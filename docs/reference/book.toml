@@ -1,0 +1,17 @@
+[book]
+title = "The Crust Reference"
+authors = ["StarkWare Industries Ltd."]
+description = "Crust Language Reference."
+src = "src"
+language = "en"
+multilingual = false
+
+[output.html]
+additional-js = [
+    "theme/custom-highlight.js",
+    "theme/bnf-linking.js",
+]
+git-repository-url = "https://github.com/starkware-libs/TODO"
+
+[preprocessor.bnf-indexer]
+command = "python3 bnf_indexer.py"
