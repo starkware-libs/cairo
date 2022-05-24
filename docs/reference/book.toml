@@ -11,7 +11,7 @@ additional-js = [
     "theme/custom-highlight.js",
     "theme/bnf-linking.js",
 ]
-git-repository-url = "https://github.com/starkware-libs/TODO"
+git-repository-url = "https://github.com/starkware-libs/cairo2"
 
 [preprocessor.bnf-indexer]
 command = "python3 bnf_indexer.py"
