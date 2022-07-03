@@ -72,9 +72,7 @@ pub struct Function {
     pub name: String,
     pub args: Vec<TypedVar>,
     pub res_types: Vec<Type>,
-    pub blocks: Block,
-    pub entry: u64,
-    pub cost: i64,
+    pub blocks: Vec<Block>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -87,7 +85,6 @@ pub struct TypedVar {
 pub struct Block {
     pub invocations: Vec<Invocation>,
     pub exit: BlockExit,
-    pub cost: i64,
 }
 
 #[derive(Clone, Debug)]
@@ -156,7 +153,7 @@ impl fmt::Display for JumpInfo {
 
 #[derive(Clone, Debug)]
 pub struct BranchInfo {
-    pub block: u64,
+    pub block: usize,
     pub exports: Vec<String>,
 }
 

@@ -1,24 +1,18 @@
 use crate::error::Error;
 use crate::graph::*;
 use std::collections::HashMap;
-use std::collections::HashSet;
 use Result::*;
 
-type ScopeState = HashMap<String, Type>;
-type TypeSet = HashSet<Type>;
+pub type ScopeState = HashMap<String, Type>;
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct TypedMapping {
+pub struct ScopeChange {
     pub args: Vec<TypedVar>,
     pub results: Vec<TypedVar>,
 }
 
-pub fn prev_state(
-    unowned_types: &TypeSet,
-    mapping: &TypedMapping,
-    mut state: ScopeState,
-) -> Result<ScopeState, Error> {
-    for res in &mapping.results {
+pub fn prev_state(change: &ScopeChange, mut state: ScopeState) -> Result<ScopeState, Error> {
+    for res in &change.results {
         match state.remove(&res.name) {
             None => {
                 return Err(Error::MissingReference);
@@ -30,15 +24,13 @@ pub fn prev_state(
             }
         }
     }
-    for arg in &mapping.args {
+    for arg in &change.args {
         match state.insert(arg.name.clone(), arg.ty.clone()) {
             Some(ty) => {
                 if arg.ty != ty {
                     return Err(Error::TypeMismatch);
                 }
-                if !unowned_types.contains(&ty) {
-                    return Err(Error::UnconsumedOwnedType);
-                }
+                return Err(Error::UnconsumedOwnedVar);
             }
             None => {}
         }
@@ -46,27 +38,20 @@ pub fn prev_state(
     Ok(state)
 }
 
-fn next_state(
-    unowned_types: &TypeSet,
-    mapping: &TypedMapping,
-    mut state: ScopeState,
-) -> Result<ScopeState, Error> {
-    for arg in &mapping.args {
-        match state.get(&arg.name) {
+pub fn next_state(change: &ScopeChange, mut state: ScopeState) -> Result<ScopeState, Error> {
+    for arg in &change.args {
+        match state.remove(&arg.name) {
             None => {
                 return Err(Error::MissingReference);
             }
             Some(ty) => {
-                if *ty != arg.ty {
+                if ty != arg.ty {
                     return Err(Error::TypeMismatch);
                 }
             }
         }
-        if !unowned_types.contains(&arg.ty) {
-            state.remove(&arg.name);
-        }
     }
-    for res in &mapping.results {
+    for res in &change.results {
         match state.insert(res.name.clone(), res.ty.clone()) {
             Some(_) => return Err(Error::VariableOverride),
             None => {}
@@ -81,17 +66,16 @@ mod tests {
 
     #[test]
     fn empty() {
-        let unowned_types = TypeSet::new();
-        let mapping = TypedMapping {
+        let change = ScopeChange {
             args: vec![],
             results: vec![],
         };
         assert_eq!(
-            prev_state(&unowned_types, &mapping, ScopeState::new()),
+            prev_state(&change, ScopeState::new()),
             Ok(ScopeState::new())
         );
         assert_eq!(
-            next_state(&unowned_types, &mapping, ScopeState::new()),
+            next_state(&change, ScopeState::new()),
             Ok(ScopeState::new())
         );
     }
@@ -104,72 +88,51 @@ mod tests {
                 .map(|v| (v.name.clone(), v.ty.clone()))
                 .collect()
         };
-        let types = |types: Vec<&TypedVar>| types.iter().map(|v| v.ty.clone()).collect();
         let typed = |var_name: &str, type_name: &str| TypedVar {
             name: var_name.to_string(),
             ty: Type::Basic(type_name.to_string()),
         };
         let arg = typed("arg", "Arg");
         let res = typed("res", "Res");
-        let mapping = TypedMapping {
+        let change = ScopeChange {
             args: vec![arg.clone()],
             results: vec![res.clone()],
         };
         assert_eq!(
-            prev_state(&types(vec![]), &mapping, state(vec![&res])),
+            prev_state(&change, state(vec![&res])),
             Ok(state(vec![&arg]))
         );
         assert_eq!(
-            next_state(&types(vec![]), &mapping, state(vec![&arg])),
+            next_state(&change, state(vec![&arg])),
             Ok(state(vec![&res]))
         );
         assert_eq!(
-            next_state(&types(vec![&arg]), &mapping, state(vec![&arg])),
-            Ok(state(vec![&arg, &res]))
+            prev_state(&change, state(vec![&res, &arg])),
+            Err(Error::UnconsumedOwnedVar)
         );
         assert_eq!(
-            prev_state(&types(vec![&arg]), &mapping, state(vec![&res, &arg])),
-            Ok(state(vec![&arg]))
-        );
-        assert_eq!(
-            prev_state(&types(vec![]), &mapping, state(vec![&res, &arg])),
-            Err(Error::UnconsumedOwnedType)
-        );
-        assert_eq!(
-            prev_state(&types(vec![]), &mapping, state(vec![])),
+            prev_state(&change, state(vec![])),
             Err(Error::MissingReference)
         );
         assert_eq!(
-            next_state(&types(vec![]), &mapping, state(vec![])),
+            next_state(&change, state(vec![])),
             Err(Error::MissingReference)
         );
         assert_eq!(
-            next_state(&types(vec![&arg]), &mapping, state(vec![])),
-            Err(Error::MissingReference)
-        );
-        assert_eq!(
-            prev_state(
-                &types(vec![]),
-                &mapping,
-                state(vec![&typed("res", "ResWrong")])
-            ),
+            prev_state(&change, state(vec![&typed("res", "ResWrong")])),
             Err(Error::TypeMismatch)
         );
         let arg_wrong_type = typed("arg", "ArgWrong");
         assert_eq!(
-            prev_state(&types(vec![]), &mapping, state(vec![&res, &arg_wrong_type])),
+            prev_state(&change, state(vec![&res, &arg_wrong_type])),
             Err(Error::TypeMismatch)
         );
         assert_eq!(
-            next_state(&types(vec![]), &mapping, state(vec![&arg_wrong_type])),
+            next_state(&change, state(vec![&arg_wrong_type])),
             Err(Error::TypeMismatch)
         );
         assert_eq!(
-            next_state(&types(vec![&arg]), &mapping, state(vec![&arg_wrong_type])),
-            Err(Error::TypeMismatch)
-        );
-        assert_eq!(
-            next_state(&types(vec![&arg]), &mapping, state(vec![&arg, &res])),
+            next_state(&change, state(vec![&arg, &res])),
             Err(Error::VariableOverride)
         );
     }

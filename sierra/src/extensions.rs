@@ -4,19 +4,13 @@ use crate::scope_state::*;
 use std::collections::HashMap;
 use Result::*;
 
-#[derive(Clone, Debug, PartialEq)]
-pub struct CodeEffects {
-    pub mapping: TypedMapping,
-    pub cost: i64,
-}
-
-pub fn get_invoke_effects(invc: &Invocation) -> Result<CodeEffects, Error> {
+pub fn get_invoke_effects(invc: &Invocation) -> Result<ScopeChange, Error> {
     match invc.libcall.name.as_str() {
         "add" | "sub" | "mul" | "div" => {
             if invc.libcall.tmpl_args.len() != 1 {
                 return Err(Error::WrongNumberOfTypeArgs(invc.to_string()));
             }
-            if invc.args.len() != 2 {
+            if invc.args.len() != 3 {
                 return Err(Error::WrongNumberOfArgs(invc.to_string()));
             }
             if invc.results.len() != 1 {
@@ -26,37 +20,38 @@ pub fn get_invoke_effects(invc: &Invocation) -> Result<CodeEffects, Error> {
                 TemplateArg::Type(t) => Ok(t),
                 TemplateArg::Value(_) => Err(Error::UnsupportedTypeArg),
             }?;
-            Ok(CodeEffects {
-                mapping: TypedMapping {
-                    args: vec![
-                        TypedVar {
-                            name: invc.args[0].clone(),
-                            ty: numeric_type.clone(),
-                        },
-                        TypedVar {
-                            name: invc.args[1].clone(),
-                            ty: numeric_type.clone(),
-                        },
-                    ],
-                    results: vec![TypedVar {
-                        name: invc.results[0].clone(),
+            Ok(ScopeChange {
+                args: vec![
+                    TypedVar {
+                        name: invc.args[0].clone(),
                         ty: numeric_type.clone(),
-                    }],
-                },
-                cost: 1,
+                    },
+                    TypedVar {
+                        name: invc.args[1].clone(),
+                        ty: numeric_type.clone(),
+                    },
+                    TypedVar {
+                        name: invc.args[2].clone(),
+                        ty: Type::Template("Cost".to_string(), vec![TemplateArg::Value(1)]),
+                    },
+                ],
+                results: vec![TypedVar {
+                    name: invc.results[0].clone(),
+                    ty: numeric_type.clone(),
+                }],
             })
         }
         _ => Err(Error::UnsupportedLibCallName),
     }
 }
 
-pub fn get_jump_effects(jump: &JumpInfo) -> Result<HashMap<u64, CodeEffects>, Error> {
+pub fn get_jump_effects(jump: &JumpInfo) -> Result<HashMap<usize, ScopeChange>, Error> {
     match jump.libcall.name.as_str() {
         "jump" => {
             if !jump.libcall.tmpl_args.is_empty() {
                 return Err(Error::WrongNumberOfTypeArgs(jump.to_string()));
             }
-            if !jump.args.is_empty() {
+            if jump.args.len() != 1 {
                 return Err(Error::WrongNumberOfArgs(jump.to_string()));
             }
             if jump.branches.len() != 1 {
@@ -65,14 +60,14 @@ pub fn get_jump_effects(jump: &JumpInfo) -> Result<HashMap<u64, CodeEffects>, Er
             if !jump.branches[0].exports.is_empty() {
                 return Err(Error::WrongNumberOfResults(jump.to_string()));
             }
-            Ok(HashMap::<u64, CodeEffects>::from([(
+            Ok(HashMap::<usize, ScopeChange>::from([(
                 jump.branches[0].block,
-                CodeEffects {
-                    mapping: TypedMapping {
-                        args: vec![],
-                        results: vec![],
-                    },
-                    cost: 1,
+                ScopeChange {
+                    args: vec![TypedVar {
+                        name: jump.args[0].clone(),
+                        ty: Type::Template("Cost".to_string(), vec![TemplateArg::Value(1)]),
+                    }],
+                    results: vec![],
                 },
             )]))
         }
@@ -80,7 +75,7 @@ pub fn get_jump_effects(jump: &JumpInfo) -> Result<HashMap<u64, CodeEffects>, Er
             if jump.libcall.tmpl_args.len() != 1 {
                 return Err(Error::WrongNumberOfTypeArgs(jump.to_string()));
             }
-            if jump.args.len() != 1 {
+            if jump.args.len() != 2 {
                 return Err(Error::WrongNumberOfArgs(jump.to_string()));
             }
             if jump.branches.len() != 2 {
@@ -98,40 +93,40 @@ pub fn get_jump_effects(jump: &JumpInfo) -> Result<HashMap<u64, CodeEffects>, Er
                 TemplateArg::Type(t) => Ok(t),
                 TemplateArg::Value(_) => Err(Error::UnsupportedTypeArg),
             }?;
-            Ok(HashMap::<u64, CodeEffects>::from([
+            Ok(HashMap::<usize, ScopeChange>::from([
                 (
                     success.block,
-                    CodeEffects {
-                        mapping: TypedMapping {
-                            args: vec![TypedVar {
+                    ScopeChange {
+                        args: vec![
+                            TypedVar {
                                 name: jump.args[0].clone(),
                                 ty: numeric_type.clone(),
-                            }],
-                            results: vec![],
-                        },
-                        cost: 1,
+                            },
+                            TypedVar {
+                                name: jump.args[1].clone(),
+                                ty: Type::Template("Cost".to_string(), vec![TemplateArg::Value(1)]),
+                            },
+                        ],
+                        results: vec![],
                     },
                 ),
                 (
                     failure.block,
-                    CodeEffects {
-                        mapping: TypedMapping {
-                            args: vec![TypedVar {
-                                name: jump.args[0].clone(),
-                                ty: numeric_type.clone(),
-                            }],
-                            results: vec![],
-                        },
-                        cost: 1,
+                    ScopeChange {
+                        args: vec![TypedVar {
+                            name: jump.args[0].clone(),
+                            ty: numeric_type.clone(),
+                        }],
+                        results: vec![],
                     },
                 ),
             ]))
         }
         "deduct_gas" => {
-            if jump.libcall.tmpl_args.len() != 1 {
+            if jump.libcall.tmpl_args.is_empty() {
                 return Err(Error::WrongNumberOfTypeArgs(jump.to_string()));
             }
-            if jump.args.len() != 1 {
+            if jump.args.len() != 2 {
                 return Err(Error::WrongNumberOfArgs(jump.to_string()));
             }
             if jump.branches.len() != 2 {
@@ -139,48 +134,65 @@ pub fn get_jump_effects(jump: &JumpInfo) -> Result<HashMap<u64, CodeEffects>, Er
             }
             let success = &jump.branches[0];
             let failure = &jump.branches[1];
-            if success.exports.len() == 1 {
+            if success.exports.len() != 1 + jump.libcall.tmpl_args.len() {
                 return Err(Error::WrongNumberOfResults(jump.to_string()));
             }
-            if failure.exports.len() == 1 {
+            if failure.exports.len() != 1 {
                 return Err(Error::WrongNumberOfResults(jump.to_string()));
             }
-            let usage = match &jump.libcall.tmpl_args[0] {
-                TemplateArg::Value(v) => Ok(v),
-                TemplateArg::Type(_) => Err(Error::UnsupportedTypeArg),
-            }?;
             let gas_type = Type::Basic("GasBuiltin".to_string());
-            Ok(HashMap::<u64, CodeEffects>::from([
+            let mut success_results = vec![TypedVar {
+                name: success.exports[0].clone(),
+                ty: gas_type.clone(),
+            }];
+            jump.libcall
+                .tmpl_args
+                .iter()
+                .zip(success.exports.iter().skip(1))
+                .try_for_each(|(tmpl_arg, name)| match tmpl_arg {
+                    TemplateArg::Value(v) => {
+                        success_results.push(TypedVar {
+                            name: name.to_string(),
+                            ty: Type::Template("Cost".to_string(), vec![TemplateArg::Value(*v)]),
+                        });
+                        Ok(())
+                    }
+                    TemplateArg::Type(_) => Err(Error::UnsupportedTypeArg),
+                })?;
+            Ok(HashMap::<usize, ScopeChange>::from([
                 (
                     success.block,
-                    CodeEffects {
-                        mapping: TypedMapping {
-                            args: vec![TypedVar {
+                    ScopeChange {
+                        args: vec![
+                            TypedVar {
                                 name: jump.args[0].clone(),
                                 ty: gas_type.clone(),
-                            }],
-                            results: vec![TypedVar {
-                                name: success.exports[0].clone(),
-                                ty: gas_type.clone(),
-                            }],
-                        },
-                        cost: 1 - usage,
+                            },
+                            TypedVar {
+                                name: jump.args[1].clone(),
+                                ty: Type::Template("Cost".to_string(), vec![TemplateArg::Value(1)]),
+                            },
+                        ],
+                        results: success_results,
                     },
                 ),
                 (
                     failure.block,
-                    CodeEffects {
-                        mapping: TypedMapping {
-                            args: vec![TypedVar {
+                    ScopeChange {
+                        args: vec![
+                            TypedVar {
                                 name: jump.args[0].clone(),
                                 ty: gas_type.clone(),
-                            }],
-                            results: vec![TypedVar {
-                                name: failure.exports[0].clone(),
-                                ty: gas_type.clone(),
-                            }],
-                        },
-                        cost: 1,
+                            },
+                            TypedVar {
+                                name: jump.args[1].clone(),
+                                ty: Type::Template("Cost".to_string(), vec![TemplateArg::Value(1)]),
+                            },
+                        ],
+                        results: vec![TypedVar {
+                            name: failure.exports[0].clone(),
+                            ty: gas_type.clone(),
+                        }],
                     },
                 ),
             ]))
@@ -189,7 +201,7 @@ pub fn get_jump_effects(jump: &JumpInfo) -> Result<HashMap<u64, CodeEffects>, Er
             if jump.libcall.tmpl_args.len() != 1 {
                 return Err(Error::WrongNumberOfTypeArgs(jump.to_string()));
             }
-            if jump.args.len() != 1 {
+            if jump.args.len() != 2 {
                 return Err(Error::WrongNumberOfArgs(jump.to_string()));
             }
             if jump.branches.len() != 2 {
@@ -207,47 +219,45 @@ pub fn get_jump_effects(jump: &JumpInfo) -> Result<HashMap<u64, CodeEffects>, Er
                 TemplateArg::Value(_) => Err(Error::UnsupportedTypeArg),
                 TemplateArg::Type(t) => Ok(t),
             }?;
-            Ok(HashMap::<u64, CodeEffects>::from([
+            Ok(HashMap::<usize, ScopeChange>::from([
                 (
                     success.block,
-                    CodeEffects {
-                        mapping: TypedMapping {
-                            args: vec![TypedVar {
+                    ScopeChange {
+                        args: vec![
+                            TypedVar {
                                 name: jump.args[0].clone(),
                                 ty: Type::Template(
                                     "Nullable".to_string(),
                                     vec![TemplateArg::Type(inner_type.clone())],
                                 ),
-                            }],
-                            results: vec![TypedVar {
-                                name: success.exports[0].clone(),
-                                ty: inner_type.clone(),
-                            }],
-                        },
-                        cost: 1,
+                            },
+                            TypedVar {
+                                name: jump.args[1].clone(),
+                                ty: Type::Template("Cost".to_string(), vec![TemplateArg::Value(1)]),
+                            },
+                        ],
+                        results: vec![TypedVar {
+                            name: success.exports[0].clone(),
+                            ty: inner_type.clone(),
+                        }],
                     },
                 ),
                 (
                     failure.block,
-                    CodeEffects {
-                        mapping: TypedMapping {
-                            args: vec![TypedVar {
-                                name: jump.args[0].clone(),
-                                ty: Type::Template(
-                                    "Nullable".to_string(),
-                                    vec![TemplateArg::Type(inner_type.clone())],
-                                ),
-                            }],
-                            results: vec![],
-                        },
-                        cost: 1,
+                    ScopeChange {
+                        args: vec![TypedVar {
+                            name: jump.args[0].clone(),
+                            ty: Type::Template(
+                                "Nullable".to_string(),
+                                vec![TemplateArg::Type(inner_type.clone())],
+                            ),
+                        }],
+                        results: vec![],
                     },
                 ),
             ]))
         }
-        _ => {
-            return Err(Error::UnsupportedLibCallName);
-        }
+        _ => Err(Error::UnsupportedLibCallName),
     }
 }
 
@@ -263,6 +273,10 @@ mod tests {
         };
         let a = typed("a", "int");
         let b = typed("b", "int");
+        let cost = TypedVar {
+            name: "cost".to_string(),
+            ty: Type::Template("Cost".to_string(), vec![TemplateArg::Value(1)]),
+        };
         let c = typed("c", "int");
         assert_eq!(
             get_invoke_effects(&Invocation {
@@ -270,41 +284,39 @@ mod tests {
                     name: "add".to_string(),
                     tmpl_args: vec![TemplateArg::Type(a.ty.clone())]
                 },
-                args: vec![a.name.clone(), b.name.clone()],
+                args: vec![a.name.clone(), b.name.clone(), cost.name.clone()],
                 results: vec![c.name.clone()],
             }),
-            Ok(CodeEffects {
-                mapping: TypedMapping {
-                    args: vec![a, b],
-                    results: vec![c],
-                },
-                cost: 1
+            Ok(ScopeChange {
+                args: vec![a, b, cost],
+                results: vec![c],
             })
         );
     }
 
     #[test]
     fn get_jump_mapping() {
+        let cost = TypedVar {
+            name: "cost".to_string(),
+            ty: Type::Template("Cost".to_string(), vec![TemplateArg::Value(1)]),
+        };
         assert_eq!(
             get_jump_effects(&JumpInfo {
                 libcall: LibCall {
                     name: "jump".to_string(),
                     tmpl_args: vec![]
                 },
-                args: vec![],
+                args: vec![cost.name.clone()],
                 branches: vec![BranchInfo {
                     block: 1,
                     exports: vec![]
                 }],
             }),
-            Ok(HashMap::<u64, CodeEffects>::from([(
+            Ok(HashMap::<usize, ScopeChange>::from([(
                 1,
-                CodeEffects {
-                    mapping: TypedMapping {
-                        args: vec![],
-                        results: vec![],
-                    },
-                    cost: 1,
+                ScopeChange {
+                    args: vec![cost],
+                    results: vec![],
                 },
             )]))
         );
