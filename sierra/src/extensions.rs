@@ -93,33 +93,22 @@ pub fn get_jump_effects(jump: &JumpInfo) -> Result<HashMap<usize, ScopeChange>, 
                 TemplateArg::Type(t) => Ok(t),
                 TemplateArg::Value(_) => Err(Error::UnsupportedTypeArg),
             }?;
+            let change = ScopeChange {
+                args: vec![
+                    TypedVar {
+                        name: jump.args[0].clone(),
+                        ty: numeric_type.clone(),
+                    },
+                    TypedVar {
+                        name: jump.args[1].clone(),
+                        ty: Type::Template("Gas".to_string(), vec![TemplateArg::Value(1)]),
+                    },
+                ],
+                results: vec![],
+            };
             Ok(HashMap::<usize, ScopeChange>::from([
-                (
-                    success.block,
-                    ScopeChange {
-                        args: vec![
-                            TypedVar {
-                                name: jump.args[0].clone(),
-                                ty: numeric_type.clone(),
-                            },
-                            TypedVar {
-                                name: jump.args[1].clone(),
-                                ty: Type::Template("Gas".to_string(), vec![TemplateArg::Value(1)]),
-                            },
-                        ],
-                        results: vec![],
-                    },
-                ),
-                (
-                    failure.block,
-                    ScopeChange {
-                        args: vec![TypedVar {
-                            name: jump.args[0].clone(),
-                            ty: numeric_type.clone(),
-                        }],
-                        results: vec![],
-                    },
-                ),
+                (success.block, change.clone()),
+                (failure.block, change),
             ]))
         }
         "get_gas" => {
@@ -141,6 +130,16 @@ pub fn get_jump_effects(jump: &JumpInfo) -> Result<HashMap<usize, ScopeChange>, 
                 return Err(Error::WrongNumberOfResults(jump.to_string()));
             }
             let gas_type = Type::Basic("GasBuiltin".to_string());
+            let args = vec![
+                TypedVar {
+                    name: jump.args[0].clone(),
+                    ty: gas_type.clone(),
+                },
+                TypedVar {
+                    name: jump.args[1].clone(),
+                    ty: Type::Template("Gas".to_string(), vec![TemplateArg::Value(1)]),
+                },
+            ];
             let mut success_results = vec![TypedVar {
                 name: success.exports[0].clone(),
                 ty: gas_type.clone(),
@@ -163,32 +162,14 @@ pub fn get_jump_effects(jump: &JumpInfo) -> Result<HashMap<usize, ScopeChange>, 
                 (
                     success.block,
                     ScopeChange {
-                        args: vec![
-                            TypedVar {
-                                name: jump.args[0].clone(),
-                                ty: gas_type.clone(),
-                            },
-                            TypedVar {
-                                name: jump.args[1].clone(),
-                                ty: Type::Template("Gas".to_string(), vec![TemplateArg::Value(1)]),
-                            },
-                        ],
+                        args: args.clone(),
                         results: success_results,
                     },
                 ),
                 (
                     failure.block,
                     ScopeChange {
-                        args: vec![
-                            TypedVar {
-                                name: jump.args[0].clone(),
-                                ty: gas_type.clone(),
-                            },
-                            TypedVar {
-                                name: jump.args[1].clone(),
-                                ty: Type::Template("Gas".to_string(), vec![TemplateArg::Value(1)]),
-                            },
-                        ],
+                        args: args,
                         results: vec![TypedVar {
                             name: failure.exports[0].clone(),
                             ty: gas_type.clone(),
@@ -219,23 +200,24 @@ pub fn get_jump_effects(jump: &JumpInfo) -> Result<HashMap<usize, ScopeChange>, 
                 TemplateArg::Value(_) => Err(Error::UnsupportedTypeArg),
                 TemplateArg::Type(t) => Ok(t),
             }?;
+            let args = vec![
+                TypedVar {
+                    name: jump.args[0].clone(),
+                    ty: Type::Template(
+                        "Nullable".to_string(),
+                        vec![TemplateArg::Type(inner_type.clone())],
+                    ),
+                },
+                TypedVar {
+                    name: jump.args[1].clone(),
+                    ty: Type::Template("Gas".to_string(), vec![TemplateArg::Value(1)]),
+                },
+            ];
             Ok(HashMap::<usize, ScopeChange>::from([
                 (
                     success.block,
                     ScopeChange {
-                        args: vec![
-                            TypedVar {
-                                name: jump.args[0].clone(),
-                                ty: Type::Template(
-                                    "Nullable".to_string(),
-                                    vec![TemplateArg::Type(inner_type.clone())],
-                                ),
-                            },
-                            TypedVar {
-                                name: jump.args[1].clone(),
-                                ty: Type::Template("Gas".to_string(), vec![TemplateArg::Value(1)]),
-                            },
-                        ],
+                        args: args.clone(),
                         results: vec![TypedVar {
                             name: success.exports[0].clone(),
                             ty: inner_type.clone(),
@@ -245,13 +227,7 @@ pub fn get_jump_effects(jump: &JumpInfo) -> Result<HashMap<usize, ScopeChange>, 
                 (
                     failure.block,
                     ScopeChange {
-                        args: vec![TypedVar {
-                            name: jump.args[0].clone(),
-                            ty: Type::Template(
-                                "Nullable".to_string(),
-                                vec![TemplateArg::Type(inner_type.clone())],
-                            ),
-                        }],
+                        args: args,
                         results: vec![],
                     },
                 ),

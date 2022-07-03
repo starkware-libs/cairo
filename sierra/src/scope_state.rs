@@ -11,33 +11,6 @@ pub struct ScopeChange {
     pub results: Vec<TypedVar>,
 }
 
-pub fn prev_state(change: &ScopeChange, mut state: ScopeState) -> Result<ScopeState, Error> {
-    for res in &change.results {
-        match state.remove(&res.name) {
-            None => {
-                return Err(Error::MissingReference);
-            }
-            Some(ty) => {
-                if ty != res.ty {
-                    return Err(Error::TypeMismatch);
-                }
-            }
-        }
-    }
-    for arg in &change.args {
-        match state.insert(arg.name.clone(), arg.ty.clone()) {
-            Some(ty) => {
-                if arg.ty != ty {
-                    return Err(Error::TypeMismatch);
-                }
-                return Err(Error::UnconsumedOwnedVar);
-            }
-            None => {}
-        }
-    }
-    Ok(state)
-}
-
 pub fn next_state(change: &ScopeChange, mut state: ScopeState) -> Result<ScopeState, Error> {
     for arg in &change.args {
         match state.remove(&arg.name) {
@@ -71,10 +44,6 @@ mod tests {
             results: vec![],
         };
         assert_eq!(
-            prev_state(&change, ScopeState::new()),
-            Ok(ScopeState::new())
-        );
-        assert_eq!(
             next_state(&change, ScopeState::new()),
             Ok(ScopeState::new())
         );
@@ -99,36 +68,15 @@ mod tests {
             results: vec![res.clone()],
         };
         assert_eq!(
-            prev_state(&change, state(vec![&res])),
-            Ok(state(vec![&arg]))
-        );
-        assert_eq!(
             next_state(&change, state(vec![&arg])),
             Ok(state(vec![&res]))
-        );
-        assert_eq!(
-            prev_state(&change, state(vec![&res, &arg])),
-            Err(Error::UnconsumedOwnedVar)
-        );
-        assert_eq!(
-            prev_state(&change, state(vec![])),
-            Err(Error::MissingReference)
         );
         assert_eq!(
             next_state(&change, state(vec![])),
             Err(Error::MissingReference)
         );
         assert_eq!(
-            prev_state(&change, state(vec![&typed("res", "ResWrong")])),
-            Err(Error::TypeMismatch)
-        );
-        let arg_wrong_type = typed("arg", "ArgWrong");
-        assert_eq!(
-            prev_state(&change, state(vec![&res, &arg_wrong_type])),
-            Err(Error::TypeMismatch)
-        );
-        assert_eq!(
-            next_state(&change, state(vec![&arg_wrong_type])),
+            next_state(&change, state(vec![&typed("arg", "ArgWrong")])),
             Err(Error::TypeMismatch)
         );
         assert_eq!(
