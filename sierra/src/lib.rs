@@ -10,7 +10,7 @@ use crate::scope_state::*;
 use Result::*;
 
 pub fn test_function(f: &Function) -> Result<(), Error> {
-    let found_ret = test_function_helper(
+    let returns = test_function_helper(
         f,
         0,
         f.args
@@ -19,7 +19,7 @@ pub fn test_function(f: &Function) -> Result<(), Error> {
             .collect(),
         &mut vec![None; f.blocks.len()],
     )?;
-    if !found_ret {
+    if !returns {
         return Err(Error::FunctionNoExit);
     }
     Ok(())
@@ -78,11 +78,14 @@ fn test_function_helper(
         BlockExit::Continue => test_function_helper(f, b + 1, state, block_start_states),
         BlockExit::Jump(j) => {
             let changes = get_jump_effects(j)?;
-            let found_ret = changes.iter().try_fold(false, |_, (next_block, change)| {
+            let mut returns = false;
+            for (next_block, change) in changes.iter() {
                 let next_state = next_state(&change, state.clone())?;
-                test_function_helper(f, *next_block, next_state, block_start_states)
-            })?;
-            Ok(found_ret)
+                let this_returns =
+                    test_function_helper(f, *next_block, next_state, block_start_states)?;
+                returns = returns || this_returns;
+            }
+            Ok(returns)
         }
     }
 }
@@ -124,7 +127,7 @@ mod full_function {
                     typed("gb", "GasBuiltin"),
                     TypedVar {
                         name: "cost".to_string(),
-                        ty: Type::Template("Cost".to_string(), vec![TemplateArg::Value(1)]),
+                        ty: Type::Template("Gas".to_string(), vec![TemplateArg::Value(1)]),
                     }
                 ],
                 res_types: vec![Type::Basic("GasBuiltin".to_string())],
@@ -133,7 +136,7 @@ mod full_function {
                         invocations: vec![],
                         exit: BlockExit::Jump(JumpInfo {
                             libcall: LibCall {
-                                name: "deduct_gas".to_string(),
+                                name: "get_gas".to_string(),
                                 tmpl_args: vec![TemplateArg::Value(1)]
                             },
                             args: vec!["gb".to_string(), "cost".to_string()],
@@ -155,7 +158,55 @@ mod full_function {
                     },
                 ],
             }),
-            Err(Error::FunctionNoExit)
+            Ok(())
+        );
+    }
+
+    #[test]
+    fn gas_mismatch() {
+        let typed = |var_name: &str, type_name: &str| TypedVar {
+            name: var_name.to_string(),
+            ty: Type::Basic(type_name.to_string()),
+        };
+        assert_eq!(
+            test_function(&Function {
+                name: "Some".to_string(),
+                args: vec![
+                    typed("gb", "GasBuiltin"),
+                    TypedVar {
+                        name: "cost".to_string(),
+                        ty: Type::Template("Gas".to_string(), vec![TemplateArg::Value(1)]),
+                    }
+                ],
+                res_types: vec![Type::Basic("GasBuiltin".to_string())],
+                blocks: vec![
+                    Block {
+                        invocations: vec![],
+                        exit: BlockExit::Jump(JumpInfo {
+                            libcall: LibCall {
+                                name: "get_gas".to_string(),
+                                tmpl_args: vec![TemplateArg::Value(2)]
+                            },
+                            args: vec!["gb".to_string(), "cost".to_string()],
+                            branches: vec![
+                                BranchInfo {
+                                    block: 0,
+                                    exports: vec!["gb".to_string(), "cost".to_string()]
+                                },
+                                BranchInfo {
+                                    block: 1,
+                                    exports: vec!["gb".to_string()]
+                                }
+                            ],
+                        }),
+                    },
+                    Block {
+                        invocations: vec![],
+                        exit: BlockExit::Return(vec!["gb".to_string()]),
+                    },
+                ],
+            }),
+            Err(Error::FunctionBlockMismatch)
         );
     }
 }

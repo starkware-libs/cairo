@@ -32,7 +32,7 @@ pub fn get_invoke_effects(invc: &Invocation) -> Result<ScopeChange, Error> {
                     },
                     TypedVar {
                         name: invc.args[2].clone(),
-                        ty: Type::Template("Cost".to_string(), vec![TemplateArg::Value(1)]),
+                        ty: Type::Template("Gas".to_string(), vec![TemplateArg::Value(1)]),
                     },
                 ],
                 results: vec![TypedVar {
@@ -65,7 +65,7 @@ pub fn get_jump_effects(jump: &JumpInfo) -> Result<HashMap<usize, ScopeChange>, 
                 ScopeChange {
                     args: vec![TypedVar {
                         name: jump.args[0].clone(),
-                        ty: Type::Template("Cost".to_string(), vec![TemplateArg::Value(1)]),
+                        ty: Type::Template("Gas".to_string(), vec![TemplateArg::Value(1)]),
                     }],
                     results: vec![],
                 },
@@ -104,7 +104,7 @@ pub fn get_jump_effects(jump: &JumpInfo) -> Result<HashMap<usize, ScopeChange>, 
                             },
                             TypedVar {
                                 name: jump.args[1].clone(),
-                                ty: Type::Template("Cost".to_string(), vec![TemplateArg::Value(1)]),
+                                ty: Type::Template("Gas".to_string(), vec![TemplateArg::Value(1)]),
                             },
                         ],
                         results: vec![],
@@ -122,7 +122,7 @@ pub fn get_jump_effects(jump: &JumpInfo) -> Result<HashMap<usize, ScopeChange>, 
                 ),
             ]))
         }
-        "deduct_gas" => {
+        "get_gas" => {
             if jump.libcall.tmpl_args.is_empty() {
                 return Err(Error::WrongNumberOfTypeArgs(jump.to_string()));
             }
@@ -153,7 +153,7 @@ pub fn get_jump_effects(jump: &JumpInfo) -> Result<HashMap<usize, ScopeChange>, 
                     TemplateArg::Value(v) => {
                         success_results.push(TypedVar {
                             name: name.to_string(),
-                            ty: Type::Template("Cost".to_string(), vec![TemplateArg::Value(*v)]),
+                            ty: Type::Template("Gas".to_string(), vec![TemplateArg::Value(*v)]),
                         });
                         Ok(())
                     }
@@ -170,7 +170,7 @@ pub fn get_jump_effects(jump: &JumpInfo) -> Result<HashMap<usize, ScopeChange>, 
                             },
                             TypedVar {
                                 name: jump.args[1].clone(),
-                                ty: Type::Template("Cost".to_string(), vec![TemplateArg::Value(1)]),
+                                ty: Type::Template("Gas".to_string(), vec![TemplateArg::Value(1)]),
                             },
                         ],
                         results: success_results,
@@ -186,7 +186,7 @@ pub fn get_jump_effects(jump: &JumpInfo) -> Result<HashMap<usize, ScopeChange>, 
                             },
                             TypedVar {
                                 name: jump.args[1].clone(),
-                                ty: Type::Template("Cost".to_string(), vec![TemplateArg::Value(1)]),
+                                ty: Type::Template("Gas".to_string(), vec![TemplateArg::Value(1)]),
                             },
                         ],
                         results: vec![TypedVar {
@@ -233,7 +233,7 @@ pub fn get_jump_effects(jump: &JumpInfo) -> Result<HashMap<usize, ScopeChange>, 
                             },
                             TypedVar {
                                 name: jump.args[1].clone(),
-                                ty: Type::Template("Cost".to_string(), vec![TemplateArg::Value(1)]),
+                                ty: Type::Template("Gas".to_string(), vec![TemplateArg::Value(1)]),
                             },
                         ],
                         results: vec![TypedVar {
@@ -275,7 +275,7 @@ mod tests {
         let b = typed("b", "int");
         let cost = TypedVar {
             name: "cost".to_string(),
-            ty: Type::Template("Cost".to_string(), vec![TemplateArg::Value(1)]),
+            ty: Type::Template("Gas".to_string(), vec![TemplateArg::Value(1)]),
         };
         let c = typed("c", "int");
         assert_eq!(
@@ -298,7 +298,7 @@ mod tests {
     fn get_jump_mapping() {
         let cost = TypedVar {
             name: "cost".to_string(),
-            ty: Type::Template("Cost".to_string(), vec![TemplateArg::Value(1)]),
+            ty: Type::Template("Gas".to_string(), vec![TemplateArg::Value(1)]),
         };
         assert_eq!(
             get_jump_effects(&JumpInfo {
