@@ -11,8 +11,8 @@ fn gas_type(v: i64) -> Type {
 }
 
 impl JumpExtension for GetGasExtension {
-    fn get_effects(self: &Self, jump: &JumpInfo) -> Result<HashMap<usize, ScopeChange>, Error> {
-        if jump.libcall.tmpl_args.is_empty() {
+    fn get_effects(self: &Self, jump: &JumpInfo) -> Result<HashMap<BlockId, ScopeChange>, Error> {
+        if jump.ext.tmpl_args.is_empty() {
             return Err(Error::WrongNumberOfTypeArgs(jump.to_string()));
         }
         if jump.args.len() != 2 {
@@ -23,7 +23,7 @@ impl JumpExtension for GetGasExtension {
         }
         let success = &jump.branches[0];
         let failure = &jump.branches[1];
-        if success.exports.len() != 1 + jump.libcall.tmpl_args.len() {
+        if success.exports.len() != 1 + jump.ext.tmpl_args.len() {
             return Err(Error::WrongNumberOfResults(jump.to_string()));
         }
         if failure.exports.len() != 1 {
@@ -43,7 +43,7 @@ impl JumpExtension for GetGasExtension {
             name: success.exports[0].clone(),
             ty: gas_builtin_type(),
         }];
-        jump.libcall
+        jump.ext
             .tmpl_args
             .iter()
             .zip(success.exports.iter().skip(1))
@@ -57,7 +57,7 @@ impl JumpExtension for GetGasExtension {
                 }
                 TemplateArg::Type(_) => Err(Error::UnsupportedTypeArg),
             })?;
-        Ok(HashMap::<usize, ScopeChange>::from([
+        Ok(HashMap::<BlockId, ScopeChange>::from([
             (
                 success.block,
                 ScopeChange {
@@ -83,18 +83,18 @@ struct SplitGasExtension {}
 
 impl InvokeExtension for SplitGasExtension {
     fn get_effects(self: &Self, invc: &Invocation) -> Result<ScopeChange, Error> {
-        if invc.libcall.tmpl_args.len() <= 1 {
+        if invc.ext.tmpl_args.len() <= 1 {
             return Err(Error::WrongNumberOfTypeArgs(invc.to_string()));
         }
         if invc.args.len() != 1 {
             return Err(Error::WrongNumberOfArgs(invc.to_string()));
         }
-        if invc.results.len() != invc.libcall.tmpl_args.len() {
+        if invc.results.len() != invc.ext.tmpl_args.len() {
             return Err(Error::WrongNumberOfResults(invc.to_string()));
         }
         let mut results = vec![];
         let mut total = 0;
-        invc.libcall
+        invc.ext
             .tmpl_args
             .iter()
             .zip(invc.results.iter())
@@ -121,10 +121,10 @@ impl InvokeExtension for SplitGasExtension {
 
 pub(super) fn register(registry: &mut ExtensionRegistry) {
     registry
-        .jump_libcalls
+        .jump_exts
         .insert("get_gas".to_string(), Box::new(GetGasExtension {}));
     registry
-        .invoke_libcalls
+        .invoke_exts
         .insert("split_gas".to_string(), Box::new(SplitGasExtension {}));
 }
 
@@ -144,32 +144,32 @@ fn get_gas_mapping() {
     };
     assert_eq!(
         GetGasExtension {}.get_effects(&JumpInfo {
-            libcall: LibCall {
+            ext: Extension {
                 name: "".to_string(),
                 tmpl_args: vec![TemplateArg::Value(6)]
             },
             args: vec![gb.name.clone(), cost.name.clone()],
             branches: vec![
                 BranchInfo {
-                    block: 0,
+                    block: BlockId(0),
                     exports: vec![gb.name.clone(), new_cost.name.clone()]
                 },
                 BranchInfo {
-                    block: 1,
+                    block: BlockId(1),
                     exports: vec![gb.name.clone()]
                 }
             ],
         }),
-        Ok(HashMap::<usize, ScopeChange>::from([
+        Ok(HashMap::<BlockId, ScopeChange>::from([
             (
-                0,
+                BlockId(0),
                 ScopeChange {
                     args: vec![gb.clone(), cost.clone()],
                     results: vec![gb.clone(), new_cost.clone()],
                 },
             ),
             (
-                1,
+                BlockId(1),
                 ScopeChange {
                     args: vec![gb.clone(), cost],
                     results: vec![gb],
@@ -199,7 +199,7 @@ fn split_gas_mapping() {
     };
     assert_eq!(
         SplitGasExtension {}.get_effects(&Invocation {
-            libcall: LibCall {
+            ext: Extension {
                 name: "".to_string(),
                 tmpl_args: vec![
                     TemplateArg::Value(12),

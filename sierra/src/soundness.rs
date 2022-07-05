@@ -7,7 +7,7 @@ use Result::*;
 pub fn validate(f: &Function) -> Result<(), Error> {
     validate_helper(
         f,
-        0,
+        BlockId(0),
         f.args
             .iter()
             .map(|v| (v.name.clone(), v.ty.clone()))
@@ -18,16 +18,16 @@ pub fn validate(f: &Function) -> Result<(), Error> {
 
 fn validate_helper(
     f: &Function,
-    b: usize,
+    b: BlockId,
     start_state: ScopeState,
     block_start_states: &mut Vec<Option<ScopeState>>,
 ) -> Result<(), Error> {
-    if b >= block_start_states.len() {
+    if b.0 >= block_start_states.len() {
         return Err(Error::FunctionBlockOutOfBounds);
     }
-    match &block_start_states[b] {
+    match &block_start_states[b.0] {
         None => {
-            block_start_states[b] = Some(start_state.clone());
+            block_start_states[b.0] = Some(start_state.clone());
         }
         Some(s) => {
             return if *s != start_state {
@@ -38,12 +38,12 @@ fn validate_helper(
         }
     }
     let mut state = start_state;
-    for invc in &f.blocks[b].invocations {
+    for invc in &f.blocks[b.0].invocations {
         let change = get_invoke_effects(invc)?;
         state = next_state(&change, state)?;
     }
 
-    match &f.blocks[b].exit {
+    match &f.blocks[b.0].exit {
         BlockExit::Return(ref_ids) => {
             if ref_ids.len() != f.res_types.len() {
                 return Err(Error::FunctionTypeMismatch);
@@ -65,7 +65,7 @@ fn validate_helper(
                     }
                 })
         }
-        BlockExit::Continue => validate_helper(f, b + 1, state, block_start_states),
+        BlockExit::Continue => validate_helper(f, BlockId(b.0 + 1), state, block_start_states),
         BlockExit::Jump(j) => {
             let changes = get_jump_effects(j)?;
             changes.iter().try_for_each(|(next_block, change)| {
@@ -132,7 +132,7 @@ mod function {
                 blocks: vec![Block {
                     invocations: vec![
                         Invocation {
-                            libcall: LibCall {
+                            ext: Extension {
                                 name: "split_gas".to_string(),
                                 tmpl_args: vec![TemplateArg::Value(1), TemplateArg::Value(2)],
                             },
@@ -140,7 +140,7 @@ mod function {
                             results: vec!["cost_for_next".to_string(), "cost".to_string()],
                         },
                         Invocation {
-                            libcall: LibCall {
+                            ext: Extension {
                                 name: "add".to_string(),
                                 tmpl_args: vec![TemplateArg::Type(int_type())],
                             },
@@ -148,7 +148,7 @@ mod function {
                             results: vec!["a_plus_b".to_string()],
                         },
                         Invocation {
-                            libcall: LibCall {
+                            ext: Extension {
                                 name: "split_gas".to_string(),
                                 tmpl_args: vec![TemplateArg::Value(1), TemplateArg::Value(1)],
                             },
@@ -156,7 +156,7 @@ mod function {
                             results: vec!["cost_for_next".to_string(), "cost_for_last".to_string()],
                         },
                         Invocation {
-                            libcall: LibCall {
+                            ext: Extension {
                                 name: "sub".to_string(),
                                 tmpl_args: vec![TemplateArg::Type(int_type())],
                             },
@@ -168,7 +168,7 @@ mod function {
                             results: vec!["c_minus_d".to_string()],
                         },
                         Invocation {
-                            libcall: LibCall {
+                            ext: Extension {
                                 name: "mul".to_string(),
                                 tmpl_args: vec![TemplateArg::Type(int_type())],
                             },
@@ -198,18 +198,18 @@ mod function {
                     Block {
                         invocations: vec![],
                         exit: BlockExit::Jump(JumpInfo {
-                            libcall: LibCall {
+                            ext: Extension {
                                 name: "get_gas".to_string(),
                                 tmpl_args: vec![TemplateArg::Value(1)]
                             },
                             args: vec!["gb".to_string(), "cost".to_string()],
                             branches: vec![
                                 BranchInfo {
-                                    block: 0,
+                                    block: BlockId(0),
                                     exports: vec!["gb".to_string(), "cost".to_string()]
                                 },
                                 BranchInfo {
-                                    block: 1,
+                                    block: BlockId(1),
                                     exports: vec!["gb".to_string()]
                                 }
                             ],
@@ -236,18 +236,18 @@ mod function {
                     Block {
                         invocations: vec![],
                         exit: BlockExit::Jump(JumpInfo {
-                            libcall: LibCall {
+                            ext: Extension {
                                 name: "get_gas".to_string(),
                                 tmpl_args: vec![TemplateArg::Value(2)]
                             },
                             args: vec!["gb".to_string(), "cost".to_string()],
                             branches: vec![
                                 BranchInfo {
-                                    block: 0,
+                                    block: BlockId(0),
                                     exports: vec!["gb".to_string(), "cost".to_string()]
                                 },
                                 BranchInfo {
-                                    block: 1,
+                                    block: BlockId(1),
                                     exports: vec!["gb".to_string()]
                                 }
                             ],

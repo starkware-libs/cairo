@@ -6,12 +6,12 @@ pub struct Program {
 }
 
 #[derive(Clone, Debug)]
-pub struct LibCall {
+pub struct Extension {
     pub name: String,
     pub tmpl_args: Vec<TemplateArg>,
 }
 
-impl fmt::Display for LibCall {
+impl fmt::Display for Extension {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.name)?;
         let mut iter = self.tmpl_args.iter();
@@ -25,6 +25,9 @@ impl fmt::Display for LibCall {
         Ok(())
     }
 }
+
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct BlockId(pub usize);
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum TemplateArg {
@@ -89,14 +92,14 @@ pub struct Block {
 
 #[derive(Clone, Debug)]
 pub struct Invocation {
-    pub libcall: LibCall,
+    pub ext: Extension,
     pub args: Vec<String>,
     pub results: Vec<String>,
 }
 
 impl fmt::Display for Invocation {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}(", self.libcall)?;
+        write!(f, "{}(", self.ext)?;
         self.args
             .iter()
             .take(1)
@@ -127,14 +130,14 @@ pub enum BlockExit {
 
 #[derive(Clone, Debug)]
 pub struct JumpInfo {
-    pub libcall: LibCall,
+    pub ext: Extension,
     pub args: Vec<String>,
     pub branches: Vec<BranchInfo>,
 }
 
 impl fmt::Display for JumpInfo {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}(", self.libcall)?;
+        write!(f, "{}(", self.ext)?;
         self.args
             .iter()
             .take(1)
@@ -153,13 +156,13 @@ impl fmt::Display for JumpInfo {
 
 #[derive(Clone, Debug)]
 pub struct BranchInfo {
-    pub block: usize,
+    pub block: BlockId,
     pub exports: Vec<String>,
 }
 
 impl fmt::Display for BranchInfo {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}(", self.block)?;
+        write!(f, "{}(", self.block.0)?;
         self.exports
             .iter()
             .take(1)

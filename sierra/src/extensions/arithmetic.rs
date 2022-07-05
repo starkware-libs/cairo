@@ -4,7 +4,7 @@ struct ArithmeticExtension {}
 
 impl InvokeExtension for ArithmeticExtension {
     fn get_effects(self: &Self, invc: &Invocation) -> Result<ScopeChange, Error> {
-        if invc.libcall.tmpl_args.len() != 1 {
+        if invc.ext.tmpl_args.len() != 1 {
             return Err(Error::WrongNumberOfTypeArgs(invc.to_string()));
         }
         if invc.args.len() != 3 {
@@ -13,7 +13,7 @@ impl InvokeExtension for ArithmeticExtension {
         if invc.results.len() != 1 {
             return Err(Error::WrongNumberOfResults(invc.to_string()));
         }
-        let numeric_type = match &invc.libcall.tmpl_args[0] {
+        let numeric_type = match &invc.ext.tmpl_args[0] {
             TemplateArg::Type(t) => Ok(t),
             TemplateArg::Value(_) => Err(Error::UnsupportedTypeArg),
         }?;
@@ -43,7 +43,7 @@ impl InvokeExtension for ArithmeticExtension {
 pub(super) fn register(registry: &mut ExtensionRegistry) {
     for op in ["add", "sub", "mul", "div"] {
         registry
-            .invoke_libcalls
+            .invoke_exts
             .insert(op.to_string(), Box::new(ArithmeticExtension {}));
     }
 }
@@ -63,7 +63,7 @@ fn mapping() {
     let c = typed("c", "int");
     assert_eq!(
         ArithmeticExtension {}.get_effects(&Invocation {
-            libcall: LibCall {
+            ext: Extension {
                 name: "".to_string(),
                 tmpl_args: vec![TemplateArg::Type(a.ty.clone())]
             },

@@ -3,8 +3,8 @@ use crate::extensions::*;
 struct MatchNullableExtension {}
 
 impl JumpExtension for MatchNullableExtension {
-    fn get_effects(self: &Self, jump: &JumpInfo) -> Result<HashMap<usize, ScopeChange>, Error> {
-        if jump.libcall.tmpl_args.len() != 1 {
+    fn get_effects(self: &Self, jump: &JumpInfo) -> Result<HashMap<BlockId, ScopeChange>, Error> {
+        if jump.ext.tmpl_args.len() != 1 {
             return Err(Error::WrongNumberOfTypeArgs(jump.to_string()));
         }
         if jump.args.len() != 2 {
@@ -21,7 +21,7 @@ impl JumpExtension for MatchNullableExtension {
         if !failure.exports.is_empty() {
             return Err(Error::WrongNumberOfResults(jump.to_string()));
         }
-        let inner_type = match &jump.libcall.tmpl_args[0] {
+        let inner_type = match &jump.ext.tmpl_args[0] {
             TemplateArg::Value(_) => Err(Error::UnsupportedTypeArg),
             TemplateArg::Type(t) => Ok(t),
         }?;
@@ -38,7 +38,7 @@ impl JumpExtension for MatchNullableExtension {
                 ty: Type::Template("Gas".to_string(), vec![TemplateArg::Value(1)]),
             },
         ];
-        Ok(HashMap::<usize, ScopeChange>::from([
+        Ok(HashMap::<BlockId, ScopeChange>::from([
             (
                 success.block,
                 ScopeChange {
@@ -61,7 +61,7 @@ impl JumpExtension for MatchNullableExtension {
 }
 
 pub(super) fn register(registry: &mut ExtensionRegistry) {
-    registry.jump_libcalls.insert(
+    registry.jump_exts.insert(
         "match_nullable".to_string(),
         Box::new(MatchNullableExtension {}),
     );
@@ -86,32 +86,32 @@ fn mapping() {
     };
     assert_eq!(
         MatchNullableExtension {}.get_effects(&JumpInfo {
-            libcall: LibCall {
+            ext: Extension {
                 name: "".to_string(),
                 tmpl_args: vec![TemplateArg::Type(a.ty.clone())]
             },
             args: vec![a_wrap.name.clone(), cost.name.clone()],
             branches: vec![
                 BranchInfo {
-                    block: 0,
+                    block: BlockId(0),
                     exports: vec![a.name.clone()]
                 },
                 BranchInfo {
-                    block: 1,
+                    block: BlockId(1),
                     exports: vec![]
                 }
             ],
         }),
-        Ok(HashMap::<usize, ScopeChange>::from([
+        Ok(HashMap::<BlockId, ScopeChange>::from([
             (
-                0,
+                BlockId(0),
                 ScopeChange {
                     args: vec![a_wrap.clone(), cost.clone()],
                     results: vec![a],
                 },
             ),
             (
-                1,
+                BlockId(1),
                 ScopeChange {
                     args: vec![a_wrap, cost],
                     results: vec![],

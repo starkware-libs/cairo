@@ -3,8 +3,8 @@ use crate::extensions::*;
 struct UnconditionalJumpExtension {}
 
 impl JumpExtension for UnconditionalJumpExtension {
-    fn get_effects(self: &Self, jump: &JumpInfo) -> Result<HashMap<usize, ScopeChange>, Error> {
-        if !jump.libcall.tmpl_args.is_empty() {
+    fn get_effects(self: &Self, jump: &JumpInfo) -> Result<HashMap<BlockId, ScopeChange>, Error> {
+        if !jump.ext.tmpl_args.is_empty() {
             return Err(Error::WrongNumberOfTypeArgs(jump.to_string()));
         }
         if jump.args.len() != 1 {
@@ -16,7 +16,7 @@ impl JumpExtension for UnconditionalJumpExtension {
         if !jump.branches[0].exports.is_empty() {
             return Err(Error::WrongNumberOfResults(jump.to_string()));
         }
-        Ok(HashMap::<usize, ScopeChange>::from([(
+        Ok(HashMap::<BlockId, ScopeChange>::from([(
             jump.branches[0].block,
             ScopeChange {
                 args: vec![TypedVar {
@@ -31,7 +31,7 @@ impl JumpExtension for UnconditionalJumpExtension {
 
 pub(super) fn register(registry: &mut ExtensionRegistry) {
     registry
-        .jump_libcalls
+        .jump_exts
         .insert("jump".to_string(), Box::new(UnconditionalJumpExtension {}));
 }
 
@@ -43,18 +43,18 @@ fn mapping() {
     };
     assert_eq!(
         UnconditionalJumpExtension {}.get_effects(&JumpInfo {
-            libcall: LibCall {
+            ext: Extension {
                 name: "".to_string(),
                 tmpl_args: vec![]
             },
             args: vec![cost.name.clone()],
             branches: vec![BranchInfo {
-                block: 1,
+                block: BlockId(1),
                 exports: vec![]
             }],
         }),
-        Ok(HashMap::<usize, ScopeChange>::from([(
-            1,
+        Ok(HashMap::<BlockId, ScopeChange>::from([(
+            BlockId(1),
             ScopeChange {
                 args: vec![cost],
                 results: vec![],
