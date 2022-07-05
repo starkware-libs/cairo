@@ -1,10 +1,10 @@
-use crate::graph::Type;
+use crate::graph::{Identifier, Type};
 
 #[derive(Debug, PartialEq)]
 pub enum Error {
-    TypeMismatch(String, Type, Type),
-    MissingReference(String, Type),
-    VariableOverride(String),
+    TypeMismatch(Identifier, Type, Type),
+    MissingReference(Identifier, Type),
+    VariableOverride(Identifier),
     ArgumentSizeMismatch,
     ResultSizeMismatch,
     WrongNumberOfTypeArgs,

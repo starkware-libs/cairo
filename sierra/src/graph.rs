@@ -16,9 +16,12 @@ pub struct Function {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct TypedVar {
-    pub name: String,
+    pub id: Identifier,
     pub ty: Type,
 }
+
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct Identifier(pub String);
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Type {
@@ -40,6 +43,9 @@ impl fmt::Display for Type {
         Ok(())
     }
 }
+
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct BlockId(pub usize);
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum TemplateArg {
@@ -65,8 +71,8 @@ pub struct Block {
 #[derive(Clone, Debug)]
 pub struct Invocation {
     pub ext: Extension,
-    pub args: Vec<String>,
-    pub results: Vec<String>,
+    pub args: Vec<Identifier>,
+    pub results: Vec<Identifier>,
 }
 
 impl fmt::Display for Invocation {
@@ -75,27 +81,27 @@ impl fmt::Display for Invocation {
         self.args
             .iter()
             .take(1)
-            .try_for_each(|n| write!(f, "{}", n))?;
+            .try_for_each(|n| write!(f, "{}", n.0))?;
         self.args
             .iter()
             .skip(1)
-            .try_for_each(|n| write!(f, ", {}", n))?;
+            .try_for_each(|n| write!(f, ", {}", n.0))?;
         write!(f, ") -> (")?;
         self.results
             .iter()
             .take(1)
-            .try_for_each(|n| write!(f, "{}", n))?;
+            .try_for_each(|n| write!(f, "{}", n.0))?;
         self.results
             .iter()
             .skip(1)
-            .try_for_each(|n| write!(f, ", {}", n))?;
+            .try_for_each(|n| write!(f, ", {}", n.0))?;
         write!(f, ")")
     }
 }
 
 #[derive(Clone, Debug)]
 pub enum BlockExit {
-    Return(Vec<String>),
+    Return(Vec<Identifier>),
     Jump(JumpInfo),
     Continue,
 }
@@ -103,7 +109,7 @@ pub enum BlockExit {
 #[derive(Clone, Debug)]
 pub struct JumpInfo {
     pub ext: Extension,
-    pub args: Vec<String>,
+    pub args: Vec<Identifier>,
     pub branches: Vec<BranchInfo>,
 }
 
@@ -113,11 +119,11 @@ impl fmt::Display for JumpInfo {
         self.args
             .iter()
             .take(1)
-            .try_for_each(|n| write!(f, "{}", n))?;
+            .try_for_each(|n| write!(f, "{}", n.0))?;
         self.args
             .iter()
             .skip(1)
-            .try_for_each(|n| write!(f, ", {}", n))?;
+            .try_for_each(|n| write!(f, ", {}", n.0))?;
         writeln!(f, ") {{")?;
         self.branches
             .iter()
@@ -150,11 +156,8 @@ impl fmt::Display for Extension {
 #[derive(Clone, Debug)]
 pub struct BranchInfo {
     pub block: BlockId,
-    pub exports: Vec<String>,
+    pub exports: Vec<Identifier>,
 }
-
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub struct BlockId(pub usize);
 
 impl fmt::Display for BranchInfo {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -162,11 +165,11 @@ impl fmt::Display for BranchInfo {
         self.exports
             .iter()
             .take(1)
-            .try_for_each(|n| write!(f, "{}", n))?;
+            .try_for_each(|n| write!(f, "{}", n.0))?;
         self.exports
             .iter()
             .skip(1)
-            .try_for_each(|n| write!(f, ", {}", n))?;
+            .try_for_each(|n| write!(f, ", {}", n.0))?;
         writeln!(f, ")")
     }
 }

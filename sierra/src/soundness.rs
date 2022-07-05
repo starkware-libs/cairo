@@ -13,7 +13,7 @@ pub fn validate(prog: &Program) -> Result<(), Error> {
             f.entry,
             f.args
                 .iter()
-                .map(|v| (v.name.clone(), v.ty.clone()))
+                .map(|v| (v.id.clone(), v.ty.clone()))
                 .collect(),
             &mut block_start_states,
         )
@@ -48,9 +48,9 @@ fn validate_helper(
         state = next_state(
             state,
             ScopeChange {
-                arg_names: &invc.args,
+                arg_ids: &invc.args,
                 arg_types: &arg_types,
-                res_names: &invc.results,
+                res_ids: &invc.results,
                 res_types: &res_types,
             },
         )?;
@@ -61,9 +61,9 @@ fn validate_helper(
             state = next_state(
                 state,
                 ScopeChange {
-                    arg_names: &ref_ids,
+                    arg_ids: &ref_ids,
                     arg_types: &res_types,
-                    res_names: &vec![],
+                    res_ids: &vec![],
                     res_types: &vec![],
                 },
             )?;
@@ -89,9 +89,9 @@ fn validate_helper(
                     let next_state = next_state(
                         state.clone(),
                         ScopeChange {
-                            arg_names: &j.args,
+                            arg_ids: &j.args,
                             arg_types: &arg_types,
-                            res_names: &branch.exports,
+                            res_ids: &branch.exports,
                             res_types: &res_types,
                         },
                     )?;
@@ -111,11 +111,12 @@ fn validate_helper(
 mod function {
     use super::*;
 
-    fn typed(var_name: &str, ty: Type) -> TypedVar {
-        TypedVar {
-            name: var_name.to_string(),
-            ty: ty,
-        }
+    fn as_id(name: &str) -> Identifier {
+        Identifier(name.to_string())
+    }
+
+    fn typed(id: Identifier, ty: Type) -> TypedVar {
+        TypedVar { id: id, ty: ty }
     }
 
     fn gas_builtin_type() -> Type {
@@ -153,7 +154,10 @@ mod function {
                 blocks: vec![],
                 funcs: vec![Function {
                     name: "Some".to_string(),
-                    args: vec![typed("gb", gas_builtin_type()), typed("a", felt_type())],
+                    args: vec![
+                        typed(as_id("gb"), gas_builtin_type()),
+                        typed(as_id("a"), felt_type())
+                    ],
                     res_types: vec![gas_builtin_type(), felt_type()],
                     entry: BlockId(0),
                 }]
@@ -173,40 +177,32 @@ mod function {
                                 name: "split_gas".to_string(),
                                 tmpl_args: vec![TemplateArg::Value(1), TemplateArg::Value(2)],
                             },
-                            args: vec!["cost".to_string()],
-                            results: vec!["cost_for_next".to_string(), "cost".to_string()],
+                            args: vec![as_id("cost")],
+                            results: vec![as_id("cost_for_next"), as_id("cost")],
                         },
                         Invocation {
                             ext: Extension {
                                 name: "add".to_string(),
                                 tmpl_args: vec![TemplateArg::Type(int_type())],
                             },
-                            args: vec![
-                                "a".to_string(),
-                                "b".to_string(),
-                                "cost_for_next".to_string()
-                            ],
-                            results: vec!["a_plus_b".to_string()],
+                            args: vec![as_id("a"), as_id("b"), as_id("cost_for_next")],
+                            results: vec![as_id("a_plus_b")],
                         },
                         Invocation {
                             ext: Extension {
                                 name: "split_gas".to_string(),
                                 tmpl_args: vec![TemplateArg::Value(1), TemplateArg::Value(1)],
                             },
-                            args: vec!["cost".to_string()],
-                            results: vec!["cost_for_next".to_string(), "cost_for_last".to_string()],
+                            args: vec![as_id("cost")],
+                            results: vec![as_id("cost_for_next"), as_id("cost_for_last")],
                         },
                         Invocation {
                             ext: Extension {
                                 name: "sub".to_string(),
                                 tmpl_args: vec![TemplateArg::Type(int_type())],
                             },
-                            args: vec![
-                                "c".to_string(),
-                                "d".to_string(),
-                                "cost_for_next".to_string()
-                            ],
-                            results: vec!["c_minus_d".to_string()],
+                            args: vec![as_id("c"), as_id("d"), as_id("cost_for_next")],
+                            results: vec![as_id("c_minus_d")],
                         },
                         Invocation {
                             ext: Extension {
@@ -214,24 +210,24 @@ mod function {
                                 tmpl_args: vec![TemplateArg::Type(int_type())],
                             },
                             args: vec![
-                                "a_plus_b".to_string(),
-                                "c_minus_d".to_string(),
-                                "cost_for_last".to_string()
+                                as_id("a_plus_b"),
+                                as_id("c_minus_d"),
+                                as_id("cost_for_last")
                             ],
-                            results: vec!["a_plus_b_mul_c_minus_d".to_string()],
+                            results: vec![as_id("a_plus_b_mul_c_minus_d")],
                         }
                     ],
-                    exit: BlockExit::Return(vec!["a_plus_b_mul_c_minus_d".to_string()]),
+                    exit: BlockExit::Return(vec![as_id("a_plus_b_mul_c_minus_d")]),
                 },],
 
                 funcs: vec![Function {
                     name: "Other".to_string(),
                     args: vec![
-                        typed("a", int_type()),
-                        typed("b", int_type()),
-                        typed("c", int_type()),
-                        typed("d", int_type()),
-                        typed("cost", gas_type(3)),
+                        typed(as_id("a"), int_type()),
+                        typed(as_id("b"), int_type()),
+                        typed(as_id("c"), int_type()),
+                        typed(as_id("d"), int_type()),
+                        typed(as_id("cost"), gas_type(3)),
                     ],
                     res_types: vec![int_type()],
                     entry: BlockId(0),
@@ -253,27 +249,30 @@ mod function {
                                 name: "get_gas".to_string(),
                                 tmpl_args: vec![TemplateArg::Value(1)]
                             },
-                            args: vec!["gb".to_string(), "cost".to_string()],
+                            args: vec![as_id("gb"), as_id("cost")],
                             branches: vec![
                                 BranchInfo {
                                     block: BlockId(0),
-                                    exports: vec!["gb".to_string(), "cost".to_string()]
+                                    exports: vec![as_id("gb"), as_id("cost")]
                                 },
                                 BranchInfo {
                                     block: BlockId(1),
-                                    exports: vec!["gb".to_string()]
+                                    exports: vec![as_id("gb")]
                                 }
                             ],
                         }),
                     },
                     Block {
                         invocations: vec![],
-                        exit: BlockExit::Return(vec!["gb".to_string()]),
+                        exit: BlockExit::Return(vec![as_id("gb")]),
                     },
                 ],
                 funcs: vec![Function {
                     name: "Some".to_string(),
-                    args: vec![typed("gb", gas_builtin_type()), typed("cost", gas_type(1)),],
+                    args: vec![
+                        typed(as_id("gb"), gas_builtin_type()),
+                        typed(as_id("cost"), gas_type(1)),
+                    ],
                     res_types: vec![gas_builtin_type()],
                     entry: BlockId(0),
                 }]
@@ -294,27 +293,30 @@ mod function {
                                 name: "get_gas".to_string(),
                                 tmpl_args: vec![TemplateArg::Value(2)]
                             },
-                            args: vec!["gb".to_string(), "cost".to_string()],
+                            args: vec![as_id("gb"), as_id("cost")],
                             branches: vec![
                                 BranchInfo {
                                     block: BlockId(0),
-                                    exports: vec!["gb".to_string(), "cost".to_string()]
+                                    exports: vec![as_id("gb"), as_id("cost")]
                                 },
                                 BranchInfo {
                                     block: BlockId(1),
-                                    exports: vec!["gb".to_string()]
+                                    exports: vec![as_id("gb")]
                                 }
                             ],
                         }),
                     },
                     Block {
                         invocations: vec![],
-                        exit: BlockExit::Return(vec!["gb".to_string()]),
+                        exit: BlockExit::Return(vec![as_id("gb")]),
                     },
                 ],
                 funcs: vec![Function {
                     name: "Some".to_string(),
-                    args: vec![typed("gb", gas_builtin_type()), typed("cost", gas_type(1)),],
+                    args: vec![
+                        typed(as_id("gb"), gas_builtin_type()),
+                        typed(as_id("cost"), gas_type(1)),
+                    ],
                     res_types: vec![gas_builtin_type()],
                     entry: BlockId(0),
                 }]
