@@ -102,19 +102,31 @@ mod function {
     }
 
     fn gas_builtin_type() -> Type {
-        Type::Basic("GasBuiltin".to_string())
+        Type {
+            name: "GasBuiltin".to_string(),
+            args: vec![],
+        }
     }
 
     fn felt_type() -> Type {
-        Type::Basic("Felt".to_string())
+        Type {
+            name: "Felt".to_string(),
+            args: vec![],
+        }
     }
 
     fn int_type() -> Type {
-        Type::Basic("Int".to_string())
+        Type {
+            name: "int".to_string(),
+            args: vec![],
+        }
     }
 
     fn gas_type(c: i64) -> Type {
-        Type::Template("Gas".to_string(), vec![TemplateArg::Value(c)])
+        Type {
+            name: "Gas".to_string(),
+            args: vec![TemplateArg::Value(c)],
+        }
     }
 
     #[test]

@@ -45,28 +45,23 @@ impl fmt::Display for TemplateArg {
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub enum Type {
-    Basic(String),
-    Template(String, Vec<TemplateArg>),
+pub struct Type {
+    pub name: String,
+    pub args: Vec<TemplateArg>,
 }
 
 impl fmt::Display for Type {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Type::Basic(name) => write!(f, "{}", name),
-            Type::Template(name, tmpl_args) => {
-                write!(f, "{}<", name)?;
-                tmpl_args
-                    .iter()
-                    .take(1)
-                    .try_for_each(|ta| write!(f, "{}", ta))?;
-                tmpl_args
-                    .iter()
-                    .skip(1)
-                    .try_for_each(|ta| write!(f, ", {}", ta))?;
-                write!(f, ">")
+        write!(f, "{}", self.name)?;
+        let mut iter = self.args.iter();
+        if let Some(ta) = iter.next() {
+            write!(f, "<{}", ta)?;
+            for ta in iter {
+                write!(f, ", {}", ta)?;
             }
+            write!(f, ">")?;
         }
+        Ok(())
     }
 }
 

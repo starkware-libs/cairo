@@ -16,11 +16,14 @@ impl JumpExtension for MatchNullableExtension {
         }?;
         Ok((
             vec![
-                Type::Template(
-                    "Nullable".to_string(),
-                    vec![TemplateArg::Type(inner_type.clone())],
-                ),
-                Type::Template("Gas".to_string(), vec![TemplateArg::Value(1)]),
+                Type {
+                    name: "Nullable".to_string(),
+                    args: vec![TemplateArg::Type(inner_type.clone())],
+                },
+                Type {
+                    name: "Gas".to_string(),
+                    args: vec![TemplateArg::Value(1)],
+                },
             ],
             vec![vec![inner_type.clone()], vec![]],
         ))
@@ -40,13 +43,22 @@ mod tests {
 
     #[test]
     fn legal_usage() {
-        let ty = Type::Basic("int".to_string());
+        let ty = Type {
+            name: "int".to_string(),
+            args: vec![],
+        };
         assert_eq!(
             MatchNullableExtension {}.get_signature(&vec![TemplateArg::Type(ty.clone())]),
             Ok((
                 vec![
-                    Type::Template("Nullable".to_string(), vec![TemplateArg::Type(ty.clone())],),
-                    Type::Template("Gas".to_string(), vec![TemplateArg::Value(1)]),
+                    Type {
+                        name: "Nullable".to_string(),
+                        args: vec![TemplateArg::Type(ty.clone())]
+                    },
+                    Type {
+                        name: "Gas".to_string(),
+                        args: vec![TemplateArg::Value(1)]
+                    },
                 ],
                 vec![vec![ty], vec![]],
             ))

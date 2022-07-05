@@ -66,7 +66,10 @@ mod tests {
 
     #[test]
     fn basic_mapping() {
-        let as_type = |name: &str| Type::Basic(name.to_string());
+        let as_type = |name: &str| Type {
+            name: name.to_string(),
+            args: vec![],
+        };
         assert_eq!(
             next_state(
                 ScopeState::from([("arg".to_string(), as_type("Arg"))]),

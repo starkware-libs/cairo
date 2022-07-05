@@ -11,10 +11,10 @@ impl JumpExtension for UnconditionalJumpExtension {
             return Err(Error::WrongNumberOfTypeArgs);
         }
         Ok((
-            vec![Type::Template(
-                "Gas".to_string(),
-                vec![TemplateArg::Value(1)],
-            )],
+            vec![Type {
+                name: "Gas".to_string(),
+                args: vec![TemplateArg::Value(1)],
+            }],
             vec![vec![]],
         ))
     }
@@ -35,10 +35,10 @@ mod tests {
         assert_eq!(
             UnconditionalJumpExtension {}.get_signature(&vec![]),
             Ok((
-                vec![Type::Template(
-                    "Gas".to_string(),
-                    vec![TemplateArg::Value(1)]
-                ),],
+                vec![Type {
+                    name: "Gas".to_string(),
+                    args: vec![TemplateArg::Value(1)]
+                }],
                 vec![vec![]],
             ))
         );

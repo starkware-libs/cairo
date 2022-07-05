@@ -3,11 +3,17 @@ use crate::extensions::*;
 struct GetGasExtension {}
 
 fn gas_builtin_type() -> Type {
-    Type::Basic("GasBuiltin".to_string())
+    Type {
+        name: "GasBuiltin".to_string(),
+        args: vec![],
+    }
 }
 
 fn gas_type(v: i64) -> Type {
-    Type::Template("Gas".to_string(), vec![TemplateArg::Value(v)])
+    Type {
+        name: "Gas".to_string(),
+        args: vec![TemplateArg::Value(v)],
+    }
 }
 
 impl JumpExtension for GetGasExtension {

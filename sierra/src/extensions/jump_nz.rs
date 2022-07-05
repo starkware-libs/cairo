@@ -17,7 +17,10 @@ impl JumpExtension for JumpNzExtension {
         Ok((
             vec![
                 numeric_type.clone(),
-                Type::Template("Gas".to_string(), vec![TemplateArg::Value(1)]),
+                Type {
+                    name: "Gas".to_string(),
+                    args: vec![TemplateArg::Value(1)],
+                },
             ],
             vec![vec![], vec![]],
         ))
@@ -36,13 +39,19 @@ mod tests {
 
     #[test]
     fn legal_usage() {
-        let ty = Type::Basic("int".to_string());
+        let ty = Type {
+            name: "int".to_string(),
+            args: vec![],
+        };
         assert_eq!(
             JumpNzExtension {}.get_signature(&vec![TemplateArg::Type(ty.clone())]),
             Ok((
                 vec![
                     ty,
-                    Type::Template("Gas".to_string(), vec![TemplateArg::Value(1)]),
+                    Type {
+                        name: "Gas".to_string(),
+                        args: vec![TemplateArg::Value(1)]
+                    },
                 ],
                 vec![vec![], vec![]],
             ))
