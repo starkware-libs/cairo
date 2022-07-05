@@ -2,46 +2,22 @@ use std::fmt;
 
 #[derive(Clone, Debug)]
 pub struct Program {
+    pub blocks: Vec<Block>,
     pub funcs: Vec<Function>,
 }
 
 #[derive(Clone, Debug)]
-pub struct Extension {
+pub struct Function {
     pub name: String,
-    pub tmpl_args: Vec<TemplateArg>,
+    pub args: Vec<TypedVar>,
+    pub res_types: Vec<Type>,
+    pub entry: BlockId,
 }
 
-impl fmt::Display for Extension {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.name)?;
-        let mut iter = self.tmpl_args.iter();
-        if let Some(ta) = iter.next() {
-            write!(f, "<{}", ta)?;
-            for ta in iter {
-                write!(f, ", {}", ta)?;
-            }
-            write!(f, ">")?;
-        }
-        Ok(())
-    }
-}
-
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub struct BlockId(pub usize);
-
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub enum TemplateArg {
-    Type(Type),
-    Value(i64),
-}
-
-impl fmt::Display for TemplateArg {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            TemplateArg::Type(t) => write!(f, "{}", t),
-            TemplateArg::Value(v) => write!(f, "{}", v),
-        }
-    }
+#[derive(Clone, Debug, PartialEq)]
+pub struct TypedVar {
+    pub name: String,
+    pub ty: Type,
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -65,18 +41,19 @@ impl fmt::Display for Type {
     }
 }
 
-#[derive(Clone, Debug)]
-pub struct Function {
-    pub name: String,
-    pub args: Vec<TypedVar>,
-    pub res_types: Vec<Type>,
-    pub blocks: Vec<Block>,
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum TemplateArg {
+    Type(Type),
+    Value(i64),
 }
 
-#[derive(Clone, Debug, PartialEq)]
-pub struct TypedVar {
-    pub name: String,
-    pub ty: Type,
+impl fmt::Display for TemplateArg {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            TemplateArg::Type(t) => write!(f, "{}", t),
+            TemplateArg::Value(v) => write!(f, "{}", v),
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -150,10 +127,34 @@ impl fmt::Display for JumpInfo {
 }
 
 #[derive(Clone, Debug)]
+pub struct Extension {
+    pub name: String,
+    pub tmpl_args: Vec<TemplateArg>,
+}
+
+impl fmt::Display for Extension {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.name)?;
+        let mut iter = self.tmpl_args.iter();
+        if let Some(ta) = iter.next() {
+            write!(f, "<{}", ta)?;
+            for ta in iter {
+                write!(f, ", {}", ta)?;
+            }
+            write!(f, ">")?;
+        }
+        Ok(())
+    }
+}
+
+#[derive(Clone, Debug)]
 pub struct BranchInfo {
     pub block: BlockId,
     pub exports: Vec<String>,
 }
+
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct BlockId(pub usize);
 
 impl fmt::Display for BranchInfo {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

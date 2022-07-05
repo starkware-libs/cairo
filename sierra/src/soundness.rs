@@ -4,20 +4,25 @@ use crate::graph::*;
 use crate::scope_state::*;
 use Result::*;
 
-pub fn validate(f: &Function) -> Result<(), Error> {
-    validate_helper(
-        f,
-        BlockId(0),
-        f.args
-            .iter()
-            .map(|v| (v.name.clone(), v.ty.clone()))
-            .collect(),
-        &mut vec![None; f.blocks.len()],
-    )
+pub fn validate(prog: &Program) -> Result<(), Error> {
+    let mut block_start_states = vec![None; prog.blocks.len()];
+    prog.funcs.iter().try_for_each(|f| {
+        validate_helper(
+            &prog.blocks,
+            &f.res_types,
+            f.entry,
+            f.args
+                .iter()
+                .map(|v| (v.name.clone(), v.ty.clone()))
+                .collect(),
+            &mut block_start_states,
+        )
+    })
 }
 
 fn validate_helper(
-    f: &Function,
+    blocks: &Vec<Block>,
+    res_types: &Vec<Type>,
     b: BlockId,
     start_state: ScopeState,
     block_start_states: &mut Vec<Option<ScopeState>>,
@@ -38,7 +43,7 @@ fn validate_helper(
         }
     }
     let mut state = start_state;
-    for invc in &f.blocks[b.0].invocations {
+    for invc in &blocks[b.0].invocations {
         let (arg_types, res_types) = get_invoke_signature(&invc.ext)?;
         state = next_state(
             state,
@@ -51,13 +56,13 @@ fn validate_helper(
         )?;
     }
 
-    match &f.blocks[b.0].exit {
+    match &blocks[b.0].exit {
         BlockExit::Return(ref_ids) => {
             state = next_state(
                 state,
                 ScopeChange {
                     arg_names: &ref_ids,
-                    arg_types: &f.res_types,
+                    arg_types: &res_types,
                     res_names: &vec![],
                     res_types: &vec![],
                 },
@@ -68,7 +73,13 @@ fn validate_helper(
                 return Err(Error::FunctionRemainingOwnedObjects);
             }
         }
-        BlockExit::Continue => validate_helper(f, BlockId(b.0 + 1), state, block_start_states),
+        BlockExit::Continue => validate_helper(
+            blocks,
+            res_types,
+            BlockId(b.0 + 1),
+            state,
+            block_start_states,
+        ),
         BlockExit::Jump(j) => {
             let (arg_types, res_types_opts) = get_jump_signature(&j.ext)?;
             res_types_opts
@@ -84,7 +95,13 @@ fn validate_helper(
                             res_types: &res_types,
                         },
                     )?;
-                    validate_helper(f, branch.block, next_state, block_start_states)
+                    validate_helper(
+                        blocks,
+                        res_types,
+                        branch.block,
+                        next_state,
+                        block_start_states,
+                    )
                 })
         }
     }
@@ -132,11 +149,14 @@ mod function {
     #[test]
     fn empty() {
         assert_eq!(
-            validate(&Function {
-                name: "Some".to_string(),
-                args: vec![typed("gb", gas_builtin_type()), typed("a", felt_type())],
-                res_types: vec![gas_builtin_type(), felt_type()],
+            validate(&Program {
                 blocks: vec![],
+                funcs: vec![Function {
+                    name: "Some".to_string(),
+                    args: vec![typed("gb", gas_builtin_type()), typed("a", felt_type())],
+                    res_types: vec![gas_builtin_type(), felt_type()],
+                    entry: BlockId(0),
+                }]
             }),
             Err(Error::FunctionBlockOutOfBounds)
         );
@@ -145,16 +165,7 @@ mod function {
     #[test]
     fn basic_return() {
         assert_eq!(
-            validate(&Function {
-                name: "Other".to_string(),
-                args: vec![
-                    typed("a", int_type()),
-                    typed("b", int_type()),
-                    typed("c", int_type()),
-                    typed("d", int_type()),
-                    typed("cost", gas_type(3)),
-                ],
-                res_types: vec![int_type()],
+            validate(&Program {
                 blocks: vec![Block {
                     invocations: vec![
                         Invocation {
@@ -212,6 +223,19 @@ mod function {
                     ],
                     exit: BlockExit::Return(vec!["a_plus_b_mul_c_minus_d".to_string()]),
                 },],
+
+                funcs: vec![Function {
+                    name: "Other".to_string(),
+                    args: vec![
+                        typed("a", int_type()),
+                        typed("b", int_type()),
+                        typed("c", int_type()),
+                        typed("d", int_type()),
+                        typed("cost", gas_type(3)),
+                    ],
+                    res_types: vec![int_type()],
+                    entry: BlockId(0),
+                }]
             }),
             Ok(())
         );
@@ -220,10 +244,7 @@ mod function {
     #[test]
     fn inifinite_gas_take_or_return() {
         assert_eq!(
-            validate(&Function {
-                name: "Some".to_string(),
-                args: vec![typed("gb", gas_builtin_type()), typed("cost", gas_type(1)),],
-                res_types: vec![gas_builtin_type()],
+            validate(&Program {
                 blocks: vec![
                     Block {
                         invocations: vec![],
@@ -250,6 +271,12 @@ mod function {
                         exit: BlockExit::Return(vec!["gb".to_string()]),
                     },
                 ],
+                funcs: vec![Function {
+                    name: "Some".to_string(),
+                    args: vec![typed("gb", gas_builtin_type()), typed("cost", gas_type(1)),],
+                    res_types: vec![gas_builtin_type()],
+                    entry: BlockId(0),
+                }]
             }),
             Ok(())
         );
@@ -258,10 +285,7 @@ mod function {
     #[test]
     fn gas_mismatch() {
         assert_eq!(
-            validate(&Function {
-                name: "Some".to_string(),
-                args: vec![typed("gb", gas_builtin_type()), typed("cost", gas_type(1)),],
-                res_types: vec![gas_builtin_type()],
+            validate(&Program {
                 blocks: vec![
                     Block {
                         invocations: vec![],
@@ -288,6 +312,12 @@ mod function {
                         exit: BlockExit::Return(vec!["gb".to_string()]),
                     },
                 ],
+                funcs: vec![Function {
+                    name: "Some".to_string(),
+                    args: vec![typed("gb", gas_builtin_type()), typed("cost", gas_type(1)),],
+                    res_types: vec![gas_builtin_type()],
+                    entry: BlockId(0),
+                }]
             }),
             Err(Error::FunctionBlockMismatch)
         );
