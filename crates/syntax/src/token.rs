@@ -1,5 +1,3 @@
-
-
 use smol_str::SmolStr;
 #[derive(Clone, PartialEq, Debug, Eq, Hash)]
 pub struct Token {

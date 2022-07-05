@@ -1,0 +1,10 @@
+[package]
+name = "syntax_codegen"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+genco = "0.17.0"
+xshell = "0.2.2"

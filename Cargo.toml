@@ -3,4 +3,5 @@
 members = [
     "crates/parser",
     "crates/syntax",
+    "crates/syntax_codegen",
 ]

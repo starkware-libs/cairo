@@ -7,6 +7,7 @@ use crate::token::{Token, TokenKind};
 use self::kind::SyntaxKind;
 
 #[allow(dead_code)]
+#[allow(unused_variables)]
 pub mod ast;
 #[cfg(test)]
 mod ast_test;

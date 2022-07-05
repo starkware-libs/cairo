@@ -3,7 +3,7 @@ use syntax::{
         ast::{Terminal, Trivia, TriviumSingleLineComment, TriviumWhitespace},
         GreenDatabase, GreenId, SyntaxNode, SyntaxToken, TypedSyntaxNode,
     },
-    token::{TokenKind},
+    token::TokenKind,
 };
 
 use parser::{lexer::Lexer, text::CodeSource};
