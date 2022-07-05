@@ -126,27 +126,45 @@ mod function {
                     typed("b", int_type()),
                     typed("c", int_type()),
                     typed("d", int_type()),
-                    typed("cost1", gas_type(1)),
-                    typed("cost2", gas_type(1)),
-                    typed("cost3", gas_type(1)),
+                    typed("cost", gas_type(3)),
                 ],
                 res_types: vec![int_type()],
                 blocks: vec![Block {
                     invocations: vec![
                         Invocation {
                             libcall: LibCall {
+                                name: "split_gas".to_string(),
+                                tmpl_args: vec![TemplateArg::Value(1), TemplateArg::Value(2)],
+                            },
+                            args: vec!["cost".to_string()],
+                            results: vec!["cost_for_next".to_string(), "cost".to_string()],
+                        },
+                        Invocation {
+                            libcall: LibCall {
                                 name: "add".to_string(),
                                 tmpl_args: vec![TemplateArg::Type(int_type())],
                             },
-                            args: vec!["a".to_string(), "b".to_string(), "cost1".to_string()],
+                            args: vec!["a".to_string(), "b".to_string(), "cost_for_next".to_string()],
                             results: vec!["a_plus_b".to_string()],
+                        },
+                        Invocation {
+                            libcall: LibCall {
+                                name: "split_gas".to_string(),
+                                tmpl_args: vec![TemplateArg::Value(1), TemplateArg::Value(1)],
+                            },
+                            args: vec!["cost".to_string()],
+                            results: vec!["cost_for_next".to_string(), "cost_for_last".to_string()],
                         },
                         Invocation {
                             libcall: LibCall {
                                 name: "sub".to_string(),
                                 tmpl_args: vec![TemplateArg::Type(int_type())],
                             },
-                            args: vec!["c".to_string(), "d".to_string(), "cost2".to_string()],
+                            args: vec![
+                                "c".to_string(),
+                                "d".to_string(),
+                                "cost_for_next".to_string()
+                            ],
                             results: vec!["c_minus_d".to_string()],
                         },
                         Invocation {
@@ -157,7 +175,7 @@ mod function {
                             args: vec![
                                 "a_plus_b".to_string(),
                                 "c_minus_d".to_string(),
-                                "cost3".to_string()
+                                "cost_for_last".to_string()
                             ],
                             results: vec!["a_plus_b_mul_c_minus_d".to_string()],
                         }
