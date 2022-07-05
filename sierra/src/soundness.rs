@@ -39,39 +39,53 @@ fn validate_helper(
     }
     let mut state = start_state;
     for invc in &f.blocks[b.0].invocations {
-        let change = get_invoke_effects(invc)?;
-        state = next_state(&change, state)?;
+        let (arg_types, res_types) = get_invoke_signature(&invc.ext)?;
+        state = next_state(
+            state,
+            ScopeChange {
+                arg_names: &invc.args,
+                arg_types: &arg_types,
+                res_names: &invc.results,
+                res_types: &res_types,
+            },
+        )?;
     }
 
     match &f.blocks[b.0].exit {
         BlockExit::Return(ref_ids) => {
-            if ref_ids.len() != f.res_types.len() {
-                return Err(Error::FunctionTypeMismatch);
-            }
-            if ref_ids.len() != state.len() {
+            state = next_state(
+                state,
+                ScopeChange {
+                    arg_names: &ref_ids,
+                    arg_types: &f.res_types,
+                    res_names: &vec![],
+                    res_types: &vec![],
+                },
+            )?;
+            if state.is_empty() {
+                Ok(())
+            } else {
                 return Err(Error::FunctionRemainingOwnedObjects);
             }
-            ref_ids
-                .iter()
-                .zip(f.res_types.iter())
-                .try_for_each(|(n, ty)| match state.get(n) {
-                    None => Err(Error::FunctionTypeMismatch),
-                    Some(other) => {
-                        if ty != other {
-                            Err(Error::FunctionTypeMismatch)
-                        } else {
-                            Ok(())
-                        }
-                    }
-                })
         }
         BlockExit::Continue => validate_helper(f, BlockId(b.0 + 1), state, block_start_states),
         BlockExit::Jump(j) => {
-            let changes = get_jump_effects(j)?;
-            changes.iter().try_for_each(|(next_block, change)| {
-                let next_state = next_state(&change, state.clone())?;
-                validate_helper(f, *next_block, next_state, block_start_states)
-            })
+            let (arg_types, res_types_opts) = get_jump_signature(&j.ext)?;
+            res_types_opts
+                .iter()
+                .zip(j.branches.iter())
+                .try_for_each(|(res_types, branch)| {
+                    let next_state = next_state(
+                        state.clone(),
+                        ScopeChange {
+                            arg_names: &j.args,
+                            arg_types: &arg_types,
+                            res_names: &branch.exports,
+                            res_types: &res_types,
+                        },
+                    )?;
+                    validate_helper(f, branch.block, next_state, block_start_states)
+                })
         }
     }
 }
@@ -144,7 +158,11 @@ mod function {
                                 name: "add".to_string(),
                                 tmpl_args: vec![TemplateArg::Type(int_type())],
                             },
-                            args: vec!["a".to_string(), "b".to_string(), "cost_for_next".to_string()],
+                            args: vec![
+                                "a".to_string(),
+                                "b".to_string(),
+                                "cost_for_next".to_string()
+                            ],
                             results: vec!["a_plus_b".to_string()],
                         },
                         Invocation {

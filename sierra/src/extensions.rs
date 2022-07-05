@@ -1,6 +1,5 @@
 use crate::error::Error;
 use crate::graph::*;
-use crate::scope_state::*;
 use std::collections::HashMap;
 use Result::*;
 
@@ -11,11 +10,17 @@ mod match_nullable;
 mod unconditional_jump;
 
 trait InvokeExtension {
-    fn get_effects(self: &Self, invc: &Invocation) -> Result<ScopeChange, Error>;
+    fn get_signature(
+        self: &Self,
+        tmpl_args: &Vec<TemplateArg>,
+    ) -> Result<(Vec<Type>, Vec<Type>), Error>;
 }
 
 trait JumpExtension {
-    fn get_effects(self: &Self, jump: &JumpInfo) -> Result<HashMap<BlockId, ScopeChange>, Error>;
+    fn get_signature(
+        self: &Self,
+        tmpl_args: &Vec<TemplateArg>,
+    ) -> Result<(Vec<Type>, Vec<Vec<Type>>), Error>;
 }
 
 pub(self) struct ExtensionRegistry {
@@ -38,16 +43,16 @@ lazy_static! {
     };
 }
 
-pub fn get_invoke_effects(invc: &Invocation) -> Result<ScopeChange, Error> {
-    match REGISTRY.invoke_exts.get(&invc.ext.name) {
-        Some(ext) => ext.get_effects(invc),
+pub fn get_invoke_signature(e: &Extension) -> Result<(Vec<Type>, Vec<Type>), Error> {
+    match REGISTRY.invoke_exts.get(&e.name) {
+        Some(ext) => ext.get_signature(&e.tmpl_args),
         _ => Err(Error::UnsupportedLibCallName),
     }
 }
 
-pub fn get_jump_effects(jump: &JumpInfo) -> Result<HashMap<BlockId, ScopeChange>, Error> {
-    match REGISTRY.jump_exts.get(&jump.ext.name) {
-        Some(ext) => ext.get_effects(jump),
+pub fn get_jump_signature(e: &Extension) -> Result<(Vec<Type>, Vec<Vec<Type>>), Error> {
+    match REGISTRY.jump_exts.get(&e.name) {
+        Some(ext) => ext.get_signature(&e.tmpl_args),
         _ => Err(Error::UnsupportedLibCallName),
     }
 }

@@ -11,111 +11,49 @@ fn gas_type(v: i64) -> Type {
 }
 
 impl JumpExtension for GetGasExtension {
-    fn get_effects(self: &Self, jump: &JumpInfo) -> Result<HashMap<BlockId, ScopeChange>, Error> {
-        if jump.ext.tmpl_args.is_empty() {
-            return Err(Error::WrongNumberOfTypeArgs(jump.to_string()));
+    fn get_signature(
+        self: &Self,
+        tmpl_args: &Vec<TemplateArg>,
+    ) -> Result<(Vec<Type>, Vec<Vec<Type>>), Error> {
+        if tmpl_args.is_empty() {
+            return Err(Error::WrongNumberOfTypeArgs);
         }
-        if jump.args.len() != 2 {
-            return Err(Error::WrongNumberOfArgs(jump.to_string()));
-        }
-        if jump.branches.len() != 2 {
-            return Err(Error::WrongNumberOfBranches(jump.to_string()));
-        }
-        let success = &jump.branches[0];
-        let failure = &jump.branches[1];
-        if success.exports.len() != 1 + jump.ext.tmpl_args.len() {
-            return Err(Error::WrongNumberOfResults(jump.to_string()));
-        }
-        if failure.exports.len() != 1 {
-            return Err(Error::WrongNumberOfResults(jump.to_string()));
-        }
-        let args = vec![
-            TypedVar {
-                name: jump.args[0].clone(),
-                ty: gas_builtin_type(),
-            },
-            TypedVar {
-                name: jump.args[1].clone(),
-                ty: gas_type(1),
-            },
-        ];
-        let mut success_results = vec![TypedVar {
-            name: success.exports[0].clone(),
-            ty: gas_builtin_type(),
-        }];
-        jump.ext
-            .tmpl_args
-            .iter()
-            .zip(success.exports.iter().skip(1))
-            .try_for_each(|(tmpl_arg, name)| match tmpl_arg {
-                TemplateArg::Value(v) => {
-                    success_results.push(TypedVar {
-                        name: name.to_string(),
-                        ty: gas_type(*v),
-                    });
-                    Ok(())
-                }
-                TemplateArg::Type(_) => Err(Error::UnsupportedTypeArg),
-            })?;
-        Ok(HashMap::<BlockId, ScopeChange>::from([
-            (
-                success.block,
-                ScopeChange {
-                    args: args.clone(),
-                    results: success_results,
-                },
-            ),
-            (
-                failure.block,
-                ScopeChange {
-                    args: args,
-                    results: vec![TypedVar {
-                        name: failure.exports[0].clone(),
-                        ty: gas_builtin_type(),
-                    }],
-                },
-            ),
-        ]))
+        let mut success_types = vec![gas_builtin_type()];
+        tmpl_args.iter().try_for_each(|tmpl_arg| match tmpl_arg {
+            TemplateArg::Value(v) => {
+                success_types.push(gas_type(*v));
+                Ok(())
+            }
+            TemplateArg::Type(_) => Err(Error::UnsupportedTypeArg),
+        })?;
+        Ok((
+            vec![gas_builtin_type(), gas_type(1)],
+            vec![success_types, vec![gas_builtin_type()]],
+        ))
     }
 }
 
 struct SplitGasExtension {}
 
 impl InvokeExtension for SplitGasExtension {
-    fn get_effects(self: &Self, invc: &Invocation) -> Result<ScopeChange, Error> {
-        if invc.ext.tmpl_args.len() <= 1 {
-            return Err(Error::WrongNumberOfTypeArgs(invc.to_string()));
+    fn get_signature(
+        self: &Self,
+        tmpl_args: &Vec<TemplateArg>,
+    ) -> Result<(Vec<Type>, Vec<Type>), Error> {
+        if tmpl_args.len() <= 1 {
+            return Err(Error::WrongNumberOfTypeArgs);
         }
-        if invc.args.len() != 1 {
-            return Err(Error::WrongNumberOfArgs(invc.to_string()));
-        }
-        if invc.results.len() != invc.ext.tmpl_args.len() {
-            return Err(Error::WrongNumberOfResults(invc.to_string()));
-        }
-        let mut results = vec![];
+        let mut res_types = vec![];
         let mut total = 0;
-        invc.ext
-            .tmpl_args
-            .iter()
-            .zip(invc.results.iter())
-            .try_for_each(|(tmpl_arg, name)| match tmpl_arg {
-                TemplateArg::Value(v) => {
-                    results.push(TypedVar {
-                        name: name.to_string(),
-                        ty: gas_type(*v),
-                    });
-                    total += v;
-                    Ok(())
-                }
-                TemplateArg::Type(_) => Err(Error::UnsupportedTypeArg),
-            })?;
-        Ok(ScopeChange {
-            args: vec![TypedVar {
-                name: invc.args[0].clone(),
-                ty: gas_type(total),
-            }],
-            results: results,
-        })
+        tmpl_args.iter().try_for_each(|tmpl_arg| match tmpl_arg {
+            TemplateArg::Value(v) => {
+                res_types.push(gas_type(*v));
+                total += v;
+                Ok(())
+            }
+            TemplateArg::Type(_) => Err(Error::UnsupportedTypeArg),
+        })?;
+        Ok((vec![gas_type(total)], res_types))
     }
 }
 
@@ -128,91 +66,66 @@ pub(super) fn register(registry: &mut ExtensionRegistry) {
         .insert("split_gas".to_string(), Box::new(SplitGasExtension {}));
 }
 
-#[test]
-fn get_gas_mapping() {
-    let gb = TypedVar {
-        name: "gb".to_string(),
-        ty: gas_builtin_type(),
-    };
-    let cost = TypedVar {
-        name: "cost".to_string(),
-        ty: gas_type(1),
-    };
-    let new_cost = TypedVar {
-        name: "new_cost".to_string(),
-        ty: gas_type(6),
-    };
-    assert_eq!(
-        GetGasExtension {}.get_effects(&JumpInfo {
-            ext: Extension {
-                name: "".to_string(),
-                tmpl_args: vec![TemplateArg::Value(6)]
-            },
-            args: vec![gb.name.clone(), cost.name.clone()],
-            branches: vec![
-                BranchInfo {
-                    block: BlockId(0),
-                    exports: vec![gb.name.clone(), new_cost.name.clone()]
-                },
-                BranchInfo {
-                    block: BlockId(1),
-                    exports: vec![gb.name.clone()]
-                }
-            ],
-        }),
-        Ok(HashMap::<BlockId, ScopeChange>::from([
-            (
-                BlockId(0),
-                ScopeChange {
-                    args: vec![gb.clone(), cost.clone()],
-                    results: vec![gb.clone(), new_cost.clone()],
-                },
-            ),
-            (
-                BlockId(1),
-                ScopeChange {
-                    args: vec![gb.clone(), cost],
-                    results: vec![gb],
-                },
-            )
-        ]))
-    );
-}
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-#[test]
-fn split_gas_mapping() {
-    let c100 = TypedVar {
-        name: "c100".to_string(),
-        ty: gas_type(100),
-    };
-    let c12 = TypedVar {
-        name: "c12".to_string(),
-        ty: gas_type(12),
-    };
-    let c38 = TypedVar {
-        name: "c38".to_string(),
-        ty: gas_type(38),
-    };
-    let c50 = TypedVar {
-        name: "c50".to_string(),
-        ty: gas_type(50),
-    };
-    assert_eq!(
-        SplitGasExtension {}.get_effects(&Invocation {
-            ext: Extension {
-                name: "".to_string(),
-                tmpl_args: vec![
-                    TemplateArg::Value(12),
-                    TemplateArg::Value(38),
-                    TemplateArg::Value(50)
-                ]
-            },
-            args: vec![c100.name.clone()],
-            results: vec![c12.name.clone(), c38.name.clone(), c50.name.clone()],
-        }),
-        Ok(ScopeChange {
-            args: vec![c100],
-            results: vec![c12, c38, c50],
-        },)
-    );
+    #[test]
+    fn get_gas_legal_usage() {
+        assert_eq!(
+            GetGasExtension {}.get_signature(&vec![TemplateArg::Value(1), TemplateArg::Value(2)]),
+            Ok((
+                vec![gas_builtin_type(), gas_type(1)],
+                vec![
+                    vec![gas_builtin_type(), gas_type(1), gas_type(2)],
+                    vec![gas_builtin_type()]
+                ],
+            ))
+        );
+    }
+
+    #[test]
+    fn get_gas_wrong_num_of_args() {
+        assert_eq!(
+            GetGasExtension {}.get_signature(&vec![]),
+            Err(Error::WrongNumberOfTypeArgs)
+        );
+    }
+
+    #[test]
+    fn get_gas_wrong_arg_type() {
+        assert_eq!(
+            GetGasExtension {}.get_signature(&vec![TemplateArg::Type(gas_type(1))]),
+            Err(Error::UnsupportedTypeArg)
+        );
+    }
+
+    #[test]
+    fn split_gas_legal_usage() {
+        assert_eq!(
+            SplitGasExtension {}.get_signature(&vec![TemplateArg::Value(1), TemplateArg::Value(2)]),
+            Ok((vec![gas_type(3)], vec![gas_type(1), gas_type(2)],))
+        );
+    }
+
+    #[test]
+    fn split_gas_wrong_num_of_args() {
+        assert_eq!(
+            SplitGasExtension {}.get_signature(&vec![]),
+            Err(Error::WrongNumberOfTypeArgs)
+        );
+        assert_eq!(
+            SplitGasExtension {}.get_signature(&vec![TemplateArg::Value(1)]),
+            Err(Error::WrongNumberOfTypeArgs)
+        );
+    }
+
+    #[test]
+    fn split_gas_wrong_arg_type() {
+        assert_eq!(
+            SplitGasExtension {}
+                .get_signature(&vec![TemplateArg::Value(1), TemplateArg::Type(gas_type(1))]),
+            Err(Error::UnsupportedTypeArg)
+        );
+    }
 }
