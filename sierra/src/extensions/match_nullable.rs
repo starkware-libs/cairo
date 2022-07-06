@@ -2,11 +2,11 @@ use crate::extensions::*;
 
 struct MatchNullableExtension {}
 
-impl JumpExtension for MatchNullableExtension {
+impl ExtensionImplementation for MatchNullableExtension {
     fn get_signature(
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
-    ) -> Result<(Vec<Type>, Vec<Vec<Type>>), Error> {
+    ) -> Result<ExtensionSignature, Error> {
         if tmpl_args.len() != 1 {
             return Err(Error::WrongNumberOfTypeArgs);
         }
@@ -14,8 +14,8 @@ impl JumpExtension for MatchNullableExtension {
             TemplateArg::Value(_) => Err(Error::UnsupportedTypeArg),
             TemplateArg::Type(t) => Ok(t),
         }?;
-        Ok((
-            vec![
+        Ok(ExtensionSignature {
+            args: vec![
                 Type {
                     name: "Nullable".to_string(),
                     args: vec![TemplateArg::Type(inner_type.clone())],
@@ -25,13 +25,14 @@ impl JumpExtension for MatchNullableExtension {
                     args: vec![TemplateArg::Value(1)],
                 },
             ],
-            vec![vec![inner_type.clone()], vec![]],
-        ))
+            results: vec![vec![inner_type.clone()], vec![]],
+            fallthrough: Some(1),
+        })
     }
 }
 
 pub(super) fn register(registry: &mut ExtensionRegistry) {
-    registry.jump_exts.insert(
+    registry.insert(
         "match_nullable".to_string(),
         Box::new(MatchNullableExtension {}),
     );
@@ -49,8 +50,8 @@ mod tests {
         };
         assert_eq!(
             MatchNullableExtension {}.get_signature(&vec![TemplateArg::Type(ty.clone())]),
-            Ok((
-                vec![
+            Ok(ExtensionSignature {
+                args: vec![
                     Type {
                         name: "Nullable".to_string(),
                         args: vec![TemplateArg::Type(ty.clone())]
@@ -60,8 +61,9 @@ mod tests {
                         args: vec![TemplateArg::Value(1)]
                     },
                 ],
-                vec![vec![ty], vec![]],
-            ))
+                results: vec![vec![ty], vec![]],
+                fallthrough: Some(1),
+            })
         );
     }
 

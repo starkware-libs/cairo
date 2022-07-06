@@ -16,11 +16,11 @@ fn gas_type(v: i64) -> Type {
     }
 }
 
-impl JumpExtension for GetGasExtension {
+impl ExtensionImplementation for GetGasExtension {
     fn get_signature(
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
-    ) -> Result<(Vec<Type>, Vec<Vec<Type>>), Error> {
+    ) -> Result<ExtensionSignature, Error> {
         if tmpl_args.is_empty() {
             return Err(Error::WrongNumberOfTypeArgs);
         }
@@ -32,20 +32,21 @@ impl JumpExtension for GetGasExtension {
             }
             TemplateArg::Type(_) => Err(Error::UnsupportedTypeArg),
         })?;
-        Ok((
-            vec![gas_builtin_type(), gas_type(1)],
-            vec![success_types, vec![gas_builtin_type()]],
-        ))
+        Ok(ExtensionSignature {
+            args: vec![gas_builtin_type(), gas_type(1)],
+            results: vec![success_types, vec![gas_builtin_type()]],
+            fallthrough: Some(1),
+        })
     }
 }
 
 struct SplitGasExtension {}
 
-impl InvokeExtension for SplitGasExtension {
+impl ExtensionImplementation for SplitGasExtension {
     fn get_signature(
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
-    ) -> Result<(Vec<Type>, Vec<Type>), Error> {
+    ) -> Result<ExtensionSignature, Error> {
         if tmpl_args.len() <= 1 {
             return Err(Error::WrongNumberOfTypeArgs);
         }
@@ -59,17 +60,13 @@ impl InvokeExtension for SplitGasExtension {
             }
             TemplateArg::Type(_) => Err(Error::UnsupportedTypeArg),
         })?;
-        Ok((vec![gas_type(total)], res_types))
+        Ok(simple_invoke_ext_sign(vec![gas_type(total)], res_types))
     }
 }
 
 pub(super) fn register(registry: &mut ExtensionRegistry) {
-    registry
-        .jump_exts
-        .insert("get_gas".to_string(), Box::new(GetGasExtension {}));
-    registry
-        .invoke_exts
-        .insert("split_gas".to_string(), Box::new(SplitGasExtension {}));
+    registry.insert("get_gas".to_string(), Box::new(GetGasExtension {}));
+    registry.insert("split_gas".to_string(), Box::new(SplitGasExtension {}));
 }
 
 #[cfg(test)]
@@ -80,13 +77,14 @@ mod tests {
     fn get_gas_legal_usage() {
         assert_eq!(
             GetGasExtension {}.get_signature(&vec![TemplateArg::Value(1), TemplateArg::Value(2)]),
-            Ok((
-                vec![gas_builtin_type(), gas_type(1)],
-                vec![
+            Ok(ExtensionSignature {
+                args: vec![gas_builtin_type(), gas_type(1)],
+                results: vec![
                     vec![gas_builtin_type(), gas_type(1), gas_type(2)],
                     vec![gas_builtin_type()]
                 ],
-            ))
+                fallthrough: Some(1),
+            })
         );
     }
 
@@ -110,7 +108,10 @@ mod tests {
     fn split_gas_legal_usage() {
         assert_eq!(
             SplitGasExtension {}.get_signature(&vec![TemplateArg::Value(1), TemplateArg::Value(2)]),
-            Ok((vec![gas_type(3)], vec![gas_type(1), gas_type(2)],))
+            Ok(simple_invoke_ext_sign(
+                vec![gas_type(3)],
+                vec![gas_type(1), gas_type(2)],
+            ))
         );
     }
 

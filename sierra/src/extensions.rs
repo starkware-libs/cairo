@@ -9,31 +9,33 @@ mod jump_nz;
 mod match_nullable;
 mod unconditional_jump;
 
-trait InvokeExtension {
+#[derive(Debug, PartialEq)]
+pub(crate) struct ExtensionSignature {
+    pub args: Vec<Type>,
+    pub results: Vec<Vec<Type>>,
+    pub fallthrough: Option<usize>,
+}
+
+fn simple_invoke_ext_sign(args: Vec<Type>, results: Vec<Type>) -> ExtensionSignature {
+    ExtensionSignature {
+        args: args,
+        results: vec![results],
+        fallthrough: Some(0),
+    }
+}
+
+trait ExtensionImplementation {
     fn get_signature(
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
-    ) -> Result<(Vec<Type>, Vec<Type>), Error>;
+    ) -> Result<ExtensionSignature, Error>;
 }
 
-trait JumpExtension {
-    fn get_signature(
-        self: &Self,
-        tmpl_args: &Vec<TemplateArg>,
-    ) -> Result<(Vec<Type>, Vec<Vec<Type>>), Error>;
-}
-
-pub(self) struct ExtensionRegistry {
-    invoke_exts: HashMap<String, Box<dyn InvokeExtension + Sync + Send>>,
-    jump_exts: HashMap<String, Box<dyn JumpExtension + Sync + Send>>,
-}
+type ExtensionRegistry = HashMap<String, Box<dyn ExtensionImplementation + Sync + Send>>;
 
 lazy_static! {
     static ref REGISTRY: ExtensionRegistry = {
-        let mut registry = ExtensionRegistry {
-            invoke_exts: HashMap::<String, Box<dyn InvokeExtension + Sync + Send>>::new(),
-            jump_exts: HashMap::<String, Box<dyn JumpExtension + Sync + Send>>::new(),
-        };
+        let mut registry = ExtensionRegistry::new();
         arithmetic::register(&mut registry);
         unconditional_jump::register(&mut registry);
         jump_nz::register(&mut registry);
@@ -43,15 +45,8 @@ lazy_static! {
     };
 }
 
-pub fn get_invoke_signature(e: &Extension) -> Result<(Vec<Type>, Vec<Type>), Error> {
-    match REGISTRY.invoke_exts.get(&e.name) {
-        Some(ext) => ext.get_signature(&e.tmpl_args),
-        _ => Err(Error::UnsupportedLibCallName),
-    }
-}
-
-pub fn get_jump_signature(e: &Extension) -> Result<(Vec<Type>, Vec<Vec<Type>>), Error> {
-    match REGISTRY.jump_exts.get(&e.name) {
+pub(crate) fn get_signature(e: &Extension) -> Result<ExtensionSignature, Error> {
+    match REGISTRY.get(&e.name) {
         Some(ext) => ext.get_signature(&e.tmpl_args),
         _ => Err(Error::UnsupportedLibCallName),
     }

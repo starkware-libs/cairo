@@ -36,7 +36,7 @@ fn validate_helper(
         }
         Some(s) => {
             return if *s != start_state {
-                Err(Error::FunctionBlockMismatch)
+                Err(Error::FunctionBlockMismatch(b, s.clone(), start_state))
             } else {
                 Ok(())
             };
@@ -44,14 +44,23 @@ fn validate_helper(
     }
     let mut state = start_state;
     for invc in &blocks[b.0].invocations {
-        let (arg_types, res_types) = get_invoke_signature(&invc.ext)?;
+        let sign = get_signature(&invc.ext)?;
+        if sign.results.len() != 1 {
+            return Err(Error::FunctionInvocationMismatch(invc.to_string()));
+        }
+        match sign.fallthrough {
+            Some(0) => {}
+            _ => {
+                return Err(Error::FunctionInvocationMismatch(invc.to_string()));
+            }
+        }
         state = next_state(
             state,
             ScopeChange {
                 arg_ids: &invc.args,
-                arg_types: &arg_types,
+                arg_types: &sign.args,
                 res_ids: &invc.results,
-                res_types: &res_types,
+                res_types: &sign.results[0],
             },
         )?;
     }
@@ -70,19 +79,23 @@ fn validate_helper(
             if state.is_empty() {
                 Ok(())
             } else {
-                return Err(Error::FunctionRemainingOwnedObjects);
+                return Err(Error::FunctionRemainingOwnedObjects(state));
             }
         }
-        BlockExit::Continue => validate_helper(
-            blocks,
-            res_types,
-            BlockId(b.0 + 1),
-            state,
-            block_start_states,
-        ),
         BlockExit::Jump(j) => {
-            let (arg_types, res_types_opts) = get_jump_signature(&j.ext)?;
-            res_types_opts
+            let sign = get_signature(&j.ext)?;
+            if sign.results.len() != j.branches.len() {
+                return Err(Error::FunctionJumpMismatch(j.to_string()));
+            }
+            match sign.fallthrough {
+                None => {}
+                Some(i) => {
+                    if j.branches[i].block.0 != b.0 + 1 {
+                        return Err(Error::FunctionJumpMismatch(j.to_string()));
+                    }
+                }
+            }
+            sign.results
                 .iter()
                 .zip(j.branches.iter())
                 .try_for_each(|(res_types, branch)| {
@@ -90,7 +103,7 @@ fn validate_helper(
                         state.clone(),
                         ScopeChange {
                             arg_ids: &j.args,
-                            arg_types: &arg_types,
+                            arg_types: &sign.args,
                             res_ids: &branch.exports,
                             res_types: &res_types,
                         },
@@ -239,6 +252,51 @@ mod function {
 
     #[test]
     fn inifinite_gas_take_or_return() {
+        let ji = JumpInfo {
+            ext: Extension {
+                name: "get_gas".to_string(),
+                tmpl_args: vec![TemplateArg::Value(1)],
+            },
+            args: vec![as_id("gb"), as_id("cost")],
+            branches: vec![
+                BranchInfo {
+                    block: BlockId(1),
+                    exports: vec![as_id("gb"), as_id("cost")],
+                },
+                BranchInfo {
+                    block: BlockId(0),
+                    exports: vec![as_id("gb")],
+                },
+            ],
+        };
+        assert_eq!(
+            validate(&Program {
+                blocks: vec![
+                    Block {
+                        invocations: vec![],
+                        exit: BlockExit::Return(vec![as_id("gb")]),
+                    },
+                    Block {
+                        invocations: vec![],
+                        exit: BlockExit::Jump(ji.clone()),
+                    },
+                ],
+                funcs: vec![Function {
+                    name: "Some".to_string(),
+                    args: vec![
+                        typed(as_id("gb"), gas_builtin_type()),
+                        typed(as_id("cost"), gas_type(1)),
+                    ],
+                    res_types: vec![gas_builtin_type()],
+                    entry: BlockId(1),
+                }]
+            }),
+            Err(Error::FunctionJumpMismatch(ji.to_string()))
+        );
+    }
+
+    #[test]
+    fn inifinite_gas_take_or_return_bad_fallthrough() {
         assert_eq!(
             validate(&Program {
                 blocks: vec![
@@ -321,7 +379,17 @@ mod function {
                     entry: BlockId(0),
                 }]
             }),
-            Err(Error::FunctionBlockMismatch)
+            Err(Error::FunctionBlockMismatch(
+                BlockId(0),
+                ScopeState::from([
+                    (as_id("gb"), gas_builtin_type()),
+                    (as_id("cost"), gas_type(1))
+                ]),
+                ScopeState::from([
+                    (as_id("gb"), gas_builtin_type()),
+                    (as_id("cost"), gas_type(2))
+                ])
+            ))
         );
     }
 }

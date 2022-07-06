@@ -1,4 +1,7 @@
-use crate::graph::{Identifier, Type};
+use crate::{
+    graph::{BlockId, Identifier, Type},
+    scope_state::ScopeState,
+};
 
 #[derive(Debug, PartialEq)]
 pub enum Error {
@@ -8,12 +11,11 @@ pub enum Error {
     ArgumentSizeMismatch,
     ResultSizeMismatch,
     WrongNumberOfTypeArgs,
-    WrongNumberOfArgs(String),
-    WrongNumberOfResults(String),
-    WrongNumberOfBranches(String),
     UnsupportedTypeArg,
     UnsupportedLibCallName,
     FunctionBlockOutOfBounds,
-    FunctionRemainingOwnedObjects,
-    FunctionBlockMismatch,
+    FunctionRemainingOwnedObjects(ScopeState),
+    FunctionBlockMismatch(BlockId, ScopeState, ScopeState),
+    FunctionInvocationMismatch(String),
+    FunctionJumpMismatch(String),
 }

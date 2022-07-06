@@ -2,28 +2,27 @@ use crate::extensions::*;
 
 struct UnconditionalJumpExtension {}
 
-impl JumpExtension for UnconditionalJumpExtension {
+impl ExtensionImplementation for UnconditionalJumpExtension {
     fn get_signature(
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
-    ) -> Result<(Vec<Type>, Vec<Vec<Type>>), Error> {
+    ) -> Result<ExtensionSignature, Error> {
         if !tmpl_args.is_empty() {
             return Err(Error::WrongNumberOfTypeArgs);
         }
-        Ok((
-            vec![Type {
+        Ok(ExtensionSignature {
+            args: vec![Type {
                 name: "Gas".to_string(),
                 args: vec![TemplateArg::Value(1)],
             }],
-            vec![vec![]],
-        ))
+            results: vec![vec![]],
+            fallthrough: None,
+        })
     }
 }
 
 pub(super) fn register(registry: &mut ExtensionRegistry) {
-    registry
-        .jump_exts
-        .insert("jump".to_string(), Box::new(UnconditionalJumpExtension {}));
+    registry.insert("jump".to_string(), Box::new(UnconditionalJumpExtension {}));
 }
 
 #[cfg(test)]
@@ -34,13 +33,14 @@ mod tests {
     fn legal_usage() {
         assert_eq!(
             UnconditionalJumpExtension {}.get_signature(&vec![]),
-            Ok((
-                vec![Type {
+            Ok(ExtensionSignature {
+                args: vec![Type {
                     name: "Gas".to_string(),
                     args: vec![TemplateArg::Value(1)]
                 }],
-                vec![vec![]],
-            ))
+                results: vec![vec![]],
+                fallthrough: None,
+            })
         );
     }
 

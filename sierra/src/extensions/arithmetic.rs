@@ -2,11 +2,11 @@ use crate::extensions::*;
 
 struct ArithmeticExtension {}
 
-impl InvokeExtension for ArithmeticExtension {
+impl ExtensionImplementation for ArithmeticExtension {
     fn get_signature(
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
-    ) -> Result<(Vec<Type>, Vec<Type>), Error> {
+    ) -> Result<ExtensionSignature, Error> {
         if tmpl_args.len() != 1 {
             return Err(Error::WrongNumberOfTypeArgs);
         }
@@ -14,7 +14,7 @@ impl InvokeExtension for ArithmeticExtension {
             TemplateArg::Type(t) => Ok(t),
             TemplateArg::Value(_) => Err(Error::UnsupportedTypeArg),
         }?;
-        Ok((
+        Ok(simple_invoke_ext_sign(
             vec![
                 numeric_type.clone(),
                 numeric_type.clone(),
@@ -30,9 +30,7 @@ impl InvokeExtension for ArithmeticExtension {
 
 pub(super) fn register(registry: &mut ExtensionRegistry) {
     for op in ["add", "sub", "mul", "div"] {
-        registry
-            .invoke_exts
-            .insert(op.to_string(), Box::new(ArithmeticExtension {}));
+        registry.insert(op.to_string(), Box::new(ArithmeticExtension {}));
     }
 }
 
@@ -48,7 +46,7 @@ mod tests {
         };
         assert_eq!(
             ArithmeticExtension {}.get_signature(&vec![TemplateArg::Type(ty.clone())]),
-            Ok((
+            Ok(simple_invoke_ext_sign(
                 vec![
                     ty.clone(),
                     ty.clone(),

@@ -103,7 +103,6 @@ impl fmt::Display for Invocation {
 pub enum BlockExit {
     Return(Vec<Identifier>),
     Jump(JumpInfo),
-    Continue,
 }
 
 #[derive(Clone, Debug)]

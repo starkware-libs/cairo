@@ -2,11 +2,11 @@ use crate::extensions::*;
 
 struct JumpNzExtension {}
 
-impl JumpExtension for JumpNzExtension {
+impl ExtensionImplementation for JumpNzExtension {
     fn get_signature(
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
-    ) -> Result<(Vec<Type>, Vec<Vec<Type>>), Error> {
+    ) -> Result<ExtensionSignature, Error> {
         if tmpl_args.len() != 1 {
             return Err(Error::WrongNumberOfTypeArgs);
         }
@@ -14,23 +14,22 @@ impl JumpExtension for JumpNzExtension {
             TemplateArg::Type(t) => Ok(t),
             TemplateArg::Value(_) => Err(Error::UnsupportedTypeArg),
         }?;
-        Ok((
-            vec![
+        Ok(ExtensionSignature {
+            args: vec![
                 numeric_type.clone(),
                 Type {
                     name: "Gas".to_string(),
                     args: vec![TemplateArg::Value(1)],
                 },
             ],
-            vec![vec![], vec![]],
-        ))
+            results: vec![vec![], vec![]],
+            fallthrough: Some(1),
+        })
     }
 }
 
 pub(super) fn register(registry: &mut ExtensionRegistry) {
-    registry
-        .jump_exts
-        .insert("jump_nz".to_string(), Box::new(JumpNzExtension {}));
+    registry.insert("jump_nz".to_string(), Box::new(JumpNzExtension {}));
 }
 
 #[cfg(test)]
@@ -45,16 +44,17 @@ mod tests {
         };
         assert_eq!(
             JumpNzExtension {}.get_signature(&vec![TemplateArg::Type(ty.clone())]),
-            Ok((
-                vec![
+            Ok(ExtensionSignature {
+                args: vec![
                     ty,
                     Type {
                         name: "Gas".to_string(),
                         args: vec![TemplateArg::Value(1)]
                     },
                 ],
-                vec![vec![], vec![]],
-            ))
+                results: vec![vec![], vec![]],
+                fallthrough: Some(1),
+            })
         );
     }
 
