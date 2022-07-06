@@ -40,6 +40,27 @@ impl ExtensionImplementation for GetGasExtension {
     }
 }
 
+struct RefundGasExtension {}
+
+impl ExtensionImplementation for RefundGasExtension {
+    fn get_signature(
+        self: &Self,
+        tmpl_args: &Vec<TemplateArg>,
+    ) -> Result<ExtensionSignature, Error> {
+        if tmpl_args.len() != 1 {
+            return Err(Error::WrongNumberOfTypeArgs);
+        }
+        let value = match &tmpl_args[0] {
+            TemplateArg::Value(v) => Ok(*v),
+            TemplateArg::Type(_) => Err(Error::UnsupportedTypeArg),
+        }?;
+        Ok(simple_invoke_ext_sign(
+            vec![gas_builtin_type(), gas_type(value)],
+            vec![gas_builtin_type()],
+        ))
+    }
+}
+
 struct SplitGasExtension {}
 
 impl ExtensionImplementation for SplitGasExtension {
@@ -64,9 +85,10 @@ impl ExtensionImplementation for SplitGasExtension {
     }
 }
 
-pub(super) fn extensions() -> [(String, ExtensionBox); 2] {
+pub(super) fn extensions() -> [(String, ExtensionBox); 3] {
     [
         ("get_gas".to_string(), Box::new(GetGasExtension {})),
+        ("refund_gas".to_string(), Box::new(RefundGasExtension {})),
         ("split_gas".to_string(), Box::new(SplitGasExtension {})),
     ]
 }

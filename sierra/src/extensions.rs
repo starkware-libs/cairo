@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use Result::*;
 
 mod arithmetic;
+mod function_call;
 mod gas_station;
 mod jump_nz;
 mod match_nullable;
@@ -25,7 +26,7 @@ fn simple_invoke_ext_sign(args: Vec<Type>, results: Vec<Type>) -> ExtensionSigna
     }
 }
 
-trait ExtensionImplementation {
+pub(crate) trait ExtensionImplementation {
     fn get_signature(
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
@@ -34,25 +35,27 @@ trait ExtensionImplementation {
 
 type ExtensionBox = Box<dyn ExtensionImplementation + Sync + Send>;
 
-type ExtensionRegistry = HashMap<String, ExtensionBox>;
+pub(crate) type ExtensionRegistry = HashMap<String, ExtensionBox>;
 
-lazy_static! {
-    static ref REGISTRY: ExtensionRegistry = {
-        chain!(
-            arithmetic::extensions().into_iter(),
-            gas_station::extensions().into_iter(),
-            jump_nz::extensions().into_iter(),
-            match_nullable::extensions().into_iter(),
-            tuple_obj::extensions().into_iter(),
-            unconditional_jump::extensions().into_iter(),
-        )
-        .collect()
-    };
+pub(crate) fn get_registry(prog: &Program) -> ExtensionRegistry {
+    chain!(
+        arithmetic::extensions().into_iter(),
+        function_call::extensions(prog).into_iter(),
+        gas_station::extensions().into_iter(),
+        jump_nz::extensions().into_iter(),
+        match_nullable::extensions().into_iter(),
+        tuple_obj::extensions().into_iter(),
+        unconditional_jump::extensions().into_iter()
+    )
+    .collect()
 }
 
-pub(crate) fn get_signature(e: &Extension) -> Result<ExtensionSignature, Error> {
-    match REGISTRY.get(&e.name) {
-        Some(ext) => ext.get_signature(&e.tmpl_args),
-        _ => Err(Error::UnsupportedLibCallName),
+pub(crate) fn get_signature(
+    registry: &ExtensionRegistry,
+    ext: &Extension,
+) -> Result<ExtensionSignature, Error> {
+    match registry.get(&ext.name) {
+        None => Err(Error::UnsupportedLibCallName(ext.name.clone())),
+        Some(e) => e.get_signature(&ext.tmpl_args),
     }
 }

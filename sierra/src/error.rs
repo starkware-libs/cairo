@@ -12,7 +12,7 @@ pub enum Error {
     ResultSizeMismatch,
     WrongNumberOfTypeArgs,
     UnsupportedTypeArg,
-    UnsupportedLibCallName,
+    UnsupportedLibCallName(String),
     FunctionBlockOutOfBounds,
     FunctionRemainingOwnedObjects(ScopeState),
     FunctionBlockMismatch(BlockId, ScopeState, ScopeState),
