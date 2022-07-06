@@ -7,6 +7,7 @@ mod arithmetic;
 mod gas_station;
 mod jump_nz;
 mod match_nullable;
+mod tuple_obj;
 mod unconditional_jump;
 
 #[derive(Debug, PartialEq)]
@@ -39,10 +40,11 @@ lazy_static! {
     static ref REGISTRY: ExtensionRegistry = {
         chain!(
             arithmetic::extensions().into_iter(),
-            unconditional_jump::extensions().into_iter(),
+            gas_station::extensions().into_iter(),
             jump_nz::extensions().into_iter(),
             match_nullable::extensions().into_iter(),
-            gas_station::extensions().into_iter()
+            tuple_obj::extensions().into_iter(),
+            unconditional_jump::extensions().into_iter(),
         )
         .collect()
     };
