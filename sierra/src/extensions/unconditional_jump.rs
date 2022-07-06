@@ -21,8 +21,8 @@ impl ExtensionImplementation for UnconditionalJumpExtension {
     }
 }
 
-pub(super) fn register(registry: &mut ExtensionRegistry) {
-    registry.insert("jump".to_string(), Box::new(UnconditionalJumpExtension {}));
+pub(super) fn extensions() -> [(String, ExtensionBox); 1] {
+    [("jump".to_string(), Box::new(UnconditionalJumpExtension {}))]
 }
 
 #[cfg(test)]

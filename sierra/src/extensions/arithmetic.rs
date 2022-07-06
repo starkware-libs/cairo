@@ -28,10 +28,13 @@ impl ExtensionImplementation for ArithmeticExtension {
     }
 }
 
-pub(super) fn register(registry: &mut ExtensionRegistry) {
-    for op in ["add", "sub", "mul", "div"] {
-        registry.insert(op.to_string(), Box::new(ArithmeticExtension {}));
-    }
+pub(super) fn extensions() -> [(String, ExtensionBox); 4] {
+    [
+        ("add".to_string(), Box::new(ArithmeticExtension {})),
+        ("sub".to_string(), Box::new(ArithmeticExtension {})),
+        ("mul".to_string(), Box::new(ArithmeticExtension {})),
+        ("div".to_string(), Box::new(ArithmeticExtension {})),
+    ]
 }
 
 #[cfg(test)]

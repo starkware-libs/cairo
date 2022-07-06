@@ -28,8 +28,8 @@ impl ExtensionImplementation for JumpNzExtension {
     }
 }
 
-pub(super) fn register(registry: &mut ExtensionRegistry) {
-    registry.insert("jump_nz".to_string(), Box::new(JumpNzExtension {}));
+pub(super) fn extensions() -> [(String, ExtensionBox); 1] {
+    [("jump_nz".to_string(), Box::new(JumpNzExtension {}))]
 }
 
 #[cfg(test)]

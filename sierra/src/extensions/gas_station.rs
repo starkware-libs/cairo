@@ -64,9 +64,11 @@ impl ExtensionImplementation for SplitGasExtension {
     }
 }
 
-pub(super) fn register(registry: &mut ExtensionRegistry) {
-    registry.insert("get_gas".to_string(), Box::new(GetGasExtension {}));
-    registry.insert("split_gas".to_string(), Box::new(SplitGasExtension {}));
+pub(super) fn extensions() -> [(String, ExtensionBox); 2] {
+    [
+        ("get_gas".to_string(), Box::new(GetGasExtension {})),
+        ("split_gas".to_string(), Box::new(SplitGasExtension {})),
+    ]
 }
 
 #[cfg(test)]

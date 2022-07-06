@@ -31,11 +31,11 @@ impl ExtensionImplementation for MatchNullableExtension {
     }
 }
 
-pub(super) fn register(registry: &mut ExtensionRegistry) {
-    registry.insert(
+pub(super) fn extensions() -> [(String, ExtensionBox); 1] {
+    [(
         "match_nullable".to_string(),
         Box::new(MatchNullableExtension {}),
-    );
+    )]
 }
 
 #[cfg(test)]

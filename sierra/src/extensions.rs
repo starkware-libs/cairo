@@ -31,17 +31,20 @@ trait ExtensionImplementation {
     ) -> Result<ExtensionSignature, Error>;
 }
 
-type ExtensionRegistry = HashMap<String, Box<dyn ExtensionImplementation + Sync + Send>>;
+type ExtensionBox = Box<dyn ExtensionImplementation + Sync + Send>;
+
+type ExtensionRegistry = HashMap<String, ExtensionBox>;
 
 lazy_static! {
     static ref REGISTRY: ExtensionRegistry = {
-        let mut registry = ExtensionRegistry::new();
-        arithmetic::register(&mut registry);
-        unconditional_jump::register(&mut registry);
-        jump_nz::register(&mut registry);
-        match_nullable::register(&mut registry);
-        gas_station::register(&mut registry);
-        registry
+        chain!(
+            arithmetic::extensions().into_iter(),
+            unconditional_jump::extensions().into_iter(),
+            jump_nz::extensions().into_iter(),
+            match_nullable::extensions().into_iter(),
+            gas_station::extensions().into_iter()
+        )
+        .collect()
     };
 }
 
