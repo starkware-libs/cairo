@@ -1,4 +1,4 @@
-use crate::extensions::*;
+use crate::{extensions::*, utils::gas_type};
 
 struct JumpNzExtension {}
 
@@ -15,13 +15,7 @@ impl ExtensionImplementation for JumpNzExtension {
             TemplateArg::Value(_) => Err(Error::UnsupportedTypeArg),
         }?;
         Ok(ExtensionSignature {
-            args: vec![
-                numeric_type.clone(),
-                Type {
-                    name: "Gas".to_string(),
-                    args: vec![TemplateArg::Value(1)],
-                },
-            ],
+            args: vec![numeric_type.clone(), gas_type(1)],
             results: vec![vec![], vec![]],
             fallthrough: Some(1),
         })
@@ -35,23 +29,14 @@ pub(super) fn extensions() -> [(String, ExtensionBox); 1] {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::utils::{as_type, type_arg, val_arg};
 
     #[test]
     fn legal_usage() {
-        let ty = Type {
-            name: "int".to_string(),
-            args: vec![],
-        };
         assert_eq!(
-            JumpNzExtension {}.get_signature(&vec![TemplateArg::Type(ty.clone())]),
+            JumpNzExtension {}.get_signature(&vec![type_arg(as_type("int"))]),
             Ok(ExtensionSignature {
-                args: vec![
-                    ty,
-                    Type {
-                        name: "Gas".to_string(),
-                        args: vec![TemplateArg::Value(1)]
-                    },
-                ],
+                args: vec![as_type("int"), gas_type(1)],
                 results: vec![vec![], vec![]],
                 fallthrough: Some(1),
             })
@@ -69,7 +54,7 @@ mod tests {
     #[test]
     fn wrong_arg_type() {
         assert_eq!(
-            JumpNzExtension {}.get_signature(&vec![TemplateArg::Value(1)]),
+            JumpNzExtension {}.get_signature(&vec![val_arg(1)]),
             Err(Error::UnsupportedTypeArg)
         );
     }

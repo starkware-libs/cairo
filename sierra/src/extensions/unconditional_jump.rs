@@ -1,4 +1,4 @@
-use crate::extensions::*;
+use crate::{extensions::*, utils::gas_type};
 
 struct UnconditionalJumpExtension {}
 
@@ -11,10 +11,7 @@ impl ExtensionImplementation for UnconditionalJumpExtension {
             return Err(Error::WrongNumberOfTypeArgs);
         }
         Ok(ExtensionSignature {
-            args: vec![Type {
-                name: "Gas".to_string(),
-                args: vec![TemplateArg::Value(1)],
-            }],
+            args: vec![gas_type(1)],
             results: vec![vec![]],
             fallthrough: None,
         })
@@ -28,16 +25,14 @@ pub(super) fn extensions() -> [(String, ExtensionBox); 1] {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::utils::val_arg;
 
     #[test]
     fn legal_usage() {
         assert_eq!(
             UnconditionalJumpExtension {}.get_signature(&vec![]),
             Ok(ExtensionSignature {
-                args: vec![Type {
-                    name: "Gas".to_string(),
-                    args: vec![TemplateArg::Value(1)]
-                }],
+                args: vec![gas_type(1)],
                 results: vec![vec![]],
                 fallthrough: None,
             })
@@ -47,7 +42,7 @@ mod tests {
     #[test]
     fn wrong_num_of_args() {
         assert_eq!(
-            UnconditionalJumpExtension {}.get_signature(&vec![TemplateArg::Value(1)]),
+            UnconditionalJumpExtension {}.get_signature(&vec![val_arg(1)]),
             Err(Error::WrongNumberOfTypeArgs)
         );
     }

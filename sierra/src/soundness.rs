@@ -128,6 +128,7 @@ impl Helper<'_> {
 #[cfg(test)]
 mod function {
     use super::*;
+    use crate::utils::{as_type, gas_builtin_type, gas_type, type_arg, val_arg};
 
     fn as_id(name: &str) -> Identifier {
         Identifier(name.to_string())
@@ -137,39 +138,8 @@ mod function {
         TypedVar { id: id, ty: ty }
     }
 
-    fn gas_builtin_type() -> Type {
-        Type {
-            name: "GasBuiltin".to_string(),
-            args: vec![],
-        }
-    }
-
-    fn felt_type() -> Type {
-        Type {
-            name: "Felt".to_string(),
-            args: vec![],
-        }
-    }
-
     fn int_type() -> Type {
-        Type {
-            name: "int".to_string(),
-            args: vec![],
-        }
-    }
-
-    fn type_arg(t: Type) -> TemplateArg {
-        TemplateArg::Type(t)
-    }
-    fn val_arg(v: i64) -> TemplateArg {
-        TemplateArg::Value(v)
-    }
-
-    fn gas_type(c: i64) -> Type {
-        Type {
-            name: "Gas".to_string(),
-            args: vec![val_arg(c)],
-        }
+        as_type("int")
     }
 
     #[test]
@@ -181,9 +151,9 @@ mod function {
                     name: "Some".to_string(),
                     args: vec![
                         typed(as_id("gb"), gas_builtin_type()),
-                        typed(as_id("a"), felt_type())
+                        typed(as_id("a"), as_type("felt"))
                     ],
-                    res_types: vec![gas_builtin_type(), felt_type()],
+                    res_types: vec![gas_builtin_type(), as_type("felt")],
                     entry: BlockId(0),
                 }]
             }),

@@ -1,4 +1,7 @@
-use crate::extensions::*;
+use crate::{
+    extensions::*,
+    utils::{as_nullable, gas_type},
+};
 
 struct MatchNullableExtension {}
 
@@ -15,16 +18,7 @@ impl ExtensionImplementation for MatchNullableExtension {
             TemplateArg::Type(t) => Ok(t),
         }?;
         Ok(ExtensionSignature {
-            args: vec![
-                Type {
-                    name: "Nullable".to_string(),
-                    args: vec![TemplateArg::Type(inner_type.clone())],
-                },
-                Type {
-                    name: "Gas".to_string(),
-                    args: vec![TemplateArg::Value(1)],
-                },
-            ],
+            args: vec![as_nullable(inner_type.clone()), gas_type(1)],
             results: vec![vec![inner_type.clone()], vec![]],
             fallthrough: Some(1),
         })
@@ -41,27 +35,15 @@ pub(super) fn extensions() -> [(String, ExtensionBox); 1] {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::utils::{as_type, type_arg, val_arg};
 
     #[test]
     fn legal_usage() {
-        let ty = Type {
-            name: "int".to_string(),
-            args: vec![],
-        };
         assert_eq!(
-            MatchNullableExtension {}.get_signature(&vec![TemplateArg::Type(ty.clone())]),
+            MatchNullableExtension {}.get_signature(&vec![type_arg(as_type("int"))]),
             Ok(ExtensionSignature {
-                args: vec![
-                    Type {
-                        name: "Nullable".to_string(),
-                        args: vec![TemplateArg::Type(ty.clone())]
-                    },
-                    Type {
-                        name: "Gas".to_string(),
-                        args: vec![TemplateArg::Value(1)]
-                    },
-                ],
-                results: vec![vec![ty], vec![]],
+                args: vec![as_nullable(as_type("int")), gas_type(1)],
+                results: vec![vec![as_type("int")], vec![]],
                 fallthrough: Some(1),
             })
         );
@@ -78,7 +60,7 @@ mod tests {
     #[test]
     fn wrong_arg_type() {
         assert_eq!(
-            MatchNullableExtension {}.get_signature(&vec![TemplateArg::Value(1)]),
+            MatchNullableExtension {}.get_signature(&vec![val_arg(1)]),
             Err(Error::UnsupportedTypeArg)
         );
     }

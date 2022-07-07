@@ -1,4 +1,4 @@
-use crate::extensions::*;
+use crate::{extensions::*, utils::gas_type};
 
 struct ArithmeticExtension {}
 
@@ -9,14 +9,7 @@ impl ExtensionImplementation for ArithmeticExtension {
     ) -> Result<ExtensionSignature, Error> {
         let numeric_type = get_type(tmpl_args)?;
         Ok(simple_invoke_ext_sign(
-            vec![
-                numeric_type.clone(),
-                numeric_type.clone(),
-                Type {
-                    name: "Gas".to_string(),
-                    args: vec![TemplateArg::Value(1)],
-                },
-            ],
+            vec![numeric_type.clone(), numeric_type.clone(), gas_type(1)],
             vec![numeric_type.clone()],
         ))
     }
@@ -47,10 +40,7 @@ impl ExtensionImplementation for ConstantExtension {
         if tmpl_args.len() != 2 {
             return Err(Error::WrongNumberOfTypeArgs);
         }
-        let numeric_type = match &tmpl_args[0] {
-            TemplateArg::Type(t) if matches!(t.to_string().as_str(), "int" | "felt") => Ok(t),
-            _ => Err(Error::UnsupportedTypeArg),
-        }?;
+        let numeric_type = get_numeric_type(&tmpl_args[0])?;
         match &tmpl_args[1] {
             TemplateArg::Value(_) => {}
             _ => {
@@ -58,10 +48,7 @@ impl ExtensionImplementation for ConstantExtension {
             }
         }
         Ok(simple_invoke_ext_sign(
-            vec![Type {
-                name: "Gas".to_string(),
-                args: vec![TemplateArg::Value(1)],
-            }],
+            vec![gas_type(1)],
             vec![numeric_type.clone()],
         ))
     }
@@ -79,14 +66,18 @@ impl ExtensionImplementation for IgnoreExtension {
     }
 }
 
+fn get_numeric_type<'a>(arg: &'a TemplateArg) -> Result<&'a Type, Error> {
+    match arg {
+        TemplateArg::Type(t) if matches!(t.to_string().as_str(), "int" | "felt") => Ok(t),
+        _ => Err(Error::UnsupportedTypeArg),
+    }
+}
+
 fn get_type<'a>(tmpl_args: &'a Vec<TemplateArg>) -> Result<&'a Type, Error> {
     if tmpl_args.len() != 1 {
         return Err(Error::WrongNumberOfTypeArgs);
     }
-    match &tmpl_args[0] {
-        TemplateArg::Type(t) if matches!(t.to_string().as_str(), "int" | "felt") => Ok(t),
-        _ => Err(Error::UnsupportedTypeArg),
-    }
+    get_numeric_type(&tmpl_args[0])
 }
 
 pub(super) fn extensions() -> [(String, ExtensionBox); 7] {
@@ -105,32 +96,32 @@ pub(super) fn extensions() -> [(String, ExtensionBox); 7] {
 mod tests {
     use super::*;
 
+    use crate::utils::{as_type, type_arg, val_arg};
+
     #[test]
     fn legal_usage() {
-        let ty = Type {
-            name: "int".to_string(),
-            args: vec![],
-        };
+        let ty = as_type("int");
         assert_eq!(
-            ArithmeticExtension {}.get_signature(&vec![TemplateArg::Type(ty.clone())]),
+            ArithmeticExtension {}.get_signature(&vec![type_arg(ty.clone())]),
             Ok(simple_invoke_ext_sign(
-                vec![
-                    ty.clone(),
-                    ty.clone(),
-                    Type {
-                        name: "Gas".to_string(),
-                        args: vec![TemplateArg::Value(1)]
-                    },
-                ],
+                vec![ty.clone(), ty.clone(), gas_type(1),],
                 vec![ty.clone()],
             ))
         );
         assert_eq!(
-            DuplicateExtension {}.get_signature(&vec![TemplateArg::Type(ty.clone())]),
+            DuplicateExtension {}.get_signature(&vec![type_arg(ty.clone())]),
             Ok(simple_invoke_ext_sign(
                 vec![ty.clone()],
-                vec![ty.clone(), ty],
+                vec![ty.clone(), ty.clone()],
             ))
+        );
+        assert_eq!(
+            ConstantExtension {}.get_signature(&vec![type_arg(ty.clone()), val_arg(1)]),
+            Ok(simple_invoke_ext_sign(vec![gas_type(1)], vec![ty.clone()],))
+        );
+        assert_eq!(
+            IgnoreExtension {}.get_signature(&vec![type_arg(ty.clone())]),
+            Ok(simple_invoke_ext_sign(vec![ty], vec![],))
         );
     }
 
@@ -145,7 +136,11 @@ mod tests {
     #[test]
     fn wrong_arg_type() {
         assert_eq!(
-            ArithmeticExtension {}.get_signature(&vec![TemplateArg::Value(1)]),
+            ArithmeticExtension {}.get_signature(&vec![type_arg(as_type("non-int"))]),
+            Err(Error::UnsupportedTypeArg)
+        );
+        assert_eq!(
+            ArithmeticExtension {}.get_signature(&vec![val_arg(1)]),
             Err(Error::UnsupportedTypeArg)
         );
     }

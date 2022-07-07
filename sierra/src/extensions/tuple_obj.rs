@@ -1,4 +1,4 @@
-use crate::extensions::*;
+use crate::{extensions::*, utils::as_tuple};
 
 struct TuplePackExtension {}
 
@@ -10,10 +10,7 @@ impl ExtensionImplementation for TuplePackExtension {
         let arg_types = types(tmpl_args)?;
         Ok(simple_invoke_ext_sign(
             arg_types,
-            vec![Type {
-                name: "Tuple".to_string(),
-                args: tmpl_args.clone(),
-            }],
+            vec![as_tuple(tmpl_args.clone())],
         ))
     }
 }
@@ -27,10 +24,7 @@ impl ExtensionImplementation for TupleUnpackExtension {
     ) -> Result<ExtensionSignature, Error> {
         let arg_types = types(tmpl_args)?;
         Ok(simple_invoke_ext_sign(
-            vec![Type {
-                name: "Tuple".to_string(),
-                args: tmpl_args.clone(),
-            }],
+            vec![as_tuple(tmpl_args.clone())],
             arg_types,
         ))
     }
@@ -61,60 +55,42 @@ pub(super) fn extensions() -> [(String, ExtensionBox); 2] {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    fn ty(name: &str) -> Type {
-        Type {
-            name: name.to_string(),
-            args: vec![],
-        }
-    }
+    use crate::utils::{as_type, type_arg, val_arg};
 
     #[test]
-    fn pack_legal_usage() {
+    fn legal_usage() {
         assert_eq!(
-            TuplePackExtension {}.get_signature(&vec![
-                TemplateArg::Type(ty("1")),
-                TemplateArg::Type(ty("2"))
-            ]),
+            TuplePackExtension {}
+                .get_signature(&vec![type_arg(as_type("1")), type_arg(as_type("2"))]),
             Ok(simple_invoke_ext_sign(
-                vec![ty("1"), ty("2")],
-                vec![Type {
-                    name: "Tuple".to_string(),
-                    args: vec![TemplateArg::Type(ty("1")), TemplateArg::Type(ty("2"))]
-                }],
+                vec![as_type("1"), as_type("2")],
+                vec![as_tuple(vec![
+                    type_arg(as_type("1")),
+                    type_arg(as_type("2"))
+                ])]
+            ))
+        );
+        assert_eq!(
+            TupleUnpackExtension {}
+                .get_signature(&vec![type_arg(as_type("1")), type_arg(as_type("2"))]),
+            Ok(simple_invoke_ext_sign(
+                vec![as_tuple(vec![
+                    type_arg(as_type("1")),
+                    type_arg(as_type("2"))
+                ])],
+                vec![as_type("1"), as_type("2")]
             ))
         );
     }
 
     #[test]
-    fn pack_wrong_arg_type() {
+    fn wrong_arg_type() {
         assert_eq!(
-            TuplePackExtension {}.get_signature(&vec![TemplateArg::Value(1)]),
+            TuplePackExtension {}.get_signature(&vec![val_arg(1)]),
             Err(Error::UnsupportedTypeArg)
         );
-    }
-
-    #[test]
-    fn unpack_legal_usage() {
         assert_eq!(
-            TupleUnpackExtension {}.get_signature(&vec![
-                TemplateArg::Type(ty("1")),
-                TemplateArg::Type(ty("2"))
-            ]),
-            Ok(simple_invoke_ext_sign(
-                vec![Type {
-                    name: "Tuple".to_string(),
-                    args: vec![TemplateArg::Type(ty("1")), TemplateArg::Type(ty("2"))]
-                }],
-                vec![ty("1"), ty("2")],
-            ))
-        );
-    }
-
-    #[test]
-    fn unpack_wrong_arg_type() {
-        assert_eq!(
-            TupleUnpackExtension {}.get_signature(&vec![TemplateArg::Value(1)]),
+            TupleUnpackExtension {}.get_signature(&vec![val_arg(1)]),
             Err(Error::UnsupportedTypeArg)
         );
     }
