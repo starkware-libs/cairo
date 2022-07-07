@@ -1,5 +1,4 @@
-use crate::error::Error;
-use crate::graph::*;
+use crate::{error::Error, graph::*, mem_loc::ResLoc};
 use std::collections::HashMap;
 use Result::*;
 
@@ -14,11 +13,11 @@ mod unconditional_jump;
 #[derive(Debug, PartialEq)]
 pub(crate) struct ExtensionSignature {
     pub args: Vec<Type>,
-    pub results: Vec<Vec<Type>>,
+    pub results: Vec<Vec<(Type, ResLoc)>>,
     pub fallthrough: Option<usize>,
 }
 
-fn simple_invoke_ext_sign(args: Vec<Type>, results: Vec<Type>) -> ExtensionSignature {
+fn simple_invoke_ext_sign(args: Vec<Type>, results: Vec<(Type, ResLoc)>) -> ExtensionSignature {
     ExtensionSignature {
         args: args,
         results: vec![results],

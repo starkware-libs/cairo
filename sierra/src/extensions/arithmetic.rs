@@ -10,7 +10,7 @@ impl ExtensionImplementation for ArithmeticExtension {
         let numeric_type = get_type(tmpl_args)?;
         Ok(simple_invoke_ext_sign(
             vec![numeric_type.clone(), numeric_type.clone(), gas_type(1)],
-            vec![numeric_type.clone()],
+            vec![(numeric_type.clone(), ResLoc::NewMem)],
         ))
     }
 }
@@ -25,7 +25,10 @@ impl ExtensionImplementation for DuplicateExtension {
         let numeric_type = get_type(tmpl_args)?;
         Ok(simple_invoke_ext_sign(
             vec![numeric_type.clone()],
-            vec![numeric_type.clone(), numeric_type.clone()],
+            vec![
+                (numeric_type.clone(), ResLoc::ArgRef(0)),
+                (numeric_type.clone(), ResLoc::ArgRef(0)),
+            ],
         ))
     }
 }
@@ -49,7 +52,7 @@ impl ExtensionImplementation for ConstantExtension {
         }
         Ok(simple_invoke_ext_sign(
             vec![gas_type(1)],
-            vec![numeric_type.clone()],
+            vec![(numeric_type.clone(), ResLoc::NewMem)],
         ))
     }
 }
@@ -105,19 +108,25 @@ mod tests {
             ArithmeticExtension {}.get_signature(&vec![type_arg(ty.clone())]),
             Ok(simple_invoke_ext_sign(
                 vec![ty.clone(), ty.clone(), gas_type(1),],
-                vec![ty.clone()],
+                vec![(ty.clone(), ResLoc::NewMem)],
             ))
         );
         assert_eq!(
             DuplicateExtension {}.get_signature(&vec![type_arg(ty.clone())]),
             Ok(simple_invoke_ext_sign(
                 vec![ty.clone()],
-                vec![ty.clone(), ty.clone()],
+                vec![
+                    (ty.clone(), ResLoc::ArgRef(0)),
+                    (ty.clone(), ResLoc::ArgRef(0))
+                ],
             ))
         );
         assert_eq!(
             ConstantExtension {}.get_signature(&vec![type_arg(ty.clone()), val_arg(1)]),
-            Ok(simple_invoke_ext_sign(vec![gas_type(1)], vec![ty.clone()],))
+            Ok(simple_invoke_ext_sign(
+                vec![gas_type(1)],
+                vec![(ty.clone(), ResLoc::NewMem)],
+            ))
         );
         assert_eq!(
             IgnoreExtension {}.get_signature(&vec![type_arg(ty.clone())]),

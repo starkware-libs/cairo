@@ -10,7 +10,7 @@ impl ExtensionImplementation for TuplePackExtension {
         let arg_types = types(tmpl_args)?;
         Ok(simple_invoke_ext_sign(
             arg_types,
-            vec![as_tuple(tmpl_args.clone())],
+            vec![(as_tuple(tmpl_args.clone()), ResLoc::ArgRef(0))],
         ))
     }
 }
@@ -25,7 +25,10 @@ impl ExtensionImplementation for TupleUnpackExtension {
         let arg_types = types(tmpl_args)?;
         Ok(simple_invoke_ext_sign(
             vec![as_tuple(tmpl_args.clone())],
-            arg_types,
+            arg_types
+                .into_iter()
+                .map(|x| (x, ResLoc::ArgRef(0)))
+                .collect(),
         ))
     }
 }
@@ -64,10 +67,10 @@ mod tests {
                 .get_signature(&vec![type_arg(as_type("1")), type_arg(as_type("2"))]),
             Ok(simple_invoke_ext_sign(
                 vec![as_type("1"), as_type("2")],
-                vec![as_tuple(vec![
-                    type_arg(as_type("1")),
-                    type_arg(as_type("2"))
-                ])]
+                vec![(
+                    as_tuple(vec![type_arg(as_type("1")), type_arg(as_type("2"))]),
+                    ResLoc::ArgRef(0)
+                )]
             ))
         );
         assert_eq!(
@@ -78,7 +81,10 @@ mod tests {
                     type_arg(as_type("1")),
                     type_arg(as_type("2"))
                 ])],
-                vec![as_type("1"), as_type("2")]
+                vec![
+                    (as_type("1"), ResLoc::ArgRef(0)),
+                    (as_type("2"), ResLoc::ArgRef(0))
+                ]
             ))
         );
     }

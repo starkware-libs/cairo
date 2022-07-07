@@ -1,7 +1,4 @@
-use crate::error::Error;
-use crate::extensions::*;
-use crate::graph::*;
-use crate::scope_state::*;
+use crate::{error::Error, extensions::*, graph::*, scope_state::*};
 use Result::*;
 
 pub fn validate(prog: &Program) -> Result<(), Error> {

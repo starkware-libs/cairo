@@ -21,8 +21,9 @@ impl ExtensionImplementation for FunctionCallExtension {
                 as_tuple(self.args.iter().map(|t| type_arg(t.clone())).collect()),
                 gas_type(2),
             ],
-            vec![as_tuple(
-                self.results.iter().map(|t| type_arg(t.clone())).collect(),
+            vec![(
+                as_tuple(self.results.iter().map(|t| type_arg(t.clone())).collect()),
+                ResLoc::NewMem,
             )],
         ))
     }
@@ -58,7 +59,7 @@ mod tests {
             .get_signature(&vec![]),
             Ok(simple_invoke_ext_sign(
                 vec![as_tuple(vec![]), gas_type(2)],
-                vec![as_tuple(vec![])],
+                vec![(as_tuple(vec![]), ResLoc::NewMem)],
             ))
         );
         assert_eq!(
@@ -72,10 +73,10 @@ mod tests {
                     as_tuple(vec![type_arg(as_type("1")), type_arg(as_type("2"))]),
                     gas_type(2)
                 ],
-                vec![as_tuple(vec![
-                    type_arg(as_type("3")),
-                    type_arg(as_type("4"))
-                ])],
+                vec![(
+                    as_tuple(vec![type_arg(as_type("3")), type_arg(as_type("4"))]),
+                    ResLoc::NewMem
+                )],
             ))
         );
     }
