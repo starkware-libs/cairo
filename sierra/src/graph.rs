@@ -154,13 +154,13 @@ impl fmt::Display for Extension {
 
 #[derive(Clone, Debug)]
 pub struct BranchInfo {
-    pub block: BlockId,
+    pub target: BranchTarget,
     pub exports: Vec<Identifier>,
 }
 
 impl fmt::Display for BranchInfo {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}(", self.block.0)?;
+        write!(f, "{}(", self.target)?;
         self.exports
             .iter()
             .take(1)
@@ -170,5 +170,20 @@ impl fmt::Display for BranchInfo {
             .skip(1)
             .try_for_each(|n| write!(f, ", {}", n.0))?;
         writeln!(f, ")")
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum BranchTarget {
+    Fallthrough,
+    Block(BlockId),
+}
+
+impl fmt::Display for BranchTarget {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            BranchTarget::Fallthrough => write!(f, "fallthrough"),
+            BranchTarget::Block(b) => write!(f, "{}", b.0),
+        }
     }
 }

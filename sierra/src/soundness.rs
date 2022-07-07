@@ -100,7 +100,7 @@ impl Helper<'_> {
                 match sign.fallthrough {
                     None => {}
                     Some(i) => {
-                        if j.branches[i].block.0 != block.0 + 1 {
+                        if j.branches[i].target != BranchTarget::Fallthrough {
                             return Err(Error::FunctionJumpMismatch(j.to_string()));
                         }
                     }
@@ -118,7 +118,14 @@ impl Helper<'_> {
                                 res_types: &res_types,
                             },
                         )?;
-                        self.validate(branch.block, next_state, block_start_states)
+                        self.validate(
+                            match branch.target {
+                                BranchTarget::Fallthrough => BlockId(block.0 + 1),
+                                BranchTarget::Block(b) => b,
+                            },
+                            next_state,
+                            block_start_states,
+                        )
                     })
             }
         }
@@ -247,11 +254,11 @@ mod function {
                             args: vec![as_id("gb"), as_id("cost")],
                             branches: vec![
                                 BranchInfo {
-                                    block: BlockId(0),
+                                    target: BranchTarget::Block(BlockId(0)),
                                     exports: vec![as_id("gb"), as_id("cost")]
                                 },
                                 BranchInfo {
-                                    block: BlockId(1),
+                                    target: BranchTarget::Fallthrough,
                                     exports: vec![as_id("gb")]
                                 }
                             ],
@@ -286,11 +293,11 @@ mod function {
             args: vec![as_id("gb"), as_id("cost")],
             branches: vec![
                 BranchInfo {
-                    block: BlockId(1),
+                    target: BranchTarget::Fallthrough,
                     exports: vec![as_id("gb"), as_id("cost")],
                 },
                 BranchInfo {
-                    block: BlockId(0),
+                    target: BranchTarget::Block(BlockId(0)),
                     exports: vec![as_id("gb")],
                 },
             ],
@@ -336,11 +343,11 @@ mod function {
                             args: vec![as_id("gb"), as_id("cost")],
                             branches: vec![
                                 BranchInfo {
-                                    block: BlockId(0),
+                                    target: BranchTarget::Block(BlockId(0)),
                                     exports: vec![as_id("gb"), as_id("cost")]
                                 },
                                 BranchInfo {
-                                    block: BlockId(1),
+                                    target: BranchTarget::Fallthrough,
                                     exports: vec![as_id("gb")]
                                 }
                             ],
@@ -409,18 +416,18 @@ mod function {
             args: vec![as_id(name)],
             results: vec![],
         };
-        let as_exit = |invc: Invocation, b_id: usize| {
+        let as_exit = |invc: Invocation| {
             BlockExit::Jump(JumpInfo {
                 ext: invc.ext,
                 args: invc.args,
                 branches: vec![BranchInfo {
-                    block: BlockId(b_id),
+                    target: BranchTarget::Fallthrough,
                     exports: invc.results,
                 }],
             })
         };
 
-        let test_n = |b_success, b_failure| {
+        let test_n = |b_success| {
             BlockExit::Jump(JumpInfo {
                 ext: Extension {
                     name: "jump_nz".to_string(),
@@ -429,11 +436,11 @@ mod function {
                 args: vec![as_id("use"), as_id("use_cost")],
                 branches: vec![
                     BranchInfo {
-                        block: BlockId(b_success),
+                        target: BranchTarget::Block(BlockId(b_success)),
                         exports: vec![],
                     },
                     BranchInfo {
-                        block: BlockId(b_failure),
+                        target: BranchTarget::Fallthrough,
                         exports: vec![],
                     },
                 ],
@@ -467,7 +474,7 @@ mod function {
                             dup("n", "use"),
                             gas_use(5, 1),
                         ],
-                        exit: test_n(2, 1),
+                        exit: test_n(2),
                     },
                     Block {
                         // 1
@@ -483,7 +490,7 @@ mod function {
                             dup("n", "use"),
                             gas_use(3, 1),
                         ],
-                        exit: test_n(4, 3),
+                        exit: test_n(4),
                     },
                     Block {
                         // 3
@@ -493,7 +500,7 @@ mod function {
                     Block {
                         // 4
                         invocations: vec![dup("one", "a")],
-                        exit: as_exit(dup("one", "b"), 5),
+                        exit: as_exit(dup("one", "b")),
                     },
                     Block {
                         // 5
@@ -513,11 +520,11 @@ mod function {
                             args: vec![as_id("gb"), as_id("split_gas_cost")],
                             branches: vec![
                                 BranchInfo {
-                                    block: BlockId(7),
+                                    target: BranchTarget::Block(BlockId(7)),
                                     exports: vec![as_id("gb"), as_id("cost")]
                                 },
                                 BranchInfo {
-                                    block: BlockId(6),
+                                    target: BranchTarget::Fallthrough,
                                     exports: vec![as_id("gb")]
                                 }
                             ],
@@ -561,7 +568,7 @@ mod function {
                             dup("n", "use"),
                             gas_use(3, 1),
                         ],
-                        exit: test_n(5, 8),
+                        exit: test_n(5),
                     },
                     Block {
                         // 8
@@ -619,7 +626,7 @@ mod function {
             results: vec![],
         };
 
-        let test_n = |b_success, b_failure| {
+        let test_n = |b_success| {
             BlockExit::Jump(JumpInfo {
                 ext: Extension {
                     name: "jump_nz".to_string(),
@@ -628,11 +635,11 @@ mod function {
                 args: vec![as_id("use"), as_id("use_cost")],
                 branches: vec![
                     BranchInfo {
-                        block: BlockId(b_success),
+                        target: BranchTarget::Block(BlockId(b_success)),
                         exports: vec![],
                     },
                     BranchInfo {
-                        block: BlockId(b_failure),
+                        target: BranchTarget::Fallthrough,
                         exports: vec![],
                     },
                 ],
@@ -657,7 +664,7 @@ mod function {
                             dup("n", "use"),
                             gas_use(5, 1),
                         ],
-                        exit: test_n(2, 1),
+                        exit: test_n(2),
                     },
                     Block {
                         // 1
@@ -680,7 +687,7 @@ mod function {
                             dup("n_1", "use"),
                             gas_use(3, 1),
                         ],
-                        exit: test_n(4, 3),
+                        exit: test_n(4),
                     },
                     Block {
                         // 3
@@ -711,7 +718,7 @@ mod function {
                             args: vec![as_id("gb"), as_id("split_gas_cost")],
                             branches: vec![
                                 BranchInfo {
-                                    block: BlockId(6),
+                                    target: BranchTarget::Block(BlockId(6)),
                                     exports: vec![
                                         as_id("gb"),
                                         as_id("dec_cost"),
@@ -722,7 +729,7 @@ mod function {
                                     ]
                                 },
                                 BranchInfo {
-                                    block: BlockId(5),
+                                    target: BranchTarget::Fallthrough,
                                     exports: vec![as_id("gb")]
                                 }
                             ],
