@@ -12,6 +12,7 @@ impl ExtensionImplementation for FunctionCallExtension {
     fn get_signature(
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
+        _: &TypeRegistry,
     ) -> Result<ExtensionSignature, Error> {
         if !tmpl_args.is_empty() {
             return Err(Error::WrongNumberOfTypeArgs);
@@ -56,7 +57,7 @@ mod tests {
                 args: vec![],
                 results: vec![]
             }
-            .get_signature(&vec![]),
+            .get_signature(&vec![], &TypeRegistry::new()),
             Ok(simple_invoke_ext_sign(
                 vec![as_tuple(vec![]), gas_type(2)],
                 vec![(as_tuple(vec![]), ResLoc::NewMem)],
@@ -67,7 +68,7 @@ mod tests {
                 args: vec![as_type("1"), as_type("2")],
                 results: vec![as_type("3"), as_type("4")]
             }
-            .get_signature(&vec![]),
+            .get_signature(&vec![], &TypeRegistry::new()),
             Ok(simple_invoke_ext_sign(
                 vec![
                     as_tuple(vec![type_arg(as_type("1")), type_arg(as_type("2"))]),
@@ -88,7 +89,7 @@ mod tests {
                 args: vec![],
                 results: vec![]
             }
-            .get_signature(&vec![type_arg(as_type("1"))]),
+            .get_signature(&vec![type_arg(as_type("1"))], &TypeRegistry::new()),
             Err(Error::WrongNumberOfTypeArgs)
         );
     }

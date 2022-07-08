@@ -9,6 +9,7 @@ impl ExtensionImplementation for GetGasExtension {
     fn get_signature(
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
+        _: &TypeRegistry,
     ) -> Result<ExtensionSignature, Error> {
         if tmpl_args.is_empty() {
             return Err(Error::WrongNumberOfTypeArgs);
@@ -35,6 +36,7 @@ impl ExtensionImplementation for RefundGasExtension {
     fn get_signature(
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
+        _: &TypeRegistry,
     ) -> Result<ExtensionSignature, Error> {
         if tmpl_args.len() != 1 {
             return Err(Error::WrongNumberOfTypeArgs);
@@ -56,6 +58,7 @@ impl ExtensionImplementation for SplitGasExtension {
     fn get_signature(
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
+        _: &TypeRegistry,
     ) -> Result<ExtensionSignature, Error> {
         if tmpl_args.len() <= 1 {
             return Err(Error::WrongNumberOfTypeArgs);
@@ -82,6 +85,49 @@ pub(super) fn extensions() -> [(String, ExtensionBox); 3] {
     ]
 }
 
+struct GasBuiltinTypeInfo {}
+
+impl TypeInfoImplementation for GasBuiltinTypeInfo {
+    fn get_info(
+        self: &Self,
+        tmpl_args: &Vec<TemplateArg>,
+        _: &TypeRegistry,
+    ) -> Result<TypeInfo, Error> {
+        if !tmpl_args.is_empty() {
+            return Err(Error::WrongNumberOfTypeArgs);
+        }
+        Ok(TypeInfo { size: 1 })
+    }
+}
+
+struct GasTypeInfo {}
+
+impl TypeInfoImplementation for GasTypeInfo {
+    fn get_info(
+        self: &Self,
+        tmpl_args: &Vec<TemplateArg>,
+        _: &TypeRegistry,
+    ) -> Result<TypeInfo, Error> {
+        if tmpl_args.len() != 1 {
+            return Err(Error::WrongNumberOfTypeArgs);
+        }
+        match &tmpl_args[0] {
+            TemplateArg::Type(_) => {
+                return Err(Error::UnsupportedTypeArg);
+            }
+            TemplateArg::Value(_) => {}
+        }
+        Ok(TypeInfo { size: 0 })
+    }
+}
+
+pub(super) fn types() -> [(String, TypeInfoBox); 2] {
+    [
+        (gas_builtin_type().name, Box::new(GasBuiltinTypeInfo {})),
+        (gas_type(1).name, Box::new(GasTypeInfo {})),
+    ]
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -90,7 +136,7 @@ mod tests {
     #[test]
     fn legal_usage() {
         assert_eq!(
-            GetGasExtension {}.get_signature(&vec![val_arg(1), val_arg(2)]),
+            GetGasExtension {}.get_signature(&vec![val_arg(1), val_arg(2)], &TypeRegistry::new()),
             Ok(ExtensionSignature {
                 args: vec![gas_builtin_type(), gas_type(1)],
                 results: vec![
@@ -105,14 +151,14 @@ mod tests {
             })
         );
         assert_eq!(
-            RefundGasExtension {}.get_signature(&vec![val_arg(5)]),
+            RefundGasExtension {}.get_signature(&vec![val_arg(5)], &TypeRegistry::new()),
             Ok(simple_invoke_ext_sign(
                 vec![gas_builtin_type(), gas_type(5)],
                 vec![(gas_builtin_type(), ResLoc::NewMem)],
             ))
         );
         assert_eq!(
-            SplitGasExtension {}.get_signature(&vec![val_arg(1), val_arg(2)]),
+            SplitGasExtension {}.get_signature(&vec![val_arg(1), val_arg(2)], &TypeRegistry::new()),
             Ok(simple_invoke_ext_sign(
                 vec![gas_type(3)],
                 vec![(gas_type(1), ResLoc::NewMem), (gas_type(2), ResLoc::NewMem)],
@@ -123,19 +169,19 @@ mod tests {
     #[test]
     fn wrong_num_of_args() {
         assert_eq!(
-            GetGasExtension {}.get_signature(&vec![]),
+            GetGasExtension {}.get_signature(&vec![], &TypeRegistry::new()),
             Err(Error::WrongNumberOfTypeArgs)
         );
         assert_eq!(
-            RefundGasExtension {}.get_signature(&vec![]),
+            RefundGasExtension {}.get_signature(&vec![], &TypeRegistry::new()),
             Err(Error::WrongNumberOfTypeArgs)
         );
         assert_eq!(
-            SplitGasExtension {}.get_signature(&vec![]),
+            SplitGasExtension {}.get_signature(&vec![], &TypeRegistry::new()),
             Err(Error::WrongNumberOfTypeArgs)
         );
         assert_eq!(
-            SplitGasExtension {}.get_signature(&vec![val_arg(1)]),
+            SplitGasExtension {}.get_signature(&vec![val_arg(1)], &TypeRegistry::new()),
             Err(Error::WrongNumberOfTypeArgs)
         );
     }
@@ -143,15 +189,18 @@ mod tests {
     #[test]
     fn wrong_arg_type() {
         assert_eq!(
-            GetGasExtension {}.get_signature(&vec![type_arg(gas_type(1))]),
+            GetGasExtension {}.get_signature(&vec![type_arg(gas_type(1))], &TypeRegistry::new()),
             Err(Error::UnsupportedTypeArg)
         );
         assert_eq!(
-            RefundGasExtension {}.get_signature(&vec![type_arg(gas_type(1))]),
+            RefundGasExtension {}.get_signature(&vec![type_arg(gas_type(1))], &TypeRegistry::new()),
             Err(Error::UnsupportedTypeArg)
         );
         assert_eq!(
-            SplitGasExtension {}.get_signature(&vec![val_arg(1), type_arg(gas_type(1))]),
+            SplitGasExtension {}.get_signature(
+                &vec![val_arg(1), type_arg(gas_type(1))],
+                &TypeRegistry::new()
+            ),
             Err(Error::UnsupportedTypeArg)
         );
     }

@@ -3,10 +3,12 @@ use Result::*;
 
 pub fn validate(prog: &Program) -> Result<(), Error> {
     let mut block_start_states = vec![None; prog.blocks.len()];
-    let registry = get_registry(prog);
+    let ext_registry = get_ext_registry(prog);
+    let type_registry = get_type_registry();
     prog.funcs.iter().try_for_each(|f| {
         Helper {
-            registry: &registry,
+            ext_registry: &ext_registry,
+            type_registry: &type_registry,
             blocks: &prog.blocks,
             res_types: &f.res_types,
         }
@@ -22,7 +24,8 @@ pub fn validate(prog: &Program) -> Result<(), Error> {
 }
 
 struct Helper<'a> {
-    pub registry: &'a ExtensionRegistry,
+    pub ext_registry: &'a ExtensionRegistry,
+    pub type_registry: &'a TypeRegistry,
     pub blocks: &'a Vec<Block>,
     pub res_types: &'a Vec<Type>,
 }
@@ -51,7 +54,7 @@ impl Helper<'_> {
         }
         let mut state = start_state;
         for invc in &self.blocks[block.0].invocations {
-            let sign = get_signature(self.registry, &invc.ext)?;
+            let sign = get_signature(self.ext_registry, self.type_registry, &invc.ext)?;
             if sign.results.len() != 1 {
                 return Err(Error::FunctionInvocationMismatch(invc.to_string()));
             }
@@ -90,7 +93,7 @@ impl Helper<'_> {
                 }
             }
             BlockExit::Jump(j) => {
-                let sign = get_signature(self.registry, &j.ext)?;
+                let sign = get_signature(self.ext_registry, self.type_registry, &j.ext)?;
                 if sign.results.len() != j.branches.len() {
                     return Err(Error::FunctionJumpMismatch(j.to_string()));
                 }

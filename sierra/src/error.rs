@@ -12,6 +12,7 @@ pub enum Error {
     ResultSizeMismatch,
     WrongNumberOfTypeArgs,
     UnsupportedTypeArg,
+    UnsupportedTypeName(String),
     UnsupportedLibCallName(String),
     FunctionBlockOutOfBounds,
     FunctionRemainingOwnedObjects(ScopeState),

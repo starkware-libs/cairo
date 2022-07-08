@@ -9,6 +9,7 @@ impl ExtensionImplementation for MatchNullableExtension {
     fn get_signature(
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
+        _: &TypeRegistry,
     ) -> Result<ExtensionSignature, Error> {
         if tmpl_args.len() != 1 {
             return Err(Error::WrongNumberOfTypeArgs);
@@ -40,7 +41,8 @@ mod tests {
     #[test]
     fn legal_usage() {
         assert_eq!(
-            MatchNullableExtension {}.get_signature(&vec![type_arg(as_type("int"))]),
+            MatchNullableExtension {}
+                .get_signature(&vec![type_arg(as_type("int"))], &TypeRegistry::new()),
             Ok(ExtensionSignature {
                 args: vec![as_nullable(as_type("int")), gas_type(1)],
                 results: vec![vec![(as_type("int"), ResLoc::NewMem)], vec![]],
@@ -52,7 +54,7 @@ mod tests {
     #[test]
     fn wrong_num_of_args() {
         assert_eq!(
-            MatchNullableExtension {}.get_signature(&vec![]),
+            MatchNullableExtension {}.get_signature(&vec![], &TypeRegistry::new()),
             Err(Error::WrongNumberOfTypeArgs)
         );
     }
@@ -60,7 +62,7 @@ mod tests {
     #[test]
     fn wrong_arg_type() {
         assert_eq!(
-            MatchNullableExtension {}.get_signature(&vec![val_arg(1)]),
+            MatchNullableExtension {}.get_signature(&vec![val_arg(1)], &TypeRegistry::new()),
             Err(Error::UnsupportedTypeArg)
         );
     }
