@@ -19,7 +19,7 @@ impl ExtensionImplementation for MatchNullableExtension {
         }?;
         Ok(ExtensionSignature {
             args: vec![as_nullable(inner_type.clone()), gas_type(1)],
-            results: vec![vec![inner_type.clone()], vec![]],
+            results: vec![vec![(inner_type.clone(), vec![0])], vec![]],
             fallthrough: Some(1),
         })
     }
@@ -40,11 +40,10 @@ mod tests {
     #[test]
     fn legal_usage() {
         assert_eq!(
-            MatchNullableExtension {}
-                .get_signature(&vec![type_arg(as_type("int"))]),
+            MatchNullableExtension {}.get_signature(&vec![type_arg(as_type("int"))]),
             Ok(ExtensionSignature {
                 args: vec![as_nullable(as_type("int")), gas_type(1)],
-                results: vec![vec![as_type("int")], vec![]],
+                results: vec![vec![(as_type("int"), vec![0])], vec![]],
                 fallthrough: Some(1),
             })
         );

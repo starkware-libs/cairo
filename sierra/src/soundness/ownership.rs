@@ -1,4 +1,4 @@
-use crate::{error::Error, extensions::*, graph::*, scope_state::*};
+use crate::{error::Error, extensions::*, graph::*, scope_state::*, utils::as_local};
 use Result::*;
 
 pub fn validate(prog: &Program) -> Result<(), Error> {
@@ -14,7 +14,7 @@ pub fn validate(prog: &Program) -> Result<(), Error> {
             f.entry,
             f.args
                 .iter()
-                .map(|v| (v.id.clone(), v.ty.clone()))
+                .map(|v| (v.id.clone(), as_local(v.ty.clone())))
                 .collect(),
             &mut block_start_states,
         )
@@ -368,12 +368,12 @@ mod function {
             Err(Error::FunctionBlockMismatch(
                 BlockId(0),
                 ScopeState::from([
-                    (as_id("gb"), gas_builtin_type()),
-                    (as_id("cost"), gas_type(1))
+                    (as_id("gb"), as_local(gas_builtin_type())),
+                    (as_id("cost"), as_local(gas_type(1)))
                 ]),
                 ScopeState::from([
-                    (as_id("gb"), gas_builtin_type()),
-                    (as_id("cost"), gas_type(2))
+                    (as_id("gb"), as_local(gas_builtin_type())),
+                    (as_id("cost"), as_local(gas_type(2)))
                 ])
             ))
         );

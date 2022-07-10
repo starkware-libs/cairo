@@ -10,7 +10,7 @@ impl ExtensionImplementation for ArithmeticExtension {
         let numeric_type = get_type(tmpl_args)?;
         Ok(simple_invoke_ext_sign(
             vec![numeric_type.clone(), numeric_type.clone(), gas_type(1)],
-            vec![numeric_type.clone()],
+            vec![(numeric_type.clone(), vec![])],
         ))
     }
 }
@@ -26,8 +26,8 @@ impl ExtensionImplementation for DuplicateExtension {
         Ok(simple_invoke_ext_sign(
             vec![numeric_type.clone()],
             vec![
-                numeric_type.clone(),
-                numeric_type.clone(),
+                (numeric_type.clone(), vec![]),
+                (numeric_type.clone(), vec![]),
             ],
         ))
     }
@@ -52,7 +52,7 @@ impl ExtensionImplementation for ConstantExtension {
         }
         Ok(simple_invoke_ext_sign(
             vec![gas_type(1)],
-            vec![numeric_type.clone()],
+            vec![(numeric_type.clone(), vec![])],
         ))
     }
 }
@@ -130,26 +130,21 @@ mod tests {
             ArithmeticExtension {}.get_signature(&vec![type_arg(ty.clone())]),
             Ok(simple_invoke_ext_sign(
                 vec![ty.clone(), ty.clone(), gas_type(1),],
-                vec![ty.clone()],
+                vec![(ty.clone(), vec![])],
             ))
         );
         assert_eq!(
             DuplicateExtension {}.get_signature(&vec![type_arg(ty.clone())]),
             Ok(simple_invoke_ext_sign(
                 vec![ty.clone()],
-                vec![
-                    ty.clone(),
-                    ty.clone()
-                ],
+                vec![(ty.clone(), vec![]), (ty.clone(), vec![])],
             ))
         );
         assert_eq!(
-            ConstantExtension {}.get_signature(
-                &vec![type_arg(ty.clone()), val_arg(1)],
-            ),
+            ConstantExtension {}.get_signature(&vec![type_arg(ty.clone()), val_arg(1)],),
             Ok(simple_invoke_ext_sign(
                 vec![gas_type(1)],
-                vec![ty.clone()],
+                vec![(ty.clone(), vec![])],
             ))
         );
         assert_eq!(
@@ -169,8 +164,7 @@ mod tests {
     #[test]
     fn wrong_arg_type() {
         assert_eq!(
-            ArithmeticExtension {}
-                .get_signature(&vec![type_arg(as_type("non-int"))]),
+            ArithmeticExtension {}.get_signature(&vec![type_arg(as_type("non-int"))]),
             Err(Error::UnsupportedTypeArg)
         );
         assert_eq!(

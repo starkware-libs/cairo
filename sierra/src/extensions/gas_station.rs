@@ -13,17 +13,17 @@ impl ExtensionImplementation for GetGasExtension {
         if tmpl_args.is_empty() {
             return Err(Error::WrongNumberOfTypeArgs);
         }
-        let mut success_types = vec![gas_builtin_type()];
+        let mut success_types = vec![(gas_builtin_type(), vec![])];
         tmpl_args.iter().try_for_each(|tmpl_arg| match tmpl_arg {
             TemplateArg::Value(v) => {
-                success_types.push(gas_type(*v));
+                success_types.push((gas_type(*v), vec![]));
                 Ok(())
             }
             TemplateArg::Type(_) => Err(Error::UnsupportedTypeArg),
         })?;
         Ok(ExtensionSignature {
             args: vec![gas_builtin_type(), gas_type(1)],
-            results: vec![success_types, vec![gas_builtin_type()]],
+            results: vec![success_types, vec![(gas_builtin_type(), vec![])]],
             fallthrough: Some(1),
         })
     }
@@ -45,7 +45,7 @@ impl ExtensionImplementation for RefundGasExtension {
         }?;
         Ok(simple_invoke_ext_sign(
             vec![gas_builtin_type(), gas_type(value)],
-            vec![gas_builtin_type()],
+            vec![(gas_builtin_type(), vec![])],
         ))
     }
 }
@@ -64,7 +64,7 @@ impl ExtensionImplementation for SplitGasExtension {
         let mut total = 0;
         tmpl_args.iter().try_for_each(|tmpl_arg| match tmpl_arg {
             TemplateArg::Value(v) => {
-                res_types.push(gas_type(*v));
+                res_types.push((gas_type(*v), vec![]));
                 total += v;
                 Ok(())
             }
@@ -138,11 +138,11 @@ mod tests {
                 args: vec![gas_builtin_type(), gas_type(1)],
                 results: vec![
                     vec![
-                        gas_builtin_type(),
-                        gas_type(1),
-                        gas_type(2)
+                        (gas_builtin_type(), vec![]),
+                        (gas_type(1), vec![]),
+                        (gas_type(2), vec![])
                     ],
-                    vec![gas_builtin_type()]
+                    vec![(gas_builtin_type(), vec![])]
                 ],
                 fallthrough: Some(1),
             })
@@ -151,14 +151,14 @@ mod tests {
             RefundGasExtension {}.get_signature(&vec![val_arg(5)]),
             Ok(simple_invoke_ext_sign(
                 vec![gas_builtin_type(), gas_type(5)],
-                vec![gas_builtin_type()],
+                vec![(gas_builtin_type(), vec![])],
             ))
         );
         assert_eq!(
             SplitGasExtension {}.get_signature(&vec![val_arg(1), val_arg(2)]),
             Ok(simple_invoke_ext_sign(
                 vec![gas_type(3)],
-                vec![gas_type(1), gas_type(2)],
+                vec![(gas_type(1), vec![]), (gas_type(2), vec![])],
             ))
         );
     }
@@ -194,9 +194,7 @@ mod tests {
             Err(Error::UnsupportedTypeArg)
         );
         assert_eq!(
-            SplitGasExtension {}.get_signature(
-                &vec![val_arg(1), type_arg(gas_type(1))],
-            ),
+            SplitGasExtension {}.get_signature(&vec![val_arg(1), type_arg(gas_type(1))],),
             Err(Error::UnsupportedTypeArg)
         );
     }
