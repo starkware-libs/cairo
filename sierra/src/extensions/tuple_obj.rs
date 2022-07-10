@@ -17,7 +17,7 @@ impl ExtensionImplementation for TuplePackExtension {
         })?;
         Ok(simple_invoke_ext_sign(
             arg_types,
-            vec![(as_tuple(tmpl_args.clone()), (0..tmpl_args.len()).collect())],
+            vec![as_tuple(tmpl_args.clone())],
         ))
     }
 }
@@ -32,7 +32,7 @@ impl ExtensionImplementation for TupleUnpackExtension {
         let mut arg_types = vec![];
         tmpl_args.iter().try_for_each(|tmpl_arg| match tmpl_arg {
             TemplateArg::Type(t) => {
-                arg_types.push((t.clone(), vec![0]));
+                arg_types.push(t.clone());
                 Ok(())
             }
             TemplateArg::Value(_) => Err(Error::UnsupportedTypeArg),
@@ -91,10 +91,10 @@ mod tests {
                 .get_signature(&vec![type_arg(as_type("1")), type_arg(as_type("2"))],),
             Ok(simple_invoke_ext_sign(
                 vec![as_type("1"), as_type("2")],
-                vec![(
-                    as_tuple(vec![type_arg(as_type("1")), type_arg(as_type("2"))]),
-                    vec![0, 1]
-                )]
+                vec![as_tuple(vec![
+                    type_arg(as_type("1")),
+                    type_arg(as_type("2"))
+                ])]
             ))
         );
         assert_eq!(
@@ -105,7 +105,7 @@ mod tests {
                     type_arg(as_type("1")),
                     type_arg(as_type("2"))
                 ])],
-                vec![(as_type("1"), vec![0]), (as_type("2"), vec![0])]
+                vec![as_type("1"), as_type("2")]
             ))
         );
     }

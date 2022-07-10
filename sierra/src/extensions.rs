@@ -13,11 +13,11 @@ mod unconditional_jump;
 #[derive(Debug, PartialEq)]
 pub(crate) struct ExtensionSignature {
     pub args: Vec<Type>,
-    pub results: Vec<Vec<(Type, Vec<usize>)>>,
+    pub results: Vec<Vec<Type>>,
     pub fallthrough: Option<usize>,
 }
 
-fn simple_invoke_ext_sign(args: Vec<Type>, results: Vec<(Type, Vec<usize>)>) -> ExtensionSignature {
+fn simple_invoke_ext_sign(args: Vec<Type>, results: Vec<Type>) -> ExtensionSignature {
     ExtensionSignature {
         args: args,
         results: vec![results],

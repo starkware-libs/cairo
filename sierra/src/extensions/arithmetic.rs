@@ -1,4 +1,7 @@
-use crate::{extensions::*, utils::gas_type};
+use crate::{
+    extensions::*,
+    utils::{as_deferred, gas_type},
+};
 
 struct ArithmeticExtension {}
 
@@ -11,15 +14,15 @@ impl ExtensionImplementation for ArithmeticExtension {
             1 => {
                 let numeric_type = get_numeric_type(&tmpl_args[0])?;
                 Ok(simple_invoke_ext_sign(
-                    vec![numeric_type.clone(), numeric_type.clone(), gas_type(1)],
-                    vec![(numeric_type.clone(), vec![])],
+                    vec![numeric_type.clone(), numeric_type.clone()],
+                    vec![as_deferred(numeric_type.clone())],
                 ))
             }
             2 => {
                 let (numeric_type, _) = get_type_value(tmpl_args)?;
                 Ok(simple_invoke_ext_sign(
-                    vec![numeric_type.clone(), gas_type(1)],
-                    vec![(numeric_type.clone(), vec![])],
+                    vec![numeric_type.clone()],
+                    vec![as_deferred(numeric_type.clone())],
                 ))
             }
             _ => Err(Error::WrongNumberOfTypeArgs),
@@ -37,10 +40,7 @@ impl ExtensionImplementation for DuplicateExtension {
         let numeric_type = get_type(tmpl_args)?;
         Ok(simple_invoke_ext_sign(
             vec![numeric_type.clone()],
-            vec![
-                (numeric_type.clone(), vec![]),
-                (numeric_type.clone(), vec![]),
-            ],
+            vec![numeric_type.clone(), numeric_type.clone()],
         ))
     }
 }
@@ -57,8 +57,8 @@ impl ExtensionImplementation for ConstantExtension {
         }
         let (numeric_type, _) = get_type_value(tmpl_args)?;
         Ok(simple_invoke_ext_sign(
-            vec![gas_type(1)],
-            vec![(numeric_type.clone(), vec![])],
+            vec![],
+            vec![as_deferred(numeric_type.clone())],
         ))
     }
 }
@@ -72,6 +72,21 @@ impl ExtensionImplementation for IgnoreExtension {
     ) -> Result<ExtensionSignature, Error> {
         let numeric_type = get_type(tmpl_args)?;
         Ok(simple_invoke_ext_sign(vec![numeric_type.clone()], vec![]))
+    }
+}
+
+struct EnactExtension {}
+
+impl ExtensionImplementation for EnactExtension {
+    fn get_signature(
+        self: &Self,
+        tmpl_args: &Vec<TemplateArg>,
+    ) -> Result<ExtensionSignature, Error> {
+        let numeric_type = get_type(tmpl_args)?;
+        Ok(simple_invoke_ext_sign(
+            vec![as_deferred(numeric_type.clone()), gas_type(1)],
+            vec![numeric_type.clone()],
+        ))
     }
 }
 
@@ -112,7 +127,7 @@ impl TypeInfoImplementation for ArithmeticTypeInfo {
     }
 }
 
-pub(super) fn extensions() -> [(String, ExtensionBox); 7] {
+pub(super) fn extensions() -> [(String, ExtensionBox); 8] {
     [
         ("add".to_string(), Box::new(ArithmeticExtension {})),
         ("sub".to_string(), Box::new(ArithmeticExtension {})),
@@ -121,6 +136,7 @@ pub(super) fn extensions() -> [(String, ExtensionBox); 7] {
         ("duplicate_num".to_string(), Box::new(DuplicateExtension {})),
         ("constant_num".to_string(), Box::new(ConstantExtension {})),
         ("ignore_num".to_string(), Box::new(IgnoreExtension {})),
+        ("enact_calc".to_string(), Box::new(EnactExtension {})),
     ]
 }
 
@@ -143,34 +159,41 @@ mod tests {
         assert_eq!(
             ArithmeticExtension {}.get_signature(&vec![type_arg(ty.clone())]),
             Ok(simple_invoke_ext_sign(
-                vec![ty.clone(), ty.clone(), gas_type(1),],
-                vec![(ty.clone(), vec![])],
+                vec![ty.clone(), ty.clone()],
+                vec![as_deferred(ty.clone())],
             ))
         );
         assert_eq!(
             ArithmeticExtension {}.get_signature(&vec![type_arg(ty.clone()), val_arg(1)],),
             Ok(simple_invoke_ext_sign(
-                vec![ty.clone(), gas_type(1)],
-                vec![(ty.clone(), vec![])],
+                vec![ty.clone()],
+                vec![as_deferred(ty.clone())],
             ))
         );
         assert_eq!(
             DuplicateExtension {}.get_signature(&vec![type_arg(ty.clone())]),
             Ok(simple_invoke_ext_sign(
                 vec![ty.clone()],
-                vec![(ty.clone(), vec![]), (ty.clone(), vec![])],
+                vec![ty.clone(), ty.clone()],
             ))
         );
         assert_eq!(
             ConstantExtension {}.get_signature(&vec![type_arg(ty.clone()), val_arg(1)],),
             Ok(simple_invoke_ext_sign(
-                vec![gas_type(1)],
-                vec![(ty.clone(), vec![])],
+                vec![],
+                vec![as_deferred(ty.clone())],
             ))
         );
         assert_eq!(
             IgnoreExtension {}.get_signature(&vec![type_arg(ty.clone())]),
-            Ok(simple_invoke_ext_sign(vec![ty], vec![],))
+            Ok(simple_invoke_ext_sign(vec![ty.clone()], vec![]))
+        );
+        assert_eq!(
+            EnactExtension {}.get_signature(&vec![type_arg(ty.clone())]),
+            Ok(simple_invoke_ext_sign(
+                vec![as_deferred(ty.clone()), gas_type(1)],
+                vec![ty],
+            ))
         );
     }
 

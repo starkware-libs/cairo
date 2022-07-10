@@ -1,22 +1,9 @@
 use crate::graph::*;
 
-#[derive(Clone, Debug, PartialEq)]
-pub struct IdentifierState {
-    pub ty: Type,
-    pub is_temp: bool,
-}
-
-pub fn as_temp(ty: Type) -> IdentifierState {
-    IdentifierState {
-        ty: ty,
-        is_temp: true,
-    }
-}
-
-pub fn as_local(ty: Type) -> IdentifierState {
-    IdentifierState {
-        ty: ty,
-        is_temp: false,
+pub fn as_deferred(arg: Type) -> Type {
+    Type {
+        name: "Deferred".to_string(),
+        args: vec![type_arg(arg)],
     }
 }
 

@@ -1,4 +1,4 @@
-use crate::{error::Error, extensions::*, graph::*, scope_state::*, utils::as_local};
+use crate::{error::Error, extensions::*, graph::*, scope_state::*};
 use Result::*;
 
 pub fn validate(prog: &Program) -> Result<(), Error> {
@@ -14,7 +14,7 @@ pub fn validate(prog: &Program) -> Result<(), Error> {
             f.entry,
             f.args
                 .iter()
-                .map(|v| (v.id.clone(), as_local(v.ty.clone())))
+                .map(|v| (v.id.clone(), v.ty.clone()))
                 .collect(),
             &mut block_start_states,
         )
@@ -184,7 +184,15 @@ mod function {
                                 name: "add".to_string(),
                                 tmpl_args: vec![type_arg(int_type())],
                             },
-                            args: vec![as_id("a"), as_id("b"), as_id("cost_for_next")],
+                            args: vec![as_id("a"), as_id("b")],
+                            results: vec![as_id("a_plus_b_deferred")],
+                        },
+                        Invocation {
+                            ext: Extension {
+                                name: "enact_calc".to_string(),
+                                tmpl_args: vec![type_arg(int_type())],
+                            },
+                            args: vec![as_id("a_plus_b_deferred"), as_id("cost_for_next")],
                             results: vec![as_id("a_plus_b")],
                         },
                         Invocation {
@@ -200,7 +208,15 @@ mod function {
                                 name: "sub".to_string(),
                                 tmpl_args: vec![type_arg(int_type())],
                             },
-                            args: vec![as_id("c"), as_id("d"), as_id("cost_for_next")],
+                            args: vec![as_id("c"), as_id("d")],
+                            results: vec![as_id("c_minus_d_deferred")],
+                        },
+                        Invocation {
+                            ext: Extension {
+                                name: "enact_calc".to_string(),
+                                tmpl_args: vec![type_arg(int_type())],
+                            },
+                            args: vec![as_id("c_minus_d_deferred"), as_id("cost_for_next")],
                             results: vec![as_id("c_minus_d")],
                         },
                         Invocation {
@@ -208,9 +224,16 @@ mod function {
                                 name: "mul".to_string(),
                                 tmpl_args: vec![type_arg(int_type())],
                             },
+                            args: vec![as_id("a_plus_b"), as_id("c_minus_d"),],
+                            results: vec![as_id("a_plus_b_mul_c_minus_d_deferred")],
+                        },
+                        Invocation {
+                            ext: Extension {
+                                name: "enact_calc".to_string(),
+                                tmpl_args: vec![type_arg(int_type())],
+                            },
                             args: vec![
-                                as_id("a_plus_b"),
-                                as_id("c_minus_d"),
+                                as_id("a_plus_b_mul_c_minus_d_deferred"),
                                 as_id("cost_for_last")
                             ],
                             results: vec![as_id("a_plus_b_mul_c_minus_d")],
@@ -368,12 +391,12 @@ mod function {
             Err(Error::FunctionBlockMismatch(
                 BlockId(0),
                 ScopeState::from([
-                    (as_id("gb"), as_local(gas_builtin_type())),
-                    (as_id("cost"), as_local(gas_type(1)))
+                    (as_id("gb"), gas_builtin_type()),
+                    (as_id("cost"), gas_type(1))
                 ]),
                 ScopeState::from([
-                    (as_id("gb"), as_local(gas_builtin_type())),
-                    (as_id("cost"), as_local(gas_type(2)))
+                    (as_id("gb"), gas_builtin_type()),
+                    (as_id("cost"), gas_type(2))
                 ])
             ))
         );
@@ -449,8 +472,17 @@ mod function {
                 name: "add".to_string(),
                 tmpl_args: vec![type_arg(int_type()), val_arg(-1)],
             },
-            args: vec![as_id("n"), as_id("use_cost")],
+            args: vec![as_id("n")],
             results: vec![as_id("n")],
+        };
+
+        let enact = |name| Invocation {
+            ext: Extension {
+                name: "enact_calc".to_string(),
+                tmpl_args: vec![type_arg(int_type())],
+            },
+            args: vec![as_id(name), as_id("use_cost")],
+            results: vec![as_id(name)],
         };
 
         assert_eq!(
@@ -459,15 +491,16 @@ mod function {
                     Block {
                         // 0
                         invocations: vec![
-                            gas_use(6, 1),
                             Invocation {
                                 ext: Extension {
                                     name: "constant_num".to_string(),
                                     tmpl_args: vec![type_arg(int_type()), val_arg(1)],
                                 },
-                                args: vec![as_id("use_cost")],
+                                args: vec![],
                                 results: vec![as_id("one")],
                             },
+                            gas_use(6, 1),
+                            enact("one"),
                             dup("n", "n", "use"),
                             gas_use(5, 1),
                         ],
@@ -481,8 +514,9 @@ mod function {
                     Block {
                         // 2
                         invocations: vec![
-                            gas_use(4, 1),
                             dec_n.clone(),
+                            gas_use(4, 1),
+                            enact("n"),
                             dup("n", "n", "use"),
                             gas_use(3, 1),
                         ],
@@ -534,9 +568,10 @@ mod function {
                                     name: "constant_num".to_string(),
                                     tmpl_args: vec![type_arg(int_type()), val_arg(-1)],
                                 },
-                                args: vec![as_id("use_cost")],
+                                args: vec![],
                                 results: vec![as_id("minus")],
                             },
+                            enact("minus"),
                             ignore("a"),
                             ignore("b"),
                             ignore("n"),
@@ -552,13 +587,15 @@ mod function {
                                     name: "add".to_string(),
                                     tmpl_args: vec![type_arg(int_type())],
                                 },
-                                args: vec![as_id("a"), as_id("b"), as_id("use_cost")],
+                                args: vec![as_id("a"), as_id("b")],
                                 results: vec![as_id("a")],
                             },
+                            enact("a"),
                             dup("tmp", "tmp", "b"),
                             ignore("tmp"),
-                            gas_use(4, 1),
                             dec_n.clone(),
+                            gas_use(4, 1),
+                            enact("n"),
                             dup("n", "n", "use"),
                             gas_use(3, 1),
                         ],
@@ -640,21 +677,31 @@ mod function {
             })
         };
 
+        let enact = |name| Invocation {
+            ext: Extension {
+                name: "enact_calc".to_string(),
+                tmpl_args: vec![type_arg(int_type())],
+            },
+            args: vec![as_id(name), as_id("use_cost")],
+            results: vec![as_id(name)],
+        };
+
         assert_eq!(
             validate(&Program {
                 blocks: vec![
                     Block {
                         // 0
                         invocations: vec![
-                            gas_use(6, 1),
                             Invocation {
                                 ext: Extension {
                                     name: "constant_num".to_string(),
                                     tmpl_args: vec![type_arg(int_type()), val_arg(1)],
                                 },
-                                args: vec![as_id("use_cost")],
+                                args: vec![],
                                 results: vec![as_id("one")],
                             },
+                            gas_use(6, 1),
+                            enact("one"),
                             dup("n", "use"),
                             gas_use(5, 1),
                         ],
@@ -668,15 +715,16 @@ mod function {
                     Block {
                         // 2
                         invocations: vec![
-                            gas_use(4, 1),
                             Invocation {
                                 ext: Extension {
                                     name: "add".to_string(),
                                     tmpl_args: vec![type_arg(int_type()), val_arg(-1)],
                                 },
-                                args: vec![as_id("n"), as_id("use_cost")],
+                                args: vec![as_id("n")],
                                 results: vec![as_id("n_1")],
                             },
+                            gas_use(4, 1),
+                            enact("n_1"),
                             dup("n_1", "use"),
                             gas_use(3, 1),
                         ],
@@ -739,9 +787,10 @@ mod function {
                                     name: "constant_num".to_string(),
                                     tmpl_args: vec![type_arg(int_type()), val_arg(-10000)],
                                 },
-                                args: vec![as_id("use_cost")],
+                                args: vec![],
                                 results: vec![as_id("minus")],
                             },
+                            enact("minus"),
                             ignore("n_1"),
                         ],
                         exit: BlockExit::Return(vec![as_id("gb"), as_id("minus")]),
@@ -754,6 +803,14 @@ mod function {
                                 ext: Extension {
                                     name: "add".to_string(),
                                     tmpl_args: vec![type_arg(int_type()), val_arg(-1)],
+                                },
+                                args: vec![as_id("n_2")],
+                                results: vec![as_id("n_2")],
+                            },
+                            Invocation {
+                                ext: Extension {
+                                    name: "enact_calc".to_string(),
+                                    tmpl_args: vec![type_arg(int_type())],
                                 },
                                 args: vec![as_id("n_2"), as_id("dec_cost")],
                                 results: vec![as_id("n_2")],
@@ -825,9 +882,10 @@ mod function {
                                     name: "add".to_string(),
                                     tmpl_args: vec![type_arg(int_type())],
                                 },
-                                args: vec![as_id("r1"), as_id("r2"), as_id("use_cost")],
+                                args: vec![as_id("r1"), as_id("r2")],
                                 results: vec![as_id("r")],
                             },
+                            enact("r"),
                         ],
                         exit: BlockExit::Return(vec![as_id("gb"), as_id("r")]),
                     },
