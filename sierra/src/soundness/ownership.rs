@@ -190,7 +190,7 @@ mod function {
                         Invocation {
                             ext: Extension {
                                 name: "enact_calc".to_string(),
-                                tmpl_args: vec![type_arg(int_type())],
+                                tmpl_args: vec![type_arg(int_type()), val_arg(0)],
                             },
                             args: vec![as_id("a_plus_b_deferred"), as_id("cost_for_next")],
                             results: vec![as_id("a_plus_b")],
@@ -214,7 +214,7 @@ mod function {
                         Invocation {
                             ext: Extension {
                                 name: "enact_calc".to_string(),
-                                tmpl_args: vec![type_arg(int_type())],
+                                tmpl_args: vec![type_arg(int_type()), val_arg(1)],
                             },
                             args: vec![as_id("c_minus_d_deferred"), as_id("cost_for_next")],
                             results: vec![as_id("c_minus_d")],
@@ -230,7 +230,7 @@ mod function {
                         Invocation {
                             ext: Extension {
                                 name: "enact_calc".to_string(),
-                                tmpl_args: vec![type_arg(int_type())],
+                                tmpl_args: vec![type_arg(int_type()), val_arg(0)],
                             },
                             args: vec![
                                 as_id("a_plus_b_mul_c_minus_d_deferred"),
@@ -479,7 +479,7 @@ mod function {
         let enact = |name| Invocation {
             ext: Extension {
                 name: "enact_calc".to_string(),
-                tmpl_args: vec![type_arg(int_type())],
+                tmpl_args: vec![type_arg(int_type()), val_arg(0)],
             },
             args: vec![as_id(name), as_id("use_cost")],
             results: vec![as_id(name)],
@@ -680,7 +680,7 @@ mod function {
         let enact = |name| Invocation {
             ext: Extension {
                 name: "enact_calc".to_string(),
-                tmpl_args: vec![type_arg(int_type())],
+                tmpl_args: vec![type_arg(int_type()), val_arg(0)],
             },
             args: vec![as_id(name), as_id("use_cost")],
             results: vec![as_id(name)],
@@ -810,7 +810,7 @@ mod function {
                             Invocation {
                                 ext: Extension {
                                     name: "enact_calc".to_string(),
-                                    tmpl_args: vec![type_arg(int_type())],
+                                    tmpl_args: vec![type_arg(int_type()), val_arg(1)],
                                 },
                                 args: vec![as_id("n_2"), as_id("dec_cost")],
                                 results: vec![as_id("n_2")],

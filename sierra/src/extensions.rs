@@ -1,4 +1,4 @@
-use crate::{error::Error, graph::*};
+use crate::{error::Error, graph::*, mem_state::*};
 use std::collections::HashMap;
 use Result::*;
 
@@ -30,6 +30,23 @@ pub(crate) trait ExtensionImplementation {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
     ) -> Result<ExtensionSignature, Error>;
+
+    fn mem_change(
+        self: &Self,
+        tmpl_args: &Vec<TemplateArg>,
+        registry: &TypeRegistry,
+        mem_state: MemState,
+        args_state: &Vec<Location>,
+    ) -> Result<(MemState, Vec<Vec<Location>>), Error> {
+        let sign = self.get_signature(tmpl_args)?;
+        Ok((
+            mem_state,
+            sign.results
+                .iter()
+                .map(|r| r.iter().map(|v| Location::Transient).collect())
+                .collect(),
+        ))
+    }
 }
 
 type ExtensionBox = Box<dyn ExtensionImplementation + Sync + Send>;

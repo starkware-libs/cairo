@@ -28,6 +28,16 @@ impl ExtensionImplementation for ArithmeticExtension {
             _ => Err(Error::WrongNumberOfTypeArgs),
         }
     }
+
+    fn mem_change(
+        self: &Self,
+        _tmpl_args: &Vec<TemplateArg>,
+        _registry: &TypeRegistry,
+        mem_state: MemState,
+        _args_state: &Vec<Location>,
+    ) -> Result<(MemState, Vec<Vec<Location>>), Error> {
+        Ok((mem_state, vec![vec![Location::Transient]]))
+    }
 }
 
 struct DuplicateExtension {}
@@ -41,6 +51,19 @@ impl ExtensionImplementation for DuplicateExtension {
         Ok(simple_invoke_ext_sign(
             vec![numeric_type.clone()],
             vec![numeric_type.clone(), numeric_type.clone()],
+        ))
+    }
+
+    fn mem_change(
+        self: &Self,
+        _tmpl_args: &Vec<TemplateArg>,
+        _registry: &TypeRegistry,
+        mem_state: MemState,
+        args_state: &Vec<Location>,
+    ) -> Result<(MemState, Vec<Vec<Location>>), Error> {
+        Ok((
+            mem_state,
+            vec![vec![args_state[0].clone(), args_state[0].clone()]],
         ))
     }
 }
@@ -61,6 +84,16 @@ impl ExtensionImplementation for ConstantExtension {
             vec![as_deferred(numeric_type.clone())],
         ))
     }
+
+    fn mem_change(
+        self: &Self,
+        _tmpl_args: &Vec<TemplateArg>,
+        _registry: &TypeRegistry,
+        mem_state: MemState,
+        _args_state: &Vec<Location>,
+    ) -> Result<(MemState, Vec<Vec<Location>>), Error> {
+        Ok((mem_state, vec![vec![Location::Transient]]))
+    }
 }
 
 struct IgnoreExtension {}
@@ -73,6 +106,16 @@ impl ExtensionImplementation for IgnoreExtension {
         let numeric_type = get_type(tmpl_args)?;
         Ok(simple_invoke_ext_sign(vec![numeric_type.clone()], vec![]))
     }
+
+    fn mem_change(
+        self: &Self,
+        _tmpl_args: &Vec<TemplateArg>,
+        _registry: &TypeRegistry,
+        mem_state: MemState,
+        _args_state: &Vec<Location>,
+    ) -> Result<(MemState, Vec<Vec<Location>>), Error> {
+        Ok((mem_state, vec![vec![]]))
+    }
 }
 
 struct EnactExtension {}
@@ -82,11 +125,39 @@ impl ExtensionImplementation for EnactExtension {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
     ) -> Result<ExtensionSignature, Error> {
-        let numeric_type = get_type(tmpl_args)?;
+        let (numeric_type, v) = get_type_value(tmpl_args)?;
+        if v != 0 && v != 1 {
+            return Err(Error::UnsupportedTypeArg);
+        }
         Ok(simple_invoke_ext_sign(
             vec![as_deferred(numeric_type.clone()), gas_type(1)],
             vec![numeric_type.clone()],
         ))
+    }
+
+    fn mem_change(
+        self: &Self,
+        tmpl_args: &Vec<TemplateArg>,
+        registry: &TypeRegistry,
+        mut mem_state: MemState,
+        _args_state: &Vec<Location>,
+    ) -> Result<(MemState, Vec<Vec<Location>>), Error> {
+        let (ty, v) = get_type_value(tmpl_args)?;
+        let ti = get_info(registry, ty)?;
+        let loc = match v {
+            0 => {
+                let prev = mem_state.temp_offset;
+                mem_state.temp_offset += ti.size;
+                Ok(Location::Temp(prev.try_into().unwrap()))
+            }
+            1 => {
+                let prev = mem_state.local_offset;
+                mem_state.local_offset += ti.size;
+                Ok(Location::Local(prev.try_into().unwrap()))
+            }
+            _ => Err(Error::UnsupportedTypeArg),
+        }?;
+        Ok((mem_state, vec![vec![loc]]))
     }
 }
 
@@ -189,7 +260,14 @@ mod tests {
             Ok(simple_invoke_ext_sign(vec![ty.clone()], vec![]))
         );
         assert_eq!(
-            EnactExtension {}.get_signature(&vec![type_arg(ty.clone())]),
+            EnactExtension {}.get_signature(&vec![type_arg(ty.clone()), val_arg(0)]),
+            Ok(simple_invoke_ext_sign(
+                vec![as_deferred(ty.clone()), gas_type(1)],
+                vec![ty.clone()],
+            ))
+        );
+        assert_eq!(
+            EnactExtension {}.get_signature(&vec![type_arg(ty.clone()), val_arg(1)]),
             Ok(simple_invoke_ext_sign(
                 vec![as_deferred(ty.clone()), gas_type(1)],
                 vec![ty],
