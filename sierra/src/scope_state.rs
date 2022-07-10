@@ -1,7 +1,6 @@
 use crate::{
     error::Error,
     graph::{Identifier, Type},
-    mem_loc::ResLoc,
 };
 use std::collections::HashMap;
 use Result::*;
@@ -12,7 +11,7 @@ pub struct ScopeChange<'a> {
     pub arg_ids: &'a Vec<Identifier>,
     pub arg_types: &'a Vec<Type>,
     pub res_ids: &'a Vec<Identifier>,
-    pub res_types: &'a Vec<(Type, ResLoc)>,
+    pub res_types: &'a Vec<Type>,
 }
 
 pub fn next_state(mut state: ScopeState, change: ScopeChange<'_>) -> Result<ScopeState, Error> {
@@ -38,7 +37,7 @@ pub fn next_state(mut state: ScopeState, change: ScopeChange<'_>) -> Result<Scop
             }
         }
     }
-    for (name, (ty, _)) in change.res_ids.iter().zip(change.res_types.iter()) {
+    for (name, ty) in change.res_ids.iter().zip(change.res_types.iter()) {
         match state.insert(name.clone(), ty.clone()) {
             Some(_) => return Err(Error::VariableOverride(name.clone())),
             None => {}
@@ -84,7 +83,7 @@ mod tests {
                     arg_ids: &vec![as_id("arg")],
                     arg_types: &vec![as_type("Arg")],
                     res_ids: &vec![as_id("res")],
-                    res_types: &vec![(as_type("Res"), ResLoc::NewMem)],
+                    res_types: &vec![as_type("Res")],
                 }
             ),
             Ok(ScopeState::from([(as_id("res"), as_type("Res"))]))
@@ -96,7 +95,7 @@ mod tests {
                     arg_ids: &vec![as_id("arg")],
                     arg_types: &vec![as_type("Arg")],
                     res_ids: &vec![as_id("res")],
-                    res_types: &vec![(as_type("Res"), ResLoc::NewMem)],
+                    res_types: &vec![as_type("Res")],
                 }
             ),
             Err(Error::MissingReference(as_id("arg"), as_type("Arg")))
@@ -108,7 +107,7 @@ mod tests {
                     arg_ids: &vec![as_id("arg")],
                     arg_types: &vec![as_type("Arg")],
                     res_ids: &vec![as_id("res")],
-                    res_types: &vec![(as_type("Res"), ResLoc::NewMem)],
+                    res_types: &vec![as_type("Res")],
                 }
             ),
             Err(Error::TypeMismatch(
@@ -127,7 +126,7 @@ mod tests {
                     arg_ids: &vec![as_id("arg")],
                     arg_types: &vec![as_type("Arg")],
                     res_ids: &vec![as_id("res")],
-                    res_types: &vec![(as_type("Res"), ResLoc::NewMem)],
+                    res_types: &vec![as_type("Res")],
                 }
             ),
             Err(Error::VariableOverride(as_id("res")))

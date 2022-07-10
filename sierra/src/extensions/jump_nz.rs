@@ -6,7 +6,6 @@ impl ExtensionImplementation for JumpNzExtension {
     fn get_signature(
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
-        _: &TypeRegistry,
     ) -> Result<ExtensionSignature, Error> {
         if tmpl_args.len() != 1 {
             return Err(Error::WrongNumberOfTypeArgs);
@@ -35,7 +34,7 @@ mod tests {
     #[test]
     fn legal_usage() {
         assert_eq!(
-            JumpNzExtension {}.get_signature(&vec![type_arg(as_type("int"))], &TypeRegistry::new()),
+            JumpNzExtension {}.get_signature(&vec![type_arg(as_type("int"))]),
             Ok(ExtensionSignature {
                 args: vec![as_type("int"), gas_type(1)],
                 results: vec![vec![], vec![]],
@@ -47,7 +46,7 @@ mod tests {
     #[test]
     fn wrong_num_of_args() {
         assert_eq!(
-            JumpNzExtension {}.get_signature(&vec![], &TypeRegistry::new()),
+            JumpNzExtension {}.get_signature(&vec![]),
             Err(Error::WrongNumberOfTypeArgs)
         );
     }
@@ -55,7 +54,7 @@ mod tests {
     #[test]
     fn wrong_arg_type() {
         assert_eq!(
-            JumpNzExtension {}.get_signature(&vec![val_arg(1)], &TypeRegistry::new()),
+            JumpNzExtension {}.get_signature(&vec![val_arg(1)]),
             Err(Error::UnsupportedTypeArg)
         );
     }

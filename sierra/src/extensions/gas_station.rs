@@ -9,22 +9,21 @@ impl ExtensionImplementation for GetGasExtension {
     fn get_signature(
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
-        _: &TypeRegistry,
     ) -> Result<ExtensionSignature, Error> {
         if tmpl_args.is_empty() {
             return Err(Error::WrongNumberOfTypeArgs);
         }
-        let mut success_types = vec![(gas_builtin_type(), ResLoc::NewMem)];
+        let mut success_types = vec![gas_builtin_type()];
         tmpl_args.iter().try_for_each(|tmpl_arg| match tmpl_arg {
             TemplateArg::Value(v) => {
-                success_types.push((gas_type(*v), ResLoc::NewMem));
+                success_types.push(gas_type(*v));
                 Ok(())
             }
             TemplateArg::Type(_) => Err(Error::UnsupportedTypeArg),
         })?;
         Ok(ExtensionSignature {
             args: vec![gas_builtin_type(), gas_type(1)],
-            results: vec![success_types, vec![(gas_builtin_type(), ResLoc::NewMem)]],
+            results: vec![success_types, vec![gas_builtin_type()]],
             fallthrough: Some(1),
         })
     }
@@ -36,7 +35,6 @@ impl ExtensionImplementation for RefundGasExtension {
     fn get_signature(
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
-        _: &TypeRegistry,
     ) -> Result<ExtensionSignature, Error> {
         if tmpl_args.len() != 1 {
             return Err(Error::WrongNumberOfTypeArgs);
@@ -47,7 +45,7 @@ impl ExtensionImplementation for RefundGasExtension {
         }?;
         Ok(simple_invoke_ext_sign(
             vec![gas_builtin_type(), gas_type(value)],
-            vec![(gas_builtin_type(), ResLoc::NewMem)],
+            vec![gas_builtin_type()],
         ))
     }
 }
@@ -58,7 +56,6 @@ impl ExtensionImplementation for SplitGasExtension {
     fn get_signature(
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
-        _: &TypeRegistry,
     ) -> Result<ExtensionSignature, Error> {
         if tmpl_args.len() <= 1 {
             return Err(Error::WrongNumberOfTypeArgs);
@@ -67,7 +64,7 @@ impl ExtensionImplementation for SplitGasExtension {
         let mut total = 0;
         tmpl_args.iter().try_for_each(|tmpl_arg| match tmpl_arg {
             TemplateArg::Value(v) => {
-                res_types.push((gas_type(*v), ResLoc::NewMem));
+                res_types.push(gas_type(*v));
                 total += v;
                 Ok(())
             }
@@ -136,32 +133,32 @@ mod tests {
     #[test]
     fn legal_usage() {
         assert_eq!(
-            GetGasExtension {}.get_signature(&vec![val_arg(1), val_arg(2)], &TypeRegistry::new()),
+            GetGasExtension {}.get_signature(&vec![val_arg(1), val_arg(2)]),
             Ok(ExtensionSignature {
                 args: vec![gas_builtin_type(), gas_type(1)],
                 results: vec![
                     vec![
-                        (gas_builtin_type(), ResLoc::NewMem),
-                        (gas_type(1), ResLoc::NewMem),
-                        (gas_type(2), ResLoc::NewMem)
+                        gas_builtin_type(),
+                        gas_type(1),
+                        gas_type(2)
                     ],
-                    vec![(gas_builtin_type(), ResLoc::NewMem)]
+                    vec![gas_builtin_type()]
                 ],
                 fallthrough: Some(1),
             })
         );
         assert_eq!(
-            RefundGasExtension {}.get_signature(&vec![val_arg(5)], &TypeRegistry::new()),
+            RefundGasExtension {}.get_signature(&vec![val_arg(5)]),
             Ok(simple_invoke_ext_sign(
                 vec![gas_builtin_type(), gas_type(5)],
-                vec![(gas_builtin_type(), ResLoc::NewMem)],
+                vec![gas_builtin_type()],
             ))
         );
         assert_eq!(
-            SplitGasExtension {}.get_signature(&vec![val_arg(1), val_arg(2)], &TypeRegistry::new()),
+            SplitGasExtension {}.get_signature(&vec![val_arg(1), val_arg(2)]),
             Ok(simple_invoke_ext_sign(
                 vec![gas_type(3)],
-                vec![(gas_type(1), ResLoc::NewMem), (gas_type(2), ResLoc::NewMem)],
+                vec![gas_type(1), gas_type(2)],
             ))
         );
     }
@@ -169,19 +166,19 @@ mod tests {
     #[test]
     fn wrong_num_of_args() {
         assert_eq!(
-            GetGasExtension {}.get_signature(&vec![], &TypeRegistry::new()),
+            GetGasExtension {}.get_signature(&vec![]),
             Err(Error::WrongNumberOfTypeArgs)
         );
         assert_eq!(
-            RefundGasExtension {}.get_signature(&vec![], &TypeRegistry::new()),
+            RefundGasExtension {}.get_signature(&vec![]),
             Err(Error::WrongNumberOfTypeArgs)
         );
         assert_eq!(
-            SplitGasExtension {}.get_signature(&vec![], &TypeRegistry::new()),
+            SplitGasExtension {}.get_signature(&vec![]),
             Err(Error::WrongNumberOfTypeArgs)
         );
         assert_eq!(
-            SplitGasExtension {}.get_signature(&vec![val_arg(1)], &TypeRegistry::new()),
+            SplitGasExtension {}.get_signature(&vec![val_arg(1)]),
             Err(Error::WrongNumberOfTypeArgs)
         );
     }
@@ -189,17 +186,16 @@ mod tests {
     #[test]
     fn wrong_arg_type() {
         assert_eq!(
-            GetGasExtension {}.get_signature(&vec![type_arg(gas_type(1))], &TypeRegistry::new()),
+            GetGasExtension {}.get_signature(&vec![type_arg(gas_type(1))]),
             Err(Error::UnsupportedTypeArg)
         );
         assert_eq!(
-            RefundGasExtension {}.get_signature(&vec![type_arg(gas_type(1))], &TypeRegistry::new()),
+            RefundGasExtension {}.get_signature(&vec![type_arg(gas_type(1))]),
             Err(Error::UnsupportedTypeArg)
         );
         assert_eq!(
             SplitGasExtension {}.get_signature(
                 &vec![val_arg(1), type_arg(gas_type(1))],
-                &TypeRegistry::new()
             ),
             Err(Error::UnsupportedTypeArg)
         );

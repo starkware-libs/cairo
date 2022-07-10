@@ -6,12 +6,11 @@ impl ExtensionImplementation for ArithmeticExtension {
     fn get_signature(
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
-        _: &TypeRegistry,
     ) -> Result<ExtensionSignature, Error> {
         let numeric_type = get_type(tmpl_args)?;
         Ok(simple_invoke_ext_sign(
             vec![numeric_type.clone(), numeric_type.clone(), gas_type(1)],
-            vec![(numeric_type.clone(), ResLoc::NewMem)],
+            vec![numeric_type.clone()],
         ))
     }
 }
@@ -22,14 +21,13 @@ impl ExtensionImplementation for DuplicateExtension {
     fn get_signature(
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
-        _: &TypeRegistry,
     ) -> Result<ExtensionSignature, Error> {
         let numeric_type = get_type(tmpl_args)?;
         Ok(simple_invoke_ext_sign(
             vec![numeric_type.clone()],
             vec![
-                (numeric_type.clone(), ResLoc::ArgRef(0)),
-                (numeric_type.clone(), ResLoc::ArgRef(0)),
+                numeric_type.clone(),
+                numeric_type.clone(),
             ],
         ))
     }
@@ -41,7 +39,6 @@ impl ExtensionImplementation for ConstantExtension {
     fn get_signature(
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
-        _: &TypeRegistry,
     ) -> Result<ExtensionSignature, Error> {
         if tmpl_args.len() != 2 {
             return Err(Error::WrongNumberOfTypeArgs);
@@ -55,7 +52,7 @@ impl ExtensionImplementation for ConstantExtension {
         }
         Ok(simple_invoke_ext_sign(
             vec![gas_type(1)],
-            vec![(numeric_type.clone(), ResLoc::NewMem)],
+            vec![numeric_type.clone()],
         ))
     }
 }
@@ -66,7 +63,6 @@ impl ExtensionImplementation for IgnoreExtension {
     fn get_signature(
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
-        _: &TypeRegistry,
     ) -> Result<ExtensionSignature, Error> {
         let numeric_type = get_type(tmpl_args)?;
         Ok(simple_invoke_ext_sign(vec![numeric_type.clone()], vec![]))
@@ -131,34 +127,33 @@ mod tests {
     fn legal_usage() {
         let ty = as_type("int");
         assert_eq!(
-            ArithmeticExtension {}.get_signature(&vec![type_arg(ty.clone())], &TypeRegistry::new()),
+            ArithmeticExtension {}.get_signature(&vec![type_arg(ty.clone())]),
             Ok(simple_invoke_ext_sign(
                 vec![ty.clone(), ty.clone(), gas_type(1),],
-                vec![(ty.clone(), ResLoc::NewMem)],
+                vec![ty.clone()],
             ))
         );
         assert_eq!(
-            DuplicateExtension {}.get_signature(&vec![type_arg(ty.clone())], &TypeRegistry::new()),
+            DuplicateExtension {}.get_signature(&vec![type_arg(ty.clone())]),
             Ok(simple_invoke_ext_sign(
                 vec![ty.clone()],
                 vec![
-                    (ty.clone(), ResLoc::ArgRef(0)),
-                    (ty.clone(), ResLoc::ArgRef(0))
+                    ty.clone(),
+                    ty.clone()
                 ],
             ))
         );
         assert_eq!(
             ConstantExtension {}.get_signature(
                 &vec![type_arg(ty.clone()), val_arg(1)],
-                &TypeRegistry::new()
             ),
             Ok(simple_invoke_ext_sign(
                 vec![gas_type(1)],
-                vec![(ty.clone(), ResLoc::NewMem)],
+                vec![ty.clone()],
             ))
         );
         assert_eq!(
-            IgnoreExtension {}.get_signature(&vec![type_arg(ty.clone())], &TypeRegistry::new()),
+            IgnoreExtension {}.get_signature(&vec![type_arg(ty.clone())]),
             Ok(simple_invoke_ext_sign(vec![ty], vec![],))
         );
     }
@@ -166,7 +161,7 @@ mod tests {
     #[test]
     fn wrong_num_of_args() {
         assert_eq!(
-            ArithmeticExtension {}.get_signature(&vec![], &TypeRegistry::new()),
+            ArithmeticExtension {}.get_signature(&vec![]),
             Err(Error::WrongNumberOfTypeArgs)
         );
     }
@@ -175,11 +170,11 @@ mod tests {
     fn wrong_arg_type() {
         assert_eq!(
             ArithmeticExtension {}
-                .get_signature(&vec![type_arg(as_type("non-int"))], &TypeRegistry::new()),
+                .get_signature(&vec![type_arg(as_type("non-int"))]),
             Err(Error::UnsupportedTypeArg)
         );
         assert_eq!(
-            ArithmeticExtension {}.get_signature(&vec![val_arg(1)], &TypeRegistry::new()),
+            ArithmeticExtension {}.get_signature(&vec![val_arg(1)]),
             Err(Error::UnsupportedTypeArg)
         );
     }

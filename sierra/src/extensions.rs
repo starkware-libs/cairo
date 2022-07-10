@@ -1,4 +1,4 @@
-use crate::{error::Error, graph::*, mem_loc::ResLoc};
+use crate::{error::Error, graph::*};
 use std::collections::HashMap;
 use Result::*;
 
@@ -13,11 +13,11 @@ mod unconditional_jump;
 #[derive(Debug, PartialEq)]
 pub(crate) struct ExtensionSignature {
     pub args: Vec<Type>,
-    pub results: Vec<Vec<(Type, ResLoc)>>,
+    pub results: Vec<Vec<Type>>,
     pub fallthrough: Option<usize>,
 }
 
-fn simple_invoke_ext_sign(args: Vec<Type>, results: Vec<(Type, ResLoc)>) -> ExtensionSignature {
+fn simple_invoke_ext_sign(args: Vec<Type>, results: Vec<Type>) -> ExtensionSignature {
     ExtensionSignature {
         args: args,
         results: vec![results],
@@ -29,7 +29,6 @@ pub(crate) trait ExtensionImplementation {
     fn get_signature(
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
-        registry: &TypeRegistry,
     ) -> Result<ExtensionSignature, Error>;
 }
 
@@ -51,13 +50,12 @@ pub(crate) fn get_ext_registry(prog: &Program) -> ExtensionRegistry {
 }
 
 pub(crate) fn get_signature(
-    ext_registry: &ExtensionRegistry,
-    type_registry: &TypeRegistry,
+    registry: &ExtensionRegistry,
     ext: &Extension,
 ) -> Result<ExtensionSignature, Error> {
-    match ext_registry.get(&ext.name) {
+    match registry.get(&ext.name) {
         None => Err(Error::UnsupportedLibCallName(ext.name.clone())),
-        Some(e) => e.get_signature(&ext.tmpl_args, type_registry),
+        Some(e) => e.get_signature(&ext.tmpl_args),
     }
 }
 
