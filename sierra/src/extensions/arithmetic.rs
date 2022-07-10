@@ -7,11 +7,23 @@ impl ExtensionImplementation for ArithmeticExtension {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
     ) -> Result<ExtensionSignature, Error> {
-        let numeric_type = get_type(tmpl_args)?;
-        Ok(simple_invoke_ext_sign(
-            vec![numeric_type.clone(), numeric_type.clone(), gas_type(1)],
-            vec![(numeric_type.clone(), vec![])],
-        ))
+        match tmpl_args.len() {
+            1 => {
+                let numeric_type = get_numeric_type(&tmpl_args[0])?;
+                Ok(simple_invoke_ext_sign(
+                    vec![numeric_type.clone(), numeric_type.clone(), gas_type(1)],
+                    vec![(numeric_type.clone(), vec![])],
+                ))
+            }
+            2 => {
+                let (numeric_type, _) = get_type_value(tmpl_args)?;
+                Ok(simple_invoke_ext_sign(
+                    vec![numeric_type.clone(), gas_type(1)],
+                    vec![(numeric_type.clone(), vec![])],
+                ))
+            }
+            _ => Err(Error::WrongNumberOfTypeArgs),
+        }
     }
 }
 
@@ -43,13 +55,7 @@ impl ExtensionImplementation for ConstantExtension {
         if tmpl_args.len() != 2 {
             return Err(Error::WrongNumberOfTypeArgs);
         }
-        let numeric_type = get_numeric_type(&tmpl_args[0])?;
-        match &tmpl_args[1] {
-            TemplateArg::Value(_) => {}
-            _ => {
-                return Err(Error::UnsupportedTypeArg);
-            }
-        }
+        let (numeric_type, _) = get_type_value(tmpl_args)?;
         Ok(simple_invoke_ext_sign(
             vec![gas_type(1)],
             vec![(numeric_type.clone(), vec![])],
@@ -72,6 +78,14 @@ impl ExtensionImplementation for IgnoreExtension {
 fn get_numeric_type<'a>(arg: &'a TemplateArg) -> Result<&'a Type, Error> {
     match arg {
         TemplateArg::Type(t) if matches!(t.to_string().as_str(), "int" | "felt") => Ok(t),
+        _ => Err(Error::UnsupportedTypeArg),
+    }
+}
+
+fn get_type_value<'a>(tmpl_args: &'a Vec<TemplateArg>) -> Result<(&'a Type, i64), Error> {
+    let numeric_type = get_numeric_type(&tmpl_args[0])?;
+    match &tmpl_args[1] {
+        TemplateArg::Value(v) => Ok((numeric_type, *v)),
         _ => Err(Error::UnsupportedTypeArg),
     }
 }
@@ -134,6 +148,13 @@ mod tests {
             ))
         );
         assert_eq!(
+            ArithmeticExtension {}.get_signature(&vec![type_arg(ty.clone()), val_arg(1)],),
+            Ok(simple_invoke_ext_sign(
+                vec![ty.clone(), gas_type(1)],
+                vec![(ty.clone(), vec![])],
+            ))
+        );
+        assert_eq!(
             DuplicateExtension {}.get_signature(&vec![type_arg(ty.clone())]),
             Ok(simple_invoke_ext_sign(
                 vec![ty.clone()],
@@ -157,6 +178,18 @@ mod tests {
     fn wrong_num_of_args() {
         assert_eq!(
             ArithmeticExtension {}.get_signature(&vec![]),
+            Err(Error::WrongNumberOfTypeArgs)
+        );
+        assert_eq!(
+            ConstantExtension {}.get_signature(&vec![]),
+            Err(Error::WrongNumberOfTypeArgs)
+        );
+        assert_eq!(
+            DuplicateExtension {}.get_signature(&vec![]),
+            Err(Error::WrongNumberOfTypeArgs)
+        );
+        assert_eq!(
+            IgnoreExtension {}.get_signature(&vec![]),
             Err(Error::WrongNumberOfTypeArgs)
         );
     }

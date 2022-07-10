@@ -381,13 +381,13 @@ mod function {
 
     #[test]
     fn fibonacci_using_jump() {
-        let dup = |name, other| Invocation {
+        let dup = |old, new1, new2| Invocation {
             ext: Extension {
                 name: "duplicate_num".to_string(),
                 tmpl_args: vec![type_arg(int_type())],
             },
-            args: vec![as_id(name)],
-            results: vec![as_id(name), as_id(other)],
+            args: vec![as_id(old)],
+            results: vec![as_id(new1), as_id(new2)],
         };
         let gas_use = |curr, taken| Invocation {
             ext: Extension {
@@ -446,10 +446,10 @@ mod function {
 
         let dec_n = Invocation {
             ext: Extension {
-                name: "sub".to_string(),
-                tmpl_args: vec![type_arg(int_type())],
+                name: "add".to_string(),
+                tmpl_args: vec![type_arg(int_type()), val_arg(-1)],
             },
-            args: vec![as_id("n"), as_id("for_dec"), as_id("use_cost")],
+            args: vec![as_id("n"), as_id("use_cost")],
             results: vec![as_id("n")],
         };
 
@@ -468,7 +468,7 @@ mod function {
                                 args: vec![as_id("use_cost")],
                                 results: vec![as_id("one")],
                             },
-                            dup("n", "use"),
+                            dup("n", "n", "use"),
                             gas_use(5, 1),
                         ],
                         exit: test_n(2),
@@ -481,10 +481,9 @@ mod function {
                     Block {
                         // 2
                         invocations: vec![
-                            dup("one", "for_dec"),
                             gas_use(4, 1),
                             dec_n.clone(),
-                            dup("n", "use"),
+                            dup("n", "n", "use"),
                             gas_use(3, 1),
                         ],
                         exit: test_n(4),
@@ -496,8 +495,8 @@ mod function {
                     },
                     Block {
                         // 4
-                        invocations: vec![dup("one", "a")],
-                        exit: as_exit(dup("one", "b")),
+                        invocations: vec![],
+                        exit: as_exit(dup("one", "a", "b")),
                     },
                     Block {
                         // 5
@@ -541,14 +540,13 @@ mod function {
                             ignore("a"),
                             ignore("b"),
                             ignore("n"),
-                            ignore("one"),
                         ],
                         exit: BlockExit::Return(vec![as_id("gb"), as_id("minus")]),
                     },
                     Block {
                         // 7
                         invocations: vec![
-                            dup("a", "tmp"),
+                            dup("a", "a", "tmp"),
                             Invocation {
                                 ext: Extension {
                                     name: "add".to_string(),
@@ -557,19 +555,18 @@ mod function {
                                 args: vec![as_id("a"), as_id("b"), as_id("use_cost")],
                                 results: vec![as_id("a")],
                             },
-                            dup("tmp", "b"),
+                            dup("tmp", "tmp", "b"),
                             ignore("tmp"),
-                            dup("one", "for_dec"),
                             gas_use(4, 1),
                             dec_n.clone(),
-                            dup("n", "use"),
+                            dup("n", "n", "use"),
                             gas_use(3, 1),
                         ],
                         exit: test_n(5),
                     },
                     Block {
                         // 8
-                        invocations: vec![refund(2), ignore("n"), ignore("b"), ignore("one")],
+                        invocations: vec![refund(2), ignore("n"), ignore("b")],
                         exit: BlockExit::Return(vec![as_id("gb"), as_id("a")]),
                     },
                 ],
@@ -671,14 +668,13 @@ mod function {
                     Block {
                         // 2
                         invocations: vec![
-                            dup("one", "for_dec"),
                             gas_use(4, 1),
                             Invocation {
                                 ext: Extension {
-                                    name: "sub".to_string(),
-                                    tmpl_args: vec![type_arg(int_type())],
+                                    name: "add".to_string(),
+                                    tmpl_args: vec![type_arg(int_type()), val_arg(-1)],
                                 },
-                                args: vec![as_id("n"), as_id("for_dec"), as_id("use_cost")],
+                                args: vec![as_id("n"), as_id("use_cost")],
                                 results: vec![as_id("n_1")],
                             },
                             dup("n_1", "use"),
@@ -693,14 +689,17 @@ mod function {
                     },
                     Block {
                         // 4
-                        invocations: vec![Invocation {
-                            ext: Extension {
-                                name: "split_gas".to_string(),
-                                tmpl_args: vec![val_arg(1), val_arg(1)],
-                            },
-                            args: vec![as_id("cost")],
-                            results: vec![as_id("split_gas_cost"), as_id("use_cost")],
-                        }],
+                        invocations: vec![
+                            ignore("one"),
+                            Invocation {
+                                ext: Extension {
+                                    name: "split_gas".to_string(),
+                                    tmpl_args: vec![val_arg(1), val_arg(1)],
+                                },
+                                args: vec![as_id("cost")],
+                                results: vec![as_id("split_gas_cost"), as_id("use_cost")],
+                            }
+                        ],
                         exit: BlockExit::Jump(JumpInfo {
                             ext: Extension {
                                 name: "get_gas".to_string(),
@@ -744,7 +743,6 @@ mod function {
                                 results: vec![as_id("minus")],
                             },
                             ignore("n_1"),
-                            ignore("one"),
                         ],
                         exit: BlockExit::Return(vec![as_id("gb"), as_id("minus")]),
                     },
@@ -754,10 +752,10 @@ mod function {
                             dup("n_1", "n_2"),
                             Invocation {
                                 ext: Extension {
-                                    name: "sub".to_string(),
-                                    tmpl_args: vec![type_arg(int_type())],
+                                    name: "add".to_string(),
+                                    tmpl_args: vec![type_arg(int_type()), val_arg(-1)],
                                 },
-                                args: vec![as_id("n_2"), as_id("one"), as_id("dec_cost")],
+                                args: vec![as_id("n_2"), as_id("dec_cost")],
                                 results: vec![as_id("n_2")],
                             },
                             Invocation {
