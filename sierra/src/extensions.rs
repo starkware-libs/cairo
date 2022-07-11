@@ -10,6 +10,46 @@ mod match_nullable;
 mod tuple_obj;
 mod unconditional_jump;
 
+pub(crate) struct Registry {
+    ext_reg: ExtensionRegistry,
+    ty_reg: TypeRegistry,
+}
+
+impl Registry {
+    pub(crate) fn new(prog: &Program) -> Registry {
+        Registry {
+            ext_reg: get_ext_registry(prog),
+            ty_reg: get_type_registry(),
+        }
+    }
+
+    pub(crate) fn get_type_info(self: &Self, ty: &Type) -> Result<TypeInfo, Error> {
+        get_info(&self.ty_reg, ty)
+    }
+
+    pub(crate) fn get_mapping(
+        self: &Self,
+        ext: &Extension,
+        mem_state: MemState,
+        args_state: &Vec<Location>,
+    ) -> Result<(ExtensionSignature, Vec<(MemState, Vec<Location>)>), Error> {
+        let e = match self.ext_reg.get(&ext.name) {
+            None => Err(Error::UnsupportedLibCallName(ext.name.clone())),
+            Some(e) => Ok(e),
+        }?;
+        let sign = e.get_signature(&ext.tmpl_args)?;
+        let locs = e.mem_change(&ext.tmpl_args, &self.ty_reg, mem_state, args_state)?;
+        Ok((sign, locs))
+    }
+}
+
+fn get_info(reg: &TypeRegistry, ty: &Type) -> Result<TypeInfo, Error> {
+    match reg.get(&ty.name) {
+        None => Err(Error::UnsupportedTypeName(ty.name.clone())),
+        Some(e) => e.get_info(&ty.args, reg),
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub(crate) struct ExtensionSignature {
     pub args: Vec<Type>,
@@ -25,7 +65,7 @@ fn simple_invoke_ext_sign(args: Vec<Type>, results: Vec<Type>) -> ExtensionSigna
     }
 }
 
-pub(crate) trait ExtensionImplementation {
+trait ExtensionImplementation {
     fn get_signature(
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
@@ -37,23 +77,26 @@ pub(crate) trait ExtensionImplementation {
         _registry: &TypeRegistry,
         mem_state: MemState,
         _args_state: &Vec<Location>,
-    ) -> Result<(MemState, Vec<Vec<Location>>), Error> {
+    ) -> Result<Vec<(MemState, Vec<Location>)>, Error> {
         let sign = self.get_signature(tmpl_args)?;
-        Ok((
-            mem_state,
-            sign.results
-                .iter()
-                .map(|r| r.iter().map(|_| Location::Transient).collect())
-                .collect(),
-        ))
+        Ok(sign
+            .results
+            .iter()
+            .map(|r| {
+                (
+                    mem_state.clone(),
+                    r.iter().map(|_| Location::Transient).collect(),
+                )
+            })
+            .collect())
     }
 }
 
 type ExtensionBox = Box<dyn ExtensionImplementation + Sync + Send>;
 
-pub(crate) type ExtensionRegistry = HashMap<String, ExtensionBox>;
+type ExtensionRegistry = HashMap<String, ExtensionBox>;
 
-pub(crate) fn get_ext_registry(prog: &Program) -> ExtensionRegistry {
+fn get_ext_registry(prog: &Program) -> ExtensionRegistry {
     chain!(
         arithmetic::extensions().into_iter(),
         function_call::extensions(prog).into_iter(),
@@ -66,22 +109,12 @@ pub(crate) fn get_ext_registry(prog: &Program) -> ExtensionRegistry {
     .collect()
 }
 
-pub(crate) fn get_signature(
-    registry: &ExtensionRegistry,
-    ext: &Extension,
-) -> Result<ExtensionSignature, Error> {
-    match registry.get(&ext.name) {
-        None => Err(Error::UnsupportedLibCallName(ext.name.clone())),
-        Some(e) => e.get_signature(&ext.tmpl_args),
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub(crate) struct TypeInfo {
     pub size: usize,
 }
 
-pub(crate) trait TypeInfoImplementation {
+trait TypeInfoImplementation {
     fn get_info(
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
@@ -91,20 +124,13 @@ pub(crate) trait TypeInfoImplementation {
 
 type TypeInfoBox = Box<dyn TypeInfoImplementation + Sync + Send>;
 
-pub(crate) type TypeRegistry = HashMap<String, TypeInfoBox>;
+type TypeRegistry = HashMap<String, TypeInfoBox>;
 
-pub(crate) fn get_type_registry() -> TypeRegistry {
+fn get_type_registry() -> TypeRegistry {
     chain!(
         arithmetic::types().into_iter(),
         gas_station::types().into_iter(),
         tuple_obj::types().into_iter(),
     )
     .collect()
-}
-
-pub(crate) fn get_info(registry: &TypeRegistry, ty: &Type) -> Result<TypeInfo, Error> {
-    match registry.get(&ty.name) {
-        None => Err(Error::UnsupportedTypeName(ty.name.clone())),
-        Some(e) => e.get_info(&ty.args, registry),
-    }
 }

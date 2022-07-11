@@ -1,24 +1,33 @@
-use crate::{error::Error, extensions::*, graph::*, mem_state::*, next_state::next_state};
+use crate::{
+    error::Error,
+    extensions::*,
+    graph::*,
+    mem_state::*,
+    next_state::{put_results, take_args},
+};
 use std::collections::HashMap;
 use Result::*;
 
 pub fn validate(prog: &Program) -> Result<(), Error> {
     let mut block_start_states = vec![None; prog.blocks.len()];
-    let ext_registry = get_ext_registry(prog);
-    let type_registry = get_type_registry();
+    let registry = Registry::new(prog);
     prog.funcs.iter().try_for_each(|f| {
-        //let mut last = -2;
+        let mut last = -2;
         let mut vars = VarStates::new();
         f.args.iter().try_for_each(|v| {
-            //let ti = get_info(&type_registry, &v.ty)?;
-            //last -= ti.size as i64;
-            //vars.insert(v.id.clone(), VarState { ty:v.ty, loc:Location::Local(last)});
-            vars.insert(v.id.clone(), v.ty.clone());
+            let ti = registry.get_type_info(&v.ty)?;
+            last -= ti.size as i64;
+            vars.insert(
+                v.id.clone(),
+                VarState {
+                    ty: v.ty.clone(),
+                    loc: Location::Local(last),
+                },
+            );
             Ok(())
         })?;
         Helper {
-            ext_registry: &ext_registry,
-            type_registry: &type_registry,
+            registry: &registry,
             blocks: &prog.blocks,
             res_types: &f.res_types,
         }
@@ -37,25 +46,22 @@ pub fn validate(prog: &Program) -> Result<(), Error> {
     })
 }
 
-type VarState = Type;
-
-//#[derive(Debug, Clone, PartialEq)]
-//struct VarState {
-//    ty: Type,
-//    loc: Location,
-//}
+#[derive(Debug, Clone, PartialEq)]
+struct VarState {
+    ty: Type,
+    loc: Location,
+}
 
 type VarStates = HashMap<Identifier, VarState>;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 struct State {
     vars: VarStates,
     mem: MemState,
 }
 
 struct Helper<'a> {
-    pub ext_registry: &'a ExtensionRegistry,
-    pub type_registry: &'a TypeRegistry,
+    pub registry: &'a Registry,
     pub blocks: &'a Vec<Block>,
     pub res_types: &'a Vec<Type>,
 }
@@ -90,12 +96,12 @@ impl Helper<'_> {
                             start_state.vars.keys().map(|x| x.clone()).collect(),
                         )),
                         Some(var_state) => {
-                            if var_state != expected_var_state {
+                            if var_state.ty != expected_var_state.ty {
                                 Err(Error::FunctionBlockIdentifierTypeMismatch(
                                     block,
                                     id.clone(),
-                                    expected_var_state.clone(),
-                                    var_state.clone(),
+                                    expected_var_state.ty.clone(),
+                                    var_state.ty.clone(),
                                 ))
                             } else {
                                 Ok(())
@@ -103,34 +109,54 @@ impl Helper<'_> {
                         }
                     }?;
                 }
+                return Ok(());
             }
         }
-        let State { mut vars, mem } = start_state;
+        let State { mut vars, mut mem } = start_state;
         for invc in &self.blocks[block.0].invocations {
-            let sign = get_signature(self.ext_registry, &invc.ext)?;
-            if sign.results.len() != 1 {
-                return Err(Error::FunctionInvocationMismatch(invc.to_string()));
+            let (nvars, used_vars) = take_args(vars, invc.args.iter())?;
+            let (arg_types, arg_locs): (Vec<_>, Vec<_>) =
+                used_vars.into_iter().map(|v| (v.ty, v.loc)).unzip();
+            let (sign, locs) = self.registry.get_mapping(&invc.ext, mem, &arg_locs)?;
+            if sign.args != arg_types {
+                return Err(Error::ExtensionArgumentsMismatch(invc.to_string()));
+            }
+            if sign.results.len() != 1 || locs.len() != 1 {
+                return Err(Error::ExtensionBranchesMismatch(invc.to_string()));
             }
             match sign.fallthrough {
                 Some(0) => {}
                 _ => {
-                    return Err(Error::FunctionInvocationMismatch(invc.to_string()));
+                    return Err(Error::ExtensionFallthroughMismatch(invc.to_string()));
                 }
             }
-            vars = next_state(
-                vars,
-                invc.args.iter().zip(sign.args.iter()),
-                invc.results.iter().zip(sign.results[0].iter()),
+            let (nmem, locs) = &locs[0];
+            if sign.results[0].len() != invc.results.len() || locs.len() != invc.results.len() {
+                return Err(Error::ExtensionResultSizeMismatch(invc.to_string()));
+            }
+            mem = nmem.clone();
+            vars = put_results(
+                nvars,
+                izip!(invc.results.iter(), sign.results[0].iter(), locs.iter()).map(
+                    |(id, ty, loc)| {
+                        (
+                            id,
+                            VarState {
+                                ty: ty.clone(),
+                                loc: loc.clone(),
+                            },
+                        )
+                    },
+                ),
             )?;
         }
 
         match &self.blocks[block.0].exit {
             BlockExit::Return(ref_ids) => {
-                vars = next_state(
-                    vars,
-                    ref_ids.iter().zip(self.res_types.iter()),
-                    vec![].into_iter(),
-                )?;
+                let (vars, used_vars) = take_args(vars, ref_ids.iter())?;
+                if izip!(used_vars.iter(), self.res_types.iter()).any(|(v, ty)| v.ty != *ty) {
+                    return Err(Error::FunctionReturnTypeMismatch(block));
+                }
                 if vars.is_empty() {
                     Ok(())
                 } else {
@@ -140,39 +166,54 @@ impl Helper<'_> {
                 }
             }
             BlockExit::Jump(j) => {
-                let sign = get_signature(self.ext_registry, &j.ext)?;
-                if sign.results.len() != j.branches.len() {
-                    return Err(Error::FunctionJumpMismatch(j.to_string()));
+                let (vars, used_vars) = take_args(vars, j.args.iter())?;
+                let (arg_types, arg_locs): (Vec<_>, Vec<_>) =
+                    used_vars.into_iter().map(|v| (v.ty, v.loc)).unzip();
+                let (sign, locs) = self.registry.get_mapping(&j.ext, mem, &arg_locs)?;
+                if sign.args != arg_types {
+                    return Err(Error::ExtensionArgumentsMismatch(j.to_string()));
+                }
+                if sign.results.len() != j.branches.len() || locs.len() != j.branches.len() {
+                    return Err(Error::ExtensionBranchesMismatch(j.to_string()));
                 }
                 match sign.fallthrough {
                     None => {}
                     Some(i) => {
                         if j.branches[i].target != BranchTarget::Fallthrough {
-                            return Err(Error::FunctionJumpMismatch(j.to_string()));
+                            return Err(Error::ExtensionFallthroughMismatch(j.to_string()));
                         }
                     }
                 }
-                sign.results
-                    .iter()
-                    .zip(j.branches.iter())
-                    .try_for_each(|(res_types, branch)| {
-                        let next_vars = next_state(
-                            vars.clone(),
-                            j.args.iter().zip(sign.args.iter()),
-                            branch.exports.iter().zip(res_types.iter()),
-                        )?;
-                        self.validate(
-                            match branch.target {
-                                BranchTarget::Fallthrough => BlockId(block.0 + 1),
-                                BranchTarget::Block(b) => b,
-                            },
-                            State {
-                                vars: next_vars,
-                                mem: mem.clone(),
-                            },
-                            block_start_states,
+                izip!(
+                    j.branches.iter(),
+                    sign.results.into_iter(),
+                    locs.into_iter()
+                )
+                .try_for_each(|(branch, res_types, (mem, locs))| {
+                    if branch.exports.len() != res_types.len() || locs.len() != res_types.len() {
+                        return Err(Error::ExtensionResultSizeMismatch(j.to_string()));
+                    }
+                    let next_vars = put_results(
+                        vars.clone(),
+                        izip!(
+                            branch.exports.iter(),
+                            res_types.into_iter(),
+                            locs.into_iter()
                         )
-                    })
+                        .map(|(id, ty, loc)| (id, VarState { ty: ty, loc: loc })),
+                    )?;
+                    self.validate(
+                        match branch.target {
+                            BranchTarget::Fallthrough => BlockId(block.0 + 1),
+                            BranchTarget::Block(b) => b,
+                        },
+                        State {
+                            vars: next_vars,
+                            mem: mem,
+                        },
+                        block_start_states,
+                    )
+                })
             }
         }
     }
@@ -393,7 +434,7 @@ mod function {
                     entry: BlockId(1),
                 }]
             }),
-            Err(Error::FunctionJumpMismatch(ji.to_string()))
+            Err(Error::ExtensionFallthroughMismatch(ji.to_string()))
         );
     }
 

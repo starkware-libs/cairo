@@ -35,8 +35,8 @@ impl ExtensionImplementation for ArithmeticExtension {
         _registry: &TypeRegistry,
         mem_state: MemState,
         _args_state: &Vec<Location>,
-    ) -> Result<(MemState, Vec<Vec<Location>>), Error> {
-        Ok((mem_state, vec![vec![Location::Transient]]))
+    ) -> Result<Vec<(MemState, Vec<Location>)>, Error> {
+        Ok(vec![(mem_state, vec![Location::Transient])])
     }
 }
 
@@ -60,11 +60,11 @@ impl ExtensionImplementation for DuplicateExtension {
         _registry: &TypeRegistry,
         mem_state: MemState,
         args_state: &Vec<Location>,
-    ) -> Result<(MemState, Vec<Vec<Location>>), Error> {
-        Ok((
+    ) -> Result<Vec<(MemState, Vec<Location>)>, Error> {
+        Ok(vec![(
             mem_state,
-            vec![vec![args_state[0].clone(), args_state[0].clone()]],
-        ))
+            vec![args_state[0].clone(), args_state[0].clone()],
+        )])
     }
 }
 
@@ -91,8 +91,8 @@ impl ExtensionImplementation for ConstantExtension {
         _registry: &TypeRegistry,
         mem_state: MemState,
         _args_state: &Vec<Location>,
-    ) -> Result<(MemState, Vec<Vec<Location>>), Error> {
-        Ok((mem_state, vec![vec![Location::Transient]]))
+    ) -> Result<Vec<(MemState, Vec<Location>)>, Error> {
+        Ok(vec![(mem_state, vec![Location::Transient])])
     }
 }
 
@@ -113,8 +113,8 @@ impl ExtensionImplementation for IgnoreExtension {
         _registry: &TypeRegistry,
         mem_state: MemState,
         _args_state: &Vec<Location>,
-    ) -> Result<(MemState, Vec<Vec<Location>>), Error> {
-        Ok((mem_state, vec![vec![]]))
+    ) -> Result<Vec<(MemState, Vec<Location>)>, Error> {
+        Ok(vec![(mem_state, vec![])])
     }
 }
 
@@ -141,7 +141,7 @@ impl ExtensionImplementation for EnactExtension {
         registry: &TypeRegistry,
         mut mem_state: MemState,
         _args_state: &Vec<Location>,
-    ) -> Result<(MemState, Vec<Vec<Location>>), Error> {
+    ) -> Result<Vec<(MemState, Vec<Location>)>, Error> {
         let (ty, v) = get_type_value(tmpl_args)?;
         let ti = get_info(registry, ty)?;
         let loc = match v {
@@ -157,7 +157,7 @@ impl ExtensionImplementation for EnactExtension {
             }
             _ => Err(Error::UnsupportedTypeArg),
         }?;
-        Ok((mem_state, vec![vec![loc]]))
+        Ok(vec![(mem_state, vec![loc])])
     }
 }
 
