@@ -68,6 +68,15 @@ pub struct Block {
     pub exit: BlockExit,
 }
 
+impl fmt::Display for Block {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        for invc in &self.invocations {
+            writeln!(f, "{};", invc)?;
+        }
+        writeln!(f, "{};", self.exit)
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct Invocation {
     pub ext: Extension,
@@ -103,6 +112,24 @@ impl fmt::Display for Invocation {
 pub enum BlockExit {
     Return(Vec<Identifier>),
     Jump(JumpInfo),
+}
+
+impl fmt::Display for BlockExit {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            BlockExit::Return(ids) => {
+                write!(f, "return (")?;
+                ids.iter().take(1).try_for_each(|n| write!(f, "{}", n.0))?;
+                ids.iter()
+                    .skip(1)
+                    .try_for_each(|n| write!(f, ", {}", n.0))?;
+                write!(f, ")")
+            }
+            BlockExit::Jump(j) => {
+                write!(f, "{}", j)
+            }
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
