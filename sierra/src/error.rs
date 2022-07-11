@@ -1,12 +1,9 @@
-use crate::{
-    graph::{BlockId, Identifier, Type},
-    scope_state::ScopeState,
-};
+use crate::graph::{BlockId, Identifier, Type};
 
 #[derive(Debug, PartialEq)]
 pub enum Error {
-    TypeMismatch(Identifier, Type, Type),
-    MissingReference(Identifier, Type),
+    TypeMismatch(Identifier),
+    MissingReference(Identifier),
     VariableOverride(Identifier),
     ArgumentSizeMismatch,
     ResultSizeMismatch,
@@ -15,8 +12,9 @@ pub enum Error {
     UnsupportedTypeName(String),
     UnsupportedLibCallName(String),
     FunctionBlockOutOfBounds,
-    FunctionRemainingOwnedObjects(ScopeState),
-    FunctionBlockMismatch(BlockId, ScopeState, ScopeState),
+    FunctionRemainingOwnedObjects(Vec<Identifier>),
+    FunctionBlockIdentifiersMismatch(BlockId, Vec<Identifier>, Vec<Identifier>),
+    FunctionBlockIdentifierTypeMismatch(BlockId, Identifier, Type, Type),
     FunctionInvocationMismatch(String),
     FunctionJumpMismatch(String),
 }
