@@ -1,0 +1,73 @@
+use crate::graph::*;
+
+grammar;
+
+pub(crate) Block: Block = {
+    <invcs:Invocation*> <exit:BlockExit> => Block{invocations: invcs, exit: exit},
+}
+
+Invocation: Invocation = {
+    <e:Extension> "(" <args:Identifiers> ")" "->" "(" <results:Identifiers> ")" ";"  => Invocation{ext: e, args: args, results: results},
+}
+
+BlockExit: BlockExit = {
+    "return" "(" <args:Identifiers> ")" ";"  => BlockExit::Return(args),
+    <e:Extension> "(" <args:Identifiers> ")" "{" <branches:BranchInfo*> "}" ";" => BlockExit::Jump(JumpInfo{ext:e, args: args, branches: branches}),
+}
+
+Extension: Extension = {
+    <name:Label> "<" <tmpl_args:TemplateArgs> ">" => Extension{name: name, tmpl_args: tmpl_args},
+    <name:Label> => Extension{name: name, tmpl_args: vec![]},
+}
+ 
+TemplateArgs = Comma<TemplateArg>;
+
+Comma<T>: Vec<T> = { // (0)
+    <mut v:(<T> ",")*> <e:T?> => match e { // (1)
+        None=> v,
+        Some(e) => {
+            v.push(e);
+            v
+        }
+    }
+}; 
+
+TemplateArg: TemplateArg = {
+    <v:UnsignedInt> => TemplateArg::Value(v),
+    "-" <v:UnsignedInt> => TemplateArg::Value(-v),
+    Type => TemplateArg::Type(<>),
+}
+
+Type: Type = {
+    <name:Label> "<" <args:TemplateArgs> ">" => Type{name: name, args: args},
+    <name:Label> => Type{name: name, args: vec![]},
+}
+
+BranchInfo: BranchInfo = {
+     <target: BranchTarget> "(" <exports:Identifiers> ")" => BranchInfo{ target: target, exports: exports },
+}
+
+BranchTarget: BranchTarget = {
+     "fallthrough" => BranchTarget::Fallthrough,
+     <b:UnsignedInt> => BranchTarget::Block(BlockId(b as usize)),
+}
+
+Identifiers = Comma<Identifier>;
+
+Identifier: Identifier = {
+    Label => Identifier(<>),
+}
+
+Label: String = {
+    r"[a-zA-Z_][a-zA-Z_0-9]*" => <>.to_string(),
+}
+
+UnsignedInt: i64 = {
+    r"[1-9][0-9]*" => <>.parse().unwrap(),
+    "0" => 0,
+}
+
+match {
+    r"\s*" => {},
+    _,
+}

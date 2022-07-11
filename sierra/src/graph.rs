@@ -153,7 +153,7 @@ impl fmt::Display for JumpInfo {
         writeln!(f, ") {{")?;
         self.branches
             .iter()
-            .try_for_each(|b| writeln!(f, "{},", b))?;
+            .try_for_each(|b| writeln!(f, "{}", b))?;
         write!(f, "}}")
     }
 }
@@ -196,7 +196,7 @@ impl fmt::Display for BranchInfo {
             .iter()
             .skip(1)
             .try_for_each(|n| write!(f, ", {}", n.0))?;
-        writeln!(f, ")")
+        write!(f, ")")
     }
 }
 

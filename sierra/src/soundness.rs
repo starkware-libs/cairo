@@ -222,7 +222,10 @@ impl Helper<'_> {
 #[cfg(test)]
 mod function {
     use super::*;
-    use crate::utils::{as_type, gas_builtin_type, gas_type, type_arg, val_arg};
+    use crate::{
+        parser::BlockParser,
+        utils::{as_type, gas_builtin_type, gas_type, type_arg, val_arg},
+    };
 
     fn as_id(name: &str) -> Identifier {
         Identifier(name.to_string())
@@ -257,81 +260,22 @@ mod function {
 
     #[test]
     fn basic_return() {
+        let bp = BlockParser::new();
         assert_eq!(
             validate(&Program {
-                blocks: vec![Block {
-                    invocations: vec![
-                        Invocation {
-                            ext: Extension {
-                                name: "split_gas".to_string(),
-                                tmpl_args: vec![val_arg(1), val_arg(2)],
-                            },
-                            args: vec![as_id("cost")],
-                            results: vec![as_id("cost_for_next"), as_id("cost")],
-                        },
-                        Invocation {
-                            ext: Extension {
-                                name: "add".to_string(),
-                                tmpl_args: vec![type_arg(int_type())],
-                            },
-                            args: vec![as_id("a"), as_id("b")],
-                            results: vec![as_id("a_plus_b_deferred")],
-                        },
-                        Invocation {
-                            ext: Extension {
-                                name: "enact_calc".to_string(),
-                                tmpl_args: vec![type_arg(int_type()), val_arg(0)],
-                            },
-                            args: vec![as_id("a_plus_b_deferred"), as_id("cost_for_next")],
-                            results: vec![as_id("a_plus_b")],
-                        },
-                        Invocation {
-                            ext: Extension {
-                                name: "split_gas".to_string(),
-                                tmpl_args: vec![val_arg(1), val_arg(1)],
-                            },
-                            args: vec![as_id("cost")],
-                            results: vec![as_id("cost_for_next"), as_id("cost_for_last")],
-                        },
-                        Invocation {
-                            ext: Extension {
-                                name: "sub".to_string(),
-                                tmpl_args: vec![type_arg(int_type())],
-                            },
-                            args: vec![as_id("c"), as_id("d")],
-                            results: vec![as_id("c_minus_d_deferred")],
-                        },
-                        Invocation {
-                            ext: Extension {
-                                name: "enact_calc".to_string(),
-                                tmpl_args: vec![type_arg(int_type()), val_arg(1)],
-                            },
-                            args: vec![as_id("c_minus_d_deferred"), as_id("cost_for_next")],
-                            results: vec![as_id("c_minus_d")],
-                        },
-                        Invocation {
-                            ext: Extension {
-                                name: "mul".to_string(),
-                                tmpl_args: vec![type_arg(int_type())],
-                            },
-                            args: vec![as_id("a_plus_b"), as_id("c_minus_d"),],
-                            results: vec![as_id("a_plus_b_mul_c_minus_d_deferred")],
-                        },
-                        Invocation {
-                            ext: Extension {
-                                name: "enact_calc".to_string(),
-                                tmpl_args: vec![type_arg(int_type()), val_arg(0)],
-                            },
-                            args: vec![
-                                as_id("a_plus_b_mul_c_minus_d_deferred"),
-                                as_id("cost_for_last")
-                            ],
-                            results: vec![as_id("a_plus_b_mul_c_minus_d")],
-                        }
-                    ],
-                    exit: BlockExit::Return(vec![as_id("a_plus_b_mul_c_minus_d")]),
-                },],
-
+                blocks: vec![
+                    bp.parse(r#"
+                    split_gas<1, 2>(cost) -> (cost_for_next, cost);
+                    add<int>(a, b) -> (a_plus_b_deferred);
+                    enact_calc<int, 0>(a_plus_b_deferred, cost_for_next) -> (a_plus_b);
+                    split_gas<1, 1>(cost) -> (cost_for_next, cost_for_last);
+                    sub<int>(c, d) -> (c_minus_d_deferred);
+                    enact_calc<int, 0>(c_minus_d_deferred, cost_for_next) -> (c_minus_d);
+                    mul<int>(a_plus_b, c_minus_d) -> (a_plus_b_mul_c_minus_d_deferred);
+                    enact_calc<int, 0>(a_plus_b_mul_c_minus_d_deferred, cost_for_last) -> (a_plus_b_mul_c_minus_d);
+                    return(a_plus_b_mul_c_minus_d);
+                    "#).unwrap()
+                ],
                 funcs: vec![Function {
                     name: "Other".to_string(),
                     args: vec![
@@ -351,33 +295,13 @@ mod function {
 
     #[test]
     fn inifinite_gas_take_or_return() {
+        let bp = BlockParser::new();
         assert_eq!(
             validate(&Program {
                 blocks: vec![
-                    Block {
-                        invocations: vec![],
-                        exit: BlockExit::Jump(JumpInfo {
-                            ext: Extension {
-                                name: "get_gas".to_string(),
-                                tmpl_args: vec![val_arg(1)]
-                            },
-                            args: vec![as_id("gb"), as_id("cost")],
-                            branches: vec![
-                                BranchInfo {
-                                    target: BranchTarget::Block(BlockId(0)),
-                                    exports: vec![as_id("gb"), as_id("cost")]
-                                },
-                                BranchInfo {
-                                    target: BranchTarget::Fallthrough,
-                                    exports: vec![as_id("gb")]
-                                }
-                            ],
-                        }),
-                    },
-                    Block {
-                        invocations: vec![],
-                        exit: BlockExit::Return(vec![as_id("gb")]),
-                    },
+                    bp.parse("get_gas<1>(gb, cost) { 0(gb, cost) fallthrough(gb) };")
+                        .unwrap(),
+                    bp.parse("return(gb);").unwrap(),
                 ],
                 funcs: vec![Function {
                     name: "Some".to_string(),
@@ -395,34 +319,13 @@ mod function {
 
     #[test]
     fn inifinite_gas_take_or_return_bad_fallthrough() {
-        let ji = JumpInfo {
-            ext: Extension {
-                name: "get_gas".to_string(),
-                tmpl_args: vec![val_arg(1)],
-            },
-            args: vec![as_id("gb"), as_id("cost")],
-            branches: vec![
-                BranchInfo {
-                    target: BranchTarget::Fallthrough,
-                    exports: vec![as_id("gb"), as_id("cost")],
-                },
-                BranchInfo {
-                    target: BranchTarget::Block(BlockId(0)),
-                    exports: vec![as_id("gb")],
-                },
-            ],
-        };
+        let bp = BlockParser::new();
         assert_eq!(
             validate(&Program {
                 blocks: vec![
-                    Block {
-                        invocations: vec![],
-                        exit: BlockExit::Return(vec![as_id("gb")]),
-                    },
-                    Block {
-                        invocations: vec![],
-                        exit: BlockExit::Jump(ji.clone()),
-                    },
+                    bp.parse("return(gb);").unwrap(),
+                    bp.parse("get_gas<1>(gb, cost) { 1(gb, cost) 0(gb) };")
+                        .unwrap(),
                 ],
                 funcs: vec![Function {
                     name: "Some".to_string(),
@@ -434,39 +337,21 @@ mod function {
                     entry: BlockId(1),
                 }]
             }),
-            Err(Error::ExtensionFallthroughMismatch(ji.to_string()))
+            Err(Error::ExtensionFallthroughMismatch(
+                "get_gas<1>(gb, cost) {\n1(gb, cost)\n0(gb)\n}".to_string()
+            ))
         );
     }
 
     #[test]
     fn gas_mismatch() {
+        let bp = BlockParser::new();
         assert_eq!(
             validate(&Program {
                 blocks: vec![
-                    Block {
-                        invocations: vec![],
-                        exit: BlockExit::Jump(JumpInfo {
-                            ext: Extension {
-                                name: "get_gas".to_string(),
-                                tmpl_args: vec![val_arg(2)]
-                            },
-                            args: vec![as_id("gb"), as_id("cost")],
-                            branches: vec![
-                                BranchInfo {
-                                    target: BranchTarget::Block(BlockId(0)),
-                                    exports: vec![as_id("gb"), as_id("cost")]
-                                },
-                                BranchInfo {
-                                    target: BranchTarget::Fallthrough,
-                                    exports: vec![as_id("gb")]
-                                }
-                            ],
-                        }),
-                    },
-                    Block {
-                        invocations: vec![],
-                        exit: BlockExit::Return(vec![as_id("gb")]),
-                    },
+                    bp.parse("get_gas<2>(gb, cost) { 0(gb, cost) fallthrough(gb) };")
+                        .unwrap(),
+                    bp.parse("return(gb);").unwrap(),
                 ],
                 funcs: vec![Function {
                     name: "Some".to_string(),
@@ -489,208 +374,85 @@ mod function {
 
     #[test]
     fn fibonacci_using_jump() {
-        let dup = |old, new1, new2| Invocation {
-            ext: Extension {
-                name: "duplicate_num".to_string(),
-                tmpl_args: vec![type_arg(int_type())],
-            },
-            args: vec![as_id(old)],
-            results: vec![as_id(new1), as_id(new2)],
-        };
-        let gas_use = |curr, taken| Invocation {
-            ext: Extension {
-                name: "split_gas".to_string(),
-                tmpl_args: vec![val_arg(taken), val_arg(curr - taken)],
-            },
-            args: vec![as_id("cost")],
-            results: vec![as_id("use_cost"), as_id("cost")],
-        };
-        let refund = |count| Invocation {
-            ext: Extension {
-                name: "refund_gas".to_string(),
-                tmpl_args: vec![val_arg(count)],
-            },
-            args: vec![as_id("gb"), as_id("cost")],
-            results: vec![as_id("gb")],
-        };
-        let ignore = |name| Invocation {
-            ext: Extension {
-                name: "ignore_num".to_string(),
-                tmpl_args: vec![type_arg(int_type())],
-            },
-            args: vec![as_id(name)],
-            results: vec![],
-        };
-        let as_exit = |invc: Invocation| {
-            BlockExit::Jump(JumpInfo {
-                ext: invc.ext,
-                args: invc.args,
-                branches: vec![BranchInfo {
-                    target: BranchTarget::Fallthrough,
-                    exports: invc.results,
-                }],
-            })
-        };
-
-        let test_n = |b_success| {
-            BlockExit::Jump(JumpInfo {
-                ext: Extension {
-                    name: "jump_nz".to_string(),
-                    tmpl_args: vec![type_arg(int_type())],
-                },
-                args: vec![as_id("use"), as_id("use_cost")],
-                branches: vec![
-                    BranchInfo {
-                        target: BranchTarget::Block(BlockId(b_success)),
-                        exports: vec![],
-                    },
-                    BranchInfo {
-                        target: BranchTarget::Fallthrough,
-                        exports: vec![],
-                    },
-                ],
-            })
-        };
-
-        let dec_n = Invocation {
-            ext: Extension {
-                name: "add".to_string(),
-                tmpl_args: vec![type_arg(int_type()), val_arg(-1)],
-            },
-            args: vec![as_id("n")],
-            results: vec![as_id("n")],
-        };
-
-        let enact = |name| Invocation {
-            ext: Extension {
-                name: "enact_calc".to_string(),
-                tmpl_args: vec![type_arg(int_type()), val_arg(0)],
-            },
-            args: vec![as_id(name), as_id("use_cost")],
-            results: vec![as_id(name)],
-        };
-
+        let bp = BlockParser::new();
         assert_eq!(
             validate(&Program {
                 blocks: vec![
-                    Block {
-                        // 0
-                        invocations: vec![
-                            Invocation {
-                                ext: Extension {
-                                    name: "constant_num".to_string(),
-                                    tmpl_args: vec![type_arg(int_type()), val_arg(1)],
-                                },
-                                args: vec![],
-                                results: vec![as_id("one")],
-                            },
-                            gas_use(6, 1),
-                            enact("one"),
-                            dup("n", "n", "use"),
-                            gas_use(5, 1),
-                        ],
-                        exit: test_n(2),
-                    },
-                    Block {
-                        // 1
-                        invocations: vec![refund(4), ignore("n")],
-                        exit: BlockExit::Return(vec![as_id("gb"), as_id("one")]),
-                    },
-                    Block {
-                        // 2
-                        invocations: vec![
-                            dec_n.clone(),
-                            gas_use(4, 1),
-                            enact("n"),
-                            dup("n", "n", "use"),
-                            gas_use(3, 1),
-                        ],
-                        exit: test_n(4),
-                    },
-                    Block {
-                        // 3
-                        invocations: vec![refund(2), ignore("n")],
-                        exit: BlockExit::Return(vec![as_id("gb"), as_id("one")]),
-                    },
-                    Block {
-                        // 4
-                        invocations: vec![],
-                        exit: as_exit(dup("one", "a", "b")),
-                    },
-                    Block {
-                        // 5
-                        invocations: vec![Invocation {
-                            ext: Extension {
-                                name: "split_gas".to_string(),
-                                tmpl_args: vec![val_arg(1), val_arg(1)],
-                            },
-                            args: vec![as_id("cost")],
-                            results: vec![as_id("split_gas_cost"), as_id("use_cost")],
-                        }],
-                        exit: BlockExit::Jump(JumpInfo {
-                            ext: Extension {
-                                name: "get_gas".to_string(),
-                                tmpl_args: vec![val_arg(4)]
-                            },
-                            args: vec![as_id("gb"), as_id("split_gas_cost")],
-                            branches: vec![
-                                BranchInfo {
-                                    target: BranchTarget::Block(BlockId(7)),
-                                    exports: vec![as_id("gb"), as_id("cost")]
-                                },
-                                BranchInfo {
-                                    target: BranchTarget::Fallthrough,
-                                    exports: vec![as_id("gb")]
-                                }
-                            ],
-                        }),
-                    },
-                    Block {
-                        // 6
-                        invocations: vec![
-                            Invocation {
-                                ext: Extension {
-                                    name: "constant_num".to_string(),
-                                    tmpl_args: vec![type_arg(int_type()), val_arg(-1)],
-                                },
-                                args: vec![],
-                                results: vec![as_id("minus")],
-                            },
-                            enact("minus"),
-                            ignore("a"),
-                            ignore("b"),
-                            ignore("n"),
-                        ],
-                        exit: BlockExit::Return(vec![as_id("gb"), as_id("minus")]),
-                    },
-                    Block {
-                        // 7
-                        invocations: vec![
-                            dup("a", "a", "tmp"),
-                            Invocation {
-                                ext: Extension {
-                                    name: "add".to_string(),
-                                    tmpl_args: vec![type_arg(int_type())],
-                                },
-                                args: vec![as_id("a"), as_id("b")],
-                                results: vec![as_id("a")],
-                            },
-                            enact("a"),
-                            dup("tmp", "tmp", "b"),
-                            ignore("tmp"),
-                            dec_n.clone(),
-                            gas_use(4, 1),
-                            enact("n"),
-                            dup("n", "n", "use"),
-                            gas_use(3, 1),
-                        ],
-                        exit: test_n(5),
-                    },
-                    Block {
-                        // 8
-                        invocations: vec![refund(2), ignore("n"), ignore("b")],
-                        exit: BlockExit::Return(vec![as_id("gb"), as_id("a")]),
-                    },
+                    bp.parse(
+                        r#"
+                    constant_num<int, 1>() -> (one);
+                    split_gas<5, 1>(cost) -> (cost, use_cost);
+                    enact_calc<int, 0>(one, use_cost) -> (one);
+                    duplicate_num<int>(n) -> (n, use);
+                    split_gas<4, 1>(cost) -> (cost, use_cost);
+                    jump_nz<int>(use, use_cost) { 2() fallthrough() };"#
+                    )
+                    .unwrap(),
+                    bp.parse(
+                        r#"
+                    refund_gas<4>(gb, cost) -> (gb);
+                    ignore_num<int>(n) -> ();
+                    return(gb, one);"#
+                    )
+                    .unwrap(),
+                    bp.parse(
+                        r#"
+                    add<int, -1>(n) -> (n);
+                    split_gas<3, 1>(cost) -> (cost, use_cost);
+                    enact_calc<int, 0>(n, use_cost) -> (n);
+                    duplicate_num<int>(n) -> (n, use);
+                    split_gas<2, 1>(cost) -> (cost, use_cost);
+                    jump_nz<int>(use, use_cost) { 4() fallthrough() };"#
+                    )
+                    .unwrap(),
+                    bp.parse(
+                        r#"
+                    refund_gas<2>(gb, cost) -> (gb);
+                    ignore_num<int>(n) -> ();
+                    return(gb, one);"#
+                    )
+                    .unwrap(),
+                    bp.parse("duplicate_num<int>(one) { fallthrough(a, b) };")
+                        .unwrap(),
+                    bp.parse(
+                        r#"
+                    split_gas<1, 1>(cost) -> (split_gas_cost, use_cost);
+                    get_gas<4>(gb, split_gas_cost) { 7(gb, cost) fallthrough(gb) };"#
+                    )
+                    .unwrap(),
+                    bp.parse(
+                        r#"
+                    ignore_num<int>(a) -> ();
+                    ignore_num<int>(b) -> ();
+                    ignore_num<int>(n) -> ();
+                    constant_num<int, -1>() -> (minus);
+                    enact_calc<int, 0>(minus, use_cost) -> (minus);
+                    return(gb, minus);"#
+                    )
+                    .unwrap(),
+                    bp.parse(
+                        r#"
+                    duplicate_num<int>(a) -> (a, prev_a);
+                    add<int>(a, b) -> (a);
+                    duplicate_num<int>(prev_a) -> (b, tmp);
+                    ignore_num<int>(tmp) -> ();
+                    enact_calc<int, 0>(a, use_cost) -> (a);
+                    add<int, -1>(n) -> (n);
+                    split_gas<3, 1>(cost) -> (cost, use_cost);
+                    enact_calc<int, 0>(n, use_cost) -> (n);
+                    split_gas<2, 1>(cost) -> (cost, use_cost);
+                    duplicate_num<int>(n) -> (n, use);
+                    jump_nz<int>(use, use_cost) { 5() fallthrough() };"#
+                    )
+                    .unwrap(),
+                    bp.parse(
+                        r#"
+                    refund_gas<2>(gb, cost) -> (gb);
+                    ignore_num<int>(n) -> ();
+                    ignore_num<int>(b) -> ();
+                    return(gb, a);"#
+                    )
+                    .unwrap(),
                 ],
                 funcs: vec![Function {
                     name: "Fibonacci".to_string(),
@@ -709,6 +471,7 @@ mod function {
 
     #[test]
     fn fibonacci_using_recursion() {
+        let bp = BlockParser::new();
         let dup = |name, other| Invocation {
             ext: Extension {
                 name: "duplicate_num".to_string(),
@@ -716,14 +479,6 @@ mod function {
             },
             args: vec![as_id(name)],
             results: vec![as_id(name), as_id(other)],
-        };
-        let gas_use = |curr, taken| Invocation {
-            ext: Extension {
-                name: "split_gas".to_string(),
-                tmpl_args: vec![val_arg(taken), val_arg(curr - taken)],
-            },
-            args: vec![as_id("cost")],
-            results: vec![as_id("use_cost"), as_id("cost")],
         };
         let refund = |count| Invocation {
             ext: Extension {
@@ -774,206 +529,75 @@ mod function {
         assert_eq!(
             validate(&Program {
                 blocks: vec![
-                    Block {
-                        // 0
-                        invocations: vec![
-                            Invocation {
-                                ext: Extension {
-                                    name: "constant_num".to_string(),
-                                    tmpl_args: vec![type_arg(int_type()), val_arg(1)],
-                                },
-                                args: vec![],
-                                results: vec![as_id("one")],
-                            },
-                            gas_use(6, 1),
-                            enact("one"),
-                            dup("n", "use"),
-                            gas_use(5, 1),
-                        ],
-                        exit: test_n(2),
-                    },
-                    Block {
-                        // 1
-                        invocations: vec![refund(4), ignore("n")],
-                        exit: BlockExit::Return(vec![as_id("gb"), as_id("one")]),
-                    },
-                    Block {
-                        // 2
-                        invocations: vec![
-                            Invocation {
-                                ext: Extension {
-                                    name: "add".to_string(),
-                                    tmpl_args: vec![type_arg(int_type()), val_arg(-1)],
-                                },
-                                args: vec![as_id("n")],
-                                results: vec![as_id("n_1")],
-                            },
-                            gas_use(4, 1),
-                            enact("n_1"),
-                            dup("n_1", "use"),
-                            gas_use(3, 1),
-                        ],
-                        exit: test_n(4),
-                    },
-                    Block {
-                        // 3
-                        invocations: vec![refund(2), ignore("n_1")],
-                        exit: BlockExit::Return(vec![as_id("gb"), as_id("one")]),
-                    },
-                    Block {
-                        // 4
-                        invocations: vec![
-                            ignore("one"),
-                            Invocation {
-                                ext: Extension {
-                                    name: "split_gas".to_string(),
-                                    tmpl_args: vec![val_arg(1), val_arg(1)],
-                                },
-                                args: vec![as_id("cost")],
-                                results: vec![as_id("split_gas_cost"), as_id("use_cost")],
-                            }
-                        ],
-                        exit: BlockExit::Jump(JumpInfo {
-                            ext: Extension {
-                                name: "get_gas".to_string(),
-                                tmpl_args: vec![
-                                    val_arg(1),
-                                    val_arg(6),
-                                    val_arg(2),
-                                    val_arg(6),
-                                    val_arg(2)
-                                ]
-                            },
-                            args: vec![as_id("gb"), as_id("split_gas_cost")],
-                            branches: vec![
-                                BranchInfo {
-                                    target: BranchTarget::Block(BlockId(6)),
-                                    exports: vec![
-                                        as_id("gb"),
-                                        as_id("dec_cost"),
-                                        as_id("call1_inner_cost"),
-                                        as_id("call1_outer_cost"),
-                                        as_id("call2_inner_cost"),
-                                        as_id("call2_outer_cost"),
-                                    ]
-                                },
-                                BranchInfo {
-                                    target: BranchTarget::Fallthrough,
-                                    exports: vec![as_id("gb")]
-                                }
-                            ],
-                        }),
-                    },
-                    Block {
-                        // 5
-                        invocations: vec![
-                            Invocation {
-                                ext: Extension {
-                                    name: "constant_num".to_string(),
-                                    tmpl_args: vec![type_arg(int_type()), val_arg(-10000)],
-                                },
-                                args: vec![],
-                                results: vec![as_id("minus")],
-                            },
-                            enact("minus"),
-                            ignore("n_1"),
-                        ],
-                        exit: BlockExit::Return(vec![as_id("gb"), as_id("minus")]),
-                    },
-                    Block {
-                        // 6
-                        invocations: vec![
-                            dup("n_1", "n_2"),
-                            Invocation {
-                                ext: Extension {
-                                    name: "add".to_string(),
-                                    tmpl_args: vec![type_arg(int_type()), val_arg(-1)],
-                                },
-                                args: vec![as_id("n_2")],
-                                results: vec![as_id("n_2")],
-                            },
-                            Invocation {
-                                ext: Extension {
-                                    name: "enact_calc".to_string(),
-                                    tmpl_args: vec![type_arg(int_type()), val_arg(1)],
-                                },
-                                args: vec![as_id("n_2"), as_id("dec_cost")],
-                                results: vec![as_id("n_2")],
-                            },
-                            Invocation {
-                                ext: Extension {
-                                    name: "tuple_pack".to_string(),
-                                    tmpl_args: vec![
-                                        type_arg(gas_builtin_type()),
-                                        type_arg(int_type()),
-                                        type_arg(gas_type(6))
-                                    ],
-                                },
-                                args: vec![as_id("gb"), as_id("n_1"), as_id("call1_inner_cost")],
-                                results: vec![as_id("input")],
-                            },
-                            Invocation {
-                                ext: Extension {
-                                    name: "Fibonacci".to_string(),
-                                    tmpl_args: vec![],
-                                },
-                                args: vec![as_id("input"), as_id("call1_outer_cost")],
-                                results: vec![as_id("output")],
-                            },
-                            Invocation {
-                                ext: Extension {
-                                    name: "tuple_unpack".to_string(),
-                                    tmpl_args: vec![
-                                        type_arg(gas_builtin_type()),
-                                        type_arg(int_type())
-                                    ],
-                                },
-                                args: vec![as_id("output")],
-                                results: vec![as_id("gb"), as_id("r1")],
-                            },
-                            Invocation {
-                                ext: Extension {
-                                    name: "tuple_pack".to_string(),
-                                    tmpl_args: vec![
-                                        type_arg(gas_builtin_type()),
-                                        type_arg(int_type()),
-                                        type_arg(gas_type(6))
-                                    ],
-                                },
-                                args: vec![as_id("gb"), as_id("n_2"), as_id("call2_inner_cost")],
-                                results: vec![as_id("input")],
-                            },
-                            Invocation {
-                                ext: Extension {
-                                    name: "Fibonacci".to_string(),
-                                    tmpl_args: vec![],
-                                },
-                                args: vec![as_id("input"), as_id("call2_outer_cost")],
-                                results: vec![as_id("output")],
-                            },
-                            Invocation {
-                                ext: Extension {
-                                    name: "tuple_unpack".to_string(),
-                                    tmpl_args: vec![
-                                        type_arg(gas_builtin_type()),
-                                        type_arg(int_type())
-                                    ],
-                                },
-                                args: vec![as_id("output")],
-                                results: vec![as_id("gb"), as_id("r2")],
-                            },
-                            Invocation {
-                                ext: Extension {
-                                    name: "add".to_string(),
-                                    tmpl_args: vec![type_arg(int_type())],
-                                },
-                                args: vec![as_id("r1"), as_id("r2")],
-                                results: vec![as_id("r")],
-                            },
-                            enact("r"),
-                        ],
-                        exit: BlockExit::Return(vec![as_id("gb"), as_id("r")]),
-                    },
+                    bp.parse(
+                        r#"
+                    constant_num<int, 1>() -> (one);
+                    split_gas<5, 1>(cost) -> (cost, use_cost);
+                    enact_calc<int, 0>(one, use_cost) -> (one);
+                    duplicate_num<int>(n) -> (n, use);
+                    split_gas<4, 1>(cost) -> (cost, use_cost);
+                    jump_nz<int>(use, use_cost) { 2() fallthrough() };"#
+                    )
+                    .unwrap(),
+                    bp.parse(
+                        r#"
+                    refund_gas<4>(gb, cost) -> (gb);
+                    ignore_num<int>(n) -> ();
+                    return(gb, one);"#
+                    )
+                    .unwrap(),
+                    bp.parse(
+                        r#"
+                    add<int, -1>(n) -> (n_1);
+                    split_gas<3, 1>(cost) -> (cost, use_cost);
+                    enact_calc<int, 0>(n_1, use_cost) -> (n_1);
+                    duplicate_num<int>(n_1) -> (n_1, use);
+                    split_gas<2, 1>(cost) -> (cost, use_cost);
+                    jump_nz<int>(use, use_cost) { 4() fallthrough() };"#
+                    )
+                    .unwrap(),
+                    bp.parse(
+                        r#"
+                    refund_gas<2>(gb, cost) -> (gb);
+                    ignore_num<int>(n_1) -> ();
+                    return(gb, one);"#
+                    )
+                    .unwrap(),
+                    bp.parse(
+                        r#"
+                    ignore_num<int>(one) -> ();
+                    split_gas<1, 1>(cost) -> (split_gas_cost, use_cost);
+                    get_gas<1, 6, 2, 6 ,2>(gb, split_gas_cost) {
+                        6(gb, dec_cost, call1_inner_cost, call1_outer_cost,
+                          call2_inner_cost, call2_outer_cost)
+                        fallthrough(gb)
+                    };"#
+                    )
+                    .unwrap(),
+                    bp.parse(
+                        r#"
+                    ignore_num<int>(n_1) -> ();
+                    constant_num<int, -10000>() -> (minus);
+                    enact_calc<int, 0>(minus, use_cost) -> (minus);
+                    return(gb, minus);"#
+                    )
+                    .unwrap(),
+                    bp.parse(
+                        r#"
+                    duplicate_num<int>(n_1) -> (n_1, n_2);
+                    add<int, -1>(n_2) -> (n_2);
+                    enact_calc<int, 1>(n_2, dec_cost) -> (n_2);
+                    tuple_pack<GasBuiltin, int, Gas<6>>(gb, n_1, call1_inner_cost) -> (input);
+                    Fibonacci(input, call1_outer_cost) -> (output);
+                    tuple_unpack<GasBuiltin, int>(output) -> (gb, r1);
+                    tuple_pack<GasBuiltin, int, Gas<6>>(gb, n_2, call2_inner_cost) -> (input);
+                    Fibonacci(input, call2_outer_cost) -> (output);
+                    tuple_unpack<GasBuiltin, int>(output) -> (gb, r2);
+                    add<int>(r1, r2) -> (r);
+                    enact_calc<int, 1>(r, use_cost) -> (r);
+                    return(gb, r);"#
+                    )
+                    .unwrap(),
                 ],
                 funcs: vec![Function {
                     name: "Fibonacci".to_string(),
