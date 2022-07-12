@@ -223,8 +223,8 @@ impl Helper<'_> {
 mod function {
     use super::*;
     use crate::{
-        parser::BlocksParser,
         utils::{as_type, gas_builtin_type, gas_type, type_arg, val_arg},
+        ProgramParser,
     };
 
     fn as_id(name: &str) -> Identifier {
@@ -241,104 +241,68 @@ mod function {
 
     #[test]
     fn empty() {
-        let bp = BlocksParser::new();
+        let pp = ProgramParser::new();
         assert_eq!(
-            validate(&Program {
-                blocks: bp.parse("").unwrap(),
-                funcs: vec![Function {
-                    name: "Some".to_string(),
-                    args: vec![
-                        typed(as_id("gb"), gas_builtin_type()),
-                        typed(as_id("a"), as_type("felt"))
-                    ],
-                    res_types: vec![gas_builtin_type(), as_type("felt")],
-                    entry: BlockId(0),
-                }]
-            }),
+            validate(
+                &pp.parse("Some@0(gb: GasBuiltin, a: felt) -> (GasBuiltin, felt);")
+                    .unwrap()
+            ),
             Err(Error::FunctionBlockOutOfBounds)
         );
     }
 
     #[test]
     fn basic_return() {
-        let bp = BlocksParser::new();
+        let pp = ProgramParser::new();
         assert_eq!(
-            validate(&Program {
-                blocks:
-                    bp.parse(r#"
-                    split_gas<1, 2>(cost) -> (cost_for_next, cost);
-                    add<int>(a, b) -> (a_plus_b_deferred);
-                    enact_calc<int, 0>(a_plus_b_deferred, cost_for_next) -> (a_plus_b);
-                    split_gas<1, 1>(cost) -> (cost_for_next, cost_for_last);
-                    sub<int>(c, d) -> (c_minus_d_deferred);
-                    enact_calc<int, 0>(c_minus_d_deferred, cost_for_next) -> (c_minus_d);
-                    mul<int>(a_plus_b, c_minus_d) -> (a_plus_b_mul_c_minus_d_deferred);
-                    enact_calc<int, 0>(a_plus_b_mul_c_minus_d_deferred, cost_for_last) -> (a_plus_b_mul_c_minus_d);
-                    return(a_plus_b_mul_c_minus_d);
-                    "#).unwrap(),
-                funcs: vec![Function {
-                    name: "Other".to_string(),
-                    args: vec![
-                        typed(as_id("a"), int_type()),
-                        typed(as_id("b"), int_type()),
-                        typed(as_id("c"), int_type()),
-                        typed(as_id("d"), int_type()),
-                        typed(as_id("cost"), gas_type(3)),
-                    ],
-                    res_types: vec![int_type()],
-                    entry: BlockId(0),
-                }]
-            }),
+            validate(&pp.parse(r#"
+                split_gas<1, 2>(cost) -> (cost_for_next, cost);
+                add<int>(a, b) -> (a_plus_b_deferred);
+                enact_calc<int, 0>(a_plus_b_deferred, cost_for_next) -> (a_plus_b);
+                split_gas<1, 1>(cost) -> (cost_for_next, cost_for_last);
+                sub<int>(c, d) -> (c_minus_d_deferred);
+                enact_calc<int, 0>(c_minus_d_deferred, cost_for_next) -> (c_minus_d);
+                mul<int>(a_plus_b, c_minus_d) -> (a_plus_b_mul_c_minus_d_deferred);
+                enact_calc<int, 0>(a_plus_b_mul_c_minus_d_deferred, cost_for_last) -> (a_plus_b_mul_c_minus_d);
+                return(a_plus_b_mul_c_minus_d);
+
+                Other@0(a: int, b: int, c: int, d: int, cost: Gas<3>) -> (int);"#).unwrap()),
             Ok(())
         );
     }
 
     #[test]
     fn inifinite_gas_take_or_return() {
-        let bp = BlocksParser::new();
+        let pp = ProgramParser::new();
         assert_eq!(
-            validate(&Program {
-                blocks: bp
-                    .parse(
-                        r#"get_gas<1>(gb, cost) { 0(gb, cost) fallthrough(gb) };
-                    return(gb);"#
-                    )
-                    .unwrap(),
-                funcs: vec![Function {
-                    name: "Some".to_string(),
-                    args: vec![
-                        typed(as_id("gb"), gas_builtin_type()),
-                        typed(as_id("cost"), gas_type(1)),
-                    ],
-                    res_types: vec![gas_builtin_type()],
-                    entry: BlockId(0),
-                }]
-            }),
+            validate(
+                &pp.parse(
+                    r#"
+                get_gas<1>(gb, cost) { 0(gb, cost) fallthrough(gb) };
+                return(gb);
+
+                Other@0(gb: GasBuiltin, cost: Gas<1>) -> (GasBuiltin);"#
+                )
+                .unwrap()
+            ),
             Ok(())
         );
     }
 
     #[test]
     fn inifinite_gas_take_or_return_bad_fallthrough() {
-        let bp = BlocksParser::new();
+        let pp = ProgramParser::new();
         assert_eq!(
-            validate(&Program {
-                blocks: bp
-                    .parse(
-                        r#"return(gb);
-                             get_gas<1>(gb, cost) { 1(gb, cost) 0(gb) };"#
-                    )
-                    .unwrap(),
-                funcs: vec![Function {
-                    name: "Some".to_string(),
-                    args: vec![
-                        typed(as_id("gb"), gas_builtin_type()),
-                        typed(as_id("cost"), gas_type(1)),
-                    ],
-                    res_types: vec![gas_builtin_type()],
-                    entry: BlockId(1),
-                }]
-            }),
+            validate(
+                &pp.parse(
+                    r#"
+                return(gb);
+                get_gas<1>(gb, cost) { 1(gb, cost) 0(gb) };
+                
+                Some@1(gb: GasBuiltin, cost: Gas<1>) -> (GasBuiltin);"#
+                )
+                .unwrap()
+            ),
             Err(Error::ExtensionFallthroughMismatch(
                 "get_gas<1>(gb, cost) {\n1(gb, cost)\n0(gb)\n}".to_string()
             ))
@@ -347,25 +311,18 @@ mod function {
 
     #[test]
     fn gas_mismatch() {
-        let bp = BlocksParser::new();
+        let pp = ProgramParser::new();
         assert_eq!(
-            validate(&Program {
-                blocks: bp
-                    .parse(
-                        r#"get_gas<2>(gb, cost) { 0(gb, cost) fallthrough(gb) };
-                    return(gb);"#
-                    )
-                    .unwrap(),
-                funcs: vec![Function {
-                    name: "Some".to_string(),
-                    args: vec![
-                        typed(as_id("gb"), gas_builtin_type()),
-                        typed(as_id("cost"), gas_type(1)),
-                    ],
-                    res_types: vec![gas_builtin_type()],
-                    entry: BlockId(0),
-                }]
-            }),
+            validate(
+                &pp.parse(
+                    r#"
+                get_gas<2>(gb, cost) { 0(gb, cost) fallthrough(gb) };
+                return(gb);
+
+                Some@0(gb: GasBuiltin, cost: Gas<1>) -> (GasBuiltin);"#
+                )
+                .unwrap()
+            ),
             Err(Error::FunctionBlockIdentifierTypeMismatch(
                 BlockId(0),
                 as_id("cost"),
@@ -377,149 +334,131 @@ mod function {
 
     #[test]
     fn fibonacci_using_jump() {
-        let bp = BlocksParser::new();
+        let pp = ProgramParser::new();
         assert_eq!(
-            validate(&Program {
-                blocks: bp
-                    .parse(
-                        r#"
-                    # 0
-                    constant_num<int, 1>() -> (one);
-                    split_gas<5, 1>(cost) -> (cost, use_cost);
-                    enact_calc<int, 0>(one, use_cost) -> (one);
-                    duplicate_num<int>(n) -> (n, use);
-                    split_gas<4, 1>(cost) -> (cost, use_cost);
-                    jump_nz<int>(use, use_cost) { 2() fallthrough() };
-                    # 1
-                    refund_gas<4>(gb, cost) -> (gb);
-                    ignore_num<int>(n) -> ();
-                    return(gb, one);
-                    # 2
-                    add<int, -1>(n) -> (n);
-                    split_gas<3, 1>(cost) -> (cost, use_cost);
-                    enact_calc<int, 0>(n, use_cost) -> (n);
-                    duplicate_num<int>(n) -> (n, use);
-                    split_gas<2, 1>(cost) -> (cost, use_cost);
-                    jump_nz<int>(use, use_cost) { 4() fallthrough() };
-                    # 3
-                    refund_gas<2>(gb, cost) -> (gb);
-                    ignore_num<int>(n) -> ();
-                    return(gb, one);
-                    # 4
-                    duplicate_num<int>(one) { fallthrough(a, b) };
-                    # 5
-                    split_gas<1, 1>(cost) -> (split_gas_cost, use_cost);
-                    get_gas<4>(gb, split_gas_cost) { 7(gb, cost) fallthrough(gb) };
-                    # 6
-                    ignore_num<int>(a) -> ();
-                    ignore_num<int>(b) -> ();
-                    ignore_num<int>(n) -> ();
-                    constant_num<int, -1>() -> (minus);
-                    enact_calc<int, 0>(minus, use_cost) -> (minus);
-                    return(gb, minus);
-                    # 7
-                    duplicate_num<int>(a) -> (a, prev_a);
-                    add<int>(a, b) -> (a);
-                    duplicate_num<int>(prev_a) -> (b, tmp);
-                    ignore_num<int>(tmp) -> ();
-                    enact_calc<int, 0>(a, use_cost) -> (a);
-                    add<int, -1>(n) -> (n);
-                    split_gas<3, 1>(cost) -> (cost, use_cost);
-                    enact_calc<int, 0>(n, use_cost) -> (n);
-                    split_gas<2, 1>(cost) -> (cost, use_cost);
-                    duplicate_num<int>(n) -> (n, use);
-                    jump_nz<int>(use, use_cost) { 5() fallthrough() };
-                    # 8
-                    refund_gas<2>(gb, cost) -> (gb);
-                    ignore_num<int>(n) -> ();
-                    ignore_num<int>(b) -> ();
-                    return(gb, a);"#
-                    )
-                    .unwrap(),
-                funcs: vec![Function {
-                    name: "Fibonacci".to_string(),
-                    args: vec![
-                        typed(as_id("gb"), gas_builtin_type()),
-                        typed(as_id("n"), int_type()),
-                        typed(as_id("cost"), gas_type(6)),
-                    ],
-                    res_types: vec![gas_builtin_type(), int_type()],
-                    entry: BlockId(0),
-                }]
-            }),
+            validate(
+                &pp.parse(
+                    r#"
+                # 0
+                constant_num<int, 1>() -> (one);
+                split_gas<5, 1>(cost) -> (cost, use_cost);
+                enact_calc<int, 0>(one, use_cost) -> (one);
+                duplicate_num<int>(n) -> (n, use);
+                split_gas<4, 1>(cost) -> (cost, use_cost);
+                jump_nz<int>(use, use_cost) { 2() fallthrough() };
+                # 1
+                refund_gas<4>(gb, cost) -> (gb);
+                ignore_num<int>(n) -> ();
+                return(gb, one);
+                # 2
+                add<int, -1>(n) -> (n);
+                split_gas<3, 1>(cost) -> (cost, use_cost);
+                enact_calc<int, 0>(n, use_cost) -> (n);
+                duplicate_num<int>(n) -> (n, use);
+                split_gas<2, 1>(cost) -> (cost, use_cost);
+                jump_nz<int>(use, use_cost) { 4() fallthrough() };
+                # 3
+                refund_gas<2>(gb, cost) -> (gb);
+                ignore_num<int>(n) -> ();
+                return(gb, one);
+                # 4
+                duplicate_num<int>(one) { fallthrough(a, b) };
+                # 5
+                split_gas<1, 1>(cost) -> (split_gas_cost, use_cost);
+                get_gas<4>(gb, split_gas_cost) { 7(gb, cost) fallthrough(gb) };
+                # 6
+                ignore_num<int>(a) -> ();
+                ignore_num<int>(b) -> ();
+                ignore_num<int>(n) -> ();
+                constant_num<int, -1>() -> (minus);
+                enact_calc<int, 0>(minus, use_cost) -> (minus);
+                return(gb, minus);
+                # 7
+                duplicate_num<int>(a) -> (a, prev_a);
+                add<int>(a, b) -> (a);
+                duplicate_num<int>(prev_a) -> (b, tmp);
+                ignore_num<int>(tmp) -> ();
+                enact_calc<int, 0>(a, use_cost) -> (a);
+                add<int, -1>(n) -> (n);
+                split_gas<3, 1>(cost) -> (cost, use_cost);
+                enact_calc<int, 0>(n, use_cost) -> (n);
+                split_gas<2, 1>(cost) -> (cost, use_cost);
+                duplicate_num<int>(n) -> (n, use);
+                jump_nz<int>(use, use_cost) { 5() fallthrough() };
+                # 8
+                refund_gas<2>(gb, cost) -> (gb);
+                ignore_num<int>(n) -> ();
+                ignore_num<int>(b) -> ();
+                return(gb, a);
+
+                Fibonacci@0(gb: GasBuiltin, n: int, cost: Gas<6>) -> (GasBuiltin, int);"#
+                )
+                .unwrap()
+            ),
             Ok(())
         );
     }
 
     #[test]
     fn fibonacci_using_recursion() {
-        let bp = BlocksParser::new();
+        let pp = ProgramParser::new();
         assert_eq!(
-            validate(&Program {
-                blocks: bp
-                    .parse(
-                        r#"
-                    # 0
-                    constant_num<int, 1>() -> (one);
-                    split_gas<5, 1>(cost) -> (cost, use_cost);
-                    enact_calc<int, 0>(one, use_cost) -> (one);
-                    duplicate_num<int>(n) -> (n, use);
-                    split_gas<4, 1>(cost) -> (cost, use_cost);
-                    jump_nz<int>(use, use_cost) { 2() fallthrough() };
-                    # 1
-                    refund_gas<4>(gb, cost) -> (gb);
-                    ignore_num<int>(n) -> ();
-                    return(gb, one);
-                    # 2
-                    add<int, -1>(n) -> (n_1);
-                    split_gas<3, 1>(cost) -> (cost, use_cost);
-                    enact_calc<int, 0>(n_1, use_cost) -> (n_1);
-                    duplicate_num<int>(n_1) -> (n_1, use);
-                    split_gas<2, 1>(cost) -> (cost, use_cost);
-                    jump_nz<int>(use, use_cost) { 4() fallthrough() };
-                    # 3
-                    refund_gas<2>(gb, cost) -> (gb);
-                    ignore_num<int>(n_1) -> ();
-                    return(gb, one);
-                    # 4
-                    ignore_num<int>(one) -> ();
-                    split_gas<1, 1>(cost) -> (split_gas_cost, use_cost);
-                    get_gas<1, 6, 2, 6 ,2>(gb, split_gas_cost) {
-                        6(gb, dec_cost, call1_inner_cost, call1_outer_cost,
-                          call2_inner_cost, call2_outer_cost)
-                        fallthrough(gb)
-                    };
-                    # 5
-                    ignore_num<int>(n_1) -> ();
-                    constant_num<int, -10000>() -> (minus);
-                    enact_calc<int, 0>(minus, use_cost) -> (minus);
-                    return(gb, minus);
-                    # 6
-                    duplicate_num<int>(n_1) -> (n_1, n_2);
-                    add<int, -1>(n_2) -> (n_2);
-                    enact_calc<int, 1>(n_2, dec_cost) -> (n_2);
-                    tuple_pack<GasBuiltin, int, Gas<6>>(gb, n_1, call1_inner_cost) -> (input);
-                    Fibonacci(input, call1_outer_cost) -> (output);
-                    tuple_unpack<GasBuiltin, int>(output) -> (gb, r1);
-                    tuple_pack<GasBuiltin, int, Gas<6>>(gb, n_2, call2_inner_cost) -> (input);
-                    Fibonacci(input, call2_outer_cost) -> (output);
-                    tuple_unpack<GasBuiltin, int>(output) -> (gb, r2);
-                    add<int>(r1, r2) -> (r);
-                    enact_calc<int, 1>(r, use_cost) -> (r);
-                    return(gb, r);"#
-                    )
-                    .unwrap(),
-                funcs: vec![Function {
-                    name: "Fibonacci".to_string(),
-                    args: vec![
-                        typed(as_id("gb"), gas_builtin_type()),
-                        typed(as_id("n"), int_type()),
-                        typed(as_id("cost"), gas_type(6)),
-                    ],
-                    res_types: vec![gas_builtin_type(), int_type()],
-                    entry: BlockId(0),
-                }]
-            }),
+            validate(
+                &pp.parse(
+                    r#"
+                # 0
+                constant_num<int, 1>() -> (one);
+                split_gas<5, 1>(cost) -> (cost, use_cost);
+                enact_calc<int, 0>(one, use_cost) -> (one);
+                duplicate_num<int>(n) -> (n, use);
+                split_gas<4, 1>(cost) -> (cost, use_cost);
+                jump_nz<int>(use, use_cost) { 2() fallthrough() };
+                # 1
+                refund_gas<4>(gb, cost) -> (gb);
+                ignore_num<int>(n) -> ();
+                return(gb, one);
+                # 2
+                add<int, -1>(n) -> (n_1);
+                split_gas<3, 1>(cost) -> (cost, use_cost);
+                enact_calc<int, 0>(n_1, use_cost) -> (n_1);
+                duplicate_num<int>(n_1) -> (n_1, use);
+                split_gas<2, 1>(cost) -> (cost, use_cost);
+                jump_nz<int>(use, use_cost) { 4() fallthrough() };
+                # 3
+                refund_gas<2>(gb, cost) -> (gb);
+                ignore_num<int>(n_1) -> ();
+                return(gb, one);
+                # 4
+                ignore_num<int>(one) -> ();
+                split_gas<1, 1>(cost) -> (split_gas_cost, use_cost);
+                get_gas<1, 6, 2, 6 ,2>(gb, split_gas_cost) {
+                    6(gb, dec_cost, call1_inner_cost, call1_outer_cost,
+                      call2_inner_cost, call2_outer_cost)
+                    fallthrough(gb)
+                };
+                # 5
+                ignore_num<int>(n_1) -> ();
+                constant_num<int, -10000>() -> (minus);
+                enact_calc<int, 0>(minus, use_cost) -> (minus);
+                return(gb, minus);
+                # 6
+                duplicate_num<int>(n_1) -> (n_1, n_2);
+                add<int, -1>(n_2) -> (n_2);
+                enact_calc<int, 1>(n_2, dec_cost) -> (n_2);
+                tuple_pack<GasBuiltin, int, Gas<6>>(gb, n_1, call1_inner_cost) -> (input);
+                Fibonacci(input, call1_outer_cost) -> (output);
+                tuple_unpack<GasBuiltin, int>(output) -> (gb, r1);
+                tuple_pack<GasBuiltin, int, Gas<6>>(gb, n_2, call2_inner_cost) -> (input);
+                Fibonacci(input, call2_outer_cost) -> (output);
+                tuple_unpack<GasBuiltin, int>(output) -> (gb, r2);
+                add<int>(r1, r2) -> (r);
+                enact_calc<int, 1>(r, use_cost) -> (r);
+                return(gb, r);
+
+                Fibonacci@0(gb: GasBuiltin, n: int, cost: Gas<6>) -> (GasBuiltin, int);"#
+                )
+                .unwrap()
+            ),
             Ok(())
         );
     }

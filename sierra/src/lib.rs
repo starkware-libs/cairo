@@ -10,5 +10,7 @@ pub mod utils;
 
 lalrpop_mod!(parser);
 
+pub type ProgramParser = parser::ProgramParser;
+
 #[macro_use]
 extern crate itertools;

@@ -2,12 +2,16 @@ use crate::graph::*;
 
 grammar;
 
-pub(crate) Blocks: Vec<Block> = {
-    <blocks:Block*> => blocks,
+pub Program: Program = {
+    <blocks:Block*> <funcs:Function*> => Program{blocks: blocks, funcs: funcs},
 }
 
 Block: Block = {
     <invcs:Invocation*> <exit:BlockExit> => Block{invocations: invcs, exit: exit},
+}
+
+Function: Function = {
+    <name:Label> "@" <entry:BlockId> "(" <args: TypedVars> ")" "->" "(" <res_types: Types> ")" ";" => Function{name: name, args: args, res_types: res_types, entry: entry},
 }
 
 Invocation: Invocation = {
@@ -24,8 +28,6 @@ Extension: Extension = {
     <name:Label> => Extension{name: name, tmpl_args: vec![]},
 }
  
-TemplateArgs = Comma<TemplateArg>;
-
 Comma<T>: Vec<T> = { // (0)
     <mut v:(<T> ",")*> <e:T?> => match e { // (1)
         None=> v,
@@ -36,11 +38,21 @@ Comma<T>: Vec<T> = { // (0)
     }
 }; 
 
+TemplateArgs = Comma<TemplateArg>;
+
 TemplateArg: TemplateArg = {
     <v:UnsignedInt> => TemplateArg::Value(v),
     "-" <v:UnsignedInt> => TemplateArg::Value(-v),
     Type => TemplateArg::Type(<>),
 }
+
+TypedVars = Comma<TypedVar>;
+
+TypedVar: TypedVar = {
+    <id:Identifier> ":" <ty:Type> => TypedVar{id: id, ty: ty},
+}
+
+Types = Comma<Type>;
 
 Type: Type = {
     <name:Label> "<" <args:TemplateArgs> ">" => Type{name: name, args: args},
@@ -53,13 +65,18 @@ BranchInfo: BranchInfo = {
 
 BranchTarget: BranchTarget = {
      "fallthrough" => BranchTarget::Fallthrough,
-     <b:UnsignedInt> => BranchTarget::Block(BlockId(b as usize)),
+     <b:BlockId> => BranchTarget::Block(b),
 }
+
 
 Identifiers = Comma<Identifier>;
 
 Identifier: Identifier = {
     Label => Identifier(<>),
+}
+
+BlockId: BlockId = {
+     <b:UnsignedInt> => BlockId(b as usize),
 }
 
 Label: String = {
