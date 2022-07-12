@@ -2,7 +2,11 @@ use crate::graph::*;
 
 grammar;
 
-pub(crate) Block: Block = {
+pub(crate) Blocks: Vec<Block> = {
+    <blocks:Block*> => blocks,
+}
+
+Block: Block = {
     <invcs:Invocation*> <exit:BlockExit> => Block{invocations: invcs, exit: exit},
 }
 
@@ -69,5 +73,6 @@ UnsignedInt: i64 = {
 
 match {
     r"\s*" => {},
+    r"#[^\n\r]*[\n\r]*" => {},
     _,
 }

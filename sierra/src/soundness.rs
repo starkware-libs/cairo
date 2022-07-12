@@ -223,7 +223,7 @@ impl Helper<'_> {
 mod function {
     use super::*;
     use crate::{
-        parser::BlockParser,
+        parser::BlocksParser,
         utils::{as_type, gas_builtin_type, gas_type, type_arg, val_arg},
     };
 
@@ -241,9 +241,10 @@ mod function {
 
     #[test]
     fn empty() {
+        let bp = BlocksParser::new();
         assert_eq!(
             validate(&Program {
-                blocks: vec![],
+                blocks: bp.parse("").unwrap(),
                 funcs: vec![Function {
                     name: "Some".to_string(),
                     args: vec![
@@ -260,10 +261,10 @@ mod function {
 
     #[test]
     fn basic_return() {
-        let bp = BlockParser::new();
+        let bp = BlocksParser::new();
         assert_eq!(
             validate(&Program {
-                blocks: vec![
+                blocks:
                     bp.parse(r#"
                     split_gas<1, 2>(cost) -> (cost_for_next, cost);
                     add<int>(a, b) -> (a_plus_b_deferred);
@@ -274,8 +275,7 @@ mod function {
                     mul<int>(a_plus_b, c_minus_d) -> (a_plus_b_mul_c_minus_d_deferred);
                     enact_calc<int, 0>(a_plus_b_mul_c_minus_d_deferred, cost_for_last) -> (a_plus_b_mul_c_minus_d);
                     return(a_plus_b_mul_c_minus_d);
-                    "#).unwrap()
-                ],
+                    "#).unwrap(),
                 funcs: vec![Function {
                     name: "Other".to_string(),
                     args: vec![
@@ -295,14 +295,15 @@ mod function {
 
     #[test]
     fn inifinite_gas_take_or_return() {
-        let bp = BlockParser::new();
+        let bp = BlocksParser::new();
         assert_eq!(
             validate(&Program {
-                blocks: vec![
-                    bp.parse("get_gas<1>(gb, cost) { 0(gb, cost) fallthrough(gb) };")
-                        .unwrap(),
-                    bp.parse("return(gb);").unwrap(),
-                ],
+                blocks: bp
+                    .parse(
+                        r#"get_gas<1>(gb, cost) { 0(gb, cost) fallthrough(gb) };
+                    return(gb);"#
+                    )
+                    .unwrap(),
                 funcs: vec![Function {
                     name: "Some".to_string(),
                     args: vec![
@@ -319,14 +320,15 @@ mod function {
 
     #[test]
     fn inifinite_gas_take_or_return_bad_fallthrough() {
-        let bp = BlockParser::new();
+        let bp = BlocksParser::new();
         assert_eq!(
             validate(&Program {
-                blocks: vec![
-                    bp.parse("return(gb);").unwrap(),
-                    bp.parse("get_gas<1>(gb, cost) { 1(gb, cost) 0(gb) };")
-                        .unwrap(),
-                ],
+                blocks: bp
+                    .parse(
+                        r#"return(gb);
+                             get_gas<1>(gb, cost) { 1(gb, cost) 0(gb) };"#
+                    )
+                    .unwrap(),
                 funcs: vec![Function {
                     name: "Some".to_string(),
                     args: vec![
@@ -345,14 +347,15 @@ mod function {
 
     #[test]
     fn gas_mismatch() {
-        let bp = BlockParser::new();
+        let bp = BlocksParser::new();
         assert_eq!(
             validate(&Program {
-                blocks: vec![
-                    bp.parse("get_gas<2>(gb, cost) { 0(gb, cost) fallthrough(gb) };")
-                        .unwrap(),
-                    bp.parse("return(gb);").unwrap(),
-                ],
+                blocks: bp
+                    .parse(
+                        r#"get_gas<2>(gb, cost) { 0(gb, cost) fallthrough(gb) };
+                    return(gb);"#
+                    )
+                    .unwrap(),
                 funcs: vec![Function {
                     name: "Some".to_string(),
                     args: vec![
@@ -374,64 +377,47 @@ mod function {
 
     #[test]
     fn fibonacci_using_jump() {
-        let bp = BlockParser::new();
+        let bp = BlocksParser::new();
         assert_eq!(
             validate(&Program {
-                blocks: vec![
-                    bp.parse(
+                blocks: bp
+                    .parse(
                         r#"
+                    # 0
                     constant_num<int, 1>() -> (one);
                     split_gas<5, 1>(cost) -> (cost, use_cost);
                     enact_calc<int, 0>(one, use_cost) -> (one);
                     duplicate_num<int>(n) -> (n, use);
                     split_gas<4, 1>(cost) -> (cost, use_cost);
-                    jump_nz<int>(use, use_cost) { 2() fallthrough() };"#
-                    )
-                    .unwrap(),
-                    bp.parse(
-                        r#"
+                    jump_nz<int>(use, use_cost) { 2() fallthrough() };
+                    # 1
                     refund_gas<4>(gb, cost) -> (gb);
                     ignore_num<int>(n) -> ();
-                    return(gb, one);"#
-                    )
-                    .unwrap(),
-                    bp.parse(
-                        r#"
+                    return(gb, one);
+                    # 2
                     add<int, -1>(n) -> (n);
                     split_gas<3, 1>(cost) -> (cost, use_cost);
                     enact_calc<int, 0>(n, use_cost) -> (n);
                     duplicate_num<int>(n) -> (n, use);
                     split_gas<2, 1>(cost) -> (cost, use_cost);
-                    jump_nz<int>(use, use_cost) { 4() fallthrough() };"#
-                    )
-                    .unwrap(),
-                    bp.parse(
-                        r#"
+                    jump_nz<int>(use, use_cost) { 4() fallthrough() };
+                    # 3
                     refund_gas<2>(gb, cost) -> (gb);
                     ignore_num<int>(n) -> ();
-                    return(gb, one);"#
-                    )
-                    .unwrap(),
-                    bp.parse("duplicate_num<int>(one) { fallthrough(a, b) };")
-                        .unwrap(),
-                    bp.parse(
-                        r#"
+                    return(gb, one);
+                    # 4
+                    duplicate_num<int>(one) { fallthrough(a, b) };
+                    # 5
                     split_gas<1, 1>(cost) -> (split_gas_cost, use_cost);
-                    get_gas<4>(gb, split_gas_cost) { 7(gb, cost) fallthrough(gb) };"#
-                    )
-                    .unwrap(),
-                    bp.parse(
-                        r#"
+                    get_gas<4>(gb, split_gas_cost) { 7(gb, cost) fallthrough(gb) };
+                    # 6
                     ignore_num<int>(a) -> ();
                     ignore_num<int>(b) -> ();
                     ignore_num<int>(n) -> ();
                     constant_num<int, -1>() -> (minus);
                     enact_calc<int, 0>(minus, use_cost) -> (minus);
-                    return(gb, minus);"#
-                    )
-                    .unwrap(),
-                    bp.parse(
-                        r#"
+                    return(gb, minus);
+                    # 7
                     duplicate_num<int>(a) -> (a, prev_a);
                     add<int>(a, b) -> (a);
                     duplicate_num<int>(prev_a) -> (b, tmp);
@@ -442,18 +428,14 @@ mod function {
                     enact_calc<int, 0>(n, use_cost) -> (n);
                     split_gas<2, 1>(cost) -> (cost, use_cost);
                     duplicate_num<int>(n) -> (n, use);
-                    jump_nz<int>(use, use_cost) { 5() fallthrough() };"#
-                    )
-                    .unwrap(),
-                    bp.parse(
-                        r#"
+                    jump_nz<int>(use, use_cost) { 5() fallthrough() };
+                    # 8
                     refund_gas<2>(gb, cost) -> (gb);
                     ignore_num<int>(n) -> ();
                     ignore_num<int>(b) -> ();
                     return(gb, a);"#
                     )
                     .unwrap(),
-                ],
                 funcs: vec![Function {
                     name: "Fibonacci".to_string(),
                     args: vec![
@@ -471,119 +453,48 @@ mod function {
 
     #[test]
     fn fibonacci_using_recursion() {
-        let bp = BlockParser::new();
-        let dup = |name, other| Invocation {
-            ext: Extension {
-                name: "duplicate_num".to_string(),
-                tmpl_args: vec![type_arg(int_type())],
-            },
-            args: vec![as_id(name)],
-            results: vec![as_id(name), as_id(other)],
-        };
-        let refund = |count| Invocation {
-            ext: Extension {
-                name: "refund_gas".to_string(),
-                tmpl_args: vec![val_arg(count)],
-            },
-            args: vec![as_id("gb"), as_id("cost")],
-            results: vec![as_id("gb")],
-        };
-        let ignore = |name| Invocation {
-            ext: Extension {
-                name: "ignore_num".to_string(),
-                tmpl_args: vec![type_arg(int_type())],
-            },
-            args: vec![as_id(name)],
-            results: vec![],
-        };
-
-        let test_n = |b_success| {
-            BlockExit::Jump(JumpInfo {
-                ext: Extension {
-                    name: "jump_nz".to_string(),
-                    tmpl_args: vec![type_arg(int_type())],
-                },
-                args: vec![as_id("use"), as_id("use_cost")],
-                branches: vec![
-                    BranchInfo {
-                        target: BranchTarget::Block(BlockId(b_success)),
-                        exports: vec![],
-                    },
-                    BranchInfo {
-                        target: BranchTarget::Fallthrough,
-                        exports: vec![],
-                    },
-                ],
-            })
-        };
-
-        let enact = |name| Invocation {
-            ext: Extension {
-                name: "enact_calc".to_string(),
-                tmpl_args: vec![type_arg(int_type()), val_arg(0)],
-            },
-            args: vec![as_id(name), as_id("use_cost")],
-            results: vec![as_id(name)],
-        };
-
+        let bp = BlocksParser::new();
         assert_eq!(
             validate(&Program {
-                blocks: vec![
-                    bp.parse(
+                blocks: bp
+                    .parse(
                         r#"
+                    # 0
                     constant_num<int, 1>() -> (one);
                     split_gas<5, 1>(cost) -> (cost, use_cost);
                     enact_calc<int, 0>(one, use_cost) -> (one);
                     duplicate_num<int>(n) -> (n, use);
                     split_gas<4, 1>(cost) -> (cost, use_cost);
-                    jump_nz<int>(use, use_cost) { 2() fallthrough() };"#
-                    )
-                    .unwrap(),
-                    bp.parse(
-                        r#"
+                    jump_nz<int>(use, use_cost) { 2() fallthrough() };
+                    # 1
                     refund_gas<4>(gb, cost) -> (gb);
                     ignore_num<int>(n) -> ();
-                    return(gb, one);"#
-                    )
-                    .unwrap(),
-                    bp.parse(
-                        r#"
+                    return(gb, one);
+                    # 2
                     add<int, -1>(n) -> (n_1);
                     split_gas<3, 1>(cost) -> (cost, use_cost);
                     enact_calc<int, 0>(n_1, use_cost) -> (n_1);
                     duplicate_num<int>(n_1) -> (n_1, use);
                     split_gas<2, 1>(cost) -> (cost, use_cost);
-                    jump_nz<int>(use, use_cost) { 4() fallthrough() };"#
-                    )
-                    .unwrap(),
-                    bp.parse(
-                        r#"
+                    jump_nz<int>(use, use_cost) { 4() fallthrough() };
+                    # 3
                     refund_gas<2>(gb, cost) -> (gb);
                     ignore_num<int>(n_1) -> ();
-                    return(gb, one);"#
-                    )
-                    .unwrap(),
-                    bp.parse(
-                        r#"
+                    return(gb, one);
+                    # 4
                     ignore_num<int>(one) -> ();
                     split_gas<1, 1>(cost) -> (split_gas_cost, use_cost);
                     get_gas<1, 6, 2, 6 ,2>(gb, split_gas_cost) {
                         6(gb, dec_cost, call1_inner_cost, call1_outer_cost,
                           call2_inner_cost, call2_outer_cost)
                         fallthrough(gb)
-                    };"#
-                    )
-                    .unwrap(),
-                    bp.parse(
-                        r#"
+                    };
+                    # 5
                     ignore_num<int>(n_1) -> ();
                     constant_num<int, -10000>() -> (minus);
                     enact_calc<int, 0>(minus, use_cost) -> (minus);
-                    return(gb, minus);"#
-                    )
-                    .unwrap(),
-                    bp.parse(
-                        r#"
+                    return(gb, minus);
+                    # 6
                     duplicate_num<int>(n_1) -> (n_1, n_2);
                     add<int, -1>(n_2) -> (n_2);
                     enact_calc<int, 1>(n_2, dec_cost) -> (n_2);
@@ -598,7 +509,6 @@ mod function {
                     return(gb, r);"#
                     )
                     .unwrap(),
-                ],
                 funcs: vec![Function {
                     name: "Fibonacci".to_string(),
                     args: vec![
