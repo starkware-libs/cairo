@@ -222,22 +222,7 @@ impl Helper<'_> {
 #[cfg(test)]
 mod function {
     use super::*;
-    use crate::{
-        utils::{as_type, gas_builtin_type, gas_type, type_arg, val_arg},
-        ProgramParser,
-    };
-
-    fn as_id(name: &str) -> Identifier {
-        Identifier(name.to_string())
-    }
-
-    fn typed(id: Identifier, ty: Type) -> TypedVar {
-        TypedVar { id: id, ty: ty }
-    }
-
-    fn int_type() -> Type {
-        as_type("int")
-    }
+    use crate::{utils::gas_type, ProgramParser};
 
     #[test]
     fn empty() {
@@ -325,7 +310,7 @@ mod function {
             ),
             Err(Error::FunctionBlockIdentifierTypeMismatch(
                 BlockId(0),
-                as_id("cost"),
+                Identifier("cost".to_string()),
                 gas_type(1),
                 gas_type(2)
             ))
