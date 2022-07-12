@@ -7,24 +7,29 @@ pub Program: Program = {
 }
 
 Block: Block = {
-    <invcs:Invocation*> <exit:BlockExit> => Block{invocations: invcs, exit: exit},
+    <invcs:Invocation*> <exit:BlockExit> =>
+        Block{invocations: invcs, exit: exit},
 }
 
 Function: Function = {
-    <name:Label> "@" <entry:BlockId> "(" <args: TypedVars> ")" "->" "(" <res_types: Types> ")" ";" => Function{name: name, args: args, res_types: res_types, entry: entry},
+    <name:Label> "@" <entry:BlockId> "(" <args: TypedVars> ")" "->" "(" <res_types: Types> ")" ";" =>
+        Function{name: name, args: args, res_types: res_types, entry: entry},
 }
 
 Invocation: Invocation = {
-    <e:Extension> "(" <args:Identifiers> ")" "->" "(" <results:Identifiers> ")" ";"  => Invocation{ext: e, args: args, results: results},
+    <e:Extension> "(" <args:Identifiers> ")" "->" "(" <results:Identifiers> ")" ";" =>
+        Invocation{ext: e, args: args, results: results},
 }
 
 BlockExit: BlockExit = {
-    "return" "(" <args:Identifiers> ")" ";"  => BlockExit::Return(args),
-    <e:Extension> "(" <args:Identifiers> ")" "{" <branches:BranchInfo*> "}" ";" => BlockExit::Jump(JumpInfo{ext:e, args: args, branches: branches}),
+    "return" "(" <args:Identifiers> ")" ";" => BlockExit::Return(args),
+    <e:Extension> "(" <args:Identifiers> ")" "{" <branches:BranchInfo*> "}" ";" =>
+        BlockExit::Jump(JumpInfo{ext:e, args: args, branches: branches}),
 }
 
 Extension: Extension = {
-    <name:Label> "<" <tmpl_args:TemplateArgs> ">" => Extension{name: name, tmpl_args: tmpl_args},
+    <name:Label> "<" <tmpl_args:TemplateArgs> ">" =>
+        Extension{name: name, tmpl_args: tmpl_args},
     <name:Label> => Extension{name: name, tmpl_args: vec![]},
 }
  
@@ -60,7 +65,8 @@ Type: Type = {
 }
 
 BranchInfo: BranchInfo = {
-     <target: BranchTarget> "(" <exports:Identifiers> ")" => BranchInfo{ target: target, exports: exports },
+    <target: BranchTarget> "(" <exports:Identifiers> ")" =>
+        BranchInfo{ target: target, exports: exports },
 }
 
 BranchTarget: BranchTarget = {
