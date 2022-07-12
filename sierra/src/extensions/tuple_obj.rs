@@ -20,6 +20,54 @@ impl ExtensionImplementation for TuplePackExtension {
             vec![as_tuple(tmpl_args.clone())],
         ))
     }
+
+    fn mem_change(
+        self: &Self,
+        tmpl_args: &Vec<TemplateArg>,
+        registry: &TypeRegistry,
+        mem_state: MemState,
+        arg_locs: Vec<Location>,
+    ) -> Result<Vec<(MemState, Vec<Location>)>, Error> {
+        let mut result: Option<&Location> = None;
+        let mut expected_next: Option<Location> = None;
+        tmpl_args
+            .iter()
+            .zip(arg_locs.iter())
+            .try_for_each(|(tmpl_arg, loc)| match tmpl_arg {
+                TemplateArg::Type(t) => {
+                    let ti = get_info(registry, t)?;
+                    if ti.size == 0 {
+                        return Ok(());
+                    }
+                    //match &expected_next {
+                    //    Some(exp) if loc != exp => {
+                    //        return Err(Error::IllegalExtensionArgsLocation);
+                    //    }
+                    //    _ => {}
+                    //}
+                    if result.is_none() {
+                        result = Some(loc);
+                    }
+                    expected_next = match loc {
+                        Location::Temp(offset) => Ok(Some(Location::Temp(offset + ti.size as i64))),
+                        Location::Local(offset) => {
+                            Ok(Some(Location::Local(offset + ti.size as i64)))
+                        }
+                        // Location::Transient(_) => Err(Error::IllegalExtensionArgsLocation),
+                        Location::Transient(_) => Ok(Some(Location::Local(0))),
+                    }?;
+                    Ok(())
+                }
+                TemplateArg::Value(_) => Err(Error::UnsupportedTypeArg),
+            })?;
+        Ok(vec![(
+            mem_state,
+            vec![match result {
+                None => Location::Transient(vec![]),
+                Some(loc) => loc.clone(),
+            }],
+        )])
+    }
 }
 
 struct TupleUnpackExtension {}
@@ -41,6 +89,34 @@ impl ExtensionImplementation for TupleUnpackExtension {
             vec![as_tuple(tmpl_args.clone())],
             arg_types,
         ))
+    }
+
+    fn mem_change(
+        self: &Self,
+        tmpl_args: &Vec<TemplateArg>,
+        registry: &TypeRegistry,
+        mem_state: MemState,
+        arg_locs: Vec<Location>,
+    ) -> Result<Vec<(MemState, Vec<Location>)>, Error> {
+        let mut locs = vec![];
+        let mut offset = 0;
+        tmpl_args.iter().try_for_each(|tmpl_arg| match tmpl_arg {
+            TemplateArg::Type(t) => {
+                let ti = get_info(registry, t)?;
+                if ti.size == 0 {
+                    return Ok(());
+                }
+                locs.push(match &arg_locs[0] {
+                    Location::Temp(base) => Ok(Location::Temp(base + offset)),
+                    Location::Local(base) => Ok(Location::Local(base + offset)),
+                    Location::Transient(_) => Err(Error::IllegalExtensionArgsLocation),
+                }?);
+                offset += ti.size as i64;
+                Ok(())
+            }
+            TemplateArg::Value(_) => Err(Error::UnsupportedTypeArg),
+        })?;
+        Ok(vec![(mem_state, locs)])
     }
 }
 

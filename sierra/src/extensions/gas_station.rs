@@ -1,6 +1,6 @@
 use crate::{
     extensions::*,
-    utils::{gas_builtin_type, gas_type},
+    utils::{as_deferred, gas_builtin_type, gas_type},
 };
 
 struct GetGasExtension {}
@@ -13,7 +13,7 @@ impl ExtensionImplementation for GetGasExtension {
         if tmpl_args.is_empty() {
             return Err(Error::WrongNumberOfTypeArgs);
         }
-        let mut success_types = vec![gas_builtin_type()];
+        let mut success_types = vec![as_deferred(gas_builtin_type())];
         tmpl_args.iter().try_for_each(|tmpl_arg| match tmpl_arg {
             TemplateArg::Value(v) => {
                 success_types.push(gas_type(*v));
@@ -45,7 +45,7 @@ impl ExtensionImplementation for RefundGasExtension {
         }?;
         Ok(simple_invoke_ext_sign(
             vec![gas_builtin_type(), gas_type(value)],
-            vec![gas_builtin_type()],
+            vec![as_deferred(gas_builtin_type())],
         ))
     }
 }
@@ -137,7 +137,7 @@ mod tests {
             Ok(ExtensionSignature {
                 args: vec![gas_builtin_type(), gas_type(1)],
                 results: vec![
-                    vec![gas_builtin_type(), gas_type(1), gas_type(2)],
+                    vec![as_deferred(gas_builtin_type()), gas_type(1), gas_type(2)],
                     vec![gas_builtin_type()]
                 ],
                 fallthrough: Some(1),
@@ -147,7 +147,7 @@ mod tests {
             RefundGasExtension {}.get_signature(&vec![val_arg(5)]),
             Ok(simple_invoke_ext_sign(
                 vec![gas_builtin_type(), gas_type(5)],
-                vec![gas_builtin_type()],
+                vec![as_deferred(gas_builtin_type())],
             ))
         );
         assert_eq!(

@@ -8,12 +8,12 @@ pub enum ApChange {
 pub enum Location {
     Temp(i64),
     Local(i64),
-    Transient,
+    Transient(Vec<Location>),
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct MemState {
-    pub temp_offset: usize,
-    pub local_offset: usize,
+    pub temp_cursur: usize,
+    pub local_cursur: usize,
     pub ap_change: ApChange,
 }

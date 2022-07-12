@@ -5,6 +5,8 @@ pub enum Error {
     TypeMismatch(Identifier),
     MissingReference(Identifier),
     VariableOverride(Identifier),
+    IllegalApChangeValue,
+    IllegalExtensionArgsLocation,
     WrongNumberOfTypeArgs,
     UnsupportedTypeArg,
     UnsupportedTypeName(String),

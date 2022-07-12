@@ -36,8 +36,8 @@ pub fn validate(prog: &Program) -> Result<(), Error> {
             State {
                 vars: vars,
                 mem: MemState {
-                    temp_offset: 0,
-                    local_offset: 0,
+                    temp_cursur: 0,
+                    local_cursur: 0,
                     ap_change: ApChange::Known(0),
                 },
             },
@@ -117,8 +117,16 @@ impl Helper<'_> {
             let (nvars, used_vars) = take_args(vars, invc.args.iter())?;
             let (arg_types, arg_locs): (Vec<_>, Vec<_>) =
                 used_vars.into_iter().map(|v| (v.ty, v.loc)).unzip();
-            let (sign, locs) = self.registry.get_mapping(&invc.ext, mem, &arg_locs)?;
+            let (sign, locs) = self.registry.get_mapping(&invc.ext, mem, arg_locs)?;
             if sign.args != arg_types {
+                for a in &sign.args {
+                    print!("{}, ", a);
+                }
+                println!("");
+                for a in &arg_types {
+                    print!("{}, ", a);
+                }
+                println!("");
                 return Err(Error::ExtensionArgumentsMismatch(invc.to_string()));
             }
             if sign.results.len() != 1 || locs.len() != 1 {
@@ -169,7 +177,7 @@ impl Helper<'_> {
                 let (vars, used_vars) = take_args(vars, j.args.iter())?;
                 let (arg_types, arg_locs): (Vec<_>, Vec<_>) =
                     used_vars.into_iter().map(|v| (v.ty, v.loc)).unzip();
-                let (sign, locs) = self.registry.get_mapping(&j.ext, mem, &arg_locs)?;
+                let (sign, locs) = self.registry.get_mapping(&j.ext, mem, arg_locs)?;
                 if sign.args != arg_types {
                     return Err(Error::ExtensionArgumentsMismatch(j.to_string()));
                 }
@@ -243,12 +251,12 @@ mod function {
             validate(&pp.parse(r#"
                 split_gas<1, 2>(cost) -> (cost_for_next, cost);
                 add<int>(a, b) -> (a_plus_b_deferred);
-                enact_calc<int, 0>(a_plus_b_deferred, cost_for_next) -> (a_plus_b);
+                store<0, int>(a_plus_b_deferred, cost_for_next) -> (a_plus_b);
                 split_gas<1, 1>(cost) -> (cost_for_next, cost_for_last);
                 sub<int>(c, d) -> (c_minus_d_deferred);
-                enact_calc<int, 0>(c_minus_d_deferred, cost_for_next) -> (c_minus_d);
+                store<0, int>(c_minus_d_deferred, cost_for_next) -> (c_minus_d);
                 mul<int>(a_plus_b, c_minus_d) -> (a_plus_b_mul_c_minus_d_deferred);
-                enact_calc<int, 0>(a_plus_b_mul_c_minus_d_deferred, cost_for_last) -> (a_plus_b_mul_c_minus_d);
+                store<0, int>(a_plus_b_mul_c_minus_d_deferred, cost_for_last) -> (a_plus_b_mul_c_minus_d);
                 return(a_plus_b_mul_c_minus_d);
 
                 Other@0(a: int, b: int, c: int, d: int, cost: Gas<3>) -> (int);"#).unwrap()),
@@ -263,10 +271,11 @@ mod function {
             validate(
                 &pp.parse(
                     r#"
-                get_gas<1>(gb, cost) { 0(gb, cost) fallthrough(gb) };
+                store<0, GasBuiltin>(gb, success_cost) { fallthrough(gb) };
+                get_gas<1, 1>(gb, cost) { 0(gb, cost, success_cost) fallthrough(gb) };
                 return(gb);
 
-                Other@0(gb: GasBuiltin, cost: Gas<1>) -> (GasBuiltin);"#
+                Other@1(gb: GasBuiltin, cost: Gas<1>) -> (GasBuiltin);"#
                 )
                 .unwrap()
             ),
@@ -282,14 +291,15 @@ mod function {
                 &pp.parse(
                     r#"
                 return(gb);
-                get_gas<1>(gb, cost) { 1(gb, cost) 0(gb) };
+                store<0, GasBuiltin>(gb, success_cost) { fallthrough(gb) };
+                get_gas<1, 1>(gb, cost) { 1(gb, cost, success_cost) 0(gb) };
                 
-                Some@1(gb: GasBuiltin, cost: Gas<1>) -> (GasBuiltin);"#
+                Some@2(gb: GasBuiltin, cost: Gas<1>) -> (GasBuiltin);"#
                 )
                 .unwrap()
             ),
             Err(Error::ExtensionFallthroughMismatch(
-                "get_gas<1>(gb, cost) {\n1(gb, cost)\n0(gb)\n}".to_string()
+                "get_gas<1, 1>(gb, cost) {\n1(gb, cost, success_cost)\n0(gb)\n}".to_string()
             ))
         );
     }
@@ -301,15 +311,16 @@ mod function {
             validate(
                 &pp.parse(
                     r#"
-                get_gas<2>(gb, cost) { 0(gb, cost) fallthrough(gb) };
+                store<0, GasBuiltin>(gb, success_cost) { fallthrough(gb) };
+                get_gas<2, 1>(gb, cost) { 0(gb, cost, success_cost) fallthrough(gb) };
                 return(gb);
 
-                Some@0(gb: GasBuiltin, cost: Gas<1>) -> (GasBuiltin);"#
+                Some@1(gb: GasBuiltin, cost: Gas<1>) -> (GasBuiltin);"#
                 )
                 .unwrap()
             ),
             Err(Error::FunctionBlockIdentifierTypeMismatch(
-                BlockId(0),
+                BlockId(1),
                 Identifier("cost".to_string()),
                 gas_type(1),
                 gas_type(2)
@@ -327,51 +338,58 @@ mod function {
                 # 0
                 constant_num<int, 1>() -> (one);
                 split_gas<5, 1>(cost) -> (cost, use_cost);
-                enact_calc<int, 0>(one, use_cost) -> (one);
+                store<0, int>(one, use_cost) -> (one);
                 duplicate_num<int>(n) -> (n, use);
                 split_gas<4, 1>(cost) -> (cost, use_cost);
                 jump_nz<int>(use, use_cost) { 2() fallthrough() };
                 # 1
-                refund_gas<4>(gb, cost) -> (gb);
+                split_gas<3, 1>(cost) -> (cost, use_cost);
+                refund_gas<3>(gb, cost) -> (gb);
+                store<0, GasBuiltin>(gb, use_cost) -> (gb);
                 ignore_num<int>(n) -> ();
                 return(gb, one);
                 # 2
                 add<int, -1>(n) -> (n);
                 split_gas<3, 1>(cost) -> (cost, use_cost);
-                enact_calc<int, 0>(n, use_cost) -> (n);
+                store<0, int>(n, use_cost) -> (n);
                 duplicate_num<int>(n) -> (n, use);
                 split_gas<2, 1>(cost) -> (cost, use_cost);
                 jump_nz<int>(use, use_cost) { 4() fallthrough() };
                 # 3
-                refund_gas<2>(gb, cost) -> (gb);
+                split_gas<1, 1>(cost) -> (cost, use_cost);
+                refund_gas<1>(gb, cost) -> (gb);
+                store<0, GasBuiltin>(gb, use_cost) -> (gb);
                 ignore_num<int>(n) -> ();
                 return(gb, one);
                 # 4
                 duplicate_num<int>(one) { fallthrough(a, b) };
                 # 5
-                split_gas<1, 1>(cost) -> (split_gas_cost, use_cost);
-                get_gas<4>(gb, split_gas_cost) { 7(gb, cost) fallthrough(gb) };
+                split_gas<1, 1>(cost) -> (get_gas_cost, use_cost);
+                get_gas<4, 1>(gb, get_gas_cost) { 7(gb, cost, success_cost) fallthrough(gb) };
                 # 6
                 ignore_num<int>(a) -> ();
                 ignore_num<int>(b) -> ();
                 ignore_num<int>(n) -> ();
                 constant_num<int, -1>() -> (minus);
-                enact_calc<int, 0>(minus, use_cost) -> (minus);
+                store<0, int>(minus, use_cost) -> (minus);
                 return(gb, minus);
                 # 7
+                store<0, GasBuiltin>(gb, success_cost) -> (gb);
                 duplicate_num<int>(a) -> (a, prev_a);
                 add<int>(a, b) -> (a);
                 duplicate_num<int>(prev_a) -> (b, tmp);
                 ignore_num<int>(tmp) -> ();
-                enact_calc<int, 0>(a, use_cost) -> (a);
+                store<0, int>(a, use_cost) -> (a);
                 add<int, -1>(n) -> (n);
                 split_gas<3, 1>(cost) -> (cost, use_cost);
-                enact_calc<int, 0>(n, use_cost) -> (n);
+                store<0, int>(n, use_cost) -> (n);
                 split_gas<2, 1>(cost) -> (cost, use_cost);
                 duplicate_num<int>(n) -> (n, use);
                 jump_nz<int>(use, use_cost) { 5() fallthrough() };
                 # 8
-                refund_gas<2>(gb, cost) -> (gb);
+                split_gas<1, 1>(cost) -> (cost, use_cost);
+                refund_gas<1>(gb, cost) -> (gb);
+                store<0, GasBuiltin>(gb, use_cost) -> (gb);
                 ignore_num<int>(n) -> ();
                 ignore_num<int>(b) -> ();
                 return(gb, a);
@@ -394,42 +412,47 @@ mod function {
                 # 0
                 constant_num<int, 1>() -> (one);
                 split_gas<5, 1>(cost) -> (cost, use_cost);
-                enact_calc<int, 0>(one, use_cost) -> (one);
+                store<0, int>(one, use_cost) -> (one);
                 duplicate_num<int>(n) -> (n, use);
                 split_gas<4, 1>(cost) -> (cost, use_cost);
                 jump_nz<int>(use, use_cost) { 2() fallthrough() };
                 # 1
-                refund_gas<4>(gb, cost) -> (gb);
+                split_gas<3, 1>(cost) -> (cost, use_cost);
+                refund_gas<3>(gb, cost) -> (gb);
+                store<0, GasBuiltin>(gb, use_cost) -> (gb);
                 ignore_num<int>(n) -> ();
                 return(gb, one);
                 # 2
                 add<int, -1>(n) -> (n_1);
                 split_gas<3, 1>(cost) -> (cost, use_cost);
-                enact_calc<int, 0>(n_1, use_cost) -> (n_1);
+                store<0, int>(n_1, use_cost) -> (n_1);
                 duplicate_num<int>(n_1) -> (n_1, use);
                 split_gas<2, 1>(cost) -> (cost, use_cost);
                 jump_nz<int>(use, use_cost) { 4() fallthrough() };
                 # 3
-                refund_gas<2>(gb, cost) -> (gb);
+                split_gas<1, 1>(cost) -> (cost, use_cost);
+                refund_gas<1>(gb, cost) -> (gb);
+                store<0, GasBuiltin>(gb, use_cost) -> (gb);
                 ignore_num<int>(n_1) -> ();
                 return(gb, one);
                 # 4
                 ignore_num<int>(one) -> ();
-                split_gas<1, 1>(cost) -> (split_gas_cost, use_cost);
-                get_gas<1, 6, 2, 6 ,2>(gb, split_gas_cost) {
+                split_gas<1, 1>(cost) -> (get_gas_cost, use_cost);
+                get_gas<1, 6, 2, 6 ,2, 1>(gb, get_gas_cost) {
                     6(gb, dec_cost, call1_inner_cost, call1_outer_cost,
-                      call2_inner_cost, call2_outer_cost)
+                      call2_inner_cost, call2_outer_cost, success_cost)
                     fallthrough(gb)
                 };
                 # 5
                 ignore_num<int>(n_1) -> ();
                 constant_num<int, -10000>() -> (minus);
-                enact_calc<int, 0>(minus, use_cost) -> (minus);
+                store<0, int>(minus, use_cost) -> (minus);
                 return(gb, minus);
                 # 6
+                store<0, GasBuiltin>(gb, success_cost) -> (gb);
                 duplicate_num<int>(n_1) -> (n_1, n_2);
                 add<int, -1>(n_2) -> (n_2);
-                enact_calc<int, 1>(n_2, dec_cost) -> (n_2);
+                store<0, int>(n_2, dec_cost) -> (n_2);
                 tuple_pack<GasBuiltin, int, Gas<6>>(gb, n_1, call1_inner_cost) -> (input);
                 Fibonacci(input, call1_outer_cost) -> (output);
                 tuple_unpack<GasBuiltin, int>(output) -> (gb, r1);
@@ -437,7 +460,7 @@ mod function {
                 Fibonacci(input, call2_outer_cost) -> (output);
                 tuple_unpack<GasBuiltin, int>(output) -> (gb, r2);
                 add<int>(r1, r2) -> (r);
-                enact_calc<int, 1>(r, use_cost) -> (r);
+                store<1, int>(r, use_cost) -> (r);
                 return(gb, r);
 
                 Fibonacci@0(gb: GasBuiltin, n: int, cost: Gas<6>) -> (GasBuiltin, int);"#

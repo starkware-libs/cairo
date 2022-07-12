@@ -26,6 +26,32 @@ impl ExtensionImplementation for FunctionCallExtension {
             )],
         ))
     }
+
+    fn mem_change(
+        self: &Self,
+        tmpl_args: &Vec<TemplateArg>,
+        registry: &TypeRegistry,
+        _mem_state: MemState,
+        _arg_locs: Vec<Location>,
+    ) -> Result<Vec<(MemState, Vec<Location>)>, Error> {
+        //let ap_val = match mem_state.ap_change {
+        //    ApChange::Unknown => Err(Error::IllegalApChangeValue),
+        //    ApChange::Known(val) => Ok(val),
+        //}?;
+        //match arg_locs[0] {
+        //    Location::Temp(offset) if offset == ap_val as i64 => Ok(()),
+        //    _ => Err(Error::IllegalExtensionArgsLocation),
+        //}?;
+        let ti = get_info(registry, &as_tuple(tmpl_args.clone()))?;
+        Ok(vec![(
+            MemState {
+                temp_cursur: ti.size,
+                local_cursur: 0,
+                ap_change: ApChange::Unknown,
+            },
+            vec![Location::Temp(-(ti.size as i64))],
+        )])
+    }
 }
 
 pub(super) fn extensions(prog: &Program) -> Vec<(String, ExtensionBox)> {

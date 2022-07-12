@@ -7,6 +7,7 @@ mod function_call;
 mod gas_station;
 mod jump_nz;
 mod match_nullable;
+mod store;
 mod tuple_obj;
 mod unconditional_jump;
 
@@ -31,14 +32,14 @@ impl Registry {
         self: &Self,
         ext: &Extension,
         mem_state: MemState,
-        args_state: &Vec<Location>,
+        arg_locs: Vec<Location>,
     ) -> Result<(ExtensionSignature, Vec<(MemState, Vec<Location>)>), Error> {
         let e = match self.ext_reg.get(&ext.name) {
             None => Err(Error::UnsupportedLibCallName(ext.name.clone())),
             Some(e) => Ok(e),
         }?;
         let sign = e.get_signature(&ext.tmpl_args)?;
-        let locs = e.mem_change(&ext.tmpl_args, &self.ty_reg, mem_state, args_state)?;
+        let locs = e.mem_change(&ext.tmpl_args, &self.ty_reg, mem_state, arg_locs)?;
         Ok((sign, locs))
     }
 }
@@ -76,7 +77,7 @@ trait ExtensionImplementation {
         tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
         mem_state: MemState,
-        _args_state: &Vec<Location>,
+        arg_locs: Vec<Location>,
     ) -> Result<Vec<(MemState, Vec<Location>)>, Error> {
         let sign = self.get_signature(tmpl_args)?;
         Ok(sign
@@ -85,7 +86,9 @@ trait ExtensionImplementation {
             .map(|r| {
                 (
                     mem_state.clone(),
-                    r.iter().map(|_| Location::Transient).collect(),
+                    r.iter()
+                        .map(|_| Location::Transient(arg_locs.clone()))
+                        .collect(),
                 )
             })
             .collect())
@@ -103,6 +106,7 @@ fn get_ext_registry(prog: &Program) -> ExtensionRegistry {
         gas_station::extensions().into_iter(),
         jump_nz::extensions().into_iter(),
         match_nullable::extensions().into_iter(),
+        store::extensions().into_iter(),
         tuple_obj::extensions().into_iter(),
         unconditional_jump::extensions().into_iter()
     )
