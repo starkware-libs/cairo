@@ -24,8 +24,8 @@ pub struct SyntaxNode(Arc<SyntaxNodeInner>);
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 struct SyntaxNodeInner {
     green: GreenId,
-    // Number of characters from the beginning of the file to the start of the span of this
-    // syntax subtree.
+    /// Number of characters from the beginning of the file to the start of the span of this
+    /// syntax subtree.
     offset: u32,
     parent: Option<SyntaxNode>,
 }
