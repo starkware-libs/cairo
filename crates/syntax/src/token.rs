@@ -49,6 +49,7 @@ pub enum TokenKind {
     ColonColon,
     Comma,
     Dot,
+    DotDot,
     Eq,
     Semi,
     Underscore,
@@ -58,6 +59,7 @@ pub enum TokenKind {
     RBrack,
     LParen,
     RParen,
+    Arrow,
 
     // Trivia.
     SingleLineComment,
