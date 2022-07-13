@@ -21,5 +21,10 @@ macro_rules! define_short_id {
                 self.0
             }
         }
+        impl std::fmt::Display for $short_id {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                write!(f, "{}", self.0)
+            }
+        }
     };
 }
