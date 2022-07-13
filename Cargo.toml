@@ -1,11 +1,12 @@
 [workspace]
 
 members = [
-    "crates/db_utils",
     "crates/casm",
+    "crates/db_utils",
     "crates/defs",
     "crates/diagnostics",
     "crates/filesystem",
+    "crates/parser",
     "crates/sierra",
     "crates/syntax",
     "crates/syntax_codegen",
