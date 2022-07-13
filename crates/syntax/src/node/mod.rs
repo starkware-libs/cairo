@@ -6,10 +6,10 @@ use crate::token::{Token, TokenKind};
 
 use self::kind::SyntaxKind;
 
+#[allow(dead_code)]
+pub mod ast;
 #[cfg(test)]
 mod ast_test;
-
-pub mod ast;
 pub mod element_list;
 pub mod kind;
 
