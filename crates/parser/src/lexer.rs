@@ -1,0 +1,247 @@
+use smol_str::SmolStr;
+use syntax::node::ast::{
+    Terminal, Trivia, TriviumNewline, TriviumSingleLineComment, TriviumWhitespace,
+};
+use syntax::node::db::GreenInterner;
+use syntax::node::ids::GreenId;
+use syntax::node::Token;
+use syntax::token::TokenKind;
+
+use crate::text::{CodeSource, TextSpan};
+
+pub struct Lexer<'a> {
+    db: &'a dyn GreenInterner,
+    source: CodeSource,
+    text: &'a str,
+    previous_position: u32,
+    current_position: u32,
+    done: bool,
+}
+
+impl<'a> Lexer<'a> {
+    // Ctors.
+    #[allow(dead_code)]
+    pub fn from_text(db: &'a dyn GreenInterner, source: CodeSource, text: &'a str) -> Lexer<'a> {
+        Lexer { db, source, text, previous_position: 0, current_position: 0, done: false }
+    }
+
+    // Helpers.
+    fn peek(&self) -> Option<char> {
+        self.text[self.current_position as usize..].chars().next()
+    }
+
+    fn peek_nth(&self, n: usize) -> Option<char> {
+        self.text[self.current_position as usize..].chars().nth(n)
+    }
+
+    fn take(&mut self) -> Option<char> {
+        let res = self.peek()?;
+        self.current_position += 1;
+        Some(res)
+    }
+
+    fn peek_span_text(&self) -> &'a str {
+        &self.text[self.previous_position as usize..self.current_position as usize]
+    }
+    fn peek_span(&self) -> TextSpan {
+        TextSpan { from: self.previous_position, to: self.current_position }
+    }
+
+    fn consume_span(&mut self) -> &str {
+        let val = self.peek_span_text();
+        self.previous_position = self.current_position;
+        val
+    }
+
+    // Trivia matchers.
+    fn match_trivia(&mut self, leading: bool) -> Vec<GreenId> {
+        let mut res: Vec<GreenId> = Vec::new();
+        while let Some(current) = self.peek() {
+            let trivium = match current {
+                ' ' | '\r' | '\t' => self.match_trivium_whitespace(),
+                '\n' => self.match_trivium_newline(),
+                '/' if self.peek_nth(1) == Some('/') => self.match_trivium_single_line_comment(),
+                _ => break,
+            };
+            res.push(trivium);
+            if current == '\n' && !leading {
+                break;
+            }
+        }
+        res
+    }
+
+    // Assumes the next character is one of [' ', '\r', '\t'].
+    fn match_trivium_whitespace(&mut self) -> GreenId {
+        while self.peek().map(|s| matches!(s, ' ' | '\r' | '\t')).unwrap_or(false) {
+            self.take();
+        }
+        TriviumWhitespace::new_green(
+            self.db,
+            Token::new_green(self.db, TokenKind::Whitespace, SmolStr::from(self.consume_span())),
+        )
+    }
+
+    // Assumes the next character '/n'.
+    fn match_trivium_newline(&mut self) -> GreenId {
+        self.take();
+        TriviumNewline::new_green(
+            self.db,
+            Token::new_green(self.db, TokenKind::Newline, SmolStr::from(self.consume_span())),
+        )
+    }
+
+    // Assumes the next 2 characters are "//".
+    fn match_trivium_single_line_comment(&mut self) -> GreenId {
+        while !matches!(self.peek(), Some('\n') | None) {
+            self.take();
+        }
+        TriviumSingleLineComment::new_green(
+            self.db,
+            Token::new_green(
+                self.db,
+                TokenKind::SingleLineComment,
+                SmolStr::from(self.consume_span()),
+            ),
+        )
+    }
+
+    // Token matchers.
+    fn take_token_literal_number(&mut self) -> TokenKind {
+        while self.peek().map(|s| s.is_ascii_digit()).unwrap_or(false) {
+            self.take();
+        }
+        TokenKind::LiteralNumber
+    }
+
+    fn take_token_identifier(&mut self) -> TokenKind {
+        // TODO(spapini): Support or explicitly report general unicode characters.
+        while self.peek().map(|s| s.is_ascii_alphanumeric() || s == '_').unwrap_or(false) {
+            self.take();
+        }
+
+        let word = self.peek_span_text();
+        match word {
+            "false" => TokenKind::False,
+            "true" => TokenKind::True,
+            "fn" => TokenKind::Function,
+            "mod" => TokenKind::Module,
+            "struct" => TokenKind::Struct,
+            "let" => TokenKind::Let,
+            "return" => TokenKind::Return,
+            "_" => TokenKind::Underscore,
+            _ => TokenKind::Identifier,
+        }
+    }
+
+    // Takes a single character and returns the given kind.
+    fn take_token_of_kind(&mut self, kind: TokenKind) -> TokenKind {
+        self.take();
+        kind
+    }
+
+    // If the next character is `second_char`, returns `long_kind`., otherwise returns `short_kind`.
+    fn pick_kind(
+        &mut self,
+        second_char: char,
+        long_kind: TokenKind,
+        short_kind: TokenKind,
+    ) -> TokenKind {
+        self.take();
+        if self.peek() == Some(second_char) {
+            self.take();
+            long_kind
+        } else {
+            short_kind
+        }
+    }
+
+    fn match_terminal(&mut self) -> TerminalWithKind {
+        let leading_trivia = self.match_trivia(true);
+
+        let kind = if let Some(current) = self.peek() {
+            match current {
+                '0'..='9' => self.take_token_literal_number(),
+                ',' => self.take_token_of_kind(TokenKind::Comma),
+                ';' => self.take_token_of_kind(TokenKind::Semi),
+                '{' => self.take_token_of_kind(TokenKind::LBrace),
+                '}' => self.take_token_of_kind(TokenKind::RBrace),
+                '[' => self.take_token_of_kind(TokenKind::LBrack),
+                ']' => self.take_token_of_kind(TokenKind::RBrack),
+                '(' => self.take_token_of_kind(TokenKind::LParen),
+                ')' => self.take_token_of_kind(TokenKind::RParen),
+                '.' => self.pick_kind('.', TokenKind::DotDot, TokenKind::Dot),
+                '*' => self.take_token_of_kind(TokenKind::Mul),
+                '/' => self.take_token_of_kind(TokenKind::Div),
+                '+' => self.take_token_of_kind(TokenKind::Plus),
+                '-' => self.pick_kind('>', TokenKind::Arrow, TokenKind::Minus),
+                '<' => self.pick_kind('=', TokenKind::LE, TokenKind::LT),
+                '>' => self.pick_kind('=', TokenKind::GE, TokenKind::GT),
+                'a'..='z' | 'A'..='Z' | '_' => self.take_token_identifier(),
+                ':' => self.pick_kind(':', TokenKind::ColonColon, TokenKind::Colon),
+                '!' => self.pick_kind('=', TokenKind::Neq, TokenKind::Not),
+                '=' => self.pick_kind('=', TokenKind::EqEq, TokenKind::Eq),
+                '&' => self.pick_kind('&', TokenKind::AndAnd, TokenKind::And),
+                '|' if self.peek() == Some('|') => {
+                    self.take();
+                    self.take();
+                    TokenKind::OrOr
+                }
+                _ => {
+                    // TODO: Add to diagnostics instead of printing.
+                    println!(
+                        "Bad character at {}",
+                        self.peek_span().for_source(self.source.clone())
+                    );
+                    self.take_token_of_kind(TokenKind::BadCharacters)
+                }
+            }
+        } else {
+            TokenKind::EndOfFile
+        };
+
+        let token_text = SmolStr::from(self.consume_span());
+        let trailing_trivia = self.match_trivia(false);
+
+        // TODO: log(verbose) "consumed text: ..."
+        TerminalWithKind {
+            terminal_green_id: Terminal::new_green(
+                self.db,
+                Trivia::new_green(self.db, leading_trivia),
+                Token::new_green(self.db, kind, token_text),
+                Trivia::new_green(self.db, trailing_trivia),
+            ),
+            kind,
+        }
+    }
+}
+
+pub struct TerminalWithKind {
+    terminal_green_id: GreenId, // The green ID of the terminal node
+    kind: TokenKind,            // the kind of the inner token of the terminal
+}
+impl TerminalWithKind {
+    pub fn terminal(&self) -> GreenId {
+        self.terminal_green_id
+    }
+    pub fn kind(&self) -> TokenKind {
+        self.kind
+    }
+}
+
+impl Iterator for Lexer<'_> {
+    type Item = TerminalWithKind;
+
+    // Returns the next token. Once there are no more tokens left, returns token EOF.
+    // One should not call this after EOF was returned. If one does, None is returned.
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.done {
+            return None;
+        }
+        let terminal_with_kind = self.match_terminal();
+        if terminal_with_kind.kind() == TokenKind::EndOfFile {
+            self.done = true;
+        };
+        Some(terminal_with_kind)
+    }
+}
