@@ -1,7 +1,4 @@
-use crate::{
-    extensions::*,
-    utils::as_deferred
-};
+use crate::{extensions::*, utils::as_deferred};
 
 struct ArithmeticExtension {}
 

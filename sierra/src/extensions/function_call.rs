@@ -31,7 +31,7 @@ impl ExtensionImplementation for FunctionCallExtension {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
         registry: &TypeRegistry,
-        _mem_state: MemState,
+        mut mem_state: MemState,
         _arg_locs: Vec<Location>,
     ) -> Result<Vec<(MemState, Vec<Location>)>, Error> {
         //let ap_val = match mem_state.ap_change {
@@ -43,14 +43,9 @@ impl ExtensionImplementation for FunctionCallExtension {
         //    _ => Err(Error::IllegalExtensionArgsLocation),
         //}?;
         let ti = get_info(registry, &as_tuple(tmpl_args.clone()))?;
-        Ok(vec![(
-            MemState {
-                temp_cursur: ti.size,
-                local_cursur: 0,
-                ap_change: ApChange::Unknown,
-            },
-            vec![Location::Temp(-(ti.size as i64))],
-        )])
+        mem_state.temp_cursur = ti.size;
+        mem_state.temp_invalidated = true;
+        Ok(vec![(mem_state, vec![Location::Temp(-(ti.size as i64))])])
     }
 }
 

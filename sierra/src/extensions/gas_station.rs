@@ -27,6 +27,23 @@ impl ExtensionImplementation for GetGasExtension {
             fallthrough: Some(1),
         })
     }
+
+    fn mem_change(
+        self: &Self,
+        tmpl_args: &Vec<TemplateArg>,
+        _registry: &TypeRegistry,
+        mem_state: MemState,
+        arg_locs: Vec<Location>,
+    ) -> Result<Vec<(MemState, Vec<Location>)>, Error> {
+        let mut success_locs = vec![Location::Transient(vec![arg_locs[0].clone()])];
+        for _ in tmpl_args {
+            success_locs.push(Location::Transient(vec![]));
+        }
+        Ok(vec![
+            (mem_state.clone(), success_locs),
+            (mem_state, vec![arg_locs[0].clone()]),
+        ])
+    }
 }
 
 struct RefundGasExtension {}
