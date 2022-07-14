@@ -28,8 +28,7 @@ impl ExtensionImplementation for TuplePackExtension {
         mem_state: MemState,
         arg_refs: Vec<RefValue>,
     ) -> Result<Vec<(MemState, Vec<RefValue>)>, Error> {
-        let mut start_ref: Option<&RefValue> = None;
-        let mut combined_size = 0;
+        let mut tup_mem: Option<(MemLocation, usize)> = None;
         for (ref_val, tmpl_arg) in arg_refs.iter().zip(tmpl_args.iter()) {
             let size = match tmpl_arg {
                 TemplateArg::Type(t) => {
@@ -41,35 +40,17 @@ impl ExtensionImplementation for TuplePackExtension {
             if size == 0 {
                 continue;
             }
-            match &start_ref {
-                None => {
-                    start_ref = Some(ref_val);
-                }
-                Some(RefValue::Final(MemLocation::Temp(start_offset))) => match ref_val {
-                    RefValue::Final(MemLocation::Temp(next))
-                        if *next == (start_offset + combined_size as i64) => {}
-                    _ => {
-                        return Err(Error::LocationsNonCosecutive);
-                    }
-                },
-                Some(RefValue::Final(MemLocation::Local(start_offset))) => match ref_val {
-                    RefValue::Final(MemLocation::Local(next))
-                        if *next == (start_offset + combined_size as i64) => {}
-                    _ => {
-                        return Err(Error::LocationsNonCosecutive);
-                    }
-                },
-                _ => {
-                    return Err(Error::LocationsNonCosecutive);
-                }
-            }
-            combined_size += size;
+            tup_mem = Some(match tup_mem {
+                None => Ok((as_final(ref_val)?, size)),
+                Some(prev) => mem_reducer(prev, (as_final(ref_val)?, size))
+                    .ok_or(Error::LocationsNonCosecutive),
+            }?);
         }
         Ok(vec![(
             mem_state,
-            vec![match start_ref {
+            vec![match tup_mem {
                 None => RefValue::Transient,
-                Some(start_ref) => start_ref.clone(),
+                Some((mem, _)) => RefValue::Final(mem),
             }],
         )])
     }

@@ -4,7 +4,7 @@ use crate::{
     graph::*,
     mem_state::*,
     next_state::{put_results, take_args},
-    ref_value::{MemLocation, RefValue},
+    ref_value::{mem_reducer, MemLocation, RefValue},
 };
 use std::collections::HashMap;
 use Result::*;
@@ -67,25 +67,6 @@ struct State {
     mem: MemState,
 }
 
-fn fix_mem(vars: &VarStates, mut mem: MemState) -> Result<MemState, Error> {
-    if mem.temp_invalidated {
-        mem.temp_invalidated = false;
-        mem.temp_used = true;
-        for (id, var_state) in vars.iter() {
-            match &var_state.ref_val {
-                RefValue::Final(MemLocation::Temp(_))
-                | RefValue::Op(MemLocation::Temp(_), _, _)
-                | RefValue::Op(MemLocation::Local(_), _, MemLocation::Temp(_))
-                | RefValue::OpWithConst(MemLocation::Temp(_), _, _) => {
-                    return Err(Error::UsedTempMemoryInvalidated(id.clone()));
-                }
-                _ => {}
-            }
-        }
-    }
-    Ok(mem)
-}
-
 struct Helper<'a> {
     pub registry: &'a Registry,
     pub blocks: &'a Vec<Block>,
@@ -102,23 +83,7 @@ impl Helper<'_> {
         if block.0 >= block_start_states.len() {
             return Err(Error::FunctionBlockOutOfBounds);
         }
-        let fix = |offset: &mut i64| {
-            *offset -= start_state.mem.temp_cursur as i64;
-        };
-        for (_, v) in start_state.vars.iter_mut() {
-            match &mut v.ref_val {
-                RefValue::Final(MemLocation::Temp(offset)) => fix(offset),
-                RefValue::Op(MemLocation::Temp(offset1), _, MemLocation::Temp(offset2)) => {
-                    fix(offset1);
-                    fix(offset2);
-                }
-                RefValue::Op(MemLocation::Local(_), _, MemLocation::Temp(offset)) => fix(offset),
-                RefValue::Op(MemLocation::Temp(offset), _, MemLocation::Local(_)) => fix(offset),
-                RefValue::OpWithConst(MemLocation::Temp(offset), _, _) => fix(offset),
-                _ => {}
-            }
-        }
-        start_state.mem.temp_cursur = 0;
+        start_state = handle_block_start(start_state);
         match &block_start_states[block.0] {
             None => {
                 block_start_states[block.0] = Some(start_state.clone());
@@ -184,7 +149,7 @@ impl Helper<'_> {
             if sign.results[0].len() != invc.results.len() || ref_vals.len() != invc.results.len() {
                 return Err(Error::ExtensionResultSizeMismatch(invc.to_string()));
             }
-            mem = fix_mem(&nvars, nmem.clone())?;
+            mem = handle_temp_invalidation(&nvars, nmem.clone())?;
             vars = put_results(
                 nvars,
                 izip!(invc.results.iter(), sign.results[0].iter(), ref_vals.iter()).map(
@@ -204,7 +169,7 @@ impl Helper<'_> {
         match &self.blocks[block.0].exit {
             BlockExit::Return(ref_ids) => {
                 let (vars, used_vars) = take_args(vars, ref_ids.iter())?;
-                let mut mem_end = None;
+                let mut res_mem: Option<(MemLocation, usize)> = None;
                 for (id, v, ty) in izip!(ref_ids.iter(), used_vars.iter(), self.res_types.iter()) {
                     if v.ty != *ty {
                         return Err(Error::FunctionReturnTypeMismatch(block, id.clone()));
@@ -213,29 +178,24 @@ impl Helper<'_> {
                     if ti.size == 0 {
                         continue;
                     }
-                    match v.ref_val {
-                        RefValue::Final(MemLocation::Temp(offset)) => {
-                            match mem_end {
-                                Some(prev) if prev != offset => {
-                                    return Err(Error::FunctionReturnLocationMismatch(
-                                        block,
-                                        id.clone(),
-                                    ));
-                                }
-                                _ => {}
-                            }
-                            mem_end = Some(offset + ti.size as i64);
-                        }
-                        _ => {
-                            return Err(Error::FunctionReturnLocationMismatch(block, id.clone()));
-                        }
-                    }
+                    let loc = match v.ref_val {
+                        RefValue::Final(MemLocation::Temp(offset)) => Ok(MemLocation::Temp(offset)),
+                        _ => Err(Error::FunctionReturnLocationMismatch(block, id.clone())),
+                    }?;
+                    res_mem = Some(match res_mem {
+                        None => Ok((loc, ti.size)),
+                        Some(prev) => mem_reducer(prev, (loc, ti.size)).ok_or_else(|| {
+                            Error::FunctionReturnLocationMismatch(block, id.clone())
+                        }),
+                    }?);
                 }
-                match mem_end {
-                    Some(mem_end) if mem_end != mem.temp_cursur as i64 => {
+                match res_mem {
+                    Some((MemLocation::Temp(base), size))
+                        if base + size as i64 != mem.temp_cursur as i64 =>
+                    {
                         return Err(Error::FunctionReturnLocationNotEndOfTemp(
                             block,
-                            mem_end,
+                            base + size as i64,
                             mem.temp_cursur,
                         ));
                     }
@@ -278,7 +238,7 @@ impl Helper<'_> {
                     {
                         return Err(Error::ExtensionResultSizeMismatch(j.to_string()));
                     }
-                    let mem = fix_mem(&vars, mem.clone())?;
+                    let mem = handle_temp_invalidation(&vars, mem.clone())?;
                     self.validate(
                         match branch.target {
                             BranchTarget::Fallthrough => BlockId(block.0 + 1),
@@ -310,6 +270,49 @@ impl Helper<'_> {
             }
         }
     }
+}
+
+fn handle_temp_invalidation(vars: &VarStates, mut mem: MemState) -> Result<MemState, Error> {
+    if mem.temp_invalidated {
+        mem.temp_invalidated = false;
+        mem.temp_used = true;
+        for (id, var_state) in vars.iter() {
+            match &var_state.ref_val {
+                RefValue::Final(MemLocation::Temp(_))
+                | RefValue::Op(MemLocation::Temp(_), _, _)
+                | RefValue::Op(MemLocation::Local(_), _, MemLocation::Temp(_))
+                | RefValue::OpWithConst(MemLocation::Temp(_), _, _) => {
+                    return Err(Error::UsedTempMemoryInvalidated(id.clone()));
+                }
+                _ => {}
+            }
+        }
+    }
+    Ok(mem)
+}
+
+fn handle_block_start(mut state: State) -> State {
+    if state.mem.temp_cursur == 0 {
+        return state;
+    }
+    let fix = |offset: &mut i64| {
+        *offset -= state.mem.temp_cursur as i64;
+    };
+    for (_, v) in state.vars.iter_mut() {
+        match &mut v.ref_val {
+            RefValue::Final(MemLocation::Temp(offset)) => fix(offset),
+            RefValue::Op(MemLocation::Temp(offset1), _, MemLocation::Temp(offset2)) => {
+                fix(offset1);
+                fix(offset2);
+            }
+            RefValue::Op(MemLocation::Local(_), _, MemLocation::Temp(offset)) => fix(offset),
+            RefValue::Op(MemLocation::Temp(offset), _, MemLocation::Local(_)) => fix(offset),
+            RefValue::OpWithConst(MemLocation::Temp(offset), _, _) => fix(offset),
+            _ => {}
+        }
+    }
+    state.mem.temp_cursur = 0;
+    state
 }
 
 #[cfg(test)]
