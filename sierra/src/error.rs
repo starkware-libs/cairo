@@ -1,6 +1,6 @@
 use crate::{
     graph::{BlockId, Identifier, Type},
-    mem_state::Location,
+    ref_value::RefValue,
 };
 
 #[derive(Debug, PartialEq)]
@@ -26,7 +26,7 @@ pub enum Error {
     FunctionReturnLocationNotEndOfTemp(BlockId, i64, usize),
     FunctionBlockIdentifiersMismatch(BlockId, Vec<Identifier>, Vec<Identifier>),
     FunctionBlockIdentifierTypeMismatch(BlockId, Identifier, Type, Type),
-    FunctionBlockIdentifierLocationMismatch(BlockId, Identifier, Location, Location),
+    FunctionBlockIdentifierLocationMismatch(BlockId, Identifier, RefValue, RefValue),
     ExtensionArgumentsMismatch(String),
     ExtensionBranchesMismatch(String),
     ExtensionResultSizeMismatch(String),

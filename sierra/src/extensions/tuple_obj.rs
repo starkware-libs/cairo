@@ -26,11 +26,11 @@ impl ExtensionImplementation for TuplePackExtension {
         tmpl_args: &Vec<TemplateArg>,
         registry: &TypeRegistry,
         mem_state: MemState,
-        arg_locs: Vec<Location>,
-    ) -> Result<Vec<(MemState, Vec<Location>)>, Error> {
-        let mut start_loc: Option<&Location> = None;
+        arg_refs: Vec<RefValue>,
+    ) -> Result<Vec<(MemState, Vec<RefValue>)>, Error> {
+        let mut start_ref: Option<&RefValue> = None;
         let mut combined_size = 0;
-        for (loc, tmpl_arg) in arg_locs.iter().zip(tmpl_args.iter()) {
+        for (ref_val, tmpl_arg) in arg_refs.iter().zip(tmpl_args.iter()) {
             let size = match tmpl_arg {
                 TemplateArg::Type(t) => {
                     let ti = get_info(registry, t)?;
@@ -41,19 +41,19 @@ impl ExtensionImplementation for TuplePackExtension {
             if size == 0 {
                 continue;
             }
-            match &start_loc {
+            match &start_ref {
                 None => {
-                    start_loc = Some(loc);
+                    start_ref = Some(ref_val);
                 }
-                Some(Location::Final(MemLocation::Temp(start_offset))) => match loc {
-                    Location::Final(MemLocation::Temp(next))
+                Some(RefValue::Final(MemLocation::Temp(start_offset))) => match ref_val {
+                    RefValue::Final(MemLocation::Temp(next))
                         if *next == (start_offset + combined_size as i64) => {}
                     _ => {
                         return Err(Error::LocationsNonCosecutive);
                     }
                 },
-                Some(Location::Final(MemLocation::Local(start_offset))) => match loc {
-                    Location::Final(MemLocation::Local(next))
+                Some(RefValue::Final(MemLocation::Local(start_offset))) => match ref_val {
+                    RefValue::Final(MemLocation::Local(next))
                         if *next == (start_offset + combined_size as i64) => {}
                     _ => {
                         return Err(Error::LocationsNonCosecutive);
@@ -67,9 +67,9 @@ impl ExtensionImplementation for TuplePackExtension {
         }
         Ok(vec![(
             mem_state,
-            vec![match start_loc {
-                None => Location::Transient,
-                Some(start_loc) => start_loc.clone(),
+            vec![match start_ref {
+                None => RefValue::Transient,
+                Some(start_ref) => start_ref.clone(),
             }],
         )])
     }
@@ -101,22 +101,22 @@ impl ExtensionImplementation for TupleUnpackExtension {
         tmpl_args: &Vec<TemplateArg>,
         registry: &TypeRegistry,
         mem_state: MemState,
-        arg_locs: Vec<Location>,
-    ) -> Result<Vec<(MemState, Vec<Location>)>, Error> {
-        let mut locs = vec![];
+        arg_refs: Vec<RefValue>,
+    ) -> Result<Vec<(MemState, Vec<RefValue>)>, Error> {
+        let mut refs = vec![];
         let mut offset = 0;
         tmpl_args.iter().try_for_each(|tmpl_arg| match tmpl_arg {
             TemplateArg::Type(t) => {
                 let ti = get_info(registry, t)?;
-                locs.push(if ti.size == 0 {
-                    Ok(Location::Transient)
+                refs.push(if ti.size == 0 {
+                    Ok(RefValue::Transient)
                 } else {
-                    match &arg_locs[0] {
-                        Location::Final(MemLocation::Temp(base)) => {
-                            Ok(Location::Final(MemLocation::Temp(base + offset)))
+                    match &arg_refs[0] {
+                        RefValue::Final(MemLocation::Temp(base)) => {
+                            Ok(RefValue::Final(MemLocation::Temp(base + offset)))
                         }
-                        Location::Final(MemLocation::Local(base)) => {
-                            Ok(Location::Final(MemLocation::Local(base + offset)))
+                        RefValue::Final(MemLocation::Local(base)) => {
+                            Ok(RefValue::Final(MemLocation::Local(base + offset)))
                         }
                         _ => Err(Error::IllegalExtensionArgsLocation),
                     }
@@ -126,7 +126,7 @@ impl ExtensionImplementation for TupleUnpackExtension {
             }
             TemplateArg::Value(_) => Err(Error::UnsupportedTypeArg),
         })?;
-        Ok(vec![(mem_state, locs)])
+        Ok(vec![(mem_state, refs)])
     }
 }
 

@@ -5,6 +5,7 @@ mod extensions;
 pub mod graph;
 mod mem_state;
 mod next_state;
+mod ref_value;
 pub mod soundness;
 pub mod utils;
 

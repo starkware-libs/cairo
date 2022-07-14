@@ -4,6 +4,7 @@ use crate::{
     graph::*,
     mem_state::*,
     next_state::{put_results, take_args},
+    ref_value::{MemLocation, RefValue},
 };
 use std::collections::HashMap;
 use Result::*;
@@ -21,10 +22,10 @@ pub fn validate(prog: &Program) -> Result<(), Error> {
                 v.id.clone(),
                 VarState {
                     ty: v.ty.clone(),
-                    loc: if ti.size > 0 {
-                        Location::Final(MemLocation::Local(last))
+                    ref_val: if ti.size > 0 {
+                        RefValue::Final(MemLocation::Local(last))
                     } else {
-                        Location::Transient
+                        RefValue::Transient
                     },
                 },
             );
@@ -55,7 +56,7 @@ pub fn validate(prog: &Program) -> Result<(), Error> {
 #[derive(Debug, Clone, PartialEq)]
 struct VarState {
     ty: Type,
-    loc: Location,
+    ref_val: RefValue,
 }
 
 type VarStates = HashMap<Identifier, VarState>;
@@ -71,11 +72,11 @@ fn fix_mem(vars: &VarStates, mut mem: MemState) -> Result<MemState, Error> {
         mem.temp_invalidated = false;
         mem.temp_used = true;
         for (id, var_state) in vars.iter() {
-            match &var_state.loc {
-                Location::Final(MemLocation::Temp(_))
-                | Location::Add(MemLocation::Temp(_), _)
-                | Location::Add(MemLocation::Local(_), MemLocation::Temp(_))
-                | Location::AddConst(MemLocation::Temp(_), _) => {
+            match &var_state.ref_val {
+                RefValue::Final(MemLocation::Temp(_))
+                | RefValue::Op(MemLocation::Temp(_), _, _)
+                | RefValue::Op(MemLocation::Local(_), _, MemLocation::Temp(_))
+                | RefValue::OpWithConst(MemLocation::Temp(_), _, _) => {
                     return Err(Error::UsedTempMemoryInvalidated(id.clone()));
                 }
                 _ => {}
@@ -105,15 +106,15 @@ impl Helper<'_> {
             *offset -= start_state.mem.temp_cursur as i64;
         };
         for (_, v) in start_state.vars.iter_mut() {
-            match &mut v.loc {
-                Location::Final(MemLocation::Temp(offset)) => fix(offset),
-                Location::Add(MemLocation::Temp(offset1), MemLocation::Temp(offset2)) => {
+            match &mut v.ref_val {
+                RefValue::Final(MemLocation::Temp(offset)) => fix(offset),
+                RefValue::Op(MemLocation::Temp(offset1), _, MemLocation::Temp(offset2)) => {
                     fix(offset1);
                     fix(offset2);
                 }
-                Location::Add(MemLocation::Local(_), MemLocation::Temp(offset)) => fix(offset),
-                Location::Add(MemLocation::Temp(offset), MemLocation::Local(_)) => fix(offset),
-                Location::AddConst(MemLocation::Temp(offset), _) => fix(offset),
+                RefValue::Op(MemLocation::Local(_), _, MemLocation::Temp(offset)) => fix(offset),
+                RefValue::Op(MemLocation::Temp(offset), _, MemLocation::Local(_)) => fix(offset),
+                RefValue::OpWithConst(MemLocation::Temp(offset), _, _) => fix(offset),
                 _ => {}
             }
         }
@@ -145,12 +146,12 @@ impl Helper<'_> {
                                     expected_var_state.ty.clone(),
                                     var_state.ty.clone(),
                                 ))
-                            } else if var_state.loc != expected_var_state.loc {
+                            } else if var_state.ref_val != expected_var_state.ref_val {
                                 Err(Error::FunctionBlockIdentifierLocationMismatch(
                                     block,
                                     id.clone(),
-                                    expected_var_state.loc.clone(),
-                                    var_state.loc.clone(),
+                                    expected_var_state.ref_val.clone(),
+                                    var_state.ref_val.clone(),
                                 ))
                             } else {
                                 Ok(())
@@ -164,13 +165,13 @@ impl Helper<'_> {
         let State { mut vars, mut mem } = start_state;
         for invc in &self.blocks[block.0].invocations {
             let (nvars, used_vars) = take_args(vars, invc.args.iter())?;
-            let (arg_types, arg_locs): (Vec<_>, Vec<_>) =
-                used_vars.into_iter().map(|v| (v.ty, v.loc)).unzip();
-            let (sign, locs) = self.registry.get_mapping(&invc.ext, mem, arg_locs)?;
+            let (arg_types, arg_refs): (Vec<_>, Vec<_>) =
+                used_vars.into_iter().map(|v| (v.ty, v.ref_val)).unzip();
+            let (sign, ref_vals) = self.registry.get_mapping(&invc.ext, mem, arg_refs)?;
             if sign.args != arg_types {
                 return Err(Error::ExtensionArgumentsMismatch(invc.to_string()));
             }
-            if sign.results.len() != 1 || locs.len() != 1 {
+            if sign.results.len() != 1 || ref_vals.len() != 1 {
                 return Err(Error::ExtensionBranchesMismatch(invc.to_string()));
             }
             match sign.fallthrough {
@@ -179,20 +180,20 @@ impl Helper<'_> {
                     return Err(Error::ExtensionFallthroughMismatch(invc.to_string()));
                 }
             }
-            let (nmem, locs) = &locs[0];
-            if sign.results[0].len() != invc.results.len() || locs.len() != invc.results.len() {
+            let (nmem, ref_vals) = &ref_vals[0];
+            if sign.results[0].len() != invc.results.len() || ref_vals.len() != invc.results.len() {
                 return Err(Error::ExtensionResultSizeMismatch(invc.to_string()));
             }
             mem = fix_mem(&nvars, nmem.clone())?;
             vars = put_results(
                 nvars,
-                izip!(invc.results.iter(), sign.results[0].iter(), locs.iter()).map(
-                    |(id, ty, loc)| {
+                izip!(invc.results.iter(), sign.results[0].iter(), ref_vals.iter()).map(
+                    |(id, ty, ref_val)| {
                         (
                             id,
                             VarState {
                                 ty: ty.clone(),
-                                loc: loc.clone(),
+                                ref_val: ref_val.clone(),
                             },
                         )
                     },
@@ -212,8 +213,8 @@ impl Helper<'_> {
                     if ti.size == 0 {
                         continue;
                     }
-                    match v.loc {
-                        Location::Final(MemLocation::Temp(offset)) => {
+                    match v.ref_val {
+                        RefValue::Final(MemLocation::Temp(offset)) => {
                             match mem_end {
                                 Some(prev) if prev != offset => {
                                     return Err(Error::FunctionReturnLocationMismatch(
@@ -250,13 +251,13 @@ impl Helper<'_> {
             }
             BlockExit::Jump(j) => {
                 let (vars, used_vars) = take_args(vars, j.args.iter())?;
-                let (arg_types, arg_locs): (Vec<_>, Vec<_>) =
-                    used_vars.into_iter().map(|v| (v.ty, v.loc)).unzip();
-                let (sign, locs) = self.registry.get_mapping(&j.ext, mem, arg_locs)?;
+                let (arg_types, arg_refs): (Vec<_>, Vec<_>) =
+                    used_vars.into_iter().map(|v| (v.ty, v.ref_val)).unzip();
+                let (sign, ref_vals) = self.registry.get_mapping(&j.ext, mem, arg_refs)?;
                 if sign.args != arg_types {
                     return Err(Error::ExtensionArgumentsMismatch(j.to_string()));
                 }
-                if sign.results.len() != j.branches.len() || locs.len() != j.branches.len() {
+                if sign.results.len() != j.branches.len() || ref_vals.len() != j.branches.len() {
                     return Err(Error::ExtensionBranchesMismatch(j.to_string()));
                 }
                 match sign.fallthrough {
@@ -270,10 +271,11 @@ impl Helper<'_> {
                 izip!(
                     j.branches.iter(),
                     sign.results.into_iter(),
-                    locs.into_iter()
+                    ref_vals.into_iter()
                 )
-                .try_for_each(|(branch, res_types, (mem, locs))| {
-                    if branch.exports.len() != res_types.len() || locs.len() != res_types.len() {
+                .try_for_each(|(branch, res_types, (mem, ref_vals))| {
+                    if branch.exports.len() != res_types.len() || ref_vals.len() != res_types.len()
+                    {
                         return Err(Error::ExtensionResultSizeMismatch(j.to_string()));
                     }
                     let mem = fix_mem(&vars, mem.clone())?;
@@ -288,9 +290,17 @@ impl Helper<'_> {
                                 izip!(
                                     branch.exports.iter(),
                                     res_types.into_iter(),
-                                    locs.into_iter()
+                                    ref_vals.into_iter()
                                 )
-                                .map(|(id, ty, loc)| (id, VarState { ty: ty, loc: loc })),
+                                .map(|(id, ty, ref_val)| {
+                                    (
+                                        id,
+                                        VarState {
+                                            ty: ty,
+                                            ref_val: ref_val,
+                                        },
+                                    )
+                                }),
                             )?,
                             mem: mem,
                         },

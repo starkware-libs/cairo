@@ -51,8 +51,8 @@ impl ExtensionImplementation for StoreExtension {
         tmpl_args: &Vec<TemplateArg>,
         registry: &TypeRegistry,
         mut mem_state: MemState,
-        _arg_locs: Vec<Location>,
-    ) -> Result<Vec<(MemState, Vec<Location>)>, Error> {
+        _arg_refs: Vec<RefValue>,
+    ) -> Result<Vec<(MemState, Vec<RefValue>)>, Error> {
         let (store_ty, ty) = unpack_args(tmpl_args)?;
         let ti = get_info(registry, ty)?;
         let loc = match store_ty {
@@ -72,7 +72,7 @@ impl ExtensionImplementation for StoreExtension {
                 }
             }
         }?;
-        Ok(vec![(mem_state, vec![Location::Final(loc)])])
+        Ok(vec![(mem_state, vec![RefValue::Final(loc)])])
     }
 }
 
@@ -98,9 +98,9 @@ impl ExtensionImplementation for RenameExtension {
         _tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
         mem_state: MemState,
-        arg_locs: Vec<Location>,
-    ) -> Result<Vec<(MemState, Vec<Location>)>, Error> {
-        Ok(vec![(mem_state, arg_locs)])
+        arg_refs: Vec<RefValue>,
+    ) -> Result<Vec<(MemState, Vec<RefValue>)>, Error> {
+        Ok(vec![(mem_state, arg_refs)])
     }
 }
 
@@ -129,11 +129,11 @@ impl ExtensionImplementation for MoveExtension {
         _tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
         mem_state: MemState,
-        arg_locs: Vec<Location>,
-    ) -> Result<Vec<(MemState, Vec<Location>)>, Error> {
+        arg_refs: Vec<RefValue>,
+    ) -> Result<Vec<(MemState, Vec<RefValue>)>, Error> {
         Ok(vec![(
             mem_state,
-            vec![Location::AddConst(as_final(&arg_locs[0])?, 0)],
+            vec![RefValue::OpWithConst(as_final(&arg_refs[0])?, Op::Add, 0)],
         )])
     }
 }
@@ -157,8 +157,8 @@ impl ExtensionImplementation for AllocLocalsExtension {
         _tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
         mut mem_state: MemState,
-        _arg_locs: Vec<Location>,
-    ) -> Result<Vec<(MemState, Vec<Location>)>, Error> {
+        _arg_refs: Vec<RefValue>,
+    ) -> Result<Vec<(MemState, Vec<RefValue>)>, Error> {
         if mem_state.local_allocated {
             Err(Error::LocalMemoryAlreadyAllocated)
         } else if mem_state.temp_used {
@@ -198,8 +198,8 @@ impl ExtensionImplementation for AlignTempsExtension {
         tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
         mut mem_state: MemState,
-        _arg_locs: Vec<Location>,
-    ) -> Result<Vec<(MemState, Vec<Location>)>, Error> {
+        _arg_refs: Vec<RefValue>,
+    ) -> Result<Vec<(MemState, Vec<RefValue>)>, Error> {
         mem_state.temp_cursur += value_arg(tmpl_args)?;
         mem_state.temp_used = true;
         Ok(vec![(mem_state, vec![])])

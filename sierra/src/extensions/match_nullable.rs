@@ -29,10 +29,10 @@ impl ExtensionImplementation for MatchNullableExtension {
         _tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
         mem_state: MemState,
-        arg_locs: Vec<Location>,
-    ) -> Result<Vec<(MemState, Vec<Location>)>, Error> {
+        arg_refs: Vec<RefValue>,
+    ) -> Result<Vec<(MemState, Vec<RefValue>)>, Error> {
         Ok(vec![
-            (mem_state.clone(), vec![arg_locs[0].clone()]),
+            (mem_state.clone(), vec![arg_refs[0].clone()]),
             (mem_state, vec![]),
         ])
     }

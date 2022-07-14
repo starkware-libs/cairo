@@ -1,6 +1,12 @@
-use crate::{extensions::*, utils::as_deferred};
+use crate::{
+    extensions::*,
+    ref_value::{Op, RefValue},
+    utils::{as_deferred, as_nonzero},
+};
 
-struct ArithmeticExtension {}
+struct ArithmeticExtension {
+    op: Op,
+}
 
 impl ExtensionImplementation for ArithmeticExtension {
     fn get_signature(
@@ -31,22 +37,87 @@ impl ExtensionImplementation for ArithmeticExtension {
         tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
         mem_state: MemState,
-        arg_locs: Vec<Location>,
-    ) -> Result<Vec<(MemState, Vec<Location>)>, Error> {
+        arg_refs: Vec<RefValue>,
+    ) -> Result<Vec<(MemState, Vec<RefValue>)>, Error> {
         match tmpl_args.len() {
             1 => Ok(vec![(
                 mem_state,
-                vec![Location::Add(
-                    as_final(&arg_locs[0])?,
-                    as_final(&arg_locs[1])?,
+                vec![RefValue::Op(
+                    as_final(&arg_refs[0])?,
+                    self.op,
+                    as_final(&arg_refs[1])?,
                 )],
             )]),
             2 => {
                 let (_, c) = get_type_value(tmpl_args)?;
                 Ok(vec![(
                     mem_state,
-                    vec![Location::AddConst(as_final(&arg_locs[0])?, c)],
+                    vec![RefValue::OpWithConst(as_final(&arg_refs[0])?, self.op, c)],
                 )])
+            }
+            _ => Err(Error::WrongNumberOfTypeArgs),
+        }
+    }
+}
+
+struct DivExtension {
+    op: Op,
+}
+
+impl ExtensionImplementation for DivExtension {
+    fn get_signature(
+        self: &Self,
+        tmpl_args: &Vec<TemplateArg>,
+    ) -> Result<ExtensionSignature, Error> {
+        match tmpl_args.len() {
+            1 => {
+                let numeric_type = get_numeric_type(&tmpl_args[0])?;
+                Ok(simple_invoke_ext_sign(
+                    vec![numeric_type.clone(), as_nonzero(numeric_type.clone())],
+                    vec![as_deferred(numeric_type.clone())],
+                ))
+            }
+            2 => {
+                let (numeric_type, c) = get_type_value(tmpl_args)?;
+                if c == 0 {
+                    Err(Error::UnsupportedTypeArg)
+                } else {
+                    Ok(simple_invoke_ext_sign(
+                        vec![numeric_type.clone()],
+                        vec![as_deferred(numeric_type.clone())],
+                    ))
+                }
+            }
+            _ => Err(Error::WrongNumberOfTypeArgs),
+        }
+    }
+
+    fn mem_change(
+        self: &Self,
+        tmpl_args: &Vec<TemplateArg>,
+        _registry: &TypeRegistry,
+        mem_state: MemState,
+        arg_refs: Vec<RefValue>,
+    ) -> Result<Vec<(MemState, Vec<RefValue>)>, Error> {
+        match tmpl_args.len() {
+            1 => Ok(vec![(
+                mem_state,
+                vec![RefValue::Op(
+                    as_final(&arg_refs[0])?,
+                    self.op,
+                    as_final(&arg_refs[1])?,
+                )],
+            )]),
+            2 => {
+                let (_, c) = get_type_value(tmpl_args)?;
+                if c == 0 {
+                    Err(Error::UnsupportedTypeArg)
+                } else {
+                    Ok(vec![(
+                        mem_state,
+                        vec![RefValue::OpWithConst(as_final(&arg_refs[0])?, self.op, c)],
+                    )])
+                }
             }
             _ => Err(Error::WrongNumberOfTypeArgs),
         }
@@ -72,11 +143,11 @@ impl ExtensionImplementation for DuplicateExtension {
         _tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
         mem_state: MemState,
-        arg_locs: Vec<Location>,
-    ) -> Result<Vec<(MemState, Vec<Location>)>, Error> {
+        arg_refs: Vec<RefValue>,
+    ) -> Result<Vec<(MemState, Vec<RefValue>)>, Error> {
         Ok(vec![(
             mem_state,
-            vec![arg_locs[0].clone(), arg_locs[0].clone()],
+            vec![arg_refs[0].clone(), arg_refs[0].clone()],
         )])
     }
 }
@@ -103,10 +174,10 @@ impl ExtensionImplementation for ConstantExtension {
         tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
         mem_state: MemState,
-        _arg_locs: Vec<Location>,
-    ) -> Result<Vec<(MemState, Vec<Location>)>, Error> {
+        _arg_refs: Vec<RefValue>,
+    ) -> Result<Vec<(MemState, Vec<RefValue>)>, Error> {
         let (_, c) = get_type_value(tmpl_args)?;
-        Ok(vec![(mem_state, vec![Location::Const(c)])])
+        Ok(vec![(mem_state, vec![RefValue::Const(c)])])
     }
 }
 
@@ -126,8 +197,8 @@ impl ExtensionImplementation for IgnoreExtension {
         _tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
         mem_state: MemState,
-        _arg_locs: Vec<Location>,
-    ) -> Result<Vec<(MemState, Vec<Location>)>, Error> {
+        _arg_refs: Vec<RefValue>,
+    ) -> Result<Vec<(MemState, Vec<RefValue>)>, Error> {
         Ok(vec![(mem_state, vec![])])
     }
 }
@@ -169,12 +240,22 @@ impl TypeInfoImplementation for ArithmeticTypeInfo {
     }
 }
 
-pub(super) fn extensions() -> [(String, ExtensionBox); 7] {
+pub(super) fn extensions() -> [(String, ExtensionBox); 8] {
     [
-        ("add".to_string(), Box::new(ArithmeticExtension {})),
-        ("sub".to_string(), Box::new(ArithmeticExtension {})),
-        ("mul".to_string(), Box::new(ArithmeticExtension {})),
-        ("div".to_string(), Box::new(ArithmeticExtension {})),
+        (
+            "add".to_string(),
+            Box::new(ArithmeticExtension { op: Op::Add }),
+        ),
+        (
+            "sub".to_string(),
+            Box::new(ArithmeticExtension { op: Op::Sub }),
+        ),
+        (
+            "mul".to_string(),
+            Box::new(ArithmeticExtension { op: Op::Mul }),
+        ),
+        ("div".to_string(), Box::new(DivExtension { op: Op::Div })),
+        ("mod".to_string(), Box::new(DivExtension { op: Op::Mod })),
         ("duplicate_num".to_string(), Box::new(DuplicateExtension {})),
         ("constant_num".to_string(), Box::new(ConstantExtension {})),
         ("ignore_num".to_string(), Box::new(IgnoreExtension {})),
@@ -198,14 +279,15 @@ mod tests {
     fn legal_usage() {
         let ty = as_type("int");
         assert_eq!(
-            ArithmeticExtension {}.get_signature(&vec![type_arg(ty.clone())]),
+            ArithmeticExtension { op: Op::Add }.get_signature(&vec![type_arg(ty.clone())]),
             Ok(simple_invoke_ext_sign(
                 vec![ty.clone(), ty.clone()],
                 vec![as_deferred(ty.clone())],
             ))
         );
         assert_eq!(
-            ArithmeticExtension {}.get_signature(&vec![type_arg(ty.clone()), val_arg(1)],),
+            ArithmeticExtension { op: Op::Add }
+                .get_signature(&vec![type_arg(ty.clone()), val_arg(1)],),
             Ok(simple_invoke_ext_sign(
                 vec![ty.clone()],
                 vec![as_deferred(ty.clone())],
@@ -234,7 +316,7 @@ mod tests {
     #[test]
     fn wrong_num_of_args() {
         assert_eq!(
-            ArithmeticExtension {}.get_signature(&vec![]),
+            ArithmeticExtension { op: Op::Add }.get_signature(&vec![]),
             Err(Error::WrongNumberOfTypeArgs)
         );
         assert_eq!(
@@ -254,11 +336,11 @@ mod tests {
     #[test]
     fn wrong_arg_type() {
         assert_eq!(
-            ArithmeticExtension {}.get_signature(&vec![type_arg(as_type("non-int"))]),
+            ArithmeticExtension { op: Op::Add }.get_signature(&vec![type_arg(as_type("non-int"))]),
             Err(Error::UnsupportedTypeArg)
         );
         assert_eq!(
-            ArithmeticExtension {}.get_signature(&vec![val_arg(1)]),
+            ArithmeticExtension { op: Op::Add }.get_signature(&vec![val_arg(1)]),
             Err(Error::UnsupportedTypeArg)
         );
     }

@@ -1,4 +1,4 @@
-use crate::{error::Error, graph::*, mem_state::*};
+use crate::{error::Error, graph::*, mem_state::*, ref_value::*};
 use std::collections::HashMap;
 use Result::*;
 
@@ -32,15 +32,15 @@ impl Registry {
         self: &Self,
         ext: &Extension,
         mem_state: MemState,
-        arg_locs: Vec<Location>,
-    ) -> Result<(ExtensionSignature, Vec<(MemState, Vec<Location>)>), Error> {
+        arg_refs: Vec<RefValue>,
+    ) -> Result<(ExtensionSignature, Vec<(MemState, Vec<RefValue>)>), Error> {
         let e = match self.ext_reg.get(&ext.name) {
             None => Err(Error::UnsupportedLibCallName(ext.name.clone())),
             Some(e) => Ok(e),
         }?;
         let sign = e.get_signature(&ext.tmpl_args)?;
-        let locs = e.mem_change(&ext.tmpl_args, &self.ty_reg, mem_state, arg_locs)?;
-        Ok((sign, locs))
+        let ref_vals = e.mem_change(&ext.tmpl_args, &self.ty_reg, mem_state, arg_refs)?;
+        Ok((sign, ref_vals))
     }
 }
 
@@ -58,9 +58,9 @@ pub(crate) struct ExtensionSignature {
     pub fallthrough: Option<usize>,
 }
 
-fn as_final(loc: &Location) -> Result<MemLocation, Error> {
-    match loc {
-        Location::Final(m) => Ok(*m),
+fn as_final(ref_val: &RefValue) -> Result<MemLocation, Error> {
+    match ref_val {
+        RefValue::Final(m) => Ok(*m),
         _ => Err(Error::IllegalExtensionArgsLocation),
     }
 }
@@ -84,8 +84,8 @@ trait ExtensionImplementation {
         tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
         mem_state: MemState,
-        arg_locs: Vec<Location>,
-    ) -> Result<Vec<(MemState, Vec<Location>)>, Error>;
+        arg_refs: Vec<RefValue>,
+    ) -> Result<Vec<(MemState, Vec<RefValue>)>, Error>;
 }
 
 type ExtensionBox = Box<dyn ExtensionImplementation + Sync + Send>;

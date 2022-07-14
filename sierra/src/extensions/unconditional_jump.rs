@@ -22,8 +22,8 @@ impl ExtensionImplementation for UnconditionalJumpExtension {
         _tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
         mem_state: MemState,
-        _arg_locs: Vec<Location>,
-    ) -> Result<Vec<(MemState, Vec<Location>)>, Error> {
+        _arg_refs: Vec<RefValue>,
+    ) -> Result<Vec<(MemState, Vec<RefValue>)>, Error> {
         Ok(vec![(mem_state, vec![])])
     }
 }

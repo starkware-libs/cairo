@@ -33,22 +33,22 @@ impl ExtensionImplementation for GetGasExtension {
         tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
         mem_state: MemState,
-        arg_locs: Vec<Location>,
-    ) -> Result<Vec<(MemState, Vec<Location>)>, Error> {
+        arg_refs: Vec<RefValue>,
+    ) -> Result<Vec<(MemState, Vec<RefValue>)>, Error> {
         let mut total_gas = 0;
-        let mut success_locs = vec![Location::Transient];
+        let mut success_refs = vec![RefValue::Transient];
         tmpl_args.iter().try_for_each(|tmpl_arg| match tmpl_arg {
             TemplateArg::Value(v) if *v > 0 => {
-                success_locs.push(Location::Transient);
+                success_refs.push(RefValue::Transient);
                 total_gas += *v;
                 Ok(())
             }
             _ => Err(Error::UnsupportedTypeArg),
         })?;
-        success_locs[0] = Location::AddConst(as_final(&arg_locs[0])?, total_gas);
+        success_refs[0] = RefValue::OpWithConst(as_final(&arg_refs[0])?, Op::Add, total_gas);
         Ok(vec![
-            (mem_state.clone(), success_locs),
-            (mem_state, vec![arg_locs[0].clone()]),
+            (mem_state.clone(), success_refs),
+            (mem_state, vec![arg_refs[0].clone()]),
         ])
     }
 }
@@ -78,8 +78,8 @@ impl ExtensionImplementation for RefundGasExtension {
         tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
         mem_state: MemState,
-        arg_locs: Vec<Location>,
-    ) -> Result<Vec<(MemState, Vec<Location>)>, Error> {
+        arg_refs: Vec<RefValue>,
+    ) -> Result<Vec<(MemState, Vec<RefValue>)>, Error> {
         if tmpl_args.len() != 1 {
             return Err(Error::WrongNumberOfTypeArgs);
         }
@@ -89,7 +89,11 @@ impl ExtensionImplementation for RefundGasExtension {
         }?;
         Ok(vec![(
             mem_state,
-            vec![Location::AddConst(as_final(&arg_locs[0])?, -value)],
+            vec![RefValue::OpWithConst(
+                as_final(&arg_refs[0])?,
+                Op::Sub,
+                value,
+            )],
         )])
     }
 }
@@ -122,11 +126,11 @@ impl ExtensionImplementation for SplitGasExtension {
         tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
         mem_state: MemState,
-        _arg_locs: Vec<Location>,
-    ) -> Result<Vec<(MemState, Vec<Location>)>, Error> {
+        _arg_refs: Vec<RefValue>,
+    ) -> Result<Vec<(MemState, Vec<RefValue>)>, Error> {
         Ok(vec![(
             mem_state,
-            tmpl_args.iter().map(|_| Location::Transient).collect(),
+            tmpl_args.iter().map(|_| RefValue::Transient).collect(),
         )])
     }
 }
