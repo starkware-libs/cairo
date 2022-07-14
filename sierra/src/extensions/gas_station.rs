@@ -35,10 +35,17 @@ impl ExtensionImplementation for GetGasExtension {
         mem_state: MemState,
         arg_locs: Vec<Location>,
     ) -> Result<Vec<(MemState, Vec<Location>)>, Error> {
-        let mut success_locs = vec![Location::Transient(vec![arg_locs[0].clone()])];
-        for _ in tmpl_args {
-            success_locs.push(Location::Transient(vec![]));
-        }
+        let mut total_gas = 0;
+        let mut success_locs = vec![Location::Transient];
+        tmpl_args.iter().try_for_each(|tmpl_arg| match tmpl_arg {
+            TemplateArg::Value(v) if *v > 0 => {
+                success_locs.push(Location::Transient);
+                total_gas += *v;
+                Ok(())
+            }
+            _ => Err(Error::UnsupportedTypeArg),
+        })?;
+        success_locs[0] = Location::AddConst(as_final(&arg_locs[0])?, total_gas);
         Ok(vec![
             (mem_state.clone(), success_locs),
             (mem_state, vec![arg_locs[0].clone()]),
@@ -65,6 +72,26 @@ impl ExtensionImplementation for RefundGasExtension {
             vec![as_deferred(gas_builtin_type())],
         ))
     }
+
+    fn mem_change(
+        self: &Self,
+        tmpl_args: &Vec<TemplateArg>,
+        _registry: &TypeRegistry,
+        mem_state: MemState,
+        arg_locs: Vec<Location>,
+    ) -> Result<Vec<(MemState, Vec<Location>)>, Error> {
+        if tmpl_args.len() != 1 {
+            return Err(Error::WrongNumberOfTypeArgs);
+        }
+        let value = match &tmpl_args[0] {
+            TemplateArg::Value(v) => Ok(*v),
+            TemplateArg::Type(_) => Err(Error::UnsupportedTypeArg),
+        }?;
+        Ok(vec![(
+            mem_state,
+            vec![Location::AddConst(as_final(&arg_locs[0])?, -value)],
+        )])
+    }
 }
 
 struct SplitGasExtension {}
@@ -88,6 +115,19 @@ impl ExtensionImplementation for SplitGasExtension {
             TemplateArg::Type(_) => Err(Error::UnsupportedTypeArg),
         })?;
         Ok(simple_invoke_ext_sign(vec![gas_type(total)], res_types))
+    }
+
+    fn mem_change(
+        self: &Self,
+        tmpl_args: &Vec<TemplateArg>,
+        _registry: &TypeRegistry,
+        mem_state: MemState,
+        _arg_locs: Vec<Location>,
+    ) -> Result<Vec<(MemState, Vec<Location>)>, Error> {
+        Ok(vec![(
+            mem_state,
+            tmpl_args.iter().map(|_| Location::Transient).collect(),
+        )])
     }
 }
 

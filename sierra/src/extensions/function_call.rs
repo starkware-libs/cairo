@@ -8,6 +8,10 @@ struct FunctionCallExtension {
     pub results: Vec<Type>,
 }
 
+fn types_as_tuple(tys: &Vec<Type>) -> Type {
+    as_tuple(tys.iter().map(|t| type_arg(t.clone())).collect())
+}
+
 impl ExtensionImplementation for FunctionCallExtension {
     fn get_signature(
         self: &Self,
@@ -17,35 +21,33 @@ impl ExtensionImplementation for FunctionCallExtension {
             return Err(Error::WrongNumberOfTypeArgs);
         }
         Ok(simple_invoke_ext_sign(
-            vec![
-                as_tuple(self.args.iter().map(|t| type_arg(t.clone())).collect()),
-                gas_type(2),
-            ],
-            vec![as_tuple(
-                self.results.iter().map(|t| type_arg(t.clone())).collect(),
-            )],
+            vec![types_as_tuple(&self.args), gas_type(2)],
+            vec![types_as_tuple(&self.results)],
         ))
     }
 
     fn mem_change(
         self: &Self,
-        tmpl_args: &Vec<TemplateArg>,
+        _tmpl_args: &Vec<TemplateArg>,
         registry: &TypeRegistry,
         mut mem_state: MemState,
-        _arg_locs: Vec<Location>,
+        arg_locs: Vec<Location>,
     ) -> Result<Vec<(MemState, Vec<Location>)>, Error> {
-        //let ap_val = match mem_state.ap_change {
-        //    ApChange::Unknown => Err(Error::IllegalApChangeValue),
-        //    ApChange::Known(val) => Ok(val),
-        //}?;
-        //match arg_locs[0] {
-        //    Location::Temp(offset) if offset == ap_val as i64 => Ok(()),
-        //    _ => Err(Error::IllegalExtensionArgsLocation),
-        //}?;
-        let ti = get_info(registry, &as_tuple(tmpl_args.clone()))?;
-        mem_state.temp_cursur = ti.size;
+        let ti = get_info(registry, &types_as_tuple(&self.args))?;
+        match &arg_locs[0] {
+            Location::Final(MemLocation::Temp(offset))
+                if offset + ti.size as i64 == mem_state.temp_cursur as i64 => {}
+            _ => {
+                return Err(Error::IllegalExtensionArgsLocation);
+            }
+        }
+        let ti = get_info(registry, &types_as_tuple(&self.results))?;
+        mem_state.temp_cursur = 0;
         mem_state.temp_invalidated = true;
-        Ok(vec![(mem_state, vec![Location::Temp(-(ti.size as i64))])])
+        Ok(vec![(
+            mem_state,
+            vec![Location::Final(MemLocation::Temp(-(ti.size as i64)))],
+        )])
     }
 }
 

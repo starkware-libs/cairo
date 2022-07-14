@@ -25,6 +25,32 @@ impl ExtensionImplementation for ArithmeticExtension {
             _ => Err(Error::WrongNumberOfTypeArgs),
         }
     }
+
+    fn mem_change(
+        self: &Self,
+        tmpl_args: &Vec<TemplateArg>,
+        _registry: &TypeRegistry,
+        mem_state: MemState,
+        arg_locs: Vec<Location>,
+    ) -> Result<Vec<(MemState, Vec<Location>)>, Error> {
+        match tmpl_args.len() {
+            1 => Ok(vec![(
+                mem_state,
+                vec![Location::Add(
+                    as_final(&arg_locs[0])?,
+                    as_final(&arg_locs[1])?,
+                )],
+            )]),
+            2 => {
+                let (_, c) = get_type_value(tmpl_args)?;
+                Ok(vec![(
+                    mem_state,
+                    vec![Location::AddConst(as_final(&arg_locs[0])?, c)],
+                )])
+            }
+            _ => Err(Error::WrongNumberOfTypeArgs),
+        }
+    }
 }
 
 struct DuplicateExtension {}
@@ -74,12 +100,13 @@ impl ExtensionImplementation for ConstantExtension {
 
     fn mem_change(
         self: &Self,
-        _tmpl_args: &Vec<TemplateArg>,
+        tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
         mem_state: MemState,
-        arg_locs: Vec<Location>,
+        _arg_locs: Vec<Location>,
     ) -> Result<Vec<(MemState, Vec<Location>)>, Error> {
-        Ok(vec![(mem_state, vec![Location::Transient(arg_locs)])])
+        let (_, c) = get_type_value(tmpl_args)?;
+        Ok(vec![(mem_state, vec![Location::Const(c)])])
     }
 }
 
@@ -92,6 +119,16 @@ impl ExtensionImplementation for IgnoreExtension {
     ) -> Result<ExtensionSignature, Error> {
         let numeric_type = get_type(tmpl_args)?;
         Ok(simple_invoke_ext_sign(vec![numeric_type.clone()], vec![]))
+    }
+
+    fn mem_change(
+        self: &Self,
+        _tmpl_args: &Vec<TemplateArg>,
+        _registry: &TypeRegistry,
+        mem_state: MemState,
+        _arg_locs: Vec<Location>,
+    ) -> Result<Vec<(MemState, Vec<Location>)>, Error> {
+        Ok(vec![(mem_state, vec![])])
     }
 }
 

@@ -23,6 +23,19 @@ impl ExtensionImplementation for MatchNullableExtension {
             fallthrough: Some(1),
         })
     }
+
+    fn mem_change(
+        self: &Self,
+        _tmpl_args: &Vec<TemplateArg>,
+        _registry: &TypeRegistry,
+        mem_state: MemState,
+        arg_locs: Vec<Location>,
+    ) -> Result<Vec<(MemState, Vec<Location>)>, Error> {
+        Ok(vec![
+            (mem_state.clone(), vec![arg_locs[0].clone()]),
+            (mem_state, vec![]),
+        ])
+    }
 }
 
 pub(super) fn extensions() -> [(String, ExtensionBox); 1] {

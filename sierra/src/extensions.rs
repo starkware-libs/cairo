@@ -58,6 +58,13 @@ pub(crate) struct ExtensionSignature {
     pub fallthrough: Option<usize>,
 }
 
+fn as_final(loc: &Location) -> Result<MemLocation, Error> {
+    match loc {
+        Location::Final(m) => Ok(*m),
+        _ => Err(Error::IllegalExtensionArgsLocation),
+    }
+}
+
 fn simple_invoke_ext_sign(args: Vec<Type>, results: Vec<Type>) -> ExtensionSignature {
     ExtensionSignature {
         args: args,
@@ -78,21 +85,7 @@ trait ExtensionImplementation {
         _registry: &TypeRegistry,
         mem_state: MemState,
         arg_locs: Vec<Location>,
-    ) -> Result<Vec<(MemState, Vec<Location>)>, Error> {
-        let sign = self.get_signature(tmpl_args)?;
-        Ok(sign
-            .results
-            .iter()
-            .map(|r| {
-                (
-                    mem_state.clone(),
-                    r.iter()
-                        .map(|_| Location::Transient(arg_locs.clone()))
-                        .collect(),
-                )
-            })
-            .collect())
-    }
+    ) -> Result<Vec<(MemState, Vec<Location>)>, Error>;
 }
 
 type ExtensionBox = Box<dyn ExtensionImplementation + Sync + Send>;

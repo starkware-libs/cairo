@@ -28,43 +28,48 @@ impl ExtensionImplementation for TuplePackExtension {
         mem_state: MemState,
         arg_locs: Vec<Location>,
     ) -> Result<Vec<(MemState, Vec<Location>)>, Error> {
-        let mut result: Option<&Location> = None;
-        let mut expected_next: Option<Location> = None;
-        tmpl_args
-            .iter()
-            .zip(arg_locs.iter())
-            .try_for_each(|(tmpl_arg, loc)| match tmpl_arg {
+        let mut start_loc: Option<&Location> = None;
+        let mut combined_size = 0;
+        for (loc, tmpl_arg) in arg_locs.iter().zip(tmpl_args.iter()) {
+            let size = match tmpl_arg {
                 TemplateArg::Type(t) => {
                     let ti = get_info(registry, t)?;
-                    if ti.size == 0 {
-                        return Ok(());
-                    }
-                    //match &expected_next {
-                    //    Some(exp) if loc != exp => {
-                    //        return Err(Error::IllegalExtensionArgsLocation);
-                    //    }
-                    //    _ => {}
-                    //}
-                    if result.is_none() {
-                        result = Some(loc);
-                    }
-                    expected_next = match loc {
-                        Location::Temp(offset) => Ok(Some(Location::Temp(offset + ti.size as i64))),
-                        Location::Local(offset) => {
-                            Ok(Some(Location::Local(offset + ti.size as i64)))
-                        }
-                        // Location::Transient(_) => Err(Error::IllegalExtensionArgsLocation),
-                        Location::Transient(_) => Ok(Some(Location::Local(0))),
-                    }?;
-                    Ok(())
+                    Ok(ti.size)
                 }
                 TemplateArg::Value(_) => Err(Error::UnsupportedTypeArg),
-            })?;
+            }?;
+            if size == 0 {
+                continue;
+            }
+            match &start_loc {
+                None => {
+                    start_loc = Some(loc);
+                }
+                Some(Location::Final(MemLocation::Temp(start_offset))) => match loc {
+                    Location::Final(MemLocation::Temp(next))
+                        if *next == (start_offset + combined_size as i64) => {}
+                    _ => {
+                        return Err(Error::LocationsNonCosecutive);
+                    }
+                },
+                Some(Location::Final(MemLocation::Local(start_offset))) => match loc {
+                    Location::Final(MemLocation::Local(next))
+                        if *next == (start_offset + combined_size as i64) => {}
+                    _ => {
+                        return Err(Error::LocationsNonCosecutive);
+                    }
+                },
+                _ => {
+                    return Err(Error::LocationsNonCosecutive);
+                }
+            }
+            combined_size += size;
+        }
         Ok(vec![(
             mem_state,
-            vec![match result {
-                None => Location::Transient(vec![]),
-                Some(loc) => loc.clone(),
+            vec![match start_loc {
+                None => Location::Transient,
+                Some(start_loc) => start_loc.clone(),
             }],
         )])
     }
@@ -103,13 +108,18 @@ impl ExtensionImplementation for TupleUnpackExtension {
         tmpl_args.iter().try_for_each(|tmpl_arg| match tmpl_arg {
             TemplateArg::Type(t) => {
                 let ti = get_info(registry, t)?;
-                if ti.size == 0 {
-                    return Ok(());
-                }
-                locs.push(match &arg_locs[0] {
-                    Location::Temp(base) => Ok(Location::Temp(base + offset)),
-                    Location::Local(base) => Ok(Location::Local(base + offset)),
-                    Location::Transient(_) => Err(Error::IllegalExtensionArgsLocation),
+                locs.push(if ti.size == 0 {
+                    Ok(Location::Transient)
+                } else {
+                    match &arg_locs[0] {
+                        Location::Final(MemLocation::Temp(base)) => {
+                            Ok(Location::Final(MemLocation::Temp(base + offset)))
+                        }
+                        Location::Final(MemLocation::Local(base)) => {
+                            Ok(Location::Final(MemLocation::Local(base + offset)))
+                        }
+                        _ => Err(Error::IllegalExtensionArgsLocation),
+                    }
                 }?);
                 offset += ti.size as i64;
                 Ok(())

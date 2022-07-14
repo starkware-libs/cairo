@@ -60,19 +60,19 @@ impl ExtensionImplementation for StoreExtension {
                 let prev = mem_state.temp_cursur as i64;
                 mem_state.temp_used = true;
                 mem_state.temp_cursur += ti.size;
-                Ok(Location::Temp(prev))
+                Ok(MemLocation::Temp(prev))
             }
             StoreType::Local => {
                 let prev = mem_state.local_cursur as i64;
                 mem_state.local_cursur += ti.size;
                 if mem_state.local_allocated {
-                    Ok(Location::Local(prev))
+                    Ok(MemLocation::Local(prev))
                 } else {
                     Err(Error::LocalMemoryNotAllocated)
                 }
             }
         }?;
-        Ok(vec![(mem_state, vec![loc])])
+        Ok(vec![(mem_state, vec![Location::Final(loc)])])
     }
 }
 
@@ -94,6 +94,19 @@ impl ExtensionImplementation for MoveExtension {
             vec![ty.clone()],
             vec![as_deferred(ty.clone())],
         ))
+    }
+
+    fn mem_change(
+        self: &Self,
+        _tmpl_args: &Vec<TemplateArg>,
+        _registry: &TypeRegistry,
+        mem_state: MemState,
+        arg_locs: Vec<Location>,
+    ) -> Result<Vec<(MemState, Vec<Location>)>, Error> {
+        Ok(vec![(
+            mem_state,
+            vec![Location::AddConst(as_final(&arg_locs[0])?, 0)],
+        )])
     }
 }
 

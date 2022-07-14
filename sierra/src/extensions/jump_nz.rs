@@ -20,6 +20,16 @@ impl ExtensionImplementation for JumpNzExtension {
             fallthrough: Some(1),
         })
     }
+
+    fn mem_change(
+        self: &Self,
+        _tmpl_args: &Vec<TemplateArg>,
+        _registry: &TypeRegistry,
+        mem_state: MemState,
+        _arg_locs: Vec<Location>,
+    ) -> Result<Vec<(MemState, Vec<Location>)>, Error> {
+        Ok(vec![(mem_state.clone(), vec![]), (mem_state, vec![])])
+    }
 }
 
 pub(super) fn extensions() -> [(String, ExtensionBox); 1] {
