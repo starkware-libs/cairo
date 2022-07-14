@@ -437,11 +437,9 @@ mod function {
                 &pp.parse(
                     r#"
                 # 0
-                duplicate_num<int>(n) -> (n, n_dup);
                 split_gas<9, 1>(cost) -> (cost, jump_cost);
-                jump_nz<int>(n_dup, jump_cost) { 2() fallthrough() };
+                jump_nz<int>(n, jump_cost) { 2(n) fallthrough() };
                 # 1
-                ignore_num<int>(n) -> ();
                 split_gas<7, 1, 1>(cost) -> (cost, push_gb, push_one);
                 refund_gas<7>(gb, cost) -> (gb);
                 store<Temp, GasBuiltin>(gb, push_gb) -> (gb);
@@ -450,12 +448,11 @@ mod function {
                 return(gb, one);
                 # 2
                 split_gas<7, 1, 1>(cost) -> (cost, push_n, jump_cost);
+                unwrap_nz<int>(n) -> (n);
                 add<int, -1>(n) -> (n);
                 store<Temp, int>(n, push_n) -> (n);
-                duplicate_num<int>(n) -> (n, n_dup);
-                jump_nz<int>(n_dup, jump_cost) { 4() fallthrough() };
+                jump_nz<int>(n, jump_cost) { 4(n) fallthrough() };
                 # 3
-                ignore_num<int>(n) -> ();
                 split_gas<5, 1, 1>(cost) -> (cost, push_gb, push_one);
                 refund_gas<5>(gb, cost) -> (gb);
                 store<Temp, GasBuiltin>(gb, push_gb) -> (gb);
@@ -468,8 +465,8 @@ mod function {
                 );
                 constant_num<int, 1>() -> (b);
                 store<Temp, int>(b, push_b) -> (b);
-                move<int>(n) -> (n);
-                store<Temp, int>(n, push_n) -> (n);
+                move<NonZero<int>>(n) -> (n);
+                store<Temp, NonZero<int>>(n, push_n) -> (n);
                 move<GasBuiltin>(gb) -> (gb);
                 store<Temp, GasBuiltin>(gb, push_gb) -> (gb);
                 constant_num<int, 1>() -> (a);
@@ -482,6 +479,7 @@ mod function {
                 # 6
                 ignore_num<int>(a) -> ();
                 ignore_num<int>(b) -> ();
+                unwrap_nz<int>(n) -> (n);
                 ignore_num<int>(n) -> ();
                 split_gas<1, 1>(final_cost) -> (push_gb, push_err);
                 move<GasBuiltin>(gb) -> (gb);
@@ -493,15 +491,14 @@ mod function {
                 duplicate_num<int>(a) -> (a, prev_a);
                 add<int>(a, b) -> (a);
                 rename<int>(prev_a) -> (b);
+                unwrap_nz<int>(n) -> (n);
                 add<int, -1>(n) -> (n);
                 store<Temp, int>(n, push_n) -> (n);
                 store<Temp, GasBuiltin>(gb, push_gb) -> (gb);
                 store<Temp, int>(a, push_a) -> (a);
-                duplicate_num<int>(n) -> (n, use);
-                jump_nz<int>(use, jump_cost) { 5() fallthrough() };
+                jump_nz<int>(n, jump_cost) { 5(n) fallthrough() };
                 # 8
                 ignore_num<int>(b) -> ();
-                ignore_num<int>(n) -> ();
                 refund_gas<1>(gb, get_gas_cost) -> (gb);
                 split_gas<1, 1>(final_cost) -> (push_gb, push_a);
                 store<Temp, GasBuiltin>(gb, push_gb) -> (gb);
@@ -530,11 +527,9 @@ mod function {
                 constant_num<int, 1>() -> (one);
                 split_gas<6, 1>(cost) -> (cost, use_cost);
                 store<Temp, int>(one, use_cost) -> (one);
-                duplicate_num<int>(n) -> (n, use);
                 split_gas<5, 1>(cost) -> (cost, use_cost);
-                jump_nz<int>(use, use_cost) { 2() fallthrough() };
+                jump_nz<int>(n, use_cost) { 2(n) fallthrough() };
                 # 1
-                ignore_num<int>(n) -> ();
                 split_gas<3, 1, 1>(cost) -> (cost, push_res1, push_res2);
                 refund_gas<3>(gb, cost) -> (gb);
                 store<Temp, GasBuiltin>(gb, push_res1) -> (gb);
@@ -542,14 +537,13 @@ mod function {
                 store<Temp, int>(one, push_res2) -> (one);
                 return(gb, one);
                 # 2
+                unwrap_nz<int>(n) -> (n);
                 add<int, -1>(n) -> (n_1);
                 split_gas<4, 1>(cost) -> (cost, use_cost);
                 store<Temp, int>(n_1, use_cost) -> (n_1);
-                duplicate_num<int>(n_1) -> (n_1, use);
                 split_gas<3, 1>(cost) -> (cost, use_cost);
-                jump_nz<int>(use, use_cost) { 4() fallthrough() };
+                jump_nz<int>(n_1, use_cost) { 4(n_1) fallthrough() };
                 # 3
-                ignore_num<int>(n_1) -> ();
                 split_gas<1, 1, 1>(cost) -> (cost, push_res1, push_res2);
                 refund_gas<1>(gb, cost) -> (gb);
                 store<Temp, GasBuiltin>(gb, push_res1) -> (gb);
@@ -557,6 +551,7 @@ mod function {
                 store<Temp, int>(one, push_res2) -> (one);
                 return(gb, one);
                 # 4
+                unwrap_nz<int>(n_1) -> (n_1);
                 ignore_num<int>(one) -> ();
                 split_gas<1, 1, 1>(cost) -> (get_gas_cost, use_cost, store_gb);
                 get_gas<1, 8, 2, 8 ,2, 1, 1, 1, 1, 1>(gb, get_gas_cost) {
@@ -598,6 +593,94 @@ mod function {
                 return(gb, r);
 
                 Fibonacci@0(gb: GasBuiltin, n: int, cost: Gas<8>) -> (GasBuiltin, int);"#
+                )
+                .unwrap()
+            ),
+            Ok(())
+        );
+    }
+
+    #[test]
+    fn collatz() {
+        let pp = ProgramParser::new();
+        // count = 0;
+        // while n != 1 {
+        //   n = n % 2 == 0 { n / 2 } else { 3 * n + 1 };
+        //   count++;
+        // }
+        assert_eq!(
+            validate(
+                &pp.parse(
+                    r#"
+                # 0
+                split_gas<1, 1, 1, 1, 1, 1, 1, 2>(cost) -> (
+                    push_n, push_gb, push_counter,
+                    jump_cost0, jump_cost7, push_n_1, get_gas_cost, final_cost
+                );
+                move<int>(n) -> (n);
+                store<Temp, int>(n, push_n) -> (n);
+                move<GasBuiltin>(gb) -> (gb);
+                store<Temp, GasBuiltin>(gb, push_gb) -> (gb);
+                constant_num<int, 0>() -> (counter);
+                store<Temp, int>(counter, push_counter) -> (counter);
+                jump(jump_cost0) { 7() };
+                # 1
+                unwrap_nz<int>(to_drop) -> (to_drop);
+                ignore_num<int>(to_drop) -> ();
+                get_gas<1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1>(gb, get_gas_cost) {
+                    3(gb, push_parity, jump_cost4, cost1, cost2, push_gb1, push_gb2, push_counter,
+                      jump_cost7, jump_cost3, push_n_1, get_gas_cost)
+                    fallthrough(gb)
+                };
+                # 2
+                ignore_num<int>(n) -> ();
+                ignore_num<int>(counter) -> ();
+                split_gas<1, 1>(final_cost) -> (push_gb, push_err);
+                move<GasBuiltin>(gb) -> (gb);
+                store<Temp, GasBuiltin>(gb, push_gb) -> (gb);
+                constant_num<int, -1>() -> (err);
+                store<Temp, int>(err, push_err) -> (err);
+                return(gb, err);
+                # 3
+                duplicate_num<int>(n) -> (n, parity);
+                mod<int, 2>(parity) -> (parity);
+                store<Temp, int>(parity, push_parity) -> (parity);
+                store<Temp, GasBuiltin>(gb, push_gb1) -> (gb);
+                jump_nz<int>(parity, jump_cost3) { 5(to_drop) fallthrough() };
+                # 4
+                align_temps<1>(cost1) -> ();
+                div<int, 2>(n) -> (n);
+                store<Temp, int>(n, cost2) -> (n);
+                move<GasBuiltin>(gb) -> (gb);
+                store<Temp, GasBuiltin>(gb, push_gb2) -> (gb);
+                jump(jump_cost4) { 6() };
+                # 5
+                unwrap_nz<int>(to_drop) -> (to_drop);
+                ignore_num<int>(to_drop) -> ();
+                mul<int, 3>(n) -> (n);
+                store<Temp, int>(n, cost1) -> (n);
+                add<int, 1>(n) -> (n);
+                store<Temp, int>(n, cost2) -> (n);
+                refund_gas<1>(gb, jump_cost4) -> (gb);
+                store<Temp, GasBuiltin>(gb, push_gb2) { fallthrough(gb) };
+                # 6
+                add<int, 1>(counter) -> (counter);
+                store<Temp, int>(counter, push_counter) { fallthrough(counter) };
+                # 7
+                duplicate_num<int>(n) -> (n, n_1);
+                add<int, -1>(n_1) -> (n_1);
+                store<Temp, int>(n_1, push_n_1) -> (n_1);
+                jump_nz<int>(n_1, jump_cost7) { 1(to_drop) fallthrough() };
+                # 8
+                ignore_num<int>(n) -> ();
+                refund_gas<1>(gb, get_gas_cost) -> (gb);
+                split_gas<1, 1>(final_cost) -> (push_gb, push_counter);
+                store<Temp, GasBuiltin>(gb, push_gb) -> (gb);
+                move<int>(counter) -> (counter);
+                store<Temp, int>(counter, push_counter) -> (counter);
+                return(gb, counter);
+
+                Collatz@0(gb: GasBuiltin, n: int, cost: Gas<9>) -> (GasBuiltin, int);"#
                 )
                 .unwrap()
             ),

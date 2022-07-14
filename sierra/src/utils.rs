@@ -9,7 +9,7 @@ pub fn as_deferred(arg: Type) -> Type {
 
 pub fn as_nonzero(arg: Type) -> Type {
     Type {
-        name: "NoneZero".to_string(),
+        name: "NonZero".to_string(),
         args: vec![type_arg(arg)],
     }
 }

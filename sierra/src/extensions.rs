@@ -58,6 +58,17 @@ pub(crate) struct ExtensionSignature {
     pub fallthrough: Option<usize>,
 }
 
+fn single_type_arg<'a>(tmpl_args: &'a Vec<TemplateArg>) -> Result<&'a Type, Error> {
+    if tmpl_args.len() != 1 {
+        Err(Error::WrongNumberOfTypeArgs)
+    } else {
+        match &tmpl_args[0] {
+            TemplateArg::Type(t) => Ok(t),
+            TemplateArg::Value(_) => Err(Error::UnsupportedTypeArg),
+        }
+    }
+}
+
 fn as_final(ref_val: &RefValue) -> Result<MemLocation, Error> {
     match ref_val {
         RefValue::Final(m) => Ok(*m),
@@ -127,6 +138,7 @@ fn get_type_registry() -> TypeRegistry {
     chain!(
         arithmetic::types().into_iter(),
         gas_station::types().into_iter(),
+        jump_nz::types().into_iter(),
         tuple_obj::types().into_iter(),
     )
     .collect()

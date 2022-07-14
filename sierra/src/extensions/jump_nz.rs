@@ -1,4 +1,7 @@
-use crate::{extensions::*, utils::gas_type};
+use crate::{
+    extensions::*,
+    utils::{as_nonzero, gas_type},
+};
 
 struct JumpNzExtension {}
 
@@ -7,16 +10,10 @@ impl ExtensionImplementation for JumpNzExtension {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
     ) -> Result<ExtensionSignature, Error> {
-        if tmpl_args.len() != 1 {
-            return Err(Error::WrongNumberOfTypeArgs);
-        }
-        let numeric_type = match &tmpl_args[0] {
-            TemplateArg::Type(t) => Ok(t),
-            TemplateArg::Value(_) => Err(Error::UnsupportedTypeArg),
-        }?;
+        let numeric_type = single_type_arg(tmpl_args)?;
         Ok(ExtensionSignature {
             args: vec![numeric_type.clone(), gas_type(1)],
-            results: vec![vec![], vec![]],
+            results: vec![vec![as_nonzero(numeric_type.clone())], vec![]],
             fallthrough: Some(1),
         })
     }
@@ -26,14 +23,63 @@ impl ExtensionImplementation for JumpNzExtension {
         _tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
         mem_state: MemState,
-        _arg_refs: Vec<RefValue>,
+        arg_refs: Vec<RefValue>,
     ) -> Result<Vec<(MemState, Vec<RefValue>)>, Error> {
-        Ok(vec![(mem_state.clone(), vec![]), (mem_state, vec![])])
+        Ok(vec![
+            (mem_state.clone(), vec![arg_refs[0].clone()]),
+            (mem_state, vec![]),
+        ])
     }
 }
 
-pub(super) fn extensions() -> [(String, ExtensionBox); 1] {
-    [("jump_nz".to_string(), Box::new(JumpNzExtension {}))]
+struct UnwrapNzExtension {}
+
+impl ExtensionImplementation for UnwrapNzExtension {
+    fn get_signature(
+        self: &Self,
+        tmpl_args: &Vec<TemplateArg>,
+    ) -> Result<ExtensionSignature, Error> {
+        let numeric_type = single_type_arg(tmpl_args)?;
+        Ok(simple_invoke_ext_sign(
+            vec![as_nonzero(numeric_type.clone())],
+            vec![numeric_type.clone()],
+        ))
+    }
+
+    fn mem_change(
+        self: &Self,
+        _tmpl_args: &Vec<TemplateArg>,
+        _registry: &TypeRegistry,
+        mem_state: MemState,
+        arg_refs: Vec<RefValue>,
+    ) -> Result<Vec<(MemState, Vec<RefValue>)>, Error> {
+        Ok(vec![(mem_state, arg_refs)])
+    }
+}
+
+struct NonZeroTypeInfo {}
+
+impl TypeInfoImplementation for NonZeroTypeInfo {
+    fn get_info(
+        self: &Self,
+        tmpl_args: &Vec<TemplateArg>,
+        registry: &TypeRegistry,
+    ) -> Result<TypeInfo, Error> {
+        let numeric_type = single_type_arg(tmpl_args)?;
+        let ti = get_info(registry, numeric_type)?;
+        Ok(TypeInfo { size: ti.size })
+    }
+}
+
+pub(super) fn extensions() -> [(String, ExtensionBox); 2] {
+    [
+        ("jump_nz".to_string(), Box::new(JumpNzExtension {})),
+        ("unwrap_nz".to_string(), Box::new(UnwrapNzExtension {})),
+    ]
+}
+
+pub(super) fn types() -> [(String, TypeInfoBox); 1] {
+    [("NonZero".to_string(), Box::new(NonZeroTypeInfo {}))]
 }
 
 #[cfg(test)]
@@ -47,7 +93,7 @@ mod tests {
             JumpNzExtension {}.get_signature(&vec![type_arg(as_type("int"))]),
             Ok(ExtensionSignature {
                 args: vec![as_type("int"), gas_type(1)],
-                results: vec![vec![], vec![]],
+                results: vec![vec![as_nonzero(as_type("int"))], vec![]],
                 fallthrough: Some(1),
             })
         );
