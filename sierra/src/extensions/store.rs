@@ -76,6 +76,34 @@ impl ExtensionImplementation for StoreExtension {
     }
 }
 
+struct RenameExtension {}
+
+impl ExtensionImplementation for RenameExtension {
+    fn get_signature(
+        self: &Self,
+        tmpl_args: &Vec<TemplateArg>,
+    ) -> Result<ExtensionSignature, Error> {
+        if tmpl_args.len() != 1 {
+            return Err(Error::WrongNumberOfTypeArgs);
+        }
+        let ty = match &tmpl_args[0] {
+            TemplateArg::Type(ty) => Ok(ty),
+            _ => Err(Error::UnsupportedTypeArg),
+        }?;
+        Ok(simple_invoke_ext_sign(vec![ty.clone()], vec![ty.clone()]))
+    }
+
+    fn mem_change(
+        self: &Self,
+        _tmpl_args: &Vec<TemplateArg>,
+        _registry: &TypeRegistry,
+        mem_state: MemState,
+        arg_locs: Vec<Location>,
+    ) -> Result<Vec<(MemState, Vec<Location>)>, Error> {
+        Ok(vec![(mem_state, arg_locs)])
+    }
+}
+
 struct MoveExtension {}
 
 impl ExtensionImplementation for MoveExtension {
@@ -178,9 +206,10 @@ impl ExtensionImplementation for AlignTempsExtension {
     }
 }
 
-pub(super) fn extensions() -> [(String, ExtensionBox); 4] {
+pub(super) fn extensions() -> [(String, ExtensionBox); 5] {
     [
         ("store".to_string(), Box::new(StoreExtension {})),
+        ("rename".to_string(), Box::new(RenameExtension {})),
         ("move".to_string(), Box::new(MoveExtension {})),
         (
             "alloc_locals".to_string(),
