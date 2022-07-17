@@ -30,22 +30,22 @@ impl ExtensionImplementation for FunctionCallExtension {
         self: &Self,
         _tmpl_args: &Vec<TemplateArg>,
         registry: &TypeRegistry,
-        mut mem_state: MemState,
+        mut context: Context,
         arg_refs: Vec<RefValue>,
-    ) -> Result<Vec<(MemState, Vec<RefValue>)>, Error> {
+    ) -> Result<Vec<(Context, Vec<RefValue>)>, Error> {
         let ti = get_info(registry, &types_as_tuple(&self.args))?;
         match &arg_refs[0] {
             RefValue::Final(MemLocation::Temp(offset))
-                if offset + ti.size as i64 == mem_state.temp_cursur as i64 => {}
+                if offset + ti.size as i64 == context.temp_cursur as i64 => {}
             _ => {
                 return Err(Error::IllegalExtensionArgsLocation);
             }
         }
         let ti = get_info(registry, &types_as_tuple(&self.results))?;
-        mem_state.temp_cursur = 0;
-        mem_state.temp_invalidated = true;
+        context.temp_cursur = 0;
+        context.temp_invalidated = true;
         Ok(vec![(
-            mem_state,
+            context,
             vec![RefValue::Final(MemLocation::Temp(-(ti.size as i64)))],
         )])
     }

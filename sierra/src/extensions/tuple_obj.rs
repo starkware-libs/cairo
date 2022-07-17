@@ -25,9 +25,9 @@ impl ExtensionImplementation for TuplePackExtension {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
         registry: &TypeRegistry,
-        mem_state: MemState,
+        context: Context,
         arg_refs: Vec<RefValue>,
-    ) -> Result<Vec<(MemState, Vec<RefValue>)>, Error> {
+    ) -> Result<Vec<(Context, Vec<RefValue>)>, Error> {
         let mut tup_mem: Option<(MemLocation, usize)> = None;
         for (ref_val, tmpl_arg) in arg_refs.iter().zip(tmpl_args.iter()) {
             let size = match tmpl_arg {
@@ -47,7 +47,7 @@ impl ExtensionImplementation for TuplePackExtension {
             }?);
         }
         Ok(vec![(
-            mem_state,
+            context,
             vec![match tup_mem {
                 None => RefValue::Transient,
                 Some((mem, _)) => RefValue::Final(mem),
@@ -81,9 +81,9 @@ impl ExtensionImplementation for TupleUnpackExtension {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
         registry: &TypeRegistry,
-        mem_state: MemState,
+        context: Context,
         arg_refs: Vec<RefValue>,
-    ) -> Result<Vec<(MemState, Vec<RefValue>)>, Error> {
+    ) -> Result<Vec<(Context, Vec<RefValue>)>, Error> {
         let mut refs = vec![];
         let mut offset = 0;
         tmpl_args.iter().try_for_each(|tmpl_arg| match tmpl_arg {
@@ -107,7 +107,7 @@ impl ExtensionImplementation for TupleUnpackExtension {
             }
             TemplateArg::Value(_) => Err(Error::UnsupportedTypeArg),
         })?;
-        Ok(vec![(mem_state, refs)])
+        Ok(vec![(context, refs)])
     }
 }
 

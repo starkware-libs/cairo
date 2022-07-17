@@ -1,5 +1,5 @@
 #[derive(Debug, Clone, PartialEq)]
-pub(crate) struct MemState {
+pub(crate) struct Context {
     pub local_cursur: usize,
     pub local_allocated: bool,
     pub temp_used: bool,

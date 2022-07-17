@@ -50,29 +50,29 @@ impl ExtensionImplementation for StoreExtension {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
         registry: &TypeRegistry,
-        mut mem_state: MemState,
+        mut context: Context,
         _arg_refs: Vec<RefValue>,
-    ) -> Result<Vec<(MemState, Vec<RefValue>)>, Error> {
+    ) -> Result<Vec<(Context, Vec<RefValue>)>, Error> {
         let (store_ty, ty) = unpack_args(tmpl_args)?;
         let ti = get_info(registry, ty)?;
         let loc = match store_ty {
             StoreType::Temp => {
-                let prev = mem_state.temp_cursur as i64;
-                mem_state.temp_used = true;
-                mem_state.temp_cursur += ti.size;
+                let prev = context.temp_cursur as i64;
+                context.temp_used = true;
+                context.temp_cursur += ti.size;
                 Ok(MemLocation::Temp(prev))
             }
             StoreType::Local => {
-                let prev = mem_state.local_cursur as i64;
-                mem_state.local_cursur += ti.size;
-                if mem_state.local_allocated {
+                let prev = context.local_cursur as i64;
+                context.local_cursur += ti.size;
+                if context.local_allocated {
                     Ok(MemLocation::Local(prev))
                 } else {
                     Err(Error::LocalMemoryNotAllocated)
                 }
             }
         }?;
-        Ok(vec![(mem_state, vec![RefValue::Final(loc)])])
+        Ok(vec![(context, vec![RefValue::Final(loc)])])
     }
 }
 
@@ -91,10 +91,10 @@ impl ExtensionImplementation for RenameExtension {
         self: &Self,
         _tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
-        mem_state: MemState,
+        context: Context,
         arg_refs: Vec<RefValue>,
-    ) -> Result<Vec<(MemState, Vec<RefValue>)>, Error> {
-        Ok(vec![(mem_state, arg_refs)])
+    ) -> Result<Vec<(Context, Vec<RefValue>)>, Error> {
+        Ok(vec![(context, arg_refs)])
     }
 }
 
@@ -116,11 +116,11 @@ impl ExtensionImplementation for MoveExtension {
         self: &Self,
         _tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
-        mem_state: MemState,
+        context: Context,
         arg_refs: Vec<RefValue>,
-    ) -> Result<Vec<(MemState, Vec<RefValue>)>, Error> {
+    ) -> Result<Vec<(Context, Vec<RefValue>)>, Error> {
         Ok(vec![(
-            mem_state,
+            context,
             vec![RefValue::OpWithConst(as_final(&arg_refs[0])?, Op::Add, 0)],
         )])
     }
@@ -144,17 +144,17 @@ impl ExtensionImplementation for AllocLocalsExtension {
         self: &Self,
         _tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
-        mut mem_state: MemState,
+        mut context: Context,
         _arg_refs: Vec<RefValue>,
-    ) -> Result<Vec<(MemState, Vec<RefValue>)>, Error> {
-        if mem_state.local_allocated {
+    ) -> Result<Vec<(Context, Vec<RefValue>)>, Error> {
+        if context.local_allocated {
             Err(Error::LocalMemoryAlreadyAllocated)
-        } else if mem_state.temp_used {
+        } else if context.temp_used {
             Err(Error::LocalMemoryCantBeAllocated)
         } else {
-            mem_state.local_allocated = true;
-            mem_state.temp_used = true;
-            Ok(vec![(mem_state, vec![])])
+            context.local_allocated = true;
+            context.temp_used = true;
+            Ok(vec![(context, vec![])])
         }
     }
 }
@@ -185,12 +185,12 @@ impl ExtensionImplementation for AlignTempsExtension {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
-        mut mem_state: MemState,
+        mut context: Context,
         _arg_refs: Vec<RefValue>,
-    ) -> Result<Vec<(MemState, Vec<RefValue>)>, Error> {
-        mem_state.temp_cursur += value_arg(tmpl_args)?;
-        mem_state.temp_used = true;
-        Ok(vec![(mem_state, vec![])])
+    ) -> Result<Vec<(Context, Vec<RefValue>)>, Error> {
+        context.temp_cursur += value_arg(tmpl_args)?;
+        context.temp_used = true;
+        Ok(vec![(context, vec![])])
     }
 }
 

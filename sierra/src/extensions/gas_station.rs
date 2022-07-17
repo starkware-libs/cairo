@@ -32,9 +32,9 @@ impl ExtensionImplementation for GetGasExtension {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
-        mem_state: MemState,
+        context: Context,
         arg_refs: Vec<RefValue>,
-    ) -> Result<Vec<(MemState, Vec<RefValue>)>, Error> {
+    ) -> Result<Vec<(Context, Vec<RefValue>)>, Error> {
         let mut total_gas = 0;
         let mut success_refs = vec![RefValue::Transient];
         tmpl_args.iter().try_for_each(|tmpl_arg| match tmpl_arg {
@@ -47,8 +47,8 @@ impl ExtensionImplementation for GetGasExtension {
         })?;
         success_refs[0] = RefValue::OpWithConst(as_final(&arg_refs[0])?, Op::Add, total_gas);
         Ok(vec![
-            (mem_state.clone(), success_refs),
-            (mem_state, vec![arg_refs[0].clone()]),
+            (context.clone(), success_refs),
+            (context, vec![arg_refs[0].clone()]),
         ])
     }
 }
@@ -77,9 +77,9 @@ impl ExtensionImplementation for RefundGasExtension {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
-        mem_state: MemState,
+        context: Context,
         arg_refs: Vec<RefValue>,
-    ) -> Result<Vec<(MemState, Vec<RefValue>)>, Error> {
+    ) -> Result<Vec<(Context, Vec<RefValue>)>, Error> {
         if tmpl_args.len() != 1 {
             return Err(Error::WrongNumberOfTypeArgs);
         }
@@ -88,7 +88,7 @@ impl ExtensionImplementation for RefundGasExtension {
             TemplateArg::Type(_) => Err(Error::UnsupportedTypeArg),
         }?;
         Ok(vec![(
-            mem_state,
+            context,
             vec![RefValue::OpWithConst(
                 as_final(&arg_refs[0])?,
                 Op::Sub,
@@ -125,11 +125,11 @@ impl ExtensionImplementation for SplitGasExtension {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
-        mem_state: MemState,
+        context: Context,
         _arg_refs: Vec<RefValue>,
-    ) -> Result<Vec<(MemState, Vec<RefValue>)>, Error> {
+    ) -> Result<Vec<(Context, Vec<RefValue>)>, Error> {
         Ok(vec![(
-            mem_state,
+            context,
             tmpl_args.iter().map(|_| RefValue::Transient).collect(),
         )])
     }

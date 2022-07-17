@@ -1,4 +1,4 @@
-use crate::{error::Error, graph::*, mem_state::*, ref_value::*};
+use crate::{context::Context, error::Error, graph::*, ref_value::*};
 use std::collections::HashMap;
 use Result::*;
 
@@ -57,7 +57,7 @@ pub(crate) struct VarInfo {
 #[derive(Debug, PartialEq)]
 pub(crate) struct PartialStateInfo {
     pub vars: Vec<VarInfo>,
-    pub context: MemState,
+    pub context: Context,
 }
 
 #[derive(Debug, PartialEq)]
@@ -103,9 +103,9 @@ trait ExtensionImplementation {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
-        mem_state: MemState,
+        context: Context,
         arg_refs: Vec<RefValue>,
-    ) -> Result<Vec<(MemState, Vec<RefValue>)>, Error>;
+    ) -> Result<Vec<(Context, Vec<RefValue>)>, Error>;
 
     fn transform(
         self: &Self,

@@ -22,12 +22,12 @@ impl ExtensionImplementation for JumpNzExtension {
         self: &Self,
         _tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
-        mem_state: MemState,
+        context: Context,
         arg_refs: Vec<RefValue>,
-    ) -> Result<Vec<(MemState, Vec<RefValue>)>, Error> {
+    ) -> Result<Vec<(Context, Vec<RefValue>)>, Error> {
         Ok(vec![
-            (mem_state.clone(), vec![arg_refs[0].clone()]),
-            (mem_state, vec![]),
+            (context.clone(), vec![arg_refs[0].clone()]),
+            (context, vec![]),
         ])
     }
 }
@@ -50,10 +50,10 @@ impl ExtensionImplementation for UnwrapNzExtension {
         self: &Self,
         _tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
-        mem_state: MemState,
+        context: Context,
         arg_refs: Vec<RefValue>,
-    ) -> Result<Vec<(MemState, Vec<RefValue>)>, Error> {
-        Ok(vec![(mem_state, arg_refs)])
+    ) -> Result<Vec<(Context, Vec<RefValue>)>, Error> {
+        Ok(vec![(context, arg_refs)])
     }
 }
 

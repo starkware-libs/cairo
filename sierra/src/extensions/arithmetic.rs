@@ -36,12 +36,12 @@ impl ExtensionImplementation for ArithmeticExtension {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
-        mem_state: MemState,
+        context: Context,
         arg_refs: Vec<RefValue>,
-    ) -> Result<Vec<(MemState, Vec<RefValue>)>, Error> {
+    ) -> Result<Vec<(Context, Vec<RefValue>)>, Error> {
         match tmpl_args.len() {
             1 => Ok(vec![(
-                mem_state,
+                context,
                 vec![RefValue::Op(
                     as_final(&arg_refs[0])?,
                     self.op,
@@ -51,7 +51,7 @@ impl ExtensionImplementation for ArithmeticExtension {
             2 => {
                 let (_, c) = get_type_value(tmpl_args)?;
                 Ok(vec![(
-                    mem_state,
+                    context,
                     vec![RefValue::OpWithConst(as_final(&arg_refs[0])?, self.op, c)],
                 )])
             }
@@ -96,12 +96,12 @@ impl ExtensionImplementation for DivExtension {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
-        mem_state: MemState,
+        context: Context,
         arg_refs: Vec<RefValue>,
-    ) -> Result<Vec<(MemState, Vec<RefValue>)>, Error> {
+    ) -> Result<Vec<(Context, Vec<RefValue>)>, Error> {
         match tmpl_args.len() {
             1 => Ok(vec![(
-                mem_state,
+                context,
                 vec![RefValue::Op(
                     as_final(&arg_refs[0])?,
                     self.op,
@@ -114,7 +114,7 @@ impl ExtensionImplementation for DivExtension {
                     Err(Error::UnsupportedTypeArg)
                 } else {
                     Ok(vec![(
-                        mem_state,
+                        context,
                         vec![RefValue::OpWithConst(as_final(&arg_refs[0])?, self.op, c)],
                     )])
                 }
@@ -142,11 +142,11 @@ impl ExtensionImplementation for DuplicateExtension {
         self: &Self,
         _tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
-        mem_state: MemState,
+        context: Context,
         arg_refs: Vec<RefValue>,
-    ) -> Result<Vec<(MemState, Vec<RefValue>)>, Error> {
+    ) -> Result<Vec<(Context, Vec<RefValue>)>, Error> {
         Ok(vec![(
-            mem_state,
+            context,
             vec![arg_refs[0].clone(), arg_refs[0].clone()],
         )])
     }
@@ -173,11 +173,11 @@ impl ExtensionImplementation for ConstantExtension {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
-        mem_state: MemState,
+        context: Context,
         _arg_refs: Vec<RefValue>,
-    ) -> Result<Vec<(MemState, Vec<RefValue>)>, Error> {
+    ) -> Result<Vec<(Context, Vec<RefValue>)>, Error> {
         let (_, c) = get_type_value(tmpl_args)?;
-        Ok(vec![(mem_state, vec![RefValue::Const(c)])])
+        Ok(vec![(context, vec![RefValue::Const(c)])])
     }
 }
 
@@ -196,10 +196,10 @@ impl ExtensionImplementation for IgnoreExtension {
         self: &Self,
         _tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
-        mem_state: MemState,
+        context: Context,
         _arg_refs: Vec<RefValue>,
-    ) -> Result<Vec<(MemState, Vec<RefValue>)>, Error> {
-        Ok(vec![(mem_state, vec![])])
+    ) -> Result<Vec<(Context, Vec<RefValue>)>, Error> {
+        Ok(vec![(context, vec![])])
     }
 }
 

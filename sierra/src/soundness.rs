@@ -1,8 +1,8 @@
 use crate::{
+    context::Context,
     error::Error,
     extensions::*,
     graph::*,
-    mem_state::*,
     next_state::{put_results, take_args},
     ref_value::{mem_reducer, MemLocation, RefValue},
 };
@@ -40,7 +40,7 @@ pub fn validate(prog: &Program) -> Result<(), Error> {
             f.entry,
             State {
                 vars: vars,
-                mem: MemState {
+                ctxt: Context {
                     local_cursur: 0,
                     local_allocated: false,
                     temp_used: false,
@@ -58,7 +58,7 @@ type VarStates = HashMap<Identifier, VarInfo>;
 #[derive(Debug, Clone)]
 struct State {
     vars: VarStates,
-    mem: MemState,
+    ctxt: Context,
 }
 
 struct Helper<'a> {
@@ -121,14 +121,14 @@ impl Helper<'_> {
                 return Ok(());
             }
         }
-        let State { mut vars, mut mem } = start_state;
+        let State { mut vars, mut ctxt } = start_state;
         for invc in &self.blocks[block.0].invocations {
             let (nvars, args_info) = take_args(vars, invc.args.iter())?;
             let (mut states, fallthrough) = self.registry.transform(
                 &invc.ext,
                 PartialStateInfo {
                     vars: args_info,
-                    context: mem,
+                    context: ctxt,
                 },
             )?;
             if states.len() != 1 {
@@ -142,12 +142,12 @@ impl Helper<'_> {
             }
             let PartialStateInfo {
                 vars: results_info,
-                context: nmem,
+                context: nctxt,
             } = states.remove(0);
             if results_info.len() != invc.results.len() {
                 return Err(Error::ExtensionResultSizeMismatch(invc.to_string()));
             }
-            mem = handle_temp_invalidation(&nvars, nmem.clone())?;
+            ctxt = handle_temp_invalidation(&nvars, nctxt.clone())?;
             vars = put_results(nvars, izip!(invc.results.iter(), results_info.into_iter()))?;
         }
 
@@ -176,12 +176,12 @@ impl Helper<'_> {
                 }
                 match res_mem {
                     Some((MemLocation::Temp(base), size))
-                        if base + size as i64 != mem.temp_cursur as i64 =>
+                        if base + size as i64 != ctxt.temp_cursur as i64 =>
                     {
                         return Err(Error::FunctionReturnLocationNotEndOfTemp(
                             block,
                             base + size as i64,
-                            mem.temp_cursur,
+                            ctxt.temp_cursur,
                         ));
                     }
                     _ => {}
@@ -200,7 +200,7 @@ impl Helper<'_> {
                     &j.ext,
                     PartialStateInfo {
                         vars: args_info,
-                        context: mem,
+                        context: ctxt,
                     },
                 )?;
                 if states.len() != j.branches.len() {
@@ -216,14 +216,14 @@ impl Helper<'_> {
                     branch,
                     PartialStateInfo {
                         vars: results_info,
-                        context: mem,
+                        context: ctxt,
                     },
                 ) in izip!(j.branches.iter(), states.into_iter())
                 {
                     if results_info.len() != branch.exports.len() {
                         return Err(Error::ExtensionResultSizeMismatch(j.to_string()));
                     }
-                    let mem = handle_temp_invalidation(&vars, mem)?;
+                    let ctxt = handle_temp_invalidation(&vars, ctxt)?;
                     self.validate(
                         match branch.target {
                             BranchTarget::Fallthrough => BlockId(block.0 + 1),
@@ -234,7 +234,7 @@ impl Helper<'_> {
                                 vars.clone(),
                                 izip!(branch.exports.iter(), results_info.into_iter(),),
                             )?,
-                            mem: mem,
+                            ctxt: ctxt,
                         },
                         block_start_states,
                     )?;
@@ -245,10 +245,10 @@ impl Helper<'_> {
     }
 }
 
-fn handle_temp_invalidation(vars: &VarStates, mut mem: MemState) -> Result<MemState, Error> {
-    if mem.temp_invalidated {
-        mem.temp_invalidated = false;
-        mem.temp_used = true;
+fn handle_temp_invalidation(vars: &VarStates, mut ctxt: Context) -> Result<Context, Error> {
+    if ctxt.temp_invalidated {
+        ctxt.temp_invalidated = false;
+        ctxt.temp_used = true;
         for (id, var_state) in vars.iter() {
             match &var_state.ref_val {
                 RefValue::Final(MemLocation::Temp(_))
@@ -261,15 +261,15 @@ fn handle_temp_invalidation(vars: &VarStates, mut mem: MemState) -> Result<MemSt
             }
         }
     }
-    Ok(mem)
+    Ok(ctxt)
 }
 
 fn handle_block_start(mut state: State) -> State {
-    if state.mem.temp_cursur == 0 {
+    if state.ctxt.temp_cursur == 0 {
         return state;
     }
     let fix = |offset: &mut i64| {
-        *offset -= state.mem.temp_cursur as i64;
+        *offset -= state.ctxt.temp_cursur as i64;
     };
     for (_, v) in state.vars.iter_mut() {
         match &mut v.ref_val {
@@ -284,7 +284,7 @@ fn handle_block_start(mut state: State) -> State {
             _ => {}
         }
     }
-    state.mem.temp_cursur = 0;
+    state.ctxt.temp_cursur = 0;
     state
 }
 
