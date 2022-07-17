@@ -131,7 +131,7 @@ impl ExtensionImplementation for DuplicateExtension {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
     ) -> Result<ExtensionSignature, Error> {
-        let numeric_type = get_type(tmpl_args)?;
+        let numeric_type = single_type_arg(tmpl_args)?;
         Ok(simple_invoke_ext_sign(
             vec![numeric_type.clone()],
             vec![numeric_type.clone(), numeric_type.clone()],
@@ -188,7 +188,7 @@ impl ExtensionImplementation for IgnoreExtension {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
     ) -> Result<ExtensionSignature, Error> {
-        let numeric_type = get_type(tmpl_args)?;
+        let numeric_type = single_type_arg(tmpl_args)?;
         Ok(simple_invoke_ext_sign(vec![numeric_type.clone()], vec![]))
     }
 
@@ -216,13 +216,6 @@ fn get_type_value<'a>(tmpl_args: &'a Vec<TemplateArg>) -> Result<(&'a Type, i64)
         TemplateArg::Value(v) => Ok((numeric_type, *v)),
         _ => Err(Error::UnsupportedTypeArg),
     }
-}
-
-fn get_type<'a>(tmpl_args: &'a Vec<TemplateArg>) -> Result<&'a Type, Error> {
-    if tmpl_args.len() != 1 {
-        return Err(Error::WrongNumberOfTypeArgs);
-    }
-    get_numeric_type(&tmpl_args[0])
 }
 
 struct ArithmeticTypeInfo {}

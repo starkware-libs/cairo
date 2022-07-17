@@ -20,7 +20,7 @@ pub fn validate(prog: &Program) -> Result<(), Error> {
             last -= ti.size as i64;
             vars.insert(
                 v.id.clone(),
-                VarState {
+                VarInfo {
                     ty: v.ty.clone(),
                     ref_val: if ti.size > 0 {
                         RefValue::Final(MemLocation::Local(last))
@@ -53,13 +53,7 @@ pub fn validate(prog: &Program) -> Result<(), Error> {
     })
 }
 
-#[derive(Debug, Clone, PartialEq)]
-struct VarState {
-    ty: Type,
-    ref_val: RefValue,
-}
-
-type VarStates = HashMap<Identifier, VarState>;
+type VarStates = HashMap<Identifier, VarInfo>;
 
 #[derive(Debug, Clone)]
 struct State {
@@ -129,41 +123,32 @@ impl Helper<'_> {
         }
         let State { mut vars, mut mem } = start_state;
         for invc in &self.blocks[block.0].invocations {
-            let (nvars, used_vars) = take_args(vars, invc.args.iter())?;
-            let (arg_types, arg_refs): (Vec<_>, Vec<_>) =
-                used_vars.into_iter().map(|v| (v.ty, v.ref_val)).unzip();
-            let (sign, ref_vals) = self.registry.get_mapping(&invc.ext, mem, arg_refs)?;
-            if sign.args != arg_types {
-                return Err(Error::ExtensionArgumentsMismatch(invc.to_string()));
-            }
-            if sign.results.len() != 1 || ref_vals.len() != 1 {
+            let (nvars, args_info) = take_args(vars, invc.args.iter())?;
+            let (mut states, fallthrough) = self.registry.transform(
+                &invc.ext,
+                PartialStateInfo {
+                    vars: args_info,
+                    context: mem,
+                },
+            )?;
+            if states.len() != 1 {
                 return Err(Error::ExtensionBranchesMismatch(invc.to_string()));
             }
-            match sign.fallthrough {
+            match fallthrough {
                 Some(0) => {}
                 _ => {
                     return Err(Error::ExtensionFallthroughMismatch(invc.to_string()));
                 }
             }
-            let (nmem, ref_vals) = &ref_vals[0];
-            if sign.results[0].len() != invc.results.len() || ref_vals.len() != invc.results.len() {
+            let PartialStateInfo {
+                vars: results_info,
+                context: nmem,
+            } = states.remove(0);
+            if results_info.len() != invc.results.len() {
                 return Err(Error::ExtensionResultSizeMismatch(invc.to_string()));
             }
             mem = handle_temp_invalidation(&nvars, nmem.clone())?;
-            vars = put_results(
-                nvars,
-                izip!(invc.results.iter(), sign.results[0].iter(), ref_vals.iter()).map(
-                    |(id, ty, ref_val)| {
-                        (
-                            id,
-                            VarState {
-                                ty: ty.clone(),
-                                ref_val: ref_val.clone(),
-                            },
-                        )
-                    },
-                ),
-            )?;
+            vars = put_results(nvars, izip!(invc.results.iter(), results_info.into_iter()))?;
         }
 
         match &self.blocks[block.0].exit {
@@ -210,35 +195,35 @@ impl Helper<'_> {
                 }
             }
             BlockExit::Jump(j) => {
-                let (vars, used_vars) = take_args(vars, j.args.iter())?;
-                let (arg_types, arg_refs): (Vec<_>, Vec<_>) =
-                    used_vars.into_iter().map(|v| (v.ty, v.ref_val)).unzip();
-                let (sign, ref_vals) = self.registry.get_mapping(&j.ext, mem, arg_refs)?;
-                if sign.args != arg_types {
-                    return Err(Error::ExtensionArgumentsMismatch(j.to_string()));
-                }
-                if sign.results.len() != j.branches.len() || ref_vals.len() != j.branches.len() {
+                let (vars, args_info) = take_args(vars, j.args.iter())?;
+                let (states, fallthrough) = self.registry.transform(
+                    &j.ext,
+                    PartialStateInfo {
+                        vars: args_info,
+                        context: mem,
+                    },
+                )?;
+                if states.len() != j.branches.len() {
                     return Err(Error::ExtensionBranchesMismatch(j.to_string()));
                 }
-                match sign.fallthrough {
-                    None => {}
-                    Some(i) => {
-                        if j.branches[i].target != BranchTarget::Fallthrough {
-                            return Err(Error::ExtensionFallthroughMismatch(j.to_string()));
-                        }
+                match fallthrough {
+                    Some(i) if j.branches[i].target != BranchTarget::Fallthrough => {
+                        return Err(Error::ExtensionFallthroughMismatch(j.to_string()));
                     }
+                    _ => {}
                 }
-                izip!(
-                    j.branches.iter(),
-                    sign.results.into_iter(),
-                    ref_vals.into_iter()
-                )
-                .try_for_each(|(branch, res_types, (mem, ref_vals))| {
-                    if branch.exports.len() != res_types.len() || ref_vals.len() != res_types.len()
-                    {
+                for (
+                    branch,
+                    PartialStateInfo {
+                        vars: results_info,
+                        context: mem,
+                    },
+                ) in izip!(j.branches.iter(), states.into_iter())
+                {
+                    if results_info.len() != branch.exports.len() {
                         return Err(Error::ExtensionResultSizeMismatch(j.to_string()));
                     }
-                    let mem = handle_temp_invalidation(&vars, mem.clone())?;
+                    let mem = handle_temp_invalidation(&vars, mem)?;
                     self.validate(
                         match branch.target {
                             BranchTarget::Fallthrough => BlockId(block.0 + 1),
@@ -247,26 +232,14 @@ impl Helper<'_> {
                         State {
                             vars: put_results(
                                 vars.clone(),
-                                izip!(
-                                    branch.exports.iter(),
-                                    res_types.into_iter(),
-                                    ref_vals.into_iter()
-                                )
-                                .map(|(id, ty, ref_val)| {
-                                    (
-                                        id,
-                                        VarState {
-                                            ty: ty,
-                                            ref_val: ref_val,
-                                        },
-                                    )
-                                }),
+                                izip!(branch.exports.iter(), results_info.into_iter(),),
                             )?,
                             mem: mem,
                         },
                         block_start_states,
-                    )
-                })
+                    )?;
+                }
+                Ok(())
             }
         }
     }

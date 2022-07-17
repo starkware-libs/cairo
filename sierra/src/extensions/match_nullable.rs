@@ -10,13 +10,7 @@ impl ExtensionImplementation for MatchNullableExtension {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
     ) -> Result<ExtensionSignature, Error> {
-        if tmpl_args.len() != 1 {
-            return Err(Error::WrongNumberOfTypeArgs);
-        }
-        let inner_type = match &tmpl_args[0] {
-            TemplateArg::Value(_) => Err(Error::UnsupportedTypeArg),
-            TemplateArg::Type(t) => Ok(t),
-        }?;
+        let inner_type = single_type_arg(tmpl_args)?;
         Ok(ExtensionSignature {
             args: vec![as_nullable(inner_type.clone()), gas_type(1)],
             results: vec![vec![inner_type.clone()], vec![]],

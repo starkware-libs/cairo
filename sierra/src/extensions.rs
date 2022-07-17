@@ -28,19 +28,16 @@ impl Registry {
         get_info(&self.ty_reg, ty)
     }
 
-    pub(crate) fn get_mapping(
+    pub(crate) fn transform(
         self: &Self,
         ext: &Extension,
-        mem_state: MemState,
-        arg_refs: Vec<RefValue>,
-    ) -> Result<(ExtensionSignature, Vec<(MemState, Vec<RefValue>)>), Error> {
+        state: PartialStateInfo,
+    ) -> Result<(Vec<PartialStateInfo>, Option<usize>), Error> {
         let e = match self.ext_reg.get(&ext.name) {
             None => Err(Error::UnsupportedLibCallName(ext.name.clone())),
             Some(e) => Ok(e),
         }?;
-        let sign = e.get_signature(&ext.tmpl_args)?;
-        let ref_vals = e.mem_change(&ext.tmpl_args, &self.ty_reg, mem_state, arg_refs)?;
-        Ok((sign, ref_vals))
+        e.transform(&ext.tmpl_args, &self.ty_reg, state)
     }
 }
 
@@ -49,6 +46,18 @@ fn get_info(reg: &TypeRegistry, ty: &Type) -> Result<TypeInfo, Error> {
         None => Err(Error::UnsupportedTypeName(ty.name.clone())),
         Some(e) => e.get_info(&ty.args, reg),
     }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub(crate) struct VarInfo {
+    pub ty: Type,
+    pub ref_val: RefValue,
+}
+
+#[derive(Debug, PartialEq)]
+pub(crate) struct PartialStateInfo {
+    pub vars: Vec<VarInfo>,
+    pub context: MemState,
 }
 
 #[derive(Debug, PartialEq)]
@@ -97,6 +106,44 @@ trait ExtensionImplementation {
         mem_state: MemState,
         arg_refs: Vec<RefValue>,
     ) -> Result<Vec<(MemState, Vec<RefValue>)>, Error>;
+
+    fn transform(
+        self: &Self,
+        tmpl_args: &Vec<TemplateArg>,
+        registry: &TypeRegistry,
+        state: PartialStateInfo,
+    ) -> Result<(Vec<PartialStateInfo>, Option<usize>), Error> {
+        let sign = self.get_signature(tmpl_args)?;
+        if state.vars.len() != sign.args.len() {
+            return Err(Error::ExtensionArgumentsMismatch("".to_string()));
+        }
+        for (v, ty) in state.vars.iter().zip(sign.args.into_iter()) {
+            if v.ty != ty {
+                return Err(Error::ExtensionArgumentsMismatch("".to_string()));
+            }
+        }
+        let ref_vals = self.mem_change(
+            tmpl_args,
+            registry,
+            state.context,
+            state.vars.into_iter().map(|v| v.ref_val).collect(),
+        )?;
+        Ok((
+            ref_vals
+                .into_iter()
+                .zip(sign.results.into_iter())
+                .map(|((m, refs), tys)| PartialStateInfo {
+                    vars: refs
+                        .into_iter()
+                        .zip(tys.into_iter())
+                        .map(|(r, ty)| VarInfo { ty: ty, ref_val: r })
+                        .collect(),
+                    context: m,
+                })
+                .collect(),
+            sign.fallthrough,
+        ))
+    }
 }
 
 type ExtensionBox = Box<dyn ExtensionImplementation + Sync + Send>;

@@ -83,13 +83,7 @@ impl ExtensionImplementation for RenameExtension {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
     ) -> Result<ExtensionSignature, Error> {
-        if tmpl_args.len() != 1 {
-            return Err(Error::WrongNumberOfTypeArgs);
-        }
-        let ty = match &tmpl_args[0] {
-            TemplateArg::Type(ty) => Ok(ty),
-            _ => Err(Error::UnsupportedTypeArg),
-        }?;
+        let ty = single_type_arg(tmpl_args)?;
         Ok(simple_invoke_ext_sign(vec![ty.clone()], vec![ty.clone()]))
     }
 
@@ -111,13 +105,7 @@ impl ExtensionImplementation for MoveExtension {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
     ) -> Result<ExtensionSignature, Error> {
-        if tmpl_args.len() != 1 {
-            return Err(Error::WrongNumberOfTypeArgs);
-        }
-        let ty = match &tmpl_args[0] {
-            TemplateArg::Type(ty) => Ok(ty),
-            _ => Err(Error::UnsupportedTypeArg),
-        }?;
+        let ty = single_type_arg(tmpl_args)?;
         Ok(simple_invoke_ext_sign(
             vec![ty.clone()],
             vec![as_deferred(ty.clone())],
