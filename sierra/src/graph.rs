@@ -9,6 +9,7 @@ pub struct Program {
     pub funcs: Vec<Function>,
 }
 
+// Descriptor of a function.
 #[derive(Clone, Debug)]
 pub struct Function {
     pub name: String,
