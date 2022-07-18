@@ -52,7 +52,31 @@ impl Registry {
             None => Err(Error::UnsupportedLibCallName),
             Some(e) => Ok(e),
         }?;
-        e.transform(&ext.tmpl_args, &self.ty_reg, state)
+        let sign = e.get_signature(&ext.tmpl_args)?;
+        if state.vars.iter().map(|v| &v.ty).ne(sign.args.iter()) {
+            return Err(Error::ArgumentsMismatch);
+        }
+        let ref_vals = e.mem_change(
+            &ext.tmpl_args,
+            &self.ty_reg,
+            state.context,
+            state.vars.into_iter().map(|v| v.ref_val).collect(),
+        )?;
+        Ok((
+            ref_vals
+                .into_iter()
+                .zip(sign.results.into_iter())
+                .map(|((m, refs), tys)| PartialStateInfo {
+                    vars: refs
+                        .into_iter()
+                        .zip(tys.into_iter())
+                        .map(|(r, ty)| VarInfo { ty: ty, ref_val: r })
+                        .collect(),
+                    context: m,
+                })
+                .collect(),
+            sign.fallthrough,
+        ))
     }
 }
 
@@ -121,39 +145,6 @@ trait ExtensionImplementation {
         context: Context,
         arg_refs: Vec<RefValue>,
     ) -> Result<Vec<(Context, Vec<RefValue>)>, Error>;
-
-    fn transform(
-        self: &Self,
-        tmpl_args: &Vec<TemplateArg>,
-        registry: &TypeRegistry,
-        state: PartialStateInfo,
-    ) -> Result<(Vec<PartialStateInfo>, Option<usize>), Error> {
-        let sign = self.get_signature(tmpl_args)?;
-        if state.vars.iter().map(|v| &v.ty).ne(sign.args.iter()) {
-            return Err(Error::ArgumentsMismatch);
-        }
-        let ref_vals = self.mem_change(
-            tmpl_args,
-            registry,
-            state.context,
-            state.vars.into_iter().map(|v| v.ref_val).collect(),
-        )?;
-        Ok((
-            ref_vals
-                .into_iter()
-                .zip(sign.results.into_iter())
-                .map(|((m, refs), tys)| PartialStateInfo {
-                    vars: refs
-                        .into_iter()
-                        .zip(tys.into_iter())
-                        .map(|(r, ty)| VarInfo { ty: ty, ref_val: r })
-                        .collect(),
-                    context: m,
-                })
-                .collect(),
-            sign.fallthrough,
-        ))
-    }
 }
 
 type ExtensionBox = Box<dyn ExtensionImplementation + Sync + Send>;
