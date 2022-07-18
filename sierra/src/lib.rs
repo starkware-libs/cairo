@@ -1,10 +1,10 @@
 use lalrpop_util::*;
 
 mod context;
+mod edit_state;
 pub mod error;
 mod extensions;
 pub mod graph;
-mod next_state;
 mod ref_value;
 pub mod soundness;
 pub mod utils;

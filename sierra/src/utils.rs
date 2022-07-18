@@ -1,4 +1,4 @@
-use crate::graph::*;
+use crate::graph::{TemplateArg, Type};
 
 pub fn as_deferred(arg: Type) -> Type {
     Type {

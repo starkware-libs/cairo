@@ -1,8 +1,11 @@
 use std::fmt;
 
+// A full sierra program.
 #[derive(Clone, Debug)]
 pub struct Program {
+    // All code blocks of the program.
     pub blocks: Vec<Block>,
+    // Descriptions of the functions - signature and entry point.
     pub funcs: Vec<Function>,
 }
 

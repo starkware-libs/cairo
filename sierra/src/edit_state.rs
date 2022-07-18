@@ -2,7 +2,7 @@ use crate::{error::Error, graph::Identifier};
 use std::collections::HashMap;
 use Result::*;
 
-pub fn take_args<'a, V: 'a + std::cmp::PartialEq + std::clone::Clone>(
+pub fn take_args<'a, V: 'a + std::cmp::PartialEq>(
     mut state: HashMap<Identifier, V>,
     ids: impl Iterator<Item = &'a Identifier>,
 ) -> Result<(HashMap<Identifier, V>, Vec<V>), Error> {

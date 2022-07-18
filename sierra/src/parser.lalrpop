@@ -1,3 +1,6 @@
+// Simple parser for sierra.
+// Currently only used for more easily writing tests.
+
 use crate::graph::*;
 
 grammar;

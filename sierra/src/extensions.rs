@@ -86,6 +86,7 @@ impl Registry {
     }
 }
 
+// Helper to get the type infomation from a type and the registry.
 fn get_info(reg: &TypeRegistry, ty: &Type) -> Result<TypeInfo, Error> {
     match reg.get(&ty.name) {
         None => Err(Error::UnsupportedTypeName),
@@ -93,12 +94,14 @@ fn get_info(reg: &TypeRegistry, ty: &Type) -> Result<TypeInfo, Error> {
     }
 }
 
+// Class for the information on a variable.
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct VarInfo {
     pub ty: Type,
     pub ref_val: RefValue,
 }
 
+// The partial state required to know the full state change an extension may do.
 #[derive(Debug, PartialEq)]
 pub(crate) struct PartialStateInfo {
     pub vars: Vec<VarInfo>,
@@ -106,11 +109,81 @@ pub(crate) struct PartialStateInfo {
 }
 
 #[derive(Debug, PartialEq)]
-pub(crate) struct ExtensionSignature {
+struct ExtensionSignature {
+    // The types of the extension inputs.
     pub args: Vec<Type>,
+    // The types of the extension outputs per possible branch.
     pub results: Vec<Vec<Type>>,
+    // The index of the fallthrough branch.
     pub fallthrough: Option<usize>,
 }
+
+// Trait for implementing an extension.
+trait ExtensionImplementation {
+    // Returns the signature given the extensions template arguments.
+    fn get_signature(
+        self: &Self,
+        tmpl_args: &Vec<TemplateArg>,
+    ) -> Result<ExtensionSignature, Error>;
+
+    // Returns the changes in context, and reference values of all return values for all possible branches.
+    fn mem_change(
+        self: &Self,
+        tmpl_args: &Vec<TemplateArg>,
+        registry: &TypeRegistry,
+        context: Context,
+        arg_refs: Vec<RefValue>,
+    ) -> Result<Vec<(Context, Vec<RefValue>)>, Error>;
+}
+
+type ExtensionBox = Box<dyn ExtensionImplementation + Sync + Send>;
+
+type ExtensionRegistry = HashMap<String, ExtensionBox>;
+
+// Creates the registry for the existing extensions.
+fn get_ext_registry(prog: &Program) -> ExtensionRegistry {
+    chain!(
+        arithmetic::extensions().into_iter(),
+        function_call::extensions(prog).into_iter(),
+        gas_station::extensions().into_iter(),
+        jump_nz::extensions().into_iter(),
+        match_nullable::extensions().into_iter(),
+        store::extensions().into_iter(),
+        tuple_obj::extensions().into_iter(),
+        unconditional_jump::extensions().into_iter()
+    )
+    .collect()
+}
+
+#[derive(Debug, PartialEq)]
+pub(crate) struct TypeInfo {
+    pub size: usize,
+}
+
+trait TypeInfoImplementation {
+    fn get_info(
+        self: &Self,
+        tmpl_args: &Vec<TemplateArg>,
+        registry: &TypeRegistry,
+    ) -> Result<TypeInfo, Error>;
+}
+
+type TypeInfoBox = Box<dyn TypeInfoImplementation + Sync + Send>;
+
+type TypeRegistry = HashMap<String, TypeInfoBox>;
+
+// Creates the registry for type information.
+fn get_type_registry() -> TypeRegistry {
+    chain!(
+        arithmetic::types().into_iter(),
+        gas_station::types().into_iter(),
+        jump_nz::types().into_iter(),
+        tuple_obj::types().into_iter(),
+    )
+    .collect()
+}
+
+// Utility functions for developing the extensions.
 
 fn unwrap_type<'a>(tmpl_arg: &'a TemplateArg) -> Result<&'a Type, Error> {
     match tmpl_arg {
@@ -170,64 +243,4 @@ fn simple_invoke_ext_sign(args: Vec<Type>, results: Vec<Type>) -> ExtensionSigna
         results: vec![results],
         fallthrough: Some(0),
     }
-}
-
-trait ExtensionImplementation {
-    fn get_signature(
-        self: &Self,
-        tmpl_args: &Vec<TemplateArg>,
-    ) -> Result<ExtensionSignature, Error>;
-
-    fn mem_change(
-        self: &Self,
-        tmpl_args: &Vec<TemplateArg>,
-        _registry: &TypeRegistry,
-        context: Context,
-        arg_refs: Vec<RefValue>,
-    ) -> Result<Vec<(Context, Vec<RefValue>)>, Error>;
-}
-
-type ExtensionBox = Box<dyn ExtensionImplementation + Sync + Send>;
-
-type ExtensionRegistry = HashMap<String, ExtensionBox>;
-
-fn get_ext_registry(prog: &Program) -> ExtensionRegistry {
-    chain!(
-        arithmetic::extensions().into_iter(),
-        function_call::extensions(prog).into_iter(),
-        gas_station::extensions().into_iter(),
-        jump_nz::extensions().into_iter(),
-        match_nullable::extensions().into_iter(),
-        store::extensions().into_iter(),
-        tuple_obj::extensions().into_iter(),
-        unconditional_jump::extensions().into_iter()
-    )
-    .collect()
-}
-
-#[derive(Debug, PartialEq)]
-pub(crate) struct TypeInfo {
-    pub size: usize,
-}
-
-trait TypeInfoImplementation {
-    fn get_info(
-        self: &Self,
-        tmpl_args: &Vec<TemplateArg>,
-        registry: &TypeRegistry,
-    ) -> Result<TypeInfo, Error>;
-}
-
-type TypeInfoBox = Box<dyn TypeInfoImplementation + Sync + Send>;
-
-type TypeRegistry = HashMap<String, TypeInfoBox>;
-
-fn get_type_registry() -> TypeRegistry {
-    chain!(
-        arithmetic::types().into_iter(),
-        gas_station::types().into_iter(),
-        jump_nz::types().into_iter(),
-        tuple_obj::types().into_iter(),
-    )
-    .collect()
 }
