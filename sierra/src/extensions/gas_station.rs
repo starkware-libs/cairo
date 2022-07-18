@@ -10,16 +10,11 @@ impl ExtensionImplementation for GetGasExtension {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
     ) -> Result<ExtensionSignature, Error> {
-        if tmpl_args.is_empty() {
-            return Err(Error::WrongNumberOfTypeArgs);
-        }
+        validate_size_ge(tmpl_args, 1)?;
         let mut success_types = vec![as_deferred(gas_builtin_type())];
-        tmpl_args.iter().try_for_each(|tmpl_arg| match tmpl_arg {
-            TemplateArg::Value(v) => {
-                success_types.push(gas_type(*v));
-                Ok(())
-            }
-            TemplateArg::Type(_) => Err(Error::UnsupportedTypeArg),
+        tmpl_args.iter().try_for_each(|tmpl_arg| {
+            success_types.push(gas_type(unwrap_value(tmpl_arg)?));
+            Ok(())
         })?;
         Ok(ExtensionSignature {
             args: vec![gas_builtin_type(), gas_type(1)],
@@ -37,13 +32,15 @@ impl ExtensionImplementation for GetGasExtension {
     ) -> Result<Vec<(Context, Vec<RefValue>)>, Error> {
         let mut total_gas = 0;
         let mut success_refs = vec![RefValue::Transient];
-        tmpl_args.iter().try_for_each(|tmpl_arg| match tmpl_arg {
-            TemplateArg::Value(v) if *v > 0 => {
+        tmpl_args.iter().try_for_each(|tmpl_arg| {
+            let v = unwrap_value(tmpl_arg)?;
+            if v <= 0 {
+                Err(Error::UnsupportedTypeArg)
+            } else {
+                total_gas += v;
                 success_refs.push(RefValue::Transient);
-                total_gas += *v;
                 Ok(())
             }
-            _ => Err(Error::UnsupportedTypeArg),
         })?;
         success_refs[0] = RefValue::OpWithConst(as_final(&arg_refs[0])?, Op::Add, total_gas);
         Ok(vec![
@@ -60,15 +57,8 @@ impl ExtensionImplementation for RefundGasExtension {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
     ) -> Result<ExtensionSignature, Error> {
-        if tmpl_args.len() != 1 {
-            return Err(Error::WrongNumberOfTypeArgs);
-        }
-        let value = match &tmpl_args[0] {
-            TemplateArg::Value(v) => Ok(*v),
-            TemplateArg::Type(_) => Err(Error::UnsupportedTypeArg),
-        }?;
         Ok(simple_invoke_ext_sign(
-            vec![gas_builtin_type(), gas_type(value)],
+            vec![gas_builtin_type(), gas_type(single_value_arg(tmpl_args)?)],
             vec![as_deferred(gas_builtin_type())],
         ))
     }
@@ -80,19 +70,12 @@ impl ExtensionImplementation for RefundGasExtension {
         context: Context,
         arg_refs: Vec<RefValue>,
     ) -> Result<Vec<(Context, Vec<RefValue>)>, Error> {
-        if tmpl_args.len() != 1 {
-            return Err(Error::WrongNumberOfTypeArgs);
-        }
-        let value = match &tmpl_args[0] {
-            TemplateArg::Value(v) => Ok(*v),
-            TemplateArg::Type(_) => Err(Error::UnsupportedTypeArg),
-        }?;
         Ok(vec![(
             context,
             vec![RefValue::OpWithConst(
                 as_final(&arg_refs[0])?,
                 Op::Sub,
-                value,
+                single_value_arg(tmpl_args)?,
             )],
         )])
     }
@@ -105,18 +88,14 @@ impl ExtensionImplementation for SplitGasExtension {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
     ) -> Result<ExtensionSignature, Error> {
-        if tmpl_args.len() <= 1 {
-            return Err(Error::WrongNumberOfTypeArgs);
-        }
+        validate_size_ge(tmpl_args, 2)?;
         let mut res_types = vec![];
         let mut total = 0;
-        tmpl_args.iter().try_for_each(|tmpl_arg| match tmpl_arg {
-            TemplateArg::Value(v) => {
-                res_types.push(gas_type(*v));
-                total += v;
-                Ok(())
-            }
-            TemplateArg::Type(_) => Err(Error::UnsupportedTypeArg),
+        tmpl_args.iter().try_for_each(|tmpl_arg| {
+            let v = unwrap_value(tmpl_arg)?;
+            res_types.push(gas_type(v));
+            total += v;
+            Ok(())
         })?;
         Ok(simple_invoke_ext_sign(vec![gas_type(total)], res_types))
     }
@@ -151,9 +130,7 @@ impl TypeInfoImplementation for GasBuiltinTypeInfo {
         tmpl_args: &Vec<TemplateArg>,
         _: &TypeRegistry,
     ) -> Result<TypeInfo, Error> {
-        if !tmpl_args.is_empty() {
-            return Err(Error::WrongNumberOfTypeArgs);
-        }
+        validate_size_eq(tmpl_args, 0)?;
         Ok(TypeInfo { size: 1 })
     }
 }
@@ -166,15 +143,7 @@ impl TypeInfoImplementation for GasTypeInfo {
         tmpl_args: &Vec<TemplateArg>,
         _: &TypeRegistry,
     ) -> Result<TypeInfo, Error> {
-        if tmpl_args.len() != 1 {
-            return Err(Error::WrongNumberOfTypeArgs);
-        }
-        match &tmpl_args[0] {
-            TemplateArg::Type(_) => {
-                return Err(Error::UnsupportedTypeArg);
-            }
-            TemplateArg::Value(_) => {}
-        }
+        single_value_arg(tmpl_args)?;
         Ok(TypeInfo { size: 0 })
     }
 }

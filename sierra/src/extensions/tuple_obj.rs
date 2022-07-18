@@ -8,13 +8,9 @@ impl ExtensionImplementation for TuplePackExtension {
         tmpl_args: &Vec<TemplateArg>,
     ) -> Result<ExtensionSignature, Error> {
         let mut arg_types = vec![];
-        tmpl_args.iter().try_for_each(|tmpl_arg| match tmpl_arg {
-            TemplateArg::Type(t) => {
-                arg_types.push(t.clone());
-                Ok(())
-            }
-            TemplateArg::Value(_) => Err(Error::UnsupportedTypeArg),
-        })?;
+        for tmpl_arg in tmpl_args {
+            arg_types.push(unwrap_type(tmpl_arg)?.clone());
+        }
         Ok(simple_invoke_ext_sign(
             arg_types,
             vec![as_tuple(tmpl_args.clone())],
@@ -30,13 +26,7 @@ impl ExtensionImplementation for TuplePackExtension {
     ) -> Result<Vec<(Context, Vec<RefValue>)>, Error> {
         let mut tup_mem: Option<(MemLocation, usize)> = None;
         for (ref_val, tmpl_arg) in arg_refs.iter().zip(tmpl_args.iter()) {
-            let size = match tmpl_arg {
-                TemplateArg::Type(t) => {
-                    let ti = get_info(registry, t)?;
-                    Ok(ti.size)
-                }
-                TemplateArg::Value(_) => Err(Error::UnsupportedTypeArg),
-            }?;
+            let size = get_info(registry, unwrap_type(tmpl_arg)?)?.size;
             if size == 0 {
                 continue;
             }
@@ -64,13 +54,9 @@ impl ExtensionImplementation for TupleUnpackExtension {
         tmpl_args: &Vec<TemplateArg>,
     ) -> Result<ExtensionSignature, Error> {
         let mut arg_types = vec![];
-        tmpl_args.iter().try_for_each(|tmpl_arg| match tmpl_arg {
-            TemplateArg::Type(t) => {
-                arg_types.push(t.clone());
-                Ok(())
-            }
-            TemplateArg::Value(_) => Err(Error::UnsupportedTypeArg),
-        })?;
+        for tmpl_arg in tmpl_args {
+            arg_types.push(unwrap_type(tmpl_arg)?.clone());
+        }
         Ok(simple_invoke_ext_sign(
             vec![as_tuple(tmpl_args.clone())],
             arg_types,
@@ -86,27 +72,23 @@ impl ExtensionImplementation for TupleUnpackExtension {
     ) -> Result<Vec<(Context, Vec<RefValue>)>, Error> {
         let mut refs = vec![];
         let mut offset = 0;
-        tmpl_args.iter().try_for_each(|tmpl_arg| match tmpl_arg {
-            TemplateArg::Type(t) => {
-                let ti = get_info(registry, t)?;
-                refs.push(if ti.size == 0 {
-                    Ok(RefValue::Transient)
-                } else {
-                    match &arg_refs[0] {
-                        RefValue::Final(MemLocation::Temp(base)) => {
-                            Ok(RefValue::Final(MemLocation::Temp(base + offset)))
-                        }
-                        RefValue::Final(MemLocation::Local(base)) => {
-                            Ok(RefValue::Final(MemLocation::Local(base + offset)))
-                        }
-                        _ => Err(Error::IllegalArgsLocation),
+        for tmpl_arg in tmpl_args {
+            let size = get_info(registry, unwrap_type(tmpl_arg)?)?.size;
+            refs.push(if size == 0 {
+                Ok(RefValue::Transient)
+            } else {
+                match &arg_refs[0] {
+                    RefValue::Final(MemLocation::Temp(base)) => {
+                        Ok(RefValue::Final(MemLocation::Temp(base + offset)))
                     }
-                }?);
-                offset += ti.size as i64;
-                Ok(())
-            }
-            TemplateArg::Value(_) => Err(Error::UnsupportedTypeArg),
-        })?;
+                    RefValue::Final(MemLocation::Local(base)) => {
+                        Ok(RefValue::Final(MemLocation::Local(base + offset)))
+                    }
+                    _ => Err(Error::IllegalArgsLocation),
+                }
+            }?);
+            offset += size as i64;
+        }
         Ok(vec![(context, refs)])
     }
 }
@@ -120,14 +102,10 @@ impl TypeInfoImplementation for TupleTypeInfo {
         registry: &TypeRegistry,
     ) -> Result<TypeInfo, Error> {
         let mut size = 0;
-        tmpl_args.iter().try_for_each(|tmpl_arg| match tmpl_arg {
-            TemplateArg::Type(t) => {
-                let ti = get_info(registry, t)?;
-                size += ti.size;
-                Ok(())
-            }
-            TemplateArg::Value(_) => Err(Error::UnsupportedTypeArg),
-        })?;
+        for tmpl_arg in tmpl_args {
+            let ti = get_info(registry, unwrap_type(tmpl_arg)?)?;
+            size += ti.size;
+        }
         Ok(TypeInfo { size: size })
     }
 }

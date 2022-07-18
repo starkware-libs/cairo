@@ -17,9 +17,7 @@ impl ExtensionImplementation for FunctionCallExtension {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
     ) -> Result<ExtensionSignature, Error> {
-        if !tmpl_args.is_empty() {
-            return Err(Error::WrongNumberOfTypeArgs);
-        }
+        validate_size_eq(tmpl_args, 0)?;
         Ok(simple_invoke_ext_sign(
             vec![types_as_tuple(&self.args), gas_type(2)],
             vec![types_as_tuple(&self.results)],
@@ -28,11 +26,12 @@ impl ExtensionImplementation for FunctionCallExtension {
 
     fn mem_change(
         self: &Self,
-        _tmpl_args: &Vec<TemplateArg>,
+        tmpl_args: &Vec<TemplateArg>,
         registry: &TypeRegistry,
         mut context: Context,
         arg_refs: Vec<RefValue>,
     ) -> Result<Vec<(Context, Vec<RefValue>)>, Error> {
+        validate_size_eq(tmpl_args, 0)?;
         let ti = get_info(registry, &types_as_tuple(&self.args))?;
         match &arg_refs[0] {
             RefValue::Final(MemLocation::Temp(offset))

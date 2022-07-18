@@ -11,6 +11,7 @@ mod store;
 mod tuple_obj;
 mod unconditional_jump;
 
+// Error option while using extensions.
 #[derive(Debug, PartialEq)]
 pub enum Error {
     UnsupportedLibCallName,
@@ -26,12 +27,14 @@ pub enum Error {
     LocationsNonCosecutive,
 }
 
+// Registry for finding information on extensions and types.
 pub(crate) struct Registry {
     ext_reg: ExtensionRegistry,
     ty_reg: TypeRegistry,
 }
 
 impl Registry {
+    // Creates a new registry that includes the functions from the program.
     pub(crate) fn new(prog: &Program) -> Registry {
         Registry {
             ext_reg: get_ext_registry(prog),
@@ -39,10 +42,13 @@ impl Registry {
         }
     }
 
+    // Get the information on a type.
     pub(crate) fn get_type_info(self: &Self, ty: &Type) -> Result<TypeInfo, Error> {
         get_info(&self.ty_reg, ty)
     }
 
+    // Given a state and an extension returns all the possible states for different possible
+    // branches, as well as info on the fallthrough.
     pub(crate) fn transform(
         self: &Self,
         ext: &Extension,
@@ -106,15 +112,49 @@ pub(crate) struct ExtensionSignature {
     pub fallthrough: Option<usize>,
 }
 
-fn single_type_arg<'a>(tmpl_args: &'a Vec<TemplateArg>) -> Result<&'a Type, Error> {
-    if tmpl_args.len() != 1 {
-        Err(Error::WrongNumberOfTypeArgs)
-    } else {
-        match &tmpl_args[0] {
-            TemplateArg::Type(t) => Ok(t),
-            TemplateArg::Value(_) => Err(Error::UnsupportedTypeArg),
-        }
+fn unwrap_type<'a>(tmpl_arg: &'a TemplateArg) -> Result<&'a Type, Error> {
+    match tmpl_arg {
+        TemplateArg::Type(t) => Ok(t),
+        TemplateArg::Value(_) => Err(Error::UnsupportedTypeArg),
     }
+}
+
+fn unwrap_value(tmpl_arg: &TemplateArg) -> Result<i64, Error> {
+    match tmpl_arg {
+        TemplateArg::Value(v) => Ok(*v),
+        TemplateArg::Type(_) => Err(Error::UnsupportedTypeArg),
+    }
+}
+
+fn validate_size_eq(tmpl_args: &Vec<TemplateArg>, size: usize) -> Result<(), Error> {
+    if tmpl_args.len() == size {
+        Ok(())
+    } else {
+        Err(Error::WrongNumberOfTypeArgs)
+    }
+}
+
+fn validate_size_ge(tmpl_args: &Vec<TemplateArg>, size: usize) -> Result<(), Error> {
+    if tmpl_args.len() >= size {
+        Ok(())
+    } else {
+        Err(Error::WrongNumberOfTypeArgs)
+    }
+}
+
+fn single_type_arg<'a>(tmpl_args: &'a Vec<TemplateArg>) -> Result<&'a Type, Error> {
+    validate_size_eq(tmpl_args, 1)?;
+    unwrap_type(&tmpl_args[0])
+}
+
+fn single_value_arg<'a>(tmpl_args: &'a Vec<TemplateArg>) -> Result<i64, Error> {
+    validate_size_eq(tmpl_args, 1)?;
+    unwrap_value(&tmpl_args[0])
+}
+
+fn type_value_args<'a>(tmpl_args: &'a Vec<TemplateArg>) -> Result<(&'a Type, i64), Error> {
+    validate_size_eq(tmpl_args, 2)?;
+    Ok((unwrap_type(&tmpl_args[0])?, unwrap_value(&tmpl_args[1])?))
 }
 
 fn as_final(ref_val: &RefValue) -> Result<MemLocation, Error> {

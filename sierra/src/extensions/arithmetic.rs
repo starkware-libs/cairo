@@ -15,14 +15,15 @@ impl ExtensionImplementation for ArithmeticExtension {
     ) -> Result<ExtensionSignature, Error> {
         match tmpl_args.len() {
             1 => {
-                let numeric_type = get_numeric_type(&tmpl_args[0])?;
+                let numeric_type = validate_numeric(single_type_arg(tmpl_args)?)?;
                 Ok(simple_invoke_ext_sign(
                     vec![numeric_type.clone(), numeric_type.clone()],
                     vec![as_deferred(numeric_type.clone())],
                 ))
             }
             2 => {
-                let (numeric_type, _) = get_type_value(tmpl_args)?;
+                let (numeric_type, _) = type_value_args(tmpl_args)?;
+                validate_numeric(numeric_type)?;
                 Ok(simple_invoke_ext_sign(
                     vec![numeric_type.clone()],
                     vec![as_deferred(numeric_type.clone())],
@@ -49,7 +50,7 @@ impl ExtensionImplementation for ArithmeticExtension {
                 )],
             )]),
             2 => {
-                let (_, c) = get_type_value(tmpl_args)?;
+                let (_, c) = type_value_args(tmpl_args)?;
                 Ok(vec![(
                     context,
                     vec![RefValue::OpWithConst(as_final(&arg_refs[0])?, self.op, c)],
@@ -71,14 +72,15 @@ impl ExtensionImplementation for DivExtension {
     ) -> Result<ExtensionSignature, Error> {
         match tmpl_args.len() {
             1 => {
-                let numeric_type = get_numeric_type(&tmpl_args[0])?;
+                let numeric_type = validate_numeric(single_type_arg(tmpl_args)?)?;
                 Ok(simple_invoke_ext_sign(
                     vec![numeric_type.clone(), as_nonzero(numeric_type.clone())],
                     vec![as_deferred(numeric_type.clone())],
                 ))
             }
             2 => {
-                let (numeric_type, c) = get_type_value(tmpl_args)?;
+                let (numeric_type, c) = type_value_args(tmpl_args)?;
+                validate_numeric(numeric_type)?;
                 if c == 0 {
                     Err(Error::UnsupportedTypeArg)
                 } else {
@@ -109,7 +111,7 @@ impl ExtensionImplementation for DivExtension {
                 )],
             )]),
             2 => {
-                let (_, c) = get_type_value(tmpl_args)?;
+                let (_, c) = type_value_args(tmpl_args)?;
                 if c == 0 {
                     Err(Error::UnsupportedTypeArg)
                 } else {
@@ -131,7 +133,7 @@ impl ExtensionImplementation for DuplicateExtension {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
     ) -> Result<ExtensionSignature, Error> {
-        let numeric_type = single_type_arg(tmpl_args)?;
+        let numeric_type = validate_numeric(single_type_arg(tmpl_args)?)?;
         Ok(simple_invoke_ext_sign(
             vec![numeric_type.clone()],
             vec![numeric_type.clone(), numeric_type.clone()],
@@ -159,10 +161,8 @@ impl ExtensionImplementation for ConstantExtension {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
     ) -> Result<ExtensionSignature, Error> {
-        if tmpl_args.len() != 2 {
-            return Err(Error::WrongNumberOfTypeArgs);
-        }
-        let (numeric_type, _) = get_type_value(tmpl_args)?;
+        let (numeric_type, _) = type_value_args(tmpl_args)?;
+        validate_numeric(numeric_type)?;
         Ok(simple_invoke_ext_sign(
             vec![],
             vec![as_deferred(numeric_type.clone())],
@@ -176,7 +176,7 @@ impl ExtensionImplementation for ConstantExtension {
         context: Context,
         _arg_refs: Vec<RefValue>,
     ) -> Result<Vec<(Context, Vec<RefValue>)>, Error> {
-        let (_, c) = get_type_value(tmpl_args)?;
+        let (_, c) = type_value_args(tmpl_args)?;
         Ok(vec![(context, vec![RefValue::Const(c)])])
     }
 }
@@ -188,7 +188,7 @@ impl ExtensionImplementation for IgnoreExtension {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
     ) -> Result<ExtensionSignature, Error> {
-        let numeric_type = single_type_arg(tmpl_args)?;
+        let numeric_type = validate_numeric(single_type_arg(tmpl_args)?)?;
         Ok(simple_invoke_ext_sign(vec![numeric_type.clone()], vec![]))
     }
 
@@ -203,18 +203,11 @@ impl ExtensionImplementation for IgnoreExtension {
     }
 }
 
-fn get_numeric_type<'a>(arg: &'a TemplateArg) -> Result<&'a Type, Error> {
-    match arg {
-        TemplateArg::Type(t) if matches!(t.to_string().as_str(), "int" | "felt") => Ok(t),
-        _ => Err(Error::UnsupportedTypeArg),
-    }
-}
-
-fn get_type_value<'a>(tmpl_args: &'a Vec<TemplateArg>) -> Result<(&'a Type, i64), Error> {
-    let numeric_type = get_numeric_type(&tmpl_args[0])?;
-    match &tmpl_args[1] {
-        TemplateArg::Value(v) => Ok((numeric_type, *v)),
-        _ => Err(Error::UnsupportedTypeArg),
+fn validate_numeric<'a>(t: &'a Type) -> Result<&'a Type, Error> {
+    if matches!(t.to_string().as_str(), "int" | "felt") {
+        Ok(t)
+    } else {
+        Err(Error::UnsupportedTypeArg)
     }
 }
 
@@ -226,9 +219,7 @@ impl TypeInfoImplementation for ArithmeticTypeInfo {
         tmpl_args: &Vec<TemplateArg>,
         _: &TypeRegistry,
     ) -> Result<TypeInfo, Error> {
-        if !tmpl_args.is_empty() {
-            return Err(Error::WrongNumberOfTypeArgs);
-        }
+        validate_size_eq(tmpl_args, 0)?;
         Ok(TypeInfo { size: 1 })
     }
 }

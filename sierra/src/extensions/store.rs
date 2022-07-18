@@ -8,27 +8,18 @@ enum StoreType {
     Local,
 }
 fn unpack_args<'a>(tmpl_args: &'a Vec<TemplateArg>) -> Result<(StoreType, &'a Type), Error> {
-    if tmpl_args.len() != 2 {
-        return Err(Error::WrongNumberOfTypeArgs);
-    }
+    validate_size_eq(tmpl_args, 2)?;
     Ok((
-        match &tmpl_args[0] {
-            TemplateArg::Type(Type { name: n, args: a })
-                if n.as_str() == "Temp" && a.is_empty() =>
-            {
+        match unwrap_type(&tmpl_args[0])? {
+            Type { name: n, args: a } if n.as_str() == "Temp" && a.is_empty() => {
                 Ok(StoreType::Temp)
             }
-            TemplateArg::Type(Type { name: n, args: a })
-                if n.as_str() == "Local" && a.is_empty() =>
-            {
+            Type { name: n, args: a } if n.as_str() == "Local" && a.is_empty() => {
                 Ok(StoreType::Local)
             }
             _ => Err(Error::UnsupportedTypeArg),
         }?,
-        match &tmpl_args[1] {
-            TemplateArg::Type(ty) => Ok(ty),
-            _ => Err(Error::UnsupportedTypeArg),
-        }?,
+        unwrap_type(&tmpl_args[1])?,
     ))
 }
 
@@ -133,11 +124,8 @@ impl ExtensionImplementation for AllocLocalsExtension {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
     ) -> Result<ExtensionSignature, Error> {
-        if !tmpl_args.is_empty() {
-            Err(Error::WrongNumberOfTypeArgs)
-        } else {
-            Ok(simple_invoke_ext_sign(vec![gas_type(1)], vec![]))
-        }
+        validate_size_eq(tmpl_args, 0)?;
+        Ok(simple_invoke_ext_sign(vec![gas_type(1)], vec![]))
     }
 
     fn mem_change(
@@ -161,14 +149,12 @@ impl ExtensionImplementation for AllocLocalsExtension {
 
 struct AlignTempsExtension {}
 
-fn value_arg(tmpl_args: &Vec<TemplateArg>) -> Result<usize, Error> {
-    if tmpl_args.len() != 1 {
-        Err(Error::WrongNumberOfTypeArgs)
+fn positive_value_arg(tmpl_args: &Vec<TemplateArg>) -> Result<usize, Error> {
+    let v = single_value_arg(tmpl_args)?;
+    if v > 0 {
+        Ok(v as usize)
     } else {
-        match &tmpl_args[0] {
-            TemplateArg::Value(v) if *v > 0 => Ok(*v as usize),
-            _ => Err(Error::UnsupportedTypeArg),
-        }
+        Err(Error::UnsupportedTypeArg)
     }
 }
 
@@ -177,7 +163,7 @@ impl ExtensionImplementation for AlignTempsExtension {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
     ) -> Result<ExtensionSignature, Error> {
-        value_arg(tmpl_args)?;
+        positive_value_arg(tmpl_args)?;
         Ok(simple_invoke_ext_sign(vec![gas_type(1)], vec![]))
     }
 
@@ -188,7 +174,7 @@ impl ExtensionImplementation for AlignTempsExtension {
         mut context: Context,
         _arg_refs: Vec<RefValue>,
     ) -> Result<Vec<(Context, Vec<RefValue>)>, Error> {
-        context.temp_cursur += value_arg(tmpl_args)?;
+        context.temp_cursur += positive_value_arg(tmpl_args)?;
         context.temp_used = true;
         Ok(vec![(context, vec![])])
     }

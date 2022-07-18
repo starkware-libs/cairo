@@ -7,9 +7,7 @@ impl ExtensionImplementation for UnconditionalJumpExtension {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
     ) -> Result<ExtensionSignature, Error> {
-        if !tmpl_args.is_empty() {
-            return Err(Error::WrongNumberOfTypeArgs);
-        }
+        validate_size_eq(tmpl_args, 0)?;
         Ok(ExtensionSignature {
             args: vec![gas_type(1)],
             results: vec![vec![]],
