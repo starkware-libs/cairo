@@ -99,7 +99,7 @@ impl ExtensionImplementation for TupleUnpackExtension {
                         RefValue::Final(MemLocation::Local(base)) => {
                             Ok(RefValue::Final(MemLocation::Local(base + offset)))
                         }
-                        _ => Err(Error::IllegalExtensionArgsLocation),
+                        _ => Err(Error::IllegalArgsLocation),
                     }
                 }?);
                 offset += ti.size as i64;

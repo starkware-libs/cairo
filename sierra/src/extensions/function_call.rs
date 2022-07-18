@@ -38,7 +38,7 @@ impl ExtensionImplementation for FunctionCallExtension {
             RefValue::Final(MemLocation::Temp(offset))
                 if offset + ti.size as i64 == context.temp_cursur as i64 => {}
             _ => {
-                return Err(Error::IllegalExtensionArgsLocation);
+                return Err(Error::IllegalArgsLocation);
             }
         }
         let ti = get_info(registry, &types_as_tuple(&self.results))?;

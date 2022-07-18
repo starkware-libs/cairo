@@ -1,4 +1,4 @@
-use crate::{context::Context, error::Error, graph::*, ref_value::*};
+use crate::{context::Context, graph::*, ref_value::*};
 use std::collections::HashMap;
 use Result::*;
 
@@ -10,6 +10,21 @@ mod match_nullable;
 mod store;
 mod tuple_obj;
 mod unconditional_jump;
+
+#[derive(Debug, PartialEq)]
+pub enum Error {
+    UnsupportedLibCallName,
+    UnsupportedTypeName,
+    ArgumentsMismatch,
+    WrongNumberOfTypeArgs,
+    UnsupportedTypeArg,
+    IllegalArgsLocation,
+    IllegalApChangeValue,
+    LocalMemoryAlreadyAllocated,
+    LocalMemoryCantBeAllocated,
+    LocalMemoryNotAllocated,
+    LocationsNonCosecutive,
+}
 
 pub(crate) struct Registry {
     ext_reg: ExtensionRegistry,
@@ -34,7 +49,7 @@ impl Registry {
         state: PartialStateInfo,
     ) -> Result<(Vec<PartialStateInfo>, Option<usize>), Error> {
         let e = match self.ext_reg.get(&ext.name) {
-            None => Err(Error::UnsupportedLibCallName(ext.name.clone())),
+            None => Err(Error::UnsupportedLibCallName),
             Some(e) => Ok(e),
         }?;
         e.transform(&ext.tmpl_args, &self.ty_reg, state)
@@ -43,7 +58,7 @@ impl Registry {
 
 fn get_info(reg: &TypeRegistry, ty: &Type) -> Result<TypeInfo, Error> {
     match reg.get(&ty.name) {
-        None => Err(Error::UnsupportedTypeName(ty.name.clone())),
+        None => Err(Error::UnsupportedTypeName),
         Some(e) => e.get_info(&ty.args, reg),
     }
 }
@@ -81,7 +96,7 @@ fn single_type_arg<'a>(tmpl_args: &'a Vec<TemplateArg>) -> Result<&'a Type, Erro
 fn as_final(ref_val: &RefValue) -> Result<MemLocation, Error> {
     match ref_val {
         RefValue::Final(m) => Ok(*m),
-        _ => Err(Error::IllegalExtensionArgsLocation),
+        _ => Err(Error::IllegalArgsLocation),
     }
 }
 
@@ -114,13 +129,8 @@ trait ExtensionImplementation {
         state: PartialStateInfo,
     ) -> Result<(Vec<PartialStateInfo>, Option<usize>), Error> {
         let sign = self.get_signature(tmpl_args)?;
-        if state.vars.len() != sign.args.len() {
-            return Err(Error::ExtensionArgumentsMismatch("".to_string()));
-        }
-        for (v, ty) in state.vars.iter().zip(sign.args.into_iter()) {
-            if v.ty != ty {
-                return Err(Error::ExtensionArgumentsMismatch("".to_string()));
-            }
+        if state.vars.iter().map(|v| &v.ty).ne(sign.args.iter()) {
+            return Err(Error::ArgumentsMismatch);
         }
         let ref_vals = self.mem_change(
             tmpl_args,

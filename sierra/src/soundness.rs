@@ -16,7 +16,9 @@ pub fn validate(prog: &Program) -> Result<(), Error> {
         let mut last = -2;
         let mut vars = VarStates::new();
         f.args.iter().try_for_each(|v| {
-            let ti = registry.get_type_info(&v.ty)?;
+            let ti = registry
+                .get_type_info(&v.ty)
+                .map_err(|e| Error::TypeInfo(e, v.ty.clone()))?;
             last -= ti.size as i64;
             vars.insert(
                 v.id.clone(),
@@ -124,13 +126,16 @@ impl Helper<'_> {
         let State { mut vars, mut ctxt } = start_state;
         for invc in &self.blocks[block.0].invocations {
             let (nvars, args_info) = take_args(vars, invc.args.iter())?;
-            let (mut states, fallthrough) = self.registry.transform(
-                &invc.ext,
-                PartialStateInfo {
-                    vars: args_info,
-                    context: ctxt,
-                },
-            )?;
+            let (mut states, fallthrough) = self
+                .registry
+                .transform(
+                    &invc.ext,
+                    PartialStateInfo {
+                        vars: args_info,
+                        context: ctxt,
+                    },
+                )
+                .map_err(|e| Error::Extension(e, invc.to_string()))?;
             if states.len() != 1 {
                 return Err(Error::ExtensionBranchesMismatch(invc.to_string()));
             }
@@ -159,7 +164,10 @@ impl Helper<'_> {
                     if v.ty != *ty {
                         return Err(Error::FunctionReturnTypeMismatch(block, id.clone()));
                     }
-                    let ti = self.registry.get_type_info(ty)?;
+                    let ti = self
+                        .registry
+                        .get_type_info(ty)
+                        .map_err(|e| Error::TypeInfo(e, ty.clone()))?;
                     if ti.size == 0 {
                         continue;
                     }
@@ -196,13 +204,16 @@ impl Helper<'_> {
             }
             BlockExit::Jump(j) => {
                 let (vars, args_info) = take_args(vars, j.args.iter())?;
-                let (states, fallthrough) = self.registry.transform(
-                    &j.ext,
-                    PartialStateInfo {
-                        vars: args_info,
-                        context: ctxt,
-                    },
-                )?;
+                let (states, fallthrough) = self
+                    .registry
+                    .transform(
+                        &j.ext,
+                        PartialStateInfo {
+                            vars: args_info,
+                            context: ctxt,
+                        },
+                    )
+                    .map_err(|e| Error::Extension(e, j.to_string()))?;
                 if states.len() != j.branches.len() {
                     return Err(Error::ExtensionBranchesMismatch(j.to_string()));
                 }
