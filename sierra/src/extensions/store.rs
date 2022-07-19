@@ -31,10 +31,7 @@ impl NonBranchImplementation for StoreExtension {
         tmpl_args: &Vec<TemplateArg>,
     ) -> Result<(Vec<Type>, Vec<Type>), Error> {
         let (_, ty) = unpack_args(tmpl_args)?;
-        Ok((
-            vec![as_deferred(ty.clone()), gas_type(1)],
-            vec![ty.clone()],
-        ))
+        Ok((vec![as_deferred(ty.clone()), gas_type(1)], vec![ty.clone()]))
     }
 
     fn mem_change(
@@ -97,10 +94,7 @@ impl NonBranchImplementation for MoveExtension {
         tmpl_args: &Vec<TemplateArg>,
     ) -> Result<(Vec<Type>, Vec<Type>), Error> {
         let ty = single_type_arg(tmpl_args)?;
-        Ok((
-            vec![ty.clone()],
-            vec![as_deferred(ty.clone())],
-        ))
+        Ok((vec![ty.clone()], vec![as_deferred(ty.clone())]))
     }
 
     fn mem_change(
@@ -182,14 +176,26 @@ impl NonBranchImplementation for AlignTempsExtension {
 
 pub(super) fn extensions() -> [(String, ExtensionBox); 5] {
     [
-        ("store".to_string(), wrap_non_branch(Box::new(StoreExtension {}))),
-        ("rename".to_string(), wrap_non_branch(Box::new(RenameExtension {}))),
-        ("move".to_string(), wrap_non_branch(Box::new(MoveExtension {}))),
+        (
+            "store".to_string(),
+            wrap_non_branch(Box::new(StoreExtension {})),
+        ),
+        (
+            "rename".to_string(),
+            wrap_non_branch(Box::new(RenameExtension {})),
+        ),
+        (
+            "move".to_string(),
+            wrap_non_branch(Box::new(MoveExtension {})),
+        ),
         (
             "alloc_locals".to_string(),
             wrap_non_branch(Box::new(AllocLocalsExtension {})),
         ),
-        ("align_temps".to_string(), wrap_non_branch(Box::new(AlignTempsExtension {}))),
+        (
+            "align_temps".to_string(),
+            wrap_non_branch(Box::new(AlignTempsExtension {})),
+        ),
     ]
 }
 
@@ -204,18 +210,12 @@ mod tests {
         let ty = as_type("int");
         assert_eq!(
             StoreExtension {}.get_signature(&vec![type_arg(as_type("Temp")), type_arg(ty.clone())]),
-            Ok((
-                vec![as_deferred(ty.clone()), gas_type(1)],
-                vec![ty.clone()],
-            ))
+            Ok((vec![as_deferred(ty.clone()), gas_type(1)], vec![ty.clone()],))
         );
         assert_eq!(
             StoreExtension {}
                 .get_signature(&vec![type_arg(as_type("Local")), type_arg(ty.clone())]),
-            Ok((
-                vec![as_deferred(ty.clone()), gas_type(1)],
-                vec![ty],
-            ))
+            Ok((vec![as_deferred(ty.clone()), gas_type(1)], vec![ty],))
         );
     }
 

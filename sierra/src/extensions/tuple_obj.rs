@@ -11,10 +11,7 @@ impl NonBranchImplementation for TuplePackExtension {
         for tmpl_arg in tmpl_args {
             arg_types.push(unwrap_type(tmpl_arg)?.clone());
         }
-        Ok((
-            arg_types,
-            vec![as_tuple(tmpl_args.clone())],
-        ))
+        Ok((arg_types, vec![as_tuple(tmpl_args.clone())]))
     }
 
     fn mem_change(
@@ -57,10 +54,7 @@ impl NonBranchImplementation for TupleUnpackExtension {
         for tmpl_arg in tmpl_args {
             arg_types.push(unwrap_type(tmpl_arg)?.clone());
         }
-        Ok((
-            vec![as_tuple(tmpl_args.clone())],
-            arg_types,
-        ))
+        Ok((vec![as_tuple(tmpl_args.clone())], arg_types))
     }
 
     fn mem_change(
@@ -112,7 +106,10 @@ impl TypeInfoImplementation for TupleTypeInfo {
 
 pub(super) fn extensions() -> [(String, ExtensionBox); 2] {
     [
-        ("tuple_pack".to_string(), wrap_non_branch(Box::new(TuplePackExtension {}))),
+        (
+            "tuple_pack".to_string(),
+            wrap_non_branch(Box::new(TuplePackExtension {})),
+        ),
         (
             "tuple_unpack".to_string(),
             wrap_non_branch(Box::new(TupleUnpackExtension {})),

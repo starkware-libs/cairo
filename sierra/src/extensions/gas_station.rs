@@ -117,8 +117,14 @@ impl NonBranchImplementation for SplitGasExtension {
 pub(super) fn extensions() -> [(String, ExtensionBox); 3] {
     [
         ("get_gas".to_string(), Box::new(GetGasExtension {})),
-        ("refund_gas".to_string(), wrap_non_branch(Box::new(RefundGasExtension {}))),
-        ("split_gas".to_string(), wrap_non_branch(Box::new(SplitGasExtension {}))),
+        (
+            "refund_gas".to_string(),
+            wrap_non_branch(Box::new(RefundGasExtension {})),
+        ),
+        (
+            "split_gas".to_string(),
+            wrap_non_branch(Box::new(SplitGasExtension {})),
+        ),
     ]
 }
 
@@ -182,10 +188,7 @@ mod tests {
         );
         assert_eq!(
             SplitGasExtension {}.get_signature(&vec![val_arg(1), val_arg(2)]),
-            Ok((
-                vec![gas_type(3)],
-                vec![gas_type(1), gas_type(2)],
-            ))
+            Ok((vec![gas_type(3)], vec![gas_type(1), gas_type(2)],))
         );
     }
 

@@ -147,10 +147,7 @@ impl NonBranchImplementation for DuplicateExtension {
         context: Context,
         arg_refs: Vec<RefValue>,
     ) -> Result<(Context, Vec<RefValue>), Error> {
-        Ok((
-            context,
-            vec![arg_refs[0].clone(), arg_refs[0].clone()],
-        ))
+        Ok((context, vec![arg_refs[0].clone(), arg_refs[0].clone()]))
     }
 }
 
@@ -163,10 +160,7 @@ impl NonBranchImplementation for ConstantExtension {
     ) -> Result<(Vec<Type>, Vec<Type>), Error> {
         let (numeric_type, _) = type_value_args(tmpl_args)?;
         validate_numeric(numeric_type)?;
-        Ok((
-            vec![],
-            vec![as_deferred(numeric_type.clone())],
-        ))
+        Ok((vec![], vec![as_deferred(numeric_type.clone())]))
     }
 
     fn mem_change(
@@ -238,11 +232,26 @@ pub(super) fn extensions() -> [(String, ExtensionBox); 8] {
             "mul".to_string(),
             wrap_non_branch(Box::new(ArithmeticExtension { op: Op::Mul })),
         ),
-        ("div".to_string(), wrap_non_branch(Box::new(DivExtension { op: Op::Div }))),
-        ("mod".to_string(), wrap_non_branch(Box::new(DivExtension { op: Op::Mod }))),
-        ("duplicate_num".to_string(), wrap_non_branch(Box::new(DuplicateExtension {}))),
-        ("constant_num".to_string(), wrap_non_branch(Box::new(ConstantExtension {}))),
-        ("ignore_num".to_string(), wrap_non_branch(Box::new(IgnoreExtension {}))),
+        (
+            "div".to_string(),
+            wrap_non_branch(Box::new(DivExtension { op: Op::Div })),
+        ),
+        (
+            "mod".to_string(),
+            wrap_non_branch(Box::new(DivExtension { op: Op::Mod })),
+        ),
+        (
+            "duplicate_num".to_string(),
+            wrap_non_branch(Box::new(DuplicateExtension {})),
+        ),
+        (
+            "constant_num".to_string(),
+            wrap_non_branch(Box::new(ConstantExtension {})),
+        ),
+        (
+            "ignore_num".to_string(),
+            wrap_non_branch(Box::new(IgnoreExtension {})),
+        ),
     ]
 }
 
@@ -264,32 +273,20 @@ mod tests {
         let ty = as_type("int");
         assert_eq!(
             ArithmeticExtension { op: Op::Add }.get_signature(&vec![type_arg(ty.clone())]),
-            Ok((
-                vec![ty.clone(), ty.clone()],
-                vec![as_deferred(ty.clone())],
-            ))
+            Ok((vec![ty.clone(), ty.clone()], vec![as_deferred(ty.clone())],))
         );
         assert_eq!(
             ArithmeticExtension { op: Op::Add }
                 .get_signature(&vec![type_arg(ty.clone()), val_arg(1)],),
-            Ok((
-                vec![ty.clone()],
-                vec![as_deferred(ty.clone())],
-            ))
+            Ok((vec![ty.clone()], vec![as_deferred(ty.clone())],))
         );
         assert_eq!(
             DuplicateExtension {}.get_signature(&vec![type_arg(ty.clone())]),
-            Ok((
-                vec![ty.clone()],
-                vec![ty.clone(), ty.clone()],
-            ))
+            Ok((vec![ty.clone()], vec![ty.clone(), ty.clone()],))
         );
         assert_eq!(
             ConstantExtension {}.get_signature(&vec![type_arg(ty.clone()), val_arg(1)],),
-            Ok((
-                vec![],
-                vec![as_deferred(ty.clone())],
-            ))
+            Ok((vec![], vec![as_deferred(ty.clone())],))
         );
         assert_eq!(
             IgnoreExtension {}.get_signature(&vec![type_arg(ty.clone())]),

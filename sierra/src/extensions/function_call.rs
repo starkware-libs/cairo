@@ -78,10 +78,7 @@ mod tests {
                 results: vec![]
             }
             .get_signature(&vec![]),
-            Ok((
-                vec![as_tuple(vec![]), gas_type(2)],
-                vec![as_tuple(vec![])],
-            ))
+            Ok((vec![as_tuple(vec![]), gas_type(2)], vec![as_tuple(vec![])],))
         );
         assert_eq!(
             FunctionCallExtension {

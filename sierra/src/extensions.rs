@@ -281,10 +281,12 @@ impl ExtensionImplementation for NonBranchExtension {
         context: Context,
         arg_refs: Vec<RefValue>,
     ) -> Result<Vec<(Context, Vec<RefValue>)>, Error> {
-        Ok(vec![self.inner.mem_change(tmpl_args, registry, context, arg_refs)?])
+        Ok(vec![self
+            .inner
+            .mem_change(tmpl_args, registry, context, arg_refs)?])
     }
 }
 
 fn wrap_non_branch(nbb: NonBranchBox) -> ExtensionBox {
-    Box::new(NonBranchExtension{inner: nbb})
+    Box::new(NonBranchExtension { inner: nbb })
 }

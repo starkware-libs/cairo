@@ -38,7 +38,7 @@ impl NonBranchImplementation for UnwrapNzExtension {
     fn get_signature(
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
-    ) -> Result<(Vec<Type>,Vec<Type>), Error> {
+    ) -> Result<(Vec<Type>, Vec<Type>), Error> {
         let numeric_type = single_type_arg(tmpl_args)?;
         Ok((
             vec![as_nonzero(numeric_type.clone())],
@@ -74,7 +74,10 @@ impl TypeInfoImplementation for NonZeroTypeInfo {
 pub(super) fn extensions() -> [(String, ExtensionBox); 2] {
     [
         ("jump_nz".to_string(), Box::new(JumpNzExtension {})),
-        ("unwrap_nz".to_string(), wrap_non_branch(Box::new(UnwrapNzExtension {}))),
+        (
+            "unwrap_nz".to_string(),
+            wrap_non_branch(Box::new(UnwrapNzExtension {})),
+        ),
     ]
 }
 
