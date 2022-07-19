@@ -25,6 +25,7 @@ pub enum Error {
     LocalMemoryCantBeAllocated,
     LocalMemoryNotAllocated,
     LocationsNonCosecutive,
+    UnexpectedMemoryStructure,
 }
 
 // Registry for finding information on extensions and types.
@@ -84,6 +85,17 @@ impl Registry {
             sign.fallthrough,
         ))
     }
+
+    pub(crate) fn exec(
+        self: &Self,
+        ext: &Extension,
+        inputs: Vec<Vec<i64>>,
+    ) -> Result<(Vec<Vec<i64>>, usize), Error> {
+        match self.ext_reg.get(&ext.name) {
+            None => Err(Error::UnsupportedLibCallName),
+            Some(e) => e.exec(&ext.tmpl_args, &self.ty_reg, inputs),
+        }
+    }
 }
 
 // Helper to get the type infomation from a type and the registry.
@@ -134,6 +146,14 @@ trait ExtensionImplementation {
         context: Context,
         arg_refs: Vec<RefValue>,
     ) -> Result<Vec<(Context, Vec<RefValue>)>, Error>;
+
+    // Returns the memory representation of the results, given the memory representations of the inputs.
+    fn exec(
+        self: &Self,
+        tmpl_args: &Vec<TemplateArg>,
+        registry: &TypeRegistry,
+        inputs: Vec<Vec<i64>>,
+    ) -> Result<(Vec<Vec<i64>>, usize), Error>;
 }
 
 // Trait for implementing an extension.
@@ -152,6 +172,14 @@ trait NonBranchImplementation {
         context: Context,
         arg_refs: Vec<RefValue>,
     ) -> Result<(Context, Vec<RefValue>), Error>;
+
+    // Returns the memory representation of the results, given the memory representations of the inputs.
+    fn exec(
+        self: &Self,
+        tmpl_args: &Vec<TemplateArg>,
+        registry: &TypeRegistry,
+        inputs: Vec<Vec<i64>>,
+    ) -> Result<Vec<Vec<i64>>, Error>;
 }
 
 type ExtensionBox = Box<dyn ExtensionImplementation + Sync + Send>;
@@ -248,6 +276,17 @@ fn type_value_args<'a>(tmpl_args: &'a Vec<TemplateArg>) -> Result<(&'a Type, i64
     Ok((unwrap_type(&tmpl_args[0])?, unwrap_value(&tmpl_args[1])?))
 }
 
+fn validate_mem_sizes<const N: usize>(
+    inputs: &Vec<Vec<i64>>,
+    expectation: [usize; N],
+) -> Result<(), Error> {
+    if inputs.iter().map(|input| input.len()).eq(expectation) {
+        Ok(())
+    } else {
+        Err(Error::UnexpectedMemoryStructure)
+    }
+}
+
 fn as_final(ref_val: &RefValue) -> Result<MemLocation, Error> {
     match ref_val {
         RefValue::Final(m) => Ok(*m),
@@ -284,6 +323,15 @@ impl ExtensionImplementation for NonBranchExtension {
         Ok(vec![self
             .inner
             .mem_change(tmpl_args, registry, context, arg_refs)?])
+    }
+
+    fn exec(
+        self: &Self,
+        tmpl_args: &Vec<TemplateArg>,
+        registry: &TypeRegistry,
+        inputs: Vec<Vec<i64>>,
+    ) -> Result<(Vec<Vec<i64>>, usize), Error> {
+        Ok((self.inner.exec(tmpl_args, registry, inputs)?, 0))
     }
 }
 

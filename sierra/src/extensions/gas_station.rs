@@ -30,6 +30,7 @@ impl ExtensionImplementation for GetGasExtension {
         context: Context,
         arg_refs: Vec<RefValue>,
     ) -> Result<Vec<(Context, Vec<RefValue>)>, Error> {
+        validate_size_ge(tmpl_args, 1)?;
         let mut total_gas = 0;
         let mut success_refs = vec![RefValue::Transient];
         tmpl_args.iter().try_for_each(|tmpl_arg| {
@@ -47,6 +48,33 @@ impl ExtensionImplementation for GetGasExtension {
             (context.clone(), success_refs),
             (context, vec![arg_refs[0].clone()]),
         ])
+    }
+
+    fn exec(
+        self: &Self,
+        tmpl_args: &Vec<TemplateArg>,
+        _registry: &TypeRegistry,
+        mut inputs: Vec<Vec<i64>>,
+    ) -> Result<(Vec<Vec<i64>>, usize), Error> {
+        validate_size_ge(tmpl_args, 1)?;
+        let mut total_gas = 0;
+        tmpl_args.iter().try_for_each(|tmpl_arg| {
+            total_gas += unwrap_value(tmpl_arg)?;
+            Ok(())
+        })?;
+        validate_mem_sizes(&inputs, [1, 0])?;
+        if inputs[0][0] >= total_gas {
+            Ok((
+                chain!(
+                    [vec![inputs[0][0] - total_gas]].into_iter(),
+                    tmpl_args.iter().map(|_| vec![])
+                )
+                .collect(),
+                0,
+            ))
+        } else {
+            Ok((vec![inputs.remove(0)], 1))
+        }
     }
 }
 
@@ -74,10 +102,20 @@ impl NonBranchImplementation for RefundGasExtension {
             context,
             vec![RefValue::OpWithConst(
                 as_final(&arg_refs[0])?,
-                Op::Sub,
+                Op::Add,
                 single_value_arg(tmpl_args)?,
             )],
         ))
+    }
+
+    fn exec(
+        self: &Self,
+        tmpl_args: &Vec<TemplateArg>,
+        _registry: &TypeRegistry,
+        inputs: Vec<Vec<i64>>,
+    ) -> Result<Vec<Vec<i64>>, Error> {
+        validate_mem_sizes(&inputs, [1, 0])?;
+        Ok(vec![vec![inputs[0][0] + single_value_arg(tmpl_args)?]])
     }
 }
 
@@ -111,6 +149,16 @@ impl NonBranchImplementation for SplitGasExtension {
             context,
             tmpl_args.iter().map(|_| RefValue::Transient).collect(),
         ))
+    }
+
+    fn exec(
+        self: &Self,
+        tmpl_args: &Vec<TemplateArg>,
+        _registry: &TypeRegistry,
+        inputs: Vec<Vec<i64>>,
+    ) -> Result<Vec<Vec<i64>>, Error> {
+        validate_mem_sizes(&inputs, [0])?;
+        Ok(tmpl_args.iter().map(|_| vec![]).collect())
     }
 }
 

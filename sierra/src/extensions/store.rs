@@ -62,6 +62,16 @@ impl NonBranchImplementation for StoreExtension {
         }?;
         Ok((context, vec![RefValue::Final(loc)]))
     }
+
+    fn exec(
+        self: &Self,
+        _tmpl_args: &Vec<TemplateArg>,
+        _registry: &TypeRegistry,
+        inputs: Vec<Vec<i64>>,
+    ) -> Result<Vec<Vec<i64>>, Error> {
+        validate_mem_sizes(&inputs, [1, 0])?;
+        Ok(inputs)
+    }
 }
 
 struct RenameExtension {}
@@ -83,6 +93,15 @@ impl NonBranchImplementation for RenameExtension {
         arg_refs: Vec<RefValue>,
     ) -> Result<(Context, Vec<RefValue>), Error> {
         Ok((context, arg_refs))
+    }
+
+    fn exec(
+        self: &Self,
+        _tmpl_args: &Vec<TemplateArg>,
+        _registry: &TypeRegistry,
+        inputs: Vec<Vec<i64>>,
+    ) -> Result<Vec<Vec<i64>>, Error> {
+        Ok(inputs)
     }
 }
 
@@ -108,6 +127,16 @@ impl NonBranchImplementation for MoveExtension {
             context,
             vec![RefValue::OpWithConst(as_final(&arg_refs[0])?, Op::Add, 0)],
         ))
+    }
+
+    fn exec(
+        self: &Self,
+        _tmpl_args: &Vec<TemplateArg>,
+        _registry: &TypeRegistry,
+        inputs: Vec<Vec<i64>>,
+    ) -> Result<Vec<Vec<i64>>, Error> {
+        validate_mem_sizes(&inputs, [1])?;
+        Ok(inputs)
     }
 }
 
@@ -138,6 +167,16 @@ impl NonBranchImplementation for AllocLocalsExtension {
             context.temp_used = true;
             Ok((context, vec![]))
         }
+    }
+
+    fn exec(
+        self: &Self,
+        _tmpl_args: &Vec<TemplateArg>,
+        _registry: &TypeRegistry,
+        inputs: Vec<Vec<i64>>,
+    ) -> Result<Vec<Vec<i64>>, Error> {
+        validate_mem_sizes(&inputs, [0])?;
+        Ok(vec![])
     }
 }
 
@@ -171,6 +210,16 @@ impl NonBranchImplementation for AlignTempsExtension {
         context.temp_cursur += positive_value_arg(tmpl_args)?;
         context.temp_used = true;
         Ok((context, vec![]))
+    }
+
+    fn exec(
+        self: &Self,
+        _tmpl_args: &Vec<TemplateArg>,
+        _registry: &TypeRegistry,
+        inputs: Vec<Vec<i64>>,
+    ) -> Result<Vec<Vec<i64>>, Error> {
+        validate_mem_sizes(&inputs, [0])?;
+        Ok(vec![])
     }
 }
 

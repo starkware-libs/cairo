@@ -30,6 +30,15 @@ impl ExtensionImplementation for MatchNullableExtension {
             (context, vec![]),
         ])
     }
+
+    fn exec(
+        self: &Self,
+        _tmpl_args: &Vec<TemplateArg>,
+        _registry: &TypeRegistry,
+        _inputs: Vec<Vec<i64>>,
+    ) -> Result<(Vec<Vec<i64>>, usize), Error> {
+        todo!("yet to decide on the structure of a general nullable.")
+    }
 }
 
 pub(super) fn extensions() -> [(String, ExtensionBox); 1] {

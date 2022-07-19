@@ -59,6 +59,36 @@ impl NonBranchImplementation for ArithmeticExtension {
             _ => Err(Error::WrongNumberOfTypeArgs),
         }
     }
+
+    fn exec(
+        self: &Self,
+        tmpl_args: &Vec<TemplateArg>,
+        _registry: &TypeRegistry,
+        inputs: Vec<Vec<i64>>,
+    ) -> Result<Vec<Vec<i64>>, Error> {
+        match tmpl_args.len() {
+            1 => {
+                validate_mem_sizes(&inputs, [1, 1])?;
+                Ok(vec![vec![match self.op {
+                    Op::Add => inputs[0][0] + inputs[1][0],
+                    Op::Sub => inputs[0][0] - inputs[1][0],
+                    Op::Mul => inputs[0][0] * inputs[1][0],
+                    _ => unreachable!(),
+                }]])
+            }
+            2 => {
+                let (_, c) = type_value_args(tmpl_args)?;
+                validate_mem_sizes(&inputs, [1])?;
+                Ok(vec![vec![match self.op {
+                    Op::Add => inputs[0][0] + c,
+                    Op::Sub => inputs[0][0] - c,
+                    Op::Mul => inputs[0][0] * c,
+                    _ => unreachable!(),
+                }]])
+            }
+            _ => Err(Error::WrongNumberOfTypeArgs),
+        }
+    }
 }
 
 struct DivExtension {
@@ -124,6 +154,34 @@ impl NonBranchImplementation for DivExtension {
             _ => Err(Error::WrongNumberOfTypeArgs),
         }
     }
+
+    fn exec(
+        self: &Self,
+        tmpl_args: &Vec<TemplateArg>,
+        _registry: &TypeRegistry,
+        inputs: Vec<Vec<i64>>,
+    ) -> Result<Vec<Vec<i64>>, Error> {
+        match tmpl_args.len() {
+            1 => {
+                validate_mem_sizes(&inputs, [1, 1])?;
+                Ok(vec![vec![match self.op {
+                    Op::Div => inputs[0][0] / inputs[1][0],
+                    Op::Mod => inputs[0][0] % inputs[1][0],
+                    _ => unreachable!(),
+                }]])
+            }
+            2 => {
+                let (_, c) = type_value_args(tmpl_args)?;
+                validate_mem_sizes(&inputs, [1])?;
+                Ok(vec![vec![match self.op {
+                    Op::Div => inputs[0][0] / c,
+                    Op::Mod => inputs[0][0] % c,
+                    _ => unreachable!(),
+                }]])
+            }
+            _ => Err(Error::WrongNumberOfTypeArgs),
+        }
+    }
 }
 
 struct DuplicateExtension {}
@@ -149,6 +207,16 @@ impl NonBranchImplementation for DuplicateExtension {
     ) -> Result<(Context, Vec<RefValue>), Error> {
         Ok((context, vec![arg_refs[0].clone(), arg_refs[0].clone()]))
     }
+
+    fn exec(
+        self: &Self,
+        _tmpl_args: &Vec<TemplateArg>,
+        _registry: &TypeRegistry,
+        mut inputs: Vec<Vec<i64>>,
+    ) -> Result<Vec<Vec<i64>>, Error> {
+        validate_mem_sizes(&inputs, [1])?;
+        Ok(vec![inputs[0].clone(), inputs.remove(0)])
+    }
 }
 
 struct ConstantExtension {}
@@ -173,6 +241,17 @@ impl NonBranchImplementation for ConstantExtension {
         let (_, c) = type_value_args(tmpl_args)?;
         Ok((context, vec![RefValue::Const(c)]))
     }
+
+    fn exec(
+        self: &Self,
+        tmpl_args: &Vec<TemplateArg>,
+        _registry: &TypeRegistry,
+        inputs: Vec<Vec<i64>>,
+    ) -> Result<Vec<Vec<i64>>, Error> {
+        validate_mem_sizes(&inputs, [])?;
+        let (_, c) = type_value_args(tmpl_args)?;
+        Ok(vec![vec![c]])
+    }
 }
 
 struct IgnoreExtension {}
@@ -194,6 +273,15 @@ impl NonBranchImplementation for IgnoreExtension {
         _arg_refs: Vec<RefValue>,
     ) -> Result<(Context, Vec<RefValue>), Error> {
         Ok((context, vec![]))
+    }
+
+    fn exec(
+        self: &Self,
+        _tmpl_args: &Vec<TemplateArg>,
+        _registry: &TypeRegistry,
+        _inputs: Vec<Vec<i64>>,
+    ) -> Result<Vec<Vec<i64>>, Error> {
+        Ok(vec![vec![]])
     }
 }
 

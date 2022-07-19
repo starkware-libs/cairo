@@ -24,6 +24,16 @@ impl ExtensionImplementation for UnconditionalJumpExtension {
     ) -> Result<Vec<(Context, Vec<RefValue>)>, Error> {
         Ok(vec![(context, vec![])])
     }
+
+    fn exec(
+        self: &Self,
+        _tmpl_args: &Vec<TemplateArg>,
+        _registry: &TypeRegistry,
+        inputs: Vec<Vec<i64>>,
+    ) -> Result<(Vec<Vec<i64>>, usize), Error> {
+        validate_mem_sizes(&inputs, [0])?;
+        Ok((vec![], 0))
+    }
 }
 
 pub(super) fn extensions() -> [(String, ExtensionBox); 1] {

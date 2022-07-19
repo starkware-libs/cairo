@@ -48,6 +48,15 @@ impl NonBranchImplementation for FunctionCallExtension {
             vec![RefValue::Final(MemLocation::Temp(-(ti.size as i64)))],
         ))
     }
+
+    fn exec(
+        self: &Self,
+        _tmpl_args: &Vec<TemplateArg>,
+        _registry: &TypeRegistry,
+        _inputs: Vec<Vec<i64>>,
+    ) -> Result<Vec<Vec<i64>>, Error> {
+        unreachable!("any legal usage of the code must prevent exec through here!")
+    }
 }
 
 pub(super) fn extensions(prog: &Program) -> Vec<(String, ExtensionBox)> {

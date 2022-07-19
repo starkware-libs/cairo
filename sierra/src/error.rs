@@ -1,16 +1,16 @@
 use crate::{
-    extensions,
+    edit_state::Error as EditError,
+    extensions::Error as ExtError,
     graph::{BlockId, Identifier, Type},
     ref_value::RefValue,
 };
 
 #[derive(Debug, PartialEq)]
 pub enum Error {
-    MissingReference(Identifier),
-    VariableOverride(Identifier),
     UsedTempMemoryInvalidated(Identifier),
-    Extension(extensions::Error, String),
-    TypeInfo(extensions::Error, Type),
+    Extension(ExtError, String),
+    TypeInfo(ExtError, Type),
+    EditState(BlockId, EditError),
     FunctionBlockOutOfBounds,
     FunctionRemainingOwnedObjects(Vec<Identifier>),
     FunctionReturnTypeMismatch(BlockId, Identifier),

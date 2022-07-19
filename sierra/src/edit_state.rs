@@ -1,6 +1,12 @@
-use crate::{error::Error, graph::Identifier};
+use crate::graph::Identifier;
 use std::collections::HashMap;
 use Result::*;
+
+#[derive(Debug, PartialEq)]
+pub enum Error {
+    MissingReference(Identifier),
+    VariableOverride(Identifier),
+}
 
 pub fn take_args<'a, V: 'a + std::cmp::PartialEq>(
     mut state: HashMap<Identifier, V>,

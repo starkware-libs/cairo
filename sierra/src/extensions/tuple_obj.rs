@@ -41,6 +41,26 @@ impl NonBranchImplementation for TuplePackExtension {
             }],
         ))
     }
+
+    fn exec(
+        self: &Self,
+        tmpl_args: &Vec<TemplateArg>,
+        registry: &TypeRegistry,
+        inputs: Vec<Vec<i64>>,
+    ) -> Result<Vec<Vec<i64>>, Error> {
+        if inputs.len() != tmpl_args.len() {
+            return Err(Error::UnexpectedMemoryStructure);
+        }
+        let mut output = vec![];
+        for (tmpl_arg, input) in tmpl_args.iter().zip(inputs.into_iter()) {
+            let size = get_info(registry, unwrap_type(tmpl_arg)?)?.size;
+            if input.len() != size {
+                return Err(Error::UnexpectedMemoryStructure);
+            }
+            output.extend(input);
+        }
+        Ok(vec![output])
+    }
 }
 
 struct TupleUnpackExtension {}
@@ -84,6 +104,36 @@ impl NonBranchImplementation for TupleUnpackExtension {
             offset += size as i64;
         }
         Ok((context, refs))
+    }
+
+    fn exec(
+        self: &Self,
+        tmpl_args: &Vec<TemplateArg>,
+        registry: &TypeRegistry,
+        inputs: Vec<Vec<i64>>,
+    ) -> Result<Vec<Vec<i64>>, Error> {
+        if inputs.len() != 1 {
+            return Err(Error::UnexpectedMemoryStructure);
+        }
+        let mut offset = 0;
+        let mut outputs = vec![];
+        for tmpl_arg in tmpl_args {
+            let size = get_info(registry, unwrap_type(tmpl_arg)?)?.size;
+            if offset + size > inputs[0].len() {
+                return Err(Error::UnexpectedMemoryStructure);
+            }
+            outputs.push(
+                inputs[0][offset..offset + size]
+                    .iter()
+                    .map(|v| *v)
+                    .collect(),
+            );
+            offset += size;
+        }
+        if inputs.len() != 1 {
+            return Err(Error::UnexpectedMemoryStructure);
+        }
+        Ok(outputs)
     }
 }
 
