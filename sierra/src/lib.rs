@@ -8,6 +8,7 @@ pub mod graph;
 mod ref_value;
 pub mod soundness;
 pub mod utils;
+pub mod vm;
 
 lalrpop_mod!(parser);
 
