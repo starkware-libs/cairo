@@ -12,13 +12,13 @@ fn types_as_tuple(tys: &Vec<Type>) -> Type {
     as_tuple(tys.iter().map(|t| type_arg(t.clone())).collect())
 }
 
-impl ExtensionImplementation for FunctionCallExtension {
+impl NonBranchImplementation for FunctionCallExtension {
     fn get_signature(
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
-    ) -> Result<ExtensionSignature, Error> {
+    ) -> Result<(Vec<Type>, Vec<Type>), Error> {
         validate_size_eq(tmpl_args, 0)?;
-        Ok(simple_invoke_ext_sign(
+        Ok((
             vec![types_as_tuple(&self.args), gas_type(2)],
             vec![types_as_tuple(&self.results)],
         ))
@@ -30,7 +30,7 @@ impl ExtensionImplementation for FunctionCallExtension {
         registry: &TypeRegistry,
         mut context: Context,
         arg_refs: Vec<RefValue>,
-    ) -> Result<Vec<(Context, Vec<RefValue>)>, Error> {
+    ) -> Result<(Context, Vec<RefValue>), Error> {
         validate_size_eq(tmpl_args, 0)?;
         let ti = get_info(registry, &types_as_tuple(&self.args))?;
         match &arg_refs[0] {
@@ -43,10 +43,10 @@ impl ExtensionImplementation for FunctionCallExtension {
         let ti = get_info(registry, &types_as_tuple(&self.results))?;
         context.temp_cursur = 0;
         context.temp_invalidated = true;
-        Ok(vec![(
+        Ok((
             context,
             vec![RefValue::Final(MemLocation::Temp(-(ti.size as i64)))],
-        )])
+        ))
     }
 }
 
@@ -56,10 +56,10 @@ pub(super) fn extensions(prog: &Program) -> Vec<(String, ExtensionBox)> {
         .map(|f| {
             (
                 f.name.clone(),
-                Box::new(FunctionCallExtension {
+                wrap_non_branch(Box::new(FunctionCallExtension {
                     args: f.args.iter().map(|v| v.ty.clone()).collect(),
                     results: f.res_types.clone(),
-                }) as ExtensionBox,
+                })),
             )
         })
         .collect()
@@ -78,7 +78,7 @@ mod tests {
                 results: vec![]
             }
             .get_signature(&vec![]),
-            Ok(simple_invoke_ext_sign(
+            Ok((
                 vec![as_tuple(vec![]), gas_type(2)],
                 vec![as_tuple(vec![])],
             ))
@@ -89,7 +89,7 @@ mod tests {
                 results: vec![as_type("3"), as_type("4")]
             }
             .get_signature(&vec![]),
-            Ok(simple_invoke_ext_sign(
+            Ok((
                 vec![
                     as_tuple(vec![type_arg(as_type("1")), type_arg(as_type("2"))]),
                     gas_type(2)

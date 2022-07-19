@@ -136,6 +136,24 @@ trait ExtensionImplementation {
     ) -> Result<Vec<(Context, Vec<RefValue>)>, Error>;
 }
 
+// Trait for implementing an extension.
+trait NonBranchImplementation {
+    // Returns the signature given the extensions template arguments.
+    fn get_signature(
+        self: &Self,
+        tmpl_args: &Vec<TemplateArg>,
+    ) -> Result<(Vec<Type>, Vec<Type>), Error>;
+
+    // Returns the changes in context, and reference values of all return values for all possible branches.
+    fn mem_change(
+        self: &Self,
+        tmpl_args: &Vec<TemplateArg>,
+        registry: &TypeRegistry,
+        context: Context,
+        arg_refs: Vec<RefValue>,
+    ) -> Result<(Context, Vec<RefValue>), Error>;
+}
+
 type ExtensionBox = Box<dyn ExtensionImplementation + Sync + Send>;
 
 type ExtensionRegistry = HashMap<String, ExtensionBox>;
@@ -237,10 +255,36 @@ fn as_final(ref_val: &RefValue) -> Result<MemLocation, Error> {
     }
 }
 
-fn simple_invoke_ext_sign(args: Vec<Type>, results: Vec<Type>) -> ExtensionSignature {
-    ExtensionSignature {
-        args: args,
-        results: vec![results],
-        fallthrough: Some(0),
+type NonBranchBox = Box<dyn NonBranchImplementation + Sync + Send>;
+
+struct NonBranchExtension {
+    inner: NonBranchBox,
+}
+
+impl ExtensionImplementation for NonBranchExtension {
+    fn get_signature(
+        self: &Self,
+        tmpl_args: &Vec<TemplateArg>,
+    ) -> Result<ExtensionSignature, Error> {
+        let (args, results) = self.inner.get_signature(tmpl_args)?;
+        Ok(ExtensionSignature {
+            args: args,
+            results: vec![results],
+            fallthrough: Some(0),
+        })
     }
+
+    fn mem_change(
+        self: &Self,
+        tmpl_args: &Vec<TemplateArg>,
+        registry: &TypeRegistry,
+        context: Context,
+        arg_refs: Vec<RefValue>,
+    ) -> Result<Vec<(Context, Vec<RefValue>)>, Error> {
+        Ok(vec![self.inner.mem_change(tmpl_args, registry, context, arg_refs)?])
+    }
+}
+
+fn wrap_non_branch(nbb: NonBranchBox) -> ExtensionBox {
+    Box::new(NonBranchExtension{inner: nbb})
 }

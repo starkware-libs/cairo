@@ -34,13 +34,13 @@ impl ExtensionImplementation for JumpNzExtension {
 
 struct UnwrapNzExtension {}
 
-impl ExtensionImplementation for UnwrapNzExtension {
+impl NonBranchImplementation for UnwrapNzExtension {
     fn get_signature(
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
-    ) -> Result<ExtensionSignature, Error> {
+    ) -> Result<(Vec<Type>,Vec<Type>), Error> {
         let numeric_type = single_type_arg(tmpl_args)?;
-        Ok(simple_invoke_ext_sign(
+        Ok((
             vec![as_nonzero(numeric_type.clone())],
             vec![numeric_type.clone()],
         ))
@@ -52,8 +52,8 @@ impl ExtensionImplementation for UnwrapNzExtension {
         _registry: &TypeRegistry,
         context: Context,
         arg_refs: Vec<RefValue>,
-    ) -> Result<Vec<(Context, Vec<RefValue>)>, Error> {
-        Ok(vec![(context, arg_refs)])
+    ) -> Result<(Context, Vec<RefValue>), Error> {
+        Ok((context, arg_refs))
     }
 }
 
@@ -74,7 +74,7 @@ impl TypeInfoImplementation for NonZeroTypeInfo {
 pub(super) fn extensions() -> [(String, ExtensionBox); 2] {
     [
         ("jump_nz".to_string(), Box::new(JumpNzExtension {})),
-        ("unwrap_nz".to_string(), Box::new(UnwrapNzExtension {})),
+        ("unwrap_nz".to_string(), wrap_non_branch(Box::new(UnwrapNzExtension {}))),
     ]
 }
 

@@ -52,12 +52,12 @@ impl ExtensionImplementation for GetGasExtension {
 
 struct RefundGasExtension {}
 
-impl ExtensionImplementation for RefundGasExtension {
+impl NonBranchImplementation for RefundGasExtension {
     fn get_signature(
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
-    ) -> Result<ExtensionSignature, Error> {
-        Ok(simple_invoke_ext_sign(
+    ) -> Result<(Vec<Type>, Vec<Type>), Error> {
+        Ok((
             vec![gas_builtin_type(), gas_type(single_value_arg(tmpl_args)?)],
             vec![as_deferred(gas_builtin_type())],
         ))
@@ -69,25 +69,25 @@ impl ExtensionImplementation for RefundGasExtension {
         _registry: &TypeRegistry,
         context: Context,
         arg_refs: Vec<RefValue>,
-    ) -> Result<Vec<(Context, Vec<RefValue>)>, Error> {
-        Ok(vec![(
+    ) -> Result<(Context, Vec<RefValue>), Error> {
+        Ok((
             context,
             vec![RefValue::OpWithConst(
                 as_final(&arg_refs[0])?,
                 Op::Sub,
                 single_value_arg(tmpl_args)?,
             )],
-        )])
+        ))
     }
 }
 
 struct SplitGasExtension {}
 
-impl ExtensionImplementation for SplitGasExtension {
+impl NonBranchImplementation for SplitGasExtension {
     fn get_signature(
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
-    ) -> Result<ExtensionSignature, Error> {
+    ) -> Result<(Vec<Type>, Vec<Type>), Error> {
         validate_size_ge(tmpl_args, 2)?;
         let mut res_types = vec![];
         let mut total = 0;
@@ -97,7 +97,7 @@ impl ExtensionImplementation for SplitGasExtension {
             total += v;
             Ok(())
         })?;
-        Ok(simple_invoke_ext_sign(vec![gas_type(total)], res_types))
+        Ok((vec![gas_type(total)], res_types))
     }
 
     fn mem_change(
@@ -106,19 +106,19 @@ impl ExtensionImplementation for SplitGasExtension {
         _registry: &TypeRegistry,
         context: Context,
         _arg_refs: Vec<RefValue>,
-    ) -> Result<Vec<(Context, Vec<RefValue>)>, Error> {
-        Ok(vec![(
+    ) -> Result<(Context, Vec<RefValue>), Error> {
+        Ok((
             context,
             tmpl_args.iter().map(|_| RefValue::Transient).collect(),
-        )])
+        ))
     }
 }
 
 pub(super) fn extensions() -> [(String, ExtensionBox); 3] {
     [
         ("get_gas".to_string(), Box::new(GetGasExtension {})),
-        ("refund_gas".to_string(), Box::new(RefundGasExtension {})),
-        ("split_gas".to_string(), Box::new(SplitGasExtension {})),
+        ("refund_gas".to_string(), wrap_non_branch(Box::new(RefundGasExtension {}))),
+        ("split_gas".to_string(), wrap_non_branch(Box::new(SplitGasExtension {}))),
     ]
 }
 
@@ -175,14 +175,14 @@ mod tests {
         );
         assert_eq!(
             RefundGasExtension {}.get_signature(&vec![val_arg(5)]),
-            Ok(simple_invoke_ext_sign(
+            Ok((
                 vec![gas_builtin_type(), gas_type(5)],
                 vec![as_deferred(gas_builtin_type())],
             ))
         );
         assert_eq!(
             SplitGasExtension {}.get_signature(&vec![val_arg(1), val_arg(2)]),
-            Ok(simple_invoke_ext_sign(
+            Ok((
                 vec![gas_type(3)],
                 vec![gas_type(1), gas_type(2)],
             ))

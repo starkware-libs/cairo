@@ -2,16 +2,16 @@ use crate::{extensions::*, utils::as_tuple};
 
 struct TuplePackExtension {}
 
-impl ExtensionImplementation for TuplePackExtension {
+impl NonBranchImplementation for TuplePackExtension {
     fn get_signature(
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
-    ) -> Result<ExtensionSignature, Error> {
+    ) -> Result<(Vec<Type>, Vec<Type>), Error> {
         let mut arg_types = vec![];
         for tmpl_arg in tmpl_args {
             arg_types.push(unwrap_type(tmpl_arg)?.clone());
         }
-        Ok(simple_invoke_ext_sign(
+        Ok((
             arg_types,
             vec![as_tuple(tmpl_args.clone())],
         ))
@@ -23,7 +23,7 @@ impl ExtensionImplementation for TuplePackExtension {
         registry: &TypeRegistry,
         context: Context,
         arg_refs: Vec<RefValue>,
-    ) -> Result<Vec<(Context, Vec<RefValue>)>, Error> {
+    ) -> Result<(Context, Vec<RefValue>), Error> {
         let mut tup_mem: Option<(MemLocation, usize)> = None;
         for (ref_val, tmpl_arg) in arg_refs.iter().zip(tmpl_args.iter()) {
             let size = get_info(registry, unwrap_type(tmpl_arg)?)?.size;
@@ -36,28 +36,28 @@ impl ExtensionImplementation for TuplePackExtension {
                     .ok_or(Error::LocationsNonCosecutive),
             }?);
         }
-        Ok(vec![(
+        Ok((
             context,
             vec![match tup_mem {
                 None => RefValue::Transient,
                 Some((mem, _)) => RefValue::Final(mem),
             }],
-        )])
+        ))
     }
 }
 
 struct TupleUnpackExtension {}
 
-impl ExtensionImplementation for TupleUnpackExtension {
+impl NonBranchImplementation for TupleUnpackExtension {
     fn get_signature(
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
-    ) -> Result<ExtensionSignature, Error> {
+    ) -> Result<(Vec<Type>, Vec<Type>), Error> {
         let mut arg_types = vec![];
         for tmpl_arg in tmpl_args {
             arg_types.push(unwrap_type(tmpl_arg)?.clone());
         }
-        Ok(simple_invoke_ext_sign(
+        Ok((
             vec![as_tuple(tmpl_args.clone())],
             arg_types,
         ))
@@ -69,7 +69,7 @@ impl ExtensionImplementation for TupleUnpackExtension {
         registry: &TypeRegistry,
         context: Context,
         arg_refs: Vec<RefValue>,
-    ) -> Result<Vec<(Context, Vec<RefValue>)>, Error> {
+    ) -> Result<(Context, Vec<RefValue>), Error> {
         let mut refs = vec![];
         let mut offset = 0;
         for tmpl_arg in tmpl_args {
@@ -89,7 +89,7 @@ impl ExtensionImplementation for TupleUnpackExtension {
             }?);
             offset += size as i64;
         }
-        Ok(vec![(context, refs)])
+        Ok((context, refs))
     }
 }
 
@@ -112,10 +112,10 @@ impl TypeInfoImplementation for TupleTypeInfo {
 
 pub(super) fn extensions() -> [(String, ExtensionBox); 2] {
     [
-        ("tuple_pack".to_string(), Box::new(TuplePackExtension {})),
+        ("tuple_pack".to_string(), wrap_non_branch(Box::new(TuplePackExtension {}))),
         (
             "tuple_unpack".to_string(),
-            Box::new(TupleUnpackExtension {}),
+            wrap_non_branch(Box::new(TupleUnpackExtension {})),
         ),
     ]
 }
@@ -134,7 +134,7 @@ mod tests {
         assert_eq!(
             TuplePackExtension {}
                 .get_signature(&vec![type_arg(as_type("1")), type_arg(as_type("2"))],),
-            Ok(simple_invoke_ext_sign(
+            Ok((
                 vec![as_type("1"), as_type("2")],
                 vec![as_tuple(vec![
                     type_arg(as_type("1")),
@@ -145,7 +145,7 @@ mod tests {
         assert_eq!(
             TupleUnpackExtension {}
                 .get_signature(&vec![type_arg(as_type("1")), type_arg(as_type("2"))]),
-            Ok(simple_invoke_ext_sign(
+            Ok((
                 vec![as_tuple(vec![
                     type_arg(as_type("1")),
                     type_arg(as_type("2"))

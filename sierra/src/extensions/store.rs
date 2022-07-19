@@ -25,13 +25,13 @@ fn unpack_args<'a>(tmpl_args: &'a Vec<TemplateArg>) -> Result<(StoreType, &'a Ty
 
 struct StoreExtension {}
 
-impl ExtensionImplementation for StoreExtension {
+impl NonBranchImplementation for StoreExtension {
     fn get_signature(
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
-    ) -> Result<ExtensionSignature, Error> {
+    ) -> Result<(Vec<Type>, Vec<Type>), Error> {
         let (_, ty) = unpack_args(tmpl_args)?;
-        Ok(simple_invoke_ext_sign(
+        Ok((
             vec![as_deferred(ty.clone()), gas_type(1)],
             vec![ty.clone()],
         ))
@@ -43,7 +43,7 @@ impl ExtensionImplementation for StoreExtension {
         registry: &TypeRegistry,
         mut context: Context,
         _arg_refs: Vec<RefValue>,
-    ) -> Result<Vec<(Context, Vec<RefValue>)>, Error> {
+    ) -> Result<(Context, Vec<RefValue>), Error> {
         let (store_ty, ty) = unpack_args(tmpl_args)?;
         let ti = get_info(registry, ty)?;
         let loc = match store_ty {
@@ -63,19 +63,19 @@ impl ExtensionImplementation for StoreExtension {
                 }
             }
         }?;
-        Ok(vec![(context, vec![RefValue::Final(loc)])])
+        Ok((context, vec![RefValue::Final(loc)]))
     }
 }
 
 struct RenameExtension {}
 
-impl ExtensionImplementation for RenameExtension {
+impl NonBranchImplementation for RenameExtension {
     fn get_signature(
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
-    ) -> Result<ExtensionSignature, Error> {
+    ) -> Result<(Vec<Type>, Vec<Type>), Error> {
         let ty = single_type_arg(tmpl_args)?;
-        Ok(simple_invoke_ext_sign(vec![ty.clone()], vec![ty.clone()]))
+        Ok((vec![ty.clone()], vec![ty.clone()]))
     }
 
     fn mem_change(
@@ -84,20 +84,20 @@ impl ExtensionImplementation for RenameExtension {
         _registry: &TypeRegistry,
         context: Context,
         arg_refs: Vec<RefValue>,
-    ) -> Result<Vec<(Context, Vec<RefValue>)>, Error> {
-        Ok(vec![(context, arg_refs)])
+    ) -> Result<(Context, Vec<RefValue>), Error> {
+        Ok((context, arg_refs))
     }
 }
 
 struct MoveExtension {}
 
-impl ExtensionImplementation for MoveExtension {
+impl NonBranchImplementation for MoveExtension {
     fn get_signature(
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
-    ) -> Result<ExtensionSignature, Error> {
+    ) -> Result<(Vec<Type>, Vec<Type>), Error> {
         let ty = single_type_arg(tmpl_args)?;
-        Ok(simple_invoke_ext_sign(
+        Ok((
             vec![ty.clone()],
             vec![as_deferred(ty.clone())],
         ))
@@ -109,23 +109,23 @@ impl ExtensionImplementation for MoveExtension {
         _registry: &TypeRegistry,
         context: Context,
         arg_refs: Vec<RefValue>,
-    ) -> Result<Vec<(Context, Vec<RefValue>)>, Error> {
-        Ok(vec![(
+    ) -> Result<(Context, Vec<RefValue>), Error> {
+        Ok((
             context,
             vec![RefValue::OpWithConst(as_final(&arg_refs[0])?, Op::Add, 0)],
-        )])
+        ))
     }
 }
 
 struct AllocLocalsExtension {}
 
-impl ExtensionImplementation for AllocLocalsExtension {
+impl NonBranchImplementation for AllocLocalsExtension {
     fn get_signature(
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
-    ) -> Result<ExtensionSignature, Error> {
+    ) -> Result<(Vec<Type>, Vec<Type>), Error> {
         validate_size_eq(tmpl_args, 0)?;
-        Ok(simple_invoke_ext_sign(vec![gas_type(1)], vec![]))
+        Ok((vec![gas_type(1)], vec![]))
     }
 
     fn mem_change(
@@ -134,7 +134,7 @@ impl ExtensionImplementation for AllocLocalsExtension {
         _registry: &TypeRegistry,
         mut context: Context,
         _arg_refs: Vec<RefValue>,
-    ) -> Result<Vec<(Context, Vec<RefValue>)>, Error> {
+    ) -> Result<(Context, Vec<RefValue>), Error> {
         if context.local_allocated {
             Err(Error::LocalMemoryAlreadyAllocated)
         } else if context.temp_used {
@@ -142,7 +142,7 @@ impl ExtensionImplementation for AllocLocalsExtension {
         } else {
             context.local_allocated = true;
             context.temp_used = true;
-            Ok(vec![(context, vec![])])
+            Ok((context, vec![]))
         }
     }
 }
@@ -158,13 +158,13 @@ fn positive_value_arg(tmpl_args: &Vec<TemplateArg>) -> Result<usize, Error> {
     }
 }
 
-impl ExtensionImplementation for AlignTempsExtension {
+impl NonBranchImplementation for AlignTempsExtension {
     fn get_signature(
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
-    ) -> Result<ExtensionSignature, Error> {
+    ) -> Result<(Vec<Type>, Vec<Type>), Error> {
         positive_value_arg(tmpl_args)?;
-        Ok(simple_invoke_ext_sign(vec![gas_type(1)], vec![]))
+        Ok((vec![gas_type(1)], vec![]))
     }
 
     fn mem_change(
@@ -173,23 +173,23 @@ impl ExtensionImplementation for AlignTempsExtension {
         _registry: &TypeRegistry,
         mut context: Context,
         _arg_refs: Vec<RefValue>,
-    ) -> Result<Vec<(Context, Vec<RefValue>)>, Error> {
+    ) -> Result<(Context, Vec<RefValue>), Error> {
         context.temp_cursur += positive_value_arg(tmpl_args)?;
         context.temp_used = true;
-        Ok(vec![(context, vec![])])
+        Ok((context, vec![]))
     }
 }
 
 pub(super) fn extensions() -> [(String, ExtensionBox); 5] {
     [
-        ("store".to_string(), Box::new(StoreExtension {})),
-        ("rename".to_string(), Box::new(RenameExtension {})),
-        ("move".to_string(), Box::new(MoveExtension {})),
+        ("store".to_string(), wrap_non_branch(Box::new(StoreExtension {}))),
+        ("rename".to_string(), wrap_non_branch(Box::new(RenameExtension {}))),
+        ("move".to_string(), wrap_non_branch(Box::new(MoveExtension {}))),
         (
             "alloc_locals".to_string(),
-            Box::new(AllocLocalsExtension {}),
+            wrap_non_branch(Box::new(AllocLocalsExtension {})),
         ),
-        ("align_temps".to_string(), Box::new(AlignTempsExtension {})),
+        ("align_temps".to_string(), wrap_non_branch(Box::new(AlignTempsExtension {}))),
     ]
 }
 
@@ -204,7 +204,7 @@ mod tests {
         let ty = as_type("int");
         assert_eq!(
             StoreExtension {}.get_signature(&vec![type_arg(as_type("Temp")), type_arg(ty.clone())]),
-            Ok(simple_invoke_ext_sign(
+            Ok((
                 vec![as_deferred(ty.clone()), gas_type(1)],
                 vec![ty.clone()],
             ))
@@ -212,7 +212,7 @@ mod tests {
         assert_eq!(
             StoreExtension {}
                 .get_signature(&vec![type_arg(as_type("Local")), type_arg(ty.clone())]),
-            Ok(simple_invoke_ext_sign(
+            Ok((
                 vec![as_deferred(ty.clone()), gas_type(1)],
                 vec![ty],
             ))

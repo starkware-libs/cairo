@@ -8,15 +8,15 @@ struct ArithmeticExtension {
     op: Op,
 }
 
-impl ExtensionImplementation for ArithmeticExtension {
+impl NonBranchImplementation for ArithmeticExtension {
     fn get_signature(
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
-    ) -> Result<ExtensionSignature, Error> {
+    ) -> Result<(Vec<Type>, Vec<Type>), Error> {
         match tmpl_args.len() {
             1 => {
                 let numeric_type = validate_numeric(single_type_arg(tmpl_args)?)?;
-                Ok(simple_invoke_ext_sign(
+                Ok((
                     vec![numeric_type.clone(), numeric_type.clone()],
                     vec![as_deferred(numeric_type.clone())],
                 ))
@@ -24,7 +24,7 @@ impl ExtensionImplementation for ArithmeticExtension {
             2 => {
                 let (numeric_type, _) = type_value_args(tmpl_args)?;
                 validate_numeric(numeric_type)?;
-                Ok(simple_invoke_ext_sign(
+                Ok((
                     vec![numeric_type.clone()],
                     vec![as_deferred(numeric_type.clone())],
                 ))
@@ -39,22 +39,22 @@ impl ExtensionImplementation for ArithmeticExtension {
         _registry: &TypeRegistry,
         context: Context,
         arg_refs: Vec<RefValue>,
-    ) -> Result<Vec<(Context, Vec<RefValue>)>, Error> {
+    ) -> Result<(Context, Vec<RefValue>), Error> {
         match tmpl_args.len() {
-            1 => Ok(vec![(
+            1 => Ok((
                 context,
                 vec![RefValue::Op(
                     as_final(&arg_refs[0])?,
                     self.op,
                     as_final(&arg_refs[1])?,
                 )],
-            )]),
+            )),
             2 => {
                 let (_, c) = type_value_args(tmpl_args)?;
-                Ok(vec![(
+                Ok((
                     context,
                     vec![RefValue::OpWithConst(as_final(&arg_refs[0])?, self.op, c)],
-                )])
+                ))
             }
             _ => Err(Error::WrongNumberOfTypeArgs),
         }
@@ -65,15 +65,15 @@ struct DivExtension {
     op: Op,
 }
 
-impl ExtensionImplementation for DivExtension {
+impl NonBranchImplementation for DivExtension {
     fn get_signature(
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
-    ) -> Result<ExtensionSignature, Error> {
+    ) -> Result<(Vec<Type>, Vec<Type>), Error> {
         match tmpl_args.len() {
             1 => {
                 let numeric_type = validate_numeric(single_type_arg(tmpl_args)?)?;
-                Ok(simple_invoke_ext_sign(
+                Ok((
                     vec![numeric_type.clone(), as_nonzero(numeric_type.clone())],
                     vec![as_deferred(numeric_type.clone())],
                 ))
@@ -84,7 +84,7 @@ impl ExtensionImplementation for DivExtension {
                 if c == 0 {
                     Err(Error::UnsupportedTypeArg)
                 } else {
-                    Ok(simple_invoke_ext_sign(
+                    Ok((
                         vec![numeric_type.clone()],
                         vec![as_deferred(numeric_type.clone())],
                     ))
@@ -100,25 +100,25 @@ impl ExtensionImplementation for DivExtension {
         _registry: &TypeRegistry,
         context: Context,
         arg_refs: Vec<RefValue>,
-    ) -> Result<Vec<(Context, Vec<RefValue>)>, Error> {
+    ) -> Result<(Context, Vec<RefValue>), Error> {
         match tmpl_args.len() {
-            1 => Ok(vec![(
+            1 => Ok((
                 context,
                 vec![RefValue::Op(
                     as_final(&arg_refs[0])?,
                     self.op,
                     as_final(&arg_refs[1])?,
                 )],
-            )]),
+            )),
             2 => {
                 let (_, c) = type_value_args(tmpl_args)?;
                 if c == 0 {
                     Err(Error::UnsupportedTypeArg)
                 } else {
-                    Ok(vec![(
+                    Ok((
                         context,
                         vec![RefValue::OpWithConst(as_final(&arg_refs[0])?, self.op, c)],
-                    )])
+                    ))
                 }
             }
             _ => Err(Error::WrongNumberOfTypeArgs),
@@ -128,13 +128,13 @@ impl ExtensionImplementation for DivExtension {
 
 struct DuplicateExtension {}
 
-impl ExtensionImplementation for DuplicateExtension {
+impl NonBranchImplementation for DuplicateExtension {
     fn get_signature(
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
-    ) -> Result<ExtensionSignature, Error> {
+    ) -> Result<(Vec<Type>, Vec<Type>), Error> {
         let numeric_type = validate_numeric(single_type_arg(tmpl_args)?)?;
-        Ok(simple_invoke_ext_sign(
+        Ok((
             vec![numeric_type.clone()],
             vec![numeric_type.clone(), numeric_type.clone()],
         ))
@@ -146,24 +146,24 @@ impl ExtensionImplementation for DuplicateExtension {
         _registry: &TypeRegistry,
         context: Context,
         arg_refs: Vec<RefValue>,
-    ) -> Result<Vec<(Context, Vec<RefValue>)>, Error> {
-        Ok(vec![(
+    ) -> Result<(Context, Vec<RefValue>), Error> {
+        Ok((
             context,
             vec![arg_refs[0].clone(), arg_refs[0].clone()],
-        )])
+        ))
     }
 }
 
 struct ConstantExtension {}
 
-impl ExtensionImplementation for ConstantExtension {
+impl NonBranchImplementation for ConstantExtension {
     fn get_signature(
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
-    ) -> Result<ExtensionSignature, Error> {
+    ) -> Result<(Vec<Type>, Vec<Type>), Error> {
         let (numeric_type, _) = type_value_args(tmpl_args)?;
         validate_numeric(numeric_type)?;
-        Ok(simple_invoke_ext_sign(
+        Ok((
             vec![],
             vec![as_deferred(numeric_type.clone())],
         ))
@@ -175,21 +175,21 @@ impl ExtensionImplementation for ConstantExtension {
         _registry: &TypeRegistry,
         context: Context,
         _arg_refs: Vec<RefValue>,
-    ) -> Result<Vec<(Context, Vec<RefValue>)>, Error> {
+    ) -> Result<(Context, Vec<RefValue>), Error> {
         let (_, c) = type_value_args(tmpl_args)?;
-        Ok(vec![(context, vec![RefValue::Const(c)])])
+        Ok((context, vec![RefValue::Const(c)]))
     }
 }
 
 struct IgnoreExtension {}
 
-impl ExtensionImplementation for IgnoreExtension {
+impl NonBranchImplementation for IgnoreExtension {
     fn get_signature(
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
-    ) -> Result<ExtensionSignature, Error> {
+    ) -> Result<(Vec<Type>, Vec<Type>), Error> {
         let numeric_type = validate_numeric(single_type_arg(tmpl_args)?)?;
-        Ok(simple_invoke_ext_sign(vec![numeric_type.clone()], vec![]))
+        Ok((vec![numeric_type.clone()], vec![]))
     }
 
     fn mem_change(
@@ -198,8 +198,8 @@ impl ExtensionImplementation for IgnoreExtension {
         _registry: &TypeRegistry,
         context: Context,
         _arg_refs: Vec<RefValue>,
-    ) -> Result<Vec<(Context, Vec<RefValue>)>, Error> {
-        Ok(vec![(context, vec![])])
+    ) -> Result<(Context, Vec<RefValue>), Error> {
+        Ok((context, vec![]))
     }
 }
 
@@ -228,21 +228,21 @@ pub(super) fn extensions() -> [(String, ExtensionBox); 8] {
     [
         (
             "add".to_string(),
-            Box::new(ArithmeticExtension { op: Op::Add }),
+            wrap_non_branch(Box::new(ArithmeticExtension { op: Op::Add })),
         ),
         (
             "sub".to_string(),
-            Box::new(ArithmeticExtension { op: Op::Sub }),
+            wrap_non_branch(Box::new(ArithmeticExtension { op: Op::Sub })),
         ),
         (
             "mul".to_string(),
-            Box::new(ArithmeticExtension { op: Op::Mul }),
+            wrap_non_branch(Box::new(ArithmeticExtension { op: Op::Mul })),
         ),
-        ("div".to_string(), Box::new(DivExtension { op: Op::Div })),
-        ("mod".to_string(), Box::new(DivExtension { op: Op::Mod })),
-        ("duplicate_num".to_string(), Box::new(DuplicateExtension {})),
-        ("constant_num".to_string(), Box::new(ConstantExtension {})),
-        ("ignore_num".to_string(), Box::new(IgnoreExtension {})),
+        ("div".to_string(), wrap_non_branch(Box::new(DivExtension { op: Op::Div }))),
+        ("mod".to_string(), wrap_non_branch(Box::new(DivExtension { op: Op::Mod }))),
+        ("duplicate_num".to_string(), wrap_non_branch(Box::new(DuplicateExtension {}))),
+        ("constant_num".to_string(), wrap_non_branch(Box::new(ConstantExtension {}))),
+        ("ignore_num".to_string(), wrap_non_branch(Box::new(IgnoreExtension {}))),
     ]
 }
 
@@ -264,7 +264,7 @@ mod tests {
         let ty = as_type("int");
         assert_eq!(
             ArithmeticExtension { op: Op::Add }.get_signature(&vec![type_arg(ty.clone())]),
-            Ok(simple_invoke_ext_sign(
+            Ok((
                 vec![ty.clone(), ty.clone()],
                 vec![as_deferred(ty.clone())],
             ))
@@ -272,28 +272,28 @@ mod tests {
         assert_eq!(
             ArithmeticExtension { op: Op::Add }
                 .get_signature(&vec![type_arg(ty.clone()), val_arg(1)],),
-            Ok(simple_invoke_ext_sign(
+            Ok((
                 vec![ty.clone()],
                 vec![as_deferred(ty.clone())],
             ))
         );
         assert_eq!(
             DuplicateExtension {}.get_signature(&vec![type_arg(ty.clone())]),
-            Ok(simple_invoke_ext_sign(
+            Ok((
                 vec![ty.clone()],
                 vec![ty.clone(), ty.clone()],
             ))
         );
         assert_eq!(
             ConstantExtension {}.get_signature(&vec![type_arg(ty.clone()), val_arg(1)],),
-            Ok(simple_invoke_ext_sign(
+            Ok((
                 vec![],
                 vec![as_deferred(ty.clone())],
             ))
         );
         assert_eq!(
             IgnoreExtension {}.get_signature(&vec![type_arg(ty.clone())]),
-            Ok(simple_invoke_ext_sign(vec![ty.clone()], vec![]))
+            Ok((vec![ty.clone()], vec![]))
         );
     }
 
