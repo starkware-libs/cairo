@@ -16,6 +16,7 @@ pub struct Function {
     pub args: Vec<TypedVar>,
     pub res_types: Vec<Type>,
     pub entry: BlockId,
+    pub side_effects: SideEffects,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -50,6 +51,17 @@ impl fmt::Display for Type {
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct BlockId(pub usize);
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct SideEffects {
+    pub ap_change: ApChange,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum ApChange {
+    Known(usize),
+    Unknown,
+}
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum TemplateArg {

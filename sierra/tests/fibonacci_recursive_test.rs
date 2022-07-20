@@ -73,7 +73,7 @@ fn fib_program() -> sierra::graph::Program {
         store<Temp, int>(r, use_cost) -> (r);
         return(gb, r);
 
-        Fibonacci@0(gb: GasBuiltin, n: int, cost: Gas<8>) -> (GasBuiltin, int);"#,
+        Fibonacci@0[ap += unknown](gb: GasBuiltin, n: int, cost: Gas<8>) -> (GasBuiltin, int);"#,
         )
         .unwrap()
 }

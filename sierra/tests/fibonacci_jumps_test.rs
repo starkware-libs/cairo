@@ -72,7 +72,7 @@ fn fib_program() -> sierra::graph::Program {
         store<Temp, int>(a, push_a) -> (a);
         return(gb, a);
 
-        Fibonacci@0(gb: GasBuiltin, n: int, cost: Gas<10>) -> (GasBuiltin, int);"#,
+        Fibonacci@0[ap += unknown](gb: GasBuiltin, n: int, cost: Gas<10>) -> (GasBuiltin, int);"#,
         )
         .unwrap()
 }
@@ -83,7 +83,7 @@ fn soundness_test() {
 }
 
 #[test]
-fn vm_test() {
+fn simulation_test() {
     let prog = fib_program();
     // 1, 1, 2, 3, 5, 8, 13, 21, 34
     assert_eq!(

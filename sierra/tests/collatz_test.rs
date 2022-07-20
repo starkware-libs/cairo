@@ -70,7 +70,7 @@ fn collatz_program() -> sierra::graph::Program {
         store<Temp, int>(counter, push_counter) -> (counter);
         return(gb, counter);
 
-        Collatz@0(gb: GasBuiltin, n: int, cost: Gas<9>) -> (GasBuiltin, int);"#,
+        Collatz@0[ap += unknown](gb: GasBuiltin, n: int, cost: Gas<9>) -> (GasBuiltin, int);"#,
         )
         .unwrap()
 }
@@ -81,7 +81,7 @@ fn soundness_test() {
 }
 
 #[test]
-fn vm_test() {
+fn simulation_test() {
     let prog = collatz_program();
     assert_eq!(
         sierra::simulation::run(&prog, "Collatz", vec![100, 5]), // 5 -> 16 -> 8 -> 4 -> 2 -> 1
