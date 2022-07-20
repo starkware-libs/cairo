@@ -15,13 +15,13 @@ Block: Block = {
 }
 
 Function: Function = {
-    <name:Label> "@" <entry:BlockId> "[" <side_effects:SideEffects> "]" "(" <args: TypedVars> ")" "->" "(" <res_types: Types> ")" ";" =>
+    <name:Label> "@" <entry:BlockId> "[" <side_effects:FunctionSideEffects> "]" "(" <args: TypedVars> ")" "->" "(" <res_types: Types> ")" ";" =>
         Function{name: name, args: args, res_types: res_types, entry: entry, side_effects: side_effects},
 }
 
-SideEffects: SideEffects = {
-    "ap" "+=" "unknown" => SideEffects { ap_change: ApChange::Unknown },
-    "ap" "+=" <v:UnsignedInt> => SideEffects { ap_change: ApChange::Known(v as usize) },
+FunctionSideEffects: FunctionSideEffects = {
+    "ap" "+=" "unknown" => FunctionSideEffects { ap_change: ApChange::Unknown },
+    "ap" "+=" <v:UnsignedInt> => FunctionSideEffects { ap_change: ApChange::Known(v as usize) },
 }
 
 Invocation: Invocation = {

@@ -5,6 +5,7 @@ use crate::{
     extensions::*,
     graph::*,
     ref_value::{mem_reducer, MemLocation, RefValue},
+    side_effects::SideEffects,
 };
 use std::collections::HashMap;
 use Result::*;
@@ -49,6 +50,7 @@ pub fn validate(prog: &Program) -> Result<(), Error> {
                     temp_invalidated: false,
                 },
                 res_types: &f.res_types,
+                effects: None,
             },
             &mut block_start_states,
         )?;
@@ -63,6 +65,7 @@ struct BlockInfo<'a> {
     start_vars: VarStates,
     start_ctxt: Context,
     res_types: &'a Vec<Type>,
+    effects: Option<SideEffects>,
 }
 
 struct Helper<'a> {
@@ -75,14 +78,19 @@ impl Helper<'_> {
         self: &Self,
         block_id: BlockId,
         block_info: BlockInfo<'a>,
-    ) -> Result<Vec<(BlockId, BlockInfo<'a>)>, Error> {
+    ) -> Result<Vec<(Option<BlockId>, BlockInfo<'a>, SideEffects)>, Error> {
         let BlockInfo {
             start_vars,
             start_ctxt,
             res_types,
+            effects: _,
         } = block_info;
         let mut vars = start_vars;
         let mut ctxt = start_ctxt;
+        let mut side_effects = SideEffects {
+            ap_change: ApChange::Known(0),
+            local_writes: 0,
+        };
         let block = &self.prog.blocks[block_id.0];
         for invc in &block.invocations {
             let (nvars, args_info) =
@@ -93,7 +101,7 @@ impl Helper<'_> {
                     &invc.ext,
                     PartialStateInfo {
                         vars: args_info,
-                        context: ctxt,
+                        context: ctxt.clone(),
                     },
                 )
                 .map_err(|e| Error::Extension(e, invc.to_string()))?;
@@ -113,6 +121,7 @@ impl Helper<'_> {
             if results_info.len() != invc.results.len() {
                 return Err(Error::ExtensionResultSizeMismatch(invc.to_string()));
             }
+            side_effects = side_effects.add(&SideEffects::new(&ctxt, &nctxt));
             ctxt = handle_temp_invalidation(&nvars, nctxt)?;
             vars = put_results(nvars, izip!(invc.results.iter(), results_info.into_iter()))
                 .map_err(|e| Error::EditState(block_id, e))?;
@@ -158,7 +167,16 @@ impl Helper<'_> {
                     _ => {}
                 }
                 if vars.is_empty() {
-                    Ok(vec![])
+                    Ok(vec![(
+                        None,
+                        BlockInfo {
+                            start_vars: vars,
+                            start_ctxt: ctxt,
+                            res_types: res_types,
+                            effects: None,
+                        },
+                        side_effects,
+                    )])
                 } else {
                     Err(Error::FunctionRemainingOwnedObjects(
                         vars.into_keys().collect(),
@@ -174,7 +192,7 @@ impl Helper<'_> {
                         &j.ext,
                         PartialStateInfo {
                             vars: args_info,
-                            context: ctxt,
+                            context: ctxt.clone(),
                         },
                     )
                     .map_err(|e| Error::Extension(e, j.to_string()))?;
@@ -192,27 +210,30 @@ impl Helper<'_> {
                     branch,
                     PartialStateInfo {
                         vars: results_info,
-                        context: ctxt,
+                        context: nctxt,
                     },
                 ) in izip!(j.branches.iter(), states.into_iter())
                 {
                     if results_info.len() != branch.exports.len() {
                         return Err(Error::ExtensionResultSizeMismatch(j.to_string()));
                     }
+                    let mut side_effects = side_effects.clone();
+                    side_effects = side_effects.add(&SideEffects::new(&ctxt, &nctxt));
                     next_states.push((
-                        match branch.target {
+                        Some(match branch.target {
                             BranchTarget::Fallthrough => BlockId(block_id.0 + 1),
                             BranchTarget::Block(b) => b,
-                        },
+                        }),
                         as_block_info(
                             put_results(
                                 vars.clone(),
                                 izip!(branch.exports.iter(), results_info.into_iter(),),
                             )
                             .map_err(|e| Error::EditState(block_id, e))?,
-                            handle_temp_invalidation(&vars, ctxt)?,
+                            handle_temp_invalidation(&vars, nctxt)?,
                             res_types,
                         ),
+                        side_effects,
                     ))
                 }
                 Ok(next_states)
@@ -233,9 +254,34 @@ impl Helper<'_> {
             return Ok(());
         }
         results[block.0] = Some(info.clone());
-        for (next_block, next_block_info) in self.following_blocks_info(block, info)? {
-            self.calc_block_infos(next_block, next_block_info, results)?;
+        let mut combined_effects: Option<SideEffects> = None;
+        for (next_block, next_block_info, effects) in self.following_blocks_info(block, info)? {
+            let effects = effects.add(match next_block {
+                None => &SideEffects {
+                    ap_change: ApChange::Known(0),
+                    local_writes: 0,
+                },
+                Some(next_block) => {
+                    self.calc_block_infos(next_block, next_block_info, results)?;
+                    // This was just calculated.
+                    match &results[next_block.0].as_ref().unwrap().effects {
+                        // If missing - we have reached a cycle.
+                        None => &SideEffects {
+                            ap_change: ApChange::Unknown,
+                            local_writes: 0,
+                        },
+                        Some(next_block_effects) => next_block_effects,
+                    }
+                }
+            });
+            combined_effects = Some(match combined_effects {
+                None => effects,
+                Some(combined) => combined.converge(&effects),
+            });
         }
+        results[block.0].as_mut().map(|info| {
+            info.effects = combined_effects;
+        });
         Ok(())
     }
 
@@ -244,19 +290,44 @@ impl Helper<'_> {
             let block_info = block_info
                 .as_ref()
                 .ok_or_else(|| Error::UnusedBlock(b.clone()))?;
-            for (next_block, next_block_info) in
+            for (next_block, next_block_info, _effects) in
                 self.following_blocks_info(b, block_info.clone())?
             {
-                if next_block.0 >= block_infos.len() {
-                    return Err(Error::FunctionBlockOutOfBounds);
+                if let Some(next_block) = next_block {
+                    if next_block.0 >= block_infos.len() {
+                        return Err(Error::FunctionBlockOutOfBounds);
+                    }
+                    validate_eq(
+                        next_block,
+                        &next_block_info,
+                        block_infos[next_block.0]
+                            .as_ref()
+                            .ok_or_else(|| Error::UnusedBlock(b.clone()))?,
+                    )?;
                 }
-                validate_eq(
-                    next_block,
-                    &next_block_info,
-                    block_infos[next_block.0]
+            }
+        }
+        for f in &self.prog.funcs {
+            if let ApChange::Known(expected_ap_change) = &f.side_effects.ap_change {
+                // Adding the extra ap change per function call.
+                let func_side_effects = SideEffects {
+                    ap_change: ApChange::Known(2),
+                    local_writes: 0,
+                }
+                .add(
+                    block_infos[f.entry.0]
                         .as_ref()
-                        .ok_or_else(|| Error::UnusedBlock(b.clone()))?,
-                )?;
+                        .unwrap()
+                        .effects
+                        .as_ref()
+                        .unwrap(),
+                );
+                if ApChange::Known(*expected_ap_change) != func_side_effects.ap_change {
+                    return Err(Error::FunctionReturnApChangeMismatch(
+                        f.name.clone(),
+                        func_side_effects.ap_change,
+                    ));
+                }
             }
         }
         Ok(())
@@ -264,8 +335,18 @@ impl Helper<'_> {
 }
 
 fn validate_eq(block: BlockId, info: &BlockInfo, expected: &BlockInfo) -> Result<(), Error> {
-    if info.res_types != expected.res_types {
-        unreachable!()
+    if info.start_ctxt != expected.start_ctxt {
+        Err(Error::FunctionBlockContextMismatch(
+            block,
+            info.start_ctxt.clone(),
+            expected.start_ctxt.clone(),
+        ))
+    } else if info.res_types != expected.res_types {
+        Err(Error::FunctionBlockReturnTypesMismatch(
+            block,
+            info.res_types.clone(),
+            expected.res_types.clone(),
+        ))
     } else if info.start_vars.len() != expected.start_vars.len() {
         Err(Error::FunctionBlockIdentifiersMismatch(
             block,
@@ -352,6 +433,7 @@ fn as_block_info<'a>(
         start_vars: vars,
         start_ctxt: ctxt,
         res_types: res_types,
+        effects: None,
     }
 }
 
@@ -389,6 +471,46 @@ mod function {
 
                 Other@0[ap += 5](a: int, b: int, c: int, d: int, cost: Gas<3>) -> (int);"#).unwrap()),
             Ok(())
+        );
+    }
+
+    #[test]
+    fn basic_return_unknown_change() {
+        let pp = ProgramParser::new();
+        assert_eq!(
+            validate(&pp.parse(r#"
+                split_gas<1, 2>(cost) -> (cost_for_next, cost);
+                add<int>(a, b) -> (a_plus_b_deferred);
+                store<Temp, int>(a_plus_b_deferred, cost_for_next) -> (a_plus_b);
+                split_gas<1, 1>(cost) -> (cost_for_next, cost_for_last);
+                sub<int>(c, d) -> (c_minus_d_deferred);
+                store<Temp, int>(c_minus_d_deferred, cost_for_next) -> (c_minus_d);
+                mul<int>(a_plus_b, c_minus_d) -> (a_plus_b_mul_c_minus_d_deferred);
+                store<Temp, int>(a_plus_b_mul_c_minus_d_deferred, cost_for_last) -> (a_plus_b_mul_c_minus_d);
+                return(a_plus_b_mul_c_minus_d);
+
+                Other@0[ap += unknown](a: int, b: int, c: int, d: int, cost: Gas<3>) -> (int);"#).unwrap()),
+            Ok(())
+        );
+    }
+
+    #[test]
+    fn basic_return_wrong_ap_change() {
+        let pp = ProgramParser::new();
+        assert_eq!(
+            validate(&pp.parse(r#"
+                split_gas<1, 2>(cost) -> (cost_for_next, cost);
+                add<int>(a, b) -> (a_plus_b_deferred);
+                store<Temp, int>(a_plus_b_deferred, cost_for_next) -> (a_plus_b);
+                split_gas<1, 1>(cost) -> (cost_for_next, cost_for_last);
+                sub<int>(c, d) -> (c_minus_d_deferred);
+                store<Temp, int>(c_minus_d_deferred, cost_for_next) -> (c_minus_d);
+                mul<int>(a_plus_b, c_minus_d) -> (a_plus_b_mul_c_minus_d_deferred);
+                store<Temp, int>(a_plus_b_mul_c_minus_d_deferred, cost_for_last) -> (a_plus_b_mul_c_minus_d);
+                return(a_plus_b_mul_c_minus_d);
+
+                Other@0[ap += 4](a: int, b: int, c: int, d: int, cost: Gas<3>) -> (int);"#).unwrap()),
+            Err(Error::FunctionReturnApChangeMismatch("Other".to_string(), ApChange::Known(5)))
         );
     }
 
