@@ -1,5 +1,5 @@
 use crate::{
-    context::Context,
+    context::{Context, Resource, ResourceMap},
     edit_state::{put_results, take_args},
     error::Error,
     extensions::*,
@@ -48,6 +48,7 @@ pub fn validate(prog: &Program) -> Result<(), Error> {
                     temp_used: false,
                     temp_cursur: 0,
                     temp_invalidated: false,
+                    resources: ResourceMap::from([(Resource::Gas, f.side_effects.gas_change)]),
                 },
                 res_types: &f.res_types,
                 effects: None,
@@ -90,6 +91,7 @@ impl Helper<'_> {
         let mut side_effects = SideEffects {
             ap_change: ApChange::Known(0),
             local_writes: 0,
+            resources: ResourceMap::new(),
         };
         let block = &self.prog.blocks[block_id.0];
         for invc in &block.invocations {
@@ -122,7 +124,7 @@ impl Helper<'_> {
                 return Err(Error::ExtensionResultSizeMismatch(invc.to_string()));
             }
             side_effects = side_effects.add(&SideEffects::new(&ctxt, &nctxt));
-            ctxt = handle_temp_invalidation(&nvars, nctxt)?;
+            ctxt = normalize_context(&nvars, nctxt)?;
             vars = put_results(nvars, izip!(invc.results.iter(), results_info.into_iter()))
                 .map_err(|e| Error::EditState(block_id, e))?;
         }
@@ -230,7 +232,7 @@ impl Helper<'_> {
                                 izip!(branch.exports.iter(), results_info.into_iter(),),
                             )
                             .map_err(|e| Error::EditState(block_id, e))?,
-                            handle_temp_invalidation(&vars, nctxt)?,
+                            normalize_context(&vars, nctxt)?,
                             res_types,
                         ),
                         side_effects,
@@ -256,21 +258,23 @@ impl Helper<'_> {
         results[block.0] = Some(info.clone());
         let mut combined_effects: Option<SideEffects> = None;
         for (next_block, next_block_info, effects) in self.following_blocks_info(block, info)? {
-            let effects = effects.add(match next_block {
-                None => &SideEffects {
+            let effects = effects.add(&match next_block {
+                None => SideEffects {
                     ap_change: ApChange::Known(0),
                     local_writes: 0,
+                    resources: ResourceMap::new(),
                 },
                 Some(next_block) => {
                     self.calc_block_infos(next_block, next_block_info, results)?;
                     // This was just calculated.
                     match &results[next_block.0].as_ref().unwrap().effects {
                         // If missing - we have reached a cycle.
-                        None => &SideEffects {
+                        None => SideEffects {
                             ap_change: ApChange::Unknown,
                             local_writes: 0,
+                            resources: ResourceMap::new(),
                         },
-                        Some(next_block_effects) => next_block_effects,
+                        Some(next_block_effects) => next_block_effects.clone(),
                     }
                 }
             });
@@ -308,26 +312,33 @@ impl Helper<'_> {
             }
         }
         for f in &self.prog.funcs {
+            // Adding the extra ap change per function call.
+            let func_side_effects = SideEffects {
+                ap_change: ApChange::Known(2),
+                local_writes: 0,
+                resources: ResourceMap::from([(Resource::Gas, -2)]),
+            }.add(
+                block_infos[f.entry.0]
+                    .as_ref()
+                    .unwrap()
+                    .effects
+                    .as_ref()
+                    .unwrap(),
+            );
             if let ApChange::Known(expected_ap_change) = &f.side_effects.ap_change {
-                // Adding the extra ap change per function call.
-                let func_side_effects = SideEffects {
-                    ap_change: ApChange::Known(2),
-                    local_writes: 0,
-                }
-                .add(
-                    block_infos[f.entry.0]
-                        .as_ref()
-                        .unwrap()
-                        .effects
-                        .as_ref()
-                        .unwrap(),
-                );
                 if ApChange::Known(*expected_ap_change) != func_side_effects.ap_change {
                     return Err(Error::FunctionReturnApChangeMismatch(
                         f.name.clone(),
                         func_side_effects.ap_change,
                     ));
                 }
+            }
+            let gas_usage = -func_side_effects.resources.get(&Resource::Gas).unwrap_or(&0);
+            if f.side_effects.gas_change != gas_usage {
+                return Err(Error::FunctionReturnGasUsageMismatch(
+                    f.name.clone(),
+                    gas_usage,
+                ));
             }
         }
         Ok(())
@@ -386,7 +397,7 @@ fn validate_eq(block: BlockId, info: &BlockInfo, expected: &BlockInfo) -> Result
     }
 }
 
-fn handle_temp_invalidation(vars: &VarStates, mut ctxt: Context) -> Result<Context, Error> {
+fn normalize_context(vars: &VarStates, mut ctxt: Context) -> Result<Context, Error> {
     if ctxt.temp_invalidated {
         ctxt.temp_invalidated = false;
         ctxt.temp_used = true;
@@ -440,14 +451,14 @@ fn as_block_info<'a>(
 #[cfg(test)]
 mod function {
     use super::*;
-    use crate::{utils::gas_type, ProgramParser};
+    use crate::ProgramParser;
 
     #[test]
     fn empty() {
         let pp = ProgramParser::new();
         assert_eq!(
             validate(
-                &pp.parse("Some@0[ap += unknown](gb: GasBuiltin, a: felt) -> (GasBuiltin, felt);")
+                &pp.parse("Some@0[ap += unknown, gas -= 2](gb: GasBuiltin, a: felt) -> (GasBuiltin, felt);")
                     .unwrap()
             ),
             Err(Error::FunctionBlockOutOfBounds)
@@ -458,19 +469,45 @@ mod function {
     fn basic_return() {
         let pp = ProgramParser::new();
         assert_eq!(
-            validate(&pp.parse(r#"
-                split_gas<1, 2>(cost) -> (cost_for_next, cost);
-                add<int>(a, b) -> (a_plus_b_deferred);
-                store<Temp, int>(a_plus_b_deferred, cost_for_next) -> (a_plus_b);
-                split_gas<1, 1>(cost) -> (cost_for_next, cost_for_last);
-                sub<int>(c, d) -> (c_minus_d_deferred);
-                store<Temp, int>(c_minus_d_deferred, cost_for_next) -> (c_minus_d);
-                mul<int>(a_plus_b, c_minus_d) -> (a_plus_b_mul_c_minus_d_deferred);
-                store<Temp, int>(a_plus_b_mul_c_minus_d_deferred, cost_for_last) -> (a_plus_b_mul_c_minus_d);
+            validate(
+                &pp.parse(
+                    r#"
+                add<int>(a, b) -> (a_plus_b);
+                store<Temp, int>(a_plus_b) -> (a_plus_b);
+                sub<int>(c, d) -> (c_minus_d);
+                store<Temp, int>(c_minus_d) -> (c_minus_d);
+                mul<int>(a_plus_b, c_minus_d) -> (a_plus_b_mul_c_minus_d);
+                store<Temp, int>(a_plus_b_mul_c_minus_d) -> (a_plus_b_mul_c_minus_d);
                 return(a_plus_b_mul_c_minus_d);
 
-                Other@0[ap += 5](a: int, b: int, c: int, d: int, cost: Gas<3>) -> (int);"#).unwrap()),
+                Other@0[ap += 5, gas -= 5](a: int, b: int, c: int, d: int) -> (int);"#
+                )
+                .unwrap()
+            ),
             Ok(())
+        );
+    }
+
+    #[test]
+    fn basic_return_gas_overuse() {
+        let pp = ProgramParser::new();
+        assert_eq!(
+            validate(
+                &pp.parse(
+                    r#"
+                add<int>(a, b) -> (a_plus_b);
+                store<Temp, int>(a_plus_b) -> (a_plus_b);
+                sub<int>(c, d) -> (c_minus_d);
+                store<Temp, int>(c_minus_d) -> (c_minus_d);
+                mul<int>(a_plus_b, c_minus_d) -> (a_plus_b_mul_c_minus_d);
+                store<Temp, int>(a_plus_b_mul_c_minus_d) -> (a_plus_b_mul_c_minus_d);
+                return(a_plus_b_mul_c_minus_d);
+
+                Other@0[ap += 5, gas -= 4](a: int, b: int, c: int, d: int) -> (int);"#
+                )
+                .unwrap()
+            ),
+            Err(Error::FunctionReturnGasUsageMismatch("Other".to_string(), 5))
         );
     }
 
@@ -478,18 +515,21 @@ mod function {
     fn basic_return_unknown_change() {
         let pp = ProgramParser::new();
         assert_eq!(
-            validate(&pp.parse(r#"
-                split_gas<1, 2>(cost) -> (cost_for_next, cost);
-                add<int>(a, b) -> (a_plus_b_deferred);
-                store<Temp, int>(a_plus_b_deferred, cost_for_next) -> (a_plus_b);
-                split_gas<1, 1>(cost) -> (cost_for_next, cost_for_last);
-                sub<int>(c, d) -> (c_minus_d_deferred);
-                store<Temp, int>(c_minus_d_deferred, cost_for_next) -> (c_minus_d);
-                mul<int>(a_plus_b, c_minus_d) -> (a_plus_b_mul_c_minus_d_deferred);
-                store<Temp, int>(a_plus_b_mul_c_minus_d_deferred, cost_for_last) -> (a_plus_b_mul_c_minus_d);
+            validate(
+                &pp.parse(
+                    r#"
+                add<int>(a, b) -> (a_plus_b);
+                store<Temp, int>(a_plus_b) -> (a_plus_b);
+                sub<int>(c, d) -> (c_minus_d);
+                store<Temp, int>(c_minus_d) -> (c_minus_d);
+                mul<int>(a_plus_b, c_minus_d) -> (a_plus_b_mul_c_minus_d);
+                store<Temp, int>(a_plus_b_mul_c_minus_d) -> (a_plus_b_mul_c_minus_d);
                 return(a_plus_b_mul_c_minus_d);
 
-                Other@0[ap += unknown](a: int, b: int, c: int, d: int, cost: Gas<3>) -> (int);"#).unwrap()),
+                Other@0[ap += unknown, gas -= 5](a: int, b: int, c: int, d: int) -> (int);"#
+                )
+                .unwrap()
+            ),
             Ok(())
         );
     }
@@ -498,19 +538,25 @@ mod function {
     fn basic_return_wrong_ap_change() {
         let pp = ProgramParser::new();
         assert_eq!(
-            validate(&pp.parse(r#"
-                split_gas<1, 2>(cost) -> (cost_for_next, cost);
-                add<int>(a, b) -> (a_plus_b_deferred);
-                store<Temp, int>(a_plus_b_deferred, cost_for_next) -> (a_plus_b);
-                split_gas<1, 1>(cost) -> (cost_for_next, cost_for_last);
-                sub<int>(c, d) -> (c_minus_d_deferred);
-                store<Temp, int>(c_minus_d_deferred, cost_for_next) -> (c_minus_d);
-                mul<int>(a_plus_b, c_minus_d) -> (a_plus_b_mul_c_minus_d_deferred);
-                store<Temp, int>(a_plus_b_mul_c_minus_d_deferred, cost_for_last) -> (a_plus_b_mul_c_minus_d);
+            validate(
+                &pp.parse(
+                    r#"
+                add<int>(a, b) -> (a_plus_b);
+                store<Temp, int>(a_plus_b) -> (a_plus_b);
+                sub<int>(c, d) -> (c_minus_d);
+                store<Temp, int>(c_minus_d) -> (c_minus_d);
+                mul<int>(a_plus_b, c_minus_d) -> (a_plus_b_mul_c_minus_d);
+                store<Temp, int>(a_plus_b_mul_c_minus_d) -> (a_plus_b_mul_c_minus_d);
                 return(a_plus_b_mul_c_minus_d);
 
-                Other@0[ap += 4](a: int, b: int, c: int, d: int, cost: Gas<3>) -> (int);"#).unwrap()),
-            Err(Error::FunctionReturnApChangeMismatch("Other".to_string(), ApChange::Known(5)))
+                Other@0[ap += 4, gas -= 5](a: int, b: int, c: int, d: int) -> (int);"#
+                )
+                .unwrap()
+            ),
+            Err(Error::FunctionReturnApChangeMismatch(
+                "Other".to_string(),
+                ApChange::Known(5)
+            ))
         );
     }
 
@@ -521,15 +567,14 @@ mod function {
             validate(
                 &pp.parse(
                     r#"
-                store<Temp, GasBuiltin>(gb, store_cost) { fallthrough(gb) };
-                get_gas<1, 1>(gb, get_gas_cost) { 0(gb, get_gas_cost, store_cost) fallthrough(gb) };
+                store<Temp, GasBuiltin>(gb) { fallthrough(gb) };
+                get_gas<2>(gb) { 0(gb) fallthrough(gb) };
                 return(gb);
-                split_gas<1, 1, 1>(cost) -> (get_gas_cost, jump_cost, store_cost);
                 move<GasBuiltin>(gb) -> (gb);
-                store<Temp, GasBuiltin>(gb, store_cost) -> (gb);
-                jump(jump_cost) { 1() };
+                store<Temp, GasBuiltin>(gb) -> (gb);
+                jump() { 1() };
 
-                Other@3[ap += unknown](gb: GasBuiltin, cost: Gas<3>) -> (GasBuiltin);"#
+                Other@3[ap += unknown, gas -= 5](gb: GasBuiltin) -> (GasBuiltin);"#
                 )
                 .unwrap()
             ),
@@ -545,20 +590,18 @@ mod function {
                 &pp.parse(
                     r#"
                 return(gb);
-                store<Temp, GasBuiltin>(gb, store_cost) { fallthrough(gb) };
-                get_gas<1, 1>(gb, get_gas_cost) { 1(gb, get_gas_cost, store_cost) 0(gb) };
-                split_gas<1, 1, 1>(cost) -> (get_gas_cost, jump_cost, store_cost);
+                store<Temp, GasBuiltin>(gb) { fallthrough(gb) };
+                get_gas<2>(gb) { 1(gb) 0(gb) };
                 move<GasBuiltin>(gb) -> (gb);
-                store<Temp, GasBuiltin>(gb, store_cost) -> (gb);
-                jump(jump_cost) { 2() };
+                store<Temp, GasBuiltin>(gb) -> (gb);
+                jump() { 2() };
                 
-                Some@3[ap += unknown](gb: GasBuiltin, cost: Gas<3>) -> (GasBuiltin);"#
+                Some@3[ap += unknown, gas -= 5](gb: GasBuiltin) -> (GasBuiltin);"#
                 )
                 .unwrap()
             ),
             Err(Error::ExtensionFallthroughMismatch(
-                "get_gas<1, 1>(gb, get_gas_cost) {\n1(gb, get_gas_cost, store_cost)\n0(gb)\n}"
-                    .to_string()
+                "get_gas<2>(gb) {\n1(gb)\n0(gb)\n}".to_string()
             ))
         );
     }
@@ -570,23 +613,35 @@ mod function {
             validate(
                 &pp.parse(
                     r#"
-                store<Temp, GasBuiltin>(gb, store_cost) { fallthrough(gb) };
-                get_gas<2, 1>(gb, get_gas_cost) { 0(gb, get_gas_cost, store_cost) fallthrough(gb) };
+                store<Temp, GasBuiltin>(gb) { fallthrough(gb) };
+                get_gas<3>(gb) { 0(gb) fallthrough(gb) };
                 return(gb);
-                split_gas<1, 1, 1>(cost) -> (get_gas_cost, jump_cost, store_cost);
                 move<GasBuiltin>(gb) -> (gb);
-                store<Temp, GasBuiltin>(gb, store_cost) -> (gb);
-                jump(jump_cost) { 1() };
+                store<Temp, GasBuiltin>(gb) -> (gb);
+                jump() { 1() };
 
-                Other@3[ap += unknown](gb: GasBuiltin, cost: Gas<3>) -> (GasBuiltin);"#
+                Other@3[ap += unknown, gas -= 5](gb: GasBuiltin) -> (GasBuiltin);"#
                 )
                 .unwrap()
             ),
-            Err(Error::FunctionBlockIdentifierTypeMismatch(
+            Err(Error::FunctionBlockContextMismatch(
                 BlockId(1),
-                Identifier("get_gas_cost".to_string()),
-                gas_type(1),
-                gas_type(2)
+                Context {
+                    local_cursur: 0,
+                    local_allocated: false,
+                    temp_used: true,
+                    temp_cursur: 0,
+                    temp_invalidated: false,
+                    resources: ResourceMap::from([(Resource::Gas, 4)])
+                },
+                Context {
+                    local_cursur: 0,
+                    local_allocated: false,
+                    temp_used: true,
+                    temp_cursur: 0,
+                    temp_invalidated: false,
+                    resources: ResourceMap::from([(Resource::Gas, 3)])
+                }
             ))
         );
     }

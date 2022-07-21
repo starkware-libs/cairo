@@ -46,10 +46,3 @@ pub fn as_nullable(arg: Type) -> Type {
 pub fn gas_builtin_type() -> Type {
     as_type("GasBuiltin")
 }
-
-pub fn gas_type(v: i64) -> Type {
-    Type {
-        name: "Gas".to_string(),
-        args: vec![val_arg(v)],
-    }
-}

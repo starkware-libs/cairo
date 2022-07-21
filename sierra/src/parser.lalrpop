@@ -20,8 +20,12 @@ Function: Function = {
 }
 
 FunctionSideEffects: FunctionSideEffects = {
-    "ap" "+=" "unknown" => FunctionSideEffects { ap_change: ApChange::Unknown },
-    "ap" "+=" <v:UnsignedInt> => FunctionSideEffects { ap_change: ApChange::Known(v as usize) },
+    <ap_change:ApChange> "," "gas" "-=" <gas_change:UnsignedInt> => FunctionSideEffects { ap_change: ap_change, gas_change: gas_change },
+}
+
+ApChange: ApChange = {
+    "ap" "+=" "unknown" => ApChange::Unknown,
+    "ap" "+=" <v:UnsignedInt> => ApChange::Known(v as usize),
 }
 
 Invocation: Invocation = {

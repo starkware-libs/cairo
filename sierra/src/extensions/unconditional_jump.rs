@@ -1,4 +1,4 @@
-use crate::{extensions::*, utils::gas_type};
+use crate::extensions::*;
 
 struct UnconditionalJumpExtension {}
 
@@ -9,7 +9,7 @@ impl ExtensionImplementation for UnconditionalJumpExtension {
     ) -> Result<ExtensionSignature, Error> {
         validate_size_eq(tmpl_args, 0)?;
         Ok(ExtensionSignature {
-            args: vec![gas_type(1)],
+            args: vec![],
             results: vec![vec![]],
             fallthrough: None,
         })
@@ -22,7 +22,7 @@ impl ExtensionImplementation for UnconditionalJumpExtension {
         context: Context,
         _arg_refs: Vec<RefValue>,
     ) -> Result<Vec<(Context, Vec<RefValue>)>, Error> {
-        Ok(vec![(context, vec![])])
+        Ok(vec![(update_gas(context, -1), vec![])])
     }
 
     fn exec(
@@ -31,7 +31,7 @@ impl ExtensionImplementation for UnconditionalJumpExtension {
         _registry: &TypeRegistry,
         inputs: Vec<Vec<i64>>,
     ) -> Result<(Vec<Vec<i64>>, usize), Error> {
-        validate_mem_sizes(&inputs, [0])?;
+        validate_mem_sizes(&inputs, [])?;
         Ok((vec![], 0))
     }
 }
@@ -50,7 +50,7 @@ mod tests {
         assert_eq!(
             UnconditionalJumpExtension {}.get_signature(&vec![]),
             Ok(ExtensionSignature {
-                args: vec![gas_type(1)],
+                args: vec![],
                 results: vec![vec![]],
                 fallthrough: None,
             })

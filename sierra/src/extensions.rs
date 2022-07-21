@@ -1,4 +1,8 @@
-use crate::{context::Context, graph::*, ref_value::*};
+use crate::{
+    context::{Context, Resource},
+    graph::*,
+    ref_value::*,
+};
 use std::collections::HashMap;
 use Result::*;
 
@@ -253,14 +257,6 @@ fn validate_size_eq(tmpl_args: &Vec<TemplateArg>, size: usize) -> Result<(), Err
     }
 }
 
-fn validate_size_ge(tmpl_args: &Vec<TemplateArg>, size: usize) -> Result<(), Error> {
-    if tmpl_args.len() >= size {
-        Ok(())
-    } else {
-        Err(Error::WrongNumberOfTypeArgs)
-    }
-}
-
 fn single_type_arg<'a>(tmpl_args: &'a Vec<TemplateArg>) -> Result<&'a Type, Error> {
     validate_size_eq(tmpl_args, 1)?;
     unwrap_type(&tmpl_args[0])
@@ -292,6 +288,11 @@ fn as_final(ref_val: &RefValue) -> Result<MemLocation, Error> {
         RefValue::Final(m) => Ok(*m),
         _ => Err(Error::IllegalArgsLocation),
     }
+}
+
+fn update_gas(mut ctxt: Context, change: i64) -> Context {
+    *ctxt.resources.entry(Resource::Gas).or_insert(0) += change;
+    ctxt
 }
 
 type NonBranchBox = Box<dyn NonBranchImplementation + Sync + Send>;

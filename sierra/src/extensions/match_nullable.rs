@@ -1,7 +1,4 @@
-use crate::{
-    extensions::*,
-    utils::{as_nullable, gas_type},
-};
+use crate::{extensions::*, utils::as_nullable};
 
 struct MatchNullableExtension {}
 
@@ -12,7 +9,7 @@ impl ExtensionImplementation for MatchNullableExtension {
     ) -> Result<ExtensionSignature, Error> {
         let inner_type = single_type_arg(tmpl_args)?;
         Ok(ExtensionSignature {
-            args: vec![as_nullable(inner_type.clone()), gas_type(1)],
+            args: vec![as_nullable(inner_type.clone())],
             results: vec![vec![inner_type.clone()], vec![]],
             fallthrough: Some(1),
         })
@@ -25,6 +22,7 @@ impl ExtensionImplementation for MatchNullableExtension {
         context: Context,
         arg_refs: Vec<RefValue>,
     ) -> Result<Vec<(Context, Vec<RefValue>)>, Error> {
+        let context = update_gas(context, -1);
         Ok(vec![
             (context.clone(), vec![arg_refs[0].clone()]),
             (context, vec![]),
@@ -58,7 +56,7 @@ mod tests {
         assert_eq!(
             MatchNullableExtension {}.get_signature(&vec![type_arg(as_type("int"))]),
             Ok(ExtensionSignature {
-                args: vec![as_nullable(as_type("int")), gas_type(1)],
+                args: vec![as_nullable(as_type("int"))],
                 results: vec![vec![as_type("int")], vec![]],
                 fallthrough: Some(1),
             })

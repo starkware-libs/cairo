@@ -1,12 +1,12 @@
 use crate::{
     extensions::*,
-    utils::{as_tuple, gas_type, type_arg},
+    utils::{as_tuple, type_arg},
 };
 
 struct FunctionCallExtension {
     pub args: Vec<Type>,
     pub results: Vec<Type>,
-    pub ap_change: ApChange,
+    pub side_effects: FunctionSideEffects,
 }
 
 fn types_as_tuple(tys: &Vec<Type>) -> Type {
@@ -20,7 +20,7 @@ impl NonBranchImplementation for FunctionCallExtension {
     ) -> Result<(Vec<Type>, Vec<Type>), Error> {
         validate_size_eq(tmpl_args, 0)?;
         Ok((
-            vec![types_as_tuple(&self.args), gas_type(2)],
+            vec![types_as_tuple(&self.args)],
             vec![types_as_tuple(&self.results)],
         ))
     }
@@ -42,7 +42,7 @@ impl NonBranchImplementation for FunctionCallExtension {
             }
         }
         let ti = get_info(registry, &types_as_tuple(&self.results))?;
-        match self.ap_change {
+        match self.side_effects.ap_change {
             ApChange::Unknown => {
                 context.temp_cursur = 0;
                 context.temp_invalidated = true;
@@ -51,9 +51,10 @@ impl NonBranchImplementation for FunctionCallExtension {
                 context.temp_cursur += change;
             }
         }
+
         let base = context.temp_cursur as i64;
         Ok((
-            context,
+            update_gas(context, -self.side_effects.gas_change),
             vec![RefValue::Final(MemLocation::Temp(base - ti.size as i64))],
         ))
     }
@@ -77,7 +78,7 @@ pub(super) fn extensions(prog: &Program) -> Vec<(String, ExtensionBox)> {
                 wrap_non_branch(Box::new(FunctionCallExtension {
                     args: f.args.iter().map(|v| v.ty.clone()).collect(),
                     results: f.res_types.clone(),
-                    ap_change: f.side_effects.ap_change.clone(),
+                    side_effects: f.side_effects.clone(),
                 })),
             )
         })
@@ -95,23 +96,30 @@ mod tests {
             FunctionCallExtension {
                 args: vec![],
                 results: vec![],
-                ap_change: ApChange::Unknown,
+                side_effects: FunctionSideEffects {
+                    ap_change: ApChange::Unknown,
+                    gas_change: 5,
+                }
             }
             .get_signature(&vec![]),
-            Ok((vec![as_tuple(vec![]), gas_type(2)], vec![as_tuple(vec![])],))
+            Ok((vec![as_tuple(vec![])], vec![as_tuple(vec![])],))
         );
         assert_eq!(
             FunctionCallExtension {
                 args: vec![as_type("1"), as_type("2")],
                 results: vec![as_type("3"), as_type("4")],
-                ap_change: ApChange::Unknown,
+
+                side_effects: FunctionSideEffects {
+                    ap_change: ApChange::Unknown,
+                    gas_change: 5,
+                }
             }
             .get_signature(&vec![]),
             Ok((
-                vec![
-                    as_tuple(vec![type_arg(as_type("1")), type_arg(as_type("2"))]),
-                    gas_type(2)
-                ],
+                vec![as_tuple(vec![
+                    type_arg(as_type("1")),
+                    type_arg(as_type("2"))
+                ]),],
                 vec![as_tuple(vec![
                     type_arg(as_type("3")),
                     type_arg(as_type("4"))
@@ -126,7 +134,11 @@ mod tests {
             FunctionCallExtension {
                 args: vec![],
                 results: vec![],
-                ap_change: ApChange::Unknown,
+
+                side_effects: FunctionSideEffects {
+                    ap_change: ApChange::Unknown,
+                    gas_change: 5,
+                }
             }
             .get_signature(&vec![type_arg(as_type("1"))]),
             Err(Error::WrongNumberOfTypeArgs)

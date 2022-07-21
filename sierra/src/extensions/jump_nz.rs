@@ -1,7 +1,4 @@
-use crate::{
-    extensions::*,
-    utils::{as_nonzero, gas_type},
-};
+use crate::{extensions::*, utils::as_nonzero};
 
 struct JumpNzExtension {}
 
@@ -12,7 +9,7 @@ impl ExtensionImplementation for JumpNzExtension {
     ) -> Result<ExtensionSignature, Error> {
         let numeric_type = single_type_arg(tmpl_args)?;
         Ok(ExtensionSignature {
-            args: vec![numeric_type.clone(), gas_type(1)],
+            args: vec![numeric_type.clone()],
             results: vec![vec![as_nonzero(numeric_type.clone())], vec![]],
             fallthrough: Some(1),
         })
@@ -25,6 +22,7 @@ impl ExtensionImplementation for JumpNzExtension {
         context: Context,
         arg_refs: Vec<RefValue>,
     ) -> Result<Vec<(Context, Vec<RefValue>)>, Error> {
+        let context = update_gas(context, -1);
         Ok(vec![
             (context.clone(), vec![arg_refs[0].clone()]),
             (context, vec![]),
@@ -37,7 +35,7 @@ impl ExtensionImplementation for JumpNzExtension {
         _registry: &TypeRegistry,
         mut inputs: Vec<Vec<i64>>,
     ) -> Result<(Vec<Vec<i64>>, usize), Error> {
-        validate_mem_sizes(&inputs, [1, 0])?;
+        validate_mem_sizes(&inputs, [1])?;
         if inputs[0][0] != 0 {
             Ok((vec![inputs.remove(0)], 0))
         } else {
@@ -119,7 +117,7 @@ mod tests {
         assert_eq!(
             JumpNzExtension {}.get_signature(&vec![type_arg(as_type("int"))]),
             Ok(ExtensionSignature {
-                args: vec![as_type("int"), gas_type(1)],
+                args: vec![as_type("int")],
                 results: vec![vec![as_nonzero(as_type("int"))], vec![]],
                 fallthrough: Some(1),
             })

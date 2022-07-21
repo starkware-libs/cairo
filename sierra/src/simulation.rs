@@ -30,7 +30,7 @@ impl Executer<'_> {
         func_execs: &ExecuterMap,
         inputs: Vec<Vec<i64>>,
     ) -> Result<Vec<i64>, Error> {
-        if inputs.len() != 2 {
+        if inputs.len() != 1 {
             println!("{:?}", inputs);
             return Err(Error::FunctionNonTupleInput(self.func.name.clone()));
         }
@@ -116,6 +116,6 @@ pub fn run(prog: &Program, name: &str, inputs: Vec<i64>) -> Result<Vec<i64>, Err
     }
     match func_execs.get(name) {
         None => Err(Error::MissingFunctionCall(name.to_string())),
-        Some(exec) => exec.exec(&func_execs, vec![inputs, vec![]]),
+        Some(exec) => exec.exec(&func_execs, vec![inputs]),
     }
 }

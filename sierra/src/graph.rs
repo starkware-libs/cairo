@@ -55,6 +55,7 @@ pub struct BlockId(pub usize);
 #[derive(Clone, Debug, PartialEq)]
 pub struct FunctionSideEffects {
     pub ap_change: ApChange,
+    pub gas_change: i64,
 }
 
 #[derive(Clone, Debug, PartialEq)]

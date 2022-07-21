@@ -3,55 +3,44 @@ fn fib_program() -> sierra::graph::Program {
         .parse(
             r#"
         # 0
-        split_gas<9, 1>(cost) -> (cost, jump_cost);
-        jump_nz<int>(n, jump_cost) { 2(n) fallthrough() };
+        jump_nz<int>(n) { 2(n) fallthrough() };
         # 1
-        split_gas<7, 1, 1>(cost) -> (cost, push_gb, push_one);
-        refund_gas<7>(gb, cost) -> (gb);
-        store<Temp, GasBuiltin>(gb, push_gb) -> (gb);
+        refund_gas<7>(gb) -> (gb);
+        store<Temp, GasBuiltin>(gb) -> (gb);
         constant_num<int, 1>() -> (one);
-        store<Temp, int>(one, push_one) -> (one);
+        store<Temp, int>(one) -> (one);
         return(gb, one);
         # 2
-        split_gas<7, 1, 1>(cost) -> (cost, push_n, jump_cost);
         unwrap_nz<int>(n) -> (n);
         add<int, -1>(n) -> (n);
-        store<Temp, int>(n, push_n) -> (n);
-        jump_nz<int>(n, jump_cost) { 4(n) fallthrough() };
+        store<Temp, int>(n) -> (n);
+        jump_nz<int>(n) { 4(n) fallthrough() };
         # 3
-        split_gas<5, 1, 1>(cost) -> (cost, push_gb, push_one);
-        refund_gas<5>(gb, cost) -> (gb);
-        store<Temp, GasBuiltin>(gb, push_gb) -> (gb);
+        refund_gas<5>(gb) -> (gb);
+        store<Temp, GasBuiltin>(gb) -> (gb);
         constant_num<int, 1>() -> (one);
-        store<Temp, int>(one, push_one) -> (one);
+        store<Temp, int>(one) -> (one);
         return(gb, one);
         # 4
-        split_gas<1, 1, 1, 1, 1, 2>(cost) -> (
-            push_b, push_n, push_gb, push_a, get_gas_cost, final_cost
-        );
         constant_num<int, 1>() -> (b);
-        store<Temp, int>(b, push_b) -> (b);
+        store<Temp, int>(b) -> (b);
         move<NonZero<int>>(n) -> (n);
-        store<Temp, NonZero<int>>(n, push_n) -> (n);
+        store<Temp, NonZero<int>>(n) -> (n);
         move<GasBuiltin>(gb) -> (gb);
-        store<Temp, GasBuiltin>(gb, push_gb) -> (gb);
+        store<Temp, GasBuiltin>(gb) -> (gb);
         constant_num<int, 1>() -> (a);
-        store<Temp, int>(a, push_a) { fallthrough(a) };
+        store<Temp, int>(a) { fallthrough(a) };
         # 5
-        get_gas<1, 1, 1, 1, 1>(gb, get_gas_cost) {
-            7(gb, push_n, push_gb, push_a, jump_cost, get_gas_cost)
-            fallthrough(gb)
-        };
+        get_gas<5>(gb) { 7(gb) fallthrough(gb) };
         # 6
         ignore_num<int>(a) -> ();
         ignore_num<int>(b) -> ();
         unwrap_nz<int>(n) -> (n);
         ignore_num<int>(n) -> ();
-        split_gas<1, 1>(final_cost) -> (push_gb, push_err);
         move<GasBuiltin>(gb) -> (gb);
-        store<Temp, GasBuiltin>(gb, push_gb) -> (gb);
+        store<Temp, GasBuiltin>(gb) -> (gb);
         constant_num<int, -1>() -> (err);
-        store<Temp, int>(err, push_err) -> (err);
+        store<Temp, int>(err) -> (err);
         return(gb, err);
         # 7
         duplicate_num<int>(a) -> (a, prev_a);
@@ -59,20 +48,19 @@ fn fib_program() -> sierra::graph::Program {
         rename<int>(prev_a) -> (b);
         unwrap_nz<int>(n) -> (n);
         add<int, -1>(n) -> (n);
-        store<Temp, int>(n, push_n) -> (n);
-        store<Temp, GasBuiltin>(gb, push_gb) -> (gb);
-        store<Temp, int>(a, push_a) -> (a);
-        jump_nz<int>(n, jump_cost) { 5(n) fallthrough() };
+        store<Temp, int>(n) -> (n);
+        store<Temp, GasBuiltin>(gb) -> (gb);
+        store<Temp, int>(a) -> (a);
+        jump_nz<int>(n) { 5(n) fallthrough() };
         # 8
         ignore_num<int>(b) -> ();
-        refund_gas<1>(gb, get_gas_cost) -> (gb);
-        split_gas<1, 1>(final_cost) -> (push_gb, push_a);
-        store<Temp, GasBuiltin>(gb, push_gb) -> (gb);
+        refund_gas<1>(gb) -> (gb);
+        store<Temp, GasBuiltin>(gb) -> (gb);
         move<int>(a) -> (a);
-        store<Temp, int>(a, push_a) -> (a);
+        store<Temp, int>(a) -> (a);
         return(gb, a);
 
-        Fibonacci@0[ap += unknown](gb: GasBuiltin, n: int, cost: Gas<10>) -> (GasBuiltin, int);"#,
+        Fibonacci@0[ap += unknown, gas -= 12](gb: GasBuiltin, n: int) -> (GasBuiltin, int);"#,
         )
         .unwrap()
 }

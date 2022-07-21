@@ -1,7 +1,4 @@
-use crate::{
-    extensions::*,
-    utils::{as_deferred, gas_type},
-};
+use crate::{extensions::*, utils::as_deferred};
 
 enum StoreType {
     Temp,
@@ -31,7 +28,7 @@ impl NonBranchImplementation for StoreExtension {
         tmpl_args: &Vec<TemplateArg>,
     ) -> Result<(Vec<Type>, Vec<Type>), Error> {
         let (_, ty) = unpack_args(tmpl_args)?;
-        Ok((vec![as_deferred(ty.clone()), gas_type(1)], vec![ty.clone()]))
+        Ok((vec![as_deferred(ty.clone())], vec![ty.clone()]))
     }
 
     fn mem_change(
@@ -41,6 +38,7 @@ impl NonBranchImplementation for StoreExtension {
         mut context: Context,
         _arg_refs: Vec<RefValue>,
     ) -> Result<(Context, Vec<RefValue>), Error> {
+        context = update_gas(context, -1);
         let (store_ty, ty) = unpack_args(tmpl_args)?;
         let ti = get_info(registry, ty)?;
         let loc = match store_ty {
@@ -69,7 +67,7 @@ impl NonBranchImplementation for StoreExtension {
         _registry: &TypeRegistry,
         inputs: Vec<Vec<i64>>,
     ) -> Result<Vec<Vec<i64>>, Error> {
-        validate_mem_sizes(&inputs, [1, 0])?;
+        validate_mem_sizes(&inputs, [1])?;
         Ok(inputs)
     }
 }
@@ -148,7 +146,7 @@ impl NonBranchImplementation for AllocLocalsExtension {
         tmpl_args: &Vec<TemplateArg>,
     ) -> Result<(Vec<Type>, Vec<Type>), Error> {
         validate_size_eq(tmpl_args, 0)?;
-        Ok((vec![gas_type(1)], vec![]))
+        Ok((vec![], vec![]))
     }
 
     fn mem_change(
@@ -158,6 +156,7 @@ impl NonBranchImplementation for AllocLocalsExtension {
         mut context: Context,
         _arg_refs: Vec<RefValue>,
     ) -> Result<(Context, Vec<RefValue>), Error> {
+        context = update_gas(context, -1);
         if context.local_allocated {
             Err(Error::LocalMemoryAlreadyAllocated)
         } else if context.temp_used {
@@ -175,7 +174,7 @@ impl NonBranchImplementation for AllocLocalsExtension {
         _registry: &TypeRegistry,
         inputs: Vec<Vec<i64>>,
     ) -> Result<Vec<Vec<i64>>, Error> {
-        validate_mem_sizes(&inputs, [0])?;
+        validate_mem_sizes(&inputs, [])?;
         Ok(vec![])
     }
 }
@@ -197,7 +196,7 @@ impl NonBranchImplementation for AlignTempsExtension {
         tmpl_args: &Vec<TemplateArg>,
     ) -> Result<(Vec<Type>, Vec<Type>), Error> {
         positive_value_arg(tmpl_args)?;
-        Ok((vec![gas_type(1)], vec![]))
+        Ok((vec![], vec![]))
     }
 
     fn mem_change(
@@ -207,6 +206,7 @@ impl NonBranchImplementation for AlignTempsExtension {
         mut context: Context,
         _arg_refs: Vec<RefValue>,
     ) -> Result<(Context, Vec<RefValue>), Error> {
+        context = update_gas(context, -1);
         context.temp_cursur += positive_value_arg(tmpl_args)?;
         context.temp_used = true;
         Ok((context, vec![]))
@@ -218,7 +218,7 @@ impl NonBranchImplementation for AlignTempsExtension {
         _registry: &TypeRegistry,
         inputs: Vec<Vec<i64>>,
     ) -> Result<Vec<Vec<i64>>, Error> {
-        validate_mem_sizes(&inputs, [0])?;
+        validate_mem_sizes(&inputs, [])?;
         Ok(vec![])
     }
 }
@@ -259,12 +259,12 @@ mod tests {
         let ty = as_type("int");
         assert_eq!(
             StoreExtension {}.get_signature(&vec![type_arg(as_type("Temp")), type_arg(ty.clone())]),
-            Ok((vec![as_deferred(ty.clone()), gas_type(1)], vec![ty.clone()],))
+            Ok((vec![as_deferred(ty.clone())], vec![ty.clone()],))
         );
         assert_eq!(
             StoreExtension {}
                 .get_signature(&vec![type_arg(as_type("Local")), type_arg(ty.clone())]),
-            Ok((vec![as_deferred(ty.clone()), gas_type(1)], vec![ty],))
+            Ok((vec![as_deferred(ty.clone())], vec![ty],))
         );
     }
 

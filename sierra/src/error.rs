@@ -19,6 +19,7 @@ pub enum Error {
     FunctionRemainingOwnedObjects(Vec<Identifier>),
     FunctionReturnTypeMismatch(BlockId, Identifier),
     FunctionReturnApChangeMismatch(String, ApChange),
+    FunctionReturnGasUsageMismatch(String, i64),
     FunctionReturnLocationMismatch(BlockId, Identifier),
     FunctionReturnLocationNotEndOfTemp(BlockId, i64, usize),
     FunctionBlockIdentifiersMismatch(BlockId, Vec<Identifier>, Vec<Identifier>),
