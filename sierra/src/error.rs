@@ -17,6 +17,7 @@ pub enum Error {
     FunctionBlockContextMismatch(BlockId, Context, Context),
     FunctionBlockReturnTypesMismatch(BlockId, Vec<Type>, Vec<Type>),
     FunctionRemainingOwnedObjects(Vec<Identifier>),
+    FunctionRanOutOfResources(Vec<(Identifier, i64)>),
     FunctionReturnTypeMismatch(BlockId, Identifier),
     FunctionReturnApChangeMismatch(String, Option<usize>),
     FunctionReturnResourceUsageMismatch(String, Identifier, i64),

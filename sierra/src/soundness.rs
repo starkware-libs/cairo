@@ -11,7 +11,8 @@ use std::collections::HashMap;
 use Result::*;
 
 pub fn validate(prog: &Program) -> Result<(), Error> {
-    let mut block_start_states = vec![None; prog.blocks.len()];
+    let mut block_start_infos = vec![None; prog.blocks.len()];
+    let mut block_forward_infos = vec![None; prog.blocks.len()];
     let h = Helper {
         prog: prog,
         reg: Registry::new(prog),
@@ -40,9 +41,9 @@ pub fn validate(prog: &Program) -> Result<(), Error> {
         })?;
         h.calc_block_infos(
             f.entry,
-            BlockInfo {
-                start_vars: vars,
-                start_ctxt: Context {
+            BlockStartInfo {
+                vars: vars,
+                ctxt: Context {
                     local_cursur: 0,
                     local_allocated: false,
                     temp_used: false,
@@ -55,23 +56,27 @@ pub fn validate(prog: &Program) -> Result<(), Error> {
                             .map(|(id, usage)| (id.clone(), *usage as i64)),
                     ),
                 },
-                res_types: &f.res_types,
-                effects: None,
             },
-            &mut block_start_states,
+            &f.res_types,
+            &mut block_start_infos,
+            &mut block_forward_infos,
         )?;
     }
-    h.validate(block_start_states)
+    h.validate(block_start_infos, block_forward_infos)
 }
 
 type VarStates = HashMap<Identifier, VarInfo>;
 
 #[derive(Debug, Clone)]
-struct BlockInfo<'a> {
-    start_vars: VarStates,
-    start_ctxt: Context,
+struct BlockStartInfo {
+    vars: VarStates,
+    ctxt: Context,
+}
+
+#[derive(Debug, Clone)]
+struct BlockForwardInfo<'a> {
     res_types: &'a Vec<Type>,
-    effects: Option<SideEffects>,
+    effects: SideEffects,
 }
 
 struct Helper<'a> {
@@ -80,19 +85,13 @@ struct Helper<'a> {
 }
 
 impl Helper<'_> {
-    fn following_blocks_info<'a>(
+    fn following_blocks_info(
         self: &Self,
         block_id: BlockId,
-        block_info: BlockInfo<'a>,
-    ) -> Result<Vec<(Option<BlockId>, BlockInfo<'a>, SideEffects)>, Error> {
-        let BlockInfo {
-            start_vars,
-            start_ctxt,
-            res_types,
-            effects: _,
-        } = block_info;
-        let mut vars = start_vars;
-        let mut ctxt = start_ctxt;
+        start_info: BlockStartInfo,
+        res_types: &Vec<Type>,
+    ) -> Result<Vec<(Option<BlockId>, BlockStartInfo, SideEffects)>, Error> {
+        let BlockStartInfo { mut vars, mut ctxt } = start_info;
         let mut side_effects = SideEffects {
             ap_change: Some(0),
             local_writes: 0,
@@ -173,21 +172,14 @@ impl Helper<'_> {
                     }
                     _ => {}
                 }
-                if vars.is_empty() {
-                    Ok(vec![(
-                        None,
-                        BlockInfo {
-                            start_vars: vars,
-                            start_ctxt: ctxt,
-                            res_types: res_types,
-                            effects: None,
-                        },
-                        side_effects,
-                    )])
-                } else {
+                if !vars.is_empty() {
                     Err(Error::FunctionRemainingOwnedObjects(
                         vars.into_keys().collect(),
                     ))
+                }else if ctxt.resources.values().any(|v|*v < 0){
+                    Err(Error::FunctionRanOutOfResources(ctxt.resources.clone().into_iter().collect()))
+                } else {
+                    Ok(vec![(None, BlockStartInfo { vars, ctxt }, side_effects)])
                 }
             }
             BlockExit::Jump(j) => {
@@ -231,14 +223,13 @@ impl Helper<'_> {
                             BranchTarget::Fallthrough => BlockId(block_id.0 + 1),
                             BranchTarget::Block(b) => b,
                         }),
-                        as_block_info(
+                        as_block_start_info(
                             put_results(
                                 vars.clone(),
                                 izip!(branch.exports.iter(), results_info.into_iter(),),
                             )
                             .map_err(|e| Error::EditState(block_id, e))?,
                             normalize_context(&vars, nctxt)?,
-                            res_types,
                         ),
                         side_effects,
                     ))
@@ -251,18 +242,22 @@ impl Helper<'_> {
     fn calc_block_infos<'a>(
         self: &Self,
         block: BlockId,
-        info: BlockInfo<'a>,
-        results: &mut Vec<Option<BlockInfo<'a>>>,
+        start_info: BlockStartInfo,
+        res_types: &'a Vec<Type>,
+        bsis: &mut Vec<Option<BlockStartInfo>>,
+        bfis: &mut Vec<Option<BlockForwardInfo<'a>>>,
     ) -> Result<(), Error> {
-        if block.0 >= results.len() {
+        if block.0 >= bsis.len() {
             return Err(Error::FunctionBlockOutOfBounds);
         }
-        if results[block.0].is_some() {
+        if bsis[block.0].is_some() {
             return Ok(());
         }
-        results[block.0] = Some(info.clone());
+        bsis[block.0] = Some(start_info.clone());
         let mut combined_effects: Option<SideEffects> = None;
-        for (next_block, next_block_info, effects) in self.following_blocks_info(block, info)? {
+        for (next_block, next_start_info, effects) in
+            self.following_blocks_info(block, start_info, res_types)?
+        {
             let effects = effects.add(&match next_block {
                 None => SideEffects {
                     ap_change: Some(0),
@@ -270,16 +265,15 @@ impl Helper<'_> {
                     resource_usages: ResourceMap::new(),
                 },
                 Some(next_block) => {
-                    self.calc_block_infos(next_block, next_block_info, results)?;
-                    // This was just calculated.
-                    match &results[next_block.0].as_ref().unwrap().effects {
-                        // If missing - we have reached a cycle.
+                    self.calc_block_infos(next_block, next_start_info, res_types, bsis, bfis)?;
+                    match &bfis[next_block.0] {
+                        // cycle detected - ap change unknown!
                         None => SideEffects {
                             ap_change: None,
                             local_writes: 0,
                             resource_usages: ResourceMap::new(),
                         },
-                        Some(next_block_effects) => next_block_effects.clone(),
+                        Some(next_forward_info) => next_forward_info.effects.clone(),
                     }
                 }
             });
@@ -288,49 +282,63 @@ impl Helper<'_> {
                 Some(combined) => combined.converge(&effects),
             });
         }
-        results[block.0].as_mut().map(|info| {
-            info.effects = combined_effects;
+        bfis[block.0] = Some(BlockForwardInfo {
+            res_types: res_types,
+            effects: combined_effects.unwrap(),
         });
         Ok(())
     }
 
-    fn validate<'a>(self: &Self, block_infos: Vec<Option<BlockInfo<'a>>>) -> Result<(), Error> {
-        for (b, block_info) in izip!((0..).map(|b| BlockId(b)), &block_infos) {
-            let block_info = block_info
-                .as_ref()
-                .ok_or_else(|| Error::UnusedBlock(b.clone()))?;
-            for (next_block, next_block_info, _effects) in
-                self.following_blocks_info(b, block_info.clone())?
+    fn validate<'a>(
+        self: &Self,
+        bsis: Vec<Option<BlockStartInfo>>,
+        bfis: Vec<Option<BlockForwardInfo<'a>>>,
+    ) -> Result<(), Error> {
+        for (b, si, fi) in izip!((0..).map(|b| BlockId(b)), &bsis, &bfis) {
+            let si = si.as_ref().ok_or_else(|| Error::UnusedBlock(b.clone()))?;
+            let fi = fi.as_ref().ok_or_else(|| Error::UnusedBlock(b.clone()))?;
+            for (next_block, next_si, _effects) in
+                self.following_blocks_info(b, si.clone(), fi.res_types)?
             {
                 if let Some(next_block) = next_block {
-                    if next_block.0 >= block_infos.len() {
+                    if next_block.0 >= bsis.len() {
                         return Err(Error::FunctionBlockOutOfBounds);
                     }
-                    validate_eq(
-                        next_block,
-                        &next_block_info,
-                        block_infos[next_block.0]
-                            .as_ref()
-                            .ok_or_else(|| Error::UnusedBlock(b.clone()))?,
-                    )?;
+                    let exp_si = bsis[next_block.0]
+                        .as_ref()
+                        .ok_or_else(|| Error::UnusedBlock(b.clone()))?;
+                    let next_fi = bfis[next_block.0]
+                        .as_ref()
+                        .ok_or_else(|| Error::UnusedBlock(b.clone()))?;
+                    validate_eq(next_block, &next_si, exp_si)?;
+                    if fi.res_types != next_fi.res_types {
+                        return Err(Error::FunctionBlockReturnTypesMismatch(
+                            next_block,
+                            fi.res_types.clone(),
+                            next_fi.res_types.clone(),
+                        ));
+                    }
                 }
             }
         }
         for f in &self.prog.funcs {
+            let bfi = &bfis[f.entry.0]
+                .as_ref()
+                .ok_or_else(|| Error::UnusedBlock(f.entry.clone()))?;
+            if f.res_types != *bfi.res_types {
+                return Err(Error::FunctionBlockReturnTypesMismatch(
+                    f.entry,
+                    f.res_types.clone(),
+                    bfi.res_types.clone(),
+                ));
+            }
             // Adding the extra ap change per function call.
             let func_side_effects = SideEffects {
                 ap_change: Some(2),
                 local_writes: 0,
                 resource_usages: ResourceMap::from([(Identifier("gas".to_string()), 2)]),
             }
-            .add(
-                block_infos[f.entry.0]
-                    .as_ref()
-                    .unwrap()
-                    .effects
-                    .as_ref()
-                    .unwrap(),
-            );
+            .add(&bfi.effects);
             if let Some(expected_ap_change) = &f.side_effects.ap_change {
                 if Some(*expected_ap_change) != func_side_effects.ap_change {
                     return Err(Error::FunctionReturnApChangeMismatch(
@@ -354,55 +362,54 @@ impl Helper<'_> {
     }
 }
 
-fn validate_eq(block: BlockId, info: &BlockInfo, expected: &BlockInfo) -> Result<(), Error> {
-    if info.start_ctxt != expected.start_ctxt {
+fn validate_eq(block: BlockId, si: &BlockStartInfo, exp_si: &BlockStartInfo) -> Result<(), Error> {
+    if si.ctxt != exp_si.ctxt {
         Err(Error::FunctionBlockContextMismatch(
             block,
-            info.start_ctxt.clone(),
-            expected.start_ctxt.clone(),
+            si.ctxt.clone(),
+            exp_si.ctxt.clone(),
         ))
-    } else if info.res_types != expected.res_types {
-        Err(Error::FunctionBlockReturnTypesMismatch(
-            block,
-            info.res_types.clone(),
-            expected.res_types.clone(),
-        ))
-    } else if info.start_vars.len() != expected.start_vars.len() {
+    } else if si.vars.len() != exp_si.vars.len() {
         Err(Error::FunctionBlockIdentifiersMismatch(
             block,
-            info.start_vars.keys().map(|x| x.clone()).collect(),
-            expected.start_vars.keys().map(|x| x.clone()).collect(),
+            si.vars.keys().map(|x| x.clone()).collect(),
+            exp_si.vars.keys().map(|x| x.clone()).collect(),
         ))
     } else {
-        expected
-            .start_vars
-            .iter()
-            .try_for_each(|(id, expected_var_state)| match info.start_vars.get(id) {
+        exp_si.vars.iter().try_for_each(
+            |(
+                id,
+                VarInfo {
+                    ty: exp_ty,
+                    ref_val: exp_ref_val,
+                },
+            )| match si.vars.get(id) {
                 None => Err(Error::FunctionBlockIdentifiersMismatch(
                     block,
-                    info.start_vars.keys().map(|x| x.clone()).collect(),
-                    expected.start_vars.keys().map(|x| x.clone()).collect(),
+                    si.vars.keys().map(|x| x.clone()).collect(),
+                    exp_si.vars.keys().map(|x| x.clone()).collect(),
                 )),
-                Some(var_state) => {
-                    if var_state.ty != expected_var_state.ty {
+                Some(VarInfo { ty, ref_val }) => {
+                    if ty != exp_ty {
                         Err(Error::FunctionBlockIdentifierTypeMismatch(
                             block,
                             id.clone(),
-                            expected_var_state.ty.clone(),
-                            var_state.ty.clone(),
+                            exp_ty.clone(),
+                            ty.clone(),
                         ))
-                    } else if var_state.ref_val != expected_var_state.ref_val {
+                    } else if ref_val != exp_ref_val {
                         Err(Error::FunctionBlockIdentifierLocationMismatch(
                             block,
                             id.clone(),
-                            expected_var_state.ref_val.clone(),
-                            var_state.ref_val.clone(),
+                            exp_ref_val.clone(),
+                            ref_val.clone(),
                         ))
                     } else {
                         Ok(())
                     }
                 }
-            })
+            },
+        )
     }
 }
 
@@ -425,11 +432,7 @@ fn normalize_context(vars: &VarStates, mut ctxt: Context) -> Result<Context, Err
     Ok(ctxt)
 }
 
-fn as_block_info<'a>(
-    mut vars: VarStates,
-    mut ctxt: Context,
-    res_types: &'a Vec<Type>,
-) -> BlockInfo {
+fn as_block_start_info(mut vars: VarStates, mut ctxt: Context) -> BlockStartInfo {
     if ctxt.temp_cursur != 0 {
         let fix = |offset: &mut i64| {
             *offset -= ctxt.temp_cursur as i64;
@@ -449,12 +452,7 @@ fn as_block_info<'a>(
         }
         ctxt.temp_cursur = 0;
     }
-    BlockInfo {
-        start_vars: vars,
-        start_ctxt: ctxt,
-        res_types: res_types,
-        effects: None,
-    }
+    BlockStartInfo { vars, ctxt }
 }
 
 #[cfg(test)]
@@ -494,6 +492,29 @@ mod function {
                 .unwrap()
             ),
             Ok(())
+        );
+    }
+
+    #[test]
+    fn basic_return_gas_not_stated() {
+        let pp = ProgramParser::new();
+        assert_eq!(
+            validate(
+                &pp.parse(
+                    r#"
+                add<int>(a, b) -> (a_plus_b);
+                store<Temp, int>(a_plus_b) -> (a_plus_b);
+                sub<int>(c, d) -> (c_minus_d);
+                store<Temp, int>(c_minus_d) -> (c_minus_d);
+                mul<int>(a_plus_b, c_minus_d) -> (a_plus_b_mul_c_minus_d);
+                store<Temp, int>(a_plus_b_mul_c_minus_d) -> (a_plus_b_mul_c_minus_d);
+                return(a_plus_b_mul_c_minus_d);
+
+                Other@0[ap += 5](a: int, b: int, c: int, d: int) -> (int);"#
+                )
+                .unwrap()
+            ),
+            Err(Error::FunctionRanOutOfResources(vec![(Identifier("gas".to_string()), -3)]))
         );
     }
 
