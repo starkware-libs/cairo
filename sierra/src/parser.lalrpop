@@ -20,12 +20,16 @@ Function: Function = {
 }
 
 FunctionSideEffects: FunctionSideEffects = {
-    <ap_change:ApChange> "," "gas" "-=" <gas_change:UnsignedInt> => FunctionSideEffects { ap_change: ap_change, gas_change: gas_change },
+    <ap_change:ApChange> <resource_usages:("," <ResourceUsage>)*> => FunctionSideEffects { ap_change: ap_change, resource_usages: resource_usages },
 }
 
-ApChange: ApChange = {
-    "ap" "+=" "unknown" => ApChange::Unknown,
-    "ap" "+=" <v:UnsignedInt> => ApChange::Known(v as usize),
+ResourceUsage: (Identifier, usize) =     {
+    <id:Identifier> "-=" <v:UnsignedInt> => (id, v as usize),
+}
+
+ApChange: Option<usize> = {
+    "ap" "+=" "unknown" => None,
+    "ap" "+=" <v:UnsignedInt> => Some(v as usize),
 }
 
 Invocation: Invocation = {

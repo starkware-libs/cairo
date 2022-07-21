@@ -2,7 +2,7 @@ use crate::{
     context::Context,
     edit_state::Error as EditError,
     extensions::Error as ExtError,
-    graph::{ApChange, BlockId, Identifier, Type},
+    graph::{BlockId, Identifier, Type},
     ref_value::RefValue,
 };
 
@@ -18,8 +18,8 @@ pub enum Error {
     FunctionBlockReturnTypesMismatch(BlockId, Vec<Type>, Vec<Type>),
     FunctionRemainingOwnedObjects(Vec<Identifier>),
     FunctionReturnTypeMismatch(BlockId, Identifier),
-    FunctionReturnApChangeMismatch(String, ApChange),
-    FunctionReturnGasUsageMismatch(String, i64),
+    FunctionReturnApChangeMismatch(String, Option<usize>),
+    FunctionReturnResourceUsageMismatch(String, Identifier, i64),
     FunctionReturnLocationMismatch(BlockId, Identifier),
     FunctionReturnLocationNotEndOfTemp(BlockId, i64, usize),
     FunctionBlockIdentifiersMismatch(BlockId, Vec<Identifier>, Vec<Identifier>),

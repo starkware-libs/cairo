@@ -1,5 +1,5 @@
 use crate::{
-    context::{Context, Resource, ResourceMap},
+    context::{Context, ResourceMap},
     edit_state::{put_results, take_args},
     error::Error,
     extensions::*,
@@ -48,7 +48,12 @@ pub fn validate(prog: &Program) -> Result<(), Error> {
                     temp_used: false,
                     temp_cursur: 0,
                     temp_invalidated: false,
-                    resources: ResourceMap::from([(Resource::Gas, f.side_effects.gas_change)]),
+                    resources: ResourceMap::from_iter(
+                        f.side_effects
+                            .resource_usages
+                            .iter()
+                            .map(|(id, usage)| (id.clone(), *usage as i64)),
+                    ),
                 },
                 res_types: &f.res_types,
                 effects: None,
@@ -89,9 +94,9 @@ impl Helper<'_> {
         let mut vars = start_vars;
         let mut ctxt = start_ctxt;
         let mut side_effects = SideEffects {
-            ap_change: ApChange::Known(0),
+            ap_change: Some(0),
             local_writes: 0,
-            resources: ResourceMap::new(),
+            resource_usages: ResourceMap::new(),
         };
         let block = &self.prog.blocks[block_id.0];
         for invc in &block.invocations {
@@ -260,9 +265,9 @@ impl Helper<'_> {
         for (next_block, next_block_info, effects) in self.following_blocks_info(block, info)? {
             let effects = effects.add(&match next_block {
                 None => SideEffects {
-                    ap_change: ApChange::Known(0),
+                    ap_change: Some(0),
                     local_writes: 0,
-                    resources: ResourceMap::new(),
+                    resource_usages: ResourceMap::new(),
                 },
                 Some(next_block) => {
                     self.calc_block_infos(next_block, next_block_info, results)?;
@@ -270,9 +275,9 @@ impl Helper<'_> {
                     match &results[next_block.0].as_ref().unwrap().effects {
                         // If missing - we have reached a cycle.
                         None => SideEffects {
-                            ap_change: ApChange::Unknown,
+                            ap_change: None,
                             local_writes: 0,
-                            resources: ResourceMap::new(),
+                            resource_usages: ResourceMap::new(),
                         },
                         Some(next_block_effects) => next_block_effects.clone(),
                     }
@@ -314,10 +319,11 @@ impl Helper<'_> {
         for f in &self.prog.funcs {
             // Adding the extra ap change per function call.
             let func_side_effects = SideEffects {
-                ap_change: ApChange::Known(2),
+                ap_change: Some(2),
                 local_writes: 0,
-                resources: ResourceMap::from([(Resource::Gas, -2)]),
-            }.add(
+                resource_usages: ResourceMap::from([(Identifier("gas".to_string()), 2)]),
+            }
+            .add(
                 block_infos[f.entry.0]
                     .as_ref()
                     .unwrap()
@@ -325,20 +331,23 @@ impl Helper<'_> {
                     .as_ref()
                     .unwrap(),
             );
-            if let ApChange::Known(expected_ap_change) = &f.side_effects.ap_change {
-                if ApChange::Known(*expected_ap_change) != func_side_effects.ap_change {
+            if let Some(expected_ap_change) = &f.side_effects.ap_change {
+                if Some(*expected_ap_change) != func_side_effects.ap_change {
                     return Err(Error::FunctionReturnApChangeMismatch(
                         f.name.clone(),
                         func_side_effects.ap_change,
                     ));
                 }
             }
-            let gas_usage = -func_side_effects.resources.get(&Resource::Gas).unwrap_or(&0);
-            if f.side_effects.gas_change != gas_usage {
-                return Err(Error::FunctionReturnGasUsageMismatch(
-                    f.name.clone(),
-                    gas_usage,
-                ));
+            for (id, expected_usage) in &f.side_effects.resource_usages {
+                let usage = func_side_effects.resource_usages.get(&id).unwrap_or(&0);
+                if *expected_usage as i64 != *usage {
+                    return Err(Error::FunctionReturnResourceUsageMismatch(
+                        f.name.clone(),
+                        id.clone(),
+                        *usage,
+                    ));
+                }
             }
         }
         Ok(())
@@ -507,7 +516,11 @@ mod function {
                 )
                 .unwrap()
             ),
-            Err(Error::FunctionReturnGasUsageMismatch("Other".to_string(), 5))
+            Err(Error::FunctionReturnResourceUsageMismatch(
+                "Other".to_string(),
+                Identifier("gas".to_string()),
+                5
+            ))
         );
     }
 
@@ -555,7 +568,7 @@ mod function {
             ),
             Err(Error::FunctionReturnApChangeMismatch(
                 "Other".to_string(),
-                ApChange::Known(5)
+                Some(5)
             ))
         );
     }
@@ -632,7 +645,7 @@ mod function {
                     temp_used: true,
                     temp_cursur: 0,
                     temp_invalidated: false,
-                    resources: ResourceMap::from([(Resource::Gas, 4)])
+                    resources: ResourceMap::from([(Identifier("gas".to_string()), 4)])
                 },
                 Context {
                     local_cursur: 0,
@@ -640,7 +653,7 @@ mod function {
                     temp_used: true,
                     temp_cursur: 0,
                     temp_invalidated: false,
-                    resources: ResourceMap::from([(Resource::Gas, 3)])
+                    resources: ResourceMap::from([(Identifier("gas".to_string()), 3)])
                 }
             ))
         );

@@ -1,8 +1,4 @@
-use crate::{
-    context::{Context, Resource},
-    graph::*,
-    ref_value::*,
-};
+use crate::{context::Context, graph::*, ref_value::*};
 use std::collections::HashMap;
 use Result::*;
 
@@ -290,9 +286,13 @@ fn as_final(ref_val: &RefValue) -> Result<MemLocation, Error> {
     }
 }
 
-fn update_gas(mut ctxt: Context, change: i64) -> Context {
-    *ctxt.resources.entry(Resource::Gas).or_insert(0) += change;
+fn update_resource(mut ctxt: Context, id: Identifier, change: i64) -> Context {
+    *ctxt.resources.entry(id).or_insert(0) += change;
     ctxt
+}
+
+fn update_gas(ctxt: Context, change: i64) -> Context {
+    update_resource(ctxt, Identifier("gas".to_string()), change)
 }
 
 type NonBranchBox = Box<dyn NonBranchImplementation + Sync + Send>;

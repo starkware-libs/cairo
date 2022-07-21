@@ -54,14 +54,8 @@ pub struct BlockId(pub usize);
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct FunctionSideEffects {
-    pub ap_change: ApChange,
-    pub gas_change: i64,
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub enum ApChange {
-    Known(usize),
-    Unknown,
+    pub ap_change: Option<usize>,
+    pub resource_usages: Vec<(Identifier, usize)>,
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]

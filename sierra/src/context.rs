@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use crate::graph::Identifier;
+
 // The context that can be changed by a running line, not including its direct inputs and outputs.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Context {
@@ -11,16 +13,4 @@ pub struct Context {
     pub resources: ResourceMap,
 }
 
-pub(crate) type ResourceMap = HashMap<Resource, i64>;
-
-#[derive(Debug, Clone, Copy, PartialEq, Hash, Eq)]
-pub enum Resource {
-    Gas,
-}
-
-impl Resource {
-    pub fn iterator() -> std::slice::Iter<'static, Resource> {
-        static RESOURCES: [Resource; 1] = [Resource::Gas];
-        RESOURCES.iter()
-    }
-}
+pub(crate) type ResourceMap = HashMap<Identifier, i64>;

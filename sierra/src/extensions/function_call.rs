@@ -43,18 +43,21 @@ impl NonBranchImplementation for FunctionCallExtension {
         }
         let ti = get_info(registry, &types_as_tuple(&self.results))?;
         match self.side_effects.ap_change {
-            ApChange::Unknown => {
+            None => {
                 context.temp_cursur = 0;
                 context.temp_invalidated = true;
             }
-            ApChange::Known(change) => {
+            Some(change) => {
                 context.temp_cursur += change;
             }
+        }
+        for (id, usage) in &self.side_effects.resource_usages {
+            context = update_resource(context, id.clone(), *usage as i64);
         }
 
         let base = context.temp_cursur as i64;
         Ok((
-            update_gas(context, -self.side_effects.gas_change),
+            context,
             vec![RefValue::Final(MemLocation::Temp(base - ti.size as i64))],
         ))
     }
@@ -97,8 +100,8 @@ mod tests {
                 args: vec![],
                 results: vec![],
                 side_effects: FunctionSideEffects {
-                    ap_change: ApChange::Unknown,
-                    gas_change: 5,
+                    ap_change: None,
+                    resource_usages: vec![(Identifier("gas".to_string()), 5)],
                 }
             }
             .get_signature(&vec![]),
@@ -108,10 +111,9 @@ mod tests {
             FunctionCallExtension {
                 args: vec![as_type("1"), as_type("2")],
                 results: vec![as_type("3"), as_type("4")],
-
                 side_effects: FunctionSideEffects {
-                    ap_change: ApChange::Unknown,
-                    gas_change: 5,
+                    ap_change: None,
+                    resource_usages: vec![(Identifier("gas".to_string()), 5)],
                 }
             }
             .get_signature(&vec![]),
@@ -134,10 +136,9 @@ mod tests {
             FunctionCallExtension {
                 args: vec![],
                 results: vec![],
-
                 side_effects: FunctionSideEffects {
-                    ap_change: ApChange::Unknown,
-                    gas_change: 5,
+                    ap_change: None,
+                    resource_usages: vec![(Identifier("gas".to_string()), 5)],
                 }
             }
             .get_signature(&vec![type_arg(as_type("1"))]),
