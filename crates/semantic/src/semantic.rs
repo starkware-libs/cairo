@@ -1,78 +1,109 @@
-use defs::ids::{FunctionArgId, GenericArgId, LocalVarId, ModuleItemId, VarId};
+use defs::ids::{LocalVarId, MemberId, ModuleItemId, ParamId, VarId};
 
-use crate::ids::{ExprId, FunctionInstanceId, TypeInstanceId};
+use crate::ids::{ExprId, FunctionInstanceId, TypeId};
 
 // Statements.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum Statement {
     Expr(ExprId),
-    Let(Let),
+    Let(StatementLet),
 }
+
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub struct Let {
-    var: LocalVarId,
-    expr: ExprId,
+pub struct StatementLet {
+    pub var: LocalVarId,
+    pub expr: ExprId,
 }
 
 // Expressions.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum Expr {
     ExprBlock(ExprBlock),
-    ExprCall(ExprCall),
+    ExprFunctionCall(ExprFunctionCall),
     ExprMatch(ExprMatch),
     ExprVar(ExprVar),
     ExprLiteral(ExprLiteral),
 }
+impl Expr {
+    pub fn ty(&self) -> TypeId {
+        match self {
+            Expr::ExprBlock(expr) => expr.ty,
+            Expr::ExprFunctionCall(expr) => expr.ty,
+            Expr::ExprMatch(expr) => expr.ty,
+            Expr::ExprVar(expr) => expr.ty,
+            Expr::ExprLiteral(expr) => expr.ty,
+        }
+    }
+}
+
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct ExprBlock {
-    statements: Vec<Statement>,
-    tail: Option<ExprId>,
+    pub statements: Vec<Statement>,
+    // Blocks may end with an expression, without a trailing `;`.
+    // In this case, `tail` will be Some(expr) with that expression.
+    // The block expression will evaluate to this tail expression.
+    // Otherwise, this will be None.
+    pub tail: Option<ExprId>,
+    pub ty: TypeId,
 }
+
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub struct ExprCall {
-    function: FunctionInstanceId,
-    args: Vec<ExprId>,
-    ty: TypeInstanceId,
+pub struct ExprFunctionCall {
+    pub function: FunctionInstanceId,
+    pub args: Vec<ExprId>,
+    pub ty: TypeId,
 }
+
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct ExprMatch {
-    expr: ExprId,
-    branches: Vec<Branch>,
+    pub expr: ExprId,
+    pub branches: Vec<MatchBranch>,
+    pub ty: TypeId,
 }
+
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub struct Branch {
-    pattern: Pattern,
-    block: ExprBlock,
+pub struct MatchBranch {
+    pub pattern: Pattern,
+    pub block: ExprBlock,
 }
-// TODO:
+
+// TODO(spapini): Implement a semantic structure for `Pattern`.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Pattern {}
+
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct ExprVar {
-    var: VarId,
-    ty: TypeInstanceId,
+    pub var: VarId,
+    pub ty: TypeId,
 }
+
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct ExprLiteral {
     // TODO(spapini): Literal value.
-    ty: TypeInstanceId,
+    pub ty: TypeId,
 }
 
 // Items.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub struct Function {
-    signature: Signature,
-    body: ExprBlock,
+pub struct FreeFunction {
+    pub signature: Signature,
+    pub body: ExprBlock,
 }
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Signature {
-    generic_args: Vec<GenericArgId>,
-    args: Vec<(FunctionArgId, TypeInstanceId)>,
-    ret: TypeInstanceId,
+    // TODO(spapini): Generics parameters.
+    pub params: Vec<ParamId>,
+    pub ret: TypeId,
 }
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct Struct {
+    pub members: Vec<MemberId>,
+}
+// TODO(spapini): Add semantic representation for Params and Members.
+//   This will include their types.
 
 // Module.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Module {
-    items: Vec<ModuleItemId>,
+    pub items: Vec<ModuleItemId>,
 }
