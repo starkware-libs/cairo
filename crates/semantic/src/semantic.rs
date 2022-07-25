@@ -1,6 +1,6 @@
-use defs::ids::{FunctionArgId, GenericArgId, LocalVarId, ModuleItemId, VarId};
+use defs::ids::{LocalVarId, MemberId, ModuleItemId, ParamId, VarId};
 
-use crate::ids::{ExprId, FunctionInstanceId, TypeInstanceId};
+use crate::ids::{ExprId, FunctionInstanceId, TypeId};
 
 // Statements.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
@@ -32,7 +32,7 @@ pub struct ExprBlock {
 pub struct ExprCall {
     function: FunctionInstanceId,
     args: Vec<ExprId>,
-    ty: TypeInstanceId,
+    ty: TypeId,
 }
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct ExprMatch {
@@ -44,31 +44,35 @@ pub struct Branch {
     pattern: Pattern,
     block: ExprBlock,
 }
-// TODO:
+// TODO(spapini): Implement pattern.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Pattern {}
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct ExprVar {
     var: VarId,
-    ty: TypeInstanceId,
+    ty: TypeId,
 }
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct ExprLiteral {
     // TODO(spapini): Literal value.
-    ty: TypeInstanceId,
+    ty: TypeId,
 }
 
 // Items.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub struct Function {
+pub struct FreeFunction {
     signature: Signature,
     body: ExprBlock,
 }
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Signature {
-    generic_args: Vec<GenericArgId>,
-    args: Vec<(FunctionArgId, TypeInstanceId)>,
-    ret: TypeInstanceId,
+    // TODO(spapini): Generics parameters.
+    args: Vec<(ParamId, TypeId)>,
+    ret: TypeId,
+}
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct Struct {
+    members: Vec<(MemberId, TypeId)>,
 }
 
 // Module.
