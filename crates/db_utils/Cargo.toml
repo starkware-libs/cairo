@@ -1,8 +1,7 @@
 [package]
-name = "syntax"
+name = "db_utils"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
 salsa = "0.16.1"
-smol_str = "0.1.23"
