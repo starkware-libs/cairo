@@ -7,6 +7,7 @@ members = [
     "crates/diagnostics",
     "crates/filesystem",
     "crates/parser",
+    "crates/semantic",
     "crates/sierra",
     "crates/syntax",
     "crates/syntax_codegen",

@@ -1,50 +1,58 @@
 use db_utils::define_short_id;
-use defs::ids::{ExternFunctionId, ExternTypeId, FreeFunctionId, GenericTypeArgId};
+use defs::ids::{ExternFunctionId, ExternTypeId, FreeFunctionId, StructId};
 
 // Ids in this file represent semantic representations.
 
-// Generics.
+/// Generic argument.
+/// A value assigned to a generic parameter.
+/// May be a type, impl, constant, etc..
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub enum GenericValueId {
-    Type(TypeInstanceId),
+pub enum GenericArgumentId {
+    Type(TypeId),
     // TODO(spapini): impls and constants as generic values.
 }
 
-// Function instance.
-// For example: ImplA::foo<A, B>, or bar<A>.
+/// Function instance.
+/// For example: ImplA::foo<A, B>, or bar<A>.
+// TODO(spapini): Add a function pointer variant.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct FunctionInstanceLongId {
-    kind: FunctionInstanceKind,
-    generic_values: Vec<GenericValueId>,
-}
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub enum FunctionInstanceKind {
-    Top(FreeFunctionId),
-    // TODO(spapini): impl functions.
-    Extern(ExternFunctionId),
+    generic_function: GenericFunctionId,
+    generic_args: Vec<GenericArgumentId>,
 }
 define_short_id!(FunctionInstanceId);
 
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub enum GenericFunctionId {
+    Free(FreeFunctionId),
+    Extern(ExternFunctionId),
+    // TODO(spapini): impl functions.
+}
+
 // Type instance.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub enum TypeDefId {
-    Generic(GenericTypeArgId),
+pub enum GenericType {
+    Struct(StructId),
     External(ExternTypeId),
-    // TODO(spapini): structs, enums, associated types in impls.
+    // TODO(spapini): enums, associated types in impls.
 }
+
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub enum TypeInstanceLongId {
-    TypeDef(TypeDefId, Vec<GenericValueId>),
+pub enum TypeLongId {
+    Concrete(GenericType, Vec<GenericArgumentId>),
+    // Some expressions might have invalid types during processing, either due to errors or
+    // durin inference.
     Missing,
+    // TODO(spapini): tuple, generic type parameters.
 }
-define_short_id!(TypeInstanceId);
+define_short_id!(TypeId);
+
+pub struct ConcreteType {
+    generic_type: GenericType,
+    generic_args: Vec<GenericArgumentId>,
+}
 
 // CodeElements.
+// Expressions and statements are defined at semantic.rs .
 define_short_id!(ExprId);
 define_short_id!(StatementId);
-
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub enum CodeElementId {
-    Statement(StatementId),
-    Expr(ExprId),
-}
