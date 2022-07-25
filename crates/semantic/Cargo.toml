@@ -1,0 +1,11 @@
+[package]
+name = "semantic"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+db_utils = { path = "../db_utils" }
+defs = { path = "../defs" }
+salsa = "0.16.1"
+smol_str = "0.1.23"
+syntax = { path = "../syntax" }
