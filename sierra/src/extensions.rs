@@ -1,4 +1,8 @@
-use crate::{context::Context, graph::*, ref_value::*};
+use crate::{
+    context::{Context, Effects, Error as CtxtError},
+    graph::*,
+    ref_value::*,
+};
 use std::collections::HashMap;
 use Result::*;
 
@@ -21,11 +25,9 @@ pub enum Error {
     UnsupportedTypeArg,
     IllegalArgsLocation,
     IllegalApChangeValue,
-    LocalMemoryAlreadyAllocated,
-    LocalMemoryCantBeAllocated,
-    LocalMemoryNotAllocated,
     LocationsNonCosecutive,
     UnexpectedMemoryStructure,
+    MergeEffects(CtxtError),
 }
 
 // Registry for finding information on extensions and types.
@@ -53,33 +55,34 @@ impl Registry {
     pub(crate) fn transform(
         self: &Self,
         ext: &Extension,
-        state: PartialStateInfo,
-    ) -> Result<(Vec<PartialStateInfo>, Option<usize>), Error> {
+        vars: Vec<VarInfo>,
+        ctxt: &Context,
+    ) -> Result<(Vec<ExtensionEffects>, Option<usize>), Error> {
         let e = match self.ext_reg.get(&ext.name) {
             None => Err(Error::UnsupportedLibCallName),
             Some(e) => Ok(e),
         }?;
         let sign = e.get_signature(&ext.tmpl_args)?;
-        if state.vars.iter().map(|v| &v.ty).ne(sign.args.iter()) {
+        if vars.iter().map(|v| &v.ty).ne(sign.args.iter()) {
             return Err(Error::ArgumentsMismatch);
         }
         let ref_vals = e.mem_change(
             &ext.tmpl_args,
             &self.ty_reg,
-            state.context,
-            state.vars.into_iter().map(|v| v.ref_val).collect(),
+            ctxt,
+            vars.into_iter().map(|v| v.ref_val).collect(),
         )?;
         Ok((
             ref_vals
                 .into_iter()
                 .zip(sign.results.into_iter())
-                .map(|((m, refs), tys)| PartialStateInfo {
+                .map(|((m, refs), tys)| ExtensionEffects {
                     vars: refs
                         .into_iter()
                         .zip(tys.into_iter())
                         .map(|(r, ty)| VarInfo { ty: ty, ref_val: r })
                         .collect(),
-                    context: m,
+                    effects: m,
                 })
                 .collect(),
             sign.fallthrough,
@@ -115,9 +118,9 @@ pub(crate) struct VarInfo {
 
 // The partial state required to know the full state change an extension may do.
 #[derive(Debug, PartialEq)]
-pub(crate) struct PartialStateInfo {
+pub(crate) struct ExtensionEffects {
     pub vars: Vec<VarInfo>,
-    pub context: Context,
+    pub effects: Effects,
 }
 
 #[derive(Debug, PartialEq)]
@@ -143,9 +146,9 @@ trait ExtensionImplementation {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
         registry: &TypeRegistry,
-        context: Context,
+        ctxt: &Context,
         arg_refs: Vec<RefValue>,
-    ) -> Result<Vec<(Context, Vec<RefValue>)>, Error>;
+    ) -> Result<Vec<(Effects, Vec<RefValue>)>, Error>;
 
     // Returns the memory representation of the results, given the memory representations of the inputs.
     fn exec(
@@ -169,9 +172,9 @@ trait NonBranchImplementation {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
         registry: &TypeRegistry,
-        context: Context,
+        ctxt: &Context,
         arg_refs: Vec<RefValue>,
-    ) -> Result<(Context, Vec<RefValue>), Error>;
+    ) -> Result<(Effects, Vec<RefValue>), Error>;
 
     // Returns the memory representation of the results, given the memory representations of the inputs.
     fn exec(
@@ -286,13 +289,8 @@ fn as_final(ref_val: &RefValue) -> Result<MemLocation, Error> {
     }
 }
 
-fn update_resource(mut ctxt: Context, id: Identifier, change: i64) -> Context {
-    *ctxt.resources.entry(id).or_insert(0) += change;
-    ctxt
-}
-
-fn update_gas(ctxt: Context, change: i64) -> Context {
-    update_resource(ctxt, Identifier("gas".to_string()), change)
+fn gas_usage(count: i64) -> Effects {
+    Effects::resource_usage(Identifier("gas".to_string()), count)
 }
 
 type NonBranchBox = Box<dyn NonBranchImplementation + Sync + Send>;
@@ -318,12 +316,12 @@ impl ExtensionImplementation for NonBranchExtension {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
         registry: &TypeRegistry,
-        context: Context,
+        ctxt: &Context,
         arg_refs: Vec<RefValue>,
-    ) -> Result<Vec<(Context, Vec<RefValue>)>, Error> {
+    ) -> Result<Vec<(Effects, Vec<RefValue>)>, Error> {
         Ok(vec![self
             .inner
-            .mem_change(tmpl_args, registry, context, arg_refs)?])
+            .mem_change(tmpl_args, registry, ctxt, arg_refs)?])
     }
 
     fn exec(

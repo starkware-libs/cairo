@@ -35,30 +35,27 @@ impl NonBranchImplementation for StoreExtension {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
         registry: &TypeRegistry,
-        mut context: Context,
+        ctxt: &Context,
         _arg_refs: Vec<RefValue>,
-    ) -> Result<(Context, Vec<RefValue>), Error> {
-        context = update_gas(context, -1);
+    ) -> Result<(Effects, Vec<RefValue>), Error> {
+        let mut effects = gas_usage(1);
         let (store_ty, ty) = unpack_args(tmpl_args)?;
         let ti = get_info(registry, ty)?;
         let loc = match store_ty {
             StoreType::Temp => {
-                let prev = context.temp_cursur as i64;
-                context.temp_used = true;
-                context.temp_cursur += ti.size;
-                Ok(MemLocation::Temp(prev))
+                effects = effects
+                    .add(&Effects::ap_change(ti.size))
+                    .map_err(|e| Error::MergeEffects(e))?;
+                Ok(MemLocation::Temp(ctxt.temp_cursur as i64))
             }
             StoreType::Local => {
-                let prev = context.local_cursur as i64;
-                context.local_cursur += ti.size;
-                if context.local_allocated {
-                    Ok(MemLocation::Local(prev))
-                } else {
-                    Err(Error::LocalMemoryNotAllocated)
-                }
+                effects = effects
+                    .add(&Effects::local_writes(ti.size))
+                    .map_err(|e| Error::MergeEffects(e))?;
+                Ok(MemLocation::Local(ctxt.local_cursur as i64))
             }
         }?;
-        Ok((context, vec![RefValue::Final(loc)]))
+        Ok((effects, vec![RefValue::Final(loc)]))
     }
 
     fn exec(
@@ -87,10 +84,10 @@ impl NonBranchImplementation for RenameExtension {
         self: &Self,
         _tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
-        context: Context,
+        _ctxt: &Context,
         arg_refs: Vec<RefValue>,
-    ) -> Result<(Context, Vec<RefValue>), Error> {
-        Ok((context, arg_refs))
+    ) -> Result<(Effects, Vec<RefValue>), Error> {
+        Ok((Effects::none(), arg_refs))
     }
 
     fn exec(
@@ -118,11 +115,11 @@ impl NonBranchImplementation for MoveExtension {
         self: &Self,
         _tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
-        context: Context,
+        _ctxt: &Context,
         arg_refs: Vec<RefValue>,
-    ) -> Result<(Context, Vec<RefValue>), Error> {
+    ) -> Result<(Effects, Vec<RefValue>), Error> {
         Ok((
-            context,
+            Effects::none(),
             vec![RefValue::OpWithConst(as_final(&arg_refs[0])?, Op::Add, 0)],
         ))
     }
@@ -153,19 +150,15 @@ impl NonBranchImplementation for AllocLocalsExtension {
         self: &Self,
         _tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
-        mut context: Context,
+        _ctxt: &Context,
         _arg_refs: Vec<RefValue>,
-    ) -> Result<(Context, Vec<RefValue>), Error> {
-        context = update_gas(context, -1);
-        if context.local_allocated {
-            Err(Error::LocalMemoryAlreadyAllocated)
-        } else if context.temp_used {
-            Err(Error::LocalMemoryCantBeAllocated)
-        } else {
-            context.local_allocated = true;
-            context.temp_used = true;
-            Ok((context, vec![]))
-        }
+    ) -> Result<(Effects, Vec<RefValue>), Error> {
+        Ok((
+            Effects::allocate_locals()
+                .add(&gas_usage(1))
+                .map_err(|e| Error::MergeEffects(e))?,
+            vec![],
+        ))
     }
 
     fn exec(
@@ -203,13 +196,15 @@ impl NonBranchImplementation for AlignTempsExtension {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
-        mut context: Context,
+        _ctxt: &Context,
         _arg_refs: Vec<RefValue>,
-    ) -> Result<(Context, Vec<RefValue>), Error> {
-        context = update_gas(context, -1);
-        context.temp_cursur += positive_value_arg(tmpl_args)?;
-        context.temp_used = true;
-        Ok((context, vec![]))
+    ) -> Result<(Effects, Vec<RefValue>), Error> {
+        Ok((
+            gas_usage(1)
+                .add(&Effects::ap_change(positive_value_arg(tmpl_args)?))
+                .map_err(|e| Error::MergeEffects(e))?,
+            vec![],
+        ))
     }
 
     fn exec(

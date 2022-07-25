@@ -18,9 +18,9 @@ impl NonBranchImplementation for TuplePackExtension {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
         registry: &TypeRegistry,
-        context: Context,
+        _ctxt: &Context,
         arg_refs: Vec<RefValue>,
-    ) -> Result<(Context, Vec<RefValue>), Error> {
+    ) -> Result<(Effects, Vec<RefValue>), Error> {
         let mut tup_mem: Option<(MemLocation, usize)> = None;
         for (ref_val, tmpl_arg) in arg_refs.iter().zip(tmpl_args.iter()) {
             let size = get_info(registry, unwrap_type(tmpl_arg)?)?.size;
@@ -34,7 +34,7 @@ impl NonBranchImplementation for TuplePackExtension {
             }?);
         }
         Ok((
-            context,
+            Effects::none(),
             vec![match tup_mem {
                 None => RefValue::Transient,
                 Some((mem, _)) => RefValue::Final(mem),
@@ -81,9 +81,9 @@ impl NonBranchImplementation for TupleUnpackExtension {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
         registry: &TypeRegistry,
-        context: Context,
+        _ctxt: &Context,
         arg_refs: Vec<RefValue>,
-    ) -> Result<(Context, Vec<RefValue>), Error> {
+    ) -> Result<(Effects, Vec<RefValue>), Error> {
         let mut refs = vec![];
         let mut offset = 0;
         for tmpl_arg in tmpl_args {
@@ -103,7 +103,7 @@ impl NonBranchImplementation for TupleUnpackExtension {
             }?);
             offset += size as i64;
         }
-        Ok((context, refs))
+        Ok((Effects::none(), refs))
     }
 
     fn exec(

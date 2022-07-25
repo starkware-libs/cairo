@@ -19,13 +19,12 @@ impl ExtensionImplementation for JumpNzExtension {
         self: &Self,
         _tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
-        context: Context,
+        _ctxt: &Context,
         arg_refs: Vec<RefValue>,
-    ) -> Result<Vec<(Context, Vec<RefValue>)>, Error> {
-        let context = update_gas(context, -1);
+    ) -> Result<Vec<(Effects, Vec<RefValue>)>, Error> {
         Ok(vec![
-            (context.clone(), vec![arg_refs[0].clone()]),
-            (context, vec![]),
+            (gas_usage(1), vec![arg_refs[0].clone()]),
+            (gas_usage(1), vec![]),
         ])
     }
 
@@ -62,10 +61,10 @@ impl NonBranchImplementation for UnwrapNzExtension {
         self: &Self,
         _tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
-        context: Context,
+        _ctxt: &Context,
         arg_refs: Vec<RefValue>,
-    ) -> Result<(Context, Vec<RefValue>), Error> {
-        Ok((context, arg_refs))
+    ) -> Result<(Effects, Vec<RefValue>), Error> {
+        Ok((Effects::none(), arg_refs))
     }
 
     fn exec(

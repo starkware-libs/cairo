@@ -1,5 +1,5 @@
 use crate::{
-    context::Context,
+    context::{Context, Effects, Error as CtxtError},
     edit_state::Error as EditError,
     extensions::Error as ExtError,
     graph::{BlockId, Identifier, Type},
@@ -12,9 +12,11 @@ pub enum Error {
     Extension(ExtError, String),
     TypeInfo(ExtError, Type),
     EditState(BlockId, EditError),
+    MergeEffects(BlockId, CtxtError),
     UnusedBlock(BlockId),
     FunctionBlockOutOfBounds,
     FunctionBlockContextMismatch(BlockId, Context, Context),
+    FunctionBlockEffectsMismatch(BlockId, Effects, Effects),
     FunctionBlockReturnTypesMismatch(BlockId, Vec<Type>, Vec<Type>),
     FunctionRemainingOwnedObjects(Vec<Identifier>),
     FunctionRanOutOfResources(Vec<(Identifier, i64)>),

@@ -37,12 +37,12 @@ impl NonBranchImplementation for ArithmeticExtension {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
-        context: Context,
+        _ctxt: &Context,
         arg_refs: Vec<RefValue>,
-    ) -> Result<(Context, Vec<RefValue>), Error> {
+    ) -> Result<(Effects, Vec<RefValue>), Error> {
         match tmpl_args.len() {
             1 => Ok((
-                context,
+                Effects::none(),
                 vec![RefValue::Op(
                     as_final(&arg_refs[0])?,
                     self.op,
@@ -52,7 +52,7 @@ impl NonBranchImplementation for ArithmeticExtension {
             2 => {
                 let (_, c) = type_value_args(tmpl_args)?;
                 Ok((
-                    context,
+                    Effects::none(),
                     vec![RefValue::OpWithConst(as_final(&arg_refs[0])?, self.op, c)],
                 ))
             }
@@ -128,12 +128,12 @@ impl NonBranchImplementation for DivExtension {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
-        context: Context,
+        _ctxt: &Context,
         arg_refs: Vec<RefValue>,
-    ) -> Result<(Context, Vec<RefValue>), Error> {
+    ) -> Result<(Effects, Vec<RefValue>), Error> {
         match tmpl_args.len() {
             1 => Ok((
-                context,
+                Effects::none(),
                 vec![RefValue::Op(
                     as_final(&arg_refs[0])?,
                     self.op,
@@ -146,7 +146,7 @@ impl NonBranchImplementation for DivExtension {
                     Err(Error::UnsupportedTypeArg)
                 } else {
                     Ok((
-                        context,
+                        Effects::none(),
                         vec![RefValue::OpWithConst(as_final(&arg_refs[0])?, self.op, c)],
                     ))
                 }
@@ -202,10 +202,13 @@ impl NonBranchImplementation for DuplicateExtension {
         self: &Self,
         _tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
-        context: Context,
+        _ctxt: &Context,
         arg_refs: Vec<RefValue>,
-    ) -> Result<(Context, Vec<RefValue>), Error> {
-        Ok((context, vec![arg_refs[0].clone(), arg_refs[0].clone()]))
+    ) -> Result<(Effects, Vec<RefValue>), Error> {
+        Ok((
+            Effects::none(),
+            vec![arg_refs[0].clone(), arg_refs[0].clone()],
+        ))
     }
 
     fn exec(
@@ -235,11 +238,11 @@ impl NonBranchImplementation for ConstantExtension {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
-        context: Context,
+        _ctxt: &Context,
         _arg_refs: Vec<RefValue>,
-    ) -> Result<(Context, Vec<RefValue>), Error> {
+    ) -> Result<(Effects, Vec<RefValue>), Error> {
         let (_, c) = type_value_args(tmpl_args)?;
-        Ok((context, vec![RefValue::Const(c)]))
+        Ok((Effects::none(), vec![RefValue::Const(c)]))
     }
 
     fn exec(
@@ -269,10 +272,10 @@ impl NonBranchImplementation for IgnoreExtension {
         self: &Self,
         _tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
-        context: Context,
+        _ctxt: &Context,
         _arg_refs: Vec<RefValue>,
-    ) -> Result<(Context, Vec<RefValue>), Error> {
-        Ok((context, vec![]))
+    ) -> Result<(Effects, Vec<RefValue>), Error> {
+        Ok((Effects::none(), vec![]))
     }
 
     fn exec(

@@ -29,35 +29,34 @@ impl NonBranchImplementation for FunctionCallExtension {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
         registry: &TypeRegistry,
-        mut context: Context,
+        ctxt: &Context,
         arg_refs: Vec<RefValue>,
-    ) -> Result<(Context, Vec<RefValue>), Error> {
+    ) -> Result<(Effects, Vec<RefValue>), Error> {
         validate_size_eq(tmpl_args, 0)?;
         let ti = get_info(registry, &types_as_tuple(&self.args))?;
         match &arg_refs[0] {
             RefValue::Final(MemLocation::Temp(offset))
-                if offset + ti.size as i64 == context.temp_cursur as i64 => {}
+                if offset + ti.size as i64 == ctxt.temp_cursur as i64 => {}
             _ => {
                 return Err(Error::IllegalArgsLocation);
             }
         }
-        let ti = get_info(registry, &types_as_tuple(&self.results))?;
-        match self.side_effects.ap_change {
-            None => {
-                context.temp_cursur = 0;
-                context.temp_invalidated = true;
-            }
-            Some(change) => {
-                context.temp_cursur += change;
-            }
-        }
+        let (base, mut effects) = match self.side_effects.ap_change {
+            None => (0, Effects::ap_invalidation()),
+            Some(change) => (
+                (ctxt.temp_cursur + change) as i64,
+                Effects::ap_change(change),
+            ),
+        };
         for (id, usage) in &self.side_effects.resource_usages {
-            context = update_resource(context, id.clone(), *usage as i64);
+            effects = effects
+                .add(&Effects::resource_usage(id.clone(), *usage as i64))
+                .map_err(|e| Error::MergeEffects(e))?;
         }
 
-        let base = context.temp_cursur as i64;
+        let ti = get_info(registry, &types_as_tuple(&self.results))?;
         Ok((
-            context,
+            effects,
             vec![RefValue::Final(MemLocation::Temp(base - ti.size as i64))],
         ))
     }

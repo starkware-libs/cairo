@@ -25,19 +25,19 @@ impl ExtensionImplementation for GetGasExtension {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
-        context: Context,
+        _ctxt: &Context,
         arg_refs: Vec<RefValue>,
-    ) -> Result<Vec<(Context, Vec<RefValue>)>, Error> {
+    ) -> Result<Vec<(Effects, Vec<RefValue>)>, Error> {
         let gas = single_value_arg(tmpl_args)?;
         if gas <= 0 {
             return Err(Error::UnsupportedTypeArg);
         }
         Ok(vec![
             (
-                update_gas(context.clone(), gas - 1),
+                gas_usage(-gas + 1),
                 vec![RefValue::OpWithConst(as_final(&arg_refs[0])?, Op::Sub, gas)],
             ),
-            (update_gas(context, -1), vec![arg_refs[0].clone()]),
+            (gas_usage(1), vec![arg_refs[0].clone()]),
         ])
     }
 
@@ -75,12 +75,12 @@ impl NonBranchImplementation for RefundGasExtension {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
-        context: Context,
+        _ctxt: &Context,
         arg_refs: Vec<RefValue>,
-    ) -> Result<(Context, Vec<RefValue>), Error> {
+    ) -> Result<(Effects, Vec<RefValue>), Error> {
         let gas = single_value_arg(tmpl_args)?;
         Ok((
-            update_gas(context, -gas),
+            gas_usage(gas),
             vec![RefValue::OpWithConst(as_final(&arg_refs[0])?, Op::Add, gas)],
         ))
     }
