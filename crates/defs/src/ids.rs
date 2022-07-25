@@ -43,16 +43,115 @@ macro_rules! id_by_name_and_parent {
 // TODO(spapini): Add ModuleLongId once crates are added.
 define_short_id!(ModuleId);
 
-// Module Items.
 // ModuleItemId - direct children of a module.
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub enum ModuleItemId {
+    Submodule(SubmoduleId),
+    Function(FunctionId),
     Struct(StructId),
+    Enum(EnumId),
+    Trait(TraitId),
+    Impl(ImplId),
+    Use(UseId),
+    ExternType(ExternTypeId),
+    ExternFunction(ExternFunctionId),
 }
+id_by_name_and_parent!(SubmoduleId, SubmoduleLongId, ModuleId);
+id_by_name_and_parent!(FunctionId, FunctionLongId, ModuleId);
 id_by_name_and_parent!(StructId, StructLongId, ModuleId);
+id_by_name_and_parent!(MemberId, MemberLongId, StructId);
+id_by_name_and_parent!(EnumId, EnumLongId, ModuleId);
+id_by_name_and_parent!(VariantId, VariantLongId, EnumId);
+id_by_name_and_parent!(TraitId, TraitLongId, ModuleId);
+id_by_name_and_parent!(ImplId, ImplLongId, ModuleId);
+id_by_name_and_parent!(UseId, UseLongId, ModuleId);
+id_by_name_and_parent!(ExternTypeId, ExternTypeLongId, ModuleId);
+id_by_name_and_parent!(ExternFunctionId, ExternFunctionLongId, ModuleId);
+
+// TraitItemId - direct children of a trait.
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+pub enum TraitItemId {
+    AssociatedType(TraitAssociatedTypeId),
+    Function(TraitFunctionId),
+}
+id_by_name_and_parent!(TraitAssociatedTypeId, TraitAssociatedTypeLongId, TraitId);
+id_by_name_and_parent!(TraitFunctionId, TraitFunctionLongId, TraitId);
+
+// ImplItemId - direct children of an impl.
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+pub enum ImplItemId {
+    AssociatedType(ImplAssociatedTypeId),
+    Function(ImplFunctionId),
+}
+id_by_name_and_parent!(ImplAssociatedTypeId, ImplAssociatedTypeLongId, ImplId);
+id_by_name_and_parent!(ImplFunctionId, ImplFunctionLongId, ImplId);
+
+// Generics.
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+pub enum GenericArgId {
+    Type(GenericTypeArgId),
+    Impl(GenericImplArgId),
+}
+id_by_name_and_parent!(GenericTypeArgId, GenericTypeArgLongId, ItemWithGenericsId);
+id_by_name_and_parent!(GenericImplArgId, GenericImplArgLongId, ItemWithGenericsId);
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+pub enum ItemWithGenericsId {
+    Function(FunctionId),
+    Struct(StructId),
+    Enum(EnumId),
+    Trait(TraitId),
+    TraitAssociatedType(TraitAssociatedTypeId),
+    TraitFunction(TraitFunctionId),
+    Impl(ImplId),
+    ImplAssociatedType(ImplAssociatedTypeId),
+    ImplFunction(ImplFunctionId),
+    ExternType(ExternTypeId),
+    ExternFunction(ExternFunctionId),
+}
+
+// Function args.
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub enum ItemWithFunctionSignatureId {
+    Function(FunctionId),
+    ImplFunction(ImplFunctionId),
+    TraitFunction(TraitFunctionId),
+    ExternFunction(ExternFunctionId),
+}
+id_by_name_and_parent!(FunctionArgId, FunctionArgLongId, ItemWithFunctionSignatureId);
+
+// Local definitions.
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+pub enum VarId {
+    Arg(FunctionArgId),
+    Local(LetVarId),
+    // TODO: Add var from pattern matching.
+}
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub enum ItemWithFunctionBodyId {
+    Function(FunctionId),
+    ImplFunction(ImplFunctionId),
+    ExternFunction(ExternFunctionId),
+}
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub enum BlockLongId {
+    FunctionBody(ItemWithFunctionBodyId),
+    Inner { parent: BlockId, index: usize },
+}
+define_short_id!(BlockId);
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct LetVarLongId {
+    block: BlockId,
+    name: SmolStr,
+    index: usize,
+}
+define_short_id!(LetVarId);
 
 // Symbol - anything that can be a "Go to definition" result.
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub enum Symbol {
     ModuleItem(ModuleItemId),
+    TraitItem(TraitItemId),
+    ImplItem(ImplItemId),
+    GenericArg(GenericArgId),
+    Var(VarId),
 }
