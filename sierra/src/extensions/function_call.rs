@@ -29,29 +29,26 @@ impl NonBranchImplementation for FunctionCallExtension {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
         registry: &TypeRegistry,
-        ctxt: &Context,
+        cursors: &Cursors,
         arg_refs: Vec<RefValue>,
     ) -> Result<(Effects, Vec<RefValue>), Error> {
         validate_size_eq(tmpl_args, 0)?;
         let ti = get_info(registry, &types_as_tuple(&self.args))?;
         match &arg_refs[0] {
             RefValue::Final(MemLocation::Temp(offset))
-                if offset + ti.size as i64 == ctxt.temp_cursur as i64 => {}
+                if offset + ti.size as i64 == cursors.temp as i64 => {}
             _ => {
                 return Err(Error::IllegalArgsLocation);
             }
         }
         let (base, mut effects) = match self.side_effects.ap_change {
             None => (0, Effects::ap_invalidation()),
-            Some(change) => (
-                (ctxt.temp_cursur + change) as i64,
-                Effects::ap_change(change),
-            ),
+            Some(change) => ((cursors.temp + change) as i64, Effects::ap_change(change)),
         };
         for (id, usage) in &self.side_effects.resource_usages {
             effects = effects
                 .add(&Effects::resource_usage(id.clone(), *usage as i64))
-                .map_err(|e| Error::MergeEffects(e))?;
+                .map_err(|e| Error::EffectsAdd(e))?;
         }
 
         let ti = get_info(registry, &types_as_tuple(&self.results))?;

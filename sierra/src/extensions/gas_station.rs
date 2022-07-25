@@ -25,7 +25,7 @@ impl ExtensionImplementation for GetGasExtension {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
-        _ctxt: &Context,
+        _cursors: &Cursors,
         arg_refs: Vec<RefValue>,
     ) -> Result<Vec<(Effects, Vec<RefValue>)>, Error> {
         let gas = single_value_arg(tmpl_args)?;
@@ -75,7 +75,7 @@ impl NonBranchImplementation for RefundGasExtension {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
-        _ctxt: &Context,
+        _cursors: &Cursors,
         arg_refs: Vec<RefValue>,
     ) -> Result<(Effects, Vec<RefValue>), Error> {
         let gas = single_value_arg(tmpl_args)?;

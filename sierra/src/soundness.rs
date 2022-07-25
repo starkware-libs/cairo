@@ -1,6 +1,7 @@
 use crate::{
-    context::{Context, Effects},
+    cursors::Cursors,
     edit_state::{put_results, take_args},
+    effects::Effects,
     error::Error,
     extensions::{Error as ExtError, ExtensionEffects, Registry, VarInfo},
     graph::*,
@@ -20,10 +21,7 @@ pub fn validate(prog: &Program) -> Result<(), Error> {
         h.calc_basic_info(
             f.entry,
             h.func_start_vars(f)?,
-            Context {
-                local_cursur: 0,
-                temp_cursur: 0,
-            },
+            Cursors { local: 0, temp: 0 },
             &f.res_types,
             &mut visited,
             &mut block_basic_infos,
@@ -44,7 +42,7 @@ enum NextEffects {
 #[derive(Debug, Clone)]
 struct BlockBasicInfo<'a> {
     start_vars: VarStates,
-    start_ctxt: Context,
+    start_cursors: Cursors,
     res_types: &'a Vec<Type>,
     next_effects: NextEffects,
 }
@@ -55,7 +53,7 @@ struct Helper<'a> {
 }
 
 enum FollowingInfo {
-    Blocks(Vec<(BlockId, VarStates, Context, Effects)>),
+    Blocks(Vec<(BlockId, VarStates, Cursors, Effects)>),
     Return(Effects),
 }
 
@@ -89,7 +87,7 @@ impl Helper<'_> {
         self: &Self,
         block_id: BlockId,
         mut vars: VarStates,
-        mut ctxt: Context,
+        mut cursors: Cursors,
         res_types: &'a Vec<Type>,
     ) -> Result<FollowingInfo, Error> {
         let block = &self.prog.blocks[block_id.0];
@@ -99,7 +97,7 @@ impl Helper<'_> {
                 take_args(vars, invc.args.iter()).map_err(|e| Error::EditState(block_id, e))?;
             let (mut effects, fallthrough) = self
                 .reg
-                .transform(&invc.ext, args_info, &ctxt)
+                .transform(&invc.ext, args_info, &cursors)
                 .map_err(|e| Error::Extension(e, invc.to_string()))?;
             if effects.len() != 1 {
                 return Err(Error::ExtensionBranchesMismatch(invc.to_string()));
@@ -119,8 +117,8 @@ impl Helper<'_> {
             }
             block_effects = block_effects
                 .add(&effects)
-                .map_err(|e| Error::Extension(ExtError::MergeEffects(e), invc.to_string()))?;
-            ctxt = normalize_context(&nvars, &effects, ctxt)?;
+                .map_err(|e| Error::Extension(ExtError::EffectsAdd(e), invc.to_string()))?;
+            cursors = normalize_cursors(&nvars, &effects, cursors)?;
             vars = put_results(nvars, izip!(invc.results.iter(), results_info.into_iter()))
                 .map_err(|e| Error::EditState(block_id, e))?;
         }
@@ -154,12 +152,12 @@ impl Helper<'_> {
                 }
                 match res_mem {
                     Some((MemLocation::Temp(base), size))
-                        if base + size as i64 != ctxt.temp_cursur as i64 =>
+                        if base + size as i64 != cursors.temp as i64 =>
                     {
                         return Err(Error::FunctionReturnLocationNotEndOfTemp(
                             block_id,
                             base + size as i64,
-                            ctxt.temp_cursur,
+                            cursors.temp,
                         ));
                     }
                     _ => {}
@@ -177,7 +175,7 @@ impl Helper<'_> {
                     take_args(vars, j.args.iter()).map_err(|e| Error::EditState(block_id, e))?;
                 let (states, fallthrough) = self
                     .reg
-                    .transform(&j.ext, args_info, &ctxt)
+                    .transform(&j.ext, args_info, &cursors)
                     .map_err(|e| Error::Extension(e, j.to_string()))?;
                 if states.len() != j.branches.len() {
                     return Err(Error::ExtensionBranchesMismatch(j.to_string()));
@@ -200,13 +198,13 @@ impl Helper<'_> {
                     if results_info.len() != branch.exports.len() {
                         return Err(Error::ExtensionResultSizeMismatch(j.to_string()));
                     }
-                    let (vars, ctxt) = normalize_for_block_start(
+                    let (vars, cursors) = normalize_for_block_start(
                         put_results(
                             vars.clone(),
                             izip!(branch.exports.iter(), results_info.into_iter(),),
                         )
                         .map_err(|e| Error::EditState(block_id, e))?,
-                        normalize_context(&vars, &effects, ctxt.clone())?,
+                        normalize_cursors(&vars, &effects, cursors.clone())?,
                     );
                     next_states.push((
                         match branch.target {
@@ -214,9 +212,9 @@ impl Helper<'_> {
                             BranchTarget::Block(b) => b,
                         },
                         vars,
-                        ctxt,
+                        cursors,
                         block_effects.add(&effects).map_err(|e| {
-                            Error::Extension(ExtError::MergeEffects(e), j.to_string())
+                            Error::Extension(ExtError::EffectsAdd(e), j.to_string())
                         })?,
                     ))
                 }
@@ -229,7 +227,7 @@ impl Helper<'_> {
         self: &Self,
         block_id: BlockId,
         vars: VarStates,
-        ctxt: Context,
+        cursors: Cursors,
         res_types: &'a Vec<Type>,
         visited: &mut Vec<bool>,
         results: &mut Vec<Option<BlockBasicInfo<'a>>>,
@@ -243,14 +241,14 @@ impl Helper<'_> {
         visited[block_id.0] = true;
         results[block_id.0] = Some(BlockBasicInfo {
             start_vars: vars.clone(),
-            start_ctxt: ctxt.clone(),
+            start_cursors: cursors.clone(),
             res_types: res_types,
-            next_effects: match self.get_following_info(block_id, vars, ctxt, res_types)? {
+            next_effects: match self.get_following_info(block_id, vars, cursors, res_types)? {
                 FollowingInfo::Return(effects) => Ok(NextEffects::Return(effects)),
                 FollowingInfo::Blocks(nexts) => {
                     let mut options = vec![];
-                    for (next_id, nvars, nctxt, effects) in nexts {
-                        self.calc_basic_info(next_id, nvars, nctxt, res_types, visited, results)?;
+                    for (next_id, vars, cursors, effects) in nexts {
+                        self.calc_basic_info(next_id, vars, cursors, res_types, visited, results)?;
                         options.push((next_id.clone(), effects));
                     }
                     Ok(NextEffects::Continue(options))
@@ -348,12 +346,12 @@ impl Helper<'_> {
                             Some(future_effects) => {
                                 let effects = block_effects
                                     .add(future_effects)
-                                    .map_err(|e| Error::MergeEffects(*b, e))?;
+                                    .map_err(|e| Error::EffectsAdd(*b, e))?;
                                 merged_effects = Some(match merged_effects {
                                     None => effects,
                                     Some(prev) => prev
                                         .converge(&effects)
-                                        .map_err(|e| Error::MergeEffects(*b, e))?,
+                                        .map_err(|e| Error::EffectsConverge(*b, e))?,
                                 })
                             }
                         }
@@ -392,29 +390,29 @@ impl Helper<'_> {
             let found_effect = match self.get_following_info(
                 b,
                 bi.start_vars.clone(),
-                bi.start_ctxt.clone(),
+                bi.start_cursors.clone(),
                 bi.res_types,
             )? {
                 FollowingInfo::Return(effects) => Ok(effects),
                 FollowingInfo::Blocks(nexts) => {
                     let mut merged_effects: Option<Effects> = None;
-                    for (n_id, nvars, nctxt, effects) in nexts {
+                    for (n_id, vars, cursors, effects) in nexts {
                         let nbi = bis[n_id.0]
                             .as_ref()
                             .ok_or_else(|| Error::UnusedBlock(b.clone()))?;
-                        validate_vars_eq(n_id, &nbi.start_vars, &nvars)?;
-                        validate_ctxt_eq(n_id, &nbi.start_ctxt, &nctxt)?;
+                        validate_vars_eq(n_id, &nbi.start_vars, &vars)?;
+                        validate_ctxt_eq(n_id, &nbi.start_cursors, &cursors)?;
                         let nfuture_effect = all_effects[n_id.0]
                             .as_ref()
                             .ok_or_else(|| Error::UnusedBlock(b.clone()))?;
                         let effects = effects
                             .add(nfuture_effect)
-                            .map_err(|e| Error::MergeEffects(b, e))?;
+                            .map_err(|e| Error::EffectsAdd(b, e))?;
                         merged_effects = Some(match merged_effects {
                             None => effects,
                             Some(prev) => prev
                                 .converge(&effects)
-                                .map_err(|e| Error::MergeEffects(b, e))?,
+                                .map_err(|e| Error::EffectsConverge(b, e))?,
                         });
                     }
                     Ok(merged_effects.unwrap())
@@ -433,14 +431,7 @@ impl Helper<'_> {
                 .as_ref()
                 .ok_or_else(|| Error::UnusedBlock(f.entry.clone()))?;
             validate_vars_eq(f.entry, &self.func_start_vars(f)?, &bi.start_vars)?;
-            validate_ctxt_eq(
-                f.entry,
-                &Context {
-                    local_cursur: 0,
-                    temp_cursur: 0,
-                },
-                &bi.start_ctxt,
-            )?;
+            validate_ctxt_eq(f.entry, &Cursors { local: 0, temp: 0 }, &bi.start_cursors)?;
             if f.res_types != *bi.res_types {
                 return Err(Error::FunctionBlockReturnTypesMismatch(
                     f.entry,
@@ -448,13 +439,13 @@ impl Helper<'_> {
                     bi.res_types.clone(),
                 ));
             }
-            let future_effects = &all_effects[f.entry.0]
+            let future_effects = all_effects[f.entry.0]
                 .as_ref()
                 .ok_or_else(|| Error::UnusedBlock(f.entry.clone()))?;
             let with_func = future_effects
                 .add(&Effects::resource_usage(Identifier("gas".to_string()), 2))
                 .unwrap()
-                .add(&&Effects::ap_change(2))
+                .add(&Effects::ap_change(2))
                 .unwrap();
             if f.side_effects.ap_change.is_some() && with_func.ap_change != f.side_effects.ap_change
             {
@@ -484,14 +475,14 @@ impl Helper<'_> {
     }
 }
 
-fn validate_ctxt_eq(block: BlockId, ctxt1: &Context, ctxt2: &Context) -> Result<(), Error> {
-    if ctxt1 == ctxt2 {
+fn validate_ctxt_eq(block: BlockId, cursors1: &Cursors, cursors2: &Cursors) -> Result<(), Error> {
+    if cursors1 == cursors2 {
         Ok(())
     } else {
-        Err(Error::FunctionBlockContextMismatch(
+        Err(Error::FunctionBlockCursorsMismatch(
             block,
-            ctxt1.clone(),
-            ctxt2.clone(),
+            cursors1.clone(),
+            cursors2.clone(),
         ))
     }
 }
@@ -544,18 +535,18 @@ fn validate_vars_eq(block: BlockId, vars1: &VarStates, vars2: &VarStates) -> Res
     }
 }
 
-fn normalize_context(
+fn normalize_cursors(
     vars: &VarStates,
     effects: &Effects,
-    mut ctxt: Context,
-) -> Result<Context, Error> {
-    ctxt.local_cursur += effects.local_writes;
+    mut cursors: Cursors,
+) -> Result<Cursors, Error> {
+    cursors.local += effects.local_writes;
     match effects.ap_change {
         Some(ap_change) => {
-            ctxt.temp_cursur += ap_change;
+            cursors.temp += ap_change;
         }
         None => {
-            ctxt.temp_cursur = 0;
+            cursors.temp = 0;
             for (id, var_state) in vars.iter() {
                 match &var_state.ref_val {
                     RefValue::Final(MemLocation::Temp(_))
@@ -569,13 +560,13 @@ fn normalize_context(
             }
         }
     }
-    Ok(ctxt)
+    Ok(cursors)
 }
 
-fn normalize_for_block_start(mut vars: VarStates, mut ctxt: Context) -> (VarStates, Context) {
-    if ctxt.temp_cursur != 0 {
+fn normalize_for_block_start(mut vars: VarStates, mut cursors: Cursors) -> (VarStates, Cursors) {
+    if cursors.temp != 0 {
         let fix = |offset: &mut i64| {
-            *offset -= ctxt.temp_cursur as i64;
+            *offset -= cursors.temp as i64;
         };
         for (_, v) in vars.iter_mut() {
             match &mut v.ref_val {
@@ -590,15 +581,15 @@ fn normalize_for_block_start(mut vars: VarStates, mut ctxt: Context) -> (VarStat
                 _ => {}
             }
         }
-        ctxt.temp_cursur = 0;
+        cursors.temp = 0;
     }
-    (vars, ctxt)
+    (vars, cursors)
 }
 
 #[cfg(test)]
 mod function {
     use super::*;
-    use crate::{context::ResourceMap, ProgramParser};
+    use crate::{effects::ResourceMap, ProgramParser};
 
     #[test]
     fn empty() {
@@ -802,9 +793,9 @@ mod function {
                 )
                 .unwrap()
             ),
-            Err(Error::MergeEffects(
+            Err(Error::EffectsConverge(
                 BlockId(1),
-                crate::context::Error::ResourceUsageMismatch(
+                crate::effects::Error::ResourceUsageMismatch(
                     ResourceMap::from([(Identifier("gas".to_string()), 0)]),
                     ResourceMap::from([(Identifier("gas".to_string()), 1)])
                 )

@@ -19,7 +19,7 @@ impl ExtensionImplementation for UnconditionalJumpExtension {
         self: &Self,
         _tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
-        _ctxt: &Context,
+        _cursors: &Cursors,
         _arg_refs: Vec<RefValue>,
     ) -> Result<Vec<(Effects, Vec<RefValue>)>, Error> {
         Ok(vec![(gas_usage(1), vec![])])

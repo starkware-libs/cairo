@@ -1,7 +1,8 @@
 use lalrpop_util::*;
 
-mod context;
+mod cursors;
 mod edit_state;
+mod effects;
 pub mod error;
 mod extensions;
 pub mod graph;

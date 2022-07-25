@@ -35,7 +35,7 @@ impl NonBranchImplementation for StoreExtension {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
         registry: &TypeRegistry,
-        ctxt: &Context,
+        cursors: &Cursors,
         _arg_refs: Vec<RefValue>,
     ) -> Result<(Effects, Vec<RefValue>), Error> {
         let mut effects = gas_usage(1);
@@ -45,14 +45,14 @@ impl NonBranchImplementation for StoreExtension {
             StoreType::Temp => {
                 effects = effects
                     .add(&Effects::ap_change(ti.size))
-                    .map_err(|e| Error::MergeEffects(e))?;
-                Ok(MemLocation::Temp(ctxt.temp_cursur as i64))
+                    .map_err(|e| Error::EffectsAdd(e))?;
+                Ok(MemLocation::Temp(cursors.temp as i64))
             }
             StoreType::Local => {
                 effects = effects
                     .add(&Effects::local_writes(ti.size))
-                    .map_err(|e| Error::MergeEffects(e))?;
-                Ok(MemLocation::Local(ctxt.local_cursur as i64))
+                    .map_err(|e| Error::EffectsAdd(e))?;
+                Ok(MemLocation::Local(cursors.local as i64))
             }
         }?;
         Ok((effects, vec![RefValue::Final(loc)]))
@@ -84,7 +84,7 @@ impl NonBranchImplementation for RenameExtension {
         self: &Self,
         _tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
-        _ctxt: &Context,
+        _cursors: &Cursors,
         arg_refs: Vec<RefValue>,
     ) -> Result<(Effects, Vec<RefValue>), Error> {
         Ok((Effects::none(), arg_refs))
@@ -115,7 +115,7 @@ impl NonBranchImplementation for MoveExtension {
         self: &Self,
         _tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
-        _ctxt: &Context,
+        _cursors: &Cursors,
         arg_refs: Vec<RefValue>,
     ) -> Result<(Effects, Vec<RefValue>), Error> {
         Ok((
@@ -150,13 +150,13 @@ impl NonBranchImplementation for AllocLocalsExtension {
         self: &Self,
         _tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
-        _ctxt: &Context,
+        _cursors: &Cursors,
         _arg_refs: Vec<RefValue>,
     ) -> Result<(Effects, Vec<RefValue>), Error> {
         Ok((
             Effects::allocate_locals()
                 .add(&gas_usage(1))
-                .map_err(|e| Error::MergeEffects(e))?,
+                .map_err(|e| Error::EffectsAdd(e))?,
             vec![],
         ))
     }
@@ -196,13 +196,13 @@ impl NonBranchImplementation for AlignTempsExtension {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
-        _ctxt: &Context,
+        _cursors: &Cursors,
         _arg_refs: Vec<RefValue>,
     ) -> Result<(Effects, Vec<RefValue>), Error> {
         Ok((
             gas_usage(1)
                 .add(&Effects::ap_change(positive_value_arg(tmpl_args)?))
-                .map_err(|e| Error::MergeEffects(e))?,
+                .map_err(|e| Error::EffectsAdd(e))?,
             vec![],
         ))
     }

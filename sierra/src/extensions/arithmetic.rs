@@ -37,7 +37,7 @@ impl NonBranchImplementation for ArithmeticExtension {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
-        _ctxt: &Context,
+        _cursors: &Cursors,
         arg_refs: Vec<RefValue>,
     ) -> Result<(Effects, Vec<RefValue>), Error> {
         match tmpl_args.len() {
@@ -128,7 +128,7 @@ impl NonBranchImplementation for DivExtension {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
-        _ctxt: &Context,
+        _cursors: &Cursors,
         arg_refs: Vec<RefValue>,
     ) -> Result<(Effects, Vec<RefValue>), Error> {
         match tmpl_args.len() {
@@ -202,7 +202,7 @@ impl NonBranchImplementation for DuplicateExtension {
         self: &Self,
         _tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
-        _ctxt: &Context,
+        _cursors: &Cursors,
         arg_refs: Vec<RefValue>,
     ) -> Result<(Effects, Vec<RefValue>), Error> {
         Ok((
@@ -238,7 +238,7 @@ impl NonBranchImplementation for ConstantExtension {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
-        _ctxt: &Context,
+        _cursors: &Cursors,
         _arg_refs: Vec<RefValue>,
     ) -> Result<(Effects, Vec<RefValue>), Error> {
         let (_, c) = type_value_args(tmpl_args)?;
@@ -272,7 +272,7 @@ impl NonBranchImplementation for IgnoreExtension {
         self: &Self,
         _tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
-        _ctxt: &Context,
+        _cursors: &Cursors,
         _arg_refs: Vec<RefValue>,
     ) -> Result<(Effects, Vec<RefValue>), Error> {
         Ok((Effects::none(), vec![]))

@@ -1,5 +1,6 @@
 use crate::{
-    context::{Context, Effects, Error as CtxtError},
+    cursors::Cursors,
+    effects::{Effects, Error as EffError},
     graph::*,
     ref_value::*,
 };
@@ -27,7 +28,7 @@ pub enum Error {
     IllegalApChangeValue,
     LocationsNonCosecutive,
     UnexpectedMemoryStructure,
-    MergeEffects(CtxtError),
+    EffectsAdd(EffError),
 }
 
 // Registry for finding information on extensions and types.
@@ -56,7 +57,7 @@ impl Registry {
         self: &Self,
         ext: &Extension,
         vars: Vec<VarInfo>,
-        ctxt: &Context,
+        cursors: &Cursors,
     ) -> Result<(Vec<ExtensionEffects>, Option<usize>), Error> {
         let e = match self.ext_reg.get(&ext.name) {
             None => Err(Error::UnsupportedLibCallName),
@@ -69,7 +70,7 @@ impl Registry {
         let ref_vals = e.mem_change(
             &ext.tmpl_args,
             &self.ty_reg,
-            ctxt,
+            cursors,
             vars.into_iter().map(|v| v.ref_val).collect(),
         )?;
         Ok((
@@ -146,7 +147,7 @@ trait ExtensionImplementation {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
         registry: &TypeRegistry,
-        ctxt: &Context,
+        cursors: &Cursors,
         arg_refs: Vec<RefValue>,
     ) -> Result<Vec<(Effects, Vec<RefValue>)>, Error>;
 
@@ -172,7 +173,7 @@ trait NonBranchImplementation {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
         registry: &TypeRegistry,
-        ctxt: &Context,
+        cursors: &Cursors,
         arg_refs: Vec<RefValue>,
     ) -> Result<(Effects, Vec<RefValue>), Error>;
 
@@ -316,12 +317,12 @@ impl ExtensionImplementation for NonBranchExtension {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
         registry: &TypeRegistry,
-        ctxt: &Context,
+        cursors: &Cursors,
         arg_refs: Vec<RefValue>,
     ) -> Result<Vec<(Effects, Vec<RefValue>)>, Error> {
         Ok(vec![self
             .inner
-            .mem_change(tmpl_args, registry, ctxt, arg_refs)?])
+            .mem_change(tmpl_args, registry, cursors, arg_refs)?])
     }
 
     fn exec(

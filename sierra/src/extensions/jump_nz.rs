@@ -19,7 +19,7 @@ impl ExtensionImplementation for JumpNzExtension {
         self: &Self,
         _tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
-        _ctxt: &Context,
+        _cursors: &Cursors,
         arg_refs: Vec<RefValue>,
     ) -> Result<Vec<(Effects, Vec<RefValue>)>, Error> {
         Ok(vec![
@@ -61,7 +61,7 @@ impl NonBranchImplementation for UnwrapNzExtension {
         self: &Self,
         _tmpl_args: &Vec<TemplateArg>,
         _registry: &TypeRegistry,
-        _ctxt: &Context,
+        _cursors: &Cursors,
         arg_refs: Vec<RefValue>,
     ) -> Result<(Effects, Vec<RefValue>), Error> {
         Ok((Effects::none(), arg_refs))

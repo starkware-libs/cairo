@@ -18,7 +18,7 @@ impl NonBranchImplementation for TuplePackExtension {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
         registry: &TypeRegistry,
-        _ctxt: &Context,
+        _cursors: &Cursors,
         arg_refs: Vec<RefValue>,
     ) -> Result<(Effects, Vec<RefValue>), Error> {
         let mut tup_mem: Option<(MemLocation, usize)> = None;
@@ -81,7 +81,7 @@ impl NonBranchImplementation for TupleUnpackExtension {
         self: &Self,
         tmpl_args: &Vec<TemplateArg>,
         registry: &TypeRegistry,
-        _ctxt: &Context,
+        _cursors: &Cursors,
         arg_refs: Vec<RefValue>,
     ) -> Result<(Effects, Vec<RefValue>), Error> {
         let mut refs = vec![];
