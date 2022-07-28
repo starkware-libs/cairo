@@ -1,0 +1,12 @@
+[package]
+name = "syntax_codegen"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "generate_syntax"
+path = "src/bin/generate_syntax.rs"
+
+[dependencies]
+genco = "0.17.0"
+xshell = "0.2.2"
