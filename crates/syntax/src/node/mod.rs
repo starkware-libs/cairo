@@ -1,59 +1,26 @@
+use core::hash::Hash;
 use std::sync::Arc;
 
 use smol_str::SmolStr;
 
+use self::db::GreenInterner;
+use self::green::GreenNode;
+use self::ids::GreenId;
 use self::kind::SyntaxKind;
 use crate::token;
 
+pub mod ast;
 #[cfg(test)]
 mod ast_test;
-
-pub mod ast;
+pub mod db;
 pub mod element_list;
+pub mod green;
+pub mod ids;
 pub mod kind;
 
-// Salsa database interface.
-#[salsa::query_group(GreenDatabase)]
-pub trait GreenInterner {
-    #[salsa::interned]
-    fn intern_green(&self, field: GreenNode) -> GreenId;
-}
-
-// Green node. Underlying untyped representation of the syntax tree.
+/// SyntaxNode. Untyped view of the syntax tree. Adds parent() and offset() capabilities.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub struct GreenNodeInternal {
-    kind: SyntaxKind,
-    children: Vec<GreenId>,
-    // Number of characters in the span of this syntax subtree.
-    width: u32,
-}
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub enum GreenNode {
-    Internal(GreenNodeInternal),
-    Token(token::Token),
-}
-impl GreenNode {
-    fn width(&self) -> u32 {
-        match self {
-            GreenNode::Internal(internal) => internal.width,
-            GreenNode::Token(token) => token.width(),
-        }
-    }
-}
-
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
-pub struct GreenId(salsa::InternId);
-impl salsa::InternKey for GreenId {
-    fn from_intern_id(id: salsa::InternId) -> Self {
-        Self(id)
-    }
-
-    fn as_intern_id(&self) -> salsa::InternId {
-        self.0
-    }
-}
-
-// SyntaxNode. Untyped view of the syntax tree. Adds parent() and offset() capabilities.
+pub struct SyntaxNode(Arc<SyntaxNodeInner>);
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 struct SyntaxNodeInner {
     green: GreenId,
@@ -62,23 +29,20 @@ struct SyntaxNodeInner {
     offset: u32,
     parent: Option<SyntaxNode>,
 }
-
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub struct SyntaxNode(Arc<SyntaxNodeInner>);
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub enum SyntaxNodeKind {
+pub enum SyntaxNodeDetails {
     Syntax(SyntaxKind),
-    Token,
+    Token(token::Token),
 }
 impl SyntaxNode {
     pub fn new_root(green: GreenId) -> Self {
         let inner = SyntaxNodeInner { green, offset: 0, parent: None };
         Self(Arc::new(inner))
     }
-    pub fn kind(&self, db: &dyn GreenInterner) -> SyntaxNodeKind {
+    pub fn details(&self, db: &dyn GreenInterner) -> SyntaxNodeDetails {
         match db.lookup_intern_green(self.0.green) {
-            GreenNode::Internal(internal) => SyntaxNodeKind::Syntax(internal.kind),
-            GreenNode::Token(_token) => SyntaxNodeKind::Token,
+            GreenNode::Internal(internal) => SyntaxNodeDetails::Syntax(internal.kind),
+            GreenNode::Token(token) => SyntaxNodeDetails::Token(token),
         }
     }
     pub fn offset(&self) -> u32 {
@@ -115,16 +79,17 @@ impl SyntaxNode {
     }
 }
 
-// Trait for the typed view of the syntax tree. All the internal node implementations are under
-// the ast module.
-// TODO(spapini): Add parent().
-// TODO(spapini): Add converting from untyped to typed.
+/// Trait for the typed view of the syntax tree. All the internal node implementations are under
+/// the ast module.
 pub trait TypedSyntaxNode {
     fn missing(db: &dyn GreenInterner) -> GreenId;
     fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self;
+    fn as_syntax_node(&self) -> SyntaxNode;
 }
 
-// Typed view for a token. Implements the typed view interface TypedSyntaxNode.
+// TODO(spapini): Children should be excluded from Eq and Hash of Typed nodes.
+/// Typed view for a token. Implements the typed view interface TypedSyntaxNode.
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Token {
     node: SyntaxNode,
 }
@@ -162,5 +127,16 @@ impl TypedSyntaxNode for Token {
             }
             GreenNode::Token(_token) => Self { node },
         }
+    }
+
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+}
+
+// TODO(spapini): Consider converting into a trait and moving somewhere else.
+impl ast::Identifier {
+    pub fn text(&self, db: &dyn GreenInterner) -> SmolStr {
+        self.terminal(db).token(db).text(db)
     }
 }
