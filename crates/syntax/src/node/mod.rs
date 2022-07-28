@@ -2,9 +2,8 @@ use std::sync::Arc;
 
 use smol_str::SmolStr;
 
-use crate::token;
-
 use self::kind::SyntaxKind;
+use crate::token;
 
 #[cfg(test)]
 mod ast_test;
