@@ -11,6 +11,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          components: rustfmt
+          toolchain: nightly-2022-07-27
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v1
       - run: |
@@ -20,11 +24,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: dtolnay/rust-toolchain@nightly
+      - uses: dtolnay/rust-toolchain@master
         with:
           components: rustfmt
+          toolchain: nightly-2022-07-27
       - uses: Swatinem/rust-cache@v1
-      - run: cargo +nightly fmt --all -- --check
+      - run: cargo +nightly-2022-07-27 fmt --all -- --check
 
   clippy:
     runs-on: ubuntu-latest

@@ -7,4 +7,5 @@ members = [
     "crates/diagnostics",
     "crates/filesystem",
     "crates/syntax",
+    "crates/syntax_codegen",
 ]
