@@ -9,7 +9,7 @@ pub enum Error {
 }
 
 // Given a map with identifiers as key, extracts out the given identifiers, failing if some identifier is missing.
-pub fn take_args<'a, V: 'a + std::cmp::PartialEq>(
+pub(crate) fn take_args<'a, V: 'a + std::cmp::PartialEq>(
     mut state: HashMap<Identifier, V>,
     ids: impl Iterator<Item = &'a Identifier>,
 ) -> Result<(HashMap<Identifier, V>, Vec<V>), Error> {
@@ -28,7 +28,7 @@ pub fn take_args<'a, V: 'a + std::cmp::PartialEq>(
 }
 
 // Adds the given pairs to map with identifiers as key, failing if some variable is overriden.
-pub fn put_results<'a, V>(
+pub(crate) fn put_results<'a, V>(
     mut state: HashMap<Identifier, V>,
     results: impl Iterator<Item = (&'a Identifier, V)>,
 ) -> Result<HashMap<Identifier, V>, Error> {
@@ -52,23 +52,14 @@ mod tests {
 
     #[test]
     fn empty() {
-        assert_eq!(
-            take_args(State::new(), vec![].into_iter()),
-            Ok((State::new(), vec![]))
-        );
-        assert_eq!(
-            put_results(State::new(), vec![].into_iter()),
-            Ok(State::new())
-        );
+        assert_eq!(take_args(State::new(), vec![].into_iter()), Ok((State::new(), vec![])));
+        assert_eq!(put_results(State::new(), vec![].into_iter()), Ok(State::new()));
     }
 
     #[test]
     fn basic_mapping() {
         assert_eq!(
-            take_args(
-                State::from([(as_id("arg"), 0)]),
-                vec![&as_id("arg")].into_iter(),
-            ),
+            take_args(State::from([(as_id("arg"), 0)]), vec![&as_id("arg")].into_iter(),),
             Ok((State::new(), vec![0]))
         );
         assert_eq!(
@@ -80,10 +71,7 @@ mod tests {
             Err(Error::MissingReference(as_id("arg")))
         );
         assert_eq!(
-            put_results(
-                State::from([(as_id("res"), 1)]),
-                vec![(&as_id("res"), 1)].into_iter(),
-            ),
+            put_results(State::from([(as_id("res"), 1)]), vec![(&as_id("res"), 1)].into_iter(),),
             Err(Error::VariableOverride(as_id("res")))
         );
     }
