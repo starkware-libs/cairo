@@ -1,6 +1,8 @@
 use std::fmt;
 
-use crate::program::{Type, TemplateArg, Statement, Invocation, Extension, BranchInfo, BranchTarget, Identifier};
+use crate::program::{
+    BranchInfo, BranchTarget, Extension, Identifier, Invocation, Statement, TemplateArg, Type,
+};
 
 impl fmt::Display for Type {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
