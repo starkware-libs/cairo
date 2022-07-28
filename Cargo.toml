@@ -8,4 +8,5 @@ members = [
     "crates/filesystem",
     "crates/sierra",
     "crates/syntax",
+    "crates/syntax_codegen",
 ]
