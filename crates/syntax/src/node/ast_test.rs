@@ -1,7 +1,6 @@
+use super::ast::Empty;
 use super::kind::SyntaxKind;
-use super::{ast::Empty, GreenInterner, SyntaxNode, SyntaxNodeKind};
-
-use super::GreenDatabase;
+use super::{GreenDatabase, GreenInterner, SyntaxNode, SyntaxNodeKind};
 
 #[salsa::database(GreenDatabase)]
 #[derive(Default)]

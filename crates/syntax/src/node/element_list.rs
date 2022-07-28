@@ -1,8 +1,7 @@
 use std::marker::PhantomData;
 
-use crate::node::{SyntaxNode, TypedSyntaxNode};
-
 use super::GreenInterner;
+use crate::node::{SyntaxNode, TypedSyntaxNode};
 
 // A typed view of an element list node.
 // STEP=1 means a sequence of elements (e.g. sequence of trivia elements).
