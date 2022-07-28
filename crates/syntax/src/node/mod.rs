@@ -1,64 +1,32 @@
+use core::hash::Hash;
 use std::sync::Arc;
 
 use smol_str::SmolStr;
 
+use self::db::GreenInterner;
+use self::green::GreenNode;
+use self::ids::GreenId;
 use self::kind::SyntaxKind;
 use crate::token;
 
+#[allow(clippy::too_many_arguments)]
+#[allow(dead_code)]
+#[allow(unused_variables)]
+pub mod ast;
 #[cfg(test)]
 mod ast_test;
-
-pub mod ast;
+pub mod db;
 pub mod element_list;
+pub mod green;
+pub mod ids;
 pub mod kind;
 
-// Salsa database interface.
-#[salsa::query_group(GreenDatabase)]
-pub trait GreenInterner {
-    #[salsa::interned]
-    fn intern_green(&self, field: GreenNode) -> GreenId;
-}
-
-// Green node. Underlying untyped representation of the syntax tree.
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub struct GreenNodeInternal {
-    kind: SyntaxKind,
-    children: Vec<GreenId>,
-    // Number of characters in the span of this syntax subtree.
-    width: u32,
-}
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub enum GreenNode {
-    Internal(GreenNodeInternal),
-    Token(token::Token),
-}
-impl GreenNode {
-    fn width(&self) -> u32 {
-        match self {
-            GreenNode::Internal(internal) => internal.width,
-            GreenNode::Token(token) => token.width(),
-        }
-    }
-}
-
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
-pub struct GreenId(salsa::InternId);
-impl salsa::InternKey for GreenId {
-    fn from_intern_id(id: salsa::InternId) -> Self {
-        Self(id)
-    }
-
-    fn as_intern_id(&self) -> salsa::InternId {
-        self.0
-    }
-}
+// TODO: Children should be excluded from Eq and Hash of Typed nodes.
 
 // SyntaxNode. Untyped view of the syntax tree. Adds parent() and offset() capabilities.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 struct SyntaxNodeInner {
     green: GreenId,
-    // Number of characters from the beginning of the file to the start of the span of this
-    // syntax subtree.
     offset: u32,
     parent: Option<SyntaxNode>,
 }
@@ -68,7 +36,7 @@ pub struct SyntaxNode(Arc<SyntaxNodeInner>);
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum SyntaxNodeKind {
     Syntax(SyntaxKind),
-    Token,
+    Token(token::Token),
 }
 impl SyntaxNode {
     pub fn new_root(green: GreenId) -> Self {
@@ -78,7 +46,7 @@ impl SyntaxNode {
     pub fn kind(&self, db: &dyn GreenInterner) -> SyntaxNodeKind {
         match db.lookup_intern_green(self.0.green) {
             GreenNode::Internal(internal) => SyntaxNodeKind::Syntax(internal.kind),
-            GreenNode::Token(_token) => SyntaxNodeKind::Token,
+            GreenNode::Token(token) => SyntaxNodeKind::Token(token),
         }
     }
     pub fn offset(&self) -> u32 {
@@ -117,14 +85,14 @@ impl SyntaxNode {
 
 // Trait for the typed view of the syntax tree. All the internal node implementations are under
 // the ast module.
-// TODO(spapini): Add parent().
-// TODO(spapini): Add converting from untyped to typed.
 pub trait TypedSyntaxNode {
     fn missing(db: &dyn GreenInterner) -> GreenId;
     fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self;
+    fn as_syntax_node(&self) -> SyntaxNode;
 }
 
 // Typed view for a token. Implements the typed view interface TypedSyntaxNode.
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Token {
     node: SyntaxNode,
 }
@@ -138,7 +106,7 @@ impl Token {
         if let GreenNode::Token(token) = green {
             return token;
         }
-        panic!("Expected a token, got {:?}.", green);
+        panic!("Expected a token.");
     }
     pub fn kind(&self, db: &dyn GreenInterner) -> token::TokenKind {
         self.raw(db).kind
@@ -162,5 +130,15 @@ impl TypedSyntaxNode for Token {
             }
             GreenNode::Token(_token) => Self { node },
         }
+    }
+
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+}
+
+impl ast::Identifier {
+    pub fn text(&self, db: &dyn GreenInterner) -> SmolStr {
+        self.terminal(db).token(db).text(db)
     }
 }
