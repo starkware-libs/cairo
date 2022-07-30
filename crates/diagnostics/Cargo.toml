@@ -1,0 +1,8 @@
+[package]
+name = "diagnostics"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+filesystem = { path = "../filesystem" }
+salsa = "0.16.1"
