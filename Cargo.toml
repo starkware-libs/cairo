@@ -3,6 +3,7 @@
 members = [
     "crates/db_utils",
     "crates/defs",
+    "crates/diagnostics",
     "crates/filesystem",
     "crates/syntax",
 ]
