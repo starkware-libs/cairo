@@ -22,6 +22,7 @@
 // Call sites, variable usages, assignments, etc. are NOT definitions.
 
 use db_utils::define_short_id;
+use filesystem::ids::CrateId;
 use smol_str::SmolStr;
 
 // Utility macro for defining ids.
@@ -40,16 +41,21 @@ macro_rules! id_by_name_and_parent {
 }
 
 // Module.
-// TODO(spapini): Add ModuleLongId once crates are added.
-define_short_id!(ModuleId);
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub enum ModuleId {
+    CrateRoot(CrateId),
+    Submodule(SubmoduleId),
+}
 
 // Module Items.
 // ModuleItemId - direct children of a module.
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub enum ModuleItemId {
+    Submodule(SubmoduleId),
     Struct(StructId),
 }
 id_by_name_and_parent!(StructId, StructLongId, ModuleId);
+id_by_name_and_parent!(SubmoduleId, SubmoduleLongId, ModuleId);
 
 // Symbol - anything that can be a "Go to definition" result.
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
