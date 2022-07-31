@@ -1,8 +1,8 @@
-// A full sierra program.
+// A full Sierra program.
 #[derive(Clone, Debug)]
 pub struct Program {
     // All code of the program.
-    pub stmts: Vec<Statement>,
+    pub statements: Vec<Statement>,
     // Descriptions of the functions - signature and entry point.
     pub funcs: Vec<Function>,
 }
@@ -38,6 +38,7 @@ pub struct Type {
     pub args: Vec<TemplateArg>,
 }
 
+// Represents the index of a statement in the Program::statements vector.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct StatementId(pub usize);
 
@@ -60,9 +61,10 @@ pub enum Statement {
 pub struct Invocation {
     // The called extension.
     pub ext: Extension,
-    // The argumenst consumed by the extension invocation.
+    // The arguments consumed by the extension's invocation.
     pub args: Vec<Identifier>,
-    // The possibly called branches by the invocation.
+    // The possible branches to continue to after the invocation.
+    // The extension would continue to exactly one of the branches.
     pub branches: Vec<BranchInfo>,
 }
 
