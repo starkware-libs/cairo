@@ -37,14 +37,17 @@ impl fmt::Display for Invocation {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}(", self.ext)?;
         write_comma_separated(f, &self.args)?;
-        if self.branches.len() == 1 && self.branches[0].target == BranchTarget::Fallthrough {
-            write!(f, ") -> (")?;
-            write_comma_separated(f, &self.branches[0].results)?;
-            write!(f, ")")
-        } else {
-            write!(f, ") {{ ")?;
-            self.branches.iter().try_for_each(|b| write!(f, "{} ", b))?;
-            write!(f, "}}")
+        match &self.branches[..] {
+            [BranchInfo { target: BranchTarget::Fallthrough, results }] => {
+                write!(f, ") -> (")?;
+                write_comma_separated(f, results)?;
+                write!(f, ")")
+            }
+            brs => {
+                write!(f, ") {{ ")?;
+                brs.iter().try_for_each(|b| write!(f, "{} ", b))?;
+                write!(f, "}}")
+            }
         }
     }
 }
