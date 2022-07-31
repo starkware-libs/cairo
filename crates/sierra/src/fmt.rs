@@ -6,7 +6,7 @@ use crate::program::{
 
 impl fmt::Display for Type {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.name)?;
+        write!(f, "{}", self.id)?;
         write_template_args(f, &self.args)
     }
 }
@@ -57,7 +57,7 @@ impl fmt::Display for Identifier {
 
 impl fmt::Display for Extension {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.name)?;
+        write!(f, "{}", self.id)?;
         write_template_args(f, &self.tmpl_args)
     }
 }
@@ -101,22 +101,25 @@ fn write_comma_separated<V: std::fmt::Display>(
 mod tests {
     use super::*;
     use crate::program::StatementId;
+    fn as_id(id: &str) -> Identifier {
+        Identifier(id.into())
+    }
     #[test]
     fn display_type() {
-        assert_eq!(Type { name: "type".to_string(), args: vec![] }.to_string(), "type".to_string());
+        assert_eq!(Type { id: as_id("type"), args: vec![] }.to_string(), "type".to_string());
         assert_eq!(
             Type {
-                name: "type".to_string(),
-                args: vec![TemplateArg::Type(Type { name: "arg".to_string(), args: vec![] })]
+                id: as_id("type"),
+                args: vec![TemplateArg::Type(Type { id: as_id("arg"), args: vec![] })]
             }
             .to_string(),
             "type<arg>".to_string()
         );
         assert_eq!(
             Type {
-                name: "type".to_string(),
+                id: as_id("type"),
                 args: vec![
-                    TemplateArg::Type(Type { name: "arg1".to_string(), args: vec![] }),
+                    TemplateArg::Type(Type { id: as_id("arg1"), args: vec![] }),
                     TemplateArg::Value(4)
                 ]
             }
@@ -128,22 +131,22 @@ mod tests {
     #[test]
     fn display_extension() {
         assert_eq!(
-            Extension { name: "ext".to_string(), tmpl_args: vec![] }.to_string(),
+            Extension { id: as_id("ext"), tmpl_args: vec![] }.to_string(),
             "ext".to_string()
         );
         assert_eq!(
             Extension {
-                name: "ext".to_string(),
-                tmpl_args: vec![TemplateArg::Type(Type { name: "arg".to_string(), args: vec![] })]
+                id: as_id("ext"),
+                tmpl_args: vec![TemplateArg::Type(Type { id: as_id("arg"), args: vec![] })]
             }
             .to_string(),
             "ext<arg>".to_string()
         );
         assert_eq!(
             Extension {
-                name: "ext".to_string(),
+                id: as_id("ext"),
                 tmpl_args: vec![
-                    TemplateArg::Type(Type { name: "arg1".to_string(), args: vec![] }),
+                    TemplateArg::Type(Type { id: as_id("arg1"), args: vec![] }),
                     TemplateArg::Value(4)
                 ]
             }
@@ -156,7 +159,7 @@ mod tests {
     fn display_statement() {
         assert_eq!(
             Statement::Invocation(Invocation {
-                ext: Extension { name: "ext".to_string(), tmpl_args: vec![] },
+                ext: Extension { id: as_id("ext"), tmpl_args: vec![] },
                 args: vec![],
                 branches: vec![BranchInfo { target: BranchTarget::Fallthrough, results: vec![] }]
             })
@@ -165,11 +168,11 @@ mod tests {
         );
         assert_eq!(
             Statement::Invocation(Invocation {
-                ext: Extension { name: "ext".to_string(), tmpl_args: vec![] },
-                args: vec![Identifier("arg1".to_string())],
+                ext: Extension { id: as_id("ext"), tmpl_args: vec![] },
+                args: vec![as_id("arg1")],
                 branches: vec![BranchInfo {
                     target: BranchTarget::Fallthrough,
-                    results: vec![Identifier("res1".to_string())]
+                    results: vec![as_id("res1")]
                 }]
             })
             .to_string(),
@@ -177,11 +180,11 @@ mod tests {
         );
         assert_eq!(
             Statement::Invocation(Invocation {
-                ext: Extension { name: "ext".to_string(), tmpl_args: vec![] },
-                args: vec![Identifier("arg1".to_string()), Identifier("arg2".to_string())],
+                ext: Extension { id: as_id("ext"), tmpl_args: vec![] },
+                args: vec![as_id("arg1"), as_id("arg2")],
                 branches: vec![BranchInfo {
                     target: BranchTarget::Fallthrough,
-                    results: vec![Identifier("res1".to_string()), Identifier("res2".to_string())]
+                    results: vec![as_id("res1"), as_id("res2")]
                 }]
             })
             .to_string(),
@@ -189,7 +192,7 @@ mod tests {
         );
         assert_eq!(
             Statement::Invocation(Invocation {
-                ext: Extension { name: "ext".to_string(), tmpl_args: vec![] },
+                ext: Extension { id: as_id("ext"), tmpl_args: vec![] },
                 args: vec![],
                 branches: vec![BranchInfo {
                     target: BranchTarget::Statement(StatementId(5)),
@@ -201,20 +204,17 @@ mod tests {
         );
         assert_eq!(
             Statement::Invocation(Invocation {
-                ext: Extension { name: "ext".to_string(), tmpl_args: vec![] },
-                args: vec![Identifier("arg1".to_string()), Identifier("arg2".to_string())],
+                ext: Extension { id: as_id("ext"), tmpl_args: vec![] },
+                args: vec![as_id("arg1"), as_id("arg2")],
                 branches: vec![
                     BranchInfo { target: BranchTarget::Fallthrough, results: vec![] },
                     BranchInfo {
                         target: BranchTarget::Statement(StatementId(7)),
-                        results: vec![Identifier("res1".to_string())]
+                        results: vec![as_id("res1")]
                     },
                     BranchInfo {
                         target: BranchTarget::Statement(StatementId(5)),
-                        results: vec![
-                            Identifier("res1".to_string()),
-                            Identifier("res2".to_string())
-                        ]
+                        results: vec![as_id("res1"), as_id("res2")]
                     }
                 ]
             })
