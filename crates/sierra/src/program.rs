@@ -1,9 +1,9 @@
 // A full Sierra program.
 #[derive(Clone, Debug)]
 pub struct Program {
-    // All code of the program.
+    // The code of the program.
     pub statements: Vec<Statement>,
-    // Descriptions of the functions - signature and entry point.
+    // Descriptions of the functions - signatures and entry points.
     pub funcs: Vec<Function>,
 }
 
