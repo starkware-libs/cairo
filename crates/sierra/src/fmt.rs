@@ -79,7 +79,7 @@ impl fmt::Display for BranchTarget {
     }
 }
 
-fn write_template_args(f: &mut fmt::Formatter<'_>, args: &Vec<TemplateArg>) -> fmt::Result {
+fn write_template_args(f: &mut fmt::Formatter<'_>, args: &[TemplateArg]) -> fmt::Result {
     if args.is_empty() {
         Ok(())
     } else {

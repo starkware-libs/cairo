@@ -7,7 +7,7 @@ impl ExtensionImplementation for GetGasExtension {
         &self,
         tmpl_args: &[TemplateArg],
         mut inputs: Vec<Vec<i64>>,
-    ) -> Result<(Vec<Vec<i64>>, usize), Error> {
+    ) -> Result<(Vec<Vec<i64>>, usize), ExtensionError> {
         let gas = gas_value_arg(tmpl_args)?;
         validate_mem_sizes(&inputs, [1])?;
         if inputs[0][0] >= gas {
@@ -25,15 +25,15 @@ impl NonBranchExtensionImplementation for RefundGasExtension {
         &self,
         tmpl_args: &[TemplateArg],
         inputs: Vec<Vec<i64>>,
-    ) -> Result<Vec<Vec<i64>>, Error> {
+    ) -> Result<Vec<Vec<i64>>, ExtensionError> {
         validate_mem_sizes(&inputs, [1])?;
         Ok(vec![vec![inputs[0][0] + gas_value_arg(tmpl_args)?]])
     }
 }
 
-fn gas_value_arg(tmpl_args: &[TemplateArg]) -> Result<i64, Error> {
+fn gas_value_arg(tmpl_args: &[TemplateArg]) -> Result<i64, ExtensionError> {
     let gas = single_value_arg(tmpl_args)?;
-    if gas <= 0 { Err(Error::UnsupportedTypeArg) } else { Ok(gas) }
+    if gas <= 0 { Err(ExtensionError::UnsupportedTemplateArg) } else { Ok(gas) }
 }
 
 pub(super) fn extensions() -> [(String, ExtensionBox); 2] {

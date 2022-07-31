@@ -17,7 +17,7 @@ impl NonBranchExtensionImplementation for OpExtension {
         &self,
         _tmpl_args: &[TemplateArg],
         inputs: Vec<Vec<i64>>,
-    ) -> Result<Vec<Vec<i64>>, Error> {
+    ) -> Result<Vec<Vec<i64>>, ExtensionError> {
         validate_mem_sizes(&inputs, [1, 1])?;
         Ok(vec![vec![match self.op {
             Op::Add => inputs[0][0] + inputs[1][0],
@@ -38,7 +38,7 @@ impl NonBranchExtensionImplementation for OpWithConstExtension {
         &self,
         tmpl_args: &[TemplateArg],
         inputs: Vec<Vec<i64>>,
-    ) -> Result<Vec<Vec<i64>>, Error> {
+    ) -> Result<Vec<Vec<i64>>, ExtensionError> {
         let c = single_value_arg(tmpl_args)?;
         validate_mem_sizes(&inputs, [1])?;
         Ok(vec![vec![match self.op {
@@ -58,7 +58,7 @@ impl NonBranchExtensionImplementation for IgnoreExtension {
         &self,
         _tmpl_args: &[TemplateArg],
         inputs: Vec<Vec<i64>>,
-    ) -> Result<Vec<Vec<i64>>, Error> {
+    ) -> Result<Vec<Vec<i64>>, ExtensionError> {
         validate_mem_sizes(&inputs, [1])?;
         Ok(vec![])
     }
@@ -71,7 +71,7 @@ impl NonBranchExtensionImplementation for DuplicateExtension {
         &self,
         _tmpl_args: &[TemplateArg],
         mut inputs: Vec<Vec<i64>>,
-    ) -> Result<Vec<Vec<i64>>, Error> {
+    ) -> Result<Vec<Vec<i64>>, ExtensionError> {
         validate_mem_sizes(&inputs, [1])?;
         Ok(vec![inputs[0].clone(), inputs.remove(0)])
     }
@@ -84,7 +84,7 @@ impl NonBranchExtensionImplementation for ConstantExtension {
         &self,
         tmpl_args: &[TemplateArg],
         inputs: Vec<Vec<i64>>,
-    ) -> Result<Vec<Vec<i64>>, Error> {
+    ) -> Result<Vec<Vec<i64>>, ExtensionError> {
         validate_mem_sizes(&inputs, [])?;
         Ok(vec![vec![single_value_arg(tmpl_args)?]])
     }
@@ -97,7 +97,7 @@ impl ExtensionImplementation for JumpNzExtension {
         &self,
         _tmpl_args: &[TemplateArg],
         inputs: Vec<Vec<i64>>,
-    ) -> Result<(Vec<Vec<i64>>, usize), Error> {
+    ) -> Result<(Vec<Vec<i64>>, usize), ExtensionError> {
         validate_mem_sizes(&inputs, [1])?;
         if inputs[0][0] != 0 { Ok((inputs, 0)) } else { Ok((vec![], 1)) }
     }
@@ -110,7 +110,7 @@ impl NonBranchExtensionImplementation for UnwrapNzExtension {
         &self,
         _tmpl_args: &[TemplateArg],
         inputs: Vec<Vec<i64>>,
-    ) -> Result<Vec<Vec<i64>>, Error> {
+    ) -> Result<Vec<Vec<i64>>, ExtensionError> {
         validate_mem_sizes(&inputs, [1])?;
         Ok(inputs)
     }

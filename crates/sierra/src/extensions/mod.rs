@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use thiserror::Error;
+
 use crate::program::{Extension, TemplateArg};
 
 mod gas;
@@ -8,11 +10,15 @@ mod mem;
 mod unconditional_jump;
 
 // Error option while using extensions.
-#[derive(Debug, PartialEq)]
-pub enum Error {
+#[derive(Error, Debug, PartialEq)]
+pub enum ExtensionError {
+    #[error("Count not find the requested exension")]
     UnsupportedLibCallName,
-    WrongNumberOfTypeArgs,
-    UnsupportedTypeArg,
+    #[error("Expected a different number of template arguments")]
+    WrongNumberOfTemplateArgs,
+    #[error("Provided template arg is unsupported")]
+    UnsupportedTemplateArg,
+    #[error("Unexpected memory structure")]
     UnexpectedMemoryStructure,
 }
 
@@ -40,10 +46,10 @@ impl Extensions {
         &self,
         ext: &Extension,
         inputs: Vec<Vec<i64>>,
-    ) -> Result<(Vec<Vec<i64>>, usize), Error> {
+    ) -> Result<(Vec<Vec<i64>>, usize), ExtensionError> {
         self.ext_reg
             .get(&ext.name)
-            .ok_or(Error::UnsupportedLibCallName)?
+            .ok_or(ExtensionError::UnsupportedLibCallName)?
             .simulate(&ext.tmpl_args, inputs)
     }
 }
@@ -56,7 +62,7 @@ trait ExtensionImplementation {
         &self,
         tmpl_args: &[TemplateArg],
         inputs: Vec<Vec<i64>>,
-    ) -> Result<(Vec<Vec<i64>>, usize), Error>;
+    ) -> Result<(Vec<Vec<i64>>, usize), ExtensionError>;
 }
 
 type ExtensionBox = Box<dyn ExtensionImplementation + Sync + Send>;
@@ -73,7 +79,7 @@ impl ExtensionImplementation for NonBranchExtension {
         &self,
         tmpl_args: &[TemplateArg],
         inputs: Vec<Vec<i64>>,
-    ) -> Result<(Vec<Vec<i64>>, usize), Error> {
+    ) -> Result<(Vec<Vec<i64>>, usize), ExtensionError> {
         Ok((self.inner.simulate(tmpl_args, inputs)?, 0))
     }
 }
@@ -86,32 +92,32 @@ trait NonBranchExtensionImplementation {
         &self,
         tmpl_args: &[TemplateArg],
         inputs: Vec<Vec<i64>>,
-    ) -> Result<Vec<Vec<i64>>, Error>;
+    ) -> Result<Vec<Vec<i64>>, ExtensionError>;
 }
 
 fn validate_mem_sizes<const N: usize>(
     inputs: &[Vec<i64>],
     expectation: [usize; N],
-) -> Result<(), Error> {
+) -> Result<(), ExtensionError> {
     if inputs.iter().map(|input| input.len()).eq(expectation) {
         Ok(())
     } else {
-        Err(Error::UnexpectedMemoryStructure)
+        Err(ExtensionError::UnexpectedMemoryStructure)
     }
 }
 
-fn unwrap_value(tmpl_arg: &TemplateArg) -> Result<i64, Error> {
+fn unwrap_value(tmpl_arg: &TemplateArg) -> Result<i64, ExtensionError> {
     match tmpl_arg {
         TemplateArg::Value(v) => Ok(*v),
-        TemplateArg::Type(_) => Err(Error::UnsupportedTypeArg),
+        TemplateArg::Type(_) => Err(ExtensionError::UnsupportedTemplateArg),
     }
 }
 
-fn validate_size_eq(tmpl_args: &[TemplateArg], size: usize) -> Result<(), Error> {
-    if tmpl_args.len() == size { Ok(()) } else { Err(Error::WrongNumberOfTypeArgs) }
+fn validate_size_eq(tmpl_args: &[TemplateArg], size: usize) -> Result<(), ExtensionError> {
+    if tmpl_args.len() == size { Ok(()) } else { Err(ExtensionError::WrongNumberOfTemplateArgs) }
 }
 
-fn single_value_arg(tmpl_args: &[TemplateArg]) -> Result<i64, Error> {
+fn single_value_arg(tmpl_args: &[TemplateArg]) -> Result<i64, ExtensionError> {
     validate_size_eq(tmpl_args, 1)?;
     unwrap_value(&tmpl_args[0])
 }
