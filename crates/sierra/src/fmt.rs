@@ -5,14 +5,14 @@ use crate::program::{
 };
 
 impl fmt::Display for Type {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.name)?;
         write_template_args(f, &self.args)
     }
 }
 
 impl fmt::Display for TemplateArg {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             TemplateArg::Type(t) => write!(f, "{}", t),
             TemplateArg::Value(v) => write!(f, "{}", v),
@@ -21,7 +21,7 @@ impl fmt::Display for TemplateArg {
 }
 
 impl fmt::Display for Statement {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Statement::Invocation(invc) => write!(f, "{};", invc),
             Statement::Return(ids) => {
@@ -34,7 +34,7 @@ impl fmt::Display for Statement {
 }
 
 impl fmt::Display for Invocation {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}(", self.ext)?;
         write_comma_separated(f, &self.args)?;
         if let [BranchInfo { target: BranchTarget::Fallthrough, results }] = &self.branches[..] {
@@ -49,15 +49,21 @@ impl fmt::Display for Invocation {
     }
 }
 
+impl fmt::Display for Identifier {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
 impl fmt::Display for Extension {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.name)?;
         write_template_args(f, &self.tmpl_args)
     }
 }
 
 impl fmt::Display for BranchInfo {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}(", self.target)?;
         write_comma_separated(f, &self.results)?;
         write!(f, ")")
@@ -65,7 +71,7 @@ impl fmt::Display for BranchInfo {
 }
 
 impl fmt::Display for BranchTarget {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             BranchTarget::Fallthrough => write!(f, "fallthrough"),
             BranchTarget::Statement(s_id) => write!(f, "{}", s_id.0),
@@ -73,21 +79,22 @@ impl fmt::Display for BranchTarget {
     }
 }
 
-fn write_template_args(f: &mut fmt::Formatter, args: &Vec<TemplateArg>) -> fmt::Result {
-    let mut iter = args.iter();
-    if let Some(arg) = iter.next() {
-        write!(f, "<{}", arg)?;
-        for arg in iter {
-            write!(f, ", {}", arg)?;
-        }
-        write!(f, ">")?;
+fn write_template_args(f: &mut fmt::Formatter<'_>, args: &Vec<TemplateArg>) -> fmt::Result {
+    if args.is_empty() {
+        Ok(())
+    } else {
+        write!(f, "<")?;
+        write_comma_separated(f, args)?;
+        write!(f, ">")
     }
-    Ok(())
 }
 
-fn write_comma_separated(f: &mut fmt::Formatter, ids: &Vec<Identifier>) -> fmt::Result {
-    ids.iter().take(1).try_for_each(|n| write!(f, "{}", n.0))?;
-    ids.iter().skip(1).try_for_each(|n| write!(f, ", {}", n.0))
+fn write_comma_separated<V: std::fmt::Display>(
+    f: &mut fmt::Formatter<'_>,
+    values: &[V],
+) -> fmt::Result {
+    values.iter().take(1).try_for_each(|v| write!(f, "{}", v))?;
+    values.iter().skip(1).try_for_each(|v| write!(f, ", {}", v))
 }
 
 #[cfg(test)]
