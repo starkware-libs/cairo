@@ -1,7 +1,5 @@
 use std::collections::HashMap;
 
-use Result::*;
-
 use crate::program::Identifier;
 
 #[derive(Debug, PartialEq)]
