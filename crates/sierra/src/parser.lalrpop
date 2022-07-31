@@ -1,0 +1,104 @@
+// Simple parser for sierra.
+// Currently only used for more easily writing tests.
+
+use crate::program::*;
+
+grammar;
+
+pub Program: Program = {
+    <statements:Statement*> <funcs:Function*> => Program{statements, funcs},
+}
+
+Statement: Statement = {
+    <invc:Invocation> => Statement::Invocation(invc),
+    "return" "(" <args:Identifiers> ")" ";" => Statement::Return(args),
+}
+
+Function: Function = {
+    <id:Identifier> "@" <entry:StatementId> 
+    "(" <args: TypedVars> ")" "->" "(" <ret_types: Types> ")" ";"
+    => Function{id, args, ret_types, entry},
+}
+
+Invocation: Invocation = {
+    <ext:Extension> "(" <args:Identifiers> ")" "->" "(" <results:Identifiers> ")" ";" =>
+        Invocation{
+            ext,
+            args,
+            branches: vec![BranchInfo{ target: BranchTarget::Fallthrough , results }]
+        },
+    <ext:Extension> "(" <args:Identifiers> ")" "{" <branches:BranchInfo*> "}" ";" =>
+        Invocation{ext, args, branches},
+}
+
+Extension: Extension = {
+    <name:Label> "<" <tmpl_args:TemplateArgs> ">" => Extension{name, tmpl_args},
+    <name:Label> => Extension{name, tmpl_args: vec![]},
+}
+ 
+Comma<T>: Vec<T> = { // (0)
+    <mut v:(<T> ",")*> <e:T?> => match e { // (1)
+        None=> v,
+        Some(e) => {
+            v.push(e);
+            v
+        }
+    }
+}; 
+
+TemplateArgs = Comma<TemplateArg>;
+
+TemplateArg: TemplateArg = {
+    <v:UnsignedInt> => TemplateArg::Value(v),
+    "-" <v:UnsignedInt> => TemplateArg::Value(-v),
+    Type => TemplateArg::Type(<>),
+}
+
+TypedVars = Comma<TypedVar>;
+
+TypedVar: TypedVar = {
+    <id:Identifier> ":" <ty:Type> => TypedVar{id, ty},
+}
+
+Types = Comma<Type>;
+
+Type: Type = {
+    <name:Label> "<" <args:TemplateArgs> ">" => Type{name, args},
+    <name:Label> => Type{name, args: vec![]},
+}
+
+BranchInfo: BranchInfo = {
+    <target: BranchTarget> "(" <results:Identifiers> ")" =>
+        BranchInfo{ target, results },
+}
+
+BranchTarget: BranchTarget = {
+     "fallthrough" => BranchTarget::Fallthrough,
+     <s_id:StatementId> => BranchTarget::Statement(s_id),
+}
+
+
+Identifiers = Comma<Identifier>;
+
+Identifier: Identifier = {
+    Label => Identifier(<>),
+}
+
+StatementId: StatementId = {
+     <s_id:UnsignedInt> => StatementId(s_id as usize),
+}
+
+Label: String = {
+    r"[a-zA-Z_][a-zA-Z_0-9]*" => <>.to_string(),
+}
+
+UnsignedInt: i64 = {
+    r"[1-9][0-9]*" => <>.parse().unwrap(),
+    "0" => 0,
+}
+
+match {
+    r"\s*" => {},
+    r"#[^\n\r]*[\n\r]*" => {},
+    _,
+}
