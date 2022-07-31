@@ -3,57 +3,57 @@ fn fib_program() -> sierra::program::Program {
         .parse(
             r#"
         #  0
-        jump_nz<int>(n) { 6(n) fallthrough() };
+        int_jump_nz(n) { 6(n) fallthrough() };
         #  1
         refund_gas<7>(gb) -> (gb);
         store<Temp, GasBuiltin>(gb) -> (gb);
-        constant_num<int, 1>() -> (one);
+        int_const<1>() -> (one);
         store<Temp, int>(one) -> (one);
         return(gb, one);
         #  6
-        unwrap_nz<int>(n) -> (n);
-        add<int, -1>(n) -> (n);
+        int_unwrap_nz(n) -> (n);
+        int_add_const<-1>(n) -> (n);
         store<Temp, int>(n) -> (n);
-        jump_nz<int>(n) { 15(n) fallthrough() };
+        int_jump_nz(n) { 15(n) fallthrough() };
         # 10
         refund_gas<5>(gb) -> (gb);
         store<Temp, GasBuiltin>(gb) -> (gb);
-        constant_num<int, 1>() -> (one);
+        int_const<1>() -> (one);
         store<Temp, int>(one) -> (one);
         return(gb, one);
         # 15
-        constant_num<int, 1>() -> (b);
+        int_const<1>() -> (b);
         store<Temp, int>(b) -> (b);
         move<NonZero<int>>(n) -> (n);
         store<Temp, NonZero<int>>(n) -> (n);
         move<GasBuiltin>(gb) -> (gb);
         store<Temp, GasBuiltin>(gb) -> (gb);
-        constant_num<int, 1>() -> (a);
+        int_const<1>() -> (a);
         store<Temp, int>(a) -> (a);
         # 23
         get_gas<5>(gb) { 33(gb) fallthrough(gb) };
         # 24
-        ignore_num<int>(a) -> ();
-        ignore_num<int>(b) -> ();
-        unwrap_nz<int>(n) -> (n);
-        ignore_num<int>(n) -> ();
+        int_ignore(a) -> ();
+        int_ignore(b) -> ();
+        int_unwrap_nz(n) -> (n);
+        int_ignore(n) -> ();
         move<GasBuiltin>(gb) -> (gb);
         store<Temp, GasBuiltin>(gb) -> (gb);
-        constant_num<int, -1>() -> (err);
+        int_const<-1>() -> (err);
         store<Temp, int>(err) -> (err);
         return(gb, err);
         # 33
-        duplicate_num<int>(a) -> (a, prev_a);
-        add<int>(a, b) -> (a);
+        int_dup(a) -> (a, prev_a);
+        int_add(a, b) -> (a);
         rename<int>(prev_a) -> (b);
-        unwrap_nz<int>(n) -> (n);
-        add<int, -1>(n) -> (n);
+        int_unwrap_nz(n) -> (n);
+        int_add_const<-1>(n) -> (n);
         store<Temp, int>(n) -> (n);
         store<Temp, GasBuiltin>(gb) -> (gb);
         store<Temp, int>(a) -> (a);
-        jump_nz<int>(n) { 23(n) fallthrough() };
+        int_jump_nz(n) { 23(n) fallthrough() };
         # 42
-        ignore_num<int>(b) -> ();
+        int_ignore(b) -> ();
         refund_gas<1>(gb) -> (gb);
         store<Temp, GasBuiltin>(gb) -> (gb);
         move<int>(a) -> (a);
@@ -68,4 +68,51 @@ fn fib_program() -> sierra::program::Program {
 #[test]
 fn parse_test() {
     fib_program();
+}
+
+#[test]
+fn simulation_test() {
+    let prog = fib_program();
+    let id = sierra::program::Identifier("Fibonacci".to_string());
+    // 1, 1, 2, 3, 5, 8, 13, 21, 34
+    assert_eq!(
+        sierra::simulation::run(&prog, &id, vec![vec![1000], vec![0]]),
+        Ok(vec![vec![1007], vec![1]])
+    );
+    assert_eq!(
+        sierra::simulation::run(&prog, &id, vec![vec![1000], vec![1]]),
+        Ok(vec![vec![1005], vec![1]])
+    );
+    assert_eq!(
+        sierra::simulation::run(&prog, &id, vec![vec![1000], vec![2]]),
+        Ok(vec![vec![996], vec![2]])
+    );
+    assert_eq!(
+        sierra::simulation::run(&prog, &id, vec![vec![1000], vec![3]]),
+        Ok(vec![vec![991], vec![3]])
+    );
+    assert_eq!(
+        sierra::simulation::run(&prog, &id, vec![vec![1000], vec![4]]),
+        Ok(vec![vec![986], vec![5]])
+    );
+    assert_eq!(
+        sierra::simulation::run(&prog, &id, vec![vec![1000], vec![5]]),
+        Ok(vec![vec![981], vec![8]])
+    );
+    assert_eq!(
+        sierra::simulation::run(&prog, &id, vec![vec![1000], vec![6]]),
+        Ok(vec![vec![976], vec![13]])
+    );
+    assert_eq!(
+        sierra::simulation::run(&prog, &id, vec![vec![1000], vec![7]]),
+        Ok(vec![vec![971], vec![21]])
+    );
+    assert_eq!(
+        sierra::simulation::run(&prog, &id, vec![vec![1000], vec![8]]),
+        Ok(vec![vec![966], vec![34]])
+    );
+    assert_eq!(
+        sierra::simulation::run(&prog, &id, vec![vec![100], vec![80]]),
+        Ok(vec![vec![0], vec![-1]])
+    );
 }
