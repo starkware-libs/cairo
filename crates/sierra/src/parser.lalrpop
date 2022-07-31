@@ -85,7 +85,7 @@ Identifier: Identifier = {
 }
 
 StatementId: StatementId = {
-     <s_id:UnsignedInt> => StatementId(s_id as usize),
+     <s_id:UnsignedInt> => StatementId::new(s_id as usize),
 }
 
 Label: String = {

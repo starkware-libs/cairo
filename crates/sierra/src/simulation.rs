@@ -1,11 +1,12 @@
 use std::collections::HashMap;
 
+// use thiserror::Error;
 use crate::edit_state::{put_results, take_args, Error as EditError};
 use crate::extensions::{Error as ExtError, Extensions};
-use crate::program::{BranchTarget, Identifier, Program, Statement, StatementId};
+use crate::program::{Identifier, Program, Statement, StatementId};
 
 #[derive(Debug, PartialEq)]
-pub enum Error {
+pub enum SimError {
     Extension(ExtError, String),
     EditState(StatementId, EditError),
     FunctionNonTupleInput(String),
@@ -14,40 +15,40 @@ pub enum Error {
 }
 
 // Simulates a Sierra program run of the function with the given id.
-pub fn run(prog: &Program, id: &Identifier, inputs: Vec<Vec<i64>>) -> Result<Vec<Vec<i64>>, Error> {
+pub fn run(
+    program: &Program,
+    entry_function: &Identifier,
+    inputs: Vec<Vec<i64>>,
+) -> Result<Vec<Vec<i64>>, SimError> {
     let exts = Extensions::new();
-    let f = prog
+    let f = program
         .funcs
         .iter()
-        .find(|f| f.id == *id)
-        .ok_or_else(|| Error::MissingFunctionCall(id.clone()))?;
-    let mut vars = HashMap::<Identifier, Vec<i64>>::from_iter(
-        izip!(f.args.iter(), inputs.into_iter()).map(|(v, input)| (v.id.clone(), input)),
-    );
-    let mut s_id = f.entry;
+        .find(|f| f.id == *entry_function)
+        .ok_or_else(|| SimError::MissingFunctionCall(entry_function.clone()))?;
+    let mut vars: HashMap<Identifier, Vec<i64>> =
+        izip!(f.args.iter().map(|v| v.id.clone()), inputs.into_iter()).collect();
+    let mut current_statement_id = f.entry;
     loop {
-        match &prog.statements[s_id.0] {
+        match program.get_statement(current_statement_id) {
             Statement::Return(ref_ids) => {
-                let (_, used_vars) =
-                    take_args(vars, ref_ids.iter()).map_err(|e| Error::EditState(s_id, e))?;
+                let (_remaining_vars, used_vars) = take_args(vars, ref_ids.iter())
+                    .map_err(|e| SimError::EditState(current_statement_id, e))?;
                 return Ok(used_vars);
             }
-            Statement::Invocation(invc) => {
-                let (nvars, args_info) =
-                    take_args(vars, invc.args.iter()).map_err(|e| Error::EditState(s_id, e))?;
-                let (results_info, chosen_branch) = exts
-                    .simulate(&invc.ext, args_info)
-                    .map_err(|e| Error::Extension(e, invc.ext.to_string()))?;
-                let chosen_branch = &invc.branches[chosen_branch];
+            Statement::Invocation(invocation) => {
+                let (nvars, args_info) = take_args(vars, invocation.args.iter())
+                    .map_err(|e| SimError::EditState(current_statement_id, e))?;
+                let (results_info, chosen_branch_index) = exts
+                    .simulate(&invocation.ext, args_info)
+                    .map_err(|e| SimError::Extension(e, invocation.ext.to_string()))?;
+                let chosen_branch = &invocation.branches[chosen_branch_index];
                 vars = put_results(
                     nvars,
                     izip!(chosen_branch.results.iter(), results_info.into_iter()),
                 )
-                .map_err(|e| Error::EditState(s_id, e))?;
-                s_id = match chosen_branch.target {
-                    BranchTarget::Statement(next) => next,
-                    BranchTarget::Fallthrough => StatementId(s_id.0 + 1),
-                };
+                .map_err(|e| SimError::EditState(current_statement_id, e))?;
+                current_statement_id = chosen_branch.target.get(current_statement_id);
             }
         }
     }

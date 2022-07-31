@@ -74,7 +74,7 @@ impl fmt::Display for BranchTarget {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             BranchTarget::Fallthrough => write!(f, "fallthrough"),
-            BranchTarget::Statement(s_id) => write!(f, "{}", s_id.0),
+            BranchTarget::Statement(s_id) => write!(f, "{}", s_id.get()),
         }
     }
 }
@@ -99,8 +99,10 @@ fn write_comma_separated<V: std::fmt::Display>(
 
 #[cfg(test)]
 mod tests {
+    use itertools::Itertools;
+
     use super::*;
-    use crate::program::StatementId;
+    use crate::ProgramParser;
     #[test]
     fn display_type() {
         assert_eq!(Type { name: "type".to_string(), args: vec![] }.to_string(), "type".to_string());
@@ -155,71 +157,30 @@ mod tests {
     #[test]
     fn display_statement() {
         assert_eq!(
-            Statement::Invocation(Invocation {
-                ext: Extension { name: "ext".to_string(), tmpl_args: vec![] },
-                args: vec![],
-                branches: vec![BranchInfo { target: BranchTarget::Fallthrough, results: vec![] }]
-            })
-            .to_string(),
-            "ext() -> ();".to_string()
-        );
-        assert_eq!(
-            Statement::Invocation(Invocation {
-                ext: Extension { name: "ext".to_string(), tmpl_args: vec![] },
-                args: vec![Identifier("arg1".to_string())],
-                branches: vec![BranchInfo {
-                    target: BranchTarget::Fallthrough,
-                    results: vec![Identifier("res1".to_string())]
-                }]
-            })
-            .to_string(),
-            "ext(arg1) -> (res1);".to_string()
-        );
-        assert_eq!(
-            Statement::Invocation(Invocation {
-                ext: Extension { name: "ext".to_string(), tmpl_args: vec![] },
-                args: vec![Identifier("arg1".to_string()), Identifier("arg2".to_string())],
-                branches: vec![BranchInfo {
-                    target: BranchTarget::Fallthrough,
-                    results: vec![Identifier("res1".to_string()), Identifier("res2".to_string())]
-                }]
-            })
-            .to_string(),
-            "ext(arg1, arg2) -> (res1, res2);".to_string()
-        );
-        assert_eq!(
-            Statement::Invocation(Invocation {
-                ext: Extension { name: "ext".to_string(), tmpl_args: vec![] },
-                args: vec![],
-                branches: vec![BranchInfo {
-                    target: BranchTarget::Statement(StatementId(5)),
-                    results: vec![]
-                }]
-            })
-            .to_string(),
-            "ext() { 5() };".to_string()
-        );
-        assert_eq!(
-            Statement::Invocation(Invocation {
-                ext: Extension { name: "ext".to_string(), tmpl_args: vec![] },
-                args: vec![Identifier("arg1".to_string()), Identifier("arg2".to_string())],
-                branches: vec![
-                    BranchInfo { target: BranchTarget::Fallthrough, results: vec![] },
-                    BranchInfo {
-                        target: BranchTarget::Statement(StatementId(7)),
-                        results: vec![Identifier("res1".to_string())]
-                    },
-                    BranchInfo {
-                        target: BranchTarget::Statement(StatementId(5)),
-                        results: vec![
-                            Identifier("res1".to_string()),
-                            Identifier("res2".to_string())
-                        ]
-                    }
-                ]
-            })
-            .to_string(),
-            "ext(arg1, arg2) { fallthrough() 7(res1) 5(res1, res2) };".to_string()
+            ProgramParser::new()
+                .parse(
+                    r#"
+          ext() -> ();
+          ext(arg1) -> (res1);
+          ext(arg1, arg2) -> (res1, res2);
+          ext() { 5() };
+          ext(arg1, arg2) { fallthrough() 7(res1) 5(res1, res2) };
+
+          some@0() -> ();
+        "#,
+                )
+                .unwrap()
+                .statements
+                .into_iter()
+                .map(|s| s.to_string())
+                .collect_vec(),
+            vec![
+                "ext() -> ();".to_string(),
+                "ext(arg1) -> (res1);".to_string(),
+                "ext(arg1, arg2) -> (res1, res2);".to_string(),
+                "ext() { 5() };".to_string(),
+                "ext(arg1, arg2) { fallthrough() 7(res1) 5(res1, res2) };".to_string(),
+            ],
         );
     }
 }

@@ -7,6 +7,12 @@ pub struct Program {
     pub funcs: Vec<Function>,
 }
 
+impl Program {
+    pub fn get_statement(&self, id: StatementId) -> &Statement {
+        &self.statements[id.0]
+    }
+}
+
 // Descriptor of a function.
 #[derive(Clone, Debug)]
 pub struct Function {
@@ -40,7 +46,15 @@ pub struct Type {
 
 // Represents the index of a statement in the Program::statements vector.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub struct StatementId(pub usize);
+pub struct StatementId(usize);
+impl StatementId {
+    pub fn new(value: usize) -> Self {
+        StatementId(value)
+    }
+    pub fn get(&self) -> usize {
+        self.0
+    }
+}
 
 // Possible arguments for templatic type.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -90,4 +104,13 @@ pub enum BranchTarget {
     Fallthrough,
     // Continues the run to provided statement.
     Statement(StatementId),
+}
+
+impl BranchTarget {
+    pub fn get(&self, curr_statement_id: StatementId) -> StatementId {
+        match &self {
+            Self::Fallthrough => StatementId(curr_statement_id.0 + 1),
+            Self::Statement(id) => *id,
+        }
+    }
 }
