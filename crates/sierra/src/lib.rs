@@ -1,8 +1,10 @@
 use lalrpop_util::*;
 
-pub mod edit_state;
+mod edit_state;
+pub mod extensions;
 pub mod fmt;
 pub mod program;
+pub mod simulation;
 
 lalrpop_mod!(
     #[allow(clippy::all, unused_extern_crates)]
@@ -10,3 +12,6 @@ lalrpop_mod!(
 );
 
 pub type ProgramParser = parser::ProgramParser;
+
+#[macro_use]
+extern crate itertools;
