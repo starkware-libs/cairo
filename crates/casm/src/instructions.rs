@@ -8,14 +8,14 @@ mod instructions_test;
 
 // An enum of Cairo instructions.
 enum Instruction {
-    JumpInstruction(JumpInstruction),
-    AssertEqInstruction(AssertEqInstruction),
+    AssertEq(AssertEqInstruction),
+    Jump(JumpInstruction),
 }
 impl Display for Instruction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Instruction::JumpInstruction(insn) => write!(f, "{}", insn),
-            Instruction::AssertEqInstruction(insn) => write!(f, "{}", insn),
+            Instruction::AssertEq(insn) => write!(f, "{}", insn),
+            Instruction::Jump(insn) => write!(f, "{}", insn),
         }
     }
 }

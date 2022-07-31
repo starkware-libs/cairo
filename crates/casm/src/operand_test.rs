@@ -18,6 +18,6 @@ fn test_bin_op_format() {
     let a = DerefOperand { register: Register::FP, offset: -3 };
     let b = ImmediateOperand { value: 1400 };
 
-    let bin_op = BinOpOperand { op: Operation::Mul, a, b: DerefOrImmediate::ImmediateOperand(b) };
+    let bin_op = BinOpOperand { op: Operation::Mul, a, b: DerefOrImmediate::Immediate(b) };
     assert_eq!(bin_op.to_string(), "[fp + -3] * 1400")
 }
