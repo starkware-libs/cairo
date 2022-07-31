@@ -7,7 +7,7 @@ impl ExtensionImplementation for UnconditionalJumpExtension {
         &self,
         _tmpl_args: &[TemplateArg],
         inputs: Vec<Vec<i64>>,
-    ) -> Result<(Vec<Vec<i64>>, usize), Error> {
+    ) -> Result<(Vec<Vec<i64>>, usize), ExtensionError> {
         validate_mem_sizes(&inputs, [])?;
         Ok((inputs, 0))
     }

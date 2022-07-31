@@ -7,7 +7,7 @@ impl NonBranchExtensionImplementation for StoreExtension {
         &self,
         _tmpl_args: &[TemplateArg],
         inputs: Vec<Vec<i64>>,
-    ) -> Result<Vec<Vec<i64>>, Error> {
+    ) -> Result<Vec<Vec<i64>>, ExtensionError> {
         validate_mem_sizes(&inputs, [1])?;
         Ok(inputs)
     }
@@ -20,7 +20,7 @@ impl NonBranchExtensionImplementation for RenameExtension {
         &self,
         _tmpl_args: &[TemplateArg],
         inputs: Vec<Vec<i64>>,
-    ) -> Result<Vec<Vec<i64>>, Error> {
+    ) -> Result<Vec<Vec<i64>>, ExtensionError> {
         Ok(inputs)
     }
 }
@@ -32,7 +32,7 @@ impl NonBranchExtensionImplementation for MoveExtension {
         &self,
         _tmpl_args: &[TemplateArg],
         inputs: Vec<Vec<i64>>,
-    ) -> Result<Vec<Vec<i64>>, Error> {
+    ) -> Result<Vec<Vec<i64>>, ExtensionError> {
         Ok(inputs)
     }
 }

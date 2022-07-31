@@ -49,6 +49,12 @@ impl fmt::Display for Invocation {
     }
 }
 
+impl fmt::Display for Identifier {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
 impl fmt::Display for Extension {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.name)?;
@@ -74,20 +80,21 @@ impl fmt::Display for BranchTarget {
 }
 
 fn write_template_args(f: &mut fmt::Formatter<'_>, args: &[TemplateArg]) -> fmt::Result {
-    let mut iter = args.iter();
-    if let Some(arg) = iter.next() {
-        write!(f, "<{}", arg)?;
-        for arg in iter {
-            write!(f, ", {}", arg)?;
-        }
-        write!(f, ">")?;
+    if args.is_empty() {
+        Ok(())
+    } else {
+        write!(f, "<")?;
+        write_comma_separated(f, args)?;
+        write!(f, ">")
     }
-    Ok(())
 }
 
-fn write_comma_separated(f: &mut fmt::Formatter<'_>, ids: &[Identifier]) -> fmt::Result {
-    ids.iter().take(1).try_for_each(|n| write!(f, "{}", n.0))?;
-    ids.iter().skip(1).try_for_each(|n| write!(f, ", {}", n.0))
+fn write_comma_separated<V: std::fmt::Display>(
+    f: &mut fmt::Formatter<'_>,
+    values: &[V],
+) -> fmt::Result {
+    values.iter().take(1).try_for_each(|v| write!(f, "{}", v))?;
+    values.iter().skip(1).try_for_each(|v| write!(f, ", {}", v))
 }
 
 #[cfg(test)]
