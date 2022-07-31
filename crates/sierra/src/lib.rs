@@ -1,7 +1,7 @@
 use lalrpop_util::*;
 
 mod edit_state;
-pub mod extensions;
+mod extensions;
 pub mod fmt;
 pub mod program;
 pub mod simulation;

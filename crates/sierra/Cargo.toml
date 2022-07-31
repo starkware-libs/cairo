@@ -11,3 +11,4 @@ regex = "1"
 [dependencies]
 lalrpop-util = { version = "*", features = ["lexer"] }
 itertools = "*"
+thiserror = "*"
