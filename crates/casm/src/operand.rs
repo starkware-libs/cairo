@@ -20,16 +20,16 @@ impl Display for Register {
 
 // Represents the rhs operand of an assert equal instruction.
 pub enum ResOperand {
-    DerefOperand(DerefOperand),
-    ImmediateOperand(ImmediateOperand),
-    BinOpOperand(BinOpOperand),
+    Deref(DerefOperand),
+    Immediate(ImmediateOperand),
+    BinOp(BinOpOperand),
 }
 impl Display for ResOperand {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ResOperand::DerefOperand(operand) => write!(f, "{}", operand),
-            ResOperand::ImmediateOperand(operand) => write!(f, "{}", operand),
-            ResOperand::BinOpOperand(operand) => write!(f, "{}", operand),
+            ResOperand::Deref(operand) => write!(f, "{}", operand),
+            ResOperand::Immediate(operand) => write!(f, "{}", operand),
+            ResOperand::BinOp(operand) => write!(f, "{}", operand),
         }
     }
 }
@@ -56,14 +56,14 @@ impl Display for ImmediateOperand {
 }
 
 pub enum DerefOrImmediate {
-    DerefOperand(DerefOperand),
-    ImmediateOperand(ImmediateOperand),
+    Deref(DerefOperand),
+    Immediate(ImmediateOperand),
 }
 impl Display for DerefOrImmediate {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            DerefOrImmediate::DerefOperand(operand) => write!(f, "{}", operand),
-            DerefOrImmediate::ImmediateOperand(operand) => write!(f, "{}", operand),
+            DerefOrImmediate::Deref(operand) => write!(f, "{}", operand),
+            DerefOrImmediate::Immediate(operand) => write!(f, "{}", operand),
         }
     }
 }
