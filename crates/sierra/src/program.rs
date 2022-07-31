@@ -34,7 +34,7 @@ pub struct Identifier(pub String);
 // A generic type.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Type {
-    pub name: String,
+    pub id: Identifier,
     pub args: Vec<TemplateArg>,
 }
 
@@ -71,7 +71,7 @@ pub struct Invocation {
 // Describes an extension.
 #[derive(Clone, Debug)]
 pub struct Extension {
-    pub name: String,
+    pub id: Identifier,
     pub tmpl_args: Vec<TemplateArg>,
 }
 
