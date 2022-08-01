@@ -8,7 +8,11 @@ build = "src/build.rs" # LALRPOP preprocessing
 lalrpop = "*"
 regex = "1"
 
+[dev-dependencies]
+test-case = "*"
+
 [dependencies]
 indoc = "*"
+itertools = "*"
 lalrpop-util = { version = "*", features = ["lexer"] }
 thiserror = "*"

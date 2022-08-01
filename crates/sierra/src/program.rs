@@ -65,9 +65,9 @@ macro_rules! define_identity {
     };
 }
 
-define_identity!("The identity of an extension", (Clone, Debug), ExtensionId);
+define_identity!("The identity of an extension", (Clone, Debug, Eq, Hash, PartialEq), ExtensionId);
 
-define_identity!("The identity for a concrete extension.", (Clone, Debug), CalleeId);
+define_identity!("The identity for a concrete extension.", (Clone, Debug, PartialEq), CalleeId);
 
 define_identity!("The identity for a user function.", (Clone, Debug, PartialEq), FunctionId);
 
@@ -108,7 +108,7 @@ pub struct Invocation {
     pub branches: Vec<BranchInfo>,
 }
 
-/// Describes the flow of a chosen extension's branch.
+// Describes the flow of a chosen extension's branch.
 #[derive(Clone, Debug)]
 pub struct BranchInfo {
     /// The target the branch continues the run through.
