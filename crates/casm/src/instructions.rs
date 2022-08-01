@@ -9,6 +9,7 @@ mod instructions_test;
 // An enum of Cairo instructions.
 enum Instruction {
     AssertEq(AssertEqInstruction),
+    Call(CallInstruction),
     Jnz(JnzInstruction),
     Jump(JumpInstruction),
 }
@@ -16,9 +17,20 @@ impl Display for Instruction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Instruction::AssertEq(insn) => write!(f, "{}", insn),
+            Instruction::Call(insn) => write!(f, "{}", insn),
             Instruction::Jnz(insn) => write!(f, "{}", insn),
             Instruction::Jump(insn) => write!(f, "{}", insn),
         }
+    }
+}
+
+pub struct CallInstruction {
+    target: DerefOrImmediate,
+    relative: bool,
+}
+impl Display for CallInstruction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "call {} {}", if self.relative { "rel" } else { "abs" }, self.target,)
     }
 }
 
