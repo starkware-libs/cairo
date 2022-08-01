@@ -71,7 +71,7 @@ pub struct Invocation {
 }
 
 // Describes an extension.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Extension {
     pub id: Identifier,
     pub tmpl_args: Vec<TemplateArg>,
