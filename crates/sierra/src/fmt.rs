@@ -51,7 +51,9 @@ impl fmt::Display for Invocation {
 
 impl fmt::Display for Identifier {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
+        match &self {
+            Self::Name(name) => write!(f, "{}", name),
+        }
     }
 }
 
@@ -102,7 +104,7 @@ mod tests {
     use super::*;
     use crate::program::StatementId;
     fn as_id(id: &str) -> Identifier {
-        Identifier(id.into())
+        Identifier::Name(id.into())
     }
     #[test]
     fn display_type() {

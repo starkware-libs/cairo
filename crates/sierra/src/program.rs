@@ -29,7 +29,9 @@ pub struct TypedVar {
 
 // A general identifier - mostly used to identify vars and functions.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct Identifier(pub String);
+pub enum Identifier {
+    Name(String),
+}
 
 // A generic type.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
