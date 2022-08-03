@@ -121,4 +121,7 @@ fn display_statement() {
         .to_string(),
         "ext(arg1, arg2) { fallthrough() 7(res1) 5(res1, res2) };"
     );
+    assert_eq!(Statement::Return(vec![]).to_string(), "return ();");
+    assert_eq!(Statement::Return(vec![as_id("r")]).to_string(), "return (r);");
+    assert_eq!(Statement::Return(vec![as_id("r1"), as_id("r2")]).to_string(), "return (r1, r2);");
 }
