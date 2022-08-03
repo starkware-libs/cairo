@@ -4,6 +4,10 @@ use thiserror::Error;
 
 use crate::program::Identifier;
 
+#[cfg(test)]
+#[path = "edit_state_test.rs"]
+mod tests;
+
 #[derive(Error, Debug, PartialEq)]
 pub enum EditError {
     #[error("Missing reference")]
