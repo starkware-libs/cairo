@@ -6,5 +6,6 @@ members = [
     "crates/defs",
     "crates/diagnostics",
     "crates/filesystem",
+    "crates/sierra",
     "crates/syntax",
 ]
