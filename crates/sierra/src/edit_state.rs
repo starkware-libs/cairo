@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use thiserror::Error;
 
-use crate::program::Identifier;
+use crate::program::VarId;
 
 #[cfg(test)]
 #[path = "edit_state_test.rs"]
@@ -11,17 +11,16 @@ mod tests;
 #[derive(Error, Debug, PartialEq)]
 pub enum EditError {
     #[error("Missing reference")]
-    MissingReference(Identifier),
+    MissingReference(VarId),
     #[error("Overriden variable")]
-    VariableOverride(Identifier),
+    VariableOverride(VarId),
 }
 
-// Given a map with identifiers as key, extracts out the given identifiers, failing if some
-// identifier is missing.
+// Given a map with var ids as keys, extracts out the given ids, failing if some id is missing.
 pub fn take_args<'a, V: 'a + std::cmp::PartialEq>(
-    mut state: HashMap<Identifier, V>,
-    ids: impl Iterator<Item = &'a Identifier>,
-) -> Result<(HashMap<Identifier, V>, Vec<V>), EditError> {
+    mut state: HashMap<VarId, V>,
+    ids: impl Iterator<Item = &'a VarId>,
+) -> Result<(HashMap<VarId, V>, Vec<V>), EditError> {
     let mut vals = vec![];
     for id in ids {
         match state.remove(id) {
@@ -36,11 +35,11 @@ pub fn take_args<'a, V: 'a + std::cmp::PartialEq>(
     Ok((state, vals))
 }
 
-// Adds the given pairs to map with identifiers as key, failing if some variable is overriden.
+// Adds the given pairs to map with var ids as keys, failing if some variable is overriden.
 pub fn put_results<'a, V>(
-    mut state: HashMap<Identifier, V>,
-    results: impl Iterator<Item = (&'a Identifier, V)>,
-) -> Result<HashMap<Identifier, V>, EditError> {
+    mut state: HashMap<VarId, V>,
+    results: impl Iterator<Item = (&'a VarId, V)>,
+) -> Result<HashMap<VarId, V>, EditError> {
     for (id, v) in results {
         match state.insert(id.clone(), v) {
             Some(_) => return Err(EditError::VariableOverride(id.clone())),
