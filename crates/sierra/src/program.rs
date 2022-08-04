@@ -60,7 +60,7 @@ macro_rules! define_identity {
         pub enum $type_name {
             // This variant is for testing.
             Name(String),
-            Numeric(i64),
+            Numeric(u64),
         }
     };
 }
