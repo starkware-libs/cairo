@@ -6,10 +6,6 @@ use crate::program::{
     TypedVar, VarId,
 };
 
-#[cfg(test)]
-#[path = "fmt_test.rs"]
-mod tests;
-
 impl fmt::Display for Program {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for declaration in &self.type_declarations {
@@ -96,7 +92,7 @@ impl fmt::Display for Statement {
         match self {
             Statement::Invocation(invc) => write!(f, "{}", invc),
             Statement::Return(ids) => {
-                write!(f, "return (")?;
+                write!(f, "return(")?;
                 write_comma_separated(f, ids)?;
                 write!(f, ")")
             }

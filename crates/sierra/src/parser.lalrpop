@@ -1,0 +1,136 @@
+// Simple parser for sierra.
+// Currently only used for testing.
+
+use crate::program::*;
+
+grammar;
+
+pub Program: Program = {
+    <type_declarations:TypeDeclaration*>
+    <extension_declarations:ExtensionDeclaration*>
+    <statements:Statement*>
+    <funcs:Function*>
+    => Program{type_declarations, extension_declarations, statements, funcs},
+}
+
+TypeDeclaration: TypeDeclaration = {
+    "type" <id:ConcreteTypeId> "=" <type_id:TypeId>  "<" <args:TemplateArgs> ">" ";"
+    => TypeDeclaration{id, type_id, args},
+    "type" <id:ConcreteTypeId> "=" <type_id:TypeId> ";"
+    => TypeDeclaration{id, type_id, args: vec![]},
+}
+
+ExtensionDeclaration: ExtensionDeclaration = {
+    "ext" <id:CalleeId> "=" <extension_id:ExtensionId> "<" <args:TemplateArgs> ">" ";"
+    => ExtensionDeclaration{id, extension_id, args},
+    "ext" <id:CalleeId> "=" <extension_id:ExtensionId> ";"
+    => ExtensionDeclaration{id, extension_id, args: vec![]},
+}
+
+Function: Function = {
+    <id:FunctionId> "@" <entry:StatementId> 
+    "(" <args: TypedVars> ")" "->" "(" <ret_types: ConcreteTypeIds> ")" ";"
+    => Function{id, args, ret_types, entry},
+}
+
+TypedVar: TypedVar = {
+    <id:VarId> ":" <ty:ConcreteTypeId> => TypedVar{id, ty},
+}
+TypedVars = Comma<TypedVar>;
+
+ExtensionId: ExtensionId = {
+    <id:Label> => ExtensionId::Name(id),
+    "[" <id:UnsignedInt> "]" => ExtensionId::Numeric(id),
+}
+
+CalleeId: CalleeId = {
+    <id:Label> => CalleeId::Name(id),
+    "[" <id:UnsignedInt> "]" => CalleeId::Numeric(id),
+}
+
+FunctionId: FunctionId = {
+    <id:Label> => FunctionId::Name(id),
+    "[" <id:UnsignedInt> "]" => FunctionId::Numeric(id),
+}
+
+VarId: VarId = {
+    <id:Label> => VarId::Name(id),
+    "[" <id:UnsignedInt> "]" => VarId::Numeric(id),
+}
+VarIds = Comma<VarId>;
+
+TypeId: TypeId = {
+    <id:Label> => TypeId::Name(id),
+    "[" <id:UnsignedInt> "]" => TypeId::Numeric(id),
+}
+
+ConcreteTypeId: ConcreteTypeId = {
+    <id:Label> => ConcreteTypeId::Name(id),
+    "[" <id:UnsignedInt> "]" => ConcreteTypeId::Numeric(id),
+}
+ConcreteTypeIds = Comma<ConcreteTypeId>;
+
+StatementId: StatementId = {
+     <s_id:UnsignedInt> => StatementId(s_id as usize),
+}
+
+TemplateArg: TemplateArg = {
+    <v:UnsignedInt> => TemplateArg::Value(v),
+    "-" <v:UnsignedInt> => TemplateArg::Value(-v),
+    ConcreteTypeId => TemplateArg::Type(<>),
+    "&" <id:FunctionId> => TemplateArg::Func(id),
+}
+TemplateArgs = Comma<TemplateArg>;
+
+Statement: Statement = {
+    <invocation:Invocation> => Statement::Invocation(invocation),
+    "return" "(" <args:VarIds> ")" ";" => Statement::Return(args),
+}
+
+Invocation: Invocation = {
+    <callee_id:CalleeId> "(" <args:VarIds> ")" "->" "(" <results:VarIds> ")" ";" =>
+        Invocation{
+            callee_id,
+            args,
+            branches: vec![BranchInfo{ target: BranchTarget::Fallthrough , results }]
+        },
+    <callee_id:CalleeId> "(" <args:VarIds> ")" "{" <branches:BranchInfo*> "}" ";" =>
+        Invocation{callee_id, args, branches},
+}
+
+// Generates a vector of Ts without a trailing comma.
+Comma<T>: Vec<T> = {
+    // If we have an additional element we add it to the vector, otherwise
+    // returning the current vector.
+    <mut v:(<T> ",")*> <e:T?> => match e {
+        None => v,
+        Some(e) => {
+            v.push(e);
+            v
+        }
+    }
+};
+
+BranchInfo: BranchInfo = {
+    <target: BranchTarget> "(" <results:VarIds> ")" =>
+        BranchInfo{ target, results },
+}
+
+BranchTarget: BranchTarget = {
+     "fallthrough" => BranchTarget::Fallthrough,
+     <s_id:StatementId> => BranchTarget::Statement(s_id),
+}
+
+Label: String = {
+    r"[a-zA-Z_][a-zA-Z_0-9]*" => <>.to_string(),
+}
+
+UnsignedInt: i64 = {
+    r"[1-9][0-9]*|0" => <>.parse().unwrap(),
+}
+
+match {
+    r"\s*" => {},
+    r"//[^\n\r]*[\n\r]" => {},
+    _,
+}
