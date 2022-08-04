@@ -2,13 +2,9 @@ use std::fmt;
 
 use crate::program::{
     BranchInfo, BranchTarget, CalleeId, ConcreteTypeId, ExtensionDeclaration, ExtensionId,
-    Function, FunctionId, Invocation, Program, Statement, TemplateArg, TypeDeclaration, TypeId,
-    TypedVar, VarId,
+    Function, FunctionId, Invocation, Param, Program, Statement, TemplateArg, TypeDeclaration,
+    TypeId, VarId,
 };
-
-#[cfg(test)]
-#[path = "fmt_test.rs"]
-mod tests;
 
 impl fmt::Display for Program {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -48,14 +44,14 @@ impl fmt::Display for ExtensionDeclaration {
 impl fmt::Display for Function {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}@{}(", self.id, self.entry.0)?;
-        write_comma_separated(f, &self.args)?;
+        write_comma_separated(f, &self.params)?;
         write!(f, ") -> (")?;
         write_comma_separated(f, &self.ret_types)?;
         write!(f, ")")
     }
 }
 
-impl fmt::Display for TypedVar {
+impl fmt::Display for Param {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}: {}", self.id, self.ty)
     }
@@ -96,7 +92,7 @@ impl fmt::Display for Statement {
         match self {
             Statement::Invocation(invc) => write!(f, "{}", invc),
             Statement::Return(ids) => {
-                write!(f, "return (")?;
+                write!(f, "return(")?;
                 write_comma_separated(f, ids)?;
                 write!(f, ")")
             }
