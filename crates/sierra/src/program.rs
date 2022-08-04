@@ -39,7 +39,7 @@ pub struct Function {
     // The name of the function.
     pub id: FunctionId,
     // The arguments for the function.
-    pub args: Vec<TypedVar>,
+    pub params: Vec<Param>,
     // The return types.
     pub ret_types: Vec<ConcreteTypeId>,
     // The statement id where the function starts.
@@ -48,7 +48,7 @@ pub struct Function {
 
 /// Descriptor of a variable.
 #[derive(Clone, Debug, PartialEq)]
-pub struct TypedVar {
+pub struct Param {
     pub id: VarId,
     pub ty: ConcreteTypeId,
 }
@@ -60,7 +60,7 @@ macro_rules! define_identity {
         pub enum $type_name {
             // This variant is for testing.
             Name(String),
-            Numeric(i64),
+            Numeric(u64),
         }
     };
 }
