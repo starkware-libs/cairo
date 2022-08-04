@@ -1,12 +1,12 @@
 use std::collections::HashMap;
 
 use crate::edit_state::{put_results, take_args, EditError};
-use crate::program::Identifier;
+use crate::program::VarId;
 
-pub type State = HashMap<Identifier, i64>;
+pub type State = HashMap<VarId, i64>;
 
-fn as_id(name: &str) -> Identifier {
-    Identifier::Name(name.into())
+fn as_id(name: &str) -> VarId {
+    VarId::Name(name.into())
 }
 
 #[test]
