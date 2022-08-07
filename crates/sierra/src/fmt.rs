@@ -1,9 +1,9 @@
 use std::fmt;
 
 use crate::program::{
-    BranchInfo, BranchTarget, CalleeId, ConcreteType, ConcreteTypeId, ExtensionId,
-    ExtensionSpecialization, Function, Invocation, Program, Statement, TemplateArg, TypeId,
-    TypeSpecialization, TypedVar, VarId,
+    BranchInfo, BranchTarget, CalleeId, ConcreteTypeId, ExtensionDeclaration, ExtensionId,
+    Function, FunctionId, Invocation, Program, Statement, TemplateArg, TypeDeclaration, TypeId,
+    TypedVar, VarId,
 };
 
 #[cfg(test)]
@@ -12,12 +12,12 @@ mod tests;
 
 impl fmt::Display for Program {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for specialization in &self.type_specializations {
-            writeln!(f, "{};", specialization)?;
+        for declaration in &self.type_declarations {
+            writeln!(f, "{};", declaration)?;
         }
         writeln!(f)?;
-        for specialization in &self.extension_specializations {
-            writeln!(f, "{};", specialization)?;
+        for declaration in &self.extension_declarations {
+            writeln!(f, "{};", declaration)?;
         }
         writeln!(f)?;
         for statement in &self.statements {
@@ -31,13 +31,14 @@ impl fmt::Display for Program {
     }
 }
 
-impl fmt::Display for TypeSpecialization {
+impl fmt::Display for TypeDeclaration {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "type {} = {}", self.id, self.ty)
+        write!(f, "type {} = {}", self.id, self.type_id)?;
+        write_template_args(f, &self.args)
     }
 }
 
-impl fmt::Display for ExtensionSpecialization {
+impl fmt::Display for ExtensionDeclaration {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "ext {} = {}", self.id, self.extension_id)?;
         write_template_args(f, &self.args)
@@ -60,13 +61,6 @@ impl fmt::Display for TypedVar {
     }
 }
 
-impl fmt::Display for ConcreteType {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.id)?;
-        write_template_args(f, &self.args)
-    }
-}
-
 macro_rules! display_identity {
     ($type_name:tt) => {
         impl fmt::Display for $type_name {
@@ -82,6 +76,7 @@ macro_rules! display_identity {
 
 display_identity!(ExtensionId);
 display_identity!(CalleeId);
+display_identity!(FunctionId);
 display_identity!(VarId);
 display_identity!(TypeId);
 display_identity!(ConcreteTypeId);
@@ -89,7 +84,8 @@ display_identity!(ConcreteTypeId);
 impl fmt::Display for TemplateArg {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            TemplateArg::Type(t) => write!(f, "{}", t),
+            TemplateArg::Type(id) => write!(f, "{}", id),
+            TemplateArg::Func(id) => write!(f, "&{}", id),
             TemplateArg::Value(v) => write!(f, "{}", v),
         }
     }
