@@ -1,74 +1,111 @@
 use crate::program::{
-    BranchInfo, BranchTarget, Extension, Identifier, Invocation, Statement, StatementId,
-    TemplateArg, Type,
+    BranchInfo, BranchTarget, CalleeId, ConcreteType, ConcreteTypeId, ExtensionId,
+    ExtensionSpecialization, Function, Invocation, Statement, StatementId, TemplateArg, TypeId,
+    TypeSpecialization, TypedVar, VarId,
 };
 
-fn as_id(id: &str) -> Identifier {
-    Identifier::Name(id.into())
+#[test]
+fn display_type_specialization() {
+    let as_id = |id: &str| TypeId::Name(id.into());
+    assert_eq!(
+        TypeSpecialization {
+            ty: ConcreteType { id: as_id("TypeId"), args: vec![] },
+            id: ConcreteTypeId::Name("ConcreteTypeId".into())
+        }
+        .to_string(),
+        "type ConcreteTypeId = TypeId"
+    );
+    assert_eq!(
+        TypeSpecialization {
+            ty: ConcreteType {
+                id: as_id("TypeId"),
+                args: vec![TemplateArg::Type(ConcreteTypeId::Name("arg".into()))]
+            },
+            id: ConcreteTypeId::Name("ConcreteTypeId".into())
+        }
+        .to_string(),
+        "type ConcreteTypeId = TypeId<arg>"
+    );
+    assert_eq!(
+        TypeSpecialization {
+            ty: ConcreteType {
+                id: as_id("TypeId"),
+                args: vec![
+                    TemplateArg::Type(ConcreteTypeId::Name("arg1".into())),
+                    TemplateArg::Value(4)
+                ]
+            },
+            id: ConcreteTypeId::Name("ConcreteTypeId".into())
+        }
+        .to_string(),
+        "type ConcreteTypeId = TypeId<arg1, 4>"
+    );
 }
 
 #[test]
-fn display_type() {
-    assert_eq!(Type { id: as_id("type"), args: vec![] }.to_string(), "type");
+fn display_extension_specialization() {
     assert_eq!(
-        Type {
-            id: as_id("type"),
-            args: vec![TemplateArg::Type(Type { id: as_id("arg"), args: vec![] })]
+        ExtensionSpecialization {
+            extension_id: ExtensionId::Name("ExtensionId".into()),
+            args: vec![],
+            id: CalleeId::Name("CalleeId".into())
         }
         .to_string(),
-        "type<arg>"
+        "ext CalleeId = ExtensionId"
     );
     assert_eq!(
-        Type {
-            id: as_id("type"),
+        ExtensionSpecialization {
+            extension_id: ExtensionId::Name("ExtensionId".into()),
             args: vec![
-                TemplateArg::Type(Type { id: as_id("arg1"), args: vec![] }),
+                TemplateArg::Type(ConcreteTypeId::Name("arg".into())),
                 TemplateArg::Value(4)
-            ]
+            ],
+            id: CalleeId::Name("OtherCalleeId".into())
         }
         .to_string(),
-        "type<arg1, 4>"
+        "ext OtherCalleeId = ExtensionId<arg, 4>"
     );
 }
 
 #[test]
-fn display_extension() {
-    assert_eq!(Extension { id: as_id("ext"), tmpl_args: vec![] }.to_string(), "ext");
+fn display_function() {
     assert_eq!(
-        Extension {
-            id: as_id("ext"),
-            tmpl_args: vec![TemplateArg::Type(Type { id: as_id("arg"), args: vec![] })]
+        Function {
+            id: CalleeId::Name("Name".into()),
+            args: vec![],
+            ret_types: vec![],
+            entry: StatementId(5),
         }
         .to_string(),
-        "ext<arg>"
+        "Name@5() -> ()"
     );
     assert_eq!(
-        Extension {
-            id: as_id("ext"),
-            tmpl_args: vec![
-                TemplateArg::Type(Type { id: as_id("arg1"), args: vec![] }),
-                TemplateArg::Value(4)
-            ]
+        Function {
+            id: CalleeId::Name("Other".into()),
+            args: vec![TypedVar { id: VarId::Numeric(5), ty: ConcreteTypeId::Name("T1".into()) }],
+            ret_types: vec![ConcreteTypeId::Name("T2".into())],
+            entry: StatementId(3),
         }
         .to_string(),
-        "ext<arg1, 4>"
+        "Other@3([5]: T1) -> (T2)"
     );
 }
 
 #[test]
 fn display_statement() {
+    let as_id = |id: &str| VarId::Name(id.into());
     assert_eq!(
         Statement::Invocation(Invocation {
-            ext: Extension { id: as_id("ext"), tmpl_args: vec![] },
+            callee_id: CalleeId::Name("callee".into()),
             args: vec![],
             branches: vec![BranchInfo { target: BranchTarget::Fallthrough, results: vec![] }]
         })
         .to_string(),
-        "ext() -> ();"
+        "callee() -> ()"
     );
     assert_eq!(
         Statement::Invocation(Invocation {
-            ext: Extension { id: as_id("ext"), tmpl_args: vec![] },
+            callee_id: CalleeId::Name("callee".into()),
             args: vec![as_id("arg1")],
             branches: vec![BranchInfo {
                 target: BranchTarget::Fallthrough,
@@ -76,11 +113,11 @@ fn display_statement() {
             }]
         })
         .to_string(),
-        "ext(arg1) -> (res1);"
+        "callee(arg1) -> (res1)"
     );
     assert_eq!(
         Statement::Invocation(Invocation {
-            ext: Extension { id: as_id("ext"), tmpl_args: vec![] },
+            callee_id: CalleeId::Name("callee".into()),
             args: vec![as_id("arg1"), as_id("arg2")],
             branches: vec![BranchInfo {
                 target: BranchTarget::Fallthrough,
@@ -88,11 +125,11 @@ fn display_statement() {
             }]
         })
         .to_string(),
-        "ext(arg1, arg2) -> (res1, res2);"
+        "callee(arg1, arg2) -> (res1, res2)"
     );
     assert_eq!(
         Statement::Invocation(Invocation {
-            ext: Extension { id: as_id("ext"), tmpl_args: vec![] },
+            callee_id: CalleeId::Name("callee".into()),
             args: vec![],
             branches: vec![BranchInfo {
                 target: BranchTarget::Statement(StatementId(5)),
@@ -100,11 +137,11 @@ fn display_statement() {
             }]
         })
         .to_string(),
-        "ext() { 5() };"
+        "callee() { 5() }"
     );
     assert_eq!(
         Statement::Invocation(Invocation {
-            ext: Extension { id: as_id("ext"), tmpl_args: vec![] },
+            callee_id: CalleeId::Name("callee".into()),
             args: vec![as_id("arg1"), as_id("arg2")],
             branches: vec![
                 BranchInfo { target: BranchTarget::Fallthrough, results: vec![] },
@@ -119,9 +156,24 @@ fn display_statement() {
             ]
         })
         .to_string(),
-        "ext(arg1, arg2) { fallthrough() 7(res1) 5(res1, res2) };"
+        "callee(arg1, arg2) { fallthrough() 7(res1) 5(res1, res2) }"
     );
-    assert_eq!(Statement::Return(vec![]).to_string(), "return ();");
-    assert_eq!(Statement::Return(vec![as_id("r")]).to_string(), "return (r);");
-    assert_eq!(Statement::Return(vec![as_id("r1"), as_id("r2")]).to_string(), "return (r1, r2);");
+    assert_eq!(
+        Statement::Invocation(Invocation {
+            callee_id: CalleeId::Numeric(12345),
+            args: vec![VarId::Numeric(12)],
+            branches: vec![
+                BranchInfo {
+                    target: BranchTarget::Statement(StatementId(2)),
+                    results: vec![VarId::Numeric(37)]
+                },
+                BranchInfo { target: BranchTarget::Fallthrough, results: vec![] }
+            ]
+        })
+        .to_string(),
+        "[12345]([12]) { 2([37]) fallthrough() }"
+    );
+    assert_eq!(Statement::Return(vec![]).to_string(), "return ()");
+    assert_eq!(Statement::Return(vec![as_id("r")]).to_string(), "return (r)");
+    assert_eq!(Statement::Return(vec![as_id("r1"), as_id("r2")]).to_string(), "return (r1, r2)");
 }
