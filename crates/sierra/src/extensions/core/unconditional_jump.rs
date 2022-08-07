@@ -1,17 +1,10 @@
-use super::validate_no_args;
-use crate::extensions::{
-    ConcreteExtension, ConcreteExtensionBox, Extension, ExtensionBox, SpecializationError,
-};
-use crate::program::{ExtensionId, TemplateArg};
+use crate::extensions::{ConcreteExtension, ConcreteExtensionBox, ExtensionBox, NoArgsExtension};
+use crate::program::ExtensionId;
 
 struct UnconditionalJumpExtension {}
-impl Extension for UnconditionalJumpExtension {
-    fn specialize(
-        &self,
-        tmpl_args: &[TemplateArg],
-    ) -> Result<ConcreteExtensionBox, SpecializationError> {
-        validate_no_args(tmpl_args)?;
-        Ok(Box::new(UnconditionalJump {}))
+impl NoArgsExtension for UnconditionalJumpExtension {
+    fn specialize(&self) -> ConcreteExtensionBox {
+        Box::new(UnconditionalJump {})
     }
 }
 
