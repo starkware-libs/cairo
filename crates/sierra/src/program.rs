@@ -2,40 +2,42 @@
 #[derive(Clone, Debug)]
 pub struct Program {
     /// Specializations for all the used types.
-    pub type_specializations: Vec<TypeSpecialization>,
+    pub type_declarations: Vec<TypeDeclaration>,
     /// Specializations for all the used extensions.
-    pub extension_specializations: Vec<ExtensionSpecialization>,
+    pub extension_declarations: Vec<ExtensionDeclaration>,
     /// The code of the program.
     pub statements: Vec<Statement>,
     /// Descriptions of the functions - signatures and entry points.
     pub funcs: Vec<Function>,
 }
 
-/// Declaration of a specialization.
+/// Declaration of a concrete type.
 #[derive(Clone, Debug)]
-pub struct TypeSpecialization {
-    /// The specialized type.
-    pub ty: ConcreteType,
-    /// The identification of the specialization.
+pub struct TypeDeclaration {
+    /// The id of the declared concrete type.
     pub id: ConcreteTypeId,
+    /// The id of the used generic type.
+    pub type_id: TypeId,
+    /// The arguments for the generic type.
+    pub args: Vec<TemplateArg>,
 }
 
-/// Declaration of a specialization.
+/// Declaration of a callable extension.
 #[derive(Clone, Debug)]
-pub struct ExtensionSpecialization {
+pub struct ExtensionDeclaration {
+    /// The id of the declared callable extension.
+    pub id: CalleeId,
     /// The id of the specialized extension.
     pub extension_id: ExtensionId,
-    /// The arguments the specialization.
+    /// The arguments for the specialization.
     pub args: Vec<TemplateArg>,
-    /// The identification of the specialization.
-    pub id: CalleeId,
 }
 
 /// Descriptor of a function.
 #[derive(Clone, Debug)]
 pub struct Function {
     // The name of the function.
-    pub id: CalleeId,
+    pub id: FunctionId,
     // The arguments for the function.
     pub args: Vec<TypedVar>,
     // The return types.
@@ -49,13 +51,6 @@ pub struct Function {
 pub struct TypedVar {
     pub id: VarId,
     pub ty: ConcreteTypeId,
-}
-
-/// A concrete type.
-#[derive(Clone, Debug, PartialEq)]
-pub struct ConcreteType {
-    pub id: TypeId,
-    pub args: Vec<TemplateArg>,
 }
 
 macro_rules! define_identity {
@@ -72,11 +67,9 @@ macro_rules! define_identity {
 
 define_identity!("The identity of an extension", (Clone, Debug), ExtensionId);
 
-define_identity!(
-    "The identity for a concrete extension, or a user function.",
-    (Clone, Debug),
-    CalleeId
-);
+define_identity!("The identity for a concrete extension.", (Clone, Debug), CalleeId);
+
+define_identity!("The identity for a user function.", (Clone, Debug, PartialEq), FunctionId);
 
 define_identity!("The identity for a variable.", (Clone, Debug, Eq, Hash, PartialEq), VarId);
 
@@ -92,6 +85,7 @@ pub struct StatementId(pub usize);
 #[derive(Clone, Debug, PartialEq)]
 pub enum TemplateArg {
     Type(ConcreteTypeId),
+    Func(FunctionId),
     Value(i64),
 }
 

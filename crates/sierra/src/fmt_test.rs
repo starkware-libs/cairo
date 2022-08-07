@@ -1,41 +1,38 @@
 use crate::program::{
-    BranchInfo, BranchTarget, CalleeId, ConcreteType, ConcreteTypeId, ExtensionId,
-    ExtensionSpecialization, Function, Invocation, Statement, StatementId, TemplateArg, TypeId,
-    TypeSpecialization, TypedVar, VarId,
+    BranchInfo, BranchTarget, CalleeId, ConcreteTypeId, ExtensionDeclaration, ExtensionId,
+    Function, FunctionId, Invocation, Statement, StatementId, TemplateArg, TypeDeclaration, TypeId,
+    TypedVar, VarId,
 };
 
 #[test]
-fn display_type_specialization() {
+fn display_type_declaration() {
     let as_id = |id: &str| TypeId::Name(id.into());
     assert_eq!(
-        TypeSpecialization {
-            ty: ConcreteType { id: as_id("TypeId"), args: vec![] },
-            id: ConcreteTypeId::Name("ConcreteTypeId".into())
+        TypeDeclaration {
+            id: ConcreteTypeId::Name("ConcreteTypeId".into()),
+            type_id: as_id("TypeId"),
+            args: vec![],
         }
         .to_string(),
         "type ConcreteTypeId = TypeId"
     );
     assert_eq!(
-        TypeSpecialization {
-            ty: ConcreteType {
-                id: as_id("TypeId"),
-                args: vec![TemplateArg::Type(ConcreteTypeId::Name("arg".into()))]
-            },
-            id: ConcreteTypeId::Name("ConcreteTypeId".into())
+        TypeDeclaration {
+            id: ConcreteTypeId::Name("ConcreteTypeId".into()),
+            type_id: as_id("TypeId"),
+            args: vec![TemplateArg::Type(ConcreteTypeId::Name("arg".into()))],
         }
         .to_string(),
         "type ConcreteTypeId = TypeId<arg>"
     );
     assert_eq!(
-        TypeSpecialization {
-            ty: ConcreteType {
-                id: as_id("TypeId"),
-                args: vec![
-                    TemplateArg::Type(ConcreteTypeId::Name("arg1".into())),
-                    TemplateArg::Value(4)
-                ]
-            },
-            id: ConcreteTypeId::Name("ConcreteTypeId".into())
+        TypeDeclaration {
+            id: ConcreteTypeId::Name("ConcreteTypeId".into()),
+            type_id: as_id("TypeId"),
+            args: vec![
+                TemplateArg::Type(ConcreteTypeId::Name("arg1".into())),
+                TemplateArg::Value(4)
+            ],
         }
         .to_string(),
         "type ConcreteTypeId = TypeId<arg1, 4>"
@@ -45,25 +42,34 @@ fn display_type_specialization() {
 #[test]
 fn display_extension_specialization() {
     assert_eq!(
-        ExtensionSpecialization {
+        ExtensionDeclaration {
+            id: CalleeId::Name("CalleeId".into()),
             extension_id: ExtensionId::Name("ExtensionId".into()),
             args: vec![],
-            id: CalleeId::Name("CalleeId".into())
         }
         .to_string(),
         "ext CalleeId = ExtensionId"
     );
     assert_eq!(
-        ExtensionSpecialization {
+        ExtensionDeclaration {
+            id: CalleeId::Name("OtherCalleeId".into()),
             extension_id: ExtensionId::Name("ExtensionId".into()),
             args: vec![
                 TemplateArg::Type(ConcreteTypeId::Name("arg".into())),
                 TemplateArg::Value(4)
             ],
-            id: CalleeId::Name("OtherCalleeId".into())
         }
         .to_string(),
         "ext OtherCalleeId = ExtensionId<arg, 4>"
+    );
+    assert_eq!(
+        ExtensionDeclaration {
+            id: CalleeId::Name("CallFunction".into()),
+            extension_id: ExtensionId::Name("Call".into()),
+            args: vec![TemplateArg::Func(FunctionId::Name("Function".into())),],
+        }
+        .to_string(),
+        "ext CallFunction = Call<&Function>"
     );
 }
 
@@ -71,7 +77,7 @@ fn display_extension_specialization() {
 fn display_function() {
     assert_eq!(
         Function {
-            id: CalleeId::Name("Name".into()),
+            id: FunctionId::Name("Name".into()),
             args: vec![],
             ret_types: vec![],
             entry: StatementId(5),
@@ -81,7 +87,7 @@ fn display_function() {
     );
     assert_eq!(
         Function {
-            id: CalleeId::Name("Other".into()),
+            id: FunctionId::Name("Other".into()),
             args: vec![TypedVar { id: VarId::Numeric(5), ty: ConcreteTypeId::Name("T1".into()) }],
             ret_types: vec![ConcreteTypeId::Name("T2".into())],
             entry: StatementId(3),
