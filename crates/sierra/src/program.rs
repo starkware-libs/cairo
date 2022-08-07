@@ -62,6 +62,21 @@ macro_rules! define_identity {
             Name(String),
             Numeric(u64),
         }
+        impl From<&str> for $type_name {
+            fn from(name: &str) -> Self {
+                Self::Name(name.into())
+            }
+        }
+        impl From<String> for $type_name {
+            fn from(name: String) -> Self {
+                Self::Name(name)
+            }
+        }
+        impl From<u64> for $type_name {
+            fn from(id: u64) -> Self {
+                Self::Numeric(id)
+            }
+        }
     };
 }
 
