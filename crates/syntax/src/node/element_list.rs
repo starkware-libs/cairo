@@ -6,8 +6,9 @@ use crate::node::{SyntaxNode, TypedSyntaxNode};
 // A typed view of an element list node.
 // STEP=1 means a sequence of elements (e.g. sequence of trivia elements).
 // STEP=2 means a separated sequence (e.g. argument list separated by `,`).
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ElementList<T: TypedSyntaxNode, const STEP: usize> {
-    node: SyntaxNode,
+    pub node: SyntaxNode,
     phantom: PhantomData<T>,
 }
 impl<T: TypedSyntaxNode, const STEP: usize> ElementList<T, STEP> {
@@ -21,5 +22,8 @@ impl<T: TypedSyntaxNode, const STEP: usize> ElementList<T, STEP> {
             .step_by(STEP)
             .map(|x| T::from_syntax_node(db, x))
             .collect()
+    }
+    pub fn has_tail(&self, db: &dyn GreenInterner) -> bool {
+        self.node.children(db).len() % STEP != 0
     }
 }
