@@ -37,7 +37,7 @@ impl Extensions {
     pub fn specialize(
         &self,
         extension_id: &ExtensionId,
-        tmpl_args: &[TemplateArg],
+        args: &[TemplateArg],
     ) -> Result<ConcreteExtensionBox, ExtensionError> {
         self.specializers
             .get(extension_id)
@@ -45,7 +45,7 @@ impl Extensions {
                 extension_id: extension_id.clone(),
                 error: SpecializationError::UnsupportedLibCallName,
             })?
-            .specialize(tmpl_args)
+            .specialize(args)
             .map_err(move |error| ExtensionError::Specialization {
                 extension_id: extension_id.clone(),
                 error,
@@ -56,12 +56,28 @@ impl Extensions {
 /// Trait for implementing a specialization generator.
 trait Extension {
     /// Creates the specialization with the template arguments.
-    fn specialize(
-        &self,
-        tmpl_args: &[TemplateArg],
-    ) -> Result<ConcreteExtensionBox, SpecializationError>;
+    fn specialize(&self, args: &[TemplateArg])
+    -> Result<ConcreteExtensionBox, SpecializationError>;
 }
 
+/// Trait for implementing a specialization generator with no generic arguments.
+trait NoArgsExtension {
+    fn specialize(&self) -> ConcreteExtensionBox;
+}
+impl<T: NoArgsExtension> Extension for T {
+    fn specialize(
+        &self,
+        args: &[TemplateArg],
+    ) -> Result<ConcreteExtensionBox, SpecializationError> {
+        if args.is_empty() {
+            Ok(self.specialize())
+        } else {
+            Err(SpecializationError::WrongNumberOfTemplateArgs)
+        }
+    }
+}
+
+/// Trait for a specialized extension.
 pub trait ConcreteExtension {}
 
 type ExtensionBox = Box<dyn Extension>;
