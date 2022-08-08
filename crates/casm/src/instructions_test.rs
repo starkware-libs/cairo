@@ -2,6 +2,7 @@ use std::fmt::Display;
 
 use crate::instructions::{
     AssertEqInstruction, CallInstruction, Instruction, JnzInstruction, JumpInstruction,
+    RetInstruction,
 };
 use crate::operand::{DerefOperand, DerefOrImmediate, ImmediateOperand, Register, ResOperand};
 
@@ -72,4 +73,10 @@ fn test_assert_eq_format() {
 
     let insn = AssertEqInstruction { a: op1, b: op2 };
     assert_eq!(insn.to_string(), "[ap + 5] = 205");
+}
+
+#[test]
+fn test_ret_format() {
+    let insn = RetInstruction {};
+    assert_eq!(insn.to_string(), "ret");
 }

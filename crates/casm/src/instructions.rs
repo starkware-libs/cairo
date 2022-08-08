@@ -12,6 +12,7 @@ enum Instruction {
     Call(CallInstruction),
     Jnz(JnzInstruction),
     Jump(JumpInstruction),
+    Ret(RetInstruction),
 }
 impl Display for Instruction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -20,6 +21,7 @@ impl Display for Instruction {
             Instruction::Call(insn) => write!(f, "{}", insn),
             Instruction::Jnz(insn) => write!(f, "{}", insn),
             Instruction::Jump(insn) => write!(f, "{}", insn),
+            Instruction::Ret(insn) => write!(f, "{}", insn),
         }
     }
 }
@@ -64,5 +66,12 @@ pub struct AssertEqInstruction {
 impl Display for AssertEqInstruction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{} = {}", self.a, self.b)
+    }
+}
+
+pub struct RetInstruction {}
+impl Display for RetInstruction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "ret")
     }
 }
