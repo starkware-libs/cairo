@@ -7,7 +7,8 @@ use crate::operand::{DerefOperand, DerefOrImmediate, ImmediateOperand, Register,
 mod instructions_test;
 
 // An enum of Cairo instructions.
-enum Instruction {
+#[derive(Debug, PartialEq)]
+pub enum Instruction {
     AssertEq(AssertEqInstruction),
     Call(CallInstruction),
     Jnz(JnzInstruction),
@@ -26,6 +27,7 @@ impl Display for Instruction {
     }
 }
 
+#[derive(Debug, PartialEq)]
 pub struct CallInstruction {
     target: DerefOrImmediate,
     relative: bool,
@@ -37,6 +39,7 @@ impl Display for CallInstruction {
 }
 
 // Represents the instruction "jmp rel/abs".
+#[derive(Debug, PartialEq)]
 pub struct JumpInstruction {
     target: DerefOrImmediate,
     relative: bool,
@@ -48,6 +51,7 @@ impl Display for JumpInstruction {
 }
 
 // Represents the instruction "jmp rel <jump_offset> if condition != 0".
+#[derive(Debug, PartialEq)]
 pub struct JnzInstruction {
     jump_offset: DerefOrImmediate,
     condition: DerefOperand,
@@ -59,6 +63,7 @@ impl Display for JnzInstruction {
 }
 
 // Represents the instruction "a = b" for two operands a, b.
+#[derive(Debug, PartialEq)]
 pub struct AssertEqInstruction {
     a: DerefOperand,
     b: ResOperand,
@@ -69,6 +74,7 @@ impl Display for AssertEqInstruction {
     }
 }
 
+#[derive(Debug, PartialEq)]
 pub struct RetInstruction {}
 impl Display for RetInstruction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
