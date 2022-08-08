@@ -19,6 +19,7 @@ impl Display for Register {
 }
 
 // Represents the rhs operand of an assert equal instruction.
+#[derive(Debug, PartialEq)]
 pub enum ResOperand {
     Deref(DerefOperand),
     Immediate(ImmediateOperand),
@@ -35,6 +36,7 @@ impl Display for ResOperand {
 }
 
 // Represents an operand of the form [reg + offset].
+#[derive(Debug, PartialEq)]
 pub struct DerefOperand {
     pub register: Register,
     pub offset: i16,
@@ -45,6 +47,7 @@ impl Display for DerefOperand {
     }
 }
 
+#[derive(Debug, PartialEq)]
 pub struct ImmediateOperand {
     // TODO(ilya, 10/10/2022): What type do we want to use here.
     pub value: i128,
@@ -55,6 +58,7 @@ impl Display for ImmediateOperand {
     }
 }
 
+#[derive(Debug, PartialEq)]
 pub enum DerefOrImmediate {
     Deref(DerefOperand),
     Immediate(ImmediateOperand),
@@ -68,6 +72,7 @@ impl Display for DerefOrImmediate {
     }
 }
 
+#[derive(Debug, PartialEq)]
 pub enum Operation {
     Add,
     Mul,
@@ -81,6 +86,7 @@ impl Display for Operation {
     }
 }
 
+#[derive(Debug, PartialEq)]
 pub struct BinOpOperand {
     pub op: Operation,
     pub a: DerefOperand,
