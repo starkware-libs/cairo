@@ -1,0 +1,10 @@
+[package]
+name = "parser"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+salsa = "0.16.1"
+smol_str = "0.1.23"
+syntax = { path = "../syntax" }
+filesystem = { path = "../filesystem" }
