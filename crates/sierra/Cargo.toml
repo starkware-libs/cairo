@@ -12,6 +12,7 @@ regex = "1"
 test-case = "*"
 
 [dependencies]
+array-init = "*"
 indoc = "*"
 itertools = "*"
 lalrpop-util = { version = "*", features = ["lexer"] }
