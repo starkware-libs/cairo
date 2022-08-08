@@ -1,9 +1,11 @@
 use std::collections::HashMap;
 
+use array_init::array_init;
 use itertools::chain;
 
-use super::GenericExtensionBox;
+use super::{GenericExtensionBox, InputError};
 use crate::ids::GenericExtensionId;
+use crate::mem_cell::MemCell;
 
 mod gas;
 mod integer;
@@ -18,4 +20,19 @@ pub(super) fn all_core_extensions() -> HashMap<GenericExtensionId, GenericExtens
         unconditional_jump::extensions().into_iter(),
     )
     .collect()
+}
+
+/// Unpacking inputs from a vector of vectors memcells into an array of memcell of the given
+/// constant size.
+fn unpack_inputs<const N: usize>(
+    mut inputs: Vec<Vec<MemCell>>,
+) -> Result<[MemCell; N], InputError> {
+    if inputs.len() != N {
+        Err(InputError::WrongNumberOfArgs)
+    } else if inputs.iter().any(|input| input.len() != 1) {
+        // TODO(oziv): Currently we only support internal vectors to be of size 1.
+        Err(InputError::MemoryLayoutMismatch)
+    } else {
+        Ok(array_init(|i| inputs[i].remove(0)))
+    }
 }

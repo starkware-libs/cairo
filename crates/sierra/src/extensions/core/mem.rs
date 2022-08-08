@@ -1,8 +1,10 @@
+use super::unpack_inputs;
 use crate::extensions::{
-    ConcreteExtension, ConcreteExtensionBox, GenericExtension, GenericExtensionBox,
-    NoGenericArgsGenericExtension, SpecializationError,
+    ConcreteExtensionBox, GenericExtension, GenericExtensionBox, InputError,
+    NoGenericArgsGenericExtension, NonBranchConcreteExtension, SpecializationError,
 };
 use crate::ids::{ConcreteTypeId, GenericExtensionId};
+use crate::mem_cell::MemCell;
 use crate::program::GenericArg;
 
 /// Helper for extracting the type from the template arguments.
@@ -24,7 +26,15 @@ impl GenericExtension for StoreTempGeneric {
 struct StoreTempConcrete {
     _ty: ConcreteTypeId,
 }
-impl ConcreteExtension for StoreTempConcrete {}
+impl NonBranchConcreteExtension for StoreTempConcrete {
+    fn non_branch_simulate(
+        &self,
+        inputs: Vec<Vec<MemCell>>,
+    ) -> Result<Vec<Vec<MemCell>>, InputError> {
+        let [cell] = unpack_inputs::<1>(inputs)?;
+        Ok(vec![vec![cell]])
+    }
+}
 
 /// Extension for aligning the temporary buffer for flow control merge.
 struct AlignTempsGeneric {}
@@ -37,7 +47,15 @@ impl GenericExtension for AlignTempsGeneric {
 struct AlignTempsConcrete {
     _ty: ConcreteTypeId,
 }
-impl ConcreteExtension for AlignTempsConcrete {}
+impl NonBranchConcreteExtension for AlignTempsConcrete {
+    fn non_branch_simulate(
+        &self,
+        inputs: Vec<Vec<MemCell>>,
+    ) -> Result<Vec<Vec<MemCell>>, InputError> {
+        unpack_inputs::<0>(inputs)?;
+        Ok(vec![])
+    }
+}
 
 /// Extension for storing a deferred value into local memory.
 struct StoreLocalGeneric {}
@@ -50,7 +68,15 @@ impl GenericExtension for StoreLocalGeneric {
 struct StoreLocalConcrete {
     _ty: ConcreteTypeId,
 }
-impl ConcreteExtension for StoreLocalConcrete {}
+impl NonBranchConcreteExtension for StoreLocalConcrete {
+    fn non_branch_simulate(
+        &self,
+        inputs: Vec<Vec<MemCell>>,
+    ) -> Result<Vec<Vec<MemCell>>, InputError> {
+        let [cell] = unpack_inputs::<1>(inputs)?;
+        Ok(vec![vec![cell]])
+    }
+}
 
 /// Extension for allocating locals for later stores.
 struct AllocLocalsGeneric {}
@@ -61,7 +87,15 @@ impl NoGenericArgsGenericExtension for AllocLocalsGeneric {
 }
 
 struct AllocLocalsConcrete {}
-impl ConcreteExtension for AllocLocalsConcrete {}
+impl NonBranchConcreteExtension for AllocLocalsConcrete {
+    fn non_branch_simulate(
+        &self,
+        inputs: Vec<Vec<MemCell>>,
+    ) -> Result<Vec<Vec<MemCell>>, InputError> {
+        unpack_inputs::<0>(inputs)?;
+        Ok(vec![])
+    }
+}
 
 /// Extension for renaming an identifier - used to align identities for flow control merge.
 struct RenameGeneric {}
@@ -74,7 +108,15 @@ impl GenericExtension for RenameGeneric {
 struct RenameConcrete {
     _ty: ConcreteTypeId,
 }
-impl ConcreteExtension for RenameConcrete {}
+impl NonBranchConcreteExtension for RenameConcrete {
+    fn non_branch_simulate(
+        &self,
+        inputs: Vec<Vec<MemCell>>,
+    ) -> Result<Vec<Vec<MemCell>>, InputError> {
+        let [cell] = unpack_inputs::<1>(inputs)?;
+        Ok(vec![vec![cell]])
+    }
+}
 
 /// Extension for making a type deferred for later store.
 struct MoveGeneric {}
@@ -87,7 +129,15 @@ impl GenericExtension for MoveGeneric {
 struct MoveConcrete {
     _ty: ConcreteTypeId,
 }
-impl ConcreteExtension for MoveConcrete {}
+impl NonBranchConcreteExtension for MoveConcrete {
+    fn non_branch_simulate(
+        &self,
+        inputs: Vec<Vec<MemCell>>,
+    ) -> Result<Vec<Vec<MemCell>>, InputError> {
+        let [cell] = unpack_inputs::<1>(inputs)?;
+        Ok(vec![vec![cell]])
+    }
+}
 
 pub(super) fn extensions() -> [(GenericExtensionId, GenericExtensionBox); 6] {
     [

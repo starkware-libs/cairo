@@ -3,11 +3,12 @@ use std::collections::HashMap;
 use thiserror::Error;
 
 use crate::ids::GenericExtensionId;
+use crate::mem_cell::MemCell;
 use crate::program::GenericArg;
 
 mod core;
 
-/// Error option while using extensions.
+/// Error occurring while specializing extensions.
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum SpecializationError {
     #[error("Count not find the requested extension")]
@@ -18,11 +19,22 @@ pub enum SpecializationError {
     UnsupportedTemplateArg,
 }
 
-/// Error option while using extensions.
+/// Error occurring while testing extension inputs.
+#[derive(Error, Debug, Eq, PartialEq)]
+pub enum InputError {
+    #[error("Expected different number of arguments")]
+    WrongNumberOfArgs,
+    #[error("Expected a different memory layout")]
+    MemoryLayoutMismatch,
+}
+
+/// Extension related errors.
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum ExtensionError {
-    #[error("Count not specialize extension")]
+    #[error("Could not specialize extension")]
     Specialization { extension_id: GenericExtensionId, error: SpecializationError },
+    #[error("Encountered unexpected data in extension inputs")]
+    Inputs { extension_id: GenericExtensionId, error: InputError },
 }
 
 /// Handles extensions usages.
@@ -75,7 +87,28 @@ impl<T: NoGenericArgsGenericExtension> GenericExtension for T {
 }
 
 /// Trait for a specialized extension.
-pub trait ConcreteExtension {}
+pub trait ConcreteExtension {
+    /// Given the sets of memory cell values corresponding to inputs to the extension, returns the
+    /// sets of memory cell values corresponding to outputs, and the index of the chosen branch.
+    fn simulate(&self, inputs: Vec<Vec<MemCell>>)
+    -> Result<(Vec<Vec<MemCell>>, usize), InputError>;
+}
+
+/// Trait for ConcreteExtension that isn't a branch.
+trait NonBranchConcreteExtension {
+    fn non_branch_simulate(
+        &self,
+        inputs: Vec<Vec<MemCell>>,
+    ) -> Result<Vec<Vec<MemCell>>, InputError>;
+}
+impl<T: NonBranchConcreteExtension> ConcreteExtension for T {
+    fn simulate(
+        &self,
+        inputs: Vec<Vec<MemCell>>,
+    ) -> Result<(Vec<Vec<MemCell>>, usize), InputError> {
+        Ok((self.non_branch_simulate(inputs)?, 0))
+    }
+}
 
 type GenericExtensionBox = Box<dyn GenericExtension>;
 type ConcreteExtensionBox = Box<dyn ConcreteExtension>;

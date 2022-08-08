@@ -15,6 +15,7 @@ test-case = "*"
 
 [dependencies]
 casm = { path = "../casm" }
+array-init = "*"
 itertools = "*"
 lalrpop-util = { version = "*", features = ["lexer"] }
 thiserror = "*"
