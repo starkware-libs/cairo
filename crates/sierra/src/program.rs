@@ -1,9 +1,9 @@
 /// A full Sierra program.
 #[derive(Clone, Debug)]
 pub struct Program {
-    /// Specializations for all the used types.
+    /// Declarations for all the used types.
     pub type_declarations: Vec<TypeDeclaration>,
-    /// Specializations for all the used extensions.
+    /// Declarations for all the used extensions.
     pub extension_declarations: Vec<ExtensionDeclaration>,
     /// The code of the program.
     pub statements: Vec<Statement>,
@@ -36,13 +36,13 @@ pub struct ExtensionDeclaration {
 /// Descriptor of a function.
 #[derive(Clone, Debug)]
 pub struct Function {
-    // The name of the function.
+    /// The name of the function.
     pub id: FunctionId,
-    // The arguments for the function.
+    /// The arguments for the function.
     pub params: Vec<Param>,
-    // The return types.
+    /// The return types.
     pub ret_types: Vec<ConcreteTypeId>,
-    // The statement id where the function starts.
+    /// The statement id where the function starts.
     pub entry: StatementId,
 }
 
@@ -65,9 +65,9 @@ macro_rules! define_identity {
     };
 }
 
-define_identity!("The identity of an extension", (Clone, Debug), ExtensionId);
+define_identity!("The identity of an extension", (Clone, Debug, Eq, Hash, PartialEq), ExtensionId);
 
-define_identity!("The identity for a concrete extension.", (Clone, Debug), CalleeId);
+define_identity!("The identity for a concrete extension.", (Clone, Debug, PartialEq), CalleeId);
 
 define_identity!("The identity for a user function.", (Clone, Debug, PartialEq), FunctionId);
 
@@ -108,7 +108,7 @@ pub struct Invocation {
     pub branches: Vec<BranchInfo>,
 }
 
-/// Describes the flow of a chosen extension's branch.
+// Describes the flow of a chosen extension's branch.
 #[derive(Clone, Debug)]
 pub struct BranchInfo {
     /// The target the branch continues the run through.
