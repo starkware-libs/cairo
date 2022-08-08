@@ -16,7 +16,7 @@ pub enum EditError {
     VariableOverride(VarId),
 }
 
-// Given a map with var ids as keys, extracts out the given ids, failing if some id is missing.
+/// Given a map with var ids as keys, extracts out the given ids, failing if some id is missing.
 pub fn take_args<'a, V: 'a + std::cmp::PartialEq>(
     mut state: HashMap<VarId, V>,
     ids: impl Iterator<Item = &'a VarId>,
@@ -35,7 +35,7 @@ pub fn take_args<'a, V: 'a + std::cmp::PartialEq>(
     Ok((state, vals))
 }
 
-// Adds the given pairs to map with var ids as keys, failing if some variable is overriden.
+/// Adds the given pairs to map with var ids as keys, failing if some variable is overriden.
 pub fn put_results<'a, V>(
     mut state: HashMap<VarId, V>,
     results: impl Iterator<Item = (&'a VarId, V)>,
