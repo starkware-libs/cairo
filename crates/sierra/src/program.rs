@@ -113,14 +113,14 @@ pub enum GenericArg {
 }
 
 /// A possible statement.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Statement {
     Invocation(Invocation),
     Return(Vec<VarId>),
 }
 
 /// An invocation statement.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Invocation {
     /// The called extension.
     pub extension_id: ConcreteExtensionId,
@@ -131,8 +131,8 @@ pub struct Invocation {
     pub branches: Vec<BranchInfo>,
 }
 
-// Describes the flow of a chosen extension's branch.
-#[derive(Clone, Debug)]
+/// Describes the flow of a chosen extension's branch.
+#[derive(Clone, Debug, PartialEq)]
 pub struct BranchInfo {
     /// The target the branch continues the run through.
     pub target: BranchTarget,
