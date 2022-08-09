@@ -1,3 +1,6 @@
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
+
 /// A full Sierra program.
 #[derive(Clone, Debug)]
 pub struct Program {
@@ -57,24 +60,37 @@ macro_rules! define_identity {
     ($doc:literal, $derives:tt, $type_name:ident) => {
         #[doc=$doc]
         #[derive $derives]
-        pub enum $type_name {
+
+        pub struct $type_name {
             // This variant is for testing.
-            Name(String),
-            Numeric(u64),
+            pub id: u64,
+            pub debug_name : Option<String>,
+        }
+
+        impl $type_name {
+            pub fn new(id: u64) -> Self {
+                $type_name{id: id, debug_name: None}
+            }
+
+            pub fn from_string(s : String) -> Self {
+                let mut hasher = DefaultHasher::new();
+                s.hash(&mut hasher);
+                $type_name{id: hasher.finish().into(), debug_name: Some(s)}
+            }
         }
         impl From<&str> for $type_name {
             fn from(name: &str) -> Self {
-                Self::Name(name.into())
+                Self::from_string(name.into())
             }
         }
         impl From<String> for $type_name {
             fn from(name: String) -> Self {
-                Self::Name(name)
+                Self::from_string(name)
             }
         }
         impl From<u64> for $type_name {
             fn from(id: u64) -> Self {
-                Self::Numeric(id)
+                Self::new(id)
             }
         }
     };
