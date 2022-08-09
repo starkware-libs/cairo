@@ -1,45 +1,42 @@
 use test_case::test_case;
 
 use super::{ExtensionError, Extensions, SpecializationError};
-use crate::program::TemplateArg;
+use crate::program::GenericArg;
 
-fn type_arg(name: &str) -> TemplateArg {
-    TemplateArg::Type(name.into())
+fn type_arg(name: &str) -> GenericArg {
+    GenericArg::Type(name.into())
 }
 
-/// TemplateArg::Value($v)
-macro_rules! tav {
-    ($v:expr) => {
-        TemplateArg::Value($v)
-    };
+fn value_arg(v: i64) -> GenericArg {
+    GenericArg::Value(v)
 }
 
 #[test_case("NoneExistent", vec![] => Err(SpecializationError::UnsupportedLibCallName);
             "NoneExistent")]
-#[test_case("get_gas", vec![tav!(2)] => Ok(()); "get_gas<2>")]
+#[test_case("get_gas", vec![value_arg(2)] => Ok(()); "get_gas<2>")]
 #[test_case("get_gas", vec![] => Err(SpecializationError::UnsupportedTemplateArg); "get_gas")]
-#[test_case("get_gas", vec![tav!(-2)] => Err(SpecializationError::UnsupportedTemplateArg);
+#[test_case("get_gas", vec![value_arg(-2)] => Err(SpecializationError::UnsupportedTemplateArg);
             "get_gas<minus 2>")]
-#[test_case("refund_gas", vec![tav!(7)] => Ok(()); "refund_gas<7>")]
+#[test_case("refund_gas", vec![value_arg(7)] => Ok(()); "refund_gas<7>")]
 #[test_case("refund_gas", vec![] => Err(SpecializationError::UnsupportedTemplateArg);
             "refund_gas")]
-#[test_case("refund_gas", vec![tav!(-7)] => Err(SpecializationError::UnsupportedTemplateArg);
+#[test_case("refund_gas", vec![value_arg(-7)] => Err(SpecializationError::UnsupportedTemplateArg);
             "refund_gas<minus 7>")]
 #[test_case("int_add", vec![] => Ok(()); "int_add")]
 #[test_case("int_sub", vec![] => Ok(()); "int_sub")]
 #[test_case("int_mul", vec![] => Ok(()); "int_mul")]
 #[test_case("int_div", vec![] => Ok(()); "int_div")]
 #[test_case("int_mod", vec![] => Ok(()); "int_mod")]
-#[test_case("int_add", vec![tav!(2)] => Ok(()); "int_add<2>")]
-#[test_case("int_sub", vec![tav!(5)] => Ok(()); "int_sub<5>")]
-#[test_case("int_mul", vec![tav!(7)] => Ok(()); "int_mul<7>")]
-#[test_case("int_div", vec![tav!(9)] => Ok(()); "int_div<9>")]
-#[test_case("int_div", vec![tav!(0)] => Err(SpecializationError::UnsupportedTemplateArg);
+#[test_case("int_add", vec![value_arg(2)] => Ok(()); "int_add<2>")]
+#[test_case("int_sub", vec![value_arg(5)] => Ok(()); "int_sub<5>")]
+#[test_case("int_mul", vec![value_arg(7)] => Ok(()); "int_mul<7>")]
+#[test_case("int_div", vec![value_arg(9)] => Ok(()); "int_div<9>")]
+#[test_case("int_div", vec![value_arg(0)] => Err(SpecializationError::UnsupportedTemplateArg);
             "int_div<0>")]
-#[test_case("int_mod", vec![tav!(1)] => Ok(()); "int_mod<1>")]
-#[test_case("int_mod", vec![tav!(0)] => Err(SpecializationError::UnsupportedTemplateArg);
+#[test_case("int_mod", vec![value_arg(1)] => Ok(()); "int_mod<1>")]
+#[test_case("int_mod", vec![value_arg(0)] => Err(SpecializationError::UnsupportedTemplateArg);
             "int_mod<0>")]
-#[test_case("int_const", vec![tav!(8)] => Ok(()); "int_const<8>")]
+#[test_case("int_const", vec![value_arg(8)] => Ok(()); "int_const<8>")]
 #[test_case("int_const", vec![] => Err(SpecializationError::UnsupportedTemplateArg); "int_const")]
 #[test_case("int_ignore", vec![] => Ok(()); "int_ignore")]
 #[test_case("int_ignore", vec![type_arg("T")] =>
@@ -76,7 +73,7 @@ macro_rules! tav {
 #[test_case("jump", vec![] => Ok(()); "jump")]
 #[test_case("jump", vec![type_arg("T")] => Err(SpecializationError::WrongNumberOfTemplateArgs);
             "jump<T>")]
-fn find_specialization(id: &str, args: Vec<TemplateArg>) -> Result<(), SpecializationError> {
+fn find_specialization(id: &str, args: Vec<GenericArg>) -> Result<(), SpecializationError> {
     Extensions::default().specialize(&id.into(), &args).map(|_| ()).map_err(|error| match error {
         ExtensionError::Specialization { extension_id: _, error } => error,
     })

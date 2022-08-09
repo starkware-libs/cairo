@@ -5,10 +5,6 @@ use crate::program::VarId;
 
 pub type State = HashMap<VarId, i64>;
 
-fn as_var_id(name: &str) -> VarId {
-    VarId::Name(name.into())
-}
-
 #[test]
 fn empty() {
     assert_eq!(take_args(State::new(), vec![].into_iter()), Ok((State::new(), vec![])));
@@ -18,19 +14,19 @@ fn empty() {
 #[test]
 fn basic_mapping() {
     assert_eq!(
-        take_args(State::from([(as_var_id("arg"), 0)]), vec![&as_var_id("arg")].into_iter(),),
+        take_args(State::from([("arg".into(), 0)]), vec![&"arg".into()].into_iter(),),
         Ok((State::new(), vec![0]))
     );
     assert_eq!(
-        put_results(State::new(), vec![(&as_var_id("res"), 1)].into_iter(),),
-        Ok(State::from([(as_var_id("res"), 1)]))
+        put_results(State::new(), vec![(&"res".into(), 1)].into_iter(),),
+        Ok(State::from([("res".into(), 1)]))
     );
     assert_eq!(
-        take_args(State::new(), vec![&as_var_id("arg")].into_iter(),),
-        Err(EditError::MissingReference(as_var_id("arg")))
+        take_args(State::new(), vec![&"arg".into()].into_iter(),),
+        Err(EditError::MissingReference("arg".into()))
     );
     assert_eq!(
-        put_results(State::from([(as_var_id("res"), 1)]), vec![(&as_var_id("res"), 1)].into_iter(),),
-        Err(EditError::VariableOverride(as_var_id("res")))
+        put_results(State::from([("res".into(), 1)]), vec![(&"res".into(), 1)].into_iter(),),
+        Err(EditError::VariableOverride("res".into()))
     );
 }

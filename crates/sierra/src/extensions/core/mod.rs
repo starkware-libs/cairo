@@ -2,15 +2,15 @@ use std::collections::HashMap;
 
 use itertools::chain;
 
-use super::ExtensionBox;
-use crate::program::ExtensionId;
+use super::GenericExtensionBox;
+use crate::program::GenericExtensionId;
 
 mod gas;
 mod integer;
 mod mem;
 mod unconditional_jump;
 
-pub(super) fn all_core_extensions() -> HashMap<ExtensionId, ExtensionBox> {
+pub(super) fn all_core_extensions() -> HashMap<GenericExtensionId, GenericExtensionBox> {
     chain!(
         gas::extensions().into_iter(),
         integer::extensions().into_iter(),
