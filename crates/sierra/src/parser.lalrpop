@@ -39,34 +39,34 @@ Param: Param = {
 Params = Comma<Param>;
 
 GenericExtensionId: GenericExtensionId = {
-    <id:Label> => GenericExtensionId::Name(id),
-    "[" <id:UnsignedInt> "]" => GenericExtensionId::Numeric(id),
+    <id:Label> => GenericExtensionId::from_string(id),
+    "[" <id:UnsignedInt> "]" => GenericExtensionId::new(id),
 }
 
 ConcreteExtensionId: ConcreteExtensionId = {
-    <id:Label> => ConcreteExtensionId::Name(id),
-    "[" <id:UnsignedInt> "]" => ConcreteExtensionId::Numeric(id),
+    <id:Label> => ConcreteExtensionId::from_string(id),
+    "[" <id:UnsignedInt> "]" => ConcreteExtensionId::new(id),
 }
 
 FunctionId: FunctionId = {
-    <id:Label> => FunctionId::Name(id),
-    "[" <id:UnsignedInt> "]" => FunctionId::Numeric(id),
+    <id:Label> => FunctionId::from_string(id),
+    "[" <id:UnsignedInt> "]" => FunctionId::new(id),
 }
 
 VarId: VarId = {
-    <id:Label> => VarId::Name(id),
-    "[" <id:UnsignedInt> "]" => VarId::Numeric(id),
+    <id:Label> => VarId::from_string(id),
+    "[" <id:UnsignedInt> "]" => VarId::new(id),
 }
 VarIds = Comma<VarId>;
 
 GenericTypeId: GenericTypeId = {
-    <id:Label> => GenericTypeId::Name(id),
-    "[" <id:UnsignedInt> "]" => GenericTypeId::Numeric(id),
+    <id:Label> => GenericTypeId::from_string(id),
+    "[" <id:UnsignedInt> "]" => GenericTypeId::new(id),
 }
 
 ConcreteTypeId: ConcreteTypeId = {
-    <id:Label> => ConcreteTypeId::Name(id),
-    "[" <id:UnsignedInt> "]" => ConcreteTypeId::Numeric(id),
+    <id:Label> => ConcreteTypeId::from_string(id),
+    "[" <id:UnsignedInt> "]" => ConcreteTypeId::new(id),
 }
 ConcreteTypeIds = Comma<ConcreteTypeId>;
 

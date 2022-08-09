@@ -30,7 +30,8 @@ fn missing_ref() {
             test_program@0() -> ();"
         })
         .unwrap();
-    assert_matches!(compile(&prog), Err(CompilationError::MissingReference(VarId::Numeric(2))));
+    assert_matches!(
+        compile(&prog), Err(CompilationError::MissingReference(x)) if x == VarId::new(2));
 }
 
 // TODO(ilya, 10/10/2022): Add test for UnsupportedStatement.
