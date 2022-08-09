@@ -14,17 +14,17 @@ pub Program: Program = {
 }
 
 TypeDeclaration: TypeDeclaration = {
-    "type" <id:ConcreteTypeId> "=" <type_id:TypeId> "<" <args:TemplateArgs> ">" ";"
-    => TypeDeclaration{id, type_id, args},
-    "type" <id:ConcreteTypeId> "=" <type_id:TypeId> ";"
-    => TypeDeclaration{id, type_id, args: vec![]},
+    "type" <id:ConcreteTypeId> "=" <generic_id:GenericTypeId> "<" <args:GenericArgs> ">" ";"
+    => TypeDeclaration{id, generic_id, args},
+    "type" <id:ConcreteTypeId> "=" <generic_id:GenericTypeId> ";"
+    => TypeDeclaration{id, generic_id, args: vec![]},
 }
 
 ExtensionDeclaration: ExtensionDeclaration = {
-    "ext" <id:CalleeId> "=" <extension_id:ExtensionId> "<" <args:TemplateArgs> ">" ";"
-    => ExtensionDeclaration{id, extension_id, args},
-    "ext" <id:CalleeId> "=" <extension_id:ExtensionId> ";"
-    => ExtensionDeclaration{id, extension_id, args: vec![]},
+    "ext" <id:ConcreteExtensionId> "=" <generic_id:GenericExtensionId>
+    "<" <args:GenericArgs> ">" ";" => ExtensionDeclaration{id, generic_id, args},
+    "ext" <id:ConcreteExtensionId> "=" <generic_id:GenericExtensionId> ";"
+    => ExtensionDeclaration{id, generic_id, args: vec![]},
 }
 
 Function: Function = {
@@ -38,14 +38,14 @@ Param: Param = {
 }
 Params = Comma<Param>;
 
-ExtensionId: ExtensionId = {
-    <id:Label> => ExtensionId::Name(id),
-    "[" <id:UnsignedInt> "]" => ExtensionId::Numeric(id),
+GenericExtensionId: GenericExtensionId = {
+    <id:Label> => GenericExtensionId::Name(id),
+    "[" <id:UnsignedInt> "]" => GenericExtensionId::Numeric(id),
 }
 
-CalleeId: CalleeId = {
-    <id:Label> => CalleeId::Name(id),
-    "[" <id:UnsignedInt> "]" => CalleeId::Numeric(id),
+ConcreteExtensionId: ConcreteExtensionId = {
+    <id:Label> => ConcreteExtensionId::Name(id),
+    "[" <id:UnsignedInt> "]" => ConcreteExtensionId::Numeric(id),
 }
 
 FunctionId: FunctionId = {
@@ -59,9 +59,9 @@ VarId: VarId = {
 }
 VarIds = Comma<VarId>;
 
-TypeId: TypeId = {
-    <id:Label> => TypeId::Name(id),
-    "[" <id:UnsignedInt> "]" => TypeId::Numeric(id),
+GenericTypeId: GenericTypeId = {
+    <id:Label> => GenericTypeId::Name(id),
+    "[" <id:UnsignedInt> "]" => GenericTypeId::Numeric(id),
 }
 
 ConcreteTypeId: ConcreteTypeId = {
@@ -74,12 +74,12 @@ StatementId: StatementId = {
      <id:UnsignedInt> => StatementId(id as usize),
 }
 
-TemplateArg: TemplateArg = {
-    <v:SignedInt> => TemplateArg::Value(v),
-    ConcreteTypeId => TemplateArg::Type(<>),
-    "&" <id:FunctionId> => TemplateArg::Func(id),
+GenericArg: GenericArg = {
+    <v:SignedInt> => GenericArg::Value(v),
+    ConcreteTypeId => GenericArg::Type(<>),
+    "&" <id:FunctionId> => GenericArg::Func(id),
 }
-TemplateArgs = Comma<TemplateArg>;
+GenericArgs = Comma<GenericArg>;
 
 Statement: Statement = {
     <invocation:Invocation> => Statement::Invocation(invocation),
@@ -87,14 +87,14 @@ Statement: Statement = {
 }
 
 Invocation: Invocation = {
-    <callee_id:CalleeId> "(" <args:VarIds> ")" "->" "(" <results:VarIds> ")" ";" =>
+    <extension_id:ConcreteExtensionId> "(" <args:VarIds> ")" "->" "(" <results:VarIds> ")" ";" =>
         Invocation{
-            callee_id,
+            extension_id,
             args,
             branches: vec![BranchInfo{ target: BranchTarget::Fallthrough , results }]
         },
-    <callee_id:CalleeId> "(" <args:VarIds> ")" "{" <branches:BranchInfo*> "}" ";" =>
-        Invocation{callee_id, args, branches},
+    <extension_id:ConcreteExtensionId> "(" <args:VarIds> ")" "{" <branches:BranchInfo*> "}" ";" =>
+        Invocation{extension_id, args, branches},
 }
 
 // Generates a vector of Ts with or without a trailing comma.

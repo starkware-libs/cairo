@@ -1,27 +1,27 @@
 use std::fmt;
 
 use crate::program::{
-    BranchInfo, BranchTarget, CalleeId, ConcreteTypeId, ExtensionDeclaration, ExtensionId,
-    Function, FunctionId, Invocation, Param, Program, Statement, TemplateArg, TypeDeclaration,
-    TypeId, VarId,
+    BranchInfo, BranchTarget, ConcreteExtensionId, ConcreteTypeId, ExtensionDeclaration, Function,
+    FunctionId, GenericArg, GenericExtensionId, GenericTypeId, Invocation, Param, Program,
+    Statement, TypeDeclaration, VarId,
 };
 
 impl fmt::Display for Program {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for declaration in &self.type_declarations {
-            writeln!(f, "{};", declaration)?;
+            writeln!(f, "{declaration};")?;
         }
         writeln!(f)?;
         for declaration in &self.extension_declarations {
-            writeln!(f, "{};", declaration)?;
+            writeln!(f, "{declaration};")?;
         }
         writeln!(f)?;
         for statement in &self.statements {
-            writeln!(f, "{};", statement)?;
+            writeln!(f, "{statement};")?;
         }
         writeln!(f)?;
         for func in &self.funcs {
-            writeln!(f, "{};", func)?;
+            writeln!(f, "{func};")?;
         }
         Ok(())
     }
@@ -29,14 +29,14 @@ impl fmt::Display for Program {
 
 impl fmt::Display for TypeDeclaration {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "type {} = {}", self.id, self.type_id)?;
+        write!(f, "type {} = {}", self.id, self.generic_id)?;
         write_template_args(f, &self.args)
     }
 }
 
 impl fmt::Display for ExtensionDeclaration {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "ext {} = {}", self.id, self.extension_id)?;
+        write!(f, "ext {} = {}", self.id, self.generic_id)?;
         write_template_args(f, &self.args)
     }
 }
@@ -70,19 +70,19 @@ macro_rules! display_identity {
     };
 }
 
-display_identity!(ExtensionId);
-display_identity!(CalleeId);
+display_identity!(GenericExtensionId);
+display_identity!(ConcreteExtensionId);
 display_identity!(FunctionId);
 display_identity!(VarId);
-display_identity!(TypeId);
+display_identity!(GenericTypeId);
 display_identity!(ConcreteTypeId);
 
-impl fmt::Display for TemplateArg {
+impl fmt::Display for GenericArg {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            TemplateArg::Type(id) => write!(f, "{}", id),
-            TemplateArg::Func(id) => write!(f, "&{}", id),
-            TemplateArg::Value(v) => write!(f, "{}", v),
+            GenericArg::Type(id) => write!(f, "{id}"),
+            GenericArg::Func(id) => write!(f, "&{id}"),
+            GenericArg::Value(v) => write!(f, "{v}"),
         }
     }
 }
@@ -90,7 +90,7 @@ impl fmt::Display for TemplateArg {
 impl fmt::Display for Statement {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Statement::Invocation(invc) => write!(f, "{}", invc),
+            Statement::Invocation(invocation) => write!(f, "{invocation}"),
             Statement::Return(ids) => {
                 write!(f, "return(")?;
                 write_comma_separated(f, ids)?;
@@ -102,7 +102,7 @@ impl fmt::Display for Statement {
 
 impl fmt::Display for Invocation {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}(", self.callee_id)?;
+        write!(f, "{}(", self.extension_id)?;
         write_comma_separated(f, &self.args)?;
         if let [BranchInfo { target: BranchTarget::Fallthrough, results }] = &self.branches[..] {
             write!(f, ") -> (")?;
@@ -110,7 +110,7 @@ impl fmt::Display for Invocation {
             write!(f, ")")
         } else {
             write!(f, ") {{ ")?;
-            self.branches.iter().try_for_each(|b| write!(f, "{} ", b))?;
+            self.branches.iter().try_for_each(|branch_info| write!(f, "{branch_info} "))?;
             write!(f, "}}")
         }
     }
@@ -128,12 +128,12 @@ impl fmt::Display for BranchTarget {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             BranchTarget::Fallthrough => write!(f, "fallthrough"),
-            BranchTarget::Statement(s_id) => write!(f, "{}", s_id.0),
+            BranchTarget::Statement(id) => write!(f, "{}", id.0),
         }
     }
 }
 
-fn write_template_args(f: &mut fmt::Formatter<'_>, args: &Vec<TemplateArg>) -> fmt::Result {
+fn write_template_args(f: &mut fmt::Formatter<'_>, args: &Vec<GenericArg>) -> fmt::Result {
     if args.is_empty() {
         Ok(())
     } else {
@@ -147,6 +147,6 @@ fn write_comma_separated<V: std::fmt::Display>(
     f: &mut fmt::Formatter<'_>,
     values: &[V],
 ) -> fmt::Result {
-    values.iter().take(1).try_for_each(|v| write!(f, "{}", v))?;
-    values.iter().skip(1).try_for_each(|v| write!(f, ", {}", v))
+    values.iter().take(1).try_for_each(|v| write!(f, "{v}"))?;
+    values.iter().skip(1).try_for_each(|v| write!(f, ", {v}"))
 }

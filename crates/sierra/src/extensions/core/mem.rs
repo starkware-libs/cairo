@@ -1,24 +1,21 @@
 use crate::extensions::{
-    ConcreteExtension, ConcreteExtensionBox, Extension, ExtensionBox, NoArgsExtension,
-    SpecializationError,
+    ConcreteExtension, ConcreteExtensionBox, GenericExtension, GenericExtensionBox,
+    NoGenericArgsGenericExtension, SpecializationError,
 };
-use crate::program::{ConcreteTypeId, ExtensionId, TemplateArg};
+use crate::program::{ConcreteTypeId, GenericArg, GenericExtensionId};
 
 /// Helper for extracting the type from the template arguments.
-fn as_single_type(args: &[TemplateArg]) -> Result<ConcreteTypeId, SpecializationError> {
+fn as_single_type(args: &[GenericArg]) -> Result<ConcreteTypeId, SpecializationError> {
     match args {
-        [TemplateArg::Type(ty)] => Ok(ty.clone()),
+        [GenericArg::Type(ty)] => Ok(ty.clone()),
         _ => Err(SpecializationError::UnsupportedTemplateArg),
     }
 }
 
 /// Extension for storing a deferred value into temporary memory.
-struct StoreTempExtension {}
-impl Extension for StoreTempExtension {
-    fn specialize(
-        &self,
-        args: &[TemplateArg],
-    ) -> Result<ConcreteExtensionBox, SpecializationError> {
+struct StoreTempGeneric {}
+impl GenericExtension for StoreTempGeneric {
+    fn specialize(&self, args: &[GenericArg]) -> Result<ConcreteExtensionBox, SpecializationError> {
         Ok(Box::new(StoreTempConcrete { _ty: as_single_type(args)? }))
     }
 }
@@ -29,12 +26,9 @@ struct StoreTempConcrete {
 impl ConcreteExtension for StoreTempConcrete {}
 
 /// Extension for aligning the temporary buffer for flow control merge.
-struct AlignTempsExtension {}
-impl Extension for AlignTempsExtension {
-    fn specialize(
-        &self,
-        args: &[TemplateArg],
-    ) -> Result<ConcreteExtensionBox, SpecializationError> {
+struct AlignTempsGeneric {}
+impl GenericExtension for AlignTempsGeneric {
+    fn specialize(&self, args: &[GenericArg]) -> Result<ConcreteExtensionBox, SpecializationError> {
         Ok(Box::new(AlignTempsConcrete { _ty: as_single_type(args)? }))
     }
 }
@@ -45,12 +39,9 @@ struct AlignTempsConcrete {
 impl ConcreteExtension for AlignTempsConcrete {}
 
 /// Extension for storing a deferred value into local memory.
-struct StoreLocalExtension {}
-impl Extension for StoreLocalExtension {
-    fn specialize(
-        &self,
-        args: &[TemplateArg],
-    ) -> Result<ConcreteExtensionBox, SpecializationError> {
+struct StoreLocalGeneric {}
+impl GenericExtension for StoreLocalGeneric {
+    fn specialize(&self, args: &[GenericArg]) -> Result<ConcreteExtensionBox, SpecializationError> {
         Ok(Box::new(StoreLocalConcrete { _ty: as_single_type(args)? }))
     }
 }
@@ -61,8 +52,8 @@ struct StoreLocalConcrete {
 impl ConcreteExtension for StoreLocalConcrete {}
 
 /// Extension for allocating locals for later stores.
-struct AllocLocalsExtension {}
-impl NoArgsExtension for AllocLocalsExtension {
+struct AllocLocalsGeneric {}
+impl NoGenericArgsGenericExtension for AllocLocalsGeneric {
     fn specialize(&self) -> ConcreteExtensionBox {
         Box::new(AllocLocalsConcrete {})
     }
@@ -72,12 +63,9 @@ struct AllocLocalsConcrete {}
 impl ConcreteExtension for AllocLocalsConcrete {}
 
 /// Extension for renaming an identifier - used to align identities for flow control merge.
-struct RenameExtension {}
-impl Extension for RenameExtension {
-    fn specialize(
-        &self,
-        args: &[TemplateArg],
-    ) -> Result<ConcreteExtensionBox, SpecializationError> {
+struct RenameGeneric {}
+impl GenericExtension for RenameGeneric {
+    fn specialize(&self, args: &[GenericArg]) -> Result<ConcreteExtensionBox, SpecializationError> {
         Ok(Box::new(RenameConcrete { _ty: as_single_type(args)? }))
     }
 }
@@ -88,12 +76,9 @@ struct RenameConcrete {
 impl ConcreteExtension for RenameConcrete {}
 
 /// Extension for making a type deferred for later store.
-struct MoveExtension {}
-impl Extension for MoveExtension {
-    fn specialize(
-        &self,
-        args: &[TemplateArg],
-    ) -> Result<ConcreteExtensionBox, SpecializationError> {
+struct MoveGeneric {}
+impl GenericExtension for MoveGeneric {
+    fn specialize(&self, args: &[GenericArg]) -> Result<ConcreteExtensionBox, SpecializationError> {
         Ok(Box::new(MoveConcrete { _ty: as_single_type(args)? }))
     }
 }
@@ -103,13 +88,13 @@ struct MoveConcrete {
 }
 impl ConcreteExtension for MoveConcrete {}
 
-pub(super) fn extensions() -> [(ExtensionId, ExtensionBox); 6] {
+pub(super) fn extensions() -> [(GenericExtensionId, GenericExtensionBox); 6] {
     [
-        ("store_temp".into(), Box::new(StoreTempExtension {})),
-        ("align_temps".into(), Box::new(AlignTempsExtension {})),
-        ("store_local".into(), Box::new(StoreLocalExtension {})),
-        ("alloc_locals".into(), Box::new(AllocLocalsExtension {})),
-        ("rename".into(), Box::new(RenameExtension {})),
-        ("move".into(), Box::new(MoveExtension {})),
+        ("store_temp".into(), Box::new(StoreTempGeneric {})),
+        ("align_temps".into(), Box::new(AlignTempsGeneric {})),
+        ("store_local".into(), Box::new(StoreLocalGeneric {})),
+        ("alloc_locals".into(), Box::new(AllocLocalsGeneric {})),
+        ("rename".into(), Box::new(RenameGeneric {})),
+        ("move".into(), Box::new(MoveGeneric {})),
     ]
 }

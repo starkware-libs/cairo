@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use thiserror::Error;
 
-use crate::program::{ExtensionId, TemplateArg};
+use crate::program::{GenericArg, GenericExtensionId};
 
 mod core;
 
@@ -21,12 +21,12 @@ pub enum SpecializationError {
 #[derive(Error, Debug, PartialEq)]
 pub enum ExtensionError {
     #[error("Count not specialize extension")]
-    Specialization { extension_id: ExtensionId, error: SpecializationError },
+    Specialization { extension_id: GenericExtensionId, error: SpecializationError },
 }
 
 /// Handles extensions usages.
 pub struct Extensions {
-    specializers: HashMap<ExtensionId, ExtensionBox>,
+    specializers: HashMap<GenericExtensionId, GenericExtensionBox>,
 }
 impl Default for Extensions {
     fn default() -> Self {
@@ -36,8 +36,8 @@ impl Default for Extensions {
 impl Extensions {
     pub fn specialize(
         &self,
-        extension_id: &ExtensionId,
-        args: &[TemplateArg],
+        extension_id: &GenericExtensionId,
+        args: &[GenericArg],
     ) -> Result<ConcreteExtensionBox, ExtensionError> {
         self.specializers
             .get(extension_id)
@@ -54,21 +54,17 @@ impl Extensions {
 }
 
 /// Trait for implementing a specialization generator.
-trait Extension {
+trait GenericExtension {
     /// Creates the specialization with the template arguments.
-    fn specialize(&self, args: &[TemplateArg])
-    -> Result<ConcreteExtensionBox, SpecializationError>;
+    fn specialize(&self, args: &[GenericArg]) -> Result<ConcreteExtensionBox, SpecializationError>;
 }
 
 /// Trait for implementing a specialization generator with no generic arguments.
-trait NoArgsExtension {
+trait NoGenericArgsGenericExtension {
     fn specialize(&self) -> ConcreteExtensionBox;
 }
-impl<T: NoArgsExtension> Extension for T {
-    fn specialize(
-        &self,
-        args: &[TemplateArg],
-    ) -> Result<ConcreteExtensionBox, SpecializationError> {
+impl<T: NoGenericArgsGenericExtension> GenericExtension for T {
+    fn specialize(&self, args: &[GenericArg]) -> Result<ConcreteExtensionBox, SpecializationError> {
         if args.is_empty() {
             Ok(self.specialize())
         } else {
@@ -80,7 +76,7 @@ impl<T: NoArgsExtension> Extension for T {
 /// Trait for a specialized extension.
 pub trait ConcreteExtension {}
 
-type ExtensionBox = Box<dyn Extension>;
+type GenericExtensionBox = Box<dyn GenericExtension>;
 type ConcreteExtensionBox = Box<dyn ConcreteExtension>;
 
 #[cfg(test)]
