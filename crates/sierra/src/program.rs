@@ -1,3 +1,6 @@
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
+
 /// A full Sierra program.
 #[derive(Clone, Debug)]
 pub struct Program {
@@ -53,28 +56,47 @@ pub struct Param {
     pub ty: ConcreteTypeId,
 }
 
+fn id_from_string(s: &str) -> u64 {
+    // TODO(ilya, 10/10/2022): Fix https://github.com/starkware-libs/cairo2/issues/45.
+    let mut hasher = DefaultHasher::new();
+    s.hash(&mut hasher);
+    hasher.finish()
+}
+
 macro_rules! define_identity {
     ($doc:literal, $derives:tt, $type_name:ident) => {
         #[doc=$doc]
         #[derive $derives]
-        pub enum $type_name {
-            // This variant is for testing.
-            Name(String),
-            Numeric(u64),
+
+        pub struct $type_name {
+            pub id: u64,
+            /// Optional name for testing and debugging.
+            pub debug_name: Option<String>,
+        }
+
+        impl $type_name {
+            pub fn new(id: u64) -> Self {
+                $type_name{id, debug_name: None}
+            }
+
+            pub fn from_string(name: impl Into<String>) -> Self {
+                let s: String = name.into();
+                $type_name{id: id_from_string(&s), debug_name: Some(s)}
+            }
         }
         impl From<&str> for $type_name {
             fn from(name: &str) -> Self {
-                Self::Name(name.into())
+                Self::from_string(name.to_string())
             }
         }
         impl From<String> for $type_name {
             fn from(name: String) -> Self {
-                Self::Name(name)
+                Self::from_string(name)
             }
         }
         impl From<u64> for $type_name {
             fn from(id: u64) -> Self {
-                Self::Numeric(id)
+                Self::new(id)
             }
         }
     };

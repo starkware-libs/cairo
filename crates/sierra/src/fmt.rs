@@ -61,9 +61,9 @@ macro_rules! display_identity {
     ($type_name:tt) => {
         impl fmt::Display for $type_name {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-                match &self {
-                    Self::Name(name) => write!(f, "{}", name),
-                    Self::Numeric(id) => write!(f, "[{}]", id),
+                match &self.debug_name {
+                    Some(name) => write!(f, "{name}"),
+                    None => write!(f, "[{}]", self.id),
                 }
             }
         }
