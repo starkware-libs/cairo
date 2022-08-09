@@ -6,7 +6,7 @@ use crate::program::VarId;
 pub type State = HashMap<VarId, i64>;
 
 fn as_var_id(name: &str) -> VarId {
-    VarId::Name(name.into())
+    VarId::from_string(name.into())
 }
 
 #[test]
