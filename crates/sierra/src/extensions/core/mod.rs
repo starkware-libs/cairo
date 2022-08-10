@@ -4,6 +4,7 @@ use self::mem::MemExtension;
 use self::unconditional_jump::UnconditionalJumpGeneric;
 use crate::{define_extension_hierarchy, define_type_hierarchy};
 
+pub mod function_call;
 pub mod gas;
 pub mod integer;
 pub mod mem;
@@ -18,6 +19,7 @@ define_type_hierarchy! {
 
 define_extension_hierarchy! {
     pub enum CoreExtension {
+        FuncCall(function_call::FunctionCallGeneric),
         Gas(GasExtension),
         Integer(IntegerExtension),
         Mem(MemExtension),
