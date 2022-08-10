@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::edit_state::{put_results, take_args, EditError};
-use crate::program::VarId;
+use crate::ids::VarId;
 
 pub type State = HashMap<VarId, i64>;
 

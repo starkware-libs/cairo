@@ -1,6 +1,7 @@
 // Simple parser for sierra.
 // Currently only used for testing.
 
+use crate::ids::*;
 use crate::program::*;
 
 grammar;

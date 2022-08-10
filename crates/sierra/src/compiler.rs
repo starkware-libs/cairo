@@ -3,7 +3,8 @@ use std::fmt::Display;
 use casm::instructions::{Instruction, RetInstruction};
 use thiserror::Error;
 
-use crate::program::{Program, Statement, VarId};
+use crate::ids::VarId;
+use crate::program::{Program, Statement};
 
 #[cfg(test)]
 #[path = "compiler_test.rs"]

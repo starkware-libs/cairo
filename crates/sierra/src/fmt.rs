@@ -1,9 +1,11 @@
 use std::fmt;
 
+use crate::ids::{
+    ConcreteExtensionId, ConcreteTypeId, FunctionId, GenericExtensionId, GenericTypeId, VarId,
+};
 use crate::program::{
-    BranchInfo, BranchTarget, ConcreteExtensionId, ConcreteTypeId, ExtensionDeclaration, Function,
-    FunctionId, GenericArg, GenericExtensionId, GenericTypeId, Invocation, Param, Program,
-    Statement, TypeDeclaration, VarId,
+    BranchInfo, BranchTarget, ExtensionDeclaration, Function, GenericArg, Invocation, Param,
+    Program, Statement, TypeDeclaration,
 };
 
 impl fmt::Display for Program {

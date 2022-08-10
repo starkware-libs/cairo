@@ -3,7 +3,8 @@ use crate::extensions::{
     ConcreteExtension, ConcreteExtensionBox, GenericExtension, GenericExtensionBox,
     SpecializationError,
 };
-use crate::program::{GenericArg, GenericExtensionId};
+use crate::ids::GenericExtensionId;
+use crate::program::GenericArg;
 
 /// Helper for extracting a single positive value from template arguments.
 fn as_single_positive_value(args: &[GenericArg]) -> Result<i64, SpecializationError> {

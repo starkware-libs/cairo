@@ -2,7 +2,8 @@ use crate::extensions::{
     ConcreteExtension, ConcreteExtensionBox, GenericExtension, GenericExtensionBox,
     NoGenericArgsGenericExtension, SpecializationError,
 };
-use crate::program::{ConcreteTypeId, GenericArg, GenericExtensionId};
+use crate::ids::{ConcreteTypeId, GenericExtensionId};
+use crate::program::GenericArg;
 
 /// Helper for extracting the type from the template arguments.
 fn as_single_type(args: &[GenericArg]) -> Result<ConcreteTypeId, SpecializationError> {

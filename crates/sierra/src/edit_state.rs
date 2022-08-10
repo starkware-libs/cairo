@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use thiserror::Error;
 
-use crate::program::VarId;
+use crate::ids::VarId;
 
 #[cfg(test)]
 #[path = "edit_state_test.rs"]
