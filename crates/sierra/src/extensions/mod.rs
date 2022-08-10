@@ -2,7 +2,8 @@ use std::collections::HashMap;
 
 use thiserror::Error;
 
-use crate::program::{GenericArg, GenericExtensionId};
+use crate::ids::GenericExtensionId;
+use crate::program::GenericArg;
 
 mod core;
 

@@ -2,7 +2,8 @@ use crate::extensions::{
     ConcreteExtension, ConcreteExtensionBox, GenericExtension, GenericExtensionBox,
     NoGenericArgsGenericExtension, SpecializationError,
 };
-use crate::program::{GenericArg, GenericExtensionId};
+use crate::ids::GenericExtensionId;
+use crate::program::GenericArg;
 
 /// Possible operators for integers.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
