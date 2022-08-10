@@ -1,4 +1,5 @@
 use indoc::indoc;
+use sierra::program_registry::ProgramRegistry;
 
 fn fib_program() -> sierra::program::Program {
     sierra::ProgramParser::new()
@@ -88,4 +89,10 @@ fn fib_program() -> sierra::program::Program {
 #[test]
 fn parse_test() {
     fib_program();
+}
+
+#[test]
+#[ignore] // TODO(oziv) - enable again when function call extension is added.
+fn create_registry_test() {
+    ProgramRegistry::new(&fib_program()).unwrap();
 }

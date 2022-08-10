@@ -11,6 +11,7 @@ pub mod fmt;
 pub mod ids;
 pub mod mem_cell;
 pub mod program;
+pub mod program_registry;
 
 lalrpop_mod!(
     #[allow(clippy::all, unused_extern_crates)]

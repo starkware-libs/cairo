@@ -27,12 +27,12 @@ impl GenericExtension for OperationGeneric {
             [] => Ok(Box::new(BinaryOperationConcrete { operator: self.operator })),
             [GenericArg::Value(c)] => {
                 if matches!(self.operator, Operator::Div | Operator::Mod) && *c == 0 {
-                    Err(SpecializationError::UnsupportedTemplateArg)
+                    Err(SpecializationError::UnsupportedGenericArg)
                 } else {
                     Ok(Box::new(OperationWithConstConcrete { operator: self.operator, c: *c }))
                 }
             }
-            _ => Err(SpecializationError::UnsupportedTemplateArg),
+            _ => Err(SpecializationError::UnsupportedGenericArg),
         }
     }
 }

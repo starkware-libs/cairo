@@ -12,12 +12,12 @@ mod core;
 /// Error occurring while specializing extensions.
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum SpecializationError {
-    #[error("Count not find the requested extension")]
+    #[error("Could not find the requested extension")]
     UnsupportedLibCallName,
-    #[error("Expected a different number of template arguments")]
-    WrongNumberOfTemplateArgs,
-    #[error("Provided template arg is unsupported")]
-    UnsupportedTemplateArg,
+    #[error("Expected a different number of generic arguments")]
+    WrongNumberOfGenericArgs,
+    #[error("Provided generic arg is unsupported")]
+    UnsupportedGenericArg,
 }
 
 /// Error occurring while testing extension inputs.
@@ -86,7 +86,7 @@ impl<T: NoGenericArgsGenericExtension> GenericExtension for T {
         if args.is_empty() {
             Ok(self.specialize())
         } else {
-            Err(SpecializationError::WrongNumberOfTemplateArgs)
+            Err(SpecializationError::WrongNumberOfGenericArgs)
         }
     }
 }
