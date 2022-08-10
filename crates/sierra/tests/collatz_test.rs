@@ -7,7 +7,7 @@ fn collatz_program() -> sierra::program::Program {
         .parse(indoc! {"
         type int = int;
         type GasBuiltin = GasBuiltin;
-        type NonZero_int = NonZero<int>;
+        type int_non_zero = int_non_zero;
 
         ext move_int = move<int>;
         ext move_gb = move<GasBuiltin>;

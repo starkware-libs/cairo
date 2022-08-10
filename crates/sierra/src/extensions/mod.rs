@@ -4,15 +4,15 @@ mod test;
 
 use thiserror::Error;
 
-pub use self::core::{CoreConcrete, CoreExtension};
-use crate::ids::{ConcreteExtensionId, ConcreteTypeId, GenericExtensionId};
+pub use self::core::{CoreConcrete, CoreExtension, CoreType};
+use crate::ids::{ConcreteExtensionId, ConcreteTypeId, GenericExtensionId, GenericTypeId};
 use crate::program::GenericArg;
 
 /// Error occurring while specializing extensions.
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum SpecializationError {
-    #[error("Could not find the requested extension")]
-    UnsupportedLibCallName,
+    #[error("Could not find the requested id")]
+    UnsupportedId,
     #[error("Expected a different number of generic arguments")]
     WrongNumberOfGenericArgs,
     #[error("Provided generic arg is unsupported")]
@@ -22,15 +22,144 @@ pub enum SpecializationError {
 /// Extension related errors.
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum ExtensionError {
+    #[error("Could not specialize type")]
+    TypeSpecialization { type_id: GenericTypeId, error: SpecializationError },
     #[error("Could not specialize extension")]
-    Specialization { extension_id: GenericExtensionId, error: SpecializationError },
+    ExtensionSpecialization { extension_id: GenericExtensionId, error: SpecializationError },
     #[error("Requested extension not declared.")]
     UndeclaredExtension { extension_id: ConcreteExtensionId },
     #[error("The requested functionality is not implemented yet")]
     NotImplemented,
 }
 
-/// Trait for implementing a specialization generator.
+/// Trait for implementing an extension specialization generator.
+pub trait GenericType: Sized {
+    /// Instantiates the type by id.
+    fn by_id(id: &GenericTypeId) -> Option<Self>;
+    /// Creates the specialization with the template arguments.
+    fn get_concrete_info(
+        &self,
+        args: &[GenericArg],
+    ) -> Result<ConcreteTypeInfo, SpecializationError>;
+}
+
+/// Trait for introducing helper methods on GenericType.
+pub trait GenericTypeEx: GenericType {
+    fn get_concrete_info_by_id(
+        type_id: &GenericTypeId,
+        args: &[GenericArg],
+    ) -> Result<ConcreteTypeInfo, ExtensionError>;
+}
+impl<TGenericType: GenericType> GenericTypeEx for TGenericType {
+    fn get_concrete_info_by_id(
+        type_id: &GenericTypeId,
+        args: &[GenericArg],
+    ) -> Result<ConcreteTypeInfo, ExtensionError> {
+        Self::by_id(type_id)
+            .ok_or_else(move || ExtensionError::TypeSpecialization {
+                type_id: type_id.clone(),
+                error: SpecializationError::UnsupportedId,
+            })?
+            .get_concrete_info(args)
+            .map_err(move |error| ExtensionError::TypeSpecialization {
+                type_id: type_id.clone(),
+                error,
+            })
+    }
+}
+
+// TODO(orizi): If GenericTypeId becomes constexpr, use it here instead of name.
+/// Trait for implementing a type info generator with with a simple id.
+pub trait NamedType: Default {
+    const NAME: &'static str;
+    /// Creates the specialization with the template arguments.
+    fn get_concrete_info(
+        &self,
+        args: &[GenericArg],
+    ) -> Result<ConcreteTypeInfo, SpecializationError>;
+}
+impl<TNamedType: NamedType> GenericType for TNamedType {
+    fn by_id(id: &GenericTypeId) -> Option<Self> {
+        if &GenericTypeId::from_string(Self::NAME) == id { Some(Self::default()) } else { None }
+    }
+
+    fn get_concrete_info(
+        &self,
+        args: &[GenericArg],
+    ) -> Result<ConcreteTypeInfo, SpecializationError> {
+        <Self as NamedType>::get_concrete_info(self, args)
+    }
+}
+
+pub trait NoGenericArgsNamedType: Default {
+    const NAME: &'static str;
+    const SIZE: usize;
+}
+impl<TNoGenericArgsNamedType: NoGenericArgsNamedType> NamedType for TNoGenericArgsNamedType {
+    const NAME: &'static str = <Self as NoGenericArgsNamedType>::NAME;
+    fn get_concrete_info(
+        &self,
+        args: &[GenericArg],
+    ) -> Result<ConcreteTypeInfo, SpecializationError> {
+        if args.is_empty() {
+            Ok(ConcreteTypeInfo { size: Self::SIZE })
+        } else {
+            Err(SpecializationError::WrongNumberOfGenericArgs)
+        }
+    }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+/// The information for a concrete type.
+pub struct ConcreteTypeInfo {
+    pub size: usize,
+}
+
+/// Forms an generic-type type from an enum of generic-types.
+/// The new enum implements GenericType.
+/// All the variant types must also implement GenericType.
+/// Usage example:
+/// ```ignore
+/// define_type_hierarchy! {
+///     pub enum MyType {
+///       Ty0(Type0),
+///       Ty1(Type1)
+///     },
+/// }
+/// ```
+#[macro_export]
+macro_rules! define_type_hierarchy {
+    (pub enum $name:ident { $($variant_name:ident ($variant:ty)),* }) => {
+        #[allow(clippy::enum_variant_names)]
+        pub enum $name {
+            $($variant_name ($variant)),*
+        }
+
+        impl $crate::extensions::GenericType for $name {
+            fn by_id(id: &$crate::ids::GenericTypeId) -> Option<Self> {
+                $(
+                    if let Some(res) = <$variant>::by_id(id){
+                        return Some(Self::$variant_name(res));
+                    }
+                )*
+                None
+            }
+            fn get_concrete_info(
+                    &self, args: &[$crate::extensions::GenericArg]
+            ) -> Result<$crate::extensions::ConcreteTypeInfo, $crate::extensions::SpecializationError>{
+                match self {
+                    $(
+                        Self::$variant_name(value) => {
+                            <$variant as $crate::extensions::GenericType>::get_concrete_info(value, args)
+                        }
+                    ),*
+                }
+            }
+        }
+    }
+}
+
+/// Trait for implementing an extension specialization generator.
 pub trait GenericExtension: Sized {
     type Concrete: ConcreteExtension;
 
@@ -53,12 +182,12 @@ impl<TGenericExtension: GenericExtension> GenericExtensionEx for TGenericExtensi
         args: &[GenericArg],
     ) -> Result<TGenericExtension::Concrete, ExtensionError> {
         Self::by_id(extension_id)
-            .ok_or_else(move || ExtensionError::Specialization {
+            .ok_or_else(move || ExtensionError::ExtensionSpecialization {
                 extension_id: extension_id.clone(),
-                error: SpecializationError::UnsupportedLibCallName,
+                error: SpecializationError::UnsupportedId,
             })?
             .specialize(args)
-            .map_err(move |error| ExtensionError::Specialization {
+            .map_err(move |error| ExtensionError::ExtensionSpecialization {
                 extension_id: extension_id.clone(),
                 error,
             })
@@ -77,10 +206,11 @@ impl<TNamedExtension: NamedExtension> GenericExtension for TNamedExtension {
     type Concrete = <Self as NamedExtension>::Concrete;
 
     fn by_id(id: &GenericExtensionId) -> Option<Self> {
-        if &GenericExtensionId::from(Self::NAME.to_string()) == id {
-            return Some(Self::default());
+        if &GenericExtensionId::from_string(Self::NAME) == id {
+            Some(Self::default())
+        } else {
+            None
         }
-        None
     }
 
     fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError> {
@@ -184,7 +314,7 @@ macro_rules! define_concrete_extension_hierarchy {
 /// define_extension_hierarchy! {
 ///     pub enum MyExtension {
 ///       Ext0(Extension0),
-///       Ext1(Extension1),
+///       Ext1(Extension1)
 ///     }, MyExtensionConcrete
 /// }
 /// ```
@@ -213,7 +343,7 @@ macro_rules! define_extension_hierarchy {
                 match self {
                     $(
                         Self::$variant_name(value) => {
-                            Ok(Self::Concrete::$variant_name(<$variant as GenericExtension>::specialize(value, args)?.into()))
+                            Ok(Self::Concrete::$variant_name(<$variant as $crate::extensions::GenericExtension>::specialize(value, args)?.into()))
                         }
                     ),*
                 }
@@ -222,7 +352,7 @@ macro_rules! define_extension_hierarchy {
 
         $crate::define_concrete_extension_hierarchy! {
             pub enum $concrete_name {
-                $($variant_name (<$variant as GenericExtension> ::Concrete),)*
+                $($variant_name (<$variant as $crate::extensions::GenericExtension> ::Concrete),)*
             }
         }
     }

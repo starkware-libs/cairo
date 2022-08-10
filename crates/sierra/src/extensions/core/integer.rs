@@ -1,10 +1,33 @@
 use crate::extensions::{
     ConcreteExtension, GenericExtension, NamedExtension, NoGenericArgsGenericExtension,
-    NonBranchConcreteExtension, SpecializationError,
+    NoGenericArgsNamedType, NonBranchConcreteExtension, SpecializationError,
 };
 use crate::ids::{ConcreteTypeId, GenericExtensionId};
 use crate::program::GenericArg;
-use crate::{define_concrete_extension_hierarchy, define_extension_hierarchy};
+use crate::{
+    define_concrete_extension_hierarchy, define_extension_hierarchy, define_type_hierarchy,
+};
+
+define_type_hierarchy! {
+    pub enum IntegerType {
+        Basic(BasicType),
+        NonZero(NonZeroType)
+    }
+}
+
+#[derive(Default)]
+pub struct BasicType {}
+impl NoGenericArgsNamedType for BasicType {
+    const NAME: &'static str = "int";
+    const SIZE: usize = 1;
+}
+
+#[derive(Default)]
+pub struct NonZeroType {}
+impl NoGenericArgsNamedType for NonZeroType {
+    const NAME: &'static str = "int_non_zero";
+    const SIZE: usize = 1;
+}
 
 define_extension_hierarchy! {
     pub enum IntegerExtension {
