@@ -6,7 +6,7 @@ fn fib_program() -> sierra::program::Program {
         .parse(indoc! {"
         type int = int;
         type GasBuiltin = GasBuiltin;
-        type NonZero_int = NonZero<int>;
+        type int_non_zero = int_non_zero;
 
         ext move_int = move<int>;
         ext move_gb = move<GasBuiltin>;
@@ -25,7 +25,7 @@ fn fib_program() -> sierra::program::Program {
         ext refund_gas_1 = refund_gas<1>;
         ext refund_gas_3 = refund_gas<3>;
         ext alloc_locals = alloc_locals;
-        ext call_fib = Call<&Fibonacci>;
+        ext call_fib = call_function<&Fibonacci>;
 
         // Statement #  0 - tests if n == 0 and initiates 1 for the early return values.
         alloc_locals() -> ();

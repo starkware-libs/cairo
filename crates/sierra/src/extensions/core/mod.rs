@@ -5,6 +5,7 @@ use itertools::chain;
 use super::{GenericExtensionBox, GenericTypeBox};
 use crate::ids::{GenericExtensionId, GenericTypeId};
 
+mod function_call;
 mod gas;
 mod integer;
 mod mem;
@@ -12,6 +13,7 @@ mod unconditional_jump;
 
 pub(super) fn all_core_extensions() -> HashMap<GenericExtensionId, GenericExtensionBox> {
     chain!(
+        function_call::extensions().into_iter(),
         gas::extensions().into_iter(),
         integer::extensions().into_iter(),
         mem::extensions().into_iter(),
