@@ -1,7 +1,16 @@
 // Module providing the gas related extensions.
 use crate::define_extension_hierarchy;
-use crate::extensions::{ConcreteExtension, GenericExtension, NamedExtension, SpecializationError};
+use crate::extensions::{
+    ConcreteExtension, NamedExtension, NoGenericArgsNamedType, SpecializationError,
+};
 use crate::program::GenericArg;
+
+#[derive(Default)]
+pub struct GasBuiltinType {}
+impl NoGenericArgsNamedType for GasBuiltinType {
+    const NAME: &'static str = "GasBuiltin";
+    const SIZE: usize = 1;
+}
 
 define_extension_hierarchy! {
     pub enum GasExtension {

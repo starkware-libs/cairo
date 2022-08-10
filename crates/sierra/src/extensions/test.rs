@@ -1,7 +1,7 @@
 use test_case::test_case;
 
-use super::core::CoreExtension;
-use super::SpecializationError;
+use super::core::{CoreExtension, CoreType};
+use super::{ConcreteTypeInfo, GenericType, SpecializationError};
 use crate::extensions::GenericExtension;
 use crate::program::GenericArg;
 
@@ -13,7 +13,24 @@ fn value_arg(v: i64) -> GenericArg {
     GenericArg::Value(v)
 }
 
-#[test_case("NoneExistent", vec![] => Err(SpecializationError::UnsupportedLibCallName);
+#[test_case("NoneExistent", vec![] => Err(SpecializationError::UnsupportedId);
+            "NoneExistent")]
+#[test_case("GasBuiltin", vec![] => Ok(ConcreteTypeInfo{size: 1}); "GasBuiltin")]
+#[test_case("GasBuiltin", vec![value_arg(3)] =>
+            Err(SpecializationError::WrongNumberOfGenericArgs);
+            "GasBuiltin<3>")]
+#[test_case("int", vec![] => Ok(ConcreteTypeInfo{size: 1}); "int")]
+#[test_case("int", vec![value_arg(3)] => Err(SpecializationError::WrongNumberOfGenericArgs);
+            "int<3>")]
+#[test_case("int_non_zero", vec![] => Ok(ConcreteTypeInfo{size: 1}); "int_non_zero")]
+#[test_case("int_non_zero", vec![value_arg(3)] =>
+            Err(SpecializationError::WrongNumberOfGenericArgs);
+            "int_non_zero<3>")]
+fn get_type_info(id: &str, args: Vec<GenericArg>) -> Result<ConcreteTypeInfo, SpecializationError> {
+    CoreType::by_id(&id.into()).ok_or(SpecializationError::UnsupportedId)?.get_concrete_info(&args)
+}
+
+#[test_case("NoneExistent", vec![] => Err(SpecializationError::UnsupportedId);
             "NoneExistent")]
 #[test_case("get_gas", vec![value_arg(2)] => Ok(()); "get_gas<2>")]
 #[test_case("get_gas", vec![] => Err(SpecializationError::UnsupportedGenericArg); "get_gas")]
@@ -77,7 +94,7 @@ fn value_arg(v: i64) -> GenericArg {
             "jump<T>")]
 fn find_specialization(id: &str, generic_args: Vec<GenericArg>) -> Result<(), SpecializationError> {
     CoreExtension::by_id(&id.into())
-        .ok_or(SpecializationError::UnsupportedLibCallName)?
+        .ok_or(SpecializationError::UnsupportedId)?
         .specialize(&generic_args)
         .map(|_| ())
 }

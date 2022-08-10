@@ -1,7 +1,6 @@
 use crate::define_extension_hierarchy;
 use crate::extensions::{
-    ConcreteExtension, GenericExtension, NamedExtension, NoGenericArgsGenericExtension,
-    SpecializationError,
+    ConcreteExtension, NamedExtension, NoGenericArgsGenericExtension, SpecializationError,
 };
 use crate::ids::ConcreteTypeId;
 use crate::program::GenericArg;
