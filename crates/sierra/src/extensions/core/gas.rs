@@ -1,9 +1,9 @@
 // Module providing the gas related extensions.
 use crate::extensions::{
-    ConcreteExtension, ConcreteExtensionBox, GenericExtension, GenericExtensionBox,
-    SpecializationError,
+    ConcreteExtension, ConcreteExtensionBox, GenericExtension, GenericExtensionBox, GenericTypeBox,
+    NoGenericArgsGenericType, SpecializationError,
 };
-use crate::ids::GenericExtensionId;
+use crate::ids::{GenericExtensionId, GenericTypeId};
 use crate::program::GenericArg;
 
 /// Helper for extracting a single positive value from template arguments.
@@ -45,4 +45,8 @@ pub(super) fn extensions() -> [(GenericExtensionId, GenericExtensionBox); 2] {
         ("get_gas".into(), Box::new(GetGasGeneric {})),
         ("refund_gas".into(), Box::new(RefundGasGeneric {})),
     ]
+}
+
+pub(super) fn types() -> [(GenericTypeId, GenericTypeBox); 1] {
+    [("GasBuiltin".into(), Box::new(NoGenericArgsGenericType::<1> {}))]
 }
