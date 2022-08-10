@@ -38,7 +38,7 @@ pub struct ExtensionDeclaration {
 }
 
 /// Descriptor of a function.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Function {
     /// The name of the function.
     pub id: FunctionId,
