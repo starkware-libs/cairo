@@ -23,7 +23,7 @@ pub struct TypeDeclaration {
 }
 
 /// Declaration of a callable extension.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct ExtensionDeclaration {
     /// The id of the declared concrete extension.
     pub id: ConcreteExtensionId,
@@ -88,7 +88,7 @@ define_identity!(
 
 define_identity!(
     "The identity of a concrete extension.",
-    (Clone, Debug, PartialEq),
+    (Clone, Debug, Eq, Hash, PartialEq),
     ConcreteExtensionId
 );
 
