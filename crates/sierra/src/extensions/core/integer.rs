@@ -1,8 +1,8 @@
 use crate::extensions::{
-    ConcreteExtension, ConcreteExtensionBox, GenericExtension, GenericExtensionBox,
-    NoGenericArgsGenericExtension, SpecializationError,
+    ConcreteExtension, ConcreteExtensionBox, GenericExtension, GenericExtensionBox, GenericTypeBox,
+    NoGenericArgsGenericExtension, NoGenericArgsGenericType, SpecializationError,
 };
-use crate::ids::GenericExtensionId;
+use crate::ids::{GenericExtensionId, GenericTypeId};
 use crate::program::GenericArg;
 
 /// Possible operators for integers.
@@ -121,5 +121,12 @@ pub(super) fn extensions() -> [(GenericExtensionId, GenericExtensionBox); 10] {
         ("int_dup".into(), Box::new(DuplicateGeneric {})),
         ("int_jump_nz".into(), Box::new(JumpNotZeroGeneric {})),
         ("int_unwrap_nz".into(), Box::new(UnwrapNonZeroGeneric {})),
+    ]
+}
+
+pub(super) fn types() -> [(GenericTypeId, GenericTypeBox); 2] {
+    [
+        ("int".into(), Box::new(NoGenericArgsGenericType::<1> {})),
+        ("int_non_zero".into(), Box::new(NoGenericArgsGenericType::<1> {})),
     ]
 }

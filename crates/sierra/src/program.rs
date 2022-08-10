@@ -16,7 +16,7 @@ pub struct Program {
 }
 
 /// Declaration of a concrete type.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct TypeDeclaration {
     /// The id of the declared concrete type.
     pub id: ConcreteTypeId,

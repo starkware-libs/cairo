@@ -9,6 +9,8 @@ fn basic_insertion() {
         ProgramRegistry::new(
             &ProgramParser::new()
                 .parse(indoc! {"
+        type int = int;
+        type GasBuiltin = GasBuiltin;
         ext move_int = move<int>;
         ext move_gb = move<GasBuiltin>;
     "})
@@ -20,7 +22,23 @@ fn basic_insertion() {
 }
 
 #[test]
-fn double_insertion() {
+fn double_type_statement() {
+    assert_eq!(
+        ProgramRegistry::new(
+            &ProgramParser::new()
+                .parse(indoc! {"
+        type same_id = int;
+        type same_id = GasBuiltin;
+    "})
+                .unwrap()
+        )
+        .map(|_| ()),
+        Err(ProgramRegistryError::TypeConcreteIdUsedTwice("same_id".into()))
+    );
+}
+
+#[test]
+fn double_extension_statement() {
     assert_eq!(
         ProgramRegistry::new(
             &ProgramParser::new()
