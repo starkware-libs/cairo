@@ -1,7 +1,7 @@
 use test_case::test_case;
 
 use super::{ExtensionError, Extensions, SpecializationError};
-use crate::program::{ExtensionDeclaration, GenericArg};
+use crate::program::{ExtensionDeclaration, GenericArg, TypeDeclaration};
 
 fn type_arg(name: &str) -> GenericArg {
     GenericArg::Type(name.into())
@@ -9,6 +9,28 @@ fn type_arg(name: &str) -> GenericArg {
 
 fn value_arg(v: i64) -> GenericArg {
     GenericArg::Value(v)
+}
+
+#[test_case("NoneExistent", vec![] => Err(SpecializationError::UnsupportedLibCallName);
+            "NoneExistent")]
+#[test_case("GasBuiltin", vec![] => Ok(()); "GasBuiltin")]
+#[test_case("GasBuiltin", vec![value_arg(3)] =>
+            Err(SpecializationError::WrongNumberOfGenericArgs);
+            "GasBuiltin<3>")]
+#[test_case("int", vec![] => Ok(()); "int")]
+#[test_case("int", vec![value_arg(3)] => Err(SpecializationError::WrongNumberOfGenericArgs);
+            "int<3>")]
+#[test_case("int_non_zero", vec![] => Ok(()); "int_non_zero")]
+#[test_case("int_non_zero", vec![value_arg(3)] =>
+            Err(SpecializationError::WrongNumberOfGenericArgs);
+            "int_non_zero<3>")]
+fn specialize_type(id: &str, args: Vec<GenericArg>) -> Result<(), SpecializationError> {
+    Extensions::default()
+        .specialize_type(&TypeDeclaration { id: "concrete_id".into(), generic_id: id.into(), args })
+        .map_err(|error| match error {
+            ExtensionError::TypeSpecialization { declaration: _, error } => error,
+            _ => panic!("should get only specialization errors"),
+        })
 }
 
 #[test_case("NoneExistent", vec![] => Err(SpecializationError::UnsupportedLibCallName);
@@ -75,9 +97,14 @@ fn value_arg(v: i64) -> GenericArg {
             "jump<T>")]
 fn find_specialization(id: &str, args: Vec<GenericArg>) -> Result<(), SpecializationError> {
     Extensions::default()
-        .specialize(&ExtensionDeclaration { id: "concrete_id".into(), generic_id: id.into(), args })
+        .specialize_extension(&ExtensionDeclaration {
+            id: "concrete_id".into(),
+            generic_id: id.into(),
+            args,
+        })
         .map_err(|error| match error {
-            ExtensionError::Specialization { declaration: _, error } => error,
+            ExtensionError::ExtensionSpecialization { declaration: _, error } => error,
+            _ => panic!("should get only specialization errors"),
         })
 }
 
@@ -89,9 +116,9 @@ fn double_insertion() {
         generic_id: "int_add".into(),
         args: vec![],
     };
-    assert_eq!(extensions.specialize(&repeated_declaration), Ok(()));
+    assert_eq!(extensions.specialize_extension(&repeated_declaration), Ok(()));
     assert_eq!(
-        extensions.specialize(&ExtensionDeclaration {
+        extensions.specialize_extension(&ExtensionDeclaration {
             id: "concrete_id2".into(),
             generic_id: "int_add".into(),
             args: vec![]
@@ -99,8 +126,8 @@ fn double_insertion() {
         Ok(())
     );
     assert_eq!(
-        extensions.specialize(&repeated_declaration),
-        Err(ExtensionError::Specialization {
+        extensions.specialize_extension(&repeated_declaration),
+        Err(ExtensionError::ExtensionSpecialization {
             declaration: repeated_declaration,
             error: SpecializationError::ConcreteIdUsedMoreThanOnce
         })
