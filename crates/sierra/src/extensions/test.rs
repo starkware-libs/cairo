@@ -44,10 +44,8 @@ fn function_double_register() {
 #[test_case("int", vec![] => Ok(()); "int")]
 #[test_case("int", vec![value_arg(3)] => Err(SpecializationError::WrongNumberOfGenericArgs);
             "int<3>")]
-#[test_case("int_non_zero", vec![] => Ok(()); "int_non_zero")]
-#[test_case("int_non_zero", vec![value_arg(3)] =>
-            Err(SpecializationError::WrongNumberOfGenericArgs);
-            "int_non_zero<3>")]
+#[test_case("NonZero", vec![type_arg("unregistered")] => Err(SpecializationError::UsedUnregisteredType("unregistered".into())); "NonZero<unregistered>")]
+#[test_case("NonZero", vec![] => Err(SpecializationError::WrongNumberOfGenericArgs); "NonZero<>")]
 fn specialize_type(id: &str, args: Vec<GenericArg>) -> Result<(), SpecializationError> {
     Extensions::default()
         .specialize_type(&TypeDeclaration { id: "concrete_id".into(), generic_id: id.into(), args })
@@ -55,6 +53,27 @@ fn specialize_type(id: &str, args: Vec<GenericArg>) -> Result<(), Specialization
             ExtensionError::TypeSpecialization { declaration: _, error } => error,
             _ => panic!("should get only specialization errors"),
         })
+}
+
+#[test]
+fn type_recursive_register() {
+    let mut extensions = Extensions::default();
+    assert_eq!(
+        extensions.specialize_type(&TypeDeclaration {
+            id: "int".into(),
+            generic_id: "int".into(),
+            args: vec![]
+        }),
+        Ok(())
+    );
+    assert_eq!(
+        extensions.specialize_type(&TypeDeclaration {
+            id: "NonZero_int".into(),
+            generic_id: "NonZero".into(),
+            args: vec![type_arg("int")]
+        }),
+        Ok(())
+    );
 }
 
 #[test_case("NoneExistent", vec![] => Err(SpecializationError::UnsupportedId);

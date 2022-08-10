@@ -20,6 +20,8 @@ pub enum SpecializationError {
     UnsupportedGenericArg,
     #[error("The concrete id is used more than once")]
     ConcreteIdUsedMoreThanOnce,
+    #[error("The missing required type")]
+    UsedUnregisteredType(ConcreteTypeId),
 }
 
 /// Error option while using extensions.
@@ -33,22 +35,25 @@ pub enum ExtensionError {
     ExtensionSpecialization { declaration: ExtensionDeclaration, error: SpecializationError },
 }
 
+type FunctionRegistry = HashMap<FunctionId, Function>;
+type ConcreteTypeRegistry = HashMap<ConcreteTypeId, ConcreteTypeInfo>;
+
 /// Handles extensions usages.
 pub struct Extensions {
-    extension_specializers: HashMap<GenericExtensionId, GenericExtensionBox>,
     type_specializers: HashMap<GenericTypeId, GenericTypeBox>,
-    functions: HashMap<FunctionId, Function>,
+    extension_specializers: HashMap<GenericExtensionId, GenericExtensionBox>,
+    functions: FunctionRegistry,
+    concrete_type_info: ConcreteTypeRegistry,
     concrete_extensions: HashMap<ConcreteExtensionId, ConcreteExtensionBox>,
-    concrete_type_info: HashMap<ConcreteTypeId, ConcreteTypeInfo>,
 }
 impl Default for Extensions {
     fn default() -> Self {
         Extensions {
-            extension_specializers: core::all_core_extensions(),
             type_specializers: core::all_core_types(),
-            functions: HashMap::<FunctionId, Function>::new(),
+            extension_specializers: core::all_core_extensions(),
+            functions: FunctionRegistry::new(),
+            concrete_type_info: ConcreteTypeRegistry::new(),
             concrete_extensions: HashMap::<ConcreteExtensionId, ConcreteExtensionBox>::new(),
-            concrete_type_info: HashMap::<ConcreteTypeId, ConcreteTypeInfo>::new(),
         }
     }
 }
@@ -72,7 +77,7 @@ impl Extensions {
                 declaration: declaration.clone(),
                 error: SpecializationError::UnsupportedId,
             })?
-            .get_info(&declaration.args)
+            .get_info(&self.concrete_type_info, &declaration.args)
             .map_err(move |error| ExtensionError::TypeSpecialization {
                 declaration: declaration.clone(),
                 error,
@@ -141,11 +146,19 @@ type ConcreteExtensionBox = Box<dyn ConcreteExtension>;
 /// Trait for implementing a type generator.
 trait GenericType {
     /// Returns the type info given generic arguments.
-    fn get_info(&self, args: &[GenericArg]) -> Result<ConcreteTypeInfo, SpecializationError>;
+    fn get_info(
+        &self,
+        type_registry: &ConcreteTypeRegistry,
+        args: &[GenericArg],
+    ) -> Result<ConcreteTypeInfo, SpecializationError>;
 }
 struct NoGenericArgsGenericType<const SIZE: usize> {}
 impl<const SIZE: usize> GenericType for NoGenericArgsGenericType<SIZE> {
-    fn get_info(&self, args: &[GenericArg]) -> Result<ConcreteTypeInfo, SpecializationError> {
+    fn get_info(
+        &self,
+        _type_registry: &ConcreteTypeRegistry,
+        args: &[GenericArg],
+    ) -> Result<ConcreteTypeInfo, SpecializationError> {
         if args.is_empty() {
             Ok(ConcreteTypeInfo { size: SIZE })
         } else {
@@ -155,6 +168,7 @@ impl<const SIZE: usize> GenericType for NoGenericArgsGenericType<SIZE> {
 }
 
 /// The information for a concrete type.
+#[derive(Clone, Debug)]
 pub struct ConcreteTypeInfo {
     pub size: usize,
 }
