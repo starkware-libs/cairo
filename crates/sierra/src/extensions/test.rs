@@ -37,6 +37,10 @@ fn specialize_type(
 
 #[test_case("NoneExistent", vec![] => Err(SpecializationError::UnsupportedLibCallName);
             "NoneExistent")]
+#[test_case("call_function", vec![GenericArg::Func("Function".into())] => Ok(());
+            "call_function<&Function>")]
+#[test_case("call_function", vec![value_arg(2)] => Err(SpecializationError::UnsupportedGenericArg);
+            "call_function<2>")]
 #[test_case("get_gas", vec![value_arg(2)] => Ok(()); "get_gas<2>")]
 #[test_case("get_gas", vec![] => Err(SpecializationError::UnsupportedGenericArg); "get_gas")]
 #[test_case("get_gas", vec![value_arg(-2)] => Err(SpecializationError::UnsupportedGenericArg);
