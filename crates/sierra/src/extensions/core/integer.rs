@@ -1,8 +1,9 @@
 use super::{single_cell_identity, unpack_inputs};
 use crate::extensions::{
-    ConcreteExtension, ConcreteExtensionBox, GenericExtension, GenericExtensionBox, GenericTypeBox,
-    InputError, NoGenericArgsGenericExtension, NoGenericArgsGenericType,
-    NonBranchConcreteExtension, SpecializationError,
+    ConcreteExtension, ConcreteExtensionBox, ConcreteTypeInfo, ConcreteTypeRegistry,
+    GenericExtension, GenericExtensionBox, GenericType, GenericTypeBox, InputError,
+    NoGenericArgsGenericExtension, NoGenericArgsGenericType, NonBranchConcreteExtension,
+    SpecializationError,
 };
 use crate::ids::{GenericExtensionId, GenericTypeId};
 use crate::mem_cell::MemCell;
@@ -206,9 +207,26 @@ pub(super) fn extensions() -> [(GenericExtensionId, GenericExtensionBox); 10] {
     ]
 }
 
+struct NonZeroGenericType {}
+impl GenericType for NonZeroGenericType {
+    fn get_info(
+        &self,
+        type_registry: &ConcreteTypeRegistry,
+        args: &[GenericArg],
+    ) -> Result<ConcreteTypeInfo, SpecializationError> {
+        match args {
+            [GenericArg::Type(id)] => type_registry
+                .get(id)
+                .cloned()
+                .ok_or_else(|| SpecializationError::UsedUnregisteredType(id.clone())),
+            _ => Err(SpecializationError::WrongNumberOfGenericArgs),
+        }
+    }
+}
+
 pub(super) fn types() -> [(GenericTypeId, GenericTypeBox); 2] {
     [
         ("int".into(), Box::new(NoGenericArgsGenericType::<1> {})),
-        ("int_non_zero".into(), Box::new(NoGenericArgsGenericType::<1> {})),
+        ("NonZero".into(), Box::new(NonZeroGenericType {})),
     ]
 }

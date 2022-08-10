@@ -3,6 +3,7 @@ use crate::extensions::{
     SpecializationError,
 };
 use crate::ids::GenericExtensionId;
+use crate::mem_cell::MemCell;
 use crate::program::GenericArg;
 
 struct FunctionCallGeneric {}
@@ -19,8 +20,8 @@ struct FunctionCallConcrete {}
 impl ConcreteExtension for FunctionCallConcrete {
     fn simulate(
         &self,
-        _inputs: Vec<Vec<crate::mem_cell::MemCell>>,
-    ) -> Result<(Vec<Vec<crate::mem_cell::MemCell>>, usize), crate::extensions::InputError> {
+        _inputs: Vec<Vec<MemCell>>,
+    ) -> Result<(Vec<Vec<MemCell>>, usize), crate::extensions::InputError> {
         unreachable!("simulation of function calls should happen from outside the function call")
     }
 }

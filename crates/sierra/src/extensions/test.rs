@@ -1,6 +1,9 @@
 use test_case::test_case;
 
-use super::{ConcreteTypeInfo, ExtensionError, Extensions, InputError, SpecializationError};
+use super::{
+    ConcreteTypeInfo, ConcreteTypeRegistry, ExtensionError, Extensions, InputError,
+    SpecializationError,
+};
 use crate::mem_cell::MemCell;
 use crate::program::GenericArg;
 
@@ -21,18 +24,30 @@ fn value_arg(v: i64) -> GenericArg {
 #[test_case("int", vec![] => Ok(ConcreteTypeInfo{size: 1}); "int")]
 #[test_case("int", vec![value_arg(3)] => Err(SpecializationError::WrongNumberOfGenericArgs);
             "int<3>")]
-#[test_case("int_non_zero", vec![] => Ok(ConcreteTypeInfo{size: 1}); "int_non_zero")]
-#[test_case("int_non_zero", vec![value_arg(3)] =>
-            Err(SpecializationError::WrongNumberOfGenericArgs);
-            "int_non_zero<3>")]
+#[test_case("NonZero", vec![type_arg("unregistered")] => Err(SpecializationError::UsedUnregisteredType("unregistered".into())); "NonZero<unregistered>")]
+#[test_case("NonZero", vec![] => Err(SpecializationError::WrongNumberOfGenericArgs); "NonZero<>")]
 fn specialize_type(
     id: &str,
     args: Vec<GenericArg>,
 ) -> Result<ConcreteTypeInfo, SpecializationError> {
-    Extensions::default().specialize_type(&id.into(), &args).map_err(|error| match error {
-        ExtensionError::TypeSpecialization { type_id: _, error } => error,
-        _ => panic!("should get only type specialization errors"),
-    })
+    Extensions::default().specialize_type(&ConcreteTypeRegistry::new(), &id.into(), &args).map_err(
+        |error| match error {
+            ExtensionError::TypeSpecialization { type_id: _, error } => error,
+            _ => panic!("should get only type specialization errors"),
+        },
+    )
+}
+
+#[test]
+fn specialize_type_recursive() {
+    assert_eq!(
+        Extensions::default().specialize_type(
+            &ConcreteTypeRegistry::from([("registered".into(), ConcreteTypeInfo { size: 5 })]),
+            &"NonZero".into(),
+            &[type_arg("registered")]
+        ),
+        Ok(ConcreteTypeInfo { size: 5 })
+    );
 }
 
 #[test_case("NoneExistent", vec![] => Err(SpecializationError::UnsupportedId);

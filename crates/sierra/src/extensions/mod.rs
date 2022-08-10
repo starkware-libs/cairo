@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use casm::instructions::Instruction;
 use thiserror::Error;
 
-use crate::ids::{ConcreteExtensionId, GenericExtensionId, GenericTypeId};
+use crate::ids::{ConcreteExtensionId, ConcreteTypeId, GenericExtensionId, GenericTypeId};
 use crate::mem_cell::MemCell;
 use crate::program::GenericArg;
 
@@ -18,6 +18,8 @@ pub enum SpecializationError {
     WrongNumberOfGenericArgs,
     #[error("Provided generic arg is unsupported")]
     UnsupportedGenericArg,
+    #[error("The missing required type")]
+    UsedUnregisteredType(ConcreteTypeId),
 }
 
 /// Error occurring while testing extension inputs.
@@ -44,6 +46,8 @@ pub enum ExtensionError {
     NotImplemented,
 }
 
+pub type ConcreteTypeRegistry = HashMap<ConcreteTypeId, ConcreteTypeInfo>;
+
 /// Handles extensions usages.
 pub struct Extensions {
     type_specializers: HashMap<GenericTypeId, GenericTypeBox>,
@@ -61,6 +65,7 @@ impl Extensions {
     /// Adds a specialization of a type to the set of concrete types.
     pub fn specialize_type(
         &self,
+        concrete_type_registry: &ConcreteTypeRegistry,
         type_id: &GenericTypeId,
         args: &[GenericArg],
     ) -> Result<ConcreteTypeInfo, ExtensionError> {
@@ -70,7 +75,7 @@ impl Extensions {
                 type_id: type_id.clone(),
                 error: SpecializationError::UnsupportedId,
             })?
-            .get_info(args)
+            .get_info(concrete_type_registry, args)
             .map_err(move |error| ExtensionError::TypeSpecialization {
                 type_id: type_id.clone(),
                 error,
@@ -149,11 +154,19 @@ pub type ConcreteExtensionBox = Box<dyn ConcreteExtension>;
 /// Trait for implementing a type generator.
 trait GenericType {
     /// Returns the type info given generic arguments.
-    fn get_info(&self, args: &[GenericArg]) -> Result<ConcreteTypeInfo, SpecializationError>;
+    fn get_info(
+        &self,
+        type_registry: &ConcreteTypeRegistry,
+        args: &[GenericArg],
+    ) -> Result<ConcreteTypeInfo, SpecializationError>;
 }
 struct NoGenericArgsGenericType<const SIZE: usize> {}
 impl<const SIZE: usize> GenericType for NoGenericArgsGenericType<SIZE> {
-    fn get_info(&self, args: &[GenericArg]) -> Result<ConcreteTypeInfo, SpecializationError> {
+    fn get_info(
+        &self,
+        _type_registry: &ConcreteTypeRegistry,
+        args: &[GenericArg],
+    ) -> Result<ConcreteTypeInfo, SpecializationError> {
         if args.is_empty() {
             Ok(ConcreteTypeInfo { size: SIZE })
         } else {
@@ -162,8 +175,8 @@ impl<const SIZE: usize> GenericType for NoGenericArgsGenericType<SIZE> {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
 /// The information for a concrete type.
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct ConcreteTypeInfo {
     pub size: usize,
 }

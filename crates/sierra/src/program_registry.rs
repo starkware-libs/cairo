@@ -50,7 +50,7 @@ impl ProgramRegistry {
         let mut concrete_type_info = HashMap::<ConcreteTypeId, ConcreteTypeInfo>::new();
         for declaration in &program.type_declarations {
             let type_info = extensions
-                .specialize_type(&declaration.generic_id, &declaration.args)
+                .specialize_type(&concrete_type_info, &declaration.generic_id, &declaration.args)
                 .map_err(|error| ProgramRegistryError::TypeSpecialization {
                     concrete_id: declaration.id.clone(),
                     error,
