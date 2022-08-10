@@ -3,8 +3,8 @@ use std::collections::HashMap;
 use array_init::array_init;
 use itertools::chain;
 
-use super::{GenericExtensionBox, InputError};
-use crate::ids::GenericExtensionId;
+use super::{GenericExtensionBox, GenericTypeBox, InputError};
+use crate::ids::{GenericExtensionId, GenericTypeId};
 use crate::mem_cell::MemCell;
 
 mod gas;
@@ -20,6 +20,10 @@ pub(super) fn all_core_extensions() -> HashMap<GenericExtensionId, GenericExtens
         unconditional_jump::extensions().into_iter(),
     )
     .collect()
+}
+
+pub(super) fn all_core_types() -> HashMap<GenericTypeId, GenericTypeBox> {
+    chain!(gas::types().into_iter(), integer::types().into_iter(),).collect()
 }
 
 /// Unpacking inputs from a vector of vectors memcells into an array of memcell of the given

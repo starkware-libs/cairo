@@ -1,6 +1,6 @@
 use test_case::test_case;
 
-use super::{ExtensionError, Extensions, InputError, SpecializationError};
+use super::{ConcreteTypeInfo, ExtensionError, Extensions, InputError, SpecializationError};
 use crate::mem_cell::MemCell;
 use crate::program::GenericArg;
 
@@ -10,6 +10,29 @@ fn type_arg(name: &str) -> GenericArg {
 
 fn value_arg(v: i64) -> GenericArg {
     GenericArg::Value(v)
+}
+
+#[test_case("NoneExistent", vec![] => Err(SpecializationError::UnsupportedLibCallName);
+            "NoneExistent")]
+#[test_case("GasBuiltin", vec![] => Ok(ConcreteTypeInfo{size: 1}); "GasBuiltin")]
+#[test_case("GasBuiltin", vec![value_arg(3)] =>
+            Err(SpecializationError::WrongNumberOfGenericArgs);
+            "GasBuiltin<3>")]
+#[test_case("int", vec![] => Ok(ConcreteTypeInfo{size: 1}); "int")]
+#[test_case("int", vec![value_arg(3)] => Err(SpecializationError::WrongNumberOfGenericArgs);
+            "int<3>")]
+#[test_case("int_non_zero", vec![] => Ok(ConcreteTypeInfo{size: 1}); "int_non_zero")]
+#[test_case("int_non_zero", vec![value_arg(3)] =>
+            Err(SpecializationError::WrongNumberOfGenericArgs);
+            "int_non_zero<3>")]
+fn specialize_type(
+    id: &str,
+    args: Vec<GenericArg>,
+) -> Result<ConcreteTypeInfo, SpecializationError> {
+    Extensions::default().specialize_type(&id.into(), &args).map_err(|error| match error {
+        ExtensionError::TypeSpecialization { type_id: _, error } => error,
+        _ => panic!("should get only type specialization errors"),
+    })
 }
 
 #[test_case("NoneExistent", vec![] => Err(SpecializationError::UnsupportedLibCallName);
@@ -75,12 +98,12 @@ fn value_arg(v: i64) -> GenericArg {
 #[test_case("jump", vec![type_arg("T")] => Err(SpecializationError::WrongNumberOfGenericArgs);
             "jump<T>")]
 fn find_specialization(id: &str, generic_args: Vec<GenericArg>) -> Result<(), SpecializationError> {
-    Extensions::default().specialize(&id.into(), &generic_args).map(|_| ()).map_err(|error| {
-        match error {
-            ExtensionError::Specialization { extension_id: _, error } => error,
+    Extensions::default().specialize_extension(&id.into(), &generic_args).map(|_| ()).map_err(
+        |error| match error {
+            ExtensionError::ExtensionSpecialization { extension_id: _, error } => error,
             other => panic!("unexpected extension error: {:?}", other),
-        }
-    })
+        },
+    )
 }
 
 /// Expects to find an extension and simulate it.
@@ -89,7 +112,7 @@ fn simulate(
     generic_args: Vec<GenericArg>,
     inputs: Vec<Vec<MemCell>>,
 ) -> Result<(Vec<Vec<MemCell>>, usize), InputError> {
-    Extensions::default().specialize(&id.into(), &generic_args).unwrap().simulate(inputs)
+    Extensions::default().specialize_extension(&id.into(), &generic_args).unwrap().simulate(inputs)
 }
 
 /// Expects to find an extension, wrapping and unwrapping the MemCell types and vectors of the
