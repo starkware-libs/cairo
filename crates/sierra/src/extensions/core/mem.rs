@@ -9,7 +9,7 @@ use crate::program::GenericArg;
 fn as_single_type(args: &[GenericArg]) -> Result<ConcreteTypeId, SpecializationError> {
     match args {
         [GenericArg::Type(ty)] => Ok(ty.clone()),
-        _ => Err(SpecializationError::UnsupportedTemplateArg),
+        _ => Err(SpecializationError::UnsupportedGenericArg),
     }
 }
 
