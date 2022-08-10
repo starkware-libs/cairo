@@ -55,12 +55,15 @@ impl ProgramRegistry {
         }
         let mut concrete_type_infos = HashMap::<ConcreteTypeId, ConcreteTypeInfo>::new();
         for declaration in &program.type_declarations {
-            let type_info =
-                CoreType::get_concrete_info_by_id(&declaration.generic_id, &declaration.args)
-                    .map_err(|error| ProgramRegistryError::TypeSpecialization {
-                        concrete_id: declaration.id.clone(),
-                        error,
-                    })?;
+            let type_info = CoreType::get_concrete_info_by_id(
+                &concrete_type_infos,
+                &declaration.generic_id,
+                &declaration.args,
+            )
+            .map_err(|error| ProgramRegistryError::TypeSpecialization {
+                concrete_id: declaration.id.clone(),
+                error,
+            })?;
             match concrete_type_infos.entry(declaration.id.clone()) {
                 Entry::Occupied(_) => {
                     Err(ProgramRegistryError::TypeConcreteIdUsedTwice(declaration.id.clone()))

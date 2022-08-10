@@ -2,7 +2,7 @@ use test_case::test_case;
 
 use super::core::{CoreExtension, CoreType};
 use super::{ConcreteTypeInfo, GenericType, SpecializationError};
-use crate::extensions::GenericExtension;
+use crate::extensions::{ConcreteTypeRegistry, GenericExtension, GenericTypeEx};
 use crate::program::GenericArg;
 
 fn type_arg(name: &str) -> GenericArg {
@@ -22,12 +22,25 @@ fn value_arg(v: i64) -> GenericArg {
 #[test_case("int", vec![] => Ok(ConcreteTypeInfo{size: 1}); "int")]
 #[test_case("int", vec![value_arg(3)] => Err(SpecializationError::WrongNumberOfGenericArgs);
             "int<3>")]
-#[test_case("int_non_zero", vec![] => Ok(ConcreteTypeInfo{size: 1}); "int_non_zero")]
-#[test_case("int_non_zero", vec![value_arg(3)] =>
-            Err(SpecializationError::WrongNumberOfGenericArgs);
-            "int_non_zero<3>")]
+#[test_case("NonZero", vec![type_arg("unregistered")] => Err(SpecializationError::UsedUnregisteredType("unregistered".into())); "NonZero<unregistered>")]
+#[test_case("NonZero", vec![] => Err(SpecializationError::UnsupportedGenericArg); "NonZero<>")]
+#[test_case("NonZero", vec![value_arg(3)] => Err(SpecializationError::UnsupportedGenericArg); "NonZero<3>")]
 fn get_type_info(id: &str, args: Vec<GenericArg>) -> Result<ConcreteTypeInfo, SpecializationError> {
-    CoreType::by_id(&id.into()).ok_or(SpecializationError::UnsupportedId)?.get_concrete_info(&args)
+    CoreType::by_id(&id.into())
+        .ok_or(SpecializationError::UnsupportedId)?
+        .get_concrete_info(&ConcreteTypeRegistry::new(), &args)
+}
+
+#[test]
+fn specialize_type_dependent_on_another() {
+    assert_eq!(
+        CoreType::get_concrete_info_by_id(
+            &ConcreteTypeRegistry::from([("registered".into(), ConcreteTypeInfo { size: 5 })]),
+            &"NonZero".into(),
+            &[type_arg("registered")]
+        ),
+        Ok(ConcreteTypeInfo { size: 5 })
+    );
 }
 
 #[test_case("NoneExistent", vec![] => Err(SpecializationError::UnsupportedId);

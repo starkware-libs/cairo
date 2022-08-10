@@ -1,6 +1,7 @@
 use crate::extensions::{
-    ConcreteExtension, GenericExtension, NamedExtension, NoGenericArgsGenericExtension,
-    NoGenericArgsNamedType, NonBranchConcreteExtension, SpecializationError,
+    ConcreteExtension, ConcreteTypeInfo, ConcreteTypeRegistry, GenericExtension, NamedExtension,
+    NamedType, NoGenericArgsGenericExtension, NoGenericArgsNamedType, NonBranchConcreteExtension,
+    SpecializationError,
 };
 use crate::ids::{ConcreteTypeId, GenericExtensionId};
 use crate::program::GenericArg;
@@ -24,9 +25,21 @@ impl NoGenericArgsNamedType for BasicType {
 
 #[derive(Default)]
 pub struct NonZeroType {}
-impl NoGenericArgsNamedType for NonZeroType {
-    const NAME: &'static str = "int_non_zero";
-    const SIZE: usize = 1;
+impl NamedType for NonZeroType {
+    const NAME: &'static str = "NonZero";
+    fn get_concrete_info(
+        &self,
+        concrete_type_registry: &ConcreteTypeRegistry,
+        args: &[GenericArg],
+    ) -> Result<ConcreteTypeInfo, SpecializationError> {
+        match args {
+            [GenericArg::Type(ty)] => concrete_type_registry
+                .get(ty)
+                .cloned()
+                .ok_or_else(|| SpecializationError::UsedUnregisteredType(ty.clone())),
+            _ => Err(SpecializationError::UnsupportedGenericArg),
+        }
+    }
 }
 
 define_extension_hierarchy! {

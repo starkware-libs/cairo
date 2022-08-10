@@ -2,21 +2,25 @@ pub mod core;
 #[cfg(test)]
 mod test;
 
+use std::collections::HashMap;
+
 use thiserror::Error;
 
 pub use self::core::{CoreConcrete, CoreExtension, CoreType};
 use crate::ids::{ConcreteExtensionId, ConcreteTypeId, GenericExtensionId, GenericTypeId};
 use crate::program::GenericArg;
 
-/// Error occurring while specializing extensions.
+/// Error occurring while making a type or an extension concrete.
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum SpecializationError {
-    #[error("Could not find the requested id")]
+    #[error("Could not find the requested generic id")]
     UnsupportedId,
     #[error("Expected a different number of generic arguments")]
     WrongNumberOfGenericArgs,
     #[error("Provided generic arg is unsupported")]
     UnsupportedGenericArg,
+    #[error("Required type is missing in registry")]
+    UsedUnregisteredType(ConcreteTypeId),
 }
 
 /// Extension related errors.
@@ -39,19 +43,25 @@ pub trait GenericType: Sized {
     /// Creates the specialization with the template arguments.
     fn get_concrete_info(
         &self,
+        concrete_type_registry: &ConcreteTypeRegistry,
         args: &[GenericArg],
     ) -> Result<ConcreteTypeInfo, SpecializationError>;
 }
 
+pub type ConcreteTypeRegistry = HashMap<ConcreteTypeId, ConcreteTypeInfo>;
+
 /// Trait for introducing helper methods on GenericType.
 pub trait GenericTypeEx: GenericType {
     fn get_concrete_info_by_id(
+        concrete_type_registry: &ConcreteTypeRegistry,
         type_id: &GenericTypeId,
         args: &[GenericArg],
     ) -> Result<ConcreteTypeInfo, ExtensionError>;
 }
+
 impl<TGenericType: GenericType> GenericTypeEx for TGenericType {
     fn get_concrete_info_by_id(
+        concrete_type_registry: &ConcreteTypeRegistry,
         type_id: &GenericTypeId,
         args: &[GenericArg],
     ) -> Result<ConcreteTypeInfo, ExtensionError> {
@@ -60,7 +70,7 @@ impl<TGenericType: GenericType> GenericTypeEx for TGenericType {
                 type_id: type_id.clone(),
                 error: SpecializationError::UnsupportedId,
             })?
-            .get_concrete_info(args)
+            .get_concrete_info(concrete_type_registry, args)
             .map_err(move |error| ExtensionError::TypeSpecialization {
                 type_id: type_id.clone(),
                 error,
@@ -75,6 +85,7 @@ pub trait NamedType: Default {
     /// Creates the specialization with the template arguments.
     fn get_concrete_info(
         &self,
+        concrete_type_registry: &ConcreteTypeRegistry,
         args: &[GenericArg],
     ) -> Result<ConcreteTypeInfo, SpecializationError>;
 }
@@ -85,9 +96,10 @@ impl<TNamedType: NamedType> GenericType for TNamedType {
 
     fn get_concrete_info(
         &self,
+        concrete_type_registry: &ConcreteTypeRegistry,
         args: &[GenericArg],
     ) -> Result<ConcreteTypeInfo, SpecializationError> {
-        <Self as NamedType>::get_concrete_info(self, args)
+        <Self as NamedType>::get_concrete_info(self, concrete_type_registry, args)
     }
 }
 
@@ -99,6 +111,7 @@ impl<TNoGenericArgsNamedType: NoGenericArgsNamedType> NamedType for TNoGenericAr
     const NAME: &'static str = <Self as NoGenericArgsNamedType>::NAME;
     fn get_concrete_info(
         &self,
+        _concrete_type_registry: &ConcreteTypeRegistry,
         args: &[GenericArg],
     ) -> Result<ConcreteTypeInfo, SpecializationError> {
         if args.is_empty() {
@@ -145,12 +158,14 @@ macro_rules! define_type_hierarchy {
                 None
             }
             fn get_concrete_info(
-                    &self, args: &[$crate::extensions::GenericArg]
+                    &self,
+                    concrete_type_registry: &$crate::extensions::ConcreteTypeRegistry,
+                    args: &[$crate::extensions::GenericArg]
             ) -> Result<$crate::extensions::ConcreteTypeInfo, $crate::extensions::SpecializationError>{
                 match self {
                     $(
                         Self::$variant_name(value) => {
-                            <$variant as $crate::extensions::GenericType>::get_concrete_info(value, args)
+                            <$variant as $crate::extensions::GenericType>::get_concrete_info(value, concrete_type_registry, args)
                         }
                     ),*
                 }
