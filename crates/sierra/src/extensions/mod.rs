@@ -12,8 +12,8 @@ mod core;
 /// Error occurring while specializing extensions.
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum SpecializationError {
-    #[error("Could not find the requested extension")]
-    UnsupportedLibCallName,
+    #[error("Count not find the requested id")]
+    UnsupportedId,
     #[error("Expected a different number of generic arguments")]
     WrongNumberOfGenericArgs,
     #[error("Provided generic arg is unsupported")]
@@ -68,7 +68,7 @@ impl Extensions {
             .get(type_id)
             .ok_or_else(move || ExtensionError::TypeSpecialization {
                 type_id: type_id.clone(),
-                error: SpecializationError::UnsupportedLibCallName,
+                error: SpecializationError::UnsupportedId,
             })?
             .get_info(args)
             .map_err(move |error| ExtensionError::TypeSpecialization {
@@ -86,7 +86,7 @@ impl Extensions {
             .get(extension_id)
             .ok_or_else(move || ExtensionError::ExtensionSpecialization {
                 extension_id: extension_id.clone(),
-                error: SpecializationError::UnsupportedLibCallName,
+                error: SpecializationError::UnsupportedId,
             })?
             .specialize(args)
             .map_err(move |error| ExtensionError::ExtensionSpecialization {

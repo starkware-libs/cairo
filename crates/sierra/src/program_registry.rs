@@ -4,8 +4,8 @@ use std::collections::HashMap;
 use thiserror::Error;
 
 use crate::extensions::{ConcreteExtensionBox, ConcreteTypeInfo, ExtensionError, Extensions};
-use crate::ids::{ConcreteExtensionId, ConcreteTypeId};
-use crate::program::Program;
+use crate::ids::{ConcreteExtensionId, ConcreteTypeId, FunctionId};
+use crate::program::{Function, Program};
 
 #[cfg(test)]
 #[path = "program_registry_test.rs"]
@@ -18,6 +18,8 @@ pub enum ProgramRegistryError {
     TypeSpecialization { concrete_id: ConcreteTypeId, error: ExtensionError },
     #[error("Error during extension specialization")]
     ExtensionSpecialization { concrete_id: ConcreteExtensionId, error: ExtensionError },
+    #[error("Error used the same function id twice")]
+    FunctionIdUsedTwice(FunctionId),
     #[error("Error used the same concrete type id twice")]
     TypeConcreteIdUsedTwice(ConcreteTypeId),
     #[error("Error used the same concrete extension id twice")]
@@ -28,12 +30,22 @@ pub enum ProgramRegistryError {
 
 /// Registry for the data of the compiler, for all program specific data.
 pub struct ProgramRegistry {
+    pub functions: HashMap<FunctionId, Function>,
     pub concrete_type_info: HashMap<ConcreteTypeId, ConcreteTypeInfo>,
     pub concrete_extensions: HashMap<ConcreteExtensionId, ConcreteExtensionBox>,
 }
 impl ProgramRegistry {
     /// Create a registry for the program.
     pub fn new(program: &Program) -> Result<ProgramRegistry, ProgramRegistryError> {
+        let mut functions = HashMap::<FunctionId, Function>::new();
+        for func in &program.funcs {
+            match functions.entry(func.id.clone()) {
+                Entry::Occupied(_) => {
+                    Err(ProgramRegistryError::FunctionIdUsedTwice(func.id.clone()))
+                }
+                Entry::Vacant(entry) => Ok(entry.insert(func.clone())),
+            }?;
+        }
         let extensions = Extensions::default();
         let mut concrete_type_info = HashMap::<ConcreteTypeId, ConcreteTypeInfo>::new();
         for declaration in &program.type_declarations {
@@ -65,7 +77,7 @@ impl ProgramRegistry {
                 Entry::Vacant(entry) => Ok(entry.insert(concrete_extension)),
             }?;
         }
-        Ok(ProgramRegistry { concrete_type_info, concrete_extensions })
+        Ok(ProgramRegistry { functions, concrete_type_info, concrete_extensions })
     }
     /// Get an extension for a given program.
     pub fn get_extension<'a>(

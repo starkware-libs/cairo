@@ -12,7 +12,7 @@ fn value_arg(v: i64) -> GenericArg {
     GenericArg::Value(v)
 }
 
-#[test_case("NoneExistent", vec![] => Err(SpecializationError::UnsupportedLibCallName);
+#[test_case("NoneExistent", vec![] => Err(SpecializationError::UnsupportedId);
             "NoneExistent")]
 #[test_case("GasBuiltin", vec![] => Ok(ConcreteTypeInfo{size: 1}); "GasBuiltin")]
 #[test_case("GasBuiltin", vec![value_arg(3)] =>
@@ -35,7 +35,7 @@ fn specialize_type(
     })
 }
 
-#[test_case("NoneExistent", vec![] => Err(SpecializationError::UnsupportedLibCallName);
+#[test_case("NoneExistent", vec![] => Err(SpecializationError::UnsupportedId);
             "NoneExistent")]
 #[test_case("call_function", vec![GenericArg::Func("Function".into())] => Ok(());
             "call_function<&Function>")]
