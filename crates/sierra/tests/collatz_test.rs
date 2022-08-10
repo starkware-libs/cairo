@@ -6,7 +6,7 @@ fn collatz_program() -> sierra::program::Program {
         .parse(indoc! {"
         type int = int;
         type GasBuiltin = GasBuiltin;
-        type NonZero_int = NonZero<int>;
+        type int_non_zero = int_non_zero;
 
         ext move_int = move<int>;
         ext move_gb = move<GasBuiltin>;
@@ -99,8 +99,12 @@ fn parse_test() {
 
 #[test]
 fn perform_declarations_test() {
+    let program = collatz_program();
     let mut extensions = Extensions::default();
-    for declaration in collatz_program().extension_declarations {
-        extensions.specialize(&declaration).unwrap();
+    for declaration in &program.type_declarations {
+        extensions.specialize_type(declaration).unwrap();
+    }
+    for declaration in &program.extension_declarations {
+        extensions.specialize_extension(declaration).unwrap();
     }
 }
