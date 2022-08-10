@@ -1,7 +1,7 @@
 use test_case::test_case;
 
 use super::{ExtensionError, Extensions, SpecializationError};
-use crate::program::{ExtensionDeclaration, GenericArg, TypeDeclaration};
+use crate::program::{ExtensionDeclaration, Function, GenericArg, StatementId, TypeDeclaration};
 
 fn type_arg(name: &str) -> GenericArg {
     GenericArg::Type(name.into())
@@ -11,7 +11,31 @@ fn value_arg(v: i64) -> GenericArg {
     GenericArg::Value(v)
 }
 
-#[test_case("NoneExistent", vec![] => Err(SpecializationError::UnsupportedLibCallName);
+#[test]
+fn function_double_register() {
+    let mut extensions = Extensions::default();
+    let repeated_func =
+        Function { id: "Func".into(), params: vec![], ret_types: vec![], entry: StatementId(5) };
+    assert_eq!(extensions.register_function(&repeated_func), Ok(()));
+    assert_eq!(
+        extensions.register_function(&Function {
+            id: "Other".into(),
+            params: vec![],
+            ret_types: vec![],
+            entry: StatementId(5)
+        }),
+        Ok(())
+    );
+    assert_eq!(
+        extensions.register_function(&repeated_func),
+        Err(ExtensionError::FunctionRegistration {
+            func: repeated_func,
+            error: SpecializationError::ConcreteIdUsedMoreThanOnce
+        })
+    );
+}
+
+#[test_case("NoneExistent", vec![] => Err(SpecializationError::UnsupportedId);
             "NoneExistent")]
 #[test_case("GasBuiltin", vec![] => Ok(()); "GasBuiltin")]
 #[test_case("GasBuiltin", vec![value_arg(3)] =>
@@ -33,7 +57,7 @@ fn specialize_type(id: &str, args: Vec<GenericArg>) -> Result<(), Specialization
         })
 }
 
-#[test_case("NoneExistent", vec![] => Err(SpecializationError::UnsupportedLibCallName);
+#[test_case("NoneExistent", vec![] => Err(SpecializationError::UnsupportedId);
             "NoneExistent")]
 #[test_case("call_function", vec![GenericArg::Func("Function".into())] => Ok(());
             "call_function<&Function>")]
@@ -113,7 +137,7 @@ fn find_specialization(id: &str, args: Vec<GenericArg>) -> Result<(), Specializa
 }
 
 #[test]
-fn double_insertion() {
+fn extension_double_specialization() {
     let mut extensions = Extensions::default();
     let repeated_declaration = ExtensionDeclaration {
         id: "concrete_id1".into(),

@@ -13,6 +13,9 @@ pub enum ValidationError {
 /// Validates a Sierra program.
 pub fn validate(program: &Program) -> Result<(), ValidationError> {
     let mut extensions = Extensions::default();
+    for func in &program.funcs {
+        extensions.register_function(func).map_err(ValidationError::Extension)?;
+    }
     for declaration in &program.type_declarations {
         extensions.specialize_type(declaration).map_err(ValidationError::Extension)?;
     }

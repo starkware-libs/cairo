@@ -34,7 +34,7 @@ pub struct ExtensionDeclaration {
 }
 
 /// Descriptor of a function.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Function {
     /// The name of the function.
     pub id: FunctionId,
@@ -54,9 +54,9 @@ pub struct Param {
 }
 
 macro_rules! define_identity {
-    ($doc:literal, $derives:tt, $type_name:ident) => {
+    ($doc:literal, $type_name:ident) => {
         #[doc=$doc]
-        #[derive $derives]
+        #[derive(Clone, Debug, Eq, Hash, PartialEq)]
         pub enum $type_name {
             // This variant is for testing.
             Name(String),
@@ -80,33 +80,17 @@ macro_rules! define_identity {
     };
 }
 
-define_identity!(
-    "The identity of a generic extension",
-    (Clone, Debug, Eq, Hash, PartialEq),
-    GenericExtensionId
-);
+define_identity!("The identity of a generic extension", GenericExtensionId);
 
-define_identity!(
-    "The identity of a concrete extension.",
-    (Clone, Debug, Eq, Hash, PartialEq),
-    ConcreteExtensionId
-);
+define_identity!("The identity of a concrete extension.", ConcreteExtensionId);
 
-define_identity!("The identity of a user function.", (Clone, Debug, PartialEq), FunctionId);
+define_identity!("The identity of a user function.", FunctionId);
 
-define_identity!("The identity of a variable.", (Clone, Debug, Eq, Hash, PartialEq), VarId);
+define_identity!("The identity of a variable.", VarId);
 
-define_identity!(
-    "The identity of a generic type.",
-    (Clone, Debug, Eq, Hash, PartialEq),
-    GenericTypeId
-);
+define_identity!("The identity of a generic type.", GenericTypeId);
 
-define_identity!(
-    "The identity of a concrete type.",
-    (Clone, Debug, Eq, Hash, PartialEq),
-    ConcreteTypeId
-);
+define_identity!("The identity of a concrete type.", ConcreteTypeId);
 
 /// Represents the index of a statement in the Program::statements vector.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]

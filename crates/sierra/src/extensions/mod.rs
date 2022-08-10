@@ -3,8 +3,8 @@ use std::collections::HashMap;
 use thiserror::Error;
 
 use crate::program::{
-    ConcreteExtensionId, ConcreteTypeId, ExtensionDeclaration, GenericArg, GenericExtensionId,
-    GenericTypeId, TypeDeclaration,
+    ConcreteExtensionId, ConcreteTypeId, ExtensionDeclaration, Function, FunctionId, GenericArg,
+    GenericExtensionId, GenericTypeId, TypeDeclaration,
 };
 
 mod core;
@@ -12,8 +12,8 @@ mod core;
 /// Error option while using extensions.
 #[derive(Error, Debug, PartialEq)]
 pub enum SpecializationError {
-    #[error("Count not find the requested extension")]
-    UnsupportedLibCallName,
+    #[error("Count not find the requested id")]
+    UnsupportedId,
     #[error("Expected a different number of generic arguments")]
     WrongNumberOfGenericArgs,
     #[error("Provided generic arg is unsupported")]
@@ -25,6 +25,8 @@ pub enum SpecializationError {
 /// Error option while using extensions.
 #[derive(Error, Debug, PartialEq)]
 pub enum ExtensionError {
+    #[error("Count not register function")]
+    FunctionRegistration { func: Function, error: SpecializationError },
     #[error("Count not specialize type")]
     TypeSpecialization { declaration: TypeDeclaration, error: SpecializationError },
     #[error("Count not specialize extension")]
@@ -35,6 +37,7 @@ pub enum ExtensionError {
 pub struct Extensions {
     extension_specializers: HashMap<GenericExtensionId, GenericExtensionBox>,
     type_specializers: HashMap<GenericTypeId, GenericTypeBox>,
+    functions: HashMap<FunctionId, Function>,
     concrete_extensions: HashMap<ConcreteExtensionId, ConcreteExtensionBox>,
     concrete_type_info: HashMap<ConcreteTypeId, ConcreteTypeInfo>,
 }
@@ -43,12 +46,23 @@ impl Default for Extensions {
         Extensions {
             extension_specializers: core::all_core_extensions(),
             type_specializers: core::all_core_types(),
+            functions: HashMap::<FunctionId, Function>::new(),
             concrete_extensions: HashMap::<ConcreteExtensionId, ConcreteExtensionBox>::new(),
             concrete_type_info: HashMap::<ConcreteTypeId, ConcreteTypeInfo>::new(),
         }
     }
 }
 impl Extensions {
+    /// Registers a function.
+    pub fn register_function(&mut self, func: &Function) -> Result<(), ExtensionError> {
+        match self.functions.insert(func.id.clone(), func.clone()) {
+            None => Ok(()),
+            Some(_) => Err(ExtensionError::FunctionRegistration {
+                func: func.clone(),
+                error: SpecializationError::ConcreteIdUsedMoreThanOnce,
+            }),
+        }
+    }
     /// Adds a specialization of a type to the set of concrete types.
     pub fn specialize_type(&mut self, declaration: &TypeDeclaration) -> Result<(), ExtensionError> {
         let concrete_extension = self
@@ -56,7 +70,7 @@ impl Extensions {
             .get(&declaration.generic_id)
             .ok_or_else(move || ExtensionError::TypeSpecialization {
                 declaration: declaration.clone(),
-                error: SpecializationError::UnsupportedLibCallName,
+                error: SpecializationError::UnsupportedId,
             })?
             .get_info(&declaration.args)
             .map_err(move |error| ExtensionError::TypeSpecialization {
@@ -81,7 +95,7 @@ impl Extensions {
             .get(&declaration.generic_id)
             .ok_or_else(move || ExtensionError::ExtensionSpecialization {
                 declaration: declaration.clone(),
-                error: SpecializationError::UnsupportedLibCallName,
+                error: SpecializationError::UnsupportedId,
             })?
             .specialize(&declaration.args)
             .map_err(move |error| ExtensionError::ExtensionSpecialization {
