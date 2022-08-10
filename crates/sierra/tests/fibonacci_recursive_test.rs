@@ -1,4 +1,5 @@
 use indoc::indoc;
+use sierra::validate::validate;
 
 fn fib_program() -> sierra::program::Program {
     sierra::ProgramParser::new()
@@ -88,4 +89,10 @@ fn fib_program() -> sierra::program::Program {
 #[test]
 fn parse_test() {
     fib_program();
+}
+
+#[ignore] // Ignoring until we add the function call extension support.
+#[test]
+fn validation_test() {
+    assert_eq!(validate(&fib_program()), Ok(()));
 }

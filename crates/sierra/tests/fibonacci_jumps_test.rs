@@ -1,5 +1,5 @@
 use indoc::indoc;
-use sierra::extensions::Extensions;
+use sierra::validate::validate;
 
 fn fib_program() -> sierra::program::Program {
     sierra::ProgramParser::new()
@@ -100,13 +100,6 @@ fn parse_test() {
 }
 
 #[test]
-fn perform_declarations_test() {
-    let program = fib_program();
-    let mut extensions = Extensions::default();
-    for declaration in &program.type_declarations {
-        extensions.specialize_type(declaration).unwrap();
-    }
-    for declaration in &program.extension_declarations {
-        extensions.specialize_extension(declaration).unwrap();
-    }
+fn validation_test() {
+    assert_eq!(validate(&fib_program()), Ok(()));
 }
