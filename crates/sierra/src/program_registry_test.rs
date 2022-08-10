@@ -13,6 +13,7 @@ fn basic_insertion() {
         type GasBuiltin = GasBuiltin;
         ext move_int = move<int>;
         ext move_gb = move<GasBuiltin>;
+        Some@1(var: int, gb: GasBuiltin) -> (int, GasBuiltin);
     "})
                 .unwrap()
         )
@@ -50,5 +51,21 @@ fn extension_id_double_declaration() {
         )
         .map(|_| ()),
         Err(ProgramRegistryError::ExtensionConcreteIdUsedTwice("used_id".into()))
+    );
+}
+
+#[test]
+fn double_function_statement() {
+    assert_eq!(
+        ProgramRegistry::new(
+            &ProgramParser::new()
+                .parse(indoc! {"
+        SameId@0() -> (int, GasBuiltin);
+        SameId@1(var: int, gb: GasBuiltin) -> (int, GasBuiltin);
+    "})
+                .unwrap()
+        )
+        .map(|_| ()),
+        Err(ProgramRegistryError::FunctionIdUsedTwice("SameId".into()))
     );
 }
