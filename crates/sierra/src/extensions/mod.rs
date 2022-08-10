@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use thiserror::Error;
 
-use crate::program::{GenericArg, GenericExtensionId};
+use crate::program::{ConcreteExtensionId, ExtensionDeclaration, GenericArg, GenericExtensionId};
 
 mod core;
 
@@ -11,45 +11,56 @@ mod core;
 pub enum SpecializationError {
     #[error("Count not find the requested extension")]
     UnsupportedLibCallName,
-    #[error("Expected a different number of template arguments")]
-    WrongNumberOfTemplateArgs,
-    #[error("Provided template arg is unsupported")]
-    UnsupportedTemplateArg,
+    #[error("Expected a different number of generic arguments")]
+    WrongNumberOfGenericArgs,
+    #[error("Provided generic arg is unsupported")]
+    UnsupportedGenericArg,
+    #[error("The concrete id is used more than once")]
+    ConcreteIdUsedMoreThanOnce,
 }
 
 /// Error option while using extensions.
 #[derive(Error, Debug, PartialEq)]
 pub enum ExtensionError {
     #[error("Count not specialize extension")]
-    Specialization { extension_id: GenericExtensionId, error: SpecializationError },
+    Specialization { declaration: ExtensionDeclaration, error: SpecializationError },
 }
 
 /// Handles extensions usages.
 pub struct Extensions {
     specializers: HashMap<GenericExtensionId, GenericExtensionBox>,
+    concrete_extensions: HashMap<ConcreteExtensionId, ConcreteExtensionBox>,
 }
 impl Default for Extensions {
     fn default() -> Self {
-        Extensions { specializers: core::all_core_extensions() }
+        Extensions {
+            specializers: core::all_core_extensions(),
+            concrete_extensions: HashMap::<ConcreteExtensionId, ConcreteExtensionBox>::new(),
+        }
     }
 }
 impl Extensions {
-    pub fn specialize(
-        &self,
-        extension_id: &GenericExtensionId,
-        args: &[GenericArg],
-    ) -> Result<ConcreteExtensionBox, ExtensionError> {
-        self.specializers
-            .get(extension_id)
+    /// Adds a specialization of an extension to the set of concrete extensions.
+    pub fn specialize(&mut self, declaration: &ExtensionDeclaration) -> Result<(), ExtensionError> {
+        let concrete_extension = self
+            .specializers
+            .get(&declaration.generic_id)
             .ok_or_else(move || ExtensionError::Specialization {
-                extension_id: extension_id.clone(),
+                declaration: declaration.clone(),
                 error: SpecializationError::UnsupportedLibCallName,
             })?
-            .specialize(args)
+            .specialize(&declaration.args)
             .map_err(move |error| ExtensionError::Specialization {
-                extension_id: extension_id.clone(),
+                declaration: declaration.clone(),
                 error,
-            })
+            })?;
+        match self.concrete_extensions.insert(declaration.id.clone(), concrete_extension) {
+            None => Ok(()),
+            Some(_) => Err(ExtensionError::Specialization {
+                declaration: declaration.clone(),
+                error: SpecializationError::ConcreteIdUsedMoreThanOnce,
+            }),
+        }
     }
 }
 
@@ -68,7 +79,7 @@ impl<T: NoGenericArgsGenericExtension> GenericExtension for T {
         if args.is_empty() {
             Ok(self.specialize())
         } else {
-            Err(SpecializationError::WrongNumberOfTemplateArgs)
+            Err(SpecializationError::WrongNumberOfGenericArgs)
         }
     }
 }
