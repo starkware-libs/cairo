@@ -12,7 +12,7 @@ use crate::program::GenericArg;
 fn as_single_positive_value(args: &[GenericArg]) -> Result<i64, SpecializationError> {
     match args {
         [GenericArg::Value(count)] if *count > 0 => Ok(*count),
-        _ => Err(SpecializationError::UnsupportedTemplateArg),
+        _ => Err(SpecializationError::UnsupportedGenericArg),
     }
 }
 
