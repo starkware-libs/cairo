@@ -1,4 +1,5 @@
 use indoc::indoc;
+use sierra::extensions::Extensions;
 
 fn fib_program() -> sierra::program::Program {
     sierra::ProgramParser::new()
@@ -96,4 +97,12 @@ fn fib_program() -> sierra::program::Program {
 #[test]
 fn parse_test() {
     fib_program();
+}
+
+#[test]
+fn perform_declarations_test() {
+    let mut extensions = Extensions::default();
+    for declaration in fib_program().extension_declarations {
+        extensions.specialize(&declaration).unwrap();
+    }
 }
