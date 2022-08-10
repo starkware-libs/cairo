@@ -32,6 +32,10 @@ fn get_type_info(id: &str, args: Vec<GenericArg>) -> Result<ConcreteTypeInfo, Sp
 
 #[test_case("NoneExistent", vec![] => Err(SpecializationError::UnsupportedId);
             "NoneExistent")]
+#[test_case("function_call", vec![GenericArg::Func("Function".into())] => Ok(());
+            "function_call<&Function>")]
+#[test_case("function_call", vec![value_arg(2)] => Err(SpecializationError::UnsupportedGenericArg);
+            "function_call<2>")]
 #[test_case("get_gas", vec![value_arg(2)] => Ok(()); "get_gas<2>")]
 #[test_case("get_gas", vec![] => Err(SpecializationError::UnsupportedGenericArg); "get_gas")]
 #[test_case("get_gas", vec![value_arg(-2)] => Err(SpecializationError::UnsupportedGenericArg);
