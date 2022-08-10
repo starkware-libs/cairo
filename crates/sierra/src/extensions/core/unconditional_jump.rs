@@ -1,8 +1,10 @@
-use crate::extensions::{ConcreteExtension, ConcreteExtensionBox, ExtensionBox, NoArgsExtension};
-use crate::program::ExtensionId;
+use crate::extensions::{
+    ConcreteExtension, ConcreteExtensionBox, GenericExtensionBox, NoGenericArgsGenericExtension,
+};
+use crate::program::GenericExtensionId;
 
-struct UnconditionalJumpExtension {}
-impl NoArgsExtension for UnconditionalJumpExtension {
+struct UnconditionalJumpGeneric {}
+impl NoGenericArgsGenericExtension for UnconditionalJumpGeneric {
     fn specialize(&self) -> ConcreteExtensionBox {
         Box::new(UnconditionalJumpConcrete {})
     }
@@ -11,6 +13,6 @@ impl NoArgsExtension for UnconditionalJumpExtension {
 struct UnconditionalJumpConcrete {}
 impl ConcreteExtension for UnconditionalJumpConcrete {}
 
-pub(super) fn extensions() -> [(ExtensionId, ExtensionBox); 1] {
-    [("jump".into(), Box::new(UnconditionalJumpExtension {}))]
+pub(super) fn extensions() -> [(GenericExtensionId, GenericExtensionBox); 1] {
+    [("jump".into(), Box::new(UnconditionalJumpGeneric {}))]
 }

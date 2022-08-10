@@ -17,20 +17,20 @@ pub struct TypeDeclaration {
     /// The id of the declared concrete type.
     pub id: ConcreteTypeId,
     /// The id of the used generic type.
-    pub type_id: TypeId,
+    pub generic_id: GenericTypeId,
     /// The arguments for the generic type.
-    pub args: Vec<TemplateArg>,
+    pub args: Vec<GenericArg>,
 }
 
 /// Declaration of a callable extension.
 #[derive(Clone, Debug)]
 pub struct ExtensionDeclaration {
-    /// The id of the declared callable extension.
-    pub id: CalleeId,
-    /// The id of the specialized extension.
-    pub extension_id: ExtensionId,
+    /// The id of the declared concrete extension.
+    pub id: ConcreteExtensionId,
+    /// The id of the used generic extension.
+    pub generic_id: GenericExtensionId,
     /// The arguments for the specialization.
-    pub args: Vec<TemplateArg>,
+    pub args: Vec<GenericArg>,
 }
 
 /// Descriptor of a function.
@@ -80,25 +80,33 @@ macro_rules! define_identity {
     };
 }
 
-define_identity!("The identity of an extension", (Clone, Debug, Eq, Hash, PartialEq), ExtensionId);
+define_identity!(
+    "The identity of a generic extension",
+    (Clone, Debug, Eq, Hash, PartialEq),
+    GenericExtensionId
+);
 
-define_identity!("The identity for a concrete extension.", (Clone, Debug, PartialEq), CalleeId);
+define_identity!(
+    "The identity of a concrete extension.",
+    (Clone, Debug, PartialEq),
+    ConcreteExtensionId
+);
 
-define_identity!("The identity for a user function.", (Clone, Debug, PartialEq), FunctionId);
+define_identity!("The identity of a user function.", (Clone, Debug, PartialEq), FunctionId);
 
-define_identity!("The identity for a variable.", (Clone, Debug, Eq, Hash, PartialEq), VarId);
+define_identity!("The identity of a variable.", (Clone, Debug, Eq, Hash, PartialEq), VarId);
 
-define_identity!("The identity for a generic type.", (Clone, Debug, PartialEq), TypeId);
+define_identity!("The identity of a generic type.", (Clone, Debug, PartialEq), GenericTypeId);
 
-define_identity!("The identity for a concrete type.", (Clone, Debug, PartialEq), ConcreteTypeId);
+define_identity!("The identity of a concrete type.", (Clone, Debug, PartialEq), ConcreteTypeId);
 
 /// Represents the index of a statement in the Program::statements vector.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct StatementId(pub usize);
 
-/// Possible arguments for templatic type.
+/// Possible arguments for generic type.
 #[derive(Clone, Debug, PartialEq)]
-pub enum TemplateArg {
+pub enum GenericArg {
     Type(ConcreteTypeId),
     Func(FunctionId),
     Value(i64),
@@ -115,7 +123,7 @@ pub enum Statement {
 #[derive(Clone, Debug)]
 pub struct Invocation {
     /// The called extension.
-    pub callee_id: CalleeId,
+    pub extension_id: ConcreteExtensionId,
     /// The arguments consumed by the extension's invocation.
     pub args: Vec<VarId>,
     /// The possible branches to continue to after the invocation.
