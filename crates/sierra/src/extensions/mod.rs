@@ -2,7 +2,10 @@ use std::collections::HashMap;
 
 use thiserror::Error;
 
-use crate::program::{GenericArg, GenericExtensionId};
+use crate::program::{
+    ConcreteExtensionId, ConcreteTypeId, ExtensionDeclaration, GenericArg, GenericExtensionId,
+    GenericTypeId, TypeDeclaration,
+};
 
 mod core;
 
@@ -11,45 +14,87 @@ mod core;
 pub enum SpecializationError {
     #[error("Count not find the requested extension")]
     UnsupportedLibCallName,
-    #[error("Expected a different number of template arguments")]
-    WrongNumberOfTemplateArgs,
-    #[error("Provided template arg is unsupported")]
-    UnsupportedTemplateArg,
+    #[error("Expected a different number of generic arguments")]
+    WrongNumberOfGenericArgs,
+    #[error("Provided generic arg is unsupported")]
+    UnsupportedGenericArg,
+    #[error("The concrete id is used more than once")]
+    ConcreteIdUsedMoreThanOnce,
 }
 
 /// Error option while using extensions.
 #[derive(Error, Debug, PartialEq)]
 pub enum ExtensionError {
+    #[error("Count not specialize type")]
+    TypeSpecialization { declaration: TypeDeclaration, error: SpecializationError },
     #[error("Count not specialize extension")]
-    Specialization { extension_id: GenericExtensionId, error: SpecializationError },
+    ExtensionSpecialization { declaration: ExtensionDeclaration, error: SpecializationError },
 }
 
 /// Handles extensions usages.
 pub struct Extensions {
-    specializers: HashMap<GenericExtensionId, GenericExtensionBox>,
+    extension_specializers: HashMap<GenericExtensionId, GenericExtensionBox>,
+    type_specializers: HashMap<GenericTypeId, GenericTypeBox>,
+    concrete_extensions: HashMap<ConcreteExtensionId, ConcreteExtensionBox>,
+    concrete_type_info: HashMap<ConcreteTypeId, ConcreteTypeInfo>,
 }
 impl Default for Extensions {
     fn default() -> Self {
-        Extensions { specializers: core::all_core_extensions() }
+        Extensions {
+            extension_specializers: core::all_core_extensions(),
+            type_specializers: core::all_core_types(),
+            concrete_extensions: HashMap::<ConcreteExtensionId, ConcreteExtensionBox>::new(),
+            concrete_type_info: HashMap::<ConcreteTypeId, ConcreteTypeInfo>::new(),
+        }
     }
 }
 impl Extensions {
-    pub fn specialize(
-        &self,
-        extension_id: &GenericExtensionId,
-        args: &[GenericArg],
-    ) -> Result<ConcreteExtensionBox, ExtensionError> {
-        self.specializers
-            .get(extension_id)
-            .ok_or_else(move || ExtensionError::Specialization {
-                extension_id: extension_id.clone(),
+    /// Adds a specialization of a type to the set of concrete types.
+    pub fn specialize_type(&mut self, declaration: &TypeDeclaration) -> Result<(), ExtensionError> {
+        let concrete_extension = self
+            .type_specializers
+            .get(&declaration.generic_id)
+            .ok_or_else(move || ExtensionError::TypeSpecialization {
+                declaration: declaration.clone(),
                 error: SpecializationError::UnsupportedLibCallName,
             })?
-            .specialize(args)
-            .map_err(move |error| ExtensionError::Specialization {
-                extension_id: extension_id.clone(),
+            .get_info(&declaration.args)
+            .map_err(move |error| ExtensionError::TypeSpecialization {
+                declaration: declaration.clone(),
                 error,
-            })
+            })?;
+        match self.concrete_type_info.insert(declaration.id.clone(), concrete_extension) {
+            None => Ok(()),
+            Some(_) => Err(ExtensionError::TypeSpecialization {
+                declaration: declaration.clone(),
+                error: SpecializationError::ConcreteIdUsedMoreThanOnce,
+            }),
+        }
+    }
+    /// Adds a specialization of an extension to the set of concrete extensions.
+    pub fn specialize_extension(
+        &mut self,
+        declaration: &ExtensionDeclaration,
+    ) -> Result<(), ExtensionError> {
+        let concrete_extension = self
+            .extension_specializers
+            .get(&declaration.generic_id)
+            .ok_or_else(move || ExtensionError::ExtensionSpecialization {
+                declaration: declaration.clone(),
+                error: SpecializationError::UnsupportedLibCallName,
+            })?
+            .specialize(&declaration.args)
+            .map_err(move |error| ExtensionError::ExtensionSpecialization {
+                declaration: declaration.clone(),
+                error,
+            })?;
+        match self.concrete_extensions.insert(declaration.id.clone(), concrete_extension) {
+            None => Ok(()),
+            Some(_) => Err(ExtensionError::ExtensionSpecialization {
+                declaration: declaration.clone(),
+                error: SpecializationError::ConcreteIdUsedMoreThanOnce,
+            }),
+        }
     }
 }
 
@@ -68,7 +113,7 @@ impl<T: NoGenericArgsGenericExtension> GenericExtension for T {
         if args.is_empty() {
             Ok(self.specialize())
         } else {
-            Err(SpecializationError::WrongNumberOfTemplateArgs)
+            Err(SpecializationError::WrongNumberOfGenericArgs)
         }
     }
 }
@@ -78,6 +123,29 @@ pub trait ConcreteExtension {}
 
 type GenericExtensionBox = Box<dyn GenericExtension>;
 type ConcreteExtensionBox = Box<dyn ConcreteExtension>;
+
+/// Trait for implementing a type generator.
+trait GenericType {
+    /// Returns the type info given generic arguments.
+    fn get_info(&self, args: &[GenericArg]) -> Result<ConcreteTypeInfo, SpecializationError>;
+}
+struct NoGenericArgsGenericType<const SIZE: usize> {}
+impl<const SIZE: usize> GenericType for NoGenericArgsGenericType<SIZE> {
+    fn get_info(&self, args: &[GenericArg]) -> Result<ConcreteTypeInfo, SpecializationError> {
+        if args.is_empty() {
+            Ok(ConcreteTypeInfo { size: SIZE })
+        } else {
+            Err(SpecializationError::WrongNumberOfGenericArgs)
+        }
+    }
+}
+
+/// The information for a concrete type.
+pub struct ConcreteTypeInfo {
+    pub size: usize,
+}
+
+type GenericTypeBox = Box<dyn GenericType>;
 
 #[cfg(test)]
 mod test;

@@ -12,7 +12,7 @@ pub struct Program {
 }
 
 /// Declaration of a concrete type.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct TypeDeclaration {
     /// The id of the declared concrete type.
     pub id: ConcreteTypeId,
@@ -23,7 +23,7 @@ pub struct TypeDeclaration {
 }
 
 /// Declaration of a callable extension.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct ExtensionDeclaration {
     /// The id of the declared concrete extension.
     pub id: ConcreteExtensionId,
@@ -88,7 +88,7 @@ define_identity!(
 
 define_identity!(
     "The identity of a concrete extension.",
-    (Clone, Debug, PartialEq),
+    (Clone, Debug, Eq, Hash, PartialEq),
     ConcreteExtensionId
 );
 
@@ -96,9 +96,17 @@ define_identity!("The identity of a user function.", (Clone, Debug, PartialEq), 
 
 define_identity!("The identity of a variable.", (Clone, Debug, Eq, Hash, PartialEq), VarId);
 
-define_identity!("The identity of a generic type.", (Clone, Debug, PartialEq), GenericTypeId);
+define_identity!(
+    "The identity of a generic type.",
+    (Clone, Debug, Eq, Hash, PartialEq),
+    GenericTypeId
+);
 
-define_identity!("The identity of a concrete type.", (Clone, Debug, PartialEq), ConcreteTypeId);
+define_identity!(
+    "The identity of a concrete type.",
+    (Clone, Debug, Eq, Hash, PartialEq),
+    ConcreteTypeId
+);
 
 /// Represents the index of a statement in the Program::statements vector.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]

@@ -1,17 +1,18 @@
 use indoc::indoc;
+use sierra::extensions::Extensions;
 
 fn fib_program() -> sierra::program::Program {
     sierra::ProgramParser::new()
         .parse(indoc! {"
         type int = int;
         type GasBuiltin = GasBuiltin;
-        type NonZero_int = NonZero<int>;
+        type int_non_zero = int_non_zero;
 
         ext move_int = move<int>;
-        ext move_nz_int = move<NonZero_int>;
+        ext move_nz_int = move<int_non_zero>;
         ext move_gb = move<GasBuiltin>;
         ext store_temp_int = store_temp<int>;
-        ext store_temp_nz_int = store_temp<NonZero_int>;
+        ext store_temp_nz_int = store_temp<int_non_zero>;
         ext store_temp_gb = store_temp<GasBuiltin>;
         ext rename_int = rename<int>;
         ext int_const_1 = int_const<1>;
@@ -96,4 +97,16 @@ fn fib_program() -> sierra::program::Program {
 #[test]
 fn parse_test() {
     fib_program();
+}
+
+#[test]
+fn perform_declarations_test() {
+    let program = fib_program();
+    let mut extensions = Extensions::default();
+    for declaration in &program.type_declarations {
+        extensions.specialize_type(declaration).unwrap();
+    }
+    for declaration in &program.extension_declarations {
+        extensions.specialize_extension(declaration).unwrap();
+    }
 }

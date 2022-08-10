@@ -1,11 +1,12 @@
 use indoc::indoc;
+use sierra::extensions::Extensions;
 
 fn collatz_program() -> sierra::program::Program {
     sierra::ProgramParser::new()
         .parse(indoc! {"
         type int = int;
         type GasBuiltin = GasBuiltin;
-        type NonZero_int = NonZero<int>;
+        type int_non_zero = int_non_zero;
 
         ext move_int = move<int>;
         ext move_gb = move<GasBuiltin>;
@@ -25,7 +26,7 @@ fn collatz_program() -> sierra::program::Program {
         ext get_gas_11 = get_gas<11>;
         ext refund_gas_1 = refund_gas<1>;
         ext jump = jump;
-        ext align_temps = align_temps<1>;
+        ext align_temps = align_temps<int>;
 
         // Statement #  0 - Setting up memory the form [n, gb, counter=0].
         move_int(n) -> (n);
@@ -94,4 +95,16 @@ fn collatz_program() -> sierra::program::Program {
 #[test]
 fn parse_test() {
     collatz_program();
+}
+
+#[test]
+fn perform_declarations_test() {
+    let program = collatz_program();
+    let mut extensions = Extensions::default();
+    for declaration in &program.type_declarations {
+        extensions.specialize_type(declaration).unwrap();
+    }
+    for declaration in &program.extension_declarations {
+        extensions.specialize_extension(declaration).unwrap();
+    }
 }
