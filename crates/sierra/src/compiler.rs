@@ -1,12 +1,12 @@
-use std::collections::HashMap;
 use std::fmt::Display;
 
 use casm::instructions::{Instruction, InstructionBody, RetInstruction};
 use thiserror::Error;
 
-use crate::extensions::{ConcreteExtensionBox, ExtensionError, Extensions};
-use crate::ids::{ConcreteExtensionId, VarId};
-use crate::program::{ExtensionDeclaration, Program, Statement};
+use crate::extensions::ExtensionError;
+use crate::ids::VarId;
+use crate::program::{Program, Statement};
+use crate::program_registry::{ProgramRegistry, ProgramRegistryError};
 
 #[cfg(test)]
 #[path = "compiler_test.rs"]
@@ -16,8 +16,8 @@ mod compiler_test;
 pub enum CompilationError {
     #[error("Missing reference")]
     MissingReference(VarId),
-    #[error("ConcreateExtensionAlreadyDecleared")]
-    ConcreateExtensionAlreadyDecleared(ConcreteExtensionId),
+    #[error("Error from program registry")]
+    ProgramRegistryError(ProgramRegistryError),
     #[error(transparent)]
     ExtensionError(#[from] ExtensionError),
 }
@@ -35,27 +35,10 @@ impl Display for CairoProgram {
     }
 }
 
-pub fn collect_extensions(
-    extension_declarations: &Vec<ExtensionDeclaration>,
-) -> Result<HashMap<ConcreteExtensionId, ConcreteExtensionBox>, CompilationError> {
-    let mut extensions: HashMap<ConcreteExtensionId, ConcreteExtensionBox> = HashMap::new();
-
-    for extentsion in extension_declarations {
-        let concreate_ext =
-            Extensions::default().specialize(&extentsion.generic_id, &extentsion.args)?;
-        if extensions.insert(extentsion.id.clone(), concreate_ext).is_some() {
-            return Err(CompilationError::ConcreateExtensionAlreadyDecleared(
-                extentsion.id.clone(),
-            ));
-        };
-    }
-    Ok(extensions)
-}
-
 pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
     let mut instructions = Vec::new();
 
-    let extensions = collect_extensions(&program.extension_declarations)?;
+    let registry = ProgramRegistry::new(program).map_err(CompilationError::ProgramRegistryError)?;
 
     for statement in program.statements.iter() {
         match statement {
@@ -70,12 +53,10 @@ pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
                 });
             }
             Statement::Invocation(invocation) => {
-                let ext = extensions.get(&invocation.extension_id).ok_or_else(|| {
-                    ExtensionError::UndeclaredExtension {
-                        extension_id: invocation.extension_id.clone(),
-                    }
-                })?;
-                ext.gen_code()?;
+                let extension = registry
+                    .get_extension(&invocation.extension_id)
+                    .map_err(CompilationError::ProgramRegistryError)?;
+                extension.gen_code()?;
             }
         }
     }
