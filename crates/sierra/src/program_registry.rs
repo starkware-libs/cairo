@@ -3,7 +3,10 @@ use std::collections::HashMap;
 
 use thiserror::Error;
 
-use crate::extensions::{ConcreteExtensionBox, ConcreteTypeInfo, ExtensionError, Extensions};
+use crate::extensions::{
+    ConcreteExtensionBox, ConcreteTypeInfo, ConcreteTypeRegistry, ExtensionError, Extensions,
+    FunctionRegistry,
+};
 use crate::ids::{ConcreteExtensionId, ConcreteTypeId, FunctionId};
 use crate::program::{Function, Program};
 
@@ -30,8 +33,8 @@ pub enum ProgramRegistryError {
 
 /// Registry for the data of the compiler, for all program specific data.
 pub struct ProgramRegistry {
-    pub functions: HashMap<FunctionId, Function>,
-    pub concrete_type_info: HashMap<ConcreteTypeId, ConcreteTypeInfo>,
+    pub functions: FunctionRegistry,
+    pub concrete_type_info: ConcreteTypeRegistry,
     pub concrete_extensions: HashMap<ConcreteExtensionId, ConcreteExtensionBox>,
 }
 impl ProgramRegistry {
@@ -65,7 +68,12 @@ impl ProgramRegistry {
         let mut concrete_extensions = HashMap::<ConcreteExtensionId, ConcreteExtensionBox>::new();
         for declaration in &program.extension_declarations {
             let concrete_extension = extensions
-                .specialize_extension(&declaration.generic_id, &declaration.args)
+                .specialize_extension(
+                    &functions,
+                    &concrete_type_info,
+                    &declaration.generic_id,
+                    &declaration.args,
+                )
                 .map_err(|error| ProgramRegistryError::ExtensionSpecialization {
                     concrete_id: declaration.id.clone(),
                     error,

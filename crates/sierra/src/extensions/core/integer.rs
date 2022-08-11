@@ -1,8 +1,8 @@
 use super::{single_cell_identity, unpack_inputs};
 use crate::extensions::{
     ConcreteExtension, ConcreteExtensionBox, ConcreteTypeInfo, ConcreteTypeRegistry,
-    GenericExtension, GenericExtensionBox, GenericType, GenericTypeBox, InputError,
-    NoGenericArgsGenericExtension, NoGenericArgsGenericType, NonBranchConcreteExtension,
+    GenericExtensionBox, GenericType, GenericTypeBox, InputError, NoGenericArgsGenericExtension,
+    NoGenericArgsGenericType, NoRegistryRequiredGenericExtension, NonBranchConcreteExtension,
     SpecializationError,
 };
 use crate::ids::{GenericExtensionId, GenericTypeId};
@@ -23,7 +23,7 @@ enum Operator {
 struct OperationGeneric {
     operator: Operator,
 }
-impl GenericExtension for OperationGeneric {
+impl NoRegistryRequiredGenericExtension for OperationGeneric {
     fn specialize(&self, args: &[GenericArg]) -> Result<ConcreteExtensionBox, SpecializationError> {
         match args {
             [] => Ok(Box::new(BinaryOperationConcrete { operator: self.operator })),
@@ -87,7 +87,7 @@ impl NonBranchConcreteExtension for OperationWithConstConcrete {
 
 /// Extension for creating a constant int.
 struct ConstGeneric {}
-impl GenericExtension for ConstGeneric {
+impl NoRegistryRequiredGenericExtension for ConstGeneric {
     fn specialize(&self, args: &[GenericArg]) -> Result<ConcreteExtensionBox, SpecializationError> {
         match args {
             [GenericArg::Value(c)] => Ok(Box::new(ConstConcrete { c: *c })),

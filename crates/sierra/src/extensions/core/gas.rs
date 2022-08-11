@@ -1,8 +1,9 @@
 // Module providing the gas related extensions.
 use super::unpack_inputs;
 use crate::extensions::{
-    ConcreteExtension, ConcreteExtensionBox, GenericExtension, GenericExtensionBox, GenericTypeBox,
-    InputError, NoGenericArgsGenericType, NonBranchConcreteExtension, SpecializationError,
+    ConcreteExtension, ConcreteExtensionBox, GenericExtensionBox, GenericTypeBox, InputError,
+    NoGenericArgsGenericType, NoRegistryRequiredGenericExtension, NonBranchConcreteExtension,
+    SpecializationError,
 };
 use crate::ids::{GenericExtensionId, GenericTypeId};
 use crate::mem_cell::MemCell;
@@ -18,7 +19,7 @@ fn as_single_positive_value(args: &[GenericArg]) -> Result<i64, SpecializationEr
 
 /// Extension for getting gas branch.
 struct GetGasGeneric {}
-impl GenericExtension for GetGasGeneric {
+impl NoRegistryRequiredGenericExtension for GetGasGeneric {
     fn specialize(&self, args: &[GenericArg]) -> Result<ConcreteExtensionBox, SpecializationError> {
         Ok(Box::new(GetGasConcrete { count: as_single_positive_value(args)? }))
     }
@@ -45,7 +46,7 @@ impl ConcreteExtension for GetGasConcrete {
 
 /// Extension for returning unused gas.
 struct RefundGasGeneric {}
-impl GenericExtension for RefundGasGeneric {
+impl NoRegistryRequiredGenericExtension for RefundGasGeneric {
     fn specialize(&self, args: &[GenericArg]) -> Result<ConcreteExtensionBox, SpecializationError> {
         Ok(Box::new(RefundGasConcrete { count: as_single_positive_value(args)? }))
     }

@@ -3,9 +3,11 @@ use std::collections::HashMap;
 use casm::instructions::Instruction;
 use thiserror::Error;
 
-use crate::ids::{ConcreteExtensionId, ConcreteTypeId, GenericExtensionId, GenericTypeId};
+use crate::ids::{
+    ConcreteExtensionId, ConcreteTypeId, FunctionId, GenericExtensionId, GenericTypeId,
+};
 use crate::mem_cell::MemCell;
-use crate::program::GenericArg;
+use crate::program::{Function, GenericArg};
 
 mod core;
 
@@ -20,6 +22,8 @@ pub enum SpecializationError {
     UnsupportedGenericArg,
     #[error("The missing required type")]
     UsedUnregisteredType(ConcreteTypeId),
+    #[error("A required function id is missing")]
+    UsedUnregisteredFunction(FunctionId),
 }
 
 /// Error occurring while testing extension inputs.
@@ -46,6 +50,7 @@ pub enum ExtensionError {
     NotImplemented,
 }
 
+pub type FunctionRegistry = HashMap<FunctionId, Function>;
 pub type ConcreteTypeRegistry = HashMap<ConcreteTypeId, ConcreteTypeInfo>;
 
 /// Handles extensions usages.
@@ -84,6 +89,8 @@ impl Extensions {
     /// Adds a specialization of an extension to the set of concrete extensions.
     pub fn specialize_extension(
         &self,
+        function_registry: &FunctionRegistry,
+        concrete_type_registry: &ConcreteTypeRegistry,
         extension_id: &GenericExtensionId,
         args: &[GenericArg],
     ) -> Result<ConcreteExtensionBox, ExtensionError> {
@@ -93,7 +100,7 @@ impl Extensions {
                 extension_id: extension_id.clone(),
                 error: SpecializationError::UnsupportedId,
             })?
-            .specialize(args)
+            .specialize(function_registry, concrete_type_registry, args)
             .map_err(move |error| ExtensionError::ExtensionSpecialization {
                 extension_id: extension_id.clone(),
                 error,
@@ -104,14 +111,34 @@ impl Extensions {
 /// Trait for implementing a specialization generator.
 trait GenericExtension {
     /// Creates the specialization with the template arguments.
+    fn specialize(
+        &self,
+        function_registry: &FunctionRegistry,
+        type_registry: &ConcreteTypeRegistry,
+        args: &[GenericArg],
+    ) -> Result<ConcreteExtensionBox, SpecializationError>;
+}
+
+/// Trait for implementing a specialization generator with no need for registries.
+trait NoRegistryRequiredGenericExtension {
     fn specialize(&self, args: &[GenericArg]) -> Result<ConcreteExtensionBox, SpecializationError>;
+}
+impl<T: NoRegistryRequiredGenericExtension> GenericExtension for T {
+    fn specialize(
+        &self,
+        _function_registry: &FunctionRegistry,
+        _type_registry: &ConcreteTypeRegistry,
+        args: &[GenericArg],
+    ) -> Result<ConcreteExtensionBox, SpecializationError> {
+        self.specialize(args)
+    }
 }
 
 /// Trait for implementing a specialization generator with no generic arguments.
 trait NoGenericArgsGenericExtension {
     fn specialize(&self) -> ConcreteExtensionBox;
 }
-impl<T: NoGenericArgsGenericExtension> GenericExtension for T {
+impl<T: NoGenericArgsGenericExtension> NoRegistryRequiredGenericExtension for T {
     fn specialize(&self, args: &[GenericArg]) -> Result<ConcreteExtensionBox, SpecializationError> {
         if args.is_empty() {
             Ok(self.specialize())

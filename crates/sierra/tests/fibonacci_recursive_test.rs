@@ -92,7 +92,6 @@ fn parse_test() {
 }
 
 #[test]
-#[ignore] // TODO(oziv) - enable again when function call extension is added.
 fn create_registry_test() {
     ProgramRegistry::new(&fib_program()).unwrap();
 }

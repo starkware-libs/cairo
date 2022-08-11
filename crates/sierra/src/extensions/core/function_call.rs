@@ -1,22 +1,58 @@
 use crate::extensions::{
-    ConcreteExtension, ConcreteExtensionBox, GenericExtension, GenericExtensionBox,
-    SpecializationError,
+    ConcreteExtension, ConcreteExtensionBox, ConcreteTypeRegistry, FunctionRegistry,
+    GenericExtension, GenericExtensionBox, SpecializationError,
 };
 use crate::ids::GenericExtensionId;
 use crate::mem_cell::MemCell;
-use crate::program::GenericArg;
+use crate::program::{Function, GenericArg};
 
 struct FunctionCallGeneric {}
 impl GenericExtension for FunctionCallGeneric {
-    fn specialize(&self, args: &[GenericArg]) -> Result<ConcreteExtensionBox, SpecializationError> {
+    fn specialize(
+        &self,
+        function_registry: &FunctionRegistry,
+        type_registry: &ConcreteTypeRegistry,
+        args: &[GenericArg],
+    ) -> Result<ConcreteExtensionBox, SpecializationError> {
         match args {
-            [GenericArg::Func(_)] => Ok(Box::new(FunctionCallConcrete {})),
+            [GenericArg::Func(id)] => {
+                let function = function_registry
+                    .get(id)
+                    .cloned()
+                    .ok_or_else(|| SpecializationError::UsedUnregisteredFunction(id.clone()))?;
+                let mut input_type_sizes = vec![];
+                for param in &function.params {
+                    input_type_sizes.push(
+                        type_registry.get(&param.ty).map(|info| info.size).ok_or_else(|| {
+                            SpecializationError::UsedUnregisteredType(param.ty.clone())
+                        })?,
+                    )
+                }
+                let mut output_type_sizes = vec![];
+                for ty in &function.ret_types {
+                    output_type_sizes.push(
+                        type_registry
+                            .get(ty)
+                            .map(|info| info.size)
+                            .ok_or_else(|| SpecializationError::UsedUnregisteredType(ty.clone()))?,
+                    )
+                }
+                Ok(Box::new(FunctionCallConcrete {
+                    _function: function,
+                    _input_type_sizes: input_type_sizes,
+                    _output_type_sizes: output_type_sizes,
+                }))
+            }
             _ => Err(SpecializationError::UnsupportedGenericArg),
         }
     }
 }
 
-struct FunctionCallConcrete {}
+struct FunctionCallConcrete {
+    _function: Function,
+    _input_type_sizes: Vec<usize>,
+    _output_type_sizes: Vec<usize>,
+}
 impl ConcreteExtension for FunctionCallConcrete {
     fn simulate(
         &self,

@@ -1,11 +1,11 @@
 use test_case::test_case;
 
 use super::{
-    ConcreteTypeInfo, ConcreteTypeRegistry, ExtensionError, Extensions, InputError,
-    SpecializationError,
+    ConcreteTypeInfo, ConcreteTypeRegistry, ExtensionError, Extensions, FunctionRegistry,
+    InputError, SpecializationError,
 };
 use crate::mem_cell::MemCell;
-use crate::program::GenericArg;
+use crate::program::{Function, GenericArg, StatementId};
 
 fn type_arg(name: &str) -> GenericArg {
     GenericArg::Type(name.into())
@@ -52,8 +52,6 @@ fn specialize_type_recursive() {
 
 #[test_case("NoneExistent", vec![] => Err(SpecializationError::UnsupportedId);
             "NoneExistent")]
-#[test_case("call_function", vec![GenericArg::Func("Function".into())] => Ok(());
-            "call_function<&Function>")]
 #[test_case("call_function", vec![value_arg(2)] => Err(SpecializationError::UnsupportedGenericArg);
             "call_function<2>")]
 #[test_case("get_gas", vec![value_arg(2)] => Ok(()); "get_gas<2>")]
@@ -117,12 +115,18 @@ fn specialize_type_recursive() {
 #[test_case("jump", vec![type_arg("T")] => Err(SpecializationError::WrongNumberOfGenericArgs);
             "jump<T>")]
 fn find_specialization(id: &str, generic_args: Vec<GenericArg>) -> Result<(), SpecializationError> {
-    Extensions::default().specialize_extension(&id.into(), &generic_args).map(|_| ()).map_err(
-        |error| match error {
+    Extensions::default()
+        .specialize_extension(
+            &FunctionRegistry::new(),
+            &ConcreteTypeRegistry::new(),
+            &id.into(),
+            &generic_args,
+        )
+        .map(|_| ())
+        .map_err(|error| match error {
             ExtensionError::ExtensionSpecialization { extension_id: _, error } => error,
             other => panic!("unexpected extension error: {:?}", other),
-        },
-    )
+        })
 }
 
 /// Expects to find an extension and simulate it.
@@ -131,7 +135,15 @@ fn simulate(
     generic_args: Vec<GenericArg>,
     inputs: Vec<Vec<MemCell>>,
 ) -> Result<(Vec<Vec<MemCell>>, usize), InputError> {
-    Extensions::default().specialize_extension(&id.into(), &generic_args).unwrap().simulate(inputs)
+    Extensions::default()
+        .specialize_extension(
+            &FunctionRegistry::new(),
+            &ConcreteTypeRegistry::new(),
+            &id.into(),
+            &generic_args,
+        )
+        .unwrap()
+        .simulate(inputs)
 }
 
 /// Expects to find an extension, wrapping and unwrapping the MemCell types and vectors of the
@@ -193,6 +205,29 @@ fn simulate_none_branch(
         assert_eq!(chosen_branch, 0);
         outputs
     })
+}
+
+#[test]
+fn specialize_extension_recursive() {
+    assert_eq!(
+        Extensions::default()
+            .specialize_extension(
+                &FunctionRegistry::from([(
+                    "Function".into(),
+                    Function {
+                        id: "Function".into(),
+                        params: vec![],
+                        ret_types: vec!["int".into()],
+                        entry: StatementId(3)
+                    }
+                )]),
+                &ConcreteTypeRegistry::from([("int".into(), ConcreteTypeInfo { size: 2 })]),
+                &"call_function".into(),
+                &[GenericArg::Func("Function".into())]
+            )
+            .map(|_| ()),
+        Ok(())
+    );
 }
 
 #[test_case("get_gas", vec![value_arg(4)], vec![vec![]] => InputError::MemoryLayoutMismatch;
