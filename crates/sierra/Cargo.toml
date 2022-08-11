@@ -9,9 +9,11 @@ lalrpop = "*"
 regex = "1"
 
 [dev-dependencies]
+assert_matches = "1.5"
 test-case = "*"
 
 [dependencies]
+casm = { path = "../casm" }
 indoc = "*"
 itertools = "*"
 lalrpop-util = { version = "*", features = ["lexer"] }
