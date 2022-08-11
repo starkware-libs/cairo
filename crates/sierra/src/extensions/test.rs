@@ -78,8 +78,6 @@ fn type_recursive_register() {
 
 #[test_case("NoneExistent", vec![] => Err(SpecializationError::UnsupportedId);
             "NoneExistent")]
-#[test_case("call_function", vec![GenericArg::Func("Function".into())] => Ok(());
-            "call_function<&Function>")]
 #[test_case("call_function", vec![value_arg(2)] => Err(SpecializationError::UnsupportedGenericArg);
             "call_function<2>")]
 #[test_case("get_gas", vec![value_arg(2)] => Ok(()); "get_gas<2>")]
@@ -178,5 +176,35 @@ fn extension_double_specialization() {
             declaration: repeated_declaration,
             error: SpecializationError::ConcreteIdUsedMoreThanOnce
         })
+    );
+}
+
+#[test]
+fn extension_recursive_register() {
+    let mut extensions = Extensions::default();
+    assert_eq!(
+        extensions.register_function(&Function {
+            id: "Function".into(),
+            params: vec![],
+            ret_types: vec!["int".into()],
+            entry: StatementId(3)
+        }),
+        Ok(())
+    );
+    assert_eq!(
+        extensions.specialize_type(&TypeDeclaration {
+            id: "int".into(),
+            generic_id: "int".into(),
+            args: vec![]
+        }),
+        Ok(())
+    );
+    assert_eq!(
+        extensions.specialize_extension(&ExtensionDeclaration {
+            id: "call_function_Function".into(),
+            generic_id: "call_function".into(),
+            args: vec![GenericArg::Func("Function".into())]
+        }),
+        Ok(())
     );
 }

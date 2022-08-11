@@ -1,6 +1,6 @@
 use crate::extensions::{
-    ConcreteExtension, ConcreteExtensionBox, GenericExtension, GenericExtensionBox,
-    NoGenericArgsGenericExtension, SpecializationError,
+    ConcreteExtension, ConcreteExtensionBox, GenericExtensionBox, NoGenericArgsGenericExtension,
+    NoRegistryRequiredGenericExtension, SpecializationError,
 };
 use crate::program::{ConcreteTypeId, GenericArg, GenericExtensionId};
 
@@ -14,7 +14,7 @@ fn as_single_type(args: &[GenericArg]) -> Result<ConcreteTypeId, SpecializationE
 
 /// Extension for storing a deferred value into temporary memory.
 struct StoreTempGeneric {}
-impl GenericExtension for StoreTempGeneric {
+impl NoRegistryRequiredGenericExtension for StoreTempGeneric {
     fn specialize(&self, args: &[GenericArg]) -> Result<ConcreteExtensionBox, SpecializationError> {
         Ok(Box::new(StoreTempConcrete { _ty: as_single_type(args)? }))
     }
@@ -27,7 +27,7 @@ impl ConcreteExtension for StoreTempConcrete {}
 
 /// Extension for aligning the temporary buffer for flow control merge.
 struct AlignTempsGeneric {}
-impl GenericExtension for AlignTempsGeneric {
+impl NoRegistryRequiredGenericExtension for AlignTempsGeneric {
     fn specialize(&self, args: &[GenericArg]) -> Result<ConcreteExtensionBox, SpecializationError> {
         Ok(Box::new(AlignTempsConcrete { _ty: as_single_type(args)? }))
     }
@@ -40,7 +40,7 @@ impl ConcreteExtension for AlignTempsConcrete {}
 
 /// Extension for storing a deferred value into local memory.
 struct StoreLocalGeneric {}
-impl GenericExtension for StoreLocalGeneric {
+impl NoRegistryRequiredGenericExtension for StoreLocalGeneric {
     fn specialize(&self, args: &[GenericArg]) -> Result<ConcreteExtensionBox, SpecializationError> {
         Ok(Box::new(StoreLocalConcrete { _ty: as_single_type(args)? }))
     }
@@ -64,7 +64,7 @@ impl ConcreteExtension for AllocLocalsConcrete {}
 
 /// Extension for renaming an identifier - used to align identities for flow control merge.
 struct RenameGeneric {}
-impl GenericExtension for RenameGeneric {
+impl NoRegistryRequiredGenericExtension for RenameGeneric {
     fn specialize(&self, args: &[GenericArg]) -> Result<ConcreteExtensionBox, SpecializationError> {
         Ok(Box::new(RenameConcrete { _ty: as_single_type(args)? }))
     }
@@ -77,7 +77,7 @@ impl ConcreteExtension for RenameConcrete {}
 
 /// Extension for making a type deferred for later store.
 struct MoveGeneric {}
-impl GenericExtension for MoveGeneric {
+impl NoRegistryRequiredGenericExtension for MoveGeneric {
     fn specialize(&self, args: &[GenericArg]) -> Result<ConcreteExtensionBox, SpecializationError> {
         Ok(Box::new(MoveConcrete { _ty: as_single_type(args)? }))
     }

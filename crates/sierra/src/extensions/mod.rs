@@ -22,6 +22,8 @@ pub enum SpecializationError {
     ConcreteIdUsedMoreThanOnce,
     #[error("The missing required type")]
     UsedUnregisteredType(ConcreteTypeId),
+    #[error("A required function id is missing")]
+    UsedUnregisteredFunction(FunctionId),
 }
 
 /// Error option while using extensions.
@@ -102,7 +104,7 @@ impl Extensions {
                 declaration: declaration.clone(),
                 error: SpecializationError::UnsupportedId,
             })?
-            .specialize(&declaration.args)
+            .specialize(&self.functions, &self.concrete_type_info, &declaration.args)
             .map_err(move |error| ExtensionError::ExtensionSpecialization {
                 declaration: declaration.clone(),
                 error,
@@ -120,14 +122,34 @@ impl Extensions {
 /// Trait for implementing a specialization generator.
 trait GenericExtension {
     /// Creates the specialization with the template arguments.
+    fn specialize(
+        &self,
+        function_registry: &FunctionRegistry,
+        type_registry: &ConcreteTypeRegistry,
+        args: &[GenericArg],
+    ) -> Result<ConcreteExtensionBox, SpecializationError>;
+}
+
+/// Trait for implementing a specialization generator with no need for registries.
+trait NoRegistryRequiredGenericExtension {
     fn specialize(&self, args: &[GenericArg]) -> Result<ConcreteExtensionBox, SpecializationError>;
+}
+impl<T: NoRegistryRequiredGenericExtension> GenericExtension for T {
+    fn specialize(
+        &self,
+        _function_registry: &FunctionRegistry,
+        _type_registry: &ConcreteTypeRegistry,
+        args: &[GenericArg],
+    ) -> Result<ConcreteExtensionBox, SpecializationError> {
+        self.specialize(args)
+    }
 }
 
 /// Trait for implementing a specialization generator with no generic arguments.
 trait NoGenericArgsGenericExtension {
     fn specialize(&self) -> ConcreteExtensionBox;
 }
-impl<T: NoGenericArgsGenericExtension> GenericExtension for T {
+impl<T: NoGenericArgsGenericExtension> NoRegistryRequiredGenericExtension for T {
     fn specialize(&self, args: &[GenericArg]) -> Result<ConcreteExtensionBox, SpecializationError> {
         if args.is_empty() {
             Ok(self.specialize())

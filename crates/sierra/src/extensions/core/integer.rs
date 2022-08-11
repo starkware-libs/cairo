@@ -1,7 +1,7 @@
 use crate::extensions::{
     ConcreteExtension, ConcreteExtensionBox, ConcreteTypeInfo, ConcreteTypeRegistry,
-    GenericExtension, GenericExtensionBox, GenericType, GenericTypeBox,
-    NoGenericArgsGenericExtension, NoGenericArgsGenericType, SpecializationError,
+    GenericExtensionBox, GenericType, GenericTypeBox, NoGenericArgsGenericExtension,
+    NoGenericArgsGenericType, NoRegistryRequiredGenericExtension, SpecializationError,
 };
 use crate::program::{GenericArg, GenericExtensionId, GenericTypeId};
 
@@ -19,7 +19,7 @@ enum Operator {
 struct OperationGeneric {
     operator: Operator,
 }
-impl GenericExtension for OperationGeneric {
+impl NoRegistryRequiredGenericExtension for OperationGeneric {
     fn specialize(&self, args: &[GenericArg]) -> Result<ConcreteExtensionBox, SpecializationError> {
         match args {
             [] => Ok(Box::new(BinaryOperationConcrete { _operator: self.operator })),
@@ -50,7 +50,7 @@ impl ConcreteExtension for OperationWithConstConcrete {}
 
 /// Extension for creating a constant int.
 struct ConstGeneric {}
-impl GenericExtension for ConstGeneric {
+impl NoRegistryRequiredGenericExtension for ConstGeneric {
     fn specialize(&self, args: &[GenericArg]) -> Result<ConcreteExtensionBox, SpecializationError> {
         match args {
             [GenericArg::Value(c)] => Ok(Box::new(ConstConcrete { _c: *c })),
