@@ -1,11 +1,15 @@
 use crate::spec::{list_node, separated_list_node, EnumBuilder, Node, StructBuilder};
 
-// TODO(spapini): Separate this to another file.
 // The specific syntax specification of Cairo.
 pub fn get_spec() -> Vec<Node> {
     let nodes = vec![
         // Terminal.
         StructBuilder::new("Terminal")
+            .node("leading_trivia", "Trivia")
+            .token("token")
+            .node("trailing_trivia", "Trivia")
+            .build(),
+        StructBuilder::new("SkippedTerminal")
             .node("leading_trivia", "Trivia")
             .token("token")
             .node("trailing_trivia", "Trivia")
@@ -25,7 +29,12 @@ pub fn get_spec() -> Vec<Node> {
             .node("Parenthesized")
             .node("Unary")
             .node("Binary")
+            .node("FunctionCall")
+            .node("ConstructorCall")
+            .node("Tuple")
+            .node("Block")
             .build(),
+        separated_list_node("ExprList", "Expr"),
         StructBuilder::new("ExprMissing").build(),
         separated_list_node("ExprPath", "PathSegment"),
         StructBuilder::new("PathSegment")
@@ -54,7 +63,7 @@ pub fn get_spec() -> Vec<Node> {
             .node("rbrace", "Terminal")
             .build(),
         // Statements.
-        separated_list_node("StatementList", "Statement"),
+        list_node("StatementList", "Statement"),
         EnumBuilder::new("Statement")
             .missing("Missing")
             .node("Let")
@@ -62,20 +71,30 @@ pub fn get_spec() -> Vec<Node> {
             .node("Return")
             .build(),
         StructBuilder::new("StatementMissing").build(),
-        // TODO(spapini): Optional type clause.
         StructBuilder::new("StatementLet")
             .node("letkw", "Terminal")
             .node("lhs", "Identifier")
+            .node("typeclause", "OptionTypeClause")
             .node("eq", "Terminal")
             .node("rhs", "Expr")
+            .node("semi", "Terminal")
             .build(),
-        StructBuilder::new("StatementExpr").node("expr", "Expr").build(),
+        StructBuilder::new("StatementExpr")
+            .node("expr", "Expr")
+            .node("semi", "OptionSemicolon")
+            .build(),
+        EnumBuilder::new("OptionSemicolon")
+            .node("Empty")
+            .node_with_existing_kind("Some", "Terminal")
+            .build(),
+        StructBuilder::new("OptionSemicolonEmpty").build(),
         StructBuilder::new("StatementReturn")
             .node("returnkw", "Terminal")
             .node("expr", "Expr")
+            .node("semi", "Terminal")
             .build(),
         // Items.
-        separated_list_node("ItemList", "Item"),
+        list_node("ItemList", "Item"),
         EnumBuilder::new("Item")
             .node("Module")
             .node("Function")
@@ -102,11 +121,8 @@ pub fn get_spec() -> Vec<Node> {
         StructBuilder::new("FunctionSignature")
             .node("funckw", "Terminal")
             .node("name", "Identifier")
-            .node("lparen", "Terminal")
-            .node("parameters", "ParameterList")
-            .node("rparen", "Terminal")
-            .node("arrow", "Terminal")
-            .node("ret_ty", "Expr")
+            .node("parameters", "ParamListParenthesized")
+            .node("ret_ty", "ReturnTypeClause")
             .build(),
         separated_list_node("ParameterList", "Parameter"),
         StructBuilder::new("Parameter")
@@ -156,9 +172,82 @@ pub fn get_spec() -> Vec<Node> {
             .node("path", "ExprPath")
             .node("semi", "Terminal")
             .build(),
+        StructBuilder::new("ExprTuple")
+            .node("lparen", "Terminal")
+            .node("expressions", "ExprList")
+            .node("rparen", "Terminal")
+            .build(),
+        StructBuilder::new("ArgExpr").node("colon", "Terminal").node("expr", "Expr").build(),
+        EnumBuilder::new("OptionArgExpr")
+            .node("Empty")
+            .node_with_existing_kind("Some", "ArgExpr")
+            .build(),
+        StructBuilder::new("OptionArgExprEmpty").build(),
+        StructBuilder::new("Arg")
+            .node("identifier", "Identifier")
+            .node("arg_expr", "OptionArgExpr")
+            .build(),
+        StructBuilder::new("ExprFunctionCall")
+            .node("path", "ExprPath")
+            .node("arguments", "ExprListParenthesized")
+            .build(),
+        StructBuilder::new("StructUpdateTail")
+            .node("dotdot", "Terminal")
+            .node("expression", "Expr")
+            .build(),
+        EnumBuilder::new("CtorArg")
+            .node_with_existing_kind("Arg", "Arg")
+            .node_with_existing_kind("StructUpdateTail", "StructUpdateTail")
+            .build(),
+        separated_list_node("CtorArgList", "CtorArg"),
+        StructBuilder::new("ArgListBraced")
+            .node("lbrace", "Terminal")
+            .node("arguments", "CtorArgList")
+            .node("rbrace", "Terminal")
+            .build(),
+        StructBuilder::new("ExprConstructorCall")
+            .node("path", "ExprPath")
+            .node("arguments", "ArgListBraced")
+            .build(),
+        StructBuilder::new("ExprListParenthesized")
+            .node("lparen", "Terminal")
+            .node("expressions", "ExprList")
+            .node("rparen", "Terminal")
+            .build(),
+        // TODO(yuval): support SimpleExpr instead
+        StructBuilder::new("TypeClause").node("colon", "Terminal").node("ty", "ExprPath").build(),
+        // TODO(yg): Integrate the direct thing into ::new_option
+        EnumBuilder::new("OptionTypeClause")
+            .node("Empty")
+            .node_with_existing_kind("TypeClause", "TypeClause")
+            .build(),
+        StructBuilder::new("OptionTypeClauseEmpty").build(),
+        StructBuilder::new("ReturnTypeClause")
+            .node("arrow", "Terminal")
+            .node("ty", "ExprPath")
+            .build(),
+        EnumBuilder::new("OptionReturnTypeClause")
+            .node("Empty")
+            .node_with_existing_kind("ReturnTypeClause", "ReturnTypeClause")
+            .build(),
+        StructBuilder::new("OptionReturnTypeClauseEmpty").build(),
+        StructBuilder::new("Param")
+            .node("identifier", "Terminal")
+            .node("typeclause", "OptionTypeClause")
+            .build(),
+        separated_list_node("ParamList", "Param"),
+        StructBuilder::new("ParamListParenthesized")
+            .node("lparen", "Terminal")
+            .node("parameters", "ParamList")
+            .node("rparen", "Terminal")
+            .build(),
+        StructBuilder::new("ParamListBraced")
+            .node("lbrace", "Terminal")
+            .node("parameters", "ParamList")
+            .node("rbrace", "Terminal")
+            .build(),
         // Meta.
         StructBuilder::new("SyntaxFile").node("items", "ItemList").node("eof", "Terminal").build(),
     ];
-
     nodes
 }
