@@ -76,5 +76,6 @@ fn value_arg(v: i64) -> GenericArg {
 fn find_specialization(id: &str, args: Vec<GenericArg>) -> Result<(), SpecializationError> {
     Extensions::default().specialize(&id.into(), &args).map(|_| ()).map_err(|error| match error {
         ExtensionError::Specialization { extension_id: _, error } => error,
+        _ => panic!("Unexpected error."),
     })
 }
