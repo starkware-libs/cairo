@@ -26,7 +26,7 @@ fn fib_program() -> sierra::program::Program {
         ext refund_gas_1 = refund_gas<1>;
         ext refund_gas_3 = refund_gas<3>;
         ext alloc_locals = alloc_locals;
-        ext call_fib = call_function<&Fibonacci>;
+        ext call_fib = function_call<&Fibonacci>;
 
         // Statement #  0 - tests if n == 0 and initiates 1 for the early return values.
         alloc_locals() -> ();
@@ -93,7 +93,6 @@ fn parse_test() {
 }
 
 #[test]
-#[ignore] // TODO(orizi) - enable again when function call extension is added.
 fn create_registry_test() {
     ProgramRegistry::new(&fib_program()).unwrap();
 }

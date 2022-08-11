@@ -1,9 +1,11 @@
 use test_case::test_case;
 
 use super::core::{CoreExtension, CoreType};
-use super::{ConcreteTypeInfo, GenericType, SpecializationError};
-use crate::extensions::{ConcreteTypeRegistry, GenericExtension, GenericTypeEx};
-use crate::program::GenericArg;
+use super::{ConcreteTypeInfo, FunctionRegistry, GenericType, SpecializationError};
+use crate::extensions::{
+    ConcreteTypeRegistry, GenericExtension, GenericExtensionEx, GenericTypeEx,
+};
+use crate::program::{Function, GenericArg, StatementId};
 
 fn type_arg(name: &str) -> GenericArg {
     GenericArg::Type(name.into())
@@ -45,8 +47,6 @@ fn specialize_type_dependent_on_another() {
 
 #[test_case("NoneExistent", vec![] => Err(SpecializationError::UnsupportedId);
             "NoneExistent")]
-#[test_case("function_call", vec![GenericArg::Func("Function".into())] => Ok(());
-            "function_call<&Function>")]
 #[test_case("function_call", vec![value_arg(2)] => Err(SpecializationError::UnsupportedGenericArg);
             "function_call<2>")]
 #[test_case("get_gas", vec![value_arg(2)] => Ok(()); "get_gas<2>")]
@@ -112,6 +112,28 @@ fn specialize_type_dependent_on_another() {
 fn find_specialization(id: &str, generic_args: Vec<GenericArg>) -> Result<(), SpecializationError> {
     CoreExtension::by_id(&id.into())
         .ok_or(SpecializationError::UnsupportedId)?
-        .specialize(&generic_args)
+        .specialize(&FunctionRegistry::new(), &ConcreteTypeRegistry::new(), &generic_args)
         .map(|_| ())
+}
+
+#[test]
+fn specialize_function_extension() {
+    assert_eq!(
+        CoreExtension::specialize_by_id(
+            &FunctionRegistry::from([(
+                "Function".into(),
+                Function {
+                    id: "Function".into(),
+                    params: vec![],
+                    ret_types: vec!["int".into()],
+                    entry: StatementId(3)
+                }
+            )]),
+            &ConcreteTypeRegistry::from([("int".into(), ConcreteTypeInfo { size: 2 })]),
+            &"function_call".into(),
+            &[GenericArg::Func("Function".into())]
+        )
+        .map(|_| ()),
+        Ok(())
+    );
 }

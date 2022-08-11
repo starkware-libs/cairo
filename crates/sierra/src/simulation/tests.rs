@@ -3,7 +3,7 @@ use test_case::test_case;
 use super::core;
 use super::mem_cell::MemCell;
 use super::ExtensionSimulationError::{self, MemoryLayoutMismatch, WrongNumberOfArgs};
-use crate::extensions::{CoreExtension, GenericExtension};
+use crate::extensions::{ConcreteTypeRegistry, CoreExtension, FunctionRegistry, GenericExtension};
 use crate::program::GenericArg;
 
 fn type_arg(name: &str) -> GenericArg {
@@ -21,7 +21,10 @@ fn simulate(
     inputs: Vec<Vec<MemCell>>,
 ) -> Result<(Vec<Vec<MemCell>>, usize), ExtensionSimulationError> {
     core::simulate(
-        &CoreExtension::by_id(&id.into()).unwrap().specialize(&generic_args).unwrap(),
+        &CoreExtension::by_id(&id.into())
+            .unwrap()
+            .specialize(&FunctionRegistry::new(), &ConcreteTypeRegistry::new(), &generic_args)
+            .unwrap(),
         inputs,
     )
 }

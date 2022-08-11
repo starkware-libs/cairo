@@ -7,8 +7,10 @@ use std::collections::HashMap;
 use thiserror::Error;
 
 pub use self::core::{CoreConcrete, CoreExtension, CoreType};
-use crate::ids::{ConcreteExtensionId, ConcreteTypeId, GenericExtensionId, GenericTypeId};
-use crate::program::GenericArg;
+use crate::ids::{
+    ConcreteExtensionId, ConcreteTypeId, FunctionId, GenericExtensionId, GenericTypeId,
+};
+use crate::program::{Function, GenericArg};
 
 /// Error occurring while making a type or an extension concrete.
 #[derive(Error, Debug, Eq, PartialEq)]
@@ -21,6 +23,8 @@ pub enum SpecializationError {
     UnsupportedGenericArg,
     #[error("Required type is missing in registry")]
     UsedUnregisteredType(ConcreteTypeId),
+    #[error("A required function id is missing")]
+    UsedUnregisteredFunction(FunctionId),
 }
 
 /// Extension related errors.
@@ -48,6 +52,7 @@ pub trait GenericType: Sized {
     ) -> Result<ConcreteTypeInfo, SpecializationError>;
 }
 
+pub type FunctionRegistry = HashMap<FunctionId, Function>;
 pub type ConcreteTypeRegistry = HashMap<ConcreteTypeId, ConcreteTypeInfo>;
 
 /// Trait for introducing helper methods on GenericType.
@@ -181,18 +186,27 @@ pub trait GenericExtension: Sized {
     /// Instantiates the extension by id.
     fn by_id(id: &GenericExtensionId) -> Option<Self>;
     /// Creates the specialization with the template arguments.
-    fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError>;
+    fn specialize(
+        &self,
+        function_registry: &FunctionRegistry,
+        concrete_type_registry: &ConcreteTypeRegistry,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError>;
 }
 
 /// Trait for introducing helper methods on GenericExtension.
 pub trait GenericExtensionEx: GenericExtension {
     fn specialize_by_id(
+        function_registry: &FunctionRegistry,
+        concrete_type_registry: &ConcreteTypeRegistry,
         extension_id: &GenericExtensionId,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, ExtensionError>;
 }
 impl<TGenericExtension: GenericExtension> GenericExtensionEx for TGenericExtension {
     fn specialize_by_id(
+        function_registry: &FunctionRegistry,
+        concrete_type_registry: &ConcreteTypeRegistry,
         extension_id: &GenericExtensionId,
         args: &[GenericArg],
     ) -> Result<TGenericExtension::Concrete, ExtensionError> {
@@ -201,7 +215,7 @@ impl<TGenericExtension: GenericExtension> GenericExtensionEx for TGenericExtensi
                 extension_id: extension_id.clone(),
                 error: SpecializationError::UnsupportedId,
             })?
-            .specialize(args)
+            .specialize(function_registry, concrete_type_registry, args)
             .map_err(move |error| ExtensionError::ExtensionSpecialization {
                 extension_id: extension_id.clone(),
                 error,
@@ -215,7 +229,12 @@ pub trait NamedExtension: Default {
     type Concrete: ConcreteExtension;
     const NAME: &'static str;
     /// Creates the specialization with the template arguments.
-    fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError>;
+    fn specialize(
+        &self,
+        function_registry: &FunctionRegistry,
+        concrete_type_registry: &ConcreteTypeRegistry,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError>;
 }
 impl<TNamedExtension: NamedExtension> GenericExtension for TNamedExtension {
     type Concrete = <Self as NamedExtension>::Concrete;
@@ -227,9 +246,34 @@ impl<TNamedExtension: NamedExtension> GenericExtension for TNamedExtension {
             None
         }
     }
+    fn specialize(
+        &self,
+        function_registry: &FunctionRegistry,
+        type_registry: &ConcreteTypeRegistry,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
+        <Self as NamedExtension>::specialize(self, function_registry, type_registry, args)
+    }
+}
 
-    fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError> {
-        <Self as NamedExtension>::specialize(self, args)
+/// Trait for implementing a specialization generator with no need for registries.
+pub trait NoRegistryRequiredNamedExtension: Default {
+    type Concrete: ConcreteExtension;
+    const NAME: &'static str;
+    fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError>;
+}
+impl<TNoRegistryRequiredNamedExtension: NoRegistryRequiredNamedExtension> NamedExtension
+    for TNoRegistryRequiredNamedExtension
+{
+    type Concrete = <Self as NoRegistryRequiredNamedExtension>::Concrete;
+    const NAME: &'static str = <Self as NoRegistryRequiredNamedExtension>::NAME;
+    fn specialize(
+        &self,
+        _function_registry: &FunctionRegistry,
+        _type_registry: &ConcreteTypeRegistry,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
+        self.specialize(args)
     }
 }
 
@@ -239,7 +283,7 @@ pub trait NoGenericArgsGenericExtension: Default {
     const NAME: &'static str;
     fn specialize(&self) -> Self::Concrete;
 }
-impl<T: NoGenericArgsGenericExtension> NamedExtension for T {
+impl<T: NoGenericArgsGenericExtension> NoRegistryRequiredNamedExtension for T {
     type Concrete = <Self as NoGenericArgsGenericExtension>::Concrete;
     const NAME: &'static str = <Self as NoGenericArgsGenericExtension>::NAME;
 
@@ -353,12 +397,14 @@ macro_rules! define_extension_hierarchy {
                 None
             }
             fn specialize(
-                    &self, args: &[$crate::extensions::GenericArg]
+                    &self,
+                    function_registry: &$crate::extensions::FunctionRegistry,
+                    concrete_type_registry: &$crate::extensions::ConcreteTypeRegistry, args: &[$crate::extensions::GenericArg]
             ) -> Result<Self::Concrete, $crate::extensions::SpecializationError>{
                 match self {
                     $(
                         Self::$variant_name(value) => {
-                            Ok(Self::Concrete::$variant_name(<$variant as $crate::extensions::GenericExtension>::specialize(value, args)?.into()))
+                            Ok(Self::Concrete::$variant_name(<$variant as $crate::extensions::GenericExtension>::specialize(value, function_registry, concrete_type_registry, args)?.into()))
                         }
                     ),*
                 }

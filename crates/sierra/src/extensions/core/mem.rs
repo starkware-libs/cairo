@@ -1,6 +1,7 @@
 use crate::define_extension_hierarchy;
 use crate::extensions::{
-    NamedExtension, NoGenericArgsGenericExtension, NonBranchConcreteExtension, SpecializationError,
+    NoGenericArgsGenericExtension, NoRegistryRequiredNamedExtension, NonBranchConcreteExtension,
+    SpecializationError,
 };
 use crate::ids::ConcreteTypeId;
 use crate::program::GenericArg;
@@ -27,7 +28,7 @@ fn as_single_type(args: &[GenericArg]) -> Result<ConcreteTypeId, SpecializationE
 /// Extension for storing a deferred value into temporary memory.
 #[derive(Default)]
 pub struct StoreTempGeneric {}
-impl NamedExtension for StoreTempGeneric {
+impl NoRegistryRequiredNamedExtension for StoreTempGeneric {
     type Concrete = StoreTempConcrete;
     const NAME: &'static str = "store_temp";
     fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError> {
@@ -50,7 +51,7 @@ impl NonBranchConcreteExtension for StoreTempConcrete {
 /// Extension for aligning the temporary buffer for flow control merge.
 #[derive(Default)]
 pub struct AlignTempsGeneric {}
-impl NamedExtension for AlignTempsGeneric {
+impl NoRegistryRequiredNamedExtension for AlignTempsGeneric {
     type Concrete = AlignTempsConcrete;
     const NAME: &'static str = "align_temps";
     fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError> {
@@ -73,7 +74,7 @@ impl NonBranchConcreteExtension for AlignTempsConcrete {
 /// Extension for storing a deferred value into local memory.
 #[derive(Default)]
 pub struct StoreLocalGeneric {}
-impl NamedExtension for StoreLocalGeneric {
+impl NoRegistryRequiredNamedExtension for StoreLocalGeneric {
     type Concrete = StoreLocalConcrete;
     const NAME: &'static str = "store_local";
     fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError> {
@@ -117,7 +118,7 @@ impl NonBranchConcreteExtension for AllocLocalsConcrete {
 /// Extension for renaming an identifier - used to align identities for flow control merge.
 #[derive(Default)]
 pub struct RenameGeneric {}
-impl NamedExtension for RenameGeneric {
+impl NoRegistryRequiredNamedExtension for RenameGeneric {
     type Concrete = RenameConcrete;
     const NAME: &'static str = "rename";
     fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError> {
@@ -140,7 +141,7 @@ impl NonBranchConcreteExtension for RenameConcrete {
 /// Extension for making a type deferred for later store.
 #[derive(Default)]
 pub struct MoveGeneric {}
-impl NamedExtension for MoveGeneric {
+impl NoRegistryRequiredNamedExtension for MoveGeneric {
     type Concrete = MoveConcrete;
     const NAME: &'static str = "move";
     fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError> {

@@ -1,8 +1,8 @@
 // Module providing the gas related extensions.
 use crate::define_extension_hierarchy;
 use crate::extensions::{
-    ConcreteExtension, NamedExtension, NoGenericArgsNamedType, NonBranchConcreteExtension,
-    SpecializationError,
+    ConcreteExtension, NoGenericArgsNamedType, NoRegistryRequiredNamedExtension,
+    NonBranchConcreteExtension, SpecializationError,
 };
 use crate::ids::ConcreteTypeId;
 use crate::program::GenericArg;
@@ -32,7 +32,7 @@ fn as_single_positive_value(args: &[GenericArg]) -> Result<i64, SpecializationEr
 /// Extension for getting gas branch.
 #[derive(Default)]
 pub struct GetGasGeneric {}
-impl NamedExtension for GetGasGeneric {
+impl NoRegistryRequiredNamedExtension for GetGasGeneric {
     type Concrete = GetGasConcrete;
     const NAME: &'static str = "get_gas";
     fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError> {
@@ -58,7 +58,7 @@ impl ConcreteExtension for GetGasConcrete {
 /// Extension for returning unused gas.
 #[derive(Default)]
 pub struct RefundGasGeneric {}
-impl NamedExtension for RefundGasGeneric {
+impl NoRegistryRequiredNamedExtension for RefundGasGeneric {
     type Concrete = RefundGasConcrete;
     const NAME: &'static str = "refund_gas";
     fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError> {
