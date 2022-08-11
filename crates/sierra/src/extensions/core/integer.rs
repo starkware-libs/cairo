@@ -1,6 +1,7 @@
 use crate::extensions::{
-    ConcreteExtension, ConcreteTypeInfo, ConcreteTypeRegistry, GenericExtension, NamedExtension,
-    NamedType, NoGenericArgsGenericExtension, NoGenericArgsNamedType, SpecializationError,
+    ConcreteExtension, ConcreteTypeInfo, ConcreteTypeRegistry, FunctionRegistry, GenericExtension,
+    NamedType, NoGenericArgsGenericExtension, NoGenericArgsNamedType,
+    NoRegistryRequiredNamedExtension, SpecializationError,
 };
 use crate::ids::GenericExtensionId;
 use crate::program::GenericArg;
@@ -84,7 +85,12 @@ impl GenericExtension for OperationGeneric {
         }
         None
     }
-    fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError> {
+    fn specialize(
+        &self,
+        _function_registry: &FunctionRegistry,
+        _concrete_type_registry: &ConcreteTypeRegistry,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
         match args {
             [] => {
                 Ok(OperationConcrete::Binary(BinaryOperationConcrete { operator: self.operator }))
@@ -125,7 +131,7 @@ impl ConcreteExtension for OperationConcrete {}
 /// Extension for creating a constant int.
 #[derive(Default)]
 pub struct ConstGeneric {}
-impl NamedExtension for ConstGeneric {
+impl NoRegistryRequiredNamedExtension for ConstGeneric {
     type Concrete = ConstConcrete;
     const NAME: &'static str = "int_const";
     fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError> {

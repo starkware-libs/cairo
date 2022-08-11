@@ -4,8 +4,8 @@ use std::collections::HashMap;
 use thiserror::Error;
 
 use crate::extensions::{
-    ConcreteTypeInfo, CoreConcrete, CoreExtension, CoreType, ExtensionError, GenericExtensionEx,
-    GenericTypeEx,
+    ConcreteTypeInfo, ConcreteTypeRegistry, CoreConcrete, CoreExtension, CoreType, ExtensionError,
+    FunctionRegistry, GenericExtensionEx, GenericTypeEx,
 };
 use crate::ids::{ConcreteExtensionId, ConcreteTypeId, FunctionId};
 use crate::program::{Function, Program};
@@ -37,9 +37,9 @@ pub enum ProgramRegistryError {
 
 /// Registry for the data of the compiler, for all program specific data.
 pub struct ProgramRegistry {
-    functions: HashMap<FunctionId, Function>,
+    functions: FunctionRegistry,
+    concrete_type_infos: ConcreteTypeRegistry,
     concrete_extensions: HashMap<ConcreteExtensionId, CoreConcrete>,
-    concrete_type_infos: HashMap<ConcreteTypeId, ConcreteTypeInfo>,
 }
 impl ProgramRegistry {
     /// Create a registry for the program.
@@ -73,12 +73,16 @@ impl ProgramRegistry {
         }
         let mut concrete_extensions = HashMap::<ConcreteExtensionId, CoreConcrete>::new();
         for declaration in &program.extension_declarations {
-            let concrete_extension =
-                CoreExtension::specialize_by_id(&declaration.generic_id, &declaration.args)
-                    .map_err(|error| ProgramRegistryError::ExtensionSpecialization {
-                        concrete_id: declaration.id.clone(),
-                        error,
-                    })?;
+            let concrete_extension = CoreExtension::specialize_by_id(
+                &functions,
+                &concrete_type_infos,
+                &declaration.generic_id,
+                &declaration.args,
+            )
+            .map_err(|error| ProgramRegistryError::ExtensionSpecialization {
+                concrete_id: declaration.id.clone(),
+                error,
+            })?;
             match concrete_extensions.entry(declaration.id.clone()) {
                 Entry::Occupied(_) => {
                     Err(ProgramRegistryError::ExtensionConcreteIdUsedTwice(declaration.id.clone()))
