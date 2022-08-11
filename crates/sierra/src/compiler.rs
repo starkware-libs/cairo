@@ -30,22 +30,33 @@ impl Display for CairoProgram {
     }
 }
 
-pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
-    let mut instructions = Vec::new();
+struct Compiler<'a> {
+    // The Program to compile
+    program: &'a Program,
 
-    for statement in program.statements.iter() {
-        match statement {
-            Statement::Return(ref_ids) => {
-                if let Some(ref_id) = ref_ids.iter().next() {
-                    return Err(CompilationError::MissingReference(ref_id.clone()));
+    // Resulting Instruction list.
+    instructions: Vec<Instruction>,
+}
+impl Compiler<'_> {
+    pub fn compile(mut self) -> Result<CairoProgram, CompilationError> {
+        for statement in self.program.statements.iter() {
+            match statement {
+                Statement::Return(ref_ids) => {
+                    if let Some(ref_id) = ref_ids.iter().next() {
+                        return Err(CompilationError::MissingReference(ref_id.clone()));
+                    }
+
+                    self.instructions.push(Instruction::Ret(RetInstruction {}));
                 }
-
-                instructions.push(Instruction::Ret(RetInstruction {}));
-            }
-            Statement::Invocation(_invocation) => {
-                return Err(CompilationError::UnsupportedStatement(statement.clone()));
+                Statement::Invocation(_invocation) => {
+                    return Err(CompilationError::UnsupportedStatement(statement.clone()));
+                }
             }
         }
+        Ok(CairoProgram { instructions: self.instructions })
     }
-    Ok(CairoProgram { instructions })
+}
+
+pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
+    (Compiler { program, instructions: Vec::new() }).compile()
 }
