@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use casm::instructions::Instruction;
 use thiserror::Error;
 
 use crate::ids::GenericExtensionId;
@@ -75,10 +76,14 @@ impl<T: NoGenericArgsGenericExtension> GenericExtension for T {
 }
 
 /// Trait for a specialized extension.
-pub trait ConcreteExtension {}
+pub trait ConcreteExtension {
+    fn gen_code(&self) -> Vec<Instruction> {
+        todo!()
+    }
+}
 
 type GenericExtensionBox = Box<dyn GenericExtension>;
-type ConcreteExtensionBox = Box<dyn ConcreteExtension>;
+pub(crate) type ConcreteExtensionBox = Box<dyn ConcreteExtension>;
 
 #[cfg(test)]
 mod test;

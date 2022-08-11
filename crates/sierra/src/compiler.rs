@@ -1,10 +1,12 @@
+use std::collections::HashMap;
 use std::fmt::Display;
 
 use casm::instructions::{Instruction, RetInstruction};
 use thiserror::Error;
 
-use crate::ids::VarId;
-use crate::program::{Program, Statement};
+use crate::extensions::{ConcreteExtensionBox, ExtensionError, Extensions, SpecializationError};
+use crate::ids::{ConcreteExtensionId, VarId};
+use crate::program::{ExtensionDeclaration, Program, Statement};
 
 #[cfg(test)]
 #[path = "compiler_test.rs"]
@@ -16,6 +18,8 @@ pub enum CompilationError {
     MissingReference(VarId),
     #[error("UnsupportedStatement")]
     UnsupportedStatement(Statement),
+    #[error(transparent)]
+    SpecializationError(#[from] SpecializationError),
 }
 
 #[derive(Error, Debug, Eq, PartialEq)]
@@ -31,10 +35,28 @@ impl Display for CairoProgram {
     }
 }
 
+pub fn collect_extensions(
+    extension_declarations: &Vec<ExtensionDeclaration>,
+) -> Result<HashMap<ConcreteExtensionId, ConcreteExtensionBox>, CompilationError> {
+    let mut extensions: HashMap<ConcreteExtensionId, ConcreteExtensionBox> = HashMap::new();
+
+    for extentsion in extension_declarations {
+        let concreate_ext = Extensions::default()
+            .specialize(&extentsion.generic_id, &extentsion.args)
+            .map_err(|error| match error {
+                ExtensionError::Specialization { extension_id: _, error } => error,
+            })?;
+        extensions.insert(extentsion.id.clone(), concreate_ext);
+    }
+    Ok(extensions)
+}
+
 pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
     let mut instructions = Vec::new();
 
-    for statement in &program.statements {
+    let extensions = collect_extensions(&program.extension_declarations)?;
+
+    for statement in program.statements.iter() {
         match statement {
             Statement::Return(ref_ids) => {
                 if let Some(ref_id) = ref_ids.iter().next() {
@@ -43,7 +65,11 @@ pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
 
                 instructions.push(Instruction::Ret(RetInstruction {}));
             }
-            Statement::Invocation(_invocation) => {
+            Statement::Invocation(invocation) => {
+                let ext = extensions
+                    .get(&invocation.extension_id)
+                    .ok_or(SpecializationError::UnsupportedLibCallName)?;
+                ext.gen_code();
                 return Err(CompilationError::UnsupportedStatement(statement.clone()));
             }
         }
