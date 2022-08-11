@@ -63,11 +63,13 @@ impl EnumBuilder {
         self.missing_variant = Some(Member { name: name.clone(), kind: MemberKind::Node(name) });
         self
     }
-    // TODO(spapini): Separate variant name and node name, so we would get for example:
-    //   Unary(ExprUnary),
-    pub fn node(mut self, name: &'static str) -> EnumBuilder {
-        let name = self.name.clone() + name;
-        self.variants.push(Member { name: name.clone(), kind: MemberKind::Node(name) });
+    pub fn node(self, name: &'static str) -> EnumBuilder {
+        let kind_name = self.name.clone() + name;
+        self.node_with_explicit_kind(name, &kind_name)
+    }
+    pub fn node_with_explicit_kind(mut self, name: &'static str, kind: &str) -> EnumBuilder {
+        self.variants
+            .push(Member { name: name.to_string(), kind: MemberKind::Node(kind.to_string()) });
         self
     }
     pub fn token(mut self, name: &'static str) -> EnumBuilder {
