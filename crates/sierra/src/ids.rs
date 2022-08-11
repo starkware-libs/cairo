@@ -55,7 +55,7 @@ define_identity!(
 
 define_identity!(
     "The identity of a concrete extension.",
-    (Clone, Debug, Eq, PartialEq),
+    (Clone, Debug, Eq, Hash, PartialEq),
     ConcreteExtensionId
 );
 
