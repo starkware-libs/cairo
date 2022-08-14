@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use itertools::chain;
 
 use super::GenericExtensionBox;
-use crate::program::GenericExtensionId;
+use crate::ids::GenericExtensionId;
 
 mod gas;
 mod integer;

@@ -3,13 +3,14 @@ use std::fmt::Display;
 use casm::instructions::{Instruction, RetInstruction};
 use thiserror::Error;
 
-use crate::program::{Program, Statement, VarId};
+use crate::ids::VarId;
+use crate::program::{Program, Statement};
 
 #[cfg(test)]
 #[path = "compiler_test.rs"]
 mod compiler_test;
 
-#[derive(Error, Debug, PartialEq)]
+#[derive(Error, Debug, Eq, PartialEq)]
 pub enum CompilationError {
     #[error("Missing reference")]
     MissingReference(VarId),
@@ -17,13 +18,13 @@ pub enum CompilationError {
     UnsupportedStatement(Statement),
 }
 
-#[derive(Error, Debug, PartialEq)]
+#[derive(Error, Debug, Eq, PartialEq)]
 pub struct CairoProgram {
     instructions: Vec<Instruction>,
 }
 impl Display for CairoProgram {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for instruction in self.instructions.iter() {
+        for instruction in &self.instructions {
             writeln!(f, "{};", instruction)?
         }
         Ok(())
@@ -33,7 +34,7 @@ impl Display for CairoProgram {
 pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
     let mut instructions = Vec::new();
 
-    for statement in program.statements.iter() {
+    for statement in &program.statements {
         match statement {
             Statement::Return(ref_ids) => {
                 if let Some(ref_id) = ref_ids.iter().next() {

@@ -2,12 +2,13 @@ use std::collections::HashMap;
 
 use thiserror::Error;
 
-use crate::program::{GenericArg, GenericExtensionId};
+use crate::ids::GenericExtensionId;
+use crate::program::GenericArg;
 
 mod core;
 
 /// Error option while using extensions.
-#[derive(Error, Debug, PartialEq)]
+#[derive(Error, Debug, Eq, PartialEq)]
 pub enum SpecializationError {
     #[error("Count not find the requested extension")]
     UnsupportedLibCallName,
@@ -18,7 +19,7 @@ pub enum SpecializationError {
 }
 
 /// Error option while using extensions.
-#[derive(Error, Debug, PartialEq)]
+#[derive(Error, Debug, Eq, PartialEq)]
 pub enum ExtensionError {
     #[error("Count not specialize extension")]
     Specialization { extension_id: GenericExtensionId, error: SpecializationError },

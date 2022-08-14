@@ -1,3 +1,7 @@
+use crate::ids::{
+    ConcreteExtensionId, ConcreteTypeId, FunctionId, GenericExtensionId, GenericTypeId, VarId,
+};
+
 /// A full Sierra program.
 #[derive(Clone, Debug)]
 pub struct Program {
@@ -47,65 +51,18 @@ pub struct Function {
 }
 
 /// Descriptor of a variable.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Param {
     pub id: VarId,
     pub ty: ConcreteTypeId,
 }
-
-macro_rules! define_identity {
-    ($doc:literal, $derives:tt, $type_name:ident) => {
-        #[doc=$doc]
-        #[derive $derives]
-        pub enum $type_name {
-            // This variant is for testing.
-            Name(String),
-            Numeric(u64),
-        }
-        impl From<&str> for $type_name {
-            fn from(name: &str) -> Self {
-                Self::Name(name.into())
-            }
-        }
-        impl From<String> for $type_name {
-            fn from(name: String) -> Self {
-                Self::Name(name)
-            }
-        }
-        impl From<u64> for $type_name {
-            fn from(id: u64) -> Self {
-                Self::Numeric(id)
-            }
-        }
-    };
-}
-
-define_identity!(
-    "The identity of a generic extension",
-    (Clone, Debug, Eq, Hash, PartialEq),
-    GenericExtensionId
-);
-
-define_identity!(
-    "The identity of a concrete extension.",
-    (Clone, Debug, PartialEq),
-    ConcreteExtensionId
-);
-
-define_identity!("The identity of a user function.", (Clone, Debug, PartialEq), FunctionId);
-
-define_identity!("The identity of a variable.", (Clone, Debug, Eq, Hash, PartialEq), VarId);
-
-define_identity!("The identity of a generic type.", (Clone, Debug, PartialEq), GenericTypeId);
-
-define_identity!("The identity of a concrete type.", (Clone, Debug, PartialEq), ConcreteTypeId);
 
 /// Represents the index of a statement in the Program::statements vector.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct StatementId(pub usize);
 
 /// Possible arguments for generic type.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum GenericArg {
     Type(ConcreteTypeId),
     Func(FunctionId),
@@ -113,14 +70,14 @@ pub enum GenericArg {
 }
 
 /// A possible statement.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Statement {
     Invocation(Invocation),
     Return(Vec<VarId>),
 }
 
 /// An invocation statement.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Invocation {
     /// The called extension.
     pub extension_id: ConcreteExtensionId,
@@ -132,7 +89,7 @@ pub struct Invocation {
 }
 
 /// Describes the flow of a chosen extension's branch.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct BranchInfo {
     /// The target the branch continues the run through.
     pub target: BranchTarget,
@@ -140,7 +97,7 @@ pub struct BranchInfo {
     pub results: Vec<VarId>,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum BranchTarget {
     /// Continues a run to the next statement.
     Fallthrough,

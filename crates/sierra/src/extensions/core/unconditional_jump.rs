@@ -1,7 +1,7 @@
 use crate::extensions::{
     ConcreteExtension, ConcreteExtensionBox, GenericExtensionBox, NoGenericArgsGenericExtension,
 };
-use crate::program::GenericExtensionId;
+use crate::ids::GenericExtensionId;
 
 struct UnconditionalJumpGeneric {}
 impl NoGenericArgsGenericExtension for UnconditionalJumpGeneric {

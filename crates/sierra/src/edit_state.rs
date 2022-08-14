@@ -2,13 +2,13 @@ use std::collections::HashMap;
 
 use thiserror::Error;
 
-use crate::program::VarId;
+use crate::ids::VarId;
 
 #[cfg(test)]
 #[path = "edit_state_test.rs"]
 mod tests;
 
-#[derive(Error, Debug, PartialEq)]
+#[derive(Error, Debug, Eq, PartialEq)]
 pub enum EditError {
     #[error("Missing reference")]
     MissingReference(VarId),

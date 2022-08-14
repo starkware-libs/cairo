@@ -1,9 +1,11 @@
 use std::fmt;
 
+use crate::ids::{
+    ConcreteExtensionId, ConcreteTypeId, FunctionId, GenericExtensionId, GenericTypeId, VarId,
+};
 use crate::program::{
-    BranchInfo, BranchTarget, ConcreteExtensionId, ConcreteTypeId, ExtensionDeclaration, Function,
-    FunctionId, GenericArg, GenericExtensionId, GenericTypeId, Invocation, Param, Program,
-    Statement, TypeDeclaration, VarId,
+    BranchInfo, BranchTarget, ExtensionDeclaration, Function, GenericArg, Invocation, Param,
+    Program, Statement, TypeDeclaration,
 };
 
 impl fmt::Display for Program {
@@ -61,9 +63,9 @@ macro_rules! display_identity {
     ($type_name:tt) => {
         impl fmt::Display for $type_name {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-                match &self {
-                    Self::Name(name) => write!(f, "{}", name),
-                    Self::Numeric(id) => write!(f, "[{}]", id),
+                match &self.debug_name {
+                    Some(name) => write!(f, "{name}"),
+                    None => write!(f, "[{}]", self.id),
                 }
             }
         }
