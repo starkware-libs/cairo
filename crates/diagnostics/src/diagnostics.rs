@@ -28,7 +28,21 @@ impl DiagnosticBag {
     }
 }
 
-// Helper type for computations that may produce diagnostics.
+/// Helper type for computations that may produce diagnostics.
+/// Should be used with the with_diagnostics macro. Example:
+///
+/// ```ignore
+/// #[with_diagnostics]
+/// fn dummy_compute_macro(bag: &mut DiagnosticBag, x: usize) -> Option<usize> {
+///     let param = WithDiagnostics::pure(Some(x * x));
+///     let res = param.unwrap(bag)?;
+///     Some(res * res)
+/// }
+/// ```
+/// The resulting function will have the signature:
+/// ```ignore
+/// fn dummy_compute_macro(x: usize) -> WithDiagnostics<Option<usize>>;
+/// ```
 pub struct WithDiagnostics<T> {
     value: T,
     bag: DiagnosticBag,
@@ -40,31 +54,5 @@ impl<T> WithDiagnostics<T> {
     fn unwrap(self, bag: &mut DiagnosticBag) -> T {
         bag.0.extend(self.bag.0);
         self.value
-    }
-}
-
-// Helper type for computations that may produce diagnostics, or fail.
-// Example usage:
-// fn compute(params...) -> OptionWithDiagnostics<usize> {
-//     OptionWithDiagnostics::new(|bag: &mut DiagnosticBag| {
-//         let res = subcomputation().unwrap(bag)?;
-//         Some(res)
-//     })
-// }
-pub struct OptionWithDiagnostics<T>(WithDiagnostics<Option<T>>);
-impl<T> OptionWithDiagnostics<T> {
-    fn pure(value: Option<T>) -> Self {
-        Self(WithDiagnostics::pure(value))
-    }
-    // This is the ony way to create OptionWithDiagnostics.
-    // The reason it requires a function parameter, is to allow the use of the '?' operator, while
-    // stil passing the accumulated diagnostics in case of a failure.
-    pub fn new<F: FnOnce(&mut DiagnosticBag) -> Option<T>>(f: F) -> Self {
-        let mut bag = DiagnosticBag::default();
-        let value = f(&mut bag);
-        Self(WithDiagnostics { value, bag })
-    }
-    fn unwrap(self, bag: &mut DiagnosticBag) -> Option<T> {
-        self.0.unwrap(bag)
     }
 }

@@ -4,5 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+diagnostics_proc_macros = { path = "../diagnostics_proc_macros" }
 filesystem = { path = "../filesystem" }
 salsa = "0.16.1"
