@@ -1,7 +1,7 @@
 use indoc::indoc;
 
 use crate::compiler::{compile, CompilationError};
-use crate::program::VarId;
+use crate::ids::VarId;
 use crate::ProgramParser;
 
 #[test]
