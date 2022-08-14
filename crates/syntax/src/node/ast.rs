@@ -196,11 +196,11 @@ impl TypedSyntaxNode for Identifier {
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum Expr {
-    ExprPath(ExprPath),
-    ExprLiteral(ExprLiteral),
-    ExprParenthesized(ExprParenthesized),
-    ExprUnary(ExprUnary),
-    ExprBinary(ExprBinary),
+    Path(ExprPath),
+    Literal(ExprLiteral),
+    Parenthesized(ExprParenthesized),
+    Unary(ExprUnary),
+    Binary(ExprBinary),
     ExprMissing(ExprMissing),
 }
 impl TypedSyntaxNode for Expr {
@@ -214,15 +214,13 @@ impl TypedSyntaxNode for Expr {
     fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => match internal.kind {
-                SyntaxKind::ExprPath => Expr::ExprPath(ExprPath::from_syntax_node(db, node)),
-                SyntaxKind::ExprLiteral => {
-                    Expr::ExprLiteral(ExprLiteral::from_syntax_node(db, node))
-                }
+                SyntaxKind::ExprPath => Expr::Path(ExprPath::from_syntax_node(db, node)),
+                SyntaxKind::ExprLiteral => Expr::Literal(ExprLiteral::from_syntax_node(db, node)),
                 SyntaxKind::ExprParenthesized => {
-                    Expr::ExprParenthesized(ExprParenthesized::from_syntax_node(db, node))
+                    Expr::Parenthesized(ExprParenthesized::from_syntax_node(db, node))
                 }
-                SyntaxKind::ExprUnary => Expr::ExprUnary(ExprUnary::from_syntax_node(db, node)),
-                SyntaxKind::ExprBinary => Expr::ExprBinary(ExprBinary::from_syntax_node(db, node)),
+                SyntaxKind::ExprUnary => Expr::Unary(ExprUnary::from_syntax_node(db, node)),
+                SyntaxKind::ExprBinary => Expr::Binary(ExprBinary::from_syntax_node(db, node)),
                 SyntaxKind::ExprMissing => {
                     Expr::ExprMissing(ExprMissing::from_syntax_node(db, node))
                 }
@@ -238,11 +236,11 @@ impl TypedSyntaxNode for Expr {
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         match self {
-            Expr::ExprPath(x) => x.as_syntax_node(),
-            Expr::ExprLiteral(x) => x.as_syntax_node(),
-            Expr::ExprParenthesized(x) => x.as_syntax_node(),
-            Expr::ExprUnary(x) => x.as_syntax_node(),
-            Expr::ExprBinary(x) => x.as_syntax_node(),
+            Expr::Path(x) => x.as_syntax_node(),
+            Expr::Literal(x) => x.as_syntax_node(),
+            Expr::Parenthesized(x) => x.as_syntax_node(),
+            Expr::Unary(x) => x.as_syntax_node(),
+            Expr::Binary(x) => x.as_syntax_node(),
             Expr::ExprMissing(x) => x.as_syntax_node(),
         }
     }
@@ -380,8 +378,8 @@ impl TypedSyntaxNode for PathSegment {
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum OptionGenericArgs {
-    OptionGenericArgsNone(OptionGenericArgsNone),
-    OptionGenericArgsSome(OptionGenericArgsSome),
+    None(OptionGenericArgsNone),
+    Some(OptionGenericArgsSome),
 }
 impl TypedSyntaxNode for OptionGenericArgs {
     fn missing(db: &dyn GreenInterner) -> GreenId {
@@ -390,12 +388,12 @@ impl TypedSyntaxNode for OptionGenericArgs {
     fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => match internal.kind {
-                SyntaxKind::OptionGenericArgsNone => OptionGenericArgs::OptionGenericArgsNone(
-                    OptionGenericArgsNone::from_syntax_node(db, node),
-                ),
-                SyntaxKind::OptionGenericArgsSome => OptionGenericArgs::OptionGenericArgsSome(
-                    OptionGenericArgsSome::from_syntax_node(db, node),
-                ),
+                SyntaxKind::OptionGenericArgsNone => {
+                    OptionGenericArgs::None(OptionGenericArgsNone::from_syntax_node(db, node))
+                }
+                SyntaxKind::OptionGenericArgsSome => {
+                    OptionGenericArgs::Some(OptionGenericArgsSome::from_syntax_node(db, node))
+                }
                 _ => panic!(
                     "Unexpected syntax kind {:?} when constructing {}.",
                     internal.kind, "OptionGenericArgs"
@@ -411,8 +409,8 @@ impl TypedSyntaxNode for OptionGenericArgs {
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         match self {
-            OptionGenericArgs::OptionGenericArgsNone(x) => x.as_syntax_node(),
-            OptionGenericArgs::OptionGenericArgsSome(x) => x.as_syntax_node(),
+            OptionGenericArgs::None(x) => x.as_syntax_node(),
+            OptionGenericArgs::Some(x) => x.as_syntax_node(),
         }
     }
 }
@@ -818,9 +816,9 @@ impl TypedSyntaxNode for StatementList {
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum Statement {
-    StatementLet(StatementLet),
-    StatementExpr(StatementExpr),
-    StatementReturn(StatementReturn),
+    Let(StatementLet),
+    Expr(StatementExpr),
+    Return(StatementReturn),
     StatementMissing(StatementMissing),
 }
 impl TypedSyntaxNode for Statement {
@@ -835,13 +833,13 @@ impl TypedSyntaxNode for Statement {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => match internal.kind {
                 SyntaxKind::StatementLet => {
-                    Statement::StatementLet(StatementLet::from_syntax_node(db, node))
+                    Statement::Let(StatementLet::from_syntax_node(db, node))
                 }
                 SyntaxKind::StatementExpr => {
-                    Statement::StatementExpr(StatementExpr::from_syntax_node(db, node))
+                    Statement::Expr(StatementExpr::from_syntax_node(db, node))
                 }
                 SyntaxKind::StatementReturn => {
-                    Statement::StatementReturn(StatementReturn::from_syntax_node(db, node))
+                    Statement::Return(StatementReturn::from_syntax_node(db, node))
                 }
                 SyntaxKind::StatementMissing => {
                     Statement::StatementMissing(StatementMissing::from_syntax_node(db, node))
@@ -861,9 +859,9 @@ impl TypedSyntaxNode for Statement {
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         match self {
-            Statement::StatementLet(x) => x.as_syntax_node(),
-            Statement::StatementExpr(x) => x.as_syntax_node(),
-            Statement::StatementReturn(x) => x.as_syntax_node(),
+            Statement::Let(x) => x.as_syntax_node(),
+            Statement::Expr(x) => x.as_syntax_node(),
+            Statement::Return(x) => x.as_syntax_node(),
             Statement::StatementMissing(x) => x.as_syntax_node(),
         }
     }
@@ -1123,13 +1121,13 @@ impl TypedSyntaxNode for ItemList {
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum Item {
-    ItemModule(ItemModule),
-    ItemFunction(ItemFunction),
-    ItemTrait(ItemTrait),
-    ItemImpl(ItemImpl),
-    ItemStruct(ItemStruct),
-    ItemEnum(ItemEnum),
-    ItemUse(ItemUse),
+    Module(ItemModule),
+    Function(ItemFunction),
+    Trait(ItemTrait),
+    Impl(ItemImpl),
+    Struct(ItemStruct),
+    Enum(ItemEnum),
+    Use(ItemUse),
 }
 impl TypedSyntaxNode for Item {
     fn missing(db: &dyn GreenInterner) -> GreenId {
@@ -1138,15 +1136,15 @@ impl TypedSyntaxNode for Item {
     fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => match internal.kind {
-                SyntaxKind::ItemModule => Item::ItemModule(ItemModule::from_syntax_node(db, node)),
+                SyntaxKind::ItemModule => Item::Module(ItemModule::from_syntax_node(db, node)),
                 SyntaxKind::ItemFunction => {
-                    Item::ItemFunction(ItemFunction::from_syntax_node(db, node))
+                    Item::Function(ItemFunction::from_syntax_node(db, node))
                 }
-                SyntaxKind::ItemTrait => Item::ItemTrait(ItemTrait::from_syntax_node(db, node)),
-                SyntaxKind::ItemImpl => Item::ItemImpl(ItemImpl::from_syntax_node(db, node)),
-                SyntaxKind::ItemStruct => Item::ItemStruct(ItemStruct::from_syntax_node(db, node)),
-                SyntaxKind::ItemEnum => Item::ItemEnum(ItemEnum::from_syntax_node(db, node)),
-                SyntaxKind::ItemUse => Item::ItemUse(ItemUse::from_syntax_node(db, node)),
+                SyntaxKind::ItemTrait => Item::Trait(ItemTrait::from_syntax_node(db, node)),
+                SyntaxKind::ItemImpl => Item::Impl(ItemImpl::from_syntax_node(db, node)),
+                SyntaxKind::ItemStruct => Item::Struct(ItemStruct::from_syntax_node(db, node)),
+                SyntaxKind::ItemEnum => Item::Enum(ItemEnum::from_syntax_node(db, node)),
+                SyntaxKind::ItemUse => Item::Use(ItemUse::from_syntax_node(db, node)),
                 _ => panic!(
                     "Unexpected syntax kind {:?} when constructing {}.",
                     internal.kind, "Item"
@@ -1159,13 +1157,13 @@ impl TypedSyntaxNode for Item {
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         match self {
-            Item::ItemModule(x) => x.as_syntax_node(),
-            Item::ItemFunction(x) => x.as_syntax_node(),
-            Item::ItemTrait(x) => x.as_syntax_node(),
-            Item::ItemImpl(x) => x.as_syntax_node(),
-            Item::ItemStruct(x) => x.as_syntax_node(),
-            Item::ItemEnum(x) => x.as_syntax_node(),
-            Item::ItemUse(x) => x.as_syntax_node(),
+            Item::Module(x) => x.as_syntax_node(),
+            Item::Function(x) => x.as_syntax_node(),
+            Item::Trait(x) => x.as_syntax_node(),
+            Item::Impl(x) => x.as_syntax_node(),
+            Item::Struct(x) => x.as_syntax_node(),
+            Item::Enum(x) => x.as_syntax_node(),
+            Item::Use(x) => x.as_syntax_node(),
         }
     }
 }
