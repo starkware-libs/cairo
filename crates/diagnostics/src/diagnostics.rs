@@ -29,6 +29,20 @@ impl Diagnostics {
 }
 
 /// Helper type for computations that may produce diagnostics.
+/// Should be used with the with_diagnostics macro. Example:
+///
+/// ```ignore
+/// #[with_diagnostics]
+/// fn dummy_compute_macro(bag: &mut DiagnosticBag, x: usize) -> Option<usize> {
+///     let param = WithDiagnostics::pure(Some(x * x));
+///     let res = param.unwrap(bag)?;
+///     Some(res * res)
+/// }
+/// ```
+/// The resulting function will have the signature:
+/// ```ignore
+/// fn dummy_compute_macro(x: usize) -> WithDiagnostics<Option<usize>>;
+/// ```
 pub struct WithDiagnostics<T> {
     value: T,
     diagnostics: Diagnostics,
@@ -43,40 +57,5 @@ impl<T> WithDiagnostics<T> {
     fn unwrap(self, diagnostics: &mut Diagnostics) -> T {
         diagnostics.0.extend(self.diagnostics.0);
         self.value
-    }
-}
-
-/// Helper type for computations that may produce diagnostics, or fail.
-///
-/// Example usage:
-/// ```ignore
-/// fn compute() -> OptionWithDiagnostics<usize> {
-///     OptionWithDiagnostics::new(|diagnostics: &mut Diagnostics| {
-///         let res = subcomputation().unwrap(diagnostics)?;
-///         Some(res)
-///     })
-/// }
-/// ```
-pub struct OptionWithDiagnostics<T>(WithDiagnostics<Option<T>>);
-impl<T> OptionWithDiagnostics<T> {
-    /// Returns `value` without any diagnostics.
-    fn pure(value: Option<T>) -> Self {
-        Self(WithDiagnostics::pure(value))
-    }
-
-    /// This is the only way to create [OptionWithDiagnostics].
-    ///
-    /// It takes a function that returns [`Option<T>`] (and therefore, may use the `?` operator)
-    /// and calls it with a new diagnostics object. The diagnostics created inside the function
-    /// will be accumulated even when `None` is returned.
-    pub fn new<F: FnOnce(&mut Diagnostics) -> Option<T>>(f: F) -> Self {
-        let mut diagnostics = Diagnostics::default();
-        let value = f(&mut diagnostics);
-        Self(WithDiagnostics { value, diagnostics })
-    }
-
-    /// Adds the diagnostics of `self` to the given `diagnostics` object and returns the value.
-    fn unwrap(self, diagnostics: &mut Diagnostics) -> Option<T> {
-        self.0.unwrap(diagnostics)
     }
 }

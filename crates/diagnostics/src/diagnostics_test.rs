@@ -1,4 +1,6 @@
-use super::{DiagnosticEntry, DiagnosticLocation, Diagnostics, OptionWithDiagnostics};
+use diagnostics_proc_macros::with_diagnostics;
+
+use super::{DiagnosticEntry, DiagnosticLocation, Diagnostics, WithDiagnostics};
 
 struct SimpleDiag {}
 impl DiagnosticEntry for SimpleDiag {
@@ -25,13 +27,12 @@ fn test_diagnostics() {
 
 #[test]
 fn test_option_with_diagnostics() {
-    dummy_compute(2);
+    dummy_compute_macro(2);
 }
 
-fn dummy_compute(x: usize) -> OptionWithDiagnostics<usize> {
-    OptionWithDiagnostics::new(|bag: &mut Diagnostics| {
-        let param = OptionWithDiagnostics::pure(Some(x * x));
-        let res = param.unwrap(bag)?;
-        Some(res * res)
-    })
+#[with_diagnostics]
+fn dummy_compute_macro(diagnostics: &mut Diagnostics, x: usize) -> Option<usize> {
+    let param = WithDiagnostics::pure(Some(x * x));
+    let res = param.unwrap(diagnostics)?;
+    Some(res * res)
 }
