@@ -1,0 +1,9 @@
+[package]
+name = "sierra_generator"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+defs = {path = "../defs"}
+salsa = "0.16.1"
+semantic = { path = "../semantic" }

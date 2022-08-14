@@ -9,6 +9,7 @@ members = [
     "crates/parser",
     "crates/semantic",
     "crates/sierra",
+    "crates/sierra_generator",
     "crates/syntax",
     "crates/syntax_codegen",
 ]
