@@ -8,7 +8,7 @@ use crate::program::VarId;
 #[path = "edit_state_test.rs"]
 mod tests;
 
-#[derive(Error, Debug, PartialEq)]
+#[derive(Error, Debug, Eq, PartialEq)]
 pub enum EditError {
     #[error("Missing reference")]
     MissingReference(VarId),
