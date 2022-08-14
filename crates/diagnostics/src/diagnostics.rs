@@ -7,9 +7,9 @@ use std::any::Any;
 use filesystem::db::FilesGroup;
 use filesystem::ids::FileId;
 
-// Trait for diagnostics (i.e. errors) across the compiler.
-// Meant to be implemented by each module with diagnostics to produce.
-pub trait Diagnostic {
+/// A trait for diagnostics (i.e., errors and warnings) across the compiler.
+/// Meant to be implemented by each module that may produce diagnostics.
+pub trait DiagnosticEntry {
     fn format(&self, db: &dyn FilesGroup) -> String;
     fn location(&self, db: &dyn FilesGroup) -> DiagnosticLocation;
     fn as_any(&self) -> &dyn Any;
@@ -19,52 +19,64 @@ pub struct DiagnosticLocation {
     // TODO(spapini): Add span: TextSpan.
 }
 
-// A bag of diagnostics, accumulating multiple diagnostics that arise during a computation.
+/// A set of diagnostic entries, accumulating multiple diagnostics that arise during a computation.
 #[derive(Default)]
-pub struct DiagnosticBag(pub Vec<Box<dyn Diagnostic>>);
-impl DiagnosticBag {
-    fn add(&mut self, diagnostic: Box<dyn Diagnostic>) {
+pub struct Diagnostics(pub Vec<Box<dyn DiagnosticEntry>>);
+impl Diagnostics {
+    fn add(&mut self, diagnostic: Box<dyn DiagnosticEntry>) {
         self.0.push(diagnostic);
     }
 }
 
-// Helper type for computations that may produce diagnostics.
+/// Helper type for computations that may produce diagnostics.
 pub struct WithDiagnostics<T> {
     value: T,
-    bag: DiagnosticBag,
+    diagnostics: Diagnostics,
 }
 impl<T> WithDiagnostics<T> {
+    /// Returns `value` without any diagnostics.
     fn pure(value: T) -> Self {
-        Self { value, bag: DiagnosticBag::default() }
+        Self { value, diagnostics: Diagnostics::default() }
     }
-    fn unwrap(self, bag: &mut DiagnosticBag) -> T {
-        bag.0.extend(self.bag.0);
+
+    /// Adds the diagnostics of `self` to the given `diagnostics` object and returns the value.
+    fn unwrap(self, diagnostics: &mut Diagnostics) -> T {
+        diagnostics.0.extend(self.diagnostics.0);
         self.value
     }
 }
 
-// Helper type for computations that may produce diagnostics, or fail.
-// Example usage:
-// fn compute(params...) -> OptionWithDiagnostics<usize> {
-//     OptionWithDiagnostics::new(|bag: &mut DiagnosticBag| {
-//         let res = subcomputation().unwrap(bag)?;
-//         Some(res)
-//     })
-// }
+/// Helper type for computations that may produce diagnostics, or fail.
+///
+/// Example usage:
+/// ```ignore
+/// fn compute() -> OptionWithDiagnostics<usize> {
+///     OptionWithDiagnostics::new(|diagnostics: &mut Diagnostics| {
+///         let res = subcomputation().unwrap(diagnostics)?;
+///         Some(res)
+///     })
+/// }
+/// ```
 pub struct OptionWithDiagnostics<T>(WithDiagnostics<Option<T>>);
 impl<T> OptionWithDiagnostics<T> {
+    /// Returns `value` without any diagnostics.
     fn pure(value: Option<T>) -> Self {
         Self(WithDiagnostics::pure(value))
     }
-    // This is the ony way to create OptionWithDiagnostics.
-    // The reason it requires a function parameter, is to allow the use of the '?' operator, while
-    // stil passing the accumulated diagnostics in case of a failure.
-    pub fn new<F: FnOnce(&mut DiagnosticBag) -> Option<T>>(f: F) -> Self {
-        let mut bag = DiagnosticBag::default();
-        let value = f(&mut bag);
-        Self(WithDiagnostics { value, bag })
+
+    /// This is the only way to create [OptionWithDiagnostics].
+    ///
+    /// It takes a function that returns [`Option<T>`] (and therefore, may use the `?` operator)
+    /// and calls it with a new diagnostics object. The diagnostics created inside the function
+    /// will be accumulated even when `None` is returned.
+    pub fn new<F: FnOnce(&mut Diagnostics) -> Option<T>>(f: F) -> Self {
+        let mut diagnostics = Diagnostics::default();
+        let value = f(&mut diagnostics);
+        Self(WithDiagnostics { value, diagnostics })
     }
-    fn unwrap(self, bag: &mut DiagnosticBag) -> Option<T> {
-        self.0.unwrap(bag)
+
+    /// Adds the diagnostics of `self` to the given `diagnostics` object and returns the value.
+    fn unwrap(self, diagnostics: &mut Diagnostics) -> Option<T> {
+        self.0.unwrap(diagnostics)
     }
 }
