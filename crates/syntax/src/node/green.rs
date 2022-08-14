@@ -9,6 +9,27 @@ pub struct GreenNodeInternal {
     pub children: Vec<GreenId>,
     pub width: u32,
 }
+impl GreenNodeInternal {
+    pub fn kind(&self) -> SyntaxKind {
+        self.kind
+    }
+    pub fn child_at(&self, i: usize) -> GreenId {
+        self.children[i]
+    }
+    pub fn children(&self) -> Vec<GreenId> {
+        self.children.clone()
+    }
+    pub fn append_children(&mut self, children: &mut Vec<GreenId>) {
+        self.children.append(children);
+    }
+    pub fn modify_child(&mut self, index: usize, new_child: GreenId) {
+        self.children[index] = new_child;
+    }
+    pub fn set_kind(&mut self, kind: SyntaxKind) {
+        self.kind = kind;
+    }
+}
+
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum GreenNode {
     Internal(GreenNodeInternal),
