@@ -1,4 +1,7 @@
 use smol_str::SmolStr;
+
+use crate::node::{db::GreenInterner, green::GreenNode, ids::GreenId};
+
 #[derive(Clone, PartialEq, Debug, Eq, Hash)]
 pub struct Token {
     pub kind: TokenKind,
@@ -7,6 +10,9 @@ pub struct Token {
 impl Token {
     pub fn missing() -> Token {
         Token { kind: TokenKind::Missing, text: SmolStr::new("") }
+    }
+    pub fn missing_green(db: &dyn GreenInterner) -> GreenId {
+        db.intern_green(GreenNode::Token(Self::missing()))
     }
     pub fn width(&self) -> u32 {
         self.text.len() as u32
