@@ -1,4 +1,6 @@
-use super::{DiagnosticEntry, DiagnosticLocation, Diagnostics, OptionWithDiagnostics};
+use diagnostics_proc_macros::with_diagnostics;
+
+use super::{DiagnosticEntry, DiagnosticLocation, Diagnostics, WithDiagnostics};
 
 struct SimpleDiag {}
 impl DiagnosticEntry for SimpleDiag {
@@ -17,21 +19,30 @@ impl DiagnosticEntry for SimpleDiag {
 
 #[test]
 fn test_diagnostics() {
-    let mut bag = Diagnostics::default();
+    let mut diagnostics = Diagnostics::default();
     let diagnostic = SimpleDiag {};
-    bag.add(Box::new(diagnostic));
-    bag.0[0].as_any().downcast_ref::<SimpleDiag>().expect("Unexpected type");
+    diagnostics.add(diagnostic);
+    diagnostics.0[0].as_any().downcast_ref::<SimpleDiag>().expect("Unexpected type");
 }
 
 #[test]
 fn test_option_with_diagnostics() {
-    dummy_compute(2);
+    assert_matches!(
+        dummy_compute_macro(2),
+        WithDiagnostics { value: None, diagnostics } if diagnostics.0.len() == 1);
 }
 
-fn dummy_compute(x: usize) -> OptionWithDiagnostics<usize> {
-    OptionWithDiagnostics::new(|bag: &mut Diagnostics| {
-        let param = OptionWithDiagnostics::pure(Some(x * x));
-        let res = param.unwrap(bag)?;
-        Some(res * res)
-    })
+#[with_diagnostics]
+fn dummy_compute_macro(diagnostics: &mut Diagnostics, x: usize) -> Option<usize> {
+    let param = WithDiagnostics::pure(Some(x * x));
+    let res = param.unwrap(diagnostics)?;
+    // This should add one diagnostic entry, and return.
+    let _param2 = dummy_compute_fail().unwrap(diagnostics)?;
+    Some(res)
+}
+
+#[with_diagnostics]
+fn dummy_compute_fail(diagnostics: &mut Diagnostics) -> Option<usize> {
+    diagnostics.add(SimpleDiag {});
+    None
 }

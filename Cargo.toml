@@ -5,6 +5,7 @@ members = [
     "crates/db_utils",
     "crates/defs",
     "crates/diagnostics",
+    "crates/diagnostics_proc_macros",
     "crates/filesystem",
     "crates/parser",
     "crates/semantic",
