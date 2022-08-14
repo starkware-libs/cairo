@@ -23,7 +23,7 @@ pub struct CairoProgram {
 }
 impl Display for CairoProgram {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for instruction in self.instructions.iter() {
+        for instruction in &self.instructions {
             writeln!(f, "{};", instruction)?
         }
         Ok(())
@@ -33,7 +33,7 @@ impl Display for CairoProgram {
 pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
     let mut instructions = Vec::new();
 
-    for statement in program.statements.iter() {
+    for statement in &program.statements {
         match statement {
             Statement::Return(ref_ids) => {
                 if let Some(ref_id) = ref_ids.iter().next() {
