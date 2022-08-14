@@ -1,6 +1,5 @@
-mod cairo_spec;
+pub mod cairo_spec;
+pub mod generator;
 #[cfg(test)]
 mod golden_test;
-mod spec;
-
-pub mod generator;
+pub mod spec;
