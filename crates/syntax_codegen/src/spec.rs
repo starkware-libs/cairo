@@ -3,6 +3,7 @@ pub struct Node {
     pub name: String,
     pub kind: NodeKind,
 }
+#[derive(Clone)]
 pub enum NodeKind {
     Enum { variants: Vec<Member>, missing_variant: Option<String> },
     Struct { members: Vec<Member> },
