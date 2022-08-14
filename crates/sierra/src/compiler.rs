@@ -9,7 +9,7 @@ use crate::program::{Program, Statement, VarId};
 #[path = "compiler_test.rs"]
 mod compiler_test;
 
-#[derive(Error, Debug, PartialEq)]
+#[derive(Error, Debug, Eq, PartialEq)]
 pub enum CompilationError {
     #[error("Missing reference")]
     MissingReference(VarId),
@@ -17,7 +17,7 @@ pub enum CompilationError {
     UnsupportedStatement(Statement),
 }
 
-#[derive(Error, Debug, PartialEq)]
+#[derive(Error, Debug, Eq, PartialEq)]
 pub struct CairoProgram {
     instructions: Vec<Instruction>,
 }
