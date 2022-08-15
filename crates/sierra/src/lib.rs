@@ -1,7 +1,3 @@
-#[cfg(test)]
-#[macro_use]
-extern crate assert_matches;
-
 use lalrpop_util::lalrpop_mod;
 
 pub mod compiler;
