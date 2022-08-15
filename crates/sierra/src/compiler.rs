@@ -2,11 +2,13 @@ use std::collections::HashMap;
 use std::fmt::Display;
 
 use casm::instructions::{Instruction, InstructionBody, RetInstruction};
+use itertools::izip;
 use thiserror::Error;
 
 use crate::extensions::{ConcreteExtensionBox, ExtensionError, Extensions};
 use crate::ids::{ConcreteExtensionId, VarId};
 use crate::program::{ExtensionDeclaration, Program, Statement};
+use crate::references::init_reference;
 
 #[cfg(test)]
 #[path = "compiler_test.rs"]
@@ -16,8 +18,18 @@ mod compiler_test;
 pub enum CompilationError {
     #[error("Missing reference")]
     MissingReference(VarId),
-    #[error("ConcreateExtensionAlreadyDecleared")]
-    ConcreateExtensionAlreadyDecleared(ConcreteExtensionId),
+    #[error("ConcreteExtensionAlreadyDeclared")]
+    ConcreteExtensionAlreadyDeclared(ConcreteExtensionId),
+
+    #[error("Inconsistent References.")]
+    InconsistentReferences,
+
+    #[error("MissingReferecesForStatement")]
+    MissingReferecesForStatement,
+
+    #[error("InvalidEntryPoint")]
+    InvalidEntryPoint,
+
     #[error(transparent)]
     ExtensionError(#[from] ExtensionError),
 }
@@ -36,17 +48,15 @@ impl Display for CairoProgram {
 }
 
 pub fn collect_extensions(
-    extension_declarations: &Vec<ExtensionDeclaration>,
+    extension_declarations: &[ExtensionDeclaration],
 ) -> Result<HashMap<ConcreteExtensionId, ConcreteExtensionBox>, CompilationError> {
     let mut extensions: HashMap<ConcreteExtensionId, ConcreteExtensionBox> = HashMap::new();
 
     for extentsion in extension_declarations {
-        let concreate_ext =
+        let concrete_ext =
             Extensions::default().specialize(&extentsion.generic_id, &extentsion.args)?;
-        if extensions.insert(extentsion.id.clone(), concreate_ext).is_some() {
-            return Err(CompilationError::ConcreateExtensionAlreadyDecleared(
-                extentsion.id.clone(),
-            ));
+        if extensions.insert(extentsion.id.clone(), concrete_ext).is_some() {
+            return Err(CompilationError::ConcreteExtensionAlreadyDeclared(extentsion.id.clone()));
         };
     }
     Ok(extensions)
@@ -56,8 +66,13 @@ pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
     let mut instructions = Vec::new();
 
     let extensions = collect_extensions(&program.extension_declarations)?;
+    let all_refs = init_reference(program.statements.len(), &program.funcs)?;
 
-    for statement in program.statements.iter() {
+    for (statement, refs) in izip!(&program.statements, &all_refs.refs) {
+        if refs.is_none() {
+            return Err(CompilationError::MissingReferecesForStatement);
+        }
+
         match statement {
             Statement::Return(ref_ids) => {
                 if let Some(ref_id) = ref_ids.iter().next() {
