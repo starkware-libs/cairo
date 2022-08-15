@@ -1,8 +1,9 @@
 use indoc::indoc;
+use test_case::test_case;
 
 use crate::compiler::{compile, CompilationError};
 use crate::extensions::ExtensionError::{NotImplemented, UndeclaredExtension};
-use crate::ids::{ConcreteExtensionId, VarId};
+use crate::ids::ConcreteExtensionId;
 use crate::ProgramParser;
 
 #[test]
@@ -24,48 +25,49 @@ fn good_flow() {
     );
 }
 
-#[test]
-fn missing_ref() {
-    let prog = ProgramParser::new()
-        .parse(indoc! {"
+#[test_case(indoc! {"
             return([2]);
 
-            test_program@0() -> ();"
-        })
-        .unwrap();
-    assert_matches!(
-        compile(&prog), Err(CompilationError::MissingReference(x)) if x == VarId::new(2));
-}
-
-#[test]
-fn unimplemented_extension() {
-    let prog = ProgramParser::new()
-        .parse(indoc! {"
-            ext store_temp_felt = store_temp<felt>;
-
+            test_program@0() -> ();
+        "} => Err(CompilationError::MissingReference(2.into()));
+            "missing reference")]
+#[test_case(indoc! {"
             store_temp_felt([1]) -> ([1]);
+
+            test_program@0() -> ();
+        "} => Err(UndeclaredExtension{
+            extension_id: ConcreteExtensionId::from_string("store_temp_felt")}.into());
+            "undeclared extension")]
+#[test_case(indoc! {"
+            ext store_temp_felt = store_temp<felt>;
+            store_temp_felt([1]) -> ([1]);
+
+            test_program@0() -> ();
+        "} => Err(NotImplemented.into());
+            "Not implemented")]
+#[test_case(indoc! {"
+            test_program@25() -> ();
+        "} => Err(CompilationError::InvalidEntryPoint);
+            "Invalid entry point")]
+#[test_case(indoc! {"
             return();
 
-            test_program@0() -> ();
-        "})
-        .unwrap();
-
-    assert_matches!(compile(&prog), Err(CompilationError::ExtensionError(NotImplemented)));
-}
-
-#[test]
-fn undeclared_extension() {
-    let prog = ProgramParser::new()
-        .parse(indoc! {"
-            store_temp_felt([1]) -> ([1]);
-
-            test_program@0() -> ();
-        "})
-        .unwrap();
-
-    assert_matches!(
-        compile(&prog), Err(
-            CompilationError::ExtensionError(
-                UndeclaredExtension { extension_id }))
-                if extension_id == ConcreteExtensionId::from_string("store_temp_felt"));
+            foo@0([1]: felt) -> ();
+            bar@0([2]: felt) -> ();
+        "} => Err(CompilationError::InconsistentReferences);
+            "Inconsistent references")]
+#[test_case(indoc! {"
+            return();
+        "} => Err(CompilationError::MissingReferecesForStatement);
+            "Missing references for statement")]
+#[test_case(indoc! {"
+            ext store_temp_felt = store_temp<felt>;
+            ext store_temp_felt = store_temp<felt>;
+        "} => Err(CompilationError::ConcreateExtensionAlreadyDecleared(
+            ConcreteExtensionId::from_string("store_temp_felt")));
+            "Concreate extension already declared")]
+fn compiler_errors(sierra_code: &str) -> Result<(), CompilationError> {
+    let prog = ProgramParser::new().parse(sierra_code).unwrap();
+    compile(&prog)?;
+    Ok(())
 }
