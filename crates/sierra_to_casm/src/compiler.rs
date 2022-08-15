@@ -2,10 +2,12 @@ use std::fmt::Display;
 
 use casm::instructions::{Instruction, InstructionBody, RetInstruction};
 use sierra::extensions::{CoreConcrete, ExtensionError};
-use sierra::ids::{GenericExtensionId, VarId};
+use sierra::ids::VarId;
 use sierra::program::{Program, Statement};
 use sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use thiserror::Error;
+
+use crate::references::{init_reference, ReferencesError};
 
 #[cfg(test)]
 #[path = "compiler_test.rs"]
@@ -19,8 +21,10 @@ pub enum CompilationError {
     ProgramRegistryError(ProgramRegistryError),
     #[error(transparent)]
     ExtensionError(#[from] ExtensionError),
-    #[error("ExtensionNotFound")]
-    ExtensionNotFound(GenericExtensionId),
+    #[error("MissingReferencesForStatement")]
+    MissingReferencesForStatement,
+    #[error(transparent)]
+    ReferencesError(#[from] ReferencesError),
 }
 
 #[derive(Error, Debug, Eq, PartialEq)]
@@ -40,8 +44,14 @@ pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
     let mut instructions = Vec::new();
 
     let registry = ProgramRegistry::new(program).map_err(CompilationError::ProgramRegistryError)?;
+    let program_refs = init_reference(program.statements.len(), &program.funcs)?;
 
-    for statement in program.statements.iter() {
+    for (statement_id, statement) in program.statements.iter().enumerate() {
+        let _statement_refs = match &program_refs.per_statement_refs[statement_id] {
+            None => Err(CompilationError::MissingReferencesForStatement),
+            Some(statement_refs) => Ok(statement_refs),
+        }?;
+
         match statement {
             Statement::Return(ref_ids) => {
                 if let Some(ref_id) = ref_ids.iter().next() {
