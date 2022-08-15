@@ -1,7 +1,7 @@
-use super::{Diagnostic, DiagnosticBag, DiagnosticLocation, OptionWithDiagnostics};
+use super::{DiagnosticEntry, DiagnosticLocation, Diagnostics, OptionWithDiagnostics};
 
 struct SimpleDiag {}
-impl Diagnostic for SimpleDiag {
+impl DiagnosticEntry for SimpleDiag {
     fn format(&self, _db: &dyn filesystem::db::FilesGroup) -> String {
         unimplemented!();
     }
@@ -17,7 +17,7 @@ impl Diagnostic for SimpleDiag {
 
 #[test]
 fn test_diagnostics() {
-    let mut bag = DiagnosticBag::default();
+    let mut bag = Diagnostics::default();
     let diagnostic = SimpleDiag {};
     bag.add(Box::new(diagnostic));
     bag.0[0].as_any().downcast_ref::<SimpleDiag>().expect("Unexpected type");
@@ -29,7 +29,7 @@ fn test_option_with_diagnostics() {
 }
 
 fn dummy_compute(x: usize) -> OptionWithDiagnostics<usize> {
-    OptionWithDiagnostics::new(|bag: &mut DiagnosticBag| {
+    OptionWithDiagnostics::new(|bag: &mut Diagnostics| {
         let param = OptionWithDiagnostics::pure(Some(x * x));
         let res = param.unwrap(bag)?;
         Some(res * res)
