@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use casm::instructions::{Instruction, RetInstruction};
+use casm::instructions::{Instruction, InstructionBody, RetInstruction};
 use thiserror::Error;
 
 use crate::ids::VarId;
@@ -41,7 +41,10 @@ pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
                     return Err(CompilationError::MissingReference(ref_id.clone()));
                 }
 
-                instructions.push(Instruction::Ret(RetInstruction {}));
+                instructions.push(Instruction {
+                    body: InstructionBody::Ret(RetInstruction {}),
+                    inc_ap: false,
+                });
             }
             Statement::Invocation(_invocation) => {
                 return Err(CompilationError::UnsupportedStatement(statement.clone()));
