@@ -8,22 +8,39 @@ mod instructions_test;
 
 // An enum of Cairo instructions.
 #[derive(Debug, Eq, PartialEq)]
-pub enum Instruction {
+pub enum InstructionBody {
     AssertEq(AssertEqInstruction),
     Call(CallInstruction),
     Jnz(JnzInstruction),
     Jump(JumpInstruction),
     Ret(RetInstruction),
 }
-impl Display for Instruction {
+impl Display for InstructionBody {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Instruction::AssertEq(insn) => write!(f, "{}", insn),
-            Instruction::Call(insn) => write!(f, "{}", insn),
-            Instruction::Jnz(insn) => write!(f, "{}", insn),
-            Instruction::Jump(insn) => write!(f, "{}", insn),
-            Instruction::Ret(insn) => write!(f, "{}", insn),
+            InstructionBody::AssertEq(insn) => write!(f, "{}", insn),
+            InstructionBody::Call(insn) => write!(f, "{}", insn),
+            InstructionBody::Jnz(insn) => write!(f, "{}", insn),
+            InstructionBody::Jump(insn) => write!(f, "{}", insn),
+            InstructionBody::Ret(insn) => write!(f, "{}", insn),
         }
+    }
+}
+
+/// Represents an instruction, including the ap++ flag (inc_ap).
+#[derive(Debug, Eq, PartialEq)]
+pub struct Instruction {
+    pub body: InstructionBody,
+    pub inc_ap: bool,
+}
+
+impl Display for Instruction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.body)?;
+        if self.inc_ap {
+            write!(f, ", ap++")?
+        };
+        Ok(())
     }
 }
 
@@ -38,7 +55,7 @@ impl Display for CallInstruction {
     }
 }
 
-// Represents the instruction "jmp rel/abs".
+// Represents the InstructionBody "jmp rel/abs".
 #[derive(Debug, Eq, PartialEq)]
 pub struct JumpInstruction {
     target: DerefOrImmediate,
@@ -50,7 +67,7 @@ impl Display for JumpInstruction {
     }
 }
 
-// Represents the instruction "jmp rel <jump_offset> if condition != 0".
+// Represents the InstructionBody "jmp rel <jump_offset> if condition != 0".
 #[derive(Debug, Eq, PartialEq)]
 pub struct JnzInstruction {
     jump_offset: DerefOrImmediate,
@@ -62,7 +79,7 @@ impl Display for JnzInstruction {
     }
 }
 
-// Represents the instruction "a = b" for two operands a, b.
+// Represents the InstructionBody "a = b" for two operands a, b.
 #[derive(Debug, Eq, PartialEq)]
 pub struct AssertEqInstruction {
     a: DerefOperand,
