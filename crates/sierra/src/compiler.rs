@@ -7,6 +7,7 @@ use thiserror::Error;
 use crate::extensions::{ConcreteExtensionBox, ExtensionError, Extensions};
 use crate::ids::{ConcreteExtensionId, VarId};
 use crate::program::{ExtensionDeclaration, Program, Statement};
+use crate::references::{init_reference, ReferencesError};
 
 #[cfg(test)]
 #[path = "compiler_test.rs"]
@@ -16,10 +17,17 @@ mod compiler_test;
 pub enum CompilationError {
     #[error("Missing reference")]
     MissingReference(VarId),
-    #[error("ConcreateExtensionAlreadyDecleared")]
-    ConcreateExtensionAlreadyDecleared(ConcreteExtensionId),
+    #[error("ConcreteExtensionAlreadyDeclared")]
+    ConcreteExtensionAlreadyDeclared(ConcreteExtensionId),
+
+    #[error("MissingReferencesForStatement")]
+    MissingReferencesForStatement,
+
     #[error(transparent)]
     ExtensionError(#[from] ExtensionError),
+
+    #[error(transparent)]
+    ReferencesError(#[from] ReferencesError),
 }
 
 #[derive(Error, Debug, Eq, PartialEq)]
@@ -36,17 +44,15 @@ impl Display for CairoProgram {
 }
 
 pub fn collect_extensions(
-    extension_declarations: &Vec<ExtensionDeclaration>,
+    extension_declarations: &[ExtensionDeclaration],
 ) -> Result<HashMap<ConcreteExtensionId, ConcreteExtensionBox>, CompilationError> {
     let mut extensions: HashMap<ConcreteExtensionId, ConcreteExtensionBox> = HashMap::new();
 
     for extentsion in extension_declarations {
-        let concreate_ext =
+        let concrete_ext =
             Extensions::default().specialize(&extentsion.generic_id, &extentsion.args)?;
-        if extensions.insert(extentsion.id.clone(), concreate_ext).is_some() {
-            return Err(CompilationError::ConcreateExtensionAlreadyDecleared(
-                extentsion.id.clone(),
-            ));
+        if extensions.insert(extentsion.id.clone(), concrete_ext).is_some() {
+            return Err(CompilationError::ConcreteExtensionAlreadyDeclared(extentsion.id.clone()));
         };
     }
     Ok(extensions)
@@ -56,8 +62,14 @@ pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
     let mut instructions = Vec::new();
 
     let extensions = collect_extensions(&program.extension_declarations)?;
+    let program_refs = init_reference(program.statements.len(), &program.funcs)?;
 
-    for statement in program.statements.iter() {
+    for (statement_id, statement) in program.statements.iter().enumerate() {
+        let _statement_refs = match &program_refs.per_statement_refs[statement_id] {
+            None => Err(CompilationError::MissingReferencesForStatement),
+            Some(statement_refs) => Ok(statement_refs),
+        }?;
+
         match statement {
             Statement::Return(ref_ids) => {
                 if let Some(ref_id) = ref_ids.iter().next() {
