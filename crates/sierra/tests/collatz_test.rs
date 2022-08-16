@@ -101,3 +101,25 @@ fn parse_test() {
 fn create_registry_test() {
     ProgramRegistry::new(&collatz_program()).unwrap();
 }
+
+#[test]
+fn simulate_test() {
+    let program = collatz_program();
+    let id = "Collatz".into();
+    // 5 -> 16 -> 8 -> 4 -> 2 -> 1
+    assert_eq!(
+        sierra::simulate::simulate(&program, &id, vec![vec![100.into()], vec![5.into()]]),
+        Ok(vec![vec![47.into()], vec![5.into()]])
+    );
+    //  0     1     2     3     4     5     6     7     8     9
+    //  7 -> 22 -> 11 -> 34 -> 17 -> 52 -> 26 -> 13 -> 40 -> 20 ->
+    // 10 ->  5 -> 16 ->  8 ->  4 ->  2 ->  1 */
+    assert_eq!(
+        sierra::simulate::simulate(&program, &id, vec![vec![200.into()], vec![7.into()]]),
+        Ok(vec![vec![30.into()], vec![16.into()]])
+    );
+    assert_eq!(
+        sierra::simulate::simulate(&program, &id, vec![vec![100.into()], vec![7.into()]]), /* Out of gas. */
+        Ok(vec![vec![5.into()], vec![(-1).into()]])
+    );
+}

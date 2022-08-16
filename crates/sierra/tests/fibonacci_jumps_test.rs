@@ -62,7 +62,7 @@ fn fib_program() -> sierra::program::Program {
         // Statement # 24  - Ran out of gas - returning updated gb and -1.
         int_ignore(a) -> ();
         int_ignore(b) -> ();
-        int_nz_unwrap(n) -> (n);
+        int_unwrap_nz(n) -> (n);
         int_ignore(n) -> ();
         move_gb(gb) -> (gb);
         store_temp_gb(gb) -> (gb);
@@ -102,4 +102,51 @@ fn parse_test() {
 #[test]
 fn create_registry_test() {
     ProgramRegistry::new(&fib_program()).unwrap();
+}
+
+#[test]
+fn simulate_test() {
+    let program = fib_program();
+    let id = "Fibonacci".into();
+    // 1, 1, 2, 3, 5, 8, 13, 21, 34
+    assert_eq!(
+        sierra::simulate::simulate(&program, &id, vec![vec![1000.into()], vec![0.into()]]),
+        Ok(vec![vec![1007.into()], vec![1.into()]])
+    );
+    assert_eq!(
+        sierra::simulate::simulate(&program, &id, vec![vec![1000.into()], vec![1.into()]]),
+        Ok(vec![vec![1005.into()], vec![1.into()]])
+    );
+    assert_eq!(
+        sierra::simulate::simulate(&program, &id, vec![vec![1000.into()], vec![2.into()]]),
+        Ok(vec![vec![996.into()], vec![2.into()]])
+    );
+    assert_eq!(
+        sierra::simulate::simulate(&program, &id, vec![vec![1000.into()], vec![3.into()]]),
+        Ok(vec![vec![991.into()], vec![3.into()]])
+    );
+    assert_eq!(
+        sierra::simulate::simulate(&program, &id, vec![vec![1000.into()], vec![4.into()]]),
+        Ok(vec![vec![986.into()], vec![5.into()]])
+    );
+    assert_eq!(
+        sierra::simulate::simulate(&program, &id, vec![vec![1000.into()], vec![5.into()]]),
+        Ok(vec![vec![981.into()], vec![8.into()]])
+    );
+    assert_eq!(
+        sierra::simulate::simulate(&program, &id, vec![vec![1000.into()], vec![6.into()]]),
+        Ok(vec![vec![976.into()], vec![13.into()]])
+    );
+    assert_eq!(
+        sierra::simulate::simulate(&program, &id, vec![vec![1000.into()], vec![7.into()]]),
+        Ok(vec![vec![971.into()], vec![21.into()]])
+    );
+    assert_eq!(
+        sierra::simulate::simulate(&program, &id, vec![vec![1000.into()], vec![8.into()]]),
+        Ok(vec![vec![966.into()], vec![34.into()]])
+    );
+    assert_eq!(
+        sierra::simulate::simulate(&program, &id, vec![vec![100.into()], vec![80.into()]]),
+        Ok(vec![vec![0.into()], vec![(-1).into()]])
+    );
 }
