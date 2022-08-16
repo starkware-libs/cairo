@@ -1,8 +1,8 @@
 use std::fmt::Display;
 
 use crate::instructions::{
-    AssertEqInstruction, CallInstruction, Instruction, JnzInstruction, JumpInstruction,
-    RetInstruction,
+    AssertEqInstruction, CallInstruction, Instruction, InstructionBody, JnzInstruction,
+    JumpInstruction, RetInstruction,
 };
 use crate::operand::{DerefOperand, DerefOrImmediate, ImmediateOperand, Register, ResOperand};
 
@@ -14,7 +14,7 @@ fn test_jump_or_call<Inst>() {
 
     assert_eq!(abs_jmp_insn.to_string(), "jmp abs 3");
 
-    let rel_jmp_insn: Instruction = Instruction::Jump(JumpInstruction {
+    let rel_jmp_insn: InstructionBody = InstructionBody::Jump(JumpInstruction {
         target: DerefOrImmediate::Immediate(ImmediateOperand { value: -5 }),
         relative: true,
     });
@@ -24,19 +24,25 @@ fn test_jump_or_call<Inst>() {
 
 #[test]
 fn test_jump_format() {
-    let abs_jmp_insn = JumpInstruction {
-        target: DerefOrImmediate::Immediate(ImmediateOperand { value: 3 }),
-        relative: false,
+    let abs_jmp_insn = Instruction {
+        body: InstructionBody::Jump(JumpInstruction {
+            target: DerefOrImmediate::Immediate(ImmediateOperand { value: 3 }),
+            relative: false,
+        }),
+        inc_ap: false,
     };
 
     assert_eq!(abs_jmp_insn.to_string(), "jmp abs 3");
 
-    let rel_jmp_insn: Instruction = Instruction::Jump(JumpInstruction {
-        target: DerefOrImmediate::Immediate(ImmediateOperand { value: -5 }),
-        relative: true,
-    });
+    let rel_jmp_insn = Instruction {
+        body: InstructionBody::Jump(JumpInstruction {
+            target: DerefOrImmediate::Immediate(ImmediateOperand { value: -5 }),
+            relative: true,
+        }),
+        inc_ap: true,
+    };
 
-    assert_eq!(rel_jmp_insn.to_string(), "jmp rel -5");
+    assert_eq!(rel_jmp_insn.to_string(), "jmp rel -5, ap++");
 }
 
 #[test]
@@ -48,7 +54,7 @@ fn test_call_format() {
 
     assert_eq!(abs_call_insn.to_string(), "call abs 3");
 
-    let rel_call_insn: Instruction = Instruction::Call(CallInstruction {
+    let rel_call_insn: InstructionBody = InstructionBody::Call(CallInstruction {
         target: DerefOrImmediate::Immediate(ImmediateOperand { value: -5 }),
         relative: true,
     });
