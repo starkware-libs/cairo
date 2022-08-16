@@ -79,7 +79,8 @@ pub struct ExprVar {
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct ExprLiteral {
-    // TODO(spapini): Literal value.
+    // TODO(spapini): Fix the type of `value`.
+    pub value: usize,
     pub ty: TypeId,
 }
 
