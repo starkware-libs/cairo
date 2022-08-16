@@ -7,3 +7,6 @@ edition = "2021"
 defs = {path = "../defs"}
 salsa = "0.16.1"
 semantic = { path = "../semantic" }
+
+[dev_dependencies]
+pretty_assertions = "1.2.1"
