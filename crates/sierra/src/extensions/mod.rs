@@ -1,8 +1,9 @@
 use std::collections::HashMap;
 
+use casm::instructions::Instruction;
 use thiserror::Error;
 
-use crate::ids::GenericExtensionId;
+use crate::ids::{ConcreteExtensionId, GenericExtensionId};
 use crate::program::GenericArg;
 
 mod core;
@@ -23,6 +24,10 @@ pub enum SpecializationError {
 pub enum ExtensionError {
     #[error("Count not specialize extension")]
     Specialization { extension_id: GenericExtensionId, error: SpecializationError },
+    #[error("Requested extension not declared.")]
+    UndeclaredExtension { extension_id: ConcreteExtensionId },
+    #[error("The requested functionality is not implemented yet")]
+    NotImplemented,
 }
 
 /// Handles extensions usages.
@@ -75,10 +80,14 @@ impl<T: NoGenericArgsGenericExtension> GenericExtension for T {
 }
 
 /// Trait for a specialized extension.
-pub trait ConcreteExtension {}
+pub trait ConcreteExtension {
+    fn gen_code(&self) -> Result<Vec<Instruction>, ExtensionError> {
+        Err(ExtensionError::NotImplemented)
+    }
+}
 
 type GenericExtensionBox = Box<dyn GenericExtension>;
-type ConcreteExtensionBox = Box<dyn ConcreteExtension>;
+pub type ConcreteExtensionBox = Box<dyn ConcreteExtension>;
 
 #[cfg(test)]
 mod test;
