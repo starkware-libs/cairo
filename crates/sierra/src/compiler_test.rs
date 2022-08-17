@@ -1,3 +1,4 @@
+use assert_matches::assert_matches;
 use indoc::indoc;
 
 use crate::compiler::{compile, CompilationError};
