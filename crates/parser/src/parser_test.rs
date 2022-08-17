@@ -27,7 +27,7 @@ fn test_simple() {
     let contents = fs::read_to_string(filename)
         .unwrap_or_else(|_| panic!("Something went wrong reading file {}", filename));
     let mut parser = Parser::from_text(db, test_source(), contents.as_str());
-    let _green_root = parser.parse_compilation_unit().root;
+    let _green_root = parser.parse_syntax_file().items(db);
 
     // TODO(yuval): print the green tree and compare to the expected string.
 }
