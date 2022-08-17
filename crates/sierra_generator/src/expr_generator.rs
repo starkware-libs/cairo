@@ -1,3 +1,7 @@
+#[cfg(test)]
+#[path = "expr_generator_test.rs"]
+mod tests;
+
 use defs::ids::VarId;
 use semantic;
 
@@ -8,16 +12,16 @@ use crate::expr_generator_context::{ExprGeneratorContext, SierraVariable};
 /// is stored.
 pub fn generate_expression_code(
     context: &mut ExprGeneratorContext<'_>,
-    x: semantic::ExprId,
+    expr_id: semantic::ExprId,
 ) -> (Vec<String>, SierraVariable) {
-    generate_expression_code_by_val(context, &context.get_db().lookup_expr(x))
+    generate_expression_code_by_val(context, &context.get_db().lookup_expr(expr_id))
 }
 
 fn generate_expression_code_by_val(
     context: &mut ExprGeneratorContext<'_>,
-    x: &semantic::Expr,
+    expr: &semantic::Expr,
 ) -> (Vec<String>, SierraVariable) {
-    match x {
+    match expr {
         semantic::Expr::ExprBlock(expr_block) => handle_block(context, expr_block),
         semantic::Expr::ExprFunctionCall(expr_function_call) => {
             handle_function_call(context, expr_function_call)
