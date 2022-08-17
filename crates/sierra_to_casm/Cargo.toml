@@ -1,12 +1,7 @@
 [package]
-name = "sierra"
+name = "sierra_to_casm"
 version = "0.1.0"
 edition = "2021"
-build = "src/build.rs" # LALRPOP preprocessing
-
-[build-dependencies]
-lalrpop = "*"
-regex = "1"
 
 [dev-dependencies]
 assert_matches = "1.5"
@@ -14,8 +9,7 @@ indoc = "*"
 test-case = "*"
 
 [dependencies]
-array-init = "*"
 casm = { path = "../casm" }
+sierra = { path = "../sierra" }
 itertools = "*"
-lalrpop-util = { version = "*", features = ["lexer"] }
 thiserror = "*"
