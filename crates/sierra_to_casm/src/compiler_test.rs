@@ -1,11 +1,11 @@
 use assert_matches::assert_matches;
 use indoc::indoc;
+use sierra::extensions::ExtensionError::NotImplemented;
+use sierra::ids::{ConcreteExtensionId, VarId};
+use sierra::program_registry::ProgramRegistryError::MissingExtension;
+use sierra::ProgramParser;
 
 use crate::compiler::{compile, CompilationError};
-use crate::extensions::ExtensionError::NotImplemented;
-use crate::ids::{ConcreteExtensionId, VarId};
-use crate::program_registry::ProgramRegistryError::MissingExtension;
-use crate::ProgramParser;
 
 #[test]
 fn good_flow() {
