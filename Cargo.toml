@@ -10,6 +10,7 @@ members = [
     "crates/semantic",
     "crates/sierra",
     "crates/sierra_generator",
+    "crates/sierra_to_casm",
     "crates/syntax",
     "crates/syntax_codegen",
 ]

@@ -1,13 +1,13 @@
-use std::collections::HashMap;
+mod core;
+#[cfg(test)]
+mod test;
 
-use casm::instructions::Instruction;
 use thiserror::Error;
 
+pub use self::core::{CoreConcrete, CoreExtension};
 use crate::ids::{ConcreteExtensionId, GenericExtensionId};
 use crate::mem_cell::MemCell;
 use crate::program::GenericArg;
-
-mod core;
 
 /// Error occurring while specializing extensions.
 #[derive(Error, Debug, Eq, PartialEq)]
@@ -42,23 +42,29 @@ pub enum ExtensionError {
     NotImplemented,
 }
 
-/// Handles extensions usages.
-pub struct Extensions {
-    specializers: HashMap<GenericExtensionId, GenericExtensionBox>,
+/// Trait for implementing a specialization generator.
+pub trait GenericExtension: Sized {
+    type Concrete: ConcreteExtension;
+
+    /// Instantiates the extension by id.
+    fn by_id(id: &GenericExtensionId) -> Option<Self>;
+    /// Creates the specialization with the template arguments.
+    fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError>;
 }
-impl Default for Extensions {
-    fn default() -> Self {
-        Extensions { specializers: core::all_core_extensions() }
-    }
-}
-impl Extensions {
-    pub fn specialize(
-        &self,
+
+/// Trait for introducing helper methods on GenericExtension.
+pub trait GenericExtensionEx: GenericExtension {
+    fn specialize_by_id(
         extension_id: &GenericExtensionId,
         args: &[GenericArg],
-    ) -> Result<ConcreteExtensionBox, ExtensionError> {
-        self.specializers
-            .get(extension_id)
+    ) -> Result<Self::Concrete, ExtensionError>;
+}
+impl<TGenericExtension: GenericExtension> GenericExtensionEx for TGenericExtension {
+    fn specialize_by_id(
+        extension_id: &GenericExtensionId,
+        args: &[GenericArg],
+    ) -> Result<TGenericExtension::Concrete, ExtensionError> {
+        Self::by_id(extension_id)
             .ok_or_else(move || ExtensionError::Specialization {
                 extension_id: extension_id.clone(),
                 error: SpecializationError::UnsupportedLibCallName,
@@ -71,18 +77,40 @@ impl Extensions {
     }
 }
 
-/// Trait for implementing a specialization generator.
-trait GenericExtension {
+// TODO(spapini): If GenericExtensionId becomes constexpr, use it here instead of name.
+/// Trait for implementing a specialization generator with with a simple id.
+pub trait NamedExtension: Default {
+    type Concrete: ConcreteExtension;
+    const NAME: &'static str;
     /// Creates the specialization with the template arguments.
-    fn specialize(&self, args: &[GenericArg]) -> Result<ConcreteExtensionBox, SpecializationError>;
+    fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError>;
+}
+impl<TNamedExtension: NamedExtension> GenericExtension for TNamedExtension {
+    type Concrete = <Self as NamedExtension>::Concrete;
+
+    fn by_id(id: &GenericExtensionId) -> Option<Self> {
+        if &GenericExtensionId::from(Self::NAME.to_string()) == id {
+            return Some(Self::default());
+        }
+        None
+    }
+
+    fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError> {
+        <Self as NamedExtension>::specialize(self, args)
+    }
 }
 
 /// Trait for implementing a specialization generator with no generic arguments.
-trait NoGenericArgsGenericExtension {
-    fn specialize(&self) -> ConcreteExtensionBox;
+pub trait NoGenericArgsGenericExtension: Default {
+    type Concrete: ConcreteExtension;
+    const NAME: &'static str;
+    fn specialize(&self) -> Self::Concrete;
 }
-impl<T: NoGenericArgsGenericExtension> GenericExtension for T {
-    fn specialize(&self, args: &[GenericArg]) -> Result<ConcreteExtensionBox, SpecializationError> {
+impl<T: NoGenericArgsGenericExtension> NamedExtension for T {
+    type Concrete = <Self as NoGenericArgsGenericExtension>::Concrete;
+    const NAME: &'static str = <Self as NoGenericArgsGenericExtension>::NAME;
+
+    fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError> {
         if args.is_empty() {
             Ok(self.specialize())
         } else {
@@ -93,9 +121,6 @@ impl<T: NoGenericArgsGenericExtension> GenericExtension for T {
 
 /// Trait for a specialized extension.
 pub trait ConcreteExtension {
-    fn gen_code(&self) -> Result<Vec<Instruction>, ExtensionError> {
-        Err(ExtensionError::NotImplemented)
-    }
     /// Given the sets of memory cell values corresponding to inputs to the extension, returns the
     /// sets of memory cell values corresponding to outputs, and the index of the chosen branch.
     fn simulate(&self, inputs: Vec<Vec<MemCell>>)
@@ -118,8 +143,67 @@ impl<T: NonBranchConcreteExtension> ConcreteExtension for T {
     }
 }
 
-type GenericExtensionBox = Box<dyn GenericExtension>;
-pub type ConcreteExtensionBox = Box<dyn ConcreteExtension>;
+/// Forms an extension type from an enum of extensions.
+/// The new enum implements GenericExtension.
+/// All the variant types must also implement GenericExtension.
+/// Usage example:
+/// ```ignore
+/// define_extension_hierarchy! {
+///     pub enum MyExtension {
+///       Ext0(Extension0),
+///       Ext1(Extension1),
+///     }, MyExtensionConcrete
+/// }
+/// ```
+#[macro_export]
+macro_rules! define_extension_hierarchy {
+    (pub enum $name:ident { $($variant_name:ident ($variant:ty)),* },
+            $concrete_name:ident) => {
+        #[allow(clippy::enum_variant_names)]
+        pub enum $name {
+            $($variant_name ($variant)),*
+        }
 
-#[cfg(test)]
-mod test;
+        impl $crate::extensions::GenericExtension for $name {
+            type Concrete = $concrete_name;
+            fn by_id(id: &$crate::ids::GenericExtensionId) -> Option<Self> {
+                $(
+                    if let Some(res) = <$variant>::by_id(id){
+                        return Some(Self::$variant_name(res));
+                    }
+                )*
+                None
+            }
+            fn specialize(
+                    &self, args: &[$crate::extensions::GenericArg]
+            ) -> Result<Self::Concrete, $crate::extensions::SpecializationError>{
+                match self {
+                    $(
+                        Self::$variant_name(value) => {
+                            Ok(Self::Concrete::$variant_name(<$variant as GenericExtension>::specialize(value, args)?.into()))
+                        }
+                    ),*
+                }
+            }
+        }
+
+        #[allow(clippy::enum_variant_names)]
+        pub enum $concrete_name {
+            $($variant_name (<$variant as GenericExtension> ::Concrete)),*
+        }
+
+        impl $crate::extensions::ConcreteExtension for $concrete_name {
+            fn simulate(
+                &self, inputs: Vec<Vec<MemCell>>
+            ) -> Result<(Vec<Vec<MemCell>>, usize), InputError>{
+                match self {
+                    $(
+                        Self::$variant_name(value) => {
+                            value.simulate(inputs)
+                        }
+                    ),*
+                }
+            }
+        }
+    }
+}
