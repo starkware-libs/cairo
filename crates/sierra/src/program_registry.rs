@@ -3,7 +3,7 @@ use std::collections::HashMap;
 
 use thiserror::Error;
 
-use crate::extensions::{ConcreteExtensionBox, ExtensionError, Extensions};
+use crate::extensions::{CoreConcrete, CoreExtension, ExtensionError, GenericExtensionEx};
 use crate::ids::ConcreteExtensionId;
 use crate::program::Program;
 
@@ -24,20 +24,19 @@ pub enum ProgramRegistryError {
 
 /// Registry for the data of the compiler, for all program specific data.
 pub struct ProgramRegistry {
-    pub concrete_extensions: HashMap<ConcreteExtensionId, ConcreteExtensionBox>,
+    pub concrete_extensions: HashMap<ConcreteExtensionId, CoreConcrete>,
 }
 impl ProgramRegistry {
     /// Create a registry for the program.
     pub fn new(program: &Program) -> Result<ProgramRegistry, ProgramRegistryError> {
-        let extensions = Extensions::default();
-        let mut concrete_extensions = HashMap::<ConcreteExtensionId, ConcreteExtensionBox>::new();
+        let mut concrete_extensions = HashMap::<ConcreteExtensionId, CoreConcrete>::new();
         for declaration in &program.extension_declarations {
-            let concrete_extension = extensions
-                .specialize(&declaration.generic_id, &declaration.args)
-                .map_err(|error| ProgramRegistryError::ExtensionSpecialization {
-                    concrete_id: declaration.id.clone(),
-                    error,
-                })?;
+            let concrete_extension =
+                CoreExtension::specialize_by_id(&declaration.generic_id, &declaration.args)
+                    .map_err(|error| ProgramRegistryError::ExtensionSpecialization {
+                        concrete_id: declaration.id.clone(),
+                        error,
+                    })?;
             match concrete_extensions.entry(declaration.id.clone()) {
                 Entry::Occupied(_) => {
                     Err(ProgramRegistryError::ExtensionConcreteIdUsedTwice(declaration.id.clone()))
@@ -51,7 +50,7 @@ impl ProgramRegistry {
     pub fn get_extension<'a>(
         &'a self,
         id: &ConcreteExtensionId,
-    ) -> Result<&'a ConcreteExtensionBox, ProgramRegistryError> {
+    ) -> Result<&'a CoreConcrete, ProgramRegistryError> {
         self.concrete_extensions
             .get(id)
             .ok_or_else(|| ProgramRegistryError::MissingExtension(id.clone()))
