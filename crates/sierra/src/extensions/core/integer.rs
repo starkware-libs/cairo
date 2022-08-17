@@ -1,9 +1,20 @@
 use crate::extensions::{
-    ConcreteExtension, ConcreteExtensionBox, GenericExtension, GenericExtensionBox,
-    NoGenericArgsGenericExtension, SpecializationError,
+    ConcreteExtension, GenericExtension, NoGenericArgsGenericExtension, SpecializationError,
 };
 use crate::ids::GenericExtensionId;
 use crate::program::GenericArg;
+use crate::super_extension;
+
+super_extension! {
+    pub enum IntegerExtension {
+        Operation(OperationGeneric),
+        Const(ConstGeneric),
+        Ignore(IgnoreGeneric),
+        Duplicate(DuplicateGeneric),
+        JumpNotZero(JumpNotZeroGeneric),
+        UnwrapNonZero(UnwrapNonZeroGeneric)
+    }, IntegerConcrete
+}
 
 /// Possible operators for integers.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -16,18 +27,48 @@ enum Operator {
 }
 
 /// Extension for operations on integers.
-struct OperationGeneric {
+pub struct OperationGeneric {
     operator: Operator,
 }
 impl GenericExtension for OperationGeneric {
-    fn specialize(&self, args: &[GenericArg]) -> Result<ConcreteExtensionBox, SpecializationError> {
+    type Concrete = OperationConcrete;
+    fn id() -> Option<GenericExtensionId> {
+        None
+    }
+    fn new() -> Option<Self> {
+        None
+    }
+    fn by_id(id: &GenericExtensionId) -> Option<Self> {
+        if id == &"int_add".into() {
+            return Some(OperationGeneric { operator: Operator::Add });
+        }
+        if id == &"int_sub".into() {
+            return Some(OperationGeneric { operator: Operator::Sub });
+        }
+        if id == &"int_mul".into() {
+            return Some(OperationGeneric { operator: Operator::Mul });
+        }
+        if id == &"int_div".into() {
+            return Some(OperationGeneric { operator: Operator::Div });
+        }
+        if id == &"int_mod".into() {
+            return Some(OperationGeneric { operator: Operator::Mod });
+        }
+        None
+    }
+    fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError> {
         match args {
-            [] => Ok(Box::new(BinaryOperationConcrete { _operator: self.operator })),
+            [] => {
+                Ok(OperationConcrete::Binary(BinaryOperationConcrete { _operator: self.operator }))
+            }
             [GenericArg::Value(c)] => {
                 if matches!(self.operator, Operator::Div | Operator::Mod) && *c == 0 {
                     Err(SpecializationError::UnsupportedTemplateArg)
                 } else {
-                    Ok(Box::new(OperationWithConstConcrete { _operator: self.operator, _c: *c }))
+                    Ok(OperationConcrete::Const(OperationWithConstConcrete {
+                        _operator: self.operator,
+                        _c: *c,
+                    }))
                 }
             }
             _ => Err(SpecializationError::UnsupportedTemplateArg),
@@ -36,90 +77,112 @@ impl GenericExtension for OperationGeneric {
 }
 
 /// Binary int operations.
-struct BinaryOperationConcrete {
+pub struct BinaryOperationConcrete {
     _operator: Operator,
 }
-impl ConcreteExtension for BinaryOperationConcrete {}
-
 /// Operations between a int and a const.
-struct OperationWithConstConcrete {
+pub struct OperationWithConstConcrete {
     _operator: Operator,
     _c: i64,
 }
-impl ConcreteExtension for OperationWithConstConcrete {}
+pub enum OperationConcrete {
+    Binary(BinaryOperationConcrete),
+    Const(OperationWithConstConcrete),
+}
+impl ConcreteExtension for OperationConcrete {}
 
 /// Extension for creating a constant int.
-struct ConstGeneric {}
+pub struct ConstGeneric {}
 impl GenericExtension for ConstGeneric {
-    fn specialize(&self, args: &[GenericArg]) -> Result<ConcreteExtensionBox, SpecializationError> {
+    type Concrete = ConstConcrete;
+    fn id() -> Option<GenericExtensionId> {
+        Some("int_const".into())
+    }
+    fn new() -> Option<Self> {
+        Some(Self {})
+    }
+    fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError> {
         match args {
-            [GenericArg::Value(c)] => Ok(Box::new(ConstConcrete { _c: *c })),
+            [GenericArg::Value(c)] => Ok(ConstConcrete { _c: *c }),
             _ => Err(SpecializationError::UnsupportedTemplateArg),
         }
     }
 }
 
-struct ConstConcrete {
+pub struct ConstConcrete {
     _c: i64,
 }
 impl ConcreteExtension for ConstConcrete {}
 
 /// Extension for ignoring an int.
-struct IgnoreGeneric {}
+pub struct IgnoreGeneric {}
 impl NoGenericArgsGenericExtension for IgnoreGeneric {
-    fn specialize(&self) -> ConcreteExtensionBox {
-        Box::new(IgnoreConcrete {})
+    type Concrete = IgnoreConcrete;
+    fn id() -> Option<GenericExtensionId> {
+        Some("int_ignore".into())
+    }
+    fn new() -> Option<Self> {
+        Some(Self {})
+    }
+    fn specialize(&self) -> Self::Concrete {
+        IgnoreConcrete {}
     }
 }
 
-struct IgnoreConcrete {}
+pub struct IgnoreConcrete {}
 impl ConcreteExtension for IgnoreConcrete {}
 
 /// Extension for duplicating an int.
-struct DuplicateGeneric {}
+pub struct DuplicateGeneric {}
 impl NoGenericArgsGenericExtension for DuplicateGeneric {
-    fn specialize(&self) -> ConcreteExtensionBox {
-        Box::new(DuplicateConcrete {})
+    type Concrete = DuplicateConcrete;
+    fn id() -> Option<GenericExtensionId> {
+        Some("int_dup".into())
+    }
+    fn new() -> Option<Self> {
+        Some(Self {})
+    }
+    fn specialize(&self) -> Self::Concrete {
+        DuplicateConcrete {}
     }
 }
 
-struct DuplicateConcrete {}
+pub struct DuplicateConcrete {}
 impl ConcreteExtension for DuplicateConcrete {}
 
 /// Extension for jump non-zero on an int's value, and returning a non-zero wrapped int in case of
 /// success.
-struct JumpNotZeroGeneric {}
+pub struct JumpNotZeroGeneric {}
 impl NoGenericArgsGenericExtension for JumpNotZeroGeneric {
-    fn specialize(&self) -> ConcreteExtensionBox {
-        Box::new(JumpNotZeroConcrete {})
+    type Concrete = JumpNotZeroConcrete;
+    fn id() -> Option<GenericExtensionId> {
+        Some("int_jump_nz".into())
+    }
+    fn new() -> Option<Self> {
+        Some(Self {})
+    }
+    fn specialize(&self) -> Self::Concrete {
+        JumpNotZeroConcrete {}
     }
 }
 
-struct JumpNotZeroConcrete {}
+pub struct JumpNotZeroConcrete {}
 impl ConcreteExtension for JumpNotZeroConcrete {}
 
 /// Extension for unwrapping a non-zero int back into a regular int.
-struct UnwrapNonZeroGeneric {}
+pub struct UnwrapNonZeroGeneric {}
 impl NoGenericArgsGenericExtension for UnwrapNonZeroGeneric {
-    fn specialize(&self) -> ConcreteExtensionBox {
-        Box::new(UnwrapNonZeroConcrete {})
+    type Concrete = UnwrapNonZeroConcrete;
+    fn id() -> Option<GenericExtensionId> {
+        Some("int_unwrap_nz".into())
+    }
+    fn new() -> Option<Self> {
+        Some(Self {})
+    }
+    fn specialize(&self) -> Self::Concrete {
+        UnwrapNonZeroConcrete {}
     }
 }
 
-struct UnwrapNonZeroConcrete {}
+pub struct UnwrapNonZeroConcrete {}
 impl ConcreteExtension for UnwrapNonZeroConcrete {}
-
-pub(super) fn extensions() -> [(GenericExtensionId, GenericExtensionBox); 10] {
-    [
-        ("int_add".into(), Box::new(OperationGeneric { operator: Operator::Add })),
-        ("int_sub".into(), Box::new(OperationGeneric { operator: Operator::Sub })),
-        ("int_mul".into(), Box::new(OperationGeneric { operator: Operator::Mul })),
-        ("int_div".into(), Box::new(OperationGeneric { operator: Operator::Div })),
-        ("int_mod".into(), Box::new(OperationGeneric { operator: Operator::Mod })),
-        ("int_const".into(), Box::new(ConstGeneric {})),
-        ("int_ignore".into(), Box::new(IgnoreGeneric {})),
-        ("int_dup".into(), Box::new(DuplicateGeneric {})),
-        ("int_jump_nz".into(), Box::new(JumpNotZeroGeneric {})),
-        ("int_unwrap_nz".into(), Box::new(UnwrapNonZeroGeneric {})),
-    ]
-}

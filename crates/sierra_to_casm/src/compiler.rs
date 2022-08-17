@@ -2,11 +2,10 @@ use std::collections::HashMap;
 use std::fmt::Display;
 
 use casm::instructions::{Instruction, InstructionBody, RetInstruction};
+use sierra::extensions::{CoreConcrete, CoreExtension, ExtensionError, GenericExtensionEx};
+use sierra::ids::{ConcreteExtensionId, GenericExtensionId, VarId};
+use sierra::program::{ExtensionDeclaration, Program, Statement};
 use thiserror::Error;
-
-use crate::extensions::{ConcreteExtensionBox, ExtensionError, Extensions};
-use crate::ids::{ConcreteExtensionId, VarId};
-use crate::program::{ExtensionDeclaration, Program, Statement};
 
 #[cfg(test)]
 #[path = "compiler_test.rs"]
@@ -20,6 +19,8 @@ pub enum CompilationError {
     ConcreateExtensionAlreadyDecleared(ConcreteExtensionId),
     #[error(transparent)]
     ExtensionError(#[from] ExtensionError),
+    #[error("ConcreateExtensionAlreadyDecleared")]
+    ExtensionNotFound(GenericExtensionId),
 }
 
 #[derive(Error, Debug, Eq, PartialEq)]
@@ -37,16 +38,14 @@ impl Display for CairoProgram {
 
 pub fn collect_extensions(
     extension_declarations: &Vec<ExtensionDeclaration>,
-) -> Result<HashMap<ConcreteExtensionId, ConcreteExtensionBox>, CompilationError> {
-    let mut extensions: HashMap<ConcreteExtensionId, ConcreteExtensionBox> = HashMap::new();
+) -> Result<HashMap<ConcreteExtensionId, CoreConcrete>, CompilationError> {
+    let mut extensions: HashMap<ConcreteExtensionId, CoreConcrete> = HashMap::new();
 
-    for extentsion in extension_declarations {
+    for extension in extension_declarations {
         let concreate_ext =
-            Extensions::default().specialize(&extentsion.generic_id, &extentsion.args)?;
-        if extensions.insert(extentsion.id.clone(), concreate_ext).is_some() {
-            return Err(CompilationError::ConcreateExtensionAlreadyDecleared(
-                extentsion.id.clone(),
-            ));
+            CoreExtension::specialize_by_id(&extension.generic_id, &extension.args)?;
+        if extensions.insert(extension.id.clone(), concreate_ext).is_some() {
+            return Err(CompilationError::ConcreateExtensionAlreadyDecleared(extension.id.clone()));
         };
     }
     Ok(extensions)
@@ -75,9 +74,13 @@ pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
                         extension_id: invocation.extension_id.clone(),
                     }
                 })?;
-                ext.gen_code()?;
+                gen_code(ext)?;
             }
         }
     }
     Ok(CairoProgram { instructions })
+}
+
+fn gen_code(_ext: &CoreConcrete) -> Result<Vec<Instruction>, ExtensionError> {
+    Err(ExtensionError::NotImplemented)
 }

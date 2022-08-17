@@ -1,6 +1,8 @@
 use test_case::test_case;
 
-use super::{ExtensionError, Extensions, SpecializationError};
+use super::core::CoreExtension;
+use super::SpecializationError;
+use crate::extensions::GenericExtension;
 use crate::program::GenericArg;
 
 fn type_arg(name: &str) -> GenericArg {
@@ -74,8 +76,8 @@ fn value_arg(v: i64) -> GenericArg {
 #[test_case("jump", vec![type_arg("T")] => Err(SpecializationError::WrongNumberOfTemplateArgs);
             "jump<T>")]
 fn find_specialization(id: &str, args: Vec<GenericArg>) -> Result<(), SpecializationError> {
-    Extensions::default().specialize(&id.into(), &args).map(|_| ()).map_err(|error| match error {
-        ExtensionError::Specialization { extension_id: _, error } => error,
-        _ => panic!("Unexpected error."),
-    })
+    CoreExtension::by_id(&id.into())
+        .ok_or(SpecializationError::UnsupportedLibCallName)?
+        .specialize(&args)
+        .map(|_| ())
 }

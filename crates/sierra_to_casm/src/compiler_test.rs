@@ -1,9 +1,9 @@
 use indoc::indoc;
+use sierra::extensions::ExtensionError::{NotImplemented, UndeclaredExtension};
+use sierra::ids::{ConcreteExtensionId, VarId};
+use sierra::ProgramParser;
 
 use crate::compiler::{compile, CompilationError};
-use crate::extensions::ExtensionError::{NotImplemented, UndeclaredExtension};
-use crate::ids::{ConcreteExtensionId, VarId};
-use crate::ProgramParser;
 
 #[test]
 fn good_flow() {

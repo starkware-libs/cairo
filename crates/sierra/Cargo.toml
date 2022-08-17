@@ -14,7 +14,6 @@ indoc = "*"
 test-case = "*"
 
 [dependencies]
-casm = { path = "../casm" }
 itertools = "*"
 lalrpop-util = { version = "*", features = ["lexer"] }
 thiserror = "*"

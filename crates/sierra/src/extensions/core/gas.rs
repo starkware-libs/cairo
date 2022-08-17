@@ -1,10 +1,15 @@
 // Module providing the gas related extensions.
-use crate::extensions::{
-    ConcreteExtension, ConcreteExtensionBox, GenericExtension, GenericExtensionBox,
-    SpecializationError,
-};
+use crate::extensions::{ConcreteExtension, GenericExtension, SpecializationError};
 use crate::ids::GenericExtensionId;
 use crate::program::GenericArg;
+use crate::super_extension;
+
+super_extension! {
+    pub enum GasExtension {
+        GetGas(GetGasGeneric),
+        RefundGas(RefundGasGeneric)
+    }, GasConcrete
+}
 
 /// Helper for extracting a single positive value from template arguments.
 fn as_single_positive_value(args: &[GenericArg]) -> Result<i64, SpecializationError> {
@@ -15,34 +20,41 @@ fn as_single_positive_value(args: &[GenericArg]) -> Result<i64, SpecializationEr
 }
 
 /// Extension for getting gas branch.
-struct GetGasGeneric {}
+pub struct GetGasGeneric {}
 impl GenericExtension for GetGasGeneric {
-    fn specialize(&self, args: &[GenericArg]) -> Result<ConcreteExtensionBox, SpecializationError> {
-        Ok(Box::new(GetGasConcrete { _count: as_single_positive_value(args)? }))
+    type Concrete = GetGasConcrete;
+    fn id() -> Option<GenericExtensionId> {
+        Some("get_gas".into())
+    }
+    fn new() -> Option<Self> {
+        Some(Self {})
+    }
+    fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError> {
+        Ok(GetGasConcrete { _count: as_single_positive_value(args)? })
     }
 }
 
-struct GetGasConcrete {
+pub struct GetGasConcrete {
     _count: i64,
 }
 impl ConcreteExtension for GetGasConcrete {}
 
 /// Extension for returning unused gas.
-struct RefundGasGeneric {}
+pub struct RefundGasGeneric {}
 impl GenericExtension for RefundGasGeneric {
-    fn specialize(&self, args: &[GenericArg]) -> Result<ConcreteExtensionBox, SpecializationError> {
-        Ok(Box::new(RefundGasConcrete { _count: as_single_positive_value(args)? }))
+    type Concrete = RefundGasConcrete;
+    fn id() -> Option<GenericExtensionId> {
+        Some("refund_gas".into())
+    }
+    fn new() -> Option<Self> {
+        Some(Self {})
+    }
+    fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError> {
+        Ok(RefundGasConcrete { _count: as_single_positive_value(args)? })
     }
 }
 
-struct RefundGasConcrete {
+pub struct RefundGasConcrete {
     _count: i64,
 }
 impl ConcreteExtension for RefundGasConcrete {}
-
-pub(super) fn extensions() -> [(GenericExtensionId, GenericExtensionBox); 2] {
-    [
-        ("get_gas".into(), Box::new(GetGasGeneric {})),
-        ("refund_gas".into(), Box::new(RefundGasGeneric {})),
-    ]
-}

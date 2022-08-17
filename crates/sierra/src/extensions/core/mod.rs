@@ -1,21 +1,20 @@
-use std::collections::HashMap;
-
-use itertools::chain;
-
-use super::GenericExtensionBox;
-use crate::ids::GenericExtensionId;
+use self::gas::GasExtension;
+use self::integer::IntegerExtension;
+use self::mem::MemExtension;
+use self::unconditional_jump::UnconditionalJumpGeneric;
+use super::GenericExtension;
+use crate::super_extension;
 
 mod gas;
 mod integer;
 mod mem;
 mod unconditional_jump;
 
-pub(super) fn all_core_extensions() -> HashMap<GenericExtensionId, GenericExtensionBox> {
-    chain!(
-        gas::extensions().into_iter(),
-        integer::extensions().into_iter(),
-        mem::extensions().into_iter(),
-        unconditional_jump::extensions().into_iter(),
-    )
-    .collect()
+super_extension! {
+    pub enum CoreExtension {
+        Gas(GasExtension),
+        Integer(IntegerExtension),
+        Mem(MemExtension),
+        UnconditionalJump(UnconditionalJumpGeneric)
+    }, CoreConcrete
 }
