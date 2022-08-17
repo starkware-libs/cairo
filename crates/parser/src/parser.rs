@@ -4,6 +4,7 @@ mod tests;
 
 use std::collections::HashMap;
 use std::mem;
+use std::sync::Arc;
 
 use filesystem::ids::FileId;
 use syntax::node::ast::*;
@@ -11,6 +12,7 @@ use syntax::node::db::GreenInterner;
 use syntax::node::green::{GreenNode, GreenNodeInternal};
 use syntax::node::ids::GreenId;
 use syntax::node::kind::SyntaxKind;
+use syntax::node::{SyntaxNode, TypedSyntaxNode};
 use syntax::token::TokenKind;
 
 use crate::lexer::{Lexer, TerminalWithKind};
@@ -54,17 +56,23 @@ impl<'a> Parser<'a> {
         Parser {
             lexer,
             current,
-            skipped_tokens: Vec::new(), // , diagnostics: DiagnosticsBag::new()
+            skipped_tokens: Vec::new(),
+            // diagnostics: DiagnosticsBag::new()
             db,
         }
     }
 
-    pub fn parse_compilation_unit(&mut self) -> GreenCompilationUnit {
-        let root = self.parse_top_level_items();
+    pub fn parse_file(&mut self) -> Arc<SyntaxFile> {
+        let items = self.parse_top_level_items();
         while self.peek().kind != TokenKind::EndOfFile {
             self.skip_token();
         }
-        GreenCompilationUnit { root }
+
+        let eof = self.current.terminal;
+        Arc::new(SyntaxFile::from_syntax_node(
+            self.db,
+            SyntaxNode::new_root(SyntaxFile::new_green(self.db, items, eof)),
+        ))
     }
 
     // Top level items
