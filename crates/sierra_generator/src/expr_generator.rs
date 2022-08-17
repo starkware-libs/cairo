@@ -40,18 +40,67 @@ fn generate_expression_code_by_val(
 
 /// Generates Sierra code for [semantic::ExprBlock].
 fn handle_block(
-    _context: &mut ExprGeneratorContext<'_>,
-    _expr_block: &semantic::ExprBlock,
+    context: &mut ExprGeneratorContext<'_>,
+    expr_block: &semantic::ExprBlock,
 ) -> (Vec<String>, SierraVariable) {
-    todo!();
+    // Process the statements.
+    let mut instructions: Vec<String> = vec![];
+    for statement in &expr_block.statements {
+        match statement {
+            semantic::Statement::Expr(expr) => {
+                let (statement_instructions, _res) = generate_expression_code(context, *expr);
+                instructions.extend(statement_instructions);
+            }
+            semantic::Statement::Let(statement_let) => {
+                let (statement_instructions, res) =
+                    generate_expression_code(context, statement_let.expr);
+                instructions.extend(statement_instructions);
+                context.register_variable(statement_let.var, res);
+            }
+        }
+    }
+
+    // Process the tail expression.
+    match expr_block.tail {
+        Some(expr_id) => {
+            let (tail_instructions, output_var) = generate_expression_code(context, expr_id);
+            instructions.extend(tail_instructions);
+            (instructions, output_var)
+        }
+        None => {
+            // TODO(lior): Support expressions that do not return a value.
+            todo!();
+        }
+    }
 }
 
 /// Generates Sierra code for [semantic::ExprFunctionCall].
 fn handle_function_call(
-    _context: &mut ExprGeneratorContext<'_>,
-    _expr_function_call: &semantic::ExprFunctionCall,
+    context: &mut ExprGeneratorContext<'_>,
+    expr_function_call: &semantic::ExprFunctionCall,
 ) -> (Vec<String>, SierraVariable) {
-    todo!();
+    let mut instructions: Vec<String> = vec![];
+
+    // Output instructions to compute the arguments.
+    let mut args: Vec<SierraVariable> = vec![];
+    for arg in &expr_function_call.args {
+        let (arg_instructions, res) = generate_expression_code(context, *arg);
+        instructions.extend(arg_instructions);
+        args.push(res);
+    }
+
+    // Push the arguments on top of the stack.
+    let mut args_on_stack: Vec<String> = vec![];
+    for arg_res in args {
+        let arg_var = context.allocate_sierra_variable();
+        instructions.push(format!("store_temp({}) -> ({});", arg_res, arg_var));
+        args_on_stack.push(format!("{}", arg_var));
+    }
+
+    // Call the function.
+    let tmp_var = context.allocate_sierra_variable();
+    instructions.push(format!("func({}) -> ({});", args_on_stack.join(", "), tmp_var));
+    (instructions, tmp_var)
 }
 
 /// Generates Sierra code for [semantic::ExprMatch].
