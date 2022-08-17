@@ -1,5 +1,8 @@
-#[macro_export]
+pub trait Upcast<T: ?Sized> {
+    fn upcast(&self) -> &T;
+}
 
+#[macro_export]
 // Defines a short id struct for use with salsa interning.
 // Interning is the process of representing a value as an id in a table.
 // We usually denote the value type as "long id", and the id type as "short id" or just "id".

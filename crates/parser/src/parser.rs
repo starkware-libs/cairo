@@ -10,6 +10,7 @@ use syntax::node::db::GreenInterner;
 use syntax::node::green::{GreenNode, GreenNodeInternal};
 use syntax::node::ids::GreenId;
 use syntax::node::kind::SyntaxKind;
+use syntax::node::{SyntaxNode, TypedSyntaxNode};
 use syntax::token::TokenKind;
 
 use crate::lexer::{Lexer, TerminalWithKind};
@@ -60,8 +61,8 @@ impl<'a> Parser<'a> {
         }
     }
 
-    pub fn parse_compilation_unit(&mut self) -> GreenCompilationUnit {
-        let root = self.parse_list(
+    pub fn parse_syntax_file(&mut self) -> SyntaxFile {
+        let items = self.parse_list(
             Self::try_parse_top_level_item,
             TokenKind::EndOfFile,
             ItemList::new_green,
@@ -69,8 +70,12 @@ impl<'a> Parser<'a> {
         while self.peek().kind != TokenKind::EndOfFile {
             self.skip_token();
         }
-        // TODO(yuval): change to SyntaxFile
-        GreenCompilationUnit { root }
+
+        let eof = self.current.terminal;
+        SyntaxFile::from_syntax_node(
+            self.db,
+            SyntaxNode::new_root(SyntaxFile::new_green(self.db, items, eof)),
+        )
     }
 
     // ------------------------------- Top level items -------------------------------

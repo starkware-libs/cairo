@@ -1,3 +1,4 @@
+pub mod db;
 pub mod lexer;
 pub mod operators;
 pub mod parser;
