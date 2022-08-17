@@ -1,10 +1,10 @@
 use indoc::indoc;
+use sierra::extensions::ExtensionError::NotImplemented;
+use sierra::ids::{ConcreteExtensionId, VarId};
+use sierra::program_registry::ProgramRegistryError::MissingExtension;
+use sierra::ProgramParser;
 
 use crate::compiler::{compile, CompilationError};
-use crate::extensions::ExtensionError::NotImplemented;
-use crate::ids::{ConcreteExtensionId, VarId};
-use crate::program_registry::ProgramRegistryError::MissingExtension;
-use crate::ProgramParser;
 
 #[test]
 fn good_flow() {
@@ -34,7 +34,7 @@ fn missing_ref() {
             test_program@0() -> ();"
         })
         .unwrap();
-    assert_matches!(
+    assert_matches::assert_matches!(
         compile(&prog), Err(CompilationError::MissingReference(x)) if x == VarId::new(2));
 }
 
@@ -51,7 +51,10 @@ fn unimplemented_extension() {
         "})
         .unwrap();
 
-    assert_matches!(compile(&prog), Err(CompilationError::ExtensionError(NotImplemented)));
+    assert_matches::assert_matches!(
+        compile(&prog),
+        Err(CompilationError::ExtensionError(NotImplemented))
+    );
 }
 
 #[test]
@@ -64,7 +67,7 @@ fn undeclared_extension() {
         "})
         .unwrap();
 
-    assert_matches!(
+    assert_matches::assert_matches!(
         compile(&prog), Err(
             CompilationError::ProgramRegistryError(MissingExtension(extension_id)))
                 if extension_id == ConcreteExtensionId::from_string("store_temp_felt"));
