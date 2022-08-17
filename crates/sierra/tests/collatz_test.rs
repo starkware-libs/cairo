@@ -1,4 +1,5 @@
 use indoc::indoc;
+use sierra::program_registry::ProgramRegistry;
 
 fn collatz_program() -> sierra::program::Program {
     sierra::ProgramParser::new()
@@ -25,7 +26,7 @@ fn collatz_program() -> sierra::program::Program {
         ext get_gas_11 = get_gas<11>;
         ext refund_gas_1 = refund_gas<1>;
         ext jump = jump;
-        ext align_temps = align_temps<1>;
+        ext align_temps = align_temps<int>;
 
         // Statement #  0 - Setting up memory the form [n, gb, counter=0].
         move_int(n) -> (n);
@@ -94,4 +95,9 @@ fn collatz_program() -> sierra::program::Program {
 #[test]
 fn parse_test() {
     collatz_program();
+}
+
+#[test]
+fn create_registry_test() {
+    ProgramRegistry::new(&collatz_program()).unwrap();
 }

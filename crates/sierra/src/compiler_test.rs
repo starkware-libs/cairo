@@ -1,8 +1,9 @@
 use indoc::indoc;
 
 use crate::compiler::{compile, CompilationError};
-use crate::extensions::ExtensionError::{NotImplemented, UndeclaredExtension};
+use crate::extensions::ExtensionError::NotImplemented;
 use crate::ids::{ConcreteExtensionId, VarId};
+use crate::program_registry::ProgramRegistryError::MissingExtension;
 use crate::ProgramParser;
 
 #[test]
@@ -65,7 +66,6 @@ fn undeclared_extension() {
 
     assert_matches!(
         compile(&prog), Err(
-            CompilationError::ExtensionError(
-                UndeclaredExtension { extension_id }))
+            CompilationError::ProgramRegistryError(MissingExtension(extension_id)))
                 if extension_id == ConcreteExtensionId::from_string("store_temp_felt"));
 }

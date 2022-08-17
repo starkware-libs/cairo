@@ -27,7 +27,7 @@ pub struct TypeDeclaration {
 }
 
 /// Declaration of a callable extension.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ExtensionDeclaration {
     /// The id of the declared concrete extension.
     pub id: ConcreteExtensionId,
