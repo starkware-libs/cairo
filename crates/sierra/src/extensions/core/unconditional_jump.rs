@@ -1,19 +1,23 @@
 use super::unpack_inputs;
-use crate::extensions::{
-    ConcreteExtension, ConcreteExtensionBox, GenericExtensionBox, InputError,
-    NoGenericArgsGenericExtension,
-};
+use crate::extensions::{ConcreteExtension, InputError, NoGenericArgsGenericExtension};
 use crate::ids::GenericExtensionId;
 use crate::mem_cell::MemCell;
 
-struct UnconditionalJumpGeneric {}
+pub struct UnconditionalJumpGeneric {}
 impl NoGenericArgsGenericExtension for UnconditionalJumpGeneric {
-    fn specialize(&self) -> ConcreteExtensionBox {
-        Box::new(UnconditionalJumpConcrete {})
+    type Concrete = UnconditionalJumpConcrete;
+    fn id() -> Option<GenericExtensionId> {
+        Some("jump".into())
+    }
+    fn new() -> Option<Self> {
+        Some(Self {})
+    }
+    fn specialize(&self) -> Self::Concrete {
+        UnconditionalJumpConcrete {}
     }
 }
 
-struct UnconditionalJumpConcrete {}
+pub struct UnconditionalJumpConcrete {}
 impl ConcreteExtension for UnconditionalJumpConcrete {
     fn simulate(
         &self,
@@ -22,8 +26,4 @@ impl ConcreteExtension for UnconditionalJumpConcrete {
         unpack_inputs::<0>(inputs)?;
         Ok((vec![], 0))
     }
-}
-
-pub(super) fn extensions() -> [(GenericExtensionId, GenericExtensionBox); 1] {
-    [("jump".into(), Box::new(UnconditionalJumpGeneric {}))]
 }
