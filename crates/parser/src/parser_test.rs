@@ -29,6 +29,8 @@ fn test_simple() {
     let mut parser = Parser::from_text(db, test_source(), contents.as_str());
     let _green_root = parser.parse_compilation_unit().root;
 
+    // TODO(yuval): compare the green tree to some golden tree built explicitly here.
+
     // TODO(yuval): uncomment after merging yuval/printer
     // println!("Colored print:\n");
     // print_colored(green_root, db);

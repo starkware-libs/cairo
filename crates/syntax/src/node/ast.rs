@@ -2430,10 +2430,12 @@ impl FunctionSignature {
         db: &dyn GreenInterner,
         funckw: GreenId,
         name: GreenId,
+        lparen: GreenId,
         parameters: GreenId,
+        rparen: GreenId,
         ret_ty: GreenId,
     ) -> GreenId {
-        let children: Vec<GreenId> = vec![funckw, name, parameters, ret_ty];
+        let children: Vec<GreenId> = vec![funckw, name, lparen, parameters, rparen, ret_ty];
         let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::FunctionSignature,
@@ -2447,11 +2449,17 @@ impl FunctionSignature {
     pub fn name(&self, db: &dyn GreenInterner) -> Identifier {
         Identifier::from_syntax_node(db, self.children[1].clone())
     }
-    pub fn parameters(&self, db: &dyn GreenInterner) -> ParamListParenthesized {
-        ParamListParenthesized::from_syntax_node(db, self.children[2].clone())
+    pub fn lparen(&self, db: &dyn GreenInterner) -> Terminal {
+        Terminal::from_syntax_node(db, self.children[2].clone())
+    }
+    pub fn parameters(&self, db: &dyn GreenInterner) -> ParamList {
+        ParamList::from_syntax_node(db, self.children[3].clone())
+    }
+    pub fn rparen(&self, db: &dyn GreenInterner) -> Terminal {
+        Terminal::from_syntax_node(db, self.children[4].clone())
     }
     pub fn ret_ty(&self, db: &dyn GreenInterner) -> ReturnTypeClause {
-        ReturnTypeClause::from_syntax_node(db, self.children[3].clone())
+        ReturnTypeClause::from_syntax_node(db, self.children[5].clone())
     }
 }
 impl TypedSyntaxNode for FunctionSignature {
@@ -2461,7 +2469,9 @@ impl TypedSyntaxNode for FunctionSignature {
             children: vec![
                 Terminal::missing(db),
                 Identifier::missing(db),
-                ParamListParenthesized::missing(db),
+                Terminal::missing(db),
+                ParamList::missing(db),
+                Terminal::missing(db),
                 ReturnTypeClause::missing(db),
             ],
             width: 0,
@@ -2915,9 +2925,11 @@ impl ItemStruct {
         db: &dyn GreenInterner,
         structkw: GreenId,
         name: GreenId,
-        body: GreenId,
+        lbrace: GreenId,
+        members: GreenId,
+        rbrace: GreenId,
     ) -> GreenId {
-        let children: Vec<GreenId> = vec![structkw, name, body];
+        let children: Vec<GreenId> = vec![structkw, name, lbrace, members, rbrace];
         let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ItemStruct,
@@ -2931,8 +2943,14 @@ impl ItemStruct {
     pub fn name(&self, db: &dyn GreenInterner) -> Identifier {
         Identifier::from_syntax_node(db, self.children[1].clone())
     }
-    pub fn body(&self, db: &dyn GreenInterner) -> ParamListBraced {
-        ParamListBraced::from_syntax_node(db, self.children[2].clone())
+    pub fn lbrace(&self, db: &dyn GreenInterner) -> Terminal {
+        Terminal::from_syntax_node(db, self.children[2].clone())
+    }
+    pub fn members(&self, db: &dyn GreenInterner) -> ParamList {
+        ParamList::from_syntax_node(db, self.children[3].clone())
+    }
+    pub fn rbrace(&self, db: &dyn GreenInterner) -> Terminal {
+        Terminal::from_syntax_node(db, self.children[4].clone())
     }
 }
 impl TypedSyntaxNode for ItemStruct {
@@ -2942,7 +2960,9 @@ impl TypedSyntaxNode for ItemStruct {
             children: vec![
                 Terminal::missing(db),
                 Identifier::missing(db),
-                ParamListBraced::missing(db),
+                Terminal::missing(db),
+                ParamList::missing(db),
+                Terminal::missing(db),
             ],
             width: 0,
         }))
