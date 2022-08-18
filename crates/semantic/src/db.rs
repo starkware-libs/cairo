@@ -2,7 +2,7 @@ use defs::db::DefsGroup;
 use defs::ids::{FreeFunctionId, ModuleId, StructId};
 
 use crate::ids::{
-    ConcreteFunctionId, ConcreteFunctionLongId, ExprId, StatementId, TypeId, TypeLongId,
+    ConcreteFunctionId, ConcreteFunctionLongId, ExprId, StatementIdx, TypeId, TypeLongId,
 };
 use crate::semantic;
 
@@ -16,7 +16,7 @@ pub trait SemanticGroup: DefsGroup {
     #[salsa::interned]
     fn expr(&self, expr: semantic::Expr) -> ExprId;
     #[salsa::interned]
-    fn statement(&self, statement: semantic::Statement) -> StatementId;
+    fn statement(&self, statement: semantic::Statement) -> StatementIdx;
 
     // Queries to compute the semantic model for definitions.
     fn module_semantic(&self, item: ModuleId) -> semantic::Module;

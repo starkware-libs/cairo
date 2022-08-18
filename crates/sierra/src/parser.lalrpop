@@ -29,7 +29,7 @@ ExtensionDeclaration: ExtensionDeclaration = {
 }
 
 Function: Function = {
-    <id:FunctionId> "@" <entry:StatementId>
+    <id:FunctionId> "@" <entry:StatementIdx>
     "(" <params: Params> ")" "->" "(" <ret_types: ConcreteTypeIds> ")" ";"
     => Function{id, params, ret_types, entry},
 }
@@ -71,8 +71,8 @@ ConcreteTypeId: ConcreteTypeId = {
 }
 ConcreteTypeIds = Comma<ConcreteTypeId>;
 
-StatementId: StatementId = {
-     <id:UnsignedInt> => StatementId(id as usize),
+StatementIdx: StatementIdx = {
+     <id:UnsignedInt> => StatementIdx(id as usize),
 }
 
 GenericArg: GenericArg = {
@@ -118,7 +118,7 @@ BranchInfo: BranchInfo = {
 
 BranchTarget: BranchTarget = {
      "fallthrough" => BranchTarget::Fallthrough,
-     <id:StatementId> => BranchTarget::Statement(id),
+     <id:StatementIdx> => BranchTarget::Statement(id),
 }
 
 Label: String = {
