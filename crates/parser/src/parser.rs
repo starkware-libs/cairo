@@ -15,21 +15,20 @@ use syntax::token::TokenKind;
 
 use crate::lexer::{Lexer, TerminalWithKind};
 
-// TODO: add diagnostics.
+// TODO(yuval): add diagnostics.
 
 pub struct Parser<'a> {
-    pub lexer: Lexer<'a>,
+    db: &'a dyn GreenInterner,
+    lexer: Lexer<'a>,
     current: TerminalWithKind,
     skipped_tokens: Vec<GreenId>,
-    // pub diagnostics: DiagnosticsBag,
-    db: &'a dyn GreenInterner,
 }
 
 pub struct GreenCompilationUnit {
     pub root: GreenId,
 }
 
-// match_<something>: expects something to be present and returns a green ID of a node of the
+// expect_<something>: expects something to be present and returns a green ID of a node of the
 // relevant kind. If it's not present - panics.
 // Unless it panics - always returns some green ID which is not of a missing kind.
 //
@@ -40,11 +39,11 @@ pub struct GreenCompilationUnit {
 // Unless it panics - always returns some green ID (could be of a missing kind).
 //
 // try_parse_<something>: if something is there, returns a green ID of a node
-// of kind Something wrapped with Some(). If something is not there, returns None. used when
+// of kind Something wrapped with Some(). If something is not there, returns None. Used when
 // something may or may not be there and we can act differently according to each case.
 // Never panics or returns a green ID of a missing kind.
 
-type FunctionPointer<'c> = fn(&mut Parser<'c>) -> GreenId;
+type ExpectFunction<'c> = fn(&mut Parser<'c>) -> GreenId;
 const MAX_PRECEDENCE: usize = 10;
 impl<'a> Parser<'a> {
     /// Ctor.
@@ -54,13 +53,18 @@ impl<'a> Parser<'a> {
         Parser {
             lexer,
             current,
-            skipped_tokens: Vec::new(), // , diagnostics: DiagnosticsBag::new()
+            skipped_tokens: Vec::new(),
+            // diagnostics: DiagnosticsBag::new()
             db,
         }
     }
 
     pub fn parse_compilation_unit(&mut self) -> GreenCompilationUnit {
-        let root = self.parse_top_level_items();
+        let root = self.parse_list(
+            Self::try_parse_top_level_item,
+            TokenKind::EndOfFile,
+            ItemList::new_green,
+        );
         while self.peek().kind != TokenKind::EndOfFile {
             self.skip_token();
         }
@@ -69,89 +73,82 @@ impl<'a> Parser<'a> {
 
     // Top level items
 
-    /// Returns a GreenId of a node with kind ItemList.
-    pub fn parse_top_level_items(&mut self) -> GreenId {
-        self.parse_list(Self::try_parse_top_level_item, TokenKind::EndOfFile, ItemList::new_green)
-    }
-
     /// Returns a GreenId of a node with an Item.* kind (see syntax::node::ast::Item).
     /// If can't parse as a top level item, keeps skipping tokens until it can.
     /// Returns None only when it reaches EOF.
     pub fn try_parse_top_level_item(&mut self) -> Option<GreenId> {
-        let map: HashMap<TokenKind, FunctionPointer<'a>> = HashMap::from([
-            (TokenKind::Module, Parser::match_module as FunctionPointer<'a>),
-            (TokenKind::Struct, Parser::match_struct as FunctionPointer<'a>),
-            (TokenKind::Function, Parser::match_function as FunctionPointer<'a>),
+        let map: HashMap<TokenKind, ExpectFunction<'a>> = HashMap::from([
+            (TokenKind::Module, Parser::expect_module as ExpectFunction<'a>),
+            (TokenKind::Struct, Parser::expect_struct as ExpectFunction<'a>),
+            (TokenKind::Function, Parser::expect_function as ExpectFunction<'a>),
         ]);
-        self.try_match_item(map, TokenKind::EndOfFile)
+        self.try_expect_item(map, TokenKind::EndOfFile)
     }
 
-    /// Matches one item using a match function from the given map, according to the current token.
-    /// If the current token is not in the map, skips tokens until one is in the map or the
-    /// terminating_token appears. If an item is parsed successfully, returns a GreenId of the node
-    /// with the relevant SyntaxKind. If the terminating_token is reached, returns None.
-    fn try_match_item(
+    /// Expects one item using an expect_.* function from the given map, according to the current
+    /// token. If the current token is not in the map, skips tokens until one is in the map or
+    /// the terminating_token appears. If an item is parsed successfully, returns a GreenId of
+    /// the node with the relevant SyntaxKind. If the terminating_token is reached, returns
+    /// None.
+    fn try_expect_item(
         &mut self,
-        match_functions_map: HashMap<TokenKind, fn(&mut Self) -> GreenId>,
+        expect_functions_map: HashMap<TokenKind, fn(&mut Self) -> GreenId>,
         terminating_token: TokenKind,
     ) -> Option<GreenId> {
         while self.peek().kind != terminating_token && self.peek().kind != TokenKind::EndOfFile {
-            if let Some(parse_item_function) = match_functions_map.get(&self.peek().kind) {
+            if let Some(parse_item_function) = expect_functions_map.get(&self.peek().kind) {
                 return Some(parse_item_function(self));
             }
             self.skip_token();
-            // TODO: report error to diagnostics.
+            // TODO(yuval): report error to diagnostics.
         }
         None
     }
 
     /// Assumes the current token is Module.
     /// Expected pattern: mod<Identifier>\{<ItemList>\}
-    /// Returns a GreenId of a node with kind ItemModule.
-    fn match_module(&mut self) -> GreenId {
+    fn expect_module(&mut self) -> GreenId {
         ItemModule::new_green(
             self.db,
-            self.take(),                             // module keyword
-            self.match_token(TokenKind::Identifier), // name
-            self.match_token(TokenKind::Semi),       // semicolon
+            self.take(),                              // module keyword
+            self.expect_token(TokenKind::Identifier), // name
+            self.expect_token(TokenKind::Semi),       // semicolon
         )
     }
 
     /// Assumes the current token is Struct.
     /// Expected pattern: struct<Identifier><ParamListBraced>
-    /// Returns a GreenId of a node with kind ItemStruct.
-    fn match_struct(&mut self) -> GreenId {
+    fn expect_struct(&mut self) -> GreenId {
         ItemStruct::new_green(
             self.db,
-            self.take(),                             // struct keyword
-            self.match_token(TokenKind::Identifier), // name
-            // TODO: support generics
-            self.match_braced_param_list(), // body
+            self.take(),                              // struct keyword
+            self.expect_token(TokenKind::Identifier), // name
+            // TODO(yuval): support generics
+            self.expect_braced_param_list(), // body
         )
     }
 
     /// Assumes the current token is Function.
     /// Expected pattern: fn<Identifier><ParenthesizedParamList><ReturnTypeClause>
-    /// Returns a GreenId of a node with kind FunctionSignature.
-    fn match_function_signature(&mut self) -> GreenId {
+    fn expect_function_signature(&mut self) -> GreenId {
         FunctionSignature::new_green(
             self.db,
-            self.take(),                             // function keyword
-            self.match_token(TokenKind::Identifier), // name
-            // TODO: support generics
-            self.match_parenthesized_param_list(), // (params)
-            self.parse_return_type_clause(),       // return type clause
+            self.take(),                              // function keyword
+            self.expect_token(TokenKind::Identifier), // name
+            // TODO(yuval): support generics
+            self.expect_parenthesized_param_list(), // (params)
+            self.parse_return_type_clause(),        // return type clause
         )
     }
 
     /// Assumes the current token is Function.
     /// Expected pattern: <FunctionSignature><Block>
     /// Returns a GreenId of a node with kind ItemFunction.
-    fn match_function(&mut self) -> GreenId {
+    fn expect_function(&mut self) -> GreenId {
         ItemFunction::new_green(
             self.db,
-            self.match_function_signature(), // signature
-            self.parse_block(),              // function body
+            self.expect_function_signature(), // signature
+            self.parse_block(),               // function body
         )
     }
 
@@ -187,7 +184,7 @@ impl<'a> Parser<'a> {
             self.try_parse_atom()?
         };
 
-        while let Some(precedence) = get_operator_precedence(self.peek().kind) {
+        while let Some(precedence) = get_binary_operator_precedence(self.peek().kind) {
             if precedence >= parent_precedence {
                 return Some(expr);
             }
@@ -213,19 +210,20 @@ impl<'a> Parser<'a> {
     /// ExprPath|ExprFunctionCall|ExprStructCtorCall|ExprParenthesized|ExprTuple kind, or None if
     /// such an expression can't be parsed.
     fn try_parse_atom(&mut self) -> Option<GreenId> {
+        // TODO(yuval): support paths starting with "::".
         match self.peek().kind {
             TokenKind::Identifier => {
                 let path = self.parse_path();
                 match self.peek().kind {
-                    TokenKind::LParen => Some(self.match_function_call(path)),
-                    TokenKind::LBrace => Some(self.match_constructor_call(path)),
+                    TokenKind::LParen => Some(self.expect_function_call(path)),
+                    TokenKind::LBrace => Some(self.expect_constructor_call(path)),
                     _ => Some(path),
                 }
             }
             TokenKind::False | TokenKind::True | TokenKind::LiteralNumber => Some(self.take()),
-            TokenKind::LParen => Some(self.match_parenthesized_expr()),
+            TokenKind::LParen => Some(self.expect_parenthesized_expr()),
             _ => {
-                // TODO: report to diagnostics.
+                // TODO(yuval): report to diagnostics.
                 None
             }
         }
@@ -233,12 +231,11 @@ impl<'a> Parser<'a> {
 
     /// Assumes the current token is LParen.
     /// Expected pattern: \(<ExprList>\)
-    /// Returns a GreenId of a node with kind ExprListParenthesized.
-    fn match_expression_list_parenthesized(&mut self) -> GreenId {
+    fn expect_expression_list_parenthesized(&mut self) -> GreenId {
         ExprListParenthesized::new_green(
             self.db,
             // left parenthesis
-            self.match_token(TokenKind::LParen),
+            self.take(),
             // Expression list
             self.parse_separated_list(
                 Self::try_parse_expr,
@@ -247,18 +244,17 @@ impl<'a> Parser<'a> {
                 ExprList::new_green,
             ),
             // right parenthesis
-            self.match_token(TokenKind::RParen),
+            self.expect_token(TokenKind::RParen),
         )
     }
 
     /// Assumes the current token is LBrace
     /// Expected pattern: \{<StructArgList>\}
-    /// Returns a GreenId of a node with kind ArgListBraced
-    fn match_struct_ctor_argument_list_braced(&mut self) -> GreenId {
+    fn expect_struct_ctor_argument_list_braced(&mut self) -> GreenId {
         ArgListBraced::new_green(
             self.db,
             // left brace
-            self.match_token(TokenKind::LBrace),
+            self.take(),
             // Argument list
             self.parse_separated_list(
                 Self::try_parse_struct_ctor_argument,
@@ -267,36 +263,34 @@ impl<'a> Parser<'a> {
                 StructArgList::new_green,
             ),
             // right brace
-            self.match_token(TokenKind::RBrace),
+            self.expect_token(TokenKind::RBrace),
         )
     }
 
     /// Assumes the current token is LParen
     /// Expected pattern: <ExprListParenthesized>
-    /// Returns a GreenId of a node with kind ExprFunctionCall
-    fn match_function_call(&mut self, path: GreenId) -> GreenId {
+    fn expect_function_call(&mut self, path: GreenId) -> GreenId {
         ExprFunctionCall::new_green(
             self.db,
-            path,                                       // function name
-            self.match_expression_list_parenthesized(), // (arguments)
+            path,                                        // function name
+            self.expect_expression_list_parenthesized(), // (arguments)
         )
     }
 
     /// Assumes the current token is LBrace
     /// Expected pattern: <ExprListBraced>
-    /// Returns a GreenId of a node with kind ExprStructCtorCall
-    fn match_constructor_call(&mut self, path: GreenId) -> GreenId {
+    fn expect_constructor_call(&mut self, path: GreenId) -> GreenId {
         ExprStructCtorCall::new_green(
             self.db,
-            path,                                          // constructor name
-            self.match_struct_ctor_argument_list_braced(), // arguments
+            path,                                           // constructor name
+            self.expect_struct_ctor_argument_list_braced(), // arguments
         )
     }
 
     /// Assumes the current token is LParen
     /// Expected pattern: \((<expr>,)*<expr>?\)
     /// Returns a GreenId of a node with kind ExprParenthesized|ExprTuple
-    fn match_parenthesized_expr(&mut self) -> GreenId {
+    fn expect_parenthesized_expr(&mut self) -> GreenId {
         let lparen = self.take();
 
         let expr_list_green = self.parse_separated_list(
@@ -312,25 +306,27 @@ impl<'a> Parser<'a> {
                 // We have exactly one item and no separator --> This is not a tuple.
                 ExprParenthesized::new_green(
                     self.db,
-                    lparen,                              // left parenthesis
-                    list_internal.children[0],           // expression
-                    self.match_token(TokenKind::RParen), // right parenthesis
+                    lparen,                               // left parenthesis
+                    list_internal.children[0],            // expression
+                    self.expect_token(TokenKind::RParen), // right parenthesis
                 )
             }
             GreenNode::Internal(_list_internal) => ExprTuple::new_green(
                 self.db,
-                lparen,                              // left parenthesis
-                expr_list_green,                     // expressions
-                self.match_token(TokenKind::RParen), // right parenthesis
+                lparen,                               // left parenthesis
+                expr_list_green,                      // expressions
+                self.expect_token(TokenKind::RParen), // right parenthesis
             ),
-            _ => panic!("This should never happen"),
+            GreenNode::Token(_) => {
+                // This should never happen.
+                panic!("Unexpected token. Expected an internal node")
+            }
         }
     }
 
     /// Assumes the current token is DotDot
     /// Expected pattern: \.\.<Expr>
-    /// Returns a GreenId of a node with kind StructArgTail
-    fn match_struct_argument_tail(&mut self) -> GreenId {
+    fn expect_struct_argument_tail(&mut self) -> GreenId {
         StructArgTail::new_green(
             self.db,
             self.take(), // ..
@@ -339,12 +335,13 @@ impl<'a> Parser<'a> {
         )
     }
 
-    /// Like parse_argument, but also allows for the "struct update syntax" (see https://doc.rust-lang.org/book/ch05-01-defining-structs.html#creating-instances-from-other-instances-with-struct-update-syntax).
-    /// e.g. 'let s2 = S{"s2", ..s1};'
+    // For the similar syntax in Rust, see
+    // https://doc.rust-lang.org/book/ch05-01-defining-structs.html#creating-instances-from-other-instances-with-struct-update-syntax.
+    /// Like parse_argument, but also allows a struct-arg-tail, e.g. 'let s2 = S{"s2", ..s1};'
     /// Returns a GreenId of a node with kind StructArgSingle|StructArgTail.
     fn try_parse_struct_ctor_argument(&mut self) -> Option<GreenId> {
         if self.peek().kind == TokenKind::DotDot {
-            Some(self.match_struct_argument_tail())
+            Some(self.expect_struct_argument_tail())
         } else {
             self.try_parse_argument_single()
         }
@@ -352,12 +349,12 @@ impl<'a> Parser<'a> {
 
     /// Returns a GreenId of a node with kind StructArgExpr or OptionStructArgExprEmpty if an
     /// argument expression (":<value>") can't be parsed.
-    fn parse_arg_expression(&mut self) -> GreenId {
+    fn parse_struct_arg_expression(&mut self) -> GreenId {
         if self.peek().kind == TokenKind::Colon {
             StructArgExpr::new_green(
                 self.db,
-                self.match_token(TokenKind::Colon), // ':'
-                self.parse_expr(),                  // value
+                self.expect_token(TokenKind::Colon), // ':'
+                self.parse_expr(),                   // value
             )
         } else {
             OptionStructArgExprEmpty::new_green(self.db)
@@ -372,8 +369,8 @@ impl<'a> Parser<'a> {
         }
         Some(StructArgSingle::new_green(
             self.db,
-            self.match_token(TokenKind::Identifier), // identifier
-            self.parse_arg_expression(),             // :<expr>
+            self.expect_token(TokenKind::Identifier), // identifier
+            self.parse_struct_arg_expression(),       // :<expr>
         ))
     }
 
@@ -384,11 +381,11 @@ impl<'a> Parser<'a> {
         ExprBlock::new_green(
             self.db,
             // left brace
-            self.match_token(TokenKind::LBrace),
+            self.expect_token(TokenKind::LBrace),
             // statements
             self.parse_list(Self::try_parse_statement, TokenKind::RBrace, StatementList::new_green),
             // right brace
-            self.match_token(TokenKind::RBrace),
+            self.expect_token(TokenKind::RBrace),
         )
     }
 
@@ -402,27 +399,27 @@ impl<'a> Parser<'a> {
                 Some(StatementLet::new_green(
                     self.db,
                     self.take(), // let keyword
-                    // TODO: support patterns instead of only an identifier.
-                    self.match_token(TokenKind::Identifier), // identifier
-                    self.parse_type_clause(),                // type clause
-                    self.match_token(TokenKind::Eq),         // '='
-                    self.parse_expr(),                       // expression
-                    self.match_token(TokenKind::Semi),       // ';'
+                    // TODO(yuval): support patterns instead of only an identifier.
+                    self.expect_token(TokenKind::Identifier), // identifier
+                    self.parse_type_clause(),                 // type clause
+                    self.expect_token(TokenKind::Eq),         // '='
+                    self.parse_expr(),                        // expression
+                    self.expect_token(TokenKind::Semi),       // ';'
                 ))
             }
             TokenKind::Return => {
                 Some(StatementReturn::new_green(
                     self.db,
-                    self.take(),                       // return keyword
-                    self.parse_expr(),                 // expression
-                    self.match_token(TokenKind::Semi), // ';'
+                    self.take(),                        // return keyword
+                    self.parse_expr(),                  // expression
+                    self.expect_token(TokenKind::Semi), // ';'
                 ))
             }
             _ => match self.try_parse_expr() {
                 None => None,
                 Some(expr) => {
                     let optional_semi = if self.peek().kind == TokenKind::Semi {
-                        self.match_token(TokenKind::Semi)
+                        self.expect_token(TokenKind::Semi)
                     } else {
                         OptionSemicolonEmpty::new_green(self.db)
                     };
@@ -438,8 +435,8 @@ impl<'a> Parser<'a> {
         if self.peek().kind == TokenKind::Colon {
             TypeClause::new_green(
                 self.db,
-                self.match_token(TokenKind::Colon), // ':'
-                // TODO: support reacher types.
+                self.expect_token(TokenKind::Colon), // ':'
+                // TODO(yuval): support reacher types.
                 self.parse_path(), // type
             )
         } else {
@@ -453,8 +450,8 @@ impl<'a> Parser<'a> {
         if self.peek().kind == TokenKind::Arrow {
             ReturnTypeClause::new_green(
                 self.db,
-                self.match_token(TokenKind::Arrow), // '->'
-                // TODO: support reacher types.
+                self.expect_token(TokenKind::Arrow), // '->'
+                // TODO(yuval): support reacher types.
                 self.parse_path(), // return type
             )
         } else {
@@ -462,23 +459,25 @@ impl<'a> Parser<'a> {
         }
     }
 
-    /// Returns a GreenId of a node with kind ParamListParenthesized.
-    fn match_parenthesized_param_list(&mut self) -> GreenId {
+    /// Assumes the current token is LParen
+    /// Expected pattern: (<ParamList>)
+    fn expect_parenthesized_param_list(&mut self) -> GreenId {
         ParamListParenthesized::new_green(
             self.db,
-            self.match_token(TokenKind::LParen),      // left
+            self.expect_token(TokenKind::LParen),     // left
             self.parse_param_list(TokenKind::RParen), // param list
-            self.match_token(TokenKind::RParen),      // right
+            self.expect_token(TokenKind::RParen),     // right
         )
     }
 
-    /// Returns a GreenId of a node with kind ParamListBraced.
-    fn match_braced_param_list(&mut self) -> GreenId {
+    /// Assumes the current token is LBrace
+    /// Expected pattern: {<ParamList>}
+    fn expect_braced_param_list(&mut self) -> GreenId {
         ParamListBraced::new_green(
             self.db,
-            self.match_token(TokenKind::LBrace),      // left
+            self.expect_token(TokenKind::LBrace),     // left
             self.parse_param_list(TokenKind::RBrace), // param list
-            self.match_token(TokenKind::RBrace),      // right
+            self.expect_token(TokenKind::RBrace),     // right
         )
     }
 
@@ -514,7 +513,7 @@ impl<'a> Parser<'a> {
     /// identifier.
     fn try_parse_identifier(&mut self) -> Option<GreenId> {
         if self.peek().kind == TokenKind::Identifier {
-            Some(self.match_token(TokenKind::Identifier))
+            Some(self.expect_token(TokenKind::Identifier))
         } else {
             None
         }
@@ -614,7 +613,7 @@ impl<'a> Parser<'a> {
             let item = try_parse_list_item(self);
             if self.peek().kind == separator {
                 children.push(item.map_or(GreenId::missing_token(self.db), |x| x));
-                children.push(self.match_token(separator));
+                children.push(self.expect_token(separator));
             } else {
                 match item {
                     // No separator is missing. If item is missing too, skip the current token and
@@ -735,18 +734,18 @@ impl<'a> Parser<'a> {
         if self.peek().kind == token_kind {
             Some(self.take())
         } else {
-            // TODO: report to diagnostics
+            // TODO(yuval): report to diagnostics
             None
         }
     }
     /// Assumes the current token is of the given `token_kind`.
     /// Returns a GreenId of a node with kind `token_kind` or panics if the current token is not of
     /// this kind.
-    fn match_token(&mut self, token_kind: TokenKind) -> GreenId {
+    fn expect_token(&mut self, token_kind: TokenKind) -> GreenId {
         if let Some(green) = self.try_parse_token(token_kind) {
             green
         } else {
-            // TODO: we want more advanced logic here - decide if token is missing or skipped
+            // TODO(yuval): we want more advanced logic here - decide if token is missing or skipped
             // according to context. Currently we immediately panic.
             panic!("Expected token {:?} is missing!", token_kind);
         }
@@ -755,12 +754,12 @@ impl<'a> Parser<'a> {
 
 fn get_unary_operator_precedence(kind: TokenKind) -> Option<usize> {
     if [TokenKind::Not, TokenKind::Minus].contains(&kind) {
-        get_operator_precedence(kind)
+        get_binary_operator_precedence(kind)
     } else {
         None
     }
 }
-fn get_operator_precedence(kind: TokenKind) -> Option<usize> {
+fn get_binary_operator_precedence(kind: TokenKind) -> Option<usize> {
     match kind {
         TokenKind::Dot => Some(0),
         // TODO(yuval): support unary-only/non-binary operators. "not" can't be binary.
