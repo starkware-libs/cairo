@@ -1,4 +1,4 @@
-mod core;
+pub mod core;
 #[cfg(test)]
 mod test;
 
@@ -6,7 +6,6 @@ use thiserror::Error;
 
 pub use self::core::{CoreConcrete, CoreExtension};
 use crate::ids::{ConcreteExtensionId, GenericExtensionId};
-use crate::mem_cell::MemCell;
 use crate::program::GenericArg;
 
 /// Error occurring while specializing extensions.
@@ -20,15 +19,6 @@ pub enum SpecializationError {
     UnsupportedGenericArg,
 }
 
-/// Error occurring while testing extension inputs.
-#[derive(Error, Debug, Eq, PartialEq)]
-pub enum InputError {
-    #[error("Expected different number of arguments")]
-    WrongNumberOfArgs,
-    #[error("Expected a different memory layout")]
-    MemoryLayoutMismatch,
-}
-
 /// Extension related errors.
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum ExtensionError {
@@ -36,8 +26,6 @@ pub enum ExtensionError {
     Specialization { extension_id: GenericExtensionId, error: SpecializationError },
     #[error("Requested extension not declared.")]
     UndeclaredExtension { extension_id: ConcreteExtensionId },
-    #[error("Encountered unexpected data in extension inputs")]
-    Inputs { extension_id: GenericExtensionId, error: InputError },
     #[error("The requested functionality is not implemented yet")]
     NotImplemented,
 }
@@ -120,28 +108,7 @@ impl<T: NoGenericArgsGenericExtension> NamedExtension for T {
 }
 
 /// Trait for a specialized extension.
-pub trait ConcreteExtension {
-    /// Given the sets of memory cell values corresponding to inputs to the extension, returns the
-    /// sets of memory cell values corresponding to outputs, and the index of the chosen branch.
-    fn simulate(&self, inputs: Vec<Vec<MemCell>>)
-    -> Result<(Vec<Vec<MemCell>>, usize), InputError>;
-}
-
-/// Trait for ConcreteExtension that isn't a branch.
-trait NonBranchConcreteExtension {
-    fn non_branch_simulate(
-        &self,
-        inputs: Vec<Vec<MemCell>>,
-    ) -> Result<Vec<Vec<MemCell>>, InputError>;
-}
-impl<T: NonBranchConcreteExtension> ConcreteExtension for T {
-    fn simulate(
-        &self,
-        inputs: Vec<Vec<MemCell>>,
-    ) -> Result<(Vec<Vec<MemCell>>, usize), InputError> {
-        Ok((self.non_branch_simulate(inputs)?, 0))
-    }
-}
+pub trait ConcreteExtension {}
 
 /// Forms an extension type from an enum of extensions.
 /// The new enum implements GenericExtension.
@@ -192,18 +159,6 @@ macro_rules! define_extension_hierarchy {
             $($variant_name (<$variant as GenericExtension> ::Concrete)),*
         }
 
-        impl $crate::extensions::ConcreteExtension for $concrete_name {
-            fn simulate(
-                &self, inputs: Vec<Vec<MemCell>>
-            ) -> Result<(Vec<Vec<MemCell>>, usize), InputError>{
-                match self {
-                    $(
-                        Self::$variant_name(value) => {
-                            value.simulate(inputs)
-                        }
-                    ),*
-                }
-            }
-        }
+        impl $crate::extensions::ConcreteExtension for $concrete_name {}
     }
 }
