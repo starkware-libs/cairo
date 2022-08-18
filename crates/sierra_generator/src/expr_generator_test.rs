@@ -52,7 +52,7 @@ fn test_expr_generator() {
     let mut expr_generator_context = ExprGeneratorContext::new(&db);
     let (instructions, res) = generate_expression_code(&mut expr_generator_context, block);
     assert_eq!(
-        instructions,
+        instructions.iter().map(|x| format!("{}", x)).collect::<Vec<String>>(),
         vec![
             // let x = 7;
             "literal<7>() -> (var0);",
