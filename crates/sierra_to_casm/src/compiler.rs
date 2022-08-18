@@ -7,7 +7,7 @@ use sierra::program::{Program, Statement};
 use sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use thiserror::Error;
 
-use crate::references::{init_reference, ReferencesError};
+use crate::references::{init_reference, Reference, ReferencesError};
 
 #[cfg(test)]
 #[path = "compiler_test.rs"]
@@ -66,13 +66,30 @@ pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
                 let extension = registry
                     .get_extension(&invocation.extension_id)
                     .map_err(CompilationError::ProgramRegistryError)?;
-                gen_code(extension)?;
+                compile_invocation(extension)?;
             }
         }
     }
     Ok(CairoProgram { instructions })
 }
 
-fn gen_code(_ext: &CoreConcrete) -> Result<Vec<Instruction>, ExtensionError> {
+/// Describes the changes to the set of reference at the branch target.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct BranchRefChanges {
+    // New references defined at a given branch.
+    // should correspond to BranchInfo.results.
+    refs: Vec<Reference>,
+    ap_change: i16,
+}
+
+#[derive(Debug, Eq, PartialEq)]
+struct CompiledInvocation {
+    // A vector instructions that implement the Invocation.
+    instruction: Vec<Instruction>,
+    // A vector of BranchRefChanges, should correspond to Invocation.branches.
+    results: Vec<BranchRefChanges>,
+}
+
+fn compile_invocation(_ext: &CoreConcrete) -> Result<CompiledInvocation, ExtensionError> {
     Err(ExtensionError::NotImplemented)
 }

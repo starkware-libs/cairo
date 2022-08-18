@@ -6,7 +6,14 @@ use sierra::ids::VarId;
 use sierra::program::{Function, Param, StatementId};
 use thiserror::Error;
 
-type StatementRefs = HashMap<VarId, ResOperand>;
+/// Describes the changes to the set of reference at the branch target.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Reference {
+    // TODO(ilya, 10/10/2022): Add type.
+    expression: ResOperand,
+}
+
+type StatementRefs = HashMap<VarId, Reference>;
 
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum ReferencesError {
@@ -57,7 +64,9 @@ pub fn build_function_parameter_refs(params: &[Param]) -> Result<StatementRefs, 
         if refs
             .insert(
                 param.id.clone(),
-                ResOperand::Deref(DerefOperand { register: Register::FP, offset }),
+                Reference {
+                    expression: ResOperand::Deref(DerefOperand { register: Register::FP, offset }),
+                },
             )
             .is_some()
         {
