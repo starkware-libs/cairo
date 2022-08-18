@@ -40,7 +40,7 @@ macro_rules! id_by_name_and_parent {
     };
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub enum ModuleId {
     CrateRoot(CrateId),
     Submodule(SubmoduleId),
