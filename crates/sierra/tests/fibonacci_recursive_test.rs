@@ -1,5 +1,6 @@
 use indoc::indoc;
 use sierra::program_registry::ProgramRegistry;
+use sierra::simulation;
 
 fn fib_program() -> sierra::program::Program {
     sierra::ProgramParser::new()
@@ -92,7 +93,56 @@ fn parse_test() {
 }
 
 #[test]
-#[ignore] // TODO(oziv) - enable again when function call extension is added.
+#[ignore] // TODO(orizi) - enable again when function call extension is added.
 fn create_registry_test() {
     ProgramRegistry::new(&fib_program()).unwrap();
+}
+
+// TODO(orizi) - enable again and fix resulting gas counters when function call extension is added.
+#[test]
+#[ignore]
+fn simulate_test() {
+    let program = fib_program();
+    let id = "Fibonacci".into();
+    // 1, 1, 2, 3, 5, 8, 13, 21, 34
+    assert_eq!(
+        simulation::run(&program, &id, vec![vec![1000.into()], vec![0.into()]]),
+        Ok(vec![vec![1007.into()], vec![1.into()]])
+    );
+    assert_eq!(
+        simulation::run(&program, &id, vec![vec![1000.into()], vec![1.into()]]),
+        Ok(vec![vec![1005.into()], vec![1.into()]])
+    );
+    assert_eq!(
+        simulation::run(&program, &id, vec![vec![1000.into()], vec![2.into()]]),
+        Ok(vec![vec![996.into()], vec![2.into()]])
+    );
+    assert_eq!(
+        simulation::run(&program, &id, vec![vec![1000.into()], vec![3.into()]]),
+        Ok(vec![vec![991.into()], vec![3.into()]])
+    );
+    assert_eq!(
+        simulation::run(&program, &id, vec![vec![1000.into()], vec![4.into()]]),
+        Ok(vec![vec![986.into()], vec![5.into()]])
+    );
+    assert_eq!(
+        simulation::run(&program, &id, vec![vec![1000.into()], vec![5.into()]]),
+        Ok(vec![vec![981.into()], vec![8.into()]])
+    );
+    assert_eq!(
+        simulation::run(&program, &id, vec![vec![1000.into()], vec![6.into()]]),
+        Ok(vec![vec![976.into()], vec![13.into()]])
+    );
+    assert_eq!(
+        simulation::run(&program, &id, vec![vec![1000.into()], vec![7.into()]]),
+        Ok(vec![vec![971.into()], vec![21.into()]])
+    );
+    assert_eq!(
+        simulation::run(&program, &id, vec![vec![1000.into()], vec![8.into()]]),
+        Ok(vec![vec![966.into()], vec![34.into()]])
+    );
+    assert_eq!(
+        simulation::run(&program, &id, vec![vec![100.into()], vec![80.into()]]),
+        Ok(vec![vec![0.into()], vec![(-1).into()]])
+    );
 }
