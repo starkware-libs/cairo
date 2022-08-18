@@ -98,9 +98,9 @@ fn handle_function_call(
     }
 
     // Call the function.
-    let tmp_var = context.allocate_sierra_variable();
-    instructions.push(format!("func({}) -> ({});", args_on_stack.join(", "), tmp_var));
-    (instructions, tmp_var)
+    let res_var = context.allocate_sierra_variable();
+    instructions.push(format!("func({}) -> ({});", args_on_stack.join(", "), res_var));
+    (instructions, res_var)
 }
 
 /// Generates Sierra code for [semantic::ExprMatch].
