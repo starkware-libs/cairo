@@ -11,4 +11,7 @@ sierra = { path = "../sierra" }
 smol_str = "0.1.23"
 
 [dev_dependencies]
+filesystem = { path = "../filesystem" }
+parser = { path = "../parser" }
 pretty_assertions = "1.2.1"
+syntax = { path = "../syntax" }

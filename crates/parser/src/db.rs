@@ -14,11 +14,11 @@ mod db_test;
 // Salsa database interface.
 #[salsa::query_group(ParserDatabase)]
 pub trait ParserGroup: GreenInterner + AsGreenInterner + FilesGroup {
-    fn file_syntax(&self, file_id: FileId) -> Arc<SyntaxFile>;
+    fn file_syntax(&self, file_id: FileId) -> Option<Arc<SyntaxFile>>;
 }
 
-pub fn file_syntax(db: &dyn ParserGroup, file_id: FileId) -> Arc<SyntaxFile> {
-    let s = db.file_content(file_id).unwrap();
+pub fn file_syntax(db: &dyn ParserGroup, file_id: FileId) -> Option<Arc<SyntaxFile>> {
+    let s = db.file_content(file_id)?;
     let mut parser = Parser::from_text(db.as_green_interner(), file_id, s.as_str());
-    Arc::new(parser.parse_syntax_file())
+    Some(Arc::new(parser.parse_syntax_file()))
 }
