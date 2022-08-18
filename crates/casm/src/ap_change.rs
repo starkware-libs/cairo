@@ -1,3 +1,5 @@
+use thiserror::Error;
+
 use crate::operand::{
     BinOpOperand, DerefOperand, DerefOrImmediate, ImmediateOperand, Register, ResOperand,
 };
@@ -12,13 +14,15 @@ pub enum ApChange {
     Unknown,
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Error, Eq, PartialEq)]
 pub enum ApChangeError {
+    #[error("Unknown ap change")]
     UnknownApChange,
+    #[error("Offset overflow")]
     OffsetOverflow,
 }
 
-trait ApplyApChange: Sized {
+pub trait ApplyApChange: Sized {
     fn apply_ap_change(self, ap_change: ApChange) -> Result<Self, ApChangeError>;
 }
 

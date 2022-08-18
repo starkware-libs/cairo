@@ -50,7 +50,7 @@ fn good_flow() {
             ext store_temp_felt = store_temp<felt>;
             store_temp_felt([1]) -> ([1]);
 
-            test_program@0() -> ();
+            test_program@0([1]: felt) -> ();
         "} => Err(NotImplemented.into());
             "Not implemented")]
 #[test_case(indoc! {"

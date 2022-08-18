@@ -10,5 +10,6 @@ test-case = "*"
 
 [dependencies]
 casm = { path = "../casm" }
+itertools = "*"
 sierra = { path = "../sierra" }
 thiserror = "*"

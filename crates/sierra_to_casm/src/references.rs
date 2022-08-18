@@ -11,7 +11,7 @@ use thiserror::Error;
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ReferenceValue {
     // TODO(ilya, 10/10/2022): Add type.
-    expression: ResOperand,
+    pub expression: ResOperand,
 }
 
 type StatementRefs = HashMap<VarId, ReferenceValue>;
