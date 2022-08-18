@@ -22,6 +22,9 @@ pub struct CompiledInvocation {
     pub results: Vec<BranchRefChanges>,
 }
 
-pub fn compile_invocation(_ext: &CoreConcrete) -> Result<CompiledInvocation, ExtensionError> {
+pub fn compile_invocation(
+    _ext: &CoreConcrete,
+    _refs: &[ReferenceValue],
+) -> Result<CompiledInvocation, ExtensionError> {
     Err(ExtensionError::NotImplemented)
 }

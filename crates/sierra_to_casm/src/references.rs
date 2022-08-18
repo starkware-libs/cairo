@@ -1,18 +1,22 @@
 use std::collections::HashMap;
 use std::iter;
 
+use casm::ap_change::{ApChangeError, ApplyApChange};
 use casm::operand::{DerefOperand, Register, ResOperand};
-use sierra::edit_state::{take_args, EditStateError};
+use itertools::zip_eq;
+use sierra::edit_state::{put_results, take_args, EditStateError};
 use sierra::ids::VarId;
-use sierra::program::{Function, Param, StatementIdx};
+use sierra::program::{Function, GenBranchInfo, Param, StatementIdx};
 use thiserror::Error;
+
+use crate::invocations::BranchRefChanges;
 
 /// A reference to a value.
 /// Corresponds to an argument or return value of a sierra statement.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ReferenceValue {
     // TODO(ilya, 10/10/2022): Add type.
-    expression: ResOperand,
+    pub expression: ResOperand,
 }
 
 type StatementRefs = HashMap<VarId, ReferenceValue>;
@@ -27,11 +31,13 @@ pub enum ReferencesError {
     MissingReferencesForStatement,
     #[error(transparent)]
     EditStateError(#[from] EditStateError),
+    #[error(transparent)]
+    ApChangeError(#[from] ApChangeError),
 }
 
 pub struct ProgramReferences {
     // Per statement optional VarId => SierraReference mapping.
-    pub per_statement_refs: Vec<Option<StatementRefs>>,
+    per_statement_refs: Vec<Option<StatementRefs>>,
 }
 impl ProgramReferences {
     pub fn new(n_statements: usize) -> Self {
@@ -71,6 +77,36 @@ impl ProgramReferences {
             .as_ref()
             .ok_or(ReferencesError::MissingReferencesForStatement)?;
         Ok(take_args(statement_refs.clone(), ref_ids)?)
+    }
+
+    pub fn update_references(
+        &mut self,
+        statement_idx: StatementIdx,
+        statement_refs: StatementRefs,
+        branches: &[GenBranchInfo<StatementIdx>],
+        per_branch_ref_changes: impl Iterator<Item = BranchRefChanges>,
+    ) -> Result<(), ReferencesError> {
+        for (branch_info, branch_result) in zip_eq(branches, per_branch_ref_changes) {
+            let mut new_refs: StatementRefs =
+                HashMap::with_capacity(statement_refs.len() + branch_result.refs.len());
+            for (var_id, ref_value) in &statement_refs {
+                new_refs.insert(
+                    var_id.clone(),
+                    ReferenceValue {
+                        expression: ref_value
+                            .expression
+                            .clone()
+                            .apply_ap_change(branch_result.ap_change)?,
+                    },
+                );
+            }
+
+            self.set_or_assert(
+                statement_idx.next(&branch_info.target),
+                put_results(new_refs, zip_eq(&branch_info.results, branch_result.refs))?,
+            )?;
+        }
+        Ok(())
     }
 }
 
