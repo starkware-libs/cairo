@@ -1,12 +1,13 @@
 use std::fmt::Display;
 
 use casm::instructions::{Instruction, InstructionBody, RetInstruction};
-use sierra::extensions::{CoreConcrete, ExtensionError};
+use sierra::extensions::ExtensionError;
 use sierra::ids::VarId;
 use sierra::program::{Program, Statement};
 use sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use thiserror::Error;
 
+use crate::invocations::compile_invocation;
 use crate::references::{init_reference, ReferencesError};
 
 #[cfg(test)]
@@ -66,13 +67,9 @@ pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
                 let extension = registry
                     .get_extension(&invocation.extension_id)
                     .map_err(CompilationError::ProgramRegistryError)?;
-                gen_code(extension)?;
+                compile_invocation(extension)?;
             }
         }
     }
     Ok(CairoProgram { instructions })
-}
-
-fn gen_code(_ext: &CoreConcrete) -> Result<Vec<Instruction>, ExtensionError> {
-    Err(ExtensionError::NotImplemented)
 }
