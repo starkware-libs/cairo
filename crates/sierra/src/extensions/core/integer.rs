@@ -1,11 +1,9 @@
-use super::{single_cell_identity, unpack_inputs};
 use crate::define_extension_hierarchy;
 use crate::extensions::{
-    ConcreteExtension, GenericExtension, InputError, NamedExtension, NoGenericArgsGenericExtension,
-    NonBranchConcreteExtension, SpecializationError,
+    ConcreteExtension, GenericExtension, NamedExtension, NoGenericArgsGenericExtension,
+    SpecializationError,
 };
 use crate::ids::GenericExtensionId;
-use crate::mem_cell::MemCell;
 use crate::program::GenericArg;
 
 define_extension_hierarchy! {
@@ -21,7 +19,7 @@ define_extension_hierarchy! {
 
 /// Possible operators for integers.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-enum Operator {
+pub enum Operator {
     Add,
     Sub,
     Mul,
@@ -31,7 +29,7 @@ enum Operator {
 
 /// Extension for operations on integers.
 pub struct OperationGeneric {
-    operator: Operator,
+    pub operator: Operator,
 }
 impl GenericExtension for OperationGeneric {
     type Concrete = OperationConcrete;
@@ -74,66 +72,22 @@ impl GenericExtension for OperationGeneric {
 }
 
 pub struct BinaryOperationConcrete {
-    operator: Operator,
+    pub operator: Operator,
 }
-impl NonBranchConcreteExtension for BinaryOperationConcrete {
-    fn non_branch_simulate(
-        &self,
-        inputs: Vec<Vec<MemCell>>,
-    ) -> Result<Vec<Vec<MemCell>>, InputError> {
-        let [MemCell { value: lhs }, MemCell { value: rhs }] = unpack_inputs::<2>(inputs)?;
-        Ok(vec![vec![
-            match &self.operator {
-                Operator::Add => lhs + rhs,
-                Operator::Sub => lhs - rhs,
-                Operator::Mul => lhs * rhs,
-                Operator::Div => lhs / rhs,
-                Operator::Mod => lhs % rhs,
-            }
-            .into(),
-        ]])
-    }
-}
+impl ConcreteExtension for BinaryOperationConcrete {}
 
 /// Operations between a int and a const.
 pub struct OperationWithConstConcrete {
-    operator: Operator,
-    c: i64,
+    pub operator: Operator,
+    pub c: i64,
 }
 pub enum OperationConcrete {
     Binary(BinaryOperationConcrete),
     Const(OperationWithConstConcrete),
 }
-impl NonBranchConcreteExtension for OperationWithConstConcrete {
-    fn non_branch_simulate(
-        &self,
-        inputs: Vec<Vec<MemCell>>,
-    ) -> Result<Vec<Vec<MemCell>>, InputError> {
-        let [MemCell { value }] = unpack_inputs::<1>(inputs)?;
-        Ok(vec![vec![
-            match &self.operator {
-                Operator::Add => value + self.c,
-                Operator::Sub => value - self.c,
-                Operator::Mul => value * self.c,
-                Operator::Div => value / self.c,
-                Operator::Mod => value % self.c,
-            }
-            .into(),
-        ]])
-    }
-}
+impl ConcreteExtension for OperationWithConstConcrete {}
 
-impl NonBranchConcreteExtension for OperationConcrete {
-    fn non_branch_simulate(
-        &self,
-        inputs: Vec<Vec<MemCell>>,
-    ) -> Result<Vec<Vec<MemCell>>, InputError> {
-        match self {
-            OperationConcrete::Binary(value) => value.non_branch_simulate(inputs),
-            OperationConcrete::Const(value) => value.non_branch_simulate(inputs),
-        }
-    }
-}
+impl ConcreteExtension for OperationConcrete {}
 
 /// Extension for creating a constant int.
 #[derive(Default)]
@@ -150,17 +104,9 @@ impl NamedExtension for ConstGeneric {
 }
 
 pub struct ConstConcrete {
-    c: i64,
+    pub c: i64,
 }
-impl NonBranchConcreteExtension for ConstConcrete {
-    fn non_branch_simulate(
-        &self,
-        inputs: Vec<Vec<MemCell>>,
-    ) -> Result<Vec<Vec<MemCell>>, InputError> {
-        unpack_inputs::<0>(inputs)?;
-        Ok(vec![vec![self.c.into()]])
-    }
-}
+impl ConcreteExtension for ConstConcrete {}
 
 /// Extension for ignoring an int.
 #[derive(Default)]
@@ -174,15 +120,7 @@ impl NoGenericArgsGenericExtension for IgnoreGeneric {
 }
 
 pub struct IgnoreConcrete {}
-impl NonBranchConcreteExtension for IgnoreConcrete {
-    fn non_branch_simulate(
-        &self,
-        inputs: Vec<Vec<MemCell>>,
-    ) -> Result<Vec<Vec<MemCell>>, InputError> {
-        unpack_inputs::<1>(inputs)?;
-        Ok(vec![])
-    }
-}
+impl ConcreteExtension for IgnoreConcrete {}
 
 /// Extension for duplicating an int.
 #[derive(Default)]
@@ -197,15 +135,7 @@ impl NoGenericArgsGenericExtension for DuplicateGeneric {
 }
 
 pub struct DuplicateConcrete {}
-impl NonBranchConcreteExtension for DuplicateConcrete {
-    fn non_branch_simulate(
-        &self,
-        inputs: Vec<Vec<MemCell>>,
-    ) -> Result<Vec<Vec<MemCell>>, InputError> {
-        let [MemCell { value }] = unpack_inputs::<1>(inputs)?;
-        Ok(vec![vec![value.into()], vec![value.into()]])
-    }
-}
+impl ConcreteExtension for DuplicateConcrete {}
 
 /// Extension for jump non-zero on an int's value, and returning a non-zero wrapped int in case of
 /// success.
@@ -221,22 +151,7 @@ impl NoGenericArgsGenericExtension for JumpNotZeroGeneric {
 }
 
 pub struct JumpNotZeroConcrete {}
-impl ConcreteExtension for JumpNotZeroConcrete {
-    fn simulate(
-        &self,
-        inputs: Vec<Vec<MemCell>>,
-    ) -> Result<(Vec<Vec<MemCell>>, usize), InputError> {
-        let [MemCell { value }] = unpack_inputs::<1>(inputs)?;
-        if value != 0 {
-            // Non-zero - jumping to the success branch and providing a NonZero wrap to the given
-            // value.
-            Ok((vec![vec![value.into()]], 0))
-        } else {
-            // Zero - jumping to the failure branch.
-            Ok((vec![], 1))
-        }
-    }
-}
+impl ConcreteExtension for JumpNotZeroConcrete {}
 
 /// Extension for unwrapping a non-zero int back into a regular int.
 #[derive(Default)]
@@ -251,11 +166,4 @@ impl NoGenericArgsGenericExtension for UnwrapNonZeroGeneric {
 }
 
 pub struct UnwrapNonZeroConcrete {}
-impl NonBranchConcreteExtension for UnwrapNonZeroConcrete {
-    fn non_branch_simulate(
-        &self,
-        inputs: Vec<Vec<MemCell>>,
-    ) -> Result<Vec<Vec<MemCell>>, InputError> {
-        single_cell_identity::<1>(inputs)
-    }
-}
+impl ConcreteExtension for UnwrapNonZeroConcrete {}
