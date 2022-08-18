@@ -1,12 +1,11 @@
 use std::fmt::Display;
 
 use casm::instructions::{Instruction, InstructionBody, RetInstruction};
+use sierra::extensions::{CoreConcrete, ExtensionError};
+use sierra::ids::{GenericExtensionId, VarId};
+use sierra::program::{Program, Statement};
+use sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use thiserror::Error;
-
-use crate::extensions::ExtensionError;
-use crate::ids::VarId;
-use crate::program::{Program, Statement};
-use crate::program_registry::{ProgramRegistry, ProgramRegistryError};
 
 #[cfg(test)]
 #[path = "compiler_test.rs"]
@@ -20,6 +19,8 @@ pub enum CompilationError {
     ProgramRegistryError(ProgramRegistryError),
     #[error(transparent)]
     ExtensionError(#[from] ExtensionError),
+    #[error("ExtensionNotFound")]
+    ExtensionNotFound(GenericExtensionId),
 }
 
 #[derive(Error, Debug, Eq, PartialEq)]
@@ -56,9 +57,13 @@ pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
                 let extension = registry
                     .get_extension(&invocation.extension_id)
                     .map_err(CompilationError::ProgramRegistryError)?;
-                extension.gen_code()?;
+                gen_code(extension)?;
             }
         }
     }
     Ok(CairoProgram { instructions })
+}
+
+fn gen_code(_ext: &CoreConcrete) -> Result<Vec<Instruction>, ExtensionError> {
+    Err(ExtensionError::NotImplemented)
 }

@@ -1,10 +1,11 @@
-use std::collections::HashMap;
-
 use array_init::array_init;
-use itertools::chain;
 
-use super::{GenericExtensionBox, InputError};
-use crate::ids::GenericExtensionId;
+use self::gas::GasExtension;
+use self::integer::IntegerExtension;
+use self::mem::MemExtension;
+use self::unconditional_jump::UnconditionalJumpGeneric;
+use super::{GenericExtension, InputError};
+use crate::define_extension_hierarchy;
 use crate::mem_cell::MemCell;
 
 mod gas;
@@ -12,14 +13,13 @@ mod integer;
 mod mem;
 mod unconditional_jump;
 
-pub(super) fn all_core_extensions() -> HashMap<GenericExtensionId, GenericExtensionBox> {
-    chain!(
-        gas::extensions().into_iter(),
-        integer::extensions().into_iter(),
-        mem::extensions().into_iter(),
-        unconditional_jump::extensions().into_iter(),
-    )
-    .collect()
+define_extension_hierarchy! {
+    pub enum CoreExtension {
+        Gas(GasExtension),
+        Integer(IntegerExtension),
+        Mem(MemExtension),
+        UnconditionalJump(UnconditionalJumpGeneric)
+    }, CoreConcrete
 }
 
 /// Unpacking inputs from a vector of vectors memcells into an array of memcell of the given

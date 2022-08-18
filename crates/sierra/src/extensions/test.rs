@@ -1,6 +1,8 @@
 use test_case::test_case;
 
-use super::{ExtensionError, Extensions, InputError, SpecializationError};
+use super::core::CoreExtension;
+use super::{ConcreteExtension, InputError, SpecializationError};
+use crate::extensions::GenericExtension;
 use crate::mem_cell::MemCell;
 use crate::program::GenericArg;
 
@@ -75,12 +77,10 @@ fn value_arg(v: i64) -> GenericArg {
 #[test_case("jump", vec![type_arg("T")] => Err(SpecializationError::WrongNumberOfGenericArgs);
             "jump<T>")]
 fn find_specialization(id: &str, generic_args: Vec<GenericArg>) -> Result<(), SpecializationError> {
-    Extensions::default().specialize(&id.into(), &generic_args).map(|_| ()).map_err(|error| {
-        match error {
-            ExtensionError::Specialization { extension_id: _, error } => error,
-            other => panic!("unexpected extension error: {:?}", other),
-        }
-    })
+    CoreExtension::by_id(&id.into())
+        .ok_or(SpecializationError::UnsupportedLibCallName)?
+        .specialize(&generic_args)
+        .map(|_| ())
 }
 
 /// Expects to find an extension and simulate it.
@@ -89,7 +89,7 @@ fn simulate(
     generic_args: Vec<GenericArg>,
     inputs: Vec<Vec<MemCell>>,
 ) -> Result<(Vec<Vec<MemCell>>, usize), InputError> {
-    Extensions::default().specialize(&id.into(), &generic_args).unwrap().simulate(inputs)
+    CoreExtension::by_id(&id.into()).unwrap().specialize(&generic_args).unwrap().simulate(inputs)
 }
 
 /// Expects to find an extension, wrapping and unwrapping the MemCell types and vectors of the

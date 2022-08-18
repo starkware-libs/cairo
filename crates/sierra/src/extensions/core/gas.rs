@@ -1,12 +1,19 @@
 // Module providing the gas related extensions.
 use super::unpack_inputs;
+use crate::define_extension_hierarchy;
 use crate::extensions::{
-    ConcreteExtension, ConcreteExtensionBox, GenericExtension, GenericExtensionBox, InputError,
-    NonBranchConcreteExtension, SpecializationError,
+    ConcreteExtension, GenericExtension, InputError, NamedExtension, NonBranchConcreteExtension,
+    SpecializationError,
 };
-use crate::ids::GenericExtensionId;
 use crate::mem_cell::MemCell;
 use crate::program::GenericArg;
+
+define_extension_hierarchy! {
+    pub enum GasExtension {
+        GetGas(GetGasGeneric),
+        RefundGas(RefundGasGeneric)
+    }, GasConcrete
+}
 
 /// Helper for extracting a single positive value from template arguments.
 fn as_single_positive_value(args: &[GenericArg]) -> Result<i64, SpecializationError> {
@@ -17,14 +24,17 @@ fn as_single_positive_value(args: &[GenericArg]) -> Result<i64, SpecializationEr
 }
 
 /// Extension for getting gas branch.
-struct GetGasGeneric {}
-impl GenericExtension for GetGasGeneric {
-    fn specialize(&self, args: &[GenericArg]) -> Result<ConcreteExtensionBox, SpecializationError> {
-        Ok(Box::new(GetGasConcrete { count: as_single_positive_value(args)? }))
+#[derive(Default)]
+pub struct GetGasGeneric {}
+impl NamedExtension for GetGasGeneric {
+    type Concrete = GetGasConcrete;
+    const NAME: &'static str = "get_gas";
+    fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError> {
+        Ok(GetGasConcrete { count: as_single_positive_value(args)? })
     }
 }
 
-struct GetGasConcrete {
+pub struct GetGasConcrete {
     count: i64,
 }
 impl ConcreteExtension for GetGasConcrete {
@@ -44,14 +54,17 @@ impl ConcreteExtension for GetGasConcrete {
 }
 
 /// Extension for returning unused gas.
-struct RefundGasGeneric {}
-impl GenericExtension for RefundGasGeneric {
-    fn specialize(&self, args: &[GenericArg]) -> Result<ConcreteExtensionBox, SpecializationError> {
-        Ok(Box::new(RefundGasConcrete { count: as_single_positive_value(args)? }))
+#[derive(Default)]
+pub struct RefundGasGeneric {}
+impl NamedExtension for RefundGasGeneric {
+    type Concrete = RefundGasConcrete;
+    const NAME: &'static str = "refund_gas";
+    fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError> {
+        Ok(RefundGasConcrete { count: as_single_positive_value(args)? })
     }
 }
 
-struct RefundGasConcrete {
+pub struct RefundGasConcrete {
     count: i64,
 }
 impl NonBranchConcreteExtension for RefundGasConcrete {
@@ -62,11 +75,4 @@ impl NonBranchConcreteExtension for RefundGasConcrete {
         let [MemCell { value: gas_counter }] = unpack_inputs::<1>(inputs)?;
         Ok(vec![vec![(gas_counter + self.count).into()]])
     }
-}
-
-pub(super) fn extensions() -> [(GenericExtensionId, GenericExtensionBox); 2] {
-    [
-        ("get_gas".into(), Box::new(GetGasGeneric {})),
-        ("refund_gas".into(), Box::new(RefundGasGeneric {})),
-    ]
 }
