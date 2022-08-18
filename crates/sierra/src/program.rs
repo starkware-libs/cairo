@@ -14,6 +14,11 @@ pub struct Program {
     /// Descriptions of the functions - signatures and entry points.
     pub funcs: Vec<Function>,
 }
+impl Program {
+    pub fn get_statement(&self, id: &StatementId) -> Option<&Statement> {
+        self.statements.get(id.0)
+    }
+}
 
 /// Declaration of a concrete type.
 #[derive(Clone, Debug)]
@@ -60,6 +65,14 @@ pub struct Param {
 /// Represents the index of a statement in the Program::statements vector.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct StatementId(pub usize);
+impl StatementId {
+    pub fn next(&self, target: &BranchTarget) -> StatementId {
+        match target {
+            BranchTarget::Fallthrough => StatementId(self.0 + 1),
+            BranchTarget::Statement(id) => *id,
+        }
+    }
+}
 
 /// Possible arguments for generic type.
 #[derive(Clone, Debug, Eq, PartialEq)]

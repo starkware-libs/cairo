@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::edit_state::{put_results, take_args, EditError};
+use crate::edit_state::{put_results, take_args, EditStateError};
 use crate::ids::VarId;
 
 pub type State = HashMap<VarId, i64>;
@@ -23,10 +23,10 @@ fn basic_mapping() {
     );
     assert_eq!(
         take_args(State::new(), vec![&"arg".into()].into_iter(),),
-        Err(EditError::MissingReference("arg".into()))
+        Err(EditStateError::MissingReference("arg".into()))
     );
     assert_eq!(
         put_results(State::from([("res".into(), 1)]), vec![(&"res".into(), 1)].into_iter(),),
-        Err(EditError::VariableOverride("res".into()))
+        Err(EditStateError::VariableOverride("res".into()))
     );
 }
