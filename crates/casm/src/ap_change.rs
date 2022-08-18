@@ -7,7 +7,7 @@ use crate::operand::{
 mod test;
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
-enum ApChange {
+pub enum ApChange {
     Known(i16),
     Unknown,
 }
