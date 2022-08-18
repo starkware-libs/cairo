@@ -3,7 +3,7 @@ use std::iter;
 
 use casm::operand::{DerefOperand, Register, ResOperand};
 use sierra::ids::VarId;
-use sierra::program::{Function, Param, StatementId};
+use sierra::program::{Function, Param, StatementIdx};
 use thiserror::Error;
 
 type StatementRefs = HashMap<VarId, ResOperand>;
@@ -12,8 +12,8 @@ type StatementRefs = HashMap<VarId, ResOperand>;
 pub enum ReferencesError {
     #[error("Inconsistent References.")]
     InconsistentReferences,
-    #[error("InvalidStatementId")]
-    InvalidStatementId,
+    #[error("InvalidStatementIdx")]
+    InvalidStatementIdx,
 }
 
 pub struct ProgramReferences {
@@ -32,11 +32,11 @@ impl ProgramReferences {
     /// assignment is consistent with the new assignment.
     pub fn set_or_assert(
         &mut self,
-        statement_id: StatementId,
+        statement_id: StatementIdx,
         statement_refs: StatementRefs,
     ) -> Result<(), ReferencesError> {
         let idx = statement_id.0;
-        match self.per_statement_refs.get(idx).ok_or(ReferencesError::InvalidStatementId)? {
+        match self.per_statement_refs.get(idx).ok_or(ReferencesError::InvalidStatementIdx)? {
             None => self.per_statement_refs[idx] = Some(statement_refs),
             Some(curr_refs) => {
                 if curr_refs != &statement_refs {

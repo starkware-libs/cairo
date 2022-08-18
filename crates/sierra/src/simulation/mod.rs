@@ -6,7 +6,7 @@ use thiserror::Error;
 use self::mem_cell::MemCell;
 use crate::edit_state::{put_results, take_args, EditStateError};
 use crate::ids::{FunctionId, VarId};
-use crate::program::{Program, Statement, StatementId};
+use crate::program::{Program, Statement, StatementIdx};
 use crate::program_registry::{ProgramRegistry, ProgramRegistryError};
 
 pub mod core;
@@ -29,17 +29,17 @@ pub enum SimulationError {
     #[error("error from the program registry")]
     ProgramRegistryError(#[from] ProgramRegistryError),
     #[error("error from editing a variable state")]
-    EditStateError(EditStateError, StatementId),
+    EditStateError(EditStateError, StatementIdx),
     #[error("error from simulating an extension")]
-    ExtensionSimulationError(ExtensionSimulationError, StatementId),
+    ExtensionSimulationError(ExtensionSimulationError, StatementIdx),
     #[error("could not find the function to call")]
     MissingFunction,
     #[error("jumped out of bounds during simulation")]
-    StatementOutOfBounds(StatementId),
+    StatementOutOfBounds(StatementIdx),
     #[error("unexpected number of arguments to function")]
     FunctionArgumentCountMismatch { function_id: FunctionId, expected: usize, actual: usize },
     #[error("identifiers left at function return")]
-    FunctionDidNotConsumeAllArgs(FunctionId, StatementId),
+    FunctionDidNotConsumeAllArgs(FunctionId, StatementIdx),
 }
 
 /// Runs a function from the program with the given inputs.

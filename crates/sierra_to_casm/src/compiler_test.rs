@@ -55,7 +55,7 @@ fn good_flow() {
             "Not implemented")]
 #[test_case(indoc! {"
             test_program@25() -> ();
-        "} => Err(ReferencesError::InvalidStatementId.into());
+        "} => Err(ReferencesError::InvalidStatementIdx.into());
             "Invalid entry point")]
 #[test_case(indoc! {"
             return();
