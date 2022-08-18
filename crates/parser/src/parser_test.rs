@@ -29,13 +29,5 @@ fn test_simple() {
     let mut parser = Parser::from_text(db, test_source(), contents.as_str());
     let _green_root = parser.parse_compilation_unit().root;
 
-    // TODO(yuval): uncomment after merging yuval/printer
-    // println!("Colored print:\n");
-    // print_colored(green_root, db);
-
-    // println!("Colored print with missing:\n");
-    // print_colored_with_missing(green_root, db);
-
-    // println!("Tree print:\n");
-    // print_tree(green_root, db, true);
+    // TODO(yuval): print the green tree and compare to the expected string.
 }

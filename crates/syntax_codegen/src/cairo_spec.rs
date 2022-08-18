@@ -178,7 +178,9 @@ pub fn get_spec() -> Vec<Node> {
         StructBuilder::new("FunctionSignature")
             .node("funckw", "Terminal")
             .node("name", "Identifier")
-            .node("parameters", "ParamListParenthesized")
+            .node("lparen", "Terminal")
+            .node("parameters", "ParamList")
+            .node("rparen", "Terminal")
             .node("ret_ty", "ReturnTypeClause")
             .build(),
         // --- Items ---
@@ -226,7 +228,9 @@ pub fn get_spec() -> Vec<Node> {
         StructBuilder::new("ItemStruct")
             .node("structkw", "Terminal")
             .node("name", "Identifier")
-            .node("body", "ParamListBraced")
+            .node("lbrace", "Terminal")
+            .node("members", "ParamList")
+            .node("rbrace", "Terminal")
             .build(),
         StructBuilder::new("ItemEnum")
             .node("enumkw", "Terminal")
