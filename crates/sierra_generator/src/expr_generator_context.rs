@@ -70,8 +70,9 @@ impl<'a> ExprGeneratorContext<'a> {
     }
 
     /// Generates a label id and a label statement.
+    // TODO(lior): Consider using stabe ids, instead of allocating sequential ids.
     pub fn new_label(&mut self) -> (pre_sierra::Statement, pre_sierra::LabelId) {
-        let id = pre_sierra::LabelId::from(self.statement_id_allocator.allocate());
+        let id = pre_sierra::LabelId::new(self.statement_id_allocator.allocate());
         (pre_sierra::Statement::Label(pre_sierra::Label { id: id.clone() }), id)
     }
 }
