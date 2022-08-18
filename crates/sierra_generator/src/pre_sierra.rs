@@ -1,7 +1,7 @@
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct LabelId(usize);
-impl From<usize> for LabelId {
-    fn from(value: usize) -> Self {
+impl LabelId {
+    pub fn new(value: usize) -> Self {
         LabelId(value)
     }
 }
