@@ -4,15 +4,15 @@ use crate::ids::{
 
 /// A full Sierra program.
 #[derive(Clone, Debug)]
-pub struct Program {
+pub struct GenProgram<StatementId> {
     /// Declarations for all the used types.
     pub type_declarations: Vec<TypeDeclaration>,
     /// Declarations for all the used extensions.
     pub extension_declarations: Vec<ExtensionDeclaration>,
     /// The code of the program.
-    pub statements: Vec<Statement>,
+    pub statements: Vec<GenStatement<StatementId>>,
     /// Descriptions of the functions - signatures and entry points.
-    pub funcs: Vec<Function>,
+    pub funcs: Vec<GenFunction<StatementId>>,
 }
 
 /// Declaration of a concrete type.
@@ -39,7 +39,7 @@ pub struct ExtensionDeclaration {
 
 /// Descriptor of a function.
 #[derive(Clone, Debug)]
-pub struct Function {
+pub struct GenFunction<StatementId> {
     /// The name of the function.
     pub id: FunctionId,
     /// The arguments for the function.
@@ -57,9 +57,9 @@ pub struct Param {
     pub ty: ConcreteTypeId,
 }
 
-/// Represents the index of a statement in the Program::statements vector.
+/// Represents the index of a statement in the GenProgram::statements vector.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub struct StatementId(pub usize);
+pub struct StatementIdx(pub usize);
 
 /// Possible arguments for generic type.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -71,36 +71,43 @@ pub enum GenericArg {
 
 /// A possible statement.
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub enum Statement {
-    Invocation(Invocation),
+pub enum GenStatement<StatementId> {
+    Invocation(GenInvocation<StatementId>),
     Return(Vec<VarId>),
 }
 
 /// An invocation statement.
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Invocation {
+pub struct GenInvocation<StatementId> {
     /// The called extension.
     pub extension_id: ConcreteExtensionId,
     /// The arguments consumed by the extension's invocation.
     pub args: Vec<VarId>,
     /// The possible branches to continue to after the invocation.
     /// The extension would continue to exactly one of the branches.
-    pub branches: Vec<BranchInfo>,
+    pub branches: Vec<GenBranchInfo<StatementId>>,
 }
 
 /// Describes the flow of a chosen extension's branch.
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct BranchInfo {
+pub struct GenBranchInfo<StatementId> {
     /// The target the branch continues the run through.
-    pub target: BranchTarget,
+    pub target: GenBranchTarget<StatementId>,
     /// The resulting identifiers from the extension call.
     pub results: Vec<VarId>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub enum BranchTarget {
+pub enum GenBranchTarget<StatementId> {
     /// Continues a run to the next statement.
     Fallthrough,
     /// Continues the run to provided statement.
     Statement(StatementId),
 }
+
+pub type Program = GenProgram<StatementIdx>;
+pub type Function = GenFunction<StatementIdx>;
+pub type Statement = GenStatement<StatementIdx>;
+pub type Invocation = GenInvocation<StatementIdx>;
+pub type BranchInfo = GenBranchInfo<StatementIdx>;
+pub type BranchTarget = GenBranchTarget<StatementIdx>;
