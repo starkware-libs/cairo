@@ -1,0 +1,251 @@
+└── root (kind: SyntaxFile)
+    ├── items (kind: ItemList)
+    │   ├── child #0 (kind: ItemFunction)
+    │   │   ├── signature (kind: FunctionSignature)
+    │   │   │   ├── funckw (kind: Function): 'fn'
+    │   │   │   ├── name (kind: Identifier): 'foo'
+    │   │   │   ├── lparen (kind: LParen): '('
+    │   │   │   ├── parameters (kind: ParamList)
+    │   │   │   │   └── item #0 (kind: Param)
+    │   │   │   │       ├── identifier (kind: Identifier): 'x'
+    │   │   │   │       └── type_clause (kind: TypeClause)
+    │   │   │   │           ├── colon (kind: Colon): ':'
+    │   │   │   │           └── ty (kind: ExprPath)
+    │   │   │   │               └── item #0 (kind: PathSegment)
+    │   │   │   │                   ├── ident (kind: Identifier): 'T'
+    │   │   │   │                   └── generic_args (kind: OptionGenericArgsNone) []
+    │   │   │   ├── rparen (kind: RParen): ')'
+    │   │   │   └── ret_ty (kind: ReturnTypeClause)
+    │   │   │       ├── arrow (kind: Arrow): '->'
+    │   │   │       └── ty (kind: ExprPath)
+    │   │   │           └── item #0 (kind: PathSegment)
+    │   │   │               ├── ident (kind: Identifier): 'S'
+    │   │   │               └── generic_args (kind: OptionGenericArgsNone) []
+    │   │   └── body (kind: ExprBlock)
+    │   │       ├── lbrace (kind: LBrace): '{'
+    │   │       ├── statements (kind: StatementList)
+    │   │       │   ├── child #0 (kind: StatementLet)
+    │   │       │   │   ├── letkw (kind: Let): 'let'
+    │   │       │   │   ├── lhs (kind: Identifier): 'x'
+    │   │       │   │   ├── type_clause (kind: OptionTypeClauseEmpty) []
+    │   │       │   │   ├── eq (kind: Eq): '='
+    │   │       │   │   ├── rhs (kind: ExprBinary)
+    │   │       │   │   │   ├── lhs (kind: ExprUnary)
+    │   │       │   │   │   │   ├── op (kind: Minus): '-'
+    │   │       │   │   │   │   └── expr (kind: ExprLiteral)
+    │   │       │   │   │   │       └── terminal (kind: LiteralNumber): '5'
+    │   │       │   │   │   ├── op (kind: Plus): '+'
+    │   │       │   │   │   └── rhs (kind: ExprLiteral)
+    │   │       │   │   │       └── terminal (kind: LiteralNumber): '3'
+    │   │       │   │   └── semi (kind: Semi): ';'
+    │   │       │   ├── child #1 (kind: StatementLet)
+    │   │       │   │   ├── letkw (kind: Let): 'let'
+    │   │       │   │   ├── lhs (kind: Identifier): 'y'
+    │   │       │   │   ├── type_clause (kind: TypeClause)
+    │   │       │   │   │   ├── colon (kind: Colon): ':'
+    │   │       │   │   │   └── ty (kind: ExprPath)
+    │   │       │   │   │       └── item #0 (kind: PathSegment)
+    │   │       │   │   │           ├── ident (kind: Identifier): 'T'
+    │   │       │   │   │           └── generic_args (kind: OptionGenericArgsNone) []
+    │   │       │   │   ├── eq (kind: Eq): '='
+    │   │       │   │   ├── rhs (kind: ExprBinary)
+    │   │       │   │   │   ├── lhs (kind: ExprBinary)
+    │   │       │   │   │   │   ├── lhs (kind: ExprPath)
+    │   │       │   │   │   │   │   └── item #0 (kind: PathSegment)
+    │   │       │   │   │   │   │       ├── ident (kind: Identifier): 'x'
+    │   │       │   │   │   │   │       └── generic_args (kind: OptionGenericArgsNone) []
+    │   │       │   │   │   │   ├── op (kind: Mul): '*'
+    │   │       │   │   │   │   └── rhs (kind: ExprLiteral)
+    │   │       │   │   │   │       └── terminal (kind: LiteralNumber): '2'
+    │   │       │   │   │   ├── op (kind: Plus): '+'
+    │   │       │   │   │   └── rhs (kind: ExprBinary)
+    │   │       │   │   │       ├── lhs (kind: ExprLiteral)
+    │   │       │   │   │       │   └── terminal (kind: LiteralNumber): '3'
+    │   │       │   │   │       ├── op (kind: Mul): '*'
+    │   │       │   │   │       └── rhs (kind: ExprLiteral)
+    │   │       │   │   │           └── terminal (kind: LiteralNumber): '5'
+    │   │       │   │   └── semi (kind: Semi): ';'
+    │   │       │   ├── child #2 (kind: StatementLet)
+    │   │       │   │   ├── letkw (kind: Let): 'let'
+    │   │       │   │   ├── lhs (kind: Identifier): 'z'
+    │   │       │   │   ├── type_clause (kind: OptionTypeClauseEmpty) []
+    │   │       │   │   ├── eq (kind: Eq): '='
+    │   │       │   │   ├── rhs: Missing []
+    │   │       │   │   └── semi (kind: Semi): ';'
+    │   │       │   ├── child #3 (kind: StatementExpr)
+    │   │       │   │   ├── expr (kind: ExprBinary)
+    │   │       │   │   │   ├── lhs (kind: ExprLiteral)
+    │   │       │   │   │   │   └── terminal (kind: LiteralNumber): '5'
+    │   │       │   │   │   ├── op (kind: Plus): '+'
+    │   │       │   │   │   └── rhs (kind: ExprStructCtorCall)
+    │   │       │   │   │       ├── path (kind: ExprPath)
+    │   │       │   │   │       │   └── item #0 (kind: PathSegment)
+    │   │       │   │   │       │       ├── ident (kind: Identifier): 'Struct'
+    │   │       │   │   │       │       └── generic_args (kind: OptionGenericArgsNone) []
+    │   │       │   │   │       └── arguments (kind: ArgListBraced)
+    │   │       │   │   │           ├── lbrace (kind: LBrace): '{'
+    │   │       │   │   │           ├── arguments (kind: StructArgList)
+    │   │       │   │   │           │   ├── item #0 (kind: StructArgSingle)
+    │   │       │   │   │           │   │   ├── identifier (kind: Identifier): 'a'
+    │   │       │   │   │           │   │   └── arg_expr (kind: StructArgExpr)
+    │   │       │   │   │           │   │       ├── colon (kind: Colon): ':'
+    │   │       │   │   │           │   │       └── expr (kind: ExprLiteral)
+    │   │       │   │   │           │   │           └── terminal (kind: LiteralNumber): '5'
+    │   │       │   │   │           │   ├── separator #0 (kind: Comma): ','
+    │   │       │   │   │           │   └── item #1 (kind: StructArgSingle)
+    │   │       │   │   │           │       ├── identifier (kind: Identifier): 'b'
+    │   │       │   │   │           │       └── arg_expr (kind: StructArgExpr)
+    │   │       │   │   │           │           ├── colon (kind: Colon): ':'
+    │   │       │   │   │           │           └── expr (kind: ExprStructCtorCall)
+    │   │       │   │   │           │               ├── path (kind: ExprPath)
+    │   │       │   │   │           │               │   └── item #0 (kind: PathSegment)
+    │   │       │   │   │           │               │       ├── ident (kind: Identifier): 'Struct2'
+    │   │       │   │   │           │               │       └── generic_args (kind: OptionGenericArgsNone) []
+    │   │       │   │   │           │               └── arguments (kind: ArgListBraced)
+    │   │       │   │   │           │                   ├── lbrace (kind: LBrace): '{'
+    │   │       │   │   │           │                   ├── arguments (kind: StructArgList)
+    │   │       │   │   │           │                   │   └── item #0 (kind: StructArgSingle)
+    │   │       │   │   │           │                   │       ├── identifier (kind: Identifier): '_gg'
+    │   │       │   │   │           │                   │       └── arg_expr (kind: StructArgExpr)
+    │   │       │   │   │           │                   │           ├── colon (kind: Colon): ':'
+    │   │       │   │   │           │                   │           └── expr (kind: ExprTuple)
+    │   │       │   │   │           │                   │               ├── lparen (kind: LParen): '('
+    │   │       │   │   │           │                   │               ├── expressions (kind: ExprList) []
+    │   │       │   │   │           │                   │               └── rparen (kind: RParen): ')'
+    │   │       │   │   │           │                   └── rbrace (kind: RBrace): '}'
+    │   │       │   │   │           └── rbrace (kind: RBrace): '}'
+    │   │       │   │   └── semi (kind: Semi): ';'
+    │   │       │   ├── child #4 (kind: StatementReturn)
+    │   │       │   │   ├── returnkw (kind: Return): 'return'
+    │   │       │   │   ├── expr (kind: ExprBinary)
+    │   │       │   │   │   ├── lhs (kind: ExprPath)
+    │   │       │   │   │   │   └── item #0 (kind: PathSegment)
+    │   │       │   │   │   │       ├── ident (kind: Identifier): 'df'
+    │   │       │   │   │   │       └── generic_args (kind: OptionGenericArgsNone) []
+    │   │       │   │   │   ├── op (kind: EqEq): '=='
+    │   │       │   │   │   └── rhs (kind: ExprLiteral)
+    │   │       │   │   │       └── terminal (kind: LiteralNumber): '6'
+    │   │       │   │   └── semi (kind: Semi): ';'
+    │   │       │   └── child #5 (kind: StatementExpr)
+    │   │       │       ├── expr (kind: ExprBinary)
+    │   │       │       │   ├── lhs (kind: ExprPath)
+    │   │       │       │   │   └── item #0 (kind: PathSegment)
+    │   │       │       │   │       ├── ident (kind: Identifier): 'x'
+    │   │       │       │   │       └── generic_args (kind: OptionGenericArgsNone) []
+    │   │       │       │   ├── op (kind: Plus): '+'
+    │   │       │       │   └── rhs (kind: ExprPath)
+    │   │       │       │       └── item #0 (kind: PathSegment)
+    │   │       │       │           ├── ident (kind: Identifier): 'y'
+    │   │       │       │           └── generic_args (kind: OptionGenericArgsNone) []
+    │   │       │       └── semi (kind: OptionSemicolonEmpty) []
+    │   │       └── rbrace (kind: RBrace): '}'
+    │   ├── child #1 (kind: ItemModule)
+    │   │   ├── modkw (kind: Module): 'mod'
+    │   │   ├── name (kind: Identifier): 'my_mod'
+    │   │   └── semi: Missing
+    │   ├── child #2 (kind: ItemFunction)
+    │   │   ├── signature (kind: FunctionSignature)
+    │   │   │   ├── funckw (kind: Function): 'fn'
+    │   │   │   ├── name (kind: Identifier): 'bar'
+    │   │   │   ├── lparen (kind: LParen): '('
+    │   │   │   ├── parameters (kind: ParamList)
+    │   │   │   │   ├── item #0 (kind: Param)
+    │   │   │   │   │   ├── identifier (kind: Identifier): 'x'
+    │   │   │   │   │   └── type_clause (kind: TypeClause)
+    │   │   │   │   │       ├── colon (kind: Colon): ':'
+    │   │   │   │   │       └── ty (kind: ExprPath)
+    │   │   │   │   │           └── item #0 (kind: PathSegment)
+    │   │   │   │   │               ├── ident (kind: Identifier): 'T0'
+    │   │   │   │   │               └── generic_args (kind: OptionGenericArgsNone) []
+    │   │   │   │   ├── separator #0 (kind: Comma): ','
+    │   │   │   │   └── item #1 (kind: Param)
+    │   │   │   │       ├── identifier (kind: Identifier): 's'
+    │   │   │   │       └── type_clause (kind: TypeClause)
+    │   │   │   │           ├── colon (kind: Colon): ':'
+    │   │   │   │           └── ty (kind: ExprPath)
+    │   │   │   │               └── item #0 (kind: PathSegment)
+    │   │   │   │                   ├── ident (kind: Identifier): 'S'
+    │   │   │   │                   └── generic_args (kind: OptionGenericArgsNone) []
+    │   │   │   ├── rparen (kind: RParen): ')'
+    │   │   │   └── ret_ty (kind: ReturnTypeClause)
+    │   │   │       ├── arrow (kind: Arrow): '->'
+    │   │   │       └── ty (kind: ExprPath)
+    │   │   │           └── item #0 (kind: PathSegment)
+    │   │   │               ├── ident (kind: Identifier): 'X'
+    │   │   │               └── generic_args (kind: OptionGenericArgsNone) []
+    │   │   └── body (kind: ExprBlock)
+    │   │       ├── lbrace (kind: LBrace): '{'
+    │   │       ├── statements (kind: StatementList)
+    │   │       │   └── child #0 (kind: StatementExpr)
+    │   │       │       ├── expr (kind: ExprBinary)
+    │   │       │       │   ├── lhs (kind: ExprBinary)
+    │   │       │       │   │   ├── lhs (kind: ExprBinary)
+    │   │       │       │   │   │   ├── lhs (kind: ExprPath)
+    │   │       │       │   │   │   │   └── item #0 (kind: PathSegment)
+    │   │       │       │   │   │   │       ├── ident (kind: Identifier): 'x'
+    │   │       │       │   │   │   │       └── generic_args (kind: OptionGenericArgsNone) []
+    │   │       │       │   │   │   ├── op (kind: Dot): '.'
+    │   │       │       │   │   │   └── rhs (kind: ExprPath)
+    │   │       │       │   │   │       └── item #0 (kind: PathSegment)
+    │   │       │       │   │   │           ├── ident (kind: Identifier): 'a'
+    │   │       │       │   │   │           └── generic_args (kind: OptionGenericArgsNone) []
+    │   │       │       │   │   ├── op (kind: Mul): '*'
+    │   │       │       │   │   └── rhs: Missing []
+    │   │       │       │   ├── op (kind: Plus): '+'
+    │   │       │       │   └── rhs (kind: ExprBinary)
+    │   │       │       │       ├── lhs (kind: ExprBinary)
+    │   │       │       │       │   ├── lhs (kind: ExprBinary)
+    │   │       │       │       │   │   ├── lhs (kind: ExprUnary)
+    │   │       │       │       │   │   │   ├── op (kind: Minus): '-'
+    │   │       │       │       │   │   │   └── expr: Missing []
+    │   │       │       │       │   │   ├── op (kind: Dot): '.'
+    │   │       │       │       │   │   └── rhs (kind: ExprPath)
+    │   │       │       │       │   │       └── item #0 (kind: PathSegment)
+    │   │       │       │       │   │           ├── ident (kind: Identifier): 's'
+    │   │       │       │       │   │           └── generic_args (kind: OptionGenericArgsNone) []
+    │   │       │       │       │   ├── op (kind: Dot): '.'
+    │   │       │       │       │   └── rhs (kind: ExprPath)
+    │   │       │       │       │       └── item #0 (kind: PathSegment)
+    │   │       │       │       │           ├── ident (kind: Identifier): 's'
+    │   │       │       │       │           └── generic_args (kind: OptionGenericArgsNone) []
+    │   │       │       │       ├── op (kind: Mul): '*'
+    │   │       │       │       └── rhs (kind: ExprFunctionCall)
+    │   │       │       │           ├── path (kind: ExprPath)
+    │   │       │       │           │   └── item #0 (kind: PathSegment)
+    │   │       │       │           │       ├── ident (kind: Identifier): 'foo'
+    │   │       │       │           │       └── generic_args (kind: OptionGenericArgsNone) []
+    │   │       │       │           └── arguments (kind: ExprListParenthesized)
+    │   │       │       │               ├── lparen (kind: LParen): '('
+    │   │       │       │               ├── expressions (kind: ExprList)
+    │   │       │       │               │   ├── item #0 (kind: ExprLiteral)
+    │   │       │       │               │   │   └── terminal (kind: LiteralNumber): '1'
+    │   │       │       │               │   ├── separator #0 (kind: Comma): ','
+    │   │       │       │               │   └── item #1 (kind: ExprLiteral)
+    │   │       │       │               │       └── terminal (kind: LiteralNumber): '3'
+    │   │       │       │               └── rparen (kind: RParen): ')'
+    │   │       │       └── semi (kind: OptionSemicolonEmpty) []
+    │   │       └── rbrace (kind: RBrace): '}'
+    │   └── child #3 (kind: ItemStruct)
+    │       ├── structkw (kind: Struct): 'struct'
+    │       ├── name (kind: Identifier): 'A'
+    │       ├── lbrace (kind: LBrace): '{'
+    │       ├── members (kind: ParamList)
+    │       │   ├── item #0 (kind: Param)
+    │       │   │   ├── identifier (kind: Identifier): 'x'
+    │       │   │   └── type_clause (kind: TypeClause)
+    │       │   │       ├── colon (kind: Colon): ':'
+    │       │   │       └── ty (kind: ExprPath)
+    │       │   │           └── item #0 (kind: PathSegment)
+    │       │   │               ├── ident (kind: Identifier): 'a'
+    │       │   │               └── generic_args (kind: OptionGenericArgsNone) []
+    │       │   ├── separator #0 (kind: Comma): ','
+    │       │   └── item #1 (kind: Param)
+    │       │       ├── identifier (kind: Identifier): 'y'
+    │       │       └── type_clause (kind: TypeClause)
+    │       │           ├── colon (kind: Colon): ':'
+    │       │           └── ty (kind: ExprPath)
+    │       │               └── item #0 (kind: PathSegment)
+    │       │                   ├── ident (kind: Identifier): 'int'
+    │       │                   └── generic_args (kind: OptionGenericArgsNone) []
+    │       └── rbrace (kind: RBrace): '}'
+    └── eof (kind: EndOfFile).
