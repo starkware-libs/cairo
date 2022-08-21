@@ -4,7 +4,7 @@ use std::fmt::Display;
 #[path = "operand_test.rs"]
 mod test;
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub enum Register {
     AP,
     FP,
@@ -36,7 +36,7 @@ impl Display for ResOperand {
 }
 
 // Represents an operand of the form [reg + offset].
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct DerefOperand {
     pub register: Register,
     pub offset: i16,
@@ -47,7 +47,7 @@ impl Display for DerefOperand {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct ImmediateOperand {
     // TODO(ilya, 10/10/2022): What type do we want to use here.
     pub value: i128,
