@@ -3,6 +3,9 @@ name = "parser"
 version = "0.1.0"
 edition = "2021"
 
+[dev-dependencies]
+test-case = "2.2.1"
+
 [dependencies]
 colored = "2"
 db_utils = { path = "../db_utils" }
