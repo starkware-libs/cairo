@@ -89,13 +89,17 @@ impl<'a> Printer<'a> {
             String::new()
         };
 
-        self.result.push_str(
-            format!(
-                "{indent}{extra_head_indent}{}{extra_info}{no_children_str}\n",
-                self.cyan(field_description.into()),
-            )
-            .as_str(),
+        let bla = format!(
+            "{indent}{extra_head_indent}{}{extra_info}{no_children_str}\n",
+            self.cyan(field_description.into())
         );
+        let bla2 = format!(
+            "{indent}{extra_head_indent}{}{extra_info}{no_children_str}\n",
+            field_description
+        );
+        println!("with colors len: {}, wihtout: {}", bla.len(), bla2.len());
+
+        self.result.push_str(bla.as_str());
 
         if num_children == 0 {
             return;
@@ -168,7 +172,16 @@ impl<'a> Printer<'a> {
         if self.print_colors { text.red() } else { text }
     }
     fn cyan(&self, text: ColoredString) -> ColoredString {
-        if self.print_colors { text.cyan() } else { text }
+        if self.print_colors {
+            println!("coloring with cyan!");
+            let res = text.cyan();
+            println!("coloring with cyan! res length: {}", res.len());
+            res
+        } else {
+            println!("not coloring with cyan!");
+            println!("not coloring with cyan! res length: {}", text.len());
+            text
+        }
     }
     fn blue(&self, text: ColoredString) -> ColoredString {
         if self.print_colors { text.blue() } else { text }
