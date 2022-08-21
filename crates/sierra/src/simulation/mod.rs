@@ -3,7 +3,7 @@ use thiserror::Error;
 pub mod core;
 pub mod mem_cell;
 #[cfg(test)]
-mod tests;
+mod test;
 
 /// Error occurring while testing extension inputs.
 #[derive(Error, Debug, Eq, PartialEq)]
