@@ -2,11 +2,11 @@
 #[path = "expr_generator_test.rs"]
 mod test;
 
-use defs::ids::VarId;
 use semantic;
 
 use crate::expr_generator_context::ExprGeneratorContext;
 use crate::pre_sierra;
+use crate::utils::simple_statement;
 
 /// Generates Sierra code that computes a given expression.
 /// Returns a list of Sierra instructions and the Sierra variable in which the result
@@ -29,13 +29,17 @@ fn generate_expression_code_by_val(
         }
         semantic::Expr::ExprMatch(expr_match) => handle_felt_match(context, expr_match),
         semantic::Expr::ExprVar(expr_var) => match expr_var.var {
-            VarId::Param(_) => todo!(),
-            VarId::Local(local_var) => (vec![], context.get_variable(local_var)),
+            defs::ids::VarId::Param(_) => todo!(),
+            defs::ids::VarId::Local(local_var) => (vec![], context.get_variable(local_var)),
         },
         semantic::Expr::ExprLiteral(expr_literal) => {
             let tmp_var = context.allocate_sierra_variable();
             (
-                vec![new_statement(format!("literal<{}>() -> ({});", expr_literal.value, tmp_var))],
+                vec![simple_statement(
+                    format!("literal<{}>", expr_literal.value),
+                    &[],
+                    &[tmp_var.clone()],
+                )],
                 tmp_var,
             )
         }
@@ -94,20 +98,16 @@ fn handle_function_call(
     }
 
     // Push the arguments on top of the stack.
-    let mut args_on_stack: Vec<String> = vec![];
+    let mut args_on_stack: Vec<sierra::ids::VarId> = vec![];
     for arg_res in args {
         let arg_var = context.allocate_sierra_variable();
-        instructions.push(new_statement(format!("store_temp({}) -> ({});", arg_res, arg_var)));
-        args_on_stack.push(format!("{}", arg_var));
+        instructions.push(simple_statement("store_temp", &[arg_res], &[arg_var.clone()]));
+        args_on_stack.push(arg_var);
     }
 
     // Call the function.
     let res_var = context.allocate_sierra_variable();
-    instructions.push(new_statement(format!(
-        "func({}) -> ({});",
-        args_on_stack.join(", "),
-        res_var
-    )));
+    instructions.push(simple_statement("func", &args_on_stack, &[res_var.clone()]));
     (instructions, res_var)
 }
 
@@ -118,8 +118,4 @@ fn handle_felt_match(
     _expr_match: &semantic::ExprMatch,
 ) -> (Vec<pre_sierra::Statement>, sierra::ids::VarId) {
     todo!();
-}
-
-fn new_statement(x: String) -> pre_sierra::Statement {
-    pre_sierra::Statement::SierraStatement(x)
 }

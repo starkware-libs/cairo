@@ -55,24 +55,24 @@ fn test_expr_generator() {
         instructions.iter().map(|x| format!("{}", x)).collect::<Vec<String>>(),
         vec![
             // let x = 7;
-            "literal<7>() -> ([0]);",
+            "literal<7>() -> ([0])",
             // foo(x, 7);
-            "literal<7>() -> ([1]);",
-            "store_temp([0]) -> ([2]);",
-            "store_temp([1]) -> ([3]);",
-            "func([2], [3]) -> ([4]);",
+            "literal<7>() -> ([1])",
+            "store_temp([0]) -> ([2])",
+            "store_temp([1]) -> ([3])",
+            "func([2], [3]) -> ([4])",
             // foo(foo(x, 7), foo(x, 7))
-            "literal<7>() -> ([5]);",
-            "store_temp([0]) -> ([6]);",
-            "store_temp([5]) -> ([7]);",
-            "func([6], [7]) -> ([8]);",
-            "literal<7>() -> ([9]);",
-            "store_temp([0]) -> ([10]);",
-            "store_temp([9]) -> ([11]);",
-            "func([10], [11]) -> ([12]);",
-            "store_temp([8]) -> ([13]);",
-            "store_temp([12]) -> ([14]);",
-            "func([13], [14]) -> ([15]);",
+            "literal<7>() -> ([5])",
+            "store_temp([0]) -> ([6])",
+            "store_temp([5]) -> ([7])",
+            "func([6], [7]) -> ([8])",
+            "literal<7>() -> ([9])",
+            "store_temp([0]) -> ([10])",
+            "store_temp([9]) -> ([11])",
+            "func([10], [11]) -> ([12])",
+            "store_temp([8]) -> ([13])",
+            "store_temp([12]) -> ([14])",
+            "func([13], [14]) -> ([15])",
         ]
     );
 
