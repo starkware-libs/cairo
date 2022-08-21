@@ -1,12 +1,16 @@
 // Module providing the gas related extensions.
 use crate::define_extension_hierarchy;
-use crate::extensions::{ConcreteExtension, GenericExtension, NamedExtension, SpecializationError};
+use crate::extensions::{
+    ConcreteExtension, GenericExtension, NamedExtension, NonBranchConcreteExtension,
+    SpecializationError,
+};
+use crate::ids::ConcreteTypeId;
 use crate::program::GenericArg;
 
 define_extension_hierarchy! {
     pub enum GasExtension {
         GetGas(GetGasGeneric),
-        RefundGas(RefundGasGeneric)
+        RefundGas(RefundGasGeneric),
     }, GasConcrete
 }
 
@@ -32,7 +36,17 @@ impl NamedExtension for GetGasGeneric {
 pub struct GetGasConcrete {
     pub count: i64,
 }
-impl ConcreteExtension for GetGasConcrete {}
+impl ConcreteExtension for GetGasConcrete {
+    fn input_types(&self) -> Vec<ConcreteTypeId> {
+        vec!["GasBuiltin".into()]
+    }
+    fn output_types(&self) -> Vec<Vec<ConcreteTypeId>> {
+        vec![vec!["GasBuiltin".into()], vec!["GasBuiltin".into()]]
+    }
+    fn fallthrough(&self) -> Option<usize> {
+        Some(1)
+    }
+}
 
 /// Extension for returning unused gas.
 #[derive(Default)]
@@ -48,4 +62,11 @@ impl NamedExtension for RefundGasGeneric {
 pub struct RefundGasConcrete {
     pub count: i64,
 }
-impl ConcreteExtension for RefundGasConcrete {}
+impl NonBranchConcreteExtension for RefundGasConcrete {
+    fn input_types(&self) -> Vec<ConcreteTypeId> {
+        vec!["GasBuiltin".into()]
+    }
+    fn output_types(&self) -> Vec<ConcreteTypeId> {
+        vec!["GasBuiltin".into()]
+    }
+}

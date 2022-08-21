@@ -1,10 +1,10 @@
-use crate::define_extension_hierarchy;
 use crate::extensions::{
     ConcreteExtension, GenericExtension, NamedExtension, NoGenericArgsGenericExtension,
-    SpecializationError,
+    NonBranchConcreteExtension, SpecializationError,
 };
-use crate::ids::GenericExtensionId;
+use crate::ids::{ConcreteTypeId, GenericExtensionId};
 use crate::program::GenericArg;
+use crate::{define_concrete_extension_hierarchy, define_extension_hierarchy};
 
 define_extension_hierarchy! {
     pub enum IntegerExtension {
@@ -13,7 +13,7 @@ define_extension_hierarchy! {
         Ignore(IgnoreGeneric),
         Duplicate(DuplicateGeneric),
         JumpNotZero(JumpNotZeroGeneric),
-        UnwrapNonZero(UnwrapNonZeroGeneric)
+        UnwrapNonZero(UnwrapNonZeroGeneric),
     }, IntegerConcrete
 }
 
@@ -74,20 +74,35 @@ impl GenericExtension for OperationGeneric {
 pub struct BinaryOperationConcrete {
     pub operator: Operator,
 }
-impl ConcreteExtension for BinaryOperationConcrete {}
+impl NonBranchConcreteExtension for BinaryOperationConcrete {
+    fn input_types(&self) -> Vec<ConcreteTypeId> {
+        vec!["int".into(), "int".into()]
+    }
+    fn output_types(&self) -> Vec<ConcreteTypeId> {
+        vec!["int".into()]
+    }
+}
 
 /// Operations between a int and a const.
 pub struct OperationWithConstConcrete {
     pub operator: Operator,
     pub c: i64,
 }
-pub enum OperationConcrete {
-    Binary(BinaryOperationConcrete),
-    Const(OperationWithConstConcrete),
+define_concrete_extension_hierarchy! {
+    pub enum OperationConcrete {
+        Binary(BinaryOperationConcrete),
+        Const(OperationWithConstConcrete),
+    }
 }
-impl ConcreteExtension for OperationWithConstConcrete {}
 
-impl ConcreteExtension for OperationConcrete {}
+impl NonBranchConcreteExtension for OperationWithConstConcrete {
+    fn input_types(&self) -> Vec<ConcreteTypeId> {
+        vec!["int".into()]
+    }
+    fn output_types(&self) -> Vec<ConcreteTypeId> {
+        vec!["int".into()]
+    }
+}
 
 /// Extension for creating a constant int.
 #[derive(Default)]
@@ -106,7 +121,14 @@ impl NamedExtension for ConstGeneric {
 pub struct ConstConcrete {
     pub c: i64,
 }
-impl ConcreteExtension for ConstConcrete {}
+impl NonBranchConcreteExtension for ConstConcrete {
+    fn input_types(&self) -> Vec<ConcreteTypeId> {
+        vec![]
+    }
+    fn output_types(&self) -> Vec<ConcreteTypeId> {
+        vec!["int".into()]
+    }
+}
 
 /// Extension for ignoring an int.
 #[derive(Default)]
@@ -120,7 +142,14 @@ impl NoGenericArgsGenericExtension for IgnoreGeneric {
 }
 
 pub struct IgnoreConcrete {}
-impl ConcreteExtension for IgnoreConcrete {}
+impl NonBranchConcreteExtension for IgnoreConcrete {
+    fn input_types(&self) -> Vec<ConcreteTypeId> {
+        vec!["int".into()]
+    }
+    fn output_types(&self) -> Vec<ConcreteTypeId> {
+        vec![]
+    }
+}
 
 /// Extension for duplicating an int.
 #[derive(Default)]
@@ -135,7 +164,14 @@ impl NoGenericArgsGenericExtension for DuplicateGeneric {
 }
 
 pub struct DuplicateConcrete {}
-impl ConcreteExtension for DuplicateConcrete {}
+impl NonBranchConcreteExtension for DuplicateConcrete {
+    fn input_types(&self) -> Vec<ConcreteTypeId> {
+        vec!["int".into()]
+    }
+    fn output_types(&self) -> Vec<ConcreteTypeId> {
+        vec!["int".into(), "int".into()]
+    }
+}
 
 /// Extension for jump non-zero on an int's value, and returning a non-zero wrapped int in case of
 /// success.
@@ -151,7 +187,17 @@ impl NoGenericArgsGenericExtension for JumpNotZeroGeneric {
 }
 
 pub struct JumpNotZeroConcrete {}
-impl ConcreteExtension for JumpNotZeroConcrete {}
+impl ConcreteExtension for JumpNotZeroConcrete {
+    fn input_types(&self) -> Vec<ConcreteTypeId> {
+        vec!["int".into()]
+    }
+    fn output_types(&self) -> Vec<Vec<ConcreteTypeId>> {
+        vec![vec!["int".into()], vec![]]
+    }
+    fn fallthrough(&self) -> Option<usize> {
+        Some(1)
+    }
+}
 
 /// Extension for unwrapping a non-zero int back into a regular int.
 #[derive(Default)]
@@ -166,4 +212,11 @@ impl NoGenericArgsGenericExtension for UnwrapNonZeroGeneric {
 }
 
 pub struct UnwrapNonZeroConcrete {}
-impl ConcreteExtension for UnwrapNonZeroConcrete {}
+impl NonBranchConcreteExtension for UnwrapNonZeroConcrete {
+    fn input_types(&self) -> Vec<ConcreteTypeId> {
+        vec!["int_nonzero".into()]
+    }
+    fn output_types(&self) -> Vec<ConcreteTypeId> {
+        vec!["int".into()]
+    }
+}

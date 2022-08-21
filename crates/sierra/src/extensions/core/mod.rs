@@ -15,6 +15,6 @@ define_extension_hierarchy! {
         Gas(GasExtension),
         Integer(IntegerExtension),
         Mem(MemExtension),
-        UnconditionalJump(UnconditionalJumpGeneric)
+        UnconditionalJump(UnconditionalJumpGeneric),
     }, CoreConcrete
 }
