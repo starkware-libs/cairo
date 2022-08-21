@@ -1,6 +1,6 @@
 #[cfg(test)]
 #[path = "expr_generator_test.rs"]
-mod tests;
+mod test;
 
 use defs::ids::VarId;
 use semantic;

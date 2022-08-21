@@ -1,6 +1,6 @@
 #[cfg(test)]
 #[path = "lexer_test.rs"]
-mod tests;
+mod test;
 
 use filesystem::ids::FileId;
 use smol_str::SmolStr;

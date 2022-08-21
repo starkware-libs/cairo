@@ -9,7 +9,7 @@ use crate::program::Program;
 
 #[cfg(test)]
 #[path = "program_registry_test.rs"]
-mod tests;
+mod test;
 
 /// Errors encountered in the program registry.
 #[derive(Error, Debug, Eq, PartialEq)]

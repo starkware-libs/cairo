@@ -12,7 +12,7 @@ use crate::program_registry::{ProgramRegistry, ProgramRegistryError};
 pub mod core;
 pub mod mem_cell;
 #[cfg(test)]
-mod tests;
+mod test;
 
 /// Error occurring while simulating an extension.
 #[derive(Error, Debug, Eq, PartialEq)]

@@ -6,7 +6,7 @@ use crate::ids::VarId;
 
 #[cfg(test)]
 #[path = "edit_state_test.rs"]
-mod tests;
+mod test;
 
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum EditStateError {

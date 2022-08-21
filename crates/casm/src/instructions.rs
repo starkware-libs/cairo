@@ -4,7 +4,7 @@ use crate::operand::{DerefOperand, DerefOrImmediate, ImmediateOperand, Register,
 
 #[cfg(test)]
 #[path = "instructions_test.rs"]
-mod instructions_test;
+mod test;
 
 // An enum of Cairo instructions.
 #[derive(Debug, Eq, PartialEq)]

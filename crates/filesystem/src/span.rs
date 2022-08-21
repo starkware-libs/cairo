@@ -1,6 +1,6 @@
 #[cfg(test)]
 #[path = "span_test.rs"]
-mod span_test;
+mod test;
 
 use std::ops::Sub;
 
