@@ -24,6 +24,11 @@ macro_rules! define_identity {
                 $type_name{id, debug_name: None}
             }
 
+            // TODO(lior): Remove this function once issue #45 is resolved. Use new() instead.
+            pub fn from_usize(id: usize) -> Self {
+                Self::new(id.try_into().unwrap())
+            }
+
             pub fn from_string(name: impl Into<String>) -> Self {
                 let s: String = name.into();
                 $type_name{id: id_from_string(&s), debug_name: Some(s)}

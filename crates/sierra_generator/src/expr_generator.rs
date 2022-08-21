@@ -5,7 +5,7 @@ mod test;
 use defs::ids::VarId;
 use semantic;
 
-use crate::expr_generator_context::{ExprGeneratorContext, SierraVariable};
+use crate::expr_generator_context::ExprGeneratorContext;
 use crate::pre_sierra;
 
 /// Generates Sierra code that computes a given expression.
@@ -14,14 +14,14 @@ use crate::pre_sierra;
 pub fn generate_expression_code(
     context: &mut ExprGeneratorContext<'_>,
     expr_id: semantic::ExprId,
-) -> (Vec<pre_sierra::Statement>, SierraVariable) {
+) -> (Vec<pre_sierra::Statement>, sierra::ids::VarId) {
     generate_expression_code_by_val(context, &context.get_db().lookup_expr(expr_id))
 }
 
 fn generate_expression_code_by_val(
     context: &mut ExprGeneratorContext<'_>,
     expr: &semantic::Expr,
-) -> (Vec<pre_sierra::Statement>, SierraVariable) {
+) -> (Vec<pre_sierra::Statement>, sierra::ids::VarId) {
     match expr {
         semantic::Expr::ExprBlock(expr_block) => handle_block(context, expr_block),
         semantic::Expr::ExprFunctionCall(expr_function_call) => {
@@ -46,7 +46,7 @@ fn generate_expression_code_by_val(
 fn handle_block(
     context: &mut ExprGeneratorContext<'_>,
     expr_block: &semantic::ExprBlock,
-) -> (Vec<pre_sierra::Statement>, SierraVariable) {
+) -> (Vec<pre_sierra::Statement>, sierra::ids::VarId) {
     // Process the statements.
     let mut instructions: Vec<pre_sierra::Statement> = vec![];
     for statement in &expr_block.statements {
@@ -82,11 +82,11 @@ fn handle_block(
 fn handle_function_call(
     context: &mut ExprGeneratorContext<'_>,
     expr_function_call: &semantic::ExprFunctionCall,
-) -> (Vec<pre_sierra::Statement>, SierraVariable) {
+) -> (Vec<pre_sierra::Statement>, sierra::ids::VarId) {
     let mut instructions: Vec<pre_sierra::Statement> = vec![];
 
     // Output instructions to compute the arguments.
-    let mut args: Vec<SierraVariable> = vec![];
+    let mut args: Vec<sierra::ids::VarId> = vec![];
     for arg in &expr_function_call.args {
         let (arg_instructions, res) = generate_expression_code(context, *arg);
         instructions.extend(arg_instructions);
@@ -116,7 +116,7 @@ fn handle_function_call(
 fn handle_felt_match(
     _context: &mut ExprGeneratorContext<'_>,
     _expr_match: &semantic::ExprMatch,
-) -> (Vec<pre_sierra::Statement>, SierraVariable) {
+) -> (Vec<pre_sierra::Statement>, sierra::ids::VarId) {
     todo!();
 }
 

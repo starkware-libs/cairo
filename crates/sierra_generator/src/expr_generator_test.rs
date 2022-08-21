@@ -6,7 +6,7 @@ use semantic::db::{SemanticDatabase, SemanticGroup};
 use semantic::ids::{ConcreteFunctionId, TypeId};
 
 use crate::expr_generator::generate_expression_code;
-use crate::expr_generator_context::{ExprGeneratorContext, SierraVariable};
+use crate::expr_generator_context::ExprGeneratorContext;
 
 #[salsa::database(DefsDatabase, SemanticDatabase)]
 #[derive(Default)]
@@ -55,26 +55,26 @@ fn test_expr_generator() {
         instructions.iter().map(|x| format!("{}", x)).collect::<Vec<String>>(),
         vec![
             // let x = 7;
-            "literal<7>() -> (var0);",
+            "literal<7>() -> ([0]);",
             // foo(x, 7);
-            "literal<7>() -> (var1);",
-            "store_temp(var0) -> (var2);",
-            "store_temp(var1) -> (var3);",
-            "func(var2, var3) -> (var4);",
+            "literal<7>() -> ([1]);",
+            "store_temp([0]) -> ([2]);",
+            "store_temp([1]) -> ([3]);",
+            "func([2], [3]) -> ([4]);",
             // foo(foo(x, 7), foo(x, 7))
-            "literal<7>() -> (var5);",
-            "store_temp(var0) -> (var6);",
-            "store_temp(var5) -> (var7);",
-            "func(var6, var7) -> (var8);",
-            "literal<7>() -> (var9);",
-            "store_temp(var0) -> (var10);",
-            "store_temp(var9) -> (var11);",
-            "func(var10, var11) -> (var12);",
-            "store_temp(var8) -> (var13);",
-            "store_temp(var12) -> (var14);",
-            "func(var13, var14) -> (var15);",
+            "literal<7>() -> ([5]);",
+            "store_temp([0]) -> ([6]);",
+            "store_temp([5]) -> ([7]);",
+            "func([6], [7]) -> ([8]);",
+            "literal<7>() -> ([9]);",
+            "store_temp([0]) -> ([10]);",
+            "store_temp([9]) -> ([11]);",
+            "func([10], [11]) -> ([12]);",
+            "store_temp([8]) -> ([13]);",
+            "store_temp([12]) -> ([14]);",
+            "func([13], [14]) -> ([15]);",
         ]
     );
 
-    assert_eq!(res, SierraVariable::from(15));
+    assert_eq!(res, sierra::ids::VarId::from(15));
 }
