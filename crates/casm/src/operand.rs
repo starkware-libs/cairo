@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 #[cfg(test)]
 #[path = "operand_test.rs"]
-mod operand_test;
+mod test;
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum Register {

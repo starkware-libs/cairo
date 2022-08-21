@@ -1,6 +1,6 @@
 #[cfg(test)]
 #[path = "db_test.rs"]
-mod db_test;
+mod test;
 
 use std::collections::HashMap;
 use std::fs;

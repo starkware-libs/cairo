@@ -11,7 +11,7 @@ use crate::references::{init_reference, ReferencesError};
 
 #[cfg(test)]
 #[path = "compiler_test.rs"]
-mod compiler_test;
+mod test;
 
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum CompilationError {
