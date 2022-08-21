@@ -1,3 +1,5 @@
+use sierra::program;
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct LabelId(usize);
 impl LabelId {
@@ -12,8 +14,7 @@ impl std::fmt::Display for LabelId {
 }
 
 pub enum Statement {
-    // TODO(lior): Replace String with the actual Sierra statement struct.
-    SierraStatement(String),
+    SierraStatement(program::GenStatement<LabelId>),
     Label(Label),
 }
 impl std::fmt::Display for Statement {
