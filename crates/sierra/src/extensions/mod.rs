@@ -5,7 +5,7 @@ mod test;
 use thiserror::Error;
 
 pub use self::core::{CoreConcrete, CoreExtension};
-use crate::ids::{ConcreteExtensionId, GenericExtensionId};
+use crate::ids::{ConcreteExtensionId, ConcreteTypeId, GenericExtensionId};
 use crate::program::GenericArg;
 
 /// Error occurring while specializing extensions.
@@ -108,7 +108,73 @@ impl<T: NoGenericArgsGenericExtension> NamedExtension for T {
 }
 
 /// Trait for a specialized extension.
-pub trait ConcreteExtension {}
+pub trait ConcreteExtension {
+    fn input_types(&self) -> Vec<ConcreteTypeId>;
+    fn output_types(&self) -> Vec<Vec<ConcreteTypeId>>;
+    fn fallthrough(&self) -> Option<usize>;
+}
+
+/// Trait for a non branch specialized extension.
+pub trait NonBranchConcreteExtension {
+    fn input_types(&self) -> Vec<ConcreteTypeId>;
+    fn output_types(&self) -> Vec<ConcreteTypeId>;
+}
+impl<TNonBranchConcreteExtension: NonBranchConcreteExtension> ConcreteExtension
+    for TNonBranchConcreteExtension
+{
+    fn input_types(&self) -> Vec<ConcreteTypeId> {
+        <Self as NonBranchConcreteExtension>::input_types(self)
+    }
+    fn output_types(&self) -> Vec<Vec<ConcreteTypeId>> {
+        vec![<Self as NonBranchConcreteExtension>::output_types(self)]
+    }
+    fn fallthrough(&self) -> Option<usize> {
+        Some(0)
+    }
+}
+
+/// Forms a concrete extension type from an enum of extensions.
+/// The new enum implements ConcreteExtension.
+/// All the variant types must also implement ConcreteExtension.
+/// Usage example:
+/// ```ignore
+/// define_concrete_extension_hierarchy! {
+///     pub enum MyExtension {
+///       Ext0(Extension0),
+///       Ext1(Extension1),
+///     }, MyExtensionConcrete
+/// }
+/// ```
+#[macro_export]
+macro_rules! define_concrete_extension_hierarchy {
+    (pub enum $name:ident { $($variant_name:ident ($variant:ty),)* }) => {
+        #[allow(clippy::enum_variant_names)]
+        pub enum $name {
+            $($variant_name ($variant),)*
+        }
+
+        impl $crate::extensions::ConcreteExtension for $name {
+            fn input_types(&self) -> Vec<$crate::extensions::ConcreteTypeId> {
+                match self {
+                    $(Self::$variant_name(value) =>
+                        <$variant as $crate::extensions::ConcreteExtension>::input_types(value)),*
+                }
+            }
+            fn output_types(&self) -> Vec<Vec<$crate::extensions::ConcreteTypeId>> {
+                match self {
+                    $(Self::$variant_name(value) =>
+                        <$variant as $crate::extensions::ConcreteExtension>::output_types(value)),*
+                }
+            }
+            fn fallthrough(&self) -> Option<usize> {
+                match self {
+                    $(Self::$variant_name(value) =>
+                        <$variant as $crate::extensions::ConcreteExtension>::fallthrough(value)),*
+                }
+            }
+        }
+    }
+}
 
 /// Forms an extension type from an enum of extensions.
 /// The new enum implements GenericExtension.
@@ -124,8 +190,8 @@ pub trait ConcreteExtension {}
 /// ```
 #[macro_export]
 macro_rules! define_extension_hierarchy {
-    (pub enum $name:ident { $($variant_name:ident ($variant:ty)),* },
-            $concrete_name:ident) => {
+    (pub enum $name:ident { $($variant_name:ident ($variant:ty),)* },
+    $concrete_name:ident) => {
         #[allow(clippy::enum_variant_names)]
         pub enum $name {
             $($variant_name ($variant)),*
@@ -154,11 +220,10 @@ macro_rules! define_extension_hierarchy {
             }
         }
 
-        #[allow(clippy::enum_variant_names)]
-        pub enum $concrete_name {
-            $($variant_name (<$variant as GenericExtension> ::Concrete)),*
+        $crate::define_concrete_extension_hierarchy! {
+            pub enum $concrete_name {
+                $($variant_name (<$variant as GenericExtension> ::Concrete),)*
+            }
         }
-
-        impl $crate::extensions::ConcreteExtension for $concrete_name {}
     }
 }
