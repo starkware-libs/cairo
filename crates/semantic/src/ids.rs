@@ -56,4 +56,4 @@ pub struct ConcreteType {
 // CodeElements.
 // Expressions and statements are defined at 'semantic.rs'.
 define_short_id!(ExprId);
-define_short_id!(StatementId);
+define_short_id!(StatementIdx);
