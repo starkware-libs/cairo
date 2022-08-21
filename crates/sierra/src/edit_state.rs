@@ -9,7 +9,7 @@ use crate::ids::VarId;
 mod tests;
 
 #[derive(Error, Debug, Eq, PartialEq)]
-pub enum EditError {
+pub enum EditStateError {
     #[error("Missing reference")]
     MissingReference(VarId),
     #[error("Overriden variable")]
@@ -20,12 +20,12 @@ pub enum EditError {
 pub fn take_args<'a, V: 'a + std::cmp::PartialEq>(
     mut state: HashMap<VarId, V>,
     ids: impl Iterator<Item = &'a VarId>,
-) -> Result<(HashMap<VarId, V>, Vec<V>), EditError> {
+) -> Result<(HashMap<VarId, V>, Vec<V>), EditStateError> {
     let mut vals = vec![];
     for id in ids {
         match state.remove(id) {
             None => {
-                return Err(EditError::MissingReference(id.clone()));
+                return Err(EditStateError::MissingReference(id.clone()));
             }
             Some(v) => {
                 vals.push(v);
@@ -39,10 +39,10 @@ pub fn take_args<'a, V: 'a + std::cmp::PartialEq>(
 pub fn put_results<'a, V>(
     mut state: HashMap<VarId, V>,
     results: impl Iterator<Item = (&'a VarId, V)>,
-) -> Result<HashMap<VarId, V>, EditError> {
+) -> Result<HashMap<VarId, V>, EditStateError> {
     for (id, v) in results {
         match state.insert(id.clone(), v) {
-            Some(_) => return Err(EditError::VariableOverride(id.clone())),
+            Some(_) => return Err(EditStateError::VariableOverride(id.clone())),
             None => {}
         }
     }

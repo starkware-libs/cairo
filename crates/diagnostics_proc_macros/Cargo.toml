@@ -1,0 +1,11 @@
+[package]
+name = "diagnostics_proc_macros"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = { version = "1.0.99", features = ["full", "extra-traits"] }
+quote = "1.0.21"

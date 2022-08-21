@@ -1,0 +1,14 @@
+[package]
+name = "sierra_to_casm"
+version = "0.1.0"
+edition = "2021"
+
+[dev-dependencies]
+assert_matches = "1.5"
+indoc = "*"
+test-case = "*"
+
+[dependencies]
+casm = { path = "../casm" }
+sierra = { path = "../sierra" }
+thiserror = "*"

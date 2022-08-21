@@ -1,4 +1,6 @@
 use indoc::indoc;
+use sierra::program_registry::ProgramRegistry;
+use sierra::simulation;
 
 fn collatz_program() -> sierra::program::Program {
     sierra::ProgramParser::new()
@@ -25,7 +27,7 @@ fn collatz_program() -> sierra::program::Program {
         ext get_gas_11 = get_gas<11>;
         ext refund_gas_1 = refund_gas<1>;
         ext jump = jump;
-        ext align_temps = align_temps<1>;
+        ext align_temps = align_temps<int>;
 
         // Statement #  0 - Setting up memory the form [n, gb, counter=0].
         move_int(n) -> (n);
@@ -94,4 +96,41 @@ fn collatz_program() -> sierra::program::Program {
 #[test]
 fn parse_test() {
     collatz_program();
+}
+
+#[test]
+fn create_registry_test() {
+    ProgramRegistry::new(&collatz_program()).unwrap();
+}
+
+#[test]
+fn simulate_test() {
+    let program = collatz_program();
+    let id = "Collatz".into();
+    // 5 -> 16 -> 8 -> 4 -> 2 -> 1
+    assert_eq!(
+        simulation::run(&program, &id, vec![vec![/* gb= */ 100.into()], vec![/* n= */ 5.into()]]),
+        Ok(vec![vec![/* gb= */ 47.into()], vec![/* index= */ 5.into()]])
+    );
+    //  0     1     2     3     4     5     6     7     8     9
+    //  7 -> 22 -> 11 -> 34 -> 17 -> 52 -> 26 -> 13 -> 40 -> 20 ->
+    // 10 ->  5 -> 16 ->  8 ->  4 ->  2 ->  1
+    assert_eq!(
+        simulation::run(&program, &id, vec![vec![/* gb= */ 200.into()], vec![/* n= */ 7.into()]]),
+        Ok(vec![vec![/* gb= */ 30.into()], vec![/* index= */ 16.into()]])
+    );
+    // Out of gas.
+    assert_eq!(
+        simulation::run(&program, &id, vec![vec![/* gb= */ 100.into()], vec![/* n= */ 7.into()]]),
+        Ok(vec![
+            vec![/* gb= */ 5.into()],
+            vec![
+                (
+                    // index=
+                    -1
+                )
+                .into()
+            ]
+        ])
+    );
 }

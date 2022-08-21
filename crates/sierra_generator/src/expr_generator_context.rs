@@ -33,7 +33,7 @@ impl<'a> ExprGeneratorContext<'a> {
     }
 
     /// Allocates a new Sierra variable.
-    pub fn allocate_variable(&mut self) -> SierraVariable {
+    pub fn allocate_sierra_variable(&mut self) -> SierraVariable {
         SierraVariable::from(self.id_allocator.allocate())
     }
 
@@ -57,7 +57,6 @@ impl<'a> ExprGeneratorContext<'a> {
 
     /// Returns the Sierra variable associated with the given local variable.
     /// See [Self::register_variable].
-    #[allow(dead_code)]
     pub fn get_variable(&self, local_var: LocalVarId) -> SierraVariable {
         // TODO(lior): Consider throwing an error with a location.
         self.variables.get(&local_var).expect("Internal compiler error.").clone()

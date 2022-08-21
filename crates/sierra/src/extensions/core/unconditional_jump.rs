@@ -1,29 +1,25 @@
-use super::unpack_inputs;
-use crate::extensions::{
-    ConcreteExtension, ConcreteExtensionBox, GenericExtensionBox, InputError,
-    NoGenericArgsGenericExtension,
-};
-use crate::ids::GenericExtensionId;
-use crate::mem_cell::MemCell;
+use crate::extensions::{ConcreteExtension, NoGenericArgsGenericExtension};
+use crate::ids::ConcreteTypeId;
 
-struct UnconditionalJumpGeneric {}
+#[derive(Default)]
+pub struct UnconditionalJumpGeneric {}
 impl NoGenericArgsGenericExtension for UnconditionalJumpGeneric {
-    fn specialize(&self) -> ConcreteExtensionBox {
-        Box::new(UnconditionalJumpConcrete {})
+    type Concrete = UnconditionalJumpConcrete;
+    const NAME: &'static str = "jump";
+    fn specialize(&self) -> Self::Concrete {
+        UnconditionalJumpConcrete {}
     }
 }
 
-struct UnconditionalJumpConcrete {}
+pub struct UnconditionalJumpConcrete {}
 impl ConcreteExtension for UnconditionalJumpConcrete {
-    fn simulate(
-        &self,
-        inputs: Vec<Vec<MemCell>>,
-    ) -> Result<(Vec<Vec<MemCell>>, usize), InputError> {
-        unpack_inputs::<0>(inputs)?;
-        Ok((vec![], 0))
+    fn input_types(&self) -> Vec<ConcreteTypeId> {
+        vec![]
     }
-}
-
-pub(super) fn extensions() -> [(GenericExtensionId, GenericExtensionBox); 1] {
-    [("jump".into(), Box::new(UnconditionalJumpGeneric {}))]
+    fn output_types(&self) -> Vec<Vec<ConcreteTypeId>> {
+        vec![]
+    }
+    fn fallthrough(&self) -> Option<usize> {
+        None
+    }
 }
