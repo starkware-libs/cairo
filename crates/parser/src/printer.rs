@@ -168,7 +168,16 @@ impl<'a> Printer<'a> {
         if self.print_colors { text.red() } else { text }
     }
     fn cyan(&self, text: ColoredString) -> ColoredString {
-        if self.print_colors { text.cyan() } else { text }
+        if self.print_colors {
+            println!("coloring with cyan!");
+            let res = text.cyan();
+            println!("coloring with cyan! res length: {}", res.len());
+            res
+        } else {
+            println!("not coloring with cyan!");
+            println!("not coloring with cyan! res length: {}", text.len());
+            text
+        }
     }
     fn blue(&self, text: ColoredString) -> ColoredString {
         if self.print_colors { text.blue() } else { text }

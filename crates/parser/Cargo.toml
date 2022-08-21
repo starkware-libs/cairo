@@ -12,3 +12,4 @@ salsa = "0.16.1"
 smol_str = "0.1.23"
 syntax = { path = "../syntax" }
 syntax_codegen = { path = "../syntax_codegen" }
+test-case = "2.2.1"
