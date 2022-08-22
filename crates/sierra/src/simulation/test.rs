@@ -1,8 +1,11 @@
+use std::collections::HashMap;
+
 use test_case::test_case;
 
 use super::core;
 use super::mem_cell::MemCell;
 use super::LibFuncSimulationError::{self, MemoryLayoutMismatch, WrongNumberOfArgs};
+use crate::extensions::lib_func::Registries;
 use crate::extensions::{CoreLibFunc, GenericLibFunc};
 use crate::program::GenericArg;
 
@@ -21,7 +24,13 @@ fn simulate(
     inputs: Vec<Vec<MemCell>>,
 ) -> Result<(Vec<Vec<MemCell>>, usize), LibFuncSimulationError> {
     core::simulate(
-        &CoreLibFunc::by_id(&id.into()).unwrap().specialize(&generic_args).unwrap(),
+        &CoreLibFunc::by_id(&id.into())
+            .unwrap()
+            .specialize(
+                Registries { concrete_type_ids: &HashMap::new(), functions: &HashMap::new() },
+                &generic_args,
+            )
+            .unwrap(),
         inputs,
     )
 }
