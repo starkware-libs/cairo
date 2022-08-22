@@ -15,8 +15,8 @@ fn good_flow() {
         .parse(indoc! {"
             libfunc store_temp_felt = store_temp<felt>;
 
-            store_temp_felt([1]) -> ([1]);
-            return();
+            store_temp_felt([1]) -> ([2]);
+            return([2]);
 
             test_program@0([1]: felt) -> ();
         "})
@@ -36,6 +36,12 @@ fn good_flow() {
             test_program@0() -> ();
         "} => Err(CompilationError::ReferencesError(ReferencesError::EditStateError(EditStateError::MissingReference(2.into()))));
             "missing reference")]
+#[test_case(indoc! {"
+            return([2]);
+
+            test_program@0([2]: felt) -> ();
+        "} => Err(CompilationError::ReferencesError(ReferencesError::InvalidReturnReference));
+            "Invalid return reference")]
 #[test_case(indoc! {"
             store_temp_felt([1]) -> ([1]);
 

@@ -27,6 +27,8 @@ pub enum ReferencesError {
     InconsistentReferences,
     #[error("InvalidStatementIdx")]
     InvalidStatementIdx,
+    #[error("InvalidReturnReference")]
+    InvalidReturnReference,
     #[error("MissingReferencesForStatement")]
     MissingReferencesForStatement,
     #[error(transparent)]
@@ -108,6 +110,22 @@ impl ProgramReferences {
         }
         Ok(())
     }
+}
+
+pub fn validate_return_ref(return_refs: &[ReferenceValue]) -> Result<(), ReferencesError> {
+    let mut expected_offset: i16 = -1;
+    for return_ref in return_refs.iter().rev() {
+        match return_ref.expression {
+            ResOperand::Deref(DerefOperand { register: Register::AP, offset })
+                if offset == expected_offset =>
+            {
+                // TODO(ilya, 10/10/2022): Get size from type.
+                expected_offset -= 1
+            }
+            _ => return Err(ReferencesError::InvalidReturnReference),
+        }
+    }
+    Ok(())
 }
 
 /// Builds the HashMap of references to the parameters of a function.
