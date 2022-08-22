@@ -1,10 +1,39 @@
 use crate::extensions::{
-    ConcreteLibFunc, GenericLibFunc, NamedLibFunc, NoGenericArgsGenericLibFunc,
-    NonBranchConcreteLibFunc, SpecializationError,
+    ConcreteLibFunc, ConcreteType, GenericLibFunc, NamedLibFunc, NoGenericArgsGenericLibFunc,
+    NoGenericArgsGenericType, NonBranchConcreteLibFunc, SpecializationError,
 };
 use crate::ids::{ConcreteTypeId, GenericLibFuncId};
 use crate::program::GenericArg;
-use crate::{define_concrete_libfunc_hierarchy, define_libfunc_hierarchy};
+use crate::{define_concrete_libfunc_hierarchy, define_libfunc_hierarchy, define_type_hierarchy};
+
+define_type_hierarchy! {
+    pub enum IntegerGenericType {
+        Basic(IntegerBasicGeneric),
+        NonZero(IntegerNonZeroGeneric),
+    }, IntegerConcreteType
+}
+
+/// Type for int.
+#[derive(Default)]
+pub struct IntegerBasicGeneric {}
+impl NoGenericArgsGenericType for IntegerBasicGeneric {
+    type Concrete = IntegerBasicConcrete;
+    const NAME: &'static str = "int";
+}
+#[derive(Default)]
+pub struct IntegerBasicConcrete {}
+impl ConcreteType for IntegerBasicConcrete {}
+
+/// Type for non-zero int.
+#[derive(Default)]
+pub struct IntegerNonZeroGeneric {}
+impl NoGenericArgsGenericType for IntegerNonZeroGeneric {
+    type Concrete = IntegerNonZeroConcrete;
+    const NAME: &'static str = "NonZeroInt";
+}
+#[derive(Default)]
+pub struct IntegerNonZeroConcrete {}
+impl ConcreteType for IntegerNonZeroConcrete {}
 
 define_libfunc_hierarchy! {
     pub enum IntegerLibFunc {
