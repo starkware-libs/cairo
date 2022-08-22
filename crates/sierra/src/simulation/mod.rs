@@ -5,6 +5,8 @@ use thiserror::Error;
 
 use self::mem_cell::MemCell;
 use crate::edit_state::{put_results, take_args, EditStateError};
+use crate::extensions::core::function_call::FunctionCallConcrete;
+use crate::extensions::CoreConcrete;
 use crate::ids::{FunctionId, VarId};
 use crate::program::{Program, Statement, StatementIdx};
 use crate::program_registry::{ProgramRegistry, ProgramRegistryError};
@@ -21,6 +23,8 @@ pub enum LibFuncSimulationError {
     WrongNumberOfArgs,
     #[error("Expected a different memory layout")]
     MemoryLayoutMismatch,
+    #[error("Cannot simulate this sort of libfunc")]
+    CannotBeSimulated,
 }
 
 /// Error occurring while simulating a program function.
@@ -47,6 +51,16 @@ pub fn run(
     inputs: Vec<Vec<MemCell>>,
 ) -> Result<Vec<Vec<MemCell>>, SimulationError> {
     let registry = ProgramRegistry::new(program)?;
+    run_helper(program, &registry, entry_point, inputs)
+}
+
+/// Helper for the run function enabling recursive function calls.
+fn run_helper(
+    program: &Program,
+    registry: &ProgramRegistry,
+    entry_point: &FunctionId,
+    inputs: Vec<Vec<MemCell>>,
+) -> Result<Vec<Vec<MemCell>>, SimulationError> {
     let func = registry.get_function(entry_point)?;
     let mut current_statement_id = func.entry;
     if func.params.len() != inputs.len() {
@@ -85,9 +99,15 @@ pub fn run(
                     })?;
                 let libfunc = registry.get_libfunc(&invocation.libfunc_id)?;
                 let (outputs, chosen_branch) =
-                    core::simulate(libfunc, inputs).map_err(|error| {
-                        SimulationError::LibFuncSimulationError(error, current_statement_id)
-                    })?;
+                    if let CoreConcrete::FunctionCall(FunctionCallConcrete { function_id }) =
+                        libfunc
+                    {
+                        Ok((run_helper(program, registry, function_id, inputs)?, 0))
+                    } else {
+                        core::simulate(libfunc, inputs).map_err(|error| {
+                            SimulationError::LibFuncSimulationError(error, current_statement_id)
+                        })
+                    }?;
                 let branch_info = &invocation.branches[chosen_branch];
                 state =
                     put_results(remaining, izip!(branch_info.results.iter(), outputs.into_iter()))
