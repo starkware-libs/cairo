@@ -64,10 +64,10 @@ pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
                 });
             }
             Statement::Invocation(invocation) => {
-                let extension = registry
-                    .get_extension(&invocation.extension_id)
+                let libfunc = registry
+                    .get_libfunc(&invocation.libfunc_id)
                     .map_err(CompilationError::ProgramRegistryError)?;
-                compile_invocation(extension)?;
+                compile_invocation(libfunc)?;
             }
         }
     }

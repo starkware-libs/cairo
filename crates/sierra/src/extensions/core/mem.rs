@@ -1,13 +1,13 @@
-use crate::define_extension_hierarchy;
+use crate::define_libfunc_hierarchy;
 use crate::extensions::{
-    GenericExtension, NamedExtension, NoGenericArgsGenericExtension, NonBranchConcreteExtension,
+    GenericLibFunc, NamedLibFunc, NoGenericArgsGenericLibFunc, NonBranchConcreteLibFunc,
     SpecializationError,
 };
 use crate::ids::ConcreteTypeId;
 use crate::program::GenericArg;
 
-define_extension_hierarchy! {
-    pub enum MemExtension {
+define_libfunc_hierarchy! {
+    pub enum MemLibFunc {
         StoreTemp(StoreTempGeneric),
         AlignTemps(AlignTempsGeneric),
         StoreLocal(StoreLocalGeneric),
@@ -25,10 +25,10 @@ fn as_single_type(args: &[GenericArg]) -> Result<ConcreteTypeId, SpecializationE
     }
 }
 
-/// Extension for storing a deferred value into temporary memory.
+/// LibFunc for storing a deferred value into temporary memory.
 #[derive(Default)]
 pub struct StoreTempGeneric {}
-impl NamedExtension for StoreTempGeneric {
+impl NamedLibFunc for StoreTempGeneric {
     type Concrete = StoreTempConcrete;
     const NAME: &'static str = "store_temp";
     fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError> {
@@ -39,7 +39,7 @@ impl NamedExtension for StoreTempGeneric {
 pub struct StoreTempConcrete {
     ty: ConcreteTypeId,
 }
-impl NonBranchConcreteExtension for StoreTempConcrete {
+impl NonBranchConcreteLibFunc for StoreTempConcrete {
     fn input_types(&self) -> Vec<ConcreteTypeId> {
         vec![self.ty.clone()]
     }
@@ -48,10 +48,10 @@ impl NonBranchConcreteExtension for StoreTempConcrete {
     }
 }
 
-/// Extension for aligning the temporary buffer for flow control merge.
+/// LibFunc for aligning the temporary buffer for flow control merge.
 #[derive(Default)]
 pub struct AlignTempsGeneric {}
-impl NamedExtension for AlignTempsGeneric {
+impl NamedLibFunc for AlignTempsGeneric {
     type Concrete = AlignTempsConcrete;
     const NAME: &'static str = "align_temps";
     fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError> {
@@ -62,7 +62,7 @@ impl NamedExtension for AlignTempsGeneric {
 pub struct AlignTempsConcrete {
     _ty: ConcreteTypeId,
 }
-impl NonBranchConcreteExtension for AlignTempsConcrete {
+impl NonBranchConcreteLibFunc for AlignTempsConcrete {
     fn input_types(&self) -> Vec<ConcreteTypeId> {
         vec![]
     }
@@ -71,10 +71,10 @@ impl NonBranchConcreteExtension for AlignTempsConcrete {
     }
 }
 
-/// Extension for storing a deferred value into local memory.
+/// LibFunc for storing a deferred value into local memory.
 #[derive(Default)]
 pub struct StoreLocalGeneric {}
-impl NamedExtension for StoreLocalGeneric {
+impl NamedLibFunc for StoreLocalGeneric {
     type Concrete = StoreLocalConcrete;
     const NAME: &'static str = "store_local";
     fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError> {
@@ -85,7 +85,7 @@ impl NamedExtension for StoreLocalGeneric {
 pub struct StoreLocalConcrete {
     ty: ConcreteTypeId,
 }
-impl NonBranchConcreteExtension for StoreLocalConcrete {
+impl NonBranchConcreteLibFunc for StoreLocalConcrete {
     fn input_types(&self) -> Vec<ConcreteTypeId> {
         vec![self.ty.clone()]
     }
@@ -94,10 +94,10 @@ impl NonBranchConcreteExtension for StoreLocalConcrete {
     }
 }
 
-/// Extension for allocating locals for later stores.
+/// LibFunc for allocating locals for later stores.
 #[derive(Default)]
 pub struct AllocLocalsGeneric {}
-impl NoGenericArgsGenericExtension for AllocLocalsGeneric {
+impl NoGenericArgsGenericLibFunc for AllocLocalsGeneric {
     type Concrete = AllocLocalsConcrete;
     const NAME: &'static str = "alloc_locals";
     fn specialize(&self) -> Self::Concrete {
@@ -106,7 +106,7 @@ impl NoGenericArgsGenericExtension for AllocLocalsGeneric {
 }
 
 pub struct AllocLocalsConcrete {}
-impl NonBranchConcreteExtension for AllocLocalsConcrete {
+impl NonBranchConcreteLibFunc for AllocLocalsConcrete {
     fn input_types(&self) -> Vec<ConcreteTypeId> {
         vec![]
     }
@@ -115,10 +115,10 @@ impl NonBranchConcreteExtension for AllocLocalsConcrete {
     }
 }
 
-/// Extension for renaming an identifier - used to align identities for flow control merge.
+/// LibFunc for renaming an identifier - used to align identities for flow control merge.
 #[derive(Default)]
 pub struct RenameGeneric {}
-impl NamedExtension for RenameGeneric {
+impl NamedLibFunc for RenameGeneric {
     type Concrete = RenameConcrete;
     const NAME: &'static str = "rename";
     fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError> {
@@ -129,7 +129,7 @@ impl NamedExtension for RenameGeneric {
 pub struct RenameConcrete {
     ty: ConcreteTypeId,
 }
-impl NonBranchConcreteExtension for RenameConcrete {
+impl NonBranchConcreteLibFunc for RenameConcrete {
     fn input_types(&self) -> Vec<ConcreteTypeId> {
         vec![self.ty.clone()]
     }
@@ -138,10 +138,10 @@ impl NonBranchConcreteExtension for RenameConcrete {
     }
 }
 
-/// Extension for making a type deferred for later store.
+/// LibFunc for making a type deferred for later store.
 #[derive(Default)]
 pub struct MoveGeneric {}
-impl NamedExtension for MoveGeneric {
+impl NamedLibFunc for MoveGeneric {
     type Concrete = MoveConcrete;
     const NAME: &'static str = "move";
     fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError> {
@@ -152,7 +152,7 @@ impl NamedExtension for MoveGeneric {
 pub struct MoveConcrete {
     ty: ConcreteTypeId,
 }
-impl NonBranchConcreteExtension for MoveConcrete {
+impl NonBranchConcreteLibFunc for MoveConcrete {
     fn input_types(&self) -> Vec<ConcreteTypeId> {
         vec![self.ty.clone()]
     }

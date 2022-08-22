@@ -1,11 +1,11 @@
 use std::fmt;
 
 use crate::ids::{
-    ConcreteExtensionId, ConcreteTypeId, FunctionId, GenericExtensionId, GenericTypeId, VarId,
+    ConcreteLibFuncId, ConcreteTypeId, FunctionId, GenericLibFuncId, GenericTypeId, VarId,
 };
 use crate::program::{
-    BranchInfo, BranchTarget, ExtensionDeclaration, Function, GenericArg, Invocation, Param,
-    Program, Statement, TypeDeclaration,
+    BranchInfo, BranchTarget, Function, GenericArg, Invocation, LibFuncDeclaration, Param, Program,
+    Statement, TypeDeclaration,
 };
 
 impl fmt::Display for Program {
@@ -14,7 +14,7 @@ impl fmt::Display for Program {
             writeln!(f, "{declaration};")?;
         }
         writeln!(f)?;
-        for declaration in &self.extension_declarations {
+        for declaration in &self.libfunc_declarations {
             writeln!(f, "{declaration};")?;
         }
         writeln!(f)?;
@@ -36,9 +36,9 @@ impl fmt::Display for TypeDeclaration {
     }
 }
 
-impl fmt::Display for ExtensionDeclaration {
+impl fmt::Display for LibFuncDeclaration {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "ext {} = {}", self.id, self.generic_id)?;
+        write!(f, "libfunc {} = {}", self.id, self.generic_id)?;
         write_template_args(f, &self.args)
     }
 }
@@ -72,8 +72,8 @@ macro_rules! display_identity {
     };
 }
 
-display_identity!(GenericExtensionId);
-display_identity!(ConcreteExtensionId);
+display_identity!(GenericLibFuncId);
+display_identity!(ConcreteLibFuncId);
 display_identity!(FunctionId);
 display_identity!(VarId);
 display_identity!(GenericTypeId);
@@ -104,7 +104,7 @@ impl fmt::Display for Statement {
 
 impl fmt::Display for Invocation {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}(", self.extension_id)?;
+        write!(f, "{}(", self.libfunc_id)?;
         write_comma_separated(f, &self.args)?;
         if let [BranchInfo { target: BranchTarget::Fallthrough, results }] = &self.branches[..] {
             write!(f, ") -> (")?;
