@@ -14,7 +14,7 @@ define_type_hierarchy! {
     pub enum CoreType {
         GasBuiltin(GasBuiltinGeneric),
         Integer(IntegerGenericType),
-    }, CoreConcreteType
+    }, CoreTypeConcrete
 }
 
 define_libfunc_hierarchy! {
