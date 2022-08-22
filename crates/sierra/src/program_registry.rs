@@ -7,8 +7,8 @@ use crate::extensions::{
     CoreConcrete, CoreLibFunc, CoreType, CoreTypeConcrete, ExtensionError, GenericLibFuncEx,
     GenericTypeEx,
 };
-use crate::ids::{ConcreteLibFuncId, ConcreteTypeId, FunctionId};
-use crate::program::{Function, Program};
+use crate::ids::{ConcreteLibFuncId, ConcreteTypeId, FunctionId, GenericTypeId};
+use crate::program::{Function, GenericArg, Program, TypeDeclaration};
 
 #[cfg(test)]
 #[path = "program_registry_test.rs"]
@@ -23,8 +23,10 @@ pub enum ProgramRegistryError {
     MissingFunction(FunctionId),
     #[error("Error during type specialization")]
     TypeSpecialization { concrete_id: ConcreteTypeId, error: ExtensionError },
-    #[error("Error used the same concrete type id twice")]
+    #[error("Used the same concrete type id twice")]
     TypeConcreteIdUsedTwice(ConcreteTypeId),
+    #[error("Declared the same concrete type twice")]
+    TypeAlreadyDeclared(TypeDeclaration),
     #[error("Could not find the requested type")]
     MissingType(ConcreteTypeId),
     #[error("Error during libfunc specialization")]
@@ -54,6 +56,8 @@ impl ProgramRegistry {
             }?;
         }
         let mut concrete_types = HashMap::<ConcreteTypeId, CoreTypeConcrete>::new();
+        let mut concrete_type_ids =
+            HashMap::<(GenericTypeId, &[GenericArg]), ConcreteTypeId>::new();
         for declaration in &program.type_declarations {
             let concrete_type =
                 CoreType::specialize_by_id(&declaration.generic_id, &declaration.args).map_err(
@@ -67,6 +71,12 @@ impl ProgramRegistry {
                     Err(ProgramRegistryError::TypeConcreteIdUsedTwice(declaration.id.clone()))
                 }
                 Entry::Vacant(entry) => Ok(entry.insert(concrete_type)),
+            }?;
+            match concrete_type_ids.entry((declaration.generic_id.clone(), &declaration.args[..])) {
+                Entry::Occupied(_) => {
+                    Err(ProgramRegistryError::TypeAlreadyDeclared(declaration.clone()))
+                }
+                Entry::Vacant(entry) => Ok(entry.insert(declaration.id.clone())),
             }?;
         }
         let mut concrete_libfuncs = HashMap::<ConcreteLibFuncId, CoreConcrete>::new();

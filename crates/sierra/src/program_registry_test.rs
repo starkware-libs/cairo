@@ -1,5 +1,6 @@
 use indoc::indoc;
 
+use crate::program::TypeDeclaration;
 use crate::program_registry::{ProgramRegistry, ProgramRegistryError};
 use crate::ProgramParser;
 
@@ -53,6 +54,26 @@ fn type_id_double_declaration() {
         )
         .map(|_| ()),
         Err(ProgramRegistryError::TypeConcreteIdUsedTwice("used_id".into()))
+    );
+}
+
+#[test]
+fn concrete_type_double_declaration() {
+    assert_eq!(
+        ProgramRegistry::new(
+            &ProgramParser::new()
+                .parse(indoc! {"
+        type int1 = int;
+        type int2 = int;
+    "})
+                .unwrap()
+        )
+        .map(|_| ()),
+        Err(ProgramRegistryError::TypeAlreadyDeclared(TypeDeclaration {
+            id: "int2".into(),
+            generic_id: "int".into(),
+            args: vec![]
+        }))
     );
 }
 
