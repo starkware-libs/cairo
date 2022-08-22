@@ -1,5 +1,5 @@
 use crate::ids::{
-    ConcreteExtensionId, ConcreteTypeId, FunctionId, GenericExtensionId, GenericTypeId, VarId,
+    ConcreteLibFuncId, ConcreteTypeId, FunctionId, GenericLibFuncId, GenericTypeId, VarId,
 };
 
 /// A full Sierra program.
@@ -7,8 +7,8 @@ use crate::ids::{
 pub struct Program {
     /// Declarations for all the used types.
     pub type_declarations: Vec<TypeDeclaration>,
-    /// Declarations for all the used extensions.
-    pub extension_declarations: Vec<ExtensionDeclaration>,
+    /// Declarations for all the used library functions.
+    pub libfunc_declarations: Vec<LibFuncDeclaration>,
     /// The code of the program.
     pub statements: Vec<Statement>,
     /// Descriptions of the functions - signatures and entry points.
@@ -31,13 +31,13 @@ pub struct TypeDeclaration {
     pub args: Vec<GenericArg>,
 }
 
-/// Declaration of a callable extension.
+/// Declaration of a concrete library function.
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct ExtensionDeclaration {
-    /// The id of the declared concrete extension.
-    pub id: ConcreteExtensionId,
-    /// The id of the used generic extension.
-    pub generic_id: GenericExtensionId,
+pub struct LibFuncDeclaration {
+    /// The id of the declared concrete libfunc.
+    pub id: ConcreteLibFuncId,
+    /// The id of the used generic libfunc.
+    pub generic_id: GenericLibFuncId,
     /// The arguments for the specialization.
     pub args: Vec<GenericArg>,
 }
@@ -92,8 +92,8 @@ pub enum GenStatement<StatementId> {
 /// An invocation statement.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct GenInvocation<StatementId> {
-    /// The called extension.
-    pub extension_id: ConcreteExtensionId,
+    /// The called libfunc.
+    pub libfunc_id: ConcreteLibFuncId,
     /// The arguments consumed by the extension's invocation.
     pub args: Vec<VarId>,
     /// The possible branches to continue to after the invocation.
@@ -101,7 +101,7 @@ pub struct GenInvocation<StatementId> {
     pub branches: Vec<GenBranchInfo<StatementId>>,
 }
 
-/// Describes the flow of a chosen extension's branch.
+/// Describes the flow of a chosen libfunc's branch.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct GenBranchInfo<StatementId> {
     /// The target the branch continues the run through.

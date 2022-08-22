@@ -2,8 +2,8 @@ use test_case::test_case;
 
 use super::core;
 use super::mem_cell::MemCell;
-use super::ExtensionSimulationError::{self, MemoryLayoutMismatch, WrongNumberOfArgs};
-use crate::extensions::{CoreExtension, GenericExtension};
+use super::LibFuncSimulationError::{self, MemoryLayoutMismatch, WrongNumberOfArgs};
+use crate::extensions::{CoreLibFunc, GenericLibFunc};
 use crate::program::GenericArg;
 
 fn type_arg(name: &str) -> GenericArg {
@@ -14,19 +14,19 @@ fn value_arg(v: i64) -> GenericArg {
     GenericArg::Value(v)
 }
 
-/// Expects to find an extension and simulate it.
+/// Expects to find a libfunc and simulate it.
 fn simulate(
     id: &str,
     generic_args: Vec<GenericArg>,
     inputs: Vec<Vec<MemCell>>,
-) -> Result<(Vec<Vec<MemCell>>, usize), ExtensionSimulationError> {
+) -> Result<(Vec<Vec<MemCell>>, usize), LibFuncSimulationError> {
     core::simulate(
-        &CoreExtension::by_id(&id.into()).unwrap().specialize(&generic_args).unwrap(),
+        &CoreLibFunc::by_id(&id.into()).unwrap().specialize(&generic_args).unwrap(),
         inputs,
     )
 }
 
-/// Expects to find an extension, wrapping and unwrapping the MemCell types and vectors of the
+/// Expects to find a libfunc, wrapping and unwrapping the MemCell types and vectors of the
 /// inputs and outputs, assumming all of size 1.
 #[test_case("get_gas", vec![value_arg(4)], vec![5] => Ok((vec![1], 0)); "get_gas<4>(5)")]
 #[test_case("get_gas", vec![value_arg(4)], vec![2] => Ok((vec![2], 1)); "get_gas<4>(2)")]
@@ -37,7 +37,7 @@ fn simulate_invocation(
     id: &str,
     generic_args: Vec<GenericArg>,
     inputs: Vec<i64>,
-) -> Result<(Vec<i64>, usize), ExtensionSimulationError> {
+) -> Result<(Vec<i64>, usize), LibFuncSimulationError> {
     simulate(id, generic_args, inputs.into_iter().map(|value| vec![MemCell { value }]).collect())
         .map(|(outputs, chosen_branch)| {
             (
@@ -80,7 +80,7 @@ fn simulate_none_branch(
     id: &str,
     generic_args: Vec<GenericArg>,
     inputs: Vec<i64>,
-) -> Result<Vec<i64>, ExtensionSimulationError> {
+) -> Result<Vec<i64>, LibFuncSimulationError> {
     simulate_invocation(id, generic_args, inputs).map(|(outputs, chosen_branch)| {
         assert_eq!(chosen_branch, 0);
         outputs
@@ -122,7 +122,7 @@ fn simulate_error(
     id: &str,
     generic_args: Vec<GenericArg>,
     inputs: Vec<Vec<i64>>,
-) -> ExtensionSimulationError {
+) -> LibFuncSimulationError {
     simulate(
         id,
         generic_args,

@@ -9,8 +9,8 @@ fn basic_insertion() {
         ProgramRegistry::new(
             &ProgramParser::new()
                 .parse(indoc! {"
-        ext move_int = move<int>;
-        ext move_gb = move<GasBuiltin>;
+        libfunc move_int = move<int>;
+        libfunc move_gb = move<GasBuiltin>;
     "})
                 .unwrap()
         )
@@ -20,17 +20,17 @@ fn basic_insertion() {
 }
 
 #[test]
-fn extension_id_double_declaration() {
+fn libfunc_id_double_declaration() {
     assert_eq!(
         ProgramRegistry::new(
             &ProgramParser::new()
                 .parse(indoc! {"
-        ext used_id = move<int>;
-        ext used_id = move<GasBuiltin>;
+        libfunc used_id = move<int>;
+        libfunc used_id = move<GasBuiltin>;
     "})
                 .unwrap()
         )
         .map(|_| ()),
-        Err(ProgramRegistryError::ExtensionConcreteIdUsedTwice("used_id".into()))
+        Err(ProgramRegistryError::LibFuncConcreteIdUsedTwice("used_id".into()))
     );
 }
