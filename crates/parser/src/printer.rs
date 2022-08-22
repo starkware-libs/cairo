@@ -76,7 +76,7 @@ impl<'a> Printer<'a> {
             num_children,
         );
 
-        for (i, child) in children.into_iter().enumerate() {
+        for (i, child) in children.iter().enumerate() {
             self.print_tree(&expected_children[i].name, *child, indent, i == num_children - 1);
         }
     }
@@ -197,8 +197,8 @@ fn is_missing_kind(kind: SyntaxKind) -> bool {
 }
 
 pub fn print_tree(
-    root: GreenId,
     db: &dyn GreenInterner,
+    root: GreenId,
     print_colors: bool,
     print_trivia: bool,
 ) -> String {
