@@ -1,6 +1,9 @@
+use std::collections::HashMap;
+
 use test_case::test_case;
 
 use super::core::{CoreLibFunc, CoreType};
+use super::lib_func::Registries;
 use super::SpecializationError::{
     self, UnsupportedGenericArg, UnsupportedId, WrongNumberOfGenericArgs,
 };
@@ -30,6 +33,9 @@ fn find_type_specialization(
 }
 
 #[test_case("NoneExistent", vec![] => Err(UnsupportedId); "NoneExistent")]
+#[test_case("function_call", vec![GenericArg::Func("Function".into())] => Ok(());
+            "function_call<&Function>")]
+#[test_case("function_call", vec![] => Err(UnsupportedGenericArg); "function_call")]
 #[test_case("get_gas", vec![value_arg(2)] => Ok(()); "get_gas<2>")]
 #[test_case("get_gas", vec![] => Err(UnsupportedGenericArg); "get_gas")]
 #[test_case("get_gas", vec![value_arg(-2)] => Err(UnsupportedGenericArg); "get_gas<minus 2>")]
@@ -79,5 +85,11 @@ fn find_libfunc_specialization(
     id: &str,
     generic_args: Vec<GenericArg>,
 ) -> Result<(), SpecializationError> {
-    CoreLibFunc::by_id(&id.into()).ok_or(UnsupportedId)?.specialize(&generic_args).map(|_| ())
+    CoreLibFunc::by_id(&id.into())
+        .ok_or(UnsupportedId)?
+        .specialize(
+            Registries { concrete_type_ids: &HashMap::new(), functions: &HashMap::new() },
+            &generic_args,
+        )
+        .map(|_| ())
 }
