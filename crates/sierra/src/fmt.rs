@@ -4,8 +4,8 @@ use crate::ids::{
     ConcreteLibFuncId, ConcreteTypeId, FunctionId, GenericLibFuncId, GenericTypeId, VarId,
 };
 use crate::program::{
-    BranchInfo, BranchTarget, Function, GenericArg, Invocation, LibFuncDeclaration, Param, Program,
-    Statement, TypeDeclaration,
+    Function, GenBranchInfo, GenBranchTarget, GenInvocation, GenStatement, GenericArg,
+    LibFuncDeclaration, Param, Program, StatementIdx, TypeDeclaration,
 };
 
 impl fmt::Display for Program {
@@ -89,11 +89,11 @@ impl fmt::Display for GenericArg {
     }
 }
 
-impl fmt::Display for Statement {
+impl<StatementId: fmt::Display> fmt::Display for GenStatement<StatementId> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Statement::Invocation(invocation) => write!(f, "{invocation}"),
-            Statement::Return(ids) => {
+            GenStatement::Invocation(invocation) => write!(f, "{invocation}"),
+            GenStatement::Return(ids) => {
                 write!(f, "return(")?;
                 write_comma_separated(f, ids)?;
                 write!(f, ")")
@@ -102,11 +102,13 @@ impl fmt::Display for Statement {
     }
 }
 
-impl fmt::Display for Invocation {
+impl<StatementId: fmt::Display> fmt::Display for GenInvocation<StatementId> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}(", self.libfunc_id)?;
         write_comma_separated(f, &self.args)?;
-        if let [BranchInfo { target: BranchTarget::Fallthrough, results }] = &self.branches[..] {
+        if let [GenBranchInfo { target: GenBranchTarget::Fallthrough, results }] =
+            &self.branches[..]
+        {
             write!(f, ") -> (")?;
             write_comma_separated(f, results)?;
             write!(f, ")")
@@ -118,7 +120,7 @@ impl fmt::Display for Invocation {
     }
 }
 
-impl fmt::Display for BranchInfo {
+impl<StatementId: fmt::Display> fmt::Display for GenBranchInfo<StatementId> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}(", self.target)?;
         write_comma_separated(f, &self.results)?;
@@ -126,12 +128,18 @@ impl fmt::Display for BranchInfo {
     }
 }
 
-impl fmt::Display for BranchTarget {
+impl<StatementId: fmt::Display> fmt::Display for GenBranchTarget<StatementId> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            BranchTarget::Fallthrough => write!(f, "fallthrough"),
-            BranchTarget::Statement(id) => write!(f, "{}", id.0),
+            GenBranchTarget::Fallthrough => write!(f, "fallthrough"),
+            GenBranchTarget::Statement(id) => write!(f, "{}", id),
         }
+    }
+}
+
+impl fmt::Display for StatementIdx {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 
