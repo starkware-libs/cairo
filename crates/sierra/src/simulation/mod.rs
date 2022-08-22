@@ -32,8 +32,6 @@ pub enum SimulationError {
     EditStateError(EditStateError, StatementIdx),
     #[error("error from simulating a libfunc")]
     LibFuncSimulationError(LibFuncSimulationError, StatementIdx),
-    #[error("could not find the function to call")]
-    MissingFunction,
     #[error("jumped out of bounds during simulation")]
     StatementOutOfBounds(StatementIdx),
     #[error("unexpected number of arguments to function")]
@@ -49,12 +47,7 @@ pub fn run(
     inputs: Vec<Vec<MemCell>>,
 ) -> Result<Vec<Vec<MemCell>>, SimulationError> {
     let registry = ProgramRegistry::new(program)?;
-    // TODO(orizi): use registry to get the function info when it is in the registry.
-    let func = program
-        .funcs
-        .iter()
-        .find(|func| &func.id == entry_point)
-        .ok_or(SimulationError::MissingFunction)?;
+    let func = registry.get_function(entry_point)?;
     let mut current_statement_id = func.entry;
     if func.params.len() != inputs.len() {
         return Err(SimulationError::FunctionArgumentCountMismatch {
