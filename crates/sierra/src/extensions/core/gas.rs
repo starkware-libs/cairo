@@ -1,10 +1,22 @@
 // Module providing the gas related extensions.
 use crate::define_libfunc_hierarchy;
 use crate::extensions::{
-    ConcreteLibFunc, GenericLibFunc, NamedLibFunc, NonBranchConcreteLibFunc, SpecializationError,
+    ConcreteLibFunc, ConcreteType, GenericLibFunc, NamedLibFunc, NoGenericArgsGenericType,
+    NonBranchConcreteLibFunc, SpecializationError,
 };
 use crate::ids::ConcreteTypeId;
 use crate::program::GenericArg;
+
+/// Type for gas actions.
+#[derive(Default)]
+pub struct GasBuiltinGeneric {}
+impl NoGenericArgsGenericType for GasBuiltinGeneric {
+    type Concrete = GasBuiltinConcrete;
+    const NAME: &'static str = "GasBuiltin";
+}
+#[derive(Default)]
+pub struct GasBuiltinConcrete {}
+impl ConcreteType for GasBuiltinConcrete {}
 
 define_libfunc_hierarchy! {
     pub enum GasLibFunc {
