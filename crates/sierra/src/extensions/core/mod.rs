@@ -21,7 +21,8 @@ define_type_hierarchy! {
 
 // TODO(orizi): Improve naming of this hierarchy. e.g. CoreConcrete should have LibFunc in its name.
 define_libfunc_hierarchy! {
-    pub enum CoreLibFunc {        FunctionCall(FunctionCallGeneric),
+    pub enum CoreLibFunc {
+        FunctionCall(FunctionCallGeneric),
         Gas(GasLibFunc),
         Integer(IntegerLibFunc),
         Mem(MemLibFunc),
