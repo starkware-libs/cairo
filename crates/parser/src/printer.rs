@@ -1,4 +1,5 @@
 use colored::{ColoredString, Colorize};
+use itertools::zip_eq;
 use syntax::node::db::GreenInterner;
 use syntax::node::green::{GreenNode, GreenNodeInternal};
 use syntax::node::ids::GreenId;
@@ -15,24 +16,29 @@ struct Printer<'a> {
     result: String,
 }
 impl<'a> Printer<'a> {
-    // Color helpers.
-    fn bold(&self, text: ColoredString) -> ColoredString {
-        if self.print_colors { text.bold() } else { text }
-    }
-    fn green(&self, text: ColoredString) -> ColoredString {
-        if self.print_colors { text.green() } else { text }
-    }
-    fn red(&self, text: ColoredString) -> ColoredString {
-        if self.print_colors { text.red() } else { text }
-    }
-    fn cyan(&self, text: ColoredString) -> ColoredString {
-        if self.print_colors { text.cyan() } else { text }
-    }
-    fn blue(&self, text: ColoredString) -> ColoredString {
-        if self.print_colors { text.blue() } else { text }
-    }
-    fn bright_purple(&self, text: ColoredString) -> ColoredString {
-        if self.print_colors { text.bright_purple() } else { text }
+    fn print_tree(
+        &mut self,
+        field_description: &str,
+        green_node: GreenId,
+        indent: &str,
+        is_last: bool,
+    ) {
+        let green_node = self.db.lookup_intern_green(green_node);
+        let extra_head_indent = if is_last { "└── " } else { "├── " };
+        match green_node {
+            GreenNode::Token(token) => {
+                self.print_token_node(field_description, indent, extra_head_indent, token);
+            }
+            GreenNode::Internal(internal) => {
+                self.print_internal_node(
+                    field_description,
+                    indent,
+                    extra_head_indent,
+                    is_last,
+                    internal,
+                );
+            }
+        }
     }
 
     fn print_token_node(
@@ -49,36 +55,9 @@ impl<'a> Printer<'a> {
                 TokenKind::Whitespace | TokenKind::Newline => ".".to_string(),
                 _ => format!(": '{}'", self.green(self.bold(token.text.as_str().into()))),
             };
-            format!(
-                "{} (kind: {:?}){}",
-                self.blue(field_description.into()),
-                token.kind,
-                token_text
-            )
+            format!("{} (kind: {:?}){token_text}", self.blue(field_description.into()), token.kind)
         };
-        self.result.push_str(format!("{}{}{}\n", indent, extra_head_indent, text).as_str());
-    }
-
-    fn print_internal_struct(
-        &mut self,
-        children: &Vec<GreenId>,
-        expected_children: &Vec<Member>,
-        kind: SyntaxKind,
-        indent: &str,
-    ) {
-        let num_children = children.len();
-        assert_eq!(
-            expected_children.len(),
-            num_children,
-            "Expected {} fields for kind {:?}, Actual fields: {}",
-            expected_children.len(),
-            kind,
-            num_children,
-        );
-
-        for (i, child) in children.into_iter().enumerate() {
-            self.print_tree(&expected_children[i].name, *child, indent, i == num_children - 1);
-        }
+        self.result.push_str(format!("{indent}{extra_head_indent}{text}\n").as_str());
     }
 
     fn print_internal_node(
@@ -105,37 +84,32 @@ impl<'a> Printer<'a> {
         let no_children_str = if num_children == 0 {
             self.bright_purple(" []".into()).to_string()
         } else {
-            "".to_string()
+            String::new()
         };
 
         self.result.push_str(
             format!(
-                "{}{}{}{}{}\n",
-                indent,
-                extra_head_indent,
+                "{indent}{extra_head_indent}{}{extra_info}{no_children_str}\n",
                 self.cyan(field_description.into()),
-                extra_info,
-                no_children_str
             )
             .as_str(),
         );
+
+        if num_children == 0 {
+            return;
+        }
 
         let extra_indent = if is_last { "    " } else { "│   " };
         let indent = String::from(indent) + extra_indent;
         let kind = self.get_node_kind(internal_node.kind.to_string());
         match kind {
             NodeKind::Struct { members: expected_children } => {
-                self.print_internal_struct(
-                    &children,
-                    &expected_children,
-                    internal_node.kind,
-                    indent.as_str(),
-                );
+                self.print_internal_struct(&children, &expected_children, indent.as_str());
             }
             NodeKind::List { element_type: _ } => {
                 for (i, child) in children.into_iter().enumerate() {
                     self.print_tree(
-                        format!("child #{}", i).as_str(),
+                        format!("child #{i}").as_str(),
                         child,
                         indent.as_str(),
                         i == num_children - 1,
@@ -146,7 +120,7 @@ impl<'a> Printer<'a> {
                 for (i, child) in children.into_iter().enumerate() {
                     let description = if i % 2 == 0 { "item" } else { "separator" };
                     self.print_tree(
-                        format!("{} #{}", description, i / 2).as_str(),
+                        format!("{description} #{}", i / 2).as_str(),
                         child,
                         indent.as_str(),
                         i == num_children - 1,
@@ -157,37 +131,48 @@ impl<'a> Printer<'a> {
         }
     }
 
-    fn print_tree(
+    /// Assumes children and expected children are non-empty of the same length.
+    fn print_internal_struct(
         &mut self,
-        field_description: &str,
-        green_node: GreenId,
+        children: &[GreenId],
+        expected_children: &[Member],
         indent: &str,
-        is_last: bool,
     ) {
-        let green_node = self.db.lookup_intern_green(green_node);
-        let extra_head_indent = if is_last { "└── " } else { "├── " };
-        match green_node {
-            GreenNode::Token(token) => {
-                self.print_token_node(field_description, indent, extra_head_indent, token);
-            }
-            GreenNode::Internal(internal) => {
-                self.print_internal_node(
-                    field_description,
-                    indent,
-                    extra_head_indent,
-                    is_last,
-                    internal,
-                );
-            }
+        let (last_child, non_last_children) = children.split_last().unwrap();
+        let (last_expected_child, non_last_expected_children) =
+            expected_children.split_last().unwrap();
+        for (child, expected_child) in zip_eq(non_last_children, non_last_expected_children) {
+            self.print_tree(&expected_child.name, *child, indent, /* is_last = */ false);
         }
+        self.print_tree(&last_expected_child.name, *last_child, indent, /* is_last = */ true);
     }
 
     fn get_node_kind(&self, name: String) -> NodeKind {
         if let Some(node) = self.spec.iter().find(|x| x.name == name) {
             node.kind.clone()
         } else {
-            panic!("Could not find spec for {}", name)
+            panic!("Could not find spec for {name}")
         }
+    }
+
+    // Color helpers.
+    fn bold(&self, text: ColoredString) -> ColoredString {
+        if self.print_colors { text.bold() } else { text }
+    }
+    fn green(&self, text: ColoredString) -> ColoredString {
+        if self.print_colors { text.green() } else { text }
+    }
+    fn red(&self, text: ColoredString) -> ColoredString {
+        if self.print_colors { text.red() } else { text }
+    }
+    fn cyan(&self, text: ColoredString) -> ColoredString {
+        if self.print_colors { text.cyan() } else { text }
+    }
+    fn blue(&self, text: ColoredString) -> ColoredString {
+        if self.print_colors { text.blue() } else { text }
+    }
+    fn bright_purple(&self, text: ColoredString) -> ColoredString {
+        if self.print_colors { text.bright_purple() } else { text }
     }
 }
 
@@ -197,13 +182,13 @@ fn is_missing_kind(kind: SyntaxKind) -> bool {
 }
 
 pub fn print_tree(
-    root: GreenId,
     db: &dyn GreenInterner,
+    root: GreenId,
     print_colors: bool,
     print_trivia: bool,
 ) -> String {
     let mut printer =
-        Printer { db, spec: get_spec(), print_colors, print_trivia, result: "".to_string() };
+        Printer { db, spec: get_spec(), print_colors, print_trivia, result: String::new() };
     printer.print_tree("root", root, "", true);
     printer.result
 }
