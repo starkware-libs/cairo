@@ -1,3 +1,4 @@
+use crate::extensions::lib_func::SpecializationContext;
 use crate::extensions::{ConcreteLibFunc, NamedLibFunc, SpecializationError};
 use crate::ids::FunctionId;
 use crate::program::GenericArg;
@@ -8,7 +9,11 @@ pub struct FunctionCallGeneric {}
 impl NamedLibFunc for FunctionCallGeneric {
     type Concrete = FunctionCallConcrete;
     const NAME: &'static str = "function_call";
-    fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError> {
+    fn specialize(
+        &self,
+        _context: SpecializationContext<'_>,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
         match args {
             [GenericArg::Func(function_id)] => {
                 Ok(Self::Concrete { function_id: function_id.clone() })
