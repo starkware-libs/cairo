@@ -9,25 +9,25 @@ fn collatz_program() -> sierra::program::Program {
         type GasBuiltin = GasBuiltin;
         type NonZero_int = NonZero<int>;
 
-        ext move_int = move<int>;
-        ext move_gb = move<GasBuiltin>;
-        ext store_temp_int = store_temp<int>;
-        ext store_temp_gb = store_temp<GasBuiltin>;
-        ext int_const_0 = int_const<0>;
-        ext int_const_minus_1 = int_const<-1>;
-        ext int_mod_2 = int_mod<2>;
-        ext int_div_2 = int_div<2>;
-        ext int_mul_3 = int_mul<3>;
-        ext int_add_1 = int_add<1>;
-        ext int_sub_1 = int_sub<1>;
-        ext int_dup = int_dup;
-        ext int_ignore = int_ignore;
-        ext int_jump_nz = int_jump_nz;
-        ext int_unwrap_nz = int_unwrap_nz;
-        ext get_gas_11 = get_gas<11>;
-        ext refund_gas_1 = refund_gas<1>;
-        ext jump = jump;
-        ext align_temps = align_temps<int>;
+        libcall move_int = move<int>;
+        libcall move_gb = move<GasBuiltin>;
+        libcall store_temp_int = store_temp<int>;
+        libcall store_temp_gb = store_temp<GasBuiltin>;
+        libcall int_const_0 = int_const<0>;
+        libcall int_const_minus_1 = int_const<-1>;
+        libcall int_mod_2 = int_mod<2>;
+        libcall int_div_2 = int_div<2>;
+        libcall int_mul_3 = int_mul<3>;
+        libcall int_add_1 = int_add<1>;
+        libcall int_sub_1 = int_sub<1>;
+        libcall int_dup = int_dup;
+        libcall int_ignore = int_ignore;
+        libcall int_jump_nz = int_jump_nz;
+        libcall int_unwrap_nz = int_unwrap_nz;
+        libcall get_gas_11 = get_gas<11>;
+        libcall refund_gas_1 = refund_gas<1>;
+        libcall jump = jump;
+        libcall align_temps = align_temps<int>;
 
         // Statement #  0 - Setting up memory the form [n, gb, counter=0].
         move_int(n) -> (n);

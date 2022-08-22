@@ -9,8 +9,8 @@ fn basic_insertion() {
         ProgramRegistry::new(
             &ProgramParser::new()
                 .parse(indoc! {"
-        ext move_int = move<int>;
-        ext move_gb = move<GasBuiltin>;
+        libcall move_int = move<int>;
+        libcall move_gb = move<GasBuiltin>;
     "})
                 .unwrap()
         )
@@ -25,12 +25,12 @@ fn extension_id_double_declaration() {
         ProgramRegistry::new(
             &ProgramParser::new()
                 .parse(indoc! {"
-        ext used_id = move<int>;
-        ext used_id = move<GasBuiltin>;
+        libcall used_id = move<int>;
+        libcall used_id = move<GasBuiltin>;
     "})
                 .unwrap()
         )
         .map(|_| ()),
-        Err(ProgramRegistryError::ExtensionConcreteIdUsedTwice("used_id".into()))
+        Err(ProgramRegistryError::LibcallConcreteIdUsedTwice("used_id".into()))
     );
 }

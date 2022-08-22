@@ -1,9 +1,9 @@
-use crate::extensions::{ConcreteExtension, NoGenericArgsGenericExtension};
+use crate::extensions::{ConcreteLibcall, NoGenericArgsGenericLibcall};
 use crate::ids::ConcreteTypeId;
 
 #[derive(Default)]
 pub struct UnconditionalJumpGeneric {}
-impl NoGenericArgsGenericExtension for UnconditionalJumpGeneric {
+impl NoGenericArgsGenericLibcall for UnconditionalJumpGeneric {
     type Concrete = UnconditionalJumpConcrete;
     const NAME: &'static str = "jump";
     fn specialize(&self) -> Self::Concrete {
@@ -12,7 +12,7 @@ impl NoGenericArgsGenericExtension for UnconditionalJumpGeneric {
 }
 
 pub struct UnconditionalJumpConcrete {}
-impl ConcreteExtension for UnconditionalJumpConcrete {
+impl ConcreteLibcall for UnconditionalJumpConcrete {
     fn input_types(&self) -> Vec<ConcreteTypeId> {
         vec![]
     }

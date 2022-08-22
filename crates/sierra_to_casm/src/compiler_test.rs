@@ -1,6 +1,6 @@
 use indoc::indoc;
 use sierra::extensions::ExtensionError::NotImplemented;
-use sierra::ids::ConcreteExtensionId;
+use sierra::ids::ConcreteLibcallId;
 use sierra::program_registry::ProgramRegistryError;
 use sierra::ProgramParser;
 use test_case::test_case;
@@ -12,7 +12,7 @@ use crate::references::ReferencesError;
 fn good_flow() {
     let prog = ProgramParser::new()
         .parse(indoc! {"
-            ext store_temp_felt = store_temp<felt>;
+            libcall store_temp_felt = store_temp<felt>;
 
             return();
 
@@ -38,16 +38,16 @@ fn good_flow() {
 
             test_program@0() -> ();
         "} => Err(CompilationError::ProgramRegistryError(
-            ProgramRegistryError::MissingExtension(ConcreteExtensionId::from_string("store_temp_felt"))));
-            "undeclared extension")]
+            ProgramRegistryError::MissingLibcall(ConcreteLibcallId::from_string("store_temp_felt"))));
+            "undeclared libcall")]
 #[test_case(indoc! {"
-            ext store_temp_felt = store_temp<felt>;
-            ext store_temp_felt = store_temp<felt>;
-        "} => Err(CompilationError::ProgramRegistryError(ProgramRegistryError::ExtensionConcreteIdUsedTwice(
-            ConcreteExtensionId::from_string("store_temp_felt"))));
-            "Concrete extension Id used twice")]
+            libcall store_temp_felt = store_temp<felt>;
+            libcall store_temp_felt = store_temp<felt>;
+        "} => Err(CompilationError::ProgramRegistryError(ProgramRegistryError::LibcallConcreteIdUsedTwice(
+            ConcreteLibcallId::from_string("store_temp_felt"))));
+            "Concrete libcall Id used twice")]
 #[test_case(indoc! {"
-            ext store_temp_felt = store_temp<felt>;
+libcall store_temp_felt = store_temp<felt>;
             store_temp_felt([1]) -> ([1]);
 
             test_program@0() -> ();

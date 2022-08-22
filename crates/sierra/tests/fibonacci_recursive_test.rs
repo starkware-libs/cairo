@@ -9,24 +9,24 @@ fn fib_program() -> sierra::program::Program {
         type GasBuiltin = GasBuiltin;
         type NonZero_int = NonZero<int>;
 
-        ext move_int = move<int>;
-        ext move_gb = move<GasBuiltin>;
-        ext store_temp_int = store_temp<int>;
-        ext store_local_int = store_local<int>;
-        ext store_temp_gb = store_temp<GasBuiltin>;
-        ext int_const_1 = int_const<1>;
-        ext int_const_minus_10000 = int_const<-10000>;
-        ext int_add = int_add;
-        ext int_sub_1 = int_sub<1>;
-        ext int_dup = int_dup;
-        ext int_ignore = int_ignore;
-        ext int_jump_nz = int_jump_nz;
-        ext int_unwrap_nz = int_unwrap_nz;
-        ext get_gas_26 = get_gas<26>;
-        ext refund_gas_1 = refund_gas<1>;
-        ext refund_gas_3 = refund_gas<3>;
-        ext alloc_locals = alloc_locals;
-        ext call_fib = Call<&Fibonacci>;
+        libcall move_int = move<int>;
+        libcall move_gb = move<GasBuiltin>;
+        libcall store_temp_int = store_temp<int>;
+        libcall store_local_int = store_local<int>;
+        libcall store_temp_gb = store_temp<GasBuiltin>;
+        libcall int_const_1 = int_const<1>;
+        libcall int_const_minus_10000 = int_const<-10000>;
+        libcall int_add = int_add;
+        libcall int_sub_1 = int_sub<1>;
+        libcall int_dup = int_dup;
+        libcall int_ignore = int_ignore;
+        libcall int_jump_nz = int_jump_nz;
+        libcall int_unwrap_nz = int_unwrap_nz;
+        libcall get_gas_26 = get_gas<26>;
+        libcall refund_gas_1 = refund_gas<1>;
+        libcall refund_gas_3 = refund_gas<3>;
+        libcall alloc_locals = alloc_locals;
+        libcall call_fib = Call<&Fibonacci>;
 
         // Statement #  0 - tests if n == 0 and initiates 1 for the early return values.
         alloc_locals() -> ();

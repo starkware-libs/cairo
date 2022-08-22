@@ -1,20 +1,20 @@
-use self::gas::GasExtension;
-use self::integer::IntegerExtension;
-use self::mem::MemExtension;
+use self::gas::GasLibcall;
+use self::integer::IntegerLibcall;
+use self::mem::MemLibcall;
 use self::unconditional_jump::UnconditionalJumpGeneric;
-use super::GenericExtension;
-use crate::define_extension_hierarchy;
+use super::GenericLibcall;
+use crate::define_libcall_hierarchy;
 
 pub mod gas;
 pub mod integer;
 pub mod mem;
 pub mod unconditional_jump;
 
-define_extension_hierarchy! {
-    pub enum CoreExtension {
-        Gas(GasExtension),
-        Integer(IntegerExtension),
-        Mem(MemExtension),
+define_libcall_hierarchy! {
+    pub enum CoreLibcall {
+        Gas(GasLibcall),
+        Integer(IntegerLibcall),
+        Mem(MemLibcall),
         UnconditionalJump(UnconditionalJumpGeneric),
     }, CoreConcrete
 }

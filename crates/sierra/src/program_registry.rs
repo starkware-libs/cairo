@@ -3,8 +3,8 @@ use std::collections::HashMap;
 
 use thiserror::Error;
 
-use crate::extensions::{CoreConcrete, CoreExtension, ExtensionError, GenericExtensionEx};
-use crate::ids::ConcreteExtensionId;
+use crate::extensions::{CoreConcrete, CoreLibcall, ExtensionError, GenericLibcallEx};
+use crate::ids::ConcreteLibcallId;
 use crate::program::Program;
 
 #[cfg(test)]
@@ -14,45 +14,46 @@ mod test;
 /// Errors encountered in the program registry.
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum ProgramRegistryError {
-    #[error("Error during extension specialization")]
-    ExtensionSpecialization { concrete_id: ConcreteExtensionId, error: ExtensionError },
-    #[error("Error used the same concrete extension id twice")]
-    ExtensionConcreteIdUsedTwice(ConcreteExtensionId),
-    #[error("Could not find the extension")]
-    MissingExtension(ConcreteExtensionId),
+    #[error("Error during libcall specialization")]
+    LibcallSpecialization { concrete_id: ConcreteLibcallId, error: ExtensionError },
+    #[error("Error used the same concrete libcall id twice")]
+    LibcallConcreteIdUsedTwice(ConcreteLibcallId),
+    #[error("Could not find the requested libcall")]
+    MissingLibcall(ConcreteLibcallId),
 }
 
 /// Registry for the data of the compiler, for all program specific data.
 pub struct ProgramRegistry {
-    pub concrete_extensions: HashMap<ConcreteExtensionId, CoreConcrete>,
+    pub concrete_libcalls: HashMap<ConcreteLibcallId, CoreConcrete>,
 }
 impl ProgramRegistry {
     /// Create a registry for the program.
     pub fn new(program: &Program) -> Result<ProgramRegistry, ProgramRegistryError> {
-        let mut concrete_extensions = HashMap::<ConcreteExtensionId, CoreConcrete>::new();
-        for declaration in &program.extension_declarations {
-            let concrete_extension =
-                CoreExtension::specialize_by_id(&declaration.generic_id, &declaration.args)
-                    .map_err(|error| ProgramRegistryError::ExtensionSpecialization {
+        let mut concrete_libcalls = HashMap::<ConcreteLibcallId, CoreConcrete>::new();
+        for declaration in &program.libcall_declarations {
+            let concrete_libcall =
+                CoreLibcall::specialize_by_id(&declaration.generic_id, &declaration.args).map_err(
+                    |error| ProgramRegistryError::LibcallSpecialization {
                         concrete_id: declaration.id.clone(),
                         error,
-                    })?;
-            match concrete_extensions.entry(declaration.id.clone()) {
+                    },
+                )?;
+            match concrete_libcalls.entry(declaration.id.clone()) {
                 Entry::Occupied(_) => {
-                    Err(ProgramRegistryError::ExtensionConcreteIdUsedTwice(declaration.id.clone()))
+                    Err(ProgramRegistryError::LibcallConcreteIdUsedTwice(declaration.id.clone()))
                 }
-                Entry::Vacant(entry) => Ok(entry.insert(concrete_extension)),
+                Entry::Vacant(entry) => Ok(entry.insert(concrete_libcall)),
             }?;
         }
-        Ok(ProgramRegistry { concrete_extensions })
+        Ok(ProgramRegistry { concrete_libcalls })
     }
-    /// Get an extension for a given program.
-    pub fn get_extension<'a>(
+    /// Get an libcall for a given program.
+    pub fn get_libcall<'a>(
         &'a self,
-        id: &ConcreteExtensionId,
+        id: &ConcreteLibcallId,
     ) -> Result<&'a CoreConcrete, ProgramRegistryError> {
-        self.concrete_extensions
+        self.concrete_libcalls
             .get(id)
-            .ok_or_else(|| ProgramRegistryError::MissingExtension(id.clone()))
+            .ok_or_else(|| ProgramRegistryError::MissingLibcall(id.clone()))
     }
 }

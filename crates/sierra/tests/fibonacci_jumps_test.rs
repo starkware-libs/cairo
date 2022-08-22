@@ -9,25 +9,25 @@ fn fib_program() -> sierra::program::Program {
         type GasBuiltin = GasBuiltin;
         type NonZero_int = NonZero<int>;
 
-        ext move_int = move<int>;
-        ext move_nz_int = move<NonZero_int>;
-        ext move_gb = move<GasBuiltin>;
-        ext store_temp_int = store_temp<int>;
-        ext store_temp_nz_int = store_temp<NonZero_int>;
-        ext store_temp_gb = store_temp<GasBuiltin>;
-        ext rename_int = rename<int>;
-        ext int_const_1 = int_const<1>;
-        ext int_const_minus_1 = int_const<-1>;
-        ext int_add = int_add;
-        ext int_sub_1 = int_sub<1>;
-        ext int_dup = int_dup;
-        ext int_ignore = int_ignore;
-        ext int_jump_nz = int_jump_nz;
-        ext int_unwrap_nz = int_unwrap_nz;
-        ext get_gas_5 = get_gas<5>;
-        ext refund_gas_1 = refund_gas<1>;
-        ext refund_gas_5 = refund_gas<5>;
-        ext refund_gas_7 = refund_gas<7>;
+        libcall move_int = move<int>;
+        libcall move_nz_int = move<NonZero_int>;
+        libcall move_gb = move<GasBuiltin>;
+        libcall store_temp_int = store_temp<int>;
+        libcall store_temp_nz_int = store_temp<NonZero_int>;
+        libcall store_temp_gb = store_temp<GasBuiltin>;
+        libcall rename_int = rename<int>;
+        libcall int_const_1 = int_const<1>;
+        libcall int_const_minus_1 = int_const<-1>;
+        libcall int_add = int_add;
+        libcall int_sub_1 = int_sub<1>;
+        libcall int_dup = int_dup;
+        libcall int_ignore = int_ignore;
+        libcall int_jump_nz = int_jump_nz;
+        libcall int_unwrap_nz = int_unwrap_nz;
+        libcall get_gas_5 = get_gas<5>;
+        libcall refund_gas_1 = refund_gas<1>;
+        libcall refund_gas_5 = refund_gas<5>;
+        libcall refund_gas_7 = refund_gas<7>;
 
         // Statement #  0 - tests if n == 0.
         int_jump_nz(n) { 6(n) fallthrough() };
