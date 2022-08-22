@@ -14,9 +14,9 @@ pub mod mem_cell;
 #[cfg(test)]
 mod test;
 
-/// Error occurring while simulating an extension.
+/// Error occurring while simulating a libfunc.
 #[derive(Error, Debug, Eq, PartialEq)]
-pub enum ExtensionSimulationError {
+pub enum LibFuncSimulationError {
     #[error("Expected different number of arguments")]
     WrongNumberOfArgs,
     #[error("Expected a different memory layout")]
@@ -30,8 +30,8 @@ pub enum SimulationError {
     ProgramRegistryError(#[from] ProgramRegistryError),
     #[error("error from editing a variable state")]
     EditStateError(EditStateError, StatementIdx),
-    #[error("error from simulating an extension")]
-    ExtensionSimulationError(ExtensionSimulationError, StatementIdx),
+    #[error("error from simulating a libfunc")]
+    LibFuncSimulationError(LibFuncSimulationError, StatementIdx),
     #[error("could not find the function to call")]
     MissingFunction,
     #[error("jumped out of bounds during simulation")]
@@ -90,10 +90,10 @@ pub fn run(
                     take_args(state, invocation.args.iter()).map_err(|error| {
                         SimulationError::EditStateError(error, current_statement_id)
                     })?;
-                let extension = registry.get_extension(&invocation.extension_id)?;
+                let libfunc = registry.get_libfunc(&invocation.libfunc_id)?;
                 let (outputs, chosen_branch) =
-                    core::simulate(extension, inputs).map_err(|error| {
-                        SimulationError::ExtensionSimulationError(error, current_statement_id)
+                    core::simulate(libfunc, inputs).map_err(|error| {
+                        SimulationError::LibFuncSimulationError(error, current_statement_id)
                     })?;
                 let branch_info = &invocation.branches[chosen_branch];
                 state =

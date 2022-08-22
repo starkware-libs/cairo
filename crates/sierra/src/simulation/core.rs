@@ -1,7 +1,7 @@
 use array_init::array_init;
 
 use super::mem_cell::MemCell;
-use super::ExtensionSimulationError;
+use super::LibFuncSimulationError;
 use crate::extensions::core::gas::GasConcrete::{GetGas, RefundGas};
 use crate::extensions::core::gas::{GetGasConcrete, RefundGasConcrete};
 use crate::extensions::core::integer::IntegerConcrete::{
@@ -15,12 +15,12 @@ use crate::extensions::core::mem::MemConcrete::{
 };
 use crate::extensions::CoreConcrete::{self, Gas, Integer, Mem, UnconditionalJump};
 
-/// Simulates the run of a single extension.
+/// Simulates the run of a single libfunc.
 pub fn simulate(
-    extension: &CoreConcrete,
+    libfunc: &CoreConcrete,
     inputs: Vec<Vec<MemCell>>,
-) -> Result<(Vec<Vec<MemCell>>, usize), ExtensionSimulationError> {
-    match extension {
+) -> Result<(Vec<Vec<MemCell>>, usize), LibFuncSimulationError> {
+    match libfunc {
         Gas(GetGas(GetGasConcrete { count })) => {
             let [MemCell { value: gas_counter }] = unpack_inputs::<1>(inputs)?;
             if gas_counter >= *count {
@@ -109,12 +109,12 @@ pub fn simulate(
 /// constant size.
 fn unpack_inputs<const N: usize>(
     mut inputs: Vec<Vec<MemCell>>,
-) -> Result<[MemCell; N], ExtensionSimulationError> {
+) -> Result<[MemCell; N], LibFuncSimulationError> {
     if inputs.len() != N {
-        Err(ExtensionSimulationError::WrongNumberOfArgs)
+        Err(LibFuncSimulationError::WrongNumberOfArgs)
     } else if inputs.iter().any(|input| input.len() != 1) {
         // TODO(oziv): Currently we only support internal vectors to be of size 1.
-        Err(ExtensionSimulationError::MemoryLayoutMismatch)
+        Err(LibFuncSimulationError::MemoryLayoutMismatch)
     } else {
         Ok(array_init(|i| inputs[i].remove(0)))
     }
@@ -123,7 +123,7 @@ fn unpack_inputs<const N: usize>(
 /// Unpacks and repacks the arguments, validating the number and size of arguments.
 fn single_cell_identity<const N: usize>(
     inputs: Vec<Vec<MemCell>>,
-) -> Result<Vec<Vec<MemCell>>, ExtensionSimulationError> {
+) -> Result<Vec<Vec<MemCell>>, LibFuncSimulationError> {
     let cells = unpack_inputs::<N>(inputs)?;
     Ok(cells.into_iter().map(|cell| vec![cell]).collect())
 }

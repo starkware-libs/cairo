@@ -12,11 +12,11 @@ fn format_test() {
             type ConcreteTypeId  = TypeId<arg>;
             type  ConcreteTypeId = TypeId<arg1, 4>;
             type [123] = TypeId<[12],  4>;
-            ext CalleeId = ExtensionId ;
+            libfunc CalleeId = LibFuncId ;
             // Additional comment.
-            ext OtherCalleeId = ExtensionId <arg, 4>;
-            ext [5642] = ExtensionId<[22 ], 4>;
-            ext CallFunction = Call<&Function>;
+            libfunc OtherCalleeId = LibFuncId <arg, 4>;
+            libfunc [5642] = LibFuncId<[22 ], 4>;
+            libfunc CallFunction = Call<&Function>;
             callee() -> ();
             callee(arg1) -> (res1);
             callee( arg1, arg2) -> ( res1, res2);
@@ -39,10 +39,10 @@ fn format_test() {
             type ConcreteTypeId = TypeId<arg1, 4>;
             type [123] = TypeId<[12], 4>;
 
-            ext CalleeId = ExtensionId;
-            ext OtherCalleeId = ExtensionId<arg, 4>;
-            ext [5642] = ExtensionId<[22], 4>;
-            ext CallFunction = Call<&Function>;
+            libfunc CalleeId = LibFuncId;
+            libfunc OtherCalleeId = LibFuncId<arg, 4>;
+            libfunc [5642] = LibFuncId<[22], 4>;
+            libfunc CallFunction = Call<&Function>;
 
             callee() -> ();
             callee(arg1) -> (res1);

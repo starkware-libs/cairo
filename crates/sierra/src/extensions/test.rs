@@ -1,8 +1,8 @@
 use test_case::test_case;
 
-use super::core::CoreExtension;
+use super::core::CoreLibFunc;
 use super::SpecializationError;
-use crate::extensions::GenericExtension;
+use crate::extensions::GenericLibFunc;
 use crate::program::GenericArg;
 
 fn type_arg(name: &str) -> GenericArg {
@@ -13,7 +13,7 @@ fn value_arg(v: i64) -> GenericArg {
     GenericArg::Value(v)
 }
 
-#[test_case("NoneExistent", vec![] => Err(SpecializationError::UnsupportedLibCallName);
+#[test_case("NoneExistent", vec![] => Err(SpecializationError::UnsupportedId);
             "NoneExistent")]
 #[test_case("get_gas", vec![value_arg(2)] => Ok(()); "get_gas<2>")]
 #[test_case("get_gas", vec![] => Err(SpecializationError::UnsupportedGenericArg); "get_gas")]
@@ -76,8 +76,8 @@ fn value_arg(v: i64) -> GenericArg {
 #[test_case("jump", vec![type_arg("T")] => Err(SpecializationError::WrongNumberOfGenericArgs);
             "jump<T>")]
 fn find_specialization(id: &str, generic_args: Vec<GenericArg>) -> Result<(), SpecializationError> {
-    CoreExtension::by_id(&id.into())
-        .ok_or(SpecializationError::UnsupportedLibCallName)?
+    CoreLibFunc::by_id(&id.into())
+        .ok_or(SpecializationError::UnsupportedId)?
         .specialize(&generic_args)
         .map(|_| ())
 }

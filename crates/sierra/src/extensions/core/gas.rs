@@ -1,14 +1,13 @@
 // Module providing the gas related extensions.
-use crate::define_extension_hierarchy;
+use crate::define_libfunc_hierarchy;
 use crate::extensions::{
-    ConcreteExtension, GenericExtension, NamedExtension, NonBranchConcreteExtension,
-    SpecializationError,
+    ConcreteLibFunc, GenericLibFunc, NamedLibFunc, NonBranchConcreteLibFunc, SpecializationError,
 };
 use crate::ids::ConcreteTypeId;
 use crate::program::GenericArg;
 
-define_extension_hierarchy! {
-    pub enum GasExtension {
+define_libfunc_hierarchy! {
+    pub enum GasLibFunc {
         GetGas(GetGasGeneric),
         RefundGas(RefundGasGeneric),
     }, GasConcrete
@@ -22,10 +21,10 @@ fn as_single_positive_value(args: &[GenericArg]) -> Result<i64, SpecializationEr
     }
 }
 
-/// Extension for getting gas branch.
+/// LibFunc for getting gas branch.
 #[derive(Default)]
 pub struct GetGasGeneric {}
-impl NamedExtension for GetGasGeneric {
+impl NamedLibFunc for GetGasGeneric {
     type Concrete = GetGasConcrete;
     const NAME: &'static str = "get_gas";
     fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError> {
@@ -36,7 +35,7 @@ impl NamedExtension for GetGasGeneric {
 pub struct GetGasConcrete {
     pub count: i64,
 }
-impl ConcreteExtension for GetGasConcrete {
+impl ConcreteLibFunc for GetGasConcrete {
     fn input_types(&self) -> Vec<ConcreteTypeId> {
         vec!["GasBuiltin".into()]
     }
@@ -48,10 +47,10 @@ impl ConcreteExtension for GetGasConcrete {
     }
 }
 
-/// Extension for returning unused gas.
+/// LibFunc for returning unused gas.
 #[derive(Default)]
 pub struct RefundGasGeneric {}
-impl NamedExtension for RefundGasGeneric {
+impl NamedLibFunc for RefundGasGeneric {
     type Concrete = RefundGasConcrete;
     const NAME: &'static str = "refund_gas";
     fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError> {
@@ -62,7 +61,7 @@ impl NamedExtension for RefundGasGeneric {
 pub struct RefundGasConcrete {
     pub count: i64,
 }
-impl NonBranchConcreteExtension for RefundGasConcrete {
+impl NonBranchConcreteLibFunc for RefundGasConcrete {
     fn input_types(&self) -> Vec<ConcreteTypeId> {
         vec!["GasBuiltin".into()]
     }

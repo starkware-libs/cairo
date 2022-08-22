@@ -48,15 +48,15 @@ macro_rules! define_identity {
 }
 
 define_identity!(
-    "The identity of a generic extension",
+    "The identity of a generic library function",
     (Clone, Debug, Eq, Hash, PartialEq),
-    GenericExtensionId
+    GenericLibFuncId
 );
 
 define_identity!(
-    "The identity of a concrete extension.",
+    "The identity of a concrete library function.",
     (Clone, Debug, Eq, Hash, PartialEq),
-    ConcreteExtensionId
+    ConcreteLibFuncId
 );
 
 define_identity!("The identity of a user function.", (Clone, Debug, Eq, PartialEq), FunctionId);
