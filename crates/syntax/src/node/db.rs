@@ -7,3 +7,7 @@ pub trait GreenInterner {
     #[salsa::interned]
     fn intern_green(&self, field: GreenNode) -> GreenId;
 }
+
+pub trait AsGreenInterner {
+    fn as_green_interner(&self) -> &(dyn GreenInterner + 'static);
+}
