@@ -21,7 +21,7 @@ impl Program {
 }
 
 /// Declaration of a concrete type.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct TypeDeclaration {
     /// The id of the declared concrete type.
     pub id: ConcreteTypeId,
@@ -75,7 +75,7 @@ impl StatementIdx {
 }
 
 /// Possible arguments for generic type.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum GenericArg {
     Type(ConcreteTypeId),
     Func(FunctionId),

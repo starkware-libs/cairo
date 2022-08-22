@@ -44,7 +44,7 @@ fn good_flow() {
 #[test_case(indoc! {"
             libfunc store_temp_felt = store_temp<felt>;
             libfunc store_temp_felt = store_temp<felt>;
-        "} => Err(CompilationError::ProgramRegistryError(ProgramRegistryError::LibFuncConcreteIdUsedTwice(
+        "} => Err(CompilationError::ProgramRegistryError(ProgramRegistryError::LibFuncConcreteIdAlreadyExists(
             ConcreteLibFuncId::from_string("store_temp_felt"))));
             "Concrete libfunc Id used twice")]
 #[test_case(indoc! {"
