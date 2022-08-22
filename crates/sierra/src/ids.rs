@@ -9,10 +9,9 @@ fn id_from_string(s: &str) -> u64 {
 }
 
 macro_rules! define_identity {
-    ($doc:literal, $derives:tt, $type_name:ident) => {
+    ($doc:literal, $type_name:ident) => {
         #[doc=$doc]
-        #[derive $derives]
-
+        #[derive(Clone, Debug, Eq, Hash, PartialEq)]
         pub struct $type_name {
             pub id: u64,
             /// Optional name for testing and debugging.
@@ -21,7 +20,7 @@ macro_rules! define_identity {
 
         impl $type_name {
             pub fn new(id: u64) -> Self {
-                $type_name{id, debug_name: None}
+                $type_name { id, debug_name: None }
             }
 
             // TODO(lior): Remove this function once issue #45 is resolved. Use new() instead.
@@ -31,7 +30,7 @@ macro_rules! define_identity {
 
             pub fn from_string(name: impl Into<String>) -> Self {
                 let s: String = name.into();
-                $type_name{id: id_from_string(&s), debug_name: Some(s)}
+                $type_name { id: id_from_string(&s), debug_name: Some(s) }
             }
         }
         impl From<&str> for $type_name {
@@ -52,22 +51,14 @@ macro_rules! define_identity {
     };
 }
 
-define_identity!(
-    "The identity of a generic library function",
-    (Clone, Debug, Eq, Hash, PartialEq),
-    GenericLibFuncId
-);
+define_identity!("The identity of a generic library function", GenericLibFuncId);
 
-define_identity!(
-    "The identity of a concrete library function.",
-    (Clone, Debug, Eq, Hash, PartialEq),
-    ConcreteLibFuncId
-);
+define_identity!("The identity of a concrete library function.", ConcreteLibFuncId);
 
-define_identity!("The identity of a user function.", (Clone, Debug, Eq, PartialEq), FunctionId);
+define_identity!("The identity of a user function.", FunctionId);
 
-define_identity!("The identity of a variable.", (Clone, Debug, Eq, Hash, PartialEq), VarId);
+define_identity!("The identity of a variable.", VarId);
 
-define_identity!("The identity of a generic type.", (Clone, Debug, Eq, PartialEq), GenericTypeId);
+define_identity!("The identity of a generic type.", GenericTypeId);
 
-define_identity!("The identity of a concrete type.", (Clone, Debug, Eq, PartialEq), ConcreteTypeId);
+define_identity!("The identity of a concrete type.", ConcreteTypeId);

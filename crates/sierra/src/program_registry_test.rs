@@ -9,6 +9,9 @@ fn basic_insertion() {
         ProgramRegistry::new(
             &ProgramParser::new()
                 .parse(indoc! {"
+        type int = int;
+        type GasBuiltin = GasBuiltin;
+        type NonZeroInt = NonZeroInt;
         libfunc move_int = move<int>;
         libfunc move_gb = move<GasBuiltin>;
     "})
@@ -16,6 +19,22 @@ fn basic_insertion() {
         )
         .map(|_| ()),
         Ok(())
+    );
+}
+
+#[test]
+fn type_id_double_declaration() {
+    assert_eq!(
+        ProgramRegistry::new(
+            &ProgramParser::new()
+                .parse(indoc! {"
+        type used_id = int;
+        type used_id = GasBuiltin;
+    "})
+                .unwrap()
+        )
+        .map(|_| ()),
+        Err(ProgramRegistryError::TypeConcreteIdUsedTwice("used_id".into()))
     );
 }
 
