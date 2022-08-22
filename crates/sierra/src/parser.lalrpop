@@ -8,10 +8,10 @@ grammar;
 
 pub Program: Program = {
     <type_declarations:TypeDeclaration*>
-    <extension_declarations:ExtensionDeclaration*>
+    <libfunc_declarations:LibFuncDeclaration*>
     <statements:Statement*>
     <funcs:Function*>
-    => Program{type_declarations, extension_declarations, statements, funcs},
+    => Program{type_declarations, libfunc_declarations, statements, funcs},
 }
 
 TypeDeclaration: TypeDeclaration = {
@@ -21,11 +21,11 @@ TypeDeclaration: TypeDeclaration = {
     => TypeDeclaration{id, generic_id, args: vec![]},
 }
 
-ExtensionDeclaration: ExtensionDeclaration = {
-    "ext" <id:ConcreteExtensionId> "=" <generic_id:GenericExtensionId>
-    "<" <args:GenericArgs> ">" ";" => ExtensionDeclaration{id, generic_id, args},
-    "ext" <id:ConcreteExtensionId> "=" <generic_id:GenericExtensionId> ";"
-    => ExtensionDeclaration{id, generic_id, args: vec![]},
+LibFuncDeclaration: LibFuncDeclaration = {
+    "libfunc" <id:ConcreteLibFuncId> "=" <generic_id:GenericLibFuncId>
+    "<" <args:GenericArgs> ">" ";" => LibFuncDeclaration{id, generic_id, args},
+    "libfunc" <id:ConcreteLibFuncId> "=" <generic_id:GenericLibFuncId> ";"
+    => LibFuncDeclaration{id, generic_id, args: vec![]},
 }
 
 Function: Function = {
@@ -39,14 +39,14 @@ Param: Param = {
 }
 Params = Comma<Param>;
 
-GenericExtensionId: GenericExtensionId = {
-    <id:Label> => GenericExtensionId::from_string(id),
-    "[" <id:UnsignedInt> "]" => GenericExtensionId::new(id),
+GenericLibFuncId: GenericLibFuncId = {
+    <id:Label> => GenericLibFuncId::from_string(id),
+    "[" <id:UnsignedInt> "]" => GenericLibFuncId::new(id),
 }
 
-ConcreteExtensionId: ConcreteExtensionId = {
-    <id:Label> => ConcreteExtensionId::from_string(id),
-    "[" <id:UnsignedInt> "]" => ConcreteExtensionId::new(id),
+ConcreteLibFuncId: ConcreteLibFuncId = {
+    <id:Label> => ConcreteLibFuncId::from_string(id),
+    "[" <id:UnsignedInt> "]" => ConcreteLibFuncId::new(id),
 }
 
 FunctionId: FunctionId = {
@@ -88,14 +88,14 @@ Statement: Statement = {
 }
 
 Invocation: Invocation = {
-    <extension_id:ConcreteExtensionId> "(" <args:VarIds> ")" "->" "(" <results:VarIds> ")" ";" =>
+    <libfunc_id:ConcreteLibFuncId> "(" <args:VarIds> ")" "->" "(" <results:VarIds> ")" ";" =>
         Invocation{
-            extension_id,
+            libfunc_id,
             args,
             branches: vec![BranchInfo{ target: BranchTarget::Fallthrough , results }]
         },
-    <extension_id:ConcreteExtensionId> "(" <args:VarIds> ")" "{" <branches:BranchInfo*> "}" ";" =>
-        Invocation{extension_id, args, branches},
+    <libfunc_id:ConcreteLibFuncId> "(" <args:VarIds> ")" "{" <branches:BranchInfo*> "}" ";" =>
+        Invocation{libfunc_id, args, branches},
 }
 
 // Generates a vector of Ts with or without a trailing comma.
