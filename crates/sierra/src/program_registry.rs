@@ -7,8 +7,8 @@ use crate::extensions::{
     CoreConcrete, CoreLibFunc, CoreType, CoreTypeConcrete, ExtensionError, GenericLibFuncEx,
     GenericTypeEx,
 };
-use crate::ids::{ConcreteLibFuncId, ConcreteTypeId};
-use crate::program::Program;
+use crate::ids::{ConcreteLibFuncId, ConcreteTypeId, FunctionId};
+use crate::program::{Function, Program};
 
 #[cfg(test)]
 #[path = "program_registry_test.rs"]
@@ -17,6 +17,10 @@ mod test;
 /// Errors encountered in the program registry.
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum ProgramRegistryError {
+    #[error("used the same function id twice")]
+    FunctionIdUsedTwice(FunctionId),
+    #[error("Could not find the requested function")]
+    MissingFunction(FunctionId),
     #[error("Error during type specialization")]
     TypeSpecialization { concrete_id: ConcreteTypeId, error: ExtensionError },
     #[error("Error used the same concrete type id twice")]
@@ -33,12 +37,22 @@ pub enum ProgramRegistryError {
 
 /// Registry for the data of the compiler, for all program specific data.
 pub struct ProgramRegistry {
+    functions: HashMap<FunctionId, Function>,
     concrete_types: HashMap<ConcreteTypeId, CoreTypeConcrete>,
     concrete_libfuncs: HashMap<ConcreteLibFuncId, CoreConcrete>,
 }
 impl ProgramRegistry {
     /// Create a registry for the program.
     pub fn new(program: &Program) -> Result<ProgramRegistry, ProgramRegistryError> {
+        let mut functions = HashMap::<FunctionId, Function>::new();
+        for func in &program.funcs {
+            match functions.entry(func.id.clone()) {
+                Entry::Occupied(_) => {
+                    Err(ProgramRegistryError::FunctionIdUsedTwice(func.id.clone()))
+                }
+                Entry::Vacant(entry) => Ok(entry.insert(func.clone())),
+            }?;
+        }
         let mut concrete_types = HashMap::<ConcreteTypeId, CoreTypeConcrete>::new();
         for declaration in &program.type_declarations {
             let concrete_type =
@@ -71,7 +85,14 @@ impl ProgramRegistry {
                 Entry::Vacant(entry) => Ok(entry.insert(concrete_libfunc)),
             }?;
         }
-        Ok(ProgramRegistry { concrete_types, concrete_libfuncs })
+        Ok(ProgramRegistry { functions, concrete_types, concrete_libfuncs })
+    }
+    /// Get a function from the given program.
+    pub fn get_function<'a>(
+        &'a self,
+        id: &FunctionId,
+    ) -> Result<&'a Function, ProgramRegistryError> {
+        self.functions.get(id).ok_or_else(|| ProgramRegistryError::MissingFunction(id.clone()))
     }
     /// Get a type from the given program.
     pub fn get_type<'a>(

@@ -14,11 +14,29 @@ fn basic_insertion() {
         type NonZeroInt = NonZeroInt;
         libfunc move_int = move<int>;
         libfunc move_gb = move<GasBuiltin>;
+        Func1@1(a: int, gb: GasBuiltin) -> (GasBuiltin);
+        Func2@6() -> ();
     "})
                 .unwrap()
         )
         .map(|_| ()),
         Ok(())
+    );
+}
+
+#[test]
+fn function_id_double_declaration() {
+    assert_eq!(
+        ProgramRegistry::new(
+            &ProgramParser::new()
+                .parse(indoc! {"
+        used_id@1(a: int, gb: GasBuiltin) -> (GasBuiltin);
+        used_id@6() -> ();
+    "})
+                .unwrap()
+        )
+        .map(|_| ()),
+        Err(ProgramRegistryError::FunctionIdUsedTwice("used_id".into()))
     );
 }
 
