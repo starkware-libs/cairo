@@ -24,7 +24,7 @@ pub enum ProgramRegistryError {
 
 /// Registry for the data of the compiler, for all program specific data.
 pub struct ProgramRegistry {
-    pub concrete_libfuncs: HashMap<ConcreteLibFuncId, CoreConcrete>,
+    concrete_libfuncs: HashMap<ConcreteLibFuncId, CoreConcrete>,
 }
 impl ProgramRegistry {
     /// Create a registry for the program.
