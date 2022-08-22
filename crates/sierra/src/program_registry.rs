@@ -3,6 +3,7 @@ use std::collections::HashMap;
 
 use thiserror::Error;
 
+use crate::extensions::lib_func::Registries;
 use crate::extensions::{
     CoreConcrete, CoreLibFunc, CoreType, CoreTypeConcrete, ExtensionError, GenericLibFuncEx,
     GenericTypeEx,
@@ -81,13 +82,15 @@ impl ProgramRegistry {
         }
         let mut concrete_libfuncs = HashMap::<ConcreteLibFuncId, CoreConcrete>::new();
         for declaration in &program.libfunc_declarations {
-            let concrete_libfunc =
-                CoreLibFunc::specialize_by_id(&declaration.generic_id, &declaration.args).map_err(
-                    |error| ProgramRegistryError::LibFuncSpecialization {
-                        concrete_id: declaration.id.clone(),
-                        error,
-                    },
-                )?;
+            let concrete_libfunc = CoreLibFunc::specialize_by_id(
+                Registries { functions: &functions, concrete_type_ids: &concrete_type_ids },
+                &declaration.generic_id,
+                &declaration.args,
+            )
+            .map_err(|error| ProgramRegistryError::LibFuncSpecialization {
+                concrete_id: declaration.id.clone(),
+                error,
+            })?;
             match concrete_libfuncs.entry(declaration.id.clone()) {
                 Entry::Occupied(_) => {
                     Err(ProgramRegistryError::LibFuncConcreteIdUsedTwice(declaration.id.clone()))
