@@ -6,7 +6,15 @@ use sierra::ids::VarId;
 use sierra::program::{Function, Param, StatementIdx};
 use thiserror::Error;
 
-type StatementRefs = HashMap<VarId, ResOperand>;
+/// A reference to a value.
+/// Corresponds to an argument or return value of a sierra statement.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ReferenceValue {
+    // TODO(ilya, 10/10/2022): Add type.
+    expression: ResOperand,
+}
+
+type StatementRefs = HashMap<VarId, ReferenceValue>;
 
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum ReferencesError {
@@ -57,7 +65,9 @@ pub fn build_function_parameter_refs(params: &[Param]) -> Result<StatementRefs, 
         if refs
             .insert(
                 param.id.clone(),
-                ResOperand::Deref(DerefOperand { register: Register::FP, offset }),
+                ReferenceValue {
+                    expression: ResOperand::Deref(DerefOperand { register: Register::FP, offset }),
+                },
             )
             .is_some()
         {
