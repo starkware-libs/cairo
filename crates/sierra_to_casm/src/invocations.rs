@@ -1,5 +1,7 @@
 use casm::ap_change::ApChange;
-use casm::instructions::Instruction;
+use casm::instructions::{AssertEqInstruction, Instruction, InstructionBody};
+use casm::operand::{DerefOperand, Register, ResOperand};
+use sierra::extensions::core::mem::MemConcrete;
 use sierra::extensions::{CoreConcrete, ExtensionError};
 
 use crate::references::ReferenceValue;
@@ -23,8 +25,29 @@ pub struct CompiledInvocation {
 }
 
 pub fn compile_invocation(
-    _ext: &CoreConcrete,
-    _refs: &[ReferenceValue],
+    ext: &CoreConcrete,
+    refs: &[ReferenceValue],
 ) -> Result<CompiledInvocation, ExtensionError> {
-    Err(ExtensionError::NotImplemented)
+    match ext {
+        // TODO(ilya, 10/10/2022): Handle type.
+        CoreConcrete::Mem(MemConcrete::StoreTemp(_)) => Ok(CompiledInvocation {
+            instruction: vec![Instruction {
+                body: InstructionBody::AssertEq(AssertEqInstruction {
+                    a: DerefOperand { register: Register::AP, offset: 0 },
+                    b: refs[0].expression.clone(),
+                }),
+                inc_ap: true,
+            }],
+            results: vec![BranchRefChanges {
+                refs: vec![ReferenceValue {
+                    expression: ResOperand::Deref(DerefOperand {
+                        register: Register::AP,
+                        offset: -1,
+                    }),
+                }],
+                ap_change: ApChange::Known(1),
+            }],
+        }),
+        _ => Err(ExtensionError::NotImplemented),
+    }
 }
