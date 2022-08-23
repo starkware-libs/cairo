@@ -2,8 +2,7 @@ use std::fmt::Display;
 
 use casm::instructions::{Instruction, InstructionBody, RetInstruction};
 use sierra::extensions::ExtensionError;
-use sierra::ids::VarId;
-use sierra::program::{Program, Statement};
+use sierra::program::{Program, Statement, StatementIdx};
 use sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use thiserror::Error;
 
@@ -16,14 +15,10 @@ mod test;
 
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum CompilationError {
-    #[error("Missing reference")]
-    MissingReference(VarId),
     #[error("Error from program registry")]
     ProgramRegistryError(ProgramRegistryError),
     #[error(transparent)]
     ExtensionError(#[from] ExtensionError),
-    #[error("MissingReferencesForStatement")]
-    MissingReferencesForStatement,
     #[error(transparent)]
     ReferencesError(#[from] ReferencesError),
 }
@@ -48,15 +43,10 @@ pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
     let program_refs = init_reference(program.statements.len(), &program.funcs)?;
 
     for (statement_id, statement) in program.statements.iter().enumerate() {
-        let _statement_refs = program_refs.per_statement_refs[statement_id]
-            .as_ref()
-            .ok_or(CompilationError::MissingReferencesForStatement)?;
-
+        let statement_idx = StatementIdx(statement_id);
         match statement {
             Statement::Return(ref_ids) => {
-                if let Some(ref_id) = ref_ids.iter().next() {
-                    return Err(CompilationError::MissingReference(ref_id.clone()));
-                }
+                program_refs.take_references(statement_idx, ref_ids.iter())?;
 
                 instructions.push(Instruction {
                     body: InstructionBody::Ret(RetInstruction {}),
