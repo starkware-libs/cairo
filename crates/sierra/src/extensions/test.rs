@@ -30,6 +30,9 @@ fn find_type_specialization(
 }
 
 #[test_case("NoneExistent", vec![] => Err(UnsupportedId); "NoneExistent")]
+#[test_case("function_call", vec![GenericArg::Func("Function".into())] => Ok(());
+            "function_call<&Function>")]
+#[test_case("function_call", vec![] => Err(UnsupportedGenericArg); "function_call")]
 #[test_case("get_gas", vec![value_arg(2)] => Ok(()); "get_gas<2>")]
 #[test_case("get_gas", vec![] => Err(UnsupportedGenericArg); "get_gas")]
 #[test_case("get_gas", vec![value_arg(-2)] => Err(UnsupportedGenericArg); "get_gas<minus 2>")]
