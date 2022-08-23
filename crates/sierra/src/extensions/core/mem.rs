@@ -1,3 +1,4 @@
+use super::as_single_type;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::SpecializationContext;
 use crate::extensions::{
@@ -31,14 +32,6 @@ define_libfunc_hierarchy! {
         Rename(RenameLibFunc),
         Move(MoveLibFunc),
     }, MemConcreteLibFunc
-}
-
-/// Helper for extracting the type from the template arguments.
-fn as_single_type(args: &[GenericArg]) -> Result<ConcreteTypeId, SpecializationError> {
-    match args {
-        [GenericArg::Type(ty)] => Ok(ty.clone()),
-        _ => Err(SpecializationError::UnsupportedGenericArg),
-    }
 }
 
 /// LibFunc for storing a deferred value into temporary memory.

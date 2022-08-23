@@ -38,7 +38,7 @@ fn simulate(
                 SpecializationContext {
                     concrete_type_ids: &HashMap::from([
                         (("int".into(), &[][..]), "int".into()),
-                        (("NonZeroInt".into(), &[][..]), "NonZeroInt".into()),
+                        (("NonZero".into(), &[type_arg("int")][..]), "NonZeroInt".into()),
                         (("Deferred".into(), &[type_arg("int")][..]), "DeferredInt".into()),
                         (("GasBuiltin".into(), &[][..]), "GasBuiltin".into()),
                         (
@@ -114,7 +114,7 @@ fn simulate_invocation(
 #[test_case("int_const", vec![value_arg(3)], vec![] => Ok(vec![3]); "int_const<3>()")]
 #[test_case("int_dup", vec![], vec![24] => Ok(vec![24, 24]); "int_dup(24)")]
 #[test_case("int_ignore", vec![], vec![2] => Ok(vec![]); "int_ignore(2)")]
-#[test_case("int_unwrap_nz", vec![], vec![6] => Ok(vec![6]); "int_unwrap_nz(6)")]
+#[test_case("unwrap_nz", vec![type_arg("int")], vec![6] => Ok(vec![6]); "unwrap_nz<int>(6)")]
 #[test_case("store_temp", vec![type_arg("int")], vec![6] => Ok(vec![6]); "store_temp<int>(6)")]
 #[test_case("align_temps", vec![type_arg("int")], vec![] => Ok(vec![]); "align_temps<int>()")]
 #[test_case("store_local", vec![type_arg("int")], vec![6] => Ok(vec![6]); "store_local<int>(6)")]
@@ -155,7 +155,7 @@ fn simulate_none_branch(
 #[test_case("int_dup", vec![], vec![] => WrongNumberOfArgs; "int_dup()")]
 #[test_case("int_ignore", vec![], vec![] => WrongNumberOfArgs; "int_ignore()")]
 #[test_case("int_jump_nz", vec![], vec![] => WrongNumberOfArgs; "int_jump_nz()")]
-#[test_case("int_unwrap_nz", vec![], vec![] => WrongNumberOfArgs; "int_unwrap_nz()")]
+#[test_case("unwrap_nz", vec![type_arg("int")], vec![] => WrongNumberOfArgs; "unwrap_nz<int>()")]
 #[test_case("store_temp", vec![type_arg("int")], vec![] => WrongNumberOfArgs; "store_temp<int>()")]
 #[test_case("align_temps", vec![type_arg("int")], vec![vec![4]] => WrongNumberOfArgs;
             "align_temps<int>(4)")]
