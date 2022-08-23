@@ -100,6 +100,7 @@ impl GenericLibFunc for OperationLibFunc {
             [] => Ok(OperationConcreteLibFunc::Binary(BinaryOperationConcreteLibFunc {
                 operator: self.operator,
                 int_type,
+                non_zero_int_type: context.get_concrete_type(NonZeroIntegerType::id(), &[])?,
                 deferred_int_type,
             })),
             [GenericArg::Value(c)] => {
@@ -122,11 +123,19 @@ impl GenericLibFunc for OperationLibFunc {
 pub struct BinaryOperationConcreteLibFunc {
     pub operator: Operator,
     pub int_type: ConcreteTypeId,
+    pub non_zero_int_type: ConcreteTypeId,
     pub deferred_int_type: ConcreteTypeId,
 }
 impl NonBranchConcreteLibFunc for BinaryOperationConcreteLibFunc {
     fn input_types(&self) -> Vec<ConcreteTypeId> {
-        vec![self.int_type.clone(), self.int_type.clone()]
+        vec![
+            self.int_type.clone(),
+            if matches!(self.operator, Operator::Div | Operator::Mod) {
+                self.non_zero_int_type.clone()
+            } else {
+                self.int_type.clone()
+            },
+        ]
     }
     fn output_types(&self) -> Vec<ConcreteTypeId> {
         vec![self.deferred_int_type.clone()]
