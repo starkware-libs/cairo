@@ -4,8 +4,11 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+colored = "2"
 db_utils = { path = "../db_utils" }
 filesystem = { path = "../filesystem" }
+itertools = "0.10.3"
 salsa = "0.16.1"
 smol_str = "0.1.23"
 syntax = { path = "../syntax" }
+syntax_codegen = { path = "../syntax_codegen" }
