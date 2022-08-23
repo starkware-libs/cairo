@@ -126,8 +126,8 @@ impl RunContext<'_> {
         inputs: Vec<Vec<MemCell>>,
         current_statement_id: StatementIdx,
     ) -> Result<(Vec<Vec<MemCell>>, usize), SimulationError> {
-        if let CoreConcrete::FunctionCall(FunctionCallConcrete { function_id }) = libfunc {
-            Ok((self.run_function(function_id, inputs)?, 0))
+        if let CoreConcrete::FunctionCall(FunctionCallConcrete { function }) = libfunc {
+            Ok((self.run_function(&function.id, inputs)?, 0))
         } else {
             core::simple_simulate(libfunc, inputs).map_err(|error| {
                 SimulationError::LibFuncSimulationError(error, current_statement_id)
