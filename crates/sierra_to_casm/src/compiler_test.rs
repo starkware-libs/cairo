@@ -37,7 +37,7 @@ fn good_flow() {
 #[test_case(indoc! {"
             store_temp_felt([1]) -> ([1]);
 
-            test_program@0() -> ();
+            test_program@0([1]: felt) -> ();
         "} => Err(CompilationError::ProgramRegistryError(
             ProgramRegistryError::MissingLibFunc(ConcreteLibFuncId::from_string("store_temp_felt"))));
             "undeclared libfunc")]
@@ -51,7 +51,7 @@ fn good_flow() {
 libfunc store_temp_felt = store_temp<felt>;
             store_temp_felt([1]) -> ([1]);
 
-            test_program@0() -> ();
+            test_program@0([1]: felt) -> ();
         "} => Err(NotImplemented.into());
             "Not implemented")]
 #[test_case(indoc! {"

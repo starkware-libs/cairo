@@ -40,7 +40,7 @@ pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
     let mut instructions = Vec::new();
 
     let registry = ProgramRegistry::new(program).map_err(CompilationError::ProgramRegistryError)?;
-    let program_refs = init_reference(program.statements.len(), &program.funcs)?;
+    let mut program_refs = init_reference(program.statements.len(), &program.funcs)?;
 
     for (statement_id, statement) in program.statements.iter().enumerate() {
         let statement_idx = StatementIdx(statement_id);
@@ -54,10 +54,20 @@ pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
                 });
             }
             Statement::Invocation(invocation) => {
+                let (statement_refs, invoke_refs) =
+                    program_refs.take_references(statement_idx, invocation.args.iter())?;
+
                 let libfunc = registry
                     .get_libfunc(&invocation.libfunc_id)
                     .map_err(CompilationError::ProgramRegistryError)?;
-                compile_invocation(libfunc)?;
+                let compiled_invocation = compile_invocation(libfunc, &invoke_refs)?;
+
+                program_refs.update_references(
+                    statement_idx,
+                    statement_refs,
+                    &invocation.branches,
+                    compiled_invocation.results.into_iter(),
+                )?;
             }
         }
     }
