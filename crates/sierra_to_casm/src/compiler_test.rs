@@ -15,14 +15,16 @@ fn good_flow() {
         .parse(indoc! {"
             libfunc store_temp_felt = store_temp<felt>;
 
+            store_temp_felt([1]) -> ([1]);
             return();
 
-            test_program@0() -> ();
+            test_program@0([1]: felt) -> ();
         "})
         .unwrap();
     assert_eq!(
         compile(&prog).unwrap().to_string(),
         indoc! {"
+            [ap + 0] = [fp + -2], ap++;
             ret;
         "}
     );
@@ -48,8 +50,8 @@ fn good_flow() {
             ConcreteLibFuncId::from_string("store_temp_felt"))));
             "Concrete libfunc Id used twice")]
 #[test_case(indoc! {"
-libfunc store_temp_felt = store_temp<felt>;
-            store_temp_felt([1]) -> ([1]);
+            libfunc store_local_felt = store_local<felt>;
+            store_local_felt([1]) -> ([1]);
 
             test_program@0([1]: felt) -> ();
         "} => Err(NotImplemented.into());

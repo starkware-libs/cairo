@@ -82,8 +82,8 @@ impl Display for JnzInstruction {
 // Represents the InstructionBody "a = b" for two operands a, b.
 #[derive(Debug, Eq, PartialEq)]
 pub struct AssertEqInstruction {
-    a: DerefOperand,
-    b: ResOperand,
+    pub a: DerefOperand,
+    pub b: ResOperand,
 }
 impl Display for AssertEqInstruction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
