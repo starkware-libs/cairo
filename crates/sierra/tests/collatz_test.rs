@@ -7,6 +7,8 @@ fn collatz_program() -> sierra::program::Program {
         .parse(indoc! {"
         type int = int;
         type GasBuiltin = GasBuiltin;
+        type DeferredInt = Deferred<int>;
+        type DeferredGasBuiltin = Deferred<GasBuiltin>;
         type NonZeroInt = NonZeroInt;
 
         libfunc move_int = move<int>;
