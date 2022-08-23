@@ -1,5 +1,5 @@
 use crate::extensions::lib_func::Registries;
-use crate::extensions::{ConcreteLibFunc, NoGenericArgsGenericLibFunc};
+use crate::extensions::{ConcreteLibFunc, NoGenericArgsGenericLibFunc, SpecializationError};
 use crate::ids::ConcreteTypeId;
 
 #[derive(Default)]
@@ -7,8 +7,11 @@ pub struct UnconditionalJumpGeneric {}
 impl NoGenericArgsGenericLibFunc for UnconditionalJumpGeneric {
     type Concrete = UnconditionalJumpConcrete;
     const NAME: &'static str = "jump";
-    fn specialize(&self, _registries: Registries<'_>) -> Self::Concrete {
-        UnconditionalJumpConcrete {}
+    fn specialize(
+        &self,
+        _registries: Registries<'_>,
+    ) -> Result<Self::Concrete, SpecializationError> {
+        Ok(UnconditionalJumpConcrete {})
     }
 }
 

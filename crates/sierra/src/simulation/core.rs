@@ -22,7 +22,11 @@ pub fn simulate(
 ) -> Result<(Vec<Vec<MemCell>>, usize), LibFuncSimulationError> {
     match libfunc {
         FunctionCall(_) => Err(LibFuncSimulationError::CannotBeSimulated),
-        Gas(GetGas(GetGasConcrete { count })) => {
+        Gas(GetGas(GetGasConcrete {
+            count,
+            gas_builtin_type: _,
+            deferred_gas_builtin_type: _,
+        })) => {
             let [MemCell { value: gas_counter }] = unpack_inputs::<1>(inputs)?;
             if gas_counter >= *count {
                 // Have enough gas - return reduced counter and jump to success branch.
@@ -32,15 +36,23 @@ pub fn simulate(
                 Ok((vec![vec![gas_counter.into()]], 1))
             }
         }
-        Gas(RefundGas(RefundGasConcrete { count })) => {
+        Gas(RefundGas(RefundGasConcrete {
+            count,
+            gas_builtin_type: _,
+            deferred_gas_builtin_type: _,
+        })) => {
             let [MemCell { value: gas_counter }] = unpack_inputs::<1>(inputs)?;
             Ok((vec![vec![(gas_counter + count).into()]], 0))
         }
-        Integer(Const(ConstConcrete { c })) => {
+        Integer(Const(ConstConcrete { c, deferred_int_type: _ })) => {
             unpack_inputs::<0>(inputs)?;
             Ok((vec![vec![(*c).into()]], 0))
         }
-        Integer(Operation(OperationConcrete::Binary(BinaryOperationConcrete { operator }))) => {
+        Integer(Operation(OperationConcrete::Binary(BinaryOperationConcrete {
+            operator,
+            int_type: _,
+            deferred_int_type: _,
+        }))) => {
             let [MemCell { value: lhs }, MemCell { value: rhs }] = unpack_inputs::<2>(inputs)?;
             Ok((
                 vec![vec![
@@ -59,6 +71,8 @@ pub fn simulate(
         Integer(Operation(OperationConcrete::Const(OperationWithConstConcrete {
             operator,
             c,
+            int_type: _,
+            deferred_int_type: _,
         }))) => {
             let [MemCell { value }] = unpack_inputs::<1>(inputs)?;
             Ok((

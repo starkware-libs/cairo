@@ -42,6 +42,11 @@ impl<TGenericType: GenericType> GenericTypeEx for TGenericType {
 pub trait NamedType: Default {
     type Concrete: ConcreteType;
     const NAME: &'static str;
+    // TODO(orizi): If GenericTypeId becomes constexpr, use the newly created constexpr ID directly.
+    /// Returns the generic id of the type.
+    fn id() -> GenericTypeId {
+        Self::NAME.into()
+    }
     /// Creates the specialization with the template arguments.
     fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError>;
 }
@@ -49,10 +54,7 @@ impl<TNamedType: NamedType> GenericType for TNamedType {
     type Concrete = <Self as NamedType>::Concrete;
 
     fn by_id(id: &GenericTypeId) -> Option<Self> {
-        if &GenericTypeId::from(Self::NAME.to_string()) == id {
-            return Some(Self::default());
-        }
-        None
+        if &Self::id() == id { Some(Self::default()) } else { None }
     }
 
     fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError> {
