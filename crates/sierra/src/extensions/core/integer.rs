@@ -1,4 +1,4 @@
-use super::mem::DeferredGeneric;
+use super::mem::DeferredType;
 use crate::extensions::lib_func::SpecializationContext;
 use crate::extensions::{
     ConcreteLibFunc, ConcreteType, GenericLibFunc, NamedLibFunc, NamedType,
@@ -10,50 +10,50 @@ use crate::program::GenericArg;
 use crate::{define_concrete_libfunc_hierarchy, define_libfunc_hierarchy, define_type_hierarchy};
 
 define_type_hierarchy! {
-    pub enum IntegerGenericType {
-        Basic(IntegerBasicGeneric),
-        NonZero(IntegerNonZeroGeneric),
+    pub enum IntegerType {
+        Basic(BasicIntegerType),
+        NonZero(NonZeroIntegerType),
     }, IntegerConcreteType
 }
 
 /// Type for int.
 #[derive(Default)]
-pub struct IntegerBasicGeneric {}
-impl NoGenericArgsGenericType for IntegerBasicGeneric {
-    type Concrete = IntegerBasicConcrete;
+pub struct BasicIntegerType {}
+impl NoGenericArgsGenericType for BasicIntegerType {
+    type Concrete = BasicIntegerConcreteType;
     const NAME: &'static str = "int";
 }
 #[derive(Default)]
-pub struct IntegerBasicConcrete {}
-impl ConcreteType for IntegerBasicConcrete {}
+pub struct BasicIntegerConcreteType {}
+impl ConcreteType for BasicIntegerConcreteType {}
 
 /// Type for non-zero int.
 #[derive(Default)]
-pub struct IntegerNonZeroGeneric {}
-impl NoGenericArgsGenericType for IntegerNonZeroGeneric {
-    type Concrete = IntegerNonZeroConcrete;
+pub struct NonZeroIntegerType {}
+impl NoGenericArgsGenericType for NonZeroIntegerType {
+    type Concrete = NonZeroIntegerConcreteType;
     const NAME: &'static str = "NonZeroInt";
 }
 #[derive(Default)]
-pub struct IntegerNonZeroConcrete {}
-impl ConcreteType for IntegerNonZeroConcrete {}
+pub struct NonZeroIntegerConcreteType {}
+impl ConcreteType for NonZeroIntegerConcreteType {}
 
 define_libfunc_hierarchy! {
     pub enum IntegerLibFunc {
-        Operation(OperationGeneric),
-        Const(ConstGeneric),
-        Ignore(IgnoreGeneric),
-        Duplicate(DuplicateGeneric),
-        JumpNotZero(JumpNotZeroGeneric),
-        UnwrapNonZero(UnwrapNonZeroGeneric),
+        Operation(OperationLibFunc),
+        Const(ConstLibFunc),
+        Ignore(IgnoreLibFunc),
+        Duplicate(DuplicateLibFunc),
+        JumpNotZero(JumpNotZeroLibFunc),
+        UnwrapNonZero(UnwrapNonZeroLibFunc),
     }, IntegerConcrete
 }
 
 fn get_int_types(
     context: &SpecializationContext<'_>,
 ) -> Result<(ConcreteTypeId, ConcreteTypeId), SpecializationError> {
-    let int_type = context.get_concrete_type(IntegerBasicGeneric::id(), &[])?;
-    Ok((int_type.clone(), context.get_wrapped_concrete_type(DeferredGeneric::id(), int_type)?))
+    let int_type = context.get_concrete_type(BasicIntegerType::id(), &[])?;
+    Ok((int_type.clone(), context.get_wrapped_concrete_type(DeferredType::id(), int_type)?))
 }
 
 /// Possible operators for integers.
@@ -67,26 +67,26 @@ pub enum Operator {
 }
 
 /// Libfunc for operations on integers.
-pub struct OperationGeneric {
+pub struct OperationLibFunc {
     pub operator: Operator,
 }
-impl GenericLibFunc for OperationGeneric {
-    type Concrete = OperationConcrete;
+impl GenericLibFunc for OperationLibFunc {
+    type Concrete = OperationConcreteLibFunc;
     fn by_id(id: &GenericLibFuncId) -> Option<Self> {
         if id == &"int_add".into() {
-            return Some(OperationGeneric { operator: Operator::Add });
+            return Some(OperationLibFunc { operator: Operator::Add });
         }
         if id == &"int_sub".into() {
-            return Some(OperationGeneric { operator: Operator::Sub });
+            return Some(OperationLibFunc { operator: Operator::Sub });
         }
         if id == &"int_mul".into() {
-            return Some(OperationGeneric { operator: Operator::Mul });
+            return Some(OperationLibFunc { operator: Operator::Mul });
         }
         if id == &"int_div".into() {
-            return Some(OperationGeneric { operator: Operator::Div });
+            return Some(OperationLibFunc { operator: Operator::Div });
         }
         if id == &"int_mod".into() {
-            return Some(OperationGeneric { operator: Operator::Mod });
+            return Some(OperationLibFunc { operator: Operator::Mod });
         }
         None
     }
@@ -97,7 +97,7 @@ impl GenericLibFunc for OperationGeneric {
     ) -> Result<Self::Concrete, SpecializationError> {
         let (int_type, deferred_int_type) = get_int_types(&context)?;
         match args {
-            [] => Ok(OperationConcrete::Binary(BinaryOperationConcrete {
+            [] => Ok(OperationConcreteLibFunc::Binary(BinaryOperationConcreteLibFunc {
                 operator: self.operator,
                 int_type,
                 deferred_int_type,
@@ -106,7 +106,7 @@ impl GenericLibFunc for OperationGeneric {
                 if matches!(self.operator, Operator::Div | Operator::Mod) && *c == 0 {
                     Err(SpecializationError::UnsupportedGenericArg)
                 } else {
-                    Ok(OperationConcrete::Const(OperationWithConstConcrete {
+                    Ok(OperationConcreteLibFunc::Const(OperationWithConstConcreteLibFunc {
                         operator: self.operator,
                         c: *c,
                         int_type,
@@ -119,12 +119,12 @@ impl GenericLibFunc for OperationGeneric {
     }
 }
 
-pub struct BinaryOperationConcrete {
+pub struct BinaryOperationConcreteLibFunc {
     pub operator: Operator,
     pub int_type: ConcreteTypeId,
     pub deferred_int_type: ConcreteTypeId,
 }
-impl NonBranchConcreteLibFunc for BinaryOperationConcrete {
+impl NonBranchConcreteLibFunc for BinaryOperationConcreteLibFunc {
     fn input_types(&self) -> Vec<ConcreteTypeId> {
         vec![self.int_type.clone(), self.int_type.clone()]
     }
@@ -134,20 +134,20 @@ impl NonBranchConcreteLibFunc for BinaryOperationConcrete {
 }
 
 /// Operations between a int and a const.
-pub struct OperationWithConstConcrete {
+pub struct OperationWithConstConcreteLibFunc {
     pub operator: Operator,
     pub c: i64,
     pub int_type: ConcreteTypeId,
     pub deferred_int_type: ConcreteTypeId,
 }
 define_concrete_libfunc_hierarchy! {
-    pub enum OperationConcrete {
-        Binary(BinaryOperationConcrete),
-        Const(OperationWithConstConcrete),
+    pub enum OperationConcreteLibFunc {
+        Binary(BinaryOperationConcreteLibFunc),
+        Const(OperationWithConstConcreteLibFunc),
     }
 }
 
-impl NonBranchConcreteLibFunc for OperationWithConstConcrete {
+impl NonBranchConcreteLibFunc for OperationWithConstConcreteLibFunc {
     fn input_types(&self) -> Vec<ConcreteTypeId> {
         vec![self.int_type.clone()]
     }
@@ -158,9 +158,9 @@ impl NonBranchConcreteLibFunc for OperationWithConstConcrete {
 
 /// LibFunc for creating a constant int.
 #[derive(Default)]
-pub struct ConstGeneric {}
-impl NamedLibFunc for ConstGeneric {
-    type Concrete = ConstConcrete;
+pub struct ConstLibFunc {}
+impl NamedLibFunc for ConstLibFunc {
+    type Concrete = ConstConcreteLibFunc;
     const NAME: &'static str = "int_const";
     fn specialize(
         &self,
@@ -169,21 +169,21 @@ impl NamedLibFunc for ConstGeneric {
     ) -> Result<Self::Concrete, SpecializationError> {
         match args {
             [GenericArg::Value(c)] => {
-                let int_type = context.get_concrete_type(IntegerBasicGeneric::id(), &[])?;
-                let deferred_int_type = context
-                    .get_concrete_type(DeferredGeneric::id(), &[GenericArg::Type(int_type)])?;
-                Ok(ConstConcrete { c: *c, deferred_int_type })
+                let int_type = context.get_concrete_type(BasicIntegerType::id(), &[])?;
+                let deferred_int_type =
+                    context.get_concrete_type(DeferredType::id(), &[GenericArg::Type(int_type)])?;
+                Ok(ConstConcreteLibFunc { c: *c, deferred_int_type })
             }
             _ => Err(SpecializationError::UnsupportedGenericArg),
         }
     }
 }
 
-pub struct ConstConcrete {
+pub struct ConstConcreteLibFunc {
     pub c: i64,
     pub deferred_int_type: ConcreteTypeId,
 }
-impl NonBranchConcreteLibFunc for ConstConcrete {
+impl NonBranchConcreteLibFunc for ConstConcreteLibFunc {
     fn input_types(&self) -> Vec<ConcreteTypeId> {
         vec![]
     }
@@ -194,22 +194,24 @@ impl NonBranchConcreteLibFunc for ConstConcrete {
 
 /// LibFunc for ignoring an int.
 #[derive(Default)]
-pub struct IgnoreGeneric {}
-impl NoGenericArgsGenericLibFunc for IgnoreGeneric {
-    type Concrete = IgnoreConcrete;
+pub struct IgnoreLibFunc {}
+impl NoGenericArgsGenericLibFunc for IgnoreLibFunc {
+    type Concrete = IgnoreConcreteLibFunc;
     const NAME: &'static str = "int_ignore";
     fn specialize(
         &self,
         context: SpecializationContext<'_>,
     ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(IgnoreConcrete { int_type: context.get_concrete_type(IntegerBasicGeneric::id(), &[])? })
+        Ok(IgnoreConcreteLibFunc {
+            int_type: context.get_concrete_type(BasicIntegerType::id(), &[])?,
+        })
     }
 }
 
-pub struct IgnoreConcrete {
+pub struct IgnoreConcreteLibFunc {
     pub int_type: ConcreteTypeId,
 }
-impl NonBranchConcreteLibFunc for IgnoreConcrete {
+impl NonBranchConcreteLibFunc for IgnoreConcreteLibFunc {
     fn input_types(&self) -> Vec<ConcreteTypeId> {
         vec![self.int_type.clone()]
     }
@@ -220,25 +222,25 @@ impl NonBranchConcreteLibFunc for IgnoreConcrete {
 
 /// LibFunc for duplicating an int.
 #[derive(Default)]
-pub struct DuplicateGeneric {}
-impl NoGenericArgsGenericLibFunc for DuplicateGeneric {
-    type Concrete = DuplicateConcrete;
+pub struct DuplicateLibFunc {}
+impl NoGenericArgsGenericLibFunc for DuplicateLibFunc {
+    type Concrete = DuplicateConcreteLibFunc;
     const NAME: &'static str = "int_dup";
 
     fn specialize(
         &self,
         context: SpecializationContext<'_>,
     ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(DuplicateConcrete {
-            int_type: context.get_concrete_type(IntegerBasicGeneric::id(), &[])?,
+        Ok(DuplicateConcreteLibFunc {
+            int_type: context.get_concrete_type(BasicIntegerType::id(), &[])?,
         })
     }
 }
 
-pub struct DuplicateConcrete {
+pub struct DuplicateConcreteLibFunc {
     pub int_type: ConcreteTypeId,
 }
-impl NonBranchConcreteLibFunc for DuplicateConcrete {
+impl NonBranchConcreteLibFunc for DuplicateConcreteLibFunc {
     fn input_types(&self) -> Vec<ConcreteTypeId> {
         vec![self.int_type.clone()]
     }
@@ -250,27 +252,27 @@ impl NonBranchConcreteLibFunc for DuplicateConcrete {
 /// LibFunc for jump non-zero on an int's value, and returning a non-zero wrapped int in case of
 /// success.
 #[derive(Default)]
-pub struct JumpNotZeroGeneric {}
-impl NoGenericArgsGenericLibFunc for JumpNotZeroGeneric {
-    type Concrete = JumpNotZeroConcrete;
+pub struct JumpNotZeroLibFunc {}
+impl NoGenericArgsGenericLibFunc for JumpNotZeroLibFunc {
+    type Concrete = JumpNotZeroConcreteLibFunc;
     const NAME: &'static str = "int_jump_nz";
 
     fn specialize(
         &self,
         context: SpecializationContext<'_>,
     ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(JumpNotZeroConcrete {
-            int_type: context.get_concrete_type(IntegerBasicGeneric::id(), &[])?,
-            non_zero_int_type: context.get_concrete_type(IntegerNonZeroGeneric::id(), &[])?,
+        Ok(JumpNotZeroConcreteLibFunc {
+            int_type: context.get_concrete_type(BasicIntegerType::id(), &[])?,
+            non_zero_int_type: context.get_concrete_type(NonZeroIntegerType::id(), &[])?,
         })
     }
 }
 
-pub struct JumpNotZeroConcrete {
+pub struct JumpNotZeroConcreteLibFunc {
     pub int_type: ConcreteTypeId,
     pub non_zero_int_type: ConcreteTypeId,
 }
-impl ConcreteLibFunc for JumpNotZeroConcrete {
+impl ConcreteLibFunc for JumpNotZeroConcreteLibFunc {
     fn input_types(&self) -> Vec<ConcreteTypeId> {
         vec![self.int_type.clone()]
     }
@@ -284,27 +286,27 @@ impl ConcreteLibFunc for JumpNotZeroConcrete {
 
 /// LibFunc for unwrapping a non-zero int back into a regular int.
 #[derive(Default)]
-pub struct UnwrapNonZeroGeneric {}
-impl NoGenericArgsGenericLibFunc for UnwrapNonZeroGeneric {
-    type Concrete = UnwrapNonZeroConcrete;
+pub struct UnwrapNonZeroLibFunc {}
+impl NoGenericArgsGenericLibFunc for UnwrapNonZeroLibFunc {
+    type Concrete = UnwrapNonZeroConcreteLibFunc;
     const NAME: &'static str = "int_unwrap_nz";
 
     fn specialize(
         &self,
         context: SpecializationContext<'_>,
     ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(UnwrapNonZeroConcrete {
-            int_type: context.get_concrete_type(IntegerBasicGeneric::id(), &[])?,
-            non_zero_int_type: context.get_concrete_type(IntegerNonZeroGeneric::id(), &[])?,
+        Ok(UnwrapNonZeroConcreteLibFunc {
+            int_type: context.get_concrete_type(BasicIntegerType::id(), &[])?,
+            non_zero_int_type: context.get_concrete_type(NonZeroIntegerType::id(), &[])?,
         })
     }
 }
 
-pub struct UnwrapNonZeroConcrete {
+pub struct UnwrapNonZeroConcreteLibFunc {
     pub int_type: ConcreteTypeId,
     pub non_zero_int_type: ConcreteTypeId,
 }
-impl NonBranchConcreteLibFunc for UnwrapNonZeroConcrete {
+impl NonBranchConcreteLibFunc for UnwrapNonZeroConcreteLibFunc {
     fn input_types(&self) -> Vec<ConcreteTypeId> {
         vec![self.non_zero_int_type.clone()]
     }

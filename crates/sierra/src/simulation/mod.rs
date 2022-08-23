@@ -5,8 +5,8 @@ use thiserror::Error;
 
 use self::mem_cell::MemCell;
 use crate::edit_state::{put_results, take_args, EditStateError};
-use crate::extensions::core::function_call::FunctionCallConcrete;
-use crate::extensions::CoreConcrete;
+use crate::extensions::core::function_call::FunctionCallConcreteLibFunc;
+use crate::extensions::CoreConcreteLibFunc;
 use crate::ids::{FunctionId, VarId};
 use crate::program::{Program, Statement, StatementIdx};
 use crate::program_registry::{ProgramRegistry, ProgramRegistryError};
@@ -122,11 +122,12 @@ impl RunContext<'_> {
     /// Simulates the run of libfuncs - even complex ones.
     fn simulate_libfunc(
         &self,
-        libfunc: &CoreConcrete,
+        libfunc: &CoreConcreteLibFunc,
         inputs: Vec<Vec<MemCell>>,
         current_statement_id: StatementIdx,
     ) -> Result<(Vec<Vec<MemCell>>, usize), SimulationError> {
-        if let CoreConcrete::FunctionCall(FunctionCallConcrete { function }) = libfunc {
+        if let CoreConcreteLibFunc::FunctionCall(FunctionCallConcreteLibFunc { function }) = libfunc
+        {
             Ok((self.run_function(&function.id, inputs)?, 0))
         } else {
             core::simple_simulate(libfunc, inputs).map_err(|error| {

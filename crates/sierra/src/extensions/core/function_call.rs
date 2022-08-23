@@ -5,9 +5,9 @@ use crate::program::{Function, GenericArg};
 
 /// LibFunc used to call user functions.
 #[derive(Default)]
-pub struct FunctionCallGeneric {}
-impl NamedLibFunc for FunctionCallGeneric {
-    type Concrete = FunctionCallConcrete;
+pub struct FunctionCallLibFunc {}
+impl NamedLibFunc for FunctionCallLibFunc {
+    type Concrete = FunctionCallConcreteLibFunc;
     const NAME: &'static str = "function_call";
     fn specialize(
         &self,
@@ -27,10 +27,10 @@ impl NamedLibFunc for FunctionCallGeneric {
     }
 }
 
-pub struct FunctionCallConcrete {
+pub struct FunctionCallConcreteLibFunc {
     pub function: Function,
 }
-impl NonBranchConcreteLibFunc for FunctionCallConcrete {
+impl NonBranchConcreteLibFunc for FunctionCallConcreteLibFunc {
     fn input_types(&self) -> Vec<ConcreteTypeId> {
         self.function.params.iter().map(|p| p.ty.clone()).collect()
     }
