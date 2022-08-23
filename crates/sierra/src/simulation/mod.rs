@@ -98,16 +98,16 @@ fn run_helper(
                         SimulationError::EditStateError(error, current_statement_id)
                     })?;
                 let libfunc = registry.get_libfunc(&invocation.libfunc_id)?;
-                let (outputs, chosen_branch) =
-                    if let CoreConcrete::FunctionCall(FunctionCallConcrete { function_id }) =
-                        libfunc
-                    {
-                        Ok((run_helper(program, registry, function_id, inputs)?, 0))
-                    } else {
-                        core::simulate(libfunc, inputs).map_err(|error| {
-                            SimulationError::LibFuncSimulationError(error, current_statement_id)
-                        })
-                    }?;
+                let (outputs, chosen_branch) = if let CoreConcrete::FunctionCall(
+                    FunctionCallConcrete { function },
+                ) = libfunc
+                {
+                    Ok((run_helper(program, registry, &function.id, inputs)?, 0))
+                } else {
+                    core::simulate(libfunc, inputs).map_err(|error| {
+                        SimulationError::LibFuncSimulationError(error, current_statement_id)
+                    })
+                }?;
                 let branch_info = &invocation.branches[chosen_branch];
                 state =
                     put_results(remaining, izip!(branch_info.results.iter(), outputs.into_iter()))
