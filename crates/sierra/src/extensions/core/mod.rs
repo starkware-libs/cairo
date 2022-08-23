@@ -14,9 +14,10 @@ define_type_hierarchy! {
     pub enum CoreType {
         GasBuiltin(GasBuiltinGeneric),
         Integer(IntegerGenericType),
-    }, CoreConcreteType
+    }, CoreTypeConcrete
 }
 
+// TODO(orizi): Improve naming of this hierarchy. e.g. CoreConcrete should have LibFunc in its name.
 define_libfunc_hierarchy! {
     pub enum CoreLibFunc {
         Gas(GasLibFunc),

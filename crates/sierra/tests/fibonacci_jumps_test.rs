@@ -7,7 +7,7 @@ fn fib_program() -> sierra::program::Program {
         .parse(indoc! {"
         type int = int;
         type GasBuiltin = GasBuiltin;
-        type NonZero_int = NonZero<int>;
+        type NonZeroInt = NonZeroInt;
 
         libfunc move_int = move<int>;
         libfunc move_nz_int = move<NonZero_int>;
