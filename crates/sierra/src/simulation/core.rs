@@ -5,7 +5,7 @@ use super::LibFuncSimulationError;
 use crate::extensions::core::gas::GasConcreteLibFunc::{GetGas, RefundGas};
 use crate::extensions::core::gas::{GetGasConcreteLibFunc, RefundGasConcreteLibFunc};
 use crate::extensions::core::integer::IntegerConcrete::{
-    Const, Duplicate, Ignore, JumpNotZero, Operation, UnwrapNonZero,
+    Const, Duplicate, Ignore, JumpNotZero, Operation,
 };
 use crate::extensions::core::integer::{
     BinaryOperationConcreteLibFunc, ConstConcreteLibFunc, OperationConcreteLibFunc,
@@ -15,7 +15,7 @@ use crate::extensions::core::mem::MemConcreteLibFunc::{
     AlignTemps, AllocLocals, Move, Rename, StoreLocal, StoreTemp,
 };
 use crate::extensions::CoreConcreteLibFunc::{
-    self, FunctionCall, Gas, Integer, Mem, UnconditionalJump,
+    self, FunctionCall, Gas, Integer, Mem, UnconditionalJump, UnwrapNonZero,
 };
 
 /// Simulates the run of a single libfunc.
@@ -99,10 +99,7 @@ pub fn simple_simulate(
                 Ok((vec![], 1))
             }
         }
-        Integer(UnwrapNonZero(_))
-        | Mem(Move(_))
-        | Mem(Rename(_))
-        | Mem(StoreLocal(_))
+        UnwrapNonZero(_) | Mem(Move(_)) | Mem(Rename(_)) | Mem(StoreLocal(_))
         | Mem(StoreTemp(_)) => Ok((single_cell_identity::<1>(inputs)?, 0)),
         Mem(AlignTemps(_)) | Mem(AllocLocals(_)) | UnconditionalJump(_) => {
             unpack_inputs::<0>(inputs)?;
