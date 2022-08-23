@@ -20,7 +20,7 @@ fn simulate(
     generic_args: Vec<GenericArg>,
     inputs: Vec<Vec<MemCell>>,
 ) -> Result<(Vec<Vec<MemCell>>, usize), LibFuncSimulationError> {
-    core::simulate(
+    core::simple_simulate(
         &CoreLibFunc::by_id(&id.into()).unwrap().specialize(&generic_args).unwrap(),
         inputs,
     )
