@@ -1,3 +1,4 @@
+use self::felt::FeltGenericType;
 use self::function_call::FunctionCallGeneric;
 use self::gas::{GasBuiltinGeneric, GasLibFunc};
 use self::integer::{IntegerGenericType, IntegerLibFunc};
@@ -6,6 +7,7 @@ use self::unconditional_jump::UnconditionalJumpGeneric;
 use super::GenericLibFunc;
 use crate::{define_libfunc_hierarchy, define_type_hierarchy};
 
+pub mod felt;
 pub mod function_call;
 pub mod gas;
 pub mod integer;
@@ -15,6 +17,7 @@ pub mod unconditional_jump;
 define_type_hierarchy! {
     pub enum CoreType {
         GasBuiltin(GasBuiltinGeneric),
+        Felt(FeltGenericType),
         Integer(IntegerGenericType),
     }, CoreTypeConcrete
 }
