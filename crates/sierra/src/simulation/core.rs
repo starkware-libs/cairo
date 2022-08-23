@@ -54,6 +54,7 @@ pub fn simple_simulate(
         Integer(Operation(OperationConcreteLibFunc::Binary(BinaryOperationConcreteLibFunc {
             operator,
             int_type: _,
+            non_zero_int_type: _,
             deferred_int_type: _,
         }))) => {
             let [MemCell { value: lhs }, MemCell { value: rhs }] = unpack_inputs::<2>(inputs)?;
