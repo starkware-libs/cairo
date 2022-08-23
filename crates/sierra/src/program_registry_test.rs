@@ -12,7 +12,7 @@ fn basic_insertion() {
                 .parse(indoc! {"
         type int = int;
         type GasBuiltin = GasBuiltin;
-        type NonZeroInt = NonZeroInt;
+        type NonZeroInt = NonZero<Int>;
         libfunc move_int = move<int>;
         libfunc move_gb = move<GasBuiltin>;
         Func1@1(a: int, gb: GasBuiltin) -> (GasBuiltin);
