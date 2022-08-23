@@ -46,8 +46,8 @@ impl Display for Instruction {
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct CallInstruction {
-    target: DerefOrImmediate,
-    relative: bool,
+    pub target: DerefOrImmediate,
+    pub relative: bool,
 }
 impl Display for CallInstruction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -58,8 +58,8 @@ impl Display for CallInstruction {
 // Represents the InstructionBody "jmp rel/abs".
 #[derive(Debug, Eq, PartialEq)]
 pub struct JumpInstruction {
-    target: DerefOrImmediate,
-    relative: bool,
+    pub target: DerefOrImmediate,
+    pub relative: bool,
 }
 impl Display for JumpInstruction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -70,8 +70,8 @@ impl Display for JumpInstruction {
 // Represents the InstructionBody "jmp rel <jump_offset> if condition != 0".
 #[derive(Debug, Eq, PartialEq)]
 pub struct JnzInstruction {
-    jump_offset: DerefOrImmediate,
-    condition: DerefOperand,
+    pub jump_offset: DerefOrImmediate,
+    pub condition: DerefOperand,
 }
 impl Display for JnzInstruction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -82,8 +82,8 @@ impl Display for JnzInstruction {
 // Represents the InstructionBody "a = b" for two operands a, b.
 #[derive(Debug, Eq, PartialEq)]
 pub struct AssertEqInstruction {
-    a: DerefOperand,
-    b: ResOperand,
+    pub a: DerefOperand,
+    pub b: ResOperand,
 }
 impl Display for AssertEqInstruction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
