@@ -1,8 +1,8 @@
 use casm::ap_change::ApChange;
 use casm::instructions::{AssertEqInstruction, Instruction, InstructionBody};
 use casm::operand::{DerefOperand, Register, ResOperand};
-use sierra::extensions::core::mem::MemConcrete;
-use sierra::extensions::{CoreConcrete, ExtensionError};
+use sierra::extensions::core::mem::MemConcreteLibFunc;
+use sierra::extensions::{CoreConcreteLibFunc, ExtensionError};
 
 use crate::references::ReferenceValue;
 
@@ -25,12 +25,12 @@ pub struct CompiledInvocation {
 }
 
 pub fn compile_invocation(
-    ext: &CoreConcrete,
+    ext: &CoreConcreteLibFunc,
     refs: &[ReferenceValue],
 ) -> Result<CompiledInvocation, ExtensionError> {
     match ext {
         // TODO(ilya, 10/10/2022): Handle type.
-        CoreConcrete::Mem(MemConcrete::StoreTemp(_)) => Ok(CompiledInvocation {
+        CoreConcreteLibFunc::Mem(MemConcreteLibFunc::StoreTemp(_)) => Ok(CompiledInvocation {
             instruction: vec![Instruction {
                 body: InstructionBody::AssertEq(AssertEqInstruction {
                     a: DerefOperand { register: Register::AP, offset: 0 },

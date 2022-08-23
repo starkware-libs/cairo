@@ -1,5 +1,5 @@
 // Module providing the gas related extensions.
-use super::mem::DeferredGeneric;
+use super::mem::DeferredType;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::SpecializationContext;
 use crate::extensions::{
@@ -11,20 +11,20 @@ use crate::program::GenericArg;
 
 /// Type for gas actions.
 #[derive(Default)]
-pub struct GasBuiltinGeneric {}
-impl NoGenericArgsGenericType for GasBuiltinGeneric {
-    type Concrete = GasBuiltinConcrete;
+pub struct GasBuiltinType {}
+impl NoGenericArgsGenericType for GasBuiltinType {
+    type Concrete = GasBuiltinConcreteType;
     const NAME: &'static str = "GasBuiltin";
 }
 #[derive(Default)]
-pub struct GasBuiltinConcrete {}
-impl ConcreteType for GasBuiltinConcrete {}
+pub struct GasBuiltinConcreteType {}
+impl ConcreteType for GasBuiltinConcreteType {}
 
 define_libfunc_hierarchy! {
     pub enum GasLibFunc {
-        GetGas(GetGasGeneric),
-        RefundGas(RefundGasGeneric),
-    }, GasConcrete
+        GetGas(GetGasLibFunc),
+        RefundGas(RefundGasLibFunc),
+    }, GasConcreteLibFunc
 }
 
 /// Helper for extracting a single positive value from template arguments.
@@ -37,21 +37,19 @@ fn as_single_positive_value(args: &[GenericArg]) -> Result<i64, SpecializationEr
 
 /// LibFunc for getting gas branch.
 #[derive(Default)]
-pub struct GetGasGeneric {}
-impl NamedLibFunc for GetGasGeneric {
-    type Concrete = GetGasConcrete;
+pub struct GetGasLibFunc {}
+impl NamedLibFunc for GetGasLibFunc {
+    type Concrete = GetGasConcreteLibFunc;
     const NAME: &'static str = "get_gas";
     fn specialize(
         &self,
         context: SpecializationContext<'_>,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        let gas_builtin_type = context.get_concrete_type(GasBuiltinGeneric::id(), &[])?;
-        let deferred_gas_builtin_type = context.get_concrete_type(
-            DeferredGeneric::id(),
-            &[GenericArg::Type(gas_builtin_type.clone())],
-        )?;
-        Ok(GetGasConcrete {
+        let gas_builtin_type = context.get_concrete_type(GasBuiltinType::id(), &[])?;
+        let deferred_gas_builtin_type = context
+            .get_concrete_type(DeferredType::id(), &[GenericArg::Type(gas_builtin_type.clone())])?;
+        Ok(GetGasConcreteLibFunc {
             count: as_single_positive_value(args)?,
             gas_builtin_type,
             deferred_gas_builtin_type,
@@ -59,12 +57,12 @@ impl NamedLibFunc for GetGasGeneric {
     }
 }
 
-pub struct GetGasConcrete {
+pub struct GetGasConcreteLibFunc {
     pub count: i64,
     pub gas_builtin_type: ConcreteTypeId,
     pub deferred_gas_builtin_type: ConcreteTypeId,
 }
-impl ConcreteLibFunc for GetGasConcrete {
+impl ConcreteLibFunc for GetGasConcreteLibFunc {
     fn input_types(&self) -> Vec<ConcreteTypeId> {
         vec![self.gas_builtin_type.clone()]
     }
@@ -78,21 +76,19 @@ impl ConcreteLibFunc for GetGasConcrete {
 
 /// LibFunc for returning unused gas.
 #[derive(Default)]
-pub struct RefundGasGeneric {}
-impl NamedLibFunc for RefundGasGeneric {
-    type Concrete = RefundGasConcrete;
+pub struct RefundGasLibFunc {}
+impl NamedLibFunc for RefundGasLibFunc {
+    type Concrete = RefundGasConcreteLibFunc;
     const NAME: &'static str = "refund_gas";
     fn specialize(
         &self,
         context: SpecializationContext<'_>,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        let gas_builtin_type = context.get_concrete_type(GasBuiltinGeneric::id(), &[])?;
-        let deferred_gas_builtin_type = context.get_concrete_type(
-            DeferredGeneric::id(),
-            &[GenericArg::Type(gas_builtin_type.clone())],
-        )?;
-        Ok(RefundGasConcrete {
+        let gas_builtin_type = context.get_concrete_type(GasBuiltinType::id(), &[])?;
+        let deferred_gas_builtin_type = context
+            .get_concrete_type(DeferredType::id(), &[GenericArg::Type(gas_builtin_type.clone())])?;
+        Ok(RefundGasConcreteLibFunc {
             count: as_single_positive_value(args)?,
             gas_builtin_type,
             deferred_gas_builtin_type,
@@ -100,12 +96,12 @@ impl NamedLibFunc for RefundGasGeneric {
     }
 }
 
-pub struct RefundGasConcrete {
+pub struct RefundGasConcreteLibFunc {
     pub count: i64,
     pub gas_builtin_type: ConcreteTypeId,
     pub deferred_gas_builtin_type: ConcreteTypeId,
 }
-impl NonBranchConcreteLibFunc for RefundGasConcrete {
+impl NonBranchConcreteLibFunc for RefundGasConcreteLibFunc {
     fn input_types(&self) -> Vec<ConcreteTypeId> {
         vec![self.gas_builtin_type.clone()]
     }

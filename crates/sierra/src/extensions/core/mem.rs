@@ -9,28 +9,28 @@ use crate::program::GenericArg;
 
 /// Type for deferred actions.
 #[derive(Default)]
-pub struct DeferredGeneric {}
-impl NamedType for DeferredGeneric {
-    type Concrete = DeferredConcrete;
+pub struct DeferredType {}
+impl NamedType for DeferredType {
+    type Concrete = DeferredConcreteType;
     const NAME: &'static str = "Deferred";
     fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError> {
-        Ok(DeferredConcrete { ty: as_single_type(args)? })
+        Ok(DeferredConcreteType { ty: as_single_type(args)? })
     }
 }
-pub struct DeferredConcrete {
+pub struct DeferredConcreteType {
     pub ty: ConcreteTypeId,
 }
-impl ConcreteType for DeferredConcrete {}
+impl ConcreteType for DeferredConcreteType {}
 
 define_libfunc_hierarchy! {
-pub enum MemLibFunc {
-    StoreTemp(StoreTempGeneric),
-    AlignTemps(AlignTempsGeneric),
-    StoreLocal(StoreLocalGeneric),
-    AllocLocals(AllocLocalsGeneric),
-    Rename(RenameGeneric),
-    Move(MoveGeneric),
-}, MemConcrete
+    pub enum MemLibFunc {
+        StoreTemp(StoreTempLibFunc),
+        AlignTemps(AlignTempsLibFunc),
+        StoreLocal(StoreLocalLibFunc),
+        AllocLocals(AllocLocalsLibFunc),
+        Rename(RenameLibFunc),
+        Move(MoveLibFunc),
+    }, MemConcreteLibFunc
 }
 
 /// Helper for extracting the type from the template arguments.
@@ -43,23 +43,23 @@ fn as_single_type(args: &[GenericArg]) -> Result<ConcreteTypeId, SpecializationE
 
 /// LibFunc for storing a deferred value into temporary memory.
 #[derive(Default)]
-pub struct StoreTempGeneric {}
-impl NamedLibFunc for StoreTempGeneric {
-    type Concrete = StoreTempConcrete;
+pub struct StoreTempLibFunc {}
+impl NamedLibFunc for StoreTempLibFunc {
+    type Concrete = StoreTempConcreteLibFunc;
     const NAME: &'static str = "store_temp";
     fn specialize(
         &self,
         _context: SpecializationContext<'_>,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(StoreTempConcrete { ty: as_single_type(args)? })
+        Ok(StoreTempConcreteLibFunc { ty: as_single_type(args)? })
     }
 }
 
-pub struct StoreTempConcrete {
+pub struct StoreTempConcreteLibFunc {
     ty: ConcreteTypeId,
 }
-impl NonBranchConcreteLibFunc for StoreTempConcrete {
+impl NonBranchConcreteLibFunc for StoreTempConcreteLibFunc {
     fn input_types(&self) -> Vec<ConcreteTypeId> {
         vec![self.ty.clone()]
     }
@@ -70,23 +70,23 @@ impl NonBranchConcreteLibFunc for StoreTempConcrete {
 
 /// LibFunc for aligning the temporary buffer for flow control merge.
 #[derive(Default)]
-pub struct AlignTempsGeneric {}
-impl NamedLibFunc for AlignTempsGeneric {
-    type Concrete = AlignTempsConcrete;
+pub struct AlignTempsLibFunc {}
+impl NamedLibFunc for AlignTempsLibFunc {
+    type Concrete = AlignTempsConcreteLibFunc;
     const NAME: &'static str = "align_temps";
     fn specialize(
         &self,
         _context: SpecializationContext<'_>,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(AlignTempsConcrete { _ty: as_single_type(args)? })
+        Ok(AlignTempsConcreteLibFunc { _ty: as_single_type(args)? })
     }
 }
 
-pub struct AlignTempsConcrete {
+pub struct AlignTempsConcreteLibFunc {
     _ty: ConcreteTypeId,
 }
-impl NonBranchConcreteLibFunc for AlignTempsConcrete {
+impl NonBranchConcreteLibFunc for AlignTempsConcreteLibFunc {
     fn input_types(&self) -> Vec<ConcreteTypeId> {
         vec![]
     }
@@ -97,23 +97,23 @@ impl NonBranchConcreteLibFunc for AlignTempsConcrete {
 
 /// LibFunc for storing a deferred value into local memory.
 #[derive(Default)]
-pub struct StoreLocalGeneric {}
-impl NamedLibFunc for StoreLocalGeneric {
-    type Concrete = StoreLocalConcrete;
+pub struct StoreLocalLibFunc {}
+impl NamedLibFunc for StoreLocalLibFunc {
+    type Concrete = StoreLocalConcreteLibFunc;
     const NAME: &'static str = "store_local";
     fn specialize(
         &self,
         _context: SpecializationContext<'_>,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(StoreLocalConcrete { ty: as_single_type(args)? })
+        Ok(StoreLocalConcreteLibFunc { ty: as_single_type(args)? })
     }
 }
 
-pub struct StoreLocalConcrete {
+pub struct StoreLocalConcreteLibFunc {
     ty: ConcreteTypeId,
 }
-impl NonBranchConcreteLibFunc for StoreLocalConcrete {
+impl NonBranchConcreteLibFunc for StoreLocalConcreteLibFunc {
     fn input_types(&self) -> Vec<ConcreteTypeId> {
         vec![self.ty.clone()]
     }
@@ -124,20 +124,20 @@ impl NonBranchConcreteLibFunc for StoreLocalConcrete {
 
 /// LibFunc for allocating locals for later stores.
 #[derive(Default)]
-pub struct AllocLocalsGeneric {}
-impl NoGenericArgsGenericLibFunc for AllocLocalsGeneric {
-    type Concrete = AllocLocalsConcrete;
+pub struct AllocLocalsLibFunc {}
+impl NoGenericArgsGenericLibFunc for AllocLocalsLibFunc {
+    type Concrete = AllocLocalsConcreteLibFunc;
     const NAME: &'static str = "alloc_locals";
     fn specialize(
         &self,
         _context: SpecializationContext<'_>,
     ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(AllocLocalsConcrete {})
+        Ok(AllocLocalsConcreteLibFunc {})
     }
 }
 
-pub struct AllocLocalsConcrete {}
-impl NonBranchConcreteLibFunc for AllocLocalsConcrete {
+pub struct AllocLocalsConcreteLibFunc {}
+impl NonBranchConcreteLibFunc for AllocLocalsConcreteLibFunc {
     fn input_types(&self) -> Vec<ConcreteTypeId> {
         vec![]
     }
@@ -148,23 +148,23 @@ impl NonBranchConcreteLibFunc for AllocLocalsConcrete {
 
 /// LibFunc for renaming an identifier - used to align identities for flow control merge.
 #[derive(Default)]
-pub struct RenameGeneric {}
-impl NamedLibFunc for RenameGeneric {
-    type Concrete = RenameConcrete;
+pub struct RenameLibFunc {}
+impl NamedLibFunc for RenameLibFunc {
+    type Concrete = RenameConcreteLibFunc;
     const NAME: &'static str = "rename";
     fn specialize(
         &self,
         _context: SpecializationContext<'_>,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(RenameConcrete { ty: as_single_type(args)? })
+        Ok(RenameConcreteLibFunc { ty: as_single_type(args)? })
     }
 }
 
-pub struct RenameConcrete {
+pub struct RenameConcreteLibFunc {
     ty: ConcreteTypeId,
 }
-impl NonBranchConcreteLibFunc for RenameConcrete {
+impl NonBranchConcreteLibFunc for RenameConcreteLibFunc {
     fn input_types(&self) -> Vec<ConcreteTypeId> {
         vec![self.ty.clone()]
     }
@@ -175,23 +175,23 @@ impl NonBranchConcreteLibFunc for RenameConcrete {
 
 /// LibFunc for making a type deferred for later store.
 #[derive(Default)]
-pub struct MoveGeneric {}
-impl NamedLibFunc for MoveGeneric {
-    type Concrete = MoveConcrete;
+pub struct MoveLibFunc {}
+impl NamedLibFunc for MoveLibFunc {
+    type Concrete = MoveConcreteLibFunc;
     const NAME: &'static str = "move";
     fn specialize(
         &self,
         _context: SpecializationContext<'_>,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(MoveConcrete { ty: as_single_type(args)? })
+        Ok(MoveConcreteLibFunc { ty: as_single_type(args)? })
     }
 }
 
-pub struct MoveConcrete {
+pub struct MoveConcreteLibFunc {
     ty: ConcreteTypeId,
 }
-impl NonBranchConcreteLibFunc for MoveConcrete {
+impl NonBranchConcreteLibFunc for MoveConcreteLibFunc {
     fn input_types(&self) -> Vec<ConcreteTypeId> {
         vec![self.ty.clone()]
     }
