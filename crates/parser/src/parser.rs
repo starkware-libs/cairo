@@ -84,14 +84,11 @@ impl<'a> Parser<'a> {
     /// If can't parse as a top level item, keeps skipping tokens until it can.
     /// Returns None only when it reaches EOF.
     pub fn try_parse_top_level_item(&mut self) -> Option<GreenId> {
-        loop {
-            match self.peek().kind {
-                TokenKind::EndOfFile => return None,
-                TokenKind::Module => return Some(self.expect_module()),
-                TokenKind::Struct => return Some(self.expect_struct()),
-                TokenKind::Function => return Some(self.expect_function()),
-                _ => self.skip_token(),
-            }
+        match self.peek().kind {
+            TokenKind::Module => Some(self.expect_module()),
+            TokenKind::Struct => Some(self.expect_struct()),
+            TokenKind::Function => Some(self.expect_function()),
+            _ => None,
         }
     }
 
