@@ -45,16 +45,11 @@ pub enum SimulationError {
 /// Runs a function from the program with the given inputs.
 pub fn run(
     program: &Program,
-    entry_point: &FunctionId,
+    function_id: &FunctionId,
     inputs: Vec<Vec<MemCell>>,
 ) -> Result<Vec<Vec<MemCell>>, SimulationError> {
     let registry = ProgramRegistry::new(program)?;
-    // TODO(orizi): use registry to get the function info when it is in the registry.
-    let func = program
-        .funcs
-        .iter()
-        .find(|func| &func.id == entry_point)
-        .ok_or(SimulationError::MissingFunction)?;
+    let func = registry.get_function(function_id)?;
     let mut current_statement_id = func.entry;
     if func.params.len() != inputs.len() {
         return Err(SimulationError::FunctionArgumentCountMismatch {
