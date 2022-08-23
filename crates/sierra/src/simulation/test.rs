@@ -28,7 +28,16 @@ fn simulate(
             .unwrap()
             .specialize(
                 SpecializationContext {
-                    concrete_type_ids: &HashMap::new(),
+                    concrete_type_ids: &HashMap::from([
+                        (("int".into(), &[][..]), "int".into()),
+                        (("NonZeroInt".into(), &[][..]), "NonZeroInt".into()),
+                        (("Deferred".into(), &[type_arg("int")][..]), "DeferredInt".into()),
+                        (("GasBuiltin".into(), &[][..]), "GasBuiltin".into()),
+                        (
+                            ("Deferred".into(), &[type_arg("GasBuiltin")][..]),
+                            "DeferredGasBuiltin".into(),
+                        ),
+                    ]),
                     functions: &HashMap::new(),
                 },
                 &generic_args,

@@ -13,6 +13,19 @@ pub struct SpecializationContext<'a> {
     pub functions: &'a FunctionMap,
     pub concrete_type_ids: &'a ConcreteTypeIdMap<'a>,
 }
+impl SpecializationContext<'_> {
+    /// Returns concrete type id or an error if missing.
+    pub fn get_concrete_type(
+        &self,
+        id: GenericTypeId,
+        args: &[GenericArg],
+    ) -> Result<ConcreteTypeId, SpecializationError> {
+        self.concrete_type_ids
+            .get(&(id.clone(), args))
+            .ok_or_else(|| SpecializationError::TypeWasNotDeclared(id, args.to_vec()))
+            .cloned()
+    }
+}
 
 /// Trait for implementing a libfunc specialization generator.
 pub trait GenericLibFunc: Sized {
@@ -90,7 +103,10 @@ impl<TNamedLibFunc: NamedLibFunc> GenericLibFunc for TNamedLibFunc {
 pub trait NoGenericArgsGenericLibFunc: Default {
     type Concrete: ConcreteLibFunc;
     const NAME: &'static str;
-    fn specialize(&self, context: SpecializationContext<'_>) -> Self::Concrete;
+    fn specialize(
+        &self,
+        context: SpecializationContext<'_>,
+    ) -> Result<Self::Concrete, SpecializationError>;
 }
 impl<T: NoGenericArgsGenericLibFunc> NamedLibFunc for T {
     type Concrete = <Self as NoGenericArgsGenericLibFunc>::Concrete;
@@ -102,7 +118,7 @@ impl<T: NoGenericArgsGenericLibFunc> NamedLibFunc for T {
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
         if args.is_empty() {
-            Ok(self.specialize(context))
+            self.specialize(context)
         } else {
             Err(SpecializationError::WrongNumberOfGenericArgs)
         }

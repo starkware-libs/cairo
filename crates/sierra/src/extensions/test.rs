@@ -93,7 +93,16 @@ fn find_libfunc_specialization(
         .ok_or(UnsupportedId)?
         .specialize(
             SpecializationContext {
-                concrete_type_ids: &HashMap::new(),
+                concrete_type_ids: &HashMap::from([
+                    (("int".into(), &[][..]), "int".into()),
+                    (("NonZeroInt".into(), &[][..]), "NonZeroInt".into()),
+                    (("Deferred".into(), &[type_arg("int")][..]), "DeferredInt".into()),
+                    (("GasBuiltin".into(), &[][..]), "GasBuiltin".into()),
+                    (
+                        ("Deferred".into(), &[type_arg("GasBuiltin")][..]),
+                        "DeferredGasBuiltin".into(),
+                    ),
+                ]),
                 functions: &HashMap::from([(
                     "RegisteredFunction".into(),
                     Function {
