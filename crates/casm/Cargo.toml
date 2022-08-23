@@ -5,3 +5,6 @@ edition = "2021"
 
 [dependencies]
 thiserror = "1.0.32"
+
+[dev-dependencies]
+indoc = "1.0.7"
