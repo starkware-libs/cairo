@@ -3,20 +3,20 @@ use crate::extensions::{ConcreteLibFunc, NoGenericArgsGenericLibFunc, Specializa
 use crate::ids::ConcreteTypeId;
 
 #[derive(Default)]
-pub struct UnconditionalJumpGeneric {}
-impl NoGenericArgsGenericLibFunc for UnconditionalJumpGeneric {
-    type Concrete = UnconditionalJumpConcrete;
+pub struct UnconditionalJumpLibFunc {}
+impl NoGenericArgsGenericLibFunc for UnconditionalJumpLibFunc {
+    type Concrete = UnconditionalJumpConcreteLibFunc;
     const NAME: &'static str = "jump";
     fn specialize(
         &self,
         _context: SpecializationContext<'_>,
     ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(UnconditionalJumpConcrete {})
+        Ok(UnconditionalJumpConcreteLibFunc {})
     }
 }
 
-pub struct UnconditionalJumpConcrete {}
-impl ConcreteLibFunc for UnconditionalJumpConcrete {
+pub struct UnconditionalJumpConcreteLibFunc {}
+impl ConcreteLibFunc for UnconditionalJumpConcreteLibFunc {
     fn input_types(&self) -> Vec<ConcreteTypeId> {
         vec![]
     }

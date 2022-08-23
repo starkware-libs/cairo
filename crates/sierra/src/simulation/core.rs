@@ -2,27 +2,30 @@ use array_init::array_init;
 
 use super::mem_cell::MemCell;
 use super::LibFuncSimulationError;
-use crate::extensions::core::gas::GasConcrete::{GetGas, RefundGas};
-use crate::extensions::core::gas::{GetGasConcrete, RefundGasConcrete};
+use crate::extensions::core::gas::GasConcreteLibFunc::{GetGas, RefundGas};
+use crate::extensions::core::gas::{GetGasConcreteLibFunc, RefundGasConcreteLibFunc};
 use crate::extensions::core::integer::IntegerConcrete::{
     Const, Duplicate, Ignore, JumpNotZero, Operation, UnwrapNonZero,
 };
 use crate::extensions::core::integer::{
-    BinaryOperationConcrete, ConstConcrete, OperationConcrete, OperationWithConstConcrete, Operator,
+    BinaryOperationConcreteLibFunc, ConstConcreteLibFunc, OperationConcreteLibFunc,
+    OperationWithConstConcreteLibFunc, Operator,
 };
-use crate::extensions::core::mem::MemConcrete::{
+use crate::extensions::core::mem::MemConcreteLibFunc::{
     AlignTemps, AllocLocals, Move, Rename, StoreLocal, StoreTemp,
 };
-use crate::extensions::CoreConcrete::{self, FunctionCall, Gas, Integer, Mem, UnconditionalJump};
+use crate::extensions::CoreConcreteLibFunc::{
+    self, FunctionCall, Gas, Integer, Mem, UnconditionalJump,
+};
 
 /// Simulates the run of a single libfunc.
 pub fn simple_simulate(
-    libfunc: &CoreConcrete,
+    libfunc: &CoreConcreteLibFunc,
     inputs: Vec<Vec<MemCell>>,
 ) -> Result<(Vec<Vec<MemCell>>, usize), LibFuncSimulationError> {
     match libfunc {
         FunctionCall(_) => Err(LibFuncSimulationError::NonSimpleLibFunc),
-        Gas(GetGas(GetGasConcrete { count, .. })) => {
+        Gas(GetGas(GetGasConcreteLibFunc { count, .. })) => {
             let [MemCell { value: gas_counter }] = unpack_inputs::<1>(inputs)?;
             if gas_counter >= *count {
                 // Have enough gas - return reduced counter and jump to success branch.
@@ -32,16 +35,17 @@ pub fn simple_simulate(
                 Ok((vec![vec![gas_counter.into()]], 1))
             }
         }
-        Gas(RefundGas(RefundGasConcrete { count, .. })) => {
+        Gas(RefundGas(RefundGasConcreteLibFunc { count, .. })) => {
             let [MemCell { value: gas_counter }] = unpack_inputs::<1>(inputs)?;
             Ok((vec![vec![(gas_counter + count).into()]], 0))
         }
-        Integer(Const(ConstConcrete { c, deferred_int_type: _ })) => {
+        Integer(Const(ConstConcreteLibFunc { c, deferred_int_type: _ })) => {
             unpack_inputs::<0>(inputs)?;
             Ok((vec![vec![(*c).into()]], 0))
         }
-        Integer(Operation(OperationConcrete::Binary(BinaryOperationConcrete {
-            operator, ..
+        Integer(Operation(OperationConcreteLibFunc::Binary(BinaryOperationConcreteLibFunc {
+            operator,
+            ..
         }))) => {
             let [MemCell { value: lhs }, MemCell { value: rhs }] = unpack_inputs::<2>(inputs)?;
             Ok((
@@ -58,11 +62,9 @@ pub fn simple_simulate(
                 0,
             ))
         }
-        Integer(Operation(OperationConcrete::Const(OperationWithConstConcrete {
-            operator,
-            c,
-            ..
-        }))) => {
+        Integer(Operation(OperationConcreteLibFunc::Const(
+            OperationWithConstConcreteLibFunc { operator, c, .. },
+        ))) => {
             let [MemCell { value }] = unpack_inputs::<1>(inputs)?;
             Ok((
                 vec![vec![
