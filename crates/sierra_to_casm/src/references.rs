@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::iter;
 
 use casm::operand::{DerefOperand, Register, ResOperand};
+use sierra::edit_state::{take_args, EditStateError};
 use sierra::ids::VarId;
 use sierra::program::{Function, Param, StatementIdx};
 use thiserror::Error;
@@ -22,6 +23,10 @@ pub enum ReferencesError {
     InconsistentReferences,
     #[error("InvalidStatementIdx")]
     InvalidStatementIdx,
+    #[error("MissingReferencesForStatement")]
+    MissingReferencesForStatement,
+    #[error(transparent)]
+    EditStateError(#[from] EditStateError),
 }
 
 pub struct ProgramReferences {
@@ -53,6 +58,17 @@ impl ProgramReferences {
             }
         };
         Ok(())
+    }
+
+    pub fn take_references<'a>(
+        &self,
+        statement_idx: StatementIdx,
+        ref_ids: impl Iterator<Item = &'a VarId>,
+    ) -> Result<(StatementRefs, Vec<ReferenceValue>), ReferencesError> {
+        let statement_refs = self.per_statement_refs[statement_idx.0]
+            .as_ref()
+            .ok_or(ReferencesError::MissingReferencesForStatement)?;
+        Ok(take_args(statement_refs.clone(), ref_ids)?)
     }
 }
 

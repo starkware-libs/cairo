@@ -1,4 +1,5 @@
 use indoc::indoc;
+use sierra::edit_state::EditStateError;
 use sierra::extensions::ExtensionError::NotImplemented;
 use sierra::ids::ConcreteLibFuncId;
 use sierra::program_registry::ProgramRegistryError;
@@ -31,7 +32,7 @@ fn good_flow() {
             return([2]);
 
             test_program@0() -> ();
-        "} => Err(CompilationError::MissingReference(2.into()));
+        "} => Err(CompilationError::ReferencesError(ReferencesError::EditStateError(EditStateError::MissingReference(2.into()))));
             "missing reference")]
 #[test_case(indoc! {"
             store_temp_felt([1]) -> ([1]);
@@ -66,7 +67,8 @@ libfunc store_temp_felt = store_temp<felt>;
             "Inconsistent references")]
 #[test_case(indoc! {"
             return();
-        "} => Err(CompilationError::MissingReferencesForStatement);
+        "} => Err(CompilationError::ReferencesError(
+            ReferencesError::MissingReferencesForStatement));
             "Missing references for statement")]
 fn compiler_errors(sierra_code: &str) -> Result<(), CompilationError> {
     let prog = ProgramParser::new().parse(sierra_code).unwrap();
