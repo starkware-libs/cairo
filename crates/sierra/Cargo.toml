@@ -5,16 +5,16 @@ edition = "2021"
 build = "src/build.rs" # LALRPOP preprocessing
 
 [build-dependencies]
-lalrpop = "*"
+lalrpop = "0.19.8"
 regex = "1"
 
 [dev-dependencies]
 assert_matches = "1.5"
-indoc = "*"
-test-case = "*"
+indoc = "1.0.7"
+test-case = "2.2.1"
 
 [dependencies]
-array-init = "*"
-itertools = "*"
-lalrpop-util = { version = "*", features = ["lexer"] }
-thiserror = "*"
+array-init = "2.0.1"
+itertools = "0.10.3"
+lalrpop-util = { version = "0.19.8", features = ["lexer"] }
+thiserror = "1.0.32"
