@@ -1,7 +1,7 @@
 use crate::extensions::lib_func::SpecializationContext;
-use crate::extensions::{ConcreteLibFunc, NamedLibFunc, SpecializationError};
-use crate::ids::FunctionId;
-use crate::program::GenericArg;
+use crate::extensions::{NamedLibFunc, NonBranchConcreteLibFunc, SpecializationError};
+use crate::ids::ConcreteTypeId;
+use crate::program::{Function, GenericArg};
 
 /// LibFunc used to call user functions.
 #[derive(Default)]
@@ -11,12 +11,16 @@ impl NamedLibFunc for FunctionCallGeneric {
     const NAME: &'static str = "function_call";
     fn specialize(
         &self,
-        _context: SpecializationContext<'_>,
+        context: SpecializationContext<'_>,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
         match args {
             [GenericArg::Func(function_id)] => {
-                Ok(Self::Concrete { function_id: function_id.clone() })
+                let function = context
+                    .functions
+                    .get(function_id)
+                    .ok_or_else(|| SpecializationError::MissingFunction(function_id.clone()))?;
+                Ok(Self::Concrete { function: function.clone() })
             }
             _ => Err(SpecializationError::UnsupportedGenericArg),
         }
@@ -24,16 +28,13 @@ impl NamedLibFunc for FunctionCallGeneric {
 }
 
 pub struct FunctionCallConcrete {
-    pub function_id: FunctionId,
+    pub function: Function,
 }
-impl ConcreteLibFunc for FunctionCallConcrete {
-    fn input_types(&self) -> Vec<crate::ids::ConcreteTypeId> {
-        todo!("implemented when function declaration is looked up")
+impl NonBranchConcreteLibFunc for FunctionCallConcrete {
+    fn input_types(&self) -> Vec<ConcreteTypeId> {
+        self.function.params.iter().map(|p| p.ty.clone()).collect()
     }
-    fn output_types(&self) -> Vec<Vec<crate::ids::ConcreteTypeId>> {
-        todo!("implemented when function declaration is looked up")
-    }
-    fn fallthrough(&self) -> Option<usize> {
-        Some(0)
+    fn output_types(&self) -> Vec<ConcreteTypeId> {
+        self.function.ret_types.clone()
     }
 }
