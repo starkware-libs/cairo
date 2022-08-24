@@ -26,7 +26,7 @@ fn fib_program() -> sierra::program::Program {
         libfunc refund_gas_1 = refund_gas<1>;
         libfunc refund_gas_3 = refund_gas<3>;
         libfunc alloc_locals = alloc_locals;
-        libfunc call_fib = Call<&Fibonacci>;
+        libfunc call_fib = function_call<&Fibonacci>;
 
         // Statement #  0 - tests if n == 0 and initiates 1 for the early return values.
         alloc_locals() -> ();
@@ -93,57 +93,54 @@ fn parse_test() {
 }
 
 #[test]
-#[ignore] // TODO(orizi) - enable again when function call extension is added.
 fn create_registry_test() {
     ProgramRegistry::new(&fib_program()).unwrap();
 }
 
-// TODO(orizi) - enable again and fix resulting gas counters when function call extension is added.
 #[test]
-#[ignore]
 fn simulate_test() {
     let program = fib_program();
     let id = "Fibonacci".into();
     // 1, 1, 2, 3, 5, 8, 13, 21, 34
     assert_eq!(
         simulation::run(&program, &id, vec![vec![/* gb= */ 1000.into()], vec![/* n= */ 0.into()]]),
-        Ok(vec![vec![/* gb= */ 1007.into()], vec![/* fib= */ 1.into()]])
+        Ok(vec![vec![/* gb= */ 1003.into()], vec![/* fib= */ 1.into()]])
     );
     assert_eq!(
         simulation::run(&program, &id, vec![vec![/* gb= */ 1000.into()], vec![/* n= */ 1.into()]]),
-        Ok(vec![vec![/* gb= */ 1005.into()], vec![/* fib= */ 1.into()]])
+        Ok(vec![vec![/* gb= */ 1001.into()], vec![/* fib= */ 1.into()]])
     );
     assert_eq!(
         simulation::run(&program, &id, vec![vec![/* gb= */ 1000.into()], vec![/* n= */ 2.into()]]),
-        Ok(vec![vec![/* gb= */ 996.into()], vec![/* fib= */ 2.into()]])
+        Ok(vec![vec![/* gb= */ 978.into()], vec![/* fib= */ 2.into()]])
     );
     assert_eq!(
         simulation::run(&program, &id, vec![vec![/* gb= */ 1000.into()], vec![/* n= */ 3.into()]]),
-        Ok(vec![vec![/* gb= */ 991.into()], vec![/* fib= */ 3.into()]])
+        Ok(vec![vec![/* gb= */ 953.into()], vec![/* fib= */ 3.into()]])
     );
     assert_eq!(
         simulation::run(&program, &id, vec![vec![/* gb= */ 1000.into()], vec![/* n= */ 4.into()]]),
-        Ok(vec![vec![/* gb= */ 986.into()], vec![/* fib= */ 5.into()]])
+        Ok(vec![vec![/* gb= */ 905.into()], vec![/* fib= */ 5.into()]])
     );
     assert_eq!(
         simulation::run(&program, &id, vec![vec![/* gb= */ 1000.into()], vec![/* n= */ 5.into()]]),
-        Ok(vec![vec![/* gb= */ 981.into()], vec![/* fib= */ 8.into()]])
+        Ok(vec![vec![/* gb= */ 832.into()], vec![/* fib= */ 8.into()]])
     );
     assert_eq!(
         simulation::run(&program, &id, vec![vec![/* gb= */ 1000.into()], vec![/* n= */ 6.into()]]),
-        Ok(vec![vec![/* gb= */ 976.into()], vec![/* fib= */ 13.into()]])
+        Ok(vec![vec![/* gb= */ 711.into()], vec![/* fib= */ 13.into()]])
     );
     assert_eq!(
         simulation::run(&program, &id, vec![vec![/* gb= */ 1000.into()], vec![/* n= */ 7.into()]]),
-        Ok(vec![vec![/* gb= */ 971.into()], vec![/* fib= */ 21.into()]])
+        Ok(vec![vec![/* gb= */ 517.into()], vec![/* fib= */ 21.into()]])
     );
     assert_eq!(
         simulation::run(&program, &id, vec![vec![/* gb= */ 1000.into()], vec![/* n= */ 8.into()]]),
-        Ok(vec![vec![/* gb= */ 966.into()], vec![/* fib= */ 34.into()]])
+        Ok(vec![vec![/* gb= */ 202.into()], vec![/* fib= */ 34.into()]])
     );
     // Out of gas.
     assert_eq!(
         simulation::run(&program, &id, vec![vec![/* gb= */ 100.into()], vec![/* n= */ 80.into()]]),
-        Ok(vec![vec![/* gb= */ 0.into()], vec![(-1).into()]])
+        Ok(vec![vec![/* gb= */ 22.into()], vec![(-40000).into()]])
     );
 }

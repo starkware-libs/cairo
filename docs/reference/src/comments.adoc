@@ -1,0 +1,13 @@
+# Comments
+
+```bnf
+LINE_COMMENT : "//"  ( ~EOL* )
+```
+
+Comments follow general C++/Rust style of line (`//`) comments.
+
+## Example
+
+```cairo
+// Comment.
+```
