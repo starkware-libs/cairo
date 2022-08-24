@@ -42,19 +42,22 @@ impl NamedLibFunc for StoreTempLibFunc {
     const ID: GenericLibFuncId = GenericLibFuncId::new_inline("store_temp");
     fn specialize(
         &self,
-        _context: SpecializationContext<'_>,
+        context: SpecializationContext<'_>,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(StoreTempConcreteLibFunc { ty: as_single_type(args)? })
+        let ty = as_single_type(args)?;
+        let deferred_ty = context.get_wrapped_concrete_type(DeferredType::id(), ty.clone())?;
+        Ok(StoreTempConcreteLibFunc { ty, deferred_ty })
     }
 }
 
 pub struct StoreTempConcreteLibFunc {
     ty: ConcreteTypeId,
+    deferred_ty: ConcreteTypeId,
 }
 impl NonBranchConcreteLibFunc for StoreTempConcreteLibFunc {
     fn input_types(&self) -> Vec<ConcreteTypeId> {
-        vec![self.ty.clone()]
+        vec![self.deferred_ty.clone()]
     }
     fn output_types(&self) -> Vec<ConcreteTypeId> {
         vec![self.ty.clone()]
@@ -96,19 +99,23 @@ impl NamedLibFunc for StoreLocalLibFunc {
     const ID: GenericLibFuncId = GenericLibFuncId::new_inline("store_local");
     fn specialize(
         &self,
-        _context: SpecializationContext<'_>,
+        context: SpecializationContext<'_>,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(StoreLocalConcreteLibFunc { ty: as_single_type(args)? })
+        let ty = as_single_type(args)?;
+        let deferred_ty =
+            context.get_concrete_type(DeferredType::id(), &[GenericArg::Type(ty.clone())])?;
+        Ok(StoreLocalConcreteLibFunc { ty, deferred_ty })
     }
 }
 
 pub struct StoreLocalConcreteLibFunc {
     ty: ConcreteTypeId,
+    deferred_ty: ConcreteTypeId,
 }
 impl NonBranchConcreteLibFunc for StoreLocalConcreteLibFunc {
     fn input_types(&self) -> Vec<ConcreteTypeId> {
-        vec![self.ty.clone()]
+        vec![self.deferred_ty.clone()]
     }
     fn output_types(&self) -> Vec<ConcreteTypeId> {
         vec![self.ty.clone()]
@@ -174,21 +181,25 @@ impl NamedLibFunc for MoveLibFunc {
     const ID: GenericLibFuncId = GenericLibFuncId::new_inline("move");
     fn specialize(
         &self,
-        _context: SpecializationContext<'_>,
+        context: SpecializationContext<'_>,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(MoveConcreteLibFunc { ty: as_single_type(args)? })
+        let ty = as_single_type(args)?;
+        let deferred_ty =
+            context.get_concrete_type(DeferredType::id(), &[GenericArg::Type(ty.clone())])?;
+        Ok(MoveConcreteLibFunc { ty, deferred_ty })
     }
 }
 
 pub struct MoveConcreteLibFunc {
     ty: ConcreteTypeId,
+    deferred_ty: ConcreteTypeId,
 }
 impl NonBranchConcreteLibFunc for MoveConcreteLibFunc {
     fn input_types(&self) -> Vec<ConcreteTypeId> {
         vec![self.ty.clone()]
     }
     fn output_types(&self) -> Vec<ConcreteTypeId> {
-        vec![self.ty.clone()]
+        vec![self.deferred_ty.clone()]
     }
 }
