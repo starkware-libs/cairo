@@ -3,10 +3,12 @@
 mod test;
 
 use semantic;
+use sierra::ids::ConcreteLibFuncId;
+use sierra::program;
 
 use crate::expr_generator_context::ExprGeneratorContext;
 use crate::pre_sierra;
-use crate::utils::simple_statement;
+use crate::utils::{jump_statement, simple_statement};
 
 /// Generates Sierra code that computes a given expression.
 /// Returns a list of Sierra statements and the Sierra variable in which the result
@@ -113,8 +115,80 @@ fn handle_function_call(
 /// Generates Sierra code for [semantic::ExprMatch].
 /// Currently only a simple match-zero is supported.
 fn handle_felt_match(
-    _context: &mut ExprGeneratorContext<'_>,
-    _expr_match: &semantic::ExprMatch,
+    context: &mut ExprGeneratorContext<'_>,
+    expr_match: &semantic::ExprMatch,
 ) -> (Vec<pre_sierra::Statement>, sierra::ids::VarId) {
-    todo!();
+    match &expr_match.arms[..] {
+        [
+            semantic::MatchBranch { pattern: semantic::Pattern::Expr(expr), block: block0 },
+            semantic::MatchBranch { pattern: semantic::Pattern::Otherwise, block: block_otherwise },
+        ] => {
+            // Fetch the expression and make sure it's 0.
+            if let semantic::Expr::ExprLiteral(expr_literal) = context.get_db().lookup_expr(*expr) {
+                assert_eq!(expr_literal.value, 0);
+            } else {
+                // TOOD(lior): Replace with diagnostics.
+                unimplemented!();
+            };
+
+            // Generate two labels: for the second code block (otherwise) and for the end of the
+            // match.
+            let (otherwise_label, otherwise_label_id) = context.new_label();
+            let (end_label, end_label_id) = context.new_label();
+
+            let mut statements: Vec<pre_sierra::Statement> = vec![];
+
+            // Generate statements for the matched expression.
+            let (match_expr_statements, match_expr_res) =
+                generate_expression_code(context, expr_match.matched_expr);
+            statements.extend(match_expr_statements);
+
+            // Add the match_zero() statement.
+            statements.push(pre_sierra::Statement::SierraStatement(
+                program::GenStatement::Invocation(program::GenInvocation {
+                    libfunc_id: ConcreteLibFuncId::from_string("match_zero"),
+                    args: vec![match_expr_res],
+                    branches: vec![
+                        // If 0, continue to the next instruction.
+                        program::GenBranchInfo {
+                            target: program::GenBranchTarget::Fallthrough,
+                            results: vec![],
+                        },
+                        // Otherwise, jump to the "otherwise" block.
+                        program::GenBranchInfo {
+                            target: program::GenBranchTarget::Statement(otherwise_label_id),
+                            results: vec![],
+                        },
+                    ],
+                }),
+            ));
+
+            // Generate the first block (0).
+            let (block0_statements, block0_res) = generate_expression_code(context, *block0);
+            statements.extend(block0_statements);
+            let output_var = context.allocate_sierra_variable();
+            statements.push(simple_statement("store_temp", &[block0_res], &[output_var.clone()]));
+            statements.push(jump_statement(end_label_id));
+
+            // Generate the second block (otherwise).
+            let (block_otherwise_statements, block_otherwise_res) =
+                generate_expression_code(context, *block_otherwise);
+            statements.push(otherwise_label);
+            statements.extend(block_otherwise_statements);
+            statements.push(simple_statement(
+                "store_temp",
+                &[block_otherwise_res],
+                &[output_var.clone()],
+            ));
+
+            // Post match.
+            statements.push(end_label);
+
+            (statements, output_var)
+        }
+        _ => {
+            // TOOD(lior): Replace with diagnostics.
+            unimplemented!();
+        }
+    }
 }
