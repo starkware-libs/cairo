@@ -10,12 +10,13 @@ fn fib_program() -> sierra::program::Program {
         type NonZeroInt = NonZero<int>;
         type DeferredInt = Deferred<int>;
         type DeferredGasBuiltin = Deferred<GasBuiltin>;
+        type DeferredNonZeroInt = Deferred<NonZeroInt>;
 
         libfunc move_int = move<int>;
-        libfunc move_nz_int = move<NonZero_int>;
+        libfunc move_nz_int = move<NonZeroInt>;
         libfunc move_gb = move<GasBuiltin>;
         libfunc store_temp_int = store_temp<int>;
-        libfunc store_temp_nz_int = store_temp<NonZero_int>;
+        libfunc store_temp_nz_int = store_temp<NonZeroInt>;
         libfunc store_temp_gb = store_temp<GasBuiltin>;
         libfunc rename_int = rename<int>;
         libfunc int_const_1 = int_const<1>;
