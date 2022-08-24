@@ -1,11 +1,26 @@
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::SpecializationContext;
 use crate::extensions::{
-    GenericLibFunc, NamedLibFunc, NoGenericArgsGenericLibFunc, NonBranchConcreteLibFunc,
-    SpecializationError,
+    ConcreteType, GenericLibFunc, NamedLibFunc, NamedType, NoGenericArgsGenericLibFunc,
+    NonBranchConcreteLibFunc, SpecializationError,
 };
 use crate::ids::ConcreteTypeId;
 use crate::program::GenericArg;
+
+/// Type for deferred actions.
+#[derive(Default)]
+pub struct DeferredGeneric {}
+impl NamedType for DeferredGeneric {
+    type Concrete = DeferredConcrete;
+    const NAME: &'static str = "Deferred";
+    fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError> {
+        Ok(DeferredConcrete { ty: as_single_type(args)? })
+    }
+}
+pub struct DeferredConcrete {
+    pub ty: ConcreteTypeId,
+}
+impl ConcreteType for DeferredConcrete {}
 
 define_libfunc_hierarchy! {
 pub enum MemLibFunc {
@@ -113,8 +128,11 @@ pub struct AllocLocalsGeneric {}
 impl NoGenericArgsGenericLibFunc for AllocLocalsGeneric {
     type Concrete = AllocLocalsConcrete;
     const NAME: &'static str = "alloc_locals";
-    fn specialize(&self, _context: SpecializationContext<'_>) -> Self::Concrete {
-        AllocLocalsConcrete {}
+    fn specialize(
+        &self,
+        _context: SpecializationContext<'_>,
+    ) -> Result<Self::Concrete, SpecializationError> {
+        Ok(AllocLocalsConcrete {})
     }
 }
 
