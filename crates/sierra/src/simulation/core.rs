@@ -13,14 +13,15 @@ use crate::extensions::core::integer::{
 use crate::extensions::core::mem::MemConcrete::{
     AlignTemps, AllocLocals, Move, Rename, StoreLocal, StoreTemp,
 };
-use crate::extensions::CoreConcrete::{self, Gas, Integer, Mem, UnconditionalJump};
+use crate::extensions::CoreConcrete::{self, FunctionCall, Gas, Integer, Mem, UnconditionalJump};
 
 /// Simulates the run of a single libfunc.
-pub fn simulate(
+pub fn simple_simulate(
     libfunc: &CoreConcrete,
     inputs: Vec<Vec<MemCell>>,
 ) -> Result<(Vec<Vec<MemCell>>, usize), LibFuncSimulationError> {
     match libfunc {
+        FunctionCall(_) => Err(LibFuncSimulationError::NonSimpleLibFunc),
         Gas(GetGas(GetGasConcrete { count })) => {
             let [MemCell { value: gas_counter }] = unpack_inputs::<1>(inputs)?;
             if gas_counter >= *count {

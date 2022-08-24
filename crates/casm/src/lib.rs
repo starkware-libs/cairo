@@ -1,5 +1,6 @@
 #[allow(dead_code)]
 pub mod ap_change;
+pub mod inline;
 #[allow(dead_code, unused_imports)]
 pub mod instructions;
 #[allow(dead_code)]
