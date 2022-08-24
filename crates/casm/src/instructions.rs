@@ -20,6 +20,7 @@ impl InstructionBody {
         // TOOD(spapini): Make this correct.
         match self {
             InstructionBody::AssertEq(insn) => insn.op_size(),
+            InstructionBody::Call(insn) => insn.op_size(),
             _ => 1,
         }
     }
@@ -57,6 +58,14 @@ impl Display for Instruction {
 pub struct CallInstruction {
     pub target: DerefOrImmediate,
     pub relative: bool,
+}
+impl CallInstruction {
+    pub fn op_size(&self) -> usize {
+        match self.target {
+            DerefOrImmediate::Deref(_) => 1,
+            DerefOrImmediate::Immediate(_) => 2,
+        }
+    }
 }
 impl Display for CallInstruction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

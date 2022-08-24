@@ -18,9 +18,11 @@ fn test_assert() {
         [fp - 5] = [ap + 1] * 2;
         [fp - 5] = [ap + 1] * y;
         [fp - 5] = 1, ap++;
+        start:
         [fp - 5] = [ap + 1];
-        call abs 5, ap++;
-        call rel y, ap++;
+        call abs y, ap++;
+        call rel 5, ap++;
+        call rel start, ap++;
     };
 
     let code = ctx.instructions.iter().map(Instruction::to_string).collect::<Vec<_>>().join("\n");
@@ -35,7 +37,8 @@ fn test_assert() {
             [fp + -5] = [ap + 1] + [fp + 5]
             [fp + -5] = 1, ap++
             [fp + -5] = [ap + 1]
-            call abs 5, ap++
-            call rel [fp + 5], ap++"}
+            call abs [fp + 5], ap++
+            call rel 5, ap++
+            call rel -4, ap++"}
     );
 }
