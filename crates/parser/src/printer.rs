@@ -33,7 +33,7 @@ impl<'a> Printer<'a> {
                     indent,
                     extra_head_indent,
                     is_last,
-                    &syntax_node,
+                    syntax_node,
                     kind,
                 );
             }
