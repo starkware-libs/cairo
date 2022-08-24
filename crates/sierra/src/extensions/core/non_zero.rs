@@ -3,7 +3,7 @@ use crate::extensions::lib_func::SpecializationContext;
 use crate::extensions::{
     ConcreteType, NamedLibFunc, NamedType, NonBranchConcreteLibFunc, SpecializationError,
 };
-use crate::ids::ConcreteTypeId;
+use crate::ids::{ConcreteTypeId, GenericLibFuncId, GenericTypeId};
 use crate::program::GenericArg;
 
 /// Type wrapping a value as non zero.
@@ -11,7 +11,7 @@ use crate::program::GenericArg;
 pub struct NonZeroType {}
 impl NamedType for NonZeroType {
     type Concrete = NonZeroConcreteType;
-    const NAME: &'static str = "NonZero";
+    const ID: GenericTypeId = GenericTypeId::new_inline("NonZero");
     fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError> {
         Ok(NonZeroConcreteType { ty: as_single_type(args)? })
     }
@@ -26,7 +26,7 @@ impl ConcreteType for NonZeroConcreteType {}
 pub struct UnwrapNonZeroLibFunc {}
 impl NamedLibFunc for UnwrapNonZeroLibFunc {
     type Concrete = UnwrapNonZeroConcreteLibFunc;
-    const NAME: &'static str = "unwrap_nz";
+    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("unwrap_nz");
 
     fn specialize(
         &self,
