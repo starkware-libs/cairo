@@ -5,7 +5,7 @@ use crate::extensions::{
     ConcreteType, GenericLibFunc, NamedLibFunc, NamedType, NoGenericArgsGenericLibFunc,
     NonBranchConcreteLibFunc, SpecializationError,
 };
-use crate::ids::ConcreteTypeId;
+use crate::ids::{ConcreteTypeId, GenericLibFuncId, GenericTypeId};
 use crate::program::GenericArg;
 
 /// Type for deferred actions.
@@ -13,7 +13,7 @@ use crate::program::GenericArg;
 pub struct DeferredType {}
 impl NamedType for DeferredType {
     type Concrete = DeferredConcreteType;
-    const NAME: &'static str = "Deferred";
+    const ID: GenericTypeId = GenericTypeId::new_inline("Deferred");
     fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError> {
         Ok(DeferredConcreteType { ty: as_single_type(args)? })
     }
@@ -39,7 +39,7 @@ define_libfunc_hierarchy! {
 pub struct StoreTempLibFunc {}
 impl NamedLibFunc for StoreTempLibFunc {
     type Concrete = StoreTempConcreteLibFunc;
-    const NAME: &'static str = "store_temp";
+    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("store_temp");
     fn specialize(
         &self,
         _context: SpecializationContext<'_>,
@@ -66,7 +66,7 @@ impl NonBranchConcreteLibFunc for StoreTempConcreteLibFunc {
 pub struct AlignTempsLibFunc {}
 impl NamedLibFunc for AlignTempsLibFunc {
     type Concrete = AlignTempsConcreteLibFunc;
-    const NAME: &'static str = "align_temps";
+    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("align_temps");
     fn specialize(
         &self,
         _context: SpecializationContext<'_>,
@@ -93,7 +93,7 @@ impl NonBranchConcreteLibFunc for AlignTempsConcreteLibFunc {
 pub struct StoreLocalLibFunc {}
 impl NamedLibFunc for StoreLocalLibFunc {
     type Concrete = StoreLocalConcreteLibFunc;
-    const NAME: &'static str = "store_local";
+    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("store_local");
     fn specialize(
         &self,
         _context: SpecializationContext<'_>,
@@ -120,7 +120,7 @@ impl NonBranchConcreteLibFunc for StoreLocalConcreteLibFunc {
 pub struct AllocLocalsLibFunc {}
 impl NoGenericArgsGenericLibFunc for AllocLocalsLibFunc {
     type Concrete = AllocLocalsConcreteLibFunc;
-    const NAME: &'static str = "alloc_locals";
+    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("alloc_locals");
     fn specialize(
         &self,
         _context: SpecializationContext<'_>,
@@ -144,7 +144,7 @@ impl NonBranchConcreteLibFunc for AllocLocalsConcreteLibFunc {
 pub struct RenameLibFunc {}
 impl NamedLibFunc for RenameLibFunc {
     type Concrete = RenameConcreteLibFunc;
-    const NAME: &'static str = "rename";
+    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("rename");
     fn specialize(
         &self,
         _context: SpecializationContext<'_>,
@@ -171,7 +171,7 @@ impl NonBranchConcreteLibFunc for RenameConcreteLibFunc {
 pub struct MoveLibFunc {}
 impl NamedLibFunc for MoveLibFunc {
     type Concrete = MoveConcreteLibFunc;
-    const NAME: &'static str = "move";
+    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("move");
     fn specialize(
         &self,
         _context: SpecializationContext<'_>,
