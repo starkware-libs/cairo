@@ -12,7 +12,9 @@ fn basic_insertion() {
                 .parse(indoc! {"
         type int = int;
         type GasBuiltin = GasBuiltin;
-        type NonZeroInt = NonZero<Int>;
+        type NonZeroInt = NonZero<int>;
+        type DeferredInt = Deferred<int>;
+        type DeferredGasBuiltin = Deferred<GasBuiltin>;
         libfunc move_int = move<int>;
         libfunc move_gb = move<GasBuiltin>;
         Func1@1(a: int, gb: GasBuiltin) -> (GasBuiltin);
@@ -83,6 +85,10 @@ fn libfunc_id_double_declaration() {
         ProgramRegistry::new(
             &ProgramParser::new()
                 .parse(indoc! {"
+        type int = int;
+        type DeferredInt = Deferred<int>;
+        type GasBuiltin = GasBuiltin;
+        type DeferredGasBuiltin = Deferred<GasBuiltin>;
         libfunc used_id = move<int>;
         libfunc used_id = move<GasBuiltin>;
     "})
