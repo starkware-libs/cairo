@@ -48,6 +48,11 @@ pub fn compile_invocation(
                 ap_change: ApChange::Known(1),
             }],
         }),
+        CoreConcreteLibFunc::Mem(MemConcreteLibFunc::Move(_))
+        | CoreConcreteLibFunc::Mem(MemConcreteLibFunc::Rename(_)) => Ok(CompiledInvocation {
+            instruction: vec![],
+            results: vec![BranchRefChanges { refs: refs.to_vec(), ap_change: ApChange::Known(0) }],
+        }),
         _ => Err(ExtensionError::NotImplemented),
     }
 }
