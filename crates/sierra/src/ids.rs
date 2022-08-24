@@ -1,11 +1,18 @@
-use std::collections::hash_map::DefaultHasher;
-use std::hash::{Hash, Hasher};
+use smol_str::SmolStr;
 
-fn id_from_string(s: &str) -> u64 {
+const fn id_from_string(s: &str) -> u64 {
     // TODO(ilya, 10/10/2022): Fix https://github.com/starkware-libs/cairo2/issues/45.
-    let mut hasher = DefaultHasher::new();
-    s.hash(&mut hasher);
-    hasher.finish()
+    let mut hash = 0xcbf29ce484222325;
+    let prime = 0x00000100000001B3;
+
+    let bytes = s.as_bytes();
+    let mut i = 0;
+    while i < bytes.len() {
+        hash ^= bytes[i] as u64;
+        hash = hash.wrapping_mul(prime);
+        i += 1;
+    }
+    hash
 }
 
 macro_rules! define_identity {
@@ -15,7 +22,7 @@ macro_rules! define_identity {
         pub struct $type_name {
             pub id: u64,
             /// Optional name for testing and debugging.
-            pub debug_name: Option<String>,
+            pub debug_name: Option<SmolStr>,
         }
 
         impl $type_name {
@@ -28,8 +35,12 @@ macro_rules! define_identity {
                 Self::new(id.try_into().unwrap())
             }
 
-            pub fn from_string(name: impl Into<String>) -> Self {
-                let s: String = name.into();
+            pub const fn new_inline(name: &'static str) -> Self {
+                $type_name { id: id_from_string(name), debug_name: Some(SmolStr::new_inline(name)) }
+            }
+
+            pub fn from_string(name: impl Into<SmolStr>) -> Self {
+                let s: SmolStr = name.into();
                 $type_name { id: id_from_string(&s), debug_name: Some(s) }
             }
         }
