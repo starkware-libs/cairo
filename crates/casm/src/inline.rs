@@ -1,8 +1,19 @@
+use std::collections::HashMap;
+
 use crate::instructions::*;
 
 #[cfg(test)]
 #[path = "inline_test.rs"]
 mod test;
+
+#[allow(dead_code)]
+#[derive(Default)]
+struct CasmContext {
+    pc: usize,
+    instructions: Vec<Instruction>,
+    labels: HashMap<&'static str, usize>,
+    // TODO(spapini): Branches.
+}
 
 #[macro_export]
 macro_rules! casm {
@@ -30,7 +41,7 @@ macro_rules! casm_inner {
     };
     ($ctx:ident, call rel $target:tt $(,$ap:ident++)? ; $($tok:tt)*) => {
         let body = InstructionBody::Call(CallInstruction {
-            target: $crate::deref_or_immediate!($target),
+            target: $crate::label_or_deref_or_immediate!($ctx, $target),
             relative: true,
         });
         $crate::add_inst!($ctx, body $(,$ap++)?);
@@ -42,6 +53,13 @@ macro_rules! casm_inner {
             relative: false,
         });
         $crate::add_inst!($ctx, body $(,$ap++)?);
+        $crate::casm_inner!($ctx, $($tok)*)
+    };
+    ($ctx:ident, $label:ident : $($tok:tt)*) => {
+        let name: &'static str = stringify!($label);
+        if $ctx.labels.insert(name, $ctx.pc).is_some() {
+            panic!("Redefinition of label {name}");
+        }
         $crate::casm_inner!($ctx, $($tok)*)
     };
 }
@@ -58,14 +76,6 @@ macro_rules! add_inst {
         $ctx.pc += instr.body.op_size();
         $ctx.instructions.push(instr);
     };
-}
-
-#[allow(dead_code)]
-#[derive(Default)]
-struct CasmContext {
-    pc: usize,
-    instructions: Vec<Instruction>,
-    // TODO(spapini): Branches.
 }
 
 #[macro_export]
@@ -91,6 +101,18 @@ macro_rules! reg {
     };
     (fp) => {
         Register::FP
+    };
+}
+
+#[macro_export]
+macro_rules! label_or_deref_or_immediate {
+    ($ctx:ident, $a:ident) => {{
+        let target = $ctx.labels[stringify!($a)] as i128;
+        let rel_jump = target - ($ctx.pc as i128);
+        DerefOrImmediate::Immediate(ImmediateOperand { value: rel_jump })
+    }};
+    ($ctx:ident, $a:tt) => {
+        $crate::deref_or_immediate!($a)
     };
 }
 
