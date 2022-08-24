@@ -6,7 +6,7 @@ use crate::extensions::{
     NoGenericArgsGenericLibFunc, NoGenericArgsGenericType, NonBranchConcreteLibFunc,
     SpecializationError,
 };
-use crate::ids::{ConcreteTypeId, GenericLibFuncId};
+use crate::ids::{ConcreteTypeId, GenericLibFuncId, GenericTypeId};
 use crate::program::GenericArg;
 use crate::{define_concrete_libfunc_hierarchy, define_libfunc_hierarchy};
 
@@ -15,7 +15,7 @@ use crate::{define_concrete_libfunc_hierarchy, define_libfunc_hierarchy};
 pub struct IntegerType {}
 impl NoGenericArgsGenericType for IntegerType {
     type Concrete = IntegerConcreteType;
-    const NAME: &'static str = "int";
+    const ID: GenericTypeId = GenericTypeId::new_inline("int");
 }
 #[derive(Default)]
 pub struct IntegerConcreteType {}
@@ -55,22 +55,19 @@ pub struct OperationLibFunc {
 impl GenericLibFunc for OperationLibFunc {
     type Concrete = OperationConcreteLibFunc;
     fn by_id(id: &GenericLibFuncId) -> Option<Self> {
-        if id == &"int_add".into() {
-            return Some(OperationLibFunc { operator: Operator::Add });
+        const INT_ADD: GenericLibFuncId = GenericLibFuncId::new_inline("int_add");
+        const INT_SUB: GenericLibFuncId = GenericLibFuncId::new_inline("int_sub");
+        const INT_MUL: GenericLibFuncId = GenericLibFuncId::new_inline("int_mul");
+        const INT_DIV: GenericLibFuncId = GenericLibFuncId::new_inline("int_div");
+        const INT_MOD: GenericLibFuncId = GenericLibFuncId::new_inline("int_mod");
+        match id {
+            id if id == &INT_ADD => Some(OperationLibFunc { operator: Operator::Add }),
+            id if id == &INT_SUB => Some(OperationLibFunc { operator: Operator::Sub }),
+            id if id == &INT_MUL => Some(OperationLibFunc { operator: Operator::Mul }),
+            id if id == &INT_DIV => Some(OperationLibFunc { operator: Operator::Div }),
+            id if id == &INT_MOD => Some(OperationLibFunc { operator: Operator::Mod }),
+            _ => None,
         }
-        if id == &"int_sub".into() {
-            return Some(OperationLibFunc { operator: Operator::Sub });
-        }
-        if id == &"int_mul".into() {
-            return Some(OperationLibFunc { operator: Operator::Mul });
-        }
-        if id == &"int_div".into() {
-            return Some(OperationLibFunc { operator: Operator::Div });
-        }
-        if id == &"int_mod".into() {
-            return Some(OperationLibFunc { operator: Operator::Mod });
-        }
-        None
     }
     fn specialize(
         &self,
@@ -153,7 +150,7 @@ impl NonBranchConcreteLibFunc for OperationWithConstConcreteLibFunc {
 pub struct ConstLibFunc {}
 impl NamedLibFunc for ConstLibFunc {
     type Concrete = ConstConcreteLibFunc;
-    const NAME: &'static str = "int_const";
+    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("int_const");
     fn specialize(
         &self,
         context: SpecializationContext<'_>,
@@ -189,7 +186,7 @@ impl NonBranchConcreteLibFunc for ConstConcreteLibFunc {
 pub struct IgnoreLibFunc {}
 impl NoGenericArgsGenericLibFunc for IgnoreLibFunc {
     type Concrete = IgnoreConcreteLibFunc;
-    const NAME: &'static str = "int_ignore";
+    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("int_ignore");
     fn specialize(
         &self,
         context: SpecializationContext<'_>,
@@ -215,7 +212,7 @@ impl NonBranchConcreteLibFunc for IgnoreConcreteLibFunc {
 pub struct DuplicateLibFunc {}
 impl NoGenericArgsGenericLibFunc for DuplicateLibFunc {
     type Concrete = DuplicateConcreteLibFunc;
-    const NAME: &'static str = "int_dup";
+    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("int_dup");
 
     fn specialize(
         &self,
@@ -245,7 +242,7 @@ impl NonBranchConcreteLibFunc for DuplicateConcreteLibFunc {
 pub struct JumpNotZeroLibFunc {}
 impl NoGenericArgsGenericLibFunc for JumpNotZeroLibFunc {
     type Concrete = JumpNotZeroConcreteLibFunc;
-    const NAME: &'static str = "int_jump_nz";
+    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("int_jump_nz");
 
     fn specialize(
         &self,

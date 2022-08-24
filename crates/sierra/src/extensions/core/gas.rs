@@ -6,7 +6,7 @@ use crate::extensions::{
     ConcreteLibFunc, ConcreteType, GenericLibFunc, NamedLibFunc, NamedType,
     NoGenericArgsGenericType, NonBranchConcreteLibFunc, SpecializationError,
 };
-use crate::ids::ConcreteTypeId;
+use crate::ids::{ConcreteTypeId, GenericLibFuncId, GenericTypeId};
 use crate::program::GenericArg;
 
 /// Type for gas actions.
@@ -14,7 +14,7 @@ use crate::program::GenericArg;
 pub struct GasBuiltinType {}
 impl NoGenericArgsGenericType for GasBuiltinType {
     type Concrete = GasBuiltinConcreteType;
-    const NAME: &'static str = "GasBuiltin";
+    const ID: GenericTypeId = GenericTypeId::new_inline("GasBuiltin");
 }
 #[derive(Default)]
 pub struct GasBuiltinConcreteType {}
@@ -50,7 +50,7 @@ fn get_gas_types(
 pub struct GetGasLibFunc {}
 impl NamedLibFunc for GetGasLibFunc {
     type Concrete = GetGasConcreteLibFunc;
-    const NAME: &'static str = "get_gas";
+    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("get_gas");
     fn specialize(
         &self,
         context: SpecializationContext<'_>,
@@ -92,7 +92,7 @@ impl ConcreteLibFunc for GetGasConcreteLibFunc {
 pub struct RefundGasLibFunc {}
 impl NamedLibFunc for RefundGasLibFunc {
     type Concrete = RefundGasConcreteLibFunc;
-    const NAME: &'static str = "refund_gas";
+    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("refund_gas");
     fn specialize(
         &self,
         context: SpecializationContext<'_>,
