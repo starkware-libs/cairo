@@ -1,0 +1,10 @@
+# Operator expressions
+
+```bnf
+OPERATOR_EXPR : NEGATION_OP_EXPR
+              | ARITHMETIC_OR_LOGICAL_OP_EXPR
+              | EQUALITY_EXPR
+              | COMPARISON_EXPR
+              | BOOLEAN_EXPR
+              | ERROR_PROPAGATION_EXPR
+```

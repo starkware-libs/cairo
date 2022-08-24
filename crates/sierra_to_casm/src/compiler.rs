@@ -7,7 +7,7 @@ use sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use thiserror::Error;
 
 use crate::invocations::compile_invocation;
-use crate::references::{init_reference, ReferencesError};
+use crate::references::{check_return_refs_on_stack, init_reference, ReferencesError};
 
 #[cfg(test)]
 #[path = "compiler_test.rs"]
@@ -46,7 +46,9 @@ pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
         let statement_idx = StatementIdx(statement_id);
         match statement {
             Statement::Return(ref_ids) => {
-                program_refs.take_references(statement_idx, ref_ids.iter())?;
+                let (_statement_refs, return_refs) =
+                    program_refs.take_references(statement_idx, ref_ids.iter())?;
+                check_return_refs_on_stack(&return_refs)?;
 
                 instructions.push(Instruction {
                     body: InstructionBody::Ret(RetInstruction {}),
@@ -61,6 +63,7 @@ pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
                     .get_libfunc(&invocation.libfunc_id)
                     .map_err(CompilationError::ProgramRegistryError)?;
                 let compiled_invocation = compile_invocation(libfunc, &invoke_refs)?;
+                instructions.extend(compiled_invocation.instruction.into_iter());
 
                 program_refs.update_references(
                     statement_idx,
