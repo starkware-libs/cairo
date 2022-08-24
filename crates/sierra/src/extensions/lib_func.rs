@@ -76,11 +76,10 @@ impl<TGenericLibFunc: GenericLibFunc> GenericLibFuncEx for TGenericLibFunc {
     }
 }
 
-// TODO(spapini): If GenericLibFuncId becomes constexpr, use it here instead of name.
 /// Trait for implementing a specialization generator with with a simple id.
 pub trait NamedLibFunc: Default {
     type Concrete: ConcreteLibFunc;
-    const NAME: &'static str;
+    const ID: GenericLibFuncId;
     /// Creates the specialization with the template arguments.
     fn specialize(
         &self,
@@ -92,10 +91,7 @@ impl<TNamedLibFunc: NamedLibFunc> GenericLibFunc for TNamedLibFunc {
     type Concrete = <Self as NamedLibFunc>::Concrete;
 
     fn by_id(id: &GenericLibFuncId) -> Option<Self> {
-        if &GenericLibFuncId::from(Self::NAME.to_string()) == id {
-            return Some(Self::default());
-        }
-        None
+        if &Self::ID == id { Some(Self::default()) } else { None }
     }
 
     fn specialize(
@@ -110,7 +106,7 @@ impl<TNamedLibFunc: NamedLibFunc> GenericLibFunc for TNamedLibFunc {
 /// Trait for implementing a specialization generator with no generic arguments.
 pub trait NoGenericArgsGenericLibFunc: Default {
     type Concrete: ConcreteLibFunc;
-    const NAME: &'static str;
+    const ID: GenericLibFuncId;
     fn specialize(
         &self,
         context: SpecializationContext<'_>,
@@ -118,7 +114,7 @@ pub trait NoGenericArgsGenericLibFunc: Default {
 }
 impl<T: NoGenericArgsGenericLibFunc> NamedLibFunc for T {
     type Concrete = <Self as NoGenericArgsGenericLibFunc>::Concrete;
-    const NAME: &'static str = <Self as NoGenericArgsGenericLibFunc>::NAME;
+    const ID: GenericLibFuncId = <Self as NoGenericArgsGenericLibFunc>::ID;
 
     fn specialize(
         &self,
