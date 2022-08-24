@@ -8,6 +8,8 @@ fn fib_program() -> sierra::program::Program {
         type int = int;
         type GasBuiltin = GasBuiltin;
         type NonZeroInt = NonZeroInt;
+        type DeferredInt = Deferred<int>;
+        type DeferredGasBuiltin = Deferred<GasBuiltin>;
 
         libfunc move_int = move<int>;
         libfunc move_nz_int = move<NonZero_int>;
