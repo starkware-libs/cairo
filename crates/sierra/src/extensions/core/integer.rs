@@ -1,3 +1,4 @@
+use crate::extensions::lib_func::SpecializationContext;
 use crate::extensions::{
     ConcreteLibFunc, ConcreteType, GenericLibFunc, NamedLibFunc, NoGenericArgsGenericLibFunc,
     NoGenericArgsGenericType, NonBranchConcreteLibFunc, SpecializationError,
@@ -80,7 +81,11 @@ impl GenericLibFunc for OperationGeneric {
         }
         None
     }
-    fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError> {
+    fn specialize(
+        &self,
+        _context: SpecializationContext<'_>,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
         match args {
             [] => {
                 Ok(OperationConcrete::Binary(BinaryOperationConcrete { operator: self.operator }))
@@ -139,7 +144,11 @@ pub struct ConstGeneric {}
 impl NamedLibFunc for ConstGeneric {
     type Concrete = ConstConcrete;
     const NAME: &'static str = "int_const";
-    fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError> {
+    fn specialize(
+        &self,
+        _context: SpecializationContext<'_>,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
         match args {
             [GenericArg::Value(c)] => Ok(ConstConcrete { c: *c }),
             _ => Err(SpecializationError::UnsupportedGenericArg),
@@ -165,7 +174,7 @@ pub struct IgnoreGeneric {}
 impl NoGenericArgsGenericLibFunc for IgnoreGeneric {
     type Concrete = IgnoreConcrete;
     const NAME: &'static str = "int_ignore";
-    fn specialize(&self) -> Self::Concrete {
+    fn specialize(&self, _context: SpecializationContext<'_>) -> Self::Concrete {
         IgnoreConcrete {}
     }
 }
@@ -187,7 +196,7 @@ impl NoGenericArgsGenericLibFunc for DuplicateGeneric {
     type Concrete = DuplicateConcrete;
     const NAME: &'static str = "int_dup";
 
-    fn specialize(&self) -> Self::Concrete {
+    fn specialize(&self, _context: SpecializationContext<'_>) -> Self::Concrete {
         DuplicateConcrete {}
     }
 }
@@ -210,7 +219,7 @@ impl NoGenericArgsGenericLibFunc for JumpNotZeroGeneric {
     type Concrete = JumpNotZeroConcrete;
     const NAME: &'static str = "int_jump_nz";
 
-    fn specialize(&self) -> Self::Concrete {
+    fn specialize(&self, _context: SpecializationContext<'_>) -> Self::Concrete {
         JumpNotZeroConcrete {}
     }
 }
@@ -235,7 +244,7 @@ impl NoGenericArgsGenericLibFunc for UnwrapNonZeroGeneric {
     type Concrete = UnwrapNonZeroConcrete;
     const NAME: &'static str = "int_unwrap_nz";
 
-    fn specialize(&self) -> Self::Concrete {
+    fn specialize(&self, _context: SpecializationContext<'_>) -> Self::Concrete {
         UnwrapNonZeroConcrete {}
     }
 }

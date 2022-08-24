@@ -3,6 +3,7 @@ use std::collections::HashMap;
 
 use thiserror::Error;
 
+use crate::extensions::lib_func::{ConcreteTypeIdMap, FunctionMap, SpecializationContext};
 use crate::extensions::{
     CoreConcrete, CoreLibFunc, CoreType, CoreTypeConcrete, ExtensionError, GenericLibFuncEx,
     GenericTypeEx,
@@ -37,21 +38,24 @@ pub enum ProgramRegistryError {
     MissingLibFunc(ConcreteLibFuncId),
 }
 
+type TypeMap = HashMap<ConcreteTypeId, CoreTypeConcrete>;
+type LibFuncMap = HashMap<ConcreteLibFuncId, CoreConcrete>;
+
 /// Registry for the data of the compiler, for all program specific data.
 pub struct ProgramRegistry {
     /// Mapping ids to the corresponding user function declaration from the program.
-    functions: HashMap<FunctionId, Function>,
+    functions: FunctionMap,
     /// Mapping ids to the concrete types reperesented by them.
-    concrete_types: HashMap<ConcreteTypeId, CoreTypeConcrete>,
+    concrete_types: TypeMap,
     /// Mapping ids to the concrete libfuncs reperesented by them.
-    concrete_libfuncs: HashMap<ConcreteLibFuncId, CoreConcrete>,
+    concrete_libfuncs: LibFuncMap,
 }
 impl ProgramRegistry {
     /// Create a registry for the program.
     pub fn new(program: &Program) -> Result<ProgramRegistry, ProgramRegistryError> {
         let functions = get_functions(program)?;
-        let concrete_types = get_concrete_types(program)?;
-        let concrete_libfuncs = get_concrete_libfuncs(program)?;
+        let (concrete_types, concrete_type_ids) = get_concrete_types_maps(program)?;
+        let concrete_libfuncs = get_concrete_libfuncs(program, &functions, &concrete_type_ids)?;
         Ok(ProgramRegistry { functions, concrete_types, concrete_libfuncs })
     }
     /// Get a function from the input program.
@@ -80,8 +84,8 @@ impl ProgramRegistry {
 }
 
 /// Creates the functions map.
-fn get_functions(program: &Program) -> Result<HashMap<FunctionId, Function>, ProgramRegistryError> {
-    let mut functions = HashMap::new();
+fn get_functions(program: &Program) -> Result<FunctionMap, ProgramRegistryError> {
+    let mut functions = FunctionMap::new();
     for func in &program.funcs {
         match functions.entry(func.id.clone()) {
             Entry::Occupied(_) => {
@@ -93,10 +97,11 @@ fn get_functions(program: &Program) -> Result<HashMap<FunctionId, Function>, Pro
     Ok(functions)
 }
 
-/// Creates the types map.
-fn get_concrete_types(
+/// Creates the type-id to concrete type map, and the reverse map from generic-id and arguments to
+/// concrete-id.
+fn get_concrete_types_maps(
     program: &Program,
-) -> Result<HashMap<ConcreteTypeId, CoreTypeConcrete>, ProgramRegistryError> {
+) -> Result<(TypeMap, ConcreteTypeIdMap<'_>), ProgramRegistryError> {
     let mut concrete_types = HashMap::new();
     let mut concrete_type_ids = HashMap::<(GenericTypeId, &[GenericArg]), ConcreteTypeId>::new();
     for declaration in &program.type_declarations {
@@ -118,22 +123,26 @@ fn get_concrete_types(
             Entry::Vacant(entry) => Ok(entry.insert(declaration.id.clone())),
         }?;
     }
-    Ok(concrete_types)
+    Ok((concrete_types, concrete_type_ids))
 }
 
 /// Creates the libfuncs map.
 fn get_concrete_libfuncs(
     program: &Program,
-) -> Result<HashMap<ConcreteLibFuncId, CoreConcrete>, ProgramRegistryError> {
+    functions: &FunctionMap,
+    concrete_type_ids: &ConcreteTypeIdMap<'_>,
+) -> Result<LibFuncMap, ProgramRegistryError> {
     let mut concrete_libfuncs = HashMap::new();
     for declaration in &program.libfunc_declarations {
-        let concrete_libfunc =
-            CoreLibFunc::specialize_by_id(&declaration.generic_id, &declaration.args).map_err(
-                |error| ProgramRegistryError::LibFuncSpecialization {
-                    concrete_id: declaration.id.clone(),
-                    error,
-                },
-            )?;
+        let concrete_libfunc = CoreLibFunc::specialize_by_id(
+            SpecializationContext { functions, concrete_type_ids },
+            &declaration.generic_id,
+            &declaration.args,
+        )
+        .map_err(|error| ProgramRegistryError::LibFuncSpecialization {
+            concrete_id: declaration.id.clone(),
+            error,
+        })?;
         match concrete_libfuncs.entry(declaration.id.clone()) {
             Entry::Occupied(_) => {
                 Err(ProgramRegistryError::LibFuncConcreteIdAlreadyExists(declaration.id.clone()))

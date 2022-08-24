@@ -1,6 +1,6 @@
 use thiserror::Error;
 
-use crate::ids::{GenericLibFuncId, GenericTypeId};
+use crate::ids::{FunctionId, GenericLibFuncId, GenericTypeId};
 
 /// Error occurring while specializing extensions.
 #[derive(Error, Debug, Eq, PartialEq)]
@@ -11,6 +11,8 @@ pub enum SpecializationError {
     WrongNumberOfGenericArgs,
     #[error("Provided generic arg is unsupported")]
     UnsupportedGenericArg,
+    #[error("Could not find the requested function")]
+    MissingFunction(FunctionId),
 }
 
 /// Extension related errors.

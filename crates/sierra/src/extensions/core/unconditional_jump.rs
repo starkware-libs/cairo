@@ -1,3 +1,4 @@
+use crate::extensions::lib_func::SpecializationContext;
 use crate::extensions::{ConcreteLibFunc, NoGenericArgsGenericLibFunc};
 use crate::ids::ConcreteTypeId;
 
@@ -6,7 +7,7 @@ pub struct UnconditionalJumpGeneric {}
 impl NoGenericArgsGenericLibFunc for UnconditionalJumpGeneric {
     type Concrete = UnconditionalJumpConcrete;
     const NAME: &'static str = "jump";
-    fn specialize(&self) -> Self::Concrete {
+    fn specialize(&self, _context: SpecializationContext<'_>) -> Self::Concrete {
         UnconditionalJumpConcrete {}
     }
 }

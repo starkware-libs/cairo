@@ -1,5 +1,6 @@
 // Module providing the gas related extensions.
 use crate::define_libfunc_hierarchy;
+use crate::extensions::lib_func::SpecializationContext;
 use crate::extensions::{
     ConcreteLibFunc, ConcreteType, GenericLibFunc, NamedLibFunc, NoGenericArgsGenericType,
     NonBranchConcreteLibFunc, SpecializationError,
@@ -39,7 +40,11 @@ pub struct GetGasGeneric {}
 impl NamedLibFunc for GetGasGeneric {
     type Concrete = GetGasConcrete;
     const NAME: &'static str = "get_gas";
-    fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError> {
+    fn specialize(
+        &self,
+        _context: SpecializationContext<'_>,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
         Ok(GetGasConcrete { count: as_single_positive_value(args)? })
     }
 }
@@ -65,7 +70,11 @@ pub struct RefundGasGeneric {}
 impl NamedLibFunc for RefundGasGeneric {
     type Concrete = RefundGasConcrete;
     const NAME: &'static str = "refund_gas";
-    fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError> {
+    fn specialize(
+        &self,
+        _context: SpecializationContext<'_>,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
         Ok(RefundGasConcrete { count: as_single_positive_value(args)? })
     }
 }

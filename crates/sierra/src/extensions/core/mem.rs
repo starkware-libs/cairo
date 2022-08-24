@@ -1,4 +1,5 @@
 use crate::define_libfunc_hierarchy;
+use crate::extensions::lib_func::SpecializationContext;
 use crate::extensions::{
     GenericLibFunc, NamedLibFunc, NoGenericArgsGenericLibFunc, NonBranchConcreteLibFunc,
     SpecializationError,
@@ -7,14 +8,14 @@ use crate::ids::ConcreteTypeId;
 use crate::program::GenericArg;
 
 define_libfunc_hierarchy! {
-    pub enum MemLibFunc {
-        StoreTemp(StoreTempGeneric),
-        AlignTemps(AlignTempsGeneric),
-        StoreLocal(StoreLocalGeneric),
-        AllocLocals(AllocLocalsGeneric),
-        Rename(RenameGeneric),
-        Move(MoveGeneric),
-    }, MemConcrete
+pub enum MemLibFunc {
+    StoreTemp(StoreTempGeneric),
+    AlignTemps(AlignTempsGeneric),
+    StoreLocal(StoreLocalGeneric),
+    AllocLocals(AllocLocalsGeneric),
+    Rename(RenameGeneric),
+    Move(MoveGeneric),
+}, MemConcrete
 }
 
 /// Helper for extracting the type from the template arguments.
@@ -31,7 +32,11 @@ pub struct StoreTempGeneric {}
 impl NamedLibFunc for StoreTempGeneric {
     type Concrete = StoreTempConcrete;
     const NAME: &'static str = "store_temp";
-    fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError> {
+    fn specialize(
+        &self,
+        _context: SpecializationContext<'_>,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
         Ok(StoreTempConcrete { ty: as_single_type(args)? })
     }
 }
@@ -54,7 +59,11 @@ pub struct AlignTempsGeneric {}
 impl NamedLibFunc for AlignTempsGeneric {
     type Concrete = AlignTempsConcrete;
     const NAME: &'static str = "align_temps";
-    fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError> {
+    fn specialize(
+        &self,
+        _context: SpecializationContext<'_>,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
         Ok(AlignTempsConcrete { _ty: as_single_type(args)? })
     }
 }
@@ -77,7 +86,11 @@ pub struct StoreLocalGeneric {}
 impl NamedLibFunc for StoreLocalGeneric {
     type Concrete = StoreLocalConcrete;
     const NAME: &'static str = "store_local";
-    fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError> {
+    fn specialize(
+        &self,
+        _context: SpecializationContext<'_>,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
         Ok(StoreLocalConcrete { ty: as_single_type(args)? })
     }
 }
@@ -100,7 +113,7 @@ pub struct AllocLocalsGeneric {}
 impl NoGenericArgsGenericLibFunc for AllocLocalsGeneric {
     type Concrete = AllocLocalsConcrete;
     const NAME: &'static str = "alloc_locals";
-    fn specialize(&self) -> Self::Concrete {
+    fn specialize(&self, _context: SpecializationContext<'_>) -> Self::Concrete {
         AllocLocalsConcrete {}
     }
 }
@@ -121,7 +134,11 @@ pub struct RenameGeneric {}
 impl NamedLibFunc for RenameGeneric {
     type Concrete = RenameConcrete;
     const NAME: &'static str = "rename";
-    fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError> {
+    fn specialize(
+        &self,
+        _context: SpecializationContext<'_>,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
         Ok(RenameConcrete { ty: as_single_type(args)? })
     }
 }
@@ -144,7 +161,11 @@ pub struct MoveGeneric {}
 impl NamedLibFunc for MoveGeneric {
     type Concrete = MoveConcrete;
     const NAME: &'static str = "move";
-    fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError> {
+    fn specialize(
+        &self,
+        _context: SpecializationContext<'_>,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
         Ok(MoveConcrete { ty: as_single_type(args)? })
     }
 }
