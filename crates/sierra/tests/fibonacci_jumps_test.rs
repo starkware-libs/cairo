@@ -1,4 +1,5 @@
 use indoc::indoc;
+use sierra::extensions::{CoreLibFunc, CoreType};
 use sierra::program_registry::ProgramRegistry;
 use sierra::simulation;
 
@@ -104,7 +105,7 @@ fn parse_test() {
 
 #[test]
 fn create_registry_test() {
-    ProgramRegistry::new(&fib_program()).unwrap();
+    ProgramRegistry::<CoreType, CoreLibFunc>::new(&fib_program()).unwrap();
 }
 
 #[test]
