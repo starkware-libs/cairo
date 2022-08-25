@@ -1,9 +1,10 @@
-# Negation operators
+= Negation operators
 
-```bnf
+[source,bnf]
+----
 NEGATION_OP_EXPR : "-" EXPR
                  | "!" EXPR
-```
+----
 
 The following table summarizes the behavior of negation operators and which traits are used to
 overload them for other types:
@@ -11,6 +12,6 @@ overload them for other types:
 [cols="1,2,2,2",options="header"]
 |===
 | Symbol | Operation   | Accepted types             | Overloading trait
-| `-`    | Negation    | `felt`, `int`, `i*` family | `std::ops::Neg`  
-| `!`    | Logical NOT | `bool`                     | `std::ops::Not`  
+| `-`    | Negation    | `felt`, `int`, `i*` family | `std::ops::Neg`
+| `!`    | Logical NOT | `bool`                     | `std::ops::Not`
 |===
