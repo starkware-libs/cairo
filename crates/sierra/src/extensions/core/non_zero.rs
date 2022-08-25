@@ -52,4 +52,7 @@ impl NonBranchConcreteLibFunc for UnwrapNonZeroConcreteLibFunc {
     fn output_types(&self) -> Vec<ConcreteTypeId> {
         vec![self.ty.clone()]
     }
+    fn output_dependencies(&self) -> Vec<Vec<usize>> {
+        vec![vec![0]]
+    }
 }

@@ -85,6 +85,14 @@ impl ConcreteLibFunc for GetGasConcreteLibFunc {
     fn fallthrough(&self) -> Option<usize> {
         Some(1)
     }
+    fn output_dependencies(&self) -> Vec<Vec<Vec<usize>>> {
+        vec![
+            // success=
+            vec![vec![0]],
+            // failure=
+            vec![vec![]],
+        ]
+    }
 }
 
 /// LibFunc for returning unused gas.
@@ -118,5 +126,8 @@ impl NonBranchConcreteLibFunc for RefundGasConcreteLibFunc {
     }
     fn output_types(&self) -> Vec<ConcreteTypeId> {
         vec![self.deferred_gas_builtin_type.clone()]
+    }
+    fn output_dependencies(&self) -> Vec<Vec<usize>> {
+        vec![vec![0]]
     }
 }
