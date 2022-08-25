@@ -5,7 +5,6 @@ use thiserror::Error;
 
 use self::mem_cell::MemCell;
 use crate::edit_state::{put_results, take_args, EditStateError};
-use crate::extensions::core::function_call::FunctionCallConcreteLibFunc;
 use crate::extensions::CoreConcreteLibFunc;
 use crate::ids::{FunctionId, VarId};
 use crate::program::{Program, Statement, StatementIdx};
@@ -23,8 +22,8 @@ pub enum LibFuncSimulationError {
     WrongNumberOfArgs,
     #[error("Expected a different memory layout")]
     MemoryLayoutMismatch,
-    #[error("Only simple libraty functions can be simulated directly")]
-    NonSimpleLibFunc,
+    #[error("Error occurred during user function call")]
+    FunctionSimulationError(FunctionId, Box<SimulationError>),
 }
 
 /// Error occurring while simulating a program function.
@@ -50,18 +49,18 @@ pub fn run(
     function_id: &FunctionId,
     inputs: Vec<Vec<MemCell>>,
 ) -> Result<Vec<Vec<MemCell>>, SimulationError> {
-    let context = RunContext { program, registry: &ProgramRegistry::new(program)? };
-    context.run_function(function_id, inputs)
+    let context = SimulationContext { program, registry: &ProgramRegistry::new(program)? };
+    context.simulate_function(function_id, inputs)
 }
 
 /// Helper class for runing the simulation.
-struct RunContext<'a> {
+struct SimulationContext<'a> {
     pub program: &'a Program,
     pub registry: &'a ProgramRegistry,
 }
-impl RunContext<'_> {
+impl SimulationContext<'_> {
     /// Simulates the run of a function, even recursively.
-    fn run_function(
+    fn simulate_function(
         &self,
         function_id: &FunctionId,
         inputs: Vec<Vec<MemCell>>,
@@ -119,20 +118,22 @@ impl RunContext<'_> {
             }
         }
     }
-    /// Simulates the run of libfuncs - even complex ones.
+    /// Simulates the run of libfuncs. Returns the memory reperesentations of the outputs given the
+    /// inputs.
     fn simulate_libfunc(
         &self,
         libfunc: &CoreConcreteLibFunc,
         inputs: Vec<Vec<MemCell>>,
         current_statement_id: StatementIdx,
     ) -> Result<(Vec<Vec<MemCell>>, usize), SimulationError> {
-        if let CoreConcreteLibFunc::FunctionCall(FunctionCallConcreteLibFunc { function }) = libfunc
-        {
-            Ok((self.run_function(&function.id, inputs)?, 0))
-        } else {
-            core::simple_simulate(libfunc, inputs).map_err(|error| {
-                SimulationError::LibFuncSimulationError(error, current_statement_id)
+        core::simulate(libfunc, inputs, |function_id, inputs| {
+            self.simulate_function(function_id, inputs).map_err(|error| {
+                LibFuncSimulationError::FunctionSimulationError(
+                    function_id.clone(),
+                    Box::new(error),
+                )
             })
-        }
+        })
+        .map_err(|error| SimulationError::LibFuncSimulationError(error, current_statement_id))
     }
 }
