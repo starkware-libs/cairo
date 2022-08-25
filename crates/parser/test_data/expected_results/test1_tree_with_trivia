@@ -46,7 +46,7 @@
     │       │   │   │               │   ├── leading_trivia (kind: Trivia) []
     │       │   │   │               │   ├── token (kind: Identifier): 'int'
     │       │   │   │               │   └── trailing_trivia (kind: Trivia) []
-    │       │   │   │               └── generic_args (kind: OptionGenericArgsNone) []
+    │       │   │   │               └── generic_args (kind: OptionGenericArgsEmpty) []
     │       │   │   ├── separator #0 (kind: Terminal)
     │       │   │   │   ├── leading_trivia (kind: Trivia) []
     │       │   │   │   ├── token (kind: Comma): ','
@@ -73,7 +73,7 @@
     │       │   │   │               │   ├── leading_trivia (kind: Trivia) []
     │       │   │   │               │   ├── token (kind: Identifier): 'felt'
     │       │   │   │               │   └── trailing_trivia (kind: Trivia) []
-    │       │   │   │               └── generic_args (kind: OptionGenericArgsNone) []
+    │       │   │   │               └── generic_args (kind: OptionGenericArgsEmpty) []
     │       │   │   └── separator #1 (kind: Terminal)
     │       │   │       ├── leading_trivia (kind: Trivia) []
     │       │   │       ├── token (kind: Comma): ','
@@ -96,7 +96,7 @@
     │       │               │   ├── token (kind: Identifier): 'int'
     │       │               │   └── trailing_trivia (kind: Trivia)
     │       │               │       └── child #0 (kind: Whitespace).
-    │       │               └── generic_args (kind: OptionGenericArgsNone) []
+    │       │               └── generic_args (kind: OptionGenericArgsEmpty) []
     │       └── body (kind: ExprBlock)
     │           ├── lbrace (kind: Terminal)
     │           │   ├── leading_trivia (kind: Trivia) []
@@ -264,7 +264,7 @@
     │           │   │   │   │       │   │   └── child #3 (kind: Whitespace).
     │           │   │   │   │       │   ├── token (kind: Identifier): 'func'
     │           │   │   │   │       │   └── trailing_trivia (kind: Trivia) []
-    │           │   │   │   │       └── generic_args (kind: OptionGenericArgsNone) []
+    │           │   │   │   │       └── generic_args (kind: OptionGenericArgsEmpty) []
     │           │   │   │   └── arguments (kind: ExprListParenthesized)
     │           │   │   │       ├── lparen (kind: Terminal)
     │           │   │   │       │   ├── leading_trivia (kind: Trivia) []
@@ -277,7 +277,7 @@
     │           │   │   │       │           │   ├── leading_trivia (kind: Trivia) []
     │           │   │   │       │           │   ├── token (kind: Identifier): 'x'
     │           │   │   │       │           │   └── trailing_trivia (kind: Trivia) []
-    │           │   │   │       │           └── generic_args (kind: OptionGenericArgsNone) []
+    │           │   │   │       │           └── generic_args (kind: OptionGenericArgsEmpty) []
     │           │   │   │       └── rparen (kind: Terminal)
     │           │   │   │           ├── leading_trivia (kind: Trivia) []
     │           │   │   │           ├── token (kind: RParen): ')'
@@ -296,7 +296,7 @@
     │           │   │   │   │       │   │   └── child #0 (kind: Whitespace).
     │           │   │   │   │       │   ├── token (kind: Identifier): 'func2'
     │           │   │   │   │       │   └── trailing_trivia (kind: Trivia) []
-    │           │   │   │   │       └── generic_args (kind: OptionGenericArgsNone) []
+    │           │   │   │   │       └── generic_args (kind: OptionGenericArgsEmpty) []
     │           │   │   │   └── arguments (kind: ExprListParenthesized)
     │           │   │   │       ├── lparen (kind: Terminal)
     │           │   │   │       │   ├── leading_trivia (kind: Trivia) []
@@ -309,7 +309,7 @@
     │           │   │   │       │           │   ├── leading_trivia (kind: Trivia) []
     │           │   │   │       │           │   ├── token (kind: Identifier): 'x'
     │           │   │   │       │           │   └── trailing_trivia (kind: Trivia) []
-    │           │   │   │       │           └── generic_args (kind: OptionGenericArgsNone) []
+    │           │   │   │       │           └── generic_args (kind: OptionGenericArgsEmpty) []
     │           │   │   │       └── rparen (kind: Terminal)
     │           │   │   │           ├── leading_trivia (kind: Trivia) []
     │           │   │   │           ├── token (kind: RParen): ')'
@@ -329,7 +329,7 @@
     │           │       │       │   ├── leading_trivia (kind: Trivia) []
     │           │       │       │   ├── token (kind: Identifier): 'x'
     │           │       │       │   └── trailing_trivia (kind: Trivia) []
-    │           │       │       └── generic_args (kind: OptionGenericArgsNone) []
+    │           │       │       └── generic_args (kind: OptionGenericArgsEmpty) []
     │           │       └── semi (kind: Terminal)
     │           │           ├── leading_trivia (kind: Trivia) []
     │           │           ├── token (kind: Semi): ';'
