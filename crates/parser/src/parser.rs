@@ -520,7 +520,7 @@ impl<'a> Parser<'a> {
             self.take(),
             // TODO(yuval): support generics.
             // generic args
-            OptionGenericArgsNone::new_green(self.db),
+            OptionGenericArgsEmpty::new_green(self.db),
         )
     }
 
