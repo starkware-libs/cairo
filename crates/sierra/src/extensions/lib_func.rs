@@ -1,6 +1,39 @@
+use std::collections::HashMap;
+
 use super::error::{ExtensionError, SpecializationError};
-use crate::ids::{ConcreteTypeId, GenericLibFuncId};
-use crate::program::GenericArg;
+use crate::ids::{ConcreteTypeId, FunctionId, GenericLibFuncId, GenericTypeId};
+use crate::program::{Function, GenericArg};
+
+pub type FunctionMap = HashMap<FunctionId, Function>;
+/// Mapping from the arguments for generating a concrete type (the generic-id and the arguments) to
+/// the concrete-id that points to it.
+pub type ConcreteTypeIdMap<'a> = HashMap<(GenericTypeId, &'a [GenericArg]), ConcreteTypeId>;
+/// Context required for specialization process.
+pub struct SpecializationContext<'a> {
+    pub functions: &'a FunctionMap,
+    pub concrete_type_ids: &'a ConcreteTypeIdMap<'a>,
+}
+impl SpecializationContext<'_> {
+    /// Returns concrete type id or an error if missing.
+    pub fn get_concrete_type(
+        &self,
+        id: GenericTypeId,
+        args: &[GenericArg],
+    ) -> Result<ConcreteTypeId, SpecializationError> {
+        self.concrete_type_ids
+            .get(&(id.clone(), args))
+            .ok_or_else(|| SpecializationError::TypeWasNotDeclared(id, args.to_vec()))
+            .cloned()
+    }
+    /// Returns the concrete id of a generic-type-id wrapping the type of a concrete-type-id.
+    pub fn get_wrapped_concrete_type(
+        &self,
+        id: GenericTypeId,
+        wrapped: ConcreteTypeId,
+    ) -> Result<ConcreteTypeId, SpecializationError> {
+        self.get_concrete_type(id, &[GenericArg::Type(wrapped)])
+    }
+}
 
 /// Trait for implementing a libfunc specialization generator.
 pub trait GenericLibFunc: Sized {
@@ -9,18 +42,24 @@ pub trait GenericLibFunc: Sized {
     /// Instantiates the libfunc by id.
     fn by_id(id: &GenericLibFuncId) -> Option<Self>;
     /// Creates the specialization with the template arguments.
-    fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError>;
+    fn specialize(
+        &self,
+        context: SpecializationContext<'_>,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError>;
 }
 
 /// Trait for introducing helper methods on GenericLibFunc.
 pub trait GenericLibFuncEx: GenericLibFunc {
     fn specialize_by_id(
+        context: SpecializationContext<'_>,
         libfunc_id: &GenericLibFuncId,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, ExtensionError>;
 }
 impl<TGenericLibFunc: GenericLibFunc> GenericLibFuncEx for TGenericLibFunc {
     fn specialize_by_id(
+        context: SpecializationContext<'_>,
         libfunc_id: &GenericLibFuncId,
         args: &[GenericArg],
     ) -> Result<TGenericLibFunc::Concrete, ExtensionError> {
@@ -29,7 +68,7 @@ impl<TGenericLibFunc: GenericLibFunc> GenericLibFuncEx for TGenericLibFunc {
                 libfunc_id: libfunc_id.clone(),
                 error: SpecializationError::UnsupportedId,
             })?
-            .specialize(args)
+            .specialize(context, args)
             .map_err(move |error| ExtensionError::LibFuncSpecialization {
                 libfunc_id: libfunc_id.clone(),
                 error,
@@ -43,7 +82,11 @@ pub trait NamedLibFunc: Default {
     type Concrete: ConcreteLibFunc;
     const NAME: &'static str;
     /// Creates the specialization with the template arguments.
-    fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError>;
+    fn specialize(
+        &self,
+        context: SpecializationContext<'_>,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError>;
 }
 impl<TNamedLibFunc: NamedLibFunc> GenericLibFunc for TNamedLibFunc {
     type Concrete = <Self as NamedLibFunc>::Concrete;
@@ -55,8 +98,12 @@ impl<TNamedLibFunc: NamedLibFunc> GenericLibFunc for TNamedLibFunc {
         None
     }
 
-    fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError> {
-        <Self as NamedLibFunc>::specialize(self, args)
+    fn specialize(
+        &self,
+        context: SpecializationContext<'_>,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
+        <Self as NamedLibFunc>::specialize(self, context, args)
     }
 }
 
@@ -64,25 +111,35 @@ impl<TNamedLibFunc: NamedLibFunc> GenericLibFunc for TNamedLibFunc {
 pub trait NoGenericArgsGenericLibFunc: Default {
     type Concrete: ConcreteLibFunc;
     const NAME: &'static str;
-    fn specialize(&self) -> Self::Concrete;
+    fn specialize(
+        &self,
+        context: SpecializationContext<'_>,
+    ) -> Result<Self::Concrete, SpecializationError>;
 }
 impl<T: NoGenericArgsGenericLibFunc> NamedLibFunc for T {
     type Concrete = <Self as NoGenericArgsGenericLibFunc>::Concrete;
     const NAME: &'static str = <Self as NoGenericArgsGenericLibFunc>::NAME;
 
-    fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError> {
+    fn specialize(
+        &self,
+        context: SpecializationContext<'_>,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
         if args.is_empty() {
-            Ok(self.specialize())
+            self.specialize(context)
         } else {
             Err(SpecializationError::WrongNumberOfGenericArgs)
         }
     }
 }
 
-/// Trait for a specialized library call.
+/// Trait for a specialized library function.
 pub trait ConcreteLibFunc {
+    /// The input types for calling the library function.
     fn input_types(&self) -> Vec<ConcreteTypeId>;
+    /// The output types returning from library function per branch.
     fn output_types(&self) -> Vec<Vec<ConcreteTypeId>>;
+    /// The index of the fallthrough branch of the library function if any.
     fn fallthrough(&self) -> Option<usize>;
 }
 
@@ -180,12 +237,14 @@ macro_rules! define_libfunc_hierarchy {
                 None
             }
             fn specialize(
-                    &self, args: &[$crate::program::GenericArg]
+                    &self,
+                    context: $crate::extensions::lib_func::SpecializationContext<'_>,
+                    args: &[$crate::program::GenericArg],
             ) -> Result<Self::Concrete, $crate::extensions::SpecializationError>{
                 match self {
                     $(
                         Self::$variant_name(value) => {
-                            let inner = <$variant as GenericLibFunc>::specialize(value, args)?;
+                            let inner = <$variant as GenericLibFunc>::specialize(value, context, args)?;
                             Ok(Self::Concrete::$variant_name(inner.into()))
                         }
                     ),*

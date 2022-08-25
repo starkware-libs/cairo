@@ -9,7 +9,7 @@ use crate::pre_sierra;
 use crate::utils::simple_statement;
 
 /// Generates Sierra code that computes a given expression.
-/// Returns a list of Sierra instructions and the Sierra variable in which the result
+/// Returns a list of Sierra statements and the Sierra variable in which the result
 /// is stored.
 pub fn generate_expression_code(
     context: &mut ExprGeneratorContext<'_>,
@@ -52,17 +52,16 @@ fn handle_block(
     expr_block: &semantic::ExprBlock,
 ) -> (Vec<pre_sierra::Statement>, sierra::ids::VarId) {
     // Process the statements.
-    let mut instructions: Vec<pre_sierra::Statement> = vec![];
+    let mut statements: Vec<pre_sierra::Statement> = vec![];
     for statement in &expr_block.statements {
         match statement {
             semantic::Statement::Expr(expr) => {
-                let (statement_instructions, _res) = generate_expression_code(context, *expr);
-                instructions.extend(statement_instructions);
+                let (cur_statements, _res) = generate_expression_code(context, *expr);
+                statements.extend(cur_statements);
             }
             semantic::Statement::Let(statement_let) => {
-                let (statement_instructions, res) =
-                    generate_expression_code(context, statement_let.expr);
-                instructions.extend(statement_instructions);
+                let (cur_statements, res) = generate_expression_code(context, statement_let.expr);
+                statements.extend(cur_statements);
                 context.register_variable(statement_let.var, res);
             }
         }
@@ -71,9 +70,9 @@ fn handle_block(
     // Process the tail expression.
     match expr_block.tail {
         Some(expr_id) => {
-            let (tail_instructions, output_var) = generate_expression_code(context, expr_id);
-            instructions.extend(tail_instructions);
-            (instructions, output_var)
+            let (tail_statements, output_var) = generate_expression_code(context, expr_id);
+            statements.extend(tail_statements);
+            (statements, output_var)
         }
         None => {
             // TODO(lior): Support expressions that do not return a value.
@@ -87,13 +86,13 @@ fn handle_function_call(
     context: &mut ExprGeneratorContext<'_>,
     expr_function_call: &semantic::ExprFunctionCall,
 ) -> (Vec<pre_sierra::Statement>, sierra::ids::VarId) {
-    let mut instructions: Vec<pre_sierra::Statement> = vec![];
+    let mut statements: Vec<pre_sierra::Statement> = vec![];
 
-    // Output instructions to compute the arguments.
+    // Output statements to compute the arguments.
     let mut args: Vec<sierra::ids::VarId> = vec![];
     for arg in &expr_function_call.args {
-        let (arg_instructions, res) = generate_expression_code(context, *arg);
-        instructions.extend(arg_instructions);
+        let (arg_statements, res) = generate_expression_code(context, *arg);
+        statements.extend(arg_statements);
         args.push(res);
     }
 
@@ -101,14 +100,14 @@ fn handle_function_call(
     let mut args_on_stack: Vec<sierra::ids::VarId> = vec![];
     for arg_res in args {
         let arg_var = context.allocate_sierra_variable();
-        instructions.push(simple_statement("store_temp", &[arg_res], &[arg_var.clone()]));
+        statements.push(simple_statement("store_temp", &[arg_res], &[arg_var.clone()]));
         args_on_stack.push(arg_var);
     }
 
     // Call the function.
     let res_var = context.allocate_sierra_variable();
-    instructions.push(simple_statement("func", &args_on_stack, &[res_var.clone()]));
-    (instructions, res_var)
+    statements.push(simple_statement("func", &args_on_stack, &[res_var.clone()]));
+    (statements, res_var)
 }
 
 /// Generates Sierra code for [semantic::ExprMatch].
