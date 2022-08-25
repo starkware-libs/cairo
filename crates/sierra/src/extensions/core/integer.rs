@@ -120,6 +120,9 @@ impl NonBranchConcreteLibFunc for BinaryOperationConcreteLibFunc {
     fn output_types(&self) -> Vec<ConcreteTypeId> {
         vec![self.deferred_int_type.clone()]
     }
+    fn output_dependencies(&self) -> Vec<Vec<usize>> {
+        vec![vec![0, 1]]
+    }
 }
 
 /// Operations between a int and a const.
@@ -142,6 +145,9 @@ impl NonBranchConcreteLibFunc for OperationWithConstConcreteLibFunc {
     }
     fn output_types(&self) -> Vec<ConcreteTypeId> {
         vec![self.deferred_int_type.clone()]
+    }
+    fn output_dependencies(&self) -> Vec<Vec<usize>> {
+        vec![vec![0]]
     }
 }
 
@@ -179,6 +185,9 @@ impl NonBranchConcreteLibFunc for ConstConcreteLibFunc {
     fn output_types(&self) -> Vec<ConcreteTypeId> {
         vec![self.deferred_int_type.clone()]
     }
+    fn output_dependencies(&self) -> Vec<Vec<usize>> {
+        vec![vec![]]
+    }
 }
 
 /// LibFunc for ignoring an int.
@@ -203,6 +212,9 @@ impl NonBranchConcreteLibFunc for IgnoreConcreteLibFunc {
         vec![self.int_type.clone()]
     }
     fn output_types(&self) -> Vec<ConcreteTypeId> {
+        vec![]
+    }
+    fn output_dependencies(&self) -> Vec<Vec<usize>> {
         vec![]
     }
 }
@@ -233,6 +245,9 @@ impl NonBranchConcreteLibFunc for DuplicateConcreteLibFunc {
     }
     fn output_types(&self) -> Vec<ConcreteTypeId> {
         vec![self.int_type.clone(), self.int_type.clone()]
+    }
+    fn output_dependencies(&self) -> Vec<Vec<usize>> {
+        vec![vec![0], vec![0]]
     }
 }
 
@@ -270,5 +285,8 @@ impl ConcreteLibFunc for JumpNotZeroConcreteLibFunc {
     }
     fn fallthrough(&self) -> Option<usize> {
         Some(1)
+    }
+    fn output_dependencies(&self) -> Vec<Vec<Vec<usize>>> {
+        vec![/* success= */ vec![vec![0]], /* failure= */ vec![]]
     }
 }
