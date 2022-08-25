@@ -1,4 +1,4 @@
-# Prelude
+= Prelude
 
 A _prelude_ is a collection of items that are always available in every module in a program.
 

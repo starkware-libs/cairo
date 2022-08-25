@@ -1,10 +1,10 @@
-# Summary
+= Summary
 
-## Introduction
+== Introduction
 
 link:notation.adoc[Notation]
 
-## Language Constructs
+== Language Constructs
 
 * link:lexical-structure.adoc[Lexical structure]
 ** link:keywords.adoc[Keywords]
@@ -84,7 +84,7 @@ link:notation.adoc[Notation]
 
 * Hints
 
-## Language Semantics
+== Language Semantics
 
 * Memory model
 
@@ -94,6 +94,6 @@ link:notation.adoc[Notation]
 
 * Runtime
 
-## Appendices
+== Appendices
 
 * link:Full Grammar
