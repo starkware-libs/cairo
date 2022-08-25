@@ -5,7 +5,7 @@ use thiserror::Error;
 
 use crate::extensions::lib_func::{ConcreteTypeIdMap, FunctionMap, SpecializationContext};
 use crate::extensions::{
-    CoreConcrete, CoreLibFunc, CoreType, CoreTypeConcrete, ExtensionError, GenericLibFuncEx,
+    CoreConcreteLibFunc, CoreLibFunc, CoreType, CoreTypeConcrete, ExtensionError, GenericLibFuncEx,
     GenericTypeEx,
 };
 use crate::ids::{ConcreteLibFuncId, ConcreteTypeId, FunctionId, GenericTypeId};
@@ -39,7 +39,7 @@ pub enum ProgramRegistryError {
 }
 
 type TypeMap = HashMap<ConcreteTypeId, CoreTypeConcrete>;
-type LibFuncMap = HashMap<ConcreteLibFuncId, CoreConcrete>;
+type LibFuncMap = HashMap<ConcreteLibFuncId, CoreConcreteLibFunc>;
 
 /// Registry for the data of the compiler, for all program specific data.
 pub struct ProgramRegistry {
@@ -76,7 +76,7 @@ impl ProgramRegistry {
     pub fn get_libfunc<'a>(
         &'a self,
         id: &ConcreteLibFuncId,
-    ) -> Result<&'a CoreConcrete, ProgramRegistryError> {
+    ) -> Result<&'a CoreConcreteLibFunc, ProgramRegistryError> {
         self.concrete_libfuncs
             .get(id)
             .ok_or_else(|| ProgramRegistryError::MissingLibFunc(id.clone()))
