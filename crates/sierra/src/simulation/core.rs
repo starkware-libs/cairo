@@ -2,6 +2,7 @@ use array_init::array_init;
 
 use super::mem_cell::MemCell;
 use super::LibFuncSimulationError;
+use crate::extensions::core::function_call::FunctionCallConcreteLibFunc;
 use crate::extensions::core::gas::GasConcreteLibFunc::{GetGas, RefundGas};
 use crate::extensions::core::gas::{GetGasConcreteLibFunc, RefundGasConcreteLibFunc};
 use crate::extensions::core::integer::IntegerConcrete::{
@@ -17,14 +18,22 @@ use crate::extensions::core::mem::MemConcreteLibFunc::{
 use crate::extensions::CoreConcreteLibFunc::{
     self, FunctionCall, Gas, Integer, Mem, UnconditionalJump,
 };
+use crate::ids::FunctionId;
 
-/// Simulates the run of a single libfunc.
-pub fn simple_simulate(
+/// Simulates the run of a single libfunc. Returns the memory reperesentations of the outputs, and
+/// the chosen branch given the inputs. A function that provides the simulation of running a user
+/// function is also provided for the case where the extensions needs to simulate it.
+pub fn simulate<
+    F: Fn(&FunctionId, Vec<Vec<MemCell>>) -> Result<Vec<Vec<MemCell>>, LibFuncSimulationError>,
+>(
     libfunc: &CoreConcreteLibFunc,
     inputs: Vec<Vec<MemCell>>,
+    simulate_function: F,
 ) -> Result<(Vec<Vec<MemCell>>, usize), LibFuncSimulationError> {
     match libfunc {
-        FunctionCall(_) => Err(LibFuncSimulationError::NonSimpleLibFunc),
+        FunctionCall(FunctionCallConcreteLibFunc { function }) => {
+            Ok((simulate_function(&function.id, inputs)?, 0))
+        }
         Gas(GetGas(GetGasConcreteLibFunc { count, .. })) => {
             let [MemCell { value: gas_counter }] = unpack_inputs::<1>(inputs)?;
             if gas_counter >= *count {
