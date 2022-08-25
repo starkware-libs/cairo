@@ -3,7 +3,7 @@ use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::SpecializationContext;
 use crate::extensions::{
     ConcreteType, GenericLibFunc, NamedLibFunc, NamedType, NoGenericArgsGenericLibFunc,
-    NonBranchConcreteLibFunc, SpecializationError,
+    NonBranchConcreteLibFunc, OutputOrigin, SpecializationError,
 };
 use crate::ids::{ConcreteTypeId, GenericLibFuncId, GenericTypeId};
 use crate::program::GenericArg;
@@ -62,6 +62,9 @@ impl NonBranchConcreteLibFunc for StoreTempConcreteLibFunc {
     fn output_types(&self) -> Vec<ConcreteTypeId> {
         vec![self.ty.clone()]
     }
+    fn output_origins(&self) -> Vec<OutputOrigin> {
+        vec![OutputOrigin::OnTemp]
+    }
 }
 
 /// LibFunc for aligning the temporary buffer for flow control merge.
@@ -87,6 +90,9 @@ impl NonBranchConcreteLibFunc for AlignTempsConcreteLibFunc {
         vec![]
     }
     fn output_types(&self) -> Vec<ConcreteTypeId> {
+        vec![]
+    }
+    fn output_origins(&self) -> Vec<OutputOrigin> {
         vec![]
     }
 }
@@ -120,6 +126,9 @@ impl NonBranchConcreteLibFunc for StoreLocalConcreteLibFunc {
     fn output_types(&self) -> Vec<ConcreteTypeId> {
         vec![self.ty.clone()]
     }
+    fn output_origins(&self) -> Vec<OutputOrigin> {
+        vec![OutputOrigin::OnLocal]
+    }
 }
 
 /// LibFunc for allocating locals for later stores.
@@ -142,6 +151,9 @@ impl NonBranchConcreteLibFunc for AllocLocalsConcreteLibFunc {
         vec![]
     }
     fn output_types(&self) -> Vec<ConcreteTypeId> {
+        vec![]
+    }
+    fn output_origins(&self) -> Vec<OutputOrigin> {
         vec![]
     }
 }
@@ -170,6 +182,9 @@ impl NonBranchConcreteLibFunc for RenameConcreteLibFunc {
     }
     fn output_types(&self) -> Vec<ConcreteTypeId> {
         vec![self.ty.clone()]
+    }
+    fn output_origins(&self) -> Vec<OutputOrigin> {
+        vec![OutputOrigin::SameAsInput(0)]
     }
 }
 
@@ -201,5 +216,8 @@ impl NonBranchConcreteLibFunc for MoveConcreteLibFunc {
     }
     fn output_types(&self) -> Vec<ConcreteTypeId> {
         vec![self.deferred_ty.clone()]
+    }
+    fn output_origins(&self) -> Vec<OutputOrigin> {
+        vec![OutputOrigin::DependentOnInputs(vec![0])]
     }
 }

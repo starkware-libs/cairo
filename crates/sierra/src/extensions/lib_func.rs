@@ -129,6 +129,14 @@ impl<T: NoGenericArgsGenericLibFunc> NamedLibFunc for T {
     }
 }
 
+/// The origin of an output of a library function.
+pub enum OutputOrigin {
+    OnTemp,
+    OnLocal,
+    SameAsInput(usize),
+    DependentOnInputs(Vec<usize>),
+}
+
 /// Trait for a specialized library function.
 pub trait ConcreteLibFunc {
     /// The input types for calling the library function.
@@ -137,12 +145,15 @@ pub trait ConcreteLibFunc {
     fn output_types(&self) -> Vec<Vec<ConcreteTypeId>>;
     /// The index of the fallthrough branch of the library function if any.
     fn fallthrough(&self) -> Option<usize>;
+    /// The origin of an all outputs per branch.
+    fn output_origins(&self) -> Vec<Vec<OutputOrigin>>;
 }
 
 /// Trait for a non branch specialized libfunc.
 pub trait NonBranchConcreteLibFunc {
     fn input_types(&self) -> Vec<ConcreteTypeId>;
     fn output_types(&self) -> Vec<ConcreteTypeId>;
+    fn output_origins(&self) -> Vec<OutputOrigin>;
 }
 impl<TNonBranchConcreteLibFunc: NonBranchConcreteLibFunc> ConcreteLibFunc
     for TNonBranchConcreteLibFunc
@@ -155,6 +166,9 @@ impl<TNonBranchConcreteLibFunc: NonBranchConcreteLibFunc> ConcreteLibFunc
     }
     fn fallthrough(&self) -> Option<usize> {
         Some(0)
+    }
+    fn output_origins(&self) -> Vec<Vec<OutputOrigin>> {
+        vec![<Self as NonBranchConcreteLibFunc>::output_origins(self)]
     }
 }
 
@@ -190,6 +204,11 @@ macro_rules! define_concrete_libfunc_hierarchy {
             }
             $crate::extensions::lib_func::concrete_method_impl!{
                 fn fallthrough(&self) -> Option<usize> {
+                    $($variant_name => $variant,)*
+                }
+            }
+            $crate::extensions::lib_func::concrete_method_impl!{
+                fn output_origins(&self) -> Vec<Vec<$crate::extensions::OutputOrigin>> {
                     $($variant_name => $variant,)*
                 }
             }

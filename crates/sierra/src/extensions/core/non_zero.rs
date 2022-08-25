@@ -1,7 +1,8 @@
 use super::as_single_type;
 use crate::extensions::lib_func::SpecializationContext;
 use crate::extensions::{
-    ConcreteType, NamedLibFunc, NamedType, NonBranchConcreteLibFunc, SpecializationError,
+    ConcreteType, NamedLibFunc, NamedType, NonBranchConcreteLibFunc, OutputOrigin,
+    SpecializationError,
 };
 use crate::ids::{ConcreteTypeId, GenericLibFuncId, GenericTypeId};
 use crate::program::GenericArg;
@@ -51,5 +52,8 @@ impl NonBranchConcreteLibFunc for UnwrapNonZeroConcreteLibFunc {
     }
     fn output_types(&self) -> Vec<ConcreteTypeId> {
         vec![self.ty.clone()]
+    }
+    fn output_origins(&self) -> Vec<OutputOrigin> {
+        vec![OutputOrigin::SameAsInput(0)]
     }
 }

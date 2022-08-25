@@ -1,5 +1,7 @@
 use crate::extensions::lib_func::SpecializationContext;
-use crate::extensions::{ConcreteLibFunc, NoGenericArgsGenericLibFunc, SpecializationError};
+use crate::extensions::{
+    ConcreteLibFunc, NoGenericArgsGenericLibFunc, OutputOrigin, SpecializationError,
+};
 use crate::ids::{ConcreteTypeId, GenericLibFuncId};
 
 #[derive(Default)]
@@ -25,5 +27,8 @@ impl ConcreteLibFunc for UnconditionalJumpConcreteLibFunc {
     }
     fn fallthrough(&self) -> Option<usize> {
         None
+    }
+    fn output_origins(&self) -> Vec<Vec<OutputOrigin>> {
+        vec![vec![]]
     }
 }

@@ -1,5 +1,7 @@
 use crate::extensions::lib_func::SpecializationContext;
-use crate::extensions::{NamedLibFunc, NonBranchConcreteLibFunc, SpecializationError};
+use crate::extensions::{
+    NamedLibFunc, NonBranchConcreteLibFunc, OutputOrigin, SpecializationError,
+};
 use crate::ids::{ConcreteTypeId, GenericLibFuncId};
 use crate::program::{Function, GenericArg};
 
@@ -36,5 +38,8 @@ impl NonBranchConcreteLibFunc for FunctionCallConcreteLibFunc {
     }
     fn output_types(&self) -> Vec<ConcreteTypeId> {
         self.function.ret_types.clone()
+    }
+    fn output_origins(&self) -> Vec<OutputOrigin> {
+        self.function.ret_types.iter().map(|_| OutputOrigin::OnTemp).collect()
     }
 }

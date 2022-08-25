@@ -4,7 +4,7 @@ use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::SpecializationContext;
 use crate::extensions::{
     ConcreteLibFunc, ConcreteType, GenericLibFunc, NamedLibFunc, NamedType,
-    NoGenericArgsGenericType, NonBranchConcreteLibFunc, SpecializationError,
+    NoGenericArgsGenericType, NonBranchConcreteLibFunc, OutputOrigin, SpecializationError,
 };
 use crate::ids::{ConcreteTypeId, GenericLibFuncId, GenericTypeId};
 use crate::program::GenericArg;
@@ -85,6 +85,14 @@ impl ConcreteLibFunc for GetGasConcreteLibFunc {
     fn fallthrough(&self) -> Option<usize> {
         Some(1)
     }
+    fn output_origins(&self) -> Vec<Vec<OutputOrigin>> {
+        vec![
+            // success=
+            vec![OutputOrigin::DependentOnInputs(vec![0])],
+            // failure=
+            vec![OutputOrigin::SameAsInput(0)],
+        ]
+    }
 }
 
 /// LibFunc for returning unused gas.
@@ -118,5 +126,8 @@ impl NonBranchConcreteLibFunc for RefundGasConcreteLibFunc {
     }
     fn output_types(&self) -> Vec<ConcreteTypeId> {
         vec![self.deferred_gas_builtin_type.clone()]
+    }
+    fn output_origins(&self) -> Vec<OutputOrigin> {
+        vec![OutputOrigin::DependentOnInputs(vec![0])]
     }
 }

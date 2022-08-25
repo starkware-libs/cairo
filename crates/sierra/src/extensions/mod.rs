@@ -7,7 +7,7 @@ pub use self::core::{CoreConcreteLibFunc, CoreLibFunc, CoreType, CoreTypeConcret
 pub use self::error::{ExtensionError, SpecializationError};
 pub use self::lib_func::{
     ConcreteLibFunc, GenericLibFunc, GenericLibFuncEx, NamedLibFunc, NoGenericArgsGenericLibFunc,
-    NonBranchConcreteLibFunc,
+    NonBranchConcreteLibFunc, OutputOrigin,
 };
 pub use self::types::{
     ConcreteType, GenericType, GenericTypeEx, NamedType, NoGenericArgsGenericType,

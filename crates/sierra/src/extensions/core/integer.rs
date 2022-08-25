@@ -3,7 +3,7 @@ use super::non_zero::NonZeroType;
 use crate::extensions::lib_func::SpecializationContext;
 use crate::extensions::{
     ConcreteLibFunc, ConcreteType, GenericLibFunc, NamedLibFunc, NamedType,
-    NoGenericArgsGenericLibFunc, NoGenericArgsGenericType, NonBranchConcreteLibFunc,
+    NoGenericArgsGenericLibFunc, NoGenericArgsGenericType, NonBranchConcreteLibFunc, OutputOrigin,
     SpecializationError,
 };
 use crate::ids::{ConcreteTypeId, GenericLibFuncId, GenericTypeId};
@@ -120,6 +120,9 @@ impl NonBranchConcreteLibFunc for BinaryOperationConcreteLibFunc {
     fn output_types(&self) -> Vec<ConcreteTypeId> {
         vec![self.deferred_int_type.clone()]
     }
+    fn output_origins(&self) -> Vec<OutputOrigin> {
+        vec![OutputOrigin::DependentOnInputs(vec![0, 1])]
+    }
 }
 
 /// Operations between a int and a const.
@@ -142,6 +145,9 @@ impl NonBranchConcreteLibFunc for OperationWithConstConcreteLibFunc {
     }
     fn output_types(&self) -> Vec<ConcreteTypeId> {
         vec![self.deferred_int_type.clone()]
+    }
+    fn output_origins(&self) -> Vec<OutputOrigin> {
+        vec![OutputOrigin::DependentOnInputs(vec![0])]
     }
 }
 
@@ -179,6 +185,9 @@ impl NonBranchConcreteLibFunc for ConstConcreteLibFunc {
     fn output_types(&self) -> Vec<ConcreteTypeId> {
         vec![self.deferred_int_type.clone()]
     }
+    fn output_origins(&self) -> Vec<OutputOrigin> {
+        vec![OutputOrigin::DependentOnInputs(vec![])]
+    }
 }
 
 /// LibFunc for ignoring an int.
@@ -203,6 +212,9 @@ impl NonBranchConcreteLibFunc for IgnoreConcreteLibFunc {
         vec![self.int_type.clone()]
     }
     fn output_types(&self) -> Vec<ConcreteTypeId> {
+        vec![]
+    }
+    fn output_origins(&self) -> Vec<OutputOrigin> {
         vec![]
     }
 }
@@ -233,6 +245,9 @@ impl NonBranchConcreteLibFunc for DuplicateConcreteLibFunc {
     }
     fn output_types(&self) -> Vec<ConcreteTypeId> {
         vec![self.int_type.clone(), self.int_type.clone()]
+    }
+    fn output_origins(&self) -> Vec<OutputOrigin> {
+        vec![OutputOrigin::SameAsInput(0), OutputOrigin::SameAsInput(0)]
     }
 }
 
@@ -269,5 +284,8 @@ impl ConcreteLibFunc for JumpNotZeroConcreteLibFunc {
     }
     fn fallthrough(&self) -> Option<usize> {
         Some(1)
+    }
+    fn output_origins(&self) -> Vec<Vec<OutputOrigin>> {
+        vec![/* success= */ vec![OutputOrigin::SameAsInput(0)], /* failure= */ vec![]]
     }
 }
