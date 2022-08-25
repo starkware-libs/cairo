@@ -791,7 +791,7 @@ impl TypedSyntaxNode for ExprMissing {
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum OptionGenericArgs {
-    None(OptionGenericArgsNone),
+    Empty(OptionGenericArgsEmpty),
     Some(OptionGenericArgsSome),
 }
 impl TypedSyntaxNode for OptionGenericArgs {
@@ -801,8 +801,8 @@ impl TypedSyntaxNode for OptionGenericArgs {
     fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => match internal.kind {
-                SyntaxKind::OptionGenericArgsNone => {
-                    OptionGenericArgs::None(OptionGenericArgsNone::from_syntax_node(db, node))
+                SyntaxKind::OptionGenericArgsEmpty => {
+                    OptionGenericArgs::Empty(OptionGenericArgsEmpty::from_syntax_node(db, node))
                 }
                 SyntaxKind::OptionGenericArgsSome => {
                     OptionGenericArgs::Some(OptionGenericArgsSome::from_syntax_node(db, node))
@@ -822,31 +822,31 @@ impl TypedSyntaxNode for OptionGenericArgs {
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         match self {
-            OptionGenericArgs::None(x) => x.as_syntax_node(),
+            OptionGenericArgs::Empty(x) => x.as_syntax_node(),
             OptionGenericArgs::Some(x) => x.as_syntax_node(),
         }
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct OptionGenericArgsNone {
+pub struct OptionGenericArgsEmpty {
     node: SyntaxNode,
     children: Vec<SyntaxNode>,
 }
-impl OptionGenericArgsNone {
+impl OptionGenericArgsEmpty {
     pub fn new_green(db: &dyn GreenInterner) -> GreenId {
         let children: Vec<GreenId> = vec![];
         let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
-            kind: SyntaxKind::OptionGenericArgsNone,
+            kind: SyntaxKind::OptionGenericArgsEmpty,
             children,
             width,
         }))
     }
 }
-impl TypedSyntaxNode for OptionGenericArgsNone {
+impl TypedSyntaxNode for OptionGenericArgsEmpty {
     fn missing(db: &dyn GreenInterner) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
-            kind: SyntaxKind::OptionGenericArgsNone,
+            kind: SyntaxKind::OptionGenericArgsEmpty,
             children: vec![],
             width: 0,
         }))
@@ -854,11 +854,11 @@ impl TypedSyntaxNode for OptionGenericArgsNone {
     fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => {
-                if internal.kind != SyntaxKind::OptionGenericArgsNone {
+                if internal.kind != SyntaxKind::OptionGenericArgsEmpty {
                     panic!(
                         "Unexpected SyntaxKind {:?}. Expected {:?}.",
                         internal.kind,
-                        SyntaxKind::OptionGenericArgsNone
+                        SyntaxKind::OptionGenericArgsEmpty
                     );
                 }
                 let children = node.children(db);
@@ -868,7 +868,7 @@ impl TypedSyntaxNode for OptionGenericArgsNone {
                 panic!(
                     "Unexpected Token {:?}. Expected {:?}.",
                     token,
-                    SyntaxKind::OptionGenericArgsNone
+                    SyntaxKind::OptionGenericArgsEmpty
                 );
             }
         }

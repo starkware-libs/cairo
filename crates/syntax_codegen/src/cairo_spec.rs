@@ -64,8 +64,8 @@ pub fn get_spec() -> Vec<Node> {
             .build(),
         separated_list_node("ExprList", "Expr"),
         StructBuilder::new("ExprMissing").build(),
-        EnumBuilder::new_option("OptionGenericArgs").build(),
-        StructBuilder::new("OptionGenericArgsNone").build(),
+        EnumBuilder::new("OptionGenericArgs").node("Empty").node("Some").build(),
+        StructBuilder::new("OptionGenericArgsEmpty").build(),
         // TODO(spapini): Add SimpleExpr.
         separated_list_node("OptionGenericArgsSome", "Expr"),
         StructBuilder::new("PathSegment")
