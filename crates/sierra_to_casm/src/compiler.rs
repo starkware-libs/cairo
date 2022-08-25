@@ -1,6 +1,7 @@
 use std::fmt::Display;
 
 use casm::instructions::{Instruction, InstructionBody, RetInstruction};
+use sierra::extensions::{CoreLibFunc, CoreType};
 use sierra::program::{Program, Statement, StatementIdx};
 use sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use thiserror::Error;
@@ -38,7 +39,8 @@ impl Display for CairoProgram {
 pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
     let mut instructions = Vec::new();
 
-    let registry = ProgramRegistry::new(program).map_err(CompilationError::ProgramRegistryError)?;
+    let registry = ProgramRegistry::<CoreType, CoreLibFunc>::new(program)
+        .map_err(CompilationError::ProgramRegistryError)?;
     let mut program_refs = init_reference(program.statements.len(), &program.funcs)?;
 
     for (statement_id, statement) in program.statements.iter().enumerate() {
