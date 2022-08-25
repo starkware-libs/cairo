@@ -177,29 +177,41 @@ macro_rules! define_concrete_libfunc_hierarchy {
         pub enum $name {
             $($variant_name ($variant),)*
         }
-
         impl $crate::extensions::ConcreteLibFunc for $name {
-            fn input_types(&self) -> Vec<$crate::ids::ConcreteTypeId> {
-                match self {
-                    $(Self::$variant_name(value) =>
-                        <$variant as $crate::extensions::ConcreteLibFunc>::input_types(value)),*
+            $crate::extensions::lib_func::concrete_method_impl! {
+                fn input_types(&self) -> Vec<$crate::ids::ConcreteTypeId> {
+                    $($variant_name => $variant,)*
                 }
             }
-            fn output_types(&self) -> Vec<Vec<$crate::ids::ConcreteTypeId>> {
-                match self {
-                    $(Self::$variant_name(value) =>
-                        <$variant as $crate::extensions::ConcreteLibFunc>::output_types(value)),*
+            $crate::extensions::lib_func::concrete_method_impl!{
+                fn output_types(&self) -> Vec<Vec<$crate::ids::ConcreteTypeId>> {
+                    $($variant_name => $variant,)*
                 }
             }
-            fn fallthrough(&self) -> Option<usize> {
-                match self {
-                    $(Self::$variant_name(value) =>
-                        <$variant as $crate::extensions::ConcreteLibFunc>::fallthrough(value)),*
+            $crate::extensions::lib_func::concrete_method_impl!{
+                fn fallthrough(&self) -> Option<usize> {
+                    $($variant_name => $variant,)*
                 }
             }
         }
     }
 }
+
+/// Implements a method for an enum of library calls by recursively calling the enum option existing
+/// implementation.
+macro_rules! concrete_method_impl {
+    (fn $method_name:ident(&self $(,$var_name:ident : $var:ty)*) -> $ret_type:ty {
+        $($variant_name:ident => $variant:ty,)*
+    }) => {
+        fn $method_name(&self $(,$var_name:ident : $var:ty)*) -> $ret_type {
+            match self {
+                $(Self::$variant_name(value) =>
+                    <$variant as $crate::extensions::ConcreteLibFunc>::$method_name(value)),*
+            }
+        }
+    }
+}
+pub(crate) use concrete_method_impl;
 
 /// Forms a libfunc type from an enum of libfuncs.
 /// The new enum implements GenericLibFunc.
