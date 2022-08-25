@@ -1,11 +1,14 @@
+use std::collections::HashMap;
+
 use test_case::test_case;
 
 use super::core::{CoreLibFunc, CoreType};
+use super::lib_func::SpecializationContext;
 use super::SpecializationError::{
-    self, UnsupportedGenericArg, UnsupportedId, WrongNumberOfGenericArgs,
+    self, MissingFunction, UnsupportedGenericArg, UnsupportedId, WrongNumberOfGenericArgs,
 };
 use crate::extensions::{GenericLibFunc, GenericType};
-use crate::program::GenericArg;
+use crate::program::{Function, GenericArg, StatementIdx};
 
 fn type_arg(name: &str) -> GenericArg {
     GenericArg::Type(name.into())
@@ -30,6 +33,13 @@ fn find_type_specialization(
 }
 
 #[test_case("NoneExistent", vec![] => Err(UnsupportedId); "NoneExistent")]
+#[test_case("function_call", vec![GenericArg::Func("UnregisteredFunction".into())]
+             => Err(MissingFunction("UnregisteredFunction".into()));
+             "function_call<&UnregisteredFunction>")]
+#[test_case("function_call", vec![GenericArg::Func("RegisteredFunction".into())]
+            => Ok(());
+            "function_call<&RegisteredFunction>")]
+#[test_case("function_call", vec![] => Err(UnsupportedGenericArg); "function_call")]
 #[test_case("get_gas", vec![value_arg(2)] => Ok(()); "get_gas<2>")]
 #[test_case("get_gas", vec![] => Err(UnsupportedGenericArg); "get_gas")]
 #[test_case("get_gas", vec![value_arg(-2)] => Err(UnsupportedGenericArg); "get_gas<minus 2>")]
@@ -79,5 +89,32 @@ fn find_libfunc_specialization(
     id: &str,
     generic_args: Vec<GenericArg>,
 ) -> Result<(), SpecializationError> {
-    CoreLibFunc::by_id(&id.into()).ok_or(UnsupportedId)?.specialize(&generic_args).map(|_| ())
+    let functions = &HashMap::from([(
+        "RegisteredFunction".into(),
+        Function {
+            id: "RegisteredFunction".into(),
+            entry: StatementIdx(5),
+            ret_types: vec![],
+            params: vec![],
+        },
+    )]);
+    CoreLibFunc::by_id(&id.into())
+        .ok_or(UnsupportedId)?
+        .specialize(
+            SpecializationContext {
+                concrete_type_ids: &HashMap::from([
+                    (("int".into(), &[][..]), "int".into()),
+                    (("NonZeroInt".into(), &[][..]), "NonZeroInt".into()),
+                    (("Deferred".into(), &[type_arg("int")][..]), "DeferredInt".into()),
+                    (("GasBuiltin".into(), &[][..]), "GasBuiltin".into()),
+                    (
+                        ("Deferred".into(), &[type_arg("GasBuiltin")][..]),
+                        "DeferredGasBuiltin".into(),
+                    ),
+                ]),
+                functions,
+            },
+            &generic_args,
+        )
+        .map(|_| ())
 }

@@ -50,9 +50,9 @@ fn test_expr_generator() {
     }));
 
     let mut expr_generator_context = ExprGeneratorContext::new(&db);
-    let (instructions, res) = generate_expression_code(&mut expr_generator_context, block);
+    let (statements, res) = generate_expression_code(&mut expr_generator_context, block);
     assert_eq!(
-        instructions.iter().map(|x| format!("{}", x)).collect::<Vec<String>>(),
+        statements.iter().map(|x| format!("{}", x)).collect::<Vec<String>>(),
         vec![
             // let x = 7;
             "literal<7>() -> ([0])",
