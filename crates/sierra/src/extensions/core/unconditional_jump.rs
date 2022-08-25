@@ -26,4 +26,7 @@ impl ConcreteLibFunc for UnconditionalJumpConcreteLibFunc {
     fn fallthrough(&self) -> Option<usize> {
         None
     }
+    fn output_dependencies(&self) -> Vec<Vec<Vec<usize>>> {
+        vec![vec![]]
+    }
 }

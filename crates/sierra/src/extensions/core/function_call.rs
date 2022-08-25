@@ -37,4 +37,7 @@ impl NonBranchConcreteLibFunc for FunctionCallConcreteLibFunc {
     fn output_types(&self) -> Vec<ConcreteTypeId> {
         self.function.ret_types.clone()
     }
+    fn output_dependencies(&self) -> Vec<Vec<usize>> {
+        self.function.ret_types.iter().map(|_| vec![]).collect()
+    }
 }

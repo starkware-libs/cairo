@@ -137,12 +137,15 @@ pub trait ConcreteLibFunc {
     fn output_types(&self) -> Vec<Vec<ConcreteTypeId>>;
     /// The index of the fallthrough branch of the library function if any.
     fn fallthrough(&self) -> Option<usize>;
+    /// The indices of the inputs an output is dependent on, per output, per branch.
+    fn output_dependencies(&self) -> Vec<Vec<Vec<usize>>>;
 }
 
 /// Trait for a non branch specialized libfunc.
 pub trait NonBranchConcreteLibFunc {
     fn input_types(&self) -> Vec<ConcreteTypeId>;
     fn output_types(&self) -> Vec<ConcreteTypeId>;
+    fn output_dependencies(&self) -> Vec<Vec<usize>>;
 }
 impl<TNonBranchConcreteLibFunc: NonBranchConcreteLibFunc> ConcreteLibFunc
     for TNonBranchConcreteLibFunc
@@ -155,6 +158,9 @@ impl<TNonBranchConcreteLibFunc: NonBranchConcreteLibFunc> ConcreteLibFunc
     }
     fn fallthrough(&self) -> Option<usize> {
         Some(0)
+    }
+    fn output_dependencies(&self) -> Vec<Vec<Vec<usize>>> {
+        vec![<Self as NonBranchConcreteLibFunc>::output_dependencies(self)]
     }
 }
 
@@ -190,6 +196,11 @@ macro_rules! define_concrete_libfunc_hierarchy {
             }
             $crate::extensions::lib_func::concrete_method_impl!{
                 fn fallthrough(&self) -> Option<usize> {
+                    $($variant_name => $variant,)*
+                }
+            }
+            $crate::extensions::lib_func::concrete_method_impl!{
+                fn output_dependencies(&self) -> Vec<Vec<Vec<usize>>> {
                     $($variant_name => $variant,)*
                 }
             }
