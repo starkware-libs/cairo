@@ -70,8 +70,7 @@ pub struct MatchBranch {
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum Pattern {
     Otherwise,
-    // TODO(lior): Should this be constant expression?
-    Expr(ExprId),
+    Literal(ExprLiteral),
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]

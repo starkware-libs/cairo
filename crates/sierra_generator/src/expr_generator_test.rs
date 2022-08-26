@@ -92,9 +92,7 @@ fn test_match() {
     let statement_let = semantic::StatementLet { var: var_x, expr: literal7 };
 
     let branch0 = semantic::MatchBranch {
-        pattern: semantic::Pattern::Expr(
-            db.expr(semantic::Expr::ExprLiteral(semantic::ExprLiteral { value: 0, ty })),
-        ),
+        pattern: semantic::Pattern::Literal(semantic::ExprLiteral { value: 0, ty }),
         block: var_x_expr,
     };
     let branch_otherwise =
@@ -119,7 +117,7 @@ fn test_match() {
             // let x = 7;
             "literal<7>() -> ([0])",
             // match {
-            "match_zero([0]) { fallthrough() label0() }",
+            "jump_nz([0]) { label0() fallthrough() }",
             // Branch 0.
             "store_temp([0]) -> ([1])",
             "jump() { label1() }",
