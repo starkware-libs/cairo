@@ -17,7 +17,7 @@ pub enum InstructionBody {
 }
 impl InstructionBody {
     pub fn op_size(&self) -> usize {
-        // TOOD(spapini): Make this correct.
+        // TODO(spapini): Make this correct.
         match self {
             InstructionBody::AssertEq(insn) => insn.op_size(),
             _ => 1,

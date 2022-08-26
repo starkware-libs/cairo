@@ -120,16 +120,12 @@ fn handle_felt_match(
 ) -> (Vec<pre_sierra::Statement>, sierra::ids::VarId) {
     match &expr_match.arms[..] {
         [
-            semantic::MatchBranch { pattern: semantic::Pattern::Expr(expr), block: block0 },
+            semantic::MatchBranch { pattern: semantic::Pattern::Literal(literal), block: block0 },
             semantic::MatchBranch { pattern: semantic::Pattern::Otherwise, block: block_otherwise },
         ] => {
-            // Fetch the expression and make sure it's 0.
-            if let semantic::Expr::ExprLiteral(expr_literal) = context.get_db().lookup_expr(*expr) {
-                assert_eq!(expr_literal.value, 0);
-            } else {
-                // TOOD(lior): Replace with diagnostics.
-                unimplemented!();
-            };
+            // Make sure the literal in the pattern is 0.
+            // TODO(lior): Replace with diagnostics.
+            assert_eq!(literal.value, 0);
 
             // Generate two labels: for the second code block (otherwise) and for the end of the
             // match.
@@ -143,30 +139,32 @@ fn handle_felt_match(
                 generate_expression_code(context, expr_match.matched_expr);
             statements.extend(match_expr_statements);
 
-            // Add the match_zero() statement.
+            // Add the jump_nz() statement.
             statements.push(pre_sierra::Statement::SierraStatement(
                 program::GenStatement::Invocation(program::GenInvocation {
-                    libfunc_id: ConcreteLibFuncId::from_string("match_zero"),
+                    libfunc_id: ConcreteLibFuncId::from_string("jump_nz"),
                     args: vec![match_expr_res],
                     branches: vec![
-                        // If 0, continue to the next instruction.
-                        program::GenBranchInfo {
-                            target: program::GenBranchTarget::Fallthrough,
-                            results: vec![],
-                        },
-                        // Otherwise, jump to the "otherwise" block.
+                        // If not zero, jump to the "otherwise" block.
                         program::GenBranchInfo {
                             target: program::GenBranchTarget::Statement(otherwise_label_id),
+                            results: vec![],
+                        },
+                        // If zero, continue to the next instruction.
+                        program::GenBranchInfo {
+                            target: program::GenBranchTarget::Fallthrough,
                             results: vec![],
                         },
                     ],
                 }),
             ));
 
+            // Allocate a variable for the result of the match.
+            let output_var = context.allocate_sierra_variable();
+
             // Generate the first block (0).
             let (block0_statements, block0_res) = generate_expression_code(context, *block0);
             statements.extend(block0_statements);
-            let output_var = context.allocate_sierra_variable();
             statements.push(simple_statement("store_temp", &[block0_res], &[output_var.clone()]));
             statements.push(jump_statement(end_label_id));
 
@@ -187,7 +185,7 @@ fn handle_felt_match(
             (statements, output_var)
         }
         _ => {
-            // TOOD(lior): Replace with diagnostics.
+            // TODO(lior): Replace with diagnostics.
             unimplemented!();
         }
     }
