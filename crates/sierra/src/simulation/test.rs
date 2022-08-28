@@ -19,6 +19,10 @@ fn value_arg(v: i64) -> GenericArg {
     GenericArg::Value(v)
 }
 
+fn user_func_arg(name: &str) -> GenericArg {
+    GenericArg::UserFunc(name.into())
+}
+
 /// Expects to find a libfunc and simulate it.
 fn simulate(
     id: &str,
@@ -121,8 +125,10 @@ fn simulate_invocation(
 #[test_case("alloc_locals", vec![], vec![] => Ok(vec![]); "alloc_locals()")]
 #[test_case("rename", vec![type_arg("int")], vec![6] => Ok(vec![6]); "rename<int>(6)")]
 #[test_case("move", vec![type_arg("int")], vec![6] => Ok(vec![6]); "move<int>(6)")]
-#[test_case("function_call", vec![GenericArg::Func("drop_all_inputs".into())], vec![3, 5] => Ok(vec![]); "function_call<drop_all_inputs>()")]
-#[test_case("function_call", vec![GenericArg::Func("identity".into())], vec![3, 5] => Ok(vec![3, 5]); "function_call<identity>()")]
+#[test_case("function_call", vec![user_func_arg("drop_all_inputs")], vec![3, 5] => Ok(vec![]);
+            "function_call<drop_all_inputs>()")]
+#[test_case("function_call", vec![user_func_arg("identity")], vec![3, 5] => Ok(vec![3, 5]);
+            "function_call<identity>()")]
 fn simulate_none_branch(
     id: &str,
     generic_args: Vec<GenericArg>,
@@ -165,7 +171,7 @@ fn simulate_none_branch(
 #[test_case("rename", vec![type_arg("int")], vec![] => WrongNumberOfArgs; "rename<int>()")]
 #[test_case("move", vec![type_arg("int")], vec![] => WrongNumberOfArgs; "move<int>()")]
 #[test_case("jump", vec![], vec![vec![4]] => WrongNumberOfArgs; "jump(4)")]
-#[test_case("function_call", vec![GenericArg::Func("unimplemented".into())], vec![] =>
+#[test_case("function_call", vec![user_func_arg("unimplemented")], vec![] =>
             FunctionSimulationError(
                 "unimplemented".into(),
                 Box::new(SimulationError::StatementOutOfBounds(StatementIdx(0))));

@@ -77,9 +77,10 @@ StatementIdx: StatementIdx = {
 }
 
 GenericArg: GenericArg = {
-    <v:SignedInt> => GenericArg::Value(v),
     ConcreteTypeId => GenericArg::Type(<>),
-    "&" <id:FunctionId> => GenericArg::Func(id),
+    <v:SignedInt> => GenericArg::Value(v),
+    "user@" <id:FunctionId> => GenericArg::UserFunc(id),
+    "lib@" <id:ConcreteLibFuncId> => GenericArg::LibFunc(id),
 }
 GenericArgs = Comma<GenericArg>;
 

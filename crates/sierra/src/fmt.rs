@@ -96,8 +96,9 @@ impl fmt::Display for GenericArg {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             GenericArg::Type(id) => write!(f, "{id}"),
-            GenericArg::Func(id) => write!(f, "&{id}"),
             GenericArg::Value(v) => write!(f, "{v}"),
+            GenericArg::UserFunc(id) => write!(f, "user@{id}"),
+            GenericArg::LibFunc(id) => write!(f, "lib@{id}"),
         }
     }
 }
