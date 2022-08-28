@@ -13,10 +13,13 @@ use crate::references::ReferencesError;
 fn good_flow() {
     let prog = ProgramParser::new()
         .parse(indoc! {"
+            type felt = felt;
+            type DeferredFelt = Deferred<felt>;
             libfunc store_temp_felt = store_temp<felt>;
-
-            store_temp_felt([1]) -> ([2]);
-            return([2]);
+            libfunc move_felt = move<felt>;
+            move_felt([1]) -> ([1]);
+            store_temp_felt([1]) -> ([1]);
+            return([1]);
 
             test_program@0([1]: felt) -> ();
         "})
@@ -50,12 +53,16 @@ fn good_flow() {
             ProgramRegistryError::MissingLibFunc(ConcreteLibFuncId::from_string("store_temp_felt"))));
             "undeclared libfunc")]
 #[test_case(indoc! {"
+            type felt = felt;
+            type DeferredFelt = Deferred<felt>;
             libfunc store_temp_felt = store_temp<felt>;
             libfunc store_temp_felt = store_temp<felt>;
         "} => Err(CompilationError::ProgramRegistryError(ProgramRegistryError::LibFuncConcreteIdAlreadyExists(
             ConcreteLibFuncId::from_string("store_temp_felt"))));
             "Concrete libfunc Id used twice")]
 #[test_case(indoc! {"
+            type felt = felt;
+            type DeferredFelt = Deferred<felt>;
             libfunc store_local_felt = store_local<felt>;
             store_local_felt([1]) -> ([1]);
 
