@@ -1,0 +1,35 @@
+└── root (kind: SyntaxFile)
+    ├── items (kind: ItemList)
+    │   └── child #0 (kind: ItemFunction)
+    │       ├── signature (kind: FunctionSignature)
+    │       │   ├── funckw (kind: Function): 'fn'
+    │       │   ├── name (kind: Identifier): 'foo'
+    │       │   ├── lparen (kind: LParen): '('
+    │       │   ├── parameters (kind: ParamList)
+    │       │   │   └── item #0 (kind: Param)
+    │       │   │       ├── identifier (kind: Identifier): 'a'
+    │       │   │       └── type_clause (kind: TypeClause)
+    │       │   │           ├── colon (kind: Colon): ':'
+    │       │   │           └── ty (kind: ExprPath)
+    │       │   │               └── item #0 (kind: PathSegment)
+    │       │   │                   ├── ident (kind: Identifier): 'int'
+    │       │   │                   └── generic_args (kind: OptionGenericArgsNone) []
+    │       │   ├── rparen (kind: RParen): ')'
+    │       │   └── ret_ty (kind: ReturnTypeClause)
+    │       │       ├── arrow (kind: Arrow): '->'
+    │       │       └── ty (kind: ExprPath)
+    │       │           └── item #0 (kind: PathSegment)
+    │       │               ├── ident (kind: Identifier): 'felt'
+    │       │               └── generic_args (kind: OptionGenericArgsNone) []
+    │       └── body (kind: ExprBlock)
+    │           ├── lbrace (kind: LBrace): '{'
+    │           ├── statements (kind: StatementList)
+    │           │   └── child #0 (kind: StatementReturn)
+    │           │       ├── returnkw (kind: Return): 'return'
+    │           │       ├── expr (kind: ExprPath)
+    │           │       │   └── item #0 (kind: PathSegment)
+    │           │       │       ├── ident (kind: Identifier): 'a'
+    │           │       │       └── generic_args (kind: OptionGenericArgsNone) []
+    │           │       └── semi (kind: Semi): ';'
+    │           └── rbrace (kind: RBrace): '}'
+    └── eof (kind: EndOfFile).
