@@ -13,14 +13,14 @@
     │   │   │   │           └── ty (kind: ExprPath)
     │   │   │   │               └── item #0 (kind: PathSegment)
     │   │   │   │                   ├── ident (kind: Identifier): 'T'
-    │   │   │   │                   └── generic_args (kind: OptionGenericArgsNone) []
+    │   │   │   │                   └── generic_args (kind: OptionGenericArgsEmpty) []
     │   │   │   ├── rparen (kind: RParen): ')'
     │   │   │   └── ret_ty (kind: ReturnTypeClause)
     │   │   │       ├── arrow (kind: Arrow): '->'
     │   │   │       └── ty (kind: ExprPath)
     │   │   │           └── item #0 (kind: PathSegment)
     │   │   │               ├── ident (kind: Identifier): 'S'
-    │   │   │               └── generic_args (kind: OptionGenericArgsNone) []
+    │   │   │               └── generic_args (kind: OptionGenericArgsEmpty) []
     │   │   └── body (kind: ExprBlock)
     │   │       ├── lbrace (kind: LBrace): '{'
     │   │       ├── statements (kind: StatementList)
@@ -46,14 +46,14 @@
     │   │       │   │   │   └── ty (kind: ExprPath)
     │   │       │   │   │       └── item #0 (kind: PathSegment)
     │   │       │   │   │           ├── ident (kind: Identifier): 'T'
-    │   │       │   │   │           └── generic_args (kind: OptionGenericArgsNone) []
+    │   │       │   │   │           └── generic_args (kind: OptionGenericArgsEmpty) []
     │   │       │   │   ├── eq (kind: Eq): '='
     │   │       │   │   ├── rhs (kind: ExprBinary)
     │   │       │   │   │   ├── lhs (kind: ExprBinary)
     │   │       │   │   │   │   ├── lhs (kind: ExprPath)
     │   │       │   │   │   │   │   └── item #0 (kind: PathSegment)
     │   │       │   │   │   │   │       ├── ident (kind: Identifier): 'x'
-    │   │       │   │   │   │   │       └── generic_args (kind: OptionGenericArgsNone) []
+    │   │       │   │   │   │   │       └── generic_args (kind: OptionGenericArgsEmpty) []
     │   │       │   │   │   │   ├── op (kind: Mul): '*'
     │   │       │   │   │   │   └── rhs (kind: ExprLiteral)
     │   │       │   │   │   │       └── terminal (kind: LiteralNumber): '2'
@@ -81,7 +81,7 @@
     │   │       │   │   │       ├── path (kind: ExprPath)
     │   │       │   │   │       │   └── item #0 (kind: PathSegment)
     │   │       │   │   │       │       ├── ident (kind: Identifier): 'Struct'
-    │   │       │   │   │       │       └── generic_args (kind: OptionGenericArgsNone) []
+    │   │       │   │   │       │       └── generic_args (kind: OptionGenericArgsEmpty) []
     │   │       │   │   │       └── arguments (kind: ArgListBraced)
     │   │       │   │   │           ├── lbrace (kind: LBrace): '{'
     │   │       │   │   │           ├── arguments (kind: StructArgList)
@@ -100,7 +100,7 @@
     │   │       │   │   │           │               ├── path (kind: ExprPath)
     │   │       │   │   │           │               │   └── item #0 (kind: PathSegment)
     │   │       │   │   │           │               │       ├── ident (kind: Identifier): 'Struct2'
-    │   │       │   │   │           │               │       └── generic_args (kind: OptionGenericArgsNone) []
+    │   │       │   │   │           │               │       └── generic_args (kind: OptionGenericArgsEmpty) []
     │   │       │   │   │           │               └── arguments (kind: ArgListBraced)
     │   │       │   │   │           │                   ├── lbrace (kind: LBrace): '{'
     │   │       │   │   │           │                   ├── arguments (kind: StructArgList)
@@ -121,7 +121,7 @@
     │   │       │   │   │   ├── lhs (kind: ExprPath)
     │   │       │   │   │   │   └── item #0 (kind: PathSegment)
     │   │       │   │   │   │       ├── ident (kind: Identifier): 'df'
-    │   │       │   │   │   │       └── generic_args (kind: OptionGenericArgsNone) []
+    │   │       │   │   │   │       └── generic_args (kind: OptionGenericArgsEmpty) []
     │   │       │   │   │   ├── op (kind: EqEq): '=='
     │   │       │   │   │   └── rhs (kind: ExprLiteral)
     │   │       │   │   │       └── terminal (kind: LiteralNumber): '6'
@@ -131,12 +131,12 @@
     │   │       │       │   ├── lhs (kind: ExprPath)
     │   │       │       │   │   └── item #0 (kind: PathSegment)
     │   │       │       │   │       ├── ident (kind: Identifier): 'x'
-    │   │       │       │   │       └── generic_args (kind: OptionGenericArgsNone) []
+    │   │       │       │   │       └── generic_args (kind: OptionGenericArgsEmpty) []
     │   │       │       │   ├── op (kind: Plus): '+'
     │   │       │       │   └── rhs (kind: ExprPath)
     │   │       │       │       └── item #0 (kind: PathSegment)
     │   │       │       │           ├── ident (kind: Identifier): 'y'
-    │   │       │       │           └── generic_args (kind: OptionGenericArgsNone) []
+    │   │       │       │           └── generic_args (kind: OptionGenericArgsEmpty) []
     │   │       │       └── semi (kind: OptionSemicolonEmpty) []
     │   │       └── rbrace (kind: RBrace): '}'
     │   ├── child #1 (kind: ItemModule)
@@ -156,7 +156,7 @@
     │   │   │   │   │       └── ty (kind: ExprPath)
     │   │   │   │   │           └── item #0 (kind: PathSegment)
     │   │   │   │   │               ├── ident (kind: Identifier): 'T0'
-    │   │   │   │   │               └── generic_args (kind: OptionGenericArgsNone) []
+    │   │   │   │   │               └── generic_args (kind: OptionGenericArgsEmpty) []
     │   │   │   │   ├── separator #0 (kind: Comma): ','
     │   │   │   │   └── item #1 (kind: Param)
     │   │   │   │       ├── identifier (kind: Identifier): 's'
@@ -165,14 +165,14 @@
     │   │   │   │           └── ty (kind: ExprPath)
     │   │   │   │               └── item #0 (kind: PathSegment)
     │   │   │   │                   ├── ident (kind: Identifier): 'S'
-    │   │   │   │                   └── generic_args (kind: OptionGenericArgsNone) []
+    │   │   │   │                   └── generic_args (kind: OptionGenericArgsEmpty) []
     │   │   │   ├── rparen (kind: RParen): ')'
     │   │   │   └── ret_ty (kind: ReturnTypeClause)
     │   │   │       ├── arrow (kind: Arrow): '->'
     │   │   │       └── ty (kind: ExprPath)
     │   │   │           └── item #0 (kind: PathSegment)
     │   │   │               ├── ident (kind: Identifier): 'X'
-    │   │   │               └── generic_args (kind: OptionGenericArgsNone) []
+    │   │   │               └── generic_args (kind: OptionGenericArgsEmpty) []
     │   │   └── body (kind: ExprBlock)
     │   │       ├── lbrace (kind: LBrace): '{'
     │   │       ├── statements (kind: StatementList)
@@ -183,12 +183,12 @@
     │   │       │       │   │   │   ├── lhs (kind: ExprPath)
     │   │       │       │   │   │   │   └── item #0 (kind: PathSegment)
     │   │       │       │   │   │   │       ├── ident (kind: Identifier): 'x'
-    │   │       │       │   │   │   │       └── generic_args (kind: OptionGenericArgsNone) []
+    │   │       │       │   │   │   │       └── generic_args (kind: OptionGenericArgsEmpty) []
     │   │       │       │   │   │   ├── op (kind: Dot): '.'
     │   │       │       │   │   │   └── rhs (kind: ExprPath)
     │   │       │       │   │   │       └── item #0 (kind: PathSegment)
     │   │       │       │   │   │           ├── ident (kind: Identifier): 'a'
-    │   │       │       │   │   │           └── generic_args (kind: OptionGenericArgsNone) []
+    │   │       │       │   │   │           └── generic_args (kind: OptionGenericArgsEmpty) []
     │   │       │       │   │   ├── op (kind: Mul): '*'
     │   │       │       │   │   └── rhs: Missing []
     │   │       │       │   ├── op (kind: Plus): '+'
@@ -202,18 +202,18 @@
     │   │       │       │       │   │   └── rhs (kind: ExprPath)
     │   │       │       │       │   │       └── item #0 (kind: PathSegment)
     │   │       │       │       │   │           ├── ident (kind: Identifier): 's'
-    │   │       │       │       │   │           └── generic_args (kind: OptionGenericArgsNone) []
+    │   │       │       │       │   │           └── generic_args (kind: OptionGenericArgsEmpty) []
     │   │       │       │       │   ├── op (kind: Dot): '.'
     │   │       │       │       │   └── rhs (kind: ExprPath)
     │   │       │       │       │       └── item #0 (kind: PathSegment)
     │   │       │       │       │           ├── ident (kind: Identifier): 's'
-    │   │       │       │       │           └── generic_args (kind: OptionGenericArgsNone) []
+    │   │       │       │       │           └── generic_args (kind: OptionGenericArgsEmpty) []
     │   │       │       │       ├── op (kind: Mul): '*'
     │   │       │       │       └── rhs (kind: ExprFunctionCall)
     │   │       │       │           ├── path (kind: ExprPath)
     │   │       │       │           │   └── item #0 (kind: PathSegment)
     │   │       │       │           │       ├── ident (kind: Identifier): 'foo'
-    │   │       │       │           │       └── generic_args (kind: OptionGenericArgsNone) []
+    │   │       │       │           │       └── generic_args (kind: OptionGenericArgsEmpty) []
     │   │       │       │           └── arguments (kind: ExprListParenthesized)
     │   │       │       │               ├── lparen (kind: LParen): '('
     │   │       │       │               ├── expressions (kind: ExprList)
@@ -237,7 +237,7 @@
     │       │   │       └── ty (kind: ExprPath)
     │       │   │           └── item #0 (kind: PathSegment)
     │       │   │               ├── ident (kind: Identifier): 'a'
-    │       │   │               └── generic_args (kind: OptionGenericArgsNone) []
+    │       │   │               └── generic_args (kind: OptionGenericArgsEmpty) []
     │       │   ├── separator #0 (kind: Comma): ','
     │       │   └── item #1 (kind: Param)
     │       │       ├── identifier (kind: Identifier): 'y'
@@ -246,6 +246,6 @@
     │       │           └── ty (kind: ExprPath)
     │       │               └── item #0 (kind: PathSegment)
     │       │                   ├── ident (kind: Identifier): 'int'
-    │       │                   └── generic_args (kind: OptionGenericArgsNone) []
+    │       │                   └── generic_args (kind: OptionGenericArgsEmpty) []
     │       └── rbrace (kind: RBrace): '}'
     └── eof (kind: EndOfFile).

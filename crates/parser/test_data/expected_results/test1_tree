@@ -13,7 +13,7 @@
     │       │   │   │       └── ty (kind: ExprPath)
     │       │   │   │           └── item #0 (kind: PathSegment)
     │       │   │   │               ├── ident (kind: Identifier): 'int'
-    │       │   │   │               └── generic_args (kind: OptionGenericArgsNone) []
+    │       │   │   │               └── generic_args (kind: OptionGenericArgsEmpty) []
     │       │   │   ├── separator #0 (kind: Comma): ','
     │       │   │   ├── item #1 (kind: Param)
     │       │   │   │   ├── identifier (kind: Identifier): 'var2'
@@ -22,7 +22,7 @@
     │       │   │   │       └── ty (kind: ExprPath)
     │       │   │   │           └── item #0 (kind: PathSegment)
     │       │   │   │               ├── ident (kind: Identifier): 'felt'
-    │       │   │   │               └── generic_args (kind: OptionGenericArgsNone) []
+    │       │   │   │               └── generic_args (kind: OptionGenericArgsEmpty) []
     │       │   │   └── separator #1 (kind: Comma): ','
     │       │   ├── rparen (kind: RParen): ')'
     │       │   └── ret_ty (kind: ReturnTypeClause)
@@ -30,7 +30,7 @@
     │       │       └── ty (kind: ExprPath)
     │       │           └── item #0 (kind: PathSegment)
     │       │               ├── ident (kind: Identifier): 'int'
-    │       │               └── generic_args (kind: OptionGenericArgsNone) []
+    │       │               └── generic_args (kind: OptionGenericArgsEmpty) []
     │       └── body (kind: ExprBlock)
     │           ├── lbrace (kind: LBrace): '{'
     │           ├── statements (kind: StatementList)
@@ -83,14 +83,14 @@
     │           │   │   │   ├── path (kind: ExprPath)
     │           │   │   │   │   └── item #0 (kind: PathSegment)
     │           │   │   │   │       ├── ident (kind: Identifier): 'func'
-    │           │   │   │   │       └── generic_args (kind: OptionGenericArgsNone) []
+    │           │   │   │   │       └── generic_args (kind: OptionGenericArgsEmpty) []
     │           │   │   │   └── arguments (kind: ExprListParenthesized)
     │           │   │   │       ├── lparen (kind: LParen): '('
     │           │   │   │       ├── expressions (kind: ExprList)
     │           │   │   │       │   └── item #0 (kind: ExprPath)
     │           │   │   │       │       └── item #0 (kind: PathSegment)
     │           │   │   │       │           ├── ident (kind: Identifier): 'x'
-    │           │   │   │       │           └── generic_args (kind: OptionGenericArgsNone) []
+    │           │   │   │       │           └── generic_args (kind: OptionGenericArgsEmpty) []
     │           │   │   │       └── rparen (kind: RParen): ')'
     │           │   │   └── semi (kind: Semi): ';'
     │           │   ├── child #5 (kind: StatementExpr)
@@ -98,14 +98,14 @@
     │           │   │   │   ├── path (kind: ExprPath)
     │           │   │   │   │   └── item #0 (kind: PathSegment)
     │           │   │   │   │       ├── ident (kind: Identifier): 'func2'
-    │           │   │   │   │       └── generic_args (kind: OptionGenericArgsNone) []
+    │           │   │   │   │       └── generic_args (kind: OptionGenericArgsEmpty) []
     │           │   │   │   └── arguments (kind: ExprListParenthesized)
     │           │   │   │       ├── lparen (kind: LParen): '('
     │           │   │   │       ├── expressions (kind: ExprList)
     │           │   │   │       │   └── item #0 (kind: ExprPath)
     │           │   │   │       │       └── item #0 (kind: PathSegment)
     │           │   │   │       │           ├── ident (kind: Identifier): 'x'
-    │           │   │   │       │           └── generic_args (kind: OptionGenericArgsNone) []
+    │           │   │   │       │           └── generic_args (kind: OptionGenericArgsEmpty) []
     │           │   │   │       └── rparen (kind: RParen): ')'
     │           │   │   └── semi (kind: OptionSemicolonEmpty) []
     │           │   └── child #6 (kind: StatementReturn)
@@ -113,7 +113,7 @@
     │           │       ├── expr (kind: ExprPath)
     │           │       │   └── item #0 (kind: PathSegment)
     │           │       │       ├── ident (kind: Identifier): 'x'
-    │           │       │       └── generic_args (kind: OptionGenericArgsNone) []
+    │           │       │       └── generic_args (kind: OptionGenericArgsEmpty) []
     │           │       └── semi (kind: Semi): ';'
     │           └── rbrace (kind: RBrace): '}'
     └── eof (kind: EndOfFile).

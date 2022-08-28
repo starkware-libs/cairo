@@ -1,5 +1,5 @@
 use super::ast::{
-    ExprBinary, ExprLiteral, ExprPath, Identifier, OptionGenericArgsNone, PathSegment, Terminal,
+    ExprBinary, ExprLiteral, ExprPath, Identifier, OptionGenericArgsEmpty, PathSegment, Terminal,
     Trivia,
 };
 use super::db::GreenDatabase;
@@ -27,12 +27,12 @@ fn test_empty() {
     let db_val = DatabaseImpl::default();
     let db = &db_val;
 
-    let empty = OptionGenericArgsNone::new_green(db);
+    let empty = OptionGenericArgsEmpty::new_green(db);
 
     let root = SyntaxNode::new_root(empty);
     assert_eq!(
         traverse(db, root),
-        [(SyntaxNodeDetails::Syntax(SyntaxKind::OptionGenericArgsNone), 0, 0),]
+        [(SyntaxNodeDetails::Syntax(SyntaxKind::OptionGenericArgsEmpty), 0, 0),]
     )
 }
 
@@ -43,7 +43,7 @@ fn test_ast() {
 
     // TODO: Use a builder for easier construction of token.
     // Construct green nodes.
-    let empty = OptionGenericArgsNone::new_green(db);
+    let empty = OptionGenericArgsEmpty::new_green(db);
     let tokens = vec![
         node::Token::new_green(db, token::TokenKind::Identifier, "foo".into()),
         node::Token::new_green(db, token::TokenKind::Whitespace, " ".into()),
@@ -98,7 +98,7 @@ fn test_ast() {
                 3,
                 1
             ),
-            (SyntaxNodeDetails::Syntax(SyntaxKind::OptionGenericArgsNone), 4, 0),
+            (SyntaxNodeDetails::Syntax(SyntaxKind::OptionGenericArgsEmpty), 4, 0),
             (SyntaxNodeDetails::Syntax(SyntaxKind::Terminal), 4, 2),
             (SyntaxNodeDetails::Syntax(SyntaxKind::Trivia), 4, 0),
             (

@@ -14,7 +14,7 @@ pub enum SyntaxKind {
     Identifier,
     ExprList,
     ExprMissing,
-    OptionGenericArgsNone,
+    OptionGenericArgsEmpty,
     OptionGenericArgsSome,
     PathSegment,
     ExprPath,

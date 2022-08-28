@@ -13,14 +13,14 @@
     │       │   │           └── ty (kind: ExprPath)
     │       │   │               └── item #0 (kind: PathSegment)
     │       │   │                   ├── ident (kind: Identifier): 'int'
-    │       │   │                   └── generic_args (kind: OptionGenericArgsNone) []
+    │       │   │                   └── generic_args (kind: OptionGenericArgsEmpty) []
     │       │   ├── rparen (kind: RParen): ')'
     │       │   └── ret_ty (kind: ReturnTypeClause)
     │       │       ├── arrow (kind: Arrow): '->'
     │       │       └── ty (kind: ExprPath)
     │       │           └── item #0 (kind: PathSegment)
     │       │               ├── ident (kind: Identifier): 'felt'
-    │       │               └── generic_args (kind: OptionGenericArgsNone) []
+    │       │               └── generic_args (kind: OptionGenericArgsEmpty) []
     │       └── body (kind: ExprBlock)
     │           ├── lbrace (kind: LBrace): '{'
     │           ├── statements (kind: StatementList)
@@ -29,7 +29,7 @@
     │           │       ├── expr (kind: ExprPath)
     │           │       │   └── item #0 (kind: PathSegment)
     │           │       │       ├── ident (kind: Identifier): 'a'
-    │           │       │       └── generic_args (kind: OptionGenericArgsNone) []
+    │           │       │       └── generic_args (kind: OptionGenericArgsEmpty) []
     │           │       └── semi (kind: Semi): ';'
     │           └── rbrace (kind: RBrace): '}'
     └── eof (kind: EndOfFile).
