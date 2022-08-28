@@ -9,38 +9,36 @@ use sierra::program;
 use crate::pre_sierra;
 
 /// Replaces labels with their corresponding StatementIdx.
-pub fn resolve_labels(statements: &Vec<pre_sierra::Statement>) -> Vec<program::Statement> {
+pub fn resolve_labels(statements: &[pre_sierra::Statement]) -> Vec<program::Statement> {
     let label_replacer = LabelReplacer::new(get_label_id_to_index(statements));
 
-    let mut result: Vec<program::Statement> = vec![];
-    for statement in statements {
-        match statement {
+    statements
+        .iter()
+        .filter_map(|statement| match &statement {
             pre_sierra::Statement::SierraStatement(sierra_statement) => {
-                result.push(label_replacer.handle_statement(sierra_statement))
+                Some(label_replacer.handle_statement(sierra_statement))
             }
-            pre_sierra::Statement::Label(_) => {}
-        }
-    }
-
-    result
+            pre_sierra::Statement::Label(_) => None,
+        })
+        .collect()
 }
 
 /// Returns a map from LabelId to the index of the next Sierra statement.
 fn get_label_id_to_index(
-    statements: &Vec<pre_sierra::Statement>,
+    statements: &[pre_sierra::Statement],
 ) -> HashMap<pre_sierra::LabelId, usize> {
     let mut label_id_to_index = HashMap::<pre_sierra::LabelId, usize>::new();
-    let mut idx = 0;
+    let mut index = 0;
     for statement in statements {
         match &statement {
             pre_sierra::Statement::SierraStatement(_) => {
-                idx += 1;
+                index += 1;
             }
             pre_sierra::Statement::Label(label) => {
                 if let hash_map::Entry::Vacant(entry) = label_id_to_index.entry(label.id.clone()) {
-                    entry.insert(idx);
+                    entry.insert(index);
                 } else {
-                    panic!()
+                    panic!("Label {} was not declared.", label.id)
                 }
             }
         }
@@ -54,7 +52,7 @@ struct LabelReplacer {
 }
 impl LabelReplacer {
     fn new(label_id_to_index: HashMap<pre_sierra::LabelId, usize>) -> Self {
-        LabelReplacer { label_id_to_index }
+        Self { label_id_to_index }
     }
 
     fn handle_statement(
