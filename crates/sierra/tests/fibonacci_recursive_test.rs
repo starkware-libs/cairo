@@ -28,7 +28,7 @@ fn fib_program() -> sierra::program::Program {
         libfunc refund_gas_1 = refund_gas<1>;
         libfunc refund_gas_3 = refund_gas<3>;
         libfunc alloc_locals = alloc_locals;
-        libfunc call_fib = function_call<&Fibonacci>;
+        libfunc call_fib = function_call<user@Fibonacci>;
 
         // Statement #  0 - tests if n == 0 and initiates 1 for the early return values.
         alloc_locals() -> ();

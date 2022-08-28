@@ -78,8 +78,9 @@ impl StatementIdx {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum GenericArg {
     Type(ConcreteTypeId),
-    Func(FunctionId),
     Value(i64),
+    UserFunc(FunctionId),
+    LibFunc(ConcreteLibFuncId),
 }
 
 /// A possible statement.

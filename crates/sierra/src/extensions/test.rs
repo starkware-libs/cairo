@@ -35,11 +35,10 @@ fn find_type_specialization(
 }
 
 #[test_case("NoneExistent", vec![] => Err(UnsupportedId); "NoneExistent")]
-#[test_case("function_call", vec![GenericArg::Func("UnregisteredFunction".into())]
+#[test_case("function_call", vec![GenericArg::UserFunc("UnregisteredFunction".into())]
              => Err(MissingFunction("UnregisteredFunction".into()));
              "function_call<&UnregisteredFunction>")]
-#[test_case("function_call", vec![GenericArg::Func("RegisteredFunction".into())]
-            => Ok(());
+#[test_case("function_call", vec![GenericArg::UserFunc("RegisteredFunction".into())] => Ok(());
             "function_call<&RegisteredFunction>")]
 #[test_case("function_call", vec![] => Err(UnsupportedGenericArg); "function_call")]
 #[test_case("get_gas", vec![value_arg(2)] => Ok(()); "get_gas<2>")]
