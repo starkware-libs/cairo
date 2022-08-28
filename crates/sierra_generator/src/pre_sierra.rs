@@ -1,6 +1,6 @@
 use sierra::program;
 
-#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 pub struct LabelId(usize);
 impl LabelId {
     pub fn new(value: usize) -> Self {
