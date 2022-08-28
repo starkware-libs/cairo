@@ -25,6 +25,12 @@ impl Program {
 pub struct TypeDeclaration {
     /// The id of the declared concrete type.
     pub id: ConcreteTypeId,
+    pub long_id: ConcreteTypeLongId,
+}
+
+/// A concrete type (the generic parent type and the generic arguments).
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+pub struct ConcreteTypeLongId {
     /// The id of the used generic type.
     pub generic_id: GenericTypeId,
     /// The arguments for the generic type.
@@ -36,6 +42,12 @@ pub struct TypeDeclaration {
 pub struct LibFuncDeclaration {
     /// The id of the declared concrete libfunc.
     pub id: ConcreteLibFuncId,
+    pub long_id: ConcreteLibFuncLongId,
+}
+
+/// A concrete library function (the generic parent function and the generic arguments).
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+pub struct ConcreteLibFuncLongId {
     /// The id of the used generic libfunc.
     pub generic_id: GenericLibFuncId,
     /// The arguments for the specialization.
