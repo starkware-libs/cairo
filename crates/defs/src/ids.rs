@@ -118,3 +118,18 @@ pub enum Symbol {
     ModuleItem(ModuleItemId),
     Var(VarId),
 }
+
+/// Location of expressions/statements in the syntax.
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub enum CodeElementLongId {
+    // A block code element..
+    Block(BlockId),
+    // a non-block code element.
+    Child {
+        parent: CodeElementId,
+        /// Index of a child code element inside its containing parent code element, among all
+        /// other direct children.
+        index: usize,
+    },
+}
+define_short_id!(CodeElementId);
