@@ -1,9 +1,10 @@
-# Expression statement
+= Expression statement
 
-```bnf
+[source,bnf]
+----
 EXPR_STMT : EXPR_WITHOUT_BLOCK ";"
           | EXPR_WITH_BLOCK ";"?
-```
+----
 
 An _expression statement_ evaluates an link:expressions.adoc[expression] and ignores its result.
 Its purpose is to trigger side effects of expression evaluation only.
@@ -18,7 +19,8 @@ This can cause an ambiguity between it being parsed as a standalone statement an
 another expression; in this case, it is parsed as a statement.
 
 // TODO(spapini): Use cairo syntax highlighting.
-```rust
+[source,rust]
+----
 v.pop();          // Ignore the element returned from pop
 if v.is_empty() {
     v.push(5);
@@ -26,12 +28,13 @@ if v.is_empty() {
     v.remove(0);
 }                 // Semicolon can be omitted.
 [1];              // Separate expression statement, not an indexing expression
-```
+----
 
 When the trailing semicolon is omitted, the result return type of the expression must be
 the link:unit-type.adoc[unit type].
 
-```rust
+[source,rust]
+----
 // bad: the block's type is i32, not ()
 // Error: expected `()` because of default return type
 // if true {
@@ -44,4 +47,4 @@ if true {
 } else {
   2
 };
-```
+----

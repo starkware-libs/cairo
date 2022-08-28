@@ -37,11 +37,14 @@ impl<TGenericType: GenericType> GenericTypeEx for TGenericType {
     }
 }
 
-// TODO(orizi): If GenericTypeId becomes constexpr, use it here instead of name.
 /// Trait for implementing a specialization generator with with a simple id.
 pub trait NamedType: Default {
     type Concrete: ConcreteType;
-    const NAME: &'static str;
+    const ID: GenericTypeId;
+    /// Returns the generic id of named types.
+    fn id() -> GenericTypeId {
+        Self::ID
+    }
     /// Creates the specialization with the template arguments.
     fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError>;
 }
@@ -49,10 +52,7 @@ impl<TNamedType: NamedType> GenericType for TNamedType {
     type Concrete = <Self as NamedType>::Concrete;
 
     fn by_id(id: &GenericTypeId) -> Option<Self> {
-        if &GenericTypeId::from(Self::NAME.to_string()) == id {
-            return Some(Self::default());
-        }
-        None
+        if &Self::ID == id { Some(Self::default()) } else { None }
     }
 
     fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError> {
@@ -63,11 +63,11 @@ impl<TNamedType: NamedType> GenericType for TNamedType {
 /// Trait for implementing a specialization generator with no generic arguments.
 pub trait NoGenericArgsGenericType: Default {
     type Concrete: ConcreteType + Default;
-    const NAME: &'static str;
+    const ID: GenericTypeId;
 }
 impl<T: NoGenericArgsGenericType> NamedType for T {
     type Concrete = <Self as NoGenericArgsGenericType>::Concrete;
-    const NAME: &'static str = <Self as NoGenericArgsGenericType>::NAME;
+    const ID: GenericTypeId = <Self as NoGenericArgsGenericType>::ID;
 
     fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError> {
         if args.is_empty() {

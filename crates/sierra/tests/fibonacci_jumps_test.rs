@@ -7,7 +7,9 @@ fn fib_program() -> sierra::program::Program {
         .parse(indoc! {"
         type int = int;
         type GasBuiltin = GasBuiltin;
-        type NonZeroInt = NonZeroInt;
+        type NonZeroInt = NonZero<int>;
+        type DeferredInt = Deferred<int>;
+        type DeferredGasBuiltin = Deferred<GasBuiltin>;
 
         libfunc move_int = move<int>;
         libfunc move_nz_int = move<NonZero_int>;
@@ -23,7 +25,7 @@ fn fib_program() -> sierra::program::Program {
         libfunc int_dup = int_dup;
         libfunc int_ignore = int_ignore;
         libfunc int_jump_nz = int_jump_nz;
-        libfunc int_unwrap_nz = int_unwrap_nz;
+        libfunc int_unwrap_nz = unwrap_nz<int>;
         libfunc get_gas_5 = get_gas<5>;
         libfunc refund_gas_1 = refund_gas<1>;
         libfunc refund_gas_5 = refund_gas<5>;

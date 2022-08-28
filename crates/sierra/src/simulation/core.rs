@@ -2,26 +2,39 @@ use array_init::array_init;
 
 use super::mem_cell::MemCell;
 use super::LibFuncSimulationError;
-use crate::extensions::core::gas::GasConcrete::{GetGas, RefundGas};
-use crate::extensions::core::gas::{GetGasConcrete, RefundGasConcrete};
+use crate::extensions::core::function_call::FunctionCallConcreteLibFunc;
+use crate::extensions::core::gas::GasConcreteLibFunc::{GetGas, RefundGas};
+use crate::extensions::core::gas::{GetGasConcreteLibFunc, RefundGasConcreteLibFunc};
 use crate::extensions::core::integer::IntegerConcrete::{
-    Const, Duplicate, Ignore, JumpNotZero, Operation, UnwrapNonZero,
+    Const, Duplicate, Ignore, JumpNotZero, Operation,
 };
 use crate::extensions::core::integer::{
-    BinaryOperationConcrete, ConstConcrete, OperationConcrete, OperationWithConstConcrete, Operator,
+    BinaryOperationConcreteLibFunc, ConstConcreteLibFunc, OperationConcreteLibFunc,
+    OperationWithConstConcreteLibFunc, Operator,
 };
-use crate::extensions::core::mem::MemConcrete::{
+use crate::extensions::core::mem::MemConcreteLibFunc::{
     AlignTemps, AllocLocals, Move, Rename, StoreLocal, StoreTemp,
 };
-use crate::extensions::CoreConcrete::{self, Gas, Integer, Mem, UnconditionalJump};
+use crate::extensions::CoreConcreteLibFunc::{
+    self, FunctionCall, Gas, Integer, Mem, UnconditionalJump, UnwrapNonZero,
+};
+use crate::ids::FunctionId;
 
-/// Simulates the run of a single libfunc.
-pub fn simulate(
-    libfunc: &CoreConcrete,
+/// Simulates the run of a single libfunc. Returns the memory reperesentations of the outputs, and
+/// the chosen branch given the inputs. A function that provides the simulation of running a user
+/// function is also provided for the case where the extensions needs to simulate it.
+pub fn simulate<
+    F: Fn(&FunctionId, Vec<Vec<MemCell>>) -> Result<Vec<Vec<MemCell>>, LibFuncSimulationError>,
+>(
+    libfunc: &CoreConcreteLibFunc,
     inputs: Vec<Vec<MemCell>>,
+    simulate_function: F,
 ) -> Result<(Vec<Vec<MemCell>>, usize), LibFuncSimulationError> {
     match libfunc {
-        Gas(GetGas(GetGasConcrete { count })) => {
+        FunctionCall(FunctionCallConcreteLibFunc { function }) => {
+            Ok((simulate_function(&function.id, inputs)?, 0))
+        }
+        Gas(GetGas(GetGasConcreteLibFunc { count, .. })) => {
             let [MemCell { value: gas_counter }] = unpack_inputs::<1>(inputs)?;
             if gas_counter >= *count {
                 // Have enough gas - return reduced counter and jump to success branch.
@@ -31,15 +44,18 @@ pub fn simulate(
                 Ok((vec![vec![gas_counter.into()]], 1))
             }
         }
-        Gas(RefundGas(RefundGasConcrete { count })) => {
+        Gas(RefundGas(RefundGasConcreteLibFunc { count, .. })) => {
             let [MemCell { value: gas_counter }] = unpack_inputs::<1>(inputs)?;
             Ok((vec![vec![(gas_counter + count).into()]], 0))
         }
-        Integer(Const(ConstConcrete { c })) => {
+        Integer(Const(ConstConcreteLibFunc { c, .. })) => {
             unpack_inputs::<0>(inputs)?;
             Ok((vec![vec![(*c).into()]], 0))
         }
-        Integer(Operation(OperationConcrete::Binary(BinaryOperationConcrete { operator }))) => {
+        Integer(Operation(OperationConcreteLibFunc::Binary(BinaryOperationConcreteLibFunc {
+            operator,
+            ..
+        }))) => {
             let [MemCell { value: lhs }, MemCell { value: rhs }] = unpack_inputs::<2>(inputs)?;
             Ok((
                 vec![vec![
@@ -55,10 +71,9 @@ pub fn simulate(
                 0,
             ))
         }
-        Integer(Operation(OperationConcrete::Const(OperationWithConstConcrete {
-            operator,
-            c,
-        }))) => {
+        Integer(Operation(OperationConcreteLibFunc::Const(
+            OperationWithConstConcreteLibFunc { operator, c, .. },
+        ))) => {
             let [MemCell { value }] = unpack_inputs::<1>(inputs)?;
             Ok((
                 vec![vec![
@@ -93,10 +108,7 @@ pub fn simulate(
                 Ok((vec![], 1))
             }
         }
-        Integer(UnwrapNonZero(_))
-        | Mem(Move(_))
-        | Mem(Rename(_))
-        | Mem(StoreLocal(_))
+        UnwrapNonZero(_) | Mem(Move(_)) | Mem(Rename(_)) | Mem(StoreLocal(_))
         | Mem(StoreTemp(_)) => Ok((single_cell_identity::<1>(inputs)?, 0)),
         Mem(AlignTemps(_)) | Mem(AllocLocals(_)) | UnconditionalJump(_) => {
             unpack_inputs::<0>(inputs)?;

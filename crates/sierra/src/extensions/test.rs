@@ -1,11 +1,14 @@
+use std::collections::HashMap;
+
 use test_case::test_case;
 
 use super::core::{CoreLibFunc, CoreType};
+use super::lib_func::SpecializationContext;
 use super::SpecializationError::{
-    self, UnsupportedGenericArg, UnsupportedId, WrongNumberOfGenericArgs,
+    self, MissingFunction, UnsupportedGenericArg, UnsupportedId, WrongNumberOfGenericArgs,
 };
 use crate::extensions::{GenericLibFunc, GenericType};
-use crate::program::GenericArg;
+use crate::program::{Function, GenericArg, StatementIdx};
 
 fn type_arg(name: &str) -> GenericArg {
     GenericArg::Type(name.into())
@@ -18,10 +21,12 @@ fn value_arg(v: i64) -> GenericArg {
 #[test_case("NoneExistent", vec![] => Err(UnsupportedId); "NoneExistent")]
 #[test_case("GasBuiltin", vec![] => Ok(()); "GasBuiltin")]
 #[test_case("GasBuiltin", vec![type_arg("T")] => Err(WrongNumberOfGenericArgs); "GasBuiltin<T>")]
+#[test_case("felt", vec![] => Ok(()); "felt")]
+#[test_case("felt", vec![type_arg("T")] => Err(WrongNumberOfGenericArgs); "felt<T>")]
 #[test_case("int", vec![] => Ok(()); "int")]
 #[test_case("int", vec![type_arg("T")] => Err(WrongNumberOfGenericArgs); "int<T>")]
-#[test_case("NonZeroInt", vec![] => Ok(()); "NonZeroInt")]
-#[test_case("NonZeroInt", vec![type_arg("T")] => Err(WrongNumberOfGenericArgs); "NonZeroInt<T>")]
+#[test_case("NonZero", vec![type_arg("T")] => Ok(()); "NonZero<T>")]
+#[test_case("NonZero", vec![] => Err(UnsupportedGenericArg); "NonZero")]
 fn find_type_specialization(
     id: &str,
     generic_args: Vec<GenericArg>,
@@ -30,6 +35,13 @@ fn find_type_specialization(
 }
 
 #[test_case("NoneExistent", vec![] => Err(UnsupportedId); "NoneExistent")]
+#[test_case("function_call", vec![GenericArg::Func("UnregisteredFunction".into())]
+             => Err(MissingFunction("UnregisteredFunction".into()));
+             "function_call<&UnregisteredFunction>")]
+#[test_case("function_call", vec![GenericArg::Func("RegisteredFunction".into())]
+            => Ok(());
+            "function_call<&RegisteredFunction>")]
+#[test_case("function_call", vec![] => Err(UnsupportedGenericArg); "function_call")]
 #[test_case("get_gas", vec![value_arg(2)] => Ok(()); "get_gas<2>")]
 #[test_case("get_gas", vec![] => Err(UnsupportedGenericArg); "get_gas")]
 #[test_case("get_gas", vec![value_arg(-2)] => Err(UnsupportedGenericArg); "get_gas<minus 2>")]
@@ -56,10 +68,9 @@ fn find_type_specialization(
 #[test_case("int_dup", vec![] => Ok(()); "int_dup")]
 #[test_case("int_dup", vec![type_arg("T")] => Err(WrongNumberOfGenericArgs); "int_dup<T>")]
 #[test_case("int_jump_nz", vec![] => Ok(()); "int_jump_nz")]
-#[test_case("int_jump_nz", vec![type_arg("T")] => Err(WrongNumberOfGenericArgs); "int_jump_nz<T>")]
-#[test_case("int_unwrap_nz", vec![] => Ok(()); "int_unwrap_nz")]
-#[test_case("int_unwrap_nz", vec![type_arg("T")] => Err(WrongNumberOfGenericArgs);
-            "int_unwrap_nz<T>")]
+#[test_case("int_jump_nz", vec![type_arg("int")] => Err(WrongNumberOfGenericArgs); "int_jump_nz<int>")]
+#[test_case("unwrap_nz", vec![type_arg("int")] => Ok(()); "unwrap_nz<int>")]
+#[test_case("unwrap_nz", vec![] => Err(UnsupportedGenericArg); "unwrap_nz")]
 #[test_case("store_temp", vec![type_arg("int")] => Ok(()); "store_temp<int>")]
 #[test_case("store_temp", vec![] => Err(UnsupportedGenericArg); "store_temp")]
 #[test_case("align_temps", vec![type_arg("int")] => Ok(()); "align_temps<int>")]
@@ -79,5 +90,32 @@ fn find_libfunc_specialization(
     id: &str,
     generic_args: Vec<GenericArg>,
 ) -> Result<(), SpecializationError> {
-    CoreLibFunc::by_id(&id.into()).ok_or(UnsupportedId)?.specialize(&generic_args).map(|_| ())
+    let functions = &HashMap::from([(
+        "RegisteredFunction".into(),
+        Function {
+            id: "RegisteredFunction".into(),
+            entry: StatementIdx(5),
+            ret_types: vec![],
+            params: vec![],
+        },
+    )]);
+    CoreLibFunc::by_id(&id.into())
+        .ok_or(UnsupportedId)?
+        .specialize(
+            SpecializationContext {
+                concrete_type_ids: &HashMap::from([
+                    (("int".into(), &[][..]), "int".into()),
+                    (("NonZero".into(), &[type_arg("int")][..]), "NonZeroInt".into()),
+                    (("Deferred".into(), &[type_arg("int")][..]), "DeferredInt".into()),
+                    (("GasBuiltin".into(), &[][..]), "GasBuiltin".into()),
+                    (
+                        ("Deferred".into(), &[type_arg("GasBuiltin")][..]),
+                        "DeferredGasBuiltin".into(),
+                    ),
+                ]),
+                functions,
+            },
+            &generic_args,
+        )
+        .map(|_| ())
 }
