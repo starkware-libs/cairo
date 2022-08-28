@@ -4,8 +4,9 @@ use crate::ids::{
     ConcreteLibFuncId, ConcreteTypeId, FunctionId, GenericLibFuncId, GenericTypeId, VarId,
 };
 use crate::program::{
-    Function, GenBranchInfo, GenBranchTarget, GenInvocation, GenStatement, GenericArg,
-    LibFuncDeclaration, Param, Program, StatementIdx, TypeDeclaration,
+    ConcreteLibFuncLongId, ConcreteTypeLongId, Function, GenBranchInfo, GenBranchTarget,
+    GenInvocation, GenStatement, GenericArg, LibFuncDeclaration, Param, Program, StatementIdx,
+    TypeDeclaration,
 };
 
 impl fmt::Display for Program {
@@ -31,14 +32,26 @@ impl fmt::Display for Program {
 
 impl fmt::Display for TypeDeclaration {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "type {} = {}", self.id, self.generic_id)?;
+        write!(f, "type {} = {}", self.id, self.long_id)
+    }
+}
+
+impl fmt::Display for ConcreteTypeLongId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.generic_id)?;
         write_template_args(f, &self.args)
     }
 }
 
 impl fmt::Display for LibFuncDeclaration {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "libfunc {} = {}", self.id, self.generic_id)?;
+        write!(f, "libfunc {} = {}", self.id, self.long_id)
+    }
+}
+
+impl fmt::Display for ConcreteLibFuncLongId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.generic_id)?;
         write_template_args(f, &self.args)
     }
 }

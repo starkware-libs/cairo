@@ -1,6 +1,6 @@
 use indoc::indoc;
 
-use crate::program::TypeDeclaration;
+use crate::program::{ConcreteTypeLongId, TypeDeclaration};
 use crate::program_registry::{ProgramRegistry, ProgramRegistryError};
 use crate::ProgramParser;
 
@@ -73,8 +73,7 @@ fn concrete_type_double_declaration() {
         .map(|_| ()),
         Err(ProgramRegistryError::TypeAlreadyDeclared(TypeDeclaration {
             id: "int2".into(),
-            generic_id: "int".into(),
-            args: vec![]
+            long_id: ConcreteTypeLongId { generic_id: "int".into(), args: vec![] },
         }))
     );
 }
