@@ -1,10 +1,11 @@
 use sierra::ids::ConcreteLibFuncId;
 use sierra::program;
+use smol_str::SmolStr;
 
 use crate::pre_sierra;
 
 pub fn simple_statement(
-    ext_name: impl Into<String>,
+    ext_name: impl Into<SmolStr>,
     args: &[sierra::ids::VarId],
     results: &[sierra::ids::VarId],
 ) -> pre_sierra::Statement {

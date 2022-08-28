@@ -1,6 +1,6 @@
 use crate::extensions::lib_func::SpecializationContext;
 use crate::extensions::{NamedLibFunc, NonBranchConcreteLibFunc, SpecializationError};
-use crate::ids::ConcreteTypeId;
+use crate::ids::{ConcreteTypeId, GenericLibFuncId};
 use crate::program::{Function, GenericArg};
 
 /// LibFunc used to call user functions.
@@ -8,7 +8,7 @@ use crate::program::{Function, GenericArg};
 pub struct FunctionCallLibFunc {}
 impl NamedLibFunc for FunctionCallLibFunc {
     type Concrete = FunctionCallConcreteLibFunc;
-    const NAME: &'static str = "function_call";
+    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("function_call");
     fn specialize(
         &self,
         context: SpecializationContext<'_>,
