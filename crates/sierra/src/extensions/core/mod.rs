@@ -1,3 +1,4 @@
+use self::cost::CostType;
 use self::felt::{FeltLibFunc, FeltType};
 use self::function_call::FunctionCallLibFunc;
 use self::gas::{GasBuiltinType, GasLibFunc};
@@ -10,6 +11,7 @@ use crate::ids::ConcreteTypeId;
 use crate::program::GenericArg;
 use crate::{define_libfunc_hierarchy, define_type_hierarchy};
 
+pub mod cost;
 pub mod felt;
 pub mod function_call;
 pub mod gas;
@@ -20,6 +22,7 @@ pub mod unconditional_jump;
 
 define_type_hierarchy! {
     pub enum CoreType {
+        Cost(CostType),
         Felt(FeltType),
         GasBuiltin(GasBuiltinType),
         Integer(IntegerType),
