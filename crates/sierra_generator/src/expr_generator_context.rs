@@ -1,21 +1,21 @@
 use std::collections::{hash_map, HashMap};
 
 use defs::ids::LocalVarId;
-use semantic::db::SemanticGroup;
 
+use crate::db::SierraGenGroup;
 use crate::id_allocator::IdAllocator;
 use crate::pre_sierra;
 
 /// Context for the methods that generate Sierra instructions for an expression.
 pub struct ExprGeneratorContext<'a> {
-    db: &'a dyn SemanticGroup,
+    db: &'a dyn SierraGenGroup,
     var_id_allocator: IdAllocator,
     statement_id_allocator: IdAllocator,
     variables: HashMap<LocalVarId, sierra::ids::VarId>,
 }
 impl<'a> ExprGeneratorContext<'a> {
     /// Constructs an empty [ExprGeneratorContext].
-    pub fn new(db: &'a dyn SemanticGroup) -> Self {
+    pub fn new(db: &'a dyn SierraGenGroup) -> Self {
         ExprGeneratorContext {
             db,
             var_id_allocator: IdAllocator::default(),
@@ -29,8 +29,8 @@ impl<'a> ExprGeneratorContext<'a> {
         sierra::ids::VarId::from_usize(self.var_id_allocator.allocate())
     }
 
-    /// Returns the SemanticGroup salsa database.
-    pub fn get_db(&self) -> &'a dyn SemanticGroup {
+    /// Returns the SierraGenGroup salsa database.
+    pub fn get_db(&self) -> &'a dyn SierraGenGroup {
         self.db
     }
 
