@@ -1,5 +1,7 @@
 use db_utils::define_short_id;
-use defs::ids::{ExternFunctionId, ExternTypeId, FreeFunctionId, StructId};
+use defs::ids::{self, ExternFunctionId, ExternTypeId, FreeFunctionId, StructId};
+
+use crate::semantic;
 
 // Ids in this file represent semantic representations.
 
@@ -53,7 +55,18 @@ pub struct ConcreteType {
     pub generic_args: Vec<GenericArgumentId>,
 }
 
-// CodeElements.
-// Expressions and statements are defined at 'semantic.rs'.
+// Code elements - expressions and statements.
+// Semantic expressions and statements are defined at 'semantic.rs'.
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct ExprData {
+    pub expr: semantic::Expr,
+    pub code_element: ids::CodeElementId,
+}
 define_short_id!(ExprId);
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct StatementData {
+    pub statement: semantic::Statement,
+    pub code_element: ids::CodeElementId,
+}
 define_short_id!(StatementId);

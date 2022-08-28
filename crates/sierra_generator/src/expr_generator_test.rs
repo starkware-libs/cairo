@@ -1,11 +1,16 @@
-use defs::db::{AsDefsGroup, DefsDatabase};
-use defs::ids::{LocalVarId, VarId};
-use filesystem::db::FilesDatabase;
+use defs::db::{AsDefsGroup, DefsDatabase, DefsGroup};
+use defs::ids::{
+    BlockLongId, CodeElementLongId, FreeFunctionLongId, FunctionWithBodyId, LocalVarId, ModuleId,
+    VarId,
+};
+use filesystem::db::{FilesDatabase, FilesGroup};
+use filesystem::ids::CrateLongId;
 use parser::db::ParserDatabase;
 use pretty_assertions::assert_eq;
 use salsa::{InternId, InternKey};
 use semantic::db::{SemanticDatabase, SemanticGroup};
 use semantic::ids::{ConcreteFunctionId, TypeId};
+use semantic::ExprData;
 use syntax::node::db::{AsGreenInterner, GreenDatabase, GreenInterner};
 
 use crate::db::SierraGenDatabase;
@@ -38,38 +43,54 @@ impl AsDefsGroup for DatabaseImpl {
 
 #[test]
 fn test_expr_generator() {
-    let db = DatabaseImpl::default();
+    let (db, code_element) = prepare_test_data();
 
     let ty = TypeId::from_intern_id(InternId::from(0u32));
-    let literal7 =
-        db.intern_expr(semantic::Expr::ExprLiteral(semantic::ExprLiteral { value: 7, ty }));
+    let literal7 = db.intern_expr(ExprData {
+        expr: semantic::Expr::ExprLiteral(semantic::ExprLiteral { value: 7, ty }),
+        code_element,
+    });
     let var_x = LocalVarId::from_intern_id(InternId::from(3u32));
-    let var_x_expr =
-        db.intern_expr(semantic::Expr::ExprVar(semantic::ExprVar { var: VarId::Local(var_x), ty }));
+    let var_x_expr = db.intern_expr(ExprData {
+        expr: semantic::Expr::ExprVar(semantic::ExprVar { var: VarId::Local(var_x), ty }),
+        code_element,
+    });
 
     // "let x = 7;" statement.
     let statement_let = semantic::StatementLet { var: var_x, expr: literal7 };
 
     // "foo(x, 7)" expression.
-    let expr = db.intern_expr(semantic::Expr::ExprFunctionCall(semantic::ExprFunctionCall {
-        function: ConcreteFunctionId::from_intern_id(InternId::from(1u32)),
-        args: vec![var_x_expr, literal7],
-        ty,
-    }));
+    let expr = db.intern_expr(ExprData {
+        expr: semantic::Expr::ExprFunctionCall(semantic::ExprFunctionCall {
+            function: ConcreteFunctionId::from_intern_id(InternId::from(1u32)),
+            args: vec![var_x_expr, literal7],
+            ty,
+        }),
+        code_element,
+    });
 
     // "foo(foo(x, 7), foo(x, 7))" expression.
-    let expr2 = db.intern_expr(semantic::Expr::ExprFunctionCall(semantic::ExprFunctionCall {
-        function: ConcreteFunctionId::from_intern_id(InternId::from(2u32)),
-        args: vec![expr, expr],
-        ty,
-    }));
+    let expr2 = db.intern_expr(ExprData {
+        expr: semantic::Expr::ExprFunctionCall(semantic::ExprFunctionCall {
+            function: ConcreteFunctionId::from_intern_id(InternId::from(2u32)),
+            args: vec![expr, expr],
+            ty,
+        }),
+        code_element,
+    });
 
     // "let x = 7; foo(x, 7); foo(foo(x, 7), foo(x, 7))" block.
-    let block = db.intern_expr(semantic::Expr::ExprBlock(semantic::ExprBlock {
-        statements: vec![semantic::Statement::Let(statement_let), semantic::Statement::Expr(expr)],
-        tail: Some(expr2),
-        ty,
-    }));
+    let block = db.intern_expr(ExprData {
+        expr: semantic::Expr::ExprBlock(semantic::ExprBlock {
+            statements: vec![
+                semantic::Statement::Let(statement_let),
+                semantic::Statement::Expr(expr),
+            ],
+            tail: Some(expr2),
+            ty,
+        }),
+        code_element,
+    });
 
     let mut expr_generator_context = ExprGeneratorContext::new(&db);
     let (statements, res) = generate_expression_code(&mut expr_generator_context, block);
@@ -103,14 +124,18 @@ fn test_expr_generator() {
 
 #[test]
 fn test_match() {
-    let db = DatabaseImpl::default();
+    let (db, code_element) = prepare_test_data();
 
     let ty = TypeId::from_intern_id(InternId::from(0u32));
-    let literal7 =
-        db.intern_expr(semantic::Expr::ExprLiteral(semantic::ExprLiteral { value: 7, ty }));
+    let literal7 = db.intern_expr(ExprData {
+        expr: semantic::Expr::ExprLiteral(semantic::ExprLiteral { value: 7, ty }),
+        code_element,
+    });
     let var_x = LocalVarId::from_intern_id(InternId::from(3u32));
-    let var_x_expr =
-        db.intern_expr(semantic::Expr::ExprVar(semantic::ExprVar { var: VarId::Local(var_x), ty }));
+    let var_x_expr = db.intern_expr(ExprData {
+        expr: semantic::Expr::ExprVar(semantic::ExprVar { var: VarId::Local(var_x), ty }),
+        code_element,
+    });
 
     let statement_let = semantic::StatementLet { var: var_x, expr: literal7 };
 
@@ -120,17 +145,23 @@ fn test_match() {
     };
     let branch_otherwise =
         semantic::MatchBranch { pattern: semantic::Pattern::Otherwise, block: literal7 };
-    let match_statement = db.intern_expr(semantic::Expr::ExprMatch(semantic::ExprMatch {
-        matched_expr: var_x_expr,
-        arms: vec![branch0, branch_otherwise],
-        ty,
-    }));
+    let match_statement = db.intern_expr(ExprData {
+        expr: semantic::Expr::ExprMatch(semantic::ExprMatch {
+            matched_expr: var_x_expr,
+            arms: vec![branch0, branch_otherwise],
+            ty,
+        }),
+        code_element,
+    });
 
-    let block = db.intern_expr(semantic::Expr::ExprBlock(semantic::ExprBlock {
-        statements: vec![semantic::Statement::Let(statement_let)],
-        tail: Some(match_statement),
-        ty,
-    }));
+    let block = db.intern_expr(ExprData {
+        expr: semantic::Expr::ExprBlock(semantic::ExprBlock {
+            statements: vec![semantic::Statement::Let(statement_let)],
+            tail: Some(match_statement),
+            ty,
+        }),
+        code_element,
+    });
 
     let mut expr_generator_context = ExprGeneratorContext::new(&db);
     let (statements, res) = generate_expression_code(&mut expr_generator_context, block);
@@ -154,4 +185,17 @@ fn test_match() {
     );
 
     assert_eq!(res, sierra::ids::VarId::new(1));
+}
+
+fn prepare_test_data() -> (DatabaseImpl, defs::ids::CodeElementId) {
+    let db = DatabaseImpl::default();
+    let crate_id = db.intern_crate(CrateLongId("my_crate".into()));
+    let module_id = ModuleId::CrateRoot(crate_id);
+    let function_id =
+        db.intern_free_function(FreeFunctionLongId { parent: module_id, name: "my_func".into() });
+    let block_id =
+        db.intern_block(BlockLongId::FunctionBody(FunctionWithBodyId::FreeFunction(function_id)));
+    // TODO(spapini): Remove this fake id once we get this data from the semantic model.
+    let code_element = db.intern_code_element(CodeElementLongId::Block(block_id));
+    (db, code_element)
 }

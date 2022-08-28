@@ -5,6 +5,8 @@ use crate::ids::*;
 #[salsa::query_group(DefsDatabase)]
 pub trait DefsGroup {
     #[salsa::interned]
+    fn intern_submodule(&self, id: SubmoduleLongId) -> SubmoduleId;
+    #[salsa::interned]
     fn intern_free_function(&self, id: FreeFunctionLongId) -> FreeFunctionId;
     #[salsa::interned]
     fn intern_struct(&self, id: StructLongId) -> StructId;
@@ -21,7 +23,7 @@ pub trait DefsGroup {
     #[salsa::interned]
     fn intern_local_var(&self, id: LocalVarLongId) -> LocalVarId;
     #[salsa::interned]
-    fn intern_submodule(&self, id: SubmoduleLongId) -> SubmoduleId;
+    fn intern_code_element(&self, id: CodeElementLongId) -> CodeElementId;
 }
 
 pub trait AsDefsGroup {
