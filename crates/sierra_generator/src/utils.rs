@@ -20,3 +20,16 @@ pub fn simple_statement(
         },
     ))
 }
+
+pub fn jump_statement(label: pre_sierra::LabelId) -> pre_sierra::Statement {
+    pre_sierra::Statement::SierraStatement(program::GenStatement::Invocation(
+        program::GenInvocation {
+            libfunc_id: ConcreteLibFuncId::from_string("jump"),
+            args: vec![],
+            branches: vec![program::GenBranchInfo {
+                target: program::GenBranchTarget::Statement(label),
+                results: vec![],
+            }],
+        },
+    ))
+}
