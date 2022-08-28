@@ -5,10 +5,11 @@ use salsa::{InternId, InternKey};
 use semantic::db::{SemanticDatabase, SemanticGroup};
 use semantic::ids::{ConcreteFunctionId, TypeId};
 
+use crate::db::SierraGenDatabase;
 use crate::expr_generator::generate_expression_code;
 use crate::expr_generator_context::ExprGeneratorContext;
 
-#[salsa::database(DefsDatabase, SemanticDatabase)]
+#[salsa::database(DefsDatabase, SemanticDatabase, SierraGenDatabase)]
 #[derive(Default)]
 pub struct DatabaseImpl {
     storage: salsa::Storage<DatabaseImpl>,

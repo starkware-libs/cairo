@@ -1,3 +1,4 @@
+use salsa;
 use smol_str::SmolStr;
 
 const fn id_from_string(s: &str) -> u64 {
@@ -46,6 +47,16 @@ macro_rules! define_identity {
         impl From<u64> for $type_name {
             fn from(id: u64) -> Self {
                 Self::new(id)
+            }
+        }
+        impl salsa::InternKey for $type_name {
+            fn from_intern_id(salsa_id: salsa::InternId) -> Self {
+                Self::from_usize(salsa_id.as_usize())
+            }
+
+            fn as_intern_id(&self) -> salsa::InternId {
+                let id_usize: usize = self.id.try_into().unwrap();
+                id_usize.into()
             }
         }
     };
