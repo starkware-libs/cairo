@@ -1,7 +1,8 @@
 use thiserror::Error;
 
 use crate::operand::{
-    BinOpOperand, DerefOperand, DerefOrImmediate, ImmediateOperand, Register, ResOperand,
+    BinOpOperand, DerefOperand, DerefOrImmediate, DoubleDerefOperand, ImmediateOperand, Register,
+    ResOperand,
 };
 
 #[cfg(test)]
@@ -30,6 +31,9 @@ impl ApplyApChange for ResOperand {
     fn apply_ap_change(self, ap_change: ApChange) -> Result<Self, ApChangeError> {
         Ok(match self {
             ResOperand::Deref(operand) => ResOperand::Deref(operand.apply_ap_change(ap_change)?),
+            ResOperand::DoubleDeref(operand) => {
+                ResOperand::DoubleDeref(operand.apply_ap_change(ap_change)?)
+            }
             ResOperand::Immediate(operand) => {
                 ResOperand::Immediate(operand.apply_ap_change(ap_change)?)
             }
@@ -50,6 +54,12 @@ impl ApplyApChange for DerefOperand {
             },
             DerefOperand { register: Register::FP, offset: _ } => Ok(self),
         }
+    }
+}
+
+impl ApplyApChange for DoubleDerefOperand {
+    fn apply_ap_change(self, ap_change: ApChange) -> Result<Self, ApChangeError> {
+        Ok(DoubleDerefOperand { inner_deref: self.inner_deref.apply_ap_change(ap_change)? })
     }
 }
 
