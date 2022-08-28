@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 defs = {path = "../defs"}
+filesystem = {path = "../filesystem"}
 salsa = "0.16.1"
 semantic = { path = "../semantic" }
 sierra = { path = "../sierra" }

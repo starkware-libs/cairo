@@ -118,3 +118,20 @@ pub enum Symbol {
     ModuleItem(ModuleItemId),
     Var(VarId),
 }
+
+// TODO(spapini): Make this private, owned by a single entity, to enforce invariants, such as
+// one to one mapping to ast code elements. Consider doing the same for other ids in this file.
+/// Location of expressions/statements in the syntax.
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub enum CodeElementLongId {
+    /// A block code element.
+    Block(BlockId),
+    /// A non-block code element.
+    Child {
+        parent: CodeElementId,
+        /// Index of a child code element inside its containing parent code element, among all
+        /// other direct children.
+        index: usize,
+    },
+}
+define_short_id!(CodeElementId);

@@ -10,7 +10,7 @@ use syntax::node::ast::Item;
 use crate::ids::{
     ConcreteFunctionId, ConcreteFunctionLongId, ExprId, StatementId, TypeId, TypeLongId,
 };
-use crate::semantic;
+use crate::{semantic, ExprData, StatementData};
 
 // Salsa database interface.
 #[salsa::query_group(SemanticDatabase)]
@@ -20,14 +20,16 @@ pub trait SemanticGroup: DefsGroup + AsDefsGroup + ParserGroup {
     #[salsa::interned]
     fn intern_type_instance(&self, id: TypeLongId) -> TypeId;
     #[salsa::interned]
-    fn intern_expr(&self, expr: semantic::Expr) -> ExprId;
+    fn intern_expr(&self, expr: ExprData) -> ExprId;
     #[salsa::interned]
-    fn intern_statement(&self, statement: semantic::Statement) -> StatementId;
+    fn intern_statement(&self, statement: StatementData) -> StatementId;
 
     // Queries to compute the semantic model for definitions.
     fn module_semantic(&self, item: ModuleId) -> semantic::Module;
     fn struct_semantic(&self, item: StructId) -> semantic::Struct;
     fn free_function_semantic(&self, item: FreeFunctionId) -> semantic::FreeFunction;
+    fn expr_semantic(&self, item: ExprId) -> semantic::Expr;
+    fn statement_semantic(&self, item: StatementId) -> semantic::Statement;
 
     // TODO(yuval): consider moving to filesystem/defs crate.
     fn module_file(&self, module_id: ModuleId) -> Option<FileId>;
@@ -47,6 +49,14 @@ fn free_function_semantic(
     _item: FreeFunctionId,
 ) -> semantic::FreeFunction {
     todo!()
+}
+
+fn expr_semantic(db: &dyn SemanticGroup, item: ExprId) -> semantic::Expr {
+    db.lookup_intern_expr(item).expr
+}
+
+fn statement_semantic(db: &dyn SemanticGroup, item: StatementId) -> semantic::Statement {
+    db.lookup_intern_statement(item).statement
 }
 
 fn module_items(db: &dyn SemanticGroup, module_id: ModuleId) -> Option<Vec<ModuleItemId>> {
