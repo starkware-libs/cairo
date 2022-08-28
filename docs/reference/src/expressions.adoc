@@ -1,6 +1,7 @@
-# Expressions
+= Expressions
 
-```bnf
+[source,bnf]
+----
 EXPR : EXPR_WITHOUT_BLOCK | EXPR_WITH_BLOCK
 
 EXPR_WITHOUT_BLOCK
@@ -20,4 +21,4 @@ EXPR_WITH_BLOCK
     | IF_EXPR
     | MATCH_EXPR
     | FOR_EXPR
-```
+----

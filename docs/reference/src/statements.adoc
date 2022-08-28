@@ -1,12 +1,13 @@
-# Statements
+= Statements
 
-```bnf
+[source,bnf]
+----
 STMT : ";"
      | ASSIGN_STMT
      | ITEM_STMT
      | LET_STMT
      | EXPR_STMT
-```
+----
 
 Cairo is an expression-oriented language, where most syntax productions producing values or
 causing effects when evaluated are _expressions_.
@@ -17,7 +18,7 @@ There are not a lot of statements kinds, which role is limited to containing exp
 link:expression-statement.adoc[expression evaluation] and declaring link:items.adoc[items]
 and link:let-statement.adoc[variables] in [code blocks].
 
-## Semicolons
+== Semicolons
 
 Statements are _usually_ separated with a semicolon (`;`).
 Extraneous semicolons are ignored.

@@ -81,7 +81,7 @@ impl<'a> Printer<'a> {
             format!(" (kind: {:?})", kind)
         };
 
-        let children = syntax_node.children(self.db);
+        let children = &syntax_node.children(self.db);
         let num_children = children.len();
         let no_children_str = if num_children == 0 {
             self.bright_purple(" []".into()).to_string()
@@ -106,7 +106,7 @@ impl<'a> Printer<'a> {
         let node_kind = self.get_node_kind(kind.to_string());
         match node_kind {
             NodeKind::Struct { members: expected_children } => {
-                self.print_internal_struct(&children, &expected_children, indent.as_str());
+                self.print_internal_struct(children, &expected_children, indent.as_str());
             }
             NodeKind::List { element_type: _ } => {
                 for (i, child) in children.iter().enumerate() {

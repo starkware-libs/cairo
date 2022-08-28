@@ -98,6 +98,7 @@ impl AssertEqInstruction {
     pub fn op_size(&self) -> usize {
         match &self.b {
             ResOperand::Deref(_) => 1,
+            ResOperand::DoubleDeref(_) => 1,
             ResOperand::Immediate(_) => 2,
             ResOperand::BinOp(op) => match op.b {
                 DerefOrImmediate::Immediate(_) => 2,

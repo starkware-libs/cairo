@@ -21,6 +21,8 @@ fn value_arg(v: i64) -> GenericArg {
 #[test_case("NoneExistent", vec![] => Err(UnsupportedId); "NoneExistent")]
 #[test_case("GasBuiltin", vec![] => Ok(()); "GasBuiltin")]
 #[test_case("GasBuiltin", vec![type_arg("T")] => Err(WrongNumberOfGenericArgs); "GasBuiltin<T>")]
+#[test_case("felt", vec![] => Ok(()); "felt")]
+#[test_case("felt", vec![type_arg("T")] => Err(WrongNumberOfGenericArgs); "felt<T>")]
 #[test_case("int", vec![] => Ok(()); "int")]
 #[test_case("int", vec![type_arg("T")] => Err(WrongNumberOfGenericArgs); "int<T>")]
 #[test_case("NonZero", vec![type_arg("T")] => Ok(()); "NonZero<T>")]

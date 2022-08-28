@@ -1,4 +1,4 @@
-# Identifiers
+= Identifiers
 
 :xid_continue: http://unicode.org/cldr/utility/list-unicodeset.jsp?a=%5B%3AXID_Continue%3A%5D&abb=on&g=&i=[XID_Continue]
 
@@ -8,13 +8,13 @@
 
 :UAX31: https://www.unicode.org/reports/tr31/tr31-33.html[Unicode Standard Annex #31]
 
-
-```bnf
+[source,bnf]
+----
 IDENTIFIER_OR_KEYWORD : XID_Start XID_Continue*
                       | "_" XID_Continue+
 
 IDENTIFIER : IDENTIFIER_OR_KEYWORD /* except strict or reserved keywords */
-```
+----
 
 //  When updating the version, update the UAX links, too.
 Identifiers follow the specification in {UAX31} for Unicode version
@@ -48,12 +48,12 @@ and {xid_continue} in the following situations:
 
 - Module names loaded from the filesystem.
 
-## Normalization
+== Normalization
 
 Identifiers are normalized using Normalization Form C (NFC) as defined
 in {UAX15}.
 Two identifiers are equal if their NFC forms are equal.
 
-## Case sensitivity
+== Case sensitivity
 
 Cairo is a _case-sensitive_ language which means that upper and lower case code points are distinct.

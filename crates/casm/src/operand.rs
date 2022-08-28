@@ -22,6 +22,7 @@ impl Display for Register {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ResOperand {
     Deref(DerefOperand),
+    DoubleDeref(DoubleDerefOperand),
     Immediate(ImmediateOperand),
     BinOp(BinOpOperand),
 }
@@ -29,6 +30,7 @@ impl Display for ResOperand {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ResOperand::Deref(operand) => write!(f, "{}", operand),
+            ResOperand::DoubleDeref(operand) => write!(f, "{}", operand),
             ResOperand::Immediate(operand) => write!(f, "{}", operand),
             ResOperand::BinOp(operand) => write!(f, "{}", operand),
         }
@@ -95,5 +97,15 @@ pub struct BinOpOperand {
 impl Display for BinOpOperand {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{} {} {}", self.a, self.op, self.b)
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct DoubleDerefOperand {
+    pub inner_deref: DerefOperand,
+}
+impl Display for DoubleDerefOperand {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "[{}]", self.inner_deref)
     }
 }

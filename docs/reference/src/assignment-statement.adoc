@@ -1,8 +1,9 @@
-# Assignment statement
+= Assignment statement
 
-```bnf
+[source,bnf]
+----
 ASSIGN_STMT : IDENTIFIER "=" EXPR ";"
-```
+----
 
 An _assignment statement_ moves a value into the specified target.
 
