@@ -105,18 +105,21 @@ fn get_concrete_types_maps(
     let mut concrete_types = HashMap::new();
     let mut concrete_type_ids = HashMap::<(GenericTypeId, &[GenericArg]), ConcreteTypeId>::new();
     for declaration in &program.type_declarations {
-        let concrete_type = CoreType::specialize_by_id(&declaration.generic_id, &declaration.args)
-            .map_err(|error| ProgramRegistryError::TypeSpecialization {
-                concrete_id: declaration.id.clone(),
-                error,
-            })?;
+        let concrete_type =
+            CoreType::specialize_by_id(&declaration.long_id.generic_id, &declaration.long_id.args)
+                .map_err(|error| ProgramRegistryError::TypeSpecialization {
+                    concrete_id: declaration.id.clone(),
+                    error,
+                })?;
         match concrete_types.entry(declaration.id.clone()) {
             Entry::Occupied(_) => {
                 Err(ProgramRegistryError::TypeConcreteIdAlreadyExists(declaration.id.clone()))
             }
             Entry::Vacant(entry) => Ok(entry.insert(concrete_type)),
         }?;
-        match concrete_type_ids.entry((declaration.generic_id.clone(), &declaration.args[..])) {
+        match concrete_type_ids
+            .entry((declaration.long_id.generic_id.clone(), &declaration.long_id.args[..]))
+        {
             Entry::Occupied(_) => {
                 Err(ProgramRegistryError::TypeAlreadyDeclared(declaration.clone()))
             }
@@ -136,8 +139,8 @@ fn get_concrete_libfuncs(
     for declaration in &program.libfunc_declarations {
         let concrete_libfunc = CoreLibFunc::specialize_by_id(
             SpecializationContext { functions, concrete_type_ids },
-            &declaration.generic_id,
-            &declaration.args,
+            &declaration.long_id.generic_id,
+            &declaration.long_id.args,
         )
         .map_err(|error| ProgramRegistryError::LibFuncSpecialization {
             concrete_id: declaration.id.clone(),
