@@ -2,7 +2,7 @@ use self::felt::{FeltLibFunc, FeltType};
 use self::function_call::FunctionCallLibFunc;
 use self::gas::{GasBuiltinType, GasLibFunc};
 use self::integer::{IntegerLibFunc, IntegerType};
-use self::mem::{DeferredType, MemLibFunc};
+use self::mem::MemLibFunc;
 use self::non_zero::{NonZeroType, UnwrapNonZeroLibFunc};
 use self::unconditional_jump::UnconditionalJumpLibFunc;
 use super::{GenericLibFunc, SpecializationError};
@@ -24,7 +24,6 @@ define_type_hierarchy! {
         GasBuiltin(GasBuiltinType),
         Integer(IntegerType),
         NonZero(NonZeroType),
-        Deferred(DeferredType),
     }, CoreTypeConcrete
 }
 

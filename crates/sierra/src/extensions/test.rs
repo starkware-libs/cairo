@@ -87,8 +87,6 @@ fn find_type_specialization(
             "alloc_locals<int>")]
 #[test_case("rename", vec![type_arg("int")] => Ok(()); "rename<int>")]
 #[test_case("rename", vec![] => Err(UnsupportedGenericArg); "rename")]
-#[test_case("move", vec![type_arg("int")] => Ok(()); "move<int>")]
-#[test_case("move", vec![] => Err(UnsupportedGenericArg); "move no args")]
 #[test_case("jump", vec![] => Ok(()); "jump")]
 #[test_case("jump", vec![type_arg("T")] => Err(WrongNumberOfGenericArgs); "jump<T>")]
 fn find_libfunc_specialization(

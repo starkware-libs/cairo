@@ -1,4 +1,3 @@
-use super::mem::DeferredType;
 use super::non_zero::NonZeroType;
 use crate::extensions::lib_func::SpecializationContext;
 use crate::extensions::{
@@ -29,13 +28,6 @@ define_libfunc_hierarchy! {
         Duplicate(DuplicateLibFunc),
         JumpNotZero(JumpNotZeroLibFunc),
     }, IntegerConcrete
-}
-
-fn get_int_types(
-    context: &SpecializationContext<'_>,
-) -> Result<(ConcreteTypeId, ConcreteTypeId), SpecializationError> {
-    let int_type = context.get_concrete_type(IntegerType::id(), &[])?;
-    Ok((int_type.clone(), context.get_wrapped_concrete_type(DeferredType::id(), int_type)?))
 }
 
 /// Possible operators for integers.
@@ -74,14 +66,13 @@ impl GenericLibFunc for OperationLibFunc {
         context: SpecializationContext<'_>,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        let (int_type, deferred_int_type) = get_int_types(&context)?;
+        let int_type = context.get_concrete_type(IntegerType::id(), &[])?;
         match args {
             [] => Ok(OperationConcreteLibFunc::Binary(BinaryOperationConcreteLibFunc {
                 operator: self.operator,
                 int_type: int_type.clone(),
                 non_zero_int_type: context
                     .get_wrapped_concrete_type(NonZeroType::id(), int_type)?,
-                deferred_int_type,
             })),
             [GenericArg::Value(c)] => {
                 if matches!(self.operator, Operator::Div | Operator::Mod) && *c == 0 {
@@ -91,7 +82,6 @@ impl GenericLibFunc for OperationLibFunc {
                         operator: self.operator,
                         c: *c,
                         int_type,
-                        deferred_int_type,
                     }))
                 }
             }
@@ -104,7 +94,6 @@ pub struct BinaryOperationConcreteLibFunc {
     pub operator: Operator,
     pub int_type: ConcreteTypeId,
     pub non_zero_int_type: ConcreteTypeId,
-    pub deferred_int_type: ConcreteTypeId,
 }
 impl NonBranchConcreteLibFunc for BinaryOperationConcreteLibFunc {
     fn input_types(&self) -> Vec<ConcreteTypeId> {
@@ -118,7 +107,7 @@ impl NonBranchConcreteLibFunc for BinaryOperationConcreteLibFunc {
         ]
     }
     fn output_types(&self) -> Vec<ConcreteTypeId> {
-        vec![self.deferred_int_type.clone()]
+        vec![self.int_type.clone()]
     }
 }
 
@@ -127,7 +116,6 @@ pub struct OperationWithConstConcreteLibFunc {
     pub operator: Operator,
     pub c: i64,
     pub int_type: ConcreteTypeId,
-    pub deferred_int_type: ConcreteTypeId,
 }
 define_concrete_libfunc_hierarchy! {
     pub enum OperationConcreteLibFunc {
@@ -141,7 +129,7 @@ impl NonBranchConcreteLibFunc for OperationWithConstConcreteLibFunc {
         vec![self.int_type.clone()]
     }
     fn output_types(&self) -> Vec<ConcreteTypeId> {
-        vec![self.deferred_int_type.clone()]
+        vec![self.int_type.clone()]
     }
 }
 
@@ -157,12 +145,10 @@ impl NamedLibFunc for ConstLibFunc {
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
         match args {
-            [GenericArg::Value(c)] => {
-                let int_type = context.get_concrete_type(IntegerType::id(), &[])?;
-                let deferred_int_type =
-                    context.get_concrete_type(DeferredType::id(), &[GenericArg::Type(int_type)])?;
-                Ok(ConstConcreteLibFunc { c: *c, deferred_int_type })
-            }
+            [GenericArg::Value(c)] => Ok(ConstConcreteLibFunc {
+                c: *c,
+                int_type: context.get_concrete_type(IntegerType::id(), &[])?,
+            }),
             _ => Err(SpecializationError::UnsupportedGenericArg),
         }
     }
@@ -170,14 +156,14 @@ impl NamedLibFunc for ConstLibFunc {
 
 pub struct ConstConcreteLibFunc {
     pub c: i64,
-    pub deferred_int_type: ConcreteTypeId,
+    pub int_type: ConcreteTypeId,
 }
 impl NonBranchConcreteLibFunc for ConstConcreteLibFunc {
     fn input_types(&self) -> Vec<ConcreteTypeId> {
         vec![]
     }
     fn output_types(&self) -> Vec<ConcreteTypeId> {
-        vec![self.deferred_int_type.clone()]
+        vec![self.int_type.clone()]
     }
 }
 

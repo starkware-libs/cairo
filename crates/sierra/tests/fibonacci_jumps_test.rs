@@ -8,13 +8,7 @@ fn fib_program() -> sierra::program::Program {
         type int = int;
         type GasBuiltin = GasBuiltin;
         type NonZeroInt = NonZero<int>;
-        type DeferredInt = Deferred<int>;
-        type DeferredGasBuiltin = Deferred<GasBuiltin>;
-        type DeferredNonZeroInt = Deferred<NonZeroInt>;
 
-        libfunc move_int = move<int>;
-        libfunc move_nz_int = move<NonZeroInt>;
-        libfunc move_gb = move<GasBuiltin>;
         libfunc store_temp_int = store_temp<int>;
         libfunc store_temp_nz_int = store_temp<NonZeroInt>;
         libfunc store_temp_gb = store_temp<GasBuiltin>;
@@ -55,25 +49,22 @@ fn fib_program() -> sierra::program::Program {
         // Setting up the latest memory to be of the form [b=1, n=n-1, gb, a=1].
         int_const_1() -> (b);
         store_temp_int(b) -> (b);
-        move_nz_int(n) -> (n);
         store_temp_nz_int(n) -> (n);
-        move_gb(gb) -> (gb);
         store_temp_gb(gb) -> (gb);
         int_const_1() -> (a);
         store_temp_int(a) -> (a);
-        // Statement # 23 - Getting gas for the main loop.
-        get_gas_5(gb) { 33(gb) fallthrough(gb) };
-        // Statement # 24  - Ran out of gas - returning updated gb and -1.
+        // Statement # 21 - Getting gas for the main loop.
+        get_gas_5(gb) { 30(gb) fallthrough(gb) };
+        // Statement # 22  - Ran out of gas - returning updated gb and -1.
         int_ignore(a) -> ();
         int_ignore(b) -> ();
         int_unwrap_nz(n) -> (n);
         int_ignore(n) -> ();
-        move_gb(gb) -> (gb);
         store_temp_gb(gb) -> (gb);
         int_const_minus_1() -> (err);
         store_temp_int(err) -> (err);
         return(gb, err);
-        // Statement # 33
+        // Statement # 30
         // The main loop - given [b, n, gb, a] - adds [n-1, updated_gb, a+b]
         // Memory cells form is now [b'=a, n'=n-1, gb'=updated_gb, a'=a+b]
         int_dup(a) -> (a, prev_a);
@@ -84,12 +75,11 @@ fn fib_program() -> sierra::program::Program {
         store_temp_int(n) -> (n);
         store_temp_gb(gb) -> (gb);
         store_temp_int(a) -> (a);
-        int_jump_nz(n) { 23(n) fallthrough() };
-        // Statement # 42 - n == 0, so we can return the latest a.
+        int_jump_nz(n) { 21(n) fallthrough() };
+        // Statement # 39 - n == 0, so we can return the latest a.
         int_ignore(b) -> ();
         refund_gas_1(gb) -> (gb);
         store_temp_gb(gb) -> (gb);
-        move_int(a) -> (a);
         store_temp_int(a) -> (a);
         return(gb, a);
 

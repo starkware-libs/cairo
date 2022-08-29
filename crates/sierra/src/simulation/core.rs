@@ -13,7 +13,7 @@ use crate::extensions::core::integer::{
     OperationWithConstConcreteLibFunc, Operator,
 };
 use crate::extensions::core::mem::MemConcreteLibFunc::{
-    AlignTemps, AllocLocals, Move, Rename, StoreLocal, StoreTemp,
+    AlignTemps, AllocLocals, Rename, StoreLocal, StoreTemp,
 };
 use crate::extensions::CoreConcreteLibFunc::{
     self, Felt, FunctionCall, Gas, Integer, Mem, UnconditionalJump, UnwrapNonZero,
@@ -109,8 +109,9 @@ pub fn simulate<
                 Ok((vec![], 1))
             }
         }
-        UnwrapNonZero(_) | Mem(Move(_)) | Mem(Rename(_)) | Mem(StoreLocal(_))
-        | Mem(StoreTemp(_)) => Ok((single_cell_identity::<1>(inputs)?, 0)),
+        UnwrapNonZero(_) | Mem(Rename(_)) | Mem(StoreLocal(_)) | Mem(StoreTemp(_)) => {
+            Ok((single_cell_identity::<1>(inputs)?, 0))
+        }
         Mem(AlignTemps(_)) | Mem(AllocLocals(_)) | UnconditionalJump(_) => {
             unpack_inputs::<0>(inputs)?;
             Ok((vec![], 0))
