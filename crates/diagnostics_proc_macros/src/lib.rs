@@ -1,6 +1,7 @@
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{FnArg, Pat, PatType};
+use syn::token::Mut;
+use syn::{AngleBracketedGenericArguments, FnArg, Pat, PatType, Path, TypePath, TypeReference};
 
 /// Macro for defining functions that return WithDiagnostics<T>.
 #[proc_macro_attribute]
@@ -11,7 +12,49 @@ pub fn with_diagnostics(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let mut args = ast.sig.inputs.into_iter();
 
     // Extract the first argument.
-    let _first_argument = args.next();
+    let first_argument = args.next();
+
+    // Extract Diagnostics type. TODO: extract function.
+    let diagnostics_ref_ty = match first_argument.unwrap() {
+        FnArg::Typed(PatType { pat, ty, .. }) => match &*pat {
+            Pat::Ident(ident) => {
+                assert_eq!(ident.ident, "diagnostics");
+                ty
+            }
+            _ => panic!("Argument pattern is not a simple ident."),
+        },
+        FnArg::Receiver(_) => panic!("Argument is a receiver."),
+    };
+    let diagnostics_ty = match &*diagnostics_ref_ty {
+        syn::Type::Reference(TypeReference {
+            and_token: _,
+            lifetime: _,
+            mutability: Some(Mut { span: _ }),
+            elem,
+        }) => elem,
+        _ => panic!("Expected a reference as a first parameter."),
+    };
+    let segments = match &**diagnostics_ty {
+        syn::Type::Path(TypePath { qself: _, path: Path { leading_colon: _, segments } }) => {
+            segments
+        }
+        _ => panic!("Expected a path as the type for the first arg."),
+    };
+    let segment = segments.last().unwrap();
+    assert_eq!(segment.ident, "Diagnostics");
+    let generic_args = match &segment.arguments {
+        syn::PathArguments::AngleBracketed(AngleBracketedGenericArguments {
+            colon2_token: _,
+            lt_token: _,
+            args,
+            gt_token: _,
+        }) => args,
+        _ => panic!("Expected angle brackets, e.g. Diagnostics<T>."),
+    };
+    let entry_ty = match generic_args.first().unwrap() {
+        syn::GenericArgument::Type(ty) => ty,
+        _ => panic!("Expected a generic argument for diagnostics.."),
+    };
     // TODO(spapini): Assert that the first arg is `&mut diagnostics: Diagnostics`.
 
     // Extract the rest of the arguments into args_syntax.
@@ -35,9 +78,9 @@ pub fn with_diagnostics(_attr: TokenStream, item: TokenStream) -> TokenStream {
 
     // Emit a wrapper function.
     quote! {
-        fn #function_ident(#args_syntax) -> WithDiagnostics<#ret_ty> {
-            let mut diagnostics = Diagnostics::default();
-            let f = |diagnostics: &mut Diagnostics| {
+        fn #function_ident(#args_syntax) -> WithDiagnostics<#ret_ty, #entry_ty> {
+            let mut diagnostics = Diagnostics::new();
+            let f = |diagnostics: &mut Diagnostics<#entry_ty>| {
                 #body
             };
             let value = f(&mut diagnostics);
