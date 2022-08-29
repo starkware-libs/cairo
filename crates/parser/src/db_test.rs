@@ -51,7 +51,7 @@ fn test_parser() {
         name: "file.cairo".into(),
         content: Arc::new("".into()),
     }));
-    let syntax_file = db.file_syntax(file_id);
+    let syntax_file = db.file_syntax(file_id).unwrap();
 
     let expected_syntax_file = build_empty_file_green_tree(green_interner);
 

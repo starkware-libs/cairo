@@ -17,7 +17,7 @@ pub fn generate_expression_code(
     context: &mut ExprGeneratorContext<'_>,
     expr_id: semantic::ExprId,
 ) -> (Vec<pre_sierra::Statement>, sierra::ids::VarId) {
-    generate_expression_code_by_val(context, &context.get_db().lookup_expr(expr_id))
+    generate_expression_code_by_val(context, &context.get_db().lookup_intern_expr(expr_id))
 }
 
 fn generate_expression_code_by_val(
