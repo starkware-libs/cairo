@@ -24,7 +24,7 @@ pub struct Parser<'a> {
     /// The next terminal to handle.
     next_terminal: TerminalWithKind,
     skipped_tokens: Vec<GreenId>,
-    /// The current offset, including the current terminal.
+    /// The current offset, excluding the current terminal.
     offset: u32,
     /// The width of the current terminal being handled.
     current_width: u32,
@@ -70,10 +70,10 @@ impl<'a> Parser<'a> {
             self.skip_token();
         }
 
-        // Fix widths in case there are skipped tokens before EOF. This is usually done in
+        // Fix offset in case there are skipped tokens before EOF. This is usually done in
         // self.take_raw() but here we don't call self.take_raw as it tries to read the next
         // token, which doesn't exist.
-        self.current_width = 0; // EOF is of 0 width
+        self.offset += self.current_width;
 
         let eof = self.add_skipped_to_terminal(self.next_terminal.terminal);
         SyntaxFile::from_syntax_node(
@@ -603,8 +603,8 @@ impl<'a> Parser<'a> {
 
     /// Takes a terminal from the Lexer and places it in self.next_terminal.
     fn take_raw(&mut self) -> GreenId {
-        self.current_width = self.next_terminal.terminal.width(self.db);
         self.offset += self.current_width;
+        self.current_width = self.next_terminal.terminal.width(self.db);
         let next_terminal = self.lexer.next().unwrap();
         std::mem::replace(&mut self.next_terminal, next_terminal).terminal
     }
@@ -682,9 +682,8 @@ impl<'a> Parser<'a> {
         }
         let new_leading_trivia = Trivia::new_green(self.db, new_leading_trivia_children);
 
-        let skipped_end = self.offset - self.current_width;
         // TODO(spapini): report to diagnostics.
-        println!("Skipped tokens from: {} to: {}", skipped_end - total_width, skipped_end);
+        println!("Skipped tokens from: {} to: {}", self.offset - total_width, self.offset);
 
         // Build a replacement for the current terminal, with the new leading trivia instead of the
         // old one.
