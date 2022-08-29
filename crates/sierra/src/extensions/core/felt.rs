@@ -1,11 +1,19 @@
+use crate::define_libfunc_hierarchy;
 use crate::extensions::core::integer::Operator;
 use crate::extensions::lib_func::SpecializationContext;
 use crate::extensions::{
-    ConcreteType, GenericLibFunc, NamedType, NoGenericArgsGenericType, NonBranchConcreteLibFunc,
-    SpecializationError,
+    ConcreteType, GenericLibFunc, NamedType, NoGenericArgsGenericLibFunc, NoGenericArgsGenericType,
+    NonBranchConcreteLibFunc, SpecializationError,
 };
 use crate::ids::{ConcreteTypeId, GenericLibFuncId, GenericTypeId};
 use crate::program::GenericArg;
+
+define_libfunc_hierarchy! {
+    pub enum FeltLibFunc {
+        Operation(FeltOperationLibFunc),
+        Duplicate(FeltDuplicateLibFunc),
+    }, FeltConcrete
+}
 
 fn get_felt_type(
     context: &SpecializationContext<'_>,
@@ -64,5 +72,32 @@ impl NonBranchConcreteLibFunc for FeltBinaryOperationConcreteLibFunc {
     }
     fn output_types(&self) -> Vec<ConcreteTypeId> {
         vec![self.felt_type.clone()]
+    }
+}
+
+/// LibFunc for duplicating a felt.
+#[derive(Default)]
+pub struct FeltDuplicateLibFunc {}
+impl NoGenericArgsGenericLibFunc for FeltDuplicateLibFunc {
+    type Concrete = FeltDuplicateConcreteLibFunc;
+    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("felt_dup");
+
+    fn specialize(
+        &self,
+        context: SpecializationContext<'_>,
+    ) -> Result<Self::Concrete, SpecializationError> {
+        Ok(FeltDuplicateConcreteLibFunc { felt_type: get_felt_type(&context)? })
+    }
+}
+
+pub struct FeltDuplicateConcreteLibFunc {
+    pub felt_type: ConcreteTypeId,
+}
+impl NonBranchConcreteLibFunc for FeltDuplicateConcreteLibFunc {
+    fn input_types(&self) -> Vec<ConcreteTypeId> {
+        vec![self.felt_type.clone()]
+    }
+    fn output_types(&self) -> Vec<ConcreteTypeId> {
+        vec![self.felt_type.clone(), self.felt_type.clone()]
     }
 }
