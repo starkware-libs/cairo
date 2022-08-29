@@ -16,7 +16,8 @@ fn format_test() {
             // Additional comment.
             libfunc OtherCalleeId = LibFuncId <arg, 4>;
             libfunc [5642] = LibFuncId<[22 ], 4>;
-            libfunc CallFunction = Call<&Function>;
+            libfunc CallFunction = Call<user@Function>;
+            libfunc LibDependent = LibDependent<lib@[124]>;
             callee() -> ();
             callee(arg1) -> (res1);
             callee( arg1, arg2) -> ( res1, res2);
@@ -42,7 +43,8 @@ fn format_test() {
             libfunc CalleeId = LibFuncId;
             libfunc OtherCalleeId = LibFuncId<arg, 4>;
             libfunc [5642] = LibFuncId<[22], 4>;
-            libfunc CallFunction = Call<&Function>;
+            libfunc CallFunction = Call<user@Function>;
+            libfunc LibDependent = LibDependent<lib@[124]>;
 
             callee() -> ();
             callee(arg1) -> (res1);

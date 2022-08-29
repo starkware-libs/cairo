@@ -35,11 +35,10 @@ fn find_type_specialization(
 }
 
 #[test_case("NoneExistent", vec![] => Err(UnsupportedId); "NoneExistent")]
-#[test_case("function_call", vec![GenericArg::Func("UnregisteredFunction".into())]
+#[test_case("function_call", vec![GenericArg::UserFunc("UnregisteredFunction".into())]
              => Err(MissingFunction("UnregisteredFunction".into()));
              "function_call<&UnregisteredFunction>")]
-#[test_case("function_call", vec![GenericArg::Func("RegisteredFunction".into())]
-            => Ok(());
+#[test_case("function_call", vec![GenericArg::UserFunc("RegisteredFunction".into())] => Ok(());
             "function_call<&RegisteredFunction>")]
 #[test_case("function_call", vec![] => Err(UnsupportedGenericArg); "function_call")]
 #[test_case("get_gas", vec![value_arg(2)] => Ok(()); "get_gas<2>")]
@@ -53,6 +52,8 @@ fn find_type_specialization(
 #[test_case("felt_add", vec![value_arg(0)] => Err(WrongNumberOfGenericArgs); "int_add<0>")]
 #[test_case("felt_mul", vec![] => Ok(()); "felt_mul")]
 #[test_case("felt_mul", vec![value_arg(0)] => Err(WrongNumberOfGenericArgs); "int_mul<0>")]
+#[test_case("felt_dup", vec![] => Ok(()); "felt_dup")]
+#[test_case("felt_dup", vec![value_arg(0)] => Err(WrongNumberOfGenericArgs); "felt_dup<0>")]
 #[test_case("int_add", vec![] => Ok(()); "int_add")]
 #[test_case("int_sub", vec![] => Ok(()); "int_sub")]
 #[test_case("int_mul", vec![] => Ok(()); "int_mul")]

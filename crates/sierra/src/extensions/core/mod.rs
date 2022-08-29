@@ -1,4 +1,4 @@
-use self::felt::{FeltOperationLibFunc, FeltType};
+use self::felt::{FeltLibFunc, FeltType};
 use self::function_call::FunctionCallLibFunc;
 use self::gas::{GasBuiltinType, GasLibFunc};
 use self::integer::{IntegerLibFunc, IntegerType};
@@ -30,7 +30,7 @@ define_type_hierarchy! {
 
 define_libfunc_hierarchy! {
     pub enum CoreLibFunc {
-        Felt(FeltOperationLibFunc),
+        Felt(FeltLibFunc),
         FunctionCall(FunctionCallLibFunc),
         Gas(GasLibFunc),
         Integer(IntegerLibFunc),
