@@ -3,7 +3,9 @@ use casm::instructions::{AssertEqInstruction, Instruction, InstructionBody};
 use casm::operand::{
     BinOpOperand, DerefOperand, DerefOrImmediate, Operation, Register, ResOperand,
 };
-use sierra::extensions::core::felt::{FeltBinaryOperationConcreteLibFunc, FeltConcrete};
+use sierra::extensions::core::felt::{
+    FeltBinaryOperationConcreteLibFunc, FeltConcrete, FeltDuplicateConcreteLibFunc,
+};
 use sierra::extensions::core::integer::Operator;
 use sierra::extensions::core::mem::MemConcreteLibFunc;
 use sierra::extensions::CoreConcreteLibFunc;
@@ -77,6 +79,24 @@ pub fn handle_felt_op(
     })
 }
 
+pub fn handle_felt_dup(
+    _felt_dup: &FeltDuplicateConcreteLibFunc,
+    refs: &[ReferenceValue],
+) -> Result<CompiledInvocation, InvocationError> {
+    let ref_value = match refs {
+        [ref_value] => ref_value,
+        _ => return Err(InvocationError::WrongNumberOfArguments),
+    };
+
+    Ok(CompiledInvocation {
+        instruction: vec![],
+        results: vec![BranchRefChanges {
+            refs: vec![ref_value.clone(), ref_value.clone()],
+            ap_change: ApChange::Known(0),
+        }],
+    })
+}
+
 pub fn compile_invocation(
     ext: &CoreConcreteLibFunc,
     refs: &[ReferenceValue],
@@ -86,7 +106,9 @@ pub fn compile_invocation(
         CoreConcreteLibFunc::Felt(FeltConcrete::Operation(felt_op)) => {
             handle_felt_op(felt_op, refs)
         }
-
+        CoreConcreteLibFunc::Felt(FeltConcrete::Duplicate(felt_dup)) => {
+            handle_felt_dup(felt_dup, refs)
+        }
         CoreConcreteLibFunc::Mem(MemConcreteLibFunc::StoreTemp(_)) => Ok(CompiledInvocation {
             instruction: vec![Instruction {
                 body: InstructionBody::AssertEq(AssertEqInstruction {
