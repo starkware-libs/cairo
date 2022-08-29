@@ -1,12 +1,11 @@
 use std::fmt::Display;
 
 use casm::instructions::{Instruction, InstructionBody, RetInstruction};
-use sierra::extensions::ExtensionError;
 use sierra::program::{Program, Statement, StatementIdx};
 use sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use thiserror::Error;
 
-use crate::invocations::compile_invocation;
+use crate::invocations::{compile_invocation, InvocationError};
 use crate::references::{check_return_refs_on_stack, init_reference, ReferencesError};
 
 #[cfg(test)]
@@ -18,7 +17,7 @@ pub enum CompilationError {
     #[error("Error from program registry")]
     ProgramRegistryError(ProgramRegistryError),
     #[error(transparent)]
-    ExtensionError(#[from] ExtensionError),
+    InvocationError(#[from] InvocationError),
     #[error(transparent)]
     ReferencesError(#[from] ReferencesError),
 }

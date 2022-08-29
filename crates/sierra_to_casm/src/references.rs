@@ -30,6 +30,8 @@ pub enum ReferencesError {
     #[error("InvalidReturnReference")]
     InvalidReturnReference,
     #[error("MissingReferencesForStatement")]
+    InvalidReference,
+    #[error("InvalidReference")]
     MissingReferencesForStatement,
     #[error(transparent)]
     EditStateError(#[from] EditStateError),
