@@ -78,3 +78,57 @@ fn test_expr_generator() {
 
     assert_eq!(res, sierra::ids::VarId::from(15));
 }
+
+#[test]
+fn test_match() {
+    let db = DatabaseImpl::default();
+
+    let ty = TypeId::from_intern_id(InternId::from(0u32));
+    let literal7 = db.expr(semantic::Expr::ExprLiteral(semantic::ExprLiteral { value: 7, ty }));
+    let var_x = LocalVarId::from_intern_id(InternId::from(3u32));
+    let var_x_expr =
+        db.expr(semantic::Expr::ExprVar(semantic::ExprVar { var: VarId::Local(var_x), ty }));
+
+    let statement_let = semantic::StatementLet { var: var_x, expr: literal7 };
+
+    let branch0 = semantic::MatchBranch {
+        pattern: semantic::Pattern::Literal(semantic::ExprLiteral { value: 0, ty }),
+        block: var_x_expr,
+    };
+    let branch_otherwise =
+        semantic::MatchBranch { pattern: semantic::Pattern::Otherwise, block: literal7 };
+    let match_statement = db.expr(semantic::Expr::ExprMatch(semantic::ExprMatch {
+        matched_expr: var_x_expr,
+        arms: vec![branch0, branch_otherwise],
+        ty,
+    }));
+
+    let block = db.expr(semantic::Expr::ExprBlock(semantic::ExprBlock {
+        statements: vec![semantic::Statement::Let(statement_let)],
+        tail: Some(match_statement),
+        ty,
+    }));
+
+    let mut expr_generator_context = ExprGeneratorContext::new(&db);
+    let (statements, res) = generate_expression_code(&mut expr_generator_context, block);
+    assert_eq!(
+        statements.iter().map(|x| format!("{}", x)).collect::<Vec<String>>(),
+        vec![
+            // let x = 7;
+            "literal<7>() -> ([0])",
+            // match {
+            "jump_nz([0]) { label0() fallthrough() }",
+            // Branch 0.
+            "store_temp([0]) -> ([1])",
+            "jump() { label1() }",
+            // Branch otherwise.
+            "label0:",
+            "literal<7>() -> ([2])",
+            "store_temp([2]) -> ([1])",
+            // Post match.
+            "label1:",
+        ]
+    );
+
+    assert_eq!(res, sierra::ids::VarId::new(1));
+}

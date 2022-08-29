@@ -661,6 +661,23 @@
     │           └── trailing_trivia (kind: Trivia)
     │               └── child #0 (kind: Newline).
     └── eof (kind: Terminal)
-        ├── leading_trivia (kind: Trivia) []
+        ├── leading_trivia (kind: Trivia)
+        │   ├── child #0 (kind: TriviumSkippedTerminal)
+        │   │   ├── leading_trivia (kind: Trivia)
+        │   │   │   └── child #0 (kind: Newline).
+        │   │   ├── token (kind: RBrace): '}'
+        │   │   └── trailing_trivia (kind: Trivia)
+        │   │       └── child #0 (kind: Newline).
+        │   ├── child #1 (kind: TriviumSkippedTerminal)
+        │   │   ├── leading_trivia (kind: Trivia)
+        │   │   │   └── child #0 (kind: Newline).
+        │   │   ├── token (kind: Identifier): 'skipped'
+        │   │   └── trailing_trivia (kind: Trivia)
+        │   │       └── child #0 (kind: Whitespace).
+        │   └── child #2 (kind: TriviumSkippedTerminal)
+        │       ├── leading_trivia (kind: Trivia) []
+        │       ├── token (kind: Identifier): 'tokens'
+        │       └── trailing_trivia (kind: Trivia)
+        │           └── child #0 (kind: Newline).
         ├── token (kind: EndOfFile).
         └── trailing_trivia (kind: Trivia) []

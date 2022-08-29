@@ -67,9 +67,11 @@ pub struct MatchBranch {
     pub block: ExprId,
 }
 
-// TODO(spapini): Implement a semantic structure for `Pattern`.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub struct Pattern {}
+pub enum Pattern {
+    Otherwise,
+    Literal(ExprLiteral),
+}
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct ExprVar {
