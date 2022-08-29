@@ -24,9 +24,9 @@ fn fib_program() -> sierra::program::Program {
         libfunc int_ignore = int_ignore;
         libfunc int_jump_nz = int_jump_nz;
         libfunc int_unwrap_nz = unwrap_nz<int>;
-        libfunc get_gas_26 = get_gas<26>;
-        libfunc refund_gas_1 = refund_gas<1>;
-        libfunc refund_gas_3 = refund_gas<3>;
+        libfunc get_gas_26 = get_gas<Cost26>;
+        libfunc refund_gas_1 = refund_gas<Cost1>;
+        libfunc refund_gas_3 = refund_gas<Cost3>;
         libfunc alloc_locals = alloc_locals;
         libfunc call_fib = function_call<user@Fibonacci>;
 

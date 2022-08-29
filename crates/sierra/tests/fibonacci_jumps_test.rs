@@ -27,10 +27,10 @@ fn fib_program() -> sierra::program::Program {
         libfunc int_ignore = int_ignore;
         libfunc int_jump_nz = int_jump_nz;
         libfunc int_unwrap_nz = unwrap_nz<int>;
-        libfunc get_gas_5 = get_gas<5>;
-        libfunc refund_gas_1 = refund_gas<1>;
-        libfunc refund_gas_5 = refund_gas<5>;
-        libfunc refund_gas_7 = refund_gas<7>;
+        libfunc get_gas_5 = get_gas<Cost5>;
+        libfunc refund_gas_1 = refund_gas<Cost1>;
+        libfunc refund_gas_5 = refund_gas<Cost5>;
+        libfunc refund_gas_7 = refund_gas<Cost7>;
 
         // Statement #  0 - tests if n == 0.
         int_jump_nz(n) { 6(n) fallthrough() };

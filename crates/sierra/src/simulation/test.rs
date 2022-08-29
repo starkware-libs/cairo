@@ -72,13 +72,14 @@ fn simulate(
                 ))
             }
         },
+        |id| Ok(id.debug_name.as_ref().unwrap().parse().unwrap()),
     )
 }
 
 /// Expects to find a libfunc, wrapping and unwrapping the MemCell types and vectors of the
 /// inputs and outputs, assumming all of size 1.
-#[test_case("get_gas", vec![value_arg(4)], vec![5] => Ok((vec![1], 0)); "get_gas<4>(5)")]
-#[test_case("get_gas", vec![value_arg(4)], vec![2] => Ok((vec![2], 1)); "get_gas<4>(2)")]
+#[test_case("get_gas", vec![type_arg("4")], vec![5] => Ok((vec![1], 0)); "get_gas<4>(5)")]
+#[test_case("get_gas", vec![type_arg("4")], vec![2] => Ok((vec![2], 1)); "get_gas<4>(2)")]
 #[test_case("int_jump_nz", vec![], vec![2] => Ok((vec![2], 0)); "int_jump_nz(2)")]
 #[test_case("int_jump_nz", vec![], vec![0] => Ok((vec![], 1)); "int_jump_nz(0)")]
 #[test_case("jump", vec![], vec![] => Ok((vec![], 0)); "jump()")]
@@ -104,7 +105,7 @@ fn simulate_invocation(
 }
 
 /// Tests for simulation of a non branch invocations.
-#[test_case("refund_gas", vec![value_arg(5)], vec![2] => Ok(vec![7]); "refund_gas<5>(2)")]
+#[test_case("refund_gas", vec![type_arg("5")], vec![2] => Ok(vec![7]); "refund_gas<5>(2)")]
 #[test_case("int_add", vec![], vec![2, 3] => Ok(vec![5]); "int_add(2, 3)")]
 #[test_case("int_sub", vec![], vec![5, 3] => Ok(vec![2]); "int_sub(5, 3)")]
 #[test_case("int_mul", vec![], vec![5, 3] => Ok(vec![15]); "int_mul(5, 3)")]
@@ -140,12 +141,12 @@ fn simulate_none_branch(
     })
 }
 
-#[test_case("get_gas", vec![value_arg(4)], vec![vec![]] => MemoryLayoutMismatch;
+#[test_case("get_gas", vec![type_arg("4")], vec![vec![]] => MemoryLayoutMismatch;
             "get_gas<4>(empty)")]
-#[test_case("get_gas", vec![value_arg(4)], vec![] => WrongNumberOfArgs; "get_gas<4>()")]
-#[test_case("refund_gas", vec![value_arg(5)], vec![vec![]] => MemoryLayoutMismatch;
+#[test_case("get_gas", vec![type_arg("4")], vec![] => WrongNumberOfArgs; "get_gas<4>()")]
+#[test_case("refund_gas", vec![type_arg("5")], vec![vec![]] => MemoryLayoutMismatch;
             "refund_gas<5>(empty)")]
-#[test_case("refund_gas", vec![value_arg(5)], vec![] => WrongNumberOfArgs; "refund_gas<5>()")]
+#[test_case("refund_gas", vec![type_arg("5")], vec![] => WrongNumberOfArgs; "refund_gas<5>()")]
 #[test_case("int_add", vec![], vec![vec![1]] => WrongNumberOfArgs; "int_add(1)")]
 #[test_case("int_sub", vec![], vec![vec![1]] => WrongNumberOfArgs; "int_sub(1)")]
 #[test_case("int_mul", vec![], vec![vec![1]] => WrongNumberOfArgs; "int_mul(1)")]

@@ -1,3 +1,4 @@
+use super::as_single_type;
 // Module providing the gas related extensions.
 use super::mem::DeferredType;
 use crate::define_libfunc_hierarchy;
@@ -27,14 +28,6 @@ define_libfunc_hierarchy! {
     }, GasConcreteLibFunc
 }
 
-/// Helper for extracting a single positive value from template arguments.
-fn as_single_positive_value(args: &[GenericArg]) -> Result<i64, SpecializationError> {
-    match args {
-        [GenericArg::Value(count)] if *count > 0 => Ok(*count),
-        _ => Err(SpecializationError::UnsupportedGenericArg),
-    }
-}
-
 fn get_gas_types(
     context: &SpecializationContext<'_>,
 ) -> Result<(ConcreteTypeId, ConcreteTypeId), SpecializationError> {
@@ -58,7 +51,7 @@ impl NamedLibFunc for GetGasLibFunc {
     ) -> Result<Self::Concrete, SpecializationError> {
         let (gas_builtin_type, deferred_gas_builtin_type) = get_gas_types(&context)?;
         Ok(GetGasConcreteLibFunc {
-            count: as_single_positive_value(args)?,
+            cost_type: as_single_type(args)?,
             gas_builtin_type,
             deferred_gas_builtin_type,
         })
@@ -66,7 +59,7 @@ impl NamedLibFunc for GetGasLibFunc {
 }
 
 pub struct GetGasConcreteLibFunc {
-    pub count: i64,
+    pub cost_type: ConcreteTypeId,
     pub gas_builtin_type: ConcreteTypeId,
     pub deferred_gas_builtin_type: ConcreteTypeId,
 }
@@ -100,7 +93,7 @@ impl NamedLibFunc for RefundGasLibFunc {
     ) -> Result<Self::Concrete, SpecializationError> {
         let (gas_builtin_type, deferred_gas_builtin_type) = get_gas_types(&context)?;
         Ok(RefundGasConcreteLibFunc {
-            count: as_single_positive_value(args)?,
+            cost_type: as_single_type(args)?,
             gas_builtin_type,
             deferred_gas_builtin_type,
         })
@@ -108,7 +101,7 @@ impl NamedLibFunc for RefundGasLibFunc {
 }
 
 pub struct RefundGasConcreteLibFunc {
-    pub count: i64,
+    pub cost_type: ConcreteTypeId,
     pub gas_builtin_type: ConcreteTypeId,
     pub deferred_gas_builtin_type: ConcreteTypeId,
 }

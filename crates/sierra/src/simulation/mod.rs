@@ -22,6 +22,8 @@ pub enum LibFuncSimulationError {
     WrongNumberOfArgs,
     #[error("Expected a different memory layout")]
     MemoryLayoutMismatch,
+    #[error("Count not find a cost for given type")]
+    TypeCostUnsupported,
     #[error("Error occurred during user function call")]
     FunctionSimulationError(FunctionId, Box<SimulationError>),
 }
@@ -126,14 +128,27 @@ impl SimulationContext<'_> {
         inputs: Vec<Vec<MemCell>>,
         current_statement_id: StatementIdx,
     ) -> Result<(Vec<Vec<MemCell>>, usize), SimulationError> {
-        core::simulate(libfunc, inputs, |function_id, inputs| {
-            self.simulate_function(function_id, inputs).map_err(|error| {
-                LibFuncSimulationError::FunctionSimulationError(
-                    function_id.clone(),
-                    Box::new(error),
-                )
-            })
-        })
+        core::simulate(
+            libfunc,
+            inputs,
+            |function_id, inputs| {
+                self.simulate_function(function_id, inputs).map_err(|error| {
+                    LibFuncSimulationError::FunctionSimulationError(
+                        function_id.clone(),
+                        Box::new(error),
+                    )
+                })
+            },
+            |id| {
+                // TODO(orizi): Actually use the type system to get libfuncs costs.
+                let name =
+                    id.debug_name.as_ref().ok_or(LibFuncSimulationError::TypeCostUnsupported)?;
+                if !name.starts_with("Cost") {
+                    return Err(LibFuncSimulationError::TypeCostUnsupported);
+                }
+                name[4..].parse().map_err(|_| LibFuncSimulationError::TypeCostUnsupported)
+            },
+        )
         .map_err(|error| SimulationError::LibFuncSimulationError(error, current_statement_id))
     }
 }
