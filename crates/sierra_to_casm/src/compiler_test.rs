@@ -1,12 +1,12 @@
 use indoc::indoc;
 use sierra::edit_state::EditStateError;
-use sierra::extensions::ExtensionError::NotImplemented;
 use sierra::ids::ConcreteLibFuncId;
 use sierra::program_registry::ProgramRegistryError;
 use sierra::ProgramParser;
 use test_case::test_case;
 
 use crate::compiler::{compile, CompilationError};
+use crate::invocations::InvocationError;
 use crate::references::ReferencesError;
 
 #[test]
@@ -14,20 +14,25 @@ fn good_flow() {
     let prog = ProgramParser::new()
         .parse(indoc! {"
             type felt = felt;
+            // TODO(ilya, 10/10/2022): Remove once store_temp does not depend on it.
             type DeferredFelt = Deferred<felt>;
-            libfunc store_temp_felt = store_temp<felt>;
-            libfunc move_felt = move<felt>;
-            move_felt([1]) -> ([1]);
-            store_temp_felt([1]) -> ([1]);
-            return([1]);
 
-            test_program@0([1]: felt) -> ();
+            libfunc felt_add = felt_add;
+            libfunc store_temp_felt = store_temp<felt>;
+            libfunc rename_felt = rename<felt>;
+
+            rename_felt([1]) -> ([1]);
+            felt_add([1], [2]) -> ([3]);
+            store_temp_felt([3]) -> ([4]);
+            return([4]);
+
+            test_program@0([1]: felt, [2]: felt) -> ();
         "})
         .unwrap();
     assert_eq!(
         compile(&prog).unwrap().to_string(),
         indoc! {"
-            [ap + 0] = [fp + -2], ap++;
+            [ap + 0] = [fp + -3] + [fp + -2], ap++;
             ret;
         "}
     );
@@ -67,8 +72,18 @@ fn good_flow() {
             store_local_felt([1]) -> ([1]);
 
             test_program@0([1]: felt) -> ();
-        "} => Err(NotImplemented.into());
+        "} => Err(InvocationError::NotImplemented.into());
             "Not implemented")]
+#[test_case(indoc! {"
+            type felt = felt;
+            libfunc felt_add = felt_add;
+
+            felt_add([1], [2]) -> ([4]);
+            felt_add([3], [4]) -> ([5]);
+
+            test_program@0([1]: felt, [2]: felt, [3]: felt) -> ();
+        "} => Err(InvocationError::InvalidReferenceExpressionForArgument.into());
+            "Invalid reference expression for felt_add")]
 #[test_case(indoc! {"
             test_program@25() -> ();
         "} => Err(ReferencesError::InvalidStatementIdx.into());
