@@ -15,7 +15,7 @@ impl NamedLibFunc for FunctionCallLibFunc {
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
         match args {
-            [GenericArg::Func(function_id)] => {
+            [GenericArg::UserFunc(function_id)] => {
                 let function = context
                     .functions
                     .get(function_id)

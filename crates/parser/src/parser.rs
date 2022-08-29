@@ -21,8 +21,13 @@ use crate::operators::{get_binary_operator_precedence, get_unary_operator_preced
 pub struct Parser<'a> {
     db: &'a dyn GreenInterner,
     lexer: Lexer<'a>,
-    current: TerminalWithKind,
+    /// The next terminal to handle.
+    next_terminal: TerminalWithKind,
     skipped_tokens: Vec<GreenId>,
+    /// The current offset, including the current terminal.
+    offset: u32,
+    /// The width of the current terminal being handled.
+    current_width: u32,
 }
 
 pub struct GreenCompilationUnit {
@@ -51,14 +56,8 @@ impl<'a> Parser<'a> {
     /// Ctor.
     pub fn from_text(db: &'a dyn GreenInterner, source: FileId, text: &'a str) -> Parser<'a> {
         let mut lexer = Lexer::from_text(db, source, text);
-        let current = lexer.next().unwrap();
-        Parser {
-            lexer,
-            current,
-            skipped_tokens: Vec::new(),
-            // diagnostics: DiagnosticsBag::new()
-            db,
-        }
+        let next_terminal = lexer.next().unwrap();
+        Parser { lexer, next_terminal, skipped_tokens: Vec::new(), db, offset: 0, current_width: 0 }
     }
 
     pub fn parse_syntax_file(&mut self) -> SyntaxFile {
@@ -71,7 +70,12 @@ impl<'a> Parser<'a> {
             self.skip_token();
         }
 
-        let eof = self.current.terminal;
+        // Fix widths in case there are skipped tokens before EOF. This is usually done in
+        // self.take_raw() but here we don't call self.take_raw as it tries to read the next
+        // token, which doesn't exist.
+        self.current_width = 0; // EOF is of 0 width
+
+        let eof = self.add_skipped_to_terminal(self.next_terminal.terminal);
         SyntaxFile::from_syntax_node(
             self.db,
             SyntaxNode::new_root(SyntaxFile::new_green(self.db, items, eof)),
@@ -592,15 +596,17 @@ impl<'a> Parser<'a> {
         new_green(self.db, children)
     }
 
-    /// Peeks at the current token from the Lexer without taking it.
+    /// Peeks at the next terminal from the Lexer without taking it.
     fn peek(&self) -> &TerminalWithKind {
-        &self.current
+        &self.next_terminal
     }
 
-    /// Takes a terminal from the Lexer and place it in self.current.
+    /// Takes a terminal from the Lexer and places it in self.next_terminal.
     fn take_raw(&mut self) -> GreenId {
-        let next_token_with_kind = self.lexer.next().unwrap();
-        std::mem::replace(&mut self.current, next_token_with_kind).terminal
+        self.current_width = self.next_terminal.terminal.width(self.db);
+        self.offset += self.current_width;
+        let next_terminal = self.lexer.next().unwrap();
+        std::mem::replace(&mut self.next_terminal, next_terminal).terminal
     }
 
     /// Skips a token. A skipped token is a token which is not expected where it is found. Skipping
@@ -652,6 +658,8 @@ impl<'a> Parser<'a> {
             return terminal;
         }
 
+        let mut total_width = 0;
+
         // Collect all the skipped terminal with kind TriviumSkippedTerminal.
         let skipped_terminals: Vec<GreenId> = mem::take(&mut self.skipped_tokens)
             .into_iter()
@@ -666,12 +674,17 @@ impl<'a> Parser<'a> {
         // Build a replacement for the leading trivia.
         let mut new_leading_trivia_children = vec![];
         for skipped in skipped_terminals {
+            total_width += skipped.width(self.db);
             new_leading_trivia_children.push(skipped);
         }
         for trivium in leading_trivia_internal.children {
             new_leading_trivia_children.push(trivium);
         }
         let new_leading_trivia = Trivia::new_green(self.db, new_leading_trivia_children);
+
+        let skipped_end = self.offset - self.current_width;
+        // TODO(spapini): report to diagnostics.
+        println!("Skipped tokens from: {} to: {}", skipped_end - total_width, skipped_end);
 
         // Build a replacement for the current terminal, with the new leading trivia instead of the
         // old one.

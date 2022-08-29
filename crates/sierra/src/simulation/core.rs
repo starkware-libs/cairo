@@ -16,7 +16,7 @@ use crate::extensions::core::mem::MemConcreteLibFunc::{
     AlignTemps, AllocLocals, Move, Rename, StoreLocal, StoreTemp,
 };
 use crate::extensions::CoreConcreteLibFunc::{
-    self, FunctionCall, Gas, Integer, Mem, UnconditionalJump, UnwrapNonZero,
+    self, Felt, FunctionCall, Gas, Integer, Mem, UnconditionalJump, UnwrapNonZero,
 };
 use crate::ids::FunctionId;
 
@@ -31,6 +31,7 @@ pub fn simulate<
     simulate_function: F,
 ) -> Result<(Vec<Vec<MemCell>>, usize), LibFuncSimulationError> {
     match libfunc {
+        Felt(_) => todo!("felt operations are yet to be simulated."),
         FunctionCall(FunctionCallConcreteLibFunc { function }) => {
             Ok((simulate_function(&function.id, inputs)?, 0))
         }
