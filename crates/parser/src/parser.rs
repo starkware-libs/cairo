@@ -21,8 +21,14 @@ use crate::operators::{get_binary_operator_precedence, get_unary_operator_preced
 pub struct Parser<'a> {
     db: &'a dyn GreenInterner,
     lexer: Lexer<'a>,
+    // TODO(yuval): rename current -> next, prev -> current.
+    /// The next terminal to handle
     current: TerminalWithKind,
     skipped_tokens: Vec<GreenId>,
+    /// The current offset, including the current terminal.
+    offset: u32,
+    /// The width of the previous terminal.
+    prev_width: u32,
 }
 
 pub struct GreenCompilationUnit {
@@ -52,13 +58,7 @@ impl<'a> Parser<'a> {
     pub fn from_text(db: &'a dyn GreenInterner, source: FileId, text: &'a str) -> Parser<'a> {
         let mut lexer = Lexer::from_text(db, source, text);
         let current = lexer.next().unwrap();
-        Parser {
-            lexer,
-            current,
-            skipped_tokens: Vec::new(),
-            // diagnostics: DiagnosticsBag::new()
-            db,
-        }
+        Parser { lexer, current, skipped_tokens: Vec::new(), db, offset: 0, prev_width: 0 }
     }
 
     pub fn parse_syntax_file(&mut self) -> SyntaxFile {
@@ -71,7 +71,12 @@ impl<'a> Parser<'a> {
             self.skip_token();
         }
 
-        let eof = self.current.terminal;
+        // Fix offset and widths in case there are skipped tokens before EOF. This is usually done
+        // in self.take_raw() but here we don't call self.take_raw as it tries to read the next
+        // token, which doesn't exist.
+        self.prev_width = 0; // EOF is of 0 width
+
+        let eof = self.add_skipped_to_terminal(self.current.terminal);
         SyntaxFile::from_syntax_node(
             self.db,
             SyntaxNode::new_root(SyntaxFile::new_green(self.db, items, eof)),
@@ -599,6 +604,8 @@ impl<'a> Parser<'a> {
 
     /// Takes a terminal from the Lexer and place it in self.current.
     fn take_raw(&mut self) -> GreenId {
+        self.prev_width = self.current.terminal.width(self.db);
+        self.offset += self.prev_width;
         let next_token_with_kind = self.lexer.next().unwrap();
         std::mem::replace(&mut self.current, next_token_with_kind).terminal
     }
@@ -652,6 +659,8 @@ impl<'a> Parser<'a> {
             return terminal;
         }
 
+        let mut total_width = 0;
+
         // Collect all the skipped terminal with kind TriviumSkippedTerminal.
         let skipped_terminals: Vec<GreenId> = mem::take(&mut self.skipped_tokens)
             .into_iter()
@@ -666,12 +675,17 @@ impl<'a> Parser<'a> {
         // Build a replacement for the leading trivia.
         let mut new_leading_trivia_children = vec![];
         for skipped in skipped_terminals {
+            total_width += skipped.width(self.db);
             new_leading_trivia_children.push(skipped);
         }
         for trivium in leading_trivia_internal.children {
             new_leading_trivia_children.push(trivium);
         }
         let new_leading_trivia = Trivia::new_green(self.db, new_leading_trivia_children);
+
+        let skipped_end = self.offset - self.prev_width;
+        // TODO(spapini): report to diagnostics.
+        println!("Skipped tokens from: {} to: {}", skipped_end - total_width, skipped_end);
 
         // Build a replacement for the current terminal, with the new leading trivia instead of the
         // old one.
