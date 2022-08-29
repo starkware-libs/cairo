@@ -1,6 +1,7 @@
 use std::collections::{hash_map, HashMap};
 
 use defs::ids::LocalVarId;
+use smol_str::SmolStr;
 
 use crate::db::SierraGenGroup;
 use crate::id_allocator::IdAllocator;
@@ -59,5 +60,34 @@ impl<'a> ExprGeneratorContext<'a> {
     pub fn new_label(&mut self) -> (pre_sierra::Statement, pre_sierra::LabelId) {
         let id = pre_sierra::LabelId::new(self.statement_id_allocator.allocate());
         (pre_sierra::Statement::Label(pre_sierra::Label { id: id.clone() }), id)
+    }
+
+    fn get_extension_id_without_generics(
+        &self,
+        name: impl Into<SmolStr>,
+    ) -> sierra::ids::ConcreteLibFuncId {
+        // TODO(lior): Replace the implementation of this function by creating a proper
+        //   ConcreteLibFuncId which is based on a generic libfunc.
+        sierra::ids::ConcreteLibFuncId::from_string(name)
+    }
+
+    pub fn felt_const_libfunc_id(&self, value: usize) -> sierra::ids::ConcreteLibFuncId {
+        sierra::ids::ConcreteLibFuncId::from_string(format!("felt_const<{value}>"))
+    }
+
+    pub fn store_temp_libfunc_id(&self) -> sierra::ids::ConcreteLibFuncId {
+        self.get_extension_id_without_generics("store_temp")
+    }
+
+    pub fn function_call_libfunc_id(&self) -> sierra::ids::ConcreteLibFuncId {
+        self.get_extension_id_without_generics("function_call")
+    }
+
+    pub fn jump_nz_libfunc_id(&self) -> sierra::ids::ConcreteLibFuncId {
+        self.get_extension_id_without_generics("jump_nz")
+    }
+
+    pub fn jump_libfunc_id(&self) -> sierra::ids::ConcreteLibFuncId {
+        self.get_extension_id_without_generics("jump")
     }
 }
