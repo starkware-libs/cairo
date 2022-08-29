@@ -8,10 +8,18 @@ use semantic::db::{SemanticDatabase, SemanticGroup};
 use semantic::ids::{ConcreteFunctionId, TypeId};
 use syntax::node::db::{AsGreenInterner, GreenDatabase, GreenInterner};
 
+use crate::db::SierraGenDatabase;
 use crate::expr_generator::generate_expression_code;
 use crate::expr_generator_context::ExprGeneratorContext;
 
-#[salsa::database(DefsDatabase, SemanticDatabase, ParserDatabase, GreenDatabase, FilesDatabase)]
+#[salsa::database(
+    DefsDatabase,
+    SemanticDatabase,
+    SierraGenDatabase,
+    ParserDatabase,
+    GreenDatabase,
+    FilesDatabase
+)]
 #[derive(Default)]
 pub struct DatabaseImpl {
     storage: salsa::Storage<DatabaseImpl>,
