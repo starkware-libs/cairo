@@ -15,8 +15,6 @@ fn good_flow() {
     let prog = ProgramParser::new()
         .parse(indoc! {"
             type felt = felt;
-            // TODO(ilya, 10/10/2022): Remove once store_temp does not depend on it.
-            type DeferredFelt = Deferred<felt>;
 
             libfunc felt_add = felt_add;
             libfunc felt_dup = felt_dup;
@@ -68,7 +66,6 @@ fn good_flow() {
             "undeclared libfunc")]
 #[test_case(indoc! {"
             type felt = felt;
-            type DeferredFelt = Deferred<felt>;
             libfunc store_temp_felt = store_temp<felt>;
             libfunc store_temp_felt = store_temp<felt>;
         "} => Err(CompilationError::ProgramRegistryError(ProgramRegistryError::LibFuncConcreteIdAlreadyExists(
@@ -76,7 +73,6 @@ fn good_flow() {
             "Concrete libfunc Id used twice")]
 #[test_case(indoc! {"
             type felt = felt;
-            type DeferredFelt = Deferred<felt>;
             libfunc store_local_felt = store_local<felt>;
             store_local_felt([1]) -> ([1]);
 

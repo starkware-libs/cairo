@@ -124,7 +124,6 @@ fn simulate_invocation(
 #[test_case("store_local", vec![type_arg("int")], vec![6] => Ok(vec![6]); "store_local<int>(6)")]
 #[test_case("alloc_locals", vec![], vec![] => Ok(vec![]); "alloc_locals()")]
 #[test_case("rename", vec![type_arg("int")], vec![6] => Ok(vec![6]); "rename<int>(6)")]
-#[test_case("move", vec![type_arg("int")], vec![6] => Ok(vec![6]); "move<int>(6)")]
 #[test_case("function_call", vec![user_func_arg("drop_all_inputs")], vec![3, 5] => Ok(vec![]);
             "function_call<drop_all_inputs>()")]
 #[test_case("function_call", vec![user_func_arg("identity")], vec![3, 5] => Ok(vec![3, 5]);
@@ -169,7 +168,6 @@ fn simulate_none_branch(
             "store_local<int>()")]
 #[test_case("alloc_locals", vec![], vec![vec![4]] => WrongNumberOfArgs; "alloc_locals(4)")]
 #[test_case("rename", vec![type_arg("int")], vec![] => WrongNumberOfArgs; "rename<int>()")]
-#[test_case("move", vec![type_arg("int")], vec![] => WrongNumberOfArgs; "move<int>()")]
 #[test_case("jump", vec![], vec![vec![4]] => WrongNumberOfArgs; "jump(4)")]
 #[test_case("function_call", vec![user_func_arg("unimplemented")], vec![] =>
             FunctionSimulationError(
