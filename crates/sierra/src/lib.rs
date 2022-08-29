@@ -1,5 +1,6 @@
 use lalrpop_util::lalrpop_mod;
 
+pub mod cost_bag;
 pub mod edit_state;
 pub mod extensions;
 pub mod fmt;

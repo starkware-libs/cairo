@@ -8,7 +8,7 @@ const fn id_from_string(s: &str) -> u64 {
 macro_rules! define_identity {
     ($doc:literal, $type_name:ident) => {
         #[doc=$doc]
-        #[derive(Clone, Debug, Eq, Hash, PartialEq)]
+        #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
         pub struct $type_name {
             pub id: u64,
             /// Optional name for testing and debugging.
