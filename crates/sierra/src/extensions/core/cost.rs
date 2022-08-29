@@ -1,6 +1,7 @@
+use crate::cost_bag::CostBag;
 use crate::define_type_hierarchy;
 use crate::extensions::{ConcreteType, NamedType, SpecializationError};
-use crate::ids::{ConcreteLibFuncId, ConcreteTypeId, GenericTypeId};
+use crate::ids::{ConcreteTypeId, GenericTypeId};
 use crate::program::GenericArg;
 
 define_type_hierarchy! {
@@ -17,19 +18,19 @@ impl NamedType for LibFuncsCostType {
     type Concrete = LibFuncsCostConcreteType;
     const ID: GenericTypeId = GenericTypeId::new_inline("LibFuncsCost");
     fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError> {
-        let mut libfuncs = vec![];
+        let mut cost_bag = CostBag::new();
         for arg in args {
             if let GenericArg::LibFunc(libfunc) = arg {
-                libfuncs.push(libfunc.clone());
+                *cost_bag.entry(libfunc.clone()).or_insert(0) += 1;
             } else {
                 return Err(SpecializationError::UnsupportedGenericArg);
             }
         }
-        Ok(LibFuncsCostConcreteType { libfuncs })
+        Ok(LibFuncsCostConcreteType { cost_bag })
     }
 }
 pub struct LibFuncsCostConcreteType {
-    pub libfuncs: Vec<ConcreteLibFuncId>,
+    pub cost_bag: CostBag,
 }
 impl ConcreteType for LibFuncsCostConcreteType {}
 
