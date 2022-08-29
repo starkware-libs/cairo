@@ -7,8 +7,13 @@ use std::ops::Sub;
 use crate::db::FilesGroup;
 use crate::ids::FileId;
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TextOffset(pub usize);
+impl TextOffset {
+    pub fn inc(&mut self) {
+        self.0 += 1;
+    }
+}
 impl Sub for TextOffset {
     type Output = usize;
 
@@ -17,10 +22,15 @@ impl Sub for TextOffset {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Hash)]
 pub struct TextSpan {
     pub start: TextOffset,
     pub end: TextOffset,
+}
+impl TextSpan {
+    pub fn width(&self) -> u32 {
+        (self.end - self.start) as u32
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
