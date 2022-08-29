@@ -3,7 +3,6 @@
 mod test;
 
 use semantic;
-use sierra::ids::ConcreteLibFuncId;
 use sierra::program;
 
 use crate::expr_generator_context::ExprGeneratorContext;
@@ -38,7 +37,7 @@ fn generate_expression_code_by_val(
             let tmp_var = context.allocate_sierra_variable();
             (
                 vec![simple_statement(
-                    format!("literal<{}>", expr_literal.value),
+                    context.felt_const_libfunc_id(expr_literal.value),
                     &[],
                     &[tmp_var.clone()],
                 )],
@@ -102,13 +101,21 @@ fn handle_function_call(
     let mut args_on_stack: Vec<sierra::ids::VarId> = vec![];
     for arg_res in args {
         let arg_var = context.allocate_sierra_variable();
-        statements.push(simple_statement("store_temp", &[arg_res], &[arg_var.clone()]));
+        statements.push(simple_statement(
+            context.store_temp_libfunc_id(),
+            &[arg_res],
+            &[arg_var.clone()],
+        ));
         args_on_stack.push(arg_var);
     }
 
     // Call the function.
     let res_var = context.allocate_sierra_variable();
-    statements.push(simple_statement("func", &args_on_stack, &[res_var.clone()]));
+    statements.push(simple_statement(
+        context.function_call_libfunc_id(),
+        &args_on_stack,
+        &[res_var.clone()],
+    ));
     (statements, res_var)
 }
 
@@ -142,7 +149,7 @@ fn handle_felt_match(
             // Add the jump_nz() statement.
             statements.push(pre_sierra::Statement::SierraStatement(
                 program::GenStatement::Invocation(program::GenInvocation {
-                    libfunc_id: ConcreteLibFuncId::from_string("jump_nz"),
+                    libfunc_id: context.jump_nz_libfunc_id(),
                     args: vec![match_expr_res],
                     branches: vec![
                         // If not zero, jump to the "otherwise" block.
@@ -165,8 +172,12 @@ fn handle_felt_match(
             // Generate the first block (0).
             let (block0_statements, block0_res) = generate_expression_code(context, *block0);
             statements.extend(block0_statements);
-            statements.push(simple_statement("store_temp", &[block0_res], &[output_var.clone()]));
-            statements.push(jump_statement(end_label_id));
+            statements.push(simple_statement(
+                context.store_temp_libfunc_id(),
+                &[block0_res],
+                &[output_var.clone()],
+            ));
+            statements.push(jump_statement(context.jump_libfunc_id(), end_label_id));
 
             // Generate the second block (otherwise).
             let (block_otherwise_statements, block_otherwise_res) =
@@ -174,7 +185,7 @@ fn handle_felt_match(
             statements.push(otherwise_label);
             statements.extend(block_otherwise_statements);
             statements.push(simple_statement(
-                "store_temp",
+                context.store_temp_libfunc_id(),
                 &[block_otherwise_res],
                 &[output_var.clone()],
             ));
