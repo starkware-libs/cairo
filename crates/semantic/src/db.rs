@@ -3,8 +3,11 @@ use defs::ids::{
     ExternFunctionLongId, FreeFunctionId, FreeFunctionLongId, ModuleId, ModuleItemId, StructId,
     StructLongId,
 };
+use diagnostics::{Diagnostics, WithDiagnostics};
+use diagnostics_proc_macros::with_diagnostics;
 use filesystem::ids::FileId;
 use parser::db::ParserGroup;
+use parser::parser::ParserDiagnostic;
 use syntax::node::ast::Item;
 
 use crate::ids::{
@@ -31,7 +34,10 @@ pub trait SemanticGroup: DefsGroup + AsDefsGroup + ParserGroup {
 
     // TODO(yuval): consider moving to filesystem/defs crate.
     fn module_file(&self, module_id: ModuleId) -> Option<FileId>;
-    fn module_items(&self, item: ModuleId) -> Option<Vec<ModuleItemId>>;
+    fn module_items(
+        &self,
+        item: ModuleId,
+    ) -> WithDiagnostics<Option<Vec<ModuleItemId>>, ParserDiagnostic>;
 }
 
 fn module_semantic(_db: &dyn SemanticGroup, _item: ModuleId) -> semantic::Module {
@@ -49,10 +55,15 @@ fn free_function_semantic(
     todo!()
 }
 
-fn module_items(db: &dyn SemanticGroup, module_id: ModuleId) -> Option<Vec<ModuleItemId>> {
+#[with_diagnostics]
+fn module_items(
+    diagnostics: &mut Diagnostics<ParserDiagnostic>,
+    db: &dyn SemanticGroup,
+    module_id: ModuleId,
+) -> Option<Vec<ModuleItemId>> {
     let green_interner = db.as_green_interner();
 
-    let syntax_file = db.file_syntax(module_file(db, module_id)?)?;
+    let syntax_file = db.file_syntax(module_file(db, module_id)?).unwrap(diagnostics)?;
     let mut module_items = Vec::new();
     for item in syntax_file.items(green_interner).elements(green_interner) {
         match item {

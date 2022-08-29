@@ -4,7 +4,9 @@ mod tests;
 
 use std::mem;
 
+use diagnostics::{DiagnosticEntry, Diagnostics};
 use filesystem::ids::FileId;
+use filesystem::span::{TextOffset, TextSpan};
 use syntax::node::ast::*;
 use syntax::node::db::GreenInterner;
 use syntax::node::green::{GreenNode, GreenNodeInternal};
@@ -28,10 +30,42 @@ pub struct Parser<'a> {
     offset: u32,
     /// The width of the current terminal being handled.
     current_width: u32,
+    errors: Vec<ParserError>,
 }
 
 pub struct GreenCompilationUnit {
     pub root: GreenId,
+}
+
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct ParserDiagnostic {
+    file_id: FileId,
+    error: ParserError,
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct ParserError {
+    kind: ParserErrorKind,
+    span: TextSpan,
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum ParserErrorKind {
+    SkippedTokens,
+}
+impl DiagnosticEntry for ParserDiagnostic {
+    fn format(&self, db: &dyn filesystem::db::FilesGroup) -> String {
+        let res = db.file_content(self.file_id);
+        let text = match res {
+            Some(s) => s[self.error.span.start.0..self.error.span.end.0].to_string(),
+            None => "?".to_string(),
+        };
+        match self.error.kind {
+            ParserErrorKind::SkippedTokens => format!("Skipped tokens: {text}"),
+        }
+    }
+
+    fn location(&self, _db: &dyn filesystem::db::FilesGroup) -> diagnostics::DiagnosticLocation {
+        diagnostics::DiagnosticLocation { file_id: self.file_id, span: self.error.span }
+    }
 }
 
 // try_parse_<something>: returns a green ID with a kind that represents 'something' or None if
@@ -57,7 +91,25 @@ impl<'a> Parser<'a> {
     pub fn from_text(db: &'a dyn GreenInterner, source: FileId, text: &'a str) -> Parser<'a> {
         let mut lexer = Lexer::from_text(db, source, text);
         let next_terminal = lexer.next().unwrap();
-        Parser { lexer, next_terminal, skipped_tokens: Vec::new(), db, offset: 0, current_width: 0 }
+        Parser {
+            db,
+            lexer,
+            next_terminal,
+            skipped_tokens: Vec::new(),
+            offset: 0,
+            current_width: 0,
+            errors: Vec::new(),
+        }
+    }
+
+    pub fn report_diagnostics(
+        self,
+        diagnostics: &mut Diagnostics<ParserDiagnostic>,
+        file_id: FileId,
+    ) {
+        for error in self.errors {
+            diagnostics.add(ParserDiagnostic { file_id, error });
+        }
     }
 
     pub fn parse_syntax_file(&mut self) -> SyntaxFile {
@@ -495,6 +547,7 @@ impl<'a> Parser<'a> {
                     children.push(pending_separator); // ::
                     children.push(self.expect_path_segment()); // path segment
                 } else {
+                    // TODO(yuval): Fix this.
                     self.skipped_tokens.push(pending_separator);
                 }
             } else if self.peek().kind == TokenKind::Identifier {
@@ -651,6 +704,7 @@ impl<'a> Parser<'a> {
         )
     }
 
+    // TODO(spapini): currently, skipped tokens swallow leading and trailing trivia. Fix this.
     /// Builds a new terminal to replace the given terminal by gluing the recently skipped terminals
     /// to the given terminal as extra leading trivia.
     fn add_skipped_to_terminal(&mut self, terminal: GreenId) -> GreenId {
@@ -682,8 +736,17 @@ impl<'a> Parser<'a> {
         }
         let new_leading_trivia = Trivia::new_green(self.db, new_leading_trivia_children);
 
-        // TODO(spapini): report to diagnostics.
-        println!("Skipped tokens from: {} to: {}", self.offset - total_width, self.offset);
+        // TODO(spapini): Clean up by always saving offsets as TextOffset, and possible not use
+        // offset airthmetic, and instead, keep the correct TextOffset when generated.
+        let skipped_end = self.offset;
+        let skipped_start = skipped_end - total_width;
+        self.errors.push(ParserError {
+            kind: ParserErrorKind::SkippedTokens,
+            span: TextSpan {
+                start: TextOffset(skipped_start as usize),
+                end: TextOffset(skipped_end as usize),
+            },
+        });
 
         // Build a replacement for the current terminal, with the new leading trivia instead of the
         // old one.
