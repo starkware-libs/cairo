@@ -3,14 +3,13 @@
 mod test;
 
 use filesystem::ids::FileId;
+use filesystem::span::{TextOffset, TextSpan};
 use smol_str::SmolStr;
 use syntax::node::ast::{Terminal, Trivia};
 use syntax::node::db::GreenInterner;
 use syntax::node::ids::GreenId;
 use syntax::node::Token;
 use syntax::token::TokenKind;
-
-use crate::text::{TextOffset, TextSpan};
 
 pub struct Lexer<'a> {
     db: &'a dyn GreenInterner,
@@ -35,13 +34,17 @@ impl<'a> Lexer<'a> {
         }
     }
 
+    pub fn position(&self) -> TextOffset {
+        self.current_position
+    }
+
     // Helpers.
     fn peek(&self) -> Option<char> {
-        self.text[self.current_position.as_usize()..].chars().next()
+        self.text[self.current_position.0..].chars().next()
     }
 
     fn peek_nth(&self, n: usize) -> Option<char> {
-        self.text[self.current_position.as_usize()..].chars().nth(n)
+        self.text[self.current_position.0..].chars().nth(n)
     }
 
     fn take(&mut self) -> Option<char> {
@@ -61,10 +64,10 @@ impl<'a> Lexer<'a> {
     }
 
     fn peek_span_text(&self) -> &'a str {
-        &self.text[self.previous_position.as_usize()..self.current_position.as_usize()]
+        &self.text[self.previous_position.0..self.current_position.0]
     }
     fn peek_span(&self) -> TextSpan {
-        TextSpan { from: self.previous_position, to: self.current_position }
+        TextSpan { start: self.previous_position, end: self.current_position }
     }
 
     fn consume_span(&mut self) -> &str {
@@ -191,7 +194,7 @@ impl<'a> Lexer<'a> {
                     println!(
                         "Bad character at {:?}, offset {}",
                         self.source,
-                        self.peek_span().from
+                        self.peek_span().start.0
                     );
                     self.take_token_of_kind(TokenKind::BadCharacters)
                 }
