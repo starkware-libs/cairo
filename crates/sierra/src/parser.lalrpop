@@ -16,16 +16,17 @@ pub Program: Program = {
 
 TypeDeclaration: TypeDeclaration = {
     "type" <id:ConcreteTypeId> "=" <generic_id:GenericTypeId> "<" <args:GenericArgs> ">" ";"
-    => TypeDeclaration{id, generic_id, args},
+    => TypeDeclaration{id, long_id: ConcreteTypeLongId{generic_id, args}},
     "type" <id:ConcreteTypeId> "=" <generic_id:GenericTypeId> ";"
-    => TypeDeclaration{id, generic_id, args: vec![]},
+    => TypeDeclaration{id, long_id: ConcreteTypeLongId{generic_id, args: vec![]}},
 }
 
 LibFuncDeclaration: LibFuncDeclaration = {
     "libfunc" <id:ConcreteLibFuncId> "=" <generic_id:GenericLibFuncId>
-    "<" <args:GenericArgs> ">" ";" => LibFuncDeclaration{id, generic_id, args},
+    "<" <args:GenericArgs> ">" ";"
+    => LibFuncDeclaration{id, long_id: ConcreteLibFuncLongId{generic_id, args}},
     "libfunc" <id:ConcreteLibFuncId> "=" <generic_id:GenericLibFuncId> ";"
-    => LibFuncDeclaration{id, generic_id, args: vec![]},
+    => LibFuncDeclaration{id, long_id: ConcreteLibFuncLongId{generic_id, args: vec![]}},
 }
 
 Function: Function = {
