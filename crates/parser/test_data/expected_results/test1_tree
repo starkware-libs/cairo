@@ -117,3 +117,10 @@
     │           │       └── semi (kind: Semi): ';'
     │           └── rbrace (kind: RBrace): '}'
     └── eof (kind: EndOfFile).
+--------------------
+Error at test1.cairo from line 1 col 1 until line 4 col 1: Skipped tokens: // Func foo
+// Second line
+;
+
+Error at test1.cairo from line 4 col 8 until line 4 col 9: Skipped tokens: ,
+Error at test1.cairo from line 4 col 19 until line 4 col 21: Skipped tokens: , 

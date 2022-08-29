@@ -4,7 +4,9 @@ mod tests;
 
 use std::mem;
 
+use diagnostics::{DiagnosticEntry, Diagnostics, WithDiagnostics};
 use filesystem::ids::FileId;
+use filesystem::span::{TextOffset, TextSpan};
 use syntax::node::ast::*;
 use syntax::node::db::SyntaxGroup;
 use syntax::node::green::{GreenNode, GreenNodeInternal};
@@ -20,6 +22,7 @@ use crate::operators::{get_binary_operator_precedence, get_unary_operator_preced
 
 pub struct Parser<'a> {
     db: &'a dyn SyntaxGroup,
+    file_id: FileId,
     lexer: Lexer<'a>,
     /// The next terminal to handle.
     next_terminal: TerminalWithKind,
@@ -28,10 +31,33 @@ pub struct Parser<'a> {
     offset: u32,
     /// The width of the current terminal being handled.
     current_width: u32,
+    diagnostics: Diagnostics<ParserDiagnostic>,
 }
 
-pub struct GreenCompilationUnit {
-    pub root: GreenId,
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct ParserDiagnostic {
+    file_id: FileId,
+    span: TextSpan,
+    kind: ParserDiagnosticKind,
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum ParserDiagnosticKind {
+    SkippedTokens,
+}
+impl DiagnosticEntry for ParserDiagnostic {
+    fn format(&self, db: &dyn filesystem::db::FilesGroup) -> String {
+        let text = match db.file_content(self.file_id) {
+            Some(content) => content[self.span.start.0..self.span.end.0].to_string(),
+            None => unreachable!(),
+        };
+        match self.kind {
+            ParserDiagnosticKind::SkippedTokens => format!("Skipped tokens: {text}"),
+        }
+    }
+
+    fn location(&self, _db: &dyn filesystem::db::FilesGroup) -> diagnostics::DiagnosticLocation {
+        diagnostics::DiagnosticLocation { file_id: self.file_id, span: self.span }
+    }
 }
 
 // try_parse_<something>: returns a green ID with a kind that represents 'something' or None if
@@ -54,13 +80,22 @@ pub struct GreenCompilationUnit {
 const MAX_PRECEDENCE: usize = 10;
 impl<'a> Parser<'a> {
     /// Ctor.
-    pub fn from_text(db: &'a dyn SyntaxGroup, source: FileId, text: &'a str) -> Parser<'a> {
-        let mut lexer = Lexer::from_text(db, source, text);
+    pub fn from_text(db: &'a dyn SyntaxGroup, file_id: FileId, text: &'a str) -> Parser<'a> {
+        let mut lexer = Lexer::from_text(db, file_id, text);
         let next_terminal = lexer.next().unwrap();
-        Parser { lexer, next_terminal, skipped_tokens: Vec::new(), db, offset: 0, current_width: 0 }
+        Parser {
+            db,
+            file_id,
+            lexer,
+            next_terminal,
+            skipped_tokens: Vec::new(),
+            offset: 0,
+            current_width: 0,
+            diagnostics: Diagnostics::new(),
+        }
     }
 
-    pub fn parse_syntax_file(&mut self) -> SyntaxFile {
+    pub fn parse_syntax_file(mut self) -> WithDiagnostics<SyntaxFile, ParserDiagnostic> {
         let items = self.parse_list(
             Self::try_parse_top_level_item,
             TokenKind::EndOfFile,
@@ -76,10 +111,11 @@ impl<'a> Parser<'a> {
         self.offset += self.current_width;
 
         let eof = self.add_skipped_to_terminal(self.next_terminal.terminal);
-        SyntaxFile::from_syntax_node(
+        let syntax_file = SyntaxFile::from_syntax_node(
             self.db,
             SyntaxNode::new_root(self.db, SyntaxFile::new_green(self.db, items, eof)),
-        )
+        );
+        WithDiagnostics { value: syntax_file, diagnostics: self.diagnostics }
     }
 
     // ------------------------------- Top level items -------------------------------
@@ -651,6 +687,7 @@ impl<'a> Parser<'a> {
         )
     }
 
+    // TODO(spapini): currently, skipped tokens swallow leading and trailing trivia. Fix this.
     /// Builds a new terminal to replace the given terminal by gluing the recently skipped terminals
     /// to the given terminal as extra leading trivia.
     fn add_skipped_to_terminal(&mut self, terminal: GreenId) -> GreenId {
@@ -682,8 +719,18 @@ impl<'a> Parser<'a> {
         }
         let new_leading_trivia = Trivia::new_green(self.db, new_leading_trivia_children);
 
-        // TODO(spapini): report to diagnostics.
-        println!("Skipped tokens from: {} to: {}", self.offset - total_width, self.offset);
+        // TODO(spapini): Clean up by always saving offsets as TextOffset, and possible not use
+        // offset airthmetic, and instead, keep the correct TextOffset when generated.
+        let skipped_end = self.offset;
+        let skipped_start = skipped_end - total_width;
+        self.diagnostics.add(ParserDiagnostic {
+            file_id: self.file_id,
+            kind: ParserDiagnosticKind::SkippedTokens,
+            span: TextSpan {
+                start: TextOffset(skipped_start as usize),
+                end: TextOffset(skipped_end as usize),
+            },
+        });
 
         // Build a replacement for the current terminal, with the new leading trivia instead of the
         // old one.
