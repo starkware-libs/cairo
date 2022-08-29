@@ -1,10 +1,23 @@
 use casm::ap_change::ApChange;
 use casm::instructions::{AssertEqInstruction, Instruction, InstructionBody};
-use casm::operand::{DerefOperand, Register, ResOperand};
+use casm::operand::{
+    BinOpOperand, DerefOperand, DerefOrImmediate, Operation, Register, ResOperand,
+};
+use sierra::extensions::core::felt::FeltBinaryOperationConcreteLibFunc;
+use sierra::extensions::core::integer::Operator;
 use sierra::extensions::core::mem::MemConcreteLibFunc;
-use sierra::extensions::{CoreConcreteLibFunc, ExtensionError};
+use sierra::extensions::CoreConcreteLibFunc;
+use thiserror::Error;
 
 use crate::references::ReferenceValue;
+
+#[derive(Error, Debug, Eq, PartialEq)]
+pub enum InvocationError {
+    #[error("One of the arguments does not satisfy the requirements of the extensions.")]
+    InvalidReferenceExpressionForArgument,
+    #[error("The requested functionality is not implemented yet")]
+    NotImplemented,
+}
 
 /// Describes the changes to the set of references at the branch target.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -24,12 +37,44 @@ pub struct CompiledInvocation {
     pub results: Vec<BranchRefChanges>,
 }
 
+pub fn handle_felt_op(
+    felt_op: &FeltBinaryOperationConcreteLibFunc,
+    refs: &[ReferenceValue],
+) -> Result<CompiledInvocation, InvocationError> {
+    let op = match felt_op.operator {
+        Operator::Add => Operation::Add,
+        Operator::Mul => Operation::Mul,
+        _ => return Err(InvocationError::NotImplemented),
+    };
+    let ref_expression = match refs {
+        [
+            ReferenceValue { expression: ResOperand::Deref(a) },
+            ReferenceValue { expression: ResOperand::Deref(b) },
+        ] => BinOpOperand { op, a: *a, b: DerefOrImmediate::Deref(*b) },
+        [
+            ReferenceValue { expression: ResOperand::Deref(a) },
+            ReferenceValue { expression: ResOperand::Immediate(b) },
+        ] => BinOpOperand { op, a: *a, b: DerefOrImmediate::Immediate(*b) },
+        _ => return Err(InvocationError::InvalidReferenceExpressionForArgument),
+    };
+
+    Ok(CompiledInvocation {
+        instruction: vec![],
+        results: vec![BranchRefChanges {
+            refs: vec![ReferenceValue { expression: ResOperand::BinOp(ref_expression) }],
+            ap_change: ApChange::Known(0),
+        }],
+    })
+}
+
 pub fn compile_invocation(
     ext: &CoreConcreteLibFunc,
     refs: &[ReferenceValue],
-) -> Result<CompiledInvocation, ExtensionError> {
+) -> Result<CompiledInvocation, InvocationError> {
     match ext {
         // TODO(ilya, 10/10/2022): Handle type.
+        CoreConcreteLibFunc::Felt(felt_op) => handle_felt_op(felt_op, refs),
+
         CoreConcreteLibFunc::Mem(MemConcreteLibFunc::StoreTemp(_)) => Ok(CompiledInvocation {
             instruction: vec![Instruction {
                 body: InstructionBody::AssertEq(AssertEqInstruction {
@@ -53,6 +98,6 @@ pub fn compile_invocation(
             instruction: vec![],
             results: vec![BranchRefChanges { refs: refs.to_vec(), ap_change: ApChange::Known(0) }],
         }),
-        _ => Err(ExtensionError::NotImplemented),
+        _ => Err(InvocationError::NotImplemented),
     }
 }
