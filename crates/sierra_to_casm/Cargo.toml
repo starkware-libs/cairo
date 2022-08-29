@@ -6,6 +6,7 @@ edition = "2021"
 [dev-dependencies]
 assert_matches = "1.5"
 indoc = "1.0.7"
+pretty_assertions = "1.2.1"
 test-case = "2.2.1"
 
 [dependencies]
