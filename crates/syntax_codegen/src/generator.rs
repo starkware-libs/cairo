@@ -102,7 +102,10 @@ fn generate_ast_code() -> rust::Tokens {
         use super::kind::SyntaxKind;
         use super::element_list::ElementList;
         use super::green::GreenNodeInternal;
-        use super::{TypedSyntaxNode, GreenId, SyntaxGroup, GreenNode, SyntaxNode, Token};
+        use super::{
+            TypedSyntaxNode, GreenId, SyntaxGroup, GreenNode, SyntaxNode, SyntaxStablePtrId,
+            Token,
+        };
     };
     for Node { name, kind } in spec.into_iter() {
         tokens.extend(match kind {
@@ -119,6 +122,7 @@ fn generate_ast_code() -> rust::Tokens {
 
 fn gen_list_code(name: String, element_type: String, step: usize) -> rust::Tokens {
     // TODO(spapini): Change Deref to Borrow.
+    let ptr_name = format!("{name}Ptr");
     quote! {
         #[derive(Clone, Debug, Eq, Hash, PartialEq)]
         pub struct $(&name)(ElementList<$(&element_type),$step>);
@@ -140,7 +144,9 @@ fn gen_list_code(name: String, element_type: String, step: usize) -> rust::Token
                 }))
             }
         }
+        pub struct $(&ptr_name)(SyntaxStablePtrId);
         impl TypedSyntaxNode for $(&name) {
+            type StablePtr = $(&ptr_name);
             fn missing(db: &dyn SyntaxGroup) -> GreenId {
                 db.intern_green(
                     GreenNode::Internal(GreenNodeInternal {
@@ -154,6 +160,12 @@ fn gen_list_code(name: String, element_type: String, step: usize) -> rust::Token
             fn as_syntax_node(&self) -> SyntaxNode{
                 self.node.clone()
             }
+            fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+                Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+            }
+            fn stable_ptr(&self) -> Self::StablePtr {
+                $(&ptr_name)(self.node.0.stable_ptr)
+            }
         }
     }
 }
@@ -163,6 +175,7 @@ fn gen_enum_code(
     variants: Vec<Member>,
     missing_variant: Option<String>,
 ) -> rust::Tokens {
+    let ptr_name = format!("{name}Ptr");
     let mut enum_body = quote! {};
     let mut from_node_body = quote! {};
     let mut from_token_body = quote! {};
@@ -204,7 +217,9 @@ fn gen_enum_code(
         pub enum $(&name){
             $enum_body
         }
+        pub struct $(&ptr_name)(SyntaxStablePtrId);
         impl TypedSyntaxNode for $(&name){
+            type StablePtr = $(&ptr_name);
             fn missing(db: &dyn SyntaxGroup) -> GreenId {
                 $missing_body
             }
@@ -234,6 +249,12 @@ fn gen_enum_code(
                 match self {
                     $(for v in &variants => $(&name)::$(&v.name)(x) => x.as_syntax_node(),)
                 }
+            }
+            fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+                Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+            }
+            fn stable_ptr(&self) -> Self::StablePtr {
+                $(&ptr_name)(self.as_syntax_node().0.stable_ptr)
             }
         }
     }
@@ -268,6 +289,7 @@ fn gen_struct_code(name: String, members: Vec<Member>) -> rust::Tokens {
             }
         };
     }
+    let ptr_name = format!("{name}Ptr");
     quote! {
         #[derive(Clone, Debug, Eq, Hash, PartialEq)]
         pub struct $(&name){
@@ -287,7 +309,9 @@ fn gen_struct_code(name: String, members: Vec<Member>) -> rust::Tokens {
             }
             $body
         }
+        pub struct $(&ptr_name)(SyntaxStablePtrId);
         impl TypedSyntaxNode for $(&name){
+            type StablePtr = $(&ptr_name);
             fn missing(db: &dyn SyntaxGroup) -> GreenId{
                 // Note: A missing syntax element should result in an internal green node
                 // of width 0, with as much structure as possible.
@@ -301,18 +325,32 @@ fn gen_struct_code(name: String, members: Vec<Member>) -> rust::Tokens {
                 match db.lookup_intern_green(node.0.green) {
                     GreenNode::Internal(internal) => {
                         if internal.kind != SyntaxKind::$(&name) {
-                            panic!("Unexpected SyntaxKind {:?}. Expected {:?}.", internal.kind, SyntaxKind::$(&name));
+                            panic!(
+                                "Unexpected SyntaxKind {:?}. Expected {:?}.",
+                                internal.kind,
+                                SyntaxKind::$(&name),
+                            );
                         }
                         let children = node.children(db).collect();
                         Self { node, children }
                     },
                     GreenNode::Token(token) => {
-                        panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::$(&name));
+                        panic!(
+                            "Unexpected Token {:?}. Expected {:?}.",
+                            token,
+                            SyntaxKind::$(&name),
+                        );
                     }
                 }
             }
+            fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+                Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+            }
             fn as_syntax_node(&self) -> SyntaxNode {
                 self.node.clone()
+            }
+            fn stable_ptr(&self) -> Self::StablePtr {
+                $(&ptr_name)(self.node.0.stable_ptr)
             }
         }
     }
