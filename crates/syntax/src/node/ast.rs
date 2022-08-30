@@ -59,7 +59,7 @@ impl TypedSyntaxNode for Terminal {
                         SyntaxKind::Terminal
                     );
                 }
-                let children = node.children(db);
+                let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
@@ -120,7 +120,7 @@ impl TypedSyntaxNode for TriviumSkippedTerminal {
                         SyntaxKind::TriviumSkippedTerminal
                     );
                 }
-                let children = node.children(db);
+                let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
@@ -255,7 +255,7 @@ impl TypedSyntaxNode for StructArgExpr {
                         SyntaxKind::StructArgExpr
                     );
                 }
-                let children = node.children(db);
+                let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
@@ -339,7 +339,7 @@ impl TypedSyntaxNode for OptionStructArgExprEmpty {
                         SyntaxKind::OptionStructArgExprEmpty
                     );
                 }
-                let children = node.children(db);
+                let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
@@ -395,7 +395,7 @@ impl TypedSyntaxNode for StructArgSingle {
                         SyntaxKind::StructArgSingle
                     );
                 }
-                let children = node.children(db);
+                let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
@@ -447,7 +447,7 @@ impl TypedSyntaxNode for StructArgTail {
                         SyntaxKind::StructArgTail
                     );
                 }
-                let children = node.children(db);
+                let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
@@ -582,7 +582,7 @@ impl TypedSyntaxNode for ArgListBraced {
                         SyntaxKind::ArgListBraced
                     );
                 }
-                let children = node.children(db);
+                let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
@@ -631,7 +631,7 @@ impl TypedSyntaxNode for Identifier {
                         SyntaxKind::Identifier
                     );
                 }
-                let children = node.children(db);
+                let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
@@ -777,7 +777,7 @@ impl TypedSyntaxNode for ExprMissing {
                         SyntaxKind::ExprMissing
                     );
                 }
-                let children = node.children(db);
+                let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
@@ -861,7 +861,7 @@ impl TypedSyntaxNode for OptionGenericArgsEmpty {
                         SyntaxKind::OptionGenericArgsEmpty
                     );
                 }
-                let children = node.children(db);
+                let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
@@ -950,7 +950,7 @@ impl TypedSyntaxNode for PathSegment {
                         SyntaxKind::PathSegment
                     );
                 }
-                let children = node.children(db);
+                let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
@@ -1032,7 +1032,7 @@ impl TypedSyntaxNode for ExprLiteral {
                         SyntaxKind::ExprLiteral
                     );
                 }
-                let children = node.children(db);
+                let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
@@ -1092,7 +1092,7 @@ impl TypedSyntaxNode for ExprParenthesized {
                         SyntaxKind::ExprParenthesized
                     );
                 }
-                let children = node.children(db);
+                let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
@@ -1148,7 +1148,7 @@ impl TypedSyntaxNode for ExprUnary {
                         SyntaxKind::ExprUnary
                     );
                 }
-                let children = node.children(db);
+                let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
@@ -1203,7 +1203,7 @@ impl TypedSyntaxNode for ExprBinary {
                         SyntaxKind::ExprBinary
                     );
                 }
-                let children = node.children(db);
+                let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
@@ -1263,7 +1263,7 @@ impl TypedSyntaxNode for ExprTuple {
                         SyntaxKind::ExprTuple
                     );
                 }
-                let children = node.children(db);
+                let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
@@ -1323,7 +1323,7 @@ impl TypedSyntaxNode for ExprListParenthesized {
                         SyntaxKind::ExprListParenthesized
                     );
                 }
-                let children = node.children(db);
+                let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
@@ -1379,7 +1379,7 @@ impl TypedSyntaxNode for ExprFunctionCall {
                         SyntaxKind::ExprFunctionCall
                     );
                 }
-                let children = node.children(db);
+                let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
@@ -1435,7 +1435,7 @@ impl TypedSyntaxNode for ExprStructCtorCall {
                         SyntaxKind::ExprStructCtorCall
                     );
                 }
-                let children = node.children(db);
+                let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
@@ -1503,7 +1503,7 @@ impl TypedSyntaxNode for ExprBlock {
                         SyntaxKind::ExprBlock
                     );
                 }
-                let children = node.children(db);
+                let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
@@ -1555,7 +1555,7 @@ impl TypedSyntaxNode for TypeClause {
                         SyntaxKind::TypeClause
                     );
                 }
-                let children = node.children(db);
+                let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
@@ -1639,7 +1639,7 @@ impl TypedSyntaxNode for OptionTypeClauseEmpty {
                         SyntaxKind::OptionTypeClauseEmpty
                     );
                 }
-                let children = node.children(db);
+                let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
@@ -1695,7 +1695,7 @@ impl TypedSyntaxNode for ReturnTypeClause {
                         SyntaxKind::ReturnTypeClause
                     );
                 }
-                let children = node.children(db);
+                let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
@@ -1783,7 +1783,7 @@ impl TypedSyntaxNode for OptionReturnTypeClauseEmpty {
                         SyntaxKind::OptionReturnTypeClauseEmpty
                     );
                 }
-                let children = node.children(db);
+                let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
@@ -1918,7 +1918,7 @@ impl TypedSyntaxNode for StatementMissing {
                         SyntaxKind::StatementMissing
                     );
                 }
-                let children = node.children(db);
+                let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
@@ -2001,7 +2001,7 @@ impl TypedSyntaxNode for StatementLet {
                         SyntaxKind::StatementLet
                     );
                 }
-                let children = node.children(db);
+                let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
@@ -2083,7 +2083,7 @@ impl TypedSyntaxNode for OptionSemicolonEmpty {
                         SyntaxKind::OptionSemicolonEmpty
                     );
                 }
-                let children = node.children(db);
+                let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
@@ -2139,7 +2139,7 @@ impl TypedSyntaxNode for StatementExpr {
                         SyntaxKind::StatementExpr
                     );
                 }
-                let children = node.children(db);
+                let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
@@ -2199,7 +2199,7 @@ impl TypedSyntaxNode for StatementReturn {
                         SyntaxKind::StatementReturn
                     );
                 }
-                let children = node.children(db);
+                let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
@@ -2251,7 +2251,7 @@ impl TypedSyntaxNode for Param {
                         SyntaxKind::Param
                     );
                 }
-                let children = node.children(db);
+                let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
@@ -2344,7 +2344,7 @@ impl TypedSyntaxNode for ParamListParenthesized {
                         SyntaxKind::ParamListParenthesized
                     );
                 }
-                let children = node.children(db);
+                let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
@@ -2408,7 +2408,7 @@ impl TypedSyntaxNode for ParamListBraced {
                         SyntaxKind::ParamListBraced
                     );
                 }
-                let children = node.children(db);
+                let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
@@ -2487,7 +2487,7 @@ impl TypedSyntaxNode for FunctionSignature {
                         SyntaxKind::FunctionSignature
                     );
                 }
-                let children = node.children(db);
+                let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
@@ -2637,7 +2637,7 @@ impl TypedSyntaxNode for ItemModule {
                         SyntaxKind::ItemModule
                     );
                 }
-                let children = node.children(db);
+                let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
@@ -2689,7 +2689,7 @@ impl TypedSyntaxNode for ItemFunction {
                         SyntaxKind::ItemFunction
                     );
                 }
-                let children = node.children(db);
+                let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
@@ -2741,7 +2741,7 @@ impl TypedSyntaxNode for ItemFunctionSignature {
                         SyntaxKind::ItemFunctionSignature
                     );
                 }
-                let children = node.children(db);
+                let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
@@ -2819,7 +2819,7 @@ impl TypedSyntaxNode for ItemTrait {
                         SyntaxKind::ItemTrait
                     );
                 }
-                let children = node.children(db);
+                let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
@@ -2903,7 +2903,7 @@ impl TypedSyntaxNode for ItemImpl {
                         SyntaxKind::ItemImpl
                     );
                 }
-                let children = node.children(db);
+                let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
@@ -2977,7 +2977,7 @@ impl TypedSyntaxNode for ItemStruct {
                         SyntaxKind::ItemStruct
                     );
                 }
-                let children = node.children(db);
+                let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
@@ -3041,7 +3041,7 @@ impl TypedSyntaxNode for ItemEnum {
                         SyntaxKind::ItemEnum
                     );
                 }
-                let children = node.children(db);
+                let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
@@ -3101,7 +3101,7 @@ impl TypedSyntaxNode for ItemUse {
                         SyntaxKind::ItemUse
                     );
                 }
-                let children = node.children(db);
+                let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
@@ -3153,7 +3153,7 @@ impl TypedSyntaxNode for SyntaxFile {
                         SyntaxKind::SyntaxFile
                     );
                 }
-                let children = node.children(db);
+                let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
