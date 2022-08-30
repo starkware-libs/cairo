@@ -7,7 +7,7 @@ use sierra::extensions::core::felt::{
     FeltBinaryOperationConcreteLibFunc, FeltConcrete, FeltDuplicateConcreteLibFunc,
 };
 use sierra::extensions::core::integer::Operator;
-use sierra::extensions::core::mem::MemConcreteLibFunc;
+use sierra::extensions::core::mem::{MemConcreteLibFunc, StoreTempConcreteLibFunc};
 use sierra::extensions::CoreConcreteLibFunc;
 use thiserror::Error;
 
@@ -97,6 +97,27 @@ pub fn handle_felt_dup(
     })
 }
 
+pub fn handle_store_temp(
+    _store_temp: &StoreTempConcreteLibFunc,
+    refs: &[ReferenceValue],
+) -> Result<CompiledInvocation, InvocationError> {
+    Ok(CompiledInvocation {
+        instruction: vec![Instruction {
+            body: InstructionBody::AssertEq(AssertEqInstruction {
+                a: DerefOperand { register: Register::AP, offset: 0 },
+                b: refs[0].expression.clone(),
+            }),
+            inc_ap: true,
+        }],
+        results: vec![BranchRefChanges {
+            refs: vec![ReferenceValue {
+                expression: ResOperand::Deref(DerefOperand { register: Register::AP, offset: -1 }),
+            }],
+            ap_change: ApChange::Known(1),
+        }],
+    })
+}
+
 pub fn compile_invocation(
     ext: &CoreConcreteLibFunc,
     refs: &[ReferenceValue],
@@ -109,24 +130,9 @@ pub fn compile_invocation(
         CoreConcreteLibFunc::Felt(FeltConcrete::Duplicate(felt_dup)) => {
             handle_felt_dup(felt_dup, refs)
         }
-        CoreConcreteLibFunc::Mem(MemConcreteLibFunc::StoreTemp(_)) => Ok(CompiledInvocation {
-            instruction: vec![Instruction {
-                body: InstructionBody::AssertEq(AssertEqInstruction {
-                    a: DerefOperand { register: Register::AP, offset: 0 },
-                    b: refs[0].expression.clone(),
-                }),
-                inc_ap: true,
-            }],
-            results: vec![BranchRefChanges {
-                refs: vec![ReferenceValue {
-                    expression: ResOperand::Deref(DerefOperand {
-                        register: Register::AP,
-                        offset: -1,
-                    }),
-                }],
-                ap_change: ApChange::Known(1),
-            }],
-        }),
+        CoreConcreteLibFunc::Mem(MemConcreteLibFunc::StoreTemp(store_temp)) => {
+            handle_store_temp(store_temp, refs)
+        }
         CoreConcreteLibFunc::Mem(MemConcreteLibFunc::Move(_))
         | CoreConcreteLibFunc::Mem(MemConcreteLibFunc::Rename(_)) => Ok(CompiledInvocation {
             instruction: vec![],
