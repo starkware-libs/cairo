@@ -1,14 +1,17 @@
+use std::collections::VecDeque;
+
 use casm::ap_change::ApChange;
-use casm::instructions::{AssertEqInstruction, Instruction, InstructionBody};
+use casm::instructions::{AssertEqInstruction, CallInstruction, Instruction, InstructionBody};
 use casm::operand::{
-    BinOpOperand, DerefOperand, DerefOrImmediate, Operation, Register, ResOperand,
+    BinOpOperand, DerefOperand, DerefOrImmediate, ImmediateOperand, Operation, Register, ResOperand,
 };
 use sierra::extensions::core::felt::{
     FeltBinaryOperationConcreteLibFunc, FeltConcrete, FeltDuplicateConcreteLibFunc,
 };
+use sierra::extensions::core::function_call::FunctionCallConcreteLibFunc;
 use sierra::extensions::core::integer::Operator;
 use sierra::extensions::core::mem::MemConcreteLibFunc;
-use sierra::extensions::CoreConcreteLibFunc;
+use sierra::extensions::{ConcreteLibFunc, CoreConcreteLibFunc};
 use thiserror::Error;
 
 use crate::references::ReferenceValue;
@@ -79,6 +82,24 @@ pub fn handle_felt_op(
     })
 }
 
+// Checks that the list of reference is contiguous on the stack and ends at ap - 1.
+// This is the requirement for function call and return statements.
+pub fn check_references_on_stack(refs: &[ReferenceValue]) -> Result<(), InvocationError> {
+    let mut expected_offset: i16 = -1;
+    for return_ref in refs.iter().rev() {
+        match return_ref.expression {
+            ResOperand::Deref(DerefOperand { register: Register::AP, offset })
+                if offset == expected_offset =>
+            {
+                // TODO(ilya, 10/10/2022): Get size from type.
+                expected_offset -= 1
+            }
+            _ => return Err(InvocationError::InvalidReferenceExpressionForArgument),
+        }
+    }
+    Ok(())
+}
+
 pub fn handle_felt_dup(
     _felt_dup: &FeltDuplicateConcreteLibFunc,
     refs: &[ReferenceValue],
@@ -94,6 +115,41 @@ pub fn handle_felt_dup(
             refs: vec![ref_value.clone(), ref_value.clone()],
             ap_change: ApChange::Known(0),
         }],
+    })
+}
+
+pub fn handle_function_call(
+    func_call: &FunctionCallConcreteLibFunc,
+    refs: &[ReferenceValue],
+) -> Result<CompiledInvocation, InvocationError> {
+    check_references_on_stack(refs)?;
+
+    let output_types = func_call.output_types();
+    let fallthrough_outputs = &output_types[0];
+
+    let mut refs = VecDeque::with_capacity(fallthrough_outputs.len());
+
+    let mut offset = -1;
+    for _output_type in fallthrough_outputs.iter().rev() {
+        refs.push_front(ReferenceValue {
+            expression: ResOperand::Deref(DerefOperand { register: Register::AP, offset }),
+        });
+
+        // TODO(ilya, 10/10/2022): Get size from type.
+        let size = 1;
+        offset -= size;
+    }
+
+    // TODO(ilya, 10/10/2022): Fix call target.
+    Ok(CompiledInvocation {
+        instruction: vec![Instruction {
+            body: InstructionBody::Call(CallInstruction {
+                target: DerefOrImmediate::Immediate(ImmediateOperand { value: 0 }),
+                relative: true,
+            }),
+            inc_ap: false,
+        }],
+        results: vec![BranchRefChanges { refs: refs.into(), ap_change: ApChange::Known(0) }],
     })
 }
 
@@ -131,6 +187,7 @@ pub fn compile_invocation(
             instruction: vec![],
             results: vec![BranchRefChanges { refs: refs.to_vec(), ap_change: ApChange::Known(0) }],
         }),
+        CoreConcreteLibFunc::FunctionCall(func_call) => handle_function_call(func_call, refs),
         _ => Err(InvocationError::NotImplemented),
     }
 }
