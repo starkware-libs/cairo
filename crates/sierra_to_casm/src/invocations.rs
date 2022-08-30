@@ -17,6 +17,7 @@ use sierra::ids::ConcreteTypeId;
 use thiserror::Error;
 
 use crate::references::ReferenceValue;
+use crate::type_sizes::TypeSizeMap;
 
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum InvocationError {
@@ -24,6 +25,8 @@ pub enum InvocationError {
     InvalidReferenceExpressionForArgument,
     #[error("One of the arguments does not match the expected input of the libfunc.")]
     InvalidReferenceTypeForArgument,
+    #[error("Unexpected error - an unregistered type id used.")]
+    UnknownTypeId(ConcreteTypeId),
     #[error("Expected a different number of arguments")]
     WrongNumberOfArguments,
     #[error("The requested functionality is not implemented yet")]
@@ -128,15 +131,19 @@ fn handle_felt_op(
 
 // Checks that the list of reference is contiguous on the stack and ends at ap - 1.
 // This is the requirement for function call and return statements.
-pub fn check_references_on_stack(refs: &[ReferenceValue]) -> Result<(), InvocationError> {
+pub fn check_references_on_stack(
+    type_sizes: &TypeSizeMap,
+    refs: &[ReferenceValue],
+) -> Result<(), InvocationError> {
     let mut expected_offset: i16 = -1;
     for return_ref in refs.iter().rev() {
         match return_ref.expression {
             ResOperand::Deref(DerefOperand { register: Register::AP, offset })
                 if offset == expected_offset =>
             {
-                // TODO(ilya, 10/10/2022): Get size from type.
-                expected_offset -= 1
+                expected_offset -= type_sizes
+                    .get(&return_ref.ty)
+                    .ok_or_else(|| InvocationError::UnknownTypeId(return_ref.ty.clone()))?;
             }
             _ => return Err(InvocationError::InvalidReferenceExpressionForArgument),
         }
@@ -172,10 +179,11 @@ fn handle_felt_dup(
 }
 
 fn handle_function_call(
+    type_sizes: &TypeSizeMap,
     func_call: &FunctionCallConcreteLibFunc,
     refs: &[ReferenceValue],
 ) -> Result<CompiledInvocation, InvocationError> {
-    check_references_on_stack(refs)?;
+    check_references_on_stack(type_sizes, refs)?;
 
     let output_types = func_call.output_types();
     let fallthrough_outputs = &output_types[0];
@@ -183,12 +191,12 @@ fn handle_function_call(
     let mut refs = VecDeque::with_capacity(fallthrough_outputs.len());
 
     let mut offset = -1;
-    for _output_type in fallthrough_outputs.iter().rev() {
+    for output_type in fallthrough_outputs.iter().rev() {
         refs.push_front(ResOperand::Deref(DerefOperand { register: Register::AP, offset }));
 
-        // TODO(ilya, 10/10/2022): Get size from type.
-        let size = 1;
-        offset -= size;
+        offset -= type_sizes
+            .get(output_type)
+            .ok_or_else(|| InvocationError::UnknownTypeId(output_type.clone()))?;
     }
 
     Ok(CompiledInvocation::new(
@@ -225,6 +233,7 @@ fn handle_store_temp(
 }
 
 pub fn compile_invocation(
+    type_sizes: &TypeSizeMap,
     libfunc: &CoreConcreteLibFunc,
     refs: &[ReferenceValue],
 ) -> Result<CompiledInvocation, InvocationError> {
@@ -246,7 +255,9 @@ pub fn compile_invocation(
                 libfunc.output_types(),
             ))
         }
-        CoreConcreteLibFunc::FunctionCall(func_call) => handle_function_call(func_call, refs),
+        CoreConcreteLibFunc::FunctionCall(func_call) => {
+            handle_function_call(type_sizes, func_call, refs)
+        }
         _ => Err(InvocationError::NotImplemented),
     }
 }

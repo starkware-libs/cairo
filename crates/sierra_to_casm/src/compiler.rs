@@ -8,6 +8,7 @@ use thiserror::Error;
 
 use crate::invocations::{check_references_on_stack, compile_invocation, InvocationError};
 use crate::references::{init_reference, ReferencesError};
+use crate::type_sizes::get_type_size_map;
 
 #[cfg(test)]
 #[path = "compiler_test.rs"]
@@ -15,6 +16,8 @@ mod test;
 
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum CompilationError {
+    #[error("Failed building type information")]
+    FailedBuildingTypeInformation,
     #[error("Error from program registry")]
     ProgramRegistryError(ProgramRegistryError),
     #[error(transparent)]
@@ -41,6 +44,8 @@ pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
 
     let registry = ProgramRegistry::<CoreType, CoreLibFunc>::new(program)
         .map_err(CompilationError::ProgramRegistryError)?;
+    let type_sizes = get_type_size_map(program, &registry)
+        .ok_or(CompilationError::FailedBuildingTypeInformation)?;
     let mut program_refs = init_reference(program.statements.len(), &program.funcs)?;
 
     for (statement_id, statement) in program.statements.iter().enumerate() {
@@ -49,7 +54,7 @@ pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
             Statement::Return(ref_ids) => {
                 let (_statement_refs, return_refs) =
                     program_refs.take_references(statement_idx, ref_ids.iter())?;
-                check_references_on_stack(&return_refs)?;
+                check_references_on_stack(&type_sizes, &return_refs)?;
                 // TODO(orizi): Also test types of the results using 'check_types_match' when the
                 // returning function is available.
 
@@ -65,7 +70,7 @@ pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
                 let libfunc = registry
                     .get_libfunc(&invocation.libfunc_id)
                     .map_err(CompilationError::ProgramRegistryError)?;
-                let compiled_invocation = compile_invocation(libfunc, &invoke_refs)?;
+                let compiled_invocation = compile_invocation(&type_sizes, libfunc, &invoke_refs)?;
                 instructions.extend(compiled_invocation.instructions.into_iter());
 
                 program_refs.update_references(

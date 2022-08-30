@@ -118,6 +118,11 @@ fn good_flow() {
         "} => Err(CompilationError::ReferencesError(
             ReferencesError::MissingReferencesForStatement));
             "Missing references for statement")]
+#[test_case(indoc! {"
+            type NonZeroFelt = NonZero<felt>;
+            type felt = felt;
+        "} => Err(CompilationError::FailedBuildingTypeInformation);
+            "type ordering bad for building size map")]
 fn compiler_errors(sierra_code: &str) -> Result<(), CompilationError> {
     let prog = ProgramParser::new().parse(sierra_code).unwrap();
     compile(&prog)?;
