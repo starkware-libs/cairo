@@ -5,6 +5,7 @@ use casm::instructions::{AssertEqInstruction, CallInstruction, Instruction, Inst
 use casm::operand::{
     BinOpOperand, DerefOperand, DerefOrImmediate, ImmediateOperand, Operation, Register, ResOperand,
 };
+use itertools::{equal, zip_eq};
 use sierra::extensions::core::felt::{
     FeltBinaryOperationConcreteLibFunc, FeltConcrete, FeltDuplicateConcreteLibFunc,
 };
@@ -12,6 +13,7 @@ use sierra::extensions::core::function_call::FunctionCallConcreteLibFunc;
 use sierra::extensions::core::integer::Operator;
 use sierra::extensions::core::mem::{MemConcreteLibFunc, StoreTempConcreteLibFunc};
 use sierra::extensions::{ConcreteLibFunc, CoreConcreteLibFunc};
+use sierra::ids::ConcreteTypeId;
 use thiserror::Error;
 
 use crate::references::ReferenceValue;
@@ -20,6 +22,8 @@ use crate::references::ReferenceValue;
 pub enum InvocationError {
     #[error("One of the arguments does not satisfy the requirements of the libfunc.")]
     InvalidReferenceExpressionForArgument,
+    #[error("One of the arguments does not match the expected input of the libfunc.")]
+    InvalidReferenceTypeForArgument,
     #[error("Expected a different number of arguments")]
     WrongNumberOfArguments,
     #[error("The requested functionality is not implemented yet")]
@@ -44,10 +48,16 @@ pub struct CompiledInvocation {
     pub results: Vec<BranchRefChanges>,
 }
 
-pub fn handle_felt_op(
+/// Module internal CompiledInvocation without the type information.
+struct TypeLessCompiledInvocation {
+    pub instruction: Vec<Instruction>,
+    pub results: Vec<(Vec<ResOperand>, ApChange)>,
+}
+
+fn handle_felt_op(
     felt_op: &FeltBinaryOperationConcreteLibFunc,
     refs: &[ReferenceValue],
-) -> Result<CompiledInvocation, InvocationError> {
+) -> Result<TypeLessCompiledInvocation, InvocationError> {
     let op = match felt_op.operator {
         Operator::Add => Operation::Add,
         Operator::Mul => Operation::Mul,
@@ -57,7 +67,7 @@ pub fn handle_felt_op(
     };
 
     let (expr_a, expr_b) = match refs {
-        [ReferenceValue { expression: expr_a }, ReferenceValue { expression: expr_b }] => {
+        [ReferenceValue { expression: expr_a, .. }, ReferenceValue { expression: expr_b, .. }] => {
             (expr_a, expr_b)
         }
         _ => return Err(InvocationError::WrongNumberOfArguments),
@@ -72,13 +82,9 @@ pub fn handle_felt_op(
         }
         _ => return Err(InvocationError::InvalidReferenceExpressionForArgument),
     };
-
-    Ok(CompiledInvocation {
+    Ok(TypeLessCompiledInvocation {
         instruction: vec![],
-        results: vec![BranchRefChanges {
-            refs: vec![ReferenceValue { expression: ResOperand::BinOp(ref_expression) }],
-            ap_change: ApChange::Known(0),
-        }],
+        results: vec![(vec![ResOperand::BinOp(ref_expression)], ApChange::Known(0))],
     })
 }
 
@@ -100,28 +106,37 @@ pub fn check_references_on_stack(refs: &[ReferenceValue]) -> Result<(), Invocati
     Ok(())
 }
 
-pub fn handle_felt_dup(
+/// Checks that the list of reference contains types matching the given types.
+pub fn check_types_match(
+    refs: &[ReferenceValue],
+    types: &[ConcreteTypeId],
+) -> Result<(), InvocationError> {
+    if equal(types.iter(), refs.iter().map(|r| &r.ty)) {
+        Ok(())
+    } else {
+        Err(InvocationError::InvalidReferenceTypeForArgument)
+    }
+}
+
+fn handle_felt_dup(
     _felt_dup: &FeltDuplicateConcreteLibFunc,
     refs: &[ReferenceValue],
-) -> Result<CompiledInvocation, InvocationError> {
-    let ref_value = match refs {
-        [ref_value] => ref_value,
+) -> Result<TypeLessCompiledInvocation, InvocationError> {
+    let expression = match refs {
+        [ReferenceValue { expression, .. }] => expression,
         _ => return Err(InvocationError::WrongNumberOfArguments),
     };
 
-    Ok(CompiledInvocation {
+    Ok(TypeLessCompiledInvocation {
         instruction: vec![],
-        results: vec![BranchRefChanges {
-            refs: vec![ref_value.clone(), ref_value.clone()],
-            ap_change: ApChange::Known(0),
-        }],
+        results: vec![(vec![expression.clone(), expression.clone()], ApChange::Known(0))],
     })
 }
 
-pub fn handle_function_call(
+fn handle_function_call(
     func_call: &FunctionCallConcreteLibFunc,
     refs: &[ReferenceValue],
-) -> Result<CompiledInvocation, InvocationError> {
+) -> Result<TypeLessCompiledInvocation, InvocationError> {
     check_references_on_stack(refs)?;
 
     let output_types = func_call.output_types();
@@ -131,17 +146,13 @@ pub fn handle_function_call(
 
     let mut offset = -1;
     for _output_type in fallthrough_outputs.iter().rev() {
-        refs.push_front(ReferenceValue {
-            expression: ResOperand::Deref(DerefOperand { register: Register::AP, offset }),
-        });
+        refs.push_front(ResOperand::Deref(DerefOperand { register: Register::AP, offset }));
 
         // TODO(ilya, 10/10/2022): Get size from type.
         let size = 1;
         offset -= size;
     }
-
-    // TODO(ilya, 10/10/2022): Fix call target.
-    Ok(CompiledInvocation {
+    Ok(TypeLessCompiledInvocation {
         instruction: vec![Instruction {
             body: InstructionBody::Call(CallInstruction {
                 target: DerefOrImmediate::Immediate(ImmediateOperand { value: 0 }),
@@ -149,15 +160,15 @@ pub fn handle_function_call(
             }),
             inc_ap: false,
         }],
-        results: vec![BranchRefChanges { refs: refs.into(), ap_change: ApChange::Known(0) }],
+        results: vec![(refs.into(), ApChange::Known(0))],
     })
 }
 
-pub fn handle_store_temp(
+fn handle_store_temp(
     _store_temp: &StoreTempConcreteLibFunc,
     refs: &[ReferenceValue],
-) -> Result<CompiledInvocation, InvocationError> {
-    Ok(CompiledInvocation {
+) -> Result<TypeLessCompiledInvocation, InvocationError> {
+    Ok(TypeLessCompiledInvocation {
         instruction: vec![Instruction {
             body: InstructionBody::AssertEq(AssertEqInstruction {
                 a: DerefOperand { register: Register::AP, offset: 0 },
@@ -165,20 +176,19 @@ pub fn handle_store_temp(
             }),
             inc_ap: true,
         }],
-        results: vec![BranchRefChanges {
-            refs: vec![ReferenceValue {
-                expression: ResOperand::Deref(DerefOperand { register: Register::AP, offset: -1 }),
-            }],
-            ap_change: ApChange::Known(1),
-        }],
+        results: vec![(
+            vec![ResOperand::Deref(DerefOperand { register: Register::AP, offset: -1 })],
+            ApChange::Known(1),
+        )],
     })
 }
 
 pub fn compile_invocation(
-    ext: &CoreConcreteLibFunc,
+    libfunc: &CoreConcreteLibFunc,
     refs: &[ReferenceValue],
 ) -> Result<CompiledInvocation, InvocationError> {
-    match ext {
+    check_types_match(refs, &libfunc.input_types())?;
+    let typeless = match libfunc {
         // TODO(ilya, 10/10/2022): Handle type.
         CoreConcreteLibFunc::Felt(FeltConcrete::Operation(felt_op)) => {
             handle_felt_op(felt_op, refs)
@@ -189,11 +199,25 @@ pub fn compile_invocation(
         CoreConcreteLibFunc::Mem(MemConcreteLibFunc::StoreTemp(store_temp)) => {
             handle_store_temp(store_temp, refs)
         }
-        CoreConcreteLibFunc::Mem(MemConcreteLibFunc::Rename(_)) => Ok(CompiledInvocation {
+        CoreConcreteLibFunc::Mem(MemConcreteLibFunc::Rename(_)) => Ok(TypeLessCompiledInvocation {
             instruction: vec![],
-            results: vec![BranchRefChanges { refs: refs.to_vec(), ap_change: ApChange::Known(0) }],
+            results: vec![(
+                refs.iter().map(|r| r.expression.clone()).collect(),
+                ApChange::Known(0),
+            )],
         }),
         CoreConcreteLibFunc::FunctionCall(func_call) => handle_function_call(func_call, refs),
         _ => Err(InvocationError::NotImplemented),
-    }
+    }?;
+    Ok(CompiledInvocation {
+        instruction: typeless.instruction,
+        results: zip_eq(typeless.results.into_iter(), libfunc.output_types())
+            .map(|((expressions, ap_change), branch_output_types)| BranchRefChanges {
+                refs: zip_eq(expressions, branch_output_types)
+                    .map(|(expression, ty)| ReferenceValue { expression, ty })
+                    .collect(),
+                ap_change,
+            })
+            .collect(),
+    })
 }
