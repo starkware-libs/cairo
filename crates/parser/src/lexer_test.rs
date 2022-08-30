@@ -1,7 +1,7 @@
 use filesystem::ids::FileId;
 use salsa::{InternId, InternKey};
 use syntax::node::ast::{Terminal, Trivia};
-use syntax::node::db::GreenDatabase;
+use syntax::node::db::SyntaxDatabase;
 use syntax::node::ids::GreenId;
 use syntax::node::{SyntaxNode, Token, TypedSyntaxNode};
 use syntax::token::TokenKind;
@@ -188,7 +188,7 @@ fn test_source() -> FileId {
     FileId::from_intern_id(InternId::from(100u32))
 }
 
-#[salsa::database(GreenDatabase)]
+#[salsa::database(SyntaxDatabase)]
 #[derive(Default)]
 pub struct DatabaseImpl {
     storage: salsa::Storage<DatabaseImpl>,

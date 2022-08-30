@@ -102,7 +102,7 @@ fn generate_ast_code() -> rust::Tokens {
         use super::kind::SyntaxKind;
         use super::element_list::ElementList;
         use super::green::GreenNodeInternal;
-        use super::{TypedSyntaxNode, GreenId, GreenInterner, GreenNode, SyntaxNode, Token};
+        use super::{TypedSyntaxNode, GreenId, SyntaxGroup, GreenNode, SyntaxNode, Token};
     };
     for Node { name, kind } in spec.into_iter() {
         tokens.extend(match kind {
@@ -130,7 +130,7 @@ fn gen_list_code(name: String, element_type: String, step: usize) -> rust::Token
             }
         }
         impl $(&name){
-            pub fn new_green(db: &dyn GreenInterner, children: Vec<GreenId>) -> GreenId{
+            pub fn new_green(db: &dyn SyntaxGroup, children: Vec<GreenId>) -> GreenId{
                 let width = children.iter().map(|id|
                     db.lookup_intern_green(*id).width()).sum();
                 db.intern_green(GreenNode::Internal(GreenNodeInternal{
@@ -141,14 +141,14 @@ fn gen_list_code(name: String, element_type: String, step: usize) -> rust::Token
             }
         }
         impl TypedSyntaxNode for $(&name) {
-            fn missing(db: &dyn GreenInterner) -> GreenId {
+            fn missing(db: &dyn SyntaxGroup) -> GreenId {
                 db.intern_green(
                     GreenNode::Internal(GreenNodeInternal {
                         kind: SyntaxKind::$(&name), children: vec![], width: 0
                     })
                 )
             }
-            fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+            fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
                 Self(ElementList::new(node))
             }
             fn as_syntax_node(&self) -> SyntaxNode{
@@ -205,10 +205,10 @@ fn gen_enum_code(
             $enum_body
         }
         impl TypedSyntaxNode for $(&name){
-            fn missing(db: &dyn GreenInterner) -> GreenId {
+            fn missing(db: &dyn SyntaxGroup) -> GreenId {
                 $missing_body
             }
-            fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+            fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
                 match db.lookup_intern_green(node.0.green) {
                     GreenNode::Internal(internal) => {
                         match internal.kind{
@@ -251,7 +251,7 @@ fn gen_struct_code(name: String, members: Vec<Member>) -> rust::Tokens {
         match kind {
             MemberKind::Token(_) => {
                 body.extend(quote! {
-                    pub fn $name(&self, db: &dyn GreenInterner) -> Token {
+                    pub fn $name(&self, db: &dyn SyntaxGroup) -> Token {
                         let child = self.children[$i].clone();
                         Token::from_syntax_node(db, child)
                     }
@@ -260,7 +260,7 @@ fn gen_struct_code(name: String, members: Vec<Member>) -> rust::Tokens {
             }
             MemberKind::Node(node) => {
                 body.extend(quote! {
-                    pub fn $name(&self, db: &dyn GreenInterner) -> $node {
+                    pub fn $name(&self, db: &dyn SyntaxGroup) -> $node {
                         $node::from_syntax_node(db, self.children[$i].clone())
                     }
                 });
@@ -275,7 +275,7 @@ fn gen_struct_code(name: String, members: Vec<Member>) -> rust::Tokens {
             children: Vec<SyntaxNode>,
         }
         impl $(&name) {
-            pub fn new_green(db: &dyn GreenInterner, $params) -> GreenId {
+            pub fn new_green(db: &dyn SyntaxGroup, $params) -> GreenId {
                 let children: Vec<GreenId> = vec![$args];
                 let width = children.iter().map(|id|
                     db.lookup_intern_green(*id).width()).sum();
@@ -288,7 +288,7 @@ fn gen_struct_code(name: String, members: Vec<Member>) -> rust::Tokens {
             $body
         }
         impl TypedSyntaxNode for $(&name){
-            fn missing(db: &dyn GreenInterner) -> GreenId{
+            fn missing(db: &dyn SyntaxGroup) -> GreenId{
                 // Note: A missing syntax element should result in an internal green node
                 // of width 0, with as much structure as possible.
                 db.intern_green(GreenNode::Internal(GreenNodeInternal {
@@ -297,7 +297,7 @@ fn gen_struct_code(name: String, members: Vec<Member>) -> rust::Tokens {
                     width: 0
                 }))
             }
-            fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+            fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
                 match db.lookup_intern_green(node.0.green) {
                     GreenNode::Internal(internal) => {
                         if internal.kind != SyntaxKind::$(&name) {

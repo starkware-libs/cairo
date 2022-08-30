@@ -1,6 +1,6 @@
 use colored::{ColoredString, Colorize};
 use itertools::zip_eq;
-use syntax::node::db::GreenInterner;
+use syntax::node::db::SyntaxGroup;
 use syntax::node::kind::SyntaxKind;
 use syntax::node::SyntaxNode;
 use syntax::token::{self, TokenKind};
@@ -8,7 +8,7 @@ use syntax_codegen::cairo_spec::get_spec;
 use syntax_codegen::spec::{Member, Node, NodeKind};
 
 struct Printer<'a> {
-    db: &'a dyn GreenInterner,
+    db: &'a dyn SyntaxGroup,
     spec: Vec<Node>,
     print_colors: bool,
     print_trivia: bool,
@@ -184,7 +184,7 @@ fn is_missing_kind(kind: SyntaxKind) -> bool {
 }
 
 pub fn print_tree(
-    db: &dyn GreenInterner,
+    db: &dyn SyntaxGroup,
     syntax_root: &SyntaxNode,
     print_colors: bool,
     print_trivia: bool,

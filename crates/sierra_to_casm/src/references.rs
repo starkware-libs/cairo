@@ -5,7 +5,7 @@ use casm::ap_change::{ApChangeError, ApplyApChange};
 use casm::operand::{DerefOperand, Register, ResOperand};
 use itertools::zip_eq;
 use sierra::edit_state::{put_results, take_args, EditStateError};
-use sierra::ids::VarId;
+use sierra::ids::{ConcreteTypeId, VarId};
 use sierra::program::{Function, GenBranchInfo, Param, StatementIdx};
 use thiserror::Error;
 
@@ -15,8 +15,8 @@ use crate::invocations::BranchRefChanges;
 /// Corresponds to an argument or return value of a sierra statement.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ReferenceValue {
-    // TODO(ilya, 10/10/2022): Add type.
     pub expression: ResOperand,
+    pub ty: ConcreteTypeId,
 }
 
 type StatementRefs = HashMap<VarId, ReferenceValue>;
@@ -97,6 +97,7 @@ impl ProgramReferences {
                             .expression
                             .clone()
                             .apply_ap_change(branch_result.ap_change)?,
+                        ty: ref_value.ty.clone(),
                     },
                 );
             }
@@ -121,6 +122,7 @@ pub fn build_function_parameter_refs(params: &[Param]) -> Result<StatementRefs, 
                 param.id.clone(),
                 ReferenceValue {
                     expression: ResOperand::Deref(DerefOperand { register: Register::FP, offset }),
+                    ty: param.ty.clone(),
                 },
             )
             .is_some()
