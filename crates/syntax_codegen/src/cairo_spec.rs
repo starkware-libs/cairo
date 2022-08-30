@@ -31,7 +31,7 @@ pub fn get_spec() -> Vec<Node> {
             .build(),
         StructBuilder::new("OptionStructArgExprEmpty").build(),
         StructBuilder::new("StructArgSingle")
-            .node("identifier", "Identifier")
+            .key_node("identifier", "Identifier")
             .node("arg_expr", "OptionStructArgExpr")
             .build(),
         StructBuilder::new("StructArgTail")
@@ -49,7 +49,7 @@ pub fn get_spec() -> Vec<Node> {
             .node("rbrace", "Terminal")
             .build(),
         // --- Expressions ---
-        StructBuilder::new("Identifier").node("terminal", "Terminal").build(),
+        StructBuilder::new("Identifier").key_node("terminal", "Terminal").build(),
         EnumBuilder::new("Expr")
             .missing("Missing")
             .node("Path")
@@ -138,7 +138,7 @@ pub fn get_spec() -> Vec<Node> {
         StructBuilder::new("StatementMissing").build(),
         StructBuilder::new("StatementLet")
             .node("letkw", "Terminal")
-            .node("lhs", "Identifier")
+            .key_node("lhs", "Identifier")
             .node("type_clause", "OptionTypeClause")
             .node("eq", "Terminal")
             .node("rhs", "Expr")
@@ -160,7 +160,7 @@ pub fn get_spec() -> Vec<Node> {
             .build(),
         // --- Parameters and Functions ---
         StructBuilder::new("Param")
-            .node("identifier", "Terminal")
+            .key_node("identifier", "Terminal")
             .node("type_clause", "TypeClause")
             .build(),
         separated_list_node("ParamList", "Param"),
@@ -177,7 +177,8 @@ pub fn get_spec() -> Vec<Node> {
         // TODO(spapini): Add generic params.
         StructBuilder::new("FunctionSignature")
             .node("funckw", "Terminal")
-            .node("name", "Identifier")
+            // TODO(spapini): This key does not propogate to the item.
+            .key_node("name", "Identifier")
             .node("lparen", "Terminal")
             .node("parameters", "ParamList")
             .node("rparen", "Terminal")
@@ -197,28 +198,28 @@ pub fn get_spec() -> Vec<Node> {
         list_node("ItemList", "Item"),
         StructBuilder::new("ItemModule")
             .node("modkw", "Terminal")
-            .node("name", "Identifier")
+            .key_node("name", "Identifier")
             .node("semi", "Terminal")
             .build(),
         StructBuilder::new("ItemFunction")
-            .node("signature", "FunctionSignature")
+            .key_node("signature", "FunctionSignature")
             .node("body", "ExprBlock")
             .build(),
         StructBuilder::new("ItemFunctionSignature")
-            .node("signature", "FunctionSignature")
+            .key_node("signature", "FunctionSignature")
             .node("semi", "Terminal")
             .build(),
         // TODO(spapini): consider having specific ItemLists here.
         StructBuilder::new("ItemTrait")
             .node("traitkw", "Terminal")
-            .node("name", "Identifier")
+            .key_node("name", "Identifier")
             .node("lbrace", "Terminal")
             .node("items", "ItemList")
             .node("rbrace", "Terminal")
             .build(),
         StructBuilder::new("ItemImpl")
             .node("implkw", "Terminal")
-            .node("name", "Identifier")
+            .key_node("name", "Identifier")
             .node("forkw", "Terminal")
             .node("trait_name", "Identifier")
             .node("lbrace", "Terminal")
@@ -227,19 +228,19 @@ pub fn get_spec() -> Vec<Node> {
             .build(),
         StructBuilder::new("ItemStruct")
             .node("structkw", "Terminal")
-            .node("name", "Identifier")
+            .key_node("name", "Identifier")
             .node("lbrace", "Terminal")
             .node("members", "ParamList")
             .node("rbrace", "Terminal")
             .build(),
         StructBuilder::new("ItemEnum")
             .node("enumkw", "Terminal")
-            .node("name", "Identifier")
+            .key_node("name", "Identifier")
             .node("body", "ParamListBraced")
             .build(),
         StructBuilder::new("ItemUse")
             .node("usekw", "Terminal")
-            .node("path", "ExprPath")
+            .key_node("path", "ExprPath")
             .node("semi", "Terminal")
             .build(),
         // Meta.
