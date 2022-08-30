@@ -1,18 +1,10 @@
+use db_utils::define_short_id;
+
 use super::db::SyntaxGroup;
 use super::green::GreenNode;
 use crate::token::{Token, TokenKind};
 
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
-pub struct GreenId(salsa::InternId);
-impl salsa::InternKey for GreenId {
-    fn from_intern_id(id: salsa::InternId) -> Self {
-        Self(id)
-    }
-
-    fn as_intern_id(&self) -> salsa::InternId {
-        self.0
-    }
-}
+define_short_id!(GreenId);
 impl GreenId {
     /// Returns a green ID of a missing token.
     pub fn missing_token(db: &dyn SyntaxGroup) -> Self {
@@ -37,3 +29,5 @@ impl GreenId {
         }
     }
 }
+
+define_short_id!(SyntaxStablePtrId);

@@ -2,7 +2,7 @@ use colored::{ColoredString, Colorize};
 use itertools::zip_eq;
 use syntax::node::db::SyntaxGroup;
 use syntax::node::kind::SyntaxKind;
-use syntax::node::SyntaxNode;
+use syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
 use syntax::token::{self, TokenKind};
 use syntax_codegen::cairo_spec::get_spec;
 use syntax_codegen::spec::{Member, Node, NodeKind};
@@ -71,7 +71,13 @@ impl<'a> Printer<'a> {
         kind: SyntaxKind,
     ) {
         if kind == SyntaxKind::Terminal && !self.print_trivia {
-            self.print_tree(field_description, &syntax_node.children(self.db)[1], indent, is_last);
+            let terminal = ast::Terminal::from_syntax_node(self.db, syntax_node.clone());
+            self.print_tree(
+                field_description,
+                &terminal.token(self.db).as_syntax_node(),
+                indent,
+                is_last,
+            );
             return;
         }
 
@@ -81,7 +87,7 @@ impl<'a> Printer<'a> {
             format!(" (kind: {:?})", kind)
         };
 
-        let children = &syntax_node.children(self.db);
+        let children: Vec<_> = syntax_node.children(self.db).collect();
         let num_children = children.len();
         let no_children_str = if num_children == 0 {
             self.bright_purple(" []".into()).to_string()
@@ -106,7 +112,7 @@ impl<'a> Printer<'a> {
         let node_kind = self.get_node_kind(kind.to_string());
         match node_kind {
             NodeKind::Struct { members: expected_children } => {
-                self.print_internal_struct(children, &expected_children, indent.as_str());
+                self.print_internal_struct(&children, &expected_children, indent.as_str());
             }
             NodeKind::List { element_type: _ } => {
                 for (i, child) in children.iter().enumerate() {
