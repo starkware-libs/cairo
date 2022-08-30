@@ -6,7 +6,7 @@ use pretty_assertions::assert_eq;
 use salsa::{InternId, InternKey};
 use semantic::db::{SemanticDatabase, SemanticGroup};
 use semantic::ids::{ConcreteFunctionId, TypeId};
-use syntax::node::db::{AsGreenInterner, GreenDatabase, GreenInterner};
+use syntax::node::db::{AsSyntaxGroup, SyntaxDatabase, SyntaxGroup};
 
 use crate::db::{SierraGenDatabase, SierraGenGroup};
 use crate::expr_generator::generate_expression_code;
@@ -18,7 +18,7 @@ use crate::pre_sierra;
     SemanticDatabase,
     SierraGenDatabase,
     ParserDatabase,
-    GreenDatabase,
+    SyntaxDatabase,
     FilesDatabase
 )]
 #[derive(Default)]
@@ -26,8 +26,8 @@ pub struct DatabaseImpl {
     storage: salsa::Storage<DatabaseImpl>,
 }
 impl salsa::Database for DatabaseImpl {}
-impl AsGreenInterner for DatabaseImpl {
-    fn as_green_interner(&self) -> &(dyn GreenInterner + 'static) {
+impl AsSyntaxGroup for DatabaseImpl {
+    fn as_syntax_group(&self) -> &(dyn SyntaxGroup + 'static) {
         self
     }
 }

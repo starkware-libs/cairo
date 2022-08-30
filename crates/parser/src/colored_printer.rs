@@ -1,12 +1,12 @@
 use colored::{ColoredString, Colorize};
 use smol_str::SmolStr;
-use syntax::node::db::GreenInterner;
+use syntax::node::db::SyntaxGroup;
 use syntax::node::kind::SyntaxKind;
 use syntax::node::{SyntaxNode, SyntaxNodeDetails};
 use syntax::token::TokenKind;
 
 struct ColoredPrinter<'a> {
-    db: &'a dyn GreenInterner,
+    db: &'a dyn SyntaxGroup,
     /// Whether to also print empty and missing tokens/nodes
     verbose: bool,
     result: String,
@@ -94,7 +94,7 @@ fn set_color(text: SmolStr, kind: TokenKind) -> ColoredString {
     }
 }
 
-pub fn print_colored(db: &dyn GreenInterner, syntax_root: &SyntaxNode, verbose: bool) -> String {
+pub fn print_colored(db: &dyn SyntaxGroup, syntax_root: &SyntaxNode, verbose: bool) -> String {
     let mut printer = ColoredPrinter { db, verbose, result: "".to_string() };
     printer.print(syntax_root);
     printer.result

@@ -8,7 +8,7 @@ use std::ops::Deref;
 use super::element_list::ElementList;
 use super::green::GreenNodeInternal;
 use super::kind::SyntaxKind;
-use super::{GreenId, GreenInterner, GreenNode, SyntaxNode, Token, TypedSyntaxNode};
+use super::{GreenId, GreenNode, SyntaxGroup, SyntaxNode, Token, TypedSyntaxNode};
 use crate::token::TokenKind;
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Terminal {
@@ -17,7 +17,7 @@ pub struct Terminal {
 }
 impl Terminal {
     pub fn new_green(
-        db: &dyn GreenInterner,
+        db: &dyn SyntaxGroup,
         leading_trivia: GreenId,
         token: GreenId,
         trailing_trivia: GreenId,
@@ -30,26 +30,26 @@ impl Terminal {
             width,
         }))
     }
-    pub fn leading_trivia(&self, db: &dyn GreenInterner) -> Trivia {
+    pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
         Trivia::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn token(&self, db: &dyn GreenInterner) -> Token {
+    pub fn token(&self, db: &dyn SyntaxGroup) -> Token {
         let child = self.children[1].clone();
         Token::from_syntax_node(db, child)
     }
-    pub fn trailing_trivia(&self, db: &dyn GreenInterner) -> Trivia {
+    pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
         Trivia::from_syntax_node(db, self.children[2].clone())
     }
 }
 impl TypedSyntaxNode for Terminal {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::Terminal,
             children: vec![Trivia::missing(db), Token::missing(db), Trivia::missing(db)],
             width: 0,
         }))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => {
                 if internal.kind != SyntaxKind::Terminal {
@@ -78,7 +78,7 @@ pub struct TriviumSkippedTerminal {
 }
 impl TriviumSkippedTerminal {
     pub fn new_green(
-        db: &dyn GreenInterner,
+        db: &dyn SyntaxGroup,
         leading_trivia: GreenId,
         token: GreenId,
         trailing_trivia: GreenId,
@@ -91,26 +91,26 @@ impl TriviumSkippedTerminal {
             width,
         }))
     }
-    pub fn leading_trivia(&self, db: &dyn GreenInterner) -> Trivia {
+    pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
         Trivia::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn token(&self, db: &dyn GreenInterner) -> Token {
+    pub fn token(&self, db: &dyn SyntaxGroup) -> Token {
         let child = self.children[1].clone();
         Token::from_syntax_node(db, child)
     }
-    pub fn trailing_trivia(&self, db: &dyn GreenInterner) -> Trivia {
+    pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
         Trivia::from_syntax_node(db, self.children[2].clone())
     }
 }
 impl TypedSyntaxNode for TriviumSkippedTerminal {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::TriviumSkippedTerminal,
             children: vec![Trivia::missing(db), Token::missing(db), Trivia::missing(db)],
             width: 0,
         }))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => {
                 if internal.kind != SyntaxKind::TriviumSkippedTerminal {
@@ -145,7 +145,7 @@ impl Deref for Trivia {
     }
 }
 impl Trivia {
-    pub fn new_green(db: &dyn GreenInterner, children: Vec<GreenId>) -> GreenId {
+    pub fn new_green(db: &dyn SyntaxGroup, children: Vec<GreenId>) -> GreenId {
         let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::Trivia,
@@ -155,14 +155,14 @@ impl Trivia {
     }
 }
 impl TypedSyntaxNode for Trivia {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::Trivia,
             children: vec![],
             width: 0,
         }))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         Self(ElementList::new(node))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -177,10 +177,10 @@ pub enum Trivium {
     SkippedTerminal(TriviumSkippedTerminal),
 }
 impl TypedSyntaxNode for Trivium {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         panic!("No missing variant.");
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => match internal.kind {
                 SyntaxKind::TriviumSkippedTerminal => {
@@ -221,7 +221,7 @@ pub struct StructArgExpr {
     children: Vec<SyntaxNode>,
 }
 impl StructArgExpr {
-    pub fn new_green(db: &dyn GreenInterner, colon: GreenId, expr: GreenId) -> GreenId {
+    pub fn new_green(db: &dyn SyntaxGroup, colon: GreenId, expr: GreenId) -> GreenId {
         let children: Vec<GreenId> = vec![colon, expr];
         let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
@@ -230,22 +230,22 @@ impl StructArgExpr {
             width,
         }))
     }
-    pub fn colon(&self, db: &dyn GreenInterner) -> Terminal {
+    pub fn colon(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn expr(&self, db: &dyn GreenInterner) -> Expr {
+    pub fn expr(&self, db: &dyn SyntaxGroup) -> Expr {
         Expr::from_syntax_node(db, self.children[1].clone())
     }
 }
 impl TypedSyntaxNode for StructArgExpr {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::StructArgExpr,
             children: vec![Terminal::missing(db), Expr::missing(db)],
             width: 0,
         }))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => {
                 if internal.kind != SyntaxKind::StructArgExpr {
@@ -273,10 +273,10 @@ pub enum OptionStructArgExpr {
     Some(StructArgExpr),
 }
 impl TypedSyntaxNode for OptionStructArgExpr {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         panic!("No missing variant.");
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => match internal.kind {
                 SyntaxKind::OptionStructArgExprEmpty => {
@@ -311,7 +311,7 @@ pub struct OptionStructArgExprEmpty {
     children: Vec<SyntaxNode>,
 }
 impl OptionStructArgExprEmpty {
-    pub fn new_green(db: &dyn GreenInterner) -> GreenId {
+    pub fn new_green(db: &dyn SyntaxGroup) -> GreenId {
         let children: Vec<GreenId> = vec![];
         let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
@@ -322,14 +322,14 @@ impl OptionStructArgExprEmpty {
     }
 }
 impl TypedSyntaxNode for OptionStructArgExprEmpty {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::OptionStructArgExprEmpty,
             children: vec![],
             width: 0,
         }))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => {
                 if internal.kind != SyntaxKind::OptionStructArgExprEmpty {
@@ -361,7 +361,7 @@ pub struct StructArgSingle {
     children: Vec<SyntaxNode>,
 }
 impl StructArgSingle {
-    pub fn new_green(db: &dyn GreenInterner, identifier: GreenId, arg_expr: GreenId) -> GreenId {
+    pub fn new_green(db: &dyn SyntaxGroup, identifier: GreenId, arg_expr: GreenId) -> GreenId {
         let children: Vec<GreenId> = vec![identifier, arg_expr];
         let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
@@ -370,22 +370,22 @@ impl StructArgSingle {
             width,
         }))
     }
-    pub fn identifier(&self, db: &dyn GreenInterner) -> Identifier {
+    pub fn identifier(&self, db: &dyn SyntaxGroup) -> Identifier {
         Identifier::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn arg_expr(&self, db: &dyn GreenInterner) -> OptionStructArgExpr {
+    pub fn arg_expr(&self, db: &dyn SyntaxGroup) -> OptionStructArgExpr {
         OptionStructArgExpr::from_syntax_node(db, self.children[1].clone())
     }
 }
 impl TypedSyntaxNode for StructArgSingle {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::StructArgSingle,
             children: vec![Identifier::missing(db), OptionStructArgExpr::missing(db)],
             width: 0,
         }))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => {
                 if internal.kind != SyntaxKind::StructArgSingle {
@@ -413,7 +413,7 @@ pub struct StructArgTail {
     children: Vec<SyntaxNode>,
 }
 impl StructArgTail {
-    pub fn new_green(db: &dyn GreenInterner, dotdot: GreenId, expression: GreenId) -> GreenId {
+    pub fn new_green(db: &dyn SyntaxGroup, dotdot: GreenId, expression: GreenId) -> GreenId {
         let children: Vec<GreenId> = vec![dotdot, expression];
         let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
@@ -422,22 +422,22 @@ impl StructArgTail {
             width,
         }))
     }
-    pub fn dotdot(&self, db: &dyn GreenInterner) -> Terminal {
+    pub fn dotdot(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn expression(&self, db: &dyn GreenInterner) -> Expr {
+    pub fn expression(&self, db: &dyn SyntaxGroup) -> Expr {
         Expr::from_syntax_node(db, self.children[1].clone())
     }
 }
 impl TypedSyntaxNode for StructArgTail {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::StructArgTail,
             children: vec![Terminal::missing(db), Expr::missing(db)],
             width: 0,
         }))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => {
                 if internal.kind != SyntaxKind::StructArgTail {
@@ -465,10 +465,10 @@ pub enum StructArg {
     StructArgTail(StructArgTail),
 }
 impl TypedSyntaxNode for StructArg {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         panic!("No missing variant.");
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => match internal.kind {
                 SyntaxKind::StructArgSingle => {
@@ -506,7 +506,7 @@ impl Deref for StructArgList {
     }
 }
 impl StructArgList {
-    pub fn new_green(db: &dyn GreenInterner, children: Vec<GreenId>) -> GreenId {
+    pub fn new_green(db: &dyn SyntaxGroup, children: Vec<GreenId>) -> GreenId {
         let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::StructArgList,
@@ -516,14 +516,14 @@ impl StructArgList {
     }
 }
 impl TypedSyntaxNode for StructArgList {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::StructArgList,
             children: vec![],
             width: 0,
         }))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         Self(ElementList::new(node))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -537,7 +537,7 @@ pub struct ArgListBraced {
 }
 impl ArgListBraced {
     pub fn new_green(
-        db: &dyn GreenInterner,
+        db: &dyn SyntaxGroup,
         lbrace: GreenId,
         arguments: GreenId,
         rbrace: GreenId,
@@ -550,18 +550,18 @@ impl ArgListBraced {
             width,
         }))
     }
-    pub fn lbrace(&self, db: &dyn GreenInterner) -> Terminal {
+    pub fn lbrace(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn arguments(&self, db: &dyn GreenInterner) -> StructArgList {
+    pub fn arguments(&self, db: &dyn SyntaxGroup) -> StructArgList {
         StructArgList::from_syntax_node(db, self.children[1].clone())
     }
-    pub fn rbrace(&self, db: &dyn GreenInterner) -> Terminal {
+    pub fn rbrace(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[2].clone())
     }
 }
 impl TypedSyntaxNode for ArgListBraced {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ArgListBraced,
             children: vec![
@@ -572,7 +572,7 @@ impl TypedSyntaxNode for ArgListBraced {
             width: 0,
         }))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => {
                 if internal.kind != SyntaxKind::ArgListBraced {
@@ -600,7 +600,7 @@ pub struct Identifier {
     children: Vec<SyntaxNode>,
 }
 impl Identifier {
-    pub fn new_green(db: &dyn GreenInterner, terminal: GreenId) -> GreenId {
+    pub fn new_green(db: &dyn SyntaxGroup, terminal: GreenId) -> GreenId {
         let children: Vec<GreenId> = vec![terminal];
         let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
@@ -609,19 +609,19 @@ impl Identifier {
             width,
         }))
     }
-    pub fn terminal(&self, db: &dyn GreenInterner) -> Terminal {
+    pub fn terminal(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[0].clone())
     }
 }
 impl TypedSyntaxNode for Identifier {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::Identifier,
             children: vec![Terminal::missing(db)],
             width: 0,
         }))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => {
                 if internal.kind != SyntaxKind::Identifier {
@@ -657,14 +657,14 @@ pub enum Expr {
     ExprMissing(ExprMissing),
 }
 impl TypedSyntaxNode for Expr {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ExprMissing,
             children: vec![],
             width: 0,
         }))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => match internal.kind {
                 SyntaxKind::ExprPath => Expr::Path(ExprPath::from_syntax_node(db, node)),
@@ -719,7 +719,7 @@ impl Deref for ExprList {
     }
 }
 impl ExprList {
-    pub fn new_green(db: &dyn GreenInterner, children: Vec<GreenId>) -> GreenId {
+    pub fn new_green(db: &dyn SyntaxGroup, children: Vec<GreenId>) -> GreenId {
         let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ExprList,
@@ -729,14 +729,14 @@ impl ExprList {
     }
 }
 impl TypedSyntaxNode for ExprList {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ExprList,
             children: vec![],
             width: 0,
         }))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         Self(ElementList::new(node))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -749,7 +749,7 @@ pub struct ExprMissing {
     children: Vec<SyntaxNode>,
 }
 impl ExprMissing {
-    pub fn new_green(db: &dyn GreenInterner) -> GreenId {
+    pub fn new_green(db: &dyn SyntaxGroup) -> GreenId {
         let children: Vec<GreenId> = vec![];
         let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
@@ -760,14 +760,14 @@ impl ExprMissing {
     }
 }
 impl TypedSyntaxNode for ExprMissing {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ExprMissing,
             children: vec![],
             width: 0,
         }))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => {
                 if internal.kind != SyntaxKind::ExprMissing {
@@ -795,10 +795,10 @@ pub enum OptionGenericArgs {
     Some(OptionGenericArgsSome),
 }
 impl TypedSyntaxNode for OptionGenericArgs {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         panic!("No missing variant.");
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => match internal.kind {
                 SyntaxKind::OptionGenericArgsEmpty => {
@@ -833,7 +833,7 @@ pub struct OptionGenericArgsEmpty {
     children: Vec<SyntaxNode>,
 }
 impl OptionGenericArgsEmpty {
-    pub fn new_green(db: &dyn GreenInterner) -> GreenId {
+    pub fn new_green(db: &dyn SyntaxGroup) -> GreenId {
         let children: Vec<GreenId> = vec![];
         let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
@@ -844,14 +844,14 @@ impl OptionGenericArgsEmpty {
     }
 }
 impl TypedSyntaxNode for OptionGenericArgsEmpty {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::OptionGenericArgsEmpty,
             children: vec![],
             width: 0,
         }))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => {
                 if internal.kind != SyntaxKind::OptionGenericArgsEmpty {
@@ -886,7 +886,7 @@ impl Deref for OptionGenericArgsSome {
     }
 }
 impl OptionGenericArgsSome {
-    pub fn new_green(db: &dyn GreenInterner, children: Vec<GreenId>) -> GreenId {
+    pub fn new_green(db: &dyn SyntaxGroup, children: Vec<GreenId>) -> GreenId {
         let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::OptionGenericArgsSome,
@@ -896,14 +896,14 @@ impl OptionGenericArgsSome {
     }
 }
 impl TypedSyntaxNode for OptionGenericArgsSome {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::OptionGenericArgsSome,
             children: vec![],
             width: 0,
         }))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         Self(ElementList::new(node))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -916,7 +916,7 @@ pub struct PathSegment {
     children: Vec<SyntaxNode>,
 }
 impl PathSegment {
-    pub fn new_green(db: &dyn GreenInterner, ident: GreenId, generic_args: GreenId) -> GreenId {
+    pub fn new_green(db: &dyn SyntaxGroup, ident: GreenId, generic_args: GreenId) -> GreenId {
         let children: Vec<GreenId> = vec![ident, generic_args];
         let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
@@ -925,22 +925,22 @@ impl PathSegment {
             width,
         }))
     }
-    pub fn ident(&self, db: &dyn GreenInterner) -> Identifier {
+    pub fn ident(&self, db: &dyn SyntaxGroup) -> Identifier {
         Identifier::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn generic_args(&self, db: &dyn GreenInterner) -> OptionGenericArgs {
+    pub fn generic_args(&self, db: &dyn SyntaxGroup) -> OptionGenericArgs {
         OptionGenericArgs::from_syntax_node(db, self.children[1].clone())
     }
 }
 impl TypedSyntaxNode for PathSegment {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::PathSegment,
             children: vec![Identifier::missing(db), OptionGenericArgs::missing(db)],
             width: 0,
         }))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => {
                 if internal.kind != SyntaxKind::PathSegment {
@@ -971,7 +971,7 @@ impl Deref for ExprPath {
     }
 }
 impl ExprPath {
-    pub fn new_green(db: &dyn GreenInterner, children: Vec<GreenId>) -> GreenId {
+    pub fn new_green(db: &dyn SyntaxGroup, children: Vec<GreenId>) -> GreenId {
         let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ExprPath,
@@ -981,14 +981,14 @@ impl ExprPath {
     }
 }
 impl TypedSyntaxNode for ExprPath {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ExprPath,
             children: vec![],
             width: 0,
         }))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         Self(ElementList::new(node))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -1001,7 +1001,7 @@ pub struct ExprLiteral {
     children: Vec<SyntaxNode>,
 }
 impl ExprLiteral {
-    pub fn new_green(db: &dyn GreenInterner, terminal: GreenId) -> GreenId {
+    pub fn new_green(db: &dyn SyntaxGroup, terminal: GreenId) -> GreenId {
         let children: Vec<GreenId> = vec![terminal];
         let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
@@ -1010,19 +1010,19 @@ impl ExprLiteral {
             width,
         }))
     }
-    pub fn terminal(&self, db: &dyn GreenInterner) -> Terminal {
+    pub fn terminal(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[0].clone())
     }
 }
 impl TypedSyntaxNode for ExprLiteral {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ExprLiteral,
             children: vec![Terminal::missing(db)],
             width: 0,
         }))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => {
                 if internal.kind != SyntaxKind::ExprLiteral {
@@ -1051,7 +1051,7 @@ pub struct ExprParenthesized {
 }
 impl ExprParenthesized {
     pub fn new_green(
-        db: &dyn GreenInterner,
+        db: &dyn SyntaxGroup,
         lparen: GreenId,
         expr: GreenId,
         rparen: GreenId,
@@ -1064,25 +1064,25 @@ impl ExprParenthesized {
             width,
         }))
     }
-    pub fn lparen(&self, db: &dyn GreenInterner) -> Terminal {
+    pub fn lparen(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn expr(&self, db: &dyn GreenInterner) -> Expr {
+    pub fn expr(&self, db: &dyn SyntaxGroup) -> Expr {
         Expr::from_syntax_node(db, self.children[1].clone())
     }
-    pub fn rparen(&self, db: &dyn GreenInterner) -> Terminal {
+    pub fn rparen(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[2].clone())
     }
 }
 impl TypedSyntaxNode for ExprParenthesized {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ExprParenthesized,
             children: vec![Terminal::missing(db), Expr::missing(db), Terminal::missing(db)],
             width: 0,
         }))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => {
                 if internal.kind != SyntaxKind::ExprParenthesized {
@@ -1114,7 +1114,7 @@ pub struct ExprUnary {
     children: Vec<SyntaxNode>,
 }
 impl ExprUnary {
-    pub fn new_green(db: &dyn GreenInterner, op: GreenId, expr: GreenId) -> GreenId {
+    pub fn new_green(db: &dyn SyntaxGroup, op: GreenId, expr: GreenId) -> GreenId {
         let children: Vec<GreenId> = vec![op, expr];
         let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
@@ -1123,22 +1123,22 @@ impl ExprUnary {
             width,
         }))
     }
-    pub fn op(&self, db: &dyn GreenInterner) -> Terminal {
+    pub fn op(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn expr(&self, db: &dyn GreenInterner) -> Expr {
+    pub fn expr(&self, db: &dyn SyntaxGroup) -> Expr {
         Expr::from_syntax_node(db, self.children[1].clone())
     }
 }
 impl TypedSyntaxNode for ExprUnary {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ExprUnary,
             children: vec![Terminal::missing(db), Expr::missing(db)],
             width: 0,
         }))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => {
                 if internal.kind != SyntaxKind::ExprUnary {
@@ -1166,7 +1166,7 @@ pub struct ExprBinary {
     children: Vec<SyntaxNode>,
 }
 impl ExprBinary {
-    pub fn new_green(db: &dyn GreenInterner, lhs: GreenId, op: GreenId, rhs: GreenId) -> GreenId {
+    pub fn new_green(db: &dyn SyntaxGroup, lhs: GreenId, op: GreenId, rhs: GreenId) -> GreenId {
         let children: Vec<GreenId> = vec![lhs, op, rhs];
         let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
@@ -1175,25 +1175,25 @@ impl ExprBinary {
             width,
         }))
     }
-    pub fn lhs(&self, db: &dyn GreenInterner) -> Expr {
+    pub fn lhs(&self, db: &dyn SyntaxGroup) -> Expr {
         Expr::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn op(&self, db: &dyn GreenInterner) -> Terminal {
+    pub fn op(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[1].clone())
     }
-    pub fn rhs(&self, db: &dyn GreenInterner) -> Expr {
+    pub fn rhs(&self, db: &dyn SyntaxGroup) -> Expr {
         Expr::from_syntax_node(db, self.children[2].clone())
     }
 }
 impl TypedSyntaxNode for ExprBinary {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ExprBinary,
             children: vec![Expr::missing(db), Terminal::missing(db), Expr::missing(db)],
             width: 0,
         }))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => {
                 if internal.kind != SyntaxKind::ExprBinary {
@@ -1222,7 +1222,7 @@ pub struct ExprTuple {
 }
 impl ExprTuple {
     pub fn new_green(
-        db: &dyn GreenInterner,
+        db: &dyn SyntaxGroup,
         lparen: GreenId,
         expressions: GreenId,
         rparen: GreenId,
@@ -1235,25 +1235,25 @@ impl ExprTuple {
             width,
         }))
     }
-    pub fn lparen(&self, db: &dyn GreenInterner) -> Terminal {
+    pub fn lparen(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn expressions(&self, db: &dyn GreenInterner) -> ExprList {
+    pub fn expressions(&self, db: &dyn SyntaxGroup) -> ExprList {
         ExprList::from_syntax_node(db, self.children[1].clone())
     }
-    pub fn rparen(&self, db: &dyn GreenInterner) -> Terminal {
+    pub fn rparen(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[2].clone())
     }
 }
 impl TypedSyntaxNode for ExprTuple {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ExprTuple,
             children: vec![Terminal::missing(db), ExprList::missing(db), Terminal::missing(db)],
             width: 0,
         }))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => {
                 if internal.kind != SyntaxKind::ExprTuple {
@@ -1282,7 +1282,7 @@ pub struct ExprListParenthesized {
 }
 impl ExprListParenthesized {
     pub fn new_green(
-        db: &dyn GreenInterner,
+        db: &dyn SyntaxGroup,
         lparen: GreenId,
         expressions: GreenId,
         rparen: GreenId,
@@ -1295,25 +1295,25 @@ impl ExprListParenthesized {
             width,
         }))
     }
-    pub fn lparen(&self, db: &dyn GreenInterner) -> Terminal {
+    pub fn lparen(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn expressions(&self, db: &dyn GreenInterner) -> ExprList {
+    pub fn expressions(&self, db: &dyn SyntaxGroup) -> ExprList {
         ExprList::from_syntax_node(db, self.children[1].clone())
     }
-    pub fn rparen(&self, db: &dyn GreenInterner) -> Terminal {
+    pub fn rparen(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[2].clone())
     }
 }
 impl TypedSyntaxNode for ExprListParenthesized {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ExprListParenthesized,
             children: vec![Terminal::missing(db), ExprList::missing(db), Terminal::missing(db)],
             width: 0,
         }))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => {
                 if internal.kind != SyntaxKind::ExprListParenthesized {
@@ -1345,7 +1345,7 @@ pub struct ExprFunctionCall {
     children: Vec<SyntaxNode>,
 }
 impl ExprFunctionCall {
-    pub fn new_green(db: &dyn GreenInterner, path: GreenId, arguments: GreenId) -> GreenId {
+    pub fn new_green(db: &dyn SyntaxGroup, path: GreenId, arguments: GreenId) -> GreenId {
         let children: Vec<GreenId> = vec![path, arguments];
         let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
@@ -1354,22 +1354,22 @@ impl ExprFunctionCall {
             width,
         }))
     }
-    pub fn path(&self, db: &dyn GreenInterner) -> ExprPath {
+    pub fn path(&self, db: &dyn SyntaxGroup) -> ExprPath {
         ExprPath::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn arguments(&self, db: &dyn GreenInterner) -> ExprListParenthesized {
+    pub fn arguments(&self, db: &dyn SyntaxGroup) -> ExprListParenthesized {
         ExprListParenthesized::from_syntax_node(db, self.children[1].clone())
     }
 }
 impl TypedSyntaxNode for ExprFunctionCall {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ExprFunctionCall,
             children: vec![ExprPath::missing(db), ExprListParenthesized::missing(db)],
             width: 0,
         }))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => {
                 if internal.kind != SyntaxKind::ExprFunctionCall {
@@ -1401,7 +1401,7 @@ pub struct ExprStructCtorCall {
     children: Vec<SyntaxNode>,
 }
 impl ExprStructCtorCall {
-    pub fn new_green(db: &dyn GreenInterner, path: GreenId, arguments: GreenId) -> GreenId {
+    pub fn new_green(db: &dyn SyntaxGroup, path: GreenId, arguments: GreenId) -> GreenId {
         let children: Vec<GreenId> = vec![path, arguments];
         let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
@@ -1410,22 +1410,22 @@ impl ExprStructCtorCall {
             width,
         }))
     }
-    pub fn path(&self, db: &dyn GreenInterner) -> ExprPath {
+    pub fn path(&self, db: &dyn SyntaxGroup) -> ExprPath {
         ExprPath::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn arguments(&self, db: &dyn GreenInterner) -> ArgListBraced {
+    pub fn arguments(&self, db: &dyn SyntaxGroup) -> ArgListBraced {
         ArgListBraced::from_syntax_node(db, self.children[1].clone())
     }
 }
 impl TypedSyntaxNode for ExprStructCtorCall {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ExprStructCtorCall,
             children: vec![ExprPath::missing(db), ArgListBraced::missing(db)],
             width: 0,
         }))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => {
                 if internal.kind != SyntaxKind::ExprStructCtorCall {
@@ -1458,7 +1458,7 @@ pub struct ExprBlock {
 }
 impl ExprBlock {
     pub fn new_green(
-        db: &dyn GreenInterner,
+        db: &dyn SyntaxGroup,
         lbrace: GreenId,
         statements: GreenId,
         rbrace: GreenId,
@@ -1471,18 +1471,18 @@ impl ExprBlock {
             width,
         }))
     }
-    pub fn lbrace(&self, db: &dyn GreenInterner) -> Terminal {
+    pub fn lbrace(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn statements(&self, db: &dyn GreenInterner) -> StatementList {
+    pub fn statements(&self, db: &dyn SyntaxGroup) -> StatementList {
         StatementList::from_syntax_node(db, self.children[1].clone())
     }
-    pub fn rbrace(&self, db: &dyn GreenInterner) -> Terminal {
+    pub fn rbrace(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[2].clone())
     }
 }
 impl TypedSyntaxNode for ExprBlock {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ExprBlock,
             children: vec![
@@ -1493,7 +1493,7 @@ impl TypedSyntaxNode for ExprBlock {
             width: 0,
         }))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => {
                 if internal.kind != SyntaxKind::ExprBlock {
@@ -1521,7 +1521,7 @@ pub struct TypeClause {
     children: Vec<SyntaxNode>,
 }
 impl TypeClause {
-    pub fn new_green(db: &dyn GreenInterner, colon: GreenId, ty: GreenId) -> GreenId {
+    pub fn new_green(db: &dyn SyntaxGroup, colon: GreenId, ty: GreenId) -> GreenId {
         let children: Vec<GreenId> = vec![colon, ty];
         let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
@@ -1530,22 +1530,22 @@ impl TypeClause {
             width,
         }))
     }
-    pub fn colon(&self, db: &dyn GreenInterner) -> Terminal {
+    pub fn colon(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn ty(&self, db: &dyn GreenInterner) -> ExprPath {
+    pub fn ty(&self, db: &dyn SyntaxGroup) -> ExprPath {
         ExprPath::from_syntax_node(db, self.children[1].clone())
     }
 }
 impl TypedSyntaxNode for TypeClause {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::TypeClause,
             children: vec![Terminal::missing(db), ExprPath::missing(db)],
             width: 0,
         }))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => {
                 if internal.kind != SyntaxKind::TypeClause {
@@ -1573,10 +1573,10 @@ pub enum OptionTypeClause {
     TypeClause(TypeClause),
 }
 impl TypedSyntaxNode for OptionTypeClause {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         panic!("No missing variant.");
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => match internal.kind {
                 SyntaxKind::OptionTypeClauseEmpty => {
@@ -1611,7 +1611,7 @@ pub struct OptionTypeClauseEmpty {
     children: Vec<SyntaxNode>,
 }
 impl OptionTypeClauseEmpty {
-    pub fn new_green(db: &dyn GreenInterner) -> GreenId {
+    pub fn new_green(db: &dyn SyntaxGroup) -> GreenId {
         let children: Vec<GreenId> = vec![];
         let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
@@ -1622,14 +1622,14 @@ impl OptionTypeClauseEmpty {
     }
 }
 impl TypedSyntaxNode for OptionTypeClauseEmpty {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::OptionTypeClauseEmpty,
             children: vec![],
             width: 0,
         }))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => {
                 if internal.kind != SyntaxKind::OptionTypeClauseEmpty {
@@ -1661,7 +1661,7 @@ pub struct ReturnTypeClause {
     children: Vec<SyntaxNode>,
 }
 impl ReturnTypeClause {
-    pub fn new_green(db: &dyn GreenInterner, arrow: GreenId, ty: GreenId) -> GreenId {
+    pub fn new_green(db: &dyn SyntaxGroup, arrow: GreenId, ty: GreenId) -> GreenId {
         let children: Vec<GreenId> = vec![arrow, ty];
         let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
@@ -1670,22 +1670,22 @@ impl ReturnTypeClause {
             width,
         }))
     }
-    pub fn arrow(&self, db: &dyn GreenInterner) -> Terminal {
+    pub fn arrow(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn ty(&self, db: &dyn GreenInterner) -> ExprPath {
+    pub fn ty(&self, db: &dyn SyntaxGroup) -> ExprPath {
         ExprPath::from_syntax_node(db, self.children[1].clone())
     }
 }
 impl TypedSyntaxNode for ReturnTypeClause {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ReturnTypeClause,
             children: vec![Terminal::missing(db), ExprPath::missing(db)],
             width: 0,
         }))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => {
                 if internal.kind != SyntaxKind::ReturnTypeClause {
@@ -1717,10 +1717,10 @@ pub enum OptionReturnTypeClause {
     ReturnTypeClause(ReturnTypeClause),
 }
 impl TypedSyntaxNode for OptionReturnTypeClause {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         panic!("No missing variant.");
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => match internal.kind {
                 SyntaxKind::OptionReturnTypeClauseEmpty => OptionReturnTypeClause::Empty(
@@ -1755,7 +1755,7 @@ pub struct OptionReturnTypeClauseEmpty {
     children: Vec<SyntaxNode>,
 }
 impl OptionReturnTypeClauseEmpty {
-    pub fn new_green(db: &dyn GreenInterner) -> GreenId {
+    pub fn new_green(db: &dyn SyntaxGroup) -> GreenId {
         let children: Vec<GreenId> = vec![];
         let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
@@ -1766,14 +1766,14 @@ impl OptionReturnTypeClauseEmpty {
     }
 }
 impl TypedSyntaxNode for OptionReturnTypeClauseEmpty {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::OptionReturnTypeClauseEmpty,
             children: vec![],
             width: 0,
         }))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => {
                 if internal.kind != SyntaxKind::OptionReturnTypeClauseEmpty {
@@ -1807,14 +1807,14 @@ pub enum Statement {
     StatementMissing(StatementMissing),
 }
 impl TypedSyntaxNode for Statement {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::StatementMissing,
             children: vec![],
             width: 0,
         }))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => match internal.kind {
                 SyntaxKind::StatementLet => {
@@ -1860,7 +1860,7 @@ impl Deref for StatementList {
     }
 }
 impl StatementList {
-    pub fn new_green(db: &dyn GreenInterner, children: Vec<GreenId>) -> GreenId {
+    pub fn new_green(db: &dyn SyntaxGroup, children: Vec<GreenId>) -> GreenId {
         let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::StatementList,
@@ -1870,14 +1870,14 @@ impl StatementList {
     }
 }
 impl TypedSyntaxNode for StatementList {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::StatementList,
             children: vec![],
             width: 0,
         }))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         Self(ElementList::new(node))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -1890,7 +1890,7 @@ pub struct StatementMissing {
     children: Vec<SyntaxNode>,
 }
 impl StatementMissing {
-    pub fn new_green(db: &dyn GreenInterner) -> GreenId {
+    pub fn new_green(db: &dyn SyntaxGroup) -> GreenId {
         let children: Vec<GreenId> = vec![];
         let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
@@ -1901,14 +1901,14 @@ impl StatementMissing {
     }
 }
 impl TypedSyntaxNode for StatementMissing {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::StatementMissing,
             children: vec![],
             width: 0,
         }))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => {
                 if internal.kind != SyntaxKind::StatementMissing {
@@ -1941,7 +1941,7 @@ pub struct StatementLet {
 }
 impl StatementLet {
     pub fn new_green(
-        db: &dyn GreenInterner,
+        db: &dyn SyntaxGroup,
         letkw: GreenId,
         lhs: GreenId,
         type_clause: GreenId,
@@ -1957,27 +1957,27 @@ impl StatementLet {
             width,
         }))
     }
-    pub fn letkw(&self, db: &dyn GreenInterner) -> Terminal {
+    pub fn letkw(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn lhs(&self, db: &dyn GreenInterner) -> Identifier {
+    pub fn lhs(&self, db: &dyn SyntaxGroup) -> Identifier {
         Identifier::from_syntax_node(db, self.children[1].clone())
     }
-    pub fn type_clause(&self, db: &dyn GreenInterner) -> OptionTypeClause {
+    pub fn type_clause(&self, db: &dyn SyntaxGroup) -> OptionTypeClause {
         OptionTypeClause::from_syntax_node(db, self.children[2].clone())
     }
-    pub fn eq(&self, db: &dyn GreenInterner) -> Terminal {
+    pub fn eq(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[3].clone())
     }
-    pub fn rhs(&self, db: &dyn GreenInterner) -> Expr {
+    pub fn rhs(&self, db: &dyn SyntaxGroup) -> Expr {
         Expr::from_syntax_node(db, self.children[4].clone())
     }
-    pub fn semi(&self, db: &dyn GreenInterner) -> Terminal {
+    pub fn semi(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[5].clone())
     }
 }
 impl TypedSyntaxNode for StatementLet {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::StatementLet,
             children: vec![
@@ -1991,7 +1991,7 @@ impl TypedSyntaxNode for StatementLet {
             width: 0,
         }))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => {
                 if internal.kind != SyntaxKind::StatementLet {
@@ -2019,10 +2019,10 @@ pub enum OptionSemicolon {
     Some(Terminal),
 }
 impl TypedSyntaxNode for OptionSemicolon {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         panic!("No missing variant.");
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => match internal.kind {
                 SyntaxKind::OptionSemicolonEmpty => {
@@ -2055,7 +2055,7 @@ pub struct OptionSemicolonEmpty {
     children: Vec<SyntaxNode>,
 }
 impl OptionSemicolonEmpty {
-    pub fn new_green(db: &dyn GreenInterner) -> GreenId {
+    pub fn new_green(db: &dyn SyntaxGroup) -> GreenId {
         let children: Vec<GreenId> = vec![];
         let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
@@ -2066,14 +2066,14 @@ impl OptionSemicolonEmpty {
     }
 }
 impl TypedSyntaxNode for OptionSemicolonEmpty {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::OptionSemicolonEmpty,
             children: vec![],
             width: 0,
         }))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => {
                 if internal.kind != SyntaxKind::OptionSemicolonEmpty {
@@ -2105,7 +2105,7 @@ pub struct StatementExpr {
     children: Vec<SyntaxNode>,
 }
 impl StatementExpr {
-    pub fn new_green(db: &dyn GreenInterner, expr: GreenId, semi: GreenId) -> GreenId {
+    pub fn new_green(db: &dyn SyntaxGroup, expr: GreenId, semi: GreenId) -> GreenId {
         let children: Vec<GreenId> = vec![expr, semi];
         let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
@@ -2114,22 +2114,22 @@ impl StatementExpr {
             width,
         }))
     }
-    pub fn expr(&self, db: &dyn GreenInterner) -> Expr {
+    pub fn expr(&self, db: &dyn SyntaxGroup) -> Expr {
         Expr::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn semi(&self, db: &dyn GreenInterner) -> OptionSemicolon {
+    pub fn semi(&self, db: &dyn SyntaxGroup) -> OptionSemicolon {
         OptionSemicolon::from_syntax_node(db, self.children[1].clone())
     }
 }
 impl TypedSyntaxNode for StatementExpr {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::StatementExpr,
             children: vec![Expr::missing(db), OptionSemicolon::missing(db)],
             width: 0,
         }))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => {
                 if internal.kind != SyntaxKind::StatementExpr {
@@ -2158,7 +2158,7 @@ pub struct StatementReturn {
 }
 impl StatementReturn {
     pub fn new_green(
-        db: &dyn GreenInterner,
+        db: &dyn SyntaxGroup,
         returnkw: GreenId,
         expr: GreenId,
         semi: GreenId,
@@ -2171,25 +2171,25 @@ impl StatementReturn {
             width,
         }))
     }
-    pub fn returnkw(&self, db: &dyn GreenInterner) -> Terminal {
+    pub fn returnkw(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn expr(&self, db: &dyn GreenInterner) -> Expr {
+    pub fn expr(&self, db: &dyn SyntaxGroup) -> Expr {
         Expr::from_syntax_node(db, self.children[1].clone())
     }
-    pub fn semi(&self, db: &dyn GreenInterner) -> Terminal {
+    pub fn semi(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[2].clone())
     }
 }
 impl TypedSyntaxNode for StatementReturn {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::StatementReturn,
             children: vec![Terminal::missing(db), Expr::missing(db), Terminal::missing(db)],
             width: 0,
         }))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => {
                 if internal.kind != SyntaxKind::StatementReturn {
@@ -2217,7 +2217,7 @@ pub struct Param {
     children: Vec<SyntaxNode>,
 }
 impl Param {
-    pub fn new_green(db: &dyn GreenInterner, identifier: GreenId, type_clause: GreenId) -> GreenId {
+    pub fn new_green(db: &dyn SyntaxGroup, identifier: GreenId, type_clause: GreenId) -> GreenId {
         let children: Vec<GreenId> = vec![identifier, type_clause];
         let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
@@ -2226,22 +2226,22 @@ impl Param {
             width,
         }))
     }
-    pub fn identifier(&self, db: &dyn GreenInterner) -> Terminal {
+    pub fn identifier(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn type_clause(&self, db: &dyn GreenInterner) -> TypeClause {
+    pub fn type_clause(&self, db: &dyn SyntaxGroup) -> TypeClause {
         TypeClause::from_syntax_node(db, self.children[1].clone())
     }
 }
 impl TypedSyntaxNode for Param {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::Param,
             children: vec![Terminal::missing(db), TypeClause::missing(db)],
             width: 0,
         }))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => {
                 if internal.kind != SyntaxKind::Param {
@@ -2272,7 +2272,7 @@ impl Deref for ParamList {
     }
 }
 impl ParamList {
-    pub fn new_green(db: &dyn GreenInterner, children: Vec<GreenId>) -> GreenId {
+    pub fn new_green(db: &dyn SyntaxGroup, children: Vec<GreenId>) -> GreenId {
         let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ParamList,
@@ -2282,14 +2282,14 @@ impl ParamList {
     }
 }
 impl TypedSyntaxNode for ParamList {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ParamList,
             children: vec![],
             width: 0,
         }))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         Self(ElementList::new(node))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -2303,7 +2303,7 @@ pub struct ParamListParenthesized {
 }
 impl ParamListParenthesized {
     pub fn new_green(
-        db: &dyn GreenInterner,
+        db: &dyn SyntaxGroup,
         lparen: GreenId,
         parameters: GreenId,
         rparen: GreenId,
@@ -2316,25 +2316,25 @@ impl ParamListParenthesized {
             width,
         }))
     }
-    pub fn lparen(&self, db: &dyn GreenInterner) -> Terminal {
+    pub fn lparen(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn parameters(&self, db: &dyn GreenInterner) -> ParamList {
+    pub fn parameters(&self, db: &dyn SyntaxGroup) -> ParamList {
         ParamList::from_syntax_node(db, self.children[1].clone())
     }
-    pub fn rparen(&self, db: &dyn GreenInterner) -> Terminal {
+    pub fn rparen(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[2].clone())
     }
 }
 impl TypedSyntaxNode for ParamListParenthesized {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ParamListParenthesized,
             children: vec![Terminal::missing(db), ParamList::missing(db), Terminal::missing(db)],
             width: 0,
         }))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => {
                 if internal.kind != SyntaxKind::ParamListParenthesized {
@@ -2367,7 +2367,7 @@ pub struct ParamListBraced {
 }
 impl ParamListBraced {
     pub fn new_green(
-        db: &dyn GreenInterner,
+        db: &dyn SyntaxGroup,
         lbrace: GreenId,
         parameters: GreenId,
         rbrace: GreenId,
@@ -2380,25 +2380,25 @@ impl ParamListBraced {
             width,
         }))
     }
-    pub fn lbrace(&self, db: &dyn GreenInterner) -> Terminal {
+    pub fn lbrace(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn parameters(&self, db: &dyn GreenInterner) -> ParamList {
+    pub fn parameters(&self, db: &dyn SyntaxGroup) -> ParamList {
         ParamList::from_syntax_node(db, self.children[1].clone())
     }
-    pub fn rbrace(&self, db: &dyn GreenInterner) -> Terminal {
+    pub fn rbrace(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[2].clone())
     }
 }
 impl TypedSyntaxNode for ParamListBraced {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ParamListBraced,
             children: vec![Terminal::missing(db), ParamList::missing(db), Terminal::missing(db)],
             width: 0,
         }))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => {
                 if internal.kind != SyntaxKind::ParamListBraced {
@@ -2427,7 +2427,7 @@ pub struct FunctionSignature {
 }
 impl FunctionSignature {
     pub fn new_green(
-        db: &dyn GreenInterner,
+        db: &dyn SyntaxGroup,
         funckw: GreenId,
         name: GreenId,
         lparen: GreenId,
@@ -2443,27 +2443,27 @@ impl FunctionSignature {
             width,
         }))
     }
-    pub fn funckw(&self, db: &dyn GreenInterner) -> Terminal {
+    pub fn funckw(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn name(&self, db: &dyn GreenInterner) -> Identifier {
+    pub fn name(&self, db: &dyn SyntaxGroup) -> Identifier {
         Identifier::from_syntax_node(db, self.children[1].clone())
     }
-    pub fn lparen(&self, db: &dyn GreenInterner) -> Terminal {
+    pub fn lparen(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[2].clone())
     }
-    pub fn parameters(&self, db: &dyn GreenInterner) -> ParamList {
+    pub fn parameters(&self, db: &dyn SyntaxGroup) -> ParamList {
         ParamList::from_syntax_node(db, self.children[3].clone())
     }
-    pub fn rparen(&self, db: &dyn GreenInterner) -> Terminal {
+    pub fn rparen(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[4].clone())
     }
-    pub fn ret_ty(&self, db: &dyn GreenInterner) -> ReturnTypeClause {
+    pub fn ret_ty(&self, db: &dyn SyntaxGroup) -> ReturnTypeClause {
         ReturnTypeClause::from_syntax_node(db, self.children[5].clone())
     }
 }
 impl TypedSyntaxNode for FunctionSignature {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::FunctionSignature,
             children: vec![
@@ -2477,7 +2477,7 @@ impl TypedSyntaxNode for FunctionSignature {
             width: 0,
         }))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => {
                 if internal.kind != SyntaxKind::FunctionSignature {
@@ -2515,10 +2515,10 @@ pub enum Item {
     Use(ItemUse),
 }
 impl TypedSyntaxNode for Item {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         panic!("No missing variant.");
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => match internal.kind {
                 SyntaxKind::ItemModule => Item::Module(ItemModule::from_syntax_node(db, node)),
@@ -2565,7 +2565,7 @@ impl Deref for ItemList {
     }
 }
 impl ItemList {
-    pub fn new_green(db: &dyn GreenInterner, children: Vec<GreenId>) -> GreenId {
+    pub fn new_green(db: &dyn SyntaxGroup, children: Vec<GreenId>) -> GreenId {
         let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ItemList,
@@ -2575,14 +2575,14 @@ impl ItemList {
     }
 }
 impl TypedSyntaxNode for ItemList {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ItemList,
             children: vec![],
             width: 0,
         }))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         Self(ElementList::new(node))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -2596,7 +2596,7 @@ pub struct ItemModule {
 }
 impl ItemModule {
     pub fn new_green(
-        db: &dyn GreenInterner,
+        db: &dyn SyntaxGroup,
         modkw: GreenId,
         name: GreenId,
         semi: GreenId,
@@ -2609,25 +2609,25 @@ impl ItemModule {
             width,
         }))
     }
-    pub fn modkw(&self, db: &dyn GreenInterner) -> Terminal {
+    pub fn modkw(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn name(&self, db: &dyn GreenInterner) -> Identifier {
+    pub fn name(&self, db: &dyn SyntaxGroup) -> Identifier {
         Identifier::from_syntax_node(db, self.children[1].clone())
     }
-    pub fn semi(&self, db: &dyn GreenInterner) -> Terminal {
+    pub fn semi(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[2].clone())
     }
 }
 impl TypedSyntaxNode for ItemModule {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ItemModule,
             children: vec![Terminal::missing(db), Identifier::missing(db), Terminal::missing(db)],
             width: 0,
         }))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => {
                 if internal.kind != SyntaxKind::ItemModule {
@@ -2655,7 +2655,7 @@ pub struct ItemFunction {
     children: Vec<SyntaxNode>,
 }
 impl ItemFunction {
-    pub fn new_green(db: &dyn GreenInterner, signature: GreenId, body: GreenId) -> GreenId {
+    pub fn new_green(db: &dyn SyntaxGroup, signature: GreenId, body: GreenId) -> GreenId {
         let children: Vec<GreenId> = vec![signature, body];
         let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
@@ -2664,22 +2664,22 @@ impl ItemFunction {
             width,
         }))
     }
-    pub fn signature(&self, db: &dyn GreenInterner) -> FunctionSignature {
+    pub fn signature(&self, db: &dyn SyntaxGroup) -> FunctionSignature {
         FunctionSignature::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn body(&self, db: &dyn GreenInterner) -> ExprBlock {
+    pub fn body(&self, db: &dyn SyntaxGroup) -> ExprBlock {
         ExprBlock::from_syntax_node(db, self.children[1].clone())
     }
 }
 impl TypedSyntaxNode for ItemFunction {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ItemFunction,
             children: vec![FunctionSignature::missing(db), ExprBlock::missing(db)],
             width: 0,
         }))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => {
                 if internal.kind != SyntaxKind::ItemFunction {
@@ -2707,7 +2707,7 @@ pub struct ItemFunctionSignature {
     children: Vec<SyntaxNode>,
 }
 impl ItemFunctionSignature {
-    pub fn new_green(db: &dyn GreenInterner, signature: GreenId, semi: GreenId) -> GreenId {
+    pub fn new_green(db: &dyn SyntaxGroup, signature: GreenId, semi: GreenId) -> GreenId {
         let children: Vec<GreenId> = vec![signature, semi];
         let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
@@ -2716,22 +2716,22 @@ impl ItemFunctionSignature {
             width,
         }))
     }
-    pub fn signature(&self, db: &dyn GreenInterner) -> FunctionSignature {
+    pub fn signature(&self, db: &dyn SyntaxGroup) -> FunctionSignature {
         FunctionSignature::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn semi(&self, db: &dyn GreenInterner) -> Terminal {
+    pub fn semi(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[1].clone())
     }
 }
 impl TypedSyntaxNode for ItemFunctionSignature {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ItemFunctionSignature,
             children: vec![FunctionSignature::missing(db), Terminal::missing(db)],
             width: 0,
         }))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => {
                 if internal.kind != SyntaxKind::ItemFunctionSignature {
@@ -2764,7 +2764,7 @@ pub struct ItemTrait {
 }
 impl ItemTrait {
     pub fn new_green(
-        db: &dyn GreenInterner,
+        db: &dyn SyntaxGroup,
         traitkw: GreenId,
         name: GreenId,
         lbrace: GreenId,
@@ -2779,24 +2779,24 @@ impl ItemTrait {
             width,
         }))
     }
-    pub fn traitkw(&self, db: &dyn GreenInterner) -> Terminal {
+    pub fn traitkw(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn name(&self, db: &dyn GreenInterner) -> Identifier {
+    pub fn name(&self, db: &dyn SyntaxGroup) -> Identifier {
         Identifier::from_syntax_node(db, self.children[1].clone())
     }
-    pub fn lbrace(&self, db: &dyn GreenInterner) -> Terminal {
+    pub fn lbrace(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[2].clone())
     }
-    pub fn items(&self, db: &dyn GreenInterner) -> ItemList {
+    pub fn items(&self, db: &dyn SyntaxGroup) -> ItemList {
         ItemList::from_syntax_node(db, self.children[3].clone())
     }
-    pub fn rbrace(&self, db: &dyn GreenInterner) -> Terminal {
+    pub fn rbrace(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[4].clone())
     }
 }
 impl TypedSyntaxNode for ItemTrait {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ItemTrait,
             children: vec![
@@ -2809,7 +2809,7 @@ impl TypedSyntaxNode for ItemTrait {
             width: 0,
         }))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => {
                 if internal.kind != SyntaxKind::ItemTrait {
@@ -2838,7 +2838,7 @@ pub struct ItemImpl {
 }
 impl ItemImpl {
     pub fn new_green(
-        db: &dyn GreenInterner,
+        db: &dyn SyntaxGroup,
         implkw: GreenId,
         name: GreenId,
         forkw: GreenId,
@@ -2855,30 +2855,30 @@ impl ItemImpl {
             width,
         }))
     }
-    pub fn implkw(&self, db: &dyn GreenInterner) -> Terminal {
+    pub fn implkw(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn name(&self, db: &dyn GreenInterner) -> Identifier {
+    pub fn name(&self, db: &dyn SyntaxGroup) -> Identifier {
         Identifier::from_syntax_node(db, self.children[1].clone())
     }
-    pub fn forkw(&self, db: &dyn GreenInterner) -> Terminal {
+    pub fn forkw(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[2].clone())
     }
-    pub fn trait_name(&self, db: &dyn GreenInterner) -> Identifier {
+    pub fn trait_name(&self, db: &dyn SyntaxGroup) -> Identifier {
         Identifier::from_syntax_node(db, self.children[3].clone())
     }
-    pub fn lbrace(&self, db: &dyn GreenInterner) -> Terminal {
+    pub fn lbrace(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[4].clone())
     }
-    pub fn items(&self, db: &dyn GreenInterner) -> ItemList {
+    pub fn items(&self, db: &dyn SyntaxGroup) -> ItemList {
         ItemList::from_syntax_node(db, self.children[5].clone())
     }
-    pub fn rbrace(&self, db: &dyn GreenInterner) -> Terminal {
+    pub fn rbrace(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[6].clone())
     }
 }
 impl TypedSyntaxNode for ItemImpl {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ItemImpl,
             children: vec![
@@ -2893,7 +2893,7 @@ impl TypedSyntaxNode for ItemImpl {
             width: 0,
         }))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => {
                 if internal.kind != SyntaxKind::ItemImpl {
@@ -2922,7 +2922,7 @@ pub struct ItemStruct {
 }
 impl ItemStruct {
     pub fn new_green(
-        db: &dyn GreenInterner,
+        db: &dyn SyntaxGroup,
         structkw: GreenId,
         name: GreenId,
         lbrace: GreenId,
@@ -2937,24 +2937,24 @@ impl ItemStruct {
             width,
         }))
     }
-    pub fn structkw(&self, db: &dyn GreenInterner) -> Terminal {
+    pub fn structkw(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn name(&self, db: &dyn GreenInterner) -> Identifier {
+    pub fn name(&self, db: &dyn SyntaxGroup) -> Identifier {
         Identifier::from_syntax_node(db, self.children[1].clone())
     }
-    pub fn lbrace(&self, db: &dyn GreenInterner) -> Terminal {
+    pub fn lbrace(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[2].clone())
     }
-    pub fn members(&self, db: &dyn GreenInterner) -> ParamList {
+    pub fn members(&self, db: &dyn SyntaxGroup) -> ParamList {
         ParamList::from_syntax_node(db, self.children[3].clone())
     }
-    pub fn rbrace(&self, db: &dyn GreenInterner) -> Terminal {
+    pub fn rbrace(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[4].clone())
     }
 }
 impl TypedSyntaxNode for ItemStruct {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ItemStruct,
             children: vec![
@@ -2967,7 +2967,7 @@ impl TypedSyntaxNode for ItemStruct {
             width: 0,
         }))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => {
                 if internal.kind != SyntaxKind::ItemStruct {
@@ -2996,7 +2996,7 @@ pub struct ItemEnum {
 }
 impl ItemEnum {
     pub fn new_green(
-        db: &dyn GreenInterner,
+        db: &dyn SyntaxGroup,
         enumkw: GreenId,
         name: GreenId,
         body: GreenId,
@@ -3009,18 +3009,18 @@ impl ItemEnum {
             width,
         }))
     }
-    pub fn enumkw(&self, db: &dyn GreenInterner) -> Terminal {
+    pub fn enumkw(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn name(&self, db: &dyn GreenInterner) -> Identifier {
+    pub fn name(&self, db: &dyn SyntaxGroup) -> Identifier {
         Identifier::from_syntax_node(db, self.children[1].clone())
     }
-    pub fn body(&self, db: &dyn GreenInterner) -> ParamListBraced {
+    pub fn body(&self, db: &dyn SyntaxGroup) -> ParamListBraced {
         ParamListBraced::from_syntax_node(db, self.children[2].clone())
     }
 }
 impl TypedSyntaxNode for ItemEnum {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ItemEnum,
             children: vec![
@@ -3031,7 +3031,7 @@ impl TypedSyntaxNode for ItemEnum {
             width: 0,
         }))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => {
                 if internal.kind != SyntaxKind::ItemEnum {
@@ -3060,7 +3060,7 @@ pub struct ItemUse {
 }
 impl ItemUse {
     pub fn new_green(
-        db: &dyn GreenInterner,
+        db: &dyn SyntaxGroup,
         usekw: GreenId,
         path: GreenId,
         semi: GreenId,
@@ -3073,25 +3073,25 @@ impl ItemUse {
             width,
         }))
     }
-    pub fn usekw(&self, db: &dyn GreenInterner) -> Terminal {
+    pub fn usekw(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn path(&self, db: &dyn GreenInterner) -> ExprPath {
+    pub fn path(&self, db: &dyn SyntaxGroup) -> ExprPath {
         ExprPath::from_syntax_node(db, self.children[1].clone())
     }
-    pub fn semi(&self, db: &dyn GreenInterner) -> Terminal {
+    pub fn semi(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[2].clone())
     }
 }
 impl TypedSyntaxNode for ItemUse {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ItemUse,
             children: vec![Terminal::missing(db), ExprPath::missing(db), Terminal::missing(db)],
             width: 0,
         }))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => {
                 if internal.kind != SyntaxKind::ItemUse {
@@ -3119,7 +3119,7 @@ pub struct SyntaxFile {
     children: Vec<SyntaxNode>,
 }
 impl SyntaxFile {
-    pub fn new_green(db: &dyn GreenInterner, items: GreenId, eof: GreenId) -> GreenId {
+    pub fn new_green(db: &dyn SyntaxGroup, items: GreenId, eof: GreenId) -> GreenId {
         let children: Vec<GreenId> = vec![items, eof];
         let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
@@ -3128,22 +3128,22 @@ impl SyntaxFile {
             width,
         }))
     }
-    pub fn items(&self, db: &dyn GreenInterner) -> ItemList {
+    pub fn items(&self, db: &dyn SyntaxGroup) -> ItemList {
         ItemList::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn eof(&self, db: &dyn GreenInterner) -> Terminal {
+    pub fn eof(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[1].clone())
     }
 }
 impl TypedSyntaxNode for SyntaxFile {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::SyntaxFile,
             children: vec![ItemList::missing(db), Terminal::missing(db)],
             width: 0,
         }))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => {
                 if internal.kind != SyntaxKind::SyntaxFile {

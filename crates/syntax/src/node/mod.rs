@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use smol_str::SmolStr;
 
-use self::db::GreenInterner;
+use self::db::SyntaxGroup;
 use self::green::GreenNode;
 use self::ids::GreenId;
 use self::kind::SyntaxKind;
@@ -39,7 +39,7 @@ impl SyntaxNode {
         let inner = SyntaxNodeInner { green, offset: 0, parent: None };
         Self(Arc::new(inner))
     }
-    pub fn details(&self, db: &dyn GreenInterner) -> SyntaxNodeDetails {
+    pub fn details(&self, db: &dyn SyntaxGroup) -> SyntaxNodeDetails {
         match db.lookup_intern_green(self.0.green) {
             GreenNode::Internal(internal) => SyntaxNodeDetails::Syntax(internal.kind),
             GreenNode::Token(token) => SyntaxNodeDetails::Token(token),
@@ -48,13 +48,13 @@ impl SyntaxNode {
     pub fn offset(&self) -> u32 {
         self.0.offset
     }
-    pub fn width(&self, db: &dyn GreenInterner) -> u32 {
+    pub fn width(&self, db: &dyn SyntaxGroup) -> u32 {
         match db.lookup_intern_green(self.0.green) {
             GreenNode::Internal(internal) => internal.width,
             GreenNode::Token(token) => token.width(),
         }
     }
-    pub fn children(&self, db: &dyn GreenInterner) -> Vec<SyntaxNode> {
+    pub fn children(&self, db: &dyn SyntaxGroup) -> Vec<SyntaxNode> {
         let mut offset: u32 = self.0.offset;
         match db.lookup_intern_green(self.0.green) {
             GreenNode::Internal(internal) => internal
@@ -82,8 +82,8 @@ impl SyntaxNode {
 /// Trait for the typed view of the syntax tree. All the internal node implementations are under
 /// the ast module.
 pub trait TypedSyntaxNode {
-    fn missing(db: &dyn GreenInterner) -> GreenId;
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self;
+    fn missing(db: &dyn SyntaxGroup) -> GreenId;
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self;
     fn as_syntax_node(&self) -> SyntaxNode;
 }
 
@@ -95,31 +95,31 @@ pub struct Token {
 }
 
 impl Token {
-    pub fn new_green(db: &dyn GreenInterner, kind: token::TokenKind, text: SmolStr) -> GreenId {
+    pub fn new_green(db: &dyn SyntaxGroup, kind: token::TokenKind, text: SmolStr) -> GreenId {
         db.intern_green(GreenNode::Token(token::Token { kind, text }))
     }
-    pub fn raw(&self, db: &dyn GreenInterner) -> token::Token {
+    pub fn raw(&self, db: &dyn SyntaxGroup) -> token::Token {
         let green = db.lookup_intern_green(self.node.0.green);
         if let GreenNode::Token(token) = green {
             return token;
         }
         panic!("Expected a token, got {:?}.", green);
     }
-    pub fn kind(&self, db: &dyn GreenInterner) -> token::TokenKind {
+    pub fn kind(&self, db: &dyn SyntaxGroup) -> token::TokenKind {
         self.raw(db).kind
     }
-    pub fn text(&self, db: &dyn GreenInterner) -> SmolStr {
+    pub fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
         self.raw(db).text
     }
-    pub fn width(&self, db: &dyn GreenInterner) -> u32 {
+    pub fn width(&self, db: &dyn SyntaxGroup) -> u32 {
         self.raw(db).width()
     }
 }
 impl TypedSyntaxNode for Token {
-    fn missing(db: &dyn GreenInterner) -> GreenId {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Token(token::Token::missing()))
     }
-    fn from_syntax_node(db: &dyn GreenInterner, node: SyntaxNode) -> Self {
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         let green = db.lookup_intern_green(node.0.green);
         match green {
             GreenNode::Internal(internal) => {
@@ -136,7 +136,7 @@ impl TypedSyntaxNode for Token {
 
 // TODO(spapini): Consider converting into a trait and moving somewhere else.
 impl ast::Identifier {
-    pub fn text(&self, db: &dyn GreenInterner) -> SmolStr {
+    pub fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
         self.terminal(db).token(db).text(db)
     }
 }
