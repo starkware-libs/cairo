@@ -8,7 +8,9 @@ use std::ops::Deref;
 use super::element_list::ElementList;
 use super::green::GreenNodeInternal;
 use super::kind::SyntaxKind;
-use super::{GreenId, GreenNode, SyntaxGroup, SyntaxNode, Token, TypedSyntaxNode};
+use super::{
+    GreenId, GreenNode, SyntaxGroup, SyntaxNode, SyntaxStablePtrId, Token, TypedSyntaxNode,
+};
 use crate::token::TokenKind;
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Terminal {
@@ -41,7 +43,9 @@ impl Terminal {
         Trivia::from_syntax_node(db, self.children[2].clone())
     }
 }
+pub struct TerminalPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for Terminal {
+    type StablePtr = TerminalPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::Terminal,
@@ -56,19 +60,25 @@ impl TypedSyntaxNode for Terminal {
                     panic!(
                         "Unexpected SyntaxKind {:?}. Expected {:?}.",
                         internal.kind,
-                        SyntaxKind::Terminal
+                        SyntaxKind::Terminal,
                     );
                 }
                 let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
-                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::Terminal);
+                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::Terminal,);
             }
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        TerminalPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -102,7 +112,9 @@ impl TriviumSkippedTerminal {
         Trivia::from_syntax_node(db, self.children[2].clone())
     }
 }
+pub struct TriviumSkippedTerminalPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for TriviumSkippedTerminal {
+    type StablePtr = TriviumSkippedTerminalPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::TriviumSkippedTerminal,
@@ -117,7 +129,7 @@ impl TypedSyntaxNode for TriviumSkippedTerminal {
                     panic!(
                         "Unexpected SyntaxKind {:?}. Expected {:?}.",
                         internal.kind,
-                        SyntaxKind::TriviumSkippedTerminal
+                        SyntaxKind::TriviumSkippedTerminal,
                     );
                 }
                 let children = node.children(db).collect();
@@ -127,13 +139,19 @@ impl TypedSyntaxNode for TriviumSkippedTerminal {
                 panic!(
                     "Unexpected Token {:?}. Expected {:?}.",
                     token,
-                    SyntaxKind::TriviumSkippedTerminal
+                    SyntaxKind::TriviumSkippedTerminal,
                 );
             }
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        TriviumSkippedTerminalPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -154,7 +172,9 @@ impl Trivia {
         }))
     }
 }
+pub struct TriviaPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for Trivia {
+    type StablePtr = TriviaPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::Trivia,
@@ -168,6 +188,12 @@ impl TypedSyntaxNode for Trivia {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        TriviaPtr(self.node.0.stable_ptr)
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum Trivium {
@@ -176,7 +202,9 @@ pub enum Trivium {
     TriviumNewline(Token),
     SkippedTerminal(TriviumSkippedTerminal),
 }
+pub struct TriviumPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for Trivium {
+    type StablePtr = TriviumPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         panic!("No missing variant.");
     }
@@ -214,6 +242,12 @@ impl TypedSyntaxNode for Trivium {
             Trivium::SkippedTerminal(x) => x.as_syntax_node(),
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        TriviumPtr(self.as_syntax_node().0.stable_ptr)
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct StructArgExpr {
@@ -237,7 +271,9 @@ impl StructArgExpr {
         Expr::from_syntax_node(db, self.children[1].clone())
     }
 }
+pub struct StructArgExprPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for StructArgExpr {
+    type StablePtr = StructArgExprPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::StructArgExpr,
@@ -252,19 +288,25 @@ impl TypedSyntaxNode for StructArgExpr {
                     panic!(
                         "Unexpected SyntaxKind {:?}. Expected {:?}.",
                         internal.kind,
-                        SyntaxKind::StructArgExpr
+                        SyntaxKind::StructArgExpr,
                     );
                 }
                 let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
-                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::StructArgExpr);
+                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::StructArgExpr,);
             }
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        StructArgExprPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -272,7 +314,9 @@ pub enum OptionStructArgExpr {
     Empty(OptionStructArgExprEmpty),
     Some(StructArgExpr),
 }
+pub struct OptionStructArgExprPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for OptionStructArgExpr {
+    type StablePtr = OptionStructArgExprPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         panic!("No missing variant.");
     }
@@ -304,6 +348,12 @@ impl TypedSyntaxNode for OptionStructArgExpr {
             OptionStructArgExpr::Some(x) => x.as_syntax_node(),
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        OptionStructArgExprPtr(self.as_syntax_node().0.stable_ptr)
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionStructArgExprEmpty {
@@ -321,7 +371,9 @@ impl OptionStructArgExprEmpty {
         }))
     }
 }
+pub struct OptionStructArgExprEmptyPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for OptionStructArgExprEmpty {
+    type StablePtr = OptionStructArgExprEmptyPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::OptionStructArgExprEmpty,
@@ -336,7 +388,7 @@ impl TypedSyntaxNode for OptionStructArgExprEmpty {
                     panic!(
                         "Unexpected SyntaxKind {:?}. Expected {:?}.",
                         internal.kind,
-                        SyntaxKind::OptionStructArgExprEmpty
+                        SyntaxKind::OptionStructArgExprEmpty,
                     );
                 }
                 let children = node.children(db).collect();
@@ -346,13 +398,19 @@ impl TypedSyntaxNode for OptionStructArgExprEmpty {
                 panic!(
                     "Unexpected Token {:?}. Expected {:?}.",
                     token,
-                    SyntaxKind::OptionStructArgExprEmpty
+                    SyntaxKind::OptionStructArgExprEmpty,
                 );
             }
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        OptionStructArgExprEmptyPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -377,7 +435,9 @@ impl StructArgSingle {
         OptionStructArgExpr::from_syntax_node(db, self.children[1].clone())
     }
 }
+pub struct StructArgSinglePtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for StructArgSingle {
+    type StablePtr = StructArgSinglePtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::StructArgSingle,
@@ -392,19 +452,25 @@ impl TypedSyntaxNode for StructArgSingle {
                     panic!(
                         "Unexpected SyntaxKind {:?}. Expected {:?}.",
                         internal.kind,
-                        SyntaxKind::StructArgSingle
+                        SyntaxKind::StructArgSingle,
                     );
                 }
                 let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
-                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::StructArgSingle);
+                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::StructArgSingle,);
             }
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        StructArgSinglePtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -429,7 +495,9 @@ impl StructArgTail {
         Expr::from_syntax_node(db, self.children[1].clone())
     }
 }
+pub struct StructArgTailPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for StructArgTail {
+    type StablePtr = StructArgTailPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::StructArgTail,
@@ -444,19 +512,25 @@ impl TypedSyntaxNode for StructArgTail {
                     panic!(
                         "Unexpected SyntaxKind {:?}. Expected {:?}.",
                         internal.kind,
-                        SyntaxKind::StructArgTail
+                        SyntaxKind::StructArgTail,
                     );
                 }
                 let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
-                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::StructArgTail);
+                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::StructArgTail,);
             }
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        StructArgTailPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -464,7 +538,9 @@ pub enum StructArg {
     StructArgSingle(StructArgSingle),
     StructArgTail(StructArgTail),
 }
+pub struct StructArgPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for StructArg {
+    type StablePtr = StructArgPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         panic!("No missing variant.");
     }
@@ -496,6 +572,12 @@ impl TypedSyntaxNode for StructArg {
             StructArg::StructArgTail(x) => x.as_syntax_node(),
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        StructArgPtr(self.as_syntax_node().0.stable_ptr)
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct StructArgList(ElementList<StructArg, 2>);
@@ -515,7 +597,9 @@ impl StructArgList {
         }))
     }
 }
+pub struct StructArgListPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for StructArgList {
+    type StablePtr = StructArgListPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::StructArgList,
@@ -528,6 +612,12 @@ impl TypedSyntaxNode for StructArgList {
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        StructArgListPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -560,7 +650,9 @@ impl ArgListBraced {
         Terminal::from_syntax_node(db, self.children[2].clone())
     }
 }
+pub struct ArgListBracedPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for ArgListBraced {
+    type StablePtr = ArgListBracedPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ArgListBraced,
@@ -579,19 +671,25 @@ impl TypedSyntaxNode for ArgListBraced {
                     panic!(
                         "Unexpected SyntaxKind {:?}. Expected {:?}.",
                         internal.kind,
-                        SyntaxKind::ArgListBraced
+                        SyntaxKind::ArgListBraced,
                     );
                 }
                 let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
-                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::ArgListBraced);
+                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::ArgListBraced,);
             }
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ArgListBracedPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -613,7 +711,9 @@ impl Identifier {
         Terminal::from_syntax_node(db, self.children[0].clone())
     }
 }
+pub struct IdentifierPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for Identifier {
+    type StablePtr = IdentifierPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::Identifier,
@@ -628,19 +728,25 @@ impl TypedSyntaxNode for Identifier {
                     panic!(
                         "Unexpected SyntaxKind {:?}. Expected {:?}.",
                         internal.kind,
-                        SyntaxKind::Identifier
+                        SyntaxKind::Identifier,
                     );
                 }
                 let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
-                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::Identifier);
+                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::Identifier,);
             }
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        IdentifierPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -656,7 +762,9 @@ pub enum Expr {
     Block(ExprBlock),
     ExprMissing(ExprMissing),
 }
+pub struct ExprPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for Expr {
+    type StablePtr = ExprPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ExprMissing,
@@ -709,6 +817,12 @@ impl TypedSyntaxNode for Expr {
             Expr::ExprMissing(x) => x.as_syntax_node(),
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ExprPtr(self.as_syntax_node().0.stable_ptr)
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprList(ElementList<Expr, 2>);
@@ -728,7 +842,9 @@ impl ExprList {
         }))
     }
 }
+pub struct ExprListPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for ExprList {
+    type StablePtr = ExprListPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ExprList,
@@ -741,6 +857,12 @@ impl TypedSyntaxNode for ExprList {
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ExprListPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -759,7 +881,9 @@ impl ExprMissing {
         }))
     }
 }
+pub struct ExprMissingPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for ExprMissing {
+    type StablePtr = ExprMissingPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ExprMissing,
@@ -774,19 +898,25 @@ impl TypedSyntaxNode for ExprMissing {
                     panic!(
                         "Unexpected SyntaxKind {:?}. Expected {:?}.",
                         internal.kind,
-                        SyntaxKind::ExprMissing
+                        SyntaxKind::ExprMissing,
                     );
                 }
                 let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
-                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::ExprMissing);
+                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::ExprMissing,);
             }
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ExprMissingPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -794,7 +924,9 @@ pub enum OptionGenericArgs {
     Empty(OptionGenericArgsEmpty),
     Some(OptionGenericArgsSome),
 }
+pub struct OptionGenericArgsPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for OptionGenericArgs {
+    type StablePtr = OptionGenericArgsPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         panic!("No missing variant.");
     }
@@ -826,6 +958,12 @@ impl TypedSyntaxNode for OptionGenericArgs {
             OptionGenericArgs::Some(x) => x.as_syntax_node(),
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        OptionGenericArgsPtr(self.as_syntax_node().0.stable_ptr)
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionGenericArgsEmpty {
@@ -843,7 +981,9 @@ impl OptionGenericArgsEmpty {
         }))
     }
 }
+pub struct OptionGenericArgsEmptyPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for OptionGenericArgsEmpty {
+    type StablePtr = OptionGenericArgsEmptyPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::OptionGenericArgsEmpty,
@@ -858,7 +998,7 @@ impl TypedSyntaxNode for OptionGenericArgsEmpty {
                     panic!(
                         "Unexpected SyntaxKind {:?}. Expected {:?}.",
                         internal.kind,
-                        SyntaxKind::OptionGenericArgsEmpty
+                        SyntaxKind::OptionGenericArgsEmpty,
                     );
                 }
                 let children = node.children(db).collect();
@@ -868,13 +1008,19 @@ impl TypedSyntaxNode for OptionGenericArgsEmpty {
                 panic!(
                     "Unexpected Token {:?}. Expected {:?}.",
                     token,
-                    SyntaxKind::OptionGenericArgsEmpty
+                    SyntaxKind::OptionGenericArgsEmpty,
                 );
             }
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        OptionGenericArgsEmptyPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -895,7 +1041,9 @@ impl OptionGenericArgsSome {
         }))
     }
 }
+pub struct OptionGenericArgsSomePtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for OptionGenericArgsSome {
+    type StablePtr = OptionGenericArgsSomePtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::OptionGenericArgsSome,
@@ -908,6 +1056,12 @@ impl TypedSyntaxNode for OptionGenericArgsSome {
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        OptionGenericArgsSomePtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -932,7 +1086,9 @@ impl PathSegment {
         OptionGenericArgs::from_syntax_node(db, self.children[1].clone())
     }
 }
+pub struct PathSegmentPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for PathSegment {
+    type StablePtr = PathSegmentPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::PathSegment,
@@ -947,19 +1103,25 @@ impl TypedSyntaxNode for PathSegment {
                     panic!(
                         "Unexpected SyntaxKind {:?}. Expected {:?}.",
                         internal.kind,
-                        SyntaxKind::PathSegment
+                        SyntaxKind::PathSegment,
                     );
                 }
                 let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
-                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::PathSegment);
+                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::PathSegment,);
             }
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        PathSegmentPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -980,7 +1142,9 @@ impl ExprPath {
         }))
     }
 }
+pub struct ExprPathPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for ExprPath {
+    type StablePtr = ExprPathPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ExprPath,
@@ -993,6 +1157,12 @@ impl TypedSyntaxNode for ExprPath {
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ExprPathPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -1014,7 +1184,9 @@ impl ExprLiteral {
         Terminal::from_syntax_node(db, self.children[0].clone())
     }
 }
+pub struct ExprLiteralPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for ExprLiteral {
+    type StablePtr = ExprLiteralPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ExprLiteral,
@@ -1029,19 +1201,25 @@ impl TypedSyntaxNode for ExprLiteral {
                     panic!(
                         "Unexpected SyntaxKind {:?}. Expected {:?}.",
                         internal.kind,
-                        SyntaxKind::ExprLiteral
+                        SyntaxKind::ExprLiteral,
                     );
                 }
                 let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
-                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::ExprLiteral);
+                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::ExprLiteral,);
             }
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ExprLiteralPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -1074,7 +1252,9 @@ impl ExprParenthesized {
         Terminal::from_syntax_node(db, self.children[2].clone())
     }
 }
+pub struct ExprParenthesizedPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for ExprParenthesized {
+    type StablePtr = ExprParenthesizedPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ExprParenthesized,
@@ -1089,7 +1269,7 @@ impl TypedSyntaxNode for ExprParenthesized {
                     panic!(
                         "Unexpected SyntaxKind {:?}. Expected {:?}.",
                         internal.kind,
-                        SyntaxKind::ExprParenthesized
+                        SyntaxKind::ExprParenthesized,
                     );
                 }
                 let children = node.children(db).collect();
@@ -1099,13 +1279,19 @@ impl TypedSyntaxNode for ExprParenthesized {
                 panic!(
                     "Unexpected Token {:?}. Expected {:?}.",
                     token,
-                    SyntaxKind::ExprParenthesized
+                    SyntaxKind::ExprParenthesized,
                 );
             }
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ExprParenthesizedPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -1130,7 +1316,9 @@ impl ExprUnary {
         Expr::from_syntax_node(db, self.children[1].clone())
     }
 }
+pub struct ExprUnaryPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for ExprUnary {
+    type StablePtr = ExprUnaryPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ExprUnary,
@@ -1145,19 +1333,25 @@ impl TypedSyntaxNode for ExprUnary {
                     panic!(
                         "Unexpected SyntaxKind {:?}. Expected {:?}.",
                         internal.kind,
-                        SyntaxKind::ExprUnary
+                        SyntaxKind::ExprUnary,
                     );
                 }
                 let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
-                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::ExprUnary);
+                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::ExprUnary,);
             }
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ExprUnaryPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -1185,7 +1379,9 @@ impl ExprBinary {
         Expr::from_syntax_node(db, self.children[2].clone())
     }
 }
+pub struct ExprBinaryPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for ExprBinary {
+    type StablePtr = ExprBinaryPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ExprBinary,
@@ -1200,19 +1396,25 @@ impl TypedSyntaxNode for ExprBinary {
                     panic!(
                         "Unexpected SyntaxKind {:?}. Expected {:?}.",
                         internal.kind,
-                        SyntaxKind::ExprBinary
+                        SyntaxKind::ExprBinary,
                     );
                 }
                 let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
-                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::ExprBinary);
+                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::ExprBinary,);
             }
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ExprBinaryPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -1245,7 +1447,9 @@ impl ExprTuple {
         Terminal::from_syntax_node(db, self.children[2].clone())
     }
 }
+pub struct ExprTuplePtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for ExprTuple {
+    type StablePtr = ExprTuplePtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ExprTuple,
@@ -1260,19 +1464,25 @@ impl TypedSyntaxNode for ExprTuple {
                     panic!(
                         "Unexpected SyntaxKind {:?}. Expected {:?}.",
                         internal.kind,
-                        SyntaxKind::ExprTuple
+                        SyntaxKind::ExprTuple,
                     );
                 }
                 let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
-                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::ExprTuple);
+                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::ExprTuple,);
             }
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ExprTuplePtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -1305,7 +1515,9 @@ impl ExprListParenthesized {
         Terminal::from_syntax_node(db, self.children[2].clone())
     }
 }
+pub struct ExprListParenthesizedPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for ExprListParenthesized {
+    type StablePtr = ExprListParenthesizedPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ExprListParenthesized,
@@ -1320,7 +1532,7 @@ impl TypedSyntaxNode for ExprListParenthesized {
                     panic!(
                         "Unexpected SyntaxKind {:?}. Expected {:?}.",
                         internal.kind,
-                        SyntaxKind::ExprListParenthesized
+                        SyntaxKind::ExprListParenthesized,
                     );
                 }
                 let children = node.children(db).collect();
@@ -1330,13 +1542,19 @@ impl TypedSyntaxNode for ExprListParenthesized {
                 panic!(
                     "Unexpected Token {:?}. Expected {:?}.",
                     token,
-                    SyntaxKind::ExprListParenthesized
+                    SyntaxKind::ExprListParenthesized,
                 );
             }
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ExprListParenthesizedPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -1361,7 +1579,9 @@ impl ExprFunctionCall {
         ExprListParenthesized::from_syntax_node(db, self.children[1].clone())
     }
 }
+pub struct ExprFunctionCallPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for ExprFunctionCall {
+    type StablePtr = ExprFunctionCallPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ExprFunctionCall,
@@ -1376,7 +1596,7 @@ impl TypedSyntaxNode for ExprFunctionCall {
                     panic!(
                         "Unexpected SyntaxKind {:?}. Expected {:?}.",
                         internal.kind,
-                        SyntaxKind::ExprFunctionCall
+                        SyntaxKind::ExprFunctionCall,
                     );
                 }
                 let children = node.children(db).collect();
@@ -1386,13 +1606,19 @@ impl TypedSyntaxNode for ExprFunctionCall {
                 panic!(
                     "Unexpected Token {:?}. Expected {:?}.",
                     token,
-                    SyntaxKind::ExprFunctionCall
+                    SyntaxKind::ExprFunctionCall,
                 );
             }
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ExprFunctionCallPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -1417,7 +1643,9 @@ impl ExprStructCtorCall {
         ArgListBraced::from_syntax_node(db, self.children[1].clone())
     }
 }
+pub struct ExprStructCtorCallPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for ExprStructCtorCall {
+    type StablePtr = ExprStructCtorCallPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ExprStructCtorCall,
@@ -1432,7 +1660,7 @@ impl TypedSyntaxNode for ExprStructCtorCall {
                     panic!(
                         "Unexpected SyntaxKind {:?}. Expected {:?}.",
                         internal.kind,
-                        SyntaxKind::ExprStructCtorCall
+                        SyntaxKind::ExprStructCtorCall,
                     );
                 }
                 let children = node.children(db).collect();
@@ -1442,13 +1670,19 @@ impl TypedSyntaxNode for ExprStructCtorCall {
                 panic!(
                     "Unexpected Token {:?}. Expected {:?}.",
                     token,
-                    SyntaxKind::ExprStructCtorCall
+                    SyntaxKind::ExprStructCtorCall,
                 );
             }
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ExprStructCtorCallPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -1481,7 +1715,9 @@ impl ExprBlock {
         Terminal::from_syntax_node(db, self.children[2].clone())
     }
 }
+pub struct ExprBlockPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for ExprBlock {
+    type StablePtr = ExprBlockPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ExprBlock,
@@ -1500,19 +1736,25 @@ impl TypedSyntaxNode for ExprBlock {
                     panic!(
                         "Unexpected SyntaxKind {:?}. Expected {:?}.",
                         internal.kind,
-                        SyntaxKind::ExprBlock
+                        SyntaxKind::ExprBlock,
                     );
                 }
                 let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
-                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::ExprBlock);
+                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::ExprBlock,);
             }
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ExprBlockPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -1537,7 +1779,9 @@ impl TypeClause {
         ExprPath::from_syntax_node(db, self.children[1].clone())
     }
 }
+pub struct TypeClausePtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for TypeClause {
+    type StablePtr = TypeClausePtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::TypeClause,
@@ -1552,19 +1796,25 @@ impl TypedSyntaxNode for TypeClause {
                     panic!(
                         "Unexpected SyntaxKind {:?}. Expected {:?}.",
                         internal.kind,
-                        SyntaxKind::TypeClause
+                        SyntaxKind::TypeClause,
                     );
                 }
                 let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
-                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::TypeClause);
+                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::TypeClause,);
             }
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        TypeClausePtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -1572,7 +1822,9 @@ pub enum OptionTypeClause {
     Empty(OptionTypeClauseEmpty),
     TypeClause(TypeClause),
 }
+pub struct OptionTypeClausePtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for OptionTypeClause {
+    type StablePtr = OptionTypeClausePtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         panic!("No missing variant.");
     }
@@ -1604,6 +1856,12 @@ impl TypedSyntaxNode for OptionTypeClause {
             OptionTypeClause::TypeClause(x) => x.as_syntax_node(),
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        OptionTypeClausePtr(self.as_syntax_node().0.stable_ptr)
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionTypeClauseEmpty {
@@ -1621,7 +1879,9 @@ impl OptionTypeClauseEmpty {
         }))
     }
 }
+pub struct OptionTypeClauseEmptyPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for OptionTypeClauseEmpty {
+    type StablePtr = OptionTypeClauseEmptyPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::OptionTypeClauseEmpty,
@@ -1636,7 +1896,7 @@ impl TypedSyntaxNode for OptionTypeClauseEmpty {
                     panic!(
                         "Unexpected SyntaxKind {:?}. Expected {:?}.",
                         internal.kind,
-                        SyntaxKind::OptionTypeClauseEmpty
+                        SyntaxKind::OptionTypeClauseEmpty,
                     );
                 }
                 let children = node.children(db).collect();
@@ -1646,13 +1906,19 @@ impl TypedSyntaxNode for OptionTypeClauseEmpty {
                 panic!(
                     "Unexpected Token {:?}. Expected {:?}.",
                     token,
-                    SyntaxKind::OptionTypeClauseEmpty
+                    SyntaxKind::OptionTypeClauseEmpty,
                 );
             }
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        OptionTypeClauseEmptyPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -1677,7 +1943,9 @@ impl ReturnTypeClause {
         ExprPath::from_syntax_node(db, self.children[1].clone())
     }
 }
+pub struct ReturnTypeClausePtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for ReturnTypeClause {
+    type StablePtr = ReturnTypeClausePtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ReturnTypeClause,
@@ -1692,7 +1960,7 @@ impl TypedSyntaxNode for ReturnTypeClause {
                     panic!(
                         "Unexpected SyntaxKind {:?}. Expected {:?}.",
                         internal.kind,
-                        SyntaxKind::ReturnTypeClause
+                        SyntaxKind::ReturnTypeClause,
                     );
                 }
                 let children = node.children(db).collect();
@@ -1702,13 +1970,19 @@ impl TypedSyntaxNode for ReturnTypeClause {
                 panic!(
                     "Unexpected Token {:?}. Expected {:?}.",
                     token,
-                    SyntaxKind::ReturnTypeClause
+                    SyntaxKind::ReturnTypeClause,
                 );
             }
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ReturnTypeClausePtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -1716,7 +1990,9 @@ pub enum OptionReturnTypeClause {
     Empty(OptionReturnTypeClauseEmpty),
     ReturnTypeClause(ReturnTypeClause),
 }
+pub struct OptionReturnTypeClausePtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for OptionReturnTypeClause {
+    type StablePtr = OptionReturnTypeClausePtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         panic!("No missing variant.");
     }
@@ -1748,6 +2024,12 @@ impl TypedSyntaxNode for OptionReturnTypeClause {
             OptionReturnTypeClause::ReturnTypeClause(x) => x.as_syntax_node(),
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        OptionReturnTypeClausePtr(self.as_syntax_node().0.stable_ptr)
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionReturnTypeClauseEmpty {
@@ -1765,7 +2047,9 @@ impl OptionReturnTypeClauseEmpty {
         }))
     }
 }
+pub struct OptionReturnTypeClauseEmptyPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for OptionReturnTypeClauseEmpty {
+    type StablePtr = OptionReturnTypeClauseEmptyPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::OptionReturnTypeClauseEmpty,
@@ -1780,7 +2064,7 @@ impl TypedSyntaxNode for OptionReturnTypeClauseEmpty {
                     panic!(
                         "Unexpected SyntaxKind {:?}. Expected {:?}.",
                         internal.kind,
-                        SyntaxKind::OptionReturnTypeClauseEmpty
+                        SyntaxKind::OptionReturnTypeClauseEmpty,
                     );
                 }
                 let children = node.children(db).collect();
@@ -1790,13 +2074,19 @@ impl TypedSyntaxNode for OptionReturnTypeClauseEmpty {
                 panic!(
                     "Unexpected Token {:?}. Expected {:?}.",
                     token,
-                    SyntaxKind::OptionReturnTypeClauseEmpty
+                    SyntaxKind::OptionReturnTypeClauseEmpty,
                 );
             }
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        OptionReturnTypeClauseEmptyPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -1806,7 +2096,9 @@ pub enum Statement {
     Return(StatementReturn),
     StatementMissing(StatementMissing),
 }
+pub struct StatementPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for Statement {
+    type StablePtr = StatementPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::StatementMissing,
@@ -1850,6 +2142,12 @@ impl TypedSyntaxNode for Statement {
             Statement::StatementMissing(x) => x.as_syntax_node(),
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        StatementPtr(self.as_syntax_node().0.stable_ptr)
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct StatementList(ElementList<Statement, 1>);
@@ -1869,7 +2167,9 @@ impl StatementList {
         }))
     }
 }
+pub struct StatementListPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for StatementList {
+    type StablePtr = StatementListPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::StatementList,
@@ -1882,6 +2182,12 @@ impl TypedSyntaxNode for StatementList {
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        StatementListPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -1900,7 +2206,9 @@ impl StatementMissing {
         }))
     }
 }
+pub struct StatementMissingPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for StatementMissing {
+    type StablePtr = StatementMissingPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::StatementMissing,
@@ -1915,7 +2223,7 @@ impl TypedSyntaxNode for StatementMissing {
                     panic!(
                         "Unexpected SyntaxKind {:?}. Expected {:?}.",
                         internal.kind,
-                        SyntaxKind::StatementMissing
+                        SyntaxKind::StatementMissing,
                     );
                 }
                 let children = node.children(db).collect();
@@ -1925,13 +2233,19 @@ impl TypedSyntaxNode for StatementMissing {
                 panic!(
                     "Unexpected Token {:?}. Expected {:?}.",
                     token,
-                    SyntaxKind::StatementMissing
+                    SyntaxKind::StatementMissing,
                 );
             }
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        StatementMissingPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -1976,7 +2290,9 @@ impl StatementLet {
         Terminal::from_syntax_node(db, self.children[5].clone())
     }
 }
+pub struct StatementLetPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for StatementLet {
+    type StablePtr = StatementLetPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::StatementLet,
@@ -1998,19 +2314,25 @@ impl TypedSyntaxNode for StatementLet {
                     panic!(
                         "Unexpected SyntaxKind {:?}. Expected {:?}.",
                         internal.kind,
-                        SyntaxKind::StatementLet
+                        SyntaxKind::StatementLet,
                     );
                 }
                 let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
-                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::StatementLet);
+                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::StatementLet,);
             }
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        StatementLetPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -2018,7 +2340,9 @@ pub enum OptionSemicolon {
     Empty(OptionSemicolonEmpty),
     Some(Terminal),
 }
+pub struct OptionSemicolonPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for OptionSemicolon {
+    type StablePtr = OptionSemicolonPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         panic!("No missing variant.");
     }
@@ -2048,6 +2372,12 @@ impl TypedSyntaxNode for OptionSemicolon {
             OptionSemicolon::Some(x) => x.as_syntax_node(),
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        OptionSemicolonPtr(self.as_syntax_node().0.stable_ptr)
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionSemicolonEmpty {
@@ -2065,7 +2395,9 @@ impl OptionSemicolonEmpty {
         }))
     }
 }
+pub struct OptionSemicolonEmptyPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for OptionSemicolonEmpty {
+    type StablePtr = OptionSemicolonEmptyPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::OptionSemicolonEmpty,
@@ -2080,7 +2412,7 @@ impl TypedSyntaxNode for OptionSemicolonEmpty {
                     panic!(
                         "Unexpected SyntaxKind {:?}. Expected {:?}.",
                         internal.kind,
-                        SyntaxKind::OptionSemicolonEmpty
+                        SyntaxKind::OptionSemicolonEmpty,
                     );
                 }
                 let children = node.children(db).collect();
@@ -2090,13 +2422,19 @@ impl TypedSyntaxNode for OptionSemicolonEmpty {
                 panic!(
                     "Unexpected Token {:?}. Expected {:?}.",
                     token,
-                    SyntaxKind::OptionSemicolonEmpty
+                    SyntaxKind::OptionSemicolonEmpty,
                 );
             }
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        OptionSemicolonEmptyPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -2121,7 +2459,9 @@ impl StatementExpr {
         OptionSemicolon::from_syntax_node(db, self.children[1].clone())
     }
 }
+pub struct StatementExprPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for StatementExpr {
+    type StablePtr = StatementExprPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::StatementExpr,
@@ -2136,19 +2476,25 @@ impl TypedSyntaxNode for StatementExpr {
                     panic!(
                         "Unexpected SyntaxKind {:?}. Expected {:?}.",
                         internal.kind,
-                        SyntaxKind::StatementExpr
+                        SyntaxKind::StatementExpr,
                     );
                 }
                 let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
-                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::StatementExpr);
+                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::StatementExpr,);
             }
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        StatementExprPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -2181,7 +2527,9 @@ impl StatementReturn {
         Terminal::from_syntax_node(db, self.children[2].clone())
     }
 }
+pub struct StatementReturnPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for StatementReturn {
+    type StablePtr = StatementReturnPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::StatementReturn,
@@ -2196,19 +2544,25 @@ impl TypedSyntaxNode for StatementReturn {
                     panic!(
                         "Unexpected SyntaxKind {:?}. Expected {:?}.",
                         internal.kind,
-                        SyntaxKind::StatementReturn
+                        SyntaxKind::StatementReturn,
                     );
                 }
                 let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
-                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::StatementReturn);
+                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::StatementReturn,);
             }
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        StatementReturnPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -2233,7 +2587,9 @@ impl Param {
         TypeClause::from_syntax_node(db, self.children[1].clone())
     }
 }
+pub struct ParamPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for Param {
+    type StablePtr = ParamPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::Param,
@@ -2248,19 +2604,25 @@ impl TypedSyntaxNode for Param {
                     panic!(
                         "Unexpected SyntaxKind {:?}. Expected {:?}.",
                         internal.kind,
-                        SyntaxKind::Param
+                        SyntaxKind::Param,
                     );
                 }
                 let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
-                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::Param);
+                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::Param,);
             }
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ParamPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -2281,7 +2643,9 @@ impl ParamList {
         }))
     }
 }
+pub struct ParamListPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for ParamList {
+    type StablePtr = ParamListPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ParamList,
@@ -2294,6 +2658,12 @@ impl TypedSyntaxNode for ParamList {
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ParamListPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -2326,7 +2696,9 @@ impl ParamListParenthesized {
         Terminal::from_syntax_node(db, self.children[2].clone())
     }
 }
+pub struct ParamListParenthesizedPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for ParamListParenthesized {
+    type StablePtr = ParamListParenthesizedPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ParamListParenthesized,
@@ -2341,7 +2713,7 @@ impl TypedSyntaxNode for ParamListParenthesized {
                     panic!(
                         "Unexpected SyntaxKind {:?}. Expected {:?}.",
                         internal.kind,
-                        SyntaxKind::ParamListParenthesized
+                        SyntaxKind::ParamListParenthesized,
                     );
                 }
                 let children = node.children(db).collect();
@@ -2351,13 +2723,19 @@ impl TypedSyntaxNode for ParamListParenthesized {
                 panic!(
                     "Unexpected Token {:?}. Expected {:?}.",
                     token,
-                    SyntaxKind::ParamListParenthesized
+                    SyntaxKind::ParamListParenthesized,
                 );
             }
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ParamListParenthesizedPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -2390,7 +2768,9 @@ impl ParamListBraced {
         Terminal::from_syntax_node(db, self.children[2].clone())
     }
 }
+pub struct ParamListBracedPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for ParamListBraced {
+    type StablePtr = ParamListBracedPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ParamListBraced,
@@ -2405,19 +2785,25 @@ impl TypedSyntaxNode for ParamListBraced {
                     panic!(
                         "Unexpected SyntaxKind {:?}. Expected {:?}.",
                         internal.kind,
-                        SyntaxKind::ParamListBraced
+                        SyntaxKind::ParamListBraced,
                     );
                 }
                 let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
-                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::ParamListBraced);
+                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::ParamListBraced,);
             }
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ParamListBracedPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -2462,7 +2848,9 @@ impl FunctionSignature {
         OptionReturnTypeClause::from_syntax_node(db, self.children[5].clone())
     }
 }
+pub struct FunctionSignaturePtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for FunctionSignature {
+    type StablePtr = FunctionSignaturePtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::FunctionSignature,
@@ -2484,7 +2872,7 @@ impl TypedSyntaxNode for FunctionSignature {
                     panic!(
                         "Unexpected SyntaxKind {:?}. Expected {:?}.",
                         internal.kind,
-                        SyntaxKind::FunctionSignature
+                        SyntaxKind::FunctionSignature,
                     );
                 }
                 let children = node.children(db).collect();
@@ -2494,13 +2882,19 @@ impl TypedSyntaxNode for FunctionSignature {
                 panic!(
                     "Unexpected Token {:?}. Expected {:?}.",
                     token,
-                    SyntaxKind::FunctionSignature
+                    SyntaxKind::FunctionSignature,
                 );
             }
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        FunctionSignaturePtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -2515,7 +2909,9 @@ pub enum Item {
     Enum(ItemEnum),
     Use(ItemUse),
 }
+pub struct ItemPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for Item {
+    type StablePtr = ItemPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         panic!("No missing variant.");
     }
@@ -2560,6 +2956,12 @@ impl TypedSyntaxNode for Item {
             Item::Use(x) => x.as_syntax_node(),
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ItemPtr(self.as_syntax_node().0.stable_ptr)
+    }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ItemList(ElementList<Item, 1>);
@@ -2579,7 +2981,9 @@ impl ItemList {
         }))
     }
 }
+pub struct ItemListPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for ItemList {
+    type StablePtr = ItemListPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ItemList,
@@ -2592,6 +2996,12 @@ impl TypedSyntaxNode for ItemList {
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ItemListPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -2624,7 +3034,9 @@ impl ItemModule {
         Terminal::from_syntax_node(db, self.children[2].clone())
     }
 }
+pub struct ItemModulePtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for ItemModule {
+    type StablePtr = ItemModulePtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ItemModule,
@@ -2639,19 +3051,25 @@ impl TypedSyntaxNode for ItemModule {
                     panic!(
                         "Unexpected SyntaxKind {:?}. Expected {:?}.",
                         internal.kind,
-                        SyntaxKind::ItemModule
+                        SyntaxKind::ItemModule,
                     );
                 }
                 let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
-                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::ItemModule);
+                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::ItemModule,);
             }
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ItemModulePtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -2676,7 +3094,9 @@ impl ItemFunction {
         ExprBlock::from_syntax_node(db, self.children[1].clone())
     }
 }
+pub struct ItemFunctionPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for ItemFunction {
+    type StablePtr = ItemFunctionPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ItemFunction,
@@ -2691,19 +3111,25 @@ impl TypedSyntaxNode for ItemFunction {
                     panic!(
                         "Unexpected SyntaxKind {:?}. Expected {:?}.",
                         internal.kind,
-                        SyntaxKind::ItemFunction
+                        SyntaxKind::ItemFunction,
                     );
                 }
                 let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
-                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::ItemFunction);
+                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::ItemFunction,);
             }
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ItemFunctionPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -2736,7 +3162,9 @@ impl ItemExternFunction {
         Terminal::from_syntax_node(db, self.children[2].clone())
     }
 }
+pub struct ItemExternFunctionPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for ItemExternFunction {
+    type StablePtr = ItemExternFunctionPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ItemExternFunction,
@@ -2755,7 +3183,7 @@ impl TypedSyntaxNode for ItemExternFunction {
                     panic!(
                         "Unexpected SyntaxKind {:?}. Expected {:?}.",
                         internal.kind,
-                        SyntaxKind::ItemExternFunction
+                        SyntaxKind::ItemExternFunction,
                     );
                 }
                 let children = node.children(db).collect();
@@ -2765,13 +3193,19 @@ impl TypedSyntaxNode for ItemExternFunction {
                 panic!(
                     "Unexpected Token {:?}. Expected {:?}.",
                     token,
-                    SyntaxKind::ItemExternFunction
+                    SyntaxKind::ItemExternFunction,
                 );
             }
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ItemExternFunctionPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -2808,7 +3242,9 @@ impl ItemExternType {
         Terminal::from_syntax_node(db, self.children[3].clone())
     }
 }
+pub struct ItemExternTypePtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for ItemExternType {
+    type StablePtr = ItemExternTypePtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ItemExternType,
@@ -2828,19 +3264,25 @@ impl TypedSyntaxNode for ItemExternType {
                     panic!(
                         "Unexpected SyntaxKind {:?}. Expected {:?}.",
                         internal.kind,
-                        SyntaxKind::ItemExternType
+                        SyntaxKind::ItemExternType,
                     );
                 }
                 let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
-                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::ItemExternType);
+                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::ItemExternType,);
             }
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ItemExternTypePtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -2881,7 +3323,9 @@ impl ItemTrait {
         Terminal::from_syntax_node(db, self.children[4].clone())
     }
 }
+pub struct ItemTraitPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for ItemTrait {
+    type StablePtr = ItemTraitPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ItemTrait,
@@ -2902,19 +3346,25 @@ impl TypedSyntaxNode for ItemTrait {
                     panic!(
                         "Unexpected SyntaxKind {:?}. Expected {:?}.",
                         internal.kind,
-                        SyntaxKind::ItemTrait
+                        SyntaxKind::ItemTrait,
                     );
                 }
                 let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
-                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::ItemTrait);
+                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::ItemTrait,);
             }
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ItemTraitPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -2963,7 +3413,9 @@ impl ItemImpl {
         Terminal::from_syntax_node(db, self.children[6].clone())
     }
 }
+pub struct ItemImplPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for ItemImpl {
+    type StablePtr = ItemImplPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ItemImpl,
@@ -2986,19 +3438,25 @@ impl TypedSyntaxNode for ItemImpl {
                     panic!(
                         "Unexpected SyntaxKind {:?}. Expected {:?}.",
                         internal.kind,
-                        SyntaxKind::ItemImpl
+                        SyntaxKind::ItemImpl,
                     );
                 }
                 let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
-                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::ItemImpl);
+                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::ItemImpl,);
             }
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ItemImplPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -3039,7 +3497,9 @@ impl ItemStruct {
         Terminal::from_syntax_node(db, self.children[4].clone())
     }
 }
+pub struct ItemStructPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for ItemStruct {
+    type StablePtr = ItemStructPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ItemStruct,
@@ -3060,19 +3520,25 @@ impl TypedSyntaxNode for ItemStruct {
                     panic!(
                         "Unexpected SyntaxKind {:?}. Expected {:?}.",
                         internal.kind,
-                        SyntaxKind::ItemStruct
+                        SyntaxKind::ItemStruct,
                     );
                 }
                 let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
-                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::ItemStruct);
+                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::ItemStruct,);
             }
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ItemStructPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -3105,7 +3571,9 @@ impl ItemEnum {
         ParamListBraced::from_syntax_node(db, self.children[2].clone())
     }
 }
+pub struct ItemEnumPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for ItemEnum {
+    type StablePtr = ItemEnumPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ItemEnum,
@@ -3124,19 +3592,25 @@ impl TypedSyntaxNode for ItemEnum {
                     panic!(
                         "Unexpected SyntaxKind {:?}. Expected {:?}.",
                         internal.kind,
-                        SyntaxKind::ItemEnum
+                        SyntaxKind::ItemEnum,
                     );
                 }
                 let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
-                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::ItemEnum);
+                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::ItemEnum,);
             }
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ItemEnumPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -3169,7 +3643,9 @@ impl ItemUse {
         Terminal::from_syntax_node(db, self.children[2].clone())
     }
 }
+pub struct ItemUsePtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for ItemUse {
+    type StablePtr = ItemUsePtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ItemUse,
@@ -3184,19 +3660,25 @@ impl TypedSyntaxNode for ItemUse {
                     panic!(
                         "Unexpected SyntaxKind {:?}. Expected {:?}.",
                         internal.kind,
-                        SyntaxKind::ItemUse
+                        SyntaxKind::ItemUse,
                     );
                 }
                 let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
-                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::ItemUse);
+                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::ItemUse,);
             }
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ItemUsePtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -3221,7 +3703,9 @@ impl SyntaxFile {
         Terminal::from_syntax_node(db, self.children[1].clone())
     }
 }
+pub struct SyntaxFilePtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for SyntaxFile {
+    type StablePtr = SyntaxFilePtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::SyntaxFile,
@@ -3236,18 +3720,24 @@ impl TypedSyntaxNode for SyntaxFile {
                     panic!(
                         "Unexpected SyntaxKind {:?}. Expected {:?}.",
                         internal.kind,
-                        SyntaxKind::SyntaxFile
+                        SyntaxKind::SyntaxFile,
                     );
                 }
                 let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
-                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::SyntaxFile);
+                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::SyntaxFile,);
             }
         }
     }
+    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        SyntaxFilePtr(self.node.0.stable_ptr)
     }
 }
