@@ -112,7 +112,7 @@ fn handle_function_call(
     // Call the function.
     let res_var = context.allocate_sierra_variable();
     statements.push(simple_statement(
-        context.function_call_libfunc_id(),
+        context.function_call_libfunc_id(expr_function_call.function),
         &args_on_stack,
         &[res_var.clone()],
     ));
