@@ -1,3 +1,3 @@
-fn foo(a: int) -> felt {
+func foo(a: int) -> felt {
     return a;
 }

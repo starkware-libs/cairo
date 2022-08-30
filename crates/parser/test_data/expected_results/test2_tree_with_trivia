@@ -4,7 +4,7 @@
     │   │   ├── signature (kind: FunctionSignature)
     │   │   │   ├── funckw (kind: Terminal)
     │   │   │   │   ├── leading_trivia (kind: Trivia) []
-    │   │   │   │   ├── token (kind: Function): 'fn'
+    │   │   │   │   ├── token (kind: Function): 'func'
     │   │   │   │   └── trailing_trivia (kind: Trivia)
     │   │   │   │       └── child #0 (kind: Whitespace).
     │   │   │   ├── name (kind: Terminal)
@@ -401,7 +401,7 @@
     │   │   │   │   │   │   └── trailing_trivia (kind: Trivia)
     │   │   │   │   │   │       └── child #0 (kind: Newline).
     │   │   │   │   │   └── child #1 (kind: Whitespace).
-    │   │   │   │   ├── token (kind: Function): 'fn'
+    │   │   │   │   ├── token (kind: Function): 'func'
     │   │   │   │   └── trailing_trivia (kind: Trivia)
     │   │   │   │       └── child #0 (kind: Whitespace).
     │   │   │   ├── name (kind: Terminal)
