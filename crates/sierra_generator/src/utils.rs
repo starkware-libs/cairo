@@ -1,17 +1,16 @@
 use sierra::ids::ConcreteLibFuncId;
 use sierra::program;
-use smol_str::SmolStr;
 
 use crate::pre_sierra;
 
 pub fn simple_statement(
-    ext_name: impl Into<SmolStr>,
+    libfunc_id: ConcreteLibFuncId,
     args: &[sierra::ids::VarId],
     results: &[sierra::ids::VarId],
 ) -> pre_sierra::Statement {
     pre_sierra::Statement::SierraStatement(program::GenStatement::Invocation(
         program::GenInvocation {
-            libfunc_id: ConcreteLibFuncId::from_string(ext_name),
+            libfunc_id,
             args: args.into(),
             branches: vec![program::GenBranchInfo {
                 target: program::GenBranchTarget::Fallthrough,
@@ -21,10 +20,13 @@ pub fn simple_statement(
     ))
 }
 
-pub fn jump_statement(label: pre_sierra::LabelId) -> pre_sierra::Statement {
+pub fn jump_statement(
+    jump: ConcreteLibFuncId,
+    label: pre_sierra::LabelId,
+) -> pre_sierra::Statement {
     pre_sierra::Statement::SierraStatement(program::GenStatement::Invocation(
         program::GenInvocation {
-            libfunc_id: ConcreteLibFuncId::from_string("jump"),
+            libfunc_id: jump,
             args: vec![],
             branches: vec![program::GenBranchInfo {
                 target: program::GenBranchTarget::Statement(label),

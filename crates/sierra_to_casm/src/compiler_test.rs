@@ -15,25 +15,25 @@ fn good_flow() {
     let prog = ProgramParser::new()
         .parse(indoc! {"
             type felt = felt;
-            // TODO(ilya, 10/10/2022): Remove once store_temp does not depend on it.
-            type DeferredFelt = Deferred<felt>;
 
             libfunc felt_add = felt_add;
             libfunc felt_dup = felt_dup;
             libfunc store_temp_felt = store_temp<felt>;
             libfunc rename_felt = rename<felt>;
+            libfunc call_foo = function_call<user@foo>;
 
-            rename_felt([1]) -> ([1]);
-            felt_dup([2]) -> ([2], [5]);
-            felt_add([1], [2]) -> ([3]);
-            store_temp_felt([3]) -> ([4]);
-            felt_dup([4]) -> ([4], [6]);
-            store_temp_felt([5]) -> ([5]);
-            store_temp_felt([6]) -> ([6]);
-
-            return([4], [5], [6]);
+            rename_felt([1]) -> ([1]);          // #1
+            felt_dup([2]) -> ([2], [5]);        // #2
+            felt_add([1], [2]) -> ([3]);        // #3
+            store_temp_felt([3]) -> ([4]);      // #4
+            felt_dup([4]) -> ([4], [6]);        // #5
+            store_temp_felt([5]) -> ([5]);      // #6
+            store_temp_felt([6]) -> ([6]);      // #7
+            call_foo([5], [6]) -> ([7], [8]);   // #8
+            return([7], [8]);                   // #9
 
             test_program@0([1]: felt, [2]: felt) -> ();
+            foo@0([1]: felt, [2]: felt) -> (felt, felt);
         "})
         .unwrap();
     pretty_assertions::assert_eq!(
@@ -42,6 +42,7 @@ fn good_flow() {
             [ap + 0] = [fp + -3] + [fp + -2], ap++;
             [ap + 0] = [fp + -2], ap++;
             [ap + 0] = [ap + -2], ap++;
+            call rel 0;
             ret;
         "}
     );
@@ -57,7 +58,7 @@ fn good_flow() {
             return([2]);
 
             test_program@0([2]: felt) -> ();
-        "} => Err(CompilationError::ReferencesError(ReferencesError::InvalidReturnReference));
+        "} => Err(InvocationError::InvalidReferenceExpressionForArgument.into());
             "Invalid return reference")]
 #[test_case(indoc! {"
             store_temp_felt([1]) -> ([1]);
@@ -68,7 +69,6 @@ fn good_flow() {
             "undeclared libfunc")]
 #[test_case(indoc! {"
             type felt = felt;
-            type DeferredFelt = Deferred<felt>;
             libfunc store_temp_felt = store_temp<felt>;
             libfunc store_temp_felt = store_temp<felt>;
         "} => Err(CompilationError::ProgramRegistryError(ProgramRegistryError::LibFuncConcreteIdAlreadyExists(
@@ -76,7 +76,6 @@ fn good_flow() {
             "Concrete libfunc Id used twice")]
 #[test_case(indoc! {"
             type felt = felt;
-            type DeferredFelt = Deferred<felt>;
             libfunc store_local_felt = store_local<felt>;
             store_local_felt([1]) -> ([1]);
 
