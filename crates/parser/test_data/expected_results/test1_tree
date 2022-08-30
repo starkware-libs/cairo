@@ -2,7 +2,7 @@
     ├── items (kind: ItemList)
     │   └── child #0 (kind: ItemFunction)
     │       ├── signature (kind: FunctionSignature)
-    │       │   ├── funckw (kind: Function): 'fn'
+    │       │   ├── funckw (kind: Function): 'func'
     │       │   ├── name (kind: Identifier): 'foo'
     │       │   ├── lparen (kind: LParen): '('
     │       │   ├── parameters (kind: ParamList)
@@ -82,7 +82,7 @@
     │           │   │   ├── expr (kind: ExprFunctionCall)
     │           │   │   │   ├── path (kind: ExprPath)
     │           │   │   │   │   └── item #0 (kind: PathSegment)
-    │           │   │   │   │       ├── ident (kind: Identifier): 'func'
+    │           │   │   │   │       ├── ident (kind: Identifier): 'func1'
     │           │   │   │   │       └── generic_args (kind: OptionGenericArgsEmpty) []
     │           │   │   │   └── arguments (kind: ExprListParenthesized)
     │           │   │   │       ├── lparen (kind: LParen): '('
@@ -122,5 +122,5 @@ Error at test1.cairo from line 1 col 1 until line 4 col 1: Skipped tokens: // Fu
 // Second line
 ;
 
-Error at test1.cairo from line 4 col 8 until line 4 col 9: Skipped tokens: ,
-Error at test1.cairo from line 4 col 19 until line 4 col 21: Skipped tokens: , 
+Error at test1.cairo from line 4 col 10 until line 4 col 11: Skipped tokens: ,
+Error at test1.cairo from line 4 col 21 until line 4 col 23: Skipped tokens: , 
