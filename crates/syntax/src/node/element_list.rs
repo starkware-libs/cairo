@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use super::GreenInterner;
+use super::SyntaxGroup;
 use crate::node::{SyntaxNode, TypedSyntaxNode};
 
 // A typed view of an element list node.
@@ -15,7 +15,7 @@ impl<T: TypedSyntaxNode, const STEP: usize> ElementList<T, STEP> {
     pub fn new(node: SyntaxNode) -> Self {
         Self { node, phantom: PhantomData {} }
     }
-    pub fn elements(&self, db: &dyn GreenInterner) -> Vec<T> {
+    pub fn elements(&self, db: &dyn SyntaxGroup) -> Vec<T> {
         self.node
             .children(db)
             .into_iter()
@@ -23,7 +23,7 @@ impl<T: TypedSyntaxNode, const STEP: usize> ElementList<T, STEP> {
             .map(|x| T::from_syntax_node(db, x))
             .collect()
     }
-    pub fn has_tail(&self, db: &dyn GreenInterner) -> bool {
+    pub fn has_tail(&self, db: &dyn SyntaxGroup) -> bool {
         self.node.children(db).len() % STEP != 0
     }
 }

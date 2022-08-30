@@ -1,4 +1,4 @@
-use super::db::GreenInterner;
+use super::db::SyntaxGroup;
 use super::green::GreenNode;
 use crate::token::{Token, TokenKind};
 
@@ -15,12 +15,12 @@ impl salsa::InternKey for GreenId {
 }
 impl GreenId {
     /// Returns a green ID of a missing token.
-    pub fn missing_token(db: &dyn GreenInterner) -> Self {
+    pub fn missing_token(db: &dyn SyntaxGroup) -> Self {
         db.intern_green(GreenNode::Token(Token::missing()))
     }
 
     /// Returns the width of the node of this green id.
-    pub fn width(&self, db: &dyn GreenInterner) -> u32 {
+    pub fn width(&self, db: &dyn SyntaxGroup) -> u32 {
         match db.lookup_intern_green(*self) {
             GreenNode::Internal(internal) => internal.width,
             GreenNode::Token(token) => token.width(),
@@ -29,7 +29,7 @@ impl GreenId {
 
     /// Returns the TokenKind of the node, if this is a token. Otherwise (e.g. if it's an internal
     /// node), returns None.
-    pub fn get_token_kind(&self, db: &dyn GreenInterner) -> Option<TokenKind> {
+    pub fn get_token_kind(&self, db: &dyn SyntaxGroup) -> Option<TokenKind> {
         if let GreenNode::Token(token) = db.lookup_intern_green(*self) {
             Some(token.kind)
         } else {
