@@ -17,6 +17,7 @@ use sierra::ids::ConcreteTypeId;
 use thiserror::Error;
 
 use crate::references::ReferenceValue;
+use crate::relocations::{Relocation, RelocationEntry};
 
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum InvocationError {
@@ -58,18 +59,22 @@ impl BranchRefChanges {
 pub struct CompiledInvocation {
     // A vector instructions that implement the Invocation.
     pub instructions: Vec<Instruction>,
+    // A vector of static relocation.
+    pub relocations: Vec<RelocationEntry>,
     // A vector of BranchRefChanges, should correspond to Invocation.branches.
     pub results: Vec<BranchRefChanges>,
 }
 impl CompiledInvocation {
     fn new(
         instructions: Vec<Instruction>,
+        relocations: Vec<RelocationEntry>,
         ap_changes: impl Iterator<Item = ApChange>,
         output_expressions: impl Iterator<Item = impl Iterator<Item = ResOperand>>,
         output_types: Vec<Vec<ConcreteTypeId>>,
     ) -> Self {
         Self {
             instructions,
+            relocations,
             results: zip_eq(ap_changes, zip_eq(output_expressions, output_types))
                 .map(|(ap_change, (expressions, types))| {
                     BranchRefChanges::new(ap_change, expressions, types.into_iter())
@@ -84,6 +89,7 @@ impl CompiledInvocation {
         output_types: Vec<Vec<ConcreteTypeId>>,
     ) -> Self {
         Self::new(
+            vec![],
             vec![],
             [ApChange::Known(0)].into_iter(),
             [output_expressions].into_iter(),
@@ -199,6 +205,10 @@ fn handle_function_call(
             }),
             inc_ap: false,
         }],
+        vec![RelocationEntry {
+            instruction_idx: 0,
+            relocation: Relocation::RelativeStatementID(func_call.function.entry),
+        }],
         [ApChange::Known(0)].into_iter(),
         [refs.into_iter()].into_iter(),
         func_call.output_types(),
@@ -217,6 +227,7 @@ fn handle_store_temp(
             }),
             inc_ap: true,
         }],
+        vec![],
         [ApChange::Known(1)].into_iter(),
         [[ResOperand::Deref(DerefOperand { register: Register::AP, offset: -1 })].into_iter()]
             .into_iter(),
