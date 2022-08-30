@@ -8,5 +8,4 @@ filesystem = { path = "../filesystem" }
 salsa = "0.16.1"
 
 [dev_dependencies]
-assert_matches = "1.5"
 diagnostics_proc_macros = { path = "../diagnostics_proc_macros" }
