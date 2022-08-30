@@ -50,6 +50,8 @@ pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
                 let (_statement_refs, return_refs) =
                     program_refs.take_references(statement_idx, ref_ids.iter())?;
                 check_references_on_stack(&return_refs)?;
+                // TODO(orizi): Also test types of the results using 'check_types_match' when the
+                // returning function is available.
 
                 instructions.push(Instruction {
                     body: InstructionBody::Ret(RetInstruction {}),

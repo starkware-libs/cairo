@@ -5,6 +5,7 @@ use casm::instructions::{AssertEqInstruction, CallInstruction, Instruction, Inst
 use casm::operand::{
     BinOpOperand, DerefOperand, DerefOrImmediate, ImmediateOperand, Operation, Register, ResOperand,
 };
+use itertools::zip_eq;
 use sierra::extensions::core::felt::{
     FeltBinaryOperationConcreteLibFunc, FeltConcrete, FeltDuplicateConcreteLibFunc,
 };
@@ -12,6 +13,7 @@ use sierra::extensions::core::function_call::FunctionCallConcreteLibFunc;
 use sierra::extensions::core::integer::Operator;
 use sierra::extensions::core::mem::{MemConcreteLibFunc, StoreTempConcreteLibFunc};
 use sierra::extensions::{ConcreteLibFunc, CoreConcreteLibFunc};
+use sierra::ids::ConcreteTypeId;
 use thiserror::Error;
 
 use crate::references::ReferenceValue;
@@ -20,6 +22,8 @@ use crate::references::ReferenceValue;
 pub enum InvocationError {
     #[error("One of the arguments does not satisfy the requirements of the libfunc.")]
     InvalidReferenceExpressionForArgument,
+    #[error("One of the arguments does not match the expected input of the libfunc.")]
+    InvalidReferenceTypeForArgument,
     #[error("Expected a different number of arguments")]
     WrongNumberOfArguments,
     #[error("The requested functionality is not implemented yet")]
@@ -34,6 +38,20 @@ pub struct BranchRefChanges {
     pub refs: Vec<ReferenceValue>,
     pub ap_change: ApChange,
 }
+impl BranchRefChanges {
+    fn new(
+        ap_change: ApChange,
+        expressions: impl Iterator<Item = ResOperand>,
+        types: impl Iterator<Item = ConcreteTypeId>,
+    ) -> Self {
+        Self {
+            refs: zip_eq(expressions, types)
+                .map(|(expression, ty)| ReferenceValue { expression, ty })
+                .collect(),
+            ap_change,
+        }
+    }
+}
 
 /// The result from a compilation of a single invocation statement.
 #[derive(Debug, Eq, PartialEq)]
@@ -43,8 +61,25 @@ pub struct CompiledInvocation {
     // A vector of BranchRefChanges, should correspond to Invocation.branches.
     pub results: Vec<BranchRefChanges>,
 }
+impl CompiledInvocation {
+    fn new(
+        instruction: Vec<Instruction>,
+        ap_changes: impl Iterator<Item = ApChange>,
+        output_expressions: impl Iterator<Item = impl Iterator<Item = ResOperand>>,
+        output_types: Vec<Vec<ConcreteTypeId>>,
+    ) -> Self {
+        Self {
+            instruction,
+            results: zip_eq(ap_changes, zip_eq(output_expressions, output_types))
+                .map(|(ap_change, (expressions, types))| {
+                    BranchRefChanges::new(ap_change, expressions, types.into_iter())
+                })
+                .collect(),
+        }
+    }
+}
 
-pub fn handle_felt_op(
+fn handle_felt_op(
     felt_op: &FeltBinaryOperationConcreteLibFunc,
     refs: &[ReferenceValue],
 ) -> Result<CompiledInvocation, InvocationError> {
@@ -57,7 +92,7 @@ pub fn handle_felt_op(
     };
 
     let (expr_a, expr_b) = match refs {
-        [ReferenceValue { expression: expr_a }, ReferenceValue { expression: expr_b }] => {
+        [ReferenceValue { expression: expr_a, .. }, ReferenceValue { expression: expr_b, .. }] => {
             (expr_a, expr_b)
         }
         _ => return Err(InvocationError::WrongNumberOfArguments),
@@ -72,14 +107,12 @@ pub fn handle_felt_op(
         }
         _ => return Err(InvocationError::InvalidReferenceExpressionForArgument),
     };
-
-    Ok(CompiledInvocation {
-        instruction: vec![],
-        results: vec![BranchRefChanges {
-            refs: vec![ReferenceValue { expression: ResOperand::BinOp(ref_expression) }],
-            ap_change: ApChange::Known(0),
-        }],
-    })
+    Ok(CompiledInvocation::new(
+        vec![],
+        [ApChange::Known(0)].into_iter(),
+        [[ResOperand::BinOp(ref_expression)].into_iter()].into_iter(),
+        felt_op.output_types(),
+    ))
 }
 
 // Checks that the list of reference is contiguous on the stack and ends at ap - 1.
@@ -100,25 +133,36 @@ pub fn check_references_on_stack(refs: &[ReferenceValue]) -> Result<(), Invocati
     Ok(())
 }
 
-pub fn handle_felt_dup(
-    _felt_dup: &FeltDuplicateConcreteLibFunc,
+/// Checks that the list of reference contains types matching the given types.
+pub fn check_types_match(
+    refs: &[ReferenceValue],
+    types: &[ConcreteTypeId],
+) -> Result<(), InvocationError> {
+    if itertools::equal(types.iter(), refs.iter().map(|r| &r.ty)) {
+        Ok(())
+    } else {
+        Err(InvocationError::InvalidReferenceTypeForArgument)
+    }
+}
+
+fn handle_felt_dup(
+    felt_dup: &FeltDuplicateConcreteLibFunc,
     refs: &[ReferenceValue],
 ) -> Result<CompiledInvocation, InvocationError> {
-    let ref_value = match refs {
-        [ref_value] => ref_value,
+    let expression = match refs {
+        [ReferenceValue { expression, .. }] => expression,
         _ => return Err(InvocationError::WrongNumberOfArguments),
     };
 
-    Ok(CompiledInvocation {
-        instruction: vec![],
-        results: vec![BranchRefChanges {
-            refs: vec![ref_value.clone(), ref_value.clone()],
-            ap_change: ApChange::Known(0),
-        }],
-    })
+    Ok(CompiledInvocation::new(
+        vec![],
+        [ApChange::Known(0)].into_iter(),
+        [[expression.clone(), expression.clone()].into_iter()].into_iter(),
+        felt_dup.output_types(),
+    ))
 }
 
-pub fn handle_function_call(
+fn handle_function_call(
     func_call: &FunctionCallConcreteLibFunc,
     refs: &[ReferenceValue],
 ) -> Result<CompiledInvocation, InvocationError> {
@@ -131,54 +175,52 @@ pub fn handle_function_call(
 
     let mut offset = -1;
     for _output_type in fallthrough_outputs.iter().rev() {
-        refs.push_front(ReferenceValue {
-            expression: ResOperand::Deref(DerefOperand { register: Register::AP, offset }),
-        });
+        refs.push_front(ResOperand::Deref(DerefOperand { register: Register::AP, offset }));
 
         // TODO(ilya, 10/10/2022): Get size from type.
         let size = 1;
         offset -= size;
     }
 
-    // TODO(ilya, 10/10/2022): Fix call target.
-    Ok(CompiledInvocation {
-        instruction: vec![Instruction {
+    Ok(CompiledInvocation::new(
+        vec![Instruction {
             body: InstructionBody::Call(CallInstruction {
                 target: DerefOrImmediate::Immediate(ImmediateOperand { value: 0 }),
                 relative: true,
             }),
             inc_ap: false,
         }],
-        results: vec![BranchRefChanges { refs: refs.into(), ap_change: ApChange::Known(0) }],
-    })
+        [ApChange::Known(0)].into_iter(),
+        [refs.into_iter()].into_iter(),
+        func_call.output_types(),
+    ))
 }
 
-pub fn handle_store_temp(
-    _store_temp: &StoreTempConcreteLibFunc,
+fn handle_store_temp(
+    store_temp: &StoreTempConcreteLibFunc,
     refs: &[ReferenceValue],
 ) -> Result<CompiledInvocation, InvocationError> {
-    Ok(CompiledInvocation {
-        instruction: vec![Instruction {
+    Ok(CompiledInvocation::new(
+        vec![Instruction {
             body: InstructionBody::AssertEq(AssertEqInstruction {
                 a: DerefOperand { register: Register::AP, offset: 0 },
                 b: refs[0].expression.clone(),
             }),
             inc_ap: true,
         }],
-        results: vec![BranchRefChanges {
-            refs: vec![ReferenceValue {
-                expression: ResOperand::Deref(DerefOperand { register: Register::AP, offset: -1 }),
-            }],
-            ap_change: ApChange::Known(1),
-        }],
-    })
+        [ApChange::Known(1)].into_iter(),
+        [[ResOperand::Deref(DerefOperand { register: Register::AP, offset: -1 })].into_iter()]
+            .into_iter(),
+        store_temp.output_types(),
+    ))
 }
 
 pub fn compile_invocation(
-    ext: &CoreConcreteLibFunc,
+    libfunc: &CoreConcreteLibFunc,
     refs: &[ReferenceValue],
 ) -> Result<CompiledInvocation, InvocationError> {
-    match ext {
+    check_types_match(refs, &libfunc.input_types())?;
+    match libfunc {
         // TODO(ilya, 10/10/2022): Handle type.
         CoreConcreteLibFunc::Felt(FeltConcrete::Operation(felt_op)) => {
             handle_felt_op(felt_op, refs)
@@ -189,10 +231,14 @@ pub fn compile_invocation(
         CoreConcreteLibFunc::Mem(MemConcreteLibFunc::StoreTemp(store_temp)) => {
             handle_store_temp(store_temp, refs)
         }
-        CoreConcreteLibFunc::Mem(MemConcreteLibFunc::Rename(_)) => Ok(CompiledInvocation {
-            instruction: vec![],
-            results: vec![BranchRefChanges { refs: refs.to_vec(), ap_change: ApChange::Known(0) }],
-        }),
+        CoreConcreteLibFunc::Mem(MemConcreteLibFunc::Rename(libfunc)) => {
+            Ok(CompiledInvocation::new(
+                vec![],
+                [ApChange::Known(0)].into_iter(),
+                [refs.iter().map(|r| r.expression.clone())].into_iter(),
+                libfunc.output_types(),
+            ))
+        }
         CoreConcreteLibFunc::FunctionCall(func_call) => handle_function_call(func_call, refs),
         _ => Err(InvocationError::NotImplemented),
     }
