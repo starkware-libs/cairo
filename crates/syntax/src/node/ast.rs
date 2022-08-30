@@ -2226,8 +2226,8 @@ impl Param {
             width,
         }))
     }
-    pub fn identifier(&self, db: &dyn SyntaxGroup) -> Terminal {
-        Terminal::from_syntax_node(db, self.children[0].clone())
+    pub fn identifier(&self, db: &dyn SyntaxGroup) -> Identifier {
+        Identifier::from_syntax_node(db, self.children[0].clone())
     }
     pub fn type_clause(&self, db: &dyn SyntaxGroup) -> TypeClause {
         TypeClause::from_syntax_node(db, self.children[1].clone())
@@ -2237,7 +2237,7 @@ impl TypedSyntaxNode for Param {
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::Param,
-            children: vec![Terminal::missing(db), TypeClause::missing(db)],
+            children: vec![Identifier::missing(db), TypeClause::missing(db)],
             width: 0,
         }))
     }
@@ -2458,8 +2458,8 @@ impl FunctionSignature {
     pub fn rparen(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[4].clone())
     }
-    pub fn ret_ty(&self, db: &dyn SyntaxGroup) -> ReturnTypeClause {
-        ReturnTypeClause::from_syntax_node(db, self.children[5].clone())
+    pub fn ret_ty(&self, db: &dyn SyntaxGroup) -> OptionReturnTypeClause {
+        OptionReturnTypeClause::from_syntax_node(db, self.children[5].clone())
     }
 }
 impl TypedSyntaxNode for FunctionSignature {
@@ -2472,7 +2472,7 @@ impl TypedSyntaxNode for FunctionSignature {
                 Terminal::missing(db),
                 ParamList::missing(db),
                 Terminal::missing(db),
-                ReturnTypeClause::missing(db),
+                OptionReturnTypeClause::missing(db),
             ],
             width: 0,
         }))
