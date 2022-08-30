@@ -1,3 +1,5 @@
+use pretty_assertions::assert_eq;
+
 use super::ast::{
     ExprBinary, ExprLiteral, ExprPath, Identifier, OptionGenericArgsEmpty, PathSegment, Terminal,
     Trivia,
@@ -29,7 +31,7 @@ fn test_empty() {
 
     let empty = OptionGenericArgsEmpty::new_green(db);
 
-    let root = SyntaxNode::new_root(empty);
+    let root = SyntaxNode::new_root(db, empty);
     assert_eq!(
         traverse(db, root),
         [(SyntaxNodeDetails::Syntax(SyntaxKind::OptionGenericArgsEmpty), 0, 0),]
@@ -71,7 +73,7 @@ fn test_ast() {
         ExprLiteral::new_green(db, terminals[2]),
     );
 
-    let root = SyntaxNode::new_root(expr);
+    let root = SyntaxNode::new_root(db, expr);
     assert_eq!(
         traverse(db, root),
         [

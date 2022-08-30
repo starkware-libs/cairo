@@ -22,21 +22,20 @@ impl AsGreenInterner for TestDatabase {
     }
 }
 
-fn build_empty_file_green_tree(green_interner: &dyn GreenInterner) -> SyntaxFile {
-    let eof_token = Token::new_green(green_interner, TokenKind::EndOfFile, SmolStr::from(""));
+fn build_empty_file_green_tree(db: &dyn GreenInterner) -> SyntaxFile {
+    let eof_token = Token::new_green(db, TokenKind::EndOfFile, SmolStr::from(""));
     let eof_terminal = Terminal::new_green(
-        green_interner,
-        Trivia::new_green(green_interner, vec![]),
+        db,
+        Trivia::new_green(db, vec![]),
         eof_token,
-        Trivia::new_green(green_interner, vec![]),
+        Trivia::new_green(db, vec![]),
     );
     SyntaxFile::from_syntax_node(
-        green_interner,
-        SyntaxNode::new_root(SyntaxFile::new_green(
-            green_interner,
-            ItemList::new_green(green_interner, vec![]),
-            eof_terminal,
-        )),
+        db,
+        SyntaxNode::new_root(
+            db,
+            SyntaxFile::new_green(db, ItemList::new_green(db, vec![]), eof_terminal),
+        ),
     )
 }
 
