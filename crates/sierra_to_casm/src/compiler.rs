@@ -66,7 +66,11 @@ pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
                     .get_libfunc(&invocation.libfunc_id)
                     .map_err(CompilationError::ProgramRegistryError)?;
                 let compiled_invocation = compile_invocation(libfunc, &invoke_refs)?;
-                instructions.extend(compiled_invocation.instruction.into_iter());
+
+                match compiled_invocation.instructions {
+                    Some(new_instructions) => instructions.extend(new_instructions),
+                    None => (),
+                }
 
                 program_refs.update_references(
                     statement_idx,
