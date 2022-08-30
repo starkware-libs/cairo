@@ -28,6 +28,8 @@ pub trait SemanticGroup: DefsGroup + AsDefsGroup + ParserGroup {
     fn module_semantic(&self, item: ModuleId) -> semantic::Module;
     fn struct_semantic(&self, item: StructId) -> semantic::Struct;
     fn free_function_semantic(&self, item: FreeFunctionId) -> semantic::FreeFunction;
+    fn expr_semantic(&self, item: ExprId) -> semantic::Expr;
+    fn statement_semantic(&self, item: StatementId) -> semantic::Statement;
 
     // TODO(yuval): consider moving to filesystem/defs crate.
     fn module_file(&self, module_id: ModuleId) -> Option<FileId>;
@@ -47,6 +49,14 @@ fn free_function_semantic(
     _item: FreeFunctionId,
 ) -> semantic::FreeFunction {
     todo!()
+}
+
+fn expr_semantic(db: &dyn SemanticGroup, item: ExprId) -> semantic::Expr {
+    db.lookup_intern_expr(item)
+}
+
+fn statement_semantic(db: &dyn SemanticGroup, item: StatementId) -> semantic::Statement {
+    db.lookup_intern_statement(item)
 }
 
 fn module_items(db: &dyn SemanticGroup, module_id: ModuleId) -> Option<Vec<ModuleItemId>> {
