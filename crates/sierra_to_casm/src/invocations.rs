@@ -57,25 +57,38 @@ impl BranchRefChanges {
 #[derive(Debug, Eq, PartialEq)]
 pub struct CompiledInvocation {
     // A vector instructions that implement the Invocation.
-    pub instruction: Vec<Instruction>,
+    pub instructions: Vec<Instruction>,
     // A vector of BranchRefChanges, should correspond to Invocation.branches.
     pub results: Vec<BranchRefChanges>,
 }
 impl CompiledInvocation {
     fn new(
-        instruction: Vec<Instruction>,
+        instructions: Vec<Instruction>,
         ap_changes: impl Iterator<Item = ApChange>,
         output_expressions: impl Iterator<Item = impl Iterator<Item = ResOperand>>,
         output_types: Vec<Vec<ConcreteTypeId>>,
     ) -> Self {
         Self {
-            instruction,
+            instructions,
             results: zip_eq(ap_changes, zip_eq(output_expressions, output_types))
                 .map(|(ap_change, (expressions, types))| {
                     BranchRefChanges::new(ap_change, expressions, types.into_iter())
                 })
                 .collect(),
         }
+    }
+
+    // A constructor for the trivial case of fallthrough without any instructions.
+    fn only_reference_changes(
+        output_expressions: impl Iterator<Item = ResOperand>,
+        output_types: Vec<Vec<ConcreteTypeId>>,
+    ) -> Self {
+        Self::new(
+            vec![],
+            [ApChange::Known(0)].into_iter(),
+            [output_expressions].into_iter(),
+            output_types,
+        )
     }
 }
 
@@ -107,10 +120,8 @@ fn handle_felt_op(
         }
         _ => return Err(InvocationError::InvalidReferenceExpressionForArgument),
     };
-    Ok(CompiledInvocation::new(
-        vec![],
-        [ApChange::Known(0)].into_iter(),
-        [[ResOperand::BinOp(ref_expression)].into_iter()].into_iter(),
+    Ok(CompiledInvocation::only_reference_changes(
+        [ResOperand::BinOp(ref_expression)].into_iter(),
         felt_op.output_types(),
     ))
 }
@@ -154,10 +165,8 @@ fn handle_felt_dup(
         _ => return Err(InvocationError::WrongNumberOfArguments),
     };
 
-    Ok(CompiledInvocation::new(
-        vec![],
-        [ApChange::Known(0)].into_iter(),
-        [[expression.clone(), expression.clone()].into_iter()].into_iter(),
+    Ok(CompiledInvocation::only_reference_changes(
+        [expression.clone(), expression.clone()].into_iter(),
         felt_dup.output_types(),
     ))
 }
@@ -232,10 +241,8 @@ pub fn compile_invocation(
             handle_store_temp(store_temp, refs)
         }
         CoreConcreteLibFunc::Mem(MemConcreteLibFunc::Rename(libfunc)) => {
-            Ok(CompiledInvocation::new(
-                vec![],
-                [ApChange::Known(0)].into_iter(),
-                [refs.iter().map(|r| r.expression.clone())].into_iter(),
+            Ok(CompiledInvocation::only_reference_changes(
+                refs.iter().map(|r| r.expression.clone()),
                 libfunc.output_types(),
             ))
         }
