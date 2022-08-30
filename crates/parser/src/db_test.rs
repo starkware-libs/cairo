@@ -22,21 +22,20 @@ impl AsSyntaxGroup for TestDatabase {
     }
 }
 
-fn build_empty_file_green_tree(syntax_group: &dyn SyntaxGroup) -> SyntaxFile {
-    let eof_token = Token::new_green(syntax_group, TokenKind::EndOfFile, SmolStr::from(""));
+fn build_empty_file_green_tree(db: &dyn SyntaxGroup) -> SyntaxFile {
+    let eof_token = Token::new_green(db, TokenKind::EndOfFile, SmolStr::from(""));
     let eof_terminal = Terminal::new_green(
-        syntax_group,
-        Trivia::new_green(syntax_group, vec![]),
+        db,
+        Trivia::new_green(db, vec![]),
         eof_token,
-        Trivia::new_green(syntax_group, vec![]),
+        Trivia::new_green(db, vec![]),
     );
     SyntaxFile::from_syntax_node(
-        syntax_group,
-        SyntaxNode::new_root(SyntaxFile::new_green(
-            syntax_group,
-            ItemList::new_green(syntax_group, vec![]),
-            eof_terminal,
-        )),
+        db,
+        SyntaxNode::new_root(
+            db,
+            SyntaxFile::new_green(db, ItemList::new_green(db, vec![]), eof_terminal),
+        ),
     )
 }
 

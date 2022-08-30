@@ -202,7 +202,9 @@ fn test_lex_single_token() {
     for (kind, text) in token_kind_and_text() {
         let mut lexer = Lexer::from_text(db, test_source(), text);
         let token = lexer.next().unwrap().terminal;
-        let token = Terminal::from_syntax_node(db, SyntaxNode::new_root(token)).token(db).raw(db);
+        // TODO(spapini): Remove calling new_root on non root elements.
+        let token =
+            Terminal::from_syntax_node(db, SyntaxNode::new_root(db, token)).token(db).raw(db);
         assert_eq!(token.kind, kind, "Wrong token kind, with text: \"{}\".", text);
         assert_eq!(token.text, text, "Wrong token text.");
 
@@ -231,14 +233,16 @@ fn test_lex_double_token() {
                 let mut lexer = Lexer::from_text(db, test_source(), text.as_str());
                 let token = lexer.next().unwrap().terminal;
 
-                let token =
-                    Terminal::from_syntax_node(db, SyntaxNode::new_root(token)).token(db).raw(db);
+                let token = Terminal::from_syntax_node(db, SyntaxNode::new_root(db, token))
+                    .token(db)
+                    .raw(db);
                 assert_eq!(token.kind, kind0, "Wrong token kind0, with text: \"{}\".", text);
                 assert_eq!(token.text, text0, "Wrong token text0, with total text: \"{}\".", text);
                 let token = lexer.next().unwrap().terminal;
 
-                let token =
-                    Terminal::from_syntax_node(db, SyntaxNode::new_root(token)).token(db).raw(db);
+                let token = Terminal::from_syntax_node(db, SyntaxNode::new_root(db, token))
+                    .token(db)
+                    .raw(db);
                 assert_eq!(token.kind, kind1, "Wrong token kind1, with text: \"{}\".", text);
                 assert_eq!(token.text, text1, "Wrong token text1, with total text: \"{}\".", text);
 
@@ -264,7 +268,8 @@ fn test_lex_token_with_trivia() {
                 let text = format!("{}{} {}", leading_trivia, token_text, trailing_trivia);
                 let mut lexer = Lexer::from_text(db, test_source(), text.as_str());
                 let green_terminal = lexer.next().unwrap().terminal;
-                let terminal = Terminal::from_syntax_node(db, SyntaxNode::new_root(green_terminal));
+                let terminal =
+                    Terminal::from_syntax_node(db, SyntaxNode::new_root(db, green_terminal));
                 let token = terminal.token(db).raw(db);
                 assert_eq!(token.kind, kind, "Wrong token kind, with text: \"{}\".", text);
                 assert_eq!(token.text, token_text, "Wrong token text.");
@@ -385,7 +390,7 @@ fn test_bad_character() {
     let text = "@";
     let mut lexer = Lexer::from_text(db, test_source(), text);
     let green_terminal = lexer.next().unwrap().terminal;
-    let terminal = Terminal::from_syntax_node(db, SyntaxNode::new_root(green_terminal));
+    let terminal = Terminal::from_syntax_node(db, SyntaxNode::new_root(db, green_terminal));
     let token = terminal.token(db).raw(db);
     assert_eq!(token.kind, TokenKind::BadCharacters, "Wrong token kind, with text: \"{}\".", text);
     assert_eq!(token.text, text, "Wrong token text.");

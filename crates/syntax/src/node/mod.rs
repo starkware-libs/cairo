@@ -1,12 +1,17 @@
 use core::hash::Hash;
+use std::collections::hash_map::Entry;
+use std::collections::HashMap;
 use std::sync::Arc;
+use std::vec;
 
 use smol_str::SmolStr;
 
 use self::db::SyntaxGroup;
 use self::green::GreenNode;
-use self::ids::GreenId;
+use self::ids::{GreenId, SyntaxStablePtrId};
+use self::key_fields::get_key_fields;
 use self::kind::SyntaxKind;
+use self::stable_ptr::SyntaxStablePtr;
 use crate::token;
 
 pub mod ast;
@@ -17,7 +22,9 @@ pub mod element_list;
 pub mod green;
 pub mod helpers;
 pub mod ids;
+pub mod key_fields;
 pub mod kind;
+pub mod stable_ptr;
 
 /// SyntaxNode. Untyped view of the syntax tree. Adds parent() and offset() capabilities.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
@@ -29,6 +36,7 @@ struct SyntaxNodeInner {
     /// syntax subtree.
     offset: u32,
     parent: Option<SyntaxNode>,
+    stable_ptr: SyntaxStablePtrId,
 }
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum SyntaxNodeDetails {
@@ -36,8 +44,13 @@ pub enum SyntaxNodeDetails {
     Token(token::Token),
 }
 impl SyntaxNode {
-    pub fn new_root(green: GreenId) -> Self {
-        let inner = SyntaxNodeInner { green, offset: 0, parent: None };
+    pub fn new_root(db: &dyn SyntaxGroup, green: GreenId) -> Self {
+        let inner = SyntaxNodeInner {
+            green,
+            offset: 0,
+            parent: None,
+            stable_ptr: db.intern_stable_ptr(SyntaxStablePtr::Root),
+        };
         Self(Arc::new(inner))
     }
     pub fn details(&self, db: &dyn SyntaxGroup) -> SyntaxNodeDetails {
@@ -55,28 +68,99 @@ impl SyntaxNode {
             GreenNode::Token(token) => token.width(),
         }
     }
-    pub fn children(&self, db: &dyn SyntaxGroup) -> Vec<SyntaxNode> {
-        let mut offset: u32 = self.0.offset;
-        match db.lookup_intern_green(self.0.green) {
-            GreenNode::Internal(internal) => internal
-                .children
-                .into_iter()
-                .map(move |c| {
-                    let res = SyntaxNode(Arc::new(SyntaxNodeInner {
-                        green: c,
-                        offset,
-                        parent: Some(self.clone()),
-                    }));
-                    let width = db.lookup_intern_green(c).width();
-                    offset += width;
-                    res
-                })
-                .collect(),
+    pub fn children<'db>(&self, db: &'db dyn SyntaxGroup) -> SyntaxNodeChildIterator<'db> {
+        let green_iterator = match db.lookup_intern_green(self.0.green) {
+            GreenNode::Internal(internal) => internal.children,
             GreenNode::Token(_) => vec![],
+        }
+        .into_iter();
+        SyntaxNodeChildIterator {
+            db,
+            node: self.clone(),
+            green_iterator,
+            offset: self.0.offset,
+            key_map: HashMap::new(),
         }
     }
     pub fn parent(&self) -> Option<SyntaxNode> {
         self.0.parent.as_ref().cloned()
+    }
+    pub fn stable_ptr(&self) -> SyntaxStablePtrId {
+        self.0.stable_ptr
+    }
+
+    /// Lookups a syntax node using a stable syntax pointer.
+    /// Should only be called on the root from which the stable pointer was generated.
+    pub fn lookup_ptr(&self, db: &dyn SyntaxGroup, stable_ptr: SyntaxStablePtrId) -> SyntaxNode {
+        assert!(self.0.parent.is_none(), "May only be called on the root.");
+        let ptr = db.lookup_intern_stable_ptr(stable_ptr);
+        match ptr {
+            SyntaxStablePtr::Root => self.clone(),
+            SyntaxStablePtr::Child { parent, .. } => {
+                let parent = self.lookup_ptr(db, parent);
+                for child in parent.children(db) {
+                    if child.stable_ptr() == stable_ptr {
+                        return child;
+                    }
+                }
+                unreachable!();
+            }
+        }
+    }
+}
+pub struct SyntaxNodeChildIterator<'db> {
+    db: &'db dyn SyntaxGroup,
+    node: SyntaxNode,
+    green_iterator: vec::IntoIter<GreenId>,
+    /// The current offset in the source file of the start of the child.
+    offset: u32,
+    /// Mapping from (kind, key_fields) to the number of times this indexing pair has been seen.
+    /// This is used to maintain the correct index for creating each StablePtr.
+    /// See [`self::key_fields`].
+    key_map: HashMap<(SyntaxKind, Vec<GreenId>), usize>,
+}
+impl<'db> Iterator for SyntaxNodeChildIterator<'db> {
+    type Item = SyntaxNode;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let green_id = self.green_iterator.next()?;
+        let green = self.db.lookup_intern_green(green_id);
+        let width = green.width();
+        let (kind, children) = match green {
+            GreenNode::Internal(node) => (node.kind, node.children),
+            GreenNode::Token(_) => {
+                // TODO(spapini): change this once token is united with syntax.
+                (SyntaxKind::ExprMissing, vec![])
+            }
+        };
+        let key_fields: Vec<GreenId> = get_key_fields(kind, children);
+        let index = match self.key_map.entry((kind, key_fields.clone())) {
+            Entry::Occupied(mut entry) => entry.insert(entry.get() + 1),
+            Entry::Vacant(entry) => {
+                entry.insert(1);
+                0
+            }
+        };
+        let stable_ptr = self.db.intern_stable_ptr(SyntaxStablePtr::Child {
+            parent: self.node.0.stable_ptr,
+            kind,
+            key_fields,
+            index,
+        });
+        // Create the SyntaxNode view for the child.
+        let res = SyntaxNode(Arc::new(SyntaxNodeInner {
+            green: green_id,
+            offset: self.offset,
+            parent: Some(self.node.clone()),
+            stable_ptr,
+        }));
+        self.offset += width;
+        Some(res)
+    }
+}
+impl<'db> ExactSizeIterator for SyntaxNodeChildIterator<'db> {
+    fn len(&self) -> usize {
+        self.green_iterator.len()
     }
 }
 
@@ -86,6 +170,9 @@ pub trait TypedSyntaxNode {
     fn missing(db: &dyn SyntaxGroup) -> GreenId;
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self;
     fn as_syntax_node(&self) -> SyntaxNode;
+    fn stable_ptr(&self) -> SyntaxStablePtrId {
+        self.as_syntax_node().0.stable_ptr
+    }
 }
 
 // TODO(spapini): Children should be excluded from Eq and Hash of Typed nodes.

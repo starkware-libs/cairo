@@ -1,3 +1,5 @@
+use pretty_assertions::assert_eq;
+
 use super::ast::{
     ExprBinary, ExprLiteral, ExprPath, Identifier, OptionGenericArgsEmpty, PathSegment, Terminal,
     Trivia,
@@ -29,7 +31,7 @@ fn test_empty() {
 
     let empty = OptionGenericArgsEmpty::new_green(db);
 
-    let root = SyntaxNode::new_root(empty);
+    let root = SyntaxNode::new_root(db, empty);
     assert_eq!(
         traverse(db, root),
         [(SyntaxNodeDetails::Syntax(SyntaxKind::OptionGenericArgsEmpty), 0, 0),]
@@ -40,38 +42,8 @@ fn test_empty() {
 fn test_ast() {
     let db_val = DatabaseImpl::default();
     let db = &db_val;
+    let root = setup(db);
 
-    // TODO: Use a builder for easier construction of token.
-    // Construct green nodes.
-    let empty = OptionGenericArgsEmpty::new_green(db);
-    let tokens = vec![
-        node::Token::new_green(db, token::TokenKind::Identifier, "foo".into()),
-        node::Token::new_green(db, token::TokenKind::Whitespace, " ".into()),
-        node::Token::new_green(db, token::TokenKind::Plus, "+".into()),
-        node::Token::new_green(db, token::TokenKind::Whitespace, " ".into()),
-        node::Token::new_green(db, token::TokenKind::LiteralNumber, "5".into()),
-    ];
-    assert_eq!(tokens[1], tokens[3]);
-    let no_trivia = Trivia::new_green(db, vec![]);
-    let triviums = vec![tokens[1], tokens[3]];
-    assert_eq!(triviums[0], triviums[1]);
-    let terminals = vec![
-        Terminal::new_green(db, no_trivia, tokens[0], Trivia::new_green(db, vec![triviums[0]])),
-        Terminal::new_green(db, no_trivia, tokens[2], Trivia::new_green(db, vec![triviums[1]])),
-        Terminal::new_green(db, no_trivia, tokens[4], no_trivia),
-    ];
-
-    let expr = ExprBinary::new_green(
-        db,
-        ExprPath::new_green(
-            db,
-            vec![PathSegment::new_green(db, Identifier::new_green(db, terminals[0]), empty)],
-        ),
-        terminals[1],
-        ExprLiteral::new_green(db, terminals[2]),
-    );
-
-    let root = SyntaxNode::new_root(expr);
     assert_eq!(
         traverse(db, root),
         [
@@ -132,4 +104,52 @@ fn test_ast() {
             (SyntaxNodeDetails::Syntax(SyntaxKind::Trivia), 7, 0)
         ]
     )
+}
+
+#[test]
+fn test_stable_ptr() {
+    let db_val = DatabaseImpl::default();
+    let db = &db_val;
+    let root = setup(db);
+    traverse_and_verify_ptr(db, &root, root.clone());
+}
+fn traverse_and_verify_ptr(db: &dyn SyntaxGroup, root: &SyntaxNode, node: SyntaxNode) {
+    let ptr = node.stable_ptr();
+    let looked_up_node = root.lookup_ptr(db, ptr);
+    assert_eq!(node, looked_up_node);
+    for c in node.children(db) {
+        traverse_and_verify_ptr(db, root, c);
+    }
+}
+
+fn setup(db: &DatabaseImpl) -> SyntaxNode {
+    // TODO: Use a builder for easier construction of token.
+    // Construct green nodes.
+    let empty = OptionGenericArgsEmpty::new_green(db);
+    let tokens = vec![
+        node::Token::new_green(db, token::TokenKind::Identifier, "foo".into()),
+        node::Token::new_green(db, token::TokenKind::Whitespace, " ".into()),
+        node::Token::new_green(db, token::TokenKind::Plus, "+".into()),
+        node::Token::new_green(db, token::TokenKind::Whitespace, " ".into()),
+        node::Token::new_green(db, token::TokenKind::LiteralNumber, "5".into()),
+    ];
+    assert_eq!(tokens[1], tokens[3]);
+    let no_trivia = Trivia::new_green(db, vec![]);
+    let triviums = vec![tokens[1], tokens[3]];
+    assert_eq!(triviums[0], triviums[1]);
+    let terminals = vec![
+        Terminal::new_green(db, no_trivia, tokens[0], Trivia::new_green(db, vec![triviums[0]])),
+        Terminal::new_green(db, no_trivia, tokens[2], Trivia::new_green(db, vec![triviums[1]])),
+        Terminal::new_green(db, no_trivia, tokens[4], no_trivia),
+    ];
+    let expr = ExprBinary::new_green(
+        db,
+        ExprPath::new_green(
+            db,
+            vec![PathSegment::new_green(db, Identifier::new_green(db, terminals[0]), empty)],
+        ),
+        terminals[1],
+        ExprLiteral::new_green(db, terminals[2]),
+    );
+    SyntaxNode::new_root(db, expr)
 }

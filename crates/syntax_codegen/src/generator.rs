@@ -303,7 +303,7 @@ fn gen_struct_code(name: String, members: Vec<Member>) -> rust::Tokens {
                         if internal.kind != SyntaxKind::$(&name) {
                             panic!("Unexpected SyntaxKind {:?}. Expected {:?}.", internal.kind, SyntaxKind::$(&name));
                         }
-                        let children = node.children(db);
+                        let children = node.children(db).collect();
                         Self { node, children }
                     },
                     GreenNode::Token(token) => {

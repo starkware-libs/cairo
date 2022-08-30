@@ -78,7 +78,7 @@ impl<'a> Parser<'a> {
         let eof = self.add_skipped_to_terminal(self.next_terminal.terminal);
         SyntaxFile::from_syntax_node(
             self.db,
-            SyntaxNode::new_root(SyntaxFile::new_green(self.db, items, eof)),
+            SyntaxNode::new_root(self.db, SyntaxFile::new_green(self.db, items, eof)),
         )
     }
 
