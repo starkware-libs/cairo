@@ -31,7 +31,7 @@ pub trait SemanticGroup: DefsGroup + AsDefsGroup + ParserGroup {
 
     // TODO(yuval): consider moving to filesystem/defs crate.
     fn module_file(&self, module_id: ModuleId) -> Option<FileId>;
-    fn module_items(&self, item: ModuleId) -> Option<Vec<ModuleItemId>>;
+    fn module_items(&self, item: ModuleId) -> Option<Module>;
 }
 
 fn module_semantic(_db: &dyn SemanticGroup, _item: ModuleId) -> semantic::Module {
@@ -49,7 +49,7 @@ fn free_function_semantic(
     todo!()
 }
 
-fn module_items(db: &dyn SemanticGroup, module_id: ModuleId) -> Option<Vec<ModuleItemId>> {
+fn module_items(db: &dyn SemanticGroup, module_id: ModuleId) -> Option<Module> {
     let green_interner = db.as_green_interner();
 
     let syntax_file = db.file_syntax(module_file(db, module_id)?)?;
@@ -89,7 +89,7 @@ fn module_items(db: &dyn SemanticGroup, module_id: ModuleId) -> Option<Vec<Modul
             Item::Use(_us) => todo!(),
         }
     }
-    Some(module_items)
+    Some(semantic::Module { items: module_items })
 }
 
 fn module_file(db: &dyn SemanticGroup, module_id: ModuleId) -> Option<FileId> {
