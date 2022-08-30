@@ -2,7 +2,7 @@ use std::fs;
 
 use filesystem::ids::FileId;
 use salsa::{InternId, InternKey};
-use syntax::node::db::GreenDatabase;
+use syntax::node::db::SyntaxDatabase;
 use syntax::node::{SyntaxNode, TypedSyntaxNode};
 use test_case::test_case;
 
@@ -10,7 +10,7 @@ use crate::colored_printer::print_colored;
 use crate::parser::Parser;
 use crate::printer::print_tree;
 
-#[salsa::database(GreenDatabase)]
+#[salsa::database(SyntaxDatabase)]
 #[derive(Default)]
 pub struct DatabaseImpl {
     storage: salsa::Storage<DatabaseImpl>,

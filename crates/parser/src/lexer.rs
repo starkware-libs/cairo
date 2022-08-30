@@ -6,13 +6,13 @@ use filesystem::ids::FileId;
 use filesystem::span::{TextOffset, TextSpan};
 use smol_str::SmolStr;
 use syntax::node::ast::{Terminal, Trivia};
-use syntax::node::db::GreenInterner;
+use syntax::node::db::SyntaxGroup;
 use syntax::node::ids::GreenId;
 use syntax::node::Token;
 use syntax::token::TokenKind;
 
 pub struct Lexer<'a> {
-    db: &'a dyn GreenInterner,
+    db: &'a dyn SyntaxGroup,
     // TODO(yuval): add diagnostics. FileId should be included in diagnostics.
     source: FileId,
     text: &'a str,
@@ -23,7 +23,7 @@ pub struct Lexer<'a> {
 
 impl<'a> Lexer<'a> {
     // Ctors.
-    pub fn from_text(db: &'a dyn GreenInterner, source: FileId, text: &'a str) -> Lexer<'a> {
+    pub fn from_text(db: &'a dyn SyntaxGroup, source: FileId, text: &'a str) -> Lexer<'a> {
         Lexer {
             db,
             source,

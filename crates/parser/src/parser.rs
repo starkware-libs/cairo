@@ -6,7 +6,7 @@ use std::mem;
 
 use filesystem::ids::FileId;
 use syntax::node::ast::*;
-use syntax::node::db::GreenInterner;
+use syntax::node::db::SyntaxGroup;
 use syntax::node::green::{GreenNode, GreenNodeInternal};
 use syntax::node::ids::GreenId;
 use syntax::node::kind::SyntaxKind;
@@ -19,7 +19,7 @@ use crate::operators::{get_binary_operator_precedence, get_unary_operator_preced
 // TODO(yuval): add diagnostics.
 
 pub struct Parser<'a> {
-    db: &'a dyn GreenInterner,
+    db: &'a dyn SyntaxGroup,
     lexer: Lexer<'a>,
     /// The next terminal to handle.
     next_terminal: TerminalWithKind,
@@ -54,7 +54,7 @@ pub struct GreenCompilationUnit {
 const MAX_PRECEDENCE: usize = 10;
 impl<'a> Parser<'a> {
     /// Ctor.
-    pub fn from_text(db: &'a dyn GreenInterner, source: FileId, text: &'a str) -> Parser<'a> {
+    pub fn from_text(db: &'a dyn SyntaxGroup, source: FileId, text: &'a str) -> Parser<'a> {
         let mut lexer = Lexer::from_text(db, source, text);
         let next_terminal = lexer.next().unwrap();
         Parser { lexer, next_terminal, skipped_tokens: Vec::new(), db, offset: 0, current_width: 0 }
@@ -540,7 +540,7 @@ impl<'a> Parser<'a> {
         &mut self,
         try_parse_list_item: fn(&mut Self) -> Option<GreenId>,
         closing: TokenKind,
-        new_green: fn(&dyn GreenInterner, Vec<GreenId>) -> GreenId,
+        new_green: fn(&dyn SyntaxGroup, Vec<GreenId>) -> GreenId,
     ) -> GreenId {
         let mut children: Vec<GreenId> = Vec::new();
         while self.peek().kind != closing && self.peek().kind != TokenKind::EndOfFile {
@@ -566,7 +566,7 @@ impl<'a> Parser<'a> {
         try_parse_list_item: fn(&mut Self) -> Option<GreenId>,
         separator: TokenKind,
         closing: TokenKind,
-        new_green: fn(&dyn GreenInterner, Vec<GreenId>) -> GreenId,
+        new_green: fn(&dyn SyntaxGroup, Vec<GreenId>) -> GreenId,
     ) -> GreenId {
         let mut children: Vec<GreenId> = Vec::new();
         while self.peek().kind != closing && self.peek().kind != TokenKind::EndOfFile {

@@ -2,19 +2,19 @@ use super::ast::{
     ExprBinary, ExprLiteral, ExprPath, Identifier, OptionGenericArgsEmpty, PathSegment, Terminal,
     Trivia,
 };
-use super::db::GreenDatabase;
+use super::db::SyntaxDatabase;
 use super::kind::SyntaxKind;
-use super::{GreenInterner, SyntaxNode, SyntaxNodeDetails};
+use super::{SyntaxGroup, SyntaxNode, SyntaxNodeDetails};
 use crate::{node, token};
 
-#[salsa::database(GreenDatabase)]
+#[salsa::database(SyntaxDatabase)]
 #[derive(Default)]
 pub struct DatabaseImpl {
     storage: salsa::Storage<DatabaseImpl>,
 }
 impl salsa::Database for DatabaseImpl {}
 
-fn traverse(db: &dyn GreenInterner, node: SyntaxNode) -> Vec<(SyntaxNodeDetails, u32, u32)> {
+fn traverse(db: &dyn SyntaxGroup, node: SyntaxNode) -> Vec<(SyntaxNodeDetails, u32, u32)> {
     let mut res = vec![(node.details(db), node.offset(), node.width(db))];
     for c in node.children(db) {
         res.append(&mut traverse(db, c));
