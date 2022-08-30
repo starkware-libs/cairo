@@ -77,24 +77,24 @@ fn test_expr_generator() {
         statements.iter().map(|x| format!("{}", x)).collect::<Vec<String>>(),
         vec![
             // let x = 7;
-            "literal<7>() -> ([0])",
+            "felt_const<7>() -> ([0])",
             // foo(x, 7);
-            "literal<7>() -> ([1])",
+            "felt_const<7>() -> ([1])",
             "store_temp([0]) -> ([2])",
             "store_temp([1]) -> ([3])",
-            "func([2], [3]) -> ([4])",
+            "function_call([2], [3]) -> ([4])",
             // foo(foo(x, 7), foo(x, 7))
-            "literal<7>() -> ([5])",
+            "felt_const<7>() -> ([5])",
             "store_temp([0]) -> ([6])",
             "store_temp([5]) -> ([7])",
-            "func([6], [7]) -> ([8])",
-            "literal<7>() -> ([9])",
+            "function_call([6], [7]) -> ([8])",
+            "felt_const<7>() -> ([9])",
             "store_temp([0]) -> ([10])",
             "store_temp([9]) -> ([11])",
-            "func([10], [11]) -> ([12])",
+            "function_call([10], [11]) -> ([12])",
             "store_temp([8]) -> ([13])",
             "store_temp([12]) -> ([14])",
-            "func([13], [14]) -> ([15])",
+            "function_call([13], [14]) -> ([15])",
         ]
     );
 
@@ -138,7 +138,7 @@ fn test_match() {
         statements.iter().map(|x| format!("{}", x)).collect::<Vec<String>>(),
         vec![
             // let x = 7;
-            "literal<7>() -> ([0])",
+            "felt_const<7>() -> ([0])",
             // match {
             "jump_nz([0]) { label0() fallthrough() }",
             // Branch 0.
@@ -146,7 +146,7 @@ fn test_match() {
             "jump() { label1() }",
             // Branch otherwise.
             "label0:",
-            "literal<7>() -> ([2])",
+            "felt_const<7>() -> ([2])",
             "store_temp([2]) -> ([1])",
             // Post match.
             "label1:",
