@@ -15,6 +15,7 @@ mod ast_test;
 pub mod db;
 pub mod element_list;
 pub mod green;
+pub mod helpers;
 pub mod ids;
 pub mod kind;
 
