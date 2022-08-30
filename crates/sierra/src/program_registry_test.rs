@@ -13,10 +13,8 @@ fn basic_insertion() {
         type int = int;
         type GasBuiltin = GasBuiltin;
         type NonZeroInt = NonZero<int>;
-        type DeferredInt = Deferred<int>;
-        type DeferredGasBuiltin = Deferred<GasBuiltin>;
-        libfunc move_int = move<int>;
-        libfunc move_gb = move<GasBuiltin>;
+        libfunc rename_int = rename<int>;
+        libfunc rename_gb = rename<GasBuiltin>;
         Func1@1(a: int, gb: GasBuiltin) -> (GasBuiltin);
         Func2@6() -> ();
     "})
@@ -85,11 +83,9 @@ fn libfunc_id_double_declaration() {
             &ProgramParser::new()
                 .parse(indoc! {"
         type int = int;
-        type DeferredInt = Deferred<int>;
         type GasBuiltin = GasBuiltin;
-        type DeferredGasBuiltin = Deferred<GasBuiltin>;
-        libfunc used_id = move<int>;
-        libfunc used_id = move<GasBuiltin>;
+        libfunc used_id = rename<int>;
+        libfunc used_id = rename<GasBuiltin>;
     "})
                 .unwrap()
         )
