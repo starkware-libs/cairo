@@ -1,5 +1,6 @@
 use indoc::indoc;
 
+use crate::extensions::{CoreLibFunc, CoreType};
 use crate::program::{ConcreteTypeLongId, TypeDeclaration};
 use crate::program_registry::{ProgramRegistry, ProgramRegistryError};
 use crate::ProgramParser;
@@ -7,7 +8,7 @@ use crate::ProgramParser;
 #[test]
 fn basic_insertion() {
     assert_eq!(
-        ProgramRegistry::new(
+        ProgramRegistry::<CoreType, CoreLibFunc>::new(
             &ProgramParser::new()
                 .parse(indoc! {"
         type int = int;
@@ -28,7 +29,7 @@ fn basic_insertion() {
 #[test]
 fn function_id_double_declaration() {
     assert_eq!(
-        ProgramRegistry::new(
+        ProgramRegistry::<CoreType, CoreLibFunc>::new(
             &ProgramParser::new()
                 .parse(indoc! {"
         used_id@1(a: int, gb: GasBuiltin) -> (GasBuiltin);
@@ -44,7 +45,7 @@ fn function_id_double_declaration() {
 #[test]
 fn type_id_double_declaration() {
     assert_eq!(
-        ProgramRegistry::new(
+        ProgramRegistry::<CoreType, CoreLibFunc>::new(
             &ProgramParser::new()
                 .parse(indoc! {"
         type used_id = int;
@@ -60,7 +61,7 @@ fn type_id_double_declaration() {
 #[test]
 fn concrete_type_double_declaration() {
     assert_eq!(
-        ProgramRegistry::new(
+        ProgramRegistry::<CoreType, CoreLibFunc>::new(
             &ProgramParser::new()
                 .parse(indoc! {"
         type int1 = int;
@@ -79,7 +80,7 @@ fn concrete_type_double_declaration() {
 #[test]
 fn libfunc_id_double_declaration() {
     assert_eq!(
-        ProgramRegistry::new(
+        ProgramRegistry::<CoreType, CoreLibFunc>::new(
             &ProgramParser::new()
                 .parse(indoc! {"
         type int = int;

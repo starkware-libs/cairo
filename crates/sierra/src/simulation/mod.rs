@@ -5,7 +5,7 @@ use thiserror::Error;
 
 use self::mem_cell::MemCell;
 use crate::edit_state::{put_results, take_args, EditStateError};
-use crate::extensions::CoreConcreteLibFunc;
+use crate::extensions::{CoreConcreteLibFunc, CoreLibFunc, CoreType};
 use crate::ids::{FunctionId, VarId};
 use crate::program::{Program, Statement, StatementIdx};
 use crate::program_registry::{ProgramRegistry, ProgramRegistryError};
@@ -56,7 +56,7 @@ pub fn run(
 /// Helper class for runing the simulation.
 struct SimulationContext<'a> {
     pub program: &'a Program,
-    pub registry: &'a ProgramRegistry,
+    pub registry: &'a ProgramRegistry<CoreType, CoreLibFunc>,
 }
 impl SimulationContext<'_> {
     /// Simulates the run of a function, even recursively.

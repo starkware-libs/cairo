@@ -5,8 +5,7 @@ use thiserror::Error;
 
 use crate::extensions::lib_func::{ConcreteTypeIdMap, FunctionMap, SpecializationContext};
 use crate::extensions::{
-    CoreConcreteLibFunc, CoreLibFunc, CoreType, CoreTypeConcrete, ExtensionError, GenericLibFuncEx,
-    GenericTypeEx,
+    ExtensionError, GenericLibFunc, GenericLibFuncEx, GenericType, GenericTypeEx,
 };
 use crate::ids::{ConcreteLibFuncId, ConcreteTypeId, FunctionId, GenericTypeId};
 use crate::program::{Function, GenericArg, Program, TypeDeclaration};
@@ -38,24 +37,27 @@ pub enum ProgramRegistryError {
     MissingLibFunc(ConcreteLibFuncId),
 }
 
-type TypeMap = HashMap<ConcreteTypeId, CoreTypeConcrete>;
-type LibFuncMap = HashMap<ConcreteLibFuncId, CoreConcreteLibFunc>;
+type TypeMap<TType> = HashMap<ConcreteTypeId, TType>;
+type LibFuncMap<TLibFunc> = HashMap<ConcreteLibFuncId, TLibFunc>;
 
 /// Registry for the data of the compiler, for all program specific data.
-pub struct ProgramRegistry {
+pub struct ProgramRegistry<TType: GenericType, TLibFunc: GenericLibFunc> {
     /// Mapping ids to the corresponding user function declaration from the program.
     functions: FunctionMap,
     /// Mapping ids to the concrete types reperesented by them.
-    concrete_types: TypeMap,
+    concrete_types: TypeMap<TType::Concrete>,
     /// Mapping ids to the concrete libfuncs reperesented by them.
-    concrete_libfuncs: LibFuncMap,
+    concrete_libfuncs: LibFuncMap<TLibFunc::Concrete>,
 }
-impl ProgramRegistry {
+impl<TType: GenericType, TLibFunc: GenericLibFunc> ProgramRegistry<TType, TLibFunc> {
     /// Create a registry for the program.
-    pub fn new(program: &Program) -> Result<ProgramRegistry, ProgramRegistryError> {
+    pub fn new(
+        program: &Program,
+    ) -> Result<ProgramRegistry<TType, TLibFunc>, ProgramRegistryError> {
         let functions = get_functions(program)?;
-        let (concrete_types, concrete_type_ids) = get_concrete_types_maps(program)?;
-        let concrete_libfuncs = get_concrete_libfuncs(program, &functions, &concrete_type_ids)?;
+        let (concrete_types, concrete_type_ids) = get_concrete_types_maps::<TType>(program)?;
+        let concrete_libfuncs =
+            get_concrete_libfuncs::<TLibFunc>(program, &functions, &concrete_type_ids)?;
         Ok(ProgramRegistry { functions, concrete_types, concrete_libfuncs })
     }
     /// Get a function from the input program.
@@ -69,14 +71,14 @@ impl ProgramRegistry {
     pub fn get_type<'a>(
         &'a self,
         id: &ConcreteTypeId,
-    ) -> Result<&'a CoreTypeConcrete, ProgramRegistryError> {
+    ) -> Result<&'a TType::Concrete, ProgramRegistryError> {
         self.concrete_types.get(id).ok_or_else(|| ProgramRegistryError::MissingType(id.clone()))
     }
     /// Get a libfunc from the input program.
     pub fn get_libfunc<'a>(
         &'a self,
         id: &ConcreteLibFuncId,
-    ) -> Result<&'a CoreConcreteLibFunc, ProgramRegistryError> {
+    ) -> Result<&'a TLibFunc::Concrete, ProgramRegistryError> {
         self.concrete_libfuncs
             .get(id)
             .ok_or_else(|| ProgramRegistryError::MissingLibFunc(id.clone()))
@@ -99,14 +101,14 @@ fn get_functions(program: &Program) -> Result<FunctionMap, ProgramRegistryError>
 
 /// Creates the type-id to concrete type map, and the reverse map from generic-id and arguments to
 /// concrete-id.
-fn get_concrete_types_maps(
+fn get_concrete_types_maps<TType: GenericType>(
     program: &Program,
-) -> Result<(TypeMap, ConcreteTypeIdMap<'_>), ProgramRegistryError> {
+) -> Result<(TypeMap<TType::Concrete>, ConcreteTypeIdMap<'_>), ProgramRegistryError> {
     let mut concrete_types = HashMap::new();
     let mut concrete_type_ids = HashMap::<(GenericTypeId, &[GenericArg]), ConcreteTypeId>::new();
     for declaration in &program.type_declarations {
         let concrete_type =
-            CoreType::specialize_by_id(&declaration.long_id.generic_id, &declaration.long_id.args)
+            TType::specialize_by_id(&declaration.long_id.generic_id, &declaration.long_id.args)
                 .map_err(|error| ProgramRegistryError::TypeSpecialization {
                     concrete_id: declaration.id.clone(),
                     error,
@@ -130,14 +132,14 @@ fn get_concrete_types_maps(
 }
 
 /// Creates the libfuncs map.
-fn get_concrete_libfuncs(
+fn get_concrete_libfuncs<TLibFunc: GenericLibFunc>(
     program: &Program,
     functions: &FunctionMap,
     concrete_type_ids: &ConcreteTypeIdMap<'_>,
-) -> Result<LibFuncMap, ProgramRegistryError> {
+) -> Result<LibFuncMap<TLibFunc::Concrete>, ProgramRegistryError> {
     let mut concrete_libfuncs = HashMap::new();
     for declaration in &program.libfunc_declarations {
-        let concrete_libfunc = CoreLibFunc::specialize_by_id(
+        let concrete_libfunc = TLibFunc::specialize_by_id(
             SpecializationContext { functions, concrete_type_ids },
             &declaration.long_id.generic_id,
             &declaration.long_id.args,
