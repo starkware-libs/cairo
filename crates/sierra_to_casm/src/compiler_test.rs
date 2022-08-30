@@ -1,4 +1,5 @@
 use indoc::indoc;
+use pretty_assertions;
 use sierra::edit_state::EditStateError;
 use sierra::ids::ConcreteLibFuncId;
 use sierra::program_registry::ProgramRegistryError;
@@ -18,21 +19,29 @@ fn good_flow() {
             type DeferredFelt = Deferred<felt>;
 
             libfunc felt_add = felt_add;
+            libfunc felt_dup = felt_dup;
             libfunc store_temp_felt = store_temp<felt>;
             libfunc rename_felt = rename<felt>;
 
             rename_felt([1]) -> ([1]);
+            felt_dup([2]) -> ([2], [5]);
             felt_add([1], [2]) -> ([3]);
             store_temp_felt([3]) -> ([4]);
-            return([4]);
+            felt_dup([4]) -> ([4], [6]);
+            store_temp_felt([5]) -> ([5]);
+            store_temp_felt([6]) -> ([6]);
+
+            return([4], [5], [6]);
 
             test_program@0([1]: felt, [2]: felt) -> ();
         "})
         .unwrap();
-    assert_eq!(
+    pretty_assertions::assert_eq!(
         compile(&prog).unwrap().to_string(),
         indoc! {"
             [ap + 0] = [fp + -3] + [fp + -2], ap++;
+            [ap + 0] = [fp + -2], ap++;
+            [ap + 0] = [ap + -2], ap++;
             ret;
         "}
     );
