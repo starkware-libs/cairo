@@ -59,7 +59,7 @@ impl<'a> ExprGeneratorContext<'a> {
     // TODO(lior): Consider using stabe ids, instead of allocating sequential ids.
     pub fn new_label(&mut self) -> (pre_sierra::Statement, pre_sierra::LabelId) {
         let id = pre_sierra::LabelId::new(self.statement_id_allocator.allocate());
-        (pre_sierra::Statement::Label(pre_sierra::Label { id: id.clone() }), id)
+        (pre_sierra::Statement::Label(pre_sierra::Label { id }), id)
     }
 
     fn get_extension_id_without_generics(
