@@ -8,9 +8,10 @@ use semantic::db::{SemanticDatabase, SemanticGroup};
 use semantic::ids::{ConcreteFunctionId, TypeId};
 use syntax::node::db::{AsGreenInterner, GreenDatabase, GreenInterner};
 
-use crate::db::SierraGenDatabase;
+use crate::db::{SierraGenDatabase, SierraGenGroup};
 use crate::expr_generator::generate_expression_code;
 use crate::expr_generator_context::ExprGeneratorContext;
+use crate::pre_sierra;
 
 #[salsa::database(
     DefsDatabase,
@@ -33,6 +34,30 @@ impl AsGreenInterner for DatabaseImpl {
 impl AsDefsGroup for DatabaseImpl {
     fn as_defs_group(&self) -> &(dyn defs::db::DefsGroup + 'static) {
         self
+    }
+}
+
+/// Replaces `ConcreteLibFuncId` with a dummy `ConcreteLibFuncId` whose debug string is the string
+/// representing the original `ConcreteLibFuncLongId`.
+/// For example, while the original debug string may be `[6]`, the resulting debug string may be
+/// `felt_const<2>`.
+fn replace_libfunc_ids(
+    db: &dyn SierraGenGroup,
+    statement: &pre_sierra::Statement,
+) -> pre_sierra::Statement {
+    match statement {
+        pre_sierra::Statement::SierraStatement(sierra::program::GenStatement::Invocation(p)) => {
+            pre_sierra::Statement::SierraStatement(sierra::program::GenStatement::Invocation(
+                sierra::program::GenInvocation {
+                    libfunc_id: db
+                        .lookup_intern_concrete_lib_func(p.libfunc_id.clone())
+                        .to_string()
+                        .into(),
+                    ..p.clone()
+                },
+            ))
+        }
+        _ => statement.clone(),
     }
 }
 
@@ -74,7 +99,7 @@ fn test_expr_generator() {
     let mut expr_generator_context = ExprGeneratorContext::new(&db);
     let (statements, res) = generate_expression_code(&mut expr_generator_context, block);
     assert_eq!(
-        statements.iter().map(|x| format!("{}", x)).collect::<Vec<String>>(),
+        statements.iter().map(|x| replace_libfunc_ids(&db, x).to_string()).collect::<Vec<String>>(),
         vec![
             // let x = 7;
             "felt_const<7>() -> ([0])",
@@ -135,7 +160,7 @@ fn test_match() {
     let mut expr_generator_context = ExprGeneratorContext::new(&db);
     let (statements, res) = generate_expression_code(&mut expr_generator_context, block);
     assert_eq!(
-        statements.iter().map(|x| format!("{}", x)).collect::<Vec<String>>(),
+        statements.iter().map(|x| replace_libfunc_ids(&db, x).to_string()).collect::<Vec<String>>(),
         vec![
             // let x = 7;
             "felt_const<7>() -> ([0])",
