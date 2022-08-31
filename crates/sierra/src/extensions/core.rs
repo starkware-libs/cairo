@@ -1,4 +1,3 @@
-use super::conditional_jump::JumpNotZeroLibFunc;
 use super::modules::felt::{FeltLibFunc, FeltType};
 use super::modules::function_call::FunctionCallLibFunc;
 use super::modules::gas::{GasBuiltinType, GasLibFunc};
@@ -23,7 +22,6 @@ define_libfunc_hierarchy! {
         FunctionCall(FunctionCallLibFunc),
         Gas(GasLibFunc),
         Integer(IntegerLibFunc),
-        JumpNotZero(JumpNotZeroLibFunc),
         Mem(MemLibFunc),
         UnwrapNonZero(UnwrapNonZeroLibFunc),
         UnconditionalJump(UnconditionalJumpLibFunc),
