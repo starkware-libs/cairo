@@ -1,6 +1,6 @@
 #[cfg(test)]
 #[path = "resolve_labels_test.rs"]
-mod tests;
+mod test;
 
 use std::collections::{hash_map, HashMap};
 
