@@ -6,13 +6,14 @@ use casm::operand::{
     BinOpOperand, DerefOperand, DerefOrImmediate, ImmediateOperand, Operation, Register, ResOperand,
 };
 use itertools::zip_eq;
-use sierra::extensions::core::felt::{
+use sierra::extensions::core::CoreConcreteLibFunc;
+use sierra::extensions::felt::{
     FeltBinaryOperationConcreteLibFunc, FeltConcrete, FeltDuplicateConcreteLibFunc,
 };
-use sierra::extensions::core::function_call::FunctionCallConcreteLibFunc;
-use sierra::extensions::core::integer::Operator;
-use sierra::extensions::core::mem::{MemConcreteLibFunc, StoreTempConcreteLibFunc};
-use sierra::extensions::{ConcreteLibFunc, CoreConcreteLibFunc};
+use sierra::extensions::function_call::FunctionCallConcreteLibFunc;
+use sierra::extensions::integer::Operator;
+use sierra::extensions::mem::{MemConcreteLibFunc, StoreTempConcreteLibFunc};
+use sierra::extensions::ConcreteLibFunc;
 use sierra::ids::ConcreteTypeId;
 use thiserror::Error;
 

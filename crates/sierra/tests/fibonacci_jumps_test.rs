@@ -1,5 +1,5 @@
 use indoc::indoc;
-use sierra::extensions::{CoreLibFunc, CoreType};
+use sierra::extensions::core::{CoreLibFunc, CoreType};
 use sierra::program_registry::ProgramRegistry;
 use sierra::simulation;
 
