@@ -132,6 +132,34 @@ fn good_flow() {
             type felt = felt;
         "} => Err(CompilationError::FailedBuildingTypeInformation);
             "type ordering bad for building size map")]
+#[test_case(indoc! {"
+            type felt = felt;
+            libfunc felt_add = felt_add;
+            felt_add([1], [2], [3]) -> ([4]);
+            test_program@0([1]: felt, [2]: felt, [3]: felt) -> ();
+        "} => Err(CompilationError::LibFuncInvocationMismatch);
+            "input count mismatch")]
+#[test_case(indoc! {"
+            type felt = felt;
+            libfunc felt_add = felt_add;
+            felt_add([1], [2]) -> ([3], [4]);
+            test_program@0([1]: felt, [2]: felt) -> ();
+        "} => Err(CompilationError::LibFuncInvocationMismatch);
+            "output type mismatch")]
+#[test_case(indoc! {"
+            type felt = felt;
+            libfunc felt_add = felt_add;
+            felt_add([1], [2]) { 0([3]) 1([3]) };
+            test_program@0([1]: felt, [2]: felt) -> ();
+        "} => Err(CompilationError::LibFuncInvocationMismatch);
+            "branch count mismatch")]
+#[test_case(indoc! {"
+            type felt = felt;
+            libfunc felt_add = felt_add;
+            felt_add([1], [2]) { 0([3]) };
+            test_program@0([1]: felt, [2]: felt) -> ();
+        "} => Err(CompilationError::LibFuncInvocationMismatch);
+            "fallthrough mismatch")]
 fn compiler_errors(sierra_code: &str) -> Result<(), CompilationError> {
     let prog = ProgramParser::new().parse(sierra_code).unwrap();
     compile(&prog)?;
