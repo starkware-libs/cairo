@@ -1,11 +1,11 @@
 use defs::db::{AsDefsGroup, DefsDatabase};
-use defs::ids::{LocalVarId, VarId};
+use defs::ids::{FreeFunctionId, LocalVarId, VarId};
 use filesystem::db::FilesDatabase;
 use parser::db::ParserDatabase;
 use pretty_assertions::assert_eq;
 use salsa::{InternId, InternKey};
 use semantic::db::{SemanticDatabase, SemanticGroup};
-use semantic::ids::{ConcreteFunctionId, TypeId};
+use semantic::ids::TypeId;
 use syntax::node::db::{AsSyntaxGroup, SyntaxDatabase, SyntaxGroup};
 
 use crate::db::{SierraGenDatabase, SierraGenGroup};
@@ -75,16 +75,29 @@ fn test_expr_generator() {
     // "let x = 7;" statement.
     let statement_let = semantic::StatementLet { var: var_x, expr: literal7 };
 
+    let foo_func = db.intern_function_instance(semantic::ConcreteFunctionLongId {
+        generic_function: semantic::GenericFunctionId::Free(FreeFunctionId::from_intern_id(
+            InternId::from(1u32),
+        )),
+        generic_args: vec![],
+    });
+    let foo2_func = db.intern_function_instance(semantic::ConcreteFunctionLongId {
+        generic_function: semantic::GenericFunctionId::Free(FreeFunctionId::from_intern_id(
+            InternId::from(2u32),
+        )),
+        generic_args: vec![],
+    });
+
     // "foo(x, 7)" expression.
     let expr = db.intern_expr(semantic::Expr::ExprFunctionCall(semantic::ExprFunctionCall {
-        function: ConcreteFunctionId::from_intern_id(InternId::from(1u32)),
+        function: foo_func,
         args: vec![var_x_expr, literal7],
         ty,
     }));
 
     // "foo2(foo(x, 7), foo(x, 7))" expression.
     let expr2 = db.intern_expr(semantic::Expr::ExprFunctionCall(semantic::ExprFunctionCall {
-        function: ConcreteFunctionId::from_intern_id(InternId::from(2u32)),
+        function: foo2_func,
         args: vec![expr, expr],
         ty,
     }));
