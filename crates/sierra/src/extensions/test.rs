@@ -49,9 +49,9 @@ fn find_type_specialization(
 #[test_case("refund_gas", vec![value_arg(-7)] => Err(UnsupportedGenericArg);
             "refund_gas<minus 7>")]
 #[test_case("felt_add", vec![] => Ok(()); "felt_add")]
-#[test_case("felt_add", vec![value_arg(0)] => Err(WrongNumberOfGenericArgs); "int_add<0>")]
+#[test_case("felt_add", vec![value_arg(0)] =>  Ok(()); "felt_add<0>")]
 #[test_case("felt_mul", vec![] => Ok(()); "felt_mul")]
-#[test_case("felt_mul", vec![value_arg(0)] => Err(WrongNumberOfGenericArgs); "int_mul<0>")]
+#[test_case("felt_mul", vec![value_arg(0)] =>  Ok(()); "felt_mul<0>")]
 #[test_case("felt_dup", vec![] => Ok(()); "felt_dup")]
 #[test_case("felt_dup", vec![value_arg(0)] => Err(WrongNumberOfGenericArgs); "felt_dup<0>")]
 #[test_case("int_add", vec![] => Ok(()); "int_add")]
