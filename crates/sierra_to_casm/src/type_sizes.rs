@@ -1,8 +1,7 @@
 use std::collections::HashMap;
 
-use sierra::extensions::core::non_zero::NonZeroConcreteType;
-use sierra::extensions::core::CoreTypeConcrete;
-use sierra::extensions::{CoreLibFunc, CoreType};
+use sierra::extensions::core::{CoreLibFunc, CoreType, CoreTypeConcrete};
+use sierra::extensions::non_zero::NonZeroConcreteType;
 use sierra::ids::ConcreteTypeId;
 use sierra::program::Program;
 use sierra::program_registry::ProgramRegistry;

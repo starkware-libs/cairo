@@ -7,8 +7,9 @@ use super::LibFuncSimulationError::{
     self, FunctionSimulationError, MemoryLayoutMismatch, WrongNumberOfArgs,
 };
 use super::{core, SimulationError};
+use crate::extensions::core::CoreLibFunc;
 use crate::extensions::lib_func::SpecializationContext;
-use crate::extensions::{CoreLibFunc, GenericLibFunc};
+use crate::extensions::GenericLibFunc;
 use crate::program::{Function, GenericArg, StatementIdx};
 
 fn type_arg(name: &str) -> GenericArg {
