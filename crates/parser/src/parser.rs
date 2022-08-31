@@ -1,6 +1,6 @@
 #[cfg(test)]
 #[path = "parser_test.rs"]
-mod tests;
+mod test;
 
 use std::mem;
 
