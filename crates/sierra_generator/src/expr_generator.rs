@@ -123,7 +123,30 @@ fn handle_function_call(
             ));
             (statements, res_var)
         }
-        semantic::GenericFunctionId::Extern(_) => todo!(),
+        semantic::GenericFunctionId::Extern(extern_id) => {
+            assert!(
+                function_long_id.generic_args.is_empty(),
+                "Calling a libfunc with generic arguments is not supported yet."
+            );
+
+            // Call the libfunc.
+            let res_var = context.allocate_sierra_variable();
+            statements.push(simple_statement(
+                context.generic_libfunc_id(extern_id),
+                &args,
+                &[res_var.clone()],
+            ));
+
+            // TODO(lior): Remove the following store_temp once we have a better mechanism of
+            //   automatically adding such statements.
+            let res_var_on_stack = context.allocate_sierra_variable();
+            statements.push(simple_statement(
+                context.store_temp_libfunc_id(),
+                &[res_var],
+                &[res_var_on_stack.clone()],
+            ));
+            (statements, res_var_on_stack)
+        }
     }
 }
 

@@ -100,4 +100,12 @@ impl<'a> ExprGeneratorContext<'a> {
     pub fn jump_libfunc_id(&self) -> sierra::ids::ConcreteLibFuncId {
         self.get_extension_id_without_generics("jump")
     }
+
+    pub fn generic_libfunc_id(
+        &self,
+        extern_id: defs::ids::ExternFunctionId,
+    ) -> sierra::ids::ConcreteLibFuncId {
+        let long_id = self.get_db().lookup_intern_extern_function(extern_id);
+        self.get_extension_id_without_generics(long_id.name)
+    }
 }
