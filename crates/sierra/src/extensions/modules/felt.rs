@@ -1,9 +1,12 @@
 use crate::define_libfunc_hierarchy;
-use crate::extensions::lib_func::SpecializationContext;
+use crate::extensions::lib_func::{
+    LibFuncSignature, SignatureBasedConcreteLibFunc, SignatureOnlyConcreteLibFunc,
+    SpecializationContext,
+};
 use crate::extensions::modules::integer::Operator;
 use crate::extensions::{
     ConcreteType, GenericLibFunc, NamedType, NoGenericArgsGenericLibFunc, NoGenericArgsGenericType,
-    NonBranchConcreteLibFunc, SpecializationError,
+    SpecializationError,
 };
 use crate::ids::{ConcreteTypeId, GenericLibFuncId, GenericTypeId};
 use crate::program::GenericArg;
@@ -56,7 +59,13 @@ impl GenericLibFunc for FeltOperationLibFunc {
     ) -> Result<Self::Concrete, SpecializationError> {
         let felt_type = get_felt_type(&context)?;
         match args {
-            [] => Ok(FeltBinaryOperationConcreteLibFunc { operator: self.operator, felt_type }),
+            [] => Ok(FeltBinaryOperationConcreteLibFunc {
+                operator: self.operator,
+                signature: LibFuncSignature::non_branch(
+                    vec![felt_type.clone(), felt_type.clone()],
+                    vec![felt_type],
+                ),
+            }),
             _ => Err(SpecializationError::WrongNumberOfGenericArgs),
         }
     }
@@ -64,14 +73,11 @@ impl GenericLibFunc for FeltOperationLibFunc {
 
 pub struct FeltBinaryOperationConcreteLibFunc {
     pub operator: Operator,
-    pub felt_type: ConcreteTypeId,
+    pub signature: LibFuncSignature,
 }
-impl NonBranchConcreteLibFunc for FeltBinaryOperationConcreteLibFunc {
-    fn input_types(&self) -> Vec<ConcreteTypeId> {
-        vec![self.felt_type.clone(), self.felt_type.clone()]
-    }
-    fn output_types(&self) -> Vec<ConcreteTypeId> {
-        vec![self.felt_type.clone()]
+impl SignatureBasedConcreteLibFunc for FeltBinaryOperationConcreteLibFunc {
+    fn signature(&self) -> &LibFuncSignature {
+        &self.signature
     }
 }
 
@@ -79,25 +85,19 @@ impl NonBranchConcreteLibFunc for FeltBinaryOperationConcreteLibFunc {
 #[derive(Default)]
 pub struct FeltDuplicateLibFunc {}
 impl NoGenericArgsGenericLibFunc for FeltDuplicateLibFunc {
-    type Concrete = FeltDuplicateConcreteLibFunc;
+    type Concrete = SignatureOnlyConcreteLibFunc;
     const ID: GenericLibFuncId = GenericLibFuncId::new_inline("felt_dup");
 
     fn specialize(
         &self,
         context: SpecializationContext<'_>,
     ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(FeltDuplicateConcreteLibFunc { felt_type: get_felt_type(&context)? })
-    }
-}
-
-pub struct FeltDuplicateConcreteLibFunc {
-    pub felt_type: ConcreteTypeId,
-}
-impl NonBranchConcreteLibFunc for FeltDuplicateConcreteLibFunc {
-    fn input_types(&self) -> Vec<ConcreteTypeId> {
-        vec![self.felt_type.clone()]
-    }
-    fn output_types(&self) -> Vec<ConcreteTypeId> {
-        vec![self.felt_type.clone(), self.felt_type.clone()]
+        let felt_type = get_felt_type(&context)?;
+        Ok(SignatureOnlyConcreteLibFunc {
+            signature: LibFuncSignature::non_branch(
+                vec![felt_type.clone()],
+                vec![felt_type.clone(), felt_type],
+            ),
+        })
     }
 }

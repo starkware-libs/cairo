@@ -1,8 +1,8 @@
 use super::as_single_type;
-use crate::extensions::lib_func::SpecializationContext;
-use crate::extensions::{
-    ConcreteType, NamedLibFunc, NamedType, NonBranchConcreteLibFunc, SpecializationError,
+use crate::extensions::lib_func::{
+    LibFuncSignature, SignatureOnlyConcreteLibFunc, SpecializationContext,
 };
+use crate::extensions::{ConcreteType, NamedLibFunc, NamedType, SpecializationError};
 use crate::ids::{ConcreteTypeId, GenericLibFuncId, GenericTypeId};
 use crate::program::GenericArg;
 
@@ -25,7 +25,7 @@ impl ConcreteType for NonZeroConcreteType {}
 #[derive(Default)]
 pub struct UnwrapNonZeroLibFunc {}
 impl NamedLibFunc for UnwrapNonZeroLibFunc {
-    type Concrete = UnwrapNonZeroConcreteLibFunc;
+    type Concrete = SignatureOnlyConcreteLibFunc;
     const ID: GenericLibFuncId = GenericLibFuncId::new_inline("unwrap_nz");
 
     fn specialize(
@@ -34,22 +34,11 @@ impl NamedLibFunc for UnwrapNonZeroLibFunc {
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
         let ty = as_single_type(args)?;
-        Ok(UnwrapNonZeroConcreteLibFunc {
-            ty: ty.clone(),
-            non_zero_ty: context.get_wrapped_concrete_type(NonZeroType::id(), ty)?,
+        Ok(SignatureOnlyConcreteLibFunc {
+            signature: LibFuncSignature::non_branch(
+                vec![context.get_wrapped_concrete_type(NonZeroType::id(), ty.clone())?],
+                vec![ty],
+            ),
         })
-    }
-}
-
-pub struct UnwrapNonZeroConcreteLibFunc {
-    pub ty: ConcreteTypeId,
-    pub non_zero_ty: ConcreteTypeId,
-}
-impl NonBranchConcreteLibFunc for UnwrapNonZeroConcreteLibFunc {
-    fn input_types(&self) -> Vec<ConcreteTypeId> {
-        vec![self.non_zero_ty.clone()]
-    }
-    fn output_types(&self) -> Vec<ConcreteTypeId> {
-        vec![self.ty.clone()]
     }
 }

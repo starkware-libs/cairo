@@ -32,7 +32,7 @@ pub fn simulate<
 ) -> Result<(Vec<Vec<MemCell>>, usize), LibFuncSimulationError> {
     match libfunc {
         Felt(_) => todo!("felt operations are yet to be simulated."),
-        FunctionCall(FunctionCallConcreteLibFunc { function }) => {
+        FunctionCall(FunctionCallConcreteLibFunc { function, .. }) => {
             Ok((simulate_function(&function.id, inputs)?, 0))
         }
         Gas(GetGas(GetGasConcreteLibFunc { count, .. })) => {
