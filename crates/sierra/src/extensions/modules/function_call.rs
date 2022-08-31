@@ -24,7 +24,7 @@ impl NamedLibFunc for FunctionCallLibFunc {
                     .ok_or_else(|| SpecializationError::MissingFunction(function_id.clone()))?;
                 Ok(Self::Concrete {
                     function: function.clone(),
-                    signature: LibFuncSignature::non_branch(
+                    signature: LibFuncSignature::new_non_branch(
                         function.params.iter().map(|p| p.ty.clone()).collect(),
                         function.ret_types.clone(),
                     ),

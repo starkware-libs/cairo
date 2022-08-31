@@ -86,7 +86,7 @@ impl NamedLibFunc for RefundGasLibFunc {
         let gas_builtin_type = context.get_concrete_type(GasBuiltinType::id(), &[])?;
         Ok(RefundGasConcreteLibFunc {
             count: as_single_positive_value(args)?,
-            signature: LibFuncSignature::non_branch(
+            signature: LibFuncSignature::new_non_branch(
                 vec![gas_builtin_type.clone()],
                 vec![gas_builtin_type],
             ),

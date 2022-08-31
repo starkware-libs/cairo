@@ -61,7 +61,7 @@ impl GenericLibFunc for FeltOperationLibFunc {
         match args {
             [] => Ok(FeltBinaryOperationConcreteLibFunc {
                 operator: self.operator,
-                signature: LibFuncSignature::non_branch(
+                signature: LibFuncSignature::new_non_branch(
                     vec![felt_type.clone(), felt_type.clone()],
                     vec![felt_type],
                 ),
@@ -94,7 +94,7 @@ impl NoGenericArgsGenericLibFunc for FeltDuplicateLibFunc {
     ) -> Result<Self::Concrete, SpecializationError> {
         let felt_type = get_felt_type(&context)?;
         Ok(SignatureOnlyConcreteLibFunc {
-            signature: LibFuncSignature::non_branch(
+            signature: LibFuncSignature::new_non_branch(
                 vec![felt_type.clone()],
                 vec![felt_type.clone(), felt_type],
             ),

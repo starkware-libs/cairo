@@ -71,7 +71,7 @@ impl GenericLibFunc for OperationLibFunc {
         match args {
             [] => Ok(OperationConcreteLibFunc::Binary(BinaryOperationConcreteLibFunc {
                 operator: self.operator,
-                signature: LibFuncSignature::non_branch(
+                signature: LibFuncSignature::new_non_branch(
                     vec![
                         int_type.clone(),
                         if matches!(self.operator, Operator::Div | Operator::Mod) {
@@ -91,7 +91,7 @@ impl GenericLibFunc for OperationLibFunc {
                     Ok(OperationConcreteLibFunc::Const(OperationWithConstConcreteLibFunc {
                         operator: self.operator,
                         c: *c,
-                        signature: LibFuncSignature::non_branch(
+                        signature: LibFuncSignature::new_non_branch(
                             vec![int_type.clone()],
                             vec![int_type],
                         ),
@@ -146,7 +146,7 @@ impl NamedLibFunc for ConstLibFunc {
         match args {
             [GenericArg::Value(c)] => Ok(ConstConcreteLibFunc {
                 c: *c,
-                signature: LibFuncSignature::non_branch(
+                signature: LibFuncSignature::new_non_branch(
                     vec![],
                     vec![context.get_concrete_type(IntegerType::id(), &[])?],
                 ),
@@ -177,7 +177,7 @@ impl NoGenericArgsGenericLibFunc for IgnoreLibFunc {
         context: SpecializationContext<'_>,
     ) -> Result<Self::Concrete, SpecializationError> {
         Ok(SignatureOnlyConcreteLibFunc {
-            signature: LibFuncSignature::non_branch(
+            signature: LibFuncSignature::new_non_branch(
                 vec![context.get_concrete_type(IntegerType::id(), &[])?],
                 vec![],
             ),
@@ -198,7 +198,7 @@ impl NoGenericArgsGenericLibFunc for DuplicateLibFunc {
     ) -> Result<Self::Concrete, SpecializationError> {
         let int_type = context.get_concrete_type(IntegerType::id(), &[])?;
         Ok(SignatureOnlyConcreteLibFunc {
-            signature: LibFuncSignature::non_branch(
+            signature: LibFuncSignature::new_non_branch(
                 vec![int_type.clone(), int_type.clone()],
                 vec![int_type],
             ),
