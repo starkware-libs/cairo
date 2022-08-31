@@ -1,6 +1,8 @@
-use crate::extensions::lib_func::SpecializationContext;
-use crate::extensions::{NamedLibFunc, NonBranchConcreteLibFunc, SpecializationError};
-use crate::ids::{ConcreteTypeId, GenericLibFuncId};
+use crate::extensions::lib_func::{
+    LibFuncSignature, SignatureBasedConcreteLibFunc, SpecializationContext,
+};
+use crate::extensions::{NamedLibFunc, SpecializationError};
+use crate::ids::GenericLibFuncId;
 use crate::program::{Function, GenericArg};
 
 /// LibFunc used to call user functions.
@@ -20,7 +22,13 @@ impl NamedLibFunc for FunctionCallLibFunc {
                     .functions
                     .get(function_id)
                     .ok_or_else(|| SpecializationError::MissingFunction(function_id.clone()))?;
-                Ok(Self::Concrete { function: function.clone() })
+                Ok(Self::Concrete {
+                    function: function.clone(),
+                    signature: LibFuncSignature::non_branch(
+                        function.params.iter().map(|p| p.ty.clone()).collect(),
+                        function.ret_types.clone(),
+                    ),
+                })
             }
             _ => Err(SpecializationError::UnsupportedGenericArg),
         }
@@ -29,12 +37,10 @@ impl NamedLibFunc for FunctionCallLibFunc {
 
 pub struct FunctionCallConcreteLibFunc {
     pub function: Function,
+    pub signature: LibFuncSignature,
 }
-impl NonBranchConcreteLibFunc for FunctionCallConcreteLibFunc {
-    fn input_types(&self) -> Vec<ConcreteTypeId> {
-        self.function.params.iter().map(|p| p.ty.clone()).collect()
-    }
-    fn output_types(&self) -> Vec<ConcreteTypeId> {
-        self.function.ret_types.clone()
+impl SignatureBasedConcreteLibFunc for FunctionCallConcreteLibFunc {
+    fn signature(&self) -> &LibFuncSignature {
+        &self.signature
     }
 }

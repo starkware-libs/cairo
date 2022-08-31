@@ -132,29 +132,51 @@ impl<T: NoGenericArgsGenericLibFunc> NamedLibFunc for T {
 /// Trait for a specialized library function.
 pub trait ConcreteLibFunc {
     /// The input types for calling the library function.
-    fn input_types(&self) -> Vec<ConcreteTypeId>;
+    fn input_types(&self) -> &[ConcreteTypeId];
     /// The output types returning from library function per branch.
-    fn output_types(&self) -> Vec<Vec<ConcreteTypeId>>;
+    fn output_types(&self) -> &[Vec<ConcreteTypeId>];
     /// The index of the fallthrough branch of the library function if any.
     fn fallthrough(&self) -> Option<usize>;
 }
 
-/// Trait for a non branch specialized libfunc.
-pub trait NonBranchConcreteLibFunc {
-    fn input_types(&self) -> Vec<ConcreteTypeId>;
-    fn output_types(&self) -> Vec<ConcreteTypeId>;
+/// Represents the signature of a library function.
+pub struct LibFuncSignature {
+    pub input_types: Vec<ConcreteTypeId>,
+    pub output_types: Vec<Vec<ConcreteTypeId>>,
+    pub fallthrough: Option<usize>,
 }
-impl<TNonBranchConcreteLibFunc: NonBranchConcreteLibFunc> ConcreteLibFunc
-    for TNonBranchConcreteLibFunc
-{
-    fn input_types(&self) -> Vec<ConcreteTypeId> {
-        <Self as NonBranchConcreteLibFunc>::input_types(self)
+impl LibFuncSignature {
+    /// Creates a non branch signature.
+    pub fn non_branch(input_types: Vec<ConcreteTypeId>, output_types: Vec<ConcreteTypeId>) -> Self {
+        Self { input_types, output_types: vec![output_types], fallthrough: Some(0) }
     }
-    fn output_types(&self) -> Vec<Vec<ConcreteTypeId>> {
-        vec![<Self as NonBranchConcreteLibFunc>::output_types(self)]
+}
+impl ConcreteLibFunc for LibFuncSignature {
+    fn input_types(&self) -> &[ConcreteTypeId] {
+        &self.input_types
+    }
+    fn output_types(&self) -> &[Vec<ConcreteTypeId>] {
+        &self.output_types
     }
     fn fallthrough(&self) -> Option<usize> {
-        Some(0)
+        self.fallthrough
+    }
+}
+
+pub trait SignatureBasedConcreteLibFunc {
+    fn signature(&self) -> &LibFuncSignature;
+}
+impl<TSignatureBasedConcreteLibFunc: SignatureBasedConcreteLibFunc> ConcreteLibFunc
+    for TSignatureBasedConcreteLibFunc
+{
+    fn input_types(&self) -> &[ConcreteTypeId] {
+        &self.signature().input_types
+    }
+    fn output_types(&self) -> &[Vec<ConcreteTypeId>] {
+        &self.signature().output_types
+    }
+    fn fallthrough(&self) -> Option<usize> {
+        self.signature().fallthrough
     }
 }
 
@@ -179,12 +201,12 @@ macro_rules! define_concrete_libfunc_hierarchy {
         }
         impl $crate::extensions::ConcreteLibFunc for $name {
             $crate::extensions::lib_func::concrete_method_impl! {
-                fn input_types(&self) -> Vec<$crate::ids::ConcreteTypeId> {
+                fn input_types(&self) -> &[$crate::ids::ConcreteTypeId] {
                     $($variant_name => $variant,)*
                 }
             }
             $crate::extensions::lib_func::concrete_method_impl!{
-                fn output_types(&self) -> Vec<Vec<$crate::ids::ConcreteTypeId>> {
+                fn output_types(&self) -> &[Vec<$crate::ids::ConcreteTypeId>] {
                     $($variant_name => $variant,)*
                 }
             }
