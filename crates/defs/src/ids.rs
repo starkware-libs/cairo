@@ -22,7 +22,7 @@
 // Call sites, variable usages, assignments, etc. are NOT definitions.
 
 use db_utils::define_short_id;
-use filesystem::ids::CrateId;
+use filesystem::ids::ModuleId;
 use smol_str::SmolStr;
 
 /// Utility macro for defining ids.
@@ -39,13 +39,6 @@ macro_rules! id_by_name_and_parent {
         define_short_id!($id);
     };
 }
-
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
-pub enum ModuleId {
-    CrateRoot(CrateId),
-    Submodule(SubmoduleId),
-}
-id_by_name_and_parent!(SubmoduleId, SubmoduleLongId, ModuleId);
 
 /// Id for direct children of a module.
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
