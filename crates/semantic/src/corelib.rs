@@ -18,3 +18,7 @@ pub fn core_felt_ty(db: &dyn SemanticGroup) -> TypeId {
         generic_args: vec![],
     }))
 }
+
+pub fn unit_ty(db: &dyn SemanticGroup) -> TypeId {
+    db.intern_type(TypeLongId::Tuple(vec![]))
+}

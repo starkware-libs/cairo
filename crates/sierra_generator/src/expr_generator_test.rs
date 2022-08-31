@@ -91,7 +91,10 @@ fn test_expr_generator() {
 
     // "let x = 7; foo(x, 7); foo(foo(x, 7), foo(x, 7))" block.
     let block = db.intern_expr(semantic::Expr::ExprBlock(semantic::ExprBlock {
-        statements: vec![semantic::Statement::Let(statement_let), semantic::Statement::Expr(expr)],
+        statements: vec![
+            db.intern_statement(semantic::Statement::Let(statement_let)),
+            db.intern_statement(semantic::Statement::Expr(expr)),
+        ],
         tail: Some(expr2),
         ty,
     }));
@@ -152,7 +155,7 @@ fn test_match() {
     }));
 
     let block = db.intern_expr(semantic::Expr::ExprBlock(semantic::ExprBlock {
-        statements: vec![semantic::Statement::Let(statement_let)],
+        statements: vec![db.intern_statement(semantic::Statement::Let(statement_let))],
         tail: Some(match_statement),
         ty,
     }));

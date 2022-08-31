@@ -221,7 +221,7 @@ impl<'a> Parser<'a> {
     }
     /// Returns a GreenId of a node with an Expr.* kind (see [syntax::node::ast::Expr]) or a node
     /// with kind ExprMissing if an expression can't be parsed.
-    fn parse_expr(&mut self) -> GreenId {
+    pub fn parse_expr(&mut self) -> GreenId {
         match self.try_parse_expr() {
             Some(green) => green,
             None => ExprMissing::new_green(self.db),
@@ -266,7 +266,7 @@ impl<'a> Parser<'a> {
     /// Returns a GreenId of a node with an
     /// ExprPath|ExprFunctionCall|ExprStructCtorCall|ExprParenthesized|ExprTuple kind, or None if
     /// such an expression can't be parsed.
-    pub fn try_parse_atom(&mut self) -> Option<GreenId> {
+    fn try_parse_atom(&mut self) -> Option<GreenId> {
         // TODO(yuval): support paths starting with "::".
         match self.peek().kind {
             TokenKind::Identifier => {
