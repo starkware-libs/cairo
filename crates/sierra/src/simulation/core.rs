@@ -2,22 +2,23 @@ use array_init::array_init;
 
 use super::mem_cell::MemCell;
 use super::LibFuncSimulationError;
+use crate::extensions::arithmetic::{
+    BinaryOperationConcreteLibFunc, ConstConcreteLibFunc, OperationConcreteLibFunc,
+    OperationWithConstConcreteLibFunc, Operator,
+};
 use crate::extensions::core::CoreConcreteLibFunc::{
     self, Felt, FunctionCall, Gas, Integer, Mem, UnconditionalJump, UnwrapNonZero,
 };
 use crate::extensions::function_call::FunctionCallConcreteLibFunc;
 use crate::extensions::gas::GasConcreteLibFunc::{GetGas, RefundGas};
 use crate::extensions::gas::{GetGasConcreteLibFunc, RefundGasConcreteLibFunc};
-use crate::extensions::integer::IntegerConcrete::{Const, Duplicate, Ignore, Operation};
-use crate::extensions::integer::{
-    BinaryOperationConcreteLibFunc, ConstConcreteLibFunc, OperationConcreteLibFunc,
-    OperationWithConstConcreteLibFunc, Operator,
+use crate::extensions::integer::IntegerConcrete::{
+    Const, Duplicate, Ignore, JumpNotZero, Operation,
 };
 use crate::extensions::mem::MemConcreteLibFunc::{
     AlignTemps, AllocLocals, Rename, StoreLocal, StoreTemp,
 };
 use crate::ids::FunctionId;
-use crate::simulation::CoreConcreteLibFunc::JumpNotZero;
 
 /// Simulates the run of a single libfunc. Returns the memory reperesentations of the outputs, and
 /// the chosen branch given the inputs. A function that provides the simulation of running a user
@@ -97,7 +98,7 @@ pub fn simulate<
             unpack_inputs::<1>(inputs)?;
             Ok((vec![], 0))
         }
-        JumpNotZero(_) => {
+        Integer(JumpNotZero(_)) => {
             let [MemCell { value }] = unpack_inputs::<1>(inputs)?;
             if value != 0 {
                 // Non-zero - jumping to the success branch and providing a NonZero wrap to the

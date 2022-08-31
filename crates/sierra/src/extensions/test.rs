@@ -49,11 +49,14 @@ fn find_type_specialization(
 #[test_case("refund_gas", vec![value_arg(-7)] => Err(UnsupportedGenericArg);
             "refund_gas<minus 7>")]
 #[test_case("felt_add", vec![] => Ok(()); "felt_add")]
-#[test_case("felt_add", vec![value_arg(0)] => Err(WrongNumberOfGenericArgs); "int_add<0>")]
+#[test_case("felt_add", vec![value_arg(0)] =>  Ok(()); "felt_add<0>")]
 #[test_case("felt_mul", vec![] => Ok(()); "felt_mul")]
-#[test_case("felt_mul", vec![value_arg(0)] => Err(WrongNumberOfGenericArgs); "int_mul<0>")]
+#[test_case("felt_mul", vec![value_arg(0)] =>  Ok(()); "felt_mul<0>")]
 #[test_case("felt_dup", vec![] => Ok(()); "felt_dup")]
 #[test_case("felt_dup", vec![value_arg(0)] => Err(WrongNumberOfGenericArgs); "felt_dup<0>")]
+#[test_case("felt_jump_nz", vec![] => Ok(()); "felt_jump_nz<>")]
+#[test_case("felt_jump_nz", vec![type_arg("felt")] => Err(WrongNumberOfGenericArgs);
+            "felt_jump_nz<int>")]
 #[test_case("int_add", vec![] => Ok(()); "int_add")]
 #[test_case("int_sub", vec![] => Ok(()); "int_sub")]
 #[test_case("int_mul", vec![] => Ok(()); "int_mul")]
@@ -72,10 +75,9 @@ fn find_type_specialization(
 #[test_case("int_ignore", vec![type_arg("T")] => Err(WrongNumberOfGenericArgs); "int_ignore<T>")]
 #[test_case("int_dup", vec![] => Ok(()); "int_dup")]
 #[test_case("int_dup", vec![type_arg("T")] => Err(WrongNumberOfGenericArgs); "int_dup<T>")]
-#[test_case("jump_nz", vec![type_arg("int")] => Ok(()); "jump_nz<int>")]
-#[test_case("jump_nz", vec![] => Err(UnsupportedGenericArg); "jump_nz<>")]
-#[test_case("jump_nz", vec![type_arg("int"), type_arg("int")] => Err(UnsupportedGenericArg);
- "jump_nz<T, T>")]
+#[test_case("int_jump_nz", vec![] => Ok(()); "int_jump_nz<>")]
+#[test_case("int_jump_nz", vec![type_arg("int")] => Err(WrongNumberOfGenericArgs);
+            "int_jump_nz<int>")]
 #[test_case("unwrap_nz", vec![type_arg("int")] => Ok(()); "unwrap_nz<int>")]
 #[test_case("unwrap_nz", vec![] => Err(UnsupportedGenericArg); "unwrap_nz")]
 #[test_case("store_temp", vec![type_arg("int")] => Ok(()); "store_temp<int>")]
@@ -112,12 +114,8 @@ fn find_libfunc_specialization(
                     (("felt".into(), &[][..]), "felt".into()),
                     (("int".into(), &[][..]), "int".into()),
                     (("NonZero".into(), &[type_arg("int")][..]), "NonZeroInt".into()),
-                    (("Deferred".into(), &[type_arg("int")][..]), "DeferredInt".into()),
+                    (("NonZero".into(), &[type_arg("felt")][..]), "NonZeroFelt".into()),
                     (("GasBuiltin".into(), &[][..]), "GasBuiltin".into()),
-                    (
-                        ("Deferred".into(), &[type_arg("GasBuiltin")][..]),
-                        "DeferredGasBuiltin".into(),
-                    ),
                 ]),
                 functions,
             },
