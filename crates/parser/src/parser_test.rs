@@ -1,25 +1,26 @@
+use std::fmt::Write;
 use std::fs;
+use std::path::PathBuf;
 
-use filesystem::ids::FileId;
-use salsa::{InternId, InternKey};
+use diagnostics::{Diagnostics, WithDiagnostics};
+use filesystem::db::{FilesDatabase, FilesGroup};
+use filesystem::ids::FileLongId;
+use pretty_assertions::assert_eq;
 use syntax::node::db::SyntaxDatabase;
 use syntax::node::{SyntaxNode, TypedSyntaxNode};
 use test_case::test_case;
 
+use super::ParserDiagnostic;
 use crate::colored_printer::print_colored;
 use crate::parser::Parser;
 use crate::printer::print_tree;
 
-#[salsa::database(SyntaxDatabase)]
+#[salsa::database(SyntaxDatabase, FilesDatabase)]
 #[derive(Default)]
 pub struct DatabaseImpl {
     storage: salsa::Storage<DatabaseImpl>,
 }
 impl salsa::Database for DatabaseImpl {}
-
-fn test_source() -> FileId {
-    FileId::from_intern_id(InternId::from(100u32))
-}
 
 fn read_file(filename: &str) -> String {
     fs::read_to_string(filename)
@@ -27,15 +28,30 @@ fn read_file(filename: &str) -> String {
 }
 
 /// Parse the cairo file, print it, and compare with the expected result.
-#[test_case("test_data/cairo_files/short.cairo", "test_data/expected_results/short_tree", false, false; "short_tree")]
-#[test_case("test_data/cairo_files/short.cairo", "test_data/expected_results/short_tree_colored", true, false; "short_tree_colored")]
-#[test_case("test_data/cairo_files/test1.cairo", "test_data/expected_results/test1_tree", false, false; "test1_tree")]
-#[test_case("test_data/cairo_files/test1.cairo", "test_data/expected_results/test1_tree_with_trivia", false, true; "test1_tree_with_trivia")]
-#[test_case("test_data/cairo_files/test2.cairo", "test_data/expected_results/test2_tree", false, false; "test2_tree")]
-#[test_case("test_data/cairo_files/test2.cairo", "test_data/expected_results/test2_tree_with_trivia", false, true; "test2_tree_with_trivia")]
+#[test_case(
+    "test_data/cairo_files/short.cairo", "test_data/expected_results/short_tree", true, false,
+    false; "short_tree")]
+#[test_case(
+    "test_data/cairo_files/short.cairo",
+    "test_data/expected_results/short_tree_colored", false, true, false; "short_tree_colored")]
+#[test_case(
+    "test_data/cairo_files/test1.cairo", "test_data/expected_results/test1_tree", true, false,
+    false; "test1_tree")]
+#[test_case(
+    "test_data/cairo_files/test1.cairo",
+    "test_data/expected_results/test1_tree_with_trivia", false, false, true;
+    "test1_tree_with_trivia")]
+#[test_case(
+    "test_data/cairo_files/test2.cairo", "test_data/expected_results/test2_tree", true, false,
+    false; "test2_tree")]
+#[test_case(
+    "test_data/cairo_files/test2.cairo",
+    "test_data/expected_results/test2_tree_with_trivia", false, false, true;
+    "test2_tree_with_trivia")]
 fn parse_and_compare_tree(
     cairo_filename: &str,
-    expected_tree_filename: &str,
+    expected_output_filename: &str,
+    print_diagnostics: bool,
     print_colors: bool,
     print_trivia: bool,
 ) {
@@ -45,11 +61,15 @@ fn parse_and_compare_tree(
     let db_val = DatabaseImpl::default();
     let db = &db_val;
 
-    let syntax_root = get_syntax_root(db, cairo_filename);
+    let (syntax_root, diagnostics) = get_syntax_root_and_diagnostics(db, cairo_filename);
+    let diagnostics_str = diagnostics.format(db);
 
-    let printed_tree = print_tree(db, &syntax_root, print_colors, print_trivia);
+    let mut printed_tree = print_tree(db, &syntax_root, print_colors, print_trivia);
+    if print_diagnostics {
+        write!(printed_tree, "--------------------\n{diagnostics_str}").unwrap();
+    }
 
-    let expected_tree = read_file(expected_tree_filename);
+    let expected_tree = read_file(expected_output_filename);
 
     compare_printed_and_expected(printed_tree, expected_tree);
 }
@@ -63,8 +83,7 @@ fn parse_and_compare_colored(cairo_filename: &str, expected_tree_filename: &str,
     let db_val = DatabaseImpl::default();
     let db = &db_val;
 
-    let syntax_root = get_syntax_root(db, cairo_filename);
-
+    let (syntax_root, _diagnostics) = get_syntax_root_and_diagnostics(db, cairo_filename);
     let printed = print_colored(db, &syntax_root, verbose);
     let expected = read_file(expected_tree_filename);
 
@@ -102,22 +121,26 @@ fn _debug_failure(printed: String, expected: String) {
     }
 }
 
-fn get_syntax_root(db: &DatabaseImpl, cairo_filename: &str) -> SyntaxNode {
-    let contents = read_file(cairo_filename);
-    let mut parser = Parser::from_text(db, test_source(), contents.as_str());
-    parser.parse_syntax_file().as_syntax_node()
+fn get_syntax_root_and_diagnostics(
+    db: &DatabaseImpl,
+    cairo_filename: &str,
+) -> (SyntaxNode, Diagnostics<ParserDiagnostic>) {
+    let file_id = db.intern_file(FileLongId::OnDisk(PathBuf::from(cairo_filename)));
+    let contents = db.file_content(file_id).unwrap();
+    let parser = Parser::from_text(db, file_id, contents.as_str());
+    let WithDiagnostics { value: syntax_root, diagnostics } = parser.parse_syntax_file();
+    (syntax_root.as_syntax_node(), diagnostics)
 }
 
 fn compare_printed_and_expected(printed: String, expected: String) {
     // assert_eq prints a long confusing error on failure, so it's not used here.
-    if printed != expected {
-        panic!(
-            "assertion failed: printed != expected. To debug this, use _debug_failure(). If \
-             `printed` looks like the right output, you can copy it from running _debug_failure() \
-             and paste in the expected file. Note to carefully review it and not to blindly paste \
-             it there, as this loses the whole point of the test."
-        );
-    }
+    assert_eq!(
+        printed, expected,
+        "assertion failed: printed != expected. To debug this, use _debug_failure(). If `printed` \
+         looks like the right output, you can copy it from running _debug_failure() and paste in \
+         the expected file. Note to carefully review it and not to blindly paste it there, as \
+         this loses the whole point of the test."
+    );
 }
 
 // `hex`: print hex if true, raw if false.
