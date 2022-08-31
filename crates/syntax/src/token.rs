@@ -28,6 +28,7 @@ pub enum TokenKind {
     Struct,
     Let,
     Return,
+    Match,
 
     // Punctuation.
     And,
@@ -60,6 +61,7 @@ pub enum TokenKind {
     LParen,
     RParen,
     Arrow,
+    MatchArrow,
 
     // Trivia.
     SingleLineComment,
