@@ -4,8 +4,9 @@ mod test;
 
 use syntax::node::ast;
 
+use crate::corelib::unit_ty;
 use crate::db::SemanticGroup;
-use crate::{semantic, ExprId};
+use crate::{semantic, ExprId, StatementId};
 
 pub fn compute_expr_semantic(db: &dyn SemanticGroup, syntax: ast::Expr) -> ExprId {
     let syntax_db = db.as_syntax_group();
@@ -26,8 +27,31 @@ pub fn compute_expr_semantic(db: &dyn SemanticGroup, syntax: ast::Expr) -> ExprI
         ast::Expr::Tuple(_) => todo!(),
         ast::Expr::FunctionCall(_) => todo!(),
         ast::Expr::StructCtorCall(_) => todo!(),
-        ast::Expr::Block(_) => todo!(),
+        ast::Expr::Block(block_syntax) => semantic::Expr::ExprBlock(semantic::ExprBlock {
+            statements: block_syntax
+                .statements(syntax_db)
+                .elements(syntax_db)
+                .into_iter()
+                .map(|statement_syntax| compute_statement_semantic(db, statement_syntax))
+                .collect(),
+            // TODO(spapini): Handle tail when it exists in ast.
+            tail: None,
+            ty: unit_ty(db),
+        }),
         ast::Expr::ExprMissing(_) => todo!(),
     };
     db.intern_expr(expr)
+}
+
+pub fn compute_statement_semantic(db: &dyn SemanticGroup, syntax: ast::Statement) -> StatementId {
+    let syntax_db = db.as_syntax_group();
+    let statement = match syntax {
+        ast::Statement::Let(_) => todo!(),
+        ast::Statement::Expr(expr_syntax) => {
+            semantic::Statement::Expr(compute_expr_semantic(db, expr_syntax.expr(syntax_db)))
+        }
+        ast::Statement::Return(_) => todo!(),
+        ast::Statement::StatementMissing(_) => todo!(),
+    };
+    db.intern_statement(statement)
 }

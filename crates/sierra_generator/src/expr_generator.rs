@@ -54,10 +54,10 @@ fn handle_block(
 ) -> (Vec<pre_sierra::Statement>, sierra::ids::VarId) {
     // Process the statements.
     let mut statements: Vec<pre_sierra::Statement> = vec![];
-    for statement in &expr_block.statements {
-        match statement {
+    for statement_id in expr_block.statements.iter().copied() {
+        match context.get_db().lookup_intern_statement(statement_id) {
             semantic::Statement::Expr(expr) => {
-                let (cur_statements, _res) = generate_expression_code(context, *expr);
+                let (cur_statements, _res) = generate_expression_code(context, expr);
                 statements.extend(cur_statements);
             }
             semantic::Statement::Let(statement_let) => {
