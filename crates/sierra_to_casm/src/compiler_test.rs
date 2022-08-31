@@ -47,7 +47,7 @@ fn good_flow() {
             [ap + 0] = [fp + -3] + [fp + -2], ap++;
             [ap + 0] = [fp + -2], ap++;
             [ap + 0] = [ap + -2], ap++;
-            call rel 0;
+            call rel 4;
             [ap + 0] = [ap + -3], ap++;
             ret;
             [ap + 0] = [fp + -3], ap++;
