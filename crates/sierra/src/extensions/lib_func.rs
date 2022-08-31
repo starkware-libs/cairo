@@ -252,8 +252,12 @@ macro_rules! define_libfunc_hierarchy {
                 match self {
                     $(
                         Self::$variant_name(value) => {
-                            let inner = <$variant as GenericLibFunc>::specialize(value, context, args)?;
-                            Ok(Self::Concrete::$variant_name(inner.into()))
+                            Ok(Self::Concrete::$variant_name(
+                                <$variant as $crate::extensions::GenericLibFunc>::specialize(
+                                    value, context, args,
+                                )?
+                                .into(),
+                            ))
                         }
                     ),*
                 }
@@ -262,7 +266,7 @@ macro_rules! define_libfunc_hierarchy {
 
         $crate::define_concrete_libfunc_hierarchy! {
             pub enum $concrete_name {
-                $($variant_name (<$variant as GenericLibFunc> ::Concrete),)*
+                $($variant_name (<$variant as $crate::extensions::GenericLibFunc> ::Concrete),)*
             }
         }
     }

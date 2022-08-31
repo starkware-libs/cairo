@@ -1,6 +1,6 @@
 use crate::define_libfunc_hierarchy;
-use crate::extensions::core::integer::Operator;
 use crate::extensions::lib_func::SpecializationContext;
+use crate::extensions::modules::integer::Operator;
 use crate::extensions::{
     ConcreteType, GenericLibFunc, NamedType, NoGenericArgsGenericLibFunc, NoGenericArgsGenericType,
     NonBranchConcreteLibFunc, SpecializationError,

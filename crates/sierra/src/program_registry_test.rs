@@ -1,6 +1,6 @@
 use indoc::indoc;
 
-use crate::extensions::{CoreLibFunc, CoreType};
+use crate::extensions::core::{CoreLibFunc, CoreType};
 use crate::program::{ConcreteTypeLongId, TypeDeclaration};
 use crate::program_registry::{ProgramRegistry, ProgramRegistryError};
 use crate::ProgramParser;

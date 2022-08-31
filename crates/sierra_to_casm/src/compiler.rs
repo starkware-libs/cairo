@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
 use casm::instructions::{Instruction, InstructionBody, RetInstruction};
-use sierra::extensions::{CoreLibFunc, CoreType};
+use sierra::extensions::core::{CoreLibFunc, CoreType};
 use sierra::program::{Program, Statement, StatementIdx};
 use sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use thiserror::Error;

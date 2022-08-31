@@ -2,8 +2,8 @@
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::SpecializationContext;
 use crate::extensions::{
-    ConcreteLibFunc, ConcreteType, GenericLibFunc, NamedLibFunc, NamedType,
-    NoGenericArgsGenericType, NonBranchConcreteLibFunc, SpecializationError,
+    ConcreteLibFunc, ConcreteType, NamedLibFunc, NamedType, NoGenericArgsGenericType,
+    NonBranchConcreteLibFunc, SpecializationError,
 };
 use crate::ids::{ConcreteTypeId, GenericLibFuncId, GenericTypeId};
 use crate::program::GenericArg;

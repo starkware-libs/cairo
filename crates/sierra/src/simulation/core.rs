@@ -2,21 +2,21 @@ use array_init::array_init;
 
 use super::mem_cell::MemCell;
 use super::LibFuncSimulationError;
-use crate::extensions::core::function_call::FunctionCallConcreteLibFunc;
-use crate::extensions::core::gas::GasConcreteLibFunc::{GetGas, RefundGas};
-use crate::extensions::core::gas::{GetGasConcreteLibFunc, RefundGasConcreteLibFunc};
-use crate::extensions::core::integer::IntegerConcrete::{
+use crate::extensions::core::CoreConcreteLibFunc::{
+    self, Felt, FunctionCall, Gas, Integer, Mem, UnconditionalJump, UnwrapNonZero,
+};
+use crate::extensions::function_call::FunctionCallConcreteLibFunc;
+use crate::extensions::gas::GasConcreteLibFunc::{GetGas, RefundGas};
+use crate::extensions::gas::{GetGasConcreteLibFunc, RefundGasConcreteLibFunc};
+use crate::extensions::integer::IntegerConcrete::{
     Const, Duplicate, Ignore, JumpNotZero, Operation,
 };
-use crate::extensions::core::integer::{
+use crate::extensions::integer::{
     BinaryOperationConcreteLibFunc, ConstConcreteLibFunc, OperationConcreteLibFunc,
     OperationWithConstConcreteLibFunc, Operator,
 };
-use crate::extensions::core::mem::MemConcreteLibFunc::{
+use crate::extensions::mem::MemConcreteLibFunc::{
     AlignTemps, AllocLocals, Rename, StoreLocal, StoreTemp,
-};
-use crate::extensions::CoreConcreteLibFunc::{
-    self, Felt, FunctionCall, Gas, Integer, Mem, UnconditionalJump, UnwrapNonZero,
 };
 use crate::ids::FunctionId;
 
