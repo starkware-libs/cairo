@@ -654,6 +654,7 @@ pub enum Expr {
     FunctionCall(ExprFunctionCall),
     StructCtorCall(ExprStructCtorCall),
     Block(ExprBlock),
+    Match(ExprMatch),
     ExprMissing(ExprMissing),
 }
 impl TypedSyntaxNode for Expr {
@@ -682,6 +683,7 @@ impl TypedSyntaxNode for Expr {
                     Expr::StructCtorCall(ExprStructCtorCall::from_syntax_node(db, node))
                 }
                 SyntaxKind::ExprBlock => Expr::Block(ExprBlock::from_syntax_node(db, node)),
+                SyntaxKind::ExprMatch => Expr::Match(ExprMatch::from_syntax_node(db, node)),
                 SyntaxKind::ExprMissing => {
                     Expr::ExprMissing(ExprMissing::from_syntax_node(db, node))
                 }
@@ -706,6 +708,7 @@ impl TypedSyntaxNode for Expr {
             Expr::FunctionCall(x) => x.as_syntax_node(),
             Expr::StructCtorCall(x) => x.as_syntax_node(),
             Expr::Block(x) => x.as_syntax_node(),
+            Expr::Match(x) => x.as_syntax_node(),
             Expr::ExprMissing(x) => x.as_syntax_node(),
         }
     }
@@ -1508,6 +1511,209 @@ impl TypedSyntaxNode for ExprBlock {
             }
             GreenNode::Token(token) => {
                 panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::ExprBlock);
+            }
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum Pattern {
+    Underscore(Terminal),
+    Literal(ExprLiteral),
+}
+impl TypedSyntaxNode for Pattern {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
+        panic!("No missing variant.");
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        match db.lookup_intern_green(node.0.green) {
+            GreenNode::Internal(internal) => match internal.kind {
+                SyntaxKind::Terminal => Pattern::Underscore(Terminal::from_syntax_node(db, node)),
+                SyntaxKind::ExprLiteral => {
+                    Pattern::Literal(ExprLiteral::from_syntax_node(db, node))
+                }
+                _ => panic!(
+                    "Unexpected syntax kind {:?} when constructing {}.",
+                    internal.kind, "Pattern"
+                ),
+            },
+            GreenNode::Token(token) => match token.kind {
+                _ => panic!(
+                    "Unexpected token kind {:?} when constructing {}.",
+                    token.kind, "Pattern"
+                ),
+            },
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        match self {
+            Pattern::Underscore(x) => x.as_syntax_node(),
+            Pattern::Literal(x) => x.as_syntax_node(),
+        }
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct MatchArm {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl MatchArm {
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        pattern: GreenId,
+        arrow: GreenId,
+        expression: GreenId,
+    ) -> GreenId {
+        let children: Vec<GreenId> = vec![pattern, arrow, expression];
+        let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
+        db.intern_green(GreenNode::Internal(GreenNodeInternal {
+            kind: SyntaxKind::MatchArm,
+            children,
+            width,
+        }))
+    }
+    pub fn pattern(&self, db: &dyn SyntaxGroup) -> Pattern {
+        Pattern::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn arrow(&self, db: &dyn SyntaxGroup) -> Terminal {
+        Terminal::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn expression(&self, db: &dyn SyntaxGroup) -> Expr {
+        Expr::from_syntax_node(db, self.children[2].clone())
+    }
+}
+impl TypedSyntaxNode for MatchArm {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
+        db.intern_green(GreenNode::Internal(GreenNodeInternal {
+            kind: SyntaxKind::MatchArm,
+            children: vec![Pattern::missing(db), Terminal::missing(db), Expr::missing(db)],
+            width: 0,
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        match db.lookup_intern_green(node.0.green) {
+            GreenNode::Internal(internal) => {
+                if internal.kind != SyntaxKind::MatchArm {
+                    panic!(
+                        "Unexpected SyntaxKind {:?}. Expected {:?}.",
+                        internal.kind,
+                        SyntaxKind::MatchArm
+                    );
+                }
+                let children = node.children(db).collect();
+                Self { node, children }
+            }
+            GreenNode::Token(token) => {
+                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::MatchArm);
+            }
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct MatchArms(ElementList<MatchArm, 2>);
+impl Deref for MatchArms {
+    type Target = ElementList<MatchArm, 2>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+impl MatchArms {
+    pub fn new_green(db: &dyn SyntaxGroup, children: Vec<GreenId>) -> GreenId {
+        let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
+        db.intern_green(GreenNode::Internal(GreenNodeInternal {
+            kind: SyntaxKind::MatchArms,
+            children,
+            width,
+        }))
+    }
+}
+impl TypedSyntaxNode for MatchArms {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
+        db.intern_green(GreenNode::Internal(GreenNodeInternal {
+            kind: SyntaxKind::MatchArms,
+            children: vec![],
+            width: 0,
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        Self(ElementList::new(node))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct ExprMatch {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl ExprMatch {
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        matchkw: GreenId,
+        expr: GreenId,
+        lbrace: GreenId,
+        arms: GreenId,
+        rbrace: GreenId,
+    ) -> GreenId {
+        let children: Vec<GreenId> = vec![matchkw, expr, lbrace, arms, rbrace];
+        let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
+        db.intern_green(GreenNode::Internal(GreenNodeInternal {
+            kind: SyntaxKind::ExprMatch,
+            children,
+            width,
+        }))
+    }
+    pub fn matchkw(&self, db: &dyn SyntaxGroup) -> Terminal {
+        Terminal::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn expr(&self, db: &dyn SyntaxGroup) -> ExprPath {
+        ExprPath::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn lbrace(&self, db: &dyn SyntaxGroup) -> Terminal {
+        Terminal::from_syntax_node(db, self.children[2].clone())
+    }
+    pub fn arms(&self, db: &dyn SyntaxGroup) -> MatchArms {
+        MatchArms::from_syntax_node(db, self.children[3].clone())
+    }
+    pub fn rbrace(&self, db: &dyn SyntaxGroup) -> Terminal {
+        Terminal::from_syntax_node(db, self.children[4].clone())
+    }
+}
+impl TypedSyntaxNode for ExprMatch {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
+        db.intern_green(GreenNode::Internal(GreenNodeInternal {
+            kind: SyntaxKind::ExprMatch,
+            children: vec![
+                Terminal::missing(db),
+                ExprPath::missing(db),
+                Terminal::missing(db),
+                MatchArms::missing(db),
+                Terminal::missing(db),
+            ],
+            width: 0,
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        match db.lookup_intern_green(node.0.green) {
+            GreenNode::Internal(internal) => {
+                if internal.kind != SyntaxKind::ExprMatch {
+                    panic!(
+                        "Unexpected SyntaxKind {:?}. Expected {:?}.",
+                        internal.kind,
+                        SyntaxKind::ExprMatch
+                    );
+                }
+                let children = node.children(db).collect();
+                Self { node, children }
+            }
+            GreenNode::Token(token) => {
+                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::ExprMatch);
             }
         }
     }
