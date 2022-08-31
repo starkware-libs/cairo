@@ -251,7 +251,7 @@ impl<'a> Parser<'a> {
     /// Returns a GreenId of a node with an
     /// ExprPath|ExprFunctionCall|ExprStructCtorCall|ExprParenthesized|ExprTuple kind, or None if
     /// such an expression can't be parsed.
-    fn try_parse_atom(&mut self) -> Option<GreenId> {
+    pub fn try_parse_atom(&mut self) -> Option<GreenId> {
         // TODO(yuval): support paths starting with "::".
         match self.peek().kind {
             TokenKind::Identifier => {
