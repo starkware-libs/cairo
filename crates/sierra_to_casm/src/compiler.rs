@@ -42,14 +42,22 @@ impl Display for CairoProgram {
 pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
     let mut instructions = Vec::new();
 
+    // Maps statement_idx to program_offset.
+    let mut statement_offsets = Vec::with_capacity(program.statements.len());
+
     let registry = ProgramRegistry::<CoreType, CoreLibFunc>::new(program)
         .map_err(CompilationError::ProgramRegistryError)?;
     let type_sizes = get_type_size_map(program, &registry)
         .ok_or(CompilationError::FailedBuildingTypeInformation)?;
     let mut program_refs = init_reference(program.statements.len(), &program.funcs)?;
 
+    let mut program_offset: usize = 0;
+
     for (statement_id, statement) in program.statements.iter().enumerate() {
         let statement_idx = StatementIdx(statement_id);
+
+        statement_offsets.push(program_offset);
+
         match statement {
             Statement::Return(ref_ids) => {
                 let (_statement_refs, return_refs) =
@@ -71,6 +79,10 @@ pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
                     .get_libfunc(&invocation.libfunc_id)
                     .map_err(CompilationError::ProgramRegistryError)?;
                 let compiled_invocation = compile_invocation(&type_sizes, libfunc, &invoke_refs)?;
+
+                for instruction in &instructions {
+                    program_offset += instruction.body.op_size();
+                }
                 instructions.extend(compiled_invocation.instructions.into_iter());
 
                 program_refs.update_references(
