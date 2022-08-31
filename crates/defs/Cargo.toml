@@ -5,6 +5,10 @@ edition = "2021"
 
 [dependencies]
 db_utils = { path = "../db_utils" }
+diagnostics = { path = "../diagnostics" }
+diagnostics_proc_macros = { path = "../diagnostics_proc_macros" }
 filesystem = { path = "../filesystem" }
 salsa = "0.16.1"
+syntax = { path = "../syntax" }
+parser = { path = "../parser" }
 smol_str = "0.1.23"

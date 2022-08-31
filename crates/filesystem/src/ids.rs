@@ -35,3 +35,15 @@ impl FileId {
         }
     }
 }
+
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+pub enum ModuleId {
+    CrateRoot(CrateId),
+    Submodule(SubmoduleId),
+}
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct SubmoduleLongId {
+    pub parent: ModuleId,
+    pub name: SmolStr,
+}
+define_short_id!(SubmoduleId);
