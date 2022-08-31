@@ -35,7 +35,7 @@ impl NamedLibFunc for UnwrapNonZeroLibFunc {
     ) -> Result<Self::Concrete, SpecializationError> {
         let ty = as_single_type(args)?;
         Ok(SignatureOnlyConcreteLibFunc {
-            signature: LibFuncSignature::non_branch(
+            signature: LibFuncSignature::new_non_branch(
                 vec![context.get_wrapped_concrete_type(NonZeroType::id(), ty.clone())?],
                 vec![ty],
             ),

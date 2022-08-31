@@ -129,26 +129,35 @@ impl<T: NoGenericArgsGenericLibFunc> NamedLibFunc for T {
     }
 }
 
+/// The output types returning from a library functions branch.
+type BranchOutputTypes = Vec<ConcreteTypeId>;
+
 /// Trait for a specialized library function.
 pub trait ConcreteLibFunc {
     /// The input types for calling the library function.
     fn input_types(&self) -> &[ConcreteTypeId];
-    /// The output types returning from library function per branch.
-    fn output_types(&self) -> &[Vec<ConcreteTypeId>];
+    /// The output types returning from a library function per branch.
+    fn output_types(&self) -> &[BranchOutputTypes];
     /// The index of the fallthrough branch of the library function if any.
     fn fallthrough(&self) -> Option<usize>;
 }
 
 /// Represents the signature of a library function.
 pub struct LibFuncSignature {
+    /// The input types for calling a library function.
     pub input_types: Vec<ConcreteTypeId>,
-    pub output_types: Vec<Vec<ConcreteTypeId>>,
+    /// The output types returning from a library function per branch.
+    pub output_types: Vec<BranchOutputTypes>,
+    /// The index of the fallthrough branch of the library function if any.
     pub fallthrough: Option<usize>,
 }
 impl LibFuncSignature {
     /// Creates a non branch signature.
-    pub fn non_branch(input_types: Vec<ConcreteTypeId>, output_types: Vec<ConcreteTypeId>) -> Self {
-        Self { input_types, output_types: vec![output_types], fallthrough: Some(0) }
+    pub fn new_non_branch(
+        input_types: Vec<ConcreteTypeId>,
+        branch_output_types: BranchOutputTypes,
+    ) -> Self {
+        Self { input_types, output_types: vec![branch_output_types], fallthrough: Some(0) }
     }
 }
 
@@ -171,8 +180,8 @@ impl<TSignatureBasedConcreteLibFunc: SignatureBasedConcreteLibFunc> ConcreteLibF
     }
 }
 
-/// Struct providing a ConcreteLibFunc based only on a signature - should not be used if any extra
-/// data is required by users of the libfunc concrete type.
+/// Struct providing a ConcreteLibFunc only with a signature - should not be implemented for
+/// concrete libfuncs that require any extra data.
 pub struct SignatureOnlyConcreteLibFunc {
     pub signature: LibFuncSignature,
 }
