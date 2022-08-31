@@ -5,7 +5,7 @@ use thiserror::Error;
 
 use self::mem_cell::MemCell;
 use crate::edit_state::{put_results, take_args, EditStateError};
-use crate::extensions::{CoreConcreteLibFunc, CoreLibFunc, CoreType};
+use crate::extensions::core::{CoreConcreteLibFunc, CoreLibFunc, CoreType};
 use crate::ids::{FunctionId, VarId};
 use crate::program::{Program, Statement, StatementIdx};
 use crate::program_registry::{ProgramRegistry, ProgramRegistryError};

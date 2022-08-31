@@ -1,11 +1,12 @@
 use super::non_zero::NonZeroType;
-use crate::extensions::lib_func::SpecializationContext;
-use crate::extensions::{
-    ConcreteLibFunc, ConcreteType, GenericLibFunc, NamedLibFunc, NamedType,
-    NoGenericArgsGenericLibFunc, NoGenericArgsGenericType, NonBranchConcreteLibFunc,
-    SpecializationError,
+use crate::extensions::lib_func::{
+    LibFuncSignature, SignatureOnlyConcreteLibFunc, SpecializationContext,
 };
-use crate::ids::{ConcreteTypeId, GenericLibFuncId, GenericTypeId};
+use crate::extensions::{
+    ConcreteType, GenericLibFunc, NamedLibFunc, NamedType, NoGenericArgsGenericLibFunc,
+    NoGenericArgsGenericType, SignatureBasedConcreteLibFunc, SpecializationError,
+};
+use crate::ids::{GenericLibFuncId, GenericTypeId};
 use crate::program::GenericArg;
 use crate::{define_concrete_libfunc_hierarchy, define_libfunc_hierarchy};
 
@@ -70,9 +71,18 @@ impl GenericLibFunc for OperationLibFunc {
         match args {
             [] => Ok(OperationConcreteLibFunc::Binary(BinaryOperationConcreteLibFunc {
                 operator: self.operator,
-                int_type: int_type.clone(),
-                non_zero_int_type: context
-                    .get_wrapped_concrete_type(NonZeroType::id(), int_type)?,
+                signature: LibFuncSignature::non_branch(
+                    vec![
+                        int_type.clone(),
+                        if matches!(self.operator, Operator::Div | Operator::Mod) {
+                            context
+                                .get_wrapped_concrete_type(NonZeroType::id(), int_type.clone())?
+                        } else {
+                            int_type.clone()
+                        },
+                    ],
+                    vec![int_type],
+                ),
             })),
             [GenericArg::Value(c)] => {
                 if matches!(self.operator, Operator::Div | Operator::Mod) && *c == 0 {
@@ -81,7 +91,10 @@ impl GenericLibFunc for OperationLibFunc {
                     Ok(OperationConcreteLibFunc::Const(OperationWithConstConcreteLibFunc {
                         operator: self.operator,
                         c: *c,
-                        int_type,
+                        signature: LibFuncSignature::non_branch(
+                            vec![int_type.clone()],
+                            vec![int_type],
+                        ),
                     }))
                 }
             }
@@ -92,22 +105,11 @@ impl GenericLibFunc for OperationLibFunc {
 
 pub struct BinaryOperationConcreteLibFunc {
     pub operator: Operator,
-    pub int_type: ConcreteTypeId,
-    pub non_zero_int_type: ConcreteTypeId,
+    pub signature: LibFuncSignature,
 }
-impl NonBranchConcreteLibFunc for BinaryOperationConcreteLibFunc {
-    fn input_types(&self) -> Vec<ConcreteTypeId> {
-        vec![
-            self.int_type.clone(),
-            if matches!(self.operator, Operator::Div | Operator::Mod) {
-                self.non_zero_int_type.clone()
-            } else {
-                self.int_type.clone()
-            },
-        ]
-    }
-    fn output_types(&self) -> Vec<ConcreteTypeId> {
-        vec![self.int_type.clone()]
+impl SignatureBasedConcreteLibFunc for BinaryOperationConcreteLibFunc {
+    fn signature(&self) -> &LibFuncSignature {
+        &self.signature
     }
 }
 
@@ -115,7 +117,7 @@ impl NonBranchConcreteLibFunc for BinaryOperationConcreteLibFunc {
 pub struct OperationWithConstConcreteLibFunc {
     pub operator: Operator,
     pub c: i64,
-    pub int_type: ConcreteTypeId,
+    pub signature: LibFuncSignature,
 }
 define_concrete_libfunc_hierarchy! {
     pub enum OperationConcreteLibFunc {
@@ -124,12 +126,9 @@ define_concrete_libfunc_hierarchy! {
     }
 }
 
-impl NonBranchConcreteLibFunc for OperationWithConstConcreteLibFunc {
-    fn input_types(&self) -> Vec<ConcreteTypeId> {
-        vec![self.int_type.clone()]
-    }
-    fn output_types(&self) -> Vec<ConcreteTypeId> {
-        vec![self.int_type.clone()]
+impl SignatureBasedConcreteLibFunc for OperationWithConstConcreteLibFunc {
+    fn signature(&self) -> &LibFuncSignature {
+        &self.signature
     }
 }
 
@@ -147,7 +146,10 @@ impl NamedLibFunc for ConstLibFunc {
         match args {
             [GenericArg::Value(c)] => Ok(ConstConcreteLibFunc {
                 c: *c,
-                int_type: context.get_concrete_type(IntegerType::id(), &[])?,
+                signature: LibFuncSignature::non_branch(
+                    vec![],
+                    vec![context.get_concrete_type(IntegerType::id(), &[])?],
+                ),
             }),
             _ => Err(SpecializationError::UnsupportedGenericArg),
         }
@@ -156,14 +158,11 @@ impl NamedLibFunc for ConstLibFunc {
 
 pub struct ConstConcreteLibFunc {
     pub c: i64,
-    pub int_type: ConcreteTypeId,
+    pub signature: LibFuncSignature,
 }
-impl NonBranchConcreteLibFunc for ConstConcreteLibFunc {
-    fn input_types(&self) -> Vec<ConcreteTypeId> {
-        vec![]
-    }
-    fn output_types(&self) -> Vec<ConcreteTypeId> {
-        vec![self.int_type.clone()]
+impl SignatureBasedConcreteLibFunc for ConstConcreteLibFunc {
+    fn signature(&self) -> &LibFuncSignature {
+        &self.signature
     }
 }
 
@@ -171,25 +170,18 @@ impl NonBranchConcreteLibFunc for ConstConcreteLibFunc {
 #[derive(Default)]
 pub struct IgnoreLibFunc {}
 impl NoGenericArgsGenericLibFunc for IgnoreLibFunc {
-    type Concrete = IgnoreConcreteLibFunc;
+    type Concrete = SignatureOnlyConcreteLibFunc;
     const ID: GenericLibFuncId = GenericLibFuncId::new_inline("int_ignore");
     fn specialize(
         &self,
         context: SpecializationContext<'_>,
     ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(IgnoreConcreteLibFunc { int_type: context.get_concrete_type(IntegerType::id(), &[])? })
-    }
-}
-
-pub struct IgnoreConcreteLibFunc {
-    pub int_type: ConcreteTypeId,
-}
-impl NonBranchConcreteLibFunc for IgnoreConcreteLibFunc {
-    fn input_types(&self) -> Vec<ConcreteTypeId> {
-        vec![self.int_type.clone()]
-    }
-    fn output_types(&self) -> Vec<ConcreteTypeId> {
-        vec![]
+        Ok(SignatureOnlyConcreteLibFunc {
+            signature: LibFuncSignature::non_branch(
+                vec![context.get_concrete_type(IntegerType::id(), &[])?],
+                vec![],
+            ),
+        })
     }
 }
 
@@ -197,28 +189,20 @@ impl NonBranchConcreteLibFunc for IgnoreConcreteLibFunc {
 #[derive(Default)]
 pub struct DuplicateLibFunc {}
 impl NoGenericArgsGenericLibFunc for DuplicateLibFunc {
-    type Concrete = DuplicateConcreteLibFunc;
+    type Concrete = SignatureOnlyConcreteLibFunc;
     const ID: GenericLibFuncId = GenericLibFuncId::new_inline("int_dup");
 
     fn specialize(
         &self,
         context: SpecializationContext<'_>,
     ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(DuplicateConcreteLibFunc {
-            int_type: context.get_concrete_type(IntegerType::id(), &[])?,
+        let int_type = context.get_concrete_type(IntegerType::id(), &[])?;
+        Ok(SignatureOnlyConcreteLibFunc {
+            signature: LibFuncSignature::non_branch(
+                vec![int_type.clone(), int_type.clone()],
+                vec![int_type],
+            ),
         })
-    }
-}
-
-pub struct DuplicateConcreteLibFunc {
-    pub int_type: ConcreteTypeId,
-}
-impl NonBranchConcreteLibFunc for DuplicateConcreteLibFunc {
-    fn input_types(&self) -> Vec<ConcreteTypeId> {
-        vec![self.int_type.clone()]
-    }
-    fn output_types(&self) -> Vec<ConcreteTypeId> {
-        vec![self.int_type.clone(), self.int_type.clone()]
     }
 }
 
@@ -227,7 +211,7 @@ impl NonBranchConcreteLibFunc for DuplicateConcreteLibFunc {
 #[derive(Default)]
 pub struct JumpNotZeroLibFunc {}
 impl NoGenericArgsGenericLibFunc for JumpNotZeroLibFunc {
-    type Concrete = JumpNotZeroConcreteLibFunc;
+    type Concrete = SignatureOnlyConcreteLibFunc;
     const ID: GenericLibFuncId = GenericLibFuncId::new_inline("int_jump_nz");
 
     fn specialize(
@@ -235,25 +219,17 @@ impl NoGenericArgsGenericLibFunc for JumpNotZeroLibFunc {
         context: SpecializationContext<'_>,
     ) -> Result<Self::Concrete, SpecializationError> {
         let int_type = context.get_concrete_type(IntegerType::id(), &[])?;
-        Ok(JumpNotZeroConcreteLibFunc {
-            int_type: int_type.clone(),
-            non_zero_int_type: context.get_wrapped_concrete_type(NonZeroType::id(), int_type)?,
+        Ok(SignatureOnlyConcreteLibFunc {
+            signature: LibFuncSignature {
+                input_types: vec![int_type.clone()],
+                output_types: vec![
+                    // success=
+                    vec![context.get_wrapped_concrete_type(NonZeroType::id(), int_type)?],
+                    // failure=
+                    vec![],
+                ],
+                fallthrough: Some(1),
+            },
         })
-    }
-}
-
-pub struct JumpNotZeroConcreteLibFunc {
-    pub int_type: ConcreteTypeId,
-    pub non_zero_int_type: ConcreteTypeId,
-}
-impl ConcreteLibFunc for JumpNotZeroConcreteLibFunc {
-    fn input_types(&self) -> Vec<ConcreteTypeId> {
-        vec![self.int_type.clone()]
-    }
-    fn output_types(&self) -> Vec<Vec<ConcreteTypeId>> {
-        vec![/* success= */ vec![self.non_zero_int_type.clone()], /* failure= */ vec![]]
-    }
-    fn fallthrough(&self) -> Option<usize> {
-        Some(1)
     }
 }
