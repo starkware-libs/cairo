@@ -1,6 +1,6 @@
 use sierra::program;
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 pub struct LabelId(usize);
 impl LabelId {
     pub fn new(value: usize) -> Self {
@@ -13,6 +13,7 @@ impl std::fmt::Display for LabelId {
     }
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Statement {
     SierraStatement(program::GenStatement<LabelId>),
     Label(Label),
@@ -26,6 +27,7 @@ impl std::fmt::Display for Statement {
     }
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Label {
     pub id: LabelId,
 }

@@ -93,6 +93,16 @@ fn good_flow() {
         "} => Err(InvocationError::InvalidReferenceExpressionForArgument.into());
             "Invalid reference expression for felt_add")]
 #[test_case(indoc! {"
+            type felt = felt;
+            type int = int;
+            libfunc felt_add = felt_add;
+            felt_add([1], [2]) -> ([3]);
+            return([3]);
+
+            test_program@0([1]: int, [2]: int) -> (felt);
+        "} => Err(InvocationError::InvalidReferenceTypeForArgument.into());
+            "Types mismatch")]
+#[test_case(indoc! {"
             test_program@25() -> ();
         "} => Err(ReferencesError::InvalidStatementIdx.into());
             "Invalid entry point")]
@@ -108,6 +118,11 @@ fn good_flow() {
         "} => Err(CompilationError::ReferencesError(
             ReferencesError::MissingReferencesForStatement));
             "Missing references for statement")]
+#[test_case(indoc! {"
+            type NonZeroFelt = NonZero<felt>;
+            type felt = felt;
+        "} => Err(CompilationError::FailedBuildingTypeInformation);
+            "type ordering bad for building size map")]
 fn compiler_errors(sierra_code: &str) -> Result<(), CompilationError> {
     let prog = ProgramParser::new().parse(sierra_code).unwrap();
     compile(&prog)?;

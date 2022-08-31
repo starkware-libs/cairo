@@ -5,7 +5,7 @@ use self::integer::{IntegerLibFunc, IntegerType};
 use self::mem::MemLibFunc;
 use self::non_zero::{NonZeroType, UnwrapNonZeroLibFunc};
 use self::unconditional_jump::UnconditionalJumpLibFunc;
-use super::{GenericLibFunc, SpecializationError};
+use super::{ExtensionSuite, GenericLibFunc, SpecializationError};
 use crate::ids::ConcreteTypeId;
 use crate::program::GenericArg;
 use crate::{define_libfunc_hierarchy, define_type_hierarchy};
@@ -37,6 +37,12 @@ define_libfunc_hierarchy! {
         UnwrapNonZero(UnwrapNonZeroLibFunc),
         UnconditionalJump(UnconditionalJumpLibFunc),
     }, CoreConcreteLibFunc
+}
+
+pub struct CoreExtensionSuite {}
+impl ExtensionSuite for CoreExtensionSuite {
+    type Type = CoreType;
+    type LibFunc = CoreLibFunc;
 }
 
 /// Helper for extracting the type from the template arguments.
