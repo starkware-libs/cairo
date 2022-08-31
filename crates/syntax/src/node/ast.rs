@@ -2508,6 +2508,7 @@ pub enum Item {
     Module(ItemModule),
     Function(ItemFunction),
     ExternFunction(ItemExternFunction),
+    ExternType(ItemExternType),
     Trait(ItemTrait),
     Impl(ItemImpl),
     Struct(ItemStruct),
@@ -2527,6 +2528,9 @@ impl TypedSyntaxNode for Item {
                 }
                 SyntaxKind::ItemExternFunction => {
                     Item::ExternFunction(ItemExternFunction::from_syntax_node(db, node))
+                }
+                SyntaxKind::ItemExternType => {
+                    Item::ExternType(ItemExternType::from_syntax_node(db, node))
                 }
                 SyntaxKind::ItemTrait => Item::Trait(ItemTrait::from_syntax_node(db, node)),
                 SyntaxKind::ItemImpl => Item::Impl(ItemImpl::from_syntax_node(db, node)),
@@ -2548,6 +2552,7 @@ impl TypedSyntaxNode for Item {
             Item::Module(x) => x.as_syntax_node(),
             Item::Function(x) => x.as_syntax_node(),
             Item::ExternFunction(x) => x.as_syntax_node(),
+            Item::ExternType(x) => x.as_syntax_node(),
             Item::Trait(x) => x.as_syntax_node(),
             Item::Impl(x) => x.as_syntax_node(),
             Item::Struct(x) => x.as_syntax_node(),
@@ -2762,6 +2767,75 @@ impl TypedSyntaxNode for ItemExternFunction {
                     token,
                     SyntaxKind::ItemExternFunction
                 );
+            }
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct ItemExternType {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl ItemExternType {
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        externkw: GreenId,
+        typekw: GreenId,
+        name: GreenId,
+        semi: GreenId,
+    ) -> GreenId {
+        let children: Vec<GreenId> = vec![externkw, typekw, name, semi];
+        let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
+        db.intern_green(GreenNode::Internal(GreenNodeInternal {
+            kind: SyntaxKind::ItemExternType,
+            children,
+            width,
+        }))
+    }
+    pub fn externkw(&self, db: &dyn SyntaxGroup) -> Terminal {
+        Terminal::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn typekw(&self, db: &dyn SyntaxGroup) -> Terminal {
+        Terminal::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn name(&self, db: &dyn SyntaxGroup) -> Identifier {
+        Identifier::from_syntax_node(db, self.children[2].clone())
+    }
+    pub fn semi(&self, db: &dyn SyntaxGroup) -> Terminal {
+        Terminal::from_syntax_node(db, self.children[3].clone())
+    }
+}
+impl TypedSyntaxNode for ItemExternType {
+    fn missing(db: &dyn SyntaxGroup) -> GreenId {
+        db.intern_green(GreenNode::Internal(GreenNodeInternal {
+            kind: SyntaxKind::ItemExternType,
+            children: vec![
+                Terminal::missing(db),
+                Terminal::missing(db),
+                Identifier::missing(db),
+                Terminal::missing(db),
+            ],
+            width: 0,
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        match db.lookup_intern_green(node.0.green) {
+            GreenNode::Internal(internal) => {
+                if internal.kind != SyntaxKind::ItemExternType {
+                    panic!(
+                        "Unexpected SyntaxKind {:?}. Expected {:?}.",
+                        internal.kind,
+                        SyntaxKind::ItemExternType
+                    );
+                }
+                let children = node.children(db).collect();
+                Self { node, children }
+            }
+            GreenNode::Token(token) => {
+                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::ItemExternType);
             }
         }
     }

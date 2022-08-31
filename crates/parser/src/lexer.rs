@@ -127,6 +127,7 @@ impl<'a> Lexer<'a> {
             "false" => TokenKind::False,
             "true" => TokenKind::True,
             "extern" => TokenKind::Extern,
+            "type" => TokenKind::Type,
             "func" => TokenKind::Function,
             "mod" => TokenKind::Module,
             "struct" => TokenKind::Struct,

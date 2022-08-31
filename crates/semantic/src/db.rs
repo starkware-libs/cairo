@@ -93,14 +93,18 @@ fn module_items(
                     },
                 )));
             }
-            Item::ExternFunction(sig) => {
-                module_items.push(ModuleItemId::ExternFunction(db.intern_extern_function(
-                    ExternFunctionLongId {
+            Item::ExternFunction(extern_function) => {
+                module_items.push(ModuleItemId::ExternFunction(
+                    db.intern_extern_function(ExternFunctionLongId {
                         parent: module_id,
-                        name: sig.signature(syntax_group).name(syntax_group).text(syntax_group),
-                    },
-                )));
+                        name: extern_function
+                            .signature(syntax_group)
+                            .name(syntax_group)
+                            .text(syntax_group),
+                    }),
+                ));
             }
+            Item::ExternType(_extern_type) => todo!(),
             Item::Trait(_tr) => todo!(),
             Item::Impl(_imp) => todo!(),
             Item::Struct(strct) => {

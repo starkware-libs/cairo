@@ -12,4 +12,5 @@ func foo(,var1: int,, var2: felt,) -> int {
     return x;
 }
 
+extern type felt;
 extern func bar(var1: int,) -> int;
