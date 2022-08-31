@@ -82,7 +82,7 @@ fn test_expr_generator() {
         ty,
     }));
 
-    // "foo(foo(x, 7), foo(x, 7))" expression.
+    // "foo2(foo(x, 7), foo(x, 7))" expression.
     let expr2 = db.intern_expr(semantic::Expr::ExprFunctionCall(semantic::ExprFunctionCall {
         function: ConcreteFunctionId::from_intern_id(InternId::from(2u32)),
         args: vec![expr, expr],
@@ -107,19 +107,19 @@ fn test_expr_generator() {
             "felt_const<7>() -> ([1])",
             "store_temp([0]) -> ([2])",
             "store_temp([1]) -> ([3])",
-            "function_call([2], [3]) -> ([4])",
-            // foo(foo(x, 7), foo(x, 7))
+            "function_call<user@[0]>([2], [3]) -> ([4])",
+            // foo2(foo(x, 7), foo(x, 7))
             "felt_const<7>() -> ([5])",
             "store_temp([0]) -> ([6])",
             "store_temp([5]) -> ([7])",
-            "function_call([6], [7]) -> ([8])",
+            "function_call<user@[0]>([6], [7]) -> ([8])",
             "felt_const<7>() -> ([9])",
             "store_temp([0]) -> ([10])",
             "store_temp([9]) -> ([11])",
-            "function_call([10], [11]) -> ([12])",
+            "function_call<user@[0]>([10], [11]) -> ([12])",
             "store_temp([8]) -> ([13])",
             "store_temp([12]) -> ([14])",
-            "function_call([13], [14]) -> ([15])",
+            "function_call<user@[1]>([13], [14]) -> ([15])",
         ]
     );
 
