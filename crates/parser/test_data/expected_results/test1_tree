@@ -72,13 +72,46 @@
     │   │       │   │   └── semi (kind: Semi): ';'
     │   │       │   ├── child #3 (kind: StatementLet)
     │   │       │   │   ├── letkw (kind: Let): 'let'
+    │   │       │   │   ├── lhs (kind: Identifier): 'y'
+    │   │       │   │   ├── type_clause (kind: OptionTypeClauseEmpty) []
+    │   │       │   │   ├── eq (kind: Eq): '='
+    │   │       │   │   ├── rhs (kind: ExprMatch)
+    │   │       │   │   │   ├── matchkw (kind: Match): 'match'
+    │   │       │   │   │   ├── expr (kind: ExprPath)
+    │   │       │   │   │   │   └── item #0 (kind: PathSegment)
+    │   │       │   │   │   │       ├── ident (kind: Identifier): 'x'
+    │   │       │   │   │   │       └── generic_args (kind: OptionGenericArgsEmpty) []
+    │   │       │   │   │   ├── lbrace (kind: LBrace): '{'
+    │   │       │   │   │   ├── arms (kind: MatchArms)
+    │   │       │   │   │   │   ├── item #0 (kind: MatchArm)
+    │   │       │   │   │   │   │   ├── pattern (kind: LiteralNumber): '0'
+    │   │       │   │   │   │   │   ├── arrow (kind: MatchArrow): '=>'
+    │   │       │   │   │   │   │   └── expression (kind: ExprBlock)
+    │   │       │   │   │   │   │       ├── lbrace (kind: LBrace): '{'
+    │   │       │   │   │   │   │       ├── statements (kind: StatementList)
+    │   │       │   │   │   │   │       │   └── child #0 (kind: StatementExpr)
+    │   │       │   │   │   │   │       │       ├── expr (kind: ExprLiteral)
+    │   │       │   │   │   │   │       │       │   └── terminal (kind: LiteralNumber): '1'
+    │   │       │   │   │   │   │       │       └── semi (kind: OptionSemicolonEmpty) []
+    │   │       │   │   │   │   │       └── rbrace (kind: RBrace): '}'
+    │   │       │   │   │   │   ├── separator #0 (kind: Comma): ','
+    │   │       │   │   │   │   ├── item #1 (kind: MatchArm)
+    │   │       │   │   │   │   │   ├── pattern (kind: Underscore): '_'
+    │   │       │   │   │   │   │   ├── arrow (kind: MatchArrow): '=>'
+    │   │       │   │   │   │   │   └── expression (kind: ExprLiteral)
+    │   │       │   │   │   │   │       └── terminal (kind: LiteralNumber): '0'
+    │   │       │   │   │   │   └── separator #1 (kind: Comma): ','
+    │   │       │   │   │   └── rbrace (kind: RBrace): '}'
+    │   │       │   │   └── semi (kind: Semi): ';'
+    │   │       │   ├── child #4 (kind: StatementLet)
+    │   │       │   │   ├── letkw (kind: Let): 'let'
     │   │       │   │   ├── lhs (kind: Identifier): 'x'
     │   │       │   │   ├── type_clause (kind: OptionTypeClauseEmpty) []
     │   │       │   │   ├── eq (kind: Eq): '='
     │   │       │   │   ├── rhs (kind: ExprLiteral)
     │   │       │   │   │   └── terminal (kind: True): 'true'
     │   │       │   │   └── semi (kind: Semi): ';'
-    │   │       │   ├── child #4 (kind: StatementExpr)
+    │   │       │   ├── child #5 (kind: StatementExpr)
     │   │       │   │   ├── expr (kind: ExprFunctionCall)
     │   │       │   │   │   ├── path (kind: ExprPath)
     │   │       │   │   │   │   └── item #0 (kind: PathSegment)
@@ -93,7 +126,7 @@
     │   │       │   │   │       │           └── generic_args (kind: OptionGenericArgsEmpty) []
     │   │       │   │   │       └── rparen (kind: RParen): ')'
     │   │       │   │   └── semi (kind: Semi): ';'
-    │   │       │   ├── child #5 (kind: StatementExpr)
+    │   │       │   ├── child #6 (kind: StatementExpr)
     │   │       │   │   ├── expr (kind: ExprFunctionCall)
     │   │       │   │   │   ├── path (kind: ExprPath)
     │   │       │   │   │   │   └── item #0 (kind: PathSegment)
@@ -108,7 +141,7 @@
     │   │       │   │   │       │           └── generic_args (kind: OptionGenericArgsEmpty) []
     │   │       │   │   │       └── rparen (kind: RParen): ')'
     │   │       │   │   └── semi (kind: OptionSemicolonEmpty) []
-    │   │       │   └── child #6 (kind: StatementReturn)
+    │   │       │   └── child #7 (kind: StatementReturn)
     │   │       │       ├── returnkw (kind: Return): 'return'
     │   │       │       ├── expr (kind: ExprPath)
     │   │       │       │   └── item #0 (kind: PathSegment)
