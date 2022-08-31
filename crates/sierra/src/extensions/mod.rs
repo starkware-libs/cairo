@@ -15,10 +15,6 @@ pub use self::modules::*;
 pub use self::types::{
     ConcreteType, GenericType, GenericTypeEx, NamedType, NoGenericArgsGenericType,
 };
-pub trait ExtensionSuite {
-    type Type: GenericType;
-    type LibFunc: GenericLibFunc;
-}
 
 #[cfg(test)]
 mod test;
