@@ -9,6 +9,7 @@ use thiserror::Error;
 
 use crate::invocations::{check_references_on_stack, compile_invocation, InvocationError};
 use crate::references::{init_reference, ReferencesError};
+use crate::relocations::{relocate_instructions, RelocationEntry};
 use crate::type_sizes::get_type_size_map;
 
 #[cfg(test)]
@@ -67,6 +68,7 @@ fn check_basic_structure(
 
 pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
     let mut instructions = Vec::new();
+    let mut relocations: Vec<RelocationEntry> = Vec::new();
 
     // Maps statement_idx to program_offset.
     let mut statement_offsets = Vec::with_capacity(program.statements.len());
@@ -92,8 +94,10 @@ pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
                 // TODO(orizi): Also test types of the results using 'check_types_match' when the
                 // returning function is available.
 
+                let ret_instruction = RetInstruction {};
+                program_offset += ret_instruction.op_size();
                 instructions.push(Instruction {
-                    body: InstructionBody::Ret(RetInstruction {}),
+                    body: InstructionBody::Ret(ret_instruction),
                     inc_ap: false,
                 });
             }
@@ -107,10 +111,17 @@ pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
                 check_basic_structure(invocation, libfunc)?;
                 let compiled_invocation = compile_invocation(&type_sizes, libfunc, &invoke_refs)?;
 
-                for instruction in &instructions {
+                for instruction in &compiled_invocation.instructions {
                     program_offset += instruction.body.op_size();
                 }
-                instructions.extend(compiled_invocation.instructions.into_iter());
+
+                for entry in compiled_invocation.relocations {
+                    relocations.push(RelocationEntry {
+                        instruction_idx: instructions.len() + entry.instruction_idx,
+                        relocation: entry.relocation,
+                    });
+                }
+                instructions.extend(compiled_invocation.instructions);
 
                 program_refs.update_references(
                     statement_idx,
@@ -121,5 +132,8 @@ pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
             }
         }
     }
+
+    relocate_instructions(&relocations, statement_offsets, &mut instructions);
+
     Ok(CairoProgram { instructions })
 }

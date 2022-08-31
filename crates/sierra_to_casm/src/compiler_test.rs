@@ -35,7 +35,8 @@ fn good_flow() {
 
             store_temp_felt([1]) -> ([1]);      // #10
             store_temp_felt([2]) -> ([2]);      // #11
-            return ([1], [2]);                  // #12
+            call_foo([1], [2]) -> ([1], [2]);   // #12
+            return ([1], [2]);                  // #13
 
             test_program@0([1]: felt, [2]: felt) -> ();
             foo@10([1]: felt, [2]: felt) -> (felt, felt);
@@ -47,11 +48,12 @@ fn good_flow() {
             [ap + 0] = [fp + -3] + [fp + -2], ap++;
             [ap + 0] = [fp + -2], ap++;
             [ap + 0] = [ap + -2], ap++;
-            call rel 0;
+            call rel 4;
             [ap + 0] = [ap + -3], ap++;
             ret;
             [ap + 0] = [fp + -3], ap++;
             [ap + 0] = [fp + -2], ap++;
+            call rel -2;
             ret;
         "}
     );
