@@ -10,7 +10,7 @@ use syntax::node::ast::Item;
 use crate::ids::{
     ConcreteFunctionId, ConcreteFunctionLongId, ExprId, StatementId, TypeId, TypeLongId,
 };
-use crate::semantic;
+use crate::{corelib, semantic};
 
 // Salsa database interface.
 #[salsa::query_group(SemanticDatabase)]
@@ -18,7 +18,7 @@ pub trait SemanticGroup: DefsGroup + AsDefsGroup + ParserGroup {
     #[salsa::interned]
     fn intern_function_instance(&self, id: ConcreteFunctionLongId) -> ConcreteFunctionId;
     #[salsa::interned]
-    fn intern_type_instance(&self, id: TypeLongId) -> TypeId;
+    fn intern_type(&self, id: TypeLongId) -> TypeId;
     #[salsa::interned]
     fn intern_expr(&self, expr: semantic::Expr) -> ExprId;
     #[salsa::interned]
@@ -34,6 +34,12 @@ pub trait SemanticGroup: DefsGroup + AsDefsGroup + ParserGroup {
     // TODO(yuval): consider moving to filesystem/defs crate.
     fn module_file(&self, module_id: ModuleId) -> Option<FileId>;
     fn module_items(&self, item: ModuleId) -> Option<Vec<ModuleItemId>>;
+
+    // Corelib.
+    #[salsa::invoke(corelib::core_module)]
+    fn core_module(&self) -> ModuleId;
+    #[salsa::invoke(corelib::core_felt_ty)]
+    fn core_felt_ty(&self) -> TypeId;
 }
 
 fn module_semantic(_db: &dyn SemanticGroup, _item: ModuleId) -> semantic::Module {
