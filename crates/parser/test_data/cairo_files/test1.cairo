@@ -11,3 +11,5 @@ fn foo(,var1: int,, var2: felt,) -> int {
     func2(x)
     return x;
 }
+
+extern fn bar(var1: int,) -> int;

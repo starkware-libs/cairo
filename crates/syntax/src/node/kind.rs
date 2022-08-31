@@ -45,7 +45,7 @@ pub enum SyntaxKind {
     ItemList,
     ItemModule,
     ItemFunction,
-    ItemFunctionSignature,
+    ItemExternFunction,
     ItemTrait,
     ItemImpl,
     ItemStruct,

@@ -111,6 +111,7 @@ fn get_syntax_root(db: &DatabaseImpl, cairo_filename: &str) -> SyntaxNode {
 fn compare_printed_and_expected(printed: String, expected: String) {
     // assert_eq prints a long confusing error on failure, so it's not used here.
     if printed != expected {
+        println!("Expected: {}", expected);
         panic!(
             "assertion failed: printed != expected. To debug this, use _debug_failure(). If \
              `printed` looks like the right output, you can copy it from running _debug_failure() \

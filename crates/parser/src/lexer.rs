@@ -126,6 +126,7 @@ impl<'a> Lexer<'a> {
         match self.peek_span_text() {
             "false" => TokenKind::False,
             "true" => TokenKind::True,
+            "extern" => TokenKind::Extern,
             "fn" => TokenKind::Function,
             "mod" => TokenKind::Module,
             "struct" => TokenKind::Struct,

@@ -76,7 +76,7 @@ fn module_items(db: &dyn SemanticGroup, module_id: ModuleId) -> Option<Vec<Modul
                     },
                 )));
             }
-            Item::FunctionSignature(sig) => {
+            Item::ExternFunction(sig) => {
                 module_items.push(ModuleItemId::ExternFunction(db.intern_extern_function(
                     ExternFunctionLongId {
                         parent: module_id,
