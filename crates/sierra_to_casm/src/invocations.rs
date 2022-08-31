@@ -7,11 +7,10 @@ use casm::operand::{
 };
 use itertools::zip_eq;
 use sierra::extensions::core::CoreConcreteLibFunc;
-use sierra::extensions::felt::{
-    FeltBinaryOperationConcreteLibFunc, FeltConcrete, FeltDuplicateConcreteLibFunc,
-};
+use sierra::extensions::felt::{FeltBinaryOperationConcreteLibFunc, FeltConcrete};
 use sierra::extensions::function_call::FunctionCallConcreteLibFunc;
 use sierra::extensions::integer::Operator;
+use sierra::extensions::lib_func::SignatureOnlyConcreteLibFunc;
 use sierra::extensions::mem::{MemConcreteLibFunc, StoreTempConcreteLibFunc};
 use sierra::extensions::ConcreteLibFunc;
 use sierra::ids::ConcreteTypeId;
@@ -74,14 +73,14 @@ impl CompiledInvocation {
         relocations: Vec<RelocationEntry>,
         ap_changes: impl Iterator<Item = ApChange>,
         output_expressions: impl Iterator<Item = impl Iterator<Item = ResOperand>>,
-        output_types: Vec<Vec<ConcreteTypeId>>,
+        output_types: &[Vec<ConcreteTypeId>],
     ) -> Self {
         Self {
             instructions,
             relocations,
             results: zip_eq(ap_changes, zip_eq(output_expressions, output_types))
                 .map(|(ap_change, (expressions, types))| {
-                    BranchRefChanges::new(ap_change, expressions, types.into_iter())
+                    BranchRefChanges::new(ap_change, expressions, types.iter().cloned())
                 })
                 .collect(),
         }
@@ -90,7 +89,7 @@ impl CompiledInvocation {
     // A constructor for the trivial case of fallthrough without any instructions.
     fn only_reference_changes(
         output_expressions: impl Iterator<Item = ResOperand>,
-        output_types: Vec<Vec<ConcreteTypeId>>,
+        output_types: &[Vec<ConcreteTypeId>],
     ) -> Self {
         Self::new(
             vec![],
@@ -171,7 +170,7 @@ pub fn check_types_match(
 }
 
 fn handle_felt_dup(
-    felt_dup: &FeltDuplicateConcreteLibFunc,
+    felt_dup: &SignatureOnlyConcreteLibFunc,
     refs: &[ReferenceValue],
 ) -> Result<CompiledInvocation, InvocationError> {
     let expression = match refs {
@@ -249,7 +248,7 @@ pub fn compile_invocation(
     libfunc: &CoreConcreteLibFunc,
     refs: &[ReferenceValue],
 ) -> Result<CompiledInvocation, InvocationError> {
-    check_types_match(refs, &libfunc.input_types())?;
+    check_types_match(refs, libfunc.input_types())?;
     match libfunc {
         // TODO(ilya, 10/10/2022): Handle type.
         CoreConcreteLibFunc::Felt(FeltConcrete::Operation(felt_op)) => {
