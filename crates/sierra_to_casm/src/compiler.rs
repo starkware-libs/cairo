@@ -1,8 +1,9 @@
 use std::fmt::Display;
 
 use casm::instructions::{Instruction, InstructionBody, RetInstruction};
-use sierra::extensions::core::{CoreLibFunc, CoreType};
-use sierra::program::{Program, Statement, StatementIdx};
+use sierra::extensions::core::{CoreConcreteLibFunc, CoreLibFunc, CoreType};
+use sierra::extensions::ConcreteLibFunc;
+use sierra::program::{BranchTarget, Invocation, Program, Statement, StatementIdx};
 use sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use thiserror::Error;
 
@@ -24,6 +25,8 @@ pub enum CompilationError {
     InvocationError(#[from] InvocationError),
     #[error(transparent)]
     ReferencesError(#[from] ReferencesError),
+    #[error("Invocation mismatched to libfunc")]
+    LibFuncInvocationMismatch,
 }
 
 #[derive(Error, Debug, Eq, PartialEq)]
@@ -35,6 +38,29 @@ impl Display for CairoProgram {
         for instruction in &self.instructions {
             writeln!(f, "{};", instruction)?
         }
+        Ok(())
+    }
+}
+
+/// Ensure the basic structure of the invocation is the same as the library function.
+fn check_basic_structure(
+    invocation: &Invocation,
+    libfunc: &CoreConcreteLibFunc,
+) -> Result<(), CompilationError> {
+    if invocation.args.len() != libfunc.input_types().len()
+        || !itertools::equal(
+            invocation.branches.iter().map(|branch| branch.results.len()),
+            libfunc.output_types().iter().map(|types| types.len()),
+        )
+        || match libfunc.fallthrough() {
+            Some(expected_fallthrough) => {
+                invocation.branches[expected_fallthrough].target != BranchTarget::Fallthrough
+            }
+            None => false,
+        }
+    {
+        Err(CompilationError::LibFuncInvocationMismatch)
+    } else {
         Ok(())
     }
 }
@@ -78,6 +104,7 @@ pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
                 let libfunc = registry
                     .get_libfunc(&invocation.libfunc_id)
                     .map_err(CompilationError::ProgramRegistryError)?;
+                check_basic_structure(invocation, libfunc)?;
                 let compiled_invocation = compile_invocation(&type_sizes, libfunc, &invoke_refs)?;
 
                 for instruction in &instructions {
