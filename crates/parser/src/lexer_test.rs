@@ -17,7 +17,7 @@ fn token_kind_to_text(kind: TokenKind) -> Vec<&'static str> {
             vec!["0", "9", "00", "1234567890123456789012345678901234567890"]
         }
         TokenKind::False => vec!["false"],
-        TokenKind::Function => vec!["fn"],
+        TokenKind::Function => vec!["func"],
         TokenKind::Let => vec!["let"],
         TokenKind::Module => vec!["mod"],
         TokenKind::Struct => vec!["struct"],

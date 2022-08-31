@@ -13,7 +13,7 @@
     │       │   │   │       ├── token (kind: Semi): ';'
     │       │   │   │       └── trailing_trivia (kind: Trivia)
     │       │   │   │           └── child #0 (kind: Newline).
-    │       │   │   ├── token (kind: Function): 'fn'
+    │       │   │   ├── token (kind: Function): 'func'
     │       │   │   └── trailing_trivia (kind: Trivia)
     │       │   │       └── child #0 (kind: Whitespace).
     │       │   ├── name (kind: Terminal)
@@ -262,7 +262,7 @@
     │           │   │   │   │       │   │   ├── child #1 (kind: SingleLineComment): '// bla2'
     │           │   │   │   │       │   │   ├── child #2 (kind: Newline).
     │           │   │   │   │       │   │   └── child #3 (kind: Whitespace).
-    │           │   │   │   │       │   ├── token (kind: Identifier): 'func'
+    │           │   │   │   │       │   ├── token (kind: Identifier): 'func1'
     │           │   │   │   │       │   └── trailing_trivia (kind: Trivia) []
     │           │   │   │   │       └── generic_args (kind: OptionGenericArgsEmpty) []
     │           │   │   │   └── arguments (kind: ExprListParenthesized)

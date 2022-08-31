@@ -2,7 +2,7 @@
     ├── items (kind: ItemList)
     │   └── child #0 (kind: ItemFunction)
     │       ├── signature (kind: FunctionSignature)
-    │       │   ├── funckw (kind: Function): 'fn'
+    │       │   ├── funckw (kind: Function): 'func'
     │       │   ├── name (kind: Identifier): 'foo'
     │       │   ├── lparen (kind: LParen): '('
     │       │   ├── parameters (kind: ParamList)
