@@ -160,7 +160,7 @@ pub fn get_spec() -> Vec<Node> {
             .build(),
         // --- Parameters and Functions ---
         StructBuilder::new("Param")
-            .node("identifier", "Terminal")
+            .node("identifier", "Identifier")
             .node("type_clause", "TypeClause")
             .build(),
         separated_list_node("ParamList", "Param"),
@@ -181,7 +181,7 @@ pub fn get_spec() -> Vec<Node> {
             .node("lparen", "Terminal")
             .node("parameters", "ParamList")
             .node("rparen", "Terminal")
-            .node("ret_ty", "ReturnTypeClause")
+            .node("ret_ty", "OptionReturnTypeClause")
             .build(),
         // --- Items ---
         EnumBuilder::new("Item")
