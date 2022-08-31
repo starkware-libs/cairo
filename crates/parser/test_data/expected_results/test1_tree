@@ -116,7 +116,12 @@
     │   │       │       │       └── generic_args (kind: OptionGenericArgsEmpty) []
     │   │       │       └── semi (kind: Semi): ';'
     │   │       └── rbrace (kind: RBrace): '}'
-    │   └── child #1 (kind: ItemExternFunction)
+    │   ├── child #1 (kind: ItemExternType)
+    │   │   ├── externkw (kind: Extern): 'extern'
+    │   │   ├── typekw (kind: Type): 'type'
+    │   │   ├── name (kind: Identifier): 'felt'
+    │   │   └── semi (kind: Semi): ';'
+    │   └── child #2 (kind: ItemExternFunction)
     │       ├── externkw (kind: Extern): 'extern'
     │       ├── signature (kind: FunctionSignature)
     │       │   ├── funckw (kind: Function): 'func'

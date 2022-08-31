@@ -60,9 +60,11 @@ fn set_color(text: SmolStr, kind: TokenKind) -> ColoredString {
             text.bright_magenta()
         }
         TokenKind::LiteralNumber | TokenKind::False | TokenKind::True => text.bright_cyan(),
-        TokenKind::Extern | TokenKind::Function | TokenKind::Module | TokenKind::Struct => {
-            text.bright_blue()
-        }
+        TokenKind::Extern
+        | TokenKind::Type
+        | TokenKind::Function
+        | TokenKind::Module
+        | TokenKind::Struct => text.bright_blue(),
         TokenKind::Let | TokenKind::Return => text.bright_blue(),
         TokenKind::Arrow
         | TokenKind::Colon

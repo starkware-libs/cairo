@@ -188,6 +188,7 @@ pub fn get_spec() -> Vec<Node> {
             .node("Module")
             .node("Function")
             .node("ExternFunction")
+            .node("ExternType")
             .node("Trait")
             .node("Impl")
             .node("Struct")
@@ -207,6 +208,12 @@ pub fn get_spec() -> Vec<Node> {
         StructBuilder::new("ItemExternFunction")
             .node("externkw", "Terminal")
             .node("signature", "FunctionSignature")
+            .node("semi", "Terminal")
+            .build(),
+        StructBuilder::new("ItemExternType")
+            .node("externkw", "Terminal")
+            .node("typekw", "Terminal")
+            .node("name", "Identifier")
             .node("semi", "Terminal")
             .build(),
         // TODO(spapini): consider having specific ItemLists here.

@@ -24,6 +24,7 @@ pub enum TokenKind {
     False,
     True,
     Extern,
+    Type,
     Function,
     Module,
     Struct,
