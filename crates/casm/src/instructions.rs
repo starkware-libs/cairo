@@ -20,6 +20,8 @@ impl InstructionBody {
         // TODO(spapini): Make this correct.
         match self {
             InstructionBody::AssertEq(insn) => insn.op_size(),
+            InstructionBody::Call(insn) => insn.op_size(),
+            InstructionBody::Ret(insn) => insn.op_size(),
             _ => 1,
         }
     }
@@ -61,6 +63,14 @@ pub struct CallInstruction {
 impl Display for CallInstruction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "call {} {}", if self.relative { "rel" } else { "abs" }, self.target,)
+    }
+}
+impl CallInstruction {
+    pub fn op_size(&self) -> usize {
+        match &self.target {
+            DerefOrImmediate::Deref(_) => 1,
+            DerefOrImmediate::Immediate(_) => 2,
+        }
     }
 }
 
@@ -118,5 +128,11 @@ pub struct RetInstruction {}
 impl Display for RetInstruction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "ret")
+    }
+}
+
+impl RetInstruction {
+    pub fn op_size(&self) -> usize {
+        1
     }
 }
