@@ -133,6 +133,7 @@ impl<'a> Lexer<'a> {
             "struct" => TokenKind::Struct,
             "let" => TokenKind::Let,
             "return" => TokenKind::Return,
+            "match" => TokenKind::Match,
             "_" => TokenKind::Underscore,
             _ => TokenKind::Identifier,
         }
@@ -184,7 +185,14 @@ impl<'a> Lexer<'a> {
                 'a'..='z' | 'A'..='Z' | '_' => self.take_token_identifier(),
                 ':' => self.pick_kind(':', TokenKind::ColonColon, TokenKind::Colon),
                 '!' => self.pick_kind('=', TokenKind::Neq, TokenKind::Not),
-                '=' => self.pick_kind('=', TokenKind::EqEq, TokenKind::Eq),
+                '=' => {
+                    self.take();
+                    match self.peek() {
+                        Some('=') => self.take_token_of_kind(TokenKind::EqEq),
+                        Some('>') => self.take_token_of_kind(TokenKind::MatchArrow),
+                        _ => TokenKind::Eq,
+                    }
+                }
                 '&' => self.pick_kind('&', TokenKind::AndAnd, TokenKind::And),
                 '|' if self.peek() == Some('|') => {
                     self.take();

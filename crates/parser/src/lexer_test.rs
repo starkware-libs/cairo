@@ -25,6 +25,7 @@ fn token_kind_to_text(kind: TokenKind) -> Vec<&'static str> {
         TokenKind::Struct => vec!["struct"],
         TokenKind::True => vec!["true"],
         TokenKind::Return => vec!["return"],
+        TokenKind::Match => vec!["match"],
         TokenKind::And => vec!["&"],
         TokenKind::AndAnd => vec!["&&"],
         TokenKind::Colon => vec![":"],
@@ -54,6 +55,7 @@ fn token_kind_to_text(kind: TokenKind) -> Vec<&'static str> {
         TokenKind::LParen => vec!["("],
         TokenKind::RParen => vec![")"],
         TokenKind::Arrow => vec!["->"],
+        TokenKind::MatchArrow => vec!["=>"],
         TokenKind::EndOfFile
         | TokenKind::BadCharacters
         | TokenKind::Missing
@@ -76,6 +78,7 @@ fn token_kinds() -> Vec<TokenKind> {
         TokenKind::Struct,
         TokenKind::Let,
         TokenKind::Return,
+        TokenKind::Match,
         TokenKind::And,
         TokenKind::AndAnd,
         TokenKind::OrOr,
@@ -105,6 +108,7 @@ fn token_kinds() -> Vec<TokenKind> {
         TokenKind::LParen,
         TokenKind::RParen,
         TokenKind::Arrow,
+        TokenKind::MatchArrow,
         TokenKind::EndOfFile,
         TokenKind::BadCharacters,
     ]
@@ -128,13 +132,14 @@ fn need_separator(
     if kind0 == TokenKind::LiteralNumber && kind0 == kind1 {
         return true;
     }
-    if (text0 == "&" && (text1 == "&" || text1 == "&&"))
+    if (text0 == "&" && text1.starts_with('&'))
         || (text0 == "/" && text1 == "/")
-        || ((text0 == "=" || text0 == "!") && text1 == "=" || text1 == "==")
-        || ((text0 == "<" || text0 == ">") && (text1 == "=" || text1 == "=="))
-        || (text0 == ":" && (text1 == ":" || text1 == "::"))
-        || (text0 == "." && (text1 == "." || text1 == ".."))
-        || (text0 == "-" && (text1 == ">" || text1 == ">="))
+        || ((text0 == "=" || text0 == "!") && text1.starts_with('='))
+        || ((text0 == "=") && text1.starts_with('>'))
+        || ((text0 == "<" || text0 == ">") && text1.starts_with('='))
+        || (text0 == ":" && text1.starts_with(':'))
+        || (text0 == "." && text1.starts_with('.'))
+        || (text0 == "-" && text1.starts_with('>'))
         || (kind0 == TokenKind::LiteralNumber && kind0 == kind1)
     {
         return true;
@@ -155,6 +160,7 @@ fn is_identifier_like(kind: TokenKind) -> bool {
             | TokenKind::Struct
             | TokenKind::Let
             | TokenKind::Return
+            | TokenKind::Match
             | TokenKind::Underscore
     )
 }
