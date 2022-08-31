@@ -48,6 +48,7 @@ fn check_basic_structure(
     invocation: &Invocation,
     libfunc: &CoreConcreteLibFunc,
 ) -> Result<(), CompilationError> {
+    println!("{}", invocation);
     if invocation.args.len() != libfunc.input_types().len()
         || !itertools::equal(
             invocation.branches.iter().map(|branch| branch.results.len()),
