@@ -22,18 +22,23 @@ fn good_flow() {
             libfunc rename_felt = rename<felt>;
             libfunc call_foo = function_call<user@foo>;
 
-            rename_felt([1]) -> ([1]);          // #1
-            felt_dup([2]) -> ([2], [5]);        // #2
-            felt_add([1], [2]) -> ([3]);        // #3
-            store_temp_felt([3]) -> ([4]);      // #4
-            felt_dup([4]) -> ([4], [6]);        // #5
-            store_temp_felt([5]) -> ([5]);      // #6
-            store_temp_felt([6]) -> ([6]);      // #7
-            call_foo([5], [6]) -> ([7], [8]);   // #8
-            return([7], [8]);                   // #9
+            rename_felt([1]) -> ([1]);          // #0
+            felt_dup([2]) -> ([2], [5]);        // #1
+            felt_add([1], [2]) -> ([3]);        // #2
+            store_temp_felt([3]) -> ([4]);      // #3
+            felt_dup([4]) -> ([4], [6]);        // #4
+            store_temp_felt([5]) -> ([5]);      // #5
+            store_temp_felt([6]) -> ([6]);      // #6
+            call_foo([5], [6]) -> ([7], [8]);   // #7
+            store_temp_felt([4]) -> ([4]);      // #8
+            return([7], [8], [4]);              // #9
+
+            store_temp_felt([1]) -> ([1]);      // #10
+            store_temp_felt([2]) -> ([2]);      // #11
+            return ([1], [2]);                  // #12
 
             test_program@0([1]: felt, [2]: felt) -> ();
-            foo@0([1]: felt, [2]: felt) -> (felt, felt);
+            foo@10([1]: felt, [2]: felt) -> (felt, felt);
         "})
         .unwrap();
     pretty_assertions::assert_eq!(
@@ -43,6 +48,10 @@ fn good_flow() {
             [ap + 0] = [fp + -2], ap++;
             [ap + 0] = [ap + -2], ap++;
             call rel 0;
+            [ap + 0] = [ap + -3], ap++;
+            ret;
+            [ap + 0] = [fp + -3], ap++;
+            [ap + 0] = [fp + -2], ap++;
             ret;
         "}
     );
