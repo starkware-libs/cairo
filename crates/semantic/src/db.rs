@@ -87,7 +87,7 @@ fn module_items(
                     },
                 )));
             }
-            Item::FunctionSignature(sig) => {
+            Item::ExternFunction(sig) => {
                 module_items.push(ModuleItemId::ExternFunction(db.intern_extern_function(
                     ExternFunctionLongId {
                         parent: module_id,

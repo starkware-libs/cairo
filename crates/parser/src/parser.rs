@@ -127,6 +127,7 @@ impl<'a> Parser<'a> {
         match self.peek().kind {
             TokenKind::Module => Some(self.expect_module()),
             TokenKind::Struct => Some(self.expect_struct()),
+            TokenKind::Extern => Some(self.expect_extern_function()),
             TokenKind::Function => Some(self.expect_function()),
             _ => None,
         }
@@ -169,6 +170,17 @@ impl<'a> Parser<'a> {
             self.parse_param_list(TokenKind::RParen), // params
             self.parse_token(TokenKind::RParen),      // )
             self.parse_option_return_type_clause(),   // return type clause
+        )
+    }
+
+    /// Assumes the current token is Extern.
+    /// Expected pattern: extern<FunctionSignature>;
+    fn expect_extern_function(&mut self) -> GreenId {
+        ItemExternFunction::new_green(
+            self.db,
+            self.take(),                       // externkw
+            self.expect_function_signature(),  // signature
+            self.parse_token(TokenKind::Semi), // semi
         )
     }
 

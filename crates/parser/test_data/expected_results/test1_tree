@@ -1,9 +1,126 @@
 └── root (kind: SyntaxFile)
     ├── items (kind: ItemList)
-    │   └── child #0 (kind: ItemFunction)
+    │   ├── child #0 (kind: ItemFunction)
+    │   │   ├── signature (kind: FunctionSignature)
+    │   │   │   ├── funckw (kind: Function): 'func'
+    │   │   │   ├── name (kind: Identifier): 'foo'
+    │   │   │   ├── lparen (kind: LParen): '('
+    │   │   │   ├── parameters (kind: ParamList)
+    │   │   │   │   ├── item #0 (kind: Param)
+    │   │   │   │   │   ├── identifier (kind: Identifier): 'var1'
+    │   │   │   │   │   └── type_clause (kind: TypeClause)
+    │   │   │   │   │       ├── colon (kind: Colon): ':'
+    │   │   │   │   │       └── ty (kind: ExprPath)
+    │   │   │   │   │           └── item #0 (kind: PathSegment)
+    │   │   │   │   │               ├── ident (kind: Identifier): 'int'
+    │   │   │   │   │               └── generic_args (kind: OptionGenericArgsEmpty) []
+    │   │   │   │   ├── separator #0 (kind: Comma): ','
+    │   │   │   │   ├── item #1 (kind: Param)
+    │   │   │   │   │   ├── identifier (kind: Identifier): 'var2'
+    │   │   │   │   │   └── type_clause (kind: TypeClause)
+    │   │   │   │   │       ├── colon (kind: Colon): ':'
+    │   │   │   │   │       └── ty (kind: ExprPath)
+    │   │   │   │   │           └── item #0 (kind: PathSegment)
+    │   │   │   │   │               ├── ident (kind: Identifier): 'felt'
+    │   │   │   │   │               └── generic_args (kind: OptionGenericArgsEmpty) []
+    │   │   │   │   └── separator #1 (kind: Comma): ','
+    │   │   │   ├── rparen (kind: RParen): ')'
+    │   │   │   └── ret_ty (kind: ReturnTypeClause)
+    │   │   │       ├── arrow (kind: Arrow): '->'
+    │   │   │       └── ty (kind: ExprPath)
+    │   │   │           └── item #0 (kind: PathSegment)
+    │   │   │               ├── ident (kind: Identifier): 'int'
+    │   │   │               └── generic_args (kind: OptionGenericArgsEmpty) []
+    │   │   └── body (kind: ExprBlock)
+    │   │       ├── lbrace (kind: LBrace): '{'
+    │   │       ├── statements (kind: StatementList)
+    │   │       │   ├── child #0 (kind: StatementLet)
+    │   │       │   │   ├── letkw (kind: Let): 'let'
+    │   │       │   │   ├── lhs (kind: Identifier): 'bla3'
+    │   │       │   │   ├── type_clause (kind: OptionTypeClauseEmpty) []
+    │   │       │   │   ├── eq (kind: Eq): '='
+    │   │       │   │   ├── rhs (kind: ExprUnary)
+    │   │       │   │   │   ├── op (kind: Minus): '-'
+    │   │       │   │   │   └── expr (kind: ExprUnary)
+    │   │       │   │   │       ├── op (kind: Minus): '-'
+    │   │       │   │   │       └── expr (kind: ExprLiteral)
+    │   │       │   │   │           └── terminal (kind: LiteralNumber): '7'
+    │   │       │   │   └── semi (kind: Semi): ';'
+    │   │       │   ├── child #1 (kind: StatementLet)
+    │   │       │   │   ├── letkw (kind: Let): 'let'
+    │   │       │   │   ├── lhs (kind: Identifier): 'bla4'
+    │   │       │   │   ├── type_clause (kind: OptionTypeClauseEmpty) []
+    │   │       │   │   ├── eq (kind: Eq): '='
+    │   │       │   │   ├── rhs (kind: ExprUnary)
+    │   │       │   │   │   ├── op (kind: Minus): '-'
+    │   │       │   │   │   └── expr (kind: ExprUnary)
+    │   │       │   │   │       ├── op (kind: Not): '!'
+    │   │       │   │   │       └── expr (kind: ExprUnary)
+    │   │       │   │   │           ├── op (kind: Minus): '-'
+    │   │       │   │   │           └── expr (kind: ExprUnary)
+    │   │       │   │   │               ├── op (kind: Not): '!'
+    │   │       │   │   │               └── expr (kind: ExprLiteral)
+    │   │       │   │   │                   └── terminal (kind: LiteralNumber): '8'
+    │   │       │   │   └── semi (kind: Semi): ';'
+    │   │       │   ├── child #2 (kind: StatementLet)
+    │   │       │   │   ├── letkw (kind: Let): 'let'
+    │   │       │   │   ├── lhs (kind: Identifier): 'x'
+    │   │       │   │   ├── type_clause (kind: OptionTypeClauseEmpty) []
+    │   │       │   │   ├── eq (kind: Eq): '='
+    │   │       │   │   ├── rhs (kind: ExprLiteral)
+    │   │       │   │   │   └── terminal (kind: LiteralNumber): '1'
+    │   │       │   │   └── semi (kind: Semi): ';'
+    │   │       │   ├── child #3 (kind: StatementLet)
+    │   │       │   │   ├── letkw (kind: Let): 'let'
+    │   │       │   │   ├── lhs (kind: Identifier): 'x'
+    │   │       │   │   ├── type_clause (kind: OptionTypeClauseEmpty) []
+    │   │       │   │   ├── eq (kind: Eq): '='
+    │   │       │   │   ├── rhs (kind: ExprLiteral)
+    │   │       │   │   │   └── terminal (kind: True): 'true'
+    │   │       │   │   └── semi (kind: Semi): ';'
+    │   │       │   ├── child #4 (kind: StatementExpr)
+    │   │       │   │   ├── expr (kind: ExprFunctionCall)
+    │   │       │   │   │   ├── path (kind: ExprPath)
+    │   │       │   │   │   │   └── item #0 (kind: PathSegment)
+    │   │       │   │   │   │       ├── ident (kind: Identifier): 'func1'
+    │   │       │   │   │   │       └── generic_args (kind: OptionGenericArgsEmpty) []
+    │   │       │   │   │   └── arguments (kind: ExprListParenthesized)
+    │   │       │   │   │       ├── lparen (kind: LParen): '('
+    │   │       │   │   │       ├── expressions (kind: ExprList)
+    │   │       │   │   │       │   └── item #0 (kind: ExprPath)
+    │   │       │   │   │       │       └── item #0 (kind: PathSegment)
+    │   │       │   │   │       │           ├── ident (kind: Identifier): 'x'
+    │   │       │   │   │       │           └── generic_args (kind: OptionGenericArgsEmpty) []
+    │   │       │   │   │       └── rparen (kind: RParen): ')'
+    │   │       │   │   └── semi (kind: Semi): ';'
+    │   │       │   ├── child #5 (kind: StatementExpr)
+    │   │       │   │   ├── expr (kind: ExprFunctionCall)
+    │   │       │   │   │   ├── path (kind: ExprPath)
+    │   │       │   │   │   │   └── item #0 (kind: PathSegment)
+    │   │       │   │   │   │       ├── ident (kind: Identifier): 'func2'
+    │   │       │   │   │   │       └── generic_args (kind: OptionGenericArgsEmpty) []
+    │   │       │   │   │   └── arguments (kind: ExprListParenthesized)
+    │   │       │   │   │       ├── lparen (kind: LParen): '('
+    │   │       │   │   │       ├── expressions (kind: ExprList)
+    │   │       │   │   │       │   └── item #0 (kind: ExprPath)
+    │   │       │   │   │       │       └── item #0 (kind: PathSegment)
+    │   │       │   │   │       │           ├── ident (kind: Identifier): 'x'
+    │   │       │   │   │       │           └── generic_args (kind: OptionGenericArgsEmpty) []
+    │   │       │   │   │       └── rparen (kind: RParen): ')'
+    │   │       │   │   └── semi (kind: OptionSemicolonEmpty) []
+    │   │       │   └── child #6 (kind: StatementReturn)
+    │   │       │       ├── returnkw (kind: Return): 'return'
+    │   │       │       ├── expr (kind: ExprPath)
+    │   │       │       │   └── item #0 (kind: PathSegment)
+    │   │       │       │       ├── ident (kind: Identifier): 'x'
+    │   │       │       │       └── generic_args (kind: OptionGenericArgsEmpty) []
+    │   │       │       └── semi (kind: Semi): ';'
+    │   │       └── rbrace (kind: RBrace): '}'
+    │   └── child #1 (kind: ItemExternFunction)
+    │       ├── externkw (kind: Extern): 'extern'
     │       ├── signature (kind: FunctionSignature)
     │       │   ├── funckw (kind: Function): 'func'
-    │       │   ├── name (kind: Identifier): 'foo'
+    │       │   ├── name (kind: Identifier): 'bar'
     │       │   ├── lparen (kind: LParen): '('
     │       │   ├── parameters (kind: ParamList)
     │       │   │   ├── item #0 (kind: Param)
@@ -14,16 +131,7 @@
     │       │   │   │           └── item #0 (kind: PathSegment)
     │       │   │   │               ├── ident (kind: Identifier): 'int'
     │       │   │   │               └── generic_args (kind: OptionGenericArgsEmpty) []
-    │       │   │   ├── separator #0 (kind: Comma): ','
-    │       │   │   ├── item #1 (kind: Param)
-    │       │   │   │   ├── identifier (kind: Identifier): 'var2'
-    │       │   │   │   └── type_clause (kind: TypeClause)
-    │       │   │   │       ├── colon (kind: Colon): ':'
-    │       │   │   │       └── ty (kind: ExprPath)
-    │       │   │   │           └── item #0 (kind: PathSegment)
-    │       │   │   │               ├── ident (kind: Identifier): 'felt'
-    │       │   │   │               └── generic_args (kind: OptionGenericArgsEmpty) []
-    │       │   │   └── separator #1 (kind: Comma): ','
+    │       │   │   └── separator #0 (kind: Comma): ','
     │       │   ├── rparen (kind: RParen): ')'
     │       │   └── ret_ty (kind: ReturnTypeClause)
     │       │       ├── arrow (kind: Arrow): '->'
@@ -31,91 +139,7 @@
     │       │           └── item #0 (kind: PathSegment)
     │       │               ├── ident (kind: Identifier): 'int'
     │       │               └── generic_args (kind: OptionGenericArgsEmpty) []
-    │       └── body (kind: ExprBlock)
-    │           ├── lbrace (kind: LBrace): '{'
-    │           ├── statements (kind: StatementList)
-    │           │   ├── child #0 (kind: StatementLet)
-    │           │   │   ├── letkw (kind: Let): 'let'
-    │           │   │   ├── lhs (kind: Identifier): 'bla3'
-    │           │   │   ├── type_clause (kind: OptionTypeClauseEmpty) []
-    │           │   │   ├── eq (kind: Eq): '='
-    │           │   │   ├── rhs (kind: ExprUnary)
-    │           │   │   │   ├── op (kind: Minus): '-'
-    │           │   │   │   └── expr (kind: ExprUnary)
-    │           │   │   │       ├── op (kind: Minus): '-'
-    │           │   │   │       └── expr (kind: ExprLiteral)
-    │           │   │   │           └── terminal (kind: LiteralNumber): '7'
-    │           │   │   └── semi (kind: Semi): ';'
-    │           │   ├── child #1 (kind: StatementLet)
-    │           │   │   ├── letkw (kind: Let): 'let'
-    │           │   │   ├── lhs (kind: Identifier): 'bla4'
-    │           │   │   ├── type_clause (kind: OptionTypeClauseEmpty) []
-    │           │   │   ├── eq (kind: Eq): '='
-    │           │   │   ├── rhs (kind: ExprUnary)
-    │           │   │   │   ├── op (kind: Minus): '-'
-    │           │   │   │   └── expr (kind: ExprUnary)
-    │           │   │   │       ├── op (kind: Not): '!'
-    │           │   │   │       └── expr (kind: ExprUnary)
-    │           │   │   │           ├── op (kind: Minus): '-'
-    │           │   │   │           └── expr (kind: ExprUnary)
-    │           │   │   │               ├── op (kind: Not): '!'
-    │           │   │   │               └── expr (kind: ExprLiteral)
-    │           │   │   │                   └── terminal (kind: LiteralNumber): '8'
-    │           │   │   └── semi (kind: Semi): ';'
-    │           │   ├── child #2 (kind: StatementLet)
-    │           │   │   ├── letkw (kind: Let): 'let'
-    │           │   │   ├── lhs (kind: Identifier): 'x'
-    │           │   │   ├── type_clause (kind: OptionTypeClauseEmpty) []
-    │           │   │   ├── eq (kind: Eq): '='
-    │           │   │   ├── rhs (kind: ExprLiteral)
-    │           │   │   │   └── terminal (kind: LiteralNumber): '1'
-    │           │   │   └── semi (kind: Semi): ';'
-    │           │   ├── child #3 (kind: StatementLet)
-    │           │   │   ├── letkw (kind: Let): 'let'
-    │           │   │   ├── lhs (kind: Identifier): 'x'
-    │           │   │   ├── type_clause (kind: OptionTypeClauseEmpty) []
-    │           │   │   ├── eq (kind: Eq): '='
-    │           │   │   ├── rhs (kind: ExprLiteral)
-    │           │   │   │   └── terminal (kind: True): 'true'
-    │           │   │   └── semi (kind: Semi): ';'
-    │           │   ├── child #4 (kind: StatementExpr)
-    │           │   │   ├── expr (kind: ExprFunctionCall)
-    │           │   │   │   ├── path (kind: ExprPath)
-    │           │   │   │   │   └── item #0 (kind: PathSegment)
-    │           │   │   │   │       ├── ident (kind: Identifier): 'func1'
-    │           │   │   │   │       └── generic_args (kind: OptionGenericArgsEmpty) []
-    │           │   │   │   └── arguments (kind: ExprListParenthesized)
-    │           │   │   │       ├── lparen (kind: LParen): '('
-    │           │   │   │       ├── expressions (kind: ExprList)
-    │           │   │   │       │   └── item #0 (kind: ExprPath)
-    │           │   │   │       │       └── item #0 (kind: PathSegment)
-    │           │   │   │       │           ├── ident (kind: Identifier): 'x'
-    │           │   │   │       │           └── generic_args (kind: OptionGenericArgsEmpty) []
-    │           │   │   │       └── rparen (kind: RParen): ')'
-    │           │   │   └── semi (kind: Semi): ';'
-    │           │   ├── child #5 (kind: StatementExpr)
-    │           │   │   ├── expr (kind: ExprFunctionCall)
-    │           │   │   │   ├── path (kind: ExprPath)
-    │           │   │   │   │   └── item #0 (kind: PathSegment)
-    │           │   │   │   │       ├── ident (kind: Identifier): 'func2'
-    │           │   │   │   │       └── generic_args (kind: OptionGenericArgsEmpty) []
-    │           │   │   │   └── arguments (kind: ExprListParenthesized)
-    │           │   │   │       ├── lparen (kind: LParen): '('
-    │           │   │   │       ├── expressions (kind: ExprList)
-    │           │   │   │       │   └── item #0 (kind: ExprPath)
-    │           │   │   │       │       └── item #0 (kind: PathSegment)
-    │           │   │   │       │           ├── ident (kind: Identifier): 'x'
-    │           │   │   │       │           └── generic_args (kind: OptionGenericArgsEmpty) []
-    │           │   │   │       └── rparen (kind: RParen): ')'
-    │           │   │   └── semi (kind: OptionSemicolonEmpty) []
-    │           │   └── child #6 (kind: StatementReturn)
-    │           │       ├── returnkw (kind: Return): 'return'
-    │           │       ├── expr (kind: ExprPath)
-    │           │       │   └── item #0 (kind: PathSegment)
-    │           │       │       ├── ident (kind: Identifier): 'x'
-    │           │       │       └── generic_args (kind: OptionGenericArgsEmpty) []
-    │           │       └── semi (kind: Semi): ';'
-    │           └── rbrace (kind: RBrace): '}'
+    │       └── semi (kind: Semi): ';'
     └── eof (kind: EndOfFile).
 --------------------
 Error at test1.cairo from line 1 col 1 until line 4 col 1: Skipped tokens: // Func foo
