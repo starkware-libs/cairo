@@ -27,7 +27,6 @@ define_libfunc_hierarchy! {
         Const(ConstLibFunc),
         Ignore(IgnoreLibFunc),
         Duplicate(DuplicateLibFunc),
-        JumpNotZero(JumpNotZeroLibFunc),
     }, IntegerConcrete
 }
 
@@ -202,34 +201,6 @@ impl NoGenericArgsGenericLibFunc for DuplicateLibFunc {
                 vec![int_type.clone(), int_type.clone()],
                 vec![int_type],
             ),
-        })
-    }
-}
-
-/// LibFunc for jump non-zero on an int's value, and returning a non-zero wrapped int in case of
-/// success.
-#[derive(Default)]
-pub struct JumpNotZeroLibFunc {}
-impl NoGenericArgsGenericLibFunc for JumpNotZeroLibFunc {
-    type Concrete = SignatureOnlyConcreteLibFunc;
-    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("int_jump_nz");
-
-    fn specialize(
-        &self,
-        context: SpecializationContext<'_>,
-    ) -> Result<Self::Concrete, SpecializationError> {
-        let int_type = context.get_concrete_type(IntegerType::id(), &[])?;
-        Ok(SignatureOnlyConcreteLibFunc {
-            signature: LibFuncSignature {
-                input_types: vec![int_type.clone()],
-                output_types: vec![
-                    // success=
-                    vec![context.get_wrapped_concrete_type(NonZeroType::id(), int_type)?],
-                    // failure=
-                    vec![],
-                ],
-                fallthrough: Some(1),
-            },
         })
     }
 }
