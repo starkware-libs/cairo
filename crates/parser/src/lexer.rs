@@ -2,6 +2,8 @@
 #[path = "lexer_test.rs"]
 mod test;
 
+use std::collections::HashMap;
+
 use filesystem::ids::FileId;
 use filesystem::span::{TextOffset, TextSpan};
 use smol_str::SmolStr;
@@ -131,6 +133,7 @@ impl<'a> Lexer<'a> {
             "struct" => TokenKind::Struct,
             "let" => TokenKind::Let,
             "return" => TokenKind::Return,
+            "match" => TokenKind::Match,
             "_" => TokenKind::Underscore,
             _ => TokenKind::Identifier,
         }
@@ -145,16 +148,23 @@ impl<'a> Lexer<'a> {
     /// If the next character is `second_char`, returns `long_kind`, otherwise returns `short_kind`.
     fn pick_kind(
         &mut self,
-        second_char: char,
-        long_kind: TokenKind,
         short_kind: TokenKind,
+        // TODO(yg): doc
+        long_token_mapping: &HashMap<char, TokenKind>,
     ) -> TokenKind {
         self.take();
-        if self.peek() == Some(second_char) {
-            self.take();
-            long_kind
-        } else {
-            short_kind
+        let second_char = match self.peek() {
+            Some(c) => c,
+            None => {
+                return short_kind;
+            }
+        };
+        match long_token_mapping.get(&second_char) {
+            Some(token_kind) => {
+                self.take();
+                *token_kind
+            }
+            None => short_kind,
         }
     }
 
@@ -172,18 +182,23 @@ impl<'a> Lexer<'a> {
                 ']' => self.take_token_of_kind(TokenKind::RBrack),
                 '(' => self.take_token_of_kind(TokenKind::LParen),
                 ')' => self.take_token_of_kind(TokenKind::RParen),
-                '.' => self.pick_kind('.', TokenKind::DotDot, TokenKind::Dot),
+                '.' => self.pick_kind(TokenKind::Dot, &HashMap::from([('.', TokenKind::DotDot)])),
                 '*' => self.take_token_of_kind(TokenKind::Mul),
                 '/' => self.take_token_of_kind(TokenKind::Div),
                 '+' => self.take_token_of_kind(TokenKind::Plus),
-                '-' => self.pick_kind('>', TokenKind::Arrow, TokenKind::Minus),
-                '<' => self.pick_kind('=', TokenKind::LE, TokenKind::LT),
-                '>' => self.pick_kind('=', TokenKind::GE, TokenKind::GT),
+                '-' => self.pick_kind(TokenKind::Minus, &HashMap::from([('>', TokenKind::Arrow)])),
+                '<' => self.pick_kind(TokenKind::LT, &HashMap::from([('=', TokenKind::LE)])),
+                '>' => self.pick_kind(TokenKind::GT, &HashMap::from([('=', TokenKind::GE)])),
                 'a'..='z' | 'A'..='Z' | '_' => self.take_token_identifier(),
-                ':' => self.pick_kind(':', TokenKind::ColonColon, TokenKind::Colon),
-                '!' => self.pick_kind('=', TokenKind::Neq, TokenKind::Not),
-                '=' => self.pick_kind('=', TokenKind::EqEq, TokenKind::Eq),
-                '&' => self.pick_kind('&', TokenKind::AndAnd, TokenKind::And),
+                ':' => {
+                    self.pick_kind(TokenKind::Colon, &HashMap::from([(':', TokenKind::ColonColon)]))
+                }
+                '!' => self.pick_kind(TokenKind::Not, &HashMap::from([('=', TokenKind::Neq)])),
+                '=' => self.pick_kind(
+                    TokenKind::Eq,
+                    &HashMap::from([('=', TokenKind::EqEq), ('>', TokenKind::MatchArrow)]),
+                ),
+                '&' => self.pick_kind(TokenKind::And, &HashMap::from([('&', TokenKind::AndAnd)])),
                 '|' if self.peek() == Some('|') => {
                     self.take();
                     self.take();
