@@ -21,6 +21,16 @@ pub struct ComputationContext<'db> {
     module_id: ModuleId,
     environment: Box<Environment>,
 }
+impl<'db> ComputationContext<'db> {
+    pub fn new(
+        db: &'db dyn SemanticGroup,
+        module_id: ModuleId,
+        variables: HashMap<SmolStr, VarId>,
+    ) -> Self {
+        let environment = Environment { parent: None, variables };
+        Self { db, module_id, environment: Box::new(environment) }
+    }
+}
 
 // TODO(spapini): Consider using identifiers instead of SmolStr everywhere in the code.
 /// A state which contains all the variables defined at the current scope until now, and a pointer
