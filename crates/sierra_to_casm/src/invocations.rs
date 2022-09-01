@@ -36,7 +36,7 @@ pub enum InvocationError {
     #[error("Expected a different number of arguments")]
     WrongNumberOfArguments,
     #[error("The requested functionality is not implemented yet")]
-    NotImplemented,
+    NotImplemented(Invocation),
 }
 
 /// Describes the changes to the set of references at the branch target.
@@ -107,6 +107,7 @@ impl CompiledInvocation {
 }
 
 fn handle_felt_op(
+    invocation: &Invocation,
     felt_op: &BinaryOperationConcreteLibFunc,
     refs: &[ReferenceValue],
 ) -> Result<CompiledInvocation, InvocationError> {
@@ -115,7 +116,7 @@ fn handle_felt_op(
         Operator::Mul => Operation::Mul,
 
         // TODO(ilya, 12/12/2022): Support div and sub.
-        _ => return Err(InvocationError::NotImplemented),
+        _ => return Err(InvocationError::NotImplemented(invocation.clone())),
     };
 
     let (expr_a, expr_b) = match refs {
@@ -293,12 +294,21 @@ pub fn compile_invocation(
         // TODO(ilya, 10/10/2022): Handle type.
         CoreConcreteLibFunc::Felt(FeltConcrete::Operation(OperationConcreteLibFunc::Binary(
             felt_op,
-        ))) => handle_felt_op(felt_op, refs),
+        ))) => handle_felt_op(invocation, felt_op, refs),
         CoreConcreteLibFunc::Felt(FeltConcrete::Duplicate(felt_dup)) => {
             handle_felt_dup(felt_dup, refs)
         }
         CoreConcreteLibFunc::Felt(FeltConcrete::JumpNotZero(jnz)) => {
             handle_jump_nz(invocation, jnz, refs)
+        }
+        CoreConcreteLibFunc::Felt(FeltConcrete::Ignore(libfunc)) => {
+            Ok(CompiledInvocation::only_reference_changes([].into_iter(), libfunc.output_types()))
+        }
+        CoreConcreteLibFunc::Felt(FeltConcrete::Const(libfunc)) => {
+            Ok(CompiledInvocation::only_reference_changes(
+                [ResOperand::Immediate(ImmediateOperand { value: libfunc.c as i128 })].into_iter(),
+                libfunc.output_types(),
+            ))
         }
         CoreConcreteLibFunc::Mem(MemConcreteLibFunc::StoreTemp(store_temp)) => {
             handle_store_temp(store_temp, refs)
@@ -313,6 +323,7 @@ pub fn compile_invocation(
         CoreConcreteLibFunc::FunctionCall(func_call) => {
             handle_function_call(type_sizes, func_call, refs)
         }
-        _ => Err(InvocationError::NotImplemented),
+
+        _ => Err(InvocationError::NotImplemented(invocation.clone())),
     }
 }
