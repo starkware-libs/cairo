@@ -88,8 +88,12 @@ pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
 
         match statement {
             Statement::Return(ref_ids) => {
-                let (_statement_refs, return_refs) =
+                let (statement_refs, return_refs) =
                     program_refs.take_references(statement_idx, ref_ids.iter())?;
+
+                if !statement_refs.is_empty() {
+                    return Err(ReferencesError::DanglingReferences(statement_idx).into());
+                }
                 check_references_on_stack(&type_sizes, &return_refs)?;
                 // TODO(orizi): Also test types of the results using 'check_types_match' when the
                 // returning function is available.

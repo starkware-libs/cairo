@@ -22,7 +22,7 @@ pub struct ConcreteFunctionLongId {
 }
 define_short_id!(ConcreteFunctionId);
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub enum GenericFunctionId {
     Free(FreeFunctionId),
     Extern(ExternFunctionId),

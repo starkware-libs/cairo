@@ -76,13 +76,13 @@ fn test_expr_generator() {
     // "let x = 7;" statement.
     let statement_let = semantic::StatementLet { var: var_x, expr: literal7 };
 
-    let foo_func = db.intern_function_instance(semantic::ConcreteFunctionLongId {
+    let foo_func = db.intern_concrete_function(semantic::ConcreteFunctionLongId {
         generic_function: semantic::GenericFunctionId::Free(FreeFunctionId::from_intern_id(
             InternId::from(1u32),
         )),
         generic_args: vec![],
     });
-    let foo2_func = db.intern_function_instance(semantic::ConcreteFunctionLongId {
+    let foo2_func = db.intern_concrete_function(semantic::ConcreteFunctionLongId {
         generic_function: semantic::GenericFunctionId::Free(FreeFunctionId::from_intern_id(
             InternId::from(2u32),
         )),
@@ -209,7 +209,7 @@ fn test_call_libfunc() {
         db.intern_expr(semantic::Expr::ExprLiteral(semantic::ExprLiteral { value: 6, ty }));
 
     let module = ModuleId::CrateRoot(CrateId::from_intern_id(InternId::from(1u32)));
-    let add_libfunc = db.intern_function_instance(semantic::ConcreteFunctionLongId {
+    let add_libfunc = db.intern_concrete_function(semantic::ConcreteFunctionLongId {
         generic_function: semantic::GenericFunctionId::Extern(db.intern_extern_function(
             ExternFunctionLongId { parent: module, name: "felt_add".into() },
         )),

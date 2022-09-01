@@ -29,6 +29,8 @@ pub enum ReferencesError {
     InvalidStatementIdx,
     #[error("MissingReferencesForStatement")]
     MissingReferencesForStatement(StatementIdx),
+    #[error("DanglingReferences")]
+    DanglingReferences(StatementIdx),
     #[error(transparent)]
     EditStateError(#[from] EditStateError),
     #[error(transparent)]
