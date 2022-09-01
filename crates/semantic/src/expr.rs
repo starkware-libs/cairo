@@ -3,6 +3,7 @@
 mod test;
 
 use std::collections::HashMap;
+use std::rc::Rc;
 
 use defs::ids::VarId;
 use filesystem::ids::ModuleId;
@@ -19,14 +20,14 @@ use crate::{
 pub struct ComputationContext<'db> {
     db: &'db dyn SemanticGroup,
     module_id: ModuleId,
-    environment: Box<Environment>,
+    environment: Rc<Environment>,
 }
 
 // TODO(spapini): Consider using identifiers instead of SmolStr everywhere in the code.
 /// A state which contains all the variables defined at the current scope until now, and a pointer
 /// to the parent environment.
 pub struct Environment {
-    parent: Option<Box<Environment>>,
+    parent: Option<Rc<Environment>>,
     variables: HashMap<SmolStr, VarId>,
 }
 
@@ -78,17 +79,26 @@ pub fn compute_expr_semantic(ctx: &mut ComputationContext<'_>, syntax: ast::Expr
             })
         }
         ast::Expr::StructCtorCall(_) => todo!(),
-        ast::Expr::Block(block_syntax) => semantic::Expr::ExprBlock(semantic::ExprBlock {
-            statements: block_syntax
-                .statements(syntax_db)
-                .elements(syntax_db)
-                .into_iter()
-                .map(|statement_syntax| compute_statement_semantic(ctx, statement_syntax))
-                .collect(),
-            // TODO(spapini): Handle tail when it exists in ast.
-            tail: None,
-            ty: unit_ty(db),
-        }),
+        ast::Expr::Block(block_syntax) => {
+            let environment = Rc::new(Environment {
+                parent: Some(ctx.environment.clone()),
+                variables: HashMap::new(),
+            });
+            let mut new_ctx = ComputationContext { environment, ..*ctx };
+            semantic::Expr::ExprBlock(semantic::ExprBlock {
+                statements: block_syntax
+                    .statements(syntax_db)
+                    .elements(syntax_db)
+                    .into_iter()
+                    .map(|statement_syntax| {
+                        compute_statement_semantic(&mut new_ctx, statement_syntax)
+                    })
+                    .collect(),
+                // TODO(spapini): Handle tail when it exists in ast.
+                tail: None,
+                ty: unit_ty(db),
+            })
+        }
         ast::Expr::Match(_) => todo!(),
         ast::Expr::ExprMissing(_) => todo!(),
     };
