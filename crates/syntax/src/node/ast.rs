@@ -9,7 +9,8 @@ use super::element_list::ElementList;
 use super::green::GreenNodeInternal;
 use super::kind::SyntaxKind;
 use super::{
-    GreenId, GreenNode, SyntaxGroup, SyntaxNode, SyntaxStablePtrId, Token, TypedSyntaxNode,
+    GreenId, GreenNode, SyntaxGroup, SyntaxNode, SyntaxStablePtr, SyntaxStablePtrId, Token,
+    TypedSyntaxNode,
 };
 use crate::token::TokenKind;
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -43,7 +44,9 @@ impl Terminal {
         Trivia::from_syntax_node(db, self.children[2].clone())
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalPtr(SyntaxStablePtrId);
+impl TerminalPtr {}
 impl TypedSyntaxNode for Terminal {
     type StablePtr = TerminalPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
@@ -112,7 +115,9 @@ impl TriviumSkippedTerminal {
         Trivia::from_syntax_node(db, self.children[2].clone())
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TriviumSkippedTerminalPtr(SyntaxStablePtrId);
+impl TriviumSkippedTerminalPtr {}
 impl TypedSyntaxNode for TriviumSkippedTerminal {
     type StablePtr = TriviumSkippedTerminalPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
@@ -172,6 +177,7 @@ impl Trivia {
         }))
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TriviaPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for Trivia {
     type StablePtr = TriviaPtr;
@@ -202,6 +208,7 @@ pub enum Trivium {
     TriviumNewline(Token),
     SkippedTerminal(TriviumSkippedTerminal),
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TriviumPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for Trivium {
     type StablePtr = TriviumPtr;
@@ -271,7 +278,9 @@ impl StructArgExpr {
         Expr::from_syntax_node(db, self.children[1].clone())
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct StructArgExprPtr(SyntaxStablePtrId);
+impl StructArgExprPtr {}
 impl TypedSyntaxNode for StructArgExpr {
     type StablePtr = StructArgExprPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
@@ -314,6 +323,7 @@ pub enum OptionStructArgExpr {
     Empty(OptionStructArgExprEmpty),
     Some(StructArgExpr),
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct OptionStructArgExprPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for OptionStructArgExpr {
     type StablePtr = OptionStructArgExprPtr;
@@ -371,7 +381,9 @@ impl OptionStructArgExprEmpty {
         }))
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct OptionStructArgExprEmptyPtr(SyntaxStablePtrId);
+impl OptionStructArgExprEmptyPtr {}
 impl TypedSyntaxNode for OptionStructArgExprEmpty {
     type StablePtr = OptionStructArgExprEmptyPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
@@ -435,7 +447,18 @@ impl StructArgSingle {
         OptionStructArgExpr::from_syntax_node(db, self.children[1].clone())
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct StructArgSinglePtr(SyntaxStablePtrId);
+impl StructArgSinglePtr {
+    pub fn identifier_green(self, db: &dyn SyntaxGroup) -> GreenId {
+        let ptr = db.lookup_intern_stable_ptr(self.0);
+        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
+            key_fields[0]
+        } else {
+            panic!("Unexpected key field query on root.");
+        }
+    }
+}
 impl TypedSyntaxNode for StructArgSingle {
     type StablePtr = StructArgSinglePtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
@@ -495,7 +518,9 @@ impl StructArgTail {
         Expr::from_syntax_node(db, self.children[1].clone())
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct StructArgTailPtr(SyntaxStablePtrId);
+impl StructArgTailPtr {}
 impl TypedSyntaxNode for StructArgTail {
     type StablePtr = StructArgTailPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
@@ -538,6 +563,7 @@ pub enum StructArg {
     StructArgSingle(StructArgSingle),
     StructArgTail(StructArgTail),
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct StructArgPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for StructArg {
     type StablePtr = StructArgPtr;
@@ -597,6 +623,7 @@ impl StructArgList {
         }))
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct StructArgListPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for StructArgList {
     type StablePtr = StructArgListPtr;
@@ -650,7 +677,9 @@ impl ArgListBraced {
         Terminal::from_syntax_node(db, self.children[2].clone())
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ArgListBracedPtr(SyntaxStablePtrId);
+impl ArgListBracedPtr {}
 impl TypedSyntaxNode for ArgListBraced {
     type StablePtr = ArgListBracedPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
@@ -706,6 +735,7 @@ pub enum Expr {
     Match(ExprMatch),
     ExprMissing(ExprMissing),
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ExprPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for Expr {
     type StablePtr = ExprPtr;
@@ -788,6 +818,7 @@ impl ExprList {
         }))
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ExprListPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for ExprList {
     type StablePtr = ExprListPtr;
@@ -827,7 +858,9 @@ impl ExprMissing {
         }))
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ExprMissingPtr(SyntaxStablePtrId);
+impl ExprMissingPtr {}
 impl TypedSyntaxNode for ExprMissing {
     type StablePtr = ExprMissingPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
@@ -870,6 +903,7 @@ pub enum OptionGenericArgs {
     Empty(OptionGenericArgsEmpty),
     Some(OptionGenericArgsSome),
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct OptionGenericArgsPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for OptionGenericArgs {
     type StablePtr = OptionGenericArgsPtr;
@@ -927,7 +961,9 @@ impl OptionGenericArgsEmpty {
         }))
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct OptionGenericArgsEmptyPtr(SyntaxStablePtrId);
+impl OptionGenericArgsEmptyPtr {}
 impl TypedSyntaxNode for OptionGenericArgsEmpty {
     type StablePtr = OptionGenericArgsEmptyPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
@@ -987,6 +1023,7 @@ impl OptionGenericArgsSome {
         }))
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct OptionGenericArgsSomePtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for OptionGenericArgsSome {
     type StablePtr = OptionGenericArgsSomePtr;
@@ -1032,7 +1069,9 @@ impl PathSegment {
         OptionGenericArgs::from_syntax_node(db, self.children[1].clone())
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct PathSegmentPtr(SyntaxStablePtrId);
+impl PathSegmentPtr {}
 impl TypedSyntaxNode for PathSegment {
     type StablePtr = PathSegmentPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
@@ -1088,6 +1127,7 @@ impl ExprPath {
         }))
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ExprPathPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for ExprPath {
     type StablePtr = ExprPathPtr;
@@ -1130,7 +1170,9 @@ impl ExprLiteral {
         Terminal::from_syntax_node(db, self.children[0].clone())
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ExprLiteralPtr(SyntaxStablePtrId);
+impl ExprLiteralPtr {}
 impl TypedSyntaxNode for ExprLiteral {
     type StablePtr = ExprLiteralPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
@@ -1198,7 +1240,9 @@ impl ExprParenthesized {
         Terminal::from_syntax_node(db, self.children[2].clone())
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ExprParenthesizedPtr(SyntaxStablePtrId);
+impl ExprParenthesizedPtr {}
 impl TypedSyntaxNode for ExprParenthesized {
     type StablePtr = ExprParenthesizedPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
@@ -1262,7 +1306,9 @@ impl ExprUnary {
         Expr::from_syntax_node(db, self.children[1].clone())
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ExprUnaryPtr(SyntaxStablePtrId);
+impl ExprUnaryPtr {}
 impl TypedSyntaxNode for ExprUnary {
     type StablePtr = ExprUnaryPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
@@ -1325,7 +1371,9 @@ impl ExprBinary {
         Expr::from_syntax_node(db, self.children[2].clone())
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ExprBinaryPtr(SyntaxStablePtrId);
+impl ExprBinaryPtr {}
 impl TypedSyntaxNode for ExprBinary {
     type StablePtr = ExprBinaryPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
@@ -1393,7 +1441,9 @@ impl ExprTuple {
         Terminal::from_syntax_node(db, self.children[2].clone())
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ExprTuplePtr(SyntaxStablePtrId);
+impl ExprTuplePtr {}
 impl TypedSyntaxNode for ExprTuple {
     type StablePtr = ExprTuplePtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
@@ -1461,7 +1511,9 @@ impl ExprListParenthesized {
         Terminal::from_syntax_node(db, self.children[2].clone())
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ExprListParenthesizedPtr(SyntaxStablePtrId);
+impl ExprListParenthesizedPtr {}
 impl TypedSyntaxNode for ExprListParenthesized {
     type StablePtr = ExprListParenthesizedPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
@@ -1525,7 +1577,9 @@ impl ExprFunctionCall {
         ExprListParenthesized::from_syntax_node(db, self.children[1].clone())
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ExprFunctionCallPtr(SyntaxStablePtrId);
+impl ExprFunctionCallPtr {}
 impl TypedSyntaxNode for ExprFunctionCall {
     type StablePtr = ExprFunctionCallPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
@@ -1589,7 +1643,9 @@ impl ExprStructCtorCall {
         ArgListBraced::from_syntax_node(db, self.children[1].clone())
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ExprStructCtorCallPtr(SyntaxStablePtrId);
+impl ExprStructCtorCallPtr {}
 impl TypedSyntaxNode for ExprStructCtorCall {
     type StablePtr = ExprStructCtorCallPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
@@ -1661,7 +1717,9 @@ impl ExprBlock {
         Terminal::from_syntax_node(db, self.children[2].clone())
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ExprBlockPtr(SyntaxStablePtrId);
+impl ExprBlockPtr {}
 impl TypedSyntaxNode for ExprBlock {
     type StablePtr = ExprBlockPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
@@ -1708,6 +1766,7 @@ pub enum Pattern {
     Underscore(Terminal),
     Literal(ExprLiteral),
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct PatternPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for Pattern {
     type StablePtr = PatternPtr;
@@ -1777,7 +1836,9 @@ impl MatchArm {
         Expr::from_syntax_node(db, self.children[2].clone())
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct MatchArmPtr(SyntaxStablePtrId);
+impl MatchArmPtr {}
 impl TypedSyntaxNode for MatchArm {
     type StablePtr = MatchArmPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
@@ -1833,6 +1894,7 @@ impl MatchArms {
         }))
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct MatchArmsPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for MatchArms {
     type StablePtr = MatchArmsPtr;
@@ -1894,7 +1956,9 @@ impl ExprMatch {
         Terminal::from_syntax_node(db, self.children[4].clone())
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ExprMatchPtr(SyntaxStablePtrId);
+impl ExprMatchPtr {}
 impl TypedSyntaxNode for ExprMatch {
     type StablePtr = ExprMatchPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
@@ -1960,7 +2024,9 @@ impl TypeClause {
         ExprPath::from_syntax_node(db, self.children[1].clone())
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TypeClausePtr(SyntaxStablePtrId);
+impl TypeClausePtr {}
 impl TypedSyntaxNode for TypeClause {
     type StablePtr = TypeClausePtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
@@ -2003,6 +2069,7 @@ pub enum OptionTypeClause {
     Empty(OptionTypeClauseEmpty),
     TypeClause(TypeClause),
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct OptionTypeClausePtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for OptionTypeClause {
     type StablePtr = OptionTypeClausePtr;
@@ -2049,6 +2116,7 @@ pub enum NonOptionTypeClause {
     TypeClause(TypeClause),
     NonOptionTypeClauseMissing(NonOptionTypeClauseMissing),
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct NonOptionTypeClausePtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for NonOptionTypeClause {
     type StablePtr = NonOptionTypeClausePtr;
@@ -2112,7 +2180,9 @@ impl NonOptionTypeClauseMissing {
         }))
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct NonOptionTypeClauseMissingPtr(SyntaxStablePtrId);
+impl NonOptionTypeClauseMissingPtr {}
 impl TypedSyntaxNode for NonOptionTypeClauseMissing {
     type StablePtr = NonOptionTypeClauseMissingPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
@@ -2170,7 +2240,9 @@ impl OptionTypeClauseEmpty {
         }))
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct OptionTypeClauseEmptyPtr(SyntaxStablePtrId);
+impl OptionTypeClauseEmptyPtr {}
 impl TypedSyntaxNode for OptionTypeClauseEmpty {
     type StablePtr = OptionTypeClauseEmptyPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
@@ -2234,7 +2306,9 @@ impl ReturnTypeClause {
         ExprPath::from_syntax_node(db, self.children[1].clone())
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ReturnTypeClausePtr(SyntaxStablePtrId);
+impl ReturnTypeClausePtr {}
 impl TypedSyntaxNode for ReturnTypeClause {
     type StablePtr = ReturnTypeClausePtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
@@ -2281,6 +2355,7 @@ pub enum OptionReturnTypeClause {
     Empty(OptionReturnTypeClauseEmpty),
     ReturnTypeClause(ReturnTypeClause),
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct OptionReturnTypeClausePtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for OptionReturnTypeClause {
     type StablePtr = OptionReturnTypeClausePtr;
@@ -2338,7 +2413,9 @@ impl OptionReturnTypeClauseEmpty {
         }))
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct OptionReturnTypeClauseEmptyPtr(SyntaxStablePtrId);
+impl OptionReturnTypeClauseEmptyPtr {}
 impl TypedSyntaxNode for OptionReturnTypeClauseEmpty {
     type StablePtr = OptionReturnTypeClauseEmptyPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
@@ -2387,6 +2464,7 @@ pub enum Statement {
     Return(StatementReturn),
     StatementMissing(StatementMissing),
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct StatementPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for Statement {
     type StablePtr = StatementPtr;
@@ -2458,6 +2536,7 @@ impl StatementList {
         }))
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct StatementListPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for StatementList {
     type StablePtr = StatementListPtr;
@@ -2497,7 +2576,9 @@ impl StatementMissing {
         }))
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct StatementMissingPtr(SyntaxStablePtrId);
+impl StatementMissingPtr {}
 impl TypedSyntaxNode for StatementMissing {
     type StablePtr = StatementMissingPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
@@ -2581,7 +2662,18 @@ impl StatementLet {
         Terminal::from_syntax_node(db, self.children[5].clone())
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct StatementLetPtr(SyntaxStablePtrId);
+impl StatementLetPtr {
+    pub fn lhs_green(self, db: &dyn SyntaxGroup) -> GreenId {
+        let ptr = db.lookup_intern_stable_ptr(self.0);
+        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
+            key_fields[0]
+        } else {
+            panic!("Unexpected key field query on root.");
+        }
+    }
+}
 impl TypedSyntaxNode for StatementLet {
     type StablePtr = StatementLetPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
@@ -2631,6 +2723,7 @@ pub enum OptionSemicolon {
     Empty(OptionSemicolonEmpty),
     Some(Terminal),
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct OptionSemicolonPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for OptionSemicolon {
     type StablePtr = OptionSemicolonPtr;
@@ -2686,7 +2779,9 @@ impl OptionSemicolonEmpty {
         }))
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct OptionSemicolonEmptyPtr(SyntaxStablePtrId);
+impl OptionSemicolonEmptyPtr {}
 impl TypedSyntaxNode for OptionSemicolonEmpty {
     type StablePtr = OptionSemicolonEmptyPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
@@ -2750,7 +2845,9 @@ impl StatementExpr {
         OptionSemicolon::from_syntax_node(db, self.children[1].clone())
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct StatementExprPtr(SyntaxStablePtrId);
+impl StatementExprPtr {}
 impl TypedSyntaxNode for StatementExpr {
     type StablePtr = StatementExprPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
@@ -2818,7 +2915,9 @@ impl StatementReturn {
         Terminal::from_syntax_node(db, self.children[2].clone())
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct StatementReturnPtr(SyntaxStablePtrId);
+impl StatementReturnPtr {}
 impl TypedSyntaxNode for StatementReturn {
     type StablePtr = StatementReturnPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
@@ -2878,7 +2977,18 @@ impl Param {
         NonOptionTypeClause::from_syntax_node(db, self.children[1].clone())
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ParamPtr(SyntaxStablePtrId);
+impl ParamPtr {
+    pub fn identifier_green(self, db: &dyn SyntaxGroup) -> GreenId {
+        let ptr = db.lookup_intern_stable_ptr(self.0);
+        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
+            key_fields[0]
+        } else {
+            panic!("Unexpected key field query on root.");
+        }
+    }
+}
 impl TypedSyntaxNode for Param {
     type StablePtr = ParamPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
@@ -2934,6 +3044,7 @@ impl ParamList {
         }))
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ParamListPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for ParamList {
     type StablePtr = ParamListPtr;
@@ -2987,7 +3098,9 @@ impl ParamListParenthesized {
         Terminal::from_syntax_node(db, self.children[2].clone())
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ParamListParenthesizedPtr(SyntaxStablePtrId);
+impl ParamListParenthesizedPtr {}
 impl TypedSyntaxNode for ParamListParenthesized {
     type StablePtr = ParamListParenthesizedPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
@@ -3059,7 +3172,9 @@ impl ParamListBraced {
         Terminal::from_syntax_node(db, self.children[2].clone())
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ParamListBracedPtr(SyntaxStablePtrId);
+impl ParamListBracedPtr {}
 impl TypedSyntaxNode for ParamListBraced {
     type StablePtr = ParamListBracedPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
@@ -3131,7 +3246,9 @@ impl FunctionSignature {
         OptionReturnTypeClause::from_syntax_node(db, self.children[3].clone())
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct FunctionSignaturePtr(SyntaxStablePtrId);
+impl FunctionSignaturePtr {}
 impl TypedSyntaxNode for FunctionSignature {
     type StablePtr = FunctionSignaturePtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
@@ -3190,6 +3307,7 @@ pub enum Item {
     Enum(ItemEnum),
     Use(ItemUse),
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ItemPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for Item {
     type StablePtr = ItemPtr;
@@ -3262,6 +3380,7 @@ impl ItemList {
         }))
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ItemListPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for ItemList {
     type StablePtr = ItemListPtr;
@@ -3315,7 +3434,18 @@ impl ItemModule {
         Terminal::from_syntax_node(db, self.children[2].clone())
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ItemModulePtr(SyntaxStablePtrId);
+impl ItemModulePtr {
+    pub fn name_green(self, db: &dyn SyntaxGroup) -> GreenId {
+        let ptr = db.lookup_intern_stable_ptr(self.0);
+        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
+            key_fields[0]
+        } else {
+            panic!("Unexpected key field query on root.");
+        }
+    }
+}
 impl TypedSyntaxNode for ItemModule {
     type StablePtr = ItemModulePtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
@@ -3387,7 +3517,18 @@ impl ItemFunction {
         ExprBlock::from_syntax_node(db, self.children[3].clone())
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ItemFunctionPtr(SyntaxStablePtrId);
+impl ItemFunctionPtr {
+    pub fn name_green(self, db: &dyn SyntaxGroup) -> GreenId {
+        let ptr = db.lookup_intern_stable_ptr(self.0);
+        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
+            key_fields[0]
+        } else {
+            panic!("Unexpected key field query on root.");
+        }
+    }
+}
 impl TypedSyntaxNode for ItemFunction {
     type StablePtr = ItemFunctionPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
@@ -3468,7 +3609,18 @@ impl ItemExternFunction {
         Terminal::from_syntax_node(db, self.children[4].clone())
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ItemExternFunctionPtr(SyntaxStablePtrId);
+impl ItemExternFunctionPtr {
+    pub fn name_green(self, db: &dyn SyntaxGroup) -> GreenId {
+        let ptr = db.lookup_intern_stable_ptr(self.0);
+        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
+            key_fields[0]
+        } else {
+            panic!("Unexpected key field query on root.");
+        }
+    }
+}
 impl TypedSyntaxNode for ItemExternFunction {
     type StablePtr = ItemExternFunctionPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
@@ -3550,7 +3702,9 @@ impl ItemExternType {
         Terminal::from_syntax_node(db, self.children[3].clone())
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ItemExternTypePtr(SyntaxStablePtrId);
+impl ItemExternTypePtr {}
 impl TypedSyntaxNode for ItemExternType {
     type StablePtr = ItemExternTypePtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
@@ -3631,7 +3785,18 @@ impl ItemTrait {
         Terminal::from_syntax_node(db, self.children[4].clone())
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ItemTraitPtr(SyntaxStablePtrId);
+impl ItemTraitPtr {
+    pub fn name_green(self, db: &dyn SyntaxGroup) -> GreenId {
+        let ptr = db.lookup_intern_stable_ptr(self.0);
+        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
+            key_fields[0]
+        } else {
+            panic!("Unexpected key field query on root.");
+        }
+    }
+}
 impl TypedSyntaxNode for ItemTrait {
     type StablePtr = ItemTraitPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
@@ -3721,7 +3886,18 @@ impl ItemImpl {
         Terminal::from_syntax_node(db, self.children[6].clone())
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ItemImplPtr(SyntaxStablePtrId);
+impl ItemImplPtr {
+    pub fn name_green(self, db: &dyn SyntaxGroup) -> GreenId {
+        let ptr = db.lookup_intern_stable_ptr(self.0);
+        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
+            key_fields[0]
+        } else {
+            panic!("Unexpected key field query on root.");
+        }
+    }
+}
 impl TypedSyntaxNode for ItemImpl {
     type StablePtr = ItemImplPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
@@ -3805,7 +3981,18 @@ impl ItemStruct {
         Terminal::from_syntax_node(db, self.children[4].clone())
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ItemStructPtr(SyntaxStablePtrId);
+impl ItemStructPtr {
+    pub fn name_green(self, db: &dyn SyntaxGroup) -> GreenId {
+        let ptr = db.lookup_intern_stable_ptr(self.0);
+        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
+            key_fields[0]
+        } else {
+            panic!("Unexpected key field query on root.");
+        }
+    }
+}
 impl TypedSyntaxNode for ItemStruct {
     type StablePtr = ItemStructPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
@@ -3879,7 +4066,18 @@ impl ItemEnum {
         ParamListBraced::from_syntax_node(db, self.children[2].clone())
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ItemEnumPtr(SyntaxStablePtrId);
+impl ItemEnumPtr {
+    pub fn name_green(self, db: &dyn SyntaxGroup) -> GreenId {
+        let ptr = db.lookup_intern_stable_ptr(self.0);
+        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
+            key_fields[0]
+        } else {
+            panic!("Unexpected key field query on root.");
+        }
+    }
+}
 impl TypedSyntaxNode for ItemEnum {
     type StablePtr = ItemEnumPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
@@ -3951,7 +4149,18 @@ impl ItemUse {
         Terminal::from_syntax_node(db, self.children[2].clone())
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ItemUsePtr(SyntaxStablePtrId);
+impl ItemUsePtr {
+    pub fn path_green(self, db: &dyn SyntaxGroup) -> GreenId {
+        let ptr = db.lookup_intern_stable_ptr(self.0);
+        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
+            key_fields[0]
+        } else {
+            panic!("Unexpected key field query on root.");
+        }
+    }
+}
 impl TypedSyntaxNode for ItemUse {
     type StablePtr = ItemUsePtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
@@ -4011,7 +4220,9 @@ impl SyntaxFile {
         Terminal::from_syntax_node(db, self.children[1].clone())
     }
 }
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct SyntaxFilePtr(SyntaxStablePtrId);
+impl SyntaxFilePtr {}
 impl TypedSyntaxNode for SyntaxFile {
     type StablePtr = SyntaxFilePtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
