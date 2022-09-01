@@ -6,10 +6,12 @@ use casm::operand::{
     BinOpOperand, DerefOperand, DerefOrImmediate, ImmediateOperand, Operation, Register, ResOperand,
 };
 use itertools::zip_eq;
+use sierra::extensions::arithmetic::{
+    BinaryOperationConcreteLibFunc, OperationConcreteLibFunc, Operator,
+};
 use sierra::extensions::core::CoreConcreteLibFunc;
-use sierra::extensions::felt::{FeltBinaryOperationConcreteLibFunc, FeltConcrete};
+use sierra::extensions::felt::FeltConcrete;
 use sierra::extensions::function_call::FunctionCallConcreteLibFunc;
-use sierra::extensions::integer::Operator;
 use sierra::extensions::lib_func::SignatureOnlyConcreteLibFunc;
 use sierra::extensions::mem::{MemConcreteLibFunc, StoreTempConcreteLibFunc};
 use sierra::extensions::ConcreteLibFunc;
@@ -102,7 +104,7 @@ impl CompiledInvocation {
 }
 
 fn handle_felt_op(
-    felt_op: &FeltBinaryOperationConcreteLibFunc,
+    felt_op: &BinaryOperationConcreteLibFunc,
     refs: &[ReferenceValue],
 ) -> Result<CompiledInvocation, InvocationError> {
     let op = match felt_op.operator {
@@ -251,9 +253,9 @@ pub fn compile_invocation(
     check_types_match(refs, libfunc.input_types())?;
     match libfunc {
         // TODO(ilya, 10/10/2022): Handle type.
-        CoreConcreteLibFunc::Felt(FeltConcrete::Operation(felt_op)) => {
-            handle_felt_op(felt_op, refs)
-        }
+        CoreConcreteLibFunc::Felt(FeltConcrete::Operation(OperationConcreteLibFunc::Binary(
+            felt_op,
+        ))) => handle_felt_op(felt_op, refs),
         CoreConcreteLibFunc::Felt(FeltConcrete::Duplicate(felt_dup)) => {
             handle_felt_dup(felt_dup, refs)
         }

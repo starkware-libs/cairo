@@ -1,29 +1,9 @@
+use super::arithmetic::{ArithmeticTraits, ConstLibFunc, OperationLibFunc};
+use super::jump_not_zero::{JumpNotZeroLibFunc, JumpNotZeroTraits};
+use super::pod::{DuplicateLibFunc, IgnoreLibFunc, PodTraits};
 use crate::define_libfunc_hierarchy;
-use crate::extensions::lib_func::{
-    LibFuncSignature, SignatureBasedConcreteLibFunc, SignatureOnlyConcreteLibFunc,
-    SpecializationContext,
-};
-use crate::extensions::modules::integer::Operator;
-use crate::extensions::{
-    ConcreteType, GenericLibFunc, NamedType, NoGenericArgsGenericLibFunc, NoGenericArgsGenericType,
-    SpecializationError,
-};
-use crate::ids::{ConcreteTypeId, GenericLibFuncId, GenericTypeId};
-use crate::program::GenericArg;
-
-define_libfunc_hierarchy! {
-    pub enum FeltLibFunc {
-        Operation(FeltOperationLibFunc),
-        Duplicate(FeltDuplicateLibFunc),
-    }, FeltConcrete
-}
-
-fn get_felt_type(
-    context: &SpecializationContext<'_>,
-) -> Result<ConcreteTypeId, SpecializationError> {
-    let felt_type = context.get_concrete_type(FeltType::id(), &[])?;
-    Ok(felt_type)
-}
+use crate::extensions::{ConcreteType, NamedType, NoGenericArgsGenericType};
+use crate::ids::{GenericLibFuncId, GenericTypeId};
 
 /// Type for felt.
 /// The native type of the Cairo architecture.
@@ -37,67 +17,39 @@ impl NoGenericArgsGenericType for FeltType {
 pub struct FeltConcreteType {}
 impl ConcreteType for FeltConcreteType {}
 
-/// Libfunc for operations on felts.
-pub struct FeltOperationLibFunc {
-    pub operator: Operator,
-}
-impl GenericLibFunc for FeltOperationLibFunc {
-    type Concrete = FeltBinaryOperationConcreteLibFunc;
-    fn by_id(id: &GenericLibFuncId) -> Option<Self> {
-        const FELT_ADD: GenericLibFuncId = GenericLibFuncId::new_inline("felt_add");
-        const FELT_MUL: GenericLibFuncId = GenericLibFuncId::new_inline("felt_mul");
-        match id {
-            id if id == &FELT_ADD => Some(FeltOperationLibFunc { operator: Operator::Add }),
-            id if id == &FELT_MUL => Some(FeltOperationLibFunc { operator: Operator::Mul }),
-            _ => None,
-        }
-    }
-    fn specialize(
-        &self,
-        context: SpecializationContext<'_>,
-        args: &[GenericArg],
-    ) -> Result<Self::Concrete, SpecializationError> {
-        let felt_type = get_felt_type(&context)?;
-        match args {
-            [] => Ok(FeltBinaryOperationConcreteLibFunc {
-                operator: self.operator,
-                signature: LibFuncSignature::non_branch(
-                    vec![felt_type.clone(), felt_type.clone()],
-                    vec![felt_type],
-                ),
-            }),
-            _ => Err(SpecializationError::WrongNumberOfGenericArgs),
-        }
-    }
+define_libfunc_hierarchy! {
+    pub enum FeltLibFunc {
+        Operation(FeltOperationLibFunc),
+        Const(FeltConstLibFunc),
+        Ignore(FeltIgnoreLibFunc),
+        Duplicate(FeltDuplicateLibFunc),
+        JumpNotZero(FeltJumpNotZeroLibFunc),
+    }, FeltConcrete
 }
 
-pub struct FeltBinaryOperationConcreteLibFunc {
-    pub operator: Operator,
-    pub signature: LibFuncSignature,
-}
-impl SignatureBasedConcreteLibFunc for FeltBinaryOperationConcreteLibFunc {
-    fn signature(&self) -> &LibFuncSignature {
-        &self.signature
-    }
-}
-
-/// LibFunc for duplicating a felt.
 #[derive(Default)]
-pub struct FeltDuplicateLibFunc {}
-impl NoGenericArgsGenericLibFunc for FeltDuplicateLibFunc {
-    type Concrete = SignatureOnlyConcreteLibFunc;
-    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("felt_dup");
-
-    fn specialize(
-        &self,
-        context: SpecializationContext<'_>,
-    ) -> Result<Self::Concrete, SpecializationError> {
-        let felt_type = get_felt_type(&context)?;
-        Ok(SignatureOnlyConcreteLibFunc {
-            signature: LibFuncSignature::non_branch(
-                vec![felt_type.clone()],
-                vec![felt_type.clone(), felt_type],
-            ),
-        })
-    }
+pub struct FeltTraits {}
+impl PodTraits for FeltTraits {
+    const IGNORE: GenericLibFuncId = GenericLibFuncId::new_inline("felt_ignore");
+    const DUPLICATE: GenericLibFuncId = GenericLibFuncId::new_inline("felt_dup");
+    const GENERIC_TYPE_ID: GenericTypeId = <FeltType as NamedType>::ID;
 }
+impl ArithmeticTraits for FeltTraits {
+    const ADD: GenericLibFuncId = GenericLibFuncId::new_inline("felt_add");
+    const SUB: GenericLibFuncId = GenericLibFuncId::new_inline("felt_sub");
+    const MUL: GenericLibFuncId = GenericLibFuncId::new_inline("felt_mul");
+    const DIV: GenericLibFuncId = GenericLibFuncId::new_inline("felt_div");
+    /// Modulo operation for felt would always return 0, as felt division is not interger division.
+    const MOD: GenericLibFuncId = GenericLibFuncId::new_inline("felt_mod");
+    const CONST: GenericLibFuncId = GenericLibFuncId::new_inline("felt_const");
+    const GENERIC_TYPE_ID: GenericTypeId = <FeltType as NamedType>::ID;
+}
+impl JumpNotZeroTraits for FeltTraits {
+    const JUMP_NOT_ZERO: GenericLibFuncId = GenericLibFuncId::new_inline("felt_jump_nz");
+    const GENERIC_TYPE_ID: GenericTypeId = <FeltType as NamedType>::ID;
+}
+pub type FeltIgnoreLibFunc = IgnoreLibFunc<FeltTraits>;
+pub type FeltDuplicateLibFunc = DuplicateLibFunc<FeltTraits>;
+pub type FeltOperationLibFunc = OperationLibFunc<FeltTraits>;
+pub type FeltConstLibFunc = ConstLibFunc<FeltTraits>;
+pub type FeltJumpNotZeroLibFunc = JumpNotZeroLibFunc<FeltTraits>;

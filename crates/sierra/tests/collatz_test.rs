@@ -21,7 +21,7 @@ fn collatz_program() -> sierra::program::Program {
             libfunc int_sub_1 = int_sub<1>;
             libfunc int_dup = int_dup;
             libfunc int_ignore = int_ignore;
-            libfunc int_jump_nz = jump_nz<int>;
+            libfunc int_jump_nz = int_jump_nz;
             libfunc int_unwrap_nz = unwrap_nz<int>;
             libfunc get_gas_11 = get_gas<11>;
             libfunc refund_gas_1 = refund_gas<1>;
