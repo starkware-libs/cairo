@@ -167,12 +167,13 @@ impl<'db> ExactSizeIterator for SyntaxNodeChildIterator<'db> {
 /// Trait for the typed view of the syntax tree. All the internal node implementations are under
 /// the ast module.
 pub trait TypedSyntaxNode {
+    type StablePtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId;
+    // TODO(spapini): Make this return an Option, if the kind is wrong.
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self;
+    fn from_ptr(db: &dyn SyntaxGroup, root: ast::SyntaxFile, node: Self::StablePtr) -> Self;
     fn as_syntax_node(&self) -> SyntaxNode;
-    fn stable_ptr(&self) -> SyntaxStablePtrId {
-        self.as_syntax_node().0.stable_ptr
-    }
+    fn stable_ptr(&self) -> Self::StablePtr;
 }
 
 // TODO(spapini): Children should be excluded from Eq and Hash of Typed nodes.
@@ -203,7 +204,9 @@ impl Token {
         self.raw(db).width()
     }
 }
+pub struct TokenPtr(SyntaxStablePtrId);
 impl TypedSyntaxNode for Token {
+    type StablePtr = TokenPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Token(token::Token::missing()))
     }
@@ -216,9 +219,14 @@ impl TypedSyntaxNode for Token {
             GreenNode::Token(_token) => Self { node },
         }
     }
-
+    fn from_ptr(db: &dyn SyntaxGroup, root: ast::SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        TokenPtr(self.node.0.stable_ptr)
     }
 }
 
