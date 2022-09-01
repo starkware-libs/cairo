@@ -65,7 +65,7 @@ pub enum VarId {
 }
 
 /// Id for anything that can directly contain a parameter.
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub enum ParamContainerId {
     FreeFunction(FreeFunctionId),
     ExternFunction(ExternFunctionId),
