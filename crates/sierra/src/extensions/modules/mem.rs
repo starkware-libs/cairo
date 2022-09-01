@@ -1,8 +1,10 @@
 use super::as_single_type;
 use crate::define_libfunc_hierarchy;
-use crate::extensions::lib_func::SpecializationContext;
+use crate::extensions::lib_func::{
+    LibFuncSignature, SignatureOnlyConcreteLibFunc, SpecializationContext,
+};
 use crate::extensions::{
-    NamedLibFunc, NoGenericArgsGenericLibFunc, NonBranchConcreteLibFunc, SpecializationError,
+    NamedLibFunc, NoGenericArgsGenericLibFunc, SignatureBasedConcreteLibFunc, SpecializationError,
 };
 use crate::ids::{ConcreteTypeId, GenericLibFuncId};
 use crate::program::GenericArg;
@@ -28,19 +30,21 @@ impl NamedLibFunc for StoreTempLibFunc {
         _context: SpecializationContext<'_>,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(StoreTempConcreteLibFunc { ty: as_single_type(args)? })
+        let ty = as_single_type(args)?;
+        Ok(StoreTempConcreteLibFunc {
+            ty: ty.clone(),
+            signature: LibFuncSignature::non_branch(vec![ty.clone()], vec![ty]),
+        })
     }
 }
 
 pub struct StoreTempConcreteLibFunc {
-    ty: ConcreteTypeId,
+    pub ty: ConcreteTypeId,
+    pub signature: LibFuncSignature,
 }
-impl NonBranchConcreteLibFunc for StoreTempConcreteLibFunc {
-    fn input_types(&self) -> Vec<ConcreteTypeId> {
-        vec![self.ty.clone()]
-    }
-    fn output_types(&self) -> Vec<ConcreteTypeId> {
-        vec![self.ty.clone()]
+impl SignatureBasedConcreteLibFunc for StoreTempConcreteLibFunc {
+    fn signature(&self) -> &LibFuncSignature {
+        &self.signature
     }
 }
 
@@ -55,19 +59,20 @@ impl NamedLibFunc for AlignTempsLibFunc {
         _context: SpecializationContext<'_>,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(AlignTempsConcreteLibFunc { _ty: as_single_type(args)? })
+        Ok(AlignTempsConcreteLibFunc {
+            ty: as_single_type(args)?,
+            signature: LibFuncSignature::non_branch(vec![], vec![]),
+        })
     }
 }
 
 pub struct AlignTempsConcreteLibFunc {
-    _ty: ConcreteTypeId,
+    pub ty: ConcreteTypeId,
+    pub signature: LibFuncSignature,
 }
-impl NonBranchConcreteLibFunc for AlignTempsConcreteLibFunc {
-    fn input_types(&self) -> Vec<ConcreteTypeId> {
-        vec![]
-    }
-    fn output_types(&self) -> Vec<ConcreteTypeId> {
-        vec![]
+impl SignatureBasedConcreteLibFunc for AlignTempsConcreteLibFunc {
+    fn signature(&self) -> &LibFuncSignature {
+        &self.signature
     }
 }
 
@@ -82,19 +87,21 @@ impl NamedLibFunc for StoreLocalLibFunc {
         _context: SpecializationContext<'_>,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(StoreLocalConcreteLibFunc { ty: as_single_type(args)? })
+        let ty = as_single_type(args)?;
+        Ok(StoreLocalConcreteLibFunc {
+            ty: ty.clone(),
+            signature: LibFuncSignature::non_branch(vec![ty.clone()], vec![ty]),
+        })
     }
 }
 
 pub struct StoreLocalConcreteLibFunc {
-    ty: ConcreteTypeId,
+    pub ty: ConcreteTypeId,
+    pub signature: LibFuncSignature,
 }
-impl NonBranchConcreteLibFunc for StoreLocalConcreteLibFunc {
-    fn input_types(&self) -> Vec<ConcreteTypeId> {
-        vec![self.ty.clone()]
-    }
-    fn output_types(&self) -> Vec<ConcreteTypeId> {
-        vec![self.ty.clone()]
+impl SignatureBasedConcreteLibFunc for StoreLocalConcreteLibFunc {
+    fn signature(&self) -> &LibFuncSignature {
+        &self.signature
     }
 }
 
@@ -102,23 +109,13 @@ impl NonBranchConcreteLibFunc for StoreLocalConcreteLibFunc {
 #[derive(Default)]
 pub struct AllocLocalsLibFunc {}
 impl NoGenericArgsGenericLibFunc for AllocLocalsLibFunc {
-    type Concrete = AllocLocalsConcreteLibFunc;
+    type Concrete = SignatureOnlyConcreteLibFunc;
     const ID: GenericLibFuncId = GenericLibFuncId::new_inline("alloc_locals");
     fn specialize(
         &self,
         _context: SpecializationContext<'_>,
     ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(AllocLocalsConcreteLibFunc {})
-    }
-}
-
-pub struct AllocLocalsConcreteLibFunc {}
-impl NonBranchConcreteLibFunc for AllocLocalsConcreteLibFunc {
-    fn input_types(&self) -> Vec<ConcreteTypeId> {
-        vec![]
-    }
-    fn output_types(&self) -> Vec<ConcreteTypeId> {
-        vec![]
+        Ok(SignatureOnlyConcreteLibFunc { signature: LibFuncSignature::non_branch(vec![], vec![]) })
     }
 }
 
@@ -126,37 +123,16 @@ impl NonBranchConcreteLibFunc for AllocLocalsConcreteLibFunc {
 #[derive(Default)]
 pub struct RenameLibFunc {}
 impl NamedLibFunc for RenameLibFunc {
-    type Concrete = RenameConcreteLibFunc;
+    type Concrete = SignatureOnlyConcreteLibFunc;
     const ID: GenericLibFuncId = GenericLibFuncId::new_inline("rename");
     fn specialize(
         &self,
         _context: SpecializationContext<'_>,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(RenameConcreteLibFunc { ty: as_single_type(args)? })
-    }
-}
-
-pub struct RenameConcreteLibFunc {
-    ty: ConcreteTypeId,
-}
-impl NonBranchConcreteLibFunc for RenameConcreteLibFunc {
-    fn input_types(&self) -> Vec<ConcreteTypeId> {
-        vec![self.ty.clone()]
-    }
-    fn output_types(&self) -> Vec<ConcreteTypeId> {
-        vec![self.ty.clone()]
-    }
-}
-
-pub struct MoveConcreteLibFunc {
-    ty: ConcreteTypeId,
-}
-impl NonBranchConcreteLibFunc for MoveConcreteLibFunc {
-    fn input_types(&self) -> Vec<ConcreteTypeId> {
-        vec![self.ty.clone()]
-    }
-    fn output_types(&self) -> Vec<ConcreteTypeId> {
-        vec![self.ty.clone()]
+        let ty = as_single_type(args)?;
+        Ok(SignatureOnlyConcreteLibFunc {
+            signature: LibFuncSignature::non_branch(vec![ty.clone()], vec![ty]),
+        })
     }
 }

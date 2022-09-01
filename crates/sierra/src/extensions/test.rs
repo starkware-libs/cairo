@@ -72,8 +72,10 @@ fn find_type_specialization(
 #[test_case("int_ignore", vec![type_arg("T")] => Err(WrongNumberOfGenericArgs); "int_ignore<T>")]
 #[test_case("int_dup", vec![] => Ok(()); "int_dup")]
 #[test_case("int_dup", vec![type_arg("T")] => Err(WrongNumberOfGenericArgs); "int_dup<T>")]
-#[test_case("int_jump_nz", vec![] => Ok(()); "int_jump_nz")]
-#[test_case("int_jump_nz", vec![type_arg("int")] => Err(WrongNumberOfGenericArgs); "int_jump_nz<int>")]
+#[test_case("jump_nz", vec![type_arg("int")] => Ok(()); "jump_nz<int>")]
+#[test_case("jump_nz", vec![] => Err(UnsupportedGenericArg); "jump_nz<>")]
+#[test_case("jump_nz", vec![type_arg("int"), type_arg("int")] => Err(UnsupportedGenericArg);
+ "jump_nz<T, T>")]
 #[test_case("unwrap_nz", vec![type_arg("int")] => Ok(()); "unwrap_nz<int>")]
 #[test_case("unwrap_nz", vec![] => Err(UnsupportedGenericArg); "unwrap_nz")]
 #[test_case("store_temp", vec![type_arg("int")] => Ok(()); "store_temp<int>")]

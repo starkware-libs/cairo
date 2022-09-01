@@ -1,6 +1,7 @@
 use defs::ids::{LocalVarId, MemberId, ModuleItemId, ParamId, VarId};
 
 use crate::ids::{ConcreteFunctionId, ExprId, TypeId};
+use crate::StatementId;
 
 // Statements.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
@@ -38,7 +39,7 @@ impl Expr {
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct ExprBlock {
-    pub statements: Vec<Statement>,
+    pub statements: Vec<StatementId>,
     /// Blocks may end with an expression, without a trailing `;`.
     /// In this case, `tail` will be Some(expr) with that expression.
     /// The block expression will evaluate to this tail expression.

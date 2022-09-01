@@ -2,6 +2,7 @@ use super::SpecializationError;
 use crate::ids::ConcreteTypeId;
 use crate::program::GenericArg;
 
+pub mod conditional_jump;
 pub mod felt;
 pub mod function_call;
 pub mod gas;
