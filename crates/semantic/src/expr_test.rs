@@ -1,19 +1,21 @@
+use std::collections::HashMap;
 use std::sync::Arc;
 
 use assert_matches::assert_matches;
 use defs::db::{AsDefsGroup, DefsDatabase, DefsGroup};
+use defs::ids::{FreeFunctionLongId, VarId};
 use filesystem::db::{FilesDatabase, FilesGroup, ProjectConfig};
 use filesystem::ids::{CrateLongId, FileLongId, ModuleId, VirtualFile};
 use indoc::indoc;
 use parser::db::{ParserDatabase, ParserGroup};
-use syntax::node::ast;
+use syntax::node::ast::{self, SyntaxFile};
 use syntax::node::db::{AsSyntaxGroup, SyntaxDatabase, SyntaxGroup};
 
 use super::compute_expr_semantic;
 use crate::corelib::unit_ty;
 use crate::db::{SemanticDatabase, SemanticGroup};
-use crate::expr::ComputationContext;
-use crate::semantic;
+use crate::expr::{ComputationContext, Environment};
+use crate::{semantic, GenericFunctionId};
 
 #[salsa::database(SemanticDatabase, DefsDatabase, ParserDatabase, SyntaxDatabase, FilesDatabase)]
 #[derive(Default)]
@@ -35,9 +37,8 @@ impl AsSyntaxGroup for DatabaseImpl {
 #[test]
 fn test_expr_literal() {
     let mut db_val = DatabaseImpl::default();
-    let module_id = setup_test_module(&mut db_val, "func foo() { 7 }");
+    let (module_id, module_syntax) = setup_test_module(&mut db_val, "func foo() { 7 }");
     let db = &db_val;
-    let module_syntax = db.file_syntax(db.module_file(module_id).unwrap()).expect("").unwrap();
     // TODO(spapini): When a tail expression is supported, take the syntax from the tail instead
     // of the statements.
     let syntax = match &extract_function_body(db, module_syntax, 0).statements(db).elements(db)[0] {
@@ -46,7 +47,11 @@ fn test_expr_literal() {
     };
 
     // Compute semantics of expr.
-    let mut ctx = ComputationContext { db, module_id };
+    let mut ctx = ComputationContext {
+        db,
+        module_id,
+        environment: Box::new(Environment { parent: None, variables: HashMap::new() }),
+    };
     let expr_id = compute_expr_semantic(&mut ctx, syntax);
     let expr = db.lookup_intern_expr(expr_id);
 
@@ -60,9 +65,51 @@ fn test_expr_literal() {
 }
 
 #[test]
+fn test_expr_var() {
+    let mut db_val = DatabaseImpl::default();
+    let (module_id, module_syntax) = setup_test_module(&mut db_val, "func foo(a) { a }");
+    let db = &db_val;
+    // TODO(spapini): When a tail expression in a block is supported, take the syntax from the tail
+    // instead of from the statements.
+    let syntax = match &extract_function_body(db, module_syntax, 0).statements(db).elements(db)[0] {
+        ast::Statement::Expr(syntax) => syntax.expr(db),
+        _ => panic!("Expected an expression statement"),
+    };
+
+    // Compute semantics of signature.
+    let signature = db
+        .generic_function_signature_semantic(GenericFunctionId::Free(
+            db.intern_free_function(FreeFunctionLongId { parent: module_id, name: "foo".into() }),
+        ))
+        .expect("Unexpected diagnostic")
+        .unwrap();
+
+    // Compute semantics of expr.
+    let var_id = VarId::Param(signature.params[0]);
+    let mut ctx = ComputationContext {
+        db,
+        module_id,
+        environment: Box::new(Environment {
+            parent: None,
+            variables: [("a".into(), var_id)].into_iter().collect(),
+        }),
+    };
+    let expr_id = compute_expr_semantic(&mut ctx, syntax);
+    let expr = db.lookup_intern_expr(expr_id);
+
+    // Check expr.
+    let semantic::ExprVar { var, ty: _ } = match expr {
+        crate::Expr::ExprVar(expr) => expr,
+        _ => panic!("Expected a variable."),
+    };
+    assert_eq!(var, var_id);
+    // TODO(spapini): Check type.
+}
+
+#[test]
 fn test_expr_block() {
     let mut db_val = DatabaseImpl::default();
-    let module_id = setup_test_module(
+    let (module_id, module_syntax) = setup_test_module(
         &mut db_val,
         indoc! {"
             func foo() {
@@ -72,11 +119,14 @@ fn test_expr_block() {
         "},
     );
     let db = &db_val;
-    let module_syntax = db.file_syntax(db.module_file(module_id).unwrap()).expect("").unwrap();
     let syntax = ast::Expr::Block(extract_function_body(db, module_syntax, 0));
 
     // Compute semantics of expr.
-    let mut ctx = ComputationContext { db, module_id };
+    let mut ctx = ComputationContext {
+        db,
+        module_id,
+        environment: Box::new(Environment { parent: None, variables: HashMap::new() }),
+    };
     let expr_id = compute_expr_semantic(&mut ctx, syntax);
     let expr = db.lookup_intern_expr(expr_id);
 
@@ -103,7 +153,7 @@ fn test_expr_block() {
 fn test_expr_call() {
     let mut db_val = DatabaseImpl::default();
     // TODO(spapini): Add types.
-    let module_id = setup_test_module(
+    let (module_id, module_syntax) = setup_test_module(
         &mut db_val,
         indoc! {"
             func foo() {
@@ -115,16 +165,19 @@ fn test_expr_call() {
         "},
     );
     let db = &db_val;
-    let module_syntax = db.file_syntax(db.module_file(module_id).unwrap()).expect("").unwrap();
     // TODO(spapini): When a tail expression in a block is supported, take the syntax from the tail
-    // instead of from the statments.
+    // instead of from the statements.
     let syntax = match &extract_function_body(db, module_syntax, 0).statements(db).elements(db)[0] {
         ast::Statement::Expr(syntax) => syntax.expr(db),
         _ => panic!("Expected an expression statement"),
     };
 
     // Compute semantics of expr.
-    let mut ctx = ComputationContext { db, module_id };
+    let mut ctx = ComputationContext {
+        db,
+        module_id,
+        environment: Box::new(Environment { parent: None, variables: HashMap::new() }),
+    };
     let expr_id = compute_expr_semantic(&mut ctx, syntax);
     let expr = db.lookup_intern_expr(expr_id);
 
@@ -138,7 +191,7 @@ fn test_expr_call() {
     }
 }
 
-fn setup_test_module(db: &mut DatabaseImpl, content: &str) -> ModuleId {
+fn setup_test_module(db: &mut DatabaseImpl, content: &str) -> (ModuleId, Arc<SyntaxFile>) {
     let crate_id = db.intern_crate(CrateLongId("test_crate".into()));
     let file_id = db.intern_file(FileLongId::Virtual(VirtualFile {
         parent: None,
@@ -148,7 +201,9 @@ fn setup_test_module(db: &mut DatabaseImpl, content: &str) -> ModuleId {
     db.set_project_config(ProjectConfig {
         crate_roots: [(crate_id, file_id)].into_iter().collect(),
     });
-    ModuleId::CrateRoot(crate_id)
+    let module_id = ModuleId::CrateRoot(crate_id);
+    let module_syntax = db.file_syntax(db.module_file(module_id).unwrap()).expect("").unwrap();
+    (module_id, module_syntax)
 }
 
 fn extract_function_body(
