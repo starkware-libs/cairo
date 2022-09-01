@@ -37,7 +37,7 @@ pub trait DefsGroup: FilesGroup + SyntaxGroup + AsSyntaxGroup + ParserGroup {
         &self,
         module_id: ModuleId,
     ) -> WithDiagnostics<Option<ModuleItems>, ParserDiagnostic>;
-    fn resolve_identifier(
+    fn resolve_module_identifier(
         &self,
         module_id: ModuleId,
         name: SmolStr,
@@ -50,7 +50,7 @@ pub trait AsDefsGroup {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ModuleItems {
-    items: HashMap<SmolStr, ModuleItemId>,
+    pub items: HashMap<SmolStr, ModuleItemId>,
 }
 
 #[with_diagnostics]
@@ -108,7 +108,7 @@ fn module_items(
 }
 
 #[with_diagnostics]
-fn resolve_identifier(
+fn resolve_module_identifier(
     diagnostics: &mut Diagnostics<ParserDiagnostic>,
     db: &dyn DefsGroup,
     module_id: ModuleId,
