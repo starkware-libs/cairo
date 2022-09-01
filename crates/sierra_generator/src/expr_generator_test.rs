@@ -75,13 +75,13 @@ fn test_expr_generator() {
     // "let x = 7;" statement.
     let statement_let = semantic::StatementLet { var: var_x, expr: literal7 };
 
-    let foo_func = db.intern_function_instance(semantic::ConcreteFunctionLongId {
+    let foo_func = db.intern_concrete_function(semantic::ConcreteFunctionLongId {
         generic_function: semantic::GenericFunctionId::Free(FreeFunctionId::from_intern_id(
             InternId::from(1u32),
         )),
         generic_args: vec![],
     });
-    let foo2_func = db.intern_function_instance(semantic::ConcreteFunctionLongId {
+    let foo2_func = db.intern_concrete_function(semantic::ConcreteFunctionLongId {
         generic_function: semantic::GenericFunctionId::Free(FreeFunctionId::from_intern_id(
             InternId::from(2u32),
         )),
