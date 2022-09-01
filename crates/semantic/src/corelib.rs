@@ -1,5 +1,5 @@
-use defs::ids::{ExternTypeLongId, ModuleId};
-use filesystem::ids::CrateLongId;
+use defs::ids::ExternTypeLongId;
+use filesystem::ids::{CrateLongId, ModuleId};
 
 use crate::db::SemanticGroup;
 use crate::{ConcreteType, GenericType, TypeId, TypeLongId};

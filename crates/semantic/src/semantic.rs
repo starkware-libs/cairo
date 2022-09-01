@@ -1,4 +1,4 @@
-use defs::ids::{LocalVarId, MemberId, ModuleItemId, ParamId, VarId};
+use defs::ids::{LocalVarId, MemberId, ParamId, VarId};
 
 use crate::ids::{ConcreteFunctionId, ExprId, TypeId};
 use crate::StatementId;
@@ -105,9 +105,3 @@ pub struct Struct {
 }
 // TODO(spapini): Add semantic representation for Params and Members.
 //   This will include their types.
-
-// Module.
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub struct Module {
-    pub items: Vec<ModuleItemId>,
-}
