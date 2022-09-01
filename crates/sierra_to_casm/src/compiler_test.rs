@@ -2,6 +2,7 @@ use indoc::indoc;
 use pretty_assertions;
 use sierra::edit_state::EditStateError::MissingReference;
 use sierra::ids::ConcreteLibFuncId;
+use sierra::program::StatementIdx;
 use sierra::program_registry::ProgramRegistryError::{
     LibFuncConcreteIdAlreadyExists, MissingLibFunc,
 };
@@ -134,8 +135,9 @@ fn good_flow() {
             "} => Err(InconsistentReferences.into());
             "Inconsistent references")]
 #[test_case(indoc! {"
-                return();
-            "} => Err(CompilationError::ReferencesError(MissingReferencesForStatement));
+            return();
+            "} => Err(CompilationError::ReferencesError(
+            MissingReferencesForStatement(StatementIdx(0))));
             "Missing references for statement")]
 #[test_case(indoc! {"
                 type NonZeroFelt = NonZero<felt>;
