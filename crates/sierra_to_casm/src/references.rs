@@ -28,7 +28,7 @@ pub enum ReferencesError {
     #[error("InvalidStatementIdx")]
     InvalidStatementIdx,
     #[error("MissingReferencesForStatement")]
-    MissingReferencesForStatement,
+    MissingReferencesForStatement(StatementIdx),
     #[error(transparent)]
     EditStateError(#[from] EditStateError),
     #[error(transparent)]
@@ -75,7 +75,7 @@ impl ProgramReferences {
     ) -> Result<(StatementRefs, Vec<ReferenceValue>), ReferencesError> {
         let statement_refs = self.per_statement_refs[statement_idx.0]
             .as_ref()
-            .ok_or(ReferencesError::MissingReferencesForStatement)?;
+            .ok_or(ReferencesError::MissingReferencesForStatement(statement_idx))?;
         Ok(take_args(statement_refs.clone(), ref_ids)?)
     }
 
