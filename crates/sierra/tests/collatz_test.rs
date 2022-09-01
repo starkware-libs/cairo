@@ -2,6 +2,7 @@ use indoc::indoc;
 use sierra::extensions::core::{CoreLibFunc, CoreType};
 use sierra::program_registry::ProgramRegistry;
 use sierra::simulation;
+use test_case::test_case;
 
 fn collatz_program() -> sierra::program::Program {
     sierra::ProgramParser::new()
@@ -97,34 +98,21 @@ fn create_registry_test() {
     ProgramRegistry::<CoreType, CoreLibFunc>::new(&collatz_program()).unwrap();
 }
 
-#[test]
-fn simulate_test() {
-    let program = collatz_program();
-    let id = "Collatz".into();
-    // 5 -> 16 -> 8 -> 4 -> 2 -> 1
+// 5 -> 16 -> 8 -> 4 -> 2 -> 1
+#[test_case((100, 5), (47, 5); "#collatz(5) => 5")]
+//  0     1     2     3     4     5     6     7     8     9
+//  7 -> 22 -> 11 -> 34 -> 17 -> 52 -> 26 -> 13 -> 40 -> 20 ->
+// 10 ->  5 -> 16 ->  8 ->  4 ->  2 ->  1
+#[test_case((200, 7), (30, 16); "#collatz(7) => 16")]
+// Out of gas.
+#[test_case((100, 7), (5, -1); "Out of gas.")]
+fn simulate((gb, n): (i64, i64), (new_gb, index): (i64, i64)) {
     assert_eq!(
-        simulation::run(&program, &id, vec![vec![/* gb= */ 100.into()], vec![/* n= */ 5.into()]]),
-        Ok(vec![vec![/* gb= */ 47.into()], vec![/* index= */ 5.into()]])
-    );
-    //  0     1     2     3     4     5     6     7     8     9
-    //  7 -> 22 -> 11 -> 34 -> 17 -> 52 -> 26 -> 13 -> 40 -> 20 ->
-    // 10 ->  5 -> 16 ->  8 ->  4 ->  2 ->  1
-    assert_eq!(
-        simulation::run(&program, &id, vec![vec![/* gb= */ 200.into()], vec![/* n= */ 7.into()]]),
-        Ok(vec![vec![/* gb= */ 30.into()], vec![/* index= */ 16.into()]])
-    );
-    // Out of gas.
-    assert_eq!(
-        simulation::run(&program, &id, vec![vec![/* gb= */ 100.into()], vec![/* n= */ 7.into()]]),
-        Ok(vec![
-            vec![/* gb= */ 5.into()],
-            vec![
-                (
-                    // index=
-                    -1
-                )
-                .into()
-            ]
-        ])
+        simulation::run(
+            &collatz_program(),
+            &"Collatz".into(),
+            vec![vec![gb.into()], vec![n.into()]]
+        ),
+        Ok(vec![vec![new_gb.into()], vec![index.into()]])
     );
 }
