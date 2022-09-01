@@ -148,7 +148,8 @@ fn module_items(
 }
 
 #[with_diagnostics]
-fn module_resolve_identifier(
+// TODO(yg): rename to module_item_by_name()
+fn resolve_module_identifier(
     diagnostics: &mut Diagnostics<ParserDiagnostic>,
     db: &dyn DefsGroup,
     module_id: ModuleId,
