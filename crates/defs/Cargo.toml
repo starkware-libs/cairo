@@ -12,3 +12,6 @@ salsa = "0.16.1"
 syntax = { path = "../syntax" }
 parser = { path = "../parser" }
 smol_str = "0.1.23"
+
+[dev-dependencies]
+indoc = "1.0.7"
