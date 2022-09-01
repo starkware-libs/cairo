@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::rc::Rc;
 use std::sync::Arc;
 
 use assert_matches::assert_matches;
@@ -50,7 +51,7 @@ fn test_expr_literal() {
     let mut ctx = ComputationContext {
         db,
         module_id,
-        environment: Box::new(Environment { parent: None, variables: HashMap::new() }),
+        environment: Rc::new(Environment { parent: None, variables: HashMap::new() }),
     };
     let expr_id = compute_expr_semantic(&mut ctx, syntax);
     let expr = db.lookup_intern_expr(expr_id);
@@ -89,7 +90,7 @@ fn test_expr_var() {
     let mut ctx = ComputationContext {
         db,
         module_id,
-        environment: Box::new(Environment {
+        environment: Rc::new(Environment {
             parent: None,
             variables: [("a".into(), var_id)].into_iter().collect(),
         }),
@@ -125,7 +126,7 @@ fn test_expr_block() {
     let mut ctx = ComputationContext {
         db,
         module_id,
-        environment: Box::new(Environment { parent: None, variables: HashMap::new() }),
+        environment: Rc::new(Environment { parent: None, variables: HashMap::new() }),
     };
     let expr_id = compute_expr_semantic(&mut ctx, syntax);
     let expr = db.lookup_intern_expr(expr_id);
@@ -176,7 +177,7 @@ fn test_expr_call() {
     let mut ctx = ComputationContext {
         db,
         module_id,
-        environment: Box::new(Environment { parent: None, variables: HashMap::new() }),
+        environment: Rc::new(Environment { parent: None, variables: HashMap::new() }),
     };
     let expr_id = compute_expr_semantic(&mut ctx, syntax);
     let expr = db.lookup_intern_expr(expr_id);
@@ -189,6 +190,39 @@ fn test_expr_call() {
         }
         _ => panic!("Unexpected expr"),
     }
+}
+
+#[test]
+fn test_function_body() {
+    let mut db_val = DatabaseImpl::default();
+    let (module_id, _module_syntax) = setup_test_module(
+        &mut db_val,
+        indoc! {"
+            func foo(a: felt) {
+                a;
+            }
+        "},
+    );
+    let db = &db_val;
+    let function_id =
+        db.intern_free_function(FreeFunctionLongId { parent: module_id, name: "foo".into() });
+    let function = db.free_function_semantic(function_id).expect("Unexpected diagnostics").unwrap();
+
+    // Test the resulting semantic function body.
+    let expr = match db.lookup_intern_expr(function.body) {
+        crate::Expr::ExprBlock(expr) => expr,
+        _ => panic!(),
+    };
+    assert_eq!(expr.statements.len(), 1);
+    let expr = db.lookup_intern_expr(match db.lookup_intern_statement(expr.statements[0]) {
+        crate::Statement::Expr(expr) => expr,
+        _ => panic!(),
+    });
+    let param = db.lookup_intern_param(match expr {
+        crate::Expr::ExprVar(semantic::ExprVar { var: VarId::Param(param_id), ty: _ }) => param_id,
+        _ => panic!(),
+    });
+    assert_eq!(param.name, "a");
 }
 
 fn setup_test_module(db: &mut DatabaseImpl, content: &str) -> (ModuleId, Arc<SyntaxFile>) {

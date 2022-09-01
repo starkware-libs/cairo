@@ -1,5 +1,5 @@
 use defs::db::{AsDefsGroup, DefsGroup};
-use defs::ids::{FreeFunctionId, ParamContainerId, ParamId, ParamLongId, StructId};
+use defs::ids::{FreeFunctionId, ParamContainerId, ParamId, ParamLongId, StructId, VarId};
 use diagnostics::{Diagnostics, WithDiagnostics};
 use diagnostics_proc_macros::with_diagnostics;
 use filesystem::ids::ModuleId;
@@ -8,6 +8,7 @@ use parser::parser::ParserDiagnostic;
 use syntax::node::ast;
 
 use crate::corelib::unit_ty;
+use crate::expr::{compute_expr_semantic, ComputationContext};
 use crate::ids::{
     ConcreteFunctionId, ConcreteFunctionLongId, ExprId, StatementId, TypeId, TypeLongId,
 };
@@ -80,14 +81,27 @@ fn free_function_semantic(
     function_id: FreeFunctionId,
 ) -> Option<semantic::FreeFunction> {
     let function = lookup_ast_free_function(db, function_id).unwrap(diagnostics)?;
-    Some(semantic::FreeFunction {
-        signature: function_signature_from_ast_function(
-            db,
-            ParamContainerId::FreeFunction(function_id),
-            &function,
-        ),
-        body: free_function_body(db, &function),
-    })
+    let module_id = db.lookup_intern_free_function(function_id).parent;
+
+    // Compute signature semantic.
+    let signature = function_signature_from_ast_function(
+        db,
+        ParamContainerId::FreeFunction(function_id),
+        &function,
+    );
+
+    // Compute body semantic expr.
+    let variables = signature
+        .params
+        .iter()
+        .copied()
+        .map(|param_id| (db.lookup_intern_param(param_id).name, VarId::Param(param_id)))
+        .collect();
+    let mut ctx = ComputationContext::new(db, module_id, variables);
+    let body =
+        compute_expr_semantic(&mut ctx, ast::Expr::Block(function.body(db.as_syntax_group())));
+
+    Some(semantic::FreeFunction { signature, body })
 }
 
 fn expr_semantic(db: &dyn SemanticGroup, item: ExprId) -> semantic::Expr {
@@ -185,11 +199,4 @@ fn function_signature_params(
             })
         })
         .collect()
-}
-
-// TODO(spapini): add a query wrapper.
-/// Gets the body of the given free function's AST.
-fn free_function_body(_db: &dyn SemanticGroup, _function: &ast::ItemFunction) -> ExprId {
-    // TODO(spapini)
-    todo!()
 }
