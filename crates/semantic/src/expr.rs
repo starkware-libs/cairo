@@ -38,6 +38,7 @@ pub fn compute_expr_semantic(db: &dyn SemanticGroup, syntax: ast::Expr) -> ExprI
             tail: None,
             ty: unit_ty(db),
         }),
+        ast::Expr::Match(_) => todo!(),
         ast::Expr::ExprMissing(_) => todo!(),
     };
     db.intern_expr(expr)

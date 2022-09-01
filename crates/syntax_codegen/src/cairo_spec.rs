@@ -60,6 +60,7 @@ pub fn get_spec() -> Vec<Node> {
             .node("FunctionCall")
             .node("StructCtorCall")
             .node("Block")
+            .node("Match")
             .build(),
         separated_list_node("ExprList", "Expr"),
         StructBuilder::new("ExprMissing").build(),
@@ -105,6 +106,25 @@ pub fn get_spec() -> Vec<Node> {
         StructBuilder::new("ExprBlock")
             .node("lbrace", "Terminal")
             .node("statements", "StatementList")
+            .node("rbrace", "Terminal")
+            .build(),
+        EnumBuilder::new("Pattern")
+            .node_with_explicit_kind("Underscore", "Terminal")
+            // TODO(yuval): support more options.
+            .node_with_explicit_kind("Literal", "ExprLiteral")
+            .build(),
+        StructBuilder::new("MatchArm")
+            .node("pattern", "Pattern")
+            .node("arrow", "Terminal")
+            .node("expression", "Expr")
+            .build(),
+        separated_list_node("MatchArms", "MatchArm"),
+        StructBuilder::new("ExprMatch")
+            .node("matchkw", "Terminal")
+            // TODO(yuval): change to SimpleExpr
+            .node("expr", "Expr")
+            .node("lbrace", "Terminal")
+            .node("arms", "MatchArms")
             .node("rbrace", "Terminal")
             .build(),
         // --- Type clauses ---
