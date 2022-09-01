@@ -2,7 +2,11 @@
 #[path = "expr_test.rs"]
 mod test;
 
+use std::collections::HashMap;
+
+use defs::ids::VarId;
 use filesystem::ids::ModuleId;
+use smol_str::SmolStr;
 use syntax::node::ast;
 
 use crate::corelib::unit_ty;
@@ -15,6 +19,15 @@ use crate::{
 pub struct ComputationContext<'db> {
     db: &'db dyn SemanticGroup,
     module_id: ModuleId,
+    environment: Box<Environment>,
+}
+
+// TODO(spapini): Consider using identifiers instead of SmolStr everywhere in the code.
+/// A state which contains all the variables defined at the current scope until now, and a pointer
+/// to the parent environment.
+pub struct Environment {
+    parent: Option<Box<Environment>>,
+    variables: HashMap<SmolStr, VarId>,
 }
 
 /// Computes the semantic model of an expression.
@@ -23,10 +36,13 @@ pub fn compute_expr_semantic(ctx: &mut ComputationContext<'_>, syntax: ast::Expr
     let syntax_db = db.as_syntax_group();
     // TODO: When semantic::Expr holds the syntax pointer, add it here as well.
     let expr = match syntax {
-        ast::Expr::Path(_) => todo!(),
+        ast::Expr::Path(path) => {
+            let var = resolve_variable(ctx, path);
+            // TODO(spapini): Return the correct variable type, instead of the unit type.
+            semantic::Expr::ExprVar(semantic::ExprVar { var, ty: unit_ty(db) })
+        }
         ast::Expr::Literal(literal_syntax) => {
-            // TODO(spapini): Use TerminalEx.
-            let text = literal_syntax.terminal(syntax_db).token(syntax_db).text(syntax_db);
+            let text = literal_syntax.terminal(syntax_db).text(syntax_db);
             // TODO(spapini): Diagnostics.
             let value = text.parse::<usize>().unwrap();
             let ty = db.core_felt_ty();
@@ -77,6 +93,30 @@ pub fn compute_expr_semantic(ctx: &mut ComputationContext<'_>, syntax: ast::Expr
         ast::Expr::ExprMissing(_) => todo!(),
     };
     db.intern_expr(expr)
+}
+
+/// Resolves a variable given a context and a path expression.
+fn resolve_variable(ctx: &mut ComputationContext<'_>, path: ast::ExprPath) -> VarId {
+    let db = ctx.db;
+    let syntax_db = db.as_syntax_group();
+    let elements = path.elements(syntax_db);
+    if elements.len() != 1 {
+        panic!("Expected a single identifier");
+    }
+    let last_element = &elements[0];
+    match last_element.generic_args(syntax_db) {
+        ast::OptionGenericArgs::Empty(_) => {}
+        ast::OptionGenericArgs::Some(_) => todo!("Generics are not supported yet"),
+    };
+    let variable_name = last_element.ident(syntax_db).text(syntax_db);
+    let mut maybe_env = Some(&*ctx.environment);
+    while let Some(env) = maybe_env {
+        if let Some(var) = env.variables.get(&variable_name) {
+            return *var;
+        }
+        maybe_env = env.parent.as_deref();
+    }
+    panic!("Not found");
 }
 
 /// Resolves a concrete function given a context and a path expression.
