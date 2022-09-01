@@ -1,11 +1,11 @@
 use defs::db::{AsDefsGroup, DefsGroup};
 use defs::ids::{
-    ExternFunctionLongId, FreeFunctionId, FreeFunctionLongId, ModuleItemId, ParamContainerId,
-    ParamId, ParamLongId, StructId, StructLongId,
+    ExternFunctionLongId, ExternTypeLongId, FreeFunctionId, FreeFunctionLongId, ModuleItemId,
+    ParamContainerId, ParamId, ParamLongId, StructId, StructLongId,
 };
 use diagnostics::{Diagnostics, WithDiagnostics};
 use diagnostics_proc_macros::with_diagnostics;
-use filesystem::ids::{FileId, ModuleId};
+use filesystem::ids::{CrateLongId, FileId, ModuleId};
 use parser::db::ParserGroup;
 use parser::parser::ParserDiagnostic;
 use syntax::node::ast;
@@ -187,9 +187,23 @@ fn function_signature_params(
 
 // TODO(spapini): add a query wrapper.
 /// Gets the body of the given free function's AST.
-fn free_function_body(_db: &dyn SemanticGroup, _function: &ast::ItemFunction) -> ExprId {
-    // TODO(spapini)
-    todo!()
+fn free_function_body(db: &dyn SemanticGroup, _function: &ast::ItemFunction) -> ExprId {
+    // TODO(spapini): implement this for real. This is just a temporary hardcoded body for
+    // integration tests.
+    let ty = db.intern_type(TypeLongId::Concrete(ConcreteType {
+        generic_type: GenericType::External(db.intern_extern_type(ExternTypeLongId {
+            parent: ModuleId::CrateRoot(db.intern_crate(CrateLongId("fake_crate".into()))),
+            name: "fake_type".into(),
+        })),
+        generic_args: Vec::new(),
+    }));
+    db.intern_expr(semantic::Expr::ExprBlock(semantic::ExprBlock {
+        statements: Vec::new(),
+        tail: Some(
+            db.intern_expr(semantic::Expr::ExprLiteral(semantic::ExprLiteral { value: 5, ty })),
+        ),
+        ty,
+    }))
 }
 
 #[with_diagnostics]
