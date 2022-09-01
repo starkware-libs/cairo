@@ -1,3 +1,6 @@
+use std::fs;
+use std::path::PathBuf;
+
 use indoc::indoc;
 use pretty_assertions;
 use sierra::edit_state::EditStateError::MissingReference;
@@ -81,43 +84,9 @@ fn good_flow() {
 
 #[test]
 fn fib_program() {
-    let prog = sierra::ProgramParser::new()
-        .parse(indoc! {"
-            type felt = felt;
-            type NonZeroFelt = NonZero<felt>;
-
-            libfunc store_temp_felt = store_temp<felt>;
-            libfunc store_temp_nz_felt = store_temp<NonZeroFelt>;
-            libfunc felt_const_minus_1 = felt_const<-1>;
-            libfunc felt_add = felt_add;
-            libfunc felt_dup = felt_dup;
-            libfunc felt_ignore = felt_ignore;
-            libfunc felt_jump_nz = felt_jump_nz;
-            libfunc felt_unwrap_nz = unwrap_nz<felt>;
-            libfunc call_lib = function_call<user@Fibonacci>;
-
-            // Statement #  0 - tests if n == 0.
-            felt_jump_nz(n) { 4(n) fallthrough() };
-            // Statement #  1 - n == 0, so we return a.
-            felt_ignore(b) -> ();
-            store_temp_felt(a)  -> (a);
-            return(a);
-            // Statement #  4 - calculates arguments for recursion call.
-            felt_unwrap_nz(n) -> (n);
-            felt_const_minus_1() -> (minus1);
-            felt_add(n, minus1) -> (n);
-            felt_dup(b) -> (b, b_);
-            felt_add(a, b_) -> (a_plus_b);
-            store_temp_felt(b) -> (b);
-            store_temp_felt(a_plus_b) -> (a_plus_b);
-            store_temp_felt(n) -> (n);
-            call_lib(b, a_plus_b, n) -> (r);
-            return(r);
-
-            Fibonacci@0(a: felt, b: felt, n: felt) -> (felt);
-        "})
-        .unwrap();
-
+    let path: PathBuf =
+        [env!("CARGO_MANIFEST_DIR"), "../sierra/examples/fib_no_gas.sierra"].iter().collect();
+    let prog = sierra::ProgramParser::new().parse(&fs::read_to_string(path).unwrap()).unwrap();
     pretty_assertions::assert_eq!(
         compile(&prog).unwrap().to_string(),
         indoc! {"
