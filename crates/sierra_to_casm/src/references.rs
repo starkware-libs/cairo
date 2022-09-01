@@ -1,21 +1,67 @@
 use std::collections::HashMap;
 use std::iter;
 
-use casm::ap_change::{ApChangeError, ApplyApChange};
-use casm::operand::{DerefOperand, Register, ResOperand};
+use casm::ap_change::{ApChange, ApChangeError, ApplyApChange};
+use casm::operand::{
+    DerefOperand, DerefOrImmediate, DoubleDerefOperand, ImmediateOperand, Register,
+};
 use itertools::zip_eq;
 use sierra::edit_state::{put_results, take_args, EditStateError};
+use sierra::extensions::arithmetic::Operator;
 use sierra::ids::{ConcreteTypeId, VarId};
 use sierra::program::{Function, GenBranchInfo, Param, StatementIdx};
 use thiserror::Error;
 
 use crate::invocations::BranchRefChanges;
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct BinOpExpression {
+    pub op: Operator,
+    pub a: DerefOperand,
+    pub b: DerefOrImmediate,
+}
+impl ApplyApChange for BinOpExpression {
+    fn apply_ap_change(self, ap_change: ApChange) -> Result<Self, ApChangeError> {
+        Ok(BinOpExpression {
+            op: self.op,
+            a: self.a.apply_ap_change(ap_change)?,
+            b: self.b.apply_ap_change(ap_change)?,
+        })
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum ReferenceExpression {
+    Deref(DerefOperand),
+    DoubleDeref(DoubleDerefOperand),
+    Immediate(ImmediateOperand),
+    BinOp(BinOpExpression),
+}
+
+impl ApplyApChange for ReferenceExpression {
+    fn apply_ap_change(self, ap_change: ApChange) -> Result<Self, ApChangeError> {
+        Ok(match self {
+            ReferenceExpression::Deref(operand) => {
+                ReferenceExpression::Deref(operand.apply_ap_change(ap_change)?)
+            }
+            ReferenceExpression::DoubleDeref(operand) => {
+                ReferenceExpression::DoubleDeref(operand.apply_ap_change(ap_change)?)
+            }
+            ReferenceExpression::Immediate(operand) => {
+                ReferenceExpression::Immediate(operand.apply_ap_change(ap_change)?)
+            }
+            ReferenceExpression::BinOp(operand) => {
+                ReferenceExpression::BinOp(operand.apply_ap_change(ap_change)?)
+            }
+        })
+    }
+}
+
 /// A reference to a value.
 /// Corresponds to an argument or return value of a sierra statement.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ReferenceValue {
-    pub expression: ResOperand,
+    pub expression: ReferenceExpression,
     pub ty: ConcreteTypeId,
 }
 
@@ -123,7 +169,10 @@ pub fn build_function_parameter_refs(params: &[Param]) -> Result<StatementRefs, 
             .insert(
                 param.id.clone(),
                 ReferenceValue {
-                    expression: ResOperand::Deref(DerefOperand { register: Register::FP, offset }),
+                    expression: ReferenceExpression::Deref(DerefOperand {
+                        register: Register::FP,
+                        offset,
+                    }),
                     ty: param.ty.clone(),
                 },
             )

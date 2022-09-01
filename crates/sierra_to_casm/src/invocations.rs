@@ -21,7 +21,7 @@ use sierra::ids::ConcreteTypeId;
 use sierra::program::{BranchInfo, BranchTarget, Invocation};
 use thiserror::Error;
 
-use crate::references::ReferenceValue;
+use crate::references::{BinOpExpression, ReferenceExpression, ReferenceValue};
 use crate::relocations::{Relocation, RelocationEntry};
 use crate::type_sizes::TypeSizeMap;
 
@@ -50,7 +50,7 @@ pub struct BranchRefChanges {
 impl BranchRefChanges {
     fn new(
         ap_change: ApChange,
-        expressions: impl Iterator<Item = ResOperand>,
+        expressions: impl Iterator<Item = ReferenceExpression>,
         types: impl Iterator<Item = ConcreteTypeId>,
     ) -> Self {
         Self {
@@ -77,7 +77,7 @@ impl CompiledInvocation {
         instructions: Vec<Instruction>,
         relocations: Vec<RelocationEntry>,
         ap_changes: impl Iterator<Item = ApChange>,
-        output_expressions: impl Iterator<Item = impl Iterator<Item = ResOperand>>,
+        output_expressions: impl Iterator<Item = impl Iterator<Item = ReferenceExpression>>,
         output_types: &[Vec<ConcreteTypeId>],
     ) -> Self {
         Self {
@@ -93,7 +93,7 @@ impl CompiledInvocation {
 
     // A constructor for the trivial case of fallthrough without any instructions.
     fn only_reference_changes(
-        output_expressions: impl Iterator<Item = ResOperand>,
+        output_expressions: impl Iterator<Item = ReferenceExpression>,
         output_types: &[Vec<ConcreteTypeId>],
     ) -> Self {
         Self::new(
@@ -107,18 +107,10 @@ impl CompiledInvocation {
 }
 
 fn handle_felt_op(
-    invocation: &Invocation,
+    _invocation: &Invocation,
     felt_op: &BinaryOperationConcreteLibFunc,
     refs: &[ReferenceValue],
 ) -> Result<CompiledInvocation, InvocationError> {
-    let op = match felt_op.operator {
-        Operator::Add => Operation::Add,
-        Operator::Mul => Operation::Mul,
-
-        // TODO(ilya, 12/12/2022): Support div and sub.
-        _ => return Err(InvocationError::NotImplemented(invocation.clone())),
-    };
-
     let (expr_a, expr_b) = match refs {
         [ReferenceValue { expression: expr_a, .. }, ReferenceValue { expression: expr_b, .. }] => {
             (expr_a, expr_b)
@@ -127,16 +119,16 @@ fn handle_felt_op(
     };
 
     let ref_expression = match (expr_a, expr_b) {
-        (ResOperand::Deref(a), ResOperand::Deref(b)) => {
-            BinOpOperand { op, a: *a, b: DerefOrImmediate::Deref(*b) }
+        (ReferenceExpression::Deref(a), ReferenceExpression::Deref(b)) => {
+            BinOpExpression { op: felt_op.operator, a: *a, b: DerefOrImmediate::Deref(*b) }
         }
-        (ResOperand::Deref(a), ResOperand::Immediate(b)) => {
-            BinOpOperand { op, a: *a, b: DerefOrImmediate::Immediate(*b) }
+        (ReferenceExpression::Deref(a), ReferenceExpression::Immediate(b)) => {
+            BinOpExpression { op: felt_op.operator, a: *a, b: DerefOrImmediate::Immediate(*b) }
         }
         _ => return Err(InvocationError::InvalidReferenceExpressionForArgument),
     };
     Ok(CompiledInvocation::only_reference_changes(
-        [ResOperand::BinOp(ref_expression)].into_iter(),
+        [ReferenceExpression::BinOp(ref_expression)].into_iter(),
         felt_op.output_types(),
     ))
 }
@@ -150,7 +142,7 @@ pub fn check_references_on_stack(
     let mut expected_offset: i16 = -1;
     for return_ref in refs.iter().rev() {
         match return_ref.expression {
-            ResOperand::Deref(DerefOperand { register: Register::AP, offset })
+            ReferenceExpression::Deref(DerefOperand { register: Register::AP, offset })
                 if offset == expected_offset =>
             {
                 expected_offset -= type_sizes
@@ -204,7 +196,10 @@ fn handle_function_call(
 
     let mut offset = -1;
     for output_type in fallthrough_outputs.iter().rev() {
-        refs.push_front(ResOperand::Deref(DerefOperand { register: Register::AP, offset }));
+        refs.push_front(ReferenceExpression::Deref(DerefOperand {
+            register: Register::AP,
+            offset,
+        }));
 
         offset -= type_sizes
             .get(output_type)
@@ -230,21 +225,53 @@ fn handle_function_call(
 }
 
 fn handle_store_temp(
+    invocation: &Invocation,
     store_temp: &StoreTempConcreteLibFunc,
     refs: &[ReferenceValue],
 ) -> Result<CompiledInvocation, InvocationError> {
+    let expression = match refs {
+        [ReferenceValue { expression, .. }] => expression,
+        _ => return Err(InvocationError::WrongNumberOfArguments),
+    };
+
+    let dst = DerefOperand { register: Register::AP, offset: 0 };
+
+    let (dst_operand, res_operand) = match expression {
+        ReferenceExpression::Deref(operand) => (dst, ResOperand::Deref(*operand)),
+        ReferenceExpression::DoubleDeref(operand) => {
+            (dst, ResOperand::DoubleDeref(operand.clone()))
+        }
+        ReferenceExpression::Immediate(operand) => (dst, ResOperand::Immediate(*operand)),
+        ReferenceExpression::BinOp(BinOpExpression { op, a, b }) => match op {
+            Operator::Add => {
+                (dst, ResOperand::BinOp(BinOpOperand { op: Operation::Add, a: *a, b: b.clone() }))
+            }
+            Operator::Mul => {
+                (dst, ResOperand::BinOp(BinOpOperand { op: Operation::Mul, a: *a, b: b.clone() }))
+            }
+
+            // dst = a - b => a = dst + b
+            Operator::Sub => {
+                (*a, ResOperand::BinOp(BinOpOperand { op: Operation::Add, a: dst, b: b.clone() }))
+            }
+            // dst = a / b => a = dst * b
+            Operator::Div => {
+                (*a, ResOperand::BinOp(BinOpOperand { op: Operation::Mul, a: dst, b: b.clone() }))
+            }
+            _ => return Err(InvocationError::NotImplemented(invocation.clone())),
+        },
+    };
+
     Ok(CompiledInvocation::new(
         vec![Instruction {
-            body: InstructionBody::AssertEq(AssertEqInstruction {
-                a: DerefOperand { register: Register::AP, offset: 0 },
-                b: refs[0].expression.clone(),
-            }),
+            body: InstructionBody::AssertEq(AssertEqInstruction { a: dst_operand, b: res_operand }),
             inc_ap: true,
         }],
         vec![],
         [ApChange::Known(1)].into_iter(),
-        [[ResOperand::Deref(DerefOperand { register: Register::AP, offset: -1 })].into_iter()]
-            .into_iter(),
+        [[ReferenceExpression::Deref(DerefOperand { register: Register::AP, offset: -1 })]
+            .into_iter()]
+        .into_iter(),
         store_temp.output_types(),
     ))
 }
@@ -255,7 +282,9 @@ fn handle_jump_nz(
     refs: &[ReferenceValue],
 ) -> Result<CompiledInvocation, InvocationError> {
     let condition = match refs {
-        [ReferenceValue { expression: ResOperand::Deref(deref_operand), .. }] => deref_operand,
+        [ReferenceValue { expression: ReferenceExpression::Deref(deref_operand), .. }] => {
+            deref_operand
+        }
         [_] => return Err(InvocationError::InvalidReferenceExpressionForArgument),
         _ => return Err(InvocationError::WrongNumberOfArguments),
     };
@@ -278,7 +307,7 @@ fn handle_jump_nz(
             relocation: Relocation::RelativeStatementId(*target_statement_id),
         }],
         [ApChange::Known(0), ApChange::Known(0)].into_iter(),
-        [vec![ResOperand::Deref(*condition)].into_iter(), vec![].into_iter()].into_iter(),
+        [vec![ReferenceExpression::Deref(*condition)].into_iter(), vec![].into_iter()].into_iter(),
         jnz.output_types(),
     ))
 }
@@ -306,12 +335,13 @@ pub fn compile_invocation(
         }
         CoreConcreteLibFunc::Felt(FeltConcrete::Const(libfunc)) => {
             Ok(CompiledInvocation::only_reference_changes(
-                [ResOperand::Immediate(ImmediateOperand { value: libfunc.c as i128 })].into_iter(),
+                [ReferenceExpression::Immediate(ImmediateOperand { value: libfunc.c as i128 })]
+                    .into_iter(),
                 libfunc.output_types(),
             ))
         }
         CoreConcreteLibFunc::Mem(MemConcreteLibFunc::StoreTemp(store_temp)) => {
-            handle_store_temp(store_temp, refs)
+            handle_store_temp(invocation, store_temp, refs)
         }
         CoreConcreteLibFunc::Mem(MemConcreteLibFunc::Rename(libfunc))
         | CoreConcreteLibFunc::UnwrapNonZero(libfunc) => {
