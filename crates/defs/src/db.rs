@@ -59,16 +59,15 @@ fn module_items(
     db: &dyn DefsGroup,
     module_id: ModuleId,
 ) -> Option<ModuleItems> {
-    let syntax_group = db.as_syntax_group();
+    let syntax_db = db.as_syntax_group();
 
     let syntax_file = db.file_syntax(db.module_file(module_id)?).unwrap(diagnostics)?;
     Some(ModuleItems {
-        items: HashMap::from_iter(
-            syntax_file.items(syntax_group).elements(syntax_group).iter().map(|item| match item {
+        items: HashMap::from_iter(syntax_file.items(syntax_db).elements(syntax_db).iter().map(
+            |item| match item {
                 ast::Item::Module(_module) => todo!(),
                 ast::Item::Function(function) => {
-                    let name =
-                        function.signature(syntax_group).name(syntax_group).text(syntax_group);
+                    let name = function.signature(syntax_db).name(syntax_db).text(syntax_db);
                     (
                         name.clone(),
                         ModuleItemId::FreeFunction(
@@ -77,10 +76,7 @@ fn module_items(
                     )
                 }
                 ast::Item::ExternFunction(extern_function) => {
-                    let name = extern_function
-                        .signature(syntax_group)
-                        .name(syntax_group)
-                        .text(syntax_group);
+                    let name = extern_function.signature(syntax_db).name(syntax_db).text(syntax_db);
                     (
                         name.clone(),
                         ModuleItemId::ExternFunction(db.intern_extern_function(
@@ -88,11 +84,19 @@ fn module_items(
                         )),
                     )
                 }
-                ast::Item::ExternType(_extern_type) => todo!(),
+                ast::Item::ExternType(extern_type) => {
+                    let name = extern_type.name(syntax_db).text(syntax_db);
+                    (
+                        name.clone(),
+                        ModuleItemId::ExternType(
+                            db.intern_extern_type(ExternTypeLongId { parent: module_id, name }),
+                        ),
+                    )
+                }
                 ast::Item::Trait(_tr) => todo!(),
                 ast::Item::Impl(_imp) => todo!(),
                 ast::Item::Struct(strct) => {
-                    let name = strct.name(db.as_syntax_group()).text(db.as_syntax_group());
+                    let name = strct.name(syntax_db).text(syntax_db);
                     (
                         name.clone(),
                         ModuleItemId::Struct(
@@ -102,8 +106,8 @@ fn module_items(
                 }
                 ast::Item::Enum(_en) => todo!(),
                 ast::Item::Use(_us) => todo!(),
-            }),
-        ),
+            },
+        )),
     })
 }
 
