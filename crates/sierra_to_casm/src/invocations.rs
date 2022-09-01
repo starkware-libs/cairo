@@ -301,6 +301,15 @@ pub fn compile_invocation(
         CoreConcreteLibFunc::Felt(FeltConcrete::JumpNotZero(jnz)) => {
             handle_jump_nz(invocation, jnz, refs)
         }
+        CoreConcreteLibFunc::Felt(FeltConcrete::Ignore(libfunc)) => {
+            Ok(CompiledInvocation::only_reference_changes([].into_iter(), libfunc.output_types()))
+        }
+        CoreConcreteLibFunc::Felt(FeltConcrete::Const(libfunc)) => {
+            Ok(CompiledInvocation::only_reference_changes(
+                [ResOperand::Immediate(ImmediateOperand { value: libfunc.c as i128 })].into_iter(),
+                libfunc.output_types(),
+            ))
+        }
         CoreConcreteLibFunc::Mem(MemConcreteLibFunc::StoreTemp(store_temp)) => {
             handle_store_temp(store_temp, refs)
         }
@@ -314,6 +323,7 @@ pub fn compile_invocation(
         CoreConcreteLibFunc::FunctionCall(func_call) => {
             handle_function_call(type_sizes, func_call, refs)
         }
+
         _ => Err(InvocationError::NotImplemented(invocation.clone())),
     }
 }
