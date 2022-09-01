@@ -428,8 +428,8 @@ impl StructArgSingle {
             width,
         }))
     }
-    pub fn identifier(&self, db: &dyn SyntaxGroup) -> Identifier {
-        Identifier::from_syntax_node(db, self.children[0].clone())
+    pub fn identifier(&self, db: &dyn SyntaxGroup) -> Terminal {
+        Terminal::from_syntax_node(db, self.children[0].clone())
     }
     pub fn arg_expr(&self, db: &dyn SyntaxGroup) -> OptionStructArgExpr {
         OptionStructArgExpr::from_syntax_node(db, self.children[1].clone())
@@ -441,7 +441,7 @@ impl TypedSyntaxNode for StructArgSingle {
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::StructArgSingle,
-            children: vec![Identifier::missing(db), OptionStructArgExpr::missing(db)],
+            children: vec![Terminal::missing(db), OptionStructArgExpr::missing(db)],
             width: 0,
         }))
     }
@@ -690,63 +690,6 @@ impl TypedSyntaxNode for ArgListBraced {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         ArgListBracedPtr(self.node.0.stable_ptr)
-    }
-}
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct Identifier {
-    node: SyntaxNode,
-    children: Vec<SyntaxNode>,
-}
-impl Identifier {
-    pub fn new_green(db: &dyn SyntaxGroup, terminal: GreenId) -> GreenId {
-        let children: Vec<GreenId> = vec![terminal];
-        let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
-        db.intern_green(GreenNode::Internal(GreenNodeInternal {
-            kind: SyntaxKind::Identifier,
-            children,
-            width,
-        }))
-    }
-    pub fn terminal(&self, db: &dyn SyntaxGroup) -> Terminal {
-        Terminal::from_syntax_node(db, self.children[0].clone())
-    }
-}
-pub struct IdentifierPtr(SyntaxStablePtrId);
-impl TypedSyntaxNode for Identifier {
-    type StablePtr = IdentifierPtr;
-    fn missing(db: &dyn SyntaxGroup) -> GreenId {
-        db.intern_green(GreenNode::Internal(GreenNodeInternal {
-            kind: SyntaxKind::Identifier,
-            children: vec![Terminal::missing(db)],
-            width: 0,
-        }))
-    }
-    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match db.lookup_intern_green(node.0.green) {
-            GreenNode::Internal(internal) => {
-                if internal.kind != SyntaxKind::Identifier {
-                    panic!(
-                        "Unexpected SyntaxKind {:?}. Expected {:?}.",
-                        internal.kind,
-                        SyntaxKind::Identifier,
-                    );
-                }
-                let children = node.children(db).collect();
-                Self { node, children }
-            }
-            GreenNode::Token(token) => {
-                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::Identifier,);
-            }
-        }
-    }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
-        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
-    }
-    fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
-    }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        IdentifierPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -1079,8 +1022,8 @@ impl PathSegment {
             width,
         }))
     }
-    pub fn ident(&self, db: &dyn SyntaxGroup) -> Identifier {
-        Identifier::from_syntax_node(db, self.children[0].clone())
+    pub fn ident(&self, db: &dyn SyntaxGroup) -> Terminal {
+        Terminal::from_syntax_node(db, self.children[0].clone())
     }
     pub fn generic_args(&self, db: &dyn SyntaxGroup) -> OptionGenericArgs {
         OptionGenericArgs::from_syntax_node(db, self.children[1].clone())
@@ -1092,7 +1035,7 @@ impl TypedSyntaxNode for PathSegment {
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::PathSegment,
-            children: vec![Identifier::missing(db), OptionGenericArgs::missing(db)],
+            children: vec![Terminal::missing(db), OptionGenericArgs::missing(db)],
             width: 0,
         }))
     }
@@ -2274,8 +2217,8 @@ impl StatementLet {
     pub fn letkw(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn lhs(&self, db: &dyn SyntaxGroup) -> Identifier {
-        Identifier::from_syntax_node(db, self.children[1].clone())
+    pub fn lhs(&self, db: &dyn SyntaxGroup) -> Terminal {
+        Terminal::from_syntax_node(db, self.children[1].clone())
     }
     pub fn type_clause(&self, db: &dyn SyntaxGroup) -> OptionTypeClause {
         OptionTypeClause::from_syntax_node(db, self.children[2].clone())
@@ -2298,7 +2241,7 @@ impl TypedSyntaxNode for StatementLet {
             kind: SyntaxKind::StatementLet,
             children: vec![
                 Terminal::missing(db),
-                Identifier::missing(db),
+                Terminal::missing(db),
                 OptionTypeClause::missing(db),
                 Terminal::missing(db),
                 Expr::missing(db),
@@ -2580,8 +2523,8 @@ impl Param {
             width,
         }))
     }
-    pub fn identifier(&self, db: &dyn SyntaxGroup) -> Identifier {
-        Identifier::from_syntax_node(db, self.children[0].clone())
+    pub fn identifier(&self, db: &dyn SyntaxGroup) -> Terminal {
+        Terminal::from_syntax_node(db, self.children[0].clone())
     }
     pub fn type_clause(&self, db: &dyn SyntaxGroup) -> TypeClause {
         TypeClause::from_syntax_node(db, self.children[1].clone())
@@ -2593,7 +2536,7 @@ impl TypedSyntaxNode for Param {
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::Param,
-            children: vec![Identifier::missing(db), TypeClause::missing(db)],
+            children: vec![Terminal::missing(db), TypeClause::missing(db)],
             width: 0,
         }))
     }
@@ -2832,8 +2775,8 @@ impl FunctionSignature {
     pub fn funckw(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn name(&self, db: &dyn SyntaxGroup) -> Identifier {
-        Identifier::from_syntax_node(db, self.children[1].clone())
+    pub fn name(&self, db: &dyn SyntaxGroup) -> Terminal {
+        Terminal::from_syntax_node(db, self.children[1].clone())
     }
     pub fn lparen(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[2].clone())
@@ -2856,7 +2799,7 @@ impl TypedSyntaxNode for FunctionSignature {
             kind: SyntaxKind::FunctionSignature,
             children: vec![
                 Terminal::missing(db),
-                Identifier::missing(db),
+                Terminal::missing(db),
                 Terminal::missing(db),
                 ParamList::missing(db),
                 Terminal::missing(db),
@@ -3027,8 +2970,8 @@ impl ItemModule {
     pub fn modkw(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn name(&self, db: &dyn SyntaxGroup) -> Identifier {
-        Identifier::from_syntax_node(db, self.children[1].clone())
+    pub fn name(&self, db: &dyn SyntaxGroup) -> Terminal {
+        Terminal::from_syntax_node(db, self.children[1].clone())
     }
     pub fn semi(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[2].clone())
@@ -3040,7 +2983,7 @@ impl TypedSyntaxNode for ItemModule {
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ItemModule,
-            children: vec![Terminal::missing(db), Identifier::missing(db), Terminal::missing(db)],
+            children: vec![Terminal::missing(db), Terminal::missing(db), Terminal::missing(db)],
             width: 0,
         }))
     }
@@ -3235,8 +3178,8 @@ impl ItemExternType {
     pub fn typekw(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[1].clone())
     }
-    pub fn name(&self, db: &dyn SyntaxGroup) -> Identifier {
-        Identifier::from_syntax_node(db, self.children[2].clone())
+    pub fn name(&self, db: &dyn SyntaxGroup) -> Terminal {
+        Terminal::from_syntax_node(db, self.children[2].clone())
     }
     pub fn semi(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[3].clone())
@@ -3251,7 +3194,7 @@ impl TypedSyntaxNode for ItemExternType {
             children: vec![
                 Terminal::missing(db),
                 Terminal::missing(db),
-                Identifier::missing(db),
+                Terminal::missing(db),
                 Terminal::missing(db),
             ],
             width: 0,
@@ -3310,8 +3253,8 @@ impl ItemTrait {
     pub fn traitkw(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn name(&self, db: &dyn SyntaxGroup) -> Identifier {
-        Identifier::from_syntax_node(db, self.children[1].clone())
+    pub fn name(&self, db: &dyn SyntaxGroup) -> Terminal {
+        Terminal::from_syntax_node(db, self.children[1].clone())
     }
     pub fn lbrace(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[2].clone())
@@ -3331,7 +3274,7 @@ impl TypedSyntaxNode for ItemTrait {
             kind: SyntaxKind::ItemTrait,
             children: vec![
                 Terminal::missing(db),
-                Identifier::missing(db),
+                Terminal::missing(db),
                 Terminal::missing(db),
                 ItemList::missing(db),
                 Terminal::missing(db),
@@ -3394,14 +3337,14 @@ impl ItemImpl {
     pub fn implkw(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn name(&self, db: &dyn SyntaxGroup) -> Identifier {
-        Identifier::from_syntax_node(db, self.children[1].clone())
+    pub fn name(&self, db: &dyn SyntaxGroup) -> Terminal {
+        Terminal::from_syntax_node(db, self.children[1].clone())
     }
     pub fn forkw(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[2].clone())
     }
-    pub fn trait_name(&self, db: &dyn SyntaxGroup) -> Identifier {
-        Identifier::from_syntax_node(db, self.children[3].clone())
+    pub fn trait_name(&self, db: &dyn SyntaxGroup) -> Terminal {
+        Terminal::from_syntax_node(db, self.children[3].clone())
     }
     pub fn lbrace(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[4].clone())
@@ -3421,9 +3364,9 @@ impl TypedSyntaxNode for ItemImpl {
             kind: SyntaxKind::ItemImpl,
             children: vec![
                 Terminal::missing(db),
-                Identifier::missing(db),
                 Terminal::missing(db),
-                Identifier::missing(db),
+                Terminal::missing(db),
+                Terminal::missing(db),
                 Terminal::missing(db),
                 ItemList::missing(db),
                 Terminal::missing(db),
@@ -3484,8 +3427,8 @@ impl ItemStruct {
     pub fn structkw(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn name(&self, db: &dyn SyntaxGroup) -> Identifier {
-        Identifier::from_syntax_node(db, self.children[1].clone())
+    pub fn name(&self, db: &dyn SyntaxGroup) -> Terminal {
+        Terminal::from_syntax_node(db, self.children[1].clone())
     }
     pub fn lbrace(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[2].clone())
@@ -3505,7 +3448,7 @@ impl TypedSyntaxNode for ItemStruct {
             kind: SyntaxKind::ItemStruct,
             children: vec![
                 Terminal::missing(db),
-                Identifier::missing(db),
+                Terminal::missing(db),
                 Terminal::missing(db),
                 ParamList::missing(db),
                 Terminal::missing(db),
@@ -3564,8 +3507,8 @@ impl ItemEnum {
     pub fn enumkw(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn name(&self, db: &dyn SyntaxGroup) -> Identifier {
-        Identifier::from_syntax_node(db, self.children[1].clone())
+    pub fn name(&self, db: &dyn SyntaxGroup) -> Terminal {
+        Terminal::from_syntax_node(db, self.children[1].clone())
     }
     pub fn body(&self, db: &dyn SyntaxGroup) -> ParamListBraced {
         ParamListBraced::from_syntax_node(db, self.children[2].clone())
@@ -3579,7 +3522,7 @@ impl TypedSyntaxNode for ItemEnum {
             kind: SyntaxKind::ItemEnum,
             children: vec![
                 Terminal::missing(db),
-                Identifier::missing(db),
+                Terminal::missing(db),
                 ParamListBraced::missing(db),
             ],
             width: 0,

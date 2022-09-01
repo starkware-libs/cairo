@@ -231,8 +231,8 @@ impl TypedSyntaxNode for Token {
 }
 
 // TODO(spapini): Consider converting into a trait and moving somewhere else.
-impl ast::Identifier {
+impl ast::Terminal {
     pub fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.terminal(db).token(db).text(db)
+        self.token(db).text(db)
     }
 }

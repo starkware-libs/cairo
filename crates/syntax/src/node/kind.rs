@@ -11,7 +11,6 @@ pub enum SyntaxKind {
     StructArgTail,
     StructArgList,
     ArgListBraced,
-    Identifier,
     ExprList,
     ExprMissing,
     OptionGenericArgsEmpty,
