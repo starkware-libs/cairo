@@ -2,7 +2,7 @@ use indoc::indoc;
 use pretty_assertions;
 use sierra::edit_state::EditStateError::MissingReference;
 use sierra::ids::ConcreteLibFuncId;
-use sierra::program::StatementIdx;
+use sierra::program::{BranchInfo, BranchTarget, Invocation, StatementIdx};
 use sierra::program_registry::ProgramRegistryError::{
     LibFuncConcreteIdAlreadyExists, MissingLibFunc,
 };
@@ -115,7 +115,15 @@ fn good_flow() {
                 store_local_felt([1]) -> ([1]);
 
                 test_program@0([1]: felt) -> ();
-            "} => Err(InvocationError::NotImplemented.into());
+            "} => Err(InvocationError::NotImplemented(
+                Invocation{
+                    libfunc_id: ConcreteLibFuncId::from_string("store_local_felt"),
+                    args: vec![sierra::ids::VarId::new(1)],
+                    branches: vec![BranchInfo{
+                        target: BranchTarget::Fallthrough,
+                        results: vec![sierra::ids::VarId::new(1)],
+                    }],
+                }).into());
             "Not implemented")]
 #[test_case(indoc! {"
                 type felt = felt;
