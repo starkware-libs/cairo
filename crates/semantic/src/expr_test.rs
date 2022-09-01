@@ -192,6 +192,39 @@ fn test_expr_call() {
     }
 }
 
+#[test]
+fn test_function_body() {
+    let mut db_val = DatabaseImpl::default();
+    let (module_id, _module_syntax) = setup_test_module(
+        &mut db_val,
+        indoc! {"
+            func foo(a: felt) {
+                a;
+            }
+        "},
+    );
+    let db = &db_val;
+    let function_id =
+        db.intern_free_function(FreeFunctionLongId { parent: module_id, name: "foo".into() });
+    let function = db.free_function_semantic(function_id).expect("Unexpected diagnostics").unwrap();
+
+    // Test the resulting semantic function body.
+    let expr = match db.lookup_intern_expr(function.body) {
+        crate::Expr::ExprBlock(expr) => expr,
+        _ => panic!(),
+    };
+    assert_eq!(expr.statements.len(), 1);
+    let expr = db.lookup_intern_expr(match db.lookup_intern_statement(expr.statements[0]) {
+        crate::Statement::Expr(expr) => expr,
+        _ => panic!(),
+    });
+    let param = db.lookup_intern_param(match expr {
+        crate::Expr::ExprVar(semantic::ExprVar { var: VarId::Param(param_id), ty: _ }) => param_id,
+        _ => panic!(),
+    });
+    assert_eq!(param.name, "a");
+}
+
 fn setup_test_module(db: &mut DatabaseImpl, content: &str) -> (ModuleId, Arc<SyntaxFile>) {
     let crate_id = db.intern_crate(CrateLongId("test_crate".into()));
     let file_id = db.intern_file(FileLongId::Virtual(VirtualFile {

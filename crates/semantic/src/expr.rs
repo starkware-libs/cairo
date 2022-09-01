@@ -7,6 +7,7 @@ use std::rc::Rc;
 
 use defs::ids::VarId;
 use filesystem::ids::ModuleId;
+use itertools::zip_eq;
 use smol_str::SmolStr;
 use syntax::node::ast;
 
@@ -21,6 +22,16 @@ pub struct ComputationContext<'db> {
     db: &'db dyn SemanticGroup,
     module_id: ModuleId,
     environment: Rc<Environment>,
+}
+impl<'db> ComputationContext<'db> {
+    pub fn new(
+        db: &'db dyn SemanticGroup,
+        module_id: ModuleId,
+        variables: HashMap<SmolStr, VarId>,
+    ) -> Self {
+        let environment = Environment { parent: None, variables };
+        Self { db, module_id, environment: Rc::new(environment) }
+    }
 }
 
 // TODO(spapini): Consider using identifiers instead of SmolStr everywhere in the code.
@@ -61,17 +72,19 @@ pub fn compute_expr_semantic(ctx: &mut ComputationContext<'_>, syntax: ast::Expr
                 .expect("Diagnostics not supported yet")
                 .expect("No signature");
 
-            let args = call_syntax
-                .arguments(syntax_db)
-                .expressions(syntax_db)
-                .elements(syntax_db)
-                .into_iter()
-                .zip(signature.params)
-                .map(|(arg_syntax, _param_id)| {
-                    // TODO(spapini): Type check arguments.
-                    compute_expr_semantic(ctx, arg_syntax)
-                })
-                .collect();
+            let args = zip_eq(
+                call_syntax
+                    .arguments(syntax_db)
+                    .expressions(syntax_db)
+                    .elements(syntax_db)
+                    .into_iter(),
+                signature.params,
+            )
+            .map(|(arg_syntax, _param_id)| {
+                // TODO(spapini): Type check arguments.
+                compute_expr_semantic(ctx, arg_syntax)
+            })
+            .collect();
             semantic::Expr::ExprFunctionCall(semantic::ExprFunctionCall {
                 function: concrete_function,
                 args,
@@ -111,12 +124,12 @@ fn resolve_variable(ctx: &mut ComputationContext<'_>, path: ast::ExprPath) -> Va
     let syntax_db = db.as_syntax_group();
     let elements = path.elements(syntax_db);
     if elements.len() != 1 {
+        // TODO(spapini): Diagnostic.
         panic!("Expected a single identifier");
     }
     let last_element = &elements[0];
-    match last_element.generic_args(syntax_db) {
-        ast::OptionGenericArgs::Empty(_) => {}
-        ast::OptionGenericArgs::Some(_) => todo!("Generics are not supported yet"),
+    if let ast::OptionGenericArgs::Some(_) = last_element.generic_args(syntax_db) {
+        todo!("Generics are not supported yet")
     };
     let variable_name = last_element.ident(syntax_db).text(syntax_db);
     let mut maybe_env = Some(&*ctx.environment);
@@ -126,6 +139,7 @@ fn resolve_variable(ctx: &mut ComputationContext<'_>, path: ast::ExprPath) -> Va
         }
         maybe_env = env.parent.as_deref();
     }
+    // TODO(spapini): Diagnostic and return option.
     panic!("Not found");
 }
 
@@ -138,13 +152,14 @@ fn resolve_concrete_function(
     let db = ctx.db;
     let syntax_db = db.as_syntax_group();
     let elements = path.elements(syntax_db);
+    // TODO(spapini): Support qualified paths.
     if elements.len() != 1 {
         todo!("Qualified paths are not supported yet");
     }
     let last_element = &elements[0];
-    match last_element.generic_args(syntax_db) {
-        ast::OptionGenericArgs::Empty(_) => {}
-        ast::OptionGenericArgs::Some(_) => todo!("Generics are not supported yet"),
+    // TODO(spapini): Support generics.
+    if let ast::OptionGenericArgs::Some(_) = last_element.generic_args(syntax_db) {
+        todo!("Generics are not supported yet")
     };
     let function_name = last_element.ident(syntax_db).text(syntax_db);
     let generic_function = match db
