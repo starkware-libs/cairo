@@ -1,8 +1,7 @@
 use pretty_assertions::assert_eq;
 
 use super::ast::{
-    ExprBinary, ExprLiteral, ExprPath, Identifier, OptionGenericArgsEmpty, PathSegment, Terminal,
-    Trivia,
+    ExprBinary, ExprLiteral, ExprPath, OptionGenericArgsEmpty, PathSegment, Terminal, Trivia,
 };
 use super::db::SyntaxDatabase;
 use super::kind::SyntaxKind;
@@ -50,7 +49,6 @@ fn test_ast() {
             (SyntaxNodeDetails::Syntax(SyntaxKind::ExprBinary), 0, 7),
             (SyntaxNodeDetails::Syntax(SyntaxKind::ExprPath), 0, 4),
             (SyntaxNodeDetails::Syntax(SyntaxKind::PathSegment), 0, 4),
-            (SyntaxNodeDetails::Syntax(SyntaxKind::Identifier), 0, 4),
             (SyntaxNodeDetails::Syntax(SyntaxKind::Terminal), 0, 4),
             (SyntaxNodeDetails::Syntax(SyntaxKind::Trivia), 0, 0),
             (
@@ -144,10 +142,7 @@ fn setup(db: &DatabaseImpl) -> SyntaxNode {
     ];
     let expr = ExprBinary::new_green(
         db,
-        ExprPath::new_green(
-            db,
-            vec![PathSegment::new_green(db, Identifier::new_green(db, terminals[0]), empty)],
-        ),
+        ExprPath::new_green(db, vec![PathSegment::new_green(db, terminals[0], empty)]),
         terminals[1],
         ExprLiteral::new_green(db, terminals[2]),
     );
