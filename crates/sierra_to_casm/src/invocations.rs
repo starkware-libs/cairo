@@ -1,7 +1,9 @@
 use std::collections::VecDeque;
 
 use casm::ap_change::ApChange;
-use casm::instructions::{AssertEqInstruction, CallInstruction, Instruction, InstructionBody};
+use casm::instructions::{
+    AssertEqInstruction, CallInstruction, Instruction, InstructionBody, JnzInstruction,
+};
 use casm::operand::{
     BinOpOperand, DerefOperand, DerefOrImmediate, ImmediateOperand, Operation, Register, ResOperand,
 };
@@ -16,6 +18,7 @@ use sierra::extensions::lib_func::SignatureOnlyConcreteLibFunc;
 use sierra::extensions::mem::{MemConcreteLibFunc, StoreTempConcreteLibFunc};
 use sierra::extensions::ConcreteLibFunc;
 use sierra::ids::ConcreteTypeId;
+use sierra::program::{BranchInfo, BranchTarget, Invocation};
 use thiserror::Error;
 
 use crate::references::ReferenceValue;
@@ -245,10 +248,45 @@ fn handle_store_temp(
     ))
 }
 
+fn handle_jump_nz(
+    invocation: &Invocation,
+    jnz: &SignatureOnlyConcreteLibFunc,
+    refs: &[ReferenceValue],
+) -> Result<CompiledInvocation, InvocationError> {
+    let condition = match refs {
+        [ReferenceValue { expression: ResOperand::Deref(deref_operand), .. }] => deref_operand,
+        [_] => return Err(InvocationError::InvalidReferenceExpressionForArgument),
+        _ => return Err(InvocationError::WrongNumberOfArguments),
+    };
+
+    let target_statement_id = match invocation.branches.as_slice() {
+        [BranchInfo { target: BranchTarget::Statement(statement_id), .. }, _] => statement_id,
+        _ => panic!("malformed invocation"),
+    };
+
+    Ok(CompiledInvocation::new(
+        vec![Instruction {
+            body: InstructionBody::Jnz(JnzInstruction {
+                jump_offset: DerefOrImmediate::Immediate(ImmediateOperand { value: 0 }),
+                condition: *condition,
+            }),
+            inc_ap: false,
+        }],
+        vec![RelocationEntry {
+            instruction_idx: 0,
+            relocation: Relocation::RelativeStatementId(*target_statement_id),
+        }],
+        [ApChange::Known(0), ApChange::Known(0)].into_iter(),
+        [vec![ResOperand::Deref(*condition)].into_iter(), vec![].into_iter()].into_iter(),
+        jnz.output_types(),
+    ))
+}
+
 pub fn compile_invocation(
-    type_sizes: &TypeSizeMap,
+    invocation: &Invocation,
     libfunc: &CoreConcreteLibFunc,
     refs: &[ReferenceValue],
+    type_sizes: &TypeSizeMap,
 ) -> Result<CompiledInvocation, InvocationError> {
     check_types_match(refs, libfunc.input_types())?;
     match libfunc {
@@ -258,6 +296,9 @@ pub fn compile_invocation(
         ))) => handle_felt_op(felt_op, refs),
         CoreConcreteLibFunc::Felt(FeltConcrete::Duplicate(felt_dup)) => {
             handle_felt_dup(felt_dup, refs)
+        }
+        CoreConcreteLibFunc::Felt(FeltConcrete::JumpNotZero(jnz)) => {
+            handle_jump_nz(invocation, jnz, refs)
         }
         CoreConcreteLibFunc::Mem(MemConcreteLibFunc::StoreTemp(store_temp)) => {
             handle_store_temp(store_temp, refs)
