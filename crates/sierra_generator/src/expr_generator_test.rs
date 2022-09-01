@@ -1,6 +1,7 @@
-use defs::db::{AsDefsGroup, DefsDatabase};
-use defs::ids::{FreeFunctionId, LocalVarId, VarId};
+use defs::db::{AsDefsGroup, DefsDatabase, DefsGroup};
+use defs::ids::{ExternFunctionLongId, FreeFunctionId, LocalVarId, VarId};
 use filesystem::db::FilesDatabase;
+use filesystem::ids::{CrateId, ModuleId};
 use parser::db::ParserDatabase;
 use pretty_assertions::assert_eq;
 use salsa::{InternId, InternKey};
@@ -195,4 +196,43 @@ fn test_match() {
     );
 
     assert_eq!(res, sierra::ids::VarId::new(1));
+}
+
+#[test]
+fn test_call_libfunc() {
+    let db = DatabaseImpl::default();
+
+    let ty = TypeId::from_intern_id(InternId::from(0u32));
+    let literal3 =
+        db.intern_expr(semantic::Expr::ExprLiteral(semantic::ExprLiteral { value: 3, ty }));
+    let literal6 =
+        db.intern_expr(semantic::Expr::ExprLiteral(semantic::ExprLiteral { value: 6, ty }));
+
+    let module = ModuleId::CrateRoot(CrateId::from_intern_id(InternId::from(1u32)));
+    let add_libfunc = db.intern_function_instance(semantic::ConcreteFunctionLongId {
+        generic_function: semantic::GenericFunctionId::Extern(db.intern_extern_function(
+            ExternFunctionLongId { parent: module, name: "felt_add".into() },
+        )),
+        generic_args: vec![],
+    });
+
+    let expr = db.intern_expr(semantic::Expr::ExprFunctionCall(semantic::ExprFunctionCall {
+        function: add_libfunc,
+        args: vec![literal3, literal6],
+        ty,
+    }));
+
+    let mut expr_generator_context = ExprGeneratorContext::new(&db);
+    let (statements, res) = generate_expression_code(&mut expr_generator_context, expr);
+    assert_eq!(
+        statements.iter().map(|x| replace_libfunc_ids(&db, x).to_string()).collect::<Vec<String>>(),
+        vec![
+            "felt_const<3>() -> ([0])",
+            "felt_const<6>() -> ([1])",
+            "felt_add([0], [1]) -> ([2])",
+            "store_temp([2]) -> ([3])",
+        ]
+    );
+
+    assert_eq!(res, sierra::ids::VarId::new(3));
 }
