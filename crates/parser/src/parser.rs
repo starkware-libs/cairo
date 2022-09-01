@@ -1,6 +1,6 @@
 #[cfg(test)]
 #[path = "parser_test.rs"]
-mod tests;
+mod test;
 
 use std::mem;
 
@@ -128,6 +128,7 @@ impl<'a> Parser<'a> {
         match self.peek().kind {
             TokenKind::Module => Some(self.expect_module()),
             TokenKind::Struct => Some(self.expect_struct()),
+            TokenKind::Extern => Some(self.expect_extern_item()),
             TokenKind::Function => Some(self.expect_function()),
             _ => None,
         }
@@ -173,6 +174,32 @@ impl<'a> Parser<'a> {
         )
     }
 
+    /// Assumes the current token is Extern.
+    /// Expected pattern: extern(<FunctionSignature>|type<Identifier>);
+    fn expect_extern_item(&mut self) -> GreenId {
+        let externkw = self.take();
+        match self.peek().kind {
+            TokenKind::Function => {
+                ItemExternFunction::new_green(
+                    self.db,
+                    externkw,                          // externkw
+                    self.expect_function_signature(),  // signature
+                    self.parse_token(TokenKind::Semi), // semi
+                )
+            }
+            _ => {
+                // If the next token is not type, assume it is missing.
+                ItemExternType::new_green(
+                    self.db,
+                    externkw,                                // externkw
+                    self.parse_token(TokenKind::Type),       // typekw
+                    self.parse_token(TokenKind::Identifier), // name
+                    self.parse_token(TokenKind::Semi),       // semi
+                )
+            }
+        }
+    }
+
     /// Assumes the current token is Function.
     /// Expected pattern: <FunctionSignature><Block>
     fn expect_function(&mut self) -> GreenId {
@@ -195,7 +222,7 @@ impl<'a> Parser<'a> {
     }
     /// Returns a GreenId of a node with an Expr.* kind (see [syntax::node::ast::Expr]) or a node
     /// with kind ExprMissing if an expression can't be parsed.
-    fn parse_expr(&mut self) -> GreenId {
+    pub fn parse_expr(&mut self) -> GreenId {
         match self.try_parse_expr() {
             Some(green) => green,
             None => ExprMissing::new_green(self.db),

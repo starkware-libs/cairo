@@ -80,8 +80,8 @@ fn simulate(
 /// inputs and outputs, assumming all of size 1.
 #[test_case("get_gas", vec![value_arg(4)], vec![5] => Ok((vec![1], 0)); "get_gas<4>(5)")]
 #[test_case("get_gas", vec![value_arg(4)], vec![2] => Ok((vec![2], 1)); "get_gas<4>(2)")]
-#[test_case("int_jump_nz", vec![], vec![2] => Ok((vec![2], 0)); "int_jump_nz(2)")]
-#[test_case("int_jump_nz", vec![], vec![0] => Ok((vec![], 1)); "int_jump_nz(0)")]
+#[test_case("jump_nz", vec![type_arg("int")], vec![2] => Ok((vec![2], 0)); "jump_nz<int>(2)")]
+#[test_case("jump_nz", vec![type_arg("int")], vec![0] => Ok((vec![], 1)); "jump_nz<int>(0)")]
 #[test_case("jump", vec![], vec![] => Ok((vec![], 0)); "jump()")]
 fn simulate_invocation(
     id: &str,
@@ -160,7 +160,7 @@ fn simulate_none_branch(
             "int_const<3>(1)")]
 #[test_case("int_dup", vec![], vec![] => WrongNumberOfArgs; "int_dup()")]
 #[test_case("int_ignore", vec![], vec![] => WrongNumberOfArgs; "int_ignore()")]
-#[test_case("int_jump_nz", vec![], vec![] => WrongNumberOfArgs; "int_jump_nz()")]
+#[test_case("jump_nz", vec![type_arg("int")], vec![] => WrongNumberOfArgs; "jump_nz<int>()")]
 #[test_case("unwrap_nz", vec![type_arg("int")], vec![] => WrongNumberOfArgs; "unwrap_nz<int>()")]
 #[test_case("store_temp", vec![type_arg("int")], vec![] => WrongNumberOfArgs; "store_temp<int>()")]
 #[test_case("align_temps", vec![type_arg("int")], vec![vec![4]] => WrongNumberOfArgs;

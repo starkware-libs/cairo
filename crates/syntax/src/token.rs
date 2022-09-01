@@ -23,6 +23,8 @@ pub enum TokenKind {
     // Keywords.
     False,
     True,
+    Extern,
+    Type,
     Function,
     Module,
     Struct,

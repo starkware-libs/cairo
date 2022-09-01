@@ -17,6 +17,8 @@ fn token_kind_to_text(kind: TokenKind) -> Vec<&'static str> {
             vec!["0", "9", "00", "1234567890123456789012345678901234567890"]
         }
         TokenKind::False => vec!["false"],
+        TokenKind::Extern => vec!["extern"],
+        TokenKind::Type => vec!["type"],
         TokenKind::Function => vec!["func"],
         TokenKind::Let => vec!["let"],
         TokenKind::Module => vec!["mod"],
@@ -67,6 +69,8 @@ fn token_kinds() -> Vec<TokenKind> {
         TokenKind::LiteralNumber,
         TokenKind::False,
         TokenKind::True,
+        TokenKind::Extern,
+        TokenKind::Type,
         TokenKind::Function,
         TokenKind::Module,
         TokenKind::Struct,
@@ -144,6 +148,8 @@ fn is_identifier_like(kind: TokenKind) -> bool {
         TokenKind::Identifier
             | TokenKind::False
             | TokenKind::True
+            | TokenKind::Extern
+            | TokenKind::Type
             | TokenKind::Function
             | TokenKind::Module
             | TokenKind::Struct

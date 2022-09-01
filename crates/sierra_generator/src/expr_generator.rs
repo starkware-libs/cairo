@@ -54,10 +54,10 @@ fn handle_block(
 ) -> (Vec<pre_sierra::Statement>, sierra::ids::VarId) {
     // Process the statements.
     let mut statements: Vec<pre_sierra::Statement> = vec![];
-    for statement in &expr_block.statements {
-        match statement {
+    for statement_id in expr_block.statements.iter().copied() {
+        match context.get_db().lookup_intern_statement(statement_id) {
             semantic::Statement::Expr(expr) => {
-                let (cur_statements, _res) = generate_expression_code(context, *expr);
+                let (cur_statements, _res) = generate_expression_code(context, expr);
                 statements.extend(cur_statements);
             }
             semantic::Statement::Let(statement_let) => {
@@ -97,26 +97,34 @@ fn handle_function_call(
         args.push(res);
     }
 
-    // Push the arguments on top of the stack.
-    let mut args_on_stack: Vec<sierra::ids::VarId> = vec![];
-    for arg_res in args {
-        let arg_var = context.allocate_sierra_variable();
-        statements.push(simple_statement(
-            context.store_temp_libfunc_id(),
-            &[arg_res],
-            &[arg_var.clone()],
-        ));
-        args_on_stack.push(arg_var);
-    }
+    // Check if this is a user defined function or a libcall.
+    let function_long_id =
+        context.get_db().lookup_intern_function_instance(expr_function_call.function);
+    match function_long_id.generic_function {
+        semantic::GenericFunctionId::Free(_) => {
+            // Push the arguments on top of the stack.
+            let mut args_on_stack: Vec<sierra::ids::VarId> = vec![];
+            for arg_res in args {
+                let arg_var = context.allocate_sierra_variable();
+                statements.push(simple_statement(
+                    context.store_temp_libfunc_id(),
+                    &[arg_res],
+                    &[arg_var.clone()],
+                ));
+                args_on_stack.push(arg_var);
+            }
 
-    // Call the function.
-    let res_var = context.allocate_sierra_variable();
-    statements.push(simple_statement(
-        context.function_call_libfunc_id(expr_function_call.function),
-        &args_on_stack,
-        &[res_var.clone()],
-    ));
-    (statements, res_var)
+            // Call the function.
+            let res_var = context.allocate_sierra_variable();
+            statements.push(simple_statement(
+                context.function_call_libfunc_id(expr_function_call.function),
+                &args_on_stack,
+                &[res_var.clone()],
+            ));
+            (statements, res_var)
+        }
+        semantic::GenericFunctionId::Extern(_) => todo!(),
+    }
 }
 
 /// Generates Sierra code for [semantic::ExprMatch].

@@ -13,7 +13,7 @@ use syntax::node::ast::Item;
 use crate::ids::{
     ConcreteFunctionId, ConcreteFunctionLongId, ExprId, StatementId, TypeId, TypeLongId,
 };
-use crate::semantic;
+use crate::{corelib, semantic};
 
 // Salsa database interface.
 #[salsa::query_group(SemanticDatabase)]
@@ -21,7 +21,7 @@ pub trait SemanticGroup: DefsGroup + AsDefsGroup + ParserGroup {
     #[salsa::interned]
     fn intern_function_instance(&self, id: ConcreteFunctionLongId) -> ConcreteFunctionId;
     #[salsa::interned]
-    fn intern_type_instance(&self, id: TypeLongId) -> TypeId;
+    fn intern_type(&self, id: TypeLongId) -> TypeId;
     #[salsa::interned]
     fn intern_expr(&self, expr: semantic::Expr) -> ExprId;
     #[salsa::interned]
@@ -40,6 +40,12 @@ pub trait SemanticGroup: DefsGroup + AsDefsGroup + ParserGroup {
         &self,
         item: ModuleId,
     ) -> WithDiagnostics<Option<Vec<ModuleItemId>>, ParserDiagnostic>;
+
+    // Corelib.
+    #[salsa::invoke(corelib::core_module)]
+    fn core_module(&self) -> ModuleId;
+    #[salsa::invoke(corelib::core_felt_ty)]
+    fn core_felt_ty(&self) -> TypeId;
 }
 
 fn module_semantic(_db: &dyn SemanticGroup, _item: ModuleId) -> semantic::Module {
@@ -87,14 +93,18 @@ fn module_items(
                     },
                 )));
             }
-            Item::FunctionSignature(sig) => {
-                module_items.push(ModuleItemId::ExternFunction(db.intern_extern_function(
-                    ExternFunctionLongId {
+            Item::ExternFunction(extern_function) => {
+                module_items.push(ModuleItemId::ExternFunction(
+                    db.intern_extern_function(ExternFunctionLongId {
                         parent: module_id,
-                        name: sig.signature(syntax_group).name(syntax_group).text(syntax_group),
-                    },
-                )));
+                        name: extern_function
+                            .signature(syntax_group)
+                            .name(syntax_group)
+                            .text(syntax_group),
+                    }),
+                ));
             }
+            Item::ExternType(_extern_type) => todo!(),
             Item::Trait(_tr) => todo!(),
             Item::Impl(_imp) => todo!(),
             Item::Struct(strct) => {

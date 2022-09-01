@@ -42,6 +42,7 @@ pub enum TypeLongId {
     Concrete(ConcreteType),
     /// Some expressions might have invalid types during processing, either due to errors or
     /// during inference.
+    Tuple(Vec<TypeId>),
     Missing,
     // TODO(spapini): tuple, generic type parameters.
 }
