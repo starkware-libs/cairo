@@ -1,11 +1,8 @@
 use defs::db::{AsDefsGroup, DefsGroup};
-use defs::ids::{
-    ExternFunctionLongId, FreeFunctionId, FreeFunctionLongId, ModuleItemId, ParamContainerId,
-    ParamId, ParamLongId, StructId, StructLongId,
-};
+use defs::ids::{FreeFunctionId, ParamContainerId, ParamId, ParamLongId, StructId};
 use diagnostics::{Diagnostics, WithDiagnostics};
 use diagnostics_proc_macros::with_diagnostics;
-use filesystem::ids::{FileId, ModuleId};
+use filesystem::ids::ModuleId;
 use parser::db::ParserGroup;
 use parser::parser::ParserDiagnostic;
 use syntax::node::ast;
@@ -125,7 +122,7 @@ fn lookup_ast_free_function(
     let function = db.lookup_intern_free_function(function_id);
     let module_id = function.parent;
     let func_name = function.name;
-    let syntax_file = db.file_syntax(module_file(db, module_id)?).unwrap(diagnostics)?;
+    let syntax_file = db.file_syntax(db.module_file(module_id)?).unwrap(diagnostics)?;
     for item in syntax_file.items(syntax_db).elements(syntax_db) {
         if let ast::Item::Function(function) = item {
             if function.signature(syntax_db).name(syntax_db).text(syntax_db) == func_name {
@@ -195,61 +192,4 @@ fn function_signature_params(
 fn free_function_body(_db: &dyn SemanticGroup, _function: &ast::ItemFunction) -> ExprId {
     // TODO(spapini)
     todo!()
-}
-
-#[with_diagnostics]
-fn module_items(
-    diagnostics: &mut Diagnostics<ParserDiagnostic>,
-    db: &dyn SemanticGroup,
-    module_id: ModuleId,
-) -> Option<Vec<ModuleItemId>> {
-    let syntax_group = db.as_syntax_group();
-
-    let syntax_file = db.file_syntax(module_file(db, module_id)?).unwrap(diagnostics)?;
-    let mut module_items = Vec::new();
-    for item in syntax_file.items(syntax_group).elements(syntax_group) {
-        match item {
-            ast::Item::Module(_module) => todo!(),
-            ast::Item::Function(function) => {
-                module_items.push(ModuleItemId::FreeFunction(db.intern_free_function(
-                    FreeFunctionLongId {
-                        parent: module_id,
-                        name:
-                            function.signature(syntax_group).name(syntax_group).text(syntax_group),
-                    },
-                )));
-            }
-            ast::Item::ExternFunction(sig) => {
-                module_items.push(ModuleItemId::ExternFunction(db.intern_extern_function(
-                    ExternFunctionLongId {
-                        parent: module_id,
-                        name: sig.signature(syntax_group).name(syntax_group).text(syntax_group),
-                    },
-                )));
-            }
-            ast::Item::Trait(_tr) => todo!(),
-            ast::Item::Impl(_imp) => todo!(),
-            ast::Item::Struct(strct) => {
-                module_items.push(ModuleItemId::Struct(db.intern_struct(StructLongId {
-                    parent: module_id,
-                    name: strct.name(db.as_syntax_group()).text(db.as_syntax_group()),
-                })));
-            }
-            ast::Item::Enum(_en) => todo!(),
-            ast::Item::Use(_us) => todo!(),
-            ast::Item::ExternType(_extern_type) => todo!(),
-        }
-    }
-    Some(module_items)
-}
-
-fn module_file(db: &dyn SemanticGroup, module_id: ModuleId) -> Option<FileId> {
-    match module_id {
-        ModuleId::CrateRoot(crate_id) => db.crate_root_file(crate_id),
-        ModuleId::Submodule(submodule_id) => {
-            let _submodule_long_id = db.as_defs_group().lookup_intern_submodule(submodule_id);
-            // TODO(yuval): support submodules.
-            todo!()
-        }
-    }
 }
