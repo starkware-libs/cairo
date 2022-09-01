@@ -217,6 +217,7 @@ impl<'a> Parser<'a> {
     fn try_parse_expr(&mut self) -> Option<GreenId> {
         match self.peek().kind {
             TokenKind::LBrace => Some(self.expect_block()),
+            TokenKind::Match => Some(self.expect_match_expr()),
             _ => self.try_parse_simple_expression(MAX_PRECEDENCE),
         }
     }
@@ -451,6 +452,51 @@ impl<'a> Parser<'a> {
         match self.try_parse_block() {
             Some(green) => green,
             None => ExprMissing::new_green(self.db),
+        }
+    }
+
+    /// Assumes the current token is Match.
+    /// Expected pattern: match \{<MatchArm>*\}
+    fn expect_match_expr(&mut self) -> GreenId {
+        ExprMatch::new_green(
+            self.db,
+            // match keyword
+            self.take(),
+            // expression
+            // TODO(yuval): change to simple expression.
+            self.parse_path(),
+            // left brace
+            self.parse_token(TokenKind::LBrace),
+            // match arms
+            self.parse_separated_list(
+                Self::try_parse_match_arm,
+                TokenKind::Comma,
+                TokenKind::RBrace,
+                MatchArms::new_green,
+            ),
+            // right brace
+            self.parse_token(TokenKind::RBrace),
+        )
+    }
+
+    /// Returns a GreenId of a node with a MatchArm kind or None if a match arm can't be parsed.
+    pub fn try_parse_match_arm(&mut self) -> Option<GreenId> {
+        Some(MatchArm::new_green(
+            self.db,
+            self.try_parse_pattern()?,
+            self.parse_token(TokenKind::MatchArrow),
+            self.parse_expr(),
+        ))
+    }
+
+    /// Returns a GreenId of a node with some Pattern kind (see [syntax::node::ast::Pattern]) or
+    /// None if a pattern can't be parsed.
+    fn try_parse_pattern(&mut self) -> Option<GreenId> {
+        // TODO(yuval): Support more options.
+        match self.peek().kind {
+            TokenKind::LiteralNumber => Some(self.take()),
+            TokenKind::Underscore => Some(self.take()),
+            _ => None,
         }
     }
 
