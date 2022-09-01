@@ -109,7 +109,8 @@ pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
                     .get_libfunc(&invocation.libfunc_id)
                     .map_err(CompilationError::ProgramRegistryError)?;
                 check_basic_structure(invocation, libfunc)?;
-                let compiled_invocation = compile_invocation(&type_sizes, libfunc, &invoke_refs)?;
+                let compiled_invocation =
+                    compile_invocation(invocation, libfunc, &invoke_refs, &type_sizes)?;
 
                 for instruction in &compiled_invocation.instructions {
                     program_offset += instruction.body.op_size();
