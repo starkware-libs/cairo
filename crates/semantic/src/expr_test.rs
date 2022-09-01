@@ -1,14 +1,10 @@
-use std::sync::Arc;
-
 use assert_matches::assert_matches;
 use defs::db::{AsDefsGroup, DefsDatabase, DefsGroup};
-use filesystem::db::{FilesDatabase, FilesGroup};
-use filesystem::ids::{FileLongId, VirtualFile};
+use filesystem::db::FilesDatabase;
 use indoc::indoc;
 use parser::db::ParserDatabase;
-use parser::parser::Parser;
+use parser::test_utils::prepare_test_expr;
 use syntax::node::db::{AsSyntaxGroup, SyntaxDatabase, SyntaxGroup};
-use syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
 
 use super::compute_expr_semantic;
 use crate::corelib::unit_ty;
@@ -32,28 +28,13 @@ impl AsSyntaxGroup for DatabaseImpl {
     }
 }
 
-fn setup(content: &str) -> (DatabaseImpl, SyntaxNode) {
-    let db_val = DatabaseImpl::default();
-    let db = &db_val;
-    let content = Arc::new(content.to_string());
-    let file = db.intern_file(FileLongId::Virtual(VirtualFile {
-        parent: None,
-        name: "test.cairo".into(),
-        content: content.clone(),
-    }));
-    let mut parser = Parser::from_text(db, file, &content);
-    let green = parser.parse_expr();
-    let syntax_node = SyntaxNode::new_root(db, green);
-    (db_val, syntax_node)
-}
-
 #[test]
 fn test_expr_literal() {
-    let (db_val, syntax_node) = setup("7");
+    let db_val = DatabaseImpl::default();
     let db = &db_val;
+    let syntax = prepare_test_expr(db, "7");
 
     // Compute semantics of expr.
-    let syntax = ast::Expr::from_syntax_node(db, syntax_node);
     let expr_id = compute_expr_semantic(db, syntax);
     let expr = db.lookup_intern_expr(expr_id);
 
@@ -68,16 +49,20 @@ fn test_expr_literal() {
 
 #[test]
 fn test_expr_block() {
-    let (db_val, syntax_node) = setup(indoc! {"
+    let db_val = DatabaseImpl::default();
+    let db = &db_val;
+    let syntax = prepare_test_expr(
+        db,
+        indoc! {"
         {
             6;
             8;
         }
-    "});
+    "},
+    );
     let db = &db_val;
 
     // Compute semantics of expr.
-    let syntax = ast::Expr::from_syntax_node(db, syntax_node);
     let expr_id = compute_expr_semantic(db, syntax);
     let expr = db.lookup_intern_expr(expr_id);
 
