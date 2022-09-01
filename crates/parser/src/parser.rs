@@ -51,7 +51,8 @@ impl DiagnosticEntry for ParserDiagnostic {
             None => unreachable!(),
         };
         match self.kind {
-            ParserDiagnosticKind::SkippedTokens => format!("Skipped tokens: {text}"),
+            // TODO(yuval): replace line breaks with "\n".
+            ParserDiagnosticKind::SkippedTokens => format!("Skipped tokens: '{text}'"),
         }
     }
 

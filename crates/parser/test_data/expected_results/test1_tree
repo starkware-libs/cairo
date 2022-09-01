@@ -147,9 +147,9 @@
     │       └── semi (kind: Semi): ';'
     └── eof (kind: EndOfFile).
 --------------------
-Error at test1.cairo from line 1 col 1 until line 4 col 1: Skipped tokens: // Func foo
+Error at test1.cairo from line 1 col 1 until line 4 col 1: Skipped tokens: '// Func foo
 // Second line
 ;
-
-Error at test1.cairo from line 4 col 10 until line 4 col 11: Skipped tokens: ,
-Error at test1.cairo from line 4 col 21 until line 4 col 23: Skipped tokens: , 
+'
+Error at test1.cairo from line 4 col 10 until line 4 col 11: Skipped tokens: ','
+Error at test1.cairo from line 4 col 21 until line 4 col 23: Skipped tokens: ', '

@@ -250,10 +250,10 @@
     │       └── rbrace (kind: RBrace): '}'
     └── eof (kind: EndOfFile).
 --------------------
-Error at test2.cairo from line 13 col 11 until line 14 col 1: Skipped tokens: {
-
-Error at test2.cairo from line 21 col 1 until line 25 col 1: Skipped tokens: 
+Error at test2.cairo from line 13 col 11 until line 14 col 1: Skipped tokens: '{
+'
+Error at test2.cairo from line 21 col 1 until line 25 col 1: Skipped tokens: '
 }
 
 skipped tokens
-
+'
