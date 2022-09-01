@@ -12,7 +12,8 @@ use test_case::test_case;
 use crate::compiler::{compile, CompilationError};
 use crate::invocations::InvocationError;
 use crate::references::ReferencesError::{
-    EditStateError, InconsistentReferences, InvalidStatementIdx, MissingReferencesForStatement,
+    self, EditStateError, InconsistentReferences, InvalidStatementIdx,
+    MissingReferencesForStatement,
 };
 
 #[test]
@@ -248,6 +249,15 @@ fn fib_program() {
                 test_program@0([1]: felt, [2]: felt) -> ();
             "} => Err(CompilationError::LibFuncInvocationMismatch);
             "fallthrough mismatch")]
+#[test_case(indoc! {"
+                type felt = felt;
+                libfunc felt_dup = felt_dup;
+
+                felt_dup([1]) -> ([1], [2]);
+                return ([1]);
+                test_program@0([1]: felt) -> ();
+            "} => Err(ReferencesError::DanglingReferences(StatementIdx(1)).into());
+            "Dangling references")]
 fn compiler_errors(sierra_code: &str) -> Result<(), CompilationError> {
     let prog = ProgramParser::new().parse(sierra_code).unwrap();
     compile(&prog).map(|_| ())
