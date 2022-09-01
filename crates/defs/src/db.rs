@@ -1,9 +1,12 @@
+use std::collections::HashMap;
+
 use diagnostics::{Diagnostics, WithDiagnostics};
 use diagnostics_proc_macros::with_diagnostics;
 use filesystem::db::FilesGroup;
 use filesystem::ids::ModuleId;
 use parser::db::ParserGroup;
 use parser::parser::ParserDiagnostic;
+use smol_str::SmolStr;
 use syntax::node::ast;
 use syntax::node::db::{AsSyntaxGroup, SyntaxGroup};
 
@@ -34,15 +37,20 @@ pub trait DefsGroup: FilesGroup + SyntaxGroup + AsSyntaxGroup + ParserGroup {
         &self,
         module_id: ModuleId,
     ) -> WithDiagnostics<Option<ModuleItems>, ParserDiagnostic>;
+    fn resolve_identifier(
+        &self,
+        module_id: ModuleId,
+        name: SmolStr,
+    ) -> WithDiagnostics<Option<ModuleItemId>, ParserDiagnostic>;
 }
 
 pub trait AsDefsGroup {
     fn as_defs_group(&self) -> &(dyn DefsGroup + 'static);
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ModuleItems {
-    items: Vec<ModuleItemId>,
+    items: HashMap<SmolStr, ModuleItemId>,
 }
 
 #[with_diagnostics]
@@ -54,42 +62,56 @@ fn module_items(
     let syntax_group = db.as_syntax_group();
 
     let syntax_file = db.file_syntax(db.module_file(module_id)?).unwrap(diagnostics)?;
-    let mut items = Vec::new();
+    let mut items = HashMap::new();
     for item in syntax_file.items(syntax_group).elements(syntax_group) {
-        match item {
+        let (name, item) = match item {
             ast::Item::Module(_module) => todo!(),
             ast::Item::Function(function) => {
-                items.push(ModuleItemId::FreeFunction(db.intern_free_function(
-                    FreeFunctionLongId {
-                        parent: module_id,
-                        name:
-                            function.signature(syntax_group).name(syntax_group).text(syntax_group),
-                    },
-                )));
+                let name = function.signature(syntax_group).name(syntax_group).text(syntax_group);
+                (
+                    name.clone(),
+                    ModuleItemId::FreeFunction(
+                        db.intern_free_function(FreeFunctionLongId { parent: module_id, name }),
+                    ),
+                )
             }
             ast::Item::ExternFunction(extern_function) => {
-                items.push(ModuleItemId::ExternFunction(
-                    db.intern_extern_function(ExternFunctionLongId {
-                        parent: module_id,
-                        name: extern_function
-                            .signature(syntax_group)
-                            .name(syntax_group)
-                            .text(syntax_group),
-                    }),
-                ));
+                let name =
+                    extern_function.signature(syntax_group).name(syntax_group).text(syntax_group);
+                (
+                    name.clone(),
+                    ModuleItemId::ExternFunction(
+                        db.intern_extern_function(ExternFunctionLongId { parent: module_id, name }),
+                    ),
+                )
             }
             ast::Item::ExternType(_extern_type) => todo!(),
             ast::Item::Trait(_tr) => todo!(),
             ast::Item::Impl(_imp) => todo!(),
             ast::Item::Struct(strct) => {
-                items.push(ModuleItemId::Struct(db.intern_struct(StructLongId {
-                    parent: module_id,
-                    name: strct.name(db.as_syntax_group()).text(db.as_syntax_group()),
-                })));
+                let name = strct.name(db.as_syntax_group()).text(db.as_syntax_group());
+                (
+                    name.clone(),
+                    ModuleItemId::Struct(
+                        db.intern_struct(StructLongId { parent: module_id, name }),
+                    ),
+                )
             }
             ast::Item::Enum(_en) => todo!(),
             ast::Item::Use(_us) => todo!(),
-        }
+        };
+        items.insert(name, item);
     }
     Some(ModuleItems { items })
+}
+
+#[with_diagnostics]
+fn resolve_identifier(
+    diagnostics: &mut Diagnostics<ParserDiagnostic>,
+    db: &dyn DefsGroup,
+    module_id: ModuleId,
+    name: SmolStr,
+) -> Option<ModuleItemId> {
+    let module_items = db.module_items(module_id).unwrap(diagnostics)?;
+    Some(*module_items.items.get(&name)?)
 }
