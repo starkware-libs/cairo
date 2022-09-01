@@ -9,6 +9,7 @@ defs = { path = "../defs" }
 diagnostics = { path = "../diagnostics" }
 diagnostics_proc_macros = { path = "../diagnostics_proc_macros" }
 filesystem = { path = "../filesystem" }
+itertools = "0.10.3"
 parser = { path = "../parser" }
 salsa = "0.16.1"
 smol_str = "0.1.23"
