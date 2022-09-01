@@ -10,16 +10,17 @@ use parser::db::ParserGroup;
 use parser::parser::ParserDiagnostic;
 use syntax::node::ast;
 
+use crate::corelib::unit_ty;
 use crate::ids::{
     ConcreteFunctionId, ConcreteFunctionLongId, ExprId, StatementId, TypeId, TypeLongId,
 };
-use crate::{corelib, semantic, ConcreteType, GenericType};
+use crate::{corelib, semantic, ConcreteType, GenericFunctionId, GenericType};
 
 // Salsa database interface.
 #[salsa::query_group(SemanticDatabase)]
 pub trait SemanticGroup: DefsGroup + AsDefsGroup + ParserGroup {
     #[salsa::interned]
-    fn intern_function_instance(&self, id: ConcreteFunctionLongId) -> ConcreteFunctionId;
+    fn intern_concrete_function(&self, id: ConcreteFunctionLongId) -> ConcreteFunctionId;
     #[salsa::interned]
     fn intern_type(&self, id: TypeLongId) -> TypeId;
     #[salsa::interned]
@@ -33,9 +34,9 @@ pub trait SemanticGroup: DefsGroup + AsDefsGroup + ParserGroup {
     fn statement_semantic(&self, item: StatementId) -> semantic::Statement;
 
     /// Gets the semantic signature of a function from the given function_id.
-    fn free_function_signature_semantic(
+    fn generic_function_signature_semantic(
         &self,
-        function_id: FreeFunctionId,
+        function_id: GenericFunctionId,
     ) -> WithDiagnostics<Option<semantic::Signature>, ParserDiagnostic>;
     /// Gets the semantic function from the given function_id.
     fn free_function_semantic(
@@ -56,16 +57,21 @@ fn struct_semantic(_db: &dyn SemanticGroup, _struct_id: StructId) -> semantic::S
     todo!()
 }
 
+/// Computes the semantic model of the signature of a GenericFunction (e.g. Free / Extern).
 #[with_diagnostics]
-fn free_function_signature_semantic(
+fn generic_function_signature_semantic(
     diagnostics: &mut Diagnostics<ParserDiagnostic>,
     db: &dyn SemanticGroup,
-    function_id: FreeFunctionId,
+    function_id: GenericFunctionId,
 ) -> Option<semantic::Signature> {
-    let function = lookup_ast_free_function(db, function_id).unwrap(diagnostics)?;
+    let free_function_id = match function_id {
+        GenericFunctionId::Free(free_function_id) => free_function_id,
+        GenericFunctionId::Extern(_) => todo!("Unsupported"),
+    };
+    let function = lookup_ast_free_function(db, free_function_id).unwrap(diagnostics)?;
     Some(function_signature_from_ast_function(
         db,
-        ParamContainerId::FreeFunction(function_id),
+        ParamContainerId::FreeFunction(free_function_id),
         &function,
     ))
 }
@@ -146,8 +152,7 @@ fn function_signature_from_ast_function(
 fn function_signature_return_type(db: &dyn SemanticGroup, sig: &ast::FunctionSignature) -> TypeId {
     let type_path = match sig.ret_ty(db.as_syntax_group()) {
         ast::OptionReturnTypeClause::Empty(_) => {
-            // TODO(yuval): return unit type when tuple types are supported.
-            todo!()
+            return unit_ty(db);
         }
         ast::OptionReturnTypeClause::ReturnTypeClause(ret_type_clause) => {
             ret_type_clause.ty(db.as_syntax_group())

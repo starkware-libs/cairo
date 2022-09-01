@@ -2,17 +2,17 @@ use std::sync::Arc;
 
 use assert_matches::assert_matches;
 use defs::db::{AsDefsGroup, DefsDatabase, DefsGroup};
-use filesystem::db::{FilesDatabase, FilesGroup};
-use filesystem::ids::{FileLongId, VirtualFile};
+use filesystem::db::{FilesDatabase, FilesGroup, ProjectConfig};
+use filesystem::ids::{CrateLongId, FileLongId, ModuleId, VirtualFile};
 use indoc::indoc;
-use parser::db::ParserDatabase;
-use parser::parser::Parser;
+use parser::db::{ParserDatabase, ParserGroup};
+use syntax::node::ast;
 use syntax::node::db::{AsSyntaxGroup, SyntaxDatabase, SyntaxGroup};
-use syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
 
 use super::compute_expr_semantic;
 use crate::corelib::unit_ty;
 use crate::db::{SemanticDatabase, SemanticGroup};
+use crate::expr::ComputationContext;
 use crate::semantic;
 
 #[salsa::database(SemanticDatabase, DefsDatabase, ParserDatabase, SyntaxDatabase, FilesDatabase)]
@@ -32,29 +32,22 @@ impl AsSyntaxGroup for DatabaseImpl {
     }
 }
 
-fn setup(content: &str) -> (DatabaseImpl, SyntaxNode) {
-    let db_val = DatabaseImpl::default();
-    let db = &db_val;
-    let content = Arc::new(content.to_string());
-    let file = db.intern_file(FileLongId::Virtual(VirtualFile {
-        parent: None,
-        name: "test.cairo".into(),
-        content: content.clone(),
-    }));
-    let mut parser = Parser::from_text(db, file, &content);
-    let green = parser.parse_expr();
-    let syntax_node = SyntaxNode::new_root(db, green);
-    (db_val, syntax_node)
-}
-
 #[test]
 fn test_expr_literal() {
-    let (db_val, syntax_node) = setup("7");
+    let mut db_val = DatabaseImpl::default();
+    let module_id = setup_test_module(&mut db_val, "func foo() { 7 }");
     let db = &db_val;
+    let module_syntax = db.file_syntax(db.module_file(module_id).unwrap()).expect("").unwrap();
+    // TODO(spapini): When a tail expression is supported, take the syntax from the tail instead
+    // of the statements.
+    let syntax = match &extract_function_body(db, module_syntax, 0).statements(db).elements(db)[0] {
+        ast::Statement::Expr(syntax) => syntax.expr(db),
+        _ => panic!("Expected an expression statemnet"),
+    };
 
     // Compute semantics of expr.
-    let syntax = ast::Expr::from_syntax_node(db, syntax_node);
-    let expr_id = compute_expr_semantic(db, syntax);
+    let mut ctx = ComputationContext { db, module_id };
+    let expr_id = compute_expr_semantic(&mut ctx, syntax);
     let expr = db.lookup_intern_expr(expr_id);
 
     // Check expr.
@@ -68,17 +61,23 @@ fn test_expr_literal() {
 
 #[test]
 fn test_expr_block() {
-    let (db_val, syntax_node) = setup(indoc! {"
-        {
-            6;
-            8;
-        }
-    "});
+    let mut db_val = DatabaseImpl::default();
+    let module_id = setup_test_module(
+        &mut db_val,
+        indoc! {"
+            func foo() {
+                6;
+                8;
+            }
+        "},
+    );
     let db = &db_val;
+    let module_syntax = db.file_syntax(db.module_file(module_id).unwrap()).expect("").unwrap();
+    let syntax = ast::Expr::Block(extract_function_body(db, module_syntax, 0));
 
     // Compute semantics of expr.
-    let syntax = ast::Expr::from_syntax_node(db, syntax_node);
-    let expr_id = compute_expr_semantic(db, syntax);
+    let mut ctx = ComputationContext { db, module_id };
+    let expr_id = compute_expr_semantic(&mut ctx, syntax);
     let expr = db.lookup_intern_expr(expr_id);
 
     // Check expr.
@@ -98,4 +97,69 @@ fn test_expr_block() {
         }
         _ => panic!("Expected two statements."),
     }
+}
+
+#[test]
+fn test_expr_call() {
+    let mut db_val = DatabaseImpl::default();
+    // TODO(spapini): Add types.
+    let module_id = setup_test_module(
+        &mut db_val,
+        indoc! {"
+            func foo() {
+                bar();
+            }
+            func bar() {
+                6;
+            }
+        "},
+    );
+    let db = &db_val;
+    let module_syntax = db.file_syntax(db.module_file(module_id).unwrap()).expect("").unwrap();
+    // TODO(spapini): When a tail expression in a block is supported, take the syntax from the tail
+    // instead of from the statments.
+    let syntax = match &extract_function_body(db, module_syntax, 0).statements(db).elements(db)[0] {
+        ast::Statement::Expr(syntax) => syntax.expr(db),
+        _ => panic!("Expected an expression statement"),
+    };
+
+    // Compute semantics of expr.
+    let mut ctx = ComputationContext { db, module_id };
+    let expr_id = compute_expr_semantic(&mut ctx, syntax);
+    let expr = db.lookup_intern_expr(expr_id);
+
+    // Check expr.
+    match expr {
+        semantic::Expr::ExprFunctionCall(semantic::ExprFunctionCall { function: _, args, ty }) => {
+            assert!(args.is_empty());
+            assert_eq!(ty, unit_ty(db));
+        }
+        _ => panic!("Unexpected expr"),
+    }
+}
+
+fn setup_test_module(db: &mut DatabaseImpl, content: &str) -> ModuleId {
+    let crate_id = db.intern_crate(CrateLongId("test_crate".into()));
+    let file_id = db.intern_file(FileLongId::Virtual(VirtualFile {
+        parent: None,
+        name: "test.cairo".into(),
+        content: Arc::new(content.to_string()),
+    }));
+    db.set_project_config(ProjectConfig {
+        crate_roots: [(crate_id, file_id)].into_iter().collect(),
+    });
+    ModuleId::CrateRoot(crate_id)
+}
+
+fn extract_function_body(
+    db: &dyn SyntaxGroup,
+    module_syntax: Arc<ast::SyntaxFile>,
+    index: usize,
+) -> ast::ExprBlock {
+    let syntax = &module_syntax.items(db).elements(db)[index];
+    let function_syntax = match syntax {
+        ast::Item::Function(function_syntax) => function_syntax,
+        _ => panic!("Not a free function."),
+    };
+    function_syntax.body(db)
 }
