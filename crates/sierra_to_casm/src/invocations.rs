@@ -303,7 +303,8 @@ pub fn compile_invocation(
         CoreConcreteLibFunc::Mem(MemConcreteLibFunc::StoreTemp(store_temp)) => {
             handle_store_temp(store_temp, refs)
         }
-        CoreConcreteLibFunc::Mem(MemConcreteLibFunc::Rename(libfunc)) => {
+        CoreConcreteLibFunc::Mem(MemConcreteLibFunc::Rename(libfunc))
+        | CoreConcreteLibFunc::UnwrapNonZero(libfunc) => {
             Ok(CompiledInvocation::only_reference_changes(
                 refs.iter().map(|r| r.expression.clone()),
                 libfunc.output_types(),
