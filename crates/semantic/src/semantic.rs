@@ -1,4 +1,5 @@
-use defs::ids::{LocalVarId, MemberId, ParamId, VarId};
+use defs::ids::{LocalVarId, MemberId, VarId};
+use smol_str::SmolStr;
 
 use crate::ids::{ConcreteFunctionId, ExprId, TypeId};
 use crate::StatementId;
@@ -96,9 +97,16 @@ pub struct FreeFunction {
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Signature {
     // TODO(spapini): Generics parameters.
-    pub params: Vec<ParamId>,
+    pub params: Vec<Parameter>,
     pub return_type: TypeId,
 }
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct Parameter {
+    pub name: SmolStr,
+    pub ty: TypeId,
+}
+
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Struct {
     pub members: Vec<MemberId>,

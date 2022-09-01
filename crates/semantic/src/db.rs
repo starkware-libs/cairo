@@ -1,7 +1,6 @@
 use defs::db::{AsDefsGroup, DefsGroup};
 use defs::ids::{
-    ExternFunctionLongId, FreeFunctionId, FreeFunctionLongId, ModuleItemId, ParamContainerId,
-    ParamId, ParamLongId, StructId, StructLongId,
+    ExternFunctionLongId, FreeFunctionId, FreeFunctionLongId, ModuleItemId, StructId, StructLongId,
 };
 use diagnostics::{Diagnostics, WithDiagnostics};
 use diagnostics_proc_macros::with_diagnostics;
@@ -13,7 +12,7 @@ use syntax::node::ast;
 use crate::ids::{
     ConcreteFunctionId, ConcreteFunctionLongId, ExprId, StatementId, TypeId, TypeLongId,
 };
-use crate::{corelib, semantic, ConcreteType, GenericType};
+use crate::{corelib, semantic, ConcreteType};
 
 // Salsa database interface.
 #[salsa::query_group(SemanticDatabase)]
@@ -63,11 +62,7 @@ fn free_function_signature_semantic(
     function_id: FreeFunctionId,
 ) -> Option<semantic::Signature> {
     let function = lookup_ast_free_function(db, function_id).unwrap(diagnostics)?;
-    Some(function_signature_from_ast_function(
-        db,
-        ParamContainerId::FreeFunction(function_id),
-        &function,
-    ))
+    Some(function_signature_from_ast_function(db, &function))
 }
 
 #[with_diagnostics]
@@ -78,11 +73,7 @@ fn free_function_semantic(
 ) -> Option<semantic::FreeFunction> {
     let function = lookup_ast_free_function(db, function_id).unwrap(diagnostics)?;
     Some(semantic::FreeFunction {
-        signature: function_signature_from_ast_function(
-            db,
-            ParamContainerId::FreeFunction(function_id),
-            &function,
-        ),
+        signature: function_signature_from_ast_function(db, &function),
         body: free_function_body(db, &function),
     })
 }
@@ -133,11 +124,10 @@ fn lookup_ast_free_function(
 /// Gets the semantic signature of the given function's AST.
 fn function_signature_from_ast_function(
     db: &dyn SemanticGroup,
-    sig_id: ParamContainerId,
     function: &ast::ItemFunction,
 ) -> semantic::Signature {
     semantic::Signature {
-        params: function_signature_params(db, sig_id, &function.signature(db.as_syntax_group())),
+        params: function_signature_params(db, &function.signature(db.as_syntax_group())),
         return_type: function_signature_return_type(db, &function.signature(db.as_syntax_group())),
     }
 }
@@ -153,34 +143,35 @@ fn function_signature_return_type(db: &dyn SemanticGroup, sig: &ast::FunctionSig
             ret_type_clause.ty(db.as_syntax_group())
         }
     };
-    db.intern_type(TypeLongId::Concrete(ConcreteType {
-        generic_type: resolve_type(type_path),
-        generic_args: vec![], // TODO(yuval): support generics.
-    }))
+    resolve_type(db, type_path)
 }
 
 // TODO(spapini): add a query wrapper.
 /// Helper function to resolve a type from its path.
-fn resolve_type(_type_path: ast::ExprPath) -> GenericType {
+#[allow(unreachable_code)]
+fn resolve_type(db: &dyn SemanticGroup, _type_path: ast::ExprPath) -> TypeId {
     // TODO(yuval/spapini): implement.
-    todo!()
+    db.intern_type(TypeLongId::Concrete(ConcreteType {
+        generic_type: todo!(),
+        generic_args: Vec::new(), // TODO(yuval): support generics.
+    }))
 }
 
 /// Gets the parameters of the given function signature's AST.
 fn function_signature_params(
     db: &dyn SemanticGroup,
-    sig_id: ParamContainerId,
     sig: &ast::FunctionSignature,
-) -> Vec<ParamId> {
+) -> Vec<semantic::Parameter> {
     let syntax_db = db.as_syntax_group();
     sig.parameters(syntax_db)
         .elements(syntax_db)
         .iter()
         .map(|param| {
-            db.intern_param(ParamLongId {
-                parent: sig_id,
-                name: param.identifier(syntax_db).text(syntax_db),
-            })
+            let name = param.identifier(syntax_db).text(syntax_db);
+            semantic::Parameter {
+                name,
+                ty: resolve_type(db, param.type_clause(syntax_db).ty(syntax_db)),
+            }
         })
         .collect()
 }
