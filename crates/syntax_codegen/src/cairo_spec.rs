@@ -136,6 +136,11 @@ pub fn get_spec() -> Vec<Node> {
             .node("Empty")
             .node_with_explicit_kind("TypeClause", "TypeClause")
             .build(),
+        EnumBuilder::new("NonOptionTypeClause")
+            .missing("Missing")
+            .node_with_explicit_kind("TypeClause", "TypeClause")
+            .build(),
+        StructBuilder::new("NonOptionTypeClauseMissing").build(),
         StructBuilder::new("OptionTypeClauseEmpty").build(),
         StructBuilder::new("ReturnTypeClause")
             .node("arrow", "Terminal")
@@ -180,7 +185,7 @@ pub fn get_spec() -> Vec<Node> {
         // --- Parameters and Functions ---
         StructBuilder::new("Param")
             .node("identifier", "Terminal")
-            .node("type_clause", "TypeClause")
+            .node("type_clause", "NonOptionTypeClause")
             .build(),
         separated_list_node("ParamList", "Param"),
         StructBuilder::new("ParamListParenthesized")

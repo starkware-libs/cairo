@@ -543,15 +543,28 @@ impl<'a> Parser<'a> {
     /// Returns a GreenId of a node with kind TypeClause or OptionTypeClauseEmpty if a type clause
     /// can't be parsed.
     fn parse_option_type_clause(&mut self) -> GreenId {
+        match self.try_parse_type_clause() {
+            Some(green) => green,
+            None => OptionTypeClauseEmpty::new_green(self.db),
+        }
+    }
+
+    fn parse_type_clause(&mut self) -> GreenId {
+        match self.try_parse_type_clause() {
+            Some(green) => green,
+            None => NonOptionTypeClauseMissing::new_green(self.db),
+        }
+    }
+    fn try_parse_type_clause(&mut self) -> Option<GreenId> {
         if self.peek().kind == TokenKind::Colon {
-            TypeClause::new_green(
+            Some(TypeClause::new_green(
                 self.db,
                 self.take(), // ':'
                 // TODO(yuval): support reacher types.
                 self.parse_path(), // type
-            )
+            ))
         } else {
-            OptionTypeClauseEmpty::new_green(self.db)
+            None
         }
     }
 
@@ -585,7 +598,7 @@ impl<'a> Parser<'a> {
         Some(Param::new_green(
             self.db,
             self.try_parse_token(TokenKind::Identifier)?, // identifier
-            self.parse_option_type_clause(),              // type_clause
+            self.parse_type_clause(),                     // type_clause
         ))
     }
 
