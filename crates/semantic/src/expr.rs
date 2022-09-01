@@ -2,7 +2,11 @@
 #[path = "expr_test.rs"]
 mod test;
 
+use std::collections::HashMap;
+
+use defs::ids::VarId;
 use filesystem::ids::ModuleId;
+use smol_str::SmolStr;
 use syntax::node::ast;
 
 use crate::corelib::unit_ty;
@@ -12,6 +16,13 @@ use crate::{semantic, ConcreteFunctionLongId, ExprId, GenericFunctionId, Stateme
 pub struct ComputationContext<'db> {
     db: &'db dyn SemanticGroup,
     module_id: ModuleId,
+    environment: Box<Environment>,
+}
+
+// TODO(spapini): consider using identifiers instead of SmolStr everywhere in the code.
+pub struct Environment {
+    parent: Option<Box<Environment>>,
+    variables: HashMap<SmolStr, VarId>,
 }
 
 pub fn compute_expr_semantic(ctx: &mut ComputationContext<'_>, syntax: ast::Expr) -> ExprId {
@@ -19,7 +30,11 @@ pub fn compute_expr_semantic(ctx: &mut ComputationContext<'_>, syntax: ast::Expr
     let syntax_db = db.as_syntax_group();
     // TODO: When semantic::Expr holds the syntax pointer, add it here as well.
     let expr = match syntax {
-        ast::Expr::Path(_) => todo!(),
+        ast::Expr::Path(path) => {
+            let var = resolve_variable(ctx, path);
+            // TODO(spapini): fix type.
+            semantic::Expr::ExprVar(semantic::ExprVar { var, ty: unit_ty(db) })
+        }
         ast::Expr::Literal(literal_syntax) => {
             // TODO(spapini): Use TerminalEx.
             let text = literal_syntax.terminal(syntax_db).token(syntax_db).text(syntax_db);
@@ -34,7 +49,7 @@ pub fn compute_expr_semantic(ctx: &mut ComputationContext<'_>, syntax: ast::Expr
         ast::Expr::Tuple(_) => todo!(),
         ast::Expr::FunctionCall(call_syntax) => {
             let path = call_syntax.path(syntax_db);
-            let (generic_function, concrete_function) = resolve_concrete_function(db, ctx, path);
+            let (generic_function, concrete_function) = resolve_concrete_function(ctx, path);
             let signature = db
                 .generic_function_signature_semantic(generic_function)
                 .expect("Diagnostics not supported yet")
@@ -74,11 +89,34 @@ pub fn compute_expr_semantic(ctx: &mut ComputationContext<'_>, syntax: ast::Expr
     db.intern_expr(expr)
 }
 
+fn resolve_variable(ctx: &mut ComputationContext<'_>, path: ast::ExprPath) -> VarId {
+    let db = ctx.db;
+    let syntax_db = db.as_syntax_group();
+    let elements = path.elements(syntax_db);
+    if elements.len() != 1 {
+        panic!("Expected a single identifier");
+    }
+    let last_element = &elements[0];
+    match last_element.generic_args(syntax_db) {
+        ast::OptionGenericArgs::Empty(_) => {}
+        ast::OptionGenericArgs::Some(_) => todo!("Generics are not supported yet"),
+    };
+    let variable_name = last_element.ident(syntax_db).text(syntax_db);
+    let mut maybe_env = Some(&*ctx.environment);
+    while let Some(env) = maybe_env {
+        if let Some(var) = env.variables.get(&variable_name) {
+            return *var;
+        }
+        maybe_env = env.parent.as_deref();
+    }
+    panic!("Not found");
+}
+
 fn resolve_concrete_function(
-    db: &dyn SemanticGroup,
     ctx: &mut ComputationContext<'_>,
     path: ast::ExprPath,
 ) -> (GenericFunctionId, crate::ConcreteFunctionId) {
+    let db = ctx.db;
     let syntax_db = db.as_syntax_group();
     let elements = path.elements(syntax_db);
     if elements.len() != 1 {
