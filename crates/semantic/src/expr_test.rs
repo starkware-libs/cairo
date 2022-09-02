@@ -5,17 +5,17 @@ use std::sync::Arc;
 use assert_matches::assert_matches;
 use defs::db::{AsDefsGroup, DefsDatabase, DefsGroup};
 use defs::ids::{FreeFunctionLongId, VarId};
-use filesystem::db::{FilesDatabase, FilesGroup, ProjectConfig};
-use filesystem::ids::{CrateLongId, FileLongId, ModuleId, VirtualFile};
+use filesystem::db::FilesDatabase;
 use indoc::indoc;
-use parser::db::{ParserDatabase, ParserGroup};
-use syntax::node::ast::{self, SyntaxFile};
+use parser::db::ParserDatabase;
+use syntax::node::ast;
 use syntax::node::db::{AsSyntaxGroup, SyntaxDatabase, SyntaxGroup};
 
 use super::compute_expr_semantic;
 use crate::corelib::unit_ty;
 use crate::db::{SemanticDatabase, SemanticGroup};
 use crate::expr::{ComputationContext, Environment};
+use crate::test_utils::setup_test_module;
 use crate::{semantic, GenericFunctionId};
 
 #[salsa::database(SemanticDatabase, DefsDatabase, ParserDatabase, SyntaxDatabase, FilesDatabase)]
@@ -223,21 +223,6 @@ fn test_function_body() {
         _ => panic!(),
     });
     assert_eq!(param.name, "a");
-}
-
-fn setup_test_module(db: &mut DatabaseImpl, content: &str) -> (ModuleId, Arc<SyntaxFile>) {
-    let crate_id = db.intern_crate(CrateLongId("test_crate".into()));
-    let file_id = db.intern_file(FileLongId::Virtual(VirtualFile {
-        parent: None,
-        name: "test.cairo".into(),
-        content: Arc::new(content.to_string()),
-    }));
-    db.set_project_config(ProjectConfig {
-        crate_roots: [(crate_id, file_id)].into_iter().collect(),
-    });
-    let module_id = ModuleId::CrateRoot(crate_id);
-    let module_syntax = db.file_syntax(db.module_file(module_id).unwrap()).expect("").unwrap();
-    (module_id, module_syntax)
 }
 
 fn extract_function_body(

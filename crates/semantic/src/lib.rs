@@ -7,3 +7,6 @@ mod semantic;
 pub use ids::*;
 
 pub use self::semantic::*;
+
+#[cfg(any(feature = "testing", test))]
+pub mod test_utils;
