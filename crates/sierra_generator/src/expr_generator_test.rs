@@ -38,6 +38,16 @@ impl AsDefsGroup for DatabaseImpl {
     }
 }
 
+fn generate_expr_code_for_test(
+    db: &DatabaseImpl,
+    block: semantic::ExprId,
+) -> (Vec<pre_sierra::Statement>, sierra::ids::VarId) {
+    let dummy_function_id = FreeFunctionId::from_intern_id(InternId::from(0u32));
+    let mut expr_generator_context = ExprGeneratorContext::new(db, dummy_function_id);
+    let (statements, res) = generate_expression_code(&mut expr_generator_context, block);
+    (statements, res)
+}
+
 /// Replaces `ConcreteLibFuncId` with a dummy `ConcreteLibFuncId` whose debug string is the string
 /// representing the original `ConcreteLibFuncLongId`.
 /// For example, while the original debug string may be `[6]`, the resulting debug string may be
@@ -113,8 +123,7 @@ fn test_expr_generator() {
         ty,
     }));
 
-    let mut expr_generator_context = ExprGeneratorContext::new(&db);
-    let (statements, res) = generate_expression_code(&mut expr_generator_context, block);
+    let (statements, res) = generate_expr_code_for_test(&db, block);
     assert_eq!(
         statements.iter().map(|x| replace_libfunc_ids(&db, x).to_string()).collect::<Vec<String>>(),
         vec![
@@ -174,8 +183,7 @@ fn test_match() {
         ty,
     }));
 
-    let mut expr_generator_context = ExprGeneratorContext::new(&db);
-    let (statements, res) = generate_expression_code(&mut expr_generator_context, block);
+    let (statements, res) = generate_expr_code_for_test(&db, block);
     assert_eq!(
         statements.iter().map(|x| replace_libfunc_ids(&db, x).to_string()).collect::<Vec<String>>(),
         vec![
@@ -222,8 +230,7 @@ fn test_call_libfunc() {
         ty,
     }));
 
-    let mut expr_generator_context = ExprGeneratorContext::new(&db);
-    let (statements, res) = generate_expression_code(&mut expr_generator_context, expr);
+    let (statements, res) = generate_expr_code_for_test(&db, expr);
     assert_eq!(
         statements.iter().map(|x| replace_libfunc_ids(&db, x).to_string()).collect::<Vec<String>>(),
         vec![
