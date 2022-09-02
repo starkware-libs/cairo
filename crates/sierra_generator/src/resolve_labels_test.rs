@@ -1,4 +1,5 @@
 use pretty_assertions::assert_eq;
+use salsa::{InternId, InternKey};
 use sierra::ids::ConcreteLibFuncId;
 
 use super::resolve_labels;
@@ -6,11 +7,16 @@ use crate::pre_sierra;
 use crate::utils::{jump_statement, simple_statement};
 
 fn label(id: usize) -> pre_sierra::Statement {
-    pre_sierra::Statement::Label(pre_sierra::Label { id: pre_sierra::LabelId::new(id) })
+    pre_sierra::Statement::Label(pre_sierra::Label {
+        id: pre_sierra::LabelId::from_intern_id(InternId::from(id)),
+    })
 }
 
 fn jump(id: usize) -> pre_sierra::Statement {
-    jump_statement(ConcreteLibFuncId::from_string("jump"), pre_sierra::LabelId::new(id))
+    jump_statement(
+        ConcreteLibFuncId::from_string("jump"),
+        pre_sierra::LabelId::from_intern_id(InternId::from(id)),
+    )
 }
 
 #[test]
