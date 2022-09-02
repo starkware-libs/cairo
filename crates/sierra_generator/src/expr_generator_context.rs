@@ -1,6 +1,6 @@
 use std::collections::{hash_map, HashMap};
 
-use defs::ids::LocalVarId;
+use defs::ids::{FreeFunctionId, LocalVarId};
 use smol_str::SmolStr;
 
 use crate::db::SierraGenGroup;
@@ -10,17 +10,19 @@ use crate::pre_sierra;
 /// Context for the methods that generate Sierra instructions for an expression.
 pub struct ExprGeneratorContext<'a> {
     db: &'a dyn SierraGenGroup,
+    function_id: FreeFunctionId,
     var_id_allocator: IdAllocator,
-    statement_id_allocator: IdAllocator,
+    label_id_allocator: IdAllocator,
     variables: HashMap<LocalVarId, sierra::ids::VarId>,
 }
 impl<'a> ExprGeneratorContext<'a> {
     /// Constructs an empty [ExprGeneratorContext].
-    pub fn new(db: &'a dyn SierraGenGroup) -> Self {
+    pub fn new(db: &'a dyn SierraGenGroup, function_id: FreeFunctionId) -> Self {
         ExprGeneratorContext {
             db,
+            function_id,
             var_id_allocator: IdAllocator::default(),
-            statement_id_allocator: IdAllocator::default(),
+            label_id_allocator: IdAllocator::default(),
             variables: HashMap::new(),
         }
     }
@@ -56,9 +58,12 @@ impl<'a> ExprGeneratorContext<'a> {
     }
 
     /// Generates a label id and a label statement.
-    // TODO(lior): Consider using stabe ids, instead of allocating sequential ids.
+    // TODO(lior): Consider using stable ids, instead of allocating sequential ids.
     pub fn new_label(&mut self) -> (pre_sierra::Statement, pre_sierra::LabelId) {
-        let id = pre_sierra::LabelId::new(self.statement_id_allocator.allocate());
+        let id = self.get_db().intern_label_id(pre_sierra::LabelLongId {
+            parent: self.function_id,
+            id: self.label_id_allocator.allocate(),
+        });
         (pre_sierra::Statement::Label(pre_sierra::Label { id }), id)
     }
 
