@@ -31,12 +31,13 @@ pub trait SemanticGroup: DefsGroup + AsDefsGroup + ParserGroup {
     fn expr_semantic(&self, item: ExprId) -> semantic::Expr;
     fn statement_semantic(&self, item: StatementId) -> semantic::Statement;
 
-    /// Gets the semantic signature of a function from the given function_id.
+    /// Returns the semantic signature of a function given the function_id.
     fn generic_function_signature_semantic(
         &self,
         function_id: GenericFunctionId,
     ) -> WithDiagnostics<Option<semantic::Signature>, ParserDiagnostic>;
-    /// Gets the semantic function from the given function_id.
+
+    /// Returns the semantic function given the function_id.
     fn free_function_semantic(
         &self,
         function_id: FreeFunctionId,
