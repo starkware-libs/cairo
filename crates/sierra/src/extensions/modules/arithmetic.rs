@@ -68,7 +68,7 @@ impl<TArithmeticTraits: ArithmeticTraits> GenericLibFunc for OperationLibFunc<TA
         match args {
             [] => Ok(OperationConcreteLibFunc::Binary(BinaryOperationConcreteLibFunc {
                 operator: self.operator,
-                signature: LibFuncSignature::non_branch(
+                signature: LibFuncSignature::new_non_branch(
                     vec![
                         ty.clone(),
                         if matches!(self.operator, Operator::Div | Operator::Mod) {
@@ -87,7 +87,7 @@ impl<TArithmeticTraits: ArithmeticTraits> GenericLibFunc for OperationLibFunc<TA
                     Ok(OperationConcreteLibFunc::Const(OperationWithConstConcreteLibFunc {
                         operator: self.operator,
                         c: *c,
-                        signature: LibFuncSignature::non_branch(vec![ty.clone()], vec![ty]),
+                        signature: LibFuncSignature::new_non_branch(vec![ty.clone()], vec![ty]),
                     }))
                 }
             }
@@ -141,7 +141,7 @@ impl<TArithmeticTraits: ArithmeticTraits> NamedLibFunc for ConstLibFunc<TArithme
         match args {
             [GenericArg::Value(c)] => Ok(ConstConcreteLibFunc {
                 c: *c,
-                signature: LibFuncSignature::non_branch(
+                signature: LibFuncSignature::new_non_branch(
                     vec![],
                     vec![context.get_concrete_type(TArithmeticTraits::GENERIC_TYPE_ID, &[])?],
                 ),

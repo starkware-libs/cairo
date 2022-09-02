@@ -33,7 +33,7 @@ impl NamedLibFunc for StoreTempLibFunc {
         let ty = as_single_type(args)?;
         Ok(StoreTempConcreteLibFunc {
             ty: ty.clone(),
-            signature: LibFuncSignature::non_branch(vec![ty.clone()], vec![ty]),
+            signature: LibFuncSignature::new_non_branch(vec![ty.clone()], vec![ty]),
         })
     }
 }
@@ -61,7 +61,7 @@ impl NamedLibFunc for AlignTempsLibFunc {
     ) -> Result<Self::Concrete, SpecializationError> {
         Ok(AlignTempsConcreteLibFunc {
             ty: as_single_type(args)?,
-            signature: LibFuncSignature::non_branch(vec![], vec![]),
+            signature: LibFuncSignature::new_non_branch(vec![], vec![]),
         })
     }
 }
@@ -90,7 +90,7 @@ impl NamedLibFunc for StoreLocalLibFunc {
         let ty = as_single_type(args)?;
         Ok(StoreLocalConcreteLibFunc {
             ty: ty.clone(),
-            signature: LibFuncSignature::non_branch(vec![ty.clone()], vec![ty]),
+            signature: LibFuncSignature::new_non_branch(vec![ty.clone()], vec![ty]),
         })
     }
 }
@@ -115,7 +115,9 @@ impl NoGenericArgsGenericLibFunc for AllocLocalsLibFunc {
         &self,
         _context: SpecializationContext<'_>,
     ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(SignatureOnlyConcreteLibFunc { signature: LibFuncSignature::non_branch(vec![], vec![]) })
+        Ok(SignatureOnlyConcreteLibFunc {
+            signature: LibFuncSignature::new_non_branch(vec![], vec![]),
+        })
     }
 }
 
@@ -132,7 +134,7 @@ impl NamedLibFunc for RenameLibFunc {
     ) -> Result<Self::Concrete, SpecializationError> {
         let ty = as_single_type(args)?;
         Ok(SignatureOnlyConcreteLibFunc {
-            signature: LibFuncSignature::non_branch(vec![ty.clone()], vec![ty]),
+            signature: LibFuncSignature::new_non_branch(vec![ty.clone()], vec![ty]),
         })
     }
 }

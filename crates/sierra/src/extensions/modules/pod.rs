@@ -29,7 +29,7 @@ impl<TPodTraits: PodTraits> NoGenericArgsGenericLibFunc for IgnoreLibFunc<TPodTr
         context: SpecializationContext<'_>,
     ) -> Result<Self::Concrete, SpecializationError> {
         Ok(SignatureOnlyConcreteLibFunc {
-            signature: LibFuncSignature::non_branch(
+            signature: LibFuncSignature::new_non_branch(
                 vec![context.get_concrete_type(TPodTraits::GENERIC_TYPE_ID, &[])?],
                 vec![],
             ),
@@ -52,7 +52,7 @@ impl<TPodTraits: PodTraits> NoGenericArgsGenericLibFunc for DuplicateLibFunc<TPo
     ) -> Result<Self::Concrete, SpecializationError> {
         let ty = context.get_concrete_type(TPodTraits::GENERIC_TYPE_ID, &[])?;
         Ok(SignatureOnlyConcreteLibFunc {
-            signature: LibFuncSignature::non_branch(vec![ty.clone()], vec![ty.clone(), ty]),
+            signature: LibFuncSignature::new_non_branch(vec![ty.clone()], vec![ty.clone(), ty]),
         })
     }
 }
