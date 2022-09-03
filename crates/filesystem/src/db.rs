@@ -31,9 +31,15 @@ pub trait FilesGroup {
 }
 
 // Configuration of the project. This is the only input, and it defines everything else.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ProjectConfig {
     pub crate_roots: HashMap<CrateId, FileId>,
+}
+impl ProjectConfig {
+    pub fn with_crate(mut self, crt: CrateId, root: FileId) -> Self {
+        self.crate_roots.insert(crt, root);
+        self
+    }
 }
 
 fn crates(db: &dyn FilesGroup) -> Vec<CrateId> {

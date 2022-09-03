@@ -1,5 +1,8 @@
 use defs::db::{AsDefsGroup, DefsGroup};
-use defs::ids::{FreeFunctionId, ParamContainerId, ParamId, ParamLongId, StructId, VarId};
+use defs::ids::{
+    FreeFunctionId, GenericFunctionId, GenericTypeId, ParamContainerId, ParamId, ParamLongId,
+    StructId, VarId,
+};
 use diagnostics::{Diagnostics, WithDiagnostics};
 use diagnostics_proc_macros::with_diagnostics;
 use filesystem::ids::ModuleId;
@@ -12,7 +15,7 @@ use crate::expr::{compute_expr_semantic, ComputationContext};
 use crate::ids::{
     ConcreteFunctionId, ConcreteFunctionLongId, ExprId, StatementId, TypeId, TypeLongId,
 };
-use crate::{corelib, semantic, ConcreteType, GenericFunctionId, GenericType};
+use crate::{corelib, semantic, ConcreteType};
 
 // Salsa database interface.
 #[salsa::query_group(SemanticDatabase)]
@@ -178,7 +181,7 @@ fn function_signature_return_type(db: &dyn SemanticGroup, sig: &ast::FunctionSig
 
 // TODO(spapini): add a query wrapper.
 /// Helper function to resolve a type from its path.
-fn resolve_type(_type_path: ast::ExprPath) -> GenericType {
+fn resolve_type(_type_path: ast::ExprPath) -> GenericTypeId {
     // TODO(yuval/spapini): implement.
     todo!()
 }
