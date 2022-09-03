@@ -71,7 +71,7 @@ fn set_color(text: SmolStr, kind: TokenKind) -> ColoredString {
         | TokenKind::Colon
         | TokenKind::ColonColon
         | TokenKind::DotDot
-        | TokenKind::Semi
+        | TokenKind::Semicolon
         | TokenKind::Underscore
         | TokenKind::And
         | TokenKind::Not => text.truecolor(255, 180, 255), // Pink

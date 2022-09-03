@@ -10,7 +10,7 @@
     │   │   │   │   │       │   ├── child #1 (kind: Newline).
     │   │   │   │   │       │   ├── child #2 (kind: SingleLineComment): '// Second line'
     │   │   │   │   │       │   └── child #3 (kind: Newline).
-    │   │   │   │   │       ├── token (kind: Semi): ';'
+    │   │   │   │   │       ├── token (kind: Semicolon): ';'
     │   │   │   │   │       └── trailing_trivia (kind: Trivia)
     │   │   │   │   │           └── child #0 (kind: Newline).
     │   │   │   │   ├── token (kind: Function): 'func'
@@ -137,9 +137,9 @@
     │   │       │   │   │               ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │               ├── token (kind: LiteralNumber): '7'
     │   │       │   │   │               └── trailing_trivia (kind: Trivia) []
-    │   │       │   │   └── semi (kind: Terminal)
+    │   │       │   │   └── semicolon (kind: Terminal)
     │   │       │   │       ├── leading_trivia (kind: Trivia) []
-    │   │       │   │       ├── token (kind: Semi): ';'
+    │   │       │   │       ├── token (kind: Semicolon): ';'
     │   │       │   │       └── trailing_trivia (kind: Trivia)
     │   │       │   │           ├── child #0 (kind: Whitespace).
     │   │       │   │           ├── child #1 (kind: SingleLineComment): '// succeeds, ok'
@@ -187,9 +187,9 @@
     │   │       │   │   │                       ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │                       ├── token (kind: LiteralNumber): '8'
     │   │       │   │   │                       └── trailing_trivia (kind: Trivia) []
-    │   │       │   │   └── semi (kind: Terminal)
+    │   │       │   │   └── semicolon (kind: Terminal)
     │   │       │   │       ├── leading_trivia (kind: Trivia) []
-    │   │       │   │       ├── token (kind: Semi): ';'
+    │   │       │   │       ├── token (kind: Semicolon): ';'
     │   │       │   │       └── trailing_trivia (kind: Trivia)
     │   │       │   │           ├── child #0 (kind: Whitespace).
     │   │       │   │           ├── child #1 (kind: SingleLineComment): '// succeeds, ok'
@@ -217,9 +217,9 @@
     │   │       │   │   │       ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │       ├── token (kind: LiteralNumber): '1'
     │   │       │   │   │       └── trailing_trivia (kind: Trivia) []
-    │   │       │   │   └── semi (kind: Terminal)
+    │   │       │   │   └── semicolon (kind: Terminal)
     │   │       │   │       ├── leading_trivia (kind: Trivia) []
-    │   │       │   │       ├── token (kind: Semi): ';'
+    │   │       │   │       ├── token (kind: Semicolon): ';'
     │   │       │   │       └── trailing_trivia (kind: Trivia)
     │   │       │   │           └── child #0 (kind: Newline).
     │   │       │   ├── child #3 (kind: StatementLet)
@@ -286,7 +286,7 @@
     │   │       │   │   │   │   │       │       │       ├── token (kind: LiteralNumber): '1'
     │   │       │   │   │   │   │       │       │       └── trailing_trivia (kind: Trivia)
     │   │       │   │   │   │   │       │       │           └── child #0 (kind: Whitespace).
-    │   │       │   │   │   │   │       │       └── semi (kind: OptionSemicolonEmpty) []
+    │   │       │   │   │   │   │       │       └── semicolon (kind: OptionSemicolonEmpty) []
     │   │       │   │   │   │   │       └── rbrace (kind: Terminal)
     │   │       │   │   │   │   │           ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │   │   │           ├── token (kind: RBrace): '}'
@@ -323,9 +323,9 @@
     │   │       │   │   │       │   └── child #0 (kind: Whitespace).
     │   │       │   │   │       ├── token (kind: RBrace): '}'
     │   │       │   │   │       └── trailing_trivia (kind: Trivia) []
-    │   │       │   │   └── semi (kind: Terminal)
+    │   │       │   │   └── semicolon (kind: Terminal)
     │   │       │   │       ├── leading_trivia (kind: Trivia) []
-    │   │       │   │       ├── token (kind: Semi): ';'
+    │   │       │   │       ├── token (kind: Semicolon): ';'
     │   │       │   │       └── trailing_trivia (kind: Trivia)
     │   │       │   │           └── child #0 (kind: Newline).
     │   │       │   ├── child #4 (kind: StatementLet)
@@ -351,9 +351,9 @@
     │   │       │   │   │       ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │       ├── token (kind: True): 'true'
     │   │       │   │   │       └── trailing_trivia (kind: Trivia) []
-    │   │       │   │   └── semi (kind: Terminal)
+    │   │       │   │   └── semicolon (kind: Terminal)
     │   │       │   │       ├── leading_trivia (kind: Trivia) []
-    │   │       │   │       ├── token (kind: Semi): ';'
+    │   │       │   │       ├── token (kind: Semicolon): ';'
     │   │       │   │       └── trailing_trivia (kind: Trivia)
     │   │       │   │           ├── child #0 (kind: Whitespace).
     │   │       │   │           ├── child #1 (kind: SingleLineComment): '// bla1'
@@ -388,9 +388,9 @@
     │   │       │   │   │           ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │           ├── token (kind: RParen): ')'
     │   │       │   │   │           └── trailing_trivia (kind: Trivia) []
-    │   │       │   │   └── semi (kind: Terminal)
+    │   │       │   │   └── semicolon (kind: Terminal)
     │   │       │   │       ├── leading_trivia (kind: Trivia) []
-    │   │       │   │       ├── token (kind: Semi): ';'
+    │   │       │   │       ├── token (kind: Semicolon): ';'
     │   │       │   │       └── trailing_trivia (kind: Trivia)
     │   │       │   │           └── child #0 (kind: Newline).
     │   │       │   ├── child #6 (kind: StatementExpr)
@@ -421,7 +421,7 @@
     │   │       │   │   │           ├── token (kind: RParen): ')'
     │   │       │   │   │           └── trailing_trivia (kind: Trivia)
     │   │       │   │   │               └── child #0 (kind: Newline).
-    │   │       │   │   └── semi (kind: OptionSemicolonEmpty) []
+    │   │       │   │   └── semicolon (kind: OptionSemicolonEmpty) []
     │   │       │   └── child #7 (kind: StatementReturn)
     │   │       │       ├── returnkw (kind: Terminal)
     │   │       │       │   ├── leading_trivia (kind: Trivia)
@@ -436,9 +436,9 @@
     │   │       │       │       │   ├── token (kind: Identifier): 'x'
     │   │       │       │       │   └── trailing_trivia (kind: Trivia) []
     │   │       │       │       └── generic_args (kind: OptionGenericArgsEmpty) []
-    │   │       │       └── semi (kind: Terminal)
+    │   │       │       └── semicolon (kind: Terminal)
     │   │       │           ├── leading_trivia (kind: Trivia) []
-    │   │       │           ├── token (kind: Semi): ';'
+    │   │       │           ├── token (kind: Semicolon): ';'
     │   │       │           └── trailing_trivia (kind: Trivia)
     │   │       │               └── child #0 (kind: Newline).
     │   │       └── rbrace (kind: Terminal)
@@ -462,9 +462,9 @@
     │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │   │   ├── token (kind: Identifier): 'felt'
     │   │   │   └── trailing_trivia (kind: Trivia) []
-    │   │   └── semi (kind: Terminal)
+    │   │   └── semicolon (kind: Terminal)
     │   │       ├── leading_trivia (kind: Trivia) []
-    │   │       ├── token (kind: Semi): ';'
+    │   │       ├── token (kind: Semicolon): ';'
     │   │       └── trailing_trivia (kind: Trivia)
     │   │           └── child #0 (kind: Newline).
     │   └── child #2 (kind: ItemExternFunction)
@@ -528,9 +528,9 @@
     │       │               │   ├── token (kind: Identifier): 'int'
     │       │               │   └── trailing_trivia (kind: Trivia) []
     │       │               └── generic_args (kind: OptionGenericArgsEmpty) []
-    │       └── semi (kind: Terminal)
+    │       └── semicolon (kind: Terminal)
     │           ├── leading_trivia (kind: Trivia) []
-    │           ├── token (kind: Semi): ';'
+    │           ├── token (kind: Semicolon): ';'
     │           └── trailing_trivia (kind: Trivia)
     │               └── child #0 (kind: Newline).
     └── eof (kind: Terminal)

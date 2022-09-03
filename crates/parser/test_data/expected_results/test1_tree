@@ -45,7 +45,7 @@
     │   │       │   │   │       ├── op (kind: Minus): '-'
     │   │       │   │   │       └── expr (kind: ExprLiteral)
     │   │       │   │   │           └── terminal (kind: LiteralNumber): '7'
-    │   │       │   │   └── semi (kind: Semi): ';'
+    │   │       │   │   └── semicolon (kind: Semicolon): ';'
     │   │       │   ├── child #1 (kind: StatementLet)
     │   │       │   │   ├── letkw (kind: Let): 'let'
     │   │       │   │   ├── lhs (kind: Identifier): 'bla4'
@@ -61,7 +61,7 @@
     │   │       │   │   │               ├── op (kind: Not): '!'
     │   │       │   │   │               └── expr (kind: ExprLiteral)
     │   │       │   │   │                   └── terminal (kind: LiteralNumber): '8'
-    │   │       │   │   └── semi (kind: Semi): ';'
+    │   │       │   │   └── semicolon (kind: Semicolon): ';'
     │   │       │   ├── child #2 (kind: StatementLet)
     │   │       │   │   ├── letkw (kind: Let): 'let'
     │   │       │   │   ├── lhs (kind: Identifier): 'x'
@@ -69,7 +69,7 @@
     │   │       │   │   ├── eq (kind: Eq): '='
     │   │       │   │   ├── rhs (kind: ExprLiteral)
     │   │       │   │   │   └── terminal (kind: LiteralNumber): '1'
-    │   │       │   │   └── semi (kind: Semi): ';'
+    │   │       │   │   └── semicolon (kind: Semicolon): ';'
     │   │       │   ├── child #3 (kind: StatementLet)
     │   │       │   │   ├── letkw (kind: Let): 'let'
     │   │       │   │   ├── lhs (kind: Identifier): 'y'
@@ -92,7 +92,7 @@
     │   │       │   │   │   │   │       │   └── child #0 (kind: StatementExpr)
     │   │       │   │   │   │   │       │       ├── expr (kind: ExprLiteral)
     │   │       │   │   │   │   │       │       │   └── terminal (kind: LiteralNumber): '1'
-    │   │       │   │   │   │   │       │       └── semi (kind: OptionSemicolonEmpty) []
+    │   │       │   │   │   │   │       │       └── semicolon (kind: OptionSemicolonEmpty) []
     │   │       │   │   │   │   │       └── rbrace (kind: RBrace): '}'
     │   │       │   │   │   │   ├── separator #0 (kind: Comma): ','
     │   │       │   │   │   │   ├── item #1 (kind: MatchArm)
@@ -102,7 +102,7 @@
     │   │       │   │   │   │   │       └── terminal (kind: LiteralNumber): '0'
     │   │       │   │   │   │   └── separator #1 (kind: Comma): ','
     │   │       │   │   │   └── rbrace (kind: RBrace): '}'
-    │   │       │   │   └── semi (kind: Semi): ';'
+    │   │       │   │   └── semicolon (kind: Semicolon): ';'
     │   │       │   ├── child #4 (kind: StatementLet)
     │   │       │   │   ├── letkw (kind: Let): 'let'
     │   │       │   │   ├── lhs (kind: Identifier): 'x'
@@ -110,7 +110,7 @@
     │   │       │   │   ├── eq (kind: Eq): '='
     │   │       │   │   ├── rhs (kind: ExprLiteral)
     │   │       │   │   │   └── terminal (kind: True): 'true'
-    │   │       │   │   └── semi (kind: Semi): ';'
+    │   │       │   │   └── semicolon (kind: Semicolon): ';'
     │   │       │   ├── child #5 (kind: StatementExpr)
     │   │       │   │   ├── expr (kind: ExprFunctionCall)
     │   │       │   │   │   ├── path (kind: ExprPath)
@@ -125,7 +125,7 @@
     │   │       │   │   │       │           ├── ident (kind: Identifier): 'x'
     │   │       │   │   │       │           └── generic_args (kind: OptionGenericArgsEmpty) []
     │   │       │   │   │       └── rparen (kind: RParen): ')'
-    │   │       │   │   └── semi (kind: Semi): ';'
+    │   │       │   │   └── semicolon (kind: Semicolon): ';'
     │   │       │   ├── child #6 (kind: StatementExpr)
     │   │       │   │   ├── expr (kind: ExprFunctionCall)
     │   │       │   │   │   ├── path (kind: ExprPath)
@@ -140,20 +140,20 @@
     │   │       │   │   │       │           ├── ident (kind: Identifier): 'x'
     │   │       │   │   │       │           └── generic_args (kind: OptionGenericArgsEmpty) []
     │   │       │   │   │       └── rparen (kind: RParen): ')'
-    │   │       │   │   └── semi (kind: OptionSemicolonEmpty) []
+    │   │       │   │   └── semicolon (kind: OptionSemicolonEmpty) []
     │   │       │   └── child #7 (kind: StatementReturn)
     │   │       │       ├── returnkw (kind: Return): 'return'
     │   │       │       ├── expr (kind: ExprPath)
     │   │       │       │   └── item #0 (kind: PathSegment)
     │   │       │       │       ├── ident (kind: Identifier): 'x'
     │   │       │       │       └── generic_args (kind: OptionGenericArgsEmpty) []
-    │   │       │       └── semi (kind: Semi): ';'
+    │   │       │       └── semicolon (kind: Semicolon): ';'
     │   │       └── rbrace (kind: RBrace): '}'
     │   ├── child #1 (kind: ItemExternType)
     │   │   ├── externkw (kind: Extern): 'extern'
     │   │   ├── typekw (kind: Type): 'type'
     │   │   ├── name (kind: Identifier): 'felt'
-    │   │   └── semi (kind: Semi): ';'
+    │   │   └── semicolon (kind: Semicolon): ';'
     │   └── child #2 (kind: ItemExternFunction)
     │       ├── externkw (kind: Extern): 'extern'
     │       ├── signature (kind: FunctionSignature)
@@ -177,7 +177,7 @@
     │       │           └── item #0 (kind: PathSegment)
     │       │               ├── ident (kind: Identifier): 'int'
     │       │               └── generic_args (kind: OptionGenericArgsEmpty) []
-    │       └── semi (kind: Semi): ';'
+    │       └── semicolon (kind: Semicolon): ';'
     └── eof (kind: EndOfFile).
 --------------------
 Error at test1.cairo from line 1 col 1 until line 4 col 1: Skipped tokens: '// Func foo

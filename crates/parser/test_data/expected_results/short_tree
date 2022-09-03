@@ -30,7 +30,7 @@
     │           │       │   └── item #0 (kind: PathSegment)
     │           │       │       ├── ident (kind: Identifier): 'a'
     │           │       │       └── generic_args (kind: OptionGenericArgsEmpty) []
-    │           │       └── semi (kind: Semi): ';'
+    │           │       └── semicolon (kind: Semicolon): ';'
     │           └── rbrace (kind: RBrace): '}'
     └── eof (kind: EndOfFile).
 --------------------

@@ -46,7 +46,7 @@ fn token_kind_to_text(kind: TokenKind) -> Vec<&'static str> {
         TokenKind::Not => vec!["!"],
         TokenKind::OrOr => vec!["||"],
         TokenKind::Plus => vec!["+"],
-        TokenKind::Semi => vec![";"],
+        TokenKind::Semicolon => vec![";"],
         TokenKind::Underscore => vec!["_"],
         TokenKind::LBrace => vec!["{"],
         TokenKind::RBrace => vec!["}"],
@@ -99,7 +99,7 @@ fn token_kinds() -> Vec<TokenKind> {
         TokenKind::Dot,
         TokenKind::DotDot,
         TokenKind::Eq,
-        TokenKind::Semi,
+        TokenKind::Semicolon,
         TokenKind::Underscore,
         TokenKind::LBrace,
         TokenKind::RBrace,
@@ -375,7 +375,7 @@ fn test_cases() {
             Terminal::new_green(
                 db,
                 Trivia::new_green(db, vec![]),
-                Token::new_green(db, TokenKind::Semi, ";".into()),
+                Token::new_green(db, TokenKind::Semicolon, ";".into()),
                 Trivia::new_green(
                     db,
                     vec![

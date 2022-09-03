@@ -168,7 +168,7 @@ impl<'a> Lexer<'a> {
             match current {
                 '0'..='9' => self.take_token_literal_number(),
                 ',' => self.take_token_of_kind(TokenKind::Comma),
-                ';' => self.take_token_of_kind(TokenKind::Semi),
+                ';' => self.take_token_of_kind(TokenKind::Semicolon),
                 '{' => self.take_token_of_kind(TokenKind::LBrace),
                 '}' => self.take_token_of_kind(TokenKind::RBrace),
                 '[' => self.take_token_of_kind(TokenKind::LBrack),
