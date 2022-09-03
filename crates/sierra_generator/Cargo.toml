@@ -6,13 +6,18 @@ edition = "2021"
 [dependencies]
 db_utils = { path = "../db_utils" }
 defs = {path = "../defs"}
+diagnostics = { path = "../diagnostics" }
+diagnostics_proc_macros = { path = "../diagnostics_proc_macros" }
 salsa = "0.16.1"
 semantic = { path = "../semantic" }
 sierra = { path = "../sierra" }
 smol_str = "0.1.23"
+# TODO(lior): Remove parser once diagnostics are wrapper properly.
+parser = { path = "../parser" }
 
 [dev_dependencies]
 filesystem = { path = "../filesystem" }
-parser = { path = "../parser" }
+indoc = "1.0.7"
 pretty_assertions = "1.2.1"
 syntax = { path = "../syntax" }
+semantic = { path = "../semantic", features = ["testing"] }
