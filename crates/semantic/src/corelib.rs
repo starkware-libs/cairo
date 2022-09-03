@@ -1,8 +1,22 @@
-use defs::ids::ExternTypeLongId;
-use filesystem::ids::{CrateLongId, ModuleId};
+use std::path::PathBuf;
+
+use filesystem::db::ProjectConfig;
+use filesystem::ids::{CrateLongId, FileLongId, ModuleId};
 
 use crate::db::SemanticGroup;
-use crate::{ConcreteType, GenericType, TypeId, TypeLongId};
+use crate::{ConcreteType, TypeId, TypeLongId};
+
+pub fn core_config(db: &dyn SemanticGroup) -> ProjectConfig {
+    let core_crate = db.intern_crate(CrateLongId("core".into()));
+    // TODO(spapini): find the correct path.
+    // This is the directory of Cargo.toml of the syntax_codegen crate.
+    let dir = env!("CARGO_MANIFEST_DIR");
+    // Pop the "/crates/semantic" suffix.
+    let mut path = PathBuf::from(dir).parent().unwrap().parent().unwrap().to_owned();
+    path.push("corelib/mod.cairo");
+    let core_root_file = db.intern_file(FileLongId::OnDisk(path));
+    ProjectConfig::default().with_crate(core_crate, core_root_file)
+}
 
 pub fn core_module(db: &dyn SemanticGroup) -> ModuleId {
     let core_crate = db.intern_crate(CrateLongId("core".into()));
@@ -11,12 +25,12 @@ pub fn core_module(db: &dyn SemanticGroup) -> ModuleId {
 
 pub fn core_felt_ty(db: &dyn SemanticGroup) -> TypeId {
     let core_module = db.core_module();
-    let extern_type_id =
-        db.intern_extern_type(ExternTypeLongId { parent: core_module, name: "felt".into() });
-    db.intern_type(TypeLongId::Concrete(ConcreteType {
-        generic_type: GenericType::External(extern_type_id),
-        generic_args: vec![],
-    }))
+    // This should not fail if the corelib is present.
+    let generic_type = db
+        .module_resolve_generic_type(core_module, "felt".into())
+        .expect("Unexpected diagnostics when looking for corelib.")
+        .unwrap();
+    db.intern_type(TypeLongId::Concrete(ConcreteType { generic_type, generic_args: vec![] }))
 }
 
 pub fn unit_ty(db: &dyn SemanticGroup) -> TypeId {

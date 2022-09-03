@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use assert_matches::assert_matches;
 use defs::db::{AsDefsGroup, DefsDatabase, DefsGroup};
-use defs::ids::{FreeFunctionLongId, VarId};
+use defs::ids::{FreeFunctionLongId, GenericFunctionId, VarId};
 use filesystem::db::FilesDatabase;
 use indoc::indoc;
 use parser::db::ParserDatabase;
@@ -15,8 +15,8 @@ use super::compute_expr_semantic;
 use crate::corelib::unit_ty;
 use crate::db::{SemanticDatabase, SemanticGroup};
 use crate::expr::{ComputationContext, Environment};
+use crate::semantic;
 use crate::test_utils::setup_test_module;
-use crate::{semantic, GenericFunctionId};
 
 #[salsa::database(SemanticDatabase, DefsDatabase, ParserDatabase, SyntaxDatabase, FilesDatabase)]
 #[derive(Default)]
