@@ -18,6 +18,13 @@ impl std::fmt::Display for LabelId {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Function {
+    pub body: Vec<Statement>,
+    pub entry_point: LabelId,
+    pub id: sierra::ids::FunctionId,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Statement {
     SierraStatement(program::GenStatement<LabelId>),
     Label(Label),
