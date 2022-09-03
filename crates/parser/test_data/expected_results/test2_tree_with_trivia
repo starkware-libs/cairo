@@ -1,17 +1,17 @@
 └── root (kind: SyntaxFile)
     ├── items (kind: ItemList)
     │   ├── child #0 (kind: ItemFunction)
+    │   │   ├── funckw (kind: Terminal)
+    │   │   │   ├── leading_trivia (kind: Trivia) []
+    │   │   │   ├── token (kind: Function): 'func'
+    │   │   │   └── trailing_trivia (kind: Trivia)
+    │   │   │       └── child #0 (kind: Whitespace).
+    │   │   ├── name (kind: Terminal)
+    │   │   │   ├── leading_trivia (kind: Trivia) []
+    │   │   │   ├── token (kind: Identifier): 'foo'
+    │   │   │   └── trailing_trivia (kind: Trivia)
+    │   │   │       └── child #0 (kind: Whitespace).
     │   │   ├── signature (kind: FunctionSignature)
-    │   │   │   ├── funckw (kind: Terminal)
-    │   │   │   │   ├── leading_trivia (kind: Trivia) []
-    │   │   │   │   ├── token (kind: Function): 'func'
-    │   │   │   │   └── trailing_trivia (kind: Trivia)
-    │   │   │   │       └── child #0 (kind: Whitespace).
-    │   │   │   ├── name (kind: Terminal)
-    │   │   │   │   ├── leading_trivia (kind: Trivia) []
-    │   │   │   │   ├── token (kind: Identifier): 'foo'
-    │   │   │   │   └── trailing_trivia (kind: Trivia)
-    │   │   │   │       └── child #0 (kind: Whitespace).
     │   │   │   ├── lparen (kind: Terminal)
     │   │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │   │   │   ├── token (kind: LParen): '('
@@ -392,23 +392,23 @@
     │   │   │   └── trailing_trivia (kind: Trivia) []
     │   │   └── semi: Missing
     │   ├── child #2 (kind: ItemFunction)
+    │   │   ├── funckw (kind: Terminal)
+    │   │   │   ├── leading_trivia (kind: Trivia)
+    │   │   │   │   ├── child #0 (kind: TriviumSkippedTerminal)
+    │   │   │   │   │   ├── leading_trivia (kind: Trivia) []
+    │   │   │   │   │   ├── token (kind: LBrace): '{'
+    │   │   │   │   │   └── trailing_trivia (kind: Trivia)
+    │   │   │   │   │       └── child #0 (kind: Newline).
+    │   │   │   │   └── child #1 (kind: Whitespace).
+    │   │   │   ├── token (kind: Function): 'func'
+    │   │   │   └── trailing_trivia (kind: Trivia)
+    │   │   │       └── child #0 (kind: Whitespace).
+    │   │   ├── name (kind: Terminal)
+    │   │   │   ├── leading_trivia (kind: Trivia) []
+    │   │   │   ├── token (kind: Identifier): 'bar'
+    │   │   │   └── trailing_trivia (kind: Trivia)
+    │   │   │       └── child #0 (kind: Whitespace).
     │   │   ├── signature (kind: FunctionSignature)
-    │   │   │   ├── funckw (kind: Terminal)
-    │   │   │   │   ├── leading_trivia (kind: Trivia)
-    │   │   │   │   │   ├── child #0 (kind: TriviumSkippedTerminal)
-    │   │   │   │   │   │   ├── leading_trivia (kind: Trivia) []
-    │   │   │   │   │   │   ├── token (kind: LBrace): '{'
-    │   │   │   │   │   │   └── trailing_trivia (kind: Trivia)
-    │   │   │   │   │   │       └── child #0 (kind: Newline).
-    │   │   │   │   │   └── child #1 (kind: Whitespace).
-    │   │   │   │   ├── token (kind: Function): 'func'
-    │   │   │   │   └── trailing_trivia (kind: Trivia)
-    │   │   │   │       └── child #0 (kind: Whitespace).
-    │   │   │   ├── name (kind: Terminal)
-    │   │   │   │   ├── leading_trivia (kind: Trivia) []
-    │   │   │   │   ├── token (kind: Identifier): 'bar'
-    │   │   │   │   └── trailing_trivia (kind: Trivia)
-    │   │   │   │       └── child #0 (kind: Whitespace).
     │   │   │   ├── lparen (kind: Terminal)
     │   │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │   │   │   ├── token (kind: LParen): '('

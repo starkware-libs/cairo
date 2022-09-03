@@ -67,8 +67,7 @@ fn module_items(
             syntax_file.items(syntax_group).elements(syntax_group).iter().map(|item| match item {
                 ast::Item::Module(_module) => todo!(),
                 ast::Item::Function(function) => {
-                    let name =
-                        function.signature(syntax_group).name(syntax_group).text(syntax_group);
+                    let name = function.name(syntax_group).text(syntax_group);
                     (
                         name.clone(),
                         ModuleItemId::FreeFunction(
@@ -77,10 +76,7 @@ fn module_items(
                     )
                 }
                 ast::Item::ExternFunction(extern_function) => {
-                    let name = extern_function
-                        .signature(syntax_group)
-                        .name(syntax_group)
-                        .text(syntax_group);
+                    let name = extern_function.name(syntax_group).text(syntax_group);
                     (
                         name.clone(),
                         ModuleItemId::ExternFunction(db.intern_extern_function(

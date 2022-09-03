@@ -1,9 +1,9 @@
 └── root (kind: SyntaxFile)
     ├── items (kind: ItemList)
     │   ├── child #0 (kind: ItemFunction)
+    │   │   ├── funckw (kind: Function): 'func'
+    │   │   ├── name (kind: Identifier): 'foo'
     │   │   ├── signature (kind: FunctionSignature)
-    │   │   │   ├── funckw (kind: Function): 'func'
-    │   │   │   ├── name (kind: Identifier): 'foo'
     │   │   │   ├── lparen (kind: LParen): '('
     │   │   │   ├── parameters (kind: ParamList)
     │   │   │   │   ├── item #0 (kind: Param)
@@ -156,9 +156,9 @@
     │   │   └── semi (kind: Semi): ';'
     │   └── child #2 (kind: ItemExternFunction)
     │       ├── externkw (kind: Extern): 'extern'
+    │       ├── funckw (kind: Function): 'func'
+    │       ├── name (kind: Identifier): 'bar'
     │       ├── signature (kind: FunctionSignature)
-    │       │   ├── funckw (kind: Function): 'func'
-    │       │   ├── name (kind: Identifier): 'bar'
     │       │   ├── lparen (kind: LParen): '('
     │       │   ├── parameters (kind: ParamList)
     │       │   │   ├── item #0 (kind: Param)

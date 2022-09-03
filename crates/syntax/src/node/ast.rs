@@ -3105,14 +3105,12 @@ pub struct FunctionSignature {
 impl FunctionSignature {
     pub fn new_green(
         db: &dyn SyntaxGroup,
-        funckw: GreenId,
-        name: GreenId,
         lparen: GreenId,
         parameters: GreenId,
         rparen: GreenId,
         ret_ty: GreenId,
     ) -> GreenId {
-        let children: Vec<GreenId> = vec![funckw, name, lparen, parameters, rparen, ret_ty];
+        let children: Vec<GreenId> = vec![lparen, parameters, rparen, ret_ty];
         let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::FunctionSignature,
@@ -3120,23 +3118,17 @@ impl FunctionSignature {
             width,
         }))
     }
-    pub fn funckw(&self, db: &dyn SyntaxGroup) -> Terminal {
+    pub fn lparen(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn name(&self, db: &dyn SyntaxGroup) -> Terminal {
-        Terminal::from_syntax_node(db, self.children[1].clone())
-    }
-    pub fn lparen(&self, db: &dyn SyntaxGroup) -> Terminal {
-        Terminal::from_syntax_node(db, self.children[2].clone())
-    }
     pub fn parameters(&self, db: &dyn SyntaxGroup) -> ParamList {
-        ParamList::from_syntax_node(db, self.children[3].clone())
+        ParamList::from_syntax_node(db, self.children[1].clone())
     }
     pub fn rparen(&self, db: &dyn SyntaxGroup) -> Terminal {
-        Terminal::from_syntax_node(db, self.children[4].clone())
+        Terminal::from_syntax_node(db, self.children[2].clone())
     }
     pub fn ret_ty(&self, db: &dyn SyntaxGroup) -> OptionReturnTypeClause {
-        OptionReturnTypeClause::from_syntax_node(db, self.children[5].clone())
+        OptionReturnTypeClause::from_syntax_node(db, self.children[3].clone())
     }
 }
 pub struct FunctionSignaturePtr(SyntaxStablePtrId);
@@ -3146,8 +3138,6 @@ impl TypedSyntaxNode for FunctionSignature {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::FunctionSignature,
             children: vec![
-                Terminal::missing(db),
-                Terminal::missing(db),
                 Terminal::missing(db),
                 ParamList::missing(db),
                 Terminal::missing(db),
@@ -3369,8 +3359,14 @@ pub struct ItemFunction {
     children: Vec<SyntaxNode>,
 }
 impl ItemFunction {
-    pub fn new_green(db: &dyn SyntaxGroup, signature: GreenId, body: GreenId) -> GreenId {
-        let children: Vec<GreenId> = vec![signature, body];
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        funckw: GreenId,
+        name: GreenId,
+        signature: GreenId,
+        body: GreenId,
+    ) -> GreenId {
+        let children: Vec<GreenId> = vec![funckw, name, signature, body];
         let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ItemFunction,
@@ -3378,11 +3374,17 @@ impl ItemFunction {
             width,
         }))
     }
+    pub fn funckw(&self, db: &dyn SyntaxGroup) -> Terminal {
+        Terminal::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn name(&self, db: &dyn SyntaxGroup) -> Terminal {
+        Terminal::from_syntax_node(db, self.children[1].clone())
+    }
     pub fn signature(&self, db: &dyn SyntaxGroup) -> FunctionSignature {
-        FunctionSignature::from_syntax_node(db, self.children[0].clone())
+        FunctionSignature::from_syntax_node(db, self.children[2].clone())
     }
     pub fn body(&self, db: &dyn SyntaxGroup) -> ExprBlock {
-        ExprBlock::from_syntax_node(db, self.children[1].clone())
+        ExprBlock::from_syntax_node(db, self.children[3].clone())
     }
 }
 pub struct ItemFunctionPtr(SyntaxStablePtrId);
@@ -3391,7 +3393,12 @@ impl TypedSyntaxNode for ItemFunction {
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ItemFunction,
-            children: vec![FunctionSignature::missing(db), ExprBlock::missing(db)],
+            children: vec![
+                Terminal::missing(db),
+                Terminal::missing(db),
+                FunctionSignature::missing(db),
+                ExprBlock::missing(db),
+            ],
             width: 0,
         }))
     }
@@ -3432,10 +3439,12 @@ impl ItemExternFunction {
     pub fn new_green(
         db: &dyn SyntaxGroup,
         externkw: GreenId,
+        funckw: GreenId,
+        name: GreenId,
         signature: GreenId,
         semi: GreenId,
     ) -> GreenId {
-        let children: Vec<GreenId> = vec![externkw, signature, semi];
+        let children: Vec<GreenId> = vec![externkw, funckw, name, signature, semi];
         let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ItemExternFunction,
@@ -3446,11 +3455,17 @@ impl ItemExternFunction {
     pub fn externkw(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[0].clone())
     }
+    pub fn funckw(&self, db: &dyn SyntaxGroup) -> Terminal {
+        Terminal::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn name(&self, db: &dyn SyntaxGroup) -> Terminal {
+        Terminal::from_syntax_node(db, self.children[2].clone())
+    }
     pub fn signature(&self, db: &dyn SyntaxGroup) -> FunctionSignature {
-        FunctionSignature::from_syntax_node(db, self.children[1].clone())
+        FunctionSignature::from_syntax_node(db, self.children[3].clone())
     }
     pub fn semi(&self, db: &dyn SyntaxGroup) -> Terminal {
-        Terminal::from_syntax_node(db, self.children[2].clone())
+        Terminal::from_syntax_node(db, self.children[4].clone())
     }
 }
 pub struct ItemExternFunctionPtr(SyntaxStablePtrId);
@@ -3460,6 +3475,8 @@ impl TypedSyntaxNode for ItemExternFunction {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ItemExternFunction,
             children: vec![
+                Terminal::missing(db),
+                Terminal::missing(db),
                 Terminal::missing(db),
                 FunctionSignature::missing(db),
                 Terminal::missing(db),

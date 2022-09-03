@@ -159,13 +159,10 @@ impl<'a> Parser<'a> {
         )
     }
 
-    /// Assumes the current token is Function.
-    /// Expected pattern: fn<Identifier><ParenthesizedParamList><ReturnTypeClause>
+    /// Expected pattern: <ParenthesizedParamList><ReturnTypeClause>
     fn expect_function_signature(&mut self) -> GreenId {
         FunctionSignature::new_green(
             self.db,
-            self.take(),                             // function keyword
-            self.parse_token(TokenKind::Identifier), // name
             // TODO(yuval): support generics
             self.parse_token(TokenKind::LParen),      // (
             self.parse_param_list(TokenKind::RParen), // params
@@ -182,9 +179,11 @@ impl<'a> Parser<'a> {
             TokenKind::Function => {
                 ItemExternFunction::new_green(
                     self.db,
-                    externkw,                          // externkw
-                    self.expect_function_signature(),  // signature
-                    self.parse_token(TokenKind::Semi), // semi
+                    externkw,                                // externkw
+                    self.take(),                             // function keyword
+                    self.parse_token(TokenKind::Identifier), // name
+                    self.expect_function_signature(),        // signature
+                    self.parse_token(TokenKind::Semi),       // semi
                 )
             }
             _ => {
@@ -205,8 +204,10 @@ impl<'a> Parser<'a> {
     fn expect_function(&mut self) -> GreenId {
         ItemFunction::new_green(
             self.db,
-            self.expect_function_signature(), // signature
-            self.parse_block(),               // function body
+            self.take(),                             // function keyword
+            self.parse_token(TokenKind::Identifier), // name
+            self.expect_function_signature(),        // signature
+            self.parse_block(),                      // function body
         )
     }
 

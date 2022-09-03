@@ -200,8 +200,6 @@ pub fn get_spec() -> Vec<Node> {
             .build(),
         // TODO(spapini): Add generic params.
         StructBuilder::new("FunctionSignature")
-            .node("funckw", "Terminal")
-            .node("name", "Terminal")
             .node("lparen", "Terminal")
             .node("parameters", "ParamList")
             .node("rparen", "Terminal")
@@ -226,11 +224,15 @@ pub fn get_spec() -> Vec<Node> {
             .node("semi", "Terminal")
             .build(),
         StructBuilder::new("ItemFunction")
+            .node("funckw", "Terminal")
+            .node("name", "Terminal")
             .node("signature", "FunctionSignature")
             .node("body", "ExprBlock")
             .build(),
         StructBuilder::new("ItemExternFunction")
             .node("externkw", "Terminal")
+            .node("funckw", "Terminal")
+            .node("name", "Terminal")
             .node("signature", "FunctionSignature")
             .node("semi", "Terminal")
             .build(),

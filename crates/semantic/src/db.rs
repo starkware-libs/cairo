@@ -140,7 +140,7 @@ fn lookup_ast_free_function(
     let syntax_file = db.file_syntax(db.module_file(module_id)?).unwrap(diagnostics)?;
     for item in syntax_file.items(syntax_db).elements(syntax_db) {
         if let ast::Item::Function(function) = item {
-            if function.signature(syntax_db).name(syntax_db).text(syntax_db) == func_name {
+            if function.name(syntax_db).text(syntax_db) == func_name {
                 return Some(function);
             }
         }
