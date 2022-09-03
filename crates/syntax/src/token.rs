@@ -54,7 +54,7 @@ pub enum TokenKind {
     Dot,
     DotDot,
     Eq,
-    Semi,
+    Semicolon,
     Underscore,
     LBrace,
     RBrace,

@@ -144,7 +144,7 @@ impl<'a> Parser<'a> {
             self.db,
             self.take(),                             // module keyword
             self.parse_token(TokenKind::Identifier), // name
-            self.parse_token(TokenKind::Semi),       // semicolon
+            self.parse_token(TokenKind::Semicolon),  // semicolon
         )
     }
 
@@ -186,7 +186,7 @@ impl<'a> Parser<'a> {
                     self.take(),                             // function keyword
                     self.parse_token(TokenKind::Identifier), // name
                     self.expect_function_signature(),        // signature
-                    self.parse_token(TokenKind::Semi),       // semi
+                    self.parse_token(TokenKind::Semicolon),  // semicolon
                 )
             }
             _ => {
@@ -196,7 +196,7 @@ impl<'a> Parser<'a> {
                     externkw,                                // externkw
                     self.parse_token(TokenKind::Type),       // typekw
                     self.parse_token(TokenKind::Identifier), // name
-                    self.parse_token(TokenKind::Semi),       // semi
+                    self.parse_token(TokenKind::Semicolon),  // semicolon
                 )
             }
         }
@@ -519,21 +519,21 @@ impl<'a> Parser<'a> {
                     self.parse_option_type_clause(),         // type clause
                     self.parse_token(TokenKind::Eq),         // '='
                     self.parse_expr(),                       // expression
-                    self.parse_token(TokenKind::Semi),       // ';'
+                    self.parse_token(TokenKind::Semicolon),  // ';'
                 ))
             }
             TokenKind::Return => {
                 Some(StatementReturn::new_green(
                     self.db,
-                    self.take(),                       // return keyword
-                    self.parse_expr(),                 // expression
-                    self.parse_token(TokenKind::Semi), // ';'
+                    self.take(),                            // return keyword
+                    self.parse_expr(),                      // expression
+                    self.parse_token(TokenKind::Semicolon), // ';'
                 ))
             }
             _ => match self.try_parse_expr() {
                 None => None,
                 Some(expr) => {
-                    let optional_semi = if self.peek().kind == TokenKind::Semi {
+                    let optional_semi = if self.peek().kind == TokenKind::Semicolon {
                         self.take()
                     } else {
                         OptionSemicolonEmpty::new_green(self.db)

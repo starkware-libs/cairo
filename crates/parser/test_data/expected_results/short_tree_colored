@@ -30,6 +30,6 @@
     │           │       │   └── [36mitem #0[0m (kind: PathSegment)
     │           │       │       ├── [34mident[0m (kind: Identifier): '[1;32ma[0m'
     │           │       │       └── [36mgeneric_args[0m (kind: OptionGenericArgsEmpty)[95m [][0m
-    │           │       └── [34msemi[0m (kind: Semi): '[1;32m;[0m'
+    │           │       └── [34msemicolon[0m (kind: Semicolon): '[1;32m;[0m'
     │           └── [34mrbrace[0m (kind: RBrace): '[1;32m}[0m'
     └── [34meof[0m (kind: EndOfFile).
