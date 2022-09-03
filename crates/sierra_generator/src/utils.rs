@@ -35,3 +35,7 @@ pub fn jump_statement(
         },
     ))
 }
+
+pub fn return_statement(res: Vec<sierra::ids::VarId>) -> pre_sierra::Statement {
+    pre_sierra::Statement::SierraStatement(program::GenStatement::Return(res))
+}
