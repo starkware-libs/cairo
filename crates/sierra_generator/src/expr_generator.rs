@@ -2,6 +2,7 @@
 #[path = "expr_generator_test.rs"]
 mod test;
 
+use defs::ids::GenericFunctionId;
 use semantic;
 use sierra::program;
 
@@ -101,7 +102,7 @@ fn handle_function_call(
     let function_long_id =
         context.get_db().lookup_intern_concrete_function(expr_function_call.function);
     match function_long_id.generic_function {
-        semantic::GenericFunctionId::Free(_) => {
+        GenericFunctionId::Free(_) => {
             // Push the arguments on top of the stack.
             let mut args_on_stack: Vec<sierra::ids::VarId> = vec![];
             for arg_res in args {
@@ -123,7 +124,7 @@ fn handle_function_call(
             ));
             (statements, res_var)
         }
-        semantic::GenericFunctionId::Extern(extern_id) => {
+        GenericFunctionId::Extern(extern_id) => {
             assert!(
                 function_long_id.generic_args.is_empty(),
                 "Calling a libfunc with generic arguments is not supported yet."

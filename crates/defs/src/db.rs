@@ -37,11 +37,21 @@ pub trait DefsGroup: FilesGroup + SyntaxGroup + AsSyntaxGroup + ParserGroup {
         &self,
         module_id: ModuleId,
     ) -> WithDiagnostics<Option<ModuleItems>, ParserDiagnostic>;
-    fn resolve_module_identifier(
+    fn module_resolve_identifier(
         &self,
         module_id: ModuleId,
         name: SmolStr,
     ) -> WithDiagnostics<Option<ModuleItemId>, ParserDiagnostic>;
+    fn module_resolve_generic_function(
+        &self,
+        module_id: ModuleId,
+        name: SmolStr,
+    ) -> WithDiagnostics<Option<GenericFunctionId>, ParserDiagnostic>;
+    fn module_resolve_generic_type(
+        &self,
+        module_id: ModuleId,
+        name: SmolStr,
+    ) -> WithDiagnostics<Option<GenericTypeId>, ParserDiagnostic>;
 }
 
 pub trait AsDefsGroup {
@@ -108,7 +118,7 @@ fn module_items(
 }
 
 #[with_diagnostics]
-fn resolve_module_identifier(
+fn module_resolve_identifier(
     diagnostics: &mut Diagnostics<ParserDiagnostic>,
     db: &dyn DefsGroup,
     module_id: ModuleId,
@@ -116,4 +126,34 @@ fn resolve_module_identifier(
 ) -> Option<ModuleItemId> {
     let module_items = db.module_items(module_id).unwrap(diagnostics)?;
     module_items.items.get(&name).copied()
+}
+
+#[with_diagnostics]
+fn module_resolve_generic_function(
+    diagnostics: &mut Diagnostics<ParserDiagnostic>,
+    db: &dyn DefsGroup,
+    module_id: ModuleId,
+    name: SmolStr,
+) -> Option<GenericFunctionId> {
+    match db.module_resolve_identifier(module_id, name).unwrap(diagnostics)? {
+        ModuleItemId::FreeFunction(item) => Some(GenericFunctionId::Free(item)),
+        ModuleItemId::Struct(_) => None,
+        ModuleItemId::ExternType(_) => None,
+        ModuleItemId::ExternFunction(item) => Some(GenericFunctionId::Extern(item)),
+    }
+}
+
+#[with_diagnostics]
+fn module_resolve_generic_type(
+    diagnostics: &mut Diagnostics<ParserDiagnostic>,
+    db: &dyn DefsGroup,
+    module_id: ModuleId,
+    name: SmolStr,
+) -> Option<GenericTypeId> {
+    match db.module_resolve_identifier(module_id, name).unwrap(diagnostics)? {
+        ModuleItemId::FreeFunction(_) => None,
+        ModuleItemId::Struct(item) => Some(GenericTypeId::Struct(item)),
+        ModuleItemId::ExternType(item) => Some(GenericTypeId::Extern(item)),
+        ModuleItemId::ExternFunction(_) => None,
+    }
 }

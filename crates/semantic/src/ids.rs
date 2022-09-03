@@ -1,5 +1,5 @@
 use db_utils::define_short_id;
-use defs::ids::{ExternFunctionId, ExternTypeId, FreeFunctionId, StructId};
+use defs::ids::{GenericFunctionId, GenericTypeId};
 
 // Ids in this file represent semantic representations.
 
@@ -22,21 +22,6 @@ pub struct ConcreteFunctionLongId {
 }
 define_short_id!(ConcreteFunctionId);
 
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
-pub enum GenericFunctionId {
-    Free(FreeFunctionId),
-    Extern(ExternFunctionId),
-    // TODO(spapini): impl functions.
-}
-
-/// Type instance.
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub enum GenericType {
-    Struct(StructId),
-    External(ExternTypeId),
-    // TODO(spapini): enums, associated types in impls.
-}
-
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum TypeLongId {
     Concrete(ConcreteType),
@@ -50,7 +35,7 @@ define_short_id!(TypeId);
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct ConcreteType {
-    pub generic_type: GenericType,
+    pub generic_type: GenericTypeId,
     pub generic_args: Vec<GenericArgumentId>,
 }
 

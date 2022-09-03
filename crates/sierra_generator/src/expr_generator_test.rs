@@ -1,5 +1,5 @@
 use defs::db::{AsDefsGroup, DefsDatabase, DefsGroup};
-use defs::ids::{ExternFunctionLongId, FreeFunctionId, LocalVarId, VarId};
+use defs::ids::{ExternFunctionLongId, FreeFunctionId, GenericFunctionId, LocalVarId, VarId};
 use filesystem::db::FilesDatabase;
 use filesystem::ids::{CrateId, ModuleId};
 use parser::db::ParserDatabase;
@@ -87,15 +87,15 @@ fn test_expr_generator() {
     let statement_let = semantic::StatementLet { var: var_x, expr: literal7 };
 
     let foo_func = db.intern_concrete_function(semantic::ConcreteFunctionLongId {
-        generic_function: semantic::GenericFunctionId::Free(FreeFunctionId::from_intern_id(
-            InternId::from(1u32),
-        )),
+        generic_function: GenericFunctionId::Free(FreeFunctionId::from_intern_id(InternId::from(
+            1u32,
+        ))),
         generic_args: vec![],
     });
     let foo2_func = db.intern_concrete_function(semantic::ConcreteFunctionLongId {
-        generic_function: semantic::GenericFunctionId::Free(FreeFunctionId::from_intern_id(
-            InternId::from(2u32),
-        )),
+        generic_function: GenericFunctionId::Free(FreeFunctionId::from_intern_id(InternId::from(
+            2u32,
+        ))),
         generic_args: vec![],
     });
 
@@ -218,7 +218,7 @@ fn test_call_libfunc() {
 
     let module = ModuleId::CrateRoot(CrateId::from_intern_id(InternId::from(1u32)));
     let add_libfunc = db.intern_concrete_function(semantic::ConcreteFunctionLongId {
-        generic_function: semantic::GenericFunctionId::Extern(db.intern_extern_function(
+        generic_function: GenericFunctionId::Extern(db.intern_extern_function(
             ExternFunctionLongId { parent: module, name: "felt_add".into() },
         )),
         generic_args: vec![],
