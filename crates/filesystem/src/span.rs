@@ -7,11 +7,16 @@ use std::ops::Sub;
 use crate::db::FilesGroup;
 use crate::ids::FileId;
 
+// TODO(spapini): Be consistent in the project with u32 or usize offsets.
+
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TextOffset(pub usize);
 impl TextOffset {
     pub fn inc(&mut self) {
         self.0 += 1;
+    }
+    pub fn add(&self, width: usize) -> Self {
+        TextOffset(self.0 + width)
     }
 }
 impl Sub for TextOffset {

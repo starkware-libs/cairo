@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::vec;
 
+use filesystem::span::{TextOffset, TextSpan};
 use smol_str::SmolStr;
 
 use self::db::SyntaxGroup;
@@ -59,14 +60,19 @@ impl SyntaxNode {
             GreenNode::Token(token) => SyntaxNodeDetails::Token(token),
         }
     }
-    pub fn offset(&self) -> u32 {
-        self.0.offset
+    pub fn offset(&self) -> TextOffset {
+        TextOffset(self.0.offset as usize)
     }
     pub fn width(&self, db: &dyn SyntaxGroup) -> u32 {
         match db.lookup_intern_green(self.0.green) {
             GreenNode::Internal(internal) => internal.width,
             GreenNode::Token(token) => token.width(),
         }
+    }
+    pub fn span(&self, db: &dyn SyntaxGroup) -> TextSpan {
+        let start = self.offset();
+        let end = start.add(self.width(db) as usize);
+        TextSpan { start, end }
     }
     pub fn children<'db>(&self, db: &'db dyn SyntaxGroup) -> SyntaxNodeChildIterator<'db> {
         let green_iterator = match db.lookup_intern_green(self.0.green) {

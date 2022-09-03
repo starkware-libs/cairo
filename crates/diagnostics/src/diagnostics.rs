@@ -4,15 +4,16 @@ mod test;
 
 use std::fmt::Write;
 
-use filesystem::db::FilesGroup;
+use filesystem::db::AsFilesGroup;
 use filesystem::ids::FileId;
 use filesystem::span::TextSpan;
 
 /// A trait for diagnostics (i.e., errors and warnings) across the compiler.
 /// Meant to be implemented by each module that may produce diagnostics.
 pub trait DiagnosticEntry: Clone + std::fmt::Debug + Eq + std::hash::Hash {
-    fn format(&self, db: &dyn FilesGroup) -> String;
-    fn location(&self, db: &dyn FilesGroup) -> DiagnosticLocation;
+    type DbType: AsFilesGroup + ?Sized;
+    fn format(&self, db: &Self::DbType) -> String;
+    fn location(&self, db: &Self::DbType) -> DiagnosticLocation;
     // TODO(spapini): Add a way to inspect the diagnostic programmatically, e.g, downcast.
 }
 pub struct DiagnosticLocation {
@@ -33,19 +34,21 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
     pub fn add(&mut self, diagnostic: TEntry) {
         self.0.push(diagnostic);
     }
-    pub fn format(&self, db: &dyn FilesGroup) -> String {
+    pub fn format(&self, db: &TEntry::DbType) -> String {
         let mut res = String::new();
         for entry in &self.0 {
             let location = entry.location(db);
-            let filename = location.file_id.file_name(db);
-            let pos0 = match location.span.start.position_in_file(db, location.file_id) {
-                Some(pos) => format!("line {} col {}", pos.line + 1, pos.col + 1),
-                None => "?".into(),
-            };
-            let pos1 = match location.span.end.position_in_file(db, location.file_id) {
-                Some(pos) => format!("line {} col {}", pos.line + 1, pos.col + 1),
-                None => "?".into(),
-            };
+            let filename = location.file_id.file_name(db.as_files_group());
+            let pos0 =
+                match location.span.start.position_in_file(db.as_files_group(), location.file_id) {
+                    Some(pos) => format!("line {} col {}", pos.line + 1, pos.col + 1),
+                    None => "?".into(),
+                };
+            let pos1 =
+                match location.span.end.position_in_file(db.as_files_group(), location.file_id) {
+                    Some(pos) => format!("line {} col {}", pos.line + 1, pos.col + 1),
+                    None => "?".into(),
+                };
             writeln!(
                 res,
                 "Error at {} from {} until {}: {}",
@@ -69,6 +72,7 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
 /// # #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 /// # struct SimpleDiag {}
 /// # impl DiagnosticEntry for SimpleDiag {
+/// #     type DbType = dyn filesystem::db::FilesGroup;
 /// #     fn format(&self, _db: &dyn filesystem::db::FilesGroup) -> String {
 /// #         unimplemented!();
 /// #     }
@@ -101,8 +105,11 @@ impl<T, TEntry: DiagnosticEntry> WithDiagnostics<T, TEntry> {
     }
 
     /// Adds the diagnostics of `self` to the given `diagnostics` object and returns the value.
-    pub fn unwrap(self, diagnostics: &mut Diagnostics<TEntry>) -> T {
-        diagnostics.0.extend(self.diagnostics.0);
+    pub fn unwrap<TCastableEntry: DiagnosticEntry + From<TEntry>>(
+        self,
+        diagnostics: &mut Diagnostics<TCastableEntry>,
+    ) -> T {
+        diagnostics.0.extend(self.diagnostics.0.into_iter().map(TCastableEntry::from));
         self.value
     }
 

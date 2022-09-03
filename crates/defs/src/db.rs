@@ -61,7 +61,7 @@ fn module_items(
 ) -> Option<ModuleItems> {
     let syntax_group = db.as_syntax_group();
 
-    let syntax_file = db.file_syntax(db.module_file(module_id)?).unwrap(diagnostics)?;
+    let syntax_file = db.module_syntax(module_id).unwrap(diagnostics)?;
     Some(ModuleItems {
         items: HashMap::from_iter(
             syntax_file.items(syntax_group).elements(syntax_group).iter().map(|item| match item {

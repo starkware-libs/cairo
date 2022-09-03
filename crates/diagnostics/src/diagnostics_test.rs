@@ -21,6 +21,8 @@ struct SimpleDiag {
     file_id: FileId,
 }
 impl DiagnosticEntry for SimpleDiag {
+    type DbType = dyn FilesGroup;
+
     fn format(&self, _db: &dyn filesystem::db::FilesGroup) -> String {
         "Simple diagnostic.".into()
     }

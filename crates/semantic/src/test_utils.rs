@@ -16,6 +16,6 @@ pub fn setup_test_module(db: &mut dyn ParserGroup, content: &str) -> (ModuleId, 
         crate_roots: [(crate_id, file_id)].into_iter().collect(),
     });
     let module_id = ModuleId::CrateRoot(crate_id);
-    let module_syntax = db.file_syntax(db.module_file(module_id).unwrap()).expect("").unwrap();
+    let module_syntax = db.module_syntax(module_id).expect("").unwrap();
     (module_id, module_syntax)
 }

@@ -5,6 +5,7 @@ mod test;
 use std::mem;
 
 use diagnostics::{DiagnosticEntry, Diagnostics, WithDiagnostics};
+use filesystem::db::FilesGroup;
 use filesystem::ids::FileId;
 use filesystem::span::{TextOffset, TextSpan};
 use syntax::node::ast::*;
@@ -45,7 +46,9 @@ pub enum ParserDiagnosticKind {
     SkippedTokens,
 }
 impl DiagnosticEntry for ParserDiagnostic {
-    fn format(&self, db: &dyn filesystem::db::FilesGroup) -> String {
+    type DbType = dyn FilesGroup;
+
+    fn format(&self, db: &dyn FilesGroup) -> String {
         let text = match db.file_content(self.file_id) {
             Some(content) => content[self.span.start.0..self.span.end.0].to_string(),
             None => unreachable!(),
@@ -56,7 +59,7 @@ impl DiagnosticEntry for ParserDiagnostic {
         }
     }
 
-    fn location(&self, _db: &dyn filesystem::db::FilesGroup) -> diagnostics::DiagnosticLocation {
+    fn location(&self, _db: &dyn FilesGroup) -> diagnostics::DiagnosticLocation {
         diagnostics::DiagnosticLocation { file_id: self.file_id, span: self.span }
     }
 }
