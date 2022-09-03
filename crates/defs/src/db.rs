@@ -81,7 +81,7 @@ fn module_data(
     let mut res = ModuleData::default();
     let syntax_group = db.as_syntax_group();
 
-    let syntax_file = db.file_syntax(db.module_file(module_id)?).unwrap(diagnostics)?;
+    let syntax_file = db.module_syntax(module_id).unwrap(diagnostics)?;
     for item in syntax_file.items(syntax_group).elements(syntax_group) {
         match item {
             ast::Item::Module(_module) => todo!(),

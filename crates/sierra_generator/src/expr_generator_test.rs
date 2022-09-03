@@ -1,6 +1,6 @@
 use defs::db::{AsDefsGroup, DefsDatabase, DefsGroup};
 use defs::ids::{ExternFunctionLongId, FreeFunctionId, GenericFunctionId, LocalVarId, VarId};
-use filesystem::db::FilesDatabase;
+use filesystem::db::{AsFilesGroup, FilesDatabase, FilesGroup};
 use filesystem::ids::{CrateId, ModuleId};
 use parser::db::ParserDatabase;
 use pretty_assertions::assert_eq;
@@ -27,6 +27,11 @@ pub struct DatabaseImpl {
     storage: salsa::Storage<DatabaseImpl>,
 }
 impl salsa::Database for DatabaseImpl {}
+impl AsFilesGroup for DatabaseImpl {
+    fn as_files_group(&self) -> &(dyn FilesGroup + 'static) {
+        self
+    }
+}
 impl AsSyntaxGroup for DatabaseImpl {
     fn as_syntax_group(&self) -> &(dyn SyntaxGroup + 'static) {
         self

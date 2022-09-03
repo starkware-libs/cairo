@@ -15,6 +15,6 @@ pub fn setup_test_module(db: &mut dyn SemanticGroup, content: &str) -> (ModuleId
     }));
     db.set_project_config(core_config(db).with_crate(crate_id, file_id));
     let module_id = ModuleId::CrateRoot(crate_id);
-    let module_syntax = db.file_syntax(db.module_file(module_id).unwrap()).expect("").unwrap();
+    let module_syntax = db.module_syntax(module_id).expect("").unwrap();
     (module_id, module_syntax)
 }

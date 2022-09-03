@@ -5,7 +5,7 @@ use std::sync::Arc;
 use assert_matches::assert_matches;
 use defs::db::{AsDefsGroup, DefsDatabase, DefsGroup};
 use defs::ids::{FreeFunctionLongId, GenericFunctionId, VarId};
-use filesystem::db::FilesDatabase;
+use filesystem::db::{AsFilesGroup, FilesDatabase, FilesGroup};
 use indoc::indoc;
 use parser::db::ParserDatabase;
 use syntax::node::ast;
@@ -24,13 +24,18 @@ pub struct DatabaseImpl {
     storage: salsa::Storage<DatabaseImpl>,
 }
 impl salsa::Database for DatabaseImpl {}
-impl AsDefsGroup for DatabaseImpl {
-    fn as_defs_group(&self) -> &(dyn DefsGroup + 'static) {
+impl AsFilesGroup for DatabaseImpl {
+    fn as_files_group(&self) -> &(dyn FilesGroup + 'static) {
         self
     }
 }
 impl AsSyntaxGroup for DatabaseImpl {
     fn as_syntax_group(&self) -> &(dyn SyntaxGroup + 'static) {
+        self
+    }
+}
+impl AsDefsGroup for DatabaseImpl {
+    fn as_defs_group(&self) -> &(dyn DefsGroup + 'static) {
         self
     }
 }
