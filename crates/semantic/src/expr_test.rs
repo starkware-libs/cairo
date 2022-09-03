@@ -151,6 +151,58 @@ fn test_expr_block() {
 }
 
 #[test]
+fn test_expr_block_with_tail_expression() {
+    let mut db_val = DatabaseImpl::default();
+    let (module_id, module_syntax) = setup_test_module(
+        &mut db_val,
+        indoc! {"
+            func foo() {
+                6;
+                8;
+                9
+            }
+        "},
+    );
+    let db = &db_val;
+    let syntax = ast::Expr::Block(extract_function_body(db, module_syntax, 0));
+
+    // Compute semantics of expr.
+    let mut ctx = ComputationContext {
+        db,
+        module_id,
+        environment: Rc::new(Environment { parent: None, variables: HashMap::new() }),
+    };
+    let expr_id = compute_expr_semantic(&mut ctx, syntax);
+    let expr = db.lookup_intern_expr(expr_id);
+
+    // Check expr.
+    let (statements, tail) = match expr {
+        crate::Expr::ExprBlock(semantic::ExprBlock { statements, tail: Some(tail), ty }) => {
+            assert_eq!(ty, unit_ty(db));
+            (statements, tail)
+        }
+        _ => panic!("Expected a block."),
+    };
+    // Check tail expression.
+    match db.lookup_intern_expr(tail) {
+        semantic::Expr::ExprLiteral(expr_literal) => {
+            assert_eq!(expr_literal.value, 9)
+        }
+        _ => panic!("Expected a literal expression."),
+    }
+    // Check statements.
+    match statements[..] {
+        [stmt_id0, stmt_id1] => {
+            let stmt0 = db.lookup_intern_statement(stmt_id0);
+            let stmt1 = db.lookup_intern_statement(stmt_id1);
+            assert_matches!(stmt0, semantic::Statement::Expr(_));
+            assert_matches!(stmt1, semantic::Statement::Expr(_));
+        }
+        _ => panic!("Expected two statements."),
+    }
+}
+
+#[test]
 fn test_expr_call() {
     let mut db_val = DatabaseImpl::default();
     // TODO(spapini): Add types.
