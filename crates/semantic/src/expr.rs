@@ -12,7 +12,7 @@ use smol_str::SmolStr;
 use syntax::node::ast;
 use syntax::node::db::SyntaxGroup;
 
-use crate::corelib::unit_ty;
+use crate::corelib::{core_module, unit_ty};
 use crate::db::SemanticGroup;
 use crate::{
     semantic, ConcreteFunctionId, ConcreteFunctionLongId, ExprId, MatchBranch, StatementId, TypeId,
@@ -242,10 +242,26 @@ fn resolve_concrete_function(
         todo!("Generics are not supported yet")
     };
     let function_name = last_element.ident(syntax_db).text(syntax_db);
+    let generic_function = resolve_function_in_module(db, ctx.module_id, function_name.clone())
+        .or_else(|| resolve_function_in_module(db, core_module(db), function_name))
+        .expect("Unresolved identifier");
+    let concrete_function = db.intern_concrete_function(ConcreteFunctionLongId {
+        generic_function,
+        generic_args: vec![],
+    });
+    (generic_function, concrete_function)
+}
+
+// TODO(spapini): Unite / be consistent with generic type resolution.
+/// Resolves a generic function in a module, by name.
+fn resolve_function_in_module(
+    db: &dyn SemanticGroup,
+    module_id: ModuleId,
+    function_name: SmolStr,
+) -> Option<GenericFunctionId> {
     let generic_function = match db
-        .module_item_by_name(ctx.module_id, function_name)
-        .expect("Diagnostics not supported yet")
-        .expect("Unresolved identifier")
+        .module_item_by_name(module_id, function_name)
+        .expect("Diagnostics not supported yet")?
     {
         defs::ids::ModuleItemId::FreeFunction(free_function) => {
             GenericFunctionId::Free(free_function)
@@ -256,11 +272,7 @@ fn resolve_concrete_function(
         defs::ids::ModuleItemId::Struct(_) => panic!("Unexpected struct"),
         defs::ids::ModuleItemId::ExternType(_) => panic!("Unexpected extern type"),
     };
-    let concrete_function = db.intern_concrete_function(ConcreteFunctionLongId {
-        generic_function,
-        generic_args: vec![],
-    });
-    (generic_function, concrete_function)
+    Some(generic_function)
 }
 
 /// Computes the semantic model of a statement.
