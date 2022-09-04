@@ -151,19 +151,27 @@ pub fn compute_expr_semantic(ctx: &mut ComputationContext<'_>, syntax: ast::Expr
 fn resolve_variable(ctx: &mut ComputationContext<'_>, path: ast::ExprPath) -> VarId {
     let db = ctx.db;
     let syntax_db = db.as_syntax_group();
-    let elements = path.elements(syntax_db);
-    if elements.len() != 1 {
+    let segments = path.elements(syntax_db);
+    if segments.len() != 1 {
         // TODO(spapini): Diagnostic.
         panic!("Expected a single identifier");
     }
-    let last_element = &elements[0];
-    if let ast::OptionGenericArgs::Some(_) = last_element.generic_args(syntax_db) {
-        todo!("Generics are not supported yet")
+    let last_segment = &segments[0];
+    if let ast::OptionGenericArgs::Some(_) = last_segment.generic_args(syntax_db) {
+        todo!("Generics are not supported")
     };
-    let variable_name = last_element.ident(syntax_db).text(syntax_db);
+    let variable_name = last_segment.ident(syntax_db).text(syntax_db);
+    resolve_variable_by_name(ctx, &variable_name)
+}
+
+/// Resolves a variable given a context and a simple name.
+pub fn resolve_variable_by_name(
+    ctx: &mut ComputationContext<'_>,
+    variable_name: &SmolStr,
+) -> VarId {
     let mut maybe_env = Some(&*ctx.environment);
     while let Some(env) = maybe_env {
-        if let Some(var) = env.variables.get(&variable_name) {
+        if let Some(var) = env.variables.get(variable_name) {
             return *var;
         }
         maybe_env = env.parent.as_deref();
@@ -192,7 +200,7 @@ fn resolve_concrete_function(
     };
     let function_name = last_element.ident(syntax_db).text(syntax_db);
     let generic_function = match db
-        .module_resolve_identifier(ctx.module_id, function_name)
+        .module_item_by_name(ctx.module_id, function_name)
         .expect("Diagnostics not supported yet")
         .expect("Unresolved identifier")
     {

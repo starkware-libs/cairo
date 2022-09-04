@@ -4,7 +4,9 @@ use std::sync::Arc;
 
 use assert_matches::assert_matches;
 use defs::db::{AsDefsGroup, DefsDatabase, DefsGroup};
-use defs::ids::{FreeFunctionLongId, GenericFunctionId, VarId};
+use defs::ids::{
+    ExternTypeLongId, FreeFunctionLongId, GenericFunctionId, GenericTypeId, ParamLongId, VarId,
+};
 use filesystem::db::{AsFilesGroup, FilesDatabase, FilesGroup};
 use indoc::indoc;
 use parser::db::ParserDatabase;
@@ -15,8 +17,8 @@ use super::compute_expr_semantic;
 use crate::corelib::unit_ty;
 use crate::db::{SemanticDatabase, SemanticGroup};
 use crate::expr::{ComputationContext, Environment};
-use crate::semantic;
 use crate::test_utils::setup_test_module;
+use crate::{semantic, ConcreteType, TypeLongId};
 
 #[salsa::database(SemanticDatabase, DefsDatabase, ParserDatabase, SyntaxDatabase, FilesDatabase)]
 #[derive(Default)]
@@ -49,7 +51,7 @@ fn test_expr_literal() {
     // of the statements.
     let syntax = match &extract_function_body(db, module_syntax, 0).statements(db).elements(db)[0] {
         ast::Statement::Expr(syntax) => syntax.expr(db),
-        _ => panic!("Expected an expression statemnet"),
+        _ => panic!("Expected an expression statement"),
     };
 
     // Compute semantics of expr.
@@ -70,28 +72,114 @@ fn test_expr_literal() {
     assert_eq!(ty, db.core_felt_ty());
 }
 
+// TODO(yuval): split test utils and move this test to db_test/type_test.
 #[test]
-fn test_expr_var() {
+fn test_function_with_param() {
     let mut db_val = DatabaseImpl::default();
-    let (module_id, module_syntax) = setup_test_module(&mut db_val, "func foo(a) { a }");
+    let (module_id, module_syntax) = setup_test_module(
+        &mut db_val,
+        indoc! {"
+            extern type felt;
+            func foo(a: felt) {}
+        "},
+    );
     let db = &db_val;
     // TODO(spapini): When a tail expression in a block is supported, take the syntax from the tail
     // instead of from the statements.
-    let syntax = match &extract_function_body(db, module_syntax, 0).statements(db).elements(db)[0] {
+    assert!(extract_function_body(db, module_syntax, 1).statements(db).elements(db).is_empty());
+
+    // Prepare expectations
+    let free_function_id =
+        db.intern_free_function(FreeFunctionLongId { parent: module_id, name: "foo".into() });
+    let felt_id = db.intern_type(TypeLongId::Concrete(ConcreteType {
+        generic_type: GenericTypeId::Extern(
+            db.intern_extern_type(ExternTypeLongId { parent: module_id, name: "felt".into() }),
+        ),
+        generic_args: Vec::new(),
+    }));
+
+    // Compute semantics of signature.
+    let signature = db
+        .generic_function_signature_semantic(GenericFunctionId::Free(free_function_id))
+        .expect("Unexpected diagnostic")
+        .unwrap();
+
+    // Verify the parameter name and type.
+    assert_eq!(signature.params.len(), 1);
+    assert_eq!(signature.params[0].name, "a");
+    assert_eq!(signature.params[0].ty, felt_id);
+}
+
+// TODO(yuval): split test utils and move this test to db_test/type_test.
+#[test]
+fn test_function_with_return_type() {
+    let mut db_val = DatabaseImpl::default();
+    let (module_id, module_syntax) = setup_test_module(
+        &mut db_val,
+        indoc! {"
+            extern type felt;
+            func foo() -> felt {}
+        "},
+    );
+    let db = &db_val;
+    // TODO(spapini): When a tail expression in a block is supported, take the syntax from the tail
+    // instead of from the statements.
+    assert!(extract_function_body(db, module_syntax, 1).statements(db).elements(db).is_empty());
+
+    // Prepare expectations
+    let free_function_id =
+        db.intern_free_function(FreeFunctionLongId { parent: module_id, name: "foo".into() });
+    let felt_id = db.intern_type(TypeLongId::Concrete(ConcreteType {
+        generic_type: GenericTypeId::Extern(
+            db.intern_extern_type(ExternTypeLongId { parent: module_id, name: "felt".into() }),
+        ),
+        generic_args: Vec::new(),
+    }));
+
+    // Compute semantics of signature.
+    let signature = db
+        .generic_function_signature_semantic(GenericFunctionId::Free(free_function_id))
+        .expect("Unexpected diagnostic")
+        .unwrap();
+
+    // Verify the return type.
+    assert_eq!(signature.params.len(), 0);
+    assert_eq!(signature.return_type, felt_id);
+}
+
+#[test]
+fn test_expr_var() {
+    let mut db_val = DatabaseImpl::default();
+    let (module_id, module_syntax) = setup_test_module(
+        &mut db_val,
+        indoc! {"
+            extern type felt;
+            func foo(a: felt) {
+                a
+            }
+        "},
+    );
+    let db = &db_val;
+    // TODO(spapini): When a tail expression in a block is supported, take the syntax from the tail
+    // instead of from the statements.
+    let syntax = match &extract_function_body(db, module_syntax, 1).statements(db).elements(db)[0] {
         ast::Statement::Expr(syntax) => syntax.expr(db),
         _ => panic!("Expected an expression statement"),
     };
 
     // Compute semantics of signature.
+    let free_function_id =
+        db.intern_free_function(FreeFunctionLongId { parent: module_id, name: "foo".into() });
     let signature = db
-        .generic_function_signature_semantic(GenericFunctionId::Free(
-            db.intern_free_function(FreeFunctionLongId { parent: module_id, name: "foo".into() }),
-        ))
+        .generic_function_signature_semantic(GenericFunctionId::Free(free_function_id))
         .expect("Unexpected diagnostic")
         .unwrap();
 
     // Compute semantics of expr.
-    let var_id = VarId::Param(signature.params[0]);
+    let var_id = VarId::Param(db.intern_param(ParamLongId {
+        parent: defs::ids::ParamContainerId::FreeFunction(free_function_id),
+        name: signature.params[0].name.clone(),
+    }));
     let mut ctx = ComputationContext {
         db,
         module_id,
@@ -255,6 +343,7 @@ fn test_function_body() {
     let (module_id, _module_syntax) = setup_test_module(
         &mut db_val,
         indoc! {"
+            extern type felt;
             func foo(a: felt) {
                 a;
             }
@@ -290,7 +379,7 @@ fn extract_function_body(
     let syntax = &module_syntax.items(db).elements(db)[index];
     let function_syntax = match syntax {
         ast::Item::Function(function_syntax) => function_syntax,
-        _ => panic!("Not a free function."),
+        variant => panic!("Not a free function, actual: {variant:?}"),
     };
     function_syntax.body(db)
 }
