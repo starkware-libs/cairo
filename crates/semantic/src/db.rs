@@ -69,18 +69,28 @@ fn generic_function_signature_semantic(
     db: &dyn SemanticGroup,
     function_id: GenericFunctionId,
 ) -> Option<semantic::Signature> {
-    let free_function_id = match function_id {
-        GenericFunctionId::Free(free_function_id) => free_function_id,
-        GenericFunctionId::Extern(_) => todo!("Unsupported"),
-    };
-    let module_id = db.lookup_intern_free_function(free_function_id).parent;
-    let syntax = db
-        .module_data(module_id)
-        .unwrap(diagnostics)?
-        .free_functions
-        .get(&free_function_id)?
-        .clone();
-    function_signature_from_ast_function(db, module_id, &syntax).unwrap(diagnostics)
+    match function_id {
+        GenericFunctionId::Free(free_function_id) => {
+            let module_id = db.lookup_intern_free_function(free_function_id).parent;
+            let syntax = db
+                .module_data(module_id)
+                .unwrap(diagnostics)?
+                .free_functions
+                .get(&free_function_id)?
+                .clone();
+            function_signature_from_free_function_ast(db, module_id, &syntax).unwrap(diagnostics)
+        }
+        GenericFunctionId::Extern(extern_function_id) => {
+            let module_id = db.lookup_intern_extern_function(extern_function_id).parent;
+            let syntax = db
+                .module_data(module_id)
+                .unwrap(diagnostics)?
+                .extern_functions
+                .get(&extern_function_id)?
+                .clone();
+            function_signature_from_extern_function_ast(db, module_id, &syntax).unwrap(diagnostics)
+        }
+    }
 }
 
 #[with_diagnostics]
@@ -99,7 +109,7 @@ fn free_function_semantic(
 
     // Compute signature semantic.
     let signature =
-        function_signature_from_ast_function(db, module_id, &syntax).unwrap(diagnostics)?;
+        function_signature_from_free_function_ast(db, module_id, &syntax).unwrap(diagnostics)?;
 
     // Compute body semantic expr.
     let variables = signature
@@ -130,21 +140,44 @@ fn statement_semantic(db: &dyn SemanticGroup, item: StatementId) -> semantic::St
 }
 
 // ----------------------- Helper functions -----------------------
-
-/// Gets the semantic signature of the given function's AST.
 #[with_diagnostics]
-fn function_signature_from_ast_function(
+fn function_signature_from_extern_function_ast(
     diagnostics: &mut Diagnostics<ParserDiagnostic>,
     db: &dyn SemanticGroup,
     module_id: ModuleId,
-    function: &ast::ItemFunction,
+    extern_function: &ast::ItemExternFunction,
 ) -> Option<semantic::Signature> {
-    let return_type =
-        function_signature_return_type(db, module_id, &function.signature(db.as_syntax_group()))
-            .unwrap(diagnostics)?;
+    let return_type = function_signature_return_type(
+        db,
+        module_id,
+        &extern_function.signature(db.as_syntax_group()),
+    )
+    .unwrap(diagnostics)?;
 
     let params =
-        function_signature_params(db, module_id, &function.signature(db.as_syntax_group()))
+        function_signature_params(db, module_id, &extern_function.signature(db.as_syntax_group()))
+            .unwrap(diagnostics)?;
+
+    Some(semantic::Signature { params, return_type })
+}
+
+/// Gets the semantic signature of the given function's AST.
+#[with_diagnostics]
+fn function_signature_from_free_function_ast(
+    diagnostics: &mut Diagnostics<ParserDiagnostic>,
+    db: &dyn SemanticGroup,
+    module_id: ModuleId,
+    free_function: &ast::ItemFunction,
+) -> Option<semantic::Signature> {
+    let return_type = function_signature_return_type(
+        db,
+        module_id,
+        &free_function.signature(db.as_syntax_group()),
+    )
+    .unwrap(diagnostics)?;
+
+    let params =
+        function_signature_params(db, module_id, &free_function.signature(db.as_syntax_group()))
             .unwrap(diagnostics)?;
 
     Some(semantic::Signature { params, return_type })
