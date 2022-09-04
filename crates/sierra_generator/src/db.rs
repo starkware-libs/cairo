@@ -3,8 +3,8 @@ use std::sync::Arc;
 use defs::ids::FreeFunctionId;
 use diagnostics::{Diagnostics, WithDiagnostics};
 use diagnostics_proc_macros::with_diagnostics;
-use parser::parser::ParserDiagnostic;
 use semantic::db::SemanticGroup;
+use semantic::diagnostic::Diagnostic;
 
 use crate::function_generator::generate_function_code;
 use crate::pre_sierra;
@@ -36,12 +36,12 @@ pub trait SierraGenGroup: SemanticGroup {
     fn get_function_code(
         &self,
         function_id: FreeFunctionId,
-    ) -> WithDiagnostics<Option<Arc<pre_sierra::Function>>, ParserDiagnostic>;
+    ) -> WithDiagnostics<Option<Arc<pre_sierra::Function>>, Diagnostic>;
 }
 
 #[with_diagnostics]
 fn get_function_code(
-    diagnostics: &mut Diagnostics<ParserDiagnostic>,
+    diagnostics: &mut Diagnostics<Diagnostic>,
     db: &dyn SierraGenGroup,
     function_id: FreeFunctionId,
 ) -> Option<Arc<pre_sierra::Function>> {

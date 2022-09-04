@@ -2,7 +2,7 @@
 #[path = "function_generator_test.rs"]
 mod test;
 
-use defs::ids::FreeFunctionId;
+use defs::ids::{FreeFunctionId, GenericFunctionId};
 
 use crate::db::SierraGenGroup;
 use crate::expr_generator::generate_expression_code;
@@ -37,7 +37,7 @@ pub fn generate_function_code(
 
     pre_sierra::Function {
         id: db.intern_function(db.intern_concrete_function(semantic::ConcreteFunctionLongId {
-            generic_function: semantic::GenericFunctionId::Free(function_id),
+            generic_function: GenericFunctionId::Free(function_id),
             // TODO(lior): Add generic arguments.
             generic_args: vec![],
         })),

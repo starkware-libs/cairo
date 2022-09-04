@@ -1,8 +1,6 @@
 use defs::db::DefsGroup;
 use defs::ids::ModuleItemId;
-
 use indoc::indoc;
-
 use pretty_assertions::assert_eq;
 use semantic::test_utils::setup_test_module;
 
@@ -22,7 +20,7 @@ fn test_function_generator() {
                 }
             "},
     );
-    let foo = match db.module_items(module_id).expect("").unwrap().items["foo"] {
+    let foo = match db.module_items(module_id).expect("").unwrap()["foo"] {
         ModuleItemId::FreeFunction(foo) => foo,
         _ => panic!("Unexpected item type."),
     };
