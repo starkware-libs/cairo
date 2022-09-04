@@ -1,8 +1,8 @@
 use std::collections::hash_map;
 
-use db_utils::unordered_hash_map::UnorderedHashMap;
 use defs::ids::{FreeFunctionId, LocalVarId};
 use smol_str::SmolStr;
+use utils::unordered_hash_map::UnorderedHashMap;
 
 use crate::db::SierraGenGroup;
 use crate::id_allocator::IdAllocator;
