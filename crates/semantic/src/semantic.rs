@@ -59,15 +59,14 @@ pub struct ExprFunctionCall {
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct ExprMatch {
     pub matched_expr: ExprId,
-    pub arms: Vec<MatchBranch>,
+    pub arms: Vec<MatchArm>,
     pub ty: TypeId,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
-// TODO(yuval): rename to MatchArm
-pub struct MatchBranch {
+pub struct MatchArm {
     pub pattern: Pattern,
-    pub block: ExprId,
+    pub expression: ExprId,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]

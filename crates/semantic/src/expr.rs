@@ -15,7 +15,7 @@ use syntax::node::db::SyntaxGroup;
 use crate::corelib::{core_module, unit_ty};
 use crate::db::SemanticGroup;
 use crate::{
-    semantic, ConcreteFunctionId, ConcreteFunctionLongId, ExprId, MatchBranch, StatementId, TypeId,
+    semantic, ConcreteFunctionId, ConcreteFunctionLongId, ExprId, MatchArm, StatementId, TypeId,
 };
 
 /// Context for computing the semantic model of expression trees.
@@ -167,7 +167,7 @@ pub fn compute_expr_semantic(ctx: &mut ComputationContext<'_>, syntax: ast::Expr
                 };
                 let expr_semantic = compute_expr_semantic(ctx, syntax_arm.expression(syntax_db));
                 let arm_type = db.lookup_intern_expr(expr_semantic).ty();
-                semantic_arms.push(MatchBranch { pattern, block: expr_semantic });
+                semantic_arms.push(MatchArm { pattern, expression: expr_semantic });
                 match match_type {
                     Some(t) if t == arm_type => {}
                     Some(t) => {
