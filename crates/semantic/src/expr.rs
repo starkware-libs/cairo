@@ -4,15 +4,18 @@ mod test;
 
 use std::collections::HashMap;
 
-use defs::ids::GenericFunctionId;
+use defs::ids::{GenericFunctionId, LocalVarLongId, VarId};
+use diagnostics::{Diagnostics, WithDiagnostics};
+use diagnostics_proc_macros::with_diagnostics;
 use filesystem::ids::ModuleId;
 use itertools::zip_eq;
+use parser::parser::ParserDiagnostic;
 use smol_str::SmolStr;
-use syntax::node::ast;
 use syntax::node::db::SyntaxGroup;
+use syntax::node::{ast, TypedSyntaxNode};
 
 use crate::corelib::{core_module, unit_ty};
-use crate::db::SemanticGroup;
+use crate::db::{resolve_type, SemanticGroup};
 use crate::{
     semantic, ConcreteFunctionId, ConcreteFunctionLongId, ExprId, MatchArm, StatementId, TypeId,
     Variable,
@@ -75,7 +78,12 @@ fn literal_to_semantic(
 }
 
 /// Computes the semantic model of an expression.
-pub fn compute_expr_semantic(ctx: &mut ComputationContext<'_>, syntax: ast::Expr) -> ExprId {
+#[with_diagnostics]
+pub fn compute_expr_semantic(
+    diagnostics: &mut Diagnostics<ParserDiagnostic>,
+    ctx: &mut ComputationContext<'_>,
+    syntax: ast::Expr,
+) -> ExprId {
     let db = ctx.db;
     let syntax_db = db.as_syntax_group();
     // TODO: When semantic::Expr holds the syntax pointer, add it here as well.
@@ -110,7 +118,7 @@ pub fn compute_expr_semantic(ctx: &mut ComputationContext<'_>, syntax: ast::Expr
             )
             .map(|(arg_syntax, _param_id)| {
                 // TODO(spapini): Type check arguments.
-                compute_expr_semantic(ctx, arg_syntax)
+                compute_expr_semantic(ctx, arg_syntax).unwrap(diagnostics)
             })
             .collect();
             semantic::Expr::ExprFunctionCall(semantic::ExprFunctionCall {
@@ -136,12 +144,15 @@ pub fn compute_expr_semantic(ctx: &mut ComputationContext<'_>, syntax: ast::Expr
             // Convert statements to semantic model.
             let statements_semantic = statements
                 .into_iter()
-                .map(|statement_syntax| compute_statement_semantic(&mut new_ctx, statement_syntax))
+                .map(|statement_syntax| {
+                    compute_statement_semantic(&mut new_ctx, statement_syntax).unwrap(diagnostics)
+                })
                 .collect();
 
             // Convert tail expression (if exists) to semantic model.
-            let tail_semantic =
-                tail.map(|tail_expr| compute_expr_semantic(&mut new_ctx, tail_expr));
+            let tail_semantic = tail.map(|tail_expr| {
+                compute_expr_semantic(&mut new_ctx, tail_expr).unwrap(diagnostics)
+            });
 
             semantic::Expr::ExprBlock(semantic::ExprBlock {
                 statements: statements_semantic,
@@ -162,7 +173,8 @@ pub fn compute_expr_semantic(ctx: &mut ComputationContext<'_>, syntax: ast::Expr
                         semantic::Pattern::Literal(semantic_literal)
                     }
                 };
-                let expr_semantic = compute_expr_semantic(ctx, syntax_arm.expression(syntax_db));
+                let expr_semantic = compute_expr_semantic(ctx, syntax_arm.expression(syntax_db))
+                    .unwrap(diagnostics);
                 let arm_type = db.lookup_intern_expr(expr_semantic).ty();
                 semantic_arms.push(MatchArm { pattern, expression: expr_semantic });
                 match match_type {
@@ -174,7 +186,8 @@ pub fn compute_expr_semantic(ctx: &mut ComputationContext<'_>, syntax: ast::Expr
                 }
             }
             semantic::Expr::ExprMatch(semantic::ExprMatch {
-                matched_expr: compute_expr_semantic(ctx, expr_match.expr(syntax_db)),
+                matched_expr: compute_expr_semantic(ctx, expr_match.expr(syntax_db))
+                    .unwrap(diagnostics),
                 arms: semantic_arms,
                 ty: match match_type {
                     Some(t) => t,
@@ -273,17 +286,49 @@ fn resolve_function_in_module(
 }
 
 /// Computes the semantic model of a statement.
+#[with_diagnostics]
 pub fn compute_statement_semantic(
+    diagnostics: &mut Diagnostics<ParserDiagnostic>,
     ctx: &mut ComputationContext<'_>,
     syntax: ast::Statement,
 ) -> StatementId {
     let db = ctx.db;
     let syntax_db = db.as_syntax_group();
     let statement = match syntax {
-        ast::Statement::Let(_) => todo!(),
-        ast::Statement::Expr(expr_syntax) => {
-            semantic::Statement::Expr(compute_expr_semantic(ctx, expr_syntax.expr(syntax_db)))
+        ast::Statement::Let(let_syntax) => {
+            let var_id =
+                db.intern_local_var(LocalVarLongId(ctx.module_id, let_syntax.stable_ptr()));
+
+            let rhs_expr_id =
+                compute_expr_semantic(ctx, let_syntax.rhs(syntax_db)).unwrap(diagnostics);
+            let inferred_type = db.lookup_intern_expr(rhs_expr_id).ty();
+
+            let ty = match let_syntax.type_clause(syntax_db) {
+                ast::OptionTypeClause::Empty(_) => inferred_type,
+                ast::OptionTypeClause::TypeClause(type_clause) => {
+                    let var_type_path = type_clause.ty(syntax_db);
+                    resolve_type(db, ctx.module_id, var_type_path).unwrap(diagnostics)
+                    // TODO(yuval): assert once real types are returned everywhere.
+                    // assert_eq!(
+                    //     explicit_type, inferred_type,
+                    //     "inferred type ({explicit_type:?}) and explicit type ({inferred_type:?})
+                    // \      are different"
+                    // );
+                    // explicit_type
+                }
+            };
+            ctx.environment.variables.insert(
+                let_syntax.name(syntax_db).text(syntax_db),
+                Variable { id: VarId::Local(var_id), ty },
+            );
+            semantic::Statement::Let(semantic::StatementLet {
+                var: crate::LocalVariable { id: var_id, ty },
+                expr: rhs_expr_id,
+            })
         }
+        ast::Statement::Expr(expr_syntax) => semantic::Statement::Expr(
+            compute_expr_semantic(ctx, expr_syntax.expr(syntax_db)).unwrap(diagnostics),
+        ),
         ast::Statement::Return(_) => todo!(),
         ast::Statement::StatementMissing(_) => todo!(),
     };
