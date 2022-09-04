@@ -1,0 +1,423 @@
+use std::fmt;
+
+// TODO(Gil): Add more elaborate logic, i.e. if either kind is in lineage if both etc.
+#[derive(Clone, PartialEq, Eq)]
+enum FormatCondition {
+    Never,
+    Always,
+    IfNthAncestorIs(u32, String),
+    // IfLineageContains(String), // Currently not supperted TODO
+    IfIsLeadingTrivia, // Special condition only for trivia tokens, specifically comments
+    Not(Box<FormatCondition>),
+    Any(Vec<FormatCondition>),
+    All(Vec<FormatCondition>),
+}
+type FmtCond = FormatCondition;
+
+// The display of any condition variant is a boolean expression, so we can simply recursivly print it
+impl fmt::Display for FormatCondition {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            FormatCondition::Never => {
+                write!(f, "false")
+            }
+            FormatCondition::Always => {
+                write!(f, "true")
+            }
+            FormatCondition::IfNthAncestorIs(n, kind) => {
+                write!(f, "_node_path.is_nth_ancestor({n}, SyntaxKind::{kind})")
+            }
+            FormatCondition::IfIsLeadingTrivia => {
+                write!(f, "_node_path.is_leading_trivia")
+            }
+            FormatCondition::Not(cond) => {
+                write!(f, "!({cond})")
+            }
+            FormatCondition::Any(conds) => {
+                write!(f, "vec![")?;
+                for cond in conds {
+                    write!(f, "{cond},")?;
+                }
+                write!(f, "].iter().any(|&x| x)")
+            }
+            FormatCondition::All(conds) => {
+                write!(f, "vec![")?;
+                for cond in conds {
+                    write!(f, "{cond},")?;
+                }
+                write!(f, "].iter().all(|&x| x)")
+            }
+        }
+    }
+}
+
+#[derive(Clone)]
+struct SyntaxFormat {
+    name: String,
+    is_token: bool,
+    space_before: FormatCondition,
+    space_after: FormatCondition,
+    indent_increasing: FormatCondition,
+    indent_decreasing: FormatCondition,
+    whitespace_trimming: FormatCondition,
+    line_breaking: FormatCondition,
+    ignore: FormatCondition,
+}
+
+impl SyntaxFormat {
+    pub fn new(name: &str, is_token: bool) -> Self {
+        Self {
+            name: name.into(),
+            is_token,
+            space_before: FormatCondition::Never,
+            space_after: FormatCondition::Never,
+            indent_increasing: FormatCondition::Never,
+            indent_decreasing: FormatCondition::Never,
+            whitespace_trimming: FormatCondition::Never,
+            line_breaking: FormatCondition::Never,
+            ignore: FormatCondition::Never,
+        }
+    }
+    pub fn set_space_before(mut self) -> SyntaxFormat {
+        self.space_before = FormatCondition::Always;
+        self
+    }
+    pub fn set_space_after(mut self) -> SyntaxFormat {
+        self.space_after = FormatCondition::Always;
+        self
+    }
+    pub fn set_indent_increasing(mut self) -> SyntaxFormat {
+        self.indent_increasing = FormatCondition::Always;
+        self
+    }
+    pub fn set_indent_decreasing(mut self) -> SyntaxFormat {
+        self.indent_decreasing = FormatCondition::Always;
+        self
+    }
+    pub fn set_whitespace_trimming(mut self) -> SyntaxFormat {
+        self.whitespace_trimming = FormatCondition::Always;
+        self
+    }
+    pub fn set_line_breaking(mut self) -> SyntaxFormat {
+        self.line_breaking = FormatCondition::Always;
+        self
+    }
+    pub fn set_ignore(mut self) -> SyntaxFormat {
+        self.ignore = FormatCondition::Always;
+        self
+    }
+    pub fn set_space_before_conditional(mut self, condition: FormatCondition) -> SyntaxFormat {
+        self.space_before = condition;
+        self
+    }
+    pub fn set_space_after_conditional(mut self, condition: FormatCondition) -> SyntaxFormat {
+        self.space_after = condition;
+        self
+    }
+    pub fn set_indent_increasing_conditional(mut self, condition: FormatCondition) -> SyntaxFormat {
+        self.indent_increasing = condition;
+        self
+    }
+    pub fn set_indent_decreasing_conditional(mut self, condition: FormatCondition) -> SyntaxFormat {
+        self.indent_decreasing = condition;
+        self
+    }
+    pub fn set_whitespace_trimming_conditional(mut self, condition: FormatCondition) -> SyntaxFormat {
+        self.whitespace_trimming = condition;
+        self
+    }
+    pub fn set_line_breaking_conditional(mut self, condition: FormatCondition) -> SyntaxFormat {
+        self.line_breaking = condition;
+        self
+    }
+    pub fn set_ignore_conditional(mut self, condition: FormatCondition) -> SyntaxFormat {
+        self.ignore = condition;
+        self
+    }
+}
+
+fn get_trait_condition(syntax_format: &SyntaxFormat, trait_kind: &str) -> FormatCondition {
+    match trait_kind {
+        "space_before" => syntax_format.space_before.clone(),
+        "space_after" => syntax_format.space_after.clone(),
+        "indent_increasing" => syntax_format.indent_increasing.clone(),
+        "indent_decreasing" => syntax_format.indent_decreasing.clone(),
+        "whitespace_trimming" => syntax_format.whitespace_trimming.clone(),
+        "line_breaking" => syntax_format.line_breaking.clone(),
+        "ignore" => syntax_format.ignore.clone(),
+        _ => panic!("Unknown format trait."),
+    }
+}
+
+fn print_token_impl(trait_kind: &str, nodes: &Vec<SyntaxFormat>, additional_args: &str) {
+    println!("fn {trait_kind}(&self, _db: &dyn GreenInterner, _node_path: &NodePath, {additional_args}) -> bool {{");
+    let token_nodes: Vec<&SyntaxFormat> = nodes
+        .iter()
+        .filter(|node| {
+            node.is_token && get_trait_condition(node, trait_kind) != FormatCondition::Never
+        })
+        .collect();
+    if token_nodes.len() > 0 {
+        println!("match self.kind {{");
+        print_always_nodes(trait_kind, &token_nodes, "TokenKind::");
+        print_conditional_nodes(trait_kind, &token_nodes, "TokenKind::");
+        println!("_ => false");
+        println!("}}");
+    } else {
+        println!("false");
+    }
+    println!("}}");
+}
+
+fn print_syntax_impl(trait_kind: &str, nodes: &Vec<SyntaxFormat>, additional_args: &str) {
+    println!("fn {trait_kind}(&self, _db: &dyn GreenInterner, _node_path: &NodePath, {additional_args}) -> bool {{");
+    let syntax_nodes: Vec<&SyntaxFormat> = nodes
+        .iter()
+        .filter(|node| {
+            !node.is_token && get_trait_condition(node, trait_kind) != FormatCondition::Never
+        })
+        .collect();
+    if syntax_nodes.len() > 0 {
+        println!("match self.details(_db) {{");
+        println!("syntax::node::SyntaxNodeDetails::Syntax(kind) => match kind {{");
+        print_always_nodes(
+            trait_kind,
+            &syntax_nodes,
+            "SyntaxKind::",
+        );
+        print_conditional_nodes(
+            trait_kind,
+            &syntax_nodes,
+            "SyntaxKind::",
+        );
+        println!("_ => false");
+        println!("}}");
+        println!("syntax::node::SyntaxNodeDetails::Token(_) => {{");
+        println!(r#"panic!("Shouldn't happen")"#);
+        println!("}}");
+
+        println!("}}");
+    } else {
+        println!("false");
+    }
+    println!("}}");
+}
+
+fn print_always_nodes(trait_kind: &str, nodes: &Vec<&SyntaxFormat>, prefix: &str) {
+    let always_nodes: Vec<String> = nodes
+        .iter()
+        .filter(|node| get_trait_condition(node, trait_kind) == FormatCondition::Always)
+        .map(|node| prefix.to_owned() + node.name.as_str())
+        .collect();
+    if always_nodes.len() > 0 {
+        let nodes_string = always_nodes.join(" | ");
+        println!("{nodes_string} => true,");
+    }
+}
+
+fn print_conditional_nodes(trait_kind: &str, nodes: &Vec<&SyntaxFormat>, prefix: &str) {
+    for node in nodes {
+        match get_trait_condition(node, trait_kind) {
+            FormatCondition::Always | FormatCondition::Never => {}
+            _ => {
+                let node_name = node.name.as_str();
+                println!(
+                    "{prefix}{node_name} => {},",
+                    get_trait_condition(node, trait_kind)
+                );
+            }
+        }
+    }
+}
+
+fn main() {
+    let nodes = vec![
+        // Tokens
+        SyntaxFormat::new("Identifier", true),
+        SyntaxFormat::new("LiteralNumber", true),
+        SyntaxFormat::new("False", true)
+            .set_space_before()
+            .set_space_after(),
+        SyntaxFormat::new("True", true)
+            .set_space_before()
+            .set_space_after(),
+        SyntaxFormat::new("Function", true).set_space_after(),
+        SyntaxFormat::new("Module", true).set_space_after(),
+        SyntaxFormat::new("Struct", true).set_space_after(),
+        SyntaxFormat::new("Let", true).set_space_after(),
+        SyntaxFormat::new("Return", true).set_space_after(),
+        SyntaxFormat::new("And", true).set_space_before(),
+        SyntaxFormat::new("AndAnd", true)
+            .set_space_before()
+            .set_space_after(),
+        SyntaxFormat::new("OrOr", true)
+            .set_space_before()
+            .set_space_after(),
+        SyntaxFormat::new("EqEq", true)
+            .set_space_before()
+            .set_space_after(),
+        SyntaxFormat::new("Neq", true)
+            .set_space_before()
+            .set_space_after(),
+        SyntaxFormat::new("GE", true)
+            .set_space_before()
+            .set_space_after(),
+        SyntaxFormat::new("GT", true)
+            .set_space_before()
+            .set_space_after(),
+        SyntaxFormat::new("LE", true)
+            .set_space_before()
+            .set_space_after(),
+        SyntaxFormat::new("LT", true)
+            .set_space_before()
+            .set_space_after(),
+        SyntaxFormat::new("Not", true).set_space_before(),
+        SyntaxFormat::new("Plus", true)
+            .set_space_before()
+            .set_space_after(),
+        SyntaxFormat::new("Minus", true)
+            .set_space_before()
+            .set_space_after_conditional(FmtCond::Not(Box::new(FmtCond::IfNthAncestorIs(
+                1,
+                "ExprUnary".to_string(),
+            )))),
+        SyntaxFormat::new("Mul", true)
+            .set_space_before()
+            .set_space_after(),
+        SyntaxFormat::new("Div", true)
+            .set_space_before()
+            .set_space_after(),
+        SyntaxFormat::new("Colon", true).set_space_after(),
+        SyntaxFormat::new("ColonColon", true),
+        SyntaxFormat::new("Comma", true).set_space_after(),
+        SyntaxFormat::new("Dot", true),
+        SyntaxFormat::new("DotDot", true),
+        SyntaxFormat::new("Eq", true)
+            .set_space_before()
+            .set_space_after(),
+        SyntaxFormat::new("Semi", true).set_whitespace_trimming(),
+        SyntaxFormat::new("Underscore", true),
+        SyntaxFormat::new("LBrace", true)
+            .set_space_before_conditional(FmtCond::Not(Box::new(FmtCond::IfNthAncestorIs(
+                1,
+                "ExprBlock".to_string(),
+            ))))
+            .set_space_after()
+            .set_line_breaking_conditional(FmtCond::Any(vec![
+                FmtCond::IfNthAncestorIs(1, "ExprBlock".to_string()),
+                FmtCond::IfNthAncestorIs(2, "ItemModule".to_string()),
+                FmtCond::IfNthAncestorIs(2, "ItemStruct".to_string()),
+            ])),
+        SyntaxFormat::new("RBrace", true)
+            .set_space_before_conditional(FmtCond::Not(Box::new(FmtCond::IfNthAncestorIs(
+                1,
+                "ExprBlock".to_string(),
+            ))))
+            .set_space_after(),
+        SyntaxFormat::new("LBrack", true).set_space_after(),
+        SyntaxFormat::new("RBrack", true).set_space_before(),
+        SyntaxFormat::new("LParen", true),
+        SyntaxFormat::new("RParen", true),
+        SyntaxFormat::new("Arrow", true)
+            .set_space_before()
+            .set_space_after(),
+        SyntaxFormat::new("SingleLineComment", true)
+            .set_space_before_conditional(FmtCond::Not(Box::new(FmtCond::IfIsLeadingTrivia)))
+            .set_line_breaking_conditional(FmtCond::IfIsLeadingTrivia),
+        SyntaxFormat::new("Whitespace", true).set_ignore(),
+        SyntaxFormat::new("Newline", true).set_ignore(),
+        SyntaxFormat::new("Missing", true).set_ignore(),
+        SyntaxFormat::new("EndOfFile", true),
+        SyntaxFormat::new("BadCharacters", true).set_ignore(),
+        // Nodes
+        SyntaxFormat::new("Terminal", false),
+        SyntaxFormat::new("TriviumSkippedTerminal", false),
+        SyntaxFormat::new("Trivia", false),
+        SyntaxFormat::new("StructArgExpr", false),
+        SyntaxFormat::new("OptionStructArgExprEmpty", false),
+        SyntaxFormat::new("StructArgSingle", false),
+        SyntaxFormat::new("StructArgTail", false),
+        SyntaxFormat::new("StructArgList", false),
+        SyntaxFormat::new("ArgListBraced", false),
+        SyntaxFormat::new("Identifier", false)
+            .set_space_before()
+            .set_space_after(),
+        SyntaxFormat::new("ExprList", false),
+        SyntaxFormat::new("ExprMissing", false),
+        SyntaxFormat::new("OptionGenericArgsEmpty", false),
+        SyntaxFormat::new("OptionGenericArgsSome", false),
+        SyntaxFormat::new("PathSegment", false),
+        SyntaxFormat::new("ExprPath", false),
+        SyntaxFormat::new("ExprLiteral", false),
+        SyntaxFormat::new("ExprParenthesized", false),
+        SyntaxFormat::new("ExprUnary", false),
+        SyntaxFormat::new("ExprBinary", false),
+        SyntaxFormat::new("ExprTuple", false),
+        SyntaxFormat::new("ExprListParenthesized", false),
+        SyntaxFormat::new("ExprFunctionCall", false),
+        SyntaxFormat::new("ExprStructCtorCall", false),
+        SyntaxFormat::new("ExprBlock", false)
+            .set_line_breaking()
+            .set_indent_increasing()
+            .set_indent_decreasing(),
+        SyntaxFormat::new("TypeClause", false),
+        SyntaxFormat::new("OptionTypeClauseEmpty", false),
+        SyntaxFormat::new("ReturnTypeClause", false),
+        SyntaxFormat::new("OptionReturnTypeClauseEmpty", false),
+        SyntaxFormat::new("StatementList", false),
+        SyntaxFormat::new("StatementMissing", false),
+        SyntaxFormat::new("StatementLet", false).set_line_breaking(),
+        SyntaxFormat::new("OptionSemicolonEmpty", false),
+        SyntaxFormat::new("StatementExpr", false).set_line_breaking(),
+        SyntaxFormat::new("StatementReturn", false).set_line_breaking(),
+        SyntaxFormat::new("Param", false),
+        SyntaxFormat::new("ParamList", false),
+        SyntaxFormat::new("ParamListParenthesized", false),
+        SyntaxFormat::new("ParamListBraced", false),
+        SyntaxFormat::new("FunctionSignature", false).set_space_after(),
+        SyntaxFormat::new("ItemList", false).set_line_breaking(),
+        SyntaxFormat::new("ItemModule", false)
+            .set_line_breaking()
+            .set_indent_decreasing(),
+        SyntaxFormat::new("ItemFunction", false).set_line_breaking(),
+        SyntaxFormat::new("ItemFunctionSignature", false),
+        SyntaxFormat::new("ItemTrait", false)
+            .set_line_breaking()
+            .set_indent_decreasing()
+            .set_indent_increasing(),
+        SyntaxFormat::new("ItemImpl", false)
+            .set_line_breaking()
+            .set_indent_decreasing()
+            .set_indent_increasing(),
+        SyntaxFormat::new("ItemStruct", false)
+            .set_line_breaking()
+            .set_indent_decreasing()
+            .set_indent_increasing(),
+        SyntaxFormat::new("ItemEnum", false)
+            .set_line_breaking()
+            .set_indent_decreasing()
+            .set_indent_increasing(),
+        SyntaxFormat::new("ItemUse", false).set_line_breaking(),
+        SyntaxFormat::new("SyntaxFile", false),
+    ];
+
+    let traits = &[
+        ("space_before", ""),
+        ("space_after", ""),
+        ("line_breaking", "_hard_break: bool"),
+        ("whitespace_trimming", ""),
+        ("indent_increasing", ""),
+        ("indent_decreasing", ""),
+        ("ignore", ""),
+    ];
+    println!("impl SyntaxNodeFormat for SyntaxNode {{");
+    for (trait_kind, additional_args) in traits {
+        print_syntax_impl(trait_kind, &nodes, additional_args);
+    }
+    println!("}}");
+    println!("impl SyntaxNodeFormat for token::Token {{");
+    for (trait_kind, additional_args) in traits {
+        print_token_impl(trait_kind, &nodes, additional_args);
+    }
+    println!("}}");
+}
