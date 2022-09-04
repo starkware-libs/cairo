@@ -21,9 +21,12 @@ pub fn generate_program_code(
     let mut functions: Vec<Arc<pre_sierra::Function>> = vec![];
     let mut statements: Vec<pre_sierra::Statement> = vec![];
 
+    // Sort module items to guarantee deterministic compilation.
     let mut module_items_vec: Vec<_> = module_items.iter().collect();
     module_items_vec.sort_by_key(|key_value| key_value.0);
 
+    // Iterate over the functions in the module, compile them to pre-sierra statements,
+    // and add them to `functions`.
     for (_name, item) in module_items_vec {
         match item {
             ModuleItemId::FreeFunction(free_function_id) => {
