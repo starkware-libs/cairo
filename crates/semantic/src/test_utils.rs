@@ -53,8 +53,26 @@ pub fn setup_test_expr(
     let (module_id, function_semantic) =
         setup_test_function(db, &function_code, "test_func", module_code);
     let expr = match db.lookup_intern_expr(function_semantic.body) {
-        semantic::Expr::ExprBlock(block) => block.tail.unwrap(),
+        semantic::Expr::ExprBlock(block) => {
+            assert!(
+                block.statements.is_empty(),
+                "expr_code is not a valid expression. Consider using setup_test_block()."
+            );
+            block.tail.unwrap()
+        }
         _ => panic!(),
     };
     (module_id, expr)
+}
+
+/// Returns the semantic model of a given block expression.
+/// module_code - extra setup code in the module context.
+/// function_body - extra setup code in the function context.
+pub fn setup_test_block(
+    db: &mut dyn SemanticGroup,
+    expr_code: &str,
+    module_code: &str,
+    function_body: &str,
+) -> (ModuleId, ExprId) {
+    setup_test_expr(db, &format!("{{ {expr_code} }}"), module_code, function_body)
 }
