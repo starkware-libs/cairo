@@ -5,6 +5,7 @@ use diagnostics::{Diagnostics, WithDiagnostics};
 use diagnostics_proc_macros::with_diagnostics;
 use filesystem::ids::ModuleId;
 use semantic::db::SemanticGroup;
+use semantic::TypeId;
 
 use crate::function_generator::generate_function_code;
 use crate::pre_sierra;
@@ -32,6 +33,10 @@ pub trait SierraGenGroup: SemanticGroup {
     //   id is defined in sierra and the long id is defined in semantic.
     #[salsa::interned]
     fn intern_function(&self, id: semantic::ConcreteFunctionId) -> sierra::ids::FunctionId;
+
+    /// Creates a Sierra type id for a type id of the semantic model.
+    #[salsa::interned]
+    fn intern_type_id(&self, id: TypeId) -> sierra::ids::ConcreteTypeId;
 
     /// Generates and returns the Sierra code (as [pre_sierra::Function]) for a given function.
     fn get_function_code(
