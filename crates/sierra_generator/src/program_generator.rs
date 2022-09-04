@@ -6,7 +6,7 @@ use diagnostics::Diagnostics;
 
 use crate::db::SierraGenGroup;
 use crate::pre_sierra::{self};
-use crate::resolve_labels::resolve_labels;
+use crate::resolve_labels::{resolve_labels, LabelReplacer};
 
 #[cfg(test)]
 #[path = "program_generator_test.rs"]
@@ -37,7 +37,8 @@ pub fn generate_program_code(
     }
 
     // Resolve labels.
-    let resolved_statements = resolve_labels(statements);
+    let label_replacer = LabelReplacer::from_statements(&statements);
+    let resolved_statements = resolve_labels(statements, &label_replacer);
 
     Some(sierra::program::Program {
         // TODO(lior): Fill type_declarations.
@@ -53,8 +54,7 @@ pub fn generate_program_code(
                 params: vec![],
                 // TODO(lior): Add ret types.
                 ret_types: vec![],
-                // TODO(lior): Fix entry.
-                entry: sierra::program::StatementIdx(1234),
+                entry: label_replacer.handle_label_id(function.entry_point),
             })
             .collect(),
     })
