@@ -84,7 +84,8 @@
     │   │       │   │   │   ├── lbrace (kind: LBrace): '{'
     │   │       │   │   │   ├── arms (kind: MatchArms)
     │   │       │   │   │   │   ├── item #0 (kind: MatchArm)
-    │   │       │   │   │   │   │   ├── pattern (kind: LiteralNumber): '0'
+    │   │       │   │   │   │   │   ├── pattern (kind: ExprLiteral)
+    │   │       │   │   │   │   │   │   └── terminal (kind: LiteralNumber): '0'
     │   │       │   │   │   │   │   ├── arrow (kind: MatchArrow): '=>'
     │   │       │   │   │   │   │   └── expression (kind: ExprBlock)
     │   │       │   │   │   │   │       ├── lbrace (kind: LBrace): '{'
