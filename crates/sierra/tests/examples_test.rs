@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 
@@ -41,10 +42,11 @@ fn create_registry(name: &str) {
 #[test_case((200, 7), (30, 16); "7 => 16")]
 // Out of gas.
 #[test_case((100, 7), (5, -1); "Out of gas.")]
-fn simulate((gb, n): (i64, i64), (new_gb, index): (i64, i64)) {
+fn simulate_collatz((gb, n): (i64, i64), (new_gb, index): (i64, i64)) {
     assert_eq!(
         simulation::run(
             &get_example_program(COLLATZ),
+            &HashMap::from([("gas11".into(), 11), ("gas1".into(), 1)]),
             &"Collatz".into(),
             vec![vec![gb.into()], vec![n.into()]]
         ),
@@ -66,6 +68,7 @@ fn simulate_fib_jumps((gb, n): (i64, i64), (new_gb, fib): (i64, i64)) {
     assert_eq!(
         simulation::run(
             &get_example_program(FIB_JUMPS),
+            &HashMap::from([("gas7".into(), 7), ("gas5".into(), 5), ("gas1".into(), 1)]),
             &"Fibonacci".into(),
             vec![vec![gb.into()], vec![n.into()]]
         ),
@@ -86,6 +89,7 @@ fn simulate_fib_no_gas(n: i64, fib: i64) {
     assert_eq!(
         simulation::run(
             &get_example_program(FIB_NO_GAS),
+            &HashMap::new(),
             &"Fibonacci".into(),
             vec![vec![/* a= */ 1.into()], vec![/* b= */ 1.into()], vec![n.into()]]
         ),
@@ -107,6 +111,7 @@ fn simulate_fib_recursive((gb, n): (i64, i64), (new_gb, fib): (i64, i64)) {
     assert_eq!(
         simulation::run(
             &get_example_program(FIB_RECURSIVE),
+            &HashMap::from([("gas26".into(), 26), ("gas3".into(), 3), ("gas1".into(), 1)]),
             &"Fibonacci".into(),
             vec![vec![gb.into()], vec![n.into()]]
         ),

@@ -72,6 +72,11 @@ ConcreteTypeId: ConcreteTypeId = {
 }
 ConcreteTypeIds = Comma<ConcreteTypeId>;
 
+SymbolId: SymbolId = {
+    <id:Label> => SymbolId::from_string(id),
+    "[" <id:UnsignedInt> "]" => SymbolId::new(id),
+}
+
 StatementIdx: StatementIdx = {
      <id:UnsignedInt> => StatementIdx(id as usize),
 }
@@ -81,6 +86,7 @@ GenericArg: GenericArg = {
     <v:SignedInt> => GenericArg::Value(v),
     "user@" <id:FunctionId> => GenericArg::UserFunc(id),
     "lib@" <id:ConcreteLibFuncId> => GenericArg::LibFunc(id),
+    "sym@" <id:SymbolId> => GenericArg::Symbol(id),
 }
 GenericArgs = Comma<GenericArg>;
 

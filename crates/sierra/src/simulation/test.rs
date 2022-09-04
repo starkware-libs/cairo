@@ -4,7 +4,7 @@ use test_case::test_case;
 
 use super::mem_cell::MemCell;
 use super::LibFuncSimulationError::{
-    self, FunctionSimulationError, MemoryLayoutMismatch, WrongNumberOfArgs,
+    self, FunctionSimulationError, MemoryLayoutMismatch, UnresolvedSymbol, WrongNumberOfArgs,
 };
 use super::{core, SimulationError};
 use crate::extensions::core::CoreLibFunc;
@@ -22,6 +22,10 @@ fn value_arg(v: i64) -> GenericArg {
 
 fn user_func_arg(name: &str) -> GenericArg {
     GenericArg::UserFunc(name.into())
+}
+
+fn symbol_arg(name: &str) -> GenericArg {
+    GenericArg::Symbol(name.into())
 }
 
 /// Expects to find a libfunc and simulate it.
@@ -61,6 +65,7 @@ fn simulate(
             )
             .unwrap(),
         inputs,
+        &HashMap::from([("gas4".into(), 4), ("gas5".into(), 5)]),
         |id, inputs| {
             if id == &"drop_all_inputs".into() {
                 Ok(vec![])
@@ -78,8 +83,8 @@ fn simulate(
 
 /// Expects to find a libfunc, wrapping and unwrapping the MemCell types and vectors of the
 /// inputs and outputs, assumming all of size 1.
-#[test_case("get_gas", vec![value_arg(4)], vec![5] => Ok((vec![1], 0)); "get_gas<4>(5)")]
-#[test_case("get_gas", vec![value_arg(4)], vec![2] => Ok((vec![2], 1)); "get_gas<4>(2)")]
+#[test_case("get_gas", vec![symbol_arg("gas4")], vec![5] => Ok((vec![1], 0)); "get_gas<gas4>(5)")]
+#[test_case("get_gas", vec![symbol_arg("gas4")], vec![2] => Ok((vec![2], 1)); "get_gas<gas4>(2)")]
 #[test_case("int_jump_nz", vec![], vec![2] => Ok((vec![2], 0)); "int_jump_nz(2)")]
 #[test_case("int_jump_nz", vec![], vec![0] => Ok((vec![], 1)); "int_jump_nz(0)")]
 #[test_case("jump", vec![], vec![] => Ok((vec![], 0)); "jump()")]
@@ -105,7 +110,7 @@ fn simulate_invocation(
 }
 
 /// Tests for simulation of a non branch invocations.
-#[test_case("refund_gas", vec![value_arg(5)], vec![2] => Ok(vec![7]); "refund_gas<5>(2)")]
+#[test_case("refund_gas", vec![symbol_arg("gas5")], vec![2] => Ok(vec![7]); "refund_gas<gas5>(2)")]
 #[test_case("int_add", vec![], vec![2, 3] => Ok(vec![5]); "int_add(2, 3)")]
 #[test_case("int_sub", vec![], vec![5, 3] => Ok(vec![2]); "int_sub(5, 3)")]
 #[test_case("int_mul", vec![], vec![5, 3] => Ok(vec![15]); "int_mul(5, 3)")]
@@ -140,12 +145,16 @@ fn simulate_none_branch(
     })
 }
 
-#[test_case("get_gas", vec![value_arg(4)], vec![vec![]] => MemoryLayoutMismatch;
+#[test_case("get_gas", vec![symbol_arg("gas4")], vec![vec![]] => MemoryLayoutMismatch;
             "get_gas<4>(empty)")]
-#[test_case("get_gas", vec![value_arg(4)], vec![] => WrongNumberOfArgs; "get_gas<4>()")]
-#[test_case("refund_gas", vec![value_arg(5)], vec![vec![]] => MemoryLayoutMismatch;
-            "refund_gas<5>(empty)")]
-#[test_case("refund_gas", vec![value_arg(5)], vec![] => WrongNumberOfArgs; "refund_gas<5>()")]
+#[test_case("get_gas", vec![symbol_arg("unknown")], vec![] => UnresolvedSymbol("unknown".into());
+            "get_gas<unknown>()")]
+#[test_case("get_gas", vec![symbol_arg("gas4")], vec![] => WrongNumberOfArgs; "get_gas<4>()")]
+#[test_case("refund_gas", vec![symbol_arg("gas5")], vec![vec![]] => MemoryLayoutMismatch;
+            "refund_gas<gas5>(empty)")]
+#[test_case("refund_gas", vec![symbol_arg("unknown")], vec![] => UnresolvedSymbol("unknown".into());
+            "refund_gas<unknown>()")]
+#[test_case("refund_gas", vec![symbol_arg("gas5")], vec![] => WrongNumberOfArgs; "refund_gas<5>()")]
 #[test_case("int_add", vec![], vec![vec![1]] => WrongNumberOfArgs; "int_add(1)")]
 #[test_case("int_sub", vec![], vec![vec![1]] => WrongNumberOfArgs; "int_sub(1)")]
 #[test_case("int_mul", vec![], vec![vec![1]] => WrongNumberOfArgs; "int_mul(1)")]

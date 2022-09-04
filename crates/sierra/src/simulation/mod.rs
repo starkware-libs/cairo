@@ -6,7 +6,7 @@ use thiserror::Error;
 use self::mem_cell::MemCell;
 use crate::edit_state::{put_results, take_args, EditStateError};
 use crate::extensions::core::{CoreConcreteLibFunc, CoreLibFunc, CoreType};
-use crate::ids::{FunctionId, VarId};
+use crate::ids::{FunctionId, SymbolId, VarId};
 use crate::program::{Program, Statement, StatementIdx};
 use crate::program_registry::{ProgramRegistry, ProgramRegistryError};
 
@@ -22,6 +22,8 @@ pub enum LibFuncSimulationError {
     WrongNumberOfArgs,
     #[error("Expected a different memory layout")]
     MemoryLayoutMismatch,
+    #[error("Could not resolve requested symbol value")]
+    UnresolvedSymbol(SymbolId),
     #[error("Error occurred during user function call")]
     FunctionSimulationError(FunctionId, Box<SimulationError>),
 }
@@ -46,16 +48,19 @@ pub enum SimulationError {
 /// Runs a function from the program with the given inputs.
 pub fn run(
     program: &Program,
+    symbol_values: &HashMap<SymbolId, i64>,
     function_id: &FunctionId,
     inputs: Vec<Vec<MemCell>>,
 ) -> Result<Vec<Vec<MemCell>>, SimulationError> {
-    let context = SimulationContext { program, registry: &ProgramRegistry::new(program)? };
+    let context =
+        SimulationContext { program, symbol_values, registry: &ProgramRegistry::new(program)? };
     context.simulate_function(function_id, inputs)
 }
 
 /// Helper class for runing the simulation.
 struct SimulationContext<'a> {
     pub program: &'a Program,
+    pub symbol_values: &'a HashMap<SymbolId, i64>,
     pub registry: &'a ProgramRegistry<CoreType, CoreLibFunc>,
 }
 impl SimulationContext<'_> {
@@ -126,7 +131,7 @@ impl SimulationContext<'_> {
         inputs: Vec<Vec<MemCell>>,
         current_statement_id: StatementIdx,
     ) -> Result<(Vec<Vec<MemCell>>, usize), SimulationError> {
-        core::simulate(libfunc, inputs, |function_id, inputs| {
+        core::simulate(libfunc, inputs, self.symbol_values, |function_id, inputs| {
             self.simulate_function(function_id, inputs).map_err(|error| {
                 LibFuncSimulationError::FunctionSimulationError(
                     function_id.clone(),

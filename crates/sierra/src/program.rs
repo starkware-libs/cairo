@@ -1,5 +1,5 @@
 use crate::ids::{
-    ConcreteLibFuncId, ConcreteTypeId, FunctionId, GenericLibFuncId, GenericTypeId, VarId,
+    ConcreteLibFuncId, ConcreteTypeId, FunctionId, GenericLibFuncId, GenericTypeId, SymbolId, VarId,
 };
 
 /// A full Sierra program.
@@ -93,6 +93,7 @@ pub enum GenericArg {
     Value(i64),
     UserFunc(FunctionId),
     LibFunc(ConcreteLibFuncId),
+    Symbol(SymbolId),
 }
 
 /// A possible statement.

@@ -1,7 +1,7 @@
 use std::fmt;
 
 use crate::ids::{
-    ConcreteLibFuncId, ConcreteTypeId, FunctionId, GenericLibFuncId, GenericTypeId, VarId,
+    ConcreteLibFuncId, ConcreteTypeId, FunctionId, GenericLibFuncId, GenericTypeId, SymbolId, VarId,
 };
 use crate::program::{
     ConcreteLibFuncLongId, ConcreteTypeLongId, Function, GenBranchInfo, GenBranchTarget,
@@ -91,6 +91,7 @@ display_identity!(FunctionId);
 display_identity!(VarId);
 display_identity!(GenericTypeId);
 display_identity!(ConcreteTypeId);
+display_identity!(SymbolId);
 
 impl fmt::Display for GenericArg {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -99,6 +100,7 @@ impl fmt::Display for GenericArg {
             GenericArg::Value(v) => write!(f, "{v}"),
             GenericArg::UserFunc(id) => write!(f, "user@{id}"),
             GenericArg::LibFunc(id) => write!(f, "lib@{id}"),
+            GenericArg::Symbol(id) => write!(f, "symbol@{id}"),
         }
     }
 }

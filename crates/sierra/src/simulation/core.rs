@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use array_init::array_init;
 
 use super::mem_cell::MemCell;
@@ -17,7 +19,7 @@ use crate::extensions::integer::IntegerConcrete;
 use crate::extensions::mem::MemConcreteLibFunc::{
     AlignTemps, AllocLocals, Rename, StoreLocal, StoreTemp,
 };
-use crate::ids::FunctionId;
+use crate::ids::{FunctionId, SymbolId};
 
 /// Simulates the run of a single libfunc. Returns the memory reperesentations of the outputs, and
 /// the chosen branch given the inputs. A function that provides the simulation of running a user
@@ -27,6 +29,7 @@ pub fn simulate<
 >(
     libfunc: &CoreConcreteLibFunc,
     inputs: Vec<Vec<MemCell>>,
+    symbol_values: &HashMap<SymbolId, i64>,
     simulate_function: F,
 ) -> Result<(Vec<Vec<MemCell>>, usize), LibFuncSimulationError> {
     match libfunc {
@@ -34,6 +37,9 @@ pub fn simulate<
             Ok((simulate_function(&function.id, inputs)?, 0))
         }
         Gas(GetGas(GetGasConcreteLibFunc { count, .. })) => {
+            let count = symbol_values
+                .get(count)
+                .ok_or_else(|| LibFuncSimulationError::UnresolvedSymbol(count.clone()))?;
             let [MemCell { value: gas_counter }] = unpack_inputs::<1>(inputs)?;
             if gas_counter >= *count {
                 // Have enough gas - return reduced counter and jump to success branch.
@@ -44,6 +50,9 @@ pub fn simulate<
             }
         }
         Gas(RefundGas(RefundGasConcreteLibFunc { count, .. })) => {
+            let count = symbol_values
+                .get(count)
+                .ok_or_else(|| LibFuncSimulationError::UnresolvedSymbol(count.clone()))?;
             let [MemCell { value: gas_counter }] = unpack_inputs::<1>(inputs)?;
             Ok((vec![vec![(gas_counter + count).into()]], 0))
         }

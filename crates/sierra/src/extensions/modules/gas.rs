@@ -5,7 +5,7 @@ use crate::extensions::{
     ConcreteType, NamedLibFunc, NamedType, NoGenericArgsGenericType, SignatureBasedConcreteLibFunc,
     SpecializationError,
 };
-use crate::ids::{GenericLibFuncId, GenericTypeId};
+use crate::ids::{GenericLibFuncId, GenericTypeId, SymbolId};
 use crate::program::GenericArg;
 
 /// Type for gas actions.
@@ -26,10 +26,10 @@ define_libfunc_hierarchy! {
     }, GasConcreteLibFunc
 }
 
-/// Helper for extracting a single positive value from template arguments.
-fn as_single_positive_value(args: &[GenericArg]) -> Result<i64, SpecializationError> {
+/// Helper for extracting a single symbol from template arguments.
+fn as_constant(args: &[GenericArg]) -> Result<SymbolId, SpecializationError> {
     match args {
-        [GenericArg::Value(count)] if *count > 0 => Ok(*count),
+        [GenericArg::Symbol(id)] => Ok(id.clone()),
         _ => Err(SpecializationError::UnsupportedGenericArg),
     }
 }
@@ -47,7 +47,7 @@ impl NamedLibFunc for GetGasLibFunc {
     ) -> Result<Self::Concrete, SpecializationError> {
         let gas_builtin_type = context.get_concrete_type(GasBuiltinType::id(), &[])?;
         Ok(GetGasConcreteLibFunc {
-            count: as_single_positive_value(args)?,
+            count: as_constant(args)?,
             signature: LibFuncSignature {
                 input_types: vec![gas_builtin_type.clone()],
                 output_types: vec![
@@ -63,7 +63,7 @@ impl NamedLibFunc for GetGasLibFunc {
 }
 
 pub struct GetGasConcreteLibFunc {
-    pub count: i64,
+    pub count: SymbolId,
     pub signature: LibFuncSignature,
 }
 impl SignatureBasedConcreteLibFunc for GetGasConcreteLibFunc {
@@ -85,7 +85,7 @@ impl NamedLibFunc for RefundGasLibFunc {
     ) -> Result<Self::Concrete, SpecializationError> {
         let gas_builtin_type = context.get_concrete_type(GasBuiltinType::id(), &[])?;
         Ok(RefundGasConcreteLibFunc {
-            count: as_single_positive_value(args)?,
+            count: as_constant(args)?,
             signature: LibFuncSignature::new_non_branch(
                 vec![gas_builtin_type.clone()],
                 vec![gas_builtin_type],
@@ -95,7 +95,7 @@ impl NamedLibFunc for RefundGasLibFunc {
 }
 
 pub struct RefundGasConcreteLibFunc {
-    pub count: i64,
+    pub count: SymbolId,
     pub signature: LibFuncSignature,
 }
 impl SignatureBasedConcreteLibFunc for RefundGasConcreteLibFunc {
