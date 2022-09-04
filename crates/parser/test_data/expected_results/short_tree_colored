@@ -7,7 +7,7 @@
     │       │   ├── [34mlparen[0m (kind: LParen): '[1;32m([0m'
     │       │   ├── [36mparameters[0m (kind: ParamList)
     │       │   │   └── [36mitem #0[0m (kind: Param)
-    │       │   │       ├── [34midentifier[0m (kind: Identifier): '[1;32ma[0m'
+    │       │   │       ├── [34mname[0m (kind: Identifier): '[1;32ma[0m'
     │       │   │       └── [36mtype_clause[0m (kind: TypeClause)
     │       │   │           ├── [34mcolon[0m (kind: Colon): '[1;32m:[0m'
     │       │   │           └── [36mty[0m (kind: ExprPath)

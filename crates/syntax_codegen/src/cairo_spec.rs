@@ -162,7 +162,7 @@ pub fn get_spec() -> Vec<Node> {
         StructBuilder::new("StatementMissing").build(),
         StructBuilder::new("StatementLet")
             .node("letkw", "Terminal")
-            .key_node("lhs", "Terminal")
+            .key_node("name", "Terminal")
             .node("type_clause", "OptionTypeClause")
             .node("eq", "Terminal")
             .node("rhs", "Expr")
@@ -184,7 +184,7 @@ pub fn get_spec() -> Vec<Node> {
             .build(),
         // --- Parameters and Functions ---
         StructBuilder::new("Param")
-            .key_node("identifier", "Terminal")
+            .key_node("name", "Terminal")
             .node("type_clause", "NonOptionTypeClause")
             .build(),
         separated_list_node("ParamList", "Param"),
@@ -240,7 +240,7 @@ pub fn get_spec() -> Vec<Node> {
         StructBuilder::new("ItemExternType")
             .node("externkw", "Terminal")
             .node("typekw", "Terminal")
-            .node("name", "Terminal")
+            .key_node("name", "Terminal")
             .node("semicolon", "Terminal")
             .build(),
         // TODO(spapini): consider having specific ItemLists here.
