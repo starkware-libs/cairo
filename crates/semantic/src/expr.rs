@@ -5,7 +5,7 @@ mod test;
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use defs::ids::VarId;
+use defs::ids::{GenericFunctionId, VarId};
 use filesystem::ids::ModuleId;
 use itertools::zip_eq;
 use smol_str::SmolStr;
@@ -13,9 +13,7 @@ use syntax::node::ast;
 
 use crate::corelib::unit_ty;
 use crate::db::SemanticGroup;
-use crate::{
-    semantic, ConcreteFunctionId, ConcreteFunctionLongId, ExprId, GenericFunctionId, StatementId,
-};
+use crate::{semantic, ConcreteFunctionId, ConcreteFunctionLongId, ExprId, StatementId};
 
 /// Context for computing the semantic model of expression trees.
 pub struct ComputationContext<'db> {
@@ -163,7 +161,7 @@ fn resolve_concrete_function(
     };
     let function_name = last_element.ident(syntax_db).text(syntax_db);
     let generic_function = match db
-        .resolve_module_identifier(ctx.module_id, function_name)
+        .module_resolve_identifier(ctx.module_id, function_name)
         .expect("Diagnostics not supported yet")
         .expect("Unresolved identifier")
     {

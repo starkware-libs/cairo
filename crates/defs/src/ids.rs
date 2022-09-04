@@ -111,3 +111,18 @@ pub enum Symbol {
     ModuleItem(ModuleItemId),
     Var(VarId),
 }
+
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+pub enum GenericFunctionId {
+    Free(FreeFunctionId),
+    Extern(ExternFunctionId),
+    // TODO(spapini): impl functions.
+}
+
+/// Type instance.
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub enum GenericTypeId {
+    Struct(StructId),
+    Extern(ExternTypeId),
+    // TODO(spapini): enums, associated types in impls.
+}
