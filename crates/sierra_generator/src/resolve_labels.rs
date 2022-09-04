@@ -11,10 +11,9 @@ use crate::pre_sierra;
 /// Replaces labels with their corresponding StatementIdx.
 pub fn resolve_labels(
     statements: Vec<pre_sierra::Statement>,
-) -> (Vec<program::Statement>, LabelReplacer) {
-    let label_replacer = LabelReplacer::new(get_label_id_to_index(&statements));
-
-    let resolved_statements = statements
+    label_replacer: &LabelReplacer,
+) -> Vec<program::Statement> {
+    statements
         .into_iter()
         .filter_map(|statement| match statement {
             pre_sierra::Statement::Sierra(sierra_statement) => {
@@ -22,8 +21,7 @@ pub fn resolve_labels(
             }
             pre_sierra::Statement::Label(_) => None,
         })
-        .collect();
-    (resolved_statements, label_replacer)
+        .collect()
 }
 
 /// Returns a map from LabelId to the index of the next Sierra statement.
@@ -56,6 +54,10 @@ pub struct LabelReplacer {
 impl LabelReplacer {
     fn new(label_id_to_index: HashMap<pre_sierra::LabelId, usize>) -> Self {
         Self { label_id_to_index }
+    }
+
+    pub fn from_statements(statements: &[pre_sierra::Statement]) -> LabelReplacer {
+        Self::new(get_label_id_to_index(statements))
     }
 
     fn handle_statement(
