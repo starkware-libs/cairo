@@ -64,6 +64,7 @@ pub struct ExprMatch {
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
+// TODO(yuval): rename to MatchArm
 pub struct MatchBranch {
     pub pattern: Pattern,
     pub block: ExprId,
