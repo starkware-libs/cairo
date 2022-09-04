@@ -1,6 +1,6 @@
 use std::collections::hash_map;
 
-use defs::ids::{FreeFunctionId, LocalVarId};
+use defs::ids::FreeFunctionId;
 use smol_str::SmolStr;
 use utils::unordered_hash_map::UnorderedHashMap;
 
@@ -14,7 +14,7 @@ pub struct ExprGeneratorContext<'a> {
     function_id: FreeFunctionId,
     var_id_allocator: IdAllocator,
     label_id_allocator: IdAllocator,
-    variables: UnorderedHashMap<LocalVarId, sierra::ids::VarId>,
+    variables: UnorderedHashMap<defs::ids::VarId, sierra::ids::VarId>,
 }
 impl<'a> ExprGeneratorContext<'a> {
     /// Constructs an empty [ExprGeneratorContext].
@@ -40,7 +40,11 @@ impl<'a> ExprGeneratorContext<'a> {
 
     /// Attaches a local variable with its Sierra variable.
     /// See [Self::get_variable].
-    pub fn register_variable(&mut self, local_var_id: LocalVarId, sierra_var: sierra::ids::VarId) {
+    pub fn register_variable(
+        &mut self,
+        local_var_id: defs::ids::VarId,
+        sierra_var: sierra::ids::VarId,
+    ) {
         match self.variables.entry(local_var_id) {
             hash_map::Entry::Occupied(_) => {
                 // TODO(lior): Either panic!() if this is necessarily an internal compiler error
@@ -53,7 +57,7 @@ impl<'a> ExprGeneratorContext<'a> {
 
     /// Returns the Sierra variable associated with the given local variable.
     /// See [Self::register_variable].
-    pub fn get_variable(&self, local_var: LocalVarId) -> sierra::ids::VarId {
+    pub fn get_variable(&self, local_var: defs::ids::VarId) -> sierra::ids::VarId {
         // TODO(lior): Consider throwing an error with a location.
         self.variables.get(&local_var).expect("Internal compiler error.").clone()
     }
