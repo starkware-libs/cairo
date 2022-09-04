@@ -41,7 +41,8 @@ pub fn generate_function_code(
     // Copy the result to the top of the stack before returning.
     let return_variable_on_stack = context.allocate_sierra_variable();
     statements.push(simple_statement(
-        context.store_temp_libfunc_id(),
+        // TODO(lior): Use the real type instead of `felt`.
+        context.store_temp_libfunc_id(context.get_db().core_felt_ty()),
         &[res],
         &[return_variable_on_stack.clone()],
     ));
