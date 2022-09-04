@@ -1,10 +1,9 @@
-use defs::db::DefsGroup;
-use defs::ids::{ExternFunctionLongId, FreeFunctionId, GenericFunctionId, LocalVarId, VarId};
-use filesystem::ids::{CrateId, ModuleId};
+use defs::ids::{FreeFunctionId, GenericFunctionId, LocalVarId, VarId};
 use pretty_assertions::assert_eq;
 use salsa::{InternId, InternKey};
 use semantic::db::SemanticGroup;
 use semantic::ids::TypeId;
+use semantic::test_utils::setup_test_expr;
 
 use crate::expr_generator::generate_expression_code;
 use crate::expr_generator_context::ExprGeneratorContext;
@@ -157,27 +156,14 @@ fn test_match() {
 
 #[test]
 fn test_call_libfunc() {
-    let db = DatabaseImpl::default();
+    let mut db = DatabaseImpl::default();
 
-    let ty = TypeId::from_intern_id(InternId::from(0u32));
-    let literal3 =
-        db.intern_expr(semantic::Expr::ExprLiteral(semantic::ExprLiteral { value: 3, ty }));
-    let literal6 =
-        db.intern_expr(semantic::Expr::ExprLiteral(semantic::ExprLiteral { value: 6, ty }));
-
-    let module = ModuleId::CrateRoot(CrateId::from_intern_id(InternId::from(1u32)));
-    let add_libfunc = db.intern_concrete_function(semantic::ConcreteFunctionLongId {
-        generic_function: GenericFunctionId::Extern(db.intern_extern_function(
-            ExternFunctionLongId { parent: module, name: "felt_add".into() },
-        )),
-        generic_args: vec![],
-    });
-
-    let expr = db.intern_expr(semantic::Expr::ExprFunctionCall(semantic::ExprFunctionCall {
-        function: add_libfunc,
-        args: vec![literal3, literal6],
-        ty,
-    }));
+    let (_module_id, expr) = setup_test_expr(
+        &mut db,
+        "felt_add(3,6)",
+        "extern func felt_add(a: felt, b: felt) -> felt",
+        "",
+    );
 
     let (statements, res) = generate_expr_code_for_test(&db, expr);
     assert_eq!(

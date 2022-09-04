@@ -9,7 +9,7 @@ use crate::test_utils::DatabaseImpl;
 fn test_program_generator() {
     let mut db = DatabaseImpl::default();
     // TODO(lior): Make bar return something like felt_add(5, foo()).
-    let (module_id, _module_syntax) = setup_test_module(
+    let module_id = setup_test_module(
         &mut db,
         indoc! {"
                 extern type felt;
