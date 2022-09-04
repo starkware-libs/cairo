@@ -3,7 +3,6 @@
 mod test;
 
 use defs::ids::GenericFunctionId;
-use semantic;
 use sierra::program;
 
 use crate::expr_generator_context::ExprGeneratorContext;
@@ -179,8 +178,8 @@ fn handle_felt_match(
             statements.extend(match_expr_statements);
 
             // Add the jump_nz() statement.
-            statements.push(pre_sierra::Statement::SierraStatement(
-                program::GenStatement::Invocation(program::GenInvocation {
+            statements.push(pre_sierra::Statement::Sierra(program::GenStatement::Invocation(
+                program::GenInvocation {
                     libfunc_id: context.jump_nz_libfunc_id(),
                     args: vec![match_expr_res],
                     branches: vec![
@@ -195,8 +194,8 @@ fn handle_felt_match(
                             results: vec![],
                         },
                     ],
-                }),
-            ));
+                },
+            )));
 
             // Allocate a variable for the result of the match.
             let output_var = context.allocate_sierra_variable();

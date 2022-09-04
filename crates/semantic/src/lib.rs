@@ -5,6 +5,7 @@ pub mod expr;
 pub mod ids;
 mod semantic;
 
+pub use diagnostic::{Diagnostic, SemanticDiagnostic};
 pub use ids::*;
 
 pub use self::semantic::*;
