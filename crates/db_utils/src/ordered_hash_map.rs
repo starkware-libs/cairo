@@ -15,6 +15,10 @@ impl<Key: Hash + Eq, Value> OrderedHashMap<Key, Value> {
     pub fn iter(&self) -> indexmap::map::Iter<'_, Key, Value> {
         self.0.iter()
     }
+
+    pub fn insert(&mut self, key: Key, value: Value) -> Option<Value> {
+        self.0.insert(key, value)
+    }
 }
 
 impl<Key: Hash + Eq, IndexType: Into<Key>, Value> Index<IndexType> for OrderedHashMap<Key, Value> {
