@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use defs::db::{AsDefsGroup, DefsGroup};
 use defs::ids::{
     FreeFunctionId, GenericFunctionId, GenericTypeId, ModuleItemId, ParamContainerId, ParamLongId,
@@ -38,6 +40,10 @@ pub trait SemanticGroup: DefsGroup + AsDefsGroup + ParserGroup + AsFilesGroup {
     fn statement_semantic(&self, item: StatementId) -> semantic::Statement;
 
     /// Returns the semantic signature of a function given the function_id.
+    fn generic_function_data(
+        &self,
+        function_id: GenericFunctionId,
+    ) -> WithDiagnostics<Option<GenericFunctionData>, Diagnostic>;
     fn generic_function_signature_semantic(
         &self,
         function_id: GenericFunctionId,
@@ -62,6 +68,45 @@ fn struct_semantic(_db: &dyn SemanticGroup, _struct_id: StructId) -> semantic::S
     todo!()
 }
 
+/// All the semantic data that can be computed from the signature AST.
+/// Used mostly for performance reasons, and other queries should select from, instead of
+/// recomputing.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GenericFunctionData {
+    signature: semantic::Signature,
+    variables: HashMap<SmolStr, VarId>,
+}
+
+/// Fetches the AST of the generic function signature. Computes and returns the
+/// [`GenericFunctionData`] struct.
+#[with_diagnostics]
+fn generic_function_data(
+    diagnostics: &mut Diagnostics<Diagnostic>,
+    db: &dyn SemanticGroup,
+    function_id: GenericFunctionId,
+) -> Option<GenericFunctionData> {
+    let module_id = function_id.module(db.as_defs_group());
+    let module_data = db.module_data(module_id).unwrap(diagnostics)?;
+    let (function_as_param_container, signature_syntax) = match function_id {
+        GenericFunctionId::Free(free_function_id) => (
+            ParamContainerId::FreeFunction(free_function_id),
+            module_data.free_functions.get(&free_function_id)?.signature(db.as_syntax_group()),
+        ),
+        GenericFunctionId::Extern(extern_function_id) => (
+            ParamContainerId::ExternFunction(extern_function_id),
+            module_data.extern_functions.get(&extern_function_id)?.signature(db.as_syntax_group()),
+        ),
+    };
+
+    let return_type =
+        function_signature_return_type(db, module_id, &signature_syntax).unwrap(diagnostics)?;
+
+    let (params, variables) =
+        function_signature_params(db, module_id, function_as_param_container, &signature_syntax)
+            .unwrap(diagnostics)?;
+    Some(GenericFunctionData { signature: semantic::Signature { params, return_type }, variables })
+}
+
 /// Computes the semantic model of the signature of a GenericFunction (e.g. Free / Extern).
 #[with_diagnostics]
 fn generic_function_signature_semantic(
@@ -69,28 +114,8 @@ fn generic_function_signature_semantic(
     db: &dyn SemanticGroup,
     function_id: GenericFunctionId,
 ) -> Option<semantic::Signature> {
-    match function_id {
-        GenericFunctionId::Free(free_function_id) => {
-            let module_id = db.lookup_intern_free_function(free_function_id).parent;
-            let syntax = db
-                .module_data(module_id)
-                .unwrap(diagnostics)?
-                .free_functions
-                .get(&free_function_id)?
-                .clone();
-            function_signature_from_free_function_ast(db, module_id, &syntax).unwrap(diagnostics)
-        }
-        GenericFunctionId::Extern(extern_function_id) => {
-            let module_id = db.lookup_intern_extern_function(extern_function_id).parent;
-            let syntax = db
-                .module_data(module_id)
-                .unwrap(diagnostics)?
-                .extern_functions
-                .get(&extern_function_id)?
-                .clone();
-            function_signature_from_extern_function_ast(db, module_id, &syntax).unwrap(diagnostics)
-        }
-    }
+    let generic_data = db.generic_function_data(function_id).unwrap(diagnostics)?;
+    Some(generic_data.signature)
 }
 
 #[with_diagnostics]
@@ -108,27 +133,14 @@ fn free_function_semantic(
         .clone();
 
     // Compute signature semantic.
-    let signature =
-        function_signature_from_free_function_ast(db, module_id, &syntax).unwrap(diagnostics)?;
+    let generic_function_data =
+        db.generic_function_data(GenericFunctionId::Free(free_function_id)).unwrap(diagnostics)?;
 
     // Compute body semantic expr.
-    let variables = signature
-        .params
-        .iter()
-        .map(|param| {
-            (
-                param.name.clone(),
-                VarId::Param(db.intern_param(ParamLongId {
-                    parent: ParamContainerId::FreeFunction(free_function_id),
-                    name: param.name.clone(),
-                })),
-            )
-        })
-        .collect();
-    let mut ctx = ComputationContext::new(db, module_id, variables);
+    let mut ctx = ComputationContext::new(db, module_id, generic_function_data.variables);
     let body = compute_expr_semantic(&mut ctx, ast::Expr::Block(syntax.body(db.as_syntax_group())));
 
-    Some(semantic::FreeFunction { signature, body })
+    Some(semantic::FreeFunction { signature: generic_function_data.signature, body })
 }
 
 fn expr_semantic(db: &dyn SemanticGroup, item: ExprId) -> semantic::Expr {
@@ -140,49 +152,6 @@ fn statement_semantic(db: &dyn SemanticGroup, item: StatementId) -> semantic::St
 }
 
 // ----------------------- Helper functions -----------------------
-#[with_diagnostics]
-fn function_signature_from_extern_function_ast(
-    diagnostics: &mut Diagnostics<ParserDiagnostic>,
-    db: &dyn SemanticGroup,
-    module_id: ModuleId,
-    extern_function: &ast::ItemExternFunction,
-) -> Option<semantic::Signature> {
-    let return_type = function_signature_return_type(
-        db,
-        module_id,
-        &extern_function.signature(db.as_syntax_group()),
-    )
-    .unwrap(diagnostics)?;
-
-    let params =
-        function_signature_params(db, module_id, &extern_function.signature(db.as_syntax_group()))
-            .unwrap(diagnostics)?;
-
-    Some(semantic::Signature { params, return_type })
-}
-
-/// Gets the semantic signature of the given function's AST.
-#[with_diagnostics]
-fn function_signature_from_free_function_ast(
-    diagnostics: &mut Diagnostics<ParserDiagnostic>,
-    db: &dyn SemanticGroup,
-    module_id: ModuleId,
-    free_function: &ast::ItemFreeFunction,
-) -> Option<semantic::Signature> {
-    let return_type = function_signature_return_type(
-        db,
-        module_id,
-        &free_function.signature(db.as_syntax_group()),
-    )
-    .unwrap(diagnostics)?;
-
-    let params =
-        function_signature_params(db, module_id, &free_function.signature(db.as_syntax_group()))
-            .unwrap(diagnostics)?;
-
-    Some(semantic::Signature { params, return_type })
-}
-
 /// Gets the return type of the given function's AST.
 #[with_diagnostics]
 fn function_signature_return_type(
@@ -208,14 +177,17 @@ fn function_signature_params(
     diagnostics: &mut Diagnostics<ParserDiagnostic>,
     db: &dyn SemanticGroup,
     module_id: ModuleId,
+    parent: ParamContainerId,
     sig: &ast::FunctionSignature,
-) -> Option<Vec<semantic::Parameter>> {
+) -> Option<(Vec<semantic::Parameter>, HashMap<SmolStr, VarId>)> {
     let syntax_db = db.as_syntax_group();
 
     let mut semantic_params = Vec::new();
+    let mut variables = HashMap::new();
     let ast_params = sig.parameters(syntax_db).elements(syntax_db);
     for ast_param in ast_params.iter() {
         let name = ast_param.identifier(syntax_db).text(syntax_db);
+        let id = db.intern_param(ParamLongId { parent, name: name.clone() });
         let ty_path = match ast_param.type_clause(syntax_db) {
             ast::NonOptionTypeClause::TypeClause(type_clause) => type_clause.ty(syntax_db),
             ast::NonOptionTypeClause::NonOptionTypeClauseMissing(_) => {
@@ -225,10 +197,11 @@ fn function_signature_params(
         };
         // TODO(yuval): Diagnostic?
         let ty = resolve_type(db, module_id, ty_path).unwrap(diagnostics)?;
-        semantic_params.push(semantic::Parameter { name, ty });
+        semantic_params.push(semantic::Parameter { id, ty });
+        variables.insert(name, VarId::Param(id));
     }
 
-    Some(semantic_params)
+    Some((semantic_params, variables))
 }
 
 // TODO(yuval): move to a separate module "type".
