@@ -12,7 +12,6 @@ use crate::extensions::core::CoreConcreteLibFunc::{
 use crate::extensions::felt::FeltConcrete;
 use crate::extensions::function_call::FunctionCallConcreteLibFunc;
 use crate::extensions::gas::GasConcreteLibFunc::{GetGas, RefundGas};
-use crate::extensions::gas::{GetGasConcreteLibFunc, RefundGasConcreteLibFunc};
 use crate::extensions::integer::IntegerConcrete;
 use crate::extensions::mem::MemConcreteLibFunc::{
     AlignTemps, FinalizeLocals, Rename, StoreLocal, StoreTemp,
@@ -23,19 +22,23 @@ use crate::ids::FunctionId;
 /// the chosen branch given the inputs. A function that provides the simulation of running a user
 /// function is also provided for the case where the extensions needs to simulate it.
 pub fn simulate<
-    F: Fn(&FunctionId, Vec<Vec<MemCell>>) -> Result<Vec<Vec<MemCell>>, LibFuncSimulationError>,
+    GetStatementGasInfo: Fn() -> Option<i64>,
+    SimulateFunction: Fn(&FunctionId, Vec<Vec<MemCell>>) -> Result<Vec<Vec<MemCell>>, LibFuncSimulationError>,
 >(
     libfunc: &CoreConcreteLibFunc,
     inputs: Vec<Vec<MemCell>>,
-    simulate_function: F,
+    get_statement_gas_info: GetStatementGasInfo,
+    simulate_function: SimulateFunction,
 ) -> Result<(Vec<Vec<MemCell>>, usize), LibFuncSimulationError> {
     match libfunc {
         FunctionCall(FunctionCallConcreteLibFunc { function, .. }) => {
             Ok((simulate_function(&function.id, inputs)?, 0))
         }
-        Gas(GetGas(GetGasConcreteLibFunc { count, .. })) => {
+        Gas(GetGas(_)) => {
+            let count = get_statement_gas_info()
+                .ok_or(LibFuncSimulationError::UnresolvedStatementGasInfo)?;
             let [MemCell { value: gas_counter }] = unpack_inputs::<1>(inputs)?;
-            if gas_counter >= *count {
+            if gas_counter >= count {
                 // Have enough gas - return reduced counter and jump to success branch.
                 Ok((vec![vec![(gas_counter - count).into()]], 0))
             } else {
@@ -43,7 +46,9 @@ pub fn simulate<
                 Ok((vec![vec![gas_counter.into()]], 1))
             }
         }
-        Gas(RefundGas(RefundGasConcreteLibFunc { count, .. })) => {
+        Gas(RefundGas(_)) => {
+            let count = get_statement_gas_info()
+                .ok_or(LibFuncSimulationError::UnresolvedStatementGasInfo)?;
             let [MemCell { value: gas_counter }] = unpack_inputs::<1>(inputs)?;
             Ok((vec![vec![(gas_counter + count).into()]], 0))
         }

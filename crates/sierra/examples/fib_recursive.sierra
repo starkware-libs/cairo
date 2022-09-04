@@ -13,9 +13,8 @@ libfunc int_dup = int_dup;
 libfunc int_drop = int_drop;
 libfunc int_jump_nz = int_jump_nz;
 libfunc int_unwrap_nz = unwrap_nz<int>;
-libfunc get_gas_26 = get_gas<26>;
-libfunc refund_gas_1 = refund_gas<1>;
-libfunc refund_gas_3 = refund_gas<3>;
+libfunc get_gas = get_gas;
+libfunc refund_gas = refund_gas;
 libfunc finalize_locals = finalize_locals;
 libfunc call_fib = function_call<user@Fibonacci>;
 
@@ -25,7 +24,7 @@ int_const_1() -> (one);
 store_temp_int(one) -> (one);
 int_jump_nz(n) { 8(n) fallthrough() };
 // Statement #  4 - n == 0, so we return updated gb and 1.
-refund_gas_3(gb) -> (gb);
+refund_gas(gb) -> (gb);
 store_temp_gb(gb) -> (gb);
 store_temp_int(one) -> (one);
 return(gb, one);
@@ -34,15 +33,15 @@ int_unwrap_nz(n) -> (n);
 int_sub_1(n) -> (n_1);
 store_temp_int(n_1) -> (n_1);
 int_jump_nz(n_1) { 16(n_1) fallthrough() };
-// Statement # 13 - n == 1, so we return updated gb and 1.
-refund_gas_1(gb) -> (gb);
+// Statement # 12 - n == 1, so we return updated gb and 1.
+refund_gas(gb) -> (gb);
 store_temp_gb(gb) -> (gb);
 store_temp_int(one) -> (one);
 return(gb, one);
 // Statement # 16 - Get gas for the recursive calls.
 int_unwrap_nz(n_1) -> (n_1);
 int_drop(one) -> ();
-get_gas_26(gb) { 24(gb) fallthrough(gb) };
+get_gas(gb) { 24(gb) fallthrough(gb) }; // Statement 18.
 // Statement # 19 - Ran out of gas - returning update gb and error value.
 store_temp_gb(gb) -> (gb);
 int_drop(n_1) -> ();
