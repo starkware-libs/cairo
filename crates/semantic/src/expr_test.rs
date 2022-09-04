@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::rc::Rc;
 use std::sync::Arc;
 
 use assert_matches::assert_matches;
@@ -14,7 +13,7 @@ use syntax::node::db::{AsSyntaxGroup, SyntaxDatabase, SyntaxGroup};
 use super::compute_expr_semantic;
 use crate::corelib::{core_felt_ty, unit_ty};
 use crate::db::{SemanticDatabase, SemanticGroup};
-use crate::expr::{ComputationContext, Environment};
+use crate::expr::ComputationContext;
 use crate::semantic;
 use crate::test_utils::setup_test_module;
 
@@ -53,11 +52,7 @@ fn test_expr_literal() {
     };
 
     // Compute semantics of expr.
-    let mut ctx = ComputationContext {
-        db,
-        module_id,
-        environment: Rc::new(Environment { parent: None, variables: HashMap::new() }),
-    };
+    let mut ctx = ComputationContext::new(db, module_id, HashMap::new());
     let expr_id = compute_expr_semantic(&mut ctx, syntax);
     let expr = db.lookup_intern_expr(expr_id);
 
@@ -165,14 +160,8 @@ fn test_expr_var() {
         parent: defs::ids::ParamContainerId::FreeFunction(free_function_id),
         name: signature.params[0].name.clone(),
     }));
-    let mut ctx = ComputationContext {
-        db,
-        module_id,
-        environment: Rc::new(Environment {
-            parent: None,
-            variables: [("a".into(), var_id)].into_iter().collect(),
-        }),
-    };
+    let mut ctx =
+        ComputationContext::new(db, module_id, [("a".into(), var_id)].into_iter().collect());
     let expr_id = compute_expr_semantic(&mut ctx, syntax);
     let expr = db.lookup_intern_expr(expr_id);
 
@@ -240,11 +229,7 @@ fn test_expr_block() {
     let syntax = ast::Expr::Block(extract_function_body(db, module_syntax, 0));
 
     // Compute semantics of expr.
-    let mut ctx = ComputationContext {
-        db,
-        module_id,
-        environment: Rc::new(Environment { parent: None, variables: HashMap::new() }),
-    };
+    let mut ctx = ComputationContext::new(db, module_id, HashMap::new());
     let expr_id = compute_expr_semantic(&mut ctx, syntax);
     let expr = db.lookup_intern_expr(expr_id);
 
@@ -284,11 +269,7 @@ fn test_expr_block_with_tail_expression() {
     let syntax = ast::Expr::Block(extract_function_body(db, module_syntax, 0));
 
     // Compute semantics of expr.
-    let mut ctx = ComputationContext {
-        db,
-        module_id,
-        environment: Rc::new(Environment { parent: None, variables: HashMap::new() }),
-    };
+    let mut ctx = ComputationContext::new(db, module_id, HashMap::new());
     let expr_id = compute_expr_semantic(&mut ctx, syntax);
     let expr = db.lookup_intern_expr(expr_id);
 
@@ -343,11 +324,7 @@ fn test_expr_call() {
     };
 
     // Compute semantics of expr.
-    let mut ctx = ComputationContext {
-        db,
-        module_id,
-        environment: Rc::new(Environment { parent: None, variables: HashMap::new() }),
-    };
+    let mut ctx = ComputationContext::new(db, module_id, HashMap::new());
     let expr_id = compute_expr_semantic(&mut ctx, syntax);
     let expr = db.lookup_intern_expr(expr_id);
 
