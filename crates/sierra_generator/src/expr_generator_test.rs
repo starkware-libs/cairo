@@ -1,10 +1,8 @@
-use defs::ids::{FreeFunctionId, GenericFunctionId, LocalVarId, VarId};
+use defs::ids::FreeFunctionId;
+use indoc::indoc;
 use pretty_assertions::assert_eq;
 use salsa::{InternId, InternKey};
-use semantic::db::SemanticGroup;
-use semantic::ids::TypeId;
-use semantic::test_utils::{setup_test_expr, setup_test_module};
-use semantic::LocalVariable;
+use semantic::test_utils::{setup_test_block, setup_test_expr};
 
 use crate::expr_generator::generate_expression_code;
 use crate::expr_generator_context::ExprGeneratorContext;
@@ -24,59 +22,26 @@ fn generate_expr_code_for_test(
 #[test]
 fn test_expr_generator() {
     let mut db = DatabaseImpl::default();
-    setup_test_module(&mut db, "");
 
-    let ty = TypeId::from_intern_id(InternId::from(0u32));
-    let literal7 =
-        db.intern_expr(semantic::Expr::ExprLiteral(semantic::ExprLiteral { value: 7, ty }));
-    let var_x_id = LocalVarId::from_intern_id(InternId::from(3u32));
-    let var_x_expr = db.intern_expr(semantic::Expr::ExprVar(semantic::ExprVar {
-        var: VarId::Local(var_x_id),
-        ty,
-    }));
+    let (_module_id, expr) = setup_test_block(
+        &mut db,
+        indoc! {"
+            let x = 7;
+            foo(x, 7);
+            foo2(foo(x, 7), foo(x, 7))
+        "},
+        indoc! {"
+            func foo(a: felt, b: felt) -> felt {
+                a
+            }
+            func foo2(a: felt, b: felt) -> felt {
+                a
+            }
+        "},
+        "",
+    );
 
-    // "let x = 7;" statement.
-    let statement_let =
-        semantic::StatementLet { var: LocalVariable { id: var_x_id, ty }, expr: literal7 };
-
-    let foo_func = db.intern_concrete_function(semantic::ConcreteFunctionLongId {
-        generic_function: GenericFunctionId::Free(FreeFunctionId::from_intern_id(InternId::from(
-            1u32,
-        ))),
-        generic_args: vec![],
-    });
-    let foo2_func = db.intern_concrete_function(semantic::ConcreteFunctionLongId {
-        generic_function: GenericFunctionId::Free(FreeFunctionId::from_intern_id(InternId::from(
-            2u32,
-        ))),
-        generic_args: vec![],
-    });
-
-    // "foo(x, 7)" expression.
-    let expr = db.intern_expr(semantic::Expr::ExprFunctionCall(semantic::ExprFunctionCall {
-        function: foo_func,
-        args: vec![var_x_expr, literal7],
-        ty,
-    }));
-
-    // "foo2(foo(x, 7), foo(x, 7))" expression.
-    let expr2 = db.intern_expr(semantic::Expr::ExprFunctionCall(semantic::ExprFunctionCall {
-        function: foo2_func,
-        args: vec![expr, expr],
-        ty,
-    }));
-
-    // "let x = 7; foo(x, 7); foo(foo(x, 7), foo(x, 7))" block.
-    let block = db.intern_expr(semantic::Expr::ExprBlock(semantic::ExprBlock {
-        statements: vec![
-            db.intern_statement(semantic::Statement::Let(statement_let)),
-            db.intern_statement(semantic::Statement::Expr(expr)),
-        ],
-        tail: Some(expr2),
-        ty,
-    }));
-
-    let (statements, res) = generate_expr_code_for_test(&db, block);
+    let (statements, res) = generate_expr_code_for_test(&db, expr);
     assert_eq!(
         statements.iter().map(|x| replace_libfunc_ids(&db, x).to_string()).collect::<Vec<String>>(),
         vec![
@@ -108,39 +73,21 @@ fn test_expr_generator() {
 #[test]
 fn test_match() {
     let mut db = DatabaseImpl::default();
-    setup_test_module(&mut db, "");
 
-    let ty = TypeId::from_intern_id(InternId::from(0u32));
-    let literal7 =
-        db.intern_expr(semantic::Expr::ExprLiteral(semantic::ExprLiteral { value: 7, ty }));
-    let var_x_id = LocalVarId::from_intern_id(InternId::from(3u32));
-    let var_x_expr = db.intern_expr(semantic::Expr::ExprVar(semantic::ExprVar {
-        var: VarId::Local(var_x_id),
-        ty,
-    }));
+    let (_module_id, expr) = setup_test_block(
+        &mut db,
+        indoc! {"
+            let x = 7;
+            match x {
+                0 => x,
+                _ => 7,
+            }
+        "},
+        "",
+        "",
+    );
 
-    let statement_let =
-        semantic::StatementLet { var: LocalVariable { id: var_x_id, ty }, expr: literal7 };
-
-    let branch0 = semantic::MatchArm {
-        pattern: semantic::Pattern::Literal(semantic::ExprLiteral { value: 0, ty }),
-        expression: var_x_expr,
-    };
-    let branch_otherwise =
-        semantic::MatchArm { pattern: semantic::Pattern::Otherwise, expression: literal7 };
-    let match_expr = db.intern_expr(semantic::Expr::ExprMatch(semantic::ExprMatch {
-        matched_expr: var_x_expr,
-        arms: vec![branch0, branch_otherwise],
-        ty,
-    }));
-
-    let block = db.intern_expr(semantic::Expr::ExprBlock(semantic::ExprBlock {
-        statements: vec![db.intern_statement(semantic::Statement::Let(statement_let))],
-        tail: Some(match_expr),
-        ty,
-    }));
-
-    let (statements, res) = generate_expr_code_for_test(&db, block);
+    let (statements, res) = generate_expr_code_for_test(&db, expr);
     assert_eq!(
         statements.iter().map(|x| replace_libfunc_ids(&db, x).to_string()).collect::<Vec<String>>(),
         vec![
