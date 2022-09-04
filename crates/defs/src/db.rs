@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use db_utils::ordered_hash_map::OrderedHashMap;
 use diagnostics::{Diagnostics, WithDiagnostics};
 use diagnostics_proc_macros::with_diagnostics;
 use filesystem::db::FilesGroup;
@@ -74,7 +75,7 @@ pub struct ModuleData {
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ModuleItems {
-    pub items: HashMap<SmolStr, ModuleItemId>,
+    pub items: OrderedHashMap<SmolStr, ModuleItemId>,
 }
 
 #[with_diagnostics]
