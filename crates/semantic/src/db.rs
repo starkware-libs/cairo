@@ -70,11 +70,17 @@ fn generic_function_signature_semantic(
         GenericFunctionId::Free(free_function_id) => free_function_id,
         GenericFunctionId::Extern(_) => todo!("Unsupported"),
     };
-    let function = lookup_ast_free_function(db, free_function_id).unwrap(diagnostics)?;
+    let module_id = db.lookup_intern_free_function(free_function_id).parent;
+    let syntax = db
+        .module_data(module_id)
+        .unwrap(diagnostics)?
+        .free_functions
+        .get(&free_function_id)?
+        .clone();
     Some(function_signature_from_ast_function(
         db,
         ParamContainerId::FreeFunction(free_function_id),
-        &function,
+        &syntax,
     ))
 }
 
@@ -82,16 +88,21 @@ fn generic_function_signature_semantic(
 fn free_function_semantic(
     diagnostics: &mut Diagnostics<ParserDiagnostic>,
     db: &dyn SemanticGroup,
-    function_id: FreeFunctionId,
+    free_function_id: FreeFunctionId,
 ) -> Option<semantic::FreeFunction> {
-    let function = lookup_ast_free_function(db, function_id).unwrap(diagnostics)?;
-    let module_id = db.lookup_intern_free_function(function_id).parent;
+    let module_id = db.lookup_intern_free_function(free_function_id).parent;
+    let syntax = db
+        .module_data(module_id)
+        .unwrap(diagnostics)?
+        .free_functions
+        .get(&free_function_id)?
+        .clone();
 
     // Compute signature semantic.
     let signature = function_signature_from_ast_function(
         db,
-        ParamContainerId::FreeFunction(function_id),
-        &function,
+        ParamContainerId::FreeFunction(free_function_id),
+        &syntax,
     );
 
     // Compute body semantic expr.
@@ -102,8 +113,7 @@ fn free_function_semantic(
         .map(|param_id| (db.lookup_intern_param(param_id).name, VarId::Param(param_id)))
         .collect();
     let mut ctx = ComputationContext::new(db, module_id, variables);
-    let body =
-        compute_expr_semantic(&mut ctx, ast::Expr::Block(function.body(db.as_syntax_group())));
+    let body = compute_expr_semantic(&mut ctx, ast::Expr::Block(syntax.body(db.as_syntax_group())));
 
     Some(semantic::FreeFunction { signature, body })
 }
@@ -117,39 +127,6 @@ fn statement_semantic(db: &dyn SemanticGroup, item: StatementId) -> semantic::St
 }
 
 // ----------------------- Helper functions -----------------------
-
-/// Gets the AST for a function from its ID.
-// TODO(yuval/spapini): replace this logic
-// (1) It's a linear search, and used in a linear number of items => qudratic.
-// (2) We will have to rewrite this code for each element (struct, enum, etc...)
-// (3) When unrelated functions change in the AST of the same file, we will recompute the semantic
-// model of the function. This is because of the call to the query db.file_syntax().
-//
-// To solve 3 we could, for example, use an AST rooted at the Function AST, and not at
-// SyntaxFile, or maybe depend on GreenId.
-//
-// To solve 1 and 2, we can make a single query (ModuleId) -> (HashMap<ItemId, AST>), or something
-// like that. It is linear. and this function could query its hashmap.
-#[with_diagnostics]
-fn lookup_ast_free_function(
-    diagnostics: &mut Diagnostics<ParserDiagnostic>,
-    db: &dyn SemanticGroup,
-    function_id: FreeFunctionId,
-) -> Option<ast::ItemFunction> {
-    let syntax_db = db.as_syntax_group();
-    let function = db.lookup_intern_free_function(function_id);
-    let module_id = function.parent;
-    let func_name = function.name;
-    let syntax_file = db.file_syntax(db.module_file(module_id)?).unwrap(diagnostics)?;
-    for item in syntax_file.items(syntax_db).elements(syntax_db) {
-        if let ast::Item::Function(function) = item {
-            if function.name(syntax_db).text(syntax_db) == func_name {
-                return Some(function);
-            }
-        }
-    }
-    None
-}
 
 /// Gets the semantic signature of the given function's AST.
 fn function_signature_from_ast_function(
