@@ -12,7 +12,7 @@ use parser::parser::ParserDiagnostic;
 use smol_str::SmolStr;
 use syntax::node::ast;
 
-use crate::corelib::unit_ty;
+use crate::corelib::{core_module, unit_ty};
 use crate::diagnostic::Diagnostic;
 use crate::expr::{compute_expr_semantic, ComputationContext};
 use crate::ids::{
@@ -220,7 +220,9 @@ fn resolve_type(
     };
     let type_name = last_segment.ident(syntax_db).text(syntax_db);
 
-    resolve_type_by_name(db, module_id, &type_name).unwrap(diagnostics)
+    resolve_type_by_name(db, module_id, &type_name)
+        .unwrap(diagnostics)
+        .or_else(|| resolve_type_by_name(db, core_module(db), &type_name).unwrap(diagnostics))
 }
 
 // TODO(yuval): move to a separate module "type".

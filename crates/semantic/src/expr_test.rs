@@ -4,9 +4,7 @@ use std::sync::Arc;
 
 use assert_matches::assert_matches;
 use defs::db::{AsDefsGroup, DefsDatabase, DefsGroup};
-use defs::ids::{
-    ExternTypeLongId, FreeFunctionLongId, GenericFunctionId, GenericTypeId, ParamLongId, VarId,
-};
+use defs::ids::{FreeFunctionLongId, GenericFunctionId, ParamLongId, VarId};
 use filesystem::db::{AsFilesGroup, FilesDatabase, FilesGroup};
 use indoc::indoc;
 use parser::db::ParserDatabase;
@@ -14,11 +12,11 @@ use syntax::node::ast;
 use syntax::node::db::{AsSyntaxGroup, SyntaxDatabase, SyntaxGroup};
 
 use super::compute_expr_semantic;
-use crate::corelib::unit_ty;
+use crate::corelib::{core_felt_ty, unit_ty};
 use crate::db::{SemanticDatabase, SemanticGroup};
 use crate::expr::{ComputationContext, Environment};
+use crate::semantic;
 use crate::test_utils::setup_test_module;
-use crate::{semantic, ConcreteType, TypeLongId};
 
 #[salsa::database(SemanticDatabase, DefsDatabase, ParserDatabase, SyntaxDatabase, FilesDatabase)]
 #[derive(Default)]
@@ -79,24 +77,18 @@ fn test_function_with_param() {
     let (module_id, module_syntax) = setup_test_module(
         &mut db_val,
         indoc! {"
-            extern type felt;
             func foo(a: felt) {}
         "},
     );
     let db = &db_val;
     // TODO(spapini): When a tail expression in a block is supported, take the syntax from the tail
     // instead of from the statements.
-    assert!(extract_function_body(db, module_syntax, 1).statements(db).elements(db).is_empty());
+    assert!(extract_function_body(db, module_syntax, 0).statements(db).elements(db).is_empty());
 
     // Prepare expectations
     let free_function_id =
         db.intern_free_function(FreeFunctionLongId { parent: module_id, name: "foo".into() });
-    let felt_id = db.intern_type(TypeLongId::Concrete(ConcreteType {
-        generic_type: GenericTypeId::Extern(
-            db.intern_extern_type(ExternTypeLongId { parent: module_id, name: "felt".into() }),
-        ),
-        generic_args: Vec::new(),
-    }));
+    let felt_id = core_felt_ty(db);
 
     // Compute semantics of signature.
     let signature = db
@@ -117,24 +109,18 @@ fn test_function_with_return_type() {
     let (module_id, module_syntax) = setup_test_module(
         &mut db_val,
         indoc! {"
-            extern type felt;
             func foo() -> felt {}
         "},
     );
     let db = &db_val;
     // TODO(spapini): When a tail expression in a block is supported, take the syntax from the tail
     // instead of from the statements.
-    assert!(extract_function_body(db, module_syntax, 1).statements(db).elements(db).is_empty());
+    assert!(extract_function_body(db, module_syntax, 0).statements(db).elements(db).is_empty());
 
     // Prepare expectations
     let free_function_id =
         db.intern_free_function(FreeFunctionLongId { parent: module_id, name: "foo".into() });
-    let felt_id = db.intern_type(TypeLongId::Concrete(ConcreteType {
-        generic_type: GenericTypeId::Extern(
-            db.intern_extern_type(ExternTypeLongId { parent: module_id, name: "felt".into() }),
-        ),
-        generic_args: Vec::new(),
-    }));
+    let felt_id = core_felt_ty(db);
 
     // Compute semantics of signature.
     let signature = db
@@ -153,7 +139,6 @@ fn test_expr_var() {
     let (module_id, module_syntax) = setup_test_module(
         &mut db_val,
         indoc! {"
-            extern type felt;
             func foo(a: felt) {
                 a
             }
@@ -162,7 +147,7 @@ fn test_expr_var() {
     let db = &db_val;
     // TODO(spapini): When a tail expression in a block is supported, take the syntax from the tail
     // instead of from the statements.
-    let syntax = match &extract_function_body(db, module_syntax, 1).statements(db).elements(db)[0] {
+    let syntax = match &extract_function_body(db, module_syntax, 0).statements(db).elements(db)[0] {
         ast::Statement::Expr(syntax) => syntax.expr(db),
         _ => panic!("Expected an expression statement"),
     };
@@ -382,7 +367,6 @@ fn test_function_body() {
     let (module_id, _module_syntax) = setup_test_module(
         &mut db_val,
         indoc! {"
-            extern type felt;
             func foo(a: felt) {
                 a;
             }
