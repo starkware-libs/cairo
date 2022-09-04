@@ -66,7 +66,7 @@ pub trait AsDefsGroup {
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ModuleData {
-    pub free_functions: HashMap<FreeFunctionId, ast::ItemFunction>,
+    pub free_functions: HashMap<FreeFunctionId, ast::ItemFreeFunction>,
     pub structs: HashMap<StructId, ast::ItemStruct>,
     pub extern_types: HashMap<ExternTypeId, ast::ItemExternType>,
     pub extern_functions: HashMap<ExternFunctionId, ast::ItemExternFunction>,
@@ -90,7 +90,7 @@ fn module_data(
     for item in syntax_file.items(syntax_db).elements(syntax_db) {
         match item {
             ast::Item::Module(_module) => todo!(),
-            ast::Item::Function(function) => {
+            ast::Item::FreeFunction(function) => {
                 let name = function.name(syntax_db).text(syntax_db);
                 let item_id =
                     db.intern_free_function(FreeFunctionLongId { parent: module_id, name });

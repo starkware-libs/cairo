@@ -1,6 +1,6 @@
 └── [36mroot[0m (kind: SyntaxFile)
     ├── [36mitems[0m (kind: ItemList)
-    │   └── [36mchild #0[0m (kind: ItemFunction)
+    │   └── [36mchild #0[0m (kind: ItemFreeFunction)
     │       ├── [34mfunckw[0m (kind: Function): '[1;32mfunc[0m'
     │       ├── [34mname[0m (kind: Identifier): '[1;32mfoo[0m'
     │       ├── [36msignature[0m (kind: FunctionSignature)
