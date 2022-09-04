@@ -29,10 +29,7 @@ fn generate_expression_code_by_val(
             handle_function_call(context, expr_function_call)
         }
         semantic::Expr::ExprMatch(expr_match) => handle_felt_match(context, expr_match),
-        semantic::Expr::ExprVar(expr_var) => match expr_var.var {
-            defs::ids::VarId::Param(_) => todo!(),
-            defs::ids::VarId::Local(local_var) => (vec![], context.get_variable(local_var)),
-        },
+        semantic::Expr::ExprVar(expr_var) => (vec![], context.get_variable(expr_var.var)),
         semantic::Expr::ExprLiteral(expr_literal) => {
             let tmp_var = context.allocate_sierra_variable();
             (
@@ -63,7 +60,7 @@ fn handle_block(
             semantic::Statement::Let(statement_let) => {
                 let (cur_statements, res) = generate_expression_code(context, statement_let.expr);
                 statements.extend(cur_statements);
-                context.register_variable(statement_let.var, res);
+                context.register_variable(defs::ids::VarId::Local(statement_let.var), res);
             }
         }
     }
