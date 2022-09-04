@@ -164,7 +164,7 @@ fn resolve_variable(ctx: &mut ComputationContext<'_>, path: ast::ExprPath) -> Va
     resolve_variable_by_name(ctx, &variable_name)
 }
 
-/// Resolves a variable given a context and a name.
+/// Resolves a variable given a context and a simple name.
 pub fn resolve_variable_by_name(
     ctx: &mut ComputationContext<'_>,
     variable_name: &SmolStr,
