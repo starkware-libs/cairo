@@ -25,6 +25,8 @@ use db_utils::define_short_id;
 use filesystem::ids::ModuleId;
 use smol_str::SmolStr;
 
+use crate::db::DefsGroup;
+
 /// Utility macro for defining ids.
 /// Defines a long id representing some element by a parent element and a name.
 /// Also defines a short id to be used for interning of the long id.
@@ -117,6 +119,14 @@ pub enum GenericFunctionId {
     Free(FreeFunctionId),
     Extern(ExternFunctionId),
     // TODO(spapini): impl functions.
+}
+impl GenericFunctionId {
+    pub fn module(&self, db: &dyn DefsGroup) -> ModuleId {
+        match self {
+            GenericFunctionId::Free(item) => db.lookup_intern_free_function(*item).parent,
+            GenericFunctionId::Extern(item) => db.lookup_intern_extern_function(*item).parent,
+        }
+    }
 }
 
 /// Type instance.
