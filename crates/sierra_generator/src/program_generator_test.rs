@@ -29,6 +29,9 @@ fn test_program_generator() {
         program.to_string(),
         indoc! {"
 
+            libfunc [0] = felt_const<5>;
+            libfunc [1] = store_temp;
+            libfunc [2] = function_call<user@[0]>;
 
             [0]() -> ([1]);
             [1]([1]) -> ([2]);
