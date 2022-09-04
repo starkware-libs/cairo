@@ -152,7 +152,7 @@ fn generate_ast_code() -> rust::Tokens {
         use super::green::GreenNodeInternal;
         use super::{
             TypedSyntaxNode, GreenId, SyntaxGroup, GreenNode, SyntaxNode, SyntaxStablePtrId,
-            Token,
+            SyntaxStablePtr, Token,
         };
     };
     for Node { name, kind } in spec.into_iter() {
@@ -192,6 +192,7 @@ fn gen_list_code(name: String, element_type: String, step: usize) -> rust::Token
                 }))
             }
         }
+        #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
         pub struct $(&ptr_name)(SyntaxStablePtrId);
         impl TypedSyntaxNode for $(&name) {
             type StablePtr = $(&ptr_name);
@@ -265,6 +266,7 @@ fn gen_enum_code(
         pub enum $(&name){
             $enum_body
         }
+        #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
         pub struct $(&ptr_name)(SyntaxStablePtrId);
         impl TypedSyntaxNode for $(&name){
             type StablePtr = $(&ptr_name);
@@ -313,9 +315,12 @@ fn gen_struct_code(name: String, members: Vec<Member>) -> rust::Tokens {
     let mut args = quote! {};
     let mut params = quote! {};
     let mut arg_missings = quote! {};
-    for (i, Member { name, kind, key: _ }) in members.iter().enumerate() {
+    let mut ptr_getters = quote! {};
+    let mut key_field_index: usize = 0;
+    for (i, Member { name, kind, key }) in members.iter().enumerate() {
         params.extend(quote! {$name: GreenId,});
         args.extend(quote! {$name,});
+        let name_green = format!("{name}_green");
         // TODO(spapini): Validate that children SyntaxKinds are as expected.
         match kind {
             MemberKind::Token(_) => {
@@ -336,6 +341,19 @@ fn gen_struct_code(name: String, members: Vec<Member>) -> rust::Tokens {
                 arg_missings.extend(quote! {$node::missing(db),});
             }
         };
+        if *key {
+            ptr_getters.extend(quote! {
+                pub fn $(&name_green)(self, db: &dyn SyntaxGroup) -> GreenId {
+                    let ptr = db.lookup_intern_stable_ptr(self.0);
+                    if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
+                        key_fields[$key_field_index]
+                    } else {
+                        panic!("Unexpected key field query on root.");
+                    }
+                }
+            });
+            key_field_index += 1;
+        }
     }
     let ptr_name = format!("{name}Ptr");
     quote! {
@@ -357,7 +375,11 @@ fn gen_struct_code(name: String, members: Vec<Member>) -> rust::Tokens {
             }
             $body
         }
+        #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
         pub struct $(&ptr_name)(SyntaxStablePtrId);
+        impl $(&ptr_name) {
+            $ptr_getters
+        }
         impl TypedSyntaxNode for $(&name){
             type StablePtr = $(&ptr_name);
             fn missing(db: &dyn SyntaxGroup) -> GreenId{
