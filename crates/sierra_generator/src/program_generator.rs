@@ -1,9 +1,8 @@
-use std::collections::HashMap;
 use std::sync::Arc;
 
+use defs::db::ModuleItems;
 use defs::ids::ModuleItemId;
 use diagnostics::Diagnostics;
-use smol_str::SmolStr;
 
 use crate::db::SierraGenGroup;
 use crate::pre_sierra::{self};
@@ -16,13 +15,13 @@ mod test;
 pub fn generate_program_code(
     diagnostics: &mut Diagnostics<semantic::Diagnostic>,
     db: &dyn SierraGenGroup,
-    module_items: &HashMap<SmolStr, ModuleItemId>,
+    module_items: &ModuleItems,
 ) -> Option<sierra::program::Program> {
     let mut functions: Vec<Arc<pre_sierra::Function>> = vec![];
     let mut statements: Vec<pre_sierra::Statement> = vec![];
 
     // Sort module items to guarantee deterministic compilation.
-    let mut module_items_vec: Vec<_> = module_items.iter().collect();
+    let mut module_items_vec: Vec<_> = module_items.items.iter().collect();
     module_items_vec.sort_by_key(|key_value| key_value.0);
 
     // Iterate over the functions in the module, compile them to pre-sierra statements,
