@@ -4,6 +4,7 @@ use diagnostics::{Diagnostics, WithDiagnostics};
 use diagnostics_proc_macros::with_diagnostics;
 use filesystem::db::FilesGroup;
 use filesystem::ids::ModuleId;
+use itertools::chain;
 use parser::db::ParserGroup;
 use parser::parser::ParserDiagnostic;
 use smol_str::SmolStr;
@@ -33,10 +34,15 @@ pub trait DefsGroup: FilesGroup + SyntaxGroup + AsSyntaxGroup + ParserGroup {
     #[salsa::interned]
     fn intern_local_var(&self, id: LocalVarLongId) -> LocalVarId;
 
+    // Module level resolving.
+    fn module_data(
+        &self,
+        module_id: ModuleId,
+    ) -> WithDiagnostics<Option<ModuleData>, ParserDiagnostic>;
     fn module_items(
         &self,
         module_id: ModuleId,
-    ) -> WithDiagnostics<Option<ModuleItems>, ParserDiagnostic>;
+    ) -> WithDiagnostics<Option<HashMap<SmolStr, ModuleItemId>>, ParserDiagnostic>;
     fn module_resolve_identifier(
         &self,
         module_id: ModuleId,
@@ -58,9 +64,56 @@ pub trait AsDefsGroup {
     fn as_defs_group(&self) -> &(dyn DefsGroup + 'static);
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ModuleItems {
-    pub items: HashMap<SmolStr, ModuleItemId>,
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct ModuleData {
+    pub free_functions: HashMap<FreeFunctionId, ast::ItemFunction>,
+    pub structs: HashMap<StructId, ast::ItemStruct>,
+    pub extern_types: HashMap<ExternTypeId, ast::ItemExternType>,
+    pub extern_functions: HashMap<ExternFunctionId, ast::ItemExternFunction>,
+}
+
+#[with_diagnostics]
+fn module_data(
+    diagnostics: &mut Diagnostics<ParserDiagnostic>,
+    db: &dyn DefsGroup,
+    module_id: ModuleId,
+) -> Option<ModuleData> {
+    let mut res = ModuleData::default();
+    let syntax_group = db.as_syntax_group();
+
+    let syntax_file = db.file_syntax(db.module_file(module_id)?).unwrap(diagnostics)?;
+    for item in syntax_file.items(syntax_group).elements(syntax_group) {
+        match item {
+            ast::Item::Module(_module) => todo!(),
+            ast::Item::Function(function) => {
+                let name = function.name(syntax_group).text(syntax_group);
+                let item_id =
+                    db.intern_free_function(FreeFunctionLongId { parent: module_id, name });
+                res.free_functions.insert(item_id, function);
+            }
+            ast::Item::ExternFunction(extern_function) => {
+                let name = extern_function.name(syntax_group).text(syntax_group);
+                let item_id =
+                    db.intern_extern_function(ExternFunctionLongId { parent: module_id, name });
+                res.extern_functions.insert(item_id, extern_function);
+            }
+            ast::Item::ExternType(extern_type) => {
+                let name = extern_type.name(syntax_group).text(syntax_group);
+                let item_id = db.intern_extern_type(ExternTypeLongId { parent: module_id, name });
+                res.extern_types.insert(item_id, extern_type);
+            }
+            ast::Item::Trait(_tr) => todo!(),
+            ast::Item::Impl(_imp) => todo!(),
+            ast::Item::Struct(strct) => {
+                let name = strct.name(syntax_group).text(syntax_group);
+                let item_id = db.intern_struct(StructLongId { parent: module_id, name });
+                res.structs.insert(item_id, strct);
+            }
+            ast::Item::Enum(_en) => todo!(),
+            ast::Item::Use(_us) => todo!(),
+        }
+    }
+    Some(res)
 }
 
 #[with_diagnostics]
@@ -68,57 +121,30 @@ fn module_items(
     diagnostics: &mut Diagnostics<ParserDiagnostic>,
     db: &dyn DefsGroup,
     module_id: ModuleId,
-) -> Option<ModuleItems> {
+) -> Option<HashMap<SmolStr, ModuleItemId>> {
     let syntax_group = db.as_syntax_group();
-
-    let syntax_file = db.file_syntax(db.module_file(module_id)?).unwrap(diagnostics)?;
-    Some(ModuleItems {
-        items: HashMap::from_iter(
-            syntax_file.items(syntax_group).elements(syntax_group).iter().map(|item| match item {
-                ast::Item::Module(_module) => todo!(),
-                ast::Item::Function(function) => {
-                    let name = function.name(syntax_group).text(syntax_group);
-                    (
-                        name.clone(),
-                        ModuleItemId::FreeFunction(
-                            db.intern_free_function(FreeFunctionLongId { parent: module_id, name }),
-                        ),
-                    )
-                }
-                ast::Item::ExternFunction(extern_function) => {
-                    let name = extern_function.name(syntax_group).text(syntax_group);
-                    (
-                        name.clone(),
-                        ModuleItemId::ExternFunction(db.intern_extern_function(
-                            ExternFunctionLongId { parent: module_id, name },
-                        )),
-                    )
-                }
-                ast::Item::ExternType(extern_type) => {
-                    let name = extern_type.name(syntax_group).text(syntax_group);
-                    (
-                        name.clone(),
-                        ModuleItemId::ExternType(
-                            db.intern_extern_type(ExternTypeLongId { parent: module_id, name }),
-                        ),
-                    )
-                }
-                ast::Item::Trait(_tr) => todo!(),
-                ast::Item::Impl(_imp) => todo!(),
-                ast::Item::Struct(strct) => {
-                    let name = strct.name(db.as_syntax_group()).text(db.as_syntax_group());
-                    (
-                        name.clone(),
-                        ModuleItemId::Struct(
-                            db.intern_struct(StructLongId { parent: module_id, name }),
-                        ),
-                    )
-                }
-                ast::Item::Enum(_en) => todo!(),
-                ast::Item::Use(_us) => todo!(),
-            }),
-        ),
-    })
+    let module_data = db.module_data(module_id).unwrap(diagnostics)?;
+    Some(
+        chain!(
+            module_data.free_functions.iter().map(|(free_function_id, syntax)| (
+                syntax.name(syntax_group).text(syntax_group),
+                ModuleItemId::FreeFunction(*free_function_id),
+            )),
+            module_data.extern_functions.iter().map(|(extern_function_id, syntax)| (
+                syntax.name(syntax_group).text(syntax_group),
+                ModuleItemId::ExternFunction(*extern_function_id),
+            )),
+            module_data.extern_types.iter().map(|(extern_type_id, syntax)| (
+                syntax.name(syntax_group).text(syntax_group),
+                ModuleItemId::ExternType(*extern_type_id),
+            )),
+            module_data.structs.iter().map(|(struct_id, syntax)| (
+                syntax.name(syntax_group).text(syntax_group),
+                ModuleItemId::Struct(*struct_id)
+            )),
+        )
+        .collect(),
+    )
 }
 
 #[with_diagnostics]
@@ -129,7 +155,7 @@ fn module_resolve_identifier(
     name: SmolStr,
 ) -> Option<ModuleItemId> {
     let module_items = db.module_items(module_id).unwrap(diagnostics)?;
-    module_items.items.get(&name).copied()
+    module_items.get(&name).copied()
 }
 
 #[with_diagnostics]
