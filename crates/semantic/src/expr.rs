@@ -3,7 +3,6 @@
 mod test;
 
 use std::collections::HashMap;
-use std::rc::Rc;
 
 use defs::ids::{GenericFunctionId, VarId};
 use filesystem::ids::ModuleId;
@@ -22,7 +21,7 @@ use crate::{
 pub struct ComputationContext<'db> {
     db: &'db dyn SemanticGroup,
     module_id: ModuleId,
-    environment: Rc<Environment>,
+    environment: Box<Environment>,
 }
 impl<'db> ComputationContext<'db> {
     pub fn new(
@@ -31,15 +30,16 @@ impl<'db> ComputationContext<'db> {
         variables: HashMap<SmolStr, VarId>,
     ) -> Self {
         let environment = Environment { parent: None, variables };
-        Self { db, module_id, environment: Rc::new(environment) }
+        Self { db, module_id, environment: Box::new(environment) }
     }
 }
 
 // TODO(spapini): Consider using identifiers instead of SmolStr everywhere in the code.
 /// A state which contains all the variables defined at the current scope until now, and a pointer
 /// to the parent environment.
+#[derive(Clone)]
 pub struct Environment {
-    parent: Option<Rc<Environment>>,
+    parent: Option<Box<Environment>>,
     variables: HashMap<SmolStr, VarId>,
 }
 
@@ -122,7 +122,7 @@ pub fn compute_expr_semantic(ctx: &mut ComputationContext<'_>, syntax: ast::Expr
         }
         ast::Expr::StructCtorCall(_) => todo!(),
         ast::Expr::Block(block_syntax) => {
-            let environment = Rc::new(Environment {
+            let environment = Box::new(Environment {
                 parent: Some(ctx.environment.clone()),
                 variables: HashMap::new(),
             });

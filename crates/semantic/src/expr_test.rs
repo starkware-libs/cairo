@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::rc::Rc;
 use std::sync::Arc;
 
 use assert_matches::assert_matches;
@@ -56,7 +55,7 @@ fn test_expr_literal() {
     let mut ctx = ComputationContext {
         db,
         module_id,
-        environment: Rc::new(Environment { parent: None, variables: HashMap::new() }),
+        environment: Box::new(Environment { parent: None, variables: HashMap::new() }),
     };
     let expr_id = compute_expr_semantic(&mut ctx, syntax);
     let expr = db.lookup_intern_expr(expr_id);
@@ -168,7 +167,7 @@ fn test_expr_var() {
     let mut ctx = ComputationContext {
         db,
         module_id,
-        environment: Rc::new(Environment {
+        environment: Box::new(Environment {
             parent: None,
             variables: [("a".into(), var_id)].into_iter().collect(),
         }),
@@ -243,7 +242,7 @@ fn test_expr_block() {
     let mut ctx = ComputationContext {
         db,
         module_id,
-        environment: Rc::new(Environment { parent: None, variables: HashMap::new() }),
+        environment: Box::new(Environment { parent: None, variables: HashMap::new() }),
     };
     let expr_id = compute_expr_semantic(&mut ctx, syntax);
     let expr = db.lookup_intern_expr(expr_id);
@@ -287,7 +286,7 @@ fn test_expr_block_with_tail_expression() {
     let mut ctx = ComputationContext {
         db,
         module_id,
-        environment: Rc::new(Environment { parent: None, variables: HashMap::new() }),
+        environment: Box::new(Environment { parent: None, variables: HashMap::new() }),
     };
     let expr_id = compute_expr_semantic(&mut ctx, syntax);
     let expr = db.lookup_intern_expr(expr_id);
@@ -346,7 +345,7 @@ fn test_expr_call() {
     let mut ctx = ComputationContext {
         db,
         module_id,
-        environment: Rc::new(Environment { parent: None, variables: HashMap::new() }),
+        environment: Box::new(Environment { parent: None, variables: HashMap::new() }),
     };
     let expr_id = compute_expr_semantic(&mut ctx, syntax);
     let expr = db.lookup_intern_expr(expr_id);
