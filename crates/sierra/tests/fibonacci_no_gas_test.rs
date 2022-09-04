@@ -2,6 +2,7 @@ use indoc::indoc;
 use sierra::extensions::core::{CoreLibFunc, CoreType};
 use sierra::program_registry::ProgramRegistry;
 use sierra::simulation;
+use test_case::test_case;
 
 fn fib_program() -> sierra::program::Program {
     sierra::ProgramParser::new()
@@ -51,81 +52,22 @@ fn create_registry_test() {
     ProgramRegistry::<CoreType, CoreLibFunc>::new(&fib_program()).unwrap();
 }
 
-#[test]
-fn simulate_test() {
-    let program = fib_program();
-    let id = "Fibonacci".into();
-    // 1, 1, 2, 3, 5, 8, 13, 21, 34
+#[test_case(0 , 1; "fib(0) => 1")]
+#[test_case(1, 1; "fib(1) => 1")]
+#[test_case(2, 2;  "fib(2) => 2")]
+#[test_case(3, 3;  "fib(3) => 3")]
+#[test_case(4, 5;  "fib(4) => 5")]
+#[test_case(5, 8;  "fib(5) => 8")]
+#[test_case(6, 13;  "fib(6) => 13")]
+#[test_case(7, 21;  "fib(7) => 21")]
+#[test_case(8, 34;  "fib(8) => 34")]
+fn simulate(n: i64, fib: i64) {
     assert_eq!(
         simulation::run(
-            &program,
-            &id,
-            vec![vec![/* a= */ 1.into()], vec![/* b= */ 1.into()], vec![/* n= */ 0.into()]],
+            &fib_program(),
+            &"Fibonacci".into(),
+            vec![vec![/* a= */ 1.into()], vec![/* b= */ 1.into()], vec![n.into()]]
         ),
-        Ok(vec![vec![/* fib= */ 1.into()]])
-    );
-    assert_eq!(
-        simulation::run(
-            &program,
-            &id,
-            vec![vec![/* a= */ 1.into()], vec![/* b= */ 1.into()], vec![/* n= */ 1.into()]]
-        ),
-        Ok(vec![vec![/* fib= */ 1.into()]])
-    );
-    assert_eq!(
-        simulation::run(
-            &program,
-            &id,
-            vec![vec![/* a= */ 1.into()], vec![/* b= */ 1.into()], vec![/* n= */ 2.into()]]
-        ),
-        Ok(vec![vec![/* fib= */ 2.into()]])
-    );
-    assert_eq!(
-        simulation::run(
-            &program,
-            &id,
-            vec![vec![/* a= */ 1.into()], vec![/* b= */ 1.into()], vec![/* n= */ 3.into()]]
-        ),
-        Ok(vec![vec![/* fib= */ 3.into()]])
-    );
-    assert_eq!(
-        simulation::run(
-            &program,
-            &id,
-            vec![vec![/* a= */ 1.into()], vec![/* b= */ 1.into()], vec![/* n= */ 4.into()]]
-        ),
-        Ok(vec![vec![/* fib= */ 5.into()]])
-    );
-    assert_eq!(
-        simulation::run(
-            &program,
-            &id,
-            vec![vec![/* a= */ 1.into()], vec![/* b= */ 1.into()], vec![/* n= */ 5.into()]]
-        ),
-        Ok(vec![vec![/* fib= */ 8.into()]])
-    );
-    assert_eq!(
-        simulation::run(
-            &program,
-            &id,
-            vec![vec![/* a= */ 1.into()], vec![/* b= */ 1.into()], vec![/* n= */ 6.into()]]
-        ),
-        Ok(vec![vec![/* fib= */ 13.into()]])
-    );
-    assert_eq!(
-        simulation::run(
-            &program,
-            &id,
-            vec![vec![/* a= */ 1.into()], vec![/* b= */ 1.into()], vec![/* n= */ 7.into()]]
-        ),
-        Ok(vec![vec![/* fib= */ 21.into()]])
-    );
-    assert_eq!(
-        simulation::run(
-            &program,
-            &id,
-            vec![vec![/* a= */ 1.into()], vec![/* b= */ 1.into()], vec![/* n= */ 8.into()]]
-        ),
-        Ok(vec![vec![/* fib= */ 34.into()]])
+        Ok(vec![vec![fib.into()]])
     );
 }
