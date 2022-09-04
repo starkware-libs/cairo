@@ -10,7 +10,7 @@ use crate::test_utils::{replace_libfunc_ids, DatabaseImpl};
 #[test]
 fn test_function_generator() {
     let mut db = DatabaseImpl::default();
-    let (module_id, _module_syntax) = setup_test_module(
+    let module_id = setup_test_module(
         &mut db,
         indoc! {"
                 extern type felt;
