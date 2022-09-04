@@ -42,7 +42,7 @@ pub trait DefsGroup: FilesGroup + SyntaxGroup + AsSyntaxGroup + ParserGroup {
     fn module_items(
         &self,
         module_id: ModuleId,
-    ) -> WithDiagnostics<Option<HashMap<SmolStr, ModuleItemId>>, ParserDiagnostic>;
+    ) -> WithDiagnostics<Option<ModuleItems>, ParserDiagnostic>;
     fn module_item_by_name(
         &self,
         module_id: ModuleId,
@@ -70,6 +70,11 @@ pub struct ModuleData {
     pub structs: HashMap<StructId, ast::ItemStruct>,
     pub extern_types: HashMap<ExternTypeId, ast::ItemExternType>,
     pub extern_functions: HashMap<ExternFunctionId, ast::ItemExternFunction>,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct ModuleItems {
+    pub items: HashMap<SmolStr, ModuleItemId>,
 }
 
 #[with_diagnostics]
@@ -121,11 +126,11 @@ fn module_items(
     diagnostics: &mut Diagnostics<ParserDiagnostic>,
     db: &dyn DefsGroup,
     module_id: ModuleId,
-) -> Option<HashMap<SmolStr, ModuleItemId>> {
+) -> Option<ModuleItems> {
     let syntax_group = db.as_syntax_group();
     let module_data = db.module_data(module_id).unwrap(diagnostics)?;
-    Some(
-        chain!(
+    Some(ModuleItems {
+        items: chain!(
             module_data.free_functions.iter().map(|(free_function_id, syntax)| (
                 syntax.name(syntax_group).text(syntax_group),
                 ModuleItemId::FreeFunction(*free_function_id),
@@ -144,7 +149,7 @@ fn module_items(
             )),
         )
         .collect(),
-    )
+    })
 }
 
 #[with_diagnostics]
@@ -155,7 +160,7 @@ fn module_item_by_name(
     name: SmolStr,
 ) -> Option<ModuleItemId> {
     let module_items = db.module_items(module_id).unwrap(diagnostics)?;
-    module_items.get(&name).copied()
+    module_items.items.get(&name).copied()
 }
 
 #[with_diagnostics]

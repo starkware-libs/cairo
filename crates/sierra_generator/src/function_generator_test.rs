@@ -20,7 +20,7 @@ fn test_function_generator() {
                 }
             "},
     );
-    let foo = match db.module_items(module_id).expect("").unwrap()["foo"] {
+    let foo = match db.module_items(module_id).expect("").unwrap().items["foo"] {
         ModuleItemId::FreeFunction(foo) => foo,
         _ => panic!("Unexpected item type."),
     };
