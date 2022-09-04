@@ -8,6 +8,7 @@ db_utils = { path = "../db_utils" }
 diagnostics = { path = "../diagnostics" }
 diagnostics_proc_macros = { path = "../diagnostics_proc_macros" }
 filesystem = { path = "../filesystem" }
+itertools = "0.10.3"
 salsa = "0.16.1"
 syntax = { path = "../syntax" }
 parser = { path = "../parser" }
