@@ -498,7 +498,7 @@ impl<'a> Parser<'a> {
     fn try_parse_pattern(&mut self) -> Option<GreenId> {
         // TODO(yuval): Support more options.
         match self.peek().kind {
-            TokenKind::LiteralNumber => Some(self.take()),
+            TokenKind::LiteralNumber => Some(ExprLiteral::new_green(self.db, self.take())),
             TokenKind::Underscore => Some(self.take()),
             _ => None,
         }

@@ -261,12 +261,13 @@
     │   │       │   │   │   │       └── child #0 (kind: Newline).
     │   │       │   │   │   ├── arms (kind: MatchArms)
     │   │       │   │   │   │   ├── item #0 (kind: MatchArm)
-    │   │       │   │   │   │   │   ├── pattern (kind: Terminal)
-    │   │       │   │   │   │   │   │   ├── leading_trivia (kind: Trivia)
-    │   │       │   │   │   │   │   │   │   └── child #0 (kind: Whitespace).
-    │   │       │   │   │   │   │   │   ├── token (kind: LiteralNumber): '0'
-    │   │       │   │   │   │   │   │   └── trailing_trivia (kind: Trivia)
-    │   │       │   │   │   │   │   │       └── child #0 (kind: Whitespace).
+    │   │       │   │   │   │   │   ├── pattern (kind: ExprLiteral)
+    │   │       │   │   │   │   │   │   └── terminal (kind: Terminal)
+    │   │       │   │   │   │   │   │       ├── leading_trivia (kind: Trivia)
+    │   │       │   │   │   │   │   │       │   └── child #0 (kind: Whitespace).
+    │   │       │   │   │   │   │   │       ├── token (kind: LiteralNumber): '0'
+    │   │       │   │   │   │   │   │       └── trailing_trivia (kind: Trivia)
+    │   │       │   │   │   │   │   │           └── child #0 (kind: Whitespace).
     │   │       │   │   │   │   │   ├── arrow (kind: Terminal)
     │   │       │   │   │   │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │   │   │   │   ├── token (kind: MatchArrow): '=>'

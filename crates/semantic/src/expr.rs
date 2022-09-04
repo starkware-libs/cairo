@@ -167,14 +167,14 @@ pub fn compute_expr_semantic(ctx: &mut ComputationContext<'_>, syntax: ast::Expr
                 };
                 let expr_semantic = compute_expr_semantic(ctx, syntax_arm.expression(syntax_db));
                 let arm_type = db.lookup_intern_expr(expr_semantic).ty();
+                semantic_arms.push(MatchBranch { pattern, block: expr_semantic });
                 match match_type {
-                    Some(t) if t == arm_type => continue,
+                    Some(t) if t == arm_type => {}
                     Some(t) => {
                         panic!("Match arms have incompatible types: {t:?} and {arm_type:?}")
                     }
                     None => match_type = Some(arm_type),
                 }
-                semantic_arms.push(MatchBranch { pattern, block: expr_semantic });
             }
             semantic::Expr::ExprMatch(semantic::ExprMatch {
                 matched_expr: compute_expr_semantic(ctx, expr_match.expr(syntax_db)),
