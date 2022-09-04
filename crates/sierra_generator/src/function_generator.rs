@@ -20,6 +20,18 @@ pub fn generate_function_code(
     // Generate a label for the function's body.
     let (label, label_id) = context.new_label();
 
+    // Generate Sierra variables for the function parameters.
+    let _parameters: Vec<_> = function_semantic
+        .signature
+        .params
+        .iter()
+        .map(|param| {
+            let sierra_var = context.allocate_sierra_variable();
+            context.register_variable(defs::ids::VarId::Param(param.id), sierra_var.clone());
+            sierra_var
+        })
+        .collect();
+
     let mut statements: Vec<pre_sierra::Statement> = vec![label];
 
     // Generate the function's body.
@@ -27,13 +39,14 @@ pub fn generate_function_code(
     statements.extend(body_statements);
 
     // Copy the result to the top of the stack before returning.
+    let return_variable_on_stack = context.allocate_sierra_variable();
     statements.push(simple_statement(
         context.store_temp_libfunc_id(),
-        &[res.clone()],
-        &[res.clone()],
+        &[res],
+        &[return_variable_on_stack.clone()],
     ));
 
-    statements.push(return_statement(vec![res]));
+    statements.push(return_statement(vec![return_variable_on_stack]));
 
     pre_sierra::Function {
         id: db.intern_function(db.intern_concrete_function(semantic::ConcreteFunctionLongId {
