@@ -160,22 +160,11 @@ fn function_signature_from_ast_function(
 ) -> Option<semantic::Signature> {
     let return_type =
         function_signature_return_type(db, module_id, &function.signature(db.as_syntax_group()))
-            .unwrap(diagnostics);
-
-    let return_type = match return_type {
-        Some(return_type) => return_type,
-        // TODO(yuval): return None + Diagnostic.
-        None => panic!("Missing return type"),
-    };
+            .unwrap(diagnostics)?;
 
     let params =
-        match function_signature_params(db, module_id, &function.signature(db.as_syntax_group()))
-            .unwrap(diagnostics)
-        {
-            Some(params) => params,
-            // TODO(yuval): return None + Diagnostic.
-            None => panic!("Failed resolving signature params"),
-        };
+        function_signature_params(db, module_id, &function.signature(db.as_syntax_group()))
+            .unwrap(diagnostics)?;
 
     Some(semantic::Signature { params, return_type })
 }
@@ -220,11 +209,8 @@ fn function_signature_params(
                 panic!("param {name} is missing a type clause")
             }
         };
-        let ty = match resolve_type(db, module_id, ty_path).unwrap(diagnostics) {
-            Some(type_id) => type_id,
-            // TODO(yuval): return None + Diagnostic.
-            None => panic!("Could not resolve all signature params"),
-        };
+        // TODO(yuval): Diagnostic?
+        let ty = resolve_type(db, module_id, ty_path).unwrap(diagnostics)?;
         semantic_params.push(semantic::Parameter { name, ty });
     }
 
@@ -265,17 +251,14 @@ fn resolve_type_by_name(
     module_id: ModuleId,
     type_name: &SmolStr,
 ) -> Option<TypeId> {
-    let module_items = db.module_items(module_id).unwrap(diagnostics)?.items;
-    let module_item = match module_items.get(type_name) {
-        Some(module_item) => module_item,
-        // TODO(yuval): return None + Diagnostic.
-        None => panic!("Could not resolve type"),
-    };
+    // TODO(yuval): diagnostic on None?
+    let module_item =
+        db.resolve_module_identifier(module_id, type_name.clone()).unwrap(diagnostics)?;
     let generic_type = match module_item {
-        ModuleItemId::Struct(struct_id) => crate::GenericType::Struct(*struct_id),
-        ModuleItemId::ExternType(extern_type_id) => crate::GenericType::External(*extern_type_id),
-        variant @ (ModuleItemId::FreeFunction(_) | ModuleItemId::ExternFunction(_)) => {
-            panic!("Unexpected ModuleItemId variant: {variant:?}")
+        ModuleItemId::Struct(struct_id) => crate::GenericType::Struct(struct_id),
+        ModuleItemId::ExternType(extern_type_id) => crate::GenericType::External(extern_type_id),
+        unexpected_variant => {
+            panic!("Unexpected ModuleItemId variant: {unexpected_variant:?}")
         }
     };
     Some(db.intern_type(TypeLongId::Concrete(ConcreteType {
