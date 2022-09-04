@@ -33,20 +33,15 @@ fn test_resolve() {
     );
     let db = &db_val;
     assert!(
-        db.module_resolve_identifier(module_id, "doesnt_exist".into())
+        db.module_item_by_name(module_id, "doesnt_exist".into())
             .expect("Unexpected error")
             .is_none()
     );
-    match db
-        .module_resolve_identifier(module_id, "felt_add".into())
-        .expect("Unexpected error")
-        .unwrap()
-    {
+    match db.module_item_by_name(module_id, "felt_add".into()).expect("Unexpected error").unwrap() {
         crate::ids::ModuleItemId::ExternFunction(_) => {}
         _ => panic!("Expected an extern function"),
     };
-    match db.module_resolve_identifier(module_id, "foo".into()).expect("Unexpected error").unwrap()
-    {
+    match db.module_item_by_name(module_id, "foo".into()).expect("Unexpected error").unwrap() {
         crate::ids::ModuleItemId::FreeFunction(_) => {}
         _ => panic!("Expected a free function"),
     };

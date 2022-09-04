@@ -5,13 +5,9 @@ use std::sync::Arc;
 use assert_matches::assert_matches;
 use defs::db::{AsDefsGroup, DefsDatabase, DefsGroup};
 use defs::ids::{
-    ExternTypeLongId, FreeFunctionLongId, FreeFunctionLongId, GenericFunctionId, ParamLongId,
-    VarId, VarId,
+    ExternTypeLongId, FreeFunctionLongId, GenericFunctionId, GenericTypeId, ParamLongId, VarId,
 };
-use filesystem::db::{
-    AsFilesGroup, FilesDatabase, FilesDatabase, FilesGroup, FilesGroup, ProjectConfig,
-};
-use filesystem::ids::{CrateLongId, FileLongId, ModuleId, VirtualFile};
+use filesystem::db::{AsFilesGroup, FilesDatabase, FilesGroup};
 use indoc::indoc;
 use parser::db::ParserDatabase;
 use syntax::node::ast;
@@ -22,7 +18,7 @@ use crate::corelib::unit_ty;
 use crate::db::{SemanticDatabase, SemanticGroup};
 use crate::expr::{ComputationContext, Environment};
 use crate::test_utils::setup_test_module;
-use crate::{semantic, ConcreteType, GenericFunctionId, GenericType, TypeLongId};
+use crate::{semantic, ConcreteType, TypeLongId};
 
 #[salsa::database(SemanticDatabase, DefsDatabase, ParserDatabase, SyntaxDatabase, FilesDatabase)]
 #[derive(Default)]
@@ -80,8 +76,13 @@ fn test_expr_literal() {
 #[test]
 fn test_function_with_param() {
     let mut db_val = DatabaseImpl::default();
-    let (module_id, module_syntax) =
-        setup_test_module(&mut db_val, "extern type felt; func foo(a: felt) {}");
+    let (module_id, module_syntax) = setup_test_module(
+        &mut db_val,
+        indoc! {"
+            extern type felt;
+            func foo(a: felt) {}
+        "},
+    );
     let db = &db_val;
     // TODO(spapini): When a tail expression in a block is supported, take the syntax from the tail
     // instead of from the statements.
@@ -91,7 +92,7 @@ fn test_function_with_param() {
     let free_function_id =
         db.intern_free_function(FreeFunctionLongId { parent: module_id, name: "foo".into() });
     let felt_id = db.intern_type(TypeLongId::Concrete(ConcreteType {
-        generic_type: GenericType::External(
+        generic_type: GenericTypeId::Extern(
             db.intern_extern_type(ExternTypeLongId { parent: module_id, name: "felt".into() }),
         ),
         generic_args: Vec::new(),
@@ -113,8 +114,13 @@ fn test_function_with_param() {
 #[test]
 fn test_function_with_return_type() {
     let mut db_val = DatabaseImpl::default();
-    let (module_id, module_syntax) =
-        setup_test_module(&mut db_val, "extern type felt; func foo() -> felt {}");
+    let (module_id, module_syntax) = setup_test_module(
+        &mut db_val,
+        indoc! {"
+            extern type felt;
+            func foo() -> felt {}
+        "},
+    );
     let db = &db_val;
     // TODO(spapini): When a tail expression in a block is supported, take the syntax from the tail
     // instead of from the statements.
@@ -124,7 +130,7 @@ fn test_function_with_return_type() {
     let free_function_id =
         db.intern_free_function(FreeFunctionLongId { parent: module_id, name: "foo".into() });
     let felt_id = db.intern_type(TypeLongId::Concrete(ConcreteType {
-        generic_type: GenericType::External(
+        generic_type: GenericTypeId::Extern(
             db.intern_extern_type(ExternTypeLongId { parent: module_id, name: "felt".into() }),
         ),
         generic_args: Vec::new(),
@@ -144,8 +150,15 @@ fn test_function_with_return_type() {
 #[test]
 fn test_expr_var() {
     let mut db_val = DatabaseImpl::default();
-    let (module_id, module_syntax) =
-        setup_test_module(&mut db_val, "extern type felt; func foo(a: felt) { a }");
+    let (module_id, module_syntax) = setup_test_module(
+        &mut db_val,
+        indoc! {"
+            extern type felt;
+            func foo(a: felt) {
+                a
+            }
+        "},
+    );
     let db = &db_val;
     // TODO(spapini): When a tail expression in a block is supported, take the syntax from the tail
     // instead of from the statements.

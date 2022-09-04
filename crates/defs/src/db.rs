@@ -43,7 +43,7 @@ pub trait DefsGroup: FilesGroup + SyntaxGroup + AsSyntaxGroup + ParserGroup {
         &self,
         module_id: ModuleId,
     ) -> WithDiagnostics<Option<HashMap<SmolStr, ModuleItemId>>, ParserDiagnostic>;
-    fn module_resolve_identifier(
+    fn module_item_by_name(
         &self,
         module_id: ModuleId,
         name: SmolStr,
@@ -148,8 +148,7 @@ fn module_items(
 }
 
 #[with_diagnostics]
-// TODO(yg): rename to module_item_by_name()
-fn resolve_module_identifier(
+fn module_item_by_name(
     diagnostics: &mut Diagnostics<ParserDiagnostic>,
     db: &dyn DefsGroup,
     module_id: ModuleId,
@@ -166,7 +165,7 @@ fn module_resolve_generic_function(
     module_id: ModuleId,
     name: SmolStr,
 ) -> Option<GenericFunctionId> {
-    match db.module_resolve_identifier(module_id, name).unwrap(diagnostics)? {
+    match db.module_item_by_name(module_id, name).unwrap(diagnostics)? {
         ModuleItemId::FreeFunction(item) => Some(GenericFunctionId::Free(item)),
         ModuleItemId::Struct(_) => None,
         ModuleItemId::ExternType(_) => None,
@@ -181,7 +180,7 @@ fn module_resolve_generic_type(
     module_id: ModuleId,
     name: SmolStr,
 ) -> Option<GenericTypeId> {
-    match db.module_resolve_identifier(module_id, name).unwrap(diagnostics)? {
+    match db.module_item_by_name(module_id, name).unwrap(diagnostics)? {
         ModuleItemId::FreeFunction(_) => None,
         ModuleItemId::Struct(item) => Some(GenericTypeId::Struct(item)),
         ModuleItemId::ExternType(item) => Some(GenericTypeId::Extern(item)),

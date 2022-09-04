@@ -164,7 +164,7 @@ fn resolve_variable(ctx: &mut ComputationContext<'_>, path: ast::ExprPath) -> Va
     resolve_variable_by_name(ctx, &variable_name)
 }
 
-/// Resolves a variable given a context and a name.
+/// Resolves a variable given a context and a simple name.
 pub fn resolve_variable_by_name(
     ctx: &mut ComputationContext<'_>,
     variable_name: &SmolStr,
@@ -200,7 +200,7 @@ fn resolve_concrete_function(
     };
     let function_name = last_element.ident(syntax_db).text(syntax_db);
     let generic_function = match db
-        .module_resolve_identifier(ctx.module_id, function_name)
+        .module_item_by_name(ctx.module_id, function_name)
         .expect("Diagnostics not supported yet")
         .expect("Unresolved identifier")
     {
