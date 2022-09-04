@@ -42,7 +42,6 @@ fn build_empty_file_green_tree(db: &dyn SyntaxGroup) -> SyntaxFile {
 #[test]
 fn test_parser() {
     let db = TestDatabase::default();
-    let syntax_group = db.as_syntax_group();
 
     // Parse empty cairo file.
     let file_id = db.intern_file(FileLongId::Virtual(VirtualFile {
@@ -52,7 +51,7 @@ fn test_parser() {
     }));
     let syntax_file = db.file_syntax(file_id).expect("Unexpected diagnostics").unwrap();
 
-    let expected_syntax_file = build_empty_file_green_tree(syntax_group);
+    let expected_syntax_file = build_empty_file_green_tree(db.as_syntax_group());
 
     assert_eq!(*syntax_file, expected_syntax_file);
 }
