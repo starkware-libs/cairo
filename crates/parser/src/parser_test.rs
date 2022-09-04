@@ -35,14 +35,14 @@ fn read_file(filename: &str) -> String {
     "test_data/cairo_files/short.cairo",
     "test_data/expected_results/short_tree_colored", false, true, false; "short_tree_colored")]
 #[test_case(
-    "test_data/cairo_files/test1.cairo", "test_data/expected_results/test1_tree", true, false,
+    "test_data/cairo_files/test1.cairo", "test_data/expected_results/test1_tree_no_trivia", true, false,
     false; "test1_tree_no_trivia")]
 #[test_case(
     "test_data/cairo_files/test1.cairo",
     "test_data/expected_results/test1_tree_with_trivia", false, false, true;
     "test1_tree_with_trivia")]
 #[test_case(
-    "test_data/cairo_files/test2.cairo", "test_data/expected_results/test2_tree", true, false,
+    "test_data/cairo_files/test2.cairo", "test_data/expected_results/test2_tree_no_trivia", true, false,
     false; "test2_tree_no_trivia")]
 #[test_case(
     "test_data/cairo_files/test2.cairo",
