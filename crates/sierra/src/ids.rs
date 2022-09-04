@@ -73,3 +73,5 @@ define_identity!("The identity of a variable.", VarId);
 define_identity!("The identity of a generic type.", GenericTypeId);
 
 define_identity!("The identity of a concrete type.", ConcreteTypeId);
+
+define_identity!("The identity of a symbol.", SymbolId);

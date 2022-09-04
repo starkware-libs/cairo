@@ -7,7 +7,7 @@ use crate::extensions::{
     ConcreteType, NamedLibFunc, NamedType, NoGenericArgsGenericType, OutputVarReferenceInfo,
     SignatureBasedConcreteLibFunc, SpecializationError,
 };
-use crate::ids::{GenericLibFuncId, GenericTypeId};
+use crate::ids::{GenericLibFuncId, GenericTypeId, SymbolId};
 use crate::program::GenericArg;
 
 /// Type for gas actions.
@@ -28,10 +28,10 @@ define_libfunc_hierarchy! {
     }, GasConcreteLibFunc
 }
 
-/// Helper for extracting a single positive value from template arguments.
-fn as_single_positive_value(args: &[GenericArg]) -> Result<i64, SpecializationError> {
+/// Helper for extracting a single symbol from template arguments.
+fn as_constant(args: &[GenericArg]) -> Result<SymbolId, SpecializationError> {
     match args {
-        [GenericArg::Value(count)] if *count > 0 => Ok(*count),
+        [GenericArg::Symbol(id)] => Ok(id.clone()),
         _ => Err(SpecializationError::UnsupportedGenericArg),
     }
 }
@@ -73,14 +73,14 @@ impl NamedLibFunc for GetGasLibFunc {
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
         Ok(GetGasConcreteLibFunc {
-            count: as_single_positive_value(args)?,
+            count: as_constant(args)?,
             signature: self.specialize_signature(&context, args)?,
         })
     }
 }
 
 pub struct GetGasConcreteLibFunc {
-    pub count: i64,
+    pub count: SymbolId,
     pub signature: LibFuncSignature,
 }
 impl SignatureBasedConcreteLibFunc for GetGasConcreteLibFunc {
@@ -115,14 +115,14 @@ impl NamedLibFunc for RefundGasLibFunc {
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
         Ok(RefundGasConcreteLibFunc {
-            count: as_single_positive_value(args)?,
+            count: as_constant(args)?,
             signature: self.specialize_signature(&context, args)?,
         })
     }
 }
 
 pub struct RefundGasConcreteLibFunc {
-    pub count: i64,
+    pub count: SymbolId,
     pub signature: LibFuncSignature,
 }
 impl SignatureBasedConcreteLibFunc for RefundGasConcreteLibFunc {
