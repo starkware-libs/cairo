@@ -40,7 +40,7 @@ fn test_resolve_labels() {
         label(9),
     ];
     assert_eq!(
-        resolve_labels(statements).iter().map(|x| format!("{}", x)).collect::<Vec<String>>(),
+        resolve_labels(statements).0.iter().map(|x| format!("{}", x)).collect::<Vec<String>>(),
         vec![
             // labels 7 and 5 (instruction index 0).
             "Instruction0() -> ()",

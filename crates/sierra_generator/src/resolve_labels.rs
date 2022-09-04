@@ -9,10 +9,12 @@ use sierra::program;
 use crate::pre_sierra;
 
 /// Replaces labels with their corresponding StatementIdx.
-pub fn resolve_labels(statements: Vec<pre_sierra::Statement>) -> Vec<program::Statement> {
+pub fn resolve_labels(
+    statements: Vec<pre_sierra::Statement>,
+) -> (Vec<program::Statement>, LabelReplacer) {
     let label_replacer = LabelReplacer::new(get_label_id_to_index(&statements));
 
-    statements
+    let resolved_statements = statements
         .into_iter()
         .filter_map(|statement| match statement {
             pre_sierra::Statement::Sierra(sierra_statement) => {
@@ -20,7 +22,8 @@ pub fn resolve_labels(statements: Vec<pre_sierra::Statement>) -> Vec<program::St
             }
             pre_sierra::Statement::Label(_) => None,
         })
-        .collect()
+        .collect();
+    (resolved_statements, label_replacer)
 }
 
 /// Returns a map from LabelId to the index of the next Sierra statement.
@@ -38,7 +41,7 @@ fn get_label_id_to_index(
                 if let hash_map::Entry::Vacant(entry) = label_id_to_index.entry(label.id) {
                     entry.insert(index);
                 } else {
-                    panic!("Label {} was not declared.", label.id)
+                    panic!("Label {} was already declared.", label.id)
                 }
             }
         }
@@ -47,7 +50,7 @@ fn get_label_id_to_index(
 }
 
 /// Helper struct for resolve_labels.
-struct LabelReplacer {
+pub struct LabelReplacer {
     label_id_to_index: HashMap<pre_sierra::LabelId, usize>,
 }
 impl LabelReplacer {
@@ -104,7 +107,7 @@ impl LabelReplacer {
         }
     }
 
-    fn handle_label_id(&self, label_id: pre_sierra::LabelId) -> program::StatementIdx {
+    pub fn handle_label_id(&self, label_id: pre_sierra::LabelId) -> program::StatementIdx {
         // TODO(lior): handle missing labels.
         program::StatementIdx(self.label_id_to_index[&label_id])
     }

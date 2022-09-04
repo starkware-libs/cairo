@@ -37,7 +37,7 @@ pub fn generate_program_code(
     }
 
     // Resolve labels.
-    let resolved_statements = resolve_labels(statements);
+    let (resolved_statements, label_replacer) = resolve_labels(statements);
 
     Some(sierra::program::Program {
         // TODO(lior): Fill type_declarations.
@@ -53,8 +53,7 @@ pub fn generate_program_code(
                 params: vec![],
                 // TODO(lior): Add ret types.
                 ret_types: vec![],
-                // TODO(lior): Fix entry.
-                entry: sierra::program::StatementIdx(1234),
+                entry: label_replacer.handle_label_id(function.entry_point),
             })
             .collect(),
     })
