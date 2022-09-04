@@ -2,14 +2,16 @@ use assert_matches::assert_matches;
 use defs::db::{AsDefsGroup, DefsDatabase, DefsGroup};
 use defs::ids::{LanguageElementId, ModuleItemId, VarId};
 use filesystem::db::{AsFilesGroup, FilesDatabase, FilesGroup};
+use filesystem::ids::ModuleId;
 use indoc::indoc;
 use parser::db::ParserDatabase;
+use smol_str::SmolStr;
 use syntax::node::db::{AsSyntaxGroup, SyntaxDatabase, SyntaxGroup};
 
 use crate::corelib::{core_felt_ty, unit_ty};
 use crate::db::{SemanticDatabase, SemanticGroup};
-use crate::semantic;
 use crate::test_utils::{setup_test_expr, setup_test_function};
+use crate::{semantic, ExprId, StatementId, TypeId};
 
 #[salsa::database(SemanticDatabase, DefsDatabase, ParserDatabase, SyntaxDatabase, FilesDatabase)]
 #[derive(Default)]
@@ -75,6 +77,46 @@ fn test_function_with_return_type() {
 
     // TODO(spapini): Verify params names and tests after StablePtr feature is added.
     let _ret_ty = signature.return_type;
+}
+
+#[test]
+fn test_let_statement() {
+    let mut db_val = DatabaseImpl::default();
+    let (module_id, function) = setup_test_function(
+        &mut db_val,
+        indoc! {"
+            func foo() {
+                let a: felt = 3;
+                let b = a;
+            }
+        "},
+        "foo",
+        "",
+    );
+    let db = &db_val;
+
+    let _signature = function.signature;
+
+    // TODO(spapini): Verify params names and tests after StablePtr feature is added.
+    let statements = match db.lookup_intern_expr(function.body) {
+        crate::Expr::ExprBlock(block) => {
+            assert!(block.tail.is_none());
+            block.statements
+        }
+        _ => panic!(),
+    };
+
+    // Verify the statements
+    assert_eq!(statements.len(), 2);
+    assert_let_statement_with_literal(db, statements[0], module_id, "a".into(), 3);
+    assert_let_statement_with_var(
+        db,
+        statements[1],
+        module_id,
+        "b".into(),
+        "a".into(),
+        core_felt_ty(db),
+    );
 }
 
 #[test]
@@ -247,4 +289,56 @@ fn test_function_body() {
         _ => panic!(),
     };
     assert_eq!(param.name(db), "a");
+}
+
+pub fn assert_let_statement_with_literal(
+    db: &dyn SemanticGroup,
+    statement_id: StatementId,
+    module_id: ModuleId,
+    var_name: SmolStr,
+    literal_value: usize,
+) {
+    let rhs = assert_let_statement_lhs_and_get_rhs(db, statement_id, module_id, var_name);
+    if let semantic::Expr::ExprLiteral(literal) = db.lookup_intern_expr(rhs) {
+        assert_eq!(literal.value, literal_value);
+        assert_eq!(literal.ty, core_felt_ty(db));
+    } else {
+        panic!("Expected a literal expression");
+    }
+}
+
+pub fn assert_let_statement_with_var(
+    db: &dyn SemanticGroup,
+    statement_id: StatementId,
+    module_id: ModuleId,
+    var_name: SmolStr,
+    expr_var_name: SmolStr,
+    expr_var_type: TypeId,
+) {
+    let rhs = assert_let_statement_lhs_and_get_rhs(db, statement_id, module_id, var_name);
+    if let semantic::Expr::ExprVar(var) = db.lookup_intern_expr(rhs) {
+        assert_eq!(var.var.name(db.as_defs_group()), expr_var_name);
+        assert_eq!(var.ty, expr_var_type);
+    } else {
+        panic!("Expected a var expression");
+    }
+}
+
+fn assert_let_statement_lhs_and_get_rhs(
+    db: &dyn SemanticGroup,
+    statement_id: StatementId,
+    module_id: ModuleId,
+    var_name: SmolStr,
+) -> ExprId {
+    let stmt = db.lookup_intern_statement(statement_id);
+    let let_stmt = if let semantic::Statement::Let(let_stmt) = stmt {
+        let_stmt
+    } else {
+        panic!("Expected a let statement")
+    };
+    assert_eq!(let_stmt.var.id.module(db.as_defs_group()), module_id);
+    assert_eq!(let_stmt.var.id.name(db.as_defs_group()), var_name);
+    assert_eq!(let_stmt.var.ty, core_felt_ty(db));
+
+    let_stmt.expr
 }

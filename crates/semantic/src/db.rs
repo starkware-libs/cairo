@@ -97,7 +97,7 @@ fn generic_function_data(
     };
 
     let return_type =
-        function_signature_return_type(db, module_id, &signature_syntax).unwrap(diagnostics)?;
+        function_signature_return_type(db, module_id, &signature_syntax).unwrap(diagnostics);
 
     let (params, variables) =
         function_signature_params(db, module_id, &signature_syntax).unwrap(diagnostics)?;
@@ -135,10 +135,10 @@ fn free_function_semantic(
 
     // Compute body semantic expr.
     let mut ctx = ComputationContext::new(db, module_id, generic_function_data.variables);
-    let body = db.intern_expr(compute_expr_semantic(
-        &mut ctx,
-        ast::Expr::Block(syntax.body(db.as_syntax_group())),
-    ));
+    let body = db.intern_expr(
+        compute_expr_semantic(&mut ctx, ast::Expr::Block(syntax.body(db.as_syntax_group())))
+            .unwrap(diagnostics),
+    );
 
     Some(semantic::FreeFunction { signature: generic_function_data.signature, body })
 }
@@ -159,10 +159,10 @@ fn function_signature_return_type(
     db: &dyn SemanticGroup,
     module_id: ModuleId,
     sig: &ast::FunctionSignature,
-) -> Option<TypeId> {
+) -> TypeId {
     let type_path = match sig.ret_ty(db.as_syntax_group()) {
         ast::OptionReturnTypeClause::Empty(_) => {
-            return Some(unit_ty(db));
+            return unit_ty(db);
         }
         ast::OptionReturnTypeClause::ReturnTypeClause(ret_type_clause) => {
             ret_type_clause.ty(db.as_syntax_group())
@@ -195,7 +195,7 @@ fn function_signature_params(
             }
         };
         // TODO(yuval): Diagnostic?
-        let ty = resolve_type(db, module_id, ty_path).unwrap(diagnostics)?;
+        let ty = resolve_type(db, module_id, ty_path).unwrap(diagnostics);
         semantic_params.push(semantic::Parameter { id, ty });
         variables.insert(name, semantic::Variable { id: VarId::Param(id), ty });
     }
@@ -207,12 +207,12 @@ fn function_signature_params(
 // TODO(spapini): add a query wrapper.
 /// Resolves a type given a module and a path.
 #[with_diagnostics]
-fn resolve_type(
+pub fn resolve_type(
     diagnostics: &mut Diagnostics<ParserDiagnostic>,
     db: &dyn SemanticGroup,
     module_id: ModuleId,
     type_path: ast::ExprPath,
-) -> Option<TypeId> {
+) -> TypeId {
     let syntax_db = db.as_syntax_group();
     let segments = type_path.elements(syntax_db);
     if segments.len() != 1 {
@@ -225,9 +225,12 @@ fn resolve_type(
     };
     let type_name = last_segment.ident(syntax_db).text(syntax_db);
 
-    resolve_type_by_name(db, module_id, &type_name)
-        .unwrap(diagnostics)
-        .or_else(|| resolve_type_by_name(db, core_module(db), &type_name).unwrap(diagnostics))
+    let type_id = resolve_type_by_name(db, module_id, &type_name).unwrap(diagnostics);
+    if db.lookup_intern_type(type_id) != TypeLongId::Missing {
+        type_id
+    } else {
+        resolve_type_by_name(db, core_module(db), &type_name).unwrap(diagnostics)
+    }
 }
 
 // TODO(yuval): move to a separate module "type".
@@ -238,18 +241,22 @@ fn resolve_type_by_name(
     db: &dyn SemanticGroup,
     module_id: ModuleId,
     type_name: &SmolStr,
-) -> Option<TypeId> {
+) -> TypeId {
+    let module_item_id =
+        match db.module_item_by_name(module_id, type_name.clone()).unwrap(diagnostics) {
+            None => return db.intern_type(TypeLongId::Missing),
+            Some(id) => id,
+        };
     // TODO(yuval): diagnostic on None?
-    let module_item = db.module_item_by_name(module_id, type_name.clone()).unwrap(diagnostics)?;
-    let generic_type = match module_item {
+    let generic_type = match module_item_id {
         ModuleItemId::Struct(struct_id) => GenericTypeId::Struct(struct_id),
         ModuleItemId::ExternType(extern_type_id) => GenericTypeId::Extern(extern_type_id),
         unexpected_variant => {
             panic!("Unexpected ModuleItemId variant: {unexpected_variant:?}")
         }
     };
-    Some(db.intern_type(TypeLongId::Concrete(ConcreteType {
+    db.intern_type(TypeLongId::Concrete(ConcreteType {
         generic_type,
         generic_args: Vec::new(), // TODO(yuval): support generics.
-    })))
+    }))
 }
