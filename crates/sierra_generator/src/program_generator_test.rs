@@ -8,17 +8,17 @@ use crate::test_utils::DatabaseImpl;
 #[test]
 fn test_program_generator() {
     let mut db = DatabaseImpl::default();
-    // TODO(lior): Make bar return something like felt_add(5, foo()).
+    // TODO(lior): Make bar return something like felt_add(5, bar()).
     let module_id = setup_test_module(
         &mut db,
         indoc! {"
                 extern type felt;
 
-                func bar(a: felt) -> felt {
-                    foo(5)
+                func foo(a: felt) -> felt {
+                    bar(5)
                 }
 
-                func foo(a: felt) -> felt {
+                func bar(a: felt) -> felt {
                     5
                 }
             "},

@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use diagnostics::{Diagnostics, WithDiagnostics};
 use diagnostics_proc_macros::with_diagnostics;
 use filesystem::db::FilesGroup;
@@ -10,6 +8,7 @@ use parser::parser::ParserDiagnostic;
 use smol_str::SmolStr;
 use syntax::node::ast;
 use syntax::node::db::{AsSyntaxGroup, SyntaxGroup};
+use utils::ordered_hash_map::OrderedHashMap;
 
 use crate::ids::*;
 
@@ -66,15 +65,15 @@ pub trait AsDefsGroup {
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ModuleData {
-    pub free_functions: HashMap<FreeFunctionId, ast::ItemFreeFunction>,
-    pub structs: HashMap<StructId, ast::ItemStruct>,
-    pub extern_types: HashMap<ExternTypeId, ast::ItemExternType>,
-    pub extern_functions: HashMap<ExternFunctionId, ast::ItemExternFunction>,
+    pub free_functions: OrderedHashMap<FreeFunctionId, ast::ItemFreeFunction>,
+    pub structs: OrderedHashMap<StructId, ast::ItemStruct>,
+    pub extern_types: OrderedHashMap<ExternTypeId, ast::ItemExternType>,
+    pub extern_functions: OrderedHashMap<ExternFunctionId, ast::ItemExternFunction>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ModuleItems {
-    pub items: HashMap<SmolStr, ModuleItemId>,
+    pub items: OrderedHashMap<SmolStr, ModuleItemId>,
 }
 
 #[with_diagnostics]
