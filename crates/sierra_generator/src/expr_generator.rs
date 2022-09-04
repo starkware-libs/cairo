@@ -3,7 +3,7 @@
 mod test;
 
 use defs::ids::GenericFunctionId;
-use semantic;
+
 use sierra::program;
 
 use crate::expr_generator_context::ExprGeneratorContext;
