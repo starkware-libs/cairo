@@ -141,7 +141,7 @@ pub fn get_key_fields(kind: SyntaxKind, children: Vec<GreenId>) -> Vec<GreenId> 
         SyntaxKind::ItemModule => {
             vec![/* name */ children[1]]
         }
-        SyntaxKind::ItemFunction => {
+        SyntaxKind::ItemFreeFunction => {
             vec![/* name */ children[1]]
         }
         SyntaxKind::ItemExternFunction => {

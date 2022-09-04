@@ -167,7 +167,7 @@ fn function_signature_from_free_function_ast(
     diagnostics: &mut Diagnostics<ParserDiagnostic>,
     db: &dyn SemanticGroup,
     module_id: ModuleId,
-    free_function: &ast::ItemFunction,
+    free_function: &ast::ItemFreeFunction,
 ) -> Option<semantic::Signature> {
     let return_type = function_signature_return_type(
         db,

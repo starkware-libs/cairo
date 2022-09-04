@@ -209,7 +209,7 @@ pub fn get_spec() -> Vec<Node> {
         // --- Items ---
         EnumBuilder::new("Item")
             .node("Module")
-            .node("Function")
+            .node("FreeFunction")
             .node("ExternFunction")
             .node("ExternType")
             .node("Trait")
@@ -224,7 +224,7 @@ pub fn get_spec() -> Vec<Node> {
             .key_node("name", "Terminal")
             .node("semicolon", "Terminal")
             .build(),
-        StructBuilder::new("ItemFunction")
+        StructBuilder::new("ItemFreeFunction")
             .node("funckw", "Terminal")
             .key_node("name", "Terminal")
             .node("signature", "FunctionSignature")

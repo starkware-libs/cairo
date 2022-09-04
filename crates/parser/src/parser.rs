@@ -205,7 +205,7 @@ impl<'a> Parser<'a> {
     /// Assumes the current token is Function.
     /// Expected pattern: <FunctionSignature><Block>
     fn expect_function(&mut self) -> GreenId {
-        ItemFunction::new_green(
+        ItemFreeFunction::new_green(
             self.db,
             self.take(),                             // function keyword
             self.parse_token(TokenKind::Identifier), // name
