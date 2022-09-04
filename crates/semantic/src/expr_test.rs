@@ -59,9 +59,11 @@ fn test_function_with_param() {
     let signature = function.signature;
 
     // Verify the parameter name and type.
-    assert_eq!(signature.params.len(), 1);
-    assert_eq!(signature.params[0].name, "a");
-    let _param_ty = signature.params[0].ty;
+    let params: Vec<_> = signature.params.into_iter().collect();
+    assert_eq!(params.len(), 1);
+    let (_param_id, param) = &params[0];
+    let _param_ty = param.ty;
+    // TODO(spapini): Compare name;
     // TODO(spapini): Compare type;
 }
 
@@ -104,7 +106,6 @@ fn test_expr_var() {
         crate::Expr::ExprVar(expr) => expr,
         _ => panic!("Expected a variable."),
     };
-    let _param = &function.signature.params[0];
     // TODO(spapini): Check Var against param using param.id.
 }
 

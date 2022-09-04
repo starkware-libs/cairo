@@ -38,6 +38,7 @@ impl<'db> ComputationContext<'db> {
 // TODO(spapini): Consider using identifiers instead of SmolStr everywhere in the code.
 /// A state which contains all the variables defined at the current scope until now, and a pointer
 /// to the parent environment.
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Environment {
     parent: Option<Rc<Environment>>,
     variables: HashMap<SmolStr, VarId>,
