@@ -14,7 +14,9 @@ use syntax::node::db::SyntaxGroup;
 
 use crate::corelib::unit_ty;
 use crate::db::SemanticGroup;
-use crate::{semantic, ConcreteFunctionId, ConcreteFunctionLongId, ExprId, StatementId};
+use crate::{
+    semantic, ConcreteFunctionId, ConcreteFunctionLongId, ExprId, MatchBranch, StatementId, TypeId,
+};
 
 /// Context for computing the semantic model of expression trees.
 pub struct ComputationContext<'db> {
@@ -60,6 +62,19 @@ fn get_tail_expression(
     None
 }
 
+fn literal_to_semantic(
+    ctx: &mut ComputationContext<'_>,
+    literal_syntax: ast::ExprLiteral,
+) -> semantic::ExprLiteral {
+    let db = ctx.db;
+    let syntax_db = db.as_syntax_group();
+    let text = literal_syntax.terminal(syntax_db).text(syntax_db);
+    // TODO(spapini): Diagnostics.
+    let value = text.parse::<usize>().unwrap();
+    let ty = db.core_felt_ty();
+    semantic::ExprLiteral { value, ty }
+}
+
 /// Computes the semantic model of an expression.
 pub fn compute_expr_semantic(ctx: &mut ComputationContext<'_>, syntax: ast::Expr) -> ExprId {
     let db = ctx.db;
@@ -72,11 +87,7 @@ pub fn compute_expr_semantic(ctx: &mut ComputationContext<'_>, syntax: ast::Expr
             semantic::Expr::ExprVar(semantic::ExprVar { var, ty: unit_ty(db) })
         }
         ast::Expr::Literal(literal_syntax) => {
-            let text = literal_syntax.terminal(syntax_db).text(syntax_db);
-            // TODO(spapini): Diagnostics.
-            let value = text.parse::<usize>().unwrap();
-            let ty = db.core_felt_ty();
-            semantic::Expr::ExprLiteral(semantic::ExprLiteral { value, ty })
+            semantic::Expr::ExprLiteral(literal_to_semantic(ctx, literal_syntax))
         }
         ast::Expr::Parenthesized(_) => todo!(),
         ast::Expr::Unary(_) => todo!(),
@@ -141,7 +152,39 @@ pub fn compute_expr_semantic(ctx: &mut ComputationContext<'_>, syntax: ast::Expr
                 ty: unit_ty(db),
             })
         }
-        ast::Expr::Match(_) => todo!(),
+        // TODO(yuval): verify exhaustiveness.
+        ast::Expr::Match(expr_match) => {
+            let syntax_arms = expr_match.arms(syntax_db).elements(syntax_db);
+            let mut semantic_arms = Vec::new();
+            let mut match_type: Option<TypeId> = None;
+            for syntax_arm in syntax_arms {
+                let pattern = match syntax_arm.pattern(syntax_db) {
+                    ast::Pattern::Underscore(_) => semantic::Pattern::Otherwise,
+                    ast::Pattern::Literal(literal) => {
+                        let semantic_literal = literal_to_semantic(ctx, literal);
+                        semantic::Pattern::Literal(semantic_literal)
+                    }
+                };
+                let expr_semantic = compute_expr_semantic(ctx, syntax_arm.expression(syntax_db));
+                let arm_type = db.lookup_intern_expr(expr_semantic).ty();
+                match match_type {
+                    Some(t) if t == arm_type => continue,
+                    Some(t) => {
+                        panic!("Match arms have incompatible types: {t:?} and {arm_type:?}")
+                    }
+                    None => match_type = Some(arm_type),
+                }
+                semantic_arms.push(MatchBranch { pattern, block: expr_semantic });
+            }
+            semantic::Expr::ExprMatch(semantic::ExprMatch {
+                matched_expr: compute_expr_semantic(ctx, expr_match.expr(syntax_db)),
+                arms: semantic_arms,
+                ty: match match_type {
+                    Some(t) => t,
+                    None => todo!("Return never-type"),
+                },
+            })
+        }
         ast::Expr::ExprMissing(_) => todo!(),
     };
     db.intern_expr(expr)

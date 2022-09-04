@@ -192,12 +192,51 @@ fn test_expr_var() {
     let expr = db.lookup_intern_expr(expr_id);
 
     // Check expr.
-    let semantic::ExprVar { var, ty: _ } = match expr {
-        crate::Expr::ExprVar(expr) => expr,
+    let var = match expr {
+        crate::Expr::ExprVar(expr) => expr.var,
         _ => panic!("Expected a variable."),
     };
     assert_eq!(var, var_id);
     // TODO(spapini): Check type.
+}
+
+#[test]
+fn test_expr_match() {
+    let mut db_val = DatabaseImpl::default();
+    let (module_id, module_syntax) = setup_test_module(
+        &mut db_val,
+        indoc! {"
+            extern type felt;
+            func foo(a: felt) {
+                match a {
+                    0 => 0,
+                    _ => 1,
+                }
+            }
+        "},
+    );
+    let db = &db_val;
+    // TODO(spapini): When a tail expression in a block is supported, take the syntax from the tail
+    // instead of from the statements.
+    let expr_syntax =
+        match &extract_function_body(db, module_syntax, 1).statements(db).elements(db)[0] {
+            ast::Statement::Expr(syntax) => syntax.expr(db),
+            _ => panic!("Expected an expression statement"),
+        };
+    let _match_syntax = match expr_syntax {
+        ast::Expr::Match(match_syntax) => match_syntax.expr(db_val.as_syntax_group()),
+        _ => panic!("Expected a match statement"),
+    };
+
+    // Compute semantics of signature.
+    let free_function_id =
+        db.intern_free_function(FreeFunctionLongId { parent: module_id, name: "foo".into() });
+    let _signature = db
+        .generic_function_signature_semantic(GenericFunctionId::Free(free_function_id))
+        .expect("Unexpected diagnostic")
+        .unwrap();
+
+    // TODO(yuval/spapini): complete test with test utils.
 }
 
 #[test]
