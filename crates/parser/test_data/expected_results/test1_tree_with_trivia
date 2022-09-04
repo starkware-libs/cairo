@@ -1,6 +1,6 @@
 └── root (kind: SyntaxFile)
     ├── items (kind: ItemList)
-    │   ├── child #0 (kind: ItemFunction)
+    │   ├── child #0 (kind: ItemFreeFunction)
     │   │   ├── funckw (kind: Terminal)
     │   │   │   ├── leading_trivia (kind: Trivia)
     │   │   │   │   └── child #0 (kind: TriviumSkippedTerminal)

@@ -401,7 +401,7 @@ fn extract_function_body(
 ) -> ast::ExprBlock {
     let syntax = &module_syntax.items(db).elements(db)[index];
     let function_syntax = match syntax {
-        ast::Item::Function(function_syntax) => function_syntax,
+        ast::Item::FreeFunction(function_syntax) => function_syntax,
         variant => panic!("Not a free function, actual: {variant:?}"),
     };
     function_syntax.body(db)

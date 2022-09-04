@@ -1,6 +1,6 @@
 └── root (kind: SyntaxFile)
     ├── items (kind: ItemList)
-    │   ├── child #0 (kind: ItemFunction)
+    │   ├── child #0 (kind: ItemFreeFunction)
     │   │   ├── funckw (kind: Function): 'func'
     │   │   ├── name (kind: Identifier): 'foo'
     │   │   ├── signature (kind: FunctionSignature)
@@ -143,7 +143,7 @@
     │   │   ├── modkw (kind: Module): 'mod'
     │   │   ├── name (kind: Identifier): 'my_mod'
     │   │   └── semicolon: Missing
-    │   ├── child #2 (kind: ItemFunction)
+    │   ├── child #2 (kind: ItemFreeFunction)
     │   │   ├── funckw (kind: Function): 'func'
     │   │   ├── name (kind: Identifier): 'bar'
     │   │   ├── signature (kind: FunctionSignature)

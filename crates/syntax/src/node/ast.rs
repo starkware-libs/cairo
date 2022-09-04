@@ -3298,7 +3298,7 @@ impl TypedSyntaxNode for FunctionSignature {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum Item {
     Module(ItemModule),
-    Function(ItemFunction),
+    FreeFunction(ItemFreeFunction),
     ExternFunction(ItemExternFunction),
     ExternType(ItemExternType),
     Trait(ItemTrait),
@@ -3318,8 +3318,8 @@ impl TypedSyntaxNode for Item {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => match internal.kind {
                 SyntaxKind::ItemModule => Item::Module(ItemModule::from_syntax_node(db, node)),
-                SyntaxKind::ItemFunction => {
-                    Item::Function(ItemFunction::from_syntax_node(db, node))
+                SyntaxKind::ItemFreeFunction => {
+                    Item::FreeFunction(ItemFreeFunction::from_syntax_node(db, node))
                 }
                 SyntaxKind::ItemExternFunction => {
                     Item::ExternFunction(ItemExternFunction::from_syntax_node(db, node))
@@ -3345,7 +3345,7 @@ impl TypedSyntaxNode for Item {
     fn as_syntax_node(&self) -> SyntaxNode {
         match self {
             Item::Module(x) => x.as_syntax_node(),
-            Item::Function(x) => x.as_syntax_node(),
+            Item::FreeFunction(x) => x.as_syntax_node(),
             Item::ExternFunction(x) => x.as_syntax_node(),
             Item::ExternType(x) => x.as_syntax_node(),
             Item::Trait(x) => x.as_syntax_node(),
@@ -3484,11 +3484,11 @@ impl TypedSyntaxNode for ItemModule {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct ItemFunction {
+pub struct ItemFreeFunction {
     node: SyntaxNode,
     children: Vec<SyntaxNode>,
 }
-impl ItemFunction {
+impl ItemFreeFunction {
     pub fn new_green(
         db: &dyn SyntaxGroup,
         funckw: GreenId,
@@ -3499,7 +3499,7 @@ impl ItemFunction {
         let children: Vec<GreenId> = vec![funckw, name, signature, body];
         let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
-            kind: SyntaxKind::ItemFunction,
+            kind: SyntaxKind::ItemFreeFunction,
             children,
             width,
         }))
@@ -3518,8 +3518,8 @@ impl ItemFunction {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ItemFunctionPtr(SyntaxStablePtrId);
-impl ItemFunctionPtr {
+pub struct ItemFreeFunctionPtr(SyntaxStablePtrId);
+impl ItemFreeFunctionPtr {
     pub fn name_green(self, db: &dyn SyntaxGroup) -> GreenId {
         let ptr = db.lookup_intern_stable_ptr(self.0);
         if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
@@ -3529,11 +3529,11 @@ impl ItemFunctionPtr {
         }
     }
 }
-impl TypedSyntaxNode for ItemFunction {
-    type StablePtr = ItemFunctionPtr;
+impl TypedSyntaxNode for ItemFreeFunction {
+    type StablePtr = ItemFreeFunctionPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
-            kind: SyntaxKind::ItemFunction,
+            kind: SyntaxKind::ItemFreeFunction,
             children: vec![
                 Terminal::missing(db),
                 Terminal::missing(db),
@@ -3546,18 +3546,22 @@ impl TypedSyntaxNode for ItemFunction {
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => {
-                if internal.kind != SyntaxKind::ItemFunction {
+                if internal.kind != SyntaxKind::ItemFreeFunction {
                     panic!(
                         "Unexpected SyntaxKind {:?}. Expected {:?}.",
                         internal.kind,
-                        SyntaxKind::ItemFunction,
+                        SyntaxKind::ItemFreeFunction,
                     );
                 }
                 let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
-                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::ItemFunction,);
+                panic!(
+                    "Unexpected Token {:?}. Expected {:?}.",
+                    token,
+                    SyntaxKind::ItemFreeFunction,
+                );
             }
         }
     }
@@ -3568,7 +3572,7 @@ impl TypedSyntaxNode for ItemFunction {
         self.node.clone()
     }
     fn stable_ptr(&self) -> Self::StablePtr {
-        ItemFunctionPtr(self.node.0.stable_ptr)
+        ItemFreeFunctionPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
