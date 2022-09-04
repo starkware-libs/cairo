@@ -84,33 +84,33 @@ fn module_data(
     module_id: ModuleId,
 ) -> Option<ModuleData> {
     let mut res = ModuleData::default();
-    let syntax_group = db.as_syntax_group();
+    let syntax_db = db.as_syntax_group();
 
     let syntax_file = db.module_syntax(module_id).unwrap(diagnostics)?;
-    for item in syntax_file.items(syntax_group).elements(syntax_group) {
+    for item in syntax_file.items(syntax_db).elements(syntax_db) {
         match item {
             ast::Item::Module(_module) => todo!(),
             ast::Item::Function(function) => {
-                let name = function.name(syntax_group).text(syntax_group);
+                let name = function.name(syntax_db).text(syntax_db);
                 let item_id =
                     db.intern_free_function(FreeFunctionLongId { parent: module_id, name });
                 res.free_functions.insert(item_id, function);
             }
             ast::Item::ExternFunction(extern_function) => {
-                let name = extern_function.name(syntax_group).text(syntax_group);
+                let name = extern_function.name(syntax_db).text(syntax_db);
                 let item_id =
                     db.intern_extern_function(ExternFunctionLongId { parent: module_id, name });
                 res.extern_functions.insert(item_id, extern_function);
             }
             ast::Item::ExternType(extern_type) => {
-                let name = extern_type.name(syntax_group).text(syntax_group);
+                let name = extern_type.name(syntax_db).text(syntax_db);
                 let item_id = db.intern_extern_type(ExternTypeLongId { parent: module_id, name });
                 res.extern_types.insert(item_id, extern_type);
             }
             ast::Item::Trait(_tr) => todo!(),
             ast::Item::Impl(_imp) => todo!(),
             ast::Item::Struct(strct) => {
-                let name = strct.name(syntax_group).text(syntax_group);
+                let name = strct.name(syntax_db).text(syntax_db);
                 let item_id = db.intern_struct(StructLongId { parent: module_id, name });
                 res.structs.insert(item_id, strct);
             }
@@ -127,24 +127,24 @@ fn module_items(
     db: &dyn DefsGroup,
     module_id: ModuleId,
 ) -> Option<ModuleItems> {
-    let syntax_group = db.as_syntax_group();
+    let syntax_db = db.as_syntax_group();
     let module_data = db.module_data(module_id).unwrap(diagnostics)?;
     Some(ModuleItems {
         items: chain!(
             module_data.free_functions.iter().map(|(free_function_id, syntax)| (
-                syntax.name(syntax_group).text(syntax_group),
+                syntax.name(syntax_db).text(syntax_db),
                 ModuleItemId::FreeFunction(*free_function_id),
             )),
             module_data.extern_functions.iter().map(|(extern_function_id, syntax)| (
-                syntax.name(syntax_group).text(syntax_group),
+                syntax.name(syntax_db).text(syntax_db),
                 ModuleItemId::ExternFunction(*extern_function_id),
             )),
             module_data.extern_types.iter().map(|(extern_type_id, syntax)| (
-                syntax.name(syntax_group).text(syntax_group),
+                syntax.name(syntax_db).text(syntax_db),
                 ModuleItemId::ExternType(*extern_type_id),
             )),
             module_data.structs.iter().map(|(struct_id, syntax)| (
-                syntax.name(syntax_group).text(syntax_group),
+                syntax.name(syntax_db).text(syntax_db),
                 ModuleItemId::Struct(*struct_id)
             )),
         )
