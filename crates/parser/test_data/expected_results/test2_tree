@@ -7,7 +7,7 @@
     │   │   │   ├── lparen (kind: LParen): '('
     │   │   │   ├── parameters (kind: ParamList)
     │   │   │   │   └── item #0 (kind: Param)
-    │   │   │   │       ├── identifier (kind: Identifier): 'x'
+    │   │   │   │       ├── name (kind: Identifier): 'x'
     │   │   │   │       └── type_clause (kind: TypeClause)
     │   │   │   │           ├── colon (kind: Colon): ':'
     │   │   │   │           └── ty (kind: ExprPath)
@@ -26,7 +26,7 @@
     │   │       ├── statements (kind: StatementList)
     │   │       │   ├── child #0 (kind: StatementLet)
     │   │       │   │   ├── letkw (kind: Let): 'let'
-    │   │       │   │   ├── lhs (kind: Identifier): 'x'
+    │   │       │   │   ├── name (kind: Identifier): 'x'
     │   │       │   │   ├── type_clause (kind: OptionTypeClauseEmpty) []
     │   │       │   │   ├── eq (kind: Eq): '='
     │   │       │   │   ├── rhs (kind: ExprBinary)
@@ -40,7 +40,7 @@
     │   │       │   │   └── semicolon (kind: Semicolon): ';'
     │   │       │   ├── child #1 (kind: StatementLet)
     │   │       │   │   ├── letkw (kind: Let): 'let'
-    │   │       │   │   ├── lhs (kind: Identifier): 'y'
+    │   │       │   │   ├── name (kind: Identifier): 'y'
     │   │       │   │   ├── type_clause (kind: TypeClause)
     │   │       │   │   │   ├── colon (kind: Colon): ':'
     │   │       │   │   │   └── ty (kind: ExprPath)
@@ -67,7 +67,7 @@
     │   │       │   │   └── semicolon (kind: Semicolon): ';'
     │   │       │   ├── child #2 (kind: StatementLet)
     │   │       │   │   ├── letkw (kind: Let): 'let'
-    │   │       │   │   ├── lhs (kind: Identifier): 'z'
+    │   │       │   │   ├── name (kind: Identifier): 'z'
     │   │       │   │   ├── type_clause (kind: OptionTypeClauseEmpty) []
     │   │       │   │   ├── eq (kind: Eq): '='
     │   │       │   │   ├── rhs: Missing []
@@ -150,7 +150,7 @@
     │   │   │   ├── lparen (kind: LParen): '('
     │   │   │   ├── parameters (kind: ParamList)
     │   │   │   │   ├── item #0 (kind: Param)
-    │   │   │   │   │   ├── identifier (kind: Identifier): 'x'
+    │   │   │   │   │   ├── name (kind: Identifier): 'x'
     │   │   │   │   │   └── type_clause (kind: TypeClause)
     │   │   │   │   │       ├── colon (kind: Colon): ':'
     │   │   │   │   │       └── ty (kind: ExprPath)
@@ -159,7 +159,7 @@
     │   │   │   │   │               └── generic_args (kind: OptionGenericArgsEmpty) []
     │   │   │   │   ├── separator #0 (kind: Comma): ','
     │   │   │   │   └── item #1 (kind: Param)
-    │   │   │   │       ├── identifier (kind: Identifier): 's'
+    │   │   │   │       ├── name (kind: Identifier): 's'
     │   │   │   │       └── type_clause (kind: TypeClause)
     │   │   │   │           ├── colon (kind: Colon): ':'
     │   │   │   │           └── ty (kind: ExprPath)
@@ -231,7 +231,7 @@
     │       ├── lbrace (kind: LBrace): '{'
     │       ├── members (kind: ParamList)
     │       │   ├── item #0 (kind: Param)
-    │       │   │   ├── identifier (kind: Identifier): 'x'
+    │       │   │   ├── name (kind: Identifier): 'x'
     │       │   │   └── type_clause (kind: TypeClause)
     │       │   │       ├── colon (kind: Colon): ':'
     │       │   │       └── ty (kind: ExprPath)
@@ -240,7 +240,7 @@
     │       │   │               └── generic_args (kind: OptionGenericArgsEmpty) []
     │       │   ├── separator #0 (kind: Comma): ','
     │       │   └── item #1 (kind: Param)
-    │       │       ├── identifier (kind: Identifier): 'y'
+    │       │       ├── name (kind: Identifier): 'y'
     │       │       └── type_clause (kind: TypeClause)
     │       │           ├── colon (kind: Colon): ':'
     │       │           └── ty (kind: ExprPath)

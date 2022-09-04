@@ -1,6 +1,6 @@
 use std::collections::hash_map;
 
-use defs::ids::FreeFunctionId;
+use defs::ids::{FreeFunctionId, HasName};
 use smol_str::SmolStr;
 use utils::unordered_hash_map::UnorderedHashMap;
 
@@ -115,7 +115,6 @@ impl<'a> ExprGeneratorContext<'a> {
         &self,
         extern_id: defs::ids::ExternFunctionId,
     ) -> sierra::ids::ConcreteLibFuncId {
-        let long_id = self.get_db().lookup_intern_extern_function(extern_id);
-        self.get_extension_id_without_generics(long_id.name)
+        self.get_extension_id_without_generics(extern_id.name(self.get_db().as_defs_group()))
     }
 }

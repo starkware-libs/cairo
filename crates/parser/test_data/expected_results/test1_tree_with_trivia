@@ -26,7 +26,7 @@
     │   │   │   │   └── trailing_trivia (kind: Trivia) []
     │   │   │   ├── parameters (kind: ParamList)
     │   │   │   │   ├── item #0 (kind: Param)
-    │   │   │   │   │   ├── identifier (kind: Terminal)
+    │   │   │   │   │   ├── name (kind: Terminal)
     │   │   │   │   │   │   ├── leading_trivia (kind: Trivia)
     │   │   │   │   │   │   │   └── child #0 (kind: TriviumSkippedTerminal)
     │   │   │   │   │   │   │       ├── leading_trivia (kind: Trivia) []
@@ -52,7 +52,7 @@
     │   │   │   │   │   ├── token (kind: Comma): ','
     │   │   │   │   │   └── trailing_trivia (kind: Trivia) []
     │   │   │   │   ├── item #1 (kind: Param)
-    │   │   │   │   │   ├── identifier (kind: Terminal)
+    │   │   │   │   │   ├── name (kind: Terminal)
     │   │   │   │   │   │   ├── leading_trivia (kind: Trivia)
     │   │   │   │   │   │   │   └── child #0 (kind: TriviumSkippedTerminal)
     │   │   │   │   │   │   │       ├── leading_trivia (kind: Trivia) []
@@ -111,7 +111,7 @@
     │   │       │   │   │   ├── token (kind: Let): 'let'
     │   │       │   │   │   └── trailing_trivia (kind: Trivia)
     │   │       │   │   │       └── child #0 (kind: Whitespace).
-    │   │       │   │   ├── lhs (kind: Terminal)
+    │   │       │   │   ├── name (kind: Terminal)
     │   │       │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │   ├── token (kind: Identifier): 'bla3'
     │   │       │   │   │   └── trailing_trivia (kind: Trivia)
@@ -151,7 +151,7 @@
     │   │       │   │   │   ├── token (kind: Let): 'let'
     │   │       │   │   │   └── trailing_trivia (kind: Trivia)
     │   │       │   │   │       └── child #0 (kind: Whitespace).
-    │   │       │   │   ├── lhs (kind: Terminal)
+    │   │       │   │   ├── name (kind: Terminal)
     │   │       │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │   ├── token (kind: Identifier): 'bla4'
     │   │       │   │   │   └── trailing_trivia (kind: Trivia)
@@ -201,7 +201,7 @@
     │   │       │   │   │   ├── token (kind: Let): 'let'
     │   │       │   │   │   └── trailing_trivia (kind: Trivia)
     │   │       │   │   │       └── child #0 (kind: Whitespace).
-    │   │       │   │   ├── lhs (kind: Terminal)
+    │   │       │   │   ├── name (kind: Terminal)
     │   │       │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │   ├── token (kind: Identifier): 'x'
     │   │       │   │   │   └── trailing_trivia (kind: Trivia)
@@ -229,7 +229,7 @@
     │   │       │   │   │   ├── token (kind: Let): 'let'
     │   │       │   │   │   └── trailing_trivia (kind: Trivia)
     │   │       │   │   │       └── child #0 (kind: Whitespace).
-    │   │       │   │   ├── lhs (kind: Terminal)
+    │   │       │   │   ├── name (kind: Terminal)
     │   │       │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │   ├── token (kind: Identifier): 'y'
     │   │       │   │   │   └── trailing_trivia (kind: Trivia)
@@ -336,7 +336,7 @@
     │   │       │   │   │   ├── token (kind: Let): 'let'
     │   │       │   │   │   └── trailing_trivia (kind: Trivia)
     │   │       │   │   │       └── child #0 (kind: Whitespace).
-    │   │       │   │   ├── lhs (kind: Terminal)
+    │   │       │   │   ├── name (kind: Terminal)
     │   │       │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │   ├── token (kind: Identifier): 'x'
     │   │       │   │   │   └── trailing_trivia (kind: Trivia)
@@ -490,7 +490,7 @@
     │       │   │   └── trailing_trivia (kind: Trivia) []
     │       │   ├── parameters (kind: ParamList)
     │       │   │   ├── item #0 (kind: Param)
-    │       │   │   │   ├── identifier (kind: Terminal)
+    │       │   │   │   ├── name (kind: Terminal)
     │       │   │   │   │   ├── leading_trivia (kind: Trivia) []
     │       │   │   │   │   ├── token (kind: Identifier): 'var1'
     │       │   │   │   │   └── trailing_trivia (kind: Trivia) []

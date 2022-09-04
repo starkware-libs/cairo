@@ -177,7 +177,7 @@ pub trait TypedSyntaxNode {
     fn missing(db: &dyn SyntaxGroup) -> GreenId;
     // TODO(spapini): Make this return an Option, if the kind is wrong.
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self;
-    fn from_ptr(db: &dyn SyntaxGroup, root: ast::SyntaxFile, node: Self::StablePtr) -> Self;
+    fn from_ptr(db: &dyn SyntaxGroup, root: &ast::SyntaxFile, node: Self::StablePtr) -> Self;
     fn as_syntax_node(&self) -> SyntaxNode;
     fn stable_ptr(&self) -> Self::StablePtr;
 }
@@ -225,7 +225,7 @@ impl TypedSyntaxNode for Token {
             GreenNode::Token(_token) => Self { node },
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: ast::SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &ast::SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn as_syntax_node(&self) -> SyntaxNode {

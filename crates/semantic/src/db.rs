@@ -2,8 +2,7 @@ use std::collections::HashMap;
 
 use defs::db::{AsDefsGroup, DefsGroup};
 use defs::ids::{
-    FreeFunctionId, GenericFunctionId, GenericTypeId, ModuleItemId, ParamContainerId, ParamLongId,
-    StructId, VarId,
+    FreeFunctionId, GenericFunctionId, GenericTypeId, ModuleItemId, ParamLongId, StructId, VarId,
 };
 use diagnostics::{Diagnostics, WithDiagnostics};
 use diagnostics_proc_macros::with_diagnostics;
@@ -12,7 +11,7 @@ use filesystem::ids::ModuleId;
 use parser::db::ParserGroup;
 use parser::parser::ParserDiagnostic;
 use smol_str::SmolStr;
-use syntax::node::ast;
+use syntax::node::{ast, TypedSyntaxNode};
 
 use crate::corelib::{core_module, unit_ty};
 use crate::diagnostic::Diagnostic;
@@ -87,23 +86,20 @@ fn generic_function_data(
 ) -> Option<GenericFunctionData> {
     let module_id = function_id.module(db.as_defs_group());
     let module_data = db.module_data(module_id).unwrap(diagnostics)?;
-    let (function_as_param_container, signature_syntax) = match function_id {
-        GenericFunctionId::Free(free_function_id) => (
-            ParamContainerId::FreeFunction(free_function_id),
-            module_data.free_functions.get(&free_function_id)?.signature(db.as_syntax_group()),
-        ),
-        GenericFunctionId::Extern(extern_function_id) => (
-            ParamContainerId::ExternFunction(extern_function_id),
-            module_data.extern_functions.get(&extern_function_id)?.signature(db.as_syntax_group()),
-        ),
+    let signature_syntax = match function_id {
+        GenericFunctionId::Free(free_function_id) => {
+            module_data.free_functions.get(&free_function_id)?.signature(db.as_syntax_group())
+        }
+        GenericFunctionId::Extern(extern_function_id) => {
+            module_data.extern_functions.get(&extern_function_id)?.signature(db.as_syntax_group())
+        }
     };
 
     let return_type =
         function_signature_return_type(db, module_id, &signature_syntax).unwrap(diagnostics)?;
 
     let (params, variables) =
-        function_signature_params(db, module_id, function_as_param_container, &signature_syntax)
-            .unwrap(diagnostics)?;
+        function_signature_params(db, module_id, &signature_syntax).unwrap(diagnostics)?;
     Some(GenericFunctionData { signature: semantic::Signature { params, return_type }, variables })
 }
 
@@ -124,7 +120,7 @@ fn free_function_semantic(
     db: &dyn SemanticGroup,
     free_function_id: FreeFunctionId,
 ) -> Option<semantic::FreeFunction> {
-    let module_id = db.lookup_intern_free_function(free_function_id).parent;
+    let module_id = free_function_id.module(db.as_defs_group());
     let syntax = db
         .module_data(module_id)
         .unwrap(diagnostics)?
@@ -177,7 +173,6 @@ fn function_signature_params(
     diagnostics: &mut Diagnostics<ParserDiagnostic>,
     db: &dyn SemanticGroup,
     module_id: ModuleId,
-    parent: ParamContainerId,
     sig: &ast::FunctionSignature,
 ) -> Option<(Vec<semantic::Parameter>, HashMap<SmolStr, VarId>)> {
     let syntax_db = db.as_syntax_group();
@@ -186,8 +181,8 @@ fn function_signature_params(
     let mut variables = HashMap::new();
     let ast_params = sig.parameters(syntax_db).elements(syntax_db);
     for ast_param in ast_params.iter() {
-        let name = ast_param.identifier(syntax_db).text(syntax_db);
-        let id = db.intern_param(ParamLongId { parent, name: name.clone() });
+        let name = ast_param.name(syntax_db).text(syntax_db);
+        let id = db.intern_param(ParamLongId(module_id, ast_param.stable_ptr()));
         let ty_path = match ast_param.type_clause(syntax_db) {
             ast::NonOptionTypeClause::TypeClause(type_clause) => type_clause.ty(syntax_db),
             ast::NonOptionTypeClause::NonOptionTypeClauseMissing(_) => {
