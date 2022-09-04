@@ -3,6 +3,7 @@ use std::sync::Arc;
 use defs::db::ModuleItems;
 use defs::ids::ModuleItemId;
 use diagnostics::Diagnostics;
+use sierra::ids::ConcreteLibFuncId;
 
 use crate::db::SierraGenGroup;
 use crate::pre_sierra::{self};
@@ -36,14 +37,16 @@ pub fn generate_program_code(
         }
     }
 
+    let libfunc_declarations =
+        generate_libfunc_declarations(db, collect_used_libfuncs(&statements).iter());
+
     // Resolve labels.
     let resolved_statements = resolve_labels(statements);
 
     Some(sierra::program::Program {
         // TODO(lior): Fill type_declarations.
         type_declarations: vec![],
-        // TODO(lior): Fill libfunc_declarations.
-        libfunc_declarations: vec![],
+        libfunc_declarations,
         statements: resolved_statements,
         funcs: functions
             .iter()
@@ -58,4 +61,41 @@ pub fn generate_program_code(
             })
             .collect(),
     })
+}
+
+/// Generates the list of [sierra::program::LibFuncDeclaration] for the given list of
+/// [ConcreteLibFuncId].
+fn generate_libfunc_declarations<'a>(
+    db: &dyn SierraGenGroup,
+    libfuncs: impl Iterator<Item = &'a ConcreteLibFuncId>,
+) -> Vec<sierra::program::LibFuncDeclaration> {
+    // Sort libfuncs to produce a deterministic result.
+    // TODO(lior): Use OrderedHashSet instead of sort().
+    let mut libfuncs_vec: Vec<&ConcreteLibFuncId> = libfuncs.collect();
+    libfuncs_vec.sort_unstable();
+
+    libfuncs_vec
+        .into_iter()
+        .map(|libfunc_id| sierra::program::LibFuncDeclaration {
+            id: libfunc_id.clone(),
+            long_id: db.lookup_intern_concrete_lib_func(libfunc_id.clone()),
+        })
+        .collect()
+}
+
+/// Collects the set of all [ConcreteLibFuncId] used in the given list of [pre_sierra::Statement].
+fn collect_used_libfuncs(statements: &[pre_sierra::Statement]) -> HashSet<ConcreteLibFuncId> {
+    let mut all_libfuncs: HashSet<ConcreteLibFuncId> = HashSet::new();
+    for statement in statements {
+        match statement {
+            pre_sierra::Statement::SierraStatement(sierra::program::GenStatement::Invocation(
+                invocation,
+            )) => {
+                all_libfuncs.insert(invocation.libfunc_id.clone());
+            }
+            pre_sierra::Statement::SierraStatement(sierra::program::GenStatement::Return(_)) => {}
+            pre_sierra::Statement::Label(_) => {}
+        }
+    }
+    all_libfuncs
 }
