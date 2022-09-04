@@ -11,10 +11,9 @@ use crate::pre_sierra;
 /// Replaces labels with their corresponding StatementIdx.
 pub fn resolve_labels(
     statements: Vec<pre_sierra::Statement>,
-) -> (Vec<program::Statement>, LabelReplacer) {
-    let label_replacer = LabelReplacer::new(get_label_id_to_index(&statements));
-
-    let resolved_statements = statements
+    label_replacer: &LabelReplacer,
+) -> Vec<program::Statement> {
+    statements
         .into_iter()
         .filter_map(|statement| match statement {
             pre_sierra::Statement::Sierra(sierra_statement) => {
@@ -22,8 +21,7 @@ pub fn resolve_labels(
             }
             pre_sierra::Statement::Label(_) => None,
         })
-        .collect();
-    (resolved_statements, label_replacer)
+        .collect()
 }
 
 /// Returns a map from LabelId to the index of the next Sierra statement.
@@ -58,6 +56,11 @@ impl LabelReplacer {
         Self { label_id_to_index }
     }
 
+    pub fn from_statements(statements: &[pre_sierra::Statement]) -> LabelReplacer {
+        Self::new(get_label_id_to_index(statements))
+    }
+
+    /// Replaces the pre-sierra labels in the given statement, and returns [program::Statement].
     fn handle_statement(
         &self,
         statement: program::GenStatement<pre_sierra::LabelId>,
@@ -70,6 +73,7 @@ impl LabelReplacer {
         }
     }
 
+    /// Replaces the pre-sierra labels in the given invocation, and returns [program::Invocation].
     fn handle_invocation(
         &self,
         invocation: program::GenInvocation<pre_sierra::LabelId>,
@@ -85,6 +89,7 @@ impl LabelReplacer {
         }
     }
 
+    /// Replaces the pre-sierra labels in the given branch info, and returns [program::BranchInfo].
     fn handle_branch_info(
         &self,
         branch_info: program::GenBranchInfo<pre_sierra::LabelId>,
@@ -95,6 +100,8 @@ impl LabelReplacer {
         }
     }
 
+    /// Replaces the pre-sierra labels in the given branch target, and returns
+    /// [program::BranchTarget].
     fn handle_branch_target(
         &self,
         branch_target: program::GenBranchTarget<pre_sierra::LabelId>,
@@ -107,6 +114,7 @@ impl LabelReplacer {
         }
     }
 
+    /// Resolves the given pre-sierra label, and returns [program::StatementIdx].
     pub fn handle_label_id(&self, label_id: pre_sierra::LabelId) -> program::StatementIdx {
         // TODO(lior): handle missing labels.
         program::StatementIdx(self.label_id_to_index[&label_id])
