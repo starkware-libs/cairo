@@ -12,7 +12,7 @@ salsa = "0.16.1"
 semantic = { path = "../semantic" }
 sierra = { path = "../sierra" }
 smol_str = "0.1.23"
-# TODO(lior): Remove parser once diagnostics are wrapper properly.
+# TODO(lior): Remove parser once diagnostics are wrapped properly.
 parser = { path = "../parser" }
 
 [dev_dependencies]
