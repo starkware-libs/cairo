@@ -22,6 +22,8 @@ pub enum LibFuncSimulationError {
     WrongNumberOfArgs,
     #[error("Expected a different memory layout")]
     MemoryLayoutMismatch,
+    #[error("Could not resolve requested symbol value")]
+    UnresolvedStatementGasInfo,
     #[error("Error occurred during user function call")]
     FunctionSimulationError(FunctionId, Box<SimulationError>),
 }
@@ -46,16 +48,22 @@ pub enum SimulationError {
 /// Runs a function from the program with the given inputs.
 pub fn run(
     program: &Program,
+    statement_gas_info: &HashMap<StatementIdx, i64>,
     function_id: &FunctionId,
     inputs: Vec<Vec<MemCell>>,
 ) -> Result<Vec<Vec<MemCell>>, SimulationError> {
-    let context = SimulationContext { program, registry: &ProgramRegistry::new(program)? };
+    let context = SimulationContext {
+        program,
+        statement_gas_info,
+        registry: &ProgramRegistry::new(program)?,
+    };
     context.simulate_function(function_id, inputs)
 }
 
 /// Helper class for runing the simulation.
 struct SimulationContext<'a> {
     pub program: &'a Program,
+    pub statement_gas_info: &'a HashMap<StatementIdx, i64>,
     pub registry: &'a ProgramRegistry<CoreType, CoreLibFunc>,
 }
 impl SimulationContext<'_> {
@@ -103,8 +111,12 @@ impl SimulationContext<'_> {
                             SimulationError::EditStateError(error, current_statement_id)
                         })?;
                     let libfunc = self.registry.get_libfunc(&invocation.libfunc_id)?;
-                    let (outputs, chosen_branch) =
-                        self.simulate_libfunc(libfunc, inputs, current_statement_id)?;
+                    let (outputs, chosen_branch) = self.simulate_libfunc(
+                        &current_statement_id,
+                        libfunc,
+                        inputs,
+                        current_statement_id,
+                    )?;
                     let branch_info = &invocation.branches[chosen_branch];
                     state = put_results(
                         remaining,
@@ -122,18 +134,24 @@ impl SimulationContext<'_> {
     /// inputs.
     fn simulate_libfunc(
         &self,
+        idx: &StatementIdx,
         libfunc: &CoreConcreteLibFunc,
         inputs: Vec<Vec<MemCell>>,
         current_statement_id: StatementIdx,
     ) -> Result<(Vec<Vec<MemCell>>, usize), SimulationError> {
-        core::simulate(libfunc, inputs, |function_id, inputs| {
-            self.simulate_function(function_id, inputs).map_err(|error| {
-                LibFuncSimulationError::FunctionSimulationError(
-                    function_id.clone(),
-                    Box::new(error),
-                )
-            })
-        })
+        core::simulate(
+            libfunc,
+            inputs,
+            || self.statement_gas_info.get(idx).copied(),
+            |function_id, inputs| {
+                self.simulate_function(function_id, inputs).map_err(|error| {
+                    LibFuncSimulationError::FunctionSimulationError(
+                        function_id.clone(),
+                        Box::new(error),
+                    )
+                })
+            },
+        )
         .map_err(|error| SimulationError::LibFuncSimulationError(error, current_statement_id))
     }
 }

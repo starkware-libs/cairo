@@ -1,8 +1,9 @@
+use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 
 use sierra::extensions::core::{CoreLibFunc, CoreType};
-use sierra::program::Program;
+use sierra::program::{Program, StatementIdx};
 use sierra::program_registry::ProgramRegistry;
 use sierra::simulation;
 use test_case::test_case;
@@ -41,10 +42,11 @@ fn create_registry(name: &str) {
 #[test_case((200, 7), (30, 16); "7 => 16")]
 // Out of gas.
 #[test_case((100, 7), (5, -1); "Out of gas.")]
-fn simulate((gb, n): (i64, i64), (new_gb, index): (i64, i64)) {
+fn simulate_collatz((gb, n): (i64, i64), (new_gb, index): (i64, i64)) {
     assert_eq!(
         simulation::run(
             &get_example_program(COLLATZ),
+            &HashMap::from([(StatementIdx(7), 11), (StatementIdx(30), 1), (StatementIdx(39), 1)]),
             &"Collatz".into(),
             vec![vec![gb.into()], vec![n.into()]]
         ),
@@ -66,6 +68,12 @@ fn simulate_fib_jumps((gb, n): (i64, i64), (new_gb, fib): (i64, i64)) {
     assert_eq!(
         simulation::run(
             &get_example_program(FIB_JUMPS),
+            &HashMap::from([
+                (StatementIdx(21), 5),
+                (StatementIdx(1), 7),
+                (StatementIdx(10), 5),
+                (StatementIdx(40), 1)
+            ]),
             &"Fibonacci".into(),
             vec![vec![gb.into()], vec![n.into()]]
         ),
@@ -86,6 +94,7 @@ fn simulate_fib_no_gas(n: i64, fib: i64) {
     assert_eq!(
         simulation::run(
             &get_example_program(FIB_NO_GAS),
+            &HashMap::new(),
             &"Fibonacci".into(),
             vec![vec![/* a= */ 1.into()], vec![/* b= */ 1.into()], vec![n.into()]]
         ),
@@ -107,6 +116,7 @@ fn simulate_fib_recursive((gb, n): (i64, i64), (new_gb, fib): (i64, i64)) {
     assert_eq!(
         simulation::run(
             &get_example_program(FIB_RECURSIVE),
+            &HashMap::from([(StatementIdx(18), 26), (StatementIdx(4), 3), (StatementIdx(12), 1)]),
             &"Fibonacci".into(),
             vec![vec![gb.into()], vec![n.into()]]
         ),

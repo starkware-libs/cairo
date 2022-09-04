@@ -15,8 +15,8 @@ libfunc int_dup = int_dup;
 libfunc int_drop = int_drop;
 libfunc int_jump_nz = int_jump_nz;
 libfunc int_unwrap_nz = unwrap_nz<int>;
-libfunc get_gas_11 = get_gas<11>;
-libfunc refund_gas_1 = refund_gas<1>;
+libfunc get_gas = get_gas;
+libfunc refund_gas = refund_gas;
 libfunc jump = jump;
 libfunc align_temps = align_temps<int>;
 
@@ -30,7 +30,7 @@ jump() { 34() };
 // Unwrapping and ignoring jump_nz result, as we don't use it.
 int_unwrap_nz(to_drop) -> (to_drop);
 int_drop(to_drop) -> ();
-get_gas_11(gb) { 14(gb) fallthrough(gb) };
+get_gas(gb) { 14(gb) fallthrough(gb) };
 // Statement #  8 - Ran out of gas - returning updated gb and -1.
 int_drop(n) -> ();
 int_drop(counter) -> ();
@@ -57,7 +57,7 @@ int_mul_3(n) -> (n);
 store_temp_int(n) -> (n);
 int_add_1(n) -> (n);
 store_temp_int(n) -> (n);
-refund_gas_1(gb) -> (gb); // Aligning gas usage.
+refund_gas(gb) -> (gb); // Aligning gas usage.
 store_temp_gb(gb) -> (gb);
 // Statement # 32 - Adding [counter + 1]. Memory now looks like [n', gb', counter'].
 int_add_1(counter) -> (counter);
@@ -69,7 +69,7 @@ store_temp_int(n_1) -> (n_1);
 int_jump_nz(n_1) { 5(to_drop) fallthrough() };
 // Statement # 38 - n == 1 - we are done - returning the counter result.
 int_drop(n) -> ();
-refund_gas_1(gb) -> (gb);
+refund_gas(gb) -> (gb);
 store_temp_gb(gb) -> (gb);
 store_temp_int(counter) -> (counter);
 return(gb, counter);
