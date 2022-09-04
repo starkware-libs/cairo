@@ -1,7 +1,8 @@
-use std::collections::{hash_map, HashMap};
+use std::collections::hash_map;
 
 use defs::ids::{FreeFunctionId, LocalVarId};
 use smol_str::SmolStr;
+use utils::unordered_hash_map::UnorderedHashMap;
 
 use crate::db::SierraGenGroup;
 use crate::id_allocator::IdAllocator;
@@ -13,7 +14,7 @@ pub struct ExprGeneratorContext<'a> {
     function_id: FreeFunctionId,
     var_id_allocator: IdAllocator,
     label_id_allocator: IdAllocator,
-    variables: HashMap<LocalVarId, sierra::ids::VarId>,
+    variables: UnorderedHashMap<LocalVarId, sierra::ids::VarId>,
 }
 impl<'a> ExprGeneratorContext<'a> {
     /// Constructs an empty [ExprGeneratorContext].
@@ -23,7 +24,7 @@ impl<'a> ExprGeneratorContext<'a> {
             function_id,
             var_id_allocator: IdAllocator::default(),
             label_id_allocator: IdAllocator::default(),
-            variables: HashMap::new(),
+            variables: UnorderedHashMap::default(),
         }
     }
 
