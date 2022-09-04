@@ -52,11 +52,10 @@ pub fn generate_program_code(
         libfunc_declarations,
         statements: resolved_statements,
         funcs: functions
-            .iter()
+            .into_iter()
             .map(|function| program::Function {
                 id: function.id.clone(),
-                // TODO(lior): Add params.
-                params: vec![],
+                params: function.parameters.clone(),
                 // TODO(lior): Add ret types.
                 ret_types: vec![],
                 entry: label_replacer.handle_label_id(function.entry_point),
