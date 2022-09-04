@@ -1,6 +1,6 @@
 use assert_matches::assert_matches;
 use defs::db::{AsDefsGroup, DefsDatabase, DefsGroup};
-use defs::ids::{FreeFunctionLongId, VarId};
+use defs::ids::{HasName, ModuleItemId, VarId};
 use filesystem::db::{AsFilesGroup, FilesDatabase, FilesGroup};
 use indoc::indoc;
 use parser::db::ParserDatabase;
@@ -226,8 +226,10 @@ fn test_function_body() {
         "",
     );
     let db = &db_val;
+    let item_id =
+        db.module_item_by_name(module_id, "foo".into()).expect("Unexpected diagnostics").unwrap();
     let function_id =
-        db.intern_free_function(FreeFunctionLongId { parent: module_id, name: "foo".into() });
+        if let ModuleItemId::FreeFunction(function_id) = item_id { function_id } else { panic!() };
     let function = db.free_function_semantic(function_id).expect("Unexpected diagnostics").unwrap();
 
     // Test the resulting semantic function body.
@@ -240,9 +242,9 @@ fn test_function_body() {
         crate::Statement::Expr(expr) => expr,
         _ => panic!(),
     });
-    let param = db.lookup_intern_param(match expr {
+    let param = match expr {
         crate::Expr::ExprVar(semantic::ExprVar { var: VarId::Param(param_id), ty: _ }) => param_id,
         _ => panic!(),
-    });
-    assert_eq!(param.name, "a");
+    };
+    assert_eq!(param.name(db), "a");
 }

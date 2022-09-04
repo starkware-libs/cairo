@@ -6,8 +6,8 @@ use itertools::chain;
 use parser::db::ParserGroup;
 use parser::parser::ParserDiagnostic;
 use smol_str::SmolStr;
-use syntax::node::ast;
 use syntax::node::db::{AsSyntaxGroup, SyntaxGroup};
+use syntax::node::{ast, TypedSyntaxNode};
 use utils::ordered_hash_map::OrderedHashMap;
 
 use crate::ids::*;
@@ -90,27 +90,26 @@ fn module_data(
         match item {
             ast::Item::Module(_module) => todo!(),
             ast::Item::FreeFunction(function) => {
-                let name = function.name(syntax_db).text(syntax_db);
                 let item_id =
-                    db.intern_free_function(FreeFunctionLongId { parent: module_id, name });
+                    db.intern_free_function(FreeFunctionLongId(module_id, function.stable_ptr()));
                 res.free_functions.insert(item_id, function);
             }
             ast::Item::ExternFunction(extern_function) => {
-                let name = extern_function.name(syntax_db).text(syntax_db);
-                let item_id =
-                    db.intern_extern_function(ExternFunctionLongId { parent: module_id, name });
+                let item_id = db.intern_extern_function(ExternFunctionLongId(
+                    module_id,
+                    extern_function.stable_ptr(),
+                ));
                 res.extern_functions.insert(item_id, extern_function);
             }
             ast::Item::ExternType(extern_type) => {
-                let name = extern_type.name(syntax_db).text(syntax_db);
-                let item_id = db.intern_extern_type(ExternTypeLongId { parent: module_id, name });
+                let item_id =
+                    db.intern_extern_type(ExternTypeLongId(module_id, extern_type.stable_ptr()));
                 res.extern_types.insert(item_id, extern_type);
             }
             ast::Item::Trait(_tr) => todo!(),
             ast::Item::Impl(_imp) => todo!(),
             ast::Item::Struct(strct) => {
-                let name = strct.name(syntax_db).text(syntax_db);
-                let item_id = db.intern_struct(StructLongId { parent: module_id, name });
+                let item_id = db.intern_struct(StructLongId(module_id, strct.stable_ptr()));
                 res.structs.insert(item_id, strct);
             }
             ast::Item::Enum(_en) => todo!(),

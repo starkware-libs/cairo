@@ -209,7 +209,7 @@ fn gen_list_code(name: String, element_type: String, step: usize) -> rust::Token
             fn as_syntax_node(&self) -> SyntaxNode{
                 self.node.clone()
             }
-            fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+            fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
                 Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
             }
             fn stable_ptr(&self) -> Self::StablePtr {
@@ -300,7 +300,7 @@ fn gen_enum_code(
                     $(for v in &variants => $(&name)::$(&v.name)(x) => x.as_syntax_node(),)
                 }
             }
-            fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+            fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
                 Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
             }
             fn stable_ptr(&self) -> Self::StablePtr {
@@ -413,7 +413,7 @@ fn gen_struct_code(name: String, members: Vec<Member>) -> rust::Tokens {
                     }
                 }
             }
-            fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+            fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
                 Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
             }
             fn as_syntax_node(&self) -> SyntaxNode {

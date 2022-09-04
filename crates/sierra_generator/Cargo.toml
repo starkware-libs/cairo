@@ -19,5 +19,5 @@ utils = { path = "../utils" }
 indoc = "1.0.7"
 parser = { path = "../parser" }
 pretty_assertions = "1.2.1"
-syntax = { path = "../syntax" }
 semantic = { path = "../semantic", features = ["testing"] }
+syntax = { path = "../syntax" }

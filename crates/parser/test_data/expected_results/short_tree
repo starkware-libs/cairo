@@ -7,7 +7,7 @@
     │       │   ├── lparen (kind: LParen): '('
     │       │   ├── parameters (kind: ParamList)
     │       │   │   └── item #0 (kind: Param)
-    │       │   │       ├── identifier (kind: Identifier): 'a'
+    │       │   │       ├── name (kind: Identifier): 'a'
     │       │   │       └── type_clause (kind: TypeClause)
     │       │   │           ├── colon (kind: Colon): ':'
     │       │   │           └── ty (kind: ExprPath)
