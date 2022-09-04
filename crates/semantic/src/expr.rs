@@ -257,8 +257,8 @@ fn resolve_concrete_function(
     };
     let function_name = last_element.ident(syntax_db).text(syntax_db);
     let generic_function = resolve_function_in_module(db, ctx.module_id, function_name.clone())
-        .or_else(|| resolve_function_in_module(db, core_module(db), function_name))
-        .expect("Unresolved identifier");
+        .or_else(|| resolve_function_in_module(db, core_module(db), function_name.clone()))
+        .unwrap_or_else(|| panic!("Unresolved identifier: {function_name}"));
     let concrete_function = db.intern_concrete_function(ConcreteFunctionLongId {
         generic_function,
         generic_args: vec![],
