@@ -33,13 +33,13 @@ pub struct Function {
 /// Represents a pre-sierra statement - a statement before label-resolution.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Statement {
-    SierraStatement(program::GenStatement<LabelId>),
+    Sierra(program::GenStatement<LabelId>),
     Label(Label),
 }
 impl std::fmt::Display for Statement {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Statement::SierraStatement(value) => write!(f, "{}", value),
+            Statement::Sierra(value) => write!(f, "{}", value),
             Statement::Label(Label { id }) => write!(f, "{}:", id),
         }
     }

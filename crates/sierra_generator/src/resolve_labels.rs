@@ -15,7 +15,7 @@ pub fn resolve_labels(statements: Vec<pre_sierra::Statement>) -> Vec<program::St
     statements
         .into_iter()
         .filter_map(|statement| match statement {
-            pre_sierra::Statement::SierraStatement(sierra_statement) => {
+            pre_sierra::Statement::Sierra(sierra_statement) => {
                 Some(label_replacer.handle_statement(sierra_statement))
             }
             pre_sierra::Statement::Label(_) => None,
@@ -31,7 +31,7 @@ fn get_label_id_to_index(
     let mut index = 0;
     for statement in statements {
         match &statement {
-            pre_sierra::Statement::SierraStatement(_) => {
+            pre_sierra::Statement::Sierra(_) => {
                 index += 1;
             }
             pre_sierra::Statement::Label(label) => {

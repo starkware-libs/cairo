@@ -3,7 +3,7 @@ use crate::ids::{
 };
 
 /// A full Sierra program.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Program {
     /// Declarations for all the used types.
     pub type_declarations: Vec<TypeDeclaration>,
@@ -55,7 +55,7 @@ pub struct ConcreteLibFuncLongId {
 }
 
 /// Descriptor of a function.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct GenFunction<StatementId> {
     /// The name of the function.
     pub id: FunctionId,

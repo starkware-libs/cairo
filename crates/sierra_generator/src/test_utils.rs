@@ -45,8 +45,8 @@ pub fn replace_libfunc_ids(
     statement: &pre_sierra::Statement,
 ) -> pre_sierra::Statement {
     match statement {
-        pre_sierra::Statement::SierraStatement(sierra::program::GenStatement::Invocation(p)) => {
-            pre_sierra::Statement::SierraStatement(sierra::program::GenStatement::Invocation(
+        pre_sierra::Statement::Sierra(sierra::program::GenStatement::Invocation(p)) => {
+            pre_sierra::Statement::Sierra(sierra::program::GenStatement::Invocation(
                 sierra::program::GenInvocation {
                     libfunc_id: db
                         .lookup_intern_concrete_lib_func(p.libfunc_id.clone())

@@ -1,10 +1,11 @@
 pub mod db;
-pub mod expr_generator;
-pub mod expr_generator_context;
-pub mod function_generator;
-pub mod id_allocator;
-pub mod pre_sierra;
-pub mod resolve_labels;
+mod expr_generator;
+mod expr_generator_context;
+mod function_generator;
+mod id_allocator;
+mod pre_sierra;
+mod program_generator;
+mod resolve_labels;
 #[cfg(test)]
-pub mod test_utils;
-pub mod utils;
+mod test_utils;
+mod utils;
