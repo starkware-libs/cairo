@@ -30,6 +30,16 @@ pub trait FilesGroup {
     fn module_file(&self, module_id: ModuleId) -> Option<FileId>;
 }
 
+pub trait AsFilesGroup {
+    fn as_files_group(&self) -> &(dyn FilesGroup + 'static);
+}
+
+impl AsFilesGroup for dyn FilesGroup {
+    fn as_files_group(&self) -> &(dyn FilesGroup + 'static) {
+        self
+    }
+}
+
 // Configuration of the project. This is the only input, and it defines everything else.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ProjectConfig {

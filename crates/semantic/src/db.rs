@@ -5,12 +5,13 @@ use defs::ids::{
 };
 use diagnostics::{Diagnostics, WithDiagnostics};
 use diagnostics_proc_macros::with_diagnostics;
+use filesystem::db::AsFilesGroup;
 use filesystem::ids::ModuleId;
 use parser::db::ParserGroup;
-use parser::parser::ParserDiagnostic;
 use syntax::node::ast;
 
 use crate::corelib::unit_ty;
+use crate::diagnostic::Diagnostic;
 use crate::expr::{compute_expr_semantic, ComputationContext};
 use crate::ids::{
     ConcreteFunctionId, ConcreteFunctionLongId, ExprId, StatementId, TypeId, TypeLongId,
@@ -19,7 +20,7 @@ use crate::{corelib, semantic, ConcreteType};
 
 // Salsa database interface.
 #[salsa::query_group(SemanticDatabase)]
-pub trait SemanticGroup: DefsGroup + AsDefsGroup + ParserGroup {
+pub trait SemanticGroup: DefsGroup + AsDefsGroup + ParserGroup + AsFilesGroup {
     #[salsa::interned]
     fn intern_concrete_function(&self, id: ConcreteFunctionLongId) -> ConcreteFunctionId;
     #[salsa::interned]
@@ -38,13 +39,13 @@ pub trait SemanticGroup: DefsGroup + AsDefsGroup + ParserGroup {
     fn generic_function_signature_semantic(
         &self,
         function_id: GenericFunctionId,
-    ) -> WithDiagnostics<Option<semantic::Signature>, ParserDiagnostic>;
+    ) -> WithDiagnostics<Option<semantic::Signature>, Diagnostic>;
 
     /// Returns the semantic function given the function_id.
     fn free_function_semantic(
         &self,
         function_id: FreeFunctionId,
-    ) -> WithDiagnostics<Option<semantic::FreeFunction>, ParserDiagnostic>;
+    ) -> WithDiagnostics<Option<semantic::FreeFunction>, Diagnostic>;
 
     // Corelib.
     #[salsa::invoke(corelib::core_module)]
@@ -62,7 +63,7 @@ fn struct_semantic(_db: &dyn SemanticGroup, _struct_id: StructId) -> semantic::S
 /// Computes the semantic model of the signature of a GenericFunction (e.g. Free / Extern).
 #[with_diagnostics]
 fn generic_function_signature_semantic(
-    diagnostics: &mut Diagnostics<ParserDiagnostic>,
+    diagnostics: &mut Diagnostics<Diagnostic>,
     db: &dyn SemanticGroup,
     function_id: GenericFunctionId,
 ) -> Option<semantic::Signature> {
@@ -86,7 +87,7 @@ fn generic_function_signature_semantic(
 
 #[with_diagnostics]
 fn free_function_semantic(
-    diagnostics: &mut Diagnostics<ParserDiagnostic>,
+    diagnostics: &mut Diagnostics<Diagnostic>,
     db: &dyn SemanticGroup,
     free_function_id: FreeFunctionId,
 ) -> Option<semantic::FreeFunction> {

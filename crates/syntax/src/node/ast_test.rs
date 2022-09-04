@@ -16,7 +16,7 @@ pub struct DatabaseImpl {
 impl salsa::Database for DatabaseImpl {}
 
 fn traverse(db: &dyn SyntaxGroup, node: SyntaxNode) -> Vec<(SyntaxNodeDetails, u32, u32)> {
-    let mut res = vec![(node.details(db), node.offset(), node.width(db))];
+    let mut res = vec![(node.details(db), node.offset().0 as u32, node.width(db))];
     for c in node.children(db) {
         res.append(&mut traverse(db, c));
     }
