@@ -157,7 +157,7 @@ impl fmt::Display for StatementIdx {
     }
 }
 
-fn write_template_args(f: &mut fmt::Formatter<'_>, args: &Vec<GenericArg>) -> fmt::Result {
+fn write_template_args(f: &mut fmt::Formatter<'_>, args: &[GenericArg]) -> fmt::Result {
     if args.is_empty() {
         Ok(())
     } else {

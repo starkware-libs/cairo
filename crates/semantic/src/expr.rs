@@ -10,6 +10,7 @@ use filesystem::ids::ModuleId;
 use itertools::zip_eq;
 use smol_str::SmolStr;
 use syntax::node::ast;
+use syntax::node::db::SyntaxGroup;
 
 use crate::corelib::unit_ty;
 use crate::db::SemanticGroup;
@@ -38,6 +39,25 @@ impl<'db> ComputationContext<'db> {
 pub struct Environment {
     parent: Option<Rc<Environment>>,
     variables: HashMap<SmolStr, VarId>,
+}
+
+/// Returns the tail expression of the given list of statements, if exists.
+/// A tail expression is the last statement in the list, if it is an expression and
+/// it does not end with a semicolon.
+fn get_tail_expression(
+    syntax_db: &dyn SyntaxGroup,
+    statements: &[ast::Statement],
+) -> Option<ast::Expr> {
+    if statements.is_empty() {
+        return None;
+    }
+
+    if let ast::Statement::Expr(statement_expr) = &statements[statements.len() - 1] {
+        if let ast::OptionSemicolon::Empty(_) = statement_expr.semi(syntax_db) {
+            return Some(statement_expr.expr(syntax_db));
+        }
+    }
+    None
 }
 
 /// Computes the semantic model of an expression.
@@ -96,17 +116,28 @@ pub fn compute_expr_semantic(ctx: &mut ComputationContext<'_>, syntax: ast::Expr
                 variables: HashMap::new(),
             });
             let mut new_ctx = ComputationContext { environment, ..*ctx };
+            let mut statements = block_syntax.statements(syntax_db).elements(syntax_db);
+
+            // Remove the tail expression, if exists.
+            // TODO(spapini): Consider splitting tail expression in the parser.
+            let tail = get_tail_expression(syntax_db, statements.as_slice());
+            if tail.is_some() {
+                statements.pop();
+            }
+
+            // Convert statements to semantic model.
+            let statements_semantic = statements
+                .into_iter()
+                .map(|statement_syntax| compute_statement_semantic(&mut new_ctx, statement_syntax))
+                .collect();
+
+            // Convert tail expression (if exists) to semantic model.
+            let tail_semantic =
+                tail.map(|tail_expr| compute_expr_semantic(&mut new_ctx, tail_expr));
+
             semantic::Expr::ExprBlock(semantic::ExprBlock {
-                statements: block_syntax
-                    .statements(syntax_db)
-                    .elements(syntax_db)
-                    .into_iter()
-                    .map(|statement_syntax| {
-                        compute_statement_semantic(&mut new_ctx, statement_syntax)
-                    })
-                    .collect(),
-                // TODO(spapini): Handle tail when it exists in ast.
-                tail: None,
+                statements: statements_semantic,
+                tail: tail_semantic,
                 ty: unit_ty(db),
             })
         }
