@@ -31,7 +31,7 @@ pub fn get_spec() -> Vec<Node> {
             .build(),
         StructBuilder::new("OptionStructArgExprEmpty").build(),
         StructBuilder::new("StructArgSingle")
-            .node("identifier", "Terminal")
+            .key_node("identifier", "Terminal")
             .node("arg_expr", "OptionStructArgExpr")
             .build(),
         StructBuilder::new("StructArgTail")
@@ -162,7 +162,7 @@ pub fn get_spec() -> Vec<Node> {
         StructBuilder::new("StatementMissing").build(),
         StructBuilder::new("StatementLet")
             .node("letkw", "Terminal")
-            .node("lhs", "Terminal")
+            .key_node("lhs", "Terminal")
             .node("type_clause", "OptionTypeClause")
             .node("eq", "Terminal")
             .node("rhs", "Expr")
@@ -184,7 +184,7 @@ pub fn get_spec() -> Vec<Node> {
             .build(),
         // --- Parameters and Functions ---
         StructBuilder::new("Param")
-            .node("identifier", "Terminal")
+            .key_node("identifier", "Terminal")
             .node("type_clause", "NonOptionTypeClause")
             .build(),
         separated_list_node("ParamList", "Param"),
@@ -221,19 +221,19 @@ pub fn get_spec() -> Vec<Node> {
         list_node("ItemList", "Item"),
         StructBuilder::new("ItemModule")
             .node("modkw", "Terminal")
-            .node("name", "Terminal")
+            .key_node("name", "Terminal")
             .node("semi", "Terminal")
             .build(),
         StructBuilder::new("ItemFunction")
             .node("funckw", "Terminal")
-            .node("name", "Terminal")
+            .key_node("name", "Terminal")
             .node("signature", "FunctionSignature")
             .node("body", "ExprBlock")
             .build(),
         StructBuilder::new("ItemExternFunction")
             .node("externkw", "Terminal")
             .node("funckw", "Terminal")
-            .node("name", "Terminal")
+            .key_node("name", "Terminal")
             .node("signature", "FunctionSignature")
             .node("semi", "Terminal")
             .build(),
@@ -246,14 +246,14 @@ pub fn get_spec() -> Vec<Node> {
         // TODO(spapini): consider having specific ItemLists here.
         StructBuilder::new("ItemTrait")
             .node("traitkw", "Terminal")
-            .node("name", "Terminal")
+            .key_node("name", "Terminal")
             .node("lbrace", "Terminal")
             .node("items", "ItemList")
             .node("rbrace", "Terminal")
             .build(),
         StructBuilder::new("ItemImpl")
             .node("implkw", "Terminal")
-            .node("name", "Terminal")
+            .key_node("name", "Terminal")
             .node("forkw", "Terminal")
             .node("trait_name", "Terminal")
             .node("lbrace", "Terminal")
@@ -262,19 +262,19 @@ pub fn get_spec() -> Vec<Node> {
             .build(),
         StructBuilder::new("ItemStruct")
             .node("structkw", "Terminal")
-            .node("name", "Terminal")
+            .key_node("name", "Terminal")
             .node("lbrace", "Terminal")
             .node("members", "ParamList")
             .node("rbrace", "Terminal")
             .build(),
         StructBuilder::new("ItemEnum")
             .node("enumkw", "Terminal")
-            .node("name", "Terminal")
+            .key_node("name", "Terminal")
             .node("body", "ParamListBraced")
             .build(),
         StructBuilder::new("ItemUse")
             .node("usekw", "Terminal")
-            .node("path", "ExprPath")
+            .key_node("path", "ExprPath")
             .node("semi", "Terminal")
             .build(),
         // Meta.
