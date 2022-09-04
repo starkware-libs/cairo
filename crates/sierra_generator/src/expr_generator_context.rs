@@ -1,6 +1,6 @@
 use std::collections::hash_map;
 
-use db_utils::unordered_hash_map::UnorderedHashMap;
+use utils::unordered_hash_map::UnorderedHashMap;
 use defs::ids::{FreeFunctionId, LocalVarId};
 use smol_str::SmolStr;
 

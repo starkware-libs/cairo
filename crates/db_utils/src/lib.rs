@@ -1,6 +1,3 @@
-pub mod ordered_hash_map;
-pub mod unordered_hash_map;
-
 #[macro_export]
 
 // Defines a short id struct for use with salsa interning.
