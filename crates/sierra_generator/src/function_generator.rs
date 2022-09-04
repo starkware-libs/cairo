@@ -21,14 +21,14 @@ pub fn generate_function_code(
     let (label, label_id) = context.new_label();
 
     // Generate Sierra variables for the function parameters.
-    let _parameters: Vec<_> = function_semantic
+    let parameters: Vec<sierra::program::Param> = function_semantic
         .signature
         .params
         .iter()
         .map(|param| {
             let sierra_var = context.allocate_sierra_variable();
             context.register_variable(defs::ids::VarId::Param(param.id), sierra_var.clone());
-            sierra_var
+            sierra::program::Param { id: sierra_var, ty: db.intern_type_id(param.ty) }
         })
         .collect();
 
@@ -56,5 +56,6 @@ pub fn generate_function_code(
         })),
         body: statements,
         entry_point: label_id,
+        parameters,
     }
 }

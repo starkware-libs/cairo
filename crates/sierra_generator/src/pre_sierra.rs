@@ -28,6 +28,7 @@ pub struct Function {
     pub body: Vec<Statement>,
     /// A label pointing to the first instruction of the function.
     pub entry_point: LabelId,
+    pub parameters: Vec<program::Param>,
 }
 
 /// Represents a pre-sierra statement - a statement before label-resolution.
