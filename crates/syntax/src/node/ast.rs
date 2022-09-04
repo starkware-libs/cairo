@@ -2552,9 +2552,9 @@ impl StatementLet {
         type_clause: GreenId,
         eq: GreenId,
         rhs: GreenId,
-        semi: GreenId,
+        semicolon: GreenId,
     ) -> GreenId {
-        let children: Vec<GreenId> = vec![letkw, lhs, type_clause, eq, rhs, semi];
+        let children: Vec<GreenId> = vec![letkw, lhs, type_clause, eq, rhs, semicolon];
         let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::StatementLet,
@@ -2577,7 +2577,7 @@ impl StatementLet {
     pub fn rhs(&self, db: &dyn SyntaxGroup) -> Expr {
         Expr::from_syntax_node(db, self.children[4].clone())
     }
-    pub fn semi(&self, db: &dyn SyntaxGroup) -> Terminal {
+    pub fn semicolon(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[5].clone())
     }
 }
@@ -2734,8 +2734,8 @@ pub struct StatementExpr {
     children: Vec<SyntaxNode>,
 }
 impl StatementExpr {
-    pub fn new_green(db: &dyn SyntaxGroup, expr: GreenId, semi: GreenId) -> GreenId {
-        let children: Vec<GreenId> = vec![expr, semi];
+    pub fn new_green(db: &dyn SyntaxGroup, expr: GreenId, semicolon: GreenId) -> GreenId {
+        let children: Vec<GreenId> = vec![expr, semicolon];
         let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::StatementExpr,
@@ -2746,7 +2746,7 @@ impl StatementExpr {
     pub fn expr(&self, db: &dyn SyntaxGroup) -> Expr {
         Expr::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn semi(&self, db: &dyn SyntaxGroup) -> OptionSemicolon {
+    pub fn semicolon(&self, db: &dyn SyntaxGroup) -> OptionSemicolon {
         OptionSemicolon::from_syntax_node(db, self.children[1].clone())
     }
 }
@@ -2798,9 +2798,9 @@ impl StatementReturn {
         db: &dyn SyntaxGroup,
         returnkw: GreenId,
         expr: GreenId,
-        semi: GreenId,
+        semicolon: GreenId,
     ) -> GreenId {
-        let children: Vec<GreenId> = vec![returnkw, expr, semi];
+        let children: Vec<GreenId> = vec![returnkw, expr, semicolon];
         let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::StatementReturn,
@@ -2814,7 +2814,7 @@ impl StatementReturn {
     pub fn expr(&self, db: &dyn SyntaxGroup) -> Expr {
         Expr::from_syntax_node(db, self.children[1].clone())
     }
-    pub fn semi(&self, db: &dyn SyntaxGroup) -> Terminal {
+    pub fn semicolon(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[2].clone())
     }
 }
@@ -3295,9 +3295,9 @@ impl ItemModule {
         db: &dyn SyntaxGroup,
         modkw: GreenId,
         name: GreenId,
-        semi: GreenId,
+        semicolon: GreenId,
     ) -> GreenId {
-        let children: Vec<GreenId> = vec![modkw, name, semi];
+        let children: Vec<GreenId> = vec![modkw, name, semicolon];
         let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ItemModule,
@@ -3311,7 +3311,7 @@ impl ItemModule {
     pub fn name(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[1].clone())
     }
-    pub fn semi(&self, db: &dyn SyntaxGroup) -> Terminal {
+    pub fn semicolon(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[2].clone())
     }
 }
@@ -3442,9 +3442,9 @@ impl ItemExternFunction {
         funckw: GreenId,
         name: GreenId,
         signature: GreenId,
-        semi: GreenId,
+        semicolon: GreenId,
     ) -> GreenId {
-        let children: Vec<GreenId> = vec![externkw, funckw, name, signature, semi];
+        let children: Vec<GreenId> = vec![externkw, funckw, name, signature, semicolon];
         let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ItemExternFunction,
@@ -3464,7 +3464,7 @@ impl ItemExternFunction {
     pub fn signature(&self, db: &dyn SyntaxGroup) -> FunctionSignature {
         FunctionSignature::from_syntax_node(db, self.children[3].clone())
     }
-    pub fn semi(&self, db: &dyn SyntaxGroup) -> Terminal {
+    pub fn semicolon(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[4].clone())
     }
 }
@@ -3527,9 +3527,9 @@ impl ItemExternType {
         externkw: GreenId,
         typekw: GreenId,
         name: GreenId,
-        semi: GreenId,
+        semicolon: GreenId,
     ) -> GreenId {
-        let children: Vec<GreenId> = vec![externkw, typekw, name, semi];
+        let children: Vec<GreenId> = vec![externkw, typekw, name, semicolon];
         let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ItemExternType,
@@ -3546,7 +3546,7 @@ impl ItemExternType {
     pub fn name(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[2].clone())
     }
-    pub fn semi(&self, db: &dyn SyntaxGroup) -> Terminal {
+    pub fn semicolon(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[3].clone())
     }
 }
@@ -3931,9 +3931,9 @@ impl ItemUse {
         db: &dyn SyntaxGroup,
         usekw: GreenId,
         path: GreenId,
-        semi: GreenId,
+        semicolon: GreenId,
     ) -> GreenId {
-        let children: Vec<GreenId> = vec![usekw, path, semi];
+        let children: Vec<GreenId> = vec![usekw, path, semicolon];
         let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ItemUse,
@@ -3947,7 +3947,7 @@ impl ItemUse {
     pub fn path(&self, db: &dyn SyntaxGroup) -> ExprPath {
         ExprPath::from_syntax_node(db, self.children[1].clone())
     }
-    pub fn semi(&self, db: &dyn SyntaxGroup) -> Terminal {
+    pub fn semicolon(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[2].clone())
     }
 }

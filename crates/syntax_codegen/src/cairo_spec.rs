@@ -166,7 +166,7 @@ pub fn get_spec() -> Vec<Node> {
             .node("type_clause", "OptionTypeClause")
             .node("eq", "Terminal")
             .node("rhs", "Expr")
-            .node("semi", "Terminal")
+            .node("semicolon", "Terminal")
             .build(),
         EnumBuilder::new("OptionSemicolon")
             .node("Empty")
@@ -175,12 +175,12 @@ pub fn get_spec() -> Vec<Node> {
         StructBuilder::new("OptionSemicolonEmpty").build(),
         StructBuilder::new("StatementExpr")
             .node("expr", "Expr")
-            .node("semi", "OptionSemicolon")
+            .node("semicolon", "OptionSemicolon")
             .build(),
         StructBuilder::new("StatementReturn")
             .node("returnkw", "Terminal")
             .node("expr", "Expr")
-            .node("semi", "Terminal")
+            .node("semicolon", "Terminal")
             .build(),
         // --- Parameters and Functions ---
         StructBuilder::new("Param")
@@ -222,7 +222,7 @@ pub fn get_spec() -> Vec<Node> {
         StructBuilder::new("ItemModule")
             .node("modkw", "Terminal")
             .key_node("name", "Terminal")
-            .node("semi", "Terminal")
+            .node("semicolon", "Terminal")
             .build(),
         StructBuilder::new("ItemFunction")
             .node("funckw", "Terminal")
@@ -235,13 +235,13 @@ pub fn get_spec() -> Vec<Node> {
             .node("funckw", "Terminal")
             .key_node("name", "Terminal")
             .node("signature", "FunctionSignature")
-            .node("semi", "Terminal")
+            .node("semicolon", "Terminal")
             .build(),
         StructBuilder::new("ItemExternType")
             .node("externkw", "Terminal")
             .node("typekw", "Terminal")
             .node("name", "Terminal")
-            .node("semi", "Terminal")
+            .node("semicolon", "Terminal")
             .build(),
         // TODO(spapini): consider having specific ItemLists here.
         StructBuilder::new("ItemTrait")
@@ -275,7 +275,7 @@ pub fn get_spec() -> Vec<Node> {
         StructBuilder::new("ItemUse")
             .node("usekw", "Terminal")
             .key_node("path", "ExprPath")
-            .node("semi", "Terminal")
+            .node("semicolon", "Terminal")
             .build(),
         // Meta.
         StructBuilder::new("SyntaxFile").node("items", "ItemList").node("eof", "Terminal").build(),

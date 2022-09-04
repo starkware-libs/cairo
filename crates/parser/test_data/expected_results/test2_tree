@@ -37,7 +37,7 @@
     │   │       │   │   │   ├── op (kind: Plus): '+'
     │   │       │   │   │   └── rhs (kind: ExprLiteral)
     │   │       │   │   │       └── terminal (kind: LiteralNumber): '3'
-    │   │       │   │   └── semi (kind: Semi): ';'
+    │   │       │   │   └── semicolon (kind: Semicolon): ';'
     │   │       │   ├── child #1 (kind: StatementLet)
     │   │       │   │   ├── letkw (kind: Let): 'let'
     │   │       │   │   ├── lhs (kind: Identifier): 'y'
@@ -64,14 +64,14 @@
     │   │       │   │   │       ├── op (kind: Mul): '*'
     │   │       │   │   │       └── rhs (kind: ExprLiteral)
     │   │       │   │   │           └── terminal (kind: LiteralNumber): '5'
-    │   │       │   │   └── semi (kind: Semi): ';'
+    │   │       │   │   └── semicolon (kind: Semicolon): ';'
     │   │       │   ├── child #2 (kind: StatementLet)
     │   │       │   │   ├── letkw (kind: Let): 'let'
     │   │       │   │   ├── lhs (kind: Identifier): 'z'
     │   │       │   │   ├── type_clause (kind: OptionTypeClauseEmpty) []
     │   │       │   │   ├── eq (kind: Eq): '='
     │   │       │   │   ├── rhs: Missing []
-    │   │       │   │   └── semi (kind: Semi): ';'
+    │   │       │   │   └── semicolon (kind: Semicolon): ';'
     │   │       │   ├── child #3 (kind: StatementExpr)
     │   │       │   │   ├── expr (kind: ExprBinary)
     │   │       │   │   │   ├── lhs (kind: ExprLiteral)
@@ -114,7 +114,7 @@
     │   │       │   │   │           │                   │               └── rparen (kind: RParen): ')'
     │   │       │   │   │           │                   └── rbrace (kind: RBrace): '}'
     │   │       │   │   │           └── rbrace (kind: RBrace): '}'
-    │   │       │   │   └── semi (kind: Semi): ';'
+    │   │       │   │   └── semicolon (kind: Semicolon): ';'
     │   │       │   ├── child #4 (kind: StatementReturn)
     │   │       │   │   ├── returnkw (kind: Return): 'return'
     │   │       │   │   ├── expr (kind: ExprBinary)
@@ -125,7 +125,7 @@
     │   │       │   │   │   ├── op (kind: EqEq): '=='
     │   │       │   │   │   └── rhs (kind: ExprLiteral)
     │   │       │   │   │       └── terminal (kind: LiteralNumber): '6'
-    │   │       │   │   └── semi (kind: Semi): ';'
+    │   │       │   │   └── semicolon (kind: Semicolon): ';'
     │   │       │   └── child #5 (kind: StatementExpr)
     │   │       │       ├── expr (kind: ExprBinary)
     │   │       │       │   ├── lhs (kind: ExprPath)
@@ -137,12 +137,12 @@
     │   │       │       │       └── item #0 (kind: PathSegment)
     │   │       │       │           ├── ident (kind: Identifier): 'y'
     │   │       │       │           └── generic_args (kind: OptionGenericArgsEmpty) []
-    │   │       │       └── semi (kind: OptionSemicolonEmpty) []
+    │   │       │       └── semicolon (kind: OptionSemicolonEmpty) []
     │   │       └── rbrace (kind: RBrace): '}'
     │   ├── child #1 (kind: ItemModule)
     │   │   ├── modkw (kind: Module): 'mod'
     │   │   ├── name (kind: Identifier): 'my_mod'
-    │   │   └── semi: Missing
+    │   │   └── semicolon: Missing
     │   ├── child #2 (kind: ItemFunction)
     │   │   ├── funckw (kind: Function): 'func'
     │   │   ├── name (kind: Identifier): 'bar'
@@ -223,7 +223,7 @@
     │   │       │       │               │   └── item #1 (kind: ExprLiteral)
     │   │       │       │               │       └── terminal (kind: LiteralNumber): '3'
     │   │       │       │               └── rparen (kind: RParen): ')'
-    │   │       │       └── semi (kind: OptionSemicolonEmpty) []
+    │   │       │       └── semicolon (kind: OptionSemicolonEmpty) []
     │   │       └── rbrace (kind: RBrace): '}'
     │   └── child #3 (kind: ItemStruct)
     │       ├── structkw (kind: Struct): 'struct'

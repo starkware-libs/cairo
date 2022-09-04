@@ -53,7 +53,7 @@ fn get_tail_expression(
     }
 
     if let ast::Statement::Expr(statement_expr) = &statements[statements.len() - 1] {
-        if let ast::OptionSemicolon::Empty(_) = statement_expr.semi(syntax_db) {
+        if let ast::OptionSemicolon::Empty(_) = statement_expr.semicolon(syntax_db) {
             return Some(statement_expr.expr(syntax_db));
         }
     }
