@@ -69,8 +69,13 @@ fn test_expr_literal() {
 #[test]
 fn test_function_with_param() {
     let mut db_val = DatabaseImpl::default();
-    let (module_id, module_syntax) =
-        setup_test_module(&mut db_val, "extern type felt; func foo(a: felt) {}");
+    let (module_id, module_syntax) = setup_test_module(
+        &mut db_val,
+        indoc! {"
+            extern type felt;
+            func foo(a: felt) {}
+        "},
+    );
     let db = &db_val;
     // TODO(spapini): When a tail expression in a block is supported, take the syntax from the tail
     // instead of from the statements.
@@ -102,8 +107,13 @@ fn test_function_with_param() {
 #[test]
 fn test_function_with_return_type() {
     let mut db_val = DatabaseImpl::default();
-    let (module_id, module_syntax) =
-        setup_test_module(&mut db_val, "extern type felt; func foo() -> felt {}");
+    let (module_id, module_syntax) = setup_test_module(
+        &mut db_val,
+        indoc! {"
+            extern type felt;
+            func foo() -> felt {}
+        "},
+    );
     let db = &db_val;
     // TODO(spapini): When a tail expression in a block is supported, take the syntax from the tail
     // instead of from the statements.
@@ -133,8 +143,15 @@ fn test_function_with_return_type() {
 #[test]
 fn test_expr_var() {
     let mut db_val = DatabaseImpl::default();
-    let (module_id, module_syntax) =
-        setup_test_module(&mut db_val, "extern type felt; func foo(a: felt) { a }");
+    let (module_id, module_syntax) = setup_test_module(
+        &mut db_val,
+        indoc! {"
+            extern type felt;
+            func foo(a: felt) {
+                a
+            }
+        "},
+    );
     let db = &db_val;
     // TODO(spapini): When a tail expression in a block is supported, take the syntax from the tail
     // instead of from the statements.
