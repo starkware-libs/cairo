@@ -9,7 +9,10 @@ use syntax::node::db::{AsSyntaxGroup, SyntaxDatabase, SyntaxGroup};
 use crate::corelib::unit_ty;
 use crate::db::{SemanticDatabase, SemanticGroup};
 use crate::semantic;
-use crate::test_utils::{setup_test_expr, setup_test_function};
+use crate::test_utils::{
+    assert_let_statement_with_literal, assert_let_statement_with_var, setup_test_expr,
+    setup_test_function,
+};
 
 #[salsa::database(SemanticDatabase, DefsDatabase, ParserDatabase, SyntaxDatabase, FilesDatabase)]
 #[derive(Default)]
@@ -75,6 +78,40 @@ fn test_function_with_return_type() {
 
     // TODO(spapini): Verify params names and tests after StablePtr feature is added.
     let _ret_ty = signature.return_type;
+}
+
+// TODO(yuval): add test with implicit var type when real types are supported.
+#[test]
+fn test_let_statement() {
+    let mut db_val = DatabaseImpl::default();
+    let (module_id, function) = setup_test_function(
+        &mut db_val,
+        indoc! {"
+            func foo() {
+                let a: felt = 3;
+                let b: felt = a;
+            }
+        "},
+        "foo",
+        "",
+    );
+    let db = &db_val;
+
+    let _signature = function.signature;
+
+    // TODO(spapini): Verify params names and tests after StablePtr feature is added.
+    let statements = match db.lookup_intern_expr(function.body) {
+        crate::Expr::ExprBlock(block) => {
+            assert!(block.tail.is_none());
+            block.statements
+        }
+        _ => panic!(),
+    };
+
+    // Verify the statements
+    assert_eq!(statements.len(), 2);
+    assert_let_statement_with_literal(db, statements[0], module_id, "a".into(), 3);
+    assert_let_statement_with_var(db, statements[1], module_id, "b".into(), "a".into());
 }
 
 #[test]
