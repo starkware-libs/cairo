@@ -3,6 +3,9 @@ use std::sync::Arc;
 use defs::db::ModuleItems;
 use defs::ids::ModuleItemId;
 use diagnostics::Diagnostics;
+use sierra::ids::ConcreteLibFuncId;
+use sierra::program;
+use utils::ordered_hash_set::OrderedHashSet;
 
 use crate::db::SierraGenGroup;
 use crate::pre_sierra::{self};
@@ -16,7 +19,7 @@ pub fn generate_program_code(
     diagnostics: &mut Diagnostics<semantic::Diagnostic>,
     db: &dyn SierraGenGroup,
     module_items: &ModuleItems,
-) -> Option<sierra::program::Program> {
+) -> Option<program::Program> {
     let mut functions: Vec<Arc<pre_sierra::Function>> = vec![];
     let mut statements: Vec<pre_sierra::Statement> = vec![];
 
@@ -36,19 +39,21 @@ pub fn generate_program_code(
         }
     }
 
+    let libfunc_declarations =
+        generate_libfunc_declarations(db, collect_used_libfuncs(&statements).iter());
+
     // Resolve labels.
     let label_replacer = LabelReplacer::from_statements(&statements);
     let resolved_statements = resolve_labels(statements, &label_replacer);
 
-    Some(sierra::program::Program {
+    Some(program::Program {
         // TODO(lior): Fill type_declarations.
         type_declarations: vec![],
-        // TODO(lior): Fill libfunc_declarations.
-        libfunc_declarations: vec![],
+        libfunc_declarations,
         statements: resolved_statements,
         funcs: functions
             .iter()
-            .map(|function| sierra::program::Function {
+            .map(|function| program::Function {
                 id: function.id.clone(),
                 // TODO(lior): Add params.
                 params: vec![],
@@ -58,4 +63,36 @@ pub fn generate_program_code(
             })
             .collect(),
     })
+}
+
+/// Generates the list of [sierra::program::LibFuncDeclaration] for the given list of
+/// [ConcreteLibFuncId].
+fn generate_libfunc_declarations<'a>(
+    db: &dyn SierraGenGroup,
+    libfuncs: impl Iterator<Item = &'a ConcreteLibFuncId>,
+) -> Vec<program::LibFuncDeclaration> {
+    libfuncs
+        .into_iter()
+        .map(|libfunc_id| program::LibFuncDeclaration {
+            id: libfunc_id.clone(),
+            long_id: db.lookup_intern_concrete_lib_func(libfunc_id.clone()),
+        })
+        .collect()
+}
+
+/// Collects the set of all [ConcreteLibFuncId] used in the given list of [pre_sierra::Statement].
+fn collect_used_libfuncs(
+    statements: &[pre_sierra::Statement],
+) -> OrderedHashSet<ConcreteLibFuncId> {
+    let mut all_libfuncs: OrderedHashSet<ConcreteLibFuncId> = OrderedHashSet::default();
+    for statement in statements {
+        match statement {
+            pre_sierra::Statement::Sierra(program::GenStatement::Invocation(invocation)) => {
+                all_libfuncs.insert(invocation.libfunc_id.clone());
+            }
+            pre_sierra::Statement::Sierra(program::GenStatement::Return(_)) => {}
+            pre_sierra::Statement::Label(_) => {}
+        }
+    }
+    all_libfuncs
 }
