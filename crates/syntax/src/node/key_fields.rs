@@ -109,7 +109,7 @@ pub fn get_key_fields(kind: SyntaxKind, children: Vec<GreenId>) -> Vec<GreenId> 
             vec![]
         }
         SyntaxKind::StatementLet => {
-            vec![/* lhs */ children[1]]
+            vec![/* name */ children[1]]
         }
         SyntaxKind::OptionSemicolonEmpty => {
             vec![]
@@ -121,7 +121,7 @@ pub fn get_key_fields(kind: SyntaxKind, children: Vec<GreenId>) -> Vec<GreenId> 
             vec![]
         }
         SyntaxKind::Param => {
-            vec![/* identifier */ children[0]]
+            vec![/* name */ children[0]]
         }
         SyntaxKind::ParamList => {
             vec![]
@@ -141,14 +141,14 @@ pub fn get_key_fields(kind: SyntaxKind, children: Vec<GreenId>) -> Vec<GreenId> 
         SyntaxKind::ItemModule => {
             vec![/* name */ children[1]]
         }
-        SyntaxKind::ItemFunction => {
+        SyntaxKind::ItemFreeFunction => {
             vec![/* name */ children[1]]
         }
         SyntaxKind::ItemExternFunction => {
             vec![/* name */ children[2]]
         }
         SyntaxKind::ItemExternType => {
-            vec![]
+            vec![/* name */ children[2]]
         }
         SyntaxKind::ItemTrait => {
             vec![/* name */ children[1]]

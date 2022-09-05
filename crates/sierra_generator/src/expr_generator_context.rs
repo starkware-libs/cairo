@@ -1,7 +1,8 @@
-use std::collections::{hash_map, HashMap};
+use std::collections::hash_map;
 
-use defs::ids::{FreeFunctionId, LocalVarId};
+use defs::ids::{FreeFunctionId, HasName};
 use smol_str::SmolStr;
+use utils::unordered_hash_map::UnorderedHashMap;
 
 use crate::db::SierraGenGroup;
 use crate::id_allocator::IdAllocator;
@@ -13,7 +14,7 @@ pub struct ExprGeneratorContext<'a> {
     function_id: FreeFunctionId,
     var_id_allocator: IdAllocator,
     label_id_allocator: IdAllocator,
-    variables: HashMap<LocalVarId, sierra::ids::VarId>,
+    variables: UnorderedHashMap<defs::ids::VarId, sierra::ids::VarId>,
 }
 impl<'a> ExprGeneratorContext<'a> {
     /// Constructs an empty [ExprGeneratorContext].
@@ -23,7 +24,7 @@ impl<'a> ExprGeneratorContext<'a> {
             function_id,
             var_id_allocator: IdAllocator::default(),
             label_id_allocator: IdAllocator::default(),
-            variables: HashMap::new(),
+            variables: UnorderedHashMap::default(),
         }
     }
 
@@ -39,7 +40,11 @@ impl<'a> ExprGeneratorContext<'a> {
 
     /// Attaches a local variable with its Sierra variable.
     /// See [Self::get_variable].
-    pub fn register_variable(&mut self, local_var_id: LocalVarId, sierra_var: sierra::ids::VarId) {
+    pub fn register_variable(
+        &mut self,
+        local_var_id: defs::ids::VarId,
+        sierra_var: sierra::ids::VarId,
+    ) {
         match self.variables.entry(local_var_id) {
             hash_map::Entry::Occupied(_) => {
                 // TODO(lior): Either panic!() if this is necessarily an internal compiler error
@@ -52,7 +57,7 @@ impl<'a> ExprGeneratorContext<'a> {
 
     /// Returns the Sierra variable associated with the given local variable.
     /// See [Self::register_variable].
-    pub fn get_variable(&self, local_var: LocalVarId) -> sierra::ids::VarId {
+    pub fn get_variable(&self, local_var: defs::ids::VarId) -> sierra::ids::VarId {
         // TODO(lior): Consider throwing an error with a location.
         self.variables.get(&local_var).expect("Internal compiler error.").clone()
     }
@@ -84,8 +89,11 @@ impl<'a> ExprGeneratorContext<'a> {
         })
     }
 
-    pub fn store_temp_libfunc_id(&self) -> sierra::ids::ConcreteLibFuncId {
-        self.get_extension_id_without_generics("store_temp")
+    pub fn store_temp_libfunc_id(&self, ty: semantic::TypeId) -> sierra::ids::ConcreteLibFuncId {
+        self.db.intern_concrete_lib_func(sierra::program::ConcreteLibFuncLongId {
+            generic_id: sierra::ids::GenericLibFuncId::from_string("store_temp"),
+            args: vec![sierra::program::GenericArg::Type(self.db.intern_type_id(ty))],
+        })
     }
 
     pub fn function_call_libfunc_id(
@@ -110,7 +118,6 @@ impl<'a> ExprGeneratorContext<'a> {
         &self,
         extern_id: defs::ids::ExternFunctionId,
     ) -> sierra::ids::ConcreteLibFuncId {
-        let long_id = self.get_db().lookup_intern_extern_function(extern_id);
-        self.get_extension_id_without_generics(long_id.name)
+        self.get_extension_id_without_generics(extern_id.name(self.get_db().as_defs_group()))
     }
 }

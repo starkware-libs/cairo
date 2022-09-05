@@ -4,6 +4,7 @@ use sierra::ids::ConcreteLibFuncId;
 
 use super::resolve_labels;
 use crate::pre_sierra;
+use crate::resolve_labels::LabelReplacer;
 use crate::utils::{jump_statement, simple_statement};
 
 fn label(id: usize) -> pre_sierra::Statement {
@@ -39,8 +40,12 @@ fn test_resolve_labels() {
         // Note: this label does not point to an actual instruction.
         label(9),
     ];
+    let label_replacer = LabelReplacer::from_statements(&statements);
     assert_eq!(
-        resolve_labels(statements).iter().map(|x| format!("{}", x)).collect::<Vec<String>>(),
+        resolve_labels(statements, &label_replacer)
+            .iter()
+            .map(|x| format!("{}", x))
+            .collect::<Vec<String>>(),
         vec![
             // labels 7 and 5 (instruction index 0).
             "Instruction0() -> ()",

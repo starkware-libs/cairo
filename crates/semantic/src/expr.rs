@@ -3,7 +3,6 @@
 mod test;
 
 use std::collections::HashMap;
-use std::rc::Rc;
 
 use defs::ids::{GenericFunctionId, VarId};
 use filesystem::ids::ModuleId;
@@ -19,27 +18,28 @@ use crate::{
 };
 
 /// Context for computing the semantic model of expression trees.
-pub struct ComputationContext<'db> {
-    db: &'db dyn SemanticGroup,
+pub struct ComputationContext<'ctx> {
+    db: &'ctx dyn SemanticGroup,
     module_id: ModuleId,
-    environment: Rc<Environment>,
+    environment: Environment<'ctx>,
 }
-impl<'db> ComputationContext<'db> {
+impl<'ctx> ComputationContext<'ctx> {
     pub fn new(
-        db: &'db dyn SemanticGroup,
+        db: &'ctx dyn SemanticGroup,
         module_id: ModuleId,
         variables: HashMap<SmolStr, VarId>,
     ) -> Self {
         let environment = Environment { parent: None, variables };
-        Self { db, module_id, environment: Rc::new(environment) }
+        Self { db, module_id, environment }
     }
 }
 
 // TODO(spapini): Consider using identifiers instead of SmolStr everywhere in the code.
 /// A state which contains all the variables defined at the current scope until now, and a pointer
 /// to the parent environment.
-pub struct Environment {
-    parent: Option<Rc<Environment>>,
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Environment<'penv> {
+    parent: Option<&'penv Environment<'penv>>,
     variables: HashMap<SmolStr, VarId>,
 }
 
@@ -122,10 +122,8 @@ pub fn compute_expr_semantic(ctx: &mut ComputationContext<'_>, syntax: ast::Expr
         }
         ast::Expr::StructCtorCall(_) => todo!(),
         ast::Expr::Block(block_syntax) => {
-            let environment = Rc::new(Environment {
-                parent: Some(ctx.environment.clone()),
-                variables: HashMap::new(),
-            });
+            let environment =
+                Environment { parent: Some(&ctx.environment), variables: HashMap::new() };
             let mut new_ctx = ComputationContext { environment, ..*ctx };
             let mut statements = block_syntax.statements(syntax_db).elements(syntax_db);
 
@@ -212,12 +210,12 @@ pub fn resolve_variable_by_name(
     ctx: &mut ComputationContext<'_>,
     variable_name: &SmolStr,
 ) -> VarId {
-    let mut maybe_env = Some(&*ctx.environment);
+    let mut maybe_env = Some(&ctx.environment);
     while let Some(env) = maybe_env {
         if let Some(var) = env.variables.get(variable_name) {
             return *var;
         }
-        maybe_env = env.parent.as_deref();
+        maybe_env = env.parent;
     }
     // TODO(spapini): Diagnostic and return option.
     panic!("Not found");

@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use diagnostics::{Diagnostics, WithDiagnostics};
 use diagnostics_proc_macros::with_diagnostics;
 use filesystem::db::FilesGroup;
@@ -8,8 +6,9 @@ use itertools::chain;
 use parser::db::ParserGroup;
 use parser::parser::ParserDiagnostic;
 use smol_str::SmolStr;
-use syntax::node::ast;
 use syntax::node::db::{AsSyntaxGroup, SyntaxGroup};
+use syntax::node::{ast, TypedSyntaxNode};
+use utils::ordered_hash_map::OrderedHashMap;
 
 use crate::ids::*;
 
@@ -66,15 +65,15 @@ pub trait AsDefsGroup {
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ModuleData {
-    pub free_functions: HashMap<FreeFunctionId, ast::ItemFunction>,
-    pub structs: HashMap<StructId, ast::ItemStruct>,
-    pub extern_types: HashMap<ExternTypeId, ast::ItemExternType>,
-    pub extern_functions: HashMap<ExternFunctionId, ast::ItemExternFunction>,
+    pub free_functions: OrderedHashMap<FreeFunctionId, ast::ItemFreeFunction>,
+    pub structs: OrderedHashMap<StructId, ast::ItemStruct>,
+    pub extern_types: OrderedHashMap<ExternTypeId, ast::ItemExternType>,
+    pub extern_functions: OrderedHashMap<ExternFunctionId, ast::ItemExternFunction>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ModuleItems {
-    pub items: HashMap<SmolStr, ModuleItemId>,
+    pub items: OrderedHashMap<SmolStr, ModuleItemId>,
 }
 
 #[with_diagnostics]
@@ -84,34 +83,33 @@ fn module_data(
     module_id: ModuleId,
 ) -> Option<ModuleData> {
     let mut res = ModuleData::default();
-    let syntax_group = db.as_syntax_group();
+    let syntax_db = db.as_syntax_group();
 
     let syntax_file = db.module_syntax(module_id).unwrap(diagnostics)?;
-    for item in syntax_file.items(syntax_group).elements(syntax_group) {
+    for item in syntax_file.items(syntax_db).elements(syntax_db) {
         match item {
             ast::Item::Module(_module) => todo!(),
-            ast::Item::Function(function) => {
-                let name = function.name(syntax_group).text(syntax_group);
+            ast::Item::FreeFunction(function) => {
                 let item_id =
-                    db.intern_free_function(FreeFunctionLongId { parent: module_id, name });
+                    db.intern_free_function(FreeFunctionLongId(module_id, function.stable_ptr()));
                 res.free_functions.insert(item_id, function);
             }
             ast::Item::ExternFunction(extern_function) => {
-                let name = extern_function.name(syntax_group).text(syntax_group);
-                let item_id =
-                    db.intern_extern_function(ExternFunctionLongId { parent: module_id, name });
+                let item_id = db.intern_extern_function(ExternFunctionLongId(
+                    module_id,
+                    extern_function.stable_ptr(),
+                ));
                 res.extern_functions.insert(item_id, extern_function);
             }
             ast::Item::ExternType(extern_type) => {
-                let name = extern_type.name(syntax_group).text(syntax_group);
-                let item_id = db.intern_extern_type(ExternTypeLongId { parent: module_id, name });
+                let item_id =
+                    db.intern_extern_type(ExternTypeLongId(module_id, extern_type.stable_ptr()));
                 res.extern_types.insert(item_id, extern_type);
             }
             ast::Item::Trait(_tr) => todo!(),
             ast::Item::Impl(_imp) => todo!(),
             ast::Item::Struct(strct) => {
-                let name = strct.name(syntax_group).text(syntax_group);
-                let item_id = db.intern_struct(StructLongId { parent: module_id, name });
+                let item_id = db.intern_struct(StructLongId(module_id, strct.stable_ptr()));
                 res.structs.insert(item_id, strct);
             }
             ast::Item::Enum(_en) => todo!(),
@@ -127,24 +125,24 @@ fn module_items(
     db: &dyn DefsGroup,
     module_id: ModuleId,
 ) -> Option<ModuleItems> {
-    let syntax_group = db.as_syntax_group();
+    let syntax_db = db.as_syntax_group();
     let module_data = db.module_data(module_id).unwrap(diagnostics)?;
     Some(ModuleItems {
         items: chain!(
             module_data.free_functions.iter().map(|(free_function_id, syntax)| (
-                syntax.name(syntax_group).text(syntax_group),
+                syntax.name(syntax_db).text(syntax_db),
                 ModuleItemId::FreeFunction(*free_function_id),
             )),
             module_data.extern_functions.iter().map(|(extern_function_id, syntax)| (
-                syntax.name(syntax_group).text(syntax_group),
+                syntax.name(syntax_db).text(syntax_db),
                 ModuleItemId::ExternFunction(*extern_function_id),
             )),
             module_data.extern_types.iter().map(|(extern_type_id, syntax)| (
-                syntax.name(syntax_group).text(syntax_group),
+                syntax.name(syntax_db).text(syntax_db),
                 ModuleItemId::ExternType(*extern_type_id),
             )),
             module_data.structs.iter().map(|(struct_id, syntax)| (
-                syntax.name(syntax_group).text(syntax_group),
+                syntax.name(syntax_db).text(syntax_db),
                 ModuleItemId::Struct(*struct_id)
             )),
         )

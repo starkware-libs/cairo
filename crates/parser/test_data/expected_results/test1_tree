@@ -1,13 +1,13 @@
 └── root (kind: SyntaxFile)
     ├── items (kind: ItemList)
-    │   ├── child #0 (kind: ItemFunction)
+    │   ├── child #0 (kind: ItemFreeFunction)
     │   │   ├── funckw (kind: Function): 'func'
     │   │   ├── name (kind: Identifier): 'foo'
     │   │   ├── signature (kind: FunctionSignature)
     │   │   │   ├── lparen (kind: LParen): '('
     │   │   │   ├── parameters (kind: ParamList)
     │   │   │   │   ├── item #0 (kind: Param)
-    │   │   │   │   │   ├── identifier (kind: Identifier): 'var1'
+    │   │   │   │   │   ├── name (kind: Identifier): 'var1'
     │   │   │   │   │   └── type_clause (kind: TypeClause)
     │   │   │   │   │       ├── colon (kind: Colon): ':'
     │   │   │   │   │       └── ty (kind: ExprPath)
@@ -16,7 +16,7 @@
     │   │   │   │   │               └── generic_args (kind: OptionGenericArgsEmpty) []
     │   │   │   │   ├── separator #0 (kind: Comma): ','
     │   │   │   │   ├── item #1 (kind: Param)
-    │   │   │   │   │   ├── identifier (kind: Identifier): 'var2'
+    │   │   │   │   │   ├── name (kind: Identifier): 'var2'
     │   │   │   │   │   └── type_clause (kind: TypeClause)
     │   │   │   │   │       ├── colon (kind: Colon): ':'
     │   │   │   │   │       └── ty (kind: ExprPath)
@@ -36,7 +36,7 @@
     │   │       ├── statements (kind: StatementList)
     │   │       │   ├── child #0 (kind: StatementLet)
     │   │       │   │   ├── letkw (kind: Let): 'let'
-    │   │       │   │   ├── lhs (kind: Identifier): 'bla3'
+    │   │       │   │   ├── name (kind: Identifier): 'bla3'
     │   │       │   │   ├── type_clause (kind: OptionTypeClauseEmpty) []
     │   │       │   │   ├── eq (kind: Eq): '='
     │   │       │   │   ├── rhs (kind: ExprUnary)
@@ -48,7 +48,7 @@
     │   │       │   │   └── semicolon (kind: Semicolon): ';'
     │   │       │   ├── child #1 (kind: StatementLet)
     │   │       │   │   ├── letkw (kind: Let): 'let'
-    │   │       │   │   ├── lhs (kind: Identifier): 'bla4'
+    │   │       │   │   ├── name (kind: Identifier): 'bla4'
     │   │       │   │   ├── type_clause (kind: OptionTypeClauseEmpty) []
     │   │       │   │   ├── eq (kind: Eq): '='
     │   │       │   │   ├── rhs (kind: ExprUnary)
@@ -64,7 +64,7 @@
     │   │       │   │   └── semicolon (kind: Semicolon): ';'
     │   │       │   ├── child #2 (kind: StatementLet)
     │   │       │   │   ├── letkw (kind: Let): 'let'
-    │   │       │   │   ├── lhs (kind: Identifier): 'x'
+    │   │       │   │   ├── name (kind: Identifier): 'x'
     │   │       │   │   ├── type_clause (kind: OptionTypeClauseEmpty) []
     │   │       │   │   ├── eq (kind: Eq): '='
     │   │       │   │   ├── rhs (kind: ExprLiteral)
@@ -72,7 +72,7 @@
     │   │       │   │   └── semicolon (kind: Semicolon): ';'
     │   │       │   ├── child #3 (kind: StatementLet)
     │   │       │   │   ├── letkw (kind: Let): 'let'
-    │   │       │   │   ├── lhs (kind: Identifier): 'y'
+    │   │       │   │   ├── name (kind: Identifier): 'y'
     │   │       │   │   ├── type_clause (kind: OptionTypeClauseEmpty) []
     │   │       │   │   ├── eq (kind: Eq): '='
     │   │       │   │   ├── rhs (kind: ExprMatch)
@@ -106,7 +106,7 @@
     │   │       │   │   └── semicolon (kind: Semicolon): ';'
     │   │       │   ├── child #4 (kind: StatementLet)
     │   │       │   │   ├── letkw (kind: Let): 'let'
-    │   │       │   │   ├── lhs (kind: Identifier): 'x'
+    │   │       │   │   ├── name (kind: Identifier): 'x'
     │   │       │   │   ├── type_clause (kind: OptionTypeClauseEmpty) []
     │   │       │   │   ├── eq (kind: Eq): '='
     │   │       │   │   ├── rhs (kind: ExprLiteral)
@@ -163,7 +163,7 @@
     │       │   ├── lparen (kind: LParen): '('
     │       │   ├── parameters (kind: ParamList)
     │       │   │   ├── item #0 (kind: Param)
-    │       │   │   │   ├── identifier (kind: Identifier): 'var1'
+    │       │   │   │   ├── name (kind: Identifier): 'var1'
     │       │   │   │   └── type_clause (kind: TypeClause)
     │       │   │   │       ├── colon (kind: Colon): ':'
     │       │   │   │       └── ty (kind: ExprPath)

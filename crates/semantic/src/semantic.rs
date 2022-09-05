@@ -1,5 +1,4 @@
-use defs::ids::{LocalVarId, MemberId, VarId};
-use smol_str::SmolStr;
+use defs::ids::{LocalVarId, MemberId, ParamId, VarId};
 
 use crate::ids::{ConcreteFunctionId, ExprId, TypeId};
 use crate::StatementId;
@@ -89,12 +88,12 @@ pub struct ExprLiteral {
 }
 
 // Items.
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FreeFunction {
     pub signature: Signature,
     pub body: ExprId,
 }
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Signature {
     // TODO(spapini): Generics parameters.
     pub params: Vec<Parameter>,
@@ -103,7 +102,7 @@ pub struct Signature {
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Parameter {
-    pub name: SmolStr,
+    pub id: ParamId,
     pub ty: TypeId,
 }
 

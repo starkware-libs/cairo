@@ -29,10 +29,7 @@ fn generate_expression_code_by_val(
             handle_function_call(context, expr_function_call)
         }
         semantic::Expr::ExprMatch(expr_match) => handle_felt_match(context, expr_match),
-        semantic::Expr::ExprVar(expr_var) => match expr_var.var {
-            defs::ids::VarId::Param(_) => todo!(),
-            defs::ids::VarId::Local(local_var) => (vec![], context.get_variable(local_var)),
-        },
+        semantic::Expr::ExprVar(expr_var) => (vec![], context.get_variable(expr_var.var)),
         semantic::Expr::ExprLiteral(expr_literal) => {
             let tmp_var = context.allocate_sierra_variable();
             (
@@ -63,7 +60,7 @@ fn handle_block(
             semantic::Statement::Let(statement_let) => {
                 let (cur_statements, res) = generate_expression_code(context, statement_let.expr);
                 statements.extend(cur_statements);
-                context.register_variable(statement_let.var, res);
+                context.register_variable(defs::ids::VarId::Local(statement_let.var), res);
             }
         }
     }
@@ -107,7 +104,8 @@ fn handle_function_call(
             for arg_res in args {
                 let arg_var = context.allocate_sierra_variable();
                 statements.push(simple_statement(
-                    context.store_temp_libfunc_id(),
+                    // TODO(lior): Use the real type instead of `felt`.
+                    context.store_temp_libfunc_id(context.get_db().core_felt_ty()),
                     &[arg_res],
                     &[arg_var.clone()],
                 ));
@@ -141,7 +139,8 @@ fn handle_function_call(
             //   automatically adding such statements.
             let res_var_on_stack = context.allocate_sierra_variable();
             statements.push(simple_statement(
-                context.store_temp_libfunc_id(),
+                // TODO(lior): Use the real type instead of `felt`.
+                context.store_temp_libfunc_id(context.get_db().core_felt_ty()),
                 &[res_var],
                 &[res_var_on_stack.clone()],
             ));
@@ -207,7 +206,8 @@ fn handle_felt_match(
             let (block0_statements, block0_res) = generate_expression_code(context, *block0);
             statements.extend(block0_statements);
             statements.push(simple_statement(
-                context.store_temp_libfunc_id(),
+                // TODO(lior): Use the real type instead of `felt`.
+                context.store_temp_libfunc_id(context.get_db().core_felt_ty()),
                 &[block0_res],
                 &[output_var.clone()],
             ));
@@ -219,7 +219,8 @@ fn handle_felt_match(
             statements.push(otherwise_label);
             statements.extend(block_otherwise_statements);
             statements.push(simple_statement(
-                context.store_temp_libfunc_id(),
+                // TODO(lior): Use the real type instead of `felt`.
+                context.store_temp_libfunc_id(context.get_db().core_felt_ty()),
                 &[block_otherwise_res],
                 &[output_var.clone()],
             ));

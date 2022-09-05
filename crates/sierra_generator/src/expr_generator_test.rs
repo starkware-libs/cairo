@@ -1,10 +1,9 @@
-use defs::db::DefsGroup;
-use defs::ids::{ExternFunctionLongId, FreeFunctionId, GenericFunctionId, LocalVarId, VarId};
-use filesystem::ids::{CrateId, ModuleId};
+use defs::ids::{FreeFunctionId, GenericFunctionId, LocalVarId, VarId};
 use pretty_assertions::assert_eq;
 use salsa::{InternId, InternKey};
 use semantic::db::SemanticGroup;
 use semantic::ids::TypeId;
+use semantic::test_utils::{setup_test_expr, setup_test_module};
 
 use crate::expr_generator::generate_expression_code;
 use crate::expr_generator_context::ExprGeneratorContext;
@@ -23,7 +22,8 @@ fn generate_expr_code_for_test(
 
 #[test]
 fn test_expr_generator() {
-    let db = DatabaseImpl::default();
+    let mut db = DatabaseImpl::default();
+    setup_test_module(&mut db, "");
 
     let ty = TypeId::from_intern_id(InternId::from(0u32));
     let literal7 =
@@ -80,20 +80,20 @@ fn test_expr_generator() {
             "felt_const<7>() -> ([0])",
             // foo(x, 7);
             "felt_const<7>() -> ([1])",
-            "store_temp([0]) -> ([2])",
-            "store_temp([1]) -> ([3])",
+            "store_temp<[0]>([0]) -> ([2])",
+            "store_temp<[0]>([1]) -> ([3])",
             "function_call<user@[0]>([2], [3]) -> ([4])",
             // foo2(foo(x, 7), foo(x, 7))
             "felt_const<7>() -> ([5])",
-            "store_temp([0]) -> ([6])",
-            "store_temp([5]) -> ([7])",
+            "store_temp<[0]>([0]) -> ([6])",
+            "store_temp<[0]>([5]) -> ([7])",
             "function_call<user@[0]>([6], [7]) -> ([8])",
             "felt_const<7>() -> ([9])",
-            "store_temp([0]) -> ([10])",
-            "store_temp([9]) -> ([11])",
+            "store_temp<[0]>([0]) -> ([10])",
+            "store_temp<[0]>([9]) -> ([11])",
             "function_call<user@[0]>([10], [11]) -> ([12])",
-            "store_temp([8]) -> ([13])",
-            "store_temp([12]) -> ([14])",
+            "store_temp<[0]>([8]) -> ([13])",
+            "store_temp<[0]>([12]) -> ([14])",
             "function_call<user@[1]>([13], [14]) -> ([15])",
         ]
     );
@@ -103,7 +103,8 @@ fn test_expr_generator() {
 
 #[test]
 fn test_match() {
-    let db = DatabaseImpl::default();
+    let mut db = DatabaseImpl::default();
+    setup_test_module(&mut db, "");
 
     let ty = TypeId::from_intern_id(InternId::from(0u32));
     let literal7 =
@@ -141,12 +142,12 @@ fn test_match() {
             // match {
             "jump_nz([0]) { label0() fallthrough() }",
             // Branch 0.
-            "store_temp([0]) -> ([1])",
+            "store_temp<[0]>([0]) -> ([1])",
             "jump() { label1() }",
             // Branch otherwise.
             "label0:",
             "felt_const<7>() -> ([2])",
-            "store_temp([2]) -> ([1])",
+            "store_temp<[0]>([2]) -> ([1])",
             // Post match.
             "label1:",
         ]
@@ -157,27 +158,14 @@ fn test_match() {
 
 #[test]
 fn test_call_libfunc() {
-    let db = DatabaseImpl::default();
+    let mut db = DatabaseImpl::default();
 
-    let ty = TypeId::from_intern_id(InternId::from(0u32));
-    let literal3 =
-        db.intern_expr(semantic::Expr::ExprLiteral(semantic::ExprLiteral { value: 3, ty }));
-    let literal6 =
-        db.intern_expr(semantic::Expr::ExprLiteral(semantic::ExprLiteral { value: 6, ty }));
-
-    let module = ModuleId::CrateRoot(CrateId::from_intern_id(InternId::from(1u32)));
-    let add_libfunc = db.intern_concrete_function(semantic::ConcreteFunctionLongId {
-        generic_function: GenericFunctionId::Extern(db.intern_extern_function(
-            ExternFunctionLongId { parent: module, name: "felt_add".into() },
-        )),
-        generic_args: vec![],
-    });
-
-    let expr = db.intern_expr(semantic::Expr::ExprFunctionCall(semantic::ExprFunctionCall {
-        function: add_libfunc,
-        args: vec![literal3, literal6],
-        ty,
-    }));
+    let (_module_id, expr) = setup_test_expr(
+        &mut db,
+        "felt_add(3,6)",
+        "extern func felt_add(a: felt, b: felt) -> felt",
+        "",
+    );
 
     let (statements, res) = generate_expr_code_for_test(&db, expr);
     assert_eq!(
@@ -186,7 +174,7 @@ fn test_call_libfunc() {
             "felt_const<3>() -> ([0])",
             "felt_const<6>() -> ([1])",
             "felt_add([0], [1]) -> ([2])",
-            "store_temp([2]) -> ([3])",
+            "store_temp<[0]>([2]) -> ([3])",
         ]
     );
 

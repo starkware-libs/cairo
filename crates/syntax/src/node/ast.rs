@@ -74,7 +74,7 @@ impl TypedSyntaxNode for Terminal {
             }
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -149,7 +149,7 @@ impl TypedSyntaxNode for TriviumSkippedTerminal {
             }
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -194,7 +194,7 @@ impl TypedSyntaxNode for Trivia {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn stable_ptr(&self) -> Self::StablePtr {
@@ -249,7 +249,7 @@ impl TypedSyntaxNode for Trivium {
             Trivium::SkippedTerminal(x) => x.as_syntax_node(),
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn stable_ptr(&self) -> Self::StablePtr {
@@ -308,7 +308,7 @@ impl TypedSyntaxNode for StructArgExpr {
             }
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -358,7 +358,7 @@ impl TypedSyntaxNode for OptionStructArgExpr {
             OptionStructArgExpr::Some(x) => x.as_syntax_node(),
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn stable_ptr(&self) -> Self::StablePtr {
@@ -415,7 +415,7 @@ impl TypedSyntaxNode for OptionStructArgExprEmpty {
             }
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -486,7 +486,7 @@ impl TypedSyntaxNode for StructArgSingle {
             }
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -548,7 +548,7 @@ impl TypedSyntaxNode for StructArgTail {
             }
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -598,7 +598,7 @@ impl TypedSyntaxNode for StructArg {
             StructArg::StructArgTail(x) => x.as_syntax_node(),
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn stable_ptr(&self) -> Self::StablePtr {
@@ -640,7 +640,7 @@ impl TypedSyntaxNode for StructArgList {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn stable_ptr(&self) -> Self::StablePtr {
@@ -711,7 +711,7 @@ impl TypedSyntaxNode for ArgListBraced {
             }
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -793,7 +793,7 @@ impl TypedSyntaxNode for Expr {
             Expr::ExprMissing(x) => x.as_syntax_node(),
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn stable_ptr(&self) -> Self::StablePtr {
@@ -835,7 +835,7 @@ impl TypedSyntaxNode for ExprList {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn stable_ptr(&self) -> Self::StablePtr {
@@ -888,7 +888,7 @@ impl TypedSyntaxNode for ExprMissing {
             }
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -938,7 +938,7 @@ impl TypedSyntaxNode for OptionGenericArgs {
             OptionGenericArgs::Some(x) => x.as_syntax_node(),
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn stable_ptr(&self) -> Self::StablePtr {
@@ -995,7 +995,7 @@ impl TypedSyntaxNode for OptionGenericArgsEmpty {
             }
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -1040,7 +1040,7 @@ impl TypedSyntaxNode for OptionGenericArgsSome {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn stable_ptr(&self) -> Self::StablePtr {
@@ -1099,7 +1099,7 @@ impl TypedSyntaxNode for PathSegment {
             }
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -1144,7 +1144,7 @@ impl TypedSyntaxNode for ExprPath {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn stable_ptr(&self) -> Self::StablePtr {
@@ -1200,7 +1200,7 @@ impl TypedSyntaxNode for ExprLiteral {
             }
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -1274,7 +1274,7 @@ impl TypedSyntaxNode for ExprParenthesized {
             }
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -1336,7 +1336,7 @@ impl TypedSyntaxNode for ExprUnary {
             }
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -1401,7 +1401,7 @@ impl TypedSyntaxNode for ExprBinary {
             }
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -1471,7 +1471,7 @@ impl TypedSyntaxNode for ExprTuple {
             }
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -1545,7 +1545,7 @@ impl TypedSyntaxNode for ExprListParenthesized {
             }
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -1611,7 +1611,7 @@ impl TypedSyntaxNode for ExprFunctionCall {
             }
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -1677,7 +1677,7 @@ impl TypedSyntaxNode for ExprStructCtorCall {
             }
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -1751,7 +1751,7 @@ impl TypedSyntaxNode for ExprBlock {
             }
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -1799,7 +1799,7 @@ impl TypedSyntaxNode for Pattern {
             Pattern::Literal(x) => x.as_syntax_node(),
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn stable_ptr(&self) -> Self::StablePtr {
@@ -1866,7 +1866,7 @@ impl TypedSyntaxNode for MatchArm {
             }
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -1911,7 +1911,7 @@ impl TypedSyntaxNode for MatchArms {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn stable_ptr(&self) -> Self::StablePtr {
@@ -1992,7 +1992,7 @@ impl TypedSyntaxNode for ExprMatch {
             }
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -2054,7 +2054,7 @@ impl TypedSyntaxNode for TypeClause {
             }
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -2104,7 +2104,7 @@ impl TypedSyntaxNode for OptionTypeClause {
             OptionTypeClause::TypeClause(x) => x.as_syntax_node(),
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn stable_ptr(&self) -> Self::StablePtr {
@@ -2157,7 +2157,7 @@ impl TypedSyntaxNode for NonOptionTypeClause {
             NonOptionTypeClause::NonOptionTypeClauseMissing(x) => x.as_syntax_node(),
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn stable_ptr(&self) -> Self::StablePtr {
@@ -2214,7 +2214,7 @@ impl TypedSyntaxNode for NonOptionTypeClauseMissing {
             }
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -2274,7 +2274,7 @@ impl TypedSyntaxNode for OptionTypeClauseEmpty {
             }
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -2340,7 +2340,7 @@ impl TypedSyntaxNode for ReturnTypeClause {
             }
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -2390,7 +2390,7 @@ impl TypedSyntaxNode for OptionReturnTypeClause {
             OptionReturnTypeClause::ReturnTypeClause(x) => x.as_syntax_node(),
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn stable_ptr(&self) -> Self::StablePtr {
@@ -2447,7 +2447,7 @@ impl TypedSyntaxNode for OptionReturnTypeClauseEmpty {
             }
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -2511,7 +2511,7 @@ impl TypedSyntaxNode for Statement {
             Statement::StatementMissing(x) => x.as_syntax_node(),
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn stable_ptr(&self) -> Self::StablePtr {
@@ -2553,7 +2553,7 @@ impl TypedSyntaxNode for StatementList {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn stable_ptr(&self) -> Self::StablePtr {
@@ -2610,7 +2610,7 @@ impl TypedSyntaxNode for StatementMissing {
             }
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -2629,13 +2629,13 @@ impl StatementLet {
     pub fn new_green(
         db: &dyn SyntaxGroup,
         letkw: GreenId,
-        lhs: GreenId,
+        name: GreenId,
         type_clause: GreenId,
         eq: GreenId,
         rhs: GreenId,
         semicolon: GreenId,
     ) -> GreenId {
-        let children: Vec<GreenId> = vec![letkw, lhs, type_clause, eq, rhs, semicolon];
+        let children: Vec<GreenId> = vec![letkw, name, type_clause, eq, rhs, semicolon];
         let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::StatementLet,
@@ -2646,7 +2646,7 @@ impl StatementLet {
     pub fn letkw(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn lhs(&self, db: &dyn SyntaxGroup) -> Terminal {
+    pub fn name(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[1].clone())
     }
     pub fn type_clause(&self, db: &dyn SyntaxGroup) -> OptionTypeClause {
@@ -2665,7 +2665,7 @@ impl StatementLet {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct StatementLetPtr(SyntaxStablePtrId);
 impl StatementLetPtr {
-    pub fn lhs_green(self, db: &dyn SyntaxGroup) -> GreenId {
+    pub fn name_green(self, db: &dyn SyntaxGroup) -> GreenId {
         let ptr = db.lookup_intern_stable_ptr(self.0);
         if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
             key_fields[0]
@@ -2708,7 +2708,7 @@ impl TypedSyntaxNode for StatementLet {
             }
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -2756,7 +2756,7 @@ impl TypedSyntaxNode for OptionSemicolon {
             OptionSemicolon::Some(x) => x.as_syntax_node(),
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn stable_ptr(&self) -> Self::StablePtr {
@@ -2813,7 +2813,7 @@ impl TypedSyntaxNode for OptionSemicolonEmpty {
             }
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -2875,7 +2875,7 @@ impl TypedSyntaxNode for StatementExpr {
             }
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -2945,7 +2945,7 @@ impl TypedSyntaxNode for StatementReturn {
             }
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -2961,8 +2961,8 @@ pub struct Param {
     children: Vec<SyntaxNode>,
 }
 impl Param {
-    pub fn new_green(db: &dyn SyntaxGroup, identifier: GreenId, type_clause: GreenId) -> GreenId {
-        let children: Vec<GreenId> = vec![identifier, type_clause];
+    pub fn new_green(db: &dyn SyntaxGroup, name: GreenId, type_clause: GreenId) -> GreenId {
+        let children: Vec<GreenId> = vec![name, type_clause];
         let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::Param,
@@ -2970,7 +2970,7 @@ impl Param {
             width,
         }))
     }
-    pub fn identifier(&self, db: &dyn SyntaxGroup) -> Terminal {
+    pub fn name(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[0].clone())
     }
     pub fn type_clause(&self, db: &dyn SyntaxGroup) -> NonOptionTypeClause {
@@ -2980,7 +2980,7 @@ impl Param {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ParamPtr(SyntaxStablePtrId);
 impl ParamPtr {
-    pub fn identifier_green(self, db: &dyn SyntaxGroup) -> GreenId {
+    pub fn name_green(self, db: &dyn SyntaxGroup) -> GreenId {
         let ptr = db.lookup_intern_stable_ptr(self.0);
         if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
             key_fields[0]
@@ -3016,7 +3016,7 @@ impl TypedSyntaxNode for Param {
             }
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -3061,7 +3061,7 @@ impl TypedSyntaxNode for ParamList {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn stable_ptr(&self) -> Self::StablePtr {
@@ -3132,7 +3132,7 @@ impl TypedSyntaxNode for ParamListParenthesized {
             }
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -3202,7 +3202,7 @@ impl TypedSyntaxNode for ParamListBraced {
             }
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -3285,7 +3285,7 @@ impl TypedSyntaxNode for FunctionSignature {
             }
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -3298,7 +3298,7 @@ impl TypedSyntaxNode for FunctionSignature {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum Item {
     Module(ItemModule),
-    Function(ItemFunction),
+    FreeFunction(ItemFreeFunction),
     ExternFunction(ItemExternFunction),
     ExternType(ItemExternType),
     Trait(ItemTrait),
@@ -3318,8 +3318,8 @@ impl TypedSyntaxNode for Item {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => match internal.kind {
                 SyntaxKind::ItemModule => Item::Module(ItemModule::from_syntax_node(db, node)),
-                SyntaxKind::ItemFunction => {
-                    Item::Function(ItemFunction::from_syntax_node(db, node))
+                SyntaxKind::ItemFreeFunction => {
+                    Item::FreeFunction(ItemFreeFunction::from_syntax_node(db, node))
                 }
                 SyntaxKind::ItemExternFunction => {
                     Item::ExternFunction(ItemExternFunction::from_syntax_node(db, node))
@@ -3345,7 +3345,7 @@ impl TypedSyntaxNode for Item {
     fn as_syntax_node(&self) -> SyntaxNode {
         match self {
             Item::Module(x) => x.as_syntax_node(),
-            Item::Function(x) => x.as_syntax_node(),
+            Item::FreeFunction(x) => x.as_syntax_node(),
             Item::ExternFunction(x) => x.as_syntax_node(),
             Item::ExternType(x) => x.as_syntax_node(),
             Item::Trait(x) => x.as_syntax_node(),
@@ -3355,7 +3355,7 @@ impl TypedSyntaxNode for Item {
             Item::Use(x) => x.as_syntax_node(),
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn stable_ptr(&self) -> Self::StablePtr {
@@ -3397,7 +3397,7 @@ impl TypedSyntaxNode for ItemList {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn stable_ptr(&self) -> Self::StablePtr {
@@ -3473,7 +3473,7 @@ impl TypedSyntaxNode for ItemModule {
             }
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -3484,11 +3484,11 @@ impl TypedSyntaxNode for ItemModule {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct ItemFunction {
+pub struct ItemFreeFunction {
     node: SyntaxNode,
     children: Vec<SyntaxNode>,
 }
-impl ItemFunction {
+impl ItemFreeFunction {
     pub fn new_green(
         db: &dyn SyntaxGroup,
         funckw: GreenId,
@@ -3499,7 +3499,7 @@ impl ItemFunction {
         let children: Vec<GreenId> = vec![funckw, name, signature, body];
         let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
-            kind: SyntaxKind::ItemFunction,
+            kind: SyntaxKind::ItemFreeFunction,
             children,
             width,
         }))
@@ -3518,8 +3518,8 @@ impl ItemFunction {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ItemFunctionPtr(SyntaxStablePtrId);
-impl ItemFunctionPtr {
+pub struct ItemFreeFunctionPtr(SyntaxStablePtrId);
+impl ItemFreeFunctionPtr {
     pub fn name_green(self, db: &dyn SyntaxGroup) -> GreenId {
         let ptr = db.lookup_intern_stable_ptr(self.0);
         if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
@@ -3529,11 +3529,11 @@ impl ItemFunctionPtr {
         }
     }
 }
-impl TypedSyntaxNode for ItemFunction {
-    type StablePtr = ItemFunctionPtr;
+impl TypedSyntaxNode for ItemFreeFunction {
+    type StablePtr = ItemFreeFunctionPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
-            kind: SyntaxKind::ItemFunction,
+            kind: SyntaxKind::ItemFreeFunction,
             children: vec![
                 Terminal::missing(db),
                 Terminal::missing(db),
@@ -3546,29 +3546,33 @@ impl TypedSyntaxNode for ItemFunction {
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => {
-                if internal.kind != SyntaxKind::ItemFunction {
+                if internal.kind != SyntaxKind::ItemFreeFunction {
                     panic!(
                         "Unexpected SyntaxKind {:?}. Expected {:?}.",
                         internal.kind,
-                        SyntaxKind::ItemFunction,
+                        SyntaxKind::ItemFreeFunction,
                     );
                 }
                 let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
-                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::ItemFunction,);
+                panic!(
+                    "Unexpected Token {:?}. Expected {:?}.",
+                    token,
+                    SyntaxKind::ItemFreeFunction,
+                );
             }
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
     fn stable_ptr(&self) -> Self::StablePtr {
-        ItemFunctionPtr(self.node.0.stable_ptr)
+        ItemFreeFunctionPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -3658,7 +3662,7 @@ impl TypedSyntaxNode for ItemExternFunction {
             }
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -3704,7 +3708,16 @@ impl ItemExternType {
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ItemExternTypePtr(SyntaxStablePtrId);
-impl ItemExternTypePtr {}
+impl ItemExternTypePtr {
+    pub fn name_green(self, db: &dyn SyntaxGroup) -> GreenId {
+        let ptr = db.lookup_intern_stable_ptr(self.0);
+        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
+            key_fields[0]
+        } else {
+            panic!("Unexpected key field query on root.");
+        }
+    }
+}
 impl TypedSyntaxNode for ItemExternType {
     type StablePtr = ItemExternTypePtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
@@ -3737,7 +3750,7 @@ impl TypedSyntaxNode for ItemExternType {
             }
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -3830,7 +3843,7 @@ impl TypedSyntaxNode for ItemTrait {
             }
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -3933,7 +3946,7 @@ impl TypedSyntaxNode for ItemImpl {
             }
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -4026,7 +4039,7 @@ impl TypedSyntaxNode for ItemStruct {
             }
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -4109,7 +4122,7 @@ impl TypedSyntaxNode for ItemEnum {
             }
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -4188,7 +4201,7 @@ impl TypedSyntaxNode for ItemUse {
             }
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -4250,7 +4263,7 @@ impl TypedSyntaxNode for SyntaxFile {
             }
         }
     }
-    fn from_ptr(db: &dyn SyntaxGroup, root: SyntaxFile, ptr: Self::StablePtr) -> Self {
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn as_syntax_node(&self) -> SyntaxNode {
