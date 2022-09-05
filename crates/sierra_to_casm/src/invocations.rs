@@ -127,11 +127,11 @@ fn handle_felt_op(
     };
 
     let ref_expression = match (expr_a, expr_b) {
-        (ResOperand::Deref(a), ResOperand::Deref(b)) => {
-            BinOpOperand { op, a: *a, b: DerefOrImmediate::Deref(*b) }
+        (ResOperand::Deref(lhs), ResOperand::Deref(rhs)) => {
+            BinOpOperand { op, lhs: *lhs, rhs: DerefOrImmediate::Deref(*rhs) }
         }
-        (ResOperand::Deref(a), ResOperand::Immediate(b)) => {
-            BinOpOperand { op, a: *a, b: DerefOrImmediate::Immediate(*b) }
+        (ResOperand::Deref(lhs), ResOperand::Immediate(rhs)) => {
+            BinOpOperand { op, lhs: *lhs, rhs: DerefOrImmediate::Immediate(*rhs) }
         }
         _ => return Err(InvocationError::InvalidReferenceExpressionForArgument),
     };

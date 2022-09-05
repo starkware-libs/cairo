@@ -24,9 +24,9 @@ fn test_immediate_format() {
 
 #[test]
 fn test_bin_op_format() {
-    let a = DerefOperand { register: Register::FP, offset: -3 };
-    let b = ImmediateOperand { value: 1400 };
+    let lhs = DerefOperand { register: Register::FP, offset: -3 };
+    let rhs = ImmediateOperand { value: 1400 };
 
-    let bin_op = BinOpOperand { op: Operation::Mul, a, b: DerefOrImmediate::Immediate(b) };
+    let bin_op = BinOpOperand { op: Operation::Mul, lhs, rhs: DerefOrImmediate::Immediate(rhs) };
     assert_eq!(bin_op.to_string(), "[fp + -3] * 1400")
 }

@@ -86,8 +86,8 @@ impl ApplyApChange for BinOpOperand {
     fn apply_ap_change(self, ap_change: ApChange) -> Result<Self, ApChangeError> {
         Ok(BinOpOperand {
             op: self.op,
-            a: self.a.apply_ap_change(ap_change)?,
-            b: self.b.apply_ap_change(ap_change)?,
+            lhs: self.lhs.apply_ap_change(ap_change)?,
+            rhs: self.rhs.apply_ap_change(ap_change)?,
         })
     }
 }

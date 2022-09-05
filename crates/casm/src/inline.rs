@@ -106,18 +106,18 @@ macro_rules! deref_or_immediate {
 
 #[macro_export]
 macro_rules! res {
-    ($a:tt + $b:tt) => {
+    ($lhs:tt + $rhs:tt) => {
         ResOperand::BinOp(BinOpOperand {
             op: Operation::Add,
-            a: $crate::deref!($a),
-            b: $crate::deref_or_immediate!($b),
+            lhs: $crate::deref!($lhs),
+            rhs: $crate::deref_or_immediate!($rhs),
         })
     };
-    ($a:tt * $b:tt) => {
+    ($lhs:tt * $rhs:tt) => {
         ResOperand::BinOp(BinOpOperand {
             op: Operation::Add,
-            a: $crate::deref!($a),
-            b: $crate::deref_or_immediate!($b),
+            lhs: $crate::deref!($lhs),
+            rhs: $crate::deref_or_immediate!($rhs),
         })
     };
     ([$a:tt]) => {

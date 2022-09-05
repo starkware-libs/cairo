@@ -110,7 +110,7 @@ impl AssertEqInstruction {
             ResOperand::Deref(_) => 1,
             ResOperand::DoubleDeref(_) => 1,
             ResOperand::Immediate(_) => 2,
-            ResOperand::BinOp(op) => match op.b {
+            ResOperand::BinOp(op) => match op.rhs {
                 DerefOrImmediate::Immediate(_) => 2,
                 DerefOrImmediate::Deref(_) => 1,
             },

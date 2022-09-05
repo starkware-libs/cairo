@@ -9,8 +9,8 @@ fn test_res_operand_ap_change() {
 
     let operand = ResOperand::BinOp(BinOpOperand {
         op: Operation::Mul,
-        a: fp_based_operand,
-        b: DerefOrImmediate::Deref(ap_based_operand),
+        lhs: fp_based_operand,
+        rhs: DerefOrImmediate::Deref(ap_based_operand),
     });
 
     assert_eq!(
