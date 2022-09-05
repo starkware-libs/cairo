@@ -27,6 +27,7 @@ fn good_flow() {
             type NonZeroFelt = NonZero<felt>;
 
             libfunc felt_add = felt_add;
+            libfunc felt_sub = felt_sub;
             libfunc felt_dup = felt_dup;
             libfunc felt_jump_nz = felt_jump_nz;
             libfunc felt_unwrap_nz = unwrap_nz<felt>;
@@ -52,10 +53,12 @@ fn good_flow() {
             return ([1], [2]);                              // #14
 
             felt_unwrap_nz([1]) -> ([1]);                   // #15
-            store_temp_felt([1]) -> ([1]);                  // #16
-            store_temp_felt([2]) -> ([2]);                  // #17
-            call_foo([1], [2]) -> ([1], [2]);               // #18
-            return ([1], [2]);                              // #19
+            felt_dup([2]) -> ([2], [3]);                    // #16
+            felt_sub([1], [3]) -> ([1]);                    // #17
+            store_temp_felt([1]) -> ([1]);                  // #18
+            store_temp_felt([2]) -> ([2]);                  // #19
+            call_foo([1], [2]) -> ([1], [2]);               // #20
+            return ([1], [2]);                              // #21
 
             test_program@0([1]: felt, [2]: felt) -> ();
             foo@10([1]: felt, [2]: felt) -> (felt, felt);
@@ -74,7 +77,7 @@ fn good_flow() {
             [ap + 0] = [fp + -2], ap++;
             [ap + 0] = [fp + -2], ap++;
             ret;
-            [ap + 0] = [fp + -3], ap++;
+            [fp + -3] = [ap + 0] + [fp + -2], ap++;
             [ap + 0] = [fp + -2], ap++;
             call rel -6;
             ret;
