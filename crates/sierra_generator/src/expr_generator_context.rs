@@ -92,7 +92,9 @@ impl<'a> ExprGeneratorContext<'a> {
     pub fn store_temp_libfunc_id(&self, ty: semantic::TypeId) -> sierra::ids::ConcreteLibFuncId {
         self.db.intern_concrete_lib_func(sierra::program::ConcreteLibFuncLongId {
             generic_id: sierra::ids::GenericLibFuncId::from_string("store_temp"),
-            args: vec![sierra::program::GenericArg::Type(self.db.intern_type_id(ty))],
+            args: vec![sierra::program::GenericArg::Type(
+                self.db.get_concrete_type_id(ty).expect("got unexpected diagnostics").unwrap(),
+            )],
         })
     }
 

@@ -28,10 +28,17 @@ pub fn generate_function_code(
         .map(|param| {
             let sierra_var = context.allocate_sierra_variable();
             context.register_variable(defs::ids::VarId::Param(param.id), sierra_var.clone());
-            sierra::program::Param { id: sierra_var, ty: db.intern_type_id(param.ty) }
+            sierra::program::Param {
+                id: sierra_var,
+                ty: db.get_concrete_type_id(param.ty).expect("got unexpected diagnostics").unwrap(),
+            }
         })
         .collect();
-    let ret_types = vec![db.intern_type_id(function_semantic.signature.return_type)];
+    let ret_types = vec![
+        db.get_concrete_type_id(function_semantic.signature.return_type)
+            .expect("got unexpected diagnostics")
+            .unwrap(),
+    ];
 
     let mut statements: Vec<pre_sierra::Statement> = vec![label];
 
