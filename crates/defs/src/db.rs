@@ -29,8 +29,6 @@ pub trait DefsGroup: FilesGroup + SyntaxGroup + AsSyntaxGroup + ParserGroup {
     #[salsa::interned]
     fn intern_param(&self, id: ParamLongId) -> ParamId;
     #[salsa::interned]
-    fn intern_block(&self, id: BlockLongId) -> BlockId;
-    #[salsa::interned]
     fn intern_local_var(&self, id: LocalVarLongId) -> LocalVarId;
 
     // Module level resolving.

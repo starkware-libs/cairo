@@ -46,19 +46,7 @@ macro_rules! id_by_stable_ptr {
             pub fn stable_ptr(self, db: &dyn DefsGroup) -> <$ast_ty as TypedSyntaxNode>::StablePtr {
                 db.$lookup(self).1
             }
-        }
-    };
-}
-/// A trait for ids that have a "name" getter
-pub trait HasName {
-    fn name(self, db: &dyn DefsGroup) -> SmolStr;
-}
-/// Implements HasName for ids whose stable pointer has "name" as a key field.
-/// See `stable_ptr.rs` for more details.
-macro_rules! has_name_key_field {
-    ($short_id:ident, $lookup:ident) => {
-        impl HasName for $short_id {
-            fn name(self, db: &dyn DefsGroup) -> SmolStr {
+            pub fn name(self, db: &dyn DefsGroup) -> SmolStr {
                 let syntax_db = db.as_syntax_group();
                 let terminal_green = db.$lookup(self).1.name_green(syntax_db);
                 let terminal_ast = ast::Terminal::from_syntax_node(
@@ -93,14 +81,9 @@ id_by_stable_ptr!(
 );
 id_by_stable_ptr!(StructId, StructLongId, ast::ItemStruct, lookup_intern_struct);
 id_by_stable_ptr!(ExternTypeId, ExternTypeLongId, ast::ItemExternType, lookup_intern_extern_type);
-has_name_key_field!(FreeFunctionId, lookup_intern_free_function);
-has_name_key_field!(ExternFunctionId, lookup_intern_extern_function);
-has_name_key_field!(StructId, lookup_intern_struct);
-has_name_key_field!(ExternTypeId, lookup_intern_extern_type);
 
 // Struct items.
 id_by_stable_ptr!(MemberId, MemberLongId, ast::Param, lookup_intern_member);
-has_name_key_field!(MemberId, lookup_intern_member);
 
 /// Id for any variable definition.
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
@@ -110,6 +93,12 @@ pub enum VarId {
     // TODO(spapini): Add var from pattern matching.
 }
 impl VarId {
+    pub fn module(self, db: &dyn DefsGroup) -> ModuleId {
+        match self {
+            VarId::Param(id) => id.module(db),
+            VarId::Local(id) => id.module(db),
+        }
+    }
     pub fn name(&self, db: &dyn DefsGroup) -> SmolStr {
         match self {
             VarId::Param(id) => id.name(db),
@@ -118,34 +107,9 @@ impl VarId {
     }
 }
 
-/// Id for anything that can directly contain a parameter.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
-pub enum ParamContainerId {
-    FreeFunction(FreeFunctionId),
-    ExternFunction(ExternFunctionId),
-}
-impl ParamContainerId {
-    pub fn module(&self, db: &dyn DefsGroup) -> ModuleId {
-        match *self {
-            ParamContainerId::FreeFunction(id) => db.lookup_intern_free_function(id).0,
-            ParamContainerId::ExternFunction(id) => db.lookup_intern_extern_function(id).0,
-        }
-    }
-}
 id_by_stable_ptr!(ParamId, ParamLongId, ast::Param, lookup_intern_param);
-has_name_key_field!(ParamId, lookup_intern_param);
-id_by_stable_ptr!(BlockId, BlockLongId, ast::ExprBlock, lookup_intern_block);
 // TODO(spapini): change this to a binding inside a pattern.
 id_by_stable_ptr!(LocalVarId, LocalVarLongId, ast::StatementLet, lookup_intern_local_var);
-has_name_key_field!(LocalVarId, lookup_intern_local_var);
-
-/// Id for any function definition that also contains a body with code.
-/// For example, 'extern func' is not included.
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub enum FunctionWithBodyId {
-    FreeFunction(FreeFunctionId),
-    // TODO(spapini): impl functions
-}
 
 /// Id for anything that can be a "Go to definition" result.
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
@@ -154,6 +118,7 @@ pub enum Symbol {
     Var(VarId),
 }
 
+// Enums of ids.
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub enum GenericFunctionId {
     Free(FreeFunctionId),
@@ -163,16 +128,35 @@ pub enum GenericFunctionId {
 impl GenericFunctionId {
     pub fn module(&self, db: &dyn DefsGroup) -> ModuleId {
         match self {
-            GenericFunctionId::Free(item) => item.module(db),
-            GenericFunctionId::Extern(item) => item.module(db),
+            GenericFunctionId::Free(id) => id.module(db),
+            GenericFunctionId::Extern(id) => id.module(db),
+        }
+    }
+    pub fn name(&self, db: &dyn DefsGroup) -> SmolStr {
+        match self {
+            GenericFunctionId::Free(id) => id.name(db),
+            GenericFunctionId::Extern(id) => id.name(db),
         }
     }
 }
 
-/// Type instance.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum GenericTypeId {
     Struct(StructId),
     Extern(ExternTypeId),
     // TODO(spapini): enums, associated types in impls.
+}
+impl GenericTypeId {
+    pub fn module(&self, db: &dyn DefsGroup) -> ModuleId {
+        match self {
+            GenericTypeId::Struct(id) => id.module(db),
+            GenericTypeId::Extern(id) => id.module(db),
+        }
+    }
+    pub fn name(&self, db: &dyn DefsGroup) -> SmolStr {
+        match self {
+            GenericTypeId::Struct(id) => id.name(db),
+            GenericTypeId::Extern(id) => id.name(db),
+        }
+    }
 }
