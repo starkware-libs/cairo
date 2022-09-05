@@ -27,6 +27,7 @@ pub fn generate_program_code(
     // and add them to `functions`.
     for (_name, item) in module_items.items.iter() {
         match item {
+            ModuleItemId::Use(_) => todo!(),
             ModuleItemId::FreeFunction(free_function_id) => {
                 let function: Arc<pre_sierra::Function> =
                     db.get_function_code(*free_function_id).unwrap(diagnostics)?;

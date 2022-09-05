@@ -17,6 +17,8 @@ use crate::ids::*;
 #[salsa::query_group(DefsDatabase)]
 pub trait DefsGroup: FilesGroup + SyntaxGroup + AsSyntaxGroup + ParserGroup {
     #[salsa::interned]
+    fn intern_use(&self, id: UseLongId) -> UseId;
+    #[salsa::interned]
     fn intern_free_function(&self, id: FreeFunctionLongId) -> FreeFunctionId;
     #[salsa::interned]
     fn intern_struct(&self, id: StructLongId) -> StructId;
@@ -63,6 +65,7 @@ pub trait AsDefsGroup {
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ModuleData {
+    pub uses: OrderedHashMap<UseId, ast::ItemUse>,
     pub free_functions: OrderedHashMap<FreeFunctionId, ast::ItemFreeFunction>,
     pub structs: OrderedHashMap<StructId, ast::ItemStruct>,
     pub extern_types: OrderedHashMap<ExternTypeId, ast::ItemExternType>,
@@ -87,6 +90,10 @@ fn module_data(
     for item in syntax_file.items(syntax_db).elements(syntax_db) {
         match item {
             ast::Item::Module(_module) => todo!(),
+            ast::Item::Use(us) => {
+                let item_id = db.intern_use(UseLongId(module_id, us.stable_ptr()));
+                res.uses.insert(item_id, us);
+            }
             ast::Item::FreeFunction(function) => {
                 let item_id =
                     db.intern_free_function(FreeFunctionLongId(module_id, function.stable_ptr()));
@@ -111,7 +118,6 @@ fn module_data(
                 res.structs.insert(item_id, strct);
             }
             ast::Item::Enum(_en) => todo!(),
-            ast::Item::Use(_us) => todo!(),
         }
     }
     Some(res)
@@ -125,8 +131,17 @@ fn module_items(
 ) -> Option<ModuleItems> {
     let syntax_db = db.as_syntax_group();
     let module_data = db.module_data(module_id).unwrap(diagnostics)?;
+    // TODO(spapini): Prune other items if name is missing.
     Some(ModuleItems {
         items: chain!(
+            module_data.uses.iter().flat_map(|(use_id, syntax)| (syntax
+                .name(syntax_db)
+                .elements(syntax_db)
+                .last()
+                .map(|segment| (
+                    segment.ident(syntax_db).text(syntax_db),
+                    ModuleItemId::Use(*use_id)
+                )))),
             module_data.free_functions.iter().map(|(free_function_id, syntax)| (
                 syntax.name(syntax_db).text(syntax_db),
                 ModuleItemId::FreeFunction(*free_function_id),
@@ -167,6 +182,7 @@ fn module_resolve_generic_function(
     name: SmolStr,
 ) -> Option<GenericFunctionId> {
     match db.module_item_by_name(module_id, name).unwrap(diagnostics)? {
+        ModuleItemId::Use(_) => None,
         ModuleItemId::FreeFunction(item) => Some(GenericFunctionId::Free(item)),
         ModuleItemId::Struct(_) => None,
         ModuleItemId::ExternType(_) => None,
@@ -182,6 +198,7 @@ fn module_resolve_generic_type(
     name: SmolStr,
 ) -> Option<GenericTypeId> {
     match db.module_item_by_name(module_id, name).unwrap(diagnostics)? {
+        ModuleItemId::Use(_) => None,
         ModuleItemId::FreeFunction(_) => None,
         ModuleItemId::Struct(item) => Some(GenericTypeId::Struct(item)),
         ModuleItemId::ExternType(item) => Some(GenericTypeId::Extern(item)),

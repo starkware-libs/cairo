@@ -26,6 +26,7 @@ fn token_kind_to_text(kind: TokenKind) -> Vec<&'static str> {
         TokenKind::True => vec!["true"],
         TokenKind::Return => vec!["return"],
         TokenKind::Match => vec!["match"],
+        TokenKind::Use => vec!["use"],
         TokenKind::And => vec!["&"],
         TokenKind::AndAnd => vec!["&&"],
         TokenKind::Colon => vec![":"],
@@ -79,6 +80,7 @@ fn token_kinds() -> Vec<TokenKind> {
         TokenKind::Let,
         TokenKind::Return,
         TokenKind::Match,
+        TokenKind::Use,
         TokenKind::And,
         TokenKind::AndAnd,
         TokenKind::OrOr,
@@ -161,6 +163,7 @@ fn is_identifier_like(kind: TokenKind) -> bool {
             | TokenKind::Let
             | TokenKind::Return
             | TokenKind::Match
+            | TokenKind::Use
             | TokenKind::Underscore
     )
 }

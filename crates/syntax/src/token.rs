@@ -31,6 +31,7 @@ pub enum TokenKind {
     Let,
     Return,
     Match,
+    Use,
 
     // Punctuation.
     And,

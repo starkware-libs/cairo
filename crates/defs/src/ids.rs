@@ -62,11 +62,13 @@ macro_rules! id_by_stable_ptr {
 /// Id for direct children of a module.
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub enum ModuleItemId {
+    Use(UseId),
     FreeFunction(FreeFunctionId),
     Struct(StructId),
     ExternType(ExternTypeId),
     ExternFunction(ExternFunctionId),
 }
+id_by_stable_ptr!(UseId, UseLongId, ast::ItemUse, lookup_intern_use);
 id_by_stable_ptr!(
     FreeFunctionId,
     FreeFunctionLongId,
