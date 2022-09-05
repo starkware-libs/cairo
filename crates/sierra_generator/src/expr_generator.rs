@@ -179,10 +179,10 @@ fn handle_felt_match(
                 generate_expression_code(context, expr_match.matched_expr);
             statements.extend(match_expr_statements);
 
-            // Add the jump_nz() statement.
+            // Add the felt_jump_nz() statement.
             statements.push(pre_sierra::Statement::Sierra(program::GenStatement::Invocation(
                 program::GenInvocation {
-                    libfunc_id: context.jump_nz_libfunc_id(),
+                    libfunc_id: context.felt_jump_nz_libfunc_id(),
                     args: vec![match_expr_res],
                     branches: vec![
                         // If not zero, jump to the "otherwise" block.

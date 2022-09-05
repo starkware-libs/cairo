@@ -140,7 +140,7 @@ fn test_match() {
             // let x = 7;
             "felt_const<7>() -> ([0])",
             // match {
-            "jump_nz([0]) { label0() fallthrough() }",
+            "felt_jump_nz([0]) { label0() fallthrough() }",
             // Branch 0.
             "store_temp<[0]>([0]) -> ([1])",
             "jump() { label1() }",
