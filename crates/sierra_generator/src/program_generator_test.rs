@@ -26,6 +26,8 @@ fn test_program_generator() {
     assert_eq!(
         program.to_string(),
         indoc! {"
+            type [0] = felt;
+            type [1] = NonZero<[0]>;
 
             libfunc [0] = felt_const<5>;
             libfunc [1] = store_temp<[0]>;
