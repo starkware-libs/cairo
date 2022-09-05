@@ -32,6 +32,8 @@ pub struct Function {
     pub parameters: Vec<program::Param>,
     /// The return types from the function.
     pub ret_types: Vec<sierra::ids::ConcreteTypeId>,
+    /// All types the function used in its statements.
+    pub all_used_types: Vec<sierra::ids::ConcreteTypeId>,
 }
 
 /// Represents a pre-sierra statement - a statement before label-resolution.

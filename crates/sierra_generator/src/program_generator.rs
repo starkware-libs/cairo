@@ -38,7 +38,14 @@ pub fn generate_program_code(
             ModuleItemId::ExternFunction(_) => todo!(),
         }
     }
-
+    let type_declarations =
+        OrderedHashSet::from_iter(functions.iter().flat_map(|f| &f.all_used_types).cloned())
+            .into_iter()
+            .map(|type_id| program::TypeDeclaration {
+                id: type_id.clone(),
+                long_id: db.lookup_intern_concrete_type(type_id),
+            })
+            .collect();
     let libfunc_declarations =
         generate_libfunc_declarations(db, collect_used_libfuncs(&statements).iter());
 
@@ -47,8 +54,7 @@ pub fn generate_program_code(
     let resolved_statements = resolve_labels(statements, &label_replacer);
 
     Some(program::Program {
-        // TODO(lior): Fill type_declarations.
-        type_declarations: vec![],
+        type_declarations,
         libfunc_declarations,
         statements: resolved_statements,
         funcs: functions

@@ -2,6 +2,7 @@ use std::collections::hash_map;
 
 use defs::ids::{FreeFunctionId, HasName};
 use smol_str::SmolStr;
+use utils::ordered_hash_set::OrderedHashSet;
 use utils::unordered_hash_map::UnorderedHashMap;
 
 use crate::db::SierraGenGroup;
@@ -15,6 +16,7 @@ pub struct ExprGeneratorContext<'a> {
     var_id_allocator: IdAllocator,
     label_id_allocator: IdAllocator,
     variables: UnorderedHashMap<defs::ids::VarId, sierra::ids::VarId>,
+    used_types: OrderedHashSet<sierra::ids::ConcreteTypeId>,
 }
 impl<'a> ExprGeneratorContext<'a> {
     /// Constructs an empty [ExprGeneratorContext].
@@ -25,6 +27,7 @@ impl<'a> ExprGeneratorContext<'a> {
             var_id_allocator: IdAllocator::default(),
             label_id_allocator: IdAllocator::default(),
             variables: UnorderedHashMap::default(),
+            used_types: OrderedHashSet::default(),
         }
     }
 
@@ -72,6 +75,16 @@ impl<'a> ExprGeneratorContext<'a> {
         (pre_sierra::Statement::Label(pre_sierra::Label { id }), id)
     }
 
+    /// Marks a Sierra type as used.
+    pub fn mark_type_used(&mut self, ty: sierra::ids::ConcreteTypeId) {
+        self.used_types.insert(ty);
+    }
+
+    /// Returns all the Sierra types that were marked as used.
+    pub fn get_all_used_types(&self) -> Vec<sierra::ids::ConcreteTypeId> {
+        self.used_types.iter().cloned().collect()
+    }
+
     fn get_extension_id_without_generics(
         &self,
         name: impl Into<SmolStr>,
@@ -82,6 +95,25 @@ impl<'a> ExprGeneratorContext<'a> {
         })
     }
 
+    /// Returns the type id of a the felt type.
+    pub fn get_felt_type_id(&self) -> sierra::ids::ConcreteTypeId {
+        self.db.intern_concrete_type(sierra::program::ConcreteTypeLongId {
+            generic_id: sierra::ids::GenericTypeId::from_string("felt"),
+            args: vec![],
+        })
+    }
+
+    /// Returns the type id of a given type wrapped by NonZero type.
+    pub fn get_non_zero_type_id(
+        &self,
+        ty: sierra::ids::ConcreteTypeId,
+    ) -> sierra::ids::ConcreteTypeId {
+        self.db.intern_concrete_type(sierra::program::ConcreteTypeLongId {
+            generic_id: sierra::ids::GenericTypeId::from_string("NonZero"),
+            args: vec![sierra::program::GenericArg::Type(ty)],
+        })
+    }
+
     pub fn felt_const_libfunc_id(&self, value: usize) -> sierra::ids::ConcreteLibFuncId {
         self.db.intern_concrete_lib_func(sierra::program::ConcreteLibFuncLongId {
             generic_id: sierra::ids::GenericLibFuncId::from_string("felt_const"),
@@ -89,10 +121,14 @@ impl<'a> ExprGeneratorContext<'a> {
         })
     }
 
-    pub fn store_temp_libfunc_id(&self, ty: semantic::TypeId) -> sierra::ids::ConcreteLibFuncId {
+    /// Returns the libfunc id of store temp for the given type.
+    pub fn store_temp_libfunc_id(
+        &self,
+        ty: sierra::ids::ConcreteTypeId,
+    ) -> sierra::ids::ConcreteLibFuncId {
         self.db.intern_concrete_lib_func(sierra::program::ConcreteLibFuncLongId {
             generic_id: sierra::ids::GenericLibFuncId::from_string("store_temp"),
-            args: vec![sierra::program::GenericArg::Type(self.db.intern_type_id(ty))],
+            args: vec![sierra::program::GenericArg::Type(ty)],
         })
     }
 

@@ -31,7 +31,11 @@ pub fn generate_function_code(
             sierra::program::Param { id: sierra_var, ty: db.intern_type_id(param.ty) }
         })
         .collect();
-    let ret_types = vec![db.intern_type_id(function_semantic.signature.return_type)];
+    let ret_type = db.intern_type_id(function_semantic.signature.return_type);
+    for param in &parameters {
+        context.mark_type_used(param.ty.clone());
+    }
+    context.mark_type_used(ret_type.clone());
 
     let mut statements: Vec<pre_sierra::Statement> = vec![label];
 
@@ -42,8 +46,7 @@ pub fn generate_function_code(
     // Copy the result to the top of the stack before returning.
     let return_variable_on_stack = context.allocate_sierra_variable();
     statements.push(simple_statement(
-        // TODO(lior): Use the real type instead of `felt`.
-        context.store_temp_libfunc_id(context.get_db().core_felt_ty()),
+        context.store_temp_libfunc_id(ret_type.clone()),
         &[res],
         &[return_variable_on_stack.clone()],
     ));
@@ -59,6 +62,7 @@ pub fn generate_function_code(
         body: statements,
         entry_point: label_id,
         parameters,
-        ret_types,
+        ret_types: vec![ret_type],
+        all_used_types: context.get_all_used_types(),
     }
 }

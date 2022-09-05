@@ -32,6 +32,7 @@ fn generate_expression_code_by_val(
         semantic::Expr::ExprVar(expr_var) => (vec![], context.get_variable(expr_var.var)),
         semantic::Expr::ExprLiteral(expr_literal) => {
             let tmp_var = context.allocate_sierra_variable();
+            context.mark_type_used(context.get_felt_type_id());
             (
                 vec![simple_statement(
                     context.felt_const_libfunc_id(expr_literal.value),
@@ -103,9 +104,11 @@ fn handle_function_call(
             let mut args_on_stack: Vec<sierra::ids::VarId> = vec![];
             for arg_res in args {
                 let arg_var = context.allocate_sierra_variable();
+                // TODO(lior): Use the real type instead of `felt`.
+                let ty = context.get_felt_type_id();
+                context.mark_type_used(ty.clone());
                 statements.push(simple_statement(
-                    // TODO(lior): Use the real type instead of `felt`.
-                    context.store_temp_libfunc_id(context.get_db().core_felt_ty()),
+                    context.store_temp_libfunc_id(ty),
                     &[arg_res],
                     &[arg_var.clone()],
                 ));
@@ -138,9 +141,11 @@ fn handle_function_call(
             // TODO(lior): Remove the following store_temp once we have a better mechanism of
             //   automatically adding such statements.
             let res_var_on_stack = context.allocate_sierra_variable();
+            let ty = context.get_felt_type_id();
+            context.mark_type_used(ty.clone());
             statements.push(simple_statement(
                 // TODO(lior): Use the real type instead of `felt`.
-                context.store_temp_libfunc_id(context.get_db().core_felt_ty()),
+                context.store_temp_libfunc_id(ty),
                 &[res_var],
                 &[res_var_on_stack.clone()],
             ));
@@ -155,6 +160,11 @@ fn handle_felt_match(
     context: &mut ExprGeneratorContext<'_>,
     expr_match: &semantic::ExprMatch,
 ) -> (Vec<pre_sierra::Statement>, sierra::ids::VarId) {
+    // TODO(lior): Use the real type instead of `felt`.
+    let ty = context.get_felt_type_id();
+    let non_zero_ty = context.get_non_zero_type_id(ty.clone());
+    context.mark_type_used(ty.clone());
+    context.mark_type_used(non_zero_ty);
     match &expr_match.arms[..] {
         [
             semantic::MatchArm { pattern: semantic::Pattern::Literal(literal), expression: block0 },
@@ -207,8 +217,7 @@ fn handle_felt_match(
             let (block0_statements, block0_res) = generate_expression_code(context, *block0);
             statements.extend(block0_statements);
             statements.push(simple_statement(
-                // TODO(lior): Use the real type instead of `felt`.
-                context.store_temp_libfunc_id(context.get_db().core_felt_ty()),
+                context.store_temp_libfunc_id(ty.clone()),
                 &[block0_res],
                 &[output_var.clone()],
             ));
@@ -220,8 +229,7 @@ fn handle_felt_match(
             statements.push(otherwise_label);
             statements.extend(block_otherwise_statements);
             statements.push(simple_statement(
-                // TODO(lior): Use the real type instead of `felt`.
-                context.store_temp_libfunc_id(context.get_db().core_felt_ty()),
+                context.store_temp_libfunc_id(ty),
                 &[block_otherwise_res],
                 &[output_var.clone()],
             ));
