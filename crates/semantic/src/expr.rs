@@ -4,7 +4,7 @@ mod test;
 
 use std::collections::HashMap;
 
-use defs::ids::{GenericFunctionId, VarId};
+use defs::ids::GenericFunctionId;
 use filesystem::ids::ModuleId;
 use itertools::zip_eq;
 use smol_str::SmolStr;
@@ -15,6 +15,7 @@ use crate::corelib::{core_module, unit_ty};
 use crate::db::SemanticGroup;
 use crate::{
     semantic, ConcreteFunctionId, ConcreteFunctionLongId, ExprId, MatchArm, StatementId, TypeId,
+    Variable,
 };
 
 /// Context for computing the semantic model of expression trees.
@@ -24,15 +25,13 @@ pub struct ComputationContext<'ctx> {
     environment: Environment<'ctx>,
 }
 impl<'ctx> ComputationContext<'ctx> {
-    pub fn new(
-        db: &'ctx dyn SemanticGroup,
-        module_id: ModuleId,
-        variables: HashMap<SmolStr, VarId>,
-    ) -> Self {
+    pub fn new(db: &'ctx dyn SemanticGroup, module_id: ModuleId, variables: EnvVariables) -> Self {
         let environment = Environment { parent: None, variables };
         Self { db, module_id, environment }
     }
 }
+
+pub type EnvVariables = HashMap<SmolStr, Variable>;
 
 // TODO(spapini): Consider using identifiers instead of SmolStr everywhere in the code.
 /// A state which contains all the variables defined at the current scope until now, and a pointer
@@ -40,7 +39,7 @@ impl<'ctx> ComputationContext<'ctx> {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Environment<'penv> {
     parent: Option<&'penv Environment<'penv>>,
-    variables: HashMap<SmolStr, VarId>,
+    variables: EnvVariables,
 }
 
 /// Returns the tail expression of the given list of statements, if exists.
@@ -84,7 +83,7 @@ pub fn compute_expr_semantic(ctx: &mut ComputationContext<'_>, syntax: ast::Expr
         ast::Expr::Path(path) => {
             let var = resolve_variable(ctx, path);
             // TODO(spapini): Return the correct variable type, instead of the unit type.
-            semantic::Expr::ExprVar(semantic::ExprVar { var, ty: unit_ty(db) })
+            semantic::Expr::ExprVar(semantic::ExprVar { var: var.id, ty: unit_ty(db) })
         }
         ast::Expr::Literal(literal_syntax) => {
             semantic::Expr::ExprLiteral(literal_to_semantic(ctx, literal_syntax))
@@ -189,7 +188,7 @@ pub fn compute_expr_semantic(ctx: &mut ComputationContext<'_>, syntax: ast::Expr
 }
 
 /// Resolves a variable given a context and a path expression.
-fn resolve_variable(ctx: &mut ComputationContext<'_>, path: ast::ExprPath) -> VarId {
+fn resolve_variable(ctx: &mut ComputationContext<'_>, path: ast::ExprPath) -> Variable {
     let db = ctx.db;
     let syntax_db = db.as_syntax_group();
     let segments = path.elements(syntax_db);
@@ -209,11 +208,11 @@ fn resolve_variable(ctx: &mut ComputationContext<'_>, path: ast::ExprPath) -> Va
 pub fn resolve_variable_by_name(
     ctx: &mut ComputationContext<'_>,
     variable_name: &SmolStr,
-) -> VarId {
+) -> Variable {
     let mut maybe_env = Some(&ctx.environment);
     while let Some(env) = maybe_env {
         if let Some(var) = env.variables.get(variable_name) {
-            return *var;
+            return var.clone();
         }
         maybe_env = env.parent;
     }
