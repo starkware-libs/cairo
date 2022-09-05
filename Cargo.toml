@@ -14,4 +14,5 @@ members = [
     "crates/sierra_to_casm",
     "crates/syntax",
     "crates/syntax_codegen",
+    "tests",
 ]
