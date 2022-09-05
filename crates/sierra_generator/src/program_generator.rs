@@ -38,6 +38,20 @@ pub fn generate_program_code(
             ModuleItemId::ExternFunction(_) => todo!(),
         }
     }
+    // TODO(orizi): Actually find all the required types.
+    let felt_type =
+        db.get_concrete_type_id(db.core_felt_ty()).expect("got unexpected diagnostics").unwrap();
+    let non_zero_felt_type = db.intern_concrete_type(sierra::program::ConcreteTypeLongId {
+        generic_id: sierra::ids::GenericTypeId::from_string("NonZero"),
+        args: vec![sierra::program::GenericArg::Type(felt_type.clone())],
+    });
+    let type_declarations = [felt_type, non_zero_felt_type]
+        .into_iter()
+        .map(|type_id| program::TypeDeclaration {
+            id: type_id.clone(),
+            long_id: db.lookup_intern_concrete_type(type_id),
+        })
+        .collect();
 
     let libfunc_declarations =
         generate_libfunc_declarations(db, collect_used_libfuncs(&statements).iter());
@@ -47,8 +61,7 @@ pub fn generate_program_code(
     let resolved_statements = resolve_labels(statements, &label_replacer);
 
     Some(program::Program {
-        // TODO(lior): Fill type_declarations.
-        type_declarations: vec![],
+        type_declarations,
         libfunc_declarations,
         statements: resolved_statements,
         funcs: functions
