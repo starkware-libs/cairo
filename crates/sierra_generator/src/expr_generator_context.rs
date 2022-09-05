@@ -1,6 +1,6 @@
 use std::collections::hash_map;
 
-use defs::ids::{FreeFunctionId, HasName};
+use defs::ids::{FreeFunctionId, LanguageElementId};
 use smol_str::SmolStr;
 use utils::unordered_hash_map::UnorderedHashMap;
 

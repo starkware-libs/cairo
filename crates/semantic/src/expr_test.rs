@@ -1,6 +1,6 @@
 use assert_matches::assert_matches;
 use defs::db::{AsDefsGroup, DefsDatabase, DefsGroup};
-use defs::ids::{HasName, ModuleItemId, VarId};
+use defs::ids::{LanguageElementId, ModuleItemId, VarId};
 use filesystem::db::{AsFilesGroup, FilesDatabase, FilesGroup};
 use indoc::indoc;
 use parser::db::ParserDatabase;
