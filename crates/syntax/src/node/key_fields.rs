@@ -163,7 +163,7 @@ pub fn get_key_fields(kind: SyntaxKind, children: Vec<GreenId>) -> Vec<GreenId> 
             vec![/* name */ children[1]]
         }
         SyntaxKind::ItemUse => {
-            vec![/* path */ children[1]]
+            vec![/* name */ children[1]]
         }
         SyntaxKind::SyntaxFile => {
             vec![]

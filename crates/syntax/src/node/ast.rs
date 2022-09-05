@@ -3298,6 +3298,7 @@ impl TypedSyntaxNode for FunctionSignature {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum Item {
     Module(ItemModule),
+    Use(ItemUse),
     FreeFunction(ItemFreeFunction),
     ExternFunction(ItemExternFunction),
     ExternType(ItemExternType),
@@ -3305,7 +3306,6 @@ pub enum Item {
     Impl(ItemImpl),
     Struct(ItemStruct),
     Enum(ItemEnum),
-    Use(ItemUse),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ItemPtr(SyntaxStablePtrId);
@@ -3318,6 +3318,7 @@ impl TypedSyntaxNode for Item {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => match internal.kind {
                 SyntaxKind::ItemModule => Item::Module(ItemModule::from_syntax_node(db, node)),
+                SyntaxKind::ItemUse => Item::Use(ItemUse::from_syntax_node(db, node)),
                 SyntaxKind::ItemFreeFunction => {
                     Item::FreeFunction(ItemFreeFunction::from_syntax_node(db, node))
                 }
@@ -3331,7 +3332,6 @@ impl TypedSyntaxNode for Item {
                 SyntaxKind::ItemImpl => Item::Impl(ItemImpl::from_syntax_node(db, node)),
                 SyntaxKind::ItemStruct => Item::Struct(ItemStruct::from_syntax_node(db, node)),
                 SyntaxKind::ItemEnum => Item::Enum(ItemEnum::from_syntax_node(db, node)),
-                SyntaxKind::ItemUse => Item::Use(ItemUse::from_syntax_node(db, node)),
                 _ => panic!(
                     "Unexpected syntax kind {:?} when constructing {}.",
                     internal.kind, "Item"
@@ -3345,6 +3345,7 @@ impl TypedSyntaxNode for Item {
     fn as_syntax_node(&self) -> SyntaxNode {
         match self {
             Item::Module(x) => x.as_syntax_node(),
+            Item::Use(x) => x.as_syntax_node(),
             Item::FreeFunction(x) => x.as_syntax_node(),
             Item::ExternFunction(x) => x.as_syntax_node(),
             Item::ExternType(x) => x.as_syntax_node(),
@@ -3352,7 +3353,6 @@ impl TypedSyntaxNode for Item {
             Item::Impl(x) => x.as_syntax_node(),
             Item::Struct(x) => x.as_syntax_node(),
             Item::Enum(x) => x.as_syntax_node(),
-            Item::Use(x) => x.as_syntax_node(),
         }
     }
     fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
@@ -4141,10 +4141,10 @@ impl ItemUse {
     pub fn new_green(
         db: &dyn SyntaxGroup,
         usekw: GreenId,
-        path: GreenId,
+        name: GreenId,
         semicolon: GreenId,
     ) -> GreenId {
-        let children: Vec<GreenId> = vec![usekw, path, semicolon];
+        let children: Vec<GreenId> = vec![usekw, name, semicolon];
         let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ItemUse,
@@ -4155,7 +4155,7 @@ impl ItemUse {
     pub fn usekw(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn path(&self, db: &dyn SyntaxGroup) -> ExprPath {
+    pub fn name(&self, db: &dyn SyntaxGroup) -> ExprPath {
         ExprPath::from_syntax_node(db, self.children[1].clone())
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> Terminal {
@@ -4165,7 +4165,7 @@ impl ItemUse {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ItemUsePtr(SyntaxStablePtrId);
 impl ItemUsePtr {
-    pub fn path_green(self, db: &dyn SyntaxGroup) -> GreenId {
+    pub fn name_green(self, db: &dyn SyntaxGroup) -> GreenId {
         let ptr = db.lookup_intern_stable_ptr(self.0);
         if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
             key_fields[0]
