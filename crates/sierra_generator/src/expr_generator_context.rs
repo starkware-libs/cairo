@@ -106,8 +106,8 @@ impl<'a> ExprGeneratorContext<'a> {
         })
     }
 
-    pub fn jump_nz_libfunc_id(&self) -> sierra::ids::ConcreteLibFuncId {
-        self.get_extension_id_without_generics("jump_nz")
+    pub fn felt_jump_nz_libfunc_id(&self) -> sierra::ids::ConcreteLibFuncId {
+        self.get_extension_id_without_generics("felt_jump_nz")
     }
 
     pub fn jump_libfunc_id(&self) -> sierra::ids::ConcreteLibFuncId {
