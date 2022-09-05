@@ -18,6 +18,8 @@ use crate::invocations::BranchRefChanges;
 pub enum ReferencesError {
     #[error("Inconsistent References.")]
     InconsistentReferences,
+    #[error("Inconsistent annotations.")]
+    InconsistentAnnotations(StatementIdx),
     #[error("InvalidStatementIdx")]
     InvalidStatementIdx,
     #[error("MissingReferencesForStatement")]
@@ -85,11 +87,18 @@ pub struct ReferenceValue {
 
 type StatementRefs = HashMap<VarId, ReferenceValue>;
 
+/// An annotation that specific the expected return type at each statement.
+/// This is used to propagate the return type to return statements.
+/// Note that this is less strict then annotating each statement with the function it belongs to.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ReturnAnnotation(usize);
+
 /// Annotation that represent the state at each program statement.
 /// Currently this only includes the live references at each statement.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct StatementAnnotations {
     pub refs: StatementRefs,
+    pub return_annotation: ReturnAnnotation,
 }
 
 /// Annotations of the program statements.
@@ -108,12 +117,22 @@ impl ProgramAnnotations {
     // Creates a ProgramAnnotations object based on 'n_statements' and a given functions list.
     pub fn create(n_statements: usize, functions: &[Function]) -> Result<Self, ReferencesError> {
         let mut annotations = ProgramAnnotations::new(n_statements);
+        let mut return_annotations = HashMap::new();
         for func in functions {
+            let next_annotations = return_annotations.len();
+            let return_annotation = return_annotations
+                .entry(&func.ret_types)
+                .or_insert_with(|| ReturnAnnotation(next_annotations));
+
             annotations.set_or_assert(
                 func.entry,
-                StatementAnnotations { refs: build_function_parameter_refs(&func.params)? },
+                StatementAnnotations {
+                    refs: build_function_parameter_refs(&func.params)?,
+                    return_annotation: return_annotation.clone(),
+                },
             )?
         }
+        // TODO(ilya, 10/10/2022): Store Return types in ProgramAnnotations.
 
         Ok(annotations)
     }
@@ -131,7 +150,7 @@ impl ProgramAnnotations {
             None => self.per_statement_annotations[idx] = Some(annotations),
             Some(curr_refs) => {
                 if *curr_refs != annotations {
-                    return Err(ReferencesError::InconsistentReferences);
+                    return Err(ReferencesError::InconsistentAnnotations(statement_id));
                 }
             }
         };
@@ -150,7 +169,13 @@ impl ProgramAnnotations {
             .ok_or(ReferencesError::MissingReferencesForStatement(statement_idx))?;
 
         let (statement_refs, taken_refs) = take_args(statement_annotations.refs.clone(), ref_ids)?;
-        Ok((StatementAnnotations { refs: statement_refs }, taken_refs))
+        Ok((
+            StatementAnnotations {
+                refs: statement_refs,
+                return_annotation: statement_annotations.return_annotation.clone(),
+            },
+            taken_refs,
+        ))
     }
 
     // Propagate the annotations from the statement at 'statement_idx' to all the branches
@@ -184,6 +209,7 @@ impl ProgramAnnotations {
                 statement_idx.next(&branch_info.target),
                 StatementAnnotations {
                     refs: put_results(new_refs, zip_eq(&branch_info.results, branch_result.refs))?,
+                    return_annotation: annotations.return_annotation.clone(),
                 },
             )?;
         }

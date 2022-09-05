@@ -15,7 +15,7 @@ use test_case::test_case;
 use crate::compiler::{compile, CompilationError};
 use crate::invocations::InvocationError;
 use crate::references::ReferencesError::{
-    self, EditStateError, InconsistentReferences, InvalidStatementIdx,
+    self, EditStateError, InconsistentAnnotations, InconsistentReferences, InvalidStatementIdx,
     MissingReferencesForStatement,
 };
 
@@ -179,8 +179,7 @@ fn fib_program() {
 #[test_case(indoc! {"
                 return();
 
-                foo@0([1]: felt) -> ();
-                bar@0([2]: felt) -> ();
+                foo@0([1]: felt, [1]: felt) -> ();
             "} => Err(InconsistentReferences.into());
             "Inconsistent references")]
 #[test_case(indoc! {"
@@ -230,6 +229,23 @@ fn fib_program() {
                 test_program@0([1]: felt) -> ();
             "} => Err(ReferencesError::DanglingReferences(StatementIdx(1)).into());
             "Dangling references")]
+#[test_case(indoc! {"
+                return();
+
+                foo@0([1]: felt) -> ();
+                bar@0([2]: felt) -> ();
+            "} => Err(InconsistentAnnotations(StatementIdx(0)).into());
+            "Two different function definitions fo a statement.")]
+#[test_case(indoc! {"
+                type felt = felt;
+                libfunc felt_dup = felt_dup;
+
+                felt_dup([1]) -> ([1], [2]);
+                return ([1]);
+                test_program@0([1]: felt) -> ();
+                foo@1([1]: felt) -> (foo);
+            "} => Err(InconsistentAnnotations(StatementIdx(1)).into());
+            "Inconsistent return annotations")]
 fn compiler_errors(sierra_code: &str) -> Result<(), CompilationError> {
     let prog = ProgramParser::new().parse(sierra_code).unwrap();
     compile(&prog).map(|_| ())
