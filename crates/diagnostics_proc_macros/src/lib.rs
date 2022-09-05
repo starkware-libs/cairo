@@ -10,6 +10,7 @@ pub fn with_diagnostics(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let ast: syn::ItemFn = syn::parse(item).unwrap();
     let function_ident = ast.sig.ident;
     let mut params = ast.sig.inputs.into_iter();
+    let visibility = ast.vis;
 
     // Extract the first parameter.
     let first_parameter = params.next();
@@ -67,7 +68,7 @@ pub fn with_diagnostics(_attr: TokenStream, item: TokenStream) -> TokenStream {
 
     // Emit a wrapper function.
     quote! {
-        fn #function_ident(#args_syntax) -> WithDiagnostics<#ret_ty, #entry_ty> {
+        #visibility fn #function_ident(#args_syntax) -> WithDiagnostics<#ret_ty, #entry_ty> {
             let mut diagnostics = Diagnostics::new();
             let f = |diagnostics: &mut Diagnostics<#entry_ty>| {
                 #body
