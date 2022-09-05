@@ -16,7 +16,7 @@ impl NoGenericArgsGenericLibFunc for UnconditionalJumpLibFunc {
         Ok(SignatureOnlyConcreteLibFunc {
             signature: LibFuncSignature {
                 input_types: vec![],
-                output_types: vec![],
+                output_types: vec![vec![]],
                 fallthrough: None,
             },
         })
