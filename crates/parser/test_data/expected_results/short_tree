@@ -1,6 +1,17 @@
 └── root (kind: SyntaxFile)
     ├── items (kind: ItemList)
-    │   └── child #0 (kind: ItemFreeFunction)
+    │   ├── child #0 (kind: ItemUse)
+    │   │   ├── usekw (kind: Use): 'use'
+    │   │   ├── name (kind: ExprPath)
+    │   │   │   ├── item #0 (kind: PathSegment)
+    │   │   │   │   ├── ident (kind: Identifier): 'std'
+    │   │   │   │   └── generic_args (kind: OptionGenericArgsEmpty) []
+    │   │   │   ├── separator #0 (kind: ColonColon): '::'
+    │   │   │   └── item #1 (kind: PathSegment)
+    │   │   │       ├── ident (kind: Identifier): 'format'
+    │   │   │       └── generic_args (kind: OptionGenericArgsEmpty) []
+    │   │   └── semicolon (kind: Semicolon): ';'
+    │   └── child #1 (kind: ItemFreeFunction)
     │       ├── funckw (kind: Function): 'func'
     │       ├── name (kind: Identifier): 'foo'
     │       ├── signature (kind: FunctionSignature)

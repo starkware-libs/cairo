@@ -134,6 +134,7 @@ impl<'a> Lexer<'a> {
             "let" => TokenKind::Let,
             "return" => TokenKind::Return,
             "match" => TokenKind::Match,
+            "use" => TokenKind::Use,
             "_" => TokenKind::Underscore,
             _ => TokenKind::Identifier,
         }
