@@ -157,8 +157,11 @@ fn handle_felt_match(
 ) -> (Vec<pre_sierra::Statement>, sierra::ids::VarId) {
     match &expr_match.arms[..] {
         [
-            semantic::MatchBranch { pattern: semantic::Pattern::Literal(literal), block: block0 },
-            semantic::MatchBranch { pattern: semantic::Pattern::Otherwise, block: block_otherwise },
+            semantic::MatchArm { pattern: semantic::Pattern::Literal(literal), expression: block0 },
+            semantic::MatchArm {
+                pattern: semantic::Pattern::Otherwise,
+                expression: block_otherwise,
+            },
         ] => {
             // Make sure the literal in the pattern is 0.
             // TODO(lior): Replace with diagnostics.

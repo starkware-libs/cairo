@@ -115,12 +115,12 @@ fn test_match() {
 
     let statement_let = semantic::StatementLet { var: var_x, expr: literal7 };
 
-    let branch0 = semantic::MatchBranch {
+    let branch0 = semantic::MatchArm {
         pattern: semantic::Pattern::Literal(semantic::ExprLiteral { value: 0, ty }),
-        block: var_x_expr,
+        expression: var_x_expr,
     };
     let branch_otherwise =
-        semantic::MatchBranch { pattern: semantic::Pattern::Otherwise, block: literal7 };
+        semantic::MatchArm { pattern: semantic::Pattern::Otherwise, expression: literal7 };
     let match_statement = db.intern_expr(semantic::Expr::ExprMatch(semantic::ExprMatch {
         matched_expr: var_x_expr,
         arms: vec![branch0, branch_otherwise],
