@@ -140,20 +140,20 @@ fn test_match() {
             // let x = 7;
             "felt_const<7>() -> ([0])",
             // match {
-            "felt_jump_nz([0]) { label0() fallthrough() }",
+            "felt_jump_nz([0]) { label0([1]) fallthrough() }",
             // Branch 0.
-            "store_temp<[0]>([0]) -> ([1])",
+            "store_temp<[0]>([0]) -> ([2])",
             "jump() { label1() }",
             // Branch otherwise.
             "label0:",
-            "felt_const<7>() -> ([2])",
-            "store_temp<[0]>([2]) -> ([1])",
+            "felt_const<7>() -> ([3])",
+            "store_temp<[0]>([3]) -> ([2])",
             // Post match.
             "label1:",
         ]
     );
 
-    assert_eq!(res, sierra::ids::VarId::new(1));
+    assert_eq!(res, sierra::ids::VarId::new(2));
 }
 
 #[test]

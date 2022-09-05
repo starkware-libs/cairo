@@ -180,6 +180,7 @@ fn handle_felt_match(
             statements.extend(match_expr_statements);
 
             // Add the felt_jump_nz() statement.
+            let non_zero_var = context.allocate_sierra_variable();
             statements.push(pre_sierra::Statement::Sierra(program::GenStatement::Invocation(
                 program::GenInvocation {
                     libfunc_id: context.felt_jump_nz_libfunc_id(),
@@ -188,7 +189,7 @@ fn handle_felt_match(
                         // If not zero, jump to the "otherwise" block.
                         program::GenBranchInfo {
                             target: program::GenBranchTarget::Statement(otherwise_label_id),
-                            results: vec![],
+                            results: vec![non_zero_var],
                         },
                         // If zero, continue to the next instruction.
                         program::GenBranchInfo {
