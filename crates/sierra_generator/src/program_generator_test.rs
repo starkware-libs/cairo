@@ -12,8 +12,6 @@ fn test_program_generator() {
     let module_id = setup_test_module(
         &mut db,
         indoc! {"
-                extern type felt;
-
                 func foo(a: felt) -> felt {
                     bar(5)
                 }
@@ -30,7 +28,7 @@ fn test_program_generator() {
         indoc! {"
 
             libfunc [0] = felt_const<5>;
-            libfunc [1] = store_temp;
+            libfunc [1] = store_temp<[0]>;
             libfunc [2] = function_call<user@[0]>;
 
             [0]() -> ([1]);

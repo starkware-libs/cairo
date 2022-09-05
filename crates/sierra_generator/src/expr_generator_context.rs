@@ -89,8 +89,11 @@ impl<'a> ExprGeneratorContext<'a> {
         })
     }
 
-    pub fn store_temp_libfunc_id(&self) -> sierra::ids::ConcreteLibFuncId {
-        self.get_extension_id_without_generics("store_temp")
+    pub fn store_temp_libfunc_id(&self, ty: semantic::TypeId) -> sierra::ids::ConcreteLibFuncId {
+        self.db.intern_concrete_lib_func(sierra::program::ConcreteLibFuncLongId {
+            generic_id: sierra::ids::GenericLibFuncId::from_string("store_temp"),
+            args: vec![sierra::program::GenericArg::Type(self.db.intern_type_id(ty))],
+        })
     }
 
     pub fn function_call_libfunc_id(
