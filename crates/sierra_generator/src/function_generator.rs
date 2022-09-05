@@ -31,6 +31,7 @@ pub fn generate_function_code(
             sierra::program::Param { id: sierra_var, ty: db.intern_type_id(param.ty) }
         })
         .collect();
+    let ret_types = vec![db.intern_type_id(function_semantic.signature.return_type)];
 
     let mut statements: Vec<pre_sierra::Statement> = vec![label];
 
@@ -58,5 +59,6 @@ pub fn generate_function_code(
         body: statements,
         entry_point: label_id,
         parameters,
+        ret_types,
     }
 }
