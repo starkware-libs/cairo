@@ -5,7 +5,7 @@ use defs::ids::{
     FreeFunctionId, GenericFunctionId, GenericTypeId, LanguageElementId, ModuleItemId, ParamLongId,
     StructId, VarId,
 };
-use diagnostics::{Diagnostics, WithDiagnostics};
+use diagnostics::WithDiagnostics;
 use diagnostics_proc_macros::with_diagnostics;
 use filesystem::db::AsFilesGroup;
 use filesystem::ids::ModuleId;
@@ -17,16 +17,14 @@ use syntax::node::{ast, TypedSyntaxNode};
 use crate::corelib::{core_module, unit_ty};
 use crate::diagnostic::Diagnostic;
 use crate::expr::{compute_expr_semantic, ComputationContext, EnvVariables};
-use crate::ids::{
-    ConcreteFunctionId, ConcreteFunctionLongId, ExprId, StatementId, TypeId, TypeLongId,
-};
-use crate::{corelib, semantic, ConcreteType};
+use crate::ids::{ExprId, FunctionId, StatementId, TypeId, TypeLongId};
+use crate::{corelib, semantic, ConcreteType, FunctionLongId};
 
 // Salsa database interface.
 #[salsa::query_group(SemanticDatabase)]
 pub trait SemanticGroup: DefsGroup + AsDefsGroup + ParserGroup + AsFilesGroup {
     #[salsa::interned]
-    fn intern_concrete_function(&self, id: ConcreteFunctionLongId) -> ConcreteFunctionId;
+    fn intern_function(&self, id: FunctionLongId) -> FunctionId;
     #[salsa::interned]
     fn intern_type(&self, id: TypeLongId) -> TypeId;
     #[salsa::interned]

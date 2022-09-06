@@ -31,8 +31,11 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
     pub fn new() -> Self {
         Self(Vec::new())
     }
-    pub fn add(&mut self, diagnostic: TEntry) {
-        self.0.push(diagnostic);
+    pub fn add<T>(&mut self, diagnostic: T)
+    where
+        TEntry: From<T>,
+    {
+        self.0.push(diagnostic.into());
     }
     pub fn format(&self, db: &TEntry::DbType) -> String {
         let mut res = String::new();
@@ -66,7 +69,7 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
 /// Helper type for computations that may produce diagnostics.
 /// Should be used with the `with_diagnostics` macro. Example:
 ///
-/// ```
+/// ```ignore
 /// use diagnostics::{DiagnosticEntry, Diagnostics, WithDiagnostics};
 /// use diagnostics_proc_macros::with_diagnostics;
 /// # #[derive(Clone, Debug, Eq, Hash, PartialEq)]

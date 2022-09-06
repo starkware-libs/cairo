@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use diagnostics::{Diagnostics, WithDiagnostics};
+use diagnostics::WithDiagnostics;
 use diagnostics_proc_macros::with_diagnostics;
 use filesystem::db::FilesGroup;
 use filesystem::ids::{FileId, ModuleId};

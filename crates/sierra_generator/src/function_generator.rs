@@ -62,11 +62,13 @@ pub fn generate_function_code(
     statements.push(return_statement(vec![return_variable_on_stack]));
 
     pre_sierra::Function {
-        id: db.intern_function(db.intern_concrete_function(semantic::ConcreteFunctionLongId {
-            generic_function: GenericFunctionId::Free(function_id),
-            // TODO(lior): Add generic arguments.
-            generic_args: vec![],
-        })),
+        id: db.intern_sierra_function(db.intern_function(semantic::FunctionLongId::Concrete(
+            semantic::ConcreteFunction {
+                generic_function: GenericFunctionId::Free(function_id),
+                // TODO(lior): Add generic arguments.
+                generic_args: vec![],
+            },
+        ))),
         body: statements,
         entry_point: label_id,
         parameters,

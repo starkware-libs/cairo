@@ -69,15 +69,18 @@ pub fn with_diagnostics(_attr: TokenStream, item: TokenStream) -> TokenStream {
     };
 
     // Emit a wrapper function.
+    let crt = crate_name("diagnostics");
     quote! {
-        #(#attrs)* #vis fn #function_ident(#args_syntax) -> WithDiagnostics<#ret_ty, #entry_ty> {
-            let mut diagnostics = Diagnostics::new();
+        #(#attrs)* #vis fn #function_ident(
+            #args_syntax
+        ) -> #crt::WithDiagnostics<#ret_ty, #entry_ty> {
+            let mut diagnostics = #crt::Diagnostics::new();
 
-            let mut f = |diagnostics: &mut Diagnostics<#entry_ty>| -> #ret_ty {
+            let mut f = |diagnostics: &mut #crt::Diagnostics<#entry_ty>| -> #ret_ty {
                 #block
             };
             let value = f(&mut diagnostics);
-            WithDiagnostics { value, diagnostics }
+            #crt::WithDiagnostics { value, diagnostics }
     }
     }
     .into()
@@ -108,7 +111,7 @@ pub fn derive_debug_with_db(input: TokenStream) -> TokenStream {
 /// Emits a DebugWithDb implementation for a struct.
 fn emit_struct_debug(name: syn::Ident, db: TokenStream2, strct: syn::DataStruct) -> TokenStream2 {
     let (pattern, field_prints) = emit_fields_debug(db.clone(), name.to_string(), strct.fields);
-    let crt = debug_crate();
+    let crt = crate_name("debug");
     quote! {
         impl #crt::debug::DebugWithDb<#db> for #name {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &#db) -> std::fmt::Result {
@@ -135,7 +138,7 @@ fn emit_enum_debug(name: syn::Ident, db: TokenStream2, enm: syn::DataEnum) -> To
             }
         }
     }
-    let crt = debug_crate();
+    let crt = crate_name("debug");
     quote! {
         impl #crt::debug::DebugWithDb<#db> for #name {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &#db) -> std::fmt::Result {
@@ -157,7 +160,7 @@ fn emit_fields_debug(
     name: String,
     fields: syn::Fields,
 ) -> (TokenStream2, TokenStream2) {
-    let crt = debug_crate();
+    let crt = crate_name("debug");
     let mut pattern = quote! {};
     let mut field_prints = quote! {};
     for (i, field) in fields.iter().enumerate() {
@@ -194,16 +197,16 @@ fn emit_fields_debug(
         }
         syn::Fields::Unit => {
             pattern = quote! {};
-            field_prints = quote! { Ok(()) };
+            field_prints = quote! { f.debug_tuple(#name).finish() };
         }
     };
     (pattern, field_prints)
 }
 
-/// Returns the identifier of the debug crate. This is needed, since inside the debug
-/// crate, it needs to be referred to as `crate` and no `debug`.
-fn debug_crate() -> syn::Ident {
-    let crate_name = std::env::var("CARGO_PKG_NAME").unwrap();
-    let res = if crate_name == "debug" { "crate" } else { "debug" };
+/// Returns the identifier of a crate. This is needed, since inside the crate
+///  it needs to be referred to as `crate` and not its real name.
+fn crate_name(name: &str) -> syn::Ident {
+    let current_crate_name = std::env::var("CARGO_CRATE_NAME").unwrap();
+    let res = if current_crate_name == name { "crate" } else { name };
     syn::Ident::new(res, Span::call_site())
 }

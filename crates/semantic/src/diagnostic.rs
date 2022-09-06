@@ -41,15 +41,17 @@ impl From<SemanticDiagnostic> for Diagnostic {
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct SemanticDiagnostic {
-    module_id: ModuleId,
-    stable_ptr: SyntaxStablePtrId,
-    kind: SemanticDiagnosticKind,
+    pub module_id: ModuleId,
+    pub stable_ptr: SyntaxStablePtrId,
+    pub kind: SemanticDiagnosticKind,
 }
 impl DiagnosticEntry for SemanticDiagnostic {
     type DbType = dyn SemanticGroup;
 
     fn format(&self, _db: &Self::DbType) -> String {
-        match self.kind {}
+        match self.kind {
+            SemanticDiagnosticKind::UnknownFunction => "Unknown function".into(),
+        }
     }
 
     fn location(&self, db: &Self::DbType) -> DiagnosticLocation {
@@ -65,4 +67,6 @@ impl DiagnosticEntry for SemanticDiagnostic {
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub enum SemanticDiagnosticKind {}
+pub enum SemanticDiagnosticKind {
+    UnknownFunction,
+}

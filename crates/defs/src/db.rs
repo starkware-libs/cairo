@@ -1,4 +1,4 @@
-use diagnostics::{Diagnostics, WithDiagnostics};
+use diagnostics::WithDiagnostics;
 use diagnostics_proc_macros::with_diagnostics;
 use filesystem::db::{AsFilesGroup, FilesGroup};
 use filesystem::ids::ModuleId;
