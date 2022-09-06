@@ -9,7 +9,7 @@ use thiserror::Error;
 
 use crate::annotations::{AnnotationError, ProgramAnnotations};
 use crate::invocations::{check_references_on_stack, compile_invocation, InvocationError};
-use crate::references::ReferencesError;
+use crate::references::{check_types_match, ReferencesError};
 use crate::relocations::{relocate_instructions, RelocationEntry};
 use crate::type_sizes::get_type_size_map;
 
@@ -98,9 +98,8 @@ pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
                 if !annotations.refs.is_empty() {
                     return Err(ReferencesError::DanglingReferences(statement_idx).into());
                 }
+                program_annotations.validate_return_type(&return_refs, annotations.return_types)?;
                 check_references_on_stack(&type_sizes, &return_refs)?;
-                // TODO(orizi): Also test types of the results using 'check_types_match' when the
-                // returning function is available.
 
                 let ret_instruction = RetInstruction {};
                 program_offset += ret_instruction.op_size();
@@ -117,6 +116,8 @@ pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
                     .get_libfunc(&invocation.libfunc_id)
                     .map_err(CompilationError::ProgramRegistryError)?;
                 check_basic_structure(invocation, libfunc)?;
+
+                check_types_match(&invoke_refs, libfunc.input_types())?;
                 let compiled_invocation =
                     compile_invocation(invocation, libfunc, &invoke_refs, &type_sizes)?;
 
