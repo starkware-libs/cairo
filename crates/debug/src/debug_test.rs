@@ -3,6 +3,7 @@ use std::fmt::Debug;
 use db_utils::define_short_id;
 use diagnostics_proc_macros::DebugWithDb;
 
+use crate::debug;
 use crate::debug::DebugWithDb;
 
 // Test database query group.
@@ -23,16 +24,7 @@ impl salsa::Database for DatabaseImpl {}
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 struct DummyLongId(usize);
 
-define_short_id!(DummyShortId);
-impl DebugWithDb<dyn TestGroup> for DummyShortId {
-    fn fmt<'me, 'db>(
-        &'me self,
-        f: &'me mut std::fmt::Formatter<'_>,
-        db: &'db dyn TestGroup,
-    ) -> std::fmt::Result {
-        db.lookup_intern_b(*self).fmt(f)
-    }
-}
+define_short_id!(DummyShortId, DummyLongId, TestGroup, lookup_intern_b);
 
 #[derive(DebugWithDb)]
 #[debug_db(TestGroup)]

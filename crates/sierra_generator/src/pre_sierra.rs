@@ -2,6 +2,8 @@ use db_utils::define_short_id;
 use defs::ids::FreeFunctionId;
 use sierra::program;
 
+use crate::db::SierraGenGroup;
+
 /// Represents the long id of a pre-sierra label.
 /// The long id consists of the parent function and a unique identifier inside the function.
 // TODO(lior): Make sure this struct can only be constructed by expr_generator_context.
@@ -11,7 +13,7 @@ pub struct LabelLongId {
     // A unique identifier inside the function
     pub id: usize,
 }
-define_short_id!(LabelId);
+define_short_id!(LabelId, LabelLongId, SierraGenGroup, lookup_intern_label_id);
 
 impl std::fmt::Display for LabelId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

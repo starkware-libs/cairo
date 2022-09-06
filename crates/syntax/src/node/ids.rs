@@ -2,9 +2,10 @@ use db_utils::define_short_id;
 
 use super::db::SyntaxGroup;
 use super::green::GreenNode;
+use crate::node::stable_ptr::SyntaxStablePtr;
 use crate::token::{Token, TokenKind};
 
-define_short_id!(GreenId);
+define_short_id!(GreenId, GreenNode, SyntaxGroup, lookup_intern_green);
 impl GreenId {
     /// Returns a green ID of a missing token.
     pub fn missing_token(db: &dyn SyntaxGroup) -> Self {
@@ -30,4 +31,4 @@ impl GreenId {
     }
 }
 
-define_short_id!(SyntaxStablePtrId);
+define_short_id!(SyntaxStablePtrId, SyntaxStablePtr, SyntaxGroup, lookup_intern_stable_ptr);

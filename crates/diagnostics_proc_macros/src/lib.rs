@@ -194,6 +194,7 @@ fn emit_fields_debug(
         }
         syn::Fields::Unit => {
             pattern = quote! {};
+            field_prints = quote! { Ok(()) };
         }
     };
     (pattern, field_prints)

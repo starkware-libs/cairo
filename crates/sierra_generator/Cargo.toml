@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 db_utils = { path = "../db_utils" }
+debug = { path = "../debug" }
 defs = {path = "../defs"}
 diagnostics = { path = "../diagnostics" }
 diagnostics_proc_macros = { path = "../diagnostics_proc_macros" }
