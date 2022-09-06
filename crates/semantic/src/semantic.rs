@@ -44,14 +44,14 @@ pub struct ExprBlock {
     /// In this case, `tail` will be Some(expr) with that expression.
     /// The block expression will evaluate to this tail expression.
     /// Otherwise, this will be None.
-    pub tail: Option<ExprId>,
+    pub tail: Option<Box<Expr>>,
     pub ty: TypeId,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct ExprFunctionCall {
     pub function: ConcreteFunctionId,
-    pub args: Vec<ExprId>,
+    pub args: Vec<Expr>,
     pub ty: TypeId,
 }
 
@@ -86,6 +86,13 @@ pub struct ExprLiteral {
     pub value: usize,
     pub ty: TypeId,
 }
+
+// TODO(yg): remove
+// #[derive(Clone, Debug, Hash, PartialEq, Eq)]
+// pub struct ExprWithType {
+//     expr: ExprId,
+//     ty: TypeId,
+// }
 
 // Items.
 #[derive(Clone, Debug, PartialEq, Eq)]

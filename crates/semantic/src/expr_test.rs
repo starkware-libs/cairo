@@ -6,7 +6,7 @@ use indoc::indoc;
 use parser::db::ParserDatabase;
 use syntax::node::db::{AsSyntaxGroup, SyntaxDatabase, SyntaxGroup};
 
-use crate::corelib::unit_ty;
+use crate::corelib::{core_felt_ty, unit_ty};
 use crate::db::{SemanticDatabase, SemanticGroup};
 use crate::semantic;
 use crate::test_utils::{setup_test_expr, setup_test_function};
@@ -98,7 +98,7 @@ fn test_expr_var() {
     };
 
     // Check expr.
-    let semantic::ExprVar { var: _, ty: _ } = match db.lookup_intern_expr(expr) {
+    let semantic::ExprVar { var: _, ty: _ } = match *expr {
         crate::Expr::ExprVar(expr) => expr,
         _ => panic!("Expected a variable."),
     };
@@ -122,11 +122,11 @@ fn test_expr_match() {
         "",
     );
     let db = &db_val;
-    let expr_id = match db.lookup_intern_expr(func.body) {
+    let tail_expr = match db.lookup_intern_expr(func.body) {
         crate::Expr::ExprBlock(block) => block.tail.unwrap(),
         _ => panic!(),
     };
-    let expr = match db.lookup_intern_expr(expr_id) {
+    let expr = match *tail_expr {
         crate::Expr::ExprMatch(expr) => expr,
         _ => panic!(),
     };
@@ -170,13 +170,13 @@ fn test_expr_block_with_tail_expression() {
     // Check expr.
     let (statements, tail) = match expr {
         crate::Expr::ExprBlock(semantic::ExprBlock { statements, tail: Some(tail), ty }) => {
-            assert_eq!(ty, unit_ty(db));
+            assert_eq!(ty, core_felt_ty(db));
             (statements, tail)
         }
         _ => panic!("Expected a block."),
     };
     // Check tail expression.
-    match db.lookup_intern_expr(tail) {
+    match *tail {
         semantic::Expr::ExprLiteral(expr_literal) => {
             assert_eq!(expr_literal.value, 9)
         }

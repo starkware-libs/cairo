@@ -67,7 +67,8 @@ fn handle_block(
 
     // Process the tail expression.
     match expr_block.tail {
-        Some(expr_id) => {
+        Some(ref expr) => {
+            let expr_id = context.get_db().intern_expr(*expr.clone());
             let (tail_statements, output_var) = generate_expression_code(context, expr_id);
             statements.extend(tail_statements);
             (statements, output_var)
@@ -89,7 +90,8 @@ fn handle_function_call(
     // Output statements to compute the arguments.
     let mut args: Vec<sierra::ids::VarId> = vec![];
     for arg in &expr_function_call.args {
-        let (arg_statements, res) = generate_expression_code(context, *arg);
+        let (arg_statements, res) =
+            generate_expression_code(context, context.get_db().intern_expr(arg.clone()));
         statements.extend(arg_statements);
         args.push(res);
     }

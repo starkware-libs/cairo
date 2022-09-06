@@ -56,5 +56,5 @@ pub fn setup_test_expr(
         semantic::Expr::ExprBlock(block) => block.tail.unwrap(),
         _ => panic!(),
     };
-    (module_id, expr)
+    (module_id, db.intern_expr(*expr))
 }

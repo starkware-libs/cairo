@@ -26,14 +26,13 @@ fn test_expr_generator() {
     setup_test_module(&mut db, "");
 
     let ty = TypeId::from_intern_id(InternId::from(0u32));
-    let literal7 =
-        db.intern_expr(semantic::Expr::ExprLiteral(semantic::ExprLiteral { value: 7, ty }));
+    let literal7 = semantic::Expr::ExprLiteral(semantic::ExprLiteral { value: 7, ty });
     let var_x = LocalVarId::from_intern_id(InternId::from(3u32));
-    let var_x_expr =
-        db.intern_expr(semantic::Expr::ExprVar(semantic::ExprVar { var: VarId::Local(var_x), ty }));
+    let var_x_expr = semantic::Expr::ExprVar(semantic::ExprVar { var: VarId::Local(var_x), ty });
 
     // "let x = 7;" statement.
-    let statement_let = semantic::StatementLet { var: var_x, expr: literal7 };
+    let statement_let =
+        semantic::StatementLet { var: var_x, expr: db.intern_expr(literal7.clone()) };
 
     let foo_func = db.intern_concrete_function(semantic::ConcreteFunctionLongId {
         generic_function: GenericFunctionId::Free(FreeFunctionId::from_intern_id(InternId::from(
@@ -49,26 +48,26 @@ fn test_expr_generator() {
     });
 
     // "foo(x, 7)" expression.
-    let expr = db.intern_expr(semantic::Expr::ExprFunctionCall(semantic::ExprFunctionCall {
+    let expr = semantic::Expr::ExprFunctionCall(semantic::ExprFunctionCall {
         function: foo_func,
         args: vec![var_x_expr, literal7],
         ty,
-    }));
+    });
 
     // "foo2(foo(x, 7), foo(x, 7))" expression.
-    let expr2 = db.intern_expr(semantic::Expr::ExprFunctionCall(semantic::ExprFunctionCall {
+    let expr2 = semantic::Expr::ExprFunctionCall(semantic::ExprFunctionCall {
         function: foo2_func,
-        args: vec![expr, expr],
+        args: vec![expr.clone(), expr.clone()],
         ty,
-    }));
+    });
 
     // "let x = 7; foo(x, 7); foo(foo(x, 7), foo(x, 7))" block.
     let block = db.intern_expr(semantic::Expr::ExprBlock(semantic::ExprBlock {
         statements: vec![
             db.intern_statement(semantic::Statement::Let(statement_let)),
-            db.intern_statement(semantic::Statement::Expr(expr)),
+            db.intern_statement(semantic::Statement::Expr(db.intern_expr(expr))),
         ],
-        tail: Some(expr2),
+        tail: Some(Box::new(expr2)),
         ty,
     }));
 
@@ -121,15 +120,15 @@ fn test_match() {
     };
     let branch_otherwise =
         semantic::MatchArm { pattern: semantic::Pattern::Otherwise, expression: literal7 };
-    let match_statement = db.intern_expr(semantic::Expr::ExprMatch(semantic::ExprMatch {
+    let match_expr = semantic::Expr::ExprMatch(semantic::ExprMatch {
         matched_expr: var_x_expr,
         arms: vec![branch0, branch_otherwise],
         ty,
-    }));
+    });
 
     let block = db.intern_expr(semantic::Expr::ExprBlock(semantic::ExprBlock {
         statements: vec![db.intern_statement(semantic::Statement::Let(statement_let))],
-        tail: Some(match_statement),
+        tail: Some(Box::new(match_expr)),
         ty,
     }));
 
