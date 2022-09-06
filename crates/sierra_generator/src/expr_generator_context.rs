@@ -105,11 +105,11 @@ impl<'a> ExprGeneratorContext<'a> {
 
     pub fn function_call_libfunc_id(
         &self,
-        func: semantic::ConcreteFunctionId,
+        func: semantic::FunctionId,
     ) -> sierra::ids::ConcreteLibFuncId {
         self.db.intern_concrete_lib_func(sierra::program::ConcreteLibFuncLongId {
             generic_id: sierra::ids::GenericLibFuncId::from_string("function_call"),
-            args: vec![sierra::program::GenericArg::UserFunc(self.db.intern_function(func))],
+            args: vec![sierra::program::GenericArg::UserFunc(self.db.intern_sierra_function(func))],
         })
     }
 
