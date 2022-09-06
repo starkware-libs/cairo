@@ -1,3 +1,5 @@
+//! General utilities.
+
 #[macro_export]
 
 // Defines a short id struct for use with salsa interning.

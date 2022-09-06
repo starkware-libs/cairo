@@ -1,3 +1,7 @@
+//! Semantic model representation and queries for Cairo.
+//! The semantic model represents the Cairo program after type resolution and some syntax
+//! desugaring.
+
 pub mod corelib;
 pub mod db;
 pub mod diagnostic;
