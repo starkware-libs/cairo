@@ -1,3 +1,4 @@
+use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::iter;
 
@@ -7,7 +8,6 @@ use sierra::edit_state::{put_results, take_args, EditStateError};
 use sierra::ids::{ConcreteTypeId, VarId};
 use sierra::program::{Function, GenBranchInfo, StatementIdx};
 use thiserror::Error;
-use utils::ordered_hash_map::OrderedHashMap;
 
 use crate::invocations::BranchRefChanges;
 use crate::references::{
@@ -65,22 +65,28 @@ impl ProgramAnnotations {
     // Creates a ProgramAnnotations object based on 'n_statements' and a given functions list.
     pub fn create(n_statements: usize, functions: &[Function]) -> Result<Self, AnnotationError> {
         let mut annotations = ProgramAnnotations::new(n_statements);
-        let mut return_annotations = OrderedHashMap::default();
+        let mut return_annotations: HashMap<&Vec<ConcreteTypeId>, ReturnTypesAnnotation> =
+            HashMap::new();
         for func in functions {
-            let next_type_annotations = return_annotations.len();
-            let return_annotation = return_annotations
-                .insert(&func.ret_types, next_type_annotations)
-                .unwrap_or(next_type_annotations);
+            let return_annotation = match return_annotations.entry(&func.ret_types) {
+                Entry::Occupied(entry) => entry.get().clone(),
+                Entry::Vacant(entry) => {
+                    let new_type_annotations =
+                        ReturnTypesAnnotation(annotations.return_types.len());
+                    annotations.return_types.push(func.ret_types.clone());
+                    entry.insert(new_type_annotations.clone());
+                    new_type_annotations
+                }
+            };
 
             annotations.set_or_assert(
                 func.entry,
                 StatementAnnotations {
                     refs: build_function_parameter_refs(func)?,
-                    return_types: ReturnTypesAnnotation(return_annotation),
+                    return_types: return_annotation,
                 },
             )?
         }
-        annotations.return_types = return_annotations.iter().map(|(k, _v)| k.to_vec()).collect();
 
         Ok(annotations)
     }
