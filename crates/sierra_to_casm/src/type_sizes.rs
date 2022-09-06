@@ -15,7 +15,6 @@ pub fn get_type_size_map(
 ) -> Option<TypeSizeMap> {
     let mut type_sizes = TypeSizeMap::new();
     for declaration in &program.type_declarations {
-        println!("{}", declaration);
         let ty = registry.get_type(&declaration.id).ok()?;
         let size = match ty {
             CoreTypeConcrete::Felt(_)
