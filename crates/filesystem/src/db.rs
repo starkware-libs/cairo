@@ -81,6 +81,7 @@ fn file_summary(db: &dyn FilesGroup, file: FileId) -> Option<Arc<FileSummary>> {
             line_offsets.push(TextOffset(offset));
         }
     }
+
     Some(Arc::new(FileSummary { line_offsets, total_length: offset }))
 }
 
