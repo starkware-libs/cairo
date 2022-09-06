@@ -30,14 +30,16 @@ fn compile_to_sierra(cairo_file: &str) -> Arc<sierra::program::Program> {
     db.get_program_code(module_id).expect("Creating sierra code should succeed").unwrap()
 }
 
-#[test_case("fib.cairo")]
-fn cairo_to_sierra(cairo_file: &str) {
-    compile_to_sierra(cairo_file);
+#[test_case("fib.cairo", include_str!("fib.sierra"))]
+fn cairo_to_sierra(name: &str, expected_code: &str) {
+    assert_eq!(compile_to_sierra(name).to_string(), expected_code);
 }
 
-#[ignore = "Compilation to sierra is yet to be a final product"]
-#[test_case("fib.cairo")]
-fn cairo_to_casm(cairo_file: &str) {
+#[test_case("fib.cairo", include_str!("fib.casm"))]
+fn cairo_to_casm(cairo_file: &str, expected_code: &str) {
     let sierra_program = compile_to_sierra(cairo_file);
-    sierra_to_casm::compiler::compile(&sierra_program).unwrap();
+    assert_eq!(
+        sierra_to_casm::compiler::compile(&sierra_program).map(|casm| casm.to_string()),
+        Ok(expected_code.to_owned())
+    );
 }

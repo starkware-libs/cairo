@@ -1,0 +1,12 @@
+jmp rel 5 if [fp + -2] != 0;
+[ap + 0] = [fp + -4], ap++;
+jmp rel 11;
+[ap + 0] = [fp + -4] + [fp + -3], ap++;
+[fp + -2] = [ap + 0] + 1, ap++;
+[ap + 0] = [fp + -3], ap++;
+[ap + 0] = [ap + -3], ap++;
+[ap + 0] = [ap + -3], ap++;
+call rel -11;
+[ap + 0] = [ap + -1], ap++;
+[ap + 0] = [ap + -1], ap++;
+ret;
