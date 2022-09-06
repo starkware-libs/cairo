@@ -9,13 +9,15 @@ use itertools::zip_eq;
 use sierra::edit_state::{put_results, take_args, EditStateError};
 use sierra::extensions::arithmetic::Operator;
 use sierra::ids::{ConcreteTypeId, VarId};
-use sierra::program::{Function, GenBranchInfo, Param, StatementIdx};
+use sierra::program::{Function, GenBranchInfo, StatementIdx};
 use thiserror::Error;
 
 use crate::invocations::BranchRefChanges;
 
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum ReferencesError {
+    #[error("Invalid function declaration.")]
+    InvalidFunctionDeclaration(Function),
     #[error("Inconsistent References.")]
     InconsistentReferences,
     #[error("InvalidStatementIdx")]
@@ -111,7 +113,7 @@ impl ProgramAnnotations {
         for func in functions {
             annotations.set_or_assert(
                 func.entry,
-                StatementAnnotations { refs: build_function_parameter_refs(&func.params)? },
+                StatementAnnotations { refs: build_function_parameter_refs(func)? },
             )?
         }
 
@@ -192,11 +194,11 @@ impl ProgramAnnotations {
 }
 
 /// Builds the HashMap of references to the parameters of a function.
-pub fn build_function_parameter_refs(params: &[Param]) -> Result<StatementRefs, ReferencesError> {
-    let mut refs = HashMap::with_capacity(params.len());
+pub fn build_function_parameter_refs(func: &Function) -> Result<StatementRefs, ReferencesError> {
+    let mut refs = HashMap::with_capacity(func.params.len());
 
     let mut offset = -2;
-    for param in params.iter().rev() {
+    for param in func.params.iter().rev() {
         if refs
             .insert(
                 param.id.clone(),
@@ -210,7 +212,7 @@ pub fn build_function_parameter_refs(params: &[Param]) -> Result<StatementRefs, 
             )
             .is_some()
         {
-            return Err(ReferencesError::InconsistentReferences);
+            return Err(ReferencesError::InvalidFunctionDeclaration(func.clone()));
         }
         // TODO(ilya, 10/10/2022): Get size from type.
         let size = 1;
