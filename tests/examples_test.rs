@@ -31,12 +31,11 @@ fn compile_to_sierra(cairo_file: &str) -> Arc<sierra::program::Program> {
 
 #[test_case("fib.cairo")]
 fn cairo_to_sierra(cairo_file: &str) {
-    compile_to_sierra(cairo_file);
+    println!("{}", compile_to_sierra(cairo_file));
 }
 
-#[ignore = "Compilation to sierra is yet to be a final product"]
 #[test_case("fib.cairo")]
 fn cairo_to_casm(cairo_file: &str) {
     let sierra_program = compile_to_sierra(cairo_file);
-    sierra_to_casm::compiler::compile(&sierra_program).unwrap();
+    println!("{}", sierra_to_casm::compiler::compile(&sierra_program).unwrap());
 }
