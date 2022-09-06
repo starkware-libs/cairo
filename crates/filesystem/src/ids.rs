@@ -2,6 +2,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use db_utils::define_short_id;
+use debug::debug::DebugWithDb;
 use smol_str::SmolStr;
 
 use crate::db::FilesGroup;
@@ -47,3 +48,20 @@ pub struct SubmoduleLongId {
     pub name: SmolStr,
 }
 define_short_id!(SubmoduleId);
+
+impl ModuleId {
+    pub fn full_path(&self, db: &dyn FilesGroup) -> String {
+        match self {
+            ModuleId::CrateRoot(id) => db.lookup_intern_crate(*id).0.to_string(),
+            ModuleId::Submodule(id) => {
+                let SubmoduleLongId { parent, name } = db.lookup_intern_submodule(*id);
+                format!("{}::{}", parent.full_path(db), name)
+            }
+        }
+    }
+}
+impl DebugWithDb<dyn FilesGroup> for ModuleId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &dyn FilesGroup) -> std::fmt::Result {
+        write!(f, "ModuleId({})", self.full_path(db))
+    }
+}
