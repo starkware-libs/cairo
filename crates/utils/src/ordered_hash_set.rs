@@ -1,6 +1,6 @@
 use std::hash::Hash;
 
-use indexmap::IndexSet;
+use indexmap::{Equivalent, IndexSet};
 use itertools::zip_eq;
 
 #[derive(Clone, Debug)]
@@ -16,6 +16,21 @@ impl<Key: Hash + Eq> OrderedHashSet<Key> {
     /// If an equivalent item already exists in the set, returns `false`. Otherwise, returns `true`.
     pub fn insert(&mut self, key: Key) -> bool {
         self.0.insert(key)
+    }
+
+    /// Return true if an equivalent to value exists in the set.
+    pub fn contains<Q: ?Sized + Hash + Equivalent<Key>>(&self, value: &Q) -> bool {
+        self.0.contains(value)
+    }
+
+    /// Returns the number of elements in the set.
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    /// Returns true if the set contains no elements.
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
     }
 }
 
