@@ -10,7 +10,7 @@ use crate::db::FilesGroup;
 // A crate is a standalone file tree representing a single compilation unit.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct CrateLongId(pub SmolStr);
-define_short_id!(CrateId);
+define_short_id!(CrateId, CrateLongId, FilesGroup, lookup_intern_crate);
 
 // We use a higher level FileId struct, because not all files are on disk. Some might be online.
 // Some might be virtual/computed on demand.
@@ -25,7 +25,7 @@ pub struct VirtualFile {
     pub name: SmolStr,
     pub content: Arc<String>,
 }
-define_short_id!(FileId);
+define_short_id!(FileId, FileLongId, FilesGroup, lookup_intern_file);
 impl FileId {
     pub fn file_name(self, db: &dyn FilesGroup) -> String {
         match db.lookup_intern_file(self) {
@@ -47,7 +47,7 @@ pub struct SubmoduleLongId {
     pub parent: ModuleId,
     pub name: SmolStr,
 }
-define_short_id!(SubmoduleId);
+define_short_id!(SubmoduleId, SubmoduleLongId, FilesGroup, lookup_intern_submodule);
 
 impl ModuleId {
     pub fn full_path(&self, db: &dyn FilesGroup) -> String {

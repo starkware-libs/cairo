@@ -1,4 +1,5 @@
 use assert_matches::assert_matches;
+use debug::DebugWithDb;
 use defs::db::{AsDefsGroup, DefsDatabase, DefsGroup};
 use defs::ids::{LanguageElementId, ModuleItemId, VarId};
 use filesystem::db::{AsFilesGroup, FilesDatabase, FilesGroup};
@@ -41,6 +42,14 @@ fn test_expr_literal() {
     let (_module_id, expr_id) = setup_test_expr(&mut db_val, "7", "", "");
     let db = &db_val;
     let expr = db.lookup_intern_expr(expr_id);
+    // TODO(spapini): Currently, DebugWithDb can't "switch" dbs, and thus ExternTypeId is not
+    // followed (it uses SyntaxGroup, and not SemanticGroup).
+    // Fix this.
+    assert_eq!(
+        format!("{:?}", expr.debug(db)),
+        "Expr::ExprLiteral(ExprLiteral { value: 7, ty: TypeLongId::Concrete(ConcreteType { \
+         generic_type: Extern(ExternTypeId(0)), generic_args: [] }) })"
+    );
 
     // Check expr.
     let semantic::ExprLiteral { value, ty } = match expr {

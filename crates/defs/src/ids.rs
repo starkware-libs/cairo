@@ -45,19 +45,30 @@ macro_rules! define_language_element_id {
     ($short_id:ident, $long_id:ident, $ast_ty:ty, $lookup:ident) => {
         #[derive(Clone, PartialEq, Eq, Hash, Debug)]
         pub struct $long_id(pub ModuleId, pub <$ast_ty as TypedSyntaxNode>::StablePtr);
-        define_short_id!($short_id);
+        impl $long_id {
+            pub fn name(&self, db: &dyn DefsGroup) -> SmolStr {
+                let syntax_db = db.as_syntax_group();
+                let terminal_green = self.1.name_green(syntax_db);
+                let terminal_ast = ast::Terminal::from_syntax_node(
+                    syntax_db,
+                    SyntaxNode::new_root(syntax_db, terminal_green),
+                );
+                terminal_ast.text(syntax_db)
+            }
+        }
+        define_short_id!($short_id, $long_id, DefsGroup, $lookup);
         impl $short_id {
             pub fn stable_ptr(self, db: &dyn DefsGroup) -> <$ast_ty as TypedSyntaxNode>::StablePtr {
                 db.$lookup(self).1
             }
         }
-        impl DebugWithDb<dyn DefsGroup + 'static> for $short_id {
+        impl DebugWithDb<dyn DefsGroup + 'static> for $long_id {
             fn fmt(
                 &self,
                 f: &mut std::fmt::Formatter<'_>,
                 db: &(dyn DefsGroup + 'static),
             ) -> std::fmt::Result {
-                let $long_id(module_id, _stable_ptr) = &db.$lookup(*self);
+                let $long_id(module_id, _stable_ptr) = self;
                 write!(
                     f,
                     "{}({}::{})",
@@ -72,13 +83,7 @@ macro_rules! define_language_element_id {
                 db.$lookup(*self).0
             }
             fn name(&self, db: &dyn DefsGroup) -> SmolStr {
-                let syntax_db = db.as_syntax_group();
-                let terminal_green = db.$lookup(*self).1.name_green(syntax_db);
-                let terminal_ast = ast::Terminal::from_syntax_node(
-                    syntax_db,
-                    SyntaxNode::new_root(syntax_db, terminal_green),
-                );
-                terminal_ast.text(syntax_db)
+                db.$lookup(*self).name(db)
             }
         }
     };
