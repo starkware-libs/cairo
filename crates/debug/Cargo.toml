@@ -1,0 +1,11 @@
+[package]
+name = "debug"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+db_utils = { path = "../db_utils" }
+salsa = "0.16.1"
+
+[dev_dependencies]
+diagnostics_proc_macros = { path = "../diagnostics_proc_macros" }
