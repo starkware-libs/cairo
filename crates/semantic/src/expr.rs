@@ -17,7 +17,8 @@ use syntax::node::{ast, TypedSyntaxNode};
 use crate::corelib::{core_module, unit_ty};
 use crate::db::{resolve_type, SemanticGroup};
 use crate::{
-    semantic, ConcreteFunctionId, ConcreteFunctionLongId, MatchArm, StatementId, TypeId, Variable,
+    semantic, ConcreteFunctionId, ConcreteFunctionLongId, Diagnostic, MatchArm, StatementId,
+    TypeId, Variable,
 };
 
 /// Context for computing the semantic model of expression trees.
@@ -79,7 +80,7 @@ fn literal_to_semantic(
 /// Computes the semantic model of an expression.
 #[with_diagnostics]
 pub fn compute_expr_semantic(
-    diagnostics: &mut Diagnostics<ParserDiagnostic>,
+    diagnostics: &mut Diagnostics<Diagnostic>,
     ctx: &mut ComputationContext<'_>,
     syntax: ast::Expr,
 ) -> semantic::Expr {
@@ -101,7 +102,8 @@ pub fn compute_expr_semantic(
         ast::Expr::Tuple(_) => todo!(),
         ast::Expr::FunctionCall(call_syntax) => {
             let path = call_syntax.path(syntax_db);
-            let (generic_function, concrete_function) = resolve_concrete_function(ctx, path);
+            let (generic_function, concrete_function) =
+                resolve_concrete_function(ctx, path).unwrap(diagnostics);
             let signature = db
                 .generic_function_signature_semantic(generic_function)
                 .expect("Diagnostics not supported yet")
@@ -239,7 +241,9 @@ pub fn resolve_variable_by_name(
 
 /// Resolves a concrete function given a context and a path expression.
 /// Returns the generic function and the concrete function.
+#[with_diagnostics]
 fn resolve_concrete_function(
+    diagnostics: &mut Diagnostics<Diagnostic>,
     ctx: &mut ComputationContext<'_>,
     path: ast::ExprPath,
 ) -> (GenericFunctionId, ConcreteFunctionId) {
@@ -257,18 +261,29 @@ fn resolve_concrete_function(
     };
     let function_name = last_element.ident(syntax_db).text(syntax_db);
     let generic_function = resolve_function_in_module(db, ctx.module_id, function_name.clone())
-        .or_else(|| resolve_function_in_module(db, core_module(db), function_name))
-        .expect("Unresolved identifier");
+        .unwrap(diagnostics)
+        .or_else(|| {
+            resolve_function_in_module(db, core_module(db), function_name).unwrap(diagnostics)
+        })
+        .expect("Unresolved function identifier");
+    let return_type = db
+        .generic_function_signature_semantic(generic_function)
+        .unwrap(diagnostics)
+        .expect("No signature")
+        .return_type;
     let concrete_function = db.intern_concrete_function(ConcreteFunctionLongId {
         generic_function,
         generic_args: vec![],
+        return_type,
     });
     (generic_function, concrete_function)
 }
 
 // TODO(spapini): Unite / be consistent with generic type resolution.
 /// Resolves a generic function in a module, by name.
+#[with_diagnostics]
 fn resolve_function_in_module(
+    diagnostics: &mut Diagnostics<ParserDiagnostic>,
     db: &dyn SemanticGroup,
     module_id: ModuleId,
     function_name: SmolStr,
@@ -293,7 +308,7 @@ fn resolve_function_in_module(
 /// Computes the semantic model of a statement.
 #[with_diagnostics]
 pub fn compute_statement_semantic(
-    diagnostics: &mut Diagnostics<ParserDiagnostic>,
+    diagnostics: &mut Diagnostics<Diagnostic>,
     ctx: &mut ComputationContext<'_>,
     syntax: ast::Statement,
 ) -> StatementId {

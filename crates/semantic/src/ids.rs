@@ -19,6 +19,7 @@ pub enum GenericArgumentId {
 pub struct ConcreteFunctionLongId {
     pub generic_function: GenericFunctionId,
     pub generic_args: Vec<GenericArgumentId>,
+    pub return_type: TypeId,
 }
 define_short_id!(ConcreteFunctionId);
 
