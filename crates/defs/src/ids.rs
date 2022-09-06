@@ -22,6 +22,7 @@
 // Call sites, variable usages, assignments, etc. are NOT definitions.
 
 use db_utils::define_short_id;
+use debug::debug::DebugWithDb;
 use filesystem::ids::ModuleId;
 use smol_str::SmolStr;
 use syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
@@ -48,6 +49,22 @@ macro_rules! define_language_element_id {
         impl $short_id {
             pub fn stable_ptr(self, db: &dyn DefsGroup) -> <$ast_ty as TypedSyntaxNode>::StablePtr {
                 db.$lookup(self).1
+            }
+        }
+        impl DebugWithDb<dyn DefsGroup + 'static> for $short_id {
+            fn fmt(
+                &self,
+                f: &mut std::fmt::Formatter<'_>,
+                db: &(dyn DefsGroup + 'static),
+            ) -> std::fmt::Result {
+                let $long_id(module_id, _stable_ptr) = &db.$lookup(*self);
+                write!(
+                    f,
+                    "{}({}::{})",
+                    stringify!($short_id),
+                    module_id.full_path(db.as_files_group()),
+                    self.name(db)
+                )
             }
         }
         impl LanguageElementId for $short_id {
@@ -79,6 +96,19 @@ macro_rules! define_language_element_id_as_enum {
         #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
         pub enum $enum_name {
             $($variant($variant_ty),)*
+        }
+        impl DebugWithDb<dyn DefsGroup + 'static> for $enum_name {
+            fn fmt(
+                &self,
+                f: &mut std::fmt::Formatter<'_>,
+                db: &(dyn DefsGroup + 'static),
+            ) -> std::fmt::Result {
+                match self {
+                    $(
+                        $enum_name::$variant(id) => id.fmt(f, db),
+                    )*
+                }
+            }
         }
         impl LanguageElementId for $enum_name {
             fn module(&self, db: &dyn DefsGroup) -> ModuleId {
