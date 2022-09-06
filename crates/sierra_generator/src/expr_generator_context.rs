@@ -118,6 +118,17 @@ impl<'a> ExprGeneratorContext<'a> {
         self.get_extension_id_without_generics("jump")
     }
 
+    pub fn unwrap_nz_libfunc_id(&self, ty: semantic::TypeId) -> sierra::ids::ConcreteLibFuncId {
+        // TODO(orizi): Propagate the diagnostics or extract `get_concrete_type_id` usage out of
+        // this function.
+        self.db.intern_concrete_lib_func(sierra::program::ConcreteLibFuncLongId {
+            generic_id: sierra::ids::GenericLibFuncId::from_string("unwrap_nz"),
+            args: vec![sierra::program::GenericArg::Type(
+                self.db.get_concrete_type_id(ty).expect("got unexpected diagnostics").unwrap(),
+            )],
+        })
+    }
+
     pub fn generic_libfunc_id(
         &self,
         extern_id: defs::ids::ExternFunctionId,
