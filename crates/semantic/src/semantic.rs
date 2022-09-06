@@ -2,8 +2,8 @@ use defs::ids::{LocalVarId, MemberId, ParamId, VarId};
 use diagnostics_proc_macros::DebugWithDb;
 
 use crate::db::SemanticGroup;
-use crate::ids::{ConcreteFunctionId, ExprId, TypeId};
-use crate::StatementId;
+use crate::ids::{ExprId, TypeId};
+use crate::{FunctionId, StatementId};
 
 // Statements.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
@@ -57,7 +57,7 @@ pub struct ExprBlock {
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
 #[debug_db(SemanticGroup)]
 pub struct ExprFunctionCall {
-    pub function: ConcreteFunctionId,
+    pub function: FunctionId,
     pub args: Vec<ExprId>,
     pub ty: TypeId,
 }

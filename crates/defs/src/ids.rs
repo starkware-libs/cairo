@@ -206,3 +206,25 @@ define_language_element_id_as_enum! {
         // TODO(spapini): enums, associated types in impls.
     }
 }
+
+// Downcasts from ModuleItemId.
+impl GenericFunctionId {
+    pub fn from(item: ModuleItemId) -> Option<Self> {
+        match item {
+            ModuleItemId::FreeFunction(id) => Some(GenericFunctionId::Free(id)),
+            ModuleItemId::ExternFunction(id) => Some(GenericFunctionId::Extern(id)),
+            ModuleItemId::Use(_) | ModuleItemId::Struct(_) | ModuleItemId::ExternType(_) => None,
+        }
+    }
+}
+impl GenericTypeId {
+    pub fn from(item: ModuleItemId) -> Option<Self> {
+        match item {
+            ModuleItemId::Struct(id) => Some(GenericTypeId::Struct(id)),
+            ModuleItemId::ExternType(id) => Some(GenericTypeId::Extern(id)),
+            ModuleItemId::Use(_)
+            | ModuleItemId::FreeFunction(_)
+            | ModuleItemId::ExternFunction(_) => None,
+        }
+    }
+}
