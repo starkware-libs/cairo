@@ -8,16 +8,16 @@ use defs::ids::{GenericFunctionId, LocalVarLongId, VarId};
 use diagnostics::{Diagnostics, WithDiagnostics};
 use diagnostics_proc_macros::with_diagnostics;
 use filesystem::ids::ModuleId;
-use itertools::zip_eq;
-use parser::parser::ParserDiagnostic;
 use smol_str::SmolStr;
 use syntax::node::db::SyntaxGroup;
 use syntax::node::{ast, TypedSyntaxNode};
 
-use crate::corelib::{core_module, unit_ty};
+use crate::corelib::unit_ty;
 use crate::db::{resolve_type, SemanticGroup};
+use crate::resolve_item::resolve_item;
 use crate::{
-    semantic, ConcreteFunctionId, ConcreteFunctionLongId, MatchArm, StatementId, TypeId, Variable,
+    semantic, ConcreteFunction, Diagnostic, FunctionId, FunctionLongId, MatchArm, StatementId,
+    TypeId, TypeLongId, Variable,
 };
 
 /// Context for computing the semantic model of expression trees.
@@ -79,7 +79,7 @@ fn literal_to_semantic(
 /// Computes the semantic model of an expression.
 #[with_diagnostics]
 pub fn compute_expr_semantic(
-    diagnostics: &mut Diagnostics<ParserDiagnostic>,
+    diagnostics: &mut Diagnostics<Diagnostic>,
     ctx: &mut ComputationContext<'_>,
     syntax: ast::Expr,
 ) -> semantic::Expr {
@@ -101,30 +101,18 @@ pub fn compute_expr_semantic(
         ast::Expr::Tuple(_) => todo!(),
         ast::Expr::FunctionCall(call_syntax) => {
             let path = call_syntax.path(syntax_db);
-            let (generic_function, concrete_function) = resolve_concrete_function(ctx, path);
-            let signature = db
-                .generic_function_signature_semantic(generic_function)
-                .expect("Diagnostics not supported yet")
-                .expect("No signature");
-
-            let args = zip_eq(
-                call_syntax
-                    .arguments(syntax_db)
-                    .expressions(syntax_db)
-                    .elements(syntax_db)
-                    .into_iter(),
-                signature.params,
-            )
-            .map(|(arg_syntax, _param_id)| {
-                // TODO(spapini): Type check arguments.
-                db.intern_expr(compute_expr_semantic(ctx, arg_syntax).unwrap(diagnostics))
-            })
-            .collect();
-            semantic::Expr::ExprFunctionCall(semantic::ExprFunctionCall {
-                function: concrete_function,
-                args,
-                ty: signature.return_type,
-            })
+            let (function, ty) = resolve_function(ctx, path).unwrap(diagnostics);
+            // TODO(spapini): Type check arguments.
+            let args = call_syntax
+                .arguments(syntax_db)
+                .expressions(syntax_db)
+                .elements(syntax_db)
+                .into_iter()
+                .map(|arg_syntax| {
+                    db.intern_expr(compute_expr_semantic(ctx, arg_syntax).unwrap(diagnostics))
+                })
+                .collect();
+            semantic::Expr::ExprFunctionCall(semantic::ExprFunctionCall { function, args, ty })
         }
         ast::Expr::StructCtorCall(_) => todo!(),
         ast::Expr::Block(block_syntax) => {
@@ -239,61 +227,43 @@ pub fn resolve_variable_by_name(
 
 /// Resolves a concrete function given a context and a path expression.
 /// Returns the generic function and the concrete function.
-fn resolve_concrete_function(
+#[with_diagnostics]
+fn resolve_function(
+    diagnostics: &mut Diagnostics<Diagnostic>,
     ctx: &mut ComputationContext<'_>,
     path: ast::ExprPath,
-) -> (GenericFunctionId, ConcreteFunctionId) {
-    let db = ctx.db;
-    let syntax_db = db.as_syntax_group();
-    let elements = path.elements(syntax_db);
-    // TODO(spapini): Support qualified paths.
-    if elements.len() != 1 {
-        todo!("Qualified paths are not supported yet");
-    }
-    let last_element = &elements[0];
-    // TODO(spapini): Support generics.
-    if let ast::OptionGenericArgs::Some(_) = last_element.generic_args(syntax_db) {
-        todo!("Generics are not supported yet")
-    };
-    let function_name = last_element.ident(syntax_db).text(syntax_db);
-    let generic_function = resolve_function_in_module(db, ctx.module_id, function_name.clone())
-        .or_else(|| resolve_function_in_module(db, core_module(db), function_name))
-        .expect("Unresolved identifier");
-    let concrete_function = db.intern_concrete_function(ConcreteFunctionLongId {
-        generic_function,
-        generic_args: vec![],
-    });
-    (generic_function, concrete_function)
-}
-
-// TODO(spapini): Unite / be consistent with generic type resolution.
-/// Resolves a generic function in a module, by name.
-fn resolve_function_in_module(
-    db: &dyn SemanticGroup,
-    module_id: ModuleId,
-    function_name: SmolStr,
-) -> Option<GenericFunctionId> {
-    let generic_function = match db
-        .module_item_by_name(module_id, function_name)
-        .expect("Diagnostics not supported yet")?
+) -> (FunctionId, TypeId) {
+    let (function, ty) = match resolve_item(ctx.db, ctx.module_id, &path)
+        .unwrap(diagnostics)
+        .and_then(Option::<GenericFunctionId>::from)
     {
-        defs::ids::ModuleItemId::Use(_) => panic!("Unexpected use"),
-        defs::ids::ModuleItemId::FreeFunction(free_function) => {
-            GenericFunctionId::Free(free_function)
+        // TODO(spapini): Type check arguments.
+        Some(generic_function) => {
+            let signature = ctx
+                .db
+                .generic_function_signature_semantic(generic_function)
+                .expect("Diagnostics not supported yet")
+                .expect("No signature");
+            (
+                FunctionLongId::Concrete(ConcreteFunction {
+                    generic_function,
+                    generic_args: vec![],
+                }),
+                signature.return_type,
+            )
         }
-        defs::ids::ModuleItemId::ExternFunction(extern_function) => {
-            GenericFunctionId::Extern(extern_function)
+        None => {
+            // TODO(spapini): Add diagnostic.
+            (FunctionLongId::Missing, ctx.db.intern_type(TypeLongId::Missing))
         }
-        defs::ids::ModuleItemId::Struct(_) => panic!("Unexpected struct"),
-        defs::ids::ModuleItemId::ExternType(_) => panic!("Unexpected extern type"),
     };
-    Some(generic_function)
+    (ctx.db.intern_function(function), ty)
 }
 
 /// Computes the semantic model of a statement.
 #[with_diagnostics]
 pub fn compute_statement_semantic(
-    diagnostics: &mut Diagnostics<ParserDiagnostic>,
+    diagnostics: &mut Diagnostics<Diagnostic>,
     ctx: &mut ComputationContext<'_>,
     syntax: ast::Statement,
 ) -> StatementId {

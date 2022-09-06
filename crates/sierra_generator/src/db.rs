@@ -32,7 +32,7 @@ pub trait SierraGenGroup: SemanticGroup {
     // TODO(lior): Can we have the short and long ids in the same place? Currently, the short
     //   id is defined in sierra and the long id is defined in semantic.
     #[salsa::interned]
-    fn intern_function(&self, id: semantic::ConcreteFunctionId) -> sierra::ids::FunctionId;
+    fn intern_sierra_function(&self, id: semantic::FunctionId) -> sierra::ids::FunctionId;
 
     /// Returns the matching sierra concrete type id for a given semantic type id.
     fn get_concrete_type_id(

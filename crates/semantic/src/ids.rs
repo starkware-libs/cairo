@@ -20,18 +20,17 @@ pub enum GenericArgumentId {
 /// Function instance.
 /// For example: ImplA::foo<A, B>, or bar<A>.
 // TODO(spapini): Add a function pointer variant.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
-#[debug_db(SemanticGroup)]
-pub struct ConcreteFunctionLongId {
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub enum FunctionLongId {
+    Concrete(ConcreteFunction),
+    Missing,
+}
+define_short_id!(FunctionId, FunctionLongId, SemanticGroup, lookup_intern_function);
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct ConcreteFunction {
     pub generic_function: GenericFunctionId,
     pub generic_args: Vec<GenericArgumentId>,
 }
-define_short_id!(
-    ConcreteFunctionId,
-    ConcreteFunctionLongId,
-    SemanticGroup,
-    lookup_intern_concrete_function
-);
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
 #[debug_db(SemanticGroup)]
