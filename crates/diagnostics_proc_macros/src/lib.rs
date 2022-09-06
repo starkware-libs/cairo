@@ -11,10 +11,9 @@ use syn::{
 #[proc_macro_attribute]
 pub fn with_diagnostics(_attr: TokenStream, item: TokenStream) -> TokenStream {
     // Parse token stream as a function AST.
-    let ast: syn::ItemFn = syn::parse(item).unwrap();
-    let function_ident = ast.sig.ident;
-    let mut params = ast.sig.inputs.into_iter();
-    let visibility = ast.vis;
+    let syn::ItemFn { attrs, vis, sig, block } = syn::parse(item).unwrap();
+    let function_ident = sig.ident;
+    let mut params = sig.inputs.into_iter();
 
     // Extract the first parameter.
     let first_parameter = params.next();
@@ -64,18 +63,18 @@ pub fn with_diagnostics(_attr: TokenStream, item: TokenStream) -> TokenStream {
     }
 
     // Extract body and return type.
-    let body = ast.block;
-    let ret_ty = match ast.sig.output {
+    let ret_ty = match sig.output {
         syn::ReturnType::Default => panic!("No return type."),
         syn::ReturnType::Type(_, ty) => ty,
     };
 
     // Emit a wrapper function.
     quote! {
-        #visibility fn #function_ident(#args_syntax) -> WithDiagnostics<#ret_ty, #entry_ty> {
+        #(#attrs)* #vis fn #function_ident(#args_syntax) -> WithDiagnostics<#ret_ty, #entry_ty> {
             let mut diagnostics = Diagnostics::new();
-            let f = |diagnostics: &mut Diagnostics<#entry_ty>| {
-                #body
+
+            let mut f = |diagnostics: &mut Diagnostics<#entry_ty>| -> #ret_ty {
+                #block
             };
             let value = f(&mut diagnostics);
             WithDiagnostics { value, diagnostics }
