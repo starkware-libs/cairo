@@ -8,5 +8,8 @@ db_utils = { path = "../db_utils" }
 filesystem = { path = "../filesystem" }
 salsa = "0.16.1"
 
+
 [dev_dependencies]
 diagnostics_proc_macros = { path = "../diagnostics_proc_macros" }
+indoc = "1.0.7"
+pretty_assertions = "1.2.1"
