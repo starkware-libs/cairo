@@ -1,6 +1,6 @@
 use diagnostics::{Diagnostics, WithDiagnostics};
 use diagnostics_proc_macros::with_diagnostics;
-use filesystem::db::FilesGroup;
+use filesystem::db::{AsFilesGroup, FilesGroup};
 use filesystem::ids::ModuleId;
 use itertools::chain;
 use parser::db::ParserGroup;
@@ -15,7 +15,7 @@ use crate::ids::*;
 /// Salsa database interface.
 /// See [`super::ids`] for further details.
 #[salsa::query_group(DefsDatabase)]
-pub trait DefsGroup: FilesGroup + SyntaxGroup + AsSyntaxGroup + ParserGroup {
+pub trait DefsGroup: FilesGroup + SyntaxGroup + AsSyntaxGroup + ParserGroup + AsFilesGroup {
     #[salsa::interned]
     fn intern_use(&self, id: UseLongId) -> UseId;
     #[salsa::interned]

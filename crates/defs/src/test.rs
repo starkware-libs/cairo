@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
-use filesystem::db::{FilesDatabase, FilesGroup, ProjectConfig};
+use debug::debug::DebugWithDb;
+use filesystem::db::{AsFilesGroup, FilesDatabase, FilesGroup, ProjectConfig};
 use filesystem::ids::{CrateLongId, FileLongId, ModuleId, VirtualFile};
 use indoc::indoc;
 use parser::db::ParserDatabase;
@@ -15,6 +16,11 @@ pub struct DatabaseImpl {
 }
 impl salsa::Database for DatabaseImpl {}
 
+impl AsFilesGroup for DatabaseImpl {
+    fn as_files_group(&self) -> &(dyn FilesGroup + 'static) {
+        self
+    }
+}
 impl AsSyntaxGroup for DatabaseImpl {
     fn as_syntax_group(&self) -> &(dyn SyntaxGroup + 'static) {
         self
@@ -37,6 +43,8 @@ fn test_resolve() {
             .expect("Unexpected error")
             .is_none()
     );
+    let felt_add = db.module_item_by_name(module_id, "felt_add".into()).expect("Unexpected error");
+    assert_eq!(format!("{:?}", felt_add.debug(db)), "Some(ExternFunctionId(test_crate::felt_add))");
     match db.module_item_by_name(module_id, "felt_add".into()).expect("Unexpected error").unwrap() {
         crate::ids::ModuleItemId::ExternFunction(_) => {}
         _ => panic!("Expected an extern function"),

@@ -1,4 +1,6 @@
-use casm::instructions::{CallInstruction, Instruction, InstructionBody, JnzInstruction};
+use casm::instructions::{
+    CallInstruction, Instruction, InstructionBody, JnzInstruction, JumpInstruction,
+};
 use casm::operand::{DerefOrImmediate, ImmediateOperand};
 use sierra::program::StatementIdx;
 
@@ -27,15 +29,20 @@ impl Relocation {
                             relative: true,
                         }),
                     inc_ap: false,
-                } => {
-                    *value +=
-                        statement_offsets[statement_id.0] as i128 - instruction_offset as i128;
                 }
-                Instruction {
+                | Instruction {
                     body:
                         InstructionBody::Jnz(JnzInstruction {
                             jump_offset: DerefOrImmediate::Immediate(ImmediateOperand { value }),
                             condition: _,
+                        }),
+                    inc_ap: false,
+                }
+                | Instruction {
+                    body:
+                        InstructionBody::Jump(JumpInstruction {
+                            target: DerefOrImmediate::Immediate(ImmediateOperand { value }),
+                            relative: true,
                         }),
                     inc_ap: false,
                 } => {
