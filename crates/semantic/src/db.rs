@@ -2,7 +2,8 @@ use std::collections::HashMap;
 
 use defs::db::{AsDefsGroup, DefsGroup};
 use defs::ids::{
-    FreeFunctionId, GenericFunctionId, GenericTypeId, ModuleItemId, ParamLongId, StructId, VarId,
+    FreeFunctionId, GenericFunctionId, GenericTypeId, LanguageElementId, ModuleItemId, ParamLongId,
+    StructId, VarId,
 };
 use diagnostics::{Diagnostics, WithDiagnostics};
 use diagnostics_proc_macros::with_diagnostics;
