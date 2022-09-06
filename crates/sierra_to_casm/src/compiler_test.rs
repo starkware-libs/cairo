@@ -63,7 +63,7 @@ fn good_flow() {
             call_foo([1], [2]) -> ([1], [2]);               // #21
             return ([1], [2]);                              // #22
 
-            test_program@0([1]: felt, [2]: felt) -> ();
+            test_program@0([1]: felt, [2]: felt) -> (felt, felt, felt);
             foo@10([1]: felt, [2]: felt) -> (felt, felt);
         "})
         .unwrap();
@@ -120,7 +120,7 @@ fn fib_program() {
 #[test_case(indoc! {"
                 return([2]);
 
-                test_program@0([2]: felt) -> ();
+                test_program@0([2]: felt) -> (felt);
             "} =>
             Err(InvocationError::InvalidReferenceExpressionForArgument.into());
             "Invalid return reference")]
@@ -174,7 +174,7 @@ fn fib_program() {
                 return([3]);
 
                 test_program@0([1]: int, [2]: int) -> (felt);
-            "} => Err(InvocationError::InvalidReferenceTypeForArgument.into());
+            "} => Err(ReferencesError::InvalidReferenceTypeForArgument.into());
             "Types mismatch")]
 #[test_case(indoc! {"
                 test_program@25() -> ();
@@ -248,9 +248,30 @@ fn fib_program() {
                 felt_dup([1]) -> ([1], [2]);
                 return ([1]);
                 test_program@0([1]: felt) -> ();
-                foo@1([1]: felt) -> (foo);
+                foo@1([1]: felt) -> (felt);
             "} => Err(InconsistentReferencesAnnotation(StatementIdx(1)).into());
             "Inconsistent return annotations")]
+#[test_case(indoc! {"
+                type felt = felt;
+                type NonZeroFelt = NonZero<felt>;
+
+                libfunc felt_dup = felt_dup;
+                libfunc felt_ignore = felt_ignore;
+                libfunc felt_jump_nz = felt_jump_nz;
+                libfunc store_temp_felt = store_temp<felt>;
+                libfunc store_temp_nz_felt = store_temp<NonZeroFelt>;
+
+                felt_jump_nz([1]) { 3([1]) fallthrough() };
+                store_temp_felt([2]) -> ([2]);
+                return ([2]);
+                felt_ignore([2]) -> ();
+                store_temp_nz_felt([1]) -> ([1]);
+                return ([1]);
+
+                test_program@0([1]: felt, [2]: felt) -> (felt);
+            "} => Err(AnnotationError::ReferencesError(
+                ReferencesError::InvalidReferenceTypeForArgument).into());
+            "Invalid return type")]
 fn compiler_errors(sierra_code: &str) -> Result<(), CompilationError> {
     let prog = ProgramParser::new().parse(sierra_code).unwrap();
     compile(&prog).map(|_| ())

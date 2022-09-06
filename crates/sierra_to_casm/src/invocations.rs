@@ -30,8 +30,6 @@ use crate::type_sizes::TypeSizeMap;
 pub enum InvocationError {
     #[error("One of the arguments does not satisfy the requirements of the libfunc.")]
     InvalidReferenceExpressionForArgument,
-    #[error("One of the arguments does not match the expected input of the libfunc.")]
-    InvalidReferenceTypeForArgument,
     #[error("Unexpected error - an unregistered type id used.")]
     UnknownTypeId(ConcreteTypeId),
     #[error("Expected a different number of arguments")]
@@ -154,18 +152,6 @@ pub fn check_references_on_stack(
         }
     }
     Ok(())
-}
-
-/// Checks that the list of reference contains types matching the given types.
-pub fn check_types_match(
-    refs: &[ReferenceValue],
-    types: &[ConcreteTypeId],
-) -> Result<(), InvocationError> {
-    if itertools::equal(types.iter(), refs.iter().map(|r| &r.ty)) {
-        Ok(())
-    } else {
-        Err(InvocationError::InvalidReferenceTypeForArgument)
-    }
 }
 
 fn handle_felt_dup(
@@ -346,7 +332,6 @@ pub fn compile_invocation(
     refs: &[ReferenceValue],
     type_sizes: &TypeSizeMap,
 ) -> Result<CompiledInvocation, InvocationError> {
-    check_types_match(refs, libfunc.input_types())?;
     match libfunc {
         // TODO(ilya, 10/10/2022): Handle type.
         CoreConcreteLibFunc::Felt(FeltConcrete::Operation(OperationConcreteLibFunc::Binary(

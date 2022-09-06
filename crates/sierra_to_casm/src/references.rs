@@ -17,6 +17,10 @@ pub enum ReferencesError {
     InvalidFunctionDeclaration(Function),
     #[error("DanglingReferences")]
     DanglingReferences(StatementIdx),
+    #[error(
+        "One of the arguments does not match the expected type of the libfunc or return statement."
+    )]
+    InvalidReferenceTypeForArgument,
 }
 
 pub type StatementRefs = HashMap<VarId, ReferenceValue>;
@@ -99,4 +103,16 @@ pub fn build_function_parameter_refs(func: &Function) -> Result<StatementRefs, R
     }
 
     Ok(refs)
+}
+
+/// Checks that the list of reference contains types matching the given types.
+pub fn check_types_match(
+    refs: &[ReferenceValue],
+    types: &[ConcreteTypeId],
+) -> Result<(), ReferencesError> {
+    if itertools::equal(types.iter(), refs.iter().map(|r| &r.ty)) {
+        Ok(())
+    } else {
+        Err(ReferencesError::InvalidReferenceTypeForArgument)
+    }
 }
