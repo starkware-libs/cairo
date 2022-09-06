@@ -1,10 +1,11 @@
 use defs::ids::{FreeFunctionId, GenericFunctionId, LocalVarId, VarId};
 use pretty_assertions::assert_eq;
 use salsa::{InternId, InternKey};
+use semantic::corelib::core_felt_ty;
 use semantic::db::SemanticGroup;
 use semantic::ids::TypeId;
 use semantic::test_utils::{setup_test_expr, setup_test_module};
-use semantic::LocalVariable;
+use semantic::{ConcreteFunction, LocalVariable};
 
 use crate::expr_generator::generate_expression_code;
 use crate::expr_generator_context::ExprGeneratorContext;
@@ -39,18 +40,20 @@ fn test_expr_generator() {
     let statement_let =
         semantic::StatementLet { var: LocalVariable { id: var_x_id, ty }, expr: literal7 };
 
-    let foo_func = db.intern_concrete_function(semantic::ConcreteFunctionLongId {
+    let foo_func = db.intern_function(semantic::FunctionLongId::Concrete(ConcreteFunction {
         generic_function: GenericFunctionId::Free(FreeFunctionId::from_intern_id(InternId::from(
             1u32,
         ))),
         generic_args: vec![],
-    });
-    let foo2_func = db.intern_concrete_function(semantic::ConcreteFunctionLongId {
+        return_type: core_felt_ty(&db),
+    }));
+    let foo2_func = db.intern_function(semantic::FunctionLongId::Concrete(ConcreteFunction {
         generic_function: GenericFunctionId::Free(FreeFunctionId::from_intern_id(InternId::from(
             2u32,
         ))),
         generic_args: vec![],
-    });
+        return_type: core_felt_ty(&db),
+    }));
 
     // "foo(x, 7)" expression.
     let expr = db.intern_expr(semantic::Expr::ExprFunctionCall(semantic::ExprFunctionCall {
