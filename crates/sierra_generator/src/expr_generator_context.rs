@@ -1,6 +1,6 @@
 use std::collections::hash_map;
 
-use defs::ids::{FreeFunctionId, HasName};
+use defs::ids::{FreeFunctionId, LanguageElementId};
 use smol_str::SmolStr;
 use utils::unordered_hash_map::UnorderedHashMap;
 
@@ -65,7 +65,7 @@ impl<'a> ExprGeneratorContext<'a> {
     /// Generates a label id and a label statement.
     // TODO(lior): Consider using stable ids, instead of allocating sequential ids.
     pub fn new_label(&mut self) -> (pre_sierra::Statement, pre_sierra::LabelId) {
-        let id = self.get_db().intern_label_id(pre_sierra::LabelLongId {
+        let id = self.db.intern_label_id(pre_sierra::LabelLongId {
             parent: self.function_id,
             id: self.label_id_allocator.allocate(),
         });
@@ -90,9 +90,13 @@ impl<'a> ExprGeneratorContext<'a> {
     }
 
     pub fn store_temp_libfunc_id(&self, ty: semantic::TypeId) -> sierra::ids::ConcreteLibFuncId {
+        // TODO(orizi): Propagate the diagnostics or extract `get_concrete_type_id` usage out of
+        // this function.
         self.db.intern_concrete_lib_func(sierra::program::ConcreteLibFuncLongId {
             generic_id: sierra::ids::GenericLibFuncId::from_string("store_temp"),
-            args: vec![sierra::program::GenericArg::Type(self.db.intern_type_id(ty))],
+            args: vec![sierra::program::GenericArg::Type(
+                self.db.get_concrete_type_id(ty).expect("got unexpected diagnostics").unwrap(),
+            )],
         })
     }
 
@@ -106,8 +110,8 @@ impl<'a> ExprGeneratorContext<'a> {
         })
     }
 
-    pub fn jump_nz_libfunc_id(&self) -> sierra::ids::ConcreteLibFuncId {
-        self.get_extension_id_without_generics("jump_nz")
+    pub fn felt_jump_nz_libfunc_id(&self) -> sierra::ids::ConcreteLibFuncId {
+        self.get_extension_id_without_generics("felt_jump_nz")
     }
 
     pub fn jump_libfunc_id(&self) -> sierra::ids::ConcreteLibFuncId {
@@ -118,6 +122,6 @@ impl<'a> ExprGeneratorContext<'a> {
         &self,
         extern_id: defs::ids::ExternFunctionId,
     ) -> sierra::ids::ConcreteLibFuncId {
-        self.get_extension_id_without_generics(extern_id.name(self.get_db().as_defs_group()))
+        self.get_extension_id_without_generics(extern_id.name(self.db.as_defs_group()))
     }
 }

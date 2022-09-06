@@ -107,6 +107,12 @@ pub struct Parameter {
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct Variable {
+    pub id: VarId,
+    pub ty: TypeId,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Struct {
     pub members: Vec<MemberId>,
 }

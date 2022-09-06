@@ -2,7 +2,8 @@ use std::collections::HashMap;
 
 use defs::db::{AsDefsGroup, DefsGroup};
 use defs::ids::{
-    FreeFunctionId, GenericFunctionId, GenericTypeId, ModuleItemId, ParamLongId, StructId, VarId,
+    FreeFunctionId, GenericFunctionId, GenericTypeId, LanguageElementId, ModuleItemId, ParamLongId,
+    StructId, VarId,
 };
 use diagnostics::{Diagnostics, WithDiagnostics};
 use diagnostics_proc_macros::with_diagnostics;
@@ -15,7 +16,7 @@ use syntax::node::{ast, TypedSyntaxNode};
 
 use crate::corelib::{core_module, unit_ty};
 use crate::diagnostic::Diagnostic;
-use crate::expr::{compute_expr_semantic, ComputationContext};
+use crate::expr::{compute_expr_semantic, ComputationContext, EnvVariables};
 use crate::ids::{
     ConcreteFunctionId, ConcreteFunctionLongId, ExprId, StatementId, TypeId, TypeLongId,
 };
@@ -73,7 +74,7 @@ fn struct_semantic(_db: &dyn SemanticGroup, _struct_id: StructId) -> semantic::S
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GenericFunctionData {
     signature: semantic::Signature,
-    variables: HashMap<SmolStr, VarId>,
+    variables: EnvVariables,
 }
 
 /// Fetches the AST of the generic function signature. Computes and returns the
@@ -174,7 +175,7 @@ fn function_signature_params(
     db: &dyn SemanticGroup,
     module_id: ModuleId,
     sig: &ast::FunctionSignature,
-) -> Option<(Vec<semantic::Parameter>, HashMap<SmolStr, VarId>)> {
+) -> Option<(Vec<semantic::Parameter>, EnvVariables)> {
     let syntax_db = db.as_syntax_group();
 
     let mut semantic_params = Vec::new();
@@ -193,7 +194,7 @@ fn function_signature_params(
         // TODO(yuval): Diagnostic?
         let ty = resolve_type(db, module_id, ty_path).unwrap(diagnostics)?;
         semantic_params.push(semantic::Parameter { id, ty });
-        variables.insert(name, VarId::Param(id));
+        variables.insert(name, semantic::Variable { id: VarId::Param(id), ty });
     }
 
     Some((semantic_params, variables))

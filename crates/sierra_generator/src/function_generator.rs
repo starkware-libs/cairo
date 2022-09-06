@@ -27,10 +27,22 @@ pub fn generate_function_code(
         .iter()
         .map(|param| {
             let sierra_var = context.allocate_sierra_variable();
+            // TODO(orizi): Propagate the diagnostics or extract `get_concrete_type_id` usage out of
+            // this function.
             context.register_variable(defs::ids::VarId::Param(param.id), sierra_var.clone());
-            sierra::program::Param { id: sierra_var, ty: db.intern_type_id(param.ty) }
+            sierra::program::Param {
+                id: sierra_var,
+                ty: db.get_concrete_type_id(param.ty).expect("got unexpected diagnostics").unwrap(),
+            }
         })
         .collect();
+    // TODO(orizi): Propagate the diagnostics or extract `get_concrete_type_id` usage out of this
+    // function.
+    let ret_types = vec![
+        db.get_concrete_type_id(function_semantic.signature.return_type)
+            .expect("got unexpected diagnostics")
+            .unwrap(),
+    ];
 
     let mut statements: Vec<pre_sierra::Statement> = vec![label];
 
@@ -58,5 +70,6 @@ pub fn generate_function_code(
         body: statements,
         entry_point: label_id,
         parameters,
+        ret_types,
     }
 }
