@@ -86,12 +86,13 @@ fn handle_function_call(
 ) -> (Vec<pre_sierra::Statement>, sierra::ids::VarId) {
     let mut statements: Vec<pre_sierra::Statement> = vec![];
 
+    // The args to push on the stack.
+    let mut args: Vec<(sierra::ids::VarId, semantic::TypeId)> = vec![];
     // Output statements to compute the arguments.
-    let mut args: Vec<sierra::ids::VarId> = vec![];
     for arg in &expr_function_call.args {
         let (arg_statements, res) = generate_expression_code(context, *arg);
         statements.extend(arg_statements);
-        args.push(res);
+        args.push((res, context.get_db().lookup_intern_expr(*arg).ty()));
     }
 
     // Check if this is a user defined function or a libcall.
@@ -101,15 +102,14 @@ fn handle_function_call(
         GenericFunctionId::Free(_) => {
             // Push the arguments on top of the stack.
             let mut args_on_stack: Vec<sierra::ids::VarId> = vec![];
-            for arg_res in args {
-                let arg_var = context.allocate_sierra_variable();
+            for (arg_var, arg_type) in args {
+                let arg_on_stack = context.allocate_sierra_variable();
                 statements.push(simple_statement(
-                    // TODO(lior): Use the real type instead of `felt`.
-                    context.store_temp_libfunc_id(context.get_db().core_felt_ty()),
-                    &[arg_res],
-                    &[arg_var.clone()],
+                    context.store_temp_libfunc_id(arg_type),
+                    &[arg_var],
+                    &[arg_on_stack.clone()],
                 ));
-                args_on_stack.push(arg_var);
+                args_on_stack.push(arg_on_stack);
             }
 
             // Call the function.
@@ -131,7 +131,7 @@ fn handle_function_call(
             let res_var = context.allocate_sierra_variable();
             statements.push(simple_statement(
                 context.generic_libfunc_id(extern_id),
-                &args,
+                &args.into_iter().map(|(var, _ty)| var).collect::<Vec<_>>()[..],
                 &[res_var.clone()],
             ));
 
@@ -139,7 +139,7 @@ fn handle_function_call(
             //   automatically adding such statements.
             let res_var_on_stack = context.allocate_sierra_variable();
             statements.push(simple_statement(
-                // TODO(lior): Use the real type instead of `felt`.
+                // TODO(lior): Use the real return type of the libcall instead of `felt`.
                 context.store_temp_libfunc_id(context.get_db().core_felt_ty()),
                 &[res_var],
                 &[res_var_on_stack.clone()],
@@ -207,8 +207,7 @@ fn handle_felt_match(
             let (block0_statements, block0_res) = generate_expression_code(context, *block0);
             statements.extend(block0_statements);
             statements.push(simple_statement(
-                // TODO(lior): Use the real type instead of `felt`.
-                context.store_temp_libfunc_id(context.get_db().core_felt_ty()),
+                context.store_temp_libfunc_id(context.get_db().lookup_intern_expr(*block0).ty()),
                 &[block0_res],
                 &[output_var.clone()],
             ));
@@ -229,8 +228,9 @@ fn handle_felt_match(
 
             statements.extend(block_otherwise_statements);
             statements.push(simple_statement(
-                // TODO(lior): Use the real type instead of `felt`.
-                context.store_temp_libfunc_id(context.get_db().core_felt_ty()),
+                context.store_temp_libfunc_id(
+                    context.get_db().lookup_intern_expr(*block_otherwise).ty(),
+                ),
                 &[block_otherwise_res],
                 &[output_var.clone()],
             ));
