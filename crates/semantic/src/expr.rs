@@ -14,8 +14,7 @@ use syntax::node::db::SyntaxGroup;
 use crate::corelib::{core_module, unit_ty};
 use crate::db::SemanticGroup;
 use crate::{
-    semantic, ConcreteFunctionId, ConcreteFunctionLongId, ExprId, MatchArm, StatementId, TypeId,
-    Variable,
+    semantic, ConcreteFunctionId, ConcreteFunctionLongId, MatchArm, StatementId, TypeId, Variable,
 };
 
 /// Context for computing the semantic model of expression trees.
@@ -75,7 +74,10 @@ fn literal_to_semantic(
 }
 
 /// Computes the semantic model of an expression.
-pub fn compute_expr_semantic(ctx: &mut ComputationContext<'_>, syntax: ast::Expr) -> ExprId {
+pub fn compute_expr_semantic(
+    ctx: &mut ComputationContext<'_>,
+    syntax: ast::Expr,
+) -> semantic::Expr {
     let db = ctx.db;
     let syntax_db = db.as_syntax_group();
     // TODO: When semantic::Expr holds the syntax pointer, add it here as well.
@@ -83,7 +85,7 @@ pub fn compute_expr_semantic(ctx: &mut ComputationContext<'_>, syntax: ast::Expr
         ast::Expr::Path(path) => {
             let var = resolve_variable(ctx, path);
             // TODO(spapini): Return the correct variable type, instead of the unit type.
-            semantic::Expr::ExprVar(semantic::ExprVar { var: var.id, ty: unit_ty(db) })
+            semantic::Expr::ExprVar(semantic::ExprVar { var: var.id, ty: var.ty })
         }
         ast::Expr::Literal(literal_syntax) => {
             semantic::Expr::ExprLiteral(literal_to_semantic(ctx, literal_syntax))
@@ -110,7 +112,7 @@ pub fn compute_expr_semantic(ctx: &mut ComputationContext<'_>, syntax: ast::Expr
             )
             .map(|(arg_syntax, _param_id)| {
                 // TODO(spapini): Type check arguments.
-                compute_expr_semantic(ctx, arg_syntax)
+                db.intern_expr(compute_expr_semantic(ctx, arg_syntax))
             })
             .collect();
             semantic::Expr::ExprFunctionCall(semantic::ExprFunctionCall {
@@ -140,13 +142,17 @@ pub fn compute_expr_semantic(ctx: &mut ComputationContext<'_>, syntax: ast::Expr
                 .collect();
 
             // Convert tail expression (if exists) to semantic model.
-            let tail_semantic =
+            let tail_semantic_expr =
                 tail.map(|tail_expr| compute_expr_semantic(&mut new_ctx, tail_expr));
 
+            let ty = match &tail_semantic_expr {
+                Some(t) => t.ty(),
+                None => unit_ty(db),
+            };
             semantic::Expr::ExprBlock(semantic::ExprBlock {
                 statements: statements_semantic,
-                tail: tail_semantic,
-                ty: unit_ty(db),
+                tail: tail_semantic_expr.map(|expr| db.intern_expr(expr)),
+                ty,
             })
         }
         // TODO(yuval): verify exhaustiveness.
@@ -163,8 +169,8 @@ pub fn compute_expr_semantic(ctx: &mut ComputationContext<'_>, syntax: ast::Expr
                     }
                 };
                 let expr_semantic = compute_expr_semantic(ctx, syntax_arm.expression(syntax_db));
-                let arm_type = db.lookup_intern_expr(expr_semantic).ty();
-                semantic_arms.push(MatchArm { pattern, expression: expr_semantic });
+                let arm_type = expr_semantic.ty();
+                semantic_arms.push(MatchArm { pattern, expression: db.intern_expr(expr_semantic) });
                 match match_type {
                     Some(t) if t == arm_type => {}
                     Some(t) => {
@@ -174,7 +180,8 @@ pub fn compute_expr_semantic(ctx: &mut ComputationContext<'_>, syntax: ast::Expr
                 }
             }
             semantic::Expr::ExprMatch(semantic::ExprMatch {
-                matched_expr: compute_expr_semantic(ctx, expr_match.expr(syntax_db)),
+                matched_expr: db
+                    .intern_expr(compute_expr_semantic(ctx, expr_match.expr(syntax_db))),
                 arms: semantic_arms,
                 ty: match match_type {
                     Some(t) => t,
@@ -184,7 +191,7 @@ pub fn compute_expr_semantic(ctx: &mut ComputationContext<'_>, syntax: ast::Expr
         }
         ast::Expr::ExprMissing(_) => todo!(),
     };
-    db.intern_expr(expr)
+    expr
 }
 
 /// Resolves a variable given a context and a path expression.
@@ -281,9 +288,9 @@ pub fn compute_statement_semantic(
     let syntax_db = db.as_syntax_group();
     let statement = match syntax {
         ast::Statement::Let(_) => todo!(),
-        ast::Statement::Expr(expr_syntax) => {
-            semantic::Statement::Expr(compute_expr_semantic(ctx, expr_syntax.expr(syntax_db)))
-        }
+        ast::Statement::Expr(expr_syntax) => semantic::Statement::Expr(
+            db.intern_expr(compute_expr_semantic(ctx, expr_syntax.expr(syntax_db))),
+        ),
         ast::Statement::Return(_) => todo!(),
         ast::Statement::StatementMissing(_) => todo!(),
     };

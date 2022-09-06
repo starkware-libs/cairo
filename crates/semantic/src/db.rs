@@ -135,7 +135,10 @@ fn free_function_semantic(
 
     // Compute body semantic expr.
     let mut ctx = ComputationContext::new(db, module_id, generic_function_data.variables);
-    let body = compute_expr_semantic(&mut ctx, ast::Expr::Block(syntax.body(db.as_syntax_group())));
+    let body = db.intern_expr(compute_expr_semantic(
+        &mut ctx,
+        ast::Expr::Block(syntax.body(db.as_syntax_group())),
+    ));
 
     Some(semantic::FreeFunction { signature: generic_function_data.signature, body })
 }
