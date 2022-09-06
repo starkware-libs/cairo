@@ -140,64 +140,59 @@ impl<'a> Parser<'a> {
     /// Assumes the current token is Module.
     /// Expected pattern: mod<Identifier>\{<ItemList>\}
     fn expect_module(&mut self) -> GreenId {
-        ItemModule::new_green(
-            self.db,
-            self.take(),                             // module keyword
-            self.parse_token(TokenKind::Identifier), // name
-            self.parse_token(TokenKind::Semicolon),  // semicolon
-        )
+        let module_kw = self.take();
+        let name = self.parse_token(TokenKind::Identifier);
+        let semicolon = self.parse_token(TokenKind::Semicolon);
+        ItemModule::new_green(self.db, module_kw, name, semicolon)
     }
 
     /// Assumes the current token is Struct.
     /// Expected pattern: struct<Identifier><ParamListBraced>
     fn expect_struct(&mut self) -> GreenId {
-        ItemStruct::new_green(
-            self.db,
-            self.take(),                             // struct keyword
-            self.parse_token(TokenKind::Identifier), // name
-            // TODO(yuval): support generics
-            self.parse_token(TokenKind::LBrace),      // {
-            self.parse_param_list(TokenKind::RBrace), // members
-            self.parse_token(TokenKind::RBrace),      // }
-        )
+        let struct_kw = self.take();
+        let name = self.parse_token(TokenKind::Identifier);
+        // TODO(yuval): support generics
+        let lbrace = self.parse_token(TokenKind::LBrace);
+        let members = self.parse_param_list(TokenKind::RBrace);
+        let rbrace = self.parse_token(TokenKind::RBrace);
+        ItemStruct::new_green(self.db, struct_kw, name, lbrace, members, rbrace)
     }
 
     /// Expected pattern: <ParenthesizedParamList><ReturnTypeClause>
     fn expect_function_signature(&mut self) -> GreenId {
-        FunctionSignature::new_green(
-            self.db,
-            // TODO(yuval): support generics
-            self.parse_token(TokenKind::LParen),      // (
-            self.parse_param_list(TokenKind::RParen), // params
-            self.parse_token(TokenKind::RParen),      // )
-            self.parse_option_return_type_clause(),   // return type clause
-        )
+        // TODO(yuval): support generics
+        let lparen = self.parse_token(TokenKind::LParen);
+        let params = self.parse_param_list(TokenKind::RParen);
+        let rparen = self.parse_token(TokenKind::RParen);
+        let return_type_clause = self.parse_option_return_type_clause();
+        FunctionSignature::new_green(self.db, lparen, params, rparen, return_type_clause)
     }
 
     /// Assumes the current token is Extern.
     /// Expected pattern: extern(<FunctionSignature>|type<Identifier>);
     fn expect_extern_item(&mut self) -> GreenId {
-        let externkw = self.take();
+        let extern_kw = self.take();
         match self.peek().kind {
             TokenKind::Function => {
+                let function_kw = self.take();
+                let name = self.parse_token(TokenKind::Identifier);
+                let signature = self.expect_function_signature();
+                let semicolon = self.parse_token(TokenKind::Semicolon);
                 ItemExternFunction::new_green(
                     self.db,
-                    externkw,                                // externkw
-                    self.take(),                             // function keyword
-                    self.parse_token(TokenKind::Identifier), // name
-                    self.expect_function_signature(),        // signature
-                    self.parse_token(TokenKind::Semicolon),  // semicolon
+                    extern_kw,
+                    function_kw,
+                    name,
+                    signature,
+                    semicolon,
                 )
             }
             _ => {
+                let type_kw = self.parse_token(TokenKind::Type);
+                let name = self.parse_token(TokenKind::Identifier);
+                let semicolon = self.parse_token(TokenKind::Semicolon);
                 // If the next token is not type, assume it is missing.
-                ItemExternType::new_green(
-                    self.db,
-                    externkw,                                // externkw
-                    self.parse_token(TokenKind::Type),       // typekw
-                    self.parse_token(TokenKind::Identifier), // name
-                    self.parse_token(TokenKind::Semicolon),  // semicolon
-                )
+                ItemExternType::new_green(self.db, extern_kw, type_kw, name, semicolon)
             }
         }
     }
@@ -205,13 +200,11 @@ impl<'a> Parser<'a> {
     /// Assumes the current token is Function.
     /// Expected pattern: <FunctionSignature><Block>
     fn expect_function(&mut self) -> GreenId {
-        ItemFreeFunction::new_green(
-            self.db,
-            self.take(),                             // function keyword
-            self.parse_token(TokenKind::Identifier), // name
-            self.expect_function_signature(),        // signature
-            self.parse_block(),                      // function body
-        )
+        let function_kw = self.take();
+        let name = self.parse_token(TokenKind::Identifier);
+        let signature = self.expect_function_signature();
+        let function_body = self.parse_block();
+        ItemFreeFunction::new_green(self.db, function_kw, name, signature, function_body)
     }
 
     // ------------------------------- Expressions -------------------------------
@@ -238,11 +231,9 @@ impl<'a> Parser<'a> {
     /// ExprBlock, or None if such an expression can't be parsed.
     fn try_parse_simple_expression(&mut self, parent_precedence: usize) -> Option<GreenId> {
         let mut expr = if let Some(precedence) = get_unary_operator_precedence(self.peek().kind) {
-            ExprUnary::new_green(
-                self.db,
-                self.take(),                              // unary operator
-                self.parse_simple_expression(precedence), // expression
-            )
+            let unary_op = self.take();
+            let expr = self.parse_simple_expression(precedence);
+            ExprUnary::new_green(self.db, unary_op, expr)
         } else {
             self.try_parse_atom()?
         };
@@ -251,12 +242,9 @@ impl<'a> Parser<'a> {
             if precedence >= parent_precedence {
                 return Some(expr);
             }
-            expr = ExprBinary::new_green(
-                self.db,
-                expr,                                     // LHS expression
-                self.take(),                              // operator
-                self.parse_simple_expression(precedence), // RHS expression
-            );
+            let op = self.take();
+            let rhs = self.parse_simple_expression(precedence);
+            expr = ExprBinary::new_green(self.db, expr, op, rhs);
         }
         Some(expr)
     }
@@ -297,59 +285,46 @@ impl<'a> Parser<'a> {
     /// Assumes the current token is LParen.
     /// Expected pattern: \(<ExprList>\)
     fn expect_expression_list_parenthesized(&mut self) -> GreenId {
-        ExprListParenthesized::new_green(
-            self.db,
-            // left parenthesis
-            self.take(),
-            // Expression list
-            self.parse_separated_list(
-                Self::try_parse_expr,
-                TokenKind::Comma,
-                TokenKind::RParen,
-                ExprList::new_green,
-            ),
-            // right parenthesis
-            self.parse_token(TokenKind::RParen),
-        )
+        let lparen = self.take();
+        let expression_list = self.parse_separated_list(
+            Self::try_parse_expr,
+            TokenKind::Comma,
+            TokenKind::RParen,
+            ExprList::new_green,
+        );
+        let rparen = self.parse_token(TokenKind::RParen);
+        ExprListParenthesized::new_green(self.db, lparen, expression_list, rparen)
     }
 
     /// Assumes the current token is LBrace.
     /// Expected pattern: \{<StructArgList>\}
     fn expect_struct_ctor_argument_list_braced(&mut self) -> GreenId {
-        ArgListBraced::new_green(
-            self.db,
-            // left brace
-            self.take(),
-            // Argument list
-            self.parse_separated_list(
-                Self::try_parse_struct_ctor_argument,
-                TokenKind::Comma,
-                TokenKind::RBrace,
-                StructArgList::new_green,
-            ),
-            // right brace
-            self.parse_token(TokenKind::RBrace),
-        )
+        let lbrace = self.take();
+        let arg_list = self.parse_separated_list(
+            Self::try_parse_struct_ctor_argument,
+            TokenKind::Comma,
+            TokenKind::RBrace,
+            StructArgList::new_green,
+        );
+        let rbrace = self.parse_token(TokenKind::RBrace);
+
+        ArgListBraced::new_green(self.db, lbrace, arg_list, rbrace)
     }
 
     /// Assumes the current token is LParen.
     /// Expected pattern: <ExprListParenthesized>
     fn expect_function_call(&mut self, path: GreenId) -> GreenId {
-        ExprFunctionCall::new_green(
-            self.db,
-            path,                                        // function name
-            self.expect_expression_list_parenthesized(), // (arguments)
-        )
+        let func_name = path;
+        let parenthesized_args = self.expect_expression_list_parenthesized();
+        ExprFunctionCall::new_green(self.db, func_name, parenthesized_args)
     }
 
     /// Assumes the current token is LBrace.
     /// Expected pattern: <ExprListBraced>
     fn expect_constructor_call(&mut self, path: GreenId) -> GreenId {
-        ExprStructCtorCall::new_green(
-            self.db,
-            path,                                           // constructor name
-            self.expect_struct_ctor_argument_list_braced(), // arguments
-        )
+        let ctor_name = path;
+        let args = self.expect_struct_ctor_argument_list_braced();
+        ExprStructCtorCall::new_green(self.db, ctor_name, args)
     }
 
     /// Assumes the current token is LParen.
@@ -368,19 +343,14 @@ impl<'a> Parser<'a> {
         match self.db.lookup_intern_green(expr_list_green) {
             GreenNode::Internal(list_internal) if list_internal.children.len() == 1 => {
                 // We have exactly one item and no separator --> This is not a tuple.
-                ExprParenthesized::new_green(
-                    self.db,
-                    lparen,                              // left parenthesis
-                    list_internal.children[0],           // expression
-                    self.parse_token(TokenKind::RParen), // right parenthesis
-                )
+                let expr = list_internal.children[0];
+                let rparen = self.parse_token(TokenKind::RParen);
+                ExprParenthesized::new_green(self.db, lparen, expr, rparen)
             }
-            GreenNode::Internal(_list_internal) => ExprTuple::new_green(
-                self.db,
-                lparen,                              // left parenthesis
-                expr_list_green,                     // expressions
-                self.parse_token(TokenKind::RParen), // right parenthesis
-            ),
+            GreenNode::Internal(_list_internal) => {
+                let rparen = self.parse_token(TokenKind::RParen);
+                ExprTuple::new_green(self.db, lparen, expr_list_green, rparen)
+            }
             GreenNode::Token(_) => {
                 // This should never happen.
                 panic!("Unexpected token. Expected an internal node")
@@ -391,12 +361,10 @@ impl<'a> Parser<'a> {
     /// Assumes the current token is DotDot.
     /// Expected pattern: \.\.<Expr>
     fn expect_struct_argument_tail(&mut self) -> GreenId {
-        StructArgTail::new_green(
-            self.db,
-            self.take(), // ..
-            // TODO(yuval): consider changing this to SimpleExpr once it exists.
-            self.parse_expr(), // expression
-        )
+        let dotdot = self.take(); // ..
+        // TODO(yuval): consider changing this to SimpleExpr once it exists.
+        let expr = self.parse_expr();
+        StructArgTail::new_green(self.db, dotdot, expr)
     }
 
     // For the similar syntax in Rust, see
@@ -415,11 +383,9 @@ impl<'a> Parser<'a> {
     /// argument expression (":<value>") can't be parsed.
     fn parse_option_struct_arg_expression(&mut self) -> GreenId {
         if self.peek().kind == TokenKind::Colon {
-            StructArgExpr::new_green(
-                self.db,
-                self.take(),       // ':'
-                self.parse_expr(), // value
-            )
+            let colon = self.take();
+            let value = self.parse_expr();
+            StructArgExpr::new_green(self.db, colon, value)
         } else {
             OptionStructArgExprEmpty::new_green(self.db)
         }
@@ -427,25 +393,19 @@ impl<'a> Parser<'a> {
 
     /// Returns a GreenId of a node with kind StructArgSingle.
     fn expect_argument_single(&mut self) -> GreenId {
-        StructArgSingle::new_green(
-            self.db,
-            self.take(),                               // identifier
-            self.parse_option_struct_arg_expression(), // :<expr>
-        )
+        let identifier = self.take();
+        let struct_arg_expr = self.parse_option_struct_arg_expression(); // :<expr>
+        StructArgSingle::new_green(self.db, identifier, struct_arg_expr)
     }
 
     /// Assumes the current token is LBrace.
     /// Expected pattern: \{<Statement>*\}
     fn expect_block(&mut self) -> GreenId {
-        ExprBlock::new_green(
-            self.db,
-            // left brace
-            self.take(),
-            // statements
-            self.parse_list(Self::try_parse_statement, TokenKind::RBrace, StatementList::new_green),
-            // right brace
-            self.parse_token(TokenKind::RBrace),
-        )
+        let lbrace = self.take();
+        let statements =
+            self.parse_list(Self::try_parse_statement, TokenKind::RBrace, StatementList::new_green);
+        let rbrace = self.parse_token(TokenKind::RBrace);
+        ExprBlock::new_green(self.db, lbrace, statements, rbrace)
     }
     /// Returns a GreenId of a node with kind ExprBlock or None if a block can't be parsed.
     fn try_parse_block(&mut self) -> Option<GreenId> {
@@ -462,35 +422,26 @@ impl<'a> Parser<'a> {
     /// Assumes the current token is Match.
     /// Expected pattern: match \{<MatchArm>*\}
     fn expect_match_expr(&mut self) -> GreenId {
-        ExprMatch::new_green(
-            self.db,
-            // match keyword
-            self.take(),
-            // expression
-            // TODO(yuval): change to simple expression.
-            self.parse_path(),
-            // left brace
-            self.parse_token(TokenKind::LBrace),
-            // match arms
-            self.parse_separated_list(
-                Self::try_parse_match_arm,
-                TokenKind::Comma,
-                TokenKind::RBrace,
-                MatchArms::new_green,
-            ),
-            // right brace
-            self.parse_token(TokenKind::RBrace),
-        )
+        let match_kw = self.take();
+        // TODO(yuval): change to simple expression.
+        let expr = self.parse_path();
+        let lbrace = self.parse_token(TokenKind::LBrace);
+        let match_arms = self.parse_separated_list(
+            Self::try_parse_match_arm,
+            TokenKind::Comma,
+            TokenKind::RBrace,
+            MatchArms::new_green,
+        );
+        let rbrace = self.parse_token(TokenKind::RBrace);
+        ExprMatch::new_green(self.db, match_kw, expr, lbrace, match_arms, rbrace)
     }
 
     /// Returns a GreenId of a node with a MatchArm kind or None if a match arm can't be parsed.
     pub fn try_parse_match_arm(&mut self) -> Option<GreenId> {
-        Some(MatchArm::new_green(
-            self.db,
-            self.try_parse_pattern()?,
-            self.parse_token(TokenKind::MatchArrow),
-            self.parse_expr(),
-        ))
+        let pattern = self.try_parse_pattern()?;
+        let arrow = self.parse_token(TokenKind::MatchArrow);
+        let expr = self.parse_expr();
+        Some(MatchArm::new_green(self.db, pattern, arrow, expr))
     }
 
     /// Returns a GreenId of a node with some Pattern kind (see [syntax::node::ast::Pattern]) or
@@ -511,34 +462,38 @@ impl<'a> Parser<'a> {
     pub fn try_parse_statement(&mut self) -> Option<GreenId> {
         match self.peek().kind {
             TokenKind::Let => {
+                let let_kw = self.take();
+                // TODO(yuval): support patterns instead of only an identifier.
+                let identifier = self.parse_token(TokenKind::Identifier);
+                let type_clause = self.parse_option_type_clause();
+                let eq = self.parse_token(TokenKind::Eq);
+                let expr = self.parse_expr();
+                let semicolon = self.parse_token(TokenKind::Semicolon);
                 Some(StatementLet::new_green(
                     self.db,
-                    self.take(), // let keyword
-                    // TODO(yuval): support patterns instead of only an identifier.
-                    self.parse_token(TokenKind::Identifier), // identifier
-                    self.parse_option_type_clause(),         // type clause
-                    self.parse_token(TokenKind::Eq),         // '='
-                    self.parse_expr(),                       // expression
-                    self.parse_token(TokenKind::Semicolon),  // ';'
+                    let_kw,
+                    identifier,
+                    type_clause,
+                    eq,
+                    expr,
+                    semicolon,
                 ))
             }
             TokenKind::Return => {
-                Some(StatementReturn::new_green(
-                    self.db,
-                    self.take(),                            // return keyword
-                    self.parse_expr(),                      // expression
-                    self.parse_token(TokenKind::Semicolon), // ';'
-                ))
+                let return_kw = self.take();
+                let expr = self.parse_expr();
+                let semicolon = self.parse_token(TokenKind::Semicolon);
+                Some(StatementReturn::new_green(self.db, return_kw, expr, semicolon))
             }
             _ => match self.try_parse_expr() {
                 None => None,
                 Some(expr) => {
-                    let optional_semi = if self.peek().kind == TokenKind::Semicolon {
+                    let optional_semicolon = if self.peek().kind == TokenKind::Semicolon {
                         self.take()
                     } else {
                         OptionSemicolonEmpty::new_green(self.db)
                     };
-                    Some(StatementExpr::new_green(self.db, expr, optional_semi))
+                    Some(StatementExpr::new_green(self.db, expr, optional_semicolon))
                 }
             },
         }
@@ -561,12 +516,10 @@ impl<'a> Parser<'a> {
     }
     fn try_parse_type_clause(&mut self) -> Option<GreenId> {
         if self.peek().kind == TokenKind::Colon {
-            Some(TypeClause::new_green(
-                self.db,
-                self.take(), // ':'
-                // TODO(yuval): support reacher types.
-                self.parse_path(), // type
-            ))
+            let colon = self.take();
+            // TODO(yuval): support reacher types.
+            let ty = self.parse_path();
+            Some(TypeClause::new_green(self.db, colon, ty))
         } else {
             None
         }
@@ -576,12 +529,10 @@ impl<'a> Parser<'a> {
     /// return type clause can't be parsed.
     fn parse_option_return_type_clause(&mut self) -> GreenId {
         if self.peek().kind == TokenKind::Arrow {
-            ReturnTypeClause::new_green(
-                self.db,
-                self.take(), // '->'
-                // TODO(yuval): support reacher types.
-                self.parse_path(), // return type
-            )
+            let arrow = self.take();
+            // TODO(yuval): support reacher types.
+            let return_type = self.parse_path();
+            ReturnTypeClause::new_green(self.db, arrow, return_type)
         } else {
             OptionReturnTypeClauseEmpty::new_green(self.db)
         }
@@ -599,11 +550,9 @@ impl<'a> Parser<'a> {
 
     /// Returns a GreenId of a node with kind Param or None if a parameter can't be parsed.
     fn try_parse_param(&mut self) -> Option<GreenId> {
-        Some(Param::new_green(
-            self.db,
-            self.try_parse_token(TokenKind::Identifier)?, // identifier
-            self.parse_type_clause(),                     // type_clause
-        ))
+        let identifier = self.try_parse_token(TokenKind::Identifier)?;
+        let type_clause = self.parse_type_clause();
+        Some(Param::new_green(self.db, identifier, type_clause))
     }
 
     /// Assumes the first token is Identifier.
@@ -645,14 +594,10 @@ impl<'a> Parser<'a> {
     /// Assumes the current token is Identifier.
     /// Expected pattern: <Identifier><GenericArgs>
     fn expect_path_segment(&mut self) -> GreenId {
-        PathSegment::new_green(
-            self.db,
-            // identifier
-            self.take(),
-            // TODO(yuval): support generics.
-            // generic args
-            OptionGenericArgsEmpty::new_green(self.db),
-        )
+        let identifier = self.take();
+        // TODO(yuval): support generics.
+        let generic_args = OptionGenericArgsEmpty::new_green(self.db);
+        PathSegment::new_green(self.db, identifier, generic_args)
     }
 
     // ------------------------------- Helpers -------------------------------
@@ -770,12 +715,10 @@ impl<'a> Parser<'a> {
     fn build_skipped_terminal(&self, terminal: GreenId) -> GreenId {
         let terminal_internal = self.unpack_internal_node(terminal, SyntaxKind::Terminal);
 
-        TriviumSkippedTerminal::new_green(
-            self.db,
-            terminal_internal.children[0],
-            terminal_internal.children[1],
-            terminal_internal.children[2],
-        )
+        let leading_trivia = terminal_internal.children[0];
+        let token = terminal_internal.children[1];
+        let trailing_trivia = terminal_internal.children[2];
+        TriviumSkippedTerminal::new_green(self.db, leading_trivia, token, trailing_trivia)
     }
 
     // TODO(spapini): currently, skipped tokens swallow leading and trailing trivia. Fix this.
@@ -825,12 +768,9 @@ impl<'a> Parser<'a> {
 
         // Build a replacement for the current terminal, with the new leading trivia instead of the
         // old one.
-        Terminal::new_green(
-            self.db,
-            new_leading_trivia,
-            terminal_internal.children[1],
-            terminal_internal.children[2],
-        )
+        let token = terminal_internal.children[1];
+        let trailing_trivia = terminal_internal.children[2];
+        Terminal::new_green(self.db, new_leading_trivia, token, trailing_trivia)
     }
 
     /// If the current token is of kind `token_kind`, returns a GreenId of a node with this kind.
