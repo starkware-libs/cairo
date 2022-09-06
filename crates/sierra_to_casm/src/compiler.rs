@@ -8,7 +8,7 @@ use sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use thiserror::Error;
 
 use crate::invocations::{check_references_on_stack, compile_invocation, InvocationError};
-use crate::references::{init_reference, ReferencesError};
+use crate::references::{ProgramAnnotations, ReferencesError};
 use crate::relocations::{relocate_instructions, RelocationEntry};
 use crate::type_sizes::get_type_size_map;
 
@@ -77,7 +77,8 @@ pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
         .map_err(CompilationError::ProgramRegistryError)?;
     let type_sizes = get_type_size_map(program, &registry)
         .ok_or(CompilationError::FailedBuildingTypeInformation)?;
-    let mut program_refs = init_reference(program.statements.len(), &program.funcs)?;
+    let mut program_annotations =
+        ProgramAnnotations::create(program.statements.len(), &program.funcs)?;
 
     let mut program_offset: usize = 0;
 
@@ -88,10 +89,10 @@ pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
 
         match statement {
             Statement::Return(ref_ids) => {
-                let (statement_refs, return_refs) =
-                    program_refs.take_references(statement_idx, ref_ids.iter())?;
+                let (annotations, return_refs) = program_annotations
+                    .get_annotations_after_take_args(statement_idx, ref_ids.iter())?;
 
-                if !statement_refs.is_empty() {
+                if !annotations.refs.is_empty() {
                     return Err(ReferencesError::DanglingReferences(statement_idx).into());
                 }
                 check_references_on_stack(&type_sizes, &return_refs)?;
@@ -106,8 +107,8 @@ pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
                 });
             }
             Statement::Invocation(invocation) => {
-                let (statement_refs, invoke_refs) =
-                    program_refs.take_references(statement_idx, invocation.args.iter())?;
+                let (annotations, invoke_refs) = program_annotations
+                    .get_annotations_after_take_args(statement_idx, invocation.args.iter())?;
 
                 let libfunc = registry
                     .get_libfunc(&invocation.libfunc_id)
@@ -128,9 +129,9 @@ pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
                 }
                 instructions.extend(compiled_invocation.instructions);
 
-                program_refs.update_references(
+                program_annotations.propagate_annotations(
                     statement_idx,
-                    statement_refs,
+                    annotations,
                     &invocation.branches,
                     compiled_invocation.results.into_iter(),
                 )?;

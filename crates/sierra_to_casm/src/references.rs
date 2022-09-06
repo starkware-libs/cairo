@@ -14,6 +14,22 @@ use thiserror::Error;
 
 use crate::invocations::BranchRefChanges;
 
+#[derive(Error, Debug, Eq, PartialEq)]
+pub enum ReferencesError {
+    #[error("Inconsistent References.")]
+    InconsistentReferences,
+    #[error("InvalidStatementIdx")]
+    InvalidStatementIdx,
+    #[error("MissingReferencesForStatement")]
+    MissingReferencesForStatement(StatementIdx),
+    #[error("DanglingReferences")]
+    DanglingReferences(StatementIdx),
+    #[error(transparent)]
+    EditStateError(#[from] EditStateError),
+    #[error(transparent)]
+    ApChangeError(#[from] ApChangeError),
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct BinOpExpression {
     pub op: Operator,
@@ -57,6 +73,8 @@ impl ApplyApChange for ReferenceExpression {
     }
 }
 
+// TODO(ilya, 10/10/2022): Move annotation related code to annotations.rs.
+
 /// A reference to a value.
 /// Corresponds to an argument or return value of a sierra statement.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -67,46 +85,52 @@ pub struct ReferenceValue {
 
 type StatementRefs = HashMap<VarId, ReferenceValue>;
 
-#[derive(Error, Debug, Eq, PartialEq)]
-pub enum ReferencesError {
-    #[error("Inconsistent References.")]
-    InconsistentReferences,
-    #[error("InvalidStatementIdx")]
-    InvalidStatementIdx,
-    #[error("MissingReferencesForStatement")]
-    MissingReferencesForStatement(StatementIdx),
-    #[error("DanglingReferences")]
-    DanglingReferences(StatementIdx),
-    #[error(transparent)]
-    EditStateError(#[from] EditStateError),
-    #[error(transparent)]
-    ApChangeError(#[from] ApChangeError),
+/// Annotation that represent the state at each program statement.
+/// Currently this only includes the live references at each statement.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct StatementAnnotations {
+    pub refs: StatementRefs,
 }
 
-pub struct ProgramReferences {
-    // Per statement optional VarId => SierraReference mapping.
-    per_statement_refs: Vec<Option<StatementRefs>>,
+/// Annotations of the program statements.
+/// See StatementAnnotations.
+pub struct ProgramAnnotations {
+    // Optional per statement annotation.
+    per_statement_annotations: Vec<Option<StatementAnnotations>>,
 }
-impl ProgramReferences {
-    pub fn new(n_statements: usize) -> Self {
-        ProgramReferences {
-            per_statement_refs: iter::repeat_with(|| None).take(n_statements).collect(),
+impl ProgramAnnotations {
+    fn new(n_statements: usize) -> Self {
+        ProgramAnnotations {
+            per_statement_annotations: iter::repeat_with(|| None).take(n_statements).collect(),
         }
     }
 
-    /// Sets the references at 'statement_id' to 'statement_refs'
-    /// If the reference for this statement were set previously, assert that the previous
+    // Creates a ProgramAnnotations object based on 'n_statements' and a given functions list.
+    pub fn create(n_statements: usize, functions: &[Function]) -> Result<Self, ReferencesError> {
+        let mut annotations = ProgramAnnotations::new(n_statements);
+        for func in functions {
+            annotations.set_or_assert(
+                func.entry,
+                StatementAnnotations { refs: build_function_parameter_refs(&func.params)? },
+            )?
+        }
+
+        Ok(annotations)
+    }
+
+    /// Sets the annotations at 'statement_id' to 'annotations'
+    /// If the annotations for this statement were set previously, assert that the previous
     /// assignment is consistent with the new assignment.
     pub fn set_or_assert(
         &mut self,
         statement_id: StatementIdx,
-        statement_refs: StatementRefs,
+        annotations: StatementAnnotations,
     ) -> Result<(), ReferencesError> {
         let idx = statement_id.0;
-        match self.per_statement_refs.get(idx).ok_or(ReferencesError::InvalidStatementIdx)? {
-            None => self.per_statement_refs[idx] = Some(statement_refs),
+        match self.per_statement_annotations.get(idx).ok_or(ReferencesError::InvalidStatementIdx)? {
+            None => self.per_statement_annotations[idx] = Some(annotations),
             Some(curr_refs) => {
-                if curr_refs != &statement_refs {
+                if *curr_refs != annotations {
                     return Err(ReferencesError::InconsistentReferences);
                 }
             }
@@ -114,30 +138,36 @@ impl ProgramReferences {
         Ok(())
     }
 
-    /// Applies take_args to the StatementRefs mapping at statement_idx.
+    /// Returns the result of applying take_args to the StatementAnnotations at statement_idx.
     /// Assumes statement_idx is a valid index.
-    pub fn take_references<'a>(
+    pub fn get_annotations_after_take_args<'a>(
         &self,
         statement_idx: StatementIdx,
         ref_ids: impl Iterator<Item = &'a VarId>,
-    ) -> Result<(StatementRefs, Vec<ReferenceValue>), ReferencesError> {
-        let statement_refs = self.per_statement_refs[statement_idx.0]
+    ) -> Result<(StatementAnnotations, Vec<ReferenceValue>), ReferencesError> {
+        let statement_annotations = &self.per_statement_annotations[statement_idx.0]
             .as_ref()
             .ok_or(ReferencesError::MissingReferencesForStatement(statement_idx))?;
-        Ok(take_args(statement_refs.clone(), ref_ids)?)
+
+        let (statement_refs, taken_refs) = take_args(statement_annotations.refs.clone(), ref_ids)?;
+        Ok((StatementAnnotations { refs: statement_refs }, taken_refs))
     }
 
-    pub fn update_references(
+    // Propagate the annotations from the statement at 'statement_idx' to all the branches
+    // from said statement.
+    // 'annotations' is the result of calling get_annotations_after_take_args at
+    // 'statement_idx' and 'per_branch_ref_changes' are the reference changes at each branch.
+    pub fn propagate_annotations(
         &mut self,
         statement_idx: StatementIdx,
-        statement_refs: StatementRefs,
+        annotations: StatementAnnotations,
         branches: &[GenBranchInfo<StatementIdx>],
         per_branch_ref_changes: impl Iterator<Item = BranchRefChanges>,
     ) -> Result<(), ReferencesError> {
         for (branch_info, branch_result) in zip_eq(branches, per_branch_ref_changes) {
             let mut new_refs: StatementRefs =
-                HashMap::with_capacity(statement_refs.len() + branch_result.refs.len());
-            for (var_id, ref_value) in &statement_refs {
+                HashMap::with_capacity(annotations.refs.len() + branch_result.refs.len());
+            for (var_id, ref_value) in &annotations.refs {
                 new_refs.insert(
                     var_id.clone(),
                     ReferenceValue {
@@ -152,7 +182,9 @@ impl ProgramReferences {
 
             self.set_or_assert(
                 statement_idx.next(&branch_info.target),
-                put_results(new_refs, zip_eq(&branch_info.results, branch_result.refs))?,
+                StatementAnnotations {
+                    refs: put_results(new_refs, zip_eq(&branch_info.results, branch_result.refs))?,
+                },
             )?;
         }
         Ok(())
@@ -183,19 +215,6 @@ pub fn build_function_parameter_refs(params: &[Param]) -> Result<StatementRefs, 
         // TODO(ilya, 10/10/2022): Get size from type.
         let size = 1;
         offset -= size;
-    }
-
-    Ok(refs)
-}
-
-// Creates a ProgramReferences object based on the given functions list.
-pub fn init_reference(
-    n_statements: usize,
-    functions: &[Function],
-) -> Result<ProgramReferences, ReferencesError> {
-    let mut refs = ProgramReferences::new(n_statements);
-    for func in functions {
-        refs.set_or_assert(func.entry, build_function_parameter_refs(&func.params)?)?;
     }
 
     Ok(refs)
