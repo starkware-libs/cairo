@@ -21,8 +21,9 @@ impl InstructionBody {
         match self {
             InstructionBody::AssertEq(insn) => insn.op_size(),
             InstructionBody::Call(insn) => insn.op_size(),
+            InstructionBody::Jump(insn) => insn.op_size(),
+            InstructionBody::Jnz(insn) => insn.op_size(),
             InstructionBody::Ret(insn) => insn.op_size(),
-            _ => 1,
         }
     }
 }
@@ -80,6 +81,14 @@ pub struct JumpInstruction {
     pub target: DerefOrImmediate,
     pub relative: bool,
 }
+impl JumpInstruction {
+    pub fn op_size(&self) -> usize {
+        match &self.target {
+            DerefOrImmediate::Deref(_) => 1,
+            DerefOrImmediate::Immediate(_) => 2,
+        }
+    }
+}
 impl Display for JumpInstruction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "jmp {} {}", if self.relative { "rel" } else { "abs" }, self.target,)
@@ -91,6 +100,14 @@ impl Display for JumpInstruction {
 pub struct JnzInstruction {
     pub jump_offset: DerefOrImmediate,
     pub condition: DerefOperand,
+}
+impl JnzInstruction {
+    pub fn op_size(&self) -> usize {
+        match &self.jump_offset {
+            DerefOrImmediate::Deref(_) => 1,
+            DerefOrImmediate::Immediate(_) => 2,
+        }
+    }
 }
 impl Display for JnzInstruction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
