@@ -96,7 +96,10 @@ fn handle_function_call(
 
     // Check if this is a user defined function or a libcall.
     let function_long_id =
-        context.get_db().lookup_intern_concrete_function(expr_function_call.function);
+        match context.get_db().lookup_intern_function(expr_function_call.function) {
+            semantic::FunctionLongId::Concrete(concrete) => concrete,
+            semantic::FunctionLongId::Missing => todo!(),
+        };
     match function_long_id.generic_function {
         GenericFunctionId::Free(_) => {
             // Push the arguments on top of the stack.
