@@ -4,6 +4,7 @@ members = [
     "crates/casm",
     "crates/db_utils",
     "crates/defs",
+    "crates/debug",
     "crates/diagnostics",
     "crates/diagnostics_proc_macros",
     "crates/filesystem",
