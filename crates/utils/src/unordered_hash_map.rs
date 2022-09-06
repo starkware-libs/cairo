@@ -1,3 +1,4 @@
+use std::borrow::Borrow;
 use std::collections::{hash_map, HashMap};
 use std::hash::Hash;
 use std::ops::Index;
@@ -19,6 +20,26 @@ impl<Key: Hash + Eq, Value> UnorderedHashMap<Key, Value> {
 
     pub fn entry(&mut self, key: Key) -> hash_map::Entry<'_, Key, Value> {
         self.0.entry(key)
+    }
+
+    /// Returns true if the map contains a value for the specified key.
+    pub fn contains_key<Q>(&self, key: &Q) -> bool
+    where
+        Q: ?Sized,
+        Key: Borrow<Q>,
+        Q: Hash + Eq,
+    {
+        self.0.contains_key(key)
+    }
+
+    /// Returns the number of elements in the map.
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    /// Returns true if the map contains no elements.
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
     }
 }
 

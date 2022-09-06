@@ -1,7 +1,7 @@
 use std::hash::Hash;
 use std::ops::Index;
 
-use indexmap::IndexMap;
+use indexmap::{Equivalent, IndexMap};
 use itertools::zip_eq;
 
 #[derive(Clone, Debug)]
@@ -18,6 +18,11 @@ impl<Key: Hash + Eq, Value> OrderedHashMap<Key, Value> {
 
     pub fn insert(&mut self, key: Key, value: Value) -> Option<Value> {
         self.0.insert(key, value)
+    }
+
+    /// Returns true if an equivalent to key exists in the map.
+    pub fn contains_key<Q: ?Sized + Hash + Equivalent<Key>>(&self, key: &Q) -> bool {
+        self.0.contains_key(key)
     }
 
     /// Return the number of key-value pairs in the map.
