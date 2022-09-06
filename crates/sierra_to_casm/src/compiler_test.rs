@@ -12,12 +12,13 @@ use sierra::program_registry::ProgramRegistryError::{
 use sierra::ProgramParser;
 use test_case::test_case;
 
+use crate::annotations::AnnotationError::{
+    self, EditStateError, InconsistentReferencesAnnotation, InvalidStatementIdx,
+    MissingReferencesForStatement,
+};
 use crate::compiler::{compile, CompilationError};
 use crate::invocations::InvocationError;
-use crate::references::ReferencesError::{
-    self, EditStateError, InconsistentReferencesAnnotation, InvalidFunctionDeclaration,
-    InvalidStatementIdx, MissingReferencesForStatement,
-};
+use crate::references::ReferencesError::{self, InvalidFunctionDeclaration};
 
 #[test]
 fn good_flow() {
@@ -112,7 +113,7 @@ fn fib_program() {
                 return([2]);
 
                 test_program@0() -> ();
-            "} => Err(CompilationError::ReferencesError(EditStateError(MissingReference(
+            "} => Err(CompilationError::AnnotationError(EditStateError(MissingReference(
                 2.into()
             ))));
             "missing reference")]
@@ -183,11 +184,12 @@ fn fib_program() {
                 return();
 
                 foo@0([1]: felt, [1]: felt) -> ();
-            "} => matches Err(CompilationError::ReferencesError(InvalidFunctionDeclaration(_)));
+            "} => matches Err(CompilationError::AnnotationError(
+                AnnotationError::ReferencesError(InvalidFunctionDeclaration(_))));
             "Bad Declaration")]
 #[test_case(indoc! {"
             return();
-            "} => Err(CompilationError::ReferencesError(
+            "} => Err(CompilationError::AnnotationError(
             MissingReferencesForStatement(StatementIdx(0))));
             "Missing references for statement")]
 #[test_case(indoc! {"
