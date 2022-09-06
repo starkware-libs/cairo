@@ -30,6 +30,7 @@ fn good_flow() {
             libfunc felt_sub = felt_sub;
             libfunc felt_dup = felt_dup;
             libfunc felt_jump_nz = felt_jump_nz;
+            libfunc jump = jump;
             libfunc felt_unwrap_nz = unwrap_nz<felt>;
             libfunc store_temp_felt = store_temp<felt>;
             libfunc rename_felt = rename<felt>;
@@ -52,13 +53,14 @@ fn good_flow() {
             store_temp_felt([2]) -> ([2]);                  // #13
             return ([1], [2]);                              // #14
 
-            felt_unwrap_nz([1]) -> ([1]);                   // #15
-            felt_dup([2]) -> ([2], [3]);                    // #16
-            felt_sub([1], [3]) -> ([1]);                    // #17
-            store_temp_felt([1]) -> ([1]);                  // #18
-            store_temp_felt([2]) -> ([2]);                  // #19
-            call_foo([1], [2]) -> ([1], [2]);               // #20
-            return ([1], [2]);                              // #21
+            jump() { 16() };                                // #15
+            felt_unwrap_nz([1]) -> ([1]);                   // #16
+            felt_dup([2]) -> ([2], [3]);                    // #17
+            felt_sub([1], [3]) -> ([1]);                    // #18
+            store_temp_felt([1]) -> ([1]);                  // #19
+            store_temp_felt([2]) -> ([2]);                  // #20
+            call_foo([1], [2]) -> ([1], [2]);               // #21
+            return ([1], [2]);                              // #22
 
             test_program@0([1]: felt, [2]: felt) -> ();
             foo@10([1]: felt, [2]: felt) -> (felt, felt);
@@ -77,9 +79,10 @@ fn good_flow() {
             [ap + 0] = [fp + -2], ap++;
             [ap + 0] = [fp + -2], ap++;
             ret;
+            jmp rel 1;
             [fp + -3] = [ap + 0] + [fp + -2], ap++;
             [ap + 0] = [fp + -2], ap++;
-            call rel -6;
+            call rel -7;
             ret;
         "}
     );

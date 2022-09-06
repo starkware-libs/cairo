@@ -3,6 +3,7 @@ use std::collections::VecDeque;
 use casm::ap_change::ApChange;
 use casm::instructions::{
     AssertEqInstruction, CallInstruction, Instruction, InstructionBody, JnzInstruction,
+    JumpInstruction,
 };
 use casm::operand::{
     BinOpOperand, DerefOperand, DerefOrImmediate, ImmediateOperand, Operation, Register, ResOperand,
@@ -312,6 +313,33 @@ fn handle_jump_nz(
     ))
 }
 
+fn handle_jump(
+    invocation: &Invocation,
+    libfunc: &SignatureOnlyConcreteLibFunc,
+) -> Result<CompiledInvocation, InvocationError> {
+    let target_statement_id = match invocation.branches.as_slice() {
+        [BranchInfo { target: BranchTarget::Statement(statement_id), .. }] => statement_id,
+        _ => panic!("malformed invocation"),
+    };
+
+    Ok(CompiledInvocation::new(
+        vec![Instruction {
+            body: InstructionBody::Jump(JumpInstruction {
+                target: DerefOrImmediate::Immediate(ImmediateOperand { value: 0 }),
+                relative: true,
+            }),
+            inc_ap: false,
+        }],
+        vec![RelocationEntry {
+            instruction_idx: 0,
+            relocation: Relocation::RelativeStatementId(*target_statement_id),
+        }],
+        [ApChange::Known(0)].into_iter(),
+        [vec![].into_iter()].into_iter(),
+        libfunc.output_types(),
+    ))
+}
+
 pub fn compile_invocation(
     invocation: &Invocation,
     libfunc: &CoreConcreteLibFunc,
@@ -353,6 +381,7 @@ pub fn compile_invocation(
         CoreConcreteLibFunc::FunctionCall(func_call) => {
             handle_function_call(type_sizes, func_call, refs)
         }
+        CoreConcreteLibFunc::UnconditionalJump(libfunc) => handle_jump(invocation, libfunc),
 
         _ => Err(InvocationError::NotImplemented(invocation.clone())),
     }
