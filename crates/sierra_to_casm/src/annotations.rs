@@ -1,3 +1,4 @@
+use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::iter;
 
@@ -64,12 +65,19 @@ impl ProgramAnnotations {
     // Creates a ProgramAnnotations object based on 'n_statements' and a given functions list.
     pub fn create(n_statements: usize, functions: &[Function]) -> Result<Self, AnnotationError> {
         let mut annotations = ProgramAnnotations::new(n_statements);
-        let mut return_annotations = HashMap::new();
+        let mut return_annotations: HashMap<&Vec<ConcreteTypeId>, ReturnTypesAnnotation> =
+            HashMap::new();
         for func in functions {
-            let next_type_annotations = return_annotations.len();
-            let return_annotation = return_annotations
-                .entry(&func.ret_types)
-                .or_insert_with(|| ReturnTypesAnnotation(next_type_annotations));
+            let return_annotation = match return_annotations.entry(&func.ret_types) {
+                Entry::Occupied(entry) => entry.get().clone(),
+                Entry::Vacant(entry) => {
+                    let new_type_annotations =
+                        ReturnTypesAnnotation(annotations.return_types.len());
+                    annotations.return_types.push(func.ret_types.clone());
+                    entry.insert(new_type_annotations.clone());
+                    new_type_annotations
+                }
+            };
 
             annotations.set_or_assert(
                 func.entry,
@@ -79,7 +87,6 @@ impl ProgramAnnotations {
                 },
             )?
         }
-        annotations.return_types = return_annotations.into_keys().cloned().collect();
 
         Ok(annotations)
     }
