@@ -7,6 +7,7 @@ use sierra::edit_state::{put_results, take_args, EditStateError};
 use sierra::ids::{ConcreteTypeId, VarId};
 use sierra::program::{Function, GenBranchInfo, StatementIdx};
 use thiserror::Error;
+use utils::ordered_hash_map::OrderedHashMap;
 
 use crate::invocations::BranchRefChanges;
 use crate::references::{
@@ -64,22 +65,22 @@ impl ProgramAnnotations {
     // Creates a ProgramAnnotations object based on 'n_statements' and a given functions list.
     pub fn create(n_statements: usize, functions: &[Function]) -> Result<Self, AnnotationError> {
         let mut annotations = ProgramAnnotations::new(n_statements);
-        let mut return_annotations = HashMap::new();
+        let mut return_annotations = OrderedHashMap::default();
         for func in functions {
             let next_type_annotations = return_annotations.len();
             let return_annotation = return_annotations
-                .entry(&func.ret_types)
-                .or_insert_with(|| ReturnTypesAnnotation(next_type_annotations));
+                .insert(&func.ret_types, next_type_annotations)
+                .unwrap_or(next_type_annotations);
 
             annotations.set_or_assert(
                 func.entry,
                 StatementAnnotations {
                     refs: build_function_parameter_refs(func)?,
-                    return_types: return_annotation.clone(),
+                    return_types: ReturnTypesAnnotation(return_annotation),
                 },
             )?
         }
-        annotations.return_types = return_annotations.into_keys().cloned().collect();
+        annotations.return_types = return_annotations.iter().map(|(k, _v)| k.to_vec()).collect();
 
         Ok(annotations)
     }

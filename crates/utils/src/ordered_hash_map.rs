@@ -19,6 +19,16 @@ impl<Key: Hash + Eq, Value> OrderedHashMap<Key, Value> {
     pub fn insert(&mut self, key: Key, value: Value) -> Option<Value> {
         self.0.insert(key, value)
     }
+
+    /// Return the number of key-value pairs in the map.
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    /// Returns true if the map contains no elements.
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
 }
 
 impl<Key: Hash + Eq, IndexType: Into<Key>, Value> Index<IndexType> for OrderedHashMap<Key, Value> {
