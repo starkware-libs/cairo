@@ -1,6 +1,7 @@
 use defs::ids::{FreeFunctionId, GenericFunctionId, LocalVarId, VarId};
 use pretty_assertions::assert_eq;
 use salsa::{InternId, InternKey};
+use semantic::corelib::core_felt_ty;
 use semantic::db::SemanticGroup;
 use semantic::ids::TypeId;
 use semantic::test_utils::{setup_test_expr, setup_test_module};
@@ -26,7 +27,7 @@ fn test_expr_generator() {
     let mut db = DatabaseImpl::default();
     setup_test_module(&mut db, "");
 
-    let ty = TypeId::from_intern_id(InternId::from(0u32));
+    let ty = core_felt_ty(&db);
     let literal7 =
         db.intern_expr(semantic::Expr::ExprLiteral(semantic::ExprLiteral { value: 7, ty }));
     let var_x_id = LocalVarId::from_intern_id(InternId::from(3u32));
@@ -110,7 +111,7 @@ fn test_match() {
     let mut db = DatabaseImpl::default();
     setup_test_module(&mut db, "");
 
-    let ty = TypeId::from_intern_id(InternId::from(0u32));
+    let ty = core_felt_ty(&db);
     let literal7 =
         db.intern_expr(semantic::Expr::ExprLiteral(semantic::ExprLiteral { value: 7, ty }));
     let var_x_id = LocalVarId::from_intern_id(InternId::from(3u32));
