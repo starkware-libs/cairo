@@ -7,8 +7,9 @@ use sierra::program::{BranchTarget, Invocation, Program, Statement, StatementIdx
 use sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use thiserror::Error;
 
+use crate::annotations::{AnnotationError, ProgramAnnotations};
 use crate::invocations::{check_references_on_stack, compile_invocation, InvocationError};
-use crate::references::{ProgramAnnotations, ReferencesError};
+use crate::references::ReferencesError;
 use crate::relocations::{relocate_instructions, RelocationEntry};
 use crate::type_sizes::get_type_size_map;
 
@@ -22,6 +23,8 @@ pub enum CompilationError {
     FailedBuildingTypeInformation,
     #[error("Error from program registry")]
     ProgramRegistryError(ProgramRegistryError),
+    #[error(transparent)]
+    AnnotationError(#[from] AnnotationError),
     #[error(transparent)]
     InvocationError(#[from] InvocationError),
     #[error(transparent)]
