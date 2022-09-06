@@ -12,6 +12,9 @@ pub struct ParserDiagnostic {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum ParserDiagnosticKind {
     SkippedTokens,
+    MissingExpression,
+    MissingBlock,
+    MissingPath,
 }
 impl DiagnosticEntry for ParserDiagnostic {
     type DbType = dyn FilesGroup;
@@ -20,6 +23,11 @@ impl DiagnosticEntry for ParserDiagnostic {
         match self.kind {
             // TODO(yuval): replace line breaks with "\n".
             ParserDiagnosticKind::SkippedTokens => "Skipped tokens.".to_string(),
+            ParserDiagnosticKind::MissingExpression => {
+                "Missing tokens: 'missing expression'.".to_string()
+            }
+            ParserDiagnosticKind::MissingBlock => "Missing tokens: 'missing block'.".to_string(),
+            ParserDiagnosticKind::MissingPath => "Missing tokens: 'missing path'.".to_string(),
         }
     }
 
