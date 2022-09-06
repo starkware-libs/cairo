@@ -133,6 +133,7 @@ impl<'a> Parser<'a> {
             TokenKind::Struct => Some(self.expect_struct()),
             TokenKind::Extern => Some(self.expect_extern_item()),
             TokenKind::Function => Some(self.expect_function()),
+            TokenKind::Use => Some(self.expect_use()),
             _ => None,
         }
     }
@@ -195,6 +196,17 @@ impl<'a> Parser<'a> {
                 ItemExternType::new_green(self.db, extern_kw, type_kw, name, semicolon)
             }
         }
+    }
+
+    /// Assumes the current token is Use.
+    /// Expected pattern: use<Path>;
+    fn expect_use(&mut self) -> GreenId {
+        ItemUse::new_green(
+            self.db,
+            self.take(),                            // usekw
+            self.parse_path(),                      // name
+            self.parse_token(TokenKind::Semicolon), // semicolon
+        )
     }
 
     /// Assumes the current token is Function.

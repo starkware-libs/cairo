@@ -27,15 +27,16 @@ pub fn generate_program_code(
     // and add them to `functions`.
     for (_name, item) in module_items.items.iter() {
         match item {
+            ModuleItemId::Use(_) => todo!("'use' lowering not supported yet."),
             ModuleItemId::FreeFunction(free_function_id) => {
                 let function: Arc<pre_sierra::Function> =
                     db.get_function_code(*free_function_id).unwrap(diagnostics)?;
                 functions.push(function.clone());
                 statements.extend_from_slice(function.body.as_slice());
             }
-            ModuleItemId::Struct(_) => todo!(),
+            ModuleItemId::Struct(_) => todo!("'struct' lowering not supported yet."),
             ModuleItemId::ExternType(_) => {}
-            ModuleItemId::ExternFunction(_) => todo!(),
+            ModuleItemId::ExternFunction(_) => todo!("'extern func' lowering not supported yet."),
         }
     }
     // TODO(orizi): Actually find all the required types.

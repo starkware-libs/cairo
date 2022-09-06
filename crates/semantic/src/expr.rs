@@ -267,6 +267,7 @@ fn resolve_function_in_module(
         .module_item_by_name(module_id, function_name)
         .expect("Diagnostics not supported yet")?
     {
+        defs::ids::ModuleItemId::Use(_) => panic!("Unexpected use"),
         defs::ids::ModuleItemId::FreeFunction(free_function) => {
             GenericFunctionId::Free(free_function)
         }
