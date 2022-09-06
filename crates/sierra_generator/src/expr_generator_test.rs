@@ -4,6 +4,7 @@ use salsa::{InternId, InternKey};
 use semantic::db::SemanticGroup;
 use semantic::ids::TypeId;
 use semantic::test_utils::{setup_test_expr, setup_test_module};
+use semantic::LocalVariable;
 
 use crate::expr_generator::generate_expression_code;
 use crate::expr_generator_context::ExprGeneratorContext;
@@ -28,12 +29,15 @@ fn test_expr_generator() {
     let ty = TypeId::from_intern_id(InternId::from(0u32));
     let literal7 =
         db.intern_expr(semantic::Expr::ExprLiteral(semantic::ExprLiteral { value: 7, ty }));
-    let var_x = LocalVarId::from_intern_id(InternId::from(3u32));
-    let var_x_expr =
-        db.intern_expr(semantic::Expr::ExprVar(semantic::ExprVar { var: VarId::Local(var_x), ty }));
+    let var_x_id = LocalVarId::from_intern_id(InternId::from(3u32));
+    let var_x_expr = db.intern_expr(semantic::Expr::ExprVar(semantic::ExprVar {
+        var: VarId::Local(var_x_id),
+        ty,
+    }));
 
     // "let x = 7;" statement.
-    let statement_let = semantic::StatementLet { var: var_x, expr: literal7 };
+    let statement_let =
+        semantic::StatementLet { var: LocalVariable { id: var_x_id, ty }, expr: literal7 };
 
     let foo_func = db.intern_concrete_function(semantic::ConcreteFunctionLongId {
         generic_function: GenericFunctionId::Free(FreeFunctionId::from_intern_id(InternId::from(
@@ -109,11 +113,14 @@ fn test_match() {
     let ty = TypeId::from_intern_id(InternId::from(0u32));
     let literal7 =
         db.intern_expr(semantic::Expr::ExprLiteral(semantic::ExprLiteral { value: 7, ty }));
-    let var_x = LocalVarId::from_intern_id(InternId::from(3u32));
-    let var_x_expr =
-        db.intern_expr(semantic::Expr::ExprVar(semantic::ExprVar { var: VarId::Local(var_x), ty }));
+    let var_x_id = LocalVarId::from_intern_id(InternId::from(3u32));
+    let var_x_expr = db.intern_expr(semantic::Expr::ExprVar(semantic::ExprVar {
+        var: VarId::Local(var_x_id),
+        ty,
+    }));
 
-    let statement_let = semantic::StatementLet { var: var_x, expr: literal7 };
+    let statement_let =
+        semantic::StatementLet { var: LocalVariable { id: var_x_id, ty }, expr: literal7 };
 
     let branch0 = semantic::MatchArm {
         pattern: semantic::Pattern::Literal(semantic::ExprLiteral { value: 0, ty }),

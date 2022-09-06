@@ -12,7 +12,7 @@ pub enum Statement {
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct StatementLet {
-    pub var: LocalVarId,
+    pub var: LocalVariable,
     pub expr: ExprId,
 }
 
@@ -106,6 +106,13 @@ pub struct Parameter {
     pub ty: TypeId,
 }
 
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct LocalVariable {
+    pub id: LocalVarId,
+    pub ty: TypeId,
+}
+
+// TODO(yuval): consider making this an enum or the id an enum of ParamId/LocalVarId
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Variable {
     pub id: VarId,
