@@ -44,6 +44,9 @@ pub struct ParserDiagnostic {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum ParserDiagnosticKind {
     SkippedTokens,
+    MissingExpression,
+    MissingBlock,
+    MissingPath,
 }
 impl DiagnosticEntry for ParserDiagnostic {
     type DbType = dyn FilesGroup;
@@ -56,6 +59,11 @@ impl DiagnosticEntry for ParserDiagnostic {
         match self.kind {
             // TODO(yuval): replace line breaks with "\n".
             ParserDiagnosticKind::SkippedTokens => format!("Skipped tokens: '{text}'"),
+            ParserDiagnosticKind::MissingExpression => {
+                format!("Missing tokens: 'missing expression'")
+            }
+            ParserDiagnosticKind::MissingBlock => format!("Missing tokens: 'missing block'"),
+            ParserDiagnosticKind::MissingPath => format!("Missing tokens: 'missing path'"),
         }
     }
 
@@ -97,6 +105,22 @@ impl<'a> Parser<'a> {
             current_width: 0,
             diagnostics: Diagnostics::new(),
         }
+    }
+
+    /// Returns a GreenId of an ExprMissing and adds a diagnostic describing it.
+    fn create_and_report_missing(&mut self, missing_kind: ParserDiagnosticKind) -> GreenId {
+        self.diagnostics.add(ParserDiagnostic {
+            file_id: self.file_id,
+            kind: missing_kind,
+            span: TextSpan {
+                start: TextOffset((self.offset + self.current_width) as usize),
+                end: TextOffset(
+                    (self.offset + self.current_width + self.peek().terminal.width(self.db))
+                        as usize,
+                ),
+            },
+        });
+        ExprMissing::new_green(self.db)
     }
 
     pub fn parse_syntax_file(mut self) -> WithDiagnostics<SyntaxFile, ParserDiagnostic> {
@@ -235,7 +259,7 @@ impl<'a> Parser<'a> {
     pub fn parse_expr(&mut self) -> GreenId {
         match self.try_parse_expr() {
             Some(green) => green,
-            None => ExprMissing::new_green(self.db),
+            None => self.create_and_report_missing(ParserDiagnosticKind::MissingExpression),
         }
     }
 
@@ -265,7 +289,7 @@ impl<'a> Parser<'a> {
     fn parse_simple_expression(&mut self, parent_precedence: usize) -> GreenId {
         match self.try_parse_simple_expression(parent_precedence) {
             Some(green) => green,
-            None => ExprMissing::new_green(self.db),
+            None => self.create_and_report_missing(ParserDiagnosticKind::MissingExpression),
         }
     }
 
@@ -421,13 +445,17 @@ impl<'a> Parser<'a> {
     }
     /// Returns a GreenId of a node with kind ExprBlock or None if a block can't be parsed.
     fn try_parse_block(&mut self) -> Option<GreenId> {
-        if self.peek().kind == TokenKind::LBrace { Some(self.expect_block()) } else { None }
+        if self.peek().kind == TokenKind::LBrace {
+            Some(self.expect_block())
+        } else {
+            None
+        }
     }
     /// Returns a GreenId of a node with kind ExprBlock or ExprMissing if a block can't be parsed.
     fn parse_block(&mut self) -> GreenId {
         match self.try_parse_block() {
             Some(green) => green,
-            None => ExprMissing::new_green(self.db),
+            None => self.create_and_report_missing(ParserDiagnosticKind::MissingBlock),
         }
     }
 
@@ -599,7 +627,7 @@ impl<'a> Parser<'a> {
         if self.peek().kind == TokenKind::Identifier {
             self.expect_path()
         } else {
-            ExprMissing::new_green(self.db)
+            self.create_and_report_missing(ParserDiagnosticKind::MissingPath)
         }
     }
 
