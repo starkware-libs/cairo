@@ -11,7 +11,7 @@
 //   table to translate between the two representations. Note that a long id of an entity will
 //   usually include the short id of the entity's parent.
 macro_rules! define_short_id {
-    ($short_id:ident) => {
+    ($short_id:ident, $long_id:ident, $db:ident, $lookup:ident) => {
         #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
         pub struct $short_id(salsa::InternId);
         impl salsa::InternKey for $short_id {
@@ -21,6 +21,23 @@ macro_rules! define_short_id {
 
             fn as_intern_id(&self) -> salsa::InternId {
                 self.0
+            }
+        }
+        // Impl transparent DebugWithDb.
+        impl debug::DebugWithDb<dyn $db + 'static> for $short_id {
+            fn fmt(
+                &self,
+                f: &mut std::fmt::Formatter<'_>,
+                db: &(dyn $db + 'static),
+            ) -> std::fmt::Result {
+                use std::fmt::Debug;
+
+                use debug::helper::Fallback;
+                debug::helper::HelperDebug::<$long_id, dyn $db>::helper_debug(
+                    &db.$lookup(*self),
+                    db,
+                )
+                .fmt(f)
             }
         }
     };
