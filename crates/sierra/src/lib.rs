@@ -1,3 +1,14 @@
+//! Sierra is an intermediate representation between high level Cairo and compilation targets,
+//! such as CASM. Sierra code is guaranteed to be "safe"* by construction.
+//! Sierra has a primitive, yet rich typing system to express all high level code while guaranteeing
+//! safety and allowing for efficient compilation down to the target.
+//!
+//! Safety - this means a few things:
+//! 1. There are no "panics" / "runtime errors". Every function is guaranteed to return.
+//! 2. There are no infinite loops. Moreover, every program "counts" its own steps, and returns when
+//!    the limit is reached.
+//! 3. Builtin library functions are always used correctly.
+
 use lalrpop_util::lalrpop_mod;
 
 pub mod edit_state;
