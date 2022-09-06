@@ -1,6 +1,17 @@
 └── [36mroot[0m (kind: SyntaxFile)
     ├── [36mitems[0m (kind: ItemList)
-    │   └── [36mchild #0[0m (kind: ItemFreeFunction)
+    │   ├── [36mchild #0[0m (kind: ItemUse)
+    │   │   ├── [34musekw[0m (kind: Use): '[1;32muse[0m'
+    │   │   ├── [36mname[0m (kind: ExprPath)
+    │   │   │   ├── [36mitem #0[0m (kind: PathSegment)
+    │   │   │   │   ├── [34mident[0m (kind: Identifier): '[1;32mstd[0m'
+    │   │   │   │   └── [36mgeneric_args[0m (kind: OptionGenericArgsEmpty)[95m [][0m
+    │   │   │   ├── [34mseparator #0[0m (kind: ColonColon): '[1;32m::[0m'
+    │   │   │   └── [36mitem #1[0m (kind: PathSegment)
+    │   │   │       ├── [34mident[0m (kind: Identifier): '[1;32mformat[0m'
+    │   │   │       └── [36mgeneric_args[0m (kind: OptionGenericArgsEmpty)[95m [][0m
+    │   │   └── [34msemicolon[0m (kind: Semicolon): '[1;32m;[0m'
+    │   └── [36mchild #1[0m (kind: ItemFreeFunction)
     │       ├── [34mfunckw[0m (kind: Function): '[1;32mfunc[0m'
     │       ├── [34mname[0m (kind: Identifier): '[1;32mfoo[0m'
     │       ├── [36msignature[0m (kind: FunctionSignature)

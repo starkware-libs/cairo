@@ -102,12 +102,14 @@ macro_rules! define_language_element_id_as_enum {
 define_language_element_id_as_enum! {
     /// Id for direct children of a module.
     pub enum ModuleItemId {
+        Use(UseId),
         FreeFunction(FreeFunctionId),
         Struct(StructId),
         ExternType(ExternTypeId),
         ExternFunction(ExternFunctionId),
     }
 }
+define_language_element_id!(UseId, UseLongId, ast::ItemUse, lookup_intern_use);
 define_language_element_id!(
     FreeFunctionId,
     FreeFunctionLongId,
