@@ -4,13 +4,14 @@ use std::iter;
 use casm::ap_change::ApplyApChange;
 use itertools::zip_eq;
 use sierra::edit_state::{put_results, take_args, EditStateError};
-use sierra::ids::VarId;
+use sierra::ids::{ConcreteTypeId, VarId};
 use sierra::program::{Function, GenBranchInfo, StatementIdx};
 use thiserror::Error;
 
 use crate::invocations::BranchRefChanges;
 use crate::references::{
-    build_function_parameter_refs, ReferenceValue, ReferencesError, StatementRefs,
+    build_function_parameter_refs, check_types_match, ReferenceValue, ReferencesError,
+    StatementRefs,
 };
 
 #[derive(Error, Debug, Eq, PartialEq)]
@@ -30,8 +31,9 @@ pub enum AnnotationError {
 }
 
 /// An annotation that specifies the expected return types at each statement.
-/// This is used to propagate the return type to return statements.
+/// Used to propagate the return type to return statements.
 /// Note that this is less strict then annotating each statement with the function it belongs to.
+/// It is implemented as an index into ProgramAnnotations.return_types.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ReturnTypesAnnotation(usize);
 
@@ -45,12 +47,16 @@ pub struct StatementAnnotations {
 /// Annotations of the program statements.
 /// See StatementAnnotations.
 pub struct ProgramAnnotations {
+    // A vector of return types vectors that appear in the program.
+    // ReturnTypesAnnotation is an index in this vector.
+    return_types: Vec<Vec<ConcreteTypeId>>,
     // Optional per statement annotation.
     per_statement_annotations: Vec<Option<StatementAnnotations>>,
 }
 impl ProgramAnnotations {
     fn new(n_statements: usize) -> Self {
         ProgramAnnotations {
+            return_types: vec![],
             per_statement_annotations: iter::repeat_with(|| None).take(n_statements).collect(),
         }
     }
@@ -73,7 +79,7 @@ impl ProgramAnnotations {
                 },
             )?
         }
-        // TODO(ilya, 10/10/2022): Store Return types in ProgramAnnotations.
+        annotations.return_types = return_annotations.into_keys().cloned().collect();
 
         Ok(annotations)
     }
@@ -158,6 +164,16 @@ impl ProgramAnnotations {
                 },
             )?;
         }
+        Ok(())
+    }
+
+    /// Checks that the list of reference contains types matching the given types.
+    pub fn validate_return_type(
+        &self,
+        return_refs: &[ReferenceValue],
+        return_types: ReturnTypesAnnotation,
+    ) -> Result<(), AnnotationError> {
+        check_types_match(return_refs, &self.return_types[return_types.0])?;
         Ok(())
     }
 }
