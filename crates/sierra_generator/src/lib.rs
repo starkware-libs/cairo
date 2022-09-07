@@ -1,6 +1,7 @@
 //! Lowering from the semantic model down to Sierra. See [semantic] and  [sierra]
 
 pub mod db;
+mod dup_and_ignore;
 mod expr_generator;
 mod expr_generator_context;
 mod function_generator;
