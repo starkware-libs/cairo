@@ -15,18 +15,18 @@ pub Program: Program = {
 }
 
 TypeDeclaration: TypeDeclaration = {
-    "type" <id:ConcreteTypeId> "=" <generic_id:GenericTypeId> "<" <args:GenericArgs> ">" ";"
-    => TypeDeclaration{id, long_id: ConcreteTypeLongId{generic_id, args}},
+    "type" <id:ConcreteTypeId> "=" <generic_id:GenericTypeId> "<" <generic_args:GenericArgs> ">" ";"
+    => TypeDeclaration{id, long_id: ConcreteTypeLongId{generic_id, generic_args}},
     "type" <id:ConcreteTypeId> "=" <generic_id:GenericTypeId> ";"
-    => TypeDeclaration{id, long_id: ConcreteTypeLongId{generic_id, args: vec![]}},
+    => TypeDeclaration{id, long_id: ConcreteTypeLongId{generic_id, generic_args: vec![]}},
 }
 
 LibFuncDeclaration: LibFuncDeclaration = {
     "libfunc" <id:ConcreteLibFuncId> "=" <generic_id:GenericLibFuncId>
-    "<" <args:GenericArgs> ">" ";"
-    => LibFuncDeclaration{id, long_id: ConcreteLibFuncLongId{generic_id, args}},
+    "<" <generic_args:GenericArgs> ">" ";"
+    => LibFuncDeclaration{id, long_id: ConcreteLibFuncLongId{generic_id, generic_args}},
     "libfunc" <id:ConcreteLibFuncId> "=" <generic_id:GenericLibFuncId> ";"
-    => LibFuncDeclaration{id, long_id: ConcreteLibFuncLongId{generic_id, args: vec![]}},
+    => LibFuncDeclaration{id, long_id: ConcreteLibFuncLongId{generic_id, generic_args: vec![]}},
 }
 
 Function: Function = {
