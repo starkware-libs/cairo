@@ -58,3 +58,15 @@ pub fn setup_test_expr(
     };
     (module_id, expr)
 }
+
+/// Returns the semantic model of a given block expression.
+/// module_code - extra setup code in the module context.
+/// function_body - extra setup code in the function context.
+pub fn setup_test_block(
+    db: &mut dyn SemanticGroup,
+    expr_code: &str,
+    module_code: &str,
+    function_body: &str,
+) -> (ModuleId, ExprId) {
+    setup_test_expr(db, &format!("{{ {expr_code} }}"), module_code, function_body)
+}

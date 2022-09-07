@@ -59,7 +59,10 @@ impl<'a> ExprGeneratorContext<'a> {
     /// See [Self::register_variable].
     pub fn get_variable(&self, local_var: defs::ids::VarId) -> sierra::ids::VarId {
         // TODO(lior): Consider throwing an error with a location.
-        self.variables.get(&local_var).expect("Internal compiler error.").clone()
+        self.variables
+            .get(&local_var)
+            .unwrap_or_else(|| panic!("Internal compiler error. Unknown variable {:?}", local_var))
+            .clone()
     }
 
     /// Generates a label id and a label statement.
