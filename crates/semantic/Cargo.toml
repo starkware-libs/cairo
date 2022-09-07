@@ -18,6 +18,7 @@ parser = { path = "../parser" }
 salsa = "0.16.1"
 smol_str = "0.1.23"
 syntax = { path = "../syntax" }
+utils = { path = "../utils" }
 
 [dev-dependencies]
 assert_matches = "1.5"
