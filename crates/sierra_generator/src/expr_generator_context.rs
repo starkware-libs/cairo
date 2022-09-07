@@ -115,6 +115,14 @@ impl<'a> ExprGeneratorContext<'a> {
         })
     }
 
+    pub fn felt_ignore_libfunc_id(&self) -> sierra::ids::ConcreteLibFuncId {
+        self.get_extension_id_without_generics("felt_ignore")
+    }
+
+    pub fn felt_dup_libfunc_id(&self) -> sierra::ids::ConcreteLibFuncId {
+        self.get_extension_id_without_generics("felt_dup")
+    }
+
     pub fn felt_jump_nz_libfunc_id(&self) -> sierra::ids::ConcreteLibFuncId {
         self.get_extension_id_without_generics("felt_jump_nz")
     }

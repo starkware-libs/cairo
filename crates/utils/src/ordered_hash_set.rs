@@ -6,8 +6,10 @@ use itertools::zip_eq;
 #[derive(Clone, Debug)]
 pub struct OrderedHashSet<Key: Hash + Eq>(IndexSet<Key>);
 
+pub type Iter<'a, Key> = indexmap::set::Iter<'a, Key>;
+
 impl<Key: Hash + Eq> OrderedHashSet<Key> {
-    pub fn iter(&self) -> indexmap::set::Iter<'_, Key> {
+    pub fn iter(&self) -> Iter<'_, Key> {
         self.0.iter()
     }
 
