@@ -77,7 +77,7 @@ fn test_location_marks() {
         "}
     );
 
-    // multiline span
+    // Multiline span.
     let location = DiagnosticLocation {
         file_id: file,
         span: TextSpan { start: second_line.add(7), end: third_line.add(2) },
@@ -121,4 +121,29 @@ fn test_location_marks() {
                        ^
         "}
     );
+}
+
+#[test]
+fn test_empty_location_line() {
+    let db = DatabaseImpl::default();
+    let content = indoc! {"
+        Oneliner.
+    "};
+    let file = db.intern_file(FileLongId::Virtual(VirtualFile {
+        parent: None,
+        name: "name".into(),
+        content: Arc::new(content.into()),
+    }));
+    let summary = db.file_summary(file).unwrap();
+
+    // Empty span past the end of the file.
+    let location = DiagnosticLocation {
+        file_id: file,
+        span: TextSpan {
+            start: TextOffset(summary.total_length),
+            end: TextOffset(summary.total_length),
+        },
+    };
+
+    assert_eq!(get_location_marks(&db, &location), "");
 }

@@ -15,7 +15,6 @@ pub fn get_location_marks(
     let summary = db.file_summary(location.file_id).expect("File missing from DB.");
 
     let span = &location.span;
-
     let first_line_idx =
         span.start.get_line_number(db, location.file_id).expect("Failed to find location in file.");
     let first_line_start = summary.line_offsets[first_line_idx].0;
@@ -26,6 +25,10 @@ pub fn get_location_marks(
 
     let first_line = &content[first_line_start..first_line_end];
     let mut res = first_line.to_string();
+    if res.is_empty() {
+        return res;
+    }
+
     res.push('\n');
     for _ in first_line_start..span.start.0 {
         res.push(' ');
