@@ -44,7 +44,7 @@ pub fn generate_program_code(
         db.get_concrete_type_id(db.core_felt_ty()).expect("got unexpected diagnostics").unwrap();
     let non_zero_felt_type = db.intern_concrete_type(sierra::program::ConcreteTypeLongId {
         generic_id: sierra::ids::GenericTypeId::from_string("NonZero"),
-        args: vec![sierra::program::GenericArg::Type(felt_type.clone())],
+        generic_args: vec![sierra::program::GenericArg::Type(felt_type.clone())],
     });
     let type_declarations = [felt_type, non_zero_felt_type]
         .into_iter()

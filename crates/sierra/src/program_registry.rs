@@ -107,12 +107,14 @@ fn get_concrete_types_maps<TType: GenericType>(
     let mut concrete_types = HashMap::new();
     let mut concrete_type_ids = HashMap::<(GenericTypeId, &[GenericArg]), ConcreteTypeId>::new();
     for declaration in &program.type_declarations {
-        let concrete_type =
-            TType::specialize_by_id(&declaration.long_id.generic_id, &declaration.long_id.args)
-                .map_err(|error| ProgramRegistryError::TypeSpecialization {
-                    concrete_id: declaration.id.clone(),
-                    error,
-                })?;
+        let concrete_type = TType::specialize_by_id(
+            &declaration.long_id.generic_id,
+            &declaration.long_id.generic_args,
+        )
+        .map_err(|error| ProgramRegistryError::TypeSpecialization {
+            concrete_id: declaration.id.clone(),
+            error,
+        })?;
         match concrete_types.entry(declaration.id.clone()) {
             Entry::Occupied(_) => {
                 Err(ProgramRegistryError::TypeConcreteIdAlreadyExists(declaration.id.clone()))
@@ -120,7 +122,7 @@ fn get_concrete_types_maps<TType: GenericType>(
             Entry::Vacant(entry) => Ok(entry.insert(concrete_type)),
         }?;
         match concrete_type_ids
-            .entry((declaration.long_id.generic_id.clone(), &declaration.long_id.args[..]))
+            .entry((declaration.long_id.generic_id.clone(), &declaration.long_id.generic_args[..]))
         {
             Entry::Occupied(_) => {
                 Err(ProgramRegistryError::TypeAlreadyDeclared(declaration.clone()))
@@ -142,7 +144,7 @@ fn get_concrete_libfuncs<TLibFunc: GenericLibFunc>(
         let concrete_libfunc = TLibFunc::specialize_by_id(
             SpecializationContext { functions, concrete_type_ids },
             &declaration.long_id.generic_id,
-            &declaration.long_id.args,
+            &declaration.long_id.generic_args,
         )
         .map_err(|error| ProgramRegistryError::LibFuncSpecialization {
             concrete_id: declaration.id.clone(),

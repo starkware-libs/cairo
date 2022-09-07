@@ -34,7 +34,7 @@ pub struct ConcreteTypeLongId {
     /// The id of the used generic type.
     pub generic_id: GenericTypeId,
     /// The arguments for the generic type.
-    pub args: Vec<GenericArg>,
+    pub generic_args: Vec<GenericArg>,
 }
 
 /// Declaration of a concrete library function.
@@ -51,7 +51,7 @@ pub struct ConcreteLibFuncLongId {
     /// The id of the used generic libfunc.
     pub generic_id: GenericLibFuncId,
     /// The arguments for the specialization.
-    pub args: Vec<GenericArg>,
+    pub generic_args: Vec<GenericArg>,
 }
 
 /// Descriptor of a function.

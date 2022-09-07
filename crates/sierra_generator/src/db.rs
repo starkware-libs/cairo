@@ -80,7 +80,7 @@ fn get_concrete_type_id(
                         generic_id: sierra::ids::GenericTypeId::from_string(
                             extrn.name(db.as_defs_group()),
                         ),
-                        args: generic_args,
+                        generic_args,
                     }))
                 }
             }
