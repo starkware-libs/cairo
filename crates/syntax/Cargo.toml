@@ -9,6 +9,7 @@ debug = { path = "../debug" }
 filesystem = { path = "../filesystem" }
 salsa = "0.16.1"
 smol_str = "0.1.23"
+utils = { path = "../utils" }
 
 [dev-dependencies]
 pretty_assertions = "1.2.1"

@@ -4,10 +4,11 @@ use defs::ids::GenericFunctionId;
 use diagnostics::{Diagnostics, WithDiagnostics};
 use diagnostics_proc_macros::with_diagnostics;
 use filesystem::ids::{CrateLongId, FileLongId, ModuleId, VirtualFile};
+use utils::extract_matches;
 
 use crate::corelib::core_config;
 use crate::db::SemanticGroup;
-use crate::{semantic, Diagnostic, ExprId};
+use crate::{semantic, Diagnostic, ExprBlock, ExprId};
 
 /// Sets up a module with given content, and returns its module id.
 pub fn setup_test_module(db: &mut dyn SemanticGroup, content: &str) -> ModuleId {
@@ -39,10 +40,7 @@ pub fn setup_test_function(
         .module_resolve_generic_function(module_id, function_name.into())
         .unwrap(diagnostics)
         .unwrap();
-    let function_id = match generic_function_id {
-        GenericFunctionId::Free(function_id) => function_id,
-        _ => panic!(),
-    };
+    let function_id = extract_matches!(generic_function_id, GenericFunctionId::Free);
     (module_id, db.free_function_semantic(function_id).unwrap(diagnostics).unwrap())
 }
 
@@ -60,11 +58,9 @@ pub fn setup_test_expr(
     let function_code = format!("func test_func() {{ {function_body} {expr_code} }}");
     let (module_id, function_semantic) =
         setup_test_function(db, &function_code, "test_func", module_code).unwrap(diagnostics);
-    let expr = match db.lookup_intern_expr(function_semantic.body) {
-        semantic::Expr::ExprBlock(block) => block.tail.unwrap(),
-        _ => panic!(),
-    };
-    (module_id, expr)
+    let ExprBlock { tail, .. } =
+        extract_matches!(db.lookup_intern_expr(function_semantic.body), semantic::Expr::ExprBlock);
+    (module_id, tail.unwrap())
 }
 
 /// Returns the semantic model of a given block expression.
