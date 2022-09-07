@@ -100,7 +100,7 @@ fn get_function_code(
 ) -> Option<Arc<pre_sierra::Function>> {
     let function_semantic: semantic::FreeFunction =
         db.free_function_semantic(function_id).propagate(diagnostics)?;
-    Some(Arc::new(generate_function_code(db, function_id, function_semantic)))
+    Some(Arc::new(generate_function_code(diagnostics, db, function_id, function_semantic)?))
 }
 
 #[with_diagnostics]
