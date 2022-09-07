@@ -14,10 +14,11 @@ use syntax::node::{ast, TypedSyntaxNode};
 
 use crate::corelib::unit_ty;
 use crate::db::{resolve_type, SemanticGroup};
+use crate::diagnostic::SemanticDiagnosticKind;
 use crate::resolve_item::resolve_item;
 use crate::{
-    semantic, ConcreteFunction, Diagnostic, FunctionId, FunctionLongId, MatchArm, StatementId,
-    TypeId, Variable,
+    semantic, ConcreteFunction, Diagnostic, FunctionId, FunctionLongId, MatchArm,
+    SemanticDiagnostic, StatementId, TypeId, Variable,
 };
 
 /// Context for computing the semantic model of expression trees.
@@ -245,7 +246,14 @@ fn resolve_function(
         .and_then(|generic_function| {
             specialize_function(ctx, generic_function, arg_types).unwrap(diagnostics)
         })
-        .unwrap_or_else(|| FunctionId::missing(ctx.db))
+        .unwrap_or_else(|| {
+            diagnostics.add(SemanticDiagnostic {
+                module_id: ctx.module_id,
+                stable_ptr: path.node.stable_ptr(),
+                kind: SemanticDiagnosticKind::UnknownFunction,
+            });
+            FunctionId::missing(ctx.db)
+        })
 }
 
 /// Tries to specializes a generic function.

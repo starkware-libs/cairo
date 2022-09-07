@@ -39,7 +39,7 @@ impl AsDefsGroup for DatabaseImpl {
 #[test]
 fn test_expr_literal() {
     let mut db_val = DatabaseImpl::default();
-    let (_module_id, expr_id) = setup_test_expr(&mut db_val, "7", "", "");
+    let (_module_id, expr_id) = setup_test_expr(&mut db_val, "7", "", "").expect("");
     let db = &db_val;
     let expr = db.lookup_intern_expr(expr_id);
     // TODO(spapini): Currently, DebugWithDb can't "switch" dbs, and thus ExternTypeId is not
@@ -47,8 +47,8 @@ fn test_expr_literal() {
     // Fix this.
     assert_eq!(
         format!("{:?}", expr.debug(db)),
-        "Expr::ExprLiteral(ExprLiteral { value: 7, ty: TypeLongId::Concrete(ConcreteType { \
-         generic_type: Extern(ExternTypeId(0)), generic_args: [] }) })"
+        "ExprLiteral(ExprLiteral { value: 7, ty: Concrete(ConcreteType { generic_type: \
+         Extern(ExternTypeId(0)), generic_args: [] }) })"
     );
 
     // Check expr.
@@ -65,7 +65,7 @@ fn test_expr_literal() {
 fn test_function_with_param() {
     let mut db_val = DatabaseImpl::default();
     let (_module_id, function) =
-        setup_test_function(&mut db_val, "func foo(a: felt) {}", "foo", "");
+        setup_test_function(&mut db_val, "func foo(a: felt) {}", "foo", "").expect("");
     let _db = &db_val;
     let signature = function.signature;
 
@@ -80,7 +80,7 @@ fn test_function_with_param() {
 fn test_function_with_return_type() {
     let mut db_val = DatabaseImpl::default();
     let (_module_id, function) =
-        setup_test_function(&mut db_val, "func foo() -> felt {}", "foo", "");
+        setup_test_function(&mut db_val, "func foo() -> felt {}", "foo", "").expect("");
     let _db = &db_val;
     let signature = function.signature;
 
@@ -101,7 +101,8 @@ fn test_let_statement() {
         "},
         "foo",
         "",
-    );
+    )
+    .expect("");
     let db = &db_val;
 
     let _signature = function.signature;
@@ -140,7 +141,8 @@ fn test_expr_var() {
         "},
         "foo",
         "",
-    );
+    )
+    .expect("");
     let db = &db_val;
 
     let expr_id = match db.lookup_intern_expr(function.body) {
@@ -171,7 +173,8 @@ fn test_expr_match() {
         "},
         "foo",
         "",
-    );
+    )
+    .expect("");
     let db = &db_val;
     let tail_expr_id = match db.lookup_intern_expr(func.body) {
         crate::Expr::ExprBlock(block) => block.tail.unwrap(),
@@ -188,7 +191,7 @@ fn test_expr_match() {
 #[test]
 fn test_expr_block() {
     let mut db_val = DatabaseImpl::default();
-    let (_module_id, expr_id) = setup_test_expr(&mut db_val, "{6;8;}", "", "");
+    let (_module_id, expr_id) = setup_test_expr(&mut db_val, "{6;8;}", "", "").expect("");
     let db = &db_val;
     let expr = db.lookup_intern_expr(expr_id);
 
@@ -214,7 +217,7 @@ fn test_expr_block() {
 #[test]
 fn test_expr_block_with_tail_expression() {
     let mut db_val = DatabaseImpl::default();
-    let (_module_id, expr_id) = setup_test_expr(&mut db_val, "{6;8;9}", "", "");
+    let (_module_id, expr_id) = setup_test_expr(&mut db_val, "{6;8;9}", "", "").expect("");
     let db = &db_val;
     let expr = db.lookup_intern_expr(expr_id);
 
@@ -249,7 +252,8 @@ fn test_expr_block_with_tail_expression() {
 fn test_expr_call() {
     let mut db_val = DatabaseImpl::default();
     // TODO(spapini): Add types.
-    let (_module_id, expr_id) = setup_test_expr(&mut db_val, "foo()", "func foo() {6;}", "");
+    let (_module_id, expr_id) =
+        setup_test_expr(&mut db_val, "foo()", "func foo() {6;}", "").expect("");
     let db = &db_val;
     let expr = db.lookup_intern_expr(expr_id);
 
@@ -264,6 +268,25 @@ fn test_expr_call() {
 }
 
 #[test]
+fn test_expr_call_missing() {
+    let mut db_val = DatabaseImpl::default();
+    // TODO(spapini): Add types.
+    let res = setup_test_expr(&mut db_val, "foo()", "", "");
+    let db = &db_val;
+
+    // Check expr.
+    assert_eq!(
+        res.diagnostics.format(db),
+        "Error at test.cairo from line 1 col 22 until line 1 col 25: Unknown function\n"
+    );
+    assert_eq!(format!("{:?}", res.value.0.debug(db)), "ModuleId(test_crate)");
+    assert_eq!(
+        format!("{:?}", res.value.1.debug(db)),
+        "ExprFunctionCall(ExprFunctionCall { function: Missing, args: [], ty: Missing })"
+    );
+}
+
+#[test]
 fn test_function_body() {
     let mut db_val = DatabaseImpl::default();
     let (module_id, _module_syntax) = setup_test_function(
@@ -275,7 +298,8 @@ fn test_function_body() {
         "},
         "foo",
         "",
-    );
+    )
+    .expect("");
     let db = &db_val;
     let item_id =
         db.module_item_by_name(module_id, "foo".into()).expect("Unexpected diagnostics").unwrap();

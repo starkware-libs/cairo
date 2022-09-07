@@ -127,7 +127,7 @@ fn emit_enum_debug(name: syn::Ident, db: TokenStream2, enm: syn::DataEnum) -> To
     for variant in enm.variants {
         let variant_name = variant.ident;
         let (pattern, field_prints) =
-            emit_fields_debug(db.clone(), format!("{}::{}", name, variant_name), variant.fields);
+            emit_fields_debug(db.clone(), variant_name.to_string(), variant.fields);
         variant_prints = quote! {
             #variant_prints
             #name :: #variant_name #pattern => {
@@ -194,7 +194,7 @@ fn emit_fields_debug(
         }
         syn::Fields::Unit => {
             pattern = quote! {};
-            field_prints = quote! { Ok(()) };
+            field_prints = quote! { f.debug_tuple(#name).finish() };
         }
     };
     (pattern, field_prints)
