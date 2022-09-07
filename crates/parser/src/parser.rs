@@ -48,14 +48,10 @@ pub enum ParserDiagnosticKind {
 impl DiagnosticEntry for ParserDiagnostic {
     type DbType = dyn FilesGroup;
 
-    fn format(&self, db: &dyn FilesGroup) -> String {
-        let text = match db.file_content(self.file_id) {
-            Some(content) => content[self.span.start.0..self.span.end.0].to_string(),
-            None => unreachable!(),
-        };
+    fn format(&self, _db: &dyn FilesGroup) -> String {
         match self.kind {
             // TODO(yuval): replace line breaks with "\n".
-            ParserDiagnosticKind::SkippedTokens => format!("Skipped tokens: '{text}'"),
+            ParserDiagnosticKind::SkippedTokens => "Skipped tokens".to_string(),
         }
     }
 

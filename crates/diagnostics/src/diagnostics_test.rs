@@ -4,6 +4,7 @@ use diagnostics_proc_macros::with_diagnostics;
 use filesystem::db::{FilesDatabase, FilesGroup};
 use filesystem::ids::{FileId, FileLongId, VirtualFile};
 use filesystem::span::{TextOffset, TextSpan};
+use indoc::indoc;
 
 use super::{DiagnosticEntry, DiagnosticLocation, Diagnostics, WithDiagnostics};
 
@@ -62,7 +63,13 @@ fn test_option_with_diagnostics() {
     let res = dummy_compute_macro(2, file_id);
     assert_eq!(
         res.diagnostics.format(db),
-        "Error at dummy_file.sierra from line 1 col 1 until line 2 col 2: Simple diagnostic.\n"
+        indoc! { "
+            error: Simple diagnostic.
+             --> dummy_file.sierra:1:1
+            abcd
+            ^**^
+
+        " }
     );
 }
 #[with_diagnostics]
