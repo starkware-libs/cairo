@@ -77,7 +77,7 @@ fn test_location_marks() {
         "}
     );
 
-    // multiline span
+    // Multiline span.
     let location = DiagnosticLocation {
         file_id: file,
         span: TextSpan { start: second_line.add(7), end: third_line.add(2) },
