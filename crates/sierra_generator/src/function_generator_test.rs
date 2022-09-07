@@ -32,6 +32,12 @@ fn test_function_generator() {
             .iter()
             .map(|x| replace_libfunc_ids(&db, x).to_string())
             .collect::<Vec<String>>(),
-        vec!["label0:", "felt_const<5>() -> ([1])", "store_temp<[0]>([1]) -> ([2])", "return([2])",]
+        vec![
+            "label0:",
+            "felt_ignore([0]) -> ()",
+            "felt_const<5>() -> ([1])",
+            "store_temp<[0]>([1]) -> ([2])",
+            "return([2])",
+        ]
     );
 }

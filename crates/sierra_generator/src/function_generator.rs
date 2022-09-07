@@ -3,11 +3,13 @@
 mod test;
 
 use defs::ids::{FreeFunctionId, GenericFunctionId};
+use sierra::program::Param;
 
 use crate::db::SierraGenGroup;
+use crate::dup_and_ignore::{calculate_statement_dups_and_ignores, VarsDupsAndIgnores};
 use crate::expr_generator::generate_expression_code;
 use crate::expr_generator_context::ExprGeneratorContext;
-use crate::pre_sierra;
+use crate::pre_sierra::{self, Statement};
 use crate::utils::{return_statement, simple_statement};
 
 pub fn generate_function_code(
@@ -59,6 +61,7 @@ pub fn generate_function_code(
     ));
 
     statements.push(return_statement(vec![return_variable_on_stack]));
+    let statements = add_dups_and_ignores(&mut context, &parameters, statements);
 
     pre_sierra::Function {
         id: db.intern_sierra_function(db.intern_function(semantic::FunctionLongId::Concrete(
@@ -74,4 +77,45 @@ pub fn generate_function_code(
         parameters,
         ret_types,
     }
+}
+
+/// Adds ignores and duplicates of felts to the sierra code.
+/// Assumes no VarId is reused in the same line.
+// TODO(orizi): Currently only supports felt types.
+fn add_dups_and_ignores(
+    context: &mut ExprGeneratorContext<'_>,
+    params: &[Param],
+    statements: Vec<Statement>,
+) -> Vec<Statement> {
+    let statement_dups_and_ignores = calculate_statement_dups_and_ignores(params, &statements);
+    itertools::zip_eq(statements.into_iter(), statement_dups_and_ignores.into_iter())
+        .flat_map(|(mut statement, VarsDupsAndIgnores { mut dups, ignores })| {
+            let mut expanded_statement: Vec<Statement> = ignores
+                .into_iter()
+                .map(|var| simple_statement(context.felt_ignore_libfunc_id(), &[var], &[]))
+                .collect();
+            if let Statement::Sierra(sierra::program::GenStatement::Invocation(invocation)) =
+                &mut statement
+            {
+                for arg in &mut invocation.args {
+                    if dups.contains(arg) {
+                        let usage_var = context.allocate_sierra_variable();
+                        expanded_statement.push(simple_statement(
+                            context.felt_dup_libfunc_id(),
+                            &[arg.clone()],
+                            &[arg.clone(), usage_var.clone()],
+                        ));
+                        *arg = usage_var;
+                    } else {
+                        // If this var is used again in this call it must be duplicated.
+                        dups.insert(arg.clone());
+                    }
+                }
+            } else {
+                assert!(dups.is_empty(), "Only invocations should cause dups!");
+            }
+            expanded_statement.push(statement);
+            expanded_statement
+        })
+        .collect()
 }
