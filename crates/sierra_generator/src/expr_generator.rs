@@ -97,7 +97,10 @@ fn handle_function_call(
 
     // Check if this is a user defined function or a libcall.
     let function_long_id =
-        context.get_db().lookup_intern_concrete_function(expr_function_call.function);
+        match context.get_db().lookup_intern_function(expr_function_call.function) {
+            semantic::FunctionLongId::Concrete(concrete) => concrete,
+            semantic::FunctionLongId::Missing => todo!(),
+        };
     match function_long_id.generic_function {
         GenericFunctionId::Free(_) => {
             // Push the arguments on top of the stack.
@@ -139,8 +142,7 @@ fn handle_function_call(
             //   automatically adding such statements.
             let res_var_on_stack = context.allocate_sierra_variable();
             statements.push(simple_statement(
-                // TODO(lior): Use the real return type of the libcall instead of `felt`.
-                context.store_temp_libfunc_id(context.get_db().core_felt_ty()),
+                context.store_temp_libfunc_id(function_long_id.return_type),
                 &[res_var],
                 &[res_var_on_stack.clone()],
             ));
