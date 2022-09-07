@@ -18,10 +18,10 @@ impl salsa::Database for DatabaseImpl {}
 
 // Test diagnostic.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-struct SimpleDiag {
+struct SimpleDiagnostic {
     file_id: FileId,
 }
-impl DiagnosticEntry for SimpleDiag {
+impl DiagnosticEntry for SimpleDiagnostic {
     type DbType = dyn FilesGroup;
 
     fn format(&self, _db: &dyn filesystem::db::FilesGroup) -> String {
@@ -50,8 +50,8 @@ fn setup() -> (DatabaseImpl, FileId) {
 fn test_diagnostics() {
     let (_db_val, file_id) = setup();
 
-    let mut diagnostics: Diagnostics<SimpleDiag> = Diagnostics::new();
-    let diagnostic = SimpleDiag { file_id };
+    let mut diagnostics: Diagnostics<SimpleDiagnostic> = Diagnostics::new();
+    let diagnostic = SimpleDiagnostic { file_id };
     diagnostics.add(diagnostic);
 }
 
@@ -72,12 +72,8 @@ fn test_option_with_diagnostics() {
         " }
     );
 }
-#[with_diagnostics]
-fn dummy_compute_macro(
-    diagnostics: &mut Diagnostics<SimpleDiag>,
-    x: usize,
-    file_id: FileId,
-) -> Option<usize> {
+#[with_diagnostics(SimpleDiagnostic, diagnostics)]
+fn dummy_compute_macro(x: usize, file_id: FileId) -> Option<usize> {
     let param = WithDiagnostics::pure(Some(x * x));
     let res = param.unwrap(diagnostics)?;
     // This should add one diagnostic entry, and return.
@@ -85,8 +81,8 @@ fn dummy_compute_macro(
     Some(res)
 }
 
-#[with_diagnostics]
-fn dummy_compute_fail(diagnostics: &mut Diagnostics<SimpleDiag>, file_id: FileId) -> Option<usize> {
-    diagnostics.add(SimpleDiag { file_id });
+#[with_diagnostics(SimpleDiagnostic, diagnostics)]
+fn dummy_compute_fail(file_id: FileId) -> Option<usize> {
+    diagnostics.add(SimpleDiagnostic { file_id });
     None
 }

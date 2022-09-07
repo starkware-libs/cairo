@@ -8,9 +8,8 @@ use crate::corelib::core_module;
 use crate::db::SemanticGroup;
 use crate::Diagnostic;
 
-#[with_diagnostics]
+#[with_diagnostics(Diagnostic, diagnostics)]
 pub fn resolve_item(
-    diagnostics: &mut Diagnostics<Diagnostic>,
     db: &dyn SemanticGroup,
     module_id: ModuleId,
     path: &ast::ExprPath,

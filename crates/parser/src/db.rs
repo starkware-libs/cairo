@@ -26,22 +26,14 @@ pub trait ParserGroup: SyntaxGroup + AsSyntaxGroup + FilesGroup {
     ) -> WithDiagnostics<Option<Arc<SyntaxFile>>, ParserDiagnostic>;
 }
 
-#[with_diagnostics]
-pub fn file_syntax(
-    diagnostics: &mut Diagnostics<ParserDiagnostic>,
-    db: &dyn ParserGroup,
-    file_id: FileId,
-) -> Option<Arc<SyntaxFile>> {
+#[with_diagnostics(ParserDiagnostic, diagnostics)]
+pub fn file_syntax(db: &dyn ParserGroup, file_id: FileId) -> Option<Arc<SyntaxFile>> {
     let s = db.file_content(file_id)?;
     let parser = Parser::from_text(db.as_syntax_group(), file_id, s.as_str());
     Some(Arc::new(parser.parse_syntax_file().unwrap(diagnostics)))
 }
 
-#[with_diagnostics]
-pub fn module_syntax(
-    diagnostics: &mut Diagnostics<ParserDiagnostic>,
-    db: &dyn ParserGroup,
-    module_id: ModuleId,
-) -> Option<Arc<SyntaxFile>> {
+#[with_diagnostics(ParserDiagnostic, diagnostics)]
+pub fn module_syntax(db: &dyn ParserGroup, module_id: ModuleId) -> Option<Arc<SyntaxFile>> {
     db.file_syntax(db.module_file(module_id)?).unwrap(diagnostics)
 }

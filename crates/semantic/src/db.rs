@@ -77,9 +77,8 @@ pub struct GenericFunctionData {
 
 /// Fetches the AST of the generic function signature. Computes and returns the
 /// [`GenericFunctionData`] struct.
-#[with_diagnostics]
+#[with_diagnostics(Diagnostic, diagnostics)]
 fn generic_function_data(
-    diagnostics: &mut Diagnostics<Diagnostic>,
     db: &dyn SemanticGroup,
     function_id: GenericFunctionId,
 ) -> Option<GenericFunctionData> {
@@ -103,9 +102,8 @@ fn generic_function_data(
 }
 
 /// Computes the semantic model of the signature of a GenericFunction (e.g. Free / Extern).
-#[with_diagnostics]
+#[with_diagnostics(Diagnostic, diagnostics)]
 fn generic_function_signature_semantic(
-    diagnostics: &mut Diagnostics<Diagnostic>,
     db: &dyn SemanticGroup,
     function_id: GenericFunctionId,
 ) -> Option<semantic::Signature> {
@@ -113,9 +111,8 @@ fn generic_function_signature_semantic(
     Some(generic_data.signature)
 }
 
-#[with_diagnostics]
+#[with_diagnostics(Diagnostic, diagnostics)]
 fn free_function_semantic(
-    diagnostics: &mut Diagnostics<Diagnostic>,
     db: &dyn SemanticGroup,
     free_function_id: FreeFunctionId,
 ) -> Option<semantic::FreeFunction> {
@@ -151,9 +148,8 @@ fn statement_semantic(db: &dyn SemanticGroup, item: StatementId) -> semantic::St
 
 // ----------------------- Helper functions -----------------------
 /// Gets the return type of the given function's AST.
-#[with_diagnostics]
+#[with_diagnostics(ParserDiagnostic, diagnostics)]
 fn function_signature_return_type(
-    diagnostics: &mut Diagnostics<ParserDiagnostic>,
     db: &dyn SemanticGroup,
     module_id: ModuleId,
     sig: &ast::FunctionSignature,
@@ -170,9 +166,8 @@ fn function_signature_return_type(
 }
 
 /// Returns the parameters of the given function signature's AST.
-#[with_diagnostics]
+#[with_diagnostics(ParserDiagnostic, diagnostics)]
 fn function_signature_params(
-    diagnostics: &mut Diagnostics<ParserDiagnostic>,
     db: &dyn SemanticGroup,
     module_id: ModuleId,
     sig: &ast::FunctionSignature,
@@ -204,9 +199,8 @@ fn function_signature_params(
 // TODO(yuval): move to a separate module "type".
 // TODO(spapini): add a query wrapper.
 /// Resolves a type given a module and a path.
-#[with_diagnostics]
+#[with_diagnostics(ParserDiagnostic, diagnostics)]
 pub fn resolve_type(
-    diagnostics: &mut Diagnostics<ParserDiagnostic>,
     db: &dyn SemanticGroup,
     module_id: ModuleId,
     type_path: ast::ExprPath,
@@ -233,9 +227,8 @@ pub fn resolve_type(
 
 // TODO(yuval): move to a separate module "type".
 /// Resolves a type given a module and a simple name.
-#[with_diagnostics]
+#[with_diagnostics(ParserDiagnostic, diagnostics)]
 fn resolve_type_by_name(
-    diagnostics: &mut Diagnostics<ParserDiagnostic>,
     db: &dyn SemanticGroup,
     module_id: ModuleId,
     type_name: &SmolStr,

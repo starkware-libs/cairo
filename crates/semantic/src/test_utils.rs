@@ -25,9 +25,8 @@ pub fn setup_test_module(db: &mut dyn SemanticGroup, content: &str) -> ModuleId 
 /// Returns the semantic model of a given function.
 /// function_name - name of the function.
 /// module_code - extra setup code in the module context.
-#[with_diagnostics]
+#[with_diagnostics(Diagnostic, diagnostics)]
 pub fn setup_test_function(
-    diagnostics: &mut Diagnostics<Diagnostic>,
     db: &mut dyn SemanticGroup,
     function_code: &str,
     function_name: &str,
@@ -49,9 +48,8 @@ pub fn setup_test_function(
 /// Returns the semantic model of a given expression.
 /// module_code - extra setup code in the module context.
 /// function_body - extra setup code in the function context.
-#[with_diagnostics]
+#[with_diagnostics(Diagnostic, diagnostics)]
 pub fn setup_test_expr(
-    diagnostics: &mut Diagnostics<Diagnostic>,
     db: &mut dyn SemanticGroup,
     expr_code: &str,
     module_code: &str,
@@ -70,9 +68,8 @@ pub fn setup_test_expr(
 /// Returns the semantic model of a given block expression.
 /// module_code - extra setup code in the module context.
 /// function_body - extra setup code in the function context.
-#[with_diagnostics]
+#[with_diagnostics(Diagnostic, diagnostics)]
 pub fn setup_test_block(
-    diagnostics: &mut Diagnostics<Diagnostic>,
     db: &mut dyn SemanticGroup,
     expr_code: &str,
     module_code: &str,

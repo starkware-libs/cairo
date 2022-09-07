@@ -1,83 +1,60 @@
 use proc_macro::TokenStream;
 use quote::__private::{Span, TokenStream as TokenStream2};
 use quote::quote;
-use syn::token::Mut;
-use syn::{
-    parse_macro_input, AngleBracketedGenericArguments, DeriveInput, FnArg, Pat, PatType, Path,
-    TypePath, TypeReference,
-};
+use syn::parse::Parse;
+use syn::{parse_macro_input, DeriveInput, Ident, Token, TypePath};
 
 /// Macro for defining functions that return WithDiagnostics<T>.
+struct WithDiagnosticsMacroInput {
+    ty: TypePath,
+    name: Ident,
+}
+impl Parse for WithDiagnosticsMacroInput {
+    fn parse(input: syn::parse::ParseStream<'_>) -> syn::Result<Self> {
+        let ty: TypePath = input.parse()?;
+        let _comma: Token![,] = input.parse()?;
+        let name: Ident = input.parse()?;
+        Ok(WithDiagnosticsMacroInput { ty, name })
+    }
+}
 #[proc_macro_attribute]
-pub fn with_diagnostics(_attr: TokenStream, item: TokenStream) -> TokenStream {
-    // Parse token stream as a function AST.
+pub fn with_diagnostics(attr: TokenStream, item: TokenStream) -> TokenStream {
+    // Parse attributes and verify them.
+    let WithDiagnosticsMacroInput { ty: path_ty, name: diagnostics_var_name } =
+        syn::parse(attr).unwrap();
+    assert_eq!(diagnostics_var_name, "diagnostics");
+    let TypePath { qself, path } = &path_ty;
+    assert!(qself.is_none());
+    let segment = path.segments.last().unwrap();
+    assert!(segment.arguments.is_empty());
+
+    assert!(
+        segment.ident.to_string().ends_with("Diagnostic"),
+        "diagnostic entry type must end with 'Diagnostic'"
+    );
+    let entry_type = &syn::Type::Path(path_ty);
+
+    // Parse `item` TokenStream as a function AST.
     let syn::ItemFn { attrs, vis, sig, block } = syn::parse(item).unwrap();
     let function_ident = sig.ident;
-    let mut params = sig.inputs.into_iter();
-
-    // Extract the first parameter.
-    let first_parameter = params.next();
-
-    // Extract Diagnostics type.
-    // TODO(spapini): Extract to a function.
-    let diagnostics_ref_ty = match first_parameter.unwrap() {
-        FnArg::Typed(PatType { pat, ty, .. }) => match &*pat {
-            Pat::Ident(ident) => {
-                assert_eq!(ident.ident, "diagnostics");
-                ty
-            }
-            _ => panic!("Argument pattern is not a simple ident."),
-        },
-        FnArg::Receiver(_) => panic!("Argument is a receiver."),
-    };
-    let diagnostics_ty = match &*diagnostics_ref_ty {
-        syn::Type::Reference(TypeReference { mutability: Some(Mut { .. }), elem, .. }) => elem,
-        _ => panic!("Expected a reference as a first parameter."),
-    };
-    let segments = match &**diagnostics_ty {
-        syn::Type::Path(TypePath { path: Path { segments, .. }, .. }) => segments,
-        _ => panic!("Expected a path as the type for the first arg."),
-    };
-    let segment = segments.last().unwrap();
-    assert_eq!(segment.ident, "Diagnostics");
-    let generic_args = match &segment.arguments {
-        syn::PathArguments::AngleBracketed(AngleBracketedGenericArguments { args, .. }) => args,
-        _ => panic!("Expected angle brackets, e.g. Diagnostics<T>."),
-    };
-    let entry_ty = match generic_args.first().unwrap() {
-        syn::GenericArgument::Type(ty) => ty,
-        _ => panic!("Expected a generic argument for diagnostics."),
-    };
-    // TODO(spapini): Assert that the first arg is `&mut diagnostics: Diagnostics`.
-
-    // Extract the rest of the arguments into args_syntax.
-    let mut args_syntax = quote! {};
-    for arg in params {
-        match arg {
-            FnArg::Typed(PatType { pat, ty, .. }) => match &*pat {
-                Pat::Ident(ident) => args_syntax = quote! {#args_syntax #ident: #ty,},
-                _ => panic!("Argument pattern is not a simple ident."),
-            },
-            FnArg::Receiver(_) => panic!("Argument is a receiver."),
-        }
-    }
+    let params = sig.inputs.into_iter();
 
     // Extract body and return type.
-    let ret_ty = match sig.output {
+    let ret_type = match sig.output {
         syn::ReturnType::Default => panic!("No return type."),
         syn::ReturnType::Type(_, ty) => ty,
     };
 
-    // Emit a wrapper function.
+    // Emit the function.
     quote! {
-        #(#attrs)* #vis fn #function_ident(#args_syntax) -> WithDiagnostics<#ret_ty, #entry_ty> {
-            let mut diagnostics = Diagnostics::new();
+        #(#attrs)* #vis fn #function_ident(#(#params),*) -> WithDiagnostics<#ret_type, #entry_type> {
+            let mut #diagnostics_var_name = Diagnostics::new();
 
-            let mut f = |diagnostics: &mut Diagnostics<#entry_ty>| -> #ret_ty {
+            let mut f = |#diagnostics_var_name: &mut Diagnostics<#entry_type>| -> #ret_type {
                 #block
             };
-            let value = f(&mut diagnostics);
-            WithDiagnostics { value, diagnostics }
+            let value = f(&mut #diagnostics_var_name);
+            WithDiagnostics { value, diagnostics: #diagnostics_var_name }
     }
     }
     .into()

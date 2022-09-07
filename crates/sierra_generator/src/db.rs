@@ -53,9 +53,8 @@ pub trait SierraGenGroup: SemanticGroup {
     ) -> WithDiagnostics<Option<Arc<sierra::program::Program>>, semantic::Diagnostic>;
 }
 
-#[with_diagnostics]
+#[with_diagnostics(semantic::Diagnostic, diagnostics)]
 fn get_concrete_type_id(
-    diagnostics: &mut Diagnostics<semantic::Diagnostic>,
     db: &dyn SierraGenGroup,
     type_id: semantic::TypeId,
 ) -> Option<sierra::ids::ConcreteTypeId> {
@@ -92,9 +91,8 @@ fn get_concrete_type_id(
     }
 }
 
-#[with_diagnostics]
+#[with_diagnostics(semantic::Diagnostic, diagnostics)]
 fn get_function_code(
-    diagnostics: &mut Diagnostics<semantic::Diagnostic>,
     db: &dyn SierraGenGroup,
     function_id: FreeFunctionId,
 ) -> Option<Arc<pre_sierra::Function>> {
@@ -103,9 +101,8 @@ fn get_function_code(
     Some(Arc::new(generate_function_code(db, function_id, function_semantic)))
 }
 
-#[with_diagnostics]
+#[with_diagnostics(semantic::Diagnostic, diagnostics)]
 fn get_program_code(
-    diagnostics: &mut Diagnostics<semantic::Diagnostic>,
     db: &dyn SierraGenGroup,
     module_id: ModuleId,
 ) -> Option<Arc<sierra::program::Program>> {

@@ -64,8 +64,8 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
 /// use diagnostics::{DiagnosticEntry, Diagnostics, WithDiagnostics};
 /// use diagnostics_proc_macros::with_diagnostics;
 /// # #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-/// # struct SimpleDiag {}
-/// # impl DiagnosticEntry for SimpleDiag {
+/// # struct SimpleDiagnostic {}
+/// # impl DiagnosticEntry for SimpleDiagnostic {
 /// #     type DbType = dyn filesystem::db::FilesGroup;
 /// #     fn format(&self, _db: &dyn filesystem::db::FilesGroup) -> String {
 /// #         unimplemented!();
@@ -76,8 +76,8 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
 /// #         unimplemented!();
 /// #     }
 /// # }
-/// #[with_diagnostics]
-/// fn dummy_compute_macro(diagnostics: &mut Diagnostics<SimpleDiag>, x: usize) -> Option<usize> {
+/// #[with_diagnostics(SimpleDiagnostic, diagnostics)]
+/// fn dummy_compute_func(x: usize) -> Option<usize> {
 ///     let param = WithDiagnostics::pure(Some(x * x));
 ///     let res = param.unwrap(diagnostics)?;
 ///     Some(res * res)
@@ -85,7 +85,7 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
 /// ```
 /// The resulting function will have the signature:
 /// ```ignore
-/// fn dummy_compute_macro(x: usize) -> WithDiagnostics<Option<usize>>;
+/// fn dummy_compute_func(x: usize) -> WithDiagnostics<Option<usize>>;
 /// ```
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct WithDiagnostics<T, TEntry: DiagnosticEntry> {

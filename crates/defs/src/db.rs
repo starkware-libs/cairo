@@ -77,12 +77,8 @@ pub struct ModuleItems {
     pub items: OrderedHashMap<SmolStr, ModuleItemId>,
 }
 
-#[with_diagnostics]
-fn module_data(
-    diagnostics: &mut Diagnostics<ParserDiagnostic>,
-    db: &dyn DefsGroup,
-    module_id: ModuleId,
-) -> Option<ModuleData> {
+#[with_diagnostics(ParserDiagnostic, diagnostics)]
+fn module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Option<ModuleData> {
     let mut res = ModuleData::default();
     let syntax_db = db.as_syntax_group();
 
@@ -123,12 +119,8 @@ fn module_data(
     Some(res)
 }
 
-#[with_diagnostics]
-fn module_items(
-    diagnostics: &mut Diagnostics<ParserDiagnostic>,
-    db: &dyn DefsGroup,
-    module_id: ModuleId,
-) -> Option<ModuleItems> {
+#[with_diagnostics(ParserDiagnostic, diagnostics)]
+fn module_items(db: &dyn DefsGroup, module_id: ModuleId) -> Option<ModuleItems> {
     let syntax_db = db.as_syntax_group();
     let module_data = db.module_data(module_id).unwrap(diagnostics)?;
     // TODO(spapini): Prune other items if name is missing.
@@ -163,9 +155,8 @@ fn module_items(
     })
 }
 
-#[with_diagnostics]
+#[with_diagnostics(ParserDiagnostic, diagnostics)]
 fn module_item_by_name(
-    diagnostics: &mut Diagnostics<ParserDiagnostic>,
     db: &dyn DefsGroup,
     module_id: ModuleId,
     name: SmolStr,
@@ -174,9 +165,8 @@ fn module_item_by_name(
     module_items.items.get(&name).copied()
 }
 
-#[with_diagnostics]
+#[with_diagnostics(ParserDiagnostic, diagnostics)]
 fn module_resolve_generic_function(
-    diagnostics: &mut Diagnostics<ParserDiagnostic>,
     db: &dyn DefsGroup,
     module_id: ModuleId,
     name: SmolStr,
@@ -190,9 +180,8 @@ fn module_resolve_generic_function(
     }
 }
 
-#[with_diagnostics]
-fn module_resolve_generic_type(
-    diagnostics: &mut Diagnostics<ParserDiagnostic>,
+#[with_diagnostics(ParserDiagnostic, diagnostics)]
+pub fn module_resolve_generic_type(
     db: &dyn DefsGroup,
     module_id: ModuleId,
     name: SmolStr,

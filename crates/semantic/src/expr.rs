@@ -78,9 +78,8 @@ fn literal_to_semantic(
 }
 
 /// Computes the semantic model of an expression.
-#[with_diagnostics]
+#[with_diagnostics(Diagnostic, diagnostics)]
 pub fn compute_expr_semantic(
-    diagnostics: &mut Diagnostics<Diagnostic>,
     ctx: &mut ComputationContext<'_>,
     syntax: ast::Expr,
 ) -> semantic::Expr {
@@ -231,9 +230,8 @@ pub fn resolve_variable_by_name(
 
 /// Resolves a concrete function given a context and a path expression.
 /// Returns the generic function and the concrete function.
-#[with_diagnostics]
+#[with_diagnostics(Diagnostic, diagnostics)]
 fn resolve_function(
-    diagnostics: &mut Diagnostics<Diagnostic>,
     ctx: &mut ComputationContext<'_>,
     path: ast::ExprPath,
     arg_types: &[TypeId],
@@ -257,9 +255,8 @@ fn resolve_function(
 }
 
 /// Tries to specializes a generic function.
-#[with_diagnostics]
+#[with_diagnostics(Diagnostic, diagnostics)]
 fn specialize_function(
-    diagnostics: &mut Diagnostics<Diagnostic>,
     ctx: &mut ComputationContext<'_>,
     generic_function: GenericFunctionId,
     _arg_types: &[TypeId],
@@ -275,9 +272,8 @@ fn specialize_function(
 }
 
 /// Computes the semantic model of a statement.
-#[with_diagnostics]
+#[with_diagnostics(Diagnostic, diagnostics)]
 pub fn compute_statement_semantic(
-    diagnostics: &mut Diagnostics<Diagnostic>,
     ctx: &mut ComputationContext<'_>,
     syntax: ast::Statement,
 ) -> StatementId {
