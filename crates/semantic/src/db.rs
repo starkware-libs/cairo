@@ -62,6 +62,16 @@ pub trait SemanticGroup: DefsGroup + AsDefsGroup + ParserGroup + AsFilesGroup {
     fn core_felt_ty(&self) -> TypeId;
 }
 
+pub trait AsSemanticGroup {
+    fn as_semantic_group(&self) -> &(dyn SemanticGroup + 'static);
+}
+
+impl AsSemanticGroup for dyn SemanticGroup {
+    fn as_semantic_group(&self) -> &(dyn SemanticGroup + 'static) {
+        self
+    }
+}
+
 // ----------------------- Queries -----------------------
 
 fn struct_semantic(_db: &dyn SemanticGroup, _struct_id: StructId) -> semantic::Struct {
