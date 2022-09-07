@@ -31,8 +31,11 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
     pub fn new() -> Self {
         Self(Vec::new())
     }
-    pub fn add(&mut self, diagnostic: TEntry) {
-        self.0.push(diagnostic);
+    pub fn add<T>(&mut self, diagnostic: T)
+    where
+        TEntry: From<T>,
+    {
+        self.0.push(diagnostic.into());
     }
     pub fn format(&self, db: &TEntry::DbType) -> String {
         let mut res = String::new();

@@ -49,7 +49,7 @@ fn setup() -> (DatabaseImpl, FileId) {
 fn test_diagnostics() {
     let (_db_val, file_id) = setup();
 
-    let mut diagnostics = Diagnostics::new();
+    let mut diagnostics: Diagnostics<SimpleDiag> = Diagnostics::new();
     let diagnostic = SimpleDiag { file_id };
     diagnostics.add(diagnostic);
 }

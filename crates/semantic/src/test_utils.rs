@@ -1,11 +1,13 @@
 use std::sync::Arc;
 
 use defs::ids::GenericFunctionId;
+use diagnostics::{Diagnostics, WithDiagnostics};
+use diagnostics_proc_macros::with_diagnostics;
 use filesystem::ids::{CrateLongId, FileLongId, ModuleId, VirtualFile};
 
 use crate::corelib::core_config;
 use crate::db::SemanticGroup;
-use crate::{semantic, ExprId};
+use crate::{semantic, Diagnostic, ExprId};
 
 /// Sets up a module with given content, and returns its module id.
 pub fn setup_test_module(db: &mut dyn SemanticGroup, content: &str) -> ModuleId {
@@ -23,7 +25,9 @@ pub fn setup_test_module(db: &mut dyn SemanticGroup, content: &str) -> ModuleId 
 /// Returns the semantic model of a given function.
 /// function_name - name of the function.
 /// module_code - extra setup code in the module context.
+#[with_diagnostics]
 pub fn setup_test_function(
+    diagnostics: &mut Diagnostics<Diagnostic>,
     db: &mut dyn SemanticGroup,
     function_code: &str,
     function_name: &str,
@@ -31,19 +35,23 @@ pub fn setup_test_function(
 ) -> (ModuleId, semantic::FreeFunction) {
     let content = format!("{module_code} {function_code}");
     let module_id = setup_test_module(db, &content);
-    let generic_function_id =
-        db.module_resolve_generic_function(module_id, function_name.into()).expect("").unwrap();
+    let generic_function_id = db
+        .module_resolve_generic_function(module_id, function_name.into())
+        .unwrap(diagnostics)
+        .unwrap();
     let function_id = match generic_function_id {
         GenericFunctionId::Free(function_id) => function_id,
         _ => panic!(),
     };
-    (module_id, db.free_function_semantic(function_id).expect("").unwrap())
+    (module_id, db.free_function_semantic(function_id).unwrap(diagnostics).unwrap())
 }
 
 /// Returns the semantic model of a given expression.
 /// module_code - extra setup code in the module context.
 /// function_body - extra setup code in the function context.
+#[with_diagnostics]
 pub fn setup_test_expr(
+    diagnostics: &mut Diagnostics<Diagnostic>,
     db: &mut dyn SemanticGroup,
     expr_code: &str,
     module_code: &str,
@@ -51,7 +59,7 @@ pub fn setup_test_expr(
 ) -> (ModuleId, ExprId) {
     let function_code = format!("func test_func() {{ {function_body} {expr_code} }}");
     let (module_id, function_semantic) =
-        setup_test_function(db, &function_code, "test_func", module_code);
+        setup_test_function(db, &function_code, "test_func", module_code).unwrap(diagnostics);
     let expr = match db.lookup_intern_expr(function_semantic.body) {
         semantic::Expr::ExprBlock(block) => block.tail.unwrap(),
         _ => panic!(),
@@ -62,11 +70,14 @@ pub fn setup_test_expr(
 /// Returns the semantic model of a given block expression.
 /// module_code - extra setup code in the module context.
 /// function_body - extra setup code in the function context.
+#[with_diagnostics]
 pub fn setup_test_block(
+    diagnostics: &mut Diagnostics<Diagnostic>,
     db: &mut dyn SemanticGroup,
     expr_code: &str,
     module_code: &str,
     function_body: &str,
 ) -> (ModuleId, ExprId) {
     setup_test_expr(db, &format!("{{ {expr_code} }}"), module_code, function_body)
+        .unwrap(diagnostics)
 }
