@@ -53,7 +53,7 @@ pub struct FileSummary {
 
 #[allow(dead_code)]
 impl TextOffset {
-    pub fn position_in_file(&self, db: &dyn FilesGroup, file: FileId) -> Option<TextPosition> {
+    pub fn get_line_number(&self, db: &dyn FilesGroup, file: FileId) -> Option<usize> {
         let summary = db.file_summary(file)?;
         assert!(
             self.0 <= summary.total_length,
@@ -61,8 +61,13 @@ impl TextOffset {
             self.0,
             summary.total_length
         );
-        let index = summary.line_offsets.binary_search(self).unwrap_or_else(|x| x - 1);
-        let line_offset = summary.line_offsets[index];
-        Some(TextPosition { line: index, col: *self - line_offset })
+        Some(summary.line_offsets.binary_search(self).unwrap_or_else(|x| x - 1))
+    }
+
+    pub fn position_in_file(&self, db: &dyn FilesGroup, file: FileId) -> Option<TextPosition> {
+        let summary = db.file_summary(file)?;
+        let line_number = self.get_line_number(db, file)?;
+        let line_offset = summary.line_offsets[line_number];
+        Some(TextPosition { line: line_number, col: *self - line_offset })
     }
 }

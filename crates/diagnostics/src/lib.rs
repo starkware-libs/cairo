@@ -2,5 +2,6 @@
 //! source files.
 
 mod diagnostics;
+mod location_marks;
 
 pub use self::diagnostics::{DiagnosticEntry, DiagnosticLocation, Diagnostics, WithDiagnostics};
