@@ -42,7 +42,7 @@ fn test_location_marks() {
     };
 
     assert_eq!(
-        get_location_marks(&db, location) + "\n",
+        get_location_marks(&db, &location) + "\n",
         indoc! {"
             Second line.
                         ^
@@ -56,7 +56,7 @@ fn test_location_marks() {
     };
 
     assert_eq!(
-        get_location_marks(&db, location) + "\n",
+        get_location_marks(&db, &location) + "\n",
         indoc! {"
             Third line.
                ^
@@ -70,7 +70,7 @@ fn test_location_marks() {
     };
 
     assert_eq!(
-        get_location_marks(&db, location) + "\n",
+        get_location_marks(&db, &location) + "\n",
         indoc! {"
             Second line.
                    ^**^
@@ -84,7 +84,7 @@ fn test_location_marks() {
     };
 
     assert_eq!(
-        get_location_marks(&db, location) + "\n",
+        get_location_marks(&db, &location) + "\n",
         indoc! {"
             Second line.
                    ^***^
@@ -98,7 +98,7 @@ fn test_location_marks() {
     };
 
     assert_eq!(
-        get_location_marks(&db, location) + "\n",
+        get_location_marks(&db, &location) + "\n",
         indoc! {"
             Third line.
                    ^**^
@@ -114,5 +114,11 @@ fn test_location_marks() {
         },
     };
 
-    assert_eq!(get_location_marks(&db, location), "");
+    assert_eq!(
+        get_location_marks(&db, &location) + "\n",
+        indoc! {"
+            Third line.
+                       ^
+        "}
+    );
 }

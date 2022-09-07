@@ -6,10 +6,9 @@ use crate::DiagnosticLocation;
 #[path = "location_marks_test.rs"]
 mod test;
 
-#[allow(dead_code)]
 pub fn get_location_marks(
     db: &dyn filesystem::db::FilesGroup,
-    location: DiagnosticLocation,
+    location: &DiagnosticLocation,
 ) -> String {
     // TODO(ilya, 10/10/2023): Handle locations which spread over a few lines.
     let content = db.file_content(location.file_id).expect("File missing from DB.");
@@ -17,9 +16,6 @@ pub fn get_location_marks(
 
     let span = &location.span;
 
-    if span.start.0 >= summary.total_length {
-        return "".to_string();
-    }
     let first_line_idx =
         span.start.get_line_number(db, location.file_id).expect("Failed to find location in file.");
     let first_line_start = summary.line_offsets[first_line_idx].0;

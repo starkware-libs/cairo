@@ -277,7 +277,13 @@ fn test_expr_call_missing() {
     // Check expr.
     assert_eq!(
         res.diagnostics.format(db),
-        "Error at test.cairo from line 1 col 22 until line 1 col 25: Unknown function\n"
+        indoc! { "
+            error: Unknown function
+             --> test.cairo:1:22
+             func test_func() {  foo() }
+                                 ^*^
+
+        "}
     );
     assert_eq!(format!("{:?}", res.value.0.debug(db)), "ModuleId(test_crate)");
     assert_eq!(
