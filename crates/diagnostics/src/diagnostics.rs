@@ -8,6 +8,8 @@ use filesystem::db::AsFilesGroup;
 use filesystem::ids::FileId;
 use filesystem::span::TextSpan;
 
+use crate::location_marks::get_location_marks;
+
 /// A trait for diagnostics (i.e., errors and warnings) across the compiler.
 /// Meant to be implemented by each module that may produce diagnostics.
 pub trait DiagnosticEntry: Clone + std::fmt::Debug + Eq + std::hash::Hash {
@@ -42,25 +44,14 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
         for entry in &self.0 {
             let location = entry.location(db);
             let filename = location.file_id.file_name(db.as_files_group());
-            let pos0 =
+            let marks = get_location_marks(db.as_files_group(), &location);
+            let pos =
                 match location.span.start.position_in_file(db.as_files_group(), location.file_id) {
-                    Some(pos) => format!("line {} col {}", pos.line + 1, pos.col + 1),
+                    Some(pos) => format!("{}:{}", pos.line + 1, pos.col + 1),
                     None => "?".into(),
                 };
-            let pos1 =
-                match location.span.end.position_in_file(db.as_files_group(), location.file_id) {
-                    Some(pos) => format!("line {} col {}", pos.line + 1, pos.col + 1),
-                    None => "?".into(),
-                };
-            writeln!(
-                res,
-                "Error at {} from {} until {}: {}",
-                filename,
-                pos0,
-                pos1,
-                entry.format(db)
-            )
-            .unwrap();
+            let message = entry.format(db);
+            writeln!(res, "error: {message}\n --> {filename}:{pos}\n{marks}\n").unwrap();
         }
         res
     }
