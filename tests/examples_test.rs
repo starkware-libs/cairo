@@ -6,7 +6,7 @@ use filesystem::db::{AsFilesGroup, FilesDatabase, FilesGroup};
 use filesystem::ids::{CrateLongId, FileLongId, ModuleId};
 use parser::db::ParserDatabase;
 use semantic::corelib::core_config;
-use semantic::db::SemanticDatabase;
+use semantic::db::{AsSemanticGroup, SemanticDatabase, SemanticGroup};
 use sierra_generator::db::{SierraGenDatabase, SierraGenGroup};
 use syntax::node::db::{AsSyntaxGroup, SyntaxDatabase, SyntaxGroup};
 use test_case::test_case;
@@ -36,6 +36,11 @@ impl AsSyntaxGroup for DatabaseImpl {
 }
 impl AsFilesGroup for DatabaseImpl {
     fn as_files_group(&self) -> &(dyn FilesGroup + 'static) {
+        self
+    }
+}
+impl AsSemanticGroup for DatabaseImpl {
+    fn as_semantic_group(&self) -> &(dyn SemanticGroup + 'static) {
         self
     }
 }
