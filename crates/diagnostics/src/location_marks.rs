@@ -6,10 +6,9 @@ use crate::DiagnosticLocation;
 #[path = "location_marks_test.rs"]
 mod test;
 
-#[allow(dead_code)]
 pub fn get_location_marks(
     db: &dyn filesystem::db::FilesGroup,
-    location: DiagnosticLocation,
+    location: &DiagnosticLocation,
 ) -> String {
     // TODO(ilya, 10/10/2023): Handle locations which spread over a few lines.
     let content = db.file_content(location.file_id).expect("File missing from DB.");
