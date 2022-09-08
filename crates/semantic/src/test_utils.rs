@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
-use defs::ids::GenericFunctionId;
+use defs::ids::{GenericFunctionId, ModuleId};
 use diagnostics::{Diagnostics, WithDiagnostics};
 use diagnostics_proc_macros::with_diagnostics;
-use filesystem::ids::{CrateLongId, FileLongId, ModuleId, VirtualFile};
+use filesystem::ids::{CrateLongId, FileLongId, VirtualFile};
 
 use crate::corelib::core_config;
 use crate::db::SemanticGroup;
