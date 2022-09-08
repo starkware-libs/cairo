@@ -55,6 +55,11 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
         }
         res
     }
+
+    /// Verifies that there are no diagnostics in this set. Fails otherwise.
+    pub fn expect(self, error_message: &str) {
+        assert!(self.0.is_empty(), "{}\n{:?}", error_message, self);
+    }
 }
 
 /// Helper type for computations that may produce diagnostics.
@@ -115,7 +120,7 @@ impl<T, TEntry: DiagnosticEntry> WithDiagnostics<T, TEntry> {
     /// Asserts that no diagnostic has occurred, panicking and printing a message on failure.
     /// Returns the wrapped value.
     pub fn expect(self, error_message: &str) -> T {
-        assert!(self.diagnostics.0.is_empty(), "{}\n{:?}", error_message, self.diagnostics);
+        self.diagnostics.expect(error_message);
         self.value
     }
 }
