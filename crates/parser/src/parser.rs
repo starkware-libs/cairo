@@ -132,11 +132,11 @@ impl<'a> Parser<'a> {
     fn expect_struct(&mut self) -> GreenId {
         let struct_kw = self.take();
         let name = self.parse_token(TokenKind::Identifier);
-        // TODO(yuval): support generics
+        let generic_args = self.parse_generic_args();
         let lbrace = self.parse_token(TokenKind::LBrace);
         let members = self.parse_param_list(TokenKind::RBrace);
         let rbrace = self.parse_token(TokenKind::RBrace);
-        ItemStruct::new_green(self.db, struct_kw, name, lbrace, members, rbrace)
+        ItemStruct::new_green(self.db, struct_kw, name, generic_args, lbrace, members, rbrace)
     }
 
     /// Expected pattern: <ParenthesizedParamList><ReturnTypeClause>
@@ -157,6 +157,7 @@ impl<'a> Parser<'a> {
             TokenKind::Function => {
                 let function_kw = self.take();
                 let name = self.parse_token(TokenKind::Identifier);
+                let generic_args = self.parse_generic_args();
                 let signature = self.expect_function_signature();
                 let semicolon = self.parse_token(TokenKind::Semicolon);
                 ItemExternFunction::new_green(
@@ -164,6 +165,7 @@ impl<'a> Parser<'a> {
                     extern_kw,
                     function_kw,
                     name,
+                    generic_args,
                     signature,
                     semicolon,
                 )
@@ -171,9 +173,17 @@ impl<'a> Parser<'a> {
             _ => {
                 let type_kw = self.parse_token(TokenKind::Type);
                 let name = self.parse_token(TokenKind::Identifier);
+                let generic_args = self.parse_generic_args();
                 let semicolon = self.parse_token(TokenKind::Semicolon);
                 // If the next token is not type, assume it is missing.
-                ItemExternType::new_green(self.db, extern_kw, type_kw, name, semicolon)
+                ItemExternType::new_green(
+                    self.db,
+                    extern_kw,
+                    type_kw,
+                    name,
+                    generic_args,
+                    semicolon,
+                )
             }
         }
     }
@@ -194,9 +204,17 @@ impl<'a> Parser<'a> {
     fn expect_function(&mut self) -> GreenId {
         let function_kw = self.take();
         let name = self.parse_token(TokenKind::Identifier);
+        let generic_args = self.parse_generic_args();
         let signature = self.expect_function_signature();
         let function_body = self.parse_block();
-        ItemFreeFunction::new_green(self.db, function_kw, name, signature, function_body)
+        ItemFreeFunction::new_green(
+            self.db,
+            function_kw,
+            name,
+            generic_args,
+            signature,
+            function_body,
+        )
     }
 
     // ------------------------------- Expressions -------------------------------
@@ -583,12 +601,26 @@ impl<'a> Parser<'a> {
         }
     }
 
+    fn parse_generic_args(&mut self) -> GreenId {
+        if self.peek().kind != TokenKind::LT {
+            return OptionGenericArgsEmpty::new_green(self.db);
+        }
+        let langle = self.take();
+        let generic_args = self.parse_separated_list(
+            Self::try_parse_expr,
+            TokenKind::Comma,
+            TokenKind::GT,
+            GenericArgList::new_green,
+        );
+        let rangle = self.parse_token(TokenKind::GT);
+        OptionGenericArgsSome::new_green(self.db, langle, generic_args, rangle)
+    }
+
     /// Assumes the current token is Identifier.
     /// Expected pattern: <Identifier><GenericArgs>
     fn expect_path_segment(&mut self) -> GreenId {
         let identifier = self.take();
-        // TODO(yuval): support generics.
-        let generic_args = OptionGenericArgsEmpty::new_green(self.db);
+        let generic_args = self.parse_generic_args();
         PathSegment::new_green(self.db, identifier, generic_args)
     }
 

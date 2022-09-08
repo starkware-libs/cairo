@@ -19,5 +19,12 @@ func foo(,var1: int,, var2: felt,) -> int {
     return x;
 }
 
-extern type felt;
-extern func bar(var1: int,) -> int;
+func bar<A, B>() -> felt { }
+
+extern type S<>;
+extern func glee<A, b>(var1: int,) -> crate::S<int>;
+
+struct A<A, B> {
+    member: bool,
+    member2: (bool, felt, ())
+}

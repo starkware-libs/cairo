@@ -60,8 +60,12 @@ pub fn get_spec() -> Vec<Node> {
         StructBuilder::new("ExprMissing").build(),
         EnumBuilder::new("OptionGenericArgs").node("Empty").node("Some").build(),
         StructBuilder::new("OptionGenericArgsEmpty").build(),
-        // TODO(spapini): Add SimpleExpr.
-        separated_list_node("OptionGenericArgsSome", "Expr"),
+        StructBuilder::new("OptionGenericArgsSome")
+            .node("langle", "Terminal")
+            .node("generic_args", "GenericArgList")
+            .node("rangle", "Terminal")
+            .build(),
+        separated_list_node("GenericArgList", "Expr"),
         StructBuilder::new("PathSegment")
             .node("ident", "Terminal")
             .node("generic_args", "OptionGenericArgs")
@@ -221,6 +225,7 @@ pub fn get_spec() -> Vec<Node> {
         StructBuilder::new("ItemFreeFunction")
             .node("funckw", "Terminal")
             .key_node("name", "Terminal")
+            .node("generic_args", "OptionGenericArgs")
             .node("signature", "FunctionSignature")
             .node("body", "ExprBlock")
             .build(),
@@ -228,6 +233,7 @@ pub fn get_spec() -> Vec<Node> {
             .node("externkw", "Terminal")
             .node("funckw", "Terminal")
             .key_node("name", "Terminal")
+            .node("generic_args", "OptionGenericArgs")
             .node("signature", "FunctionSignature")
             .node("semicolon", "Terminal")
             .build(),
@@ -235,12 +241,14 @@ pub fn get_spec() -> Vec<Node> {
             .node("externkw", "Terminal")
             .node("typekw", "Terminal")
             .key_node("name", "Terminal")
+            .node("generic_args", "OptionGenericArgs")
             .node("semicolon", "Terminal")
             .build(),
         // TODO(spapini): consider having specific ItemLists here.
         StructBuilder::new("ItemTrait")
             .node("traitkw", "Terminal")
             .key_node("name", "Terminal")
+            .node("generic_args", "OptionGenericArgs")
             .node("lbrace", "Terminal")
             .node("items", "ItemList")
             .node("rbrace", "Terminal")
@@ -248,6 +256,7 @@ pub fn get_spec() -> Vec<Node> {
         StructBuilder::new("ItemImpl")
             .node("implkw", "Terminal")
             .key_node("name", "Terminal")
+            .node("generic_args", "OptionGenericArgs")
             .node("forkw", "Terminal")
             .node("trait_name", "Terminal")
             .node("lbrace", "Terminal")
@@ -257,6 +266,7 @@ pub fn get_spec() -> Vec<Node> {
         StructBuilder::new("ItemStruct")
             .node("structkw", "Terminal")
             .key_node("name", "Terminal")
+            .node("generic_args", "OptionGenericArgs")
             .node("lbrace", "Terminal")
             .node("members", "ParamList")
             .node("rbrace", "Terminal")
