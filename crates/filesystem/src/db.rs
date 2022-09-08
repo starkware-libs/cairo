@@ -17,12 +17,26 @@ pub trait FilesGroup {
     #[salsa::interned]
     fn intern_file(&self, file: FileLongId) -> FileId;
 
+    /// Main input of the project. Lists all the crates.
     #[salsa::input]
     fn project_config(&self) -> ProjectConfig;
+    /// Overrides for file content. Mostly used by language server and tests.
+    #[salsa::input]
+    fn file_overrides(&self) -> Arc<HashMap<FileId, Arc<String>>>;
+
+    /// List of crates in the project.
     fn crates(&self) -> Vec<CrateId>;
+    /// Root file of the crate.
     fn crate_root_file(&self, crate_id: CrateId) -> Option<FileId>;
+    /// Query for raw file contents. Private.
+    fn priv_raw_file_content(&self, file_id: FileId) -> Option<Arc<String>>;
+    /// Query for the file contents. This takes overrides into consideration.
     fn file_content(&self, file_id: FileId) -> Option<Arc<String>>;
     fn file_summary(&self, file_id: FileId) -> Option<Arc<FileSummary>>;
+}
+
+pub fn init_files_group(db: &mut dyn FilesGroup) {
+    db.set_file_overrides(Arc::new(HashMap::new()));
 }
 
 pub trait AsFilesGroup {
@@ -54,10 +68,7 @@ fn crate_root_file(db: &dyn FilesGroup, crt: CrateId) -> Option<FileId> {
     db.project_config().crate_roots.get(&crt).copied()
 }
 
-// This query is treated as a pure computation. If the file content is changed, an explicit
-// invalidation should be called on the DB by another entity.
-// For example, in the language server, this is initiated by the language server itself.
-fn file_content(db: &dyn FilesGroup, file: FileId) -> Option<Arc<String>> {
+fn priv_raw_file_content(db: &dyn FilesGroup, file: FileId) -> Option<Arc<String>> {
     match db.lookup_intern_file(file) {
         FileLongId::OnDisk(path) => match fs::read_to_string(path) {
             Ok(content) => Some(Arc::new(content)),
@@ -65,6 +76,10 @@ fn file_content(db: &dyn FilesGroup, file: FileId) -> Option<Arc<String>> {
         },
         FileLongId::Virtual(virt) => Some(virt.content),
     }
+}
+fn file_content(db: &dyn FilesGroup, file: FileId) -> Option<Arc<String>> {
+    let overrides = db.file_overrides();
+    overrides.get(&file).cloned().or_else(|| db.priv_raw_file_content(file))
 }
 fn file_summary(db: &dyn FilesGroup, file: FileId) -> Option<Arc<FileSummary>> {
     let content = db.file_content(file)?;

@@ -1,5 +1,5 @@
 use defs::db::{AsDefsGroup, DefsDatabase};
-use filesystem::db::{AsFilesGroup, FilesDatabase, FilesGroup};
+use filesystem::db::{init_files_group, AsFilesGroup, FilesDatabase, FilesGroup};
 use parser::db::ParserDatabase;
 use semantic::db::{AsSemanticGroup, SemanticDatabase};
 use syntax::node::db::{AsSyntaxGroup, SyntaxDatabase, SyntaxGroup};
@@ -15,11 +15,17 @@ use crate::pre_sierra;
     SyntaxDatabase,
     FilesDatabase
 )]
-#[derive(Default)]
 pub struct SierraGenDatabaseForTesting {
     storage: salsa::Storage<SierraGenDatabaseForTesting>,
 }
 impl salsa::Database for SierraGenDatabaseForTesting {}
+impl Default for SierraGenDatabaseForTesting {
+    fn default() -> Self {
+        let mut res = Self { storage: Default::default() };
+        init_files_group(&mut res);
+        res
+    }
+}
 impl AsFilesGroup for SierraGenDatabaseForTesting {
     fn as_files_group(&self) -> &(dyn FilesGroup + 'static) {
         self
