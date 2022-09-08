@@ -31,5 +31,5 @@ pub fn file_syntax(
 ) -> Option<Arc<SyntaxFile>> {
     let s = db.file_content(file_id)?;
     let parser = Parser::from_text(db.as_syntax_group(), file_id, s.as_str());
-    Some(Arc::new(parser.parse_syntax_file().propagte(diagnostics)))
+    Some(Arc::new(parser.parse_syntax_file().propagate(diagnostics)))
 }

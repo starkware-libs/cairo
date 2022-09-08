@@ -66,7 +66,7 @@ fn get_concrete_type_id(
                 match arg {
                     semantic::GenericArgumentId::Type(ty) => {
                         generic_args.push(sierra::program::GenericArg::Type(
-                            db.get_concrete_type_id(*ty).propagte(diagnostics)?,
+                            db.get_concrete_type_id(*ty).propagate(diagnostics)?,
                         ));
                     }
                 }
@@ -99,7 +99,7 @@ fn get_function_code(
     function_id: FreeFunctionId,
 ) -> Option<Arc<pre_sierra::Function>> {
     let function_semantic: semantic::FreeFunction =
-        db.free_function_semantic(function_id).propagte(diagnostics)?;
+        db.free_function_semantic(function_id).propagate(diagnostics)?;
     Some(Arc::new(generate_function_code(db, function_id, function_semantic)))
 }
 
@@ -109,7 +109,7 @@ fn get_program_code(
     db: &dyn SierraGenGroup,
     module_id: ModuleId,
 ) -> Option<Arc<sierra::program::Program>> {
-    let module_items = db.module_items(module_id).propagte(diagnostics)?;
+    let module_items = db.module_items(module_id).propagate(diagnostics)?;
     let program: sierra::program::Program = generate_program_code(diagnostics, db, &module_items)?;
     Some(Arc::new(program))
 }

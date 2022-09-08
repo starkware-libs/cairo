@@ -81,7 +81,7 @@ pub fn module_syntax(
     db: &dyn DefsGroup,
     module_id: ModuleId,
 ) -> Option<Arc<SyntaxFile>> {
-    db.file_syntax(db.module_file(module_id)?).propagte(diagnostics)
+    db.file_syntax(db.module_file(module_id)?).propagate(diagnostics)
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -107,7 +107,7 @@ fn module_data(
     let mut res = ModuleData::default();
     let syntax_db = db.as_syntax_group();
 
-    let syntax_file = db.module_syntax(module_id).propagte(diagnostics)?;
+    let syntax_file = db.module_syntax(module_id).propagate(diagnostics)?;
     for item in syntax_file.items(syntax_db).elements(syntax_db) {
         match item {
             ast::Item::Module(_module) => todo!(),
@@ -151,7 +151,7 @@ fn module_items(
     module_id: ModuleId,
 ) -> Option<ModuleItems> {
     let syntax_db = db.as_syntax_group();
-    let module_data = db.module_data(module_id).propagte(diagnostics)?;
+    let module_data = db.module_data(module_id).propagate(diagnostics)?;
     // TODO(spapini): Prune other items if name is missing.
     Some(ModuleItems {
         items: chain!(
@@ -191,6 +191,6 @@ fn module_item_by_name(
     module_id: ModuleId,
     name: SmolStr,
 ) -> Option<ModuleItemId> {
-    let module_items = db.module_items(module_id).propagte(diagnostics)?;
+    let module_items = db.module_items(module_id).propagate(diagnostics)?;
     module_items.items.get(&name).copied()
 }
