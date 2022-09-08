@@ -1,8 +1,11 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use filesystem::db::FilesGroup;
-use filesystem::ids::{CrateLongId, FileLongId, ModuleId};
+use defs::db::{AsDefsGroup, DefsDatabase, DefsGroup};
+use defs::ids::ModuleId;
+use filesystem::db::{AsFilesGroup, FilesDatabase, FilesGroup};
+use filesystem::ids::{CrateLongId, FileLongId};
+use parser::db::ParserDatabase;
 use semantic::corelib::core_config;
 use sierra_generator::db::SierraGenGroup;
 use sierra_generator::test_utils::SierraGenDatabaseForTesting;

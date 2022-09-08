@@ -2,12 +2,13 @@ use std::sync::Arc;
 
 use debug::debug::DebugWithDb;
 use filesystem::db::{AsFilesGroup, FilesDatabase, FilesGroup, ProjectConfig};
-use filesystem::ids::{CrateLongId, FileLongId, ModuleId, VirtualFile};
+use filesystem::ids::{CrateLongId, FileLongId, VirtualFile};
 use indoc::indoc;
 use parser::db::ParserDatabase;
 use syntax::node::db::{AsSyntaxGroup, SyntaxDatabase, SyntaxGroup};
 
 use crate::db::{DefsDatabase, DefsGroup};
+use crate::ids::ModuleId;
 
 #[salsa::database(DefsDatabase, ParserDatabase, SyntaxDatabase, FilesDatabase)]
 #[derive(Default)]

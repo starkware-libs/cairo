@@ -1,3 +1,6 @@
+mod submod;
+use submod::something;
+
 // Func foo
 // Second line
 ;
