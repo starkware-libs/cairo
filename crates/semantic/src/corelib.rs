@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use defs::ids::{GenericFunctionId, GenericTypeId, ModuleId};
 use filesystem::db::ProjectConfig;
-use filesystem::ids::{CrateLongId, FileLongId};
+use filesystem::ids::{CrateLongId, Directory};
 use syntax::token::TokenKind;
 
 use crate::db::SemanticGroup;
@@ -15,9 +15,9 @@ pub fn core_config(db: &dyn SemanticGroup) -> ProjectConfig {
     let dir = env!("CARGO_MANIFEST_DIR");
     // Pop the "/crates/semantic" suffix.
     let mut path = PathBuf::from(dir).parent().unwrap().parent().unwrap().to_owned();
-    path.push("corelib/mod.cairo");
-    let core_root_file = db.intern_file(FileLongId::OnDisk(path));
-    ProjectConfig::default().with_crate(core_crate, core_root_file)
+    path.push("corelib");
+    let core_root_dir = Directory(path);
+    ProjectConfig::default().with_crate(core_crate, core_root_dir)
 }
 
 pub fn core_module(db: &dyn SemanticGroup) -> ModuleId {

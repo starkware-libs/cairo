@@ -282,7 +282,7 @@ fn test_expr_call_missing() {
         diagnostics.format(db),
         indoc! { "
             error: Unknown function
-             --> test.cairo:2:1
+             --> lib.cairo:2:1
             foo()
             ^*^
 
