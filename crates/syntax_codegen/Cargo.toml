@@ -1,3 +1,6 @@
+[package.metadata.cargo-udeps.ignore]
+normal = ["syntax"]
+
 [package]
 name = "syntax_codegen"
 version = "0.1.0"
@@ -9,4 +12,5 @@ path = "src/bin/generate_syntax.rs"
 
 [dependencies]
 genco = "0.17.0"
+syntax = { path = "../syntax" }
 xshell = "0.2.2"
