@@ -37,13 +37,13 @@ pub fn setup_test_function(
     let module_id = setup_test_module(db, &content);
     let generic_function_id = db
         .module_resolve_generic_function(module_id, function_name.into())
-        .unwrap(diagnostics)
+        .propogate(diagnostics)
         .unwrap();
     let function_id = match generic_function_id {
         GenericFunctionId::Free(function_id) => function_id,
         _ => panic!(),
     };
-    (module_id, db.free_function_semantic(function_id).unwrap(diagnostics).unwrap())
+    (module_id, db.free_function_semantic(function_id).propogate(diagnostics).unwrap())
 }
 
 /// Returns the semantic model of a given expression.
@@ -59,7 +59,7 @@ pub fn setup_test_expr(
 ) -> (ModuleId, ExprId) {
     let function_code = format!("func test_func() {{ {function_body} {expr_code} }}");
     let (module_id, function_semantic) =
-        setup_test_function(db, &function_code, "test_func", module_code).unwrap(diagnostics);
+        setup_test_function(db, &function_code, "test_func", module_code).propogate(diagnostics);
     let expr = match db.lookup_intern_expr(function_semantic.body) {
         semantic::Expr::ExprBlock(block) => block.tail.unwrap(),
         _ => panic!(),
@@ -79,5 +79,5 @@ pub fn setup_test_block(
     function_body: &str,
 ) -> (ModuleId, ExprId) {
     setup_test_expr(db, &format!("{{ {expr_code} }}"), module_code, function_body)
-        .unwrap(diagnostics)
+        .propogate(diagnostics)
 }
