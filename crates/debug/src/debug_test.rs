@@ -15,10 +15,10 @@ trait TestGroup {
 // Database impl.
 #[salsa::database(TestDatabase)]
 #[derive(Default)]
-pub struct DatabaseImpl {
-    storage: salsa::Storage<DatabaseImpl>,
+pub struct DatabaseForTesting {
+    storage: salsa::Storage<DatabaseForTesting>,
 }
-impl salsa::Database for DatabaseImpl {}
+impl salsa::Database for DatabaseForTesting {}
 
 // Structs.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -35,7 +35,7 @@ struct ComplexStruct {
 
 #[test]
 fn test_debug() {
-    let db = DatabaseImpl::default();
+    let db = DatabaseForTesting::default();
     let a = ComplexStruct { a: Some(5), b: db.intern_b(DummyLongId(6)) };
     assert_eq!(format!("{:?}", a.debug(&db)), "ComplexStruct { a: Some(5), b: DummyLongId(6) }");
 }

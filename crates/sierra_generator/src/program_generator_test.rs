@@ -3,11 +3,11 @@ use pretty_assertions::assert_eq;
 use semantic::test_utils::setup_test_module;
 
 use crate::db::SierraGenGroup;
-use crate::test_utils::DatabaseImpl;
+use crate::test_utils::SierraGenDatabaseForTesting;
 
 #[test]
 fn test_program_generator() {
-    let mut db = DatabaseImpl::default();
+    let mut db = SierraGenDatabaseForTesting::default();
     // TODO(lior): Make bar return something like felt_add(5, bar()).
     let module_id = setup_test_module(
         &mut db,

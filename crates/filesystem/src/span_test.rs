@@ -1,22 +1,16 @@
 use std::sync::Arc;
 
 use super::TextOffset;
-use crate::db::{FilesDatabase, FilesGroup};
+use crate::db::FilesGroup;
 use crate::ids::{FileLongId, VirtualFile};
 use crate::span::TextPosition;
-
-#[salsa::database(FilesDatabase)]
-#[derive(Default)]
-pub struct DatabaseImpl {
-    storage: salsa::Storage<DatabaseImpl>,
-}
-impl salsa::Database for DatabaseImpl {}
+use crate::test_utils::FilesDatabaseForTesting;
 
 const TEST_STRING: &str = "01\n23\u{1230}\r\n456\n\n\r\n789";
 
 #[test]
 fn test_span() {
-    let db = DatabaseImpl::default();
+    let db = FilesDatabaseForTesting::default();
     let file = db.intern_file(FileLongId::Virtual(VirtualFile {
         parent: None,
         name: "name".into(),
@@ -40,7 +34,7 @@ fn test_span() {
 #[test]
 #[should_panic(expected = "TextOffset out of range. 19 > 18.")]
 fn test_span_out_of_range() {
-    let db = DatabaseImpl::default();
+    let db = FilesDatabaseForTesting::default();
     let file = db.intern_file(FileLongId::Virtual(VirtualFile {
         parent: None,
         name: "name".into(),

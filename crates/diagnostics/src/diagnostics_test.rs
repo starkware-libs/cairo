@@ -1,20 +1,13 @@
 use std::sync::Arc;
 
 use diagnostics_proc_macros::with_diagnostics;
-use filesystem::db::{FilesDatabase, FilesGroup};
+use filesystem::db::FilesGroup;
 use filesystem::ids::{FileId, FileLongId, VirtualFile};
 use filesystem::span::{TextOffset, TextSpan};
+use filesystem::test_utils::FilesDatabaseForTesting;
 use indoc::indoc;
 
 use super::{DiagnosticEntry, DiagnosticLocation, Diagnostics, WithDiagnostics};
-
-// Test salsa database.
-#[salsa::database(FilesDatabase)]
-#[derive(Default)]
-pub struct DatabaseImpl {
-    storage: salsa::Storage<DatabaseImpl>,
-}
-impl salsa::Database for DatabaseImpl {}
 
 // Test diagnostic.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -36,8 +29,8 @@ impl DiagnosticEntry for SimpleDiag {
     }
 }
 
-fn setup() -> (DatabaseImpl, FileId) {
-    let db_val = DatabaseImpl::default();
+fn setup() -> (FilesDatabaseForTesting, FileId) {
+    let db_val = FilesDatabaseForTesting::default();
     let file_id = db_val.intern_file(FileLongId::Virtual(VirtualFile {
         parent: None,
         name: "dummy_file.sierra".into(),

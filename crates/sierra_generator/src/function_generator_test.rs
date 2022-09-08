@@ -5,11 +5,11 @@ use pretty_assertions::assert_eq;
 use semantic::test_utils::setup_test_module;
 
 use crate::db::SierraGenGroup;
-use crate::test_utils::{replace_libfunc_ids, DatabaseImpl};
+use crate::test_utils::{replace_libfunc_ids, SierraGenDatabaseForTesting};
 
 #[test]
 fn test_function_generator() {
-    let mut db = DatabaseImpl::default();
+    let mut db = SierraGenDatabaseForTesting::default();
     let module_id = setup_test_module(
         &mut db,
         indoc! {"

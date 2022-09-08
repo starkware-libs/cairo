@@ -1,26 +1,15 @@
 use std::sync::Arc;
 
-use filesystem::db::{FilesDatabase, FilesGroup};
+use filesystem::db::FilesGroup;
 use filesystem::ids::{FileLongId, VirtualFile};
 use smol_str::SmolStr;
 use syntax::node::ast::{ItemList, SyntaxFile, Terminal, Trivia};
-use syntax::node::db::{AsSyntaxGroup, SyntaxDatabase, SyntaxGroup};
+use syntax::node::db::{AsSyntaxGroup, SyntaxGroup};
 use syntax::node::{SyntaxNode, Token, TypedSyntaxNode};
 use syntax::token::TokenKind;
 
-use super::{ParserDatabase, ParserGroup};
-
-#[salsa::database(ParserDatabase, SyntaxDatabase, FilesDatabase)]
-#[derive(Default)]
-pub struct TestDatabase {
-    storage: salsa::Storage<TestDatabase>,
-}
-impl salsa::Database for TestDatabase {}
-impl AsSyntaxGroup for TestDatabase {
-    fn as_syntax_group(&self) -> &(dyn SyntaxGroup + 'static) {
-        self
-    }
-}
+use super::ParserGroup;
+use crate::test_utils::ParserDatabaseForTesting;
 
 fn build_empty_file_green_tree(db: &dyn SyntaxGroup) -> SyntaxFile {
     let eof_token = Token::new_green(db, TokenKind::EndOfFile, SmolStr::from(""));
@@ -41,7 +30,7 @@ fn build_empty_file_green_tree(db: &dyn SyntaxGroup) -> SyntaxFile {
 
 #[test]
 fn test_parser() {
-    let db = TestDatabase::default();
+    let db = ParserDatabaseForTesting::default();
 
     // Parse empty cairo file.
     let file_id = db.intern_file(FileLongId::Virtual(VirtualFile {
