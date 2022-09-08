@@ -3,6 +3,7 @@ use defs::ids::ModuleItemId;
 use indoc::indoc;
 use pretty_assertions::assert_eq;
 use semantic::test_utils::setup_test_module;
+use utils::extract_matches;
 
 use crate::db::SierraGenGroup;
 use crate::test_utils::{replace_libfunc_ids, SierraGenDatabaseForTesting};
@@ -18,10 +19,11 @@ fn test_function_generator() {
                 }
             "},
     );
-    let foo = match db.module_items(module_id).expect("").unwrap().items["foo"] {
-        ModuleItemId::FreeFunction(foo) => foo,
-        _ => panic!("Unexpected item type."),
-    };
+    let foo = extract_matches!(
+        db.module_items(module_id).expect("").unwrap().items["foo"],
+        ModuleItemId::FreeFunction,
+        "Unexpected item type."
+    );
 
     let function = db.get_function_code(foo).expect("").unwrap();
     assert_eq!(

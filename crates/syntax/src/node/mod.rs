@@ -6,6 +6,7 @@ use std::vec;
 
 use filesystem::span::{TextOffset, TextSpan};
 use smol_str::SmolStr;
+use utils::extract_matches;
 
 use self::db::SyntaxGroup;
 use self::green::GreenNode;
@@ -195,10 +196,7 @@ impl Token {
     }
     pub fn raw(&self, db: &dyn SyntaxGroup) -> token::Token {
         let green = db.lookup_intern_green(self.node.0.green);
-        if let GreenNode::Token(token) = green {
-            return token;
-        }
-        panic!("Expected a token, got {:?}.", green);
+        extract_matches!(green, GreenNode::Token, "Expected a token, got {:?}.", green)
     }
     pub fn kind(&self, db: &dyn SyntaxGroup) -> token::TokenKind {
         self.raw(db).kind

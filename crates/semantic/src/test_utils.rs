@@ -9,10 +9,11 @@ use filesystem::db::{init_files_group, AsFilesGroup, FilesDatabase, FilesGroup};
 use filesystem::ids::{CrateLongId, FileLongId};
 use parser::db::ParserDatabase;
 use syntax::node::db::{AsSyntaxGroup, SyntaxDatabase, SyntaxGroup};
+use utils::extract_matches;
 
 use crate::corelib::core_config;
 use crate::db::{SemanticDatabase, SemanticGroup};
-use crate::{semantic, Diagnostic, ExprId};
+use crate::{semantic, Diagnostic, ExprBlock, ExprId};
 
 #[salsa::database(SemanticDatabase, DefsDatabase, ParserDatabase, SyntaxDatabase, FilesDatabase)]
 pub struct SemanticDatabaseForTesting {
@@ -70,10 +71,7 @@ pub fn setup_test_function(
         .propagate(diagnostics)
         .and_then(GenericFunctionId::from)
         .unwrap();
-    let function_id = match generic_function_id {
-        GenericFunctionId::Free(function_id) => function_id,
-        _ => panic!(),
-    };
+    let function_id = extract_matches!(generic_function_id, GenericFunctionId::Free);
     (module_id, db.free_function_semantic(function_id).propagate(diagnostics).unwrap())
 }
 
@@ -91,22 +89,17 @@ pub fn setup_test_expr(
     let function_code = format!("func test_func() {{ {function_body} {{\n{expr_code}\n}} }}");
     let (module_id, function_semantic) =
         setup_test_function(db, &function_code, "test_func", module_code).propagate(diagnostics);
-    // Fetch the last block, which contains expr_code.
-    let expr_block = match db.lookup_intern_expr(function_semantic.body) {
-        semantic::Expr::ExprBlock(block) => block.tail.unwrap(),
-        _ => panic!(),
-    };
-    let expr = match db.lookup_intern_expr(expr_block) {
-        semantic::Expr::ExprBlock(block) => {
-            assert!(
-                block.statements.is_empty(),
-                "expr_code is not a valid expression. Consider using setup_test_block()."
-            );
-            block.tail.unwrap()
-        }
-        _ => panic!(),
-    };
-    (module_id, expr)
+    let ExprBlock { tail: function_body_tail, .. } =
+        extract_matches!(db.lookup_intern_expr(function_semantic.body), semantic::Expr::ExprBlock);
+    let ExprBlock { statements, tail, ty: _ } = extract_matches!(
+        db.lookup_intern_expr(function_body_tail.unwrap()),
+        semantic::Expr::ExprBlock
+    );
+    assert!(
+        statements.is_empty(),
+        "expr_code is not a valid expression. Consider using setup_test_block()."
+    );
+    (module_id, tail.unwrap())
 }
 
 /// Returns the semantic model of a given block expression.
