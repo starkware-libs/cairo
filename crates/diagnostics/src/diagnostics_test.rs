@@ -72,9 +72,9 @@ fn dummy_compute_macro(
     file_id: FileId,
 ) -> Option<usize> {
     let param = WithDiagnostics::pure(Some(x * x));
-    let res = param.unwrap(diagnostics)?;
+    let res = param.propagte(diagnostics)?;
     // This should add one diagnostic entry, and return.
-    dummy_compute_fail(file_id).unwrap(diagnostics)?;
+    dummy_compute_fail(file_id).propagte(diagnostics)?;
     Some(res)
 }
 

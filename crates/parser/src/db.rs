@@ -34,7 +34,7 @@ pub fn file_syntax(
 ) -> Option<Arc<SyntaxFile>> {
     let s = db.file_content(file_id)?;
     let parser = Parser::from_text(db.as_syntax_group(), file_id, s.as_str());
-    Some(Arc::new(parser.parse_syntax_file().unwrap(diagnostics)))
+    Some(Arc::new(parser.parse_syntax_file().propagte(diagnostics)))
 }
 
 #[with_diagnostics]
@@ -43,5 +43,5 @@ pub fn module_syntax(
     db: &dyn ParserGroup,
     module_id: ModuleId,
 ) -> Option<Arc<SyntaxFile>> {
-    db.file_syntax(db.module_file(module_id)?).unwrap(diagnostics)
+    db.file_syntax(db.module_file(module_id)?).propagte(diagnostics)
 }
