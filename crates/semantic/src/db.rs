@@ -9,7 +9,7 @@ use diagnostics::{Diagnostics, WithDiagnostics};
 use diagnostics_proc_macros::with_diagnostics;
 use filesystem::db::AsFilesGroup;
 use parser::db::ParserGroup;
-use parser::parser::ParserDiagnostic;
+use parser::ParserDiagnostic;
 use smol_str::SmolStr;
 use syntax::node::{ast, TypedSyntaxNode};
 
@@ -57,6 +57,16 @@ pub trait SemanticGroup: DefsGroup + AsDefsGroup + ParserGroup + AsFilesGroup {
     fn core_module(&self) -> ModuleId;
     #[salsa::invoke(corelib::core_felt_ty)]
     fn core_felt_ty(&self) -> TypeId;
+}
+
+pub trait AsSemanticGroup {
+    fn as_semantic_group(&self) -> &(dyn SemanticGroup + 'static);
+}
+
+impl AsSemanticGroup for dyn SemanticGroup {
+    fn as_semantic_group(&self) -> &(dyn SemanticGroup + 'static) {
+        self
+    }
 }
 
 // ----------------------- Queries -----------------------

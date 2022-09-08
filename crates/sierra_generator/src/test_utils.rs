@@ -1,7 +1,7 @@
 use defs::db::{AsDefsGroup, DefsDatabase};
 use filesystem::db::{AsFilesGroup, FilesDatabase, FilesGroup};
 use parser::db::ParserDatabase;
-use semantic::db::SemanticDatabase;
+use semantic::db::{AsSemanticGroup, SemanticDatabase};
 use syntax::node::db::{AsSyntaxGroup, SyntaxDatabase, SyntaxGroup};
 
 use crate::db::{SierraGenDatabase, SierraGenGroup};
@@ -32,6 +32,11 @@ impl AsSyntaxGroup for SierraGenDatabaseForTesting {
 }
 impl AsDefsGroup for SierraGenDatabaseForTesting {
     fn as_defs_group(&self) -> &(dyn defs::db::DefsGroup + 'static) {
+        self
+    }
+}
+impl AsSemanticGroup for SierraGenDatabaseForTesting {
+    fn as_semantic_group(&self) -> &(dyn semantic::db::SemanticGroup + 'static) {
         self
     }
 }

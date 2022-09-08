@@ -4,8 +4,7 @@ mod test;
 
 use std::mem;
 
-use diagnostics::{DiagnosticEntry, Diagnostics, WithDiagnostics};
-use filesystem::db::FilesGroup;
+use diagnostics::{Diagnostics, WithDiagnostics};
 use filesystem::ids::FileId;
 use filesystem::span::{TextOffset, TextSpan};
 use syntax::node::ast::*;
@@ -16,8 +15,10 @@ use syntax::node::kind::SyntaxKind;
 use syntax::node::{SyntaxNode, TypedSyntaxNode};
 use syntax::token::TokenKind;
 
+use crate::diagnostic::ParserDiagnosticKind;
 use crate::lexer::{Lexer, TerminalWithKind};
 use crate::operators::{get_binary_operator_precedence, get_unary_operator_precedence};
+use crate::ParserDiagnostic;
 
 // TODO(yuval): add diagnostics.
 
@@ -33,31 +34,6 @@ pub struct Parser<'a> {
     /// The width of the current terminal being handled.
     current_width: u32,
     diagnostics: Diagnostics<ParserDiagnostic>,
-}
-
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct ParserDiagnostic {
-    file_id: FileId,
-    span: TextSpan,
-    kind: ParserDiagnosticKind,
-}
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub enum ParserDiagnosticKind {
-    SkippedTokens,
-}
-impl DiagnosticEntry for ParserDiagnostic {
-    type DbType = dyn FilesGroup;
-
-    fn format(&self, _db: &dyn FilesGroup) -> String {
-        match self.kind {
-            // TODO(yuval): replace line breaks with "\n".
-            ParserDiagnosticKind::SkippedTokens => "Skipped tokens".to_string(),
-        }
-    }
-
-    fn location(&self, _db: &dyn FilesGroup) -> diagnostics::DiagnosticLocation {
-        diagnostics::DiagnosticLocation { file_id: self.file_id, span: self.span }
-    }
 }
 
 /// Fields for a terminal node. See Parser::unpack_terminal.

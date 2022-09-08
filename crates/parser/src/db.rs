@@ -7,7 +7,8 @@ use filesystem::ids::FileId;
 use syntax::node::ast::SyntaxFile;
 use syntax::node::db::{AsSyntaxGroup, SyntaxGroup};
 
-use crate::parser::{Parser, ParserDiagnostic};
+use crate::diagnostic::ParserDiagnostic;
+use crate::parser::Parser;
 
 #[cfg(test)]
 #[path = "db_test.rs"]

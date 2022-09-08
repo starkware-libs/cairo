@@ -8,6 +8,7 @@ use sierra::program;
 use utils::ordered_hash_set::OrderedHashSet;
 
 use crate::db::SierraGenGroup;
+use crate::diagnostic::Diagnostic;
 use crate::pre_sierra::{self};
 use crate::resolve_labels::{resolve_labels, LabelReplacer};
 
@@ -16,7 +17,7 @@ use crate::resolve_labels::{resolve_labels, LabelReplacer};
 mod test;
 
 pub fn generate_program_code(
-    diagnostics: &mut Diagnostics<semantic::Diagnostic>,
+    diagnostics: &mut Diagnostics<Diagnostic>,
     db: &dyn SierraGenGroup,
     module_items: &ModuleItems,
 ) -> Option<program::Program> {
@@ -41,8 +42,7 @@ pub fn generate_program_code(
         }
     }
     // TODO(orizi): Actually find all the required types.
-    let felt_type =
-        db.get_concrete_type_id(db.core_felt_ty()).expect("got unexpected diagnostics").unwrap();
+    let felt_type = db.get_concrete_type_id(db.core_felt_ty()).propagte(diagnostics)?;
     let non_zero_felt_type = db.intern_concrete_type(sierra::program::ConcreteTypeLongId {
         generic_id: sierra::ids::GenericTypeId::from_string("NonZero"),
         args: vec![sierra::program::GenericArg::Type(felt_type.clone())],

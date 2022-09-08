@@ -1,6 +1,6 @@
 use defs::ids::ModuleId;
 use diagnostics::{DiagnosticEntry, DiagnosticLocation};
-use parser::parser::ParserDiagnostic;
+use parser::ParserDiagnostic;
 use syntax::node::ids::SyntaxStablePtrId;
 use syntax::node::TypedSyntaxNode;
 

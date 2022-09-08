@@ -6,7 +6,7 @@ use filesystem::db::{AsFilesGroup, FilesGroup};
 use filesystem::ids::FileId;
 use itertools::chain;
 use parser::db::ParserGroup;
-use parser::parser::ParserDiagnostic;
+use parser::ParserDiagnostic;
 use smol_str::SmolStr;
 use syntax::node::ast::SyntaxFile;
 use syntax::node::db::{AsSyntaxGroup, SyntaxGroup};
