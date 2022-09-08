@@ -5,7 +5,7 @@ use std::ops::Index;
 
 /// A hash map that does not care about the order of insertion.
 /// In particular, it does not support iterating, in order to guarantee deterministic compilation.
-/// For an iterable version see [OrderedHashMap].
+/// For an iterable version see [OrderedHashMap](crate::ordered_hash_map::OrderedHashMap).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct UnorderedHashMap<Key: Hash + Eq, Value>(HashMap<Key, Value>);
 
