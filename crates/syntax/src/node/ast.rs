@@ -2009,8 +2009,8 @@ impl TypeClause {
     pub fn colon(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn ty(&self, db: &dyn SyntaxGroup) -> ExprPath {
-        ExprPath::from_syntax_node(db, self.children[1].clone())
+    pub fn ty(&self, db: &dyn SyntaxGroup) -> Expr {
+        Expr::from_syntax_node(db, self.children[1].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -2021,7 +2021,7 @@ impl TypedSyntaxNode for TypeClause {
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::TypeClause,
-            children: vec![Terminal::missing(db), ExprPath::missing(db)],
+            children: vec![Terminal::missing(db), Expr::missing(db)],
             width: 0,
         }))
     }
@@ -2291,8 +2291,8 @@ impl ReturnTypeClause {
     pub fn arrow(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn ty(&self, db: &dyn SyntaxGroup) -> ExprPath {
-        ExprPath::from_syntax_node(db, self.children[1].clone())
+    pub fn ty(&self, db: &dyn SyntaxGroup) -> Expr {
+        Expr::from_syntax_node(db, self.children[1].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -2303,7 +2303,7 @@ impl TypedSyntaxNode for ReturnTypeClause {
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ReturnTypeClause,
-            children: vec![Terminal::missing(db), ExprPath::missing(db)],
+            children: vec![Terminal::missing(db), Expr::missing(db)],
             width: 0,
         }))
     }

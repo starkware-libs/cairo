@@ -2,22 +2,19 @@ use std::collections::HashMap;
 
 use defs::db::{AsDefsGroup, DefsGroup};
 use defs::ids::{
-    FreeFunctionId, GenericFunctionId, GenericTypeId, LanguageElementId, ModuleId, ModuleItemId,
-    ParamLongId, StructId, VarId,
+    FreeFunctionId, GenericFunctionId, LanguageElementId, ModuleId, ParamLongId, StructId, VarId,
 };
 use diagnostics::{Diagnostics, WithDiagnostics};
 use diagnostics_proc_macros::with_diagnostics;
 use filesystem::db::AsFilesGroup;
 use parser::db::ParserGroup;
-use parser::ParserDiagnostic;
-use smol_str::SmolStr;
 use syntax::node::{ast, TypedSyntaxNode};
 
-use crate::corelib::{core_module, unit_ty};
+use crate::corelib::unit_ty;
 use crate::diagnostic::Diagnostic;
-use crate::expr::{compute_expr_semantic, ComputationContext, EnvVariables};
+use crate::expr::{compute_expr_semantic, resolve_type, ComputationContext, EnvVariables};
 use crate::ids::{ExprId, StatementId, TypeId, TypeLongId};
-use crate::{corelib, semantic, ConcreteType, FunctionId, FunctionLongId};
+use crate::{corelib, semantic, FunctionId, FunctionLongId};
 
 // Salsa database interface.
 #[salsa::query_group(SemanticDatabase)]
@@ -163,12 +160,12 @@ fn statement_semantic(db: &dyn SemanticGroup, item: StatementId) -> semantic::St
 /// Gets the return type of the given function's AST.
 #[with_diagnostics]
 fn function_signature_return_type(
-    diagnostics: &mut Diagnostics<ParserDiagnostic>,
+    diagnostics: &mut Diagnostics<Diagnostic>,
     db: &dyn SemanticGroup,
     module_id: ModuleId,
     sig: &ast::FunctionSignature,
 ) -> TypeId {
-    let type_path = match sig.ret_ty(db.as_syntax_group()) {
+    let ty_syntax = match sig.ret_ty(db.as_syntax_group()) {
         ast::OptionReturnTypeClause::Empty(_) => {
             return unit_ty(db);
         }
@@ -176,13 +173,13 @@ fn function_signature_return_type(
             ret_type_clause.ty(db.as_syntax_group())
         }
     };
-    resolve_type(db, module_id, type_path).propagate(diagnostics)
+    resolve_type(diagnostics, db, module_id, ty_syntax)
 }
 
 /// Returns the parameters of the given function signature's AST.
 #[with_diagnostics]
 fn function_signature_params(
-    diagnostics: &mut Diagnostics<ParserDiagnostic>,
+    diagnostics: &mut Diagnostics<Diagnostic>,
     db: &dyn SemanticGroup,
     module_id: ModuleId,
     sig: &ast::FunctionSignature,
@@ -195,7 +192,7 @@ fn function_signature_params(
     for ast_param in ast_params.iter() {
         let name = ast_param.name(syntax_db).text(syntax_db);
         let id = db.intern_param(ParamLongId(module_id, ast_param.stable_ptr()));
-        let ty_path = match ast_param.type_clause(syntax_db) {
+        let ty_syntax = match ast_param.type_clause(syntax_db) {
             ast::NonOptionTypeClause::TypeClause(type_clause) => type_clause.ty(syntax_db),
             ast::NonOptionTypeClause::NonOptionTypeClauseMissing(_) => {
                 // TODO(yuval): return None + Diagnostic.
@@ -203,68 +200,10 @@ fn function_signature_params(
             }
         };
         // TODO(yuval): Diagnostic?
-        let ty = resolve_type(db, module_id, ty_path).propagate(diagnostics);
+        let ty = resolve_type(diagnostics, db, module_id, ty_syntax);
         semantic_params.push(semantic::Parameter { id, ty });
         variables.insert(name, semantic::Variable { id: VarId::Param(id), ty });
     }
 
     Some((semantic_params, variables))
-}
-
-// TODO(yuval): move to a separate module "type".
-// TODO(spapini): add a query wrapper.
-/// Resolves a type given a module and a path.
-#[with_diagnostics]
-pub fn resolve_type(
-    diagnostics: &mut Diagnostics<ParserDiagnostic>,
-    db: &dyn SemanticGroup,
-    module_id: ModuleId,
-    type_path: ast::ExprPath,
-) -> TypeId {
-    let syntax_db = db.as_syntax_group();
-    let segments = type_path.elements(syntax_db);
-    if segments.len() != 1 {
-        // TODO(yuval): return None + Diagnostic.
-        panic!("Expected a single identifier");
-    }
-    let last_segment = &segments[0];
-    if let ast::OptionGenericArgs::Some(_) = last_segment.generic_args(syntax_db) {
-        todo!("Generics are not supported yet")
-    };
-    let type_name = last_segment.ident(syntax_db).text(syntax_db);
-
-    let type_id = resolve_type_by_name(db, module_id, &type_name).propagate(diagnostics);
-    if db.lookup_intern_type(type_id) != TypeLongId::Missing {
-        type_id
-    } else {
-        resolve_type_by_name(db, core_module(db), &type_name).propagate(diagnostics)
-    }
-}
-
-// TODO(yuval): move to a separate module "type".
-/// Resolves a type given a module and a simple name.
-#[with_diagnostics]
-fn resolve_type_by_name(
-    diagnostics: &mut Diagnostics<ParserDiagnostic>,
-    db: &dyn SemanticGroup,
-    module_id: ModuleId,
-    type_name: &SmolStr,
-) -> TypeId {
-    let module_item_id =
-        match db.module_item_by_name(module_id, type_name.clone()).propagate(diagnostics) {
-            None => return db.intern_type(TypeLongId::Missing),
-            Some(id) => id,
-        };
-    // TODO(yuval): diagnostic on None?
-    let generic_type = match module_item_id {
-        ModuleItemId::Struct(struct_id) => GenericTypeId::Struct(struct_id),
-        ModuleItemId::ExternType(extern_type_id) => GenericTypeId::Extern(extern_type_id),
-        unexpected_variant => {
-            panic!("Unexpected ModuleItemId variant: {unexpected_variant:?}")
-        }
-    };
-    db.intern_type(TypeLongId::Concrete(ConcreteType {
-        generic_type,
-        generic_args: Vec::new(), // TODO(yuval): support generics.
-    }))
 }

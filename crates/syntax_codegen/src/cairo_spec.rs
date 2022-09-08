@@ -123,7 +123,7 @@ pub fn get_spec() -> Vec<Node> {
             .build(),
         // --- Type clauses ---
         // TODO(yuval): support SimpleExpr instead of ExprPath
-        StructBuilder::new("TypeClause").node("colon", "Terminal").node("ty", "ExprPath").build(),
+        StructBuilder::new("TypeClause").node("colon", "Terminal").node("ty", "Expr").build(),
         // TODO(yuval): refactor ::new_option to have the relevant kind directly as a child, like
         // here.
         EnumBuilder::new("OptionTypeClause")
@@ -136,10 +136,7 @@ pub fn get_spec() -> Vec<Node> {
             .build(),
         StructBuilder::new("NonOptionTypeClauseMissing").build(),
         StructBuilder::new("OptionTypeClauseEmpty").build(),
-        StructBuilder::new("ReturnTypeClause")
-            .node("arrow", "Terminal")
-            .node("ty", "ExprPath")
-            .build(),
+        StructBuilder::new("ReturnTypeClause").node("arrow", "Terminal").node("ty", "Expr").build(),
         EnumBuilder::new("OptionReturnTypeClause")
             .node("Empty")
             .node_with_explicit_kind("ReturnTypeClause", "ReturnTypeClause")

@@ -274,6 +274,21 @@ impl<'a> Parser<'a> {
         }
     }
 
+    /// Returns a GreenId of a node with an
+    /// ExprPath|ExprParenthesized|ExprTuple kind, or None if
+    /// such an expression can't be parsed.
+    fn try_parse_type_expr(&mut self) -> Option<GreenId> {
+        // TODO(yuval): support paths starting with "::".
+        match self.peek().kind {
+            TokenKind::Identifier => Some(self.expect_path()),
+            TokenKind::LParen => Some(self.expect_parenthesized_expr()),
+            _ => {
+                // TODO(yuval): report to diagnostics.
+                None
+            }
+        }
+    }
+
     /// Assumes the current token is LParen.
     /// Expected pattern: \(<ExprList>\)
     fn expect_expression_list_parenthesized(&mut self) -> GreenId {
@@ -509,8 +524,7 @@ impl<'a> Parser<'a> {
     fn try_parse_type_clause(&mut self) -> Option<GreenId> {
         if self.peek().kind == TokenKind::Colon {
             let colon = self.take();
-            // TODO(yuval): support reacher types.
-            let ty = self.parse_path();
+            let ty = self.try_parse_type_expr().unwrap_or_else(|| ExprMissing::new_green(self.db));
             Some(TypeClause::new_green(self.db, colon, ty))
         } else {
             None
@@ -522,8 +536,8 @@ impl<'a> Parser<'a> {
     fn parse_option_return_type_clause(&mut self) -> GreenId {
         if self.peek().kind == TokenKind::Arrow {
             let arrow = self.take();
-            // TODO(yuval): support reacher types.
-            let return_type = self.parse_path();
+            let return_type =
+                self.try_parse_type_expr().unwrap_or_else(|| ExprMissing::new_green(self.db));
             ReturnTypeClause::new_green(self.db, arrow, return_type)
         } else {
             OptionReturnTypeClauseEmpty::new_green(self.db)
