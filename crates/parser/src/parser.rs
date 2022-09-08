@@ -27,7 +27,7 @@ pub struct Parser<'a> {
     lexer: Lexer<'a>,
     /// The next terminal to handle.
     next_terminal: TerminalWithKind,
-    skipped_tokens: Vec<GreenId>,
+    skipped_terminals: Vec<GreenId>,
     /// The current offset, excluding the current terminal.
     offset: u32,
     /// The width of the current terminal being handled.
@@ -60,6 +60,14 @@ impl DiagnosticEntry for ParserDiagnostic {
     }
 }
 
+/// Fields for a terminal node. See Parser::unpack_terminal.
+struct UnpackedTerminal {
+    leading_trivia: Vec<GreenId>,
+    token: GreenId,
+    trailing_trivia: Vec<GreenId>,
+    width: u32,
+}
+
 // try_parse_<something>: returns a green ID with a kind that represents 'something' or None if
 // 'something' can't be parsed.
 // Used when something may or may not be there and we can act differently according to each case.
@@ -88,7 +96,7 @@ impl<'a> Parser<'a> {
             file_id,
             lexer,
             next_terminal,
-            skipped_tokens: Vec::new(),
+            skipped_terminals: Vec::new(),
             offset: 0,
             current_width: 0,
             diagnostics: Diagnostics::new(),
@@ -579,7 +587,7 @@ impl<'a> Parser<'a> {
                     children.push(pending_separator); // ::
                     children.push(self.expect_path_segment()); // path segment
                 } else {
-                    self.skipped_tokens.push(pending_separator);
+                    self.skipped_terminals.push(pending_separator);
                 }
             } else if self.peek().kind == TokenKind::Identifier {
                 children.push(GreenId::missing_token(self.db)); // missing separator
@@ -694,7 +702,7 @@ impl<'a> Parser<'a> {
     /// wasn't there.
     fn skip_token(&mut self) {
         let token = self.take_raw();
-        self.skipped_tokens.push(token);
+        self.skipped_terminals.push(token);
     }
 
     /// Takes a token from the Lexer and place it in self.current. If tokens were skipped, glue them
@@ -718,31 +726,32 @@ impl<'a> Parser<'a> {
         }
     }
 
-    /// Builds a TriviumSkippedTerminal from the given `terminal` (same children, but with kind
-    /// TriviumSkippedTerminal instead of Terminal).
-    fn build_skipped_terminal(&self, terminal: GreenId) -> GreenId {
+    /// Unpacks a terminal from its GreenID to its fields and width.
+    fn unpack_terminal(&self, terminal: GreenId) -> UnpackedTerminal {
+        let width = terminal.width(self.db);
         let terminal_internal = self.unpack_internal_node(terminal, SyntaxKind::Terminal);
 
-        let leading_trivia = terminal_internal.children[0];
+        let leading_trivia =
+            self.unpack_internal_node(terminal_internal.children[0], SyntaxKind::Trivia).children;
         let token = terminal_internal.children[1];
-        let trailing_trivia = terminal_internal.children[2];
-        TriviumSkippedTerminal::new_green(self.db, leading_trivia, token, trailing_trivia)
+        let trailing_trivia =
+            self.unpack_internal_node(terminal_internal.children[2], SyntaxKind::Trivia).children;
+        UnpackedTerminal { leading_trivia, token, trailing_trivia, width }
     }
 
-    // TODO(spapini): currently, skipped tokens swallow leading and trailing trivia. Fix this.
     /// Builds a new terminal to replace the given terminal by gluing the recently skipped terminals
     /// to the given terminal as extra leading trivia.
     fn add_skipped_to_terminal(&mut self, terminal: GreenId) -> GreenId {
-        if self.skipped_tokens.is_empty() {
+        if self.skipped_terminals.is_empty() {
             return terminal;
         }
 
         let mut total_width = 0;
 
-        // Collect all the skipped terminal with kind TriviumSkippedTerminal.
-        let skipped_terminals: Vec<GreenId> = mem::take(&mut self.skipped_tokens)
+        // Collect all the skipped terminals.
+        let unpacked_terminals: Vec<UnpackedTerminal> = mem::take(&mut self.skipped_terminals)
             .into_iter()
-            .map(|t| self.build_skipped_terminal(t))
+            .map(|t| self.unpack_terminal(t))
             .collect();
 
         // Extract current leading trivia of the given terminal.
@@ -752,33 +761,60 @@ impl<'a> Parser<'a> {
 
         // Build a replacement for the leading trivia.
         let mut new_leading_trivia_children = vec![];
-        for skipped in skipped_terminals {
-            total_width += skipped.width(self.db);
-            new_leading_trivia_children.push(skipped);
+        for UnpackedTerminal { leading_trivia, token, trailing_trivia, width } in unpacked_terminals
+        {
+            new_leading_trivia_children.extend(leading_trivia);
+            new_leading_trivia_children.push(TriviumSkippedToken::new_green(self.db, token));
+            new_leading_trivia_children.extend(trailing_trivia);
+            total_width += width;
         }
-        for trivium in leading_trivia_internal.children {
-            new_leading_trivia_children.push(trivium);
-        }
-        let new_leading_trivia = Trivia::new_green(self.db, new_leading_trivia_children);
+        new_leading_trivia_children.extend(leading_trivia_internal.children);
 
-        // TODO(spapini): Clean up by always saving offsets as TextOffset, and possible not use
-        // offset airthmetic, and instead, keep the correct TextOffset when generated.
-        let skipped_end = self.offset;
-        let skipped_start = skipped_end - total_width;
-        self.diagnostics.add(ParserDiagnostic {
-            file_id: self.file_id,
-            kind: ParserDiagnosticKind::SkippedTokens,
-            span: TextSpan {
-                start: TextOffset(skipped_start as usize),
-                end: TextOffset(skipped_end as usize),
-            },
-        });
+        self.report_skipped_diagnostics(total_width, &new_leading_trivia_children);
+
+        let new_leading_trivia = Trivia::new_green(self.db, new_leading_trivia_children);
 
         // Build a replacement for the current terminal, with the new leading trivia instead of the
         // old one.
         let token = terminal_internal.children[1];
         let trailing_trivia = terminal_internal.children[2];
         Terminal::new_green(self.db, new_leading_trivia, token, trailing_trivia)
+    }
+
+    /// Given a sequence of Trivia nodes, finds consecutive SkippedTrivia and reports to
+    /// diagnostics.
+    fn report_skipped_diagnostics(&mut self, total_width: u32, trivia: &[GreenId]) {
+        // Report diagnostics for each consecutive batch of skipped tokens.
+        let mut append_diagnostic = |start, end| {
+            if end > start {
+                self.diagnostics.add(ParserDiagnostic {
+                    file_id: self.file_id,
+                    kind: ParserDiagnosticKind::SkippedTokens,
+                    span: TextSpan { start, end },
+                });
+            }
+        };
+        // TODO(spapini): Clean up by always saving offsets as TextOffset, and possible not use
+        // offset arithmetic, and instead, keep the correct TextOffset when generated.
+        let mut current_start = TextOffset((self.offset - total_width) as usize);
+        let mut current_offset = current_start;
+        for trivium in trivia.iter().copied() {
+            let width = trivium.width(self.db);
+            match self.db.lookup_intern_green(trivium) {
+                GreenNode::Internal(GreenNodeInternal {
+                    kind: SyntaxKind::TriviumSkippedToken,
+                    ..
+                }) => {
+                    current_offset = current_offset.add(width as usize);
+                }
+                _ => {
+                    append_diagnostic(current_start, current_offset);
+                    current_offset = current_offset.add(width as usize);
+                    current_start = current_offset;
+                }
+            };
+        }
+        append_diagnostic(current_start, current_offset);
     }
 
     /// If the current token is of kind `token_kind`, returns a GreenId of a node with this kind.

@@ -3,7 +3,7 @@ use core::fmt;
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub enum SyntaxKind {
     Terminal,
-    TriviumSkippedTerminal,
+    TriviumSkippedToken,
     Trivia,
     StructArgExpr,
     OptionStructArgExprEmpty,

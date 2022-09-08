@@ -9,19 +9,13 @@ pub fn get_spec() -> Vec<Node> {
             .token("token")
             .node("trailing_trivia", "Trivia")
             .build(),
-        // TODO(yuval): consider removing the trivia from the skipped terminal and instead append
-        // it to the trivia of the real terminal that the skipped terminal is a trivium of.
-        StructBuilder::new("TriviumSkippedTerminal")
-            .node("leading_trivia", "Trivia")
-            .token("token")
-            .node("trailing_trivia", "Trivia")
-            .build(),
+        StructBuilder::new("TriviumSkippedToken").token("token").build(),
         list_node("Trivia", "Trivium"),
         EnumBuilder::new("Trivium")
             .token("SingleLineComment")
             .token("Whitespace")
             .token("Newline")
-            .node("SkippedTerminal")
+            .node("SkippedToken")
             .build(),
         // --- Function calls ---
         StructBuilder::new("StructArgExpr").node("colon", "Terminal").node("expr", "Expr").build(),

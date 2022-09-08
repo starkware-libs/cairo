@@ -394,12 +394,10 @@
     │   ├── child #2 (kind: ItemFreeFunction)
     │   │   ├── funckw (kind: Terminal)
     │   │   │   ├── leading_trivia (kind: Trivia)
-    │   │   │   │   ├── child #0 (kind: TriviumSkippedTerminal)
-    │   │   │   │   │   ├── leading_trivia (kind: Trivia) []
-    │   │   │   │   │   ├── token (kind: LBrace): '{'
-    │   │   │   │   │   └── trailing_trivia (kind: Trivia)
-    │   │   │   │   │       └── child #0 (kind: Newline).
-    │   │   │   │   └── child #1 (kind: Whitespace).
+    │   │   │   │   ├── child #0 (kind: TriviumSkippedToken)
+    │   │   │   │   │   └── token (kind: LBrace): '{'
+    │   │   │   │   ├── child #1 (kind: Newline).
+    │   │   │   │   └── child #2 (kind: Whitespace).
     │   │   │   ├── token (kind: Function): 'func'
     │   │   │   └── trailing_trivia (kind: Trivia)
     │   │   │       └── child #0 (kind: Whitespace).
@@ -662,22 +660,16 @@
     │               └── child #0 (kind: Newline).
     └── eof (kind: Terminal)
         ├── leading_trivia (kind: Trivia)
-        │   ├── child #0 (kind: TriviumSkippedTerminal)
-        │   │   ├── leading_trivia (kind: Trivia)
-        │   │   │   └── child #0 (kind: Newline).
-        │   │   ├── token (kind: RBrace): '}'
-        │   │   └── trailing_trivia (kind: Trivia)
-        │   │       └── child #0 (kind: Newline).
-        │   ├── child #1 (kind: TriviumSkippedTerminal)
-        │   │   ├── leading_trivia (kind: Trivia)
-        │   │   │   └── child #0 (kind: Newline).
-        │   │   ├── token (kind: Identifier): 'skipped'
-        │   │   └── trailing_trivia (kind: Trivia)
-        │   │       └── child #0 (kind: Whitespace).
-        │   └── child #2 (kind: TriviumSkippedTerminal)
-        │       ├── leading_trivia (kind: Trivia) []
-        │       ├── token (kind: Identifier): 'tokens'
-        │       └── trailing_trivia (kind: Trivia)
-        │           └── child #0 (kind: Newline).
+        │   ├── child #0 (kind: Newline).
+        │   ├── child #1 (kind: TriviumSkippedToken)
+        │   │   └── token (kind: RBrace): '}'
+        │   ├── child #2 (kind: Newline).
+        │   ├── child #3 (kind: Newline).
+        │   ├── child #4 (kind: TriviumSkippedToken)
+        │   │   └── token (kind: Identifier): 'skipped'
+        │   ├── child #5 (kind: Whitespace).
+        │   ├── child #6 (kind: TriviumSkippedToken)
+        │   │   └── token (kind: Identifier): 'tokens'
+        │   └── child #7 (kind: Newline).
         ├── token (kind: EndOfFile).
         └── trailing_trivia (kind: Trivia) []

@@ -46,16 +46,14 @@
     │   ├── child #2 (kind: ItemFreeFunction)
     │   │   ├── funckw (kind: Terminal)
     │   │   │   ├── leading_trivia (kind: Trivia)
-    │   │   │   │   └── child #0 (kind: TriviumSkippedTerminal)
-    │   │   │   │       ├── leading_trivia (kind: Trivia)
-    │   │   │   │       │   ├── child #0 (kind: Newline).
-    │   │   │   │       │   ├── child #1 (kind: SingleLineComment): '// Func foo'
-    │   │   │   │       │   ├── child #2 (kind: Newline).
-    │   │   │   │       │   ├── child #3 (kind: SingleLineComment): '// Second line'
-    │   │   │   │       │   └── child #4 (kind: Newline).
-    │   │   │   │       ├── token (kind: Semicolon): ';'
-    │   │   │   │       └── trailing_trivia (kind: Trivia)
-    │   │   │   │           └── child #0 (kind: Newline).
+    │   │   │   │   ├── child #0 (kind: Newline).
+    │   │   │   │   ├── child #1 (kind: SingleLineComment): '// Func foo'
+    │   │   │   │   ├── child #2 (kind: Newline).
+    │   │   │   │   ├── child #3 (kind: SingleLineComment): '// Second line'
+    │   │   │   │   ├── child #4 (kind: Newline).
+    │   │   │   │   ├── child #5 (kind: TriviumSkippedToken)
+    │   │   │   │   │   └── token (kind: Semicolon): ';'
+    │   │   │   │   └── child #6 (kind: Newline).
     │   │   │   ├── token (kind: Function): 'func'
     │   │   │   └── trailing_trivia (kind: Trivia)
     │   │   │       └── child #0 (kind: Whitespace).
@@ -72,10 +70,8 @@
     │   │   │   │   ├── item #0 (kind: Param)
     │   │   │   │   │   ├── name (kind: Terminal)
     │   │   │   │   │   │   ├── leading_trivia (kind: Trivia)
-    │   │   │   │   │   │   │   └── child #0 (kind: TriviumSkippedTerminal)
-    │   │   │   │   │   │   │       ├── leading_trivia (kind: Trivia) []
-    │   │   │   │   │   │   │       ├── token (kind: Comma): ','
-    │   │   │   │   │   │   │       └── trailing_trivia (kind: Trivia) []
+    │   │   │   │   │   │   │   └── child #0 (kind: TriviumSkippedToken)
+    │   │   │   │   │   │   │       └── token (kind: Comma): ','
     │   │   │   │   │   │   ├── token (kind: Identifier): 'var1'
     │   │   │   │   │   │   └── trailing_trivia (kind: Trivia) []
     │   │   │   │   │   └── type_clause (kind: TypeClause)
@@ -98,11 +94,9 @@
     │   │   │   │   ├── item #1 (kind: Param)
     │   │   │   │   │   ├── name (kind: Terminal)
     │   │   │   │   │   │   ├── leading_trivia (kind: Trivia)
-    │   │   │   │   │   │   │   └── child #0 (kind: TriviumSkippedTerminal)
-    │   │   │   │   │   │   │       ├── leading_trivia (kind: Trivia) []
-    │   │   │   │   │   │   │       ├── token (kind: Comma): ','
-    │   │   │   │   │   │   │       └── trailing_trivia (kind: Trivia)
-    │   │   │   │   │   │   │           └── child #0 (kind: Whitespace).
+    │   │   │   │   │   │   │   ├── child #0 (kind: TriviumSkippedToken)
+    │   │   │   │   │   │   │   │   └── token (kind: Comma): ','
+    │   │   │   │   │   │   │   └── child #1 (kind: Whitespace).
     │   │   │   │   │   │   ├── token (kind: Identifier): 'var2'
     │   │   │   │   │   │   └── trailing_trivia (kind: Trivia) []
     │   │   │   │   │   └── type_clause (kind: TypeClause)

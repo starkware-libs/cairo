@@ -85,56 +85,45 @@ impl TypedSyntaxNode for Terminal {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct TriviumSkippedTerminal {
+pub struct TriviumSkippedToken {
     node: SyntaxNode,
     children: Vec<SyntaxNode>,
 }
-impl TriviumSkippedTerminal {
-    pub fn new_green(
-        db: &dyn SyntaxGroup,
-        leading_trivia: GreenId,
-        token: GreenId,
-        trailing_trivia: GreenId,
-    ) -> GreenId {
-        let children: Vec<GreenId> = vec![leading_trivia, token, trailing_trivia];
+impl TriviumSkippedToken {
+    pub fn new_green(db: &dyn SyntaxGroup, token: GreenId) -> GreenId {
+        let children: Vec<GreenId> = vec![token];
         let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
-            kind: SyntaxKind::TriviumSkippedTerminal,
+            kind: SyntaxKind::TriviumSkippedToken,
             children,
             width,
         }))
     }
-    pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
-    }
     pub fn token(&self, db: &dyn SyntaxGroup) -> Token {
-        let child = self.children[1].clone();
+        let child = self.children[0].clone();
         Token::from_syntax_node(db, child)
-    }
-    pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TriviumSkippedTerminalPtr(SyntaxStablePtrId);
-impl TriviumSkippedTerminalPtr {}
-impl TypedSyntaxNode for TriviumSkippedTerminal {
-    type StablePtr = TriviumSkippedTerminalPtr;
+pub struct TriviumSkippedTokenPtr(SyntaxStablePtrId);
+impl TriviumSkippedTokenPtr {}
+impl TypedSyntaxNode for TriviumSkippedToken {
+    type StablePtr = TriviumSkippedTokenPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
-            kind: SyntaxKind::TriviumSkippedTerminal,
-            children: vec![Trivia::missing(db), Token::missing(db), Trivia::missing(db)],
+            kind: SyntaxKind::TriviumSkippedToken,
+            children: vec![Token::missing(db)],
             width: 0,
         }))
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => {
-                if internal.kind != SyntaxKind::TriviumSkippedTerminal {
+                if internal.kind != SyntaxKind::TriviumSkippedToken {
                     panic!(
                         "Unexpected SyntaxKind {:?}. Expected {:?}.",
                         internal.kind,
-                        SyntaxKind::TriviumSkippedTerminal,
+                        SyntaxKind::TriviumSkippedToken,
                     );
                 }
                 let children = node.children(db).collect();
@@ -144,7 +133,7 @@ impl TypedSyntaxNode for TriviumSkippedTerminal {
                 panic!(
                     "Unexpected Token {:?}. Expected {:?}.",
                     token,
-                    SyntaxKind::TriviumSkippedTerminal,
+                    SyntaxKind::TriviumSkippedToken,
                 );
             }
         }
@@ -156,7 +145,7 @@ impl TypedSyntaxNode for TriviumSkippedTerminal {
         self.node.clone()
     }
     fn stable_ptr(&self) -> Self::StablePtr {
-        TriviumSkippedTerminalPtr(self.node.0.stable_ptr)
+        TriviumSkippedTokenPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -206,7 +195,7 @@ pub enum Trivium {
     TriviumSingleLineComment(Token),
     TriviumWhitespace(Token),
     TriviumNewline(Token),
-    SkippedTerminal(TriviumSkippedTerminal),
+    SkippedToken(TriviumSkippedToken),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TriviumPtr(SyntaxStablePtrId);
@@ -218,8 +207,8 @@ impl TypedSyntaxNode for Trivium {
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => match internal.kind {
-                SyntaxKind::TriviumSkippedTerminal => {
-                    Trivium::SkippedTerminal(TriviumSkippedTerminal::from_syntax_node(db, node))
+                SyntaxKind::TriviumSkippedToken => {
+                    Trivium::SkippedToken(TriviumSkippedToken::from_syntax_node(db, node))
                 }
                 _ => panic!(
                     "Unexpected syntax kind {:?} when constructing {}.",
@@ -246,7 +235,7 @@ impl TypedSyntaxNode for Trivium {
             Trivium::TriviumSingleLineComment(x) => x.as_syntax_node(),
             Trivium::TriviumWhitespace(x) => x.as_syntax_node(),
             Trivium::TriviumNewline(x) => x.as_syntax_node(),
-            Trivium::SkippedTerminal(x) => x.as_syntax_node(),
+            Trivium::SkippedToken(x) => x.as_syntax_node(),
         }
     }
     fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
