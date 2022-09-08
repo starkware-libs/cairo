@@ -16,21 +16,21 @@ use crate::{semantic, ExprId, StatementId, TypeId};
 
 #[salsa::database(SemanticDatabase, DefsDatabase, ParserDatabase, SyntaxDatabase, FilesDatabase)]
 #[derive(Default)]
-pub struct DatabaseImpl {
-    storage: salsa::Storage<DatabaseImpl>,
+pub struct DatabaseForTesting {
+    storage: salsa::Storage<DatabaseForTesting>,
 }
-impl salsa::Database for DatabaseImpl {}
-impl AsFilesGroup for DatabaseImpl {
+impl salsa::Database for DatabaseForTesting {}
+impl AsFilesGroup for DatabaseForTesting {
     fn as_files_group(&self) -> &(dyn FilesGroup + 'static) {
         self
     }
 }
-impl AsSyntaxGroup for DatabaseImpl {
+impl AsSyntaxGroup for DatabaseForTesting {
     fn as_syntax_group(&self) -> &(dyn SyntaxGroup + 'static) {
         self
     }
 }
-impl AsDefsGroup for DatabaseImpl {
+impl AsDefsGroup for DatabaseForTesting {
     fn as_defs_group(&self) -> &(dyn DefsGroup + 'static) {
         self
     }
@@ -38,7 +38,7 @@ impl AsDefsGroup for DatabaseImpl {
 
 #[test]
 fn test_expr_literal() {
-    let mut db_val = DatabaseImpl::default();
+    let mut db_val = DatabaseForTesting::default();
     let (_module_id, expr_id) = setup_test_expr(&mut db_val, "7", "", "").expect("");
     let db = &db_val;
     let expr = db.lookup_intern_expr(expr_id);
@@ -63,7 +63,7 @@ fn test_expr_literal() {
 // TODO(yuval): split test utils and move this test to db_test/type_test.
 #[test]
 fn test_function_with_param() {
-    let mut db_val = DatabaseImpl::default();
+    let mut db_val = DatabaseForTesting::default();
     let (_module_id, function) =
         setup_test_function(&mut db_val, "func foo(a: felt) {}", "foo", "").expect("");
     let _db = &db_val;
@@ -78,7 +78,7 @@ fn test_function_with_param() {
 // TODO(yuval): split test utils and move this test to db_test/type_test.
 #[test]
 fn test_function_with_return_type() {
-    let mut db_val = DatabaseImpl::default();
+    let mut db_val = DatabaseForTesting::default();
     let (_module_id, function) =
         setup_test_function(&mut db_val, "func foo() -> felt {}", "foo", "").expect("");
     let _db = &db_val;
@@ -90,7 +90,7 @@ fn test_function_with_return_type() {
 
 #[test]
 fn test_let_statement() {
-    let mut db_val = DatabaseImpl::default();
+    let mut db_val = DatabaseForTesting::default();
     let (module_id, function) = setup_test_function(
         &mut db_val,
         indoc! {"
@@ -131,7 +131,7 @@ fn test_let_statement() {
 
 #[test]
 fn test_expr_var() {
-    let mut db_val = DatabaseImpl::default();
+    let mut db_val = DatabaseForTesting::default();
     let (_module_id, function) = setup_test_function(
         &mut db_val,
         indoc! {"
@@ -160,7 +160,7 @@ fn test_expr_var() {
 
 #[test]
 fn test_expr_match() {
-    let mut db_val = DatabaseImpl::default();
+    let mut db_val = DatabaseForTesting::default();
     let (_module_id, func) = setup_test_function(
         &mut db_val,
         indoc! {"
@@ -190,7 +190,7 @@ fn test_expr_match() {
 
 #[test]
 fn test_expr_block() {
-    let mut db_val = DatabaseImpl::default();
+    let mut db_val = DatabaseForTesting::default();
     let (_module_id, expr_id) = setup_test_expr(&mut db_val, "{6;8;}", "", "").expect("");
     let db = &db_val;
     let expr = db.lookup_intern_expr(expr_id);
@@ -216,7 +216,7 @@ fn test_expr_block() {
 
 #[test]
 fn test_expr_block_with_tail_expression() {
-    let mut db_val = DatabaseImpl::default();
+    let mut db_val = DatabaseForTesting::default();
     let (_module_id, expr_id) = setup_test_expr(&mut db_val, "{6;8;9}", "", "").expect("");
     let db = &db_val;
     let expr = db.lookup_intern_expr(expr_id);
@@ -250,7 +250,7 @@ fn test_expr_block_with_tail_expression() {
 
 #[test]
 fn test_expr_call() {
-    let mut db_val = DatabaseImpl::default();
+    let mut db_val = DatabaseForTesting::default();
     // TODO(spapini): Add types.
     let (_module_id, expr_id) =
         setup_test_expr(&mut db_val, "foo()", "func foo() {6;}", "").expect("");
@@ -269,7 +269,7 @@ fn test_expr_call() {
 
 #[test]
 fn test_expr_call_missing() {
-    let mut db_val = DatabaseImpl::default();
+    let mut db_val = DatabaseForTesting::default();
     // TODO(spapini): Add types.
     let res = setup_test_expr(&mut db_val, "foo()", "", "");
     let db = &db_val;
@@ -294,7 +294,7 @@ fn test_expr_call_missing() {
 
 #[test]
 fn test_function_body() {
-    let mut db_val = DatabaseImpl::default();
+    let mut db_val = DatabaseForTesting::default();
     let (module_id, _module_syntax) = setup_test_function(
         &mut db_val,
         indoc! {"

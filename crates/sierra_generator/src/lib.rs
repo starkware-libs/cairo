@@ -8,6 +8,5 @@ mod id_allocator;
 mod pre_sierra;
 mod program_generator;
 mod resolve_labels;
-#[cfg(test)]
-mod test_utils;
+pub mod test_utils;
 mod utils;

@@ -3,10 +3,9 @@ use std::fs;
 use std::path::PathBuf;
 
 use diagnostics::{Diagnostics, WithDiagnostics};
-use filesystem::db::{FilesDatabase, FilesGroup};
+use filesystem::db::FilesGroup;
 use filesystem::ids::FileLongId;
 use pretty_assertions::assert_eq;
-use syntax::node::db::SyntaxDatabase;
 use syntax::node::{SyntaxNode, TypedSyntaxNode};
 use test_case::test_case;
 
@@ -14,13 +13,7 @@ use super::ParserDiagnostic;
 use crate::colored_printer::print_colored;
 use crate::parser::Parser;
 use crate::printer::print_tree;
-
-#[salsa::database(SyntaxDatabase, FilesDatabase)]
-#[derive(Default)]
-pub struct DatabaseImpl {
-    storage: salsa::Storage<DatabaseImpl>,
-}
-impl salsa::Database for DatabaseImpl {}
+use crate::test_utils::ParserDatabaseForTesting;
 
 fn read_file(filename: &str) -> String {
     fs::read_to_string(filename)
@@ -58,7 +51,7 @@ fn parse_and_compare_tree(
     // Make sure the colors are printed, even if the test doesn't run in a terminal.
     colored::control::set_override(true);
 
-    let db_val = DatabaseImpl::default();
+    let db_val = ParserDatabaseForTesting::default();
     let db = &db_val;
 
     let (syntax_root, diagnostics) = get_syntax_root_and_diagnostics(db, cairo_filename);
@@ -80,7 +73,7 @@ fn parse_and_compare_colored(cairo_filename: &str, expected_tree_filename: &str,
     // Make sure the colors are printed, even if the test doesn't run in a terminal.
     colored::control::set_override(true);
 
-    let db_val = DatabaseImpl::default();
+    let db_val = ParserDatabaseForTesting::default();
     let db = &db_val;
 
     let (syntax_root, _diagnostics) = get_syntax_root_and_diagnostics(db, cairo_filename);
@@ -122,7 +115,7 @@ fn _debug_failure(printed: String, expected: String) {
 }
 
 fn get_syntax_root_and_diagnostics(
-    db: &DatabaseImpl,
+    db: &ParserDatabaseForTesting,
     cairo_filename: &str,
 ) -> (SyntaxNode, Diagnostics<ParserDiagnostic>) {
     let file_id = db.intern_file(FileLongId::OnDisk(PathBuf::from(cairo_filename)));
