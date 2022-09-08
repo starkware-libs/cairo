@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::sync::Arc;
 
-use crate::ids::{CrateId, CrateLongId, FileId, FileLongId};
+use crate::ids::{CrateId, CrateLongId, FileId, FileLongId, FilesDir};
 use crate::span::{FileSummary, TextOffset};
 
 // Salsa database interface.
@@ -26,8 +26,8 @@ pub trait FilesGroup {
 
     /// List of crates in the project.
     fn crates(&self) -> Vec<CrateId>;
-    /// Root file of the crate.
-    fn crate_root_file(&self, crate_id: CrateId) -> Option<FileId>;
+    /// Root directory of the crate.
+    fn crate_root_dir(&self, crate_id: CrateId) -> Option<FilesDir>;
     /// Query for raw file contents. Private.
     fn priv_raw_file_content(&self, file_id: FileId) -> Option<Arc<String>>;
     /// Query for the file contents. This takes overrides into consideration.
@@ -39,12 +39,30 @@ pub fn init_files_group(db: &mut dyn FilesGroup) {
     db.set_file_overrides(Arc::new(HashMap::new()));
 }
 
+pub trait FilesGroupEx {
+    fn override_file_content(&mut self, file: FileId, content: Option<Arc<String>>);
+}
+impl<T: AsFilesGroup + ?Sized> FilesGroupEx for T {
+    fn override_file_content(&mut self, file: FileId, content: Option<Arc<String>>) {
+        let mut overrides = self.as_files_group().file_overrides().as_ref().clone();
+        match content {
+            Some(content) => overrides.insert(file, content),
+            None => overrides.remove(&file),
+        };
+        self.as_files_group_mut().set_file_overrides(Arc::new(overrides));
+    }
+}
+
 pub trait AsFilesGroup {
     fn as_files_group(&self) -> &(dyn FilesGroup + 'static);
+    fn as_files_group_mut(&mut self) -> &mut (dyn FilesGroup + 'static);
 }
 
 impl AsFilesGroup for dyn FilesGroup {
     fn as_files_group(&self) -> &(dyn FilesGroup + 'static) {
+        self
+    }
+    fn as_files_group_mut(&mut self) -> &mut (dyn FilesGroup + 'static) {
         self
     }
 }
@@ -52,10 +70,10 @@ impl AsFilesGroup for dyn FilesGroup {
 // Configuration of the project. This is the only input, and it defines everything else.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ProjectConfig {
-    pub crate_roots: HashMap<CrateId, FileId>,
+    pub crate_roots: HashMap<CrateId, FilesDir>,
 }
 impl ProjectConfig {
-    pub fn with_crate(mut self, crt: CrateId, root: FileId) -> Self {
+    pub fn with_crate(mut self, crt: CrateId, root: FilesDir) -> Self {
         self.crate_roots.insert(crt, root);
         self
     }
@@ -64,8 +82,8 @@ impl ProjectConfig {
 fn crates(db: &dyn FilesGroup) -> Vec<CrateId> {
     db.project_config().crate_roots.keys().copied().collect()
 }
-fn crate_root_file(db: &dyn FilesGroup, crt: CrateId) -> Option<FileId> {
-    db.project_config().crate_roots.get(&crt).copied()
+fn crate_root_dir(db: &dyn FilesGroup, crt: CrateId) -> Option<FilesDir> {
+    db.project_config().crate_roots.get(&crt).cloned()
 }
 
 fn priv_raw_file_content(db: &dyn FilesGroup, file: FileId) -> Option<Arc<String>> {

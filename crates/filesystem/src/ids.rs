@@ -35,3 +35,15 @@ impl FileId {
         }
     }
 }
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct FilesDir(pub PathBuf);
+
+impl FilesDir {
+    pub fn child(&self, db: &dyn FilesGroup, name: SmolStr) -> FileId {
+        db.intern_file(FileLongId::OnDisk(self.0.join(name.to_string())))
+    }
+    pub fn subdir(&self, name: SmolStr) -> FilesDir {
+        FilesDir(self.0.join(name.to_string()))
+    }
+}
