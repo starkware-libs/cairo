@@ -50,8 +50,10 @@ impl DiagnosticEntry for SemanticDiagnostic {
 
     fn format(&self, _db: &Self::DbType) -> String {
         match self.kind {
-            SemanticDiagnosticKind::UnknownFunction => "Unknown function".into(),
+            SemanticDiagnosticKind::UnknownBinaryOperator => "Unknown binary operator",
+            SemanticDiagnosticKind::UnknownFunction => "Unknown function",
         }
+        .into()
     }
 
     fn location(&self, db: &Self::DbType) -> DiagnosticLocation {
@@ -68,5 +70,6 @@ impl DiagnosticEntry for SemanticDiagnostic {
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum SemanticDiagnosticKind {
+    UnknownBinaryOperator,
     UnknownFunction,
 }

@@ -29,6 +29,7 @@ pub enum Expr {
     ExprMatch(ExprMatch),
     ExprVar(ExprVar),
     ExprLiteral(ExprLiteral),
+    Missing(TypeId),
 }
 impl Expr {
     pub fn ty(&self) -> TypeId {
@@ -38,6 +39,7 @@ impl Expr {
             Expr::ExprMatch(expr) => expr.ty,
             Expr::ExprVar(expr) => expr.ty,
             Expr::ExprLiteral(expr) => expr.ty,
+            Expr::Missing(ty) => *ty,
         }
     }
 }

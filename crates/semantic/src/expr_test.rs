@@ -46,8 +46,7 @@ fn test_expr_literal() {
     // Fix this.
     assert_eq!(
         format!("{:?}", expr.debug(db)),
-        "ExprLiteral(ExprLiteral { value: 7, ty: Concrete(ConcreteType { generic_type: \
-         Extern(ExternTypeId(0)), generic_args: [] }) })"
+        "ExprLiteral(ExprLiteral { value: 7, ty: Concrete(ExternTypeId(core::felt)) })"
     );
 
     // Check expr.
@@ -57,6 +56,26 @@ fn test_expr_literal() {
     };
     assert_eq!(value, 7);
     assert_eq!(ty, db.core_felt_ty());
+}
+
+#[test]
+fn test_expr_operator() {
+    let mut db_val = DatabaseForTesting::default();
+    let (_module_id, expr_id) = setup_test_expr(&mut db_val, "5 + 9 * 3", "", "").expect("");
+    let db = &db_val;
+    let expr = db.lookup_intern_expr(expr_id);
+    // TODO(spapini): Make transparent DebugWithDb attribute, to have better outputs.
+    // TODO(spapini): Have better whitespaces here somehow.
+    assert_eq!(
+        format!("{:?}", expr.debug(db)),
+        "ExprFunctionCall(ExprFunctionCall { function: \
+         Concrete(ExternFunctionId(core::felt_add)), args: [ExprLiteral(ExprLiteral { value: 5, \
+         ty: Concrete(ExternTypeId(core::felt)) }), ExprFunctionCall(ExprFunctionCall { function: \
+         Concrete(ExternFunctionId(core::felt_mul)), args: [ExprLiteral(ExprLiteral { value: 9, \
+         ty: Concrete(ExternTypeId(core::felt)) }), ExprLiteral(ExprLiteral { value: 3, ty: \
+         Concrete(ExternTypeId(core::felt)) })], ty: Concrete(ExternTypeId(core::felt)) })], ty: \
+         Concrete(ExternTypeId(core::felt)) })"
+    );
 }
 
 // TODO(yuval): split test utils and move this test to db_test/type_test.

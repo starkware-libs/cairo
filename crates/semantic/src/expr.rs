@@ -9,9 +9,10 @@ use diagnostics::{Diagnostics, WithDiagnostics};
 use diagnostics_proc_macros::with_diagnostics;
 use smol_str::SmolStr;
 use syntax::node::db::SyntaxGroup;
+use syntax::node::helpers::TerminalEx;
 use syntax::node::{ast, TypedSyntaxNode};
 
-use crate::corelib::unit_ty;
+use crate::corelib::{core_binary_operator, unit_ty};
 use crate::db::{resolve_type, SemanticGroup};
 use crate::diagnostic::SemanticDiagnosticKind;
 use crate::resolve_item::resolve_item;
@@ -97,7 +98,29 @@ pub fn compute_expr_semantic(
         }
         ast::Expr::Parenthesized(_) => todo!(),
         ast::Expr::Unary(_) => todo!(),
-        ast::Expr::Binary(_) => todo!(),
+        ast::Expr::Binary(binary_op_syntax) => {
+            let operator_kind = binary_op_syntax.op(syntax_db).kind(syntax_db);
+            let lexpr =
+                compute_expr_semantic(ctx, binary_op_syntax.lhs(syntax_db)).propagte(diagnostics);
+            let rexpr =
+                compute_expr_semantic(ctx, binary_op_syntax.rhs(syntax_db)).propagte(diagnostics);
+            let function = match core_binary_operator(db, operator_kind) {
+                Some(function) => function,
+                None => {
+                    diagnostics.add(SemanticDiagnostic {
+                        module_id: ctx.module_id,
+                        stable_ptr: binary_op_syntax.as_syntax_node().stable_ptr(),
+                        kind: SemanticDiagnosticKind::UnknownBinaryOperator,
+                    });
+                    return semantic::Expr::Missing(TypeId::missing(db));
+                }
+            };
+            semantic::Expr::ExprFunctionCall(semantic::ExprFunctionCall {
+                function,
+                args: vec![db.intern_expr(lexpr), db.intern_expr(rexpr)],
+                ty: function.return_type(db),
+            })
+        }
         ast::Expr::Tuple(_) => todo!(),
         ast::Expr::FunctionCall(call_syntax) => {
             let path = call_syntax.path(syntax_db);
