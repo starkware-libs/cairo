@@ -93,7 +93,7 @@ fn generic_function_data(
     function_id: GenericFunctionId,
 ) -> Option<GenericFunctionData> {
     let module_id = function_id.module(db.as_defs_group());
-    let module_data = db.module_data(module_id).propagte(diagnostics)?;
+    let module_data = db.module_data(module_id).propagate(diagnostics)?;
     let signature_syntax = match function_id {
         GenericFunctionId::Free(free_function_id) => {
             module_data.free_functions.get(&free_function_id)?.signature(db.as_syntax_group())
@@ -104,10 +104,10 @@ fn generic_function_data(
     };
 
     let return_type =
-        function_signature_return_type(db, module_id, &signature_syntax).propagte(diagnostics);
+        function_signature_return_type(db, module_id, &signature_syntax).propagate(diagnostics);
 
     let (params, variables) =
-        function_signature_params(db, module_id, &signature_syntax).propagte(diagnostics)?;
+        function_signature_params(db, module_id, &signature_syntax).propagate(diagnostics)?;
     Some(GenericFunctionData { signature: semantic::Signature { params, return_type }, variables })
 }
 
@@ -118,7 +118,7 @@ fn generic_function_signature_semantic(
     db: &dyn SemanticGroup,
     function_id: GenericFunctionId,
 ) -> Option<semantic::Signature> {
-    let generic_data = db.generic_function_data(function_id).propagte(diagnostics)?;
+    let generic_data = db.generic_function_data(function_id).propagate(diagnostics)?;
     Some(generic_data.signature)
 }
 
@@ -131,7 +131,7 @@ fn free_function_semantic(
     let module_id = free_function_id.module(db.as_defs_group());
     let syntax = db
         .module_data(module_id)
-        .propagte(diagnostics)?
+        .propagate(diagnostics)?
         .free_functions
         .get(&free_function_id)?
         .clone();
@@ -139,13 +139,13 @@ fn free_function_semantic(
     // Compute signature semantic.
     let generic_function_data = db
         .generic_function_data(GenericFunctionId::Free(free_function_id))
-        .propagte(diagnostics)?;
+        .propagate(diagnostics)?;
 
     // Compute body semantic expr.
     let mut ctx = ComputationContext::new(db, module_id, generic_function_data.variables);
     let body = db.intern_expr(
         compute_expr_semantic(&mut ctx, ast::Expr::Block(syntax.body(db.as_syntax_group())))
-            .propagte(diagnostics),
+            .propagate(diagnostics),
     );
 
     Some(semantic::FreeFunction { signature: generic_function_data.signature, body })
@@ -176,7 +176,7 @@ fn function_signature_return_type(
             ret_type_clause.ty(db.as_syntax_group())
         }
     };
-    resolve_type(db, module_id, type_path).propagte(diagnostics)
+    resolve_type(db, module_id, type_path).propagate(diagnostics)
 }
 
 /// Returns the parameters of the given function signature's AST.
@@ -203,7 +203,7 @@ fn function_signature_params(
             }
         };
         // TODO(yuval): Diagnostic?
-        let ty = resolve_type(db, module_id, ty_path).propagte(diagnostics);
+        let ty = resolve_type(db, module_id, ty_path).propagate(diagnostics);
         semantic_params.push(semantic::Parameter { id, ty });
         variables.insert(name, semantic::Variable { id: VarId::Param(id), ty });
     }
@@ -233,11 +233,11 @@ pub fn resolve_type(
     };
     let type_name = last_segment.ident(syntax_db).text(syntax_db);
 
-    let type_id = resolve_type_by_name(db, module_id, &type_name).propagte(diagnostics);
+    let type_id = resolve_type_by_name(db, module_id, &type_name).propagate(diagnostics);
     if db.lookup_intern_type(type_id) != TypeLongId::Missing {
         type_id
     } else {
-        resolve_type_by_name(db, core_module(db), &type_name).propagte(diagnostics)
+        resolve_type_by_name(db, core_module(db), &type_name).propagate(diagnostics)
     }
 }
 
@@ -251,7 +251,7 @@ fn resolve_type_by_name(
     type_name: &SmolStr,
 ) -> TypeId {
     let module_item_id =
-        match db.module_item_by_name(module_id, type_name.clone()).propagte(diagnostics) {
+        match db.module_item_by_name(module_id, type_name.clone()).propagate(diagnostics) {
             None => return db.intern_type(TypeLongId::Missing),
             Some(id) => id,
         };

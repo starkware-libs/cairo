@@ -32,7 +32,7 @@ pub fn generate_program_code(
             ModuleItemId::Use(_) => todo!("'use' lowering not supported yet."),
             ModuleItemId::FreeFunction(free_function_id) => {
                 let function: Arc<pre_sierra::Function> =
-                    db.get_function_code(*free_function_id).propagte(diagnostics)?;
+                    db.get_function_code(*free_function_id).propagate(diagnostics)?;
                 functions.push(function.clone());
                 statements.extend_from_slice(function.body.as_slice());
             }
@@ -42,7 +42,7 @@ pub fn generate_program_code(
         }
     }
     // TODO(orizi): Actually find all the required types.
-    let felt_type = db.get_concrete_type_id(db.core_felt_ty()).propagte(diagnostics)?;
+    let felt_type = db.get_concrete_type_id(db.core_felt_ty()).propagate(diagnostics)?;
     let non_zero_felt_type = db.intern_concrete_type(sierra::program::ConcreteTypeLongId {
         generic_id: sierra::ids::GenericTypeId::from_string("NonZero"),
         args: vec![sierra::program::GenericArg::Type(felt_type.clone())],
