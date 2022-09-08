@@ -19,10 +19,18 @@ pub trait FilesGroup {
 
     #[salsa::input]
     fn project_config(&self) -> ProjectConfig;
+    #[salsa::input]
+    fn file_overrides(&self) -> Arc<HashMap<FileId, Arc<String>>>;
+
     fn crates(&self) -> Vec<CrateId>;
     fn crate_root_file(&self, crate_id: CrateId) -> Option<FileId>;
+    fn raw_file_content(&self, file_id: FileId) -> Option<Arc<String>>;
     fn file_content(&self, file_id: FileId) -> Option<Arc<String>>;
     fn file_summary(&self, file_id: FileId) -> Option<Arc<FileSummary>>;
+}
+
+pub fn init_files_group(db: &mut dyn FilesGroup) {
+    db.set_file_overrides(Arc::new(HashMap::new()));
 }
 
 pub trait AsFilesGroup {
@@ -57,7 +65,7 @@ fn crate_root_file(db: &dyn FilesGroup, crt: CrateId) -> Option<FileId> {
 // This query is treated as a pure computation. If the file content is changed, an explicit
 // invalidation should be called on the DB by another entity.
 // For example, in the language server, this is initiated by the language server itself.
-fn file_content(db: &dyn FilesGroup, file: FileId) -> Option<Arc<String>> {
+fn raw_file_content(db: &dyn FilesGroup, file: FileId) -> Option<Arc<String>> {
     match db.lookup_intern_file(file) {
         FileLongId::OnDisk(path) => match fs::read_to_string(path) {
             Ok(content) => Some(Arc::new(content)),
@@ -65,6 +73,10 @@ fn file_content(db: &dyn FilesGroup, file: FileId) -> Option<Arc<String>> {
         },
         FileLongId::Virtual(virt) => Some(virt.content),
     }
+}
+fn file_content(db: &dyn FilesGroup, file: FileId) -> Option<Arc<String>> {
+    let overrides = db.file_overrides();
+    overrides.get(&file).cloned().or_else(|| db.raw_file_content(file))
 }
 fn file_summary(db: &dyn FilesGroup, file: FileId) -> Option<Arc<FileSummary>> {
     let content = db.file_content(file)?;

@@ -1,43 +1,18 @@
 use assert_matches::assert_matches;
 use debug::DebugWithDb;
-use defs::db::{AsDefsGroup, DefsDatabase, DefsGroup};
+use defs::db::DefsGroup;
 use defs::ids::{LanguageElementId, ModuleId, ModuleItemId, VarId};
-use filesystem::db::{AsFilesGroup, FilesDatabase, FilesGroup};
 use indoc::indoc;
-use parser::db::ParserDatabase;
 use smol_str::SmolStr;
-use syntax::node::db::{AsSyntaxGroup, SyntaxDatabase, SyntaxGroup};
 
 use crate::corelib::{core_felt_ty, unit_ty};
-use crate::db::{SemanticDatabase, SemanticGroup};
-use crate::test_utils::{setup_test_expr, setup_test_function};
+use crate::db::SemanticGroup;
+use crate::test_utils::{setup_test_expr, setup_test_function, SemanticDatabaseForTesting};
 use crate::{semantic, ExprId, StatementId, TypeId};
-
-#[salsa::database(SemanticDatabase, DefsDatabase, ParserDatabase, SyntaxDatabase, FilesDatabase)]
-#[derive(Default)]
-pub struct DatabaseForTesting {
-    storage: salsa::Storage<DatabaseForTesting>,
-}
-impl salsa::Database for DatabaseForTesting {}
-impl AsFilesGroup for DatabaseForTesting {
-    fn as_files_group(&self) -> &(dyn FilesGroup + 'static) {
-        self
-    }
-}
-impl AsSyntaxGroup for DatabaseForTesting {
-    fn as_syntax_group(&self) -> &(dyn SyntaxGroup + 'static) {
-        self
-    }
-}
-impl AsDefsGroup for DatabaseForTesting {
-    fn as_defs_group(&self) -> &(dyn DefsGroup + 'static) {
-        self
-    }
-}
 
 #[test]
 fn test_expr_literal() {
-    let mut db_val = DatabaseForTesting::default();
+    let mut db_val = SemanticDatabaseForTesting::default();
     let (_module_id, expr_id) = setup_test_expr(&mut db_val, "7", "", "").expect("");
     let db = &db_val;
     let expr = db.lookup_intern_expr(expr_id);
@@ -60,7 +35,7 @@ fn test_expr_literal() {
 
 #[test]
 fn test_expr_operator() {
-    let mut db_val = DatabaseForTesting::default();
+    let mut db_val = SemanticDatabaseForTesting::default();
     let (_module_id, expr_id) = setup_test_expr(&mut db_val, "5 + 9 * 3", "", "").expect("");
     let db = &db_val;
     let expr = db.lookup_intern_expr(expr_id);
@@ -81,7 +56,7 @@ fn test_expr_operator() {
 // TODO(yuval): split test utils and move this test to db_test/type_test.
 #[test]
 fn test_function_with_param() {
-    let mut db_val = DatabaseForTesting::default();
+    let mut db_val = SemanticDatabaseForTesting::default();
     let (_module_id, function) =
         setup_test_function(&mut db_val, "func foo(a: felt) {}", "foo", "").expect("");
     let _db = &db_val;
@@ -96,7 +71,7 @@ fn test_function_with_param() {
 // TODO(yuval): split test utils and move this test to db_test/type_test.
 #[test]
 fn test_function_with_return_type() {
-    let mut db_val = DatabaseForTesting::default();
+    let mut db_val = SemanticDatabaseForTesting::default();
     let (_module_id, function) =
         setup_test_function(&mut db_val, "func foo() -> felt {}", "foo", "").expect("");
     let _db = &db_val;
@@ -108,7 +83,7 @@ fn test_function_with_return_type() {
 
 #[test]
 fn test_let_statement() {
-    let mut db_val = DatabaseForTesting::default();
+    let mut db_val = SemanticDatabaseForTesting::default();
     let (module_id, function) = setup_test_function(
         &mut db_val,
         indoc! {"
@@ -149,7 +124,7 @@ fn test_let_statement() {
 
 #[test]
 fn test_expr_var() {
-    let mut db_val = DatabaseForTesting::default();
+    let mut db_val = SemanticDatabaseForTesting::default();
     let (_module_id, function) = setup_test_function(
         &mut db_val,
         indoc! {"
@@ -178,7 +153,7 @@ fn test_expr_var() {
 
 #[test]
 fn test_expr_match() {
-    let mut db_val = DatabaseForTesting::default();
+    let mut db_val = SemanticDatabaseForTesting::default();
     let (_module_id, func) = setup_test_function(
         &mut db_val,
         indoc! {"
@@ -208,7 +183,7 @@ fn test_expr_match() {
 
 #[test]
 fn test_expr_block() {
-    let mut db_val = DatabaseForTesting::default();
+    let mut db_val = SemanticDatabaseForTesting::default();
     let (_module_id, expr_id) = setup_test_expr(&mut db_val, "{6;8;}", "", "").expect("");
     let db = &db_val;
     let expr = db.lookup_intern_expr(expr_id);
@@ -234,7 +209,7 @@ fn test_expr_block() {
 
 #[test]
 fn test_expr_block_with_tail_expression() {
-    let mut db_val = DatabaseForTesting::default();
+    let mut db_val = SemanticDatabaseForTesting::default();
     let (_module_id, expr_id) = setup_test_expr(&mut db_val, "{6;8;9}", "", "").expect("");
     let db = &db_val;
     let expr = db.lookup_intern_expr(expr_id);
@@ -268,7 +243,7 @@ fn test_expr_block_with_tail_expression() {
 
 #[test]
 fn test_expr_call() {
-    let mut db_val = DatabaseForTesting::default();
+    let mut db_val = SemanticDatabaseForTesting::default();
     // TODO(spapini): Add types.
     let (_module_id, expr_id) =
         setup_test_expr(&mut db_val, "foo()", "func foo() {6;}", "").expect("");
@@ -287,7 +262,7 @@ fn test_expr_call() {
 
 #[test]
 fn test_expr_call_missing() {
-    let mut db_val = DatabaseForTesting::default();
+    let mut db_val = SemanticDatabaseForTesting::default();
     // TODO(spapini): Add types.
     let res = setup_test_expr(&mut db_val, "foo()", "", "");
     let db = &db_val;
@@ -312,7 +287,7 @@ fn test_expr_call_missing() {
 
 #[test]
 fn test_function_body() {
-    let mut db_val = DatabaseForTesting::default();
+    let mut db_val = SemanticDatabaseForTesting::default();
     let (module_id, _module_syntax) = setup_test_function(
         &mut db_val,
         indoc! {"
