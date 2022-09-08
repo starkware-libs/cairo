@@ -1,47 +1,15 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use defs::db::{AsDefsGroup, DefsDatabase, DefsGroup};
-use filesystem::db::{AsFilesGroup, FilesDatabase, FilesGroup};
+use filesystem::db::FilesGroup;
 use filesystem::ids::{CrateLongId, FileLongId, ModuleId};
-use parser::db::ParserDatabase;
 use semantic::corelib::core_config;
-use semantic::db::SemanticDatabase;
-use sierra_generator::db::{SierraGenDatabase, SierraGenGroup};
-use syntax::node::db::{AsSyntaxGroup, SyntaxDatabase, SyntaxGroup};
+use sierra_generator::db::SierraGenGroup;
+use sierra_generator::test_utils::SierraGenDatabaseForTesting;
 use test_case::test_case;
 
-#[salsa::database(
-    SemanticDatabase,
-    DefsDatabase,
-    ParserDatabase,
-    SyntaxDatabase,
-    FilesDatabase,
-    SierraGenDatabase
-)]
-#[derive(Default)]
-pub struct DatabaseImpl {
-    storage: salsa::Storage<DatabaseImpl>,
-}
-impl salsa::Database for DatabaseImpl {}
-impl AsDefsGroup for DatabaseImpl {
-    fn as_defs_group(&self) -> &(dyn DefsGroup + 'static) {
-        self
-    }
-}
-impl AsSyntaxGroup for DatabaseImpl {
-    fn as_syntax_group(&self) -> &(dyn SyntaxGroup + 'static) {
-        self
-    }
-}
-impl AsFilesGroup for DatabaseImpl {
-    fn as_files_group(&self) -> &(dyn FilesGroup + 'static) {
-        self
-    }
-}
-
-fn setup(cairo_file: &str) -> (DatabaseImpl, ModuleId) {
-    let mut db_val = DatabaseImpl::default();
+fn setup(cairo_file: &str) -> (SierraGenDatabaseForTesting, ModuleId) {
+    let mut db_val = SierraGenDatabaseForTesting::default();
     let db = &mut db_val;
     let dir = env!("CARGO_MANIFEST_DIR");
     // Pop the "/tests" suffix.
