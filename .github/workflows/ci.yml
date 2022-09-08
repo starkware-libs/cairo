@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   test:
@@ -70,3 +70,14 @@ jobs:
       - run: >
           cargo clippy --all-targets --all-features -- -D warnings -D future-incompatible
           -D nonstandard-style -D rust-2018-idioms -D unused
+
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+      - uses: Swatinem/rust-cache@v1
+      - run: >
+          cargo doc --document-private-items --no-deps
