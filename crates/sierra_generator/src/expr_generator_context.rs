@@ -1,27 +1,34 @@
 use std::collections::hash_map;
 
 use defs::ids::{FreeFunctionId, LanguageElementId};
+use diagnostics::Diagnostics;
 use smol_str::SmolStr;
 use utils::unordered_hash_map::UnorderedHashMap;
 
 use crate::db::SierraGenGroup;
 use crate::id_allocator::IdAllocator;
-use crate::pre_sierra;
+use crate::{pre_sierra, Diagnostic};
 
 /// Context for the methods that generate Sierra instructions for an expression.
 pub struct ExprGeneratorContext<'a> {
     db: &'a dyn SierraGenGroup,
     function_id: FreeFunctionId,
+    diagnostics: &'a mut Diagnostics<Diagnostic>,
     var_id_allocator: IdAllocator,
     label_id_allocator: IdAllocator,
     variables: UnorderedHashMap<defs::ids::VarId, sierra::ids::VarId>,
 }
 impl<'a> ExprGeneratorContext<'a> {
     /// Constructs an empty [ExprGeneratorContext].
-    pub fn new(db: &'a dyn SierraGenGroup, function_id: FreeFunctionId) -> Self {
+    pub fn new(
+        db: &'a dyn SierraGenGroup,
+        function_id: FreeFunctionId,
+        diagnostics: &'a mut Diagnostics<Diagnostic>,
+    ) -> Self {
         ExprGeneratorContext {
             db,
             function_id,
+            diagnostics,
             var_id_allocator: IdAllocator::default(),
             label_id_allocator: IdAllocator::default(),
             variables: UnorderedHashMap::default(),
@@ -147,5 +154,10 @@ impl<'a> ExprGeneratorContext<'a> {
         extern_id: defs::ids::ExternFunctionId,
     ) -> sierra::ids::ConcreteLibFuncId {
         self.get_extension_id_without_generics(extern_id.name(self.db.as_defs_group()))
+    }
+
+    /// Returns the [Diagnostics] object of the context.
+    pub fn get_diagnostics(&mut self) -> &mut Diagnostics<Diagnostic> {
+        &mut self.diagnostics
     }
 }
