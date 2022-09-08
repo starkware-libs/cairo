@@ -105,20 +105,23 @@ pub fn compute_expr_semantic(
                 compute_expr_semantic(ctx, binary_op_syntax.lhs(syntax_db)).propagate(diagnostics);
             let rexpr =
                 compute_expr_semantic(ctx, binary_op_syntax.rhs(syntax_db)).propagate(diagnostics);
-            let function = match core_binary_operator(db, operator_kind) {
-                Some(function) => function,
-                None => {
-                    diagnostics.add(SemanticDiagnostic {
-                        module_id: ctx.module_id,
-                        stable_ptr: binary_op_syntax.as_syntax_node().stable_ptr(),
-                        kind: SemanticDiagnosticKind::UnknownBinaryOperator,
-                    });
-                    return semantic::Expr::Missing {
-                        ty: TypeId::missing(db),
-                        stable_ptr: binary_op_syntax.stable_ptr().untyped(),
-                    };
-                }
-            };
+            let function =
+                match core_binary_operator(db, operator_kind).and_then(|generic_function| {
+                    specialize_function(diagnostics, ctx, generic_function, &[])
+                }) {
+                    Some(generic_function) => generic_function,
+                    None => {
+                        diagnostics.add(SemanticDiagnostic {
+                            module_id: ctx.module_id,
+                            stable_ptr: binary_op_syntax.as_syntax_node().stable_ptr(),
+                            kind: SemanticDiagnosticKind::UnknownBinaryOperator,
+                        });
+                        return semantic::Expr::Missing {
+                            ty: TypeId::missing(db),
+                            stable_ptr: binary_op_syntax.stable_ptr().untyped(),
+                        };
+                    }
+                };
             semantic::Expr::ExprFunctionCall(semantic::ExprFunctionCall {
                 function,
                 args: vec![db.intern_expr(lexpr), db.intern_expr(rexpr)],
