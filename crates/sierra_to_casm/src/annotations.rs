@@ -6,7 +6,7 @@ use casm::ap_change::ApplyApChange;
 use itertools::zip_eq;
 use sierra::edit_state::{put_results, take_args, EditStateError};
 use sierra::ids::{ConcreteTypeId, VarId};
-use sierra::program::{Function, GenBranchInfo, StatementIdx};
+use sierra::program::{BranchInfo, Function, StatementIdx};
 use thiserror::Error;
 
 use crate::invocations::BranchRefChanges;
@@ -23,8 +23,8 @@ pub enum AnnotationError {
     InconsistentReturnTypesAnnotation(StatementIdx),
     #[error("InvalidStatementIdx")]
     InvalidStatementIdx,
-    #[error("MissingReferencesForStatement")]
-    MissingReferencesForStatement(StatementIdx),
+    #[error("MissingAnnotationsForStatement")]
+    MissingAnnotationsForStatement(StatementIdx),
     #[error(transparent)]
     EditStateError(#[from] EditStateError),
     #[error(transparent)]
@@ -123,7 +123,7 @@ impl ProgramAnnotations {
     ) -> Result<(StatementAnnotations, Vec<ReferenceValue>), AnnotationError> {
         let statement_annotations = &self.per_statement_annotations[statement_idx.0]
             .as_ref()
-            .ok_or(AnnotationError::MissingReferencesForStatement(statement_idx))?;
+            .ok_or(AnnotationError::MissingAnnotationsForStatement(statement_idx))?;
 
         let (statement_refs, taken_refs) = take_args(statement_annotations.refs.clone(), ref_ids)?;
         Ok((
@@ -143,7 +143,7 @@ impl ProgramAnnotations {
         &mut self,
         statement_idx: StatementIdx,
         annotations: StatementAnnotations,
-        branches: &[GenBranchInfo<StatementIdx>],
+        branches: &[BranchInfo],
         per_branch_ref_changes: impl Iterator<Item = BranchRefChanges>,
     ) -> Result<(), AnnotationError> {
         for (branch_info, branch_result) in zip_eq(branches, per_branch_ref_changes) {
