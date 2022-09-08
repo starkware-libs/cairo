@@ -5,6 +5,7 @@ mod test;
 use defs::ids::GenericFunctionId;
 use sierra::program;
 
+use crate::diagnostic::SierraGeneratorDiagnosticKind;
 use crate::expr_generator_context::ExprGeneratorContext;
 use crate::pre_sierra;
 use crate::utils::{jump_statement, simple_statement};
@@ -122,10 +123,13 @@ fn handle_function_call(
             Some((statements, res_var))
         }
         GenericFunctionId::Extern(extern_id) => {
-            assert!(
-                function_long_id.generic_args.is_empty(),
-                "Calling a libfunc with generic arguments is not supported yet."
-            );
+            if !function_long_id.generic_args.is_empty() {
+                context.add_diagnostic(
+                    SierraGeneratorDiagnosticKind::CallLibFuncWithGenericArgs,
+                    expr_function_call.stable_ptr,
+                );
+                return None;
+            }
 
             // Call the libfunc.
             let res_var = context.allocate_sierra_variable();
@@ -163,8 +167,14 @@ fn handle_felt_match(
             },
         ] => {
             // Make sure the literal in the pattern is 0.
-            // TODO(lior): Replace with diagnostics.
-            assert_eq!(literal.value, 0);
+            if literal.value != 0 {
+                // TODO(lior): Can we point to the literal?
+                context.add_diagnostic(
+                    SierraGeneratorDiagnosticKind::NonZeroValueInMatch,
+                    expr_match.stable_ptr,
+                );
+                return None;
+            }
 
             // Generate two labels: for the second code block (otherwise) and for the end of the
             // match.

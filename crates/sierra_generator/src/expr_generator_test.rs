@@ -1,9 +1,7 @@
-use defs::ids::FreeFunctionId;
 use diagnostics::Diagnostics;
 use indoc::indoc;
 use pretty_assertions::assert_eq;
-use salsa::{InternId, InternKey};
-use semantic::test_utils::{setup_test_block, setup_test_expr};
+use semantic::test_utils::{setup_test_block, setup_test_expr, TestExpr};
 
 use crate::expr_generator::generate_expression_code;
 use crate::expr_generator_context::ExprGeneratorContext;
@@ -12,22 +10,33 @@ use crate::{pre_sierra, Diagnostic};
 
 fn generate_expr_code_for_test(
     db: &SierraGenDatabaseForTesting,
-    block: semantic::ExprId,
+    test_expr: TestExpr,
 ) -> (Vec<pre_sierra::Statement>, sierra::ids::VarId) {
-    let dummy_function_id = FreeFunctionId::from_intern_id(InternId::from(0u32));
     let mut diagnostics = Diagnostics::<Diagnostic>::new();
     let mut expr_generator_context =
-        ExprGeneratorContext::new(db, dummy_function_id, &mut diagnostics);
-    let (statements, res) = generate_expression_code(&mut expr_generator_context, block).unwrap();
+        ExprGeneratorContext::new(db, test_expr.function_id, &mut diagnostics);
+    let result = generate_expression_code(&mut expr_generator_context, test_expr.expr_id);
     diagnostics.expect("");
-    (statements, res)
+    result.unwrap()
+}
+
+fn verify_exception(
+    db: &SierraGenDatabaseForTesting,
+    test_expr: TestExpr,
+    expected_diagnostics: &str,
+) {
+    let mut diagnostics = Diagnostics::<Diagnostic>::new();
+    let mut expr_generator_context =
+        ExprGeneratorContext::new(db, test_expr.function_id, &mut diagnostics);
+    generate_expression_code(&mut expr_generator_context, test_expr.expr_id);
+    assert_eq!(diagnostics.format(db), expected_diagnostics);
 }
 
 #[test]
 fn test_expr_generator() {
     let mut db = SierraGenDatabaseForTesting::default();
 
-    let expr_id = setup_test_block(
+    let test_expr = setup_test_block(
         &mut db,
         indoc! {"
             let x = 7;
@@ -44,10 +53,9 @@ fn test_expr_generator() {
         "},
         "",
     )
-    .unwrap()
-    .expr_id;
+    .unwrap();
 
-    let (statements, res) = generate_expr_code_for_test(&db, expr_id);
+    let (statements, res) = generate_expr_code_for_test(&db, test_expr);
     assert_eq!(
         statements.iter().map(|x| replace_libfunc_ids(&db, x).to_string()).collect::<Vec<String>>(),
         vec![
@@ -80,7 +88,7 @@ fn test_expr_generator() {
 fn test_match() {
     let mut db = SierraGenDatabaseForTesting::default();
 
-    let expr_id = setup_test_block(
+    let test_expr = setup_test_block(
         &mut db,
         indoc! {"
             let x = 7;
@@ -92,10 +100,9 @@ fn test_match() {
         "",
         "",
     )
-    .unwrap()
-    .expr_id;
+    .unwrap();
 
-    let (statements, res) = generate_expr_code_for_test(&db, expr_id);
+    let (statements, res) = generate_expr_code_for_test(&db, test_expr);
     assert_eq!(
         statements.iter().map(|x| replace_libfunc_ids(&db, x).to_string()).collect::<Vec<String>>(),
         vec![
@@ -120,19 +127,48 @@ fn test_match() {
 }
 
 #[test]
+fn test_match_failures() {
+    let mut db = SierraGenDatabaseForTesting::default();
+
+    let test_expr = setup_test_block(
+        &mut db,
+        indoc! {"
+            let x = 7;
+            match x {
+                1 => x,
+                _ => 7,
+            }
+        "},
+        "",
+        "",
+    )
+    .unwrap();
+    verify_exception(
+        &db,
+        test_expr,
+        indoc! {"
+            error: Match with a non-zero value is not supported.
+             --> lib.cairo:3:1
+            match x {
+            ^*******^
+
+        "},
+    );
+}
+
+#[test]
 fn test_call_libfunc() {
     let mut db = SierraGenDatabaseForTesting::default();
 
-    let expr_id = setup_test_expr(
+    let test_expr = setup_test_expr(
         &mut db,
         "felt_add(3,6)",
         "extern func felt_add(a: felt, b: felt) -> felt;",
         "",
     )
-    .unwrap()
-    .expr_id;
+    .unwrap();
 
-    let (statements, res) = generate_expr_code_for_test(&db, expr_id);
+    let (statements, res) = generate_expr_code_for_test(&db, test_expr);
     assert_eq!(
         statements.iter().map(|x| replace_libfunc_ids(&db, x).to_string()).collect::<Vec<String>>(),
         vec![
