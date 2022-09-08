@@ -1,15 +1,11 @@
-use std::collections::HashMap;
-use std::sync::Arc;
-
 use debug::debug::DebugWithDb;
-use filesystem::db::{init_files_group, AsFilesGroup, FilesDatabase, FilesGroup, ProjectConfig};
-use filesystem::ids::{CrateLongId, FileLongId};
+use filesystem::db::{init_files_group, AsFilesGroup, FilesDatabase, FilesGroup};
 use indoc::indoc;
 use parser::db::ParserDatabase;
 use syntax::node::db::{AsSyntaxGroup, SyntaxDatabase, SyntaxGroup};
 
 use crate::db::{DefsDatabase, DefsGroup};
-use crate::ids::ModuleId;
+use crate::test_utils::setup_test_module;
 
 #[salsa::database(DefsDatabase, ParserDatabase, SyntaxDatabase, FilesDatabase)]
 pub struct DatabaseForTesting {
@@ -25,6 +21,9 @@ impl Default for DatabaseForTesting {
 }
 impl AsFilesGroup for DatabaseForTesting {
     fn as_files_group(&self) -> &(dyn FilesGroup + 'static) {
+        self
+    }
+    fn as_files_group_mut(&mut self) -> &mut (dyn FilesGroup + 'static) {
         self
     }
 }
@@ -62,12 +61,4 @@ fn test_resolve() {
     };
 }
 
-fn setup_test_module(db: &mut DatabaseForTesting, content: &str) -> ModuleId {
-    let crate_id = db.intern_crate(CrateLongId("test_crate".into()));
-    let file_id = db.intern_file(FileLongId::OnDisk("test.cairo".into()));
-    db.set_file_overrides(Arc::new(HashMap::from_iter([(file_id, Arc::new(content.to_string()))])));
-    db.set_project_config(ProjectConfig {
-        crate_roots: [(crate_id, file_id)].into_iter().collect(),
-    });
-    ModuleId::CrateRoot(crate_id)
-}
+// TODO(spapini): Test .cairo suffix on submodules.
