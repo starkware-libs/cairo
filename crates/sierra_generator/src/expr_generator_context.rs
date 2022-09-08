@@ -135,8 +135,8 @@ impl<'a> ExprGeneratorContext<'a> {
         })
     }
 
-    pub fn felt_ignore_libfunc_id(&self) -> sierra::ids::ConcreteLibFuncId {
-        self.get_extension_id_without_generics("felt_ignore")
+    pub fn felt_drop_libfunc_id(&self) -> sierra::ids::ConcreteLibFuncId {
+        self.get_extension_id_without_generics("felt_drop")
     }
 
     pub fn felt_dup_libfunc_id(&self) -> sierra::ids::ConcreteLibFuncId {

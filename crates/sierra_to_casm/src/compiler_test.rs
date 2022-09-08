@@ -251,7 +251,7 @@ fn fib_program() {
                 type NonZeroFelt = NonZero<felt>;
 
                 libfunc felt_dup = felt_dup;
-                libfunc felt_ignore = felt_ignore;
+                libfunc felt_drop = felt_drop;
                 libfunc felt_jump_nz = felt_jump_nz;
                 libfunc store_temp_felt = store_temp<felt>;
                 libfunc store_temp_nz_felt = store_temp<NonZeroFelt>;
@@ -259,7 +259,7 @@ fn fib_program() {
                 felt_jump_nz([1]) { 3([1]) fallthrough() };
                 store_temp_felt([2]) -> ([2]);
                 return ([2]);
-                felt_ignore([2]) -> ();
+                felt_drop([2]) -> ();
                 store_temp_nz_felt([1]) -> ([1]);
                 return ([1]);
 
@@ -271,7 +271,7 @@ fn fib_program() {
                 type felt = felt;
 
                 libfunc felt_dup = felt_dup;
-                libfunc felt_ignore = felt_ignore;
+                libfunc felt_drop = felt_drop;
                 libfunc store_temp_felt = store_temp<felt>;
                 libfunc call_foo = function_call<user@foo>;
 
@@ -279,7 +279,7 @@ fn fib_program() {
                 felt_dup([1]) -> ([1], [2]);
                 call_foo([2]) -> ();
                 store_temp_felt([1]) -> ([1]);
-                felt_ignore([1]) -> ();
+                felt_drop([1]) -> ();
                 return();
 
                 foo@0([1]: felt) -> ();

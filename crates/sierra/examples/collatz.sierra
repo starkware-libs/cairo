@@ -12,7 +12,7 @@ libfunc int_mul_3 = int_mul<3>;
 libfunc int_add_1 = int_add<1>;
 libfunc int_sub_1 = int_sub<1>;
 libfunc int_dup = int_dup;
-libfunc int_ignore = int_ignore;
+libfunc int_drop = int_drop;
 libfunc int_jump_nz = int_jump_nz;
 libfunc int_unwrap_nz = unwrap_nz<int>;
 libfunc get_gas_11 = get_gas<11>;
@@ -29,11 +29,11 @@ jump() { 34() };
 // Statement #  5 - Getting gas for main loop.
 // Unwrapping and ignoring jump_nz result, as we don't use it.
 int_unwrap_nz(to_drop) -> (to_drop);
-int_ignore(to_drop) -> ();
+int_drop(to_drop) -> ();
 get_gas_11(gb) { 14(gb) fallthrough(gb) };
 // Statement #  8 - Ran out of gas - returning updated gb and -1.
-int_ignore(n) -> ();
-int_ignore(counter) -> ();
+int_drop(n) -> ();
+int_drop(counter) -> ();
 store_temp_gb(gb) -> (gb);
 int_const_minus_1() -> (err);
 store_temp_int(err) -> (err);
@@ -52,7 +52,7 @@ store_temp_gb(gb) -> (gb);
 jump() { 32() };
 // Statement # 24 - Handling odd case. Adding [n*3, n*3+1, gb] to memory.
 int_unwrap_nz(to_drop) -> (to_drop);
-int_ignore(to_drop) -> ();
+int_drop(to_drop) -> ();
 int_mul_3(n) -> (n);
 store_temp_int(n) -> (n);
 int_add_1(n) -> (n);
@@ -68,7 +68,7 @@ int_sub_1(n_1) -> (n_1);
 store_temp_int(n_1) -> (n_1);
 int_jump_nz(n_1) { 5(to_drop) fallthrough() };
 // Statement # 38 - n == 1 - we are done - returning the counter result.
-int_ignore(n) -> ();
+int_drop(n) -> ();
 refund_gas_1(gb) -> (gb);
 store_temp_gb(gb) -> (gb);
 store_temp_int(counter) -> (counter);

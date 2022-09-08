@@ -1,6 +1,6 @@
 use super::arithmetic::{ArithmeticTraits, ConstLibFunc, OperationLibFunc};
 use super::jump_not_zero::{JumpNotZeroLibFunc, JumpNotZeroTraits};
-use super::pod::{DuplicateLibFunc, IgnoreLibFunc, PodTraits};
+use super::pod::{DropLibFunc, DuplicateLibFunc, PodTraits};
 use crate::define_libfunc_hierarchy;
 use crate::extensions::{ConcreteType, NamedType, NoGenericArgsGenericType};
 use crate::ids::{GenericLibFuncId, GenericTypeId};
@@ -21,7 +21,7 @@ define_libfunc_hierarchy! {
     pub enum FeltLibFunc {
         Operation(FeltOperationLibFunc),
         Const(FeltConstLibFunc),
-        Ignore(FeltIgnoreLibFunc),
+        Drop(FeltDropLibFunc),
         Duplicate(FeltDuplicateLibFunc),
         JumpNotZero(FeltJumpNotZeroLibFunc),
     }, FeltConcrete
@@ -30,7 +30,7 @@ define_libfunc_hierarchy! {
 #[derive(Default)]
 pub struct FeltTraits {}
 impl PodTraits for FeltTraits {
-    const IGNORE: GenericLibFuncId = GenericLibFuncId::new_inline("felt_ignore");
+    const DROP: GenericLibFuncId = GenericLibFuncId::new_inline("felt_drop");
     const DUPLICATE: GenericLibFuncId = GenericLibFuncId::new_inline("felt_dup");
     const GENERIC_TYPE_ID: GenericTypeId = <FeltType as NamedType>::ID;
 }
@@ -48,7 +48,7 @@ impl JumpNotZeroTraits for FeltTraits {
     const JUMP_NOT_ZERO: GenericLibFuncId = GenericLibFuncId::new_inline("felt_jump_nz");
     const GENERIC_TYPE_ID: GenericTypeId = <FeltType as NamedType>::ID;
 }
-pub type FeltIgnoreLibFunc = IgnoreLibFunc<FeltTraits>;
+pub type FeltDropLibFunc = DropLibFunc<FeltTraits>;
 pub type FeltDuplicateLibFunc = DuplicateLibFunc<FeltTraits>;
 pub type FeltOperationLibFunc = OperationLibFunc<FeltTraits>;
 pub type FeltConstLibFunc = ConstLibFunc<FeltTraits>;

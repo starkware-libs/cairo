@@ -118,7 +118,7 @@ fn simulate_invocation(
 #[test_case("int_mod", vec![value_arg(5)], vec![32] => Ok(vec![2]); "int_mod<5>(32)")]
 #[test_case("int_const", vec![value_arg(3)], vec![] => Ok(vec![3]); "int_const<3>()")]
 #[test_case("int_dup", vec![], vec![24] => Ok(vec![24, 24]); "int_dup(24)")]
-#[test_case("int_ignore", vec![], vec![2] => Ok(vec![]); "int_ignore(2)")]
+#[test_case("int_drop", vec![], vec![2] => Ok(vec![]); "int_drop(2)")]
 #[test_case("unwrap_nz", vec![type_arg("int")], vec![6] => Ok(vec![6]); "unwrap_nz<int>(6)")]
 #[test_case("store_temp", vec![type_arg("int")], vec![6] => Ok(vec![6]); "store_temp<int>(6)")]
 #[test_case("align_temps", vec![type_arg("int")], vec![] => Ok(vec![]); "align_temps<int>()")]
@@ -159,7 +159,7 @@ fn simulate_none_branch(
 #[test_case("int_const", vec![value_arg(3)], vec![vec![1]] => WrongNumberOfArgs;
             "int_const<3>(1)")]
 #[test_case("int_dup", vec![], vec![] => WrongNumberOfArgs; "int_dup()")]
-#[test_case("int_ignore", vec![], vec![] => WrongNumberOfArgs; "int_ignore()")]
+#[test_case("int_drop", vec![], vec![] => WrongNumberOfArgs; "int_drop()")]
 #[test_case("int_jump_nz", vec![], vec![] => WrongNumberOfArgs; "int_jump_nz<int>()")]
 #[test_case("unwrap_nz", vec![type_arg("int")], vec![] => WrongNumberOfArgs; "unwrap_nz<int>()")]
 #[test_case("store_temp", vec![type_arg("int")], vec![] => WrongNumberOfArgs; "store_temp<int>()")]

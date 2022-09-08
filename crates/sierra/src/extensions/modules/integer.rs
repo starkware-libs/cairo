@@ -1,6 +1,6 @@
 use super::arithmetic::{ArithmeticTraits, ConstLibFunc, OperationLibFunc};
 use super::jump_not_zero::{JumpNotZeroLibFunc, JumpNotZeroTraits};
-use super::pod::{DuplicateLibFunc, IgnoreLibFunc, PodTraits};
+use super::pod::{DropLibFunc, DuplicateLibFunc, PodTraits};
 use crate::define_libfunc_hierarchy;
 use crate::extensions::{ConcreteType, NamedType, NoGenericArgsGenericType};
 use crate::ids::{GenericLibFuncId, GenericTypeId};
@@ -20,7 +20,7 @@ define_libfunc_hierarchy! {
     pub enum IntegerLibFunc {
         Operation(IntOperationLibFunc),
         Const(IntConstLibFunc),
-        Ignore(IntIgnoreLibFunc),
+        Drop(IntDropLibFunc),
         Duplicate(IntDuplicateLibFunc),
         JumpNotZero(IntJumpNotZeroLibFunc),
     }, IntegerConcrete
@@ -29,7 +29,7 @@ define_libfunc_hierarchy! {
 #[derive(Default)]
 pub struct IntegerTraits {}
 impl PodTraits for IntegerTraits {
-    const IGNORE: GenericLibFuncId = GenericLibFuncId::new_inline("int_ignore");
+    const DROP: GenericLibFuncId = GenericLibFuncId::new_inline("int_drop");
     const DUPLICATE: GenericLibFuncId = GenericLibFuncId::new_inline("int_dup");
     const GENERIC_TYPE_ID: GenericTypeId = <IntegerType as NamedType>::ID;
 }
@@ -46,7 +46,7 @@ impl JumpNotZeroTraits for IntegerTraits {
     const JUMP_NOT_ZERO: GenericLibFuncId = GenericLibFuncId::new_inline("int_jump_nz");
     const GENERIC_TYPE_ID: GenericTypeId = <IntegerType as NamedType>::ID;
 }
-pub type IntIgnoreLibFunc = IgnoreLibFunc<IntegerTraits>;
+pub type IntDropLibFunc = DropLibFunc<IntegerTraits>;
 pub type IntDuplicateLibFunc = DuplicateLibFunc<IntegerTraits>;
 pub type IntOperationLibFunc = OperationLibFunc<IntegerTraits>;
 pub type IntConstLibFunc = ConstLibFunc<IntegerTraits>;

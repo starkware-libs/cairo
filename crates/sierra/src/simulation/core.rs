@@ -132,7 +132,7 @@ fn simulate_integer_libfunc(
             let [MemCell { value }] = unpack_inputs::<1>(inputs)?;
             Ok((vec![vec![value.into()], vec![value.into()]], 0))
         }
-        IntegerConcrete::Ignore(_) => {
+        IntegerConcrete::Drop(_) => {
             unpack_inputs::<1>(inputs)?;
             Ok((vec![], 0))
         }
@@ -202,7 +202,7 @@ fn simulate_felt_libfunc(
             let [MemCell { value }] = unpack_inputs::<1>(inputs)?;
             Ok((vec![vec![value.into()], vec![value.into()]], 0))
         }
-        FeltConcrete::Ignore(_) => {
+        FeltConcrete::Drop(_) => {
             unpack_inputs::<1>(inputs)?;
             Ok((vec![], 0))
         }

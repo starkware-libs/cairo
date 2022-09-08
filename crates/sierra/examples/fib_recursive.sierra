@@ -10,7 +10,7 @@ libfunc int_const_minus_10000 = int_const<-10000>;
 libfunc int_add = int_add;
 libfunc int_sub_1 = int_sub<1>;
 libfunc int_dup = int_dup;
-libfunc int_ignore = int_ignore;
+libfunc int_drop = int_drop;
 libfunc int_jump_nz = int_jump_nz;
 libfunc int_unwrap_nz = unwrap_nz<int>;
 libfunc get_gas_26 = get_gas<26>;
@@ -41,11 +41,11 @@ store_temp_int(one) -> (one);
 return(gb, one);
 // Statement # 16 - Get gas for the recursive calls.
 int_unwrap_nz(n_1) -> (n_1);
-int_ignore(one) -> ();
+int_drop(one) -> ();
 get_gas_26(gb) { 24(gb) fallthrough(gb) };
 // Statement # 19 - Ran out of gas - returning update gb and error value.
 store_temp_gb(gb) -> (gb);
-int_ignore(n_1) -> ();
+int_drop(n_1) -> ();
 int_const_minus_10000() -> (minus);
 store_temp_int(minus) -> (minus);
 return(gb, minus);

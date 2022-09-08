@@ -2,7 +2,7 @@
 
 pub mod db;
 mod diagnostic;
-mod dup_and_ignore;
+mod dup_and_drop;
 mod expr_generator;
 mod expr_generator_context;
 mod function_generator;

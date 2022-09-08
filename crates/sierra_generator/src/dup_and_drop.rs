@@ -1,5 +1,5 @@
 #[cfg(test)]
-#[path = "dup_and_ignore_test.rs"]
+#[path = "dup_and_drop_test.rs"]
 mod test;
 
 use std::collections::HashSet;
@@ -14,18 +14,18 @@ use crate::pre_sierra::{LabelId, Statement};
 
 /// Variables that needs to be dupped and dropped in a statement.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-pub struct VarsDupsAndIgnores {
+pub struct VarsDupsAndDrops {
     pub dups: OrderedHashSet<VarId>,
-    pub ignores: OrderedHashSet<VarId>,
+    pub drops: OrderedHashSet<VarId>,
 }
 
 /// Calculates the set of variables requiring duplication and variables that should be dropped
 /// for each statement.
 /// Variables that should have been dropped earlier are not considered.
-pub fn calculate_statement_dups_and_ignores(
+pub fn calculate_statement_dups_and_drops(
     params: &[Param],
     statements: &[Statement],
-) -> Vec<VarsDupsAndIgnores> {
+) -> Vec<VarsDupsAndDrops> {
     let next_statement_index_fetch = &NextStatementIndexFetch::new(statements);
     let mut statement_required_vars = vec![None; statements.len()];
     let statement_existing_vars = get_existing_vars_per_statement(
@@ -54,7 +54,7 @@ pub fn calculate_statement_dups_and_ignores(
                     // In      | Out    | Default handle (just let it be used in the current scope)
                     // Out     | In     | Default handle (just let it pass to next scope)
                     // Out     | Out    | Ignore
-                    VarsDupsAndIgnores {
+                    VarsDupsAndDrops {
                         // Double usages (which would require duplicates as well) are not handled
                         // here: For return statements - this can't happen -
                         // as all returned variables are stored - so would have different ids.
@@ -66,7 +66,7 @@ pub fn calculate_statement_dups_and_ignores(
                             .filter(|var| future_vars.contains(*var))
                             .cloned()
                             .collect(),
-                        ignores: statement_existing_vars[i]
+                        drops: statement_existing_vars[i]
                             .as_ref()
                             .unwrap()
                             .iter()
@@ -77,9 +77,9 @@ pub fn calculate_statement_dups_and_ignores(
                 }
                 Statement::Label(_) => {
                     // Label is a no-op - so we do no changes to it.
-                    VarsDupsAndIgnores {
+                    VarsDupsAndDrops {
                         dups: OrderedHashSet::<VarId>::default(),
-                        ignores: OrderedHashSet::<VarId>::default(),
+                        drops: OrderedHashSet::<VarId>::default(),
                     }
                 }
             }

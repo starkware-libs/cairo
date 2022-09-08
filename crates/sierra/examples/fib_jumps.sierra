@@ -11,7 +11,7 @@ libfunc int_const_minus_1 = int_const<-1>;
 libfunc int_add = int_add;
 libfunc int_sub_1 = int_sub<1>;
 libfunc int_dup = int_dup;
-libfunc int_ignore = int_ignore;
+libfunc int_drop = int_drop;
 libfunc int_jump_nz = int_jump_nz;
 libfunc int_unwrap_nz = unwrap_nz<int>;
 libfunc get_gas_5 = get_gas<5>;
@@ -49,10 +49,10 @@ store_temp_int(a) -> (a);
 // Statement # 21 - Getting gas for the main loop.
 get_gas_5(gb) { 30(gb) fallthrough(gb) };
 // Statement # 22  - Ran out of gas - returning updated gb and -1.
-int_ignore(a) -> ();
-int_ignore(b) -> ();
+int_drop(a) -> ();
+int_drop(b) -> ();
 int_unwrap_nz(n) -> (n);
-int_ignore(n) -> ();
+int_drop(n) -> ();
 store_temp_gb(gb) -> (gb);
 int_const_minus_1() -> (err);
 store_temp_int(err) -> (err);
@@ -70,7 +70,7 @@ store_temp_gb(gb) -> (gb);
 store_temp_int(a) -> (a);
 int_jump_nz(n) { 21(n) fallthrough() };
 // Statement # 39 - n == 0, so we can return the latest a.
-int_ignore(b) -> ();
+int_drop(b) -> ();
 refund_gas_1(gb) -> (gb);
 store_temp_gb(gb) -> (gb);
 store_temp_int(a) -> (a);
