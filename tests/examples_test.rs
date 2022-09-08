@@ -2,27 +2,22 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use defs::ids::ModuleId;
-use filesystem::db::FilesGroup;
-use filesystem::ids::{CrateLongId, FileLongId};
 use pretty_assertions::assert_eq;
-use semantic::corelib::core_config;
+use semantic::test_utils::setup_test_module;
 use sierra_generator::db::SierraGenGroup;
 use sierra_generator::test_utils::SierraGenDatabaseForTesting;
 use test_case::test_case;
 
 fn setup(cairo_file: &str) -> (SierraGenDatabaseForTesting, ModuleId) {
-    let mut db_val = SierraGenDatabaseForTesting::default();
-    let db = &mut db_val;
     let dir = env!("CARGO_MANIFEST_DIR");
     // Pop the "/tests" suffix.
     let mut path = PathBuf::from(dir).parent().unwrap().to_owned();
     path.push("examples");
     path.push(cairo_file);
 
-    let file_id = db.intern_file(FileLongId::OnDisk(path));
-    let crate_id = db.intern_crate(CrateLongId("mock_crate".into()));
-    db.set_project_config(core_config(db).with_crate(crate_id, file_id));
-    let module_id = ModuleId::CrateRoot(crate_id);
+    let mut db_val = SierraGenDatabaseForTesting::default();
+    let db = &mut db_val;
+    let module_id = setup_test_module(db, &std::fs::read_to_string(path).unwrap());
     (db_val, module_id)
 }
 
