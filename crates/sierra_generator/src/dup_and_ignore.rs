@@ -13,7 +13,7 @@ use utils::unordered_hash_map::UnorderedHashMap;
 use crate::pre_sierra::{LabelId, Statement};
 
 /// Variables that needs to be dupped and dropped in a statement.
-#[derive(Clone, Default)]
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct VarsDupsAndIgnores {
     pub dups: OrderedHashSet<VarId>,
     pub ignores: OrderedHashSet<VarId>,
