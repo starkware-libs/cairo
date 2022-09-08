@@ -1,9 +1,8 @@
 use assert_matches::assert_matches;
 use debug::DebugWithDb;
 use defs::db::{AsDefsGroup, DefsDatabase, DefsGroup};
-use defs::ids::{LanguageElementId, ModuleItemId, VarId};
+use defs::ids::{LanguageElementId, ModuleId, ModuleItemId, VarId};
 use filesystem::db::{AsFilesGroup, FilesDatabase, FilesGroup};
-use filesystem::ids::ModuleId;
 use indoc::indoc;
 use parser::db::ParserDatabase;
 use smol_str::SmolStr;

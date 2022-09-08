@@ -1,14 +1,58 @@
 └── root (kind: SyntaxFile)
     ├── items (kind: ItemList)
-    │   ├── child #0 (kind: ItemFreeFunction)
+    │   ├── child #0 (kind: ItemModule)
+    │   │   ├── modkw (kind: Terminal)
+    │   │   │   ├── leading_trivia (kind: Trivia) []
+    │   │   │   ├── token (kind: Module): 'mod'
+    │   │   │   └── trailing_trivia (kind: Trivia)
+    │   │   │       └── child #0 (kind: Whitespace).
+    │   │   ├── name (kind: Terminal)
+    │   │   │   ├── leading_trivia (kind: Trivia) []
+    │   │   │   ├── token (kind: Identifier): 'submod'
+    │   │   │   └── trailing_trivia (kind: Trivia) []
+    │   │   └── semicolon (kind: Terminal)
+    │   │       ├── leading_trivia (kind: Trivia) []
+    │   │       ├── token (kind: Semicolon): ';'
+    │   │       └── trailing_trivia (kind: Trivia)
+    │   │           └── child #0 (kind: Newline).
+    │   ├── child #1 (kind: ItemUse)
+    │   │   ├── usekw (kind: Terminal)
+    │   │   │   ├── leading_trivia (kind: Trivia) []
+    │   │   │   ├── token (kind: Use): 'use'
+    │   │   │   └── trailing_trivia (kind: Trivia)
+    │   │   │       └── child #0 (kind: Whitespace).
+    │   │   ├── name (kind: ExprPath)
+    │   │   │   ├── item #0 (kind: PathSegment)
+    │   │   │   │   ├── ident (kind: Terminal)
+    │   │   │   │   │   ├── leading_trivia (kind: Trivia) []
+    │   │   │   │   │   ├── token (kind: Identifier): 'submod'
+    │   │   │   │   │   └── trailing_trivia (kind: Trivia) []
+    │   │   │   │   └── generic_args (kind: OptionGenericArgsEmpty) []
+    │   │   │   ├── separator #0 (kind: Terminal)
+    │   │   │   │   ├── leading_trivia (kind: Trivia) []
+    │   │   │   │   ├── token (kind: ColonColon): '::'
+    │   │   │   │   └── trailing_trivia (kind: Trivia) []
+    │   │   │   └── item #1 (kind: PathSegment)
+    │   │   │       ├── ident (kind: Terminal)
+    │   │   │       │   ├── leading_trivia (kind: Trivia) []
+    │   │   │       │   ├── token (kind: Identifier): 'something'
+    │   │   │       │   └── trailing_trivia (kind: Trivia) []
+    │   │   │       └── generic_args (kind: OptionGenericArgsEmpty) []
+    │   │   └── semicolon (kind: Terminal)
+    │   │       ├── leading_trivia (kind: Trivia) []
+    │   │       ├── token (kind: Semicolon): ';'
+    │   │       └── trailing_trivia (kind: Trivia)
+    │   │           └── child #0 (kind: Newline).
+    │   ├── child #2 (kind: ItemFreeFunction)
     │   │   ├── funckw (kind: Terminal)
     │   │   │   ├── leading_trivia (kind: Trivia)
     │   │   │   │   └── child #0 (kind: TriviumSkippedTerminal)
     │   │   │   │       ├── leading_trivia (kind: Trivia)
-    │   │   │   │       │   ├── child #0 (kind: SingleLineComment): '// Func foo'
-    │   │   │   │       │   ├── child #1 (kind: Newline).
-    │   │   │   │       │   ├── child #2 (kind: SingleLineComment): '// Second line'
-    │   │   │   │       │   └── child #3 (kind: Newline).
+    │   │   │   │       │   ├── child #0 (kind: Newline).
+    │   │   │   │       │   ├── child #1 (kind: SingleLineComment): '// Func foo'
+    │   │   │   │       │   ├── child #2 (kind: Newline).
+    │   │   │   │       │   ├── child #3 (kind: SingleLineComment): '// Second line'
+    │   │   │   │       │   └── child #4 (kind: Newline).
     │   │   │   │       ├── token (kind: Semicolon): ';'
     │   │   │   │       └── trailing_trivia (kind: Trivia)
     │   │   │   │           └── child #0 (kind: Newline).
@@ -447,7 +491,7 @@
     │   │           ├── token (kind: RBrace): '}'
     │   │           └── trailing_trivia (kind: Trivia)
     │   │               └── child #0 (kind: Newline).
-    │   ├── child #1 (kind: ItemExternType)
+    │   ├── child #3 (kind: ItemExternType)
     │   │   ├── externkw (kind: Terminal)
     │   │   │   ├── leading_trivia (kind: Trivia)
     │   │   │   │   └── child #0 (kind: Newline).
@@ -468,7 +512,7 @@
     │   │       ├── token (kind: Semicolon): ';'
     │   │       └── trailing_trivia (kind: Trivia)
     │   │           └── child #0 (kind: Newline).
-    │   └── child #2 (kind: ItemExternFunction)
+    │   └── child #4 (kind: ItemExternFunction)
     │       ├── externkw (kind: Terminal)
     │       │   ├── leading_trivia (kind: Trivia) []
     │       │   ├── token (kind: Extern): 'extern'

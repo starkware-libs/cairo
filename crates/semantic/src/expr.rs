@@ -4,10 +4,9 @@ mod test;
 
 use std::collections::HashMap;
 
-use defs::ids::{GenericFunctionId, LocalVarLongId, VarId};
+use defs::ids::{GenericFunctionId, LocalVarLongId, ModuleId, VarId};
 use diagnostics::{Diagnostics, WithDiagnostics};
 use diagnostics_proc_macros::with_diagnostics;
-use filesystem::ids::ModuleId;
 use smol_str::SmolStr;
 use syntax::node::db::SyntaxGroup;
 use syntax::node::{ast, TypedSyntaxNode};
