@@ -81,14 +81,14 @@ impl<'a> ExprGeneratorContext<'a> {
     ) -> sierra::ids::ConcreteLibFuncId {
         self.db.intern_concrete_lib_func(sierra::program::ConcreteLibFuncLongId {
             generic_id: sierra::ids::GenericLibFuncId::from_string(name),
-            args: vec![],
+            generic_args: vec![],
         })
     }
 
     pub fn felt_const_libfunc_id(&self, value: usize) -> sierra::ids::ConcreteLibFuncId {
         self.db.intern_concrete_lib_func(sierra::program::ConcreteLibFuncLongId {
             generic_id: sierra::ids::GenericLibFuncId::from_string("felt_const"),
-            args: vec![sierra::program::GenericArg::Value(value as i64)],
+            generic_args: vec![sierra::program::GenericArg::Value(value as i64)],
         })
     }
 
@@ -97,7 +97,7 @@ impl<'a> ExprGeneratorContext<'a> {
         // this function.
         self.db.intern_concrete_lib_func(sierra::program::ConcreteLibFuncLongId {
             generic_id: sierra::ids::GenericLibFuncId::from_string("store_temp"),
-            args: vec![sierra::program::GenericArg::Type(
+            generic_args: vec![sierra::program::GenericArg::Type(
                 self.db.get_concrete_type_id(ty).expect("got unexpected diagnostics").unwrap(),
             )],
         })
@@ -109,7 +109,9 @@ impl<'a> ExprGeneratorContext<'a> {
     ) -> sierra::ids::ConcreteLibFuncId {
         self.db.intern_concrete_lib_func(sierra::program::ConcreteLibFuncLongId {
             generic_id: sierra::ids::GenericLibFuncId::from_string("function_call"),
-            args: vec![sierra::program::GenericArg::UserFunc(self.db.intern_sierra_function(func))],
+            generic_args: vec![sierra::program::GenericArg::UserFunc(
+                self.db.intern_sierra_function(func),
+            )],
         })
     }
 
@@ -126,7 +128,7 @@ impl<'a> ExprGeneratorContext<'a> {
         // this function.
         self.db.intern_concrete_lib_func(sierra::program::ConcreteLibFuncLongId {
             generic_id: sierra::ids::GenericLibFuncId::from_string("unwrap_nz"),
-            args: vec![sierra::program::GenericArg::Type(
+            generic_args: vec![sierra::program::GenericArg::Type(
                 self.db.get_concrete_type_id(ty).expect("got unexpected diagnostics").unwrap(),
             )],
         })
