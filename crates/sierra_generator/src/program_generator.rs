@@ -30,7 +30,7 @@ pub fn generate_program_code(
             ModuleItemId::Use(_) => todo!("'use' lowering not supported yet."),
             ModuleItemId::FreeFunction(free_function_id) => {
                 let function: Arc<pre_sierra::Function> =
-                    db.get_function_code(*free_function_id).unwrap(diagnostics)?;
+                    db.get_function_code(*free_function_id).propagte(diagnostics)?;
                 functions.push(function.clone());
                 statements.extend_from_slice(function.body.as_slice());
             }

@@ -79,7 +79,7 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
 /// #[with_diagnostics]
 /// fn dummy_compute_macro(diagnostics: &mut Diagnostics<SimpleDiag>, x: usize) -> Option<usize> {
 ///     let param = WithDiagnostics::pure(Some(x * x));
-///     let res = param.unwrap(diagnostics)?;
+///     let res = param.propagte(diagnostics)?;
 ///     Some(res * res)
 /// }
 /// ```
@@ -99,11 +99,16 @@ impl<T, TEntry: DiagnosticEntry> WithDiagnostics<T, TEntry> {
     }
 
     /// Adds the diagnostics of `self` to the given `diagnostics` object and returns the value.
-    pub fn unwrap<TCastableEntry: DiagnosticEntry + From<TEntry>>(
+    pub fn propagte<TCastableEntry: DiagnosticEntry + From<TEntry>>(
         self,
         diagnostics: &mut Diagnostics<TCastableEntry>,
     ) -> T {
         diagnostics.0.extend(self.diagnostics.0.into_iter().map(TCastableEntry::from));
+        self.value
+    }
+
+    /// Ignores the diagnostics of `self` and returns the value.
+    pub fn ignore<TCastableEntry: DiagnosticEntry + From<TEntry>>(self) -> T {
         self.value
     }
 
