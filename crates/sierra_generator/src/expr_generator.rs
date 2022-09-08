@@ -41,6 +41,7 @@ fn generate_expression_code_by_val(
                 tmp_var,
             )
         }
+        semantic::Expr::Missing(_) => todo!(),
     }
 }
 
