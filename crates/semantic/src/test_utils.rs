@@ -58,11 +58,22 @@ pub fn setup_test_expr(
     module_code: &str,
     function_body: &str,
 ) -> (ModuleId, ExprId) {
-    let function_code = format!("func test_func() {{ {function_body} {expr_code} }}");
+    let function_code = format!("func test_func() {{ {function_body} {{\n{expr_code}\n}} }}");
     let (module_id, function_semantic) =
         setup_test_function(db, &function_code, "test_func", module_code).propagate(diagnostics);
-    let expr = match db.lookup_intern_expr(function_semantic.body) {
+    // Fetch the last block, which contains expr_code.
+    let expr_block = match db.lookup_intern_expr(function_semantic.body) {
         semantic::Expr::ExprBlock(block) => block.tail.unwrap(),
+        _ => panic!(),
+    };
+    let expr = match db.lookup_intern_expr(expr_block) {
+        semantic::Expr::ExprBlock(block) => {
+            assert!(
+                block.statements.is_empty(),
+                "expr_code is not a valid expression. Consider using setup_test_block()."
+            );
+            block.tail.unwrap()
+        }
         _ => panic!(),
     };
     (module_id, expr)

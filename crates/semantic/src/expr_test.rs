@@ -5,6 +5,7 @@ use defs::ids::{LanguageElementId, ModuleId, ModuleItemId, VarId};
 use filesystem::db::{AsFilesGroup, FilesDatabase, FilesGroup};
 use indoc::indoc;
 use parser::db::ParserDatabase;
+use pretty_assertions::assert_eq;
 use smol_str::SmolStr;
 use syntax::node::db::{AsSyntaxGroup, SyntaxDatabase, SyntaxGroup};
 
@@ -297,9 +298,9 @@ fn test_expr_call_missing() {
         res.diagnostics.format(db),
         indoc! { "
             error: Unknown function
-             --> test.cairo:1:22
-             func test_func() {  foo() }
-                                 ^*^
+             --> test.cairo:2:1
+            foo()
+            ^*^
 
         "}
     );
