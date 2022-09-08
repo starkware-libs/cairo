@@ -13,8 +13,7 @@ use sierra::ProgramParser;
 use test_case::test_case;
 
 use crate::annotations::AnnotationError::{
-    self, EditStateError, InconsistentReferencesAnnotation, InvalidStatementIdx,
-    MissingAnnotationsForStatement,
+    self, InconsistentReferencesAnnotation, InvalidStatementIdx, MissingAnnotationsForStatement,
 };
 use crate::compiler::{compile, CompilationError};
 use crate::invocations::InvocationError;
@@ -113,9 +112,7 @@ fn fib_program() {
                 return([2]);
 
                 test_program@0() -> ();
-            "} => Err(CompilationError::AnnotationError(EditStateError(MissingReference(
-                2.into()
-            ))));
+            "} => Err((MissingReference(2.into())).into());
             "missing reference")]
 #[test_case(indoc! {"
                 return([2]);

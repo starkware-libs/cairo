@@ -1,15 +1,23 @@
+use std::collections::HashMap;
 use std::fmt::Display;
 
+use casm::ap_change::ApplyApChange;
 use casm::instructions::{Instruction, InstructionBody, RetInstruction};
+use itertools::zip_eq;
+use sierra::edit_state::{put_results, take_args, EditStateError};
 use sierra::extensions::core::{CoreConcreteLibFunc, CoreLibFunc, CoreType};
 use sierra::extensions::ConcreteLibFunc;
-use sierra::program::{BranchTarget, Invocation, Program, Statement, StatementIdx};
+use sierra::program::{BranchInfo, BranchTarget, Invocation, Program, Statement, StatementIdx};
 use sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use thiserror::Error;
 
-use crate::annotations::{AnnotationError, ProgramAnnotations};
-use crate::invocations::{check_references_on_stack, compile_invocation, InvocationError};
-use crate::references::{check_types_match, ReferencesError};
+use crate::annotations::{
+    AnnotationError, ProgramAnnotations, ReturnTypesAnnotation, StatementAnnotations,
+};
+use crate::invocations::{
+    check_references_on_stack, compile_invocation, BranchRefChanges, InvocationError,
+};
+use crate::references::{check_types_match, ReferenceValue, ReferencesError, StatementRefs};
 use crate::relocations::{relocate_instructions, RelocationEntry};
 use crate::type_sizes::get_type_size_map;
 
@@ -31,6 +39,8 @@ pub enum CompilationError {
     ReferencesError(#[from] ReferencesError),
     #[error("Invocation mismatched to libfunc")]
     LibFuncInvocationMismatch,
+    #[error(transparent)]
+    EditStateError(#[from] EditStateError),
 }
 
 #[derive(Error, Debug, Eq, PartialEq)]
@@ -69,6 +79,46 @@ fn check_basic_structure(
     }
 }
 
+// Propagate the annotations from the statement at 'statement_idx' to all the branches
+// from said statement.
+// 'annotations' is the result of calling get_annotations_after_take_args at
+// 'statement_idx' and 'per_branch_ref_changes' are the reference changes at each branch.
+pub fn propagate_annotations(
+    statement_idx: StatementIdx,
+    live_reference: StatementRefs,
+    return_types: ReturnTypesAnnotation,
+    branches: &[BranchInfo],
+    per_branch_ref_changes: impl Iterator<Item = BranchRefChanges>,
+    program_annotations: &mut ProgramAnnotations,
+) -> Result<(), CompilationError> {
+    for (branch_info, branch_result) in zip_eq(branches, per_branch_ref_changes) {
+        let mut new_refs: StatementRefs =
+            HashMap::with_capacity(live_reference.len() + branch_result.refs.len());
+        for (var_id, ref_value) in &live_reference {
+            new_refs.insert(
+                var_id.clone(),
+                ReferenceValue {
+                    expression: ref_value
+                        .expression
+                        .clone()
+                        .apply_ap_change(branch_result.ap_change)
+                        .map_err(ReferencesError::ApChangeError)?,
+                    ty: ref_value.ty.clone(),
+                },
+            );
+        }
+
+        program_annotations.set_or_assert(
+            statement_idx.next(&branch_info.target),
+            StatementAnnotations {
+                refs: put_results(new_refs, zip_eq(&branch_info.results, branch_result.refs))?,
+                return_types: return_types.clone(),
+            },
+        )?;
+    }
+    Ok(())
+}
+
 pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
     let mut instructions = Vec::new();
     let mut relocations: Vec<RelocationEntry> = Vec::new();
@@ -92,13 +142,15 @@ pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
 
         match statement {
             Statement::Return(ref_ids) => {
-                let (annotations, return_refs) = program_annotations
-                    .get_annotations_after_take_args(statement_idx, ref_ids.iter())?;
+                let annotations = program_annotations.get_annotations(statement_idx)?;
+                let (live_references, return_refs) =
+                    take_args(annotations.refs.clone(), ref_ids.iter())?;
 
-                if !annotations.refs.is_empty() {
+                if !live_references.is_empty() {
                     return Err(ReferencesError::DanglingReferences(statement_idx).into());
                 }
-                program_annotations.validate_return_type(&return_refs, annotations.return_types)?;
+                program_annotations
+                    .validate_return_type(&return_refs, annotations.return_types.clone())?;
                 check_references_on_stack(&type_sizes, &return_refs)?;
 
                 let ret_instruction = RetInstruction {};
@@ -109,8 +161,9 @@ pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
                 });
             }
             Statement::Invocation(invocation) => {
-                let (annotations, invoke_refs) = program_annotations
-                    .get_annotations_after_take_args(statement_idx, invocation.args.iter())?;
+                let annotations = program_annotations.get_annotations(statement_idx)?;
+                let (live_references, invoke_refs) =
+                    take_args(annotations.refs.clone(), invocation.args.iter())?;
 
                 let libfunc = registry
                     .get_libfunc(&invocation.libfunc_id)
@@ -133,11 +186,13 @@ pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
                 }
                 instructions.extend(compiled_invocation.instructions);
 
-                program_annotations.propagate_annotations(
+                propagate_annotations(
                     statement_idx,
-                    annotations,
+                    live_references,
+                    annotations.return_types.clone(),
                     &invocation.branches,
                     compiled_invocation.results.into_iter(),
+                    &mut program_annotations,
                 )?;
             }
         }

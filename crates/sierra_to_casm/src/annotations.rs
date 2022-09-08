@@ -2,14 +2,10 @@ use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::iter;
 
-use casm::ap_change::ApplyApChange;
-use itertools::zip_eq;
-use sierra::edit_state::{put_results, take_args, EditStateError};
-use sierra::ids::{ConcreteTypeId, VarId};
-use sierra::program::{BranchInfo, Function, StatementIdx};
+use sierra::ids::ConcreteTypeId;
+use sierra::program::{Function, StatementIdx};
 use thiserror::Error;
 
-use crate::invocations::BranchRefChanges;
 use crate::references::{
     build_function_parameter_refs, check_types_match, ReferenceValue, ReferencesError,
     StatementRefs,
@@ -25,8 +21,6 @@ pub enum AnnotationError {
     InvalidStatementIdx,
     #[error("MissingAnnotationsForStatement")]
     MissingAnnotationsForStatement(StatementIdx),
-    #[error(transparent)]
-    EditStateError(#[from] EditStateError),
     #[error(transparent)]
     ReferencesError(#[from] ReferencesError),
 }
@@ -114,64 +108,14 @@ impl ProgramAnnotations {
         Ok(())
     }
 
-    /// Returns the result of applying take_args to the StatementAnnotations at statement_idx.
-    /// Assumes statement_idx is a valid index.
-    pub fn get_annotations_after_take_args<'a>(
+    /// Gets the annotations for statement_idx.
+    pub fn get_annotations(
         &self,
         statement_idx: StatementIdx,
-        ref_ids: impl Iterator<Item = &'a VarId>,
-    ) -> Result<(StatementAnnotations, Vec<ReferenceValue>), AnnotationError> {
-        let statement_annotations = &self.per_statement_annotations[statement_idx.0]
+    ) -> Result<&StatementAnnotations, AnnotationError> {
+        self.per_statement_annotations[statement_idx.0]
             .as_ref()
-            .ok_or(AnnotationError::MissingAnnotationsForStatement(statement_idx))?;
-
-        let (statement_refs, taken_refs) = take_args(statement_annotations.refs.clone(), ref_ids)?;
-        Ok((
-            StatementAnnotations {
-                refs: statement_refs,
-                return_types: statement_annotations.return_types.clone(),
-            },
-            taken_refs,
-        ))
-    }
-
-    // Propagate the annotations from the statement at 'statement_idx' to all the branches
-    // from said statement.
-    // 'annotations' is the result of calling get_annotations_after_take_args at
-    // 'statement_idx' and 'per_branch_ref_changes' are the reference changes at each branch.
-    pub fn propagate_annotations(
-        &mut self,
-        statement_idx: StatementIdx,
-        annotations: StatementAnnotations,
-        branches: &[BranchInfo],
-        per_branch_ref_changes: impl Iterator<Item = BranchRefChanges>,
-    ) -> Result<(), AnnotationError> {
-        for (branch_info, branch_result) in zip_eq(branches, per_branch_ref_changes) {
-            let mut new_refs: StatementRefs =
-                HashMap::with_capacity(annotations.refs.len() + branch_result.refs.len());
-            for (var_id, ref_value) in &annotations.refs {
-                new_refs.insert(
-                    var_id.clone(),
-                    ReferenceValue {
-                        expression: ref_value
-                            .expression
-                            .clone()
-                            .apply_ap_change(branch_result.ap_change)
-                            .map_err(ReferencesError::ApChangeError)?,
-                        ty: ref_value.ty.clone(),
-                    },
-                );
-            }
-
-            self.set_or_assert(
-                statement_idx.next(&branch_info.target),
-                StatementAnnotations {
-                    refs: put_results(new_refs, zip_eq(&branch_info.results, branch_result.refs))?,
-                    return_types: annotations.return_types.clone(),
-                },
-            )?;
-        }
-        Ok(())
+            .ok_or(AnnotationError::MissingAnnotationsForStatement(statement_idx))
     }
 
     /// Checks that the list of reference contains types matching the given types.
