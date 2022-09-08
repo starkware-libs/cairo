@@ -364,7 +364,7 @@ pub fn compile_invocation(
         CoreConcreteLibFunc::Felt(FeltConcrete::JumpNotZero(jnz)) => {
             handle_jump_nz(invocation, jnz, refs, environment)
         }
-        CoreConcreteLibFunc::Felt(FeltConcrete::Ignore(libfunc)) => {
+        CoreConcreteLibFunc::Felt(FeltConcrete::Drop(libfunc)) => {
             Ok(CompiledInvocation::only_reference_changes(
                 [].into_iter(),
                 libfunc.output_types(),
