@@ -1,7 +1,9 @@
 use db_utils::define_short_id;
+use debug::DebugWithDb;
 use defs::ids::{GenericFunctionId, GenericTypeId};
 use diagnostics_proc_macros::DebugWithDb;
 
+use crate::corelib::unit_ty;
 use crate::db::SemanticGroup;
 use crate::semantic::{Expr, Statement};
 
@@ -10,7 +12,7 @@ use crate::semantic::{Expr, Statement};
 /// Generic argument.
 /// A value assigned to a generic parameter.
 /// May be a type, impl, constant, etc..
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
 #[debug_db(SemanticGroup)]
 pub enum GenericArgumentId {
     Type(TypeId),
@@ -40,12 +42,31 @@ impl FunctionId {
     }
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
-#[debug_db(SemanticGroup)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct ConcreteFunction {
     pub generic_function: GenericFunctionId,
     pub generic_args: Vec<GenericArgumentId>,
     pub return_type: TypeId,
+}
+impl DebugWithDb<dyn SemanticGroup> for ConcreteFunction {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+        db: &(dyn SemanticGroup + 'static),
+    ) -> std::fmt::Result {
+        self.generic_function.fmt(f, db.as_defs_group())?;
+        if !self.generic_args.is_empty() {
+            write!(f, "<")?;
+            for arg in self.generic_args.iter() {
+                write!(f, "{:?},", arg.debug(db))?;
+            }
+            write!(f, ">")?;
+        }
+        if self.return_type != unit_ty(db) && !self.generic_args.is_empty() {
+            write!(f, " -> {:?}", self.return_type)?;
+        }
+        Ok(())
+    }
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
@@ -69,6 +90,23 @@ impl TypeId {
 pub struct ConcreteType {
     pub generic_type: GenericTypeId,
     pub generic_args: Vec<GenericArgumentId>,
+}
+impl DebugWithDb<dyn SemanticGroup> for ConcreteType {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+        db: &(dyn SemanticGroup + 'static),
+    ) -> std::fmt::Result {
+        self.generic_type.fmt(f, db.as_defs_group())?;
+        if !self.generic_args.is_empty() {
+            write!(f, "<")?;
+            for arg in self.generic_args.iter() {
+                write!(f, "{:?},", arg.debug(db))?;
+            }
+            write!(f, ">")?;
+        }
+        Ok(())
+    }
 }
 
 // CodeElements.
