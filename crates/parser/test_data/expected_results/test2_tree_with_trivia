@@ -11,6 +11,7 @@
     │   │   │   ├── token (kind: Identifier): 'foo'
     │   │   │   └── trailing_trivia (kind: Trivia)
     │   │   │       └── child #0 (kind: Whitespace).
+    │   │   ├── generic_args (kind: OptionGenericArgsEmpty) []
     │   │   ├── signature (kind: FunctionSignature)
     │   │   │   ├── lparen (kind: Terminal)
     │   │   │   │   ├── leading_trivia (kind: Trivia) []
@@ -409,6 +410,7 @@
     │   │   │   ├── token (kind: Identifier): 'bar'
     │   │   │   └── trailing_trivia (kind: Trivia)
     │   │   │       └── child #0 (kind: Whitespace).
+    │   │   ├── generic_args (kind: OptionGenericArgsEmpty) []
     │   │   ├── signature (kind: FunctionSignature)
     │   │   │   ├── lparen (kind: Terminal)
     │   │   │   │   ├── leading_trivia (kind: Trivia) []
@@ -603,6 +605,7 @@
     │       │   ├── leading_trivia (kind: Trivia) []
     │       │   ├── token (kind: Identifier): 'A'
     │       │   └── trailing_trivia (kind: Trivia) []
+    │       ├── generic_args (kind: OptionGenericArgsEmpty) []
     │       ├── lbrace (kind: Terminal)
     │       │   ├── leading_trivia (kind: Trivia) []
     │       │   ├── token (kind: LBrace): '{'

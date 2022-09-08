@@ -14,6 +14,7 @@
     │   └── [36mchild #1[0m (kind: ItemFreeFunction)
     │       ├── [34mfunckw[0m (kind: Function): '[1;32mfunc[0m'
     │       ├── [34mname[0m (kind: Identifier): '[1;32mfoo[0m'
+    │       ├── [36mgeneric_args[0m (kind: OptionGenericArgsEmpty)[95m [][0m
     │       ├── [36msignature[0m (kind: FunctionSignature)
     │       │   ├── [34mlparen[0m (kind: LParen): '[1;32m([0m'
     │       │   ├── [36mparameters[0m (kind: ParamList)
