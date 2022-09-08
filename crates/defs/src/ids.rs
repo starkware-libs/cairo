@@ -23,7 +23,7 @@
 
 use db_utils::define_short_id;
 use debug::debug::DebugWithDb;
-use filesystem::ids::ModuleId;
+use filesystem::ids::CrateId;
 use smol_str::SmolStr;
 use syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
 
@@ -73,7 +73,7 @@ macro_rules! define_language_element_id {
                     f,
                     "{}({}::{})",
                     stringify!($short_id),
-                    module_id.full_path(db.as_files_group()),
+                    module_id.full_path(db),
                     self.name(db)
                 )
             }
@@ -134,9 +134,32 @@ macro_rules! define_language_element_id_as_enum {
     }
 }
 
+/// Id for a module. Either the root module of a crate, or a submodule.
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+pub enum ModuleId {
+    CrateRoot(CrateId),
+    Submodule(SubmoduleId),
+}
+impl ModuleId {
+    pub fn full_path(&self, db: &dyn DefsGroup) -> String {
+        match self {
+            ModuleId::CrateRoot(id) => db.lookup_intern_crate(*id).0.to_string(),
+            ModuleId::Submodule(id) => {
+                format!("{}::{}", id.module(db).full_path(db), id.name(db))
+            }
+        }
+    }
+}
+impl DebugWithDb<dyn DefsGroup> for ModuleId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &dyn DefsGroup) -> std::fmt::Result {
+        write!(f, "ModuleId({})", self.full_path(db))
+    }
+}
+
 define_language_element_id_as_enum! {
     /// Id for direct children of a module.
     pub enum ModuleItemId {
+        Submodule(SubmoduleId),
         Use(UseId),
         FreeFunction(FreeFunctionId),
         Struct(StructId),
@@ -144,6 +167,7 @@ define_language_element_id_as_enum! {
         ExternFunction(ExternFunctionId),
     }
 }
+define_language_element_id!(SubmoduleId, SubmoduleLongId, ast::ItemModule, lookup_intern_submodule);
 define_language_element_id!(UseId, UseLongId, ast::ItemUse, lookup_intern_use);
 define_language_element_id!(
     FreeFunctionId,
@@ -213,7 +237,10 @@ impl GenericFunctionId {
         match item {
             ModuleItemId::FreeFunction(id) => Some(GenericFunctionId::Free(id)),
             ModuleItemId::ExternFunction(id) => Some(GenericFunctionId::Extern(id)),
-            ModuleItemId::Use(_) | ModuleItemId::Struct(_) | ModuleItemId::ExternType(_) => None,
+            ModuleItemId::Submodule(_)
+            | ModuleItemId::Use(_)
+            | ModuleItemId::Struct(_)
+            | ModuleItemId::ExternType(_) => None,
         }
     }
 }
@@ -222,7 +249,8 @@ impl GenericTypeId {
         match item {
             ModuleItemId::Struct(id) => Some(GenericTypeId::Struct(id)),
             ModuleItemId::ExternType(id) => Some(GenericTypeId::Extern(id)),
-            ModuleItemId::Use(_)
+            ModuleItemId::Submodule(_)
+            | ModuleItemId::Use(_)
             | ModuleItemId::FreeFunction(_)
             | ModuleItemId::ExternFunction(_) => None,
         }

@@ -6,9 +6,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::sync::Arc;
 
-use crate::ids::{
-    CrateId, CrateLongId, FileId, FileLongId, ModuleId, SubmoduleId, SubmoduleLongId,
-};
+use crate::ids::{CrateId, CrateLongId, FileId, FileLongId};
 use crate::span::{FileSummary, TextOffset};
 
 // Salsa database interface.
@@ -18,8 +16,6 @@ pub trait FilesGroup {
     fn intern_crate(&self, crt: CrateLongId) -> CrateId;
     #[salsa::interned]
     fn intern_file(&self, file: FileLongId) -> FileId;
-    #[salsa::interned]
-    fn intern_submodule(&self, id: SubmoduleLongId) -> SubmoduleId;
 
     #[salsa::input]
     fn project_config(&self) -> ProjectConfig;
@@ -27,7 +23,6 @@ pub trait FilesGroup {
     fn crate_root_file(&self, crate_id: CrateId) -> Option<FileId>;
     fn file_content(&self, file_id: FileId) -> Option<Arc<String>>;
     fn file_summary(&self, file_id: FileId) -> Option<Arc<FileSummary>>;
-    fn module_file(&self, module_id: ModuleId) -> Option<FileId>;
 }
 
 pub trait AsFilesGroup {
@@ -82,15 +77,4 @@ fn file_summary(db: &dyn FilesGroup, file: FileId) -> Option<Arc<FileSummary>> {
         }
     }
     Some(Arc::new(FileSummary { line_offsets, total_length: offset }))
-}
-
-fn module_file(db: &dyn FilesGroup, module_id: ModuleId) -> Option<FileId> {
-    match module_id {
-        ModuleId::CrateRoot(crate_id) => db.crate_root_file(crate_id),
-        ModuleId::Submodule(submodule_id) => {
-            let _submodule_long_id = db.lookup_intern_submodule(submodule_id);
-            // TODO(yuval): support submodules.
-            todo!()
-        }
-    }
 }

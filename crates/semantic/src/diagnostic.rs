@@ -1,5 +1,5 @@
+use defs::ids::ModuleId;
 use diagnostics::{DiagnosticEntry, DiagnosticLocation};
-use filesystem::ids::ModuleId;
 use parser::parser::ParserDiagnostic;
 use syntax::node::ids::SyntaxStablePtrId;
 use syntax::node::TypedSyntaxNode;

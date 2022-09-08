@@ -2,13 +2,12 @@ use std::collections::HashMap;
 
 use defs::db::{AsDefsGroup, DefsGroup};
 use defs::ids::{
-    FreeFunctionId, GenericFunctionId, GenericTypeId, LanguageElementId, ModuleItemId, ParamLongId,
-    StructId, VarId,
+    FreeFunctionId, GenericFunctionId, GenericTypeId, LanguageElementId, ModuleId, ModuleItemId,
+    ParamLongId, StructId, VarId,
 };
 use diagnostics::{Diagnostics, WithDiagnostics};
 use diagnostics_proc_macros::with_diagnostics;
 use filesystem::db::AsFilesGroup;
-use filesystem::ids::ModuleId;
 use parser::db::ParserGroup;
 use parser::parser::ParserDiagnostic;
 use smol_str::SmolStr;

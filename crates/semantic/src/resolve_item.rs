@@ -1,7 +1,6 @@
-use defs::ids::ModuleItemId;
+use defs::ids::{ModuleId, ModuleItemId};
 use diagnostics::{Diagnostics, WithDiagnostics};
 use diagnostics_proc_macros::with_diagnostics;
-use filesystem::ids::ModuleId;
 use syntax::node::ast;
 
 use crate::corelib::core_module;
