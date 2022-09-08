@@ -1,19 +1,13 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use super::{FilesDatabase, FilesGroup, ProjectConfig};
+use super::{FilesGroup, ProjectConfig};
 use crate::ids::{CrateLongId, FileLongId, VirtualFile};
-
-#[salsa::database(FilesDatabase)]
-#[derive(Default)]
-pub struct DatabaseImpl {
-    storage: salsa::Storage<DatabaseImpl>,
-}
-impl salsa::Database for DatabaseImpl {}
+use crate::test_utils::FilesDatabaseForTesting;
 
 #[test]
 fn test_filesystem() {
-    let mut db = DatabaseImpl::default();
+    let mut db = FilesDatabaseForTesting::default();
 
     let crt = db.intern_crate(CrateLongId("my_crate".into()));
     let crt2 = db.intern_crate(CrateLongId("my_crate2".into()));

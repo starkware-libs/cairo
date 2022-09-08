@@ -7,10 +7,10 @@ use semantic::test_utils::{setup_test_block, setup_test_expr};
 use crate::expr_generator::generate_expression_code;
 use crate::expr_generator_context::ExprGeneratorContext;
 use crate::pre_sierra;
-use crate::test_utils::{replace_libfunc_ids, DatabaseImpl};
+use crate::test_utils::{replace_libfunc_ids, SierraGenDatabaseForTesting};
 
 fn generate_expr_code_for_test(
-    db: &DatabaseImpl,
+    db: &SierraGenDatabaseForTesting,
     block: semantic::ExprId,
 ) -> (Vec<pre_sierra::Statement>, sierra::ids::VarId) {
     let dummy_function_id = FreeFunctionId::from_intern_id(InternId::from(0u32));
@@ -21,7 +21,7 @@ fn generate_expr_code_for_test(
 
 #[test]
 fn test_expr_generator() {
-    let mut db = DatabaseImpl::default();
+    let mut db = SierraGenDatabaseForTesting::default();
 
     let (_module_id, expr) = setup_test_block(
         &mut db,
@@ -73,7 +73,7 @@ fn test_expr_generator() {
 
 #[test]
 fn test_match() {
-    let mut db = DatabaseImpl::default();
+    let mut db = SierraGenDatabaseForTesting::default();
 
     let (_module_id, expr) = setup_test_block(
         &mut db,
@@ -115,7 +115,7 @@ fn test_match() {
 
 #[test]
 fn test_call_libfunc() {
-    let mut db = DatabaseImpl::default();
+    let mut db = SierraGenDatabaseForTesting::default();
 
     let (_module_id, expr) = setup_test_expr(
         &mut db,

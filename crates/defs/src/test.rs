@@ -11,17 +11,17 @@ use crate::db::{DefsDatabase, DefsGroup};
 
 #[salsa::database(DefsDatabase, ParserDatabase, SyntaxDatabase, FilesDatabase)]
 #[derive(Default)]
-pub struct DatabaseImpl {
-    storage: salsa::Storage<DatabaseImpl>,
+pub struct DatabaseForTesting {
+    storage: salsa::Storage<DatabaseForTesting>,
 }
-impl salsa::Database for DatabaseImpl {}
+impl salsa::Database for DatabaseForTesting {}
 
-impl AsFilesGroup for DatabaseImpl {
+impl AsFilesGroup for DatabaseForTesting {
     fn as_files_group(&self) -> &(dyn FilesGroup + 'static) {
         self
     }
 }
-impl AsSyntaxGroup for DatabaseImpl {
+impl AsSyntaxGroup for DatabaseForTesting {
     fn as_syntax_group(&self) -> &(dyn SyntaxGroup + 'static) {
         self
     }
@@ -29,7 +29,7 @@ impl AsSyntaxGroup for DatabaseImpl {
 
 #[test]
 fn test_resolve() {
-    let mut db_val = DatabaseImpl::default();
+    let mut db_val = DatabaseForTesting::default();
     let module_id = setup_test_module(
         &mut db_val,
         indoc! {"
@@ -55,7 +55,7 @@ fn test_resolve() {
     };
 }
 
-fn setup_test_module(db: &mut DatabaseImpl, content: &str) -> ModuleId {
+fn setup_test_module(db: &mut DatabaseForTesting, content: &str) -> ModuleId {
     let crate_id = db.intern_crate(CrateLongId("test_crate".into()));
     let file_id = db.intern_file(FileLongId::Virtual(VirtualFile {
         parent: None,

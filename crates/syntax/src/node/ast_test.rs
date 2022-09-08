@@ -10,10 +10,10 @@ use crate::{node, token};
 
 #[salsa::database(SyntaxDatabase)]
 #[derive(Default)]
-pub struct DatabaseImpl {
-    storage: salsa::Storage<DatabaseImpl>,
+pub struct DatabaseForTesting {
+    storage: salsa::Storage<DatabaseForTesting>,
 }
-impl salsa::Database for DatabaseImpl {}
+impl salsa::Database for DatabaseForTesting {}
 
 fn traverse(db: &dyn SyntaxGroup, node: SyntaxNode) -> Vec<(SyntaxNodeDetails, u32, u32)> {
     let mut res = vec![(node.details(db), node.offset().0 as u32, node.width(db))];
@@ -25,7 +25,7 @@ fn traverse(db: &dyn SyntaxGroup, node: SyntaxNode) -> Vec<(SyntaxNodeDetails, u
 
 #[test]
 fn test_empty() {
-    let db_val = DatabaseImpl::default();
+    let db_val = DatabaseForTesting::default();
     let db = &db_val;
 
     let empty = OptionGenericArgsEmpty::new_green(db);
@@ -39,7 +39,7 @@ fn test_empty() {
 
 #[test]
 fn test_ast() {
-    let db_val = DatabaseImpl::default();
+    let db_val = DatabaseForTesting::default();
     let db = &db_val;
     let root = setup(db);
 
@@ -106,7 +106,7 @@ fn test_ast() {
 
 #[test]
 fn test_stable_ptr() {
-    let db_val = DatabaseImpl::default();
+    let db_val = DatabaseForTesting::default();
     let db = &db_val;
     let root = setup(db);
     traverse_and_verify_ptr(db, &root, root.clone());
@@ -120,7 +120,7 @@ fn traverse_and_verify_ptr(db: &dyn SyntaxGroup, root: &SyntaxNode, node: Syntax
     }
 }
 
-fn setup(db: &DatabaseImpl) -> SyntaxNode {
+fn setup(db: &DatabaseForTesting) -> SyntaxNode {
     // TODO: Use a builder for easier construction of token.
     // Construct green nodes.
     let empty = OptionGenericArgsEmpty::new_green(db);

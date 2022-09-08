@@ -1,12 +1,12 @@
 use filesystem::ids::FileId;
 use salsa::{InternId, InternKey};
 use syntax::node::ast::{Terminal, Trivia};
-use syntax::node::db::SyntaxDatabase;
 use syntax::node::ids::GreenId;
 use syntax::node::{SyntaxNode, Token, TypedSyntaxNode};
 use syntax::token::TokenKind;
 
 use super::Lexer;
+use crate::test_utils::ParserDatabaseForTesting;
 
 // TODO(spapini): Use snapshot/regression tests.
 
@@ -203,16 +203,9 @@ fn test_source() -> FileId {
     FileId::from_intern_id(InternId::from(100u32))
 }
 
-#[salsa::database(SyntaxDatabase)]
-#[derive(Default)]
-pub struct DatabaseImpl {
-    storage: salsa::Storage<DatabaseImpl>,
-}
-impl salsa::Database for DatabaseImpl {}
-
 #[test]
 fn test_lex_single_token() {
-    let db_val = DatabaseImpl::default();
+    let db_val = ParserDatabaseForTesting::default();
     let db = &db_val;
     for (kind, text) in token_kind_and_text() {
         let mut lexer = Lexer::from_text(db, test_source(), text);
@@ -235,7 +228,7 @@ fn test_lex_single_token() {
 
 #[test]
 fn test_lex_double_token() {
-    let db_val = DatabaseImpl::default();
+    let db_val = ParserDatabaseForTesting::default();
     let db = &db_val;
     for (kind0, text0) in token_kind_and_text() {
         for (kind1, text1) in token_kind_and_text() {
@@ -275,7 +268,7 @@ fn test_lex_double_token() {
 
 #[test]
 fn test_lex_token_with_trivia() {
-    let db_val = DatabaseImpl::default();
+    let db_val = ParserDatabaseForTesting::default();
     let db = &db_val;
     for (kind, token_text) in token_kind_and_text() {
         for (_leading_kind, leading_trivia) in trivia_kind_and_text() {
@@ -304,7 +297,7 @@ fn test_lex_token_with_trivia() {
 
 #[test]
 fn test_cases() {
-    let db_val = DatabaseImpl::default();
+    let db_val = ParserDatabaseForTesting::default();
     let db = &db_val;
     let res: Vec<GreenId> = Lexer::from_text(db, test_source(), "let x: &T = @ 6; //  5+ 3;")
         .map(|term_with_kind| term_with_kind.terminal)
@@ -399,7 +392,7 @@ fn test_cases() {
 
 #[test]
 fn test_bad_character() {
-    let db_val = DatabaseImpl::default();
+    let db_val = ParserDatabaseForTesting::default();
     let db = &db_val;
 
     let text = "@";
