@@ -1,22 +1,52 @@
+use std::collections::HashMap;
 use std::sync::Arc;
 
+use defs::db::{AsDefsGroup, DefsDatabase, DefsGroup};
 use defs::ids::{GenericFunctionId, ModuleId};
 use diagnostics::{Diagnostics, WithDiagnostics};
 use diagnostics_proc_macros::with_diagnostics;
-use filesystem::ids::{CrateLongId, FileLongId, VirtualFile};
+use filesystem::db::{init_files_group, AsFilesGroup, FilesDatabase, FilesGroup};
+use filesystem::ids::{CrateLongId, FileLongId};
+use parser::db::ParserDatabase;
+use syntax::node::db::{AsSyntaxGroup, SyntaxDatabase, SyntaxGroup};
 
 use crate::corelib::core_config;
-use crate::db::SemanticGroup;
+use crate::db::{SemanticDatabase, SemanticGroup};
 use crate::{semantic, Diagnostic, ExprId};
+
+#[salsa::database(SemanticDatabase, DefsDatabase, ParserDatabase, SyntaxDatabase, FilesDatabase)]
+pub struct SemanticDatabaseForTesting {
+    storage: salsa::Storage<SemanticDatabaseForTesting>,
+}
+impl salsa::Database for SemanticDatabaseForTesting {}
+impl Default for SemanticDatabaseForTesting {
+    fn default() -> Self {
+        let mut res = Self { storage: Default::default() };
+        init_files_group(&mut res);
+        res
+    }
+}
+impl AsFilesGroup for SemanticDatabaseForTesting {
+    fn as_files_group(&self) -> &(dyn FilesGroup + 'static) {
+        self
+    }
+}
+impl AsSyntaxGroup for SemanticDatabaseForTesting {
+    fn as_syntax_group(&self) -> &(dyn SyntaxGroup + 'static) {
+        self
+    }
+}
+impl AsDefsGroup for SemanticDatabaseForTesting {
+    fn as_defs_group(&self) -> &(dyn DefsGroup + 'static) {
+        self
+    }
+}
 
 /// Sets up a module with given content, and returns its module id.
 pub fn setup_test_module(db: &mut dyn SemanticGroup, content: &str) -> ModuleId {
     let crate_id = db.intern_crate(CrateLongId("test_crate".into()));
-    let file_id = db.intern_file(FileLongId::Virtual(VirtualFile {
-        parent: None,
-        name: "test.cairo".into(),
-        content: Arc::new(content.to_string()),
-    }));
+    let file_id = db.intern_file(FileLongId::OnDisk("test.cairo".into()));
+    db.set_file_overrides(Arc::new(HashMap::from_iter([(file_id, Arc::new(content.to_string()))])));
     db.set_project_config(core_config(db).with_crate(crate_id, file_id));
 
     ModuleId::CrateRoot(crate_id)
