@@ -1,4 +1,4 @@
-use crate::db::{init_files_group, FilesDatabase};
+use crate::db::{init_files_group, AsFilesGroup, FilesDatabase, FilesGroup};
 
 // Test salsa database.
 #[salsa::database(FilesDatabase)]
@@ -11,5 +11,13 @@ impl Default for FilesDatabaseForTesting {
         let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
         res
+    }
+}
+impl AsFilesGroup for FilesDatabaseForTesting {
+    fn as_files_group(&self) -> &(dyn FilesGroup + 'static) {
+        self
+    }
+    fn as_files_group_mut(&mut self) -> &mut (dyn FilesGroup + 'static) {
+        self
     }
 }

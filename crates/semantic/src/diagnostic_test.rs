@@ -12,87 +12,87 @@ fn test_function_with_return_type() {
         res.get_diagnostics().format(&db),
         indoc! {"
             error: Skipped tokens
-             --> test.cairo:1:1
+             --> lib.cairo:1:1
             3 + 4 +; func test_func() {  {
             ^
 
             error: Skipped tokens
-             --> test.cairo:1:3
+             --> lib.cairo:1:3
             3 + 4 +; func test_func() {  {
               ^
 
             error: Skipped tokens
-             --> test.cairo:1:5
+             --> lib.cairo:1:5
             3 + 4 +; func test_func() {  {
                 ^
 
             error: Skipped tokens
-             --> test.cairo:1:7
+             --> lib.cairo:1:7
             3 + 4 +; func test_func() {  {
                   ^
 
             error: Skipped tokens
-             --> test.cairo:1:1
+             --> lib.cairo:1:1
             3 + 4 +; func test_func() {  {
             ^
 
             error: Skipped tokens
-             --> test.cairo:1:3
+             --> lib.cairo:1:3
             3 + 4 +; func test_func() {  {
               ^
 
             error: Skipped tokens
-             --> test.cairo:1:5
+             --> lib.cairo:1:5
             3 + 4 +; func test_func() {  {
                 ^
 
             error: Skipped tokens
-             --> test.cairo:1:7
+             --> lib.cairo:1:7
             3 + 4 +; func test_func() {  {
                   ^
 
             error: Skipped tokens
-             --> test.cairo:1:1
+             --> lib.cairo:1:1
             3 + 4 +; func test_func() {  {
             ^
 
             error: Skipped tokens
-             --> test.cairo:1:3
+             --> lib.cairo:1:3
             3 + 4 +; func test_func() {  {
               ^
 
             error: Skipped tokens
-             --> test.cairo:1:5
+             --> lib.cairo:1:5
             3 + 4 +; func test_func() {  {
                 ^
 
             error: Skipped tokens
-             --> test.cairo:1:7
+             --> lib.cairo:1:7
             3 + 4 +; func test_func() {  {
                   ^
 
             error: Skipped tokens
-             --> test.cairo:1:1
+             --> lib.cairo:1:1
             3 + 4 +; func test_func() {  {
             ^
 
             error: Skipped tokens
-             --> test.cairo:1:3
+             --> lib.cairo:1:3
             3 + 4 +; func test_func() {  {
               ^
 
             error: Skipped tokens
-             --> test.cairo:1:5
+             --> lib.cairo:1:5
             3 + 4 +; func test_func() {  {
                 ^
 
             error: Skipped tokens
-             --> test.cairo:1:7
+             --> lib.cairo:1:7
             3 + 4 +; func test_func() {  {
                   ^
 
             error: Unknown function
-             --> test.cairo:2:5
+             --> lib.cairo:2:5
             1 + foo()
                 ^*^
 
