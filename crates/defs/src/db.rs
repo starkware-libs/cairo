@@ -1,11 +1,14 @@
+use std::sync::Arc;
+
 use diagnostics::{Diagnostics, WithDiagnostics};
 use diagnostics_proc_macros::with_diagnostics;
 use filesystem::db::{AsFilesGroup, FilesGroup};
-use filesystem::ids::ModuleId;
+use filesystem::ids::FileId;
 use itertools::chain;
 use parser::db::ParserGroup;
 use parser::parser::ParserDiagnostic;
 use smol_str::SmolStr;
+use syntax::node::ast::SyntaxFile;
 use syntax::node::db::{AsSyntaxGroup, SyntaxGroup};
 use syntax::node::{ast, TypedSyntaxNode};
 use utils::ordered_hash_map::OrderedHashMap;
@@ -16,6 +19,8 @@ use crate::ids::*;
 /// See [`super::ids`] for further details.
 #[salsa::query_group(DefsDatabase)]
 pub trait DefsGroup: FilesGroup + SyntaxGroup + AsSyntaxGroup + ParserGroup + AsFilesGroup {
+    #[salsa::interned]
+    fn intern_submodule(&self, id: SubmoduleLongId) -> SubmoduleId;
     #[salsa::interned]
     fn intern_use(&self, id: UseLongId) -> UseId;
     #[salsa::interned]
@@ -32,6 +37,13 @@ pub trait DefsGroup: FilesGroup + SyntaxGroup + AsSyntaxGroup + ParserGroup + As
     fn intern_param(&self, id: ParamLongId) -> ParamId;
     #[salsa::interned]
     fn intern_local_var(&self, id: LocalVarLongId) -> LocalVarId;
+
+    // Module to syntax.
+    fn module_file(&self, module_id: ModuleId) -> Option<FileId>;
+    fn module_syntax(
+        &self,
+        module_id: ModuleId,
+    ) -> WithDiagnostics<Option<Arc<SyntaxFile>>, ParserDiagnostic>;
 
     // Module level resolving.
     fn module_data(
@@ -61,6 +73,25 @@ pub trait DefsGroup: FilesGroup + SyntaxGroup + AsSyntaxGroup + ParserGroup + As
 
 pub trait AsDefsGroup {
     fn as_defs_group(&self) -> &(dyn DefsGroup + 'static);
+}
+
+fn module_file(db: &dyn DefsGroup, module_id: ModuleId) -> Option<FileId> {
+    match module_id {
+        ModuleId::CrateRoot(crate_id) => db.crate_root_file(crate_id),
+        ModuleId::Submodule(submodule_id) => {
+            let _submodule_long_id = db.lookup_intern_submodule(submodule_id);
+            // TODO(yuval): support submodules.
+            todo!()
+        }
+    }
+}
+#[with_diagnostics]
+pub fn module_syntax(
+    diagnostics: &mut Diagnostics<ParserDiagnostic>,
+    db: &dyn DefsGroup,
+    module_id: ModuleId,
+) -> Option<Arc<SyntaxFile>> {
+    db.file_syntax(db.module_file(module_id)?).unwrap(diagnostics)
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -182,6 +213,7 @@ fn module_resolve_generic_function(
     name: SmolStr,
 ) -> Option<GenericFunctionId> {
     match db.module_item_by_name(module_id, name).unwrap(diagnostics)? {
+        ModuleItemId::Submodule(_) => None,
         ModuleItemId::Use(_) => None,
         ModuleItemId::FreeFunction(item) => Some(GenericFunctionId::Free(item)),
         ModuleItemId::Struct(_) => None,
@@ -198,6 +230,7 @@ fn module_resolve_generic_type(
     name: SmolStr,
 ) -> Option<GenericTypeId> {
     match db.module_item_by_name(module_id, name).unwrap(diagnostics)? {
+        ModuleItemId::Submodule(_) => None,
         ModuleItemId::Use(_) => None,
         ModuleItemId::FreeFunction(_) => None,
         ModuleItemId::Struct(item) => Some(GenericTypeId::Struct(item)),

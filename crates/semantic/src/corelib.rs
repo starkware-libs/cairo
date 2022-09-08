@@ -1,7 +1,8 @@
 use std::path::PathBuf;
 
+use defs::ids::ModuleId;
 use filesystem::db::ProjectConfig;
-use filesystem::ids::{CrateLongId, FileLongId, ModuleId};
+use filesystem::ids::{CrateLongId, FileLongId};
 
 use crate::db::SemanticGroup;
 use crate::{ConcreteType, TypeId, TypeLongId};

@@ -2,8 +2,9 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use defs::db::{AsDefsGroup, DefsDatabase, DefsGroup};
+use defs::ids::ModuleId;
 use filesystem::db::{AsFilesGroup, FilesDatabase, FilesGroup};
-use filesystem::ids::{CrateLongId, FileLongId, ModuleId};
+use filesystem::ids::{CrateLongId, FileLongId};
 use parser::db::ParserDatabase;
 use semantic::corelib::core_config;
 use semantic::db::SemanticDatabase;
