@@ -27,6 +27,7 @@ pub fn generate_program_code(
     // and add them to `functions`.
     for (_name, item) in module_items.items.iter() {
         match item {
+            ModuleItemId::Submodule(_) => todo!("'mod' lowering not supported yet."),
             ModuleItemId::Use(_) => todo!("'use' lowering not supported yet."),
             ModuleItemId::FreeFunction(free_function_id) => {
                 let function: Arc<pre_sierra::Function> =

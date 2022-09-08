@@ -1,9 +1,8 @@
 use std::sync::Arc;
 
-use defs::ids::{FreeFunctionId, LanguageElementId};
+use defs::ids::{FreeFunctionId, LanguageElementId, ModuleId};
 use diagnostics::{Diagnostics, WithDiagnostics};
 use diagnostics_proc_macros::with_diagnostics;
-use filesystem::ids::ModuleId;
 use semantic::db::SemanticGroup;
 use sierra::program::ConcreteTypeLongId;
 

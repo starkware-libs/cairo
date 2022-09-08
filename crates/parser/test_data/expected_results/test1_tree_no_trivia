@@ -1,6 +1,21 @@
 └── root (kind: SyntaxFile)
     ├── items (kind: ItemList)
-    │   ├── child #0 (kind: ItemFreeFunction)
+    │   ├── child #0 (kind: ItemModule)
+    │   │   ├── modkw (kind: Module): 'mod'
+    │   │   ├── name (kind: Identifier): 'submod'
+    │   │   └── semicolon (kind: Semicolon): ';'
+    │   ├── child #1 (kind: ItemUse)
+    │   │   ├── usekw (kind: Use): 'use'
+    │   │   ├── name (kind: ExprPath)
+    │   │   │   ├── item #0 (kind: PathSegment)
+    │   │   │   │   ├── ident (kind: Identifier): 'submod'
+    │   │   │   │   └── generic_args (kind: OptionGenericArgsEmpty) []
+    │   │   │   ├── separator #0 (kind: ColonColon): '::'
+    │   │   │   └── item #1 (kind: PathSegment)
+    │   │   │       ├── ident (kind: Identifier): 'something'
+    │   │   │       └── generic_args (kind: OptionGenericArgsEmpty) []
+    │   │   └── semicolon (kind: Semicolon): ';'
+    │   ├── child #2 (kind: ItemFreeFunction)
     │   │   ├── funckw (kind: Function): 'func'
     │   │   ├── name (kind: Identifier): 'foo'
     │   │   ├── signature (kind: FunctionSignature)
@@ -150,12 +165,12 @@
     │   │       │       │       └── generic_args (kind: OptionGenericArgsEmpty) []
     │   │       │       └── semicolon (kind: Semicolon): ';'
     │   │       └── rbrace (kind: RBrace): '}'
-    │   ├── child #1 (kind: ItemExternType)
+    │   ├── child #3 (kind: ItemExternType)
     │   │   ├── externkw (kind: Extern): 'extern'
     │   │   ├── typekw (kind: Type): 'type'
     │   │   ├── name (kind: Identifier): 'felt'
     │   │   └── semicolon (kind: Semicolon): ';'
-    │   └── child #2 (kind: ItemExternFunction)
+    │   └── child #4 (kind: ItemExternFunction)
     │       ├── externkw (kind: Extern): 'extern'
     │       ├── funckw (kind: Function): 'func'
     │       ├── name (kind: Identifier): 'bar'
@@ -182,17 +197,17 @@
     └── eof (kind: EndOfFile).
 --------------------
 error: Skipped tokens
- --> test1.cairo:1:1
-// Func foo
-^*********^
+ --> test1.cairo:3:1
+
+^
 
 error: Skipped tokens
- --> test1.cairo:4:10
+ --> test1.cairo:7:10
 func foo(,var1: int,, var2: felt,) -> int {
          ^
 
 error: Skipped tokens
- --> test1.cairo:4:21
+ --> test1.cairo:7:21
 func foo(,var1: int,, var2: felt,) -> int {
                     ^
 
