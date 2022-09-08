@@ -14,7 +14,7 @@ use test_case::test_case;
 
 use crate::annotations::AnnotationError::{
     self, EditStateError, InconsistentReferencesAnnotation, InvalidStatementIdx,
-    MissingReferencesForStatement,
+    MissingAnnotationsForStatement,
 };
 use crate::compiler::{compile, CompilationError};
 use crate::invocations::InvocationError;
@@ -190,7 +190,7 @@ fn fib_program() {
 #[test_case(indoc! {"
             return();
             "} => Err(CompilationError::AnnotationError(
-            MissingReferencesForStatement(StatementIdx(0))));
+            MissingAnnotationsForStatement(StatementIdx(0))));
             "Missing references for statement")]
 #[test_case(indoc! {"
                 type NonZeroFelt = NonZero<felt>;
