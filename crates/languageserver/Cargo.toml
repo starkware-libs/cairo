@@ -1,0 +1,14 @@
+[package]
+name = "languageserver"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "languageserver"
+
+[dependencies]
+tokio = { version = "1.18.2", features = ["full","sync"] }
+tower-lsp = "0.17.0"
+lsp = { version = "0.93", package = "lsp-types" }
+serde_json = "1.0"
+tracing-subscriber = "0.3.11"
