@@ -101,9 +101,9 @@ pub fn compute_expr_semantic(
         ast::Expr::Binary(binary_op_syntax) => {
             let operator_kind = binary_op_syntax.op(syntax_db).kind(syntax_db);
             let lexpr =
-                compute_expr_semantic(ctx, binary_op_syntax.lhs(syntax_db)).propagte(diagnostics);
+                compute_expr_semantic(ctx, binary_op_syntax.lhs(syntax_db)).propagate(diagnostics);
             let rexpr =
-                compute_expr_semantic(ctx, binary_op_syntax.rhs(syntax_db)).propagte(diagnostics);
+                compute_expr_semantic(ctx, binary_op_syntax.rhs(syntax_db)).propagate(diagnostics);
             let function = match core_binary_operator(db, operator_kind) {
                 Some(function) => function,
                 None => {
@@ -129,11 +129,11 @@ pub fn compute_expr_semantic(
                 .expressions(syntax_db)
                 .elements(syntax_db)
                 .into_iter()
-                .map(|arg_syntax| compute_expr_semantic(ctx, arg_syntax).propagte(diagnostics))
+                .map(|arg_syntax| compute_expr_semantic(ctx, arg_syntax).propagate(diagnostics))
                 .collect();
             let arg_types: Vec<_> = arg_exprs.iter().map(|expr| expr.ty()).collect();
             let args = arg_exprs.into_iter().map(|expr| db.intern_expr(expr)).collect();
-            let function = resolve_function(ctx, path, &arg_types).propagte(diagnostics);
+            let function = resolve_function(ctx, path, &arg_types).propagate(diagnostics);
             semantic::Expr::ExprFunctionCall(semantic::ExprFunctionCall {
                 function,
                 args,
@@ -158,13 +158,14 @@ pub fn compute_expr_semantic(
             let statements_semantic = statements
                 .into_iter()
                 .map(|statement_syntax| {
-                    compute_statement_semantic(&mut new_ctx, statement_syntax).propagte(diagnostics)
+                    compute_statement_semantic(&mut new_ctx, statement_syntax)
+                        .propagate(diagnostics)
                 })
                 .collect();
 
             // Convert tail expression (if exists) to semantic model.
             let tail_semantic_expr = tail.map(|tail_expr| {
-                compute_expr_semantic(&mut new_ctx, tail_expr).propagte(diagnostics)
+                compute_expr_semantic(&mut new_ctx, tail_expr).propagate(diagnostics)
             });
 
             let ty = match &tail_semantic_expr {
@@ -191,7 +192,7 @@ pub fn compute_expr_semantic(
                     }
                 };
                 let expr_semantic = compute_expr_semantic(ctx, syntax_arm.expression(syntax_db))
-                    .propagte(diagnostics);
+                    .propagate(diagnostics);
                 let arm_type = expr_semantic.ty();
                 semantic_arms.push(MatchArm { pattern, expression: db.intern_expr(expr_semantic) });
                 match match_type {
@@ -204,7 +205,7 @@ pub fn compute_expr_semantic(
             }
             semantic::Expr::ExprMatch(semantic::ExprMatch {
                 matched_expr: db.intern_expr(
-                    compute_expr_semantic(ctx, expr_match.expr(syntax_db)).propagte(diagnostics),
+                    compute_expr_semantic(ctx, expr_match.expr(syntax_db)).propagate(diagnostics),
                 ),
                 arms: semantic_arms,
                 ty: match match_type {
@@ -263,10 +264,10 @@ fn resolve_function(
     // TODO(spapini): Try to find function in multiple places (e.g. impls, or other modules for
     //   suggestions)
     resolve_item(ctx.db, ctx.module_id, &path)
-        .propagte(diagnostics)
+        .propagate(diagnostics)
         .and_then(GenericFunctionId::from)
         .and_then(|generic_function| {
-            specialize_function(ctx, generic_function, arg_types).propagte(diagnostics)
+            specialize_function(ctx, generic_function, arg_types).propagate(diagnostics)
         })
         .unwrap_or_else(|| {
             diagnostics.add(SemanticDiagnostic {
@@ -288,7 +289,7 @@ fn specialize_function(
 ) -> Option<FunctionId> {
     // TODO(spapini): Type check arguments.
     let signature =
-        ctx.db.generic_function_signature_semantic(generic_function).propagte(diagnostics)?;
+        ctx.db.generic_function_signature_semantic(generic_function).propagate(diagnostics)?;
     Some(ctx.db.intern_function(FunctionLongId::Concrete(ConcreteFunction {
         generic_function,
         generic_args: vec![],
@@ -311,7 +312,7 @@ pub fn compute_statement_semantic(
                 db.intern_local_var(LocalVarLongId(ctx.module_id, let_syntax.stable_ptr()));
 
             let rhs_expr_id = db.intern_expr(
-                compute_expr_semantic(ctx, let_syntax.rhs(syntax_db)).propagte(diagnostics),
+                compute_expr_semantic(ctx, let_syntax.rhs(syntax_db)).propagate(diagnostics),
             );
             let inferred_type = db.lookup_intern_expr(rhs_expr_id).ty();
 
@@ -320,7 +321,7 @@ pub fn compute_statement_semantic(
                 ast::OptionTypeClause::TypeClause(type_clause) => {
                     let var_type_path = type_clause.ty(syntax_db);
                     let explicit_type =
-                        resolve_type(db, ctx.module_id, var_type_path).propagte(diagnostics);
+                        resolve_type(db, ctx.module_id, var_type_path).propagate(diagnostics);
                     assert_eq!(
                         explicit_type, inferred_type,
                         "inferred type ({explicit_type:?}) and explicit type ({inferred_type:?}) \
@@ -339,7 +340,7 @@ pub fn compute_statement_semantic(
             })
         }
         ast::Statement::Expr(expr_syntax) => semantic::Statement::Expr(db.intern_expr(
-            compute_expr_semantic(ctx, expr_syntax.expr(syntax_db)).propagte(diagnostics),
+            compute_expr_semantic(ctx, expr_syntax.expr(syntax_db)).propagate(diagnostics),
         )),
         ast::Statement::Return(_) => todo!(),
         ast::Statement::StatementMissing(_) => todo!(),

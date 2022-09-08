@@ -26,6 +26,6 @@ pub fn resolve_item(
     };
     let name = last_element.ident(syntax_db).text(syntax_db);
     db.module_item_by_name(module_id, name.clone())
-        .propagte(diagnostics)
-        .or_else(|| db.module_item_by_name(core_module(db), name).propagte(diagnostics))
+        .propagate(diagnostics)
+        .or_else(|| db.module_item_by_name(core_module(db), name).propagate(diagnostics))
 }
