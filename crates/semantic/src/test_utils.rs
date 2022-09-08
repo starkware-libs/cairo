@@ -36,8 +36,9 @@ pub fn setup_test_function(
     let content = format!("{module_code} {function_code}");
     let module_id = setup_test_module(db, &content);
     let generic_function_id = db
-        .module_resolve_generic_function(module_id, function_name.into())
+        .module_item_by_name(module_id, function_name.into())
         .unwrap(diagnostics)
+        .and_then(GenericFunctionId::from)
         .unwrap();
     let function_id = match generic_function_id {
         GenericFunctionId::Free(function_id) => function_id,

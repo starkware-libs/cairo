@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 
+use defs::ids::GenericTypeId;
 use filesystem::db::ProjectConfig;
 use filesystem::ids::{CrateLongId, FileLongId, ModuleId};
 
@@ -27,8 +28,9 @@ pub fn core_felt_ty(db: &dyn SemanticGroup) -> TypeId {
     let core_module = db.core_module();
     // This should not fail if the corelib is present.
     let generic_type = db
-        .module_resolve_generic_type(core_module, "felt".into())
-        .expect("Unexpected diagnostics when looking for corelib.")
+        .module_item_by_name(core_module, "felt".into())
+        .expect("Unexpected diagnostics when looking for corelib")
+        .and_then(GenericTypeId::from)
         .unwrap();
     db.intern_type(TypeLongId::Concrete(ConcreteType { generic_type, generic_args: vec![] }))
 }

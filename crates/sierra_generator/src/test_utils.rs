@@ -16,21 +16,21 @@ use crate::pre_sierra;
     FilesDatabase
 )]
 #[derive(Default)]
-pub struct DatabaseImpl {
-    storage: salsa::Storage<DatabaseImpl>,
+pub struct SierraGenDatabaseForTesting {
+    storage: salsa::Storage<SierraGenDatabaseForTesting>,
 }
-impl salsa::Database for DatabaseImpl {}
-impl AsFilesGroup for DatabaseImpl {
+impl salsa::Database for SierraGenDatabaseForTesting {}
+impl AsFilesGroup for SierraGenDatabaseForTesting {
     fn as_files_group(&self) -> &(dyn FilesGroup + 'static) {
         self
     }
 }
-impl AsSyntaxGroup for DatabaseImpl {
+impl AsSyntaxGroup for SierraGenDatabaseForTesting {
     fn as_syntax_group(&self) -> &(dyn SyntaxGroup + 'static) {
         self
     }
 }
-impl AsDefsGroup for DatabaseImpl {
+impl AsDefsGroup for SierraGenDatabaseForTesting {
     fn as_defs_group(&self) -> &(dyn defs::db::DefsGroup + 'static) {
         self
     }
