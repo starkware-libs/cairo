@@ -74,7 +74,7 @@ fn literal_to_semantic(
     // TODO(spapini): Diagnostics.
     let value = text.parse::<usize>().unwrap();
     let ty = db.core_felt_ty();
-    semantic::ExprLiteral { value, ty, stable_ptr: literal_syntax.untyped_stable_ptr() }
+    semantic::ExprLiteral { value, ty, stable_ptr: literal_syntax.stable_ptr().untyped() }
 }
 
 /// Computes the semantic model of an expression.
@@ -89,7 +89,7 @@ pub fn compute_expr_semantic(
     // TODO: When semantic::Expr holds the syntax pointer, add it here as well.
     let expr = match syntax {
         ast::Expr::Path(path) => {
-            let stable_ptr = path.untyped_stable_ptr();
+            let stable_ptr = path.stable_ptr().untyped();
             let var = resolve_variable(ctx, path);
             // TODO(spapini): Return the correct variable type, instead of the unit type.
             semantic::Expr::ExprVar(semantic::ExprVar { var: var.id, ty: var.ty, stable_ptr })
@@ -115,7 +115,7 @@ pub fn compute_expr_semantic(
                     });
                     return semantic::Expr::Missing {
                         ty: TypeId::missing(db),
-                        stable_ptr: binary_op_syntax.untyped_stable_ptr(),
+                        stable_ptr: binary_op_syntax.stable_ptr().untyped(),
                     };
                 }
             };
@@ -123,7 +123,7 @@ pub fn compute_expr_semantic(
                 function,
                 args: vec![db.intern_expr(lexpr), db.intern_expr(rexpr)],
                 ty: function.return_type(db),
-                stable_ptr: binary_op_syntax.untyped_stable_ptr(),
+                stable_ptr: binary_op_syntax.stable_ptr().untyped(),
             })
         }
         ast::Expr::Tuple(_) => todo!(),
@@ -143,7 +143,7 @@ pub fn compute_expr_semantic(
                 function,
                 args,
                 ty: function.return_type(db),
-                stable_ptr: call_syntax.untyped_stable_ptr(),
+                stable_ptr: call_syntax.stable_ptr().untyped(),
             })
         }
         ast::Expr::StructCtorCall(_) => todo!(),
@@ -182,7 +182,7 @@ pub fn compute_expr_semantic(
                 statements: statements_semantic,
                 tail: tail_semantic_expr.map(|expr| db.intern_expr(expr)),
                 ty,
-                stable_ptr: block_syntax.untyped_stable_ptr(),
+                stable_ptr: block_syntax.stable_ptr().untyped(),
             })
         }
         // TODO(yuval): verify exhaustiveness.
@@ -219,7 +219,7 @@ pub fn compute_expr_semantic(
                     Some(t) => t,
                     None => todo!("Return never-type"),
                 },
-                stable_ptr: expr_match.untyped_stable_ptr(),
+                stable_ptr: expr_match.stable_ptr().untyped(),
             })
         }
         ast::Expr::ExprMissing(_) => todo!(),
