@@ -5,10 +5,9 @@ mod test;
 use filesystem::ids::FileId;
 use filesystem::span::{TextOffset, TextSpan};
 use smol_str::SmolStr;
-use syntax::node::ast::{Terminal, Trivia};
+use syntax::node::ast::TriviumGreen;
 use syntax::node::db::SyntaxGroup;
-use syntax::node::ids::GreenId;
-use syntax::node::Token;
+use syntax::node::{Token, TokenGreen};
 use syntax::token::TokenKind;
 
 pub struct Lexer<'a> {
@@ -77,8 +76,8 @@ impl<'a> Lexer<'a> {
     }
 
     // Trivia matchers.
-    fn match_trivia(&mut self, leading: bool) -> Vec<GreenId> {
-        let mut res: Vec<GreenId> = Vec::new();
+    fn match_trivia(&mut self, leading: bool) -> Vec<TriviumGreen> {
+        let mut res: Vec<TriviumGreen> = Vec::new();
         while let Some(current) = self.peek() {
             let trivium = match current {
                 ' ' | '\r' | '\t' => self.match_trivium_whitespace(),
@@ -95,21 +94,22 @@ impl<'a> Lexer<'a> {
     }
 
     /// Assumes the next character is one of [' ', '\r', '\t'].
-    fn match_trivium_whitespace(&mut self) -> GreenId {
+    fn match_trivium_whitespace(&mut self) -> TriviumGreen {
         self.take_while(|s| matches!(s, ' ' | '\r' | '\t'));
-        Token::new_green(self.db, TokenKind::Whitespace, SmolStr::from(self.consume_span()))
+        Token::new_green(self.db, TokenKind::Whitespace, SmolStr::from(self.consume_span())).into()
     }
 
     /// Assumes the next character '/n'.
-    fn match_trivium_newline(&mut self) -> GreenId {
+    fn match_trivium_newline(&mut self) -> TriviumGreen {
         self.take();
-        Token::new_green(self.db, TokenKind::Newline, SmolStr::from(self.consume_span()))
+        Token::new_green(self.db, TokenKind::Newline, SmolStr::from(self.consume_span())).into()
     }
 
     /// Assumes the next 2 characters are "//".
-    fn match_trivium_single_line_comment(&mut self) -> GreenId {
+    fn match_trivium_single_line_comment(&mut self) -> TriviumGreen {
         self.take_while(|c| c != '\n');
         Token::new_green(self.db, TokenKind::SingleLineComment, SmolStr::from(self.consume_span()))
+            .into()
     }
 
     // Token matchers.
@@ -162,7 +162,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn match_terminal(&mut self) -> TerminalWithKind {
+    fn match_terminal(&mut self) -> LexerTerminal {
         let leading_trivia = self.match_trivia(true);
 
         let kind = if let Some(current) = self.peek() {
@@ -214,31 +214,34 @@ impl<'a> Lexer<'a> {
             TokenKind::EndOfFile
         };
 
-        let token_text = SmolStr::from(self.consume_span());
+        let text = SmolStr::from(self.consume_span());
+        let token = Token::new_green(self.db, kind, text);
         let trailing_trivia = self.match_trivia(false);
 
         // TODO(yuval): log(verbose) "consumed text: ..."
-        TerminalWithKind {
-            terminal: Terminal::new_green(
-                self.db,
-                Trivia::new_green(self.db, leading_trivia),
-                Token::new_green(self.db, kind, token_text),
-                Trivia::new_green(self.db, trailing_trivia),
-            ),
-            kind,
-        }
+        LexerTerminal { token, kind, leading_trivia, trailing_trivia }
     }
 }
 
-pub struct TerminalWithKind {
-    /// The green ID of the terminal node
-    pub terminal: GreenId,
-    /// the kind of the inner token of the terminal
+/// Output terminal emitted by the lexer.
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub struct LexerTerminal {
+    pub token: TokenGreen,
+    /// The kind of the inner token of this terminal.
     pub kind: TokenKind,
+    pub leading_trivia: Vec<TriviumGreen>,
+    pub trailing_trivia: Vec<TriviumGreen>,
+}
+impl LexerTerminal {
+    pub fn width(&self, db: &dyn SyntaxGroup) -> u32 {
+        self.leading_trivia.iter().map(|t| t.0.width(db)).sum::<u32>()
+            + self.token.0.width(db)
+            + self.trailing_trivia.iter().map(|t| t.0.width(db)).sum::<u32>()
+    }
 }
 
 impl Iterator for Lexer<'_> {
-    type Item = TerminalWithKind;
+    type Item = LexerTerminal;
 
     /// Returns the next token. Once there are no more tokens left, returns token EOF.
     /// One should not call this after EOF was returned. If one does, None is returned.

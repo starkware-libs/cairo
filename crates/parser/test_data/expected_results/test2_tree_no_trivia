@@ -255,6 +255,11 @@ error: Missing tokens: 'missing expression'.
     let z = ;
             ^
 
+error: Missing token Semicolon.
+ --> test2.cairo:13:11
+mod my_mod{
+          ^
+
 error: Skipped tokens.
  --> test2.cairo:13:11
 mod my_mod{
