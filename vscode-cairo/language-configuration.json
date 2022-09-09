@@ -1,0 +1,20 @@
+{
+    "comments": {
+        // Symbol used for single line comment.
+        "lineComment": "//",
+    },
+    // Symbols used as brackets.
+    "brackets": [
+        [
+            "[",
+            "]"
+        ]
+    ],
+    // Symbols that are auto closed when typing.
+    "autoClosingPairs": [
+        [
+            "[",
+            "]"
+        ],
+    ],
+}
