@@ -3,10 +3,14 @@ name = "syntax_codegen"
 version = "0.1.0"
 edition = "2021"
 
+[package.metadata.cargo-udeps.ignore]
+normal = ["syntax"]
+
 [[bin]]
 name = "generate_syntax"
 path = "src/bin/generate_syntax.rs"
 
 [dependencies]
 genco = "0.17.0"
+syntax = { path = "../syntax" }
 xshell = "0.2.2"

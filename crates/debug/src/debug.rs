@@ -157,7 +157,7 @@ where
 
 /// This is used by the macro generated code.
 /// If the field type implements `DebugWithDb`, uses that, otherwise, uses `Debug`.
-/// That's the "has impl" trick (https://github.com/nvzqz/impls#how-it-works)
+/// That's the "has impl" trick <https://github.com/nvzqz/impls#how-it-works>
 #[doc(hidden)]
 pub mod helper {
     use std::fmt;

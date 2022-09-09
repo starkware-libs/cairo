@@ -6,6 +6,10 @@ edition = "2021"
 [lib]
 proc-macro = true
 
+[package.metadata.cargo-udeps.ignore]
+normal = ["debug"]
+
 [dependencies]
 syn = { version = "1.0.99", features = ["full", "extra-traits"] }
 quote = "1.0.21"
+debug = { path = "../debug" }
