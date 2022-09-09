@@ -18,6 +18,10 @@ impl<Key: Hash + Eq, Value> UnorderedHashMap<Key, Value> {
         self.0.insert(key, value)
     }
 
+    pub fn remove(&mut self, key: &Key) -> Option<Value> {
+        self.0.remove(key)
+    }
+
     pub fn entry(&mut self, key: Key) -> hash_map::Entry<'_, Key, Value> {
         self.0.entry(key)
     }

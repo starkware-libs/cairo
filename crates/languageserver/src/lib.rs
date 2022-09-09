@@ -1,13 +1,35 @@
 //! Cairo language server. Implements the LSP protocol over stdin/out.
 
+mod semantic_highlighting;
+
+use filesystem::db::FilesGroup;
+use filesystem::ids::{FileId, FileLongId};
+use parser::db::ParserGroup;
+use semantic::test_utils::SemanticDatabaseForTesting;
+use semantic_highlighting::token_kind::SemanticTokenKind;
+use semantic_highlighting::SemanticTokensTraverser;
 use serde_json::Value;
+use syntax::node::db::AsSyntaxGroup;
+use syntax::node::TypedSyntaxNode;
 use tower_lsp::jsonrpc::Result;
 use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, LanguageServer};
 
-#[derive(Debug)]
+pub type RootDatabase = SemanticDatabaseForTesting;
+
 pub struct Backend {
     pub client: Client,
+    // TODO(spapini): Remove this once we support ParallelDatabase.
+    pub db_mutex: tokio::sync::Mutex<RootDatabase>,
+}
+impl Backend {
+    async fn db(&self) -> tokio::sync::MutexGuard<'_, RootDatabase> {
+        self.db_mutex.lock().await
+    }
+    fn file(&self, db: &RootDatabase, document: TextDocumentIdentifier) -> FileId {
+        let path = document.uri.to_file_path().expect("Only file URIs are supported.");
+        db.intern_file(FileLongId::OnDisk(path))
+    }
 }
 
 #[tower_lsp::async_trait]
@@ -17,7 +39,7 @@ impl LanguageServer for Backend {
             server_info: None,
             capabilities: ServerCapabilities {
                 text_document_sync: Some(TextDocumentSyncCapability::Kind(
-                    TextDocumentSyncKind::INCREMENTAL,
+                    TextDocumentSyncKind::FULL,
                 )),
                 completion_provider: Some(CompletionOptions {
                     resolve_provider: Some(false),
@@ -36,6 +58,17 @@ impl LanguageServer for Backend {
                     }),
                     file_operations: None,
                 }),
+                semantic_tokens_provider: Some(
+                    SemanticTokensOptions {
+                        legend: SemanticTokensLegend {
+                            token_types: SemanticTokenKind::legend(),
+                            token_modifiers: vec![],
+                        },
+                        full: Some(SemanticTokensFullOptions::Bool(true)),
+                        ..SemanticTokensOptions::default()
+                    }
+                    .into(),
+                ),
                 ..ServerCapabilities::default()
             },
         })
@@ -94,5 +127,29 @@ impl LanguageServer for Backend {
             CompletionItem::new_simple("Hello".to_string(), "Some detail".to_string()),
             CompletionItem::new_simple("Bye".to_string(), "More detail".to_string()),
         ])))
+    }
+
+    async fn semantic_tokens_full(
+        &self,
+        params: SemanticTokensParams,
+    ) -> Result<Option<SemanticTokensResult>> {
+        let db = self.db().await;
+        let file_uri = params.text_document.uri.clone();
+        let file = self.file(&db, params.text_document);
+        let syntax = if let Some(syntax) = db.file_syntax(file) {
+            syntax
+        } else {
+            eprintln!("Semantic analysis failed. File '{file_uri}' does not exist.");
+            return Ok(None);
+        };
+
+        let node = syntax.as_syntax_node();
+        let mut data: Vec<SemanticToken> = Vec::new();
+        SemanticTokensTraverser::default().find_semantic_tokens(
+            db.as_syntax_group(),
+            &mut data,
+            node,
+        );
+        Ok(Some(SemanticTokensResult::Tokens(SemanticTokens { result_id: None, data })))
     }
 }
