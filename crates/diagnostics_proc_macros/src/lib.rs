@@ -84,9 +84,9 @@ pub fn with_diagnostics(_attr: TokenStream, item: TokenStream) -> TokenStream {
 }
 
 /// Derives a [diagnostics::debug::DebugWithDb] implementation for structs and enums.
-#[proc_macro_derive(DebugWithDb, attributes(debug_db))]
+#[proc_macro_derive(DebugWithDb, attributes(debug_db, hide_field_debug_with_db))]
 pub fn derive_debug_with_db(input: TokenStream) -> TokenStream {
-    // Parse the input tokens into a syntax tree
+    // Parse the input tokens into a syntax tree.
     let input = parse_macro_input!(input as DeriveInput);
     let attribute = input
         .attrs
@@ -161,25 +161,38 @@ fn emit_fields_debug(
     let mut pattern = quote! {};
     let mut field_prints = quote! {};
     for (i, field) in fields.iter().enumerate() {
+        let has_hide_attr = field.attrs.iter().any(|a| {
+            a.path.segments.len() == 1 && a.path.segments[0].ident == "hide_field_debug_with_db"
+        });
+
         let ty = &field.ty;
 
-        let field_ident = field
-            .ident
-            .clone()
-            .unwrap_or_else(|| syn::Ident::new(&format!("v{i}"), Span::call_site()));
-        pattern = quote! { #pattern #field_ident, };
-        let func_call = quote! {
-                &#crt::debug::helper::HelperDebug::<#ty, #db>::helper_debug(#field_ident, db)
-        };
-        if let Some(field_ident) = &field.ident {
-            field_prints = quote! {
-                #field_prints
-                .field(stringify!(#field_ident), #func_call)
+        if has_hide_attr {
+            if let Some(field_ident) = &field.ident {
+                let ignore_name = syn::Ident::new(&format!("_{field_ident}"), Span::call_site());
+                pattern = quote! { #pattern #field_ident: #ignore_name, };
+            } else {
+                panic!("Hiding unnamed fields is not implemented.");
             }
         } else {
-            field_prints = quote! {
-                #field_prints
-                .field(#func_call)
+            let field_ident = field
+                .ident
+                .clone()
+                .unwrap_or_else(|| syn::Ident::new(&format!("v{i}"), Span::call_site()));
+            pattern = quote! { #pattern #field_ident, };
+            let func_call = quote! {
+                &#crt::debug::helper::HelperDebug::<#ty, #db>::helper_debug(#field_ident, db)
+            };
+            if let Some(field_ident) = &field.ident {
+                field_prints = quote! {
+                    #field_prints
+                    .field(stringify!(#field_ident), #func_call)
+                }
+            } else {
+                field_prints = quote! {
+                    #field_prints
+                    .field(#func_call)
+                }
             }
         }
     }

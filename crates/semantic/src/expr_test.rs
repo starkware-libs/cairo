@@ -27,7 +27,7 @@ fn test_expr_literal() {
     );
 
     // Check expr.
-    let semantic::ExprLiteral { value, ty } =
+    let semantic::ExprLiteral { value, ty, stable_ptr: _ } =
         extract_matches!(expr, crate::Expr::ExprLiteral, "Expected a literal.");
 
     assert_eq!(value, 7);
@@ -102,7 +102,7 @@ fn test_let_statement() {
     let _signature = function.signature;
 
     // TODO(spapini): Verify params names and tests after StablePtr feature is added.
-    let semantic::ExprBlock { statements, tail, ty: _ } =
+    let semantic::ExprBlock { statements, tail, ty: _, stable_ptr: _ } =
         extract_matches!(db.lookup_intern_expr(function.body), crate::Expr::ExprBlock);
     assert!(tail.is_none());
 
@@ -135,11 +135,11 @@ fn test_expr_var() {
     .expect("");
     let db = &db_val;
 
-    let semantic::ExprBlock { statements: _, tail, ty: _ } =
+    let semantic::ExprBlock { statements: _, tail, ty: _, stable_ptr: _ } =
         extract_matches!(db.lookup_intern_expr(function.body), crate::Expr::ExprBlock);
 
     // Check expr.
-    let semantic::ExprVar { var: _, ty: _ } = extract_matches!(
+    let semantic::ExprVar { var: _, ty: _, stable_ptr: _ } = extract_matches!(
         db.lookup_intern_expr(tail.unwrap()),
         crate::Expr::ExprVar,
         "Expected a variable."
@@ -165,7 +165,7 @@ fn test_expr_match() {
     )
     .expect("");
     let db = &db_val;
-    let semantic::ExprBlock { statements: _, tail, ty: _ } =
+    let semantic::ExprBlock { statements: _, tail, ty: _, stable_ptr: _ } =
         extract_matches!(db.lookup_intern_expr(func.body), crate::Expr::ExprBlock);
     let expr = extract_matches!(
         db.lookup_intern_expr(tail.unwrap()),
@@ -184,7 +184,7 @@ fn test_expr_block() {
     let expr = db.lookup_intern_expr(expr_id);
 
     // Check expr.
-    let semantic::ExprBlock { statements, tail, ty } =
+    let semantic::ExprBlock { statements, tail, ty, stable_ptr: _ } =
         extract_matches!(expr, crate::Expr::ExprBlock, "Expected a block.");
     assert_eq!(ty, unit_ty(db));
     assert!(tail.is_none());
@@ -208,12 +208,12 @@ fn test_expr_block_with_tail_expression() {
     let expr = db.lookup_intern_expr(expr_id);
 
     // Check expr.
-    let semantic::ExprBlock { statements, tail, ty } =
+    let semantic::ExprBlock { statements, tail, ty, stable_ptr: _ } =
         extract_matches!(expr, crate::Expr::ExprBlock, "Expected a block.");
     assert_eq!(ty, core_felt_ty(db));
 
     // Check tail expression.
-    let semantic::ExprLiteral { value, ty: _ } = extract_matches!(
+    let semantic::ExprLiteral { value, ty: _, stable_ptr: _ } = extract_matches!(
         db.lookup_intern_expr(tail.unwrap()),
         crate::Expr::ExprLiteral,
         "Expected a literal expression."
@@ -242,7 +242,7 @@ fn test_expr_call() {
     let expr = db.lookup_intern_expr(expr_id);
 
     // Check expr.
-    let semantic::ExprFunctionCall { function: _, args, ty } =
+    let semantic::ExprFunctionCall { function: _, args, ty, stable_ptr: _ } =
         extract_matches!(expr, crate::Expr::ExprFunctionCall, "Unexpected expr.");
     assert!(args.is_empty());
     assert_eq!(ty, unit_ty(db));
@@ -305,7 +305,8 @@ fn test_function_body() {
         db.lookup_intern_statement(statements[0]),
         crate::Statement::Expr
     ));
-    let semantic::ExprVar { var, ty: _ } = extract_matches!(expr, crate::Expr::ExprVar);
+    let semantic::ExprVar { var, ty: _, stable_ptr: _ } =
+        extract_matches!(expr, crate::Expr::ExprVar);
     let param = extract_matches!(var, VarId::Param);
     assert_eq!(param.name(db), "a");
 }
@@ -318,7 +319,7 @@ pub fn assert_let_statement_with_literal(
     literal_value: usize,
 ) {
     let rhs = assert_let_statement_lhs_and_get_rhs(db, statement_id, module_id, var_name);
-    let semantic::ExprLiteral { value, ty } = extract_matches!(
+    let semantic::ExprLiteral { value, ty, stable_ptr: _ } = extract_matches!(
         db.lookup_intern_expr(rhs),
         crate::Expr::ExprLiteral,
         "Expected a literal expression."
@@ -336,7 +337,7 @@ pub fn assert_let_statement_with_var(
     expr_var_type: TypeId,
 ) {
     let rhs = assert_let_statement_lhs_and_get_rhs(db, statement_id, module_id, var_name);
-    let semantic::ExprVar { var, ty } = extract_matches!(
+    let semantic::ExprVar { var, ty, stable_ptr: _ } = extract_matches!(
         db.lookup_intern_expr(rhs),
         crate::Expr::ExprVar,
         "Expected a var expression."

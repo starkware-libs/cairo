@@ -34,7 +34,7 @@ pub fn generate_expression_code(
                 tmp_var,
             ))
         }
-        semantic::Expr::Missing(_) => todo!(),
+        semantic::Expr::Missing { .. } => todo!(),
     }
 }
 
