@@ -1,5 +1,9 @@
+// TODO(lior): Remove once stable_ptr values are used.
+#![allow(unused_variables)]
+
 use defs::ids::{LocalVarId, MemberId, ParamId, VarId};
 use diagnostics_proc_macros::DebugWithDb;
+use syntax::node::ids::SyntaxStablePtrId;
 
 use crate::db::SemanticGroup;
 use crate::ids::{ExprId, TypeId};
@@ -29,7 +33,7 @@ pub enum Expr {
     ExprMatch(ExprMatch),
     ExprVar(ExprVar),
     ExprLiteral(ExprLiteral),
-    Missing(TypeId),
+    Missing { ty: TypeId, stable_ptr: Option<SyntaxStablePtrId> },
 }
 impl Expr {
     pub fn ty(&self) -> TypeId {
@@ -39,7 +43,18 @@ impl Expr {
             Expr::ExprMatch(expr) => expr.ty,
             Expr::ExprVar(expr) => expr.ty,
             Expr::ExprLiteral(expr) => expr.ty,
-            Expr::Missing(ty) => *ty,
+            Expr::Missing { ty, stable_ptr: _ } => *ty,
+        }
+    }
+    // TODO(lior): Remove Option<> once all the stable_ptrs are assigned properly.
+    pub fn stable_ptr(&self) -> Option<SyntaxStablePtrId> {
+        match self {
+            Expr::ExprBlock(expr) => expr.stable_ptr,
+            Expr::ExprFunctionCall(expr) => expr.stable_ptr,
+            Expr::ExprMatch(expr) => expr.stable_ptr,
+            Expr::ExprVar(expr) => expr.stable_ptr,
+            Expr::ExprLiteral(expr) => expr.stable_ptr,
+            Expr::Missing { ty: _, stable_ptr } => *stable_ptr,
         }
     }
 }
@@ -54,6 +69,8 @@ pub struct ExprBlock {
     /// Otherwise, this will be None.
     pub tail: Option<ExprId>,
     pub ty: TypeId,
+    #[hide_field_debug_with_db]
+    pub stable_ptr: Option<SyntaxStablePtrId>,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
@@ -62,6 +79,8 @@ pub struct ExprFunctionCall {
     pub function: FunctionId,
     pub args: Vec<ExprId>,
     pub ty: TypeId,
+    #[hide_field_debug_with_db]
+    pub stable_ptr: Option<SyntaxStablePtrId>,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
@@ -70,6 +89,8 @@ pub struct ExprMatch {
     pub matched_expr: ExprId,
     pub arms: Vec<MatchArm>,
     pub ty: TypeId,
+    #[hide_field_debug_with_db]
+    pub stable_ptr: Option<SyntaxStablePtrId>,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
@@ -91,6 +112,8 @@ pub enum Pattern {
 pub struct ExprVar {
     pub var: VarId,
     pub ty: TypeId,
+    #[hide_field_debug_with_db]
+    pub stable_ptr: Option<SyntaxStablePtrId>,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
@@ -99,6 +122,8 @@ pub struct ExprLiteral {
     // TODO(spapini): Fix the type of `value`.
     pub value: usize,
     pub ty: TypeId,
+    #[hide_field_debug_with_db]
+    pub stable_ptr: Option<SyntaxStablePtrId>,
 }
 
 // Items.

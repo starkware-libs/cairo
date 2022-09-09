@@ -91,7 +91,7 @@ pub fn setup_test_expr(
         setup_test_function(db, &function_code, "test_func", module_code).propagate(diagnostics);
     let ExprBlock { tail: function_body_tail, .. } =
         extract_matches!(db.lookup_intern_expr(function_semantic.body), semantic::Expr::ExprBlock);
-    let ExprBlock { statements, tail, ty: _ } = extract_matches!(
+    let ExprBlock { statements, tail, .. } = extract_matches!(
         db.lookup_intern_expr(function_body_tail.unwrap()),
         semantic::Expr::ExprBlock
     );
