@@ -1,4 +1,5 @@
 use defs::ids::FreeFunctionId;
+use diagnostics::Diagnostics;
 use indoc::indoc;
 use pretty_assertions::assert_eq;
 use salsa::{InternId, InternKey};
@@ -6,16 +7,19 @@ use semantic::test_utils::{setup_test_block, setup_test_expr};
 
 use crate::expr_generator::generate_expression_code;
 use crate::expr_generator_context::ExprGeneratorContext;
-use crate::pre_sierra;
 use crate::test_utils::{replace_libfunc_ids, SierraGenDatabaseForTesting};
+use crate::{pre_sierra, Diagnostic};
 
 fn generate_expr_code_for_test(
     db: &SierraGenDatabaseForTesting,
     block: semantic::ExprId,
 ) -> (Vec<pre_sierra::Statement>, sierra::ids::VarId) {
     let dummy_function_id = FreeFunctionId::from_intern_id(InternId::from(0u32));
-    let mut expr_generator_context = ExprGeneratorContext::new(db, dummy_function_id);
+    let mut diagnostics = Diagnostics::<Diagnostic>::new();
+    let mut expr_generator_context =
+        ExprGeneratorContext::new(db, dummy_function_id, &mut diagnostics);
     let (statements, res) = generate_expression_code(&mut expr_generator_context, block).unwrap();
+    diagnostics.expect("");
     (statements, res)
 }
 

@@ -20,7 +20,7 @@ pub fn generate_function_code(
     function_id: FreeFunctionId,
     function_semantic: semantic::FreeFunction,
 ) -> Option<pre_sierra::Function> {
-    let mut context = ExprGeneratorContext::new(db, function_id);
+    let mut context = ExprGeneratorContext::new(db, function_id, diagnostics);
 
     // Generate a label for the function's body.
     let (label, label_id) = context.new_label();
@@ -32,12 +32,13 @@ pub fn generate_function_code(
         context.register_variable(defs::ids::VarId::Param(param.id), sierra_var.clone());
         parameters.push(sierra::program::Param {
             id: sierra_var,
-            ty: db.get_concrete_type_id(param.ty).propagate(diagnostics)?,
+            ty: db.get_concrete_type_id(param.ty).propagate(context.get_diagnostics())?,
         })
     }
 
     let ret_types = vec![
-        db.get_concrete_type_id(function_semantic.signature.return_type).propagate(diagnostics)?,
+        db.get_concrete_type_id(function_semantic.signature.return_type)
+            .propagate(context.get_diagnostics())?,
     ];
 
     let mut statements: Vec<pre_sierra::Statement> = vec![label];
