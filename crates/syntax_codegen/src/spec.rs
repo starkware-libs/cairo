@@ -15,7 +15,7 @@ pub struct Member {
     pub name: String,
     pub kind: MemberKind,
     /// Whether this member serves as a key in the stable pointer of this syntax node.
-    /// See [`syntax::node::stable_ptr`].
+    /// See `syntax::node::stable_ptr`.
     pub key: bool,
 }
 #[derive(Clone)]
