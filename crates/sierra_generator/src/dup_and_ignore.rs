@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 #[cfg(test)]
 #[path = "dup_and_ignore_test.rs"]
 mod test;

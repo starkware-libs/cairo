@@ -31,11 +31,15 @@ define_short_id!(DummyShortId, DummyLongId, TestGroup, lookup_intern_b);
 struct ComplexStruct {
     a: Option<usize>,
     b: DummyShortId,
+    #[hide_field_debug_with_db]
+    c: usize,
+    #[hide_field_debug_with_db]
+    d: usize,
 }
 
 #[test]
 fn test_debug() {
     let db = DatabaseForTesting::default();
-    let a = ComplexStruct { a: Some(5), b: db.intern_b(DummyLongId(6)) };
+    let a = ComplexStruct { a: Some(5), b: db.intern_b(DummyLongId(6)), c: 7, d: 8 };
     assert_eq!(format!("{:?}", a.debug(&db)), "ComplexStruct { a: Some(5), b: DummyLongId(6) }");
 }
