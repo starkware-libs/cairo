@@ -60,7 +60,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
         let file_id = db.module_file(self.module_id).expect("Module in diagnostic does not exist");
         let syntax_node = db
             .file_syntax(file_id)
-            .value
+            .expect("File for diagnostic not found")
             .expect("File for diagnostic not found")
             .as_syntax_node()
             .lookup_ptr(db.as_syntax_group(), self.stable_ptr);

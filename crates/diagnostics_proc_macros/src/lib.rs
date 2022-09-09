@@ -77,7 +77,7 @@ pub fn with_diagnostics(_attr: TokenStream, item: TokenStream) -> TokenStream {
                 #block
             };
             let value = f(&mut diagnostics);
-            WithDiagnostics { value, diagnostics }
+            WithDiagnostics::new(value, diagnostics)
     }
     }
     .into()
