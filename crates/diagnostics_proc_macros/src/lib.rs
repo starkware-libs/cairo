@@ -86,7 +86,7 @@ pub fn with_diagnostics(_attr: TokenStream, item: TokenStream) -> TokenStream {
 /// Derives a [diagnostics::debug::DebugWithDb] implementation for structs and enums.
 #[proc_macro_derive(DebugWithDb, attributes(debug_db))]
 pub fn derive_debug_with_db(input: TokenStream) -> TokenStream {
-    // Parse the input tokens into a syntax tree
+    // Parse the input tokens into a syntax tree.
     let input = parse_macro_input!(input as DeriveInput);
     let attribute = input
         .attrs
@@ -172,9 +172,11 @@ fn emit_fields_debug(
                 &#crt::debug::helper::HelperDebug::<#ty, #db>::helper_debug(#field_ident, db)
         };
         if let Some(field_ident) = &field.ident {
-            field_prints = quote! {
-                #field_prints
-                .field(stringify!(#field_ident), #func_call)
+            if field_ident != "stable_ptr" {
+                field_prints = quote! {
+                    #field_prints
+                    .field(stringify!(#field_ident), #func_call)
+                }
             }
         } else {
             field_prints = quote! {
