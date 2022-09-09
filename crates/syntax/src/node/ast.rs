@@ -80,8 +80,11 @@ impl TypedSyntaxNode for Terminal {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalPtr(self.node.0.stable_ptr)
+        TerminalPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -144,8 +147,11 @@ impl TypedSyntaxNode for TriviumSkippedToken {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        TriviumSkippedTokenPtr(self.node.0.stable_ptr)
+        TriviumSkippedTokenPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -186,8 +192,11 @@ impl TypedSyntaxNode for Trivia {
     fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        TriviaPtr(self.node.0.stable_ptr)
+        TriviaPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -241,8 +250,11 @@ impl TypedSyntaxNode for Trivium {
     fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.as_syntax_node().0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        TriviumPtr(self.as_syntax_node().0.stable_ptr)
+        TriviumPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -303,8 +315,11 @@ impl TypedSyntaxNode for StructArgExpr {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        StructArgExprPtr(self.node.0.stable_ptr)
+        StructArgExprPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -350,8 +365,11 @@ impl TypedSyntaxNode for OptionStructArgExpr {
     fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.as_syntax_node().0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        OptionStructArgExprPtr(self.as_syntax_node().0.stable_ptr)
+        OptionStructArgExprPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -410,8 +428,11 @@ impl TypedSyntaxNode for OptionStructArgExprEmpty {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        OptionStructArgExprEmptyPtr(self.node.0.stable_ptr)
+        OptionStructArgExprEmptyPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -481,8 +502,11 @@ impl TypedSyntaxNode for StructArgSingle {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        StructArgSinglePtr(self.node.0.stable_ptr)
+        StructArgSinglePtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -543,8 +567,11 @@ impl TypedSyntaxNode for StructArgTail {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        StructArgTailPtr(self.node.0.stable_ptr)
+        StructArgTailPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -590,8 +617,11 @@ impl TypedSyntaxNode for StructArg {
     fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.as_syntax_node().0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        StructArgPtr(self.as_syntax_node().0.stable_ptr)
+        StructArgPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -632,8 +662,11 @@ impl TypedSyntaxNode for StructArgList {
     fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        StructArgListPtr(self.node.0.stable_ptr)
+        StructArgListPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -706,8 +739,11 @@ impl TypedSyntaxNode for ArgListBraced {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        ArgListBracedPtr(self.node.0.stable_ptr)
+        ArgListBracedPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -785,8 +821,11 @@ impl TypedSyntaxNode for Expr {
     fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.as_syntax_node().0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        ExprPtr(self.as_syntax_node().0.stable_ptr)
+        ExprPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -827,8 +866,11 @@ impl TypedSyntaxNode for ExprList {
     fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        ExprListPtr(self.node.0.stable_ptr)
+        ExprListPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -883,8 +925,11 @@ impl TypedSyntaxNode for ExprMissing {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        ExprMissingPtr(self.node.0.stable_ptr)
+        ExprMissingPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -930,8 +975,11 @@ impl TypedSyntaxNode for OptionGenericArgs {
     fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.as_syntax_node().0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        OptionGenericArgsPtr(self.as_syntax_node().0.stable_ptr)
+        OptionGenericArgsPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -990,8 +1038,11 @@ impl TypedSyntaxNode for OptionGenericArgsEmpty {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        OptionGenericArgsEmptyPtr(self.node.0.stable_ptr)
+        OptionGenericArgsEmptyPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -1032,8 +1083,11 @@ impl TypedSyntaxNode for OptionGenericArgsSome {
     fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        OptionGenericArgsSomePtr(self.node.0.stable_ptr)
+        OptionGenericArgsSomePtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -1094,8 +1148,11 @@ impl TypedSyntaxNode for PathSegment {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        PathSegmentPtr(self.node.0.stable_ptr)
+        PathSegmentPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -1136,8 +1193,11 @@ impl TypedSyntaxNode for ExprPath {
     fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        ExprPathPtr(self.node.0.stable_ptr)
+        ExprPathPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -1195,8 +1255,11 @@ impl TypedSyntaxNode for ExprLiteral {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        ExprLiteralPtr(self.node.0.stable_ptr)
+        ExprLiteralPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -1269,8 +1332,11 @@ impl TypedSyntaxNode for ExprParenthesized {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        ExprParenthesizedPtr(self.node.0.stable_ptr)
+        ExprParenthesizedPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -1331,8 +1397,11 @@ impl TypedSyntaxNode for ExprUnary {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        ExprUnaryPtr(self.node.0.stable_ptr)
+        ExprUnaryPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -1396,8 +1465,11 @@ impl TypedSyntaxNode for ExprBinary {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        ExprBinaryPtr(self.node.0.stable_ptr)
+        ExprBinaryPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -1466,8 +1538,11 @@ impl TypedSyntaxNode for ExprTuple {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        ExprTuplePtr(self.node.0.stable_ptr)
+        ExprTuplePtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -1540,8 +1615,11 @@ impl TypedSyntaxNode for ExprListParenthesized {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        ExprListParenthesizedPtr(self.node.0.stable_ptr)
+        ExprListParenthesizedPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -1606,8 +1684,11 @@ impl TypedSyntaxNode for ExprFunctionCall {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        ExprFunctionCallPtr(self.node.0.stable_ptr)
+        ExprFunctionCallPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -1672,8 +1753,11 @@ impl TypedSyntaxNode for ExprStructCtorCall {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        ExprStructCtorCallPtr(self.node.0.stable_ptr)
+        ExprStructCtorCallPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -1746,8 +1830,11 @@ impl TypedSyntaxNode for ExprBlock {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        ExprBlockPtr(self.node.0.stable_ptr)
+        ExprBlockPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -1791,8 +1878,11 @@ impl TypedSyntaxNode for Pattern {
     fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.as_syntax_node().0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        PatternPtr(self.as_syntax_node().0.stable_ptr)
+        PatternPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -1861,8 +1951,11 @@ impl TypedSyntaxNode for MatchArm {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        MatchArmPtr(self.node.0.stable_ptr)
+        MatchArmPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -1903,8 +1996,11 @@ impl TypedSyntaxNode for MatchArms {
     fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        MatchArmsPtr(self.node.0.stable_ptr)
+        MatchArmsPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -1987,8 +2083,11 @@ impl TypedSyntaxNode for ExprMatch {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        ExprMatchPtr(self.node.0.stable_ptr)
+        ExprMatchPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -2049,8 +2148,11 @@ impl TypedSyntaxNode for TypeClause {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        TypeClausePtr(self.node.0.stable_ptr)
+        TypeClausePtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -2096,8 +2198,11 @@ impl TypedSyntaxNode for OptionTypeClause {
     fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.as_syntax_node().0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        OptionTypeClausePtr(self.as_syntax_node().0.stable_ptr)
+        OptionTypeClausePtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -2149,8 +2254,11 @@ impl TypedSyntaxNode for NonOptionTypeClause {
     fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.as_syntax_node().0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        NonOptionTypeClausePtr(self.as_syntax_node().0.stable_ptr)
+        NonOptionTypeClausePtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -2209,8 +2317,11 @@ impl TypedSyntaxNode for NonOptionTypeClauseMissing {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        NonOptionTypeClauseMissingPtr(self.node.0.stable_ptr)
+        NonOptionTypeClauseMissingPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -2269,8 +2380,11 @@ impl TypedSyntaxNode for OptionTypeClauseEmpty {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        OptionTypeClauseEmptyPtr(self.node.0.stable_ptr)
+        OptionTypeClauseEmptyPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -2335,8 +2449,11 @@ impl TypedSyntaxNode for ReturnTypeClause {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        ReturnTypeClausePtr(self.node.0.stable_ptr)
+        ReturnTypeClausePtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -2382,8 +2499,11 @@ impl TypedSyntaxNode for OptionReturnTypeClause {
     fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.as_syntax_node().0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        OptionReturnTypeClausePtr(self.as_syntax_node().0.stable_ptr)
+        OptionReturnTypeClausePtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -2442,8 +2562,11 @@ impl TypedSyntaxNode for OptionReturnTypeClauseEmpty {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        OptionReturnTypeClauseEmptyPtr(self.node.0.stable_ptr)
+        OptionReturnTypeClauseEmptyPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -2503,8 +2626,11 @@ impl TypedSyntaxNode for Statement {
     fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.as_syntax_node().0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        StatementPtr(self.as_syntax_node().0.stable_ptr)
+        StatementPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -2545,8 +2671,11 @@ impl TypedSyntaxNode for StatementList {
     fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        StatementListPtr(self.node.0.stable_ptr)
+        StatementListPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -2605,8 +2734,11 @@ impl TypedSyntaxNode for StatementMissing {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        StatementMissingPtr(self.node.0.stable_ptr)
+        StatementMissingPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -2703,8 +2835,11 @@ impl TypedSyntaxNode for StatementLet {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        StatementLetPtr(self.node.0.stable_ptr)
+        StatementLetPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -2748,8 +2883,11 @@ impl TypedSyntaxNode for OptionSemicolon {
     fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.as_syntax_node().0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        OptionSemicolonPtr(self.as_syntax_node().0.stable_ptr)
+        OptionSemicolonPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -2808,8 +2946,11 @@ impl TypedSyntaxNode for OptionSemicolonEmpty {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        OptionSemicolonEmptyPtr(self.node.0.stable_ptr)
+        OptionSemicolonEmptyPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -2870,8 +3011,11 @@ impl TypedSyntaxNode for StatementExpr {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        StatementExprPtr(self.node.0.stable_ptr)
+        StatementExprPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -2940,8 +3084,11 @@ impl TypedSyntaxNode for StatementReturn {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        StatementReturnPtr(self.node.0.stable_ptr)
+        StatementReturnPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -3011,8 +3158,11 @@ impl TypedSyntaxNode for Param {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        ParamPtr(self.node.0.stable_ptr)
+        ParamPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -3053,8 +3203,11 @@ impl TypedSyntaxNode for ParamList {
     fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        ParamListPtr(self.node.0.stable_ptr)
+        ParamListPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -3127,8 +3280,11 @@ impl TypedSyntaxNode for ParamListParenthesized {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        ParamListParenthesizedPtr(self.node.0.stable_ptr)
+        ParamListParenthesizedPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -3197,8 +3353,11 @@ impl TypedSyntaxNode for ParamListBraced {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        ParamListBracedPtr(self.node.0.stable_ptr)
+        ParamListBracedPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -3280,8 +3439,11 @@ impl TypedSyntaxNode for FunctionSignature {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        FunctionSignaturePtr(self.node.0.stable_ptr)
+        FunctionSignaturePtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -3347,8 +3509,11 @@ impl TypedSyntaxNode for Item {
     fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.as_syntax_node().0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        ItemPtr(self.as_syntax_node().0.stable_ptr)
+        ItemPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -3389,8 +3554,11 @@ impl TypedSyntaxNode for ItemList {
     fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        ItemListPtr(self.node.0.stable_ptr)
+        ItemListPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -3468,8 +3636,11 @@ impl TypedSyntaxNode for ItemModule {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        ItemModulePtr(self.node.0.stable_ptr)
+        ItemModulePtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -3560,8 +3731,11 @@ impl TypedSyntaxNode for ItemFreeFunction {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        ItemFreeFunctionPtr(self.node.0.stable_ptr)
+        ItemFreeFunctionPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -3657,8 +3831,11 @@ impl TypedSyntaxNode for ItemExternFunction {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        ItemExternFunctionPtr(self.node.0.stable_ptr)
+        ItemExternFunctionPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -3745,8 +3922,11 @@ impl TypedSyntaxNode for ItemExternType {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        ItemExternTypePtr(self.node.0.stable_ptr)
+        ItemExternTypePtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -3838,8 +4018,11 @@ impl TypedSyntaxNode for ItemTrait {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        ItemTraitPtr(self.node.0.stable_ptr)
+        ItemTraitPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -3941,8 +4124,11 @@ impl TypedSyntaxNode for ItemImpl {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        ItemImplPtr(self.node.0.stable_ptr)
+        ItemImplPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -4034,8 +4220,11 @@ impl TypedSyntaxNode for ItemStruct {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        ItemStructPtr(self.node.0.stable_ptr)
+        ItemStructPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -4117,8 +4306,11 @@ impl TypedSyntaxNode for ItemEnum {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        ItemEnumPtr(self.node.0.stable_ptr)
+        ItemEnumPtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -4196,8 +4388,11 @@ impl TypedSyntaxNode for ItemUse {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        ItemUsePtr(self.node.0.stable_ptr)
+        ItemUsePtr(self.untyped_stable_ptr())
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -4258,7 +4453,10 @@ impl TypedSyntaxNode for SyntaxFile {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
+    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
+        self.node.0.stable_ptr
+    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        SyntaxFilePtr(self.node.0.stable_ptr)
+        SyntaxFilePtr(self.untyped_stable_ptr())
     }
 }
