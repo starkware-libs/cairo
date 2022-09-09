@@ -15,31 +15,24 @@ use crate::utils::{jump_statement, simple_statement};
 pub fn generate_expression_code(
     context: &mut ExprGeneratorContext<'_>,
     expr_id: semantic::ExprId,
-) -> (Vec<pre_sierra::Statement>, sierra::ids::VarId) {
-    generate_expression_code_by_val(context, &context.get_db().expr_semantic(expr_id))
-}
-
-fn generate_expression_code_by_val(
-    context: &mut ExprGeneratorContext<'_>,
-    expr: &semantic::Expr,
-) -> (Vec<pre_sierra::Statement>, sierra::ids::VarId) {
-    match expr {
-        semantic::Expr::ExprBlock(expr_block) => handle_block(context, expr_block),
+) -> Option<(Vec<pre_sierra::Statement>, sierra::ids::VarId)> {
+    match &context.get_db().expr_semantic(expr_id) {
+        semantic::Expr::ExprBlock(expr_block) => handle_block(context, expr_id, expr_block),
         semantic::Expr::ExprFunctionCall(expr_function_call) => {
-            handle_function_call(context, expr_function_call)
+            handle_function_call(context, expr_id, expr_function_call)
         }
-        semantic::Expr::ExprMatch(expr_match) => handle_felt_match(context, expr_match),
-        semantic::Expr::ExprVar(expr_var) => (vec![], context.get_variable(expr_var.var)),
+        semantic::Expr::ExprMatch(expr_match) => handle_felt_match(context, expr_id, expr_match),
+        semantic::Expr::ExprVar(expr_var) => Some((vec![], context.get_variable(expr_var.var))),
         semantic::Expr::ExprLiteral(expr_literal) => {
             let tmp_var = context.allocate_sierra_variable();
-            (
+            Some((
                 vec![simple_statement(
                     context.felt_const_libfunc_id(expr_literal.value),
                     &[],
                     &[tmp_var.clone()],
                 )],
                 tmp_var,
-            )
+            ))
         }
         semantic::Expr::Missing(_) => todo!(),
     }
@@ -48,18 +41,19 @@ fn generate_expression_code_by_val(
 /// Generates Sierra code for [semantic::ExprBlock].
 fn handle_block(
     context: &mut ExprGeneratorContext<'_>,
+    _expr_id: semantic::ExprId,
     expr_block: &semantic::ExprBlock,
-) -> (Vec<pre_sierra::Statement>, sierra::ids::VarId) {
+) -> Option<(Vec<pre_sierra::Statement>, sierra::ids::VarId)> {
     // Process the statements.
     let mut statements: Vec<pre_sierra::Statement> = vec![];
     for statement_id in expr_block.statements.iter().copied() {
         match context.get_db().lookup_intern_statement(statement_id) {
             semantic::Statement::Expr(expr) => {
-                let (cur_statements, _res) = generate_expression_code(context, expr);
+                let (cur_statements, _res) = generate_expression_code(context, expr)?;
                 statements.extend(cur_statements);
             }
             semantic::Statement::Let(statement_let) => {
-                let (cur_statements, res) = generate_expression_code(context, statement_let.expr);
+                let (cur_statements, res) = generate_expression_code(context, statement_let.expr)?;
                 statements.extend(cur_statements);
                 context.register_variable(defs::ids::VarId::Local(statement_let.var.id), res);
             }
@@ -69,9 +63,9 @@ fn handle_block(
     // Process the tail expression.
     match expr_block.tail {
         Some(expr_id) => {
-            let (tail_statements, output_var) = generate_expression_code(context, expr_id);
+            let (tail_statements, output_var) = generate_expression_code(context, expr_id)?;
             statements.extend(tail_statements);
-            (statements, output_var)
+            Some((statements, output_var))
         }
         None => {
             // TODO(lior): Support expressions that do not return a value.
@@ -83,15 +77,16 @@ fn handle_block(
 /// Generates Sierra code for [semantic::ExprFunctionCall].
 fn handle_function_call(
     context: &mut ExprGeneratorContext<'_>,
+    _expr_id: semantic::ExprId,
     expr_function_call: &semantic::ExprFunctionCall,
-) -> (Vec<pre_sierra::Statement>, sierra::ids::VarId) {
+) -> Option<(Vec<pre_sierra::Statement>, sierra::ids::VarId)> {
     let mut statements: Vec<pre_sierra::Statement> = vec![];
 
     // The args to push on the stack.
     let mut args: Vec<(sierra::ids::VarId, semantic::TypeId)> = vec![];
     // Output statements to compute the arguments.
     for arg in &expr_function_call.args {
-        let (arg_statements, res) = generate_expression_code(context, *arg);
+        let (arg_statements, res) = generate_expression_code(context, *arg)?;
         statements.extend(arg_statements);
         args.push((res, context.get_db().lookup_intern_expr(*arg).ty()));
     }
@@ -123,7 +118,7 @@ fn handle_function_call(
                 &args_on_stack,
                 &[res_var.clone()],
             ));
-            (statements, res_var)
+            Some((statements, res_var))
         }
         GenericFunctionId::Extern(extern_id) => {
             assert!(
@@ -147,7 +142,7 @@ fn handle_function_call(
                 &[res_var],
                 &[res_var_on_stack.clone()],
             ));
-            (statements, res_var_on_stack)
+            Some((statements, res_var_on_stack))
         }
     }
 }
@@ -156,8 +151,9 @@ fn handle_function_call(
 /// Currently only a simple match-zero is supported.
 fn handle_felt_match(
     context: &mut ExprGeneratorContext<'_>,
+    _expr_id: semantic::ExprId,
     expr_match: &semantic::ExprMatch,
-) -> (Vec<pre_sierra::Statement>, sierra::ids::VarId) {
+) -> Option<(Vec<pre_sierra::Statement>, sierra::ids::VarId)> {
     match &expr_match.arms[..] {
         [
             semantic::MatchArm { pattern: semantic::Pattern::Literal(literal), expression: block0 },
@@ -179,7 +175,7 @@ fn handle_felt_match(
 
             // Generate statements for the matched expression.
             let (match_expr_statements, match_expr_res) =
-                generate_expression_code(context, expr_match.matched_expr);
+                generate_expression_code(context, expr_match.matched_expr)?;
             statements.extend(match_expr_statements);
 
             // Add the felt_jump_nz() statement.
@@ -207,7 +203,7 @@ fn handle_felt_match(
             let output_var = context.allocate_sierra_variable();
 
             // Generate the first block (0).
-            let (block0_statements, block0_res) = generate_expression_code(context, *block0);
+            let (block0_statements, block0_res) = generate_expression_code(context, *block0)?;
             statements.extend(block0_statements);
             statements.push(simple_statement(
                 context.store_temp_libfunc_id(context.get_db().lookup_intern_expr(*block0).ty()),
@@ -218,7 +214,7 @@ fn handle_felt_match(
 
             // Generate the second block (otherwise).
             let (block_otherwise_statements, block_otherwise_res) =
-                generate_expression_code(context, *block_otherwise);
+                generate_expression_code(context, *block_otherwise)?;
             statements.push(otherwise_label);
             // TODO(orizi): Remove this unwrap once we know how to auto cast NonZero vars back to
             // the unwrapped type.
@@ -241,7 +237,7 @@ fn handle_felt_match(
             // Post match.
             statements.push(end_label);
 
-            (statements, output_var)
+            Some((statements, output_var))
         }
         _ => {
             // TODO(lior): Replace with diagnostics.

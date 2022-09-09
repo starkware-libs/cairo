@@ -15,7 +15,7 @@ fn generate_expr_code_for_test(
 ) -> (Vec<pre_sierra::Statement>, sierra::ids::VarId) {
     let dummy_function_id = FreeFunctionId::from_intern_id(InternId::from(0u32));
     let mut expr_generator_context = ExprGeneratorContext::new(db, dummy_function_id);
-    let (statements, res) = generate_expression_code(&mut expr_generator_context, block);
+    let (statements, res) = generate_expression_code(&mut expr_generator_context, block).unwrap();
     (statements, res)
 }
 

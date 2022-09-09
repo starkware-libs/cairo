@@ -43,7 +43,7 @@ pub fn generate_function_code(
     let mut statements: Vec<pre_sierra::Statement> = vec![label];
 
     // Generate the function's body.
-    let (body_statements, res) = generate_expression_code(&mut context, function_semantic.body);
+    let (body_statements, res) = generate_expression_code(&mut context, function_semantic.body)?;
     statements.extend(body_statements);
 
     // Copy the result to the top of the stack before returning.
