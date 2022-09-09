@@ -129,7 +129,7 @@ impl<T, TEntry: DiagnosticEntry> WithDiagnostics<T, TEntry> {
     }
 
     /// Ignores the diagnostics of `self` and returns the value.
-    pub fn ignore<TCastableEntry: DiagnosticEntry + From<TEntry>>(self) -> T {
+    pub fn ignore(self) -> T {
         self.value
     }
 
