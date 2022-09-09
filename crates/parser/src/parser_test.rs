@@ -2,7 +2,7 @@ use std::fmt::Write;
 use std::fs;
 use std::path::PathBuf;
 
-use diagnostics::{Diagnostics, WithDiagnostics};
+use diagnostics::Diagnostics;
 use filesystem::db::FilesGroup;
 use filesystem::ids::FileLongId;
 use pretty_assertions::assert_eq;
@@ -121,7 +121,7 @@ fn get_syntax_root_and_diagnostics(
     let file_id = db.intern_file(FileLongId::OnDisk(PathBuf::from(cairo_filename)));
     let contents = db.file_content(file_id).unwrap();
     let parser = Parser::from_text(db, file_id, contents.as_str());
-    let WithDiagnostics { value: syntax_root, diagnostics } = parser.parse_syntax_file();
+    let (syntax_root, diagnostics) = parser.parse_syntax_file().split();
     (syntax_root.as_syntax_node(), diagnostics)
 }
 
