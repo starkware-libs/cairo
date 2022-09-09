@@ -99,7 +99,7 @@ impl<'a> Parser<'a> {
             self.db,
             SyntaxNode::new_root(self.db, SyntaxFile::new_green(self.db, items, eof)),
         );
-        WithDiagnostics { value: syntax_file, diagnostics: self.diagnostics }
+        WithDiagnostics::new(syntax_file, self.diagnostics)
     }
 
     // ------------------------------- Top level items -------------------------------

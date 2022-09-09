@@ -252,12 +252,12 @@ fn test_expr_call() {
 fn test_expr_call_missing() {
     let mut db_val = SemanticDatabaseForTesting::default();
     // TODO(spapini): Add types.
-    let res = setup_test_expr(&mut db_val, "foo()", "", "");
+    let (res, diagnostics) = setup_test_expr(&mut db_val, "foo()", "", "").split();
     let db = &db_val;
 
     // Check expr.
     assert_eq!(
-        res.diagnostics.format(db),
+        diagnostics.format(db),
         indoc! { "
             error: Unknown function
              --> test.cairo:2:1
@@ -266,9 +266,9 @@ fn test_expr_call_missing() {
 
         "}
     );
-    assert_eq!(format!("{:?}", res.value.0.debug(db)), "ModuleId(test_crate)");
+    assert_eq!(format!("{:?}", res.0.debug(db)), "ModuleId(test_crate)");
     assert_eq!(
-        format!("{:?}", res.value.1.debug(db)),
+        format!("{:?}", res.1.debug(db)),
         "ExprFunctionCall(ExprFunctionCall { function: Missing, args: [], ty: Missing })"
     );
 }
