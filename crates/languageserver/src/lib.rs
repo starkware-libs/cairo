@@ -2,7 +2,9 @@
 
 mod semantic_highlighting;
 
-use filesystem::db::FilesGroup;
+use std::sync::Arc;
+
+use filesystem::db::{AsFilesGroup, FilesGroup, FilesGroupEx, PrivRawFileContentQuery};
 use filesystem::ids::{FileId, FileLongId};
 use parser::db::ParserGroup;
 use semantic::test_utils::SemanticDatabaseForTesting;
@@ -26,8 +28,8 @@ impl Backend {
     async fn db(&self) -> tokio::sync::MutexGuard<'_, RootDatabase> {
         self.db_mutex.lock().await
     }
-    fn file(&self, db: &RootDatabase, document: TextDocumentIdentifier) -> FileId {
-        let path = document.uri.to_file_path().expect("only file uris are supported");
+    fn file(&self, db: &RootDatabase, uri: Url) -> FileId {
+        let path = uri.to_file_path().expect("only file uris are supported");
         db.intern_file(FileLongId::OnDisk(path))
     }
 }
@@ -90,8 +92,13 @@ impl LanguageServer for Backend {
         self.client.log_message(MessageType::INFO, "configuration changed!").await;
     }
 
-    async fn did_change_watched_files(&self, _: DidChangeWatchedFilesParams) {
+    async fn did_change_watched_files(&self, params: DidChangeWatchedFilesParams) {
         self.client.log_message(MessageType::INFO, "watched files have changed!").await;
+        let mut db = self.db().await;
+        for change in params.changes {
+            let file = self.file(&db, change.uri);
+            PrivRawFileContentQuery.in_db_mut(db.as_files_group_mut()).invalidate(&file);
+        }
     }
 
     async fn execute_command(&self, _: ExecuteCommandParams) -> Result<Option<Value>> {
@@ -110,16 +117,30 @@ impl LanguageServer for Backend {
         self.client.log_message(MessageType::INFO, "file opened!").await;
     }
 
-    async fn did_change(&self, _: DidChangeTextDocumentParams) {
-        self.client.log_message(MessageType::INFO, "file changed!").await;
+    async fn did_change(&self, params: DidChangeTextDocumentParams) {
+        let text =
+            if let [TextDocumentContentChangeEvent { text, .. }] = &params.content_changes[..] {
+                text
+            } else {
+                eprintln!("Unexpected format of document change.");
+                return;
+            };
+        let mut db = self.db().await;
+        let file = self.file(&db, params.text_document.uri);
+        db.override_file_content(file, Some(Arc::new(text.into())));
     }
 
-    async fn did_save(&self, _: DidSaveTextDocumentParams) {
-        self.client.log_message(MessageType::INFO, "file saved!").await;
+    async fn did_save(&self, params: DidSaveTextDocumentParams) {
+        let mut db = self.db().await;
+        let file = self.file(&db, params.text_document.uri);
+        PrivRawFileContentQuery.in_db_mut(db.as_files_group_mut()).invalidate(&file);
+        db.override_file_content(file, None);
     }
 
-    async fn did_close(&self, _: DidCloseTextDocumentParams) {
-        self.client.log_message(MessageType::INFO, "file closed!").await;
+    async fn did_close(&self, params: DidCloseTextDocumentParams) {
+        let mut db = self.db().await;
+        let file = self.file(&db, params.text_document.uri);
+        db.override_file_content(file, None);
     }
 
     async fn completion(&self, _: CompletionParams) -> Result<Option<CompletionResponse>> {
@@ -135,7 +156,7 @@ impl LanguageServer for Backend {
     ) -> Result<Option<SemanticTokensResult>> {
         self.client.log_message(MessageType::INFO, "semantic_tokens_full!").await;
         let db = self.db().await;
-        let file = self.file(&db, params.text_document);
+        let file = self.file(&db, params.text_document.uri);
         let syntax = if let Some(syntax) = db.file_syntax(file).ignore() {
             syntax
         } else {
