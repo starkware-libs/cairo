@@ -54,6 +54,33 @@ fn test_expr_operator() {
     );
 }
 
+// TODO(lior): Move to a text file with all the similar failure tests.
+#[test]
+fn test_expr_operator_failures() {
+    let mut db = SemanticDatabaseForTesting::default();
+    let with_diagnostics = setup_test_function(
+        &mut db,
+        indoc! {"
+        func foo(a: MyType) {
+            a + 3
+        }
+        "},
+        "foo",
+        "extern type MyType;",
+    );
+    // TODO(yuval): Check why we get a wrong location span in the following test.
+    assert_eq!(
+        with_diagnostics.get_diagnostics().format(&db),
+        indoc! {"
+            error: Binary operators are not supported for non-felt-types.
+             --> test.cairo:2:1
+                a + 3
+            ^*******^
+
+        "}
+    );
+}
+
 // TODO(yuval): split test utils and move this test to db_test/type_test.
 #[test]
 fn test_function_with_param() {

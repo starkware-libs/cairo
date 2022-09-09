@@ -100,30 +100,42 @@ pub fn compute_expr_semantic(
         ast::Expr::Parenthesized(_) => todo!(),
         ast::Expr::Unary(_) => todo!(),
         ast::Expr::Binary(binary_op_syntax) => {
+            let stable_ptr = binary_op_syntax.stable_ptr().untyped();
             let operator_kind = binary_op_syntax.op(syntax_db).kind(syntax_db);
             let lexpr =
                 compute_expr_semantic(ctx, binary_op_syntax.lhs(syntax_db)).propagate(diagnostics);
             let rexpr =
                 compute_expr_semantic(ctx, binary_op_syntax.rhs(syntax_db)).propagate(diagnostics);
+            for operand in &[&lexpr, &rexpr] {
+                // Don't add diagnostic if the type is missing (a diagnostic should have been
+                // already added).
+                if operand.ty() == TypeId::missing(db) {
+                    continue;
+                }
+                if operand.ty() != db.core_felt_ty() {
+                    diagnostics.add(SemanticDiagnostic {
+                        module_id: ctx.module_id,
+                        stable_ptr,
+                        kind: SemanticDiagnosticKind::NonFeltBinaryOperator,
+                    });
+                }
+            }
             let function = match core_binary_operator(db, operator_kind) {
                 Some(function) => function,
                 None => {
                     diagnostics.add(SemanticDiagnostic {
                         module_id: ctx.module_id,
-                        stable_ptr: binary_op_syntax.as_syntax_node().stable_ptr(),
+                        stable_ptr,
                         kind: SemanticDiagnosticKind::UnknownBinaryOperator,
                     });
-                    return semantic::Expr::Missing {
-                        ty: TypeId::missing(db),
-                        stable_ptr: binary_op_syntax.stable_ptr().untyped(),
-                    };
+                    return semantic::Expr::Missing { ty: TypeId::missing(db), stable_ptr };
                 }
             };
             semantic::Expr::ExprFunctionCall(semantic::ExprFunctionCall {
                 function,
                 args: vec![db.intern_expr(lexpr), db.intern_expr(rexpr)],
                 ty: function.return_type(db),
-                stable_ptr: binary_op_syntax.stable_ptr().untyped(),
+                stable_ptr,
             })
         }
         ast::Expr::Tuple(_) => todo!(),

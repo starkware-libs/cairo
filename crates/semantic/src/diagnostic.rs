@@ -56,6 +56,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
         match self.kind {
             SemanticDiagnosticKind::UnknownBinaryOperator => "Unknown binary operator",
             SemanticDiagnosticKind::UnknownFunction => "Unknown function",
+            SemanticDiagnosticKind::NonFeltBinaryOperator => {
+                "Binary operators are not supported for non-felt-types."
+            }
         }
         .into()
     }
@@ -77,4 +80,5 @@ impl DiagnosticEntry for SemanticDiagnostic {
 pub enum SemanticDiagnosticKind {
     UnknownBinaryOperator,
     UnknownFunction,
+    NonFeltBinaryOperator,
 }
