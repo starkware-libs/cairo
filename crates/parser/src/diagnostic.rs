@@ -2,6 +2,7 @@ use diagnostics::DiagnosticEntry;
 use filesystem::db::FilesGroup;
 use filesystem::ids::FileId;
 use filesystem::span::TextSpan;
+use syntax::token::TokenKind;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ParserDiagnostic {
@@ -12,8 +13,8 @@ pub struct ParserDiagnostic {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum ParserDiagnosticKind {
     SkippedTokens,
+    MissingToken(TokenKind),
     MissingExpression,
-    MissingBlock,
     MissingPath,
 }
 impl DiagnosticEntry for ParserDiagnostic {
@@ -23,10 +24,12 @@ impl DiagnosticEntry for ParserDiagnostic {
         match self.kind {
             // TODO(yuval): replace line breaks with "\n".
             ParserDiagnosticKind::SkippedTokens => "Skipped tokens.".to_string(),
+            ParserDiagnosticKind::MissingToken(kind) => {
+                format!("Missing token {:?}.", kind)
+            }
             ParserDiagnosticKind::MissingExpression => {
                 "Missing tokens: 'missing expression'.".to_string()
             }
-            ParserDiagnosticKind::MissingBlock => "Missing tokens: 'missing block'.".to_string(),
             ParserDiagnosticKind::MissingPath => "Missing tokens: 'missing path'.".to_string(),
         }
     }
