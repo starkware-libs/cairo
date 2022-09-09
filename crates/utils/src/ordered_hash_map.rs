@@ -20,6 +20,10 @@ impl<Key: Hash + Eq, Value> OrderedHashMap<Key, Value> {
         self.0.insert(key, value)
     }
 
+    pub fn remove(&mut self, key: &Key) -> Option<Value> {
+        self.0.remove(key)
+    }
+
     /// Returns true if an equivalent to key exists in the map.
     pub fn contains_key<Q: ?Sized + Hash + Equivalent<Key>>(&self, key: &Q) -> bool {
         self.0.contains_key(key)

@@ -10,7 +10,7 @@ code --install-extension cairo*.vsix
 
 Remember to build the language server:
 ```
-cargo bin --bin languageserver --release
+cargo build --bin languageserver --release
 ```
 
 ## Troubleshooting
