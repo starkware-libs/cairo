@@ -33,7 +33,7 @@ pub enum Expr {
     ExprMatch(ExprMatch),
     ExprVar(ExprVar),
     ExprLiteral(ExprLiteral),
-    Missing { ty: TypeId, stable_ptr: Option<SyntaxStablePtrId> },
+    Missing { ty: TypeId, stable_ptr: SyntaxStablePtrId },
 }
 impl Expr {
     pub fn ty(&self) -> TypeId {
@@ -46,8 +46,7 @@ impl Expr {
             Expr::Missing { ty, stable_ptr: _ } => *ty,
         }
     }
-    // TODO(lior): Remove Option<> once all the stable_ptrs are assigned properly.
-    pub fn stable_ptr(&self) -> Option<SyntaxStablePtrId> {
+    pub fn stable_ptr(&self) -> SyntaxStablePtrId {
         match self {
             Expr::ExprBlock(expr) => expr.stable_ptr,
             Expr::ExprFunctionCall(expr) => expr.stable_ptr,
@@ -70,7 +69,7 @@ pub struct ExprBlock {
     pub tail: Option<ExprId>,
     pub ty: TypeId,
     #[hide_field_debug_with_db]
-    pub stable_ptr: Option<SyntaxStablePtrId>,
+    pub stable_ptr: SyntaxStablePtrId,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
@@ -80,7 +79,7 @@ pub struct ExprFunctionCall {
     pub args: Vec<ExprId>,
     pub ty: TypeId,
     #[hide_field_debug_with_db]
-    pub stable_ptr: Option<SyntaxStablePtrId>,
+    pub stable_ptr: SyntaxStablePtrId,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
@@ -90,7 +89,7 @@ pub struct ExprMatch {
     pub arms: Vec<MatchArm>,
     pub ty: TypeId,
     #[hide_field_debug_with_db]
-    pub stable_ptr: Option<SyntaxStablePtrId>,
+    pub stable_ptr: SyntaxStablePtrId,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
@@ -113,7 +112,7 @@ pub struct ExprVar {
     pub var: VarId,
     pub ty: TypeId,
     #[hide_field_debug_with_db]
-    pub stable_ptr: Option<SyntaxStablePtrId>,
+    pub stable_ptr: SyntaxStablePtrId,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
@@ -123,7 +122,7 @@ pub struct ExprLiteral {
     pub value: usize,
     pub ty: TypeId,
     #[hide_field_debug_with_db]
-    pub stable_ptr: Option<SyntaxStablePtrId>,
+    pub stable_ptr: SyntaxStablePtrId,
 }
 
 // Items.
