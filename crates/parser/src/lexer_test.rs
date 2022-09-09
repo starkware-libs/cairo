@@ -1,11 +1,11 @@
 use filesystem::ids::FileId;
 use salsa::{InternId, InternKey};
-use syntax::node::ast::{Terminal, Trivia};
-use syntax::node::ids::GreenId;
-use syntax::node::{SyntaxNode, Token, TypedSyntaxNode};
-use syntax::token::TokenKind;
+use syntax::node::db::SyntaxGroup;
+use syntax::node::{Token, TokenGreen};
+use syntax::token::{self, TokenKind};
 
 use super::Lexer;
+use crate::lexer::LexerTerminal;
 use crate::test_utils::ParserDatabaseForTesting;
 
 // TODO(spapini): Use snapshot/regression tests.
@@ -203,18 +203,23 @@ fn test_source() -> FileId {
     FileId::from_intern_id(InternId::from(100u32))
 }
 
+fn green_token(db: &ParserDatabaseForTesting, green: TokenGreen) -> token::Token {
+    match db.lookup_intern_green(green.0) {
+        syntax::node::green::GreenNode::Internal(_) => panic!(),
+        syntax::node::green::GreenNode::Token(token) => token,
+    }
+}
+
 #[test]
 fn test_lex_single_token() {
     let db_val = ParserDatabaseForTesting::default();
     let db = &db_val;
     for (kind, text) in token_kind_and_text() {
         let mut lexer = Lexer::from_text(db, test_source(), text);
-        let token = lexer.next().unwrap().terminal;
+        let terminal = lexer.next().unwrap();
         // TODO(spapini): Remove calling new_root on non root elements.
-        let token =
-            Terminal::from_syntax_node(db, SyntaxNode::new_root(db, token)).token(db).raw(db);
-        assert_eq!(token.kind, kind, "Wrong token kind, with text: \"{}\".", text);
-        assert_eq!(token.text, text, "Wrong token text.");
+        assert_eq!(terminal.kind, kind, "Wrong token kind, with text: \"{}\".", text);
+        assert_eq!(green_token(db, terminal.token).text, text, "Wrong token text.");
 
         assert_eq!(
             lexer.next().unwrap().kind,
@@ -239,20 +244,32 @@ fn test_lex_double_token() {
             for separator in separators {
                 let text = format!("{}{}{}", text0, separator, text1);
                 let mut lexer = Lexer::from_text(db, test_source(), text.as_str());
-                let token = lexer.next().unwrap().terminal;
 
-                let token = Terminal::from_syntax_node(db, SyntaxNode::new_root(db, token))
-                    .token(db)
-                    .raw(db);
-                assert_eq!(token.kind, kind0, "Wrong token kind0, with text: \"{}\".", text);
-                assert_eq!(token.text, text0, "Wrong token text0, with total text: \"{}\".", text);
-                let token = lexer.next().unwrap().terminal;
+                let terminal = lexer.next().unwrap();
+                let terminal_text = green_token(db, terminal.token).text;
+                assert_eq!(
+                    terminal.kind, kind0,
+                    "Wrong token kind0, with text: \"{}\".",
+                    terminal_text
+                );
+                assert_eq!(
+                    terminal_text, text0,
+                    "Wrong token text0, with total text: \"{}\".",
+                    terminal_text
+                );
 
-                let token = Terminal::from_syntax_node(db, SyntaxNode::new_root(db, token))
-                    .token(db)
-                    .raw(db);
-                assert_eq!(token.kind, kind1, "Wrong token kind1, with text: \"{}\".", text);
-                assert_eq!(token.text, text1, "Wrong token text1, with total text: \"{}\".", text);
+                let terminal = lexer.next().unwrap();
+                let terminal_text = green_token(db, terminal.token).text;
+                assert_eq!(
+                    terminal.kind, kind1,
+                    "Wrong token kind1, with text: \"{}\".",
+                    terminal_text
+                );
+                assert_eq!(
+                    terminal_text, text1,
+                    "Wrong token text1, with total text: \"{}\".",
+                    terminal_text
+                );
 
                 assert_eq!(
                     lexer.next().unwrap().kind,
@@ -275,12 +292,10 @@ fn test_lex_token_with_trivia() {
             for (_trailing_kind, trailing_trivia) in trivia_kind_and_text() {
                 let text = format!("{}{} {}", leading_trivia, token_text, trailing_trivia);
                 let mut lexer = Lexer::from_text(db, test_source(), text.as_str());
-                let green_terminal = lexer.next().unwrap().terminal;
-                let terminal =
-                    Terminal::from_syntax_node(db, SyntaxNode::new_root(db, green_terminal));
-                let token = terminal.token(db).raw(db);
-                assert_eq!(token.kind, kind, "Wrong token kind, with text: \"{}\".", text);
-                assert_eq!(token.text, token_text, "Wrong token text.");
+                let terminal = lexer.next().unwrap();
+                let terminal_text = green_token(db, terminal.token).text;
+                assert_eq!(terminal.kind, kind, "Wrong token kind, with text: \"{}\".", text);
+                assert_eq!(terminal_text, token_text, "Wrong token text.");
                 // TODO: verify trivia kinds and texts
 
                 assert_eq!(
@@ -299,93 +314,84 @@ fn test_lex_token_with_trivia() {
 fn test_cases() {
     let db_val = ParserDatabaseForTesting::default();
     let db = &db_val;
-    let res: Vec<GreenId> = Lexer::from_text(db, test_source(), "let x: &T = @ 6; //  5+ 3;")
-        .map(|term_with_kind| term_with_kind.terminal)
-        .collect();
+    let res: Vec<LexerTerminal> =
+        Lexer::from_text(db, test_source(), "let x: &T = @ 6; //  5+ 3;").collect();
     assert_eq!(
         res,
         vec![
-            Terminal::new_green(
-                db,
-                Trivia::new_green(db, vec![]),
-                Token::new_green(db, TokenKind::Let, "let".into()),
-                Trivia::new_green(
-                    db,
-                    vec![Token::new_green(db, TokenKind::Whitespace, " ".into())]
-                ),
-            ),
-            Terminal::new_green(
-                db,
-                Trivia::new_green(db, vec![]),
-                Token::new_green(db, TokenKind::Identifier, "x".into()),
-                Trivia::new_green(db, vec![]),
-            ),
-            Terminal::new_green(
-                db,
-                Trivia::new_green(db, vec![]),
-                Token::new_green(db, TokenKind::Colon, ":".into()),
-                Trivia::new_green(
-                    db,
-                    vec![Token::new_green(db, TokenKind::Whitespace, " ".into())]
-                ),
-            ),
-            Terminal::new_green(
-                db,
-                Trivia::new_green(db, vec![]),
-                Token::new_green(db, TokenKind::And, "&".into()),
-                Trivia::new_green(db, vec![]),
-            ),
-            Terminal::new_green(
-                db,
-                Trivia::new_green(db, vec![]),
-                Token::new_green(db, TokenKind::Identifier, "T".into()),
-                Trivia::new_green(
-                    db,
-                    vec![Token::new_green(db, TokenKind::Whitespace, " ".into())]
-                ),
-            ),
-            Terminal::new_green(
-                db,
-                Trivia::new_green(db, vec![]),
-                Token::new_green(db, TokenKind::Eq, "=".into()),
-                Trivia::new_green(
-                    db,
-                    vec![Token::new_green(db, TokenKind::Whitespace, " ".into())]
-                ),
-            ),
-            Terminal::new_green(
-                db,
-                Trivia::new_green(db, vec![]),
-                Token::new_green(db, TokenKind::BadCharacters, "@".into()),
-                Trivia::new_green(
-                    db,
-                    vec![Token::new_green(db, TokenKind::Whitespace, " ".into())]
-                ),
-            ),
-            Terminal::new_green(
-                db,
-                Trivia::new_green(db, vec![]),
-                Token::new_green(db, TokenKind::LiteralNumber, "6".into()),
-                Trivia::new_green(db, vec![]),
-            ),
-            Terminal::new_green(
-                db,
-                Trivia::new_green(db, vec![]),
-                Token::new_green(db, TokenKind::Semicolon, ";".into()),
-                Trivia::new_green(
-                    db,
-                    vec![
-                        Token::new_green(db, TokenKind::Whitespace, " ".into()),
-                        Token::new_green(db, TokenKind::SingleLineComment, "//  5+ 3;".into())
-                    ]
-                ),
-            ),
-            Terminal::new_green(
-                db,
-                Trivia::new_green(db, vec![]),
-                Token::new_green(db, TokenKind::EndOfFile, "".into()),
-                Trivia::new_green(db, vec![]),
-            )
+            LexerTerminal {
+                token: Token::new_green(db, TokenKind::Let, "let".into()),
+                kind: TokenKind::Let,
+                leading_trivia: vec![],
+                trailing_trivia: vec![
+                    Token::new_green(db, TokenKind::Whitespace, " ".into()).into()
+                ]
+            },
+            LexerTerminal {
+                token: Token::new_green(db, TokenKind::Identifier, "x".into()),
+                kind: TokenKind::Identifier,
+                leading_trivia: vec![],
+                trailing_trivia: vec![]
+            },
+            LexerTerminal {
+                token: Token::new_green(db, TokenKind::Colon, ":".into()),
+                kind: TokenKind::Colon,
+                leading_trivia: vec![],
+                trailing_trivia: vec![
+                    Token::new_green(db, TokenKind::Whitespace, " ".into()).into()
+                ]
+            },
+            LexerTerminal {
+                token: Token::new_green(db, TokenKind::And, "&".into()),
+                kind: TokenKind::And,
+                leading_trivia: vec![],
+                trailing_trivia: vec![]
+            },
+            LexerTerminal {
+                token: Token::new_green(db, TokenKind::Identifier, "T".into()),
+                kind: TokenKind::Identifier,
+                leading_trivia: vec![],
+                trailing_trivia: vec![
+                    Token::new_green(db, TokenKind::Whitespace, " ".into()).into()
+                ]
+            },
+            LexerTerminal {
+                token: Token::new_green(db, TokenKind::Eq, "=".into()),
+                kind: TokenKind::Eq,
+                leading_trivia: vec![],
+                trailing_trivia: vec![
+                    Token::new_green(db, TokenKind::Whitespace, " ".into()).into()
+                ]
+            },
+            LexerTerminal {
+                token: Token::new_green(db, TokenKind::BadCharacters, "@".into()),
+                kind: TokenKind::BadCharacters,
+                leading_trivia: vec![],
+                trailing_trivia: vec![
+                    Token::new_green(db, TokenKind::Whitespace, " ".into()).into()
+                ]
+            },
+            LexerTerminal {
+                token: Token::new_green(db, TokenKind::LiteralNumber, "6".into()),
+                kind: TokenKind::LiteralNumber,
+                leading_trivia: vec![],
+                trailing_trivia: vec![]
+            },
+            LexerTerminal {
+                token: Token::new_green(db, TokenKind::Semicolon, ";".into()),
+                kind: TokenKind::Semicolon,
+                leading_trivia: vec![],
+                trailing_trivia: vec![
+                    Token::new_green(db, TokenKind::Whitespace, " ".into()).into(),
+                    Token::new_green(db, TokenKind::SingleLineComment, "//  5+ 3;".into()).into()
+                ]
+            },
+            LexerTerminal {
+                token: Token::new_green(db, TokenKind::EndOfFile, "".into()),
+                kind: TokenKind::EndOfFile,
+                leading_trivia: vec![],
+                trailing_trivia: vec![]
+            }
         ]
     );
 }
@@ -397,11 +403,15 @@ fn test_bad_character() {
 
     let text = "@";
     let mut lexer = Lexer::from_text(db, test_source(), text);
-    let green_terminal = lexer.next().unwrap().terminal;
-    let terminal = Terminal::from_syntax_node(db, SyntaxNode::new_root(db, green_terminal));
-    let token = terminal.token(db).raw(db);
-    assert_eq!(token.kind, TokenKind::BadCharacters, "Wrong token kind, with text: \"{}\".", text);
-    assert_eq!(token.text, text, "Wrong token text.");
+    let terminal = lexer.next().unwrap();
+    let terminal_text = green_token(db, terminal.token).text;
+    assert_eq!(
+        terminal.kind,
+        TokenKind::BadCharacters,
+        "Wrong token kind, with text: \"{}\".",
+        text
+    );
+    assert_eq!(terminal_text, text, "Wrong token text.");
 
     assert_eq!(
         lexer.next().unwrap().kind,
