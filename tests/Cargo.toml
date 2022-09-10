@@ -8,6 +8,7 @@ defs = { path = "../crates/defs" }
 diagnostics = { path = "../crates/diagnostics" }
 filesystem = { path = "../crates/filesystem" }
 parser = { path = "../crates/parser" }
+pretty_assertions = "1.2.1"
 semantic = { path = "../crates/semantic" }
 sierra = { path = "../crates/sierra" }
 sierra_generator = { path = "../crates/sierra_generator" }

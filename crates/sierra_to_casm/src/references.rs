@@ -80,7 +80,7 @@ impl ApplyApChange for ReferenceExpression {
 pub fn build_function_parameter_refs(func: &Function) -> Result<StatementRefs, ReferencesError> {
     let mut refs = HashMap::with_capacity(func.params.len());
 
-    let mut offset = -2;
+    let mut offset = -3;
     for param in func.params.iter().rev() {
         if refs
             .insert(

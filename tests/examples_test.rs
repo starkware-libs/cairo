@@ -4,6 +4,7 @@ use std::sync::Arc;
 use defs::ids::ModuleId;
 use filesystem::db::FilesGroup;
 use filesystem::ids::{CrateLongId, FileLongId};
+use pretty_assertions::assert_eq;
 use semantic::corelib::core_config;
 use sierra_generator::db::SierraGenGroup;
 use sierra_generator::test_utils::SierraGenDatabaseForTesting;
@@ -32,6 +33,7 @@ fn compile_to_sierra(cairo_file: &str) -> Arc<sierra::program::Program> {
 
 #[test_case("fib.cairo", include_str!("fib.sierra"))]
 fn cairo_to_sierra(name: &str, expected_code: &str) {
+    // TODO(lior): Use replace_libfunc_ids to make the result more readable.
     assert_eq!(compile_to_sierra(name).to_string(), expected_code);
 }
 
@@ -39,7 +41,7 @@ fn cairo_to_sierra(name: &str, expected_code: &str) {
 fn cairo_to_casm(cairo_file: &str, expected_code: &str) {
     let sierra_program = compile_to_sierra(cairo_file);
     assert_eq!(
-        sierra_to_casm::compiler::compile(&sierra_program).map(|casm| casm.to_string()),
-        Ok(expected_code.to_owned())
+        sierra_to_casm::compiler::compile(&sierra_program).unwrap().to_string(),
+        expected_code.to_owned()
     );
 }

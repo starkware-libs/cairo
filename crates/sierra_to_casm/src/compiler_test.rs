@@ -70,19 +70,19 @@ fn good_flow() {
     pretty_assertions::assert_eq!(
         compile(&prog).unwrap().to_string(),
         indoc! {"
-            [ap + 0] = [fp + -3] + [fp + -2], ap++;
-            [ap + 0] = [fp + -2], ap++;
+            [ap + 0] = [fp + -4] + [fp + -3], ap++;
+            [ap + 0] = [fp + -3], ap++;
             [ap + 0] = [ap + -2], ap++;
             call rel 4;
             [ap + 0] = [ap + -3], ap++;
             ret;
-            jmp rel 5 if [fp + -3] != 0;
-            [ap + 0] = [fp + -2], ap++;
-            [ap + 0] = [fp + -2], ap++;
+            jmp rel 5 if [fp + -4] != 0;
+            [ap + 0] = [fp + -3], ap++;
+            [ap + 0] = [fp + -3], ap++;
             ret;
             jmp rel 2;
-            [fp + -3] = [ap + 0] + [fp + -2], ap++;
-            [ap + 0] = [fp + -2], ap++;
+            [fp + -4] = [ap + 0] + [fp + -3], ap++;
+            [ap + 0] = [fp + -3], ap++;
             call rel -9;
             ret;
         "}
@@ -97,12 +97,12 @@ fn fib_program() {
     pretty_assertions::assert_eq!(
         compile(&prog).unwrap().to_string(),
         indoc! {"
-            jmp rel 4 if [fp + -2] != 0;
-            [ap + 0] = [fp + -4], ap++;
+            jmp rel 4 if [fp + -3] != 0;
+            [ap + 0] = [fp + -5], ap++;
             ret;
-            [ap + 0] = [fp + -3], ap++;
-            [ap + 0] = [fp + -4] + [fp + -3], ap++;
-            [ap + 0] = [fp + -2] + -1, ap++;
+            [ap + 0] = [fp + -4], ap++;
+            [ap + 0] = [fp + -5] + [fp + -4], ap++;
+            [ap + 0] = [fp + -3] + -1, ap++;
             call rel -8;
             ret;
         "}
