@@ -281,7 +281,7 @@ fn test_expr_call_missing() {
     assert_eq!(
         diagnostics.format(db),
         indoc! { "
-            error: Unknown function
+            error: Unknown function.
              --> lib.cairo:2:1
             foo()
             ^*^

@@ -19,7 +19,7 @@ impl DiagnosticEntry for ParserDiagnostic {
     fn format(&self, _db: &dyn FilesGroup) -> String {
         match self.kind {
             // TODO(yuval): replace line breaks with "\n".
-            ParserDiagnosticKind::SkippedTokens => "Skipped tokens".to_string(),
+            ParserDiagnosticKind::SkippedTokens => "Skipped tokens.".to_string(),
         }
     }
 

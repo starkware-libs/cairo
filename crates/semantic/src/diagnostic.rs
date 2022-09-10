@@ -54,9 +54,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
 
     fn format(&self, _db: &Self::DbType) -> String {
         match self.kind {
-            SemanticDiagnosticKind::UnknownBinaryOperator => "Unknown binary operator",
-            SemanticDiagnosticKind::UnknownFunction => "Unknown function",
-            SemanticDiagnosticKind::UnknownType => "Unknown type",
+            SemanticDiagnosticKind::UnknownBinaryOperator => "Unknown binary operator.",
+            SemanticDiagnosticKind::UnknownFunction => "Unknown function.",
+            SemanticDiagnosticKind::UnknownType => "Unknown type.",
         }
         .into()
     }
