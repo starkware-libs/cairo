@@ -194,6 +194,11 @@ fn gen_list_code(name: String, element_type: String, step: usize) -> rust::Token
         }
         #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
         pub struct $(&ptr_name)(SyntaxStablePtrId);
+        impl $(&ptr_name) {
+            pub fn untyped(&self) -> SyntaxStablePtrId {
+                self.0
+            }
+        }
         impl TypedSyntaxNode for $(&name) {
             type StablePtr = $(&ptr_name);
             fn missing(db: &dyn SyntaxGroup) -> GreenId {
@@ -212,11 +217,8 @@ fn gen_list_code(name: String, element_type: String, step: usize) -> rust::Token
             fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
                 Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
             }
-            fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
-                self.node.0.stable_ptr
-            }
             fn stable_ptr(&self) -> Self::StablePtr {
-                $(&ptr_name)(self.untyped_stable_ptr())
+                $(&ptr_name)(self.node.0.stable_ptr)
             }
         }
     }
@@ -271,6 +273,11 @@ fn gen_enum_code(
         }
         #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
         pub struct $(&ptr_name)(SyntaxStablePtrId);
+        impl $(&ptr_name) {
+            pub fn untyped(&self) -> SyntaxStablePtrId {
+                self.0
+            }
+        }
         impl TypedSyntaxNode for $(&name){
             type StablePtr = $(&ptr_name);
             fn missing(db: &dyn SyntaxGroup) -> GreenId {
@@ -306,11 +313,8 @@ fn gen_enum_code(
             fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
                 Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
             }
-            fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
-                self.as_syntax_node().0.stable_ptr
-            }
             fn stable_ptr(&self) -> Self::StablePtr {
-                $(&ptr_name)(self.untyped_stable_ptr())
+                $(&ptr_name)(self.as_syntax_node().0.stable_ptr)
             }
         }
     }
@@ -385,6 +389,10 @@ fn gen_struct_code(name: String, members: Vec<Member>) -> rust::Tokens {
         pub struct $(&ptr_name)(SyntaxStablePtrId);
         impl $(&ptr_name) {
             $ptr_getters
+
+            pub fn untyped(&self) -> SyntaxStablePtrId {
+                self.0
+            }
         }
         impl TypedSyntaxNode for $(&name){
             type StablePtr = $(&ptr_name);
@@ -425,11 +433,8 @@ fn gen_struct_code(name: String, members: Vec<Member>) -> rust::Tokens {
             fn as_syntax_node(&self) -> SyntaxNode {
                 self.node.clone()
             }
-            fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
-                self.node.0.stable_ptr
-            }
             fn stable_ptr(&self) -> Self::StablePtr {
-                $(&ptr_name)(self.untyped_stable_ptr())
+                $(&ptr_name)(self.node.0.stable_ptr)
             }
         }
     }

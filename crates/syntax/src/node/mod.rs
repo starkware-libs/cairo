@@ -180,7 +180,6 @@ pub trait TypedSyntaxNode {
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self;
     fn from_ptr(db: &dyn SyntaxGroup, root: &ast::SyntaxFile, node: Self::StablePtr) -> Self;
     fn as_syntax_node(&self) -> SyntaxNode;
-    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId;
     fn stable_ptr(&self) -> Self::StablePtr;
 }
 
@@ -210,6 +209,12 @@ impl Token {
     }
 }
 pub struct TokenPtr(SyntaxStablePtrId);
+impl TokenPtr {
+    #[allow(dead_code)]
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
 impl TypedSyntaxNode for Token {
     type StablePtr = TokenPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
@@ -230,11 +235,8 @@ impl TypedSyntaxNode for Token {
     fn as_syntax_node(&self) -> SyntaxNode {
         self.node.clone()
     }
-    fn untyped_stable_ptr(&self) -> SyntaxStablePtrId {
-        self.node.0.stable_ptr
-    }
     fn stable_ptr(&self) -> Self::StablePtr {
-        TokenPtr(self.untyped_stable_ptr())
+        TokenPtr(self.node.0.stable_ptr)
     }
 }
 
