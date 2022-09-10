@@ -73,3 +73,34 @@ pub fn replace_libfunc_ids(
         _ => statement.clone(),
     }
 }
+
+/// Replaces `ConcreteLibFuncId` with a dummy `ConcreteLibFuncId` whose debug string is the string
+/// representing the original `ConcreteLibFuncLongId`.
+/// For example, while the original debug string may be `[6]`, the resulting debug string may be
+/// `felt_const<2>`.
+///
+/// Similar to [replace_libfunc_ids] except that it acts on [sierra::program::Program].
+pub fn replace_libfunc_ids_in_program(
+    db: &dyn SierraGenGroup,
+    program: &sierra::program::Program,
+) -> sierra::program::Program {
+    sierra::program::Program {
+        statements: program
+            .statements
+            .iter()
+            .map(|statement| match statement {
+                sierra::program::GenStatement::Invocation(p) => {
+                    sierra::program::GenStatement::Invocation(sierra::program::GenInvocation {
+                        libfunc_id: db
+                            .lookup_intern_concrete_lib_func(p.libfunc_id.clone())
+                            .to_string()
+                            .into(),
+                        ..p.clone()
+                    })
+                }
+                _ => statement.clone(),
+            })
+            .collect(),
+        ..program.clone()
+    }
+}
