@@ -66,9 +66,11 @@ pub fn setup_test_function(
 ) -> (ModuleId, semantic::FreeFunction) {
     let content = format!("{module_code} {function_code}");
     let module_id = setup_test_module(db, &content);
+    // Get module syntax diagnostics.
+    db.module_syntax(module_id).propagate(diagnostics);
     let generic_function_id = db
         .module_item_by_name(module_id, function_name.into())
-        .propagate(diagnostics)
+        .ignore()
         .and_then(GenericFunctionId::from)
         .unwrap();
     let function_id = extract_matches!(generic_function_id, GenericFunctionId::Free);

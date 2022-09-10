@@ -191,6 +191,6 @@ fn module_item_by_name(
     module_id: ModuleId,
     name: SmolStr,
 ) -> Option<ModuleItemId> {
-    let module_items = db.module_items(module_id).propagate(diagnostics)?;
+    let module_items = db.module_items(module_id).ignore()?;
     module_items.items.get(&name).copied()
 }
