@@ -93,7 +93,7 @@ fn generic_function_data(
     function_id: GenericFunctionId,
 ) -> Option<GenericFunctionData> {
     let module_id = function_id.module(db.as_defs_group());
-    let module_data = db.module_data(module_id).propagate(diagnostics)?;
+    let module_data = db.module_data(module_id).ignore()?;
     let signature_syntax = match function_id {
         GenericFunctionId::Free(free_function_id) => {
             module_data.free_functions.get(&free_function_id)?.signature(db.as_syntax_group())
@@ -129,12 +129,7 @@ fn free_function_semantic(
     free_function_id: FreeFunctionId,
 ) -> Option<semantic::FreeFunction> {
     let module_id = free_function_id.module(db.as_defs_group());
-    let syntax = db
-        .module_data(module_id)
-        .propagate(diagnostics)?
-        .free_functions
-        .get(&free_function_id)?
-        .clone();
+    let syntax = db.module_data(module_id).ignore()?.free_functions.get(&free_function_id)?.clone();
 
     // Compute signature semantic.
     let generic_function_data = db
