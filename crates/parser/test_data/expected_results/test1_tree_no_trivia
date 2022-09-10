@@ -196,17 +196,17 @@
     │       └── semicolon (kind: Semicolon): ';'
     └── eof (kind: EndOfFile).
 --------------------
-error: Skipped tokens
+error: Skipped tokens.
  --> test1.cairo:6:1
 ;
 ^
 
-error: Skipped tokens
+error: Skipped tokens.
  --> test1.cairo:7:10
 func foo(,var1: int,, var2: felt,) -> int {
          ^
 
-error: Skipped tokens
+error: Skipped tokens.
  --> test1.cairo:7:21
 func foo(,var1: int,, var2: felt,) -> int {
                     ^

@@ -250,22 +250,22 @@
     │       └── rbrace (kind: RBrace): '}'
     └── eof (kind: EndOfFile).
 --------------------
-error: Skipped tokens
+error: Skipped tokens.
  --> test2.cairo:13:11
 mod my_mod{
           ^
 
-error: Skipped tokens
+error: Skipped tokens.
  --> test2.cairo:22:1
 }
 ^
 
-error: Skipped tokens
+error: Skipped tokens.
  --> test2.cairo:24:1
 skipped tokens
 ^*****^
 
-error: Skipped tokens
+error: Skipped tokens.
  --> test2.cairo:24:9
 skipped tokens
         ^****^
