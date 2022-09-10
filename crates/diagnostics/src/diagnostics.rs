@@ -94,10 +94,26 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
 /// ```
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct WithDiagnostics<T, TEntry: DiagnosticEntry> {
-    pub value: T,
-    pub diagnostics: Diagnostics<TEntry>,
+    value: T,
+    diagnostics: Diagnostics<TEntry>,
 }
 impl<T, TEntry: DiagnosticEntry> WithDiagnostics<T, TEntry> {
+    /// Constructs a new [WithDiagnostics] object.
+    /// You should use the `with_diagnostics` macro instead of using this function explicitly.
+    pub fn new(value: T, diagnostics: Diagnostics<TEntry>) -> Self {
+        Self { value, diagnostics }
+    }
+
+    /// Returns the stored diagnostics.
+    pub fn get_diagnostics(&self) -> &Diagnostics<TEntry> {
+        &self.diagnostics
+    }
+
+    /// Returns the internal value and diagnostics.
+    pub fn split(self) -> (T, Diagnostics<TEntry>) {
+        (self.value, self.diagnostics)
+    }
+
     /// Returns `value` without any diagnostics.
     pub fn pure(value: T) -> Self {
         Self { value, diagnostics: Diagnostics::new() }
@@ -113,7 +129,7 @@ impl<T, TEntry: DiagnosticEntry> WithDiagnostics<T, TEntry> {
     }
 
     /// Ignores the diagnostics of `self` and returns the value.
-    pub fn ignore<TCastableEntry: DiagnosticEntry + From<TEntry>>(self) -> T {
+    pub fn ignore(self) -> T {
         self.value
     }
 
