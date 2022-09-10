@@ -55,6 +55,11 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
         }
         res
     }
+
+    /// Verifies that there are no diagnostics in this set. Fails otherwise.
+    pub fn expect(self, error_message: &str) {
+        assert!(self.0.is_empty(), "{}\n{:?}", error_message, self);
+    }
 }
 
 /// Helper type for computations that may produce diagnostics.
@@ -89,10 +94,26 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
 /// ```
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct WithDiagnostics<T, TEntry: DiagnosticEntry> {
-    pub value: T,
-    pub diagnostics: Diagnostics<TEntry>,
+    value: T,
+    diagnostics: Diagnostics<TEntry>,
 }
 impl<T, TEntry: DiagnosticEntry> WithDiagnostics<T, TEntry> {
+    /// Constructs a new [WithDiagnostics] object.
+    /// You should use the `with_diagnostics` macro instead of using this function explicitly.
+    pub fn new(value: T, diagnostics: Diagnostics<TEntry>) -> Self {
+        Self { value, diagnostics }
+    }
+
+    /// Returns the stored diagnostics.
+    pub fn get_diagnostics(&self) -> &Diagnostics<TEntry> {
+        &self.diagnostics
+    }
+
+    /// Returns the internal value and diagnostics.
+    pub fn split(self) -> (T, Diagnostics<TEntry>) {
+        (self.value, self.diagnostics)
+    }
+
     /// Returns `value` without any diagnostics.
     pub fn pure(value: T) -> Self {
         Self { value, diagnostics: Diagnostics::new() }
@@ -108,14 +129,14 @@ impl<T, TEntry: DiagnosticEntry> WithDiagnostics<T, TEntry> {
     }
 
     /// Ignores the diagnostics of `self` and returns the value.
-    pub fn ignore<TCastableEntry: DiagnosticEntry + From<TEntry>>(self) -> T {
+    pub fn ignore(self) -> T {
         self.value
     }
 
     /// Asserts that no diagnostic has occurred, panicking and printing a message on failure.
     /// Returns the wrapped value.
     pub fn expect(self, error_message: &str) -> T {
-        assert!(self.diagnostics.0.is_empty(), "{}\n{:?}", error_message, self.diagnostics);
+        self.diagnostics.expect(error_message);
         self.value
     }
 }

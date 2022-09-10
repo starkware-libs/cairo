@@ -209,6 +209,12 @@ impl Token {
     }
 }
 pub struct TokenPtr(SyntaxStablePtrId);
+impl TokenPtr {
+    #[allow(dead_code)]
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
 impl TypedSyntaxNode for Token {
     type StablePtr = TokenPtr;
     fn missing(db: &dyn SyntaxGroup) -> GreenId {
