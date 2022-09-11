@@ -3,6 +3,9 @@ name = "parser"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+fix_parser_tests = []
+
 [dependencies]
 colored = "2"
 db_utils = { path = "../db_utils" }

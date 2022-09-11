@@ -692,11 +692,11 @@ pub struct ArgListBraced {
 impl ArgListBraced {
     pub fn new_green(
         db: &dyn SyntaxGroup,
-        lbrace: GreenId,
+        lbrace2: GreenId,
         arguments: GreenId,
         rbrace: GreenId,
     ) -> GreenId {
-        let children: Vec<GreenId> = vec![lbrace, arguments, rbrace];
+        let children: Vec<GreenId> = vec![lbrace2, arguments, rbrace];
         let width = children.iter().map(|id| db.lookup_intern_green(*id).width()).sum();
         db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ArgListBraced,
@@ -704,7 +704,7 @@ impl ArgListBraced {
             width,
         }))
     }
-    pub fn lbrace(&self, db: &dyn SyntaxGroup) -> Terminal {
+    pub fn lbrace2(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[0].clone())
     }
     pub fn arguments(&self, db: &dyn SyntaxGroup) -> StructArgList {
