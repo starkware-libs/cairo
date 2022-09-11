@@ -9,7 +9,7 @@ use crate::test_utils::SierraGenDatabaseForTesting;
 fn test_program_generator() {
     let mut db = SierraGenDatabaseForTesting::default();
     // TODO(lior): Make bar return something like felt_add(5, bar()).
-    let module_id = setup_test_module(
+    let (module_id, diagnostics) = setup_test_module(
         &mut db,
         indoc! {"
                 func foo(a: felt) -> felt {
@@ -21,6 +21,7 @@ fn test_program_generator() {
                 }
             "},
     );
+    assert_eq!(diagnostics, "");
 
     let program = &*db.get_program_code(module_id).expect("").unwrap();
     assert_eq!(

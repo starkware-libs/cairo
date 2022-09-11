@@ -17,8 +17,8 @@ use crate::db::{resolve_type, SemanticGroup};
 use crate::diagnostic::SemanticDiagnosticKind;
 use crate::resolve_item::resolve_item;
 use crate::{
-    semantic, ConcreteFunction, Diagnostic, FunctionId, FunctionLongId, MatchArm,
-    SemanticDiagnostic, StatementId, TypeId, Variable,
+    semantic, ConcreteFunction, FunctionId, FunctionLongId, MatchArm, SemanticDiagnostic,
+    StatementId, TypeId, Variable,
 };
 
 /// Context for computing the semantic model of expression trees.
@@ -80,7 +80,7 @@ fn literal_to_semantic(
 /// Computes the semantic model of an expression.
 #[with_diagnostics]
 pub fn compute_expr_semantic(
-    diagnostics: &mut Diagnostics<Diagnostic>,
+    diagnostics: &mut Diagnostics<SemanticDiagnostic>,
     ctx: &mut ComputationContext<'_>,
     syntax: ast::Expr,
 ) -> semantic::Expr {
@@ -264,7 +264,7 @@ pub fn resolve_variable_by_name(
 /// Returns the generic function and the concrete function.
 #[with_diagnostics]
 fn resolve_function(
-    diagnostics: &mut Diagnostics<Diagnostic>,
+    diagnostics: &mut Diagnostics<SemanticDiagnostic>,
     ctx: &mut ComputationContext<'_>,
     path: ast::ExprPath,
     arg_types: &[TypeId],
@@ -290,7 +290,7 @@ fn resolve_function(
 /// Tries to specializes a generic function.
 #[with_diagnostics]
 fn specialize_function(
-    diagnostics: &mut Diagnostics<Diagnostic>,
+    diagnostics: &mut Diagnostics<SemanticDiagnostic>,
     ctx: &mut ComputationContext<'_>,
     generic_function: GenericFunctionId,
     _arg_types: &[TypeId],
@@ -308,7 +308,7 @@ fn specialize_function(
 /// Computes the semantic model of a statement.
 #[with_diagnostics]
 pub fn compute_statement_semantic(
-    diagnostics: &mut Diagnostics<Diagnostic>,
+    diagnostics: &mut Diagnostics<SemanticDiagnostic>,
     ctx: &mut ComputationContext<'_>,
     syntax: ast::Statement,
 ) -> StatementId {

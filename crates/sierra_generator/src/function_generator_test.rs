@@ -11,7 +11,7 @@ use crate::test_utils::{replace_libfunc_ids, SierraGenDatabaseForTesting};
 #[test]
 fn test_function_generator() {
     let mut db = SierraGenDatabaseForTesting::default();
-    let module_id = setup_test_module(
+    let (module_id, syntax_diagnostics) = setup_test_module(
         &mut db,
         indoc! {"
                 func foo(a: felt) -> felt {
@@ -19,8 +19,9 @@ fn test_function_generator() {
                 }
             "},
     );
+    assert_eq!(syntax_diagnostics, "");
     let foo = extract_matches!(
-        db.module_items(module_id).expect("").unwrap().items["foo"],
+        db.module_items(module_id).unwrap().items["foo"],
         ModuleItemId::FreeFunction,
         "Unexpected item type."
     );
