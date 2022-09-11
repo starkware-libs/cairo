@@ -124,7 +124,7 @@ fn test_call_libfunc() {
     let (_module_id, expr) = setup_test_expr(
         &mut db,
         "felt_add(3,6)",
-        "extern func felt_add(a: felt, b: felt) -> felt",
+        "extern func felt_add(a: felt, b: felt) -> felt;",
         "",
     )
     .expect("");
