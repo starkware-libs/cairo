@@ -4,7 +4,7 @@ mod test;
 
 use std::collections::HashMap;
 
-use defs::ids::{GenericFunctionId, LocalVarLongId, ModuleId, VarId};
+use defs::ids::{GenericFunctionId, GenericTypeId, LocalVarLongId, ModuleId, VarId};
 use diagnostics::{Diagnostics, WithDiagnostics};
 use diagnostics_proc_macros::with_diagnostics;
 use smol_str::SmolStr;
@@ -13,12 +13,12 @@ use syntax::node::helpers::TerminalEx;
 use syntax::node::{ast, TypedSyntaxNode};
 
 use crate::corelib::{core_binary_operator, unit_ty};
-use crate::db::{resolve_type, SemanticGroup};
+use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind;
 use crate::resolve_item::resolve_item;
 use crate::{
-    semantic, ConcreteFunction, Diagnostic, FunctionId, FunctionLongId, MatchArm,
-    SemanticDiagnostic, StatementId, TypeId, Variable,
+    semantic, ConcreteFunction, ConcreteType, Diagnostic, FunctionId, FunctionLongId, MatchArm,
+    SemanticDiagnostic, StatementId, TypeId, TypeLongId, Variable,
 };
 
 /// Context for computing the semantic model of expression trees.
@@ -105,20 +105,23 @@ pub fn compute_expr_semantic(
                 compute_expr_semantic(ctx, binary_op_syntax.lhs(syntax_db)).propagate(diagnostics);
             let rexpr =
                 compute_expr_semantic(ctx, binary_op_syntax.rhs(syntax_db)).propagate(diagnostics);
-            let function = match core_binary_operator(db, operator_kind) {
-                Some(function) => function,
-                None => {
-                    diagnostics.add(SemanticDiagnostic {
-                        module_id: ctx.module_id,
-                        stable_ptr: binary_op_syntax.as_syntax_node().stable_ptr(),
-                        kind: SemanticDiagnosticKind::UnknownBinaryOperator,
-                    });
-                    return semantic::Expr::Missing {
-                        ty: TypeId::missing(db),
-                        stable_ptr: binary_op_syntax.stable_ptr().untyped(),
-                    };
-                }
-            };
+            let function =
+                match core_binary_operator(db, operator_kind).and_then(|generic_function| {
+                    specialize_function(diagnostics, ctx, generic_function, &[])
+                }) {
+                    Some(generic_function) => generic_function,
+                    None => {
+                        diagnostics.add(SemanticDiagnostic {
+                            module_id: ctx.module_id,
+                            stable_ptr: binary_op_syntax.as_syntax_node().stable_ptr(),
+                            kind: SemanticDiagnosticKind::UnknownBinaryOperator,
+                        });
+                        return semantic::Expr::Missing {
+                            ty: TypeId::missing(db),
+                            stable_ptr: binary_op_syntax.stable_ptr().untyped(),
+                        };
+                    }
+                };
             semantic::Expr::ExprFunctionCall(semantic::ExprFunctionCall {
                 function,
                 args: vec![db.intern_expr(lexpr), db.intern_expr(rexpr)],
@@ -275,7 +278,7 @@ fn resolve_function(
         .propagate(diagnostics)
         .and_then(GenericFunctionId::from)
         .and_then(|generic_function| {
-            specialize_function(ctx, generic_function, arg_types).propagate(diagnostics)
+            specialize_function(diagnostics, ctx, generic_function, arg_types)
         })
         .unwrap_or_else(|| {
             diagnostics.add(SemanticDiagnostic {
@@ -288,7 +291,6 @@ fn resolve_function(
 }
 
 /// Tries to specializes a generic function.
-#[with_diagnostics]
 fn specialize_function(
     diagnostics: &mut Diagnostics<Diagnostic>,
     ctx: &mut ComputationContext<'_>,
@@ -303,6 +305,61 @@ fn specialize_function(
         generic_args: vec![],
         return_type: signature.return_type,
     })))
+}
+
+// TODO(yuval): move to a separate module "type".
+// TODO(spapini): add a query wrapper.
+/// Resolves a type given a module and a path.
+pub fn resolve_type(
+    diagnostics: &mut Diagnostics<Diagnostic>,
+    db: &dyn SemanticGroup,
+    module_id: ModuleId,
+    ty_syntax: ast::Expr,
+) -> TypeId {
+    let syntax_db = db.as_syntax_group();
+    match ty_syntax {
+        ast::Expr::Path(path) => resolve_item(db, module_id, &path)
+            .propagate(diagnostics)
+            .and_then(GenericTypeId::from)
+            .and_then(|generic_type| specialize_type(diagnostics, db, generic_type))
+            .unwrap_or_else(|| {
+                diagnostics.add(SemanticDiagnostic {
+                    module_id,
+                    stable_ptr: path.node.stable_ptr(),
+                    kind: SemanticDiagnosticKind::UnknownType,
+                });
+                TypeId::missing(db)
+            }),
+        ast::Expr::Parenthesized(expr_syntax) => {
+            resolve_type(diagnostics, db, module_id, expr_syntax.expr(syntax_db))
+        }
+        ast::Expr::Tuple(tuple_syntax) => {
+            let sub_tys = tuple_syntax
+                .expressions(syntax_db)
+                .elements(syntax_db)
+                .into_iter()
+                .map(|subexpr_syntax| resolve_type(diagnostics, db, module_id, subexpr_syntax))
+                .collect();
+            db.intern_type(TypeLongId::Tuple(sub_tys))
+        }
+        _ => {
+            diagnostics.add(SemanticDiagnostic {
+                module_id,
+                stable_ptr: ty_syntax.as_syntax_node().stable_ptr(),
+                kind: SemanticDiagnosticKind::UnknownType,
+            });
+            TypeId::missing(db)
+        }
+    }
+}
+
+/// Tries to specializes a generic type.
+fn specialize_type(
+    _diagnostics: &mut Diagnostics<Diagnostic>,
+    db: &dyn SemanticGroup,
+    generic_type: GenericTypeId,
+) -> Option<TypeId> {
+    Some(db.intern_type(TypeLongId::Concrete(ConcreteType { generic_type, generic_args: vec![] })))
 }
 
 /// Computes the semantic model of a statement.
@@ -328,8 +385,7 @@ pub fn compute_statement_semantic(
                 ast::OptionTypeClause::Empty(_) => inferred_type,
                 ast::OptionTypeClause::TypeClause(type_clause) => {
                     let var_type_path = type_clause.ty(syntax_db);
-                    let explicit_type =
-                        resolve_type(db, ctx.module_id, var_type_path).propagate(diagnostics);
+                    let explicit_type = resolve_type(diagnostics, db, ctx.module_id, var_type_path);
                     assert_eq!(
                         explicit_type, inferred_type,
                         "inferred type ({explicit_type:?}) and explicit type ({inferred_type:?}) \

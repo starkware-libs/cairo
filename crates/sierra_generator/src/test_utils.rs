@@ -30,6 +30,9 @@ impl AsFilesGroup for SierraGenDatabaseForTesting {
     fn as_files_group(&self) -> &(dyn FilesGroup + 'static) {
         self
     }
+    fn as_files_group_mut(&mut self) -> &mut (dyn FilesGroup + 'static) {
+        self
+    }
 }
 impl AsSyntaxGroup for SierraGenDatabaseForTesting {
     fn as_syntax_group(&self) -> &(dyn SyntaxGroup + 'static) {

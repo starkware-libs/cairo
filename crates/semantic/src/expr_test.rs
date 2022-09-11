@@ -37,20 +37,22 @@ fn test_expr_literal() {
 #[test]
 fn test_expr_operator() {
     let mut db_val = SemanticDatabaseForTesting::default();
-    let (_module_id, expr_id) = setup_test_expr(&mut db_val, "5 + 9 * 3", "", "").expect("");
+    let (_module_id, expr_id) = setup_test_expr(&mut db_val, "5 + 9 * 3 == 0", "", "").expect("");
     let db = &db_val;
     let expr = db.lookup_intern_expr(expr_id);
     // TODO(spapini): Make transparent DebugWithDb attribute, to have better outputs.
     // TODO(spapini): Have better whitespaces here somehow.
     assert_eq!(
         format!("{:?}", expr.debug(db)),
-        "ExprFunctionCall(ExprFunctionCall { function: \
+        "ExprFunctionCall(ExprFunctionCall { function: Concrete(ExternFunctionId(core::felt_eq)), \
+         args: [ExprFunctionCall(ExprFunctionCall { function: \
          Concrete(ExternFunctionId(core::felt_add)), args: [ExprLiteral(ExprLiteral { value: 5, \
          ty: Concrete(ExternTypeId(core::felt)) }), ExprFunctionCall(ExprFunctionCall { function: \
          Concrete(ExternFunctionId(core::felt_mul)), args: [ExprLiteral(ExprLiteral { value: 9, \
          ty: Concrete(ExternTypeId(core::felt)) }), ExprLiteral(ExprLiteral { value: 3, ty: \
          Concrete(ExternTypeId(core::felt)) })], ty: Concrete(ExternTypeId(core::felt)) })], ty: \
-         Concrete(ExternTypeId(core::felt)) })"
+         Concrete(ExternTypeId(core::felt)) }), ExprLiteral(ExprLiteral { value: 0, ty: \
+         Concrete(ExternTypeId(core::felt)) })], ty: Concrete(ExternTypeId(core::bool)) })"
     );
 }
 
@@ -67,6 +69,26 @@ fn test_function_with_param() {
     assert_eq!(signature.params.len(), 1);
     let param = &signature.params[0];
     let _param_ty = param.ty;
+}
+
+// TODO(yuval): split test utils and move this test to db_test/type_test.
+#[test]
+fn test_tuple_type() {
+    let mut db_val = SemanticDatabaseForTesting::default();
+    let (_module_id, function) =
+        setup_test_function(&mut db_val, "func foo(a: (felt, (), (felt,))) {}", "foo", "")
+            .expect("");
+    let db = &db_val;
+    let signature = function.signature;
+
+    assert_eq!(signature.params.len(), 1);
+    let param = &signature.params[0];
+    assert_eq!(format!("{:?}", param.id.debug(db)), "ParamId(test_crate::a)");
+    assert_eq!(
+        format!("{:?}", param.ty.debug(db)),
+        "Tuple([Concrete(ExternTypeId(core::felt)), Tuple([]), \
+         Tuple([Concrete(ExternTypeId(core::felt))])])"
+    );
 }
 
 // TODO(yuval): split test utils and move this test to db_test/type_test.
@@ -260,7 +282,7 @@ fn test_expr_call_missing() {
         diagnostics.format(db),
         indoc! { "
             error: Unknown function
-             --> test.cairo:2:1
+             --> lib.cairo:2:1
             foo()
             ^*^
 

@@ -35,3 +35,20 @@ impl FileId {
         }
     }
 }
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct Directory(pub PathBuf);
+
+impl Directory {
+    /// Returns a file inside this directory. The file and directory don't necessarily exist on
+    /// the file system. These are ids/paths to them.
+    pub fn file(&self, db: &dyn FilesGroup, name: SmolStr) -> FileId {
+        db.intern_file(FileLongId::OnDisk(self.0.join(name.to_string())))
+    }
+
+    /// Returns a sub directory inside this directory. These directories don't necessarily exist on
+    /// the file system. These are ids/paths to them.
+    pub fn subdir(&self, name: SmolStr) -> Directory {
+        Directory(self.0.join(name.to_string()))
+    }
+}
