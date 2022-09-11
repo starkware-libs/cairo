@@ -1,24 +1,9 @@
-use std::path::PathBuf;
-
 use defs::ids::{GenericFunctionId, GenericTypeId, ModuleId};
-use filesystem::db::ProjectConfig;
-use filesystem::ids::{CrateLongId, Directory};
+use filesystem::ids::CrateLongId;
 use syntax::token::TokenKind;
 
 use crate::db::SemanticGroup;
 use crate::{ConcreteType, TypeId, TypeLongId};
-
-pub fn core_config(db: &dyn SemanticGroup) -> ProjectConfig {
-    let core_crate = db.intern_crate(CrateLongId("core".into()));
-    // TODO(spapini): find the correct path.
-    // This is the directory of Cargo.toml of the syntax_codegen crate.
-    let dir = env!("CARGO_MANIFEST_DIR");
-    // Pop the "/crates/semantic" suffix.
-    let mut path = PathBuf::from(dir).parent().unwrap().parent().unwrap().to_owned();
-    path.push("corelib");
-    let core_root_dir = Directory(path);
-    ProjectConfig::default().with_crate(core_crate, core_root_dir)
-}
 
 pub fn core_module(db: &dyn SemanticGroup) -> ModuleId {
     let core_crate = db.intern_crate(CrateLongId("core".into()));
