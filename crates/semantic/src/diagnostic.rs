@@ -20,6 +20,10 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::UnknownBinaryOperator => "Unknown binary operator.",
             SemanticDiagnosticKind::UnknownFunction => "Unknown function.",
             SemanticDiagnosticKind::UnknownType => "Unknown type.",
+            SemanticDiagnosticKind::WrongArgumentType { arg_typ: _, param_typ: _ } => {
+                // TODO(lior): Add "Expected: {arg_typ}, found: {param_typ}.".
+                "Unexpected argument type."
+            }
         }
         .into()
     }
@@ -34,4 +38,5 @@ pub enum SemanticDiagnosticKind {
     UnknownBinaryOperator,
     UnknownFunction,
     UnknownType,
+    WrongArgumentType { arg_typ: crate::TypeId, param_typ: crate::TypeId },
 }

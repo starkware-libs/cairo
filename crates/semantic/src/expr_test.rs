@@ -11,7 +11,7 @@ use crate::corelib::{core_felt_ty, unit_ty};
 use crate::db::SemanticGroup;
 use crate::test_utils::{
     setup_test_expr, setup_test_expr_with_diagnostics, setup_test_function,
-    SemanticDatabaseForTesting,
+    setup_test_function_with_diagnostics, SemanticDatabaseForTesting,
 };
 use crate::{semantic, ExprId, StatementId, TypeId};
 
@@ -56,6 +56,43 @@ fn test_expr_operator() {
          Concrete(ExternTypeId(core::felt)) })], ty: Concrete(ExternTypeId(core::felt)) })], ty: \
          Concrete(ExternTypeId(core::felt)) }), ExprLiteral(ExprLiteral { value: 0, ty: \
          Concrete(ExternTypeId(core::felt)) })], ty: Concrete(ExternTypeId(core::bool)) })"
+    );
+}
+
+// TODO(lior): Move to a text file with all the similar failure tests.
+#[test]
+fn test_expr_operator_failures() {
+    let mut db = SemanticDatabaseForTesting::default();
+    let (_, _, diagnostics) = setup_test_function_with_diagnostics(
+        &mut db,
+        indoc! {"
+            func foo(a: MyType) {
+                a + a * a
+            }
+        "},
+        "foo",
+        "extern type MyType;",
+    );
+    // TODO(yuval): Check why we get a wrong location span in the following test.
+    assert_eq!(
+        diagnostics,
+        indoc! {"
+        error: Unexpected argument type.
+         --> lib.cairo:2:9
+            a + a * a
+                ^
+
+        error: Unexpected argument type.
+         --> lib.cairo:2:13
+            a + a * a
+                    ^
+
+        error: Unexpected argument type.
+         --> lib.cairo:2:1
+            a + a * a
+        ^****^
+
+        "}
     );
 }
 

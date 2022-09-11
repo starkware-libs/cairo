@@ -125,29 +125,32 @@ pub fn compute_expr_semantic(
         ast::Expr::Parenthesized(_) => todo!(),
         ast::Expr::Unary(_) => todo!(),
         ast::Expr::Binary(binary_op_syntax) => {
+            let stable_ptr = binary_op_syntax.stable_ptr().untyped();
             let operator_kind = binary_op_syntax.op(syntax_db).kind(syntax_db);
             let lexpr = compute_expr_semantic(ctx, binary_op_syntax.lhs(syntax_db));
             let rexpr = compute_expr_semantic(ctx, binary_op_syntax.rhs(syntax_db));
-            let function = match core_binary_operator(db, operator_kind)
-                .and_then(|generic_function| specialize_function(ctx, generic_function, &[]))
-            {
-                Some(generic_function) => generic_function,
-                None => {
-                    ctx.diagnostics.add(SemanticDiagnostic {
-                        stable_location: StableLocation::from_ast(ctx.module_id, &binary_op_syntax),
-                        kind: SemanticDiagnosticKind::UnknownBinaryOperator,
-                    });
-                    return semantic::Expr::Missing {
-                        ty: TypeId::missing(db),
-                        stable_ptr: binary_op_syntax.stable_ptr().untyped(),
-                    };
-                }
-            };
+            let function =
+                match core_binary_operator(db, operator_kind).and_then(|generic_function| {
+                    // TODO(lior): Can we avoid the clone() below?
+                    specialize_function(ctx, generic_function, &[lexpr.clone(), rexpr.clone()])
+                }) {
+                    Some(generic_function) => generic_function,
+                    None => {
+                        ctx.diagnostics.add(SemanticDiagnostic {
+                            stable_location: StableLocation::from_ast(
+                                ctx.module_id,
+                                &binary_op_syntax,
+                            ),
+                            kind: SemanticDiagnosticKind::UnknownBinaryOperator,
+                        });
+                        return semantic::Expr::Missing { ty: TypeId::missing(db), stable_ptr };
+                    }
+                };
             semantic::Expr::ExprFunctionCall(semantic::ExprFunctionCall {
                 function,
                 args: vec![db.intern_expr(lexpr), db.intern_expr(rexpr)],
                 ty: function.return_type(db),
-                stable_ptr: binary_op_syntax.stable_ptr().untyped(),
+                stable_ptr,
             })
         }
         ast::Expr::Tuple(_) => todo!(),
@@ -160,9 +163,8 @@ pub fn compute_expr_semantic(
                 .into_iter()
                 .map(|arg_syntax| compute_expr_semantic(ctx, arg_syntax))
                 .collect();
-            let arg_types: Vec<_> = arg_exprs.iter().map(|expr| expr.ty()).collect();
+            let function = resolve_function(ctx, path, &arg_exprs);
             let args = arg_exprs.into_iter().map(|expr| db.intern_expr(expr)).collect();
-            let function = resolve_function(ctx, path, &arg_types);
             semantic::Expr::ExprFunctionCall(semantic::ExprFunctionCall {
                 function,
                 args,
@@ -281,13 +283,13 @@ pub fn resolve_variable_by_name(
 fn resolve_function(
     ctx: &mut ComputationContext<'_>,
     path: ast::ExprPath,
-    arg_types: &[TypeId],
+    args: &[semantic::Expr],
 ) -> FunctionId {
     // TODO(spapini): Try to find function in multiple places (e.g. impls, or other modules for
     //   suggestions)
     resolve_item(ctx.db, ctx.module_id, &path)
         .and_then(GenericFunctionId::from)
-        .and_then(|generic_function| specialize_function(ctx, generic_function, arg_types))
+        .and_then(|generic_function| specialize_function(ctx, generic_function, args))
         .unwrap_or_else(|| {
             ctx.diagnostics.add(SemanticDiagnostic {
                 stable_location: StableLocation::from_ast(ctx.module_id, &path),
@@ -301,10 +303,29 @@ fn resolve_function(
 fn specialize_function(
     ctx: &mut ComputationContext<'_>,
     generic_function: GenericFunctionId,
-    _arg_types: &[TypeId],
+    args: &[semantic::Expr],
 ) -> Option<FunctionId> {
     // TODO(spapini): Type check arguments.
     let signature = ctx.db.generic_function_signature_semantic(generic_function)?;
+
+    // TODO(lior): Replace with diagnostic and replace zip_eq below.
+    assert_eq!(args.len(), signature.params.len());
+
+    // Check argument types.
+    for (arg, param) in itertools::zip_eq(args, signature.params) {
+        let arg_typ = arg.ty();
+        let param_typ = param.ty;
+        // Don't add diagnostic if the type is missing (a diagnostic should have already been
+        // added).
+        // TODO(lior): Add a test to missing type once possible.
+        if arg_typ != param_typ && arg_typ != TypeId::missing(ctx.db) {
+            ctx.diagnostics.add(SemanticDiagnostic {
+                stable_location: StableLocation::new(ctx.module_id, arg.stable_ptr()),
+                kind: SemanticDiagnosticKind::WrongArgumentType { arg_typ, param_typ },
+            });
+        }
+    }
+
     Some(ctx.db.intern_function(FunctionLongId::Concrete(ConcreteFunction {
         generic_function,
         generic_args: vec![],
