@@ -56,7 +56,7 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
         res
     }
 
-    /// Verifies that there are no diagnostics in this set. Fails otherwise.
+    /// Asserts that no diagnostic has occurred, panicking with an error message on failure.
     pub fn expect(self, error_message: &str) {
         assert!(self.0.is_empty(), "{}\n{:?}", error_message, self);
     }
@@ -133,7 +133,7 @@ impl<T, TEntry: DiagnosticEntry> WithDiagnostics<T, TEntry> {
         self.value
     }
 
-    /// Asserts that no diagnostic has occurred, panicking and printing a message on failure.
+    /// Asserts that no diagnostic has occurred, panicking with an error message on failure.
     /// Returns the wrapped value.
     pub fn expect(self, error_message: &str) -> T {
         self.diagnostics.expect(error_message);
