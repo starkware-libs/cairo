@@ -25,8 +25,15 @@ pub enum AnnotationError {
     InvalidStatementIdx,
     #[error("MissingAnnotationsForStatement")]
     MissingAnnotationsForStatement(StatementIdx),
-    #[error(transparent)]
-    EditStateError(#[from] EditStateError),
+    #[error("Missing reference error")]
+    MissingReferenceError { statement_idx: StatementIdx, error: EditStateError },
+    #[error("Missing reference error")]
+    OverrideReferenceError {
+        source_statement_idx: StatementIdx,
+        destination_statement_idx: StatementIdx,
+        error: EditStateError,
+    },
+
     #[error(transparent)]
     ReferencesError(#[from] ReferencesError),
 }
@@ -125,7 +132,9 @@ impl ProgramAnnotations {
             .as_ref()
             .ok_or(AnnotationError::MissingAnnotationsForStatement(statement_idx))?;
 
-        let (statement_refs, taken_refs) = take_args(statement_annotations.refs.clone(), ref_ids)?;
+        let (statement_refs, taken_refs) =
+            take_args(statement_annotations.refs.clone(), ref_ids)
+                .map_err(|error| AnnotationError::MissingReferenceError { statement_idx, error })?;
         Ok((
             StatementAnnotations {
                 refs: statement_refs,
@@ -163,10 +172,16 @@ impl ProgramAnnotations {
                 );
             }
 
+            let destination_statement_idx = statement_idx.next(&branch_info.target);
             self.set_or_assert(
-                statement_idx.next(&branch_info.target),
+                destination_statement_idx,
                 StatementAnnotations {
-                    refs: put_results(new_refs, zip_eq(&branch_info.results, branch_result.refs))?,
+                    refs: put_results(new_refs, zip_eq(&branch_info.results, branch_result.refs))
+                        .map_err(|error| AnnotationError::OverrideReferenceError {
+                        source_statement_idx: statement_idx,
+                        destination_statement_idx,
+                        error,
+                    })?,
                     return_types: annotations.return_types.clone(),
                 },
             )?;
