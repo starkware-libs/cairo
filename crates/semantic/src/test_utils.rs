@@ -10,7 +10,6 @@ use parser::db::ParserDatabase;
 use syntax::node::db::{AsSyntaxGroup, SyntaxDatabase, SyntaxGroup};
 use utils::extract_matches;
 
-use crate::corelib::core_config;
 use crate::db::{SemanticDatabase, SemanticGroup};
 use crate::{semantic, Diagnostic, ExprBlock, ExprId};
 
@@ -49,7 +48,7 @@ impl AsDefsGroup for SemanticDatabaseForTesting {
 pub fn setup_test_module(db: &mut dyn SemanticGroup, content: &str) -> ModuleId {
     let crate_id = db.intern_crate(CrateLongId("test_crate".into()));
     let directory = Directory("src".into());
-    db.set_project_config(core_config(db).with_crate(crate_id, directory));
+    db.set_crate_root(crate_id, Some(directory));
     let file_id = db.module_file(ModuleId::CrateRoot(crate_id)).unwrap();
     db.as_files_group_mut().override_file_content(file_id, Some(Arc::new(content.to_string())));
 
