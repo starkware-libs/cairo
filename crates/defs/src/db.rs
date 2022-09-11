@@ -1,12 +1,9 @@
 use std::sync::Arc;
 
-use diagnostics::{Diagnostics, WithDiagnostics};
-use diagnostics_proc_macros::with_diagnostics;
 use filesystem::db::{AsFilesGroup, FilesGroup};
 use filesystem::ids::{Directory, FileId};
 use itertools::chain;
 use parser::db::ParserGroup;
-use parser::ParserDiagnostic;
 use smol_str::SmolStr;
 use syntax::node::ast::SyntaxFile;
 use syntax::node::db::{AsSyntaxGroup, SyntaxGroup};
@@ -41,25 +38,12 @@ pub trait DefsGroup: FilesGroup + SyntaxGroup + AsSyntaxGroup + ParserGroup + As
     // Module to syntax.
     fn module_file(&self, module_id: ModuleId) -> Option<FileId>;
     fn module_dir(&self, module_id: ModuleId) -> Option<Directory>;
-    fn module_syntax(
-        &self,
-        module_id: ModuleId,
-    ) -> WithDiagnostics<Option<Arc<SyntaxFile>>, ParserDiagnostic>;
+    fn module_syntax(&self, module_id: ModuleId) -> Option<Arc<SyntaxFile>>;
 
     // Module level resolving.
-    fn module_data(
-        &self,
-        module_id: ModuleId,
-    ) -> WithDiagnostics<Option<ModuleData>, ParserDiagnostic>;
-    fn module_items(
-        &self,
-        module_id: ModuleId,
-    ) -> WithDiagnostics<Option<ModuleItems>, ParserDiagnostic>;
-    fn module_item_by_name(
-        &self,
-        module_id: ModuleId,
-        name: SmolStr,
-    ) -> WithDiagnostics<Option<ModuleItemId>, ParserDiagnostic>;
+    fn module_data(&self, module_id: ModuleId) -> Option<ModuleData>;
+    fn module_items(&self, module_id: ModuleId) -> Option<ModuleItems>;
+    fn module_item_by_name(&self, module_id: ModuleId, name: SmolStr) -> Option<ModuleItemId>;
 }
 
 pub trait AsDefsGroup {
@@ -89,14 +73,8 @@ fn module_dir(db: &dyn DefsGroup, module_id: ModuleId) -> Option<Directory> {
         }
     }
 }
-
-#[with_diagnostics]
-pub fn module_syntax(
-    diagnostics: &mut Diagnostics<ParserDiagnostic>,
-    db: &dyn DefsGroup,
-    module_id: ModuleId,
-) -> Option<Arc<SyntaxFile>> {
-    db.file_syntax(db.module_file(module_id)?).propagate(diagnostics)
+pub fn module_syntax(db: &dyn DefsGroup, module_id: ModuleId) -> Option<Arc<SyntaxFile>> {
+    db.file_syntax(db.module_file(module_id)?)
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -114,16 +92,11 @@ pub struct ModuleItems {
     pub items: OrderedHashMap<SmolStr, ModuleItemId>,
 }
 
-#[with_diagnostics]
-fn module_data(
-    diagnostics: &mut Diagnostics<ParserDiagnostic>,
-    db: &dyn DefsGroup,
-    module_id: ModuleId,
-) -> Option<ModuleData> {
+fn module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Option<ModuleData> {
     let mut res = ModuleData::default();
     let syntax_db = db.as_syntax_group();
 
-    let syntax_file = db.module_syntax(module_id).propagate(diagnostics)?;
+    let syntax_file = db.module_syntax(module_id)?;
     for item in syntax_file.items(syntax_db).elements(syntax_db) {
         match item {
             ast::Item::Module(module) => {
@@ -163,14 +136,9 @@ fn module_data(
     Some(res)
 }
 
-#[with_diagnostics]
-fn module_items(
-    diagnostics: &mut Diagnostics<ParserDiagnostic>,
-    db: &dyn DefsGroup,
-    module_id: ModuleId,
-) -> Option<ModuleItems> {
+fn module_items(db: &dyn DefsGroup, module_id: ModuleId) -> Option<ModuleItems> {
     let syntax_db = db.as_syntax_group();
-    let module_data = db.module_data(module_id).propagate(diagnostics)?;
+    let module_data = db.module_data(module_id)?;
     // TODO(spapini): Prune other items if name is missing.
     Some(ModuleItems {
         items: chain!(
@@ -207,13 +175,11 @@ fn module_items(
     })
 }
 
-#[with_diagnostics]
 fn module_item_by_name(
-    diagnostics: &mut Diagnostics<ParserDiagnostic>,
     db: &dyn DefsGroup,
     module_id: ModuleId,
     name: SmolStr,
 ) -> Option<ModuleItemId> {
-    let module_items = db.module_items(module_id).propagate(diagnostics)?;
+    let module_items = db.module_items(module_id)?;
     module_items.items.get(&name).copied()
 }
