@@ -120,8 +120,8 @@ fn get_syntax_root_and_diagnostics(
 ) -> (SyntaxNode, Diagnostics<ParserDiagnostic>) {
     let file_id = db.intern_file(FileLongId::OnDisk(PathBuf::from(cairo_filename)));
     let contents = db.file_content(file_id).unwrap();
-    let parser = Parser::from_text(db, file_id, contents.as_str());
-    let (syntax_root, diagnostics) = parser.parse_syntax_file().split();
+    let mut diagnostics = Diagnostics::new();
+    let syntax_root = Parser::parse_file(db, &mut diagnostics, file_id, contents.as_str());
     (syntax_root.as_syntax_node(), diagnostics)
 }
 

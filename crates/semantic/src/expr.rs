@@ -18,7 +18,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind;
 use crate::resolve_item::resolve_item;
 use crate::{
-    semantic, ConcreteFunction, ConcreteType, Diagnostic, FunctionId, FunctionLongId, MatchArm,
+    semantic, ConcreteFunction, ConcreteType, FunctionId, FunctionLongId, MatchArm,
     SemanticDiagnostic, StatementId, TypeId, TypeLongId, Variable,
 };
 
@@ -81,7 +81,7 @@ fn literal_to_semantic(
 /// Computes the semantic model of an expression.
 #[with_diagnostics]
 pub fn compute_expr_semantic(
-    diagnostics: &mut Diagnostics<Diagnostic>,
+    diagnostics: &mut Diagnostics<SemanticDiagnostic>,
     ctx: &mut ComputationContext<'_>,
     syntax: ast::Expr,
 ) -> semantic::Expr {
@@ -270,7 +270,7 @@ pub fn resolve_variable_by_name(
 /// Returns the generic function and the concrete function.
 #[with_diagnostics]
 fn resolve_function(
-    diagnostics: &mut Diagnostics<Diagnostic>,
+    diagnostics: &mut Diagnostics<SemanticDiagnostic>,
     ctx: &mut ComputationContext<'_>,
     path: ast::ExprPath,
     arg_types: &[TypeId],
@@ -294,7 +294,7 @@ fn resolve_function(
 
 /// Tries to specializes a generic function.
 fn specialize_function(
-    diagnostics: &mut Diagnostics<Diagnostic>,
+    diagnostics: &mut Diagnostics<SemanticDiagnostic>,
     ctx: &mut ComputationContext<'_>,
     generic_function: GenericFunctionId,
     _arg_types: &[TypeId],
@@ -313,7 +313,7 @@ fn specialize_function(
 // TODO(spapini): add a query wrapper.
 /// Resolves a type given a module and a path.
 pub fn resolve_type(
-    diagnostics: &mut Diagnostics<Diagnostic>,
+    diagnostics: &mut Diagnostics<SemanticDiagnostic>,
     db: &dyn SemanticGroup,
     module_id: ModuleId,
     ty_syntax: ast::Expr,
@@ -355,7 +355,7 @@ pub fn resolve_type(
 
 /// Tries to specializes a generic type.
 fn specialize_type(
-    _diagnostics: &mut Diagnostics<Diagnostic>,
+    _diagnostics: &mut Diagnostics<SemanticDiagnostic>,
     db: &dyn SemanticGroup,
     generic_type: GenericTypeId,
 ) -> Option<TypeId> {
@@ -365,7 +365,7 @@ fn specialize_type(
 /// Computes the semantic model of a statement.
 #[with_diagnostics]
 pub fn compute_statement_semantic(
-    diagnostics: &mut Diagnostics<Diagnostic>,
+    diagnostics: &mut Diagnostics<SemanticDiagnostic>,
     ctx: &mut ComputationContext<'_>,
     syntax: ast::Statement,
 ) -> StatementId {

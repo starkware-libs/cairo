@@ -11,10 +11,9 @@ use parser::db::ParserGroup;
 use syntax::node::{ast, TypedSyntaxNode};
 
 use crate::corelib::unit_ty;
-use crate::diagnostic::Diagnostic;
 use crate::expr::{compute_expr_semantic, resolve_type, ComputationContext, EnvVariables};
 use crate::ids::{ExprId, StatementId, TypeId, TypeLongId};
-use crate::{corelib, semantic, FunctionId, FunctionLongId};
+use crate::{corelib, semantic, FunctionId, FunctionLongId, SemanticDiagnostic};
 
 // Salsa database interface.
 #[salsa::query_group(SemanticDatabase)]
@@ -37,17 +36,17 @@ pub trait SemanticGroup: DefsGroup + AsDefsGroup + ParserGroup + AsFilesGroup {
     fn generic_function_data(
         &self,
         function_id: GenericFunctionId,
-    ) -> WithDiagnostics<Option<GenericFunctionData>, Diagnostic>;
+    ) -> WithDiagnostics<Option<GenericFunctionData>, SemanticDiagnostic>;
     fn generic_function_signature_semantic(
         &self,
         function_id: GenericFunctionId,
-    ) -> WithDiagnostics<Option<semantic::Signature>, Diagnostic>;
+    ) -> WithDiagnostics<Option<semantic::Signature>, SemanticDiagnostic>;
 
     /// Returns the semantic function given the function_id.
     fn free_function_semantic(
         &self,
         function_id: FreeFunctionId,
-    ) -> WithDiagnostics<Option<semantic::FreeFunction>, Diagnostic>;
+    ) -> WithDiagnostics<Option<semantic::FreeFunction>, SemanticDiagnostic>;
 
     // Corelib.
     #[salsa::invoke(corelib::core_module)]
@@ -85,12 +84,12 @@ pub struct GenericFunctionData {
 /// [`GenericFunctionData`] struct.
 #[with_diagnostics]
 fn generic_function_data(
-    diagnostics: &mut Diagnostics<Diagnostic>,
+    diagnostics: &mut Diagnostics<SemanticDiagnostic>,
     db: &dyn SemanticGroup,
     function_id: GenericFunctionId,
 ) -> Option<GenericFunctionData> {
     let module_id = function_id.module(db.as_defs_group());
-    let module_data = db.module_data(module_id).propagate(diagnostics)?;
+    let module_data = db.module_data(module_id)?;
     let signature_syntax = match function_id {
         GenericFunctionId::Free(free_function_id) => {
             module_data.free_functions.get(&free_function_id)?.signature(db.as_syntax_group())
@@ -111,7 +110,7 @@ fn generic_function_data(
 /// Computes the semantic model of the signature of a GenericFunction (e.g. Free / Extern).
 #[with_diagnostics]
 fn generic_function_signature_semantic(
-    diagnostics: &mut Diagnostics<Diagnostic>,
+    diagnostics: &mut Diagnostics<SemanticDiagnostic>,
     db: &dyn SemanticGroup,
     function_id: GenericFunctionId,
 ) -> Option<semantic::Signature> {
@@ -121,17 +120,12 @@ fn generic_function_signature_semantic(
 
 #[with_diagnostics]
 fn free_function_semantic(
-    diagnostics: &mut Diagnostics<Diagnostic>,
+    diagnostics: &mut Diagnostics<SemanticDiagnostic>,
     db: &dyn SemanticGroup,
     free_function_id: FreeFunctionId,
 ) -> Option<semantic::FreeFunction> {
     let module_id = free_function_id.module(db.as_defs_group());
-    let syntax = db
-        .module_data(module_id)
-        .propagate(diagnostics)?
-        .free_functions
-        .get(&free_function_id)?
-        .clone();
+    let syntax = db.module_data(module_id)?.free_functions.get(&free_function_id)?.clone();
 
     // Compute signature semantic.
     let generic_function_data = db
@@ -160,7 +154,7 @@ fn statement_semantic(db: &dyn SemanticGroup, item: StatementId) -> semantic::St
 /// Gets the return type of the given function's AST.
 #[with_diagnostics]
 fn function_signature_return_type(
-    diagnostics: &mut Diagnostics<Diagnostic>,
+    diagnostics: &mut Diagnostics<SemanticDiagnostic>,
     db: &dyn SemanticGroup,
     module_id: ModuleId,
     sig: &ast::FunctionSignature,
@@ -179,7 +173,7 @@ fn function_signature_return_type(
 /// Returns the parameters of the given function signature's AST.
 #[with_diagnostics]
 fn function_signature_params(
-    diagnostics: &mut Diagnostics<Diagnostic>,
+    diagnostics: &mut Diagnostics<SemanticDiagnostic>,
     db: &dyn SemanticGroup,
     module_id: ModuleId,
     sig: &ast::FunctionSignature,
