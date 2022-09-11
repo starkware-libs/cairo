@@ -7,11 +7,12 @@ use diagnostics_proc_macros::with_diagnostics;
 use filesystem::db::{init_files_group, AsFilesGroup, FilesDatabase, FilesGroup, FilesGroupEx};
 use filesystem::ids::{CrateLongId, Directory};
 use parser::db::ParserDatabase;
+use pretty_assertions::assert_eq;
 use syntax::node::db::{AsSyntaxGroup, SyntaxDatabase, SyntaxGroup};
 use utils::extract_matches;
 
 use crate::db::{SemanticDatabase, SemanticGroup};
-use crate::{semantic, Diagnostic, ExprBlock, ExprId};
+use crate::{semantic, ExprBlock, ExprId, SemanticDiagnostic};
 
 #[salsa::database(SemanticDatabase, DefsDatabase, ParserDatabase, SyntaxDatabase, FilesDatabase)]
 pub struct SemanticDatabaseForTesting {
@@ -45,22 +46,34 @@ impl AsDefsGroup for SemanticDatabaseForTesting {
 }
 
 /// Sets up a module with given content, and returns its module id.
-pub fn setup_test_module(db: &mut dyn SemanticGroup, content: &str) -> ModuleId {
+pub fn setup_test_module_with_diagnostics(
+    db: &mut (dyn SemanticGroup + 'static),
+    content: &str,
+) -> (ModuleId, String) {
     let crate_id = db.intern_crate(CrateLongId("test_crate".into()));
     let directory = Directory("src".into());
     db.set_crate_root(crate_id, Some(directory));
     let file_id = db.module_file(ModuleId::CrateRoot(crate_id)).unwrap();
     db.as_files_group_mut().override_file_content(file_id, Some(Arc::new(content.to_string())));
+    let syntax_diagnostics = db.file_syntax_diagnostics(file_id).format(db.as_files_group());
 
-    ModuleId::CrateRoot(crate_id)
+    (ModuleId::CrateRoot(crate_id), syntax_diagnostics)
 }
+
+/// Sets up a module with given content, and returns its module id.
+pub fn setup_test_module(db: &mut (dyn SemanticGroup + 'static), content: &str) -> ModuleId {
+    let (module_id, syntax_diagnostics) = setup_test_module_with_diagnostics(db, content);
+    assert_eq!(syntax_diagnostics, "");
+    module_id
+}
+
 /// Returns the semantic model of a given function.
 /// function_name - name of the function.
 /// module_code - extra setup code in the module context.
 #[with_diagnostics]
 pub fn setup_test_function(
-    diagnostics: &mut Diagnostics<Diagnostic>,
-    db: &mut dyn SemanticGroup,
+    diagnostics: &mut Diagnostics<SemanticDiagnostic>,
+    db: &mut (dyn SemanticGroup + 'static),
     function_code: &str,
     function_name: &str,
     module_code: &str,
@@ -69,7 +82,6 @@ pub fn setup_test_function(
     let module_id = setup_test_module(db, &content);
     let generic_function_id = db
         .module_item_by_name(module_id, function_name.into())
-        .propagate(diagnostics)
         .and_then(GenericFunctionId::from)
         .unwrap();
     let function_id = extract_matches!(generic_function_id, GenericFunctionId::Free);
@@ -81,8 +93,8 @@ pub fn setup_test_function(
 /// function_body - extra setup code in the function context.
 #[with_diagnostics]
 pub fn setup_test_expr(
-    diagnostics: &mut Diagnostics<Diagnostic>,
-    db: &mut dyn SemanticGroup,
+    diagnostics: &mut Diagnostics<SemanticDiagnostic>,
+    db: &mut (dyn SemanticGroup + 'static),
     expr_code: &str,
     module_code: &str,
     function_body: &str,
@@ -108,8 +120,8 @@ pub fn setup_test_expr(
 /// function_body - extra setup code in the function context.
 #[with_diagnostics]
 pub fn setup_test_block(
-    diagnostics: &mut Diagnostics<Diagnostic>,
-    db: &mut dyn SemanticGroup,
+    diagnostics: &mut Diagnostics<SemanticDiagnostic>,
+    db: &mut (dyn SemanticGroup + 'static),
     expr_code: &str,
     module_code: &str,
     function_body: &str,

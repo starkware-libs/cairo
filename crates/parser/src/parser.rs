@@ -4,7 +4,7 @@ mod test;
 
 use std::mem;
 
-use diagnostics::{Diagnostics, WithDiagnostics};
+use diagnostics::Diagnostics;
 use filesystem::ids::FileId;
 use filesystem::span::{TextOffset, TextSpan};
 use syntax::node::ast::*;
@@ -33,7 +33,7 @@ pub struct Parser<'a> {
     offset: u32,
     /// The width of the current terminal being handled.
     current_width: u32,
-    diagnostics: Diagnostics<ParserDiagnostic>,
+    diagnostics: &'a mut Diagnostics<ParserDiagnostic>,
 }
 
 /// Fields for a terminal node. See Parser::unpack_terminal.
@@ -63,11 +63,16 @@ struct UnpackedTerminal {
 
 const MAX_PRECEDENCE: usize = 10;
 impl<'a> Parser<'a> {
-    /// Ctor.
-    pub fn from_text(db: &'a dyn SyntaxGroup, file_id: FileId, text: &'a str) -> Parser<'a> {
+    /// Parses a file.
+    pub fn parse_file(
+        db: &'a dyn SyntaxGroup,
+        diagnostics: &mut Diagnostics<ParserDiagnostic>,
+        file_id: FileId,
+        text: &'a str,
+    ) -> SyntaxFile {
         let mut lexer = Lexer::from_text(db, file_id, text);
         let next_terminal = lexer.next().unwrap();
-        Parser {
+        let parser = Parser {
             db,
             file_id,
             lexer,
@@ -75,8 +80,10 @@ impl<'a> Parser<'a> {
             skipped_terminals: Vec::new(),
             offset: 0,
             current_width: 0,
-            diagnostics: Diagnostics::new(),
-        }
+            diagnostics,
+        };
+        let green = parser.parse_syntax_file();
+        SyntaxFile::from_syntax_node(db, SyntaxNode::new_root(db, green))
     }
 
     /// Returns a GreenId of an ExprMissing and adds a diagnostic describing it.
@@ -95,7 +102,7 @@ impl<'a> Parser<'a> {
         ExprMissing::new_green(self.db)
     }
 
-    pub fn parse_syntax_file(mut self) -> WithDiagnostics<SyntaxFile, ParserDiagnostic> {
+    pub fn parse_syntax_file(mut self) -> GreenId {
         let items = self.parse_list(
             Self::try_parse_top_level_item,
             TokenKind::EndOfFile,
@@ -111,11 +118,7 @@ impl<'a> Parser<'a> {
         self.offset += self.current_width;
 
         let eof = self.add_skipped_to_terminal(self.next_terminal.terminal);
-        let syntax_file = SyntaxFile::from_syntax_node(
-            self.db,
-            SyntaxNode::new_root(self.db, SyntaxFile::new_green(self.db, items, eof)),
-        );
-        WithDiagnostics::new(syntax_file, self.diagnostics)
+        SyntaxFile::new_green(self.db, items, eof)
     }
 
     // ------------------------------- Top level items -------------------------------

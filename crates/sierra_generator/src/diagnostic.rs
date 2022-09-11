@@ -37,12 +37,9 @@ impl From<parser::ParserDiagnostic> for Diagnostic {
         Self::Parser(diagnostic)
     }
 }
-impl From<semantic::Diagnostic> for Diagnostic {
-    fn from(diagnostic: semantic::Diagnostic) -> Self {
-        match diagnostic {
-            semantic::Diagnostic::Semantic(diagnostic) => Diagnostic::Semantic(diagnostic),
-            semantic::Diagnostic::Parser(diagnostic) => Diagnostic::Parser(diagnostic),
-        }
+impl From<semantic::SemanticDiagnostic> for Diagnostic {
+    fn from(diagnostic: semantic::SemanticDiagnostic) -> Self {
+        Self::Semantic(diagnostic)
     }
 }
 impl From<SierraGeneratorDiagnostic> for Diagnostic {
