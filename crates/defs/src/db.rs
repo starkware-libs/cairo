@@ -101,6 +101,7 @@ pub fn module_syntax(
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ModuleData {
+    pub submodules: OrderedHashMap<SubmoduleId, ast::ItemModule>,
     pub uses: OrderedHashMap<UseId, ast::ItemUse>,
     pub free_functions: OrderedHashMap<FreeFunctionId, ast::ItemFreeFunction>,
     pub structs: OrderedHashMap<StructId, ast::ItemStruct>,
@@ -125,7 +126,10 @@ fn module_data(
     let syntax_file = db.module_syntax(module_id).propagate(diagnostics)?;
     for item in syntax_file.items(syntax_db).elements(syntax_db) {
         match item {
-            ast::Item::Module(_module) => todo!(),
+            ast::Item::Module(module) => {
+                let item_id = db.intern_submodule(SubmoduleLongId(module_id, module.stable_ptr()));
+                res.submodules.insert(item_id, module);
+            }
             ast::Item::Use(us) => {
                 let item_id = db.intern_use(UseLongId(module_id, us.stable_ptr()));
                 res.uses.insert(item_id, us);
@@ -170,6 +174,10 @@ fn module_items(
     // TODO(spapini): Prune other items if name is missing.
     Some(ModuleItems {
         items: chain!(
+            module_data.submodules.iter().map(|(submodule_id, syntax)| (
+                syntax.name(syntax_db).text(syntax_db),
+                ModuleItemId::Submodule(*submodule_id),
+            )),
             module_data.uses.iter().flat_map(|(use_id, syntax)| (syntax
                 .name(syntax_db)
                 .elements(syntax_db)
