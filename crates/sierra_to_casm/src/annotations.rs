@@ -9,6 +9,7 @@ use sierra::ids::{ConcreteTypeId, VarId};
 use sierra::program::{BranchInfo, Function, StatementIdx};
 use thiserror::Error;
 
+use crate::environment::Environment;
 use crate::invocations::BranchRefChanges;
 use crate::references::{
     build_function_parameter_refs, check_types_match, ReferenceValue, ReferencesError,
@@ -43,6 +44,7 @@ pub struct ReturnTypesAnnotation(usize);
 pub struct StatementAnnotations {
     pub refs: StatementRefs,
     pub return_types: ReturnTypesAnnotation,
+    pub environment: Environment,
 }
 
 /// Annotations of the program statements.
@@ -84,6 +86,7 @@ impl ProgramAnnotations {
                 StatementAnnotations {
                     refs: build_function_parameter_refs(func)?,
                     return_types: return_annotation,
+                    environment: Environment {},
                 },
             )?
         }
@@ -121,7 +124,7 @@ impl ProgramAnnotations {
         statement_idx: StatementIdx,
         ref_ids: impl Iterator<Item = &'a VarId>,
     ) -> Result<(StatementAnnotations, Vec<ReferenceValue>), AnnotationError> {
-        let statement_annotations = &self.per_statement_annotations[statement_idx.0]
+        let statement_annotations = self.per_statement_annotations[statement_idx.0]
             .as_ref()
             .ok_or(AnnotationError::MissingAnnotationsForStatement(statement_idx))?;
 
@@ -130,6 +133,7 @@ impl ProgramAnnotations {
             StatementAnnotations {
                 refs: statement_refs,
                 return_types: statement_annotations.return_types.clone(),
+                environment: statement_annotations.environment.clone(),
             },
             taken_refs,
         ))
@@ -168,6 +172,7 @@ impl ProgramAnnotations {
                 StatementAnnotations {
                     refs: put_results(new_refs, zip_eq(&branch_info.results, branch_result.refs))?,
                     return_types: annotations.return_types.clone(),
+                    environment: annotations.environment.clone(),
                 },
             )?;
         }
