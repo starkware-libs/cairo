@@ -1,0 +1,12 @@
+[package]
+name = "project"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+serde = { version = "1.0.130", features = ["derive"] }
+thiserror = { version = "1.0.31" }
+toml = "0.4.2"
+
+[dev-dependencies]
+indoc = "1.0.7"
