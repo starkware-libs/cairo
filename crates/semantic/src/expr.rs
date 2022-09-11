@@ -304,8 +304,7 @@ fn specialize_function(
     _arg_types: &[TypeId],
 ) -> Option<FunctionId> {
     // TODO(spapini): Type check arguments.
-    let signature =
-        ctx.db.generic_function_signature_semantic(generic_function).propagate(ctx.diagnostics)?;
+    let signature = ctx.db.generic_function_signature_semantic(generic_function)?;
     Some(ctx.db.intern_function(FunctionLongId::Concrete(ConcreteFunction {
         generic_function,
         generic_args: vec![],
