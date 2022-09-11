@@ -9,13 +9,16 @@ use utils::extract_matches;
 
 use crate::corelib::{core_felt_ty, unit_ty};
 use crate::db::SemanticGroup;
-use crate::test_utils::{setup_test_expr, setup_test_function, SemanticDatabaseForTesting};
+use crate::test_utils::{
+    setup_test_expr, setup_test_expr_with_diagnostics, setup_test_function,
+    SemanticDatabaseForTesting,
+};
 use crate::{semantic, ExprId, StatementId, TypeId};
 
 #[test]
 fn test_expr_literal() {
     let mut db_val = SemanticDatabaseForTesting::default();
-    let (_module_id, expr_id) = setup_test_expr(&mut db_val, "7", "", "").expect("");
+    let (_module_id, expr_id) = setup_test_expr(&mut db_val, "7", "", "");
     let db = &db_val;
     let expr = db.lookup_intern_expr(expr_id);
     // TODO(spapini): Currently, DebugWithDb can't "switch" dbs, and thus ExternTypeId is not
@@ -37,7 +40,7 @@ fn test_expr_literal() {
 #[test]
 fn test_expr_operator() {
     let mut db_val = SemanticDatabaseForTesting::default();
-    let (_module_id, expr_id) = setup_test_expr(&mut db_val, "5 + 9 * 3 == 0", "", "").expect("");
+    let (_module_id, expr_id) = setup_test_expr(&mut db_val, "5 + 9 * 3 == 0", "", "");
     let db = &db_val;
     let expr = db.lookup_intern_expr(expr_id);
     // TODO(spapini): Make transparent DebugWithDb attribute, to have better outputs.
@@ -61,7 +64,7 @@ fn test_expr_operator() {
 fn test_function_with_param() {
     let mut db_val = SemanticDatabaseForTesting::default();
     let (_module_id, function) =
-        setup_test_function(&mut db_val, "func foo(a: felt) {}", "foo", "").expect("");
+        setup_test_function(&mut db_val, "func foo(a: felt) {}", "foo", "");
     let _db = &db_val;
     let signature = function.signature;
 
@@ -76,8 +79,7 @@ fn test_function_with_param() {
 fn test_tuple_type() {
     let mut db_val = SemanticDatabaseForTesting::default();
     let (_module_id, function) =
-        setup_test_function(&mut db_val, "func foo(a: (felt, (), (felt,))) {}", "foo", "")
-            .expect("");
+        setup_test_function(&mut db_val, "func foo(a: (felt, (), (felt,))) {}", "foo", "");
     let db = &db_val;
     let signature = function.signature;
 
@@ -96,7 +98,7 @@ fn test_tuple_type() {
 fn test_function_with_return_type() {
     let mut db_val = SemanticDatabaseForTesting::default();
     let (_module_id, function) =
-        setup_test_function(&mut db_val, "func foo() -> felt {}", "foo", "").expect("");
+        setup_test_function(&mut db_val, "func foo() -> felt {}", "foo", "");
     let _db = &db_val;
     let signature = function.signature;
 
@@ -117,8 +119,7 @@ fn test_let_statement() {
         "},
         "foo",
         "",
-    )
-    .expect("");
+    );
     let db = &db_val;
 
     let _signature = function.signature;
@@ -153,8 +154,7 @@ fn test_expr_var() {
         "},
         "foo",
         "",
-    )
-    .expect("");
+    );
     let db = &db_val;
 
     let semantic::ExprBlock { statements: _, tail, ty: _, stable_ptr: _ } =
@@ -184,8 +184,7 @@ fn test_expr_match() {
         "},
         "foo",
         "",
-    )
-    .expect("");
+    );
     let db = &db_val;
     let semantic::ExprBlock { statements: _, tail, ty: _, stable_ptr: _ } =
         extract_matches!(db.lookup_intern_expr(func.body), crate::Expr::ExprBlock);
@@ -201,7 +200,7 @@ fn test_expr_match() {
 #[test]
 fn test_expr_block() {
     let mut db_val = SemanticDatabaseForTesting::default();
-    let (_module_id, expr_id) = setup_test_expr(&mut db_val, "{6;8;}", "", "").expect("");
+    let (_module_id, expr_id) = setup_test_expr(&mut db_val, "{6;8;}", "", "");
     let db = &db_val;
     let expr = db.lookup_intern_expr(expr_id);
 
@@ -225,7 +224,7 @@ fn test_expr_block() {
 #[test]
 fn test_expr_block_with_tail_expression() {
     let mut db_val = SemanticDatabaseForTesting::default();
-    let (_module_id, expr_id) = setup_test_expr(&mut db_val, "{6;8;9}", "", "").expect("");
+    let (_module_id, expr_id) = setup_test_expr(&mut db_val, "{6;8;9}", "", "");
     let db = &db_val;
     let expr = db.lookup_intern_expr(expr_id);
 
@@ -258,8 +257,7 @@ fn test_expr_block_with_tail_expression() {
 fn test_expr_call() {
     let mut db_val = SemanticDatabaseForTesting::default();
     // TODO(spapini): Add types.
-    let (_module_id, expr_id) =
-        setup_test_expr(&mut db_val, "foo()", "func foo() {6;}", "").expect("");
+    let (_module_id, expr_id) = setup_test_expr(&mut db_val, "foo()", "func foo() {6;}", "");
     let db = &db_val;
     let expr = db.lookup_intern_expr(expr_id);
 
@@ -274,12 +272,13 @@ fn test_expr_call() {
 fn test_expr_call_missing() {
     let mut db_val = SemanticDatabaseForTesting::default();
     // TODO(spapini): Add types.
-    let (res, diagnostics) = setup_test_expr(&mut db_val, "foo()", "", "").split();
+    let (module_id, expr_id, diagnostics) =
+        setup_test_expr_with_diagnostics(&mut db_val, "foo()", "", "");
     let db = &db_val;
 
     // Check expr.
     assert_eq!(
-        diagnostics.format(db),
+        diagnostics,
         indoc! { "
             error: Unknown function.
              --> lib.cairo:2:1
@@ -288,9 +287,9 @@ fn test_expr_call_missing() {
 
         "}
     );
-    assert_eq!(format!("{:?}", res.0.debug(db)), "ModuleId(test_crate)");
+    assert_eq!(format!("{:?}", module_id.debug(db)), "ModuleId(test_crate)");
     assert_eq!(
-        format!("{:?}", res.1.debug(db)),
+        format!("{:?}", expr_id.debug(db)),
         "ExprFunctionCall(ExprFunctionCall { function: Missing, args: [], ty: Missing })"
     );
 }
@@ -307,13 +306,12 @@ fn test_function_body() {
         "},
         "foo",
         "",
-    )
-    .expect("");
+    );
     let db = &db_val;
     let item_id = db.module_item_by_name(module_id, "foo".into()).unwrap();
 
     let function_id = extract_matches!(item_id, ModuleItemId::FreeFunction);
-    let function = db.free_function_semantic(function_id).expect("Unexpected diagnostics").unwrap();
+    let function = db.free_function_semantic(function_id).unwrap();
 
     // Test the resulting semantic function body.
     let semantic::ExprBlock { statements, .. } = extract_matches!(
