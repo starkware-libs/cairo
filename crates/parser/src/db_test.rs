@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use filesystem::db::FilesGroup;
 use filesystem::ids::{FileLongId, VirtualFile};
+use pretty_assertions::assert_eq;
 use smol_str::SmolStr;
 use syntax::node::ast::{ItemList, SyntaxFile, Terminal, Trivia};
 use syntax::node::db::{AsSyntaxGroup, SyntaxGroup};
@@ -38,7 +39,9 @@ fn test_parser() {
         name: "file.cairo".into(),
         content: Arc::new("".into()),
     }));
-    let syntax_file = db.file_syntax(file_id).expect("Unexpected diagnostics").unwrap();
+    let syntax_file = db.file_syntax(file_id).unwrap();
+    let diagnostics = db.file_syntax_diagnostics(file_id);
+    assert_eq!(diagnostics.format(&db), "");
 
     let expected_syntax_file = build_empty_file_green_tree(db.as_syntax_group());
 
