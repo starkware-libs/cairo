@@ -2,6 +2,7 @@
 
 pub mod annotations;
 pub mod compiler;
+pub mod environment;
 pub mod invocations;
 pub mod references;
 pub mod relocations;
