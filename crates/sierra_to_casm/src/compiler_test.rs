@@ -3,7 +3,7 @@ use std::path::PathBuf;
 
 use indoc::indoc;
 use pretty_assertions;
-use sierra::edit_state::EditStateError::MissingReference;
+use sierra::edit_state::EditStateError::{MissingReference, VariableOverride};
 use sierra::ids::ConcreteLibFuncId;
 use sierra::program::{BranchInfo, BranchTarget, Invocation, StatementIdx};
 use sierra::program_registry::ProgramRegistryError::{
@@ -13,8 +13,7 @@ use sierra::ProgramParser;
 use test_case::test_case;
 
 use crate::annotations::AnnotationError::{
-    self, EditStateError, InconsistentReferencesAnnotation, InvalidStatementIdx,
-    MissingAnnotationsForStatement,
+    self, InconsistentReferencesAnnotation, InvalidStatementIdx, MissingAnnotationsForStatement,
 };
 use crate::compiler::{compile, CompilationError};
 use crate::invocations::InvocationError;
@@ -112,11 +111,25 @@ fn fib_program() {
 #[test_case(indoc! {"
                 return([2]);
 
-                test_program@0() -> ();
-            "} => Err(CompilationError::AnnotationError(EditStateError(MissingReference(
-                2.into()
-            ))));
-            "missing reference")]
+                test_program@0() -> (felt);
+            "} => Err(AnnotationError::MissingReferenceError{
+                statement_idx: StatementIdx(0), error: MissingReference(2.into())}.into());
+            "Missing reference")]
+#[test_case(indoc! {"
+                type felt = felt;
+                libfunc felt_dup = felt_dup;
+
+                felt_dup([1]) -> ([1], [2]);
+                felt_dup([2]) -> ([1], [2]);
+                return();
+
+                test_program@0([1]: felt) -> ();
+            "} => Err(AnnotationError::OverrideReferenceError {
+                source_statement_idx:  StatementIdx(1),
+                destination_statement_idx: StatementIdx(2),
+                error: VariableOverride(1.into()),
+            }.into());
+            "Reference override")]
 #[test_case(indoc! {"
                 return([2]);
 
