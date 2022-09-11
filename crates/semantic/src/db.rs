@@ -133,11 +133,10 @@ fn free_function_semantic(
         .propagate(diagnostics)?;
 
     // Compute body semantic expr.
-    let mut ctx = ComputationContext::new(db, module_id, generic_function_data.variables);
-    let body = db.intern_expr(
-        compute_expr_semantic(&mut ctx, ast::Expr::Block(syntax.body(db.as_syntax_group())))
-            .propagate(diagnostics),
-    );
+    let mut ctx =
+        ComputationContext::new(diagnostics, db, module_id, generic_function_data.variables);
+    let expr = compute_expr_semantic(&mut ctx, ast::Expr::Block(syntax.body(db.as_syntax_group())));
+    let body = db.intern_expr(expr);
 
     Some(semantic::FreeFunction { signature: generic_function_data.signature, body })
 }

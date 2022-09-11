@@ -1,15 +1,10 @@
 use defs::ids::{ModuleId, ModuleItemId};
-use diagnostics::{Diagnostics, WithDiagnostics};
-use diagnostics_proc_macros::with_diagnostics;
 use syntax::node::ast;
 
 use crate::corelib::core_module;
 use crate::db::SemanticGroup;
-use crate::SemanticDiagnostic;
 
-#[with_diagnostics]
 pub fn resolve_item(
-    diagnostics: &mut Diagnostics<SemanticDiagnostic>,
     db: &dyn SemanticGroup,
     module_id: ModuleId,
     path: &ast::ExprPath,
