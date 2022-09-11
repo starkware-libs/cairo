@@ -9,6 +9,7 @@ use sierra::ids::{ConcreteTypeId, VarId};
 use sierra::program::{BranchInfo, Function, StatementIdx};
 use thiserror::Error;
 
+use crate::environment::Environment;
 use crate::invocations::BranchRefChanges;
 use crate::references::{
     build_function_parameter_refs, check_types_match, ReferenceValue, ReferencesError,
@@ -50,6 +51,7 @@ pub struct ReturnTypesAnnotation(usize);
 pub struct StatementAnnotations {
     pub refs: StatementRefs,
     pub return_types: ReturnTypesAnnotation,
+    pub environment: Environment,
 }
 
 /// Annotations of the program statements.
@@ -91,6 +93,7 @@ impl ProgramAnnotations {
                 StatementAnnotations {
                     refs: build_function_parameter_refs(func)?,
                     return_types: return_annotation,
+                    environment: Environment {},
                 },
             )?
         }
@@ -128,20 +131,14 @@ impl ProgramAnnotations {
         statement_idx: StatementIdx,
         ref_ids: impl Iterator<Item = &'a VarId>,
     ) -> Result<(StatementAnnotations, Vec<ReferenceValue>), AnnotationError> {
-        let statement_annotations = &self.per_statement_annotations[statement_idx.0]
+        let statement_annotations = self.per_statement_annotations[statement_idx.0]
             .as_ref()
-            .ok_or(AnnotationError::MissingAnnotationsForStatement(statement_idx))?;
+            .ok_or(AnnotationError::MissingAnnotationsForStatement(statement_idx))?
+            .clone();
 
-        let (statement_refs, taken_refs) =
-            take_args(statement_annotations.refs.clone(), ref_ids)
-                .map_err(|error| AnnotationError::MissingReferenceError { statement_idx, error })?;
-        Ok((
-            StatementAnnotations {
-                refs: statement_refs,
-                return_types: statement_annotations.return_types.clone(),
-            },
-            taken_refs,
-        ))
+        let (statement_refs, taken_refs) = take_args(statement_annotations.refs, ref_ids)
+            .map_err(|error| AnnotationError::MissingReferenceError { statement_idx, error })?;
+        Ok((StatementAnnotations { refs: statement_refs, ..statement_annotations }, taken_refs))
     }
 
     // Propagate the annotations from the statement at 'statement_idx' to all the branches
@@ -183,6 +180,7 @@ impl ProgramAnnotations {
                         error,
                     })?,
                     return_types: annotations.return_types.clone(),
+                    environment: annotations.environment.clone(),
                 },
             )?;
         }

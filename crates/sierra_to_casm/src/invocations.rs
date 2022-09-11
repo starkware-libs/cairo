@@ -22,6 +22,7 @@ use sierra::ids::ConcreteTypeId;
 use sierra::program::{BranchInfo, BranchTarget, Invocation};
 use thiserror::Error;
 
+use crate::environment::Environment;
 use crate::references::{BinOpExpression, ReferenceExpression, ReferenceValue};
 use crate::relocations::{Relocation, RelocationEntry};
 use crate::type_sizes::TypeSizeMap;
@@ -70,6 +71,8 @@ pub struct CompiledInvocation {
     pub relocations: Vec<RelocationEntry>,
     // A vector of BranchRefChanges, should correspond to Invocation.branches.
     pub results: Vec<BranchRefChanges>,
+    // The environment after the invocation.
+    pub environment: Environment,
 }
 impl CompiledInvocation {
     fn new(
@@ -78,6 +81,7 @@ impl CompiledInvocation {
         ap_changes: impl Iterator<Item = ApChange>,
         output_expressions: impl Iterator<Item = impl Iterator<Item = ReferenceExpression>>,
         output_types: &[Vec<ConcreteTypeId>],
+        environment: Environment,
     ) -> Self {
         Self {
             instructions,
@@ -87,6 +91,7 @@ impl CompiledInvocation {
                     BranchRefChanges::new(ap_change, expressions, types.iter().cloned())
                 })
                 .collect(),
+            environment,
         }
     }
 
@@ -94,6 +99,7 @@ impl CompiledInvocation {
     fn only_reference_changes(
         output_expressions: impl Iterator<Item = ReferenceExpression>,
         output_types: &[Vec<ConcreteTypeId>],
+        environment: Environment,
     ) -> Self {
         Self::new(
             vec![],
@@ -101,6 +107,7 @@ impl CompiledInvocation {
             [ApChange::Known(0)].into_iter(),
             [output_expressions].into_iter(),
             output_types,
+            environment,
         )
     }
 }
@@ -109,6 +116,7 @@ fn handle_felt_op(
     _invocation: &Invocation,
     felt_op: &BinaryOperationConcreteLibFunc,
     refs: &[ReferenceValue],
+    environment: Environment,
 ) -> Result<CompiledInvocation, InvocationError> {
     let (expr_a, expr_b) = match refs {
         [ReferenceValue { expression: expr_a, .. }, ReferenceValue { expression: expr_b, .. }] => {
@@ -129,6 +137,7 @@ fn handle_felt_op(
     Ok(CompiledInvocation::only_reference_changes(
         [ReferenceExpression::BinOp(ref_expression)].into_iter(),
         felt_op.output_types(),
+        environment,
     ))
 }
 
@@ -157,6 +166,7 @@ pub fn check_references_on_stack(
 fn handle_felt_dup(
     felt_dup: &SignatureOnlyConcreteLibFunc,
     refs: &[ReferenceValue],
+    environment: Environment,
 ) -> Result<CompiledInvocation, InvocationError> {
     let expression = match refs {
         [ReferenceValue { expression, .. }] => expression,
@@ -166,6 +176,7 @@ fn handle_felt_dup(
     Ok(CompiledInvocation::only_reference_changes(
         [expression.clone(), expression.clone()].into_iter(),
         felt_dup.output_types(),
+        environment,
     ))
 }
 
@@ -173,6 +184,7 @@ fn handle_function_call(
     type_sizes: &TypeSizeMap,
     func_call: &FunctionCallConcreteLibFunc,
     refs: &[ReferenceValue],
+    environment: Environment,
 ) -> Result<CompiledInvocation, InvocationError> {
     check_references_on_stack(type_sizes, refs)?;
 
@@ -208,6 +220,7 @@ fn handle_function_call(
         [ApChange::Known(0)].into_iter(),
         [refs.into_iter()].into_iter(),
         func_call.output_types(),
+        environment,
     ))
 }
 
@@ -215,6 +228,7 @@ fn handle_store_temp(
     invocation: &Invocation,
     store_temp: &StoreTempConcreteLibFunc,
     refs: &[ReferenceValue],
+    environment: Environment,
 ) -> Result<CompiledInvocation, InvocationError> {
     let expression = match refs {
         [ReferenceValue { expression, .. }] => expression,
@@ -260,6 +274,7 @@ fn handle_store_temp(
             .into_iter()]
         .into_iter(),
         store_temp.output_types(),
+        environment,
     ))
 }
 
@@ -267,6 +282,7 @@ fn handle_jump_nz(
     invocation: &Invocation,
     jnz: &SignatureOnlyConcreteLibFunc,
     refs: &[ReferenceValue],
+    environment: Environment,
 ) -> Result<CompiledInvocation, InvocationError> {
     let condition = match refs {
         [ReferenceValue { expression: ReferenceExpression::Deref(deref_operand), .. }] => {
@@ -296,12 +312,14 @@ fn handle_jump_nz(
         [ApChange::Known(0), ApChange::Known(0)].into_iter(),
         [vec![ReferenceExpression::Deref(*condition)].into_iter(), vec![].into_iter()].into_iter(),
         jnz.output_types(),
+        environment,
     ))
 }
 
 fn handle_jump(
     invocation: &Invocation,
     libfunc: &SignatureOnlyConcreteLibFunc,
+    environment: Environment,
 ) -> Result<CompiledInvocation, InvocationError> {
     let target_statement_id = match invocation.branches.as_slice() {
         [BranchInfo { target: BranchTarget::Statement(statement_id), .. }] => statement_id,
@@ -323,6 +341,7 @@ fn handle_jump(
         [ApChange::Known(0)].into_iter(),
         [vec![].into_iter()].into_iter(),
         libfunc.output_types(),
+        environment,
     ))
 }
 
@@ -331,43 +350,51 @@ pub fn compile_invocation(
     libfunc: &CoreConcreteLibFunc,
     refs: &[ReferenceValue],
     type_sizes: &TypeSizeMap,
+    environment: Environment,
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
         // TODO(ilya, 10/10/2022): Handle type.
         CoreConcreteLibFunc::Felt(FeltConcrete::Operation(OperationConcreteLibFunc::Binary(
             felt_op,
-        ))) => handle_felt_op(invocation, felt_op, refs),
+        ))) => handle_felt_op(invocation, felt_op, refs, environment),
         CoreConcreteLibFunc::Felt(FeltConcrete::Duplicate(felt_dup)) => {
-            handle_felt_dup(felt_dup, refs)
+            handle_felt_dup(felt_dup, refs, environment)
         }
         CoreConcreteLibFunc::Felt(FeltConcrete::JumpNotZero(jnz)) => {
-            handle_jump_nz(invocation, jnz, refs)
+            handle_jump_nz(invocation, jnz, refs, environment)
         }
         CoreConcreteLibFunc::Felt(FeltConcrete::Ignore(libfunc)) => {
-            Ok(CompiledInvocation::only_reference_changes([].into_iter(), libfunc.output_types()))
+            Ok(CompiledInvocation::only_reference_changes(
+                [].into_iter(),
+                libfunc.output_types(),
+                environment,
+            ))
         }
         CoreConcreteLibFunc::Felt(FeltConcrete::Const(libfunc)) => {
             Ok(CompiledInvocation::only_reference_changes(
                 [ReferenceExpression::Immediate(ImmediateOperand { value: libfunc.c as i128 })]
                     .into_iter(),
                 libfunc.output_types(),
+                environment,
             ))
         }
         CoreConcreteLibFunc::Mem(MemConcreteLibFunc::StoreTemp(store_temp)) => {
-            handle_store_temp(invocation, store_temp, refs)
+            handle_store_temp(invocation, store_temp, refs, environment)
         }
         CoreConcreteLibFunc::Mem(MemConcreteLibFunc::Rename(libfunc))
         | CoreConcreteLibFunc::UnwrapNonZero(libfunc) => {
             Ok(CompiledInvocation::only_reference_changes(
                 refs.iter().map(|r| r.expression.clone()),
                 libfunc.output_types(),
+                environment,
             ))
         }
         CoreConcreteLibFunc::FunctionCall(func_call) => {
-            handle_function_call(type_sizes, func_call, refs)
+            handle_function_call(type_sizes, func_call, refs, environment)
         }
-        CoreConcreteLibFunc::UnconditionalJump(libfunc) => handle_jump(invocation, libfunc),
-
+        CoreConcreteLibFunc::UnconditionalJump(libfunc) => {
+            handle_jump(invocation, libfunc, environment)
+        }
         _ => Err(InvocationError::NotImplemented(invocation.clone())),
     }
 }

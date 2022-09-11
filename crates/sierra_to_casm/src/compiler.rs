@@ -7,7 +7,7 @@ use sierra::program::{BranchTarget, Invocation, Program, Statement, StatementIdx
 use sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use thiserror::Error;
 
-use crate::annotations::{AnnotationError, ProgramAnnotations};
+use crate::annotations::{AnnotationError, ProgramAnnotations, StatementAnnotations};
 use crate::invocations::{check_references_on_stack, compile_invocation, InvocationError};
 use crate::references::{check_types_match, ReferencesError};
 use crate::relocations::{relocate_instructions, RelocationEntry};
@@ -118,8 +118,13 @@ pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
                 check_basic_structure(invocation, libfunc)?;
 
                 check_types_match(&invoke_refs, libfunc.input_types())?;
-                let compiled_invocation =
-                    compile_invocation(invocation, libfunc, &invoke_refs, &type_sizes)?;
+                let compiled_invocation = compile_invocation(
+                    invocation,
+                    libfunc,
+                    &invoke_refs,
+                    &type_sizes,
+                    annotations.environment,
+                )?;
 
                 for instruction in &compiled_invocation.instructions {
                     program_offset += instruction.body.op_size();
@@ -135,7 +140,10 @@ pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
 
                 program_annotations.propagate_annotations(
                     statement_idx,
-                    annotations,
+                    StatementAnnotations {
+                        environment: compiled_invocation.environment,
+                        ..annotations
+                    },
                     &invocation.branches,
                     compiled_invocation.results.into_iter(),
                 )?;
