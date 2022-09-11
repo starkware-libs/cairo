@@ -2,7 +2,7 @@ use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::iter;
 
-use casm::ap_change::ApplyApChange;
+use casm::ap_change::{ApChangeError, ApplyApChange};
 use itertools::zip_eq;
 use sierra::edit_state::{put_results, take_args, EditStateError};
 use sierra::ids::{ConcreteTypeId, VarId};
@@ -37,6 +37,17 @@ pub enum AnnotationError {
 
     #[error(transparent)]
     ReferencesError(#[from] ReferencesError),
+
+    #[error(
+        "Got '{error}' error while moving {var_id} from #{source_statement_idx} to \
+         #{destination_statement_idx}."
+    )]
+    ApChangeError {
+        var_id: VarId,
+        source_statement_idx: StatementIdx,
+        destination_statement_idx: StatementIdx,
+        error: ApChangeError,
+    },
 }
 
 /// An annotation that specifies the expected return types at each statement.
@@ -153,6 +164,8 @@ impl ProgramAnnotations {
         per_branch_ref_changes: impl Iterator<Item = BranchRefChanges>,
     ) -> Result<(), AnnotationError> {
         for (branch_info, branch_result) in zip_eq(branches, per_branch_ref_changes) {
+            let destination_statement_idx = statement_idx.next(&branch_info.target);
+
             let mut new_refs: StatementRefs =
                 HashMap::with_capacity(annotations.refs.len() + branch_result.refs.len());
             for (var_id, ref_value) in &annotations.refs {
@@ -163,13 +176,17 @@ impl ProgramAnnotations {
                             .expression
                             .clone()
                             .apply_ap_change(branch_result.ap_change)
-                            .map_err(ReferencesError::ApChangeError)?,
+                            .map_err(|error| AnnotationError::ApChangeError {
+                                var_id: var_id.clone(),
+                                source_statement_idx: statement_idx,
+                                destination_statement_idx,
+                                error,
+                            })?,
                         ty: ref_value.ty.clone(),
                     },
                 );
             }
 
-            let destination_statement_idx = statement_idx.next(&branch_info.target);
             self.set_or_assert(
                 destination_statement_idx,
                 StatementAnnotations {
