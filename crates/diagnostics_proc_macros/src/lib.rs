@@ -7,6 +7,7 @@ use syn::{
     TypePath, TypeReference,
 };
 
+// TODO(spapini): Remove.
 /// Macro for defining functions that return WithDiagnostics<T>.
 #[proc_macro_attribute]
 pub fn with_diagnostics(_attr: TokenStream, item: TokenStream) -> TokenStream {

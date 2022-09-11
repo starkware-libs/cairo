@@ -3,10 +3,10 @@
 mod test;
 
 use std::collections::HashMap;
+use std::mem;
 
 use defs::ids::{GenericFunctionId, LocalVarLongId, ModuleId, VarId};
-use diagnostics::{Diagnostics, WithDiagnostics};
-use diagnostics_proc_macros::with_diagnostics;
+use diagnostics::Diagnostics;
 use smol_str::SmolStr;
 use syntax::node::db::SyntaxGroup;
 use syntax::node::helpers::TerminalEx;
@@ -17,20 +17,37 @@ use crate::db::{resolve_type, SemanticGroup};
 use crate::diagnostic::SemanticDiagnosticKind;
 use crate::resolve_item::resolve_item;
 use crate::{
-    semantic, ConcreteFunction, Diagnostic, FunctionId, FunctionLongId, MatchArm,
-    SemanticDiagnostic, StatementId, TypeId, Variable,
+    semantic, ConcreteFunction, FunctionId, FunctionLongId, MatchArm, SemanticDiagnostic,
+    StatementId, TypeId, Variable,
 };
 
 /// Context for computing the semantic model of expression trees.
 pub struct ComputationContext<'ctx> {
+    diagnostics: &'ctx mut Diagnostics<SemanticDiagnostic>,
     db: &'ctx dyn SemanticGroup,
     module_id: ModuleId,
-    environment: Environment<'ctx>,
+    environment: Box<Environment>,
 }
 impl<'ctx> ComputationContext<'ctx> {
-    pub fn new(db: &'ctx dyn SemanticGroup, module_id: ModuleId, variables: EnvVariables) -> Self {
-        let environment = Environment { parent: None, variables };
-        Self { db, module_id, environment }
+    pub fn new(
+        diagnostics: &'ctx mut Diagnostics<SemanticDiagnostic>,
+        db: &'ctx dyn SemanticGroup,
+        module_id: ModuleId,
+        variables: EnvVariables,
+    ) -> Self {
+        let environment = Box::new(Environment { parent: None, variables });
+        Self { diagnostics, db, module_id, environment }
+    }
+
+    fn push_env<T, F>(&mut self, f: F) -> T
+    where
+        F: FnOnce(&mut Self) -> T,
+    {
+        let new_environment = Box::new(Environment { parent: None, variables: HashMap::new() });
+        let old_environment = mem::replace(&mut self.environment, new_environment);
+        let res = f(self);
+        self.environment = old_environment;
+        res
     }
 }
 
@@ -40,8 +57,8 @@ pub type EnvVariables = HashMap<SmolStr, Variable>;
 /// A state which contains all the variables defined at the current scope until now, and a pointer
 /// to the parent environment.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Environment<'penv> {
-    parent: Option<&'penv Environment<'penv>>,
+pub struct Environment {
+    parent: Option<Box<Environment>>,
     variables: EnvVariables,
 }
 
@@ -78,9 +95,7 @@ fn literal_to_semantic(
 }
 
 /// Computes the semantic model of an expression.
-#[with_diagnostics]
 pub fn compute_expr_semantic(
-    diagnostics: &mut Diagnostics<Diagnostic>,
     ctx: &mut ComputationContext<'_>,
     syntax: ast::Expr,
 ) -> semantic::Expr {
@@ -101,14 +116,12 @@ pub fn compute_expr_semantic(
         ast::Expr::Unary(_) => todo!(),
         ast::Expr::Binary(binary_op_syntax) => {
             let operator_kind = binary_op_syntax.op(syntax_db).kind(syntax_db);
-            let lexpr =
-                compute_expr_semantic(ctx, binary_op_syntax.lhs(syntax_db)).propagate(diagnostics);
-            let rexpr =
-                compute_expr_semantic(ctx, binary_op_syntax.rhs(syntax_db)).propagate(diagnostics);
+            let lexpr = compute_expr_semantic(ctx, binary_op_syntax.lhs(syntax_db));
+            let rexpr = compute_expr_semantic(ctx, binary_op_syntax.rhs(syntax_db));
             let function = match core_binary_operator(db, operator_kind) {
                 Some(function) => function,
                 None => {
-                    diagnostics.add(SemanticDiagnostic {
+                    ctx.diagnostics.add(SemanticDiagnostic {
                         module_id: ctx.module_id,
                         stable_ptr: binary_op_syntax.as_syntax_node().stable_ptr(),
                         kind: SemanticDiagnosticKind::UnknownBinaryOperator,
@@ -134,11 +147,11 @@ pub fn compute_expr_semantic(
                 .expressions(syntax_db)
                 .elements(syntax_db)
                 .into_iter()
-                .map(|arg_syntax| compute_expr_semantic(ctx, arg_syntax).propagate(diagnostics))
+                .map(|arg_syntax| compute_expr_semantic(ctx, arg_syntax))
                 .collect();
             let arg_types: Vec<_> = arg_exprs.iter().map(|expr| expr.ty()).collect();
             let args = arg_exprs.into_iter().map(|expr| db.intern_expr(expr)).collect();
-            let function = resolve_function(ctx, path, &arg_types).propagate(diagnostics);
+            let function = resolve_function(ctx, path, &arg_types);
             semantic::Expr::ExprFunctionCall(semantic::ExprFunctionCall {
                 function,
                 args,
@@ -148,41 +161,36 @@ pub fn compute_expr_semantic(
         }
         ast::Expr::StructCtorCall(_) => todo!(),
         ast::Expr::Block(block_syntax) => {
-            let environment =
-                Environment { parent: Some(&ctx.environment), variables: HashMap::new() };
-            let mut new_ctx = ComputationContext { environment, ..*ctx };
-            let mut statements = block_syntax.statements(syntax_db).elements(syntax_db);
+            ctx.push_env(|ctx| {
+                let mut statements = block_syntax.statements(syntax_db).elements(syntax_db);
 
-            // Remove the tail expression, if exists.
-            // TODO(spapini): Consider splitting tail expression in the parser.
-            let tail = get_tail_expression(syntax_db, statements.as_slice());
-            if tail.is_some() {
-                statements.pop();
-            }
+                // Remove the tail expression, if exists.
+                // TODO(spapini): Consider splitting tail expression in the parser.
+                let tail = get_tail_expression(syntax_db, statements.as_slice());
+                if tail.is_some() {
+                    statements.pop();
+                }
 
-            // Convert statements to semantic model.
-            let statements_semantic = statements
-                .into_iter()
-                .map(|statement_syntax| {
-                    compute_statement_semantic(&mut new_ctx, statement_syntax)
-                        .propagate(diagnostics)
+                // Convert statements to semantic model.
+                let statements_semantic = statements
+                    .into_iter()
+                    .map(|statement_syntax| compute_statement_semantic(ctx, statement_syntax))
+                    .collect();
+
+                // Convert tail expression (if exists) to semantic model.
+                let tail_semantic_expr =
+                    tail.map(|tail_expr| compute_expr_semantic(ctx, tail_expr));
+
+                let ty = match &tail_semantic_expr {
+                    Some(t) => t.ty(),
+                    None => unit_ty(db),
+                };
+                semantic::Expr::ExprBlock(semantic::ExprBlock {
+                    statements: statements_semantic,
+                    tail: tail_semantic_expr.map(|expr| db.intern_expr(expr)),
+                    ty,
+                    stable_ptr: block_syntax.stable_ptr().untyped(),
                 })
-                .collect();
-
-            // Convert tail expression (if exists) to semantic model.
-            let tail_semantic_expr = tail.map(|tail_expr| {
-                compute_expr_semantic(&mut new_ctx, tail_expr).propagate(diagnostics)
-            });
-
-            let ty = match &tail_semantic_expr {
-                Some(t) => t.ty(),
-                None => unit_ty(db),
-            };
-            semantic::Expr::ExprBlock(semantic::ExprBlock {
-                statements: statements_semantic,
-                tail: tail_semantic_expr.map(|expr| db.intern_expr(expr)),
-                ty,
-                stable_ptr: block_syntax.stable_ptr().untyped(),
             })
         }
         // TODO(yuval): verify exhaustiveness.
@@ -198,8 +206,7 @@ pub fn compute_expr_semantic(
                         semantic::Pattern::Literal(semantic_literal)
                     }
                 };
-                let expr_semantic = compute_expr_semantic(ctx, syntax_arm.expression(syntax_db))
-                    .propagate(diagnostics);
+                let expr_semantic = compute_expr_semantic(ctx, syntax_arm.expression(syntax_db));
                 let arm_type = expr_semantic.ty();
                 semantic_arms.push(MatchArm { pattern, expression: db.intern_expr(expr_semantic) });
                 match match_type {
@@ -211,9 +218,8 @@ pub fn compute_expr_semantic(
                 }
             }
             semantic::Expr::ExprMatch(semantic::ExprMatch {
-                matched_expr: db.intern_expr(
-                    compute_expr_semantic(ctx, expr_match.expr(syntax_db)).propagate(diagnostics),
-                ),
+                matched_expr: db
+                    .intern_expr(compute_expr_semantic(ctx, expr_match.expr(syntax_db))),
                 arms: semantic_arms,
                 ty: match match_type {
                     Some(t) => t,
@@ -249,12 +255,12 @@ pub fn resolve_variable_by_name(
     ctx: &mut ComputationContext<'_>,
     variable_name: &SmolStr,
 ) -> Variable {
-    let mut maybe_env = Some(&ctx.environment);
+    let mut maybe_env = Some(&*ctx.environment);
     while let Some(env) = maybe_env {
         if let Some(var) = env.variables.get(variable_name) {
             return var.clone();
         }
-        maybe_env = env.parent;
+        maybe_env = env.parent.as_deref();
     }
     // TODO(spapini): Diagnostic and return option.
     panic!("Not found");
@@ -262,9 +268,7 @@ pub fn resolve_variable_by_name(
 
 /// Resolves a concrete function given a context and a path expression.
 /// Returns the generic function and the concrete function.
-#[with_diagnostics]
 fn resolve_function(
-    diagnostics: &mut Diagnostics<Diagnostic>,
     ctx: &mut ComputationContext<'_>,
     path: ast::ExprPath,
     arg_types: &[TypeId],
@@ -272,13 +276,10 @@ fn resolve_function(
     // TODO(spapini): Try to find function in multiple places (e.g. impls, or other modules for
     //   suggestions)
     resolve_item(ctx.db, ctx.module_id, &path)
-        .propagate(diagnostics)
         .and_then(GenericFunctionId::from)
-        .and_then(|generic_function| {
-            specialize_function(ctx, generic_function, arg_types).propagate(diagnostics)
-        })
+        .and_then(|generic_function| specialize_function(ctx, generic_function, arg_types))
         .unwrap_or_else(|| {
-            diagnostics.add(SemanticDiagnostic {
+            ctx.diagnostics.add(SemanticDiagnostic {
                 module_id: ctx.module_id,
                 stable_ptr: path.node.stable_ptr(),
                 kind: SemanticDiagnosticKind::UnknownFunction,
@@ -288,16 +289,13 @@ fn resolve_function(
 }
 
 /// Tries to specializes a generic function.
-#[with_diagnostics]
 fn specialize_function(
-    diagnostics: &mut Diagnostics<Diagnostic>,
     ctx: &mut ComputationContext<'_>,
     generic_function: GenericFunctionId,
     _arg_types: &[TypeId],
 ) -> Option<FunctionId> {
     // TODO(spapini): Type check arguments.
-    let signature =
-        ctx.db.generic_function_signature_semantic(generic_function).propagate(diagnostics)?;
+    let signature = ctx.db.generic_function_signature_semantic(generic_function)?;
     Some(ctx.db.intern_function(FunctionLongId::Concrete(ConcreteFunction {
         generic_function,
         generic_args: vec![],
@@ -306,9 +304,7 @@ fn specialize_function(
 }
 
 /// Computes the semantic model of a statement.
-#[with_diagnostics]
 pub fn compute_statement_semantic(
-    diagnostics: &mut Diagnostics<Diagnostic>,
     ctx: &mut ComputationContext<'_>,
     syntax: ast::Statement,
 ) -> StatementId {
@@ -319,9 +315,7 @@ pub fn compute_statement_semantic(
             let var_id =
                 db.intern_local_var(LocalVarLongId(ctx.module_id, let_syntax.stable_ptr()));
 
-            let rhs_expr_id = db.intern_expr(
-                compute_expr_semantic(ctx, let_syntax.rhs(syntax_db)).propagate(diagnostics),
-            );
+            let rhs_expr_id = db.intern_expr(compute_expr_semantic(ctx, let_syntax.rhs(syntax_db)));
             let inferred_type = db.lookup_intern_expr(rhs_expr_id).ty();
 
             let ty = match let_syntax.type_clause(syntax_db) {
@@ -329,7 +323,7 @@ pub fn compute_statement_semantic(
                 ast::OptionTypeClause::TypeClause(type_clause) => {
                     let var_type_path = type_clause.ty(syntax_db);
                     let explicit_type =
-                        resolve_type(db, ctx.module_id, var_type_path).propagate(diagnostics);
+                        resolve_type(ctx.diagnostics, db, ctx.module_id, var_type_path);
                     assert_eq!(
                         explicit_type, inferred_type,
                         "inferred type ({explicit_type:?}) and explicit type ({inferred_type:?}) \
@@ -347,9 +341,9 @@ pub fn compute_statement_semantic(
                 expr: rhs_expr_id,
             })
         }
-        ast::Statement::Expr(expr_syntax) => semantic::Statement::Expr(db.intern_expr(
-            compute_expr_semantic(ctx, expr_syntax.expr(syntax_db)).propagate(diagnostics),
-        )),
+        ast::Statement::Expr(expr_syntax) => semantic::Statement::Expr(
+            db.intern_expr(compute_expr_semantic(ctx, expr_syntax.expr(syntax_db))),
+        ),
         ast::Statement::Return(_) => todo!(),
         ast::Statement::StatementMissing(_) => todo!(),
     };

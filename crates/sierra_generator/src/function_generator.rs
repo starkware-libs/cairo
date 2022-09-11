@@ -7,15 +7,15 @@ use diagnostics::Diagnostics;
 use sierra::program::Param;
 
 use crate::db::SierraGenGroup;
-use crate::diagnostic::Diagnostic;
 use crate::dup_and_ignore::{calculate_statement_dups_and_ignores, VarsDupsAndIgnores};
 use crate::expr_generator::generate_expression_code;
 use crate::expr_generator_context::ExprGeneratorContext;
 use crate::pre_sierra::{self, Statement};
 use crate::utils::{return_statement, simple_statement};
+use crate::SierraGeneratorDiagnostic;
 
 pub fn generate_function_code(
-    diagnostics: &mut Diagnostics<Diagnostic>,
+    diagnostics: &mut Diagnostics<SierraGeneratorDiagnostic>,
     db: &dyn SierraGenGroup,
     function_id: FreeFunctionId,
     function_semantic: semantic::FreeFunction,

@@ -7,13 +7,13 @@ use utils::unordered_hash_map::UnorderedHashMap;
 
 use crate::db::SierraGenGroup;
 use crate::id_allocator::IdAllocator;
-use crate::{pre_sierra, Diagnostic};
+use crate::{pre_sierra, SierraGeneratorDiagnostic};
 
 /// Context for the methods that generate Sierra instructions for an expression.
 pub struct ExprGeneratorContext<'a> {
     db: &'a dyn SierraGenGroup,
     function_id: FreeFunctionId,
-    diagnostics: &'a mut Diagnostics<Diagnostic>,
+    diagnostics: &'a mut Diagnostics<SierraGeneratorDiagnostic>,
     var_id_allocator: IdAllocator,
     label_id_allocator: IdAllocator,
     variables: UnorderedHashMap<defs::ids::VarId, sierra::ids::VarId>,
@@ -23,7 +23,7 @@ impl<'a> ExprGeneratorContext<'a> {
     pub fn new(
         db: &'a dyn SierraGenGroup,
         function_id: FreeFunctionId,
-        diagnostics: &'a mut Diagnostics<Diagnostic>,
+        diagnostics: &'a mut Diagnostics<SierraGeneratorDiagnostic>,
     ) -> Self {
         ExprGeneratorContext {
             db,
@@ -157,7 +157,7 @@ impl<'a> ExprGeneratorContext<'a> {
     }
 
     /// Returns the [Diagnostics] object of the context.
-    pub fn get_diagnostics(&mut self) -> &mut Diagnostics<Diagnostic> {
+    pub fn get_diagnostics(&mut self) -> &mut Diagnostics<SierraGeneratorDiagnostic> {
         &mut self.diagnostics
     }
 }

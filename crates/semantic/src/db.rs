@@ -1,23 +1,21 @@
 use std::collections::HashMap;
+use std::sync::Arc;
 
 use defs::db::{AsDefsGroup, DefsGroup};
 use defs::ids::{
     FreeFunctionId, GenericFunctionId, GenericTypeId, LanguageElementId, ModuleId, ModuleItemId,
     ParamLongId, StructId, VarId,
 };
-use diagnostics::{Diagnostics, WithDiagnostics};
-use diagnostics_proc_macros::with_diagnostics;
+use diagnostics::Diagnostics;
 use filesystem::db::AsFilesGroup;
 use parser::db::ParserGroup;
-use parser::ParserDiagnostic;
 use smol_str::SmolStr;
 use syntax::node::{ast, TypedSyntaxNode};
 
 use crate::corelib::{core_module, unit_ty};
-use crate::diagnostic::Diagnostic;
 use crate::expr::{compute_expr_semantic, ComputationContext, EnvVariables};
 use crate::ids::{ExprId, StatementId, TypeId, TypeLongId};
-use crate::{corelib, semantic, ConcreteType, FunctionId, FunctionLongId};
+use crate::{corelib, semantic, ConcreteType, FunctionId, FunctionLongId, SemanticDiagnostic};
 
 // Salsa database interface.
 #[salsa::query_group(SemanticDatabase)]
@@ -37,20 +35,15 @@ pub trait SemanticGroup: DefsGroup + AsDefsGroup + ParserGroup + AsFilesGroup {
     fn statement_semantic(&self, item: StatementId) -> semantic::Statement;
 
     /// Returns the semantic signature of a function given the function_id.
-    fn generic_function_data(
-        &self,
-        function_id: GenericFunctionId,
-    ) -> WithDiagnostics<Option<GenericFunctionData>, Diagnostic>;
+    fn generic_function_data(&self, function_id: GenericFunctionId) -> Option<GenericFunctionData>;
     fn generic_function_signature_semantic(
         &self,
         function_id: GenericFunctionId,
-    ) -> WithDiagnostics<Option<semantic::Signature>, Diagnostic>;
+    ) -> Option<semantic::Signature>;
 
     /// Returns the semantic function given the function_id.
-    fn free_function_semantic(
-        &self,
-        function_id: FreeFunctionId,
-    ) -> WithDiagnostics<Option<semantic::FreeFunction>, Diagnostic>;
+    fn free_function_semantic(&self, function_id: FreeFunctionId)
+    -> Option<semantic::FreeFunction>;
 
     // Corelib.
     #[salsa::invoke(corelib::core_module)]
@@ -80,20 +73,20 @@ fn struct_semantic(_db: &dyn SemanticGroup, _struct_id: StructId) -> semantic::S
 /// recomputing.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GenericFunctionData {
+    diagnostics: Arc<Diagnostics<SemanticDiagnostic>>,
     signature: semantic::Signature,
     variables: EnvVariables,
 }
 
 /// Fetches the AST of the generic function signature. Computes and returns the
 /// [`GenericFunctionData`] struct.
-#[with_diagnostics]
 fn generic_function_data(
-    diagnostics: &mut Diagnostics<Diagnostic>,
     db: &dyn SemanticGroup,
     function_id: GenericFunctionId,
 ) -> Option<GenericFunctionData> {
+    let mut diagnostics = Diagnostics::new();
     let module_id = function_id.module(db.as_defs_group());
-    let module_data = db.module_data(module_id).propagate(diagnostics)?;
+    let module_data = db.module_data(module_id)?;
     let signature_syntax = match function_id {
         GenericFunctionId::Free(free_function_id) => {
             module_data.free_functions.get(&free_function_id)?.signature(db.as_syntax_group())
@@ -104,51 +97,51 @@ fn generic_function_data(
     };
 
     let return_type =
-        function_signature_return_type(db, module_id, &signature_syntax).propagate(diagnostics);
+        function_signature_return_type(&mut diagnostics, db, module_id, &signature_syntax);
 
     let (params, variables) =
-        function_signature_params(db, module_id, &signature_syntax).propagate(diagnostics)?;
-    Some(GenericFunctionData { signature: semantic::Signature { params, return_type }, variables })
+        function_signature_params(&mut diagnostics, db, module_id, &signature_syntax)?;
+    Some(GenericFunctionData {
+        signature: semantic::Signature { params, return_type },
+        variables,
+        diagnostics: Arc::new(diagnostics),
+    })
 }
 
 /// Computes the semantic model of the signature of a GenericFunction (e.g. Free / Extern).
-#[with_diagnostics]
 fn generic_function_signature_semantic(
-    diagnostics: &mut Diagnostics<Diagnostic>,
     db: &dyn SemanticGroup,
     function_id: GenericFunctionId,
 ) -> Option<semantic::Signature> {
-    let generic_data = db.generic_function_data(function_id).propagate(diagnostics)?;
+    let generic_data = db.generic_function_data(function_id)?;
     Some(generic_data.signature)
 }
 
-#[with_diagnostics]
 fn free_function_semantic(
-    diagnostics: &mut Diagnostics<Diagnostic>,
     db: &dyn SemanticGroup,
     free_function_id: FreeFunctionId,
 ) -> Option<semantic::FreeFunction> {
+    let mut diagnostics = Diagnostics::new();
     let module_id = free_function_id.module(db.as_defs_group());
-    let syntax = db
-        .module_data(module_id)
-        .propagate(diagnostics)?
-        .free_functions
-        .get(&free_function_id)?
-        .clone();
+    let syntax = db.module_data(module_id)?.free_functions.get(&free_function_id)?.clone();
 
     // Compute signature semantic.
-    let generic_function_data = db
-        .generic_function_data(GenericFunctionId::Free(free_function_id))
-        .propagate(diagnostics)?;
+    let generic_function_data =
+        db.generic_function_data(GenericFunctionId::Free(free_function_id))?;
 
     // Compute body semantic expr.
-    let mut ctx = ComputationContext::new(db, module_id, generic_function_data.variables);
-    let body = db.intern_expr(
-        compute_expr_semantic(&mut ctx, ast::Expr::Block(syntax.body(db.as_syntax_group())))
-            .propagate(diagnostics),
-    );
+    let mut ctx =
+        ComputationContext::new(&mut diagnostics, db, module_id, generic_function_data.variables);
+    let body = db.intern_expr(compute_expr_semantic(
+        &mut ctx,
+        ast::Expr::Block(syntax.body(db.as_syntax_group())),
+    ));
 
-    Some(semantic::FreeFunction { signature: generic_function_data.signature, body })
+    Some(semantic::FreeFunction {
+        diagnostics: Arc::new(diagnostics),
+        signature: generic_function_data.signature,
+        body,
+    })
 }
 
 fn expr_semantic(db: &dyn SemanticGroup, item: ExprId) -> semantic::Expr {
@@ -161,9 +154,8 @@ fn statement_semantic(db: &dyn SemanticGroup, item: StatementId) -> semantic::St
 
 // ----------------------- Helper functions -----------------------
 /// Gets the return type of the given function's AST.
-#[with_diagnostics]
 fn function_signature_return_type(
-    diagnostics: &mut Diagnostics<ParserDiagnostic>,
+    diagnostics: &mut Diagnostics<SemanticDiagnostic>,
     db: &dyn SemanticGroup,
     module_id: ModuleId,
     sig: &ast::FunctionSignature,
@@ -176,13 +168,12 @@ fn function_signature_return_type(
             ret_type_clause.ty(db.as_syntax_group())
         }
     };
-    resolve_type(db, module_id, type_path).propagate(diagnostics)
+    resolve_type(diagnostics, db, module_id, type_path)
 }
 
 /// Returns the parameters of the given function signature's AST.
-#[with_diagnostics]
 fn function_signature_params(
-    diagnostics: &mut Diagnostics<ParserDiagnostic>,
+    diagnostics: &mut Diagnostics<SemanticDiagnostic>,
     db: &dyn SemanticGroup,
     module_id: ModuleId,
     sig: &ast::FunctionSignature,
@@ -203,7 +194,7 @@ fn function_signature_params(
             }
         };
         // TODO(yuval): Diagnostic?
-        let ty = resolve_type(db, module_id, ty_path).propagate(diagnostics);
+        let ty = resolve_type(diagnostics, db, module_id, ty_path);
         semantic_params.push(semantic::Parameter { id, ty });
         variables.insert(name, semantic::Variable { id: VarId::Param(id), ty });
     }
@@ -214,9 +205,8 @@ fn function_signature_params(
 // TODO(yuval): move to a separate module "type".
 // TODO(spapini): add a query wrapper.
 /// Resolves a type given a module and a path.
-#[with_diagnostics]
 pub fn resolve_type(
-    diagnostics: &mut Diagnostics<ParserDiagnostic>,
+    _diagnostics: &mut Diagnostics<SemanticDiagnostic>,
     db: &dyn SemanticGroup,
     module_id: ModuleId,
     type_path: ast::ExprPath,
@@ -233,28 +223,25 @@ pub fn resolve_type(
     };
     let type_name = last_segment.ident(syntax_db).text(syntax_db);
 
-    let type_id = resolve_type_by_name(db, module_id, &type_name).propagate(diagnostics);
+    let type_id = resolve_type_by_name(db, module_id, &type_name);
     if db.lookup_intern_type(type_id) != TypeLongId::Missing {
         type_id
     } else {
-        resolve_type_by_name(db, core_module(db), &type_name).propagate(diagnostics)
+        resolve_type_by_name(db, core_module(db), &type_name)
     }
 }
 
 // TODO(yuval): move to a separate module "type".
 /// Resolves a type given a module and a simple name.
-#[with_diagnostics]
 fn resolve_type_by_name(
-    diagnostics: &mut Diagnostics<ParserDiagnostic>,
     db: &dyn SemanticGroup,
     module_id: ModuleId,
     type_name: &SmolStr,
 ) -> TypeId {
-    let module_item_id =
-        match db.module_item_by_name(module_id, type_name.clone()).propagate(diagnostics) {
-            None => return db.intern_type(TypeLongId::Missing),
-            Some(id) => id,
-        };
+    let module_item_id = match db.module_item_by_name(module_id, type_name.clone()) {
+        None => return db.intern_type(TypeLongId::Missing),
+        Some(id) => id,
+    };
     // TODO(yuval): diagnostic on None?
     let generic_type = match module_item_id {
         ModuleItemId::Struct(struct_id) => GenericTypeId::Struct(struct_id),

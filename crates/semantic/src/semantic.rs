@@ -1,13 +1,16 @@
 // TODO(lior): Remove once stable_ptr values are used.
 #![allow(unused_variables)]
 
+use std::sync::Arc;
+
 use defs::ids::{LocalVarId, MemberId, ParamId, VarId};
+use diagnostics::Diagnostics;
 use diagnostics_proc_macros::DebugWithDb;
 use syntax::node::ids::SyntaxStablePtrId;
 
 use crate::db::SemanticGroup;
 use crate::ids::{ExprId, TypeId};
-use crate::{FunctionId, StatementId};
+use crate::{FunctionId, SemanticDiagnostic, StatementId};
 
 // Statements.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
@@ -128,6 +131,7 @@ pub struct ExprLiteral {
 // Items.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FreeFunction {
+    pub diagnostics: Arc<Diagnostics<SemanticDiagnostic>>,
     pub signature: Signature,
     pub body: ExprId,
 }

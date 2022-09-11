@@ -6,10 +6,9 @@ use diagnostics_proc_macros::with_diagnostics;
 use semantic::db::{AsSemanticGroup, SemanticGroup};
 use sierra::program::ConcreteTypeLongId;
 
-use crate::diagnostic::Diagnostic;
 use crate::function_generator::generate_function_code;
-use crate::pre_sierra;
 use crate::program_generator::generate_program_code;
+use crate::{pre_sierra, SierraGeneratorDiagnostic};
 
 #[salsa::query_group(SierraGenDatabase)]
 pub trait SierraGenGroup: SemanticGroup + AsSemanticGroup {
@@ -38,24 +37,24 @@ pub trait SierraGenGroup: SemanticGroup + AsSemanticGroup {
     fn get_concrete_type_id(
         &self,
         type_id: semantic::TypeId,
-    ) -> WithDiagnostics<Option<sierra::ids::ConcreteTypeId>, Diagnostic>;
+    ) -> WithDiagnostics<Option<sierra::ids::ConcreteTypeId>, SierraGeneratorDiagnostic>;
 
     /// Generates and returns the Sierra code (as [pre_sierra::Function]) for a given function.
     fn get_function_code(
         &self,
         function_id: FreeFunctionId,
-    ) -> WithDiagnostics<Option<Arc<pre_sierra::Function>>, Diagnostic>;
+    ) -> WithDiagnostics<Option<Arc<pre_sierra::Function>>, SierraGeneratorDiagnostic>;
 
     /// Generates and returns the [sierra::program::Program] object for the given module.
     fn get_program_code(
         &self,
         module_id: ModuleId,
-    ) -> WithDiagnostics<Option<Arc<sierra::program::Program>>, Diagnostic>;
+    ) -> WithDiagnostics<Option<Arc<sierra::program::Program>>, SierraGeneratorDiagnostic>;
 }
 
 #[with_diagnostics]
 fn get_concrete_type_id(
-    diagnostics: &mut Diagnostics<Diagnostic>,
+    diagnostics: &mut Diagnostics<SierraGeneratorDiagnostic>,
     db: &dyn SierraGenGroup,
     type_id: semantic::TypeId,
 ) -> Option<sierra::ids::ConcreteTypeId> {
@@ -94,22 +93,21 @@ fn get_concrete_type_id(
 
 #[with_diagnostics]
 fn get_function_code(
-    diagnostics: &mut Diagnostics<Diagnostic>,
+    diagnostics: &mut Diagnostics<SierraGeneratorDiagnostic>,
     db: &dyn SierraGenGroup,
     function_id: FreeFunctionId,
 ) -> Option<Arc<pre_sierra::Function>> {
-    let function_semantic: semantic::FreeFunction =
-        db.free_function_semantic(function_id).propagate(diagnostics)?;
+    let function_semantic: semantic::FreeFunction = db.free_function_semantic(function_id)?;
     Some(Arc::new(generate_function_code(diagnostics, db, function_id, function_semantic)?))
 }
 
 #[with_diagnostics]
 fn get_program_code(
-    diagnostics: &mut Diagnostics<Diagnostic>,
+    diagnostics: &mut Diagnostics<SierraGeneratorDiagnostic>,
     db: &dyn SierraGenGroup,
     module_id: ModuleId,
 ) -> Option<Arc<sierra::program::Program>> {
-    let module_items = db.module_items(module_id).propagate(diagnostics)?;
+    let module_items = db.module_items(module_id)?;
     let program: sierra::program::Program = generate_program_code(diagnostics, db, &module_items)?;
     Some(Arc::new(program))
 }

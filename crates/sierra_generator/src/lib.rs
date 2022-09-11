@@ -13,4 +13,4 @@ mod resolve_labels;
 pub mod test_utils;
 mod utils;
 
-pub use diagnostic::{Diagnostic, SierraGeneratorDiagnostic};
+pub use diagnostic::SierraGeneratorDiagnostic;

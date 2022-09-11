@@ -8,16 +8,16 @@ use sierra::program;
 use utils::ordered_hash_set::OrderedHashSet;
 
 use crate::db::SierraGenGroup;
-use crate::diagnostic::Diagnostic;
 use crate::pre_sierra::{self};
 use crate::resolve_labels::{resolve_labels, LabelReplacer};
+use crate::SierraGeneratorDiagnostic;
 
 #[cfg(test)]
 #[path = "program_generator_test.rs"]
 mod test;
 
 pub fn generate_program_code(
-    diagnostics: &mut Diagnostics<Diagnostic>,
+    diagnostics: &mut Diagnostics<SierraGeneratorDiagnostic>,
     db: &dyn SierraGenGroup,
     module_items: &ModuleItems,
 ) -> Option<program::Program> {

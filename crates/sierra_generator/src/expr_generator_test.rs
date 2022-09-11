@@ -8,14 +8,14 @@ use semantic::test_utils::{setup_test_block, setup_test_expr};
 use crate::expr_generator::generate_expression_code;
 use crate::expr_generator_context::ExprGeneratorContext;
 use crate::test_utils::{replace_libfunc_ids, SierraGenDatabaseForTesting};
-use crate::{pre_sierra, Diagnostic};
+use crate::{pre_sierra, SierraGeneratorDiagnostic};
 
 fn generate_expr_code_for_test(
     db: &SierraGenDatabaseForTesting,
     block: semantic::ExprId,
 ) -> (Vec<pre_sierra::Statement>, sierra::ids::VarId) {
     let dummy_function_id = FreeFunctionId::from_intern_id(InternId::from(0u32));
-    let mut diagnostics = Diagnostics::<Diagnostic>::new();
+    let mut diagnostics = Diagnostics::<SierraGeneratorDiagnostic>::new();
     let mut expr_generator_context =
         ExprGeneratorContext::new(db, dummy_function_id, &mut diagnostics);
     let (statements, res) = generate_expression_code(&mut expr_generator_context, block).unwrap();
@@ -27,7 +27,7 @@ fn generate_expr_code_for_test(
 fn test_expr_generator() {
     let mut db = SierraGenDatabaseForTesting::default();
 
-    let (_module_id, expr) = setup_test_block(
+    let (_module_id, expr, _diagnostics) = setup_test_block(
         &mut db,
         indoc! {"
             let x = 7;
@@ -43,8 +43,7 @@ fn test_expr_generator() {
             }
         "},
         "",
-    )
-    .expect("");
+    );
 
     let (statements, res) = generate_expr_code_for_test(&db, expr);
     assert_eq!(
@@ -79,7 +78,7 @@ fn test_expr_generator() {
 fn test_match() {
     let mut db = SierraGenDatabaseForTesting::default();
 
-    let (_module_id, expr) = setup_test_block(
+    let (_module_id, expr, _diagnostics) = setup_test_block(
         &mut db,
         indoc! {"
             let x = 7;
@@ -90,8 +89,7 @@ fn test_match() {
         "},
         "",
         "",
-    )
-    .expect("");
+    );
 
     let (statements, res) = generate_expr_code_for_test(&db, expr);
     assert_eq!(
@@ -121,13 +119,12 @@ fn test_match() {
 fn test_call_libfunc() {
     let mut db = SierraGenDatabaseForTesting::default();
 
-    let (_module_id, expr) = setup_test_expr(
+    let (_module_id, expr, _diagnostics) = setup_test_expr(
         &mut db,
         "felt_add(3,6)",
         "extern func felt_add(a: felt, b: felt) -> felt",
         "",
-    )
-    .expect("");
+    );
 
     let (statements, res) = generate_expr_code_for_test(&db, expr);
     assert_eq!(
