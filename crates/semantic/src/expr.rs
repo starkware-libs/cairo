@@ -88,7 +88,7 @@ pub fn compute_expr_semantic(
     let db = ctx.db;
     let syntax_db = db.as_syntax_group();
     // TODO: When semantic::Expr holds the syntax pointer, add it here as well.
-    let expr = match syntax {
+    match syntax {
         ast::Expr::Path(path) => {
             let stable_ptr = path.stable_ptr().untyped();
             let var = resolve_variable(ctx, path);
@@ -229,8 +229,7 @@ pub fn compute_expr_semantic(
             })
         }
         ast::Expr::ExprMissing(_) => todo!(),
-    };
-    expr
+    }
 }
 
 /// Resolves a variable given a context and a path expression.

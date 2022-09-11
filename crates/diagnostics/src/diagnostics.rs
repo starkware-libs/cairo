@@ -56,7 +56,7 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
         res
     }
 
-    /// Verifies that there are no diagnostics in this set. Fails otherwise.
+    /// Asserts that no diagnostic has occurred, panicking and printing a message on failure.
     pub fn expect(self, error_message: &str) {
         assert!(self.0.is_empty(), "{}\n{:?}", error_message, self);
     }
