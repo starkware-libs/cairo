@@ -79,6 +79,22 @@ impl<'a> Parser<'a> {
         }
     }
 
+    /// Returns a GreenId of an ExprMissing and adds a diagnostic describing it.
+    fn create_and_report_missing(&mut self, missing_kind: ParserDiagnosticKind) -> GreenId {
+        self.diagnostics.add(ParserDiagnostic {
+            file_id: self.file_id,
+            kind: missing_kind,
+            span: TextSpan {
+                start: TextOffset((self.offset + self.current_width) as usize),
+                end: TextOffset(
+                    (self.offset + self.current_width + self.peek().terminal.width(self.db))
+                        as usize,
+                ),
+            },
+        });
+        ExprMissing::new_green(self.db)
+    }
+
     pub fn parse_syntax_file(mut self) -> WithDiagnostics<SyntaxFile, ParserDiagnostic> {
         let items = self.parse_list(
             Self::try_parse_top_level_item,
@@ -215,7 +231,7 @@ impl<'a> Parser<'a> {
     pub fn parse_expr(&mut self) -> GreenId {
         match self.try_parse_expr() {
             Some(green) => green,
-            None => ExprMissing::new_green(self.db),
+            None => self.create_and_report_missing(ParserDiagnosticKind::MissingExpression),
         }
     }
 
@@ -245,7 +261,7 @@ impl<'a> Parser<'a> {
     fn parse_simple_expression(&mut self, parent_precedence: usize) -> GreenId {
         match self.try_parse_simple_expression(parent_precedence) {
             Some(green) => green,
-            None => ExprMissing::new_green(self.db),
+            None => self.create_and_report_missing(ParserDiagnosticKind::MissingExpression),
         }
     }
 
@@ -422,7 +438,7 @@ impl<'a> Parser<'a> {
     fn parse_block(&mut self) -> GreenId {
         match self.try_parse_block() {
             Some(green) => green,
-            None => ExprMissing::new_green(self.db),
+            None => self.create_and_report_missing(ParserDiagnosticKind::MissingBlock),
         }
     }
 
@@ -593,7 +609,7 @@ impl<'a> Parser<'a> {
         if self.peek().kind == TokenKind::Identifier {
             self.expect_path()
         } else {
-            ExprMissing::new_green(self.db)
+            self.create_and_report_missing(ParserDiagnosticKind::MissingPath)
         }
     }
 
