@@ -1,12 +1,11 @@
-use std::collections::HashMap;
 use std::sync::Arc;
 
 use defs::db::{AsDefsGroup, DefsDatabase, DefsGroup};
 use defs::ids::{GenericFunctionId, ModuleId};
 use diagnostics::{Diagnostics, WithDiagnostics};
 use diagnostics_proc_macros::with_diagnostics;
-use filesystem::db::{init_files_group, AsFilesGroup, FilesDatabase, FilesGroup};
-use filesystem::ids::{CrateLongId, FileLongId};
+use filesystem::db::{init_files_group, AsFilesGroup, FilesDatabase, FilesGroup, FilesGroupEx};
+use filesystem::ids::{CrateLongId, Directory};
 use parser::db::ParserDatabase;
 use syntax::node::db::{AsSyntaxGroup, SyntaxDatabase, SyntaxGroup};
 use utils::extract_matches;
@@ -31,6 +30,9 @@ impl AsFilesGroup for SemanticDatabaseForTesting {
     fn as_files_group(&self) -> &(dyn FilesGroup + 'static) {
         self
     }
+    fn as_files_group_mut(&mut self) -> &mut (dyn FilesGroup + 'static) {
+        self
+    }
 }
 impl AsSyntaxGroup for SemanticDatabaseForTesting {
     fn as_syntax_group(&self) -> &(dyn SyntaxGroup + 'static) {
@@ -46,13 +48,13 @@ impl AsDefsGroup for SemanticDatabaseForTesting {
 /// Sets up a module with given content, and returns its module id.
 pub fn setup_test_module(db: &mut dyn SemanticGroup, content: &str) -> ModuleId {
     let crate_id = db.intern_crate(CrateLongId("test_crate".into()));
-    let file_id = db.intern_file(FileLongId::OnDisk("test.cairo".into()));
-    db.set_file_overrides(Arc::new(HashMap::from_iter([(file_id, Arc::new(content.to_string()))])));
-    db.set_project_config(core_config(db).with_crate(crate_id, file_id));
+    let directory = Directory("src".into());
+    db.set_project_config(core_config(db).with_crate(crate_id, directory));
+    let file_id = db.module_file(ModuleId::CrateRoot(crate_id)).unwrap();
+    db.as_files_group_mut().override_file_content(file_id, Some(Arc::new(content.to_string())));
 
     ModuleId::CrateRoot(crate_id)
 }
-
 /// Returns the semantic model of a given function.
 /// function_name - name of the function.
 /// module_code - extra setup code in the module context.

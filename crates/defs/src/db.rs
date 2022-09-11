@@ -3,7 +3,7 @@ use std::sync::Arc;
 use diagnostics::{Diagnostics, WithDiagnostics};
 use diagnostics_proc_macros::with_diagnostics;
 use filesystem::db::{AsFilesGroup, FilesGroup};
-use filesystem::ids::FileId;
+use filesystem::ids::{Directory, FileId};
 use itertools::chain;
 use parser::db::ParserGroup;
 use parser::ParserDiagnostic;
@@ -40,6 +40,7 @@ pub trait DefsGroup: FilesGroup + SyntaxGroup + AsSyntaxGroup + ParserGroup + As
 
     // Module to syntax.
     fn module_file(&self, module_id: ModuleId) -> Option<FileId>;
+    fn module_dir(&self, module_id: ModuleId) -> Option<Directory>;
     fn module_syntax(
         &self,
         module_id: ModuleId,
@@ -66,15 +67,29 @@ pub trait AsDefsGroup {
 }
 
 fn module_file(db: &dyn DefsGroup, module_id: ModuleId) -> Option<FileId> {
-    match module_id {
-        ModuleId::CrateRoot(crate_id) => db.crate_root_file(crate_id),
+    Some(match module_id {
+        ModuleId::CrateRoot(crate_id) => {
+            db.crate_root_dir(crate_id)?.file(db.as_files_group(), "lib.cairo".into())
+        }
         ModuleId::Submodule(submodule_id) => {
-            let _submodule_long_id = db.lookup_intern_submodule(submodule_id);
-            // TODO(yuval): support submodules.
-            todo!()
+            let parent = submodule_id.module(db);
+            let name = submodule_id.name(db);
+            db.module_dir(parent)?.file(db.as_files_group(), format!("{name}.cairo").into())
+        }
+    })
+}
+
+fn module_dir(db: &dyn DefsGroup, module_id: ModuleId) -> Option<Directory> {
+    match module_id {
+        ModuleId::CrateRoot(crate_id) => db.crate_root_dir(crate_id),
+        ModuleId::Submodule(submodule_id) => {
+            let parent = submodule_id.module(db);
+            let name = submodule_id.name(db);
+            Some(db.module_dir(parent)?.subdir(name))
         }
     }
 }
+
 #[with_diagnostics]
 pub fn module_syntax(
     diagnostics: &mut Diagnostics<ParserDiagnostic>,
