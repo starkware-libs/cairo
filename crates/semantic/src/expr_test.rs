@@ -71,6 +71,26 @@ fn test_function_with_param() {
 
 // TODO(yuval): split test utils and move this test to db_test/type_test.
 #[test]
+fn test_tuple_type() {
+    let mut db_val = SemanticDatabaseForTesting::default();
+    let (_module_id, function) =
+        setup_test_function(&mut db_val, "func foo(a: (felt, (), (felt,))) {}", "foo", "")
+            .expect("");
+    let db = &db_val;
+    let signature = function.signature;
+
+    assert_eq!(signature.params.len(), 1);
+    let param = &signature.params[0];
+    assert_eq!(format!("{:?}", param.id.debug(db)), "ParamId(test_crate::a)");
+    assert_eq!(
+        format!("{:?}", param.ty.debug(db)),
+        "Tuple([Concrete(ExternTypeId(core::felt)), Tuple([]), \
+         Tuple([Concrete(ExternTypeId(core::felt))])])"
+    );
+}
+
+// TODO(yuval): split test utils and move this test to db_test/type_test.
+#[test]
 fn test_function_with_return_type() {
     let mut db_val = SemanticDatabaseForTesting::default();
     let (_module_id, function) =

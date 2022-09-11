@@ -56,6 +56,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
         match self.kind {
             SemanticDiagnosticKind::UnknownBinaryOperator => "Unknown binary operator",
             SemanticDiagnosticKind::UnknownFunction => "Unknown function",
+            SemanticDiagnosticKind::UnknownType => "Unknown type",
         }
         .into()
     }
@@ -77,4 +78,5 @@ impl DiagnosticEntry for SemanticDiagnostic {
 pub enum SemanticDiagnosticKind {
     UnknownBinaryOperator,
     UnknownFunction,
+    UnknownType,
 }
