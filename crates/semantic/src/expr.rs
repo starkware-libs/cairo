@@ -113,10 +113,10 @@ pub fn compute_expr_semantic(
                     Some(generic_function) => generic_function,
                     None => {
                         diagnostics.add(SemanticDiagnostic {
-                            stable_location: StableLocation {
-                                module_id: ctx.module_id,
-                                stable_ptr: binary_op_syntax.as_syntax_node().stable_ptr(),
-                            },
+                            stable_location: StableLocation::from_ast(
+                                ctx.module_id,
+                                &binary_op_syntax,
+                            ),
                             kind: SemanticDiagnosticKind::UnknownBinaryOperator,
                         });
                         return semantic::Expr::Missing {
@@ -285,10 +285,7 @@ fn resolve_function(
         })
         .unwrap_or_else(|| {
             diagnostics.add(SemanticDiagnostic {
-                stable_location: StableLocation {
-                    module_id: ctx.module_id,
-                    stable_ptr: path.node.stable_ptr(),
-                },
+                stable_location: StableLocation::from_ast(ctx.module_id, &path),
                 kind: SemanticDiagnosticKind::UnknownFunction,
             });
             FunctionId::missing(ctx.db)
@@ -329,10 +326,7 @@ pub fn resolve_type(
             .and_then(|generic_type| specialize_type(diagnostics, db, generic_type))
             .unwrap_or_else(|| {
                 diagnostics.add(SemanticDiagnostic {
-                    stable_location: StableLocation {
-                        module_id,
-                        stable_ptr: path.node.stable_ptr(),
-                    },
+                    stable_location: StableLocation::from_ast(module_id, &path),
                     kind: SemanticDiagnosticKind::UnknownType,
                 });
                 TypeId::missing(db)
@@ -351,10 +345,7 @@ pub fn resolve_type(
         }
         _ => {
             diagnostics.add(SemanticDiagnostic {
-                stable_location: StableLocation {
-                    module_id,
-                    stable_ptr: ty_syntax.as_syntax_node().stable_ptr(),
-                },
+                stable_location: StableLocation::from_ast(module_id, &ty_syntax),
                 kind: SemanticDiagnosticKind::UnknownType,
             });
             TypeId::missing(db)

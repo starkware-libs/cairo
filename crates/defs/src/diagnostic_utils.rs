@@ -7,10 +7,14 @@ use crate::ids::ModuleId;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct StableLocation {
-    pub module_id: ModuleId,
-    pub stable_ptr: SyntaxStablePtrId,
+    module_id: ModuleId,
+    stable_ptr: SyntaxStablePtrId,
 }
 impl StableLocation {
+    pub fn from_ast<TNode: TypedSyntaxNode>(module_id: ModuleId, node: &TNode) -> Self {
+        Self { module_id, stable_ptr: node.as_syntax_node().stable_ptr() }
+    }
+
     pub fn diagnostic_location(&self, db: &(dyn DefsGroup + 'static)) -> DiagnosticLocation {
         let file_id = db.module_file(self.module_id).expect("Module in diagnostic does not exist");
         let syntax_node = db
