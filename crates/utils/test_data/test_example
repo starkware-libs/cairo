@@ -1,0 +1,20 @@
+Test Example
+------------
+
+>>> Expression
+a +
+
+>>> Expected
+Missing RHS.
+
+================
+
+Another Test Example
+--------------------
+
+>>> Expression
+a + ;
+panic!();
+
+>>> Expected
+Skipped ';'.
