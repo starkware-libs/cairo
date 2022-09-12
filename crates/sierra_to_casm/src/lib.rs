@@ -3,6 +3,7 @@
 pub mod annotations;
 pub mod compiler;
 pub mod environment;
+pub mod frame_state;
 pub mod invocations;
 pub mod references;
 pub mod relocations;

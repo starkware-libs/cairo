@@ -16,6 +16,7 @@ fn good_flow() {
             type felt = felt;
             type NonZeroFelt = NonZero<felt>;
 
+            libfunc alloc_locals = alloc_locals;
             libfunc felt_add = felt_add;
             libfunc felt_sub = felt_sub;
             libfunc felt_dup = felt_dup;
@@ -37,20 +38,21 @@ fn good_flow() {
             store_temp_felt([4]) -> ([4]);                  // #8
             return([7], [8], [4]);                          // #9
 
-            felt_jump_nz([1]) { 15([1]) fallthrough() };    // #10
-            felt_dup([2]) -> ([1], [2]);                    // #11
-            store_temp_felt([1]) -> ([1]);                  // #12
-            store_temp_felt([2]) -> ([2]);                  // #13
-            return ([1], [2]);                              // #14
+            alloc_locals() -> ();                           // #10
+            felt_jump_nz([1]) { 16([1]) fallthrough() };    // #11
+            felt_dup([2]) -> ([1], [2]);                    // #12
+            store_temp_felt([1]) -> ([1]);                  // #13
+            store_temp_felt([2]) -> ([2]);                  // #14
+            return ([1], [2]);                              // #15
 
-            jump() { 16() };                                // #15
-            felt_unwrap_nz([1]) -> ([1]);                   // #16
-            felt_dup([2]) -> ([2], [3]);                    // #17
-            felt_sub([1], [3]) -> ([1]);                    // #18
-            store_temp_felt([1]) -> ([1]);                  // #19
-            store_temp_felt([2]) -> ([2]);                  // #20
-            call_foo([1], [2]) -> ([1], [2]);               // #21
-            return ([1], [2]);                              // #22
+            jump() { 17() };                                // #16
+            felt_unwrap_nz([1]) -> ([1]);                   // #17
+            felt_dup([2]) -> ([2], [3]);                    // #18
+            felt_sub([1], [3]) -> ([1]);                    // #19
+            store_temp_felt([1]) -> ([1]);                  // #20
+            store_temp_felt([2]) -> ([2]);                  // #21
+            call_foo([1], [2]) -> ([1], [2]);               // #22
+            return ([1], [2]);                              // #23
 
             test_program@0([1]: felt, [2]: felt) -> (felt, felt, felt);
             foo@10([1]: felt, [2]: felt) -> (felt, felt);
@@ -285,6 +287,53 @@ fn fib_program() {
                 foo@0([1]: felt) -> ();
             "}, "Got 'Unknown ap change' error while moving [1] from #2 to #3.";
             "Ap change error")]
+#[test_case(indoc! {"
+                libfunc alloc_locals = alloc_locals;
+
+                alloc_locals () -> ();
+                alloc_locals () -> ();
+                return ();
+
+                test_program@0() -> ();
+            "}, "#1: alloc_locals is not allowed at this point.";
+            "Invalid alloc_locals 1")]
+#[test_case(indoc! {"
+                type felt = felt;
+
+                libfunc alloc_locals = alloc_locals;
+                libfunc store_temp_felt = store_temp<felt>;
+                libfunc felt_ignore = felt_ignore;
+                libfunc call_foo = function_call<user@foo>;
+
+                store_temp_felt([1]) -> ([1]);
+                call_foo([1]) -> ();
+                alloc_locals() -> ();
+                return ();
+
+                foo@0([1]: felt) -> ();
+            "}, "#2: alloc_locals is not allowed at this point.";
+            "Invalid alloc_locals 2")]
+#[test_case(indoc! {"
+                type felt = felt;
+                type NonZeroFelt = NonZero<felt>;
+
+                libfunc alloc_locals = alloc_locals;    
+                libfunc felt_ignore = felt_ignore;
+                libfunc felt_jump_nz = felt_jump_nz;
+                libfunc felt_unwrap_nz = unwrap_nz<felt>;
+                libfunc jump = jump;
+              
+
+                felt_jump_nz([1]) { 3([1]) fallthrough() };
+                alloc_locals() -> ();
+                jump() { 5() };
+                felt_unwrap_nz([1]) -> ([1]);
+                felt_ignore([1]) -> ();
+                return ();
+
+                foo@0([1]: felt) -> ();
+            "}, "Inconsistent frame state at #5.";
+            "Inconsistent frame state.")]
 fn compiler_errors(sierra_code: &str, expected_result: &str) {
     let prog = ProgramParser::new().parse(sierra_code).unwrap();
     assert_eq!(

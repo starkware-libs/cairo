@@ -9,7 +9,8 @@ use sierra::ids::{ConcreteTypeId, VarId};
 use sierra::program::{BranchInfo, Function, StatementIdx};
 use thiserror::Error;
 
-use crate::environment::Environment;
+use crate::environment::{assert_equal_environments, Environment, EnvironmentError};
+use crate::frame_state::{update_frame_state, FrameState, FrameStateError};
 use crate::invocations::BranchRefChanges;
 use crate::references::{
     build_function_parameter_refs, check_types_match, ReferenceValue, ReferencesError,
@@ -20,6 +21,8 @@ use crate::references::{
 pub enum AnnotationError {
     #[error("#{0}: Inconsistent references annotations.")]
     InconsistentReferencesAnnotation(StatementIdx),
+    #[error("{error} at #{statement_idx}.")]
+    InconsistentEnvironments { statement_idx: StatementIdx, error: EnvironmentError },
     #[error("Inconsistent return type annotation.")]
     InconsistentReturnTypesAnnotation(StatementIdx),
     #[error("InvalidStatementIdx")]
@@ -38,6 +41,8 @@ pub enum AnnotationError {
         var_id: VarId,
     },
 
+    #[error(transparent)]
+    FrameStateError(#[from] FrameStateError),
     #[error(transparent)]
     ReferencesError(#[from] ReferencesError),
 
@@ -107,7 +112,7 @@ impl ProgramAnnotations {
                 StatementAnnotations {
                     refs: build_function_parameter_refs(func)?,
                     return_types: return_annotation,
-                    environment: Environment {},
+                    environment: Environment { frame_state: FrameState::Allocating { used: 0 } },
                 },
             )?
         }
@@ -133,6 +138,15 @@ impl ProgramAnnotations {
                 if expected_annotations.return_types != annotations.return_types {
                     return Err(AnnotationError::InconsistentReturnTypesAnnotation(statement_id));
                 }
+
+                assert_equal_environments(
+                    &expected_annotations.environment,
+                    &annotations.environment,
+                )
+                .map_err(|error| AnnotationError::InconsistentEnvironments {
+                    statement_idx: statement_id,
+                    error,
+                })?;
             }
         };
         Ok(())
@@ -202,7 +216,12 @@ impl ProgramAnnotations {
                         var_id: error.var_id(),
                     })?,
                     return_types: annotations.return_types.clone(),
-                    environment: annotations.environment.clone(),
+                    environment: Environment {
+                        frame_state: update_frame_state(
+                            annotations.environment.frame_state.clone(),
+                            branch_result.ap_change,
+                        )?,
+                    },
                 },
             )?;
         }
