@@ -12,7 +12,7 @@ fn generate_expr_code_for_test(
     db: &SierraGenDatabaseForTesting,
     test_expr: TestExpr,
 ) -> (Vec<pre_sierra::Statement>, sierra::ids::VarId) {
-    let mut diagnostics = Diagnostics::<Diagnostic>::new();
+    let mut diagnostics = Diagnostics::<Diagnostic>::default();
     let mut expr_generator_context =
         ExprGeneratorContext::new(db, test_expr.function_id, &mut diagnostics);
     let result = generate_expression_code(&mut expr_generator_context, test_expr.expr_id);
@@ -25,7 +25,7 @@ fn verify_exception(
     test_expr: TestExpr,
     expected_diagnostics: &str,
 ) {
-    let mut diagnostics = Diagnostics::<Diagnostic>::new();
+    let mut diagnostics = Diagnostics::<Diagnostic>::default();
     let mut expr_generator_context =
         ExprGeneratorContext::new(db, test_expr.function_id, &mut diagnostics);
     generate_expression_code(&mut expr_generator_context, test_expr.expr_id);

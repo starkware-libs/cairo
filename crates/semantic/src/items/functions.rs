@@ -2,14 +2,14 @@ use std::collections::HashMap;
 
 use db_utils::define_short_id;
 use debug::DebugWithDb;
-use defs::ids::{GenericFunctionId, LanguageElementId, ModuleId, ParamLongId, VarId};
-use diagnostics::{Diagnostics, WithDiagnostics};
-use diagnostics_proc_macros::{with_diagnostics, DebugWithDb};
+use defs::ids::{GenericFunctionId, ModuleId, ParamLongId, VarId};
+use diagnostics::Diagnostics;
+use diagnostics_proc_macros::DebugWithDb;
 use syntax::node::{ast, TypedSyntaxNode};
 
 use crate::corelib::unit_ty;
 use crate::db::SemanticGroup;
-use crate::expr::compute::EnvVariables;
+use crate::expr::compute::Environment;
 use crate::types::resolve_type;
 use crate::{semantic, SemanticDiagnostic};
 
@@ -89,12 +89,12 @@ pub fn function_signature_return_type(
 }
 
 /// Returns the parameters of the given function signature's AST.
-fn function_signature_params(
+pub fn function_signature_params(
     diagnostics: &mut Diagnostics<SemanticDiagnostic>,
     db: &dyn SemanticGroup,
     module_id: ModuleId,
     sig: &ast::FunctionSignature,
-) -> Option<(Vec<semantic::Parameter>, EnvVariables)> {
+) -> (Vec<semantic::Parameter>, Environment) {
     let syntax_db = db.as_syntax_group();
 
     let mut semantic_params = Vec::new();
@@ -116,48 +116,18 @@ fn function_signature_params(
         variables.insert(name, semantic::Variable { id: VarId::Param(id), ty });
     }
 
-    Some((semantic_params, variables))
+    (semantic_params, Environment::new(variables))
 }
 
-/// All the semantic data that can be computed from the signature AST.
-/// Used mostly for performance reasons, and other queries should select from, instead of
-/// recomputing.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct GenericFunctionData {
-    pub signature: semantic::Signature,
-    pub variables: EnvVariables,
-}
-
-#[with_diagnostics]
-/// Query implementation of [crate::db::SemanticGroup::priv_generic_function_signature_data].
-pub fn priv_generic_function_signature_data(
-    diagnostics: &mut Diagnostics<SemanticDiagnostic>,
+/// Query implementation of [crate::db::SemanticGroup::generic_function_signature].
+pub fn generic_function_signature(
     db: &dyn SemanticGroup,
-    function_id: GenericFunctionId,
-) -> Option<GenericFunctionData> {
-    let module_id = function_id.module(db.as_defs_group());
-    let module_data = db.module_data(module_id)?;
-    let signature_syntax = match function_id {
-        GenericFunctionId::Free(free_function_id) => {
-            module_data.free_functions.get(&free_function_id)?.signature(db.as_syntax_group())
+    generic_function: GenericFunctionId,
+) -> Option<Signature> {
+    match generic_function {
+        GenericFunctionId::Free(free_function) => db.free_function_signature(free_function),
+        GenericFunctionId::Extern(extern_function) => {
+            db.extern_function_declaration_signature(extern_function)
         }
-        GenericFunctionId::Extern(extern_function_id) => {
-            module_data.extern_functions.get(&extern_function_id)?.signature(db.as_syntax_group())
-        }
-    };
-
-    let return_type = function_signature_return_type(diagnostics, db, module_id, &signature_syntax);
-
-    let (params, variables) =
-        function_signature_params(diagnostics, db, module_id, &signature_syntax)?;
-    Some(GenericFunctionData { signature: semantic::Signature { params, return_type }, variables })
-}
-
-/// Query implementation of [crate::db::SemanticGroup::generic_function_signature_semantic].
-pub fn generic_function_signature_semantic(
-    db: &dyn SemanticGroup,
-    function_id: GenericFunctionId,
-) -> Option<semantic::Signature> {
-    let generic_data = db.priv_generic_function_signature_data(function_id).ignore()?;
-    Some(generic_data.signature)
+    }
 }
