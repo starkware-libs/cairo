@@ -1,25 +1,25 @@
-#[cfg(test)]
-#[path = "expr_test.rs"]
-mod test;
+//! This module is responsible of computing the semantic model of expressions and statements in
+//! the code, while type checking.
+//! It is invoked by queries for function bodies and other code blocks.
 
 use std::collections::HashMap;
 
 use defs::diagnostic_utils::StableLocation;
-use defs::ids::{GenericFunctionId, GenericTypeId, LocalVarLongId, ModuleId, VarId};
+use defs::ids::{GenericFunctionId, LocalVarLongId, ModuleId, VarId};
 use diagnostics::Diagnostics;
 use smol_str::SmolStr;
 use syntax::node::db::SyntaxGroup;
 use syntax::node::helpers::TerminalEx;
 use syntax::node::{ast, TypedSyntaxNode};
 
+use super::objects::*;
 use crate::corelib::{core_binary_operator, unit_ty};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind;
+use crate::items::functions::{ConcreteFunction, FunctionLongId};
 use crate::resolve_item::resolve_item;
-use crate::{
-    semantic, ConcreteFunction, ConcreteType, FunctionId, FunctionLongId, MatchArm,
-    SemanticDiagnostic, StatementId, TypeId, TypeLongId, Variable,
-};
+use crate::types::resolve_type;
+use crate::{semantic, FunctionId, SemanticDiagnostic, TypeId, Variable};
 
 /// Context for computing the semantic model of expression trees.
 pub struct ComputationContext<'ctx> {
@@ -331,58 +331,6 @@ fn specialize_function(
         generic_args: vec![],
         return_type: signature.return_type,
     })))
-}
-
-// TODO(yuval): move to a separate module "type".
-// TODO(spapini): add a query wrapper.
-/// Resolves a type given a module and a path.
-pub fn resolve_type(
-    diagnostics: &mut Diagnostics<SemanticDiagnostic>,
-    db: &dyn SemanticGroup,
-    module_id: ModuleId,
-    ty_syntax: ast::Expr,
-) -> TypeId {
-    let syntax_db = db.as_syntax_group();
-    match ty_syntax {
-        ast::Expr::Path(path) => resolve_item(db, module_id, &path)
-            .and_then(GenericTypeId::from)
-            .and_then(|generic_type| specialize_type(diagnostics, db, generic_type))
-            .unwrap_or_else(|| {
-                diagnostics.add(SemanticDiagnostic {
-                    stable_location: StableLocation::from_ast(module_id, &path),
-                    kind: SemanticDiagnosticKind::UnknownType,
-                });
-                TypeId::missing(db)
-            }),
-        ast::Expr::Parenthesized(expr_syntax) => {
-            resolve_type(diagnostics, db, module_id, expr_syntax.expr(syntax_db))
-        }
-        ast::Expr::Tuple(tuple_syntax) => {
-            let sub_tys = tuple_syntax
-                .expressions(syntax_db)
-                .elements(syntax_db)
-                .into_iter()
-                .map(|subexpr_syntax| resolve_type(diagnostics, db, module_id, subexpr_syntax))
-                .collect();
-            db.intern_type(TypeLongId::Tuple(sub_tys))
-        }
-        _ => {
-            diagnostics.add(SemanticDiagnostic {
-                stable_location: StableLocation::from_ast(module_id, &ty_syntax),
-                kind: SemanticDiagnosticKind::UnknownType,
-            });
-            TypeId::missing(db)
-        }
-    }
-}
-
-/// Tries to specializes a generic type.
-fn specialize_type(
-    _diagnostics: &mut Diagnostics<SemanticDiagnostic>,
-    db: &dyn SemanticGroup,
-    generic_type: GenericTypeId,
-) -> Option<TypeId> {
-    Some(db.intern_type(TypeLongId::Concrete(ConcreteType { generic_type, generic_args: vec![] })))
 }
 
 /// Computes the semantic model of a statement.
