@@ -2,13 +2,14 @@ use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::iter;
 
-use casm::ap_change::ApplyApChange;
+use casm::ap_change::{ApChangeError, ApplyApChange};
 use itertools::zip_eq;
 use sierra::edit_state::{put_results, take_args, EditStateError};
 use sierra::ids::{ConcreteTypeId, VarId};
 use sierra::program::{BranchInfo, Function, StatementIdx};
 use thiserror::Error;
 
+use crate::environment::Environment;
 use crate::invocations::BranchRefChanges;
 use crate::references::{
     build_function_parameter_refs, check_types_match, ReferenceValue, ReferencesError,
@@ -25,10 +26,28 @@ pub enum AnnotationError {
     InvalidStatementIdx,
     #[error("MissingAnnotationsForStatement")]
     MissingAnnotationsForStatement(StatementIdx),
-    #[error(transparent)]
-    EditStateError(#[from] EditStateError),
+    #[error("Missing reference error")]
+    MissingReferenceError { statement_idx: StatementIdx, error: EditStateError },
+    #[error("Missing reference error")]
+    OverrideReferenceError {
+        source_statement_idx: StatementIdx,
+        destination_statement_idx: StatementIdx,
+        error: EditStateError,
+    },
+
     #[error(transparent)]
     ReferencesError(#[from] ReferencesError),
+
+    #[error(
+        "Got '{error}' error while moving {var_id} from #{source_statement_idx} to \
+         #{destination_statement_idx}."
+    )]
+    ApChangeError {
+        var_id: VarId,
+        source_statement_idx: StatementIdx,
+        destination_statement_idx: StatementIdx,
+        error: ApChangeError,
+    },
 }
 
 /// An annotation that specifies the expected return types at each statement.
@@ -43,6 +62,7 @@ pub struct ReturnTypesAnnotation(usize);
 pub struct StatementAnnotations {
     pub refs: StatementRefs,
     pub return_types: ReturnTypesAnnotation,
+    pub environment: Environment,
 }
 
 /// Annotations of the program statements.
@@ -84,6 +104,7 @@ impl ProgramAnnotations {
                 StatementAnnotations {
                     refs: build_function_parameter_refs(func)?,
                     return_types: return_annotation,
+                    environment: Environment {},
                 },
             )?
         }
@@ -121,18 +142,14 @@ impl ProgramAnnotations {
         statement_idx: StatementIdx,
         ref_ids: impl Iterator<Item = &'a VarId>,
     ) -> Result<(StatementAnnotations, Vec<ReferenceValue>), AnnotationError> {
-        let statement_annotations = &self.per_statement_annotations[statement_idx.0]
+        let statement_annotations = self.per_statement_annotations[statement_idx.0]
             .as_ref()
-            .ok_or(AnnotationError::MissingAnnotationsForStatement(statement_idx))?;
+            .ok_or(AnnotationError::MissingAnnotationsForStatement(statement_idx))?
+            .clone();
 
-        let (statement_refs, taken_refs) = take_args(statement_annotations.refs.clone(), ref_ids)?;
-        Ok((
-            StatementAnnotations {
-                refs: statement_refs,
-                return_types: statement_annotations.return_types.clone(),
-            },
-            taken_refs,
-        ))
+        let (statement_refs, taken_refs) = take_args(statement_annotations.refs, ref_ids)
+            .map_err(|error| AnnotationError::MissingReferenceError { statement_idx, error })?;
+        Ok((StatementAnnotations { refs: statement_refs, ..statement_annotations }, taken_refs))
     }
 
     // Propagate the annotations from the statement at 'statement_idx' to all the branches
@@ -147,6 +164,8 @@ impl ProgramAnnotations {
         per_branch_ref_changes: impl Iterator<Item = BranchRefChanges>,
     ) -> Result<(), AnnotationError> {
         for (branch_info, branch_result) in zip_eq(branches, per_branch_ref_changes) {
+            let destination_statement_idx = statement_idx.next(&branch_info.target);
+
             let mut new_refs: StatementRefs =
                 HashMap::with_capacity(annotations.refs.len() + branch_result.refs.len());
             for (var_id, ref_value) in &annotations.refs {
@@ -157,17 +176,28 @@ impl ProgramAnnotations {
                             .expression
                             .clone()
                             .apply_ap_change(branch_result.ap_change)
-                            .map_err(ReferencesError::ApChangeError)?,
+                            .map_err(|error| AnnotationError::ApChangeError {
+                                var_id: var_id.clone(),
+                                source_statement_idx: statement_idx,
+                                destination_statement_idx,
+                                error,
+                            })?,
                         ty: ref_value.ty.clone(),
                     },
                 );
             }
 
             self.set_or_assert(
-                statement_idx.next(&branch_info.target),
+                destination_statement_idx,
                 StatementAnnotations {
-                    refs: put_results(new_refs, zip_eq(&branch_info.results, branch_result.refs))?,
+                    refs: put_results(new_refs, zip_eq(&branch_info.results, branch_result.refs))
+                        .map_err(|error| AnnotationError::OverrideReferenceError {
+                        source_statement_idx: statement_idx,
+                        destination_statement_idx,
+                        error,
+                    })?,
                     return_types: annotations.return_types.clone(),
+                    environment: annotations.environment.clone(),
                 },
             )?;
         }

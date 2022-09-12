@@ -4,7 +4,10 @@ mod test;
 
 use std::collections::HashMap;
 use std::fs;
+use std::path::PathBuf;
 use std::sync::Arc;
+
+use project::ProjectConfig;
 
 use crate::ids::{CrateId, CrateLongId, Directory, FileId, FileLongId};
 use crate::span::{FileSummary, TextOffset};
@@ -19,7 +22,7 @@ pub trait FilesGroup {
 
     /// Main input of the project. Lists all the crates.
     #[salsa::input]
-    fn project_config(&self) -> ProjectConfig;
+    fn crate_roots(&self) -> Arc<HashMap<CrateId, Directory>>;
     /// Overrides for file content. Mostly used by language server and tests.
     /// TODO(spapini): Currently, when this input changes, all the file_content() queries will
     /// be invalidated.
@@ -39,14 +42,23 @@ pub trait FilesGroup {
     fn file_summary(&self, file_id: FileId) -> Option<Arc<FileSummary>>;
 }
 
-pub fn init_files_group(db: &mut dyn FilesGroup) {
+pub fn init_files_group(db: &mut (dyn FilesGroup + 'static)) {
+    // Initialize inputs.
     db.set_file_overrides(Arc::new(HashMap::new()));
+    db.set_crate_roots(Arc::new(HashMap::new()));
+
+    // Set core config.
+    let core_crate = db.intern_crate(CrateLongId("core".into()));
+    // TODO(spapini): find the correct path.
+    // This is the directory of Cargo.toml of the syntax_codegen crate.
+    let dir = env!("CARGO_MANIFEST_DIR");
+    let path = PathBuf::from(format!("{dir}/../../corelib"));
+    let core_root_dir = Directory(path);
+    db.set_crate_root(core_crate, Some(core_root_dir));
 }
 
-pub trait FilesGroupEx {
-    fn override_file_content(&mut self, file: FileId, content: Option<Arc<String>>);
-}
-impl<T: AsFilesGroup + ?Sized> FilesGroupEx for T {
+pub trait FilesGroupEx: AsFilesGroup {
+    /// Overrides file content. None value removes the override.
     fn override_file_content(&mut self, file: FileId, content: Option<Arc<String>>) {
         let mut overrides = self.as_files_group().file_overrides().as_ref().clone();
         match content {
@@ -55,7 +67,25 @@ impl<T: AsFilesGroup + ?Sized> FilesGroupEx for T {
         };
         self.as_files_group_mut().set_file_overrides(Arc::new(overrides));
     }
+    /// Sets the root directory of the crate. None value removes the crate.
+    fn set_crate_root(&mut self, crt: CrateId, root: Option<Directory>) {
+        let mut crate_roots = self.as_files_group().crate_roots().as_ref().clone();
+        match root {
+            Some(root) => crate_roots.insert(crt, root),
+            None => crate_roots.remove(&crt),
+        };
+        self.as_files_group_mut().set_crate_roots(Arc::new(crate_roots));
+    }
+    /// Updates the crate roots from a ProjectConfig object.
+    fn with_project_config(&mut self, config: ProjectConfig) {
+        for (crate_name, directory_path) in config.crate_roots {
+            let crate_id = self.as_files_group().intern_crate(CrateLongId(crate_name.into()));
+            let root = Directory(directory_path.into());
+            self.set_crate_root(crate_id, Some(root));
+        }
+    }
 }
+impl<T: AsFilesGroup + ?Sized> FilesGroupEx for T {}
 
 pub trait AsFilesGroup {
     fn as_files_group(&self) -> &(dyn FilesGroup + 'static);
@@ -71,23 +101,11 @@ impl AsFilesGroup for dyn FilesGroup {
     }
 }
 
-// Configuration of the project. This is the only input, and it defines everything else.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct ProjectConfig {
-    pub crate_roots: HashMap<CrateId, Directory>,
-}
-impl ProjectConfig {
-    pub fn with_crate(mut self, crt: CrateId, root: Directory) -> Self {
-        self.crate_roots.insert(crt, root);
-        self
-    }
-}
-
 fn crates(db: &dyn FilesGroup) -> Vec<CrateId> {
-    db.project_config().crate_roots.keys().copied().collect()
+    db.crate_roots().keys().copied().collect()
 }
 fn crate_root_dir(db: &dyn FilesGroup, crt: CrateId) -> Option<Directory> {
-    db.project_config().crate_roots.get(&crt).cloned()
+    db.crate_roots().get(&crt).cloned()
 }
 
 fn priv_raw_file_content(db: &dyn FilesGroup, file: FileId) -> Option<Arc<String>> {

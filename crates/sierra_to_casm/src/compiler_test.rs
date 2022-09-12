@@ -1,9 +1,10 @@
 use std::fs;
 use std::path::PathBuf;
 
+use casm::ap_change::ApChangeError;
 use indoc::indoc;
 use pretty_assertions;
-use sierra::edit_state::EditStateError::MissingReference;
+use sierra::edit_state::EditStateError::{MissingReference, VariableOverride};
 use sierra::ids::ConcreteLibFuncId;
 use sierra::program::{BranchInfo, BranchTarget, Invocation, StatementIdx};
 use sierra::program_registry::ProgramRegistryError::{
@@ -13,8 +14,7 @@ use sierra::ProgramParser;
 use test_case::test_case;
 
 use crate::annotations::AnnotationError::{
-    self, EditStateError, InconsistentReferencesAnnotation, InvalidStatementIdx,
-    MissingAnnotationsForStatement,
+    self, InconsistentReferencesAnnotation, InvalidStatementIdx, MissingAnnotationsForStatement,
 };
 use crate::compiler::{compile, CompilationError};
 use crate::invocations::InvocationError;
@@ -41,10 +41,10 @@ fn good_flow() {
             felt_dup([2]) -> ([2], [5]);                    // #1
             felt_add([1], [2]) -> ([3]);                    // #2
             store_temp_felt([3]) -> ([4]);                  // #3
-            felt_dup([4]) -> ([4], [6]);                    // #4
-            store_temp_felt([5]) -> ([5]);                  // #5
-            store_temp_felt([6]) -> ([6]);                  // #6
-            call_foo([5], [6]) -> ([7], [8]);               // #7
+            store_temp_felt([5]) -> ([5]);                  // #4
+            store_temp_felt([4]) -> ([4]);                  // #5
+            call_foo([5], [4]) -> ([7], [8]);               // #6
+            felt_dup([8]) -> ([4], [8]);                    // #7
             store_temp_felt([4]) -> ([4]);                  // #8
             return([7], [8], [4]);                          // #9
 
@@ -74,7 +74,7 @@ fn good_flow() {
             [ap + 0] = [fp + -3], ap++;
             [ap + 0] = [ap + -2], ap++;
             call rel 4;
-            [ap + 0] = [ap + -3], ap++;
+            [ap + 0] = [ap + -1], ap++;
             ret;
             jmp rel 5 if [fp + -4] != 0;
             [ap + 0] = [fp + -3], ap++;
@@ -112,11 +112,25 @@ fn fib_program() {
 #[test_case(indoc! {"
                 return([2]);
 
-                test_program@0() -> ();
-            "} => Err(CompilationError::AnnotationError(EditStateError(MissingReference(
-                2.into()
-            ))));
-            "missing reference")]
+                test_program@0() -> (felt);
+            "} => Err(AnnotationError::MissingReferenceError{
+                statement_idx: StatementIdx(0), error: MissingReference(2.into())}.into());
+            "Missing reference")]
+#[test_case(indoc! {"
+                type felt = felt;
+                libfunc felt_dup = felt_dup;
+
+                felt_dup([1]) -> ([1], [2]);
+                felt_dup([2]) -> ([1], [2]);
+                return();
+
+                test_program@0([1]: felt) -> ();
+            "} => Err(AnnotationError::OverrideReferenceError {
+                source_statement_idx:  StatementIdx(1),
+                destination_statement_idx: StatementIdx(2),
+                error: VariableOverride(1.into()),
+            }.into());
+            "Reference override")]
 #[test_case(indoc! {"
                 return([2]);
 
@@ -272,6 +286,29 @@ fn fib_program() {
             "} => Err(AnnotationError::ReferencesError(
                 ReferencesError::InvalidReferenceTypeForArgument).into());
             "Invalid return type")]
+#[test_case(indoc! {"
+                type felt = felt;
+
+                libfunc felt_dup = felt_dup;
+                libfunc felt_ignore = felt_ignore;
+                libfunc store_temp_felt = store_temp<felt>;
+                libfunc call_foo = function_call<user@foo>;
+
+                store_temp_felt([1]) -> ([1]);
+                felt_dup([1]) -> ([1], [2]);
+                call_foo([2]) -> ();
+                store_temp_felt([1]) -> ([1]);
+                felt_ignore([1]) -> ();
+                return();
+
+                foo@0([1]: felt) -> ();
+            "} => Err(AnnotationError::ApChangeError{
+                var_id: sierra::ids::VarId::new(1),
+                source_statement_idx:  StatementIdx(2),
+                destination_statement_idx: StatementIdx(3),
+                error: ApChangeError::UnknownApChange,
+            }.into());
+            "Ap change error")]
 fn compiler_errors(sierra_code: &str) -> Result<(), CompilationError> {
     let prog = ProgramParser::new().parse(sierra_code).unwrap();
     compile(&prog).map(|_| ())

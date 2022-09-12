@@ -98,8 +98,7 @@ fn get_function_code(
     db: &dyn SierraGenGroup,
     function_id: FreeFunctionId,
 ) -> Option<Arc<pre_sierra::Function>> {
-    let function_semantic: semantic::FreeFunction =
-        db.free_function_semantic(function_id).propagate(diagnostics)?;
+    let function_semantic: semantic::FreeFunction = db.free_function_semantic(function_id)?;
     Some(Arc::new(generate_function_code(diagnostics, db, function_id, function_semantic)?))
 }
 
@@ -109,7 +108,7 @@ fn get_program_code(
     db: &dyn SierraGenGroup,
     module_id: ModuleId,
 ) -> Option<Arc<sierra::program::Program>> {
-    let module_items = db.module_items(module_id).propagate(diagnostics)?;
+    let module_items = db.module_items(module_id)?;
     let program: sierra::program::Program = generate_program_code(diagnostics, db, &module_items)?;
     Some(Arc::new(program))
 }

@@ -43,8 +43,7 @@ fn test_expr_generator() {
             }
         "},
         "",
-    )
-    .expect("");
+    );
 
     let (statements, res) = generate_expr_code_for_test(&db, expr);
     assert_eq!(
@@ -90,8 +89,7 @@ fn test_match() {
         "},
         "",
         "",
-    )
-    .expect("");
+    );
 
     let (statements, res) = generate_expr_code_for_test(&db, expr);
     assert_eq!(
@@ -124,10 +122,9 @@ fn test_call_libfunc() {
     let (_module_id, expr) = setup_test_expr(
         &mut db,
         "felt_add(3,6)",
-        "extern func felt_add(a: felt, b: felt) -> felt",
+        "extern func felt_add(a: felt, b: felt) -> felt;",
         "",
-    )
-    .expect("");
+    );
 
     let (statements, res) = generate_expr_code_for_test(&db, expr);
     assert_eq!(

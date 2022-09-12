@@ -13,8 +13,20 @@ code --install-extension cairo*.vsix
 
 Remember to build the language server:
 ```
-cargo bin --bin languageserver --release
+cargo build --bin languageserver --release
 ```
+
+## Troubleshooting
+
+If `sudo npm install -g vsce` fails try this:
+```
+sudo apt remove nodejs
+sudo apt update
+sudo apt install curl dirmngr apt-transport-https lsb-release ca-certificates vim
+curl -sL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt install nodejs
+```
+If successful, go back to `sudo npm install -g vsce` and continue from there.
 
 # Run the extension (for development)
 

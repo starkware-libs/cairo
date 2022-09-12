@@ -7,8 +7,17 @@ edition = "2021"
 name = "languageserver"
 
 [dependencies]
+db_utils = { path = "../db_utils" }
+defs = { path = "../defs" }
+debug = { path = "../debug" }
+diagnostics = { path = "../diagnostics" }
+semantic = { path = "../semantic" }
+parser = { path = "../parser" }
+syntax = { path = "../syntax" }
+filesystem = { path = "../filesystem" }
 tokio = { version = "1.18.2", features = ["full","sync"] }
 tower-lsp = "0.17.0"
 lsp = { version = "0.93", package = "lsp-types" }
 serde_json = "1.0"
-tracing-subscriber = "0.3.11"
+salsa = "0.16.1"
+utils = { path = "../utils" }

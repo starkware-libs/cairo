@@ -6,6 +6,7 @@ use super::ast::{
 use super::db::SyntaxDatabase;
 use super::kind::SyntaxKind;
 use super::{SyntaxGroup, SyntaxNode, SyntaxNodeDetails};
+use crate::node::ast::SyntaxFileGreen;
 use crate::{node, token};
 
 #[salsa::database(SyntaxDatabase)]
@@ -21,20 +22,6 @@ fn traverse(db: &dyn SyntaxGroup, node: SyntaxNode) -> Vec<(SyntaxNodeDetails, u
         res.append(&mut traverse(db, c));
     }
     res
-}
-
-#[test]
-fn test_empty() {
-    let db_val = DatabaseForTesting::default();
-    let db = &db_val;
-
-    let empty = OptionGenericArgsEmpty::new_green(db);
-
-    let root = SyntaxNode::new_root(db, empty);
-    assert_eq!(
-        traverse(db, root),
-        [(SyntaxNodeDetails::Syntax(SyntaxKind::OptionGenericArgsEmpty), 0, 0),]
-    )
 }
 
 #[test]
@@ -123,7 +110,6 @@ fn traverse_and_verify_ptr(db: &dyn SyntaxGroup, root: &SyntaxNode, node: Syntax
 fn setup(db: &DatabaseForTesting) -> SyntaxNode {
     // TODO: Use a builder for easier construction of token.
     // Construct green nodes.
-    let empty = OptionGenericArgsEmpty::new_green(db);
     let tokens = vec![
         node::Token::new_green(db, token::TokenKind::Identifier, "foo".into()),
         node::Token::new_green(db, token::TokenKind::Whitespace, " ".into()),
@@ -136,15 +122,39 @@ fn setup(db: &DatabaseForTesting) -> SyntaxNode {
     let triviums = vec![tokens[1], tokens[3]];
     assert_eq!(triviums[0], triviums[1]);
     let terminals = vec![
-        Terminal::new_green(db, no_trivia, tokens[0], Trivia::new_green(db, vec![triviums[0]])),
-        Terminal::new_green(db, no_trivia, tokens[2], Trivia::new_green(db, vec![triviums[1]])),
+        Terminal::new_green(
+            db,
+            no_trivia,
+            tokens[0],
+            Trivia::new_green(db, vec![triviums[0].into()]),
+        ),
+        Terminal::new_green(
+            db,
+            no_trivia,
+            tokens[2],
+            Trivia::new_green(db, vec![triviums[1].into()]),
+        ),
         Terminal::new_green(db, no_trivia, tokens[4], no_trivia),
     ];
     let expr = ExprBinary::new_green(
         db,
-        ExprPath::new_green(db, vec![PathSegment::new_green(db, terminals[0], empty)]),
+        ExprPath::new_green(
+            db,
+            vec![
+                PathSegment::new_green(
+                    db,
+                    terminals[0],
+                    OptionGenericArgsEmpty::new_green(db).into(),
+                )
+                .into(),
+            ],
+        )
+        .into(),
         terminals[1],
-        ExprLiteral::new_green(db, terminals[2]),
+        ExprLiteral::new_green(db, terminals[2]).into(),
     );
-    SyntaxNode::new_root(db, expr)
+    // SyntaxNode::new_root only accepts ast::SyntaxFileGreen, but we only have an expression.
+    // This is a hack to crate a green id of "SyntaxFile" from "Expr".
+    let root = SyntaxFileGreen(expr.0);
+    SyntaxNode::new_root(db, root)
 }
