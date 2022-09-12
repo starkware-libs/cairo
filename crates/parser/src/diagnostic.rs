@@ -2,7 +2,7 @@ use diagnostics::DiagnosticEntry;
 use filesystem::db::FilesGroup;
 use filesystem::ids::FileId;
 use filesystem::span::TextSpan;
-use syntax::token::TokenKind;
+use syntax::node::kind::SyntaxKind;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ParserDiagnostic {
@@ -14,7 +14,7 @@ pub struct ParserDiagnostic {
 pub enum ParserDiagnosticKind {
     // TODO(spapini): Add tokens from the recovery set to the message.
     SkippedElement { element_name: &'static str },
-    MissingToken(TokenKind),
+    MissingToken(SyntaxKind),
     MissingExpression,
     MissingPathSegment,
     MissingTypeClause,

@@ -1,43 +1,48 @@
 └── root (kind: SyntaxFile)
     ├── items (kind: ItemList)
     │   ├── child #0 (kind: ItemUse)
-    │   │   ├── usekw (kind: Use): 'use'
+    │   │   ├── use_kw (kind: TokenUse): 'use'
     │   │   ├── name (kind: ExprPath)
-    │   │   │   ├── item #0 (kind: PathSegmentIdent)
-    │   │   │   │   └── ident (kind: Identifier): 'std'
-    │   │   │   ├── separator #0 (kind: ColonColon): '::'
-    │   │   │   └── item #1 (kind: PathSegmentIdent)
-    │   │   │       └── ident (kind: Identifier): 'format'
-    │   │   └── semicolon (kind: Semicolon): ';'
+    │   │   │   ├── item #0 (kind: PathSegment)
+    │   │   │   │   ├── ident (kind: TokenIdentifier): 'std'
+    │   │   │   │   └── generic_args (kind: OptionGenericArgsEmpty) []
+    │   │   │   ├── separator #0 (kind: TokenColonColon): '::'
+    │   │   │   └── item #1 (kind: PathSegment)
+    │   │   │       ├── ident (kind: TokenIdentifier): 'format'
+    │   │   │       └── generic_args (kind: OptionGenericArgsEmpty) []
+    │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   └── child #1 (kind: ItemFreeFunction)
-    │       ├── funckw (kind: Function): 'func'
-    │       ├── name (kind: Identifier): 'foo'
+    │       ├── function_kw (kind: TokenFunction): 'func'
+    │       ├── name (kind: TokenIdentifier): 'foo'
     │       ├── generic_args (kind: OptionGenericArgsEmpty) []
     │       ├── signature (kind: FunctionSignature)
-    │       │   ├── lparen (kind: LParen): '('
+    │       │   ├── lparen (kind: TokenLParen): '('
     │       │   ├── parameters (kind: ParamList)
     │       │   │   └── item #0 (kind: Param)
-    │       │   │       ├── name (kind: Identifier): 'a'
+    │       │   │       ├── name (kind: TokenIdentifier): 'a'
     │       │   │       └── type_clause (kind: TypeClause)
-    │       │   │           ├── colon (kind: Colon): ':'
+    │       │   │           ├── colon (kind: TokenColon): ':'
     │       │   │           └── ty (kind: ExprPath)
-    │       │   │               └── item #0 (kind: PathSegmentIdent)
-    │       │   │                   └── ident (kind: Identifier): 'int'
-    │       │   ├── rparen (kind: RParen): ')'
+    │       │   │               └── item #0 (kind: PathSegment)
+    │       │   │                   ├── ident (kind: TokenIdentifier): 'int'
+    │       │   │                   └── generic_args (kind: OptionGenericArgsEmpty) []
+    │       │   ├── rparen (kind: TokenRParen): ')'
     │       │   └── ret_ty (kind: ReturnTypeClause)
-    │       │       ├── arrow (kind: Arrow): '->'
+    │       │       ├── arrow (kind: TokenArrow): '->'
     │       │       └── ty (kind: ExprPath)
-    │       │           └── item #0 (kind: PathSegmentIdent)
-    │       │               └── ident (kind: Identifier): 'felt'
+    │       │           └── item #0 (kind: PathSegment)
+    │       │               ├── ident (kind: TokenIdentifier): 'felt'
+    │       │               └── generic_args (kind: OptionGenericArgsEmpty) []
     │       └── body (kind: ExprBlock)
-    │           ├── lbrace (kind: LBrace): '{'
+    │           ├── lbrace (kind: TokenLBrace): '{'
     │           ├── statements (kind: StatementList)
     │           │   └── child #0 (kind: StatementReturn)
-    │           │       ├── returnkw (kind: Return): 'return'
+    │           │       ├── return_kw (kind: TokenReturn): 'return'
     │           │       ├── expr (kind: ExprPath)
-    │           │       │   └── item #0 (kind: PathSegmentIdent)
-    │           │       │       └── ident (kind: Identifier): 'a'
-    │           │       └── semicolon (kind: Semicolon): ';'
-    │           └── rbrace (kind: RBrace): '}'
-    └── eof (kind: EndOfFile).
+    │           │       │   └── item #0 (kind: PathSegment)
+    │           │       │       ├── ident (kind: TokenIdentifier): 'a'
+    │           │       │       └── generic_args (kind: OptionGenericArgsEmpty) []
+    │           │       └── semicolon (kind: TokenSemicolon): ';'
+    │           └── rbrace (kind: TokenRBrace): '}'
+    └── eof (kind: TokenEndOfFile).
 --------------------

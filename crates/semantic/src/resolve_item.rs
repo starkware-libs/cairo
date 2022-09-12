@@ -1,5 +1,6 @@
 use defs::ids::{ModuleId, ModuleItemId};
 use syntax::node::ast::{self, PathSegment};
+use syntax::node::Terminal;
 
 use crate::corelib::core_module;
 use crate::db::SemanticGroup;

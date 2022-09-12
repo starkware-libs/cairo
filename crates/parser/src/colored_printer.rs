@@ -1,9 +1,9 @@
 use colored::{ColoredString, Colorize};
 use smol_str::SmolStr;
 use syntax::node::db::SyntaxGroup;
+use syntax::node::green::GreenNodeDetails;
 use syntax::node::kind::SyntaxKind;
-use syntax::node::{SyntaxNode, SyntaxNodeDetails};
-use syntax::token::TokenKind;
+use syntax::node::SyntaxNode;
 
 struct ColoredPrinter<'a> {
     db: &'a dyn SyntaxGroup,
@@ -13,19 +13,19 @@ struct ColoredPrinter<'a> {
 }
 impl<'a> ColoredPrinter<'a> {
     fn print(&mut self, syntax_node: &SyntaxNode) {
-        match syntax_node.details(self.db) {
-            SyntaxNodeDetails::Token(token) => {
-                if self.verbose && token.kind == TokenKind::Missing {
+        let node = syntax_node.green_node(self.db);
+        match node.details {
+            GreenNodeDetails::Token(text) => {
+                if self.verbose && node.kind == SyntaxKind::TokenMissing {
                     self.result.push_str(format!("{}", "<m>".red()).as_str());
                 } else {
-                    let bla = set_color(token.text, token.kind).to_string();
-                    self.result.push_str(bla.as_str());
+                    self.result.push_str(set_color(text, node.kind).to_string().as_str());
                 }
             }
-            SyntaxNodeDetails::Syntax(kind) => {
-                if self.verbose && is_missing_kind(kind) {
+            GreenNodeDetails::Node { .. } => {
+                if self.verbose && is_missing_kind(node.kind) {
                     self.result.push_str(format!("{}", "<m>".red()).as_str());
-                } else if self.verbose && is_empty_kind(kind) {
+                } else if self.verbose && is_empty_kind(node.kind) {
                     self.result.push_str(format!("{}", "<e>".red()).as_str());
                 } else {
                     for child in syntax_node.children(self.db) {
@@ -52,51 +52,62 @@ fn is_empty_kind(kind: SyntaxKind) -> bool {
     )
 }
 
-fn set_color(text: SmolStr, kind: TokenKind) -> ColoredString {
+fn set_color(text: SmolStr, kind: SyntaxKind) -> ColoredString {
     // TODO(yuval): use tags on SyntaxKind
     match kind {
-        TokenKind::Identifier => text.truecolor(255, 255, 100), // Yellow
-        TokenKind::Plus | TokenKind::Minus | TokenKind::Mul | TokenKind::Div | TokenKind::Dot => {
-            text.bright_magenta()
+        SyntaxKind::TokenIdentifier => text.truecolor(255, 255, 100), // Yellow
+        SyntaxKind::TokenPlus
+        | SyntaxKind::TokenMinus
+        | SyntaxKind::TokenMul
+        | SyntaxKind::TokenDiv
+        | SyntaxKind::TokenDot => text.bright_magenta(),
+        SyntaxKind::TokenLiteralNumber | SyntaxKind::TokenFalse | SyntaxKind::TokenTrue => {
+            text.bright_cyan()
         }
-        TokenKind::LiteralNumber | TokenKind::False | TokenKind::True => text.bright_cyan(),
-        TokenKind::Extern
-        | TokenKind::Type
-        | TokenKind::Function
-        | TokenKind::Module
-        | TokenKind::Struct
-        | TokenKind::Use => text.bright_blue(),
-        TokenKind::Let | TokenKind::Return | TokenKind::Match => text.bright_blue(),
-        TokenKind::Arrow
-        | TokenKind::MatchArrow
-        | TokenKind::Colon
-        | TokenKind::ColonColon
-        | TokenKind::DotDot
-        | TokenKind::Semicolon
-        | TokenKind::Underscore
-        | TokenKind::And
-        | TokenKind::Not => text.truecolor(255, 180, 255), // Pink
-        TokenKind::Eq
-        | TokenKind::EqEq
-        | TokenKind::GE
-        | TokenKind::GT
-        | TokenKind::LE
-        | TokenKind::LT
-        | TokenKind::Neq => {
+        SyntaxKind::TokenExtern
+        | SyntaxKind::TokenType
+        | SyntaxKind::TokenFunction
+        | SyntaxKind::TokenModule
+        | SyntaxKind::TokenStruct
+        | SyntaxKind::TokenUse => text.bright_blue(),
+        SyntaxKind::TokenLet | SyntaxKind::TokenReturn | SyntaxKind::TokenMatch => {
+            text.bright_blue()
+        }
+        SyntaxKind::TokenArrow
+        | SyntaxKind::TokenMatchArrow
+        | SyntaxKind::TokenColon
+        | SyntaxKind::TokenColonColon
+        | SyntaxKind::TokenDotDot
+        | SyntaxKind::TokenSemicolon
+        | SyntaxKind::TokenUnderscore
+        | SyntaxKind::TokenAnd
+        | SyntaxKind::TokenNot => text.truecolor(255, 180, 255), // Pink
+        SyntaxKind::TokenEq
+        | SyntaxKind::TokenEqEq
+        | SyntaxKind::TokenGE
+        | SyntaxKind::TokenGT
+        | SyntaxKind::TokenLE
+        | SyntaxKind::TokenLT
+        | SyntaxKind::TokenNeq => {
             text.truecolor(255, 165, 0) // Orange
         }
-        TokenKind::AndAnd | TokenKind::OrOr => text.truecolor(255, 165, 0), // Orange
-        TokenKind::LBrace
-        | TokenKind::RBrace
-        | TokenKind::LBrack
-        | TokenKind::RBrack
-        | TokenKind::LParen
-        | TokenKind::RParen
-        | TokenKind::Comma => text.clear(),
-        TokenKind::EndOfFile => text.clear(),
-        TokenKind::BadCharacters => text.red(),
-        TokenKind::Missing => text.clear(),
-        TokenKind::SingleLineComment | TokenKind::Whitespace | TokenKind::Newline => text.clear(),
+        SyntaxKind::TokenAndAnd | SyntaxKind::TokenOrOr => text.truecolor(255, 165, 0), // Orange
+        SyntaxKind::TokenLBrace
+        | SyntaxKind::TokenRBrace
+        | SyntaxKind::TokenLBrack
+        | SyntaxKind::TokenRBrack
+        | SyntaxKind::TokenLParen
+        | SyntaxKind::TokenRParen
+        | SyntaxKind::TokenComma => text.clear(),
+        SyntaxKind::TokenEndOfFile => text.clear(),
+        SyntaxKind::TokenBadCharacters => text.red(),
+        SyntaxKind::TokenMissing => text.clear(),
+        SyntaxKind::TokenSkipped => text.on_red(), // red background
+        SyntaxKind::TokenSingleLineComment
+        | SyntaxKind::TokenWhitespace
+        | SyntaxKind::TokenNewline => text.clear(),
+        // TODO(yuval): Can this be made exhaustive?
+        _ => panic!("Unexpected syntax kind: {kind:?}"),
     }
 }
 
