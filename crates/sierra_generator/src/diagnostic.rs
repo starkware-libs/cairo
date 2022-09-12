@@ -1,3 +1,4 @@
+use defs::diagnostic_utils::StableLocation;
 use diagnostics::{DiagnosticEntry, DiagnosticLocation};
 
 use crate::db::SierraGenGroup;
@@ -50,19 +51,31 @@ impl From<SierraGeneratorDiagnostic> for Diagnostic {
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct SierraGeneratorDiagnostic {
-    kind: SierraGeneratorDiagnosticKind,
+    pub stable_location: StableLocation,
+    pub kind: SierraGeneratorDiagnosticKind,
 }
 impl DiagnosticEntry for SierraGeneratorDiagnostic {
     type DbType = dyn SierraGenGroup;
 
     fn format(&self, _db: &Self::DbType) -> String {
-        todo!()
+        match self.kind {
+            SierraGeneratorDiagnosticKind::NonZeroValueInMatch => {
+                "Match with a non-zero value is not supported."
+            }
+            SierraGeneratorDiagnosticKind::CallLibFuncWithGenericArgs => {
+                "Calling a libfunc with generic arguments is not supported yet."
+            }
+        }
+        .into()
     }
 
-    fn location(&self, _db: &Self::DbType) -> DiagnosticLocation {
-        todo!()
+    fn location(&self, db: &Self::DbType) -> DiagnosticLocation {
+        self.stable_location.diagnostic_location(db.as_defs_group())
     }
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub enum SierraGeneratorDiagnosticKind {}
+pub enum SierraGeneratorDiagnosticKind {
+    NonZeroValueInMatch,
+    CallLibFuncWithGenericArgs,
+}
