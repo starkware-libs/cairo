@@ -15,26 +15,26 @@ fn test_function_with_return_type() {
         indoc! {"
             error: Skipped tokens.
              --> lib.cairo:1:1
-            3 + 4 +; func test_func() {  {
+            3 + 4 +;
             ^
 
             error: Skipped tokens.
              --> lib.cairo:1:3
-            3 + 4 +; func test_func() {  {
+            3 + 4 +;
               ^
 
             error: Skipped tokens.
              --> lib.cairo:1:5
-            3 + 4 +; func test_func() {  {
+            3 + 4 +;
                 ^
 
             error: Skipped tokens.
              --> lib.cairo:1:7
-            3 + 4 +; func test_func() {  {
+            3 + 4 +;
                   ^
 
             error: Unknown function.
-             --> lib.cairo:2:5
+             --> lib.cairo:3:5
             1 + foo()
                 ^*^
 
