@@ -2,7 +2,7 @@ use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::iter;
 
-use casm::ap_change::{ApChange, ApChangeError, ApplyApChange};
+use casm::ap_change::{ApChangeError, ApplyApChange};
 use itertools::zip_eq;
 use sierra::edit_state::{put_results, take_args};
 use sierra::ids::{ConcreteTypeId, VarId};
@@ -10,6 +10,7 @@ use sierra::program::{BranchInfo, Function, StatementIdx};
 use thiserror::Error;
 
 use crate::environment::ap_tracking::update_ap_tracking;
+use crate::environment::frame_state::FrameStateError;
 use crate::environment::{validate_environment_equality, Environment, EnvironmentError};
 use crate::invocations::BranchRefChanges;
 use crate::references::{
@@ -37,6 +38,8 @@ pub enum AnnotationError {
         destination_statement_idx: StatementIdx,
         var_id: VarId,
     },
+    #[error(transparent)]
+    FrameStateError(#[from] FrameStateError),
     #[error(transparent)]
     ReferencesError(#[from] ReferencesError),
 
@@ -112,7 +115,7 @@ impl ProgramAnnotations {
                 StatementAnnotations {
                     refs: build_function_parameter_refs(func)?,
                     return_types: return_annotation,
-                    environment: Environment { ap_tracking: ApChange::Known(0) },
+                    environment: Environment::default(),
                 },
             )?
         }
@@ -228,6 +231,7 @@ impl ProgramAnnotations {
                                 error,
                             }
                         })?,
+                        frame_state: annotations.environment.frame_state.clone(),
                     },
                 },
             )?;
