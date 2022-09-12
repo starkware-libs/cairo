@@ -130,12 +130,13 @@ fn test_match() {
 fn test_match_failures() {
     let mut db = SierraGenDatabaseForTesting::default();
 
+    // TODO(ilya): Fix location span below.
     let test_expr = setup_test_block(
         &mut db,
         indoc! {"
             let x = 7;
             match x {
-                1 => x,
+                12 => x,
                 _ => 7,
             }
         "},
@@ -148,9 +149,9 @@ fn test_match_failures() {
         test_expr,
         indoc! {"
             error: Match with a non-zero value is not supported.
-             --> lib.cairo:3:1
-            match x {
-            ^*******^
+             --> lib.cairo:4:5
+                12 => x,
+                ^
 
         "},
     );

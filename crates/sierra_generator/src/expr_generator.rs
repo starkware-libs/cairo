@@ -168,10 +168,9 @@ fn handle_felt_match(
         ] => {
             // Make sure the literal in the pattern is 0.
             if literal.value != 0 {
-                // TODO(lior): Can we point to the literal?
                 context.add_diagnostic(
                     SierraGeneratorDiagnosticKind::NonZeroValueInMatch,
-                    expr_match.stable_ptr,
+                    literal.stable_ptr,
                 );
                 return None;
             }
