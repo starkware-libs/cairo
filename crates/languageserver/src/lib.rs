@@ -4,8 +4,10 @@ mod semantic_highlighting;
 
 use std::sync::Arc;
 
+use diagnostics::DiagnosticEntry;
 use filesystem::db::{AsFilesGroup, FilesGroup, FilesGroupEx, PrivRawFileContentQuery};
 use filesystem::ids::{FileId, FileLongId};
+use filesystem::span::TextPosition;
 use parser::db::ParserGroup;
 use semantic::test_utils::SemanticDatabaseForTesting;
 use semantic_highlighting::token_kind::SemanticTokenKind;
@@ -24,6 +26,9 @@ pub struct Backend {
     // TODO(spapini): Remove this once we support ParallelDatabase.
     pub db_mutex: tokio::sync::Mutex<RootDatabase>,
 }
+fn from_pos(pos: TextPosition) -> Position {
+    Position { line: pos.line as u32, character: pos.col as u32 }
+}
 impl Backend {
     async fn db(&self) -> tokio::sync::MutexGuard<'_, RootDatabase> {
         self.db_mutex.lock().await
@@ -31,6 +36,40 @@ impl Backend {
     fn file(&self, db: &RootDatabase, uri: Url) -> FileId {
         let path = uri.to_file_path().expect("Only file URIs are supported.");
         db.intern_file(FileLongId::OnDisk(path))
+    }
+    async fn publish_diagnostics(
+        &self,
+        db: tokio::sync::MutexGuard<'_, RootDatabase>,
+        uri: Url,
+        file: FileId,
+    ) {
+        let syntax_diagnostics = db.file_syntax_diagnostics(file);
+        // TODO(spapini): Add semantic diagnostics.
+        // TODO(spapini): Version.
+        let mut diags = Vec::new();
+        for d in &syntax_diagnostics.0 {
+            let location = d.location(db.as_files_group());
+            let start = from_pos(
+                location
+                    .span
+                    .start
+                    .position_in_file(db.as_files_group(), location.file_id)
+                    .unwrap(),
+            );
+            let end = from_pos(
+                location
+                    .span
+                    .start
+                    .position_in_file(db.as_files_group(), location.file_id)
+                    .unwrap(),
+            );
+            diags.push(Diagnostic {
+                range: Range { start, end },
+                message: d.format(db.as_files_group()),
+                ..Diagnostic::default()
+            });
+        }
+        self.client.publish_diagnostics(uri, diags, None).await
     }
 }
 
@@ -104,7 +143,11 @@ impl LanguageServer for Backend {
         Ok(None)
     }
 
-    async fn did_open(&self, _: DidOpenTextDocumentParams) {}
+    async fn did_open(&self, params: DidOpenTextDocumentParams) {
+        let db = self.db().await;
+        let file = self.file(&db, params.text_document.uri.clone());
+        self.publish_diagnostics(db, params.text_document.uri, file).await;
+    }
 
     async fn did_change(&self, params: DidChangeTextDocumentParams) {
         let text =
@@ -115,8 +158,9 @@ impl LanguageServer for Backend {
                 return;
             };
         let mut db = self.db().await;
-        let file = self.file(&db, params.text_document.uri);
+        let file = self.file(&db, params.text_document.uri.clone());
         db.override_file_content(file, Some(Arc::new(text.into())));
+        self.publish_diagnostics(db, params.text_document.uri, file).await;
     }
 
     async fn did_save(&self, params: DidSaveTextDocumentParams) {
