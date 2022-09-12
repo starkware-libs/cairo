@@ -1,24 +1,13 @@
 use std::fs;
 use std::path::PathBuf;
 
-use casm::ap_change::ApChangeError;
 use indoc::indoc;
 use pretty_assertions;
-use sierra::edit_state::EditStateError::{MissingReference, VariableOverride};
-use sierra::ids::{ConcreteLibFuncId, VarId};
-use sierra::program::{BranchInfo, BranchTarget, Invocation, StatementIdx};
-use sierra::program_registry::ProgramRegistryError::{
-    LibFuncConcreteIdAlreadyExists, MissingLibFunc,
-};
+use pretty_assertions::assert_eq;
 use sierra::ProgramParser;
 use test_case::test_case;
 
-use crate::annotations::AnnotationError::{
-    self, InconsistentReferencesAnnotation, InvalidStatementIdx, MissingAnnotationsForStatement,
-};
-use crate::compiler::{compile, CompilationError};
-use crate::invocations::InvocationError;
-use crate::references::ReferencesError::{self, InvalidFunctionDeclaration};
+use crate::compiler::compile;
 
 #[test]
 fn good_flow() {
@@ -67,7 +56,7 @@ fn good_flow() {
             foo@10([1]: felt, [2]: felt) -> (felt, felt);
         "})
         .unwrap();
-    pretty_assertions::assert_eq!(
+    assert_eq!(
         compile(&prog).unwrap().to_string(),
         indoc! {"
             [ap + 0] = [fp + -4] + [fp + -3], ap++;
@@ -109,12 +98,13 @@ fn fib_program() {
     );
 }
 
+// TODO(ilya, 10/10/2022): Improve error messages.
 #[test_case(indoc! {"
                 return([2]);
 
                 test_program@0() -> (felt);
-            "} => Err(AnnotationError::MissingReferenceError{
-                statement_idx: StatementIdx(0), error: MissingReference(2.into())}.into());
+            "},
+            "Missing reference error";
             "Missing reference")]
 #[test_case(indoc! {"
                 type felt = felt;
@@ -125,50 +115,40 @@ fn fib_program() {
                 return();
 
                 test_program@0([1]: felt) -> ();
-            "} => Err(AnnotationError::OverrideReferenceError {
-                source_statement_idx:  StatementIdx(1),
-                destination_statement_idx: StatementIdx(2),
-                error: VariableOverride(1.into()),
-            }.into());
+            "},
+            "Overridden reference error";
             "Reference override")]
 #[test_case(indoc! {"
                 return([2]);
 
                 test_program@0([2]: felt) -> (felt);
-            "} =>
-            Err(InvocationError::InvalidReferenceExpressionForArgument.into());
+            "},
+            "One of the arguments does not satisfy the requirements of the libfunc.";
             "Invalid return reference")]
 #[test_case(indoc! {"
                 store_temp_felt([1]) -> ([1]);
 
                 test_program@0([1]: felt) -> ();
-            "} => Err(CompilationError::ProgramRegistryError(MissingLibFunc(
-                ConcreteLibFuncId::from_string("store_temp_felt")
-            )));
+            "},
+            "Error from program registry";
             "undeclared libfunc")]
 #[test_case(indoc! {"
                 type felt = felt;
+
                 libfunc store_temp_felt = store_temp<felt>;
                 libfunc store_temp_felt = store_temp<felt>;
-            "} => Err(CompilationError::ProgramRegistryError(LibFuncConcreteIdAlreadyExists(
-                ConcreteLibFuncId::from_string("store_temp_felt")
-            )));
+            "},
+            "Error from program registry";
             "Concrete libfunc Id used twice")]
 #[test_case(indoc! {"
                 type felt = felt;
-                libfunc store_local_felt = store_local<felt>;
-                store_local_felt([1]) -> ([1]);
 
+                libfunc store_local_felt = store_local<felt>;
+
+                store_local_felt([1]) -> ([1]);
                 test_program@0([1]: felt) -> ();
-            "} => Err(InvocationError::NotImplemented(
-                Invocation{
-                    libfunc_id: ConcreteLibFuncId::from_string("store_local_felt"),
-                    args: vec![sierra::ids::VarId::new(1)],
-                    branches: vec![BranchInfo{
-                        target: BranchTarget::Fallthrough,
-                        results: vec![sierra::ids::VarId::new(1)],
-                    }],
-                }).into());
+            "},
+            "The requested functionality is not implemented yet";
             "Not implemented")]
 #[test_case(indoc! {"
                 type felt = felt;
@@ -178,7 +158,8 @@ fn fib_program() {
                 felt_add([3], [4]) -> ([5]);
 
                 test_program@0([1]: felt, [2]: felt, [3]: felt) -> ();
-            "} => Err(InvocationError::InvalidReferenceExpressionForArgument.into());
+            "},
+            "One of the arguments does not satisfy the requirements of the libfunc.";
             "Invalid reference expression for felt_add")]
 #[test_case(indoc! {"
                 type felt = felt;
@@ -188,56 +169,56 @@ fn fib_program() {
                 return([3]);
 
                 test_program@0([1]: int, [2]: int) -> (felt);
-            "} => Err(ReferencesError::InvalidReferenceTypeForArgument.into());
+            "},
+            "One of the arguments does not match the expected type of the libfunc or return \
+            statement.";
             "Types mismatch")]
 #[test_case(indoc! {"
                 test_program@25() -> ();
-            "} => Err(InvalidStatementIdx.into());
+            "}, "InvalidStatementIdx";
             "Invalid entry point")]
 #[test_case(indoc! {"
                 return();
 
                 foo@0([1]: felt, [1]: felt) -> ();
-            "} => matches Err(CompilationError::AnnotationError(
-                AnnotationError::ReferencesError(InvalidFunctionDeclaration(_))));
+            "}, "Invalid function declaration.";
             "Bad Declaration")]
 #[test_case(indoc! {"
             return();
-            "} => Err(CompilationError::AnnotationError(
-            MissingAnnotationsForStatement(StatementIdx(0))));
+            "}, "MissingAnnotationsForStatement";
             "Missing references for statement")]
 #[test_case(indoc! {"
                 type NonZeroFelt = NonZero<felt>;
                 type felt = felt;
-            "} => Err(CompilationError::FailedBuildingTypeInformation);
+            "}, "Failed building type information";
             "type ordering bad for building size map")]
 #[test_case(indoc! {"
                 type felt = felt;
                 libfunc felt_add = felt_add;
                 felt_add([1], [2], [3]) -> ([4]);
                 test_program@0([1]: felt, [2]: felt, [3]: felt) -> ();
-            "} => Err(CompilationError::LibFuncInvocationMismatch);
+            "}, "Invocation mismatched to libfunc";
             "input count mismatch")]
 #[test_case(indoc! {"
                 type felt = felt;
                 libfunc felt_add = felt_add;
                 felt_add([1], [2]) -> ([3], [4]);
                 test_program@0([1]: felt, [2]: felt) -> ();
-            "} => Err(CompilationError::LibFuncInvocationMismatch);
+            "}, "Invocation mismatched to libfunc";
             "output type mismatch")]
 #[test_case(indoc! {"
                 type felt = felt;
                 libfunc felt_add = felt_add;
                 felt_add([1], [2]) { 0([3]) 1([3]) };
                 test_program@0([1]: felt, [2]: felt) -> ();
-            "} => Err(CompilationError::LibFuncInvocationMismatch);
+            "}, "Invocation mismatched to libfunc";
             "branch count mismatch")]
 #[test_case(indoc! {"
                 type felt = felt;
                 libfunc felt_add = felt_add;
                 felt_add([1], [2]) { 0([3]) };
                 test_program@0([1]: felt, [2]: felt) -> ();
-            "} => Err(CompilationError::LibFuncInvocationMismatch);
+            "}, "Invocation mismatched to libfunc";
             "fallthrough mismatch")]
 #[test_case(indoc! {"
                 type felt = felt;
@@ -246,16 +227,15 @@ fn fib_program() {
                 felt_dup([1]) -> ([1], [2]);
                 return ([1]);
                 test_program@0([1]: felt) -> ();
-            "} => Err(ReferencesError::DanglingReferences{
-                statement_idx: StatementIdx(1), var_id: VarId::new(2)}.into());
+            "}, "[2] is dangling at #1.";
             "Dangling references")]
 #[test_case(indoc! {"
                 return();
 
                 foo@0([1]: felt) -> ();
                 bar@0([2]: felt) -> ();
-            "} => Err(InconsistentReferencesAnnotation(StatementIdx(0)).into());
-            "Two different function definitions fo a statement.")]
+            "}, "Inconsistent references annotations.";
+            "Failed building type information")]
 #[test_case(indoc! {"
                 type felt = felt;
                 libfunc felt_dup = felt_dup;
@@ -264,8 +244,8 @@ fn fib_program() {
                 return ([1]);
                 test_program@0([1]: felt) -> ();
                 foo@1([1]: felt) -> (felt);
-            "} => Err(InconsistentReferencesAnnotation(StatementIdx(1)).into());
-            "Inconsistent return annotations")]
+            "}, "Inconsistent references annotations.";
+            "Inconsistent return annotations.")]
 #[test_case(indoc! {"
                 type felt = felt;
                 type NonZeroFelt = NonZero<felt>;
@@ -284,8 +264,8 @@ fn fib_program() {
                 return ([1]);
 
                 test_program@0([1]: felt, [2]: felt) -> (felt);
-            "} => Err(AnnotationError::ReferencesError(
-                ReferencesError::InvalidReferenceTypeForArgument).into());
+            "}, "One of the arguments does not match the expected type of the libfunc or return \
+            statement.";
             "Invalid return type")]
 #[test_case(indoc! {"
                 type felt = felt;
@@ -303,14 +283,15 @@ fn fib_program() {
                 return();
 
                 foo@0([1]: felt) -> ();
-            "} => Err(AnnotationError::ApChangeError{
-                var_id: sierra::ids::VarId::new(1),
-                source_statement_idx:  StatementIdx(2),
-                destination_statement_idx: StatementIdx(3),
-                error: ApChangeError::UnknownApChange,
-            }.into());
+            "}, "Got 'Unknown ap change' error while moving [1] from #2 to #3.";
             "Ap change error")]
-fn compiler_errors(sierra_code: &str) -> Result<(), CompilationError> {
+fn compiler_errors(sierra_code: &str, expected_result: &str) {
     let prog = ProgramParser::new().parse(sierra_code).unwrap();
-    compile(&prog).map(|_| ())
+    assert_eq!(
+        match compile(&prog) {
+            Ok(compiled_program) => compiled_program.to_string(),
+            Err(error) => error.to_string(),
+        },
+        expected_result
+    );
 }
