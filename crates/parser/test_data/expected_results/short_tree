@@ -14,6 +14,7 @@
     │   └── child #1 (kind: ItemFreeFunction)
     │       ├── funckw (kind: Function): 'func'
     │       ├── name (kind: Identifier): 'foo'
+    │       ├── generic_args (kind: OptionGenericArgsEmpty) []
     │       ├── signature (kind: FunctionSignature)
     │       │   ├── lparen (kind: LParen): '('
     │       │   ├── parameters (kind: ParamList)
