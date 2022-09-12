@@ -27,6 +27,6 @@ impl StableLocation {
             .expect("File for diagnostic not found")
             .as_syntax_node()
             .lookup_ptr(db.as_syntax_group(), self.stable_ptr);
-        DiagnosticLocation { file_id, span: syntax_node.span(db.as_syntax_group()) }
+        DiagnosticLocation { file_id, span: syntax_node.span_without_trivia(db.as_syntax_group()) }
     }
 }

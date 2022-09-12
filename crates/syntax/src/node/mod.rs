@@ -75,6 +75,25 @@ impl SyntaxNode {
         let end = start.add(self.width(db) as usize);
         TextSpan { start, end }
     }
+    pub fn span_without_trivia(&self, db: &dyn SyntaxGroup) -> TextSpan {
+        match self.details(db) {
+            SyntaxNodeDetails::Syntax(kind) => {
+                if kind == SyntaxKind::Terminal {
+                    return ast::Terminal::from_syntax_node(db, self.clone())
+                        .token(db)
+                        .as_syntax_node()
+                        .span(db);
+                }
+                if self.children(db).len() == 0 {
+                    return self.span(db);
+                }
+                let start_span = self.children(db).next().unwrap().span_without_trivia(db);
+                let end_span = self.children(db).last().unwrap().span_without_trivia(db);
+                TextSpan { start: start_span.start, end: end_span.end }
+            }
+            SyntaxNodeDetails::Token(_) => self.span(db),
+        }
+    }
     pub fn children<'db>(&self, db: &'db dyn SyntaxGroup) -> SyntaxNodeChildIterator<'db> {
         let green_iterator = match db.lookup_intern_green(self.0.green) {
             GreenNode::Internal(internal) => internal.children,

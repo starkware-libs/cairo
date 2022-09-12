@@ -88,9 +88,9 @@ fn test_expr_operator_failures() {
                     ^
 
         error: Unexpected argument type.
-         --> lib.cairo:2:1
+         --> lib.cairo:2:5
             a + a * a
-        ^****^
+            ^
 
         "}
     );
