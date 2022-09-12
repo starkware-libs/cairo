@@ -73,22 +73,21 @@ fn test_expr_operator_failures() {
         "foo",
         "extern type MyType;",
     );
-    // TODO(yuval): Check why we get a wrong location span in the following test.
     assert_eq!(
         diagnostics,
         indoc! {"
         error: Unexpected argument type.
-         --> lib.cairo:2:9
+         --> lib.cairo:3:9
             a + a * a
                 ^
 
         error: Unexpected argument type.
-         --> lib.cairo:2:13
+         --> lib.cairo:3:13
             a + a * a
                     ^
 
         error: Unexpected argument type.
-         --> lib.cairo:2:5
+         --> lib.cairo:3:5
             a + a * a
             ^
 
