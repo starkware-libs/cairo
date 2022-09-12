@@ -5,7 +5,7 @@ use casm::ap_change::ApChangeError;
 use indoc::indoc;
 use pretty_assertions;
 use sierra::edit_state::EditStateError::{MissingReference, VariableOverride};
-use sierra::ids::ConcreteLibFuncId;
+use sierra::ids::{ConcreteLibFuncId, VarId};
 use sierra::program::{BranchInfo, BranchTarget, Invocation, StatementIdx};
 use sierra::program_registry::ProgramRegistryError::{
     LibFuncConcreteIdAlreadyExists, MissingLibFunc,
@@ -246,7 +246,8 @@ fn fib_program() {
                 felt_dup([1]) -> ([1], [2]);
                 return ([1]);
                 test_program@0([1]: felt) -> ();
-            "} => Err(ReferencesError::DanglingReferences(StatementIdx(1)).into());
+            "} => Err(ReferencesError::DanglingReferences{
+                statement_idx: StatementIdx(1), var_id: VarId::new(2)}.into());
             "Dangling references")]
 #[test_case(indoc! {"
                 return();
