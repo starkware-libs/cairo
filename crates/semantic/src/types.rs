@@ -4,6 +4,7 @@ use defs::diagnostic_utils::StableLocation;
 use defs::ids::{GenericTypeId, ModuleId};
 use diagnostics::Diagnostics;
 use diagnostics_proc_macros::DebugWithDb;
+use itertools::Itertools;
 use syntax::node::ast;
 
 use crate::db::SemanticGroup;
@@ -25,6 +26,18 @@ define_short_id!(TypeId, TypeLongId, SemanticGroup, lookup_intern_type);
 impl TypeId {
     pub fn missing(db: &dyn SemanticGroup) -> Self {
         db.intern_type(TypeLongId::Missing)
+    }
+    pub fn format(&self, db: &(dyn SemanticGroup + 'static)) -> String {
+        match db.lookup_intern_type(*self) {
+            TypeLongId::Concrete(ConcreteType { generic_type, generic_args }) => {
+                assert!(generic_args.is_empty(), "Generic are not supported yet.");
+                generic_type.format(db.as_defs_group())
+            }
+            TypeLongId::Tuple(inner_types) => {
+                format!("({})", inner_types.into_iter().map(|ty| ty.format(db)).join(", "))
+            }
+            TypeLongId::Missing => "<missing>".to_string(),
+        }
     }
 }
 

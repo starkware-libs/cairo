@@ -14,6 +14,7 @@ define_short_id!(StatementId, Statement, SemanticGroup, lookup_intern_statement)
 pub enum Statement {
     Expr(ExprId),
     Let(StatementLet),
+    Return(ExprId),
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]

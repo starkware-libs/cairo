@@ -62,6 +62,7 @@ fn handle_block(
                 statements.extend(cur_statements);
                 context.register_variable(defs::ids::VarId::Local(statement_let.var.id), res);
             }
+            semantic::Statement::Return(_) => todo!(),
         }
     }
 
