@@ -2,8 +2,8 @@ use std::collections::VecDeque;
 
 use casm::ap_change::ApChange;
 use casm::instructions::{
-    AssertEqInstruction, CallInstruction, Instruction, InstructionBody, JnzInstruction,
-    JumpInstruction,
+    AddApInstruction, AssertEqInstruction, CallInstruction, Instruction, InstructionBody,
+    JnzInstruction, JumpInstruction,
 };
 use casm::operand::{
     BinOpOperand, DerefOperand, DerefOrImmediate, ImmediateOperand, Operation, Register, ResOperand,
@@ -22,7 +22,8 @@ use sierra::ids::ConcreteTypeId;
 use sierra::program::{BranchInfo, BranchTarget, Invocation};
 use thiserror::Error;
 
-use crate::environment::Environment;
+use crate::environment::frame_state::FrameStateError;
+use crate::environment::{frame_state, Environment};
 use crate::references::{BinOpExpression, ReferenceExpression, ReferenceValue};
 use crate::relocations::{Relocation, RelocationEntry};
 use crate::type_sizes::TypeSizeMap;
@@ -37,6 +38,8 @@ pub enum InvocationError {
     WrongNumberOfArguments,
     #[error("The requested functionality is not implemented yet.")]
     NotImplemented(Invocation),
+    #[error(transparent)]
+    FrameStateError(#[from] FrameStateError),
 }
 
 /// Describes the changes to the set of references at the branch target.
@@ -346,6 +349,27 @@ fn handle_jump(
     ))
 }
 
+fn handle_alloc_locals(
+    libfunc: &SignatureOnlyConcreteLibFunc,
+    environment: Environment,
+) -> Result<CompiledInvocation, InvocationError> {
+    let (n_slots, frame_state) =
+        frame_state::handle_alloc_locals(environment.frame_state, environment.ap_tracking)?;
+    Ok(CompiledInvocation::new(
+        vec![Instruction {
+            body: InstructionBody::AddAp(AddApInstruction {
+                operand: ResOperand::Immediate(ImmediateOperand { value: n_slots as i128 }),
+            }),
+            inc_ap: false,
+        }],
+        vec![],
+        [ApChange::Known(n_slots)].into_iter(),
+        [[].into_iter()].into_iter(),
+        libfunc.output_types(),
+        Environment { frame_state, ..environment },
+    ))
+}
+
 pub fn compile_invocation(
     invocation: &Invocation,
     libfunc: &CoreConcreteLibFunc,
@@ -396,7 +420,6 @@ pub fn compile_invocation(
         CoreConcreteLibFunc::UnconditionalJump(libfunc) => {
             handle_jump(invocation, libfunc, environment)
         }
-
         CoreConcreteLibFunc::ApTracking(libfunc) => Ok(CompiledInvocation::new(
             vec![],
             vec![],
@@ -405,6 +428,9 @@ pub fn compile_invocation(
             libfunc.output_types(),
             environment,
         )),
+        CoreConcreteLibFunc::Mem(MemConcreteLibFunc::AllocLocals(libfunc)) => {
+            handle_alloc_locals(libfunc, environment)
+        }
         _ => Err(InvocationError::NotImplemented(invocation.clone())),
     }
 }
