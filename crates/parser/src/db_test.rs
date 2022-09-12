@@ -5,17 +5,16 @@ use filesystem::db::FilesGroup;
 use filesystem::ids::{FileLongId, VirtualFile};
 use pretty_assertions::assert_eq;
 use smol_str::SmolStr;
-use syntax::node::ast::{ItemList, SyntaxFile, Terminal, Trivia};
+use syntax::node::ast::{ItemList, SyntaxFile, TerminalEndOfFile, TokenEndOfFile, Trivia};
 use syntax::node::db::SyntaxGroup;
-use syntax::node::{SyntaxNode, Token, TypedSyntaxNode};
-use syntax::token::TokenKind;
+use syntax::node::{SyntaxNode, Terminal, Token, TypedSyntaxNode};
 
 use crate::db::ParserGroup;
 use crate::test_utils::ParserDatabaseForTesting;
 
 fn build_empty_file_green_tree(db: &dyn SyntaxGroup) -> SyntaxFile {
-    let eof_token = Token::new_green(db, TokenKind::EndOfFile, SmolStr::from(""));
-    let eof_terminal = Terminal::new_green(
+    let eof_token = TokenEndOfFile::new_green(db, SmolStr::from(""));
+    let eof_terminal = TerminalEndOfFile::new_green(
         db,
         Trivia::new_green(db, vec![]),
         eof_token,

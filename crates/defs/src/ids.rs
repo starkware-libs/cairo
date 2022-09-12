@@ -25,7 +25,7 @@ use db_utils::define_short_id;
 use debug::debug::DebugWithDb;
 use filesystem::ids::CrateId;
 use smol_str::SmolStr;
-use syntax::node::helpers::{ExprPathGreenEx, TerminalGreenEx};
+use syntax::node::helpers::GetIdentifier;
 use syntax::node::{ast, TypedSyntaxNode};
 use utils::OptionFrom;
 

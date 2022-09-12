@@ -5,7 +5,7 @@ use genco::prelude::*;
 use xshell::{cmd, Shell};
 
 use crate::cairo_spec::get_spec;
-use crate::spec::{Member, MemberKind, Node, NodeKind, Variant};
+use crate::spec::{Member, Node, NodeKind, Variant};
 
 pub fn project_root() -> PathBuf {
     // This is the directory of Cargo.toml of the syntax_codegen crate.
@@ -65,9 +65,11 @@ fn generate_kinds_code() -> rust::Tokens {
         use core::fmt;
     };
     let mut kinds = rust::Tokens::new();
+    let mut token_kinds = rust::Tokens::new();
+    let mut terminal_kinds = rust::Tokens::new();
 
     // SyntaxKind.
-    for Node { name, kind } in spec.into_iter() {
+    for Node { name, kind } in spec.iter() {
         match kind {
             NodeKind::Enum { .. } => {}
             _ => {
@@ -77,10 +79,57 @@ fn generate_kinds_code() -> rust::Tokens {
             }
         }
     }
+
+    let mut first_token = true;
+    let mut first_terminal = true;
+    for Node { name, kind } in spec.into_iter() {
+        match kind {
+            NodeKind::Token { .. } => {
+                if first_token {
+                    token_kinds.extend(quote! {
+                        SyntaxKind::$name
+                    });
+                    first_token = false;
+                } else {
+                    token_kinds.extend(quote! {
+                        | SyntaxKind::$name
+                    });
+                }
+            }
+            NodeKind::Terminal { .. } => {
+                if first_terminal {
+                    terminal_kinds.extend(quote! {
+                        SyntaxKind::$name
+                    });
+                    first_terminal = false;
+                } else {
+                    terminal_kinds.extend(quote! {
+                        | SyntaxKind::$name
+                    });
+                }
+            }
+            _ => {}
+        }
+    }
+
     tokens.extend(quote! {
         #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
-        pub enum SyntaxKind{
+        pub enum SyntaxKind {
             $kinds
+        }
+        impl SyntaxKind {
+            pub fn is_terminal(&self) -> bool {
+                matches!(
+                    *self,
+                    $terminal_kinds
+                )
+            }
+            pub fn is_token(&self) -> bool {
+                matches!(
+                    *self,
+                    $token_kinds
+                )
+            }
         }
         impl fmt::Display for SyntaxKind {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -97,7 +146,7 @@ fn generate_key_fields_code() -> rust::Tokens {
 
     for Node { name, kind } in spec.into_iter() {
         match kind {
-            NodeKind::Struct { members } => {
+            NodeKind::Struct { members } | NodeKind::Terminal { members } => {
                 let mut fields = rust::Tokens::new();
                 for (i, member) in members.into_iter().enumerate() {
                     let field_name = member.name;
@@ -106,12 +155,12 @@ fn generate_key_fields_code() -> rust::Tokens {
                     }
                 }
                 arms.extend(quote! {
-                    SyntaxKind::$name => {vec![$fields]},
+                    SyntaxKind::$name => vec![$fields],
                 });
             }
-            NodeKind::List { .. } | NodeKind::SeparatedList { .. } => {
+            NodeKind::List { .. } | NodeKind::SeparatedList { .. } | NodeKind::Token => {
                 arms.extend(quote! {
-                    SyntaxKind::$name => {vec![]},
+                    SyntaxKind::$name => vec![],
                 });
             }
             NodeKind::Enum { .. } => {}
@@ -145,14 +194,15 @@ fn generate_ast_code() -> rust::Tokens {
         #![allow(unused_variables)]
         use std::ops::Deref;
 
-        use crate::token::TokenKind;
+        use smol_str::SmolStr;
+        use utils::extract_matches;
 
-        use super::kind::SyntaxKind;
         use super::element_list::ElementList;
-        use super::green::GreenNodeInternal;
+        use super::green::GreenNodeDetails;
+        use super::kind::SyntaxKind;
         use super::{
-            TypedSyntaxNode, GreenId, SyntaxGroup, GreenNode, SyntaxNode, SyntaxStablePtrId,
-            SyntaxStablePtr, Token, TokenGreen,
+            GreenId, GreenNode, SyntaxGroup, SyntaxNode, SyntaxStablePtr, SyntaxStablePtrId,
+            Terminal, Token, TypedSyntaxNode,
         };
     };
     for Node { name, kind } in spec.into_iter() {
@@ -160,9 +210,13 @@ fn generate_ast_code() -> rust::Tokens {
             NodeKind::Enum { variants, missing_variant } => {
                 gen_enum_code(name, variants, missing_variant)
             }
-            NodeKind::Struct { members } => gen_struct_code(name, members),
+            NodeKind::Struct { members } => gen_struct_code(name, members, false),
+            NodeKind::Terminal { members } => gen_struct_code(name, members, true),
+            NodeKind::Token => gen_token_code(name),
             NodeKind::List { element_type } => gen_list_code(name, element_type),
-            NodeKind::SeparatedList { element_type } => gen_separated_list_code(name, element_type),
+            NodeKind::SeparatedList { element_type, separator_type } => {
+                gen_separated_list_code(name, element_type, separator_type)
+            }
         })
     }
     tokens
@@ -190,11 +244,13 @@ fn gen_list_code(name: String, element_type: String) -> rust::Tokens {
             ) -> $(&green_name) {
                 let width = children.iter().map(|id|
                     db.lookup_intern_green(id.0).width()).sum();
-                $(&green_name)(db.intern_green(GreenNode::Internal(GreenNodeInternal{
+                $(&green_name)(db.intern_green(GreenNode {
                     kind: SyntaxKind::$(&name),
-                    children: children.iter().map(|x| x.0).collect(),
-                    width
-                })))
+                    details: GreenNodeDetails::Node {
+                        children: children.iter().map(|x| x.0).collect(),
+                        width,
+                    },
+                }))
             }
         }
         #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -208,12 +264,17 @@ fn gen_list_code(name: String, element_type: String) -> rust::Tokens {
     }
 }
 
-fn gen_separated_list_code(name: String, element_type: String) -> rust::Tokens {
+fn gen_separated_list_code(
+    name: String,
+    element_type: String,
+    separator_type: String,
+) -> rust::Tokens {
     // TODO(spapini): Change Deref to Borrow.
     let ptr_name = format!("{name}Ptr");
     let green_name = format!("{name}Green");
     let element_or_separator_green_name = format!("{name}ElementOrSeparatorGreen");
     let element_green_name = format!("{element_type}Green");
+    let separator_green_name = format!("{separator_type}Green");
     let common_code = gen_common_list_code(&name, &green_name, &ptr_name);
     quote! {
         #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -231,11 +292,13 @@ fn gen_separated_list_code(name: String, element_type: String) -> rust::Tokens {
             ) -> $(&green_name) {
                 let width = children.iter().map(|id|
                     db.lookup_intern_green(id.id()).width()).sum();
-                $(&green_name)(db.intern_green(GreenNode::Internal(GreenNodeInternal{
+                $(&green_name)(db.intern_green(GreenNode {
                     kind: SyntaxKind::$(&name),
-                    children: children.iter().map(|x| x.id()).collect(),
-                    width
-                })))
+                    details: GreenNodeDetails::Node {
+                        children: children.iter().map(|x| x.id()).collect(),
+                        width,
+                    },
+                }))
             }
         }
         #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -247,11 +310,11 @@ fn gen_separated_list_code(name: String, element_type: String) -> rust::Tokens {
         }
         #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
         pub enum $(&element_or_separator_green_name) {
-            Separator(TerminalGreen),
+            Separator($(&separator_green_name)),
             Element($(&element_green_name)),
         }
-        impl From<TerminalGreen> for $(&element_or_separator_green_name) {
-            fn from(value: TerminalGreen) -> Self {
+        impl From<$(&separator_green_name)> for $(&element_or_separator_green_name) {
+            fn from(value: $(&separator_green_name)) -> Self {
                 $(&element_or_separator_green_name)::Separator(value)
             }
         }
@@ -277,14 +340,16 @@ fn gen_common_list_code(name: &str, green_name: &str, ptr_name: &str) -> rust::T
         #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
         pub struct $green_name(pub GreenId);
         impl TypedSyntaxNode for $name {
+            const KIND: Option<SyntaxKind> = Some(SyntaxKind::$name);
             type StablePtr = $ptr_name;
             type Green = $green_name;
             fn missing(db: &dyn SyntaxGroup) -> Self::Green {
                 $green_name(db.intern_green(
-                    GreenNode::Internal(GreenNodeInternal {
-                        kind: SyntaxKind::$name, children: vec![], width: 0
+                    GreenNode {
+                        kind: SyntaxKind::$name,
+                        details: GreenNodeDetails::Node { children: vec![], width: 0 },
                     })
-                ))
+                )
             }
             fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
                 Self(ElementList::new(node))
@@ -311,43 +376,21 @@ fn gen_enum_code(
     let green_name = format!("{name}Green");
     let mut enum_body = quote! {};
     let mut from_node_body = quote! {};
-    let mut from_token_body = quote! {};
     let mut green_conversions = quote! {};
-    let mut has_token = false;
     for variant in &variants {
         let n = &variant.name;
-        match &variant.kind {
-            crate::spec::MemberKind::Token(k) => {
-                has_token = true;
-                enum_body.extend(quote! {
-                    $n(Token),
-                });
-                from_token_body.extend(quote! {
-                    TokenKind::$k => $(&name)::$n(Token::from_syntax_node(db, node)),
-                });
-            }
-            crate::spec::MemberKind::Node(k) => {
-                enum_body.extend(quote! {
-                    $n($k),
-                });
-                from_node_body.extend(quote! {
-                    SyntaxKind::$k => $(&name)::$n($k::from_syntax_node(db, node)),
-                });
-                let variant_green = format!("{k}Green");
-                green_conversions.extend(quote! {
-                    impl From<$(&variant_green)> for $(&green_name) {
-                        fn from(value: $(&variant_green)) -> Self {
-                            Self(value.0)
-                        }
-                    }
-                });
-            }
-        }
-    }
-    if has_token {
+        let k = &variant.kind;
+
+        enum_body.extend(quote! {
+            $n($k),
+        });
+        from_node_body.extend(quote! {
+            SyntaxKind::$k => $(&name)::$n($k::from_syntax_node(db, node)),
+        });
+        let variant_green = format!("{k}Green");
         green_conversions.extend(quote! {
-            impl From<TokenGreen> for $(&green_name) {
-                fn from(value: TokenGreen) -> Self {
+            impl From<$(&variant_green)> for $(&green_name) {
+                fn from(value: $(&variant_green)) -> Self {
                     Self(value.0)
                 }
             }
@@ -355,7 +398,12 @@ fn gen_enum_code(
     }
     let missing_body = match missing_variant {
         Some(missing) => quote! {
-            $(&green_name)($(missing.kind.name().to_string())::missing(db).0)
+            $(&green_name)($(missing.kind)::missing(db).0)
+            // TODO(yg): mine, before the rebase: (remove if OK)
+            // $(&green_name)(db.intern_green(GreenNode {
+            //     kind: SyntaxKind::$missing,
+            //     details: GreenNodeDetails::Node { children: vec![], width: 0 },
+            // }))
         },
         None => quote! {
             panic!("No missing variant.");
@@ -377,31 +425,21 @@ fn gen_enum_code(
         #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
         pub struct $(&green_name)(pub GreenId);
         impl TypedSyntaxNode for $(&name){
+            const KIND: Option<SyntaxKind> = None;
             type StablePtr = $(&ptr_name);
             type Green = $(&green_name);
+            // TODO(yuval): consider adding new_green()
             fn missing(db: &dyn SyntaxGroup) -> Self::Green {
                 $missing_body
             }
             fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-                match db.lookup_intern_green(node.0.green) {
-                    GreenNode::Internal(internal) => {
-                        match internal.kind{
-                            $from_node_body
-                            _ => panic!(
-                                "Unexpected syntax kind {:?} when constructing {}.",
-                                internal.kind,
-                                $[str]($[const](&name))),
-                        }
-                    },
-                    GreenNode::Token(token) => {
-                        match token.kind{
-                            $from_token_body
-                            _ => panic!(
-                                "Unexpected token kind {:?} when constructing {}.",
-                                token.kind,
-                                $[str]($[const](&name))),
-                        }
-                    },
+                let kind = node.kind(db);
+                match kind{
+                    $from_node_body
+                    _ => panic!(
+                        "Unexpected syntax kind {:?} when constructing {}.",
+                        kind,
+                        $[str]($[const](&name))),
                 }
             }
             fn as_syntax_node(&self) -> SyntaxNode {
@@ -419,7 +457,73 @@ fn gen_enum_code(
     }
 }
 
-fn gen_struct_code(name: String, members: Vec<Member>) -> rust::Tokens {
+fn gen_token_code(name: String) -> rust::Tokens {
+    let green_name = format!("{name}Green");
+    let ptr_name = format!("{name}Ptr");
+
+    quote! {
+        #[derive(Clone, Debug, Eq, Hash, PartialEq)]
+        pub struct $(&name) {
+            node: SyntaxNode,
+        }
+        impl Token for $(&name) {
+            fn new_green(db: &dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+                $(&green_name)(db.intern_green(GreenNode {
+                    kind: SyntaxKind::$(&name),
+                    details: GreenNodeDetails::Token(text),
+                }))
+            }
+            fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
+                extract_matches!(db.lookup_intern_green(self.node.0.green).details, GreenNodeDetails::Token)
+            }
+        }
+        #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+        pub struct $(&ptr_name)(SyntaxStablePtrId);
+        impl $(&ptr_name) {
+            pub fn untyped(&self) -> SyntaxStablePtrId {
+                self.0
+            }
+        }
+        #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+        pub struct $(&green_name)(pub GreenId);
+        impl $(&green_name) {
+            pub fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
+                extract_matches!(db.lookup_intern_green(self.0).details, GreenNodeDetails::Token)
+            }
+        }
+        impl TypedSyntaxNode for $(&name){
+            const KIND: Option<SyntaxKind> = Some(SyntaxKind::$(&name));
+            type StablePtr = $(&ptr_name);
+            type Green = $(&green_name);
+            fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+                $(&green_name)(db.intern_green(GreenNode {
+                    kind: SyntaxKind::TokenMissing,
+                    details: GreenNodeDetails::Token("".into()),
+                }))
+            }
+            fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+                match db.lookup_intern_green(node.0.green).details {
+                    GreenNodeDetails::Token(_) => Self { node },
+                    GreenNodeDetails::Node { .. } => panic!(
+                        "Expected a token {:?}, not an internal node",
+                        SyntaxKind::$(&name)
+                    ),
+                }
+            }
+            fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+                Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+            }
+            fn as_syntax_node(&self) -> SyntaxNode {
+                self.node.clone()
+            }
+            fn stable_ptr(&self) -> Self::StablePtr {
+                $(&ptr_name)(self.node.0.stable_ptr)
+            }
+        }
+    }
+}
+
+fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rust::Tokens {
     let green_name = format!("{name}Green");
     let mut body = rust::Tokens::new();
     let mut args = quote! {};
@@ -431,30 +535,16 @@ fn gen_struct_code(name: String, members: Vec<Member>) -> rust::Tokens {
         let key_name_green = format!("{name}_green");
         args.extend(quote! {$name.0,});
         // TODO(spapini): Validate that children SyntaxKinds are as expected.
-        let child_green = match kind {
-            MemberKind::Token(_) => {
-                params.extend(quote! {$name: TokenGreen,});
-                body.extend(quote! {
-                    pub fn $name(&self, db: &dyn SyntaxGroup) -> Token {
-                        let child = self.children[$i].clone();
-                        Token::from_syntax_node(db, child)
-                    }
-                });
-                arg_missings.extend(quote! {Token::missing(db).0,});
-                "TokenGreen".to_string()
+
+        let child_green = format!("{kind}Green");
+        params.extend(quote! {$name: $(&child_green),});
+        body.extend(quote! {
+            pub fn $name(&self, db: &dyn SyntaxGroup) -> $kind {
+                $kind::from_syntax_node(db, self.children[$i].clone())
             }
-            MemberKind::Node(node) => {
-                let child_green = format!("{node}Green");
-                params.extend(quote! {$name: $(&child_green),});
-                body.extend(quote! {
-                    pub fn $name(&self, db: &dyn SyntaxGroup) -> $node {
-                        $node::from_syntax_node(db, self.children[$i].clone())
-                    }
-                });
-                arg_missings.extend(quote! {$node::missing(db).0,});
-                child_green
-            }
-        };
+        });
+        arg_missings.extend(quote! {$kind::missing(db).0,});
+
         if *key {
             ptr_getters.extend(quote! {
                 pub fn $(&key_name_green)(self, db: &dyn SyntaxGroup) -> $(&child_green) {
@@ -470,23 +560,53 @@ fn gen_struct_code(name: String, members: Vec<Member>) -> rust::Tokens {
         }
     }
     let ptr_name = format!("{name}Ptr");
+    let new_green_impl = if is_terminal {
+        let token_name = name.replace("Terminal", "Token");
+        quote! {
+            impl Terminal for $(&name) {
+                type TokenType = $(&token_name);
+                fn new_green(
+                    db: &dyn SyntaxGroup,
+                    leading_trivia: TriviaGreen,
+                    token: <<$(&name) as Terminal>::TokenType as TypedSyntaxNode>::Green,
+                    trailing_trivia: TriviaGreen
+                ) -> Self::Green {
+                    let children: Vec<GreenId> = vec![$args];
+                    let width = children.iter().copied().map(|id|
+                        db.lookup_intern_green(id).width()).sum();
+                    $(&green_name)(db.intern_green(GreenNode {
+                        kind: SyntaxKind::$(&name),
+                        details: GreenNodeDetails::Node { children, width },
+                    }))
+                }
+                fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
+                    self.token(db).text(db)
+                }
+            }
+        }
+    } else {
+        quote! {
+            impl $(&name) {
+                pub fn new_green(db: &dyn SyntaxGroup, $params) -> $(&green_name) {
+                    let children: Vec<GreenId> = vec![$args];
+                    let width = children.iter().copied().map(|id|
+                        db.lookup_intern_green(id).width()).sum();
+                    $(&green_name)(db.intern_green(GreenNode {
+                        kind: SyntaxKind::$(&name),
+                        details: GreenNodeDetails::Node { children, width },
+                    }))
+                }
+            }
+        }
+    };
     quote! {
         #[derive(Clone, Debug, Eq, Hash, PartialEq)]
         pub struct $(&name){
             node: SyntaxNode,
             children: Vec<SyntaxNode>,
         }
+        $new_green_impl
         impl $(&name) {
-            pub fn new_green(db: &dyn SyntaxGroup, $params) -> $(&green_name) {
-                let children: Vec<GreenId> = vec![$args];
-                let width = children.iter().copied().map(|id|
-                    db.lookup_intern_green(id).width()).sum();
-                $(&green_name)(db.intern_green(GreenNode::Internal(GreenNodeInternal {
-                    kind: SyntaxKind::$(&name),
-                    children,
-                    width
-                })))
-            }
             $body
         }
         #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -501,38 +621,25 @@ fn gen_struct_code(name: String, members: Vec<Member>) -> rust::Tokens {
         #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
         pub struct $(&green_name)(pub GreenId);
         impl TypedSyntaxNode for $(&name){
+            const KIND: Option<SyntaxKind> = Some(SyntaxKind::$(&name));
             type StablePtr = $(&ptr_name);
             type Green = $(&green_name);
             fn missing(db: &dyn SyntaxGroup) -> Self::Green {
                 // Note: A missing syntax element should result in an internal green node
                 // of width 0, with as much structure as possible.
-                $(&green_name)(db.intern_green(GreenNode::Internal(GreenNodeInternal {
+                $(&green_name)(db.intern_green(GreenNode {
                     kind: SyntaxKind::$(&name),
-                    children: vec![$arg_missings],
-                    width: 0
-                })))
+                    details: GreenNodeDetails::Node {
+                        children: vec![$arg_missings],
+                        width: 0,
+                    },
+                }))
             }
             fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-                match db.lookup_intern_green(node.0.green) {
-                    GreenNode::Internal(internal) => {
-                        if internal.kind != SyntaxKind::$(&name) {
-                            panic!(
-                                "Unexpected SyntaxKind {:?}. Expected {:?}.",
-                                internal.kind,
-                                SyntaxKind::$(&name),
-                            );
-                        }
-                        let children = node.children(db).collect();
-                        Self { node, children }
-                    },
-                    GreenNode::Token(token) => {
-                        panic!(
-                            "Unexpected Token {:?}. Expected {:?}.",
-                            token,
-                            SyntaxKind::$(&name),
-                        );
-                    }
-                }
+                let kind = node.kind(db);
+                assert_eq!(kind, SyntaxKind::$(&name), "Unexpected SyntaxKind {:?}. Expected {:?}.", kind, SyntaxKind::$(&name));
+                let children = node.children(db).collect();
+                Self { node, children }
             }
             fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
                 Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))

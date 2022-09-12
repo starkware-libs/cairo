@@ -7,9 +7,8 @@ use itertools::chain;
 use parser::db::ParserGroup;
 use smol_str::SmolStr;
 use syntax::node::ast::SyntaxFile;
-use syntax::node::db::SyntaxGroup;
-use syntax::node::helpers::ExprPathEx;
-use syntax::node::{ast, TypedSyntaxNode};
+use syntax::node::db::{AsSyntaxGroup, SyntaxGroup};
+use syntax::node::{ast, Terminal, TypedSyntaxNode};
 use utils::ordered_hash_map::OrderedHashMap;
 
 use crate::ids::*;

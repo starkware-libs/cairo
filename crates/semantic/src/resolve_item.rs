@@ -2,6 +2,7 @@ use defs::ids::{ModuleId, ModuleItemId, Symbol};
 use filesystem::ids::CrateLongId;
 use syntax::node::ast::{self};
 use syntax::node::helpers::PathSegmentEx;
+use syntax::node::Terminal;
 
 use crate::corelib::core_module;
 use crate::db::SemanticGroup;
@@ -13,28 +14,11 @@ pub fn resolve_item(
     path: &ast::ExprPath,
 ) -> Result<Symbol, SemanticDiagnosticKind> {
     let syntax_db = db.upcast();
-    let elements_vec = path.elements(syntax_db);
-    let mut elements = elements_vec.iter().peekable();
-
-    let ident = elements
-        .next()
-        .and_then(|segment| segment.as_identifier(syntax_db))
-        .ok_or(SemanticDiagnosticKind::InvalidPath)?;
-    let mut symbol = db
-        .module_item_by_name(module_id, ident.clone())
-        .map(Symbol::ModuleItem)
-        .or_else(|| {
-            // TODO(spapini): Use a hashset.
-            // TODO(spapini): Better diagnostics.
-            let crate_id = db.intern_crate(CrateLongId(ident.clone()));
-            if db.crates().iter().any(|c| *c == crate_id) {
-                Some(Symbol::Crate(crate_id))
-            } else {
-                None
-            }
-        })
-        .or_else(|| db.module_item_by_name(core_module(db), ident.clone()).map(Symbol::ModuleItem))
-        .ok_or(SemanticDiagnosticKind::PathNotFound)?;
+    let elements = path.elements(syntax_db);
+    if elements.len() != 1 {
+        // TODO(spapini): Qualified paths are not supported yet.
+        return None;
+    }
 
     // Follow modules.
     for segment in elements {
