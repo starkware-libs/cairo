@@ -76,27 +76,9 @@ impl SyntaxNode {
         TextSpan { start, end }
     }
     pub fn span_without_trivia(&self, db: &dyn SyntaxGroup) -> TextSpan {
-        match self.details(db) {
-            SyntaxNodeDetails::Syntax(kind) => {
-                if kind == SyntaxKind::Terminal {
-                    return ast::Terminal::from_syntax_node(db, self.clone())
-                        .token(db)
-                        .as_syntax_node()
-                        .span(db);
-                }
-                let children = &mut self.children(db);
-                let start_span = match children.next() {
-                    Some(node) => node.span_without_trivia(db),
-                    None => return self.span(db),
-                };
-                let end_span = match children.last() {
-                    Some(node) => node.span_without_trivia(db),
-                    None => start_span,
-                };
-                TextSpan { start: start_span.start, end: end_span.end }
-            }
-            SyntaxNodeDetails::Token(_) => self.span(db),
-        }
+        let start = self.span_start_without_trivia(db);
+        let end = self.span_end_without_trivia(db);
+        TextSpan { start, end }
     }
     pub fn children<'db>(&self, db: &'db dyn SyntaxGroup) -> SyntaxNodeChildIterator<'db> {
         let green_iterator = match db.lookup_intern_green(self.0.green) {
@@ -135,6 +117,42 @@ impl SyntaxNode {
                 }
                 unreachable!();
             }
+        }
+    }
+
+    fn span_start_without_trivia(&self, db: &dyn SyntaxGroup) -> TextOffset {
+        match self.details(db) {
+            SyntaxNodeDetails::Syntax(kind) => {
+                if kind == SyntaxKind::Terminal {
+                    return ast::Terminal::from_syntax_node(db, self.clone())
+                        .token(db)
+                        .as_syntax_node()
+                        .offset();
+                }
+                match self.children(db).next() {
+                    Some(node) => node.span_start_without_trivia(db),
+                    None => self.offset(),
+                }
+            }
+            SyntaxNodeDetails::Token(_) => self.offset(),
+        }
+    }
+    fn span_end_without_trivia(&self, db: &dyn SyntaxGroup) -> TextOffset {
+        match self.details(db) {
+            SyntaxNodeDetails::Syntax(kind) => {
+                if kind == SyntaxKind::Terminal {
+                    return ast::Terminal::from_syntax_node(db, self.clone())
+                        .token(db)
+                        .as_syntax_node()
+                        .span(db)
+                        .end;
+                }
+                match self.children(db).last() {
+                    Some(node) => node.span_end_without_trivia(db),
+                    None => self.span(db).end,
+                }
+            }
+            SyntaxNodeDetails::Token(_) => self.span(db).end,
         }
     }
 }
