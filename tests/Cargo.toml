@@ -9,7 +9,7 @@ diagnostics = { path = "../crates/diagnostics" }
 filesystem = { path = "../crates/filesystem" }
 parser = { path = "../crates/parser" }
 pretty_assertions = "1.2.1"
-semantic = { path = "../crates/semantic" }
+semantic = { path = "../crates/semantic", features = ["testing"] }
 sierra = { path = "../crates/sierra" }
 sierra_generator = { path = "../crates/sierra_generator" }
 sierra_to_casm = { path = "../crates/sierra_to_casm" }
