@@ -4,7 +4,7 @@ use std::iter;
 
 use casm::ap_change::{ApChangeError, ApplyApChange};
 use itertools::zip_eq;
-use sierra::edit_state::{put_results, take_args, EditStateError};
+use sierra::edit_state::{put_results, take_args};
 use sierra::ids::{ConcreteTypeId, VarId};
 use sierra::program::{BranchInfo, Function, StatementIdx};
 use thiserror::Error;
@@ -26,13 +26,16 @@ pub enum AnnotationError {
     InvalidStatementIdx,
     #[error("MissingAnnotationsForStatement")]
     MissingAnnotationsForStatement(StatementIdx),
-    #[error("Missing reference error")]
-    MissingReferenceError { statement_idx: StatementIdx, error: EditStateError },
-    #[error("Overridden reference error")]
+    #[error("{var_id} is not defined at #{statement_idx}.")]
+    MissingReferenceError { statement_idx: StatementIdx, var_id: VarId },
+    #[error(
+        "{var_id} is overridden when moving from #{source_statement_idx} to \
+         #{destination_statement_idx}."
+    )]
     OverrideReferenceError {
         source_statement_idx: StatementIdx,
         destination_statement_idx: StatementIdx,
-        error: EditStateError,
+        var_id: VarId,
     },
 
     #[error(transparent)]
@@ -147,8 +150,10 @@ impl ProgramAnnotations {
             .ok_or(AnnotationError::MissingAnnotationsForStatement(statement_idx))?
             .clone();
 
-        let (statement_refs, taken_refs) = take_args(statement_annotations.refs, ref_ids)
-            .map_err(|error| AnnotationError::MissingReferenceError { statement_idx, error })?;
+        let (statement_refs, taken_refs) =
+            take_args(statement_annotations.refs, ref_ids).map_err(|error| {
+                AnnotationError::MissingReferenceError { statement_idx, var_id: error.var_id() }
+            })?;
         Ok((StatementAnnotations { refs: statement_refs, ..statement_annotations }, taken_refs))
     }
 
@@ -194,7 +199,7 @@ impl ProgramAnnotations {
                         .map_err(|error| AnnotationError::OverrideReferenceError {
                         source_statement_idx: statement_idx,
                         destination_statement_idx,
-                        error,
+                        var_id: error.var_id(),
                     })?,
                     return_types: annotations.return_types.clone(),
                     environment: annotations.environment.clone(),

@@ -12,8 +12,16 @@ mod test;
 pub enum EditStateError {
     #[error("Missing reference")]
     MissingReference(VarId),
-    #[error("Overriden variable")]
+    #[error("Overridden variable")]
     VariableOverride(VarId),
+}
+impl EditStateError {
+    pub fn var_id(self) -> VarId {
+        match self {
+            EditStateError::MissingReference(var_id) => var_id,
+            EditStateError::VariableOverride(var_id) => var_id,
+        }
+    }
 }
 
 /// Given a map with var ids as keys, extracts out the given ids, failing if some id is missing.
