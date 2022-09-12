@@ -33,6 +33,7 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
     pub fn new() -> Self {
         Self(Vec::new())
     }
+    // TODO(spapini): Remove generic.
     pub fn add<T>(&mut self, diagnostic: T)
     where
         TEntry: From<T>,
