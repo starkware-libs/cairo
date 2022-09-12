@@ -3,9 +3,7 @@ use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     LibFuncSignature, SignatureOnlyConcreteLibFunc, SpecializationContext,
 };
-use crate::extensions::{
-    NamedLibFunc, NoGenericArgsGenericLibFunc, SignatureBasedConcreteLibFunc, SpecializationError,
-};
+use crate::extensions::{NamedLibFunc, SignatureBasedConcreteLibFunc, SpecializationError};
 use crate::ids::{ConcreteTypeId, GenericLibFuncId};
 use crate::program::GenericArg;
 
@@ -105,17 +103,33 @@ impl SignatureBasedConcreteLibFunc for StoreLocalConcreteLibFunc {
     }
 }
 
+pub struct AllocLocalsConcreteLibFunc {
+    pub count: i64,
+    pub signature: LibFuncSignature,
+}
+impl SignatureBasedConcreteLibFunc for AllocLocalsConcreteLibFunc {
+    fn signature(&self) -> &LibFuncSignature {
+        &self.signature
+    }
+}
+
 /// LibFunc for allocating locals for later stores.
 #[derive(Default)]
 pub struct AllocLocalsLibFunc {}
-impl NoGenericArgsGenericLibFunc for AllocLocalsLibFunc {
-    type Concrete = SignatureOnlyConcreteLibFunc;
+impl NamedLibFunc for AllocLocalsLibFunc {
+    type Concrete = AllocLocalsConcreteLibFunc;
     const ID: GenericLibFuncId = GenericLibFuncId::new_inline("alloc_locals");
     fn specialize(
         &self,
         _context: SpecializationContext<'_>,
+        args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(SignatureOnlyConcreteLibFunc {
+        Ok(Self::Concrete {
+            count: match args {
+                [GenericArg::Value(value)] => Ok(*value),
+                [_] => Err(SpecializationError::UnsupportedGenericArg),
+                _ => Err(SpecializationError::WrongNumberOfGenericArgs),
+            }?,
             signature: LibFuncSignature::new_non_branch(vec![], vec![]),
         })
     }
