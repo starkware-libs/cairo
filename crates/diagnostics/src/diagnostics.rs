@@ -33,6 +33,11 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
     pub fn new() -> Self {
         Self(Vec::new())
     }
+    // TODO(spapini): Save only arcs.
+    pub fn add_diagnostics(&mut self, diagnostics: Self) {
+        self.0.extend(diagnostics.0);
+    }
+    // TODO(spapini): Remove generic.
     pub fn add<T>(&mut self, diagnostic: T)
     where
         TEntry: From<T>,
