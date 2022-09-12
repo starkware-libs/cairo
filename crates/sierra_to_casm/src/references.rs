@@ -13,8 +13,8 @@ use thiserror::Error;
 pub enum ReferencesError {
     #[error("Invalid function declaration.")]
     InvalidFunctionDeclaration(Function),
-    #[error("DanglingReferences")]
-    DanglingReferences(StatementIdx),
+    #[error("{var_id} is dangling at #{statement_idx}.")]
+    DanglingReferences { statement_idx: StatementIdx, var_id: VarId },
     #[error(
         "One of the arguments does not match the expected type of the libfunc or return statement."
     )]

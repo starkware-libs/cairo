@@ -95,9 +95,14 @@ pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
                 let (annotations, return_refs) = program_annotations
                     .get_annotations_after_take_args(statement_idx, ref_ids.iter())?;
 
-                if !annotations.refs.is_empty() {
-                    return Err(ReferencesError::DanglingReferences(statement_idx).into());
-                }
+                match annotations.refs.into_keys().next() {
+                    None => (),
+                    Some(var_id) => {
+                        return Err(
+                            ReferencesError::DanglingReferences { statement_idx, var_id }.into()
+                        );
+                    }
+                };
                 program_annotations.validate_return_type(&return_refs, annotations.return_types)?;
                 check_references_on_stack(&type_sizes, &return_refs)?;
 
