@@ -65,6 +65,12 @@ impl DiagnosticEntry for SierraGeneratorDiagnostic {
             SierraGeneratorDiagnosticKind::CallLibFuncWithGenericArgs => {
                 "Calling a libfunc with generic arguments is not supported yet."
             }
+            SierraGeneratorDiagnosticKind::OnlyMatchZeroIsSupported => {
+                "Only match zero (match ... { 0 => ..., _ => ... }) is currently supported."
+            }
+            SierraGeneratorDiagnosticKind::InternalErrorUnknownVariable => {
+                "Internal compiler error: unknown variable."
+            }
         }
         .into()
     }
@@ -78,4 +84,6 @@ impl DiagnosticEntry for SierraGeneratorDiagnostic {
 pub enum SierraGeneratorDiagnosticKind {
     NonZeroValueInMatch,
     CallLibFuncWithGenericArgs,
+    OnlyMatchZeroIsSupported,
+    InternalErrorUnknownVariable,
 }

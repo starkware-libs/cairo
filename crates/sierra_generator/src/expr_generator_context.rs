@@ -69,12 +69,20 @@ impl<'a> ExprGeneratorContext<'a> {
 
     /// Returns the Sierra variable associated with the given local variable.
     /// See [Self::register_variable].
-    pub fn get_variable(&self, local_var: defs::ids::VarId) -> sierra::ids::VarId {
-        // TODO(lior): Consider throwing an error with a location.
-        self.variables
-            .get(&local_var)
-            .unwrap_or_else(|| panic!("Internal compiler error. Unknown variable {:?}", local_var))
-            .clone()
+    pub fn get_variable(
+        &mut self,
+        local_var: defs::ids::VarId,
+        stable_ptr: SyntaxStablePtrId,
+    ) -> Option<sierra::ids::VarId> {
+        let var = self.variables.get(&local_var);
+        if var.is_none() {
+            self.add_diagnostic(
+                SierraGeneratorDiagnosticKind::InternalErrorUnknownVariable,
+                stable_ptr,
+            );
+            return None;
+        }
+        var.cloned()
     }
 
     /// Generates a label id and a label statement.

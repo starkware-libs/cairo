@@ -85,6 +85,24 @@ fn test_expr_generator() {
 }
 
 #[test]
+fn test_expr_generator_failures() {
+    let mut db = SierraGenDatabaseForTesting::default();
+
+    let test_expr = setup_test_block(&mut db, "x", "", "let x = 7;").unwrap();
+    verify_exception(
+        &db,
+        test_expr,
+        indoc! {"
+            error: Internal compiler error: unknown variable.
+             --> lib.cairo:3:1
+            x
+            ^
+
+        "},
+    );
+}
+
+#[test]
 fn test_match() {
     let mut db = SierraGenDatabaseForTesting::default();
 
@@ -149,9 +167,33 @@ fn test_match_failures() {
         test_expr,
         indoc! {"
             error: Match with a non-zero value is not supported.
-             --> lib.cairo:4:5
+             --> lib.cairo:5:5
                 12 => x,
                 ^
+
+        "},
+    );
+
+    let test_expr = setup_test_block(
+        &mut db,
+        indoc! {"
+            let x = 7;
+            match x {
+                12 => 0,
+            }
+        "},
+        "",
+        "",
+    )
+    .unwrap();
+    verify_exception(
+        &db,
+        test_expr,
+        indoc! {"
+            error: Only match zero (match ... { 0 => ..., _ => ... }) is currently supported.
+             --> lib.cairo:4:1
+            match x {
+            ^*******^
 
         "},
     );

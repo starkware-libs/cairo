@@ -23,7 +23,9 @@ pub fn generate_expression_code(
             handle_function_call(context, expr_function_call)
         }
         semantic::Expr::ExprMatch(expr_match) => handle_felt_match(context, expr_match),
-        semantic::Expr::ExprVar(expr_var) => Some((vec![], context.get_variable(expr_var.var))),
+        semantic::Expr::ExprVar(expr_var) => {
+            Some((vec![], context.get_variable(expr_var.var, expr_var.stable_ptr)?))
+        }
         semantic::Expr::ExprLiteral(expr_literal) => {
             let tmp_var = context.allocate_sierra_variable();
             Some((
@@ -249,8 +251,11 @@ fn handle_felt_match(
             Some((statements, output_var))
         }
         _ => {
-            // TODO(lior): Replace with diagnostics.
-            unimplemented!();
+            context.add_diagnostic(
+                SierraGeneratorDiagnosticKind::OnlyMatchZeroIsSupported,
+                expr_match.stable_ptr,
+            );
+            None
         }
     }
 }

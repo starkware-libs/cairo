@@ -180,5 +180,5 @@ pub fn setup_test_block(
     module_code: &str,
     function_body: &str,
 ) -> WithStringDiagnostics<TestExpr> {
-    setup_test_expr(db, &format!("{{ {expr_code} }}"), module_code, function_body)
+    setup_test_expr(db, &format!("{{ \n{expr_code}\n }}"), module_code, function_body)
 }
