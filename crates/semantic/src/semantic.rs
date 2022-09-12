@@ -7,9 +7,7 @@ use diagnostics_proc_macros::DebugWithDb;
 // Reexport objects
 pub use super::expr::objects::*;
 use crate::db::SemanticGroup;
-pub use crate::items::free_function::FreeFunction;
 pub use crate::items::functions::{ConcreteFunction, FunctionId, FunctionLongId, Signature};
-pub use crate::items::strct::Struct;
 pub use crate::types::{ConcreteType, TypeId, TypeLongId};
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]

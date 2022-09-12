@@ -10,7 +10,7 @@ use syntax::node::db::{AsSyntaxGroup, SyntaxDatabase, SyntaxGroup};
 use utils::extract_matches;
 
 use crate::db::{SemanticDatabase, SemanticGroup};
-use crate::{semantic, ExprBlock, ExprId};
+use crate::semantic;
 
 #[salsa::database(SemanticDatabase, DefsDatabase, ParserDatabase, SyntaxDatabase, FilesDatabase)]
 pub struct SemanticDatabaseForTesting {
@@ -95,7 +95,8 @@ pub fn setup_test_module(
 pub struct TestFunction {
     pub module_id: ModuleId,
     pub function_id: FreeFunctionId,
-    pub function: semantic::FreeFunction,
+    pub signature: semantic::Signature,
+    pub body: semantic::ExprId,
 }
 
 /// Returns the semantic model of a given function.
@@ -122,7 +123,8 @@ pub fn setup_test_function(
         value: TestFunction {
             module_id: test_module.module_id,
             function_id,
-            function: db.free_function_semantic(function_id).unwrap(),
+            signature: db.free_function_signature(function_id).unwrap(),
+            body: db.free_function_body(function_id).unwrap(),
         },
         diagnostics,
     }
@@ -132,8 +134,9 @@ pub fn setup_test_function(
 pub struct TestExpr {
     pub module_id: ModuleId,
     pub function_id: FreeFunctionId,
-    pub function: semantic::FreeFunction,
-    pub expr_id: ExprId,
+    pub signature: semantic::Signature,
+    pub body: semantic::ExprId,
+    pub expr_id: semantic::ExprId,
 }
 
 /// Returns the semantic model of a given expression.
@@ -148,11 +151,9 @@ pub fn setup_test_expr(
     let function_code = format!("func test_func() {{ {function_body} {{\n{expr_code}\n}} }}");
     let (test_function, diagnostics) =
         setup_test_function(db, &function_code, "test_func", module_code).split();
-    let ExprBlock { tail: function_body_tail, .. } = extract_matches!(
-        db.lookup_intern_expr(test_function.function.body),
-        semantic::Expr::ExprBlock
-    );
-    let ExprBlock { statements, tail, .. } = extract_matches!(
+    let semantic::ExprBlock { tail: function_body_tail, .. } =
+        extract_matches!(db.lookup_intern_expr(test_function.body), semantic::Expr::ExprBlock);
+    let semantic::ExprBlock { statements, tail, .. } = extract_matches!(
         db.lookup_intern_expr(function_body_tail.unwrap()),
         semantic::Expr::ExprBlock
     );
@@ -164,7 +165,8 @@ pub fn setup_test_expr(
         value: TestExpr {
             module_id: test_function.module_id,
             function_id: test_function.function_id,
-            function: test_function.function,
+            signature: test_function.signature,
+            body: test_function.body,
             expr_id: tail.unwrap(),
         },
         diagnostics,

@@ -35,10 +35,9 @@ impl<'ctx> ComputationContext<'ctx> {
         db: &'ctx dyn SemanticGroup,
         module_id: ModuleId,
         return_ty: TypeId,
-        variables: EnvVariables,
+        environment: Environment,
     ) -> Self {
-        let environment = Box::new(Environment { parent: None, variables });
-        Self { diagnostics, db, module_id, return_ty, environment }
+        Self { diagnostics, db, module_id, return_ty, environment: Box::new(environment) }
     }
 
     /// Runs a function with a modified context, with a new environment for a subscope.
@@ -72,6 +71,11 @@ pub type EnvVariables = HashMap<SmolStr, Variable>;
 pub struct Environment {
     parent: Option<Box<Environment>>,
     variables: EnvVariables,
+}
+impl Environment {
+    pub fn new(variables: EnvVariables) -> Self {
+        Self { parent: None, variables }
+    }
 }
 
 /// Returns the tail expression of the given list of statements, if exists.
@@ -308,7 +312,7 @@ fn specialize_function(
     args: &[semantic::Expr],
 ) -> Option<FunctionId> {
     // TODO(spapini): Type check arguments.
-    let signature = ctx.db.generic_function_signature_semantic(generic_function)?;
+    let signature = ctx.db.generic_function_signature(generic_function)?;
 
     // TODO(lior): Replace with diagnostic and replace zip_eq below.
     assert_eq!(args.len(), signature.params.len());
