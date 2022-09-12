@@ -2,6 +2,7 @@ use defs::db::{AsDefsGroup, DefsDatabase};
 use filesystem::db::{init_files_group, AsFilesGroup, FilesDatabase, FilesGroup};
 use parser::db::ParserDatabase;
 use semantic::db::{AsSemanticGroup, SemanticDatabase};
+use sierra::ids::ConcreteLibFuncId;
 use syntax::node::db::{AsSyntaxGroup, SyntaxDatabase, SyntaxGroup};
 
 use crate::db::{SierraGenDatabase, SierraGenGroup};
@@ -84,23 +85,17 @@ pub fn replace_libfunc_ids_in_program(
     db: &dyn SierraGenGroup,
     program: &sierra::program::Program,
 ) -> sierra::program::Program {
-    sierra::program::Program {
-        statements: program
-            .statements
-            .iter()
-            .map(|statement| match statement {
-                sierra::program::GenStatement::Invocation(p) => {
-                    sierra::program::GenStatement::Invocation(sierra::program::GenInvocation {
-                        libfunc_id: db
-                            .lookup_intern_concrete_lib_func(p.libfunc_id.clone())
-                            .to_string()
-                            .into(),
-                        ..p.clone()
-                    })
-                }
-                _ => statement.clone(),
-            })
-            .collect(),
-        ..program.clone()
+    let mut program = program.clone();
+    let replace_id = |libfunc_id: &ConcreteLibFuncId| -> ConcreteLibFuncId {
+        db.lookup_intern_concrete_lib_func(libfunc_id.clone()).to_string().into()
+    };
+    for statement in program.statements.iter_mut() {
+        if let sierra::program::GenStatement::Invocation(p) = statement {
+            p.libfunc_id = replace_id(&p.libfunc_id);
+        }
     }
+    for libfunc_declaration in program.libfunc_declarations.iter_mut() {
+        libfunc_declaration.id = replace_id(&libfunc_declaration.id);
+    }
+    program
 }
