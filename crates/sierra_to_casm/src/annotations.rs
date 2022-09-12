@@ -18,7 +18,7 @@ use crate::references::{
 
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum AnnotationError {
-    #[error("Inconsistent references annotations.")]
+    #[error("#{0}: Inconsistent references annotations.")]
     InconsistentReferencesAnnotation(StatementIdx),
     #[error("Inconsistent return type annotation.")]
     InconsistentReturnTypesAnnotation(StatementIdx),

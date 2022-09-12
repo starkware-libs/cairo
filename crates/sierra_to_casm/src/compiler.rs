@@ -25,8 +25,10 @@ pub enum CompilationError {
     ProgramRegistryError(ProgramRegistryError),
     #[error(transparent)]
     AnnotationError(#[from] AnnotationError),
-    #[error(transparent)]
-    InvocationError(#[from] InvocationError),
+    #[error("#{statement_idx}: {error}")]
+    InvocationError { statement_idx: StatementIdx, error: InvocationError },
+    #[error("#{statement_idx}: Return arguments are not on the stack.")]
+    ReturnArgumentsNotOnStack { statement_idx: StatementIdx },
     #[error(transparent)]
     ReferencesError(#[from] ReferencesError),
     #[error("Invocation mismatched to libfunc")]
@@ -101,7 +103,14 @@ pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
                     );
                 };
                 program_annotations.validate_return_type(&return_refs, annotations.return_types)?;
-                check_references_on_stack(&type_sizes, &return_refs)?;
+                check_references_on_stack(&type_sizes, &return_refs).map_err(
+                    |error| match error {
+                        InvocationError::InvalidReferenceExpressionForArgument => {
+                            CompilationError::ReturnArgumentsNotOnStack { statement_idx }
+                        }
+                        _ => CompilationError::InvocationError { statement_idx, error },
+                    },
+                )?;
 
                 let ret_instruction = RetInstruction {};
                 program_offset += ret_instruction.op_size();
@@ -126,7 +135,8 @@ pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
                     &invoke_refs,
                     &type_sizes,
                     annotations.environment,
-                )?;
+                )
+                .map_err(|error| CompilationError::InvocationError { statement_idx, error })?;
 
                 for instruction in &compiled_invocation.instructions {
                     program_offset += instruction.body.op_size();

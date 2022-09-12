@@ -33,9 +33,9 @@ pub enum InvocationError {
     InvalidReferenceExpressionForArgument,
     #[error("Unexpected error - an unregistered type id used.")]
     UnknownTypeId(ConcreteTypeId),
-    #[error("Expected a different number of arguments")]
+    #[error("Expected a different number of arguments.")]
     WrongNumberOfArguments,
-    #[error("The requested functionality is not implemented yet")]
+    #[error("The requested functionality is not implemented yet.")]
     NotImplemented(Invocation),
 }
 
