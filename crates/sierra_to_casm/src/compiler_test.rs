@@ -123,7 +123,7 @@ fn fib_program() {
 
                 test_program@0([2]: felt) -> (felt);
             "},
-            "One of the arguments does not satisfy the requirements of the libfunc.";
+            "#0: Return arguments are not on the stack.";
             "Invalid return reference")]
 #[test_case(indoc! {"
                 store_temp_felt([1]) -> ([1]);
@@ -148,7 +148,7 @@ fn fib_program() {
                 store_local_felt([1]) -> ([1]);
                 test_program@0([1]: felt) -> ();
             "},
-            "The requested functionality is not implemented yet";
+            "#0: The requested functionality is not implemented yet.";
             "Not implemented")]
 #[test_case(indoc! {"
                 type felt = felt;
@@ -159,7 +159,7 @@ fn fib_program() {
 
                 test_program@0([1]: felt, [2]: felt, [3]: felt) -> ();
             "},
-            "One of the arguments does not satisfy the requirements of the libfunc.";
+            "#1: One of the arguments does not satisfy the requirements of the libfunc.";
             "Invalid reference expression for felt_add")]
 #[test_case(indoc! {"
                 type felt = felt;
@@ -234,7 +234,7 @@ fn fib_program() {
 
                 foo@0([1]: felt) -> ();
                 bar@0([2]: felt) -> ();
-            "}, "Inconsistent references annotations.";
+            "}, "#0: Inconsistent references annotations.";
             "Failed building type information")]
 #[test_case(indoc! {"
                 type felt = felt;
@@ -244,7 +244,7 @@ fn fib_program() {
                 return ([1]);
                 test_program@0([1]: felt) -> ();
                 foo@1([1]: felt) -> (felt);
-            "}, "Inconsistent references annotations.";
+            "}, "#1: Inconsistent references annotations.";
             "Inconsistent return annotations.")]
 #[test_case(indoc! {"
                 type felt = felt;
