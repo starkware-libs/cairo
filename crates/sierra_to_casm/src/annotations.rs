@@ -2,14 +2,15 @@ use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::iter;
 
-use casm::ap_change::{ApChangeError, ApplyApChange};
+use casm::ap_change::{ApChange, ApChangeError, ApplyApChange};
 use itertools::zip_eq;
 use sierra::edit_state::{put_results, take_args};
 use sierra::ids::{ConcreteTypeId, VarId};
 use sierra::program::{BranchInfo, Function, StatementIdx};
 use thiserror::Error;
 
-use crate::environment::Environment;
+use crate::environment::ap_tracking::update_ap_tracking;
+use crate::environment::{validate_environment_equality, Environment, EnvironmentError};
 use crate::invocations::BranchRefChanges;
 use crate::references::{
     build_function_parameter_refs, check_types_match, ReferenceValue, ReferencesError,
@@ -20,6 +21,8 @@ use crate::references::{
 pub enum AnnotationError {
     #[error("#{0}: Inconsistent references annotations.")]
     InconsistentReferencesAnnotation(StatementIdx),
+    #[error("#{statement_idx}: {error}.")]
+    InconsistentEnvironments { statement_idx: StatementIdx, error: EnvironmentError },
     #[error("Inconsistent return type annotation.")]
     InconsistentReturnTypesAnnotation(StatementIdx),
     #[error("InvalidStatementIdx")]
@@ -34,7 +37,6 @@ pub enum AnnotationError {
         destination_statement_idx: StatementIdx,
         var_id: VarId,
     },
-
     #[error(transparent)]
     ReferencesError(#[from] ReferencesError),
 
@@ -44,6 +46,12 @@ pub enum AnnotationError {
     )]
     ApChangeError {
         var_id: VarId,
+        source_statement_idx: StatementIdx,
+        destination_statement_idx: StatementIdx,
+        error: ApChangeError,
+    },
+    #[error("#{source_statement_idx} -> #{destination_statement_idx}: Ap tracking error")]
+    ApTrackingError {
         source_statement_idx: StatementIdx,
         destination_statement_idx: StatementIdx,
         error: ApChangeError,
@@ -104,7 +112,7 @@ impl ProgramAnnotations {
                 StatementAnnotations {
                     refs: build_function_parameter_refs(func)?,
                     return_types: return_annotation,
-                    environment: Environment {},
+                    environment: Environment { ap_tracking: ApChange::Known(0) },
                 },
             )?
         }
@@ -130,6 +138,15 @@ impl ProgramAnnotations {
                 if expected_annotations.return_types != annotations.return_types {
                     return Err(AnnotationError::InconsistentReturnTypesAnnotation(statement_id));
                 }
+
+                validate_environment_equality(
+                    &expected_annotations.environment,
+                    &annotations.environment,
+                )
+                .map_err(|error| AnnotationError::InconsistentEnvironments {
+                    statement_idx: statement_id,
+                    error,
+                })?;
             }
         };
         Ok(())
@@ -199,7 +216,19 @@ impl ProgramAnnotations {
                         var_id: error.var_id(),
                     })?,
                     return_types: annotations.return_types.clone(),
-                    environment: annotations.environment.clone(),
+                    environment: Environment {
+                        ap_tracking: update_ap_tracking(
+                            annotations.environment.ap_tracking,
+                            branch_result.ap_change,
+                        )
+                        .map_err(|error| {
+                            AnnotationError::ApTrackingError {
+                                source_statement_idx: statement_idx,
+                                destination_statement_idx,
+                                error,
+                            }
+                        })?,
+                    },
                 },
             )?;
         }
