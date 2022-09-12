@@ -12,8 +12,16 @@ impl<Key: Hash + Eq, Value> OrderedHashMap<Key, Value> {
         self.0.get(key)
     }
 
+    pub fn get_mut(&mut self, key: &Key) -> Option<&mut Value> {
+        self.0.get_mut(key)
+    }
+
     pub fn iter(&self) -> indexmap::map::Iter<'_, Key, Value> {
         self.0.iter()
+    }
+
+    pub fn keys(&self) -> indexmap::map::Keys<'_, Key, Value> {
+        self.0.keys()
     }
 
     pub fn insert(&mut self, key: Key, value: Value) -> Option<Value> {

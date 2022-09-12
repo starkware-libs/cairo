@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use filesystem::db::{AsFilesGroup, FilesGroup};
-use filesystem::ids::{Directory, FileId};
+use filesystem::ids::{CrateId, Directory, FileId};
 use itertools::chain;
 use parser::db::ParserGroup;
 use smol_str::SmolStr;
@@ -40,8 +40,14 @@ pub trait DefsGroup: FilesGroup + SyntaxGroup + AsSyntaxGroup + ParserGroup + As
     fn module_dir(&self, module_id: ModuleId) -> Option<Directory>;
     fn module_syntax(&self, module_id: ModuleId) -> Option<Arc<SyntaxFile>>;
 
+    // File to module.
+    fn crate_modules(&self, crate_id: CrateId) -> Arc<Vec<ModuleId>>;
+    fn priv_file_to_module_mapping(&self) -> OrderedHashMap<FileId, Vec<ModuleId>>;
+    fn file_modules(&self, file_id: FileId) -> Option<Vec<ModuleId>>;
+
     // Module level resolving.
     fn module_data(&self, module_id: ModuleId) -> Option<ModuleData>;
+    fn module_submodules(&self, module_id: ModuleId) -> Option<Vec<ModuleId>>;
     fn module_items(&self, module_id: ModuleId) -> Option<ModuleItems>;
     fn module_item_by_name(&self, module_id: ModuleId, name: SmolStr) -> Option<ModuleItemId>;
 }
@@ -77,6 +83,39 @@ pub fn module_syntax(db: &dyn DefsGroup, module_id: ModuleId) -> Option<Arc<Synt
     db.file_syntax(db.module_file(module_id)?)
 }
 
+fn collect_modules_under(db: &dyn DefsGroup, modules: &mut Vec<ModuleId>, module_id: ModuleId) {
+    modules.push(module_id);
+    for submodule_module_id in db.module_submodules(module_id).iter().flatten() {
+        collect_modules_under(db, modules, *submodule_module_id);
+    }
+}
+fn crate_modules(db: &dyn DefsGroup, crate_id: CrateId) -> Arc<Vec<ModuleId>> {
+    let mut modules = Vec::new();
+    collect_modules_under(db, &mut modules, ModuleId::CrateRoot(crate_id));
+    Arc::new(modules)
+}
+fn priv_file_to_module_mapping(db: &dyn DefsGroup) -> OrderedHashMap<FileId, Vec<ModuleId>> {
+    let mut mapping = OrderedHashMap::<FileId, Vec<ModuleId>>::default();
+    for crate_id in db.crates() {
+        for module_id in db.crate_modules(crate_id).iter().copied() {
+            if let Some(file_id) = db.module_file(module_id) {
+                match mapping.get_mut(&file_id) {
+                    Some(file_modules) => {
+                        file_modules.push(module_id);
+                    }
+                    None => {
+                        mapping.insert(file_id, vec![module_id]);
+                    }
+                }
+            }
+        }
+    }
+    mapping
+}
+fn file_modules(db: &dyn DefsGroup, file_id: FileId) -> Option<Vec<ModuleId>> {
+    db.priv_file_to_module_mapping().get(&file_id).cloned()
+}
+
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ModuleData {
     pub submodules: OrderedHashMap<SubmoduleId, ast::ItemModule>,
@@ -92,6 +131,7 @@ pub struct ModuleItems {
     pub items: OrderedHashMap<SmolStr, ModuleItemId>,
 }
 
+// TODO(spapini): Make this private.
 fn module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Option<ModuleData> {
     let mut res = ModuleData::default();
     let syntax_db = db.as_syntax_group();
@@ -134,6 +174,10 @@ fn module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Option<ModuleData> {
         }
     }
     Some(res)
+}
+
+fn module_submodules(db: &dyn DefsGroup, module_id: ModuleId) -> Option<Vec<ModuleId>> {
+    Some(db.module_data(module_id)?.submodules.keys().copied().map(ModuleId::Submodule).collect())
 }
 
 fn module_items(db: &dyn DefsGroup, module_id: ModuleId) -> Option<ModuleItems> {
