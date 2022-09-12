@@ -285,6 +285,26 @@ fn fib_program() {
                 foo@0([1]: felt) -> ();
             "}, "#2->#3: Got 'Unknown ap change' error while moving [1].";
             "Ap change error")]
+#[test_case(indoc! {"
+                type felt = felt;
+                type NonZeroFelt = NonZero<felt>;
+
+                libfunc revoke_ap_tracking = revoke_ap_tracking;
+                libfunc felt_drop = felt_drop;
+                libfunc felt_jump_nz = felt_jump_nz;
+                libfunc felt_unwrap_nz = unwrap_nz<felt>;
+                libfunc jump = jump;
+
+                felt_jump_nz([1]) { 3([1]) fallthrough() };
+                revoke_ap_tracking() -> ();
+                jump() { 5() };
+                felt_unwrap_nz([1]) -> ([1]);
+                felt_drop([1]) -> ();
+                return ();
+
+                foo@0([1]: felt) -> ();
+            "}, "#5: Inconsistent ap tracking.";
+            "Inconsistent ap tracking.")]
 fn compiler_errors(sierra_code: &str, expected_result: &str) {
     let prog = ProgramParser::new().parse(sierra_code).unwrap();
     assert_eq!(
