@@ -84,11 +84,15 @@ impl SyntaxNode {
                         .as_syntax_node()
                         .span(db);
                 }
-                if self.children(db).len() == 0 {
-                    return self.span(db);
-                }
-                let start_span = self.children(db).next().unwrap().span_without_trivia(db);
-                let end_span = self.children(db).last().unwrap().span_without_trivia(db);
+                let children = &mut self.children(db);
+                let start_span = match children.next() {
+                    Some(node) => node.span_without_trivia(db),
+                    None => return self.span(db),
+                };
+                let end_span = match children.last() {
+                    Some(node) => node.span_without_trivia(db),
+                    None => start_span,
+                };
                 TextSpan { start: start_span.start, end: end_span.end }
             }
             SyntaxNodeDetails::Token(_) => self.span(db),

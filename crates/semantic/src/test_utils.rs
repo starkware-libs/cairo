@@ -77,7 +77,11 @@ pub fn setup_test_function_with_diagnostics(
     function_name: &str,
     module_code: &str,
 ) -> (ModuleId, semantic::FreeFunction, String) {
-    let content = format!("{module_code} {function_code}");
+    let content = if module_code.is_empty() {
+        function_code.to_string()
+    } else {
+        format!("{module_code}\n{function_code}")
+    };
     let (module_id, diagnostics) = setup_test_module_with_diagnostics(db, &content);
     let generic_function_id = db
         .module_item_by_name(module_id, function_name.into())
