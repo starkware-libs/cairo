@@ -34,7 +34,9 @@ fn compile_to_sierra(
 #[test_case("fib.cairo", include_str!("fib.sierra"))]
 fn cairo_to_sierra(name: &str, expected_code: &str) {
     let (db, sierra_program) = compile_to_sierra(name);
-    assert_eq!(replace_libfunc_ids_in_program(&db, &sierra_program).to_string(), expected_code);
+    let mut sierra_program = (*sierra_program).clone();
+    replace_libfunc_ids_in_program(&db, &mut sierra_program);
+    assert_eq!(sierra_program.to_string(), expected_code);
 }
 
 #[test_case("fib.cairo", include_str!("fib.casm"))]

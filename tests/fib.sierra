@@ -1,16 +1,16 @@
 type [0] = felt;
 type [1] = NonZero<[0]>;
 
-libfunc [8] = felt_dup;
-libfunc [0] = felt_jump_nz;
-libfunc [9] = felt_ignore;
-libfunc [1] = store_temp<[0]>;
-libfunc [2] = jump;
-libfunc [7] = unwrap_nz<[0]>;
-libfunc [3] = felt_add;
-libfunc [4] = felt_const<1>;
-libfunc [5] = felt_sub;
-libfunc [6] = function_call<user@[0]>;
+libfunc felt_dup = felt_dup;
+libfunc felt_jump_nz = felt_jump_nz;
+libfunc felt_ignore = felt_ignore;
+libfunc store_temp<[0]> = store_temp<[0]>;
+libfunc jump = jump;
+libfunc unwrap_nz<[0]> = unwrap_nz<[0]>;
+libfunc felt_add = felt_add;
+libfunc felt_const<1> = felt_const<1>;
+libfunc felt_sub = felt_sub;
+libfunc function_call<user@[0]> = function_call<user@[0]>;
 
 felt_dup([2]) -> ([2], [16]);
 felt_jump_nz([16]) { 6([3]) fallthrough() };
