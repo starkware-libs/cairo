@@ -26,6 +26,7 @@ pub struct ComputationContext<'ctx> {
     diagnostics: &'ctx mut Diagnostics<SemanticDiagnostic>,
     db: &'ctx dyn SemanticGroup,
     module_id: ModuleId,
+    return_ty: TypeId,
     environment: Box<Environment>,
 }
 impl<'ctx> ComputationContext<'ctx> {
@@ -33,10 +34,11 @@ impl<'ctx> ComputationContext<'ctx> {
         diagnostics: &'ctx mut Diagnostics<SemanticDiagnostic>,
         db: &'ctx dyn SemanticGroup,
         module_id: ModuleId,
+        return_ty: TypeId,
         variables: EnvVariables,
     ) -> Self {
         let environment = Box::new(Environment { parent: None, variables });
-        Self { diagnostics, db, module_id, environment }
+        Self { diagnostics, db, module_id, return_ty, environment }
     }
 
     /// Runs a function with a modified context, with a new environment for a subscope.
@@ -321,7 +323,10 @@ fn specialize_function(
         if arg_typ != param_typ && arg_typ != TypeId::missing(ctx.db) {
             ctx.diagnostics.add(SemanticDiagnostic {
                 stable_location: StableLocation::new(ctx.module_id, arg.stable_ptr()),
-                kind: SemanticDiagnosticKind::WrongArgumentType { arg_typ, param_typ },
+                kind: SemanticDiagnosticKind::WrongArgumentType {
+                    expected_ty: param_typ,
+                    actual_ty: arg_typ,
+                },
             });
         }
     }
@@ -374,7 +379,23 @@ pub fn compute_statement_semantic(
         ast::Statement::Expr(expr_syntax) => semantic::Statement::Expr(
             db.intern_expr(compute_expr_semantic(ctx, expr_syntax.expr(syntax_db))),
         ),
-        ast::Statement::Return(_) => todo!(),
+        ast::Statement::Return(return_syntax) => {
+            let expr_syntax = return_syntax.expr(syntax_db);
+            let expr = compute_expr_semantic(ctx, expr_syntax.clone());
+            if expr.ty() != ctx.return_ty {
+                ctx.diagnostics.add(SemanticDiagnostic {
+                    stable_location: StableLocation::new(
+                        ctx.module_id,
+                        expr_syntax.stable_ptr().untyped(),
+                    ),
+                    kind: SemanticDiagnosticKind::WrongReturnType {
+                        expected_ty: ctx.return_ty,
+                        actual_ty: expr.ty(),
+                    },
+                })
+            }
+            semantic::Statement::Return(db.intern_expr(expr))
+        }
         ast::Statement::StatementMissing(_) => todo!(),
     };
     db.intern_statement(statement)

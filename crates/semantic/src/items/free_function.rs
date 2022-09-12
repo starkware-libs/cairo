@@ -33,6 +33,7 @@ pub fn priv_free_function_semantic(
         diagnostics,
         db,
         module_id,
+        generic_function_signature_data.signature.return_type,
         generic_function_signature_data.variables,
     );
     let expr = compute_expr_semantic(&mut ctx, ast::Expr::Block(syntax.body(db.as_syntax_group())));

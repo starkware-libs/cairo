@@ -227,6 +227,11 @@ define_language_element_id_as_enum! {
         // TODO(spapini): enums, associated types in impls.
     }
 }
+impl GenericTypeId {
+    pub fn format(&self, db: &(dyn DefsGroup + 'static)) -> String {
+        format!("{}::{}", self.module(db).full_path(db), self.name(db))
+    }
+}
 
 // Downcasts from ModuleItemId.
 impl GenericFunctionId {

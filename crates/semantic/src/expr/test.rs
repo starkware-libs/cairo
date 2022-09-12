@@ -73,23 +73,23 @@ fn test_expr_operator_failures() {
     .get_diagnostics();
     assert_eq!(
         diagnostics,
-        indoc! {"
-        error: Unexpected argument type.
+        indoc! {r#"
+        error: Unexpected argument type. Expected: "core::felt", found: "test_crate::MyType".
          --> lib.cairo:3:9
             a + a * a
                 ^
 
-        error: Unexpected argument type.
+        error: Unexpected argument type. Expected: "core::felt", found: "test_crate::MyType".
          --> lib.cairo:3:13
             a + a * a
                     ^
 
-        error: Unexpected argument type.
+        error: Unexpected argument type. Expected: "core::felt", found: "test_crate::MyType".
          --> lib.cairo:3:5
             a + a * a
             ^
 
-        "}
+        "#}
     );
 }
 
