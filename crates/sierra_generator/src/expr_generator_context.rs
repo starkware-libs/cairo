@@ -1,18 +1,22 @@
 use std::collections::hash_map;
 
-use defs::ids::{FreeFunctionId, LanguageElementId};
+use defs::diagnostic_utils::StableLocation;
+use defs::ids::{FreeFunctionId, LanguageElementId, ModuleId};
 use diagnostics::Diagnostics;
 use smol_str::SmolStr;
+use syntax::node::ids::SyntaxStablePtrId;
 use utils::unordered_hash_map::UnorderedHashMap;
 
 use crate::db::SierraGenGroup;
+use crate::diagnostic::SierraGeneratorDiagnosticKind;
 use crate::id_allocator::IdAllocator;
-use crate::{pre_sierra, Diagnostic};
+use crate::{pre_sierra, Diagnostic, SierraGeneratorDiagnostic};
 
 /// Context for the methods that generate Sierra instructions for an expression.
 pub struct ExprGeneratorContext<'a> {
     db: &'a dyn SierraGenGroup,
     function_id: FreeFunctionId,
+    module_id: ModuleId,
     diagnostics: &'a mut Diagnostics<Diagnostic>,
     var_id_allocator: IdAllocator,
     label_id_allocator: IdAllocator,
@@ -28,6 +32,7 @@ impl<'a> ExprGeneratorContext<'a> {
         ExprGeneratorContext {
             db,
             function_id,
+            module_id: function_id.module(db.as_defs_group()),
             diagnostics,
             var_id_allocator: IdAllocator::default(),
             label_id_allocator: IdAllocator::default(),
@@ -159,5 +164,17 @@ impl<'a> ExprGeneratorContext<'a> {
     /// Returns the [Diagnostics] object of the context.
     pub fn get_diagnostics(&mut self) -> &mut Diagnostics<Diagnostic> {
         &mut self.diagnostics
+    }
+
+    /// Add a SierraGenerator diagnostic to the list of diagnostics.
+    pub fn add_diagnostic(
+        &mut self,
+        kind: SierraGeneratorDiagnosticKind,
+        stable_ptr: SyntaxStablePtrId,
+    ) {
+        self.diagnostics.add(SierraGeneratorDiagnostic {
+            stable_location: StableLocation::new(self.module_id, stable_ptr),
+            kind,
+        });
     }
 }
