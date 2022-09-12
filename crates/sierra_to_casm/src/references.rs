@@ -11,8 +11,6 @@ use thiserror::Error;
 
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum ReferencesError {
-    #[error(transparent)]
-    ApChangeError(#[from] ApChangeError),
     #[error("Invalid function declaration.")]
     InvalidFunctionDeclaration(Function),
     #[error("DanglingReferences")]

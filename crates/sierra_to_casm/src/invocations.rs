@@ -205,6 +205,7 @@ fn handle_function_call(
             .ok_or_else(|| InvocationError::UnknownTypeId(output_type.clone()))?;
     }
 
+    // TODO(ilya, 10/10/2022): Support functions with known ap change.
     Ok(CompiledInvocation::new(
         vec![Instruction {
             body: InstructionBody::Call(CallInstruction {
@@ -217,7 +218,7 @@ fn handle_function_call(
             instruction_idx: 0,
             relocation: Relocation::RelativeStatementId(func_call.function.entry),
         }],
-        [ApChange::Known(0)].into_iter(),
+        [ApChange::Unknown].into_iter(),
         [refs.into_iter()].into_iter(),
         func_call.output_types(),
         environment,
