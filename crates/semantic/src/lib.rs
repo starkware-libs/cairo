@@ -8,9 +8,12 @@ pub mod diagnostic;
 pub mod expr;
 pub mod ids;
 pub mod items;
+pub mod types;
+
 mod resolve_item;
 mod semantic;
-pub mod types;
+#[cfg(test)]
+mod test;
 
 pub use diagnostic::SemanticDiagnostic;
 pub use ids::*;
