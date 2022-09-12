@@ -22,7 +22,8 @@ use sierra::ids::ConcreteTypeId;
 use sierra::program::{BranchInfo, BranchTarget, Invocation};
 use thiserror::Error;
 
-use crate::environment::Environment;
+use crate::environment::frame_state::FrameStateError;
+use crate::environment::{frame_state, Environment};
 use crate::references::{BinOpExpression, ReferenceExpression, ReferenceValue};
 use crate::relocations::{Relocation, RelocationEntry};
 use crate::type_sizes::TypeSizeMap;
@@ -37,6 +38,8 @@ pub enum InvocationError {
     WrongNumberOfArguments,
     #[error("The requested functionality is not implemented yet.")]
     NotImplemented(Invocation),
+    #[error(transparent)]
+    FrameStateError(#[from] FrameStateError),
 }
 
 /// Describes the changes to the set of references at the branch target.
@@ -346,6 +349,18 @@ fn handle_jump(
     ))
 }
 
+fn handle_alloc_locals(
+    libfunc: &SignatureOnlyConcreteLibFunc,
+    environment: Environment,
+) -> Result<CompiledInvocation, InvocationError> {
+    Ok(CompiledInvocation::only_reference_changes(
+        [].into_iter(),
+        libfunc.output_types(),
+        // TODO(ilya, 10/10/2022): Support max > used.
+        Environment { frame_state: frame_state::handle_alloc_locals(environment.frame_state)? },
+    ))
+}
+
 pub fn compile_invocation(
     invocation: &Invocation,
     libfunc: &CoreConcreteLibFunc,
@@ -389,6 +404,9 @@ pub fn compile_invocation(
                 libfunc.output_types(),
                 environment,
             ))
+        }
+        CoreConcreteLibFunc::Mem(MemConcreteLibFunc::AllocLocals(libfunc)) => {
+            handle_alloc_locals(libfunc, environment)
         }
         CoreConcreteLibFunc::FunctionCall(func_call) => {
             handle_function_call(type_sizes, func_call, refs, environment)
