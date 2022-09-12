@@ -20,7 +20,9 @@ fn test_program_generator() {
                     felt_add(a, a)
                 }
             "},
-    );
+    )
+    .unwrap()
+    .module_id;
 
     let program = &*db.get_program_code(module_id).expect("").unwrap();
     assert_eq!(

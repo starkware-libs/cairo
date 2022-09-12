@@ -27,7 +27,7 @@ fn generate_expr_code_for_test(
 fn test_expr_generator() {
     let mut db = SierraGenDatabaseForTesting::default();
 
-    let (_module_id, expr) = setup_test_block(
+    let expr_id = setup_test_block(
         &mut db,
         indoc! {"
             let x = 7;
@@ -43,9 +43,11 @@ fn test_expr_generator() {
             }
         "},
         "",
-    );
+    )
+    .unwrap()
+    .expr_id;
 
-    let (statements, res) = generate_expr_code_for_test(&db, expr);
+    let (statements, res) = generate_expr_code_for_test(&db, expr_id);
     assert_eq!(
         statements.iter().map(|x| replace_libfunc_ids(&db, x).to_string()).collect::<Vec<String>>(),
         vec![
@@ -78,7 +80,7 @@ fn test_expr_generator() {
 fn test_match() {
     let mut db = SierraGenDatabaseForTesting::default();
 
-    let (_module_id, expr) = setup_test_block(
+    let expr_id = setup_test_block(
         &mut db,
         indoc! {"
             let x = 7;
@@ -89,9 +91,11 @@ fn test_match() {
         "},
         "",
         "",
-    );
+    )
+    .unwrap()
+    .expr_id;
 
-    let (statements, res) = generate_expr_code_for_test(&db, expr);
+    let (statements, res) = generate_expr_code_for_test(&db, expr_id);
     assert_eq!(
         statements.iter().map(|x| replace_libfunc_ids(&db, x).to_string()).collect::<Vec<String>>(),
         vec![
@@ -119,14 +123,16 @@ fn test_match() {
 fn test_call_libfunc() {
     let mut db = SierraGenDatabaseForTesting::default();
 
-    let (_module_id, expr) = setup_test_expr(
+    let expr_id = setup_test_expr(
         &mut db,
         "felt_add(3,6)",
         "extern func felt_add(a: felt, b: felt) -> felt;",
         "",
-    );
+    )
+    .unwrap()
+    .expr_id;
 
-    let (statements, res) = generate_expr_code_for_test(&db, expr);
+    let (statements, res) = generate_expr_code_for_test(&db, expr_id);
     assert_eq!(
         statements.iter().map(|x| replace_libfunc_ids(&db, x).to_string()).collect::<Vec<String>>(),
         vec![
