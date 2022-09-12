@@ -60,12 +60,13 @@ impl DiagnosticEntry for SierraGeneratorDiagnostic {
     fn format(&self, _db: &Self::DbType) -> String {
         match self.kind {
             SierraGeneratorDiagnosticKind::NonZeroValueInMatch => {
-                "Match with a non-zero value is not supported.".into()
+                "Match with a non-zero value is not supported."
             }
             SierraGeneratorDiagnosticKind::CallLibFuncWithGenericArgs => {
-                "Calling a libfunc with generic arguments is not supported yet.".into()
+                "Calling a libfunc with generic arguments is not supported yet."
             }
         }
+        .into()
     }
 
     fn location(&self, db: &Self::DbType) -> DiagnosticLocation {

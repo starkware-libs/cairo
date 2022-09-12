@@ -172,7 +172,6 @@ impl<'a> ExprGeneratorContext<'a> {
         kind: SierraGeneratorDiagnosticKind,
         stable_ptr: SyntaxStablePtrId,
     ) {
-        // stable_location: StableLocation,
         self.diagnostics.add(SierraGeneratorDiagnostic {
             stable_location: StableLocation::new(self.module_id, stable_ptr),
             kind,
