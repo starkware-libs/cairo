@@ -104,7 +104,7 @@ fn fib_program() {
 
                 test_program@0() -> (felt);
             "},
-            "Missing reference error";
+            "[2] is not defined at #0.";
             "Missing reference")]
 #[test_case(indoc! {"
                 type felt = felt;
@@ -116,7 +116,7 @@ fn fib_program() {
 
                 test_program@0([1]: felt) -> ();
             "},
-            "Overridden reference error";
+            "[1] is overridden when moving from #1 to #2.";
             "Reference override")]
 #[test_case(indoc! {"
                 return([2]);
