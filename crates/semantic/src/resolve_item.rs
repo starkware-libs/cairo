@@ -1,5 +1,5 @@
 use defs::ids::{ModuleId, ModuleItemId};
-use syntax::node::ast;
+use syntax::node::{ast, Terminal};
 
 use crate::corelib::core_module;
 use crate::db::SemanticGroup;

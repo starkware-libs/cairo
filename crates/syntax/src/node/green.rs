@@ -1,24 +1,30 @@
+use smol_str::SmolStr;
+
 use super::ids::GreenId;
 use super::kind::SyntaxKind;
-use crate::token;
 
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub enum GreenNodeDetails {
+    Token(SmolStr),
+    Node { children: Vec<GreenId>, width: u32 },
+}
 /// Green node. Underlying untyped representation of the syntax tree.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub struct GreenNodeInternal {
+pub struct GreenNode {
     pub kind: SyntaxKind,
-    pub children: Vec<GreenId>,
-    pub width: u32,
-}
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub enum GreenNode {
-    Internal(GreenNodeInternal),
-    Token(token::Token),
+    pub details: GreenNodeDetails,
 }
 impl GreenNode {
     pub fn width(&self) -> u32 {
-        match self {
-            GreenNode::Internal(internal) => internal.width,
-            GreenNode::Token(token) => token.width(),
+        match &self.details {
+            GreenNodeDetails::Token(text) => text.len() as u32,
+            GreenNodeDetails::Node { width, .. } => *width,
+        }
+    }
+    pub fn children(self) -> Vec<GreenId> {
+        match self.details {
+            GreenNodeDetails::Token(_text) => Vec::new(),
+            GreenNodeDetails::Node { children, .. } => children,
         }
     }
 }

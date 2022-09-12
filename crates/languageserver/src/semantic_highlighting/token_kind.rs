@@ -1,5 +1,5 @@
 use lsp::SemanticTokenType;
-use syntax::token::TokenKind;
+use syntax::node::kind::SyntaxKind;
 
 #[allow(dead_code)]
 pub enum SemanticTokenKind {
@@ -21,36 +21,36 @@ pub enum SemanticTokenKind {
     Number,
 }
 impl SemanticTokenKind {
-    pub fn from_token_kind(kind: TokenKind) -> Option<Self> {
+    pub fn from_syntax_kind(kind: SyntaxKind) -> Option<Self> {
         Some(match kind {
-            TokenKind::Identifier => SemanticTokenKind::Variable,
-            TokenKind::LiteralNumber => SemanticTokenKind::Number,
-            TokenKind::False
-            | TokenKind::True
-            | TokenKind::Extern
-            | TokenKind::Type
-            | TokenKind::Function
-            | TokenKind::Module
-            | TokenKind::Struct
-            | TokenKind::Let
-            | TokenKind::Return
-            | TokenKind::Match
-            | TokenKind::Use => SemanticTokenKind::Keyword,
-            TokenKind::And
-            | TokenKind::AndAnd
-            | TokenKind::OrOr
-            | TokenKind::EqEq
-            | TokenKind::Neq
-            | TokenKind::GE
-            | TokenKind::GT
-            | TokenKind::LE
-            | TokenKind::LT
-            | TokenKind::Not
-            | TokenKind::Plus
-            | TokenKind::Minus
-            | TokenKind::Mul
-            | TokenKind::Div => SemanticTokenKind::Operator,
-            TokenKind::SingleLineComment => SemanticTokenKind::Comment,
+            SyntaxKind::TokenIdentifier => SemanticTokenKind::Variable,
+            SyntaxKind::TokenLiteralNumber => SemanticTokenKind::Number,
+            SyntaxKind::TokenFalse
+            | SyntaxKind::TokenTrue
+            | SyntaxKind::TokenExtern
+            | SyntaxKind::TokenType
+            | SyntaxKind::TokenFunction
+            | SyntaxKind::TokenModule
+            | SyntaxKind::TokenStruct
+            | SyntaxKind::TokenLet
+            | SyntaxKind::TokenReturn
+            | SyntaxKind::TokenMatch
+            | SyntaxKind::TokenUse => SemanticTokenKind::Keyword,
+            SyntaxKind::TokenAnd
+            | SyntaxKind::TokenAndAnd
+            | SyntaxKind::TokenOrOr
+            | SyntaxKind::TokenEqEq
+            | SyntaxKind::TokenNeq
+            | SyntaxKind::TokenGE
+            | SyntaxKind::TokenGT
+            | SyntaxKind::TokenLE
+            | SyntaxKind::TokenLT
+            | SyntaxKind::TokenNot
+            | SyntaxKind::TokenPlus
+            | SyntaxKind::TokenMinus
+            | SyntaxKind::TokenMul
+            | SyntaxKind::TokenDiv => SemanticTokenKind::Operator,
+            SyntaxKind::TokenSingleLineComment => SemanticTokenKind::Comment,
             _ => return None,
         })
     }

@@ -3,7 +3,6 @@ use syntax::node::ast::{self};
 use syntax::node::db::SyntaxGroup;
 use syntax::node::kind::SyntaxKind;
 use syntax::node::{SyntaxNode, TypedSyntaxNode};
-use syntax::token::TokenKind;
 use tower_lsp::lsp_types::*;
 use utils::unordered_hash_map::UnorderedHashMap;
 
@@ -30,10 +29,35 @@ impl SemanticTokensTraverser {
         data: &mut Vec<SemanticToken>,
         node: SyntaxNode,
     ) {
-        let children = node.children(db);
-        match &node.details(db) {
-            syntax::node::SyntaxNodeDetails::Syntax(kind) => {
-                match kind {
+        let green_node = node.green_node(db);
+        match green_node.details {
+            syntax::node::green::GreenNodeDetails::Token(text) => {
+                if green_node.kind == SyntaxKind::TokenNewline {
+                    self.encoder.next_line();
+                    return;
+                }
+
+                let width = text.len() as u32;
+                let maybe_semantic_kind = self
+                    .offset_to_kind_lookahead
+                    .remove(&(node.offset().0 as u32))
+                    .or_else(|| SemanticTokenKind::from_syntax_kind(green_node.kind));
+                if let Some(semantic_kind) = maybe_semantic_kind {
+                    let EncodedToken { delta_line, delta_start } = self.encoder.encode(width);
+                    data.push(SemanticToken {
+                        delta_line,
+                        delta_start,
+                        length: width,
+                        token_type: semantic_kind.as_u32(),
+                        token_modifiers_bitset: 0,
+                    });
+                } else {
+                    self.encoder.skip(width);
+                }
+            }
+            syntax::node::green::GreenNodeDetails::Node { .. } => {
+                let children = node.children(db);
+                match green_node.kind {
                     SyntaxKind::Param => {
                         self.mark_future_token(
                             ast::Param::from_syntax_node(db, node)
@@ -70,30 +94,6 @@ impl SemanticTokensTraverser {
                 }
                 for child in children {
                     self.find_semantic_tokens(db, data, child);
-                }
-            }
-            syntax::node::SyntaxNodeDetails::Token(token) => {
-                if token.kind == TokenKind::Newline {
-                    self.encoder.next_line();
-                    return;
-                }
-
-                let width = token.width();
-                let maybe_semantic_kind = self
-                    .offset_to_kind_lookahead
-                    .remove(&(node.offset().0 as u32))
-                    .or_else(|| SemanticTokenKind::from_token_kind(token.kind));
-                if let Some(semantic_kind) = maybe_semantic_kind {
-                    let EncodedToken { delta_line, delta_start } = self.encoder.encode(width);
-                    data.push(SemanticToken {
-                        delta_line,
-                        delta_start,
-                        length: width,
-                        token_type: semantic_kind.as_u32(),
-                        token_modifiers_bitset: 0,
-                    });
-                } else {
-                    self.encoder.skip(width);
                 }
             }
         }

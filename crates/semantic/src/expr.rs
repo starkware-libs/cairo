@@ -9,8 +9,7 @@ use defs::ids::{GenericFunctionId, GenericTypeId, LocalVarLongId, ModuleId, VarI
 use diagnostics::Diagnostics;
 use smol_str::SmolStr;
 use syntax::node::db::SyntaxGroup;
-use syntax::node::helpers::TerminalEx;
-use syntax::node::{ast, TypedSyntaxNode};
+use syntax::node::{ast, Terminal, TypedSyntaxNode};
 
 use crate::corelib::{core_binary_operator, unit_ty};
 use crate::db::SemanticGroup;
@@ -93,11 +92,11 @@ fn get_tail_expression(
 
 fn literal_to_semantic(
     ctx: &mut ComputationContext<'_>,
-    literal_syntax: ast::ExprLiteral,
+    literal_syntax: ast::TerminalLiteralNumber,
 ) -> semantic::ExprLiteral {
     let db = ctx.db;
     let syntax_db = db.as_syntax_group();
-    let text = literal_syntax.terminal(syntax_db).text(syntax_db);
+    let text = literal_syntax.text(syntax_db);
     // TODO(spapini): Diagnostics.
     let value = text.parse::<usize>().unwrap();
     let ty = db.core_felt_ty();
@@ -122,30 +121,28 @@ pub fn compute_expr_semantic(
         ast::Expr::Literal(literal_syntax) => {
             semantic::Expr::ExprLiteral(literal_to_semantic(ctx, literal_syntax))
         }
+        ast::Expr::False(_) => todo!(),
+        ast::Expr::True(_) => todo!(),
         ast::Expr::Parenthesized(_) => todo!(),
         ast::Expr::Unary(_) => todo!(),
         ast::Expr::Binary(binary_op_syntax) => {
             let stable_ptr = binary_op_syntax.stable_ptr().untyped();
-            let operator_kind = binary_op_syntax.op(syntax_db).kind(syntax_db);
+            let binary_op = binary_op_syntax.op(syntax_db);
             let lexpr = compute_expr_semantic(ctx, binary_op_syntax.lhs(syntax_db));
             let rexpr = compute_expr_semantic(ctx, binary_op_syntax.rhs(syntax_db));
-            let function =
-                match core_binary_operator(db, operator_kind).and_then(|generic_function| {
-                    // TODO(lior): Can we avoid the clone() below?
-                    specialize_function(ctx, generic_function, &[lexpr.clone(), rexpr.clone()])
-                }) {
-                    Some(generic_function) => generic_function,
-                    None => {
-                        ctx.diagnostics.add(SemanticDiagnostic {
-                            stable_location: StableLocation::from_ast(
-                                ctx.module_id,
-                                &binary_op_syntax,
-                            ),
-                            kind: SemanticDiagnosticKind::UnknownBinaryOperator,
-                        });
-                        return semantic::Expr::Missing { ty: TypeId::missing(db), stable_ptr };
-                    }
-                };
+            let function = match core_binary_operator(db, binary_op).and_then(|generic_function| {
+                // TODO(lior): Can we avoid the clone() below?
+                specialize_function(ctx, generic_function, &[lexpr.clone(), rexpr.clone()])
+            }) {
+                Some(generic_function) => generic_function,
+                None => {
+                    ctx.diagnostics.add(SemanticDiagnostic {
+                        stable_location: StableLocation::from_ast(ctx.module_id, &binary_op_syntax),
+                        kind: SemanticDiagnosticKind::UnknownBinaryOperator,
+                    });
+                    return semantic::Expr::Missing { ty: TypeId::missing(db), stable_ptr };
+                }
+            };
             semantic::Expr::ExprFunctionCall(semantic::ExprFunctionCall {
                 function,
                 args: vec![db.intern_expr(lexpr), db.intern_expr(rexpr)],

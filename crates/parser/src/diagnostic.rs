@@ -2,7 +2,7 @@ use diagnostics::DiagnosticEntry;
 use filesystem::db::FilesGroup;
 use filesystem::ids::FileId;
 use filesystem::span::TextSpan;
-use syntax::token::TokenKind;
+use syntax::node::kind::SyntaxKind;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ParserDiagnostic {
@@ -13,7 +13,7 @@ pub struct ParserDiagnostic {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum ParserDiagnosticKind {
     SkippedTokens,
-    MissingToken(TokenKind),
+    MissingToken(SyntaxKind),
     MissingExpression,
     MissingPathSegment,
 }

@@ -8,7 +8,7 @@ use diagnostics::{Diagnostics, WithDiagnostics};
 use diagnostics_proc_macros::with_diagnostics;
 use filesystem::db::AsFilesGroup;
 use parser::db::ParserGroup;
-use syntax::node::{ast, TypedSyntaxNode};
+use syntax::node::{ast, Terminal, TypedSyntaxNode};
 
 use crate::corelib::unit_ty;
 use crate::expr::{compute_expr_semantic, resolve_type, ComputationContext, EnvVariables};

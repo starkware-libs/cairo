@@ -35,8 +35,8 @@ fn read_file(filename: &str) -> String {
     "test_data/expected_results/test1_tree_with_trivia", false, false, true;
     "test1_tree_with_trivia")]
 #[test_case(
-    "test_data/cairo_files/test2.cairo", "test_data/expected_results/test2_tree_no_trivia", true, false,
-    false; "test2_tree_no_trivia")]
+    "test_data/cairo_files/test2.cairo", "test_data/expected_results/test2_tree_no_trivia", true,
+false,     false; "test2_tree_no_trivia")]
 #[test_case(
     "test_data/cairo_files/test2.cairo",
     "test_data/expected_results/test2_tree_with_trivia", false, false, true;
@@ -127,6 +127,7 @@ fn get_syntax_root_and_diagnostics(
 
 fn compare_printed_and_expected(printed: String, expected: String) {
     // assert_eq prints a long confusing error on failure, so it's not used here.
+    _debug_failure(printed.clone(), expected.clone());
     assert_eq!(
         printed, expected,
         "assertion failed: printed != expected. To debug this, use _debug_failure(). If `printed` \
