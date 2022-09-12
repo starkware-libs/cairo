@@ -28,7 +28,7 @@ pub enum AnnotationError {
     MissingAnnotationsForStatement(StatementIdx),
     #[error("Missing reference error")]
     MissingReferenceError { statement_idx: StatementIdx, error: EditStateError },
-    #[error("Missing reference error")]
+    #[error("Overridden reference error")]
     OverrideReferenceError {
         source_statement_idx: StatementIdx,
         destination_statement_idx: StatementIdx,
