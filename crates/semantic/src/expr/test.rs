@@ -100,7 +100,7 @@ fn test_function_with_param() {
     let test_function =
         setup_test_function(&mut db_val, "func foo(a: felt) {}", "foo", "").unwrap();
     let _db = &db_val;
-    let signature = test_function.function.signature;
+    let signature = test_function.signature;
 
     // TODO(spapini): Verify params names and tests after StablePtr feature is added.
     assert_eq!(signature.params.len(), 1);
@@ -115,7 +115,7 @@ fn test_tuple_type() {
     let test_function =
         setup_test_function(&mut db_val, "func foo(a: (felt, (), (felt,))) {}", "foo", "").unwrap();
     let db = &db_val;
-    let signature = test_function.function.signature;
+    let signature = test_function.signature;
 
     assert_eq!(signature.params.len(), 1);
     let param = &signature.params[0];
@@ -134,7 +134,7 @@ fn test_function_with_return_type() {
     let test_function =
         setup_test_function(&mut db_val, "func foo() -> felt {}", "foo", "").unwrap();
     let _db = &db_val;
-    let signature = test_function.function.signature;
+    let signature = test_function.signature;
 
     // TODO(spapini): Verify params names and tests after StablePtr feature is added.
     let _ret_ty = signature.return_type;
@@ -157,13 +157,11 @@ fn test_let_statement() {
     .unwrap();
     let db = &db_val;
 
-    let _signature = test_function.function.signature;
+    let _signature = test_function.signature;
 
     // TODO(spapini): Verify params names and tests after StablePtr feature is added.
-    let semantic::ExprBlock { statements, tail, ty: _, stable_ptr: _ } = extract_matches!(
-        db.lookup_intern_expr(test_function.function.body),
-        crate::Expr::ExprBlock
-    );
+    let semantic::ExprBlock { statements, tail, ty: _, stable_ptr: _ } =
+        extract_matches!(db.lookup_intern_expr(test_function.body), crate::Expr::ExprBlock);
     assert!(tail.is_none());
 
     // Verify the statements
@@ -195,10 +193,8 @@ fn test_expr_var() {
     .unwrap();
     let db = &db_val;
 
-    let semantic::ExprBlock { statements: _, tail, ty: _, stable_ptr: _ } = extract_matches!(
-        db.lookup_intern_expr(test_function.function.body),
-        crate::Expr::ExprBlock
-    );
+    let semantic::ExprBlock { statements: _, tail, ty: _, stable_ptr: _ } =
+        extract_matches!(db.lookup_intern_expr(test_function.body), crate::Expr::ExprBlock);
 
     // Check expr.
     let semantic::ExprVar { var: _, ty: _, stable_ptr: _ } = extract_matches!(
@@ -227,10 +223,8 @@ fn test_expr_match() {
     )
     .unwrap();
     let db = &db_val;
-    let semantic::ExprBlock { statements: _, tail, ty: _, stable_ptr: _ } = extract_matches!(
-        db.lookup_intern_expr(test_function.function.body),
-        crate::Expr::ExprBlock
-    );
+    let semantic::ExprBlock { statements: _, tail, ty: _, stable_ptr: _ } =
+        extract_matches!(db.lookup_intern_expr(test_function.body), crate::Expr::ExprBlock);
     let expr = extract_matches!(
         db.lookup_intern_expr(tail.unwrap()),
         crate::Expr::ExprMatch,
@@ -355,14 +349,11 @@ fn test_function_body() {
     let item_id = db.module_item_by_name(module_id, "foo".into()).unwrap();
 
     let function_id = extract_matches!(item_id, ModuleItemId::FreeFunction);
-    let function = db.free_function_semantic(function_id).unwrap();
+    let body = db.free_function_body(function_id).unwrap();
 
     // Test the resulting semantic function body.
-    let semantic::ExprBlock { statements, .. } = extract_matches!(
-        db.lookup_intern_expr(function.body),
-        crate::Expr::ExprBlock,
-        "Expected a block."
-    );
+    let semantic::ExprBlock { statements, .. } =
+        extract_matches!(db.lookup_intern_expr(body), crate::Expr::ExprBlock, "Expected a block.");
     assert_eq!(statements.len(), 1);
     let expr = db.lookup_intern_expr(extract_matches!(
         db.lookup_intern_statement(statements[0]),

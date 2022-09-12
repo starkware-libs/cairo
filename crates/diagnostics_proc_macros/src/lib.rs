@@ -71,7 +71,7 @@ pub fn with_diagnostics(_attr: TokenStream, item: TokenStream) -> TokenStream {
     // Emit a wrapper function.
     quote! {
         #(#attrs)* #vis fn #function_ident(#args_syntax) -> WithDiagnostics<#ret_ty, #entry_ty> {
-            let mut diagnostics = Diagnostics::new();
+            let mut diagnostics = Diagnostics::default();
 
             let mut f = |diagnostics: &mut Diagnostics<#entry_ty>| -> #ret_ty {
                 #block
