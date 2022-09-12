@@ -17,7 +17,8 @@ fn setup(cairo_file: &str) -> (SierraGenDatabaseForTesting, ModuleId) {
 
     let mut db_val = SierraGenDatabaseForTesting::default();
     let db = &mut db_val;
-    let module_id = setup_test_module(db, &std::fs::read_to_string(path).unwrap());
+    let module_id =
+        setup_test_module(db, &std::fs::read_to_string(path).unwrap()).unwrap().module_id;
     (db_val, module_id)
 }
 

@@ -18,7 +18,9 @@ fn test_function_generator() {
                     5
                 }
             "},
-    );
+    )
+    .unwrap()
+    .module_id;
     let foo = extract_matches!(
         db.module_items(module_id).unwrap().items["foo"],
         ModuleItemId::FreeFunction,

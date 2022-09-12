@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use defs::db::{AsDefsGroup, DefsDatabase, DefsGroup};
-use defs::ids::{GenericFunctionId, ModuleId};
+use defs::ids::{FreeFunctionId, GenericFunctionId, ModuleId};
 use filesystem::db::{init_files_group, AsFilesGroup, FilesDatabase, FilesGroup, FilesGroupEx};
 use filesystem::ids::{CrateLongId, Directory};
 use parser::db::ParserDatabase;
@@ -43,11 +43,38 @@ impl AsDefsGroup for SemanticDatabaseForTesting {
     }
 }
 
+pub struct WithStringDiagnostics<T> {
+    value: T,
+    diagnostics: String,
+}
+impl<T> WithStringDiagnostics<T> {
+    /// Verifies that there are no diagnostics (fails otherwise), and returns the inner value.
+    pub fn unwrap(self) -> T {
+        assert_eq!(self.diagnostics, "");
+        self.value
+    }
+
+    /// Returns the inner value and the diagnostics (as a string).
+    pub fn split(self) -> (T, String) {
+        (self.value, self.diagnostics)
+    }
+
+    /// Returns the diagnostics (as a string).
+    pub fn get_diagnostics(self) -> String {
+        self.diagnostics
+    }
+}
+
+/// Helper struct for the return value of [setup_test_module].
+pub struct TestModule {
+    pub module_id: ModuleId,
+}
+
 /// Sets up a module with given content, and returns its module id.
-pub fn setup_test_module_with_diagnostics(
+pub fn setup_test_module(
     db: &mut (dyn SemanticGroup + 'static),
     content: &str,
-) -> (ModuleId, String) {
+) -> WithStringDiagnostics<TestModule> {
     let crate_id = db.intern_crate(CrateLongId("test_crate".into()));
     let directory = Directory("src".into());
     db.set_crate_root(crate_id, Some(directory));
@@ -58,65 +85,73 @@ pub fn setup_test_module_with_diagnostics(
     let syntax_diagnostics = db.file_syntax_diagnostics(file_id).format(db.as_files_group());
     let semantic_diagnostics = db.module_semantic_diagnostics(module_id).unwrap().format(db);
 
-    (module_id, format!("{syntax_diagnostics}{semantic_diagnostics}"))
+    WithStringDiagnostics {
+        value: TestModule { module_id },
+        diagnostics: format!("{syntax_diagnostics}{semantic_diagnostics}"),
+    }
 }
 
-/// Sets up a module with given content, and returns its module id.
-pub fn setup_test_module(db: &mut (dyn SemanticGroup + 'static), content: &str) -> ModuleId {
-    let (module_id, diagnostics) = setup_test_module_with_diagnostics(db, content);
-    assert_eq!(diagnostics, "");
-    module_id
+/// Helper struct for the return value of [setup_test_function].
+pub struct TestFunction {
+    pub module_id: ModuleId,
+    pub function_id: FreeFunctionId,
+    pub function: semantic::FreeFunction,
 }
 
 /// Returns the semantic model of a given function.
 /// function_name - name of the function.
 /// module_code - extra setup code in the module context.
-pub fn setup_test_function_with_diagnostics(
-    db: &mut (dyn SemanticGroup + 'static),
-    function_code: &str,
-    function_name: &str,
-    module_code: &str,
-) -> (ModuleId, semantic::FreeFunction, String) {
-    let content = if module_code.is_empty() {
-        function_code.to_string()
-    } else {
-        format!("{module_code}\n{function_code}")
-    };
-    let (module_id, diagnostics) = setup_test_module_with_diagnostics(db, &content);
-    let generic_function_id = db
-        .module_item_by_name(module_id, function_name.into())
-        .and_then(GenericFunctionId::from)
-        .unwrap();
-    let function_id = extract_matches!(generic_function_id, GenericFunctionId::Free);
-    (module_id, db.free_function_semantic(function_id).unwrap(), diagnostics)
-}
-
 pub fn setup_test_function(
     db: &mut (dyn SemanticGroup + 'static),
     function_code: &str,
     function_name: &str,
     module_code: &str,
-) -> (ModuleId, semantic::FreeFunction) {
-    let (module_id, function_semantic, diagnostics) =
-        setup_test_function_with_diagnostics(db, function_code, function_name, module_code);
-    assert_eq!(diagnostics, "");
-    (module_id, function_semantic)
+) -> WithStringDiagnostics<TestFunction> {
+    let content = if module_code.is_empty() {
+        function_code.to_string()
+    } else {
+        format!("{module_code}\n{function_code}")
+    };
+    let (test_module, diagnostics) = setup_test_module(db, &content).split();
+    let generic_function_id = db
+        .module_item_by_name(test_module.module_id, function_name.into())
+        .and_then(GenericFunctionId::from)
+        .unwrap();
+    let function_id = extract_matches!(generic_function_id, GenericFunctionId::Free);
+    WithStringDiagnostics {
+        value: TestFunction {
+            module_id: test_module.module_id,
+            function_id,
+            function: db.free_function_semantic(function_id).unwrap(),
+        },
+        diagnostics,
+    }
+}
+
+/// Helper struct for the return value of [setup_test_expr] and [setup_test_block].
+pub struct TestExpr {
+    pub module_id: ModuleId,
+    pub function_id: FreeFunctionId,
+    pub function: semantic::FreeFunction,
+    pub expr_id: ExprId,
 }
 
 /// Returns the semantic model of a given expression.
 /// module_code - extra setup code in the module context.
 /// function_body - extra setup code in the function context.
-pub fn setup_test_expr_with_diagnostics(
+pub fn setup_test_expr(
     db: &mut (dyn SemanticGroup + 'static),
     expr_code: &str,
     module_code: &str,
     function_body: &str,
-) -> (ModuleId, ExprId, String) {
+) -> WithStringDiagnostics<TestExpr> {
     let function_code = format!("func test_func() {{ {function_body} {{\n{expr_code}\n}} }}");
-    let (module_id, function_semantic, diagnostics) =
-        setup_test_function_with_diagnostics(db, &function_code, "test_func", module_code);
-    let ExprBlock { tail: function_body_tail, .. } =
-        extract_matches!(db.lookup_intern_expr(function_semantic.body), semantic::Expr::ExprBlock);
+    let (test_function, diagnostics) =
+        setup_test_function(db, &function_code, "test_func", module_code).split();
+    let ExprBlock { tail: function_body_tail, .. } = extract_matches!(
+        db.lookup_intern_expr(test_function.function.body),
+        semantic::Expr::ExprBlock
+    );
     let ExprBlock { statements, tail, .. } = extract_matches!(
         db.lookup_intern_expr(function_body_tail.unwrap()),
         semantic::Expr::ExprBlock
@@ -125,41 +160,25 @@ pub fn setup_test_expr_with_diagnostics(
         statements.is_empty(),
         "expr_code is not a valid expression. Consider using setup_test_block()."
     );
-    (module_id, tail.unwrap(), diagnostics)
-}
-
-pub fn setup_test_expr(
-    db: &mut (dyn SemanticGroup + 'static),
-    expr_code: &str,
-    module_code: &str,
-    function_body: &str,
-) -> (ModuleId, ExprId) {
-    let (module_id, expr_id, diagnostics) =
-        setup_test_expr_with_diagnostics(db, expr_code, module_code, function_body);
-    assert_eq!(diagnostics, "");
-    (module_id, expr_id)
+    WithStringDiagnostics {
+        value: TestExpr {
+            module_id: test_function.module_id,
+            function_id: test_function.function_id,
+            function: test_function.function,
+            expr_id: tail.unwrap(),
+        },
+        diagnostics,
+    }
 }
 
 /// Returns the semantic model of a given block expression.
 /// module_code - extra setup code in the module context.
 /// function_body - extra setup code in the function context.
-pub fn setup_test_block_with_diagnostics(
-    db: &mut (dyn SemanticGroup + 'static),
-    expr_code: &str,
-    module_code: &str,
-    function_body: &str,
-) -> (ModuleId, ExprId, String) {
-    setup_test_expr_with_diagnostics(db, &format!("{{ {expr_code} }}"), module_code, function_body)
-}
-
 pub fn setup_test_block(
     db: &mut (dyn SemanticGroup + 'static),
     expr_code: &str,
     module_code: &str,
     function_body: &str,
-) -> (ModuleId, ExprId) {
-    let (module_id, expr_id, diagnostics) =
-        setup_test_block_with_diagnostics(db, expr_code, module_code, function_body);
-    assert_eq!(diagnostics, "");
-    (module_id, expr_id)
+) -> WithStringDiagnostics<TestExpr> {
+    setup_test_expr(db, &format!("{{ {expr_code} }}"), module_code, function_body)
 }
