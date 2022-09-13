@@ -93,9 +93,6 @@ pub fn get_key_fields(kind: SyntaxKind, children: Vec<GreenId>) -> Vec<GreenId> 
         SyntaxKind::TypeClause => {
             vec![]
         }
-        SyntaxKind::NonOptionTypeClauseMissing => {
-            vec![]
-        }
         SyntaxKind::OptionTypeClauseEmpty => {
             vec![]
         }

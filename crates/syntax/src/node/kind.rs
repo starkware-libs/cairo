@@ -31,7 +31,6 @@ pub enum SyntaxKind {
     MatchArms,
     ExprMatch,
     TypeClause,
-    NonOptionTypeClauseMissing,
     OptionTypeClauseEmpty,
     ReturnTypeClause,
     OptionReturnTypeClauseEmpty,
