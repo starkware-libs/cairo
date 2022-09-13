@@ -103,8 +103,7 @@ pub fn function_signature_params(
     for ast_param in ast_params.iter() {
         let name = ast_param.name(syntax_db).text(syntax_db);
         let id = db.intern_param(ParamLongId(module_id, ast_param.stable_ptr()));
-        let type_clause = ast_param.type_clause(syntax_db);
-        let ty_syntax = type_clause.ty(syntax_db);
+        let ty_syntax = ast_param.type_clause(syntax_db).ty(syntax_db);
         // TODO(yuval): Diagnostic?
         let ty = resolve_type(diagnostics, db, module_id, ty_syntax);
         semantic_params.push(semantic::Parameter { id, ty });
