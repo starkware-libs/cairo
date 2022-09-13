@@ -12,25 +12,30 @@ fn test_function_with_return_type() {
     assert_eq!(
         diagnostics,
         indoc! {"
-            error: Skipped tokens.
+            error: Skipped tokens. Expected element: item or a closing EndOfFile.
              --> lib.cairo:1:1
             3 + 4 +;
             ^
 
-            error: Skipped tokens.
+            error: Skipped tokens. Expected element: item or a closing EndOfFile.
              --> lib.cairo:1:3
             3 + 4 +;
               ^
 
-            error: Skipped tokens.
+            error: Skipped tokens. Expected element: item or a closing EndOfFile.
              --> lib.cairo:1:5
             3 + 4 +;
                 ^
 
-            error: Skipped tokens.
+            error: Skipped tokens. Expected element: item or a closing EndOfFile.
              --> lib.cairo:1:7
             3 + 4 +;
                   ^
+            
+            error: Skipped tokens. Expected element: item or a closing EndOfFile.
+             --> lib.cairo:1:8
+            3 + 4 +;
+                   ^
 
             error: Unknown function.
              --> lib.cairo:3:5
