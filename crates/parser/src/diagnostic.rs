@@ -12,10 +12,12 @@ pub struct ParserDiagnostic {
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum ParserDiagnosticKind {
-    SkippedTokens,
+    SkippedElement { element_name: &'static str, closing: TokenKind },
     MissingToken(TokenKind),
     MissingExpression,
     MissingPathSegment,
+    MissingTypeClause,
+    MissingTypeExpression,
 }
 impl DiagnosticEntry for ParserDiagnostic {
     type DbType = dyn FilesGroup;
@@ -23,7 +25,11 @@ impl DiagnosticEntry for ParserDiagnostic {
     fn format(&self, _db: &dyn FilesGroup) -> String {
         match self.kind {
             // TODO(yuval): replace line breaks with "\n".
-            ParserDiagnosticKind::SkippedTokens => "Skipped tokens.".to_string(),
+            ParserDiagnosticKind::SkippedElement { element_name, closing } => {
+                format!(
+                    "Skipped tokens. Expected element: {element_name} or a closing {closing:?}."
+                )
+            }
             ParserDiagnosticKind::MissingToken(kind) => {
                 format!("Missing token {kind:?}.")
             }
@@ -32,6 +38,12 @@ impl DiagnosticEntry for ParserDiagnostic {
             }
             ParserDiagnosticKind::MissingPathSegment => {
                 "Missing tokens: 'missing path segment'.".to_string()
+            }
+            ParserDiagnosticKind::MissingTypeClause => {
+                "Missing tokens: 'missing type clause'.".to_string()
+            }
+            ParserDiagnosticKind::MissingTypeExpression => {
+                "Missing tokens: 'missing type expression'.".to_string()
             }
         }
     }

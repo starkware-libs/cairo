@@ -2725,144 +2725,6 @@ impl TypedSyntaxNode for OptionTypeClause {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub enum NonOptionTypeClause {
-    TypeClause(TypeClause),
-    NonOptionTypeClauseMissing(NonOptionTypeClauseMissing),
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct NonOptionTypeClausePtr(SyntaxStablePtrId);
-impl NonOptionTypeClausePtr {
-    pub fn untyped(&self) -> SyntaxStablePtrId {
-        self.0
-    }
-}
-impl From<TypeClauseGreen> for NonOptionTypeClauseGreen {
-    fn from(value: TypeClauseGreen) -> Self {
-        Self(value.0)
-    }
-}
-impl From<NonOptionTypeClauseMissingGreen> for NonOptionTypeClauseGreen {
-    fn from(value: NonOptionTypeClauseMissingGreen) -> Self {
-        Self(value.0)
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct NonOptionTypeClauseGreen(pub GreenId);
-impl TypedSyntaxNode for NonOptionTypeClause {
-    type StablePtr = NonOptionTypeClausePtr;
-    type Green = NonOptionTypeClauseGreen;
-    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
-        NonOptionTypeClauseGreen(db.intern_green(GreenNode::Internal(GreenNodeInternal {
-            kind: SyntaxKind::NonOptionTypeClauseMissing,
-            children: vec![],
-            width: 0,
-        })))
-    }
-    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match db.lookup_intern_green(node.0.green) {
-            GreenNode::Internal(internal) => match internal.kind {
-                SyntaxKind::TypeClause => {
-                    NonOptionTypeClause::TypeClause(TypeClause::from_syntax_node(db, node))
-                }
-                SyntaxKind::NonOptionTypeClauseMissing => {
-                    NonOptionTypeClause::NonOptionTypeClauseMissing(
-                        NonOptionTypeClauseMissing::from_syntax_node(db, node),
-                    )
-                }
-                _ => panic!(
-                    "Unexpected syntax kind {:?} when constructing {}.",
-                    internal.kind, "NonOptionTypeClause"
-                ),
-            },
-            GreenNode::Token(token) => match token.kind {
-                _ => panic!(
-                    "Unexpected token kind {:?} when constructing {}.",
-                    token.kind, "NonOptionTypeClause"
-                ),
-            },
-        }
-    }
-    fn as_syntax_node(&self) -> SyntaxNode {
-        match self {
-            NonOptionTypeClause::TypeClause(x) => x.as_syntax_node(),
-            NonOptionTypeClause::NonOptionTypeClauseMissing(x) => x.as_syntax_node(),
-        }
-    }
-    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
-        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
-    }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        NonOptionTypeClausePtr(self.as_syntax_node().0.stable_ptr)
-    }
-}
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct NonOptionTypeClauseMissing {
-    node: SyntaxNode,
-    children: Vec<SyntaxNode>,
-}
-impl NonOptionTypeClauseMissing {
-    pub fn new_green(db: &dyn SyntaxGroup) -> NonOptionTypeClauseMissingGreen {
-        let children: Vec<GreenId> = vec![];
-        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
-        NonOptionTypeClauseMissingGreen(db.intern_green(GreenNode::Internal(GreenNodeInternal {
-            kind: SyntaxKind::NonOptionTypeClauseMissing,
-            children,
-            width,
-        })))
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct NonOptionTypeClauseMissingPtr(SyntaxStablePtrId);
-impl NonOptionTypeClauseMissingPtr {
-    pub fn untyped(&self) -> SyntaxStablePtrId {
-        self.0
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct NonOptionTypeClauseMissingGreen(pub GreenId);
-impl TypedSyntaxNode for NonOptionTypeClauseMissing {
-    type StablePtr = NonOptionTypeClauseMissingPtr;
-    type Green = NonOptionTypeClauseMissingGreen;
-    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
-        NonOptionTypeClauseMissingGreen(db.intern_green(GreenNode::Internal(GreenNodeInternal {
-            kind: SyntaxKind::NonOptionTypeClauseMissing,
-            children: vec![],
-            width: 0,
-        })))
-    }
-    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match db.lookup_intern_green(node.0.green) {
-            GreenNode::Internal(internal) => {
-                if internal.kind != SyntaxKind::NonOptionTypeClauseMissing {
-                    panic!(
-                        "Unexpected SyntaxKind {:?}. Expected {:?}.",
-                        internal.kind,
-                        SyntaxKind::NonOptionTypeClauseMissing,
-                    );
-                }
-                let children = node.children(db).collect();
-                Self { node, children }
-            }
-            GreenNode::Token(token) => {
-                panic!(
-                    "Unexpected Token {:?}. Expected {:?}.",
-                    token,
-                    SyntaxKind::NonOptionTypeClauseMissing,
-                );
-            }
-        }
-    }
-    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
-        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
-    }
-    fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
-    }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        NonOptionTypeClauseMissingPtr(self.node.0.stable_ptr)
-    }
-}
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionTypeClauseEmpty {
     node: SyntaxNode,
     children: Vec<SyntaxNode>,
@@ -3737,7 +3599,7 @@ impl Param {
     pub fn new_green(
         db: &dyn SyntaxGroup,
         name: TerminalGreen,
-        type_clause: NonOptionTypeClauseGreen,
+        type_clause: TypeClauseGreen,
     ) -> ParamGreen {
         let children: Vec<GreenId> = vec![name.0, type_clause.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
@@ -3750,8 +3612,8 @@ impl Param {
     pub fn name(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn type_clause(&self, db: &dyn SyntaxGroup) -> NonOptionTypeClause {
-        NonOptionTypeClause::from_syntax_node(db, self.children[1].clone())
+    pub fn type_clause(&self, db: &dyn SyntaxGroup) -> TypeClause {
+        TypeClause::from_syntax_node(db, self.children[1].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -3777,7 +3639,7 @@ impl TypedSyntaxNode for Param {
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
         ParamGreen(db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::Param,
-            children: vec![Terminal::missing(db).0, NonOptionTypeClause::missing(db).0],
+            children: vec![Terminal::missing(db).0, TypeClause::missing(db).0],
             width: 0,
         })))
     }
