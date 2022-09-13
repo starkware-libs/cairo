@@ -1,10 +1,12 @@
 use defs::db::{AsDefsGroup, DefsGroup};
 use defs::ids::{
-    ExternFunctionId, FreeFunctionId, GenericFunctionId, MemberId, ModuleId, ModuleItemId, StructId,
+    ExternFunctionId, FreeFunctionId, GenericFunctionId, ModuleId, ModuleItemId, StructId,
 };
 use diagnostics::Diagnostics;
 use filesystem::db::AsFilesGroup;
 use parser::db::ParserGroup;
+use smol_str::SmolStr;
+use utils::ordered_hash_map::OrderedHashMap;
 
 use crate::{corelib, expr, items, semantic, types, SemanticDiagnostic};
 
@@ -26,13 +28,16 @@ pub trait SemanticGroup: DefsGroup + AsDefsGroup + ParserGroup + AsFilesGroup {
     // =======
     /// Private query to compute data about a struct.
     #[salsa::invoke(items::strct::priv_struct_semantic_data)]
-    fn priv_struct_semantic_data(&self, struct_id: StructId) -> items::strct::StructData;
+    fn priv_struct_semantic_data(&self, struct_id: StructId) -> Option<items::strct::StructData>;
     /// Returns the semantic diagnostics of a struct.
     #[salsa::invoke(items::strct::struct_semantic_diagnostics)]
     fn struct_semantic_diagnostics(&self, struct_id: StructId) -> Diagnostics<SemanticDiagnostic>;
     /// Returns the members of a struct.
     #[salsa::invoke(items::strct::struct_members)]
-    fn struct_members(&self, struct_id: StructId) -> Vec<MemberId>;
+    fn struct_members(
+        &self,
+        struct_id: StructId,
+    ) -> Option<OrderedHashMap<SmolStr, semantic::Member>>;
 
     // Free function.
     // ==============
@@ -154,9 +159,11 @@ fn module_semantic_diagnostics(
                     .0
                     .extend(db.free_function_definition_diagnostics(*free_function).0.clone());
             }
+            ModuleItemId::Struct(struct_id) => {
+                diagnostics.0.extend(db.struct_semantic_diagnostics(*struct_id).0.clone());
+            }
             ModuleItemId::Submodule(_) => {}
             ModuleItemId::Use(_) => {}
-            ModuleItemId::Struct(_) => {}
             ModuleItemId::ExternType(_) => {}
             ModuleItemId::ExternFunction(_) => {}
         }
