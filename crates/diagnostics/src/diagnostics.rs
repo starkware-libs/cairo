@@ -28,6 +28,9 @@ pub struct DiagnosticLocation {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Diagnostics<TEntry: DiagnosticEntry>(pub Vec<TEntry>);
 impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
+    pub fn new() -> Self {
+        Self(Vec::new())
+    }
     pub fn add<T>(&mut self, diagnostic: T)
     where
         TEntry: From<T>,
@@ -57,7 +60,7 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
 }
 impl<TEntry: DiagnosticEntry> Default for Diagnostics<TEntry> {
     fn default() -> Self {
-        Self(Vec::new())
+        Self::new()
     }
 }
 
