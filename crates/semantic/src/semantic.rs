@@ -8,6 +8,7 @@ use diagnostics_proc_macros::DebugWithDb;
 pub use super::expr::objects::*;
 use crate::db::SemanticGroup;
 pub use crate::items::functions::{ConcreteFunction, FunctionId, FunctionLongId, Signature};
+pub use crate::items::strct::Member;
 pub use crate::types::{ConcreteType, TypeId, TypeLongId};
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
