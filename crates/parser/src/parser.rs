@@ -528,10 +528,10 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn parse_type_clause(&mut self) -> NonOptionTypeClauseGreen {
+    fn parse_type_clause(&mut self) -> TypeClauseGreen {
         match self.try_parse_type_clause() {
-            Some(green) => green.into(),
-            None => NonOptionTypeClauseMissing::new_green(self.db).into(),
+            Some(green) => green,
+            None => TypeClause::missing(self.db),
         }
     }
     fn try_parse_type_clause(&mut self) -> Option<TypeClauseGreen> {
