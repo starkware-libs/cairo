@@ -132,6 +132,24 @@ impl<T: NoGenericArgsGenericLibFunc> NamedLibFunc for T {
 /// The output types returning from a library functions branch.
 type BranchOutputTypes = Vec<ConcreteTypeId>;
 
+/// Information regarding the reference created as an output of a library function.
+/// For example, whether the reference is equal to one of the parameters (as in the dup() function),
+/// or whether it's newly allocated local variable.
+pub enum OutputVarReferenceInfo {
+    /// The output value is exactly the same as one of the parameters.
+    SameAsParam { param_idx: usize },
+    /// The output was allocated as a temporary variable.
+    NewTempVar,
+    /// The output was allocated as a local variable.
+    NewLocalVar,
+    /// The output is the result of a computation. For example `[ap] + [fp]`,
+    /// `[ap + 1] * [fp - 3]`.
+    Deferred,
+}
+
+/// Represents the [OutputReferenceInfo] for all the output variables in an output branch.
+pub struct BranchReferenceInfo(pub Vec<OutputVarReferenceInfo>);
+
 /// Trait for a specialized library function.
 pub trait ConcreteLibFunc {
     /// The input types for calling the library function.
@@ -140,6 +158,8 @@ pub trait ConcreteLibFunc {
     fn output_types(&self) -> &[BranchOutputTypes];
     /// The index of the fallthrough branch of the library function if any.
     fn fallthrough(&self) -> Option<usize>;
+    /// The [OutputVarReferenceInfo] of all outputs per branch.
+    fn output_ref_info(&self) -> &[BranchReferenceInfo];
 }
 
 /// Represents the signature of a library function.
@@ -165,7 +185,24 @@ impl LibFuncSignature {
 /// library function.
 pub trait SignatureBasedConcreteLibFunc {
     fn signature(&self) -> &LibFuncSignature;
+    fn output_ref_info(&self) -> &[BranchReferenceInfo];
 }
+
+/// Struct providing a ConcreteLibFunc only with a signature - should not be implemented for
+/// concrete libfuncs that require any extra data.
+pub struct SignatureOnlyConcreteLibFunc {
+    pub signature: LibFuncSignature,
+    pub output_ref_info: Vec<BranchReferenceInfo>,
+}
+impl SignatureBasedConcreteLibFunc for SignatureOnlyConcreteLibFunc {
+    fn signature(&self) -> &LibFuncSignature {
+        &self.signature
+    }
+    fn output_ref_info(&self) -> &[BranchReferenceInfo] {
+        &self.output_ref_info
+    }
+}
+
 impl<TSignatureBasedConcreteLibFunc: SignatureBasedConcreteLibFunc> ConcreteLibFunc
     for TSignatureBasedConcreteLibFunc
 {
@@ -178,16 +215,8 @@ impl<TSignatureBasedConcreteLibFunc: SignatureBasedConcreteLibFunc> ConcreteLibF
     fn fallthrough(&self) -> Option<usize> {
         self.signature().fallthrough
     }
-}
-
-/// Struct providing a ConcreteLibFunc only with a signature - should not be implemented for
-/// concrete libfuncs that require any extra data.
-pub struct SignatureOnlyConcreteLibFunc {
-    pub signature: LibFuncSignature,
-}
-impl SignatureBasedConcreteLibFunc for SignatureOnlyConcreteLibFunc {
-    fn signature(&self) -> &LibFuncSignature {
-        &self.signature
+    fn output_ref_info(&self) -> &[BranchReferenceInfo] {
+        <Self as SignatureBasedConcreteLibFunc>::output_ref_info(self)
     }
 }
 
@@ -223,6 +252,11 @@ macro_rules! define_concrete_libfunc_hierarchy {
             }
             $crate::extensions::lib_func::concrete_method_impl!{
                 fn fallthrough(&self) -> Option<usize> {
+                    $($variant_name => $variant,)*
+                }
+            }
+            $crate::extensions::lib_func::concrete_method_impl!{
+                fn output_ref_info(&self) -> &[$crate::extensions::lib_func::BranchReferenceInfo] {
                     $($variant_name => $variant,)*
                 }
             }
