@@ -1,7 +1,7 @@
 use crate::extensions::lib_func::{
     LibFuncSignature, SignatureBasedConcreteLibFunc, SpecializationContext,
 };
-use crate::extensions::{NamedLibFunc, SpecializationError};
+use crate::extensions::{NamedLibFunc, OutputVarReferenceInfo, SpecializationError};
 use crate::ids::GenericLibFuncId;
 use crate::program::{Function, GenericArg};
 
@@ -27,6 +27,12 @@ impl NamedLibFunc for FunctionCallLibFunc {
                     signature: LibFuncSignature::new_non_branch(
                         function.params.iter().map(|p| p.ty.clone()).collect(),
                         function.ret_types.clone(),
+                        function
+                            .ret_types
+                            .iter()
+                            .enumerate()
+                            .map(|(i, _)| OutputVarReferenceInfo::NewTempVar { idx: i })
+                            .collect(),
                     ),
                 })
             }
