@@ -2,7 +2,9 @@ use super::as_single_type;
 use crate::extensions::lib_func::{
     LibFuncSignature, SignatureOnlyConcreteLibFunc, SpecializationContext,
 };
-use crate::extensions::{ConcreteType, NamedLibFunc, NamedType, SpecializationError};
+use crate::extensions::{
+    ConcreteType, NamedLibFunc, NamedType, OutputVarReferenceInfo, SpecializationError,
+};
 use crate::ids::{ConcreteTypeId, GenericLibFuncId, GenericTypeId};
 use crate::program::GenericArg;
 
@@ -38,6 +40,7 @@ impl NamedLibFunc for UnwrapNonZeroLibFunc {
             signature: LibFuncSignature::new_non_branch(
                 vec![context.get_wrapped_concrete_type(NonZeroType::id(), ty.clone())?],
                 vec![ty],
+                vec![OutputVarReferenceInfo::SameAsParam { param_idx: 0 }],
             ),
         })
     }

@@ -1,9 +1,9 @@
 // Module providing the gas related extensions.
 use crate::define_libfunc_hierarchy;
-use crate::extensions::lib_func::{LibFuncSignature, SpecializationContext};
+use crate::extensions::lib_func::{BranchReferenceInfo, LibFuncSignature, SpecializationContext};
 use crate::extensions::{
-    ConcreteType, NamedLibFunc, NamedType, NoGenericArgsGenericType, SignatureBasedConcreteLibFunc,
-    SpecializationError,
+    ConcreteType, NamedLibFunc, NamedType, NoGenericArgsGenericType, OutputVarReferenceInfo,
+    SignatureBasedConcreteLibFunc, SpecializationError,
 };
 use crate::ids::{GenericLibFuncId, GenericTypeId};
 use crate::program::GenericArg;
@@ -51,12 +51,18 @@ impl NamedLibFunc for GetGasLibFunc {
             signature: LibFuncSignature {
                 input_types: vec![gas_builtin_type.clone()],
                 output_types: vec![
-                    // success=
+                    // Success:
                     vec![gas_builtin_type.clone()],
-                    // failure=
+                    // Failure:
                     vec![gas_builtin_type],
                 ],
                 fallthrough: Some(1),
+                output_ref_info: vec![
+                    // Success:
+                    BranchReferenceInfo(vec![OutputVarReferenceInfo::Deferred]),
+                    // Failure:
+                    BranchReferenceInfo(vec![OutputVarReferenceInfo::SameAsParam { param_idx: 0 }]),
+                ],
             },
         })
     }
@@ -89,6 +95,7 @@ impl NamedLibFunc for RefundGasLibFunc {
             signature: LibFuncSignature::new_non_branch(
                 vec![gas_builtin_type.clone()],
                 vec![gas_builtin_type],
+                vec![OutputVarReferenceInfo::Deferred],
             ),
         })
     }
