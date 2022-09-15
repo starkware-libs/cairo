@@ -11,7 +11,7 @@ use sierra::program::Param;
 
 use crate::db::SierraGenGroup;
 use crate::diagnostic::Diagnostic;
-use crate::dup_and_ignore::{calculate_statement_dups_and_ignores, VarsDupsAndIgnores};
+use crate::dup_and_drop::{calculate_statement_dups_and_drops, VarsDupsAndDrops};
 use crate::expr_generator::generate_expression_code;
 use crate::expr_generator_context::ExprGeneratorContext;
 use crate::pre_sierra::{self, Statement};
@@ -59,7 +59,7 @@ pub fn get_function_code(
     ));
 
     statements.push(return_statement(vec![return_variable_on_stack]));
-    let statements = add_dups_and_ignores(&mut context, &parameters, statements);
+    let statements = add_dups_and_drops(&mut context, &parameters, statements);
 
     // TODO(spapini): Don't intern objects for the semantic model outside the crate. These should
     // be regarded as private.
@@ -82,20 +82,20 @@ pub fn get_function_code(
     )
 }
 
-/// Adds ignores and duplicates of felts to the sierra code.
+/// Adds drops and duplicates of felts to the sierra code.
 /// Assumes no VarId is reused in the same line.
 // TODO(orizi): Currently only supports felt types.
-fn add_dups_and_ignores(
+fn add_dups_and_drops(
     context: &mut ExprGeneratorContext<'_>,
     params: &[Param],
     statements: Vec<Statement>,
 ) -> Vec<Statement> {
-    let statement_dups_and_ignores = calculate_statement_dups_and_ignores(params, &statements);
-    itertools::zip_eq(statements.into_iter(), statement_dups_and_ignores.into_iter())
-        .flat_map(|(mut statement, VarsDupsAndIgnores { mut dups, ignores })| {
-            let mut expanded_statement: Vec<Statement> = ignores
+    let statement_dups_and_drops = calculate_statement_dups_and_drops(params, &statements);
+    itertools::zip_eq(statements.into_iter(), statement_dups_and_drops.into_iter())
+        .flat_map(|(mut statement, VarsDupsAndDrops { mut dups, drops })| {
+            let mut expanded_statement: Vec<Statement> = drops
                 .into_iter()
-                .map(|var| simple_statement(context.felt_ignore_libfunc_id(), &[var], &[]))
+                .map(|var| simple_statement(context.felt_drop_libfunc_id(), &[var], &[]))
                 .collect();
             if let Statement::Sierra(sierra::program::GenStatement::Invocation(invocation)) =
                 &mut statement

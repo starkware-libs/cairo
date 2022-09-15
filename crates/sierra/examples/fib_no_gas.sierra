@@ -6,7 +6,7 @@ libfunc store_temp_nz_felt = store_temp<NonZeroFelt>;
 libfunc felt_const_minus_1 = felt_const<-1>;
 libfunc felt_add = felt_add;
 libfunc felt_dup = felt_dup;
-libfunc felt_ignore = felt_ignore;
+libfunc felt_drop = felt_drop;
 libfunc felt_jump_nz = felt_jump_nz;
 libfunc felt_unwrap_nz = unwrap_nz<felt>;
 libfunc call_lib = function_call<user@Fibonacci>;
@@ -14,7 +14,7 @@ libfunc call_lib = function_call<user@Fibonacci>;
 // Statement #  0 - tests if n == 0.
 felt_jump_nz(n) { 4(n) fallthrough() };
 // Statement #  1 - n == 0, so we return a.
-felt_ignore(b) -> ();
+felt_drop(b) -> ();
 store_temp_felt(a)  -> (a);
 return(a);
 // Statement #  4 - calculates arguments for recursion call.

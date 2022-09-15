@@ -6,10 +6,10 @@ use crate::extensions::lib_func::{
 use crate::extensions::{NoGenericArgsGenericLibFunc, SpecializationError};
 use crate::ids::{GenericLibFuncId, GenericTypeId};
 
-/// Trait for implementing ignore and duplicate for a Plain Old Data type.
+/// Trait for implementing drop and duplicate for a Plain Old Data type.
 pub trait PodTraits: Default {
-    /// The ignore library function id.
-    const IGNORE: GenericLibFuncId;
+    /// The drop library function id.
+    const DROP: GenericLibFuncId;
     /// The duplicate library function id.
     const DUPLICATE: GenericLibFuncId;
     /// The id of the generic type to implement the library functions for.
@@ -18,12 +18,12 @@ pub trait PodTraits: Default {
 
 /// LibFunc for ignoring a plain old data object.
 #[derive(Default)]
-pub struct IgnoreLibFunc<TPodTraits: PodTraits> {
+pub struct DropLibFunc<TPodTraits: PodTraits> {
     _phantom: PhantomData<TPodTraits>,
 }
-impl<TPodTraits: PodTraits> NoGenericArgsGenericLibFunc for IgnoreLibFunc<TPodTraits> {
+impl<TPodTraits: PodTraits> NoGenericArgsGenericLibFunc for DropLibFunc<TPodTraits> {
     type Concrete = SignatureOnlyConcreteLibFunc;
-    const ID: GenericLibFuncId = TPodTraits::IGNORE;
+    const ID: GenericLibFuncId = TPodTraits::DROP;
     fn specialize(
         &self,
         context: SpecializationContext<'_>,
