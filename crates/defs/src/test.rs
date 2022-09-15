@@ -127,4 +127,12 @@ fn test_submodules() {
 
     db.module_item_by_name(subsubmodule_id, "foo".into())
         .expect("Expected to find foo() in subsubmodule.");
+
+    // Test file mappings.
+    assert_eq!(db.file_modules(db.module_file(module_id).unwrap()).unwrap(), vec![module_id]);
+    assert_eq!(db.file_modules(db.module_file(submodule_id).unwrap()).unwrap(), vec![submodule_id]);
+    assert_eq!(
+        db.file_modules(db.module_file(subsubmodule_id).unwrap()).unwrap(),
+        vec![subsubmodule_id]
+    );
 }
