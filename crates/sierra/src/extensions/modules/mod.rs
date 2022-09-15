@@ -2,6 +2,7 @@ use super::SpecializationError;
 use crate::ids::ConcreteTypeId;
 use crate::program::GenericArg;
 
+pub mod ap_tracking;
 pub mod arithmetic;
 pub mod felt;
 pub mod function_call;

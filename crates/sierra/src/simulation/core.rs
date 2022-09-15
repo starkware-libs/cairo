@@ -7,7 +7,7 @@ use crate::extensions::arithmetic::{
     OperationWithConstConcreteLibFunc, Operator,
 };
 use crate::extensions::core::CoreConcreteLibFunc::{
-    self, Felt, FunctionCall, Gas, Integer, Mem, UnconditionalJump, UnwrapNonZero,
+    self, ApTracking, Felt, FunctionCall, Gas, Integer, Mem, UnconditionalJump, UnwrapNonZero,
 };
 use crate::extensions::felt::FeltConcrete;
 use crate::extensions::function_call::FunctionCallConcreteLibFunc;
@@ -52,7 +52,7 @@ pub fn simulate<
         UnwrapNonZero(_) | Mem(Rename(_)) | Mem(StoreLocal(_)) | Mem(StoreTemp(_)) => {
             Ok((single_cell_identity::<1>(inputs)?, 0))
         }
-        Mem(AlignTemps(_)) | Mem(AllocLocals(_)) | UnconditionalJump(_) => {
+        Mem(AlignTemps(_)) | Mem(AllocLocals(_)) | UnconditionalJump(_) | ApTracking(_) => {
             unpack_inputs::<0>(inputs)?;
             Ok((vec![], 0))
         }

@@ -95,6 +95,7 @@ fn find_type_specialization(
 #[test_case("rename", vec![] => Err(WrongNumberOfGenericArgs); "rename")]
 #[test_case("jump", vec![] => Ok(()); "jump")]
 #[test_case("jump", vec![type_arg("T")] => Err(WrongNumberOfGenericArgs); "jump<T>")]
+#[test_case("revoke_ap_tracking", vec![] => Ok(()); "revoke_ap_tracking")]
 fn find_libfunc_specialization(
     id: &str,
     generic_args: Vec<GenericArg>,
