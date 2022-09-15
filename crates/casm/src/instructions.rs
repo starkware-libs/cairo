@@ -1,6 +1,8 @@
 use std::fmt::Display;
 
-use crate::operand::{DerefOperand, DerefOrImmediate, ImmediateOperand, Register, ResOperand};
+use crate::operand::{
+    self, DerefOperand, DerefOrImmediate, ImmediateOperand, Register, ResOperand,
+};
 
 #[cfg(test)]
 #[path = "instructions_test.rs"]
@@ -9,6 +11,7 @@ mod test;
 // An enum of Cairo instructions.
 #[derive(Debug, Eq, PartialEq)]
 pub enum InstructionBody {
+    AddAp(AddApInstruction),
     AssertEq(AssertEqInstruction),
     Call(CallInstruction),
     Jnz(JnzInstruction),
@@ -19,6 +22,7 @@ impl InstructionBody {
     pub fn op_size(&self) -> usize {
         // TODO(spapini): Make this correct.
         match self {
+            InstructionBody::AddAp(insn) => insn.op_size(),
             InstructionBody::AssertEq(insn) => insn.op_size(),
             InstructionBody::Call(insn) => insn.op_size(),
             InstructionBody::Jump(insn) => insn.op_size(),
@@ -30,6 +34,7 @@ impl InstructionBody {
 impl Display for InstructionBody {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            InstructionBody::AddAp(insn) => write!(f, "{}", insn),
             InstructionBody::AssertEq(insn) => write!(f, "{}", insn),
             InstructionBody::Call(insn) => write!(f, "{}", insn),
             InstructionBody::Jnz(insn) => write!(f, "{}", insn),
@@ -115,6 +120,19 @@ impl Display for JnzInstruction {
     }
 }
 
+// Return the size of instruction based on whether the res operand includes an immediate or not.
+pub fn op_size_based_on_res_operands(operand: &ResOperand) -> usize {
+    match operand {
+        ResOperand::Deref(_) => 1,
+        ResOperand::DoubleDeref(_) => 1,
+        ResOperand::Immediate(_) => 2,
+        ResOperand::BinOp(op) => match op.b {
+            DerefOrImmediate::Immediate(_) => 2,
+            DerefOrImmediate::Deref(_) => 1,
+        },
+    }
+}
+
 // Represents the InstructionBody "a = b" for two operands a, b.
 #[derive(Debug, Eq, PartialEq)]
 pub struct AssertEqInstruction {
@@ -123,15 +141,7 @@ pub struct AssertEqInstruction {
 }
 impl AssertEqInstruction {
     pub fn op_size(&self) -> usize {
-        match &self.b {
-            ResOperand::Deref(_) => 1,
-            ResOperand::DoubleDeref(_) => 1,
-            ResOperand::Immediate(_) => 2,
-            ResOperand::BinOp(op) => match op.b {
-                DerefOrImmediate::Immediate(_) => 2,
-                DerefOrImmediate::Deref(_) => 1,
-            },
-        }
+        op_size_based_on_res_operands(&self.b)
     }
 }
 impl Display for AssertEqInstruction {
@@ -151,5 +161,21 @@ impl Display for RetInstruction {
 impl RetInstruction {
     pub fn op_size(&self) -> usize {
         1
+    }
+}
+
+// Represents the InstructionBody "a = b" for two operands a, b.
+#[derive(Debug, Eq, PartialEq)]
+pub struct AddApInstruction {
+    pub operand: ResOperand,
+}
+impl AddApInstruction {
+    pub fn op_size(&self) -> usize {
+        op_size_based_on_res_operands(&self.operand)
+    }
+}
+impl Display for AddApInstruction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "ap += {}", self.operand)
     }
 }
