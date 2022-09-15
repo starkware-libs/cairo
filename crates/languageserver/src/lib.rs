@@ -48,16 +48,15 @@ impl Backend {
         // TODO(spapini): Version.
         let mut diags = Vec::new();
         for d in &syntax_diagnostics.0 {
-            let location = d.location(db.upcast());
-            let start = from_pos(
-                location.span.start.position_in_file(db.upcast(), location.file_id).unwrap(),
-            );
-            let end = from_pos(
-                location.span.start.position_in_file(db.upcast(), location.file_id).unwrap(),
-            );
+            let files_db: &dyn FilesGroup = (*db).upcast();
+            let location = d.location(files_db);
+            let start =
+                from_pos(location.span.start.position_in_file(files_db, location.file_id).unwrap());
+            let end =
+                from_pos(location.span.start.position_in_file(files_db, location.file_id).unwrap());
             diags.push(Diagnostic {
                 range: Range { start, end },
-                message: d.format(db.upcast()),
+                message: d.format(files_db),
                 ..Diagnostic::default()
             });
         }
@@ -191,7 +190,7 @@ impl LanguageServer for Backend {
 
         let node = syntax.as_syntax_node();
         let mut data: Vec<SemanticToken> = Vec::new();
-        SemanticTokensTraverser::default().find_semantic_tokens(db.upcast(), &mut data, node);
+        SemanticTokensTraverser::default().find_semantic_tokens((*db).upcast(), &mut data, node);
         Ok(Some(SemanticTokensResult::Tokens(SemanticTokens { result_id: None, data })))
     }
 }
