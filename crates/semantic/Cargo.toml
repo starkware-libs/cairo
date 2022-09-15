@@ -26,3 +26,4 @@ utils = { path = "../utils" }
 assert_matches = "1.5"
 indoc = "1.0.7"
 pretty_assertions = "1.2.1"
+utils = { path = "../utils", features = ["testing"] }

@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use assert_matches::assert_matches;
 use debug::DebugWithDb;
 use defs::db::DefsGroup;
@@ -5,7 +7,7 @@ use defs::ids::{LanguageElementId, ModuleId, ModuleItemId, VarId};
 use indoc::indoc;
 use pretty_assertions::assert_eq;
 use smol_str::SmolStr;
-use utils::extract_matches;
+use utils::{extract_matches, parse_test_file};
 
 use crate::corelib::{core_felt_ty, unit_ty};
 use crate::db::SemanticGroup;
@@ -58,41 +60,21 @@ fn test_expr_operator() {
     );
 }
 
-// TODO(lior): Move to a text file with all the similar failure tests.
 #[test]
-fn test_expr_operator_failures() {
+fn expr_diagnostics_tests() -> Result<(), std::io::Error> {
     let mut db = SemanticDatabaseForTesting::default();
-    let diagnostics = setup_test_function(
-        &mut db,
-        indoc! {"
-            func foo(a: MyType) {
-                a + a * a
-            }
-        "},
-        "foo",
-        "extern type MyType;",
-    )
-    .get_diagnostics();
-    assert_eq!(
-        diagnostics,
-        indoc! {r#"
-        error: Unexpected argument type. Expected: "core::felt", found: "test_crate::MyType".
-         --> lib.cairo:3:9
-            a + a * a
-                ^
-
-        error: Unexpected argument type. Expected: "core::felt", found: "test_crate::MyType".
-         --> lib.cairo:3:13
-            a + a * a
-                    ^
-
-        error: Unexpected argument type. Expected: "core::felt", found: "test_crate::MyType".
-         --> lib.cairo:3:5
-            a + a * a
-            ^
-
-        "#}
-    );
+    let tests = parse_test_file::parse_test_file(Path::new("test_data/tests"))?;
+    for (name, test) in tests {
+        let diagnostics = setup_test_function(
+            &mut db,
+            &test["Function"],
+            &test["Function Name"],
+            &test["Module Code"],
+        )
+        .get_diagnostics();
+        assert_eq!(diagnostics.trim(), test["Expected Result"], "\"{name}\" failed.");
+    }
+    Ok(())
 }
 
 #[test]

@@ -1,0 +1,28 @@
+//! > Test unexpected argument types for operators.
+
+//! > Function
+func foo(a: MyType) {
+    a + a * a
+}
+
+//! > Function Name
+foo
+
+//! > Module Code
+extern type MyType;
+
+//! > Expected Result
+error: Unexpected argument type. Expected: "core::felt", found: "test_crate::MyType".
+ --> lib.cairo:3:9
+    a + a * a
+        ^
+
+error: Unexpected argument type. Expected: "core::felt", found: "test_crate::MyType".
+ --> lib.cairo:3:13
+    a + a * a
+            ^
+
+error: Unexpected argument type. Expected: "core::felt", found: "test_crate::MyType".
+ --> lib.cairo:3:5
+    a + a * a
+    ^
