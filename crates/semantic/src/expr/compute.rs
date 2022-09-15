@@ -121,9 +121,21 @@ pub fn compute_expr_semantic(
     match syntax {
         ast::Expr::Path(path) => {
             let stable_ptr = path.stable_ptr().untyped();
-            let var = resolve_variable(ctx, path);
+            match resolve_variable(ctx, &path) {
+                Ok(var) => semantic::Expr::ExprVar(semantic::ExprVar {
+                    var: var.id,
+                    ty: var.ty,
+                    stable_ptr,
+                }),
+                Err(diagnostic_kind) => {
+                    ctx.diagnostics.add(SemanticDiagnostic {
+                        stable_location: StableLocation::from_ast(ctx.module_id, &path),
+                        kind: diagnostic_kind,
+                    });
+                    semantic::Expr::Missing { ty: TypeId::missing(db), stable_ptr }
+                }
+            }
             // TODO(spapini): Return the correct variable type, instead of the unit type.
-            semantic::Expr::ExprVar(semantic::ExprVar { var: var.id, ty: var.ty, stable_ptr })
         }
         ast::Expr::Literal(literal_syntax) => {
             semantic::Expr::ExprLiteral(literal_to_semantic(ctx, literal_syntax))
@@ -252,7 +264,10 @@ pub fn compute_expr_semantic(
 }
 
 /// Resolves a variable given a context and a path expression.
-fn resolve_variable(ctx: &mut ComputationContext<'_>, path: ast::ExprPath) -> Variable {
+fn resolve_variable(
+    ctx: &mut ComputationContext<'_>,
+    path: &ast::ExprPath,
+) -> Result<Variable, SemanticDiagnosticKind> {
     let db = ctx.db;
     let syntax_db = db.upcast();
     let segments = path.elements(syntax_db);
@@ -272,16 +287,15 @@ fn resolve_variable(ctx: &mut ComputationContext<'_>, path: ast::ExprPath) -> Va
 pub fn resolve_variable_by_name(
     ctx: &mut ComputationContext<'_>,
     variable_name: &SmolStr,
-) -> Variable {
+) -> Result<Variable, SemanticDiagnosticKind> {
     let mut maybe_env = Some(&*ctx.environment);
     while let Some(env) = maybe_env {
         if let Some(var) = env.variables.get(variable_name) {
-            return var.clone();
+            return Ok(var.clone());
         }
         maybe_env = env.parent.as_deref();
     }
-    // TODO(spapini): Diagnostic and return option.
-    panic!("Not found");
+    Err(SemanticDiagnosticKind::VariableNotFound { name: variable_name.clone() })
 }
 
 /// Resolves a concrete function given a context and a path expression.

@@ -37,6 +37,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     actual_ty.format(db)
                 )
             }
+            SemanticDiagnosticKind::VariableNotFound { name } => {
+                format!("Variable {name} not found.")
+            }
             SemanticDiagnosticKind::StructMemberRedefinition { struct_id, member_name } => {
                 format!(
                     r#"Redefinition of member "{member_name}" on struct "{}"."#,
@@ -58,5 +61,6 @@ pub enum SemanticDiagnosticKind {
     UnknownType,
     WrongArgumentType { expected_ty: semantic::TypeId, actual_ty: semantic::TypeId },
     WrongReturnType { expected_ty: semantic::TypeId, actual_ty: semantic::TypeId },
+    VariableNotFound { name: SmolStr },
     StructMemberRedefinition { struct_id: StructId, member_name: SmolStr },
 }
