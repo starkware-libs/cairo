@@ -26,7 +26,8 @@ fn value_arg(v: i64) -> GenericArg {
 #[test_case("int", vec![] => Ok(()); "int")]
 #[test_case("int", vec![type_arg("T")] => Err(WrongNumberOfGenericArgs); "int<T>")]
 #[test_case("NonZero", vec![type_arg("T")] => Ok(()); "NonZero<T>")]
-#[test_case("NonZero", vec![] => Err(UnsupportedGenericArg); "NonZero")]
+#[test_case("NonZero", vec![] => Err(WrongNumberOfGenericArgs); "NonZero")]
+#[test_case("NonZero", vec![value_arg(5)] => Err(UnsupportedGenericArg); "NonZero<5>")]
 fn find_type_specialization(
     id: &str,
     generic_args: Vec<GenericArg>,
@@ -79,18 +80,19 @@ fn find_type_specialization(
 #[test_case("int_jump_nz", vec![type_arg("int")] => Err(WrongNumberOfGenericArgs);
             "int_jump_nz<int>")]
 #[test_case("unwrap_nz", vec![type_arg("int")] => Ok(()); "unwrap_nz<int>")]
-#[test_case("unwrap_nz", vec![] => Err(UnsupportedGenericArg); "unwrap_nz")]
+#[test_case("unwrap_nz", vec![] => Err(WrongNumberOfGenericArgs); "unwrap_nz")]
 #[test_case("store_temp", vec![type_arg("int")] => Ok(()); "store_temp<int>")]
-#[test_case("store_temp", vec![] => Err(UnsupportedGenericArg); "store_temp")]
+#[test_case("store_temp", vec![] => Err(WrongNumberOfGenericArgs); "store_temp")]
 #[test_case("align_temps", vec![type_arg("int")] => Ok(()); "align_temps<int>")]
-#[test_case("align_temps", vec![] => Err(UnsupportedGenericArg); "align_temps")]
+#[test_case("align_temps", vec![value_arg(3)] => Err(UnsupportedGenericArg); "align_temps<3>")]
+#[test_case("align_temps", vec![] => Err(WrongNumberOfGenericArgs); "align_temps")]
 #[test_case("store_local", vec![type_arg("int")] => Ok(()); "store_local<int>")]
-#[test_case("store_local", vec![] => Err(UnsupportedGenericArg); "store_local")]
+#[test_case("store_local", vec![] => Err(WrongNumberOfGenericArgs); "store_local")]
 #[test_case("alloc_locals", vec![] => Ok(()); "alloc_locals")]
 #[test_case("alloc_locals", vec![type_arg("int")] => Err(WrongNumberOfGenericArgs);
             "alloc_locals<int>")]
 #[test_case("rename", vec![type_arg("int")] => Ok(()); "rename<int>")]
-#[test_case("rename", vec![] => Err(UnsupportedGenericArg); "rename")]
+#[test_case("rename", vec![] => Err(WrongNumberOfGenericArgs); "rename")]
 #[test_case("jump", vec![] => Ok(()); "jump")]
 #[test_case("jump", vec![type_arg("T")] => Err(WrongNumberOfGenericArgs); "jump<T>")]
 fn find_libfunc_specialization(

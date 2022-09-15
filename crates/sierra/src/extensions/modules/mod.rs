@@ -17,6 +17,7 @@ pub mod unconditional_jump;
 fn as_single_type(args: &[GenericArg]) -> Result<ConcreteTypeId, SpecializationError> {
     match args {
         [GenericArg::Type(ty)] => Ok(ty.clone()),
-        _ => Err(SpecializationError::UnsupportedGenericArg),
+        [_] => Err(SpecializationError::UnsupportedGenericArg),
+        _ => Err(SpecializationError::WrongNumberOfGenericArgs),
     }
 }
