@@ -1,5 +1,5 @@
 use crate::extensions::lib_func::{
-    LibFuncSignature, SignatureOnlyConcreteLibFunc, SpecializationContext,
+    BranchReferenceInfo, LibFuncSignature, SignatureOnlyConcreteLibFunc, SpecializationContext,
 };
 use crate::extensions::{NoGenericArgsGenericLibFunc, SpecializationError};
 use crate::ids::GenericLibFuncId;
@@ -21,6 +21,7 @@ impl NoGenericArgsGenericLibFunc for RevokeApTrackingLibFunc {
                 input_types: vec![],
                 output_types: vec![vec![]],
                 fallthrough: None,
+                output_ref_info: vec![BranchReferenceInfo(vec![])],
             },
         })
     }

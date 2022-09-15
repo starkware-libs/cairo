@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 use crate::extensions::lib_func::{
     LibFuncSignature, SignatureOnlyConcreteLibFunc, SpecializationContext,
 };
-use crate::extensions::{NoGenericArgsGenericLibFunc, SpecializationError};
+use crate::extensions::{NoGenericArgsGenericLibFunc, OutputVarReferenceInfo, SpecializationError};
 use crate::ids::{GenericLibFuncId, GenericTypeId};
 
 /// Trait for implementing drop and duplicate for a Plain Old Data type.
@@ -32,6 +32,7 @@ impl<TPodTraits: PodTraits> NoGenericArgsGenericLibFunc for DropLibFunc<TPodTrai
             signature: LibFuncSignature::new_non_branch(
                 vec![context.get_concrete_type(TPodTraits::GENERIC_TYPE_ID, &[])?],
                 vec![],
+                vec![],
             ),
         })
     }
@@ -52,7 +53,14 @@ impl<TPodTraits: PodTraits> NoGenericArgsGenericLibFunc for DuplicateLibFunc<TPo
     ) -> Result<Self::Concrete, SpecializationError> {
         let ty = context.get_concrete_type(TPodTraits::GENERIC_TYPE_ID, &[])?;
         Ok(SignatureOnlyConcreteLibFunc {
-            signature: LibFuncSignature::new_non_branch(vec![ty.clone()], vec![ty.clone(), ty]),
+            signature: LibFuncSignature::new_non_branch(
+                vec![ty.clone()],
+                vec![ty.clone(), ty],
+                vec![
+                    OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+                    OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+                ],
+            ),
         })
     }
 }
