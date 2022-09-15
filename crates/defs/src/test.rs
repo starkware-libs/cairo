@@ -49,7 +49,7 @@ pub fn setup_test_module<T: DefsGroup + AsFilesGroupMut + ?Sized>(
     db.set_crate_root(crate_id, Some(directory));
     let file = db.module_file(ModuleId::CrateRoot(crate_id)).unwrap();
     db.as_files_group_mut().override_file_content(file, Some(Arc::new(content.to_string())));
-    let syntax_diagnostics = db.file_syntax_diagnostics(file).format(db.upcast());
+    let syntax_diagnostics = db.file_syntax_diagnostics(file).format(Upcast::upcast(db));
     assert_eq!(syntax_diagnostics, "");
     ModuleId::CrateRoot(crate_id)
 }
