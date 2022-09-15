@@ -32,7 +32,7 @@ impl<'a> ExprGeneratorContext<'a> {
         ExprGeneratorContext {
             db,
             function_id,
-            module_id: function_id.module(db.as_defs_group()),
+            module_id: function_id.module(db.upcast()),
             diagnostics,
             var_id_allocator: IdAllocator::default(),
             label_id_allocator: IdAllocator::default(),
@@ -166,7 +166,7 @@ impl<'a> ExprGeneratorContext<'a> {
         &self,
         extern_id: defs::ids::ExternFunctionId,
     ) -> sierra::ids::ConcreteLibFuncId {
-        self.get_extension_id_without_generics(extern_id.name(self.db.as_defs_group()))
+        self.get_extension_id_without_generics(extern_id.name(self.db.upcast()))
     }
 
     /// Returns the [Diagnostics] object of the context.

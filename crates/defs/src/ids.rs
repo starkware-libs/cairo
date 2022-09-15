@@ -48,7 +48,7 @@ macro_rules! define_language_element_id {
         pub struct $long_id(pub ModuleId, pub <$ast_ty as TypedSyntaxNode>::StablePtr);
         impl $long_id {
             pub fn name(&self, db: &dyn DefsGroup) -> SmolStr {
-                let syntax_db = db.as_syntax_group();
+                let syntax_db = db.upcast();
                 let terminal_green = self.1.name_green(syntax_db);
                 terminal_green.identifier(syntax_db)
             }

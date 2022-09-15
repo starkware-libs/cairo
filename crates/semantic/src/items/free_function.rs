@@ -20,7 +20,7 @@ pub fn priv_free_function_semantic(
     db: &dyn SemanticGroup,
     free_function_id: FreeFunctionId,
 ) -> Option<FreeFunction> {
-    let module_id = free_function_id.module(db.as_defs_group());
+    let module_id = free_function_id.module(db.upcast());
     let syntax = db.module_data(module_id)?.free_functions.get(&free_function_id)?.clone();
 
     // Compute signature semantic.
@@ -35,7 +35,7 @@ pub fn priv_free_function_semantic(
         module_id,
         generic_function_signature_data.variables,
     );
-    let expr = compute_expr_semantic(&mut ctx, ast::Expr::Block(syntax.body(db.as_syntax_group())));
+    let expr = compute_expr_semantic(&mut ctx, ast::Expr::Block(syntax.body(db.upcast())));
     let body = db.intern_expr(expr);
 
     Some(FreeFunction { signature: generic_function_signature_data.signature, body })

@@ -1,4 +1,6 @@
-use crate::db::{init_files_group, AsFilesGroup, FilesDatabase, FilesGroup};
+use db_utils::Upcast;
+
+use crate::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup};
 
 // Test salsa database.
 #[salsa::database(FilesDatabase)]
@@ -13,10 +15,12 @@ impl Default for FilesDatabaseForTesting {
         res
     }
 }
-impl AsFilesGroup for FilesDatabaseForTesting {
-    fn as_files_group(&self) -> &(dyn FilesGroup + 'static) {
+impl Upcast<dyn FilesGroup> for FilesDatabaseForTesting {
+    fn upcast(&self) -> &(dyn FilesGroup + 'static) {
         self
     }
+}
+impl AsFilesGroupMut for FilesDatabaseForTesting {
     fn as_files_group_mut(&mut self) -> &mut (dyn FilesGroup + 'static) {
         self
     }

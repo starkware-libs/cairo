@@ -1,5 +1,6 @@
+use db_utils::Upcast;
 use filesystem::db::{init_files_group, FilesDatabase};
-use syntax::node::db::{AsSyntaxGroup, SyntaxDatabase, SyntaxGroup};
+use syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 
 use crate::db::ParserDatabase;
 
@@ -17,8 +18,8 @@ impl Default for ParserDatabaseForTesting {
     }
 }
 
-impl AsSyntaxGroup for ParserDatabaseForTesting {
-    fn as_syntax_group(&self) -> &(dyn SyntaxGroup + 'static) {
+impl Upcast<dyn SyntaxGroup> for ParserDatabaseForTesting {
+    fn upcast(&self) -> &(dyn SyntaxGroup + 'static) {
         self
     }
 }

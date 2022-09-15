@@ -42,3 +42,7 @@ macro_rules! define_short_id {
         }
     };
 }
+
+pub trait Upcast<T: ?Sized> {
+    fn upcast(&self) -> &T;
+}

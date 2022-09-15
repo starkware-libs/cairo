@@ -1,7 +1,8 @@
-use defs::db::{AsDefsGroup, DefsGroup};
+use db_utils::Upcast;
+use defs::db::DefsGroup;
 use defs::ids::{FreeFunctionId, GenericFunctionId, ModuleId, ModuleItemId, StructId};
 use diagnostics::{Diagnostics, WithDiagnostics};
-use filesystem::db::AsFilesGroup;
+use filesystem::db::{AsFilesGroupMut, FilesGroup};
 use parser::db::ParserGroup;
 
 use crate::{corelib, expr, items, semantic, FunctionId, FunctionLongId, SemanticDiagnostic};
@@ -10,7 +11,9 @@ use crate::{corelib, expr, items, semantic, FunctionId, FunctionLongId, Semantic
 // All queries starting with priv_ are for internal use only by this crate.
 // They appear in the public API because of salsa limitations.
 #[salsa::query_group(SemanticDatabase)]
-pub trait SemanticGroup: DefsGroup + AsDefsGroup + ParserGroup + AsFilesGroup {
+pub trait SemanticGroup:
+    DefsGroup + Upcast<dyn DefsGroup> + ParserGroup + Upcast<dyn FilesGroup> + AsFilesGroupMut
+{
     #[salsa::interned]
     fn intern_function(&self, id: FunctionLongId) -> FunctionId;
     #[salsa::interned]
