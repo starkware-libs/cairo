@@ -396,6 +396,15 @@ pub fn compile_invocation(
         CoreConcreteLibFunc::UnconditionalJump(libfunc) => {
             handle_jump(invocation, libfunc, environment)
         }
+
+        CoreConcreteLibFunc::ApTracking(libfunc) => Ok(CompiledInvocation::new(
+            vec![],
+            vec![],
+            [ApChange::Unknown].into_iter(),
+            [[].into_iter()].into_iter(),
+            libfunc.output_types(),
+            environment,
+        )),
         _ => Err(InvocationError::NotImplemented(invocation.clone())),
     }
 }
