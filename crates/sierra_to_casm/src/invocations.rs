@@ -346,6 +346,18 @@ fn handle_jump(
     ))
 }
 
+fn handle_alloc_locals(
+    libfunc: &SignatureOnlyConcreteLibFunc,
+    environment: Environment,
+) -> Result<CompiledInvocation, InvocationError> {
+    // TODO(ilya, 10/10/2022): Inject code if necessary according to environment.
+    Ok(CompiledInvocation::only_reference_changes(
+        [].into_iter(),
+        libfunc.output_types(),
+        environment,
+    ))
+}
+
 pub fn compile_invocation(
     invocation: &Invocation,
     libfunc: &CoreConcreteLibFunc,
@@ -395,6 +407,10 @@ pub fn compile_invocation(
         }
         CoreConcreteLibFunc::UnconditionalJump(libfunc) => {
             handle_jump(invocation, libfunc, environment)
+        }
+
+        CoreConcreteLibFunc::Mem(MemConcreteLibFunc::AllocLocals(libfunc)) => {
+            handle_alloc_locals(libfunc, environment)
         }
         _ => Err(InvocationError::NotImplemented(invocation.clone())),
     }

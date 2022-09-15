@@ -105,6 +105,10 @@ impl<'a> ExprGeneratorContext<'a> {
         })
     }
 
+    pub fn alloc_locals_libfunc_id(&self) -> sierra::ids::ConcreteLibFuncId {
+        self.get_extension_id_without_generics("alloc_locals")
+    }
+
     pub fn felt_const_libfunc_id(&self, value: usize) -> sierra::ids::ConcreteLibFuncId {
         self.db.intern_concrete_lib_func(sierra::program::ConcreteLibFuncLongId {
             generic_id: sierra::ids::GenericLibFuncId::from_string("felt_const"),

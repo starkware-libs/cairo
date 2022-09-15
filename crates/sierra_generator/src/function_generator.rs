@@ -43,6 +43,9 @@ pub fn generate_function_code(
 
     let mut statements: Vec<pre_sierra::Statement> = vec![label];
 
+    // TODO(ilya, 10/10/2022): Add alloc_locals only when necessary.
+    statements.push(simple_statement(context.alloc_locals_libfunc_id(), &[], &[]));
+
     // Generate the function's body.
     let (body_statements, res) = generate_expression_code(&mut context, function_semantic.body)?;
     statements.extend(body_statements);
