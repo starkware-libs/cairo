@@ -2,14 +2,18 @@
 
 mod semantic_highlighting;
 
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use db_utils::Upcast;
+use defs::db::DefsGroup;
 use diagnostics::DiagnosticEntry;
 use filesystem::db::{AsFilesGroupMut, FilesGroup, FilesGroupEx, PrivRawFileContentQuery};
 use filesystem::ids::{FileId, FileLongId};
 use filesystem::span::TextPosition;
 use parser::db::ParserGroup;
+use project::ProjectConfig;
+use semantic::db::SemanticGroup;
 use semantic::test_utils::SemanticDatabaseForTesting;
 use semantic_highlighting::token_kind::SemanticTokenKind;
 use semantic_highlighting::SemanticTokensTraverser;
@@ -20,6 +24,8 @@ use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, LanguageServer};
 
 pub type RootDatabase = SemanticDatabaseForTesting;
+
+const MAX_CRATE_DETECTION_DEPTH: usize = 20;
 
 pub struct Backend {
     pub client: Client,
@@ -37,29 +43,39 @@ impl Backend {
         let path = uri.to_file_path().expect("Only file URIs are supported.");
         db.intern_file(FileLongId::OnDisk(path))
     }
+    fn add_diagnostic(
+        &self,
+        db: &tokio::sync::MutexGuard<'_, RootDatabase>,
+        diags: &mut Vec<Diagnostic>,
+        location: diagnostics::DiagnosticLocation,
+        message: String,
+    ) {
+        let start =
+            from_pos(location.span.start.position_in_file(db.upcast(), location.file_id).unwrap());
+        let end =
+            from_pos(location.span.start.position_in_file(db.upcast(), location.file_id).unwrap());
+        diags.push(Diagnostic { range: Range { start, end }, message, ..Diagnostic::default() });
+    }
     async fn publish_diagnostics(
         &self,
         db: tokio::sync::MutexGuard<'_, RootDatabase>,
         uri: Url,
         file: FileId,
     ) {
-        let syntax_diagnostics = db.file_syntax_diagnostics(file);
-        // TODO(spapini): Add semantic diagnostics.
         // TODO(spapini): Version.
         let mut diags = Vec::new();
-        for d in &syntax_diagnostics.0 {
+        for d in &db.file_syntax_diagnostics(file).0 {
             let location = d.location(db.upcast());
-            let start = from_pos(
-                location.span.start.position_in_file(db.upcast(), location.file_id).unwrap(),
-            );
-            let end = from_pos(
-                location.span.start.position_in_file(db.upcast(), location.file_id).unwrap(),
-            );
-            diags.push(Diagnostic {
-                range: Range { start, end },
-                message: d.format(db.upcast()),
-                ..Diagnostic::default()
-            });
+            let message = d.format(db.upcast());
+            self.add_diagnostic(&db, &mut diags, location, message)
+        }
+        // TODO(spapini): Do this outer loop in semantic.
+        for module_id in db.file_modules(file).iter().flatten() {
+            for d in &db.module_semantic_diagnostics(*module_id).unwrap().0 {
+                let location = d.location(&*db);
+                let message = d.format(&*db);
+                self.add_diagnostic(&db, &mut diags, location, message)
+            }
         }
         self.client.publish_diagnostics(uri, diags, None).await
     }
@@ -136,7 +152,10 @@ impl LanguageServer for Backend {
     }
 
     async fn did_open(&self, params: DidOpenTextDocumentParams) {
-        let db = self.db().await;
+        let mut db = self.db().await;
+        let path = params.text_document.uri.path();
+        detect_crate_for(&mut db, path);
+
         let file = self.file(&db, params.text_document.uri.clone());
         self.publish_diagnostics(db, params.text_document.uri, file).await;
     }
@@ -193,5 +212,19 @@ impl LanguageServer for Backend {
         let mut data: Vec<SemanticToken> = Vec::new();
         SemanticTokensTraverser::default().find_semantic_tokens(db.upcast(), &mut data, node);
         Ok(Some(SemanticTokensResult::Tokens(SemanticTokens { result_id: None, data })))
+    }
+}
+
+fn detect_crate_for(db: &mut tokio::sync::MutexGuard<'_, RootDatabase>, path: &str) {
+    let mut path = PathBuf::from(path);
+    for _ in 0..MAX_CRATE_DETECTION_DEPTH {
+        path.pop();
+        let candidate = path.join("cairo_config.toml");
+        if candidate.exists() {
+            if let Ok(config) = ProjectConfig::from_file(candidate.as_path()) {
+                db.with_project_config(config);
+            };
+            break;
+        }
     }
 }

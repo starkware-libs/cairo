@@ -90,9 +90,13 @@ pub trait FilesGroupEx: Upcast<dyn FilesGroup> + AsFilesGroupMut {
     }
     /// Updates the crate roots from a ProjectConfig object.
     fn with_project_config(&mut self, config: ProjectConfig) {
-        for (crate_name, directory_path) in config.crate_roots {
+        for (crate_name, directory_path) in config.inner.crate_roots {
             let crate_id = self.upcast().intern_crate(CrateLongId(crate_name.into()));
-            let root = Directory(directory_path.into());
+            let mut path = PathBuf::from(&directory_path);
+            if path.is_relative() {
+                path = PathBuf::from(&config.base_path).join(path);
+            }
+            let root = Directory(path);
             self.set_crate_root(crate_id, Some(root));
         }
     }
@@ -104,6 +108,7 @@ pub trait AsFilesGroupMut {
 }
 
 fn crates(db: &dyn FilesGroup) -> Vec<CrateId> {
+    // TODO(spapini): Sort for stability.
     db.crate_roots().keys().copied().collect()
 }
 fn crate_root_dir(db: &dyn FilesGroup, crt: CrateId) -> Option<Directory> {

@@ -13,6 +13,7 @@ debug = { path = "../debug" }
 diagnostics = { path = "../diagnostics" }
 semantic = { path = "../semantic" }
 parser = { path = "../parser" }
+project = { path = "../project" }
 syntax = { path = "../syntax" }
 filesystem = { path = "../filesystem" }
 tokio = { version = "1.18.2", features = ["full","sync"] }
