@@ -58,11 +58,6 @@ pub fn init_files_group(db: &mut (dyn FilesGroup + 'static)) {
     db.set_crate_root(core_crate, Some(core_root_dir));
 }
 
-impl Upcast<dyn FilesGroup> for dyn FilesGroup {
-    fn upcast(&self) -> &(dyn FilesGroup + 'static) {
-        self
-    }
-}
 impl AsFilesGroupMut for dyn FilesGroup {
     fn as_files_group_mut(&mut self) -> &mut (dyn FilesGroup + 'static) {
         self
@@ -72,7 +67,7 @@ impl AsFilesGroupMut for dyn FilesGroup {
 pub trait FilesGroupEx: Upcast<dyn FilesGroup> + AsFilesGroupMut {
     /// Overrides file content. None value removes the override.
     fn override_file_content(&mut self, file: FileId, content: Option<Arc<String>>) {
-        let mut overrides = self.upcast().file_overrides().as_ref().clone();
+        let mut overrides = Upcast::upcast(self).file_overrides().as_ref().clone();
         match content {
             Some(content) => overrides.insert(file, content),
             None => overrides.remove(&file),
@@ -81,7 +76,7 @@ pub trait FilesGroupEx: Upcast<dyn FilesGroup> + AsFilesGroupMut {
     }
     /// Sets the root directory of the crate. None value removes the crate.
     fn set_crate_root(&mut self, crt: CrateId, root: Option<Directory>) {
-        let mut crate_roots = self.upcast().crate_roots().as_ref().clone();
+        let mut crate_roots = Upcast::upcast(self).crate_roots().as_ref().clone();
         match root {
             Some(root) => crate_roots.insert(crt, root),
             None => crate_roots.remove(&crt),
@@ -91,7 +86,7 @@ pub trait FilesGroupEx: Upcast<dyn FilesGroup> + AsFilesGroupMut {
     /// Updates the crate roots from a ProjectConfig object.
     fn with_project_config(&mut self, config: ProjectConfig) {
         for (crate_name, directory_path) in config.crate_roots {
-            let crate_id = self.upcast().intern_crate(CrateLongId(crate_name.into()));
+            let crate_id = Upcast::upcast(self).intern_crate(CrateLongId(crate_name.into()));
             let root = Directory(directory_path.into());
             self.set_crate_root(crate_id, Some(root));
         }
