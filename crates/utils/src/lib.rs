@@ -2,3 +2,6 @@ pub mod extract_matches;
 pub mod ordered_hash_map;
 pub mod ordered_hash_set;
 pub mod unordered_hash_map;
+
+#[cfg(any(feature = "testing", test))]
+pub mod parse_test_file;
