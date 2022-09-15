@@ -31,27 +31,30 @@ fn test_program_generator() {
             type [0] = felt;
             type [1] = NonZero<[0]>;
 
-            libfunc [3] = felt_drop;
-            libfunc [0] = felt_const<5>;
-            libfunc [1] = store_temp<[0]>;
-            libfunc [2] = function_call<user@[0]>;
-            libfunc [5] = felt_dup;
-            libfunc [4] = felt_add;
+            libfunc [4] = felt_drop;
+            libfunc [0] = revoke_ap_tracking;
+            libfunc [1] = felt_const<5>;
+            libfunc [2] = store_temp<[0]>;
+            libfunc [3] = function_call<user@[0]>;
+            libfunc [6] = felt_dup;
+            libfunc [5] = felt_add;
 
-            [3]([0]) -> ();
-            [0]() -> ([1]);
-            [1]([1]) -> ([2]);
-            [2]([2]) -> ([3]);
-            [1]([3]) -> ([4]);
+            [4]([0]) -> ();
+            [0]() -> ();
+            [1]() -> ([1]);
+            [2]([1]) -> ([2]);
+            [3]([2]) -> ([3]);
+            [2]([3]) -> ([4]);
             return([4]);
-            [5]([0]) -> ([0], [4]);
-            [4]([0], [4]) -> ([1]);
-            [1]([1]) -> ([2]);
-            [1]([2]) -> ([3]);
+            [0]() -> ();
+            [6]([0]) -> ([0], [4]);
+            [5]([0], [4]) -> ([1]);
+            [2]([1]) -> ([2]);
+            [2]([2]) -> ([3]);
             return([3]);
 
             [1]@0([0]: [0]) -> ([0]);
-            [0]@6([0]: [0]) -> ([0]);
+            [0]@7([0]: [0]) -> ([0]);
         "},
     );
 }

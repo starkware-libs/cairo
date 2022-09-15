@@ -1,6 +1,7 @@
 type [0] = felt;
 type [1] = NonZero<[0]>;
 
+libfunc revoke_ap_tracking = revoke_ap_tracking;
 libfunc felt_dup = felt_dup;
 libfunc felt_jump_nz = felt_jump_nz;
 libfunc felt_drop = felt_drop;
@@ -12,12 +13,13 @@ libfunc felt_const<1> = felt_const<1>;
 libfunc felt_sub = felt_sub;
 libfunc function_call<user@[0]> = function_call<user@[0]>;
 
+revoke_ap_tracking() -> ();
 felt_dup([2]) -> ([2], [16]);
-felt_jump_nz([16]) { 6([3]) fallthrough() };
+felt_jump_nz([16]) { 7([3]) fallthrough() };
 felt_drop([1]) -> ();
 felt_drop([2]) -> ();
 store_temp<[0]>([0]) -> ([4]);
-jump() { 19() };
+jump() { 20() };
 unwrap_nz<[0]>([3]) -> ([14]);
 felt_drop([14]) -> ();
 felt_dup([1]) -> ([1], [17]);

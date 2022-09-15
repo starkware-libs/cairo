@@ -46,6 +46,9 @@ pub fn get_function_code(
 
     let mut statements: Vec<pre_sierra::Statement> = vec![label];
 
+    // TODO(ilya, 10/10/2022): Add revoke_ap_tracking only when necessary.
+    statements.push(simple_statement(context.revoke_ap_tracking_libfunc_id(), &[], &[]));
+
     // Generate the function's body.
     let (body_statements, res) = generate_expression_code(&mut context, body)?;
     statements.extend(body_statements);

@@ -151,6 +151,10 @@ impl<'a> ExprGeneratorContext<'a> {
         self.get_extension_id_without_generics("jump")
     }
 
+    pub fn revoke_ap_tracking_libfunc_id(&self) -> sierra::ids::ConcreteLibFuncId {
+        self.get_extension_id_without_generics("revoke_ap_tracking")
+    }
+
     pub fn unwrap_nz_libfunc_id(&self, ty: semantic::TypeId) -> sierra::ids::ConcreteLibFuncId {
         // TODO(orizi): Propagate the diagnostics or extract `get_concrete_type_id` usage out of
         // this function.
