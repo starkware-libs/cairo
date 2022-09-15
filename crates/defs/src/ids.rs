@@ -62,12 +62,11 @@ macro_rules! define_language_element_id {
                 db.$lookup(self).1
             }
         }
-        impl DebugWithDb<dyn DefsGroup + 'static> for $long_id {
-            fn fmt(
-                &self,
-                f: &mut std::fmt::Formatter<'_>,
-                db: &(dyn DefsGroup + 'static),
-            ) -> std::fmt::Result {
+        impl<T: ?Sized + db_utils::Upcast<dyn DefsGroup + 'static>> debug::DebugWithDb<T>
+            for $long_id
+        {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &T) -> std::fmt::Result {
+                let db: &(dyn DefsGroup + 'static) = db.upcast();
                 let $long_id(module_id, _stable_ptr) = self;
                 write!(
                     f,
@@ -102,12 +101,15 @@ macro_rules! define_language_element_id_as_enum {
         pub enum $enum_name {
             $($variant($variant_ty),)*
         }
-        impl DebugWithDb<dyn DefsGroup + 'static> for $enum_name {
+        impl<T: ?Sized + db_utils::Upcast<dyn DefsGroup + 'static>> debug::DebugWithDb<T>
+            for $enum_name
+        {
             fn fmt(
                 &self,
                 f: &mut std::fmt::Formatter<'_>,
-                db: &(dyn DefsGroup + 'static),
+                db: &T,
             ) -> std::fmt::Result {
+                let db : &(dyn DefsGroup + 'static) = db.upcast();
                 match self {
                     $(
                         $enum_name::$variant(id) => id.fmt(f, db),
