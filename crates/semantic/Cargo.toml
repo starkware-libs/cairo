@@ -20,7 +20,7 @@ pretty_assertions = "1.2.1"
 salsa = "0.16.1"
 smol_str = "0.1.23"
 syntax = { path = "../syntax" }
-utils = { path = "../utils" }
+utils = { path = "../utils", features = ["testing"] }
 
 [dev-dependencies]
 assert_matches = "1.5"
