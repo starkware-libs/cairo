@@ -1,15 +1,10 @@
 use defs::ids::{ModuleId, ModuleItemId};
-use diagnostics::{Diagnostics, WithDiagnostics};
-use diagnostics_proc_macros::with_diagnostics;
 use syntax::node::ast;
 
 use crate::corelib::core_module;
 use crate::db::SemanticGroup;
-use crate::Diagnostic;
 
-#[with_diagnostics]
 pub fn resolve_item(
-    diagnostics: &mut Diagnostics<Diagnostic>,
     db: &dyn SemanticGroup,
     module_id: ModuleId,
     path: &ast::ExprPath,
@@ -26,6 +21,5 @@ pub fn resolve_item(
     };
     let name = last_element.ident(syntax_db).text(syntax_db);
     db.module_item_by_name(module_id, name.clone())
-        .propagate(diagnostics)
-        .or_else(|| db.module_item_by_name(core_module(db), name).propagate(diagnostics))
+        .or_else(|| db.module_item_by_name(core_module(db), name))
 }

@@ -42,7 +42,6 @@
                     },
                     "cairo.languageServerPath": {
                         "type": "string",
-                        "default": "cairo-lang-server",
                         "description": "Path to the Cairo language server (cairo-lang-server).",
                         "scope": "window"
                     }

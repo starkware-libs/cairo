@@ -15,7 +15,7 @@ use crate::{semantic, ExprId, StatementId, TypeId};
 #[test]
 fn test_expr_literal() {
     let mut db_val = SemanticDatabaseForTesting::default();
-    let (_module_id, expr_id) = setup_test_expr(&mut db_val, "7", "", "").expect("");
+    let expr_id = setup_test_expr(&mut db_val, "7", "", "").unwrap().expr_id;
     let db = &db_val;
     let expr = db.lookup_intern_expr(expr_id);
     // TODO(spapini): Currently, DebugWithDb can't "switch" dbs, and thus ExternTypeId is not
@@ -37,9 +37,9 @@ fn test_expr_literal() {
 #[test]
 fn test_expr_operator() {
     let mut db_val = SemanticDatabaseForTesting::default();
-    let (_module_id, expr_id) = setup_test_expr(&mut db_val, "5 + 9 * 3 == 0", "", "").expect("");
+    let test_expr = setup_test_expr(&mut db_val, "5 + 9 * 3 == 0", "", "").unwrap();
     let db = &db_val;
-    let expr = db.lookup_intern_expr(expr_id);
+    let expr = db.lookup_intern_expr(test_expr.expr_id);
     // TODO(spapini): Make transparent DebugWithDb attribute, to have better outputs.
     // TODO(spapini): Have better whitespaces here somehow.
     assert_eq!(
@@ -56,14 +56,51 @@ fn test_expr_operator() {
     );
 }
 
+// TODO(lior): Move to a text file with all the similar failure tests.
+#[test]
+fn test_expr_operator_failures() {
+    let mut db = SemanticDatabaseForTesting::default();
+    let diagnostics = setup_test_function(
+        &mut db,
+        indoc! {"
+            func foo(a: MyType) {
+                a + a * a
+            }
+        "},
+        "foo",
+        "extern type MyType;",
+    )
+    .get_diagnostics();
+    assert_eq!(
+        diagnostics,
+        indoc! {r#"
+        error: Unexpected argument type. Expected: "core::felt", found: "test_crate::MyType".
+         --> lib.cairo:3:9
+            a + a * a
+                ^
+
+        error: Unexpected argument type. Expected: "core::felt", found: "test_crate::MyType".
+         --> lib.cairo:3:13
+            a + a * a
+                    ^
+
+        error: Unexpected argument type. Expected: "core::felt", found: "test_crate::MyType".
+         --> lib.cairo:3:5
+            a + a * a
+            ^
+
+        "#}
+    );
+}
+
 // TODO(yuval): split test utils and move this test to db_test/type_test.
 #[test]
 fn test_function_with_param() {
     let mut db_val = SemanticDatabaseForTesting::default();
-    let (_module_id, function) =
-        setup_test_function(&mut db_val, "func foo(a: felt) {}", "foo", "").expect("");
+    let test_function =
+        setup_test_function(&mut db_val, "func foo(a: felt) {}", "foo", "").unwrap();
     let _db = &db_val;
-    let signature = function.signature;
+    let signature = test_function.signature;
 
     // TODO(spapini): Verify params names and tests after StablePtr feature is added.
     assert_eq!(signature.params.len(), 1);
@@ -75,11 +112,10 @@ fn test_function_with_param() {
 #[test]
 fn test_tuple_type() {
     let mut db_val = SemanticDatabaseForTesting::default();
-    let (_module_id, function) =
-        setup_test_function(&mut db_val, "func foo(a: (felt, (), (felt,))) {}", "foo", "")
-            .expect("");
+    let test_function =
+        setup_test_function(&mut db_val, "func foo(a: (felt, (), (felt,))) {}", "foo", "").unwrap();
     let db = &db_val;
-    let signature = function.signature;
+    let signature = test_function.signature;
 
     assert_eq!(signature.params.len(), 1);
     let param = &signature.params[0];
@@ -95,10 +131,10 @@ fn test_tuple_type() {
 #[test]
 fn test_function_with_return_type() {
     let mut db_val = SemanticDatabaseForTesting::default();
-    let (_module_id, function) =
-        setup_test_function(&mut db_val, "func foo() -> felt {}", "foo", "").expect("");
+    let test_function =
+        setup_test_function(&mut db_val, "func foo() -> felt {}", "foo", "").unwrap();
     let _db = &db_val;
-    let signature = function.signature;
+    let signature = test_function.signature;
 
     // TODO(spapini): Verify params names and tests after StablePtr feature is added.
     let _ret_ty = signature.return_type;
@@ -107,7 +143,7 @@ fn test_function_with_return_type() {
 #[test]
 fn test_let_statement() {
     let mut db_val = SemanticDatabaseForTesting::default();
-    let (module_id, function) = setup_test_function(
+    let test_function = setup_test_function(
         &mut db_val,
         indoc! {"
             func foo() {
@@ -118,23 +154,23 @@ fn test_let_statement() {
         "foo",
         "",
     )
-    .expect("");
+    .unwrap();
     let db = &db_val;
 
-    let _signature = function.signature;
+    let _signature = test_function.signature;
 
     // TODO(spapini): Verify params names and tests after StablePtr feature is added.
     let semantic::ExprBlock { statements, tail, ty: _, stable_ptr: _ } =
-        extract_matches!(db.lookup_intern_expr(function.body), crate::Expr::ExprBlock);
+        extract_matches!(db.lookup_intern_expr(test_function.body), crate::Expr::ExprBlock);
     assert!(tail.is_none());
 
     // Verify the statements
     assert_eq!(statements.len(), 2);
-    assert_let_statement_with_literal(db, statements[0], module_id, "a".into(), 3);
+    assert_let_statement_with_literal(db, statements[0], test_function.module_id, "a".into(), 3);
     assert_let_statement_with_var(
         db,
         statements[1],
-        module_id,
+        test_function.module_id,
         "b".into(),
         "a".into(),
         core_felt_ty(db),
@@ -144,7 +180,7 @@ fn test_let_statement() {
 #[test]
 fn test_expr_var() {
     let mut db_val = SemanticDatabaseForTesting::default();
-    let (_module_id, function) = setup_test_function(
+    let test_function = setup_test_function(
         &mut db_val,
         indoc! {"
             func foo(a: felt) {
@@ -154,11 +190,11 @@ fn test_expr_var() {
         "foo",
         "",
     )
-    .expect("");
+    .unwrap();
     let db = &db_val;
 
     let semantic::ExprBlock { statements: _, tail, ty: _, stable_ptr: _ } =
-        extract_matches!(db.lookup_intern_expr(function.body), crate::Expr::ExprBlock);
+        extract_matches!(db.lookup_intern_expr(test_function.body), crate::Expr::ExprBlock);
 
     // Check expr.
     let semantic::ExprVar { var: _, ty: _, stable_ptr: _ } = extract_matches!(
@@ -172,7 +208,7 @@ fn test_expr_var() {
 #[test]
 fn test_expr_match() {
     let mut db_val = SemanticDatabaseForTesting::default();
-    let (_module_id, func) = setup_test_function(
+    let test_function = setup_test_function(
         &mut db_val,
         indoc! {"
             func foo(a: felt) {
@@ -185,10 +221,10 @@ fn test_expr_match() {
         "foo",
         "",
     )
-    .expect("");
+    .unwrap();
     let db = &db_val;
     let semantic::ExprBlock { statements: _, tail, ty: _, stable_ptr: _ } =
-        extract_matches!(db.lookup_intern_expr(func.body), crate::Expr::ExprBlock);
+        extract_matches!(db.lookup_intern_expr(test_function.body), crate::Expr::ExprBlock);
     let expr = extract_matches!(
         db.lookup_intern_expr(tail.unwrap()),
         crate::Expr::ExprMatch,
@@ -201,7 +237,7 @@ fn test_expr_match() {
 #[test]
 fn test_expr_block() {
     let mut db_val = SemanticDatabaseForTesting::default();
-    let (_module_id, expr_id) = setup_test_expr(&mut db_val, "{6;8;}", "", "").expect("");
+    let expr_id = setup_test_expr(&mut db_val, "{6;8;}", "", "").unwrap().expr_id;
     let db = &db_val;
     let expr = db.lookup_intern_expr(expr_id);
 
@@ -225,7 +261,7 @@ fn test_expr_block() {
 #[test]
 fn test_expr_block_with_tail_expression() {
     let mut db_val = SemanticDatabaseForTesting::default();
-    let (_module_id, expr_id) = setup_test_expr(&mut db_val, "{6;8;9}", "", "").expect("");
+    let expr_id = setup_test_expr(&mut db_val, "{6;8;9}", "", "").unwrap().expr_id;
     let db = &db_val;
     let expr = db.lookup_intern_expr(expr_id);
 
@@ -258,8 +294,7 @@ fn test_expr_block_with_tail_expression() {
 fn test_expr_call() {
     let mut db_val = SemanticDatabaseForTesting::default();
     // TODO(spapini): Add types.
-    let (_module_id, expr_id) =
-        setup_test_expr(&mut db_val, "foo()", "func foo() {6;}", "").expect("");
+    let expr_id = setup_test_expr(&mut db_val, "foo()", "func foo() {6;}", "").unwrap().expr_id;
     let db = &db_val;
     let expr = db.lookup_intern_expr(expr_id);
 
@@ -274,12 +309,12 @@ fn test_expr_call() {
 fn test_expr_call_missing() {
     let mut db_val = SemanticDatabaseForTesting::default();
     // TODO(spapini): Add types.
-    let (res, diagnostics) = setup_test_expr(&mut db_val, "foo()", "", "").split();
+    let (test_expr, diagnostics) = setup_test_expr(&mut db_val, "foo()", "", "").split();
     let db = &db_val;
 
     // Check expr.
     assert_eq!(
-        diagnostics.format(db),
+        diagnostics,
         indoc! { "
             error: Unknown function.
              --> lib.cairo:2:1
@@ -288,9 +323,9 @@ fn test_expr_call_missing() {
 
         "}
     );
-    assert_eq!(format!("{:?}", res.0.debug(db)), "ModuleId(test_crate)");
+    assert_eq!(format!("{:?}", test_expr.module_id.debug(db)), "ModuleId(test_crate)");
     assert_eq!(
-        format!("{:?}", res.1.debug(db)),
+        format!("{:?}", test_expr.expr_id.debug(db)),
         "ExprFunctionCall(ExprFunctionCall { function: Missing, args: [], ty: Missing })"
     );
 }
@@ -298,7 +333,7 @@ fn test_expr_call_missing() {
 #[test]
 fn test_function_body() {
     let mut db_val = SemanticDatabaseForTesting::default();
-    let (module_id, _module_syntax) = setup_test_function(
+    let module_id = setup_test_function(
         &mut db_val,
         indoc! {"
             func foo(a: felt) {
@@ -308,20 +343,17 @@ fn test_function_body() {
         "foo",
         "",
     )
-    .expect("");
+    .unwrap()
+    .module_id;
     let db = &db_val;
-    let item_id =
-        db.module_item_by_name(module_id, "foo".into()).expect("Unexpected diagnostics").unwrap();
+    let item_id = db.module_item_by_name(module_id, "foo".into()).unwrap();
 
     let function_id = extract_matches!(item_id, ModuleItemId::FreeFunction);
-    let function = db.free_function_semantic(function_id).expect("Unexpected diagnostics").unwrap();
+    let body = db.free_function_body(function_id).unwrap();
 
     // Test the resulting semantic function body.
-    let semantic::ExprBlock { statements, .. } = extract_matches!(
-        db.lookup_intern_expr(function.body),
-        crate::Expr::ExprBlock,
-        "Expected a block."
-    );
+    let semantic::ExprBlock { statements, .. } =
+        extract_matches!(db.lookup_intern_expr(body), crate::Expr::ExprBlock, "Expected a block.");
     assert_eq!(statements.len(), 1);
     let expr = db.lookup_intern_expr(extract_matches!(
         db.lookup_intern_statement(statements[0]),

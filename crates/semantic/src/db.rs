@@ -1,59 +1,129 @@
-use std::collections::HashMap;
-
 use defs::db::{AsDefsGroup, DefsGroup};
 use defs::ids::{
-    FreeFunctionId, GenericFunctionId, LanguageElementId, ModuleId, ParamLongId, StructId, VarId,
+    ExternFunctionId, FreeFunctionId, GenericFunctionId, MemberId, ModuleId, ModuleItemId, StructId,
 };
-use diagnostics::{Diagnostics, WithDiagnostics};
-use diagnostics_proc_macros::with_diagnostics;
+use diagnostics::Diagnostics;
 use filesystem::db::AsFilesGroup;
 use parser::db::ParserGroup;
-use syntax::node::{ast, TypedSyntaxNode};
 
-use crate::corelib::unit_ty;
-use crate::diagnostic::Diagnostic;
-use crate::expr::{compute_expr_semantic, resolve_type, ComputationContext, EnvVariables};
-use crate::ids::{ExprId, StatementId, TypeId, TypeLongId};
-use crate::{corelib, semantic, FunctionId, FunctionLongId};
+use crate::{corelib, expr, items, semantic, types, SemanticDiagnostic};
 
 // Salsa database interface.
+// All queries starting with priv_ are for internal use only by this crate.
+// They appear in the public API because of salsa limitations.
 #[salsa::query_group(SemanticDatabase)]
 pub trait SemanticGroup: DefsGroup + AsDefsGroup + ParserGroup + AsFilesGroup {
     #[salsa::interned]
-    fn intern_function(&self, id: FunctionLongId) -> FunctionId;
+    fn intern_function(&self, id: items::functions::FunctionLongId) -> semantic::FunctionId;
     #[salsa::interned]
-    fn intern_type(&self, id: TypeLongId) -> TypeId;
+    fn intern_type(&self, id: types::TypeLongId) -> semantic::TypeId;
     #[salsa::interned]
-    fn intern_expr(&self, expr: semantic::Expr) -> ExprId;
+    fn intern_expr(&self, expr: semantic::Expr) -> semantic::ExprId;
     #[salsa::interned]
-    fn intern_statement(&self, statement: semantic::Statement) -> StatementId;
+    fn intern_statement(&self, statement: semantic::Statement) -> semantic::StatementId;
 
-    // Queries to compute the semantic model for definitions.
-    fn struct_semantic(&self, item: StructId) -> semantic::Struct;
-    fn expr_semantic(&self, item: ExprId) -> semantic::Expr;
-    fn statement_semantic(&self, item: StatementId) -> semantic::Statement;
+    // Struct.
+    // =======
+    /// Private query to compute data about a struct.
+    #[salsa::invoke(items::strct::priv_struct_semantic_data)]
+    fn priv_struct_semantic_data(&self, struct_id: StructId) -> items::strct::StructData;
+    /// Returns the semantic diagnostics of a struct.
+    #[salsa::invoke(items::strct::struct_semantic_diagnostics)]
+    fn struct_semantic_diagnostics(&self, struct_id: StructId) -> Diagnostics<SemanticDiagnostic>;
+    /// Returns the members of a struct.
+    #[salsa::invoke(items::strct::struct_members)]
+    fn struct_members(&self, struct_id: StructId) -> Vec<MemberId>;
 
-    /// Returns the semantic signature of a function given the function_id.
-    fn generic_function_data(
-        &self,
-        function_id: GenericFunctionId,
-    ) -> WithDiagnostics<Option<GenericFunctionData>, Diagnostic>;
-    fn generic_function_signature_semantic(
-        &self,
-        function_id: GenericFunctionId,
-    ) -> WithDiagnostics<Option<semantic::Signature>, Diagnostic>;
-
-    /// Returns the semantic function given the function_id.
-    fn free_function_semantic(
+    // Free function.
+    // ==============
+    /// Private query to compute data about a free function declaration - its signature excluding
+    /// its body.
+    #[salsa::invoke(items::free_function::priv_free_function_declaration_data)]
+    fn priv_free_function_declaration_data(
         &self,
         function_id: FreeFunctionId,
-    ) -> WithDiagnostics<Option<semantic::FreeFunction>, Diagnostic>;
+    ) -> Option<items::free_function::FreeFunctionDeclarationData>;
+    /// Returns the semantic diagnostics of a function declaration - its signature excluding its
+    /// body.
+    #[salsa::invoke(items::free_function::free_function_declaration_diagnostics)]
+    fn free_function_declaration_diagnostics(
+        &self,
+        free_function_id: FreeFunctionId,
+    ) -> Diagnostics<SemanticDiagnostic>;
+    /// Returns the signature of a free function.
+    #[salsa::invoke(items::free_function::free_function_signature)]
+    fn free_function_signature(
+        &self,
+        free_function_id: FreeFunctionId,
+    ) -> Option<semantic::Signature>;
+
+    /// Private query to compute data about a free function definition - its body.
+    #[salsa::invoke(items::free_function::priv_free_function_definition_data)]
+    fn priv_free_function_definition_data(
+        &self,
+        free_function_id: FreeFunctionId,
+    ) -> Option<items::free_function::FreeFunctionDefinitionData>;
+    /// Returns the semantic diagnostics of a function definition - its body.
+    #[salsa::invoke(items::free_function::free_function_definition_diagnostics)]
+    fn free_function_definition_diagnostics(
+        &self,
+        free_function_id: FreeFunctionId,
+    ) -> Diagnostics<SemanticDiagnostic>;
+    /// Returns the body of a free function.
+    #[salsa::invoke(items::free_function::free_function_body)]
+    fn free_function_body(&self, free_function_id: FreeFunctionId) -> Option<semantic::ExprId>;
+
+    // Extern function.
+    // ================
+    /// Private query to compute data about an extern function declaration. An extern function has
+    /// no body, and thus only has a declaration.
+    #[salsa::invoke(items::extern_function::priv_extern_function_declaration_data)]
+    fn priv_extern_function_declaration_data(
+        &self,
+        function_id: ExternFunctionId,
+    ) -> Option<items::extern_function::ExternFunctionDeclarationData>;
+    /// Returns the semantic diagnostics of an extern function declaration. An extern function has
+    /// no body, and thus only has a declaration.
+    #[salsa::invoke(items::extern_function::extern_function_declaration_diagnostics)]
+    fn extern_function_declaration_diagnostics(
+        &self,
+        extern_function_id: ExternFunctionId,
+    ) -> Diagnostics<SemanticDiagnostic>;
+    /// Returns the signature of an extern function.
+    #[salsa::invoke(items::extern_function::extern_function_declaration_signature)]
+    fn extern_function_declaration_signature(
+        &self,
+        extern_function_id: ExternFunctionId,
+    ) -> Option<semantic::Signature>;
+
+    // Generic function.
+    /// Returns the signature of a generic function. This include free functions, extern functions,
+    /// etc...
+    #[salsa::invoke(items::functions::generic_function_signature)]
+    fn generic_function_signature(
+        &self,
+        generic_function: GenericFunctionId,
+    ) -> Option<semantic::Signature>;
+
+    // Expression.
+    // ===========
+    #[salsa::invoke(expr::expr_semantic)]
+    fn expr_semantic(&self, item: semantic::ExprId) -> semantic::Expr;
+    #[salsa::invoke(expr::statement_semantic)]
+    fn statement_semantic(&self, item: semantic::StatementId) -> semantic::Statement;
+
+    // Aggregates module level semantic diagnostics.
+    // TODO(spapini): use Arcs to Vec of Arcs of diagnostics.
+    fn module_semantic_diagnostics(
+        &self,
+        module_id: ModuleId,
+    ) -> Option<Diagnostics<SemanticDiagnostic>>;
 
     // Corelib.
     #[salsa::invoke(corelib::core_module)]
     fn core_module(&self) -> ModuleId;
     #[salsa::invoke(corelib::core_felt_ty)]
-    fn core_felt_ty(&self) -> TypeId;
+    fn core_felt_ty(&self) -> semantic::TypeId;
 }
 
 pub trait AsSemanticGroup {
@@ -66,144 +136,30 @@ impl AsSemanticGroup for dyn SemanticGroup {
     }
 }
 
-// ----------------------- Queries -----------------------
-
-fn struct_semantic(_db: &dyn SemanticGroup, _struct_id: StructId) -> semantic::Struct {
-    todo!()
-}
-
-/// All the semantic data that can be computed from the signature AST.
-/// Used mostly for performance reasons, and other queries should select from, instead of
-/// recomputing.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct GenericFunctionData {
-    signature: semantic::Signature,
-    variables: EnvVariables,
-}
-
-/// Fetches the AST of the generic function signature. Computes and returns the
-/// [`GenericFunctionData`] struct.
-#[with_diagnostics]
-fn generic_function_data(
-    diagnostics: &mut Diagnostics<Diagnostic>,
-    db: &dyn SemanticGroup,
-    function_id: GenericFunctionId,
-) -> Option<GenericFunctionData> {
-    let module_id = function_id.module(db.as_defs_group());
-    let module_data = db.module_data(module_id).propagate(diagnostics)?;
-    let signature_syntax = match function_id {
-        GenericFunctionId::Free(free_function_id) => {
-            module_data.free_functions.get(&free_function_id)?.signature(db.as_syntax_group())
-        }
-        GenericFunctionId::Extern(extern_function_id) => {
-            module_data.extern_functions.get(&extern_function_id)?.signature(db.as_syntax_group())
-        }
-    };
-
-    let return_type =
-        function_signature_return_type(db, module_id, &signature_syntax).propagate(diagnostics);
-
-    let (params, variables) =
-        function_signature_params(db, module_id, &signature_syntax).propagate(diagnostics)?;
-    Some(GenericFunctionData { signature: semantic::Signature { params, return_type }, variables })
-}
-
-/// Computes the semantic model of the signature of a GenericFunction (e.g. Free / Extern).
-#[with_diagnostics]
-fn generic_function_signature_semantic(
-    diagnostics: &mut Diagnostics<Diagnostic>,
-    db: &dyn SemanticGroup,
-    function_id: GenericFunctionId,
-) -> Option<semantic::Signature> {
-    let generic_data = db.generic_function_data(function_id).propagate(diagnostics)?;
-    Some(generic_data.signature)
-}
-
-#[with_diagnostics]
-fn free_function_semantic(
-    diagnostics: &mut Diagnostics<Diagnostic>,
-    db: &dyn SemanticGroup,
-    free_function_id: FreeFunctionId,
-) -> Option<semantic::FreeFunction> {
-    let module_id = free_function_id.module(db.as_defs_group());
-    let syntax = db
-        .module_data(module_id)
-        .propagate(diagnostics)?
-        .free_functions
-        .get(&free_function_id)?
-        .clone();
-
-    // Compute signature semantic.
-    let generic_function_data = db
-        .generic_function_data(GenericFunctionId::Free(free_function_id))
-        .propagate(diagnostics)?;
-
-    // Compute body semantic expr.
-    let mut ctx = ComputationContext::new(db, module_id, generic_function_data.variables);
-    let body = db.intern_expr(
-        compute_expr_semantic(&mut ctx, ast::Expr::Block(syntax.body(db.as_syntax_group())))
-            .propagate(diagnostics),
-    );
-
-    Some(semantic::FreeFunction { signature: generic_function_data.signature, body })
-}
-
-fn expr_semantic(db: &dyn SemanticGroup, item: ExprId) -> semantic::Expr {
-    db.lookup_intern_expr(item)
-}
-
-fn statement_semantic(db: &dyn SemanticGroup, item: StatementId) -> semantic::Statement {
-    db.lookup_intern_statement(item)
-}
-
-// ----------------------- Helper functions -----------------------
-/// Gets the return type of the given function's AST.
-#[with_diagnostics]
-fn function_signature_return_type(
-    diagnostics: &mut Diagnostics<Diagnostic>,
+// TODO(spapini): Implement this more efficiently, with Arcs where needed, and not clones.
+#[allow(clippy::single_match)]
+fn module_semantic_diagnostics(
     db: &dyn SemanticGroup,
     module_id: ModuleId,
-    sig: &ast::FunctionSignature,
-) -> TypeId {
-    let ty_syntax = match sig.ret_ty(db.as_syntax_group()) {
-        ast::OptionReturnTypeClause::Empty(_) => {
-            return unit_ty(db);
-        }
-        ast::OptionReturnTypeClause::ReturnTypeClause(ret_type_clause) => {
-            ret_type_clause.ty(db.as_syntax_group())
-        }
-    };
-    resolve_type(diagnostics, db, module_id, ty_syntax)
-}
-
-/// Returns the parameters of the given function signature's AST.
-#[with_diagnostics]
-fn function_signature_params(
-    diagnostics: &mut Diagnostics<Diagnostic>,
-    db: &dyn SemanticGroup,
-    module_id: ModuleId,
-    sig: &ast::FunctionSignature,
-) -> Option<(Vec<semantic::Parameter>, EnvVariables)> {
-    let syntax_db = db.as_syntax_group();
-
-    let mut semantic_params = Vec::new();
-    let mut variables = HashMap::new();
-    let ast_params = sig.parameters(syntax_db).elements(syntax_db);
-    for ast_param in ast_params.iter() {
-        let name = ast_param.name(syntax_db).text(syntax_db);
-        let id = db.intern_param(ParamLongId(module_id, ast_param.stable_ptr()));
-        let ty_syntax = match ast_param.type_clause(syntax_db) {
-            ast::NonOptionTypeClause::TypeClause(type_clause) => type_clause.ty(syntax_db),
-            ast::NonOptionTypeClause::NonOptionTypeClauseMissing(_) => {
-                // TODO(yuval): return None + Diagnostic.
-                panic!("param {name} is missing a type clause")
+) -> Option<Diagnostics<SemanticDiagnostic>> {
+    let mut diagnostics = Diagnostics::default();
+    for (_name, item) in db.module_items(module_id)?.items.iter() {
+        match item {
+            // Add signature diagnostics.
+            ModuleItemId::FreeFunction(free_function) => {
+                diagnostics
+                    .0
+                    .extend(db.free_function_declaration_diagnostics(*free_function).0.clone());
+                diagnostics
+                    .0
+                    .extend(db.free_function_definition_diagnostics(*free_function).0.clone());
             }
-        };
-        // TODO(yuval): Diagnostic?
-        let ty = resolve_type(diagnostics, db, module_id, ty_syntax);
-        semantic_params.push(semantic::Parameter { id, ty });
-        variables.insert(name, semantic::Variable { id: VarId::Param(id), ty });
+            ModuleItemId::Submodule(_) => {}
+            ModuleItemId::Use(_) => {}
+            ModuleItemId::Struct(_) => {}
+            ModuleItemId::ExternType(_) => {}
+            ModuleItemId::ExternFunction(_) => {}
+        }
     }
-
-    Some((semantic_params, variables))
+    Some(diagnostics)
 }

@@ -7,7 +7,7 @@ use sierra::program::{BranchTarget, Invocation, Program, Statement, StatementIdx
 use sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use thiserror::Error;
 
-use crate::annotations::{AnnotationError, ProgramAnnotations};
+use crate::annotations::{AnnotationError, ProgramAnnotations, StatementAnnotations};
 use crate::invocations::{check_references_on_stack, compile_invocation, InvocationError};
 use crate::references::{check_types_match, ReferencesError};
 use crate::relocations::{relocate_instructions, RelocationEntry};
@@ -25,8 +25,10 @@ pub enum CompilationError {
     ProgramRegistryError(ProgramRegistryError),
     #[error(transparent)]
     AnnotationError(#[from] AnnotationError),
-    #[error(transparent)]
-    InvocationError(#[from] InvocationError),
+    #[error("#{statement_idx}: {error}")]
+    InvocationError { statement_idx: StatementIdx, error: InvocationError },
+    #[error("#{statement_idx}: Return arguments are not on the stack.")]
+    ReturnArgumentsNotOnStack { statement_idx: StatementIdx },
     #[error(transparent)]
     ReferencesError(#[from] ReferencesError),
     #[error("Invocation mismatched to libfunc")]
@@ -95,11 +97,20 @@ pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
                 let (annotations, return_refs) = program_annotations
                     .get_annotations_after_take_args(statement_idx, ref_ids.iter())?;
 
-                if !annotations.refs.is_empty() {
-                    return Err(ReferencesError::DanglingReferences(statement_idx).into());
-                }
+                if let Some(var_id) = annotations.refs.into_keys().next() {
+                    return Err(
+                        ReferencesError::DanglingReferences { statement_idx, var_id }.into()
+                    );
+                };
                 program_annotations.validate_return_type(&return_refs, annotations.return_types)?;
-                check_references_on_stack(&type_sizes, &return_refs)?;
+                check_references_on_stack(&type_sizes, &return_refs).map_err(
+                    |error| match error {
+                        InvocationError::InvalidReferenceExpressionForArgument => {
+                            CompilationError::ReturnArgumentsNotOnStack { statement_idx }
+                        }
+                        _ => CompilationError::InvocationError { statement_idx, error },
+                    },
+                )?;
 
                 let ret_instruction = RetInstruction {};
                 program_offset += ret_instruction.op_size();
@@ -118,8 +129,14 @@ pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
                 check_basic_structure(invocation, libfunc)?;
 
                 check_types_match(&invoke_refs, libfunc.input_types())?;
-                let compiled_invocation =
-                    compile_invocation(invocation, libfunc, &invoke_refs, &type_sizes)?;
+                let compiled_invocation = compile_invocation(
+                    invocation,
+                    libfunc,
+                    &invoke_refs,
+                    &type_sizes,
+                    annotations.environment,
+                )
+                .map_err(|error| CompilationError::InvocationError { statement_idx, error })?;
 
                 for instruction in &compiled_invocation.instructions {
                     program_offset += instruction.body.op_size();
@@ -135,7 +152,10 @@ pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
 
                 program_annotations.propagate_annotations(
                     statement_idx,
-                    annotations,
+                    StatementAnnotations {
+                        environment: compiled_invocation.environment,
+                        ..annotations
+                    },
                     &invocation.branches,
                     compiled_invocation.results.into_iter(),
                 )?;

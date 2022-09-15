@@ -1,3 +1,4 @@
+use defs::diagnostic_utils::StableLocation;
 use diagnostics::{DiagnosticEntry, DiagnosticLocation};
 
 use crate::db::SierraGenGroup;
@@ -37,12 +38,9 @@ impl From<parser::ParserDiagnostic> for Diagnostic {
         Self::Parser(diagnostic)
     }
 }
-impl From<semantic::Diagnostic> for Diagnostic {
-    fn from(diagnostic: semantic::Diagnostic) -> Self {
-        match diagnostic {
-            semantic::Diagnostic::Semantic(diagnostic) => Diagnostic::Semantic(diagnostic),
-            semantic::Diagnostic::Parser(diagnostic) => Diagnostic::Parser(diagnostic),
-        }
+impl From<semantic::SemanticDiagnostic> for Diagnostic {
+    fn from(diagnostic: semantic::SemanticDiagnostic) -> Self {
+        Self::Semantic(diagnostic)
     }
 }
 impl From<SierraGeneratorDiagnostic> for Diagnostic {
@@ -53,19 +51,40 @@ impl From<SierraGeneratorDiagnostic> for Diagnostic {
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct SierraGeneratorDiagnostic {
-    kind: SierraGeneratorDiagnosticKind,
+    pub stable_location: StableLocation,
+    pub kind: SierraGeneratorDiagnosticKind,
 }
 impl DiagnosticEntry for SierraGeneratorDiagnostic {
     type DbType = dyn SierraGenGroup;
 
     fn format(&self, _db: &Self::DbType) -> String {
-        todo!()
+        match self.kind {
+            SierraGeneratorDiagnosticKind::NonZeroValueInMatch => {
+                "Match with a non-zero value is not supported."
+            }
+            SierraGeneratorDiagnosticKind::CallLibFuncWithGenericArgs => {
+                "Calling a libfunc with generic arguments is not supported yet."
+            }
+            SierraGeneratorDiagnosticKind::OnlyMatchZeroIsSupported => {
+                "Only match zero (match ... { 0 => ..., _ => ... }) is currently supported."
+            }
+            SierraGeneratorDiagnosticKind::InternalErrorUnknownVariable => {
+                "Internal compiler error: unknown variable."
+            }
+        }
+        .into()
     }
 
-    fn location(&self, _db: &Self::DbType) -> DiagnosticLocation {
-        todo!()
+    fn location(&self, db: &Self::DbType) -> DiagnosticLocation {
+        self.stable_location.diagnostic_location(db.as_defs_group())
     }
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub enum SierraGeneratorDiagnosticKind {}
+pub enum SierraGeneratorDiagnosticKind {
+    NonZeroValueInMatch,
+    CallLibFuncWithGenericArgs,
+    // TODO(lior): Remove once supported.
+    OnlyMatchZeroIsSupported,
+    InternalErrorUnknownVariable,
+}

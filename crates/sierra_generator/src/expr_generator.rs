@@ -5,6 +5,7 @@ mod test;
 use defs::ids::GenericFunctionId;
 use sierra::program;
 
+use crate::diagnostic::SierraGeneratorDiagnosticKind;
 use crate::expr_generator_context::ExprGeneratorContext;
 use crate::pre_sierra;
 use crate::utils::{jump_statement, simple_statement};
@@ -17,12 +18,14 @@ pub fn generate_expression_code(
     expr_id: semantic::ExprId,
 ) -> Option<(Vec<pre_sierra::Statement>, sierra::ids::VarId)> {
     match &context.get_db().expr_semantic(expr_id) {
-        semantic::Expr::ExprBlock(expr_block) => handle_block(context, expr_id, expr_block),
+        semantic::Expr::ExprBlock(expr_block) => handle_block(context, expr_block),
         semantic::Expr::ExprFunctionCall(expr_function_call) => {
-            handle_function_call(context, expr_id, expr_function_call)
+            handle_function_call(context, expr_function_call)
         }
-        semantic::Expr::ExprMatch(expr_match) => handle_felt_match(context, expr_id, expr_match),
-        semantic::Expr::ExprVar(expr_var) => Some((vec![], context.get_variable(expr_var.var))),
+        semantic::Expr::ExprMatch(expr_match) => handle_felt_match(context, expr_match),
+        semantic::Expr::ExprVar(expr_var) => {
+            Some((vec![], context.get_variable(expr_var.var, expr_var.stable_ptr)?))
+        }
         semantic::Expr::ExprLiteral(expr_literal) => {
             let tmp_var = context.allocate_sierra_variable();
             Some((
@@ -34,14 +37,16 @@ pub fn generate_expression_code(
                 tmp_var,
             ))
         }
-        semantic::Expr::Missing { .. } => todo!(),
+        semantic::Expr::Missing { .. } => {
+            // A diagnostic should have already been added by a previous stage.
+            None
+        }
     }
 }
 
 /// Generates Sierra code for [semantic::ExprBlock].
 fn handle_block(
     context: &mut ExprGeneratorContext<'_>,
-    _expr_id: semantic::ExprId,
     expr_block: &semantic::ExprBlock,
 ) -> Option<(Vec<pre_sierra::Statement>, sierra::ids::VarId)> {
     // Process the statements.
@@ -57,6 +62,7 @@ fn handle_block(
                 statements.extend(cur_statements);
                 context.register_variable(defs::ids::VarId::Local(statement_let.var.id), res);
             }
+            semantic::Statement::Return(_) => todo!(),
         }
     }
 
@@ -77,7 +83,6 @@ fn handle_block(
 /// Generates Sierra code for [semantic::ExprFunctionCall].
 fn handle_function_call(
     context: &mut ExprGeneratorContext<'_>,
-    _expr_id: semantic::ExprId,
     expr_function_call: &semantic::ExprFunctionCall,
 ) -> Option<(Vec<pre_sierra::Statement>, sierra::ids::VarId)> {
     let mut statements: Vec<pre_sierra::Statement> = vec![];
@@ -121,10 +126,13 @@ fn handle_function_call(
             Some((statements, res_var))
         }
         GenericFunctionId::Extern(extern_id) => {
-            assert!(
-                function_long_id.generic_args.is_empty(),
-                "Calling a libfunc with generic arguments is not supported yet."
-            );
+            if !function_long_id.generic_args.is_empty() {
+                context.add_diagnostic(
+                    SierraGeneratorDiagnosticKind::CallLibFuncWithGenericArgs,
+                    expr_function_call.stable_ptr,
+                );
+                return None;
+            }
 
             // Call the libfunc.
             let res_var = context.allocate_sierra_variable();
@@ -151,7 +159,6 @@ fn handle_function_call(
 /// Currently only a simple match-zero is supported.
 fn handle_felt_match(
     context: &mut ExprGeneratorContext<'_>,
-    _expr_id: semantic::ExprId,
     expr_match: &semantic::ExprMatch,
 ) -> Option<(Vec<pre_sierra::Statement>, sierra::ids::VarId)> {
     match &expr_match.arms[..] {
@@ -163,8 +170,13 @@ fn handle_felt_match(
             },
         ] => {
             // Make sure the literal in the pattern is 0.
-            // TODO(lior): Replace with diagnostics.
-            assert_eq!(literal.value, 0);
+            if literal.value != 0 {
+                context.add_diagnostic(
+                    SierraGeneratorDiagnosticKind::NonZeroValueInMatch,
+                    literal.stable_ptr,
+                );
+                return None;
+            }
 
             // Generate two labels: for the second code block (otherwise) and for the end of the
             // match.
@@ -240,8 +252,11 @@ fn handle_felt_match(
             Some((statements, output_var))
         }
         _ => {
-            // TODO(lior): Replace with diagnostics.
-            unimplemented!();
+            context.add_diagnostic(
+                SierraGeneratorDiagnosticKind::OnlyMatchZeroIsSupported,
+                expr_match.stable_ptr,
+            );
+            None
         }
     }
 }

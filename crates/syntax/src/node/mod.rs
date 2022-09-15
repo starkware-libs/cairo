@@ -46,9 +46,9 @@ pub enum SyntaxNodeDetails {
     Token(token::Token),
 }
 impl SyntaxNode {
-    pub fn new_root(db: &dyn SyntaxGroup, green: GreenId) -> Self {
+    pub fn new_root(db: &dyn SyntaxGroup, green: ast::SyntaxFileGreen) -> Self {
         let inner = SyntaxNodeInner {
-            green,
+            green: green.0,
             offset: 0,
             parent: None,
             stable_ptr: db.intern_stable_ptr(SyntaxStablePtr::Root),
@@ -73,6 +73,11 @@ impl SyntaxNode {
     pub fn span(&self, db: &dyn SyntaxGroup) -> TextSpan {
         let start = self.offset();
         let end = start.add(self.width(db) as usize);
+        TextSpan { start, end }
+    }
+    pub fn span_without_trivia(&self, db: &dyn SyntaxGroup) -> TextSpan {
+        let start = self.span_start_without_trivia(db);
+        let end = self.span_end_without_trivia(db);
         TextSpan { start, end }
     }
     pub fn children<'db>(&self, db: &'db dyn SyntaxGroup) -> SyntaxNodeChildIterator<'db> {
@@ -112,6 +117,42 @@ impl SyntaxNode {
                 }
                 unreachable!();
             }
+        }
+    }
+
+    fn span_start_without_trivia(&self, db: &dyn SyntaxGroup) -> TextOffset {
+        match self.details(db) {
+            SyntaxNodeDetails::Syntax(kind) => {
+                if kind == SyntaxKind::Terminal {
+                    return ast::Terminal::from_syntax_node(db, self.clone())
+                        .token(db)
+                        .as_syntax_node()
+                        .offset();
+                }
+                match self.children(db).next() {
+                    Some(node) => node.span_start_without_trivia(db),
+                    None => self.offset(),
+                }
+            }
+            SyntaxNodeDetails::Token(_) => self.offset(),
+        }
+    }
+    fn span_end_without_trivia(&self, db: &dyn SyntaxGroup) -> TextOffset {
+        match self.details(db) {
+            SyntaxNodeDetails::Syntax(kind) => {
+                if kind == SyntaxKind::Terminal {
+                    return ast::Terminal::from_syntax_node(db, self.clone())
+                        .token(db)
+                        .as_syntax_node()
+                        .span(db)
+                        .end;
+                }
+                match self.children(db).last() {
+                    Some(node) => node.span_end_without_trivia(db),
+                    None => self.span(db).end,
+                }
+            }
+            SyntaxNodeDetails::Token(_) => self.span(db).end,
         }
     }
 }
@@ -175,7 +216,8 @@ impl<'db> ExactSizeIterator for SyntaxNodeChildIterator<'db> {
 /// the ast module.
 pub trait TypedSyntaxNode {
     type StablePtr;
-    fn missing(db: &dyn SyntaxGroup) -> GreenId;
+    type Green;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green;
     // TODO(spapini): Make this return an Option, if the kind is wrong.
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self;
     fn from_ptr(db: &dyn SyntaxGroup, root: &ast::SyntaxFile, node: Self::StablePtr) -> Self;
@@ -191,8 +233,8 @@ pub struct Token {
 }
 
 impl Token {
-    pub fn new_green(db: &dyn SyntaxGroup, kind: token::TokenKind, text: SmolStr) -> GreenId {
-        db.intern_green(GreenNode::Token(token::Token { kind, text }))
+    pub fn new_green(db: &dyn SyntaxGroup, kind: token::TokenKind, text: SmolStr) -> TokenGreen {
+        TokenGreen(db.intern_green(GreenNode::Token(token::Token { kind, text })))
     }
     pub fn raw(&self, db: &dyn SyntaxGroup) -> token::Token {
         let green = db.lookup_intern_green(self.node.0.green);
@@ -208,6 +250,7 @@ impl Token {
         self.raw(db).width()
     }
 }
+
 pub struct TokenPtr(SyntaxStablePtrId);
 impl TokenPtr {
     #[allow(dead_code)]
@@ -215,10 +258,21 @@ impl TokenPtr {
         self.0
     }
 }
+
+/// Wrapper for a green id of a token.
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TokenGreen(pub GreenId);
+impl TokenGreen {
+    pub fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        extract_matches!(db.lookup_intern_green(self.0), GreenNode::Token, "Expected a token").text
+    }
+}
+
 impl TypedSyntaxNode for Token {
     type StablePtr = TokenPtr;
-    fn missing(db: &dyn SyntaxGroup) -> GreenId {
-        db.intern_green(GreenNode::Token(token::Token::missing()))
+    type Green = TokenGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        TokenGreen(db.intern_green(GreenNode::Token(token::Token::missing())))
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         let green = db.lookup_intern_green(node.0.green);

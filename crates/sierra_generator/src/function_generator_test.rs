@@ -18,9 +18,11 @@ fn test_function_generator() {
                     5
                 }
             "},
-    );
+    )
+    .unwrap()
+    .module_id;
     let foo = extract_matches!(
-        db.module_items(module_id).expect("").unwrap().items["foo"],
+        db.module_items(module_id).unwrap().items["foo"],
         ModuleItemId::FreeFunction,
         "Unexpected item type."
     );

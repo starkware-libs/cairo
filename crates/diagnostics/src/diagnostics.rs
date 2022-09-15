@@ -27,12 +27,6 @@ pub struct DiagnosticLocation {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Diagnostics<TEntry: DiagnosticEntry>(pub Vec<TEntry>);
 impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
-    // Note: For some reason derive(Default) on Vec<T> requires Default for T. This is why it is
-    // not used here.
-    #[allow(clippy::new_without_default)]
-    pub fn new() -> Self {
-        Self(Vec::new())
-    }
     pub fn add<T>(&mut self, diagnostic: T)
     where
         TEntry: From<T>,
@@ -56,9 +50,14 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
         res
     }
 
-    /// Verifies that there are no diagnostics in this set. Fails otherwise.
+    /// Asserts that no diagnostic has occurred, panicking with an error message on failure.
     pub fn expect(self, error_message: &str) {
         assert!(self.0.is_empty(), "{}\n{:?}", error_message, self);
+    }
+}
+impl<TEntry: DiagnosticEntry> Default for Diagnostics<TEntry> {
+    fn default() -> Self {
+        Self(Vec::new())
     }
 }
 
@@ -116,7 +115,7 @@ impl<T, TEntry: DiagnosticEntry> WithDiagnostics<T, TEntry> {
 
     /// Returns `value` without any diagnostics.
     pub fn pure(value: T) -> Self {
-        Self { value, diagnostics: Diagnostics::new() }
+        Self { value, diagnostics: Diagnostics::default() }
     }
 
     /// Adds the diagnostics of `self` to the given `diagnostics` object and returns the value.
@@ -133,7 +132,7 @@ impl<T, TEntry: DiagnosticEntry> WithDiagnostics<T, TEntry> {
         self.value
     }
 
-    /// Asserts that no diagnostic has occurred, panicking and printing a message on failure.
+    /// Asserts that no diagnostic has occurred, panicking with an error message on failure.
     /// Returns the wrapped value.
     pub fn expect(self, error_message: &str) -> T {
         self.diagnostics.expect(error_message);

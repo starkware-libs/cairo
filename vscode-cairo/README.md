@@ -1,5 +1,8 @@
 # Installation
 
+Install Node.js 18 LTS:
+See troubleshooting section.
+
 From the directory of this file, run:
 ```
 sudo npm install -g vsce
@@ -10,7 +13,7 @@ code --install-extension cairo*.vsix
 
 Remember to build the language server:
 ```
-cargo bin --bin languageserver --release
+cargo build --bin languageserver --release
 ```
 
 ## Troubleshooting
@@ -27,7 +30,7 @@ If successful, go back to `sudo npm install -g vsce` and continue from there.
 
 # Run the extension (for development)
 
-1. Open VSCode in the directory of the extension.
+1. Open VSCode in the directory of this file.
 2. Run:
    ```
    npm install

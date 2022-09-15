@@ -25,7 +25,8 @@ use db_utils::define_short_id;
 use debug::debug::DebugWithDb;
 use filesystem::ids::CrateId;
 use smol_str::SmolStr;
-use syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
+use syntax::node::helpers::{ExprPathGreenEx, TerminalGreenEx};
+use syntax::node::{ast, TypedSyntaxNode};
 
 use crate::db::DefsGroup;
 
@@ -49,11 +50,7 @@ macro_rules! define_language_element_id {
             pub fn name(&self, db: &dyn DefsGroup) -> SmolStr {
                 let syntax_db = db.as_syntax_group();
                 let terminal_green = self.1.name_green(syntax_db);
-                let terminal_ast = ast::Terminal::from_syntax_node(
-                    syntax_db,
-                    SyntaxNode::new_root(syntax_db, terminal_green),
-                );
-                terminal_ast.text(syntax_db)
+                terminal_green.identifier(syntax_db)
             }
         }
         define_short_id!($short_id, $long_id, DefsGroup, $lookup);
@@ -228,6 +225,11 @@ define_language_element_id_as_enum! {
         Struct(StructId),
         Extern(ExternTypeId),
         // TODO(spapini): enums, associated types in impls.
+    }
+}
+impl GenericTypeId {
+    pub fn format(&self, db: &(dyn DefsGroup + 'static)) -> String {
+        format!("{}::{}", self.module(db).full_path(db), self.name(db))
     }
 }
 

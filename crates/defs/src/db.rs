@@ -1,12 +1,9 @@
 use std::sync::Arc;
 
-use diagnostics::{Diagnostics, WithDiagnostics};
-use diagnostics_proc_macros::with_diagnostics;
 use filesystem::db::{AsFilesGroup, FilesGroup};
-use filesystem::ids::{Directory, FileId};
+use filesystem::ids::{CrateId, Directory, FileId};
 use itertools::chain;
 use parser::db::ParserGroup;
-use parser::ParserDiagnostic;
 use smol_str::SmolStr;
 use syntax::node::ast::SyntaxFile;
 use syntax::node::db::{AsSyntaxGroup, SyntaxGroup};
@@ -41,25 +38,18 @@ pub trait DefsGroup: FilesGroup + SyntaxGroup + AsSyntaxGroup + ParserGroup + As
     // Module to syntax.
     fn module_file(&self, module_id: ModuleId) -> Option<FileId>;
     fn module_dir(&self, module_id: ModuleId) -> Option<Directory>;
-    fn module_syntax(
-        &self,
-        module_id: ModuleId,
-    ) -> WithDiagnostics<Option<Arc<SyntaxFile>>, ParserDiagnostic>;
+    fn module_syntax(&self, module_id: ModuleId) -> Option<Arc<SyntaxFile>>;
+
+    // File to module.
+    fn crate_modules(&self, crate_id: CrateId) -> Arc<Vec<ModuleId>>;
+    fn priv_file_to_module_mapping(&self) -> OrderedHashMap<FileId, Vec<ModuleId>>;
+    fn file_modules(&self, file_id: FileId) -> Option<Vec<ModuleId>>;
 
     // Module level resolving.
-    fn module_data(
-        &self,
-        module_id: ModuleId,
-    ) -> WithDiagnostics<Option<ModuleData>, ParserDiagnostic>;
-    fn module_items(
-        &self,
-        module_id: ModuleId,
-    ) -> WithDiagnostics<Option<ModuleItems>, ParserDiagnostic>;
-    fn module_item_by_name(
-        &self,
-        module_id: ModuleId,
-        name: SmolStr,
-    ) -> WithDiagnostics<Option<ModuleItemId>, ParserDiagnostic>;
+    fn module_data(&self, module_id: ModuleId) -> Option<ModuleData>;
+    fn module_submodules(&self, module_id: ModuleId) -> Option<Vec<ModuleId>>;
+    fn module_items(&self, module_id: ModuleId) -> Option<ModuleItems>;
+    fn module_item_by_name(&self, module_id: ModuleId, name: SmolStr) -> Option<ModuleItemId>;
 }
 
 pub trait AsDefsGroup {
@@ -89,14 +79,41 @@ fn module_dir(db: &dyn DefsGroup, module_id: ModuleId) -> Option<Directory> {
         }
     }
 }
+pub fn module_syntax(db: &dyn DefsGroup, module_id: ModuleId) -> Option<Arc<SyntaxFile>> {
+    db.file_syntax(db.module_file(module_id)?)
+}
 
-#[with_diagnostics]
-pub fn module_syntax(
-    diagnostics: &mut Diagnostics<ParserDiagnostic>,
-    db: &dyn DefsGroup,
-    module_id: ModuleId,
-) -> Option<Arc<SyntaxFile>> {
-    db.file_syntax(db.module_file(module_id)?).propagate(diagnostics)
+fn collect_modules_under(db: &dyn DefsGroup, modules: &mut Vec<ModuleId>, module_id: ModuleId) {
+    modules.push(module_id);
+    for submodule_module_id in db.module_submodules(module_id).iter().flatten() {
+        collect_modules_under(db, modules, *submodule_module_id);
+    }
+}
+fn crate_modules(db: &dyn DefsGroup, crate_id: CrateId) -> Arc<Vec<ModuleId>> {
+    let mut modules = Vec::new();
+    collect_modules_under(db, &mut modules, ModuleId::CrateRoot(crate_id));
+    Arc::new(modules)
+}
+fn priv_file_to_module_mapping(db: &dyn DefsGroup) -> OrderedHashMap<FileId, Vec<ModuleId>> {
+    let mut mapping = OrderedHashMap::<FileId, Vec<ModuleId>>::default();
+    for crate_id in db.crates() {
+        for module_id in db.crate_modules(crate_id).iter().copied() {
+            if let Some(file_id) = db.module_file(module_id) {
+                match mapping.get_mut(&file_id) {
+                    Some(file_modules) => {
+                        file_modules.push(module_id);
+                    }
+                    None => {
+                        mapping.insert(file_id, vec![module_id]);
+                    }
+                }
+            }
+        }
+    }
+    mapping
+}
+fn file_modules(db: &dyn DefsGroup, file_id: FileId) -> Option<Vec<ModuleId>> {
+    db.priv_file_to_module_mapping().get(&file_id).cloned()
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -114,16 +131,12 @@ pub struct ModuleItems {
     pub items: OrderedHashMap<SmolStr, ModuleItemId>,
 }
 
-#[with_diagnostics]
-fn module_data(
-    diagnostics: &mut Diagnostics<ParserDiagnostic>,
-    db: &dyn DefsGroup,
-    module_id: ModuleId,
-) -> Option<ModuleData> {
+// TODO(spapini): Make this private.
+fn module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Option<ModuleData> {
     let mut res = ModuleData::default();
     let syntax_db = db.as_syntax_group();
 
-    let syntax_file = db.module_syntax(module_id).propagate(diagnostics)?;
+    let syntax_file = db.module_syntax(module_id)?;
     for item in syntax_file.items(syntax_db).elements(syntax_db) {
         match item {
             ast::Item::Module(module) => {
@@ -163,14 +176,13 @@ fn module_data(
     Some(res)
 }
 
-#[with_diagnostics]
-fn module_items(
-    diagnostics: &mut Diagnostics<ParserDiagnostic>,
-    db: &dyn DefsGroup,
-    module_id: ModuleId,
-) -> Option<ModuleItems> {
+fn module_submodules(db: &dyn DefsGroup, module_id: ModuleId) -> Option<Vec<ModuleId>> {
+    Some(db.module_data(module_id)?.submodules.keys().copied().map(ModuleId::Submodule).collect())
+}
+
+fn module_items(db: &dyn DefsGroup, module_id: ModuleId) -> Option<ModuleItems> {
     let syntax_db = db.as_syntax_group();
-    let module_data = db.module_data(module_id).propagate(diagnostics)?;
+    let module_data = db.module_data(module_id)?;
     // TODO(spapini): Prune other items if name is missing.
     Some(ModuleItems {
         items: chain!(
@@ -207,13 +219,11 @@ fn module_items(
     })
 }
 
-#[with_diagnostics]
 fn module_item_by_name(
-    diagnostics: &mut Diagnostics<ParserDiagnostic>,
     db: &dyn DefsGroup,
     module_id: ModuleId,
     name: SmolStr,
 ) -> Option<ModuleItemId> {
-    let module_items = db.module_items(module_id).propagate(diagnostics)?;
+    let module_items = db.module_items(module_id)?;
     module_items.items.get(&name).copied()
 }

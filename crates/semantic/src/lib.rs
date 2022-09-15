@@ -7,10 +7,13 @@ pub mod db;
 pub mod diagnostic;
 pub mod expr;
 pub mod ids;
+pub mod items;
+pub mod types;
+
 mod resolve_item;
 mod semantic;
 
-pub use diagnostic::{Diagnostic, SemanticDiagnostic};
+pub use diagnostic::SemanticDiagnostic;
 pub use ids::*;
 
 pub use self::semantic::*;

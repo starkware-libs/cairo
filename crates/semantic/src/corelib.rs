@@ -3,7 +3,7 @@ use filesystem::ids::CrateLongId;
 use syntax::token::TokenKind;
 
 use crate::db::SemanticGroup;
-use crate::{ConcreteType, TypeId, TypeLongId};
+use crate::{semantic, TypeId};
 
 pub fn core_module(db: &dyn SemanticGroup) -> ModuleId {
     let core_crate = db.intern_crate(CrateLongId("core".into()));
@@ -13,16 +13,16 @@ pub fn core_module(db: &dyn SemanticGroup) -> ModuleId {
 pub fn core_felt_ty(db: &dyn SemanticGroup) -> TypeId {
     let core_module = db.core_module();
     // This should not fail if the corelib is present.
-    let generic_type = db
-        .module_item_by_name(core_module, "felt".into())
-        .expect("Unexpected diagnostics when looking for corelib")
-        .and_then(GenericTypeId::from)
-        .unwrap();
-    db.intern_type(TypeLongId::Concrete(ConcreteType { generic_type, generic_args: vec![] }))
+    let generic_type =
+        db.module_item_by_name(core_module, "felt".into()).and_then(GenericTypeId::from).unwrap();
+    db.intern_type(semantic::TypeLongId::Concrete(semantic::ConcreteType {
+        generic_type,
+        generic_args: vec![],
+    }))
 }
 
 pub fn unit_ty(db: &dyn SemanticGroup) -> TypeId {
-    db.intern_type(TypeLongId::Tuple(vec![]))
+    db.intern_type(semantic::TypeLongId::Tuple(vec![]))
 }
 
 pub fn core_binary_operator(
@@ -44,7 +44,6 @@ pub fn core_binary_operator(
     };
     let generic_function = db
         .module_item_by_name(core_module, function_name.into())
-        .expect("Unexpected diagnostics when looking for corelib.")
         .and_then(GenericFunctionId::from)?;
     Some(generic_function)
 }
