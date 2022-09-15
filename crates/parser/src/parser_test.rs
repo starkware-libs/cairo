@@ -1,3 +1,5 @@
+#![allow(non_upper_case_globals)]
+
 use std::fmt::Write;
 use std::fs;
 use std::path::PathBuf;
@@ -5,7 +7,6 @@ use std::path::PathBuf;
 use diagnostics::Diagnostics;
 use filesystem::db::FilesGroup;
 use filesystem::ids::FileLongId;
-use pretty_assertions::assert_eq;
 use syntax::node::{SyntaxNode, TypedSyntaxNode};
 use test_case::test_case;
 
@@ -20,71 +21,175 @@ fn read_file(filename: &str) -> String {
         .unwrap_or_else(|_| panic!("Something went wrong reading file {}", filename))
 }
 
-/// Parse the cairo file, print it, and compare with the expected result.
-#[test_case(
-    "test_data/cairo_files/short.cairo", "test_data/expected_results/short_tree", true, false,
-    false; "short_tree_uncolored")]
-#[test_case(
-    "test_data/cairo_files/short.cairo",
-    "test_data/expected_results/short_tree_colored", false, true, false; "short_tree_colored")]
-#[test_case(
-    "test_data/cairo_files/test1.cairo", "test_data/expected_results/test1_tree_no_trivia", true, false,
-    false; "test1_tree_no_trivia")]
-#[test_case(
-    "test_data/cairo_files/test1.cairo",
-    "test_data/expected_results/test1_tree_with_trivia", false, false, true;
-    "test1_tree_with_trivia")]
-#[test_case(
-    "test_data/cairo_files/test2.cairo", "test_data/expected_results/test2_tree_no_trivia", true, false,
-    false; "test2_tree_no_trivia")]
-#[test_case(
-    "test_data/cairo_files/test2.cairo",
-    "test_data/expected_results/test2_tree_with_trivia", false, false, true;
-    "test2_tree_with_trivia")]
-fn parse_and_compare_tree(
-    cairo_filename: &str,
-    expected_output_filename: &str,
+struct ParserTreeTestParams {
+    cairo_filename: &'static str,
+    expected_output_filename: &'static str,
     print_diagnostics: bool,
     print_colors: bool,
     print_trivia: bool,
-) {
+}
+
+const TEST_short_tree_uncolored: ParserTreeTestParams = ParserTreeTestParams {
+    cairo_filename: "test_data/cairo_files/short.cairo",
+    expected_output_filename: "test_data/expected_results/short_tree",
+    print_diagnostics: true,
+    print_colors: false,
+    print_trivia: false,
+};
+const TEST_short_tree_colored: ParserTreeTestParams = ParserTreeTestParams {
+    cairo_filename: "test_data/cairo_files/short.cairo",
+    expected_output_filename: "test_data/expected_results/short_tree_colored",
+    print_diagnostics: false,
+    print_colors: true,
+    print_trivia: false,
+};
+const TEST_test1_tree_no_trivia: ParserTreeTestParams = ParserTreeTestParams {
+    cairo_filename: "test_data/cairo_files/test1.cairo",
+    expected_output_filename: "test_data/expected_results/test1_tree_no_trivia",
+    print_diagnostics: true,
+    print_colors: false,
+    print_trivia: false,
+};
+const TEST_test1_tree_with_trivia: ParserTreeTestParams = ParserTreeTestParams {
+    cairo_filename: "test_data/cairo_files/test1.cairo",
+    expected_output_filename: "test_data/expected_results/test1_tree_with_trivia",
+    print_diagnostics: false,
+    print_colors: false,
+    print_trivia: true,
+};
+const TEST_test2_tree_no_trivia: ParserTreeTestParams = ParserTreeTestParams {
+    cairo_filename: "test_data/cairo_files/test2.cairo",
+    expected_output_filename: "test_data/expected_results/test2_tree_no_trivia",
+    print_diagnostics: true,
+    print_colors: false,
+    print_trivia: false,
+};
+const TEST_test2_tree_with_trivia: ParserTreeTestParams = ParserTreeTestParams {
+    cairo_filename: "test_data/cairo_files/test2.cairo",
+    expected_output_filename: "test_data/expected_results/test2_tree_with_trivia",
+    print_diagnostics: false,
+    print_colors: false,
+    print_trivia: true,
+};
+#[cfg(feature = "fix_parser_tests")]
+static TREE_TEST_CASES: [&ParserTreeTestParams; 6] = [
+    &TEST_short_tree_uncolored,
+    &TEST_short_tree_colored,
+    &TEST_test1_tree_no_trivia,
+    &TEST_test1_tree_with_trivia,
+    &TEST_test2_tree_no_trivia,
+    &TEST_test2_tree_with_trivia,
+];
+
+/// Parse the cairo file, print it, and compare with the expected result.
+#[test_case(&TEST_short_tree_uncolored; "short_tree_uncolored")]
+#[test_case(&TEST_short_tree_colored; "short_tree_colored")]
+#[test_case(&TEST_test1_tree_no_trivia; "test1_tree_no_trivia")]
+#[test_case(&TEST_test1_tree_with_trivia; "test1_tree_with_trivia")]
+#[test_case(&TEST_test2_tree_no_trivia; "test2_tree_no_trivia")]
+#[test_case(&TEST_test2_tree_with_trivia; "test2_tree_with_trivia")]
+fn parse_and_compare_tree(test_params: &ParserTreeTestParams) {
+    parse_and_compare_tree_maybe_fix(test_params, false);
+}
+
+fn parse_and_compare_tree_maybe_fix(test_params: &ParserTreeTestParams, fix: bool) {
     // Make sure the colors are printed, even if the test doesn't run in a terminal.
     colored::control::set_override(true);
 
     let db_val = ParserDatabaseForTesting::default();
     let db = &db_val;
 
-    let (syntax_root, diagnostics) = get_syntax_root_and_diagnostics(db, cairo_filename);
+    let (syntax_root, diagnostics) =
+        get_syntax_root_and_diagnostics(db, test_params.cairo_filename);
     let diagnostics_str = diagnostics.format(db);
 
-    let mut printed_tree = print_tree(db, &syntax_root, print_colors, print_trivia);
-    if print_diagnostics {
+    let mut printed_tree =
+        print_tree(db, &syntax_root, test_params.print_colors, test_params.print_trivia);
+    if test_params.print_diagnostics {
         write!(printed_tree, "--------------------\n{diagnostics_str}").unwrap();
     }
 
-    let expected_tree = read_file(expected_output_filename);
-
-    compare_printed_and_expected(printed_tree, expected_tree);
+    let expected_tree = read_file(test_params.expected_output_filename);
+    compare_printed_and_expected_maybe_fix(
+        printed_tree,
+        expected_tree,
+        test_params.expected_output_filename,
+        fix,
+    );
 }
 
-#[test_case("test_data/cairo_files/colored.cairo","test_data/expected_results/colored", false;"colored")]
-#[test_case("test_data/cairo_files/colored.cairo", "test_data/expected_results/colored_verbose", true; "colored_verbose")]
-fn parse_and_compare_colored(cairo_filename: &str, expected_tree_filename: &str, verbose: bool) {
+struct ParserColoredTestParams {
+    cairo_filename: &'static str,
+    expected_colored_filename: &'static str,
+    verbose: bool,
+}
+
+const TEST_colored: ParserColoredTestParams = ParserColoredTestParams {
+    cairo_filename: "test_data/cairo_files/colored.cairo",
+    expected_colored_filename: "test_data/expected_results/colored",
+    verbose: false,
+};
+const TEST_colored_verbose: ParserColoredTestParams = ParserColoredTestParams {
+    cairo_filename: "test_data/cairo_files/colored.cairo",
+    expected_colored_filename: "test_data/expected_results/colored_verbose",
+    verbose: true,
+};
+#[cfg(feature = "fix_parser_tests")]
+static COLORED_TEST_CASES: [&ParserColoredTestParams; 2] = [&TEST_colored, &TEST_colored_verbose];
+
+#[test_case(&TEST_colored;"colored")]
+#[test_case(&TEST_colored_verbose; "colored_verbose")]
+fn parse_and_compare_colored(test_params: &ParserColoredTestParams) {
+    parse_and_compare_colored_maybe_fix(test_params, false);
+}
+fn parse_and_compare_colored_maybe_fix(test_params: &ParserColoredTestParams, fix: bool) {
     // Make sure the colors are printed, even if the test doesn't run in a terminal.
     colored::control::set_override(true);
 
     let db_val = ParserDatabaseForTesting::default();
     let db = &db_val;
 
-    let (syntax_root, _diagnostics) = get_syntax_root_and_diagnostics(db, cairo_filename);
-    let printed = print_colored(db, &syntax_root, verbose);
-    let expected = read_file(expected_tree_filename);
-
-    compare_printed_and_expected(printed, expected);
+    let (syntax_root, _diagnostics) =
+        get_syntax_root_and_diagnostics(db, test_params.cairo_filename);
+    let printed = print_colored(db, &syntax_root, test_params.verbose);
+    let expected = read_file(test_params.expected_colored_filename);
+    compare_printed_and_expected_maybe_fix(
+        printed,
+        expected,
+        test_params.expected_colored_filename,
+        fix,
+    );
 }
 
-// TODO(yuval): add a CLI referred from the test failure, to be used after changes to the
-// parser/printer.
+/// Compares the printed output with the expected one. If `fix` is true, overwrites the output file
+/// to fix the test.
+fn compare_printed_and_expected_maybe_fix(
+    printed: String,
+    expected: String,
+    expected_output_filename: &str,
+    fix: bool,
+) {
+    if printed != expected {
+        if fix {
+            println!(
+                "Test failed, fixing expected output file: {}. Note to verify that now it looks \
+                 correct!",
+                expected_output_filename
+            );
+            std::fs::write(expected_output_filename, printed)
+                .expect("Failed writing to the expected output file");
+        } else {
+            panic!(
+                "assertion failed: printed != expected.\nTo automatically fix this, run:\n`cargo \
+                 test -p parser -F fix_parser_tests --tests parser::test::fix_parser_tests -- \
+                 --nocapture`.\nNote to carefully review it and not to blindly paste it there, as \
+                 this loses the whole point of the test.\nTo debug this without fixing, use \
+                 _debug_failure()."
+            );
+        }
+    }
+}
+
 fn _debug_failure(printed: String, expected: String) {
     println!("Printed:\n{printed}");
 
@@ -125,17 +230,6 @@ fn get_syntax_root_and_diagnostics(
     (syntax_root.as_syntax_node(), diagnostics)
 }
 
-fn compare_printed_and_expected(printed: String, expected: String) {
-    // assert_eq prints a long confusing error on failure, so it's not used here.
-    assert_eq!(
-        printed, expected,
-        "assertion failed: printed != expected. To debug this, use _debug_failure(). If `printed` \
-         looks like the right output, you can copy it from running _debug_failure() and paste in \
-         the expected file. Note to carefully review it and not to blindly paste it there, as \
-         this loses the whole point of the test."
-    );
-}
-
 // `hex`: print hex if true, raw if false.
 fn _print_bytes(title: &str, bytes: &[u8], hex: bool) {
     println!("{title}");
@@ -150,4 +244,18 @@ fn _print_bytes(title: &str, bytes: &[u8], hex: bool) {
         }
     }
     println!("{bytes_str}");
+}
+
+// Fixes the parser tests expected output files to the content of the parsed files.
+// !!! Use this with caution! Review the changed output files carefully !!!
+#[test]
+#[cfg(feature = "fix_parser_tests")]
+pub fn fix_parser_tests() {
+    for test_params in TREE_TEST_CASES {
+        parse_and_compare_tree_maybe_fix(test_params, true);
+    }
+    for test_params in COLORED_TEST_CASES {
+        parse_and_compare_colored_maybe_fix(test_params, true);
+    }
+    println!("All Parser tests should be fixed now!");
 }
