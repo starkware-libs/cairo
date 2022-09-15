@@ -119,11 +119,10 @@ fn test_tuple_type() {
 
     assert_eq!(signature.params.len(), 1);
     let param = &signature.params[0];
-    assert_eq!(format!("{:?}", param.id.debug(db)), "ParamId(test_crate::a)");
     assert_eq!(
-        format!("{:?}", param.ty.debug(db)),
-        "Tuple([Concrete(ExternTypeId(core::felt)), Tuple([]), \
-         Tuple([Concrete(ExternTypeId(core::felt))])])"
+        format!("{:?}", param.debug(db)),
+        "Parameter { id: ParamId(test_crate::a), ty: Tuple([Concrete(ExternTypeId(core::felt)), \
+         Tuple([]), Tuple([Concrete(ExternTypeId(core::felt))])]) }"
     );
 }
 

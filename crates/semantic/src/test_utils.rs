@@ -45,6 +45,11 @@ impl Upcast<dyn DefsGroup> for SemanticDatabaseForTesting {
         self
     }
 }
+impl Upcast<dyn SemanticGroup> for SemanticDatabaseForTesting {
+    fn upcast(&self) -> &(dyn SemanticGroup + 'static) {
+        self
+    }
+}
 
 pub struct WithStringDiagnostics<T> {
     value: T,
@@ -85,7 +90,7 @@ pub fn setup_test_module(
     db.as_files_group_mut().override_file_content(file_id, Some(Arc::new(content.to_string())));
     let module_id = ModuleId::CrateRoot(crate_id);
 
-    let syntax_diagnostics = db.file_syntax_diagnostics(file_id).format(db.upcast());
+    let syntax_diagnostics = db.file_syntax_diagnostics(file_id).format(Upcast::upcast(db));
     let semantic_diagnostics = db.module_semantic_diagnostics(module_id).unwrap().format(db);
 
     WithStringDiagnostics {
