@@ -24,15 +24,12 @@ macro_rules! define_short_id {
             }
         }
         // Impl transparent DebugWithDb.
-        impl debug::DebugWithDb<dyn $db + 'static> for $short_id {
-            fn fmt(
-                &self,
-                f: &mut std::fmt::Formatter<'_>,
-                db: &(dyn $db + 'static),
-            ) -> std::fmt::Result {
+        impl<T: ?Sized + db_utils::Upcast<dyn $db + 'static>> debug::DebugWithDb<T> for $short_id {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &T) -> std::fmt::Result {
                 use std::fmt::Debug;
 
                 use debug::helper::Fallback;
+                let db = db.upcast();
                 debug::helper::HelperDebug::<$long_id, dyn $db>::helper_debug(
                     &db.$lookup(*self),
                     db,
@@ -45,4 +42,10 @@ macro_rules! define_short_id {
 
 pub trait Upcast<T: ?Sized> {
     fn upcast(&self) -> &T;
+}
+
+impl<T: ?Sized> Upcast<T> for T {
+    fn upcast(&self) -> &T {
+        self
+    }
 }

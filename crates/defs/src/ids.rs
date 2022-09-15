@@ -190,6 +190,7 @@ define_language_element_id!(
 );
 
 // Struct items.
+// TODO(spapini): Override full_path for to include parents, for better debug.
 define_language_element_id!(MemberId, MemberLongId, ast::Param, lookup_intern_member);
 
 define_language_element_id_as_enum! {
@@ -201,8 +202,10 @@ define_language_element_id_as_enum! {
     }
 }
 
+// TODO(spapini): Override full_path for to include parents, for better debug.
 define_language_element_id!(ParamId, ParamLongId, ast::Param, lookup_intern_param);
 // TODO(spapini): change this to a binding inside a pattern.
+// TODO(spapini): Override full_path for to include parents, for better debug.
 define_language_element_id!(LocalVarId, LocalVarLongId, ast::StatementLet, lookup_intern_local_var);
 
 define_language_element_id_as_enum! {

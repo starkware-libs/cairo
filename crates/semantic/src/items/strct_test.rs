@@ -60,9 +60,8 @@ fn test_struct() {
     assert_eq!(
         actual,
         indoc! {"
-            a: Member { id: MemberId(4), ty: Tuple([]) },
-            b: Member { id: MemberId(1), ty: Tuple([Concrete(ExternTypeId(core::felt)), \
-                Concrete(ExternTypeId(core::felt))]) },
-            c: Member { id: MemberId(2), ty: Tuple([]) }"}
+            a: Member { id: MemberId(test_crate::a), ty: Tuple([]) },
+            b: Member { id: MemberId(test_crate::b), ty: Tuple([Concrete(ExternTypeId(core::felt)), Concrete(ExternTypeId(core::felt))]) },
+            c: Member { id: MemberId(test_crate::c), ty: Tuple([]) }"}
     );
 }
