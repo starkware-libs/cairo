@@ -43,6 +43,11 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     struct_id.full_path(db.upcast())
                 )
             }
+            SemanticDiagnosticKind::IncompatibleMatchArms { match_ty, arm_ty } => format!(
+                r#"Match arms have incompatible types: "{}" and "{}""#,
+                match_ty.format(db),
+                arm_ty.format(db)
+            ),
         }
     }
 
@@ -59,4 +64,5 @@ pub enum SemanticDiagnosticKind {
     WrongArgumentType { expected_ty: semantic::TypeId, actual_ty: semantic::TypeId },
     WrongReturnType { expected_ty: semantic::TypeId, actual_ty: semantic::TypeId },
     StructMemberRedefinition { struct_id: StructId, member_name: SmolStr },
+    IncompatibleMatchArms { match_ty: semantic::TypeId, arm_ty: semantic::TypeId },
 }

@@ -224,13 +224,45 @@ fn test_expr_match() {
     let db = &db_val;
     let semantic::ExprBlock { statements: _, tail, ty: _, stable_ptr: _ } =
         extract_matches!(db.lookup_intern_expr(test_function.body), crate::Expr::ExprBlock);
-    let expr = extract_matches!(
-        db.lookup_intern_expr(tail.unwrap()),
-        crate::Expr::ExprMatch,
-        "Expected a match statement."
+    let expr = db.lookup_intern_expr(tail.unwrap());
+    assert_eq!(
+        format!("{:?}", expr.debug(db)),
+        "ExprMatch(ExprMatch { matched_expr: ExprVar(ExprVar { var: Param(ParamId(0)), ty: \
+         Concrete(ExternTypeId(core::felt)) }), arms: [MatchArm { pattern: Literal(ExprLiteral { \
+         value: 0, ty: Concrete(ExternTypeId(core::felt)) }), expression: ExprLiteral(ExprLiteral \
+         { value: 0, ty: Concrete(ExternTypeId(core::felt)) }) }, MatchArm { pattern: Otherwise, \
+         expression: ExprLiteral(ExprLiteral { value: 1, ty: Concrete(ExternTypeId(core::felt)) \
+         }) }], ty: Concrete(ExternTypeId(core::felt)) })"
     );
-    assert_eq!(expr.arms.len(), 2);
-    // TODO(spapini): Test the rest, possibly using DebugWithDb.
+}
+
+#[test]
+fn test_expr_match_failures() {
+    let mut db_val = SemanticDatabaseForTesting::default();
+    let diagnostics = setup_test_function(
+        &mut db_val,
+        indoc! {"
+            func foo(a: felt, b: bool) {
+                match a {
+                    0 => 0,
+                    _ => b,
+                }
+            }
+        "},
+        "foo",
+        "",
+    )
+    .get_diagnostics();
+    assert_eq!(
+        diagnostics,
+        indoc! {r#"
+            error: Match arms have incompatible types: "core::felt" and "core::bool"
+             --> lib.cairo:4:14
+                    _ => b,
+                         ^
+            
+        "#}
+    )
 }
 
 #[test]
