@@ -37,6 +37,7 @@ fn test_function_generator() {
         vec![
             "label0:",
             "felt_drop([0]) -> ()",
+            "revoke_ap_tracking() -> ()",
             "felt_const<5>() -> ([1])",
             "store_temp<[0]>([1]) -> ([2])",
             "return([2])",
