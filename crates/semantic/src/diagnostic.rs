@@ -33,6 +33,16 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     struct_id.full_path(db.as_defs_group())
                 )
             }
+            SemanticDiagnosticKind::StructHasNoMembers { ty: _, member_name: _ } => {
+                "Type <todo> has no members.".to_string()
+            }
+            SemanticDiagnosticKind::NoSuchMember { struct_id, member_name } => {
+                format!(
+                    "Struct {} has not member {member_name}",
+                    struct_id.full_path(db.as_defs_group())
+                )
+            }
+            SemanticDiagnosticKind::InvalidMemberExpression => "Invalid member expression.".into(),
         }
     }
 
@@ -48,4 +58,7 @@ pub enum SemanticDiagnosticKind {
     UnknownType,
     WrongArgumentType { arg_typ: semantic::TypeId, param_typ: semantic::TypeId },
     StructMemberRedefinition { struct_id: StructId, member_name: SmolStr },
+    StructHasNoMembers { ty: semantic::TypeId, member_name: SmolStr },
+    NoSuchMember { struct_id: StructId, member_name: SmolStr },
+    InvalidMemberExpression,
 }
