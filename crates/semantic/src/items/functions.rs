@@ -48,7 +48,7 @@ impl DebugWithDb<dyn SemanticGroup> for ConcreteFunction {
         f: &mut std::fmt::Formatter<'_>,
         db: &(dyn SemanticGroup + 'static),
     ) -> std::fmt::Result {
-        self.generic_function.fmt(f, db.as_defs_group())?;
+        self.generic_function.fmt(f, db.upcast())?;
         if !self.generic_args.is_empty() {
             write!(f, "<")?;
             for arg in self.generic_args.iter() {
@@ -77,12 +77,12 @@ pub fn function_signature_return_type(
     module_id: ModuleId,
     sig: &ast::FunctionSignature,
 ) -> semantic::TypeId {
-    let ty_syntax = match sig.ret_ty(db.as_syntax_group()) {
+    let ty_syntax = match sig.ret_ty(db.upcast()) {
         ast::OptionReturnTypeClause::Empty(_) => {
             return unit_ty(db);
         }
         ast::OptionReturnTypeClause::ReturnTypeClause(ret_type_clause) => {
-            ret_type_clause.ty(db.as_syntax_group())
+            ret_type_clause.ty(db.upcast())
         }
     };
     resolve_type(diagnostics, db, module_id, ty_syntax)
@@ -95,7 +95,7 @@ pub fn function_signature_params(
     module_id: ModuleId,
     sig: &ast::FunctionSignature,
 ) -> (Vec<semantic::Parameter>, Environment) {
-    let syntax_db = db.as_syntax_group();
+    let syntax_db = db.upcast();
 
     let mut semantic_params = Vec::new();
     let mut variables = HashMap::new();

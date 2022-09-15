@@ -1,11 +1,12 @@
 use std::sync::Arc;
 
+use db_utils::Upcast;
 use debug::debug::DebugWithDb;
-use filesystem::db::{init_files_group, AsFilesGroup, FilesDatabase, FilesGroup, FilesGroupEx};
+use filesystem::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup, FilesGroupEx};
 use filesystem::ids::{CrateLongId, Directory, FileLongId};
 use indoc::indoc;
 use parser::db::ParserDatabase;
-use syntax::node::db::{AsSyntaxGroup, SyntaxDatabase, SyntaxGroup};
+use syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use utils::extract_matches;
 
 use crate::db::{DefsDatabase, DefsGroup};
@@ -23,27 +24,32 @@ impl Default for DatabaseForTesting {
         res
     }
 }
-impl AsFilesGroup for DatabaseForTesting {
-    fn as_files_group(&self) -> &(dyn FilesGroup + 'static) {
-        self
-    }
+impl AsFilesGroupMut for DatabaseForTesting {
     fn as_files_group_mut(&mut self) -> &mut (dyn FilesGroup + 'static) {
         self
     }
 }
-impl AsSyntaxGroup for DatabaseForTesting {
-    fn as_syntax_group(&self) -> &(dyn SyntaxGroup + 'static) {
+impl Upcast<dyn FilesGroup> for DatabaseForTesting {
+    fn upcast(&self) -> &(dyn FilesGroup + 'static) {
+        self
+    }
+}
+impl Upcast<dyn SyntaxGroup> for DatabaseForTesting {
+    fn upcast(&self) -> &(dyn SyntaxGroup + 'static) {
         self
     }
 }
 
-pub fn setup_test_module<T: DefsGroup + ?Sized>(db: &mut T, content: &str) -> ModuleId {
+pub fn setup_test_module<T: DefsGroup + AsFilesGroupMut + ?Sized>(
+    db: &mut T,
+    content: &str,
+) -> ModuleId {
     let crate_id = db.intern_crate(CrateLongId("test_crate".into()));
     let directory = Directory("src".into());
     db.set_crate_root(crate_id, Some(directory));
     let file = db.module_file(ModuleId::CrateRoot(crate_id)).unwrap();
     db.as_files_group_mut().override_file_content(file, Some(Arc::new(content.to_string())));
-    let syntax_diagnostics = db.file_syntax_diagnostics(file).format(db.as_files_group());
+    let syntax_diagnostics = db.file_syntax_diagnostics(file).format(db.upcast());
     assert_eq!(syntax_diagnostics, "");
     ModuleId::CrateRoot(crate_id)
 }

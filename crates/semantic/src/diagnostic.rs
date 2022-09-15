@@ -39,7 +39,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
     }
 
     fn location(&self, db: &Self::DbType) -> DiagnosticLocation {
-        self.stable_location.diagnostic_location(db.as_defs_group())
+        self.stable_location.diagnostic_location(db.upcast())
     }
 }
 

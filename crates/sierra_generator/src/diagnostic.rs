@@ -16,9 +16,7 @@ impl DiagnosticEntry for Diagnostic {
         match self {
             Diagnostic::SierraGenerator(diagnostic) => diagnostic.format(db),
             Diagnostic::Semantic(diagnostic) => diagnostic.format(db.as_semantic_group()),
-            Diagnostic::Parser(diagnostic) => {
-                diagnostic.format(db.as_semantic_group().as_files_group())
-            }
+            Diagnostic::Parser(diagnostic) => diagnostic.format(db.as_semantic_group().upcast()),
         }
     }
 
@@ -26,9 +24,7 @@ impl DiagnosticEntry for Diagnostic {
         match self {
             Diagnostic::SierraGenerator(diagnostic) => diagnostic.location(db),
             Diagnostic::Semantic(diagnostic) => diagnostic.location(db.as_semantic_group()),
-            Diagnostic::Parser(diagnostic) => {
-                diagnostic.location(db.as_semantic_group().as_files_group())
-            }
+            Diagnostic::Parser(diagnostic) => diagnostic.location(db.as_semantic_group().upcast()),
         }
     }
 }
@@ -76,7 +72,7 @@ impl DiagnosticEntry for SierraGeneratorDiagnostic {
     }
 
     fn location(&self, db: &Self::DbType) -> DiagnosticLocation {
-        self.stable_location.diagnostic_location(db.as_defs_group())
+        self.stable_location.diagnostic_location(db.upcast())
     }
 }
 

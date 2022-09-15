@@ -9,7 +9,7 @@ pub fn resolve_item(
     module_id: ModuleId,
     path: &ast::ExprPath,
 ) -> Option<ModuleItemId> {
-    let syntax_db = db.as_syntax_group();
+    let syntax_db = db.upcast();
     let elements = path.elements(syntax_db);
     if elements.len() != 1 {
         todo!("Qualified paths are not supported yet");

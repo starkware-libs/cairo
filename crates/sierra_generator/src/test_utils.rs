@@ -1,9 +1,10 @@
-use defs::db::{AsDefsGroup, DefsDatabase};
-use filesystem::db::{init_files_group, AsFilesGroup, FilesDatabase, FilesGroup};
+use db_utils::Upcast;
+use defs::db::{DefsDatabase, DefsGroup};
+use filesystem::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup};
 use parser::db::ParserDatabase;
 use semantic::db::{AsSemanticGroup, SemanticDatabase};
 use sierra::ids::ConcreteLibFuncId;
-use syntax::node::db::{AsSyntaxGroup, SyntaxDatabase, SyntaxGroup};
+use syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 
 use crate::db::{SierraGenDatabase, SierraGenGroup};
 use crate::pre_sierra;
@@ -27,21 +28,23 @@ impl Default for SierraGenDatabaseForTesting {
         res
     }
 }
-impl AsFilesGroup for SierraGenDatabaseForTesting {
-    fn as_files_group(&self) -> &(dyn FilesGroup + 'static) {
-        self
-    }
+impl AsFilesGroupMut for SierraGenDatabaseForTesting {
     fn as_files_group_mut(&mut self) -> &mut (dyn FilesGroup + 'static) {
         self
     }
 }
-impl AsSyntaxGroup for SierraGenDatabaseForTesting {
-    fn as_syntax_group(&self) -> &(dyn SyntaxGroup + 'static) {
+impl Upcast<dyn FilesGroup> for SierraGenDatabaseForTesting {
+    fn upcast(&self) -> &(dyn FilesGroup + 'static) {
         self
     }
 }
-impl AsDefsGroup for SierraGenDatabaseForTesting {
-    fn as_defs_group(&self) -> &(dyn defs::db::DefsGroup + 'static) {
+impl Upcast<dyn SyntaxGroup> for SierraGenDatabaseForTesting {
+    fn upcast(&self) -> &(dyn SyntaxGroup + 'static) {
+        self
+    }
+}
+impl Upcast<dyn DefsGroup> for SierraGenDatabaseForTesting {
+    fn upcast(&self) -> &(dyn defs::db::DefsGroup + 'static) {
         self
     }
 }
