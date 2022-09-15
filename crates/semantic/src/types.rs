@@ -31,7 +31,7 @@ impl TypeId {
         match db.lookup_intern_type(*self) {
             TypeLongId::Concrete(ConcreteType { generic_type, generic_args }) => {
                 assert!(generic_args.is_empty(), "Generic are not supported yet.");
-                generic_type.format(db.as_defs_group())
+                generic_type.format(db.upcast())
             }
             TypeLongId::Tuple(inner_types) => {
                 format!("({})", inner_types.into_iter().map(|ty| ty.format(db)).join(", "))
@@ -52,7 +52,7 @@ impl DebugWithDb<dyn SemanticGroup> for ConcreteType {
         f: &mut std::fmt::Formatter<'_>,
         db: &(dyn SemanticGroup + 'static),
     ) -> std::fmt::Result {
-        self.generic_type.fmt(f, db.as_defs_group())?;
+        self.generic_type.fmt(f, db.upcast())?;
         if !self.generic_args.is_empty() {
             write!(f, "<")?;
             for arg in self.generic_args.iter() {
@@ -73,7 +73,7 @@ pub fn resolve_type(
     module_id: ModuleId,
     ty_syntax: ast::Expr,
 ) -> TypeId {
-    let syntax_db = db.as_syntax_group();
+    let syntax_db = db.upcast();
     match ty_syntax {
         ast::Expr::Path(path) => resolve_item(db, module_id, &path)
             .and_then(GenericTypeId::from)

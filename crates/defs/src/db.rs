@@ -1,12 +1,13 @@
 use std::sync::Arc;
 
-use filesystem::db::{AsFilesGroup, FilesGroup};
+use db_utils::Upcast;
+use filesystem::db::FilesGroup;
 use filesystem::ids::{CrateId, Directory, FileId};
 use itertools::chain;
 use parser::db::ParserGroup;
 use smol_str::SmolStr;
 use syntax::node::ast::SyntaxFile;
-use syntax::node::db::{AsSyntaxGroup, SyntaxGroup};
+use syntax::node::db::SyntaxGroup;
 use syntax::node::{ast, TypedSyntaxNode};
 use utils::ordered_hash_map::OrderedHashMap;
 
@@ -15,7 +16,9 @@ use crate::ids::*;
 /// Salsa database interface.
 /// See [`super::ids`] for further details.
 #[salsa::query_group(DefsDatabase)]
-pub trait DefsGroup: FilesGroup + SyntaxGroup + AsSyntaxGroup + ParserGroup + AsFilesGroup {
+pub trait DefsGroup:
+    FilesGroup + SyntaxGroup + Upcast<dyn SyntaxGroup> + ParserGroup + Upcast<dyn FilesGroup>
+{
     #[salsa::interned]
     fn intern_submodule(&self, id: SubmoduleLongId) -> SubmoduleId;
     #[salsa::interned]
@@ -52,19 +55,15 @@ pub trait DefsGroup: FilesGroup + SyntaxGroup + AsSyntaxGroup + ParserGroup + As
     fn module_item_by_name(&self, module_id: ModuleId, name: SmolStr) -> Option<ModuleItemId>;
 }
 
-pub trait AsDefsGroup {
-    fn as_defs_group(&self) -> &(dyn DefsGroup + 'static);
-}
-
 fn module_file(db: &dyn DefsGroup, module_id: ModuleId) -> Option<FileId> {
     Some(match module_id {
         ModuleId::CrateRoot(crate_id) => {
-            db.crate_root_dir(crate_id)?.file(db.as_files_group(), "lib.cairo".into())
+            db.crate_root_dir(crate_id)?.file(db.upcast(), "lib.cairo".into())
         }
         ModuleId::Submodule(submodule_id) => {
             let parent = submodule_id.module(db);
             let name = submodule_id.name(db);
-            db.module_dir(parent)?.file(db.as_files_group(), format!("{name}.cairo").into())
+            db.module_dir(parent)?.file(db.upcast(), format!("{name}.cairo").into())
         }
     })
 }
@@ -134,7 +133,7 @@ pub struct ModuleItems {
 // TODO(spapini): Make this private.
 fn module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Option<ModuleData> {
     let mut res = ModuleData::default();
-    let syntax_db = db.as_syntax_group();
+    let syntax_db = db.upcast();
 
     let syntax_file = db.module_syntax(module_id)?;
     for item in syntax_file.items(syntax_db).elements(syntax_db) {
@@ -181,7 +180,7 @@ fn module_submodules(db: &dyn DefsGroup, module_id: ModuleId) -> Option<Vec<Modu
 }
 
 fn module_items(db: &dyn DefsGroup, module_id: ModuleId) -> Option<ModuleItems> {
-    let syntax_db = db.as_syntax_group();
+    let syntax_db = db.upcast();
     let module_data = db.module_data(module_id)?;
     // TODO(spapini): Prune other items if name is missing.
     Some(ModuleItems {

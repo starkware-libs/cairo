@@ -396,7 +396,7 @@ pub fn assert_let_statement_with_var(
         crate::Expr::ExprVar,
         "Expected a var expression."
     );
-    assert_eq!(var.name(db.as_defs_group()), expr_var_name);
+    assert_eq!(var.name(db.upcast()), expr_var_name);
     assert_eq!(ty, expr_var_type);
 }
 
@@ -410,8 +410,8 @@ fn assert_let_statement_lhs_and_get_rhs(
 
     let semantic::StatementLet { var, expr } =
         extract_matches!(stmt, semantic::Statement::Let, "Expected a let statement.");
-    assert_eq!(var.id.module(db.as_defs_group()), module_id);
-    assert_eq!(var.id.name(db.as_defs_group()), var_name);
+    assert_eq!(var.id.module(db.upcast()), module_id);
+    assert_eq!(var.id.name(db.upcast()), var_name);
     assert_eq!(var.ty, core_felt_ty(db));
 
     expr

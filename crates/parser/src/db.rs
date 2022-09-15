@@ -1,10 +1,11 @@
 use std::sync::Arc;
 
+use db_utils::Upcast;
 use diagnostics::Diagnostics;
 use filesystem::db::FilesGroup;
 use filesystem::ids::FileId;
 use syntax::node::ast::SyntaxFile;
-use syntax::node::db::{AsSyntaxGroup, SyntaxGroup};
+use syntax::node::db::SyntaxGroup;
 
 use crate::diagnostic::ParserDiagnostic;
 use crate::parser::Parser;
@@ -15,7 +16,7 @@ mod db_test;
 
 // Salsa database interface.
 #[salsa::query_group(ParserDatabase)]
-pub trait ParserGroup: SyntaxGroup + AsSyntaxGroup + FilesGroup {
+pub trait ParserGroup: SyntaxGroup + Upcast<dyn SyntaxGroup> + FilesGroup {
     /// Should only be used internally.
     /// Parses a file and returns the result and the generated [ParserDiagnostic].
     fn priv_file_syntax_data(&self, file_id: FileId) -> SyntaxData;
@@ -33,9 +34,9 @@ pub struct SyntaxData {
 
 pub fn priv_file_syntax_data(db: &dyn ParserGroup, file_id: FileId) -> SyntaxData {
     let mut diagnostics = Diagnostics::default();
-    let syntax = db.file_content(file_id).map(|s| {
-        Arc::new(Parser::parse_file(db.as_syntax_group(), &mut diagnostics, file_id, s.as_str()))
-    });
+    let syntax = db
+        .file_content(file_id)
+        .map(|s| Arc::new(Parser::parse_file(db.upcast(), &mut diagnostics, file_id, s.as_str())));
     SyntaxData { diagnostics: Arc::new(diagnostics), syntax }
 }
 

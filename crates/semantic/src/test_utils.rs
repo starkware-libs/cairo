@@ -1,12 +1,13 @@
 use std::sync::Arc;
 
-use defs::db::{AsDefsGroup, DefsDatabase, DefsGroup};
+use db_utils::Upcast;
+use defs::db::{DefsDatabase, DefsGroup};
 use defs::ids::{FreeFunctionId, GenericFunctionId, ModuleId};
-use filesystem::db::{init_files_group, AsFilesGroup, FilesDatabase, FilesGroup, FilesGroupEx};
+use filesystem::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup, FilesGroupEx};
 use filesystem::ids::{CrateLongId, Directory};
 use parser::db::ParserDatabase;
 use pretty_assertions::assert_eq;
-use syntax::node::db::{AsSyntaxGroup, SyntaxDatabase, SyntaxGroup};
+use syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use utils::extract_matches;
 
 use crate::db::{SemanticDatabase, SemanticGroup};
@@ -24,21 +25,23 @@ impl Default for SemanticDatabaseForTesting {
         res
     }
 }
-impl AsFilesGroup for SemanticDatabaseForTesting {
-    fn as_files_group(&self) -> &(dyn FilesGroup + 'static) {
-        self
-    }
+impl AsFilesGroupMut for SemanticDatabaseForTesting {
     fn as_files_group_mut(&mut self) -> &mut (dyn FilesGroup + 'static) {
         self
     }
 }
-impl AsSyntaxGroup for SemanticDatabaseForTesting {
-    fn as_syntax_group(&self) -> &(dyn SyntaxGroup + 'static) {
+impl Upcast<dyn FilesGroup> for SemanticDatabaseForTesting {
+    fn upcast(&self) -> &(dyn FilesGroup + 'static) {
         self
     }
 }
-impl AsDefsGroup for SemanticDatabaseForTesting {
-    fn as_defs_group(&self) -> &(dyn DefsGroup + 'static) {
+impl Upcast<dyn SyntaxGroup> for SemanticDatabaseForTesting {
+    fn upcast(&self) -> &(dyn SyntaxGroup + 'static) {
+        self
+    }
+}
+impl Upcast<dyn DefsGroup> for SemanticDatabaseForTesting {
+    fn upcast(&self) -> &(dyn DefsGroup + 'static) {
         self
     }
 }
@@ -82,7 +85,7 @@ pub fn setup_test_module(
     db.as_files_group_mut().override_file_content(file_id, Some(Arc::new(content.to_string())));
     let module_id = ModuleId::CrateRoot(crate_id);
 
-    let syntax_diagnostics = db.file_syntax_diagnostics(file_id).format(db.as_files_group());
+    let syntax_diagnostics = db.file_syntax_diagnostics(file_id).format(db.upcast());
     let semantic_diagnostics = db.module_semantic_diagnostics(module_id).unwrap().format(db);
 
     WithStringDiagnostics {

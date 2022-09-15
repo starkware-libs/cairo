@@ -4,8 +4,9 @@ mod semantic_highlighting;
 
 use std::sync::Arc;
 
+use db_utils::Upcast;
 use diagnostics::DiagnosticEntry;
-use filesystem::db::{AsFilesGroup, FilesGroup, FilesGroupEx, PrivRawFileContentQuery};
+use filesystem::db::{AsFilesGroupMut, FilesGroup, FilesGroupEx, PrivRawFileContentQuery};
 use filesystem::ids::{FileId, FileLongId};
 use filesystem::span::TextPosition;
 use parser::db::ParserGroup;
@@ -13,7 +14,6 @@ use semantic::test_utils::SemanticDatabaseForTesting;
 use semantic_highlighting::token_kind::SemanticTokenKind;
 use semantic_highlighting::SemanticTokensTraverser;
 use serde_json::Value;
-use syntax::node::db::AsSyntaxGroup;
 use syntax::node::TypedSyntaxNode;
 use tower_lsp::jsonrpc::Result;
 use tower_lsp::lsp_types::*;
@@ -48,24 +48,16 @@ impl Backend {
         // TODO(spapini): Version.
         let mut diags = Vec::new();
         for d in &syntax_diagnostics.0 {
-            let location = d.location(db.as_files_group());
+            let location = d.location(db.upcast());
             let start = from_pos(
-                location
-                    .span
-                    .start
-                    .position_in_file(db.as_files_group(), location.file_id)
-                    .unwrap(),
+                location.span.start.position_in_file(db.upcast(), location.file_id).unwrap(),
             );
             let end = from_pos(
-                location
-                    .span
-                    .start
-                    .position_in_file(db.as_files_group(), location.file_id)
-                    .unwrap(),
+                location.span.start.position_in_file(db.upcast(), location.file_id).unwrap(),
             );
             diags.push(Diagnostic {
                 range: Range { start, end },
-                message: d.format(db.as_files_group()),
+                message: d.format(db.upcast()),
                 ..Diagnostic::default()
             });
         }
@@ -199,11 +191,7 @@ impl LanguageServer for Backend {
 
         let node = syntax.as_syntax_node();
         let mut data: Vec<SemanticToken> = Vec::new();
-        SemanticTokensTraverser::default().find_semantic_tokens(
-            db.as_syntax_group(),
-            &mut data,
-            node,
-        );
+        SemanticTokensTraverser::default().find_semantic_tokens(db.upcast(), &mut data, node);
         Ok(Some(SemanticTokensResult::Tokens(SemanticTokens { result_id: None, data })))
     }
 }

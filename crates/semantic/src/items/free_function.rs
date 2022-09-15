@@ -42,10 +42,10 @@ pub fn priv_free_function_declaration_data(
     free_function_id: FreeFunctionId,
 ) -> Option<FreeFunctionDeclarationData> {
     let mut diagnostics = Diagnostics::default();
-    let module_id = free_function_id.module(db.as_defs_group());
+    let module_id = free_function_id.module(db.upcast());
     let module_data = db.module_data(module_id)?;
     let signature_syntax =
-        module_data.free_functions.get(&free_function_id)?.signature(db.as_syntax_group());
+        module_data.free_functions.get(&free_function_id)?.signature(db.upcast());
     let return_type =
         function_signature_return_type(&mut diagnostics, db, module_id, &signature_syntax);
     let (params, environment) =
@@ -90,7 +90,7 @@ pub fn priv_free_function_definition_data(
     free_function_id: FreeFunctionId,
 ) -> Option<FreeFunctionDefinitionData> {
     let mut diagnostics = Diagnostics::default();
-    let module_id = free_function_id.module(db.as_defs_group());
+    let module_id = free_function_id.module(db.upcast());
     let module_data = db.module_data(module_id)?;
     let syntax = module_data.free_functions.get(&free_function_id)?.clone();
     // Compute signature semantic.
@@ -104,6 +104,6 @@ pub fn priv_free_function_definition_data(
         declaration.signature.return_type,
         environment,
     );
-    let expr = compute_expr_semantic(&mut ctx, ast::Expr::Block(syntax.body(db.as_syntax_group())));
+    let expr = compute_expr_semantic(&mut ctx, ast::Expr::Block(syntax.body(db.upcast())));
     Some(FreeFunctionDefinitionData { diagnostics, body: db.intern_expr(expr) })
 }

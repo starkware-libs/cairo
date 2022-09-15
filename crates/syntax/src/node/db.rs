@@ -10,7 +10,3 @@ pub trait SyntaxGroup {
     #[salsa::interned]
     fn intern_stable_ptr(&self, field: SyntaxStablePtr) -> SyntaxStablePtrId;
 }
-
-pub trait AsSyntaxGroup {
-    fn as_syntax_group(&self) -> &(dyn SyntaxGroup + 'static);
-}

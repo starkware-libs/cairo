@@ -4,7 +4,8 @@ mod test;
 
 use std::fmt::Write;
 
-use filesystem::db::AsFilesGroup;
+use db_utils::Upcast;
+use filesystem::db::FilesGroup;
 use filesystem::ids::FileId;
 use filesystem::span::TextSpan;
 
@@ -13,7 +14,7 @@ use crate::location_marks::get_location_marks;
 /// A trait for diagnostics (i.e., errors and warnings) across the compiler.
 /// Meant to be implemented by each module that may produce diagnostics.
 pub trait DiagnosticEntry: Clone + std::fmt::Debug + Eq + std::hash::Hash {
-    type DbType: AsFilesGroup + ?Sized;
+    type DbType: Upcast<dyn FilesGroup> + ?Sized;
     fn format(&self, db: &Self::DbType) -> String;
     fn location(&self, db: &Self::DbType) -> DiagnosticLocation;
     // TODO(spapini): Add a way to inspect the diagnostic programmatically, e.g, downcast.
@@ -37,13 +38,12 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
         let mut res = String::new();
         for entry in &self.0 {
             let location = entry.location(db);
-            let filename = location.file_id.file_name(db.as_files_group());
-            let marks = get_location_marks(db.as_files_group(), &location);
-            let pos =
-                match location.span.start.position_in_file(db.as_files_group(), location.file_id) {
-                    Some(pos) => format!("{}:{}", pos.line + 1, pos.col + 1),
-                    None => "?".into(),
-                };
+            let filename = location.file_id.file_name(db.upcast());
+            let marks = get_location_marks(db.upcast(), &location);
+            let pos = match location.span.start.position_in_file(db.upcast(), location.file_id) {
+                Some(pos) => format!("{}:{}", pos.line + 1, pos.col + 1),
+                None => "?".into(),
+            };
             let message = entry.format(db);
             writeln!(res, "error: {message}\n --> {filename}:{pos}\n{marks}\n").unwrap();
         }

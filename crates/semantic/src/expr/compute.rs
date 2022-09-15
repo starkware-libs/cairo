@@ -102,7 +102,7 @@ fn literal_to_semantic(
     literal_syntax: ast::ExprLiteral,
 ) -> semantic::ExprLiteral {
     let db = ctx.db;
-    let syntax_db = db.as_syntax_group();
+    let syntax_db = db.upcast();
     let text = literal_syntax.terminal(syntax_db).text(syntax_db);
     // TODO(spapini): Diagnostics.
     let value = text.parse::<usize>().unwrap();
@@ -116,7 +116,7 @@ pub fn compute_expr_semantic(
     syntax: ast::Expr,
 ) -> semantic::Expr {
     let db = ctx.db;
-    let syntax_db = db.as_syntax_group();
+    let syntax_db = db.upcast();
     // TODO: When semantic::Expr holds the syntax pointer, add it here as well.
     match syntax {
         ast::Expr::Path(path) => {
@@ -254,7 +254,7 @@ pub fn compute_expr_semantic(
 /// Resolves a variable given a context and a path expression.
 fn resolve_variable(ctx: &mut ComputationContext<'_>, path: ast::ExprPath) -> Variable {
     let db = ctx.db;
-    let syntax_db = db.as_syntax_group();
+    let syntax_db = db.upcast();
     let segments = path.elements(syntax_db);
     if segments.len() != 1 {
         // TODO(spapini): Diagnostic.
@@ -348,7 +348,7 @@ pub fn compute_statement_semantic(
     syntax: ast::Statement,
 ) -> StatementId {
     let db = ctx.db;
-    let syntax_db = db.as_syntax_group();
+    let syntax_db = db.upcast();
     let statement = match syntax {
         ast::Statement::Let(let_syntax) => {
             let var_id =

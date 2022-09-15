@@ -39,10 +39,10 @@ pub fn priv_extern_function_declaration_data(
     extern_function_id: ExternFunctionId,
 ) -> Option<ExternFunctionDeclarationData> {
     let mut diagnostics = Diagnostics::default();
-    let module_id = extern_function_id.module(db.as_defs_group());
+    let module_id = extern_function_id.module(db.upcast());
     let module_data = db.module_data(module_id)?;
     let signature_syntax =
-        module_data.extern_functions.get(&extern_function_id)?.signature(db.as_syntax_group());
+        module_data.extern_functions.get(&extern_function_id)?.signature(db.upcast());
     let return_type =
         function_signature_return_type(&mut diagnostics, db, module_id, &signature_syntax);
     let (params, _environment) =
