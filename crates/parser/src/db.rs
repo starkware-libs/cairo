@@ -32,7 +32,7 @@ pub struct SyntaxData {
 }
 
 pub fn priv_file_syntax_data(db: &dyn ParserGroup, file_id: FileId) -> SyntaxData {
-    let mut diagnostics = Diagnostics::new();
+    let mut diagnostics = Diagnostics::default();
     let syntax = db.file_content(file_id).map(|s| {
         Arc::new(Parser::parse_file(db.as_syntax_group(), &mut diagnostics, file_id, s.as_str()))
     });

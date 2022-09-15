@@ -1,10 +1,12 @@
 use defs::db::{AsDefsGroup, DefsGroup};
-use defs::ids::{FreeFunctionId, GenericFunctionId, ModuleId, ModuleItemId, StructId};
-use diagnostics::{Diagnostics, WithDiagnostics};
+use defs::ids::{
+    ExternFunctionId, FreeFunctionId, GenericFunctionId, MemberId, ModuleId, ModuleItemId, StructId,
+};
+use diagnostics::Diagnostics;
 use filesystem::db::AsFilesGroup;
 use parser::db::ParserGroup;
 
-use crate::{corelib, expr, items, semantic, FunctionId, FunctionLongId, SemanticDiagnostic};
+use crate::{corelib, expr, items, semantic, types, SemanticDiagnostic};
 
 // Salsa database interface.
 // All queries starting with priv_ are for internal use only by this crate.
@@ -12,47 +14,103 @@ use crate::{corelib, expr, items, semantic, FunctionId, FunctionLongId, Semantic
 #[salsa::query_group(SemanticDatabase)]
 pub trait SemanticGroup: DefsGroup + AsDefsGroup + ParserGroup + AsFilesGroup {
     #[salsa::interned]
-    fn intern_function(&self, id: FunctionLongId) -> FunctionId;
+    fn intern_function(&self, id: items::functions::FunctionLongId) -> semantic::FunctionId;
     #[salsa::interned]
-    fn intern_type(&self, id: semantic::TypeLongId) -> semantic::TypeId;
+    fn intern_type(&self, id: types::TypeLongId) -> semantic::TypeId;
     #[salsa::interned]
     fn intern_expr(&self, expr: semantic::Expr) -> semantic::ExprId;
     #[salsa::interned]
     fn intern_statement(&self, statement: semantic::Statement) -> semantic::StatementId;
 
-    // Queries to compute the semantic model for definitions.
-    #[salsa::invoke(items::strct::struct_semantic)]
-    fn struct_semantic(&self, item: StructId) -> semantic::Struct;
+    // Struct.
+    // =======
+    /// Private query to compute data about a struct.
+    #[salsa::invoke(items::strct::priv_struct_semantic_data)]
+    fn priv_struct_semantic_data(&self, struct_id: StructId) -> items::strct::StructData;
+    /// Returns the semantic diagnostics of a struct.
+    #[salsa::invoke(items::strct::struct_semantic_diagnostics)]
+    fn struct_semantic_diagnostics(&self, struct_id: StructId) -> Diagnostics<SemanticDiagnostic>;
+    /// Returns the members of a struct.
+    #[salsa::invoke(items::strct::struct_members)]
+    fn struct_members(&self, struct_id: StructId) -> Vec<MemberId>;
+
+    // Free function.
+    // ==============
+    /// Private query to compute data about a free function declaration - its signature excluding
+    /// its body.
+    #[salsa::invoke(items::free_function::priv_free_function_declaration_data)]
+    fn priv_free_function_declaration_data(
+        &self,
+        function_id: FreeFunctionId,
+    ) -> Option<items::free_function::FreeFunctionDeclarationData>;
+    /// Returns the semantic diagnostics of a function declaration - its signature excluding its
+    /// body.
+    #[salsa::invoke(items::free_function::free_function_declaration_diagnostics)]
+    fn free_function_declaration_diagnostics(
+        &self,
+        free_function_id: FreeFunctionId,
+    ) -> Diagnostics<SemanticDiagnostic>;
+    /// Returns the signature of a free function.
+    #[salsa::invoke(items::free_function::free_function_signature)]
+    fn free_function_signature(
+        &self,
+        free_function_id: FreeFunctionId,
+    ) -> Option<semantic::Signature>;
+
+    /// Private query to compute data about a free function definition - its body.
+    #[salsa::invoke(items::free_function::priv_free_function_definition_data)]
+    fn priv_free_function_definition_data(
+        &self,
+        free_function_id: FreeFunctionId,
+    ) -> Option<items::free_function::FreeFunctionDefinitionData>;
+    /// Returns the semantic diagnostics of a function definition - its body.
+    #[salsa::invoke(items::free_function::free_function_definition_diagnostics)]
+    fn free_function_definition_diagnostics(
+        &self,
+        free_function_id: FreeFunctionId,
+    ) -> Diagnostics<SemanticDiagnostic>;
+    /// Returns the body of a free function.
+    #[salsa::invoke(items::free_function::free_function_body)]
+    fn free_function_body(&self, free_function_id: FreeFunctionId) -> Option<semantic::ExprId>;
+
+    // Extern function.
+    // ================
+    /// Private query to compute data about an extern function declaration. An extern function has
+    /// no body, and thus only has a declaration.
+    #[salsa::invoke(items::extern_function::priv_extern_function_declaration_data)]
+    fn priv_extern_function_declaration_data(
+        &self,
+        function_id: ExternFunctionId,
+    ) -> Option<items::extern_function::ExternFunctionDeclarationData>;
+    /// Returns the semantic diagnostics of an extern function declaration. An extern function has
+    /// no body, and thus only has a declaration.
+    #[salsa::invoke(items::extern_function::extern_function_declaration_diagnostics)]
+    fn extern_function_declaration_diagnostics(
+        &self,
+        extern_function_id: ExternFunctionId,
+    ) -> Diagnostics<SemanticDiagnostic>;
+    /// Returns the signature of an extern function.
+    #[salsa::invoke(items::extern_function::extern_function_declaration_signature)]
+    fn extern_function_declaration_signature(
+        &self,
+        extern_function_id: ExternFunctionId,
+    ) -> Option<semantic::Signature>;
+
+    // Generic function.
+    /// Returns the signature of a generic function. This include free functions, extern functions,
+    /// etc...
+    #[salsa::invoke(items::functions::generic_function_signature)]
+    fn generic_function_signature(
+        &self,
+        generic_function: GenericFunctionId,
+    ) -> Option<semantic::Signature>;
+
+    // Expression.
+    // ===========
     #[salsa::invoke(expr::expr_semantic)]
     fn expr_semantic(&self, item: semantic::ExprId) -> semantic::Expr;
     #[salsa::invoke(expr::statement_semantic)]
     fn statement_semantic(&self, item: semantic::StatementId) -> semantic::Statement;
-
-    /// Should only be used internally.
-    /// Computes semantic data about a signature of a generic function.
-    #[salsa::invoke(items::functions::priv_generic_function_signature_data)]
-    fn priv_generic_function_signature_data(
-        &self,
-        function_id: GenericFunctionId,
-    ) -> WithDiagnostics<Option<items::functions::GenericFunctionData>, SemanticDiagnostic>;
-
-    /// Returns the semantic signature of a function given the function_id.
-    #[salsa::invoke(items::functions::generic_function_signature_semantic)]
-    fn generic_function_signature_semantic(
-        &self,
-        function_id: GenericFunctionId,
-    ) -> Option<semantic::Signature>;
-
-    /// Returns the semantic function given the function_id.
-    #[salsa::invoke(items::free_function::priv_free_function_semantic)]
-    fn priv_free_function_semantic(
-        &self,
-        function_id: FreeFunctionId,
-    ) -> WithDiagnostics<Option<semantic::FreeFunction>, SemanticDiagnostic>;
-    /// Returns the semantic function given the function_id.
-    #[salsa::invoke(items::free_function::free_function_semantic)]
-    fn free_function_semantic(&self, function_id: FreeFunctionId)
-    -> Option<semantic::FreeFunction>;
 
     // Aggregates module level semantic diagnostics.
     // TODO(spapini): use Arcs to Vec of Arcs of diagnostics.
@@ -78,31 +136,23 @@ impl AsSemanticGroup for dyn SemanticGroup {
     }
 }
 
-// ----------------------- Queries -----------------------
-
 // TODO(spapini): Implement this more efficiently, with Arcs where needed, and not clones.
 #[allow(clippy::single_match)]
 fn module_semantic_diagnostics(
     db: &dyn SemanticGroup,
     module_id: ModuleId,
 ) -> Option<Diagnostics<SemanticDiagnostic>> {
-    let mut diagnostics = Diagnostics::new();
+    let mut diagnostics = Diagnostics::default();
     for (_name, item) in db.module_items(module_id)?.items.iter() {
         match item {
             // Add signature diagnostics.
             ModuleItemId::FreeFunction(free_function) => {
-                diagnostics.0.extend(
-                    db.priv_generic_function_signature_data(GenericFunctionId::Free(
-                        *free_function,
-                    ))
-                    .get_diagnostics()
+                diagnostics
                     .0
-                    .clone(),
-                );
-                // Add body diagnostics.
-                diagnostics.0.extend(
-                    db.priv_free_function_semantic(*free_function).get_diagnostics().0.clone(),
-                );
+                    .extend(db.free_function_declaration_diagnostics(*free_function).0.clone());
+                diagnostics
+                    .0
+                    .extend(db.free_function_definition_diagnostics(*free_function).0.clone());
             }
             ModuleItemId::Submodule(_) => {}
             ModuleItemId::Use(_) => {}

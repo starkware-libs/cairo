@@ -7,7 +7,6 @@ use semantic::db::{AsSemanticGroup, SemanticGroup};
 use sierra::program::ConcreteTypeLongId;
 
 use crate::diagnostic::Diagnostic;
-use crate::function_generator::generate_function_code;
 use crate::pre_sierra;
 use crate::program_generator::generate_program_code;
 
@@ -41,6 +40,7 @@ pub trait SierraGenGroup: SemanticGroup + AsSemanticGroup {
     ) -> WithDiagnostics<Option<sierra::ids::ConcreteTypeId>, Diagnostic>;
 
     /// Generates and returns the Sierra code (as [pre_sierra::Function]) for a given function.
+    #[salsa::invoke(crate::function_generator::get_function_code)]
     fn get_function_code(
         &self,
         function_id: FreeFunctionId,
@@ -90,16 +90,6 @@ fn get_concrete_type_id(
         }
         semantic::TypeLongId::Missing => None,
     }
-}
-
-#[with_diagnostics]
-fn get_function_code(
-    diagnostics: &mut Diagnostics<Diagnostic>,
-    db: &dyn SierraGenGroup,
-    function_id: FreeFunctionId,
-) -> Option<Arc<pre_sierra::Function>> {
-    let function_semantic: semantic::FreeFunction = db.free_function_semantic(function_id)?;
-    Some(Arc::new(generate_function_code(diagnostics, db, function_id, function_semantic)?))
 }
 
 #[with_diagnostics]
