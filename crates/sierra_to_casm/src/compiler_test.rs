@@ -104,7 +104,7 @@ fn fib_program() {
 
                 test_program@0() -> (felt);
             "},
-            "[2] is not defined at #0.";
+            "#0: [2] is undefined.";
             "Missing reference")]
 #[test_case(indoc! {"
                 type felt = felt;
@@ -116,7 +116,7 @@ fn fib_program() {
 
                 test_program@0([1]: felt) -> ();
             "},
-            "[1] is overridden when moving from #1 to #2.";
+            "#1->#2: [1] was overridden.";
             "Reference override")]
 #[test_case(indoc! {"
                 return([2]);
@@ -283,7 +283,7 @@ fn fib_program() {
                 return();
 
                 foo@0([1]: felt) -> ();
-            "}, "Got 'Unknown ap change' error while moving [1] from #2 to #3.";
+            "}, "#2->#3: Got 'Unknown ap change' error while moving [1].";
             "Ap change error")]
 fn compiler_errors(sierra_code: &str, expected_result: &str) {
     let prog = ProgramParser::new().parse(sierra_code).unwrap();
