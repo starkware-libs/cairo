@@ -1,5 +1,5 @@
 use db_utils::define_short_id;
-use defs::ids::{LocalVarId, VarId};
+use defs::ids::{LocalVarId, MemberId, VarId};
 use diagnostics_proc_macros::DebugWithDb;
 use syntax::node::ids::SyntaxStablePtrId;
 
@@ -40,6 +40,7 @@ pub enum Expr {
     ExprMatch(ExprMatch),
     ExprVar(ExprVar),
     ExprLiteral(ExprLiteral),
+    ExprMemberAccess(ExprMemberAccess),
     Missing { ty: semantic::TypeId, stable_ptr: SyntaxStablePtrId },
 }
 impl Expr {
@@ -50,6 +51,7 @@ impl Expr {
             Expr::ExprMatch(expr) => expr.ty,
             Expr::ExprVar(expr) => expr.ty,
             Expr::ExprLiteral(expr) => expr.ty,
+            Expr::ExprMemberAccess(expr) => expr.ty,
             Expr::Missing { ty, stable_ptr: _ } => *ty,
         }
     }
@@ -60,6 +62,7 @@ impl Expr {
             Expr::ExprMatch(expr) => expr.stable_ptr,
             Expr::ExprVar(expr) => expr.stable_ptr,
             Expr::ExprLiteral(expr) => expr.stable_ptr,
+            Expr::ExprMemberAccess(expr) => expr.stable_ptr,
             Expr::Missing { ty: _, stable_ptr } => *stable_ptr,
         }
     }
@@ -127,6 +130,16 @@ pub struct ExprVar {
 pub struct ExprLiteral {
     // TODO(spapini): Fix the type of `value`.
     pub value: usize,
+    pub ty: semantic::TypeId,
+    #[hide_field_debug_with_db]
+    pub stable_ptr: SyntaxStablePtrId,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[debug_db(SemanticGroup)]
+pub struct ExprMemberAccess {
+    pub expr: semantic::ExprId,
+    pub member: MemberId,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
     pub stable_ptr: SyntaxStablePtrId,

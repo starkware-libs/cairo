@@ -5,12 +5,14 @@
 use std::collections::HashMap;
 
 use defs::diagnostic_utils::StableLocation;
-use defs::ids::{GenericFunctionId, LocalVarLongId, ModuleId, VarId};
+use defs::ids::{GenericFunctionId, GenericTypeId, LocalVarLongId, ModuleId, VarId};
 use diagnostics::Diagnostics;
 use smol_str::SmolStr;
 use syntax::node::db::SyntaxGroup;
 use syntax::node::helpers::TerminalEx;
+use syntax::node::ids::SyntaxStablePtrId;
 use syntax::node::{ast, TypedSyntaxNode};
+use syntax::token::TokenKind;
 
 use super::objects::*;
 use crate::corelib::{core_binary_operator, unit_ty};
@@ -140,17 +142,37 @@ pub fn compute_expr_semantic(
         ast::Expr::Literal(literal_syntax) => {
             semantic::Expr::ExprLiteral(literal_to_semantic(ctx, literal_syntax))
         }
-        ast::Expr::Parenthesized(_) => todo!(),
+        ast::Expr::Parenthesized(paren_syntax) => {
+            compute_expr_semantic(ctx, paren_syntax.expr(syntax_db))
+        }
         ast::Expr::Unary(_) => todo!(),
         ast::Expr::Binary(binary_op_syntax) => {
             let stable_ptr = binary_op_syntax.stable_ptr().untyped();
             let operator_kind = binary_op_syntax.op(syntax_db).kind(syntax_db);
             let lexpr = compute_expr_semantic(ctx, binary_op_syntax.lhs(syntax_db));
-            let rexpr = compute_expr_semantic(ctx, binary_op_syntax.rhs(syntax_db));
+            let rhs_syntax = binary_op_syntax.rhs(syntax_db);
+            if operator_kind == TokenKind::Dot {
+                // Make sure rexpr is something.
+                return match member_access_expr(ctx, lexpr, rhs_syntax, stable_ptr) {
+                    Ok(expr) => expr,
+                    Err(diagnostic_kind) => {
+                        ctx.diagnostics.add(SemanticDiagnostic {
+                            stable_location: StableLocation::from_ast(
+                                ctx.module_id,
+                                &binary_op_syntax,
+                            ),
+                            kind: diagnostic_kind,
+                        });
+                        semantic::Expr::Missing { ty: TypeId::missing(db), stable_ptr }
+                    }
+                };
+            }
+            let rexpr = compute_expr_semantic(ctx, rhs_syntax);
+            let arg_exprs = [lexpr, rexpr];
             let function =
                 match core_binary_operator(db, operator_kind).and_then(|generic_function| {
                     // TODO(lior): Can we avoid the clone() below?
-                    specialize_function(ctx, generic_function, &[lexpr.clone(), rexpr.clone()])
+                    specialize_function(ctx, generic_function, &arg_exprs)
                 }) {
                     Some(generic_function) => generic_function,
                     None => {
@@ -164,9 +186,10 @@ pub fn compute_expr_semantic(
                         return semantic::Expr::Missing { ty: TypeId::missing(db), stable_ptr };
                     }
                 };
+            let args = arg_exprs.into_iter().map(|expr| db.intern_expr(expr)).collect();
             semantic::Expr::ExprFunctionCall(semantic::ExprFunctionCall {
                 function,
-                args: vec![db.intern_expr(lexpr), db.intern_expr(rexpr)],
+                args,
                 ty: function.return_type(db),
                 stable_ptr,
             })
@@ -270,6 +293,74 @@ pub fn compute_expr_semantic(
         }
         ast::Expr::ExprMissing(_) => todo!(),
     }
+}
+
+// TODO(spapini): Consider moving some checks here to the responsibility of the parser.
+/// Computes the semantic model of a member access expression (e.g. "expr.member").
+fn member_access_expr(
+    ctx: &mut ComputationContext<'_>,
+    lexpr: Expr,
+    rhs_syntax: ast::Expr,
+    stable_ptr: SyntaxStablePtrId,
+) -> Result<Expr, SemanticDiagnosticKind> {
+    let syntax_db = ctx.db.upcast();
+
+    // Find MemberId.
+    match ctx.db.lookup_intern_type(lexpr.ty()) {
+        crate::TypeLongId::Concrete(concrete) => match concrete.generic_type {
+            GenericTypeId::Struct(struct_id) => {
+                let member_name = expr_as_identifier(rhs_syntax, syntax_db)?;
+                let member = ctx
+                    .db
+                    .struct_members(struct_id)
+                    .and_then(|members| members.get(&member_name).cloned())
+                    .ok_or(SemanticDiagnosticKind::NoSuchMember { struct_id, member_name })?;
+                let lexpr_id = ctx.db.intern_expr(lexpr);
+                Ok(Expr::ExprMemberAccess(semantic::ExprMemberAccess {
+                    expr: lexpr_id,
+                    member: member.id,
+                    ty: member.ty,
+                    stable_ptr,
+                }))
+            }
+            GenericTypeId::Extern(_) => {
+                let member_name = expr_as_identifier(rhs_syntax, syntax_db)?;
+                Err(SemanticDiagnosticKind::StructHasNoMembers { ty: lexpr.ty(), member_name })
+            }
+        },
+        crate::TypeLongId::Tuple(_) => {
+            // TODO(spapini): Handle .0, .1, ...;
+            todo!()
+        }
+        crate::TypeLongId::Missing => {
+            // An error should have already been emitted for lexpr.
+            Ok(semantic::Expr::Missing { ty: TypeId::missing(ctx.db), stable_ptr })
+        }
+    }
+}
+
+/// Given an expression syntax, if it's an identifier, returns it. Otherwise, returns the proper
+/// error.
+fn expr_as_identifier(
+    rhs_syntax: ast::Expr,
+    syntax_db: &dyn SyntaxGroup,
+) -> Result<SmolStr, SemanticDiagnosticKind> {
+    Ok(match rhs_syntax {
+        ast::Expr::Path(path) => {
+            let segments = path.elements(syntax_db);
+            if segments.len() != 1 {
+                return Err(SemanticDiagnosticKind::InvalidMemberExpression);
+            }
+            let segment = &segments[0];
+            if let ast::OptionGenericArgs::Some(_) = segment.generic_args(syntax_db) {
+                return Err(SemanticDiagnosticKind::InvalidMemberExpression);
+            }
+            segment.ident(syntax_db).text(syntax_db)
+        }
+        _ => {
+            return Err(SemanticDiagnosticKind::InvalidMemberExpression);
+        }
+    })
 }
 
 /// Resolves a variable given a context and a path expression.

@@ -52,7 +52,7 @@ impl DebugWithDb<dyn SemanticGroup> for ConcreteType {
         f: &mut std::fmt::Formatter<'_>,
         db: &(dyn SemanticGroup + 'static),
     ) -> std::fmt::Result {
-        self.generic_type.fmt(f, db.upcast())?;
+        self.generic_type.fmt(f, db)?;
         if !self.generic_args.is_empty() {
             write!(f, "<")?;
             for arg in self.generic_args.iter() {

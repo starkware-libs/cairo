@@ -41,6 +41,7 @@ pub fn generate_expression_code(
             // A diagnostic should have already been added by a previous stage.
             None
         }
+        semantic::Expr::ExprMemberAccess(_) => todo!(),
     }
 }
 
