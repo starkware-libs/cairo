@@ -3,7 +3,9 @@
 mod test;
 
 use defs::diagnostic_utils::StableLocation;
+use defs::ids::{LanguageElementId, StructId};
 use diagnostics::{DiagnosticEntry, DiagnosticLocation};
+use smol_str::SmolStr;
 
 use crate::db::SemanticGroup;
 use crate::semantic;
@@ -17,7 +19,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
     type DbType = dyn SemanticGroup;
 
     fn format(&self, db: &Self::DbType) -> String {
-        match self.kind {
+        match &self.kind {
             SemanticDiagnosticKind::UnknownBinaryOperator => "Unknown binary operator.".into(),
             SemanticDiagnosticKind::UnknownFunction => "Unknown function.".into(),
             SemanticDiagnosticKind::UnknownType => "Unknown type.".into(),
@@ -35,6 +37,12 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     actual_ty.format(db)
                 )
             }
+            SemanticDiagnosticKind::StructMemberRedefinition { struct_id, member_name } => {
+                format!(
+                    r#"Redefinition of member "{member_name}" on struct "{}"."#,
+                    struct_id.full_path(db.upcast())
+                )
+            }
         }
     }
 
@@ -50,4 +58,5 @@ pub enum SemanticDiagnosticKind {
     UnknownType,
     WrongArgumentType { expected_ty: semantic::TypeId, actual_ty: semantic::TypeId },
     WrongReturnType { expected_ty: semantic::TypeId, actual_ty: semantic::TypeId },
+    StructMemberRedefinition { struct_id: StructId, member_name: SmolStr },
 }

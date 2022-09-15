@@ -34,6 +34,9 @@ use crate::db::DefsGroup;
 pub trait LanguageElementId {
     fn module(&self, db: &dyn DefsGroup) -> ModuleId;
     fn name(&self, db: &dyn DefsGroup) -> SmolStr;
+    fn full_path(&self, db: &dyn DefsGroup) -> String {
+        format!("{}::{}", self.module(db).full_path(db), self.name(db))
+    }
 }
 
 /// Utility macro for defining an id for a language element.
