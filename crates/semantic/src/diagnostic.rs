@@ -51,6 +51,13 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 match_ty.format(db),
                 arm_ty.format(db)
             ),
+            SemanticDiagnosticKind::StructHasNoMembers { ty, member_name: _ } => {
+                format!("Type {} has no members.", ty.format(db))
+            }
+            SemanticDiagnosticKind::NoSuchMember { struct_id, member_name } => {
+                format!("Struct {} has not member {member_name}", struct_id.full_path(db.upcast()))
+            }
+            SemanticDiagnosticKind::InvalidMemberExpression => "Invalid member expression.".into(),
         }
     }
 
@@ -69,4 +76,7 @@ pub enum SemanticDiagnosticKind {
     VariableNotFound { name: SmolStr },
     StructMemberRedefinition { struct_id: StructId, member_name: SmolStr },
     IncompatibleMatchArms { match_ty: semantic::TypeId, arm_ty: semantic::TypeId },
+    StructHasNoMembers { ty: semantic::TypeId, member_name: SmolStr },
+    NoSuchMember { struct_id: StructId, member_name: SmolStr },
+    InvalidMemberExpression,
 }
