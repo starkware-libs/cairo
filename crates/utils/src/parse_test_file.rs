@@ -23,16 +23,13 @@ struct TestBuilder {
     current_tag: Option<Tag>,
 }
 
-fn parse_test_file(
+pub fn parse_test_file(
     filename: &Path,
 ) -> io::Result<OrderedHashMap<String, OrderedHashMap<String, String>>> {
     let file = File::open(filename)?;
     let mut lines = io::BufReader::new(file).lines();
     let mut builder = TestBuilder::default();
     while let Some(Ok(line)) = lines.next() {
-        if line.is_empty() {
-            continue;
-        }
         if let Some(line) = line.strip_prefix(TAG_PREFIX) {
             if builder.current_test_name == None {
                 builder.set_test_name(line.into());
@@ -53,8 +50,7 @@ impl TestBuilder {
     /// Closes a tag if one is open, otherwise does nothing.
     fn close_open_tag(&mut self) {
         if let Some(tag) = &mut self.current_tag {
-            self.current_test
-                .insert(std::mem::take(&mut tag.name), std::mem::take(&mut tag.content));
+            self.current_test.insert(std::mem::take(&mut tag.name), tag.content.trim().to_string());
             self.current_tag = None;
         }
     }
@@ -69,9 +65,15 @@ impl TestBuilder {
     }
 
     fn add_content_line(&mut self, line: String) {
-        let tag = self.current_tag.as_mut().expect("No tag open for content.");
-        let connector = if tag.content.is_empty() { "" } else { "\n" };
-        tag.content += &(connector.to_string() + &line);
+        if let Some(tag) = &mut self.current_tag {
+            if !tag.content.is_empty() {
+                tag.content += "\n"
+            }
+            tag.content += &line;
+        } else {
+            // Only allow empty lines outside tags.
+            assert!(line.is_empty(), "No tag found for content line: '{line}'.");
+        }
     }
 
     fn new_test(&mut self) {

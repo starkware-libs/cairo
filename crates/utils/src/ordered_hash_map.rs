@@ -77,3 +77,12 @@ impl<Key: Hash + Eq, Value> FromIterator<(Key, Value)> for OrderedHashMap<Key, V
         Self(iter.into_iter().collect())
     }
 }
+
+impl<Key: Hash + Eq, Value> IntoIterator for OrderedHashMap<Key, Value> {
+    type Item = (Key, Value);
+    type IntoIter = indexmap::map::IntoIter<Key, Value>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
+    }
+}
