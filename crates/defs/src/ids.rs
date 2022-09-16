@@ -89,6 +89,13 @@ macro_rules! define_language_element_id {
     };
 }
 
+pub trait OptFrom<T>
+where
+    Self: Sized,
+{
+    fn opt_from(other: T) -> Option<Self>;
+}
+
 /// Defines and implements LanguageElementId for a subset of other language elements.
 macro_rules! define_language_element_id_as_enum {
     (
@@ -131,6 +138,18 @@ macro_rules! define_language_element_id_as_enum {
                 }
             }
         }
+        // OptFrom implementations.
+        $(
+            impl OptFrom<$enum_name> for $variant_ty {
+                fn opt_from(other: $enum_name) -> Option<Self> {
+                    if let $enum_name::$variant(id) = other {
+                        Some(id)
+                    } else {
+                        None
+                    }
+                }
+            }
+        )*
     }
 }
 
@@ -240,8 +259,8 @@ impl GenericTypeId {
 }
 
 // Downcasts from ModuleItemId.
-impl GenericFunctionId {
-    pub fn from(item: ModuleItemId) -> Option<Self> {
+impl OptFrom<ModuleItemId> for GenericFunctionId {
+    fn opt_from(item: ModuleItemId) -> Option<Self> {
         match item {
             ModuleItemId::FreeFunction(id) => Some(GenericFunctionId::Free(id)),
             ModuleItemId::ExternFunction(id) => Some(GenericFunctionId::Extern(id)),
@@ -252,8 +271,8 @@ impl GenericFunctionId {
         }
     }
 }
-impl GenericTypeId {
-    pub fn from(item: ModuleItemId) -> Option<Self> {
+impl OptFrom<ModuleItemId> for GenericTypeId {
+    fn opt_from(item: ModuleItemId) -> Option<Self> {
         match item {
             ModuleItemId::Struct(id) => Some(GenericTypeId::Struct(id)),
             ModuleItemId::ExternType(id) => Some(GenericTypeId::Extern(id)),
