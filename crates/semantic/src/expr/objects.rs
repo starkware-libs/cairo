@@ -22,6 +22,8 @@ pub enum Statement {
 pub struct StatementLet {
     pub var: LocalVariable,
     pub expr: ExprId,
+    #[hide_field_debug_with_db]
+    pub var_name_stable_ptr: SyntaxStablePtrId,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]

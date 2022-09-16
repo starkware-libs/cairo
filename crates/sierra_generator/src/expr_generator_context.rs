@@ -1,5 +1,3 @@
-use std::collections::hash_map;
-
 use defs::diagnostic_utils::StableLocation;
 use defs::ids::{FreeFunctionId, LanguageElementId, ModuleId};
 use diagnostics::Diagnostics;
@@ -56,15 +54,14 @@ impl<'a> ExprGeneratorContext<'a> {
         &mut self,
         local_var_id: defs::ids::VarId,
         sierra_var: sierra::ids::VarId,
+        stable_ptr: SyntaxStablePtrId,
     ) {
-        match self.variables.entry(local_var_id) {
-            hash_map::Entry::Occupied(_) => {
-                // TODO(lior): Either panic!() if this is necessarily an internal compiler error
-                //   or use diagnostics or Result.
-                unimplemented!()
-            }
-            hash_map::Entry::Vacant(entry) => entry.insert(sierra_var),
-        };
+        if self.variables.insert(local_var_id, sierra_var).is_some() {
+            self.add_diagnostic(
+                SierraGeneratorDiagnosticKind::InternalErrorDuplicatedVariable,
+                stable_ptr,
+            );
+        }
     }
 
     /// Returns the Sierra variable associated with the given local variable.
