@@ -20,9 +20,11 @@ impl DiagnosticEntry for SemanticDiagnostic {
 
     fn format(&self, db: &Self::DbType) -> String {
         match &self.kind {
+            SemanticDiagnosticKind::UnknownLiteral => "Unknown literal.".into(),
             SemanticDiagnosticKind::UnknownBinaryOperator => "Unknown binary operator.".into(),
             SemanticDiagnosticKind::UnknownFunction => "Unknown function.".into(),
             SemanticDiagnosticKind::UnknownType => "Unknown type.".into(),
+            SemanticDiagnosticKind::UnknownStruct => "Unknown struct.".into(),
             SemanticDiagnosticKind::WrongArgumentType { expected_ty, actual_ty } => {
                 format!(
                     r#"Unexpected argument type. Expected: "{}", found: "{}"."#,
@@ -68,9 +70,11 @@ impl DiagnosticEntry for SemanticDiagnostic {
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum SemanticDiagnosticKind {
+    UnknownLiteral,
     UnknownBinaryOperator,
     UnknownFunction,
     UnknownType,
+    UnknownStruct,
     WrongArgumentType { expected_ty: semantic::TypeId, actual_ty: semantic::TypeId },
     WrongReturnType { expected_ty: semantic::TypeId, actual_ty: semantic::TypeId },
     VariableNotFound { name: SmolStr },

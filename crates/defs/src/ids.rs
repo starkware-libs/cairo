@@ -27,6 +27,7 @@ use filesystem::ids::CrateId;
 use smol_str::SmolStr;
 use syntax::node::helpers::{ExprPathGreenEx, TerminalGreenEx};
 use syntax::node::{ast, TypedSyntaxNode};
+use utils::OptFrom;
 
 use crate::db::DefsGroup;
 
@@ -133,6 +134,18 @@ macro_rules! define_language_element_id_as_enum {
                 }
             }
         }
+        // Conversion from ModuleItemId to its child.
+        $(
+            impl OptFrom<$enum_name> for $variant_ty {
+                fn opt_from(other: $enum_name) -> Option<Self> {
+                    if let $enum_name::$variant(id) = other {
+                        Some(id)
+                    } else {
+                        None
+                    }
+                }
+            }
+        )*
     }
 }
 
@@ -241,9 +254,9 @@ impl GenericTypeId {
     }
 }
 
-// Downcasts from ModuleItemId.
-impl GenericFunctionId {
-    pub fn from(item: ModuleItemId) -> Option<Self> {
+// Conversion from ModuleItemId to GenericFunctionId.
+impl OptFrom<ModuleItemId> for GenericFunctionId {
+    fn opt_from(item: ModuleItemId) -> Option<Self> {
         match item {
             ModuleItemId::FreeFunction(id) => Some(GenericFunctionId::Free(id)),
             ModuleItemId::ExternFunction(id) => Some(GenericFunctionId::Extern(id)),
@@ -254,8 +267,8 @@ impl GenericFunctionId {
         }
     }
 }
-impl GenericTypeId {
-    pub fn from(item: ModuleItemId) -> Option<Self> {
+impl OptFrom<ModuleItemId> for GenericTypeId {
+    fn opt_from(item: ModuleItemId) -> Option<Self> {
         match item {
             ModuleItemId::Struct(id) => Some(GenericTypeId::Struct(id)),
             ModuleItemId::ExternType(id) => Some(GenericTypeId::Extern(id)),
