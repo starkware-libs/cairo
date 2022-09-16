@@ -37,6 +37,7 @@ pub fn generate_expression_code(
                 tmp_var,
             ))
         }
+        semantic::Expr::ExprStructCtor(_) => todo!("Struct constructor not supproted yet."),
         semantic::Expr::Missing { .. } => {
             // A diagnostic should have already been added by a previous stage.
             None

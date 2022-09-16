@@ -20,11 +20,19 @@ impl DiagnosticEntry for SemanticDiagnostic {
 
     fn format(&self, db: &Self::DbType) -> String {
         match &self.kind {
+            SemanticDiagnosticKind::Unsupported => "Unsupported feature.".into(),
             SemanticDiagnosticKind::UnknownLiteral => "Unknown literal.".into(),
             SemanticDiagnosticKind::UnknownBinaryOperator => "Unknown binary operator.".into(),
             SemanticDiagnosticKind::UnknownFunction => "Unknown function.".into(),
             SemanticDiagnosticKind::UnknownType => "Unknown type.".into(),
             SemanticDiagnosticKind::UnknownStruct => "Unknown struct.".into(),
+            SemanticDiagnosticKind::UnknownMember => "Unknown member.".into(),
+            SemanticDiagnosticKind::MissingMember { member_name } => {
+                format!("Missing member {member_name}.")
+            }
+            SemanticDiagnosticKind::MemberSpecifiedMoreThanOnce => {
+                "Member specified more than once.".into()
+            }
             SemanticDiagnosticKind::WrongArgumentType { expected_ty, actual_ty } => {
                 format!(
                     r#"Unexpected argument type. Expected: "{}", found: "{}"."#,
@@ -70,11 +78,15 @@ impl DiagnosticEntry for SemanticDiagnostic {
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum SemanticDiagnosticKind {
+    Unsupported,
     UnknownLiteral,
     UnknownBinaryOperator,
     UnknownFunction,
     UnknownType,
     UnknownStruct,
+    UnknownMember,
+    MemberSpecifiedMoreThanOnce,
+    MissingMember { member_name: SmolStr },
     WrongArgumentType { expected_ty: semantic::TypeId, actual_ty: semantic::TypeId },
     WrongReturnType { expected_ty: semantic::TypeId, actual_ty: semantic::TypeId },
     VariableNotFound { name: SmolStr },

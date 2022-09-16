@@ -1,5 +1,5 @@
 use db_utils::define_short_id;
-use defs::ids::{LocalVarId, MemberId, VarId};
+use defs::ids::{LocalVarId, MemberId, StructId, VarId};
 use diagnostics_proc_macros::DebugWithDb;
 use syntax::node::ids::SyntaxStablePtrId;
 
@@ -41,6 +41,7 @@ pub enum Expr {
     ExprVar(ExprVar),
     ExprLiteral(ExprLiteral),
     ExprMemberAccess(ExprMemberAccess),
+    ExprStructCtor(ExprStructCtor),
     Missing { ty: semantic::TypeId, stable_ptr: SyntaxStablePtrId },
 }
 impl Expr {
@@ -52,6 +53,7 @@ impl Expr {
             Expr::ExprVar(expr) => expr.ty,
             Expr::ExprLiteral(expr) => expr.ty,
             Expr::ExprMemberAccess(expr) => expr.ty,
+            Expr::ExprStructCtor(expr) => expr.ty,
             Expr::Missing { ty, stable_ptr: _ } => *ty,
         }
     }
@@ -63,6 +65,7 @@ impl Expr {
             Expr::ExprVar(expr) => expr.stable_ptr,
             Expr::ExprLiteral(expr) => expr.stable_ptr,
             Expr::ExprMemberAccess(expr) => expr.stable_ptr,
+            Expr::ExprStructCtor(expr) => expr.stable_ptr,
             Expr::Missing { ty: _, stable_ptr } => *stable_ptr,
         }
     }
@@ -140,6 +143,16 @@ pub struct ExprLiteral {
 pub struct ExprMemberAccess {
     pub expr: semantic::ExprId,
     pub member: MemberId,
+    pub ty: semantic::TypeId,
+    #[hide_field_debug_with_db]
+    pub stable_ptr: SyntaxStablePtrId,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[debug_db(SemanticGroup)]
+pub struct ExprStructCtor {
+    pub struct_id: StructId,
+    pub members: Vec<(MemberId, ExprId)>,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
     pub stable_ptr: SyntaxStablePtrId,
