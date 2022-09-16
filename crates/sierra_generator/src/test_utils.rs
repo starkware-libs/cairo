@@ -2,12 +2,14 @@ use db_utils::Upcast;
 use defs::db::{DefsDatabase, DefsGroup};
 use filesystem::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup};
 use parser::db::ParserDatabase;
+use salsa::{InternId, InternKey};
 use semantic::db::{AsSemanticGroup, SemanticDatabase};
 use sierra::ids::ConcreteLibFuncId;
 use syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 
 use crate::db::{SierraGenDatabase, SierraGenGroup};
 use crate::pre_sierra;
+use crate::utils::{return_statement, simple_statement};
 
 #[salsa::database(
     DefsDatabase,
@@ -101,4 +103,31 @@ pub fn replace_libfunc_ids_in_program(
         libfunc_declaration.id = replace_id(&libfunc_declaration.id);
     }
     program
+}
+
+/// Generates a dummy statement with the given name, inputs and outputs.
+pub fn dummy_simple_statement(
+    name: &str,
+    inputs: &[usize],
+    outputs: &[usize],
+) -> pre_sierra::Statement {
+    let inputs_vec: Vec<sierra::ids::VarId> =
+        inputs.iter().map(|x| sierra::ids::VarId::from_usize(*x)).collect();
+    let outputs_vec: Vec<sierra::ids::VarId> =
+        outputs.iter().map(|x| sierra::ids::VarId::from_usize(*x)).collect();
+    simple_statement(ConcreteLibFuncId::from_string(name), &inputs_vec, &outputs_vec)
+}
+
+/// Generates a dummy return statement.
+pub fn dummy_return_statement(args: &[usize]) -> pre_sierra::Statement {
+    let args_vec: Vec<sierra::ids::VarId> =
+        args.iter().map(|x| sierra::ids::VarId::from_usize(*x)).collect();
+    return_statement(args_vec)
+}
+
+/// Generates a dummy label.
+pub fn dummy_label(id: usize) -> pre_sierra::Statement {
+    pre_sierra::Statement::Label(pre_sierra::Label {
+        id: pre_sierra::LabelId::from_intern_id(InternId::from(id)),
+    })
 }

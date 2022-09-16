@@ -4,11 +4,10 @@
 #[path = "store_variables_test.rs"]
 mod test;
 
-use std::collections::HashSet;
-
 use sierra::extensions::OutputVarReferenceInfo;
 use sierra::ids::ConcreteLibFuncId;
 use sierra::program::{GenBranchInfo, GenBranchTarget, GenStatement};
+use utils::ordered_hash_set::OrderedHashSet;
 
 use crate::pre_sierra;
 
@@ -36,12 +35,15 @@ where
 
 struct AddStoreVariableStatements {
     result: Vec<pre_sierra::Statement>,
-    deferred_variables: HashSet<sierra::ids::VarId>,
+    deferred_variables: OrderedHashSet<sierra::ids::VarId>,
 }
 impl AddStoreVariableStatements {
     /// Constructs a new [AddStoreVariableStatements] object.
     fn new() -> Self {
-        AddStoreVariableStatements { result: Vec::new(), deferred_variables: HashSet::new() }
+        AddStoreVariableStatements {
+            result: Vec::new(),
+            deferred_variables: OrderedHashSet::default(),
+        }
     }
 
     /// Handles a single statement, including adding required store statements and the statement
@@ -67,6 +69,7 @@ impl AddStoreVariableStatements {
                 }
             }
             pre_sierra::Statement::Sierra(GenStatement::Return(_return_statement)) => {
+                // TODO(lior): Add a store_temp() statement for each returned value.
                 self.store_all_deffered_variables();
             }
             pre_sierra::Statement::Label(_) => {
@@ -77,6 +80,7 @@ impl AddStoreVariableStatements {
     }
 
     /// Stores all the deffered variables and clears `deferred_variables`.
+    /// The variables will be added according to the order of creation.
     fn store_all_deffered_variables(&mut self) {
         // TODO(lior): Store all deferred variables.
         self.deferred_variables.clear();
