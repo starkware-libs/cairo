@@ -42,7 +42,7 @@ pub fn generate_program_code(
         }
     }
     // TODO(orizi): Actually find all the required types.
-    let felt_type = db.get_concrete_type_id(db.core_felt_ty()).propagate(diagnostics)?;
+    let felt_type = db.get_concrete_type_id(db.core_felt_ty())?;
     let non_zero_felt_type = db.intern_concrete_type(sierra::program::ConcreteTypeLongId {
         generic_id: sierra::ids::GenericTypeId::from_string("NonZero"),
         generic_args: vec![sierra::program::GenericArg::Type(felt_type.clone())],

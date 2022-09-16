@@ -112,13 +112,11 @@ impl<'a> ExprGeneratorContext<'a> {
         })
     }
 
-    pub fn store_temp_libfunc_id(&self, ty: semantic::TypeId) -> sierra::ids::ConcreteLibFuncId {
-        // TODO(orizi): Propagate the diagnostics or extract `get_concrete_type_id` usage out of
-        // this function.
-        crate::utils::store_temp_libfunc_id(
-            self.db,
-            self.db.get_concrete_type_id(ty).expect("got unexpected diagnostics").unwrap(),
-        )
+    pub fn store_temp_libfunc_id(
+        &self,
+        ty: semantic::TypeId,
+    ) -> Option<sierra::ids::ConcreteLibFuncId> {
+        Some(crate::utils::store_temp_libfunc_id(self.db, self.db.get_concrete_type_id(ty)?))
     }
 
     pub fn function_call_libfunc_id(
@@ -153,15 +151,16 @@ impl<'a> ExprGeneratorContext<'a> {
         self.get_extension_id_without_generics("revoke_ap_tracking")
     }
 
-    pub fn unwrap_nz_libfunc_id(&self, ty: semantic::TypeId) -> sierra::ids::ConcreteLibFuncId {
-        // TODO(orizi): Propagate the diagnostics or extract `get_concrete_type_id` usage out of
-        // this function.
-        self.db.intern_concrete_lib_func(sierra::program::ConcreteLibFuncLongId {
+    pub fn unwrap_nz_libfunc_id(
+        &self,
+        ty: semantic::TypeId,
+    ) -> Option<sierra::ids::ConcreteLibFuncId> {
+        Some(self.db.intern_concrete_lib_func(sierra::program::ConcreteLibFuncLongId {
             generic_id: sierra::ids::GenericLibFuncId::from_string("unwrap_nz"),
             generic_args: vec![sierra::program::GenericArg::Type(
-                self.db.get_concrete_type_id(ty).expect("got unexpected diagnostics").unwrap(),
+                self.db.get_concrete_type_id(ty)?,
             )],
-        })
+        }))
     }
 
     pub fn generic_libfunc_id(
@@ -169,11 +168,6 @@ impl<'a> ExprGeneratorContext<'a> {
         extern_id: defs::ids::ExternFunctionId,
     ) -> sierra::ids::ConcreteLibFuncId {
         self.get_extension_id_without_generics(extern_id.name(self.db.upcast()))
-    }
-
-    /// Returns the [Diagnostics] object of the context.
-    pub fn get_diagnostics(&mut self) -> &mut Diagnostics<Diagnostic> {
-        &mut self.diagnostics
     }
 
     /// Add a SierraGenerator diagnostic to the list of diagnostics.
