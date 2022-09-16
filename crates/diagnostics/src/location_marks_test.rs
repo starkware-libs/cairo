@@ -56,6 +56,20 @@ fn test_location_marks() {
         "}
     );
 
+    // Span of length 2.
+    let location = DiagnosticLocation {
+        file_id: file,
+        span: TextSpan { start: third_line.add(3), end: third_line.add(5) },
+    };
+
+    assert_eq!(
+        get_location_marks(&db, &location) + "\n",
+        indoc! {"
+            Third line.
+               ^^
+        "}
+    );
+
     // Span of length > 1.
     let location = DiagnosticLocation {
         file_id: file,
