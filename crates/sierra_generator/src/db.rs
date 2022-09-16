@@ -37,7 +37,7 @@ pub trait SierraGenGroup: SemanticGroup + AsSemanticGroup {
     fn get_concrete_type_id(
         &self,
         type_id: semantic::TypeId,
-    ) -> WithDiagnostics<Option<sierra::ids::ConcreteTypeId>, Diagnostic>;
+    ) -> Option<sierra::ids::ConcreteTypeId>;
 
     /// Generates and returns the Sierra code (as [pre_sierra::Function]) for a given function.
     #[salsa::invoke(crate::function_generator::get_function_code)]
@@ -53,9 +53,7 @@ pub trait SierraGenGroup: SemanticGroup + AsSemanticGroup {
     ) -> WithDiagnostics<Option<Arc<sierra::program::Program>>, Diagnostic>;
 }
 
-#[with_diagnostics]
 fn get_concrete_type_id(
-    diagnostics: &mut Diagnostics<Diagnostic>,
     db: &dyn SierraGenGroup,
     type_id: semantic::TypeId,
 ) -> Option<sierra::ids::ConcreteTypeId> {
@@ -65,9 +63,8 @@ fn get_concrete_type_id(
             for arg in &ty.generic_args {
                 match arg {
                     semantic::GenericArgumentId::Type(ty) => {
-                        generic_args.push(sierra::program::GenericArg::Type(
-                            db.get_concrete_type_id(*ty).propagate(diagnostics)?,
-                        ));
+                        generic_args
+                            .push(sierra::program::GenericArg::Type(db.get_concrete_type_id(*ty)?));
                     }
                 }
             }
