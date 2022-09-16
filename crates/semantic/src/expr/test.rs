@@ -658,7 +658,7 @@ fn assert_let_statement_lhs_and_get_rhs(
 ) -> ExprId {
     let stmt = db.lookup_intern_statement(statement_id);
 
-    let semantic::StatementLet { var, expr } =
+    let semantic::StatementLet { var, expr, .. } =
         extract_matches!(stmt, semantic::Statement::Let, "Expected a let statement.");
     assert_eq!(var.id.module(db.upcast()), module_id);
     assert_eq!(var.id.name(db.upcast()), var_name);
