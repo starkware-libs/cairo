@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 serde = { version = "1.0.130", features = ["derive"] }
+smol_str = "0.1.23"
 thiserror = { version = "1.0.31" }
 toml = "0.4.2"
 

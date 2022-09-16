@@ -1,11 +1,12 @@
 use indoc::indoc;
 
-use crate::ProjectConfig;
+use crate::ProjectConfigContent;
 
 #[test]
 fn test_serde() {
-    let config =
-        ProjectConfig { crate_roots: [("crate".into(), "dir".into())].into_iter().collect() };
+    let config = ProjectConfigContent {
+        crate_roots: [("crate".into(), "dir".into())].into_iter().collect(),
+    };
     let serialized = toml::to_string(&config).unwrap();
     assert_eq!(
         serialized,
