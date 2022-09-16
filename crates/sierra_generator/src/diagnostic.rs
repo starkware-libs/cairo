@@ -67,6 +67,9 @@ impl DiagnosticEntry for SierraGeneratorDiagnostic {
             SierraGeneratorDiagnosticKind::InternalErrorUnknownVariable => {
                 "Internal compiler error: unknown variable."
             }
+            SierraGeneratorDiagnosticKind::InternalErrorDuplicatedVariable => {
+                r#"Internal compiler error: found two definitions for the same variable."#
+            }
         }
         .into()
     }
@@ -83,4 +86,5 @@ pub enum SierraGeneratorDiagnosticKind {
     // TODO(lior): Remove once supported.
     OnlyMatchZeroIsSupported,
     InternalErrorUnknownVariable,
+    InternalErrorDuplicatedVariable,
 }

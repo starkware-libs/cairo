@@ -62,7 +62,11 @@ fn handle_block(
             semantic::Statement::Let(statement_let) => {
                 let (cur_statements, res) = generate_expression_code(context, statement_let.expr)?;
                 statements.extend(cur_statements);
-                context.register_variable(defs::ids::VarId::Local(statement_let.var.id), res);
+                context.register_variable(
+                    defs::ids::VarId::Local(statement_let.var.id),
+                    res,
+                    statement_let.var_name_stable_ptr,
+                );
             }
             semantic::Statement::Return(_) => todo!(),
         }
