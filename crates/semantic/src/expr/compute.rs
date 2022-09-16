@@ -237,15 +237,24 @@ pub fn compute_expr_semantic(
                         semantic::Pattern::Literal(semantic_literal)
                     }
                 };
-                let expr_semantic = compute_expr_semantic(ctx, syntax_arm.expression(syntax_db));
-                let arm_type = expr_semantic.ty();
+                let expr_syntax = syntax_arm.expression(syntax_db);
+                let expr_semantic = compute_expr_semantic(ctx, expr_syntax.clone());
+                let arm_ty = expr_semantic.ty();
                 semantic_arms.push(MatchArm { pattern, expression: db.intern_expr(expr_semantic) });
                 match match_type {
-                    Some(t) if t == arm_type => {}
-                    Some(t) => {
-                        panic!("Match arms have incompatible types: {t:?} and {arm_type:?}")
+                    Some(ty) if ty == arm_ty => {}
+                    Some(ty) => {
+                        ctx.diagnostics.add(SemanticDiagnostic {
+                            stable_location: StableLocation::from_ast(ctx.module_id, &expr_syntax),
+                            kind: SemanticDiagnosticKind::IncompatibleMatchArms {
+                                match_ty: ty,
+                                arm_ty,
+                            },
+                        });
+                        match_type = Some(TypeId::missing(db));
+                        break;
                     }
-                    None => match_type = Some(arm_type),
+                    None => match_type = Some(arm_ty),
                 }
             }
             semantic::Expr::ExprMatch(semantic::ExprMatch {
