@@ -169,7 +169,7 @@ fn test_match_failures() {
             error: Match with a non-zero value is not supported.
              --> lib.cairo:5:5
                 12 => x,
-                ^
+                ^^
 
         "},
     );
