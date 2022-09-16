@@ -129,10 +129,14 @@ impl SyntaxNode {
                         .as_syntax_node()
                         .offset();
                 }
-                match self.children(db).next() {
-                    Some(node) => node.span_start_without_trivia(db),
-                    None => self.offset(),
+                for child in self.children(db) {
+                    if child.width(db) == 0 {
+                        continue;
+                    }
+                    return child.span_start_without_trivia(db);
                 }
+                // All children are empty.
+                self.offset()
             }
             SyntaxNodeDetails::Token(_) => self.offset(),
         }
@@ -147,10 +151,14 @@ impl SyntaxNode {
                         .span(db)
                         .end;
                 }
-                match self.children(db).last() {
-                    Some(node) => node.span_end_without_trivia(db),
-                    None => self.span(db).end,
+                for child in self.children(db).collect::<Vec<_>>().iter().rev() {
+                    if child.width(db) == 0 {
+                        continue;
+                    }
+                    return child.span_end_without_trivia(db);
                 }
+                // All children are empty.
+                self.span(db).end
             }
             SyntaxNodeDetails::Token(_) => self.span(db).end,
         }

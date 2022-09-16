@@ -84,10 +84,7 @@ impl<'a> Parser<'a> {
         self.diagnostics.add(ParserDiagnostic {
             file_id: self.file_id,
             kind: missing_kind,
-            span: TextSpan {
-                start: TextOffset(next_offset),
-                end: TextOffset(next_offset + (self.peek().width(self.db)) as usize),
-            },
+            span: TextSpan { start: TextOffset(next_offset), end: TextOffset(next_offset) },
         });
         T::missing(self.db)
     }

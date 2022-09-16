@@ -33,7 +33,7 @@ pub fn get_location_marks(
     res.push('^');
 
     let marker_length = std::cmp::min(first_line_end, span.end.0) - span.start.0;
-    if marker_length > 2 {
+    if marker_length > 1 {
         for _ in 0..marker_length - 2 {
             res.push('*');
         }
