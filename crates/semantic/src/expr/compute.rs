@@ -351,12 +351,11 @@ fn resolve_variable(
     let syntax_db = db.upcast();
     let segments = path.elements(syntax_db);
     if segments.len() != 1 {
-        // TODO(spapini): Diagnostic.
-        panic!("Expected a single identifier");
+        return Err(SemanticDiagnosticKind::Unsupported);
     }
     let last_segment = &segments[0];
     if let ast::OptionGenericArgs::Some(_) = last_segment.generic_args(syntax_db) {
-        todo!("Generics are not supported")
+        return Err(SemanticDiagnosticKind::Unsupported);
     };
     resolve_variable_by_name(ctx, &last_segment.ident(syntax_db))
 }
@@ -421,11 +420,15 @@ fn specialize_function(
         .generic_function_signature(generic_function)
         .ok_or(SemanticDiagnosticKind::UnknownFunction)?;
 
-    // TODO(lior): Replace with diagnostic and replace zip_eq below.
-    assert_eq!(args.len(), signature.params.len());
+    if args.len() != signature.params.len() {
+        return Err(SemanticDiagnosticKind::WrongNumberOfArguments {
+            expected: signature.params.len(),
+            actual: args.len(),
+        });
+    }
 
     // Check argument types.
-    for (arg, param) in itertools::zip_eq(args, signature.params) {
+    for (arg, param) in args.iter().zip(signature.params) {
         let arg_typ = arg.ty();
         let param_typ = param.ty;
         // Don't add diagnostic if the type is missing (a diagnostic should have already been
@@ -470,11 +473,18 @@ pub fn compute_statement_semantic(
                     let var_type_path = type_clause.ty(syntax_db);
                     let explicit_type =
                         resolve_type(ctx.diagnostics, db, ctx.module_id, var_type_path);
-                    assert_eq!(
-                        explicit_type, inferred_type,
-                        "inferred type ({explicit_type:?}) and explicit type ({inferred_type:?}) \
-                         are different"
-                    );
+                    if explicit_type != inferred_type {
+                        ctx.diagnostics.add(SemanticDiagnostic {
+                            stable_location: StableLocation::new(
+                                ctx.module_id,
+                                let_syntax.rhs(syntax_db).stable_ptr().untyped(),
+                            ),
+                            kind: SemanticDiagnosticKind::WrongArgumentType {
+                                expected_ty: explicit_type,
+                                actual_ty: inferred_type,
+                            },
+                        })
+                    }
                     explicit_type
                 }
             };
