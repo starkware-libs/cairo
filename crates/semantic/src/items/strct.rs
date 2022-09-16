@@ -24,8 +24,8 @@ pub struct StructData {
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
 #[debug_db(SemanticGroup)]
 pub struct Member {
-    id: MemberId,
-    ty: semantic::TypeId,
+    pub id: MemberId,
+    pub ty: semantic::TypeId,
 }
 
 /// Query implementation of [crate::db::SemanticGroup::struct_semantic_diagnostics].
