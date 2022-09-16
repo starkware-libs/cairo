@@ -12,12 +12,14 @@ pub fn resolve_item(
     let syntax_db = db.upcast();
     let elements = path.elements(syntax_db);
     if elements.len() != 1 {
-        todo!("Qualified paths are not supported yet");
+        // TODO(spapini): Qualified paths are not supported yet.
+        return None;
     }
     let last_element = &elements[0];
     // TODO(spapini): Support generics.
     if let ast::OptionGenericArgs::Some(_) = last_element.generic_args(syntax_db) {
-        todo!("Generics are not supported yet")
+        // TODO(spapini): Generics are not supported yet.
+        return None;
     };
     let name = last_element.ident(syntax_db).text(syntax_db);
     db.module_item_by_name(module_id, name.clone())
