@@ -35,14 +35,11 @@ pub fn get_function_code(
     for param in signature.params {
         let sierra_var = context.allocate_sierra_variable();
         context.register_variable(defs::ids::VarId::Param(param.id), sierra_var.clone());
-        parameters.push(sierra::program::Param {
-            id: sierra_var,
-            ty: db.get_concrete_type_id(param.ty).propagate(context.get_diagnostics())?,
-        })
+        parameters
+            .push(sierra::program::Param { id: sierra_var, ty: db.get_concrete_type_id(param.ty)? })
     }
 
-    let ret_types =
-        vec![db.get_concrete_type_id(signature.return_type).propagate(context.get_diagnostics())?];
+    let ret_types = vec![db.get_concrete_type_id(signature.return_type)?];
 
     let mut statements: Vec<pre_sierra::Statement> = vec![label];
 
@@ -56,7 +53,7 @@ pub fn get_function_code(
     // Copy the result to the top of the stack before returning.
     let return_variable_on_stack = context.allocate_sierra_variable();
     statements.push(simple_statement(
-        context.store_temp_libfunc_id(signature.return_type),
+        context.store_temp_libfunc_id(signature.return_type)?,
         &[res],
         &[return_variable_on_stack.clone()],
     ));
