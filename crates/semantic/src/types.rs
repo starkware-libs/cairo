@@ -1,7 +1,7 @@
 use db_utils::define_short_id;
 use debug::DebugWithDb;
 use defs::diagnostic_utils::StableLocation;
-use defs::ids::{GenericTypeId, ModuleId};
+use defs::ids::{GenericTypeId, ModuleId, OptFrom};
 use diagnostics::Diagnostics;
 use diagnostics_proc_macros::DebugWithDb;
 use itertools::Itertools;
@@ -76,7 +76,7 @@ pub fn resolve_type(
     let syntax_db = db.upcast();
     match ty_syntax {
         ast::Expr::Path(path) => resolve_item(db, module_id, &path)
-            .and_then(GenericTypeId::from)
+            .and_then(GenericTypeId::opt_from)
             .and_then(|generic_type| specialize_type(diagnostics, db, generic_type))
             .unwrap_or_else(|| {
                 diagnostics.add(SemanticDiagnostic {
