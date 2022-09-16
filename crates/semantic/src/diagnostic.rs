@@ -27,11 +27,14 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::UnknownType => "Unknown type.".into(),
             SemanticDiagnosticKind::UnknownStruct => "Unknown struct.".into(),
             SemanticDiagnosticKind::UnknownMember => "Unknown member.".into(),
+            SemanticDiagnosticKind::MemberSpecifiedMoreThanOnce => {
+                "Member specified more than once.".into()
+            }
             SemanticDiagnosticKind::MissingMember { member_name } => {
                 format!("Missing member {member_name}.")
             }
-            SemanticDiagnosticKind::MemberSpecifiedMoreThanOnce => {
-                "Member specified more than once.".into()
+            SemanticDiagnosticKind::WrongNumberOfArguments { expected, actual } => {
+                format!("Wrong number of arguments. Expected {expected}, found: {actual}")
             }
             SemanticDiagnosticKind::WrongArgumentType { expected_ty, actual_ty } => {
                 format!(
@@ -87,6 +90,7 @@ pub enum SemanticDiagnosticKind {
     UnknownMember,
     MemberSpecifiedMoreThanOnce,
     MissingMember { member_name: SmolStr },
+    WrongNumberOfArguments { expected: usize, actual: usize },
     WrongArgumentType { expected_ty: semantic::TypeId, actual_ty: semantic::TypeId },
     WrongReturnType { expected_ty: semantic::TypeId, actual_ty: semantic::TypeId },
     VariableNotFound { name: SmolStr },

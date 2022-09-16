@@ -119,7 +119,7 @@ pub fn maybe_compute_expr_semantic(
         ast::Expr::Parenthesized(paren_syntax) => {
             compute_expr_semantic(ctx, paren_syntax.expr(syntax_db))
         }
-        ast::Expr::Unary(_) => todo!(),
+        ast::Expr::Unary(_) => return Err(SemanticDiagnosticKind::Unsupported),
         ast::Expr::Binary(binary_op_syntax) => {
             let stable_ptr = binary_op_syntax.stable_ptr().untyped();
             let operator_kind = binary_op_syntax.op(syntax_db).kind(syntax_db);
@@ -140,7 +140,7 @@ pub fn maybe_compute_expr_semantic(
                 stable_ptr,
             })
         }
-        ast::Expr::Tuple(_) => todo!(),
+        ast::Expr::Tuple(_) => return Err(SemanticDiagnosticKind::Unsupported),
         ast::Expr::FunctionCall(call_syntax) => {
             let path = call_syntax.path(syntax_db);
             let arg_exprs: Vec<_> = call_syntax
@@ -232,12 +232,15 @@ pub fn maybe_compute_expr_semantic(
                 arms: semantic_arms,
                 ty: match match_type {
                     Some(t) => t,
-                    None => todo!("Return never-type"),
+                    None => {
+                        // TODO(spapini): Return never-type.
+                        TypeId::missing(db)
+                    }
                 },
                 stable_ptr: expr_match.stable_ptr().untyped(),
             })
         }
-        ast::Expr::ExprMissing(_) => todo!(),
+        ast::Expr::ExprMissing(_) => return Err(SemanticDiagnosticKind::Unsupported),
     })
 }
 
@@ -432,12 +435,11 @@ fn resolve_variable(
     let syntax_db = db.upcast();
     let segments = path.elements(syntax_db);
     if segments.len() != 1 {
-        // TODO(spapini): Diagnostic.
-        panic!("Expected a single identifier");
+        return Err(SemanticDiagnosticKind::Unsupported);
     }
     let last_segment = &segments[0];
     if let ast::OptionGenericArgs::Some(_) = last_segment.generic_args(syntax_db) {
-        todo!("Generics are not supported")
+        return Err(SemanticDiagnosticKind::Unsupported);
     };
     resolve_variable_by_name(ctx, &last_segment.ident(syntax_db))
 }
@@ -505,11 +507,15 @@ fn specialize_function(
         .generic_function_signature(generic_function)
         .ok_or(SemanticDiagnosticKind::UnknownFunction)?;
 
-    // TODO(lior): Replace with diagnostic and replace zip_eq below.
-    assert_eq!(args.len(), signature.params.len());
+    if args.len() != signature.params.len() {
+        return Err(SemanticDiagnosticKind::WrongNumberOfArguments {
+            expected: signature.params.len(),
+            actual: args.len(),
+        });
+    }
 
     // Check argument types.
-    for (arg, param) in itertools::zip_eq(args, signature.params) {
+    for (arg, param) in args.iter().zip(signature.params) {
         let arg_typ = arg.ty();
         let param_typ = param.ty;
         // Don't add diagnostic if the type is missing (a diagnostic should have already been
@@ -554,11 +560,18 @@ pub fn compute_statement_semantic(
                     let var_type_path = type_clause.ty(syntax_db);
                     let explicit_type =
                         resolve_type(ctx.diagnostics, db, ctx.module_id, var_type_path);
-                    assert_eq!(
-                        explicit_type, inferred_type,
-                        "inferred type ({explicit_type:?}) and explicit type ({inferred_type:?}) \
-                         are different"
-                    );
+                    if explicit_type != inferred_type {
+                        ctx.diagnostics.add(SemanticDiagnostic {
+                            stable_location: StableLocation::new(
+                                ctx.module_id,
+                                let_syntax.rhs(syntax_db).stable_ptr().untyped(),
+                            ),
+                            kind: SemanticDiagnosticKind::WrongArgumentType {
+                                expected_ty: explicit_type,
+                                actual_ty: inferred_type,
+                            },
+                        })
+                    }
                     explicit_type
                 }
             };

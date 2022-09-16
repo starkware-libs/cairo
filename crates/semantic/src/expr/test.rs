@@ -273,6 +273,32 @@ fn test_let_statement() {
 }
 
 #[test]
+fn test_let_statement_failures() {
+    let mut db_val = SemanticDatabaseForTesting::default();
+    let diagnostics = setup_test_function(
+        &mut db_val,
+        indoc! {"
+            func foo() {
+                let a: () = 3;
+            }
+        "},
+        "foo",
+        "",
+    )
+    .get_diagnostics();
+    assert_eq!(
+        diagnostics,
+        indoc! {r#"
+            error: Unexpected argument type. Expected: "()", found: "core::felt".
+             --> lib.cairo:2:17
+                let a: () = 3;
+                            ^
+
+        "#}
+    );
+}
+
+#[test]
 fn test_expr_var() {
     let mut db_val = SemanticDatabaseForTesting::default();
     let test_function = setup_test_function(
@@ -298,6 +324,32 @@ fn test_expr_var() {
         "Expected a variable."
     );
     // TODO(spapini): Check Var against param using param.id.
+}
+
+#[test]
+fn test_expr_var_failures() {
+    let mut db_val = SemanticDatabaseForTesting::default();
+    let diagnostics = setup_test_function(
+        &mut db_val,
+        indoc! {"
+            func foo(a: felt) {
+                a::b;
+            }
+        "},
+        "foo",
+        "",
+    )
+    .get_diagnostics();
+    assert_eq!(
+        diagnostics,
+        indoc! {"
+            error: Unsupported feature.
+             --> lib.cairo:2:5
+                a::b;
+                ^**^
+
+        "}
+    )
 }
 
 #[test]
