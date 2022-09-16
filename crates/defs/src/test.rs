@@ -29,6 +29,11 @@ impl AsFilesGroupMut for DatabaseForTesting {
         self
     }
 }
+impl Upcast<dyn DefsGroup> for DatabaseForTesting {
+    fn upcast(&self) -> &(dyn DefsGroup + 'static) {
+        self
+    }
+}
 impl Upcast<dyn FilesGroup> for DatabaseForTesting {
     fn upcast(&self) -> &(dyn FilesGroup + 'static) {
         self

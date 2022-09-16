@@ -9,7 +9,9 @@ use utils::extract_matches;
 
 use crate::corelib::{core_felt_ty, unit_ty};
 use crate::db::SemanticGroup;
-use crate::test_utils::{setup_test_expr, setup_test_function, SemanticDatabaseForTesting};
+use crate::test_utils::{
+    setup_test_expr, setup_test_function, setup_test_module, SemanticDatabaseForTesting, TestModule,
+};
 use crate::{semantic, ExprId, StatementId, TypeId};
 
 #[test]
@@ -90,6 +92,118 @@ fn test_expr_operator_failures() {
             ^
 
         "#}
+    );
+}
+
+#[test]
+fn test_member_access() {
+    let mut db_val = SemanticDatabaseForTesting::default();
+    let TestModule { module_id } = setup_test_module(
+        &mut db_val,
+        indoc! {"
+            struct A {
+                a: (felt,),
+                b: felt,
+                c: A,
+            }
+            func foo(a: A){
+                (a).a;
+                a.b;
+                a.c;
+                a.c.c.c.a;
+            }
+        "},
+    )
+    .unwrap();
+    let db = &db_val;
+    let foo_id = extract_matches!(
+        db.module_item_by_name(module_id, "foo".into()).unwrap(),
+        ModuleItemId::FreeFunction
+    );
+    let block = extract_matches!(
+        db.expr_semantic(db.free_function_body(foo_id).unwrap()),
+        semantic::Expr::ExprBlock
+    );
+    let exprs: Vec<_> = block
+        .statements
+        .iter()
+        .map(|stmt_id| {
+            format!(
+                "{:?}",
+                db.expr_semantic(extract_matches!(
+                    db.statement_semantic(*stmt_id),
+                    semantic::Statement::Expr
+                ))
+                .debug(db)
+            )
+        })
+        .collect();
+    assert_eq!(
+        exprs,
+        vec![
+            "ExprMemberAccess(ExprMemberAccess { expr: ExprVar(ExprVar { var: \
+             ParamId(test_crate::a), ty: Concrete(StructId(test_crate::A)) }), member: \
+             MemberId(test_crate::a), ty: Tuple([Concrete(ExternTypeId(core::felt))]) })",
+            "ExprMemberAccess(ExprMemberAccess { expr: ExprVar(ExprVar { var: \
+             ParamId(test_crate::a), ty: Concrete(StructId(test_crate::A)) }), member: \
+             MemberId(test_crate::b), ty: Concrete(ExternTypeId(core::felt)) })",
+            "ExprMemberAccess(ExprMemberAccess { expr: ExprVar(ExprVar { var: \
+             ParamId(test_crate::a), ty: Concrete(StructId(test_crate::A)) }), member: \
+             MemberId(test_crate::c), ty: Concrete(StructId(test_crate::A)) })",
+            "ExprMemberAccess(ExprMemberAccess { expr: ExprMemberAccess(ExprMemberAccess { expr: \
+             ExprMemberAccess(ExprMemberAccess { expr: ExprMemberAccess(ExprMemberAccess { expr: \
+             ExprVar(ExprVar { var: ParamId(test_crate::a), ty: Concrete(StructId(test_crate::A)) \
+             }), member: MemberId(test_crate::c), ty: Concrete(StructId(test_crate::A)) }), \
+             member: MemberId(test_crate::c), ty: Concrete(StructId(test_crate::A)) }), member: \
+             MemberId(test_crate::c), ty: Concrete(StructId(test_crate::A)) }), member: \
+             MemberId(test_crate::a), ty: Tuple([Concrete(ExternTypeId(core::felt))]) })"
+        ]
+    );
+}
+#[test]
+fn test_member_access_failures() {
+    let mut db_val = SemanticDatabaseForTesting::default();
+    let diagnostics = setup_test_module(
+        &mut db_val,
+        indoc! {"
+            struct A {
+                a: (felt,),
+                b: felt,
+                c: A,
+            }
+            func foo(a: A){
+                a.f
+                a.a::b;
+                a.4.4;
+                5.a;
+            }
+        "},
+    )
+    .get_diagnostics();
+    assert_eq!(
+        diagnostics,
+        indoc! {"
+            error: Struct test_crate::A has not member f
+             --> lib.cairo:7:5
+                a.f
+                ^*^
+
+            error: Invalid member expression.
+             --> lib.cairo:8:5
+                a.a::b;
+                ^****^
+
+            error: Invalid member expression.
+             --> lib.cairo:9:5
+                a.4.4;
+                ^*^
+
+            error: Type core::felt has no members.
+             --> lib.cairo:10:5
+                5.a;
+                ^*^
+
+        "}
     );
 }
 
@@ -227,7 +341,7 @@ fn test_expr_match() {
     let expr = db.lookup_intern_expr(tail.unwrap());
     assert_eq!(
         format!("{:?}", expr.debug(db)),
-        "ExprMatch(ExprMatch { matched_expr: ExprVar(ExprVar { var: Param(ParamId(0)), ty: \
+        "ExprMatch(ExprMatch { matched_expr: ExprVar(ExprVar { var: ParamId(test_crate::a), ty: \
          Concrete(ExternTypeId(core::felt)) }), arms: [MatchArm { pattern: Literal(ExprLiteral { \
          value: 0, ty: Concrete(ExternTypeId(core::felt)) }), expression: ExprLiteral(ExprLiteral \
          { value: 0, ty: Concrete(ExternTypeId(core::felt)) }) }, MatchArm { pattern: Otherwise, \
