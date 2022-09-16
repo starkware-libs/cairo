@@ -34,6 +34,10 @@ impl<Key: Hash + Eq> OrderedHashSet<Key> {
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
+
+    pub fn clear(&mut self) {
+        self.0.clear()
+    }
 }
 
 impl<Key: Hash + Eq> IntoIterator for OrderedHashSet<Key> {
