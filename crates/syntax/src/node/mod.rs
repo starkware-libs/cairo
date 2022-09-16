@@ -129,9 +129,10 @@ impl SyntaxNode {
                         .as_syntax_node()
                         .offset();
                 }
-                match self.children(db).next() {
-                    Some(node) => node.span_start_without_trivia(db),
-                    None => self.offset(),
+                if let Some(child) = self.children(db).find(|child| child.width(db) != 0) {
+                    child.span_start_without_trivia(db)
+                } else {
+                    self.offset()
                 }
             }
             SyntaxNodeDetails::Token(_) => self.offset(),
@@ -147,9 +148,10 @@ impl SyntaxNode {
                         .span(db)
                         .end;
                 }
-                match self.children(db).last() {
-                    Some(node) => node.span_end_without_trivia(db),
-                    None => self.span(db).end,
+                if let Some(child) = self.children(db).filter(|child| child.width(db) != 0).last() {
+                    child.span_end_without_trivia(db)
+                } else {
+                    self.span(db).end
                 }
             }
             SyntaxNodeDetails::Token(_) => self.span(db).end,

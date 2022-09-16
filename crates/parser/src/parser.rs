@@ -80,13 +80,16 @@ impl<'a> Parser<'a> {
         &mut self,
         missing_kind: ParserDiagnosticKind,
     ) -> T::Green {
-        let next_offset = (self.offset + self.current_width) as usize;
+        let next_offset = (self.offset
+            + self.current_width
+            + self.peek().leading_trivia.iter().map(|t| t.0.width(self.db)).sum::<u32>())
+            as usize;
         self.diagnostics.add(ParserDiagnostic {
             file_id: self.file_id,
             kind: missing_kind,
             span: TextSpan {
                 start: TextOffset(next_offset),
-                end: TextOffset(next_offset + (self.peek().width(self.db)) as usize),
+                end: TextOffset(next_offset + self.peek().token.0.width(self.db) as usize),
             },
         });
         T::missing(self.db)
