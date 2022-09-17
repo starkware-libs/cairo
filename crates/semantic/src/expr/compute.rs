@@ -248,6 +248,9 @@ pub fn maybe_compute_expr_semantic(
                 stable_ptr: expr_match.stable_ptr().untyped(),
             })
         }
+        ast::Expr::If(_expr_if) => {
+            unimplemented!()
+        }
         ast::Expr::Missing(_) => return Err(SemanticDiagnosticKind::Unsupported),
     })
 }

@@ -12,6 +12,11 @@ func foo(,var1: int,, var2: felt,) -> int {
         0 => { 1 },
         _ => 0,
     };
+    let z = if (0 + x == y) {
+        1
+    } else {
+        2
+    };
     let x = true; // bla1
                   // bla2
     func1(x);

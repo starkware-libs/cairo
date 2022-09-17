@@ -134,6 +134,8 @@ impl<'a> Lexer<'a> {
             "let" => TokenKind::Let,
             "return" => TokenKind::Return,
             "match" => TokenKind::Match,
+            "if" => TokenKind::If,
+            "else" => TokenKind::Else,
             "use" => TokenKind::Use,
             "_" => TokenKind::Underscore,
             _ => TokenKind::Identifier,
@@ -276,6 +278,8 @@ enum TokenKind {
     Let,
     Return,
     Match,
+    If,
+    Else,
     Use,
 
     // Punctuation.
@@ -333,6 +337,8 @@ fn token_kind_to_terminal_syntax_kind(kind: TokenKind) -> SyntaxKind {
         TokenKind::Let => SyntaxKind::TerminalLet,
         TokenKind::Return => SyntaxKind::TerminalReturn,
         TokenKind::Match => SyntaxKind::TerminalMatch,
+        TokenKind::If => SyntaxKind::TerminalIf,
+        TokenKind::Else => SyntaxKind::TerminalElse,
         TokenKind::Use => SyntaxKind::TerminalUse,
         TokenKind::And => SyntaxKind::TerminalAnd,
         TokenKind::AndAnd => SyntaxKind::TerminalAndAnd,
