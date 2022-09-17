@@ -92,3 +92,23 @@ impl TestBuilder {
         std::mem::take(&mut self.tests)
     }
 }
+
+#[macro_export]
+macro_rules! diagnostics_test {
+    ($filename:expr, $db:expr, $func:expr, $($param:expr),*) => {
+        #[test]
+        fn diagnostic_tests() -> Result<(), std::io::Error> {
+            let mut db = $db;
+            let tests = parse_test_file::parse_test_file(Path::new($filename))?;
+            for (name, test) in tests {
+                let diagnostics = $func(
+                    &mut db,
+                    $(&test[$param],)*
+                )
+                .get_diagnostics();
+                assert_eq!(diagnostics.trim(), test["Expected Result"], "\"{name}\" failed.");
+            }
+            Ok(())
+        }
+    };
+}

@@ -7,7 +7,7 @@ use defs::ids::{LanguageElementId, ModuleId, ModuleItemId, VarId};
 use indoc::indoc;
 use pretty_assertions::assert_eq;
 use smol_str::SmolStr;
-use utils::{extract_matches, parse_test_file};
+use utils::{diagnostics_test, extract_matches, parse_test_file};
 
 use crate::corelib::{core_felt_ty, unit_ty};
 use crate::db::SemanticGroup;
@@ -60,22 +60,14 @@ fn test_expr_operator() {
     );
 }
 
-#[test]
-fn expr_diagnostics_tests() -> Result<(), std::io::Error> {
-    let mut db = SemanticDatabaseForTesting::default();
-    let tests = parse_test_file::parse_test_file(Path::new("test_data/tests"))?;
-    for (name, test) in tests {
-        let diagnostics = setup_test_function(
-            &mut db,
-            &test["Function"],
-            &test["Function Name"],
-            &test["Module Code"],
-        )
-        .get_diagnostics();
-        assert_eq!(diagnostics.trim(), test["Expected Result"], "\"{name}\" failed.");
-    }
-    Ok(())
-}
+diagnostics_test!(
+    "test_data/tests",
+    SemanticDatabaseForTesting::default(),
+    setup_test_function,
+    "Function",
+    "Function Name",
+    "Module Code"
+);
 
 #[test]
 fn test_member_access() {
