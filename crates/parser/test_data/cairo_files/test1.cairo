@@ -17,7 +17,6 @@ func foo(,var1: int,, var2: felt,) -> int {
     func1(x);
     func2(x)
     return x;
-}
 
 func bar<A, B>() -> felt { }
 
