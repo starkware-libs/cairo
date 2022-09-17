@@ -1,5 +1,3 @@
-use std::path::Path;
-
 use assert_matches::assert_matches;
 use debug::DebugWithDb;
 use defs::db::DefsGroup;
@@ -7,14 +5,14 @@ use defs::ids::{LanguageElementId, ModuleId, ModuleItemId, VarId};
 use indoc::indoc;
 use pretty_assertions::assert_eq;
 use smol_str::SmolStr;
-use utils::{extract_matches, parse_test_file};
+use utils::extract_matches;
 
 use crate::corelib::{core_felt_ty, unit_ty};
 use crate::db::SemanticGroup;
 use crate::test_utils::{
     setup_test_expr, setup_test_function, setup_test_module, SemanticDatabaseForTesting, TestModule,
 };
-use crate::{semantic, ExprId, StatementId, TypeId};
+use crate::{diagnostics_test, semantic, ExprId, StatementId, TypeId};
 
 #[test]
 fn test_expr_literal() {
@@ -60,22 +58,12 @@ fn test_expr_operator() {
     );
 }
 
-#[test]
-fn expr_diagnostics_tests() -> Result<(), std::io::Error> {
-    let mut db = SemanticDatabaseForTesting::default();
-    let tests = parse_test_file::parse_test_file(Path::new("src/expr/test_data/tests"))?;
-    for (name, test) in tests {
-        let diagnostics = setup_test_function(
-            &mut db,
-            &test["Function"],
-            &test["Function Name"],
-            &test["Module Code"],
-        )
-        .get_diagnostics();
-        assert_eq!(diagnostics.trim(), test["Expected Result"], "\"{name}\" failed.");
-    }
-    Ok(())
-}
+diagnostics_test!(
+    expr_diagnostics_tests,
+    ["src/expr/test_data/tests"],
+    SemanticDatabaseForTesting::default(),
+    setup_test_function
+);
 
 #[test]
 fn test_member_access() {

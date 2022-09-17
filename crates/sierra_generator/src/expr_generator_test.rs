@@ -1,15 +1,12 @@
-use std::path::Path;
-
 use diagnostics::Diagnostics;
 use indoc::indoc;
 use pretty_assertions::assert_eq;
 use semantic::test_utils::{setup_test_block, setup_test_expr, TestExpr};
-use utils::parse_test_file::parse_test_file;
 
 use crate::expr_generator::generate_expression_code;
 use crate::expr_generator_context::ExprGeneratorContext;
 use crate::test_utils::{replace_libfunc_ids, SierraGenDatabaseForTesting};
-use crate::{pre_sierra, Diagnostic};
+use crate::{diagnostics_test, pre_sierra, Diagnostic};
 
 fn generate_expr_code_for_test(
     db: &SierraGenDatabaseForTesting,
@@ -88,25 +85,12 @@ fn test_expr_generator() {
     assert_eq!(res, sierra::ids::VarId::from(15));
 }
 
-#[test]
-fn test_expr_generator_diagnostics() -> Result<(), std::io::Error> {
-    let mut db = SierraGenDatabaseForTesting::default();
-    for filename in &["internal_compiler_error", "match"] {
-        let tests =
-            parse_test_file(Path::new(&format!("src/expr_generator_test_data/{filename}")))?;
-        for (name, test) in tests {
-            let test_expr = setup_test_block(
-                &mut db,
-                &test["Expr Code"],
-                &test["Module Code"],
-                &test["Function Body"],
-            )
-            .unwrap();
-            verify_exception(&db, test_expr, &test["Expected Result"], &name);
-        }
-    }
-    Ok(())
-}
+diagnostics_test!(
+    expr_generator_diagnostic_tests,
+    ["src/expr_generator_test_data/internal_compiler_error", "src/expr_generator_test_data/match"],
+    SierraGenDatabaseForTesting::default(),
+    setup_test_block
+);
 
 #[test]
 fn test_match() {
