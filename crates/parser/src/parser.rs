@@ -15,6 +15,7 @@ use syntax::token::TokenKind;
 use crate::diagnostic::ParserDiagnosticKind;
 use crate::lexer::{Lexer, LexerTerminal};
 use crate::operators::{get_binary_operator_precedence, get_unary_operator_precedence};
+use crate::recovery::is_of_kind;
 use crate::ParserDiagnostic;
 
 // TODO(yuval): add diagnostics.
@@ -98,7 +99,7 @@ impl<'a> Parser<'a> {
     pub fn parse_syntax_file(mut self) -> SyntaxFileGreen {
         let items = ItemList::new_green(
             self.db,
-            self.parse_list(Self::try_parse_top_level_item, TokenKind::EndOfFile, "item"),
+            self.parse_list(Self::try_parse_top_level_item, is_of_kind!(), "item"),
         );
         // This will not panic since the above parsing only stops when reaches EOF.
         assert_eq!(self.peek().kind, TokenKind::EndOfFile);
@@ -144,7 +145,7 @@ impl<'a> Parser<'a> {
         let name = self.parse_token(TokenKind::Identifier);
         let generic_args = self.parse_generic_args();
         let lbrace = self.parse_token(TokenKind::LBrace);
-        let members = self.parse_param_list(TokenKind::RBrace);
+        let members = self.parse_param_list();
         let rbrace = self.parse_token(TokenKind::RBrace);
         ItemStruct::new_green(self.db, struct_kw, name, generic_args, lbrace, members, rbrace)
     }
@@ -153,7 +154,7 @@ impl<'a> Parser<'a> {
     fn expect_function_signature(&mut self) -> FunctionSignatureGreen {
         // TODO(yuval): support generics
         let lparen = self.parse_token(TokenKind::LParen);
-        let params = self.parse_param_list(TokenKind::RParen);
+        let params = self.parse_param_list();
         let rparen = self.parse_token(TokenKind::RParen);
         let return_type_clause = self.parse_option_return_type_clause();
         FunctionSignature::new_green(self.db, lparen, params, rparen, return_type_clause)
@@ -327,8 +328,8 @@ impl<'a> Parser<'a> {
             self.db,
             self.parse_separated_list(
                 Self::try_parse_expr,
+                is_of_kind!(rparen, block, rbrace, top_level),
                 TokenKind::Comma,
-                TokenKind::RParen,
                 "expression",
             ),
         );
@@ -344,8 +345,8 @@ impl<'a> Parser<'a> {
             self.db,
             self.parse_separated_list(
                 Self::try_parse_struct_ctor_argument,
+                is_of_kind!(rparen, block, rbrace, top_level),
                 TokenKind::Comma,
-                TokenKind::RBrace,
                 "struct constructor argument",
             ),
         );
@@ -377,8 +378,8 @@ impl<'a> Parser<'a> {
         let lparen = self.take();
         let exprs: Vec<ExprListElementOrSeparatorGreen> = self.parse_separated_list(
             Self::try_parse_expr,
+            is_of_kind!(rparen, block, rbrace, top_level),
             TokenKind::Comma,
-            TokenKind::RParen,
             "expression",
         );
         let rparen = self.parse_token(TokenKind::RParen);
@@ -437,7 +438,7 @@ impl<'a> Parser<'a> {
         let lbrace = self.parse_token(TokenKind::LBrace);
         let statements = StatementList::new_green(
             self.db,
-            self.parse_list(Self::try_parse_statement, TokenKind::RBrace, "statement"),
+            self.parse_list(Self::try_parse_statement, is_of_kind!(rbrace, top_level), "statement"),
         );
         let rbrace = self.parse_token(TokenKind::RBrace);
         ExprBlock::new_green(self.db, lbrace, statements, rbrace)
@@ -454,8 +455,8 @@ impl<'a> Parser<'a> {
             self.db,
             self.parse_separated_list(
                 Self::try_parse_match_arm,
+                is_of_kind!(block, rbrace, top_level),
                 TokenKind::Comma,
-                TokenKind::RBrace,
                 "match arm",
             ),
         );
@@ -572,13 +573,13 @@ impl<'a> Parser<'a> {
     }
 
     /// Returns a GreenId of a node with kind ParamList.
-    fn parse_param_list(&mut self, closing_token: TokenKind) -> ParamListGreen {
+    fn parse_param_list(&mut self) -> ParamListGreen {
         ParamList::new_green(
             self.db,
             self.parse_separated_list(
                 Self::try_parse_param,
+                is_of_kind!(rparen, block, lbrace, rbrace, top_level),
                 TokenKind::Comma,
-                closing_token,
                 "parameter",
             ),
         )
@@ -639,8 +640,8 @@ impl<'a> Parser<'a> {
             self.db,
             self.parse_separated_list(
                 Self::try_parse_expr,
+                is_of_kind!(rangle, rparen, block, lbrace, rbrace, top_level),
                 TokenKind::Comma,
-                TokenKind::GT,
                 "expression",
             ),
         );
@@ -659,16 +660,19 @@ impl<'a> Parser<'a> {
     fn parse_list<ElementGreen>(
         &mut self,
         try_parse_list_element: fn(&mut Self) -> Option<ElementGreen>,
-        closing: TokenKind,
+        should_stop: fn(TokenKind) -> bool,
         element_name: &'static str,
     ) -> Vec<ElementGreen> {
         let mut children: Vec<ElementGreen> = Vec::new();
-        while self.peek().kind != closing && self.peek().kind != TokenKind::EndOfFile {
+        loop {
             let element = try_parse_list_element(self);
             if let Some(green) = element {
                 children.push(green);
             } else {
-                self.skip_token(ParserDiagnosticKind::SkippedElement { element_name, closing });
+                if should_stop(self.peek().kind) {
+                    break;
+                }
+                self.skip_token(ParserDiagnosticKind::SkippedElement { element_name });
             }
         }
         children
@@ -684,38 +688,36 @@ impl<'a> Parser<'a> {
     fn parse_separated_list<ElementGreen, ElementOrSeparator>(
         &mut self,
         try_parse_list_element: fn(&mut Self) -> Option<ElementGreen>,
+        should_stop: fn(TokenKind) -> bool,
         separator: TokenKind,
-        closing: TokenKind,
         element_name: &'static str,
     ) -> Vec<ElementOrSeparator>
     where
         ElementOrSeparator: From<TerminalGreen> + From<ElementGreen>,
     {
         let mut children: Vec<ElementOrSeparator> = Vec::new();
-        while self.peek().kind != closing && self.peek().kind != TokenKind::EndOfFile {
-            let element = try_parse_list_element(self);
-            // None means try_parse_list_element could not parse the next tokens as the expected
-            // element.
-            match element {
+        loop {
+            match try_parse_list_element(self) {
+                None if should_stop(self.peek().kind) => {
+                    break;
+                }
                 None => {
-                    self.skip_token(ParserDiagnosticKind::SkippedElement { element_name, closing });
+                    self.skip_token(ParserDiagnosticKind::SkippedElement { element_name });
                     continue;
                 }
-                Some(green) => {
-                    children.push(green.into());
+                Some(element) => {
+                    children.push(element.into());
                 }
             };
-            if self.peek().kind == closing {
-                break;
-            }
-            let separator = if self.peek().kind == separator {
-                self.take()
-            } else {
-                self.create_and_report_missing::<Terminal>(ParserDiagnosticKind::MissingToken(
-                    separator,
-                ))
+            let separator = match self.try_parse_token(separator) {
+                None if should_stop(self.peek().kind) => {
+                    break;
+                }
+                None => self.create_and_report_missing::<Terminal>(
+                    ParserDiagnosticKind::MissingToken(separator),
+                ),
+                Some(separator) => separator,
             };
-
             children.push(separator.into());
         }
         children
