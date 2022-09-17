@@ -70,9 +70,11 @@ fn set_color(text: SmolStr, kind: SyntaxKind) -> ColoredString {
         | SyntaxKind::TokenModule
         | SyntaxKind::TokenStruct
         | SyntaxKind::TokenUse => text.bright_blue(),
-        SyntaxKind::TokenLet | SyntaxKind::TokenReturn | SyntaxKind::TokenMatch => {
-            text.bright_blue()
-        }
+        SyntaxKind::TokenLet
+        | SyntaxKind::TokenReturn
+        | SyntaxKind::TokenMatch
+        | SyntaxKind::TokenIf
+        | SyntaxKind::TokenElse => text.bright_blue(),
         SyntaxKind::TokenArrow
         | SyntaxKind::TokenMatchArrow
         | SyntaxKind::TokenColon
