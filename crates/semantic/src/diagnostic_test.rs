@@ -1,47 +1,23 @@
-use indoc::indoc;
+use std::path::Path;
+
 use pretty_assertions::assert_eq;
+use utils::parse_test_file;
 
 use crate::test_utils::{setup_test_expr, SemanticDatabaseForTesting};
 
-// TODO(spapini): Bring back after diagnostics refactor is complete.
 #[test]
-fn test_function_with_return_type() {
+fn diagnostic_tests() -> Result<(), std::io::Error> {
     let mut db = SemanticDatabaseForTesting::default();
-    let diagnostics = setup_test_expr(&mut db, "1 + foo()", "3 + 4 +;", "").get_diagnostics();
-    // TODO(spapini): Remove duplicated diagnostics.
-    assert_eq!(
-        diagnostics,
-        indoc! {"
-            error: Skipped tokens. Expected element: item or a closing EndOfFile.
-             --> lib.cairo:1:1
-            3 + 4 +;
-            ^
-
-            error: Skipped tokens. Expected element: item or a closing EndOfFile.
-             --> lib.cairo:1:3
-            3 + 4 +;
-              ^
-
-            error: Skipped tokens. Expected element: item or a closing EndOfFile.
-             --> lib.cairo:1:5
-            3 + 4 +;
-                ^
-
-            error: Skipped tokens. Expected element: item or a closing EndOfFile.
-             --> lib.cairo:1:7
-            3 + 4 +;
-                  ^
-            
-            error: Skipped tokens. Expected element: item or a closing EndOfFile.
-             --> lib.cairo:1:8
-            3 + 4 +;
-                   ^
-
-            error: Unknown function.
-             --> lib.cairo:3:5
-            1 + foo()
-                ^*^
-
-        "}
-    );
+    let tests = parse_test_file::parse_test_file(Path::new("diagnostic_test_data/tests"))?;
+    for (name, test) in tests {
+        let diagnostics = setup_test_expr(
+            &mut db,
+            &test["Expr Code"],
+            &test["Module Code"],
+            &test["Function Body"],
+        )
+        .get_diagnostics();
+        assert_eq!(diagnostics.trim(), test["Expected Result"], "\"{name}\" failed.");
+    }
+    Ok(())
 }

@@ -12,5 +12,6 @@ fn test_parse_test_file() -> Result<(), std::io::Error> {
     let test2 = &tests["Another Test Example"];
     assert_eq!(test2["Expression"], "foo\n//! bar");
     assert_eq!(test2["Expected"], "baz");
+    assert_eq!(test2["Empty"], "");
     Ok(())
 }
