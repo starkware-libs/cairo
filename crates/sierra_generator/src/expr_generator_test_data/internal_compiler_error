@@ -1,0 +1,15 @@
+//! > Unknown variable (internal compiler error)
+
+//! > Expr Code
+x
+
+//! > Module Code
+
+//! > Function Body
+let x = 7;
+
+//! > Expected Result
+error: Internal compiler error: unknown variable.
+ --> lib.cairo:3:1
+x
+^

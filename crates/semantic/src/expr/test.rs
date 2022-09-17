@@ -63,7 +63,7 @@ fn test_expr_operator() {
 #[test]
 fn expr_diagnostics_tests() -> Result<(), std::io::Error> {
     let mut db = SemanticDatabaseForTesting::default();
-    let tests = parse_test_file::parse_test_file(Path::new("test_data/tests"))?;
+    let tests = parse_test_file::parse_test_file(Path::new("src/expr/test_data/tests"))?;
     for (name, test) in tests {
         let diagnostics = setup_test_function(
             &mut db,
