@@ -192,3 +192,25 @@ pub fn setup_test_block(
 ) -> WithStringDiagnostics<TestExpr> {
     setup_test_expr(db, &format!("{{ \n{expr_code}\n }}"), module_code, function_body)
 }
+
+#[macro_export]
+macro_rules! diagnostics_test {
+    ($filenames:expr, $db:expr, $func:expr, $($param:expr),*) => {
+        #[test]
+        fn diagnostic_tests() -> Result<(), std::io::Error> {
+            let mut db = $db;
+            for filename in $filenames {
+                let tests = utils::parse_test_file::parse_test_file(std::path::Path::new(filename))?;
+                for (name, test) in tests {
+                    let diagnostics = $func(
+                        &mut db,
+                        $(&test[$param],)*
+                    )
+                    .get_diagnostics();
+                    pretty_assertions::assert_eq!(diagnostics.trim(), test["Expected Result"], "\"{name}\" failed.");
+                }
+            }
+            Ok(())
+        }
+    };
+}
