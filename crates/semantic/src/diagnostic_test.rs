@@ -8,7 +8,7 @@ use crate::test_utils::{setup_test_expr, SemanticDatabaseForTesting};
 #[test]
 fn diagnostic_tests() -> Result<(), std::io::Error> {
     let mut db = SemanticDatabaseForTesting::default();
-    let tests = parse_test_file::parse_test_file(Path::new("diagnostic_test_data/tests"))?;
+    let tests = parse_test_file::parse_test_file(Path::new("src/diagnostic_test_data/tests"))?;
     for (name, test) in tests {
         let diagnostics = setup_test_expr(
             &mut db,

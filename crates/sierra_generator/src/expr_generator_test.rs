@@ -1,7 +1,10 @@
+use std::path::Path;
+
 use diagnostics::Diagnostics;
 use indoc::indoc;
 use pretty_assertions::assert_eq;
 use semantic::test_utils::{setup_test_block, setup_test_expr, TestExpr};
+use utils::parse_test_file::parse_test_file;
 
 use crate::expr_generator::generate_expression_code;
 use crate::expr_generator_context::ExprGeneratorContext;
@@ -24,12 +27,13 @@ fn verify_exception(
     db: &SierraGenDatabaseForTesting,
     test_expr: TestExpr,
     expected_diagnostics: &str,
+    name: &str,
 ) {
     let mut diagnostics = Diagnostics::<Diagnostic>::default();
     let mut expr_generator_context =
         ExprGeneratorContext::new(db, test_expr.function_id, &mut diagnostics);
     generate_expression_code(&mut expr_generator_context, test_expr.expr_id);
-    assert_eq!(diagnostics.format(db), expected_diagnostics);
+    assert_eq!(diagnostics.format(db).trim(), expected_diagnostics, "'{name}' failed.");
 }
 
 #[test]
@@ -85,21 +89,23 @@ fn test_expr_generator() {
 }
 
 #[test]
-fn test_expr_generator_failures() {
+fn test_expr_generator_diagnostics() -> Result<(), std::io::Error> {
     let mut db = SierraGenDatabaseForTesting::default();
-
-    let test_expr = setup_test_block(&mut db, "x", "", "let x = 7;").unwrap();
-    verify_exception(
-        &db,
-        test_expr,
-        indoc! {"
-            error: Internal compiler error: unknown variable.
-             --> lib.cairo:3:1
-            x
-            ^
-
-        "},
-    );
+    for filename in &["internal_compiler_error", "match"] {
+        let tests =
+            parse_test_file(Path::new(&format!("src/expr_generator_test_data/{filename}")))?;
+        for (name, test) in tests {
+            let test_expr = setup_test_block(
+                &mut db,
+                &test["Expr Code"],
+                &test["Module Code"],
+                &test["Function Body"],
+            )
+            .unwrap();
+            verify_exception(&db, test_expr, &test["Expected Result"], &name);
+        }
+    }
+    Ok(())
 }
 
 #[test]
@@ -142,61 +148,6 @@ fn test_match() {
     );
 
     assert_eq!(res, sierra::ids::VarId::new(2));
-}
-
-#[test]
-fn test_match_failures() {
-    let mut db = SierraGenDatabaseForTesting::default();
-
-    // TODO(ilya): Fix location span below.
-    let test_expr = setup_test_block(
-        &mut db,
-        indoc! {"
-            let x = 7;
-            match x {
-                12 => x,
-                _ => 7,
-            }
-        "},
-        "",
-        "",
-    )
-    .unwrap();
-    verify_exception(
-        &db,
-        test_expr,
-        indoc! {"
-            error: Match with a non-zero value is not supported.
-             --> lib.cairo:5:5
-                12 => x,
-                ^
-
-        "},
-    );
-
-    let test_expr = setup_test_block(
-        &mut db,
-        indoc! {"
-            let x = 7;
-            match x {
-                12 => 0,
-            }
-        "},
-        "",
-        "",
-    )
-    .unwrap();
-    verify_exception(
-        &db,
-        test_expr,
-        indoc! {"
-            error: Only match zero (match ... { 0 => ..., _ => ... }) is currently supported.
-             --> lib.cairo:4:1
-            match x {
-            ^*******^
-
-        "},
-    );
 }
 
 #[test]
