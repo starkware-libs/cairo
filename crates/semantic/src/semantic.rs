@@ -1,6 +1,3 @@
-// TODO(lior): Remove once stable_ptr values are used.
-#![allow(unused_variables)]
-
 use defs::ids::{ParamId, VarId};
 use diagnostics_proc_macros::DebugWithDb;
 
