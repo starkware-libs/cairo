@@ -110,12 +110,46 @@
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   ├── child #4 (kind: StatementLet)
     │   │       │   │   ├── let_kw (kind: TokenLet): 'let'
+    │   │       │   │   ├── name (kind: TokenIdentifier): 'z'
+    │   │       │   │   ├── type_clause (kind: OptionTypeClauseEmpty) []
+    │   │       │   │   ├── eq (kind: TokenEq): '='
+    │   │       │   │   ├── rhs (kind: ExprIf)
+    │   │       │   │   │   ├── if_kw (kind: TokenIf): 'if'
+    │   │       │   │   │   ├── condition (kind: ExprBinary)
+    │   │       │   │   │   │   ├── lhs (kind: ExprBinary)
+    │   │       │   │   │   │   │   ├── lhs (kind: TokenLiteralNumber): '0'
+    │   │       │   │   │   │   │   ├── op (kind: TokenPlus): '+'
+    │   │       │   │   │   │   │   └── rhs (kind: ExprPath)
+    │   │       │   │   │   │   │       └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │   │   │           └── ident (kind: TokenIdentifier): 'x'
+    │   │       │   │   │   │   ├── op (kind: TokenEqEq): '=='
+    │   │       │   │   │   │   └── rhs (kind: ExprPath)
+    │   │       │   │   │   │       └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │   │           └── ident (kind: TokenIdentifier): 'y'
+    │   │       │   │   │   ├── if_block (kind: ExprBlock)
+    │   │       │   │   │   │   ├── lbrace (kind: TokenLBrace): '{'
+    │   │       │   │   │   │   ├── statements (kind: StatementList)
+    │   │       │   │   │   │   │   └── child #0 (kind: StatementExpr)
+    │   │       │   │   │   │   │       ├── expr (kind: TokenLiteralNumber): '1'
+    │   │       │   │   │   │   │       └── semicolon (kind: OptionSemicolonEmpty) []
+    │   │       │   │   │   │   └── rbrace (kind: TokenRBrace): '}'
+    │   │       │   │   │   ├── else_kw (kind: TokenElse): 'else'
+    │   │       │   │   │   └── else_block (kind: ExprBlock)
+    │   │       │   │   │       ├── lbrace (kind: TokenLBrace): '{'
+    │   │       │   │   │       ├── statements (kind: StatementList)
+    │   │       │   │   │       │   └── child #0 (kind: StatementExpr)
+    │   │       │   │   │       │       ├── expr (kind: TokenLiteralNumber): '2'
+    │   │       │   │   │       │       └── semicolon (kind: OptionSemicolonEmpty) []
+    │   │       │   │   │       └── rbrace (kind: TokenRBrace): '}'
+    │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
+    │   │       │   ├── child #5 (kind: StatementLet)
+    │   │       │   │   ├── let_kw (kind: TokenLet): 'let'
     │   │       │   │   ├── name (kind: TokenIdentifier): 'x'
     │   │       │   │   ├── type_clause (kind: OptionTypeClauseEmpty) []
     │   │       │   │   ├── eq (kind: TokenEq): '='
     │   │       │   │   ├── rhs (kind: TokenTrue): 'true'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
-    │   │       │   ├── child #5 (kind: StatementExpr)
+    │   │       │   ├── child #6 (kind: StatementExpr)
     │   │       │   │   ├── expr (kind: ExprFunctionCall)
     │   │       │   │   │   ├── path (kind: ExprPath)
     │   │       │   │   │   │   └── item #0 (kind: PathSegmentSimple)
@@ -128,7 +162,7 @@
     │   │       │   │   │       │           └── ident (kind: TokenIdentifier): 'x'
     │   │       │   │   │       └── rparen (kind: TokenRParen): ')'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
-    │   │       │   ├── child #6 (kind: StatementExpr)
+    │   │       │   ├── child #7 (kind: StatementExpr)
     │   │       │   │   ├── expr (kind: ExprFunctionCall)
     │   │       │   │   │   ├── path (kind: ExprPath)
     │   │       │   │   │   │   └── item #0 (kind: PathSegmentWithGenericArgs)
@@ -149,7 +183,7 @@
     │   │       │   │   │       │           └── ident (kind: TokenIdentifier): 'x'
     │   │       │   │   │       └── rparen (kind: TokenRParen): ')'
     │   │       │   │   └── semicolon (kind: OptionSemicolonEmpty) []
-    │   │       │   └── child #7 (kind: StatementReturn)
+    │   │       │   └── child #8 (kind: StatementReturn)
     │   │       │       ├── return_kw (kind: TokenReturn): 'return'
     │   │       │       ├── expr (kind: ExprPath)
     │   │       │       │   └── item #0 (kind: PathSegmentSimple)
@@ -291,32 +325,32 @@ func foo(,var1: int,, var2: felt,) -> int {
                     ^
 
 error: Missing token TerminalRBrace.
- --> test1.cairo:21:1
+ --> test1.cairo:26:1
 func bar<A, B>() -> felt { }
 ^**^
 
 error: Missing token TerminalSemicolon.
- --> test1.cairo:24:47
+ --> test1.cairo:29:47
 extern func glee<A, b>(var1: int,) -> crate::S<int>;
                                               ^
 
 error: Skipped tokens. Expected element: item.
- --> test1.cairo:24:47
+ --> test1.cairo:29:47
 extern func glee<A, b>(var1: int,) -> crate::S<int>;
                                               ^
 
 error: Skipped tokens. Expected element: item.
- --> test1.cairo:24:48
+ --> test1.cairo:29:48
 extern func glee<A, b>(var1: int,) -> crate::S<int>;
                                                ^*^
 
 error: Skipped tokens. Expected element: item.
- --> test1.cairo:24:51
+ --> test1.cairo:29:51
 extern func glee<A, b>(var1: int,) -> crate::S<int>;
                                                   ^
 
 error: Skipped tokens. Expected element: item.
- --> test1.cairo:24:52
+ --> test1.cairo:29:52
 extern func glee<A, b>(var1: int,) -> crate::S<int>;
                                                    ^
 

@@ -35,6 +35,8 @@ impl SemanticTokenKind {
             | SyntaxKind::TokenLet
             | SyntaxKind::TokenReturn
             | SyntaxKind::TokenMatch
+            | SyntaxKind::TokenIf
+            | SyntaxKind::TokenElse
             | SyntaxKind::TokenUse => SemanticTokenKind::Keyword,
             SyntaxKind::TokenAnd
             | SyntaxKind::TokenAndAnd
