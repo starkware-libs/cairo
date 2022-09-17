@@ -55,6 +55,7 @@ pub fn get_spec() -> Vec<Node> {
             .node("StructCtorCall")
             .node("Block")
             .node("Match")
+            .node("If")
             .build(),
         separated_list_node("ExprList", "Expr"),
         StructBuilder::new("ExprMissing").build(),
@@ -124,6 +125,13 @@ pub fn get_spec() -> Vec<Node> {
             .node("lbrace", "Terminal")
             .node("arms", "MatchArms")
             .node("rbrace", "Terminal")
+            .build(),
+        StructBuilder::new("ExprIf")
+            .node("if_kw", "Terminal")
+            .node("condition", "Expr")
+            .node("if_block", "ExprBlock")
+            .node("else_kw", "Terminal")
+            .node("else_block", "ExprBlock")
             .build(),
         // --- Type clauses ---
         // TODO(yuval): support SimpleExpr instead of ExprPath

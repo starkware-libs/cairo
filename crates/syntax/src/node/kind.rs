@@ -30,6 +30,7 @@ pub enum SyntaxKind {
     MatchArm,
     MatchArms,
     ExprMatch,
+    ExprIf,
     TypeClause,
     OptionTypeClauseEmpty,
     ReturnTypeClause,

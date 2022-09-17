@@ -234,6 +234,7 @@ impl<'a> Parser<'a> {
             // Call parse_block() and not expect_block() because it's cheap.
             TokenKind::LBrace => Some(self.parse_block().into()),
             TokenKind::Match => Some(self.expect_match_expr().into()),
+            TokenKind::If => Some(self.expect_if_expr().into()),
             _ => self.try_parse_simple_expression(MAX_PRECEDENCE),
         }
     }
@@ -440,9 +441,10 @@ impl<'a> Parser<'a> {
         ExprBlock::new_green(self.db, lbrace, statements, rbrace)
     }
 
-    /// Assumes the current token is Match.
-    /// Expected pattern: match \{<MatchArm>*\}
+    /// Assumes the current token is `Match`.
+    /// Expected pattern: match <expr> \{<MatchArm>*\}
     fn expect_match_expr(&mut self) -> ExprMatchGreen {
+        assert_eq!(self.peek().kind, TokenKind::Match);
         let match_kw = self.take();
         // TODO(yuval): change to simple expression.
         let expr = self.parse_path().into();
@@ -458,6 +460,22 @@ impl<'a> Parser<'a> {
         );
         let rbrace = self.parse_token(TokenKind::RBrace);
         ExprMatch::new_green(self.db, match_kw, expr, lbrace, match_arms, rbrace)
+    }
+
+    // TODO: documenation
+    /// Assumes the current token is `If`.
+    /// Expected pattern: `if (<expr>) <block> [else <block>]`.
+    fn expect_if_expr(&mut self) -> ExprIfGreen {
+        assert_eq!(self.peek().kind, TokenKind::If);
+        let if_kw = self.take();
+        self.parse_token(TokenKind::LParen);
+        let condition = self.parse_expr();
+        self.parse_token(TokenKind::RParen);
+        let if_block = self.parse_block();
+        // TODO(lior): Make else block optional.
+        let else_kw = self.parse_token(TokenKind::Else);
+        let else_block = self.parse_block();
+        ExprIf::new_green(self.db, if_kw, condition, if_block, else_kw, else_block)
     }
 
     /// Returns a GreenId of a node with a MatchArm kind or None if a match arm can't be parsed.

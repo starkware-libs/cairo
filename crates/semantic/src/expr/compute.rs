@@ -291,6 +291,9 @@ pub fn compute_expr_semantic(
                 stable_ptr: expr_match.stable_ptr().untyped(),
             })
         }
+        ast::Expr::If(_expr_if) => {
+            unimplemented!()
+        }
         ast::Expr::ExprMissing(_) => todo!(),
     }
 }

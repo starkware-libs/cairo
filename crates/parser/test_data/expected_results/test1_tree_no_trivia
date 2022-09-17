@@ -122,13 +122,52 @@
     │   │       │   │   └── semicolon (kind: Semicolon): ';'
     │   │       │   ├── child #4 (kind: StatementLet)
     │   │       │   │   ├── letkw (kind: Let): 'let'
+    │   │       │   │   ├── name (kind: Identifier): 'z'
+    │   │       │   │   ├── type_clause (kind: OptionTypeClauseEmpty) []
+    │   │       │   │   ├── eq (kind: Eq): '='
+    │   │       │   │   ├── rhs (kind: ExprIf)
+    │   │       │   │   │   ├── if_kw (kind: If): 'if'
+    │   │       │   │   │   ├── condition (kind: ExprBinary)
+    │   │       │   │   │   │   ├── lhs (kind: ExprBinary)
+    │   │       │   │   │   │   │   ├── lhs (kind: ExprLiteral)
+    │   │       │   │   │   │   │   │   └── terminal (kind: LiteralNumber): '0'
+    │   │       │   │   │   │   │   ├── op (kind: Plus): '+'
+    │   │       │   │   │   │   │   └── rhs (kind: ExprPath)
+    │   │       │   │   │   │   │       └── item #0 (kind: PathSegment)
+    │   │       │   │   │   │   │           ├── ident (kind: Identifier): 'x'
+    │   │       │   │   │   │   │           └── generic_args (kind: OptionGenericArgsEmpty) []
+    │   │       │   │   │   │   ├── op (kind: EqEq): '=='
+    │   │       │   │   │   │   └── rhs (kind: ExprPath)
+    │   │       │   │   │   │       └── item #0 (kind: PathSegment)
+    │   │       │   │   │   │           ├── ident (kind: Identifier): 'y'
+    │   │       │   │   │   │           └── generic_args (kind: OptionGenericArgsEmpty) []
+    │   │       │   │   │   ├── if_block (kind: ExprBlock)
+    │   │       │   │   │   │   ├── lbrace (kind: LBrace): '{'
+    │   │       │   │   │   │   ├── statements (kind: StatementList)
+    │   │       │   │   │   │   │   └── child #0 (kind: StatementExpr)
+    │   │       │   │   │   │   │       ├── expr (kind: ExprLiteral)
+    │   │       │   │   │   │   │       │   └── terminal (kind: LiteralNumber): '1'
+    │   │       │   │   │   │   │       └── semicolon (kind: OptionSemicolonEmpty) []
+    │   │       │   │   │   │   └── rbrace (kind: RBrace): '}'
+    │   │       │   │   │   ├── else_kw (kind: Else): 'else'
+    │   │       │   │   │   └── else_block (kind: ExprBlock)
+    │   │       │   │   │       ├── lbrace (kind: LBrace): '{'
+    │   │       │   │   │       ├── statements (kind: StatementList)
+    │   │       │   │   │       │   └── child #0 (kind: StatementExpr)
+    │   │       │   │   │       │       ├── expr (kind: ExprLiteral)
+    │   │       │   │   │       │       │   └── terminal (kind: LiteralNumber): '2'
+    │   │       │   │   │       │       └── semicolon (kind: OptionSemicolonEmpty) []
+    │   │       │   │   │       └── rbrace (kind: RBrace): '}'
+    │   │       │   │   └── semicolon (kind: Semicolon): ';'
+    │   │       │   ├── child #5 (kind: StatementLet)
+    │   │       │   │   ├── letkw (kind: Let): 'let'
     │   │       │   │   ├── name (kind: Identifier): 'x'
     │   │       │   │   ├── type_clause (kind: OptionTypeClauseEmpty) []
     │   │       │   │   ├── eq (kind: Eq): '='
     │   │       │   │   ├── rhs (kind: ExprLiteral)
     │   │       │   │   │   └── terminal (kind: True): 'true'
     │   │       │   │   └── semicolon (kind: Semicolon): ';'
-    │   │       │   ├── child #5 (kind: StatementExpr)
+    │   │       │   ├── child #6 (kind: StatementExpr)
     │   │       │   │   ├── expr (kind: ExprFunctionCall)
     │   │       │   │   │   ├── path (kind: ExprPath)
     │   │       │   │   │   │   └── item #0 (kind: PathSegment)
@@ -143,7 +182,7 @@
     │   │       │   │   │       │           └── generic_args (kind: OptionGenericArgsEmpty) []
     │   │       │   │   │       └── rparen (kind: RParen): ')'
     │   │       │   │   └── semicolon (kind: Semicolon): ';'
-    │   │       │   ├── child #6 (kind: StatementExpr)
+    │   │       │   ├── child #7 (kind: StatementExpr)
     │   │       │   │   ├── expr (kind: ExprFunctionCall)
     │   │       │   │   │   ├── path (kind: ExprPath)
     │   │       │   │   │   │   └── item #0 (kind: PathSegment)
@@ -158,7 +197,7 @@
     │   │       │   │   │       │           └── generic_args (kind: OptionGenericArgsEmpty) []
     │   │       │   │   │       └── rparen (kind: RParen): ')'
     │   │       │   │   └── semicolon (kind: OptionSemicolonEmpty) []
-    │   │       │   └── child #7 (kind: StatementReturn)
+    │   │       │   └── child #8 (kind: StatementReturn)
     │   │       │       ├── returnkw (kind: Return): 'return'
     │   │       │       ├── expr (kind: ExprPath)
     │   │       │       │   └── item #0 (kind: PathSegment)
@@ -314,27 +353,27 @@ func foo(,var1: int,, var2: felt,) -> int {
                     ^
 
 error: Missing token Semicolon.
- --> test1.cairo:25:47
+ --> test1.cairo:30:47
 extern func glee<A, b>(var1: int,) -> crate::S<int>;
                                               ^
 
 error: Skipped tokens. Expected element: item or a closing EndOfFile.
- --> test1.cairo:25:47
+ --> test1.cairo:30:47
 extern func glee<A, b>(var1: int,) -> crate::S<int>;
                                               ^
 
 error: Skipped tokens. Expected element: item or a closing EndOfFile.
- --> test1.cairo:25:48
+ --> test1.cairo:30:48
 extern func glee<A, b>(var1: int,) -> crate::S<int>;
                                                ^*^
 
 error: Skipped tokens. Expected element: item or a closing EndOfFile.
- --> test1.cairo:25:51
+ --> test1.cairo:30:51
 extern func glee<A, b>(var1: int,) -> crate::S<int>;
                                                   ^
 
 error: Skipped tokens. Expected element: item or a closing EndOfFile.
- --> test1.cairo:25:52
+ --> test1.cairo:30:52
 extern func glee<A, b>(var1: int,) -> crate::S<int>;
                                                    ^
 

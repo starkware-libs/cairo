@@ -35,6 +35,8 @@ impl SemanticTokenKind {
             | TokenKind::Let
             | TokenKind::Return
             | TokenKind::Match
+            | TokenKind::If
+            | TokenKind::Else
             | TokenKind::Use => SemanticTokenKind::Keyword,
             TokenKind::And
             | TokenKind::AndAnd

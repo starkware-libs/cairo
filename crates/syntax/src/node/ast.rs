@@ -878,6 +878,7 @@ pub enum Expr {
     StructCtorCall(ExprStructCtorCall),
     Block(ExprBlock),
     Match(ExprMatch),
+    If(ExprIf),
     ExprMissing(ExprMissing),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -937,6 +938,11 @@ impl From<ExprMatchGreen> for ExprGreen {
         Self(value.0)
     }
 }
+impl From<ExprIfGreen> for ExprGreen {
+    fn from(value: ExprIfGreen) -> Self {
+        Self(value.0)
+    }
+}
 impl From<ExprMissingGreen> for ExprGreen {
     fn from(value: ExprMissingGreen) -> Self {
         Self(value.0)
@@ -973,6 +979,7 @@ impl TypedSyntaxNode for Expr {
                 }
                 SyntaxKind::ExprBlock => Expr::Block(ExprBlock::from_syntax_node(db, node)),
                 SyntaxKind::ExprMatch => Expr::Match(ExprMatch::from_syntax_node(db, node)),
+                SyntaxKind::ExprIf => Expr::If(ExprIf::from_syntax_node(db, node)),
                 SyntaxKind::ExprMissing => {
                     Expr::ExprMissing(ExprMissing::from_syntax_node(db, node))
                 }
@@ -998,6 +1005,7 @@ impl TypedSyntaxNode for Expr {
             Expr::StructCtorCall(x) => x.as_syntax_node(),
             Expr::Block(x) => x.as_syntax_node(),
             Expr::Match(x) => x.as_syntax_node(),
+            Expr::If(x) => x.as_syntax_node(),
             Expr::ExprMissing(x) => x.as_syntax_node(),
         }
     }
@@ -2588,6 +2596,98 @@ impl TypedSyntaxNode for ExprMatch {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         ExprMatchPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct ExprIf {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl ExprIf {
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        if_kw: TerminalGreen,
+        condition: ExprGreen,
+        if_block: ExprBlockGreen,
+        else_kw: TerminalGreen,
+        else_block: ExprBlockGreen,
+    ) -> ExprIfGreen {
+        let children: Vec<GreenId> =
+            vec![if_kw.0, condition.0, if_block.0, else_kw.0, else_block.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        ExprIfGreen(db.intern_green(GreenNode::Internal(GreenNodeInternal {
+            kind: SyntaxKind::ExprIf,
+            children,
+            width,
+        })))
+    }
+    pub fn if_kw(&self, db: &dyn SyntaxGroup) -> Terminal {
+        Terminal::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn condition(&self, db: &dyn SyntaxGroup) -> Expr {
+        Expr::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn if_block(&self, db: &dyn SyntaxGroup) -> ExprBlock {
+        ExprBlock::from_syntax_node(db, self.children[2].clone())
+    }
+    pub fn else_kw(&self, db: &dyn SyntaxGroup) -> Terminal {
+        Terminal::from_syntax_node(db, self.children[3].clone())
+    }
+    pub fn else_block(&self, db: &dyn SyntaxGroup) -> ExprBlock {
+        ExprBlock::from_syntax_node(db, self.children[4].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ExprIfPtr(SyntaxStablePtrId);
+impl ExprIfPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ExprIfGreen(pub GreenId);
+impl TypedSyntaxNode for ExprIf {
+    type StablePtr = ExprIfPtr;
+    type Green = ExprIfGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        ExprIfGreen(db.intern_green(GreenNode::Internal(GreenNodeInternal {
+            kind: SyntaxKind::ExprIf,
+            children: vec![
+                Terminal::missing(db).0,
+                Expr::missing(db).0,
+                ExprBlock::missing(db).0,
+                Terminal::missing(db).0,
+                ExprBlock::missing(db).0,
+            ],
+            width: 0,
+        })))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        match db.lookup_intern_green(node.0.green) {
+            GreenNode::Internal(internal) => {
+                if internal.kind != SyntaxKind::ExprIf {
+                    panic!(
+                        "Unexpected SyntaxKind {:?}. Expected {:?}.",
+                        internal.kind,
+                        SyntaxKind::ExprIf,
+                    );
+                }
+                let children = node.children(db).collect();
+                Self { node, children }
+            }
+            GreenNode::Token(token) => {
+                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::ExprIf,);
+            }
+        }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ExprIfPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]

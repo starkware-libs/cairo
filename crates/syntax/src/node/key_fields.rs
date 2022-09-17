@@ -90,6 +90,9 @@ pub fn get_key_fields(kind: SyntaxKind, children: Vec<GreenId>) -> Vec<GreenId> 
         SyntaxKind::ExprMatch => {
             vec![]
         }
+        SyntaxKind::ExprIf => {
+            vec![]
+        }
         SyntaxKind::TypeClause => {
             vec![]
         }
