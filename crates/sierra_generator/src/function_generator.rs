@@ -69,6 +69,7 @@ pub fn get_function_code(
     statements.push(return_statement(vec![return_variable_on_stack]));
 
     let statements = add_store_statements(
+        context.get_db(),
         statements,
         &|_concrete_lib_func_id: ConcreteLibFuncId| -> Vec<OutputVarReferenceInfo> {
             // TODO(lior): Implement once there's a way to get the Sierra signature from

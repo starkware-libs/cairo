@@ -9,7 +9,9 @@ use sierra::ids::ConcreteLibFuncId;
 use sierra::program::{GenBranchInfo, GenBranchTarget, GenStatement};
 use utils::ordered_hash_set::OrderedHashSet;
 
+use crate::db::SierraGenGroup;
 use crate::pre_sierra;
+use crate::utils::{simple_statement, store_temp_libfunc_id};
 
 /// Automatically adds store_temp() statements to the given list of [pre_sierra::Statement].
 /// For example, a deferred reference (e.g., `[ap] + [fp - 3]`) needs to be stored as a temporary
@@ -17,13 +19,14 @@ use crate::pre_sierra;
 /// The function will add the necessary `store_temp()` instruction before the first use of the
 /// deferred reference.
 pub fn add_store_statements<GetOutputInfo>(
+    db: &dyn SierraGenGroup,
     statements: Vec<pre_sierra::Statement>,
     get_output_info: &GetOutputInfo,
 ) -> Vec<pre_sierra::Statement>
 where
     GetOutputInfo: Fn(ConcreteLibFuncId) -> Vec<OutputVarReferenceInfo>,
 {
-    let mut handler = AddStoreVariableStatements::new();
+    let mut handler = AddStoreVariableStatements::new(db);
     // Go over the statements, restarting whenever we see a branch or a label.
     for statement in statements.into_iter() {
         handler.handle_statement(statement, get_output_info);
@@ -31,14 +34,16 @@ where
     handler.finalize()
 }
 
-struct AddStoreVariableStatements {
+struct AddStoreVariableStatements<'a> {
+    db: &'a dyn SierraGenGroup,
     result: Vec<pre_sierra::Statement>,
     deferred_variables: OrderedHashSet<sierra::ids::VarId>,
 }
-impl AddStoreVariableStatements {
+impl<'a> AddStoreVariableStatements<'a> {
     /// Constructs a new [AddStoreVariableStatements] object.
-    fn new() -> Self {
+    fn new(db: &'a dyn SierraGenGroup) -> Self {
         AddStoreVariableStatements {
+            db,
             result: Vec::new(),
             deferred_variables: OrderedHashSet::default(),
         }
@@ -75,9 +80,10 @@ impl AddStoreVariableStatements {
                 self.store_all_deffered_variables();
                 self.result.push(statement);
             }
-            pre_sierra::Statement::PushValues(_push_values) => {
-                // TODO(lior): This is currently implemented as nop. Replace with adding
-                // store_temp() for each argument.
+            pre_sierra::Statement::PushValues(push_values) => {
+                for pre_sierra::PushValue { var, var_on_stack, ty } in push_values {
+                    self.store_temp(var, var_on_stack, ty);
+                }
             }
         }
     }
@@ -95,5 +101,18 @@ impl AddStoreVariableStatements {
             "Internal compiler error: Remaining unhandled deferred variables."
         );
         self.result
+    }
+
+    fn store_temp(
+        &mut self,
+        var: &sierra::ids::VarId,
+        var_on_stack: &sierra::ids::VarId,
+        ty: &sierra::ids::ConcreteTypeId,
+    ) {
+        self.result.push(simple_statement(
+            store_temp_libfunc_id(self.db, ty.clone()),
+            &[var.clone()],
+            &[var_on_stack.clone()],
+        ));
     }
 }
