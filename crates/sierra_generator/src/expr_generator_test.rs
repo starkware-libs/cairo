@@ -66,18 +66,22 @@ fn test_expr_generator() {
             "felt_const<7>() -> ([1])",
             "store_temp<[0]>([0]) -> ([2])",
             "store_temp<[0]>([1]) -> ([3])",
+            "PushValues([0]: [0], [1]: [0])",
             "function_call<user@[0]>([2], [3]) -> ([4])",
             // foo2(foo(x, 7), foo(x, 7))
             "felt_const<7>() -> ([5])",
             "store_temp<[0]>([0]) -> ([6])",
             "store_temp<[0]>([5]) -> ([7])",
+            "PushValues([0]: [0], [5]: [0])",
             "function_call<user@[0]>([6], [7]) -> ([8])",
             "felt_const<7>() -> ([9])",
             "store_temp<[0]>([0]) -> ([10])",
             "store_temp<[0]>([9]) -> ([11])",
+            "PushValues([0]: [0], [9]: [0])",
             "function_call<user@[0]>([10], [11]) -> ([12])",
             "store_temp<[0]>([8]) -> ([13])",
             "store_temp<[0]>([12]) -> ([14])",
+            "PushValues([8]: [0], [12]: [0])",
             "function_call<user@[1]>([13], [14]) -> ([15])",
         ]
     );

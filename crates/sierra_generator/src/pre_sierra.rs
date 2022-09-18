@@ -1,6 +1,8 @@
 use db_utils::define_short_id;
 use defs::ids::FreeFunctionId;
+use sierra::ids::ConcreteTypeId;
 use sierra::program;
+use utils::write_comma_separated;
 
 use crate::db::SierraGenGroup;
 
@@ -41,12 +43,21 @@ pub struct Function {
 pub enum Statement {
     Sierra(program::GenStatement<LabelId>),
     Label(Label),
+    PushValues(Vec<(sierra::ids::VarId, ConcreteTypeId)>),
 }
 impl std::fmt::Display for Statement {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Statement::Sierra(value) => write!(f, "{}", value),
             Statement::Label(Label { id }) => write!(f, "{}:", id),
+            Statement::PushValues(values) => {
+                write!(f, "PushValues(")?;
+                write_comma_separated(
+                    f,
+                    &values.iter().map(|(arg, ty)| format!("{arg}: {ty}")).collect::<Vec<String>>(),
+                )?;
+                write!(f, ")")
+            }
         }
     }
 }

@@ -64,16 +64,22 @@ impl AddStoreVariableStatements {
                         self.store_all_deffered_variables();
                     }
                 }
+                self.result.push(statement);
             }
             pre_sierra::Statement::Sierra(GenStatement::Return(_return_statement)) => {
                 // TODO(lior): Add a store_temp() statement for each returned value.
                 self.store_all_deffered_variables();
+                self.result.push(statement);
             }
             pre_sierra::Statement::Label(_) => {
                 self.store_all_deffered_variables();
+                self.result.push(statement);
+            }
+            pre_sierra::Statement::PushValues(_push_values) => {
+                // TODO(lior): This is currently implemented as nop. Replace with adding
+                // store_temp() for each argument.
             }
         }
-        self.result.push(statement);
     }
 
     /// Stores all the deffered variables and clears `deferred_variables`.

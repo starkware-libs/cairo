@@ -20,6 +20,9 @@ pub fn resolve_labels(
                 Some(label_replacer.handle_statement(sierra_statement))
             }
             pre_sierra::Statement::Label(_) => None,
+            pre_sierra::Statement::PushValues(_) => {
+                panic!("Unexpected pre_sierra::Statement::PushValues in resolve_labels().")
+            }
         })
         .collect()
 }
@@ -41,6 +44,9 @@ fn get_label_id_to_index(
                 } else {
                     panic!("Label {} was already declared.", label.id)
                 }
+            }
+            pre_sierra::Statement::PushValues(_) => {
+                panic!("Unexpected pre_sierra::Statement::PushValues in get_label_id_to_index().")
             }
         }
     }

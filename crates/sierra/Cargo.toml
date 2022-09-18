@@ -8,11 +8,6 @@ build = "src/build.rs" # LALRPOP preprocessing
 lalrpop = "0.19.8"
 regex = "1"
 
-[dev-dependencies]
-assert_matches = "1.5"
-indoc = "1.0.7"
-test-case = "2.2.1"
-
 [dependencies]
 array-init = "2.0.1"
 const-fnv1a-hash = "1.1.0"
@@ -21,3 +16,9 @@ lalrpop-util = { version = "0.19.8", features = ["lexer"] }
 thiserror = "1.0.32"
 salsa = "0.16.1"
 smol_str = "0.1.23"
+utils = { path = "../utils" }
+
+[dev-dependencies]
+assert_matches = "1.5"
+indoc = "1.0.7"
+test-case = "2.2.1"
