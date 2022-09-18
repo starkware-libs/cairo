@@ -3,7 +3,6 @@
 mod test;
 
 use defs::ids::GenericFunctionId;
-use sierra::ids::ConcreteTypeId;
 use sierra::program;
 
 use crate::diagnostic::SierraGeneratorDiagnosticKind;
@@ -113,18 +112,15 @@ fn handle_function_call(
         GenericFunctionId::Free(_) => {
             // Push the arguments on top of the stack.
             let mut args_on_stack: Vec<sierra::ids::VarId> = vec![];
-            let mut push_values_vec: Vec<(sierra::ids::VarId, ConcreteTypeId)> = vec![];
+            let mut push_values_vec: Vec<pre_sierra::PushValue> = vec![];
             for (arg_var, arg_type) in args {
                 let arg_on_stack = context.allocate_sierra_variable();
-                // TODO(lior): Remove the following store_temp statement once PushValues is
-                //   implemented.
-                statements.push(simple_statement(
-                    context.store_temp_libfunc_id(arg_type)?,
-                    &[arg_var.clone()],
-                    &[arg_on_stack.clone()],
-                ));
+                push_values_vec.push(pre_sierra::PushValue {
+                    var: arg_var.clone(),
+                    var_on_stack: arg_on_stack.clone(),
+                    ty: context.get_db().get_concrete_type_id(arg_type)?,
+                });
                 args_on_stack.push(arg_on_stack);
-                push_values_vec.push((arg_var, context.get_db().get_concrete_type_id(arg_type)?));
             }
             statements.push(pre_sierra::Statement::PushValues(push_values_vec));
 

@@ -4,7 +4,9 @@ use sierra::ids::ConcreteLibFuncId;
 
 use crate::pre_sierra;
 use crate::store_variables::add_store_statements;
-use crate::test_utils::{dummy_label, dummy_return_statement, dummy_simple_statement};
+use crate::test_utils::{
+    dummy_label, dummy_return_statement, dummy_simple_statement, SierraGenDatabaseForTesting,
+};
 
 /// Returns the [OutputVarReferenceInfo] information for a given libfunc.
 fn get_output_info(libfunc: ConcreteLibFuncId) -> Vec<OutputVarReferenceInfo> {
@@ -17,6 +19,7 @@ fn get_output_info(libfunc: ConcreteLibFuncId) -> Vec<OutputVarReferenceInfo> {
 
 #[test]
 fn store_temp_simple() {
+    let db = SierraGenDatabaseForTesting::default();
     let statements: Vec<pre_sierra::Statement> = vec![
         dummy_simple_statement("felt_add", &[0, 1], &[2]),
         dummy_simple_statement("nope", &[], &[]),
@@ -29,7 +32,7 @@ fn store_temp_simple() {
         dummy_return_statement(&[]),
     ];
     assert_eq!(
-        add_store_statements(statements, &get_output_info)
+        add_store_statements(&db, statements, &get_output_info)
             .iter()
             .map(|x| format!("{}", x))
             .collect::<Vec<String>>(),

@@ -43,7 +43,7 @@ pub struct Function {
 pub enum Statement {
     Sierra(program::GenStatement<LabelId>),
     Label(Label),
-    PushValues(Vec<(sierra::ids::VarId, ConcreteTypeId)>),
+    PushValues(Vec<PushValue>),
 }
 impl std::fmt::Display for Statement {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -54,12 +54,30 @@ impl std::fmt::Display for Statement {
                 write!(f, "PushValues(")?;
                 write_comma_separated(
                     f,
-                    &values.iter().map(|(arg, ty)| format!("{arg}: {ty}")).collect::<Vec<String>>(),
+                    &values
+                        .iter()
+                        .map(|PushValue { var, ty, .. }| format!("{var}: {ty}"))
+                        .collect::<Vec<String>>(),
+                )?;
+                write!(f, ") -> (")?;
+                write_comma_separated(
+                    f,
+                    &values
+                        .iter()
+                        .map(|PushValue { var_on_stack, .. }| var_on_stack)
+                        .collect::<Vec<_>>(),
                 )?;
                 write!(f, ")")
             }
         }
     }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PushValue {
+    pub var: sierra::ids::VarId,
+    pub var_on_stack: sierra::ids::VarId,
+    pub ty: ConcreteTypeId,
 }
 
 /// Represents a pre-sierra label.
