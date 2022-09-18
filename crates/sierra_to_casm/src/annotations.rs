@@ -26,12 +26,9 @@ pub enum AnnotationError {
     InvalidStatementIdx,
     #[error("MissingAnnotationsForStatement")]
     MissingAnnotationsForStatement(StatementIdx),
-    #[error("{var_id} is not defined at #{statement_idx}.")]
+    #[error("#{statement_idx}: {var_id} is undefined.")]
     MissingReferenceError { statement_idx: StatementIdx, var_id: VarId },
-    #[error(
-        "{var_id} is overridden when moving from #{source_statement_idx} to \
-         #{destination_statement_idx}."
-    )]
+    #[error("#{source_statement_idx}->#{destination_statement_idx}: {var_id} was overridden.")]
     OverrideReferenceError {
         source_statement_idx: StatementIdx,
         destination_statement_idx: StatementIdx,
@@ -42,8 +39,8 @@ pub enum AnnotationError {
     ReferencesError(#[from] ReferencesError),
 
     #[error(
-        "Got '{error}' error while moving {var_id} from #{source_statement_idx} to \
-         #{destination_statement_idx}."
+        "#{source_statement_idx}->#{destination_statement_idx}: Got '{error}' error while moving \
+         {var_id}."
     )]
     ApChangeError {
         var_id: VarId,
