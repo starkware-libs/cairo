@@ -7,6 +7,8 @@ use std::sync::Arc;
 use defs::ids::{FreeFunctionId, GenericFunctionId};
 use diagnostics::{Diagnostics, WithDiagnostics};
 use diagnostics_proc_macros::with_diagnostics;
+use sierra::extensions::OutputVarReferenceInfo;
+use sierra::ids::ConcreteLibFuncId;
 use sierra::program::Param;
 
 use crate::db::SierraGenGroup;
@@ -15,6 +17,7 @@ use crate::dup_and_drop::{calculate_statement_dups_and_drops, VarsDupsAndDrops};
 use crate::expr_generator::generate_expression_code;
 use crate::expr_generator_context::ExprGeneratorContext;
 use crate::pre_sierra::{self, Statement};
+use crate::store_variables::add_store_statements;
 use crate::utils::{return_statement, simple_statement};
 
 #[with_diagnostics]
@@ -59,6 +62,15 @@ pub fn get_function_code(
     ));
 
     statements.push(return_statement(vec![return_variable_on_stack]));
+
+    let statements = add_store_statements(
+        statements,
+        &|_concrete_lib_func_id: ConcreteLibFuncId| -> Vec<OutputVarReferenceInfo> {
+            // TODO(lior): Implement once there's a way to get the Sierra signature from
+            //   ConcreteLibFuncId.
+            unimplemented!();
+        },
+    );
     let statements = add_dups_and_drops(&mut context, &parameters, statements);
 
     // TODO(spapini): Don't intern objects for the semantic model outside the crate. These should
