@@ -47,16 +47,18 @@ pub trait LanguageElementId {
 /// as defined in DefsGroup.
 /// See the documentation of 'define_short_id' and `stable_ptr.rs` for more details.
 macro_rules! define_language_element_id {
-    ($short_id:ident, $long_id:ident, $ast_ty:ty, $lookup:ident) => {
+    ($short_id:ident, $long_id:ident, $ast_ty:ty, $lookup:ident $(,$name_field:ident)?) => {
         #[derive(Clone, PartialEq, Eq, Hash, Debug)]
         pub struct $long_id(pub ModuleId, pub <$ast_ty as TypedSyntaxNode>::StablePtr);
-        impl $long_id {
-            pub fn name(&self, db: &dyn DefsGroup) -> SmolStr {
-                let syntax_db = db.upcast();
-                let terminal_green = self.1.name_green(syntax_db);
-                terminal_green.identifier(syntax_db)
+        $(
+            impl $long_id {
+                pub fn $name_field(&self, db: &dyn DefsGroup) -> SmolStr {
+                    let syntax_db = db.upcast();
+                    let terminal_green = self.1.name_green(syntax_db);
+                    terminal_green.identifier(syntax_db)
+                }
             }
-        }
+        )?
         define_short_id!($short_id, $long_id, DefsGroup, $lookup);
         impl $short_id {
             pub fn stable_ptr(self, db: &dyn DefsGroup) -> <$ast_ty as TypedSyntaxNode>::StablePtr {
@@ -182,31 +184,40 @@ define_language_element_id_as_enum! {
         ExternFunction(ExternFunctionId),
     }
 }
-define_language_element_id!(SubmoduleId, SubmoduleLongId, ast::ItemModule, lookup_intern_submodule);
-define_language_element_id!(UseId, UseLongId, ast::ItemUse, lookup_intern_use);
+define_language_element_id!(
+    SubmoduleId,
+    SubmoduleLongId,
+    ast::ItemModule,
+    lookup_intern_submodule,
+    name
+);
+define_language_element_id!(UseId, UseLongId, ast::ItemUse, lookup_intern_use, name);
 define_language_element_id!(
     FreeFunctionId,
     FreeFunctionLongId,
     ast::ItemFreeFunction,
-    lookup_intern_free_function
+    lookup_intern_free_function,
+    name
 );
 define_language_element_id!(
     ExternFunctionId,
     ExternFunctionLongId,
     ast::ItemExternFunction,
-    lookup_intern_extern_function
+    lookup_intern_extern_function,
+    name
 );
-define_language_element_id!(StructId, StructLongId, ast::ItemStruct, lookup_intern_struct);
+define_language_element_id!(StructId, StructLongId, ast::ItemStruct, lookup_intern_struct, name);
 define_language_element_id!(
     ExternTypeId,
     ExternTypeLongId,
     ast::ItemExternType,
-    lookup_intern_extern_type
+    lookup_intern_extern_type,
+    name
 );
 
 // Struct items.
 // TODO(spapini): Override full_path for to include parents, for better debug.
-define_language_element_id!(MemberId, MemberLongId, ast::Param, lookup_intern_member);
+define_language_element_id!(MemberId, MemberLongId, ast::Param, lookup_intern_member, name);
 
 define_language_element_id_as_enum! {
     /// Id for any variable definition.
@@ -218,10 +229,16 @@ define_language_element_id_as_enum! {
 }
 
 // TODO(spapini): Override full_path for to include parents, for better debug.
-define_language_element_id!(ParamId, ParamLongId, ast::Param, lookup_intern_param);
+define_language_element_id!(ParamId, ParamLongId, ast::Param, lookup_intern_param, name);
 // TODO(spapini): change this to a binding inside a pattern.
 // TODO(spapini): Override full_path for to include parents, for better debug.
-define_language_element_id!(LocalVarId, LocalVarLongId, ast::StatementLet, lookup_intern_local_var);
+define_language_element_id!(LocalVarId, LocalVarLongId, ast::Terminal, lookup_intern_local_var);
+impl LocalVarLongId {
+    pub fn name(&self, _db: &dyn DefsGroup) -> SmolStr {
+        // TODO(spapini): Have a better name once we support patterns.
+        "var".into()
+    }
+}
 
 define_language_element_id_as_enum! {
     /// Id for anything that can be a "Go to definition" result.

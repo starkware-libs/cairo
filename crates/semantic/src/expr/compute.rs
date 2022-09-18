@@ -548,8 +548,9 @@ pub fn compute_statement_semantic(
     let syntax_db = db.upcast();
     let statement = match syntax {
         ast::Statement::Let(let_syntax) => {
+            let identifier = let_syntax.name(syntax_db);
             let var_id =
-                db.intern_local_var(LocalVarLongId(ctx.module_id, let_syntax.stable_ptr()));
+                db.intern_local_var(LocalVarLongId(ctx.module_id, identifier.stable_ptr()));
 
             let rhs_expr_id = db.intern_expr(compute_expr_semantic(ctx, let_syntax.rhs(syntax_db)));
             let inferred_type = db.lookup_intern_expr(rhs_expr_id).ty();
@@ -575,10 +576,9 @@ pub fn compute_statement_semantic(
                     explicit_type
                 }
             };
-            ctx.environment.variables.insert(
-                let_syntax.name(syntax_db).text(syntax_db),
-                Variable { id: VarId::Local(var_id), ty },
-            );
+            ctx.environment
+                .variables
+                .insert(identifier.text(syntax_db), Variable { id: VarId::Local(var_id), ty });
             semantic::Statement::Let(semantic::StatementLet {
                 var: crate::LocalVariable { id: var_id, ty },
                 expr: rhs_expr_id,

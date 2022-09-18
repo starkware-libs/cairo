@@ -1,10 +1,11 @@
 use assert_matches::assert_matches;
 use debug::DebugWithDb;
 use defs::db::DefsGroup;
-use defs::ids::{LanguageElementId, ModuleId, ModuleItemId, VarId};
+use defs::ids::{LanguageElementId, LocalVarId, LocalVarLongId, ModuleId, ModuleItemId, VarId};
 use indoc::indoc;
 use pretty_assertions::assert_eq;
 use smol_str::SmolStr;
+use syntax::node::{ast, TypedSyntaxNode};
 use utils::extract_matches;
 
 use crate::corelib::{core_felt_ty, unit_ty};
@@ -12,7 +13,7 @@ use crate::db::SemanticGroup;
 use crate::test_utils::{
     setup_test_expr, setup_test_function, setup_test_module, SemanticDatabaseForTesting, TestModule,
 };
-use crate::{diagnostics_test, semantic, ExprId, StatementId, TypeId};
+use crate::{diagnostics_test, semantic, ExprId, LocalVariable, StatementId, TypeId};
 
 #[test]
 fn test_expr_literal() {
@@ -556,7 +557,7 @@ fn test_expr_struct_ctor() {
         "ExprStructCtor(ExprStructCtor { struct_id: StructId(test_crate::A), members: \
          [(MemberId(test_crate::a), ExprLiteral(ExprLiteral { value: 1, ty: \
          Concrete(ExternTypeId(core::felt)) })), (MemberId(test_crate::b), ExprVar(ExprVar { var: \
-         LocalVarId(test_crate::b), ty: Concrete(ExternTypeId(core::felt)) }))], ty: \
+         LocalVarId(test_crate::var), ty: Concrete(ExternTypeId(core::felt)) }))], ty: \
          Concrete(StructId(test_crate::A)) })"
     );
 }
@@ -646,7 +647,7 @@ pub fn assert_let_statement_with_var(
         crate::Expr::ExprVar,
         "Expected a var expression."
     );
-    assert_eq!(var.name(db.upcast()), expr_var_name);
+    assert_eq!(get_var_name(db, module_id, extract_matches!(var, VarId::Local)), expr_var_name);
     assert_eq!(ty, expr_var_type);
 }
 
@@ -661,8 +662,17 @@ fn assert_let_statement_lhs_and_get_rhs(
     let semantic::StatementLet { var, expr } =
         extract_matches!(stmt, semantic::Statement::Let, "Expected a let statement.");
     assert_eq!(var.id.module(db.upcast()), module_id);
-    assert_eq!(var.id.name(db.upcast()), var_name);
+    assert_eq!(get_var_name(db, module_id, var.id), var_name);
     assert_eq!(var.ty, core_felt_ty(db));
 
     expr
+}
+
+fn get_var_name(db: &dyn SemanticGroup, module_id: ModuleId, var: LocalVarId) -> SmolStr {
+    ast::Terminal::from_ptr(
+        db.upcast(),
+        &db.module_syntax(module_id).unwrap(),
+        var.stable_ptr(db.upcast()),
+    )
+    .text(db.upcast())
 }
