@@ -165,7 +165,7 @@
     │   │       │       │       ├── ident (kind: Identifier): 'x'
     │   │       │       │       └── generic_args (kind: OptionGenericArgsEmpty) []
     │   │       │       └── semicolon (kind: Semicolon): ';'
-    │   │       └── rbrace (kind: RBrace): '}'
+    │   │       └── rbrace: Missing
     │   ├── child #3 (kind: ItemFreeFunction)
     │   │   ├── funckw (kind: Function): 'func'
     │   │   ├── name (kind: Identifier): 'bar'
@@ -298,43 +298,48 @@
     │       └── rbrace (kind: RBrace): '}'
     └── eof (kind: EndOfFile).
 --------------------
-error: Skipped tokens. Expected element: item or a closing EndOfFile.
+error: Skipped tokens. Expected element: item.
  --> test1.cairo:6:1
 ;
 ^
 
-error: Skipped tokens. Expected element: parameter or a closing RParen.
+error: Skipped tokens. Expected element: parameter.
  --> test1.cairo:7:10
 func foo(,var1: int,, var2: felt,) -> int {
          ^
 
-error: Skipped tokens. Expected element: parameter or a closing RParen.
+error: Skipped tokens. Expected element: parameter.
  --> test1.cairo:7:21
 func foo(,var1: int,, var2: felt,) -> int {
                     ^
 
+error: Missing token RBrace.
+ --> test1.cairo:21:1
+func bar<A, B>() -> felt { }
+^**^
+
 error: Missing token Semicolon.
- --> test1.cairo:25:47
+ --> test1.cairo:24:47
 extern func glee<A, b>(var1: int,) -> crate::S<int>;
                                               ^
 
-error: Skipped tokens. Expected element: item or a closing EndOfFile.
- --> test1.cairo:25:47
+error: Skipped tokens. Expected element: item.
+ --> test1.cairo:24:47
 extern func glee<A, b>(var1: int,) -> crate::S<int>;
                                               ^
 
-error: Skipped tokens. Expected element: item or a closing EndOfFile.
- --> test1.cairo:25:48
+error: Skipped tokens. Expected element: item.
+ --> test1.cairo:24:48
 extern func glee<A, b>(var1: int,) -> crate::S<int>;
                                                ^*^
 
-error: Skipped tokens. Expected element: item or a closing EndOfFile.
- --> test1.cairo:25:51
+error: Skipped tokens. Expected element: item.
+ --> test1.cairo:24:51
 extern func glee<A, b>(var1: int,) -> crate::S<int>;
                                                   ^
 
-error: Skipped tokens. Expected element: item or a closing EndOfFile.
- --> test1.cairo:25:52
+error: Skipped tokens. Expected element: item.
+ --> test1.cairo:24:52
 extern func glee<A, b>(var1: int,) -> crate::S<int>;
                                                    ^
 
