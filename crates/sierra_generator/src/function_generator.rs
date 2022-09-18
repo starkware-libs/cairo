@@ -40,7 +40,7 @@ pub fn get_function_code(
         context.register_variable(
             defs::ids::VarId::Param(param.id),
             sierra_var.clone(),
-            param.param_name_stable_ptr,
+            param.id.stable_ptr(context.get_db().upcast()).untyped(),
         );
 
         parameters

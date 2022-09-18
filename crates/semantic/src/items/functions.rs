@@ -106,8 +106,7 @@ pub fn function_signature_params(
         let ty_syntax = ast_param.type_clause(syntax_db).ty(syntax_db);
         // TODO(yuval): Diagnostic?
         let ty = resolve_type(diagnostics, db, module_id, ty_syntax);
-        let param_name_stable_ptr = ast_param.name(syntax_db).stable_ptr().untyped();
-        semantic_params.push(semantic::Parameter { id, ty, param_name_stable_ptr });
+        semantic_params.push(semantic::Parameter { id, ty });
         variables.insert(name, semantic::Variable { id: VarId::Param(id), ty });
     }
 
