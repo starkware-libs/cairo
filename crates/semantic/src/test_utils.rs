@@ -8,7 +8,7 @@ use filesystem::ids::{CrateLongId, Directory};
 use parser::db::ParserDatabase;
 use pretty_assertions::assert_eq;
 use syntax::node::db::{SyntaxDatabase, SyntaxGroup};
-use utils::extract_matches;
+use utils::{extract_matches, OptFrom};
 
 use crate::db::{SemanticDatabase, SemanticGroup};
 use crate::semantic;
@@ -124,7 +124,7 @@ pub fn setup_test_function(
     let (test_module, diagnostics) = setup_test_module(db, &content).split();
     let generic_function_id = db
         .module_item_by_name(test_module.module_id, function_name.into())
-        .and_then(GenericFunctionId::from)
+        .and_then(GenericFunctionId::opt_from)
         .unwrap();
     let function_id = extract_matches!(generic_function_id, GenericFunctionId::Free);
     WithStringDiagnostics {
