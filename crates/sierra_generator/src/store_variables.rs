@@ -55,7 +55,6 @@ impl AddStoreVariableStatements {
     {
         match &statement {
             pre_sierra::Statement::Sierra(GenStatement::Invocation(invocation)) => {
-                // let _output_infos = get_output_info(invocation.libfunc_id.clone());
                 match &invocation.branches[..] {
                     [GenBranchInfo { target: GenBranchTarget::Fallthrough, results: _ }] => {
                         // A simple invocation.

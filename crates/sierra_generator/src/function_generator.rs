@@ -63,7 +63,14 @@ pub fn get_function_code(
 
     statements.push(return_statement(vec![return_variable_on_stack]));
 
-    let statements = add_store_statements(statements, &get_output_info);
+    let statements = add_store_statements(
+        statements,
+        &|_concrete_lib_func_id: ConcreteLibFuncId| -> Vec<OutputVarReferenceInfo> {
+            // TODO(lior): Implement once there's a way to get the Sierra signature from
+            //   ConcreteLibFuncId.
+            unimplemented!();
+        },
+    );
     let statements = add_dups_and_drops(&mut context, &parameters, statements);
 
     // TODO(spapini): Don't intern objects for the semantic model outside the crate. These should
@@ -126,8 +133,4 @@ fn add_dups_and_drops(
             expanded_statement
         })
         .collect()
-}
-
-fn get_output_info(_concrete_lib_func_id: ConcreteLibFuncId) -> Vec<OutputVarReferenceInfo> {
-    unimplemented!();
 }
