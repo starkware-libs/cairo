@@ -16,9 +16,7 @@ use crate::pre_sierra;
 /// or local variable before being included in additional computation.
 /// The function will add the necessary `store_temp()` instruction before the first use of the
 /// deferred reference.
-// TODO(lior): Remove #[allow(dead_code)] once this function is used.
-#[allow(dead_code)]
-fn add_store_statements<GetOutputInfo>(
+pub fn add_store_statements<GetOutputInfo>(
     statements: Vec<pre_sierra::Statement>,
     get_output_info: &GetOutputInfo,
 ) -> Vec<pre_sierra::Statement>
@@ -51,13 +49,13 @@ impl AddStoreVariableStatements {
     fn handle_statement<GetOutputInfo>(
         &mut self,
         statement: pre_sierra::Statement,
-        get_output_info: &GetOutputInfo,
+        _get_output_info: &GetOutputInfo,
     ) where
         GetOutputInfo: Fn(ConcreteLibFuncId) -> Vec<OutputVarReferenceInfo>,
     {
         match &statement {
             pre_sierra::Statement::Sierra(GenStatement::Invocation(invocation)) => {
-                let _output_infos = get_output_info(invocation.libfunc_id.clone());
+                // let _output_infos = get_output_info(invocation.libfunc_id.clone());
                 match &invocation.branches[..] {
                     [GenBranchInfo { target: GenBranchTarget::Fallthrough, results: _ }] => {
                         // A simple invocation.
