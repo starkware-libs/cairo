@@ -1,6 +1,7 @@
-use sierra::ids::ConcreteLibFuncId;
+use sierra::ids::{ConcreteLibFuncId, ConcreteTypeId};
 use sierra::program;
 
+use crate::db::SierraGenGroup;
 use crate::pre_sierra;
 
 pub fn simple_statement(
@@ -34,4 +35,15 @@ pub fn jump_statement(
 
 pub fn return_statement(res: Vec<sierra::ids::VarId>) -> pre_sierra::Statement {
     pre_sierra::Statement::Sierra(program::GenStatement::Return(res))
+}
+
+/// Returns the [sierra::program::ConcreteLibFuncLongId] associated with `store_temp`.
+pub fn store_temp_libfunc_id(
+    db: &dyn SierraGenGroup,
+    ty: ConcreteTypeId,
+) -> sierra::ids::ConcreteLibFuncId {
+    db.intern_concrete_lib_func(sierra::program::ConcreteLibFuncLongId {
+        generic_id: sierra::ids::GenericLibFuncId::from_string("store_temp"),
+        generic_args: vec![sierra::program::GenericArg::Type(ty)],
+    })
 }
