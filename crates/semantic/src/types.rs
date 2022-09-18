@@ -30,8 +30,8 @@ impl TypeId {
     }
     pub fn format(&self, db: &(dyn SemanticGroup + 'static)) -> String {
         match db.lookup_intern_type(*self) {
-            TypeLongId::Concrete(ConcreteType { generic_type, generic_args }) => {
-                assert!(generic_args.is_empty(), "Generic are not supported yet.");
+            TypeLongId::Concrete(ConcreteType { generic_type, generic_args: _ }) => {
+                // TODO(spapini): Format generics.
                 generic_type.format(db.upcast())
             }
             TypeLongId::Tuple(inner_types) => {
