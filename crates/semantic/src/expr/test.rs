@@ -433,7 +433,7 @@ fn test_expr_call() {
 }
 
 #[test]
-fn test_expr_call_missing() {
+fn test_expr_call_failures() {
     let mut db_val = SemanticDatabaseForTesting::default();
     // TODO(spapini): Add types.
     let (test_expr, diagnostics) = setup_test_expr(&mut db_val, "foo()", "", "").split();
@@ -490,6 +490,89 @@ fn test_function_body() {
         extract_matches!(expr, crate::Expr::ExprVar);
     let param = extract_matches!(var, VarId::Param);
     assert_eq!(param.name(db), "a");
+}
+
+#[test]
+fn test_expr_struct_ctor() {
+    let mut db_val = SemanticDatabaseForTesting::default();
+    let expr_id = setup_test_expr(
+        &mut db_val,
+        indoc! {"
+            A { a: 1, b }
+        "},
+        indoc! {"
+            struct A {
+                a: felt,
+                b: felt
+            }
+        "},
+        "let b = 2;",
+    )
+    .unwrap()
+    .expr_id;
+    let db = &db_val;
+    assert_eq!(
+        format!("{:?}", expr_id.debug(db)),
+        "ExprStructCtor(ExprStructCtor { struct_id: StructId(test_crate::A), members: \
+         [(MemberId(test_crate::a), ExprLiteral(ExprLiteral { value: 1, ty: \
+         Concrete(ExternTypeId(core::felt)) })), (MemberId(test_crate::b), ExprVar(ExprVar { var: \
+         LocalVarId(test_crate::b), ty: Concrete(ExternTypeId(core::felt)) }))], ty: \
+         Concrete(StructId(test_crate::A)) })"
+    );
+}
+
+#[test]
+fn test_expr_struct_ctor_failures() {
+    let mut db_val = SemanticDatabaseForTesting::default();
+    let diagnostics = setup_test_module(
+        &mut db_val,
+        indoc! {"
+            struct A {
+                a: felt,
+                b: ()
+            }
+            func foo(a: A){
+                A {
+                    b: 1,
+                    a: 2,
+                    c: 7,
+                    a: 3,
+                    ..d,
+                }
+            }
+        "},
+    )
+    .get_diagnostics();
+    assert_eq!(
+        diagnostics,
+        indoc! {r#"
+            error: Unexpected argument type. Expected: "()", found: "core::felt".
+             --> lib.cairo:7:9
+                    b: 1,
+                    ^
+
+            error: Unknown member.
+             --> lib.cairo:9:9
+                    c: 7,
+                    ^
+
+            error: Member specified more than once.
+             --> lib.cairo:10:9
+                    a: 3,
+                    ^
+
+            error: Unsupported feature.
+             --> lib.cairo:11:9
+                    ..d,
+                    ^*^
+
+            error: Missing member b.
+             --> lib.cairo:6:5
+                A {
+                ^*^
+
+        "#}
+    );
 }
 
 pub fn assert_let_statement_with_literal(

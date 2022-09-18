@@ -44,6 +44,15 @@ impl<Key: Hash + Eq, Value> OrderedHashMap<Key, Value> {
     }
 }
 
+impl<Key: Hash + Eq, Value> IntoIterator for OrderedHashMap<Key, Value> {
+    type Item = (Key, Value);
+    type IntoIter = indexmap::map::IntoIter<Key, Value>;
+    fn into_iter(self) -> Self::IntoIter {
+        let OrderedHashMap(inner) = self;
+        inner.into_iter()
+    }
+}
+
 impl<Key: Hash + Eq, IndexType: Into<Key>, Value> Index<IndexType> for OrderedHashMap<Key, Value> {
     type Output = Value;
 
@@ -75,14 +84,5 @@ impl<Key: Hash + Eq, Value> Default for OrderedHashMap<Key, Value> {
 impl<Key: Hash + Eq, Value> FromIterator<(Key, Value)> for OrderedHashMap<Key, Value> {
     fn from_iter<T: IntoIterator<Item = (Key, Value)>>(iter: T) -> Self {
         Self(iter.into_iter().collect())
-    }
-}
-
-impl<Key: Hash + Eq, Value> IntoIterator for OrderedHashMap<Key, Value> {
-    type Item = (Key, Value);
-    type IntoIter = indexmap::map::IntoIter<Key, Value>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.0.into_iter()
     }
 }
