@@ -1,6 +1,5 @@
 use defs::ids::{ParamId, VarId};
 use diagnostics_proc_macros::DebugWithDb;
-use syntax::node::ids::SyntaxStablePtrId;
 
 // Reexport objects
 pub use super::expr::objects::*;
@@ -14,8 +13,6 @@ pub use crate::types::{ConcreteType, TypeId, TypeLongId};
 pub struct Parameter {
     pub id: ParamId,
     pub ty: TypeId,
-    #[hide_field_debug_with_db]
-    pub param_name_stable_ptr: SyntaxStablePtrId,
 }
 
 // TODO(yuval): consider making this an enum or the id an enum of ParamId/LocalVarId

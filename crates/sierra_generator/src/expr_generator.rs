@@ -65,7 +65,7 @@ fn handle_block(
                 context.register_variable(
                     defs::ids::VarId::Local(statement_let.var.id),
                     res,
-                    statement_let.var_name_stable_ptr,
+                    statement_let.var.stable_ptr(context.get_db().upcast()).untyped(),
                 );
             }
             semantic::Statement::Return(_) => todo!(),

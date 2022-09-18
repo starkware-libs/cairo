@@ -582,7 +582,6 @@ pub fn compute_statement_semantic(
             semantic::Statement::Let(semantic::StatementLet {
                 var: crate::LocalVariable { id: var_id, ty },
                 expr: rhs_expr_id,
-                var_name_stable_ptr: let_syntax.name(syntax_db).stable_ptr().untyped(),
             })
         }
         ast::Statement::Expr(expr_syntax) => semantic::Statement::Expr(
