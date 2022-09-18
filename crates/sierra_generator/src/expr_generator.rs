@@ -111,7 +111,7 @@ fn handle_function_call(
             for (arg_var, arg_type) in args {
                 let arg_on_stack = context.allocate_sierra_variable();
                 statements.push(simple_statement(
-                    context.store_temp_libfunc_id(arg_type),
+                    context.store_temp_libfunc_id(arg_type)?,
                     &[arg_var],
                     &[arg_on_stack.clone()],
                 ));
@@ -148,7 +148,7 @@ fn handle_function_call(
             //   automatically adding such statements.
             let res_var_on_stack = context.allocate_sierra_variable();
             statements.push(simple_statement(
-                context.store_temp_libfunc_id(function_long_id.return_type),
+                context.store_temp_libfunc_id(function_long_id.return_type)?,
                 &[res_var],
                 &[res_var_on_stack.clone()],
             ));
@@ -220,7 +220,7 @@ fn handle_felt_match(
             let (block0_statements, block0_res) = generate_expression_code(context, *block0)?;
             statements.extend(block0_statements);
             statements.push(simple_statement(
-                context.store_temp_libfunc_id(context.get_db().lookup_intern_expr(*block0).ty()),
+                context.store_temp_libfunc_id(context.get_db().lookup_intern_expr(*block0).ty())?,
                 &[block0_res],
                 &[output_var.clone()],
             ));
@@ -234,7 +234,7 @@ fn handle_felt_match(
             // the unwrapped type.
             let unwraped_non_zero_var = context.allocate_sierra_variable();
             statements.push(simple_statement(
-                context.unwrap_nz_libfunc_id(context.get_db().core_felt_ty()),
+                context.unwrap_nz_libfunc_id(context.get_db().core_felt_ty())?,
                 &[non_zero_var],
                 &[unwraped_non_zero_var],
             ));
@@ -243,7 +243,7 @@ fn handle_felt_match(
             statements.push(simple_statement(
                 context.store_temp_libfunc_id(
                     context.get_db().lookup_intern_expr(*block_otherwise).ty(),
-                ),
+                )?,
                 &[block_otherwise_res],
                 &[output_var.clone()],
             ));
