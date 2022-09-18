@@ -13,6 +13,7 @@ pub mod mem;
 pub mod non_zero;
 pub mod pod;
 pub mod unconditional_jump;
+pub mod uninitialized;
 
 /// Helper for extracting the type from the template arguments.
 fn as_single_type(args: &[GenericArg]) -> Result<ConcreteTypeId, SpecializationError> {
