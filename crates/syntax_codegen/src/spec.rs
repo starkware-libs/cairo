@@ -29,6 +29,15 @@ pub enum MemberKind {
     Node(String),
 }
 
+impl MemberKind {
+    pub fn name(&self) -> &str {
+        match self {
+            MemberKind::Token(name) => name,
+            MemberKind::Node(name) => name,
+        }
+    }
+}
+
 // Helpers to build AST specifications.
 
 /// Builds spec for a struct node.
@@ -92,8 +101,9 @@ impl EnumBuilder {
             .node("Some")
     }
     pub fn missing(mut self, name: &str) -> EnumBuilder {
-        let name = self.name.clone() + name;
-        self.missing_variant = Some(Variant { name: name.clone(), kind: MemberKind::Node(name) });
+        let kind_name = self.name.clone() + name;
+        self.missing_variant =
+            Some(Variant { name: name.to_string(), kind: MemberKind::Node(kind_name) });
         self
     }
     pub fn node(self, name: &str) -> EnumBuilder {
@@ -118,7 +128,7 @@ impl EnumBuilder {
             name: self.name,
             kind: NodeKind::Enum {
                 variants: self.variants,
-                missing_variant: self.missing_variant.map(|x| x.name),
+                missing_variant: self.missing_variant.map(|x| x.kind.name().to_string()),
             },
         }
     }
