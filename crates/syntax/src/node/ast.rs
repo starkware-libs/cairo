@@ -948,11 +948,7 @@ impl TypedSyntaxNode for Expr {
     type StablePtr = ExprPtr;
     type Green = ExprGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
-        ExprGreen(db.intern_green(GreenNode::Internal(GreenNodeInternal {
-            kind: SyntaxKind::ExprMissing,
-            children: vec![],
-            width: 0,
-        })))
+        ExprGreen(ExprMissing::missing(db).0)
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
@@ -3038,11 +3034,7 @@ impl TypedSyntaxNode for Statement {
     type StablePtr = StatementPtr;
     type Green = StatementGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
-        StatementGreen(db.intern_green(GreenNode::Internal(GreenNodeInternal {
-            kind: SyntaxKind::StatementMissing,
-            children: vec![],
-            width: 0,
-        })))
+        StatementGreen(StatementMissing::missing(db).0)
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {

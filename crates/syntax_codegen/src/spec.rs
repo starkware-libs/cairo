@@ -5,7 +5,7 @@ pub struct Node {
 }
 #[derive(Clone)]
 pub enum NodeKind {
-    Enum { variants: Vec<Variant>, missing_variant: Option<String> },
+    Enum { variants: Vec<Variant>, missing_variant: Option<Variant> },
     Struct { members: Vec<Member> },
     List { element_type: String },
     SeparatedList { element_type: String },
@@ -126,10 +126,7 @@ impl EnumBuilder {
         }
         Node {
             name: self.name,
-            kind: NodeKind::Enum {
-                variants: self.variants,
-                missing_variant: self.missing_variant.map(|x| x.kind.name().to_string()),
-            },
+            kind: NodeKind::Enum { variants: self.variants, missing_variant: self.missing_variant },
         }
     }
 }

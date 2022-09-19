@@ -305,7 +305,7 @@ fn gen_common_list_code(name: &str, green_name: &str, ptr_name: &str) -> rust::T
 fn gen_enum_code(
     name: String,
     variants: Vec<Variant>,
-    missing_variant: Option<String>,
+    missing_variant: Option<Variant>,
 ) -> rust::Tokens {
     let ptr_name = format!("{name}Ptr");
     let green_name = format!("{name}Green");
@@ -355,11 +355,7 @@ fn gen_enum_code(
     }
     let missing_body = match missing_variant {
         Some(missing) => quote! {
-            $(&green_name)(db.intern_green(GreenNode::Internal(GreenNodeInternal{
-                kind: SyntaxKind::$missing,
-                children: vec![],
-                width: 0
-            })))
+            $(&green_name)($(missing.kind.name().to_string())::missing(db).0)
         },
         None => quote! {
             panic!("No missing variant.");
