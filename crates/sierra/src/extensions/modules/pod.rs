@@ -24,16 +24,24 @@ pub struct DropLibFunc<TPodTraits: PodTraits> {
 impl<TPodTraits: PodTraits> NoGenericArgsGenericLibFunc for DropLibFunc<TPodTraits> {
     type Concrete = SignatureOnlyConcreteLibFunc;
     const ID: GenericLibFuncId = TPodTraits::DROP;
+
+    fn specialize_signature(
+        &self,
+        context: SpecializationContext<'_>,
+    ) -> Result<LibFuncSignature, SpecializationError> {
+        Ok(LibFuncSignature::new_non_branch(
+            vec![context.get_concrete_type(TPodTraits::GENERIC_TYPE_ID, &[])?],
+            vec![],
+            vec![],
+        ))
+    }
+
     fn specialize(
         &self,
         context: SpecializationContext<'_>,
     ) -> Result<Self::Concrete, SpecializationError> {
         Ok(SignatureOnlyConcreteLibFunc {
-            signature: LibFuncSignature::new_non_branch(
-                vec![context.get_concrete_type(TPodTraits::GENERIC_TYPE_ID, &[])?],
-                vec![],
-                vec![],
-            ),
+            signature: <Self as NoGenericArgsGenericLibFunc>::specialize_signature(self, context)?,
         })
     }
 }
@@ -47,20 +55,27 @@ impl<TPodTraits: PodTraits> NoGenericArgsGenericLibFunc for DuplicateLibFunc<TPo
     type Concrete = SignatureOnlyConcreteLibFunc;
     const ID: GenericLibFuncId = TPodTraits::DUPLICATE;
 
+    fn specialize_signature(
+        &self,
+        context: SpecializationContext<'_>,
+    ) -> Result<LibFuncSignature, SpecializationError> {
+        let ty = context.get_concrete_type(TPodTraits::GENERIC_TYPE_ID, &[])?;
+        Ok(LibFuncSignature::new_non_branch(
+            vec![ty.clone()],
+            vec![ty.clone(), ty],
+            vec![
+                OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+                OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+            ],
+        ))
+    }
+
     fn specialize(
         &self,
         context: SpecializationContext<'_>,
     ) -> Result<Self::Concrete, SpecializationError> {
-        let ty = context.get_concrete_type(TPodTraits::GENERIC_TYPE_ID, &[])?;
         Ok(SignatureOnlyConcreteLibFunc {
-            signature: LibFuncSignature::new_non_branch(
-                vec![ty.clone()],
-                vec![ty.clone(), ty],
-                vec![
-                    OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
-                    OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
-                ],
-            ),
+            signature: <Self as NoGenericArgsGenericLibFunc>::specialize_signature(self, context)?,
         })
     }
 }

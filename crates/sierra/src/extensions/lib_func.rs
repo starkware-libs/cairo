@@ -41,6 +41,14 @@ pub trait GenericLibFunc: Sized {
 
     /// Instantiates the libfunc by id.
     fn by_id(id: &GenericLibFuncId) -> Option<Self>;
+
+    /// Creates the specialization of the libfunc's signature with the template arguments.
+    fn specialize_signature(
+        &self,
+        context: SpecializationContext<'_>,
+        args: &[GenericArg],
+    ) -> Result<LibFuncSignature, SpecializationError>;
+
     /// Creates the specialization with the template arguments.
     fn specialize(
         &self,
@@ -80,6 +88,14 @@ impl<TGenericLibFunc: GenericLibFunc> GenericLibFuncEx for TGenericLibFunc {
 pub trait NamedLibFunc: Default {
     type Concrete: ConcreteLibFunc;
     const ID: GenericLibFuncId;
+
+    /// Creates the specialization of the libfunc's signature with the template arguments.
+    fn specialize_signature(
+        &self,
+        context: SpecializationContext<'_>,
+        args: &[GenericArg],
+    ) -> Result<LibFuncSignature, SpecializationError>;
+
     /// Creates the specialization with the template arguments.
     fn specialize(
         &self,
@@ -92,6 +108,14 @@ impl<TNamedLibFunc: NamedLibFunc> GenericLibFunc for TNamedLibFunc {
 
     fn by_id(id: &GenericLibFuncId) -> Option<Self> {
         if &Self::ID == id { Some(Self::default()) } else { None }
+    }
+
+    fn specialize_signature(
+        &self,
+        context: SpecializationContext<'_>,
+        args: &[GenericArg],
+    ) -> Result<LibFuncSignature, SpecializationError> {
+        <Self as NamedLibFunc>::specialize_signature(self, context, args)
     }
 
     fn specialize(
@@ -107,6 +131,12 @@ impl<TNamedLibFunc: NamedLibFunc> GenericLibFunc for TNamedLibFunc {
 pub trait NoGenericArgsGenericLibFunc: Default {
     type Concrete: ConcreteLibFunc;
     const ID: GenericLibFuncId;
+
+    fn specialize_signature(
+        &self,
+        context: SpecializationContext<'_>,
+    ) -> Result<LibFuncSignature, SpecializationError>;
+
     fn specialize(
         &self,
         context: SpecializationContext<'_>,
@@ -115,6 +145,18 @@ pub trait NoGenericArgsGenericLibFunc: Default {
 impl<T: NoGenericArgsGenericLibFunc> NamedLibFunc for T {
     type Concrete = <Self as NoGenericArgsGenericLibFunc>::Concrete;
     const ID: GenericLibFuncId = <Self as NoGenericArgsGenericLibFunc>::ID;
+
+    fn specialize_signature(
+        &self,
+        context: SpecializationContext<'_>,
+        args: &[GenericArg],
+    ) -> Result<LibFuncSignature, SpecializationError> {
+        if args.is_empty() {
+            self.specialize_signature(context)
+        } else {
+            Err(SpecializationError::WrongNumberOfGenericArgs)
+        }
+    }
 
     fn specialize(
         &self,
@@ -322,6 +364,24 @@ macro_rules! define_libfunc_hierarchy {
                     }
                 )*
                 None
+            }
+            fn specialize_signature(
+                    &self,
+                    context: $crate::extensions::lib_func::SpecializationContext<'_>,
+                    args: &[$crate::program::GenericArg],
+            ) -> Result<
+                    $crate::extensions::lib_func::LibFuncSignature,
+                    $crate::extensions::SpecializationError
+                >{
+                match self {
+                    $(
+                        Self::$variant_name(value) => {
+                            <$variant as $crate::extensions::GenericLibFunc>::specialize_signature(
+                                value, context, args,
+                            )
+                        }
+                    ),*
+                }
             }
             fn specialize(
                     &self,

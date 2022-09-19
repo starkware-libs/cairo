@@ -11,6 +11,33 @@ pub struct FunctionCallLibFunc {}
 impl NamedLibFunc for FunctionCallLibFunc {
     type Concrete = FunctionCallConcreteLibFunc;
     const ID: GenericLibFuncId = GenericLibFuncId::new_inline("function_call");
+
+    fn specialize_signature(
+        &self,
+        context: SpecializationContext<'_>,
+        args: &[GenericArg],
+    ) -> Result<LibFuncSignature, SpecializationError> {
+        match args {
+            [GenericArg::UserFunc(function_id)] => {
+                let function = context
+                    .functions
+                    .get(function_id)
+                    .ok_or_else(|| SpecializationError::MissingFunction(function_id.clone()))?;
+                Ok(LibFuncSignature::new_non_branch(
+                    function.params.iter().map(|p| p.ty.clone()).collect(),
+                    function.ret_types.clone(),
+                    function
+                        .ret_types
+                        .iter()
+                        .enumerate()
+                        .map(|(i, _)| OutputVarReferenceInfo::NewTempVar { idx: i })
+                        .collect(),
+                ))
+            }
+            _ => Err(SpecializationError::UnsupportedGenericArg),
+        }
+    }
+
     fn specialize(
         &self,
         context: SpecializationContext<'_>,
@@ -24,16 +51,7 @@ impl NamedLibFunc for FunctionCallLibFunc {
                     .ok_or_else(|| SpecializationError::MissingFunction(function_id.clone()))?;
                 Ok(Self::Concrete {
                     function: function.clone(),
-                    signature: LibFuncSignature::new_non_branch(
-                        function.params.iter().map(|p| p.ty.clone()).collect(),
-                        function.ret_types.clone(),
-                        function
-                            .ret_types
-                            .iter()
-                            .enumerate()
-                            .map(|(i, _)| OutputVarReferenceInfo::NewTempVar { idx: i })
-                            .collect(),
-                    ),
+                    signature: self.specialize_signature(context, args)?,
                 })
             }
             _ => Err(SpecializationError::UnsupportedGenericArg),

@@ -26,20 +26,27 @@ pub struct StoreTempLibFunc {}
 impl NamedLibFunc for StoreTempLibFunc {
     type Concrete = StoreTempConcreteLibFunc;
     const ID: GenericLibFuncId = GenericLibFuncId::new_inline("store_temp");
-    fn specialize(
+
+    fn specialize_signature(
         &self,
         _context: SpecializationContext<'_>,
         args: &[GenericArg],
+    ) -> Result<LibFuncSignature, SpecializationError> {
+        let ty = as_single_type(args)?;
+        Ok(LibFuncSignature::new_non_branch(
+            vec![ty.clone()],
+            vec![ty],
+            vec![OutputVarReferenceInfo::NewTempVar { idx: 0 }],
+        ))
+    }
+
+    fn specialize(
+        &self,
+        context: SpecializationContext<'_>,
+        args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
         let ty = as_single_type(args)?;
-        Ok(StoreTempConcreteLibFunc {
-            ty: ty.clone(),
-            signature: LibFuncSignature::new_non_branch(
-                vec![ty.clone()],
-                vec![ty],
-                vec![OutputVarReferenceInfo::NewTempVar { idx: 0 }],
-            ),
-        })
+        Ok(StoreTempConcreteLibFunc { ty, signature: self.specialize_signature(context, args)? })
     }
 }
 
@@ -59,14 +66,23 @@ pub struct AlignTempsLibFunc {}
 impl NamedLibFunc for AlignTempsLibFunc {
     type Concrete = AlignTempsConcreteLibFunc;
     const ID: GenericLibFuncId = GenericLibFuncId::new_inline("align_temps");
-    fn specialize(
+
+    fn specialize_signature(
         &self,
         _context: SpecializationContext<'_>,
+        _args: &[GenericArg],
+    ) -> Result<LibFuncSignature, SpecializationError> {
+        Ok(LibFuncSignature::new_non_branch(vec![], vec![], vec![]))
+    }
+
+    fn specialize(
+        &self,
+        context: SpecializationContext<'_>,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
         Ok(AlignTempsConcreteLibFunc {
             ty: as_single_type(args)?,
-            signature: LibFuncSignature::new_non_branch(vec![], vec![], vec![]),
+            signature: self.specialize_signature(context, args)?,
         })
     }
 }
@@ -87,20 +103,27 @@ pub struct StoreLocalLibFunc {}
 impl NamedLibFunc for StoreLocalLibFunc {
     type Concrete = StoreLocalConcreteLibFunc;
     const ID: GenericLibFuncId = GenericLibFuncId::new_inline("store_local");
-    fn specialize(
+
+    fn specialize_signature(
         &self,
         _context: SpecializationContext<'_>,
         args: &[GenericArg],
+    ) -> Result<LibFuncSignature, SpecializationError> {
+        let ty = as_single_type(args)?;
+        Ok(LibFuncSignature::new_non_branch(
+            vec![ty.clone()],
+            vec![ty],
+            vec![OutputVarReferenceInfo::NewLocalVar],
+        ))
+    }
+
+    fn specialize(
+        &self,
+        context: SpecializationContext<'_>,
+        args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
         let ty = as_single_type(args)?;
-        Ok(StoreLocalConcreteLibFunc {
-            ty: ty.clone(),
-            signature: LibFuncSignature::new_non_branch(
-                vec![ty.clone()],
-                vec![ty],
-                vec![OutputVarReferenceInfo::NewLocalVar],
-            ),
-        })
+        Ok(StoreLocalConcreteLibFunc { ty, signature: self.specialize_signature(context, args)? })
     }
 }
 
@@ -120,12 +143,20 @@ pub struct AllocLocalsLibFunc {}
 impl NoGenericArgsGenericLibFunc for AllocLocalsLibFunc {
     type Concrete = SignatureOnlyConcreteLibFunc;
     const ID: GenericLibFuncId = GenericLibFuncId::new_inline("alloc_locals");
-    fn specialize(
+
+    fn specialize_signature(
         &self,
         _context: SpecializationContext<'_>,
+    ) -> Result<LibFuncSignature, SpecializationError> {
+        Ok(LibFuncSignature::new_non_branch(vec![], vec![], vec![]))
+    }
+
+    fn specialize(
+        &self,
+        context: SpecializationContext<'_>,
     ) -> Result<Self::Concrete, SpecializationError> {
         Ok(SignatureOnlyConcreteLibFunc {
-            signature: LibFuncSignature::new_non_branch(vec![], vec![], vec![]),
+            signature: <Self as NoGenericArgsGenericLibFunc>::specialize_signature(self, context)?,
         })
     }
 }
@@ -136,18 +167,25 @@ pub struct RenameLibFunc {}
 impl NamedLibFunc for RenameLibFunc {
     type Concrete = SignatureOnlyConcreteLibFunc;
     const ID: GenericLibFuncId = GenericLibFuncId::new_inline("rename");
-    fn specialize(
+
+    fn specialize_signature(
         &self,
         _context: SpecializationContext<'_>,
         args: &[GenericArg],
-    ) -> Result<Self::Concrete, SpecializationError> {
+    ) -> Result<LibFuncSignature, SpecializationError> {
         let ty = as_single_type(args)?;
-        Ok(SignatureOnlyConcreteLibFunc {
-            signature: LibFuncSignature::new_non_branch(
-                vec![ty.clone()],
-                vec![ty],
-                vec![OutputVarReferenceInfo::SameAsParam { param_idx: 0 }],
-            ),
-        })
+        Ok(LibFuncSignature::new_non_branch(
+            vec![ty.clone()],
+            vec![ty],
+            vec![OutputVarReferenceInfo::SameAsParam { param_idx: 0 }],
+        ))
+    }
+
+    fn specialize(
+        &self,
+        context: SpecializationContext<'_>,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
+        Ok(SignatureOnlyConcreteLibFunc { signature: self.specialize_signature(context, args)? })
     }
 }
