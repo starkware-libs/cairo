@@ -6,7 +6,8 @@ use std::collections::HashMap;
 
 use defs::diagnostic_utils::StableLocation;
 use defs::ids::{
-    GenericFunctionId, GenericTypeId, LocalVarLongId, MemberId, ModuleId, StructId, VarId,
+    GenericFunctionId, GenericTypeId, LocalVarLongId, MemberId, ModuleId, ModuleItemId, StructId,
+    VarId,
 };
 use diagnostics::Diagnostics;
 use smol_str::SmolStr;
@@ -252,7 +253,8 @@ fn struct_ctor_expr(
 ) -> SemanticResult<Expr> {
     let db = ctx.db;
     let syntax_db = db.upcast();
-    let struct_id = resolve_item(ctx.db, ctx.module_id, &ctor_syntax.path(syntax_db))
+    let item = resolve_item(ctx.db, ctx.module_id, &ctor_syntax.path(syntax_db))?;
+    let struct_id = ModuleItemId::opt_from(item)
         .and_then(StructId::opt_from)
         .ok_or(SemanticDiagnosticKind::UnknownStruct)?;
     let members = db.struct_members(struct_id).unwrap_or_default();
@@ -497,8 +499,7 @@ fn maybe_resolve_function(
 ) -> SemanticResult<FunctionId> {
     // TODO(spapini): Try to find function in multiple places (e.g. impls, or other modules for
     //   suggestions)
-    let generic_function = resolve_item(ctx.db, ctx.module_id, path)
-        .and_then(GenericFunctionId::opt_from)
+    let generic_function = GenericFunctionId::opt_from(resolve_item(ctx.db, ctx.module_id, path)?)
         .ok_or(SemanticDiagnosticKind::UnknownFunction)?;
     specialize_function(ctx, generic_function, args)
 }

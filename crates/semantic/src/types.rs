@@ -77,6 +77,13 @@ pub fn resolve_type(
     let syntax_db = db.upcast();
     match ty_syntax {
         ast::Expr::Path(path) => resolve_item(db, module_id, &path)
+            .map_err(|kind| {
+                diagnostics.add(SemanticDiagnostic {
+                    stable_location: StableLocation::from_ast(module_id, &path),
+                    kind,
+                });
+            })
+            .ok()
             .and_then(GenericTypeId::opt_from)
             .and_then(|generic_type| specialize_type(diagnostics, db, generic_type))
             .unwrap_or_else(|| {

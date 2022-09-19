@@ -71,6 +71,8 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 format!("Struct {} has not member {member_name}", struct_id.full_path(db.upcast()))
             }
             SemanticDiagnosticKind::InvalidMemberExpression => "Invalid member expression.".into(),
+            SemanticDiagnosticKind::InvalidPath => "Invalid path.".into(),
+            SemanticDiagnosticKind::PathNotFound => "Path not found.".into(),
         }
     }
 
@@ -99,4 +101,6 @@ pub enum SemanticDiagnosticKind {
     StructHasNoMembers { ty: semantic::TypeId, member_name: SmolStr },
     NoSuchMember { struct_id: StructId, member_name: SmolStr },
     InvalidMemberExpression,
+    InvalidPath,
+    PathNotFound,
 }
