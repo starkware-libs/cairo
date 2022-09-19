@@ -82,6 +82,8 @@ impl<'a> AddStoreVariableStatements<'a> {
             }
             pre_sierra::Statement::PushValues(push_values) => {
                 for pre_sierra::PushValue { var, var_on_stack, ty } in push_values {
+                    // TODO(lior): If the variable is already in the correct place, only rename
+                    //   it, instead of adding a `store_temp()` statement.
                     self.store_temp(var, var_on_stack, ty);
                 }
             }
