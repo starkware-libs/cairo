@@ -37,7 +37,31 @@ error: Skipped tokens. Expected element: item.
 3 + 4 +;
        ^
 
-error: Unknown function.
+error: Path not found.
  --> lib.cairo:3:5
 1 + foo()
     ^*^
+
+//! > =========================================================================
+
+//! > Test function lookup
+
+//! > Expr Code
+{
+  foo();
+  core::felt_add(1,1);
+  test_crate::foo();
+  bad_module::foo();
+}
+
+//! > Module Code
+func foo() {
+}
+
+//! > Function Body
+
+//! > Expected Result
+error: Path not found.
+ --> lib.cairo:8:3
+  bad_module::foo();
+  ^*************^
