@@ -10,6 +10,7 @@ mod id_allocator;
 pub mod pre_sierra;
 mod program_generator;
 mod resolve_labels;
+mod specialization_context;
 mod store_variables;
 pub mod test_utils;
 mod types;
