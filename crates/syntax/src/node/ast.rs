@@ -787,10 +787,7 @@ impl TypedSyntaxNode for Expr {
     type StablePtr = ExprPtr;
     type Green = ExprGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
-        ExprGreen(db.intern_green(GreenNode {
-            kind: SyntaxKind::ExprMissing,
-            details: GreenNodeDetails::Node { children: vec![], width: 0 },
-        }))
+        ExprGreen(ExprMissing::missing(db).0)
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         let kind = node.kind(db);
@@ -815,7 +812,7 @@ impl TypedSyntaxNode for Expr {
             }
             SyntaxKind::ExprBlock => Expr::Block(ExprBlock::from_syntax_node(db, node)),
             SyntaxKind::ExprMatch => Expr::Match(ExprMatch::from_syntax_node(db, node)),
-            SyntaxKind::ExprMissing => Expr::ExprMissing(ExprMissing::from_syntax_node(db, node)),
+            SyntaxKind::ExprMissing => Expr::Missing(ExprMissing::from_syntax_node(db, node)),
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "Expr"),
         }
     }
@@ -1276,31 +1273,22 @@ impl From<PathSegmentIdentGreen> for PathSegmentGreen {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct PathSegmentGreen(pub GreenId);
 impl TypedSyntaxNode for PathSegment {
+    const KIND: Option<SyntaxKind> = None;
     type StablePtr = PathSegmentPtr;
     type Green = PathSegmentGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
         PathSegmentGreen(PathSegmentIdent::missing(db).0)
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match db.lookup_intern_green(node.0.green) {
-            GreenNode::Internal(internal) => match internal.kind {
-                SyntaxKind::PathSegmentGenericArgs => {
-                    PathSegment::GenericArgs(PathSegmentGenericArgs::from_syntax_node(db, node))
-                }
-                SyntaxKind::PathSegmentIdent => {
-                    PathSegment::Ident(PathSegmentIdent::from_syntax_node(db, node))
-                }
-                _ => panic!(
-                    "Unexpected syntax kind {:?} when constructing {}.",
-                    internal.kind, "PathSegment"
-                ),
-            },
-            GreenNode::Token(token) => match token.kind {
-                _ => panic!(
-                    "Unexpected token kind {:?} when constructing {}.",
-                    token.kind, "PathSegment"
-                ),
-            },
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::PathSegmentGenericArgs => {
+                PathSegment::GenericArgs(PathSegmentGenericArgs::from_syntax_node(db, node))
+            }
+            SyntaxKind::PathSegmentIdent => {
+                PathSegment::Ident(PathSegmentIdent::from_syntax_node(db, node))
+            }
+            _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "PathSegment"),
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -1321,46 +1309,42 @@ pub struct PathSegmentIdent {
     node: SyntaxNode,
     children: Vec<SyntaxNode>,
 }
-impl PathSegment {
+impl PathSegmentIdent {
     pub fn new_green(
         db: &dyn SyntaxGroup,
         ident: TerminalIdentifierGreen,
-        generic_args: OptionGenericArgsGreen,
-    ) -> PathSegmentGreen {
-        let children: Vec<GreenId> = vec![ident.0, generic_args.0];
+    ) -> PathSegmentIdentGreen {
+        let children: Vec<GreenId> = vec![ident.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
-        PathSegmentGreen(db.intern_green(GreenNode {
-            kind: SyntaxKind::PathSegment,
+        PathSegmentIdentGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::PathSegmentIdent,
             details: GreenNodeDetails::Node { children, width },
         }))
     }
 }
-impl PathSegment {
+impl PathSegmentIdent {
     pub fn ident(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
         TerminalIdentifier::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn generic_args(&self, db: &dyn SyntaxGroup) -> OptionGenericArgs {
-        OptionGenericArgs::from_syntax_node(db, self.children[1].clone())
-    }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct PathSegmentPtr(SyntaxStablePtrId);
-impl PathSegmentPtr {
+pub struct PathSegmentIdentPtr(SyntaxStablePtrId);
+impl PathSegmentIdentPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct PathSegmentGreen(pub GreenId);
-impl TypedSyntaxNode for PathSegment {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::PathSegment);
-    type StablePtr = PathSegmentPtr;
-    type Green = PathSegmentGreen;
+pub struct PathSegmentIdentGreen(pub GreenId);
+impl TypedSyntaxNode for PathSegmentIdent {
+    const KIND: Option<SyntaxKind> = Some(SyntaxKind::PathSegmentIdent);
+    type StablePtr = PathSegmentIdentPtr;
+    type Green = PathSegmentIdentGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
-        PathSegmentGreen(db.intern_green(GreenNode {
-            kind: SyntaxKind::PathSegment,
+        PathSegmentIdentGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::PathSegmentIdent,
             details: GreenNodeDetails::Node {
-                children: vec![TerminalIdentifier::missing(db).0, OptionGenericArgs::missing(db).0],
+                children: vec![TerminalIdentifier::missing(db).0],
                 width: 0,
             },
         }))
@@ -1369,10 +1353,77 @@ impl TypedSyntaxNode for PathSegment {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::PathSegment,
+            SyntaxKind::PathSegmentIdent,
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::PathSegment
+            SyntaxKind::PathSegmentIdent
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        PathSegmentIdentPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct PathSegmentGenericArgs {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl PathSegmentGenericArgs {
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        generic_args: OptionGenericArgsSomeGreen,
+    ) -> PathSegmentGenericArgsGreen {
+        let children: Vec<GreenId> = vec![generic_args.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        PathSegmentGenericArgsGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::PathSegmentGenericArgs,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+}
+impl PathSegmentGenericArgs {
+    pub fn generic_args(&self, db: &dyn SyntaxGroup) -> OptionGenericArgsSome {
+        OptionGenericArgsSome::from_syntax_node(db, self.children[0].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct PathSegmentGenericArgsPtr(SyntaxStablePtrId);
+impl PathSegmentGenericArgsPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct PathSegmentGenericArgsGreen(pub GreenId);
+impl TypedSyntaxNode for PathSegmentGenericArgs {
+    const KIND: Option<SyntaxKind> = Some(SyntaxKind::PathSegmentGenericArgs);
+    type StablePtr = PathSegmentGenericArgsPtr;
+    type Green = PathSegmentGenericArgsGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        PathSegmentGenericArgsGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::PathSegmentGenericArgs,
+            details: GreenNodeDetails::Node {
+                children: vec![OptionGenericArgsSome::missing(db).0],
+                width: 0,
+            },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::PathSegmentGenericArgs,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::PathSegmentGenericArgs
         );
         let children = node.children(db).collect();
         Self { node, children }
@@ -2688,127 +2739,6 @@ impl TypedSyntaxNode for OptionTypeClause {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub enum NonOptionTypeClause {
-    TypeClause(TypeClause),
-    NonOptionTypeClauseMissing(NonOptionTypeClauseMissing),
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct NonOptionTypeClausePtr(SyntaxStablePtrId);
-impl NonOptionTypeClausePtr {
-    pub fn untyped(&self) -> SyntaxStablePtrId {
-        self.0
-    }
-}
-impl From<TypeClauseGreen> for NonOptionTypeClauseGreen {
-    fn from(value: TypeClauseGreen) -> Self {
-        Self(value.0)
-    }
-}
-impl From<NonOptionTypeClauseMissingGreen> for NonOptionTypeClauseGreen {
-    fn from(value: NonOptionTypeClauseMissingGreen) -> Self {
-        Self(value.0)
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct NonOptionTypeClauseGreen(pub GreenId);
-impl TypedSyntaxNode for NonOptionTypeClause {
-    const KIND: Option<SyntaxKind> = None;
-    type StablePtr = NonOptionTypeClausePtr;
-    type Green = NonOptionTypeClauseGreen;
-    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
-        NonOptionTypeClauseGreen(db.intern_green(GreenNode {
-            kind: SyntaxKind::NonOptionTypeClauseMissing,
-            details: GreenNodeDetails::Node { children: vec![], width: 0 },
-        }))
-    }
-    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        let kind = node.kind(db);
-        match kind {
-            SyntaxKind::TypeClause => {
-                NonOptionTypeClause::TypeClause(TypeClause::from_syntax_node(db, node))
-            }
-            SyntaxKind::NonOptionTypeClauseMissing => {
-                NonOptionTypeClause::NonOptionTypeClauseMissing(
-                    NonOptionTypeClauseMissing::from_syntax_node(db, node),
-                )
-            }
-            _ => panic!(
-                "Unexpected syntax kind {:?} when constructing {}.",
-                kind, "NonOptionTypeClause"
-            ),
-        }
-    }
-    fn as_syntax_node(&self) -> SyntaxNode {
-        match self {
-            NonOptionTypeClause::TypeClause(x) => x.as_syntax_node(),
-            NonOptionTypeClause::NonOptionTypeClauseMissing(x) => x.as_syntax_node(),
-        }
-    }
-    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
-        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
-    }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        NonOptionTypeClausePtr(self.as_syntax_node().0.stable_ptr)
-    }
-}
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct NonOptionTypeClauseMissing {
-    node: SyntaxNode,
-    children: Vec<SyntaxNode>,
-}
-impl NonOptionTypeClauseMissing {
-    pub fn new_green(db: &dyn SyntaxGroup) -> NonOptionTypeClauseMissingGreen {
-        let children: Vec<GreenId> = vec![];
-        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
-        NonOptionTypeClauseMissingGreen(db.intern_green(GreenNode {
-            kind: SyntaxKind::NonOptionTypeClauseMissing,
-            details: GreenNodeDetails::Node { children, width },
-        }))
-    }
-}
-impl NonOptionTypeClauseMissing {}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct NonOptionTypeClauseMissingPtr(SyntaxStablePtrId);
-impl NonOptionTypeClauseMissingPtr {
-    pub fn untyped(&self) -> SyntaxStablePtrId {
-        self.0
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct NonOptionTypeClauseMissingGreen(pub GreenId);
-impl TypedSyntaxNode for NonOptionTypeClauseMissing {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::NonOptionTypeClauseMissing);
-    type StablePtr = NonOptionTypeClauseMissingPtr;
-    type Green = NonOptionTypeClauseMissingGreen;
-    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
-        NonOptionTypeClauseMissingGreen(db.intern_green(GreenNode {
-            kind: SyntaxKind::NonOptionTypeClauseMissing,
-            details: GreenNodeDetails::Node { children: vec![], width: 0 },
-        }))
-    }
-    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        let kind = node.kind(db);
-        assert_eq!(
-            kind,
-            SyntaxKind::NonOptionTypeClauseMissing,
-            "Unexpected SyntaxKind {:?}. Expected {:?}.",
-            kind,
-            SyntaxKind::NonOptionTypeClauseMissing
-        );
-        let children = node.children(db).collect();
-        Self { node, children }
-    }
-    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
-        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
-    }
-    fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
-    }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        NonOptionTypeClauseMissingPtr(self.node.0.stable_ptr)
-    }
-}
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionTypeClauseEmpty {
     node: SyntaxNode,
     children: Vec<SyntaxNode>,
@@ -3093,10 +3023,7 @@ impl TypedSyntaxNode for Statement {
     type StablePtr = StatementPtr;
     type Green = StatementGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
-        StatementGreen(db.intern_green(GreenNode {
-            kind: SyntaxKind::StatementMissing,
-            details: GreenNodeDetails::Node { children: vec![], width: 0 },
-        }))
+        StatementGreen(StatementMissing::missing(db).0)
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         let kind = node.kind(db);
@@ -3107,7 +3034,7 @@ impl TypedSyntaxNode for Statement {
                 Statement::Return(StatementReturn::from_syntax_node(db, node))
             }
             SyntaxKind::StatementMissing => {
-                Statement::StatementMissing(StatementMissing::from_syntax_node(db, node))
+                Statement::Missing(StatementMissing::from_syntax_node(db, node))
             }
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "Statement"),
         }
@@ -3613,7 +3540,7 @@ impl Param {
     pub fn new_green(
         db: &dyn SyntaxGroup,
         name: TerminalIdentifierGreen,
-        type_clause: NonOptionTypeClauseGreen,
+        type_clause: TypeClauseGreen,
     ) -> ParamGreen {
         let children: Vec<GreenId> = vec![name.0, type_clause.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
@@ -3627,8 +3554,8 @@ impl Param {
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
         TerminalIdentifier::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn type_clause(&self, db: &dyn SyntaxGroup) -> NonOptionTypeClause {
-        NonOptionTypeClause::from_syntax_node(db, self.children[1].clone())
+    pub fn type_clause(&self, db: &dyn SyntaxGroup) -> TypeClause {
+        TypeClause::from_syntax_node(db, self.children[1].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -3656,10 +3583,7 @@ impl TypedSyntaxNode for Param {
         ParamGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::Param,
             details: GreenNodeDetails::Node {
-                children: vec![
-                    TerminalIdentifier::missing(db).0,
-                    NonOptionTypeClause::missing(db).0,
-                ],
+                children: vec![TerminalIdentifier::missing(db).0, TypeClause::missing(db).0],
                 width: 0,
             },
         }))

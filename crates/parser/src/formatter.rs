@@ -1,7 +1,7 @@
+use smol_str::SmolStr;
 use syntax::node::db::SyntaxGroup;
 use syntax::node::kind::SyntaxKind;
-use syntax::node::{SyntaxNode, SyntaxNodeDetails};
-use syntax::token::{self};
+use syntax::node::SyntaxNode;
 
 #[cfg(test)]
 #[path = "formatter_test.rs"]
@@ -143,11 +143,16 @@ impl<'a> Formatter<'a> {
         current_indent: usize, // In tabs
         current_node_path: &mut NodePath,
     ) {
-        match syntax_node.details(self.db) {
-            SyntaxNodeDetails::Token(token) => {
-                self.format_token(&token, current_indent, current_node_path);
+        let green_node = syntax_node.green_node(self.db);
+        let kind = green_node.kind;
+        if kind.should_ignore(self.db, current_node_path) {
+            return;
+        }
+        match green_node.details {
+            syntax::node::green::GreenNodeDetails::Token(text) => {
+                self.format_token(text, kind, current_indent, current_node_path);
             }
-            SyntaxNodeDetails::Syntax(kind) => {
+            syntax::node::green::GreenNodeDetails::Node { .. } => {
                 self.format_internal(syntax_node, kind, current_indent, current_node_path);
             }
         }
@@ -162,44 +167,42 @@ impl<'a> Formatter<'a> {
     ) {
         current_node_path.push(node_kind);
         let indent_change =
-            if syntax_node.should_change_indent(self.db, current_node_path) { 1 } else { 0 };
+            if node_kind.should_change_indent(self.db, current_node_path) { 1 } else { 0 };
 
         for (i, child) in syntax_node.children(self.db).enumerate() {
-            if node_kind == SyntaxKind::Terminal {
+            if node_kind.is_terminal() {
                 // First child of a terminal node is a leading trivia
                 current_node_path.is_leading_trivia = i == 0;
             }
             self.format_tree(&child, current_indent + indent_change, current_node_path);
         }
-        if syntax_node.force_line_break(self.db, current_node_path) {
+        if node_kind.force_line_break(self.db, current_node_path) {
             self.finalize_line(current_indent);
         }
         current_node_path.pop();
     }
     fn format_token(
         &mut self,
-        token: &token::Token,
+        text: SmolStr,
+        kind: SyntaxKind,
         current_indent: usize,
         current_node_path: &NodePath,
     ) {
-        if token.should_ignore(self.db, current_node_path) {
-            return;
-        }
-        self.append_token(token, current_node_path);
+        self.append_token(text, kind, current_node_path);
         // TODO(Gil) Consider removing this and use terminal instead after the tokens refactor.
-        if token.force_line_break(self.db, current_node_path) {
+        if kind.force_line_break(self.db, current_node_path) {
             self.finalize_line(current_indent);
         }
     }
-    fn append_token(&mut self, token: &token::Token, current_node_path: &NodePath) {
-        if !token.force_no_space_before(self.db, current_node_path)
+    fn append_token(&mut self, text: SmolStr, kind: SyntaxKind, current_node_path: &NodePath) {
+        if !kind.force_no_space_before(self.db, current_node_path)
             && !self.line_state.force_no_space_after
         {
             self.line_state.text += " ";
         }
         self.line_state.force_no_space_after =
-            token.force_no_space_after(self.db, current_node_path);
-        self.line_state.text += &token.text;
+            kind.force_no_space_after(self.db, current_node_path);
+        self.line_state.text += &text;
     }
     fn append_indentation(&mut self, current_indent: usize) {
         if current_indent < self.indents_list.len() {

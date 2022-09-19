@@ -100,11 +100,10 @@ impl<'a> Parser<'a> {
     pub fn parse_syntax_file(mut self) -> SyntaxFileGreen {
         let items = ItemList::new_green(
             self.db,
-            self.parse_list(Self::try_parse_top_level_item, SyntaxKind::TerminalEndOfFile),
+            self.parse_list(Self::try_parse_top_level_item, is_of_kind!(), "item"),
         );
-        while self.peek().kind != SyntaxKind::TerminalEndOfFile {
-            self.skip_token();
-        }
+        // This will not panic since the above parsing only stops when reaches EOF.
+        assert_eq!(self.peek().kind, SyntaxKind::TerminalEndOfFile);
 
         // Fix offset in case there are skipped tokens before EOF. This is usually done in
         // self.take_raw() but here we don't call self.take_raw as it tries to read the next
@@ -147,7 +146,7 @@ impl<'a> Parser<'a> {
         let name = self.parse_token::<TerminalIdentifier>();
         let generic_args = self.parse_optional_generic_args();
         let lbrace = self.parse_token::<TerminalLBrace>();
-        let members = self.parse_param_list(SyntaxKind::TerminalRBrace);
+        let members = self.parse_param_list();
         let rbrace = self.parse_token::<TerminalRBrace>();
         ItemStruct::new_green(self.db, struct_kw, name, generic_args, lbrace, members, rbrace)
     }
@@ -156,7 +155,7 @@ impl<'a> Parser<'a> {
     fn expect_function_signature(&mut self) -> FunctionSignatureGreen {
         // TODO(yuval): support generics
         let lparen = self.parse_token::<TerminalLParen>();
-        let params = self.parse_param_list(SyntaxKind::TerminalRParen);
+        let params = self.parse_param_list();
         let rparen = self.parse_token::<TerminalRParen>();
         let return_type_clause = self.parse_option_return_type_clause();
         FunctionSignature::new_green(self.db, lparen, params, rparen, return_type_clause)
@@ -461,7 +460,7 @@ impl<'a> Parser<'a> {
         let lbrace = self.parse_token::<TerminalLBrace>();
         let statements = StatementList::new_green(
             self.db,
-            self.parse_list(Self::try_parse_statement, SyntaxKind::TerminalRBrace),
+            self.parse_list(Self::try_parse_statement, is_of_kind!(rbrace, top_level), "statement"),
         );
         let rbrace = self.parse_token::<TerminalRBrace>();
         ExprBlock::new_green(self.db, lbrace, statements, rbrace)
@@ -564,9 +563,9 @@ impl<'a> Parser<'a> {
     fn try_parse_type_clause(&mut self) -> Option<TypeClauseGreen> {
         if self.peek().kind == SyntaxKind::TerminalColon {
             let colon = self.take::<TerminalColon>();
-            let ty = self
-                .try_parse_type_expr()
-                .unwrap_or_else(|| ExprMissing::new_green(self.db).into());
+            let ty = self.try_parse_type_expr().unwrap_or_else(|| {
+                self.create_and_report_missing::<Expr>(ParserDiagnosticKind::MissingTypeExpression)
+            });
             Some(TypeClause::new_green(self.db, colon, ty))
         } else {
             None
@@ -578,9 +577,9 @@ impl<'a> Parser<'a> {
     fn parse_option_return_type_clause(&mut self) -> OptionReturnTypeClauseGreen {
         if self.peek().kind == SyntaxKind::TerminalArrow {
             let arrow = self.take::<TerminalArrow>();
-            let return_type = self
-                .try_parse_type_expr()
-                .unwrap_or_else(|| ExprMissing::new_green(self.db).into());
+            let return_type = self.try_parse_type_expr().unwrap_or_else(|| {
+                self.create_and_report_missing::<Expr>(ParserDiagnosticKind::MissingTypeExpression)
+            });
             ReturnTypeClause::new_green(self.db, arrow, return_type).into()
         } else {
             OptionReturnTypeClauseEmpty::new_green(self.db).into()
@@ -588,7 +587,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Returns a GreenId of a node with kind ParamList.
-    fn parse_param_list(&mut self, closing_token: SyntaxKind) -> ParamListGreen {
+    fn parse_param_list(&mut self) -> ParamListGreen {
         ParamList::new_green(
             self.db,
             self.parse_separated_list::<Param, TerminalComma, ParamListElementOrSeparatorGreen>(
@@ -666,7 +665,7 @@ impl<'a> Parser<'a> {
             ),
         );
         let rangle = self.parse_token::<TerminalGT>();
-        OptionGenericArgsSome::new_green(self.db, langle, generic_args, rangle).into()
+        OptionGenericArgsSome::new_green(self.db, langle, generic_args, rangle)
     }
 
     fn parse_optional_generic_args(&mut self) -> OptionGenericArgsGreen {

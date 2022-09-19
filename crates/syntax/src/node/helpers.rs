@@ -39,6 +39,6 @@ impl GetIdentifier for ast::ExprPath {
 impl GetIdentifier for ast::PathSegment {
     /// Retrieves the text of the segment (without the generic args).
     fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(&*self, ast::PathSegment::Ident, "Expected an ident").ident(db).text(db)
+        extract_matches!(self, ast::PathSegment::Ident, "Expected an ident").ident(db).text(db)
     }
 }

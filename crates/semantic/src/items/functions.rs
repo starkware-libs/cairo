@@ -5,7 +5,7 @@ use debug::DebugWithDb;
 use defs::ids::{GenericFunctionId, ModuleId, ParamLongId, VarId};
 use diagnostics::Diagnostics;
 use diagnostics_proc_macros::DebugWithDb;
-use syntax::node::{ast, TypedSyntaxNode};
+use syntax::node::{ast, Terminal, TypedSyntaxNode};
 
 use crate::corelib::unit_ty;
 use crate::db::SemanticGroup;

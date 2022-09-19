@@ -77,9 +77,9 @@ impl<'a> Printer<'a> {
         kind: SyntaxKind,
     ) {
         if kind.is_terminal() && !self.print_trivia {
-            // TODO(yuval): At this point we know we should have a second children which is the
+            // TODO(yuval): At this point we know we should have a second child which is the
             // token. But still - do this safer?
-            let token_node = syntax_node.children(self.db).skip(1).next().unwrap();
+            let token_node = syntax_node.children(self.db).nth(1).unwrap();
             self.print_tree(field_description, &token_node, indent, is_last);
             return;
         }
@@ -118,7 +118,7 @@ impl<'a> Printer<'a> {
             | NodeKind::Terminal { members: expected_children } => {
                 self.print_internal_struct(&children, &expected_children, indent.as_str());
             }
-            NodeKind::List { element_type: _ } => {
+            NodeKind::List { .. } => {
                 for (i, child) in children.iter().enumerate() {
                     self.print_tree(
                         format!("child #{i}").as_str(),

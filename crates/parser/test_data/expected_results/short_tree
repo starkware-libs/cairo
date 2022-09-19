@@ -3,13 +3,11 @@
     │   ├── child #0 (kind: ItemUse)
     │   │   ├── use_kw (kind: TokenUse): 'use'
     │   │   ├── name (kind: ExprPath)
-    │   │   │   ├── item #0 (kind: PathSegment)
-    │   │   │   │   ├── ident (kind: TokenIdentifier): 'std'
-    │   │   │   │   └── generic_args (kind: OptionGenericArgsEmpty) []
+    │   │   │   ├── item #0 (kind: PathSegmentIdent)
+    │   │   │   │   └── ident (kind: TokenIdentifier): 'std'
     │   │   │   ├── separator #0 (kind: TokenColonColon): '::'
-    │   │   │   └── item #1 (kind: PathSegment)
-    │   │   │       ├── ident (kind: TokenIdentifier): 'format'
-    │   │   │       └── generic_args (kind: OptionGenericArgsEmpty) []
+    │   │   │   └── item #1 (kind: PathSegmentIdent)
+    │   │   │       └── ident (kind: TokenIdentifier): 'format'
     │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   └── child #1 (kind: ItemFreeFunction)
     │       ├── function_kw (kind: TokenFunction): 'func'
@@ -23,25 +21,22 @@
     │       │   │       └── type_clause (kind: TypeClause)
     │       │   │           ├── colon (kind: TokenColon): ':'
     │       │   │           └── ty (kind: ExprPath)
-    │       │   │               └── item #0 (kind: PathSegment)
-    │       │   │                   ├── ident (kind: TokenIdentifier): 'int'
-    │       │   │                   └── generic_args (kind: OptionGenericArgsEmpty) []
+    │       │   │               └── item #0 (kind: PathSegmentIdent)
+    │       │   │                   └── ident (kind: TokenIdentifier): 'int'
     │       │   ├── rparen (kind: TokenRParen): ')'
     │       │   └── ret_ty (kind: ReturnTypeClause)
     │       │       ├── arrow (kind: TokenArrow): '->'
     │       │       └── ty (kind: ExprPath)
-    │       │           └── item #0 (kind: PathSegment)
-    │       │               ├── ident (kind: TokenIdentifier): 'felt'
-    │       │               └── generic_args (kind: OptionGenericArgsEmpty) []
+    │       │           └── item #0 (kind: PathSegmentIdent)
+    │       │               └── ident (kind: TokenIdentifier): 'felt'
     │       └── body (kind: ExprBlock)
     │           ├── lbrace (kind: TokenLBrace): '{'
     │           ├── statements (kind: StatementList)
     │           │   └── child #0 (kind: StatementReturn)
     │           │       ├── return_kw (kind: TokenReturn): 'return'
     │           │       ├── expr (kind: ExprPath)
-    │           │       │   └── item #0 (kind: PathSegment)
-    │           │       │       ├── ident (kind: TokenIdentifier): 'a'
-    │           │       │       └── generic_args (kind: OptionGenericArgsEmpty) []
+    │           │       │   └── item #0 (kind: PathSegmentIdent)
+    │           │       │       └── ident (kind: TokenIdentifier): 'a'
     │           │       └── semicolon (kind: TokenSemicolon): ';'
     │           └── rbrace (kind: TokenRBrace): '}'
     └── eof (kind: TokenEndOfFile).
