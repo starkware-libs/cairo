@@ -1,5 +1,6 @@
 use crate::extensions::lib_func::{
-    LibFuncSignature, SignatureBasedConcreteLibFunc, SpecializationContext,
+    LibFuncSignature, SignatureBasedConcreteLibFunc, SignatureSpecializationContext,
+    SpecializationContext,
 };
 use crate::extensions::{NamedLibFunc, OutputVarReferenceInfo, SpecializationError};
 use crate::ids::GenericLibFuncId;
@@ -14,15 +15,12 @@ impl NamedLibFunc for FunctionCallLibFunc {
 
     fn specialize_signature(
         &self,
-        context: SpecializationContext<'_>,
+        context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
     ) -> Result<LibFuncSignature, SpecializationError> {
         match args {
             [GenericArg::UserFunc(function_id)] => {
-                let function = context
-                    .functions
-                    .get(function_id)
-                    .ok_or_else(|| SpecializationError::MissingFunction(function_id.clone()))?;
+                let function = context.get_function_signature(function_id)?;
                 Ok(LibFuncSignature::new_non_branch(
                     function.params.iter().map(|p| p.ty.clone()).collect(),
                     function.ret_types.clone(),
@@ -51,7 +49,7 @@ impl NamedLibFunc for FunctionCallLibFunc {
                     .ok_or_else(|| SpecializationError::MissingFunction(function_id.clone()))?;
                 Ok(Self::Concrete {
                     function: function.clone(),
-                    signature: self.specialize_signature(context, args)?,
+                    signature: self.specialize_signature(&context, args)?,
                 })
             }
             _ => Err(SpecializationError::UnsupportedGenericArg),

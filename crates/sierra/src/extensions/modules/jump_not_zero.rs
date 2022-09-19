@@ -2,7 +2,8 @@ use std::marker::PhantomData;
 
 use super::non_zero::NonZeroType;
 use crate::extensions::lib_func::{
-    BranchReferenceInfo, LibFuncSignature, SignatureOnlyConcreteLibFunc, SpecializationContext,
+    BranchReferenceInfo, LibFuncSignature, SignatureOnlyConcreteLibFunc,
+    SignatureSpecializationContext, SpecializationContext,
 };
 use crate::extensions::{
     NamedType, NoGenericArgsGenericLibFunc, OutputVarReferenceInfo, SpecializationError,
@@ -31,7 +32,7 @@ impl<TJumpNotZeroTraits: JumpNotZeroTraits> NoGenericArgsGenericLibFunc
 
     fn specialize_signature(
         &self,
-        context: SpecializationContext<'_>,
+        context: &dyn SignatureSpecializationContext,
     ) -> Result<LibFuncSignature, SpecializationError> {
         let ty = context.get_concrete_type(TJumpNotZeroTraits::GENERIC_TYPE_ID, &[])?;
         Ok(LibFuncSignature {
@@ -57,7 +58,7 @@ impl<TJumpNotZeroTraits: JumpNotZeroTraits> NoGenericArgsGenericLibFunc
         context: SpecializationContext<'_>,
     ) -> Result<Self::Concrete, SpecializationError> {
         Ok(SignatureOnlyConcreteLibFunc {
-            signature: <Self as NoGenericArgsGenericLibFunc>::specialize_signature(self, context)?,
+            signature: <Self as NoGenericArgsGenericLibFunc>::specialize_signature(self, &context)?,
         })
     }
 }

@@ -1,5 +1,6 @@
 use crate::extensions::lib_func::{
-    BranchReferenceInfo, LibFuncSignature, SignatureOnlyConcreteLibFunc, SpecializationContext,
+    BranchReferenceInfo, LibFuncSignature, SignatureOnlyConcreteLibFunc,
+    SignatureSpecializationContext, SpecializationContext,
 };
 use crate::extensions::{NoGenericArgsGenericLibFunc, SpecializationError};
 use crate::ids::GenericLibFuncId;
@@ -15,7 +16,7 @@ impl NoGenericArgsGenericLibFunc for RevokeApTrackingLibFunc {
 
     fn specialize_signature(
         &self,
-        _context: SpecializationContext<'_>,
+        _context: &dyn SignatureSpecializationContext,
     ) -> Result<LibFuncSignature, SpecializationError> {
         Ok(LibFuncSignature {
             input_types: vec![],
@@ -30,7 +31,7 @@ impl NoGenericArgsGenericLibFunc for RevokeApTrackingLibFunc {
         context: SpecializationContext<'_>,
     ) -> Result<Self::Concrete, SpecializationError> {
         Ok(SignatureOnlyConcreteLibFunc {
-            signature: <Self as NoGenericArgsGenericLibFunc>::specialize_signature(self, context)?,
+            signature: <Self as NoGenericArgsGenericLibFunc>::specialize_signature(self, &context)?,
         })
     }
 }

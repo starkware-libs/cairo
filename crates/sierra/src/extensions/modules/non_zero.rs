@@ -1,6 +1,7 @@
 use super::as_single_type;
 use crate::extensions::lib_func::{
-    LibFuncSignature, SignatureOnlyConcreteLibFunc, SpecializationContext,
+    LibFuncSignature, SignatureOnlyConcreteLibFunc, SignatureSpecializationContext,
+    SpecializationContext,
 };
 use crate::extensions::{
     ConcreteType, NamedLibFunc, NamedType, OutputVarReferenceInfo, SpecializationError,
@@ -32,7 +33,7 @@ impl NamedLibFunc for UnwrapNonZeroLibFunc {
 
     fn specialize_signature(
         &self,
-        context: SpecializationContext<'_>,
+        context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
     ) -> Result<LibFuncSignature, SpecializationError> {
         let ty = as_single_type(args)?;
@@ -48,6 +49,6 @@ impl NamedLibFunc for UnwrapNonZeroLibFunc {
         context: SpecializationContext<'_>,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(SignatureOnlyConcreteLibFunc { signature: self.specialize_signature(context, args)? })
+        Ok(SignatureOnlyConcreteLibFunc { signature: self.specialize_signature(&context, args)? })
     }
 }
