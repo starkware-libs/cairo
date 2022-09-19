@@ -105,6 +105,9 @@ fn collect_used_libfuncs(
             }
             pre_sierra::Statement::Sierra(program::GenStatement::Return(_)) => {}
             pre_sierra::Statement::Label(_) => {}
+            pre_sierra::Statement::PushValues(_) => {
+                panic!("Unexpected pre_sierra::Statement::PushValues in collect_used_libfuncs().")
+            }
         }
     }
     all_libfuncs

@@ -1,5 +1,7 @@
 use std::fmt;
 
+use utils::write_comma_separated;
+
 use crate::ids::{
     ConcreteLibFuncId, ConcreteTypeId, FunctionId, GenericLibFuncId, GenericTypeId, VarId,
 };
@@ -165,12 +167,4 @@ fn write_template_args(f: &mut fmt::Formatter<'_>, args: &[GenericArg]) -> fmt::
         write_comma_separated(f, args)?;
         write!(f, ">")
     }
-}
-
-fn write_comma_separated<V: std::fmt::Display>(
-    f: &mut fmt::Formatter<'_>,
-    values: &[V],
-) -> fmt::Result {
-    values.iter().take(1).try_for_each(|v| write!(f, "{v}"))?;
-    values.iter().skip(1).try_for_each(|v| write!(f, ", {v}"))
 }

@@ -82,6 +82,10 @@ pub fn calculate_statement_dups_and_drops(
                         drops: OrderedHashSet::<VarId>::default(),
                     }
                 }
+                Statement::PushValues(_) => panic!(
+                    "Unexpected pre_sierra::Statement::PushValues in \
+                     calculate_statement_dups_and_drops()."
+                ),
             }
         })
         .collect()
@@ -129,6 +133,12 @@ fn get_existing_vars_per_statement(
             Statement::Label(_) => {
                 // Label is a no-op - so we do no changes to it.
                 statement_existing_vars[i + 1] = statement_existing_vars[i].clone();
+            }
+            Statement::PushValues(_) => {
+                panic!(
+                    "Unexpected pre_sierra::Statement::PushValues in \
+                     get_existing_vars_per_statement()."
+                )
             }
         }
     }
@@ -234,6 +244,12 @@ fn calculate_required_vars_for_statement(
                 .collect(),
             }
         }
+        Statement::PushValues(_) => {
+            panic!(
+                "Unexpected pre_sierra::Statement::PushValues in \
+                 calculate_required_vars_for_statement()."
+            )
+        }
     }
 }
 
@@ -251,6 +267,10 @@ impl NextStatementIndexFetch {
                 .filter_map(|(i, s)| match s {
                     Statement::Sierra(_) => None,
                     Statement::Label(label) => Some((label.id, i)),
+                    Statement::PushValues(_) => panic!(
+                        "Unexpected pre_sierra::Statement::PushValues in \
+                         NextStatementIndexFetch::new()."
+                    ),
                 })
                 .collect(),
         }
