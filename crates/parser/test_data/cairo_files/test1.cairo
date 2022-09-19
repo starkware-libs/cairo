@@ -15,7 +15,7 @@ func foo(,var1: int,, var2: felt,) -> int {
     let x = true; // bla1
                   // bla2
     func1(x);
-    func2(x)
+    func2::<int>(x)
     return x;
 
 func bar<A, B>() -> felt { }
