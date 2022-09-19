@@ -29,28 +29,35 @@ impl<TJumpNotZeroTraits: JumpNotZeroTraits> NoGenericArgsGenericLibFunc
     type Concrete = SignatureOnlyConcreteLibFunc;
     const ID: GenericLibFuncId = TJumpNotZeroTraits::JUMP_NOT_ZERO;
 
+    fn specialize_signature(
+        &self,
+        context: SpecializationContext<'_>,
+    ) -> Result<LibFuncSignature, SpecializationError> {
+        let ty = context.get_concrete_type(TJumpNotZeroTraits::GENERIC_TYPE_ID, &[])?;
+        Ok(LibFuncSignature {
+            input_types: vec![ty.clone()],
+            output_types: vec![
+                // Success:
+                vec![context.get_wrapped_concrete_type(NonZeroType::id(), ty)?],
+                // Failure:
+                vec![],
+            ],
+            fallthrough: Some(1),
+            output_ref_info: vec![
+                // Success:
+                BranchReferenceInfo(vec![OutputVarReferenceInfo::SameAsParam { param_idx: 0 }]),
+                // Failure:
+                BranchReferenceInfo(vec![]),
+            ],
+        })
+    }
+
     fn specialize(
         &self,
         context: SpecializationContext<'_>,
     ) -> Result<Self::Concrete, SpecializationError> {
-        let ty = context.get_concrete_type(TJumpNotZeroTraits::GENERIC_TYPE_ID, &[])?;
         Ok(SignatureOnlyConcreteLibFunc {
-            signature: LibFuncSignature {
-                input_types: vec![ty.clone()],
-                output_types: vec![
-                    // Success:
-                    vec![context.get_wrapped_concrete_type(NonZeroType::id(), ty)?],
-                    // Failure:
-                    vec![],
-                ],
-                fallthrough: Some(1),
-                output_ref_info: vec![
-                    // Success:
-                    BranchReferenceInfo(vec![OutputVarReferenceInfo::SameAsParam { param_idx: 0 }]),
-                    // Failure:
-                    BranchReferenceInfo(vec![]),
-                ],
-            },
+            signature: <Self as NoGenericArgsGenericLibFunc>::specialize_signature(self, context)?,
         })
     }
 }

@@ -40,30 +40,39 @@ pub struct GetGasLibFunc {}
 impl NamedLibFunc for GetGasLibFunc {
     type Concrete = GetGasConcreteLibFunc;
     const ID: GenericLibFuncId = GenericLibFuncId::new_inline("get_gas");
+
+    fn specialize_signature(
+        &self,
+        context: SpecializationContext<'_>,
+        _args: &[GenericArg],
+    ) -> Result<LibFuncSignature, SpecializationError> {
+        let gas_builtin_type = context.get_concrete_type(GasBuiltinType::id(), &[])?;
+        Ok(LibFuncSignature {
+            input_types: vec![gas_builtin_type.clone()],
+            output_types: vec![
+                // Success:
+                vec![gas_builtin_type.clone()],
+                // Failure:
+                vec![gas_builtin_type],
+            ],
+            fallthrough: Some(1),
+            output_ref_info: vec![
+                // Success:
+                BranchReferenceInfo(vec![OutputVarReferenceInfo::Deferred]),
+                // Failure:
+                BranchReferenceInfo(vec![OutputVarReferenceInfo::SameAsParam { param_idx: 0 }]),
+            ],
+        })
+    }
+
     fn specialize(
         &self,
         context: SpecializationContext<'_>,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        let gas_builtin_type = context.get_concrete_type(GasBuiltinType::id(), &[])?;
         Ok(GetGasConcreteLibFunc {
             count: as_single_positive_value(args)?,
-            signature: LibFuncSignature {
-                input_types: vec![gas_builtin_type.clone()],
-                output_types: vec![
-                    // Success:
-                    vec![gas_builtin_type.clone()],
-                    // Failure:
-                    vec![gas_builtin_type],
-                ],
-                fallthrough: Some(1),
-                output_ref_info: vec![
-                    // Success:
-                    BranchReferenceInfo(vec![OutputVarReferenceInfo::Deferred]),
-                    // Failure:
-                    BranchReferenceInfo(vec![OutputVarReferenceInfo::SameAsParam { param_idx: 0 }]),
-                ],
-            },
+            signature: self.specialize_signature(context, args)?,
         })
     }
 }
@@ -84,19 +93,28 @@ pub struct RefundGasLibFunc {}
 impl NamedLibFunc for RefundGasLibFunc {
     type Concrete = RefundGasConcreteLibFunc;
     const ID: GenericLibFuncId = GenericLibFuncId::new_inline("refund_gas");
+
+    fn specialize_signature(
+        &self,
+        context: SpecializationContext<'_>,
+        _args: &[GenericArg],
+    ) -> Result<LibFuncSignature, SpecializationError> {
+        let gas_builtin_type = context.get_concrete_type(GasBuiltinType::id(), &[])?;
+        Ok(LibFuncSignature::new_non_branch(
+            vec![gas_builtin_type.clone()],
+            vec![gas_builtin_type],
+            vec![OutputVarReferenceInfo::Deferred],
+        ))
+    }
+
     fn specialize(
         &self,
         context: SpecializationContext<'_>,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        let gas_builtin_type = context.get_concrete_type(GasBuiltinType::id(), &[])?;
         Ok(RefundGasConcreteLibFunc {
             count: as_single_positive_value(args)?,
-            signature: LibFuncSignature::new_non_branch(
-                vec![gas_builtin_type.clone()],
-                vec![gas_builtin_type],
-                vec![OutputVarReferenceInfo::Deferred],
-            ),
+            signature: self.specialize_signature(context, args)?,
         })
     }
 }

@@ -50,6 +50,7 @@ impl<TArithmeticTraits: ArithmeticTraits> OperationLibFunc<TArithmeticTraits> {
 }
 impl<TArithmeticTraits: ArithmeticTraits> GenericLibFunc for OperationLibFunc<TArithmeticTraits> {
     type Concrete = OperationConcreteLibFunc;
+
     fn by_id(id: &GenericLibFuncId) -> Option<Self> {
         match id {
             id if id == &TArithmeticTraits::ADD => Some(Self::new(Operator::Add)),
@@ -60,27 +61,50 @@ impl<TArithmeticTraits: ArithmeticTraits> GenericLibFunc for OperationLibFunc<TA
             _ => None,
         }
     }
+
+    fn specialize_signature(
+        &self,
+        context: SpecializationContext<'_>,
+        args: &[GenericArg],
+    ) -> Result<LibFuncSignature, SpecializationError> {
+        let ty = context.get_concrete_type(TArithmeticTraits::GENERIC_TYPE_ID, &[])?;
+        match args {
+            [] => Ok(LibFuncSignature::new_non_branch(
+                vec![
+                    ty.clone(),
+                    if matches!(self.operator, Operator::Div | Operator::Mod) {
+                        context.get_wrapped_concrete_type(NonZeroType::id(), ty.clone())?
+                    } else {
+                        ty.clone()
+                    },
+                ],
+                vec![ty],
+                vec![OutputVarReferenceInfo::Deferred],
+            )),
+            [GenericArg::Value(c)] => {
+                if matches!(self.operator, Operator::Div | Operator::Mod) && *c == 0 {
+                    Err(SpecializationError::UnsupportedGenericArg)
+                } else {
+                    Ok(LibFuncSignature::new_non_branch(
+                        vec![ty.clone()],
+                        vec![ty],
+                        vec![OutputVarReferenceInfo::Deferred],
+                    ))
+                }
+            }
+            _ => Err(SpecializationError::UnsupportedGenericArg),
+        }
+    }
+
     fn specialize(
         &self,
         context: SpecializationContext<'_>,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        let ty = context.get_concrete_type(TArithmeticTraits::GENERIC_TYPE_ID, &[])?;
         match args {
             [] => Ok(OperationConcreteLibFunc::Binary(BinaryOperationConcreteLibFunc {
                 operator: self.operator,
-                signature: LibFuncSignature::new_non_branch(
-                    vec![
-                        ty.clone(),
-                        if matches!(self.operator, Operator::Div | Operator::Mod) {
-                            context.get_wrapped_concrete_type(NonZeroType::id(), ty.clone())?
-                        } else {
-                            ty.clone()
-                        },
-                    ],
-                    vec![ty],
-                    vec![OutputVarReferenceInfo::Deferred],
-                ),
+                signature: self.specialize_signature(context, args)?,
             })),
             [GenericArg::Value(c)] => {
                 if matches!(self.operator, Operator::Div | Operator::Mod) && *c == 0 {
@@ -89,11 +113,7 @@ impl<TArithmeticTraits: ArithmeticTraits> GenericLibFunc for OperationLibFunc<TA
                     Ok(OperationConcreteLibFunc::Const(OperationWithConstConcreteLibFunc {
                         operator: self.operator,
                         c: *c,
-                        signature: LibFuncSignature::new_non_branch(
-                            vec![ty.clone()],
-                            vec![ty],
-                            vec![OutputVarReferenceInfo::Deferred],
-                        ),
+                        signature: self.specialize_signature(context, args)?,
                     }))
                 }
             }
@@ -139,6 +159,19 @@ pub struct ConstLibFunc<TArithmeticTraits: ArithmeticTraits> {
 impl<TArithmeticTraits: ArithmeticTraits> NamedLibFunc for ConstLibFunc<TArithmeticTraits> {
     type Concrete = ConstConcreteLibFunc;
     const ID: GenericLibFuncId = TArithmeticTraits::CONST;
+
+    fn specialize_signature(
+        &self,
+        context: SpecializationContext<'_>,
+        _args: &[GenericArg],
+    ) -> Result<LibFuncSignature, SpecializationError> {
+        Ok(LibFuncSignature::new_non_branch(
+            vec![],
+            vec![context.get_concrete_type(TArithmeticTraits::GENERIC_TYPE_ID, &[])?],
+            vec![OutputVarReferenceInfo::Const],
+        ))
+    }
+
     fn specialize(
         &self,
         context: SpecializationContext<'_>,
@@ -147,11 +180,7 @@ impl<TArithmeticTraits: ArithmeticTraits> NamedLibFunc for ConstLibFunc<TArithme
         match args {
             [GenericArg::Value(c)] => Ok(ConstConcreteLibFunc {
                 c: *c,
-                signature: LibFuncSignature::new_non_branch(
-                    vec![],
-                    vec![context.get_concrete_type(TArithmeticTraits::GENERIC_TYPE_ID, &[])?],
-                    vec![OutputVarReferenceInfo::Const],
-                ),
+                signature: <Self as NamedLibFunc>::specialize_signature(self, context, args)?,
             }),
             _ => Err(SpecializationError::UnsupportedGenericArg),
         }

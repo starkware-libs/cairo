@@ -30,18 +30,24 @@ impl NamedLibFunc for UnwrapNonZeroLibFunc {
     type Concrete = SignatureOnlyConcreteLibFunc;
     const ID: GenericLibFuncId = GenericLibFuncId::new_inline("unwrap_nz");
 
+    fn specialize_signature(
+        &self,
+        context: SpecializationContext<'_>,
+        args: &[GenericArg],
+    ) -> Result<LibFuncSignature, SpecializationError> {
+        let ty = as_single_type(args)?;
+        Ok(LibFuncSignature::new_non_branch(
+            vec![context.get_wrapped_concrete_type(NonZeroType::id(), ty.clone())?],
+            vec![ty],
+            vec![OutputVarReferenceInfo::SameAsParam { param_idx: 0 }],
+        ))
+    }
+
     fn specialize(
         &self,
         context: SpecializationContext<'_>,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        let ty = as_single_type(args)?;
-        Ok(SignatureOnlyConcreteLibFunc {
-            signature: LibFuncSignature::new_non_branch(
-                vec![context.get_wrapped_concrete_type(NonZeroType::id(), ty.clone())?],
-                vec![ty],
-                vec![OutputVarReferenceInfo::SameAsParam { param_idx: 0 }],
-            ),
-        })
+        Ok(SignatureOnlyConcreteLibFunc { signature: self.specialize_signature(context, args)? })
     }
 }
