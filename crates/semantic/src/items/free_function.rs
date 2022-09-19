@@ -3,7 +3,9 @@ use diagnostics::Diagnostics;
 use diagnostics_proc_macros::DebugWithDb;
 use syntax::node::ast;
 
-use super::functions::{function_signature_params, function_signature_return_type};
+use super::functions::{
+    function_signature_generic_params, function_signature_params, function_signature_return_type,
+};
 use crate::db::SemanticGroup;
 use crate::expr::compute::{compute_expr_semantic, ComputationContext, Environment};
 use crate::{semantic, SemanticDiagnostic};
@@ -50,9 +52,11 @@ pub fn priv_free_function_declaration_data(
         function_signature_return_type(&mut diagnostics, db, module_id, &signature_syntax);
     let (params, environment) =
         function_signature_params(&mut diagnostics, db, module_id, &signature_syntax);
+    let generic_params =
+        function_signature_generic_params(&mut diagnostics, db, module_id, &signature_syntax);
     Some(FreeFunctionDeclarationData {
         diagnostics,
-        signature: semantic::Signature { params, return_type },
+        signature: semantic::Signature { params, generic_params, return_type },
         environment,
     })
 }

@@ -27,7 +27,10 @@ use crate::diagnostic::SemanticDiagnosticKind;
 use crate::items::functions::{ConcreteFunction, FunctionLongId};
 use crate::resolve_item::resolve_item;
 use crate::types::resolve_type;
-use crate::{semantic, ConcreteType, FunctionId, SemanticDiagnostic, TypeId, TypeLongId, Variable};
+use crate::{
+    semantic, ConcreteType, FunctionId, GenericArgumentId, SemanticDiagnostic, TypeId, TypeLongId,
+    Variable,
+};
 
 /// Context for computing the semantic model of expression trees.
 pub struct ComputationContext<'ctx> {
@@ -133,7 +136,7 @@ pub fn maybe_compute_expr_semantic(
             let rexpr = compute_expr_semantic(ctx, rhs_syntax);
             let arg_exprs = [lexpr, rexpr];
             let generic_function = core_binary_operator(db, operator_kind)?;
-            let function = specialize_function(ctx, generic_function, &arg_exprs)?;
+            let function = specialize_function(ctx, generic_function, &arg_exprs, &[])?;
             let args = arg_exprs.into_iter().map(|expr| db.intern_expr(expr)).collect();
             semantic::Expr::ExprFunctionCall(semantic::ExprFunctionCall {
                 function,
@@ -152,7 +155,9 @@ pub fn maybe_compute_expr_semantic(
                 .into_iter()
                 .map(|arg_syntax| compute_expr_semantic(ctx, arg_syntax))
                 .collect();
-            let function = resolve_function(ctx, path, &arg_exprs);
+            // TODO(alon): connect generic_arg_exprs to syntax once available.
+            let generic_arg_exprs: Vec<TypeId> = vec![];
+            let function = resolve_function(ctx, path, &arg_exprs, &generic_arg_exprs);
             let args = arg_exprs.into_iter().map(|expr| db.intern_expr(expr)).collect();
             semantic::Expr::ExprFunctionCall(semantic::ExprFunctionCall {
                 function,
@@ -474,8 +479,9 @@ fn resolve_function(
     ctx: &mut ComputationContext<'_>,
     path: ast::ExprPath,
     args: &[semantic::Expr],
+    generic_args: &[semantic::TypeId],
 ) -> FunctionId {
-    maybe_resolve_function(ctx, &path, args).unwrap_or_else(|kind| {
+    maybe_resolve_function(ctx, &path, args, generic_args).unwrap_or_else(|kind| {
         ctx.diagnostics.add(SemanticDiagnostic {
             stable_location: StableLocation::from_ast(ctx.module_id, &path),
             kind,
@@ -490,13 +496,14 @@ fn maybe_resolve_function(
     ctx: &mut ComputationContext<'_>,
     path: &ast::ExprPath,
     args: &[semantic::Expr],
+    generic_args: &[semantic::TypeId],
 ) -> SemanticResult<FunctionId> {
     // TODO(spapini): Try to find function in multiple places (e.g. impls, or other modules for
     //   suggestions)
     let generic_function =
         GenericFunctionId::option_from(resolve_item(ctx.db, ctx.module_id, path)?)
             .ok_or(SemanticDiagnosticKind::UnknownFunction)?;
-    specialize_function(ctx, generic_function, args)
+    specialize_function(ctx, generic_function, args, generic_args)
 }
 
 /// Tries to specializes a generic function.
@@ -504,6 +511,7 @@ fn specialize_function(
     ctx: &mut ComputationContext<'_>,
     generic_function: GenericFunctionId,
     args: &[semantic::Expr],
+    generic_args: &[semantic::TypeId],
 ) -> SemanticResult<FunctionId> {
     // TODO(spapini): Type check arguments.
     let signature = ctx
@@ -515,6 +523,13 @@ fn specialize_function(
         return Err(SemanticDiagnosticKind::WrongNumberOfArguments {
             expected: signature.params.len(),
             actual: args.len(),
+        });
+    }
+
+    if generic_args.len() != signature.generic_params.len() {
+        return Err(SemanticDiagnosticKind::WrongNumberOfGenericArguments {
+            expected: signature.generic_params.len(),
+            actual: generic_args.len(),
         });
     }
 
@@ -538,7 +553,7 @@ fn specialize_function(
 
     Ok(ctx.db.intern_function(FunctionLongId::Concrete(ConcreteFunction {
         generic_function,
-        generic_args: vec![],
+        generic_args: generic_args.iter().map(|typ| GenericArgumentId::Type(*typ)).collect(),
         return_type: signature.return_type,
     })))
 }

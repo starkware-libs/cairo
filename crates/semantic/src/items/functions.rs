@@ -66,8 +66,8 @@ impl DebugWithDb<dyn SemanticGroup> for ConcreteFunction {
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
 #[debug_db(SemanticGroup)]
 pub struct Signature {
-    // TODO(spapini): Generics parameters.
     pub params: Vec<semantic::Parameter>,
+    pub generic_params: Vec<semantic::GenericParameter>,
     pub return_type: semantic::TypeId,
 }
 
@@ -111,6 +111,17 @@ pub fn function_signature_params(
     }
 
     (semantic_params, Environment::new(variables))
+}
+
+/// Returns the parameters of the given function signature's AST.
+pub fn function_signature_generic_params(
+    _diagnostics: &mut Diagnostics<SemanticDiagnostic>,
+    _db: &dyn SemanticGroup,
+    _module_id: ModuleId,
+    _sig: &ast::FunctionSignature,
+) -> Vec<semantic::GenericParameter> {
+    // TODO(alont) get generic params from syntax when available.
+    vec![]
 }
 
 /// Query implementation of [crate::db::SemanticGroup::generic_function_signature].
