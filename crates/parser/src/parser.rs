@@ -143,7 +143,7 @@ impl<'a> Parser<'a> {
     fn expect_struct(&mut self) -> ItemStructGreen {
         let struct_kw = self.take();
         let name = self.parse_token(TokenKind::Identifier);
-        let generic_args = self.parse_generic_args();
+        let generic_args = self.parse_optional_generic_args();
         let lbrace = self.parse_token(TokenKind::LBrace);
         let members = self.parse_param_list();
         let rbrace = self.parse_token(TokenKind::RBrace);
@@ -168,7 +168,7 @@ impl<'a> Parser<'a> {
             TokenKind::Function => {
                 let function_kw = self.take();
                 let name = self.parse_token(TokenKind::Identifier);
-                let generic_args = self.parse_generic_args();
+                let generic_args = self.parse_optional_generic_args();
                 let signature = self.expect_function_signature();
                 let semicolon = self.parse_token(TokenKind::Semicolon);
                 ItemExternFunction::new_green(
@@ -186,7 +186,7 @@ impl<'a> Parser<'a> {
                 // TODO(spapini): Do'nt return ItemExternType if we don't see a type.
                 let type_kw = self.parse_token(TokenKind::Type);
                 let name = self.parse_token(TokenKind::Identifier);
-                let generic_args = self.parse_generic_args();
+                let generic_args = self.parse_optional_generic_args();
                 let semicolon = self.parse_token(TokenKind::Semicolon);
                 // If the next token is not type, assume it is missing.
                 ItemExternType::new_green(
@@ -216,7 +216,7 @@ impl<'a> Parser<'a> {
     fn expect_function(&mut self) -> ItemFreeFunctionGreen {
         let function_kw = self.take();
         let name = self.parse_token(TokenKind::Identifier);
-        let generic_args = self.parse_generic_args();
+        let generic_args = self.parse_optional_generic_args();
         let signature = self.expect_function_signature();
         let function_body = self.parse_block();
         ItemFreeFunction::new_green(
@@ -618,9 +618,16 @@ impl<'a> Parser<'a> {
 
     /// Returns a GreenId of a node with kind PathSegment or None if a segment can't be parsed.
     fn try_parse_path_segment(&mut self) -> Option<PathSegmentGreen> {
-        let identifier = self.try_parse_token(TokenKind::Identifier)?;
-        // TODO(ilya, 10/10/2022): support generics.
-        Some(PathSegmentIdent::new_green(self.db, identifier).into())
+        match self.peek().kind {
+            TokenKind::Identifier => {
+                let identifier = self.try_parse_token(TokenKind::Identifier)?;
+                Some(PathSegmentIdent::new_green(self.db, identifier).into())
+            }
+            TokenKind::LT => {
+                Some(PathSegmentGenericArgs::new_green(self.db, self.parse_generic_args()).into())
+            }
+            _ => None,
+        }
     }
 
     /// Returns a GreenId of a node with kind PathSegment or None if a segment can't be parsed.
@@ -630,10 +637,7 @@ impl<'a> Parser<'a> {
         })
     }
 
-    fn parse_generic_args(&mut self) -> OptionGenericArgsGreen {
-        if self.peek().kind != TokenKind::LT {
-            return OptionGenericArgsEmpty::new_green(self.db).into();
-        }
+    fn parse_generic_args(&mut self) -> OptionGenericArgsSomeGreen {
         let langle = self.take();
         let generic_args = GenericArgList::new_green(
             self.db,
@@ -645,7 +649,14 @@ impl<'a> Parser<'a> {
             ),
         );
         let rangle = self.parse_token(TokenKind::GT);
-        OptionGenericArgsSome::new_green(self.db, langle, generic_args, rangle).into()
+        OptionGenericArgsSome::new_green(self.db, langle, generic_args, rangle)
+    }
+
+    fn parse_optional_generic_args(&mut self) -> OptionGenericArgsGreen {
+        if self.peek().kind != TokenKind::LT {
+            return OptionGenericArgsEmpty::new_green(self.db).into();
+        }
+        self.parse_generic_args().into()
     }
 
     // ------------------------------- Helpers -------------------------------

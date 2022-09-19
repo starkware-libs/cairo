@@ -136,27 +136,28 @@
     │   │       │   │   │       └── rparen (kind: RParen): ')'
     │   │       │   │   └── semicolon (kind: Semicolon): ';'
     │   │       │   ├── child #6 (kind: StatementExpr)
-    │   │       │   │   ├── expr (kind: ExprPath)
-    │   │       │   │   │   ├── item #0 (kind: PathSegmentIdent)
-    │   │       │   │   │   │   └── ident (kind: Identifier): 'func2'
-    │   │       │   │   │   ├── separator #0 (kind: ColonColon): '::'
-    │   │       │   │   │   └── item #1 (kind: PathSegmentIdent)
-    │   │       │   │   │       └── ident: Missing
+    │   │       │   │   ├── expr (kind: ExprFunctionCall)
+    │   │       │   │   │   ├── path (kind: ExprPath)
+    │   │       │   │   │   │   ├── item #0 (kind: PathSegmentIdent)
+    │   │       │   │   │   │   │   └── ident (kind: Identifier): 'func2'
+    │   │       │   │   │   │   ├── separator #0 (kind: ColonColon): '::'
+    │   │       │   │   │   │   └── item #1 (kind: PathSegmentGenericArgs)
+    │   │       │   │   │   │       └── generic_args (kind: OptionGenericArgsSome)
+    │   │       │   │   │   │           ├── langle (kind: LT): '<'
+    │   │       │   │   │   │           ├── generic_args (kind: GenericArgList)
+    │   │       │   │   │   │           │   └── item #0 (kind: ExprPath)
+    │   │       │   │   │   │           │       └── item #0 (kind: PathSegmentIdent)
+    │   │       │   │   │   │           │           └── ident (kind: Identifier): 'int'
+    │   │       │   │   │   │           └── rangle (kind: GT): '>'
+    │   │       │   │   │   └── arguments (kind: ExprListParenthesized)
+    │   │       │   │   │       ├── lparen (kind: LParen): '('
+    │   │       │   │   │       ├── expressions (kind: ExprList)
+    │   │       │   │   │       │   └── item #0 (kind: ExprPath)
+    │   │       │   │   │       │       └── item #0 (kind: PathSegmentIdent)
+    │   │       │   │   │       │           └── ident (kind: Identifier): 'x'
+    │   │       │   │   │       └── rparen (kind: RParen): ')'
     │   │       │   │   └── semicolon (kind: OptionSemicolonEmpty) []
-    │   │       │   ├── child #7 (kind: StatementExpr)
-    │   │       │   │   ├── expr (kind: ExprPath)
-    │   │       │   │   │   └── item #0 (kind: PathSegmentIdent)
-    │   │       │   │   │       └── ident (kind: Identifier): 'int'
-    │   │       │   │   └── semicolon (kind: OptionSemicolonEmpty) []
-    │   │       │   ├── child #8 (kind: StatementExpr)
-    │   │       │   │   ├── expr (kind: ExprParenthesized)
-    │   │       │   │   │   ├── lparen (kind: LParen): '('
-    │   │       │   │   │   ├── expr (kind: ExprPath)
-    │   │       │   │   │   │   └── item #0 (kind: PathSegmentIdent)
-    │   │       │   │   │   │       └── ident (kind: Identifier): 'x'
-    │   │       │   │   │   └── rparen (kind: RParen): ')'
-    │   │       │   │   └── semicolon (kind: OptionSemicolonEmpty) []
-    │   │       │   └── child #9 (kind: StatementReturn)
+    │   │       │   └── child #7 (kind: StatementReturn)
     │   │       │       ├── returnkw (kind: Return): 'return'
     │   │       │       ├── expr (kind: ExprPath)
     │   │       │       │   └── item #0 (kind: PathSegmentIdent)
@@ -296,21 +297,6 @@ error: Skipped tokens. Expected element: parameter.
  --> test1.cairo:7:21
 func foo(,var1: int,, var2: felt,) -> int {
                     ^
-
-error: Missing tokens: 'missing path segment'.
- --> test1.cairo:18:12
-    func2::<int>(x)
-           ^
-
-error: Skipped tokens. Expected element: statement.
- --> test1.cairo:18:12
-    func2::<int>(x)
-           ^
-
-error: Skipped tokens. Expected element: statement.
- --> test1.cairo:18:16
-    func2::<int>(x)
-               ^
 
 error: Missing token RBrace.
  --> test1.cairo:21:1
