@@ -7,7 +7,9 @@ use std::sync::Arc;
 use defs::ids::{FreeFunctionId, GenericFunctionId};
 use diagnostics::{Diagnostics, WithDiagnostics};
 use diagnostics_proc_macros::with_diagnostics;
+use sierra::extensions::core::CoreLibFunc;
 use sierra::extensions::lib_func::BranchReferenceInfo;
+use sierra::extensions::GenericLibFuncEx;
 use sierra::ids::ConcreteLibFuncId;
 use sierra::program::Param;
 
@@ -17,6 +19,7 @@ use crate::dup_and_drop::{calculate_statement_dups_and_drops, VarsDupsAndDrops};
 use crate::expr_generator::generate_expression_code;
 use crate::expr_generator_context::ExprGeneratorContext;
 use crate::pre_sierra::{self, Statement};
+use crate::specialization_context::SierraSignatureSpecializationContext;
 use crate::store_variables::add_store_statements;
 use crate::utils::{return_statement, simple_statement};
 
@@ -71,10 +74,17 @@ pub fn get_function_code(
     let statements = add_store_statements(
         context.get_db(),
         statements,
-        &|_concrete_lib_func_id: ConcreteLibFuncId| -> Vec<BranchReferenceInfo> {
-            // TODO(lior): Implement once there's a way to get the Sierra signature from
-            //   ConcreteLibFuncId.
-            unimplemented!();
+        &|concrete_lib_func_id: ConcreteLibFuncId| -> Vec<BranchReferenceInfo> {
+            let libfunc_long_id =
+                context.get_db().lookup_intern_concrete_lib_func(concrete_lib_func_id);
+            // TODO(lior): replace expect() with a diagnostic (unless this can never happen).
+            CoreLibFunc::specialize_signature_by_id(
+                &SierraSignatureSpecializationContext(context.get_db()),
+                &libfunc_long_id.generic_id,
+                &libfunc_long_id.generic_args,
+            )
+            .expect("Specialization failure.")
+            .output_ref_info
         },
     );
     let statements = add_dups_and_drops(&mut context, &parameters, statements);

@@ -54,12 +54,13 @@ impl<'a> AddStoreVariableStatements<'a> {
     fn handle_statement<GetOutputInfo>(
         &mut self,
         statement: pre_sierra::Statement,
-        _get_output_info: &GetOutputInfo,
+        get_output_info: &GetOutputInfo,
     ) where
         GetOutputInfo: Fn(ConcreteLibFuncId) -> Vec<BranchReferenceInfo>,
     {
         match &statement {
             pre_sierra::Statement::Sierra(GenStatement::Invocation(invocation)) => {
+                let _output_info = get_output_info(invocation.libfunc_id.clone());
                 match &invocation.branches[..] {
                     [GenBranchInfo { target: GenBranchTarget::Fallthrough, results: _ }] => {
                         // A simple invocation.
