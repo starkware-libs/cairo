@@ -37,7 +37,12 @@ pub fn get_function_code(
     let mut parameters: Vec<sierra::program::Param> = Vec::new();
     for param in signature.params {
         let sierra_var = context.allocate_sierra_variable();
-        context.register_variable(defs::ids::VarId::Param(param.id), sierra_var.clone());
+        context.register_variable(
+            defs::ids::VarId::Param(param.id),
+            sierra_var.clone(),
+            param.id.stable_ptr(context.get_db().upcast()).untyped(),
+        );
+
         parameters
             .push(sierra::program::Param { id: sierra_var, ty: db.get_concrete_type_id(param.ty)? })
     }

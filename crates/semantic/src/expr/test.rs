@@ -396,7 +396,7 @@ fn test_expr_match_failures() {
              --> lib.cairo:4:14
                     _ => b,
                          ^
-            
+
         "#}
     )
 }

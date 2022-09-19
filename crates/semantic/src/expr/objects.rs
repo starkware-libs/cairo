@@ -1,6 +1,8 @@
 use db_utils::define_short_id;
+use defs::db::DefsGroup;
 use defs::ids::{LocalVarId, MemberId, StructId, VarId};
 use diagnostics_proc_macros::DebugWithDb;
+use syntax::node::ast::StatementLetPtr;
 use syntax::node::ids::SyntaxStablePtrId;
 
 use crate::db::SemanticGroup;
@@ -29,6 +31,11 @@ pub struct StatementLet {
 pub struct LocalVariable {
     pub id: LocalVarId,
     pub ty: semantic::TypeId,
+}
+impl LocalVariable {
+    pub fn stable_ptr(&self, db: &dyn DefsGroup) -> StatementLetPtr {
+        self.id.stable_ptr(db)
+    }
 }
 
 // Expressions.

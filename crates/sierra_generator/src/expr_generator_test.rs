@@ -93,6 +93,49 @@ diagnostics_test!(
 );
 
 #[test]
+fn test_expr_generator_duplicate_variable() {
+    let mut db = SierraGenDatabaseForTesting::default();
+
+    let test_expr = setup_test_block(&mut db, "let x = 7; x", "", "").unwrap();
+    let mut diagnostics = Diagnostics::<Diagnostic>::default();
+    let mut expr_generator_context =
+        ExprGeneratorContext::new(&db, test_expr.function_id, &mut diagnostics);
+    // Call generate_expression_code with the same code twice, to simulate the
+    // InternalErrorDuplicatedVariable error.
+    let (statements0, res0) =
+        generate_expression_code(&mut expr_generator_context, test_expr.expr_id).unwrap();
+    let (statements1, res1) =
+        generate_expression_code(&mut expr_generator_context, test_expr.expr_id).unwrap();
+    // TODO(spapini): Fix so that the span below will only point to `x`.
+    assert_eq!(
+        diagnostics.format(&db),
+        indoc! {"
+            error: Internal compiler error: found two definitions for the same variable.
+             --> lib.cairo:3:1
+            let x = 7; x
+            ^********^
+
+            "},
+    );
+    assert_eq!(
+        statements0
+            .iter()
+            .map(|x| replace_libfunc_ids(&db, x).to_string())
+            .collect::<Vec<String>>(),
+        vec!["felt_const<7>() -> ([0])",]
+    );
+    assert_eq!(res0, sierra::ids::VarId::new(0));
+    assert_eq!(
+        statements1
+            .iter()
+            .map(|x| replace_libfunc_ids(&db, x).to_string())
+            .collect::<Vec<String>>(),
+        vec!["felt_const<7>() -> ([1])",]
+    );
+    assert_eq!(res1, sierra::ids::VarId::new(1));
+}
+
+#[test]
 fn test_match() {
     let mut db = SierraGenDatabaseForTesting::default();
 
