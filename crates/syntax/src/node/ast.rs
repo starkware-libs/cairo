@@ -878,7 +878,7 @@ pub enum Expr {
     StructCtorCall(ExprStructCtorCall),
     Block(ExprBlock),
     Match(ExprMatch),
-    ExprMissing(ExprMissing),
+    Missing(ExprMissing),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ExprPtr(SyntaxStablePtrId);
@@ -973,9 +973,7 @@ impl TypedSyntaxNode for Expr {
                 }
                 SyntaxKind::ExprBlock => Expr::Block(ExprBlock::from_syntax_node(db, node)),
                 SyntaxKind::ExprMatch => Expr::Match(ExprMatch::from_syntax_node(db, node)),
-                SyntaxKind::ExprMissing => {
-                    Expr::ExprMissing(ExprMissing::from_syntax_node(db, node))
-                }
+                SyntaxKind::ExprMissing => Expr::Missing(ExprMissing::from_syntax_node(db, node)),
                 _ => panic!(
                     "Unexpected syntax kind {:?} when constructing {}.",
                     internal.kind, "Expr"
@@ -998,7 +996,7 @@ impl TypedSyntaxNode for Expr {
             Expr::StructCtorCall(x) => x.as_syntax_node(),
             Expr::Block(x) => x.as_syntax_node(),
             Expr::Match(x) => x.as_syntax_node(),
-            Expr::ExprMissing(x) => x.as_syntax_node(),
+            Expr::Missing(x) => x.as_syntax_node(),
         }
     }
     fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
@@ -3005,7 +3003,7 @@ pub enum Statement {
     Let(StatementLet),
     Expr(StatementExpr),
     Return(StatementReturn),
-    StatementMissing(StatementMissing),
+    Missing(StatementMissing),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct StatementPtr(SyntaxStablePtrId);
@@ -3059,7 +3057,7 @@ impl TypedSyntaxNode for Statement {
                     Statement::Return(StatementReturn::from_syntax_node(db, node))
                 }
                 SyntaxKind::StatementMissing => {
-                    Statement::StatementMissing(StatementMissing::from_syntax_node(db, node))
+                    Statement::Missing(StatementMissing::from_syntax_node(db, node))
                 }
                 _ => panic!(
                     "Unexpected syntax kind {:?} when constructing {}.",
@@ -3079,7 +3077,7 @@ impl TypedSyntaxNode for Statement {
             Statement::Let(x) => x.as_syntax_node(),
             Statement::Expr(x) => x.as_syntax_node(),
             Statement::Return(x) => x.as_syntax_node(),
-            Statement::StatementMissing(x) => x.as_syntax_node(),
+            Statement::Missing(x) => x.as_syntax_node(),
         }
     }
     fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {

@@ -240,7 +240,7 @@ pub fn maybe_compute_expr_semantic(
                 stable_ptr: expr_match.stable_ptr().untyped(),
             })
         }
-        ast::Expr::ExprMissing(_) => return Err(SemanticDiagnosticKind::Unsupported),
+        ast::Expr::Missing(_) => return Err(SemanticDiagnosticKind::Unsupported),
     })
 }
 
@@ -604,7 +604,7 @@ pub fn compute_statement_semantic(
             }
             semantic::Statement::Return(db.intern_expr(expr))
         }
-        ast::Statement::StatementMissing(_) => todo!(),
+        ast::Statement::Missing(_) => todo!(),
     };
     db.intern_statement(statement)
 }
