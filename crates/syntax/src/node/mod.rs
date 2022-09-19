@@ -118,7 +118,7 @@ impl SyntaxNode {
         match green_node.details {
             green::GreenNodeDetails::Node { .. } => {
                 if green_node.kind.is_terminal() {
-                    // TODO(yuval): At this point we know we should have a second children which is
+                    // TODO(yuval): At this point we know we should have a second child which is
                     // the token. But still - do this safer?
                     let token_node = self.children(db).skip(1).next().unwrap();
                     return token_node.offset();
@@ -138,7 +138,7 @@ impl SyntaxNode {
         match green_node.details {
             green::GreenNodeDetails::Node { .. } => {
                 if green_node.kind.is_terminal() {
-                    // TODO(yuval): At this point we know we should have a second children which is
+                    // TODO(yuval): At this point we know we should have a second child which is
                     // the token. But still - do this safer?
                     let token_node = self.children(db).skip(1).next().unwrap();
                     return token_node.span(db).end;

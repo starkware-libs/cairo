@@ -3,7 +3,7 @@ use defs::ids::{LanguageElementId, MemberId, MemberLongId, StructId};
 use diagnostics::Diagnostics;
 use diagnostics_proc_macros::DebugWithDb;
 use smol_str::SmolStr;
-use syntax::node::TypedSyntaxNode;
+use syntax::node::{Terminal, TypedSyntaxNode};
 use utils::ordered_hash_map::OrderedHashMap;
 
 use crate::db::SemanticGroup;

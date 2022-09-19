@@ -3,8 +3,7 @@
 
 use syntax::node::db::SyntaxGroup;
 use syntax::node::kind::SyntaxKind;
-use syntax::node::{SyntaxNode, SyntaxNodeDetails};
-use syntax::token::{self, TokenKind};
+use syntax::node::SyntaxNode;
 
 use crate::formatter::{NodePath, SyntaxNodeFormat};
 
