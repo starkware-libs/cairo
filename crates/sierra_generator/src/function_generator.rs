@@ -60,11 +60,11 @@ pub fn get_function_code(
 
     // Copy the result to the top of the stack before returning.
     let return_variable_on_stack = context.allocate_sierra_variable();
-    statements.push(simple_statement(
-        context.store_temp_libfunc_id(signature.return_type)?,
-        &[res],
-        &[return_variable_on_stack.clone()],
-    ));
+    statements.push(pre_sierra::Statement::PushValues(vec![pre_sierra::PushValue {
+        var: res,
+        var_on_stack: return_variable_on_stack.clone(),
+        ty: context.get_db().get_concrete_type_id(signature.return_type)?,
+    }]));
 
     statements.push(return_statement(vec![return_variable_on_stack]));
 
