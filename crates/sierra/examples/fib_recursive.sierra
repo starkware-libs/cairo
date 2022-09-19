@@ -13,9 +13,11 @@ libfunc int_dup = int_dup;
 libfunc int_drop = int_drop;
 libfunc int_jump_nz = int_jump_nz;
 libfunc int_unwrap_nz = unwrap_nz<int>;
-libfunc get_gas_26 = get_gas<sym@gas26>;
-libfunc refund_gas_1 = refund_gas<sym@gas1>;
-libfunc refund_gas_3 = refund_gas<sym@gas3>;
+libfunc get_gas_1 = get_gas<sym@gas1>;
+libfunc refund_gas_1 = refund_gas<sym@gas2>;
+libfunc refund_gas_2 = refund_gas<sym@gas3>;
+libfunc refund_gas_3 = refund_gas<sym@gas4>;
+libfunc refund_gas_4 = refund_gas<sym@gas5>;
 libfunc alloc_locals = alloc_locals;
 libfunc call_fib = function_call<user@Fibonacci>;
 
@@ -25,7 +27,7 @@ int_const_1() -> (one);
 store_temp_int(one) -> (one);
 int_jump_nz(n) { 8(n) fallthrough() };
 // Statement #  4 - n == 0, so we return updated gb and 1.
-refund_gas_3(gb) -> (gb);
+refund_gas_1(gb) -> (gb);
 store_temp_gb(gb) -> (gb);
 store_temp_int(one) -> (one);
 return(gb, one);
@@ -34,22 +36,23 @@ int_unwrap_nz(n) -> (n);
 int_sub_1(n) -> (n_1);
 store_temp_int(n_1) -> (n_1);
 int_jump_nz(n_1) { 16(n_1) fallthrough() };
-// Statement # 13 - n == 1, so we return updated gb and 1.
-refund_gas_1(gb) -> (gb);
+// Statement # 12 - n == 1, so we return updated gb and 1.
+refund_gas_2(gb) -> (gb);
 store_temp_gb(gb) -> (gb);
 store_temp_int(one) -> (one);
 return(gb, one);
 // Statement # 16 - Get gas for the recursive calls.
 int_unwrap_nz(n_1) -> (n_1);
 int_drop(one) -> ();
-get_gas_26(gb) { 24(gb) fallthrough(gb) };
+get_gas_1(gb) { 25(gb) fallthrough(gb) };
 // Statement # 19 - Ran out of gas - returning update gb and error value.
+refund_gas_3(gb) -> (gb);
 store_temp_gb(gb) -> (gb);
 int_drop(n_1) -> ();
 int_const_minus_10000() -> (minus);
 store_temp_int(minus) -> (minus);
 return(gb, minus);
-// Statement # 24 - Performing both recursive calculations and returning their sum.
+// Statement # 25 - Performing both recursive calculations and returning their sum.
 store_temp_gb(gb) -> (gb);
 int_dup(n_1) -> (n_1, n_2);
 int_sub_1(n_2) -> (n_2);
@@ -60,6 +63,7 @@ store_local_int(r1) -> (r1);
 store_temp_gb(gb) -> (gb);
 store_temp_int(n_2) -> (n_2);
 call_fib(gb, n_2) -> (gb, r2);
+refund_gas_4(gb) -> (gb);
 store_temp_gb(gb) -> (gb);
 int_add(r1, r2) -> (r);
 store_temp_int(r) -> (r);
