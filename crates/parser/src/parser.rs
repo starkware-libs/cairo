@@ -618,9 +618,17 @@ impl<'a> Parser<'a> {
 
     /// Returns a GreenId of a node with kind PathSegment or None if a segment can't be parsed.
     fn try_parse_path_segment(&mut self) -> Option<PathSegmentGreen> {
-        let identifier = self.try_parse_token(TokenKind::Identifier)?;
-        // TODO(ilya, 10/10/2022): support generics.
-        Some(PathSegmentIdent::new_green(self.db, identifier).into())
+        match self.peek().kind {
+            TokenKind::Identifier => {
+                let identifier = self.try_parse_token(TokenKind::Identifier)?;
+                Some(PathSegmentIdent::new_green(self.db, identifier).into())
+            }
+            TokenKind::LT => Some(
+                PathSegmentGenericArgs::new_green(self.db, self.parse_non_optional_generic_args())
+                    .into(),
+            ),
+            _ => None,
+        }
     }
 
     /// Returns a GreenId of a node with kind PathSegment or None if a segment can't be parsed.
@@ -630,10 +638,7 @@ impl<'a> Parser<'a> {
         })
     }
 
-    fn parse_generic_args(&mut self) -> OptionGenericArgsGreen {
-        if self.peek().kind != TokenKind::LT {
-            return OptionGenericArgsEmpty::new_green(self.db).into();
-        }
+    fn parse_non_optional_generic_args(&mut self) -> OptionGenericArgsSomeGreen {
         let langle = self.take();
         let generic_args = GenericArgList::new_green(
             self.db,
@@ -646,6 +651,13 @@ impl<'a> Parser<'a> {
         );
         let rangle = self.parse_token(TokenKind::GT);
         OptionGenericArgsSome::new_green(self.db, langle, generic_args, rangle).into()
+    }
+
+    fn parse_generic_args(&mut self) -> OptionGenericArgsGreen {
+        if self.peek().kind != TokenKind::LT {
+            return OptionGenericArgsEmpty::new_green(self.db).into();
+        }
+        self.parse_non_optional_generic_args().into()
     }
 
     // ------------------------------- Helpers -------------------------------
