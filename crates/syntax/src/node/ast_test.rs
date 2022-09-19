@@ -1,12 +1,12 @@
 use pretty_assertions::assert_eq;
 
 use super::ast::{
-    ExprBinary, ExprLiteral, ExprPath, OptionGenericArgsEmpty, PathSegment, Terminal, Trivia,
+    ExprBinary, ExprLiteral, ExprPath, PathSegmentGreen, PathSegmentIdent, SyntaxFileGreen,
+    Terminal, Trivia,
 };
 use super::db::SyntaxDatabase;
 use super::kind::SyntaxKind;
 use super::{SyntaxGroup, SyntaxNode, SyntaxNodeDetails};
-use crate::node::ast::SyntaxFileGreen;
 use crate::{node, token};
 
 #[salsa::database(SyntaxDatabase)]
@@ -35,7 +35,7 @@ fn test_ast() {
         [
             (SyntaxNodeDetails::Syntax(SyntaxKind::ExprBinary), 0, 7),
             (SyntaxNodeDetails::Syntax(SyntaxKind::ExprPath), 0, 4),
-            (SyntaxNodeDetails::Syntax(SyntaxKind::PathSegment), 0, 4),
+            (SyntaxNodeDetails::Syntax(SyntaxKind::PathSegmentIdent), 0, 4),
             (SyntaxNodeDetails::Syntax(SyntaxKind::Terminal), 0, 4),
             (SyntaxNodeDetails::Syntax(SyntaxKind::Trivia), 0, 0),
             (
@@ -55,7 +55,6 @@ fn test_ast() {
                 3,
                 1
             ),
-            (SyntaxNodeDetails::Syntax(SyntaxKind::OptionGenericArgsEmpty), 4, 0),
             (SyntaxNodeDetails::Syntax(SyntaxKind::Terminal), 4, 2),
             (SyntaxNodeDetails::Syntax(SyntaxKind::Trivia), 4, 0),
             (
@@ -140,14 +139,7 @@ fn setup(db: &DatabaseForTesting) -> SyntaxNode {
         db,
         ExprPath::new_green(
             db,
-            vec![
-                PathSegment::new_green(
-                    db,
-                    terminals[0],
-                    OptionGenericArgsEmpty::new_green(db).into(),
-                )
-                .into(),
-            ],
+            vec![PathSegmentGreen::from(PathSegmentIdent::new_green(db, terminals[0])).into()],
         )
         .into(),
         terminals[1],

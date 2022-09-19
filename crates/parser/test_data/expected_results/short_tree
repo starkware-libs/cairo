@@ -3,13 +3,11 @@
     │   ├── child #0 (kind: ItemUse)
     │   │   ├── usekw (kind: Use): 'use'
     │   │   ├── name (kind: ExprPath)
-    │   │   │   ├── item #0 (kind: PathSegment)
-    │   │   │   │   ├── ident (kind: Identifier): 'std'
-    │   │   │   │   └── generic_args (kind: OptionGenericArgsEmpty) []
+    │   │   │   ├── item #0 (kind: PathSegmentIdent)
+    │   │   │   │   └── ident (kind: Identifier): 'std'
     │   │   │   ├── separator #0 (kind: ColonColon): '::'
-    │   │   │   └── item #1 (kind: PathSegment)
-    │   │   │       ├── ident (kind: Identifier): 'format'
-    │   │   │       └── generic_args (kind: OptionGenericArgsEmpty) []
+    │   │   │   └── item #1 (kind: PathSegmentIdent)
+    │   │   │       └── ident (kind: Identifier): 'format'
     │   │   └── semicolon (kind: Semicolon): ';'
     │   └── child #1 (kind: ItemFreeFunction)
     │       ├── funckw (kind: Function): 'func'
@@ -23,25 +21,22 @@
     │       │   │       └── type_clause (kind: TypeClause)
     │       │   │           ├── colon (kind: Colon): ':'
     │       │   │           └── ty (kind: ExprPath)
-    │       │   │               └── item #0 (kind: PathSegment)
-    │       │   │                   ├── ident (kind: Identifier): 'int'
-    │       │   │                   └── generic_args (kind: OptionGenericArgsEmpty) []
+    │       │   │               └── item #0 (kind: PathSegmentIdent)
+    │       │   │                   └── ident (kind: Identifier): 'int'
     │       │   ├── rparen (kind: RParen): ')'
     │       │   └── ret_ty (kind: ReturnTypeClause)
     │       │       ├── arrow (kind: Arrow): '->'
     │       │       └── ty (kind: ExprPath)
-    │       │           └── item #0 (kind: PathSegment)
-    │       │               ├── ident (kind: Identifier): 'felt'
-    │       │               └── generic_args (kind: OptionGenericArgsEmpty) []
+    │       │           └── item #0 (kind: PathSegmentIdent)
+    │       │               └── ident (kind: Identifier): 'felt'
     │       └── body (kind: ExprBlock)
     │           ├── lbrace (kind: LBrace): '{'
     │           ├── statements (kind: StatementList)
     │           │   └── child #0 (kind: StatementReturn)
     │           │       ├── returnkw (kind: Return): 'return'
     │           │       ├── expr (kind: ExprPath)
-    │           │       │   └── item #0 (kind: PathSegment)
-    │           │       │       ├── ident (kind: Identifier): 'a'
-    │           │       │       └── generic_args (kind: OptionGenericArgsEmpty) []
+    │           │       │   └── item #0 (kind: PathSegmentIdent)
+    │           │       │       └── ident (kind: Identifier): 'a'
     │           │       └── semicolon (kind: Semicolon): ';'
     │           └── rbrace (kind: RBrace): '}'
     └── eof (kind: EndOfFile).
