@@ -9,11 +9,11 @@ pub mod unordered_hash_map;
 pub mod parse_test_file;
 
 /// Similar to From / TryFrom, but returns an option.
-pub trait OptFrom<T>
+pub trait OptionFrom<T>
 where
     Self: Sized,
 {
-    fn opt_from(other: T) -> Option<Self>;
+    fn option_from(other: T) -> Option<Self>;
 }
 
 pub fn write_comma_separated<Iter: IntoIterator<Item = V>, V: std::fmt::Display>(

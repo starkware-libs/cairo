@@ -6,18 +6,19 @@ use std::collections::HashMap;
 
 use defs::diagnostic_utils::StableLocation;
 use defs::ids::{
-    GenericFunctionId, GenericTypeId, LocalVarLongId, MemberId, ModuleId, StructId, VarId,
+    GenericFunctionId, GenericTypeId, LocalVarLongId, MemberId, ModuleId, ModuleItemId, StructId,
+    VarId,
 };
 use diagnostics::Diagnostics;
 use smol_str::SmolStr;
 use syntax::node::ast::PathSegment;
 use syntax::node::db::SyntaxGroup;
-use syntax::node::helpers::TerminalEx;
+use syntax::node::helpers::{PathSegmentEx, TerminalEx};
 use syntax::node::ids::SyntaxStablePtrId;
 use syntax::node::{ast, TypedSyntaxNode};
 use syntax::token::TokenKind;
 use utils::ordered_hash_map::OrderedHashMap;
-use utils::OptFrom;
+use utils::OptionFrom;
 
 use super::objects::*;
 use crate::corelib::{core_binary_operator, unit_ty};
@@ -252,8 +253,9 @@ fn struct_ctor_expr(
 ) -> SemanticResult<Expr> {
     let db = ctx.db;
     let syntax_db = db.upcast();
-    let struct_id = resolve_item(ctx.db, ctx.module_id, &ctor_syntax.path(syntax_db))
-        .and_then(StructId::opt_from)
+    let item = resolve_item(ctx.db, ctx.module_id, &ctor_syntax.path(syntax_db))?;
+    let struct_id = ModuleItemId::option_from(item)
+        .and_then(StructId::option_from)
         .ok_or(SemanticDiagnosticKind::UnknownStruct)?;
     let members = db.struct_members(struct_id).unwrap_or_default();
     let mut member_exprs: OrderedHashMap<MemberId, ExprId> = OrderedHashMap::default();
@@ -365,24 +367,18 @@ fn expr_as_identifier(
     rhs_syntax: ast::Expr,
     syntax_db: &dyn SyntaxGroup,
 ) -> Result<SmolStr, SemanticDiagnosticKind> {
-    Ok(match rhs_syntax {
+    match rhs_syntax {
         ast::Expr::Path(path) => {
             let segments = path.elements(syntax_db);
             if segments.len() != 1 {
                 return Err(SemanticDiagnosticKind::InvalidMemberExpression);
             }
-
-            match &segments[0] {
-                PathSegment::Ident(ident_segment) => ident_segment.ident(syntax_db).text(syntax_db),
-                PathSegment::GenericArgs(_generic_args_segment) => {
-                    return Err(SemanticDiagnosticKind::InvalidMemberExpression);
-                }
-            }
+            segments[0]
+                .as_identifier(syntax_db)
+                .ok_or(SemanticDiagnosticKind::InvalidMemberExpression)
         }
-        _ => {
-            return Err(SemanticDiagnosticKind::InvalidMemberExpression);
-        }
-    })
+        _ => Err(SemanticDiagnosticKind::InvalidMemberExpression),
+    }
 }
 
 // TODO(spapini): Consider moving some checks here to the responsibility of the parser.
@@ -497,9 +493,9 @@ fn maybe_resolve_function(
 ) -> SemanticResult<FunctionId> {
     // TODO(spapini): Try to find function in multiple places (e.g. impls, or other modules for
     //   suggestions)
-    let generic_function = resolve_item(ctx.db, ctx.module_id, path)
-        .and_then(GenericFunctionId::opt_from)
-        .ok_or(SemanticDiagnosticKind::UnknownFunction)?;
+    let generic_function =
+        GenericFunctionId::option_from(resolve_item(ctx.db, ctx.module_id, path)?)
+            .ok_or(SemanticDiagnosticKind::UnknownFunction)?;
     specialize_function(ctx, generic_function, args)
 }
 
