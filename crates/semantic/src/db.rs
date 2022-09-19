@@ -9,7 +9,7 @@ use parser::db::ParserGroup;
 use smol_str::SmolStr;
 use utils::ordered_hash_map::OrderedHashMap;
 
-use crate::{corelib, expr, items, semantic, types, SemanticDiagnostic};
+use crate::{corelib, expr, items, semantic, types, FunctionId, SemanticDiagnostic};
 
 // Salsa database interface.
 // All queries starting with priv_ are for internal use only by this crate.
@@ -112,6 +112,11 @@ pub trait SemanticGroup:
         &self,
         generic_function: GenericFunctionId,
     ) -> Option<semantic::Signature>;
+
+    /// Returns the signature of a concrete function. This include free functions, extern functions,
+    /// etc...
+    #[salsa::invoke(items::functions::concrete_function_signature)]
+    fn concrete_function_signature(&self, function_id: FunctionId) -> Option<semantic::Signature>;
 
     // Expression.
     // ===========

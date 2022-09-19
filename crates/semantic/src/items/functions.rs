@@ -136,3 +136,17 @@ pub fn generic_function_signature(
         }
     }
 }
+
+pub fn concrete_function_signature(
+    db: &dyn SemanticGroup,
+    function_id: FunctionId,
+) -> Option<Signature> {
+    match db.lookup_intern_function(function_id) {
+        FunctionLongId::Concrete(ConcreteFunction { generic_function, generic_args, .. }) => {
+            assert!(generic_args.is_empty(), "Generic arguments are not supported yet.");
+            // TODO(lior): Specialize according to generic args on generics are supported.
+            db.generic_function_signature(generic_function)
+        }
+        FunctionLongId::Missing => None,
+    }
+}
