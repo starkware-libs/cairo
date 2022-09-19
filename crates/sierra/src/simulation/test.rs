@@ -10,7 +10,7 @@ use super::{core, SimulationError};
 use crate::extensions::core::CoreLibFunc;
 use crate::extensions::lib_func::SpecializationContext;
 use crate::extensions::GenericLibFunc;
-use crate::program::{Function, GenericArg, StatementIdx};
+use crate::program::{Function, FunctionSignature, GenericArg, StatementIdx};
 
 fn type_arg(name: &str) -> GenericArg {
     GenericArg::Type(name.into())
@@ -33,7 +33,11 @@ fn simulate(
     let mock_func_entry = |id: &str| {
         (
             id.into(),
-            Function { id: id.into(), entry: StatementIdx(0), ret_types: vec![], params: vec![] },
+            Function {
+                id: id.into(),
+                signature: FunctionSignature { ret_types: vec![], params: vec![] },
+                entry: StatementIdx(0),
+            },
         )
     };
     core::simulate(

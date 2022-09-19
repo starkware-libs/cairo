@@ -96,12 +96,12 @@ impl ProgramAnnotations {
         let mut return_annotations: HashMap<&Vec<ConcreteTypeId>, ReturnTypesAnnotation> =
             HashMap::new();
         for func in functions {
-            let return_annotation = match return_annotations.entry(&func.ret_types) {
+            let return_annotation = match return_annotations.entry(&func.signature.ret_types) {
                 Entry::Occupied(entry) => entry.get().clone(),
                 Entry::Vacant(entry) => {
                     let new_type_annotations =
                         ReturnTypesAnnotation(annotations.return_types.len());
-                    annotations.return_types.push(func.ret_types.clone());
+                    annotations.return_types.push(func.signature.ret_types.clone());
                     entry.insert(new_type_annotations.clone());
                     new_type_annotations
                 }

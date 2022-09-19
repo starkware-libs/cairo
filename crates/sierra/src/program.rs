@@ -54,15 +54,22 @@ pub struct ConcreteLibFuncLongId {
     pub generic_args: Vec<GenericArg>,
 }
 
-/// Descriptor of a function.
+/// Represents the signature of a function.
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct GenFunction<StatementId> {
-    /// The name of the function.
-    pub id: FunctionId,
+pub struct FunctionSignature {
     /// The arguments for the function.
     pub params: Vec<Param>,
     /// The return types.
     pub ret_types: Vec<ConcreteTypeId>,
+}
+
+/// Represents a function (its name, signature and entry point).
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct GenFunction<StatementId> {
+    /// The name of the function.
+    pub id: FunctionId,
+    /// The arguments and return types.
+    pub signature: FunctionSignature,
     /// The statement id where the function starts.
     pub entry: StatementId,
 }

@@ -8,7 +8,7 @@ use super::SpecializationError::{
     self, MissingFunction, UnsupportedGenericArg, UnsupportedId, WrongNumberOfGenericArgs,
 };
 use crate::extensions::{GenericLibFunc, GenericType};
-use crate::program::{Function, GenericArg, StatementIdx};
+use crate::program::{Function, FunctionSignature, GenericArg, StatementIdx};
 
 fn type_arg(name: &str) -> GenericArg {
     GenericArg::Type(name.into())
@@ -106,8 +106,7 @@ fn find_libfunc_specialization(
         Function {
             id: "RegisteredFunction".into(),
             entry: StatementIdx(5),
-            ret_types: vec![],
-            params: vec![],
+            signature: FunctionSignature { ret_types: vec![], params: vec![] },
         },
     )]);
     CoreLibFunc::by_id(&id.into())
