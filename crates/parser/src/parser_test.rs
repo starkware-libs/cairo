@@ -169,6 +169,7 @@ fn compare_printed_and_expected_maybe_fix(
     expected_output_filename: &str,
     fix: bool,
 ) {
+    _debug_failure(printed.clone(), expected.clone());
     if printed != expected {
         if fix {
             println!(

@@ -26,6 +26,7 @@ pub struct Parser<'a> {
     lexer: Lexer<'a>,
     /// The next terminal to handle.
     next_terminal: LexerTerminal,
+    /// A vector of pending trivia to be added as leading trivia to the next valid terminal.
     pending_trivia: Vec<TriviumGreen>,
     /// The current offset, excluding the current terminal.
     offset: u32,
@@ -90,7 +91,7 @@ impl<'a> Parser<'a> {
             kind: missing_kind,
             span: TextSpan {
                 start: TextOffset(next_offset),
-                end: TextOffset(next_offset + self.peek().token.0.width(self.db) as usize),
+                end: TextOffset(next_offset + self.peek().text.len() as usize),
             },
         });
         T::missing(self.db)
@@ -99,18 +100,17 @@ impl<'a> Parser<'a> {
     pub fn parse_syntax_file(mut self) -> SyntaxFileGreen {
         let items = ItemList::new_green(
             self.db,
-            self.parse_list(Self::try_parse_top_level_item, SyntaxKind::TerminalEndOfFile),
+            self.parse_list(Self::try_parse_top_level_item, is_of_kind!(), "item"),
         );
-        while self.peek().kind != SyntaxKind::TerminalEndOfFile {
-            self.skip_token();
-        }
+        // This will not panic since the above parsing only stops when reaches EOF.
+        assert_eq!(self.peek().kind, SyntaxKind::TerminalEndOfFile);
 
         // Fix offset in case there are skipped tokens before EOF. This is usually done in
         // self.take_raw() but here we don't call self.take_raw as it tries to read the next
         // token, which doesn't exist.
         self.offset += self.current_width;
 
-        let eof = self.add_skipped_to_terminal::<TerminalEndOfFile>(self.next_terminal.clone());
+        let eof = self.add_trivia_to_terminal::<TerminalEndOfFile>(self.next_terminal.clone());
         SyntaxFile::new_green(self.db, items, eof)
     }
 
@@ -144,9 +144,9 @@ impl<'a> Parser<'a> {
     fn expect_struct(&mut self) -> ItemStructGreen {
         let struct_kw = self.take::<TerminalStruct>();
         let name = self.parse_token::<TerminalIdentifier>();
-        let generic_args = self.parse_generic_args();
+        let generic_args = self.parse_optional_generic_args();
         let lbrace = self.parse_token::<TerminalLBrace>();
-        let members = self.parse_param_list(SyntaxKind::TerminalRBrace);
+        let members = self.parse_param_list();
         let rbrace = self.parse_token::<TerminalRBrace>();
         ItemStruct::new_green(self.db, struct_kw, name, generic_args, lbrace, members, rbrace)
     }
@@ -155,7 +155,7 @@ impl<'a> Parser<'a> {
     fn expect_function_signature(&mut self) -> FunctionSignatureGreen {
         // TODO(yuval): support generics
         let lparen = self.parse_token::<TerminalLParen>();
-        let params = self.parse_param_list(SyntaxKind::TerminalRParen);
+        let params = self.parse_param_list();
         let rparen = self.parse_token::<TerminalRParen>();
         let return_type_clause = self.parse_option_return_type_clause();
         FunctionSignature::new_green(self.db, lparen, params, rparen, return_type_clause)
@@ -169,7 +169,7 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalFunction => {
                 let function_kw = self.take::<TerminalFunction>();
                 let name = self.parse_token::<TerminalIdentifier>();
-                let generic_args = self.parse_generic_args();
+                let generic_args = self.parse_optional_generic_args();
                 let signature = self.expect_function_signature();
                 let semicolon = self.parse_token::<TerminalSemicolon>();
                 ItemExternFunction::new_green(
@@ -187,7 +187,7 @@ impl<'a> Parser<'a> {
                 // TODO(spapini): Do'nt return ItemExternType if we don't see a type.
                 let type_kw = self.parse_token::<TerminalType>();
                 let name = self.parse_token::<TerminalIdentifier>();
-                let generic_args = self.parse_generic_args();
+                let generic_args = self.parse_optional_generic_args();
                 let semicolon = self.parse_token::<TerminalSemicolon>();
                 // If the next token is not type, assume it is missing.
                 ItemExternType::new_green(
@@ -217,7 +217,7 @@ impl<'a> Parser<'a> {
     fn expect_free_function(&mut self) -> ItemFreeFunctionGreen {
         let function_kw = self.take::<TerminalFunction>();
         let name = self.parse_token::<TerminalIdentifier>();
-        let generic_args = self.parse_generic_args();
+        let generic_args = self.parse_optional_generic_args();
         let signature = self.expect_function_signature();
         let function_body = self.parse_block();
         ItemFreeFunction::new_green(
@@ -349,8 +349,9 @@ impl<'a> Parser<'a> {
             self.db,
             self.parse_separated_list::<Expr, TerminalComma, ExprListElementOrSeparatorGreen>(
                 Self::try_parse_expr,
+                is_of_kind!(rparen, block, rbrace, top_level),
                 SyntaxKind::TerminalComma,
-                SyntaxKind::TerminalRParen,
+                "expression",
             ),
         );
         let rparen = self.parse_token::<TerminalRParen>();
@@ -365,8 +366,9 @@ impl<'a> Parser<'a> {
             self.db,
             self.parse_separated_list::<StructArg, TerminalComma, StructArgListElementOrSeparatorGreen>(
                 Self::try_parse_struct_ctor_argument,
+                is_of_kind!(rparen, block, rbrace, top_level),
                 SyntaxKind::TerminalComma,
-                SyntaxKind::TerminalRBrace,
+                "struct constructor argument",
             ),
         );
         let rbrace = self.parse_token::<TerminalRBrace>();
@@ -398,8 +400,9 @@ impl<'a> Parser<'a> {
         let exprs: Vec<ExprListElementOrSeparatorGreen> = self
             .parse_separated_list::<Expr, TerminalComma, ExprListElementOrSeparatorGreen>(
                 Self::try_parse_expr,
+                is_of_kind!(rparen, block, rbrace, top_level),
                 SyntaxKind::TerminalComma,
-                SyntaxKind::TerminalRParen,
+                "expression",
             );
         let rparen = self.parse_token::<TerminalRParen>();
 
@@ -457,7 +460,7 @@ impl<'a> Parser<'a> {
         let lbrace = self.parse_token::<TerminalLBrace>();
         let statements = StatementList::new_green(
             self.db,
-            self.parse_list(Self::try_parse_statement, SyntaxKind::TerminalRBrace),
+            self.parse_list(Self::try_parse_statement, is_of_kind!(rbrace, top_level), "statement"),
         );
         let rbrace = self.parse_token::<TerminalRBrace>();
         ExprBlock::new_green(self.db, lbrace, statements, rbrace)
@@ -474,8 +477,9 @@ impl<'a> Parser<'a> {
             self.db,
             self.parse_separated_list::<MatchArm, TerminalComma, MatchArmsElementOrSeparatorGreen>(
                 Self::try_parse_match_arm,
+                is_of_kind!(block, rbrace, top_level),
                 SyntaxKind::TerminalComma,
-                SyntaxKind::TerminalRBrace,
+                "match arm",
             ),
         );
         let rbrace = self.parse_token::<TerminalRBrace>();
@@ -559,9 +563,9 @@ impl<'a> Parser<'a> {
     fn try_parse_type_clause(&mut self) -> Option<TypeClauseGreen> {
         if self.peek().kind == SyntaxKind::TerminalColon {
             let colon = self.take::<TerminalColon>();
-            let ty = self
-                .try_parse_type_expr()
-                .unwrap_or_else(|| ExprMissing::new_green(self.db).into());
+            let ty = self.try_parse_type_expr().unwrap_or_else(|| {
+                self.create_and_report_missing::<Expr>(ParserDiagnosticKind::MissingTypeExpression)
+            });
             Some(TypeClause::new_green(self.db, colon, ty))
         } else {
             None
@@ -573,9 +577,9 @@ impl<'a> Parser<'a> {
     fn parse_option_return_type_clause(&mut self) -> OptionReturnTypeClauseGreen {
         if self.peek().kind == SyntaxKind::TerminalArrow {
             let arrow = self.take::<TerminalArrow>();
-            let return_type = self
-                .try_parse_type_expr()
-                .unwrap_or_else(|| ExprMissing::new_green(self.db).into());
+            let return_type = self.try_parse_type_expr().unwrap_or_else(|| {
+                self.create_and_report_missing::<Expr>(ParserDiagnosticKind::MissingTypeExpression)
+            });
             ReturnTypeClause::new_green(self.db, arrow, return_type).into()
         } else {
             OptionReturnTypeClauseEmpty::new_green(self.db).into()
@@ -583,13 +587,14 @@ impl<'a> Parser<'a> {
     }
 
     /// Returns a GreenId of a node with kind ParamList.
-    fn parse_param_list(&mut self, closing_token: SyntaxKind) -> ParamListGreen {
+    fn parse_param_list(&mut self) -> ParamListGreen {
         ParamList::new_green(
             self.db,
             self.parse_separated_list::<Param, TerminalComma, ParamListElementOrSeparatorGreen>(
                 Self::try_parse_param,
+                is_of_kind!(rparen, block, lbrace, rbrace, top_level),
                 SyntaxKind::TerminalComma,
-                closing_token,
+                "parameter",
             ),
         )
     }
@@ -627,10 +632,16 @@ impl<'a> Parser<'a> {
 
     /// Returns a GreenId of a node with kind PathSegment or None if a segment can't be parsed.
     fn try_parse_path_segment(&mut self) -> Option<PathSegmentGreen> {
-        let identifier = self.try_parse_token::<TerminalIdentifier>()?;
-        // TODO(yuval): support generics.
-        let generic_args = OptionGenericArgsEmpty::new_green(self.db);
-        Some(PathSegment::new_green(self.db, identifier, generic_args.into()))
+        match self.peek().kind {
+            SyntaxKind::TerminalIdentifier => {
+                let identifier = self.try_parse_token::<TerminalIdentifier>()?;
+                Some(PathSegmentIdent::new_green(self.db, identifier).into())
+            }
+            SyntaxKind::TerminalLT => {
+                Some(PathSegmentGenericArgs::new_green(self.db, self.expect_generic_args()).into())
+            }
+            _ => None,
+        }
     }
 
     /// Returns a GreenId of a node with kind PathSegment or None if a segment can't be parsed.
@@ -640,21 +651,28 @@ impl<'a> Parser<'a> {
         })
     }
 
-    fn parse_generic_args(&mut self) -> OptionGenericArgsGreen {
-        if self.peek().kind != SyntaxKind::TerminalLT {
-            return OptionGenericArgsEmpty::new_green(self.db).into();
-        }
+    /// Assumes the current token is LT.
+    /// Expected pattern: \< <GenericArgList> \>
+    fn expect_generic_args(&mut self) -> OptionGenericArgsSomeGreen {
         let langle = self.take::<TerminalLT>();
         let generic_args = GenericArgList::new_green(
             self.db,
             self.parse_separated_list::<Expr, TerminalComma, GenericArgListElementOrSeparatorGreen>(
                 Self::try_parse_expr,
+                is_of_kind!(rangle, rparen, block, lbrace, rbrace, top_level),
                 SyntaxKind::TerminalComma,
-                SyntaxKind::TerminalGT,
+                "expression",
             ),
         );
         let rangle = self.parse_token::<TerminalGT>();
         OptionGenericArgsSome::new_green(self.db, langle, generic_args, rangle).into()
+    }
+
+    fn parse_optional_generic_args(&mut self) -> OptionGenericArgsGreen {
+        if self.peek().kind != SyntaxKind::TerminalLT {
+            return OptionGenericArgsEmpty::new_green(self.db).into();
+        }
+        self.expect_generic_args().into()
     }
 
     // ------------------------------- Helpers -------------------------------
@@ -668,10 +686,11 @@ impl<'a> Parser<'a> {
     fn parse_list<ElementGreen>(
         &mut self,
         try_parse_list_element: fn(&mut Self) -> Option<ElementGreen>,
-        closing: SyntaxKind,
+        should_stop: fn(SyntaxKind) -> bool,
+        element_name: &'static str,
     ) -> Vec<ElementGreen> {
         let mut children: Vec<ElementGreen> = Vec::new();
-        while self.peek().kind != closing && self.peek().kind != SyntaxKind::TerminalEndOfFile {
+        loop {
             let element = try_parse_list_element(self);
             if let Some(green) = element {
                 children.push(green);
@@ -699,39 +718,38 @@ impl<'a> Parser<'a> {
     >(
         &mut self,
         try_parse_list_element: fn(&mut Self) -> Option<Element::Green>,
+        should_stop: fn(SyntaxKind) -> bool,
         separator: SyntaxKind,
-        closing: SyntaxKind,
+        element_name: &'static str,
     ) -> Vec<ElementOrSeparatorGreen>
     where
         ElementOrSeparatorGreen: From<Separator::Green> + From<Element::Green>,
     {
         let mut children: Vec<ElementOrSeparatorGreen> = Vec::new();
-        let mut last_is_missing = false;
-        while self.peek().kind != closing && self.peek().kind != SyntaxKind::TerminalEndOfFile {
-            let element = try_parse_list_element(self);
-            // None means try_parse_list_element could not parse the next tokens as the expected
-            // element.
-            match element {
+        loop {
+            match try_parse_list_element(self) {
+                None if should_stop(self.peek().kind) => {
+                    break;
+                }
                 None => {
                     self.skip_token(ParserDiagnosticKind::SkippedElement { element_name });
                     continue;
                 }
-                Some(green) => {
-                    let separator = if self.peek().kind == separator {
-                        last_is_missing = false;
-                        self.take::<Separator>()
-                    } else {
-                        last_is_missing = true;
-                        Separator::missing(self.db)
-                    };
-
-                    children.push(green.into());
-                    children.push(separator.into());
+                Some(element) => {
+                    children.push(element.into());
                 }
-            }
-        }
-        if last_is_missing {
-            children.pop();
+            };
+
+            let separator = match self.try_parse_token::<Separator>() {
+                None if should_stop(self.peek().kind) => {
+                    break;
+                }
+                None => self.create_and_report_missing::<Separator>(
+                    ParserDiagnosticKind::MissingToken(separator),
+                ),
+                Some(separator) => separator,
+            };
+            children.push(separator.into());
         }
         children
     }
@@ -752,89 +770,51 @@ impl<'a> Parser<'a> {
     /// Skips a token. A skipped token is a token which is not expected where it is found. Skipping
     /// this token means reporting an error and ignoring it and continuing the compilation as if it
     /// wasn't there.
-    fn skip_token(&mut self) {
+    fn skip_token(&mut self, diagnostic_kind: ParserDiagnosticKind) {
         let terminal = self.take_raw();
-        self.skipped_terminals.push(terminal);
+
+        let diag_start =
+            (terminal.leading_trivia.iter().map(|trivium| trivium.0.width(self.db)).sum::<u32>()
+                + self.offset) as usize;
+        let diag_end = diag_start + terminal.text.len();
+
+        // Add to pending trivia.
+        self.pending_trivia.extend(terminal.leading_trivia);
+        self.pending_trivia.push(TokenSkipped::new_green(self.db, terminal.text).into());
+        self.pending_trivia.extend(terminal.trailing_trivia);
+        self.diagnostics.add(ParserDiagnostic {
+            file_id: self.file_id,
+            kind: diagnostic_kind,
+            span: TextSpan {
+                start: TextOffset(diag_start as usize),
+                end: TextOffset(diag_end as usize),
+            },
+        });
+    }
+
+    /// Builds a new terminal to replace the given terminal by gluing the recently skipped terminals
+    /// to the given terminal as extra leading trivia.
+    fn add_trivia_to_terminal<Terminal: syntax::node::Terminal>(
+        &mut self,
+        lexer_terminal: LexerTerminal,
+    ) -> Terminal::Green {
+        let LexerTerminal { text, kind: _, leading_trivia, trailing_trivia } = lexer_terminal;
+        let token = Terminal::TokenType::new_green(self.db, text);
+        let mut new_leading_trivia = mem::take(&mut self.pending_trivia);
+        new_leading_trivia.extend(leading_trivia);
+        Terminal::new_green(
+            self.db,
+            Trivia::new_green(self.db, new_leading_trivia),
+            token,
+            Trivia::new_green(self.db, trailing_trivia),
+        )
     }
 
     /// Takes a token from the Lexer and place it in self.current. If tokens were skipped, glue them
     /// to this token as leading trivia.
     fn take<Terminal: syntax::node::Terminal>(&mut self) -> Terminal::Green {
         let token = self.take_raw();
-        self.add_skipped_to_terminal::<Terminal>(token)
-    }
-
-    /// Builds a new terminal to replace the given terminal by gluing the recently skipped terminals
-    /// to the given terminal as extra leading trivia.
-    fn add_skipped_to_terminal<Terminal: syntax::node::Terminal>(
-        &mut self,
-        lexer_terminal: LexerTerminal,
-    ) -> Terminal::Green {
-        let LexerTerminal { text, kind: _, leading_trivia, trailing_trivia } = lexer_terminal;
-        let token = Terminal::TokenType::new_green(self.db, text);
-        if self.skipped_terminals.is_empty() {
-            return Terminal::new_green(
-                self.db,
-                Trivia::new_green(self.db, leading_trivia),
-                token,
-                Trivia::new_green(self.db, trailing_trivia),
-            );
-        }
-
-        let mut total_width: u32 = 0;
-
-        // Collect all the skipped terminals.
-        let skipped_terminals = mem::take(&mut self.skipped_terminals);
-
-        // Build a replacement for the leading trivia.
-        let mut new_leading_trivia_children = vec![];
-        for lexer_terminal in skipped_terminals {
-            total_width += lexer_terminal.width(self.db);
-            let LexerTerminal { text, kind: _, leading_trivia, trailing_trivia } = lexer_terminal;
-            new_leading_trivia_children.extend(leading_trivia);
-            // TODO(yuval): consider somehow adding kind to skipped tokens.
-            new_leading_trivia_children.push(TokenSkipped::new_green(self.db, text).into());
-            new_leading_trivia_children.extend(trailing_trivia);
-        }
-
-        new_leading_trivia_children.extend(leading_trivia);
-
-        self.report_skipped_diagnostics(total_width, &new_leading_trivia_children);
-
-        let new_leading_trivia = Trivia::new_green(self.db, new_leading_trivia_children);
-        let new_trailing_trivia = Trivia::new_green(self.db, trailing_trivia);
-
-        // Build a replacement for the current terminal, with the new leading trivia instead of the
-        // old one.
-        Terminal::new_green(self.db, new_leading_trivia, token, new_trailing_trivia)
-    }
-
-    /// Given a sequence of Trivia nodes, finds consecutive SkippedTrivia and reports to
-    /// diagnostics.
-    fn report_skipped_diagnostics(&mut self, total_width: u32, trivia: &[TriviumGreen]) {
-        // Report diagnostics for each consecutive batch of skipped tokens.
-        let mut append_diagnostic = |start, end| {
-            if end > start {
-                self.diagnostics.add(ParserDiagnostic {
-                    file_id: self.file_id,
-                    kind: ParserDiagnosticKind::SkippedTokens,
-                    span: TextSpan { start, end },
-                });
-            }
-        };
-        // TODO(spapini): Clean up by always saving offsets as TextOffset, and possible not use
-        // offset arithmetic, and instead, keep the correct TextOffset when generated.
-        let current_start = TextOffset((self.offset - total_width) as usize);
-        let current_offset = current_start;
-        for trivium in trivia.iter().copied() {
-            let _width = trivium.0.width(self.db);
-            let node = self.db.lookup_intern_green(trivium.0);
-            // TODO(yg): complete after rebase (use spapini's help...)
-            match node.details {
-                _ => {}
-            };
-        }
-        append_diagnostic(current_start, current_offset);
+        self.add_trivia_to_terminal::<Terminal>(token)
     }
 
     /// If the current terminal is of kind `Terminal`, returns its Green wrapper. Otherwise, returns

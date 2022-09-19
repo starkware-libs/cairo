@@ -6,8 +6,8 @@ use filesystem::ids::{CrateId, Directory, FileId};
 use itertools::chain;
 use parser::db::ParserGroup;
 use smol_str::SmolStr;
-use syntax::node::ast::SyntaxFile;
-use syntax::node::db::{AsSyntaxGroup, SyntaxGroup};
+use syntax::node::ast::{ItemUse, SyntaxFile};
+use syntax::node::db::SyntaxGroup;
 use syntax::node::{ast, Terminal, TypedSyntaxNode};
 use utils::ordered_hash_map::OrderedHashMap;
 
@@ -179,6 +179,15 @@ fn module_submodules(db: &dyn DefsGroup, module_id: ModuleId) -> Option<Vec<Modu
     Some(db.module_data(module_id)?.submodules.keys().copied().map(ModuleId::Submodule).collect())
 }
 
+fn get_path_name(db: &dyn SyntaxGroup, item_use: &ItemUse) -> SmolStr {
+    let last_segment = item_use.name(db).elements(db).last().cloned().unwrap();
+    // TODO(yg): extract_matches
+    match last_segment {
+        ast::PathSegment::GenericArgs(_) => panic!("Expected an ident"),
+        ast::PathSegment::Ident(ident) => ident.ident(db).text(db),
+    }
+}
+
 fn module_items(db: &dyn DefsGroup, module_id: ModuleId) -> Option<ModuleItems> {
     let syntax_db = db.upcast();
     let module_data = db.module_data(module_id)?;
@@ -189,10 +198,10 @@ fn module_items(db: &dyn DefsGroup, module_id: ModuleId) -> Option<ModuleItems> 
                 syntax.name(syntax_db).text(syntax_db),
                 ModuleItemId::Submodule(*submodule_id),
             )),
-            module_data.uses.iter().flat_map(|(use_id, syntax)| syntax
-                .name(syntax_db)
-                .identifier(syntax_db)
-                .map(|ident| (ident, ModuleItemId::Use(*use_id)))),
+            module_data.uses.iter().map(|(use_id, syntax)| (
+                get_path_name(syntax_db, syntax),
+                ModuleItemId::Use(*use_id)
+            )),
             module_data.free_functions.iter().map(|(free_function_id, syntax)| (
                 syntax.name(syntax_db).text(syntax_db),
                 ModuleItemId::FreeFunction(*free_function_id),

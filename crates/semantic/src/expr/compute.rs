@@ -10,12 +10,10 @@ use defs::ids::{
 };
 use diagnostics::Diagnostics;
 use smol_str::SmolStr;
-use syntax::node::ast::PathSegment;
+use syntax::node::ast::{BinaryOperator, PathSegment};
 use syntax::node::db::SyntaxGroup;
-use syntax::node::helpers::TerminalEx;
 use syntax::node::ids::SyntaxStablePtrId;
 use syntax::node::{ast, Terminal, TypedSyntaxNode};
-use syntax::token::TokenKind;
 use utils::ordered_hash_map::OrderedHashMap;
 use utils::OptFrom;
 
@@ -128,12 +126,12 @@ pub fn maybe_compute_expr_semantic(
             let binary_op = binary_op_syntax.op(syntax_db);
             let lexpr = compute_expr_semantic(ctx, binary_op_syntax.lhs(syntax_db));
             let rhs_syntax = binary_op_syntax.rhs(syntax_db);
-            if binary_op == TokenKind::Dot {
+            if matches!(binary_op, BinaryOperator::Dot(_)) {
                 return member_access_expr(ctx, lexpr, rhs_syntax, stable_ptr);
             }
             let rexpr = compute_expr_semantic(ctx, rhs_syntax);
             let arg_exprs = [lexpr, rexpr];
-            let generic_function = core_binary_operator(db, operator_kind)?;
+            let generic_function = core_binary_operator(db, binary_op)?;
             let function = specialize_function(ctx, generic_function, &arg_exprs)?;
             let args = arg_exprs.into_iter().map(|expr| db.intern_expr(expr)).collect();
             semantic::Expr::ExprFunctionCall(semantic::ExprFunctionCall {
@@ -457,7 +455,7 @@ fn resolve_variable(
 /// Resolves a variable given a context and a simple name.
 pub fn resolve_variable_by_name(
     ctx: &mut ComputationContext<'_>,
-    identifier: &ast::Terminal,
+    identifier: &ast::TerminalIdentifier,
 ) -> SemanticResult<semantic::Expr> {
     let variable_name = identifier.text(ctx.db.upcast());
     let mut maybe_env = Some(&*ctx.environment);
