@@ -16,10 +16,16 @@ where
     fn opt_from(other: T) -> Option<Self>;
 }
 
-pub fn write_comma_separated<V: std::fmt::Display>(
+pub fn write_comma_separated<Iter: IntoIterator<Item = V>, V: std::fmt::Display>(
     f: &mut fmt::Formatter<'_>,
-    values: &[V],
+    values: Iter,
 ) -> fmt::Result {
-    values.iter().take(1).try_for_each(|v| write!(f, "{v}"))?;
-    values.iter().skip(1).try_for_each(|v| write!(f, ", {v}"))
+    let mut iter = values.into_iter();
+    if let Some(value) = iter.next() {
+        write!(f, "{value}")?;
+    }
+    for value in iter {
+        write!(f, ", {value}")?;
+    }
+    Ok(())
 }
