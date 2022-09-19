@@ -41,14 +41,15 @@ return(gb, one);
 // Statement # 16 - Get gas for the recursive calls.
 int_unwrap_nz(n_1) -> (n_1);
 int_drop(one) -> ();
-get_gas(gb) { 24(gb) fallthrough(gb) }; // Statement 18.
+get_gas(gb) { 25(gb) fallthrough(gb) }; // Statement 18.
 // Statement # 19 - Ran out of gas - returning update gb and error value.
+refund_gas(gb) -> (gb);
 store_temp_gb(gb) -> (gb);
 int_drop(n_1) -> ();
 int_const_minus_10000() -> (minus);
 store_temp_int(minus) -> (minus);
 return(gb, minus);
-// Statement # 24 - Performing both recursive calculations and returning their sum.
+// Statement # 25 - Performing both recursive calculations and returning their sum.
 store_temp_gb(gb) -> (gb);
 int_dup(n_1) -> (n_1, n_2);
 int_sub_1(n_2) -> (n_2);
@@ -59,6 +60,7 @@ store_local_int(r1) -> (r1);
 store_temp_gb(gb) -> (gb);
 store_temp_int(n_2) -> (n_2);
 call_fib(gb, n_2) -> (gb, r2);
+refund_gas(gb) -> (gb); // Statement 35.
 store_temp_gb(gb) -> (gb);
 int_add(r1, r2) -> (r);
 store_temp_int(r) -> (r);
