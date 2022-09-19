@@ -61,9 +61,9 @@ impl fmt::Display for ConcreteLibFuncLongId {
 impl fmt::Display for Function {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}@{}(", self.id, self.entry.0)?;
-        write_comma_separated(f, &self.params)?;
+        write_comma_separated(f, &self.signature.params)?;
         write!(f, ") -> (")?;
-        write_comma_separated(f, &self.ret_types)?;
+        write_comma_separated(f, &self.signature.ret_types)?;
         write!(f, ")")
     }
 }

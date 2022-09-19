@@ -70,8 +70,10 @@ pub fn generate_program_code(
             .into_iter()
             .map(|function| program::Function {
                 id: function.id.clone(),
-                params: function.parameters.clone(),
-                ret_types: function.ret_types.clone(),
+                signature: program::FunctionSignature {
+                    params: function.parameters.clone(),
+                    ret_types: function.ret_types.clone(),
+                },
                 entry: label_replacer.handle_label_id(function.entry_point),
             })
             .collect(),

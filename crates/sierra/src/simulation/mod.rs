@@ -67,15 +67,15 @@ impl SimulationContext<'_> {
     ) -> Result<Vec<Vec<MemCell>>, SimulationError> {
         let func = self.registry.get_function(function_id)?;
         let mut current_statement_id = func.entry;
-        if func.params.len() != inputs.len() {
+        if func.signature.params.len() != inputs.len() {
             return Err(SimulationError::FunctionArgumentCountMismatch {
                 function_id: func.id.clone(),
-                expected: func.params.len(),
+                expected: func.signature.params.len(),
                 actual: inputs.len(),
             });
         }
         let mut state = HashMap::<VarId, Vec<MemCell>>::from_iter(
-            izip!(func.params.iter(), inputs.into_iter())
+            izip!(func.signature.params.iter(), inputs.into_iter())
                 .map(|(param, input)| (param.id.clone(), input)),
         );
         loop {

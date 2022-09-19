@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use super::error::{ExtensionError, SpecializationError};
 use crate::ids::{ConcreteTypeId, FunctionId, GenericLibFuncId, GenericTypeId};
-use crate::program::{Function, GenericArg};
+use crate::program::{Function, FunctionSignature, GenericArg};
 
 pub type FunctionMap = HashMap<FunctionId, Function>;
 /// Mapping from the arguments for generating a concrete type (the generic-id and the arguments) to
@@ -36,7 +36,7 @@ pub trait SignatureSpecializationContext {
     fn get_function_signature(
         &self,
         function_id: &FunctionId,
-    ) -> Result<&Function, SpecializationError>;
+    ) -> Result<&FunctionSignature, SpecializationError>;
 }
 
 impl SignatureSpecializationContext for SpecializationContext<'_> {
@@ -54,10 +54,12 @@ impl SignatureSpecializationContext for SpecializationContext<'_> {
     fn get_function_signature(
         &self,
         function_id: &FunctionId,
-    ) -> Result<&Function, SpecializationError> {
-        self.functions
+    ) -> Result<&FunctionSignature, SpecializationError> {
+        Ok(&self
+            .functions
             .get(function_id)
-            .ok_or_else(|| SpecializationError::MissingFunction(function_id.clone()))
+            .ok_or_else(|| SpecializationError::MissingFunction(function_id.clone()))?
+            .signature)
     }
 }
 
