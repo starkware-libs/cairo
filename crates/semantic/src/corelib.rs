@@ -1,7 +1,7 @@
 use defs::ids::{GenericFunctionId, GenericTypeId, ModuleId};
 use filesystem::ids::CrateLongId;
 use syntax::token::TokenKind;
-use utils::OptFrom;
+use utils::OptionFrom;
 
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind;

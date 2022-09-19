@@ -8,7 +8,7 @@ use filesystem::ids::{CrateLongId, Directory};
 use parser::db::ParserDatabase;
 use pretty_assertions::assert_eq;
 use syntax::node::db::{SyntaxDatabase, SyntaxGroup};
-use utils::{extract_matches, OptFrom};
+use utils::{extract_matches, OptionFrom};
 
 use crate::db::{SemanticDatabase, SemanticGroup};
 use crate::semantic;

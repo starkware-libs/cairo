@@ -9,7 +9,7 @@ pub mod unordered_hash_map;
 pub mod parse_test_file;
 
 /// Similar to From / TryFrom, but returns an option.
-pub trait OptFrom<T>
+pub trait OptionFrom<T>
 where
     Self: Sized,
 {
