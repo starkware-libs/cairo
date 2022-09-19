@@ -2,15 +2,13 @@ use pretty_assertions::assert_eq;
 use smol_str::SmolStr;
 
 use super::ast::{
-    ExprBinary, ExprPath, PathSegmentGreen, PathSegmentIdent, SyntaxFileGreen, Terminal, Trivia,
+    ExprBinary, ExprPath, PathSegmentGreen, PathSegmentIdent, SyntaxFileGreen, TerminalIdentifier,
+    TerminalLiteralNumber, TerminalPlus, TokenIdentifier, TokenLiteralNumber, TokenPlus,
+    TokenWhitespace, Trivia,
 };
 use super::db::SyntaxDatabase;
 use super::kind::SyntaxKind;
 use super::{SyntaxGroup, SyntaxNode, Terminal, Token};
-use crate::node::ast::{
-    SyntaxFileGreen, TerminalIdentifier, TerminalLiteralNumber, TerminalPlus, TokenIdentifier,
-    TokenLiteralNumber, TokenPlus, TokenWhitespace,
-};
 
 #[salsa::database(SyntaxDatabase)]
 #[derive(Default)]
@@ -47,7 +45,6 @@ fn test_ast() {
             (SyntaxKind::TokenIdentifier, Some("foo".into()), 0, 3),
             (SyntaxKind::Trivia, None, 3, 1),
             (SyntaxKind::TokenWhitespace, Some(" ".into()), 3, 1),
-            (SyntaxKind::OptionGenericArgsEmpty, None, 4, 0),
             (SyntaxKind::TerminalPlus, None, 4, 2),
             (SyntaxKind::Trivia, None, 4, 0),
             (SyntaxKind::TokenPlus, Some("+".into()), 4, 1),

@@ -399,11 +399,6 @@ fn gen_enum_code(
     let missing_body = match missing_variant {
         Some(missing) => quote! {
             $(&green_name)($(missing.kind)::missing(db).0)
-            // TODO(yg): mine, before the rebase: (remove if OK)
-            // $(&green_name)(db.intern_green(GreenNode {
-            //     kind: SyntaxKind::$missing,
-            //     details: GreenNodeDetails::Node { children: vec![], width: 0 },
-            // }))
         },
         None => quote! {
             panic!("No missing variant.");
