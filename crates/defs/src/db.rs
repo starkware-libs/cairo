@@ -6,7 +6,7 @@ use filesystem::ids::{CrateId, Directory, FileId};
 use itertools::chain;
 use parser::db::ParserGroup;
 use smol_str::SmolStr;
-use syntax::node::ast::SyntaxFile;
+use syntax::node::ast::{PathSegment, SyntaxFile};
 use syntax::node::db::SyntaxGroup;
 use syntax::node::{ast, TypedSyntaxNode};
 use utils::ordered_hash_map::OrderedHashMap;
@@ -189,14 +189,17 @@ fn module_items(db: &dyn DefsGroup, module_id: ModuleId) -> Option<ModuleItems> 
                 syntax.name(syntax_db).text(syntax_db),
                 ModuleItemId::Submodule(*submodule_id),
             )),
-            module_data.uses.iter().flat_map(|(use_id, syntax)| (syntax
-                .name(syntax_db)
-                .elements(syntax_db)
-                .last()
-                .map(|segment| (
-                    segment.ident(syntax_db).text(syntax_db),
-                    ModuleItemId::Use(*use_id)
-                )))),
+            module_data.uses.iter().flat_map(|(use_id, syntax)| {
+                syntax.name(syntax_db).elements(syntax_db).last().and_then(
+                    |segment| match segment {
+                        PathSegment::Ident(ident_segment) => Some((
+                            ident_segment.ident(syntax_db).text(syntax_db),
+                            ModuleItemId::Use(*use_id),
+                        )),
+                        PathSegment::GenericArgs(_generic_args_segment) => None,
+                    },
+                )
+            }),
             module_data.free_functions.iter().map(|(free_function_id, syntax)| (
                 syntax.name(syntax_db).text(syntax_db),
                 ModuleItemId::FreeFunction(*free_function_id),
