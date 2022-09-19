@@ -1,6 +1,8 @@
 // Module providing the gas related extensions.
 use crate::define_libfunc_hierarchy;
-use crate::extensions::lib_func::{BranchReferenceInfo, LibFuncSignature, SpecializationContext};
+use crate::extensions::lib_func::{
+    BranchReferenceInfo, LibFuncSignature, SignatureSpecializationContext, SpecializationContext,
+};
 use crate::extensions::{
     ConcreteType, NamedLibFunc, NamedType, NoGenericArgsGenericType, OutputVarReferenceInfo,
     SignatureBasedConcreteLibFunc, SpecializationError,
@@ -43,7 +45,7 @@ impl NamedLibFunc for GetGasLibFunc {
 
     fn specialize_signature(
         &self,
-        context: SpecializationContext<'_>,
+        context: &dyn SignatureSpecializationContext,
         _args: &[GenericArg],
     ) -> Result<LibFuncSignature, SpecializationError> {
         let gas_builtin_type = context.get_concrete_type(GasBuiltinType::id(), &[])?;
@@ -72,7 +74,7 @@ impl NamedLibFunc for GetGasLibFunc {
     ) -> Result<Self::Concrete, SpecializationError> {
         Ok(GetGasConcreteLibFunc {
             count: as_single_positive_value(args)?,
-            signature: self.specialize_signature(context, args)?,
+            signature: self.specialize_signature(&context, args)?,
         })
     }
 }
@@ -96,7 +98,7 @@ impl NamedLibFunc for RefundGasLibFunc {
 
     fn specialize_signature(
         &self,
-        context: SpecializationContext<'_>,
+        context: &dyn SignatureSpecializationContext,
         _args: &[GenericArg],
     ) -> Result<LibFuncSignature, SpecializationError> {
         let gas_builtin_type = context.get_concrete_type(GasBuiltinType::id(), &[])?;
@@ -114,7 +116,7 @@ impl NamedLibFunc for RefundGasLibFunc {
     ) -> Result<Self::Concrete, SpecializationError> {
         Ok(RefundGasConcreteLibFunc {
             count: as_single_positive_value(args)?,
-            signature: self.specialize_signature(context, args)?,
+            signature: self.specialize_signature(&context, args)?,
         })
     }
 }

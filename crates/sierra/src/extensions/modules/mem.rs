@@ -1,7 +1,8 @@
 use super::as_single_type;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
-    LibFuncSignature, SignatureOnlyConcreteLibFunc, SpecializationContext,
+    LibFuncSignature, SignatureOnlyConcreteLibFunc, SignatureSpecializationContext,
+    SpecializationContext,
 };
 use crate::extensions::{
     NamedLibFunc, NoGenericArgsGenericLibFunc, OutputVarReferenceInfo,
@@ -29,7 +30,7 @@ impl NamedLibFunc for StoreTempLibFunc {
 
     fn specialize_signature(
         &self,
-        _context: SpecializationContext<'_>,
+        _context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
     ) -> Result<LibFuncSignature, SpecializationError> {
         let ty = as_single_type(args)?;
@@ -46,7 +47,7 @@ impl NamedLibFunc for StoreTempLibFunc {
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
         let ty = as_single_type(args)?;
-        Ok(StoreTempConcreteLibFunc { ty, signature: self.specialize_signature(context, args)? })
+        Ok(StoreTempConcreteLibFunc { ty, signature: self.specialize_signature(&context, args)? })
     }
 }
 
@@ -69,7 +70,7 @@ impl NamedLibFunc for AlignTempsLibFunc {
 
     fn specialize_signature(
         &self,
-        _context: SpecializationContext<'_>,
+        _context: &dyn SignatureSpecializationContext,
         _args: &[GenericArg],
     ) -> Result<LibFuncSignature, SpecializationError> {
         Ok(LibFuncSignature::new_non_branch(vec![], vec![], vec![]))
@@ -82,7 +83,7 @@ impl NamedLibFunc for AlignTempsLibFunc {
     ) -> Result<Self::Concrete, SpecializationError> {
         Ok(AlignTempsConcreteLibFunc {
             ty: as_single_type(args)?,
-            signature: self.specialize_signature(context, args)?,
+            signature: self.specialize_signature(&context, args)?,
         })
     }
 }
@@ -106,7 +107,7 @@ impl NamedLibFunc for StoreLocalLibFunc {
 
     fn specialize_signature(
         &self,
-        _context: SpecializationContext<'_>,
+        _context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
     ) -> Result<LibFuncSignature, SpecializationError> {
         let ty = as_single_type(args)?;
@@ -123,7 +124,7 @@ impl NamedLibFunc for StoreLocalLibFunc {
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
         let ty = as_single_type(args)?;
-        Ok(StoreLocalConcreteLibFunc { ty, signature: self.specialize_signature(context, args)? })
+        Ok(StoreLocalConcreteLibFunc { ty, signature: self.specialize_signature(&context, args)? })
     }
 }
 
@@ -146,7 +147,7 @@ impl NoGenericArgsGenericLibFunc for AllocLocalsLibFunc {
 
     fn specialize_signature(
         &self,
-        _context: SpecializationContext<'_>,
+        _context: &dyn SignatureSpecializationContext,
     ) -> Result<LibFuncSignature, SpecializationError> {
         Ok(LibFuncSignature::new_non_branch(vec![], vec![], vec![]))
     }
@@ -156,7 +157,7 @@ impl NoGenericArgsGenericLibFunc for AllocLocalsLibFunc {
         context: SpecializationContext<'_>,
     ) -> Result<Self::Concrete, SpecializationError> {
         Ok(SignatureOnlyConcreteLibFunc {
-            signature: <Self as NoGenericArgsGenericLibFunc>::specialize_signature(self, context)?,
+            signature: <Self as NoGenericArgsGenericLibFunc>::specialize_signature(self, &context)?,
         })
     }
 }
@@ -170,7 +171,7 @@ impl NamedLibFunc for RenameLibFunc {
 
     fn specialize_signature(
         &self,
-        _context: SpecializationContext<'_>,
+        _context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
     ) -> Result<LibFuncSignature, SpecializationError> {
         let ty = as_single_type(args)?;
@@ -186,6 +187,6 @@ impl NamedLibFunc for RenameLibFunc {
         context: SpecializationContext<'_>,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(SignatureOnlyConcreteLibFunc { signature: self.specialize_signature(context, args)? })
+        Ok(SignatureOnlyConcreteLibFunc { signature: self.specialize_signature(&context, args)? })
     }
 }

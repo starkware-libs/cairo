@@ -2,7 +2,9 @@ use std::marker::PhantomData;
 
 use super::non_zero::NonZeroType;
 use crate::define_concrete_libfunc_hierarchy;
-use crate::extensions::lib_func::{LibFuncSignature, SpecializationContext};
+use crate::extensions::lib_func::{
+    LibFuncSignature, SignatureSpecializationContext, SpecializationContext,
+};
 use crate::extensions::{
     GenericLibFunc, NamedLibFunc, NamedType, OutputVarReferenceInfo, SignatureBasedConcreteLibFunc,
     SpecializationError,
@@ -64,7 +66,7 @@ impl<TArithmeticTraits: ArithmeticTraits> GenericLibFunc for OperationLibFunc<TA
 
     fn specialize_signature(
         &self,
-        context: SpecializationContext<'_>,
+        context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
     ) -> Result<LibFuncSignature, SpecializationError> {
         let ty = context.get_concrete_type(TArithmeticTraits::GENERIC_TYPE_ID, &[])?;
@@ -104,7 +106,7 @@ impl<TArithmeticTraits: ArithmeticTraits> GenericLibFunc for OperationLibFunc<TA
         match args {
             [] => Ok(OperationConcreteLibFunc::Binary(BinaryOperationConcreteLibFunc {
                 operator: self.operator,
-                signature: self.specialize_signature(context, args)?,
+                signature: self.specialize_signature(&context, args)?,
             })),
             [GenericArg::Value(c)] => {
                 if matches!(self.operator, Operator::Div | Operator::Mod) && *c == 0 {
@@ -113,7 +115,7 @@ impl<TArithmeticTraits: ArithmeticTraits> GenericLibFunc for OperationLibFunc<TA
                     Ok(OperationConcreteLibFunc::Const(OperationWithConstConcreteLibFunc {
                         operator: self.operator,
                         c: *c,
-                        signature: self.specialize_signature(context, args)?,
+                        signature: self.specialize_signature(&context, args)?,
                     }))
                 }
             }
@@ -162,7 +164,7 @@ impl<TArithmeticTraits: ArithmeticTraits> NamedLibFunc for ConstLibFunc<TArithme
 
     fn specialize_signature(
         &self,
-        context: SpecializationContext<'_>,
+        context: &dyn SignatureSpecializationContext,
         _args: &[GenericArg],
     ) -> Result<LibFuncSignature, SpecializationError> {
         Ok(LibFuncSignature::new_non_branch(
@@ -180,7 +182,7 @@ impl<TArithmeticTraits: ArithmeticTraits> NamedLibFunc for ConstLibFunc<TArithme
         match args {
             [GenericArg::Value(c)] => Ok(ConstConcreteLibFunc {
                 c: *c,
-                signature: <Self as NamedLibFunc>::specialize_signature(self, context, args)?,
+                signature: <Self as NamedLibFunc>::specialize_signature(self, &context, args)?,
             }),
             _ => Err(SpecializationError::UnsupportedGenericArg),
         }

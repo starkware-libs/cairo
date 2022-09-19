@@ -1,7 +1,8 @@
 use std::marker::PhantomData;
 
 use crate::extensions::lib_func::{
-    LibFuncSignature, SignatureOnlyConcreteLibFunc, SpecializationContext,
+    LibFuncSignature, SignatureOnlyConcreteLibFunc, SignatureSpecializationContext,
+    SpecializationContext,
 };
 use crate::extensions::{NoGenericArgsGenericLibFunc, OutputVarReferenceInfo, SpecializationError};
 use crate::ids::{GenericLibFuncId, GenericTypeId};
@@ -27,7 +28,7 @@ impl<TPodTraits: PodTraits> NoGenericArgsGenericLibFunc for DropLibFunc<TPodTrai
 
     fn specialize_signature(
         &self,
-        context: SpecializationContext<'_>,
+        context: &dyn SignatureSpecializationContext,
     ) -> Result<LibFuncSignature, SpecializationError> {
         Ok(LibFuncSignature::new_non_branch(
             vec![context.get_concrete_type(TPodTraits::GENERIC_TYPE_ID, &[])?],
@@ -41,7 +42,7 @@ impl<TPodTraits: PodTraits> NoGenericArgsGenericLibFunc for DropLibFunc<TPodTrai
         context: SpecializationContext<'_>,
     ) -> Result<Self::Concrete, SpecializationError> {
         Ok(SignatureOnlyConcreteLibFunc {
-            signature: <Self as NoGenericArgsGenericLibFunc>::specialize_signature(self, context)?,
+            signature: <Self as NoGenericArgsGenericLibFunc>::specialize_signature(self, &context)?,
         })
     }
 }
@@ -57,7 +58,7 @@ impl<TPodTraits: PodTraits> NoGenericArgsGenericLibFunc for DuplicateLibFunc<TPo
 
     fn specialize_signature(
         &self,
-        context: SpecializationContext<'_>,
+        context: &dyn SignatureSpecializationContext,
     ) -> Result<LibFuncSignature, SpecializationError> {
         let ty = context.get_concrete_type(TPodTraits::GENERIC_TYPE_ID, &[])?;
         Ok(LibFuncSignature::new_non_branch(
@@ -75,7 +76,7 @@ impl<TPodTraits: PodTraits> NoGenericArgsGenericLibFunc for DuplicateLibFunc<TPo
         context: SpecializationContext<'_>,
     ) -> Result<Self::Concrete, SpecializationError> {
         Ok(SignatureOnlyConcreteLibFunc {
-            signature: <Self as NoGenericArgsGenericLibFunc>::specialize_signature(self, context)?,
+            signature: <Self as NoGenericArgsGenericLibFunc>::specialize_signature(self, &context)?,
         })
     }
 }
