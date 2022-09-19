@@ -35,18 +35,24 @@ fn create_registry(name: &str) {
 }
 
 // 5 -> 16 -> 8 -> 4 -> 2 -> 1
-#[test_case((100, 5), (47, 5); "5 => 5")]
+#[test_case((800, 5), (659, 5); "5 => 5")]
 //  0     1     2     3     4     5     6     7     8     9
 //  7 -> 22 -> 11 -> 34 -> 17 -> 52 -> 26 -> 13 -> 40 -> 20 ->
 // 10 ->  5 -> 16 ->  8 ->  4 ->  2 ->  1
-#[test_case((200, 7), (30, 16); "7 => 16")]
+#[test_case((800, 7), (343, 16); "7 => 16")]
 // Out of gas.
-#[test_case((100, 7), (5, -1); "Out of gas.")]
+#[test_case((400, 7), (26, -1); "Out of gas.")]
 fn simulate_collatz((gb, n): (i64, i64), (new_gb, index): (i64, i64)) {
     assert_eq!(
         simulation::run(
             &get_example_program(COLLATZ),
-            &HashMap::from([(StatementIdx(7), 11), (StatementIdx(30), 1), (StatementIdx(39), 1)]),
+            &HashMap::from([
+                (StatementIdx(7), 30),
+                (StatementIdx(10), 0),
+                (StatementIdx(23), 2),
+                (StatementIdx(32), 0),
+                (StatementIdx(41), 1),
+            ]),
             &"Collatz".into(),
             vec![vec![gb.into()], vec![n.into()]]
         ),
@@ -54,25 +60,26 @@ fn simulate_collatz((gb, n): (i64, i64), (new_gb, index): (i64, i64)) {
     );
 }
 
-#[test_case((1000, 0), (1007, 1); "0 => 1")]
+#[test_case((1000, 0), (1010, 1); "0 => 1")]
 #[test_case((1000, 1), (1005, 1); "1 => 1")]
-#[test_case((1000, 2), (996, 2); "2 => 2")]
-#[test_case((1000, 3), (991, 3); "3 => 3")]
-#[test_case((1000, 4), (986, 5); "4 => 5")]
-#[test_case((1000, 5), (981, 8); "5 => 8")]
-#[test_case((1000, 6), (976, 13); "6 => 13")]
-#[test_case((1000, 7), (971, 21); "7 => 21")]
-#[test_case((1000, 8), (966, 34); "8 => 34")]
-#[test_case((100, 80), (0, -1); "Out of gas.")]
+#[test_case((1000, 2), (988, 2); "2 => 2")]
+#[test_case((1000, 3), (975, 3); "3 => 3")]
+#[test_case((1000, 4), (962, 5); "4 => 5")]
+#[test_case((1000, 5), (949, 8); "5 => 8")]
+#[test_case((1000, 6), (936, 13); "6 => 13")]
+#[test_case((1000, 7), (923, 21); "7 => 21")]
+#[test_case((1000, 8), (910, 34); "8 => 34")]
+#[test_case((100, 80), (9, -1); "Out of gas.")]
 fn simulate_fib_jumps((gb, n): (i64, i64), (new_gb, fib): (i64, i64)) {
     assert_eq!(
         simulation::run(
             &get_example_program(FIB_JUMPS),
             &HashMap::from([
-                (StatementIdx(21), 5),
-                (StatementIdx(1), 7),
+                (StatementIdx(1), 10),
                 (StatementIdx(10), 5),
-                (StatementIdx(40), 1)
+                (StatementIdx(21), 13),
+                (StatementIdx(26), 0),
+                (StatementIdx(41), 1),
             ]),
             &"Fibonacci".into(),
             vec![vec![gb.into()], vec![n.into()]]
@@ -102,21 +109,27 @@ fn simulate_fib_no_gas(n: i64, fib: i64) {
     );
 }
 
-#[test_case((1000, 0), (1003, 1); "0 => 1")]
+#[test_case((1000, 0), (1006, 1); "0 => 1")]
 #[test_case((1000, 1), (1001, 1); "1 => 1")]
-#[test_case((1000, 2), (978, 2); "2 => 2")]
-#[test_case((1000, 3), (953, 3); "3 => 3")]
-#[test_case((1000, 4), (905, 5); "4 => 5")]
-#[test_case((1000, 5), (832, 8); "5 => 8")]
-#[test_case((1000, 6), (711, 13); "6 => 13")]
-#[test_case((1000, 7), (517, 21); "7 => 21")]
-#[test_case((1000, 8), (202, 34); "8 => 34")]
-#[test_case((100, 80), (22, -40000); "Out of gas.")]
+#[test_case((1000, 2), (965, 2); "2 => 2")]
+#[test_case((1000, 3), (924, 3); "3 => 3")]
+#[test_case((1000, 4), (847, 5); "4 => 5")]
+#[test_case((1000, 5), (729, 8); "5 => 8")]
+#[test_case((1000, 6), (534, 13); "6 => 13")]
+#[test_case((1000, 7), (221, 21); "7 => 21")]
+#[test_case((1500, 8), (213, 34); "8 => 34")]
+#[test_case((100, 80), (16, -30000); "Out of gas.")]
 fn simulate_fib_recursive((gb, n): (i64, i64), (new_gb, fib): (i64, i64)) {
     assert_eq!(
         simulation::run(
             &get_example_program(FIB_RECURSIVE),
-            &HashMap::from([(StatementIdx(18), 26), (StatementIdx(4), 3), (StatementIdx(12), 1)]),
+            &HashMap::from([
+                (StatementIdx(4), 6),
+                (StatementIdx(12), 1),
+                (StatementIdx(18), 42),
+                (StatementIdx(19), 0),
+                (StatementIdx(35), 0),
+            ]),
             &"Fibonacci".into(),
             vec![vec![gb.into()], vec![n.into()]]
         ),
