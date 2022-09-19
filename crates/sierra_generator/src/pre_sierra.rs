@@ -41,8 +41,12 @@ pub struct Function {
 /// Represents a pre-sierra statement - a statement before label-resolution.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Statement {
+    /// A compiled Sierra statement (before label resolution).
     Sierra(program::GenStatement<LabelId>),
+    /// A label.
     Label(Label),
+    /// An instruction to push variables onto the stack. For example, used before calling functions
+    /// and returning.
     PushValues(Vec<PushValue>),
 }
 impl std::fmt::Display for Statement {
@@ -54,18 +58,12 @@ impl std::fmt::Display for Statement {
                 write!(f, "PushValues(")?;
                 write_comma_separated(
                     f,
-                    &values
-                        .iter()
-                        .map(|PushValue { var, ty, .. }| format!("{var}: {ty}"))
-                        .collect::<Vec<String>>(),
+                    values.iter().map(|PushValue { var, ty, .. }| format!("{var}: {ty}")),
                 )?;
                 write!(f, ") -> (")?;
                 write_comma_separated(
                     f,
-                    &values
-                        .iter()
-                        .map(|PushValue { var_on_stack, .. }| var_on_stack)
-                        .collect::<Vec<_>>(),
+                    values.iter().map(|PushValue { var_on_stack, .. }| var_on_stack),
                 )?;
                 write!(f, ")")
             }
@@ -73,10 +71,15 @@ impl std::fmt::Display for Statement {
     }
 }
 
+/// Represents a single element that should be pushed onto the stack as part of
+/// [Statement::PushValues].
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct PushValue {
+    /// The variable id to push.
     pub var: sierra::ids::VarId,
+    /// The variable id on the stack (e.g., the result of `store_temp()`).
     pub var_on_stack: sierra::ids::VarId,
+    /// The type of the variable.
     pub ty: ConcreteTypeId,
 }
 
