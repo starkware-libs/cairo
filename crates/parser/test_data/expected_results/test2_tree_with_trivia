@@ -29,12 +29,11 @@
     │   │   │   │           │   ├── token (kind: Colon): ':'
     │   │   │   │           │   └── trailing_trivia (kind: Trivia) []
     │   │   │   │           └── ty (kind: ExprPath)
-    │   │   │   │               └── item #0 (kind: PathSegment)
-    │   │   │   │                   ├── ident (kind: Terminal)
-    │   │   │   │                   │   ├── leading_trivia (kind: Trivia) []
-    │   │   │   │                   │   ├── token (kind: Identifier): 'T'
-    │   │   │   │                   │   └── trailing_trivia (kind: Trivia) []
-    │   │   │   │                   └── generic_args (kind: OptionGenericArgsEmpty) []
+    │   │   │   │               └── item #0 (kind: PathSegmentIdent)
+    │   │   │   │                   └── ident (kind: Terminal)
+    │   │   │   │                       ├── leading_trivia (kind: Trivia) []
+    │   │   │   │                       ├── token (kind: Identifier): 'T'
+    │   │   │   │                       └── trailing_trivia (kind: Trivia) []
     │   │   │   ├── rparen (kind: Terminal)
     │   │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │   │   │   ├── token (kind: RParen): ')'
@@ -47,13 +46,12 @@
     │   │   │       │   └── trailing_trivia (kind: Trivia)
     │   │   │       │       └── child #0 (kind: Whitespace).
     │   │   │       └── ty (kind: ExprPath)
-    │   │   │           └── item #0 (kind: PathSegment)
-    │   │   │               ├── ident (kind: Terminal)
-    │   │   │               │   ├── leading_trivia (kind: Trivia) []
-    │   │   │               │   ├── token (kind: Identifier): 'S'
-    │   │   │               │   └── trailing_trivia (kind: Trivia)
-    │   │   │               │       └── child #0 (kind: Newline).
-    │   │   │               └── generic_args (kind: OptionGenericArgsEmpty) []
+    │   │   │           └── item #0 (kind: PathSegmentIdent)
+    │   │   │               └── ident (kind: Terminal)
+    │   │   │                   ├── leading_trivia (kind: Trivia) []
+    │   │   │                   ├── token (kind: Identifier): 'S'
+    │   │   │                   └── trailing_trivia (kind: Trivia)
+    │   │   │                       └── child #0 (kind: Newline).
     │   │   └── body (kind: ExprBlock)
     │   │       ├── lbrace (kind: Terminal)
     │   │       │   ├── leading_trivia (kind: Trivia) []
@@ -125,13 +123,12 @@
     │   │       │   │   │   │   └── trailing_trivia (kind: Trivia)
     │   │       │   │   │   │       └── child #0 (kind: Whitespace).
     │   │       │   │   │   └── ty (kind: ExprPath)
-    │   │       │   │   │       └── item #0 (kind: PathSegment)
-    │   │       │   │   │           ├── ident (kind: Terminal)
-    │   │       │   │   │           │   ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │           │   ├── token (kind: Identifier): 'T'
-    │   │       │   │   │           │   └── trailing_trivia (kind: Trivia)
-    │   │       │   │   │           │       └── child #0 (kind: Whitespace).
-    │   │       │   │   │           └── generic_args (kind: OptionGenericArgsEmpty) []
+    │   │       │   │   │       └── item #0 (kind: PathSegmentIdent)
+    │   │       │   │   │           └── ident (kind: Terminal)
+    │   │       │   │   │               ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │               ├── token (kind: Identifier): 'T'
+    │   │       │   │   │               └── trailing_trivia (kind: Trivia)
+    │   │       │   │   │                   └── child #0 (kind: Whitespace).
     │   │       │   │   ├── eq (kind: Terminal)
     │   │       │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │   ├── token (kind: Eq): '='
@@ -140,12 +137,11 @@
     │   │       │   │   ├── rhs (kind: ExprBinary)
     │   │       │   │   │   ├── lhs (kind: ExprBinary)
     │   │       │   │   │   │   ├── lhs (kind: ExprPath)
-    │   │       │   │   │   │   │   └── item #0 (kind: PathSegment)
-    │   │       │   │   │   │   │       ├── ident (kind: Terminal)
-    │   │       │   │   │   │   │       │   ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │   │   │       │   ├── token (kind: Identifier): 'x'
-    │   │       │   │   │   │   │       │   └── trailing_trivia (kind: Trivia) []
-    │   │       │   │   │   │   │       └── generic_args (kind: OptionGenericArgsEmpty) []
+    │   │       │   │   │   │   │   └── item #0 (kind: PathSegmentIdent)
+    │   │       │   │   │   │   │       └── ident (kind: Terminal)
+    │   │       │   │   │   │   │           ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │   │   │           ├── token (kind: Identifier): 'x'
+    │   │       │   │   │   │   │           └── trailing_trivia (kind: Trivia) []
     │   │       │   │   │   │   ├── op (kind: Terminal)
     │   │       │   │   │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │   │   │   ├── token (kind: Mul): '*'
@@ -223,12 +219,11 @@
     │   │       │   │   │   │       └── child #0 (kind: Whitespace).
     │   │       │   │   │   └── rhs (kind: ExprStructCtorCall)
     │   │       │   │   │       ├── path (kind: ExprPath)
-    │   │       │   │   │       │   └── item #0 (kind: PathSegment)
-    │   │       │   │   │       │       ├── ident (kind: Terminal)
-    │   │       │   │   │       │       │   ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │       │       │   ├── token (kind: Identifier): 'Struct'
-    │   │       │   │   │       │       │   └── trailing_trivia (kind: Trivia) []
-    │   │       │   │   │       │       └── generic_args (kind: OptionGenericArgsEmpty) []
+    │   │       │   │   │       │   └── item #0 (kind: PathSegmentIdent)
+    │   │       │   │   │       │       └── ident (kind: Terminal)
+    │   │       │   │   │       │           ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │       │           ├── token (kind: Identifier): 'Struct'
+    │   │       │   │   │       │           └── trailing_trivia (kind: Trivia) []
     │   │       │   │   │       └── arguments (kind: ArgListBraced)
     │   │       │   │   │           ├── lbrace (kind: Terminal)
     │   │       │   │   │           │   ├── leading_trivia (kind: Trivia) []
@@ -269,12 +264,11 @@
     │   │       │   │   │           │           │       └── child #0 (kind: Whitespace).
     │   │       │   │   │           │           └── expr (kind: ExprStructCtorCall)
     │   │       │   │   │           │               ├── path (kind: ExprPath)
-    │   │       │   │   │           │               │   └── item #0 (kind: PathSegment)
-    │   │       │   │   │           │               │       ├── ident (kind: Terminal)
-    │   │       │   │   │           │               │       │   ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │           │               │       │   ├── token (kind: Identifier): 'Struct2'
-    │   │       │   │   │           │               │       │   └── trailing_trivia (kind: Trivia) []
-    │   │       │   │   │           │               │       └── generic_args (kind: OptionGenericArgsEmpty) []
+    │   │       │   │   │           │               │   └── item #0 (kind: PathSegmentIdent)
+    │   │       │   │   │           │               │       └── ident (kind: Terminal)
+    │   │       │   │   │           │               │           ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │           │               │           ├── token (kind: Identifier): 'Struct2'
+    │   │       │   │   │           │               │           └── trailing_trivia (kind: Trivia) []
     │   │       │   │   │           │               └── arguments (kind: ArgListBraced)
     │   │       │   │   │           │                   ├── lbrace (kind: Terminal)
     │   │       │   │   │           │                   │   ├── leading_trivia (kind: Trivia) []
@@ -324,13 +318,12 @@
     │   │       │   │   │       └── child #0 (kind: Whitespace).
     │   │       │   │   ├── expr (kind: ExprBinary)
     │   │       │   │   │   ├── lhs (kind: ExprPath)
-    │   │       │   │   │   │   └── item #0 (kind: PathSegment)
-    │   │       │   │   │   │       ├── ident (kind: Terminal)
-    │   │       │   │   │   │       │   ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │   │       │   ├── token (kind: Identifier): 'df'
-    │   │       │   │   │   │       │   └── trailing_trivia (kind: Trivia)
-    │   │       │   │   │   │       │       └── child #0 (kind: Whitespace).
-    │   │       │   │   │   │       └── generic_args (kind: OptionGenericArgsEmpty) []
+    │   │       │   │   │   │   └── item #0 (kind: PathSegmentIdent)
+    │   │       │   │   │   │       └── ident (kind: Terminal)
+    │   │       │   │   │   │           ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │   │           ├── token (kind: Identifier): 'df'
+    │   │       │   │   │   │           └── trailing_trivia (kind: Trivia)
+    │   │       │   │   │   │               └── child #0 (kind: Whitespace).
     │   │       │   │   │   ├── op (kind: Terminal)
     │   │       │   │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │   │   ├── token (kind: EqEq): '=='
@@ -349,27 +342,25 @@
     │   │       │   └── child #5 (kind: StatementExpr)
     │   │       │       ├── expr (kind: ExprBinary)
     │   │       │       │   ├── lhs (kind: ExprPath)
-    │   │       │       │   │   └── item #0 (kind: PathSegment)
-    │   │       │       │   │       ├── ident (kind: Terminal)
-    │   │       │       │   │       │   ├── leading_trivia (kind: Trivia)
-    │   │       │       │   │       │   │   └── child #0 (kind: Whitespace).
-    │   │       │       │   │       │   ├── token (kind: Identifier): 'x'
-    │   │       │       │   │       │   └── trailing_trivia (kind: Trivia)
-    │   │       │       │   │       │       └── child #0 (kind: Whitespace).
-    │   │       │       │   │       └── generic_args (kind: OptionGenericArgsEmpty) []
+    │   │       │       │   │   └── item #0 (kind: PathSegmentIdent)
+    │   │       │       │   │       └── ident (kind: Terminal)
+    │   │       │       │   │           ├── leading_trivia (kind: Trivia)
+    │   │       │       │   │           │   └── child #0 (kind: Whitespace).
+    │   │       │       │   │           ├── token (kind: Identifier): 'x'
+    │   │       │       │   │           └── trailing_trivia (kind: Trivia)
+    │   │       │       │   │               └── child #0 (kind: Whitespace).
     │   │       │       │   ├── op (kind: Terminal)
     │   │       │       │   │   ├── leading_trivia (kind: Trivia) []
     │   │       │       │   │   ├── token (kind: Plus): '+'
     │   │       │       │   │   └── trailing_trivia (kind: Trivia)
     │   │       │       │   │       └── child #0 (kind: Whitespace).
     │   │       │       │   └── rhs (kind: ExprPath)
-    │   │       │       │       └── item #0 (kind: PathSegment)
-    │   │       │       │           ├── ident (kind: Terminal)
-    │   │       │       │           │   ├── leading_trivia (kind: Trivia) []
-    │   │       │       │           │   ├── token (kind: Identifier): 'y'
-    │   │       │       │           │   └── trailing_trivia (kind: Trivia)
-    │   │       │       │           │       └── child #0 (kind: Newline).
-    │   │       │       │           └── generic_args (kind: OptionGenericArgsEmpty) []
+    │   │       │       │       └── item #0 (kind: PathSegmentIdent)
+    │   │       │       │           └── ident (kind: Terminal)
+    │   │       │       │               ├── leading_trivia (kind: Trivia) []
+    │   │       │       │               ├── token (kind: Identifier): 'y'
+    │   │       │       │               └── trailing_trivia (kind: Trivia)
+    │   │       │       │                   └── child #0 (kind: Newline).
     │   │       │       └── semicolon (kind: OptionSemicolonEmpty) []
     │   │       └── rbrace (kind: Terminal)
     │   │           ├── leading_trivia (kind: Trivia) []
@@ -428,12 +419,11 @@
     │   │   │   │   │       │   ├── token (kind: Colon): ':'
     │   │   │   │   │       │   └── trailing_trivia (kind: Trivia) []
     │   │   │   │   │       └── ty (kind: ExprPath)
-    │   │   │   │   │           └── item #0 (kind: PathSegment)
-    │   │   │   │   │               ├── ident (kind: Terminal)
-    │   │   │   │   │               │   ├── leading_trivia (kind: Trivia) []
-    │   │   │   │   │               │   ├── token (kind: Identifier): 'T0'
-    │   │   │   │   │               │   └── trailing_trivia (kind: Trivia) []
-    │   │   │   │   │               └── generic_args (kind: OptionGenericArgsEmpty) []
+    │   │   │   │   │           └── item #0 (kind: PathSegmentIdent)
+    │   │   │   │   │               └── ident (kind: Terminal)
+    │   │   │   │   │                   ├── leading_trivia (kind: Trivia) []
+    │   │   │   │   │                   ├── token (kind: Identifier): 'T0'
+    │   │   │   │   │                   └── trailing_trivia (kind: Trivia) []
     │   │   │   │   ├── separator #0 (kind: Terminal)
     │   │   │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │   │   │   │   ├── token (kind: Comma): ','
@@ -451,12 +441,11 @@
     │   │   │   │           │   └── trailing_trivia (kind: Trivia)
     │   │   │   │           │       └── child #0 (kind: Whitespace).
     │   │   │   │           └── ty (kind: ExprPath)
-    │   │   │   │               └── item #0 (kind: PathSegment)
-    │   │   │   │                   ├── ident (kind: Terminal)
-    │   │   │   │                   │   ├── leading_trivia (kind: Trivia) []
-    │   │   │   │                   │   ├── token (kind: Identifier): 'S'
-    │   │   │   │                   │   └── trailing_trivia (kind: Trivia) []
-    │   │   │   │                   └── generic_args (kind: OptionGenericArgsEmpty) []
+    │   │   │   │               └── item #0 (kind: PathSegmentIdent)
+    │   │   │   │                   └── ident (kind: Terminal)
+    │   │   │   │                       ├── leading_trivia (kind: Trivia) []
+    │   │   │   │                       ├── token (kind: Identifier): 'S'
+    │   │   │   │                       └── trailing_trivia (kind: Trivia) []
     │   │   │   ├── rparen (kind: Terminal)
     │   │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │   │   │   ├── token (kind: RParen): ')'
@@ -469,13 +458,12 @@
     │   │   │       │   └── trailing_trivia (kind: Trivia)
     │   │   │       │       └── child #0 (kind: Whitespace).
     │   │   │       └── ty (kind: ExprPath)
-    │   │   │           └── item #0 (kind: PathSegment)
-    │   │   │               ├── ident (kind: Terminal)
-    │   │   │               │   ├── leading_trivia (kind: Trivia) []
-    │   │   │               │   ├── token (kind: Identifier): 'X'
-    │   │   │               │   └── trailing_trivia (kind: Trivia)
-    │   │   │               │       └── child #0 (kind: Whitespace).
-    │   │   │               └── generic_args (kind: OptionGenericArgsEmpty) []
+    │   │   │           └── item #0 (kind: PathSegmentIdent)
+    │   │   │               └── ident (kind: Terminal)
+    │   │   │                   ├── leading_trivia (kind: Trivia) []
+    │   │   │                   ├── token (kind: Identifier): 'X'
+    │   │   │                   └── trailing_trivia (kind: Trivia)
+    │   │   │                       └── child #0 (kind: Whitespace).
     │   │   └── body (kind: ExprBlock)
     │   │       ├── lbrace (kind: Terminal)
     │   │       │   ├── leading_trivia (kind: Trivia) []
@@ -488,25 +476,23 @@
     │   │       │       │   ├── lhs (kind: ExprBinary)
     │   │       │       │   │   ├── lhs (kind: ExprBinary)
     │   │       │       │   │   │   ├── lhs (kind: ExprPath)
-    │   │       │       │   │   │   │   └── item #0 (kind: PathSegment)
-    │   │       │       │   │   │   │       ├── ident (kind: Terminal)
-    │   │       │       │   │   │   │       │   ├── leading_trivia (kind: Trivia)
-    │   │       │       │   │   │   │       │   │   └── child #0 (kind: Whitespace).
-    │   │       │       │   │   │   │       │   ├── token (kind: Identifier): 'x'
-    │   │       │       │   │   │   │       │   └── trailing_trivia (kind: Trivia) []
-    │   │       │       │   │   │   │       └── generic_args (kind: OptionGenericArgsEmpty) []
+    │   │       │       │   │   │   │   └── item #0 (kind: PathSegmentIdent)
+    │   │       │       │   │   │   │       └── ident (kind: Terminal)
+    │   │       │       │   │   │   │           ├── leading_trivia (kind: Trivia)
+    │   │       │       │   │   │   │           │   └── child #0 (kind: Whitespace).
+    │   │       │       │   │   │   │           ├── token (kind: Identifier): 'x'
+    │   │       │       │   │   │   │           └── trailing_trivia (kind: Trivia) []
     │   │       │       │   │   │   ├── op (kind: Terminal)
     │   │       │       │   │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │       │       │   │   │   │   ├── token (kind: Dot): '.'
     │   │       │       │   │   │   │   └── trailing_trivia (kind: Trivia) []
     │   │       │       │   │   │   └── rhs (kind: ExprPath)
-    │   │       │       │   │   │       └── item #0 (kind: PathSegment)
-    │   │       │       │   │   │           ├── ident (kind: Terminal)
-    │   │       │       │   │   │           │   ├── leading_trivia (kind: Trivia) []
-    │   │       │       │   │   │           │   ├── token (kind: Identifier): 'a'
-    │   │       │       │   │   │           │   └── trailing_trivia (kind: Trivia)
-    │   │       │       │   │   │           │       └── child #0 (kind: Whitespace).
-    │   │       │       │   │   │           └── generic_args (kind: OptionGenericArgsEmpty) []
+    │   │       │       │   │   │       └── item #0 (kind: PathSegmentIdent)
+    │   │       │       │   │   │           └── ident (kind: Terminal)
+    │   │       │       │   │   │               ├── leading_trivia (kind: Trivia) []
+    │   │       │       │   │   │               ├── token (kind: Identifier): 'a'
+    │   │       │       │   │   │               └── trailing_trivia (kind: Trivia)
+    │   │       │       │   │   │                   └── child #0 (kind: Whitespace).
     │   │       │       │   │   ├── op (kind: Terminal)
     │   │       │       │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │       │       │   │   │   ├── token (kind: Mul): '*'
@@ -531,24 +517,22 @@
     │   │       │       │       │   │   │   └── trailing_trivia (kind: Trivia)
     │   │       │       │       │   │   │       └── child #0 (kind: Whitespace).
     │   │       │       │       │   │   └── rhs (kind: ExprPath)
-    │   │       │       │       │   │       └── item #0 (kind: PathSegment)
-    │   │       │       │       │   │           ├── ident (kind: Terminal)
-    │   │       │       │       │   │           │   ├── leading_trivia (kind: Trivia) []
-    │   │       │       │       │   │           │   ├── token (kind: Identifier): 's'
-    │   │       │       │       │   │           │   └── trailing_trivia (kind: Trivia) []
-    │   │       │       │       │   │           └── generic_args (kind: OptionGenericArgsEmpty) []
+    │   │       │       │       │   │       └── item #0 (kind: PathSegmentIdent)
+    │   │       │       │       │   │           └── ident (kind: Terminal)
+    │   │       │       │       │   │               ├── leading_trivia (kind: Trivia) []
+    │   │       │       │       │   │               ├── token (kind: Identifier): 's'
+    │   │       │       │       │   │               └── trailing_trivia (kind: Trivia) []
     │   │       │       │       │   ├── op (kind: Terminal)
     │   │       │       │       │   │   ├── leading_trivia (kind: Trivia) []
     │   │       │       │       │   │   ├── token (kind: Dot): '.'
     │   │       │       │       │   │   └── trailing_trivia (kind: Trivia) []
     │   │       │       │       │   └── rhs (kind: ExprPath)
-    │   │       │       │       │       └── item #0 (kind: PathSegment)
-    │   │       │       │       │           ├── ident (kind: Terminal)
-    │   │       │       │       │           │   ├── leading_trivia (kind: Trivia) []
-    │   │       │       │       │           │   ├── token (kind: Identifier): 's'
-    │   │       │       │       │           │   └── trailing_trivia (kind: Trivia)
-    │   │       │       │       │           │       └── child #0 (kind: Whitespace).
-    │   │       │       │       │           └── generic_args (kind: OptionGenericArgsEmpty) []
+    │   │       │       │       │       └── item #0 (kind: PathSegmentIdent)
+    │   │       │       │       │           └── ident (kind: Terminal)
+    │   │       │       │       │               ├── leading_trivia (kind: Trivia) []
+    │   │       │       │       │               ├── token (kind: Identifier): 's'
+    │   │       │       │       │               └── trailing_trivia (kind: Trivia)
+    │   │       │       │       │                   └── child #0 (kind: Whitespace).
     │   │       │       │       ├── op (kind: Terminal)
     │   │       │       │       │   ├── leading_trivia (kind: Trivia) []
     │   │       │       │       │   ├── token (kind: Mul): '*'
@@ -556,12 +540,11 @@
     │   │       │       │       │       └── child #0 (kind: Whitespace).
     │   │       │       │       └── rhs (kind: ExprFunctionCall)
     │   │       │       │           ├── path (kind: ExprPath)
-    │   │       │       │           │   └── item #0 (kind: PathSegment)
-    │   │       │       │           │       ├── ident (kind: Terminal)
-    │   │       │       │           │       │   ├── leading_trivia (kind: Trivia) []
-    │   │       │       │           │       │   ├── token (kind: Identifier): 'foo'
-    │   │       │       │           │       │   └── trailing_trivia (kind: Trivia) []
-    │   │       │       │           │       └── generic_args (kind: OptionGenericArgsEmpty) []
+    │   │       │       │           │   └── item #0 (kind: PathSegmentIdent)
+    │   │       │       │           │       └── ident (kind: Terminal)
+    │   │       │       │           │           ├── leading_trivia (kind: Trivia) []
+    │   │       │       │           │           ├── token (kind: Identifier): 'foo'
+    │   │       │       │           │           └── trailing_trivia (kind: Trivia) []
     │   │       │       │           └── arguments (kind: ExprListParenthesized)
     │   │       │       │               ├── lparen (kind: Terminal)
     │   │       │       │               │   ├── leading_trivia (kind: Trivia) []
@@ -625,12 +608,11 @@
     │       │   │       │   └── trailing_trivia (kind: Trivia)
     │       │   │       │       └── child #0 (kind: Whitespace).
     │       │   │       └── ty (kind: ExprPath)
-    │       │   │           └── item #0 (kind: PathSegment)
-    │       │   │               ├── ident (kind: Terminal)
-    │       │   │               │   ├── leading_trivia (kind: Trivia) []
-    │       │   │               │   ├── token (kind: Identifier): 'a'
-    │       │   │               │   └── trailing_trivia (kind: Trivia) []
-    │       │   │               └── generic_args (kind: OptionGenericArgsEmpty) []
+    │       │   │           └── item #0 (kind: PathSegmentIdent)
+    │       │   │               └── ident (kind: Terminal)
+    │       │   │                   ├── leading_trivia (kind: Trivia) []
+    │       │   │                   ├── token (kind: Identifier): 'a'
+    │       │   │                   └── trailing_trivia (kind: Trivia) []
     │       │   ├── separator #0 (kind: Terminal)
     │       │   │   ├── leading_trivia (kind: Trivia) []
     │       │   │   ├── token (kind: Comma): ','
@@ -651,13 +633,12 @@
     │       │           │   └── trailing_trivia (kind: Trivia)
     │       │           │       └── child #0 (kind: Whitespace).
     │       │           └── ty (kind: ExprPath)
-    │       │               └── item #0 (kind: PathSegment)
-    │       │                   ├── ident (kind: Terminal)
-    │       │                   │   ├── leading_trivia (kind: Trivia) []
-    │       │                   │   ├── token (kind: Identifier): 'int'
-    │       │                   │   └── trailing_trivia (kind: Trivia)
-    │       │                   │       └── child #0 (kind: Newline).
-    │       │                   └── generic_args (kind: OptionGenericArgsEmpty) []
+    │       │               └── item #0 (kind: PathSegmentIdent)
+    │       │                   └── ident (kind: Terminal)
+    │       │                       ├── leading_trivia (kind: Trivia) []
+    │       │                       ├── token (kind: Identifier): 'int'
+    │       │                       └── trailing_trivia (kind: Trivia)
+    │       │                           └── child #0 (kind: Newline).
     │       └── rbrace (kind: Terminal)
     │           ├── leading_trivia (kind: Trivia)
     │           │   └── child #0 (kind: Whitespace).

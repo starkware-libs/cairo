@@ -66,9 +66,10 @@ pub fn get_spec() -> Vec<Node> {
             .node("rangle", "Terminal")
             .build(),
         separated_list_node("GenericArgList", "Expr"),
-        StructBuilder::new("PathSegment")
-            .node("ident", "Terminal")
-            .node("generic_args", "OptionGenericArgs")
+        EnumBuilder::new("PathSegment").missing("Ident").node("GenericArgs").build(),
+        StructBuilder::new("PathSegmentIdent").node("ident", "Terminal").build(),
+        StructBuilder::new("PathSegmentGenericArgs")
+            .node("generic_args", "OptionGenericArgsSome")
             .build(),
         separated_list_node("ExprPath", "PathSegment"),
         StructBuilder::new("ExprLiteral").node("terminal", "Terminal").build(),

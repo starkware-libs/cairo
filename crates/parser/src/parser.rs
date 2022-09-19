@@ -619,9 +619,8 @@ impl<'a> Parser<'a> {
     /// Returns a GreenId of a node with kind PathSegment or None if a segment can't be parsed.
     fn try_parse_path_segment(&mut self) -> Option<PathSegmentGreen> {
         let identifier = self.try_parse_token(TokenKind::Identifier)?;
-        // TODO(yuval): support generics.
-        let generic_args = OptionGenericArgsEmpty::new_green(self.db);
-        Some(PathSegment::new_green(self.db, identifier, generic_args.into()))
+        // TODO(ilya, 10/10/2022): support generics.
+        Some(PathSegmentIdent::new_green(self.db, identifier).into())
     }
 
     /// Returns a GreenId of a node with kind PathSegment or None if a segment can't be parsed.

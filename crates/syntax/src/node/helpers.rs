@@ -1,9 +1,10 @@
 use smol_str::SmolStr;
 use utils::extract_matches;
 
+use super::ast::{self, PathSegment};
 use super::db::SyntaxGroup;
 use super::green::GreenNode;
-use super::{ast, TokenGreen};
+use super::TokenGreen;
 use crate::token::TokenKind;
 
 pub trait TerminalEx {
@@ -51,5 +52,18 @@ impl ExprPathGreenEx for ast::ExprPathGreen {
         .children;
         assert_eq!(children.len() & 1, 1, "Expected an odd number of elements in the path.");
         ast::TerminalGreen(*children.last().unwrap()).identifier(db)
+    }
+}
+
+pub trait ExprPathEx {
+    fn identifier(&self, db: &dyn SyntaxGroup) -> Option<SmolStr>;
+}
+impl ExprPathEx for ast::ExprPath {
+    /// Retrieves the text of the last identifier in the path.
+    fn identifier(&self, db: &dyn SyntaxGroup) -> Option<SmolStr> {
+        self.elements(db).last().and_then(|segment| match segment {
+            PathSegment::Ident(ident_segment) => Some(ident_segment.ident(db).text(db)),
+            PathSegment::GenericArgs(_generic_args_segment) => None,
+        })
     }
 }

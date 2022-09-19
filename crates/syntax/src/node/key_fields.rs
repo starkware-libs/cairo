@@ -48,7 +48,10 @@ pub fn get_key_fields(kind: SyntaxKind, children: Vec<GreenId>) -> Vec<GreenId> 
         SyntaxKind::GenericArgList => {
             vec![]
         }
-        SyntaxKind::PathSegment => {
+        SyntaxKind::PathSegmentIdent => {
+            vec![]
+        }
+        SyntaxKind::PathSegmentGenericArgs => {
             vec![]
         }
         SyntaxKind::ExprPath => {

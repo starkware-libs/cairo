@@ -1435,30 +1435,9 @@ impl TypedSyntaxNode for GenericArgList {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct PathSegment {
-    node: SyntaxNode,
-    children: Vec<SyntaxNode>,
-}
-impl PathSegment {
-    pub fn new_green(
-        db: &dyn SyntaxGroup,
-        ident: TerminalGreen,
-        generic_args: OptionGenericArgsGreen,
-    ) -> PathSegmentGreen {
-        let children: Vec<GreenId> = vec![ident.0, generic_args.0];
-        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
-        PathSegmentGreen(db.intern_green(GreenNode::Internal(GreenNodeInternal {
-            kind: SyntaxKind::PathSegment,
-            children,
-            width,
-        })))
-    }
-    pub fn ident(&self, db: &dyn SyntaxGroup) -> Terminal {
-        Terminal::from_syntax_node(db, self.children[0].clone())
-    }
-    pub fn generic_args(&self, db: &dyn SyntaxGroup) -> OptionGenericArgs {
-        OptionGenericArgs::from_syntax_node(db, self.children[1].clone())
-    }
+pub enum PathSegment {
+    GenericArgs(PathSegmentGenericArgs),
+    Ident(PathSegmentIdent),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct PathSegmentPtr(SyntaxStablePtrId);
@@ -1467,33 +1446,116 @@ impl PathSegmentPtr {
         self.0
     }
 }
+impl From<PathSegmentGenericArgsGreen> for PathSegmentGreen {
+    fn from(value: PathSegmentGenericArgsGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<PathSegmentIdentGreen> for PathSegmentGreen {
+    fn from(value: PathSegmentIdentGreen) -> Self {
+        Self(value.0)
+    }
+}
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct PathSegmentGreen(pub GreenId);
 impl TypedSyntaxNode for PathSegment {
     type StablePtr = PathSegmentPtr;
     type Green = PathSegmentGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
-        PathSegmentGreen(db.intern_green(GreenNode::Internal(GreenNodeInternal {
-            kind: SyntaxKind::PathSegment,
-            children: vec![Terminal::missing(db).0, OptionGenericArgs::missing(db).0],
+        PathSegmentGreen(PathSegmentIdent::missing(db).0)
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        match db.lookup_intern_green(node.0.green) {
+            GreenNode::Internal(internal) => match internal.kind {
+                SyntaxKind::PathSegmentGenericArgs => {
+                    PathSegment::GenericArgs(PathSegmentGenericArgs::from_syntax_node(db, node))
+                }
+                SyntaxKind::PathSegmentIdent => {
+                    PathSegment::Ident(PathSegmentIdent::from_syntax_node(db, node))
+                }
+                _ => panic!(
+                    "Unexpected syntax kind {:?} when constructing {}.",
+                    internal.kind, "PathSegment"
+                ),
+            },
+            GreenNode::Token(token) => match token.kind {
+                _ => panic!(
+                    "Unexpected token kind {:?} when constructing {}.",
+                    token.kind, "PathSegment"
+                ),
+            },
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        match self {
+            PathSegment::GenericArgs(x) => x.as_syntax_node(),
+            PathSegment::Ident(x) => x.as_syntax_node(),
+        }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        PathSegmentPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct PathSegmentIdent {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl PathSegmentIdent {
+    pub fn new_green(db: &dyn SyntaxGroup, ident: TerminalGreen) -> PathSegmentIdentGreen {
+        let children: Vec<GreenId> = vec![ident.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        PathSegmentIdentGreen(db.intern_green(GreenNode::Internal(GreenNodeInternal {
+            kind: SyntaxKind::PathSegmentIdent,
+            children,
+            width,
+        })))
+    }
+    pub fn ident(&self, db: &dyn SyntaxGroup) -> Terminal {
+        Terminal::from_syntax_node(db, self.children[0].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct PathSegmentIdentPtr(SyntaxStablePtrId);
+impl PathSegmentIdentPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct PathSegmentIdentGreen(pub GreenId);
+impl TypedSyntaxNode for PathSegmentIdent {
+    type StablePtr = PathSegmentIdentPtr;
+    type Green = PathSegmentIdentGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        PathSegmentIdentGreen(db.intern_green(GreenNode::Internal(GreenNodeInternal {
+            kind: SyntaxKind::PathSegmentIdent,
+            children: vec![Terminal::missing(db).0],
             width: 0,
         })))
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         match db.lookup_intern_green(node.0.green) {
             GreenNode::Internal(internal) => {
-                if internal.kind != SyntaxKind::PathSegment {
+                if internal.kind != SyntaxKind::PathSegmentIdent {
                     panic!(
                         "Unexpected SyntaxKind {:?}. Expected {:?}.",
                         internal.kind,
-                        SyntaxKind::PathSegment,
+                        SyntaxKind::PathSegmentIdent,
                     );
                 }
                 let children = node.children(db).collect();
                 Self { node, children }
             }
             GreenNode::Token(token) => {
-                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::PathSegment,);
+                panic!(
+                    "Unexpected Token {:?}. Expected {:?}.",
+                    token,
+                    SyntaxKind::PathSegmentIdent,
+                );
             }
         }
     }
@@ -1504,7 +1566,80 @@ impl TypedSyntaxNode for PathSegment {
         self.node.clone()
     }
     fn stable_ptr(&self) -> Self::StablePtr {
-        PathSegmentPtr(self.node.0.stable_ptr)
+        PathSegmentIdentPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct PathSegmentGenericArgs {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl PathSegmentGenericArgs {
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        generic_args: OptionGenericArgsSomeGreen,
+    ) -> PathSegmentGenericArgsGreen {
+        let children: Vec<GreenId> = vec![generic_args.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        PathSegmentGenericArgsGreen(db.intern_green(GreenNode::Internal(GreenNodeInternal {
+            kind: SyntaxKind::PathSegmentGenericArgs,
+            children,
+            width,
+        })))
+    }
+    pub fn generic_args(&self, db: &dyn SyntaxGroup) -> OptionGenericArgsSome {
+        OptionGenericArgsSome::from_syntax_node(db, self.children[0].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct PathSegmentGenericArgsPtr(SyntaxStablePtrId);
+impl PathSegmentGenericArgsPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct PathSegmentGenericArgsGreen(pub GreenId);
+impl TypedSyntaxNode for PathSegmentGenericArgs {
+    type StablePtr = PathSegmentGenericArgsPtr;
+    type Green = PathSegmentGenericArgsGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        PathSegmentGenericArgsGreen(db.intern_green(GreenNode::Internal(GreenNodeInternal {
+            kind: SyntaxKind::PathSegmentGenericArgs,
+            children: vec![OptionGenericArgsSome::missing(db).0],
+            width: 0,
+        })))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        match db.lookup_intern_green(node.0.green) {
+            GreenNode::Internal(internal) => {
+                if internal.kind != SyntaxKind::PathSegmentGenericArgs {
+                    panic!(
+                        "Unexpected SyntaxKind {:?}. Expected {:?}.",
+                        internal.kind,
+                        SyntaxKind::PathSegmentGenericArgs,
+                    );
+                }
+                let children = node.children(db).collect();
+                Self { node, children }
+            }
+            GreenNode::Token(token) => {
+                panic!(
+                    "Unexpected Token {:?}. Expected {:?}.",
+                    token,
+                    SyntaxKind::PathSegmentGenericArgs,
+                );
+            }
+        }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        PathSegmentGenericArgsPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
