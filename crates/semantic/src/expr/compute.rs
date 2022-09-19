@@ -10,6 +10,7 @@ use defs::ids::{
 };
 use diagnostics::Diagnostics;
 use smol_str::SmolStr;
+use syntax::node::ast::PathSegment;
 use syntax::node::db::SyntaxGroup;
 use syntax::node::helpers::TerminalEx;
 use syntax::node::ids::SyntaxStablePtrId;
@@ -370,11 +371,13 @@ fn expr_as_identifier(
             if segments.len() != 1 {
                 return Err(SemanticDiagnosticKind::InvalidMemberExpression);
             }
-            let segment = &segments[0];
-            if let ast::OptionGenericArgs::Some(_) = segment.generic_args(syntax_db) {
-                return Err(SemanticDiagnosticKind::InvalidMemberExpression);
+
+            match &segments[0] {
+                PathSegment::Ident(ident_segment) => ident_segment.ident(syntax_db).text(syntax_db),
+                PathSegment::GenericArgs(_generic_args_segment) => {
+                    return Err(SemanticDiagnosticKind::InvalidMemberExpression);
+                }
             }
-            segment.ident(syntax_db).text(syntax_db)
         }
         _ => {
             return Err(SemanticDiagnosticKind::InvalidMemberExpression);
@@ -437,11 +440,16 @@ fn resolve_variable(
     if segments.len() != 1 {
         return Err(SemanticDiagnosticKind::Unsupported);
     }
-    let last_segment = &segments[0];
-    if let ast::OptionGenericArgs::Some(_) = last_segment.generic_args(syntax_db) {
-        return Err(SemanticDiagnosticKind::Unsupported);
-    };
-    resolve_variable_by_name(ctx, &last_segment.ident(syntax_db))
+
+    match &segments[0] {
+        PathSegment::Ident(ident_segment) => {
+            resolve_variable_by_name(ctx, &ident_segment.ident(syntax_db))
+        }
+        PathSegment::GenericArgs(_generic_args_segment) => {
+            // TODO(ilya, 10/10/2022): Generics are not supported yet.
+            Err(SemanticDiagnosticKind::Unsupported)
+        }
+    }
 }
 
 /// Resolves a variable given a context and a simple name.
