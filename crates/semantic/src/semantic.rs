@@ -15,6 +15,12 @@ pub struct Parameter {
     pub ty: TypeId,
 }
 
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[debug_db(SemanticGroup)]
+pub struct GenericParameter {
+    pub id: ParamId,
+}
+
 // TODO(yuval): consider making this an enum or the id an enum of ParamId/LocalVarId
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
 #[debug_db(SemanticGroup)]
