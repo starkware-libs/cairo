@@ -38,6 +38,8 @@ pub enum InvocationError {
     WrongNumberOfArguments,
     #[error("The requested functionality is not implemented yet.")]
     NotImplemented(Invocation),
+    #[error("The functionality is supported only for sized types.")]
+    NotSized(Invocation),
     #[error(transparent)]
     FrameStateError(#[from] FrameStateError),
 }
@@ -233,11 +235,18 @@ fn handle_store_temp(
     store_temp: &StoreTempConcreteLibFunc,
     refs: &[ReferenceValue],
     environment: Environment,
+    type_sizes: &TypeSizeMap,
 ) -> Result<CompiledInvocation, InvocationError> {
     let expression = match refs {
         [ReferenceValue { expression, .. }] => expression,
         _ => return Err(InvocationError::WrongNumberOfArguments),
     };
+
+    match type_sizes.get(&store_temp.ty) {
+        Some(1) => Ok(()),
+        Some(0) => Err(InvocationError::NotSized(invocation.clone())),
+        _ => Err(InvocationError::NotImplemented(invocation.clone())),
+    }?;
 
     let dst = DerefOperand { register: Register::AP, offset: 0 };
 
@@ -404,7 +413,7 @@ pub fn compile_invocation(
             ))
         }
         CoreConcreteLibFunc::Mem(MemConcreteLibFunc::StoreTemp(store_temp)) => {
-            handle_store_temp(invocation, store_temp, refs, environment)
+            handle_store_temp(invocation, store_temp, refs, environment, type_sizes)
         }
         CoreConcreteLibFunc::Mem(MemConcreteLibFunc::Rename(libfunc))
         | CoreConcreteLibFunc::UnwrapNonZero(libfunc) => {
