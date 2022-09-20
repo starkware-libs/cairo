@@ -597,44 +597,46 @@ impl<'a> Parser<'a> {
     /// Returns a GreenId of a node with kind ExprPath.
     fn parse_path(&mut self) -> ExprPathGreen {
         // Initialize the list with the first path segment.
-        let mut children: Vec<ExprPathElementOrSeparatorGreen> =
-            vec![self.parse_path_segment().into()];
-        while let Some(separator) = self.try_parse_token(TokenKind::ColonColon) {
-            children.push(separator.into());
-            if let Some(segment) = self.try_parse_path_segment() {
-                children.push(segment.into());
-            } else {
-                children.push(
-                    self.create_and_report_missing::<PathSegment>(
-                        ParserDiagnosticKind::MissingPathSegment,
-                    )
-                    .into(),
-                );
-                break;
+        let mut children: Vec<ExprPathElementOrSeparatorGreen> = vec![];
+        loop {
+            let (node, optional_seperator) = self.parse_path_segment();
+            children.push(node.into());
+
+            if let Some(seperator) = optional_seperator {
+                children.push(seperator.into());
+                continue;
             }
+            break;
         }
+
         ExprPath::new_green(self.db, children)
     }
 
-    /// Returns a GreenId of a node with kind PathSegment or None if a segment can't be parsed.
-    fn try_parse_path_segment(&mut self) -> Option<PathSegmentGreen> {
-        match self.peek().kind {
-            TokenKind::Identifier => {
-                let identifier = self.try_parse_token(TokenKind::Identifier)?;
-                Some(PathSegmentIdent::new_green(self.db, identifier).into())
+    /// Returns a PathSegment and and optional seperator.
+    fn parse_path_segment(&mut self) -> (PathSegmentGreen, Option<TerminalGreen>) {
+        if let Some(identifier) = self.try_parse_token(TokenKind::Identifier) {
+            match self.try_parse_token(TokenKind::ColonColon) {
+                Some(seperator) if self.peek().kind == TokenKind::LT => (
+                    PathSegmentWithGenericArgs::new_green(
+                        self.db,
+                        identifier,
+                        seperator,
+                        self.parse_generic_args(),
+                    )
+                    .into(),
+                    self.try_parse_token(TokenKind::ColonColon),
+                ),
+                seperator => (PathSegmentSimple::new_green(self.db, identifier).into(), seperator),
             }
-            TokenKind::LT => {
-                Some(PathSegmentGenericArgs::new_green(self.db, self.parse_generic_args()).into())
-            }
-            _ => None,
+        } else {
+            (
+                self.create_and_report_missing::<PathSegment>(
+                    ParserDiagnosticKind::MissingPathSegment,
+                ),
+                // TODO(ilya, 10/10/2022): Should we continue parsing the path here?
+                None,
+            )
         }
-    }
-
-    /// Returns a GreenId of a node with kind PathSegment or None if a segment can't be parsed.
-    fn parse_path_segment(&mut self) -> PathSegmentGreen {
-        self.try_parse_path_segment().unwrap_or_else(|| {
-            self.create_and_report_missing::<PathSegment>(ParserDiagnosticKind::MissingPathSegment)
-        })
     }
 
     fn parse_generic_args(&mut self) -> OptionGenericArgsSomeGreen {

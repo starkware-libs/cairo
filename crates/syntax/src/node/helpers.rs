@@ -61,10 +61,13 @@ pub trait PathSegmentEx {
 impl PathSegmentEx for ast::PathSegment {
     /// Retrieves the text of the last identifier in the path.
     fn as_identifier(&self, db: &dyn SyntaxGroup) -> Option<SmolStr> {
-        match self {
-            PathSegment::Ident(ident_segment) => Some(ident_segment.ident(db).text(db)),
-            PathSegment::GenericArgs(_generic_args_segment) => None,
-        }
+        Some(
+            match self {
+                PathSegment::Simple(segment) => segment.ident(db),
+                PathSegment::WithGenericArgs(segment) => segment.ident(db),
+            }
+            .text(db),
+        )
     }
 }
 
