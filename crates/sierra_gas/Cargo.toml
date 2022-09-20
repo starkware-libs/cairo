@@ -1,0 +1,9 @@
+[package]
+name = "sierra_gas"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+sierra = { path = "../sierra" }
+itertools = "0.10.3"
+
