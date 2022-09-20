@@ -32,7 +32,7 @@ LibFuncDeclaration: LibFuncDeclaration = {
 Function: Function = {
     <id:FunctionId> "@" <entry:StatementIdx>
     "(" <params: Params> ")" "->" "(" <ret_types: ConcreteTypeIds> ")" ";"
-    => Function{id, signature: FunctionSignature{params, ret_types}, entry},
+    => Function::new(id, params, ret_types, entry),
 }
 
 Param: Param = {

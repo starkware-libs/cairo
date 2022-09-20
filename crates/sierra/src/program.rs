@@ -57,8 +57,8 @@ pub struct ConcreteLibFuncLongId {
 /// Represents the signature of a function.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct FunctionSignature {
-    /// The arguments for the function.
-    pub params: Vec<Param>,
+    /// The types of the parameters of the function.
+    pub param_types: Vec<ConcreteTypeId>,
     /// The return types.
     pub ret_types: Vec<ConcreteTypeId>,
 }
@@ -68,10 +68,31 @@ pub struct FunctionSignature {
 pub struct GenFunction<StatementId> {
     /// The name of the function.
     pub id: FunctionId,
-    /// The arguments and return types.
+    /// The parameter types and return types.
     pub signature: FunctionSignature,
+    /// The parameters of the function.
+    // TODO(lior): Consider keeping here only the var ids, instead of the full Param (the types
+    //   are stored in `signature`).
+    pub params: Vec<Param>,
     /// The statement id where the function starts.
     pub entry: StatementId,
+}
+
+impl<StatementId> GenFunction<StatementId> {
+    pub fn new(
+        id: FunctionId,
+        params: Vec<Param>,
+        ret_types: Vec<ConcreteTypeId>,
+        entry_point: StatementId,
+    ) -> Self {
+        let param_types: Vec<_> = params.iter().map(|Param { id: _, ty }| ty.clone()).collect();
+        GenFunction {
+            id,
+            signature: FunctionSignature { param_types, ret_types },
+            params,
+            entry: entry_point,
+        }
+    }
 }
 
 /// Descriptor of a variable.
