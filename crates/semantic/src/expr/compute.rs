@@ -11,12 +11,11 @@ use defs::ids::{
 };
 use diagnostics::Diagnostics;
 use smol_str::SmolStr;
-use syntax::node::ast::PathSegment;
+use syntax::node::ast::{BinaryOperator, PathSegment};
 use syntax::node::db::SyntaxGroup;
-use syntax::node::helpers::{PathSegmentEx, TerminalEx};
+use syntax::node::helpers::GetIdentifier;
 use syntax::node::ids::SyntaxStablePtrId;
-use syntax::node::{ast, TypedSyntaxNode};
-use syntax::token::TokenKind;
+use syntax::node::{ast, Terminal, TypedSyntaxNode};
 use utils::ordered_hash_map::OrderedHashMap;
 use utils::OptionFrom;
 
@@ -121,21 +120,23 @@ pub fn maybe_compute_expr_semantic(
         ast::Expr::Literal(literal_syntax) => {
             semantic::Expr::ExprLiteral(literal_to_semantic(ctx, literal_syntax)?)
         }
+        ast::Expr::False(_) => return Err(SemanticDiagnosticKind::Unsupported),
+        ast::Expr::True(_) => return Err(SemanticDiagnosticKind::Unsupported),
         ast::Expr::Parenthesized(paren_syntax) => {
             compute_expr_semantic(ctx, paren_syntax.expr(syntax_db))
         }
         ast::Expr::Unary(_) => return Err(SemanticDiagnosticKind::Unsupported),
         ast::Expr::Binary(binary_op_syntax) => {
             let stable_ptr = binary_op_syntax.stable_ptr().untyped();
-            let operator_kind = binary_op_syntax.op(syntax_db).kind(syntax_db);
+            let binary_op = binary_op_syntax.op(syntax_db);
             let lexpr = compute_expr_semantic(ctx, binary_op_syntax.lhs(syntax_db));
             let rhs_syntax = binary_op_syntax.rhs(syntax_db);
-            if operator_kind == TokenKind::Dot {
+            if matches!(binary_op, BinaryOperator::Dot(_)) {
                 return member_access_expr(ctx, lexpr, rhs_syntax, stable_ptr);
             }
             let rexpr = compute_expr_semantic(ctx, rhs_syntax);
             let arg_exprs = [lexpr, rexpr];
-            let generic_function = core_binary_operator(db, operator_kind)?;
+            let generic_function = core_binary_operator(db, binary_op)?;
             let function = specialize_function(ctx, generic_function, &arg_exprs, &[])?;
             let args = arg_exprs.into_iter().map(|expr| db.intern_expr(expr)).collect();
             semantic::Expr::ExprFunctionCall(semantic::ExprFunctionCall {
@@ -356,11 +357,11 @@ fn get_tail_expression(
 /// Creates the semantic model of a literal expression from its AST.
 fn literal_to_semantic(
     ctx: &mut ComputationContext<'_>,
-    literal_syntax: &ast::ExprLiteral,
+    literal_syntax: &ast::TerminalLiteralNumber,
 ) -> SemanticResult<semantic::ExprLiteral> {
     let db = ctx.db;
     let syntax_db = db.upcast();
-    let text = literal_syntax.terminal(syntax_db).text(syntax_db);
+    let text = literal_syntax.text(syntax_db);
     let value = text.parse::<usize>().map_err(|_err| SemanticDiagnosticKind::UnknownLiteral)?;
     let ty = db.core_felt_ty();
     Ok(semantic::ExprLiteral { value, ty, stable_ptr: literal_syntax.stable_ptr().untyped() })
@@ -378,9 +379,7 @@ fn expr_as_identifier(
             if segments.len() != 1 {
                 return Err(SemanticDiagnosticKind::InvalidMemberExpression);
             }
-            segments[0]
-                .as_identifier(syntax_db)
-                .ok_or(SemanticDiagnosticKind::InvalidMemberExpression)
+            Ok(segments[0].identifier(syntax_db))
         }
         _ => Err(SemanticDiagnosticKind::InvalidMemberExpression),
     }
@@ -456,7 +455,7 @@ fn resolve_variable(
 /// Resolves a variable given a context and a simple name.
 pub fn resolve_variable_by_name(
     ctx: &mut ComputationContext<'_>,
-    identifier: &ast::Terminal,
+    identifier: &ast::TerminalIdentifier,
 ) -> SemanticResult<semantic::Expr> {
     let variable_name = identifier.text(ctx.db.upcast());
     let mut maybe_env = Some(&*ctx.environment);

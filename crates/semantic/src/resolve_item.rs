@@ -1,7 +1,8 @@
 use defs::ids::{ModuleId, ModuleItemId, Symbol};
 use filesystem::ids::CrateLongId;
 use syntax::node::ast::{self};
-use syntax::node::helpers::PathSegmentEx;
+use syntax::node::helpers::GetIdentifier;
+use syntax::node::Terminal;
 
 use crate::corelib::core_module;
 use crate::db::SemanticGroup;
@@ -18,7 +19,7 @@ pub fn resolve_item(
 
     let ident = elements
         .next()
-        .and_then(|segment| segment.as_identifier(syntax_db))
+        .map(|segment| segment.identifier(syntax_db))
         .ok_or(SemanticDiagnosticKind::InvalidPath)?;
     let mut symbol = db
         .module_item_by_name(module_id, ident.clone())

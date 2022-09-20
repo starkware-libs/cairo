@@ -6,170 +6,160 @@ use super::kind::SyntaxKind;
 /// for its stable pointer. See [super::stable_ptr].
 pub fn get_key_fields(kind: SyntaxKind, children: Vec<GreenId>) -> Vec<GreenId> {
     match kind {
-        SyntaxKind::Terminal => {
-            vec![]
-        }
-        SyntaxKind::TriviumSkippedToken => {
-            vec![]
-        }
-        SyntaxKind::Trivia => {
-            vec![]
-        }
-        SyntaxKind::StructArgExpr => {
-            vec![]
-        }
-        SyntaxKind::OptionStructArgExprEmpty => {
-            vec![]
-        }
-        SyntaxKind::StructArgSingle => {
-            vec![/* identifier */ children[0]]
-        }
-        SyntaxKind::StructArgTail => {
-            vec![]
-        }
-        SyntaxKind::StructArgList => {
-            vec![]
-        }
-        SyntaxKind::ArgListBraced => {
-            vec![]
-        }
-        SyntaxKind::ExprList => {
-            vec![]
-        }
-        SyntaxKind::ExprMissing => {
-            vec![]
-        }
-        SyntaxKind::OptionGenericArgsEmpty => {
-            vec![]
-        }
-        SyntaxKind::OptionGenericArgsSome => {
-            vec![]
-        }
-        SyntaxKind::GenericArgList => {
-            vec![]
-        }
-        SyntaxKind::PathSegmentIdent => {
-            vec![]
-        }
-        SyntaxKind::PathSegmentGenericArgs => {
-            vec![]
-        }
-        SyntaxKind::ExprPath => {
-            vec![]
-        }
-        SyntaxKind::ExprLiteral => {
-            vec![]
-        }
-        SyntaxKind::ExprParenthesized => {
-            vec![]
-        }
-        SyntaxKind::ExprUnary => {
-            vec![]
-        }
-        SyntaxKind::ExprBinary => {
-            vec![]
-        }
-        SyntaxKind::ExprTuple => {
-            vec![]
-        }
-        SyntaxKind::ExprListParenthesized => {
-            vec![]
-        }
-        SyntaxKind::ExprFunctionCall => {
-            vec![]
-        }
-        SyntaxKind::ExprStructCtorCall => {
-            vec![]
-        }
-        SyntaxKind::ExprBlock => {
-            vec![]
-        }
-        SyntaxKind::MatchArm => {
-            vec![]
-        }
-        SyntaxKind::MatchArms => {
-            vec![]
-        }
-        SyntaxKind::ExprMatch => {
-            vec![]
-        }
-        SyntaxKind::TypeClause => {
-            vec![]
-        }
-        SyntaxKind::OptionTypeClauseEmpty => {
-            vec![]
-        }
-        SyntaxKind::ReturnTypeClause => {
-            vec![]
-        }
-        SyntaxKind::OptionReturnTypeClauseEmpty => {
-            vec![]
-        }
-        SyntaxKind::StatementList => {
-            vec![]
-        }
-        SyntaxKind::StatementMissing => {
-            vec![]
-        }
-        SyntaxKind::StatementLet => {
-            vec![/* name */ children[1]]
-        }
-        SyntaxKind::OptionSemicolonEmpty => {
-            vec![]
-        }
-        SyntaxKind::StatementExpr => {
-            vec![]
-        }
-        SyntaxKind::StatementReturn => {
-            vec![]
-        }
-        SyntaxKind::Param => {
-            vec![/* name */ children[0]]
-        }
-        SyntaxKind::ParamList => {
-            vec![]
-        }
-        SyntaxKind::ParamListParenthesized => {
-            vec![]
-        }
-        SyntaxKind::ParamListBraced => {
-            vec![]
-        }
-        SyntaxKind::FunctionSignature => {
-            vec![]
-        }
-        SyntaxKind::ItemList => {
-            vec![]
-        }
-        SyntaxKind::ItemModule => {
-            vec![/* name */ children[1]]
-        }
-        SyntaxKind::ItemFreeFunction => {
-            vec![/* name */ children[1]]
-        }
-        SyntaxKind::ItemExternFunction => {
-            vec![/* name */ children[2]]
-        }
-        SyntaxKind::ItemExternType => {
-            vec![/* name */ children[2]]
-        }
-        SyntaxKind::ItemTrait => {
-            vec![/* name */ children[1]]
-        }
-        SyntaxKind::ItemImpl => {
-            vec![/* name */ children[1]]
-        }
-        SyntaxKind::ItemStruct => {
-            vec![/* name */ children[1]]
-        }
-        SyntaxKind::ItemEnum => {
-            vec![/* name */ children[1]]
-        }
-        SyntaxKind::ItemUse => {
-            vec![/* name */ children[1]]
-        }
-        SyntaxKind::SyntaxFile => {
-            vec![]
-        }
+        SyntaxKind::Trivia => vec![],
+        SyntaxKind::StructArgExpr => vec![],
+        SyntaxKind::OptionStructArgExprEmpty => vec![],
+        SyntaxKind::StructArgSingle => vec![/* identifier */ children[0]],
+        SyntaxKind::StructArgTail => vec![],
+        SyntaxKind::StructArgList => vec![],
+        SyntaxKind::ArgListBraced => vec![],
+        SyntaxKind::ExprList => vec![],
+        SyntaxKind::ExprMissing => vec![],
+        SyntaxKind::OptionGenericArgsEmpty => vec![],
+        SyntaxKind::OptionGenericArgsSome => vec![],
+        SyntaxKind::GenericArgList => vec![],
+        SyntaxKind::PathSegmentIdent => vec![],
+        SyntaxKind::PathSegmentGenericArgs => vec![],
+        SyntaxKind::ExprPath => vec![],
+        SyntaxKind::ExprParenthesized => vec![],
+        SyntaxKind::ExprUnary => vec![],
+        SyntaxKind::ExprBinary => vec![],
+        SyntaxKind::ExprTuple => vec![],
+        SyntaxKind::ExprListParenthesized => vec![],
+        SyntaxKind::ExprFunctionCall => vec![],
+        SyntaxKind::ExprStructCtorCall => vec![],
+        SyntaxKind::ExprBlock => vec![],
+        SyntaxKind::MatchArm => vec![],
+        SyntaxKind::MatchArms => vec![],
+        SyntaxKind::ExprMatch => vec![],
+        SyntaxKind::TypeClause => vec![],
+        SyntaxKind::OptionTypeClauseEmpty => vec![],
+        SyntaxKind::ReturnTypeClause => vec![],
+        SyntaxKind::OptionReturnTypeClauseEmpty => vec![],
+        SyntaxKind::StatementList => vec![],
+        SyntaxKind::StatementMissing => vec![],
+        SyntaxKind::StatementLet => vec![/* name */ children[1]],
+        SyntaxKind::OptionSemicolonEmpty => vec![],
+        SyntaxKind::StatementExpr => vec![],
+        SyntaxKind::StatementReturn => vec![],
+        SyntaxKind::Param => vec![/* name */ children[0]],
+        SyntaxKind::ParamList => vec![],
+        SyntaxKind::ParamListParenthesized => vec![],
+        SyntaxKind::ParamListBraced => vec![],
+        SyntaxKind::FunctionSignature => vec![],
+        SyntaxKind::ItemList => vec![],
+        SyntaxKind::ItemModule => vec![/* name */ children[1]],
+        SyntaxKind::ItemFreeFunction => vec![/* name */ children[1]],
+        SyntaxKind::ItemExternFunction => vec![/* name */ children[2]],
+        SyntaxKind::ItemExternType => vec![/* name */ children[2]],
+        SyntaxKind::ItemTrait => vec![/* name */ children[1]],
+        SyntaxKind::ItemImpl => vec![/* name */ children[1]],
+        SyntaxKind::ItemStruct => vec![/* name */ children[1]],
+        SyntaxKind::ItemEnum => vec![/* name */ children[1]],
+        SyntaxKind::ItemUse => vec![/* name */ children[1]],
+        SyntaxKind::SyntaxFile => vec![],
+        SyntaxKind::TokenSingleLineComment => vec![],
+        SyntaxKind::TokenWhitespace => vec![],
+        SyntaxKind::TokenNewline => vec![],
+        SyntaxKind::TokenMissing => vec![],
+        SyntaxKind::TokenSkipped => vec![],
+        SyntaxKind::TokenIdentifier => vec![],
+        SyntaxKind::TerminalIdentifier => vec![],
+        SyntaxKind::TokenLiteralNumber => vec![],
+        SyntaxKind::TerminalLiteralNumber => vec![],
+        SyntaxKind::TokenFalse => vec![],
+        SyntaxKind::TerminalFalse => vec![],
+        SyntaxKind::TokenTrue => vec![],
+        SyntaxKind::TerminalTrue => vec![],
+        SyntaxKind::TokenExtern => vec![],
+        SyntaxKind::TerminalExtern => vec![],
+        SyntaxKind::TokenType => vec![],
+        SyntaxKind::TerminalType => vec![],
+        SyntaxKind::TokenFunction => vec![],
+        SyntaxKind::TerminalFunction => vec![],
+        SyntaxKind::TokenModule => vec![],
+        SyntaxKind::TerminalModule => vec![],
+        SyntaxKind::TokenEnum => vec![],
+        SyntaxKind::TerminalEnum => vec![],
+        SyntaxKind::TokenStruct => vec![],
+        SyntaxKind::TerminalStruct => vec![],
+        SyntaxKind::TokenTrait => vec![],
+        SyntaxKind::TerminalTrait => vec![],
+        SyntaxKind::TokenImpl => vec![],
+        SyntaxKind::TerminalImpl => vec![],
+        SyntaxKind::TokenFor => vec![],
+        SyntaxKind::TerminalFor => vec![],
+        SyntaxKind::TokenLet => vec![],
+        SyntaxKind::TerminalLet => vec![],
+        SyntaxKind::TokenReturn => vec![],
+        SyntaxKind::TerminalReturn => vec![],
+        SyntaxKind::TokenMatch => vec![],
+        SyntaxKind::TerminalMatch => vec![],
+        SyntaxKind::TokenUse => vec![],
+        SyntaxKind::TerminalUse => vec![],
+        SyntaxKind::TokenAnd => vec![],
+        SyntaxKind::TerminalAnd => vec![],
+        SyntaxKind::TokenAndAnd => vec![],
+        SyntaxKind::TerminalAndAnd => vec![],
+        SyntaxKind::TokenOrOr => vec![],
+        SyntaxKind::TerminalOrOr => vec![],
+        SyntaxKind::TokenEqEq => vec![],
+        SyntaxKind::TerminalEqEq => vec![],
+        SyntaxKind::TokenNeq => vec![],
+        SyntaxKind::TerminalNeq => vec![],
+        SyntaxKind::TokenGE => vec![],
+        SyntaxKind::TerminalGE => vec![],
+        SyntaxKind::TokenGT => vec![],
+        SyntaxKind::TerminalGT => vec![],
+        SyntaxKind::TokenLE => vec![],
+        SyntaxKind::TerminalLE => vec![],
+        SyntaxKind::TokenLT => vec![],
+        SyntaxKind::TerminalLT => vec![],
+        SyntaxKind::TokenNot => vec![],
+        SyntaxKind::TerminalNot => vec![],
+        SyntaxKind::TokenPlus => vec![],
+        SyntaxKind::TerminalPlus => vec![],
+        SyntaxKind::TokenMinus => vec![],
+        SyntaxKind::TerminalMinus => vec![],
+        SyntaxKind::TokenMul => vec![],
+        SyntaxKind::TerminalMul => vec![],
+        SyntaxKind::TokenDiv => vec![],
+        SyntaxKind::TerminalDiv => vec![],
+        SyntaxKind::TokenColon => vec![],
+        SyntaxKind::TerminalColon => vec![],
+        SyntaxKind::TokenColonColon => vec![],
+        SyntaxKind::TerminalColonColon => vec![],
+        SyntaxKind::TokenComma => vec![],
+        SyntaxKind::TerminalComma => vec![],
+        SyntaxKind::TokenDot => vec![],
+        SyntaxKind::TerminalDot => vec![],
+        SyntaxKind::TokenDotDot => vec![],
+        SyntaxKind::TerminalDotDot => vec![],
+        SyntaxKind::TokenEq => vec![],
+        SyntaxKind::TerminalEq => vec![],
+        SyntaxKind::TokenSemicolon => vec![],
+        SyntaxKind::TerminalSemicolon => vec![],
+        SyntaxKind::TokenUnderscore => vec![],
+        SyntaxKind::TerminalUnderscore => vec![],
+        SyntaxKind::TokenLBrace => vec![],
+        SyntaxKind::TerminalLBrace => vec![],
+        SyntaxKind::TokenRBrace => vec![],
+        SyntaxKind::TerminalRBrace => vec![],
+        SyntaxKind::TokenLBrack => vec![],
+        SyntaxKind::TerminalLBrack => vec![],
+        SyntaxKind::TokenRBrack => vec![],
+        SyntaxKind::TerminalRBrack => vec![],
+        SyntaxKind::TokenLParen => vec![],
+        SyntaxKind::TerminalLParen => vec![],
+        SyntaxKind::TokenRParen => vec![],
+        SyntaxKind::TerminalRParen => vec![],
+        SyntaxKind::TokenArrow => vec![],
+        SyntaxKind::TerminalArrow => vec![],
+        SyntaxKind::TokenMatchArrow => vec![],
+        SyntaxKind::TerminalMatchArrow => vec![],
+        SyntaxKind::TokenEndOfFile => vec![],
+        SyntaxKind::TerminalEndOfFile => vec![],
+        SyntaxKind::TokenBadCharacters => vec![],
+        SyntaxKind::TerminalBadCharacters => vec![],
     }
 }

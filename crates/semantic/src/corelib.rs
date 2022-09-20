@@ -1,6 +1,6 @@
 use defs::ids::{GenericFunctionId, GenericTypeId, ModuleId};
 use filesystem::ids::CrateLongId;
-use syntax::token::TokenKind;
+use syntax::node::ast::BinaryOperator;
 use utils::OptionFrom;
 
 use crate::db::SemanticGroup;
@@ -31,19 +31,19 @@ pub fn unit_ty(db: &dyn SemanticGroup) -> TypeId {
 
 pub fn core_binary_operator(
     db: &dyn SemanticGroup,
-    operator_kind: TokenKind,
+    binary_op: BinaryOperator,
 ) -> Result<GenericFunctionId, SemanticDiagnosticKind> {
     let core_module = db.core_module();
-    let function_name = match operator_kind {
-        TokenKind::Plus => "felt_add",
-        TokenKind::Minus => "felt_sub",
-        TokenKind::Mul => "felt_mul",
-        TokenKind::Div => "felt_div",
-        TokenKind::EqEq => "felt_eq",
-        TokenKind::AndAnd => "bool_and",
-        TokenKind::OrOr => "bool_or",
-        TokenKind::Not => "bool_not",
-        TokenKind::LE => "felt_le",
+    let function_name = match binary_op {
+        BinaryOperator::Plus(_) => "felt_add",
+        BinaryOperator::Minus(_) => "felt_sub",
+        BinaryOperator::Mul(_) => "felt_mul",
+        BinaryOperator::Div(_) => "felt_div",
+        BinaryOperator::EqEq(_) => "felt_eq",
+        BinaryOperator::AndAnd(_) => "bool_and",
+        BinaryOperator::OrOr(_) => "bool_or",
+        BinaryOperator::Not(_) => "bool_not",
+        BinaryOperator::LE(_) => "felt_le",
         _ => return Err(SemanticDiagnosticKind::UnknownBinaryOperator),
     };
     let generic_function = db

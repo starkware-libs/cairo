@@ -1,13 +1,14 @@
 use pretty_assertions::assert_eq;
+use smol_str::SmolStr;
 
 use super::ast::{
-    ExprBinary, ExprLiteral, ExprPath, PathSegmentGreen, PathSegmentIdent, SyntaxFileGreen,
-    Terminal, Trivia,
+    ExprBinary, ExprPath, PathSegmentGreen, PathSegmentIdent, SyntaxFileGreen, TerminalIdentifier,
+    TerminalLiteralNumber, TerminalPlus, TokenIdentifier, TokenLiteralNumber, TokenPlus,
+    TokenWhitespace, Trivia,
 };
 use super::db::SyntaxDatabase;
 use super::kind::SyntaxKind;
-use super::{SyntaxGroup, SyntaxNode, SyntaxNodeDetails};
-use crate::{node, token};
+use super::{SyntaxGroup, SyntaxNode, Terminal, Token};
 
 #[salsa::database(SyntaxDatabase)]
 #[derive(Default)]
@@ -16,10 +17,13 @@ pub struct DatabaseForTesting {
 }
 impl salsa::Database for DatabaseForTesting {}
 
-fn traverse(db: &dyn SyntaxGroup, node: SyntaxNode) -> Vec<(SyntaxNodeDetails, u32, u32)> {
-    let mut res = vec![(node.details(db), node.offset().0 as u32, node.width(db))];
-    for c in node.children(db) {
-        res.append(&mut traverse(db, c));
+fn traverse(
+    db: &dyn SyntaxGroup,
+    node: SyntaxNode,
+) -> Vec<(SyntaxKind, Option<SmolStr>, u32, u32)> {
+    let mut res = vec![(node.kind(db), node.text(db), node.offset().0 as u32, node.width(db))];
+    for child in node.children(db) {
+        res.append(&mut traverse(db, child));
     }
     res
 }
@@ -33,59 +37,23 @@ fn test_ast() {
     assert_eq!(
         traverse(db, root),
         [
-            (SyntaxNodeDetails::Syntax(SyntaxKind::ExprBinary), 0, 7),
-            (SyntaxNodeDetails::Syntax(SyntaxKind::ExprPath), 0, 4),
-            (SyntaxNodeDetails::Syntax(SyntaxKind::PathSegmentIdent), 0, 4),
-            (SyntaxNodeDetails::Syntax(SyntaxKind::Terminal), 0, 4),
-            (SyntaxNodeDetails::Syntax(SyntaxKind::Trivia), 0, 0),
-            (
-                SyntaxNodeDetails::Token(token::Token {
-                    kind: token::TokenKind::Identifier,
-                    text: "foo".into()
-                }),
-                0,
-                3
-            ),
-            (SyntaxNodeDetails::Syntax(SyntaxKind::Trivia), 3, 1),
-            (
-                SyntaxNodeDetails::Token(token::Token {
-                    kind: token::TokenKind::Whitespace,
-                    text: " ".into()
-                }),
-                3,
-                1
-            ),
-            (SyntaxNodeDetails::Syntax(SyntaxKind::Terminal), 4, 2),
-            (SyntaxNodeDetails::Syntax(SyntaxKind::Trivia), 4, 0),
-            (
-                SyntaxNodeDetails::Token(token::Token {
-                    kind: token::TokenKind::Plus,
-                    text: "+".into()
-                }),
-                4,
-                1
-            ),
-            (SyntaxNodeDetails::Syntax(SyntaxKind::Trivia), 5, 1),
-            (
-                SyntaxNodeDetails::Token(token::Token {
-                    kind: token::TokenKind::Whitespace,
-                    text: " ".into()
-                }),
-                5,
-                1
-            ),
-            (SyntaxNodeDetails::Syntax(SyntaxKind::ExprLiteral), 6, 1),
-            (SyntaxNodeDetails::Syntax(SyntaxKind::Terminal), 6, 1),
-            (SyntaxNodeDetails::Syntax(SyntaxKind::Trivia), 6, 0),
-            (
-                SyntaxNodeDetails::Token(token::Token {
-                    kind: token::TokenKind::LiteralNumber,
-                    text: "5".into()
-                }),
-                6,
-                1
-            ),
-            (SyntaxNodeDetails::Syntax(SyntaxKind::Trivia), 7, 0)
+            (SyntaxKind::ExprBinary, None, 0, 7),
+            (SyntaxKind::ExprPath, None, 0, 4),
+            (SyntaxKind::PathSegmentIdent, None, 0, 4),
+            (SyntaxKind::TerminalIdentifier, None, 0, 4),
+            (SyntaxKind::Trivia, None, 0, 0),
+            (SyntaxKind::TokenIdentifier, Some("foo".into()), 0, 3),
+            (SyntaxKind::Trivia, None, 3, 1),
+            (SyntaxKind::TokenWhitespace, Some(" ".into()), 3, 1),
+            (SyntaxKind::TerminalPlus, None, 4, 2),
+            (SyntaxKind::Trivia, None, 4, 0),
+            (SyntaxKind::TokenPlus, Some("+".into()), 4, 1),
+            (SyntaxKind::Trivia, None, 5, 1),
+            (SyntaxKind::TokenWhitespace, Some(" ".into()), 5, 1),
+            (SyntaxKind::TerminalLiteralNumber, None, 6, 1),
+            (SyntaxKind::Trivia, None, 6, 0),
+            (SyntaxKind::TokenLiteralNumber, Some("5".into()), 6, 1),
+            (SyntaxKind::Trivia, None, 7, 0)
         ]
     )
 }
@@ -109,41 +77,37 @@ fn traverse_and_verify_ptr(db: &dyn SyntaxGroup, root: &SyntaxNode, node: Syntax
 fn setup(db: &DatabaseForTesting) -> SyntaxNode {
     // TODO: Use a builder for easier construction of token.
     // Construct green nodes.
-    let tokens = vec![
-        node::Token::new_green(db, token::TokenKind::Identifier, "foo".into()),
-        node::Token::new_green(db, token::TokenKind::Whitespace, " ".into()),
-        node::Token::new_green(db, token::TokenKind::Plus, "+".into()),
-        node::Token::new_green(db, token::TokenKind::Whitespace, " ".into()),
-        node::Token::new_green(db, token::TokenKind::LiteralNumber, "5".into()),
-    ];
-    assert_eq!(tokens[1], tokens[3]);
+    let token_foo = TokenIdentifier::new_green(db, "foo".into());
+    let token_whitespace1 = TokenWhitespace::new_green(db, " ".into());
+    let token_plus = TokenPlus::new_green(db, "+".into());
+    let token_whitespace2 = TokenWhitespace::new_green(db, " ".into());
+    let token5 = TokenLiteralNumber::new_green(db, "5".into());
+    assert_eq!(token_whitespace1, token_whitespace2);
     let no_trivia = Trivia::new_green(db, vec![]);
-    let triviums = vec![tokens[1], tokens[3]];
+    let triviums = vec![token_whitespace1, token_whitespace2];
     assert_eq!(triviums[0], triviums[1]);
-    let terminals = vec![
-        Terminal::new_green(
-            db,
-            no_trivia,
-            tokens[0],
-            Trivia::new_green(db, vec![triviums[0].into()]),
-        ),
-        Terminal::new_green(
-            db,
-            no_trivia,
-            tokens[2],
-            Trivia::new_green(db, vec![triviums[1].into()]),
-        ),
-        Terminal::new_green(db, no_trivia, tokens[4], no_trivia),
-    ];
+    let terminal_foo = TerminalIdentifier::new_green(
+        db,
+        no_trivia,
+        token_foo,
+        Trivia::new_green(db, vec![triviums[0].into()]),
+    );
+    let terminal_plus = TerminalPlus::new_green(
+        db,
+        no_trivia,
+        token_plus,
+        Trivia::new_green(db, vec![triviums[1].into()]),
+    );
+    let terminal5 = TerminalLiteralNumber::new_green(db, no_trivia, token5, no_trivia);
     let expr = ExprBinary::new_green(
         db,
         ExprPath::new_green(
             db,
-            vec![PathSegmentGreen::from(PathSegmentIdent::new_green(db, terminals[0])).into()],
+            vec![PathSegmentGreen::from(PathSegmentIdent::new_green(db, terminal_foo)).into()],
         )
         .into(),
-        terminals[1],
-        ExprLiteral::new_green(db, terminals[2]).into(),
+        terminal_plus.into(),
+        terminal5.into(),
     );
     // SyntaxNode::new_root only accepts ast::SyntaxFileGreen, but we only have an expression.
     // This is a hack to crate a green id of "SyntaxFile" from "Expr".

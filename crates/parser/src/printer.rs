@@ -1,9 +1,9 @@
 use colored::{ColoredString, Colorize};
 use itertools::zip_eq;
+use smol_str::SmolStr;
 use syntax::node::db::SyntaxGroup;
 use syntax::node::kind::SyntaxKind;
-use syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
-use syntax::token::{self, TokenKind};
+use syntax::node::SyntaxNode;
 use syntax_codegen::cairo_spec::get_spec;
 use syntax_codegen::spec::{Member, Node, NodeKind};
 
@@ -23,18 +23,23 @@ impl<'a> Printer<'a> {
         is_last: bool,
     ) {
         let extra_head_indent = if is_last { "└── " } else { "├── " };
-        match syntax_node.details(self.db) {
-            syntax::node::SyntaxNodeDetails::Token(token) => {
-                self.print_token_node(field_description, indent, extra_head_indent, token);
-            }
-            syntax::node::SyntaxNodeDetails::Syntax(kind) => {
+        let green_node = syntax_node.green_node(self.db);
+        match green_node.details {
+            syntax::node::green::GreenNodeDetails::Token(text) => self.print_token_node(
+                field_description,
+                indent,
+                extra_head_indent,
+                text,
+                green_node.kind,
+            ),
+            syntax::node::green::GreenNodeDetails::Node { .. } => {
                 self.print_internal_node(
                     field_description,
                     indent,
                     extra_head_indent,
                     is_last,
                     syntax_node,
-                    kind,
+                    green_node.kind,
                 );
             }
         }
@@ -45,18 +50,19 @@ impl<'a> Printer<'a> {
         field_description: &str,
         indent: &str,
         extra_head_indent: &str,
-        token: token::Token,
+        text: SmolStr,
+        kind: SyntaxKind,
     ) {
-        let text = if token.kind == TokenKind::Missing {
+        let text = if kind == SyntaxKind::TokenMissing {
             format!("{}: {}", self.blue(field_description.into()), self.red("Missing".into()))
         } else {
-            let token_text = match token.kind {
-                TokenKind::Whitespace | TokenKind::Newline | TokenKind::EndOfFile => {
-                    ".".to_string()
-                }
-                _ => format!(": '{}'", self.green(self.bold(token.text.as_str().into()))),
+            let token_text = match kind {
+                SyntaxKind::TokenWhitespace
+                | SyntaxKind::TokenNewline
+                | SyntaxKind::TokenEndOfFile => ".".to_string(),
+                _ => format!(": '{}'", self.green(self.bold(text.as_str().into()))),
             };
-            format!("{} (kind: {:?}){token_text}", self.blue(field_description.into()), token.kind)
+            format!("{} (kind: {:?}){token_text}", self.blue(field_description.into()), kind)
         };
         self.result.push_str(format!("{indent}{extra_head_indent}{text}\n").as_str());
     }
@@ -70,14 +76,11 @@ impl<'a> Printer<'a> {
         syntax_node: &SyntaxNode,
         kind: SyntaxKind,
     ) {
-        if kind == SyntaxKind::Terminal && !self.print_trivia {
-            let terminal = ast::Terminal::from_syntax_node(self.db, syntax_node.clone());
-            self.print_tree(
-                field_description,
-                &terminal.token(self.db).as_syntax_node(),
-                indent,
-                is_last,
-            );
+        if kind.is_terminal() && !self.print_trivia {
+            // TODO(yuval): At this point we know we should have a second child which is the
+            // token. But still - do this safer?
+            let token_node = syntax_node.children(self.db).nth(1).unwrap();
+            self.print_tree(field_description, &token_node, indent, is_last);
             return;
         }
 
@@ -111,10 +114,11 @@ impl<'a> Printer<'a> {
         let indent = String::from(indent) + extra_indent;
         let node_kind = self.get_node_kind(kind.to_string());
         match node_kind {
-            NodeKind::Struct { members: expected_children } => {
+            NodeKind::Struct { members: expected_children }
+            | NodeKind::Terminal { members: expected_children } => {
                 self.print_internal_struct(&children, &expected_children, indent.as_str());
             }
-            NodeKind::List { element_type: _ } => {
+            NodeKind::List { .. } => {
                 for (i, child) in children.iter().enumerate() {
                     self.print_tree(
                         format!("child #{i}").as_str(),
@@ -124,7 +128,7 @@ impl<'a> Printer<'a> {
                     );
                 }
             }
-            NodeKind::SeparatedList { element_type: _ } => {
+            NodeKind::SeparatedList { .. } => {
                 for (i, child) in children.iter().enumerate() {
                     let description = if i % 2 == 0 { "item" } else { "separator" };
                     self.print_tree(

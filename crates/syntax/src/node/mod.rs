@@ -6,15 +6,14 @@ use std::vec;
 
 use filesystem::span::{TextOffset, TextSpan};
 use smol_str::SmolStr;
-use utils::extract_matches;
 
+use self::ast::TriviaGreen;
 use self::db::SyntaxGroup;
 use self::green::GreenNode;
 use self::ids::{GreenId, SyntaxStablePtrId};
 use self::key_fields::get_key_fields;
 use self::kind::SyntaxKind;
 use self::stable_ptr::SyntaxStablePtr;
-use crate::token;
 
 pub mod ast;
 #[cfg(test)]
@@ -40,11 +39,6 @@ struct SyntaxNodeInner {
     parent: Option<SyntaxNode>,
     stable_ptr: SyntaxStablePtrId,
 }
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub enum SyntaxNodeDetails {
-    Syntax(SyntaxKind),
-    Token(token::Token),
-}
 impl SyntaxNode {
     pub fn new_root(db: &dyn SyntaxGroup, green: ast::SyntaxFileGreen) -> Self {
         let inner = SyntaxNodeInner {
@@ -55,25 +49,29 @@ impl SyntaxNode {
         };
         Self(Arc::new(inner))
     }
-    pub fn details(&self, db: &dyn SyntaxGroup) -> SyntaxNodeDetails {
-        match db.lookup_intern_green(self.0.green) {
-            GreenNode::Internal(internal) => SyntaxNodeDetails::Syntax(internal.kind),
-            GreenNode::Token(token) => SyntaxNodeDetails::Token(token),
-        }
-    }
     pub fn offset(&self) -> TextOffset {
         TextOffset(self.0.offset as usize)
     }
     pub fn width(&self, db: &dyn SyntaxGroup) -> u32 {
-        match db.lookup_intern_green(self.0.green) {
-            GreenNode::Internal(internal) => internal.width,
-            GreenNode::Token(token) => token.width(),
-        }
+        self.green_node(db).width()
+    }
+    pub fn kind(&self, db: &dyn SyntaxGroup) -> SyntaxKind {
+        self.green_node(db).kind
     }
     pub fn span(&self, db: &dyn SyntaxGroup) -> TextSpan {
         let start = self.offset();
         let end = start.add(self.width(db) as usize);
         TextSpan { start, end }
+    }
+    /// Returns the text of the token if this node is a token.
+    pub fn text(&self, db: &dyn SyntaxGroup) -> Option<SmolStr> {
+        match self.green_node(db).details {
+            green::GreenNodeDetails::Token(text) => Some(text),
+            green::GreenNodeDetails::Node { .. } => None,
+        }
+    }
+    pub fn green_node(&self, db: &dyn SyntaxGroup) -> GreenNode {
+        db.lookup_intern_green(self.0.green)
     }
     pub fn span_without_trivia(&self, db: &dyn SyntaxGroup) -> TextSpan {
         let start = self.span_start_without_trivia(db);
@@ -81,15 +79,10 @@ impl SyntaxNode {
         TextSpan { start, end }
     }
     pub fn children<'db>(&self, db: &'db dyn SyntaxGroup) -> SyntaxNodeChildIterator<'db> {
-        let green_iterator = match db.lookup_intern_green(self.0.green) {
-            GreenNode::Internal(internal) => internal.children,
-            GreenNode::Token(_) => vec![],
-        }
-        .into_iter();
         SyntaxNodeChildIterator {
             db,
             node: self.clone(),
-            green_iterator,
+            green_iterator: self.green_node(db).children().into_iter(),
             offset: self.0.offset,
             key_map: HashMap::new(),
         }
@@ -121,40 +114,43 @@ impl SyntaxNode {
     }
 
     fn span_start_without_trivia(&self, db: &dyn SyntaxGroup) -> TextOffset {
-        match self.details(db) {
-            SyntaxNodeDetails::Syntax(kind) => {
-                if kind == SyntaxKind::Terminal {
-                    return ast::Terminal::from_syntax_node(db, self.clone())
-                        .token(db)
-                        .as_syntax_node()
-                        .offset();
+        let green_node = self.green_node(db);
+        match green_node.details {
+            green::GreenNodeDetails::Node { .. } => {
+                if green_node.kind.is_terminal() {
+                    // TODO(yuval): At this point we know we should have a second child which is
+                    // the token. But still - do this safer?
+                    let token_node = self.children(db).nth(1).unwrap();
+                    return token_node.offset();
                 }
-                if let Some(child) = self.children(db).find(|child| child.width(db) != 0) {
+                let children = &mut self.children(db);
+                if let Some(child) = children.find(|child| child.width(db) != 0) {
                     child.span_start_without_trivia(db)
                 } else {
                     self.offset()
                 }
             }
-            SyntaxNodeDetails::Token(_) => self.offset(),
+            green::GreenNodeDetails::Token(_) => self.offset(),
         }
     }
     fn span_end_without_trivia(&self, db: &dyn SyntaxGroup) -> TextOffset {
-        match self.details(db) {
-            SyntaxNodeDetails::Syntax(kind) => {
-                if kind == SyntaxKind::Terminal {
-                    return ast::Terminal::from_syntax_node(db, self.clone())
-                        .token(db)
-                        .as_syntax_node()
-                        .span(db)
-                        .end;
+        let green_node = self.green_node(db);
+        match green_node.details {
+            green::GreenNodeDetails::Node { .. } => {
+                if green_node.kind.is_terminal() {
+                    // TODO(yuval): At this point we know we should have a second child which is
+                    // the token. But still - do this safer?
+                    let token_node = self.children(db).nth(1).unwrap();
+                    return token_node.span(db).end;
                 }
-                if let Some(child) = self.children(db).filter(|child| child.width(db) != 0).last() {
+                let children = &mut self.children(db);
+                if let Some(child) = children.filter(|child| child.width(db) != 0).last() {
                     child.span_end_without_trivia(db)
                 } else {
                     self.span(db).end
                 }
             }
-            SyntaxNodeDetails::Token(_) => self.span(db).end,
+            green::GreenNodeDetails::Token(_) => self.span(db).end,
         }
     }
 }
@@ -176,14 +172,8 @@ impl<'db> Iterator for SyntaxNodeChildIterator<'db> {
         let green_id = self.green_iterator.next()?;
         let green = self.db.lookup_intern_green(green_id);
         let width = green.width();
-        let (kind, children) = match green {
-            GreenNode::Internal(node) => (node.kind, node.children),
-            GreenNode::Token(_) => {
-                // TODO(spapini): change this once token is united with syntax.
-                (SyntaxKind::ExprMissing, vec![])
-            }
-        };
-        let key_fields: Vec<GreenId> = get_key_fields(kind, children);
+        let kind = green.kind;
+        let key_fields: Vec<GreenId> = get_key_fields(kind, green.children());
         let index = match self.key_map.entry((kind, key_fields.clone())) {
             Entry::Occupied(mut entry) => entry.insert(entry.get() + 1),
             Entry::Vacant(entry) => {
@@ -217,6 +207,8 @@ impl<'db> ExactSizeIterator for SyntaxNodeChildIterator<'db> {
 /// Trait for the typed view of the syntax tree. All the internal node implementations are under
 /// the ast module.
 pub trait TypedSyntaxNode {
+    /// The relevant SyntaxKind. None for enums.
+    const KIND: Option<SyntaxKind>;
     type StablePtr;
     type Green;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green;
@@ -227,78 +219,18 @@ pub trait TypedSyntaxNode {
     fn stable_ptr(&self) -> Self::StablePtr;
 }
 
-// TODO(spapini): Children should be excluded from Eq and Hash of Typed nodes.
-/// Typed view for a token. Implements the typed view interface TypedSyntaxNode.
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct Token {
-    node: SyntaxNode,
+pub trait Token: TypedSyntaxNode {
+    fn new_green(db: &dyn SyntaxGroup, text: SmolStr) -> Self::Green;
+    fn text(&self, db: &dyn SyntaxGroup) -> SmolStr;
 }
 
-impl Token {
-    pub fn new_green(db: &dyn SyntaxGroup, kind: token::TokenKind, text: SmolStr) -> TokenGreen {
-        TokenGreen(db.intern_green(GreenNode::Token(token::Token { kind, text })))
-    }
-    pub fn raw(&self, db: &dyn SyntaxGroup) -> token::Token {
-        let green = db.lookup_intern_green(self.node.0.green);
-        extract_matches!(green, GreenNode::Token, "Expected a token, got {:?}.", green)
-    }
-    pub fn kind(&self, db: &dyn SyntaxGroup) -> token::TokenKind {
-        self.raw(db).kind
-    }
-    pub fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.raw(db).text
-    }
-    pub fn width(&self, db: &dyn SyntaxGroup) -> u32 {
-        self.raw(db).width()
-    }
-}
-
-pub struct TokenPtr(SyntaxStablePtrId);
-impl TokenPtr {
-    #[allow(dead_code)]
-    pub fn untyped(&self) -> SyntaxStablePtrId {
-        self.0
-    }
-}
-
-/// Wrapper for a green id of a token.
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenGreen(pub GreenId);
-impl TokenGreen {
-    pub fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(db.lookup_intern_green(self.0), GreenNode::Token, "Expected a token").text
-    }
-}
-
-impl TypedSyntaxNode for Token {
-    type StablePtr = TokenPtr;
-    type Green = TokenGreen;
-    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
-        TokenGreen(db.intern_green(GreenNode::Token(token::Token::missing())))
-    }
-    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        let green = db.lookup_intern_green(node.0.green);
-        match green {
-            GreenNode::Internal(internal) => {
-                panic!("Unexpected SyntaxKind {:?}. Expected a token.", internal.kind);
-            }
-            GreenNode::Token(_token) => Self { node },
-        }
-    }
-    fn from_ptr(db: &dyn SyntaxGroup, root: &ast::SyntaxFile, ptr: Self::StablePtr) -> Self {
-        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
-    }
-    fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
-    }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenPtr(self.node.0.stable_ptr)
-    }
-}
-
-// TODO(spapini): Consider converting into a trait and moving somewhere else.
-impl ast::Terminal {
-    pub fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
-    }
+pub trait Terminal: TypedSyntaxNode {
+    type TokenType: Token;
+    fn new_green(
+        db: &dyn SyntaxGroup,
+        leading_trivia: TriviaGreen,
+        token: <<Self as Terminal>::TokenType as TypedSyntaxNode>::Green,
+        trailing_trivia: TriviaGreen,
+    ) -> <Self as TypedSyntaxNode>::Green;
+    fn text(&self, db: &dyn SyntaxGroup) -> SmolStr;
 }

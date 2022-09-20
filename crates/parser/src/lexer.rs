@@ -5,10 +5,10 @@ mod test;
 use filesystem::ids::FileId;
 use filesystem::span::{TextOffset, TextSpan};
 use smol_str::SmolStr;
-use syntax::node::ast::TriviumGreen;
+use syntax::node::ast::{TokenNewline, TokenSingleLineComment, TokenWhitespace, TriviumGreen};
 use syntax::node::db::SyntaxGroup;
-use syntax::node::{Token, TokenGreen};
-use syntax::token::TokenKind;
+use syntax::node::kind::SyntaxKind;
+use syntax::node::Token;
 
 pub struct Lexer<'a> {
     db: &'a dyn SyntaxGroup,
@@ -96,20 +96,19 @@ impl<'a> Lexer<'a> {
     /// Assumes the next character is one of [' ', '\r', '\t'].
     fn match_trivium_whitespace(&mut self) -> TriviumGreen {
         self.take_while(|s| matches!(s, ' ' | '\r' | '\t'));
-        Token::new_green(self.db, TokenKind::Whitespace, SmolStr::from(self.consume_span())).into()
+        TokenWhitespace::new_green(self.db, SmolStr::from(self.consume_span())).into()
     }
 
     /// Assumes the next character '/n'.
     fn match_trivium_newline(&mut self) -> TriviumGreen {
         self.take();
-        Token::new_green(self.db, TokenKind::Newline, SmolStr::from(self.consume_span())).into()
+        TokenNewline::new_green(self.db, SmolStr::from(self.consume_span())).into()
     }
 
     /// Assumes the next 2 characters are "//".
     fn match_trivium_single_line_comment(&mut self) -> TriviumGreen {
         self.take_while(|c| c != '\n');
-        Token::new_green(self.db, TokenKind::SingleLineComment, SmolStr::from(self.consume_span()))
-            .into()
+        TokenSingleLineComment::new_green(self.db, SmolStr::from(self.consume_span())).into()
     }
 
     // Token matchers.
@@ -215,27 +214,27 @@ impl<'a> Lexer<'a> {
         };
 
         let text = SmolStr::from(self.consume_span());
-        let token = Token::new_green(self.db, kind, text);
         let trailing_trivia = self.match_trivia(false);
+        let terminal_kind = token_kind_to_terminal_syntax_kind(kind);
 
         // TODO(yuval): log(verbose) "consumed text: ..."
-        LexerTerminal { token, kind, leading_trivia, trailing_trivia }
+        LexerTerminal { text, kind: terminal_kind, leading_trivia, trailing_trivia }
     }
 }
 
 /// Output terminal emitted by the lexer.
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct LexerTerminal {
-    pub token: TokenGreen,
+    pub text: SmolStr,
     /// The kind of the inner token of this terminal.
-    pub kind: TokenKind,
+    pub kind: SyntaxKind,
     pub leading_trivia: Vec<TriviumGreen>,
     pub trailing_trivia: Vec<TriviumGreen>,
 }
 impl LexerTerminal {
     pub fn width(&self, db: &dyn SyntaxGroup) -> u32 {
         self.leading_trivia.iter().map(|t| t.0.width(db)).sum::<u32>()
-            + self.token.0.width(db)
+            + self.text.len() as u32
             + self.trailing_trivia.iter().map(|t| t.0.width(db)).sum::<u32>()
     }
 }
@@ -249,10 +248,120 @@ impl Iterator for Lexer<'_> {
         if self.done {
             return None;
         }
-        let terminal_with_kind = self.match_terminal();
-        if terminal_with_kind.kind == TokenKind::EndOfFile {
+        let lexer_terminal = self.match_terminal();
+        if lexer_terminal.kind == SyntaxKind::TerminalEndOfFile {
             self.done = true;
         };
-        Some(terminal_with_kind)
+        Some(lexer_terminal)
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Debug, Eq, Hash)]
+enum TokenKind {
+    Identifier,
+
+    // Literals.
+    LiteralNumber,
+
+    // Keywords.
+    False,
+    True,
+    Extern,
+    Type,
+    Function,
+    Module,
+    Struct,
+    Let,
+    Return,
+    Match,
+    Use,
+
+    // Punctuation.
+    And,
+    AndAnd,
+    OrOr,
+    EqEq,
+    Neq,
+    GE,
+    GT,
+    LE,
+    LT,
+    Not,
+    Plus,
+    Minus,
+    Mul,
+    Div,
+
+    Colon,
+    ColonColon,
+    Comma,
+    Dot,
+    DotDot,
+    Eq,
+    Semicolon,
+    Underscore,
+    LBrace,
+    RBrace,
+    LBrack,
+    RBrack,
+    LParen,
+    RParen,
+    Arrow,
+    MatchArrow,
+
+    // Meta.
+    EndOfFile,
+    BadCharacters,
+}
+
+// TODO(yg): consider moving this match into lexer/SyntaxKind, return SyntaxKind from there and
+// make TokenKind private there.
+fn token_kind_to_terminal_syntax_kind(kind: TokenKind) -> SyntaxKind {
+    match kind {
+        TokenKind::Identifier => SyntaxKind::TerminalIdentifier,
+        TokenKind::LiteralNumber => SyntaxKind::TerminalLiteralNumber,
+        TokenKind::False => SyntaxKind::TerminalFalse,
+        TokenKind::True => SyntaxKind::TerminalTrue,
+        TokenKind::Extern => SyntaxKind::TerminalExtern,
+        TokenKind::Type => SyntaxKind::TerminalType,
+        TokenKind::Function => SyntaxKind::TerminalFunction,
+        TokenKind::Module => SyntaxKind::TerminalModule,
+        TokenKind::Struct => SyntaxKind::TerminalStruct,
+        TokenKind::Let => SyntaxKind::TerminalLet,
+        TokenKind::Return => SyntaxKind::TerminalReturn,
+        TokenKind::Match => SyntaxKind::TerminalMatch,
+        TokenKind::Use => SyntaxKind::TerminalUse,
+        TokenKind::And => SyntaxKind::TerminalAnd,
+        TokenKind::AndAnd => SyntaxKind::TerminalAndAnd,
+        TokenKind::OrOr => SyntaxKind::TerminalOrOr,
+        TokenKind::EqEq => SyntaxKind::TerminalEqEq,
+        TokenKind::Neq => SyntaxKind::TerminalNeq,
+        TokenKind::GE => SyntaxKind::TerminalGE,
+        TokenKind::GT => SyntaxKind::TerminalGT,
+        TokenKind::LE => SyntaxKind::TerminalLE,
+        TokenKind::LT => SyntaxKind::TerminalLT,
+        TokenKind::Not => SyntaxKind::TerminalNot,
+        TokenKind::Plus => SyntaxKind::TerminalPlus,
+        TokenKind::Minus => SyntaxKind::TerminalMinus,
+        TokenKind::Mul => SyntaxKind::TerminalMul,
+        TokenKind::Div => SyntaxKind::TerminalDiv,
+        TokenKind::Colon => SyntaxKind::TerminalColon,
+        TokenKind::ColonColon => SyntaxKind::TerminalColonColon,
+        TokenKind::Comma => SyntaxKind::TerminalComma,
+        TokenKind::Dot => SyntaxKind::TerminalDot,
+        TokenKind::DotDot => SyntaxKind::TerminalDotDot,
+        TokenKind::Eq => SyntaxKind::TerminalEq,
+        TokenKind::Semicolon => SyntaxKind::TerminalSemicolon,
+        TokenKind::Underscore => SyntaxKind::TerminalUnderscore,
+        TokenKind::LBrace => SyntaxKind::TerminalLBrace,
+        TokenKind::RBrace => SyntaxKind::TerminalRBrace,
+        TokenKind::LBrack => SyntaxKind::TerminalLBrack,
+        TokenKind::RBrack => SyntaxKind::TerminalRBrack,
+        TokenKind::LParen => SyntaxKind::TerminalLParen,
+        TokenKind::RParen => SyntaxKind::TerminalRParen,
+        TokenKind::Arrow => SyntaxKind::TerminalArrow,
+        TokenKind::MatchArrow => SyntaxKind::TerminalMatchArrow,
+        TokenKind::BadCharacters => SyntaxKind::TerminalBadCharacters,
+        TokenKind::EndOfFile => SyntaxKind::TerminalEndOfFile,
     }
 }
