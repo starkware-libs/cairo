@@ -2,7 +2,9 @@ use defs::ids::{ExternFunctionId, LanguageElementId};
 use diagnostics::Diagnostics;
 use diagnostics_proc_macros::DebugWithDb;
 
-use super::functions::{function_signature_params, function_signature_return_type};
+use super::functions::{
+    function_signature_generic_params, function_signature_params, function_signature_return_type,
+};
 use crate::db::SemanticGroup;
 use crate::{semantic, SemanticDiagnostic};
 
@@ -47,8 +49,10 @@ pub fn priv_extern_function_declaration_data(
         function_signature_return_type(&mut diagnostics, db, module_id, &signature_syntax);
     let (params, _environment) =
         function_signature_params(&mut diagnostics, db, module_id, &signature_syntax);
+    let generic_params =
+        function_signature_generic_params(&mut diagnostics, db, module_id, &signature_syntax);
     Some(ExternFunctionDeclarationData {
         diagnostics,
-        signature: semantic::Signature { params, return_type },
+        signature: semantic::Signature { params, generic_params, return_type },
     })
 }

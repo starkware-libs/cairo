@@ -36,6 +36,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::WrongNumberOfArguments { expected, actual } => {
                 format!("Wrong number of arguments. Expected {expected}, found: {actual}")
             }
+            SemanticDiagnosticKind::WrongNumberOfGenericArguments { expected, actual } => {
+                format!("Wrong number of generic arguments. Expected {expected}, found: {actual}")
+            }
             SemanticDiagnosticKind::WrongArgumentType { expected_ty, actual_ty } => {
                 format!(
                     r#"Unexpected argument type. Expected: "{}", found: "{}"."#,
@@ -93,6 +96,7 @@ pub enum SemanticDiagnosticKind {
     MemberSpecifiedMoreThanOnce,
     MissingMember { member_name: SmolStr },
     WrongNumberOfArguments { expected: usize, actual: usize },
+    WrongNumberOfGenericArguments { expected: usize, actual: usize },
     WrongArgumentType { expected_ty: semantic::TypeId, actual_ty: semantic::TypeId },
     WrongReturnType { expected_ty: semantic::TypeId, actual_ty: semantic::TypeId },
     VariableNotFound { name: SmolStr },
