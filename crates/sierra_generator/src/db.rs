@@ -72,6 +72,9 @@ fn get_concrete_type_id(
                 defs::ids::GenericTypeId::Struct(_) => {
                     todo!("Add support for struct types when they are supported in Sierra.")
                 }
+                defs::ids::GenericTypeId::Enum(_) => {
+                    todo!("Add support for enum types when they are supported in Sierra.")
+                }
                 defs::ids::GenericTypeId::Extern(extrn) => {
                     Some(db.intern_concrete_type(ConcreteTypeLongId {
                         generic_id: sierra::ids::GenericTypeId::from_string(
