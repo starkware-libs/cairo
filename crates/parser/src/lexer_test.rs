@@ -23,6 +23,7 @@ fn terminal_kind_to_text(kind: SyntaxKind) -> Vec<&'static str> {
         SyntaxKind::TerminalLet => vec!["let"],
         SyntaxKind::TerminalModule => vec!["mod"],
         SyntaxKind::TerminalStruct => vec!["struct"],
+        SyntaxKind::TerminalEnum => vec!["enum"],
         SyntaxKind::TerminalTrue => vec!["true"],
         SyntaxKind::TerminalReturn => vec!["return"],
         SyntaxKind::TerminalMatch => vec!["match"],
@@ -76,6 +77,7 @@ fn terminal_kinds() -> Vec<SyntaxKind> {
         SyntaxKind::TerminalFunction,
         SyntaxKind::TerminalModule,
         SyntaxKind::TerminalStruct,
+        SyntaxKind::TerminalEnum,
         SyntaxKind::TerminalLet,
         SyntaxKind::TerminalReturn,
         SyntaxKind::TerminalMatch,
@@ -158,6 +160,7 @@ fn is_identifier_like(kind: SyntaxKind) -> bool {
             | SyntaxKind::TerminalFunction
             | SyntaxKind::TerminalModule
             | SyntaxKind::TerminalStruct
+            | SyntaxKind::TerminalEnum
             | SyntaxKind::TerminalLet
             | SyntaxKind::TerminalReturn
             | SyntaxKind::TerminalMatch

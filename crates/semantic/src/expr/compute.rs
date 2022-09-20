@@ -413,9 +413,9 @@ fn member_access_expr(
                     stable_ptr,
                 }))
             }
-            GenericTypeId::Extern(_) => {
+            _ => {
                 let member_name = expr_as_identifier(rhs_syntax, syntax_db)?;
-                Err(SemanticDiagnosticKind::StructHasNoMembers { ty: lexpr.ty(), member_name })
+                Err(SemanticDiagnosticKind::TypeHasNoMembers { ty: lexpr.ty(), member_name })
             }
         },
         crate::TypeLongId::Tuple(_) => {

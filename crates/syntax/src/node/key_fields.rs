@@ -44,8 +44,6 @@ pub fn get_key_fields(kind: SyntaxKind, children: Vec<GreenId>) -> Vec<GreenId> 
         SyntaxKind::StatementReturn => vec![],
         SyntaxKind::Param => vec![/* name */ children[0]],
         SyntaxKind::ParamList => vec![],
-        SyntaxKind::ParamListParenthesized => vec![],
-        SyntaxKind::ParamListBraced => vec![],
         SyntaxKind::FunctionSignature => vec![],
         SyntaxKind::ItemList => vec![],
         SyntaxKind::ItemModule => vec![/* name */ children[1]],

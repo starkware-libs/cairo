@@ -29,7 +29,11 @@ pub trait DefsGroup:
     #[salsa::interned]
     fn intern_struct(&self, id: StructLongId) -> StructId;
     #[salsa::interned]
+    fn intern_enum(&self, id: EnumLongId) -> EnumId;
+    #[salsa::interned]
     fn intern_member(&self, id: MemberLongId) -> MemberId;
+    #[salsa::interned]
+    fn intern_variant(&self, id: VariantLongId) -> VariantId;
     #[salsa::interned]
     fn intern_extern_type(&self, id: ExternTypeLongId) -> ExternTypeId;
     #[salsa::interned]
@@ -122,6 +126,7 @@ pub struct ModuleData {
     pub uses: OrderedHashMap<UseId, ast::ItemUse>,
     pub free_functions: OrderedHashMap<FreeFunctionId, ast::ItemFreeFunction>,
     pub structs: OrderedHashMap<StructId, ast::ItemStruct>,
+    pub enums: OrderedHashMap<EnumId, ast::ItemEnum>,
     pub extern_types: OrderedHashMap<ExternTypeId, ast::ItemExternType>,
     pub extern_functions: OrderedHashMap<ExternFunctionId, ast::ItemExternFunction>,
 }
@@ -170,7 +175,10 @@ fn module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Option<ModuleData> {
                 let item_id = db.intern_struct(StructLongId(module_id, strct.stable_ptr()));
                 res.structs.insert(item_id, strct);
             }
-            ast::Item::Enum(_en) => todo!(),
+            ast::Item::Enum(enm) => {
+                let item_id = db.intern_enum(EnumLongId(module_id, enm.stable_ptr()));
+                res.enums.insert(item_id, enm);
+            }
         }
     }
     Some(res)
@@ -209,6 +217,10 @@ fn module_items(db: &dyn DefsGroup, module_id: ModuleId) -> Option<ModuleItems> 
             module_data.structs.iter().map(|(struct_id, syntax)| (
                 syntax.name(syntax_db).text(syntax_db),
                 ModuleItemId::Struct(*struct_id)
+            )),
+            module_data.enums.iter().map(|(enum_id, syntax)| (
+                syntax.name(syntax_db).text(syntax_db),
+                ModuleItemId::Enum(*enum_id)
             )),
         )
         .collect(),

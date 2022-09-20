@@ -3,7 +3,7 @@
 mod test;
 
 use defs::diagnostic_utils::StableLocation;
-use defs::ids::{LanguageElementId, StructId};
+use defs::ids::{EnumId, LanguageElementId, StructId};
 use diagnostics::{DiagnosticEntry, DiagnosticLocation};
 use smol_str::SmolStr;
 
@@ -62,12 +62,18 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     struct_id.full_path(db.upcast())
                 )
             }
+            SemanticDiagnosticKind::EnumVariantRedefinition { enum_id, variant_name } => {
+                format!(
+                    r#"Redefinition of variant "{variant_name}" on enum "{}"."#,
+                    enum_id.full_path(db.upcast())
+                )
+            }
             SemanticDiagnosticKind::IncompatibleMatchArms { match_ty, arm_ty } => format!(
                 r#"Match arms have incompatible types: "{}" and "{}""#,
                 match_ty.format(db),
                 arm_ty.format(db)
             ),
-            SemanticDiagnosticKind::StructHasNoMembers { ty, member_name: _ } => {
+            SemanticDiagnosticKind::TypeHasNoMembers { ty, member_name: _ } => {
                 format!("Type {} has no members.", ty.format(db))
             }
             SemanticDiagnosticKind::NoSuchMember { struct_id, member_name } => {
@@ -101,8 +107,9 @@ pub enum SemanticDiagnosticKind {
     WrongReturnType { expected_ty: semantic::TypeId, actual_ty: semantic::TypeId },
     VariableNotFound { name: SmolStr },
     StructMemberRedefinition { struct_id: StructId, member_name: SmolStr },
+    EnumVariantRedefinition { enum_id: EnumId, variant_name: SmolStr },
     IncompatibleMatchArms { match_ty: semantic::TypeId, arm_ty: semantic::TypeId },
-    StructHasNoMembers { ty: semantic::TypeId, member_name: SmolStr },
+    TypeHasNoMembers { ty: semantic::TypeId, member_name: SmolStr },
     NoSuchMember { struct_id: StructId, member_name: SmolStr },
     InvalidMemberExpression,
     InvalidPath,

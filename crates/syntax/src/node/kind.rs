@@ -40,8 +40,6 @@ pub enum SyntaxKind {
     StatementReturn,
     Param,
     ParamList,
-    ParamListParenthesized,
-    ParamListBraced,
     FunctionSignature,
     ItemList,
     ItemModule,

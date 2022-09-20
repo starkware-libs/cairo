@@ -90,18 +90,18 @@ pub fn get_spec() -> Vec<Node> {
             .node("rhs", "Expr")
             .build(),
         EnumBuilder::new("BinaryOperator")
-            .node_with_explicit_kind("Dot", "TerminalDot")
-            .node_with_explicit_kind("Not", "TerminalNot")
-            .node_with_explicit_kind("Mul", "TerminalMul")
-            .node_with_explicit_kind("Div", "TerminalDiv")
-            .node_with_explicit_kind("Plus", "TerminalPlus")
-            .node_with_explicit_kind("Minus", "TerminalMinus")
-            .node_with_explicit_kind("EqEq", "TerminalEqEq")
-            // TODO(yuval): not yet implemented in parser.
-            .node_with_explicit_kind("AndAnd", "TerminalAndAnd")
-            .node_with_explicit_kind("OrOr", "TerminalOrOr")
-            .node_with_explicit_kind("LE", "TerminalLE")
-            .build(),
+                .node_with_explicit_kind("Dot", "TerminalDot")
+                .node_with_explicit_kind("Not", "TerminalNot")
+                .node_with_explicit_kind("Mul", "TerminalMul")
+                .node_with_explicit_kind("Div", "TerminalDiv")
+                .node_with_explicit_kind("Plus", "TerminalPlus")
+                .node_with_explicit_kind("Minus", "TerminalMinus")
+                .node_with_explicit_kind("EqEq", "TerminalEqEq")
+                // TODO(yuval): not yet implemented in parser.
+                .node_with_explicit_kind("AndAnd", "TerminalAndAnd")
+                .node_with_explicit_kind("OrOr", "TerminalOrOr")
+                .node_with_explicit_kind("LE", "TerminalLE")
+                .build(),
         StructBuilder::new("ExprTuple")
             .node("lparen", "TerminalLParen")
             .node("expressions", "ExprList")
@@ -126,10 +126,10 @@ pub fn get_spec() -> Vec<Node> {
             .node("rbrace", "TerminalRBrace")
             .build(),
         EnumBuilder::new("Pattern")
-            .node_with_explicit_kind("Underscore", "TerminalUnderscore")
-            // TODO(yuval): support more options.
-            .node_with_explicit_kind("Literal", "TerminalLiteralNumber")
-            .build(),
+                .node_with_explicit_kind("Underscore", "TerminalUnderscore")
+                // TODO(yuval): support more options.
+                .node_with_explicit_kind("Literal", "TerminalLiteralNumber")
+                .build(),
         StructBuilder::new("MatchArm")
             .node("pattern", "Pattern")
             .node("arrow", "TerminalMatchArrow")
@@ -137,13 +137,13 @@ pub fn get_spec() -> Vec<Node> {
             .build(),
         separated_list_node("MatchArms", "MatchArm", "TerminalComma"),
         StructBuilder::new("ExprMatch")
-            .node("match_kw", "TerminalMatch")
-            // TODO(yuval): change to SimpleExpr
-            .node("expr", "Expr")
-            .node("lbrace", "TerminalLBrace")
-            .node("arms", "MatchArms")
-            .node("rbrace", "TerminalRBrace")
-            .build(),
+                .node("match_kw", "TerminalMatch")
+                // TODO(yuval): change to SimpleExpr
+                .node("expr", "Expr")
+                .node("lbrace", "TerminalLBrace")
+                .node("arms", "MatchArms")
+                .node("rbrace", "TerminalRBrace")
+                .build(),
         // --- Type clauses ---
         // TODO(yuval): support SimpleExpr instead of ExprPath
         StructBuilder::new("TypeClause").node("colon", "TerminalColon").node("ty", "Expr").build(),
@@ -200,16 +200,6 @@ pub fn get_spec() -> Vec<Node> {
             .node("type_clause", "TypeClause")
             .build(),
         separated_list_node("ParamList", "Param", "TerminalComma"),
-        StructBuilder::new("ParamListParenthesized")
-            .node("lparen", "TerminalLParen")
-            .node("parameters", "ParamList")
-            .node("rparen", "TerminalRParen")
-            .build(),
-        StructBuilder::new("ParamListBraced")
-            .node("lbrace", "TerminalLBrace")
-            .node("parameters", "ParamList")
-            .node("rbrace", "TerminalRBrace")
-            .build(),
         // TODO(spapini): Add generic params.
         // This is an unnamed signature, e.g. "() -> Type".
         StructBuilder::new("FunctionSignature")
@@ -286,9 +276,12 @@ pub fn get_spec() -> Vec<Node> {
             .node("rbrace", "TerminalRBrace")
             .build(),
         StructBuilder::new("ItemEnum")
-            .node("enum_kw", "TerminalEnum")
+            .node("enumkw", "TerminalEnum")
             .key_node("name", "TerminalIdentifier")
-            .node("body", "ParamListBraced")
+            .node("generic_args", "OptionGenericArgs")
+            .node("lbrace", "TerminalLBrace")
+            .node("variants", "ParamList")
+            .node("rbrace", "TerminalRBrace")
             .build(),
         StructBuilder::new("ItemUse")
             .node("use_kw", "TerminalUse")
