@@ -179,16 +179,6 @@ pub fn get_spec() -> Vec<Node> {
             .node("type_clause", "TypeClause")
             .build(),
         separated_list_node("ParamList", "Param"),
-        StructBuilder::new("ParamListParenthesized")
-            .node("lparen", "Terminal")
-            .node("parameters", "ParamList")
-            .node("rparen", "Terminal")
-            .build(),
-        StructBuilder::new("ParamListBraced")
-            .node("lbrace", "Terminal")
-            .node("parameters", "ParamList")
-            .node("rbrace", "Terminal")
-            .build(),
         // TODO(spapini): Add generic params.
         // This is an unnamed signature, e.g. "() -> Type".
         StructBuilder::new("FunctionSignature")
@@ -267,7 +257,10 @@ pub fn get_spec() -> Vec<Node> {
         StructBuilder::new("ItemEnum")
             .node("enumkw", "Terminal")
             .key_node("name", "Terminal")
-            .node("body", "ParamListBraced")
+            .node("generic_args", "OptionGenericArgs")
+            .node("lbrace", "Terminal")
+            .node("variants", "ParamList")
+            .node("rbrace", "Terminal")
             .build(),
         StructBuilder::new("ItemUse")
             .node("usekw", "Terminal")

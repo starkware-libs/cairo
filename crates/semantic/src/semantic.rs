@@ -4,6 +4,7 @@ use diagnostics_proc_macros::DebugWithDb;
 // Reexport objects
 pub use super::expr::objects::*;
 use crate::db::SemanticGroup;
+pub use crate::items::enm::Variant;
 pub use crate::items::functions::{ConcreteFunction, FunctionId, FunctionLongId, Signature};
 pub use crate::items::strct::Member;
 pub use crate::types::{ConcreteType, TypeId, TypeLongId};

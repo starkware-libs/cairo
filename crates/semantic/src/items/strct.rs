@@ -48,7 +48,8 @@ pub fn priv_struct_semantic_data(
     db: &dyn SemanticGroup,
     struct_id: StructId,
 ) -> Option<StructData> {
-    // TODO: When asts are rooted on items, don't query module_data directly. Use a selector.
+    // TODO(spapini): When asts are rooted on items, don't query module_data directly. Use a
+    // selector.
     let mut diagnostics = Diagnostics::default();
     let module_id = struct_id.module(db.upcast());
     let module_data = db.module_data(module_id)?;

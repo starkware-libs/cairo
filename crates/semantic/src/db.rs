@@ -1,7 +1,7 @@
 use db_utils::Upcast;
 use defs::db::DefsGroup;
 use defs::ids::{
-    ExternFunctionId, FreeFunctionId, GenericFunctionId, ModuleId, ModuleItemId, StructId,
+    EnumId, ExternFunctionId, FreeFunctionId, GenericFunctionId, ModuleId, ModuleItemId, StructId,
 };
 use diagnostics::Diagnostics;
 use filesystem::db::{AsFilesGroupMut, FilesGroup};
@@ -41,6 +41,18 @@ pub trait SemanticGroup:
         &self,
         struct_id: StructId,
     ) -> Option<OrderedHashMap<SmolStr, semantic::Member>>;
+
+    // Enum.
+    // =======
+    /// Private query to compute data about an enum.
+    #[salsa::invoke(items::enm::priv_enum_semantic_data)]
+    fn priv_enum_semantic_data(&self, enum_id: EnumId) -> Option<items::enm::EnumData>;
+    /// Returns the semantic diagnostics of an enum.
+    #[salsa::invoke(items::enm::enum_semantic_diagnostics)]
+    fn enum_semantic_diagnostics(&self, enum_id: EnumId) -> Diagnostics<SemanticDiagnostic>;
+    /// Returns the members of an enum.
+    #[salsa::invoke(items::enm::enum_variants)]
+    fn enum_variants(&self, enum_id: EnumId) -> Option<OrderedHashMap<SmolStr, semantic::Variant>>;
 
     // Free function.
     // ==============
@@ -169,6 +181,9 @@ fn module_semantic_diagnostics(
             }
             ModuleItemId::Struct(struct_id) => {
                 diagnostics.0.extend(db.struct_semantic_diagnostics(*struct_id).0.clone());
+            }
+            ModuleItemId::Enum(enum_id) => {
+                diagnostics.0.extend(db.enum_semantic_diagnostics(*enum_id).0.clone());
             }
             ModuleItemId::Submodule(_) => {}
             ModuleItemId::Use(_) => {}

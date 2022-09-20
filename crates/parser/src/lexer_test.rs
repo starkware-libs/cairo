@@ -24,6 +24,7 @@ fn token_kind_to_text(kind: TokenKind) -> Vec<&'static str> {
         TokenKind::Let => vec!["let"],
         TokenKind::Module => vec!["mod"],
         TokenKind::Struct => vec!["struct"],
+        TokenKind::Enum => vec!["enum"],
         TokenKind::True => vec!["true"],
         TokenKind::Return => vec!["return"],
         TokenKind::Match => vec!["match"],
@@ -78,6 +79,7 @@ fn token_kinds() -> Vec<TokenKind> {
         TokenKind::Function,
         TokenKind::Module,
         TokenKind::Struct,
+        TokenKind::Enum,
         TokenKind::Let,
         TokenKind::Return,
         TokenKind::Match,
@@ -161,6 +163,7 @@ fn is_identifier_like(kind: TokenKind) -> bool {
             | TokenKind::Function
             | TokenKind::Module
             | TokenKind::Struct
+            | TokenKind::Enum
             | TokenKind::Let
             | TokenKind::Return
             | TokenKind::Match

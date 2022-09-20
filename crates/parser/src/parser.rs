@@ -122,6 +122,7 @@ impl<'a> Parser<'a> {
         match self.peek().kind {
             TokenKind::Module => Some(self.expect_module().into()),
             TokenKind::Struct => Some(self.expect_struct().into()),
+            TokenKind::Enum => Some(self.expect_enum().into()),
             TokenKind::Extern => Some(self.expect_extern_item()),
             TokenKind::Function => Some(self.expect_function().into()),
             TokenKind::Use => Some(self.expect_use().into()),
@@ -139,7 +140,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Assumes the current token is Struct.
-    /// Expected pattern: struct<Identifier><ParamListBraced>
+    /// Expected pattern: struct<Identifier>{<ParamList>}
     fn expect_struct(&mut self) -> ItemStructGreen {
         let struct_kw = self.take();
         let name = self.parse_token(TokenKind::Identifier);
@@ -148,6 +149,18 @@ impl<'a> Parser<'a> {
         let members = self.parse_param_list();
         let rbrace = self.parse_token(TokenKind::RBrace);
         ItemStruct::new_green(self.db, struct_kw, name, generic_args, lbrace, members, rbrace)
+    }
+
+    /// Assumes the current token is Enum.
+    /// Expected pattern: enum<Identifier>{<ParamList>}
+    fn expect_enum(&mut self) -> ItemEnumGreen {
+        let enum_kw = self.take();
+        let name = self.parse_token(TokenKind::Identifier);
+        let generic_args = self.parse_optional_generic_args();
+        let lbrace = self.parse_token(TokenKind::LBrace);
+        let variants = self.parse_param_list();
+        let rbrace = self.parse_token(TokenKind::RBrace);
+        ItemEnum::new_green(self.db, enum_kw, name, generic_args, lbrace, variants, rbrace)
     }
 
     /// Expected pattern: <ParenthesizedParamList><ReturnTypeClause>
