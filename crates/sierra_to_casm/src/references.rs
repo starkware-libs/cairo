@@ -76,10 +76,10 @@ impl ApplyApChange for ReferenceExpression {
 
 /// Builds the HashMap of references to the parameters of a function.
 pub fn build_function_parameter_refs(func: &Function) -> Result<StatementRefs, ReferencesError> {
-    let mut refs = HashMap::with_capacity(func.signature.params.len());
+    let mut refs = HashMap::with_capacity(func.params.len());
 
     let mut offset = -3;
-    for param in func.signature.params.iter().rev() {
+    for param in func.params.iter().rev() {
         if refs
             .insert(
                 param.id.clone(),

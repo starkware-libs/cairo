@@ -8,7 +8,7 @@ use super::SpecializationError::{
     self, MissingFunction, UnsupportedGenericArg, UnsupportedId, WrongNumberOfGenericArgs,
 };
 use crate::extensions::{GenericLibFunc, GenericType};
-use crate::program::{Function, FunctionSignature, GenericArg, StatementIdx};
+use crate::program::{Function, GenericArg, StatementIdx};
 
 fn type_arg(name: &str) -> GenericArg {
     GenericArg::Type(name.into())
@@ -103,11 +103,7 @@ fn find_libfunc_specialization(
 ) -> Result<(), SpecializationError> {
     let functions = &HashMap::from([(
         "RegisteredFunction".into(),
-        Function {
-            id: "RegisteredFunction".into(),
-            entry: StatementIdx(5),
-            signature: FunctionSignature { ret_types: vec![], params: vec![] },
-        },
+        Function::new("RegisteredFunction".into(), vec![], vec![], StatementIdx(5)),
     )]);
     CoreLibFunc::by_id(&id.into())
         .ok_or(UnsupportedId)?

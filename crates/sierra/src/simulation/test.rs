@@ -10,7 +10,7 @@ use super::{core, SimulationError};
 use crate::extensions::core::CoreLibFunc;
 use crate::extensions::lib_func::SpecializationContext;
 use crate::extensions::GenericLibFunc;
-use crate::program::{Function, FunctionSignature, GenericArg, StatementIdx};
+use crate::program::{Function, GenericArg, StatementIdx};
 
 fn type_arg(name: &str) -> GenericArg {
     GenericArg::Type(name.into())
@@ -30,16 +30,8 @@ fn simulate(
     generic_args: Vec<GenericArg>,
     inputs: Vec<Vec<MemCell>>,
 ) -> Result<(Vec<Vec<MemCell>>, usize), LibFuncSimulationError> {
-    let mock_func_entry = |id: &str| {
-        (
-            id.into(),
-            Function {
-                id: id.into(),
-                signature: FunctionSignature { ret_types: vec![], params: vec![] },
-                entry: StatementIdx(0),
-            },
-        )
-    };
+    let mock_func_entry =
+        |id: &str| (id.into(), Function::new(id.into(), vec![], vec![], StatementIdx(0)));
     core::simulate(
         &CoreLibFunc::by_id(&id.into())
             .unwrap()
