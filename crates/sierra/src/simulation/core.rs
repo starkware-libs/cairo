@@ -14,7 +14,7 @@ use crate::extensions::function_call::FunctionCallConcreteLibFunc;
 use crate::extensions::gas::GasConcreteLibFunc::{GetGas, RefundGas};
 use crate::extensions::integer::IntegerConcrete;
 use crate::extensions::mem::MemConcreteLibFunc::{
-    AlignTemps, FinalizeLocals, Rename, StoreLocal, StoreTemp,
+    AlignTemps, AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
 };
 use crate::ids::FunctionId;
 
@@ -57,7 +57,11 @@ pub fn simulate<
         UnwrapNonZero(_) | Mem(Rename(_)) | Mem(StoreLocal(_)) | Mem(StoreTemp(_)) => {
             Ok((single_cell_identity::<1>(inputs)?, 0))
         }
-        Mem(AlignTemps(_)) | Mem(FinalizeLocals(_)) | UnconditionalJump(_) | ApTracking(_) => {
+        Mem(AlignTemps(_))
+        | Mem(AllocLocal(_))
+        | Mem(FinalizeLocals(_))
+        | UnconditionalJump(_)
+        | ApTracking(_) => {
             unpack_inputs::<0>(inputs)?;
             Ok((vec![], 0))
         }

@@ -1,11 +1,12 @@
 use super::as_single_type;
+use super::uninitialized::UninitializedType;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     LibFuncSignature, SignatureOnlyConcreteLibFunc, SignatureSpecializationContext,
     SpecializationContext,
 };
 use crate::extensions::{
-    NamedLibFunc, NoGenericArgsGenericLibFunc, OutputVarReferenceInfo,
+    NamedLibFunc, NamedType, NoGenericArgsGenericLibFunc, OutputVarReferenceInfo,
     SignatureBasedConcreteLibFunc, SpecializationError,
 };
 use crate::ids::{ConcreteTypeId, GenericLibFuncId};
@@ -17,6 +18,7 @@ define_libfunc_hierarchy! {
         AlignTemps(AlignTempsLibFunc),
         StoreLocal(StoreLocalLibFunc),
         FinalizeLocals(FinalizeLocalsLibFunc),
+        AllocLocal(AllocLocalLibFunc),
         Rename(RenameLibFunc),
     }, MemConcreteLibFunc
 }
@@ -159,6 +161,45 @@ impl NoGenericArgsGenericLibFunc for FinalizeLocalsLibFunc {
         Ok(SignatureOnlyConcreteLibFunc {
             signature: <Self as NoGenericArgsGenericLibFunc>::specialize_signature(self, &context)?,
         })
+    }
+}
+
+/// LibFunc for allocating locals for later stores.
+pub struct AllocLocalConcreteLibFunc {
+    pub ty: ConcreteTypeId,
+    pub signature: LibFuncSignature,
+}
+impl SignatureBasedConcreteLibFunc for AllocLocalConcreteLibFunc {
+    fn signature(&self) -> &LibFuncSignature {
+        &self.signature
+    }
+}
+#[derive(Default)]
+pub struct AllocLocalLibFunc {}
+impl NamedLibFunc for AllocLocalLibFunc {
+    type Concrete = AllocLocalConcreteLibFunc;
+    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("alloc_local");
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<LibFuncSignature, SpecializationError> {
+        let ty = as_single_type(args)?;
+        Ok(LibFuncSignature::new_non_branch(
+            vec![],
+            vec![context.get_wrapped_concrete_type(UninitializedType::id(), ty)?],
+            vec![OutputVarReferenceInfo::NewLocalVar],
+        ))
+    }
+
+    fn specialize(
+        &self,
+        context: SpecializationContext<'_>,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
+        let ty = as_single_type(args)?;
+        Ok(AllocLocalConcreteLibFunc { ty, signature: self.specialize_signature(&context, args)? })
     }
 }
 
