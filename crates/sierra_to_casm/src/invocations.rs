@@ -6,7 +6,8 @@ use casm::instructions::{
     JnzInstruction, JumpInstruction,
 };
 use casm::operand::{
-    BinOpOperand, DerefOperand, DerefOrImmediate, ImmediateOperand, Operation, Register, ResOperand,
+    BinOpOperand, DerefOperand, DerefOrImmediate, DoubleDerefOperand, ImmediateOperand, Operation,
+    Register, ResOperand,
 };
 use itertools::zip_eq;
 use sierra::extensions::arithmetic::{
@@ -17,6 +18,7 @@ use sierra::extensions::felt::FeltConcrete;
 use sierra::extensions::function_call::FunctionCallConcreteLibFunc;
 use sierra::extensions::lib_func::SignatureOnlyConcreteLibFunc;
 use sierra::extensions::mem::{MemConcreteLibFunc, StoreTempConcreteLibFunc};
+use sierra::extensions::reference::RefConcreteLibFunc;
 use sierra::extensions::ConcreteLibFunc;
 use sierra::ids::ConcreteTypeId;
 use sierra::program::{BranchInfo, BranchTarget, Invocation};
@@ -255,6 +257,9 @@ fn handle_store_temp(
         ReferenceExpression::DoubleDeref(operand) => {
             (dst, ResOperand::DoubleDeref(operand.clone()))
         }
+        ReferenceExpression::TakeSingleCellRef(operand) => {
+            (*operand, ResOperand::DoubleDeref(DoubleDerefOperand { inner_deref: dst }))
+        }
         ReferenceExpression::Immediate(operand) => (dst, ResOperand::Immediate(*operand)),
         ReferenceExpression::BinOp(BinOpExpression { op, a, b }) => match op {
             Operator::Add => {
@@ -379,6 +384,51 @@ fn handle_finalize_locals(
     ))
 }
 
+fn handle_take_ref(
+    type_sizes: &TypeSizeMap,
+    libfunc: &SignatureOnlyConcreteLibFunc,
+    refs: &[ReferenceValue],
+    environment: Environment,
+) -> Result<CompiledInvocation, InvocationError> {
+    if type_sizes.get(&libfunc.output_types()[0][0]) != Some(&1) {
+        todo!("Add support for taking non-single cell references.");
+    }
+    let expression = match refs {
+        [ReferenceValue { expression, .. }] => expression,
+        _ => return Err(InvocationError::WrongNumberOfArguments),
+    };
+    if let ReferenceExpression::Deref(operand) = expression {
+        Ok(CompiledInvocation::only_reference_changes(
+            [ReferenceExpression::TakeSingleCellRef(*operand)].into_iter(),
+            libfunc.output_types(),
+            environment,
+        ))
+    } else {
+        Err(InvocationError::InvalidReferenceExpressionForArgument)
+    }
+}
+
+fn handle_deref(
+    libfunc: &SignatureOnlyConcreteLibFunc,
+    refs: &[ReferenceValue],
+    environment: Environment,
+) -> Result<CompiledInvocation, InvocationError> {
+    let expression = match refs {
+        [ReferenceValue { expression, .. }] => expression,
+        _ => return Err(InvocationError::WrongNumberOfArguments),
+    };
+    if let ReferenceExpression::Deref(operand) = expression {
+        Ok(CompiledInvocation::only_reference_changes(
+            [ReferenceExpression::DoubleDeref(DoubleDerefOperand { inner_deref: *operand })]
+                .into_iter(),
+            libfunc.output_types(),
+            environment,
+        ))
+    } else {
+        Err(InvocationError::InvalidReferenceExpressionForArgument)
+    }
+}
+
 pub fn compile_invocation(
     invocation: &Invocation,
     libfunc: &CoreConcreteLibFunc,
@@ -439,6 +489,12 @@ pub fn compile_invocation(
         )),
         CoreConcreteLibFunc::Mem(MemConcreteLibFunc::FinalizeLocals(libfunc)) => {
             handle_finalize_locals(libfunc, environment)
+        }
+        CoreConcreteLibFunc::Ref(RefConcreteLibFunc::Take(libfunc)) => {
+            handle_take_ref(type_sizes, libfunc, refs, environment)
+        }
+        CoreConcreteLibFunc::Ref(RefConcreteLibFunc::Deref(libfunc)) => {
+            handle_deref(libfunc, refs, environment)
         }
         _ => Err(InvocationError::NotImplemented(invocation.clone())),
     }
