@@ -5,6 +5,7 @@ use super::modules::gas::{GasBuiltinType, GasLibFunc};
 use super::modules::integer::{IntegerLibFunc, IntegerType};
 use super::modules::mem::MemLibFunc;
 use super::modules::non_zero::{NonZeroType, UnwrapNonZeroLibFunc};
+use super::modules::reference::{RefLibFunc, RefType};
 use super::modules::unconditional_jump::UnconditionalJumpLibFunc;
 use super::uninitialized::UninitializedType;
 use crate::{define_libfunc_hierarchy, define_type_hierarchy};
@@ -15,6 +16,7 @@ define_type_hierarchy! {
         GasBuiltin(GasBuiltinType),
         Integer(IntegerType),
         NonZero(NonZeroType),
+        Ref(RefType),
         Uninitialized(UninitializedType),
     }, CoreTypeConcrete
 }
@@ -27,6 +29,7 @@ define_libfunc_hierarchy! {
         Gas(GasLibFunc),
         Integer(IntegerLibFunc),
         Mem(MemLibFunc),
+        Ref(RefLibFunc),
         UnwrapNonZero(UnwrapNonZeroLibFunc),
         UnconditionalJump(UnconditionalJumpLibFunc),
     }, CoreConcreteLibFunc
