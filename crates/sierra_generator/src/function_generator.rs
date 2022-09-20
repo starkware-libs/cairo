@@ -7,7 +7,7 @@ use std::sync::Arc;
 use defs::ids::{FreeFunctionId, GenericFunctionId};
 use diagnostics::{Diagnostics, WithDiagnostics};
 use diagnostics_proc_macros::with_diagnostics;
-use sierra::extensions::OutputVarReferenceInfo;
+use sierra::extensions::lib_func::BranchReferenceInfo;
 use sierra::ids::ConcreteLibFuncId;
 use sierra::program::Param;
 
@@ -71,7 +71,7 @@ pub fn get_function_code(
     let statements = add_store_statements(
         context.get_db(),
         statements,
-        &|_concrete_lib_func_id: ConcreteLibFuncId| -> Vec<OutputVarReferenceInfo> {
+        &|_concrete_lib_func_id: ConcreteLibFuncId| -> Vec<BranchReferenceInfo> {
             // TODO(lior): Implement once there's a way to get the Sierra signature from
             //   ConcreteLibFuncId.
             unimplemented!();
