@@ -1,25 +1,12 @@
 #![allow(non_upper_case_globals)]
 
 use std::fmt::Write;
-use std::fs;
-use std::path::PathBuf;
 
-use diagnostics::Diagnostics;
-use filesystem::db::FilesGroup;
-use filesystem::ids::FileLongId;
-use syntax::node::{SyntaxNode, TypedSyntaxNode};
 use test_case::test_case;
 
-use super::ParserDiagnostic;
 use crate::colored_printer::print_colored;
-use crate::parser::Parser;
 use crate::printer::print_tree;
-use crate::test_utils::ParserDatabaseForTesting;
-
-fn read_file(filename: &str) -> String {
-    fs::read_to_string(filename)
-        .unwrap_or_else(|_| panic!("Something went wrong reading file {}", filename))
-}
+use crate::test_utils::{get_syntax_root_and_diagnostics, read_file, ParserDatabaseForTesting};
 
 struct ParserTreeTestParams {
     cairo_filename: &'static str,
@@ -217,18 +204,6 @@ fn _debug_failure(printed: String, expected: String) {
             break;
         }
     }
-}
-
-fn get_syntax_root_and_diagnostics(
-    db: &ParserDatabaseForTesting,
-    cairo_filename: &str,
-) -> (SyntaxNode, Diagnostics<ParserDiagnostic>) {
-    let path: PathBuf = [env!("CARGO_MANIFEST_DIR"), cairo_filename].iter().collect();
-    let file_id = db.intern_file(FileLongId::OnDisk(path));
-    let contents = db.file_content(file_id).unwrap();
-    let mut diagnostics = Diagnostics::default();
-    let syntax_root = Parser::parse_file(db, &mut diagnostics, file_id, contents.as_str());
-    (syntax_root.as_syntax_node(), diagnostics)
 }
 
 // `hex`: print hex if true, raw if false.
