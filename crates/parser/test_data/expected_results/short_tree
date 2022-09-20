@@ -3,10 +3,10 @@
     │   ├── child #0 (kind: ItemUse)
     │   │   ├── usekw (kind: Use): 'use'
     │   │   ├── name (kind: ExprPath)
-    │   │   │   ├── item #0 (kind: PathSegmentIdent)
+    │   │   │   ├── item #0 (kind: PathSegmentSimple)
     │   │   │   │   └── ident (kind: Identifier): 'std'
     │   │   │   ├── separator #0 (kind: ColonColon): '::'
-    │   │   │   └── item #1 (kind: PathSegmentIdent)
+    │   │   │   └── item #1 (kind: PathSegmentSimple)
     │   │   │       └── ident (kind: Identifier): 'format'
     │   │   └── semicolon (kind: Semicolon): ';'
     │   └── child #1 (kind: ItemFreeFunction)
@@ -21,13 +21,13 @@
     │       │   │       └── type_clause (kind: TypeClause)
     │       │   │           ├── colon (kind: Colon): ':'
     │       │   │           └── ty (kind: ExprPath)
-    │       │   │               └── item #0 (kind: PathSegmentIdent)
+    │       │   │               └── item #0 (kind: PathSegmentSimple)
     │       │   │                   └── ident (kind: Identifier): 'int'
     │       │   ├── rparen (kind: RParen): ')'
     │       │   └── ret_ty (kind: ReturnTypeClause)
     │       │       ├── arrow (kind: Arrow): '->'
     │       │       └── ty (kind: ExprPath)
-    │       │           └── item #0 (kind: PathSegmentIdent)
+    │       │           └── item #0 (kind: PathSegmentSimple)
     │       │               └── ident (kind: Identifier): 'felt'
     │       └── body (kind: ExprBlock)
     │           ├── lbrace (kind: LBrace): '{'
@@ -35,7 +35,7 @@
     │           │   └── child #0 (kind: StatementReturn)
     │           │       ├── returnkw (kind: Return): 'return'
     │           │       ├── expr (kind: ExprPath)
-    │           │       │   └── item #0 (kind: PathSegmentIdent)
+    │           │       │   └── item #0 (kind: PathSegmentSimple)
     │           │       │       └── ident (kind: Identifier): 'a'
     │           │       └── semicolon (kind: Semicolon): ';'
     │           └── rbrace (kind: RBrace): '}'

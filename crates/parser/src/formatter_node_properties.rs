@@ -60,8 +60,8 @@ impl SyntaxNodeFormat for SyntaxNode {
                 | SyntaxKind::OptionSemicolonEmpty
                 | SyntaxKind::StatementExpr
                 | SyntaxKind::StatementReturn
-                | SyntaxKind::PathSegmentGenericArgs
-                | SyntaxKind::PathSegmentIdent
+                | SyntaxKind::PathSegmentWithGenericArgs
+                | SyntaxKind::PathSegmentSimple
                 | SyntaxKind::Param
                 | SyntaxKind::ParamList
                 | SyntaxKind::ParamListParenthesized
@@ -133,8 +133,8 @@ impl SyntaxNodeFormat for SyntaxNode {
                 | SyntaxKind::StatementList
                 | SyntaxKind::StatementMissing
                 | SyntaxKind::OptionSemicolonEmpty
-                | SyntaxKind::PathSegmentGenericArgs
-                | SyntaxKind::PathSegmentIdent
+                | SyntaxKind::PathSegmentWithGenericArgs
+                | SyntaxKind::PathSegmentSimple
                 | SyntaxKind::Param
                 | SyntaxKind::ParamList
                 | SyntaxKind::ParamListParenthesized

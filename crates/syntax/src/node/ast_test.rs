@@ -1,7 +1,7 @@
 use pretty_assertions::assert_eq;
 
 use super::ast::{
-    ExprBinary, ExprLiteral, ExprPath, PathSegmentGreen, PathSegmentIdent, SyntaxFileGreen,
+    ExprBinary, ExprLiteral, ExprPath, PathSegmentGreen, PathSegmentSimple, SyntaxFileGreen,
     Terminal, Trivia,
 };
 use super::db::SyntaxDatabase;
@@ -35,7 +35,7 @@ fn test_ast() {
         [
             (SyntaxNodeDetails::Syntax(SyntaxKind::ExprBinary), 0, 7),
             (SyntaxNodeDetails::Syntax(SyntaxKind::ExprPath), 0, 4),
-            (SyntaxNodeDetails::Syntax(SyntaxKind::PathSegmentIdent), 0, 4),
+            (SyntaxNodeDetails::Syntax(SyntaxKind::PathSegmentSimple), 0, 4),
             (SyntaxNodeDetails::Syntax(SyntaxKind::Terminal), 0, 4),
             (SyntaxNodeDetails::Syntax(SyntaxKind::Trivia), 0, 0),
             (
@@ -139,7 +139,7 @@ fn setup(db: &DatabaseForTesting) -> SyntaxNode {
         db,
         ExprPath::new_green(
             db,
-            vec![PathSegmentGreen::from(PathSegmentIdent::new_green(db, terminals[0])).into()],
+            vec![PathSegmentGreen::from(PathSegmentSimple::new_green(db, terminals[0])).into()],
         )
         .into(),
         terminals[1],
