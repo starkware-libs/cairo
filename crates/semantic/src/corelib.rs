@@ -1,7 +1,7 @@
 use defs::ids::{GenericFunctionId, GenericTypeId, ModuleId};
 use filesystem::ids::CrateLongId;
 use syntax::token::TokenKind;
-use utils::OptFrom;
+use utils::OptionFrom;
 
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind;
@@ -17,7 +17,7 @@ pub fn core_felt_ty(db: &dyn SemanticGroup) -> TypeId {
     // This should not fail if the corelib is present.
     let generic_type = db
         .module_item_by_name(core_module, "felt".into())
-        .and_then(GenericTypeId::opt_from)
+        .and_then(GenericTypeId::option_from)
         .unwrap();
     db.intern_type(semantic::TypeLongId::Concrete(semantic::ConcreteType {
         generic_type,
@@ -48,7 +48,7 @@ pub fn core_binary_operator(
     };
     let generic_function = db
         .module_item_by_name(core_module, function_name.into())
-        .and_then(GenericFunctionId::opt_from)
+        .and_then(GenericFunctionId::option_from)
         .expect("Operator function not found in core lib.");
     Ok(generic_function)
 }

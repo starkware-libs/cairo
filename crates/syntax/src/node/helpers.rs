@@ -55,15 +55,25 @@ impl ExprPathGreenEx for ast::ExprPathGreen {
     }
 }
 
+pub trait PathSegmentEx {
+    fn as_identifier(&self, db: &dyn SyntaxGroup) -> Option<SmolStr>;
+}
+impl PathSegmentEx for ast::PathSegment {
+    /// Retrieves the text of the last identifier in the path.
+    fn as_identifier(&self, db: &dyn SyntaxGroup) -> Option<SmolStr> {
+        match self {
+            PathSegment::Ident(ident_segment) => Some(ident_segment.ident(db).text(db)),
+            PathSegment::GenericArgs(_generic_args_segment) => None,
+        }
+    }
+}
+
 pub trait ExprPathEx {
     fn identifier(&self, db: &dyn SyntaxGroup) -> Option<SmolStr>;
 }
 impl ExprPathEx for ast::ExprPath {
     /// Retrieves the text of the last identifier in the path.
     fn identifier(&self, db: &dyn SyntaxGroup) -> Option<SmolStr> {
-        self.elements(db).last().and_then(|segment| match segment {
-            PathSegment::Ident(ident_segment) => Some(ident_segment.ident(db).text(db)),
-            PathSegment::GenericArgs(_generic_args_segment) => None,
-        })
+        self.elements(db).last().and_then(|segment| segment.as_identifier(db))
     }
 }

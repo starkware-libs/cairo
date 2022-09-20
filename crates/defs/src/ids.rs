@@ -27,7 +27,7 @@ use filesystem::ids::CrateId;
 use smol_str::SmolStr;
 use syntax::node::helpers::{ExprPathGreenEx, TerminalGreenEx};
 use syntax::node::{ast, TypedSyntaxNode};
-use utils::OptFrom;
+use utils::OptionFrom;
 
 use crate::db::DefsGroup;
 
@@ -134,10 +134,10 @@ macro_rules! define_language_element_id_as_enum {
                 }
             }
         }
-        // Conversion from ModuleItemId to its child.
+        // Conversion from enum to its child.
         $(
-            impl OptFrom<$enum_name> for $variant_ty {
-                fn opt_from(other: $enum_name) -> Option<Self> {
+            impl OptionFrom<$enum_name> for $variant_ty {
+                fn option_from(other: $enum_name) -> Option<Self> {
                     if let $enum_name::$variant(id) = other {
                         Some(id)
                     } else {
@@ -224,14 +224,6 @@ define_language_element_id!(ParamId, ParamLongId, ast::Param, lookup_intern_para
 define_language_element_id!(LocalVarId, LocalVarLongId, ast::StatementLet, lookup_intern_local_var);
 
 define_language_element_id_as_enum! {
-    /// Id for anything that can be a "Go to definition" result.
-    pub enum Symbol {
-        ModuleItem(ModuleItemId),
-        Var(VarId),
-    }
-}
-
-define_language_element_id_as_enum! {
     /// Generic function ids enum.
     pub enum GenericFunctionId {
         Free(FreeFunctionId),
@@ -254,9 +246,25 @@ impl GenericTypeId {
     }
 }
 
+/// Id for anything that can be a "Go to definition" result.
+pub enum Symbol {
+    Crate(CrateId),
+    ModuleItem(ModuleItemId),
+    Var(VarId),
+}
+
+impl OptionFrom<Symbol> for ModuleItemId {
+    fn option_from(symbol: Symbol) -> Option<Self> {
+        match symbol {
+            Symbol::ModuleItem(item) => Some(item),
+            _ => None,
+        }
+    }
+}
+
 // Conversion from ModuleItemId to GenericFunctionId.
-impl OptFrom<ModuleItemId> for GenericFunctionId {
-    fn opt_from(item: ModuleItemId) -> Option<Self> {
+impl OptionFrom<ModuleItemId> for GenericFunctionId {
+    fn option_from(item: ModuleItemId) -> Option<Self> {
         match item {
             ModuleItemId::FreeFunction(id) => Some(GenericFunctionId::Free(id)),
             ModuleItemId::ExternFunction(id) => Some(GenericFunctionId::Extern(id)),
@@ -267,8 +275,13 @@ impl OptFrom<ModuleItemId> for GenericFunctionId {
         }
     }
 }
-impl OptFrom<ModuleItemId> for GenericTypeId {
-    fn opt_from(item: ModuleItemId) -> Option<Self> {
+impl OptionFrom<Symbol> for GenericFunctionId {
+    fn option_from(symbol: Symbol) -> Option<Self> {
+        ModuleItemId::option_from(symbol).and_then(GenericFunctionId::option_from)
+    }
+}
+impl OptionFrom<ModuleItemId> for GenericTypeId {
+    fn option_from(item: ModuleItemId) -> Option<Self> {
         match item {
             ModuleItemId::Struct(id) => Some(GenericTypeId::Struct(id)),
             ModuleItemId::ExternType(id) => Some(GenericTypeId::Extern(id)),
@@ -277,5 +290,10 @@ impl OptFrom<ModuleItemId> for GenericTypeId {
             | ModuleItemId::FreeFunction(_)
             | ModuleItemId::ExternFunction(_) => None,
         }
+    }
+}
+impl OptionFrom<Symbol> for GenericTypeId {
+    fn option_from(symbol: Symbol) -> Option<Self> {
+        ModuleItemId::option_from(symbol).and_then(GenericTypeId::option_from)
     }
 }
