@@ -1,5 +1,4 @@
 use smol_str::SmolStr;
-use utils::extract_matches;
 
 use super::ast::{self, TokenIdentifierGreen};
 use super::db::SyntaxGroup;
@@ -39,6 +38,10 @@ impl GetIdentifier for ast::ExprPath {
 impl GetIdentifier for ast::PathSegment {
     /// Retrieves the text of the segment (without the generic args).
     fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(self, ast::PathSegment::Ident, "Expected an ident").ident(db).text(db)
+        match self {
+            ast::PathSegment::Simple(segment) => segment.ident(db),
+            ast::PathSegment::WithGenericArgs(segment) => segment.ident(db),
+        }
+        .text(db)
     }
 }

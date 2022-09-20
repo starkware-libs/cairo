@@ -40,7 +40,7 @@ pub fn resolve_item(
     // Follow modules.
     for segment in elements {
         match segment {
-            ast::PathSegment::Ident(ident) => {
+            ast::PathSegment::Simple(ident) => {
                 let ident = ident.ident(syntax_db).text(syntax_db);
                 symbol = match symbol {
                     Symbol::ModuleItem(ModuleItemId::Submodule(submodule)) => Symbol::ModuleItem(
@@ -57,7 +57,7 @@ pub fn resolve_item(
                     }
                 }
             }
-            ast::PathSegment::GenericArgs(_generic_args) => {
+            ast::PathSegment::WithGenericArgs(_generic_args) => {
                 return Err(SemanticDiagnosticKind::Unsupported);
             }
         }
