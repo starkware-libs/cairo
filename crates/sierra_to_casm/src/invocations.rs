@@ -349,12 +349,12 @@ fn handle_jump(
     ))
 }
 
-fn handle_alloc_locals(
+fn handle_finalize_locals(
     libfunc: &SignatureOnlyConcreteLibFunc,
     environment: Environment,
 ) -> Result<CompiledInvocation, InvocationError> {
     let (n_slots, frame_state) =
-        frame_state::handle_alloc_locals(environment.frame_state, environment.ap_tracking)?;
+        frame_state::handle_finalize_locals(environment.frame_state, environment.ap_tracking)?;
     Ok(CompiledInvocation::new(
         vec![Instruction {
             body: InstructionBody::AddAp(AddApInstruction {
@@ -428,8 +428,8 @@ pub fn compile_invocation(
             libfunc.output_types(),
             environment,
         )),
-        CoreConcreteLibFunc::Mem(MemConcreteLibFunc::AllocLocals(libfunc)) => {
-            handle_alloc_locals(libfunc, environment)
+        CoreConcreteLibFunc::Mem(MemConcreteLibFunc::FinalizeLocals(libfunc)) => {
+            handle_finalize_locals(libfunc, environment)
         }
         _ => Err(InvocationError::NotImplemented(invocation.clone())),
     }

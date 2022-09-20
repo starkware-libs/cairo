@@ -89,9 +89,9 @@ fn find_type_specialization(
 #[test_case("align_temps", vec![] => Err(WrongNumberOfGenericArgs); "align_temps")]
 #[test_case("store_local", vec![type_arg("int")] => Ok(()); "store_local<int>")]
 #[test_case("store_local", vec![] => Err(WrongNumberOfGenericArgs); "store_local")]
-#[test_case("alloc_locals", vec![] => Ok(()); "alloc_locals")]
-#[test_case("alloc_locals", vec![type_arg("int")] => Err(WrongNumberOfGenericArgs);
-            "alloc_locals<int>")]
+#[test_case("finalize_locals", vec![] => Ok(()); "finalize_locals")]
+#[test_case("finalize_locals", vec![type_arg("int")] => Err(WrongNumberOfGenericArgs);
+            "finalize_locals<int>")]
 #[test_case("rename", vec![type_arg("int")] => Ok(()); "rename<int>")]
 #[test_case("rename", vec![] => Err(WrongNumberOfGenericArgs); "rename")]
 #[test_case("jump", vec![] => Ok(()); "jump")]

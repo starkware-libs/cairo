@@ -16,7 +16,7 @@ define_libfunc_hierarchy! {
         StoreTemp(StoreTempLibFunc),
         AlignTemps(AlignTempsLibFunc),
         StoreLocal(StoreLocalLibFunc),
-        AllocLocals(AllocLocalsLibFunc),
+        FinalizeLocals(FinalizeLocalsLibFunc),
         Rename(RenameLibFunc),
     }, MemConcreteLibFunc
 }
@@ -138,12 +138,12 @@ impl SignatureBasedConcreteLibFunc for StoreLocalConcreteLibFunc {
     }
 }
 
-/// LibFunc for allocating locals for later stores.
+/// LibFunc for finalizing the locals for current function.
 #[derive(Default)]
-pub struct AllocLocalsLibFunc {}
-impl NoGenericArgsGenericLibFunc for AllocLocalsLibFunc {
+pub struct FinalizeLocalsLibFunc {}
+impl NoGenericArgsGenericLibFunc for FinalizeLocalsLibFunc {
     type Concrete = SignatureOnlyConcreteLibFunc;
-    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("alloc_locals");
+    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("finalize_locals");
 
     fn specialize_signature(
         &self,

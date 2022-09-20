@@ -16,7 +16,7 @@ fn good_flow() {
             type felt = felt;
             type NonZeroFelt = NonZero<felt>;
 
-            libfunc alloc_locals = alloc_locals;
+            libfunc finalize_locals = finalize_locals;
             libfunc felt_add = felt_add;
             libfunc felt_sub = felt_sub;
             libfunc felt_dup = felt_dup;
@@ -38,7 +38,7 @@ fn good_flow() {
             store_temp_felt([4]) -> ([4]);                  // #8
             return([7], [8], [4]);                          // #9
 
-            alloc_locals() -> ();                           // #10
+            finalize_locals() -> ();                        // #10
             felt_jump_nz([1]) { 16([1]) fallthrough() };    // #11
             felt_dup([2]) -> ([1], [2]);                    // #12
             store_temp_felt([1]) -> ([1]);                  // #13
@@ -310,30 +310,30 @@ fn fib_program() {
             "}, "#5: Inconsistent ap tracking.";
             "Inconsistent ap tracking.")]
 #[test_case(indoc! {"
-                libfunc alloc_locals = alloc_locals;
+                libfunc finalize_locals = finalize_locals;
 
-                alloc_locals () -> ();
-                alloc_locals () -> ();
+                finalize_locals () -> ();
+                finalize_locals () -> ();
                 return ();
 
                 test_program@0() -> ();
-            "}, "#1: alloc_locals is not allowed at this point.";
-            "Invalid alloc_locals 1")]
+            "}, "#1: finalize_locals is not allowed at this point.";
+            "Invalid finalize_locals 1")]
 #[test_case(indoc! {"
                 type felt = felt;
 
-                libfunc alloc_locals = alloc_locals;
+                libfunc finalize_locals = finalize_locals;
                 libfunc store_temp_felt = store_temp<felt>;
                 libfunc call_foo = function_call<user@foo>;
 
                 store_temp_felt([1]) -> ([1]);
                 call_foo([1]) -> ();
-                alloc_locals() -> ();
+                finalize_locals() -> ();
                 return ();
 
                 foo@0([1]: felt) -> ();
-            "}, "#2: alloc_locals is not allowed at this point.";
-            "Invalid alloc_locals 2")]
+            "}, "#2: finalize_locals is not allowed at this point.";
+            "Invalid finalize_locals 2")]
 fn compiler_errors(sierra_code: &str, expected_result: &str) {
     let prog = ProgramParser::new().parse(sierra_code).unwrap();
     assert_eq!(
