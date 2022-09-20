@@ -19,7 +19,8 @@ pub fn get_type_size_map(
         let size = match ty {
             CoreTypeConcrete::Felt(_)
             | CoreTypeConcrete::GasBuiltin(_)
-            | CoreTypeConcrete::Integer(_) => Some(1),
+            | CoreTypeConcrete::Integer(_)
+            | CoreTypeConcrete::Ref(_) => Some(1),
             CoreTypeConcrete::NonZero(NonZeroConcreteType { ty }) => type_sizes.get(ty).cloned(),
             CoreTypeConcrete::Uninitialized(_) => Some(0),
         }?;
