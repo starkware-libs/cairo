@@ -22,7 +22,7 @@ impl NamedLibFunc for FunctionCallLibFunc {
             [GenericArg::UserFunc(function_id)] => {
                 let function = context.get_function_signature(function_id)?;
                 Ok(LibFuncSignature::new_non_branch(
-                    function.params.iter().map(|p| p.ty.clone()).collect(),
+                    function.param_types.clone(),
                     function.ret_types.clone(),
                     function
                         .ret_types

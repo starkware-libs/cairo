@@ -68,13 +68,13 @@ pub fn generate_program_code(
         statements: resolved_statements,
         funcs: functions
             .into_iter()
-            .map(|function| program::Function {
-                id: function.id.clone(),
-                signature: program::FunctionSignature {
-                    params: function.parameters.clone(),
-                    ret_types: function.ret_types.clone(),
-                },
-                entry: label_replacer.handle_label_id(function.entry_point),
+            .map(|function| {
+                program::Function::new(
+                    function.id.clone(),
+                    function.parameters.clone(),
+                    function.ret_types.clone(),
+                    label_replacer.handle_label_id(function.entry_point),
+                )
             })
             .collect(),
     })
