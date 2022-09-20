@@ -4,7 +4,7 @@
 #[path = "store_variables_test.rs"]
 mod test;
 
-use sierra::extensions::OutputVarReferenceInfo;
+use sierra::extensions::lib_func::BranchReferenceInfo;
 use sierra::ids::ConcreteLibFuncId;
 use sierra::program::{GenBranchInfo, GenBranchTarget, GenStatement};
 use utils::ordered_hash_set::OrderedHashSet;
@@ -24,7 +24,7 @@ pub fn add_store_statements<GetOutputInfo>(
     get_output_info: &GetOutputInfo,
 ) -> Vec<pre_sierra::Statement>
 where
-    GetOutputInfo: Fn(ConcreteLibFuncId) -> Vec<OutputVarReferenceInfo>,
+    GetOutputInfo: Fn(ConcreteLibFuncId) -> Vec<BranchReferenceInfo>,
 {
     let mut handler = AddStoreVariableStatements::new(db);
     // Go over the statements, restarting whenever we see a branch or a label.
@@ -56,7 +56,7 @@ impl<'a> AddStoreVariableStatements<'a> {
         statement: pre_sierra::Statement,
         _get_output_info: &GetOutputInfo,
     ) where
-        GetOutputInfo: Fn(ConcreteLibFuncId) -> Vec<OutputVarReferenceInfo>,
+        GetOutputInfo: Fn(ConcreteLibFuncId) -> Vec<BranchReferenceInfo>,
     {
         match &statement {
             pre_sierra::Statement::Sierra(GenStatement::Invocation(invocation)) => {
