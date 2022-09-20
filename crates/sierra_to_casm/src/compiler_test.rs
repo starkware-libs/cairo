@@ -334,6 +334,18 @@ fn fib_program() {
                 foo@0([1]: felt) -> ();
             "}, "#2: finalize_locals is not allowed at this point.";
             "Invalid finalize_locals 2")]
+#[test_case(indoc! {"
+                type felt = felt;
+                type UninitializedFelt = uninitialized<felt>;
+
+                libfunc store_temp_felt = store_temp<UninitializedFelt>;
+
+                store_temp_felt([1]) -> ([1]);
+                return ();
+
+                foo@0([1]:UninitializedFelt) -> ();
+            "}, "#0: The functionality is supported only for sized types.";
+            "store_temp<uninitialized<felt>()")]
 fn compiler_errors(sierra_code: &str, expected_result: &str) {
     let prog = ProgramParser::new().parse(sierra_code).unwrap();
     assert_eq!(
