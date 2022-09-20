@@ -16,6 +16,7 @@ fn good_flow() {
             type felt = felt;
             type NonZeroFelt = NonZero<felt>;
 
+            libfunc alloc_locals = alloc_locals;
             libfunc felt_add = felt_add;
             libfunc felt_sub = felt_sub;
             libfunc felt_dup = felt_dup;
@@ -37,20 +38,21 @@ fn good_flow() {
             store_temp_felt([4]) -> ([4]);                  // #8
             return([7], [8], [4]);                          // #9
 
-            felt_jump_nz([1]) { 15([1]) fallthrough() };    // #10
-            felt_dup([2]) -> ([1], [2]);                    // #11
-            store_temp_felt([1]) -> ([1]);                  // #12
-            store_temp_felt([2]) -> ([2]);                  // #13
-            return ([1], [2]);                              // #14
+            alloc_locals() -> ();                           // #10
+            felt_jump_nz([1]) { 16([1]) fallthrough() };    // #11
+            felt_dup([2]) -> ([1], [2]);                    // #12
+            store_temp_felt([1]) -> ([1]);                  // #13
+            store_temp_felt([2]) -> ([2]);                  // #14
+            return ([1], [2]);                              // #15
 
-            jump() { 16() };                                // #15
-            felt_unwrap_nz([1]) -> ([1]);                   // #16
-            felt_dup([2]) -> ([2], [3]);                    // #17
-            felt_sub([1], [3]) -> ([1]);                    // #18
-            store_temp_felt([1]) -> ([1]);                  // #19
-            store_temp_felt([2]) -> ([2]);                  // #20
-            call_foo([1], [2]) -> ([1], [2]);               // #21
-            return ([1], [2]);                              // #22
+            jump() { 17() };                                // #16
+            felt_unwrap_nz([1]) -> ([1]);                   // #17
+            felt_dup([2]) -> ([2], [3]);                    // #18
+            felt_sub([1], [3]) -> ([1]);                    // #19
+            store_temp_felt([1]) -> ([1]);                  // #20
+            store_temp_felt([2]) -> ([2]);                  // #21
+            call_foo([1], [2]) -> ([1], [2]);               // #22
+            return ([1], [2]);                              // #23
 
             test_program@0([1]: felt, [2]: felt) -> (felt, felt, felt);
             foo@10([1]: felt, [2]: felt) -> (felt, felt);
@@ -65,6 +67,7 @@ fn good_flow() {
             call rel 4;
             [ap + 0] = [ap + -1], ap++;
             ret;
+            ap += 0;
             jmp rel 5 if [fp + -4] != 0;
             [ap + 0] = [fp + -3], ap++;
             [ap + 0] = [fp + -3], ap++;
@@ -72,7 +75,7 @@ fn good_flow() {
             jmp rel 2;
             [fp + -4] = [ap + 0] + [fp + -3], ap++;
             [ap + 0] = [fp + -3], ap++;
-            call rel -9;
+            call rel -11;
             ret;
         "}
     );
@@ -290,6 +293,7 @@ fn fib_program() {
                 type NonZeroFelt = NonZero<felt>;
 
                 libfunc revoke_ap_tracking = revoke_ap_tracking;
+
                 libfunc felt_drop = felt_drop;
                 libfunc felt_jump_nz = felt_jump_nz;
                 libfunc felt_unwrap_nz = unwrap_nz<felt>;
@@ -305,6 +309,31 @@ fn fib_program() {
                 foo@0([1]: felt) -> ();
             "}, "#5: Inconsistent ap tracking.";
             "Inconsistent ap tracking.")]
+#[test_case(indoc! {"
+                libfunc alloc_locals = alloc_locals;
+
+                alloc_locals () -> ();
+                alloc_locals () -> ();
+                return ();
+
+                test_program@0() -> ();
+            "}, "#1: alloc_locals is not allowed at this point.";
+            "Invalid alloc_locals 1")]
+#[test_case(indoc! {"
+                type felt = felt;
+
+                libfunc alloc_locals = alloc_locals;
+                libfunc store_temp_felt = store_temp<felt>;
+                libfunc call_foo = function_call<user@foo>;
+
+                store_temp_felt([1]) -> ([1]);
+                call_foo([1]) -> ();
+                alloc_locals() -> ();
+                return ();
+
+                foo@0([1]: felt) -> ();
+            "}, "#2: alloc_locals is not allowed at this point.";
+            "Invalid alloc_locals 2")]
 fn compiler_errors(sierra_code: &str, expected_result: &str) {
     let prog = ProgramParser::new().parse(sierra_code).unwrap();
     assert_eq!(
