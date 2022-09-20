@@ -1,4 +1,5 @@
 use pretty_assertions::assert_eq;
+use sierra::extensions::lib_func::BranchReferenceInfo;
 use sierra::extensions::OutputVarReferenceInfo;
 use sierra::ids::ConcreteLibFuncId;
 
@@ -9,12 +10,13 @@ use crate::test_utils::{
 };
 
 /// Returns the [OutputVarReferenceInfo] information for a given libfunc.
-fn get_output_info(libfunc: ConcreteLibFuncId) -> Vec<OutputVarReferenceInfo> {
-    match libfunc.debug_name.clone().unwrap() {
+fn get_output_info(libfunc: ConcreteLibFuncId) -> Vec<BranchReferenceInfo> {
+    let single_branch = match libfunc.debug_name.clone().unwrap() {
         x if x == "felt_add" => vec![OutputVarReferenceInfo::Deferred],
         x if x == "nope" => vec![],
         _ => panic!("get_signature() is not implemented for '{}'.", libfunc.debug_name.unwrap()),
-    }
+    };
+    vec![BranchReferenceInfo(single_branch)]
 }
 
 #[test]
