@@ -12,6 +12,7 @@ mod program_generator;
 mod resolve_labels;
 mod store_variables;
 pub mod test_utils;
+mod types;
 mod utils;
 
 pub use diagnostic::{Diagnostic, SierraGeneratorDiagnostic};
