@@ -131,6 +131,7 @@ impl<'a> Lexer<'a> {
             "func" => TokenKind::Function,
             "mod" => TokenKind::Module,
             "struct" => TokenKind::Struct,
+            "enum" => TokenKind::Enum,
             "let" => TokenKind::Let,
             "return" => TokenKind::Return,
             "match" => TokenKind::Match,

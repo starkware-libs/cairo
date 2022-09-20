@@ -129,12 +129,6 @@ pub fn get_key_fields(kind: SyntaxKind, children: Vec<GreenId>) -> Vec<GreenId> 
         SyntaxKind::ParamList => {
             vec![]
         }
-        SyntaxKind::ParamListParenthesized => {
-            vec![]
-        }
-        SyntaxKind::ParamListBraced => {
-            vec![]
-        }
         SyntaxKind::FunctionSignature => {
             vec![]
         }

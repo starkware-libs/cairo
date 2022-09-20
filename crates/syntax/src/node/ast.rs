@@ -3873,172 +3873,6 @@ impl TypedSyntaxNode for ParamList {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct ParamListParenthesized {
-    node: SyntaxNode,
-    children: Vec<SyntaxNode>,
-}
-impl ParamListParenthesized {
-    pub fn new_green(
-        db: &dyn SyntaxGroup,
-        lparen: TerminalGreen,
-        parameters: ParamListGreen,
-        rparen: TerminalGreen,
-    ) -> ParamListParenthesizedGreen {
-        let children: Vec<GreenId> = vec![lparen.0, parameters.0, rparen.0];
-        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
-        ParamListParenthesizedGreen(db.intern_green(GreenNode::Internal(GreenNodeInternal {
-            kind: SyntaxKind::ParamListParenthesized,
-            children,
-            width,
-        })))
-    }
-    pub fn lparen(&self, db: &dyn SyntaxGroup) -> Terminal {
-        Terminal::from_syntax_node(db, self.children[0].clone())
-    }
-    pub fn parameters(&self, db: &dyn SyntaxGroup) -> ParamList {
-        ParamList::from_syntax_node(db, self.children[1].clone())
-    }
-    pub fn rparen(&self, db: &dyn SyntaxGroup) -> Terminal {
-        Terminal::from_syntax_node(db, self.children[2].clone())
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ParamListParenthesizedPtr(SyntaxStablePtrId);
-impl ParamListParenthesizedPtr {
-    pub fn untyped(&self) -> SyntaxStablePtrId {
-        self.0
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ParamListParenthesizedGreen(pub GreenId);
-impl TypedSyntaxNode for ParamListParenthesized {
-    type StablePtr = ParamListParenthesizedPtr;
-    type Green = ParamListParenthesizedGreen;
-    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
-        ParamListParenthesizedGreen(db.intern_green(GreenNode::Internal(GreenNodeInternal {
-            kind: SyntaxKind::ParamListParenthesized,
-            children: vec![
-                Terminal::missing(db).0,
-                ParamList::missing(db).0,
-                Terminal::missing(db).0,
-            ],
-            width: 0,
-        })))
-    }
-    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match db.lookup_intern_green(node.0.green) {
-            GreenNode::Internal(internal) => {
-                if internal.kind != SyntaxKind::ParamListParenthesized {
-                    panic!(
-                        "Unexpected SyntaxKind {:?}. Expected {:?}.",
-                        internal.kind,
-                        SyntaxKind::ParamListParenthesized,
-                    );
-                }
-                let children = node.children(db).collect();
-                Self { node, children }
-            }
-            GreenNode::Token(token) => {
-                panic!(
-                    "Unexpected Token {:?}. Expected {:?}.",
-                    token,
-                    SyntaxKind::ParamListParenthesized,
-                );
-            }
-        }
-    }
-    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
-        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
-    }
-    fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
-    }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ParamListParenthesizedPtr(self.node.0.stable_ptr)
-    }
-}
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct ParamListBraced {
-    node: SyntaxNode,
-    children: Vec<SyntaxNode>,
-}
-impl ParamListBraced {
-    pub fn new_green(
-        db: &dyn SyntaxGroup,
-        lbrace: TerminalGreen,
-        parameters: ParamListGreen,
-        rbrace: TerminalGreen,
-    ) -> ParamListBracedGreen {
-        let children: Vec<GreenId> = vec![lbrace.0, parameters.0, rbrace.0];
-        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
-        ParamListBracedGreen(db.intern_green(GreenNode::Internal(GreenNodeInternal {
-            kind: SyntaxKind::ParamListBraced,
-            children,
-            width,
-        })))
-    }
-    pub fn lbrace(&self, db: &dyn SyntaxGroup) -> Terminal {
-        Terminal::from_syntax_node(db, self.children[0].clone())
-    }
-    pub fn parameters(&self, db: &dyn SyntaxGroup) -> ParamList {
-        ParamList::from_syntax_node(db, self.children[1].clone())
-    }
-    pub fn rbrace(&self, db: &dyn SyntaxGroup) -> Terminal {
-        Terminal::from_syntax_node(db, self.children[2].clone())
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ParamListBracedPtr(SyntaxStablePtrId);
-impl ParamListBracedPtr {
-    pub fn untyped(&self) -> SyntaxStablePtrId {
-        self.0
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ParamListBracedGreen(pub GreenId);
-impl TypedSyntaxNode for ParamListBraced {
-    type StablePtr = ParamListBracedPtr;
-    type Green = ParamListBracedGreen;
-    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
-        ParamListBracedGreen(db.intern_green(GreenNode::Internal(GreenNodeInternal {
-            kind: SyntaxKind::ParamListBraced,
-            children: vec![
-                Terminal::missing(db).0,
-                ParamList::missing(db).0,
-                Terminal::missing(db).0,
-            ],
-            width: 0,
-        })))
-    }
-    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match db.lookup_intern_green(node.0.green) {
-            GreenNode::Internal(internal) => {
-                if internal.kind != SyntaxKind::ParamListBraced {
-                    panic!(
-                        "Unexpected SyntaxKind {:?}. Expected {:?}.",
-                        internal.kind,
-                        SyntaxKind::ParamListBraced,
-                    );
-                }
-                let children = node.children(db).collect();
-                Self { node, children }
-            }
-            GreenNode::Token(token) => {
-                panic!("Unexpected Token {:?}. Expected {:?}.", token, SyntaxKind::ParamListBraced,);
-            }
-        }
-    }
-    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
-        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
-    }
-    fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
-    }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ParamListBracedPtr(self.node.0.stable_ptr)
-    }
-}
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct FunctionSignature {
     node: SyntaxNode,
     children: Vec<SyntaxNode>,
@@ -5042,9 +4876,13 @@ impl ItemEnum {
         db: &dyn SyntaxGroup,
         enumkw: TerminalGreen,
         name: TerminalGreen,
-        body: ParamListBracedGreen,
+        generic_args: OptionGenericArgsGreen,
+        lbrace: TerminalGreen,
+        variants: ParamListGreen,
+        rbrace: TerminalGreen,
     ) -> ItemEnumGreen {
-        let children: Vec<GreenId> = vec![enumkw.0, name.0, body.0];
+        let children: Vec<GreenId> =
+            vec![enumkw.0, name.0, generic_args.0, lbrace.0, variants.0, rbrace.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         ItemEnumGreen(db.intern_green(GreenNode::Internal(GreenNodeInternal {
             kind: SyntaxKind::ItemEnum,
@@ -5058,8 +4896,17 @@ impl ItemEnum {
     pub fn name(&self, db: &dyn SyntaxGroup) -> Terminal {
         Terminal::from_syntax_node(db, self.children[1].clone())
     }
-    pub fn body(&self, db: &dyn SyntaxGroup) -> ParamListBraced {
-        ParamListBraced::from_syntax_node(db, self.children[2].clone())
+    pub fn generic_args(&self, db: &dyn SyntaxGroup) -> OptionGenericArgs {
+        OptionGenericArgs::from_syntax_node(db, self.children[2].clone())
+    }
+    pub fn lbrace(&self, db: &dyn SyntaxGroup) -> Terminal {
+        Terminal::from_syntax_node(db, self.children[3].clone())
+    }
+    pub fn variants(&self, db: &dyn SyntaxGroup) -> ParamList {
+        ParamList::from_syntax_node(db, self.children[4].clone())
+    }
+    pub fn rbrace(&self, db: &dyn SyntaxGroup) -> Terminal {
+        Terminal::from_syntax_node(db, self.children[5].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -5088,7 +4935,10 @@ impl TypedSyntaxNode for ItemEnum {
             children: vec![
                 Terminal::missing(db).0,
                 Terminal::missing(db).0,
-                ParamListBraced::missing(db).0,
+                OptionGenericArgs::missing(db).0,
+                Terminal::missing(db).0,
+                ParamList::missing(db).0,
+                Terminal::missing(db).0,
             ],
             width: 0,
         })))

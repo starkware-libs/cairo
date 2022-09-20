@@ -178,6 +178,7 @@ define_language_element_id_as_enum! {
         Use(UseId),
         FreeFunction(FreeFunctionId),
         Struct(StructId),
+        Enum(EnumId),
         ExternType(ExternTypeId),
         ExternFunction(ExternFunctionId),
     }
@@ -197,6 +198,7 @@ define_language_element_id!(
     lookup_intern_extern_function
 );
 define_language_element_id!(StructId, StructLongId, ast::ItemStruct, lookup_intern_struct);
+define_language_element_id!(EnumId, EnumLongId, ast::ItemEnum, lookup_intern_enum);
 define_language_element_id!(
     ExternTypeId,
     ExternTypeLongId,
@@ -207,6 +209,7 @@ define_language_element_id!(
 // Struct items.
 // TODO(spapini): Override full_path for to include parents, for better debug.
 define_language_element_id!(MemberId, MemberLongId, ast::Param, lookup_intern_member);
+define_language_element_id!(VariantId, VariantLongId, ast::Param, lookup_intern_variant);
 
 define_language_element_id_as_enum! {
     /// Id for any variable definition.
@@ -236,6 +239,7 @@ define_language_element_id_as_enum! {
     /// Generic type ids enum.
     pub enum GenericTypeId {
         Struct(StructId),
+        Enum(EnumId),
         Extern(ExternTypeId),
         // TODO(spapini): enums, associated types in impls.
     }
@@ -271,6 +275,7 @@ impl OptionFrom<ModuleItemId> for GenericFunctionId {
             ModuleItemId::Submodule(_)
             | ModuleItemId::Use(_)
             | ModuleItemId::Struct(_)
+            | ModuleItemId::Enum(_)
             | ModuleItemId::ExternType(_) => None,
         }
     }
@@ -284,6 +289,7 @@ impl OptionFrom<ModuleItemId> for GenericTypeId {
     fn option_from(item: ModuleItemId) -> Option<Self> {
         match item {
             ModuleItemId::Struct(id) => Some(GenericTypeId::Struct(id)),
+            ModuleItemId::Enum(id) => Some(GenericTypeId::Enum(id)),
             ModuleItemId::ExternType(id) => Some(GenericTypeId::Extern(id)),
             ModuleItemId::Submodule(_)
             | ModuleItemId::Use(_)

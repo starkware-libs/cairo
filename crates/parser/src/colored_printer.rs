@@ -65,6 +65,7 @@ fn set_color(text: SmolStr, kind: TokenKind) -> ColoredString {
         | TokenKind::Function
         | TokenKind::Module
         | TokenKind::Struct
+        | TokenKind::Enum
         | TokenKind::Use => text.bright_blue(),
         TokenKind::Let | TokenKind::Return | TokenKind::Match => text.bright_blue(),
         TokenKind::Arrow

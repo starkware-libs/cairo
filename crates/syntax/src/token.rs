@@ -28,6 +28,7 @@ pub enum TokenKind {
     Function,
     Module,
     Struct,
+    Enum,
     Let,
     Return,
     Match,
