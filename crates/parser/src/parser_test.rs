@@ -223,7 +223,8 @@ fn get_syntax_root_and_diagnostics(
     db: &ParserDatabaseForTesting,
     cairo_filename: &str,
 ) -> (SyntaxNode, Diagnostics<ParserDiagnostic>) {
-    let file_id = db.intern_file(FileLongId::OnDisk(PathBuf::from(cairo_filename)));
+    let path: PathBuf = [env!("CARGO_MANIFEST_DIR"), cairo_filename].iter().collect();
+    let file_id = db.intern_file(FileLongId::OnDisk(path));
     let contents = db.file_content(file_id).unwrap();
     let mut diagnostics = Diagnostics::default();
     let syntax_root = Parser::parse_file(db, &mut diagnostics, file_id, contents.as_str());
