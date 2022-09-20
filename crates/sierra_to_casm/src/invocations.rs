@@ -17,7 +17,9 @@ use sierra::extensions::core::CoreConcreteLibFunc;
 use sierra::extensions::felt::FeltConcrete;
 use sierra::extensions::function_call::FunctionCallConcreteLibFunc;
 use sierra::extensions::lib_func::SignatureOnlyConcreteLibFunc;
-use sierra::extensions::mem::{MemConcreteLibFunc, StoreTempConcreteLibFunc};
+use sierra::extensions::mem::{
+    AllocLocalConcreteLibFunc, MemConcreteLibFunc, StoreTempConcreteLibFunc,
+};
 use sierra::extensions::reference::RefConcreteLibFunc;
 use sierra::extensions::ConcreteLibFunc;
 use sierra::ids::ConcreteTypeId;
@@ -430,6 +432,32 @@ fn handle_deref(
     }
 }
 
+fn handle_alloc_local(
+    invocation: &Invocation,
+    libfunc: &AllocLocalConcreteLibFunc,
+    environment: Environment,
+    type_sizes: &TypeSizeMap,
+) -> Result<CompiledInvocation, InvocationError> {
+    let allocation_size = match type_sizes.get(&libfunc.ty) {
+        Some(0) => Err(InvocationError::NotSized(invocation.clone())),
+        Some(size) => Ok(*size),
+        _ => Err(InvocationError::NotImplemented(invocation.clone())),
+    }?;
+
+    let (slot, frame_state) = frame_state::handle_alloc_local(
+        environment.frame_state,
+        environment.ap_tracking,
+        allocation_size,
+    )?;
+
+    Ok(CompiledInvocation::only_reference_changes(
+        [ReferenceExpression::Deref(DerefOperand { register: Register::FP, offset: slot })]
+            .into_iter(),
+        libfunc.output_types(),
+        Environment { frame_state, ..environment },
+    ))
+}
+
 pub fn compile_invocation(
     invocation: &Invocation,
     libfunc: &CoreConcreteLibFunc,
@@ -496,6 +524,9 @@ pub fn compile_invocation(
         }
         CoreConcreteLibFunc::Ref(RefConcreteLibFunc::Deref(libfunc)) => {
             handle_deref(libfunc, refs, environment)
+        }
+        CoreConcreteLibFunc::Mem(MemConcreteLibFunc::AllocLocal(libfunc)) => {
+            handle_alloc_local(invocation, libfunc, environment, type_sizes)
         }
         _ => Err(InvocationError::NotImplemented(invocation.clone())),
     }

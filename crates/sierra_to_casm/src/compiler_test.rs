@@ -352,6 +352,21 @@ fn fib_program() {
                 type felt = felt;
                 type UninitializedFelt = uninitialized<felt>;
 
+                libfunc alloc_local_felt = alloc_local<felt>;
+                libfunc store_temp_felt = store_temp<felt>;
+
+                alloc_local_felt() -> ([2]);
+                store_temp_felt([1]) -> ([1]);
+                alloc_local_felt() -> ([3]);
+                return ();
+
+                foo@0([1]: felt) -> ();
+            "}, "#2: alloc_local is not allowed at this point.";
+            "Invalid alloc_local ")]
+#[test_case(indoc! {"
+                type felt = felt;
+                type UninitializedFelt = uninitialized<felt>;
+
                 libfunc store_temp_felt = store_temp<UninitializedFelt>;
 
                 store_temp_felt([1]) -> ([1]);
