@@ -11,6 +11,7 @@ use filesystem::db::{AsFilesGroupMut, FilesGroup, FilesGroupEx, PrivRawFileConte
 use filesystem::ids::{FileId, FileLongId};
 use filesystem::span::TextPosition;
 use parser::db::ParserGroup;
+use parser::formatter::{get_formatted_file, FormatterConfig};
 use project::ProjectConfig;
 use semantic::db::SemanticGroup;
 use semantic::test_utils::SemanticDatabaseForTesting;
@@ -112,6 +113,7 @@ impl LanguageServer for Backend {
                     }
                     .into(),
                 ),
+                document_formatting_provider: Some(OneOf::Left(true)),
                 ..ServerCapabilities::default()
             },
         })
@@ -210,6 +212,30 @@ impl LanguageServer for Backend {
         let mut data: Vec<SemanticToken> = Vec::new();
         SemanticTokensTraverser::default().find_semantic_tokens((*db).upcast(), &mut data, node);
         Ok(Some(SemanticTokensResult::Tokens(SemanticTokens { result_id: None, data })))
+    }
+
+    async fn formatting(&self, params: DocumentFormattingParams) -> Result<Option<Vec<TextEdit>>> {
+        let db = self.db().await;
+        let file_uri = params.text_document.uri;
+        let file = self.file(&db, file_uri.clone());
+        let syntax = if let Some(syntax) = db.file_syntax(file) {
+            syntax
+        } else {
+            eprintln!("Formatting failed. File '{file_uri}' does not exist.");
+            return Ok(None);
+        };
+        let new_text = get_formatted_file(
+            (&*db).upcast(),
+            &syntax.as_syntax_node(),
+            FormatterConfig::default(),
+        );
+        Ok(Some(vec![TextEdit {
+            range: Range {
+                start: Position { line: 0, character: 0 },
+                end: Position { line: u32::MAX, character: 0 },
+            },
+            new_text,
+        }]))
     }
 }
 
