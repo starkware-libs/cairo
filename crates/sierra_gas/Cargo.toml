@@ -6,4 +6,8 @@ edition = "2021"
 [dependencies]
 sierra = { path = "../sierra" }
 itertools = "0.10.3"
+thiserror = "1.0.32"
 
+[dev-dependencies]
+indoc = "1.0.7"
+test-case = "2.2.1"
