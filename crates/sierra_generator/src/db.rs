@@ -1,10 +1,9 @@
 use std::sync::Arc;
 
-use defs::ids::{FreeFunctionId, LanguageElementId, ModuleId};
+use defs::ids::{FreeFunctionId, ModuleId};
 use diagnostics::{Diagnostics, WithDiagnostics};
 use diagnostics_proc_macros::with_diagnostics;
 use semantic::db::{AsSemanticGroup, SemanticGroup};
-use sierra::program::ConcreteTypeLongId;
 
 use crate::diagnostic::Diagnostic;
 use crate::pre_sierra;
@@ -34,6 +33,7 @@ pub trait SierraGenGroup: SemanticGroup + AsSemanticGroup {
     fn intern_sierra_function(&self, id: semantic::FunctionId) -> sierra::ids::FunctionId;
 
     /// Returns the matching sierra concrete type id for a given semantic type id.
+    #[salsa::invoke(crate::types::get_concrete_type_id)]
     fn get_concrete_type_id(
         &self,
         type_id: semantic::TypeId,
@@ -51,45 +51,6 @@ pub trait SierraGenGroup: SemanticGroup + AsSemanticGroup {
         &self,
         module_id: ModuleId,
     ) -> WithDiagnostics<Option<Arc<sierra::program::Program>>, Diagnostic>;
-}
-
-fn get_concrete_type_id(
-    db: &dyn SierraGenGroup,
-    type_id: semantic::TypeId,
-) -> Option<sierra::ids::ConcreteTypeId> {
-    match db.lookup_intern_type(type_id) {
-        semantic::TypeLongId::Concrete(ty) => {
-            let mut generic_args = vec![];
-            for arg in &ty.generic_args {
-                match arg {
-                    semantic::GenericArgumentId::Type(ty) => {
-                        generic_args
-                            .push(sierra::program::GenericArg::Type(db.get_concrete_type_id(*ty)?));
-                    }
-                }
-            }
-            match ty.generic_type {
-                defs::ids::GenericTypeId::Struct(_) => {
-                    todo!("Add support for struct types when they are supported in Sierra.")
-                }
-                defs::ids::GenericTypeId::Enum(_) => {
-                    todo!("Add support for enum types when they are supported in Sierra.")
-                }
-                defs::ids::GenericTypeId::Extern(extrn) => {
-                    Some(db.intern_concrete_type(ConcreteTypeLongId {
-                        generic_id: sierra::ids::GenericTypeId::from_string(
-                            extrn.name(db.upcast()),
-                        ),
-                        generic_args,
-                    }))
-                }
-            }
-        }
-        semantic::TypeLongId::Tuple(_) => {
-            todo!("Add support for tuple types when they are supported in Sierra.")
-        }
-        semantic::TypeLongId::Missing => None,
-    }
 }
 
 #[with_diagnostics]
