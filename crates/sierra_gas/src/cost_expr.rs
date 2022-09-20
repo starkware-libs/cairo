@@ -1,3 +1,4 @@
+use core::fmt;
 use std::collections::HashMap;
 
 use itertools::chain;
@@ -14,6 +15,14 @@ pub enum Var {
     LibFuncImplicitGasVariable(StatementIdx),
     /// Variable marking on a statement's future cost (any route from it to a return).
     StatementFuture(StatementIdx),
+}
+impl fmt::Display for Var {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Var::LibFuncImplicitGasVariable(idx) => write!(f, "libfunc@{}", idx),
+            Var::StatementFuture(idx) => write!(f, "future@{}", idx),
+        }
+    }
 }
 
 /// An expression of a full cost.
