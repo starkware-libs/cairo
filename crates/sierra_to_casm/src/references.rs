@@ -51,6 +51,7 @@ impl ApplyApChange for BinOpExpression {
 pub enum ReferenceExpression {
     Deref(DerefOperand),
     DoubleDeref(DoubleDerefOperand),
+    IntoSingleCellRef(DerefOperand),
     Immediate(ImmediateOperand),
     BinOp(BinOpExpression),
 }
@@ -63,6 +64,9 @@ impl ApplyApChange for ReferenceExpression {
             }
             ReferenceExpression::DoubleDeref(operand) => {
                 ReferenceExpression::DoubleDeref(operand.apply_ap_change(ap_change)?)
+            }
+            ReferenceExpression::IntoSingleCellRef(operand) => {
+                ReferenceExpression::IntoSingleCellRef(operand.apply_ap_change(ap_change)?)
             }
             ReferenceExpression::Immediate(operand) => {
                 ReferenceExpression::Immediate(operand.apply_ap_change(ap_change)?)
