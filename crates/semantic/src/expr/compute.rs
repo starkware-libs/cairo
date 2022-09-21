@@ -442,10 +442,10 @@ fn resolve_variable(
     }
 
     match &segments[0] {
-        PathSegment::Ident(ident_segment) => {
+        PathSegment::Simple(ident_segment) => {
             resolve_variable_by_name(ctx, &ident_segment.ident(syntax_db))
         }
-        PathSegment::GenericArgs(_generic_args_segment) => {
+        PathSegment::WithGenericArgs(_generic_args_segment) => {
             // TODO(ilya, 10/10/2022): Generics are not supported yet.
             Err(SemanticDiagnosticKind::Unsupported)
         }

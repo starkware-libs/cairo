@@ -2,7 +2,7 @@ use pretty_assertions::assert_eq;
 use smol_str::SmolStr;
 
 use super::ast::{
-    ExprBinary, ExprPath, PathSegmentGreen, PathSegmentIdent, SyntaxFileGreen, TerminalIdentifier,
+    ExprBinary, ExprPath, PathSegmentGreen, PathSegmentSimple, SyntaxFileGreen, TerminalIdentifier,
     TerminalLiteralNumber, TerminalPlus, TokenIdentifier, TokenLiteralNumber, TokenPlus,
     TokenWhitespace, Trivia,
 };
@@ -39,7 +39,7 @@ fn test_ast() {
         [
             (SyntaxKind::ExprBinary, None, 0, 7),
             (SyntaxKind::ExprPath, None, 0, 4),
-            (SyntaxKind::PathSegmentIdent, None, 0, 4),
+            (SyntaxKind::PathSegmentSimple, None, 0, 4),
             (SyntaxKind::TerminalIdentifier, None, 0, 4),
             (SyntaxKind::Trivia, None, 0, 0),
             (SyntaxKind::TokenIdentifier, Some("foo".into()), 0, 3),
@@ -103,7 +103,7 @@ fn setup(db: &DatabaseForTesting) -> SyntaxNode {
         db,
         ExprPath::new_green(
             db,
-            vec![PathSegmentGreen::from(PathSegmentIdent::new_green(db, terminal_foo)).into()],
+            vec![PathSegmentGreen::from(PathSegmentSimple::new_green(db, terminal_foo)).into()],
         )
         .into(),
         terminal_plus.into(),
