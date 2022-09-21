@@ -5,7 +5,7 @@ use utils::OptionFrom;
 
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind;
-use crate::{semantic, TypeId};
+use crate::{semantic, ConcreteFunction, FunctionId, FunctionLongId, TypeId};
 
 pub fn core_module(db: &dyn SemanticGroup) -> ModuleId {
     let core_crate = db.intern_crate(CrateLongId("core".into()));
@@ -32,7 +32,7 @@ pub fn unit_ty(db: &dyn SemanticGroup) -> TypeId {
 pub fn core_binary_operator(
     db: &dyn SemanticGroup,
     binary_op: BinaryOperator,
-) -> Result<GenericFunctionId, SemanticDiagnosticKind> {
+) -> Result<FunctionId, SemanticDiagnosticKind> {
     let core_module = db.core_module();
     let function_name = match binary_op {
         BinaryOperator::Plus(_) => "felt_add",
@@ -50,5 +50,10 @@ pub fn core_binary_operator(
         .module_item_by_name(core_module, function_name.into())
         .and_then(GenericFunctionId::option_from)
         .expect("Operator function not found in core lib.");
-    Ok(generic_function)
+    let signature = db.generic_function_signature(generic_function).unwrap();
+    Ok(db.intern_function(FunctionLongId::Concrete(ConcreteFunction {
+        generic_function,
+        generic_args: vec![],
+        return_type: signature.return_type,
+    })))
 }

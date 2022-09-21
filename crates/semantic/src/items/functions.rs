@@ -7,10 +7,10 @@ use diagnostics::Diagnostics;
 use diagnostics_proc_macros::DebugWithDb;
 use syntax::node::{ast, Terminal, TypedSyntaxNode};
 
+use super::types::resolve_type;
 use crate::corelib::unit_ty;
 use crate::db::SemanticGroup;
 use crate::expr::compute::Environment;
-use crate::types::resolve_type;
 use crate::{semantic, SemanticDiagnostic};
 
 /// Function instance.
@@ -85,7 +85,7 @@ pub fn function_signature_return_type(
             ret_type_clause.ty(db.upcast())
         }
     };
-    resolve_type(diagnostics, db, module_id, ty_syntax)
+    resolve_type(diagnostics, db, module_id, &ty_syntax)
 }
 
 /// Returns the parameters of the given function signature's AST.
@@ -105,7 +105,7 @@ pub fn function_signature_params(
         let id = db.intern_param(ParamLongId(module_id, ast_param.stable_ptr()));
         let ty_syntax = ast_param.type_clause(syntax_db).ty(syntax_db);
         // TODO(yuval): Diagnostic?
-        let ty = resolve_type(diagnostics, db, module_id, ty_syntax);
+        let ty = resolve_type(diagnostics, db, module_id, &ty_syntax);
         semantic_params.push(semantic::Parameter { id, ty });
         variables.insert(name, semantic::Variable { id: VarId::Param(id), ty });
     }
@@ -131,9 +131,10 @@ pub fn concrete_function_signature(
     function_id: FunctionId,
 ) -> Option<Signature> {
     match db.lookup_intern_function(function_id) {
-        FunctionLongId::Concrete(ConcreteFunction { generic_function, generic_args, .. }) => {
-            assert!(generic_args.is_empty(), "Generic arguments are not supported yet.");
-            // TODO(lior): Specialize according to generic args on generics are supported.
+        FunctionLongId::Concrete(ConcreteFunction {
+            generic_function, generic_args: _, ..
+        }) => {
+            // TODO(lior): Specialize according to generic args when generics are supported.
             db.generic_function_signature(generic_function)
         }
         FunctionLongId::Missing => None,

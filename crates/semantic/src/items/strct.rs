@@ -6,9 +6,9 @@ use smol_str::SmolStr;
 use syntax::node::{Terminal, TypedSyntaxNode};
 use utils::ordered_hash_map::OrderedHashMap;
 
+use super::types::resolve_type;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind;
-use crate::types::resolve_type;
 use crate::{semantic, SemanticDiagnostic};
 
 #[cfg(test)]
@@ -62,7 +62,7 @@ pub fn priv_struct_semantic_data(
             &mut diagnostics,
             db,
             module_id,
-            member.type_clause(syntax_db).ty(syntax_db),
+            &member.type_clause(syntax_db).ty(syntax_db),
         );
         let member_name = member.name(syntax_db).text(syntax_db);
         if let Some(_other_member) = members.insert(member_name.clone(), Member { id, ty }) {

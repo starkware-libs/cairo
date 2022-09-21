@@ -27,6 +27,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::UnknownType => "Unknown type.".into(),
             SemanticDiagnosticKind::UnknownStruct => "Unknown struct.".into(),
             SemanticDiagnosticKind::UnknownMember => "Unknown member.".into(),
+            SemanticDiagnosticKind::UnknownItem => "Unknown item.".into(),
             SemanticDiagnosticKind::MemberSpecifiedMoreThanOnce => {
                 "Member specified more than once.".into()
             }
@@ -80,8 +81,8 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 format!("Struct {} has not member {member_name}", struct_id.full_path(db.upcast()))
             }
             SemanticDiagnosticKind::InvalidMemberExpression => "Invalid member expression.".into(),
-            SemanticDiagnosticKind::InvalidPath => "Invalid path.".into(),
-            SemanticDiagnosticKind::PathNotFound => "Path not found.".into(),
+            SemanticDiagnosticKind::ExpectedType => "Expected a type.".into(),
+            SemanticDiagnosticKind::UnexpectedGenerics => "Unexpected generics.".into(),
         }
     }
 
@@ -99,6 +100,7 @@ pub enum SemanticDiagnosticKind {
     UnknownType,
     UnknownStruct,
     UnknownMember,
+    UnknownItem,
     MemberSpecifiedMoreThanOnce,
     MissingMember { member_name: SmolStr },
     WrongNumberOfArguments { expected: usize, actual: usize },
@@ -112,6 +114,6 @@ pub enum SemanticDiagnosticKind {
     TypeHasNoMembers { ty: semantic::TypeId, member_name: SmolStr },
     NoSuchMember { struct_id: StructId, member_name: SmolStr },
     InvalidMemberExpression,
-    InvalidPath,
-    PathNotFound,
+    ExpectedType,
+    UnexpectedGenerics,
 }

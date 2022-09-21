@@ -1,12 +1,11 @@
 use db_utils::define_short_id;
 use debug::DebugWithDb;
 use defs::diagnostic_utils::StableLocation;
-use defs::ids::{GenericTypeId, ModuleId};
+use defs::ids::{GenericParamId, GenericTypeId, ModuleId};
 use diagnostics::Diagnostics;
 use diagnostics_proc_macros::DebugWithDb;
 use itertools::Itertools;
 use syntax::node::ast;
-use utils::OptionFrom;
 
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind;
@@ -72,54 +71,54 @@ pub fn resolve_type(
     diagnostics: &mut Diagnostics<SemanticDiagnostic>,
     db: &dyn SemanticGroup,
     module_id: ModuleId,
-    ty_syntax: ast::Expr,
+    ty_syntax: &ast::Expr,
 ) -> TypeId {
+    maybe_resolve_type(diagnostics, db, module_id, ty_syntax).unwrap_or_else(|kind| {
+        diagnostics.add(SemanticDiagnostic {
+            stable_location: StableLocation::from_ast(module_id, ty_syntax),
+            kind,
+        });
+        TypeId::missing(db)
+    })
+}
+
+pub fn maybe_resolve_type(
+    diagnostics: &mut Diagnostics<SemanticDiagnostic>,
+    db: &dyn SemanticGroup,
+    module_id: ModuleId,
+    ty_syntax: &ast::Expr,
+) -> Result<TypeId, SemanticDiagnosticKind> {
     let syntax_db = db.upcast();
-    match ty_syntax {
-        ast::Expr::Path(path) => resolve_item(db, module_id, &path)
-            .map_err(|kind| {
-                diagnostics.add(SemanticDiagnostic {
-                    stable_location: StableLocation::from_ast(module_id, &path),
-                    kind,
-                });
-            })
-            .ok()
-            .and_then(GenericTypeId::option_from)
-            .and_then(|generic_type| specialize_type(diagnostics, db, generic_type))
-            .unwrap_or_else(|| {
-                diagnostics.add(SemanticDiagnostic {
-                    stable_location: StableLocation::from_ast(module_id, &path),
-                    kind: SemanticDiagnosticKind::UnknownType,
-                });
-                TypeId::missing(db)
-            }),
+    Ok(match ty_syntax {
+        ast::Expr::Path(path) => TypeId::try_from(
+            resolve_item(db, diagnostics, module_id, path)
+                .ok_or(SemanticDiagnosticKind::UnknownType)?,
+        )?,
         ast::Expr::Parenthesized(expr_syntax) => {
-            resolve_type(diagnostics, db, module_id, expr_syntax.expr(syntax_db))
+            resolve_type(diagnostics, db, module_id, &expr_syntax.expr(syntax_db))
         }
         ast::Expr::Tuple(tuple_syntax) => {
             let sub_tys = tuple_syntax
                 .expressions(syntax_db)
                 .elements(syntax_db)
                 .into_iter()
-                .map(|subexpr_syntax| resolve_type(diagnostics, db, module_id, subexpr_syntax))
+                .map(|subexpr_syntax| resolve_type(diagnostics, db, module_id, &subexpr_syntax))
                 .collect();
             db.intern_type(TypeLongId::Tuple(sub_tys))
         }
-        _ => {
-            diagnostics.add(SemanticDiagnostic {
-                stable_location: StableLocation::from_ast(module_id, &ty_syntax),
-                kind: SemanticDiagnosticKind::UnknownType,
-            });
-            TypeId::missing(db)
-        }
-    }
+        _ => return Err(SemanticDiagnosticKind::UnknownType),
+    })
 }
 
-/// Tries to specializes a generic type.
-fn specialize_type(
-    _diagnostics: &mut Diagnostics<SemanticDiagnostic>,
+/// Query implementation of [crate::db::SemanticGroup::generic_type_generic_params].
+pub fn generic_type_generic_params(
     db: &dyn SemanticGroup,
     generic_type: GenericTypeId,
-) -> Option<TypeId> {
-    Some(db.intern_type(TypeLongId::Concrete(ConcreteType { generic_type, generic_args: vec![] })))
+) -> Option<Vec<GenericParamId>> {
+    // TODO(spapini): other types.
+    match generic_type {
+        GenericTypeId::Struct(_) => Some(vec![]),
+        GenericTypeId::Enum(_) => Some(vec![]),
+        GenericTypeId::Extern(id) => db.extern_type_declaration_generic_params(id),
+    }
 }

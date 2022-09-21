@@ -7,7 +7,7 @@ use crate::db::SemanticGroup;
 pub use crate::items::enm::Variant;
 pub use crate::items::functions::{ConcreteFunction, FunctionId, FunctionLongId, Signature};
 pub use crate::items::strct::Member;
-pub use crate::types::{ConcreteType, TypeId, TypeLongId};
+pub use crate::items::types::{ConcreteType, TypeId, TypeLongId};
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
 #[debug_db(SemanticGroup)]

@@ -6,9 +6,9 @@ use smol_str::SmolStr;
 use syntax::node::{Terminal, TypedSyntaxNode};
 use utils::ordered_hash_map::OrderedHashMap;
 
+use super::types::resolve_type;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind;
-use crate::types::resolve_type;
 use crate::{semantic, SemanticDiagnostic};
 
 #[cfg(test)]
@@ -59,7 +59,7 @@ pub fn priv_enum_semantic_data(db: &dyn SemanticGroup, enum_id: EnumId) -> Optio
             &mut diagnostics,
             db,
             module_id,
-            variant.type_clause(syntax_db).ty(syntax_db),
+            &variant.type_clause(syntax_db).ty(syntax_db),
         );
         let variant_name = variant.name(syntax_db).text(syntax_db);
         if let Some(_other_variant) = variants.insert(variant_name.clone(), Variant { id, ty }) {

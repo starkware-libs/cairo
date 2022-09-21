@@ -5,10 +5,7 @@
 use std::collections::HashMap;
 
 use defs::diagnostic_utils::StableLocation;
-use defs::ids::{
-    GenericFunctionId, GenericTypeId, LocalVarLongId, MemberId, ModuleId, ModuleItemId, StructId,
-    VarId,
-};
+use defs::ids::{GenericTypeId, LocalVarLongId, MemberId, ModuleId, VarId};
 use diagnostics::Diagnostics;
 use smol_str::SmolStr;
 use syntax::node::ast::{BinaryOperator, PathSegment};
@@ -17,19 +14,14 @@ use syntax::node::helpers::GetIdentifier;
 use syntax::node::ids::SyntaxStablePtrId;
 use syntax::node::{ast, Terminal, TypedSyntaxNode};
 use utils::ordered_hash_map::OrderedHashMap;
-use utils::OptionFrom;
 
 use super::objects::*;
 use crate::corelib::{core_binary_operator, unit_ty};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind;
-use crate::items::functions::{ConcreteFunction, FunctionLongId};
+use crate::items::types::resolve_type;
 use crate::resolve_item::resolve_item;
-use crate::types::resolve_type;
-use crate::{
-    semantic, ConcreteType, FunctionId, GenericArgumentId, SemanticDiagnostic, TypeId, TypeLongId,
-    Variable,
-};
+use crate::{semantic, ConcreteType, FunctionId, SemanticDiagnostic, TypeId, TypeLongId, Variable};
 
 /// Context for computing the semantic model of expression trees.
 pub struct ComputationContext<'ctx> {
@@ -136,8 +128,8 @@ pub fn maybe_compute_expr_semantic(
             }
             let rexpr = compute_expr_semantic(ctx, rhs_syntax);
             let arg_exprs = [lexpr, rexpr];
-            let generic_function = core_binary_operator(db, binary_op)?;
-            let function = specialize_function(ctx, generic_function, &arg_exprs, &[])?;
+            let function = core_binary_operator(db, binary_op)?;
+            typecheck_function(ctx, function, &arg_exprs)?;
             let args = arg_exprs.into_iter().map(|expr| db.intern_expr(expr)).collect();
             semantic::Expr::ExprFunctionCall(semantic::ExprFunctionCall {
                 function,
@@ -157,8 +149,11 @@ pub fn maybe_compute_expr_semantic(
                 .map(|arg_syntax| compute_expr_semantic(ctx, arg_syntax))
                 .collect();
             // TODO(alon): connect generic_arg_exprs to syntax once available.
-            let generic_arg_exprs: Vec<TypeId> = vec![];
-            let function = resolve_function(ctx, path, &arg_exprs, &generic_arg_exprs);
+            let function = FunctionId::try_from(
+                resolve_item(ctx.db, ctx.diagnostics, ctx.module_id, &path)
+                    .ok_or(SemanticDiagnosticKind::UnknownFunction)?,
+            )?;
+            typecheck_function(ctx, function, &arg_exprs)?;
             let args = arg_exprs.into_iter().map(|expr| db.intern_expr(expr)).collect();
             semantic::Expr::ExprFunctionCall(semantic::ExprFunctionCall {
                 function,
@@ -260,10 +255,16 @@ fn struct_ctor_expr(
 ) -> SemanticResult<Expr> {
     let db = ctx.db;
     let syntax_db = db.upcast();
-    let item = resolve_item(ctx.db, ctx.module_id, &ctor_syntax.path(syntax_db))?;
-    let struct_id = ModuleItemId::option_from(item)
-        .and_then(StructId::option_from)
+    let item = resolve_item(ctx.db, ctx.diagnostics, ctx.module_id, &ctor_syntax.path(syntax_db))
         .ok_or(SemanticDiagnosticKind::UnknownStruct)?;
+    let type_id = TypeId::try_from(item)?;
+    let struct_id = match db.lookup_intern_type(type_id) {
+        TypeLongId::Concrete(ConcreteType {
+            generic_type: GenericTypeId::Struct(struct_id),
+            ..
+        }) => struct_id,
+        _ => return Err(SemanticDiagnosticKind::UnknownStruct),
+    };
     let members = db.struct_members(struct_id).unwrap_or_default();
     let mut member_exprs: OrderedHashMap<MemberId, ExprId> = OrderedHashMap::default();
     for arg in ctor_syntax.arguments(syntax_db).arguments(syntax_db).elements(syntax_db) {
@@ -473,50 +474,16 @@ pub fn resolve_variable_by_name(
     Err(SemanticDiagnosticKind::VariableNotFound { name: variable_name })
 }
 
-/// Resolves a concrete function given a context and a path expression.
-/// Returns the generic function and the concrete function.
-fn resolve_function(
+/// Typechecks a function_id based on argument types.
+// TODO(spapini): This might be the basis for inference based on arguments.
+fn typecheck_function(
     ctx: &mut ComputationContext<'_>,
-    path: ast::ExprPath,
+    function: FunctionId,
     args: &[semantic::Expr],
-    generic_args: &[semantic::TypeId],
-) -> FunctionId {
-    maybe_resolve_function(ctx, &path, args, generic_args).unwrap_or_else(|kind| {
-        ctx.diagnostics.add(SemanticDiagnostic {
-            stable_location: StableLocation::from_ast(ctx.module_id, &path),
-            kind,
-        });
-        FunctionId::missing(ctx.db)
-    })
-}
-/// Resolves a concrete function given a context and a path expression.
-/// Returns the generic function and the concrete function, or returns a SemanticDiagnosticKind on
-/// error,
-fn maybe_resolve_function(
-    ctx: &mut ComputationContext<'_>,
-    path: &ast::ExprPath,
-    args: &[semantic::Expr],
-    generic_args: &[semantic::TypeId],
-) -> SemanticResult<FunctionId> {
-    // TODO(spapini): Try to find function in multiple places (e.g. impls, or other modules for
-    //   suggestions)
-    let generic_function =
-        GenericFunctionId::option_from(resolve_item(ctx.db, ctx.module_id, path)?)
-            .ok_or(SemanticDiagnosticKind::UnknownFunction)?;
-    specialize_function(ctx, generic_function, args, generic_args)
-}
-
-/// Tries to specializes a generic function.
-fn specialize_function(
-    ctx: &mut ComputationContext<'_>,
-    generic_function: GenericFunctionId,
-    args: &[semantic::Expr],
-    generic_args: &[semantic::TypeId],
-) -> SemanticResult<FunctionId> {
-    // TODO(spapini): Type check arguments.
+) -> SemanticResult<()> {
     let signature = ctx
         .db
-        .generic_function_signature(generic_function)
+        .concrete_function_signature(function)
         .ok_or(SemanticDiagnosticKind::UnknownFunction)?;
 
     if args.len() != signature.params.len() {
@@ -526,36 +493,7 @@ fn specialize_function(
         });
     }
 
-    if generic_args.len() != signature.generic_params.len() {
-        return Err(SemanticDiagnosticKind::WrongNumberOfGenericArguments {
-            expected: signature.generic_params.len(),
-            actual: generic_args.len(),
-        });
-    }
-
-    // Check argument types.
-    for (arg, param) in args.iter().zip(signature.params) {
-        let arg_typ = arg.ty();
-        let param_typ = param.ty;
-        // Don't add diagnostic if the type is missing (a diagnostic should have already been
-        // added).
-        // TODO(lior): Add a test to missing type once possible.
-        if arg_typ != param_typ && arg_typ != TypeId::missing(ctx.db) {
-            ctx.diagnostics.add(SemanticDiagnostic {
-                stable_location: StableLocation::new(ctx.module_id, arg.stable_ptr()),
-                kind: SemanticDiagnosticKind::WrongArgumentType {
-                    expected_ty: param_typ,
-                    actual_ty: arg_typ,
-                },
-            });
-        }
-    }
-
-    Ok(ctx.db.intern_function(FunctionLongId::Concrete(ConcreteFunction {
-        generic_function,
-        generic_args: generic_args.iter().map(|typ| GenericArgumentId::Type(*typ)).collect(),
-        return_type: signature.return_type,
-    })))
+    Ok(())
 }
 
 /// Computes the semantic model of a statement.
@@ -578,7 +516,7 @@ pub fn compute_statement_semantic(
                 ast::OptionTypeClause::TypeClause(type_clause) => {
                     let var_type_path = type_clause.ty(syntax_db);
                     let explicit_type =
-                        resolve_type(ctx.diagnostics, db, ctx.module_id, var_type_path);
+                        resolve_type(ctx.diagnostics, db, ctx.module_id, &var_type_path);
                     if explicit_type != inferred_type {
                         ctx.diagnostics.add(SemanticDiagnostic {
                             stable_location: StableLocation::new(

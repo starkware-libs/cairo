@@ -240,6 +240,11 @@ define_language_element_id_as_enum! {
         // TODO(spapini): impl functions.
     }
 }
+impl GenericFunctionId {
+    pub fn format(&self, db: &(dyn DefsGroup + 'static)) -> String {
+        format!("{}::{}", self.module(db).full_path(db), self.name(db))
+    }
+}
 
 define_language_element_id_as_enum! {
     /// Generic type ids enum.
@@ -256,19 +261,16 @@ impl GenericTypeId {
     }
 }
 
-/// Id for anything that can be a "Go to definition" result.
-pub enum Symbol {
-    Crate(CrateId),
-    ModuleItem(ModuleItemId),
-    Var(VarId),
+define_language_element_id_as_enum! {
+    /// Generic item ids enum.
+    pub enum GenericItemId {
+        Function(GenericFunctionId),
+        Type(GenericTypeId),
+    }
 }
-
-impl OptionFrom<Symbol> for ModuleItemId {
-    fn option_from(symbol: Symbol) -> Option<Self> {
-        match symbol {
-            Symbol::ModuleItem(item) => Some(item),
-            _ => None,
-        }
+impl GenericItemId {
+    pub fn format(&self, db: &(dyn DefsGroup + 'static)) -> String {
+        format!("{}::{}", self.module(db).full_path(db), self.name(db))
     }
 }
 
@@ -286,11 +288,6 @@ impl OptionFrom<ModuleItemId> for GenericFunctionId {
         }
     }
 }
-impl OptionFrom<Symbol> for GenericFunctionId {
-    fn option_from(symbol: Symbol) -> Option<Self> {
-        ModuleItemId::option_from(symbol).and_then(GenericFunctionId::option_from)
-    }
-}
 impl OptionFrom<ModuleItemId> for GenericTypeId {
     fn option_from(item: ModuleItemId) -> Option<Self> {
         match item {
@@ -302,10 +299,5 @@ impl OptionFrom<ModuleItemId> for GenericTypeId {
             | ModuleItemId::FreeFunction(_)
             | ModuleItemId::ExternFunction(_) => None,
         }
-    }
-}
-impl OptionFrom<Symbol> for GenericTypeId {
-    fn option_from(symbol: Symbol) -> Option<Self> {
-        ModuleItemId::option_from(symbol).and_then(GenericTypeId::option_from)
     }
 }

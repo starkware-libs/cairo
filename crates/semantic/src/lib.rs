@@ -8,7 +8,6 @@ pub mod diagnostic;
 pub mod expr;
 pub mod ids;
 pub mod items;
-pub mod types;
 
 mod resolve_item;
 mod semantic;
