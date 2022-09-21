@@ -146,7 +146,7 @@ fn handle_felt_op(
     };
     Ok(CompiledInvocation::only_reference_changes(
         [ReferenceExpression::BinOp(ref_expression)].into_iter(),
-        felt_op.output_types(),
+        &felt_op.output_types(),
         environment,
     ))
 }
@@ -185,7 +185,7 @@ fn handle_felt_dup(
 
     Ok(CompiledInvocation::only_reference_changes(
         [expression.clone(), expression.clone()].into_iter(),
-        felt_dup.output_types(),
+        &felt_dup.output_types(),
         environment,
     ))
 }
@@ -230,7 +230,7 @@ fn handle_function_call(
         }],
         [ApChange::Unknown].into_iter(),
         [refs.into_iter()].into_iter(),
-        func_call.output_types(),
+        &func_call.output_types(),
         environment,
     ))
 }
@@ -257,7 +257,7 @@ fn handle_store_temp(
         [[ReferenceExpression::Deref(DerefOperand { register: Register::AP, offset: -1 })]
             .into_iter()]
         .into_iter(),
-        store_temp.output_types(),
+        &store_temp.output_types(),
         environment,
     ))
 }
@@ -340,7 +340,7 @@ fn handle_jump_nz(
         }],
         [ApChange::Known(0), ApChange::Known(0)].into_iter(),
         [vec![ReferenceExpression::Deref(*condition)].into_iter(), vec![].into_iter()].into_iter(),
-        jnz.output_types(),
+        &jnz.output_types(),
         environment,
     ))
 }
@@ -369,7 +369,7 @@ fn handle_jump(
         }],
         [ApChange::Known(0)].into_iter(),
         [vec![].into_iter()].into_iter(),
-        libfunc.output_types(),
+        &libfunc.output_types(),
         environment,
     ))
 }
@@ -390,7 +390,7 @@ fn handle_finalize_locals(
         vec![],
         [ApChange::Known(n_slots)].into_iter(),
         [[].into_iter()].into_iter(),
-        libfunc.output_types(),
+        &libfunc.output_types(),
         Environment { frame_state, ..environment },
     ))
 }
@@ -411,7 +411,7 @@ fn handle_into_ref(
     if let ReferenceExpression::Deref(operand) = expression {
         Ok(CompiledInvocation::only_reference_changes(
             [ReferenceExpression::IntoSingleCellRef(*operand)].into_iter(),
-            libfunc.output_types(),
+            &libfunc.output_types(),
             environment,
         ))
     } else {
@@ -432,7 +432,7 @@ fn handle_deref(
         Ok(CompiledInvocation::only_reference_changes(
             [ReferenceExpression::DoubleDeref(DoubleDerefOperand { inner_deref: *operand })]
                 .into_iter(),
-            libfunc.output_types(),
+            &libfunc.output_types(),
             environment,
         ))
     } else {
@@ -461,7 +461,7 @@ fn handle_alloc_local(
     Ok(CompiledInvocation::only_reference_changes(
         [ReferenceExpression::Deref(DerefOperand { register: Register::FP, offset: slot })]
             .into_iter(),
-        libfunc.output_types(),
+        &libfunc.output_types(),
         Environment { frame_state, ..environment },
     ))
 }
@@ -489,7 +489,7 @@ fn handle_store_local(
         vec![],
         [ApChange::Known(0)].into_iter(),
         [[ReferenceExpression::Deref(*dst)].into_iter()].into_iter(),
-        libfunc.output_types(),
+        &libfunc.output_types(),
         environment,
     ))
 }
@@ -515,7 +515,7 @@ pub fn compile_invocation(
         CoreConcreteLibFunc::Felt(FeltConcrete::Drop(libfunc)) => {
             Ok(CompiledInvocation::only_reference_changes(
                 [].into_iter(),
-                libfunc.output_types(),
+                &libfunc.output_types(),
                 environment,
             ))
         }
@@ -523,7 +523,7 @@ pub fn compile_invocation(
             Ok(CompiledInvocation::only_reference_changes(
                 [ReferenceExpression::Immediate(ImmediateOperand { value: libfunc.c as i128 })]
                     .into_iter(),
-                libfunc.output_types(),
+                &libfunc.output_types(),
                 environment,
             ))
         }
@@ -534,7 +534,7 @@ pub fn compile_invocation(
         | CoreConcreteLibFunc::UnwrapNonZero(libfunc) => {
             Ok(CompiledInvocation::only_reference_changes(
                 refs.iter().map(|r| r.expression.clone()),
-                libfunc.output_types(),
+                &libfunc.output_types(),
                 environment,
             ))
         }
@@ -549,7 +549,7 @@ pub fn compile_invocation(
             vec![],
             [ApChange::Unknown].into_iter(),
             [[].into_iter()].into_iter(),
-            libfunc.output_types(),
+            &libfunc.output_types(),
             environment,
         )),
         CoreConcreteLibFunc::Mem(MemConcreteLibFunc::FinalizeLocals(libfunc)) => {

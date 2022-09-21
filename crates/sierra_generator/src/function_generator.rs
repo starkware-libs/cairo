@@ -8,7 +8,7 @@ use defs::ids::{FreeFunctionId, GenericFunctionId};
 use diagnostics::{Diagnostics, WithDiagnostics};
 use diagnostics_proc_macros::with_diagnostics;
 use sierra::extensions::core::CoreLibFunc;
-use sierra::extensions::lib_func::BranchReferenceInfo;
+use sierra::extensions::lib_func::OutputBranchInfo;
 use sierra::extensions::GenericLibFuncEx;
 use sierra::ids::ConcreteLibFuncId;
 use sierra::program::Param;
@@ -74,7 +74,7 @@ pub fn get_function_code(
     let statements = add_store_statements(
         context.get_db(),
         statements,
-        &|concrete_lib_func_id: ConcreteLibFuncId| -> Vec<BranchReferenceInfo> {
+        &|concrete_lib_func_id: ConcreteLibFuncId| -> Vec<OutputBranchInfo> {
             let libfunc_long_id =
                 context.get_db().lookup_intern_concrete_lib_func(concrete_lib_func_id);
             // TODO(lior): replace expect() with a diagnostic (unless this can never happen).
@@ -84,7 +84,7 @@ pub fn get_function_code(
                 &libfunc_long_id.generic_args,
             )
             .expect("Specialization failure.")
-            .output_ref_info
+            .output_info
         },
     );
     let statements = add_dups_and_drops(&mut context, &parameters, statements);
