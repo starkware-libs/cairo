@@ -252,7 +252,7 @@ impl<'a> Parser<'a> {
             // Call parse_block() and not expect_block() because it's cheap.
             SyntaxKind::TerminalLBrace => Some(self.parse_block().into()),
             SyntaxKind::TerminalMatch => Some(self.expect_match_expr().into()),
-            _ => self.try_parse_simple_expression(MAX_PRECEDENCE),
+            _ => self.try_parse_simple_expression(MAX_PRECEDENCE, LbraceAllowed::Allow),
         }
     }
     /// Returns a GreenId of a node with an Expr.* kind (see [syntax::node::ast::Expr]) or a node
@@ -286,13 +286,19 @@ impl<'a> Parser<'a> {
 
     /// Returns a GreenId of a node with an Expr.* kind (see [syntax::node::ast::Expr]), excluding
     /// ExprBlock, or None if such an expression can't be parsed.
-    fn try_parse_simple_expression(&mut self, parent_precedence: usize) -> Option<ExprGreen> {
+    ///
+    /// `lbrace_allowed` - See [LbraceAllowed].
+    fn try_parse_simple_expression(
+        &mut self,
+        parent_precedence: usize,
+        lbrace_allowed: LbraceAllowed,
+    ) -> Option<ExprGreen> {
         let mut expr = if let Some(precedence) = get_unary_operator_precedence(self.peek().kind) {
             let op = self.parse_unary_operator();
-            let expr = self.parse_simple_expression(precedence);
+            let expr = self.parse_simple_expression(precedence, lbrace_allowed);
             ExprUnary::new_green(self.db, op, expr).into()
         } else {
-            self.try_parse_atom()?
+            self.try_parse_atom(lbrace_allowed)?
         };
 
         while let Some(precedence) = get_binary_operator_precedence(self.peek().kind) {
@@ -300,15 +306,21 @@ impl<'a> Parser<'a> {
                 return Some(expr);
             }
             let op = self.parse_binary_operator();
-            let rhs = self.parse_simple_expression(precedence);
+            let rhs = self.parse_simple_expression(precedence, lbrace_allowed);
             expr = ExprBinary::new_green(self.db, expr, op, rhs).into();
         }
         Some(expr)
     }
     /// Returns a GreenId of a node with an Expr.* kind (see [syntax::node::ast::Expr]), excluding
     /// ExprBlock, or ExprMissing if such an expression can't be parsed.
-    fn parse_simple_expression(&mut self, parent_precedence: usize) -> ExprGreen {
-        match self.try_parse_simple_expression(parent_precedence) {
+    ///
+    /// `lbrace_allowed` - See [LbraceAllowed].
+    fn parse_simple_expression(
+        &mut self,
+        parent_precedence: usize,
+        lbrace_allowed: LbraceAllowed,
+    ) -> ExprGreen {
+        match self.try_parse_simple_expression(parent_precedence, lbrace_allowed) {
             Some(green) => green,
             None => self.create_and_report_missing::<Expr>(ParserDiagnosticKind::MissingExpression),
         }
@@ -317,7 +329,9 @@ impl<'a> Parser<'a> {
     /// Returns a GreenId of a node with an
     /// ExprPath|ExprFunctionCall|ExprStructCtorCall|ExprParenthesized|ExprTuple kind, or None if
     /// such an expression can't be parsed.
-    fn try_parse_atom(&mut self) -> Option<ExprGreen> {
+    ///
+    /// `lbrace_allowed` - See [LbraceAllowed].
+    fn try_parse_atom(&mut self, lbrace_allowed: LbraceAllowed) -> Option<ExprGreen> {
         // TODO(yuval): support paths starting with "::".
         match self.peek().kind {
             SyntaxKind::TerminalIdentifier => {
@@ -325,14 +339,20 @@ impl<'a> Parser<'a> {
                 let path = self.parse_path();
                 match self.peek().kind {
                     SyntaxKind::TerminalLParen => Some(self.expect_function_call(path).into()),
-                    SyntaxKind::TerminalLBrace => Some(self.expect_constructor_call(path).into()),
+                    SyntaxKind::TerminalLBrace if lbrace_allowed == LbraceAllowed::Allow => {
+                        Some(self.expect_constructor_call(path).into())
+                    }
                     _ => Some(path.into()),
                 }
             }
             SyntaxKind::TerminalFalse => Some(self.take::<TerminalFalse>().into()),
             SyntaxKind::TerminalTrue => Some(self.take::<TerminalTrue>().into()),
             SyntaxKind::TerminalLiteralNumber => Some(self.take::<TerminalLiteralNumber>().into()),
-            SyntaxKind::TerminalLParen => Some(self.expect_parenthesized_expr()),
+            SyntaxKind::TerminalLParen => {
+                // Note that LBrace is allowed inside parenthesis, even if `lbrace_allowed` is
+                // [LbraceAllowed::Forbid].
+                Some(self.expect_parenthesized_expr())
+            }
             _ => {
                 // TODO(yuval): report to diagnostics.
                 None
@@ -483,8 +503,7 @@ impl<'a> Parser<'a> {
     /// Expected pattern: match \{<MatchArm>*\}
     fn expect_match_expr(&mut self) -> ExprMatchGreen {
         let match_kw = self.take::<TerminalMatch>();
-        // TODO(yuval): change to simple expression.
-        let expr = self.parse_path().into();
+        let expr = self.parse_simple_expression(MAX_PRECEDENCE, LbraceAllowed::Forbid);
         let lbrace = self.parse_token::<TerminalLBrace>();
         let arms = MatchArms::new_green(
             self.db,
@@ -857,4 +876,18 @@ impl<'a> Parser<'a> {
             )),
         }
     }
+}
+
+/// Controls whether Lbrace (`{`) is allowed in the expression.
+///
+/// Lbrace is always allowed in sub-expressions (e.g. in parenthesized expression). For example,
+/// while `1 + MyStruct { ... }` may not be valid, `1 + (MyStruct { ... })` is always ok.
+///
+/// This can be used to parse the argument of a `match` statement,
+/// so that the `{` that opens the `match` body is not confused with other potential uses of
+/// `{`.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum LbraceAllowed {
+    Forbid,
+    Allow,
 }
