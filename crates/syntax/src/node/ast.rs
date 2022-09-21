@@ -976,279 +976,6 @@ impl TypedSyntaxNode for ExprMissing {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub enum OptionGenericArgs {
-    Empty(OptionGenericArgsEmpty),
-    Some(OptionGenericArgsSome),
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct OptionGenericArgsPtr(SyntaxStablePtrId);
-impl OptionGenericArgsPtr {
-    pub fn untyped(&self) -> SyntaxStablePtrId {
-        self.0
-    }
-}
-impl From<OptionGenericArgsEmptyGreen> for OptionGenericArgsGreen {
-    fn from(value: OptionGenericArgsEmptyGreen) -> Self {
-        Self(value.0)
-    }
-}
-impl From<OptionGenericArgsSomeGreen> for OptionGenericArgsGreen {
-    fn from(value: OptionGenericArgsSomeGreen) -> Self {
-        Self(value.0)
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct OptionGenericArgsGreen(pub GreenId);
-impl TypedSyntaxNode for OptionGenericArgs {
-    const KIND: Option<SyntaxKind> = None;
-    type StablePtr = OptionGenericArgsPtr;
-    type Green = OptionGenericArgsGreen;
-    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
-        panic!("No missing variant.");
-    }
-    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        let kind = node.kind(db);
-        match kind {
-            SyntaxKind::OptionGenericArgsEmpty => {
-                OptionGenericArgs::Empty(OptionGenericArgsEmpty::from_syntax_node(db, node))
-            }
-            SyntaxKind::OptionGenericArgsSome => {
-                OptionGenericArgs::Some(OptionGenericArgsSome::from_syntax_node(db, node))
-            }
-            _ => panic!(
-                "Unexpected syntax kind {:?} when constructing {}.",
-                kind, "OptionGenericArgs"
-            ),
-        }
-    }
-    fn as_syntax_node(&self) -> SyntaxNode {
-        match self {
-            OptionGenericArgs::Empty(x) => x.as_syntax_node(),
-            OptionGenericArgs::Some(x) => x.as_syntax_node(),
-        }
-    }
-    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
-        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
-    }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        OptionGenericArgsPtr(self.as_syntax_node().0.stable_ptr)
-    }
-}
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct OptionGenericArgsEmpty {
-    node: SyntaxNode,
-    children: Vec<SyntaxNode>,
-}
-impl OptionGenericArgsEmpty {
-    pub fn new_green(db: &dyn SyntaxGroup) -> OptionGenericArgsEmptyGreen {
-        let children: Vec<GreenId> = vec![];
-        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
-        OptionGenericArgsEmptyGreen(db.intern_green(GreenNode {
-            kind: SyntaxKind::OptionGenericArgsEmpty,
-            details: GreenNodeDetails::Node { children, width },
-        }))
-    }
-}
-impl OptionGenericArgsEmpty {}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct OptionGenericArgsEmptyPtr(SyntaxStablePtrId);
-impl OptionGenericArgsEmptyPtr {
-    pub fn untyped(&self) -> SyntaxStablePtrId {
-        self.0
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct OptionGenericArgsEmptyGreen(pub GreenId);
-impl TypedSyntaxNode for OptionGenericArgsEmpty {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::OptionGenericArgsEmpty);
-    type StablePtr = OptionGenericArgsEmptyPtr;
-    type Green = OptionGenericArgsEmptyGreen;
-    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
-        OptionGenericArgsEmptyGreen(db.intern_green(GreenNode {
-            kind: SyntaxKind::OptionGenericArgsEmpty,
-            details: GreenNodeDetails::Node { children: vec![], width: 0 },
-        }))
-    }
-    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        let kind = node.kind(db);
-        assert_eq!(
-            kind,
-            SyntaxKind::OptionGenericArgsEmpty,
-            "Unexpected SyntaxKind {:?}. Expected {:?}.",
-            kind,
-            SyntaxKind::OptionGenericArgsEmpty
-        );
-        let children = node.children(db).collect();
-        Self { node, children }
-    }
-    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
-        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
-    }
-    fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
-    }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        OptionGenericArgsEmptyPtr(self.node.0.stable_ptr)
-    }
-}
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct OptionGenericArgsSome {
-    node: SyntaxNode,
-    children: Vec<SyntaxNode>,
-}
-impl OptionGenericArgsSome {
-    pub fn new_green(
-        db: &dyn SyntaxGroup,
-        langle: TerminalLTGreen,
-        generic_args: GenericArgListGreen,
-        rangle: TerminalGTGreen,
-    ) -> OptionGenericArgsSomeGreen {
-        let children: Vec<GreenId> = vec![langle.0, generic_args.0, rangle.0];
-        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
-        OptionGenericArgsSomeGreen(db.intern_green(GreenNode {
-            kind: SyntaxKind::OptionGenericArgsSome,
-            details: GreenNodeDetails::Node { children, width },
-        }))
-    }
-}
-impl OptionGenericArgsSome {
-    pub fn langle(&self, db: &dyn SyntaxGroup) -> TerminalLT {
-        TerminalLT::from_syntax_node(db, self.children[0].clone())
-    }
-    pub fn generic_args(&self, db: &dyn SyntaxGroup) -> GenericArgList {
-        GenericArgList::from_syntax_node(db, self.children[1].clone())
-    }
-    pub fn rangle(&self, db: &dyn SyntaxGroup) -> TerminalGT {
-        TerminalGT::from_syntax_node(db, self.children[2].clone())
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct OptionGenericArgsSomePtr(SyntaxStablePtrId);
-impl OptionGenericArgsSomePtr {
-    pub fn untyped(&self) -> SyntaxStablePtrId {
-        self.0
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct OptionGenericArgsSomeGreen(pub GreenId);
-impl TypedSyntaxNode for OptionGenericArgsSome {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::OptionGenericArgsSome);
-    type StablePtr = OptionGenericArgsSomePtr;
-    type Green = OptionGenericArgsSomeGreen;
-    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
-        OptionGenericArgsSomeGreen(db.intern_green(GreenNode {
-            kind: SyntaxKind::OptionGenericArgsSome,
-            details: GreenNodeDetails::Node {
-                children: vec![
-                    TerminalLT::missing(db).0,
-                    GenericArgList::missing(db).0,
-                    TerminalGT::missing(db).0,
-                ],
-                width: 0,
-            },
-        }))
-    }
-    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        let kind = node.kind(db);
-        assert_eq!(
-            kind,
-            SyntaxKind::OptionGenericArgsSome,
-            "Unexpected SyntaxKind {:?}. Expected {:?}.",
-            kind,
-            SyntaxKind::OptionGenericArgsSome
-        );
-        let children = node.children(db).collect();
-        Self { node, children }
-    }
-    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
-        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
-    }
-    fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
-    }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        OptionGenericArgsSomePtr(self.node.0.stable_ptr)
-    }
-}
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct GenericArgList(ElementList<Expr, 2>);
-impl Deref for GenericArgList {
-    type Target = ElementList<Expr, 2>;
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-impl GenericArgList {
-    pub fn new_green(
-        db: &dyn SyntaxGroup,
-        children: Vec<GenericArgListElementOrSeparatorGreen>,
-    ) -> GenericArgListGreen {
-        let width = children.iter().map(|id| db.lookup_intern_green(id.id()).width()).sum();
-        GenericArgListGreen(db.intern_green(GreenNode {
-            kind: SyntaxKind::GenericArgList,
-            details: GreenNodeDetails::Node {
-                children: children.iter().map(|x| x.id()).collect(),
-                width,
-            },
-        }))
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct GenericArgListPtr(SyntaxStablePtrId);
-impl GenericArgListPtr {
-    pub fn untyped(&self) -> SyntaxStablePtrId {
-        self.0
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub enum GenericArgListElementOrSeparatorGreen {
-    Separator(TerminalCommaGreen),
-    Element(ExprGreen),
-}
-impl From<TerminalCommaGreen> for GenericArgListElementOrSeparatorGreen {
-    fn from(value: TerminalCommaGreen) -> Self {
-        GenericArgListElementOrSeparatorGreen::Separator(value)
-    }
-}
-impl From<ExprGreen> for GenericArgListElementOrSeparatorGreen {
-    fn from(value: ExprGreen) -> Self {
-        GenericArgListElementOrSeparatorGreen::Element(value)
-    }
-}
-impl GenericArgListElementOrSeparatorGreen {
-    fn id(&self) -> GreenId {
-        match self {
-            GenericArgListElementOrSeparatorGreen::Separator(green) => green.0,
-            GenericArgListElementOrSeparatorGreen::Element(green) => green.0,
-        }
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct GenericArgListGreen(pub GreenId);
-impl TypedSyntaxNode for GenericArgList {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::GenericArgList);
-    type StablePtr = GenericArgListPtr;
-    type Green = GenericArgListGreen;
-    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
-        GenericArgListGreen(db.intern_green(GreenNode {
-            kind: SyntaxKind::GenericArgList,
-            details: GreenNodeDetails::Node { children: vec![], width: 0 },
-        }))
-    }
-    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        Self(ElementList::new(node))
-    }
-    fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
-    }
-    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
-        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
-    }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        GenericArgListPtr(self.node.0.stable_ptr)
-    }
-}
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum PathSegment {
     WithGenericArgs(PathSegmentWithGenericArgs),
     Simple(PathSegmentSimple),
@@ -1381,7 +1108,7 @@ impl PathSegmentWithGenericArgs {
         db: &dyn SyntaxGroup,
         ident: TerminalIdentifierGreen,
         seperator: TerminalColonColonGreen,
-        generic_args: OptionGenericArgsSomeGreen,
+        generic_args: GenericArgsGreen,
     ) -> PathSegmentWithGenericArgsGreen {
         let children: Vec<GreenId> = vec![ident.0, seperator.0, generic_args.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
@@ -1398,8 +1125,8 @@ impl PathSegmentWithGenericArgs {
     pub fn seperator(&self, db: &dyn SyntaxGroup) -> TerminalColonColon {
         TerminalColonColon::from_syntax_node(db, self.children[1].clone())
     }
-    pub fn generic_args(&self, db: &dyn SyntaxGroup) -> OptionGenericArgsSome {
-        OptionGenericArgsSome::from_syntax_node(db, self.children[2].clone())
+    pub fn generic_args(&self, db: &dyn SyntaxGroup) -> GenericArgs {
+        GenericArgs::from_syntax_node(db, self.children[2].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -1422,7 +1149,7 @@ impl TypedSyntaxNode for PathSegmentWithGenericArgs {
                 children: vec![
                     TerminalIdentifier::missing(db).0,
                     TerminalColonColon::missing(db).0,
-                    OptionGenericArgsSome::missing(db).0,
+                    GenericArgs::missing(db).0,
                 ],
                 width: 0,
             },
@@ -4047,12 +3774,12 @@ impl ItemFreeFunction {
         db: &dyn SyntaxGroup,
         function_kw: TerminalFunctionGreen,
         name: TerminalIdentifierGreen,
-        generic_args: OptionGenericArgsGreen,
+        generic_params: OptionGenericParamsGreen,
         signature: FunctionSignatureGreen,
         body: ExprBlockGreen,
     ) -> ItemFreeFunctionGreen {
         let children: Vec<GreenId> =
-            vec![function_kw.0, name.0, generic_args.0, signature.0, body.0];
+            vec![function_kw.0, name.0, generic_params.0, signature.0, body.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         ItemFreeFunctionGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::ItemFreeFunction,
@@ -4067,8 +3794,8 @@ impl ItemFreeFunction {
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
         TerminalIdentifier::from_syntax_node(db, self.children[1].clone())
     }
-    pub fn generic_args(&self, db: &dyn SyntaxGroup) -> OptionGenericArgs {
-        OptionGenericArgs::from_syntax_node(db, self.children[2].clone())
+    pub fn generic_params(&self, db: &dyn SyntaxGroup) -> OptionGenericParams {
+        OptionGenericParams::from_syntax_node(db, self.children[2].clone())
     }
     pub fn signature(&self, db: &dyn SyntaxGroup) -> FunctionSignature {
         FunctionSignature::from_syntax_node(db, self.children[3].clone())
@@ -4105,7 +3832,7 @@ impl TypedSyntaxNode for ItemFreeFunction {
                 children: vec![
                     TerminalFunction::missing(db).0,
                     TerminalIdentifier::missing(db).0,
-                    OptionGenericArgs::missing(db).0,
+                    OptionGenericParams::missing(db).0,
                     FunctionSignature::missing(db).0,
                     ExprBlock::missing(db).0,
                 ],
@@ -4146,12 +3873,12 @@ impl ItemExternFunction {
         extern_kw: TerminalExternGreen,
         function_kw: TerminalFunctionGreen,
         name: TerminalIdentifierGreen,
-        generic_args: OptionGenericArgsGreen,
+        generic_params: OptionGenericParamsGreen,
         signature: FunctionSignatureGreen,
         semicolon: TerminalSemicolonGreen,
     ) -> ItemExternFunctionGreen {
         let children: Vec<GreenId> =
-            vec![extern_kw.0, function_kw.0, name.0, generic_args.0, signature.0, semicolon.0];
+            vec![extern_kw.0, function_kw.0, name.0, generic_params.0, signature.0, semicolon.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         ItemExternFunctionGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::ItemExternFunction,
@@ -4169,8 +3896,8 @@ impl ItemExternFunction {
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
         TerminalIdentifier::from_syntax_node(db, self.children[2].clone())
     }
-    pub fn generic_args(&self, db: &dyn SyntaxGroup) -> OptionGenericArgs {
-        OptionGenericArgs::from_syntax_node(db, self.children[3].clone())
+    pub fn generic_params(&self, db: &dyn SyntaxGroup) -> OptionGenericParams {
+        OptionGenericParams::from_syntax_node(db, self.children[3].clone())
     }
     pub fn signature(&self, db: &dyn SyntaxGroup) -> FunctionSignature {
         FunctionSignature::from_syntax_node(db, self.children[4].clone())
@@ -4208,7 +3935,7 @@ impl TypedSyntaxNode for ItemExternFunction {
                     TerminalExtern::missing(db).0,
                     TerminalFunction::missing(db).0,
                     TerminalIdentifier::missing(db).0,
-                    OptionGenericArgs::missing(db).0,
+                    OptionGenericParams::missing(db).0,
                     FunctionSignature::missing(db).0,
                     TerminalSemicolon::missing(db).0,
                 ],
@@ -4249,11 +3976,11 @@ impl ItemExternType {
         extern_kw: TerminalExternGreen,
         type_kw: TerminalTypeGreen,
         name: TerminalIdentifierGreen,
-        generic_args: OptionGenericArgsGreen,
+        generic_params: OptionGenericParamsGreen,
         semicolon: TerminalSemicolonGreen,
     ) -> ItemExternTypeGreen {
         let children: Vec<GreenId> =
-            vec![extern_kw.0, type_kw.0, name.0, generic_args.0, semicolon.0];
+            vec![extern_kw.0, type_kw.0, name.0, generic_params.0, semicolon.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         ItemExternTypeGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::ItemExternType,
@@ -4271,8 +3998,8 @@ impl ItemExternType {
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
         TerminalIdentifier::from_syntax_node(db, self.children[2].clone())
     }
-    pub fn generic_args(&self, db: &dyn SyntaxGroup) -> OptionGenericArgs {
-        OptionGenericArgs::from_syntax_node(db, self.children[3].clone())
+    pub fn generic_params(&self, db: &dyn SyntaxGroup) -> OptionGenericParams {
+        OptionGenericParams::from_syntax_node(db, self.children[3].clone())
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
         TerminalSemicolon::from_syntax_node(db, self.children[4].clone())
@@ -4307,7 +4034,7 @@ impl TypedSyntaxNode for ItemExternType {
                     TerminalExtern::missing(db).0,
                     TerminalType::missing(db).0,
                     TerminalIdentifier::missing(db).0,
-                    OptionGenericArgs::missing(db).0,
+                    OptionGenericParams::missing(db).0,
                     TerminalSemicolon::missing(db).0,
                 ],
                 width: 0,
@@ -4346,13 +4073,13 @@ impl ItemTrait {
         db: &dyn SyntaxGroup,
         trait_kw: TerminalTraitGreen,
         name: TerminalIdentifierGreen,
-        generic_args: OptionGenericArgsGreen,
+        generic_params: OptionGenericParamsGreen,
         lbrace: TerminalLBraceGreen,
         items: ItemListGreen,
         rbrace: TerminalRBraceGreen,
     ) -> ItemTraitGreen {
         let children: Vec<GreenId> =
-            vec![trait_kw.0, name.0, generic_args.0, lbrace.0, items.0, rbrace.0];
+            vec![trait_kw.0, name.0, generic_params.0, lbrace.0, items.0, rbrace.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         ItemTraitGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::ItemTrait,
@@ -4367,8 +4094,8 @@ impl ItemTrait {
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
         TerminalIdentifier::from_syntax_node(db, self.children[1].clone())
     }
-    pub fn generic_args(&self, db: &dyn SyntaxGroup) -> OptionGenericArgs {
-        OptionGenericArgs::from_syntax_node(db, self.children[2].clone())
+    pub fn generic_params(&self, db: &dyn SyntaxGroup) -> OptionGenericParams {
+        OptionGenericParams::from_syntax_node(db, self.children[2].clone())
     }
     pub fn lbrace(&self, db: &dyn SyntaxGroup) -> TerminalLBrace {
         TerminalLBrace::from_syntax_node(db, self.children[3].clone())
@@ -4408,7 +4135,7 @@ impl TypedSyntaxNode for ItemTrait {
                 children: vec![
                     TerminalTrait::missing(db).0,
                     TerminalIdentifier::missing(db).0,
-                    OptionGenericArgs::missing(db).0,
+                    OptionGenericParams::missing(db).0,
                     TerminalLBrace::missing(db).0,
                     ItemList::missing(db).0,
                     TerminalRBrace::missing(db).0,
@@ -4449,7 +4176,7 @@ impl ItemImpl {
         db: &dyn SyntaxGroup,
         impl_kw: TerminalImplGreen,
         name: TerminalIdentifierGreen,
-        generic_args: OptionGenericArgsGreen,
+        generic_params: OptionGenericParamsGreen,
         for_kw: TerminalForGreen,
         trait_name: TerminalIdentifierGreen,
         lbrace: TerminalLBraceGreen,
@@ -4459,7 +4186,7 @@ impl ItemImpl {
         let children: Vec<GreenId> = vec![
             impl_kw.0,
             name.0,
-            generic_args.0,
+            generic_params.0,
             for_kw.0,
             trait_name.0,
             lbrace.0,
@@ -4480,8 +4207,8 @@ impl ItemImpl {
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
         TerminalIdentifier::from_syntax_node(db, self.children[1].clone())
     }
-    pub fn generic_args(&self, db: &dyn SyntaxGroup) -> OptionGenericArgs {
-        OptionGenericArgs::from_syntax_node(db, self.children[2].clone())
+    pub fn generic_params(&self, db: &dyn SyntaxGroup) -> OptionGenericParams {
+        OptionGenericParams::from_syntax_node(db, self.children[2].clone())
     }
     pub fn for_kw(&self, db: &dyn SyntaxGroup) -> TerminalFor {
         TerminalFor::from_syntax_node(db, self.children[3].clone())
@@ -4527,7 +4254,7 @@ impl TypedSyntaxNode for ItemImpl {
                 children: vec![
                     TerminalImpl::missing(db).0,
                     TerminalIdentifier::missing(db).0,
-                    OptionGenericArgs::missing(db).0,
+                    OptionGenericParams::missing(db).0,
                     TerminalFor::missing(db).0,
                     TerminalIdentifier::missing(db).0,
                     TerminalLBrace::missing(db).0,
@@ -4570,13 +4297,13 @@ impl ItemStruct {
         db: &dyn SyntaxGroup,
         struct_kw: TerminalStructGreen,
         name: TerminalIdentifierGreen,
-        generic_args: OptionGenericArgsGreen,
+        generic_params: OptionGenericParamsGreen,
         lbrace: TerminalLBraceGreen,
         members: ParamListGreen,
         rbrace: TerminalRBraceGreen,
     ) -> ItemStructGreen {
         let children: Vec<GreenId> =
-            vec![struct_kw.0, name.0, generic_args.0, lbrace.0, members.0, rbrace.0];
+            vec![struct_kw.0, name.0, generic_params.0, lbrace.0, members.0, rbrace.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         ItemStructGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::ItemStruct,
@@ -4591,8 +4318,8 @@ impl ItemStruct {
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
         TerminalIdentifier::from_syntax_node(db, self.children[1].clone())
     }
-    pub fn generic_args(&self, db: &dyn SyntaxGroup) -> OptionGenericArgs {
-        OptionGenericArgs::from_syntax_node(db, self.children[2].clone())
+    pub fn generic_params(&self, db: &dyn SyntaxGroup) -> OptionGenericParams {
+        OptionGenericParams::from_syntax_node(db, self.children[2].clone())
     }
     pub fn lbrace(&self, db: &dyn SyntaxGroup) -> TerminalLBrace {
         TerminalLBrace::from_syntax_node(db, self.children[3].clone())
@@ -4632,7 +4359,7 @@ impl TypedSyntaxNode for ItemStruct {
                 children: vec![
                     TerminalStruct::missing(db).0,
                     TerminalIdentifier::missing(db).0,
-                    OptionGenericArgs::missing(db).0,
+                    OptionGenericParams::missing(db).0,
                     TerminalLBrace::missing(db).0,
                     ParamList::missing(db).0,
                     TerminalRBrace::missing(db).0,
@@ -4673,13 +4400,13 @@ impl ItemEnum {
         db: &dyn SyntaxGroup,
         enumkw: TerminalEnumGreen,
         name: TerminalIdentifierGreen,
-        generic_args: OptionGenericArgsGreen,
+        generic_params: OptionGenericParamsGreen,
         lbrace: TerminalLBraceGreen,
         variants: ParamListGreen,
         rbrace: TerminalRBraceGreen,
     ) -> ItemEnumGreen {
         let children: Vec<GreenId> =
-            vec![enumkw.0, name.0, generic_args.0, lbrace.0, variants.0, rbrace.0];
+            vec![enumkw.0, name.0, generic_params.0, lbrace.0, variants.0, rbrace.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         ItemEnumGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::ItemEnum,
@@ -4694,8 +4421,8 @@ impl ItemEnum {
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
         TerminalIdentifier::from_syntax_node(db, self.children[1].clone())
     }
-    pub fn generic_args(&self, db: &dyn SyntaxGroup) -> OptionGenericArgs {
-        OptionGenericArgs::from_syntax_node(db, self.children[2].clone())
+    pub fn generic_params(&self, db: &dyn SyntaxGroup) -> OptionGenericParams {
+        OptionGenericParams::from_syntax_node(db, self.children[2].clone())
     }
     pub fn lbrace(&self, db: &dyn SyntaxGroup) -> TerminalLBrace {
         TerminalLBrace::from_syntax_node(db, self.children[3].clone())
@@ -4735,7 +4462,7 @@ impl TypedSyntaxNode for ItemEnum {
                 children: vec![
                     TerminalEnum::missing(db).0,
                     TerminalIdentifier::missing(db).0,
-                    OptionGenericArgs::missing(db).0,
+                    OptionGenericParams::missing(db).0,
                     TerminalLBrace::missing(db).0,
                     ParamList::missing(db).0,
                     TerminalRBrace::missing(db).0,
@@ -4851,6 +4578,508 @@ impl TypedSyntaxNode for ItemUse {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         ItemUsePtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct GenericArgs {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl GenericArgs {
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        langle: TerminalLTGreen,
+        generic_args: GenericArgListGreen,
+        rangle: TerminalGTGreen,
+    ) -> GenericArgsGreen {
+        let children: Vec<GreenId> = vec![langle.0, generic_args.0, rangle.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        GenericArgsGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::GenericArgs,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+}
+impl GenericArgs {
+    pub fn langle(&self, db: &dyn SyntaxGroup) -> TerminalLT {
+        TerminalLT::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn generic_args(&self, db: &dyn SyntaxGroup) -> GenericArgList {
+        GenericArgList::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn rangle(&self, db: &dyn SyntaxGroup) -> TerminalGT {
+        TerminalGT::from_syntax_node(db, self.children[2].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct GenericArgsPtr(SyntaxStablePtrId);
+impl GenericArgsPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct GenericArgsGreen(pub GreenId);
+impl TypedSyntaxNode for GenericArgs {
+    const KIND: Option<SyntaxKind> = Some(SyntaxKind::GenericArgs);
+    type StablePtr = GenericArgsPtr;
+    type Green = GenericArgsGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        GenericArgsGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::GenericArgs,
+            details: GreenNodeDetails::Node {
+                children: vec![
+                    TerminalLT::missing(db).0,
+                    GenericArgList::missing(db).0,
+                    TerminalGT::missing(db).0,
+                ],
+                width: 0,
+            },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::GenericArgs,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::GenericArgs
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        GenericArgsPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct GenericArgList(ElementList<Expr, 2>);
+impl Deref for GenericArgList {
+    type Target = ElementList<Expr, 2>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+impl GenericArgList {
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        children: Vec<GenericArgListElementOrSeparatorGreen>,
+    ) -> GenericArgListGreen {
+        let width = children.iter().map(|id| db.lookup_intern_green(id.id()).width()).sum();
+        GenericArgListGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::GenericArgList,
+            details: GreenNodeDetails::Node {
+                children: children.iter().map(|x| x.id()).collect(),
+                width,
+            },
+        }))
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct GenericArgListPtr(SyntaxStablePtrId);
+impl GenericArgListPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub enum GenericArgListElementOrSeparatorGreen {
+    Separator(TerminalCommaGreen),
+    Element(ExprGreen),
+}
+impl From<TerminalCommaGreen> for GenericArgListElementOrSeparatorGreen {
+    fn from(value: TerminalCommaGreen) -> Self {
+        GenericArgListElementOrSeparatorGreen::Separator(value)
+    }
+}
+impl From<ExprGreen> for GenericArgListElementOrSeparatorGreen {
+    fn from(value: ExprGreen) -> Self {
+        GenericArgListElementOrSeparatorGreen::Element(value)
+    }
+}
+impl GenericArgListElementOrSeparatorGreen {
+    fn id(&self) -> GreenId {
+        match self {
+            GenericArgListElementOrSeparatorGreen::Separator(green) => green.0,
+            GenericArgListElementOrSeparatorGreen::Element(green) => green.0,
+        }
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct GenericArgListGreen(pub GreenId);
+impl TypedSyntaxNode for GenericArgList {
+    const KIND: Option<SyntaxKind> = Some(SyntaxKind::GenericArgList);
+    type StablePtr = GenericArgListPtr;
+    type Green = GenericArgListGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        GenericArgListGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::GenericArgList,
+            details: GreenNodeDetails::Node { children: vec![], width: 0 },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        Self(ElementList::new(node))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        GenericArgListPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum OptionGenericParams {
+    Empty(OptionGenericParamsEmpty),
+    Some(WrappedGenericParamList),
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct OptionGenericParamsPtr(SyntaxStablePtrId);
+impl OptionGenericParamsPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+impl From<OptionGenericParamsEmptyGreen> for OptionGenericParamsGreen {
+    fn from(value: OptionGenericParamsEmptyGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<WrappedGenericParamListGreen> for OptionGenericParamsGreen {
+    fn from(value: WrappedGenericParamListGreen) -> Self {
+        Self(value.0)
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct OptionGenericParamsGreen(pub GreenId);
+impl TypedSyntaxNode for OptionGenericParams {
+    const KIND: Option<SyntaxKind> = None;
+    type StablePtr = OptionGenericParamsPtr;
+    type Green = OptionGenericParamsGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        panic!("No missing variant.");
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::OptionGenericParamsEmpty => {
+                OptionGenericParams::Empty(OptionGenericParamsEmpty::from_syntax_node(db, node))
+            }
+            SyntaxKind::WrappedGenericParamList => {
+                OptionGenericParams::Some(WrappedGenericParamList::from_syntax_node(db, node))
+            }
+            _ => panic!(
+                "Unexpected syntax kind {:?} when constructing {}.",
+                kind, "OptionGenericParams"
+            ),
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        match self {
+            OptionGenericParams::Empty(x) => x.as_syntax_node(),
+            OptionGenericParams::Some(x) => x.as_syntax_node(),
+        }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        OptionGenericParamsPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct OptionGenericParamsEmpty {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl OptionGenericParamsEmpty {
+    pub fn new_green(db: &dyn SyntaxGroup) -> OptionGenericParamsEmptyGreen {
+        let children: Vec<GreenId> = vec![];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        OptionGenericParamsEmptyGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::OptionGenericParamsEmpty,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+}
+impl OptionGenericParamsEmpty {}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct OptionGenericParamsEmptyPtr(SyntaxStablePtrId);
+impl OptionGenericParamsEmptyPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct OptionGenericParamsEmptyGreen(pub GreenId);
+impl TypedSyntaxNode for OptionGenericParamsEmpty {
+    const KIND: Option<SyntaxKind> = Some(SyntaxKind::OptionGenericParamsEmpty);
+    type StablePtr = OptionGenericParamsEmptyPtr;
+    type Green = OptionGenericParamsEmptyGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        OptionGenericParamsEmptyGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::OptionGenericParamsEmpty,
+            details: GreenNodeDetails::Node { children: vec![], width: 0 },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::OptionGenericParamsEmpty,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::OptionGenericParamsEmpty
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        OptionGenericParamsEmptyPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct WrappedGenericParamList {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl WrappedGenericParamList {
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        langle: TerminalLTGreen,
+        generic_params: GenericParamListGreen,
+        rangle: TerminalGTGreen,
+    ) -> WrappedGenericParamListGreen {
+        let children: Vec<GreenId> = vec![langle.0, generic_params.0, rangle.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        WrappedGenericParamListGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::WrappedGenericParamList,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+}
+impl WrappedGenericParamList {
+    pub fn langle(&self, db: &dyn SyntaxGroup) -> TerminalLT {
+        TerminalLT::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn generic_params(&self, db: &dyn SyntaxGroup) -> GenericParamList {
+        GenericParamList::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn rangle(&self, db: &dyn SyntaxGroup) -> TerminalGT {
+        TerminalGT::from_syntax_node(db, self.children[2].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct WrappedGenericParamListPtr(SyntaxStablePtrId);
+impl WrappedGenericParamListPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct WrappedGenericParamListGreen(pub GreenId);
+impl TypedSyntaxNode for WrappedGenericParamList {
+    const KIND: Option<SyntaxKind> = Some(SyntaxKind::WrappedGenericParamList);
+    type StablePtr = WrappedGenericParamListPtr;
+    type Green = WrappedGenericParamListGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        WrappedGenericParamListGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::WrappedGenericParamList,
+            details: GreenNodeDetails::Node {
+                children: vec![
+                    TerminalLT::missing(db).0,
+                    GenericParamList::missing(db).0,
+                    TerminalGT::missing(db).0,
+                ],
+                width: 0,
+            },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::WrappedGenericParamList,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::WrappedGenericParamList
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        WrappedGenericParamListPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct GenericParamList(ElementList<GenericParam, 2>);
+impl Deref for GenericParamList {
+    type Target = ElementList<GenericParam, 2>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+impl GenericParamList {
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        children: Vec<GenericParamListElementOrSeparatorGreen>,
+    ) -> GenericParamListGreen {
+        let width = children.iter().map(|id| db.lookup_intern_green(id.id()).width()).sum();
+        GenericParamListGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::GenericParamList,
+            details: GreenNodeDetails::Node {
+                children: children.iter().map(|x| x.id()).collect(),
+                width,
+            },
+        }))
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct GenericParamListPtr(SyntaxStablePtrId);
+impl GenericParamListPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub enum GenericParamListElementOrSeparatorGreen {
+    Separator(TerminalCommaGreen),
+    Element(GenericParamGreen),
+}
+impl From<TerminalCommaGreen> for GenericParamListElementOrSeparatorGreen {
+    fn from(value: TerminalCommaGreen) -> Self {
+        GenericParamListElementOrSeparatorGreen::Separator(value)
+    }
+}
+impl From<GenericParamGreen> for GenericParamListElementOrSeparatorGreen {
+    fn from(value: GenericParamGreen) -> Self {
+        GenericParamListElementOrSeparatorGreen::Element(value)
+    }
+}
+impl GenericParamListElementOrSeparatorGreen {
+    fn id(&self) -> GreenId {
+        match self {
+            GenericParamListElementOrSeparatorGreen::Separator(green) => green.0,
+            GenericParamListElementOrSeparatorGreen::Element(green) => green.0,
+        }
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct GenericParamListGreen(pub GreenId);
+impl TypedSyntaxNode for GenericParamList {
+    const KIND: Option<SyntaxKind> = Some(SyntaxKind::GenericParamList);
+    type StablePtr = GenericParamListPtr;
+    type Green = GenericParamListGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        GenericParamListGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::GenericParamList,
+            details: GreenNodeDetails::Node { children: vec![], width: 0 },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        Self(ElementList::new(node))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        GenericParamListPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct GenericParam {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl GenericParam {
+    pub fn new_green(db: &dyn SyntaxGroup, name: TerminalIdentifierGreen) -> GenericParamGreen {
+        let children: Vec<GreenId> = vec![name.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        GenericParamGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::GenericParam,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+}
+impl GenericParam {
+    pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
+        TerminalIdentifier::from_syntax_node(db, self.children[0].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct GenericParamPtr(SyntaxStablePtrId);
+impl GenericParamPtr {
+    pub fn name_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
+        let ptr = db.lookup_intern_stable_ptr(self.0);
+        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
+            TerminalIdentifierGreen(key_fields[0])
+        } else {
+            panic!("Unexpected key field query on root.");
+        }
+    }
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct GenericParamGreen(pub GreenId);
+impl TypedSyntaxNode for GenericParam {
+    const KIND: Option<SyntaxKind> = Some(SyntaxKind::GenericParam);
+    type StablePtr = GenericParamPtr;
+    type Green = GenericParamGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        GenericParamGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::GenericParam,
+            details: GreenNodeDetails::Node {
+                children: vec![TerminalIdentifier::missing(db).0],
+                width: 0,
+            },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::GenericParam,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::GenericParam
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        GenericParamPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
