@@ -14,15 +14,13 @@ libfunc int_dup = int_dup;
 libfunc int_drop = int_drop;
 libfunc int_jump_nz = int_jump_nz;
 libfunc int_unwrap_nz = unwrap_nz<int>;
-libfunc get_gas_5 = get_gas<5>;
-libfunc refund_gas_1 = refund_gas<1>;
-libfunc refund_gas_5 = refund_gas<5>;
-libfunc refund_gas_7 = refund_gas<7>;
+libfunc get_gas = get_gas;
+libfunc refund_gas = refund_gas;
 
 // Statement #  0 - tests if n == 0.
 int_jump_nz(n) { 6(n) fallthrough() };
 // Statement #  1 - n == 0, so we return updated gb and 1.
-refund_gas_7(gb) -> (gb);
+refund_gas(gb) -> (gb);
 store_temp_gb(gb) -> (gb);
 int_const_1() -> (one);
 store_temp_int(one) -> (one);
@@ -33,7 +31,7 @@ int_sub_1(n) -> (n);
 store_temp_int(n) -> (n);
 int_jump_nz(n) { 15(n) fallthrough() };
 // Statement # 10  - n == 1, so we return updated gb and 1.
-refund_gas_5(gb) -> (gb);
+refund_gas(gb) -> (gb);
 store_temp_gb(gb) -> (gb);
 int_const_1() -> (one);
 store_temp_int(one) -> (one);
@@ -47,7 +45,7 @@ store_temp_gb(gb) -> (gb);
 int_const_1() -> (a);
 store_temp_int(a) -> (a);
 // Statement # 21 - Getting gas for the main loop.
-get_gas_5(gb) { 30(gb) fallthrough(gb) };
+get_gas(gb) { 30(gb) fallthrough(gb) };
 // Statement # 22  - Ran out of gas - returning updated gb and -1.
 int_drop(a) -> ();
 int_drop(b) -> ();
@@ -71,7 +69,7 @@ store_temp_int(a) -> (a);
 int_jump_nz(n) { 21(n) fallthrough() };
 // Statement # 39 - n == 0, so we can return the latest a.
 int_drop(b) -> ();
-refund_gas_1(gb) -> (gb);
+refund_gas(gb) -> (gb); // Statement 40.
 store_temp_gb(gb) -> (gb);
 store_temp_int(a) -> (a);
 return(gb, a);
