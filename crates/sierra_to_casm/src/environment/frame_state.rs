@@ -30,15 +30,15 @@ pub fn handle_finalize_locals(
     match frame_state {
         FrameState::Finalized => Err(FrameStateError::InvalidFinalizeLocals(frame_state)),
         FrameState::Allocating { allocated, last_ap_tracking } => {
-            if last_ap_tracking != ap_tracking
-                && (ap_tracking == ApChange::Unknown || allocated > 0)
-            {
-                // If the new ap change is unknown, or the ap tracking changed
-                // after we allocated locals, then it is too late to call finalize_locals.
-                Err(FrameStateError::InvalidFinalizeLocals(frame_state))
-            } else {
-                Ok((allocated, FrameState::Finalized))
-            }
+            let allocated = match ap_tracking {
+                // TODO(ilya, 10/10/2022): Do we want to support allocating 0 locals?
+                ApChange::Known(_) if allocated == 0 => Ok(0),
+                ApChange::Known(offset) if ap_tracking == last_ap_tracking => {
+                    Ok(allocated - offset)
+                }
+                _ => Err(FrameStateError::InvalidFinalizeLocals(frame_state)),
+            }?;
+            Ok((allocated, FrameState::Finalized))
         }
     }
 }

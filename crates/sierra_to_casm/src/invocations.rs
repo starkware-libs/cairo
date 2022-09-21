@@ -18,7 +18,8 @@ use sierra::extensions::felt::FeltConcrete;
 use sierra::extensions::function_call::FunctionCallConcreteLibFunc;
 use sierra::extensions::lib_func::SignatureOnlyConcreteLibFunc;
 use sierra::extensions::mem::{
-    AllocLocalConcreteLibFunc, MemConcreteLibFunc, StoreTempConcreteLibFunc,
+    AllocLocalConcreteLibFunc, MemConcreteLibFunc, StoreLocalConcreteLibFunc,
+    StoreTempConcreteLibFunc,
 };
 use sierra::extensions::reference::RefConcreteLibFunc;
 use sierra::extensions::ConcreteLibFunc;
@@ -246,15 +247,35 @@ fn handle_store_temp(
         _ => return Err(InvocationError::WrongNumberOfArguments),
     };
 
-    match type_sizes.get(&store_temp.ty) {
+    let dst = DerefOperand { register: Register::AP, offset: 0 };
+    let assert_instruction = handle_store(type_sizes, invocation, &store_temp.ty, dst, expression)?;
+
+    Ok(CompiledInvocation::new(
+        vec![Instruction { body: InstructionBody::AssertEq(assert_instruction), inc_ap: true }],
+        vec![],
+        [ApChange::Known(1)].into_iter(),
+        [[ReferenceExpression::Deref(DerefOperand { register: Register::AP, offset: -1 })]
+            .into_iter()]
+        .into_iter(),
+        store_temp.output_types(),
+        environment,
+    ))
+}
+
+fn handle_store(
+    type_sizes: &TypeSizeMap,
+    invocation: &sierra::program::GenInvocation<sierra::program::StatementIdx>,
+    src_type: &ConcreteTypeId,
+    dst: DerefOperand,
+    src_expr: &ReferenceExpression,
+) -> Result<AssertEqInstruction, InvocationError> {
+    match type_sizes.get(src_type) {
         Some(1) => Ok(()),
         Some(0) => Err(InvocationError::NotSized(invocation.clone())),
         _ => Err(InvocationError::NotImplemented(invocation.clone())),
     }?;
 
-    let dst = DerefOperand { register: Register::AP, offset: 0 };
-
-    let (dst_operand, res_operand) = match expression {
+    let (dst_operand, res_operand) = match src_expr {
         ReferenceExpression::Deref(operand) => (dst, ResOperand::Deref(*operand)),
         ReferenceExpression::DoubleDeref(operand) => {
             (dst, ResOperand::DoubleDeref(operand.clone()))
@@ -283,20 +304,7 @@ fn handle_store_temp(
             _ => return Err(InvocationError::NotImplemented(invocation.clone())),
         },
     };
-
-    Ok(CompiledInvocation::new(
-        vec![Instruction {
-            body: InstructionBody::AssertEq(AssertEqInstruction { a: dst_operand, b: res_operand }),
-            inc_ap: true,
-        }],
-        vec![],
-        [ApChange::Known(1)].into_iter(),
-        [[ReferenceExpression::Deref(DerefOperand { register: Register::AP, offset: -1 })]
-            .into_iter()]
-        .into_iter(),
-        store_temp.output_types(),
-        environment,
-    ))
+    Ok(AssertEqInstruction { a: dst_operand, b: res_operand })
 }
 
 fn handle_jump_nz(
@@ -458,6 +466,34 @@ fn handle_alloc_local(
     ))
 }
 
+fn handle_store_local(
+    invocation: &Invocation,
+    libfunc: &StoreLocalConcreteLibFunc,
+    refs: &[ReferenceValue],
+    environment: Environment,
+    type_sizes: &TypeSizeMap,
+) -> Result<CompiledInvocation, InvocationError> {
+    let (dst, src_expr) = match refs {
+        [
+            ReferenceValue { expression: ReferenceExpression::Deref(dst), .. },
+            ReferenceValue { expression: src_expr, .. },
+        ] => Ok((dst, src_expr)),
+        [_, _] => Err(InvocationError::InvalidReferenceExpressionForArgument),
+        _ => Err(InvocationError::WrongNumberOfArguments),
+    }?;
+
+    let assert_instruction = handle_store(type_sizes, invocation, &libfunc.ty, *dst, src_expr)?;
+
+    Ok(CompiledInvocation::new(
+        vec![Instruction { body: InstructionBody::AssertEq(assert_instruction), inc_ap: false }],
+        vec![],
+        [ApChange::Known(0)].into_iter(),
+        [[ReferenceExpression::Deref(*dst)].into_iter()].into_iter(),
+        libfunc.output_types(),
+        environment,
+    ))
+}
+
 pub fn compile_invocation(
     invocation: &Invocation,
     libfunc: &CoreConcreteLibFunc,
@@ -527,6 +563,9 @@ pub fn compile_invocation(
         }
         CoreConcreteLibFunc::Mem(MemConcreteLibFunc::AllocLocal(libfunc)) => {
             handle_alloc_local(invocation, libfunc, environment, type_sizes)
+        }
+        CoreConcreteLibFunc::Mem(MemConcreteLibFunc::StoreLocal(libfunc)) => {
+            handle_store_local(invocation, libfunc, refs, environment, type_sizes)
         }
         _ => Err(InvocationError::NotImplemented(invocation.clone())),
     }
