@@ -12,7 +12,7 @@ func foo(,var1: int,, var2: felt,) -> int {
         0 => { 1 },
         _ => 0,
     };
-    let z = if (0 + x == y) {
+    let z = if 0 + x == y {
         1
     } else {
         2
