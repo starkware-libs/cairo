@@ -244,7 +244,7 @@ pub enum OutputVarReferenceInfo {
     Const,
 }
 
-/// Represents the [OutputReferenceInfo] for all the output variables in an output branch.
+/// Represents the [OutputVarReferenceInfo] for all the output variables in an output branch.
 pub struct BranchReferenceInfo(pub Vec<OutputVarReferenceInfo>);
 
 /// Trait for a specialized library function.

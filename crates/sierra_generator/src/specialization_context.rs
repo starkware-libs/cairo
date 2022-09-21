@@ -4,6 +4,10 @@ use sierra::program::ConcreteTypeLongId;
 
 use crate::db::SierraGenGroup;
 
+/// A wrapper over the [SierraGenGroup] salsa database, that provides the
+/// [SignatureSpecializationContext] functionality.
+/// In particular, it can be used when calling
+/// [specialize_signature_by_id](sierra::extensions::lib_func::GenericLibFuncEx::specialize_signature_by_id).
 pub struct SierraSignatureSpecializationContext<'a>(pub &'a dyn SierraGenGroup);
 
 impl SignatureSpecializationContext for SierraSignatureSpecializationContext<'_> {
