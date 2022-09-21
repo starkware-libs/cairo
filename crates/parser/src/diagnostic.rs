@@ -33,16 +33,16 @@ impl DiagnosticEntry for ParserDiagnostic {
                 format!("Missing token {kind:?}.")
             }
             ParserDiagnosticKind::MissingExpression => {
-                "Missing tokens: 'missing expression'.".to_string()
+                "Missing tokens. Expected an expression.".to_string()
             }
             ParserDiagnosticKind::MissingPathSegment => {
-                "Missing tokens: 'missing path segment'.".to_string()
+                "Missing tokens. Expected a path segment.".to_string()
             }
             ParserDiagnosticKind::MissingTypeClause => {
-                "Missing tokens: 'missing type clause'.".to_string()
+                "Missing tokens. Expected a type clause.".to_string()
             }
             ParserDiagnosticKind::MissingTypeExpression => {
-                "Missing tokens: 'missing type expression'.".to_string()
+                "Missing tokens. Expected a type expression.".to_string()
             }
         }
     }
