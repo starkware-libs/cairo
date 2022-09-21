@@ -1,0 +1,12 @@
+//! > Test Missing Token
+
+//! > Code
+func f() {
+    1 + * 2
+}
+
+//! > Expected Result
+error: Missing tokens: 'missing expression'.
+ --> dummy_file.cairo:2:9
+    1 + * 2
+        ^
