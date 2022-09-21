@@ -193,57 +193,29 @@ pub fn setup_test_block(
     setup_test_expr(db, &format!("{{ \n{expr_code}\n }}"), module_code, function_body)
 }
 
-/// Creates a test for a given function that reads test files.
-/// filenames - a vector of tests files the test will apply to.
-/// db - the salsa DB to use for the test.
-/// func - the function to be applied on the test params to generate the tested result.
-/// params - the function parameters. For functions specialized here the parameters can be omitted.
+pub fn test_expr_diagnostics(
+    db: &mut (dyn SemanticGroup + 'static),
+    inputs: Vec<String>,
+) -> Vec<String> {
+    vec![
+        setup_test_expr(db, inputs[0].as_str(), inputs[1].as_str(), inputs[2].as_str())
+            .get_diagnostics(),
+    ]
+}
+
+pub fn test_function_diagnostics(
+    db: &mut (dyn SemanticGroup + 'static),
+    inputs: Vec<String>,
+) -> Vec<String> {
+    vec![
+        setup_test_function(db, inputs[0].as_str(), inputs[1].as_str(), inputs[2].as_str())
+            .get_diagnostics(),
+    ]
+}
+
 #[macro_export]
-macro_rules! diagnostics_test {
-    ($test_name:ident, $filenames:expr, $db:expr, $func:expr, $($param:expr),*) => {
-        #[test]
-        fn $test_name() -> Result<(), std::io::Error> {
-            let mut db = $db;
-            for filename in $filenames {
-                let tests = utils::parse_test_file::parse_test_file(
-                    std::path::Path::new(filename)
-                )?;
-                for (name, test) in tests {
-                    let diagnostics = $func(
-                        &mut db,
-                        $(&test[$param],)*
-                    )
-                    .get_diagnostics();
-                    pretty_assertions::assert_eq!(
-                        diagnostics.trim(), test["Expected Result"], "\"{name}\" failed."
-                    );
-                }
-            }
-            Ok(())
-        }
-    };
-
-    ($test_name:ident, $filenames:expr, $db:expr, setup_test_expr) => {
-        diagnostics_test!(
-            $test_name,
-            $filenames,
-            $db,
-            setup_test_expr,
-            "Expr Code",
-            "Module Code",
-            "Function Body"
-        );
-    };
-
-    ($test_name:ident, $filenames:expr, $db:expr, setup_test_function) => {
-        diagnostics_test!(
-            $test_name,
-             $filenames,
-             $db,
-             setup_test_function,
-             "Function",
-             "Function Name",
-             "Module Code"
-        );
+macro_rules! semantic_test {
+    ($test_name:ident, $filenames:expr, $func:ident) => {
+        utils::test_file_test!($test_name, $filenames, SemanticDatabaseForTesting, $func);
     };
 }

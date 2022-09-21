@@ -1,17 +1,28 @@
 //! > Test unexpected argument types for operators.
 
-//! > Function
+//! > test_function_name
+test_function_diagnostics
+
+//! > test_params
+function
+function_name
+module_code
+
+//! > test_output_params
+expected_diagnostics
+
+//! > function
 func foo(a: MyType) {
     a + a * a
 }
 
-//! > Function Name
+//! > function_name
 foo
 
-//! > Module Code
+//! > module_code
 extern type MyType;
 
-//! > Expected Result
+//! > expected_diagnostics
 error: Unexpected argument type. Expected: "core::felt", found: "test_crate::MyType".
  --> lib.cairo:3:9
     a + a * a
