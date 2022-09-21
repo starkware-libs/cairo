@@ -74,7 +74,7 @@ impl SimulationContext<'_> {
         inputs: Vec<Vec<MemCell>>,
     ) -> Result<Vec<Vec<MemCell>>, SimulationError> {
         let func = self.registry.get_function(function_id)?;
-        let mut current_statement_id = func.entry;
+        let mut current_statement_id = func.entry_point;
         if func.params.len() != inputs.len() {
             return Err(SimulationError::FunctionArgumentCountMismatch {
                 function_id: func.id.clone(),
