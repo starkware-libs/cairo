@@ -1,4 +1,7 @@
-extern type bool;
+enum bool {
+    True: (),
+    False: (),
+}
 extern func bool_dup(a: bool) -> (bool, bool);
 extern func bool_drop(a: bool);
 extern func bool_and(a: bool, b: bool) -> bool;
