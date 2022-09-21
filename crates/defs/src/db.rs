@@ -41,6 +41,8 @@ pub trait DefsGroup:
     #[salsa::interned]
     fn intern_param(&self, id: ParamLongId) -> ParamId;
     #[salsa::interned]
+    fn intern_generic_param(&self, id: GenericParamLongId) -> GenericParamId;
+    #[salsa::interned]
     fn intern_local_var(&self, id: LocalVarLongId) -> LocalVarId;
 
     // Module to syntax.

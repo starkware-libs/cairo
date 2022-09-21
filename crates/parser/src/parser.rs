@@ -145,11 +145,11 @@ impl<'a> Parser<'a> {
     fn expect_struct(&mut self) -> ItemStructGreen {
         let struct_kw = self.take::<TerminalStruct>();
         let name = self.parse_token::<TerminalIdentifier>();
-        let generic_args = self.parse_optional_generic_args();
+        let generic_params = self.parse_optional_generic_params();
         let lbrace = self.parse_token::<TerminalLBrace>();
         let members = self.parse_param_list();
         let rbrace = self.parse_token::<TerminalRBrace>();
-        ItemStruct::new_green(self.db, struct_kw, name, generic_args, lbrace, members, rbrace)
+        ItemStruct::new_green(self.db, struct_kw, name, generic_params, lbrace, members, rbrace)
     }
 
     /// Assumes the current token is Enum.
@@ -157,11 +157,11 @@ impl<'a> Parser<'a> {
     fn expect_enum(&mut self) -> ItemEnumGreen {
         let enum_kw = self.take::<TerminalEnum>();
         let name = self.parse_token::<TerminalIdentifier>();
-        let generic_args = self.parse_optional_generic_args();
+        let generic_params = self.parse_optional_generic_params();
         let lbrace = self.parse_token::<TerminalLBrace>();
         let variants = self.parse_param_list();
         let rbrace = self.parse_token::<TerminalRBrace>();
-        ItemEnum::new_green(self.db, enum_kw, name, generic_args, lbrace, variants, rbrace)
+        ItemEnum::new_green(self.db, enum_kw, name, generic_params, lbrace, variants, rbrace)
     }
 
     /// Expected pattern: <ParenthesizedParamList><ReturnTypeClause>
@@ -182,7 +182,7 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalFunction => {
                 let function_kw = self.take::<TerminalFunction>();
                 let name = self.parse_token::<TerminalIdentifier>();
-                let generic_args = self.parse_optional_generic_args();
+                let generic_params = self.parse_optional_generic_params();
                 let signature = self.expect_function_signature();
                 let semicolon = self.parse_token::<TerminalSemicolon>();
                 ItemExternFunction::new_green(
@@ -190,7 +190,7 @@ impl<'a> Parser<'a> {
                     extern_kw,
                     function_kw,
                     name,
-                    generic_args,
+                    generic_params,
                     signature,
                     semicolon,
                 )
@@ -200,7 +200,7 @@ impl<'a> Parser<'a> {
                 // TODO(spapini): Do'nt return ItemExternType if we don't see a type.
                 let type_kw = self.parse_token::<TerminalType>();
                 let name = self.parse_token::<TerminalIdentifier>();
-                let generic_args = self.parse_optional_generic_args();
+                let generic_params = self.parse_optional_generic_params();
                 let semicolon = self.parse_token::<TerminalSemicolon>();
                 // If the next token is not type, assume it is missing.
                 ItemExternType::new_green(
@@ -208,7 +208,7 @@ impl<'a> Parser<'a> {
                     extern_kw,
                     type_kw,
                     name,
-                    generic_args,
+                    generic_params,
                     semicolon,
                 )
                 .into()
@@ -230,14 +230,14 @@ impl<'a> Parser<'a> {
     fn expect_free_function(&mut self) -> ItemFreeFunctionGreen {
         let function_kw = self.take::<TerminalFunction>();
         let name = self.parse_token::<TerminalIdentifier>();
-        let generic_args = self.parse_optional_generic_args();
+        let generic_params = self.parse_optional_generic_params();
         let signature = self.expect_function_signature();
         let function_body = self.parse_block();
         ItemFreeFunction::new_green(
             self.db,
             function_kw,
             name,
-            generic_args,
+            generic_params,
             signature,
             function_body,
         )
@@ -691,7 +691,7 @@ impl<'a> Parser<'a> {
 
     /// Assumes the current token is LT.
     /// Expected pattern: \< <GenericArgList> \>
-    fn expect_generic_args(&mut self) -> OptionGenericArgsSomeGreen {
+    fn expect_generic_args(&mut self) -> GenericArgsGreen {
         let langle = self.take::<TerminalLT>();
         let generic_args = GenericArgList::new_green(
             self.db,
@@ -703,14 +703,36 @@ impl<'a> Parser<'a> {
             ),
         );
         let rangle = self.parse_token::<TerminalGT>();
-        OptionGenericArgsSome::new_green(self.db, langle, generic_args, rangle)
+        GenericArgs::new_green(self.db, langle, generic_args, rangle)
     }
 
-    fn parse_optional_generic_args(&mut self) -> OptionGenericArgsGreen {
+    /// Assumes the current token is LT.
+    /// Expected pattern: \< <GenericParamList> \>
+    fn expect_generic_params(&mut self) -> WrappedGenericParamListGreen {
+        let langle = self.take::<TerminalLT>();
+        let generic_params = GenericParamList::new_green(
+            self.db,
+            self.parse_separated_list::<GenericParam, TerminalComma, GenericParamListElementOrSeparatorGreen>(
+                Self::try_parse_generic_param,
+                is_of_kind!(rangle, rparen, block, lbrace, rbrace, top_level),
+                SyntaxKind::TerminalComma,
+                "generic param",
+            ),
+        );
+        let rangle = self.parse_token::<TerminalGT>();
+        WrappedGenericParamList::new_green(self.db, langle, generic_params, rangle)
+    }
+
+    fn parse_optional_generic_params(&mut self) -> OptionGenericParamsGreen {
         if self.peek().kind != SyntaxKind::TerminalLT {
-            return OptionGenericArgsEmpty::new_green(self.db).into();
+            return OptionGenericParamsEmpty::new_green(self.db).into();
         }
-        self.expect_generic_args().into()
+        self.expect_generic_params().into()
+    }
+
+    fn try_parse_generic_param(&mut self) -> Option<GenericParamGreen> {
+        self.try_parse_token::<TerminalIdentifier>()
+            .map(|name| GenericParam::new_green(self.db, name))
     }
 
     // ------------------------------- Helpers -------------------------------

@@ -1,4 +1,4 @@
-use defs::ids::{ParamId, VarId};
+use defs::ids::{GenericParamId, ParamId, VarId};
 use diagnostics_proc_macros::DebugWithDb;
 
 // Reexport objects
@@ -19,7 +19,7 @@ pub struct Parameter {
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
 #[debug_db(SemanticGroup)]
 pub struct GenericParameter {
-    pub id: ParamId,
+    pub id: GenericParamId,
 }
 
 // TODO(yuval): consider making this an enum or the id an enum of ParamId/LocalVarId
