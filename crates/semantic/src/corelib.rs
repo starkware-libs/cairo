@@ -1,11 +1,12 @@
 use defs::ids::{GenericFunctionId, GenericTypeId, ModuleId};
 use filesystem::ids::CrateLongId;
 use syntax::node::ast::BinaryOperator;
+use syntax::node::ids::SyntaxStablePtrId;
 use utils::OptionFrom;
 
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind;
-use crate::{semantic, TypeId};
+use crate::{semantic, Expr, ExprId, ExprTuple, TypeId, TypeLongId};
 
 pub fn core_module(db: &dyn SemanticGroup) -> ModuleId {
     let core_crate = db.intern_crate(CrateLongId("core".into()));
@@ -25,8 +26,31 @@ pub fn core_felt_ty(db: &dyn SemanticGroup) -> TypeId {
     }))
 }
 
+pub fn core_bool_ty(db: &dyn SemanticGroup) -> TypeId {
+    let core_module = db.core_module();
+    // This should not fail if the corelib is present.
+    let generic_type = db
+        .module_item_by_name(core_module, "bool".into())
+        .and_then(GenericTypeId::option_from)
+        .unwrap();
+    db.intern_type(semantic::TypeLongId::Concrete(semantic::ConcreteType {
+        generic_type,
+        generic_args: vec![],
+    }))
+}
+
 pub fn unit_ty(db: &dyn SemanticGroup) -> TypeId {
     db.intern_type(semantic::TypeLongId::Tuple(vec![]))
+}
+
+/// builds a semantic unit expression. This is not necessarily located in the AST, so it is received
+/// as a param.
+pub fn unit_expr(db: &dyn SemanticGroup, stable_ptr: SyntaxStablePtrId) -> ExprId {
+    db.intern_expr(Expr::ExprTuple(ExprTuple {
+        items: Vec::new(),
+        ty: db.intern_type(TypeLongId::Tuple(Vec::new())),
+        stable_ptr,
+    }))
 }
 
 pub fn core_binary_operator(

@@ -6,23 +6,26 @@ use std::collections::HashMap;
 
 use defs::diagnostic_utils::StableLocation;
 use defs::ids::{
-    GenericFunctionId, GenericTypeId, LocalVarLongId, MemberId, ModuleId, ModuleItemId, StructId,
-    VarId,
+    EnumLongId, GenericFunctionId, GenericTypeId, LocalVarLongId, MemberId, ModuleId, ModuleItemId,
+    StructId, VarId, VariantLongId,
 };
 use diagnostics::Diagnostics;
 use smol_str::SmolStr;
-use syntax::node::ast::{BinaryOperator, PathSegment};
+use syntax::node::ast::{BinaryOperator, ItemEnumPtr, PathSegment};
 use syntax::node::db::SyntaxGroup;
 use syntax::node::helpers::GetIdentifier;
 use syntax::node::ids::SyntaxStablePtrId;
+use syntax::node::kind::SyntaxKind;
+use syntax::node::stable_ptr::SyntaxStablePtr;
 use syntax::node::{ast, Terminal, TypedSyntaxNode};
 use utils::ordered_hash_map::OrderedHashMap;
-use utils::OptionFrom;
+use utils::{extract_matches, OptionFrom};
 
 use super::objects::*;
-use crate::corelib::{core_binary_operator, unit_ty};
+use crate::corelib::{core_binary_operator, core_bool_ty, core_module, unit_expr, unit_ty};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind;
+use crate::items::enm::enum_variants;
 use crate::items::functions::{ConcreteFunction, FunctionLongId};
 use crate::resolve_item::resolve_item;
 use crate::types::resolve_type;
@@ -107,6 +110,26 @@ pub fn compute_expr_semantic(
     })
 }
 
+/// Gets a semantic expression of the specified enum variant. Uses the given `stable_ptr` in the
+/// returned semantic expression.
+fn get_enum_variant(
+    db: &dyn SemanticGroup,
+    module_id: ModuleId,
+    enum_name: SmolStr,
+    variant_name: SmolStr,
+    stable_ptr: SyntaxStablePtrId,
+) -> semantic::Expr {
+    let bool_enum = db.module_item_by_name(module_id, enum_name).unwrap();
+    let bool_enum_id = extract_matches!(bool_enum, ModuleItemId::Enum);
+    let variant_id = db.enum_variants(bool_enum_id).unwrap()[variant_name].id;
+    semantic::Expr::ExprEnumVariantCtor(semantic::ExprEnumVariantCtor {
+        enum_variant_id: variant_id,
+        expr: unit_expr(db, stable_ptr),
+        ty: core_bool_ty(db),
+        stable_ptr,
+    })
+}
+
 /// Computes the semantic model of an expression, or returns a SemanticDiagnosticKind on error,
 pub fn maybe_compute_expr_semantic(
     ctx: &mut ComputationContext<'_>,
@@ -120,8 +143,20 @@ pub fn maybe_compute_expr_semantic(
         ast::Expr::Literal(literal_syntax) => {
             semantic::Expr::ExprLiteral(literal_to_semantic(ctx, literal_syntax)?)
         }
-        ast::Expr::False(_) => return Err(SemanticDiagnosticKind::Unsupported),
-        ast::Expr::True(_) => return Err(SemanticDiagnosticKind::Unsupported),
+        ast::Expr::False(syntax) => get_enum_variant(
+            db,
+            core_module(db),
+            "bool".into(),
+            "False".into(),
+            syntax.stable_ptr().untyped(),
+        ),
+        ast::Expr::True(syntax) => get_enum_variant(
+            db,
+            core_module(db),
+            "bool".into(),
+            "True".into(),
+            syntax.stable_ptr().untyped(),
+        ),
         ast::Expr::Parenthesized(paren_syntax) => {
             compute_expr_semantic(ctx, paren_syntax.expr(syntax_db))
         }
