@@ -10,9 +10,10 @@ use utils::extract_matches;
 use crate::corelib::{core_felt_ty, unit_ty};
 use crate::db::SemanticGroup;
 use crate::test_utils::{
-    setup_test_expr, setup_test_function, setup_test_module, SemanticDatabaseForTesting, TestModule,
+    setup_test_expr, setup_test_function, setup_test_module, test_function_diagnostics,
+    SemanticDatabaseForTesting, TestModule,
 };
-use crate::{diagnostics_test, semantic, ExprId, StatementId, TypeId};
+use crate::{semantic, semantic_test, ExprId, StatementId, TypeId};
 
 #[test]
 fn test_expr_literal() {
@@ -58,12 +59,7 @@ fn test_expr_operator() {
     );
 }
 
-diagnostics_test!(
-    expr_diagnostics_tests,
-    ["src/expr/test_data/tests"],
-    SemanticDatabaseForTesting::default(),
-    setup_test_function
-);
+semantic_test!(expr_diagnostics_tests, ["src/expr/test_data/tests"], test_function_diagnostics);
 
 #[test]
 fn test_member_access() {
