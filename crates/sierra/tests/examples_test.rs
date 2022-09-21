@@ -124,11 +124,11 @@ fn simulate_fib_recursive((gb, n): (i64, i64), (new_gb, fib): (i64, i64)) {
         simulation::run(
             &get_example_program(FIB_RECURSIVE),
             &HashMap::from([
-                (StatementIdx(4), 6),
-                (StatementIdx(12), 1),
-                (StatementIdx(18), 42),
-                (StatementIdx(19), 0),
-                (StatementIdx(35), 0),
+                (StatementIdx(3), 6),
+                (StatementIdx(11), 1),
+                (StatementIdx(17), 42),
+                (StatementIdx(18), 0),
+                (StatementIdx(37), 0),
             ]),
             &"Fibonacci".into(),
             vec![vec![gb.into()], vec![n.into()]]
