@@ -11,9 +11,6 @@ pub enum SyntaxKind {
     ArgListBraced,
     ExprList,
     ExprMissing,
-    OptionGenericArgsEmpty,
-    OptionGenericArgsSome,
-    GenericArgList,
     PathSegmentSimple,
     PathSegmentWithGenericArgs,
     ExprPath,
@@ -28,6 +25,7 @@ pub enum SyntaxKind {
     MatchArm,
     MatchArms,
     ExprMatch,
+    ExprIf,
     TypeClause,
     OptionTypeClauseEmpty,
     ReturnTypeClause,
@@ -51,6 +49,12 @@ pub enum SyntaxKind {
     ItemStruct,
     ItemEnum,
     ItemUse,
+    GenericArgs,
+    GenericArgList,
+    OptionGenericParamsEmpty,
+    WrappedGenericParamList,
+    GenericParamList,
+    GenericParam,
     SyntaxFile,
     TokenSingleLineComment,
     TokenWhitespace,
@@ -89,6 +93,10 @@ pub enum SyntaxKind {
     TerminalReturn,
     TokenMatch,
     TerminalMatch,
+    TokenIf,
+    TerminalIf,
+    TokenElse,
+    TerminalElse,
     TokenUse,
     TerminalUse,
     TokenAnd,
@@ -176,6 +184,8 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalLet
                 | SyntaxKind::TerminalReturn
                 | SyntaxKind::TerminalMatch
+                | SyntaxKind::TerminalIf
+                | SyntaxKind::TerminalElse
                 | SyntaxKind::TerminalUse
                 | SyntaxKind::TerminalAnd
                 | SyntaxKind::TerminalAndAnd
@@ -235,6 +245,8 @@ impl SyntaxKind {
                 | SyntaxKind::TokenLet
                 | SyntaxKind::TokenReturn
                 | SyntaxKind::TokenMatch
+                | SyntaxKind::TokenIf
+                | SyntaxKind::TokenElse
                 | SyntaxKind::TokenUse
                 | SyntaxKind::TokenAnd
                 | SyntaxKind::TokenAndAnd

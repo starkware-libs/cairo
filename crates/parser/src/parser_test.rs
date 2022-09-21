@@ -5,8 +5,11 @@ use std::fmt::Write;
 use test_case::test_case;
 
 use crate::colored_printer::print_colored;
+use crate::diagnostics_test;
 use crate::printer::print_tree;
-use crate::test_utils::{get_syntax_root_and_diagnostics, read_file, ParserDatabaseForTesting};
+use crate::test_utils::{
+    get_diagnostics, get_syntax_root_and_diagnostics, read_file, ParserDatabaseForTesting,
+};
 
 struct ParserTreeTestParams {
     cairo_filename: &'static str,
@@ -159,8 +162,8 @@ fn compare_printed_and_expected_maybe_fix(
     if printed != expected {
         if fix {
             println!(
-                "Test failed, fixing expected output file: {}. Note to verify that now it looks \
-                 correct!",
+                "Test failed, fixing expected output file: {}. Please make sure that the result \
+                 is correct.",
                 expected_output_filename
             );
             std::fs::write(expected_output_filename, printed)
@@ -235,3 +238,10 @@ pub fn fix_parser_tests() {
     }
     println!("All Parser tests should be fixed now!");
 }
+
+diagnostics_test!(
+    diagnostic_tests,
+    ["src/parser_test_data/exprs"],
+    ParserDatabaseForTesting::default(),
+    get_diagnostics
+);

@@ -31,13 +31,17 @@ fn compile_to_sierra(
     (db, sierra_program)
 }
 
-#[test_case("fib.cairo", include_str!("fib.sierra"))]
+#[test_case("fib.cairo", include_str!("fib.sierra"); "fib")]
+#[test_case("fib_ref.cairo", include_str!("fib_ref.sierra") =>
+            ignore["Ref not supported yet"]; "fib_ref")]
 fn cairo_to_sierra(name: &str, expected_code: &str) {
     let (db, sierra_program) = compile_to_sierra(name);
     assert_eq!(replace_libfunc_ids_in_program(&db, &sierra_program).to_string(), expected_code);
 }
 
-#[test_case("fib.cairo", include_str!("fib.casm"))]
+#[test_case("fib.cairo", include_str!("fib.casm"); "fib")]
+#[test_case("fib_ref.cairo", include_str!("fib_ref.casm") =>
+            ignore["Ref not supported yet"]; "fib_ref")]
 fn cairo_to_casm(cairo_file: &str, expected_code: &str) {
     let (_db, sierra_program) = compile_to_sierra(cairo_file);
     assert_eq!(

@@ -57,23 +57,16 @@ pub fn get_spec() -> Vec<Node> {
             .node("StructCtorCall")
             .node("Block")
             .node("Match")
+            .node("If")
             .build(),
         separated_list_node("ExprList", "Expr", "TerminalComma"),
         StructBuilder::new("ExprMissing").build(),
-        EnumBuilder::new("OptionGenericArgs").node("Empty").node("Some").build(),
-        StructBuilder::new("OptionGenericArgsEmpty").build(),
-        StructBuilder::new("OptionGenericArgsSome")
-            .node("langle", "TerminalLT")
-            .node("generic_args", "GenericArgList")
-            .node("rangle", "TerminalGT")
-            .build(),
-        separated_list_node("GenericArgList", "Expr", "TerminalComma"),
         EnumBuilder::new("PathSegment").missing("Simple").node("WithGenericArgs").build(),
         StructBuilder::new("PathSegmentSimple").node("ident", "TerminalIdentifier").build(),
         StructBuilder::new("PathSegmentWithGenericArgs")
             .node("ident", "TerminalIdentifier")
             .node("seperator", "TerminalColonColon")
-            .node("generic_args", "OptionGenericArgsSome")
+            .node("generic_args", "GenericArgs")
             .build(),
         separated_list_node("ExprPath", "PathSegment", "TerminalColonColon"),
         StructBuilder::new("ExprParenthesized")
@@ -146,6 +139,13 @@ pub fn get_spec() -> Vec<Node> {
                 .node("arms", "MatchArms")
                 .node("rbrace", "TerminalRBrace")
                 .build(),
+        StructBuilder::new("ExprIf")
+            .node("if_kw", "TerminalIf")
+            .node("condition", "Expr")
+            .node("if_block", "ExprBlock")
+            .node("else_kw", "TerminalElse")
+            .node("else_block", "ExprBlock")
+            .build(),
         // --- Type clauses ---
         // TODO(yuval): support SimpleExpr instead of ExprPath
         StructBuilder::new("TypeClause").node("colon", "TerminalColon").node("ty", "Expr").build(),
@@ -231,7 +231,7 @@ pub fn get_spec() -> Vec<Node> {
         StructBuilder::new("ItemFreeFunction")
             .node("function_kw", "TerminalFunction")
             .key_node("name", "TerminalIdentifier")
-            .node("generic_args", "OptionGenericArgs")
+            .node("generic_params", "OptionGenericParams")
             .node("signature", "FunctionSignature")
             .node("body", "ExprBlock")
             .build(),
@@ -239,7 +239,7 @@ pub fn get_spec() -> Vec<Node> {
             .node("extern_kw", "TerminalExtern")
             .node("function_kw", "TerminalFunction")
             .key_node("name", "TerminalIdentifier")
-            .node("generic_args", "OptionGenericArgs")
+            .node("generic_params", "OptionGenericParams")
             .node("signature", "FunctionSignature")
             .node("semicolon", "TerminalSemicolon")
             .build(),
@@ -247,14 +247,14 @@ pub fn get_spec() -> Vec<Node> {
             .node("extern_kw", "TerminalExtern")
             .node("type_kw", "TerminalType")
             .key_node("name", "TerminalIdentifier")
-            .node("generic_args", "OptionGenericArgs")
+            .node("generic_params", "OptionGenericParams")
             .node("semicolon", "TerminalSemicolon")
             .build(),
         // TODO(spapini): consider having specific ItemLists here.
         StructBuilder::new("ItemTrait")
             .node("trait_kw", "TerminalTrait")
             .key_node("name", "TerminalIdentifier")
-            .node("generic_args", "OptionGenericArgs")
+            .node("generic_params", "OptionGenericParams")
             .node("lbrace", "TerminalLBrace")
             .node("items", "ItemList")
             .node("rbrace", "TerminalRBrace")
@@ -262,7 +262,7 @@ pub fn get_spec() -> Vec<Node> {
         StructBuilder::new("ItemImpl")
             .node("impl_kw", "TerminalImpl")
             .key_node("name", "TerminalIdentifier")
-            .node("generic_args", "OptionGenericArgs")
+            .node("generic_params", "OptionGenericParams")
             .node("for_kw", "TerminalFor")
             .node("trait_name", "TerminalIdentifier")
             .node("lbrace", "TerminalLBrace")
@@ -272,7 +272,7 @@ pub fn get_spec() -> Vec<Node> {
         StructBuilder::new("ItemStruct")
             .node("struct_kw", "TerminalStruct")
             .key_node("name", "TerminalIdentifier")
-            .node("generic_args", "OptionGenericArgs")
+            .node("generic_params", "OptionGenericParams")
             .node("lbrace", "TerminalLBrace")
             .node("members", "ParamList")
             .node("rbrace", "TerminalRBrace")
@@ -280,7 +280,7 @@ pub fn get_spec() -> Vec<Node> {
         StructBuilder::new("ItemEnum")
             .node("enumkw", "TerminalEnum")
             .key_node("name", "TerminalIdentifier")
-            .node("generic_args", "OptionGenericArgs")
+            .node("generic_params", "OptionGenericParams")
             .node("lbrace", "TerminalLBrace")
             .node("variants", "ParamList")
             .node("rbrace", "TerminalRBrace")
@@ -290,6 +290,26 @@ pub fn get_spec() -> Vec<Node> {
             .key_node("name", "ExprPath")
             .node("semicolon", "TerminalSemicolon")
             .build(),
+        // Generics.
+        StructBuilder::new("GenericArgs")
+            .node("langle", "TerminalLT")
+            .node("generic_args", "GenericArgList")
+            .node("rangle", "TerminalGT")
+            .build(),
+        separated_list_node("GenericArgList", "Expr", "TerminalComma"),
+        EnumBuilder::new("OptionGenericParams")
+            .node("Empty")
+            .node_with_explicit_kind("Some", "WrappedGenericParamList")
+            .build(),
+        StructBuilder::new("OptionGenericParamsEmpty").build(),
+        StructBuilder::new("WrappedGenericParamList")
+            .node("langle", "TerminalLT")
+            .node("generic_params", "GenericParamList")
+            .node("rangle", "TerminalGT")
+            .build(),
+        separated_list_node("GenericParamList", "GenericParam", "TerminalComma"),
+        // TODO(spapini): Remove this indirection.
+        StructBuilder::new("GenericParam").key_node("name", "TerminalIdentifier").build(),
         // Meta.
         StructBuilder::new("SyntaxFile")
             .node("items", "ItemList")
@@ -318,6 +338,8 @@ pub fn get_spec() -> Vec<Node> {
     append_terminal_and_token(&mut nodes, "Let");
     append_terminal_and_token(&mut nodes, "Return");
     append_terminal_and_token(&mut nodes, "Match");
+    append_terminal_and_token(&mut nodes, "If");
+    append_terminal_and_token(&mut nodes, "Else");
     append_terminal_and_token(&mut nodes, "Use");
     append_terminal_and_token(&mut nodes, "And");
     append_terminal_and_token(&mut nodes, "AndAnd");

@@ -81,6 +81,7 @@ impl DiagnosticEntry for SierraGeneratorDiagnostic {
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum SierraGeneratorDiagnosticKind {
+    // TODO(lior): Remove once supported.
     NonZeroValueInMatch,
     CallLibFuncWithGenericArgs,
     // TODO(lior): Remove once supported.

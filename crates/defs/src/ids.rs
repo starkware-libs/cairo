@@ -222,6 +222,12 @@ define_language_element_id_as_enum! {
 
 // TODO(spapini): Override full_path for to include parents, for better debug.
 define_language_element_id!(ParamId, ParamLongId, ast::Param, lookup_intern_param);
+define_language_element_id!(
+    GenericParamId,
+    GenericParamLongId,
+    ast::GenericParam,
+    lookup_intern_generic_param
+);
 // TODO(spapini): change this to a binding inside a pattern.
 // TODO(spapini): Override full_path for to include parents, for better debug.
 define_language_element_id!(LocalVarId, LocalVarLongId, ast::StatementLet, lookup_intern_local_var);

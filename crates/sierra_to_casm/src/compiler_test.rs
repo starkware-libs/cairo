@@ -15,15 +15,19 @@ fn good_flow() {
         .parse(indoc! {"
             type felt = felt;
             type NonZeroFelt = NonZero<felt>;
+            type RefFelt = Ref<felt>;
 
             libfunc finalize_locals = finalize_locals;
             libfunc felt_add = felt_add;
             libfunc felt_sub = felt_sub;
             libfunc felt_dup = felt_dup;
             libfunc felt_jump_nz = felt_jump_nz;
+            libfunc felt_into_ref = into_ref<felt>;
+            libfunc felt_deref = deref<felt>;
             libfunc jump = jump;
             libfunc felt_unwrap_nz = unwrap_nz<felt>;
             libfunc store_temp_felt = store_temp<felt>;
+            libfunc store_temp_ref_felt = store_temp<RefFelt>;
             libfunc rename_felt = rename<felt>;
             libfunc call_foo = function_call<user@foo>;
 
@@ -54,8 +58,15 @@ fn good_flow() {
             call_foo([1], [2]) -> ([1], [2]);               // #22
             return ([1], [2]);                              // #23
 
+            felt_into_ref([1]) -> ([2]);                    // #24
+            store_temp_ref_felt([2]) -> ([2]);              // #25
+            felt_deref([2]) -> ([3]);                       // #26
+            store_temp_felt([3]) -> ([3]);                  // #27
+            return ([3]);                                   // #28
+
             test_program@0([1]: felt, [2]: felt) -> (felt, felt, felt);
             foo@10([1]: felt, [2]: felt) -> (felt, felt);
+            ref_and_back@24([1]: felt) -> (felt);
         "})
         .unwrap();
     assert_eq!(
@@ -76,6 +87,9 @@ fn good_flow() {
             [fp + -4] = [ap + 0] + [fp + -3], ap++;
             [ap + 0] = [fp + -3], ap++;
             call rel -11;
+            ret;
+            [fp + -3] = [[ap + 0]], ap++;
+            [ap + 0] = [[ap + -1]], ap++;
             ret;
         "}
     );
@@ -144,12 +158,12 @@ fn fib_program() {
             "Error from program registry";
             "Concrete libfunc Id used twice")]
 #[test_case(indoc! {"
-                type felt = felt;
+                type int = int;
 
-                libfunc store_local_felt = store_local<felt>;
+                libfunc int_add = int_add;
 
-                store_local_felt([1]) -> ([1]);
-                test_program@0([1]: felt) -> ();
+                int_add([1], [2]) -> ([1]);
+                test_program@0([1]: int, [2]: int) -> ();
             "},
             "#0: The requested functionality is not implemented yet.";
             "Not implemented")]
@@ -334,6 +348,21 @@ fn fib_program() {
                 foo@0([1]: felt) -> ();
             "}, "#2: finalize_locals is not allowed at this point.";
             "Invalid finalize_locals 2")]
+#[test_case(indoc! {"
+                type felt = felt;
+                type UninitializedFelt = uninitialized<felt>;
+
+                libfunc alloc_local_felt = alloc_local<felt>;
+                libfunc store_temp_felt = store_temp<felt>;
+
+                alloc_local_felt() -> ([2]);
+                store_temp_felt([1]) -> ([1]);
+                alloc_local_felt() -> ([3]);
+                return ();
+
+                foo@0([1]: felt) -> ();
+            "}, "#2: alloc_local is not allowed at this point.";
+            "Invalid alloc_local ")]
 #[test_case(indoc! {"
                 type felt = felt;
                 type UninitializedFelt = uninitialized<felt>;

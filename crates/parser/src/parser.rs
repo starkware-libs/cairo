@@ -145,11 +145,11 @@ impl<'a> Parser<'a> {
     fn expect_struct(&mut self) -> ItemStructGreen {
         let struct_kw = self.take::<TerminalStruct>();
         let name = self.parse_token::<TerminalIdentifier>();
-        let generic_args = self.parse_optional_generic_args();
+        let generic_params = self.parse_optional_generic_params();
         let lbrace = self.parse_token::<TerminalLBrace>();
         let members = self.parse_param_list();
         let rbrace = self.parse_token::<TerminalRBrace>();
-        ItemStruct::new_green(self.db, struct_kw, name, generic_args, lbrace, members, rbrace)
+        ItemStruct::new_green(self.db, struct_kw, name, generic_params, lbrace, members, rbrace)
     }
 
     /// Assumes the current token is Enum.
@@ -157,11 +157,11 @@ impl<'a> Parser<'a> {
     fn expect_enum(&mut self) -> ItemEnumGreen {
         let enum_kw = self.take::<TerminalEnum>();
         let name = self.parse_token::<TerminalIdentifier>();
-        let generic_args = self.parse_optional_generic_args();
+        let generic_params = self.parse_optional_generic_params();
         let lbrace = self.parse_token::<TerminalLBrace>();
         let variants = self.parse_param_list();
         let rbrace = self.parse_token::<TerminalRBrace>();
-        ItemEnum::new_green(self.db, enum_kw, name, generic_args, lbrace, variants, rbrace)
+        ItemEnum::new_green(self.db, enum_kw, name, generic_params, lbrace, variants, rbrace)
     }
 
     /// Expected pattern: <ParenthesizedParamList><ReturnTypeClause>
@@ -182,7 +182,7 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalFunction => {
                 let function_kw = self.take::<TerminalFunction>();
                 let name = self.parse_token::<TerminalIdentifier>();
-                let generic_args = self.parse_optional_generic_args();
+                let generic_params = self.parse_optional_generic_params();
                 let signature = self.expect_function_signature();
                 let semicolon = self.parse_token::<TerminalSemicolon>();
                 ItemExternFunction::new_green(
@@ -190,7 +190,7 @@ impl<'a> Parser<'a> {
                     extern_kw,
                     function_kw,
                     name,
-                    generic_args,
+                    generic_params,
                     signature,
                     semicolon,
                 )
@@ -200,7 +200,7 @@ impl<'a> Parser<'a> {
                 // TODO(spapini): Do'nt return ItemExternType if we don't see a type.
                 let type_kw = self.parse_token::<TerminalType>();
                 let name = self.parse_token::<TerminalIdentifier>();
-                let generic_args = self.parse_optional_generic_args();
+                let generic_params = self.parse_optional_generic_params();
                 let semicolon = self.parse_token::<TerminalSemicolon>();
                 // If the next token is not type, assume it is missing.
                 ItemExternType::new_green(
@@ -208,7 +208,7 @@ impl<'a> Parser<'a> {
                     extern_kw,
                     type_kw,
                     name,
-                    generic_args,
+                    generic_params,
                     semicolon,
                 )
                 .into()
@@ -230,14 +230,14 @@ impl<'a> Parser<'a> {
     fn expect_free_function(&mut self) -> ItemFreeFunctionGreen {
         let function_kw = self.take::<TerminalFunction>();
         let name = self.parse_token::<TerminalIdentifier>();
-        let generic_args = self.parse_optional_generic_args();
+        let generic_params = self.parse_optional_generic_params();
         let signature = self.expect_function_signature();
         let function_body = self.parse_block();
         ItemFreeFunction::new_green(
             self.db,
             function_kw,
             name,
-            generic_args,
+            generic_params,
             signature,
             function_body,
         )
@@ -252,7 +252,8 @@ impl<'a> Parser<'a> {
             // Call parse_block() and not expect_block() because it's cheap.
             SyntaxKind::TerminalLBrace => Some(self.parse_block().into()),
             SyntaxKind::TerminalMatch => Some(self.expect_match_expr().into()),
-            _ => self.try_parse_simple_expression(MAX_PRECEDENCE),
+            SyntaxKind::TerminalIf => Some(self.expect_if_expr().into()),
+            _ => self.try_parse_simple_expression(MAX_PRECEDENCE, LbraceAllowed::Allow),
         }
     }
     /// Returns a GreenId of a node with an Expr.* kind (see [syntax::node::ast::Expr]) or a node
@@ -286,13 +287,19 @@ impl<'a> Parser<'a> {
 
     /// Returns a GreenId of a node with an Expr.* kind (see [syntax::node::ast::Expr]), excluding
     /// ExprBlock, or None if such an expression can't be parsed.
-    fn try_parse_simple_expression(&mut self, parent_precedence: usize) -> Option<ExprGreen> {
+    ///
+    /// `lbrace_allowed` - See [LbraceAllowed].
+    fn try_parse_simple_expression(
+        &mut self,
+        parent_precedence: usize,
+        lbrace_allowed: LbraceAllowed,
+    ) -> Option<ExprGreen> {
         let mut expr = if let Some(precedence) = get_unary_operator_precedence(self.peek().kind) {
             let op = self.parse_unary_operator();
-            let expr = self.parse_simple_expression(precedence);
+            let expr = self.parse_simple_expression(precedence, lbrace_allowed);
             ExprUnary::new_green(self.db, op, expr).into()
         } else {
-            self.try_parse_atom()?
+            self.try_parse_atom(lbrace_allowed)?
         };
 
         while let Some(precedence) = get_binary_operator_precedence(self.peek().kind) {
@@ -300,15 +307,21 @@ impl<'a> Parser<'a> {
                 return Some(expr);
             }
             let op = self.parse_binary_operator();
-            let rhs = self.parse_simple_expression(precedence);
+            let rhs = self.parse_simple_expression(precedence, lbrace_allowed);
             expr = ExprBinary::new_green(self.db, expr, op, rhs).into();
         }
         Some(expr)
     }
     /// Returns a GreenId of a node with an Expr.* kind (see [syntax::node::ast::Expr]), excluding
     /// ExprBlock, or ExprMissing if such an expression can't be parsed.
-    fn parse_simple_expression(&mut self, parent_precedence: usize) -> ExprGreen {
-        match self.try_parse_simple_expression(parent_precedence) {
+    ///
+    /// `lbrace_allowed` - See [LbraceAllowed].
+    fn parse_simple_expression(
+        &mut self,
+        parent_precedence: usize,
+        lbrace_allowed: LbraceAllowed,
+    ) -> ExprGreen {
+        match self.try_parse_simple_expression(parent_precedence, lbrace_allowed) {
             Some(green) => green,
             None => self.create_and_report_missing::<Expr>(ParserDiagnosticKind::MissingExpression),
         }
@@ -317,7 +330,9 @@ impl<'a> Parser<'a> {
     /// Returns a GreenId of a node with an
     /// ExprPath|ExprFunctionCall|ExprStructCtorCall|ExprParenthesized|ExprTuple kind, or None if
     /// such an expression can't be parsed.
-    fn try_parse_atom(&mut self) -> Option<ExprGreen> {
+    ///
+    /// `lbrace_allowed` - See [LbraceAllowed].
+    fn try_parse_atom(&mut self, lbrace_allowed: LbraceAllowed) -> Option<ExprGreen> {
         // TODO(yuval): support paths starting with "::".
         match self.peek().kind {
             SyntaxKind::TerminalIdentifier => {
@@ -325,14 +340,20 @@ impl<'a> Parser<'a> {
                 let path = self.parse_path();
                 match self.peek().kind {
                     SyntaxKind::TerminalLParen => Some(self.expect_function_call(path).into()),
-                    SyntaxKind::TerminalLBrace => Some(self.expect_constructor_call(path).into()),
+                    SyntaxKind::TerminalLBrace if lbrace_allowed == LbraceAllowed::Allow => {
+                        Some(self.expect_constructor_call(path).into())
+                    }
                     _ => Some(path.into()),
                 }
             }
             SyntaxKind::TerminalFalse => Some(self.take::<TerminalFalse>().into()),
             SyntaxKind::TerminalTrue => Some(self.take::<TerminalTrue>().into()),
             SyntaxKind::TerminalLiteralNumber => Some(self.take::<TerminalLiteralNumber>().into()),
-            SyntaxKind::TerminalLParen => Some(self.expect_parenthesized_expr()),
+            SyntaxKind::TerminalLParen => {
+                // Note that LBrace is allowed inside parenthesis, even if `lbrace_allowed` is
+                // [LbraceAllowed::Forbid].
+                Some(self.expect_parenthesized_expr())
+            }
             _ => {
                 // TODO(yuval): report to diagnostics.
                 None
@@ -479,12 +500,11 @@ impl<'a> Parser<'a> {
         ExprBlock::new_green(self.db, lbrace, statements, rbrace)
     }
 
-    /// Assumes the current token is Match.
-    /// Expected pattern: match \{<MatchArm>*\}
+    /// Assumes the current token is `Match`.
+    /// Expected pattern: match <expr> \{<MatchArm>*\}
     fn expect_match_expr(&mut self) -> ExprMatchGreen {
         let match_kw = self.take::<TerminalMatch>();
-        // TODO(yuval): change to simple expression.
-        let expr = self.parse_path().into();
+        let expr = self.parse_simple_expression(MAX_PRECEDENCE, LbraceAllowed::Forbid);
         let lbrace = self.parse_token::<TerminalLBrace>();
         let arms = MatchArms::new_green(
             self.db,
@@ -497,6 +517,18 @@ impl<'a> Parser<'a> {
         );
         let rbrace = self.parse_token::<TerminalRBrace>();
         ExprMatch::new_green(self.db, match_kw, expr, lbrace, arms, rbrace)
+    }
+
+    /// Assumes the current token is `If`.
+    /// Expected pattern: `if <expr> <block> [else <block>]`.
+    fn expect_if_expr(&mut self) -> ExprIfGreen {
+        let if_kw = self.take::<TerminalIf>();
+        let condition = self.parse_simple_expression(MAX_PRECEDENCE, LbraceAllowed::Forbid);
+        let if_block = self.parse_block();
+        // TODO(lior): Make else block optional.
+        let else_kw = self.parse_token::<TerminalElse>();
+        let else_block = self.parse_block();
+        ExprIf::new_green(self.db, if_kw, condition, if_block, else_kw, else_block)
     }
 
     /// Returns a GreenId of a node with a MatchArm kind or None if a match arm can't be parsed.
@@ -672,7 +704,7 @@ impl<'a> Parser<'a> {
 
     /// Assumes the current token is LT.
     /// Expected pattern: \< <GenericArgList> \>
-    fn expect_generic_args(&mut self) -> OptionGenericArgsSomeGreen {
+    fn expect_generic_args(&mut self) -> GenericArgsGreen {
         let langle = self.take::<TerminalLT>();
         let generic_args = GenericArgList::new_green(
             self.db,
@@ -684,14 +716,36 @@ impl<'a> Parser<'a> {
             ),
         );
         let rangle = self.parse_token::<TerminalGT>();
-        OptionGenericArgsSome::new_green(self.db, langle, generic_args, rangle)
+        GenericArgs::new_green(self.db, langle, generic_args, rangle)
     }
 
-    fn parse_optional_generic_args(&mut self) -> OptionGenericArgsGreen {
+    /// Assumes the current token is LT.
+    /// Expected pattern: \< <GenericParamList> \>
+    fn expect_generic_params(&mut self) -> WrappedGenericParamListGreen {
+        let langle = self.take::<TerminalLT>();
+        let generic_params = GenericParamList::new_green(
+            self.db,
+            self.parse_separated_list::<GenericParam, TerminalComma, GenericParamListElementOrSeparatorGreen>(
+                Self::try_parse_generic_param,
+                is_of_kind!(rangle, rparen, block, lbrace, rbrace, top_level),
+                SyntaxKind::TerminalComma,
+                "generic param",
+            ),
+        );
+        let rangle = self.parse_token::<TerminalGT>();
+        WrappedGenericParamList::new_green(self.db, langle, generic_params, rangle)
+    }
+
+    fn parse_optional_generic_params(&mut self) -> OptionGenericParamsGreen {
         if self.peek().kind != SyntaxKind::TerminalLT {
-            return OptionGenericArgsEmpty::new_green(self.db).into();
+            return OptionGenericParamsEmpty::new_green(self.db).into();
         }
-        self.expect_generic_args().into()
+        self.expect_generic_params().into()
+    }
+
+    fn try_parse_generic_param(&mut self) -> Option<GenericParamGreen> {
+        self.try_parse_token::<TerminalIdentifier>()
+            .map(|name| GenericParam::new_green(self.db, name))
     }
 
     // ------------------------------- Helpers -------------------------------
@@ -857,4 +911,18 @@ impl<'a> Parser<'a> {
             )),
         }
     }
+}
+
+/// Controls whether Lbrace (`{`) is allowed in the expression.
+///
+/// Lbrace is always allowed in sub-expressions (e.g. in parenthesized expression). For example,
+/// while `1 + MyStruct { ... }` may not be valid, `1 + (MyStruct { ... })` is always ok.
+///
+/// This can be used to parse the argument of a `match` statement,
+/// so that the `{` that opens the `match` body is not confused with other potential uses of
+/// `{`.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum LbraceAllowed {
+    Forbid,
+    Allow,
 }

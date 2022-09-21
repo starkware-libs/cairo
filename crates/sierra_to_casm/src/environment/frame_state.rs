@@ -5,6 +5,8 @@ use thiserror::Error;
 pub enum FrameStateError {
     #[error("InvalidTransition")]
     InvalidTransition,
+    #[error("alloc_local is not allowed at this point.")]
+    InvalidAllocLocal(FrameState),
     #[error("finalize_locals is not allowed at this point.")]
     InvalidFinalizeLocals(FrameState),
 }
@@ -37,6 +39,33 @@ pub fn handle_finalize_locals(
             } else {
                 Ok((allocated, FrameState::Finalized))
             }
+        }
+    }
+}
+
+// Returns the offset of the newly allocated variable and the new frame state.
+pub fn handle_alloc_local(
+    frame_state: FrameState,
+    ap_tracking: ApChange,
+    allocation_size: i16,
+) -> Result<(i16, FrameState), FrameStateError> {
+    match frame_state {
+        FrameState::Finalized => Err(FrameStateError::InvalidAllocLocal(frame_state)),
+
+        FrameState::Allocating { allocated, last_ap_tracking } => {
+            let allocated = match ap_tracking {
+                ApChange::Known(offset) if allocated == 0 => Ok(offset),
+                ApChange::Known(_) if ap_tracking == last_ap_tracking => Ok(allocated),
+                _ => Err(FrameStateError::InvalidAllocLocal(frame_state)),
+            }?;
+
+            Ok((
+                allocated,
+                FrameState::Allocating {
+                    allocated: allocated + allocation_size,
+                    last_ap_tracking: ap_tracking,
+                },
+            ))
         }
     }
 }
