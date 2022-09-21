@@ -28,6 +28,9 @@ fn value_arg(v: i64) -> GenericArg {
 #[test_case("NonZero", vec![type_arg("T")] => Ok(()); "NonZero<T>")]
 #[test_case("NonZero", vec![] => Err(WrongNumberOfGenericArgs); "NonZero")]
 #[test_case("NonZero", vec![value_arg(5)] => Err(UnsupportedGenericArg); "NonZero<5>")]
+#[test_case("Ref", vec![type_arg("T")] => Ok(()); "Ref<T>")]
+#[test_case("Ref", vec![] => Err(WrongNumberOfGenericArgs); "Ref<>")]
+#[test_case("Ref", vec![value_arg(5)] => Err(UnsupportedGenericArg); "Ref<5>")]
 #[test_case("uninitialized", vec![type_arg("T")] => Ok(()); "uninitialized<T>")]
 fn find_type_specialization(
     id: &str,
