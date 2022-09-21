@@ -2,11 +2,14 @@ use defs::ids::{ExternFunctionId, LanguageElementId};
 use diagnostics::Diagnostics;
 use diagnostics_proc_macros::DebugWithDb;
 
-use super::functions::{
-    function_signature_generic_params, function_signature_params, function_signature_return_type,
-};
+use super::functions::{function_signature_params, function_signature_return_type};
+use super::generics::semantic_generic_params;
 use crate::db::SemanticGroup;
 use crate::{semantic, SemanticDiagnostic};
+
+#[cfg(test)]
+#[path = "extern_function_test.rs"]
+mod test;
 
 // Declaration.
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
@@ -43,14 +46,18 @@ pub fn priv_extern_function_declaration_data(
     let mut diagnostics = Diagnostics::default();
     let module_id = extern_function_id.module(db.upcast());
     let module_data = db.module_data(module_id)?;
-    let signature_syntax =
-        module_data.extern_functions.get(&extern_function_id)?.signature(db.upcast());
+    let function_syntax = module_data.extern_functions.get(&extern_function_id)?;
+    let signature_syntax = function_syntax.signature(db.upcast());
     let return_type =
         function_signature_return_type(&mut diagnostics, db, module_id, &signature_syntax);
     let (params, _environment) =
         function_signature_params(&mut diagnostics, db, module_id, &signature_syntax);
-    let generic_params =
-        function_signature_generic_params(&mut diagnostics, db, module_id, &signature_syntax);
+    let generic_params = semantic_generic_params(
+        &mut diagnostics,
+        db,
+        module_id,
+        &function_syntax.generic_params(db.upcast()),
+    );
     Some(ExternFunctionDeclarationData {
         diagnostics,
         signature: semantic::Signature { params, generic_params, return_type },
