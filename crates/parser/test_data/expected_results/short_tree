@@ -12,7 +12,7 @@
     │   └── child #1 (kind: ItemFreeFunction)
     │       ├── function_kw (kind: TokenFunction): 'func'
     │       ├── name (kind: TokenIdentifier): 'foo'
-    │       ├── generic_args (kind: OptionGenericArgsEmpty) []
+    │       ├── generic_params (kind: OptionGenericParamsEmpty) []
     │       ├── signature (kind: FunctionSignature)
     │       │   ├── lparen (kind: TokenLParen): '('
     │       │   ├── parameters (kind: ParamList)
