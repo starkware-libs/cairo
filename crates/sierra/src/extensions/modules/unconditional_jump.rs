@@ -1,5 +1,5 @@
 use crate::extensions::lib_func::{
-    BranchReferenceInfo, LibFuncSignature, SignatureOnlyConcreteLibFunc,
+    LibFuncSignature, OutputBranchInfo, SignatureOnlyConcreteLibFunc,
     SignatureSpecializationContext, SpecializationContext,
 };
 use crate::extensions::{NoGenericArgsGenericLibFunc, SpecializationError};
@@ -17,9 +17,8 @@ impl NoGenericArgsGenericLibFunc for UnconditionalJumpLibFunc {
     ) -> Result<LibFuncSignature, SpecializationError> {
         Ok(LibFuncSignature {
             input_types: vec![],
-            output_types: vec![vec![]],
+            output_info: vec![OutputBranchInfo { vars: vec![] }],
             fallthrough: None,
-            output_ref_info: vec![BranchReferenceInfo(vec![])],
         })
     }
 

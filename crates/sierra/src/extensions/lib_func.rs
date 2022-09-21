@@ -223,9 +223,6 @@ impl<T: NoGenericArgsGenericLibFunc> NamedLibFunc for T {
     }
 }
 
-/// The output types returning from a library functions branch.
-type BranchOutputTypes = Vec<ConcreteTypeId>;
-
 /// Information regarding the reference created as an output of a library function.
 /// For example, whether the reference is equal to one of the parameters (as in the dup() function),
 /// or whether it's newly allocated local variable.
@@ -244,50 +241,60 @@ pub enum OutputVarReferenceInfo {
     Const,
 }
 
-/// Represents the [OutputVarReferenceInfo] for all the output variables in an output branch.
-pub struct BranchReferenceInfo(pub Vec<OutputVarReferenceInfo>);
+/// Contains information regarding an output variable in a single branch.
+pub struct OutputVarInfo {
+    pub ty: ConcreteTypeId,
+    pub ref_info: OutputVarReferenceInfo,
+}
+
+/// Contains information on the variables returned in a single libfunc branch
+/// for all the output variables in an output branch.
+///
+/// See [OutputVarInfo].
+pub struct OutputBranchInfo {
+    pub vars: Vec<OutputVarInfo>,
+}
 
 /// Trait for a specialized library function.
 pub trait ConcreteLibFunc {
     /// The input types for calling the library function.
     fn input_types(&self) -> &[ConcreteTypeId];
-    /// The output types returning from a library function per branch.
-    fn output_types(&self) -> &[BranchOutputTypes];
+    /// The output types and other information returning from a library function per branch.
+    fn output_info(&self) -> &[OutputBranchInfo];
     /// The index of the fallthrough branch of the library function if any.
     fn fallthrough(&self) -> Option<usize>;
-    /// The [OutputVarReferenceInfo] of all outputs per branch.
-    fn output_ref_info(&self) -> &[BranchReferenceInfo];
+
+    /// Returns the output types returning from a library function per branch.
+    fn output_types(&self) -> Vec<Vec<ConcreteTypeId>> {
+        self.output_info()
+            .iter()
+            .map(|branch_info| {
+                branch_info.vars.iter().map(|var_info| var_info.ty.clone()).collect()
+            })
+            .collect()
+    }
 }
 
 /// Represents the signature of a library function.
 pub struct LibFuncSignature {
     /// The input types for calling a library function.
     pub input_types: Vec<ConcreteTypeId>,
-    /// The output types returning from a library function per branch.
-    pub output_types: Vec<BranchOutputTypes>,
+    /// The output types and other information for the return values of a library function per
+    /// branch.
+    pub output_info: Vec<OutputBranchInfo>,
     /// The index of the fallthrough branch of the library function if any.
     pub fallthrough: Option<usize>,
-    /// The [OutputVarReferenceInfo] of all outputs per branch. The length of this vector must be
-    /// equal to the length of output_types.
-    pub output_ref_info: Vec<BranchReferenceInfo>,
 }
 impl LibFuncSignature {
     /// Creates a non branch signature.
     pub fn new_non_branch(
         input_types: Vec<ConcreteTypeId>,
-        branch_output_types: BranchOutputTypes,
-        output_ref_info: Vec<OutputVarReferenceInfo>,
+        output_info: Vec<OutputVarInfo>,
     ) -> Self {
-        assert_eq!(
-            branch_output_types.len(),
-            output_ref_info.len(),
-            "Expected lengths of branch_output_types and output_ref_info to be equal."
-        );
         Self {
             input_types,
-            output_types: vec![branch_output_types],
+            output_info: vec![OutputBranchInfo { vars: output_info }],
             fallthrough: Some(0),
-            output_ref_info: vec![BranchReferenceInfo(output_ref_info)],
         }
     }
 }
@@ -315,14 +322,11 @@ impl<TSignatureBasedConcreteLibFunc: SignatureBasedConcreteLibFunc> ConcreteLibF
     fn input_types(&self) -> &[ConcreteTypeId] {
         &self.signature().input_types
     }
-    fn output_types(&self) -> &[Vec<ConcreteTypeId>] {
-        &self.signature().output_types
+    fn output_info(&self) -> &[OutputBranchInfo] {
+        &self.signature().output_info
     }
     fn fallthrough(&self) -> Option<usize> {
         self.signature().fallthrough
-    }
-    fn output_ref_info(&self) -> &[BranchReferenceInfo] {
-        &self.signature().output_ref_info
     }
 }
 
@@ -352,17 +356,12 @@ macro_rules! define_concrete_libfunc_hierarchy {
                 }
             }
             $crate::extensions::lib_func::concrete_method_impl!{
-                fn output_types(&self) -> &[Vec<$crate::ids::ConcreteTypeId>] {
+                fn output_info(&self) -> &[$crate::extensions::lib_func::OutputBranchInfo] {
                     $($variant_name => $variant,)*
                 }
             }
             $crate::extensions::lib_func::concrete_method_impl!{
                 fn fallthrough(&self) -> Option<usize> {
-                    $($variant_name => $variant,)*
-                }
-            }
-            $crate::extensions::lib_func::concrete_method_impl!{
-                fn output_ref_info(&self) -> &[$crate::extensions::lib_func::BranchReferenceInfo] {
                     $($variant_name => $variant,)*
                 }
             }

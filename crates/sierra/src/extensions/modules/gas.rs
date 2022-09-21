@@ -1,7 +1,7 @@
 // Module providing the gas related extensions.
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
-    BranchReferenceInfo, LibFuncSignature, SignatureOnlyConcreteLibFunc,
+    LibFuncSignature, OutputBranchInfo, OutputVarInfo, SignatureOnlyConcreteLibFunc,
     SignatureSpecializationContext, SpecializationContext,
 };
 use crate::extensions::{
@@ -42,19 +42,23 @@ impl NoGenericArgsGenericLibFunc for GetGasLibFunc {
         let gas_builtin_type = context.get_concrete_type(GasBuiltinType::id(), &[])?;
         Ok(LibFuncSignature {
             input_types: vec![gas_builtin_type.clone()],
-            output_types: vec![
+            output_info: vec![
                 // Success:
-                vec![gas_builtin_type.clone()],
+                OutputBranchInfo {
+                    vars: vec![OutputVarInfo {
+                        ty: gas_builtin_type.clone(),
+                        ref_info: OutputVarReferenceInfo::Deferred,
+                    }],
+                },
                 // Failure:
-                vec![gas_builtin_type],
+                OutputBranchInfo {
+                    vars: vec![OutputVarInfo {
+                        ty: gas_builtin_type,
+                        ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+                    }],
+                },
             ],
             fallthrough: Some(1),
-            output_ref_info: vec![
-                // Success:
-                BranchReferenceInfo(vec![OutputVarReferenceInfo::Deferred]),
-                // Failure:
-                BranchReferenceInfo(vec![OutputVarReferenceInfo::SameAsParam { param_idx: 0 }]),
-            ],
         })
     }
 
@@ -80,8 +84,10 @@ impl NoGenericArgsGenericLibFunc for RefundGasLibFunc {
         let gas_builtin_type = context.get_concrete_type(GasBuiltinType::id(), &[])?;
         Ok(LibFuncSignature::new_non_branch(
             vec![gas_builtin_type.clone()],
-            vec![gas_builtin_type],
-            vec![OutputVarReferenceInfo::Deferred],
+            vec![OutputVarInfo {
+                ty: gas_builtin_type,
+                ref_info: OutputVarReferenceInfo::Deferred,
+            }],
         ))
     }
 

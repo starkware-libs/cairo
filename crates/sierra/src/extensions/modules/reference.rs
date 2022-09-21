@@ -1,7 +1,7 @@
 use super::as_single_type;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
-    LibFuncSignature, SignatureOnlyConcreteLibFunc, SignatureSpecializationContext,
+    LibFuncSignature, OutputVarInfo, SignatureOnlyConcreteLibFunc, SignatureSpecializationContext,
     SpecializationContext,
 };
 use crate::extensions::{
@@ -47,8 +47,10 @@ impl NamedLibFunc for IntoRefLibFunc {
         let ty = as_single_type(args)?;
         Ok(LibFuncSignature::new_non_branch(
             vec![ty.clone()],
-            vec![context.get_wrapped_concrete_type(RefType::id(), ty)?],
-            vec![OutputVarReferenceInfo::Deferred],
+            vec![OutputVarInfo {
+                ty: context.get_wrapped_concrete_type(RefType::id(), ty)?,
+                ref_info: OutputVarReferenceInfo::Deferred,
+            }],
         ))
     }
 
@@ -76,8 +78,7 @@ impl NamedLibFunc for DerefLibFunc {
         let ty = as_single_type(args)?;
         Ok(LibFuncSignature::new_non_branch(
             vec![context.get_wrapped_concrete_type(RefType::id(), ty.clone())?],
-            vec![ty],
-            vec![OutputVarReferenceInfo::Deferred],
+            vec![OutputVarInfo { ty, ref_info: OutputVarReferenceInfo::Deferred }],
         ))
     }
 

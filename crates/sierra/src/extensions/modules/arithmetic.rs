@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 use super::non_zero::NonZeroType;
 use crate::define_concrete_libfunc_hierarchy;
 use crate::extensions::lib_func::{
-    LibFuncSignature, SignatureSpecializationContext, SpecializationContext,
+    LibFuncSignature, OutputVarInfo, SignatureSpecializationContext, SpecializationContext,
 };
 use crate::extensions::{
     GenericLibFunc, NamedLibFunc, NamedType, OutputVarReferenceInfo, SignatureBasedConcreteLibFunc,
@@ -80,8 +80,7 @@ impl<TArithmeticTraits: ArithmeticTraits> GenericLibFunc for OperationLibFunc<TA
                         ty.clone()
                     },
                 ],
-                vec![ty],
-                vec![OutputVarReferenceInfo::Deferred],
+                vec![OutputVarInfo { ty, ref_info: OutputVarReferenceInfo::Deferred }],
             )),
             [GenericArg::Value(c)] => {
                 if matches!(self.operator, Operator::Div | Operator::Mod) && *c == 0 {
@@ -89,8 +88,7 @@ impl<TArithmeticTraits: ArithmeticTraits> GenericLibFunc for OperationLibFunc<TA
                 } else {
                     Ok(LibFuncSignature::new_non_branch(
                         vec![ty.clone()],
-                        vec![ty],
-                        vec![OutputVarReferenceInfo::Deferred],
+                        vec![OutputVarInfo { ty, ref_info: OutputVarReferenceInfo::Deferred }],
                     ))
                 }
             }
@@ -169,8 +167,10 @@ impl<TArithmeticTraits: ArithmeticTraits> NamedLibFunc for ConstLibFunc<TArithme
     ) -> Result<LibFuncSignature, SpecializationError> {
         Ok(LibFuncSignature::new_non_branch(
             vec![],
-            vec![context.get_concrete_type(TArithmeticTraits::GENERIC_TYPE_ID, &[])?],
-            vec![OutputVarReferenceInfo::Const],
+            vec![OutputVarInfo {
+                ty: context.get_concrete_type(TArithmeticTraits::GENERIC_TYPE_ID, &[])?,
+                ref_info: OutputVarReferenceInfo::Const,
+            }],
         ))
     }
 

@@ -2,7 +2,7 @@ use super::as_single_type;
 use super::uninitialized::UninitializedType;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
-    LibFuncSignature, SignatureOnlyConcreteLibFunc, SignatureSpecializationContext,
+    LibFuncSignature, OutputVarInfo, SignatureOnlyConcreteLibFunc, SignatureSpecializationContext,
     SpecializationContext,
 };
 use crate::extensions::{
@@ -38,8 +38,7 @@ impl NamedLibFunc for StoreTempLibFunc {
         let ty = as_single_type(args)?;
         Ok(LibFuncSignature::new_non_branch(
             vec![ty.clone()],
-            vec![ty],
-            vec![OutputVarReferenceInfo::NewTempVar { idx: 0 }],
+            vec![OutputVarInfo { ty, ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 } }],
         ))
     }
 
@@ -75,7 +74,7 @@ impl NamedLibFunc for AlignTempsLibFunc {
         _context: &dyn SignatureSpecializationContext,
         _args: &[GenericArg],
     ) -> Result<LibFuncSignature, SpecializationError> {
-        Ok(LibFuncSignature::new_non_branch(vec![], vec![], vec![]))
+        Ok(LibFuncSignature::new_non_branch(vec![], vec![]))
     }
 
     fn specialize(
@@ -118,8 +117,7 @@ impl NamedLibFunc for StoreLocalLibFunc {
                 context.get_wrapped_concrete_type(UninitializedType::id(), ty.clone())?,
                 ty.clone(),
             ],
-            vec![ty],
-            vec![OutputVarReferenceInfo::NewLocalVar],
+            vec![OutputVarInfo { ty, ref_info: OutputVarReferenceInfo::NewLocalVar }],
         ))
     }
 
@@ -154,7 +152,7 @@ impl NoGenericArgsGenericLibFunc for FinalizeLocalsLibFunc {
         &self,
         _context: &dyn SignatureSpecializationContext,
     ) -> Result<LibFuncSignature, SpecializationError> {
-        Ok(LibFuncSignature::new_non_branch(vec![], vec![], vec![]))
+        Ok(LibFuncSignature::new_non_branch(vec![], vec![]))
     }
 
     fn specialize(
@@ -191,8 +189,10 @@ impl NamedLibFunc for AllocLocalLibFunc {
         let ty = as_single_type(args)?;
         Ok(LibFuncSignature::new_non_branch(
             vec![],
-            vec![context.get_wrapped_concrete_type(UninitializedType::id(), ty)?],
-            vec![OutputVarReferenceInfo::NewLocalVar],
+            vec![OutputVarInfo {
+                ty: context.get_wrapped_concrete_type(UninitializedType::id(), ty)?,
+                ref_info: OutputVarReferenceInfo::NewLocalVar,
+            }],
         ))
     }
 
@@ -221,8 +221,10 @@ impl NamedLibFunc for RenameLibFunc {
         let ty = as_single_type(args)?;
         Ok(LibFuncSignature::new_non_branch(
             vec![ty.clone()],
-            vec![ty],
-            vec![OutputVarReferenceInfo::SameAsParam { param_idx: 0 }],
+            vec![OutputVarInfo {
+                ty,
+                ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+            }],
         ))
     }
 
