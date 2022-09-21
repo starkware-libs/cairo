@@ -20,7 +20,7 @@ use utils::ordered_hash_map::OrderedHashMap;
 use utils::OptionFrom;
 
 use super::objects::*;
-use crate::corelib::{core_binary_operator, unit_ty};
+use crate::corelib::{core_binary_operator, false_literal_expr, true_literal_expr, unit_ty};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind;
 use crate::items::functions::{ConcreteFunction, FunctionLongId};
@@ -120,8 +120,8 @@ pub fn maybe_compute_expr_semantic(
         ast::Expr::Literal(literal_syntax) => {
             semantic::Expr::ExprLiteral(literal_to_semantic(ctx, literal_syntax)?)
         }
-        ast::Expr::False(_) => return Err(SemanticDiagnosticKind::Unsupported),
-        ast::Expr::True(_) => return Err(SemanticDiagnosticKind::Unsupported),
+        ast::Expr::False(syntax) => true_literal_expr(db, syntax.stable_ptr().untyped()),
+        ast::Expr::True(syntax) => false_literal_expr(db, syntax.stable_ptr().untyped()),
         ast::Expr::Parenthesized(paren_syntax) => {
             compute_expr_semantic(ctx, paren_syntax.expr(syntax_db))
         }
