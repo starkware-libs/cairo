@@ -57,6 +57,7 @@ pub fn get_spec() -> Vec<Node> {
             .node("StructCtorCall")
             .node("Block")
             .node("Match")
+            .node("If")
             .build(),
         separated_list_node("ExprList", "Expr", "TerminalComma"),
         StructBuilder::new("ExprMissing").build(),
@@ -138,6 +139,13 @@ pub fn get_spec() -> Vec<Node> {
                 .node("arms", "MatchArms")
                 .node("rbrace", "TerminalRBrace")
                 .build(),
+        StructBuilder::new("ExprIf")
+            .node("if_kw", "TerminalIf")
+            .node("condition", "Expr")
+            .node("if_block", "ExprBlock")
+            .node("else_kw", "TerminalElse")
+            .node("else_block", "ExprBlock")
+            .build(),
         // --- Type clauses ---
         // TODO(yuval): support SimpleExpr instead of ExprPath
         StructBuilder::new("TypeClause").node("colon", "TerminalColon").node("ty", "Expr").build(),
@@ -330,6 +338,8 @@ pub fn get_spec() -> Vec<Node> {
     append_terminal_and_token(&mut nodes, "Let");
     append_terminal_and_token(&mut nodes, "Return");
     append_terminal_and_token(&mut nodes, "Match");
+    append_terminal_and_token(&mut nodes, "If");
+    append_terminal_and_token(&mut nodes, "Else");
     append_terminal_and_token(&mut nodes, "Use");
     append_terminal_and_token(&mut nodes, "And");
     append_terminal_and_token(&mut nodes, "AndAnd");
