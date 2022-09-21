@@ -111,7 +111,7 @@ impl ProgramAnnotations {
             };
 
             annotations.set_or_assert(
-                func.entry,
+                func.entry_point,
                 StatementAnnotations {
                     refs: build_function_parameter_refs(func)?,
                     return_types: return_annotation,

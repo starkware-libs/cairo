@@ -226,7 +226,7 @@ fn handle_function_call(
         }],
         vec![RelocationEntry {
             instruction_idx: 0,
-            relocation: Relocation::RelativeStatementId(func_call.function.entry),
+            relocation: Relocation::RelativeStatementId(func_call.function.entry_point),
         }],
         [ApChange::Unknown].into_iter(),
         [refs.into_iter()].into_iter(),
