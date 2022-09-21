@@ -96,6 +96,45 @@ fn good_flow() {
 }
 
 #[test]
+fn locals_test() {
+    let prog = ProgramParser::new()
+        .parse(indoc! {"
+            type felt = felt;
+            type UninitializedFelt = uninitialized<felt>;
+
+            libfunc finalize_locals = finalize_locals;
+            libfunc alloc_local_felt = alloc_local<felt>;
+            libfunc store_local_felt = store_local<felt>;
+            libfunc store_temp_felt = store_temp<felt>;
+
+            store_temp_felt([1]) -> ([1]);
+            alloc_local_felt() -> ([3]);
+            alloc_local_felt() -> ([4]);
+            store_local_felt([3], [1]) -> ([3]);
+            finalize_locals() -> ();
+            store_local_felt([4], [2]) -> ([4]);
+            store_temp_felt([3]) -> ([3]);
+            store_temp_felt([4]) -> ([4]);
+            return ([3], [4]);
+
+            test_program@0([1]: felt, [2]: felt) -> (felt, felt);
+        "})
+        .unwrap();
+    assert_eq!(
+        compile(&prog).unwrap().to_string(),
+        indoc! {"
+            [ap + 0] = [fp + -4], ap++;
+            [fp + 1] = [ap + -1];
+            ap += 2;
+            [fp + 2] = [fp + -3];
+            [ap + 0] = [fp + 1], ap++;
+            [ap + 0] = [fp + 2], ap++;
+            ret;
+        "}
+    );
+}
+
+#[test]
 fn fib_program() {
     let path: PathBuf =
         [env!("CARGO_MANIFEST_DIR"), "../sierra/examples/fib_no_gas.sierra"].iter().collect();
