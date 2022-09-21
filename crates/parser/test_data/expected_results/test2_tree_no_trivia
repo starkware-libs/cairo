@@ -224,7 +224,7 @@
     │       └── rbrace (kind: TokenRBrace): '}'
     └── eof (kind: TokenEndOfFile).
 --------------------
-error: Missing tokens: 'missing expression'.
+error: Missing tokens. Expected an expression.
  --> test2.cairo:5:13
     let z = ;
             ^
@@ -239,12 +239,12 @@ error: Skipped tokens. Expected element: item.
 mod my_mod{
           ^
 
-error: Missing tokens: 'missing expression'.
+error: Missing tokens. Expected an expression.
  --> test2.cairo:15:14
         x.a *+-. s.s * foo(1,3)
              ^
 
-error: Missing tokens: 'missing expression'.
+error: Missing tokens. Expected an expression.
  --> test2.cairo:15:16
         x.a *+-. s.s * foo(1,3)
                ^
