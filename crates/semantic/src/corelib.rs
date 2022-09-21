@@ -29,6 +29,10 @@ pub fn unit_ty(db: &dyn SemanticGroup) -> TypeId {
     db.intern_type(semantic::TypeLongId::Tuple(vec![]))
 }
 
+pub fn bool_true(db: &dyn SemanticGroup) -> TypeId {
+    db.intern_type(semantic::TypeLongId::Tuple(vec![]))
+}
+
 pub fn core_binary_operator(
     db: &dyn SemanticGroup,
     binary_op: BinaryOperator,
