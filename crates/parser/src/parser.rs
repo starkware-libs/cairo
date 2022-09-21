@@ -520,12 +520,10 @@ impl<'a> Parser<'a> {
     }
 
     /// Assumes the current token is `If`.
-    /// Expected pattern: `if (<expr>) <block> [else <block>]`.
+    /// Expected pattern: `if <expr> <block> [else <block>]`.
     fn expect_if_expr(&mut self) -> ExprIfGreen {
         let if_kw = self.take::<TerminalIf>();
-        self.parse_token::<TerminalLParen>();
-        let condition = self.parse_expr();
-        self.parse_token::<TerminalRParen>();
+        let condition = self.parse_simple_expression(MAX_PRECEDENCE, LbraceAllowed::Forbid);
         let if_block = self.parse_block();
         // TODO(lior): Make else block optional.
         let else_kw = self.parse_token::<TerminalElse>();
