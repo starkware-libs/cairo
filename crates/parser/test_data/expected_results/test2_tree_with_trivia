@@ -11,7 +11,7 @@
     │   │   │   ├── token (kind: TokenIdentifier): 'foo'
     │   │   │   └── trailing_trivia (kind: Trivia)
     │   │   │       └── child #0 (kind: TokenWhitespace).
-    │   │   ├── generic_args (kind: OptionGenericArgsEmpty) []
+    │   │   ├── generic_params (kind: OptionGenericParamsEmpty) []
     │   │   ├── signature (kind: FunctionSignature)
     │   │   │   ├── lparen (kind: TerminalLParen)
     │   │   │   │   ├── leading_trivia (kind: Trivia) []
@@ -392,7 +392,7 @@
     │   │   │   ├── token (kind: TokenIdentifier): 'bar'
     │   │   │   └── trailing_trivia (kind: Trivia)
     │   │   │       └── child #0 (kind: TokenWhitespace).
-    │   │   ├── generic_args (kind: OptionGenericArgsEmpty) []
+    │   │   ├── generic_params (kind: OptionGenericParamsEmpty) []
     │   │   ├── signature (kind: FunctionSignature)
     │   │   │   ├── lparen (kind: TerminalLParen)
     │   │   │   │   ├── leading_trivia (kind: Trivia) []
@@ -577,7 +577,7 @@
     │       │   ├── leading_trivia (kind: Trivia) []
     │       │   ├── token (kind: TokenIdentifier): 'A'
     │       │   └── trailing_trivia (kind: Trivia) []
-    │       ├── generic_args (kind: OptionGenericArgsEmpty) []
+    │       ├── generic_params (kind: OptionGenericParamsEmpty) []
     │       ├── lbrace (kind: TerminalLBrace)
     │       │   ├── leading_trivia (kind: Trivia) []
     │       │   ├── token (kind: TokenLBrace): '{'

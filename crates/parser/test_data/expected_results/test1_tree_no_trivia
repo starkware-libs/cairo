@@ -16,7 +16,7 @@
     │   ├── child #2 (kind: ItemFreeFunction)
     │   │   ├── function_kw (kind: TokenFunction): 'func'
     │   │   ├── name (kind: TokenIdentifier): 'foo'
-    │   │   ├── generic_args (kind: OptionGenericArgsEmpty) []
+    │   │   ├── generic_params (kind: OptionGenericParamsEmpty) []
     │   │   ├── signature (kind: FunctionSignature)
     │   │   │   ├── lparen (kind: TokenLParen): '('
     │   │   │   ├── parameters (kind: ParamList)
@@ -134,7 +134,7 @@
     │   │       │   │   │   │   └── item #0 (kind: PathSegmentWithGenericArgs)
     │   │       │   │   │   │       ├── ident (kind: TokenIdentifier): 'func2'
     │   │       │   │   │   │       ├── seperator (kind: TokenColonColon): '::'
-    │   │       │   │   │   │       └── generic_args (kind: OptionGenericArgsSome)
+    │   │       │   │   │   │       └── generic_args (kind: GenericArgs)
     │   │       │   │   │   │           ├── langle (kind: TokenLT): '<'
     │   │       │   │   │   │           ├── generic_args (kind: GenericArgList)
     │   │       │   │   │   │           │   └── item #0 (kind: ExprPath)
@@ -159,16 +159,14 @@
     │   ├── child #3 (kind: ItemFreeFunction)
     │   │   ├── function_kw (kind: TokenFunction): 'func'
     │   │   ├── name (kind: TokenIdentifier): 'bar'
-    │   │   ├── generic_args (kind: OptionGenericArgsSome)
+    │   │   ├── generic_params (kind: WrappedGenericParamList)
     │   │   │   ├── langle (kind: TokenLT): '<'
-    │   │   │   ├── generic_args (kind: GenericArgList)
-    │   │   │   │   ├── item #0 (kind: ExprPath)
-    │   │   │   │   │   └── item #0 (kind: PathSegmentSimple)
-    │   │   │   │   │       └── ident (kind: TokenIdentifier): 'A'
+    │   │   │   ├── generic_params (kind: GenericParamList)
+    │   │   │   │   ├── item #0 (kind: GenericParam)
+    │   │   │   │   │   └── name (kind: TokenIdentifier): 'A'
     │   │   │   │   ├── separator #0 (kind: TokenComma): ','
-    │   │   │   │   └── item #1 (kind: ExprPath)
-    │   │   │   │       └── item #0 (kind: PathSegmentSimple)
-    │   │   │   │           └── ident (kind: TokenIdentifier): 'B'
+    │   │   │   │   └── item #1 (kind: GenericParam)
+    │   │   │   │       └── name (kind: TokenIdentifier): 'B'
     │   │   │   └── rangle (kind: TokenGT): '>'
     │   │   ├── signature (kind: FunctionSignature)
     │   │   │   ├── lparen (kind: TokenLParen): '('
@@ -187,25 +185,23 @@
     │   │   ├── extern_kw (kind: TokenExtern): 'extern'
     │   │   ├── type_kw (kind: TokenType): 'type'
     │   │   ├── name (kind: TokenIdentifier): 'S'
-    │   │   ├── generic_args (kind: OptionGenericArgsSome)
+    │   │   ├── generic_params (kind: WrappedGenericParamList)
     │   │   │   ├── langle (kind: TokenLT): '<'
-    │   │   │   ├── generic_args (kind: GenericArgList) []
+    │   │   │   ├── generic_params (kind: GenericParamList) []
     │   │   │   └── rangle (kind: TokenGT): '>'
     │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   ├── child #5 (kind: ItemExternFunction)
     │   │   ├── extern_kw (kind: TokenExtern): 'extern'
     │   │   ├── function_kw (kind: TokenFunction): 'func'
     │   │   ├── name (kind: TokenIdentifier): 'glee'
-    │   │   ├── generic_args (kind: OptionGenericArgsSome)
+    │   │   ├── generic_params (kind: WrappedGenericParamList)
     │   │   │   ├── langle (kind: TokenLT): '<'
-    │   │   │   ├── generic_args (kind: GenericArgList)
-    │   │   │   │   ├── item #0 (kind: ExprPath)
-    │   │   │   │   │   └── item #0 (kind: PathSegmentSimple)
-    │   │   │   │   │       └── ident (kind: TokenIdentifier): 'A'
+    │   │   │   ├── generic_params (kind: GenericParamList)
+    │   │   │   │   ├── item #0 (kind: GenericParam)
+    │   │   │   │   │   └── name (kind: TokenIdentifier): 'A'
     │   │   │   │   ├── separator #0 (kind: TokenComma): ','
-    │   │   │   │   └── item #1 (kind: ExprPath)
-    │   │   │   │       └── item #0 (kind: PathSegmentSimple)
-    │   │   │   │           └── ident (kind: TokenIdentifier): 'b'
+    │   │   │   │   └── item #1 (kind: GenericParam)
+    │   │   │   │       └── name (kind: TokenIdentifier): 'b'
     │   │   │   └── rangle (kind: TokenGT): '>'
     │   │   ├── signature (kind: FunctionSignature)
     │   │   │   ├── lparen (kind: TokenLParen): '('
@@ -231,16 +227,14 @@
     │   └── child #6 (kind: ItemStruct)
     │       ├── struct_kw (kind: TokenStruct): 'struct'
     │       ├── name (kind: TokenIdentifier): 'A'
-    │       ├── generic_args (kind: OptionGenericArgsSome)
+    │       ├── generic_params (kind: WrappedGenericParamList)
     │       │   ├── langle (kind: TokenLT): '<'
-    │       │   ├── generic_args (kind: GenericArgList)
-    │       │   │   ├── item #0 (kind: ExprPath)
-    │       │   │   │   └── item #0 (kind: PathSegmentSimple)
-    │       │   │   │       └── ident (kind: TokenIdentifier): 'A'
+    │       │   ├── generic_params (kind: GenericParamList)
+    │       │   │   ├── item #0 (kind: GenericParam)
+    │       │   │   │   └── name (kind: TokenIdentifier): 'A'
     │       │   │   ├── separator #0 (kind: TokenComma): ','
-    │       │   │   └── item #1 (kind: ExprPath)
-    │       │   │       └── item #0 (kind: PathSegmentSimple)
-    │       │   │           └── ident (kind: TokenIdentifier): 'B'
+    │       │   │   └── item #1 (kind: GenericParam)
+    │       │   │       └── name (kind: TokenIdentifier): 'B'
     │       │   └── rangle (kind: TokenGT): '>'
     │       ├── lbrace (kind: TokenLBrace): '{'
     │       ├── members (kind: ParamList)
