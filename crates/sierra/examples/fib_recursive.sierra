@@ -16,11 +16,11 @@ libfunc int_unwrap_nz = unwrap_nz<int>;
 libfunc get_gas_26 = get_gas<26>;
 libfunc refund_gas_1 = refund_gas<1>;
 libfunc refund_gas_3 = refund_gas<3>;
-libfunc alloc_locals = alloc_locals;
+libfunc finalize_locals = finalize_locals;
 libfunc call_fib = function_call<user@Fibonacci>;
 
 // Statement #  0 - tests if n == 0 and initiates 1 for the early return values.
-alloc_locals() -> ();
+finalize_locals() -> ();
 int_const_1() -> (one);
 store_temp_int(one) -> (one);
 int_jump_nz(n) { 8(n) fallthrough() };
