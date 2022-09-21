@@ -348,7 +348,11 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalFalse => Some(self.take::<TerminalFalse>().into()),
             SyntaxKind::TerminalTrue => Some(self.take::<TerminalTrue>().into()),
             SyntaxKind::TerminalLiteralNumber => Some(self.take::<TerminalLiteralNumber>().into()),
-            SyntaxKind::TerminalLParen => Some(self.expect_parenthesized_expr()),
+            SyntaxKind::TerminalLParen => {
+                // Note that LBrace is allowed inside parenthesis, even if `lbrace_allowed` is
+                // [LbraceAllowed::DontAllow].
+                Some(self.expect_parenthesized_expr())
+            }
             _ => {
                 // TODO(yuval): report to diagnostics.
                 None
@@ -874,7 +878,11 @@ impl<'a> Parser<'a> {
     }
 }
 
-/// Controls whether lbrace (`{`) is allowed in the expression (unless it is parenthesized).
+/// Controls whether Lbrace (`{`) is allowed in the expression.
+///
+/// Lbrace is always allowed in sub-expressions (e.g. in parenthesized expression). For example,
+/// while `1 + MyStruct { ... }` may not be valid, `1 + (MyStruct { ... })` is always ok.
+///
 /// This can be used to parse the argument of a `match` statement,
 /// so that the `{` that opens the `match` body is not confused with other potential uses of
 /// `{`.
