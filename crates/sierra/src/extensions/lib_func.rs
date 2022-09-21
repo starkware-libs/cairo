@@ -19,7 +19,7 @@ pub trait SignatureSpecializationContext {
     fn get_concrete_type(
         &self,
         id: GenericTypeId,
-        args: &[GenericArg],
+        generic_args: &[GenericArg],
     ) -> Result<ConcreteTypeId, SpecializationError>;
 
     /// Returns the concrete id of a generic-type-id wrapping the type of a concrete-type-id.
@@ -43,11 +43,11 @@ impl SignatureSpecializationContext for SpecializationContext<'_> {
     fn get_concrete_type(
         &self,
         id: GenericTypeId,
-        args: &[GenericArg],
+        generic_args: &[GenericArg],
     ) -> Result<ConcreteTypeId, SpecializationError> {
         self.concrete_type_ids
-            .get(&(id.clone(), args))
-            .ok_or_else(|| SpecializationError::TypeWasNotDeclared(id, args.to_vec()))
+            .get(&(id.clone(), generic_args))
+            .ok_or_else(|| SpecializationError::TypeWasNotDeclared(id, generic_args.to_vec()))
             .cloned()
     }
 
@@ -244,7 +244,7 @@ pub enum OutputVarReferenceInfo {
     Const,
 }
 
-/// Represents the [OutputReferenceInfo] for all the output variables in an output branch.
+/// Represents the [OutputVarReferenceInfo] for all the output variables in an output branch.
 pub struct BranchReferenceInfo(pub Vec<OutputVarReferenceInfo>);
 
 /// Trait for a specialized library function.
