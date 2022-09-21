@@ -54,7 +54,7 @@ fn test_expr_operator() {
          ty: Concrete(ExternTypeId(core::felt)) }), ExprLiteral(ExprLiteral { value: 3, ty: \
          Concrete(ExternTypeId(core::felt)) })], ty: Concrete(ExternTypeId(core::felt)) })], ty: \
          Concrete(ExternTypeId(core::felt)) }), ExprLiteral(ExprLiteral { value: 0, ty: \
-         Concrete(ExternTypeId(core::felt)) })], ty: Concrete(ExternTypeId(core::bool)) })"
+         Concrete(ExternTypeId(core::felt)) })], ty: Concrete(EnumId(core::bool)) })"
     );
 }
 
