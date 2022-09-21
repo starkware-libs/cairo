@@ -141,10 +141,12 @@ pub fn dummy_label(id: usize) -> pre_sierra::Statement {
 macro_rules! diagnostics_test {
     ($test_name:ident, $filenames:expr, $db:expr, $func:expr, $($param:expr),*) => {
         #[test]
-        fn diagnostic_tests() -> Result<(), std::io::Error> {
+        fn $test_name() -> Result<(), std::io::Error> {
             let mut db = $db;
             for filename in $filenames{
-                let tests = utils::parse_test_file::parse_test_file(std::path::Path::new(filename))?;
+                let tests = utils::parse_test_file::parse_test_file(
+                    std::path::Path::new(filename)
+                )?;
                 for (name, test) in tests {
                     let test_expr = $func(
                         &mut db,
@@ -159,6 +161,14 @@ macro_rules! diagnostics_test {
     };
 
     ($test_name:ident, $filenames:expr, $db:expr, setup_test_block) => {
-        diagnostics_test!($test_name, $filenames, $db, setup_test_block, "Expr Code", "Module Code", "Function Body");
+        diagnostics_test!(
+            $test_name,
+            $filenames,
+            $db,
+            setup_test_block,
+            "Expr Code",
+            "Module Code",
+            "Function Body"
+        );
     };
 }

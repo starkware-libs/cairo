@@ -202,17 +202,21 @@ pub fn setup_test_block(
 macro_rules! diagnostics_test {
     ($test_name:ident, $filenames:expr, $db:expr, $func:expr, $($param:expr),*) => {
         #[test]
-        fn diagnostic_tests() -> Result<(), std::io::Error> {
+        fn $test_name() -> Result<(), std::io::Error> {
             let mut db = $db;
             for filename in $filenames {
-                let tests = utils::parse_test_file::parse_test_file(std::path::Path::new(filename))?;
+                let tests = utils::parse_test_file::parse_test_file(
+                    std::path::Path::new(filename)
+                )?;
                 for (name, test) in tests {
                     let diagnostics = $func(
                         &mut db,
                         $(&test[$param],)*
                     )
                     .get_diagnostics();
-                    pretty_assertions::assert_eq!(diagnostics.trim(), test["Expected Result"], "\"{name}\" failed.");
+                    pretty_assertions::assert_eq!(
+                        diagnostics.trim(), test["Expected Result"], "\"{name}\" failed."
+                    );
                 }
             }
             Ok(())
@@ -220,10 +224,26 @@ macro_rules! diagnostics_test {
     };
 
     ($test_name:ident, $filenames:expr, $db:expr, setup_test_expr) => {
-        diagnostics_test!($test_name, $filenames, $db, setup_test_expr, "Expr Code", "Module Code", "Function Body");
+        diagnostics_test!(
+            $test_name,
+            $filenames,
+            $db,
+            setup_test_expr,
+            "Expr Code",
+            "Module Code",
+            "Function Body"
+        );
     };
 
     ($test_name:ident, $filenames:expr, $db:expr, setup_test_function) => {
-        diagnostics_test!($test_name, $filenames, $db, setup_test_function, "Function", "Function Name", "Module Code");
+        diagnostics_test!(
+            $test_name,
+             $filenames,
+             $db,
+             setup_test_function,
+             "Function",
+             "Function Name",
+             "Module Code"
+        );
     };
 }
