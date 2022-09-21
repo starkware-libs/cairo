@@ -18,6 +18,7 @@ pub fn generate_expression_code(
     expr_id: semantic::ExprId,
 ) -> Option<(Vec<pre_sierra::Statement>, sierra::ids::VarId)> {
     match &context.get_db().expr_semantic(expr_id) {
+        semantic::Expr::ExprTuple(_) => todo!(), // TODO(yg) ?
         semantic::Expr::ExprBlock(expr_block) => handle_block(context, expr_block),
         semantic::Expr::ExprFunctionCall(expr_function_call) => {
             handle_function_call(context, expr_function_call)
@@ -37,12 +38,13 @@ pub fn generate_expression_code(
                 tmp_var,
             ))
         }
+        semantic::Expr::ExprMemberAccess(_) => todo!(),
         semantic::Expr::ExprStructCtor(_) => todo!("Struct constructor not supproted yet."),
+        semantic::Expr::ExprEnumVariantCtor(_) => todo!(), // TODO(yg) ?
         semantic::Expr::Missing { .. } => {
             // A diagnostic should have already been added by a previous stage.
             None
         }
-        semantic::Expr::ExprMemberAccess(_) => todo!(),
     }
 }
 

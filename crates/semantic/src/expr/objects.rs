@@ -1,6 +1,6 @@
 use db_utils::define_short_id;
 use defs::db::DefsGroup;
-use defs::ids::{LocalVarId, MemberId, StructId, VarId};
+use defs::ids::{LocalVarId, MemberId, StructId, VarId, VariantId};
 use diagnostics_proc_macros::DebugWithDb;
 use syntax::node::ast::StatementLetPtr;
 use syntax::node::ids::SyntaxStablePtrId;
@@ -42,6 +42,7 @@ impl LocalVariable {
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
 #[debug_db(SemanticGroup)]
 pub enum Expr {
+    ExprTuple(ExprTuple),
     ExprBlock(ExprBlock),
     ExprFunctionCall(ExprFunctionCall),
     ExprMatch(ExprMatch),
@@ -49,11 +50,13 @@ pub enum Expr {
     ExprLiteral(ExprLiteral),
     ExprMemberAccess(ExprMemberAccess),
     ExprStructCtor(ExprStructCtor),
+    ExprEnumVariantCtor(ExprEnumVariantCtor),
     Missing { ty: semantic::TypeId, stable_ptr: SyntaxStablePtrId },
 }
 impl Expr {
     pub fn ty(&self) -> semantic::TypeId {
         match self {
+            Expr::ExprTuple(expr) => expr.ty,
             Expr::ExprBlock(expr) => expr.ty,
             Expr::ExprFunctionCall(expr) => expr.ty,
             Expr::ExprMatch(expr) => expr.ty,
@@ -61,11 +64,13 @@ impl Expr {
             Expr::ExprLiteral(expr) => expr.ty,
             Expr::ExprMemberAccess(expr) => expr.ty,
             Expr::ExprStructCtor(expr) => expr.ty,
+            Expr::ExprEnumVariantCtor(expr) => expr.ty,
             Expr::Missing { ty, stable_ptr: _ } => *ty,
         }
     }
     pub fn stable_ptr(&self) -> SyntaxStablePtrId {
         match self {
+            Expr::ExprTuple(expr) => expr.stable_ptr,
             Expr::ExprBlock(expr) => expr.stable_ptr,
             Expr::ExprFunctionCall(expr) => expr.stable_ptr,
             Expr::ExprMatch(expr) => expr.stable_ptr,
@@ -73,9 +78,19 @@ impl Expr {
             Expr::ExprLiteral(expr) => expr.stable_ptr,
             Expr::ExprMemberAccess(expr) => expr.stable_ptr,
             Expr::ExprStructCtor(expr) => expr.stable_ptr,
+            Expr::ExprEnumVariantCtor(expr) => expr.stable_ptr,
             Expr::Missing { ty: _, stable_ptr } => *stable_ptr,
         }
     }
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[debug_db(SemanticGroup)]
+pub struct ExprTuple {
+    pub items: Vec<ExprId>,
+    pub ty: semantic::TypeId,
+    #[hide_field_debug_with_db]
+    pub stable_ptr: SyntaxStablePtrId,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
@@ -160,6 +175,16 @@ pub struct ExprMemberAccess {
 pub struct ExprStructCtor {
     pub struct_id: StructId,
     pub members: Vec<(MemberId, ExprId)>,
+    pub ty: semantic::TypeId,
+    #[hide_field_debug_with_db]
+    pub stable_ptr: SyntaxStablePtrId,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[debug_db(SemanticGroup)]
+pub struct ExprEnumVariantCtor {
+    pub enum_variant_id: VariantId,
+    pub value_expr: ExprId,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
     pub stable_ptr: SyntaxStablePtrId,
