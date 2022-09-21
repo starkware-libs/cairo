@@ -1,7 +1,8 @@
 use db_utils::Upcast;
 use defs::db::DefsGroup;
 use defs::ids::{
-    EnumId, ExternFunctionId, FreeFunctionId, GenericFunctionId, ModuleId, ModuleItemId, StructId,
+    EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericFunctionId, GenericParamId,
+    ModuleId, ModuleItemId, StructId,
 };
 use diagnostics::Diagnostics;
 use filesystem::db::{AsFilesGroupMut, FilesGroup};
@@ -116,7 +117,31 @@ pub trait SemanticGroup:
         extern_function_id: ExternFunctionId,
     ) -> Option<semantic::Signature>;
 
+    // Extern type.
+    // ============
+    /// Private query to compute data about an extern type declaration. An extern type has
+    /// no body, and thus only has a declaration.
+    #[salsa::invoke(items::extern_type::priv_extern_type_declaration_data)]
+    fn priv_extern_type_declaration_data(
+        &self,
+        type_id: ExternTypeId,
+    ) -> Option<items::extern_type::ExternTypeDeclarationData>;
+    /// Returns the semantic diagnostics of an extern type declaration. An extern type has
+    /// no body, and thus only has a declaration.
+    #[salsa::invoke(items::extern_type::extern_type_declaration_diagnostics)]
+    fn extern_type_declaration_diagnostics(
+        &self,
+        extern_type_id: ExternTypeId,
+    ) -> Diagnostics<SemanticDiagnostic>;
+    /// Returns the signature of an extern type.
+    #[salsa::invoke(items::extern_type::extern_type_declaration_generic_params)]
+    fn extern_type_declaration_generic_params(
+        &self,
+        extern_type_id: ExternTypeId,
+    ) -> Option<Vec<GenericParamId>>;
+
     // Generic function.
+    // =================
     /// Returns the signature of a generic function. This include free functions, extern functions,
     /// etc...
     #[salsa::invoke(items::functions::generic_function_signature)]
