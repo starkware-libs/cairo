@@ -76,12 +76,11 @@ impl<'a> Printer<'a> {
         syntax_node: &SyntaxNode,
         kind: SyntaxKind,
     ) {
-        if kind.is_terminal() && !self.print_trivia {
-            // TODO(yuval): At this point we know we should have a second child which is the
-            // token. But still - do this safer?
-            let token_node = syntax_node.children(self.db).nth(1).unwrap();
-            self.print_tree(field_description, &token_node, indent, is_last);
-            return;
+        if !self.print_trivia {
+            if let Some(token_node) = syntax_node.get_terminal_token(self.db) {
+                self.print_tree(field_description, &token_node, indent, is_last);
+                return;
+            }
         }
 
         let extra_info = if is_missing_kind(kind) {
