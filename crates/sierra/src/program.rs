@@ -75,7 +75,7 @@ pub struct GenFunction<StatementId> {
     //   are stored in `signature`).
     pub params: Vec<Param>,
     /// The statement id where the function starts.
-    pub entry: StatementId,
+    pub entry_point: StatementId,
 }
 
 impl<StatementId> GenFunction<StatementId> {
@@ -90,7 +90,7 @@ impl<StatementId> GenFunction<StatementId> {
             id,
             signature: FunctionSignature { param_types, ret_types },
             params,
-            entry: entry_point,
+            entry_point,
         }
     }
 }
