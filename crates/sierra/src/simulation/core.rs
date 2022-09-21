@@ -54,18 +54,20 @@ pub fn simulate<
         }
         Integer(libfunc) => simulate_integer_libfunc(libfunc, inputs),
         Felt(libfunc) => simulate_felt_libfunc(libfunc, inputs),
-        UnwrapNonZero(_)
-        | Mem(Rename(_))
-        | Mem(StoreLocal(_))
-        | Mem(StoreTemp(_))
-        | CoreConcreteLibFunc::Ref(_) => Ok((single_cell_identity::<1>(inputs)?, 0)),
-        Mem(AlignTemps(_))
-        | Mem(AllocLocal(_))
-        | Mem(FinalizeLocals(_))
-        | UnconditionalJump(_)
-        | ApTracking(_) => {
+        UnwrapNonZero(_) | Mem(Rename(_)) | Mem(StoreTemp(_)) | CoreConcreteLibFunc::Ref(_) => {
+            Ok((single_cell_identity::<1>(inputs)?, 0))
+        }
+        Mem(AlignTemps(_)) | Mem(FinalizeLocals(_)) | UnconditionalJump(_) | ApTracking(_) => {
             unpack_inputs::<0>(inputs)?;
             Ok((vec![], 0))
+        }
+        Mem(StoreLocal(_)) => {
+            let [_, mem_cell] = unpack_inputs::<2>(inputs)?;
+            Ok((vec![vec![mem_cell]], 0))
+        }
+        Mem(AllocLocal(_)) => {
+            unpack_inputs::<0>(inputs)?;
+            Ok((vec![vec![MemCell { value: 0 }]], 0))
         }
     }
 }

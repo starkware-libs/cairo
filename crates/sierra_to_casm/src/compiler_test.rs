@@ -158,12 +158,12 @@ fn fib_program() {
             "Error from program registry";
             "Concrete libfunc Id used twice")]
 #[test_case(indoc! {"
-                type felt = felt;
+                type int = int;
 
-                libfunc store_local_felt = store_local<felt>;
+                libfunc int_add = int_add;
 
-                store_local_felt([1]) -> ([1]);
-                test_program@0([1]: felt) -> ();
+                int_add([1], [2]) -> ([1]);
+                test_program@0([1]: int, [2]: int) -> ();
             "},
             "#0: The requested functionality is not implemented yet.";
             "Not implemented")]
