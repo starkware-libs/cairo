@@ -39,6 +39,12 @@ pub trait SierraGenGroup: SemanticGroup + AsSemanticGroup {
         type_id: semantic::TypeId,
     ) -> Option<sierra::ids::ConcreteTypeId>;
 
+    /// Returns the [sierra::program::FunctionSignature] object for the given function id.
+    fn get_function_signature(
+        &self,
+        function_id: sierra::ids::FunctionId,
+    ) -> Option<Arc<sierra::program::FunctionSignature>>;
+
     /// Generates and returns the Sierra code (as [pre_sierra::Function]) for a given function.
     #[salsa::invoke(crate::function_generator::get_function_code)]
     fn get_function_code(
@@ -51,6 +57,21 @@ pub trait SierraGenGroup: SemanticGroup + AsSemanticGroup {
         &self,
         module_id: ModuleId,
     ) -> WithDiagnostics<Option<Arc<sierra::program::Program>>, Diagnostic>;
+}
+
+fn get_function_signature(
+    db: &dyn SierraGenGroup,
+    function_id: sierra::ids::FunctionId,
+) -> Option<Arc<sierra::program::FunctionSignature>> {
+    let semantic_function_id = db.lookup_intern_sierra_function(function_id);
+    let signature = db.concrete_function_signature(semantic_function_id)?;
+    let mut param_types = Vec::new();
+    for param in signature.params {
+        param_types.push(db.get_concrete_type_id(param.ty)?);
+    }
+    let ret_types = vec![db.get_concrete_type_id(signature.return_type)?];
+
+    Some(Arc::new(sierra::program::FunctionSignature { param_types, ret_types }))
 }
 
 #[with_diagnostics]

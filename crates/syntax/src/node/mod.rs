@@ -113,14 +113,23 @@ impl SyntaxNode {
         }
     }
 
+    /// Gets the inner token from a terminal SyntaxNode. If the given node is not a terminal,
+    /// returns None.
+    pub fn get_terminal_token(&self, db: &dyn SyntaxGroup) -> Option<SyntaxNode> {
+        let green_node = self.green_node(db);
+        if !green_node.kind.is_terminal() {
+            return None;
+        }
+        // At this point we know we should have a second child which is the token.
+        let token_node = self.children(db).nth(1).unwrap();
+        Some(token_node)
+    }
+
     fn span_start_without_trivia(&self, db: &dyn SyntaxGroup) -> TextOffset {
         let green_node = self.green_node(db);
         match green_node.details {
             green::GreenNodeDetails::Node { .. } => {
-                if green_node.kind.is_terminal() {
-                    // TODO(yuval): At this point we know we should have a second child which is
-                    // the token. But still - do this safer?
-                    let token_node = self.children(db).nth(1).unwrap();
+                if let Some(token_node) = self.get_terminal_token(db) {
                     return token_node.offset();
                 }
                 let children = &mut self.children(db);
@@ -137,10 +146,7 @@ impl SyntaxNode {
         let green_node = self.green_node(db);
         match green_node.details {
             green::GreenNodeDetails::Node { .. } => {
-                if green_node.kind.is_terminal() {
-                    // TODO(yuval): At this point we know we should have a second child which is
-                    // the token. But still - do this safer?
-                    let token_node = self.children(db).nth(1).unwrap();
+                if let Some(token_node) = self.get_terminal_token(db) {
                     return token_node.span(db).end;
                 }
                 let children = &mut self.children(db);

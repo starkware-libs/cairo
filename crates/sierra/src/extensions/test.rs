@@ -43,13 +43,10 @@ fn find_type_specialization(
 #[test_case("function_call", vec![GenericArg::UserFunc("RegisteredFunction".into())] => Ok(());
             "function_call<&RegisteredFunction>")]
 #[test_case("function_call", vec![] => Err(UnsupportedGenericArg); "function_call")]
-#[test_case("get_gas", vec![value_arg(2)] => Ok(()); "get_gas<2>")]
-#[test_case("get_gas", vec![] => Err(UnsupportedGenericArg); "get_gas")]
-#[test_case("get_gas", vec![value_arg(-2)] => Err(UnsupportedGenericArg); "get_gas<minus 2>")]
-#[test_case("refund_gas", vec![value_arg(7)] => Ok(()); "refund_gas<7>")]
-#[test_case("refund_gas", vec![] => Err(UnsupportedGenericArg); "refund_gas")]
-#[test_case("refund_gas", vec![value_arg(-7)] => Err(UnsupportedGenericArg);
-            "refund_gas<minus 7>")]
+#[test_case("get_gas", vec![value_arg(0)] => Err(WrongNumberOfGenericArgs); "get_gas<0>")]
+#[test_case("get_gas", vec![] => Ok(()); "get_gas")]
+#[test_case("refund_gas", vec![value_arg(0)] => Err(WrongNumberOfGenericArgs); "refund_gas<0>")]
+#[test_case("refund_gas", vec![] => Ok(()); "refund_gas")]
 #[test_case("felt_add", vec![] => Ok(()); "felt_add")]
 #[test_case("felt_add", vec![value_arg(0)] =>  Ok(()); "felt_add<0>")]
 #[test_case("felt_mul", vec![] => Ok(()); "felt_mul")]
