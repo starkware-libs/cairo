@@ -31,7 +31,7 @@ pub fn generate_equations<
         EquationGenerator { future_costs: vec![None; program.statements.len()], equations: vec![] };
     // Adding a variable for every function entry point.
     for func in &program.funcs {
-        generator.get_future_cost(&func.entry);
+        generator.get_future_cost(&func.entry_point);
     }
     // Using reverse topological order to go over the program statement so that we'd use less
     // variables (since we create variables in any case where we don't already have a cost
@@ -88,7 +88,12 @@ fn get_reverse_topological_ordering(program: &Program) -> Result<Vec<StatementId
     let mut ordering = vec![];
     let mut visited = vec![false; program.statements.len()];
     for f in &program.funcs {
-        calculate_reverse_topological_ordering(program, &mut ordering, &mut visited, &f.entry)?;
+        calculate_reverse_topological_ordering(
+            program,
+            &mut ordering,
+            &mut visited,
+            &f.entry_point,
+        )?;
     }
     Ok(ordering)
 }
