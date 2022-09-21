@@ -40,6 +40,10 @@ fn simulate(
                     concrete_type_ids: &HashMap::from([
                         (("int".into(), &[][..]), "int".into()),
                         (("NonZero".into(), &[type_arg("int")][..]), "NonZeroInt".into()),
+                        (
+                            ("uninitialized".into(), &[type_arg("int")][..]),
+                            "UninitializedInt".into(),
+                        ),
                         (("Deferred".into(), &[type_arg("int")][..]), "DeferredInt".into()),
                         (("GasBuiltin".into(), &[][..]), "GasBuiltin".into()),
                         (
@@ -119,7 +123,9 @@ fn simulate_invocation(
 #[test_case("unwrap_nz", vec![type_arg("int")], vec![6] => Ok(vec![6]); "unwrap_nz<int>(6)")]
 #[test_case("store_temp", vec![type_arg("int")], vec![6] => Ok(vec![6]); "store_temp<int>(6)")]
 #[test_case("align_temps", vec![type_arg("int")], vec![] => Ok(vec![]); "align_temps<int>()")]
-#[test_case("store_local", vec![type_arg("int")], vec![6] => Ok(vec![6]); "store_local<int>(6)")]
+// TODO(ilya, 10/10/2022): Support passing empty variables for transient values.
+#[test_case("store_local", vec![type_arg("int")], vec![0, 6] => Ok(vec![6]);
+ "store_local<int>(0, 6)")]
 #[test_case("finalize_locals", vec![], vec![] => Ok(vec![]); "finalize_locals()")]
 #[test_case("rename", vec![type_arg("int")], vec![6] => Ok(vec![6]); "rename<int>(6)")]
 #[test_case("function_call", vec![user_func_arg("drop_all_inputs")], vec![3, 5] => Ok(vec![]);

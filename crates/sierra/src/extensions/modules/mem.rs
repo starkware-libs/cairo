@@ -109,12 +109,15 @@ impl NamedLibFunc for StoreLocalLibFunc {
 
     fn specialize_signature(
         &self,
-        _context: &dyn SignatureSpecializationContext,
+        context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
     ) -> Result<LibFuncSignature, SpecializationError> {
         let ty = as_single_type(args)?;
         Ok(LibFuncSignature::new_non_branch(
-            vec![ty.clone()],
+            vec![
+                context.get_wrapped_concrete_type(UninitializedType::id(), ty.clone())?,
+                ty.clone(),
+            ],
             vec![ty],
             vec![OutputVarReferenceInfo::NewLocalVar],
         ))
