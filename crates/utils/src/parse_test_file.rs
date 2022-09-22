@@ -141,6 +141,8 @@ impl TestBuilder {
 ///
 /// Then, the call to the macro looks like:
 /// parser_test!(unique_test_name, [<test_file1>, <test_file2], test_to_upper);
+// TODO(yuval/alont): pass the full dict to the function instead of a vector of the relevant
+// strings. The function can query the relevant entries from the dict.
 #[macro_export]
 macro_rules! test_file_test {
     ($test_name:ident, $filenames:expr, $db_type:ty, $func:ident) => {
