@@ -154,24 +154,24 @@ fn test_member_access_failures() {
         diagnostics,
         indoc! {"
             error: Struct test_crate::A has not member f
-             --> lib.cairo:7:5
+             --> lib.cairo:7:7
                 a.f
-                ^*^
+                  ^
 
             error: Invalid member expression.
-             --> lib.cairo:8:5
+             --> lib.cairo:8:7
                 a.a::b;
-                ^****^
+                  ^**^
 
             error: Invalid member expression.
-             --> lib.cairo:9:5
+             --> lib.cairo:9:7
                 a.4.4;
-                ^*^
+                  ^
 
             error: Type core::felt has no members.
-             --> lib.cairo:10:5
+             --> lib.cairo:10:7
                 5.a;
-                ^*^
+                  ^
 
         "}
     );

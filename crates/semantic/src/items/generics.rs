@@ -1,14 +1,13 @@
 use defs::ids::{GenericParamId, GenericParamLongId, ModuleId};
-use diagnostics::Diagnostics;
 use syntax::node::{ast, TypedSyntaxNode};
 
 use crate::db::SemanticGroup;
-use crate::SemanticDiagnostic;
+use crate::diagnostic::SemanticDiagnostics;
 
 /// Returns the parameters of the given function signature's AST.
 pub fn semantic_generic_params(
-    _diagnostics: &mut Diagnostics<SemanticDiagnostic>,
     db: &dyn SemanticGroup,
+    _diagnostics: &mut SemanticDiagnostics,
     module_id: ModuleId,
     generic_args: &ast::OptionGenericParams,
 ) -> Vec<GenericParamId> {

@@ -3,16 +3,19 @@ use filesystem::ids::CrateLongId;
 use syntax::node::ast::{self};
 use syntax::node::helpers::GetIdentifier;
 use syntax::node::Terminal;
+use utils::OptionHelper;
 
 use crate::corelib::core_module;
 use crate::db::SemanticGroup;
-use crate::diagnostic::SemanticDiagnosticKind;
+use crate::diagnostic::SemanticDiagnosticKind::*;
+use crate::diagnostic::SemanticDiagnostics;
 
 pub fn resolve_item(
     db: &dyn SemanticGroup,
+    diagnostics: &mut SemanticDiagnostics,
     module_id: ModuleId,
     path: &ast::ExprPath,
-) -> Result<Symbol, SemanticDiagnosticKind> {
+) -> Option<Symbol> {
     let syntax_db = db.upcast();
     let elements_vec = path.elements(syntax_db);
     let mut elements = elements_vec.iter().peekable();
@@ -20,7 +23,7 @@ pub fn resolve_item(
     let ident = elements
         .next()
         .map(|segment| segment.identifier(syntax_db))
-        .ok_or(SemanticDiagnosticKind::InvalidPath)?;
+        .on_none(|| diagnostics.report(path, InvalidPath))?;
     let mut symbol = db
         .module_item_by_name(module_id, ident.clone())
         .map(Symbol::ModuleItem)
@@ -35,7 +38,7 @@ pub fn resolve_item(
             }
         })
         .or_else(|| db.module_item_by_name(core_module(db), ident.clone()).map(Symbol::ModuleItem))
-        .ok_or(SemanticDiagnosticKind::PathNotFound)?;
+        .on_none(|| diagnostics.report(path, PathNotFound))?;
 
     // Follow modules.
     for segment in elements {
@@ -45,23 +48,24 @@ pub fn resolve_item(
                 symbol = match symbol {
                     Symbol::ModuleItem(ModuleItemId::Submodule(submodule)) => Symbol::ModuleItem(
                         db.module_item_by_name(ModuleId::Submodule(submodule), ident)
-                            .ok_or(SemanticDiagnosticKind::PathNotFound)?,
+                            .on_none(|| diagnostics.report(segment, PathNotFound))?,
                     ),
                     Symbol::Crate(crate_id) => Symbol::ModuleItem(
                         db.module_item_by_name(ModuleId::CrateRoot(crate_id), ident)
-                            .ok_or(SemanticDiagnosticKind::PathNotFound)?,
+                            .on_none(|| diagnostics.report(segment, PathNotFound))?,
                     ),
                     _ => {
-                        // TODO(spapini): Support associated items.
-                        return Err(SemanticDiagnosticKind::InvalidPath);
+                        diagnostics.report(segment, InvalidPath);
+                        return None;
                     }
                 }
             }
-            ast::PathSegment::WithGenericArgs(_generic_args) => {
-                return Err(SemanticDiagnosticKind::Unsupported);
+            ast::PathSegment::WithGenericArgs(generic_args) => {
+                diagnostics.report(generic_args, Unsupported);
+                return None;
             }
         }
     }
 
-    Ok(symbol)
+    Some(symbol)
 }

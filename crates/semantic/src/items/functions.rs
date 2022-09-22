@@ -3,15 +3,15 @@ use std::collections::HashMap;
 use db_utils::define_short_id;
 use debug::DebugWithDb;
 use defs::ids::{GenericFunctionId, GenericParamId, ModuleId, ParamLongId, VarId};
-use diagnostics::Diagnostics;
 use diagnostics_proc_macros::DebugWithDb;
 use syntax::node::{ast, Terminal, TypedSyntaxNode};
 
 use crate::corelib::unit_ty;
 use crate::db::SemanticGroup;
+use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::Environment;
+use crate::semantic;
 use crate::types::resolve_type;
-use crate::{semantic, SemanticDiagnostic};
 
 /// Function instance.
 /// For example: ImplA::foo<A, B>, or bar<A>.
@@ -72,7 +72,7 @@ pub struct Signature {
 }
 
 pub fn function_signature_return_type(
-    diagnostics: &mut Diagnostics<SemanticDiagnostic>,
+    diagnostics: &mut SemanticDiagnostics,
     db: &dyn SemanticGroup,
     module_id: ModuleId,
     sig: &ast::FunctionSignature,
@@ -85,12 +85,12 @@ pub fn function_signature_return_type(
             ret_type_clause.ty(db.upcast())
         }
     };
-    resolve_type(diagnostics, db, module_id, ty_syntax)
+    resolve_type(db, diagnostics, module_id, ty_syntax)
 }
 
 /// Returns the parameters of the given function signature's AST.
 pub fn function_signature_params(
-    diagnostics: &mut Diagnostics<SemanticDiagnostic>,
+    diagnostics: &mut SemanticDiagnostics,
     db: &dyn SemanticGroup,
     module_id: ModuleId,
     sig: &ast::FunctionSignature,
@@ -105,7 +105,7 @@ pub fn function_signature_params(
         let id = db.intern_param(ParamLongId(module_id, ast_param.stable_ptr()));
         let ty_syntax = ast_param.type_clause(syntax_db).ty(syntax_db);
         // TODO(yuval): Diagnostic?
-        let ty = resolve_type(diagnostics, db, module_id, ty_syntax);
+        let ty = resolve_type(db, diagnostics, module_id, ty_syntax);
         semantic_params.push(semantic::Parameter { id, ty });
         variables.insert(name, semantic::Variable { id: VarId::Param(id), ty });
     }

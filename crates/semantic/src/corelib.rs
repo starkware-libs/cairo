@@ -5,7 +5,6 @@ use syntax::node::ids::SyntaxStablePtrId;
 use utils::{extract_matches, OptionFrom};
 
 use crate::db::SemanticGroup;
-use crate::diagnostic::SemanticDiagnosticKind;
 use crate::{semantic, Expr, ExprId, ExprTuple, TypeId, TypeLongId};
 
 pub fn core_module(db: &dyn SemanticGroup) -> ModuleId {
@@ -87,8 +86,8 @@ pub fn unit_expr(db: &dyn SemanticGroup, stable_ptr: SyntaxStablePtrId) -> ExprI
 
 pub fn core_binary_operator(
     db: &dyn SemanticGroup,
-    binary_op: BinaryOperator,
-) -> Result<GenericFunctionId, SemanticDiagnosticKind> {
+    binary_op: &BinaryOperator,
+) -> Option<GenericFunctionId> {
     let core_module = db.core_module();
     let function_name = match binary_op {
         BinaryOperator::Plus(_) => "felt_add",
@@ -100,11 +99,11 @@ pub fn core_binary_operator(
         BinaryOperator::OrOr(_) => "bool_or",
         BinaryOperator::Not(_) => "bool_not",
         BinaryOperator::LE(_) => "felt_le",
-        _ => return Err(SemanticDiagnosticKind::UnknownBinaryOperator),
+        _ => return None,
     };
     let generic_function = db
         .module_item_by_name(core_module, function_name.into())
         .and_then(GenericFunctionId::option_from)
         .expect("Operator function not found in core lib.");
-    Ok(generic_function)
+    Some(generic_function)
 }
