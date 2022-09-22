@@ -29,7 +29,6 @@ fn test_program_generator() {
         replace_libfunc_ids_in_program(&db, program).to_string(),
         indoc! {"
             type [0] = felt;
-            type [1] = NonZero<[0]>;
 
             libfunc felt_drop = felt_drop;
             libfunc revoke_ap_tracking = revoke_ap_tracking;
@@ -55,6 +54,43 @@ fn test_program_generator() {
 
             [1]@0([0]: [0]) -> ([0]);
             [0]@7([0]: [0]) -> ([0]);
+        "},
+    );
+}
+
+// TODO(orizi): Remove ignore and fix test when generic code starts working.
+#[test]
+#[ignore = "Currently generics are not supported in high level Cairo"]
+fn test_type_dependency() {
+    let mut db = SierraGenDatabaseForTesting::default();
+    let module_id = setup_test_module(
+        &mut db,
+        indoc! {"
+                func unwrap_non_zero(a: NonZero<NonZero<NonZero<felt>>>) -> NonZero<felt> {
+                    unwrap_nz<felt>(unwrap_nz<felt>(5))
+                }
+            "},
+    )
+    .unwrap()
+    .module_id;
+
+    let program = &*db.get_program_code(module_id).expect("").unwrap();
+    assert_eq!(
+        replace_libfunc_ids_in_program(&db, program).to_string(),
+        indoc! {"
+            type [0] = felt;
+            type [1] = NonZero<[0]>;
+            type [2] = NonZero<[1]>;
+            type [3] = NonZero<[2]>;
+
+            libfunc unwrap_nz<[2]> = unwrap_nz<[2]>;
+            libfunc unwrap_nz<[1]> = unwrap_nz<[1]>;
+            unwrap_nz<[0]>([0]) -> ([1]);
+            unwrap_nz<[0]>([1]) -> ([2]);
+            store_temp<[0]>([2]) -> ([3]);
+            return([3]);
+
+            [0]@0([0]: [3]) -> ([1]);
         "},
     );
 }
