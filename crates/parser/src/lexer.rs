@@ -3,7 +3,7 @@
 mod test;
 
 use filesystem::ids::FileId;
-use filesystem::span::{TextOffset, TextSpan};
+use filesystem::span::TextOffset;
 use smol_str::SmolStr;
 use syntax::node::ast::{TokenNewline, TokenSingleLineComment, TokenWhitespace, TriviumGreen};
 use syntax::node::db::SyntaxGroup;
@@ -12,8 +12,6 @@ use syntax::node::Token;
 
 pub struct Lexer<'a> {
     db: &'a dyn SyntaxGroup,
-    // TODO(yuval): add diagnostics. FileId should be included in diagnostics.
-    source: FileId,
     text: &'a str,
     previous_position: TextOffset,
     current_position: TextOffset,
@@ -22,10 +20,9 @@ pub struct Lexer<'a> {
 
 impl<'a> Lexer<'a> {
     // Ctors.
-    pub fn from_text(db: &'a dyn SyntaxGroup, source: FileId, text: &'a str) -> Lexer<'a> {
+    pub fn from_text(db: &'a dyn SyntaxGroup, _source: FileId, text: &'a str) -> Lexer<'a> {
         Lexer {
             db,
-            source,
             text,
             previous_position: TextOffset::default(),
             current_position: TextOffset::default(),
@@ -64,9 +61,6 @@ impl<'a> Lexer<'a> {
 
     fn peek_span_text(&self) -> &'a str {
         &self.text[self.previous_position.0..self.current_position.0]
-    }
-    fn peek_span(&self) -> TextSpan {
-        TextSpan { start: self.previous_position, end: self.current_position }
     }
 
     fn consume_span(&mut self) -> &str {
@@ -202,15 +196,7 @@ impl<'a> Lexer<'a> {
                     self.take();
                     TokenKind::OrOr
                 }
-                _ => {
-                    // TODO(yuval): Add to diagnostics instead of printing.
-                    println!(
-                        "Bad character at {:?}, offset {}",
-                        self.source,
-                        self.peek_span().start.0
-                    );
-                    self.take_token_of_kind(TokenKind::BadCharacters)
-                }
+                _ => self.take_token_of_kind(TokenKind::BadCharacters),
             }
         } else {
             TokenKind::EndOfFile
