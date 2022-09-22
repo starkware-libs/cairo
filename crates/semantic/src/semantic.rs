@@ -10,7 +10,7 @@ pub use crate::items::strct::Member;
 pub use crate::types::{ConcreteType, TypeId, TypeLongId};
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
-#[debug_db(SemanticGroup)]
+#[debug_db(dyn SemanticGroup + 'static)]
 pub struct Parameter {
     pub id: ParamId,
     pub ty: TypeId,
@@ -18,7 +18,7 @@ pub struct Parameter {
 
 // TODO(yuval): consider making this an enum or the id an enum of ParamId/LocalVarId
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
-#[debug_db(SemanticGroup)]
+#[debug_db(dyn SemanticGroup + 'static)]
 pub struct Variable {
     pub id: VarId,
     pub ty: TypeId,
@@ -28,7 +28,7 @@ pub struct Variable {
 /// A value assigned to a generic parameter.
 /// May be a type, impl, constant, etc..
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
-#[debug_db(SemanticGroup)]
+#[debug_db(dyn SemanticGroup + 'static)]
 pub enum GenericArgumentId {
     Type(TypeId),
     // TODO(spapini): impls and constants as generic values.

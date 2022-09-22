@@ -16,13 +16,13 @@ use crate::{semantic, SemanticDiagnostic};
 mod test;
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
-#[debug_db(SemanticGroup)]
+#[debug_db(dyn SemanticGroup + 'static)]
 pub struct EnumData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
     variants: OrderedHashMap<SmolStr, Variant>,
 }
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
-#[debug_db(SemanticGroup)]
+#[debug_db(dyn SemanticGroup + 'static)]
 pub struct Variant {
     pub id: VariantId,
     pub ty: semantic::TypeId,
