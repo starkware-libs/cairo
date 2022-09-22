@@ -49,9 +49,8 @@ pub fn put_results<'a, V>(
     results: impl Iterator<Item = (&'a VarId, V)>,
 ) -> Result<HashMap<VarId, V>, EditStateError> {
     for (id, v) in results {
-        match state.insert(id.clone(), v) {
-            Some(_) => return Err(EditStateError::VariableOverride(id.clone())),
-            None => {}
+        if state.insert(id.clone(), v).is_some() {
+            return Err(EditStateError::VariableOverride(id.clone()));
         }
     }
     Ok(state)
