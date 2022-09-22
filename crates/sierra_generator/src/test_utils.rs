@@ -4,7 +4,8 @@ use filesystem::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGrou
 use parser::db::ParserDatabase;
 use salsa::{InternId, InternKey};
 use semantic::db::{AsSemanticGroup, SemanticDatabase};
-use sierra::ids::ConcreteLibFuncId;
+use sierra::ids::{ConcreteLibFuncId, GenericLibFuncId};
+use sierra::program::ConcreteLibFuncLongId;
 use syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 
 use crate::db::{SierraGenDatabase, SierraGenGroup};
@@ -107,6 +108,7 @@ pub fn replace_libfunc_ids_in_program(
 
 /// Generates a dummy statement with the given name, inputs and outputs.
 pub fn dummy_simple_statement(
+    db: &dyn SierraGenGroup,
     name: &str,
     inputs: &[usize],
     outputs: &[usize],
@@ -115,7 +117,14 @@ pub fn dummy_simple_statement(
         inputs.iter().map(|x| sierra::ids::VarId::from_usize(*x)).collect();
     let outputs_vec: Vec<sierra::ids::VarId> =
         outputs.iter().map(|x| sierra::ids::VarId::from_usize(*x)).collect();
-    simple_statement(ConcreteLibFuncId::from_string(name), &inputs_vec, &outputs_vec)
+    simple_statement(
+        db.intern_concrete_lib_func(ConcreteLibFuncLongId {
+            generic_id: GenericLibFuncId::from_string(name),
+            generic_args: vec![],
+        }),
+        &inputs_vec,
+        &outputs_vec,
+    )
 }
 
 /// Generates a dummy return statement.
