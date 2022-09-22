@@ -22,6 +22,12 @@ pub enum TypeLongId {
     Missing,
     // TODO(spapini): tuple, generic type parameters.
 }
+impl OptionFrom<TypeLongId> for ConcreteType {
+    fn option_from(other: TypeLongId) -> Option<Self> {
+        if let TypeLongId::Concrete(res) = other { Some(res) } else { None }
+    }
+}
+
 define_short_id!(TypeId, TypeLongId, SemanticGroup, lookup_intern_type);
 impl TypeId {
     pub fn missing(db: &dyn SemanticGroup) -> Self {
@@ -86,10 +92,7 @@ pub fn maybe_resolve_type(
     Some(match ty_syntax {
         ast::Expr::Path(path) => {
             let item = resolve_item(db, diagnostics, module_id, &path)?;
-            let generic_type = GenericTypeId::option_from(item).on_none(|| {
-                diagnostics.report(&path, UnknownType);
-            })?;
-            specialize_type(db, diagnostics, generic_type)?
+            TypeId::option_from(item).on_none(|| diagnostics.report(&path, UnknownStruct))?
         }
         ast::Expr::Parenthesized(expr_syntax) => {
             resolve_type(db, diagnostics, module_id, expr_syntax.expr(syntax_db))
@@ -108,13 +111,4 @@ pub fn maybe_resolve_type(
             return None;
         }
     })
-}
-
-/// Tries to specializes a generic type.
-fn specialize_type(
-    db: &dyn SemanticGroup,
-    _diagnostics: &mut SemanticDiagnostics,
-    generic_type: GenericTypeId,
-) -> Option<TypeId> {
-    Some(db.intern_type(TypeLongId::Concrete(ConcreteType { generic_type, generic_args: vec![] })))
 }
