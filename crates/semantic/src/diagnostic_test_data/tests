@@ -64,4 +64,4 @@ func foo() {
 error: Path not found.
  --> lib.cairo:8:3
   bad_module::foo();
-  ^*************^
+  ^********^
