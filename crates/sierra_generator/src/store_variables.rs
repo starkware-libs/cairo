@@ -4,10 +4,11 @@
 #[path = "store_variables_test.rs"]
 mod test;
 
-use sierra::extensions::lib_func::OutputBranchInfo;
+use sierra::extensions::lib_func::{OutputBranchInfo, OutputVarInfo};
+use sierra::extensions::OutputVarReferenceInfo;
 use sierra::ids::ConcreteLibFuncId;
 use sierra::program::{GenBranchInfo, GenBranchTarget, GenStatement};
-use utils::ordered_hash_set::OrderedHashSet;
+use utils::ordered_hash_map::OrderedHashMap;
 
 use crate::db::SierraGenGroup;
 use crate::pre_sierra;
@@ -37,7 +38,9 @@ where
 struct AddStoreVariableStatements<'a> {
     db: &'a dyn SierraGenGroup,
     result: Vec<pre_sierra::Statement>,
-    deferred_variables: OrderedHashSet<sierra::ids::VarId>,
+    /// A map from [sierra::ids::VarId] of a deferred reference
+    /// (for example, `[ap - 1] + [ap - 2]`) to its type.
+    deferred_variables: OrderedHashMap<sierra::ids::VarId, sierra::ids::ConcreteTypeId>,
 }
 impl<'a> AddStoreVariableStatements<'a> {
     /// Constructs a new [AddStoreVariableStatements] object.
@@ -45,7 +48,7 @@ impl<'a> AddStoreVariableStatements<'a> {
         AddStoreVariableStatements {
             db,
             result: Vec::new(),
-            deferred_variables: OrderedHashSet::default(),
+            deferred_variables: OrderedHashMap::default(),
         }
     }
 
@@ -60,10 +63,11 @@ impl<'a> AddStoreVariableStatements<'a> {
     {
         match &statement {
             pre_sierra::Statement::Sierra(GenStatement::Invocation(invocation)) => {
-                let _output_info = get_output_info(invocation.libfunc_id.clone());
+                let output_infos = get_output_info(invocation.libfunc_id.clone());
                 match &invocation.branches[..] {
-                    [GenBranchInfo { target: GenBranchTarget::Fallthrough, results: _ }] => {
+                    [GenBranchInfo { target: GenBranchTarget::Fallthrough, results }] => {
                         // A simple invocation.
+                        self.add_outputs(results, &output_infos[0].vars);
                     }
                     _ => {
                         // This starts a branch. Store all deferred variables.
@@ -73,9 +77,11 @@ impl<'a> AddStoreVariableStatements<'a> {
                 self.result.push(statement);
             }
             pre_sierra::Statement::Sierra(GenStatement::Return(_return_statement)) => {
-                // TODO(lior): Add a store_temp() statement for each returned value.
-                self.store_all_deffered_variables();
                 self.result.push(statement);
+                // `return` statements are preceded by `PushValues` which takes care of pushing
+                // the return values onto the stack. The rest of the deferred variables are not
+                // needed.
+                self.clear_deffered_variables();
             }
             pre_sierra::Statement::Label(_) => {
                 self.store_all_deffered_variables();
@@ -91,10 +97,32 @@ impl<'a> AddStoreVariableStatements<'a> {
         }
     }
 
+    fn add_outputs(&mut self, results: &[sierra::ids::VarId], output_infos: &[OutputVarInfo]) {
+        for (var, output_info) in itertools::zip_eq(results, output_infos) {
+            self.add_output(var.clone(), output_info);
+        }
+    }
+
+    fn add_output(&mut self, res: sierra::ids::VarId, output_info: &OutputVarInfo) {
+        match output_info.ref_info {
+            OutputVarReferenceInfo::Deferred => {
+                self.deferred_variables.insert(res, output_info.ty.clone());
+            }
+            OutputVarReferenceInfo::SameAsParam { .. }
+            | OutputVarReferenceInfo::NewTempVar { .. }
+            | OutputVarReferenceInfo::NewLocalVar
+            | OutputVarReferenceInfo::Const => {}
+        }
+    }
+
     /// Stores all the deffered variables and clears `deferred_variables`.
     /// The variables will be added according to the order of creation.
     fn store_all_deffered_variables(&mut self) {
         // TODO(lior): Store all deferred variables.
+    }
+
+    /// Clears all the deferred variables.
+    fn clear_deffered_variables(&mut self) {
         self.deferred_variables.clear();
     }
 
