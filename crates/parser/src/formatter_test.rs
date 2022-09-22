@@ -3,7 +3,9 @@ use syntax::node::db::SyntaxDatabase;
 use test_case::test_case;
 
 use crate::formatter::{get_formatted_file, FormatterConfig};
-use crate::test_utils::{get_syntax_root_and_diagnostics, read_file, ParserDatabaseForTesting};
+use crate::test_utils::{
+    get_syntax_root_and_diagnostics_from_file, read_file, ParserDatabaseForTesting,
+};
 
 #[salsa::database(SyntaxDatabase, FilesDatabase)]
 #[derive(Default)]
@@ -21,7 +23,8 @@ fn format_and_compare_file(unformatted_filename: &str, expected_filename: &str) 
     let db_val = ParserDatabaseForTesting::default();
     let db = &db_val;
 
-    let (syntax_root, diagnostics) = get_syntax_root_and_diagnostics(db, unformatted_filename);
+    let (syntax_root, diagnostics) =
+        get_syntax_root_and_diagnostics_from_file(db, unformatted_filename);
     assert!(diagnostics.0.is_empty(), "A parsing error occured while trying to format the code.");
     let config = FormatterConfig::default();
     let formatted_file = get_formatted_file(db, &syntax_root, config);
