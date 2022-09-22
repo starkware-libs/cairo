@@ -406,6 +406,22 @@ fn fib_program() {
                 type felt = felt;
                 type UninitializedFelt = uninitialized<felt>;
 
+                libfunc alloc_local_felt = alloc_local<felt>;
+                libfunc store_local_felt = store_local<felt>;
+                libfunc felt_drop = felt_drop;
+
+                alloc_local_felt() -> ([2]);
+                store_local_felt([2], [1]) -> ([2]);
+                felt_drop([2]) -> ();
+                return ();
+
+                foo@0([1]: felt) -> ();
+            "}, "#3: locals were allocated but finalize_locals was not called.";
+            "missing finalize_locals ")]
+#[test_case(indoc! {"
+                type felt = felt;
+                type UninitializedFelt = uninitialized<felt>;
+
                 libfunc store_temp_felt = store_temp<UninitializedFelt>;
 
                 store_temp_felt([1]) -> ([1]);
