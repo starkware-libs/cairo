@@ -40,6 +40,7 @@ fn store_temp_simple() {
         dummy_simple_statement(&db, "felt_add", &[5, 5], &[6]),
         dummy_return_statement(&[]),
     ];
+
     assert_eq!(
         add_store_statements(&db, statements, &(|libfunc| get_output_info(&db, libfunc)))
             .iter()

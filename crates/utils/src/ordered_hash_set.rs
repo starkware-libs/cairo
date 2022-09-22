@@ -38,6 +38,21 @@ impl<Key: Hash + Eq> OrderedHashSet<Key> {
     pub fn clear(&mut self) {
         self.0.clear()
     }
+
+    /// Removes the value from the set, preserving the order of elements.
+    ///
+    /// Returns true if the value was present in the set.
+    pub fn shift_remove<Q: ?Sized + Hash + Equivalent<Key>>(&mut self, value: &Q) -> bool {
+        self.0.shift_remove(value)
+    }
+
+    /// Removes the value by swapping it with the last element, thus the order of elements is not
+    /// preserved, but the resulting order is still deterministic.
+    ///
+    /// Returns true if the value was present in the set.
+    pub fn swap_remove<Q: ?Sized + Hash + Equivalent<Key>>(&mut self, value: &Q) -> bool {
+        self.0.swap_remove(value)
+    }
 }
 
 impl<Key: Hash + Eq> IntoIterator for OrderedHashSet<Key> {
