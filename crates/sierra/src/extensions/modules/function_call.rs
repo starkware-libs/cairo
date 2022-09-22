@@ -1,5 +1,5 @@
 use crate::extensions::lib_func::{
-    LibFuncSignature, SignatureBasedConcreteLibFunc, SignatureSpecializationContext,
+    LibFuncSignature, OutputVarInfo, SignatureBasedConcreteLibFunc, SignatureSpecializationContext,
     SpecializationContext,
 };
 use crate::extensions::{NamedLibFunc, OutputVarReferenceInfo, SpecializationError};
@@ -23,12 +23,14 @@ impl NamedLibFunc for FunctionCallLibFunc {
                 let function = context.get_function_signature(function_id)?;
                 Ok(LibFuncSignature::new_non_branch(
                     function.param_types.clone(),
-                    function.ret_types.clone(),
                     function
                         .ret_types
                         .iter()
                         .enumerate()
-                        .map(|(i, _)| OutputVarReferenceInfo::NewTempVar { idx: i })
+                        .map(|(i, ty)| OutputVarInfo {
+                            ty: ty.clone(),
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: i },
+                        })
                         .collect(),
                 ))
             }

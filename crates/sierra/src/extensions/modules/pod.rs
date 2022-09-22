@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 
 use crate::extensions::lib_func::{
-    LibFuncSignature, SignatureOnlyConcreteLibFunc, SignatureSpecializationContext,
+    LibFuncSignature, OutputVarInfo, SignatureOnlyConcreteLibFunc, SignatureSpecializationContext,
     SpecializationContext,
 };
 use crate::extensions::{NoGenericArgsGenericLibFunc, OutputVarReferenceInfo, SpecializationError};
@@ -33,7 +33,6 @@ impl<TPodTraits: PodTraits> NoGenericArgsGenericLibFunc for DropLibFunc<TPodTrai
         Ok(LibFuncSignature::new_non_branch(
             vec![context.get_concrete_type(TPodTraits::GENERIC_TYPE_ID, &[])?],
             vec![],
-            vec![],
         ))
     }
 
@@ -63,10 +62,15 @@ impl<TPodTraits: PodTraits> NoGenericArgsGenericLibFunc for DuplicateLibFunc<TPo
         let ty = context.get_concrete_type(TPodTraits::GENERIC_TYPE_ID, &[])?;
         Ok(LibFuncSignature::new_non_branch(
             vec![ty.clone()],
-            vec![ty.clone(), ty],
             vec![
-                OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
-                OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+                OutputVarInfo {
+                    ty: ty.clone(),
+                    ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+                },
+                OutputVarInfo {
+                    ty,
+                    ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+                },
             ],
         ))
     }
