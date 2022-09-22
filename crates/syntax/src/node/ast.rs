@@ -1558,6 +1558,9 @@ pub enum BinaryOperator {
     AndAnd(TerminalAndAnd),
     OrOr(TerminalOrOr),
     LE(TerminalLE),
+    GE(TerminalGE),
+    LT(TerminalLT),
+    GT(TerminalGT),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct BinaryOperatorPtr(SyntaxStablePtrId);
@@ -1616,6 +1619,21 @@ impl From<TerminalLEGreen> for BinaryOperatorGreen {
         Self(value.0)
     }
 }
+impl From<TerminalGEGreen> for BinaryOperatorGreen {
+    fn from(value: TerminalGEGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalLTGreen> for BinaryOperatorGreen {
+    fn from(value: TerminalLTGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalGTGreen> for BinaryOperatorGreen {
+    fn from(value: TerminalGTGreen) -> Self {
+        Self(value.0)
+    }
+}
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct BinaryOperatorGreen(pub GreenId);
 impl TypedSyntaxNode for BinaryOperator {
@@ -1648,6 +1666,9 @@ impl TypedSyntaxNode for BinaryOperator {
                 BinaryOperator::OrOr(TerminalOrOr::from_syntax_node(db, node))
             }
             SyntaxKind::TerminalLE => BinaryOperator::LE(TerminalLE::from_syntax_node(db, node)),
+            SyntaxKind::TerminalGE => BinaryOperator::GE(TerminalGE::from_syntax_node(db, node)),
+            SyntaxKind::TerminalLT => BinaryOperator::LT(TerminalLT::from_syntax_node(db, node)),
+            SyntaxKind::TerminalGT => BinaryOperator::GT(TerminalGT::from_syntax_node(db, node)),
             _ => {
                 panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "BinaryOperator")
             }
@@ -1665,6 +1686,9 @@ impl TypedSyntaxNode for BinaryOperator {
             BinaryOperator::AndAnd(x) => x.as_syntax_node(),
             BinaryOperator::OrOr(x) => x.as_syntax_node(),
             BinaryOperator::LE(x) => x.as_syntax_node(),
+            BinaryOperator::GE(x) => x.as_syntax_node(),
+            BinaryOperator::LT(x) => x.as_syntax_node(),
+            BinaryOperator::GT(x) => x.as_syntax_node(),
         }
     }
     fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {

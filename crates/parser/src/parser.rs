@@ -274,6 +274,12 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalPlus => self.take::<TerminalPlus>().into(),
             SyntaxKind::TerminalMinus => self.take::<TerminalMinus>().into(),
             SyntaxKind::TerminalEqEq => self.take::<TerminalEqEq>().into(),
+            SyntaxKind::TerminalLT => self.take::<TerminalLT>().into(),
+            SyntaxKind::TerminalGT => self.take::<TerminalGT>().into(),
+            SyntaxKind::TerminalLE => self.take::<TerminalLE>().into(),
+            SyntaxKind::TerminalGE => self.take::<TerminalGE>().into(),
+            SyntaxKind::TerminalAndAnd => self.take::<TerminalAndAnd>().into(),
+            SyntaxKind::TerminalOrOr => self.take::<TerminalAndAnd>().into(),
             _ => unreachable!(),
         }
     }
