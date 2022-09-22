@@ -253,28 +253,28 @@ fn fib_program() {
                 libfunc felt_add = felt_add;
                 felt_add([1], [2], [3]) -> ([4]);
                 test_program@0([1]: felt, [2]: felt, [3]: felt) -> ();
-            "}, "Invocation mismatched to libfunc";
+            "}, "#0: Invocation mismatched to libfunc";
             "input count mismatch")]
 #[test_case(indoc! {"
                 type felt = felt;
                 libfunc felt_add = felt_add;
                 felt_add([1], [2]) -> ([3], [4]);
                 test_program@0([1]: felt, [2]: felt) -> ();
-            "}, "Invocation mismatched to libfunc";
+            "}, "#0: Invocation mismatched to libfunc";
             "output type mismatch")]
 #[test_case(indoc! {"
                 type felt = felt;
                 libfunc felt_add = felt_add;
                 felt_add([1], [2]) { 0([3]) 1([3]) };
                 test_program@0([1]: felt, [2]: felt) -> ();
-            "}, "Invocation mismatched to libfunc";
+            "}, "#0: Invocation mismatched to libfunc";
             "branch count mismatch")]
 #[test_case(indoc! {"
                 type felt = felt;
                 libfunc felt_add = felt_add;
                 felt_add([1], [2]) { 0([3]) };
                 test_program@0([1]: felt, [2]: felt) -> ();
-            "}, "Invocation mismatched to libfunc";
+            "}, "#0: Invocation mismatched to libfunc";
             "fallthrough mismatch")]
 #[test_case(indoc! {"
                 type felt = felt;

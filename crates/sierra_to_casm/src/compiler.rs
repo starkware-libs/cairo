@@ -31,8 +31,8 @@ pub enum CompilationError {
     ReturnArgumentsNotOnStack { statement_idx: StatementIdx },
     #[error(transparent)]
     ReferencesError(#[from] ReferencesError),
-    #[error("Invocation mismatched to libfunc")]
-    LibFuncInvocationMismatch,
+    #[error("#{statement_idx}: Invocation mismatched to libfunc")]
+    LibFuncInvocationMismatch { statement_idx: StatementIdx },
 }
 
 #[derive(Error, Debug, Eq, PartialEq)]
@@ -50,6 +50,7 @@ impl Display for CairoProgram {
 
 /// Ensure the basic structure of the invocation is the same as the library function.
 fn check_basic_structure(
+    statement_idx: StatementIdx,
     invocation: &Invocation,
     libfunc: &CoreConcreteLibFunc,
 ) -> Result<(), CompilationError> {
@@ -65,7 +66,7 @@ fn check_basic_structure(
             None => false,
         }
     {
-        Err(CompilationError::LibFuncInvocationMismatch)
+        Err(CompilationError::LibFuncInvocationMismatch { statement_idx })
     } else {
         Ok(())
     }
@@ -126,7 +127,7 @@ pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
                 let libfunc = registry
                     .get_libfunc(&invocation.libfunc_id)
                     .map_err(CompilationError::ProgramRegistryError)?;
-                check_basic_structure(invocation, libfunc)?;
+                check_basic_structure(statement_idx, invocation, libfunc)?;
 
                 check_types_match(&invoke_refs, libfunc.input_types())?;
                 let compiled_invocation = compile_invocation(
