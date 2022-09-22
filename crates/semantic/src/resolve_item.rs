@@ -1,3 +1,7 @@
+#[cfg(test)]
+#[path = "resolve_item_test.rs"]
+mod test;
+
 use defs::ids::{GenericFunctionId, GenericTypeId, ModuleId, ModuleItemId};
 use filesystem::ids::CrateLongId;
 use syntax::node::ast::{self};
@@ -9,8 +13,12 @@ use utils::{OptionFrom, OptionHelper};
 use crate::corelib::core_module;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
-use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics};
-use crate::{ConcreteFunction, ConcreteType, FunctionId, FunctionLongId, TypeId, TypeLongId};
+use crate::diagnostic::SemanticDiagnostics;
+use crate::types::resolve_type;
+use crate::{
+    ConcreteFunction, ConcreteType, FunctionId, FunctionLongId, GenericArgumentId, TypeId,
+    TypeLongId,
+};
 
 pub enum ResolvedItem {
     Module(ModuleId),
@@ -47,43 +55,64 @@ pub fn resolve_item(
     // Follow modules.
     for segment in elements {
         let ident = segment.identifier(syntax_db);
-        check_no_generics(diagnostics, segment)?;
+        let generic_args = if let ast::PathSegment::WithGenericArgs(generic_segment) = segment {
+            generic_segment
+                .generic_args(syntax_db)
+                .generic_args(syntax_db)
+                .elements(syntax_db)
+                .iter()
+                .map(|generic_arg_syntax| {
+                    let ty = resolve_type(db, diagnostics, current_module_id, generic_arg_syntax);
+                    GenericArgumentId::Type(ty)
+                })
+                .collect()
+        } else {
+            vec![]
+        };
         if let ResolvedItem::Module(module_id) = item {
             let module_item = db
                 .module_item_by_name(module_id, ident)
                 .on_none(|| diagnostics.report(segment, PathNotFound))?;
             item = match module_item {
-                ModuleItemId::Submodule(id) => ResolvedItem::Module(ModuleId::Submodule(id)),
+                ModuleItemId::Submodule(id) => {
+                    check_no_generics(diagnostics, segment);
+                    ResolvedItem::Module(ModuleId::Submodule(id))
+                }
                 ModuleItemId::Use(_) => todo!("Follow uses."),
                 ModuleItemId::FreeFunction(id) => ResolvedItem::Function(specialize_function(
                     db,
                     diagnostics,
                     segment.stable_ptr().untyped(),
                     GenericFunctionId::Free(id),
+                    generic_args,
                 )?),
                 ModuleItemId::ExternFunction(id) => ResolvedItem::Function(specialize_function(
                     db,
                     diagnostics,
                     segment.stable_ptr().untyped(),
                     GenericFunctionId::Extern(id),
+                    generic_args,
                 )?),
                 ModuleItemId::Struct(id) => ResolvedItem::Type(specialize_type(
                     db,
                     diagnostics,
                     segment.stable_ptr().untyped(),
                     GenericTypeId::Struct(id),
+                    generic_args,
                 )?),
                 ModuleItemId::Enum(id) => ResolvedItem::Type(specialize_type(
                     db,
                     diagnostics,
                     segment.stable_ptr().untyped(),
                     GenericTypeId::Enum(id),
+                    generic_args,
                 )?),
                 ModuleItemId::ExternType(id) => ResolvedItem::Type(specialize_type(
                     db,
                     diagnostics,
                     segment.stable_ptr().untyped(),
                     GenericTypeId::Extern(id),
+                    generic_args,
                 )?),
             };
             continue;
@@ -148,14 +177,27 @@ pub fn specialize_function(
     diagnostics: &mut SemanticDiagnostics,
     stable_ptr: SyntaxStablePtrId,
     generic_function: GenericFunctionId,
+    mut generic_args: Vec<GenericArgumentId>,
 ) -> Option<FunctionId> {
-    let signature = db.generic_function_signature(generic_function).on_none(|| {
-        diagnostics.report_by_ptr(stable_ptr, SemanticDiagnosticKind::UnknownFunction)
-    })?;
+    let signature = db
+        .generic_function_signature(generic_function)
+        .on_none(|| diagnostics.report_by_ptr(stable_ptr, UnknownFunction))?;
+
+    if generic_args.len() != signature.generic_params.len() {
+        diagnostics.report_by_ptr(
+            stable_ptr,
+            WrongNumberOfGenericArguments {
+                expected: signature.generic_params.len(),
+                actual: generic_args.len(),
+            },
+        );
+        generic_args
+            .resize(signature.generic_params.len(), GenericArgumentId::Type(TypeId::missing(db)));
+    }
 
     Some(db.intern_function(FunctionLongId::Concrete(ConcreteFunction {
         generic_function,
-        generic_args: vec![],
+        generic_args,
         return_type: signature.return_type,
     })))
 }
@@ -163,9 +205,25 @@ pub fn specialize_function(
 /// Specializes a generic type.
 fn specialize_type(
     db: &dyn SemanticGroup,
-    _diagnostics: &mut SemanticDiagnostics,
-    _stable_ptr: SyntaxStablePtrId,
+    diagnostics: &mut SemanticDiagnostics,
+    stable_ptr: SyntaxStablePtrId,
     generic_type: GenericTypeId,
+    mut generic_args: Vec<GenericArgumentId>,
 ) -> Option<TypeId> {
-    Some(db.intern_type(TypeLongId::Concrete(ConcreteType { generic_type, generic_args: vec![] })))
+    let generic_params = db
+        .generic_type_generic_params(generic_type)
+        .on_none(|| diagnostics.report_by_ptr(stable_ptr, UnknownType))?;
+
+    if generic_args.len() != generic_params.len() {
+        diagnostics.report_by_ptr(
+            stable_ptr,
+            WrongNumberOfGenericArguments {
+                expected: generic_params.len(),
+                actual: generic_args.len(),
+            },
+        );
+        generic_args.resize(generic_params.len(), GenericArgumentId::Type(TypeId::missing(db)));
+    }
+
+    Some(db.intern_type(TypeLongId::Concrete(ConcreteType { generic_type, generic_args })))
 }

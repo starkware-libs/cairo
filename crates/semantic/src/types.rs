@@ -1,6 +1,6 @@
 use db_utils::define_short_id;
 use debug::DebugWithDb;
-use defs::ids::{GenericTypeId, ModuleId};
+use defs::ids::{GenericParamId, GenericTypeId, ModuleId};
 use diagnostics_proc_macros::DebugWithDb;
 use itertools::Itertools;
 use syntax::node::ast;
@@ -78,7 +78,7 @@ pub fn resolve_type(
     db: &dyn SemanticGroup,
     diagnostics: &mut SemanticDiagnostics,
     module_id: ModuleId,
-    ty_syntax: ast::Expr,
+    ty_syntax: &ast::Expr,
 ) -> TypeId {
     maybe_resolve_type(db, diagnostics, module_id, ty_syntax).unwrap_or_else(|| TypeId::missing(db))
 }
@@ -86,29 +86,42 @@ pub fn maybe_resolve_type(
     db: &dyn SemanticGroup,
     diagnostics: &mut SemanticDiagnostics,
     module_id: ModuleId,
-    ty_syntax: ast::Expr,
+    ty_syntax: &ast::Expr,
 ) -> Option<TypeId> {
     let syntax_db = db.upcast();
     Some(match ty_syntax {
         ast::Expr::Path(path) => {
-            let item = resolve_item(db, diagnostics, module_id, &path)?;
-            TypeId::option_from(item).on_none(|| diagnostics.report(&path, UnknownStruct))?
+            let item = resolve_item(db, diagnostics, module_id, path)?;
+            TypeId::option_from(item).on_none(|| diagnostics.report(path, UnknownStruct))?
         }
         ast::Expr::Parenthesized(expr_syntax) => {
-            resolve_type(db, diagnostics, module_id, expr_syntax.expr(syntax_db))
+            resolve_type(db, diagnostics, module_id, &expr_syntax.expr(syntax_db))
         }
         ast::Expr::Tuple(tuple_syntax) => {
             let sub_tys = tuple_syntax
                 .expressions(syntax_db)
                 .elements(syntax_db)
                 .into_iter()
-                .map(|subexpr_syntax| resolve_type(db, diagnostics, module_id, subexpr_syntax))
+                .map(|subexpr_syntax| resolve_type(db, diagnostics, module_id, &subexpr_syntax))
                 .collect();
             db.intern_type(TypeLongId::Tuple(sub_tys))
         }
         _ => {
-            diagnostics.report(&ty_syntax, UnknownType);
+            diagnostics.report(ty_syntax, UnknownType);
             return None;
         }
     })
+}
+
+/// Query implementation of [crate::db::SemanticGroup::generic_type_generic_params].
+pub fn generic_type_generic_params(
+    db: &dyn SemanticGroup,
+    generic_type: GenericTypeId,
+) -> Option<Vec<GenericParamId>> {
+    // TODO(spapini): other types.
+    match generic_type {
+        GenericTypeId::Struct(_) => Some(vec![]),
+        GenericTypeId::Enum(_) => Some(vec![]),
+        GenericTypeId::Extern(id) => db.extern_type_declaration_generic_params(id),
+    }
 }

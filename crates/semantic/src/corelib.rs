@@ -109,5 +109,5 @@ pub fn core_binary_operator(
         .module_item_by_name(core_module, function_name.into())
         .and_then(GenericFunctionId::option_from)
         .expect("Operator function not found in core lib.");
-    specialize_function(db, diagnostics, binary_op.stable_ptr().untyped(), generic_function)
+    specialize_function(db, diagnostics, binary_op.stable_ptr().untyped(), generic_function, vec![])
 }
