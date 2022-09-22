@@ -48,6 +48,11 @@ impl<'a> ExprGeneratorContext<'a> {
         self.db
     }
 
+    /// Returns the SierraGenGroup salsa database.
+    pub fn function_id(&self) -> FreeFunctionId {
+        self.function_id
+    }
+
     /// Attaches a local variable with its Sierra variable.
     /// See [Self::get_variable].
     pub fn register_variable(

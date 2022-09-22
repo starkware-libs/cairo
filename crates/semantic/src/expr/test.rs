@@ -1,31 +1,32 @@
 use assert_matches::assert_matches;
 use debug::DebugWithDb;
 use defs::db::DefsGroup;
-use defs::ids::{LanguageElementId, ModuleId, ModuleItemId, VarId};
+use defs::ids::{LanguageElementId, ModuleItemId, VarId};
 use indoc::indoc;
 use pretty_assertions::assert_eq;
-use smol_str::SmolStr;
 use utils::extract_matches;
 
 use crate::corelib::{core_felt_ty, unit_ty};
 use crate::db::SemanticGroup;
+use crate::expr::fmt::ExprFormatter;
 use crate::test_utils::{
     setup_test_expr, setup_test_function, setup_test_module, test_function_diagnostics,
     SemanticDatabaseForTesting, TestModule,
 };
-use crate::{semantic, semantic_test, ExprId, StatementId, TypeId};
+use crate::{semantic, semantic_test};
 
 #[test]
 fn test_expr_literal() {
     let mut db_val = SemanticDatabaseForTesting::default();
-    let expr_id = setup_test_expr(&mut db_val, "7", "", "").unwrap().expr_id;
+    let test_expr = setup_test_expr(&mut db_val, "7", "", "").unwrap();
     let db = &db_val;
-    let expr = db.lookup_intern_expr(expr_id);
+    let expr = db.expr_semantic(test_expr.function_id, test_expr.expr_id);
+    let expr_formatter = ExprFormatter { db, free_function_id: test_expr.function_id };
     // TODO(spapini): Currently, DebugWithDb can't "switch" dbs, and thus ExternTypeId is not
     // followed (it uses SyntaxGroup, and not SemanticGroup).
     // Fix this.
     assert_eq!(
-        format!("{:?}", expr.debug(db)),
+        format!("{:?}", expr.debug(&expr_formatter)),
         "ExprLiteral(ExprLiteral { value: 7, ty: Concrete(ExternTypeId(core::felt)) })"
     );
 
@@ -42,11 +43,13 @@ fn test_expr_operator() {
     let mut db_val = SemanticDatabaseForTesting::default();
     let test_expr = setup_test_expr(&mut db_val, "5 + 9 * 3 == 0", "", "").unwrap();
     let db = &db_val;
-    let expr = db.lookup_intern_expr(test_expr.expr_id);
+    let expr = db.expr_semantic(test_expr.function_id, test_expr.expr_id);
+    let expr_formatter = ExprFormatter { db, free_function_id: test_expr.function_id };
+
     // TODO(spapini): Make transparent DebugWithDb attribute, to have better outputs.
     // TODO(spapini): Have better whitespaces here somehow.
     assert_eq!(
-        format!("{:?}", expr.debug(db)),
+        format!("{:?}", expr.debug(&expr_formatter)),
         "ExprFunctionCall(ExprFunctionCall { function: Concrete(ExternFunctionId(core::felt_eq)), \
          args: [ExprFunctionCall(ExprFunctionCall { function: \
          Concrete(ExternFunctionId(core::felt_add)), args: [ExprLiteral(ExprLiteral { value: 5, \
@@ -86,8 +89,9 @@ fn test_member_access() {
         db.module_item_by_name(module_id, "foo".into()).unwrap(),
         ModuleItemId::FreeFunction
     );
+    let expr_formatter = ExprFormatter { db, free_function_id: foo_id };
     let block = extract_matches!(
-        db.expr_semantic(db.free_function_definition_body(foo_id).unwrap()),
+        db.expr_semantic(foo_id, db.free_function_definition_body(foo_id).unwrap()),
         semantic::Expr::ExprBlock
     );
     let exprs: Vec<_> = block
@@ -96,11 +100,14 @@ fn test_member_access() {
         .map(|stmt_id| {
             format!(
                 "{:?}",
-                db.expr_semantic(extract_matches!(
-                    db.statement_semantic(*stmt_id),
-                    semantic::Statement::Expr
-                ))
-                .debug(db)
+                db.expr_semantic(
+                    foo_id,
+                    extract_matches!(
+                        db.statement_semantic(foo_id, *stmt_id),
+                        semantic::Statement::Expr
+                    )
+                )
+                .debug(&expr_formatter)
             )
         })
         .collect();
@@ -235,24 +242,18 @@ fn test_let_statement() {
     )
     .unwrap();
     let db = &db_val;
+    let expr = db.expr_semantic(test_function.function_id, test_function.body);
+    let expr_formatter = ExprFormatter { db, free_function_id: test_function.function_id };
 
-    let _signature = test_function.signature;
-
-    // TODO(spapini): Verify params names and tests after StablePtr feature is added.
-    let semantic::ExprBlock { statements, tail, ty: _, stable_ptr: _ } =
-        extract_matches!(db.lookup_intern_expr(test_function.body), crate::Expr::ExprBlock);
-    assert!(tail.is_none());
-
-    // Verify the statements
-    assert_eq!(statements.len(), 2);
-    assert_let_statement_with_literal(db, statements[0], test_function.module_id, "a".into(), 3);
-    assert_let_statement_with_var(
-        db,
-        statements[1],
-        test_function.module_id,
-        "b".into(),
-        "a".into(),
-        core_felt_ty(db),
+    assert_eq!(
+        format!("{:?}", expr.debug(&expr_formatter)),
+        "ExprBlock(ExprBlock { statements: [Let(StatementLet { var: LocalVariable { id: \
+         LocalVarId(test_crate::a), ty: Concrete(ExternTypeId(core::felt)) }, expr: \
+         ExprLiteral(ExprLiteral { value: 3, ty: Concrete(ExternTypeId(core::felt)) }) }), \
+         Let(StatementLet { var: LocalVariable { id: LocalVarId(test_crate::b), ty: \
+         Concrete(ExternTypeId(core::felt)) }, expr: ExprVar(ExprVar { var: \
+         LocalVarId(test_crate::a), ty: Concrete(ExternTypeId(core::felt)) }) })], tail: None, \
+         ty: Tuple([]) })"
     );
 }
 
@@ -298,12 +299,14 @@ fn test_expr_var() {
     .unwrap();
     let db = &db_val;
 
-    let semantic::ExprBlock { statements: _, tail, ty: _, stable_ptr: _ } =
-        extract_matches!(db.lookup_intern_expr(test_function.body), crate::Expr::ExprBlock);
+    let semantic::ExprBlock { statements: _, tail, ty: _, stable_ptr: _ } = extract_matches!(
+        db.expr_semantic(test_function.function_id, test_function.body),
+        crate::Expr::ExprBlock
+    );
 
     // Check expr.
     let semantic::ExprVar { var: _, ty: _, stable_ptr: _ } = extract_matches!(
-        db.lookup_intern_expr(tail.unwrap()),
+        db.expr_semantic(test_function.function_id, tail.unwrap()),
         crate::Expr::ExprVar,
         "Expected a variable."
     );
@@ -354,11 +357,14 @@ fn test_expr_match() {
     )
     .unwrap();
     let db = &db_val;
-    let semantic::ExprBlock { statements: _, tail, ty: _, stable_ptr: _ } =
-        extract_matches!(db.lookup_intern_expr(test_function.body), crate::Expr::ExprBlock);
-    let expr = db.lookup_intern_expr(tail.unwrap());
+    let semantic::ExprBlock { statements: _, tail, ty: _, stable_ptr: _ } = extract_matches!(
+        db.expr_semantic(test_function.function_id, test_function.body),
+        crate::Expr::ExprBlock
+    );
+    let expr = db.expr_semantic(test_function.function_id, tail.unwrap());
+    let expr_formatter = ExprFormatter { db, free_function_id: test_function.function_id };
     assert_eq!(
-        format!("{:?}", expr.debug(db)),
+        format!("{:?}", expr.debug(&expr_formatter)),
         "ExprMatch(ExprMatch { matched_expr: ExprVar(ExprVar { var: ParamId(test_crate::a), ty: \
          Concrete(ExternTypeId(core::felt)) }), arms: [MatchArm { pattern: Literal(ExprLiteral { \
          value: 0, ty: Concrete(ExternTypeId(core::felt)) }), expression: ExprLiteral(ExprLiteral \
@@ -400,9 +406,9 @@ fn test_expr_match_failures() {
 #[test]
 fn test_expr_block() {
     let mut db_val = SemanticDatabaseForTesting::default();
-    let expr_id = setup_test_expr(&mut db_val, "{6;8;}", "", "").unwrap().expr_id;
+    let test_expr = setup_test_expr(&mut db_val, "{6;8;}", "", "").unwrap();
     let db = &db_val;
-    let expr = db.lookup_intern_expr(expr_id);
+    let expr = db.expr_semantic(test_expr.function_id, test_expr.expr_id);
 
     // Check expr.
     let semantic::ExprBlock { statements, tail, ty, stable_ptr: _ } =
@@ -412,8 +418,8 @@ fn test_expr_block() {
 
     match statements[..] {
         [stmt_id0, stmt_id1] => {
-            let stmt0 = db.lookup_intern_statement(stmt_id0);
-            let stmt1 = db.lookup_intern_statement(stmt_id1);
+            let stmt0 = db.statement_semantic(test_expr.function_id, stmt_id0);
+            let stmt1 = db.statement_semantic(test_expr.function_id, stmt_id1);
             assert_matches!(stmt0, semantic::Statement::Expr(_));
             assert_matches!(stmt1, semantic::Statement::Expr(_));
         }
@@ -424,9 +430,9 @@ fn test_expr_block() {
 #[test]
 fn test_expr_block_with_tail_expression() {
     let mut db_val = SemanticDatabaseForTesting::default();
-    let expr_id = setup_test_expr(&mut db_val, "{6;8;9}", "", "").unwrap().expr_id;
+    let test_expr = setup_test_expr(&mut db_val, "{6;8;9}", "", "").unwrap();
     let db = &db_val;
-    let expr = db.lookup_intern_expr(expr_id);
+    let expr = db.expr_semantic(test_expr.function_id, test_expr.expr_id);
 
     // Check expr.
     let semantic::ExprBlock { statements, tail, ty, stable_ptr: _ } =
@@ -435,7 +441,7 @@ fn test_expr_block_with_tail_expression() {
 
     // Check tail expression.
     let semantic::ExprLiteral { value, ty: _, stable_ptr: _ } = extract_matches!(
-        db.lookup_intern_expr(tail.unwrap()),
+        db.expr_semantic(test_expr.function_id, tail.unwrap()),
         crate::Expr::ExprLiteral,
         "Expected a literal expression."
     );
@@ -444,8 +450,8 @@ fn test_expr_block_with_tail_expression() {
     // Check statements.
     match statements[..] {
         [stmt_id0, stmt_id1] => {
-            let stmt0 = db.lookup_intern_statement(stmt_id0);
-            let stmt1 = db.lookup_intern_statement(stmt_id1);
+            let stmt0 = db.statement_semantic(test_expr.function_id, stmt_id0);
+            let stmt1 = db.statement_semantic(test_expr.function_id, stmt_id1);
             assert_matches!(stmt0, semantic::Statement::Expr(_));
             assert_matches!(stmt1, semantic::Statement::Expr(_));
         }
@@ -457,9 +463,9 @@ fn test_expr_block_with_tail_expression() {
 fn test_expr_call() {
     let mut db_val = SemanticDatabaseForTesting::default();
     // TODO(spapini): Add types.
-    let expr_id = setup_test_expr(&mut db_val, "foo()", "func foo() {6;}", "").unwrap().expr_id;
+    let test_expr = setup_test_expr(&mut db_val, "foo()", "func foo() {6;}", "").unwrap();
     let db = &db_val;
-    let expr = db.lookup_intern_expr(expr_id);
+    let expr = db.expr_semantic(test_expr.function_id, test_expr.expr_id);
 
     // Check expr.
     let semantic::ExprFunctionCall { function: _, args, ty, stable_ptr: _ } =
@@ -474,6 +480,7 @@ fn test_expr_call_failures() {
     // TODO(spapini): Add types.
     let (test_expr, diagnostics) = setup_test_expr(&mut db_val, "foo()", "", "").split();
     let db = &db_val;
+    let expr_formatter = ExprFormatter { db, free_function_id: test_expr.function_id };
 
     // Check expr.
     assert_eq!(
@@ -488,7 +495,10 @@ fn test_expr_call_failures() {
     );
     assert_eq!(format!("{:?}", test_expr.module_id.debug(db)), "ModuleId(test_crate)");
     assert_eq!(
-        format!("{:?}", test_expr.expr_id.debug(db)),
+        format!(
+            "{:?}",
+            db.expr_semantic(test_expr.function_id, test_expr.expr_id).debug(&expr_formatter)
+        ),
         "ExprFunctionCall(ExprFunctionCall { function: Missing, args: [], ty: Missing })"
     );
 }
@@ -496,7 +506,7 @@ fn test_expr_call_failures() {
 #[test]
 fn test_function_body() {
     let mut db_val = SemanticDatabaseForTesting::default();
-    let module_id = setup_test_function(
+    let test_function = setup_test_function(
         &mut db_val,
         indoc! {"
             func foo(a: felt) {
@@ -506,22 +516,27 @@ fn test_function_body() {
         "foo",
         "",
     )
-    .unwrap()
-    .module_id;
+    .unwrap();
     let db = &db_val;
-    let item_id = db.module_item_by_name(module_id, "foo".into()).unwrap();
+    let item_id = db.module_item_by_name(test_function.module_id, "foo".into()).unwrap();
 
     let function_id = extract_matches!(item_id, ModuleItemId::FreeFunction);
     let body = db.free_function_definition_body(function_id).unwrap();
 
     // Test the resulting semantic function body.
-    let semantic::ExprBlock { statements, .. } =
-        extract_matches!(db.lookup_intern_expr(body), crate::Expr::ExprBlock, "Expected a block.");
+    let semantic::ExprBlock { statements, .. } = extract_matches!(
+        db.expr_semantic(test_function.function_id, body),
+        crate::Expr::ExprBlock,
+        "Expected a block."
+    );
     assert_eq!(statements.len(), 1);
-    let expr = db.lookup_intern_expr(extract_matches!(
-        db.lookup_intern_statement(statements[0]),
-        crate::Statement::Expr
-    ));
+    let expr = db.expr_semantic(
+        test_function.function_id,
+        extract_matches!(
+            db.statement_semantic(test_function.function_id, statements[0]),
+            crate::Statement::Expr
+        ),
+    );
     let semantic::ExprVar { var, ty: _, stable_ptr: _ } =
         extract_matches!(expr, crate::Expr::ExprVar);
     let param = extract_matches!(var, VarId::Param);
@@ -531,7 +546,7 @@ fn test_function_body() {
 #[test]
 fn test_expr_struct_ctor() {
     let mut db_val = SemanticDatabaseForTesting::default();
-    let expr_id = setup_test_expr(
+    let test_expr = setup_test_expr(
         &mut db_val,
         indoc! {"
             A { a: 1, b }
@@ -544,11 +559,12 @@ fn test_expr_struct_ctor() {
         "},
         "let b = 2;",
     )
-    .unwrap()
-    .expr_id;
+    .unwrap();
     let db = &db_val;
+    let expr = db.expr_semantic(test_expr.function_id, test_expr.expr_id);
+    let expr_formatter = ExprFormatter { db, free_function_id: test_expr.function_id };
     assert_eq!(
-        format!("{:?}", expr_id.debug(db)),
+        format!("{:?}", expr.debug(&expr_formatter)),
         "ExprStructCtor(ExprStructCtor { struct_id: StructId(test_crate::A), members: \
          [(MemberId(test_crate::a), ExprLiteral(ExprLiteral { value: 1, ty: \
          Concrete(ExternTypeId(core::felt)) })), (MemberId(test_crate::b), ExprVar(ExprVar { var: \
@@ -562,9 +578,10 @@ fn test_expr_tuple() {
     let mut db_val = SemanticDatabaseForTesting::default();
     let test_expr = setup_test_expr(&mut db_val, "(1 + 2, (2, 3))", "", "").unwrap();
     let db = &db_val;
-    let expr = db.lookup_intern_expr(test_expr.expr_id);
+    let expr = db.expr_semantic(test_expr.function_id, test_expr.expr_id);
+    let expr_formatter = ExprFormatter { db, free_function_id: test_expr.function_id };
     assert_eq!(
-        format!("{:?}", expr.debug(db)),
+        format!("{:?}", expr.debug(&expr_formatter)),
         "ExprTuple(ExprTuple { items: [ExprFunctionCall(ExprFunctionCall { function: \
          Concrete(ExternFunctionId(core::felt_add)), args: [ExprLiteral(ExprLiteral { value: 1, \
          ty: Concrete(ExternTypeId(core::felt)) }), ExprLiteral(ExprLiteral { value: 2, ty: \
@@ -629,56 +646,4 @@ fn test_expr_struct_ctor_failures() {
 
         "#}
     );
-}
-
-pub fn assert_let_statement_with_literal(
-    db: &dyn SemanticGroup,
-    statement_id: StatementId,
-    module_id: ModuleId,
-    var_name: SmolStr,
-    literal_value: usize,
-) {
-    let rhs = assert_let_statement_lhs_and_get_rhs(db, statement_id, module_id, var_name);
-    let semantic::ExprLiteral { value, ty, stable_ptr: _ } = extract_matches!(
-        db.lookup_intern_expr(rhs),
-        crate::Expr::ExprLiteral,
-        "Expected a literal expression."
-    );
-    assert_eq!(value, literal_value);
-    assert_eq!(ty, core_felt_ty(db));
-}
-
-pub fn assert_let_statement_with_var(
-    db: &dyn SemanticGroup,
-    statement_id: StatementId,
-    module_id: ModuleId,
-    var_name: SmolStr,
-    expr_var_name: SmolStr,
-    expr_var_type: TypeId,
-) {
-    let rhs = assert_let_statement_lhs_and_get_rhs(db, statement_id, module_id, var_name);
-    let semantic::ExprVar { var, ty, stable_ptr: _ } = extract_matches!(
-        db.lookup_intern_expr(rhs),
-        crate::Expr::ExprVar,
-        "Expected a var expression."
-    );
-    assert_eq!(var.name(db.upcast()), expr_var_name);
-    assert_eq!(ty, expr_var_type);
-}
-
-fn assert_let_statement_lhs_and_get_rhs(
-    db: &dyn SemanticGroup,
-    statement_id: StatementId,
-    module_id: ModuleId,
-    var_name: SmolStr,
-) -> ExprId {
-    let stmt = db.lookup_intern_statement(statement_id);
-
-    let semantic::StatementLet { var, expr } =
-        extract_matches!(stmt, semantic::Statement::Let, "Expected a let statement.");
-    assert_eq!(var.id.module(db.upcast()), module_id);
-    assert_eq!(var.id.name(db.upcast()), var_name);
-    assert_eq!(var.ty, core_felt_ty(db));
-
-    expr
 }

@@ -14,7 +14,7 @@ mod test;
 
 // Declaration.
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
-#[debug_db(SemanticGroup)]
+#[debug_db(dyn SemanticGroup + 'static)]
 pub struct ExternFunctionDeclarationData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
     signature: semantic::Signature,

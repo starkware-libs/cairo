@@ -17,7 +17,7 @@ pub fn generate_expression_code(
     context: &mut ExprGeneratorContext<'_>,
     expr_id: semantic::ExprId,
 ) -> Option<(Vec<pre_sierra::Statement>, sierra::ids::VarId)> {
-    match &context.get_db().expr_semantic(expr_id) {
+    match &context.get_db().expr_semantic(context.function_id(), expr_id) {
         semantic::Expr::ExprTuple(_) => todo!(), // TODO(yg) ?
         semantic::Expr::ExprBlock(expr_block) => handle_block(context, expr_block),
         semantic::Expr::ExprFunctionCall(expr_function_call) => {
@@ -56,7 +56,7 @@ fn handle_block(
     // Process the statements.
     let mut statements: Vec<pre_sierra::Statement> = vec![];
     for statement_id in expr_block.statements.iter().copied() {
-        match context.get_db().lookup_intern_statement(statement_id) {
+        match context.get_db().statement_semantic(context.function_id(), statement_id) {
             semantic::Statement::Expr(expr) => {
                 let (cur_statements, _res) = generate_expression_code(context, expr)?;
                 statements.extend(cur_statements);
@@ -101,7 +101,7 @@ fn handle_function_call(
     for arg in &expr_function_call.args {
         let (arg_statements, res) = generate_expression_code(context, *arg)?;
         statements.extend(arg_statements);
-        args.push((res, context.get_db().lookup_intern_expr(*arg).ty()));
+        args.push((res, context.get_db().expr_semantic(context.function_id(), *arg).ty()));
     }
 
     // Check if this is a user defined function or a libcall.
@@ -229,7 +229,9 @@ fn handle_felt_match(
             let (block0_statements, block0_res) = generate_expression_code(context, *block0)?;
             statements.extend(block0_statements);
             statements.push(simple_statement(
-                context.store_temp_libfunc_id(context.get_db().lookup_intern_expr(*block0).ty())?,
+                context.store_temp_libfunc_id(
+                    context.get_db().expr_semantic(context.function_id(), *block0).ty(),
+                )?,
                 &[block0_res],
                 &[output_var.clone()],
             ));
@@ -251,7 +253,7 @@ fn handle_felt_match(
             statements.extend(block_otherwise_statements);
             statements.push(simple_statement(
                 context.store_temp_libfunc_id(
-                    context.get_db().lookup_intern_expr(*block_otherwise).ty(),
+                    context.get_db().expr_semantic(context.function_id(), *block_otherwise).ty(),
                 )?,
                 &[block_otherwise_res],
                 &[output_var.clone()],

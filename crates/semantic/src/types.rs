@@ -13,7 +13,7 @@ use crate::resolve_item::resolve_item;
 use crate::semantic;
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
-#[debug_db(SemanticGroup)]
+#[debug_db(dyn SemanticGroup + 'static)]
 pub enum TypeLongId {
     Concrete(ConcreteType),
     /// Some expressions might have invalid types during processing, either due to errors or

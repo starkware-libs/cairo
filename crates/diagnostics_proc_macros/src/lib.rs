@@ -93,14 +93,18 @@ pub fn derive_debug_with_db(input: TokenStream) -> TokenStream {
         .iter()
         .find(|a| a.path.segments.len() == 1 && a.path.segments[0].ident == "debug_db")
         .expect("debug_db attribute required for deriving DebugWithDB.");
-    let db: syn::Expr = syn::parse2(attribute.tokens.clone()).expect("Invalid debug_db attribute!");
-    let db = if let syn::Expr::Paren(db) = db { db } else { panic!("Expected parenthesis") };
-    let db = quote! {(dyn #db + 'static)};
+    let db: syn::Type = syn::parse2(attribute.tokens.clone()).expect("Invalid debug_db attribute!");
+    let db = if let syn::Type::Paren(db) = db { db } else { panic!("Expected parenthesis") };
+    let db = quote! {(#db)};
     let name = input.ident;
-    match input.data {
+    let body = match input.data {
         syn::Data::Struct(strct) => emit_struct_debug(name, db, strct),
         syn::Data::Enum(enm) => emit_enum_debug(name, db, enm),
         syn::Data::Union(_) => panic!("Unions are not supported"),
+    };
+    quote! {
+        #[allow(unused_parens)]
+        #body
     }
     .into()
 }

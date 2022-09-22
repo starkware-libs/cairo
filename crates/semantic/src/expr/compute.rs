@@ -5,6 +5,7 @@
 use std::collections::HashMap;
 
 use defs::ids::{GenericTypeId, LocalVarLongId, MemberId, ModuleId, StructId, VarId};
+use id_arena::Arena;
 use smol_str::SmolStr;
 use syntax::node::ast::{BinaryOperator, PathSegment};
 use syntax::node::db::SyntaxGroup;
@@ -25,11 +26,13 @@ use crate::{semantic, ConcreteType, FunctionId, TypeId, TypeLongId, Variable};
 
 /// Context for computing the semantic model of expression trees.
 pub struct ComputationContext<'ctx> {
-    db: &'ctx dyn SemanticGroup,
+    pub db: &'ctx dyn SemanticGroup,
     diagnostics: &'ctx mut SemanticDiagnostics,
     module_id: ModuleId,
     return_ty: TypeId,
     environment: Box<Environment>,
+    pub exprs: Arena<semantic::Expr>,
+    pub statements: Arena<semantic::Statement>,
 }
 impl<'ctx> ComputationContext<'ctx> {
     pub fn new(
@@ -39,7 +42,15 @@ impl<'ctx> ComputationContext<'ctx> {
         return_ty: TypeId,
         environment: Environment,
     ) -> Self {
-        Self { db, diagnostics, module_id, return_ty, environment: Box::new(environment) }
+        Self {
+            db,
+            diagnostics,
+            module_id,
+            return_ty,
+            environment: Box::new(environment),
+            exprs: Arena::default(),
+            statements: Arena::default(),
+        }
     }
 
     /// Runs a function with a modified context, with a new environment for a subscope.
@@ -101,8 +112,8 @@ pub fn maybe_compute_expr_semantic(
         ast::Expr::Literal(literal_syntax) => {
             Expr::ExprLiteral(literal_to_semantic(ctx, literal_syntax)?)
         }
-        ast::Expr::False(syntax) => true_literal_expr(db, syntax.stable_ptr().untyped()),
-        ast::Expr::True(syntax) => false_literal_expr(db, syntax.stable_ptr().untyped()),
+        ast::Expr::False(syntax) => true_literal_expr(ctx, syntax.stable_ptr().untyped()),
+        ast::Expr::True(syntax) => false_literal_expr(ctx, syntax.stable_ptr().untyped()),
         ast::Expr::Parenthesized(paren_syntax) => {
             compute_expr_semantic(ctx, paren_syntax.expr(syntax_db))
         }
@@ -128,7 +139,7 @@ pub fn maybe_compute_expr_semantic(
                 function,
                 &arg_exprs,
             )?;
-            let args = arg_exprs.into_iter().map(|expr| db.intern_expr(expr)).collect();
+            let args = arg_exprs.into_iter().map(|expr| ctx.exprs.alloc(expr)).collect();
             Expr::ExprFunctionCall(ExprFunctionCall {
                 function,
                 args,
@@ -142,7 +153,7 @@ pub fn maybe_compute_expr_semantic(
             for expr_syntax in tuple_syntax.expressions(syntax_db).elements(syntax_db) {
                 let expr_semantic = compute_expr_semantic(ctx, expr_syntax.clone());
                 types.push(expr_semantic.ty());
-                items.push(db.intern_expr(expr_semantic));
+                items.push(ctx.exprs.alloc(expr_semantic));
             }
             Expr::ExprTuple(ExprTuple {
                 items,
@@ -160,7 +171,7 @@ pub fn maybe_compute_expr_semantic(
                 .map(|arg_syntax| compute_expr_semantic(ctx, arg_syntax))
                 .collect();
             let (function, signature) = resolve_function(ctx, path, &arg_exprs);
-            let args = arg_exprs.into_iter().map(|expr| db.intern_expr(expr)).collect();
+            let args = arg_exprs.into_iter().map(|expr| ctx.exprs.alloc(expr)).collect();
             Expr::ExprFunctionCall(ExprFunctionCall {
                 function,
                 args,
@@ -196,7 +207,7 @@ pub fn maybe_compute_expr_semantic(
                 };
                 Expr::ExprBlock(ExprBlock {
                     statements: statements_semantic,
-                    tail: tail_semantic_expr.map(|expr| db.intern_expr(expr)),
+                    tail: tail_semantic_expr.map(|expr| new_ctx.exprs.alloc(expr)),
                     ty,
                     stable_ptr: block_syntax.stable_ptr().untyped(),
                 })
@@ -218,7 +229,8 @@ pub fn maybe_compute_expr_semantic(
                 let expr_syntax = syntax_arm.expression(syntax_db);
                 let expr_semantic = compute_expr_semantic(ctx, expr_syntax.clone());
                 let arm_ty = expr_semantic.ty();
-                semantic_arms.push(MatchArm { pattern, expression: db.intern_expr(expr_semantic) });
+                semantic_arms
+                    .push(MatchArm { pattern, expression: ctx.exprs.alloc(expr_semantic) });
                 match match_type {
                     Some(ty) if ty == arm_ty => {}
                     Some(ty) => {
@@ -230,9 +242,9 @@ pub fn maybe_compute_expr_semantic(
                     None => match_type = Some(arm_ty),
                 }
             }
+            let expr = compute_expr_semantic(ctx, expr_match.expr(syntax_db));
             Expr::ExprMatch(ExprMatch {
-                matched_expr: db
-                    .intern_expr(compute_expr_semantic(ctx, expr_match.expr(syntax_db))),
+                matched_expr: ctx.exprs.alloc(expr),
                 arms: semantic_arms,
                 ty: match match_type {
                     Some(t) => t,
@@ -309,7 +321,7 @@ fn struct_ctor_expr(
             continue;
         }
         // Insert and check for duplicates.
-        if member_exprs.insert(member.id, db.intern_expr(arg_expr)).is_some() {
+        if member_exprs.insert(member.id, ctx.exprs.alloc(arg_expr)).is_some() {
             ctx.diagnostics.report(&arg_identifier, MemberSpecifiedMoreThanOnce);
         }
     }
@@ -406,7 +418,7 @@ fn member_access_expr(
                             ctx.diagnostics
                                 .report(&rhs_syntax, NoSuchMember { struct_id, member_name })
                         })?;
-                    let lexpr_id = ctx.db.intern_expr(lexpr);
+                    let lexpr_id = ctx.exprs.alloc(lexpr);
                     return Some(Expr::ExprMemberAccess(ExprMemberAccess {
                         expr: lexpr_id,
                         member: member.id,
@@ -554,8 +566,9 @@ pub fn compute_statement_semantic(
             let var_id =
                 db.intern_local_var(LocalVarLongId(ctx.module_id, let_syntax.stable_ptr()));
 
-            let rhs_expr_id = db.intern_expr(compute_expr_semantic(ctx, let_syntax.rhs(syntax_db)));
-            let inferred_type = db.lookup_intern_expr(rhs_expr_id).ty();
+            let expr = compute_expr_semantic(ctx, let_syntax.rhs(syntax_db));
+            let inferred_type = expr.ty();
+            let rhs_expr_id = ctx.exprs.alloc(expr);
 
             let ty = match let_syntax.type_clause(syntax_db) {
                 ast::OptionTypeClause::Empty(_) => inferred_type,
@@ -584,9 +597,10 @@ pub fn compute_statement_semantic(
                 expr: rhs_expr_id,
             })
         }
-        ast::Statement::Expr(expr_syntax) => semantic::Statement::Expr(
-            db.intern_expr(compute_expr_semantic(ctx, expr_syntax.expr(syntax_db))),
-        ),
+        ast::Statement::Expr(expr_syntax) => {
+            let expr = compute_expr_semantic(ctx, expr_syntax.expr(syntax_db));
+            semantic::Statement::Expr(ctx.exprs.alloc(expr))
+        }
         ast::Statement::Return(return_syntax) => {
             let expr_syntax = return_syntax.expr(syntax_db);
             let expr = compute_expr_semantic(ctx, expr_syntax.clone());
@@ -596,9 +610,9 @@ pub fn compute_statement_semantic(
                     WrongReturnType { expected_ty: ctx.return_ty, actual_ty: expr.ty() },
                 )
             }
-            semantic::Statement::Return(db.intern_expr(expr))
+            semantic::Statement::Return(ctx.exprs.alloc(expr))
         }
         ast::Statement::Missing(_) => todo!(),
     };
-    db.intern_statement(statement)
+    ctx.statements.alloc(statement)
 }
