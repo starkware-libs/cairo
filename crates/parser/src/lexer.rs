@@ -202,15 +202,7 @@ impl<'a> Lexer<'a> {
                     self.take();
                     TokenKind::OrOr
                 }
-                _ => {
-                    // TODO(yuval): Add to diagnostics instead of printing.
-                    println!(
-                        "Bad character at {:?}, offset {}",
-                        self.source,
-                        self.peek_span().start.0
-                    );
-                    self.take_token_of_kind(TokenKind::BadCharacters)
-                }
+                _ => self.take_token_of_kind(TokenKind::BadCharacters),
             }
         } else {
             TokenKind::EndOfFile
