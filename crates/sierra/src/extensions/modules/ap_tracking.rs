@@ -1,6 +1,6 @@
 use crate::extensions::lib_func::{
-    LibFuncSignature, OutputBranchInfo, SignatureOnlyConcreteLibFunc,
-    SignatureSpecializationContext, SpecializationContext,
+    LibFuncSignature, SignatureOnlyConcreteLibFunc, SignatureSpecializationContext,
+    SpecializationContext,
 };
 use crate::extensions::{NoGenericArgsGenericLibFunc, SpecializationError};
 use crate::ids::GenericLibFuncId;
@@ -18,11 +18,7 @@ impl NoGenericArgsGenericLibFunc for RevokeApTrackingLibFunc {
         &self,
         _context: &dyn SignatureSpecializationContext,
     ) -> Result<LibFuncSignature, SpecializationError> {
-        Ok(LibFuncSignature {
-            input_types: vec![],
-            output_info: vec![OutputBranchInfo { vars: vec![] }],
-            fallthrough: None,
-        })
+        Ok(LibFuncSignature::new_non_branch(vec![], vec![]))
     }
 
     fn specialize(
