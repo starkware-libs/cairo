@@ -42,6 +42,26 @@ impl<Key: Hash + Eq, Value> OrderedHashMap<Key, Value> {
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
+
+    /// Removes all the entries for the map.
+    pub fn clear(&mut self) {
+        self.0.clear()
+    }
+
+    /// Removes the entry for the given key, preserving the order of entries.
+    ///
+    /// Returns the value associated with the key (if present).
+    pub fn shift_remove<Q: ?Sized + Hash + Equivalent<Key>>(&mut self, key: &Q) -> Option<Value> {
+        self.0.shift_remove(key)
+    }
+
+    /// Removes the entry for the given key by swapping it with the last element.
+    /// Thus the order of elements is not preserved, but the resulting order is still deterministic.
+    ///
+    /// Returns the value associated with the key (if present).
+    pub fn swap_remove<Q: ?Sized + Hash + Equivalent<Key>>(&mut self, key: &Q) -> Option<Value> {
+        self.0.swap_remove(key)
+    }
 }
 
 impl<Key: Hash + Eq, Value> IntoIterator for OrderedHashMap<Key, Value> {
