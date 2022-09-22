@@ -37,3 +37,26 @@ error: Unexpected argument type. Expected: "core::felt", found: "test_crate::MyT
  --> lib.cairo:3:5
     a + a * a
     ^
+
+//! > Test operators.
+
+//! > Function
+func foo(a: felt, b: bool) {
+    // Valid.
+    a + a * a - a;
+    b && b || b && (a == a || a > a)
+    && (a<a) && (a<=a) && (a>=a);
+    // Errors.
+    a>a>a;
+}
+
+//! > Function Name
+foo
+
+//! > Module Code
+
+//! > Expected Result
+error: Unexpected argument type. Expected: "core::felt", found: "core::bool".
+ --> lib.cairo:7:5
+    a>a>a;
+    ^*^

@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [features]
-fix_parser_tests = []
+fix_parser_tests = ["utils/testing"]
 
 [dependencies]
 colored = "2"

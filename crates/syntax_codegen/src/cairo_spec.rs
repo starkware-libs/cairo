@@ -96,6 +96,9 @@ pub fn get_spec() -> Vec<Node> {
                 .node_with_explicit_kind("AndAnd", "TerminalAndAnd")
                 .node_with_explicit_kind("OrOr", "TerminalOrOr")
                 .node_with_explicit_kind("LE", "TerminalLE")
+                .node_with_explicit_kind("GE", "TerminalGE")
+                .node_with_explicit_kind("LT", "TerminalLT")
+                .node_with_explicit_kind("GT", "TerminalGT")
                 .build(),
         StructBuilder::new("ExprTuple")
             .node("lparen", "TerminalLParen")
