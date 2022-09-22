@@ -9,7 +9,6 @@ lalrpop = "0.19.8"
 regex = "1"
 
 [dependencies]
-array-init = "2.0.1"
 const-fnv1a-hash = "1.1.0"
 itertools = "0.10.3"
 lalrpop-util = { version = "0.19.8", features = ["lexer"] }
