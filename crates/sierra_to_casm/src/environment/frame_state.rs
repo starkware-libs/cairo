@@ -9,6 +9,8 @@ pub enum FrameStateError {
     InvalidAllocLocal(FrameState),
     #[error("finalize_locals is not allowed at this point.")]
     InvalidFinalizeLocals(FrameState),
+    #[error("locals were allocated but finalize_locals was not called.")]
+    FinalizeLocalsMissing(FrameState),
 }
 
 // The frame state of the current function.
@@ -67,5 +69,15 @@ pub fn handle_alloc_local(
                 },
             ))
         }
+    }
+}
+
+// Validates that the state at the end of a function is valid.
+pub fn validate_final_frame_state(frame_state: &FrameState) -> Result<(), FrameStateError> {
+    match frame_state {
+        FrameState::Allocating { allocated, .. } if *allocated > 0 => {
+            Err(FrameStateError::FinalizeLocalsMissing(frame_state.clone()))
+        }
+        _ => Ok(()),
     }
 }

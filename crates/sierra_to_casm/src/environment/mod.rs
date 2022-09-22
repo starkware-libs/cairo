@@ -1,16 +1,20 @@
 use casm::ap_change::ApChange;
-use frame_state::FrameState;
+use frame_state::{FrameState, FrameStateError};
 use thiserror::Error;
+
+use self::frame_state::validate_final_frame_state;
 
 pub mod ap_tracking;
 pub mod frame_state;
 
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum EnvironmentError {
-    #[error("Inconsistent ap tracking")]
+    #[error("Inconsistent ap tracking.")]
     InconsistentApTracking,
-    #[error("Inconsistent frame state")]
+    #[error("Inconsistent frame state.")]
     InconsistentFrameState,
+    #[error("{0}")]
+    InvalidFinalFrameState(FrameStateError),
 }
 
 /// Part of the program annotations that libfuncs may access as part of their run.
@@ -43,4 +47,9 @@ pub fn validate_environment_equality(
     } else {
         Ok(())
     }
+}
+
+// Validates that the state at the end of a function is valid.
+pub fn validate_final_environment(env: &Environment) -> Result<(), EnvironmentError> {
+    validate_final_frame_state(&env.frame_state).map_err(EnvironmentError::InvalidFinalFrameState)
 }

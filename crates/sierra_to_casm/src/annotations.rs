@@ -11,7 +11,9 @@ use thiserror::Error;
 
 use crate::environment::ap_tracking::update_ap_tracking;
 use crate::environment::frame_state::FrameStateError;
-use crate::environment::{validate_environment_equality, Environment, EnvironmentError};
+use crate::environment::{
+    validate_environment_equality, validate_final_environment, Environment, EnvironmentError,
+};
 use crate::invocations::BranchRefChanges;
 use crate::references::{
     build_function_parameter_refs, check_types_match, ReferenceValue, ReferencesError,
@@ -22,7 +24,7 @@ use crate::references::{
 pub enum AnnotationError {
     #[error("#{0}: Inconsistent references annotations.")]
     InconsistentReferencesAnnotation(StatementIdx),
-    #[error("#{statement_idx}: {error}.")]
+    #[error("#{statement_idx}: {error}")]
     InconsistentEnvironments { statement_idx: StatementIdx, error: EnvironmentError },
     #[error("Inconsistent return type annotation.")]
     InconsistentReturnTypesAnnotation(StatementIdx),
@@ -243,9 +245,19 @@ impl ProgramAnnotations {
     pub fn validate_return_type(
         &self,
         return_refs: &[ReferenceValue],
-        return_types: ReturnTypesAnnotation,
+        return_types: &ReturnTypesAnnotation,
     ) -> Result<(), AnnotationError> {
         check_types_match(return_refs, &self.return_types[return_types.0])?;
         Ok(())
+    }
+
+    /// Checks that the list of reference contains types matching the given types.
+    pub fn validate_final_annotations(
+        &self,
+        statement_idx: StatementIdx,
+        annotations: &StatementAnnotations,
+    ) -> Result<(), AnnotationError> {
+        validate_final_environment(&annotations.environment)
+            .map_err(|error| AnnotationError::InconsistentEnvironments { statement_idx, error })
     }
 }

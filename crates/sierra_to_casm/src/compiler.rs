@@ -98,12 +98,16 @@ pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
                 let (annotations, return_refs) = program_annotations
                     .get_annotations_after_take_args(statement_idx, ref_ids.iter())?;
 
-                if let Some(var_id) = annotations.refs.into_keys().next() {
-                    return Err(
-                        ReferencesError::DanglingReferences { statement_idx, var_id }.into()
-                    );
+                if let Some(var_id) = annotations.refs.keys().next() {
+                    return Err(ReferencesError::DanglingReferences {
+                        statement_idx,
+                        var_id: var_id.clone(),
+                    }
+                    .into());
                 };
-                program_annotations.validate_return_type(&return_refs, annotations.return_types)?;
+                program_annotations
+                    .validate_return_type(&return_refs, &annotations.return_types)?;
+                program_annotations.validate_final_annotations(statement_idx, &annotations)?;
                 check_references_on_stack(&type_sizes, &return_refs).map_err(
                     |error| match error {
                         InvocationError::InvalidReferenceExpressionForArgument => {
