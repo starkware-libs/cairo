@@ -2,10 +2,13 @@ use defs::ids::{GenericFunctionId, GenericTypeId, ModuleId, ModuleItemId};
 use filesystem::ids::CrateLongId;
 use syntax::node::ast::BinaryOperator;
 use syntax::node::ids::SyntaxStablePtrId;
+use syntax::node::TypedSyntaxNode;
 use utils::{extract_matches, OptionFrom};
 
 use crate::db::SemanticGroup;
-use crate::{semantic, Expr, ExprId, ExprTuple, TypeId, TypeLongId};
+use crate::diagnostic::SemanticDiagnostics;
+use crate::resolve_item::specialize_function;
+use crate::{semantic, Expr, ExprId, ExprTuple, FunctionId, TypeId, TypeLongId};
 
 pub fn core_module(db: &dyn SemanticGroup) -> ModuleId {
     let core_crate = db.intern_crate(CrateLongId("core".into()));
@@ -86,8 +89,9 @@ pub fn unit_expr(db: &dyn SemanticGroup, stable_ptr: SyntaxStablePtrId) -> ExprI
 
 pub fn core_binary_operator(
     db: &dyn SemanticGroup,
+    diagnostics: &mut SemanticDiagnostics,
     binary_op: &BinaryOperator,
-) -> Option<GenericFunctionId> {
+) -> Option<FunctionId> {
     let core_module = db.core_module();
     let function_name = match binary_op {
         BinaryOperator::Plus(_) => "felt_add",
@@ -105,5 +109,5 @@ pub fn core_binary_operator(
         .module_item_by_name(core_module, function_name.into())
         .and_then(GenericFunctionId::option_from)
         .expect("Operator function not found in core lib.");
-    Some(generic_function)
+    specialize_function(db, diagnostics, binary_op.stable_ptr().untyped(), generic_function)
 }
