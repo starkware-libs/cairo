@@ -4,12 +4,10 @@
 
 use std::collections::HashMap;
 
-use defs::diagnostic_utils::StableLocation;
 use defs::ids::{
     GenericFunctionId, GenericTypeId, LocalVarLongId, MemberId, ModuleId, ModuleItemId, StructId,
     VarId,
 };
-use diagnostics::Diagnostics;
 use smol_str::SmolStr;
 use syntax::node::ast::{BinaryOperator, PathSegment};
 use syntax::node::db::SyntaxGroup;
@@ -17,37 +15,35 @@ use syntax::node::helpers::GetIdentifier;
 use syntax::node::ids::SyntaxStablePtrId;
 use syntax::node::{ast, Terminal, TypedSyntaxNode};
 use utils::ordered_hash_map::OrderedHashMap;
-use utils::OptionFrom;
+use utils::{OptionFrom, OptionHelper};
 
 use super::objects::*;
 use crate::corelib::{core_binary_operator, false_literal_expr, true_literal_expr, unit_ty};
 use crate::db::SemanticGroup;
-use crate::diagnostic::SemanticDiagnosticKind;
+use crate::diagnostic::SemanticDiagnosticKind::*;
+use crate::diagnostic::SemanticDiagnostics;
 use crate::items::functions::{ConcreteFunction, FunctionLongId};
 use crate::resolve_item::resolve_item;
 use crate::types::resolve_type;
-use crate::{
-    semantic, ConcreteType, FunctionId, GenericArgumentId, SemanticDiagnostic, TypeId, TypeLongId,
-    Variable,
-};
+use crate::{semantic, ConcreteType, FunctionId, GenericArgumentId, TypeId, TypeLongId, Variable};
 
 /// Context for computing the semantic model of expression trees.
 pub struct ComputationContext<'ctx> {
-    diagnostics: &'ctx mut Diagnostics<SemanticDiagnostic>,
     db: &'ctx dyn SemanticGroup,
+    diagnostics: &'ctx mut SemanticDiagnostics,
     module_id: ModuleId,
     return_ty: TypeId,
     environment: Box<Environment>,
 }
 impl<'ctx> ComputationContext<'ctx> {
     pub fn new(
-        diagnostics: &'ctx mut Diagnostics<SemanticDiagnostic>,
         db: &'ctx dyn SemanticGroup,
+        diagnostics: &'ctx mut SemanticDiagnostics,
         module_id: ModuleId,
         return_ty: TypeId,
         environment: Environment,
     ) -> Self {
-        Self { diagnostics, db, module_id, return_ty, environment: Box::new(environment) }
+        Self { db, diagnostics, module_id, return_ty, environment: Box::new(environment) }
     }
 
     /// Runs a function with a modified context, with a new environment for a subscope.
@@ -88,22 +84,11 @@ impl Environment {
     }
 }
 
-type SemanticResult<T> = Result<T, SemanticDiagnosticKind>;
-
 /// Computes the semantic model of an expression.
-pub fn compute_expr_semantic(
-    ctx: &mut ComputationContext<'_>,
-    syntax: ast::Expr,
-) -> semantic::Expr {
-    maybe_compute_expr_semantic(ctx, &syntax).unwrap_or_else(|kind| {
-        ctx.diagnostics.add(SemanticDiagnostic {
-            stable_location: StableLocation::from_ast(ctx.module_id, &syntax),
-            kind,
-        });
-        semantic::Expr::Missing {
-            ty: TypeId::missing(ctx.db),
-            stable_ptr: syntax.stable_ptr().untyped(),
-        }
+pub fn compute_expr_semantic(ctx: &mut ComputationContext<'_>, syntax: ast::Expr) -> Expr {
+    maybe_compute_expr_semantic(ctx, &syntax).unwrap_or_else(|| Expr::Missing {
+        ty: TypeId::missing(ctx.db),
+        stable_ptr: syntax.stable_ptr().untyped(),
     })
 }
 
@@ -111,21 +96,24 @@ pub fn compute_expr_semantic(
 pub fn maybe_compute_expr_semantic(
     ctx: &mut ComputationContext<'_>,
     syntax: &ast::Expr,
-) -> SemanticResult<semantic::Expr> {
+) -> Option<Expr> {
     let db = ctx.db;
     let syntax_db = db.upcast();
-    // TODO: When semantic::Expr holds the syntax pointer, add it here as well.
-    Ok(match syntax {
+    // TODO: When Expr holds the syntax pointer, add it here as well.
+    Some(match syntax {
         ast::Expr::Path(path) => resolve_variable(ctx, path)?,
         ast::Expr::Literal(literal_syntax) => {
-            semantic::Expr::ExprLiteral(literal_to_semantic(ctx, literal_syntax)?)
+            Expr::ExprLiteral(literal_to_semantic(ctx, literal_syntax)?)
         }
         ast::Expr::False(syntax) => true_literal_expr(db, syntax.stable_ptr().untyped()),
         ast::Expr::True(syntax) => false_literal_expr(db, syntax.stable_ptr().untyped()),
         ast::Expr::Parenthesized(paren_syntax) => {
             compute_expr_semantic(ctx, paren_syntax.expr(syntax_db))
         }
-        ast::Expr::Unary(_) => return Err(SemanticDiagnosticKind::Unsupported),
+        ast::Expr::Unary(_) => {
+            ctx.diagnostics.report(syntax, Unsupported);
+            return None;
+        }
         ast::Expr::Binary(binary_op_syntax) => {
             let stable_ptr = binary_op_syntax.stable_ptr().untyped();
             let binary_op = binary_op_syntax.op(syntax_db);
@@ -136,17 +124,27 @@ pub fn maybe_compute_expr_semantic(
             }
             let rexpr = compute_expr_semantic(ctx, rhs_syntax);
             let arg_exprs = [lexpr, rexpr];
-            let generic_function = core_binary_operator(db, binary_op)?;
-            let function = specialize_function(ctx, generic_function, &arg_exprs, &[])?;
+            let generic_function = core_binary_operator(db, &binary_op)
+                .on_none(|| ctx.diagnostics.report(&binary_op, UnknownBinaryOperator))?;
+            let function = specialize_function(
+                ctx,
+                binary_op.stable_ptr().untyped(),
+                generic_function,
+                &arg_exprs,
+                &[],
+            )?;
             let args = arg_exprs.into_iter().map(|expr| db.intern_expr(expr)).collect();
-            semantic::Expr::ExprFunctionCall(semantic::ExprFunctionCall {
+            Expr::ExprFunctionCall(ExprFunctionCall {
                 function,
                 args,
                 ty: function.return_type(db),
                 stable_ptr,
             })
         }
-        ast::Expr::Tuple(_) => return Err(SemanticDiagnosticKind::Unsupported),
+        ast::Expr::Tuple(_) => {
+            ctx.diagnostics.report(syntax, Unsupported);
+            return None;
+        }
         ast::Expr::FunctionCall(call_syntax) => {
             let path = call_syntax.path(syntax_db);
             let arg_exprs: Vec<_> = call_syntax
@@ -160,7 +158,7 @@ pub fn maybe_compute_expr_semantic(
             let generic_arg_exprs: Vec<TypeId> = vec![];
             let function = resolve_function(ctx, path, &arg_exprs, &generic_arg_exprs);
             let args = arg_exprs.into_iter().map(|expr| db.intern_expr(expr)).collect();
-            semantic::Expr::ExprFunctionCall(semantic::ExprFunctionCall {
+            Expr::ExprFunctionCall(ExprFunctionCall {
                 function,
                 args,
                 ty: function.return_type(db),
@@ -193,7 +191,7 @@ pub fn maybe_compute_expr_semantic(
                     Some(t) => t.ty(),
                     None => unit_ty(db),
                 };
-                semantic::Expr::ExprBlock(semantic::ExprBlock {
+                Expr::ExprBlock(ExprBlock {
                     statements: statements_semantic,
                     tail: tail_semantic_expr.map(|expr| db.intern_expr(expr)),
                     ty,
@@ -221,20 +219,15 @@ pub fn maybe_compute_expr_semantic(
                 match match_type {
                     Some(ty) if ty == arm_ty => {}
                     Some(ty) => {
-                        ctx.diagnostics.add(SemanticDiagnostic {
-                            stable_location: StableLocation::from_ast(ctx.module_id, &expr_syntax),
-                            kind: SemanticDiagnosticKind::IncompatibleMatchArms {
-                                match_ty: ty,
-                                arm_ty,
-                            },
-                        });
+                        ctx.diagnostics
+                            .report(&expr_syntax, IncompatibleMatchArms { match_ty: ty, arm_ty });
                         match_type = Some(TypeId::missing(db));
                         break;
                     }
                     None => match_type = Some(arm_ty),
                 }
             }
-            semantic::Expr::ExprMatch(semantic::ExprMatch {
+            Expr::ExprMatch(ExprMatch {
                 matched_expr: db
                     .intern_expr(compute_expr_semantic(ctx, expr_match.expr(syntax_db))),
                 arms: semantic_arms,
@@ -248,8 +241,14 @@ pub fn maybe_compute_expr_semantic(
                 stable_ptr: expr_match.stable_ptr().untyped(),
             })
         }
-        ast::Expr::If(_expr_if) => return Err(SemanticDiagnosticKind::Unsupported),
-        ast::Expr::Missing(_) => return Err(SemanticDiagnosticKind::Unsupported),
+        ast::Expr::If(_expr_if) => {
+            ctx.diagnostics.report(syntax, Unsupported);
+            return None;
+        }
+        ast::Expr::Missing(_) => {
+            ctx.diagnostics.report(syntax, Unsupported);
+            return None;
+        }
     })
 }
 
@@ -257,13 +256,14 @@ pub fn maybe_compute_expr_semantic(
 fn struct_ctor_expr(
     ctx: &mut ComputationContext<'_>,
     ctor_syntax: &ast::ExprStructCtorCall,
-) -> SemanticResult<Expr> {
+) -> Option<Expr> {
     let db = ctx.db;
     let syntax_db = db.upcast();
-    let item = resolve_item(ctx.db, ctx.module_id, &ctor_syntax.path(syntax_db))?;
+    let path = ctor_syntax.path(syntax_db);
+    let item = resolve_item(ctx.db, ctx.diagnostics, ctx.module_id, &path)?;
     let struct_id = ModuleItemId::option_from(item)
         .and_then(StructId::option_from)
-        .ok_or(SemanticDiagnosticKind::UnknownStruct)?;
+        .on_none(|| ctx.diagnostics.report(&path, UnknownStruct))?;
     let members = db.struct_members(struct_id).unwrap_or_default();
     let mut member_exprs: OrderedHashMap<MemberId, ExprId> = OrderedHashMap::default();
     for arg in ctor_syntax.arguments(syntax_db).arguments(syntax_db).elements(syntax_db) {
@@ -271,10 +271,7 @@ fn struct_ctor_expr(
         let arg = match arg {
             ast::StructArg::StructArgSingle(arg) => arg,
             ast::StructArg::StructArgTail(tail_expr) => {
-                ctx.diagnostics.add(SemanticDiagnostic {
-                    stable_location: StableLocation::from_ast(ctx.module_id, &tail_expr),
-                    kind: SemanticDiagnosticKind::Unsupported,
-                });
+                ctx.diagnostics.report(&tail_expr, Unsupported);
                 continue;
             }
         };
@@ -284,10 +281,7 @@ fn struct_ctor_expr(
         let member = if let Some(member) = members.get(&arg_name) {
             member
         } else {
-            ctx.diagnostics.add(SemanticDiagnostic {
-                stable_location: StableLocation::from_ast(ctx.module_id, &arg_identifier),
-                kind: SemanticDiagnosticKind::UnknownMember,
-            });
+            ctx.diagnostics.report(&arg_identifier, UnknownMember);
             continue;
         };
         // Extract expression.
@@ -299,33 +293,24 @@ fn struct_ctor_expr(
         };
         // Check types.
         if arg_expr.ty() != member.ty {
-            ctx.diagnostics.add(SemanticDiagnostic {
-                stable_location: StableLocation::from_ast(ctx.module_id, &arg_identifier),
-                kind: SemanticDiagnosticKind::WrongArgumentType {
-                    expected_ty: member.ty,
-                    actual_ty: arg_expr.ty(),
-                },
-            });
+            ctx.diagnostics.report(
+                &arg_identifier,
+                WrongArgumentType { expected_ty: member.ty, actual_ty: arg_expr.ty() },
+            );
             continue;
         }
         // Insert and check for duplicates.
         if member_exprs.insert(member.id, db.intern_expr(arg_expr)).is_some() {
-            ctx.diagnostics.add(SemanticDiagnostic {
-                stable_location: StableLocation::from_ast(ctx.module_id, &arg_identifier),
-                kind: SemanticDiagnosticKind::MemberSpecifiedMoreThanOnce,
-            });
+            ctx.diagnostics.report(&arg_identifier, MemberSpecifiedMoreThanOnce);
         }
     }
     // Report errors for missing members.
     for (member_name, member) in members.iter() {
         if !member_exprs.contains_key(&member.id) {
-            ctx.diagnostics.add(SemanticDiagnostic {
-                stable_location: StableLocation::from_ast(ctx.module_id, ctor_syntax),
-                kind: SemanticDiagnosticKind::MissingMember { member_name: member_name.clone() },
-            });
+            ctx.diagnostics.report(ctor_syntax, MissingMember { member_name: member_name.clone() });
         }
     }
-    Ok(Expr::ExprStructCtor(ExprStructCtor {
+    Some(Expr::ExprStructCtor(ExprStructCtor {
         struct_id,
         members: member_exprs.into_iter().collect(),
         ty: db.intern_type(TypeLongId::Concrete(ConcreteType {
@@ -359,31 +344,33 @@ fn get_tail_expression(
 fn literal_to_semantic(
     ctx: &mut ComputationContext<'_>,
     literal_syntax: &ast::TerminalLiteralNumber,
-) -> SemanticResult<semantic::ExprLiteral> {
+) -> Option<ExprLiteral> {
     let db = ctx.db;
     let syntax_db = db.upcast();
     let text = literal_syntax.text(syntax_db);
-    let value = text.parse::<usize>().map_err(|_err| SemanticDiagnosticKind::UnknownLiteral)?;
+    let value = text
+        .parse::<usize>()
+        .ok()
+        .on_none(|| ctx.diagnostics.report(literal_syntax, UnknownLiteral))?;
     let ty = db.core_felt_ty();
-    Ok(semantic::ExprLiteral { value, ty, stable_ptr: literal_syntax.stable_ptr().untyped() })
+    Some(ExprLiteral { value, ty, stable_ptr: literal_syntax.stable_ptr().untyped() })
 }
 
 /// Given an expression syntax, if it's an identifier, returns it. Otherwise, returns the proper
 /// error.
 fn expr_as_identifier(
-    rhs_syntax: ast::Expr,
+    ctx: &mut ComputationContext<'_>,
+    rhs_syntax: &ast::Expr,
     syntax_db: &dyn SyntaxGroup,
-) -> Result<SmolStr, SemanticDiagnosticKind> {
-    match rhs_syntax {
-        ast::Expr::Path(path) => {
-            let segments = path.elements(syntax_db);
-            if segments.len() != 1 {
-                return Err(SemanticDiagnosticKind::InvalidMemberExpression);
-            }
-            Ok(segments[0].identifier(syntax_db))
+) -> Option<SmolStr> {
+    if let ast::Expr::Path(path) = rhs_syntax {
+        let segments = path.elements(syntax_db);
+        if segments.len() == 1 {
+            return Some(segments[0].identifier(syntax_db));
         }
-        _ => Err(SemanticDiagnosticKind::InvalidMemberExpression),
-    }
+    };
+    ctx.diagnostics.report(rhs_syntax, InvalidMemberExpression);
+    None
 }
 
 // TODO(spapini): Consider moving some checks here to the responsibility of the parser.
@@ -393,62 +380,64 @@ fn member_access_expr(
     lexpr: Expr,
     rhs_syntax: ast::Expr,
     stable_ptr: SyntaxStablePtrId,
-) -> Result<Expr, SemanticDiagnosticKind> {
+) -> Option<Expr> {
     let syntax_db = ctx.db.upcast();
 
     // Find MemberId.
     match ctx.db.lookup_intern_type(lexpr.ty()) {
-        crate::TypeLongId::Concrete(concrete) => match concrete.generic_type {
-            GenericTypeId::Struct(struct_id) => {
-                let member_name = expr_as_identifier(rhs_syntax, syntax_db)?;
-                let member = ctx
-                    .db
-                    .struct_members(struct_id)
-                    .and_then(|members| members.get(&member_name).cloned())
-                    .ok_or(SemanticDiagnosticKind::NoSuchMember { struct_id, member_name })?;
-                let lexpr_id = ctx.db.intern_expr(lexpr);
-                Ok(Expr::ExprMemberAccess(semantic::ExprMemberAccess {
-                    expr: lexpr_id,
-                    member: member.id,
-                    ty: member.ty,
-                    stable_ptr,
-                }))
+        crate::TypeLongId::Concrete(concrete) => {
+            let member_name = expr_as_identifier(ctx, &rhs_syntax, syntax_db)?;
+            match concrete.generic_type {
+                GenericTypeId::Struct(struct_id) => {
+                    let member = ctx
+                        .db
+                        .struct_members(struct_id)
+                        .and_then(|members| members.get(&member_name).cloned())
+                        .on_none(|| {
+                            ctx.diagnostics
+                                .report(&rhs_syntax, NoSuchMember { struct_id, member_name })
+                        })?;
+                    let lexpr_id = ctx.db.intern_expr(lexpr);
+                    return Some(Expr::ExprMemberAccess(ExprMemberAccess {
+                        expr: lexpr_id,
+                        member: member.id,
+                        ty: member.ty,
+                        stable_ptr,
+                    }));
+                }
+                _ => {
+                    ctx.diagnostics
+                        .report(&rhs_syntax, TypeHasNoMembers { ty: lexpr.ty(), member_name });
+                }
             }
-            _ => {
-                let member_name = expr_as_identifier(rhs_syntax, syntax_db)?;
-                Err(SemanticDiagnosticKind::TypeHasNoMembers { ty: lexpr.ty(), member_name })
-            }
-        },
+        }
         crate::TypeLongId::Tuple(_) => {
             // TODO(spapini): Handle .0, .1, ...;
-            todo!()
+            ctx.diagnostics.report(&rhs_syntax, Unsupported);
         }
-        crate::TypeLongId::Missing => {
-            // An error should have already been emitted for lexpr.
-            Ok(semantic::Expr::Missing { ty: TypeId::missing(ctx.db), stable_ptr })
-        }
+        crate::TypeLongId::Missing => {}
     }
+    None
 }
 
 /// Resolves a variable given a context and a path expression.
-fn resolve_variable(
-    ctx: &mut ComputationContext<'_>,
-    path: &ast::ExprPath,
-) -> SemanticResult<semantic::Expr> {
+fn resolve_variable(ctx: &mut ComputationContext<'_>, path: &ast::ExprPath) -> Option<Expr> {
     let db = ctx.db;
     let syntax_db = db.upcast();
     let segments = path.elements(syntax_db);
     if segments.len() != 1 {
-        return Err(SemanticDiagnosticKind::Unsupported);
+        ctx.diagnostics.report(path, Unsupported);
+        return None;
     }
 
     match &segments[0] {
         PathSegment::Simple(ident_segment) => {
             resolve_variable_by_name(ctx, &ident_segment.ident(syntax_db))
         }
-        PathSegment::WithGenericArgs(_generic_args_segment) => {
+        PathSegment::WithGenericArgs(generic_args_segment) => {
             // TODO(ilya, 10/10/2022): Generics are not supported yet.
-            Err(SemanticDiagnosticKind::Unsupported)
+            ctx.diagnostics.report(generic_args_segment, Unsupported);
+            None
         }
     }
 }
@@ -457,12 +446,12 @@ fn resolve_variable(
 pub fn resolve_variable_by_name(
     ctx: &mut ComputationContext<'_>,
     identifier: &ast::TerminalIdentifier,
-) -> SemanticResult<semantic::Expr> {
+) -> Option<Expr> {
     let variable_name = identifier.text(ctx.db.upcast());
     let mut maybe_env = Some(&*ctx.environment);
     while let Some(env) = maybe_env {
         if let Some(var) = env.variables.get(&variable_name) {
-            return Ok(semantic::Expr::ExprVar(semantic::ExprVar {
+            return Some(Expr::ExprVar(ExprVar {
                 var: var.id,
                 ty: var.ty,
                 stable_ptr: identifier.stable_ptr().untyped(),
@@ -470,7 +459,8 @@ pub fn resolve_variable_by_name(
         }
         maybe_env = env.parent.as_deref();
     }
-    Err(SemanticDiagnosticKind::VariableNotFound { name: variable_name })
+    ctx.diagnostics.report(identifier, VariableNotFound { name: variable_name });
+    None
 }
 
 /// Resolves a concrete function given a context and a path expression.
@@ -478,16 +468,11 @@ pub fn resolve_variable_by_name(
 fn resolve_function(
     ctx: &mut ComputationContext<'_>,
     path: ast::ExprPath,
-    args: &[semantic::Expr],
+    args: &[Expr],
     generic_args: &[semantic::TypeId],
 ) -> FunctionId {
-    maybe_resolve_function(ctx, &path, args, generic_args).unwrap_or_else(|kind| {
-        ctx.diagnostics.add(SemanticDiagnostic {
-            stable_location: StableLocation::from_ast(ctx.module_id, &path),
-            kind,
-        });
-        FunctionId::missing(ctx.db)
-    })
+    maybe_resolve_function(ctx, &path, args, generic_args)
+        .unwrap_or_else(|| FunctionId::missing(ctx.db))
 }
 /// Resolves a concrete function given a context and a path expression.
 /// Returns the generic function and the concrete function, or returns a SemanticDiagnosticKind on
@@ -495,42 +480,48 @@ fn resolve_function(
 fn maybe_resolve_function(
     ctx: &mut ComputationContext<'_>,
     path: &ast::ExprPath,
-    args: &[semantic::Expr],
+    args: &[Expr],
     generic_args: &[semantic::TypeId],
-) -> SemanticResult<FunctionId> {
+) -> Option<FunctionId> {
     // TODO(spapini): Try to find function in multiple places (e.g. impls, or other modules for
     //   suggestions)
     let generic_function =
-        GenericFunctionId::option_from(resolve_item(ctx.db, ctx.module_id, path)?)
-            .ok_or(SemanticDiagnosticKind::UnknownFunction)?;
-    specialize_function(ctx, generic_function, args, generic_args)
+        GenericFunctionId::option_from(resolve_item(ctx.db, ctx.diagnostics, ctx.module_id, path)?)
+            .on_none(|| ctx.diagnostics.report(path, UnknownFunction))?;
+    specialize_function(ctx, path.stable_ptr().untyped(), generic_function, args, generic_args)
 }
 
 /// Tries to specializes a generic function.
 fn specialize_function(
     ctx: &mut ComputationContext<'_>,
+    stable_ptr: SyntaxStablePtrId,
     generic_function: GenericFunctionId,
-    args: &[semantic::Expr],
+    args: &[Expr],
     generic_args: &[semantic::TypeId],
-) -> SemanticResult<FunctionId> {
-    // TODO(spapini): Type check arguments.
+) -> Option<FunctionId> {
+    // TODO(spapini): Better location for these diagnsotics after the refactor for generics resolve.
     let signature = ctx
         .db
         .generic_function_signature(generic_function)
-        .ok_or(SemanticDiagnosticKind::UnknownFunction)?;
+        .on_none(|| ctx.diagnostics.report_by_ptr(stable_ptr, UnknownFunction))?;
 
     if args.len() != signature.params.len() {
-        return Err(SemanticDiagnosticKind::WrongNumberOfArguments {
-            expected: signature.params.len(),
-            actual: args.len(),
-        });
+        ctx.diagnostics.report_by_ptr(
+            stable_ptr,
+            WrongNumberOfArguments { expected: signature.params.len(), actual: args.len() },
+        );
+        return None;
     }
 
     if generic_args.len() != signature.generic_params.len() {
-        return Err(SemanticDiagnosticKind::WrongNumberOfGenericArguments {
-            expected: signature.generic_params.len(),
-            actual: generic_args.len(),
-        });
+        ctx.diagnostics.report_by_ptr(
+            stable_ptr,
+            WrongNumberOfGenericArguments {
+                expected: signature.generic_params.len(),
+                actual: generic_args.len(),
+            },
+        );
+        return None;
     }
 
     // Check argument types.
@@ -541,17 +532,14 @@ fn specialize_function(
         // added).
         // TODO(lior): Add a test to missing type once possible.
         if arg_typ != param_typ && arg_typ != TypeId::missing(ctx.db) {
-            ctx.diagnostics.add(SemanticDiagnostic {
-                stable_location: StableLocation::new(ctx.module_id, arg.stable_ptr()),
-                kind: SemanticDiagnosticKind::WrongArgumentType {
-                    expected_ty: param_typ,
-                    actual_ty: arg_typ,
-                },
-            });
+            ctx.diagnostics.report_by_ptr(
+                arg.stable_ptr(),
+                WrongArgumentType { expected_ty: param_typ, actual_ty: arg_typ },
+            );
         }
     }
 
-    Ok(ctx.db.intern_function(FunctionLongId::Concrete(ConcreteFunction {
+    Some(ctx.db.intern_function(FunctionLongId::Concrete(ConcreteFunction {
         generic_function,
         generic_args: generic_args.iter().map(|typ| GenericArgumentId::Type(*typ)).collect(),
         return_type: signature.return_type,
@@ -578,18 +566,15 @@ pub fn compute_statement_semantic(
                 ast::OptionTypeClause::TypeClause(type_clause) => {
                     let var_type_path = type_clause.ty(syntax_db);
                     let explicit_type =
-                        resolve_type(ctx.diagnostics, db, ctx.module_id, var_type_path);
+                        resolve_type(db, ctx.diagnostics, ctx.module_id, var_type_path);
                     if explicit_type != inferred_type {
-                        ctx.diagnostics.add(SemanticDiagnostic {
-                            stable_location: StableLocation::new(
-                                ctx.module_id,
-                                let_syntax.rhs(syntax_db).stable_ptr().untyped(),
-                            ),
-                            kind: SemanticDiagnosticKind::WrongArgumentType {
+                        ctx.diagnostics.report(
+                            &let_syntax.rhs(syntax_db),
+                            WrongArgumentType {
                                 expected_ty: explicit_type,
                                 actual_ty: inferred_type,
                             },
-                        })
+                        )
                     }
                     explicit_type
                 }
@@ -610,16 +595,10 @@ pub fn compute_statement_semantic(
             let expr_syntax = return_syntax.expr(syntax_db);
             let expr = compute_expr_semantic(ctx, expr_syntax.clone());
             if expr.ty() != ctx.return_ty {
-                ctx.diagnostics.add(SemanticDiagnostic {
-                    stable_location: StableLocation::new(
-                        ctx.module_id,
-                        expr_syntax.stable_ptr().untyped(),
-                    ),
-                    kind: SemanticDiagnosticKind::WrongReturnType {
-                        expected_ty: ctx.return_ty,
-                        actual_ty: expr.ty(),
-                    },
-                })
+                ctx.diagnostics.report(
+                    &expr_syntax,
+                    WrongReturnType { expected_ty: ctx.return_ty, actual_ty: expr.ty() },
+                )
             }
             semantic::Statement::Return(db.intern_expr(expr))
         }

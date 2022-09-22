@@ -6,6 +6,7 @@ use syntax::node::ast;
 use super::functions::{function_signature_params, function_signature_return_type};
 use super::generics::semantic_generic_params;
 use crate::db::SemanticGroup;
+use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::{compute_expr_semantic, ComputationContext, Environment};
 use crate::{semantic, SemanticDiagnostic};
 
@@ -42,8 +43,8 @@ pub fn priv_free_function_declaration_data(
     db: &dyn SemanticGroup,
     free_function_id: FreeFunctionId,
 ) -> Option<FreeFunctionDeclarationData> {
-    let mut diagnostics = Diagnostics::default();
     let module_id = free_function_id.module(db.upcast());
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
     let module_data = db.module_data(module_id)?;
     let function_syntax = module_data.free_functions.get(&free_function_id)?;
     let signature_syntax = function_syntax.signature(db.upcast());
@@ -52,13 +53,13 @@ pub fn priv_free_function_declaration_data(
     let (params, environment) =
         function_signature_params(&mut diagnostics, db, module_id, &signature_syntax);
     let generic_params = semantic_generic_params(
-        &mut diagnostics,
         db,
+        &mut diagnostics,
         module_id,
         &function_syntax.generic_params(db.upcast()),
     );
     Some(FreeFunctionDeclarationData {
-        diagnostics,
+        diagnostics: diagnostics.diagnostics,
         signature: semantic::Signature { params, generic_params, return_type },
         environment,
     })
@@ -96,8 +97,8 @@ pub fn priv_free_function_definition_data(
     db: &dyn SemanticGroup,
     free_function_id: FreeFunctionId,
 ) -> Option<FreeFunctionDefinitionData> {
-    let mut diagnostics = Diagnostics::default();
     let module_id = free_function_id.module(db.upcast());
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
     let module_data = db.module_data(module_id)?;
     let syntax = module_data.free_functions.get(&free_function_id)?.clone();
     // Compute signature semantic.
@@ -105,12 +106,15 @@ pub fn priv_free_function_definition_data(
     let environment = declaration.environment;
     // Compute body semantic expr.
     let mut ctx = ComputationContext::new(
-        &mut diagnostics,
         db,
+        &mut diagnostics,
         module_id,
         declaration.signature.return_type,
         environment,
     );
     let expr = compute_expr_semantic(&mut ctx, ast::Expr::Block(syntax.body(db.upcast())));
-    Some(FreeFunctionDefinitionData { diagnostics, body: db.intern_expr(expr) })
+    Some(FreeFunctionDefinitionData {
+        diagnostics: diagnostics.diagnostics,
+        body: db.intern_expr(expr),
+    })
 }

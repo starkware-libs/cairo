@@ -3,12 +3,36 @@
 mod test;
 
 use defs::diagnostic_utils::StableLocation;
-use defs::ids::{EnumId, LanguageElementId, StructId};
-use diagnostics::{DiagnosticEntry, DiagnosticLocation};
+use defs::ids::{EnumId, LanguageElementId, ModuleId, StructId};
+use diagnostics::{DiagnosticEntry, DiagnosticLocation, Diagnostics};
 use smol_str::SmolStr;
+use syntax::node::ids::SyntaxStablePtrId;
+use syntax::node::TypedSyntaxNode;
 
 use crate::db::SemanticGroup;
 use crate::semantic;
+
+pub struct SemanticDiagnostics {
+    pub diagnostics: Diagnostics<SemanticDiagnostic>,
+    pub module_id: ModuleId,
+}
+impl SemanticDiagnostics {
+    pub fn new(module_id: ModuleId) -> Self {
+        Self { module_id, diagnostics: Diagnostics::default() }
+    }
+    pub fn report<TNode: TypedSyntaxNode>(&mut self, node: &TNode, kind: SemanticDiagnosticKind) {
+        self.diagnostics.add(SemanticDiagnostic {
+            stable_location: StableLocation::from_ast(self.module_id, node),
+            kind,
+        });
+    }
+    pub fn report_by_ptr(&mut self, stable_ptr: SyntaxStablePtrId, kind: SemanticDiagnosticKind) {
+        self.diagnostics.add(SemanticDiagnostic {
+            stable_location: StableLocation::new(self.module_id, stable_ptr),
+            kind,
+        });
+    }
+}
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct SemanticDiagnostic {

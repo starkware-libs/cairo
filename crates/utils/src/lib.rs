@@ -29,3 +29,16 @@ pub fn write_comma_separated<Iter: IntoIterator<Item = V>, V: std::fmt::Display>
     }
     Ok(())
 }
+
+/// Helper operations on Option<T>.
+pub trait OptionHelper {
+    fn on_none<F: FnOnce()>(self, f: F) -> Self;
+}
+impl<T> OptionHelper for Option<T> {
+    fn on_none<F: FnOnce()>(self, f: F) -> Self {
+        if self.is_none() {
+            f();
+        }
+        self
+    }
+}
