@@ -101,8 +101,10 @@ pub fn core_binary_operator(
         BinaryOperator::EqEq(_) => "felt_eq",
         BinaryOperator::AndAnd(_) => "bool_and",
         BinaryOperator::OrOr(_) => "bool_or",
-        BinaryOperator::Not(_) => "bool_not",
         BinaryOperator::LE(_) => "felt_le",
+        BinaryOperator::GE(_) => "felt_ge",
+        BinaryOperator::LT(_) => "felt_lt",
+        BinaryOperator::GT(_) => "felt_gt",
         _ => return None,
     };
     let generic_function = db

@@ -23,4 +23,8 @@ extern func non_zero_felt_drop(a: non_zero_felt);
 extern func felt_div(a: felt, b: non_zero_felt) -> felt;
 
 extern func felt_eq(a: felt, b: felt) -> bool;
-extern func felt_le(rc: RangeCheck, a: felt, b: felt) -> (RangeCheck, bool);
+// TODO(spapini): Get RangeCheck implicit.
+extern func felt_le(a: felt, b: felt) -> (bool);
+extern func felt_ge(a: felt, b: felt) -> (bool);
+extern func felt_lt(a: felt, b: felt) -> (bool);
+extern func felt_gt(a: felt, b: felt) -> (bool);
