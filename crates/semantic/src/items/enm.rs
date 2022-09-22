@@ -59,7 +59,7 @@ pub fn priv_enum_semantic_data(db: &dyn SemanticGroup, enum_id: EnumId) -> Optio
             db,
             &mut diagnostics,
             module_id,
-            variant.type_clause(syntax_db).ty(syntax_db),
+            &variant.type_clause(syntax_db).ty(syntax_db),
         );
         let variant_name = variant.name(syntax_db).text(syntax_db);
         if let Some(_other_variant) = variants.insert(variant_name.clone(), Variant { id, ty }) {

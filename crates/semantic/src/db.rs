@@ -2,7 +2,7 @@ use db_utils::Upcast;
 use defs::db::DefsGroup;
 use defs::ids::{
     EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericFunctionId, GenericParamId,
-    ModuleId, ModuleItemId, StructId,
+    GenericTypeId, ModuleId, ModuleItemId, StructId,
 };
 use diagnostics::Diagnostics;
 use filesystem::db::{AsFilesGroupMut, FilesGroup};
@@ -154,6 +154,16 @@ pub trait SemanticGroup:
     /// etc...
     #[salsa::invoke(items::functions::concrete_function_signature)]
     fn concrete_function_signature(&self, function_id: FunctionId) -> Option<semantic::Signature>;
+
+    // Generic type.
+    // =================
+    /// Returns the generic_type of a generic function. This include free types, extern
+    /// types, etc...
+    #[salsa::invoke(types::generic_type_generic_params)]
+    fn generic_type_generic_params(
+        &self,
+        generic_type: GenericTypeId,
+    ) -> Option<Vec<GenericParamId>>;
 
     // Expression.
     // ===========

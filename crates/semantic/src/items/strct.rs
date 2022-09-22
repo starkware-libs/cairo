@@ -62,7 +62,7 @@ pub fn priv_struct_semantic_data(
             db,
             &mut diagnostics,
             module_id,
-            member.type_clause(syntax_db).ty(syntax_db),
+            &member.type_clause(syntax_db).ty(syntax_db),
         );
         let member_name = member.name(syntax_db).text(syntax_db);
         if let Some(_other_member) = members.insert(member_name.clone(), Member { id, ty }) {
