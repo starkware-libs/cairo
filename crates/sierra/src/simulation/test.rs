@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use test_case::test_case;
 
-use super::mem_cell::MemCell;
+use super::value::CoreValue::{self, GasBuiltin, Integer, NonZero, Uninitialized};
 use super::LibFuncSimulationError::{
     self, FunctionSimulationError, MemoryLayoutMismatch, WrongNumberOfArgs,
 };
@@ -28,8 +28,8 @@ fn user_func_arg(name: &str) -> GenericArg {
 fn simulate(
     id: &str,
     generic_args: Vec<GenericArg>,
-    inputs: Vec<Vec<MemCell>>,
-) -> Result<(Vec<Vec<MemCell>>, usize), LibFuncSimulationError> {
+    inputs: Vec<CoreValue>,
+) -> Result<(Vec<CoreValue>, usize), LibFuncSimulationError> {
     let mock_func_entry =
         |id: &str| (id.into(), Function::new(id.into(), vec![], vec![], StatementIdx(0)));
     core::simulate(
@@ -77,102 +77,86 @@ fn simulate(
     )
 }
 
-/// Expects to find a libfunc, wrapping and unwrapping the MemCell types and vectors of the
-/// inputs and outputs, assumming all of size 1.
-#[test_case("get_gas", vec![], vec![5] => Ok((vec![1], 0)); "get_gas(5)")]
-#[test_case("get_gas", vec![], vec![2] => Ok((vec![2], 1)); "get_gas(2)")]
-#[test_case("int_jump_nz", vec![], vec![2] => Ok((vec![2], 0)); "int_jump_nz(2)")]
-#[test_case("int_jump_nz", vec![], vec![0] => Ok((vec![], 1)); "int_jump_nz(0)")]
+#[test_case("get_gas", vec![], vec![GasBuiltin(5)] => Ok((vec![GasBuiltin(1)], 0)); "get_gas(5)")]
+#[test_case("get_gas", vec![], vec![GasBuiltin(2)] => Ok((vec![GasBuiltin(2)], 1)); "get_gas(2)")]
+#[test_case("int_jump_nz", vec![], vec![Integer(2)] => Ok((vec![NonZero(Box::new(Integer(2)))], 0)); "int_jump_nz(2)")]
+#[test_case("int_jump_nz", vec![], vec![Integer(0)] => Ok((vec![], 1)); "int_jump_nz(0)")]
 #[test_case("jump", vec![], vec![] => Ok((vec![], 0)); "jump()")]
-fn simulate_invocation(
+fn simulate_branch(
     id: &str,
     generic_args: Vec<GenericArg>,
-    inputs: Vec<i64>,
-) -> Result<(Vec<i64>, usize), LibFuncSimulationError> {
-    simulate(id, generic_args, inputs.into_iter().map(|value| vec![MemCell { value }]).collect())
-        .map(|(outputs, chosen_branch)| {
-            (
-                outputs
-                    .into_iter()
-                    .map(|mut cells_vec| {
-                        // Unwrapping vector and MemCell.
-                        assert_eq!(cells_vec.len(), 1);
-                        cells_vec.remove(0).value
-                    })
-                    .collect(),
-                chosen_branch,
-            )
-        })
+    inputs: Vec<CoreValue>,
+) -> Result<(Vec<CoreValue>, usize), LibFuncSimulationError> {
+    simulate(id, generic_args, inputs)
 }
 
 /// Tests for simulation of a non branch invocations.
-#[test_case("refund_gas", vec![], vec![2] => Ok(vec![6]); "refund_gas(2)")]
-#[test_case("int_add", vec![], vec![2, 3] => Ok(vec![5]); "int_add(2, 3)")]
-#[test_case("int_sub", vec![], vec![5, 3] => Ok(vec![2]); "int_sub(5, 3)")]
-#[test_case("int_mul", vec![], vec![5, 3] => Ok(vec![15]); "int_mul(5, 3)")]
-#[test_case("int_div", vec![], vec![32, 5] => Ok(vec![6]); "int_div(32, 5)")]
-#[test_case("int_mod", vec![], vec![32, 5] => Ok(vec![2]); "int_mod(32, 5)")]
-#[test_case("int_add", vec![value_arg(3)], vec![2] => Ok(vec![5]); "int_add<3>(2)")]
-#[test_case("int_sub", vec![value_arg(3)], vec![5] => Ok(vec![2]); "int_sub<3>(5)")]
-#[test_case("int_mul", vec![value_arg(3)], vec![5] => Ok(vec![15]); "int_mul<3>(5)")]
-#[test_case("int_div", vec![value_arg(5)], vec![32] => Ok(vec![6]); "int_div<5>(32)")]
-#[test_case("int_mod", vec![value_arg(5)], vec![32] => Ok(vec![2]); "int_mod<5>(32)")]
-#[test_case("int_const", vec![value_arg(3)], vec![] => Ok(vec![3]); "int_const<3>()")]
-#[test_case("int_dup", vec![], vec![24] => Ok(vec![24, 24]); "int_dup(24)")]
-#[test_case("int_drop", vec![], vec![2] => Ok(vec![]); "int_drop(2)")]
-#[test_case("unwrap_nz", vec![type_arg("int")], vec![6] => Ok(vec![6]); "unwrap_nz<int>(6)")]
-#[test_case("store_temp", vec![type_arg("int")], vec![6] => Ok(vec![6]); "store_temp<int>(6)")]
+#[test_case("refund_gas", vec![], vec![GasBuiltin(2)] => Ok(vec![GasBuiltin(6)]); "refund_gas(2)")]
+#[test_case("int_add", vec![], vec![Integer(2), Integer(3)] => Ok(vec![Integer(5)]); "int_add(2, 3)")]
+#[test_case("int_sub", vec![], vec![Integer(5), Integer(3)] => Ok(vec![Integer(2)]); "int_sub(5, 3)")]
+#[test_case("int_mul", vec![], vec![Integer(5), Integer(3)] => Ok(vec![Integer(15)]); "int_mul(5, 3)")]
+#[test_case("int_div", vec![], vec![Integer(32), NonZero(Box::new(Integer(5)))] => Ok(vec![Integer(6)]); "int_div(32, 5)")]
+#[test_case("int_mod", vec![], vec![Integer(32), NonZero(Box::new(Integer(5)))] => Ok(vec![Integer(2)]); "int_mod(32, 5)")]
+#[test_case("int_add", vec![value_arg(3)], vec![Integer(2)] => Ok(vec![Integer(5)]); "int_add<3>(2)")]
+#[test_case("int_sub", vec![value_arg(3)], vec![Integer(5)] => Ok(vec![Integer(2)]); "int_sub<3>(5)")]
+#[test_case("int_mul", vec![value_arg(3)], vec![Integer(5)] => Ok(vec![Integer(15)]); "int_mul<3>(5)")]
+#[test_case("int_div", vec![value_arg(5)], vec![Integer(32)] => Ok(vec![Integer(6)]); "int_div<5>(32)")]
+#[test_case("int_mod", vec![value_arg(5)], vec![Integer(32)] => Ok(vec![Integer(2)]); "int_mod<5>(32)")]
+#[test_case("int_const", vec![value_arg(3)], vec![] => Ok(vec![Integer(3)]); "int_const<3>()")]
+#[test_case("int_dup", vec![], vec![Integer(24)] => Ok(vec![Integer(24), Integer(24)]); "int_dup(24)")]
+#[test_case("int_drop", vec![], vec![Integer(2)] => Ok(vec![]); "int_drop(2)")]
+#[test_case("unwrap_nz", vec![type_arg("int")], vec![NonZero(Box::new(Integer(6)))] => Ok(vec![Integer(6)]); "unwrap_nz<int>(6)")]
+#[test_case("store_temp", vec![type_arg("int")], vec![Integer(6)] => Ok(vec![Integer(6)]); "store_temp<int>(6)")]
 #[test_case("align_temps", vec![type_arg("int")], vec![] => Ok(vec![]); "align_temps<int>()")]
-// TODO(ilya, 10/10/2022): Support passing empty variables for transient values.
-#[test_case("store_local", vec![type_arg("int")], vec![0, 6] => Ok(vec![6]);
- "store_local<int>(0, 6)")]
+#[test_case("store_local", vec![type_arg("int")], vec![Uninitialized, Integer(6)] => Ok(vec![Integer(6)]);
+ "store_local<int>(_, 6)")]
 #[test_case("finalize_locals", vec![], vec![] => Ok(vec![]); "finalize_locals()")]
-#[test_case("rename", vec![type_arg("int")], vec![6] => Ok(vec![6]); "rename<int>(6)")]
-#[test_case("function_call", vec![user_func_arg("drop_all_inputs")], vec![3, 5] => Ok(vec![]);
+#[test_case("rename", vec![type_arg("int")], vec![Integer(6)] => Ok(vec![Integer(6)]); "rename<int>(6)")]
+#[test_case("function_call", vec![user_func_arg("drop_all_inputs")], vec![Integer(3), Integer(5)] => Ok(vec![]);
             "function_call<drop_all_inputs>()")]
-#[test_case("function_call", vec![user_func_arg("identity")], vec![3, 5] => Ok(vec![3, 5]);
+#[test_case("function_call", vec![user_func_arg("identity")], vec![Integer(3), Integer(5)] => Ok(vec![Integer(3), Integer(5)]);
             "function_call<identity>()")]
 fn simulate_none_branch(
     id: &str,
     generic_args: Vec<GenericArg>,
-    inputs: Vec<i64>,
-) -> Result<Vec<i64>, LibFuncSimulationError> {
-    simulate_invocation(id, generic_args, inputs).map(|(outputs, chosen_branch)| {
+    inputs: Vec<CoreValue>,
+) -> Result<Vec<CoreValue>, LibFuncSimulationError> {
+    simulate(id, generic_args, inputs).map(|(outputs, chosen_branch)| {
         assert_eq!(chosen_branch, 0);
         outputs
     })
 }
 
-#[test_case("get_gas", vec![], vec![vec![]] => MemoryLayoutMismatch;
+#[test_case("get_gas", vec![], vec![Uninitialized] => MemoryLayoutMismatch;
             "get_gas(empty)")]
 #[test_case("get_gas", vec![], vec![] => WrongNumberOfArgs; "get_gas()")]
-#[test_case("refund_gas", vec![], vec![vec![]] => MemoryLayoutMismatch;
+#[test_case("refund_gas", vec![], vec![Uninitialized] => MemoryLayoutMismatch;
             "refund_gas(empty)")]
 #[test_case("refund_gas", vec![], vec![] => WrongNumberOfArgs; "refund_gas()")]
-#[test_case("int_add", vec![], vec![vec![1]] => WrongNumberOfArgs; "int_add(1)")]
-#[test_case("int_sub", vec![], vec![vec![1]] => WrongNumberOfArgs; "int_sub(1)")]
-#[test_case("int_mul", vec![], vec![vec![1]] => WrongNumberOfArgs; "int_mul(1)")]
-#[test_case("int_div", vec![], vec![vec![1]] => WrongNumberOfArgs; "int_div(1)")]
-#[test_case("int_mod", vec![], vec![vec![1]] => WrongNumberOfArgs; "int_mod(1)")]
+#[test_case("int_add", vec![], vec![Integer(1)] => WrongNumberOfArgs; "int_add(1)")]
+#[test_case("int_sub", vec![], vec![Integer(1)] => WrongNumberOfArgs; "int_sub(1)")]
+#[test_case("int_mul", vec![], vec![Integer(1)] => WrongNumberOfArgs; "int_mul(1)")]
+#[test_case("int_div", vec![], vec![Integer(1)] => WrongNumberOfArgs; "int_div(1)")]
+#[test_case("int_mod", vec![], vec![Integer(1)] => WrongNumberOfArgs; "int_mod(1)")]
 #[test_case("int_add", vec![value_arg(3)], vec![] => WrongNumberOfArgs; "int_add<3>()")]
 #[test_case("int_sub", vec![value_arg(3)], vec![] => WrongNumberOfArgs; "int_sub<3>()")]
 #[test_case("int_mul", vec![value_arg(3)], vec![] => WrongNumberOfArgs; "int_mul<3>()")]
 #[test_case("int_div", vec![value_arg(5)], vec![] => WrongNumberOfArgs; "int_div<5>()")]
 #[test_case("int_mod", vec![value_arg(5)], vec![] => WrongNumberOfArgs; "int_mod<5>()")]
-#[test_case("int_const", vec![value_arg(3)], vec![vec![1]] => WrongNumberOfArgs;
+#[test_case("int_const", vec![value_arg(3)], vec![Integer(1)] => WrongNumberOfArgs;
             "int_const<3>(1)")]
 #[test_case("int_dup", vec![], vec![] => WrongNumberOfArgs; "int_dup()")]
 #[test_case("int_drop", vec![], vec![] => WrongNumberOfArgs; "int_drop()")]
 #[test_case("int_jump_nz", vec![], vec![] => WrongNumberOfArgs; "int_jump_nz<int>()")]
 #[test_case("unwrap_nz", vec![type_arg("int")], vec![] => WrongNumberOfArgs; "unwrap_nz<int>()")]
 #[test_case("store_temp", vec![type_arg("int")], vec![] => WrongNumberOfArgs; "store_temp<int>()")]
-#[test_case("align_temps", vec![type_arg("int")], vec![vec![4]] => WrongNumberOfArgs;
+#[test_case("align_temps", vec![type_arg("int")], vec![Integer(1)] => WrongNumberOfArgs;
             "align_temps<int>(4)")]
 #[test_case("store_local", vec![type_arg("int")], vec![] => WrongNumberOfArgs;
             "store_local<int>()")]
-#[test_case("finalize_locals", vec![], vec![vec![4]] => WrongNumberOfArgs; "finalize_locals(4)")]
+#[test_case("finalize_locals", vec![], vec![Integer(4)] => WrongNumberOfArgs; "finalize_locals(4)")]
 #[test_case("rename", vec![type_arg("int")], vec![] => WrongNumberOfArgs; "rename<int>()")]
-#[test_case("jump", vec![], vec![vec![4]] => WrongNumberOfArgs; "jump(4)")]
+#[test_case("jump", vec![], vec![Integer(4)] => WrongNumberOfArgs; "jump(4)")]
 #[test_case("function_call", vec![user_func_arg("unimplemented")], vec![] =>
             FunctionSimulationError(
                 "unimplemented".into(),
@@ -181,16 +165,7 @@ fn simulate_none_branch(
 fn simulate_error(
     id: &str,
     generic_args: Vec<GenericArg>,
-    inputs: Vec<Vec<i64>>,
+    inputs: Vec<CoreValue>,
 ) -> LibFuncSimulationError {
-    simulate(
-        id,
-        generic_args,
-        inputs
-            .into_iter()
-            .map(|input| input.into_iter().map(|value| MemCell { value }).collect())
-            .collect(),
-    )
-    .err()
-    .unwrap()
+    simulate(id, generic_args, inputs).err().unwrap()
 }

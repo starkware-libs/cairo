@@ -5,7 +5,8 @@ use std::path::PathBuf;
 use sierra::extensions::core::{CoreLibFunc, CoreType};
 use sierra::program::{Program, StatementIdx};
 use sierra::program_registry::ProgramRegistry;
-use sierra::simulation;
+use sierra::simulation::value::CoreValue;
+use sierra::simulation::{self};
 use test_case::test_case;
 
 const COLLATZ: &str = "examples/collatz.sierra";
@@ -54,9 +55,9 @@ fn simulate_collatz((gb, n): (i64, i64), (new_gb, index): (i64, i64)) {
                 (StatementIdx(41), 1),
             ]),
             &"Collatz".into(),
-            vec![vec![gb.into()], vec![n.into()]]
+            vec![CoreValue::GasBuiltin(gb), CoreValue::Integer(n)]
         ),
-        Ok(vec![vec![new_gb.into()], vec![index.into()]])
+        Ok(vec![CoreValue::GasBuiltin(new_gb), CoreValue::Integer(index)])
     );
 }
 
@@ -82,9 +83,9 @@ fn simulate_fib_jumps((gb, n): (i64, i64), (new_gb, fib): (i64, i64)) {
                 (StatementIdx(41), 1),
             ]),
             &"Fibonacci".into(),
-            vec![vec![gb.into()], vec![n.into()]]
+            vec![CoreValue::GasBuiltin(gb), CoreValue::Integer(n)]
         ),
-        Ok(vec![vec![new_gb.into()], vec![fib.into()]])
+        Ok(vec![CoreValue::GasBuiltin(new_gb), CoreValue::Integer(fib)])
     );
 }
 
@@ -97,15 +98,21 @@ fn simulate_fib_jumps((gb, n): (i64, i64), (new_gb, fib): (i64, i64)) {
 #[test_case(6, 13; "6 => 13")]
 #[test_case(7, 21; "7 => 21")]
 #[test_case(8, 34; "8 => 34")]
-fn simulate_fib_no_gas(n: i64, fib: i64) {
+fn simulate_fib_no_gas(n: i128, fib: i128) {
     assert_eq!(
         simulation::run(
             &get_example_program(FIB_NO_GAS),
             &HashMap::new(),
             &"Fibonacci".into(),
-            vec![vec![/* a= */ 1.into()], vec![/* b= */ 1.into()], vec![n.into()]]
+            vec![
+                // a=
+                CoreValue::Felt(1),
+                // b=
+                CoreValue::Felt(1),
+                CoreValue::Felt(n)
+            ]
         ),
-        Ok(vec![vec![fib.into()]])
+        Ok(vec![CoreValue::Felt(fib)])
     );
 }
 
@@ -131,8 +138,8 @@ fn simulate_fib_recursive((gb, n): (i64, i64), (new_gb, fib): (i64, i64)) {
                 (StatementIdx(37), 0),
             ]),
             &"Fibonacci".into(),
-            vec![vec![gb.into()], vec![n.into()]]
+            vec![CoreValue::GasBuiltin(gb), CoreValue::Integer(n)]
         ),
-        Ok(vec![vec![new_gb.into()], vec![fib.into()]])
+        Ok(vec![CoreValue::GasBuiltin(new_gb), CoreValue::Integer(fib)])
     );
 }
