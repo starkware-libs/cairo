@@ -582,6 +582,27 @@ fn test_expr_tuple() {
 }
 
 #[test]
+fn test_expr_tuple_failure() {
+    let mut db_val = SemanticDatabaseForTesting::default();
+    let diagnostics = setup_test_expr(&mut db_val, "(1 < 2, (2, 3))", "", "").get_diagnostics();
+    assert_eq!(
+        diagnostics,
+        indoc! {r#"
+            error: Missing token TerminalComma.
+             --> lib.cairo:2:4
+            (1 < 2, (2, 3))
+               ^
+
+            error: Skipped tokens. Expected element: expression.
+             --> lib.cairo:2:4
+            (1 < 2, (2, 3))
+               ^
+
+        "#}
+    );
+}
+
+#[test]
 fn test_expr_struct_ctor_failures() {
     let mut db_val = SemanticDatabaseForTesting::default();
     let diagnostics = setup_test_module(
