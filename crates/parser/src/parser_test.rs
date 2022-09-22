@@ -5,7 +5,7 @@ use std::fmt::Write;
 use test_case::test_case;
 
 use crate::colored_printer::print_colored;
-use crate::diagnostics_test;
+use crate::parser_test;
 use crate::printer::print_tree;
 use crate::test_utils::{
     get_diagnostics, get_syntax_root_and_diagnostics, read_file, ParserDatabaseForTesting,
@@ -239,9 +239,4 @@ pub fn fix_parser_tests() {
     println!("All Parser tests should be fixed now!");
 }
 
-diagnostics_test!(
-    diagnostic_tests,
-    ["src/parser_test_data/exprs"],
-    ParserDatabaseForTesting::default(),
-    get_diagnostics
-);
+parser_test!(diagnostic_tests, ["src/parser_test_data/exprs"], get_diagnostics);

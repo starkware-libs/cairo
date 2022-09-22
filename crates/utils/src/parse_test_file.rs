@@ -92,3 +92,89 @@ impl TestBuilder {
         std::mem::take(&mut self.tests)
     }
 }
+
+/// Creates a test that reads test files for a given function.
+/// test_name - the name of the test.
+/// filenames - a vector of tests files the test applies to.
+/// func - the function to be applied on the test params to generate the tested result.
+///
+/// The signature of `func` should be of the form:
+/// fn func(db: &mut SomeCrateDatabaseForTesting, inputs: Vec<String>) -> Vec<String>;
+///
+/// The structure of the file must be of the following form:
+/// //! > test description
+///
+/// //! > test_function_name
+/// test_to_upper
+///
+/// //! > test_params
+/// input1
+/// input2
+/// ...
+///
+/// //! > test_output_params
+/// expected_output1
+/// expected_output2
+/// ...
+///
+/// //! > input1
+/// hello
+///
+/// //! > input2
+/// world
+///
+/// //! > expected_output1
+/// HELLO
+///
+/// //! > expected_output2
+/// WORLD
+///
+/// // <Optionally, have more tests with the same format, separated by "//! > ===" lines>
+///
+/// Each crate should define its own wrapper for it with the relevant Database for testing, e.g.:
+/// #[macro_export]
+/// macro_rules! parser_test {
+///     ($test_name:ident, $filenames:expr, $func:ident) => {
+///         utils::test_file_test!($test_name, $filenames, ParserDatabaseForTesting, $func);
+///     };
+/// }
+///
+/// Then, the call to the macro looks like:
+/// parser_test!(unique_test_name, [<test_file1>, <test_file2], test_to_upper);
+#[macro_export]
+macro_rules! test_file_test {
+    ($test_name:ident, $filenames:expr, $db_type:ty, $func:ident) => {
+        #[test]
+        fn $test_name() -> Result<(), std::io::Error> {
+            // TODO(mkaput): consider extracting this part into a function and passing macro args
+            // via refs or closures. It may reduce compilation time sizeably.
+            for filename in $filenames {
+                let tests =
+                    utils::parse_test_file::parse_test_file(std::path::Path::new(filename))?;
+                // TODO(alont): global tags for all tests in a file.
+                for (name, test) in tests {
+                    assert_eq!(test["test_function_name"], stringify!($func));
+                    let params = test["test_params"]
+                        .split('\n')
+                        .map(|param_name| test[param_name].clone())
+                        .collect();
+
+                    let expected_outputs: Vec<String> = test["test_output_params"]
+                        .split('\n')
+                        .map(|param_name| test[param_name].clone())
+                        .collect();
+
+                    let outputs = $func(&mut <$db_type>::default(), params);
+                    for (output, expected_output) in std::iter::zip(outputs, expected_outputs) {
+                        pretty_assertions::assert_eq!(
+                            output.trim(),
+                            expected_output,
+                            "\"{name}\" failed."
+                        );
+                    }
+                }
+            }
+            Ok(())
+        }
+    };
+}

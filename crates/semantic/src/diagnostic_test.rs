@@ -1,9 +1,4 @@
-use crate::diagnostics_test;
-use crate::test_utils::{setup_test_expr, SemanticDatabaseForTesting};
+use crate::semantic_test;
+use crate::test_utils::{test_expr_diagnostics, SemanticDatabaseForTesting};
 
-diagnostics_test!(
-    diagnostics_tests,
-    ["src/diagnostic_test_data/tests"],
-    SemanticDatabaseForTesting::default(),
-    setup_test_expr
-);
+semantic_test!(diagnostics_tests, ["src/diagnostic_test_data/tests"], test_expr_diagnostics);
