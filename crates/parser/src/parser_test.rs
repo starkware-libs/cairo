@@ -1,14 +1,18 @@
 #![allow(non_upper_case_globals)]
 
 use std::fmt::Write;
+use std::sync::Arc;
 
+use filesystem::db::FilesGroup;
+use filesystem::ids::{FileLongId, VirtualFile};
 use test_case::test_case;
 
 use crate::colored_printer::print_colored;
 use crate::parser_test;
-use crate::printer::print_tree;
+use crate::printer::{print_partial_tree, print_tree};
 use crate::test_utils::{
-    get_diagnostics, get_syntax_root_and_diagnostics, read_file, ParserDatabaseForTesting,
+    get_diagnostics, get_syntax_root_and_diagnostics, get_syntax_root_and_diagnostics_from_file,
+    read_file, ParserDatabaseForTesting,
 };
 
 struct ParserTreeTestParams {
@@ -90,7 +94,7 @@ fn parse_and_compare_tree_maybe_fix(test_params: &ParserTreeTestParams, fix: boo
     let db = &db_val;
 
     let (syntax_root, diagnostics) =
-        get_syntax_root_and_diagnostics(db, test_params.cairo_filename);
+        get_syntax_root_and_diagnostics_from_file(db, test_params.cairo_filename);
     let diagnostics_str = diagnostics.format(db);
 
     let mut printed_tree =
@@ -140,7 +144,7 @@ fn parse_and_compare_colored_maybe_fix(test_params: &ParserColoredTestParams, fi
     let db = &db_val;
 
     let (syntax_root, _diagnostics) =
-        get_syntax_root_and_diagnostics(db, test_params.cairo_filename);
+        get_syntax_root_and_diagnostics_from_file(db, test_params.cairo_filename);
     let printed = print_colored(db, &syntax_root, test_params.verbose);
     let expected = read_file(test_params.expected_colored_filename);
     compare_printed_and_expected_maybe_fix(
@@ -239,4 +243,34 @@ pub fn fix_parser_tests() {
     println!("All Parser tests should be fixed now!");
 }
 
+/// Inputs:
+/// - cairo_code
+/// - top_level_kind - the highest SyntaxKind that is interesting. All other kinds, if not under it,
+///   are ignored.
+/// - ignored_kinds: Syntax kinds to ignore when printing. Ignore = print the node themselves, but
+///   not their children.
+/// Outputs:
+/// - expected_tree - the printed syntax tree of the given cairo_code, ignoring the irrelevant
+///   kinds.
+pub fn test_partial_parser_tree(
+    db: &mut ParserDatabaseForTesting,
+    inputs: Vec<String>,
+) -> Vec<String> {
+    let cairo_code = &inputs[0];
+    let top_level_kind = &inputs[1];
+    let ignored_kinds: Vec<&str> = inputs[2].split('\n').collect();
+
+    let file_id = db.intern_file(FileLongId::Virtual(VirtualFile {
+        parent: None,
+        name: "dummy_file.cairo".into(),
+        content: Arc::new(cairo_code.into()),
+    }));
+    let (syntax_root, _diagnostics) = get_syntax_root_and_diagnostics(db, file_id, cairo_code);
+    // TODO(yuval): also test diagnostics?
+
+    vec![print_partial_tree(db, &syntax_root, top_level_kind, ignored_kinds)]
+}
+
 parser_test!(diagnostic_tests, ["src/parser_test_data/exprs"], get_diagnostics);
+
+parser_test!(free_function, ["src/parser_test_data/free_function"], test_partial_parser_tree);
