@@ -225,7 +225,7 @@ impl LanguageServer for Backend {
             return Ok(None);
         };
         let new_text = get_formatted_file(
-            (&*db).upcast(),
+            (*db).upcast(),
             &syntax.as_syntax_node(),
             FormatterConfig::default(),
         );

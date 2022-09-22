@@ -131,9 +131,19 @@ pub fn maybe_compute_expr_semantic(
                 stable_ptr,
             })
         }
-        ast::Expr::Tuple(_) => {
-            ctx.diagnostics.report(syntax, Unsupported);
-            return None;
+        ast::Expr::Tuple(tuple_syntax) => {
+            let mut items: Vec<ExprId> = vec![];
+            let mut types: Vec<TypeId> = vec![];
+            for expr_syntax in tuple_syntax.expressions(syntax_db).elements(syntax_db) {
+                let expr_semantic = compute_expr_semantic(ctx, expr_syntax.clone());
+                types.push(expr_semantic.ty());
+                items.push(db.intern_expr(expr_semantic));
+            }
+            Expr::ExprTuple(ExprTuple {
+                items,
+                ty: db.intern_type(TypeLongId::Tuple(types)),
+                stable_ptr: tuple_syntax.stable_ptr().untyped(),
+            })
         }
         ast::Expr::FunctionCall(call_syntax) => {
             let path = call_syntax.path(syntax_db);

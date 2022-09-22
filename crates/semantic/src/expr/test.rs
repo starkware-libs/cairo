@@ -562,6 +562,26 @@ fn test_expr_struct_ctor() {
 }
 
 #[test]
+fn test_expr_tuple() {
+    let mut db_val = SemanticDatabaseForTesting::default();
+    let test_expr = setup_test_expr(&mut db_val, "(1 + 2, (2, 3))", "", "").unwrap();
+    let db = &db_val;
+    let expr = db.lookup_intern_expr(test_expr.expr_id);
+    assert_eq!(
+        format!("{:?}", expr.debug(db)),
+        "ExprTuple(ExprTuple { items: [ExprFunctionCall(ExprFunctionCall { function: \
+         Concrete(ExternFunctionId(core::felt_add)), args: [ExprLiteral(ExprLiteral { value: 1, \
+         ty: Concrete(ExternTypeId(core::felt)) }), ExprLiteral(ExprLiteral { value: 2, ty: \
+         Concrete(ExternTypeId(core::felt)) })], ty: Concrete(ExternTypeId(core::felt)) }), \
+         ExprTuple(ExprTuple { items: [ExprLiteral(ExprLiteral { value: 2, ty: \
+         Concrete(ExternTypeId(core::felt)) }), ExprLiteral(ExprLiteral { value: 3, ty: \
+         Concrete(ExternTypeId(core::felt)) })], ty: Tuple([Concrete(ExternTypeId(core::felt)), \
+         Concrete(ExternTypeId(core::felt))]) })], ty: Tuple([Concrete(ExternTypeId(core::felt)), \
+         Tuple([Concrete(ExternTypeId(core::felt)), Concrete(ExternTypeId(core::felt))])]) })"
+    );
+}
+
+#[test]
 fn test_expr_struct_ctor_failures() {
     let mut db_val = SemanticDatabaseForTesting::default();
     let diagnostics = setup_test_module(
