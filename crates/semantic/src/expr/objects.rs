@@ -1,15 +1,15 @@
-use db_utils::define_short_id;
 use defs::db::DefsGroup;
 use defs::ids::{LocalVarId, MemberId, StructId, VarId, VariantId};
 use diagnostics_proc_macros::DebugWithDb;
+use id_arena::Id;
 use syntax::node::ast::StatementLetPtr;
 use syntax::node::ids::SyntaxStablePtrId;
 
 use crate::db::SemanticGroup;
 use crate::{semantic, FunctionId};
 
-define_short_id!(ExprId, Expr, SemanticGroup, lookup_intern_expr);
-define_short_id!(StatementId, Statement, SemanticGroup, lookup_intern_statement);
+pub type ExprId = Id<Expr>;
+pub type StatementId = Id<Statement>;
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
 #[debug_db(SemanticGroup)]

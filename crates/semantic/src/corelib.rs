@@ -7,6 +7,7 @@ use utils::{extract_matches, OptionFrom};
 
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnostics;
+use crate::expr::compute::ComputationContext;
 use crate::resolve_item::specialize_function;
 use crate::{semantic, Expr, ExprId, ExprTuple, FunctionId, TypeId, TypeLongId};
 
@@ -43,32 +44,38 @@ pub fn core_bool_ty(db: &dyn SemanticGroup) -> TypeId {
 
 /// Gets a semantic expression of the literal `false`. Uses the given `stable_ptr` in the returned
 /// semantic expression.
-pub fn false_literal_expr(db: &dyn SemanticGroup, stable_ptr: SyntaxStablePtrId) -> semantic::Expr {
-    get_enum_variant(db, core_module(db), "bool", "False", stable_ptr)
+pub fn false_literal_expr(
+    ctx: &mut ComputationContext<'_>,
+    stable_ptr: SyntaxStablePtrId,
+) -> semantic::Expr {
+    get_enum_variant(ctx, core_module(ctx.db), "bool", "False", stable_ptr)
 }
 
 /// Gets a semantic expression of the literal `true`. Uses the given `stable_ptr` in the returned
 /// semantic expression.
-pub fn true_literal_expr(db: &dyn SemanticGroup, stable_ptr: SyntaxStablePtrId) -> semantic::Expr {
-    get_enum_variant(db, core_module(db), "bool", "True", stable_ptr)
+pub fn true_literal_expr(
+    ctx: &mut ComputationContext<'_>,
+    stable_ptr: SyntaxStablePtrId,
+) -> semantic::Expr {
+    get_enum_variant(ctx, core_module(ctx.db), "bool", "True", stable_ptr)
 }
 
 /// Gets a semantic expression of the specified enum variant. Uses the given `stable_ptr` in the
 /// returned semantic expression.
 fn get_enum_variant(
-    db: &dyn SemanticGroup,
+    ctx: &mut ComputationContext<'_>,
     module_id: ModuleId,
     enum_name: &str,
     variant_name: &str,
     stable_ptr: SyntaxStablePtrId,
 ) -> semantic::Expr {
-    let bool_enum = db.module_item_by_name(module_id, enum_name.into()).unwrap();
+    let bool_enum = ctx.db.module_item_by_name(module_id, enum_name.into()).unwrap();
     let bool_enum_id = extract_matches!(bool_enum, ModuleItemId::Enum);
-    let variant_id = db.enum_variants(bool_enum_id).unwrap()[variant_name].id;
+    let variant_id = ctx.db.enum_variants(bool_enum_id).unwrap()[variant_name].id;
     semantic::Expr::ExprEnumVariantCtor(semantic::ExprEnumVariantCtor {
         enum_variant_id: variant_id,
-        value_expr: unit_expr(db, stable_ptr),
-        ty: core_bool_ty(db),
+        value_expr: unit_expr(ctx, stable_ptr),
+        ty: core_bool_ty(ctx.db),
         stable_ptr,
     })
 }
@@ -79,10 +86,10 @@ pub fn unit_ty(db: &dyn SemanticGroup) -> TypeId {
 
 /// builds a semantic unit expression. This is not necessarily located in the AST, so it is received
 /// as a param.
-pub fn unit_expr(db: &dyn SemanticGroup, stable_ptr: SyntaxStablePtrId) -> ExprId {
-    db.intern_expr(Expr::ExprTuple(ExprTuple {
+pub fn unit_expr(ctx: &mut ComputationContext<'_>, stable_ptr: SyntaxStablePtrId) -> ExprId {
+    ctx.exprs.alloc(Expr::ExprTuple(ExprTuple {
         items: Vec::new(),
-        ty: db.intern_type(TypeLongId::Tuple(Vec::new())),
+        ty: ctx.db.intern_type(TypeLongId::Tuple(Vec::new())),
         stable_ptr,
     }))
 }
