@@ -1,6 +1,7 @@
 use defs::ids::{FreeFunctionId, GenericParamId, LanguageElementId};
 use diagnostics::Diagnostics;
 use diagnostics_proc_macros::DebugWithDb;
+use id_arena::Arena;
 use syntax::node::ast;
 
 use super::functions::{function_signature_params, function_signature_return_type};
@@ -12,7 +13,7 @@ use crate::{semantic, SemanticDiagnostic};
 
 // Declaration.
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
-#[debug_db(SemanticGroup)]
+#[debug_db(dyn SemanticGroup + 'static)]
 pub struct FreeFunctionDeclarationData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
     signature: semantic::Signature,
@@ -77,10 +78,12 @@ pub fn priv_free_function_declaration_data(
 
 // Definition.
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
-#[debug_db(SemanticGroup)]
+#[debug_db(dyn SemanticGroup + 'static)]
 pub struct FreeFunctionDefinitionData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
     body: semantic::ExprId,
+    exprs: Arena<semantic::Expr>,
+    statements: Arena<semantic::Statement>,
 }
 
 // Selectors.
@@ -123,8 +126,37 @@ pub fn priv_free_function_definition_data(
         environment,
     );
     let expr = compute_expr_semantic(&mut ctx, ast::Expr::Block(syntax.body(db.upcast())));
+    let body = ctx.exprs.alloc(expr);
+    let ComputationContext { exprs, statements, .. } = ctx;
     Some(FreeFunctionDefinitionData {
         diagnostics: diagnostics.diagnostics,
-        body: db.intern_expr(expr),
+        body,
+        exprs,
+        statements,
     })
+}
+
+/// Query implementation of [crate::db::SemanticGroup::expr_semantic].
+/// Assumes function and expression are present.
+pub fn expr_semantic(
+    db: &dyn SemanticGroup,
+    free_function_id: FreeFunctionId,
+    id: semantic::ExprId,
+) -> semantic::Expr {
+    db.priv_free_function_definition_data(free_function_id).unwrap().exprs.get(id).unwrap().clone()
+}
+
+/// Query implementation of [crate::db::SemanticGroup::statement_semantic].
+/// Assumes function and statement are valid.
+pub fn statement_semantic(
+    db: &dyn SemanticGroup,
+    free_function_id: FreeFunctionId,
+    id: semantic::StatementId,
+) -> semantic::Statement {
+    db.priv_free_function_definition_data(free_function_id)
+        .unwrap()
+        .statements
+        .get(id)
+        .unwrap()
+        .clone()
 }

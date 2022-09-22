@@ -10,7 +10,7 @@ use parser::db::ParserGroup;
 use smol_str::SmolStr;
 use utils::ordered_hash_map::OrderedHashMap;
 
-use crate::{corelib, expr, items, semantic, types, FunctionId, SemanticDiagnostic};
+use crate::{corelib, items, semantic, types, FunctionId, SemanticDiagnostic};
 
 // Salsa database interface.
 // All queries starting with priv_ are for internal use only by this crate.
@@ -26,10 +26,6 @@ pub trait SemanticGroup:
     fn intern_function(&self, id: items::functions::FunctionLongId) -> semantic::FunctionId;
     #[salsa::interned]
     fn intern_type(&self, id: types::TypeLongId) -> semantic::TypeId;
-    #[salsa::interned]
-    fn intern_expr(&self, expr: semantic::Expr) -> semantic::ExprId;
-    #[salsa::interned]
-    fn intern_statement(&self, statement: semantic::Statement) -> semantic::StatementId;
 
     // Struct.
     // =======
@@ -193,10 +189,18 @@ pub trait SemanticGroup:
 
     // Expression.
     // ===========
-    #[salsa::invoke(expr::expr_semantic)]
-    fn expr_semantic(&self, item: semantic::ExprId) -> semantic::Expr;
-    #[salsa::invoke(expr::statement_semantic)]
-    fn statement_semantic(&self, item: semantic::StatementId) -> semantic::Statement;
+    #[salsa::invoke(items::free_function::expr_semantic)]
+    fn expr_semantic(
+        &self,
+        free_function_id: FreeFunctionId,
+        id: semantic::ExprId,
+    ) -> semantic::Expr;
+    #[salsa::invoke(items::free_function::statement_semantic)]
+    fn statement_semantic(
+        &self,
+        free_function_id: FreeFunctionId,
+        id: semantic::StatementId,
+    ) -> semantic::Statement;
 
     // Aggregates module level semantic diagnostics.
     // TODO(spapini): use Arcs to Vec of Arcs of diagnostics.
