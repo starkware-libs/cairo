@@ -1,71 +1,171 @@
-use defs::ids::{ModuleId, ModuleItemId, Symbol};
+use defs::ids::{GenericFunctionId, GenericTypeId, ModuleId, ModuleItemId};
 use filesystem::ids::CrateLongId;
 use syntax::node::ast::{self};
 use syntax::node::helpers::GetIdentifier;
-use syntax::node::Terminal;
-use utils::OptionHelper;
+use syntax::node::ids::SyntaxStablePtrId;
+use syntax::node::{Terminal, TypedSyntaxNode};
+use utils::{OptionFrom, OptionHelper};
 
 use crate::corelib::core_module;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
-use crate::diagnostic::SemanticDiagnostics;
+use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics};
+use crate::{ConcreteFunction, ConcreteType, FunctionId, FunctionLongId, TypeId, TypeLongId};
 
+pub enum ResolvedItem {
+    Module(ModuleId),
+    Function(FunctionId),
+    Type(TypeId),
+}
+
+impl OptionFrom<ResolvedItem> for FunctionId {
+    fn option_from(other: ResolvedItem) -> Option<Self> {
+        if let ResolvedItem::Function(res) = other { Some(res) } else { None }
+    }
+}
+impl OptionFrom<ResolvedItem> for TypeId {
+    fn option_from(other: ResolvedItem) -> Option<Self> {
+        if let ResolvedItem::Type(res) = other { Some(res) } else { None }
+    }
+}
+
+/// Resolves a concrete item, given a path.
+/// Guaranteed to result in at most one diagnostic.
 pub fn resolve_item(
     db: &dyn SemanticGroup,
     diagnostics: &mut SemanticDiagnostics,
-    module_id: ModuleId,
+    current_module_id: ModuleId,
     path: &ast::ExprPath,
-) -> Option<Symbol> {
+) -> Option<ResolvedItem> {
     let syntax_db = db.upcast();
     let elements_vec = path.elements(syntax_db);
     let mut elements = elements_vec.iter().peekable();
 
-    let ident = elements
-        .next()
-        .map(|segment| segment.identifier(syntax_db))
-        .on_none(|| diagnostics.report(path, InvalidPath))?;
-    let mut symbol = db
-        .module_item_by_name(module_id, ident.clone())
-        .map(Symbol::ModuleItem)
-        .or_else(|| {
-            // TODO(spapini): Use a hashset.
-            // TODO(spapini): Better diagnostics.
-            let crate_id = db.intern_crate(CrateLongId(ident.clone()));
-            if db.crates().iter().any(|c| *c == crate_id) {
-                Some(Symbol::Crate(crate_id))
-            } else {
-                None
-            }
-        })
-        .or_else(|| db.module_item_by_name(core_module(db), ident.clone()).map(Symbol::ModuleItem))
-        .on_none(|| diagnostics.report(path, PathNotFound))?;
+    let base_module_id = determine_base_module(db, &mut elements, current_module_id);
+    let mut item = ResolvedItem::Module(base_module_id);
 
     // Follow modules.
     for segment in elements {
-        match segment {
-            ast::PathSegment::Simple(ident) => {
-                let ident = ident.ident(syntax_db).text(syntax_db);
-                symbol = match symbol {
-                    Symbol::ModuleItem(ModuleItemId::Submodule(submodule)) => Symbol::ModuleItem(
-                        db.module_item_by_name(ModuleId::Submodule(submodule), ident)
-                            .on_none(|| diagnostics.report(segment, PathNotFound))?,
-                    ),
-                    Symbol::Crate(crate_id) => Symbol::ModuleItem(
-                        db.module_item_by_name(ModuleId::CrateRoot(crate_id), ident)
-                            .on_none(|| diagnostics.report(segment, PathNotFound))?,
-                    ),
-                    _ => {
-                        diagnostics.report(segment, InvalidPath);
-                        return None;
-                    }
-                }
-            }
-            ast::PathSegment::WithGenericArgs(generic_args) => {
-                diagnostics.report(generic_args, Unsupported);
-                return None;
-            }
+        let ident = segment.identifier(syntax_db);
+        check_no_generics(diagnostics, segment)?;
+        if let ResolvedItem::Module(module_id) = item {
+            let module_item = db
+                .module_item_by_name(module_id, ident)
+                .on_none(|| diagnostics.report(segment, PathNotFound))?;
+            item = match module_item {
+                ModuleItemId::Submodule(id) => ResolvedItem::Module(ModuleId::Submodule(id)),
+                ModuleItemId::Use(_) => todo!("Follow uses."),
+                ModuleItemId::FreeFunction(id) => ResolvedItem::Function(specialize_function(
+                    db,
+                    diagnostics,
+                    segment.stable_ptr().untyped(),
+                    GenericFunctionId::Free(id),
+                )?),
+                ModuleItemId::ExternFunction(id) => ResolvedItem::Function(specialize_function(
+                    db,
+                    diagnostics,
+                    segment.stable_ptr().untyped(),
+                    GenericFunctionId::Extern(id),
+                )?),
+                ModuleItemId::Struct(id) => ResolvedItem::Type(specialize_type(
+                    db,
+                    diagnostics,
+                    segment.stable_ptr().untyped(),
+                    GenericTypeId::Struct(id),
+                )?),
+                ModuleItemId::Enum(id) => ResolvedItem::Type(specialize_type(
+                    db,
+                    diagnostics,
+                    segment.stable_ptr().untyped(),
+                    GenericTypeId::Enum(id),
+                )?),
+                ModuleItemId::ExternType(id) => ResolvedItem::Type(specialize_type(
+                    db,
+                    diagnostics,
+                    segment.stable_ptr().untyped(),
+                    GenericTypeId::Extern(id),
+                )?),
+            };
+            continue;
+        };
+        diagnostics.report(segment, InvalidPath);
+        return None;
+    }
+    Some(item)
+}
+
+fn check_no_generics(
+    diagnostics: &mut SemanticDiagnostics,
+    segment: &syntax::node::ast::PathSegment,
+) -> Option<()> {
+    if let ast::PathSegment::WithGenericArgs(generics) = segment {
+        diagnostics.report(generics, InvalidPath);
+        None
+    } else {
+        Some(())
+    }
+}
+
+/// Determines the base module for the path resolving.
+fn determine_base_module(
+    db: &dyn SemanticGroup,
+    segments: &mut std::iter::Peekable<std::slice::Iter<'_, syntax::node::ast::PathSegment>>,
+    current_module_id: ModuleId,
+) -> ModuleId {
+    let syntax_db = db.upcast();
+
+    // If the first segment has generics, it can't be a module, so use the current module as a base
+    // module.
+    let simple_segment = match segments.peek() {
+        Some(syntax::node::ast::PathSegment::Simple(segment)) => segment,
+        _ => {
+            return current_module_id;
         }
+    };
+    let ident = simple_segment.ident(syntax_db).text(syntax_db);
+
+    // If an item with this name is found inside the current module, use the current module.
+    if db.module_item_by_name(current_module_id, ident.clone()).is_some() {
+        return current_module_id;
     }
 
-    Some(symbol)
+    // If the first segment is a name of a crate, use the crate's root module as the base module.
+    let crate_id = db.intern_crate(CrateLongId(ident));
+    // TODO(spapini): Use a better interface to check if the crate exists (not using `dir`).
+    if db.crate_root_dir(crate_id).is_some() {
+        // Consume this segment.
+        segments.next();
+        return ModuleId::CrateRoot(crate_id);
+    }
+
+    // Last resort, use the `core` crate root module as the base module.
+    core_module(db)
+}
+
+/// Specializes a generic function.
+pub fn specialize_function(
+    db: &dyn SemanticGroup,
+    diagnostics: &mut SemanticDiagnostics,
+    stable_ptr: SyntaxStablePtrId,
+    generic_function: GenericFunctionId,
+) -> Option<FunctionId> {
+    let signature = db.generic_function_signature(generic_function).on_none(|| {
+        diagnostics.report_by_ptr(stable_ptr, SemanticDiagnosticKind::UnknownFunction)
+    })?;
+
+    Some(db.intern_function(FunctionLongId::Concrete(ConcreteFunction {
+        generic_function,
+        generic_args: vec![],
+        return_type: signature.return_type,
+    })))
+}
+
+/// Specializes a generic type.
+fn specialize_type(
+    db: &dyn SemanticGroup,
+    _diagnostics: &mut SemanticDiagnostics,
+    _stable_ptr: SyntaxStablePtrId,
+    generic_type: GenericTypeId,
+) -> Option<TypeId> {
+    Some(db.intern_type(TypeLongId::Concrete(ConcreteType { generic_type, generic_args: vec![] })))
 }
