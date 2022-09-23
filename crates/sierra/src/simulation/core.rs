@@ -1,6 +1,4 @@
-use array_init::array_init;
-
-use super::mem_cell::MemCell;
+use super::value::CoreValue;
 use super::LibFuncSimulationError;
 use crate::extensions::arithmetic::{
     BinaryOperationConcreteLibFunc, ConstConcreteLibFunc, OperationConcreteLibFunc,
@@ -18,18 +16,18 @@ use crate::extensions::mem::MemConcreteLibFunc::{
 };
 use crate::ids::FunctionId;
 
-/// Simulates the run of a single libfunc. Returns the memory reperesentations of the outputs, and
+/// Simulates the run of a single libfunc. Returns the value reperesentations of the outputs, and
 /// the chosen branch given the inputs. A function that provides the simulation of running a user
 /// function is also provided for the case where the extensions needs to simulate it.
 pub fn simulate<
     GetStatementGasInfo: Fn() -> Option<i64>,
-    SimulateFunction: Fn(&FunctionId, Vec<Vec<MemCell>>) -> Result<Vec<Vec<MemCell>>, LibFuncSimulationError>,
+    SimulateFunction: Fn(&FunctionId, Vec<CoreValue>) -> Result<Vec<CoreValue>, LibFuncSimulationError>,
 >(
     libfunc: &CoreConcreteLibFunc,
-    inputs: Vec<Vec<MemCell>>,
+    inputs: Vec<CoreValue>,
     get_statement_gas_info: GetStatementGasInfo,
     simulate_function: SimulateFunction,
-) -> Result<(Vec<Vec<MemCell>>, usize), LibFuncSimulationError> {
+) -> Result<(Vec<CoreValue>, usize), LibFuncSimulationError> {
     match libfunc {
         FunctionCall(FunctionCallConcreteLibFunc { function, .. }) => {
             Ok((simulate_function(&function.id, inputs)?, 0))
@@ -37,127 +35,154 @@ pub fn simulate<
         Gas(GetGas(_)) => {
             let count = get_statement_gas_info()
                 .ok_or(LibFuncSimulationError::UnresolvedStatementGasInfo)?;
-            let [MemCell { value: gas_counter }] = unpack_inputs::<1>(inputs)?;
-            if gas_counter >= count {
+            let gas_counter = match &inputs[..] {
+                [CoreValue::GasBuiltin(value)] => Ok(value),
+                [_] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
+                _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+            }?;
+            if *gas_counter >= count {
                 // Have enough gas - return reduced counter and jump to success branch.
-                Ok((vec![vec![(gas_counter - count).into()]], 0))
+                Ok((vec![CoreValue::GasBuiltin(gas_counter - count)], 0))
             } else {
                 // Don't have enough gas - return the same counter and jump to failure branch.
-                Ok((vec![vec![gas_counter.into()]], 1))
+                Ok((vec![CoreValue::GasBuiltin(*gas_counter)], 1))
             }
         }
         Gas(RefundGas(_)) => {
             let count = get_statement_gas_info()
                 .ok_or(LibFuncSimulationError::UnresolvedStatementGasInfo)?;
-            let [MemCell { value: gas_counter }] = unpack_inputs::<1>(inputs)?;
-            Ok((vec![vec![(gas_counter + count).into()]], 0))
+            let gas_counter = match &inputs[..] {
+                [CoreValue::GasBuiltin(value)] => Ok(value),
+                [_] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
+                _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+            }?;
+            Ok((vec![CoreValue::GasBuiltin(gas_counter + count)], 0))
         }
-        Integer(libfunc) => simulate_integer_libfunc(libfunc, inputs),
-        Felt(libfunc) => simulate_felt_libfunc(libfunc, inputs),
-        UnwrapNonZero(_) | Mem(Rename(_)) | Mem(StoreTemp(_)) | CoreConcreteLibFunc::Ref(_) => {
-            Ok((single_cell_identity::<1>(inputs)?, 0))
+        Integer(libfunc) => simulate_integer_libfunc(libfunc, &inputs),
+        Felt(libfunc) => simulate_felt_libfunc(libfunc, &inputs),
+        UnwrapNonZero(_) => match &inputs[..] {
+            [CoreValue::NonZero(value)] => Ok((vec![*value.clone()], 0)),
+            [_] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+        },
+        Mem(Rename(_) | StoreTemp(_)) | CoreConcreteLibFunc::Ref(_) => {
+            if inputs.len() == 1 {
+                Ok((inputs, 0))
+            } else {
+                Err(LibFuncSimulationError::WrongNumberOfArgs)
+            }
         }
         Mem(AlignTemps(_)) | Mem(FinalizeLocals(_)) | UnconditionalJump(_) | ApTracking(_) => {
-            unpack_inputs::<0>(inputs)?;
-            Ok((vec![], 0))
+            if inputs.is_empty() {
+                Ok((inputs, 0))
+            } else {
+                Err(LibFuncSimulationError::WrongNumberOfArgs)
+            }
         }
-        Mem(StoreLocal(_)) => {
-            let [_, mem_cell] = unpack_inputs::<2>(inputs)?;
-            Ok((vec![vec![mem_cell]], 0))
-        }
+        Mem(StoreLocal(_)) => match &inputs[..] {
+            [CoreValue::Uninitialized, other] => Ok((vec![other.clone()], 0)),
+            [_, _] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+        },
         Mem(AllocLocal(_)) => {
-            unpack_inputs::<0>(inputs)?;
-            Ok((vec![vec![MemCell { value: 0 }]], 0))
+            if inputs.is_empty() {
+                Ok((vec![CoreValue::Uninitialized], 0))
+            } else {
+                Err(LibFuncSimulationError::WrongNumberOfArgs)
+            }
         }
     }
-}
-
-/// Unpacking inputs from a vector of vectors memcells into an array of memcell of the given
-/// constant size.
-fn unpack_inputs<const N: usize>(
-    mut inputs: Vec<Vec<MemCell>>,
-) -> Result<[MemCell; N], LibFuncSimulationError> {
-    if inputs.len() != N {
-        Err(LibFuncSimulationError::WrongNumberOfArgs)
-    } else if inputs.iter().any(|input| input.len() != 1) {
-        // TODO(oziv): Currently we only support internal vectors to be of size 1.
-        Err(LibFuncSimulationError::MemoryLayoutMismatch)
-    } else {
-        Ok(array_init(|i| inputs[i].remove(0)))
-    }
-}
-
-/// Unpacks and repacks the arguments, validating the number and size of arguments.
-fn single_cell_identity<const N: usize>(
-    inputs: Vec<Vec<MemCell>>,
-) -> Result<Vec<Vec<MemCell>>, LibFuncSimulationError> {
-    let cells = unpack_inputs::<N>(inputs)?;
-    Ok(cells.into_iter().map(|cell| vec![cell]).collect())
 }
 
 /// Simulate integer library functions.
 fn simulate_integer_libfunc(
     libfunc: &IntegerConcrete,
-    inputs: Vec<Vec<MemCell>>,
-) -> Result<(Vec<Vec<MemCell>>, usize), LibFuncSimulationError> {
+    inputs: &[CoreValue],
+) -> Result<(Vec<CoreValue>, usize), LibFuncSimulationError> {
     match libfunc {
         IntegerConcrete::Const(ConstConcreteLibFunc { c, .. }) => {
-            unpack_inputs::<0>(inputs)?;
-            Ok((vec![vec![(*c).into()]], 0))
+            if inputs.is_empty() {
+                Ok((vec![CoreValue::Integer(*c)], 0))
+            } else {
+                Err(LibFuncSimulationError::WrongNumberOfArgs)
+            }
         }
         IntegerConcrete::Operation(OperationConcreteLibFunc::Binary(
             BinaryOperationConcreteLibFunc { operator, .. },
-        )) => {
-            let [MemCell { value: lhs }, MemCell { value: rhs }] = unpack_inputs::<2>(inputs)?;
-            Ok((
-                vec![vec![
-                    match operator {
-                        Operator::Add => lhs + rhs,
-                        Operator::Sub => lhs - rhs,
-                        Operator::Mul => lhs * rhs,
-                        Operator::Div => lhs / rhs,
-                        Operator::Mod => lhs % rhs,
-                    }
-                    .into(),
-                ]],
+        )) => match (inputs, operator) {
+            (
+                [CoreValue::Integer(lhs), CoreValue::Integer(rhs)],
+                Operator::Add | Operator::Sub | Operator::Mul,
+            ) => Ok((
+                vec![CoreValue::Integer(match operator {
+                    Operator::Add => lhs + rhs,
+                    Operator::Sub => lhs - rhs,
+                    Operator::Mul => lhs * rhs,
+                    _ => unreachable!("Arm only handles these cases."),
+                })],
                 0,
-            ))
-        }
+            )),
+            (
+                [CoreValue::Integer(lhs), CoreValue::NonZero(non_zero)],
+                Operator::Div | Operator::Mod,
+            ) => {
+                if let CoreValue::Integer(rhs) = **non_zero {
+                    Ok((
+                        vec![CoreValue::Integer(match operator {
+                            Operator::Div => lhs / rhs,
+                            Operator::Mod => lhs % rhs,
+                            _ => unreachable!("Arm only handles these cases."),
+                        })],
+                        0,
+                    ))
+                } else {
+                    Err(LibFuncSimulationError::MemoryLayoutMismatch)
+                }
+            }
+            ([_, _], _) => Err(LibFuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+        },
         IntegerConcrete::Operation(OperationConcreteLibFunc::Const(
             OperationWithConstConcreteLibFunc { operator, c, .. },
-        )) => {
-            let [MemCell { value }] = unpack_inputs::<1>(inputs)?;
-            Ok((
-                vec![vec![
-                    match operator {
-                        Operator::Add => value + c,
-                        Operator::Sub => value - c,
-                        Operator::Mul => value * c,
-                        Operator::Div => value / c,
-                        Operator::Mod => value % c,
-                    }
-                    .into(),
-                ]],
+        )) => match inputs {
+            [CoreValue::Integer(value)] => Ok((
+                vec![CoreValue::Integer(match operator {
+                    Operator::Add => value + c,
+                    Operator::Sub => value - c,
+                    Operator::Mul => value * c,
+                    Operator::Div => value / c,
+                    Operator::Mod => value % c,
+                })],
                 0,
-            ))
-        }
-        IntegerConcrete::Duplicate(_) => {
-            let [MemCell { value }] = unpack_inputs::<1>(inputs)?;
-            Ok((vec![vec![value.into()], vec![value.into()]], 0))
-        }
-        IntegerConcrete::Drop(_) => {
-            unpack_inputs::<1>(inputs)?;
-            Ok((vec![], 0))
-        }
+            )),
+            [_] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+        },
+        IntegerConcrete::Duplicate(_) => match inputs {
+            [CoreValue::Integer(value)] => {
+                Ok((vec![CoreValue::Integer(*value), CoreValue::Integer(*value)], 0))
+            }
+            [_] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+        },
+        IntegerConcrete::Drop(_) => match inputs {
+            [CoreValue::Integer(_)] => Ok((vec![], 0)),
+            [_] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+        },
         IntegerConcrete::JumpNotZero(_) => {
-            let [MemCell { value }] = unpack_inputs::<1>(inputs)?;
-            if value != 0 {
-                // Non-zero - jumping to the success branch and providing a NonZero wrap to the
-                // given value.
-                Ok((vec![vec![value.into()]], 0))
-            } else {
-                // Zero - jumping to the failure branch.
-                Ok((vec![], 1))
+            match inputs {
+                [CoreValue::Integer(value)] if *value != 0 => {
+                    // Non-zero - jumping to the success branch and providing a NonZero wrap to the
+                    // given value.
+                    Ok((vec![CoreValue::NonZero(Box::new(CoreValue::Integer(*value)))], 0))
+                }
+                [CoreValue::Integer(value)] if *value == 0 => {
+                    // Zero - jumping to the failure branch.
+                    Ok((vec![], 1))
+                }
+                [_] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
+                _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
             }
         }
     }
@@ -166,68 +191,92 @@ fn simulate_integer_libfunc(
 /// Simulate felt library functions.
 fn simulate_felt_libfunc(
     libfunc: &FeltConcrete,
-    inputs: Vec<Vec<MemCell>>,
-) -> Result<(Vec<Vec<MemCell>>, usize), LibFuncSimulationError> {
+    inputs: &[CoreValue],
+) -> Result<(Vec<CoreValue>, usize), LibFuncSimulationError> {
     match libfunc {
         FeltConcrete::Const(ConstConcreteLibFunc { c, .. }) => {
-            unpack_inputs::<0>(inputs)?;
-            Ok((vec![vec![(*c).into()]], 0))
+            if inputs.is_empty() {
+                Ok((vec![CoreValue::Felt(*c as i128)], 0))
+            } else {
+                Err(LibFuncSimulationError::WrongNumberOfArgs)
+            }
         }
-        // TODO(orizi): Fix MemCell to based on felt and fix operation here.
         FeltConcrete::Operation(OperationConcreteLibFunc::Binary(
             BinaryOperationConcreteLibFunc { operator, .. },
-        )) => {
-            let [MemCell { value: lhs }, MemCell { value: rhs }] = unpack_inputs::<2>(inputs)?;
-            Ok((
-                vec![vec![
-                    match operator {
-                        Operator::Add => lhs + rhs,
-                        Operator::Sub => lhs - rhs,
-                        Operator::Mul => lhs * rhs,
-                        Operator::Div => todo!("Support full felt operations."),
-                        Operator::Mod => 0,
-                    }
-                    .into(),
-                ]],
+        )) => match (inputs, operator) {
+            (
+                [CoreValue::Felt(lhs), CoreValue::Felt(rhs)],
+                Operator::Add | Operator::Sub | Operator::Mul,
+            ) => Ok((
+                vec![CoreValue::Felt(match operator {
+                    Operator::Add => lhs + rhs,
+                    Operator::Sub => lhs - rhs,
+                    Operator::Mul => lhs * rhs,
+                    _ => unreachable!("Arm only handles these cases."),
+                })],
                 0,
-            ))
-        }
-        // TODO(orizi): Fix MemCell to based on felt and fix operation here.
+            )),
+            (
+                [CoreValue::Felt(_lhs), CoreValue::NonZero(non_zero)],
+                Operator::Div | Operator::Mod,
+            ) => {
+                if let CoreValue::Felt(_rhs) = **non_zero {
+                    Ok((
+                        vec![CoreValue::Integer(match operator {
+                            Operator::Div => todo!("Support full felt operations."),
+                            Operator::Mod => 0,
+                            _ => unreachable!("Arm only handles these cases."),
+                        })],
+                        0,
+                    ))
+                } else {
+                    Err(LibFuncSimulationError::MemoryLayoutMismatch)
+                }
+            }
+            ([_, _], _) => Err(LibFuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+        },
         FeltConcrete::Operation(OperationConcreteLibFunc::Const(
             OperationWithConstConcreteLibFunc { operator, c, .. },
-        )) => {
-            let [MemCell { value }] = unpack_inputs::<1>(inputs)?;
-            Ok((
-                vec![vec![
-                    match operator {
-                        Operator::Add => value + c,
-                        Operator::Sub => value - c,
-                        Operator::Mul => value * c,
-                        Operator::Div => todo!("Support full felt operations."),
-                        Operator::Mod => value % c,
-                    }
-                    .into(),
-                ]],
+        )) => match inputs {
+            [CoreValue::Felt(value)] => Ok((
+                vec![CoreValue::Felt(match operator {
+                    Operator::Add => value + *c as i128,
+                    Operator::Sub => value - *c as i128,
+                    Operator::Mul => value * *c as i128,
+                    Operator::Div => todo!("Support full felt operations."),
+                    Operator::Mod => 0,
+                })],
                 0,
-            ))
-        }
-        FeltConcrete::Duplicate(_) => {
-            let [MemCell { value }] = unpack_inputs::<1>(inputs)?;
-            Ok((vec![vec![value.into()], vec![value.into()]], 0))
-        }
-        FeltConcrete::Drop(_) => {
-            unpack_inputs::<1>(inputs)?;
-            Ok((vec![], 0))
-        }
+            )),
+            [_] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+        },
+        FeltConcrete::Duplicate(_) => match inputs {
+            [CoreValue::Felt(value)] => {
+                Ok((vec![CoreValue::Felt(*value), CoreValue::Felt(*value)], 0))
+            }
+            [_] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+        },
+        FeltConcrete::Drop(_) => match inputs {
+            [CoreValue::Felt(_)] => Ok((vec![], 0)),
+            [_] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+        },
         FeltConcrete::JumpNotZero(_) => {
-            let [MemCell { value }] = unpack_inputs::<1>(inputs)?;
-            if value != 0 {
-                // Non-zero - jumping to the success branch and providing a NonZero wrap to the
-                // given value.
-                Ok((vec![vec![value.into()]], 0))
-            } else {
-                // Zero - jumping to the failure branch.
-                Ok((vec![], 1))
+            match inputs {
+                [CoreValue::Felt(value)] if *value != 0 => {
+                    // Non-zero - jumping to the success branch and providing a NonZero wrap to the
+                    // given value.
+                    Ok((vec![CoreValue::NonZero(Box::new(CoreValue::Felt(*value)))], 0))
+                }
+                [CoreValue::Felt(value)] if *value == 0 => {
+                    // Zero - jumping to the failure branch.
+                    Ok((vec![], 1))
+                }
+                [_] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
+                _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
             }
         }
     }
