@@ -1,6 +1,6 @@
 use db_utils::define_short_id;
 use debug::DebugWithDb;
-use defs::ids::{GenericParamId, GenericTypeId, ModuleId};
+use defs::ids::{GenericParamId, GenericTypeId, LanguageElementId};
 use diagnostics_proc_macros::DebugWithDb;
 use itertools::Itertools;
 use syntax::node::ast;
@@ -9,7 +9,7 @@ use utils::{OptionFrom, OptionHelper};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
-use crate::resolve_path::resolve_path;
+use crate::resolve_path::{resolve_path, ResolveScope};
 use crate::semantic;
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
@@ -19,8 +19,8 @@ pub enum TypeLongId {
     /// Some expressions might have invalid types during processing, either due to errors or
     /// during inference.
     Tuple(Vec<TypeId>),
+    GenericParameter(GenericParamId),
     Missing,
-    // TODO(spapini): tuple, generic type parameters.
 }
 impl OptionFrom<TypeLongId> for ConcreteType {
     fn option_from(other: TypeLongId) -> Option<Self> {
@@ -41,6 +41,9 @@ impl TypeId {
             }
             TypeLongId::Tuple(inner_types) => {
                 format!("({})", inner_types.into_iter().map(|ty| ty.format(db)).join(", "))
+            }
+            TypeLongId::GenericParameter(generic_param) => {
+                generic_param.name(db.upcast()).to_string()
             }
             TypeLongId::Missing => "<missing>".to_string(),
         }
@@ -77,32 +80,32 @@ impl DebugWithDb<dyn SemanticGroup> for ConcreteType {
 pub fn resolve_type(
     db: &dyn SemanticGroup,
     diagnostics: &mut SemanticDiagnostics,
-    module_id: ModuleId,
+    scope: &ResolveScope,
     ty_syntax: &ast::Expr,
 ) -> TypeId {
-    maybe_resolve_type(db, diagnostics, module_id, ty_syntax).unwrap_or_else(|| TypeId::missing(db))
+    maybe_resolve_type(db, diagnostics, scope, ty_syntax).unwrap_or_else(|| TypeId::missing(db))
 }
 pub fn maybe_resolve_type(
     db: &dyn SemanticGroup,
     diagnostics: &mut SemanticDiagnostics,
-    module_id: ModuleId,
+    scope: &ResolveScope,
     ty_syntax: &ast::Expr,
 ) -> Option<TypeId> {
     let syntax_db = db.upcast();
     Some(match ty_syntax {
         ast::Expr::Path(path) => {
-            let item = resolve_path(db, diagnostics, module_id, path)?;
+            let item = resolve_path(db, diagnostics, scope, path)?;
             TypeId::option_from(item).on_none(|| diagnostics.report(path, UnknownStruct))?
         }
         ast::Expr::Parenthesized(expr_syntax) => {
-            resolve_type(db, diagnostics, module_id, &expr_syntax.expr(syntax_db))
+            resolve_type(db, diagnostics, scope, &expr_syntax.expr(syntax_db))
         }
         ast::Expr::Tuple(tuple_syntax) => {
             let sub_tys = tuple_syntax
                 .expressions(syntax_db)
                 .elements(syntax_db)
                 .into_iter()
-                .map(|subexpr_syntax| resolve_type(db, diagnostics, module_id, &subexpr_syntax))
+                .map(|subexpr_syntax| resolve_type(db, diagnostics, scope, &subexpr_syntax))
                 .collect();
             db.intern_type(TypeLongId::Tuple(sub_tys))
         }
