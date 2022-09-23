@@ -1,5 +1,5 @@
 #[cfg(test)]
-#[path = "resolve_item_test.rs"]
+#[path = "resolve_path_test.rs"]
 mod test;
 
 use defs::ids::{GenericFunctionId, GenericTypeId, ModuleId, ModuleItemId};
@@ -39,7 +39,7 @@ impl OptionFrom<ResolvedItem> for TypeId {
 
 /// Resolves a concrete item, given a path.
 /// Guaranteed to result in at most one diagnostic.
-pub fn resolve_item(
+pub fn resolve_path(
     db: &dyn SemanticGroup,
     diagnostics: &mut SemanticDiagnostics,
     current_module_id: ModuleId,

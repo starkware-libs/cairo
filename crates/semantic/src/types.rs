@@ -9,7 +9,7 @@ use utils::{OptionFrom, OptionHelper};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
-use crate::resolve_item::resolve_item;
+use crate::resolve_path::resolve_path;
 use crate::semantic;
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
@@ -91,7 +91,7 @@ pub fn maybe_resolve_type(
     let syntax_db = db.upcast();
     Some(match ty_syntax {
         ast::Expr::Path(path) => {
-            let item = resolve_item(db, diagnostics, module_id, path)?;
+            let item = resolve_path(db, diagnostics, module_id, path)?;
             TypeId::option_from(item).on_none(|| diagnostics.report(path, UnknownStruct))?
         }
         ast::Expr::Parenthesized(expr_syntax) => {
