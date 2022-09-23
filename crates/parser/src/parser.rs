@@ -274,6 +274,12 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalPlus => self.take::<TerminalPlus>().into(),
             SyntaxKind::TerminalMinus => self.take::<TerminalMinus>().into(),
             SyntaxKind::TerminalEqEq => self.take::<TerminalEqEq>().into(),
+            SyntaxKind::TerminalLT => self.take::<TerminalLT>().into(),
+            SyntaxKind::TerminalGT => self.take::<TerminalGT>().into(),
+            SyntaxKind::TerminalLE => self.take::<TerminalLE>().into(),
+            SyntaxKind::TerminalGE => self.take::<TerminalGE>().into(),
+            SyntaxKind::TerminalAndAnd => self.take::<TerminalAndAnd>().into(),
+            SyntaxKind::TerminalOrOr => self.take::<TerminalAndAnd>().into(),
             _ => unreachable!(),
         }
     }
@@ -651,7 +657,6 @@ impl<'a> Parser<'a> {
         Some(Param::new_green(self.db, name, type_clause))
     }
 
-    /// Assumes the first token is Identifier.
     /// Expected pattern: <PathSegment>(::<PathSegment>)*
     /// Returns a GreenId of a node with kind ExprPath.
     fn parse_path(&mut self) -> ExprPathGreen {
@@ -709,10 +714,10 @@ impl<'a> Parser<'a> {
         let generic_args = GenericArgList::new_green(
             self.db,
             self.parse_separated_list::<Expr, TerminalComma, GenericArgListElementOrSeparatorGreen>(
-                Self::try_parse_expr,
+                Self::try_parse_type_expr,
                 is_of_kind!(rangle, rparen, block, lbrace, rbrace, top_level),
                 SyntaxKind::TerminalComma,
-                "expression",
+                "generic arg",
             ),
         );
         let rangle = self.parse_token::<TerminalGT>();
