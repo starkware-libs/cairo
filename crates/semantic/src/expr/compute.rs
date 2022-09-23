@@ -4,7 +4,7 @@
 
 use std::collections::HashMap;
 
-use defs::ids::{GenericTypeId, LocalVarLongId, MemberId, ModuleId, StructId, VarId};
+use defs::ids::{GenericTypeId, LocalVarLongId, MemberId, StructId, VarId};
 use id_arena::Arena;
 use smol_str::SmolStr;
 use syntax::node::ast::{BinaryOperator, PathSegment};
@@ -20,7 +20,7 @@ use crate::corelib::{core_binary_operator, false_literal_expr, true_literal_expr
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
-use crate::resolve_path::resolve_path;
+use crate::resolve_path::{resolve_path, ResolveScope};
 use crate::types::resolve_type;
 use crate::{semantic, ConcreteType, FunctionId, TypeId, TypeLongId, Variable};
 
@@ -28,7 +28,7 @@ use crate::{semantic, ConcreteType, FunctionId, TypeId, TypeLongId, Variable};
 pub struct ComputationContext<'ctx> {
     pub db: &'ctx dyn SemanticGroup,
     diagnostics: &'ctx mut SemanticDiagnostics,
-    module_id: ModuleId,
+    scope: ResolveScope,
     return_ty: TypeId,
     environment: Box<Environment>,
     pub exprs: Arena<semantic::Expr>,
@@ -38,14 +38,14 @@ impl<'ctx> ComputationContext<'ctx> {
     pub fn new(
         db: &'ctx dyn SemanticGroup,
         diagnostics: &'ctx mut SemanticDiagnostics,
-        module_id: ModuleId,
+        scope: ResolveScope,
         return_ty: TypeId,
         environment: Environment,
     ) -> Self {
         Self {
             db,
             diagnostics,
-            module_id,
+            scope,
             return_ty,
             environment: Box::new(environment),
             exprs: Arena::default(),
@@ -277,7 +277,7 @@ fn struct_ctor_expr(
     let path = ctor_syntax.path(syntax_db);
 
     // Extract struct.
-    let item = resolve_path(ctx.db, ctx.diagnostics, ctx.module_id, &path)?;
+    let item = resolve_path(ctx.db, ctx.diagnostics, &ctx.scope, &path)?;
     let ty = TypeId::option_from(item).on_none(|| ctx.diagnostics.report(&path, UnknownStruct))?;
     let generic_ty = ConcreteType::option_from(db.lookup_intern_type(ty))
         .on_none(|| ctx.diagnostics.report(&path, UnknownStruct))?
@@ -407,38 +407,38 @@ fn member_access_expr(
     let syntax_db = ctx.db.upcast();
 
     // Find MemberId.
+    let member_name = expr_as_identifier(ctx, &rhs_syntax, syntax_db)?;
     match ctx.db.lookup_intern_type(lexpr.ty()) {
-        crate::TypeLongId::Concrete(concrete) => {
-            let member_name = expr_as_identifier(ctx, &rhs_syntax, syntax_db)?;
-            match concrete.generic_type {
-                GenericTypeId::Struct(struct_id) => {
-                    let member = ctx
-                        .db
-                        .struct_members(struct_id)
-                        .and_then(|members| members.get(&member_name).cloned())
-                        .on_none(|| {
-                            ctx.diagnostics
-                                .report(&rhs_syntax, NoSuchMember { struct_id, member_name })
-                        })?;
-                    let lexpr_id = ctx.exprs.alloc(lexpr);
-                    return Some(Expr::ExprMemberAccess(ExprMemberAccess {
-                        expr: lexpr_id,
-                        member: member.id,
-                        ty: member.ty,
-                        stable_ptr,
-                    }));
-                }
-                _ => {
-                    ctx.diagnostics
-                        .report(&rhs_syntax, TypeHasNoMembers { ty: lexpr.ty(), member_name });
-                }
+        TypeLongId::Concrete(concrete) => match concrete.generic_type {
+            GenericTypeId::Struct(struct_id) => {
+                let member = ctx
+                    .db
+                    .struct_members(struct_id)
+                    .and_then(|members| members.get(&member_name).cloned())
+                    .on_none(|| {
+                        ctx.diagnostics.report(&rhs_syntax, NoSuchMember { struct_id, member_name })
+                    })?;
+                let lexpr_id = ctx.exprs.alloc(lexpr);
+                return Some(Expr::ExprMemberAccess(ExprMemberAccess {
+                    expr: lexpr_id,
+                    member: member.id,
+                    ty: member.ty,
+                    stable_ptr,
+                }));
             }
-        }
-        crate::TypeLongId::Tuple(_) => {
+            _ => {
+                ctx.diagnostics
+                    .report(&rhs_syntax, TypeHasNoMembers { ty: lexpr.ty(), member_name });
+            }
+        },
+        TypeLongId::Tuple(_) => {
             // TODO(spapini): Handle .0, .1, ...;
             ctx.diagnostics.report(&rhs_syntax, Unsupported);
         }
-        crate::TypeLongId::Missing => {}
+        TypeLongId::GenericParameter(_) => {
+            ctx.diagnostics.report(&rhs_syntax, TypeHasNoMembers { ty: lexpr.ty(), member_name });
+        }
+        TypeLongId::Missing => {}
     }
     None
 }
@@ -511,7 +511,7 @@ fn maybe_resolve_function(
 ) -> Option<(FunctionId, semantic::Signature)> {
     // TODO(spapini): Try to find function in multiple places (e.g. impls, or other modules for
     //   suggestions)
-    let item = resolve_path(ctx.db, ctx.diagnostics, ctx.module_id, path)?;
+    let item = resolve_path(ctx.db, ctx.diagnostics, &ctx.scope, path)?;
     let function =
         FunctionId::option_from(item).on_none(|| ctx.diagnostics.report(path, UnknownFunction))?;
     let signature = typecheck_function_call(ctx, path.stable_ptr().untyped(), function, args)?;
@@ -567,7 +567,7 @@ pub fn compute_statement_semantic(
     let statement = match syntax {
         ast::Statement::Let(let_syntax) => {
             let var_id =
-                db.intern_local_var(LocalVarLongId(ctx.module_id, let_syntax.stable_ptr()));
+                db.intern_local_var(LocalVarLongId(ctx.scope.module_id, let_syntax.stable_ptr()));
 
             let expr = compute_expr_semantic(ctx, let_syntax.rhs(syntax_db));
             let inferred_type = expr.ty();
@@ -578,7 +578,7 @@ pub fn compute_statement_semantic(
                 ast::OptionTypeClause::TypeClause(type_clause) => {
                     let var_type_path = type_clause.ty(syntax_db);
                     let explicit_type =
-                        resolve_type(db, ctx.diagnostics, ctx.module_id, &var_type_path);
+                        resolve_type(db, ctx.diagnostics, &ctx.scope, &var_type_path);
                     if explicit_type != inferred_type {
                         ctx.diagnostics.report(
                             &let_syntax.rhs(syntax_db),

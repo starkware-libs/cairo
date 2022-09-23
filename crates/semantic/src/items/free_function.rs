@@ -11,6 +11,7 @@ use super::generics::semantic_generic_params;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::{compute_expr_semantic, ComputationContext, Environment};
+use crate::resolve_path::ResolveScope;
 use crate::{semantic, ExprId, SemanticDiagnostic};
 
 #[cfg(test)]
@@ -63,17 +64,18 @@ pub fn priv_free_function_declaration_data(
     let mut diagnostics = SemanticDiagnostics::new(module_id);
     let module_data = db.module_data(module_id)?;
     let function_syntax = module_data.free_functions.get(&free_function_id)?;
-    let signature_syntax = function_syntax.signature(db.upcast());
-    let return_type =
-        function_signature_return_type(&mut diagnostics, db, module_id, &signature_syntax);
-    let (params, environment) =
-        function_signature_params(&mut diagnostics, db, module_id, &signature_syntax);
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
         module_id,
         &function_syntax.generic_params(db.upcast()),
     );
+    let scope = ResolveScope::new(db, module_id, &generic_params);
+    let signature_syntax = function_syntax.signature(db.upcast());
+    let return_type =
+        function_signature_return_type(&mut diagnostics, db, &scope, &signature_syntax);
+    let (params, environment) =
+        function_signature_params(&mut diagnostics, db, scope, &signature_syntax);
     Some(FreeFunctionDeclarationData {
         diagnostics: diagnostics.diagnostics,
         signature: semantic::Signature { params, return_type },
@@ -123,12 +125,13 @@ pub fn priv_free_function_definition_data(
     let syntax = module_data.free_functions.get(&free_function_id)?.clone();
     // Compute signature semantic.
     let declaration = db.priv_free_function_declaration_data(free_function_id)?;
+    let scope = ResolveScope::new(db, module_id, &declaration.generic_params);
     let environment = declaration.environment;
     // Compute body semantic expr.
     let mut ctx = ComputationContext::new(
         db,
         &mut diagnostics,
-        module_id,
+        scope,
         declaration.signature.return_type,
         environment,
     );
