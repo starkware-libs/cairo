@@ -72,11 +72,17 @@ pub trait SemanticGroup:
         free_function_id: FreeFunctionId,
     ) -> Diagnostics<SemanticDiagnostic>;
     /// Returns the signature of a free function.
-    #[salsa::invoke(items::free_function::free_function_signature)]
-    fn free_function_signature(
+    #[salsa::invoke(items::free_function::free_function_declaration_signature)]
+    fn free_function_declaration_signature(
         &self,
         free_function_id: FreeFunctionId,
     ) -> Option<semantic::Signature>;
+    /// Returns the generic params of a free function.
+    #[salsa::invoke(items::free_function::free_function_declaration_generic_params)]
+    fn free_function_declaration_generic_params(
+        &self,
+        free_function_id: FreeFunctionId,
+    ) -> Option<Vec<GenericParamId>>;
 
     /// Private query to compute data about a free function definition - its body.
     #[salsa::invoke(items::free_function::priv_free_function_definition_data)]
@@ -91,8 +97,11 @@ pub trait SemanticGroup:
         free_function_id: FreeFunctionId,
     ) -> Diagnostics<SemanticDiagnostic>;
     /// Returns the body of a free function.
-    #[salsa::invoke(items::free_function::free_function_body)]
-    fn free_function_body(&self, free_function_id: FreeFunctionId) -> Option<semantic::ExprId>;
+    #[salsa::invoke(items::free_function::free_function_definition_body)]
+    fn free_function_definition_body(
+        &self,
+        free_function_id: FreeFunctionId,
+    ) -> Option<semantic::ExprId>;
 
     // Extern function.
     // ================
@@ -116,6 +125,12 @@ pub trait SemanticGroup:
         &self,
         extern_function_id: ExternFunctionId,
     ) -> Option<semantic::Signature>;
+    /// Returns the generic params of an extern function.
+    #[salsa::invoke(items::extern_function::extern_function_declaration_generic_params)]
+    fn extern_function_declaration_generic_params(
+        &self,
+        extern_function_id: ExternFunctionId,
+    ) -> Option<Vec<GenericParamId>>;
 
     // Extern type.
     // ============
@@ -133,7 +148,7 @@ pub trait SemanticGroup:
         &self,
         extern_type_id: ExternTypeId,
     ) -> Diagnostics<SemanticDiagnostic>;
-    /// Returns the signature of an extern type.
+    /// Returns the generic params of an extern type.
     #[salsa::invoke(items::extern_type::extern_type_declaration_generic_params)]
     fn extern_type_declaration_generic_params(
         &self,
@@ -149,6 +164,14 @@ pub trait SemanticGroup:
         &self,
         generic_function: GenericFunctionId,
     ) -> Option<semantic::Signature>;
+
+    /// Returns the signature of a generic function. This include free functions, extern functions,
+    /// etc...
+    #[salsa::invoke(items::functions::generic_function_generic_params)]
+    fn generic_function_generic_params(
+        &self,
+        generic_function: GenericFunctionId,
+    ) -> Option<Vec<GenericParamId>>;
 
     /// Returns the signature of a concrete function. This include free functions, extern functions,
     /// etc...

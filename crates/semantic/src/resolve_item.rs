@@ -182,17 +182,19 @@ pub fn specialize_function(
     let signature = db
         .generic_function_signature(generic_function)
         .on_none(|| diagnostics.report_by_ptr(stable_ptr, UnknownFunction))?;
+    let generic_params = db
+        .generic_function_generic_params(generic_function)
+        .on_none(|| diagnostics.report_by_ptr(stable_ptr, UnknownFunction))?;
 
-    if generic_args.len() != signature.generic_params.len() {
+    if generic_args.len() != generic_params.len() {
         diagnostics.report_by_ptr(
             stable_ptr,
             WrongNumberOfGenericArguments {
-                expected: signature.generic_params.len(),
+                expected: generic_params.len(),
                 actual: generic_args.len(),
             },
         );
-        generic_args
-            .resize(signature.generic_params.len(), GenericArgumentId::Type(TypeId::missing(db)));
+        generic_args.resize(generic_params.len(), GenericArgumentId::Type(TypeId::missing(db)));
     }
 
     Some(db.intern_function(FunctionLongId::Concrete(ConcreteFunction {
