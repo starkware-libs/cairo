@@ -1,4 +1,4 @@
-use defs::ids::{ExternFunctionId, LanguageElementId};
+use defs::ids::{ExternFunctionId, GenericParamId, LanguageElementId};
 use diagnostics::Diagnostics;
 use diagnostics_proc_macros::DebugWithDb;
 
@@ -18,6 +18,7 @@ mod test;
 pub struct ExternFunctionDeclarationData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
     signature: semantic::Signature,
+    generic_params: Vec<GenericParamId>,
 }
 
 // Selectors.
@@ -36,6 +37,13 @@ pub fn extern_function_declaration_signature(
     extern_function_id: ExternFunctionId,
 ) -> Option<semantic::Signature> {
     Some(db.priv_extern_function_declaration_data(extern_function_id)?.signature)
+}
+/// Query implementation of [crate::db::SemanticGroup::extern_function_generic_params].
+pub fn extern_function_declaration_generic_params(
+    db: &dyn SemanticGroup,
+    extern_function_id: ExternFunctionId,
+) -> Option<Vec<GenericParamId>> {
+    Some(db.priv_extern_function_declaration_data(extern_function_id)?.generic_params)
 }
 
 // Computation.
@@ -61,6 +69,7 @@ pub fn priv_extern_function_declaration_data(
     );
     Some(ExternFunctionDeclarationData {
         diagnostics: diagnostics.diagnostics,
-        signature: semantic::Signature { params, generic_params, return_type },
+        signature: semantic::Signature { params, return_type },
+        generic_params,
     })
 }
