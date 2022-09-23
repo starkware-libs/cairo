@@ -98,7 +98,6 @@ pub fn get_function_code(
                     generic_function: GenericFunctionId::Free(function_id),
                     // TODO(lior): Add generic arguments.
                     generic_args: vec![],
-                    return_type: signature.return_type,
                 },
             ))),
             body: statements,

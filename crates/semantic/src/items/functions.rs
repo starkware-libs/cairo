@@ -27,20 +27,12 @@ impl FunctionId {
     pub fn missing(db: &dyn SemanticGroup) -> Self {
         db.intern_function(FunctionLongId::Missing)
     }
-
-    pub fn return_type(&self, db: &dyn SemanticGroup) -> semantic::TypeId {
-        match db.lookup_intern_function(*self) {
-            FunctionLongId::Concrete(function) => function.return_type,
-            FunctionLongId::Missing => semantic::TypeId::missing(db),
-        }
-    }
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct ConcreteFunction {
     pub generic_function: GenericFunctionId,
     pub generic_args: Vec<semantic::GenericArgumentId>,
-    pub return_type: semantic::TypeId,
 }
 impl DebugWithDb<dyn SemanticGroup> for ConcreteFunction {
     fn fmt(
@@ -55,9 +47,6 @@ impl DebugWithDb<dyn SemanticGroup> for ConcreteFunction {
                 write!(f, "{:?},", arg.debug(db))?;
             }
             write!(f, ">")?;
-        }
-        if self.return_type != unit_ty(db) && !self.generic_args.is_empty() {
-            write!(f, " -> {:?}", self.return_type)?;
         }
         Ok(())
     }
