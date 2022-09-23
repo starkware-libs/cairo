@@ -3,8 +3,7 @@ use defs::db::DefsGroup;
 use defs::ids::{LocalVarId, MemberId, StructId, VarId, VariantId};
 use diagnostics_proc_macros::DebugWithDb;
 use id_arena::Id;
-use syntax::node::ast::StatementLetPtr;
-use syntax::node::ids::SyntaxStablePtrId;
+use syntax::node::ast::{self, StatementLetPtr};
 
 use super::fmt::ExprFormatter;
 use crate::{semantic, FunctionId};
@@ -77,7 +76,7 @@ pub enum Expr {
     ExprMemberAccess(ExprMemberAccess),
     ExprStructCtor(ExprStructCtor),
     ExprEnumVariantCtor(ExprEnumVariantCtor),
-    Missing { ty: semantic::TypeId, stable_ptr: SyntaxStablePtrId },
+    Missing { ty: semantic::TypeId, stable_ptr: ast::ExprPtr },
 }
 impl Expr {
     pub fn ty(&self) -> semantic::TypeId {
@@ -94,7 +93,7 @@ impl Expr {
             Expr::Missing { ty, stable_ptr: _ } => *ty,
         }
     }
-    pub fn stable_ptr(&self) -> SyntaxStablePtrId {
+    pub fn stable_ptr(&self) -> ast::ExprPtr {
         match self {
             Expr::ExprTuple(expr) => expr.stable_ptr,
             Expr::ExprBlock(expr) => expr.stable_ptr,
@@ -116,7 +115,7 @@ pub struct ExprTuple {
     pub items: Vec<ExprId>,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
-    pub stable_ptr: SyntaxStablePtrId,
+    pub stable_ptr: ast::ExprPtr,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
@@ -130,7 +129,7 @@ pub struct ExprBlock {
     pub tail: Option<ExprId>,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
-    pub stable_ptr: SyntaxStablePtrId,
+    pub stable_ptr: ast::ExprPtr,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
@@ -140,7 +139,7 @@ pub struct ExprFunctionCall {
     pub args: Vec<ExprId>,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
-    pub stable_ptr: SyntaxStablePtrId,
+    pub stable_ptr: ast::ExprPtr,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
@@ -150,7 +149,7 @@ pub struct ExprMatch {
     pub arms: Vec<MatchArm>,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
-    pub stable_ptr: SyntaxStablePtrId,
+    pub stable_ptr: ast::ExprPtr,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
@@ -173,7 +172,7 @@ pub struct ExprVar {
     pub var: VarId,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
-    pub stable_ptr: SyntaxStablePtrId,
+    pub stable_ptr: ast::ExprPtr,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
@@ -183,7 +182,7 @@ pub struct ExprLiteral {
     pub value: usize,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
-    pub stable_ptr: SyntaxStablePtrId,
+    pub stable_ptr: ast::ExprPtr,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
@@ -193,7 +192,7 @@ pub struct ExprMemberAccess {
     pub member: MemberId,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
-    pub stable_ptr: SyntaxStablePtrId,
+    pub stable_ptr: ast::ExprPtr,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
@@ -203,7 +202,7 @@ pub struct ExprStructCtor {
     pub members: Vec<(MemberId, ExprId)>,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
-    pub stable_ptr: SyntaxStablePtrId,
+    pub stable_ptr: ast::ExprPtr,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
@@ -213,5 +212,5 @@ pub struct ExprEnumVariantCtor {
     pub value_expr: ExprId,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
-    pub stable_ptr: SyntaxStablePtrId,
+    pub stable_ptr: ast::ExprPtr,
 }

@@ -376,6 +376,7 @@ fn gen_enum_code(
     let green_name = format!("{name}Green");
     let mut enum_body = quote! {};
     let mut from_node_body = quote! {};
+    let mut ptr_conversions = quote! {};
     let mut green_conversions = quote! {};
     for variant in &variants {
         let n = &variant.name;
@@ -386,6 +387,14 @@ fn gen_enum_code(
         });
         from_node_body.extend(quote! {
             SyntaxKind::$k => $(&name)::$n($k::from_syntax_node(db, node)),
+        });
+        let variant_ptr = format!("{k}Ptr");
+        ptr_conversions.extend(quote! {
+            impl From<$(&variant_ptr)> for $(&ptr_name) {
+                fn from(value: $(&variant_ptr)) -> Self {
+                    Self(value.0)
+                }
+            }
         });
         let variant_green = format!("{k}Green");
         green_conversions.extend(quote! {
@@ -416,6 +425,7 @@ fn gen_enum_code(
                 self.0
             }
         }
+        $ptr_conversions
         $green_conversions
         #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
         pub struct $(&green_name)(pub GreenId);

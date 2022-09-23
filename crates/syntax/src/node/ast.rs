@@ -81,6 +81,26 @@ impl TriviumPtr {
         self.0
     }
 }
+impl From<TokenSingleLineCommentPtr> for TriviumPtr {
+    fn from(value: TokenSingleLineCommentPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TokenWhitespacePtr> for TriviumPtr {
+    fn from(value: TokenWhitespacePtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TokenNewlinePtr> for TriviumPtr {
+    fn from(value: TokenNewlinePtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TokenSkippedPtr> for TriviumPtr {
+    fn from(value: TokenSkippedPtr) -> Self {
+        Self(value.0)
+    }
+}
 impl From<TokenSingleLineCommentGreen> for TriviumGreen {
     fn from(value: TokenSingleLineCommentGreen) -> Self {
         Self(value.0)
@@ -220,6 +240,16 @@ pub struct OptionStructArgExprPtr(SyntaxStablePtrId);
 impl OptionStructArgExprPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
+    }
+}
+impl From<OptionStructArgExprEmptyPtr> for OptionStructArgExprPtr {
+    fn from(value: OptionStructArgExprEmptyPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<StructArgExprPtr> for OptionStructArgExprPtr {
+    fn from(value: StructArgExprPtr) -> Self {
+        Self(value.0)
     }
 }
 impl From<OptionStructArgExprEmptyGreen> for OptionStructArgExprGreen {
@@ -491,6 +521,16 @@ impl StructArgPtr {
         self.0
     }
 }
+impl From<StructArgSinglePtr> for StructArgPtr {
+    fn from(value: StructArgSinglePtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<StructArgTailPtr> for StructArgPtr {
+    fn from(value: StructArgTailPtr) -> Self {
+        Self(value.0)
+    }
+}
 impl From<StructArgSingleGreen> for StructArgGreen {
     fn from(value: StructArgSingleGreen) -> Self {
         Self(value.0)
@@ -714,6 +754,76 @@ pub struct ExprPtr(SyntaxStablePtrId);
 impl ExprPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
+    }
+}
+impl From<ExprPathPtr> for ExprPtr {
+    fn from(value: ExprPathPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalLiteralNumberPtr> for ExprPtr {
+    fn from(value: TerminalLiteralNumberPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalFalsePtr> for ExprPtr {
+    fn from(value: TerminalFalsePtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalTruePtr> for ExprPtr {
+    fn from(value: TerminalTruePtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ExprParenthesizedPtr> for ExprPtr {
+    fn from(value: ExprParenthesizedPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ExprUnaryPtr> for ExprPtr {
+    fn from(value: ExprUnaryPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ExprBinaryPtr> for ExprPtr {
+    fn from(value: ExprBinaryPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ExprTuplePtr> for ExprPtr {
+    fn from(value: ExprTuplePtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ExprFunctionCallPtr> for ExprPtr {
+    fn from(value: ExprFunctionCallPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ExprStructCtorCallPtr> for ExprPtr {
+    fn from(value: ExprStructCtorCallPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ExprBlockPtr> for ExprPtr {
+    fn from(value: ExprBlockPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ExprMatchPtr> for ExprPtr {
+    fn from(value: ExprMatchPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ExprIfPtr> for ExprPtr {
+    fn from(value: ExprIfPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ExprMissingPtr> for ExprPtr {
+    fn from(value: ExprMissingPtr) -> Self {
+        Self(value.0)
     }
 }
 impl From<ExprPathGreen> for ExprGreen {
@@ -993,6 +1103,16 @@ pub struct PathSegmentPtr(SyntaxStablePtrId);
 impl PathSegmentPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
+    }
+}
+impl From<PathSegmentWithGenericArgsPtr> for PathSegmentPtr {
+    fn from(value: PathSegmentWithGenericArgsPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<PathSegmentSimplePtr> for PathSegmentPtr {
+    fn from(value: PathSegmentSimplePtr) -> Self {
+        Self(value.0)
     }
 }
 impl From<PathSegmentWithGenericArgsGreen> for PathSegmentGreen {
@@ -1425,6 +1545,16 @@ impl UnaryOperatorPtr {
         self.0
     }
 }
+impl From<TerminalNotPtr> for UnaryOperatorPtr {
+    fn from(value: TerminalNotPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalMinusPtr> for UnaryOperatorPtr {
+    fn from(value: TerminalMinusPtr) -> Self {
+        Self(value.0)
+    }
+}
 impl From<TerminalNotGreen> for UnaryOperatorGreen {
     fn from(value: TerminalNotGreen) -> Self {
         Self(value.0)
@@ -1567,6 +1697,71 @@ pub struct BinaryOperatorPtr(SyntaxStablePtrId);
 impl BinaryOperatorPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
+    }
+}
+impl From<TerminalDotPtr> for BinaryOperatorPtr {
+    fn from(value: TerminalDotPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalNotPtr> for BinaryOperatorPtr {
+    fn from(value: TerminalNotPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalMulPtr> for BinaryOperatorPtr {
+    fn from(value: TerminalMulPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalDivPtr> for BinaryOperatorPtr {
+    fn from(value: TerminalDivPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalPlusPtr> for BinaryOperatorPtr {
+    fn from(value: TerminalPlusPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalMinusPtr> for BinaryOperatorPtr {
+    fn from(value: TerminalMinusPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalEqEqPtr> for BinaryOperatorPtr {
+    fn from(value: TerminalEqEqPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalAndAndPtr> for BinaryOperatorPtr {
+    fn from(value: TerminalAndAndPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalOrOrPtr> for BinaryOperatorPtr {
+    fn from(value: TerminalOrOrPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalLEPtr> for BinaryOperatorPtr {
+    fn from(value: TerminalLEPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalGEPtr> for BinaryOperatorPtr {
+    fn from(value: TerminalGEPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalLTPtr> for BinaryOperatorPtr {
+    fn from(value: TerminalLTPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalGTPtr> for BinaryOperatorPtr {
+    fn from(value: TerminalGTPtr) -> Self {
+        Self(value.0)
     }
 }
 impl From<TerminalDotGreen> for BinaryOperatorGreen {
@@ -2089,6 +2284,16 @@ impl PatternPtr {
         self.0
     }
 }
+impl From<TerminalUnderscorePtr> for PatternPtr {
+    fn from(value: TerminalUnderscorePtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalLiteralNumberPtr> for PatternPtr {
+    fn from(value: TerminalLiteralNumberPtr) -> Self {
+        Self(value.0)
+    }
+}
 impl From<TerminalUnderscoreGreen> for PatternGreen {
     fn from(value: TerminalUnderscoreGreen) -> Self {
         Self(value.0)
@@ -2552,6 +2757,16 @@ impl OptionTypeClausePtr {
         self.0
     }
 }
+impl From<OptionTypeClauseEmptyPtr> for OptionTypeClausePtr {
+    fn from(value: OptionTypeClauseEmptyPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TypeClausePtr> for OptionTypeClausePtr {
+    fn from(value: TypeClausePtr) -> Self {
+        Self(value.0)
+    }
+}
 impl From<OptionTypeClauseEmptyGreen> for OptionTypeClauseGreen {
     fn from(value: OptionTypeClauseEmptyGreen) -> Self {
         Self(value.0)
@@ -2739,6 +2954,16 @@ impl OptionReturnTypeClausePtr {
         self.0
     }
 }
+impl From<OptionReturnTypeClauseEmptyPtr> for OptionReturnTypeClausePtr {
+    fn from(value: OptionReturnTypeClauseEmptyPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ReturnTypeClausePtr> for OptionReturnTypeClausePtr {
+    fn from(value: ReturnTypeClausePtr) -> Self {
+        Self(value.0)
+    }
+}
 impl From<OptionReturnTypeClauseEmptyGreen> for OptionReturnTypeClauseGreen {
     fn from(value: OptionReturnTypeClauseEmptyGreen) -> Self {
         Self(value.0)
@@ -2855,6 +3080,26 @@ pub struct StatementPtr(SyntaxStablePtrId);
 impl StatementPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
+    }
+}
+impl From<StatementLetPtr> for StatementPtr {
+    fn from(value: StatementLetPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<StatementExprPtr> for StatementPtr {
+    fn from(value: StatementExprPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<StatementReturnPtr> for StatementPtr {
+    fn from(value: StatementReturnPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<StatementMissingPtr> for StatementPtr {
+    fn from(value: StatementMissingPtr) -> Self {
+        Self(value.0)
     }
 }
 impl From<StatementLetGreen> for StatementGreen {
@@ -3137,6 +3382,16 @@ pub struct OptionSemicolonPtr(SyntaxStablePtrId);
 impl OptionSemicolonPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
+    }
+}
+impl From<OptionSemicolonEmptyPtr> for OptionSemicolonPtr {
+    fn from(value: OptionSemicolonEmptyPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalSemicolonPtr> for OptionSemicolonPtr {
+    fn from(value: TerminalSemicolonPtr) -> Self {
+        Self(value.0)
     }
 }
 impl From<OptionSemicolonEmptyGreen> for OptionSemicolonGreen {
@@ -3650,6 +3905,51 @@ pub struct ItemPtr(SyntaxStablePtrId);
 impl ItemPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
+    }
+}
+impl From<ItemModulePtr> for ItemPtr {
+    fn from(value: ItemModulePtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ItemUsePtr> for ItemPtr {
+    fn from(value: ItemUsePtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ItemFreeFunctionPtr> for ItemPtr {
+    fn from(value: ItemFreeFunctionPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ItemExternFunctionPtr> for ItemPtr {
+    fn from(value: ItemExternFunctionPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ItemExternTypePtr> for ItemPtr {
+    fn from(value: ItemExternTypePtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ItemTraitPtr> for ItemPtr {
+    fn from(value: ItemTraitPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ItemImplPtr> for ItemPtr {
+    fn from(value: ItemImplPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ItemStructPtr> for ItemPtr {
+    fn from(value: ItemStructPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ItemEnumPtr> for ItemPtr {
+    fn from(value: ItemEnumPtr) -> Self {
+        Self(value.0)
     }
 }
 impl From<ItemModuleGreen> for ItemGreen {
@@ -4869,6 +5169,16 @@ pub struct OptionGenericParamsPtr(SyntaxStablePtrId);
 impl OptionGenericParamsPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
+    }
+}
+impl From<OptionGenericParamsEmptyPtr> for OptionGenericParamsPtr {
+    fn from(value: OptionGenericParamsEmptyPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<WrappedGenericParamListPtr> for OptionGenericParamsPtr {
+    fn from(value: WrappedGenericParamListPtr) -> Self {
+        Self(value.0)
     }
 }
 impl From<OptionGenericParamsEmptyGreen> for OptionGenericParamsGreen {

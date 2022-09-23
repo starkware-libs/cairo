@@ -1,7 +1,6 @@
 use defs::ids::{GenericFunctionId, GenericTypeId, ModuleId, ModuleItemId};
 use filesystem::ids::CrateLongId;
-use syntax::node::ast::BinaryOperator;
-use syntax::node::ids::SyntaxStablePtrId;
+use syntax::node::ast::{self, BinaryOperator};
 use syntax::node::TypedSyntaxNode;
 use utils::{extract_matches, OptionFrom};
 
@@ -46,7 +45,7 @@ pub fn core_bool_ty(db: &dyn SemanticGroup) -> TypeId {
 /// semantic expression.
 pub fn false_literal_expr(
     ctx: &mut ComputationContext<'_>,
-    stable_ptr: SyntaxStablePtrId,
+    stable_ptr: ast::ExprPtr,
 ) -> semantic::Expr {
     get_enum_variant(ctx, core_module(ctx.db), "bool", "False", stable_ptr)
 }
@@ -55,7 +54,7 @@ pub fn false_literal_expr(
 /// semantic expression.
 pub fn true_literal_expr(
     ctx: &mut ComputationContext<'_>,
-    stable_ptr: SyntaxStablePtrId,
+    stable_ptr: ast::ExprPtr,
 ) -> semantic::Expr {
     get_enum_variant(ctx, core_module(ctx.db), "bool", "True", stable_ptr)
 }
@@ -67,7 +66,7 @@ fn get_enum_variant(
     module_id: ModuleId,
     enum_name: &str,
     variant_name: &str,
-    stable_ptr: SyntaxStablePtrId,
+    stable_ptr: ast::ExprPtr,
 ) -> semantic::Expr {
     let bool_enum = ctx.db.module_item_by_name(module_id, enum_name.into()).unwrap();
     let bool_enum_id = extract_matches!(bool_enum, ModuleItemId::Enum);
@@ -86,7 +85,7 @@ pub fn unit_ty(db: &dyn SemanticGroup) -> TypeId {
 
 /// builds a semantic unit expression. This is not necessarily located in the AST, so it is received
 /// as a param.
-pub fn unit_expr(ctx: &mut ComputationContext<'_>, stable_ptr: SyntaxStablePtrId) -> ExprId {
+pub fn unit_expr(ctx: &mut ComputationContext<'_>, stable_ptr: ast::ExprPtr) -> ExprId {
     ctx.exprs.alloc(Expr::ExprTuple(ExprTuple {
         items: Vec::new(),
         ty: ctx.db.intern_type(TypeLongId::Tuple(Vec::new())),
