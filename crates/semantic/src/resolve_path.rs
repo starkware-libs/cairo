@@ -44,7 +44,7 @@ impl OptionFrom<ResolvedItem> for TypeId {
     }
 }
 
-// Scope informaton needed to resolve paths.
+// Scope information needed to resolve paths.
 pub struct ResolveScope {
     // Current module in which to resolve the path.
     pub module_id: ModuleId,

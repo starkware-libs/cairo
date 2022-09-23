@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use db_utils::define_short_id;
 use debug::DebugWithDb;
 use defs::ids::{GenericParamId, GenericTypeId, LanguageElementId};
@@ -10,7 +12,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::resolve_path::{resolve_path, ResolveScope};
-use crate::semantic;
+use crate::{semantic, GenericArgumentId};
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
@@ -35,9 +37,23 @@ impl TypeId {
     }
     pub fn format(&self, db: &(dyn SemanticGroup + 'static)) -> String {
         match db.lookup_intern_type(*self) {
-            TypeLongId::Concrete(ConcreteType { generic_type, generic_args: _ }) => {
+            TypeLongId::Concrete(ConcreteType { generic_type, generic_args }) => {
                 // TODO(spapini): Format generics.
-                generic_type.format(db.upcast())
+                let generic_type_format = generic_type.format(db.upcast());
+                if generic_args.is_empty() {
+                    generic_type_format
+                } else {
+                    format!(
+                        "{}::<{}>",
+                        generic_type_format,
+                        generic_args
+                            .into_iter()
+                            .map(|arg| match arg {
+                                crate::GenericArgumentId::Type(ty) => ty.format(db),
+                            })
+                            .join(", ")
+                    )
+                }
             }
             TypeLongId::Tuple(inner_types) => {
                 format!("({})", inner_types.into_iter().map(|ty| ty.format(db)).join(", "))
@@ -126,5 +142,36 @@ pub fn generic_type_generic_params(
         GenericTypeId::Struct(_) => Some(vec![]),
         GenericTypeId::Enum(_) => Some(vec![]),
         GenericTypeId::Extern(id) => db.extern_type_declaration_generic_params(id),
+    }
+}
+
+pub fn substitute_generics(
+    db: &dyn SemanticGroup,
+    substitution: &HashMap<GenericParamId, GenericArgumentId>,
+    ty: crate::TypeId,
+) -> TypeId {
+    match db.lookup_intern_type(ty) {
+        TypeLongId::Concrete(concrete) => db.intern_type(TypeLongId::Concrete(ConcreteType {
+            generic_type: concrete.generic_type,
+            generic_args: concrete
+                .generic_args
+                .into_iter()
+                .map(|generic_arg| {
+                    let GenericArgumentId::Type(ty) = generic_arg;
+                    GenericArgumentId::Type(substitute_generics(db, substitution, ty))
+                })
+                .collect(),
+        })),
+        TypeLongId::Tuple(tys) => db.intern_type(TypeLongId::Tuple(
+            tys.into_iter().map(|ty| substitute_generics(db, substitution, ty)).collect(),
+        )),
+        TypeLongId::GenericParameter(generic_param) => substitution
+            .get(&generic_param)
+            .map(|generic_arg| {
+                let GenericArgumentId::Type(ty) = generic_arg;
+                *ty
+            })
+            .unwrap_or(ty),
+        TypeLongId::Missing => ty,
     }
 }
