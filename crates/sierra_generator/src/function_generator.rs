@@ -29,8 +29,8 @@ pub fn get_function_code(
     db: &dyn SierraGenGroup,
     function_id: FreeFunctionId,
 ) -> Option<Arc<pre_sierra::Function>> {
-    let signature = db.free_function_signature(function_id)?;
-    let body = db.free_function_body(function_id)?;
+    let signature = db.free_function_declaration_signature(function_id)?;
+    let body = db.free_function_definition_body(function_id)?;
     let mut context = ExprGeneratorContext::new(db, function_id, diagnostics);
 
     // Generate a label for the function's body.

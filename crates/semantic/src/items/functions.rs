@@ -67,7 +67,6 @@ impl DebugWithDb<dyn SemanticGroup> for ConcreteFunction {
 #[debug_db(SemanticGroup)]
 pub struct Signature {
     pub params: Vec<semantic::Parameter>,
-    pub generic_params: Vec<GenericParamId>,
     pub return_type: semantic::TypeId,
 }
 
@@ -119,9 +118,25 @@ pub fn generic_function_signature(
     generic_function: GenericFunctionId,
 ) -> Option<Signature> {
     match generic_function {
-        GenericFunctionId::Free(free_function) => db.free_function_signature(free_function),
+        GenericFunctionId::Free(free_function) => {
+            db.free_function_declaration_signature(free_function)
+        }
         GenericFunctionId::Extern(extern_function) => {
             db.extern_function_declaration_signature(extern_function)
+        }
+    }
+}
+/// Query implementation of [crate::db::SemanticGroup::generic_function_generic_params].
+pub fn generic_function_generic_params(
+    db: &dyn SemanticGroup,
+    generic_function: GenericFunctionId,
+) -> Option<Vec<GenericParamId>> {
+    match generic_function {
+        GenericFunctionId::Free(free_function) => {
+            db.free_function_declaration_generic_params(free_function)
+        }
+        GenericFunctionId::Extern(extern_function) => {
+            db.extern_function_declaration_generic_params(extern_function)
         }
     }
 }

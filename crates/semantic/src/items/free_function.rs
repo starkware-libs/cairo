@@ -1,4 +1,4 @@
-use defs::ids::{FreeFunctionId, LanguageElementId};
+use defs::ids::{FreeFunctionId, GenericParamId, LanguageElementId};
 use diagnostics::Diagnostics;
 use diagnostics_proc_macros::DebugWithDb;
 use syntax::node::ast;
@@ -16,6 +16,7 @@ use crate::{semantic, SemanticDiagnostic};
 pub struct FreeFunctionDeclarationData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
     signature: semantic::Signature,
+    generic_params: Vec<GenericParamId>,
     environment: Environment,
 }
 
@@ -29,12 +30,20 @@ pub fn free_function_declaration_diagnostics(
         .map(|data| data.diagnostics)
         .unwrap_or_default()
 }
-/// Query implementation of [crate::db::SemanticGroup::free_function_signature].
-pub fn free_function_signature(
+/// Query implementation of [crate::db::SemanticGroup::free_function_declaration_signature].
+pub fn free_function_declaration_signature(
     db: &dyn SemanticGroup,
     free_function_id: FreeFunctionId,
 ) -> Option<semantic::Signature> {
     Some(db.priv_free_function_declaration_data(free_function_id)?.signature)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::free_function_declaration_generic_params].
+pub fn free_function_declaration_generic_params(
+    db: &dyn SemanticGroup,
+    free_function_id: FreeFunctionId,
+) -> Option<Vec<GenericParamId>> {
+    Some(db.priv_free_function_declaration_data(free_function_id)?.generic_params)
 }
 
 // Computation.
@@ -60,7 +69,8 @@ pub fn priv_free_function_declaration_data(
     );
     Some(FreeFunctionDeclarationData {
         diagnostics: diagnostics.diagnostics,
-        signature: semantic::Signature { params, generic_params, return_type },
+        signature: semantic::Signature { params, return_type },
+        generic_params,
         environment,
     })
 }
@@ -83,8 +93,8 @@ pub fn free_function_definition_diagnostics(
         .map(|data| data.diagnostics)
         .unwrap_or_default()
 }
-/// Query implementation of [crate::db::SemanticGroup::free_function_body].
-pub fn free_function_body(
+/// Query implementation of [crate::db::SemanticGroup::free_function_definition_body].
+pub fn free_function_definition_body(
     db: &dyn SemanticGroup,
     free_function_id: FreeFunctionId,
 ) -> Option<semantic::ExprId> {

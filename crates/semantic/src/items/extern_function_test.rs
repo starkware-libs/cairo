@@ -27,7 +27,6 @@ fn test_extern_function() {
     let signature = db.extern_function_declaration_signature(extern_function_id).unwrap();
     assert_eq!(
         format!("{:?}", signature.debug(db)),
-        "Signature { params: [], generic_params: [GenericParamId(test_crate::A), \
-         GenericParamId(test_crate::B)], return_type: Tuple([]) }"
+        "Signature { params: [], return_type: Tuple([]) }"
     );
 }
