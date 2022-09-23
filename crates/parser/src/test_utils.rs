@@ -5,7 +5,7 @@ use std::sync::Arc;
 use db_utils::Upcast;
 use diagnostics::Diagnostics;
 use filesystem::db::{init_files_group, FilesDatabase, FilesGroup};
-use filesystem::ids::{FileLongId, VirtualFile};
+use filesystem::ids::{FileId, FileLongId, VirtualFile};
 use syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use syntax::node::{SyntaxNode, TypedSyntaxNode};
 
@@ -37,7 +37,7 @@ pub fn get_syntax_root_and_diagnostics(
     db: &ParserDatabaseForTesting,
     cairo_filename: &str,
 ) -> (SyntaxNode, Diagnostics<ParserDiagnostic>) {
-    let file_id = db.intern_file(FileLongId::OnDisk(PathBuf::from(cairo_filename)));
+    let file_id = FileId::new(db, PathBuf::from(cairo_filename));
     let contents = db.file_content(file_id).unwrap();
     let mut diagnostics = Diagnostics::new();
     let syntax_root = Parser::parse_file(db, &mut diagnostics, file_id, contents.as_str());
