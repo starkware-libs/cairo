@@ -25,7 +25,7 @@ pub fn generate_expression_code(
         }
         semantic::Expr::ExprMatch(expr_match) => handle_felt_match(context, expr_match),
         semantic::Expr::ExprVar(expr_var) => {
-            Some((vec![], context.get_variable(expr_var.var, expr_var.stable_ptr)?))
+            Some((vec![], context.get_variable(expr_var.var, expr_var.stable_ptr.untyped())?))
         }
         semantic::Expr::ExprLiteral(expr_literal) => {
             let tmp_var = context.allocate_sierra_variable();
@@ -140,7 +140,7 @@ fn handle_function_call(
             if !function_long_id.generic_args.is_empty() {
                 context.add_diagnostic(
                     SierraGeneratorDiagnosticKind::CallLibFuncWithGenericArgs,
-                    expr_function_call.stable_ptr,
+                    expr_function_call.stable_ptr.untyped(),
                 );
                 return None;
             }
@@ -184,7 +184,7 @@ fn handle_felt_match(
             if literal.value != 0 {
                 context.add_diagnostic(
                     SierraGeneratorDiagnosticKind::NonZeroValueInMatch,
-                    literal.stable_ptr,
+                    literal.stable_ptr.untyped(),
                 );
                 return None;
             }
@@ -267,7 +267,7 @@ fn handle_felt_match(
         _ => {
             context.add_diagnostic(
                 SierraGeneratorDiagnosticKind::OnlyMatchZeroIsSupported,
-                expr_match.stable_ptr,
+                expr_match.stable_ptr.untyped(),
             );
             None
         }

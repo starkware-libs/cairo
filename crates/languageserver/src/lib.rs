@@ -312,7 +312,7 @@ impl LanguageServer for Backend {
 
         // Lookup semantic expression.
         let expr_id = if let Some(expr_id) =
-            db.lookup_expr_by_ptr(free_function_id, expr_node.stable_ptr().untyped())
+            db.lookup_expr_by_ptr(free_function_id, expr_node.stable_ptr())
         {
             expr_id
         } else {

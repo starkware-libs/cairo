@@ -4,7 +4,6 @@ use diagnostics::Diagnostics;
 use diagnostics_proc_macros::DebugWithDb;
 use id_arena::Arena;
 use syntax::node::ast;
-use syntax::node::ids::SyntaxStablePtrId;
 use utils::unordered_hash_map::UnorderedHashMap;
 
 use super::functions::{function_signature_params, function_signature_return_type};
@@ -90,7 +89,7 @@ pub struct FreeFunctionDefinitionData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
     body: semantic::ExprId,
     exprs: Arena<semantic::Expr>,
-    expr_lookup: UnorderedHashMap<SyntaxStablePtrId, ExprId>,
+    expr_lookup: UnorderedHashMap<ast::ExprPtr, ExprId>,
     statements: Arena<semantic::Statement>,
 }
 
@@ -177,7 +176,7 @@ pub trait SemanticExprLookup: Upcast<dyn SemanticGroup> {
     fn lookup_expr_by_ptr(
         &self,
         free_function_id: FreeFunctionId,
-        ptr: SyntaxStablePtrId,
+        ptr: ast::ExprPtr,
     ) -> Option<ExprId> {
         let definition_data = self.upcast().priv_free_function_definition_data(free_function_id)?;
         definition_data.expr_lookup.get(&ptr).copied()
