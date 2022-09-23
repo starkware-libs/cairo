@@ -122,12 +122,17 @@ pub fn maybe_compute_expr_semantic(
             let arg_exprs = [lexpr, rexpr];
             let function = core_binary_operator(db, ctx.diagnostics, &binary_op)
                 .on_none(|| ctx.diagnostics.report(&binary_op, UnknownBinaryOperator))?;
-            typecheck_function_call(ctx, binary_op.stable_ptr().untyped(), function, &arg_exprs)?;
+            let signature = typecheck_function_call(
+                ctx,
+                binary_op.stable_ptr().untyped(),
+                function,
+                &arg_exprs,
+            )?;
             let args = arg_exprs.into_iter().map(|expr| db.intern_expr(expr)).collect();
             Expr::ExprFunctionCall(ExprFunctionCall {
                 function,
                 args,
-                ty: function.return_type(db),
+                ty: signature.return_type,
                 stable_ptr,
             })
         }
@@ -154,12 +159,12 @@ pub fn maybe_compute_expr_semantic(
                 .into_iter()
                 .map(|arg_syntax| compute_expr_semantic(ctx, arg_syntax))
                 .collect();
-            let function = resolve_function(ctx, path, &arg_exprs);
+            let (function, signature) = resolve_function(ctx, path, &arg_exprs);
             let args = arg_exprs.into_iter().map(|expr| db.intern_expr(expr)).collect();
             Expr::ExprFunctionCall(ExprFunctionCall {
                 function,
                 args,
-                ty: function.return_type(db),
+                ty: signature.return_type,
                 stable_ptr: call_syntax.stable_ptr().untyped(),
             })
         }
@@ -473,8 +478,13 @@ fn resolve_function(
     ctx: &mut ComputationContext<'_>,
     path: ast::ExprPath,
     args: &[Expr],
-) -> FunctionId {
-    maybe_resolve_function(ctx, &path, args).unwrap_or_else(|| FunctionId::missing(ctx.db))
+) -> (FunctionId, semantic::Signature) {
+    maybe_resolve_function(ctx, &path, args).unwrap_or_else(|| {
+        (
+            FunctionId::missing(ctx.db),
+            semantic::Signature { params: vec![], return_type: TypeId::missing(ctx.db) },
+        )
+    })
 }
 /// Resolves a concrete function given a context and a path expression.
 /// Returns the generic function and the concrete function, or returns a SemanticDiagnosticKind on
@@ -483,14 +493,14 @@ fn maybe_resolve_function(
     ctx: &mut ComputationContext<'_>,
     path: &ast::ExprPath,
     args: &[Expr],
-) -> Option<FunctionId> {
+) -> Option<(FunctionId, semantic::Signature)> {
     // TODO(spapini): Try to find function in multiple places (e.g. impls, or other modules for
     //   suggestions)
     let item = resolve_item(ctx.db, ctx.diagnostics, ctx.module_id, path)?;
     let function =
         FunctionId::option_from(item).on_none(|| ctx.diagnostics.report(path, UnknownFunction))?;
-    typecheck_function_call(ctx, path.stable_ptr().untyped(), function, args)?;
-    Some(function)
+    let signature = typecheck_function_call(ctx, path.stable_ptr().untyped(), function, args)?;
+    Some((function, signature))
 }
 
 /// Typechecks a function call.
@@ -499,7 +509,7 @@ fn typecheck_function_call(
     stable_ptr: SyntaxStablePtrId,
     function: FunctionId,
     args: &[Expr],
-) -> Option<()> {
+) -> Option<semantic::Signature> {
     // TODO(spapini): Better location for these diagnsotics after the refactor for generics resolve.
     let signature = ctx
         .db
@@ -515,7 +525,7 @@ fn typecheck_function_call(
     }
 
     // Check argument types.
-    for (arg, param) in args.iter().zip(signature.params) {
+    for (arg, param) in args.iter().zip(signature.params.iter()) {
         let arg_typ = arg.ty();
         let param_typ = param.ty;
         // Don't add diagnostic if the type is missing (a diagnostic should have already been
@@ -529,7 +539,7 @@ fn typecheck_function_call(
         }
     }
 
-    Some(())
+    Some(signature)
 }
 
 /// Computes the semantic model of a statement.
