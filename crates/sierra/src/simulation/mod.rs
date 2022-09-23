@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use itertools::izip;
 use thiserror::Error;
 
-use self::mem_cell::MemCell;
+use self::value::CoreValue;
 use crate::edit_state::{put_results, take_args, EditStateError};
 use crate::extensions::core::{CoreConcreteLibFunc, CoreLibFunc, CoreType};
 use crate::ids::{FunctionId, VarId};
@@ -11,9 +11,9 @@ use crate::program::{Program, Statement, StatementIdx};
 use crate::program_registry::{ProgramRegistry, ProgramRegistryError};
 
 pub mod core;
-pub mod mem_cell;
 #[cfg(test)]
 mod test;
+pub mod value;
 
 /// Error occurring while simulating a libfunc.
 #[derive(Error, Debug, Eq, PartialEq)]
@@ -50,8 +50,8 @@ pub fn run(
     program: &Program,
     statement_gas_info: &HashMap<StatementIdx, i64>,
     function_id: &FunctionId,
-    inputs: Vec<Vec<MemCell>>,
-) -> Result<Vec<Vec<MemCell>>, SimulationError> {
+    inputs: Vec<CoreValue>,
+) -> Result<Vec<CoreValue>, SimulationError> {
     let context = SimulationContext {
         program,
         statement_gas_info,
@@ -71,8 +71,8 @@ impl SimulationContext<'_> {
     fn simulate_function(
         &self,
         function_id: &FunctionId,
-        inputs: Vec<Vec<MemCell>>,
-    ) -> Result<Vec<Vec<MemCell>>, SimulationError> {
+        inputs: Vec<CoreValue>,
+    ) -> Result<Vec<CoreValue>, SimulationError> {
         let func = self.registry.get_function(function_id)?;
         let mut current_statement_id = func.entry_point;
         if func.params.len() != inputs.len() {
@@ -82,7 +82,7 @@ impl SimulationContext<'_> {
                 actual: inputs.len(),
             });
         }
-        let mut state = HashMap::<VarId, Vec<MemCell>>::from_iter(
+        let mut state = HashMap::<VarId, CoreValue>::from_iter(
             izip!(func.params.iter(), inputs.into_iter())
                 .map(|(param, input)| (param.id.clone(), input)),
         );
@@ -136,9 +136,9 @@ impl SimulationContext<'_> {
         &self,
         idx: &StatementIdx,
         libfunc: &CoreConcreteLibFunc,
-        inputs: Vec<Vec<MemCell>>,
+        inputs: Vec<CoreValue>,
         current_statement_id: StatementIdx,
-    ) -> Result<(Vec<Vec<MemCell>>, usize), SimulationError> {
+    ) -> Result<(Vec<CoreValue>, usize), SimulationError> {
         core::simulate(
             libfunc,
             inputs,
