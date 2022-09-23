@@ -1,15 +1,22 @@
+use db_utils::Upcast;
 use defs::ids::{FreeFunctionId, GenericParamId, LanguageElementId};
 use diagnostics::Diagnostics;
 use diagnostics_proc_macros::DebugWithDb;
 use id_arena::Arena;
 use syntax::node::ast;
+use syntax::node::ids::SyntaxStablePtrId;
+use utils::unordered_hash_map::UnorderedHashMap;
 
 use super::functions::{function_signature_params, function_signature_return_type};
 use super::generics::semantic_generic_params;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::{compute_expr_semantic, ComputationContext, Environment};
-use crate::{semantic, SemanticDiagnostic};
+use crate::{semantic, ExprId, SemanticDiagnostic};
+
+#[cfg(test)]
+#[path = "free_function_test.rs"]
+mod test;
 
 // Declaration.
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
@@ -83,6 +90,7 @@ pub struct FreeFunctionDefinitionData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
     body: semantic::ExprId,
     exprs: Arena<semantic::Expr>,
+    expr_lookup: UnorderedHashMap<SyntaxStablePtrId, ExprId>,
     statements: Arena<semantic::Statement>,
 }
 
@@ -128,10 +136,14 @@ pub fn priv_free_function_definition_data(
     let expr = compute_expr_semantic(&mut ctx, ast::Expr::Block(syntax.body(db.upcast())));
     let body = ctx.exprs.alloc(expr);
     let ComputationContext { exprs, statements, .. } = ctx;
+
+    let expr_lookup: UnorderedHashMap<_, _> =
+        exprs.iter().map(|(expr_id, expr)| (expr.stable_ptr(), expr_id)).collect();
     Some(FreeFunctionDefinitionData {
         diagnostics: diagnostics.diagnostics,
         body,
         exprs,
+        expr_lookup,
         statements,
     })
 }
@@ -160,3 +172,16 @@ pub fn statement_semantic(
         .unwrap()
         .clone()
 }
+
+pub trait SemanticExprLookup: Upcast<dyn SemanticGroup> {
+    fn lookup_expr_by_ptr(
+        &self,
+        free_function_id: FreeFunctionId,
+        ptr: SyntaxStablePtrId,
+    ) -> Option<ExprId> {
+        let definition_data = self.upcast().priv_free_function_definition_data(free_function_id)?;
+        definition_data.expr_lookup.get(&ptr).copied()
+    }
+}
+
+impl<T: Upcast<dyn SemanticGroup> + ?Sized> SemanticExprLookup for T {}
