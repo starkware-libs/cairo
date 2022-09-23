@@ -95,7 +95,7 @@ impl Environment {
 pub fn compute_expr_semantic(ctx: &mut ComputationContext<'_>, syntax: ast::Expr) -> Expr {
     maybe_compute_expr_semantic(ctx, &syntax).unwrap_or_else(|| Expr::Missing {
         ty: TypeId::missing(ctx.db),
-        stable_ptr: syntax.stable_ptr().untyped(),
+        stable_ptr: syntax.stable_ptr(),
     })
 }
 
@@ -112,8 +112,8 @@ pub fn maybe_compute_expr_semantic(
         ast::Expr::Literal(literal_syntax) => {
             Expr::ExprLiteral(literal_to_semantic(ctx, literal_syntax)?)
         }
-        ast::Expr::False(syntax) => true_literal_expr(ctx, syntax.stable_ptr().untyped()),
-        ast::Expr::True(syntax) => false_literal_expr(ctx, syntax.stable_ptr().untyped()),
+        ast::Expr::False(syntax) => true_literal_expr(ctx, syntax.stable_ptr().into()),
+        ast::Expr::True(syntax) => false_literal_expr(ctx, syntax.stable_ptr().into()),
         ast::Expr::Parenthesized(paren_syntax) => {
             compute_expr_semantic(ctx, paren_syntax.expr(syntax_db))
         }
@@ -122,7 +122,7 @@ pub fn maybe_compute_expr_semantic(
             return None;
         }
         ast::Expr::Binary(binary_op_syntax) => {
-            let stable_ptr = binary_op_syntax.stable_ptr().untyped();
+            let stable_ptr = binary_op_syntax.stable_ptr().into();
             let binary_op = binary_op_syntax.op(syntax_db);
             let lexpr = compute_expr_semantic(ctx, binary_op_syntax.lhs(syntax_db));
             let rhs_syntax = binary_op_syntax.rhs(syntax_db);
@@ -158,7 +158,7 @@ pub fn maybe_compute_expr_semantic(
             Expr::ExprTuple(ExprTuple {
                 items,
                 ty: db.intern_type(TypeLongId::Tuple(types)),
-                stable_ptr: tuple_syntax.stable_ptr().untyped(),
+                stable_ptr: tuple_syntax.stable_ptr().into(),
             })
         }
         ast::Expr::FunctionCall(call_syntax) => {
@@ -176,7 +176,7 @@ pub fn maybe_compute_expr_semantic(
                 function,
                 args,
                 ty: signature.return_type,
-                stable_ptr: call_syntax.stable_ptr().untyped(),
+                stable_ptr: call_syntax.stable_ptr().into(),
             })
         }
         ast::Expr::StructCtorCall(ctor_syntax) => struct_ctor_expr(ctx, ctor_syntax)?,
@@ -209,7 +209,7 @@ pub fn maybe_compute_expr_semantic(
                     statements: statements_semantic,
                     tail: tail_semantic_expr.map(|expr| new_ctx.exprs.alloc(expr)),
                     ty,
-                    stable_ptr: block_syntax.stable_ptr().untyped(),
+                    stable_ptr: block_syntax.stable_ptr().into(),
                 })
             })
         }
@@ -253,7 +253,7 @@ pub fn maybe_compute_expr_semantic(
                         TypeId::missing(db)
                     }
                 },
-                stable_ptr: expr_match.stable_ptr().untyped(),
+                stable_ptr: expr_match.stable_ptr().into(),
             })
         }
         ast::Expr::If(_expr_if) => {
@@ -307,7 +307,9 @@ fn struct_ctor_expr(
         };
         // Extract expression.
         let arg_expr = match arg.arg_expr(syntax_db) {
-            ast::OptionStructArgExpr::Empty(_) => resolve_variable_by_name(ctx, &arg_identifier)?,
+            ast::OptionStructArgExpr::Empty(_) => {
+                resolve_variable_by_name(ctx, &arg_identifier, &path)?
+            }
             ast::OptionStructArgExpr::Some(arg_expr) => {
                 compute_expr_semantic(ctx, arg_expr.expr(syntax_db))
             }
@@ -338,7 +340,7 @@ fn struct_ctor_expr(
             generic_type: GenericTypeId::Struct(struct_id),
             generic_args: vec![],
         })),
-        stable_ptr: ctor_syntax.stable_ptr().untyped(),
+        stable_ptr: ctor_syntax.stable_ptr().into(),
     }))
 }
 
@@ -374,7 +376,7 @@ fn literal_to_semantic(
         .ok()
         .on_none(|| ctx.diagnostics.report(literal_syntax, UnknownLiteral))?;
     let ty = db.core_felt_ty();
-    Some(ExprLiteral { value, ty, stable_ptr: literal_syntax.stable_ptr().untyped() })
+    Some(ExprLiteral { value, ty, stable_ptr: literal_syntax.stable_ptr().into() })
 }
 
 /// Given an expression syntax, if it's an identifier, returns it. Otherwise, returns the proper
@@ -400,7 +402,7 @@ fn member_access_expr(
     ctx: &mut ComputationContext<'_>,
     lexpr: Expr,
     rhs_syntax: ast::Expr,
-    stable_ptr: SyntaxStablePtrId,
+    stable_ptr: ast::ExprPtr,
 ) -> Option<Expr> {
     let syntax_db = ctx.db.upcast();
 
@@ -453,7 +455,7 @@ fn resolve_variable(ctx: &mut ComputationContext<'_>, path: &ast::ExprPath) -> O
 
     match &segments[0] {
         PathSegment::Simple(ident_segment) => {
-            resolve_variable_by_name(ctx, &ident_segment.ident(syntax_db))
+            resolve_variable_by_name(ctx, &ident_segment.ident(syntax_db), path)
         }
         PathSegment::WithGenericArgs(generic_args_segment) => {
             // TODO(ilya, 10/10/2022): Generics are not supported yet.
@@ -467,6 +469,7 @@ fn resolve_variable(ctx: &mut ComputationContext<'_>, path: &ast::ExprPath) -> O
 pub fn resolve_variable_by_name(
     ctx: &mut ComputationContext<'_>,
     identifier: &ast::TerminalIdentifier,
+    path: &ast::ExprPath,
 ) -> Option<Expr> {
     let variable_name = identifier.text(ctx.db.upcast());
     let mut maybe_env = Some(&*ctx.environment);
@@ -475,7 +478,7 @@ pub fn resolve_variable_by_name(
             return Some(Expr::ExprVar(ExprVar {
                 var: var.id,
                 ty: var.ty,
-                stable_ptr: identifier.stable_ptr().untyped(),
+                stable_ptr: path.stable_ptr().into(),
             }));
         }
         maybe_env = env.parent.as_deref();
@@ -545,7 +548,7 @@ fn typecheck_function_call(
         // TODO(lior): Add a test to missing type once possible.
         if arg_typ != param_typ && arg_typ != TypeId::missing(ctx.db) {
             ctx.diagnostics.report_by_ptr(
-                arg.stable_ptr(),
+                arg.stable_ptr().untyped(),
                 WrongArgumentType { expected_ty: param_typ, actual_ty: arg_typ },
             );
         }
