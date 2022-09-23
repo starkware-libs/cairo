@@ -8,6 +8,7 @@ use utils::ordered_hash_map::OrderedHashMap;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
+use crate::resolve_path::ResolveScope;
 use crate::types::resolve_type;
 use crate::{semantic, SemanticDiagnostic};
 
@@ -49,6 +50,8 @@ pub fn priv_enum_semantic_data(db: &dyn SemanticGroup, enum_id: EnumId) -> Optio
     // selector.
     let module_id = enum_id.module(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_id);
+    // TODO(spapini): Add generic args when they are supported on enums.
+    let scope = ResolveScope::new(db, module_id, &[]);
     let module_data = db.module_data(module_id)?;
     let enum_ast = module_data.enums.get(&enum_id)?;
     let syntax_db = db.upcast();
@@ -58,7 +61,7 @@ pub fn priv_enum_semantic_data(db: &dyn SemanticGroup, enum_id: EnumId) -> Optio
         let ty = resolve_type(
             db,
             &mut diagnostics,
-            module_id,
+            &scope,
             &variant.type_clause(syntax_db).ty(syntax_db),
         );
         let variant_name = variant.name(syntax_db).text(syntax_db);

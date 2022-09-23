@@ -171,6 +171,11 @@ fn test_member_access_failures() {
                 a.4.4;
                   ^
 
+            error: Invalid member expression.
+             --> lib.cairo:9:9
+                a.4.4;
+                    ^
+            
             error: Type core::felt has no members.
              --> lib.cairo:10:7
                 5.a;
