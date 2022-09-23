@@ -6,6 +6,8 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use db_utils::Upcast;
+use defs::db::DefsGroup;
+use defs::ids::FreeFunctionLongId;
 use diagnostics::DiagnosticEntry;
 use filesystem::db::{AsFilesGroupMut, FilesGroup, FilesGroupEx, PrivRawFileContentQuery};
 use filesystem::ids::{FileId, FileLongId};
@@ -14,11 +16,13 @@ use parser::db::ParserGroup;
 use parser::formatter::{get_formatted_file, FormatterConfig};
 use project::ProjectConfig;
 use semantic::db::SemanticGroup;
+use semantic::items::free_function::SemanticExprLookup;
 use semantic::test_utils::SemanticDatabaseForTesting;
 use semantic_highlighting::token_kind::SemanticTokenKind;
 use semantic_highlighting::SemanticTokensTraverser;
 use serde_json::Value;
-use syntax::node::TypedSyntaxNode;
+use syntax::node::kind::SyntaxKind;
+use syntax::node::{ast, TypedSyntaxNode};
 use tower_lsp::jsonrpc::Result;
 use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, LanguageServer};
@@ -114,6 +118,7 @@ impl LanguageServer for Backend {
                     .into(),
                 ),
                 document_formatting_provider: Some(OneOf::Left(true)),
+                hover_provider: Some(HoverProviderCapability::Simple(true)),
                 ..ServerCapabilities::default()
             },
         })
@@ -237,6 +242,109 @@ impl LanguageServer for Backend {
             new_text,
         }]))
     }
+
+    async fn hover(&self, params: HoverParams) -> Result<Option<Hover>> {
+        let db = self.db().await;
+        let file_uri = params.text_document_position_params.text_document.uri;
+        let file = self.file(&db, file_uri.clone());
+
+        // Get syntax for file.
+        let syntax = if let Some(syntax) = db.file_syntax(file) {
+            syntax
+        } else {
+            eprintln!("Formatting failed. File '{file_uri}' does not exist.");
+            return Ok(None);
+        };
+
+        // Get file summary.
+        let file_summary = if let Some(summary) = db.file_summary(file) {
+            summary
+        } else {
+            eprintln!("Hover failed. File '{file_uri}' does not exist.");
+            return Ok(None);
+        };
+
+        // Find offset for position.
+        let position = params.text_document_position_params.position;
+        let line_offset =
+            if let Some(offset) = file_summary.line_offsets.get(position.line as usize) {
+                offset
+            } else {
+                eprintln!("Hover failed. Position out of bounds.");
+                return Ok(None);
+            };
+        // TODO(spapini): Check that character is not larger than line_length.
+        let mut node = syntax
+            .as_syntax_node()
+            .lookup_offset(&*db, line_offset.add(position.character as usize));
+
+        // Find module.
+        let modules: Vec<_> = db.file_modules(file).into_iter().flatten().collect();
+        if modules.len() != 1 {
+            eprintln!("Hover failed. Expected a single module for this file.");
+            return Ok(None);
+        }
+        let module_id = modules[0];
+
+        // Find containing expr.
+        while !is_expr(node.kind(&*db)) {
+            if let Some(parent) = node.parent() {
+                node = parent;
+            } else {
+                eprintln!("Hover failed. Not inside an expression.");
+                return Ok(None);
+            }
+        }
+        let expr_node = ast::Expr::from_syntax_node(&*db, node.clone());
+
+        // Find containing function.
+        while node.kind(&*db) != SyntaxKind::ItemFreeFunction {
+            if let Some(parent) = node.parent() {
+                node = parent;
+            } else {
+                eprintln!("Hover failed. Not inside a function.");
+                return Ok(None);
+            }
+        }
+        let function_node = ast::ItemFreeFunction::from_syntax_node(&*db, node);
+        let free_function_id =
+            db.intern_free_function(FreeFunctionLongId(module_id, function_node.stable_ptr()));
+
+        // Lookup semantic expression.
+        let expr_id = if let Some(expr_id) =
+            db.lookup_expr_by_ptr(free_function_id, expr_node.stable_ptr().untyped())
+        {
+            expr_id
+        } else {
+            eprintln!("Hover failed. Semantic model not found for expression.");
+            return Ok(None);
+        };
+
+        // Semantic expression found.
+        let semantic_expr = db.expr_semantic(free_function_id, expr_id);
+
+        // Format the hover text.
+        let text = format!("Type: {}", semantic_expr.ty().format(&*db));
+
+        Ok(Some(Hover { contents: HoverContents::Scalar(MarkedString::String(text)), range: None }))
+    }
+}
+
+fn is_expr(kind: SyntaxKind) -> bool {
+    matches!(
+        kind,
+        SyntaxKind::ExprBinary
+            | SyntaxKind::ExprBlock
+            | SyntaxKind::ExprParenthesized
+            | SyntaxKind::ExprFunctionCall
+            | SyntaxKind::ExprIf
+            | SyntaxKind::ExprMatch
+            | SyntaxKind::ExprMissing
+            | SyntaxKind::ExprStructCtorCall
+            | SyntaxKind::ExprUnary
+            | SyntaxKind::ExprTuple
+            | SyntaxKind::ExprPath
+    )
 }
 
 /// Tries to detect the crate root the config that contains a cairo file, and add it to the system.

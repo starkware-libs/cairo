@@ -307,7 +307,9 @@ fn struct_ctor_expr(
         };
         // Extract expression.
         let arg_expr = match arg.arg_expr(syntax_db) {
-            ast::OptionStructArgExpr::Empty(_) => resolve_variable_by_name(ctx, &arg_identifier)?,
+            ast::OptionStructArgExpr::Empty(_) => {
+                resolve_variable_by_name(ctx, &arg_identifier, path.stable_ptr().untyped())?
+            }
             ast::OptionStructArgExpr::Some(arg_expr) => {
                 compute_expr_semantic(ctx, arg_expr.expr(syntax_db))
             }
@@ -452,9 +454,11 @@ fn resolve_variable(ctx: &mut ComputationContext<'_>, path: &ast::ExprPath) -> O
     }
 
     match &segments[0] {
-        PathSegment::Simple(ident_segment) => {
-            resolve_variable_by_name(ctx, &ident_segment.ident(syntax_db))
-        }
+        PathSegment::Simple(ident_segment) => resolve_variable_by_name(
+            ctx,
+            &ident_segment.ident(syntax_db),
+            path.stable_ptr().untyped(),
+        ),
         PathSegment::WithGenericArgs(generic_args_segment) => {
             // TODO(ilya, 10/10/2022): Generics are not supported yet.
             ctx.diagnostics.report(generic_args_segment, Unsupported);
@@ -467,16 +471,13 @@ fn resolve_variable(ctx: &mut ComputationContext<'_>, path: &ast::ExprPath) -> O
 pub fn resolve_variable_by_name(
     ctx: &mut ComputationContext<'_>,
     identifier: &ast::TerminalIdentifier,
+    stable_ptr: SyntaxStablePtrId,
 ) -> Option<Expr> {
     let variable_name = identifier.text(ctx.db.upcast());
     let mut maybe_env = Some(&*ctx.environment);
     while let Some(env) = maybe_env {
         if let Some(var) = env.variables.get(&variable_name) {
-            return Some(Expr::ExprVar(ExprVar {
-                var: var.id,
-                ty: var.ty,
-                stable_ptr: identifier.stable_ptr().untyped(),
-            }));
+            return Some(Expr::ExprVar(ExprVar { var: var.id, ty: var.ty, stable_ptr }));
         }
         maybe_env = env.parent.as_deref();
     }

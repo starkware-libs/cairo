@@ -159,6 +159,16 @@ impl SyntaxNode {
             green::GreenNodeDetails::Token(_) => self.span(db).end,
         }
     }
+
+    /// Lookups a syntax node using an offset.
+    pub fn lookup_offset(&self, db: &dyn SyntaxGroup, offset: TextOffset) -> SyntaxNode {
+        for child in self.children(db) {
+            if child.offset().0 + (child.width(db) as usize) > offset.0 {
+                return child.lookup_offset(db, offset);
+            }
+        }
+        self.clone()
+    }
 }
 pub struct SyntaxNodeChildIterator<'db> {
     db: &'db dyn SyntaxGroup,
