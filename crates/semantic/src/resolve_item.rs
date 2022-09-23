@@ -200,7 +200,6 @@ pub fn specialize_function(
     Some(db.intern_function(FunctionLongId::Concrete(ConcreteFunction {
         generic_function,
         generic_args,
-        return_type: signature.return_type,
     })))
 }
 
