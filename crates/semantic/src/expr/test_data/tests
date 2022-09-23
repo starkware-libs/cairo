@@ -40,7 +40,18 @@ error: Unexpected argument type. Expected: "core::felt", found: "test_crate::MyT
 
 //! > Test operators.
 
-//! > Function
+//! > test_function_name
+test_function_diagnostics
+
+//! > test_params
+function
+function_name
+module_code
+
+//! > test_output_params
+expected_diagnostics
+
+//! > function
 func foo(a: felt, b: bool) {
     // Valid.
     a + a * a - a;
@@ -50,13 +61,47 @@ func foo(a: felt, b: bool) {
     a>a>a;
 }
 
-//! > Function Name
+//! > function_name
 foo
 
-//! > Module Code
+//! > module_code
 
-//! > Expected Result
+//! > expected_diagnostics
 error: Unexpected argument type. Expected: "core::felt", found: "core::bool".
  --> lib.cairo:7:5
     a>a>a;
     ^*^
+
+//! > Test generics substitution.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > test_params
+function
+function_name
+module_code
+
+//! > test_output_params
+expected_diagnostics
+
+//! > function
+extern type A<S>;
+extern func bar<T>(x:T) -> A::<T>;
+
+func foo(a: A::<felt>) -> A::<A::<felt>> {
+    let res = bar::<A::<felt>>(a);
+    let bad : A::<A::<bool>> = res;
+    res
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Unexpected argument type. Expected: "test_crate::A::<test_crate::A::<core::bool>>", found: "test_crate::A::<test_crate::A::<core::felt>>".
+ --> lib.cairo:6:32
+    let bad : A::<A::<bool>> = res;
+                               ^*^

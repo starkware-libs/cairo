@@ -11,8 +11,8 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::Environment;
 use crate::resolve_path::ResolveScope;
-use crate::semantic;
-use crate::types::resolve_type;
+use crate::types::{resolve_type, substitute_generics};
+use crate::{semantic, Parameter};
 
 /// Function instance.
 /// For example: ImplA::foo<A, B>, or bar<A>.
@@ -136,11 +136,31 @@ pub fn concrete_function_signature(
     function_id: FunctionId,
 ) -> Option<Signature> {
     match db.lookup_intern_function(function_id) {
-        FunctionLongId::Concrete(ConcreteFunction {
-            generic_function, generic_args: _, ..
-        }) => {
-            // TODO(spapini): Substitute generic args.
-            db.generic_function_signature(generic_function)
+        FunctionLongId::Concrete(ConcreteFunction { generic_function, generic_args, .. }) => {
+            let generic_params = db.generic_function_generic_params(generic_function)?;
+            if generic_params.len() != generic_args.len() {
+                // TODO(spapini): Make sure that construction of ConcreteFunction al ready checks
+                // for errors.
+                return None;
+            }
+            let mut substitution = HashMap::new();
+            for (param, arg) in generic_params.iter().zip(generic_args.iter()) {
+                // TODO(spapini): When trait generics are supported, they need to be substituted
+                // one by one, not together.
+                substitution.insert(*param, *arg);
+            }
+            let generic_signature = db.generic_function_signature(generic_function)?;
+            Some(Signature {
+                params: generic_signature
+                    .params
+                    .iter()
+                    .map(|param| Parameter {
+                        id: param.id,
+                        ty: substitute_generics(db, &substitution, param.ty),
+                    })
+                    .collect(),
+                return_type: substitute_generics(db, &substitution, generic_signature.return_type),
+            })
         }
         FunctionLongId::Missing => None,
     }
