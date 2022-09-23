@@ -179,7 +179,7 @@ pub fn specialize_function(
     generic_function: GenericFunctionId,
     mut generic_args: Vec<GenericArgumentId>,
 ) -> Option<FunctionId> {
-    let signature = db
+    let _signature = db
         .generic_function_signature(generic_function)
         .on_none(|| diagnostics.report_by_ptr(stable_ptr, UnknownFunction))?;
     let generic_params = db
@@ -200,7 +200,6 @@ pub fn specialize_function(
     Some(db.intern_function(FunctionLongId::Concrete(ConcreteFunction {
         generic_function,
         generic_args,
-        return_type: signature.return_type,
     })))
 }
 

@@ -35,7 +35,7 @@ fn test_resolve_item() {
         "Some(ExprBlock(ExprBlock { statements: [Expr(ExprFunctionCall(ExprFunctionCall { \
             function: Concrete(ExternFunctionId(test_crate::bar)<\
                     Type(Tuple([Concrete(ExternTypeId(core::felt))])),\
-                > -> TypeId(4)), \
+                >), \
             args: [ExprVar(ExprVar { \
                 var: ParamId(test_crate::value), \
                 ty: Concrete(ExternTypeId(test_crate::S)<\
