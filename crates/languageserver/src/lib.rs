@@ -10,7 +10,7 @@ use defs::db::DefsGroup;
 use defs::ids::FreeFunctionLongId;
 use diagnostics::DiagnosticEntry;
 use filesystem::db::{AsFilesGroupMut, FilesGroup, FilesGroupEx, PrivRawFileContentQuery};
-use filesystem::ids::{FileId, FileLongId};
+use filesystem::ids::FileId;
 use filesystem::span::TextPosition;
 use parser::db::ParserGroup;
 use parser::formatter::{get_formatted_file, FormatterConfig};
@@ -45,7 +45,7 @@ impl Backend {
     }
     fn file(&self, db: &RootDatabase, uri: Url) -> FileId {
         let path = uri.to_file_path().expect("Only file URIs are supported.");
-        db.intern_file(FileLongId::OnDisk(path))
+        FileId::new(db, path)
     }
     fn add_diagnostic(
         &self,

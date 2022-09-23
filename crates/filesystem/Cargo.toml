@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 db_utils = { path = "../db_utils" }
 debug = { path = "../debug" }
+path-clean = "0.1.0"
 project = { path = "../project" }
 salsa = "0.16.1"
 smol_str = "0.1.23"
