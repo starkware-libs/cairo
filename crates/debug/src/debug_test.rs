@@ -27,7 +27,7 @@ struct DummyLongId(usize);
 define_short_id!(DummyShortId, DummyLongId, TestGroup, lookup_intern_b);
 
 #[derive(DebugWithDb)]
-#[debug_db(TestGroup)]
+#[debug_db(dyn TestGroup + 'static)]
 struct ComplexStruct {
     a: Option<usize>,
     b: DummyShortId,

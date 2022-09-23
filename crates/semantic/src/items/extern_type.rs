@@ -13,7 +13,7 @@ mod test;
 
 // Declaration.
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
-#[debug_db(SemanticGroup)]
+#[debug_db(dyn SemanticGroup + 'static)]
 pub struct ExternTypeDeclarationData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
     generic_params: Vec<GenericParamId>,

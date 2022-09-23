@@ -16,13 +16,13 @@ use crate::{semantic, SemanticDiagnostic};
 mod test;
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
-#[debug_db(SemanticGroup)]
+#[debug_db(dyn SemanticGroup + 'static)]
 pub struct StructData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
     members: OrderedHashMap<SmolStr, Member>,
 }
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
-#[debug_db(SemanticGroup)]
+#[debug_db(dyn SemanticGroup + 'static)]
 pub struct Member {
     pub id: MemberId,
     pub ty: semantic::TypeId,

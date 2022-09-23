@@ -17,7 +17,7 @@ use crate::types::resolve_type;
 /// For example: ImplA::foo<A, B>, or bar<A>.
 // TODO(spapini): Add a function pointer variant.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
-#[debug_db(SemanticGroup)]
+#[debug_db(dyn SemanticGroup + 'static)]
 pub enum FunctionLongId {
     Concrete(ConcreteFunction),
     Missing,
@@ -53,7 +53,7 @@ impl DebugWithDb<dyn SemanticGroup> for ConcreteFunction {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
-#[debug_db(SemanticGroup)]
+#[debug_db(dyn SemanticGroup + 'static)]
 pub struct Signature {
     pub params: Vec<semantic::Parameter>,
     pub return_type: semantic::TypeId,

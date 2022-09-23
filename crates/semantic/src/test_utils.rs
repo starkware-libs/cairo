@@ -159,10 +159,12 @@ pub fn setup_test_expr(
     let function_code = format!("func test_func() {{ {function_body} {{\n{expr_code}\n}} }}");
     let (test_function, diagnostics) =
         setup_test_function(db, &function_code, "test_func", module_code).split();
-    let semantic::ExprBlock { tail: function_body_tail, .. } =
-        extract_matches!(db.lookup_intern_expr(test_function.body), semantic::Expr::ExprBlock);
+    let semantic::ExprBlock { tail: function_body_tail, .. } = extract_matches!(
+        db.expr_semantic(test_function.function_id, test_function.body),
+        semantic::Expr::ExprBlock
+    );
     let semantic::ExprBlock { statements, tail, .. } = extract_matches!(
-        db.lookup_intern_expr(function_body_tail.unwrap()),
+        db.expr_semantic(test_function.function_id, function_body_tail.unwrap()),
         semantic::Expr::ExprBlock
     );
     assert!(

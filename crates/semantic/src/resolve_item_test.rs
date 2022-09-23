@@ -5,6 +5,7 @@ use pretty_assertions::assert_eq;
 use utils::extract_matches;
 
 use crate::db::SemanticGroup;
+use crate::expr::fmt::ExprFormatter;
 use crate::test_utils::{setup_test_module, SemanticDatabaseForTesting};
 
 #[test]
@@ -29,9 +30,10 @@ fn test_resolve_item() {
         db.module_item_by_name(module_id, "foo".into()).unwrap(),
         ModuleItemId::FreeFunction
     );
+    let expr_formatter = ExprFormatter { db, free_function_id };
     let body = db.free_function_definition_body(free_function_id);
     assert_eq!(
-        format!("{:?}", body.debug(db)),
+        format!("{:?}", body.debug(&expr_formatter)),
         "Some(ExprBlock(ExprBlock { statements: [Expr(ExprFunctionCall(ExprFunctionCall { \
             function: Concrete(ExternFunctionId(test_crate::bar)<\
                     Type(Tuple([Concrete(ExternTypeId(core::felt))])),\
