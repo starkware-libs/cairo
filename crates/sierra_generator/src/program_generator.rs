@@ -1,9 +1,13 @@
+use std::collections::HashSet;
 use std::sync::Arc;
 
 use defs::db::ModuleItems;
 use defs::ids::ModuleItemId;
 use diagnostics::Diagnostics;
-use sierra::ids::ConcreteLibFuncId;
+use itertools::chain;
+use sierra::extensions::core::CoreLibFunc;
+use sierra::extensions::GenericLibFuncEx;
+use sierra::ids::{ConcreteLibFuncId, ConcreteTypeId};
 use sierra::program;
 use utils::ordered_hash_set::OrderedHashSet;
 
@@ -11,6 +15,7 @@ use crate::db::SierraGenGroup;
 use crate::diagnostic::Diagnostic;
 use crate::pre_sierra::{self};
 use crate::resolve_labels::{resolve_labels, LabelReplacer};
+use crate::specialization_context::SierraSignatureSpecializationContext;
 
 #[cfg(test)]
 #[path = "program_generator_test.rs"]
@@ -42,23 +47,10 @@ pub fn generate_program_code(
             ModuleItemId::ExternFunction(_) => todo!("'extern func' lowering not supported yet."),
         }
     }
-    // TODO(orizi): Actually find all the required types.
-    let felt_type = db.get_concrete_type_id(db.core_felt_ty())?;
-    let non_zero_felt_type = db.intern_concrete_type(sierra::program::ConcreteTypeLongId {
-        generic_id: sierra::ids::GenericTypeId::from_string("NonZero"),
-        generic_args: vec![sierra::program::GenericArg::Type(felt_type.clone())],
-    });
-    let type_declarations = [felt_type, non_zero_felt_type]
-        .into_iter()
-        .map(|type_id| program::TypeDeclaration {
-            id: type_id.clone(),
-            long_id: db.lookup_intern_concrete_type(type_id),
-        })
-        .collect();
-
     let libfunc_declarations =
         generate_libfunc_declarations(db, collect_used_libfuncs(&statements).iter());
-
+    let type_declarations =
+        generate_type_declarations(db, collect_used_types(db, &libfunc_declarations).iter());
     // Resolve labels.
     let label_replacer = LabelReplacer::from_statements(&statements);
     let resolved_statements = resolve_labels(statements, &label_replacer);
@@ -100,18 +92,75 @@ fn generate_libfunc_declarations<'a>(
 fn collect_used_libfuncs(
     statements: &[pre_sierra::Statement],
 ) -> OrderedHashSet<ConcreteLibFuncId> {
-    let mut all_libfuncs: OrderedHashSet<ConcreteLibFuncId> = OrderedHashSet::default();
-    for statement in statements {
-        match statement {
+    statements
+        .iter()
+        .filter_map(|statement| match statement {
             pre_sierra::Statement::Sierra(program::GenStatement::Invocation(invocation)) => {
-                all_libfuncs.insert(invocation.libfunc_id.clone());
+                Some(invocation.libfunc_id.clone())
             }
-            pre_sierra::Statement::Sierra(program::GenStatement::Return(_)) => {}
-            pre_sierra::Statement::Label(_) => {}
+            pre_sierra::Statement::Sierra(program::GenStatement::Return(_))
+            | pre_sierra::Statement::Label(_) => None,
             pre_sierra::Statement::PushValues(_) => {
                 panic!("Unexpected pre_sierra::Statement::PushValues in collect_used_libfuncs().")
             }
+        })
+        .collect()
+}
+
+/// Generates the list of [sierra::program::TypeDeclaration] for the given list of [ConcreteTypeId].
+fn generate_type_declarations<'a>(
+    db: &dyn SierraGenGroup,
+    types: impl Iterator<Item = &'a ConcreteTypeId>,
+) -> Vec<program::TypeDeclaration> {
+    let mut declarations = vec![];
+    let mut already_declared = HashSet::new();
+    for ty in types {
+        generate_type_declarations_helper(db, ty, &mut declarations, &mut already_declared);
+    }
+    declarations
+}
+
+/// Helper to ensure declaring types ordered in such a way that no type appears before types it
+/// depends on.
+fn generate_type_declarations_helper(
+    db: &dyn SierraGenGroup,
+    ty: &ConcreteTypeId,
+    declarations: &mut Vec<program::TypeDeclaration>,
+    already_declared: &mut HashSet<ConcreteTypeId>,
+) {
+    if already_declared.contains(ty) {
+        return;
+    }
+    let long_id = db.lookup_intern_concrete_type(ty.clone());
+    for generic_arg in &long_id.generic_args {
+        if let program::GenericArg::Type(inner_ty) = generic_arg {
+            generate_type_declarations_helper(db, inner_ty, declarations, already_declared);
         }
     }
-    all_libfuncs
+    declarations.push(program::TypeDeclaration { id: ty.clone(), long_id });
+    already_declared.insert(ty.clone());
+}
+
+/// Collects the set of all [ConcreteTypeId] that are used in the given list of
+/// [program::LibFuncDeclaration].
+fn collect_used_types(
+    db: &dyn SierraGenGroup,
+    libfunc_declarations: &[program::LibFuncDeclaration],
+) -> OrderedHashSet<ConcreteTypeId> {
+    libfunc_declarations
+        .iter()
+        .flat_map(|libfunc| {
+            // TODO(orizi): replace expect() with a diagnostic (unless this can never happen).
+            let signature = CoreLibFunc::specialize_signature_by_id(
+                &SierraSignatureSpecializationContext(db),
+                &libfunc.long_id.generic_id,
+                &libfunc.long_id.generic_args,
+            )
+            .expect("Specialization failure.");
+            chain!(
+                signature.input_types,
+                signature.output_info.into_iter().flat_map(|info| info.vars).map(|var| var.ty)
+            )
+        })
+        .collect()
 }
