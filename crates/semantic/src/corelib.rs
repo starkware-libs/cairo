@@ -7,7 +7,7 @@ use utils::{extract_matches, OptionFrom};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::ComputationContext;
-use crate::resolve_item::specialize_function;
+use crate::resolve_path::specialize_function;
 use crate::{semantic, Expr, ExprId, ExprTuple, FunctionId, TypeId, TypeLongId};
 
 pub fn core_module(db: &dyn SemanticGroup) -> ModuleId {

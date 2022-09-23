@@ -9,7 +9,7 @@ use crate::expr::fmt::ExprFormatter;
 use crate::test_utils::{setup_test_module, SemanticDatabaseForTesting};
 
 #[test]
-fn test_resolve_item() {
+fn test_resolve_path() {
     let mut db_val = SemanticDatabaseForTesting::default();
     let db = &mut db_val;
     let test_module = setup_test_module(
