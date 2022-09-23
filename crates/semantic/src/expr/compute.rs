@@ -20,7 +20,7 @@ use crate::corelib::{core_binary_operator, false_literal_expr, true_literal_expr
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
-use crate::resolve_item::resolve_item;
+use crate::resolve_path::resolve_path;
 use crate::types::resolve_type;
 use crate::{semantic, ConcreteType, FunctionId, TypeId, TypeLongId, Variable};
 
@@ -277,7 +277,7 @@ fn struct_ctor_expr(
     let path = ctor_syntax.path(syntax_db);
 
     // Extract struct.
-    let item = resolve_item(ctx.db, ctx.diagnostics, ctx.module_id, &path)?;
+    let item = resolve_path(ctx.db, ctx.diagnostics, ctx.module_id, &path)?;
     let ty = TypeId::option_from(item).on_none(|| ctx.diagnostics.report(&path, UnknownStruct))?;
     let generic_ty = ConcreteType::option_from(db.lookup_intern_type(ty))
         .on_none(|| ctx.diagnostics.report(&path, UnknownStruct))?
@@ -511,7 +511,7 @@ fn maybe_resolve_function(
 ) -> Option<(FunctionId, semantic::Signature)> {
     // TODO(spapini): Try to find function in multiple places (e.g. impls, or other modules for
     //   suggestions)
-    let item = resolve_item(ctx.db, ctx.diagnostics, ctx.module_id, path)?;
+    let item = resolve_path(ctx.db, ctx.diagnostics, ctx.module_id, path)?;
     let function =
         FunctionId::option_from(item).on_none(|| ctx.diagnostics.report(path, UnknownFunction))?;
     let signature = typecheck_function_call(ctx, path.stable_ptr().untyped(), function, args)?;
