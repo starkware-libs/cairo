@@ -3,36 +3,71 @@
 
 use syntax::node::db::SyntaxGroup;
 use syntax::node::kind::SyntaxKind;
+use syntax::node::SyntaxNode;
 
-use crate::formatter::{NodePath, SyntaxNodeFormat};
+use crate::formatter::SyntaxNodeFormat;
 
-impl SyntaxNodeFormat for SyntaxKind {
-    fn force_no_space_before(&self, _db: &dyn SyntaxGroup, _node_path: &NodePath) -> bool {
+fn token_parent_kind(db: &dyn SyntaxGroup, syntax_node: &SyntaxNode) -> Option<SyntaxKind> {
+    Some(syntax_node.parent()?.kind(db))
+}
+fn token_parent_parent_kind(db: &dyn SyntaxGroup, syntax_node: &SyntaxNode) -> Option<SyntaxKind> {
+    Some(syntax_node.parent()?.parent()?.kind(db))
+}
+
+impl SyntaxNodeFormat for SyntaxNode {
+    fn force_no_space_before(&self, db: &dyn SyntaxGroup) -> bool {
         // TODO(yg): add more exhaustiveness protection? Here and elsewhere.
-        matches!(
-            self,
+        match self.kind(db) {
             SyntaxKind::TokenColon
-                | SyntaxKind::TokenColonColon
-                | SyntaxKind::TokenComma
-                | SyntaxKind::TokenSemicolon
-                | SyntaxKind::TokenRParen
-        )
-    }
-
-    fn force_no_space_after(&self, _db: &dyn SyntaxGroup, node_path: &NodePath) -> bool {
-        match self {
-            SyntaxKind::TokenColonColon | SyntaxKind::TokenLParen => true,
-            SyntaxKind::TokenMinus => node_path.is_parent_of_kind(SyntaxKind::ExprUnary),
+            | SyntaxKind::TokenColonColon
+            | SyntaxKind::TokenComma
+            | SyntaxKind::TokenSemicolon
+            | SyntaxKind::TokenRParen => true,
+            SyntaxKind::TokenLT | SyntaxKind::TokenGT
+                if matches!(
+                    token_parent_parent_kind(db, self),
+                    Some(SyntaxKind::PathSegmentWithGenericArgs | SyntaxKind::GenericArgs)
+                ) =>
+            {
+                true
+            }
             _ => false,
         }
     }
 
-    fn should_change_indent(&self, _db: &dyn SyntaxGroup, _node_path: &NodePath) -> bool {
-        matches!(self, SyntaxKind::StatementList)
+    fn force_no_space_after(&self, db: &dyn SyntaxGroup) -> bool {
+        match self.kind(db) {
+            SyntaxKind::TokenColonColon | SyntaxKind::TokenLParen => true,
+            SyntaxKind::TokenMinus => {
+                matches!(token_parent_parent_kind(db, self), Some(SyntaxKind::ExprUnary))
+            }
+            SyntaxKind::TokenLT | SyntaxKind::TokenGT
+                if matches!(
+                    token_parent_parent_kind(db, self),
+                    Some(SyntaxKind::PathSegmentWithGenericArgs | SyntaxKind::GenericArgs)
+                ) =>
+            {
+                true
+            }
+            _ => false,
+        }
     }
 
-    fn force_line_break(&self, _db: &dyn SyntaxGroup, node_path: &NodePath) -> bool {
-        match self {
+    fn should_change_indent(&self, db: &dyn SyntaxGroup) -> bool {
+        matches!(
+            self.kind(db),
+            SyntaxKind::StatementList
+                | SyntaxKind::MatchArms
+                | SyntaxKind::ExprList
+                | SyntaxKind::StructArgList
+                | SyntaxKind::ParamList
+                | SyntaxKind::GenericParamList
+                | SyntaxKind::GenericArgList
+        )
+    }
+
+    fn force_line_break(&self, db: &dyn SyntaxGroup) -> bool {
+        match self.kind(db) {
             SyntaxKind::StatementLet
             | SyntaxKind::StatementExpr
             | SyntaxKind::StatementReturn
@@ -43,20 +78,41 @@ impl SyntaxNodeFormat for SyntaxKind {
             | SyntaxKind::ItemStruct
             | SyntaxKind::ItemEnum
             | SyntaxKind::ItemUse => true,
-            SyntaxKind::TokenLBrace => node_path.is_parent_of_kind(SyntaxKind::ExprBlock),
-            SyntaxKind::TokenSingleLineComment => node_path.is_leading_trivia,
+            SyntaxKind::TerminalComma
+                if matches!(token_parent_kind(db, self), Some(SyntaxKind::MatchArms)) =>
+            {
+                true
+            }
+            SyntaxKind::TerminalLBrace => {
+                matches!(
+                    token_parent_kind(db, self),
+                    Some(SyntaxKind::ExprBlock | SyntaxKind::ExprMatch)
+                )
+            }
             _ => false,
         }
     }
 
-    fn should_ignore(&self, _db: &dyn SyntaxGroup, _node_path: &NodePath) -> bool {
-        matches!(
-            self,
-            // Ignore whitespaces and newlines as those are injected by the formatter.
-            SyntaxKind::TokenWhitespace
-                | SyntaxKind::TokenNewline
-                | SyntaxKind::TokenMissing
-                | SyntaxKind::TokenBadCharacters
-        )
+    fn allow_newline_after(&self, db: &dyn SyntaxGroup) -> bool {
+        match self.kind(db) {
+            SyntaxKind::TerminalLParen => true,
+            SyntaxKind::TerminalComma
+                if matches!(
+                    token_parent_kind(db, self),
+                    Some(SyntaxKind::ParamList | SyntaxKind::ExprList | SyntaxKind::StructArgList)
+                ) =>
+            {
+                true
+            }
+            _ => false,
+        }
+    }
+
+    fn allowed_empty_between(&self, db: &dyn SyntaxGroup) -> usize {
+        match self.kind(db) {
+            SyntaxKind::ItemList => 2,
+            SyntaxKind::StatementList => 1,
+            _ => 0,
+        }
     }
 }
