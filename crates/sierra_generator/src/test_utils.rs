@@ -141,6 +141,10 @@ pub fn dummy_label(id: usize) -> pre_sierra::Statement {
     })
 }
 
+/// Generates a dummy [PushValues](pre_sierra::Statement::PushValues) statement.
+///
+/// values is a list of pairs (src, dst) where src refers to a variable that should be pushed onto
+/// the stack, and dst is the variable after placing it on the stack.
 pub fn dummy_push_values(
     db: &dyn SierraGenGroup,
     values: &[(usize, usize)],

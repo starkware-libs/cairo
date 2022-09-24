@@ -60,6 +60,7 @@ fn store_temp_simple() {
     );
 }
 
+/// Tests the behavior of the [PushValues](pre_sierra::Statement::PushValues) statement.
 #[test]
 fn store_temp_push_values() {
     let db = SierraGenDatabaseForTesting::default();
