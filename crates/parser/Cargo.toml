@@ -21,3 +21,4 @@ utils = { path = "../utils" }
 [dev-dependencies]
 pretty_assertions = "1.2.1"
 test-case = "2.2.1"
+utils = { path = "../utils", features=["testing"] }

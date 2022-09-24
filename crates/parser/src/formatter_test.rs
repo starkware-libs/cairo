@@ -1,4 +1,5 @@
 use filesystem::db::FilesDatabase;
+use pretty_assertions::assert_eq;
 use syntax::node::db::SyntaxDatabase;
 use test_case::test_case;
 
