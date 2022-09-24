@@ -14,8 +14,13 @@ fn test_function_generator() {
     let module_id = setup_test_module(
         &mut db,
         indoc! {"
-                func foo(a: felt) -> felt {
-                    5
+                func foo(a: felt, b: felt) -> felt {
+                    let b = felt_add(a, 5);
+                    bar(b, b, b)
+                }
+
+                func bar(x: felt, y: felt, z: felt) -> felt {
+                    0
                 }
             "},
     )
@@ -36,11 +41,19 @@ fn test_function_generator() {
             .collect::<Vec<String>>(),
         vec![
             "label0:",
-            "felt_drop([0]) -> ()",
+            "felt_drop([1]) -> ()",
             "revoke_ap_tracking() -> ()",
-            "felt_const<5>() -> ([1])",
-            "store_temp<[0]>([1]) -> ([2])",
-            "return([2])",
+            "felt_const<5>() -> ([2])",
+            "felt_add([0], [2]) -> ([3])",
+            "store_temp<[0]>([3]) -> ([4])",
+            "felt_dup([4]) -> ([4], [10])",
+            "store_temp<[0]>([10]) -> ([5])",
+            "felt_dup([4]) -> ([4], [11])",
+            "store_temp<[0]>([11]) -> ([6])",
+            "store_temp<[0]>([4]) -> ([7])",
+            "function_call<user@[0]>([5], [6], [7]) -> ([8])",
+            "store_temp<[0]>([8]) -> ([9])",
+            "return([9])",
         ]
     );
 }
