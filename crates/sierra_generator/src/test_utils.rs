@@ -9,7 +9,7 @@ use sierra::program::ConcreteLibFuncLongId;
 use syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 
 use crate::db::{SierraGenDatabase, SierraGenGroup};
-use crate::pre_sierra;
+use crate::pre_sierra::{self, PushValue};
 use crate::utils::{return_statement, simple_statement};
 
 #[salsa::database(
@@ -139,6 +139,27 @@ pub fn dummy_label(id: usize) -> pre_sierra::Statement {
     pre_sierra::Statement::Label(pre_sierra::Label {
         id: pre_sierra::LabelId::from_intern_id(InternId::from(id)),
     })
+}
+
+/// Generates a dummy [PushValues](pre_sierra::Statement::PushValues) statement.
+///
+/// values is a list of pairs (src, dst) where src refers to a variable that should be pushed onto
+/// the stack, and dst is the variable after placing it on the stack.
+pub fn dummy_push_values(
+    db: &dyn SierraGenGroup,
+    values: &[(usize, usize)],
+) -> pre_sierra::Statement {
+    let felt_ty = db.get_concrete_type_id(db.core_felt_ty()).expect("Can't find core::felt.");
+    pre_sierra::Statement::PushValues(
+        values
+            .iter()
+            .map(|(src, dst)| PushValue {
+                var: sierra::ids::VarId::from_usize(*src),
+                var_on_stack: sierra::ids::VarId::from_usize(*dst),
+                ty: felt_ty.clone(),
+            })
+            .collect(),
+    )
 }
 
 /// Creates a test for a given function that reads test files.
