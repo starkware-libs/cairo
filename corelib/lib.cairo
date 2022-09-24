@@ -28,3 +28,7 @@ extern func felt_le(a: felt, b: felt) -> (bool);
 extern func felt_ge(a: felt, b: felt) -> (bool);
 extern func felt_lt(a: felt, b: felt) -> (bool);
 extern func felt_gt(a: felt, b: felt) -> (bool);
+
+extern type Ref<T>;
+extern func into_ref<T>(value: T) -> Ref::<T>;
+extern func deref<T>(ref: Ref::<T>) -> T;
