@@ -239,4 +239,8 @@ pub fn fix_parser_tests() {
     println!("All Parser tests should be fixed now!");
 }
 
-parser_test!(diagnostic_tests, ["src/parser_test_data/exprs"], get_diagnostics);
+parser_test!(
+    diagnostic_tests,
+    ["src/parser_test_data/exprs", "src/parser_test_data/match", "src/parser_test_data/if"],
+    get_diagnostics
+);
