@@ -80,4 +80,4 @@ jobs:
           toolchain: stable
       - uses: Swatinem/rust-cache@v1
       - run: >
-          cargo doc --document-private-items --no-deps
+          RUSTDOCFLAGS="-Dwarnings" cargo doc --document-private-items --no-deps --all-features

@@ -29,7 +29,7 @@ pub fn extern_type_declaration_diagnostics(
         .map(|data| data.diagnostics)
         .unwrap_or_default()
 }
-/// Query implementation of [crate::db::SemanticGroup::extern_type_declaration_signature].
+/// Query implementation of [crate::db::SemanticGroup::extern_type_declaration_generic_params].
 pub fn extern_type_declaration_generic_params(
     db: &dyn SemanticGroup,
     extern_type_id: ExternTypeId,
