@@ -7,8 +7,8 @@ use crate::db::SierraGenGroup;
 use crate::pre_sierra;
 use crate::store_variables::add_store_statements;
 use crate::test_utils::{
-    dummy_label, dummy_return_statement, dummy_simple_statement, replace_libfunc_ids,
-    SierraGenDatabaseForTesting,
+    dummy_label, dummy_push_values, dummy_return_statement, dummy_simple_statement,
+    replace_libfunc_ids, SierraGenDatabaseForTesting,
 };
 
 /// Returns the [OutputVarReferenceInfo] information for a given libfunc.
@@ -40,6 +40,7 @@ fn store_temp_simple() {
         dummy_simple_statement(&db, "felt_add", &[5, 5], &[6]),
         dummy_return_statement(&[]),
     ];
+
     assert_eq!(
         add_store_statements(&db, statements, &(|libfunc| get_output_info(&db, libfunc)))
             .iter()
@@ -55,6 +56,41 @@ fn store_temp_simple() {
             "label0:",
             "felt_add([5], [5]) -> ([6])",
             "return()",
+        ]
+    );
+}
+
+#[test]
+fn store_temp_push_values() {
+    let db = SierraGenDatabaseForTesting::default();
+    let statements: Vec<pre_sierra::Statement> = vec![
+        dummy_simple_statement(&db, "felt_add", &[0, 1], &[2]),
+        dummy_simple_statement(&db, "nope", &[], &[]),
+        dummy_simple_statement(&db, "felt_add", &[3, 4], &[5]),
+        dummy_simple_statement(&db, "felt_add", &[5, 5], &[6]),
+        dummy_simple_statement(&db, "nope", &[], &[]),
+        dummy_push_values(&db, &[(5, 100), (2, 101), (6, 102), (6, 103)]),
+        dummy_simple_statement(&db, "nope", &[], &[]),
+        dummy_return_statement(&[6]),
+    ];
+
+    assert_eq!(
+        add_store_statements(&db, statements, &(|libfunc| get_output_info(&db, libfunc)))
+            .iter()
+            .map(|statement| replace_libfunc_ids(&db, statement).to_string())
+            .collect::<Vec<String>>(),
+        vec![
+            "felt_add([0], [1]) -> ([2])",
+            "nope() -> ()",
+            "felt_add([3], [4]) -> ([5])",
+            "felt_add([5], [5]) -> ([6])",
+            "nope() -> ()",
+            "store_temp<[0]>([5]) -> ([100])",
+            "store_temp<[0]>([2]) -> ([101])",
+            "store_temp<[0]>([6]) -> ([102])",
+            "store_temp<[0]>([6]) -> ([103])",
+            "nope() -> ()",
+            "return([6])",
         ]
     );
 }
