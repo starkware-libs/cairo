@@ -1,0 +1,40 @@
+//! > Test lbrace in match
+
+//! > test_comments
+// TODO(spapini): Improve diagnostics.
+
+//! > test_function_name
+get_diagnostics
+
+//! > test_params
+code
+
+//! > test_output_params
+expected_diagnostics
+
+//! > code
+func f() {
+    match MyStruct{a: 1} {
+    }
+}
+
+//! > expected_diagnostics
+error: Skipped tokens. Expected element: match arm.
+ --> dummy_file.cairo:2:20
+    match MyStruct{a: 1} {
+                   ^
+
+error: Skipped tokens. Expected element: match arm.
+ --> dummy_file.cairo:2:21
+    match MyStruct{a: 1} {
+                    ^
+
+error: Missing token TerminalMatchArrow.
+ --> dummy_file.cairo:2:24
+    match MyStruct{a: 1} {
+                       ^
+
+error: Missing tokens. Expected an expression.
+ --> dummy_file.cairo:2:24
+    match MyStruct{a: 1} {
+                       ^
