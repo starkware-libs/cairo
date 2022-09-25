@@ -157,22 +157,17 @@ macro_rules! test_file_test {
             // TODO(mkaput): consider extracting this part into a function and passing macro args
             // via refs or closures. It may reduce compilation time sizeably.
             for filename in $filenames {
-                let tests =
-                    utils::parse_test_file::parse_test_file(std::path::Path::new(filename))?;
+                let tests = utils::parse_test_file(std::path::Path::new(filename))?;
                 // TODO(alont): global tags for all tests in a file.
                 for (name, test) in tests {
                     assert_eq!(test["test_function_name"], stringify!($func));
-                    let params = test["test_params"]
-                        .split('\n')
-                        .map(|param_name| test[param_name].clone())
-                        .collect();
 
                     let expected_outputs: Vec<String> = test["test_output_params"]
                         .split('\n')
                         .map(|param_name| test[param_name].clone())
                         .collect();
 
-                    let outputs = $func(&mut <$db_type>::default(), params);
+                    let outputs = $func(&mut <$db_type>::default(), test);
                     for (output, expected_output) in std::iter::zip(outputs, expected_outputs) {
                         pretty_assertions::assert_eq!(
                             output.trim(),

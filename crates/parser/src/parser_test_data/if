@@ -6,13 +6,10 @@
 //! > test_function_name
 get_diagnostics
 
-//! > test_params
-code
-
 //! > test_output_params
 expected_diagnostics
 
-//! > code
+//! > cairo_code
 func f() {
     if MyStruct{a: 0} == MyStruct{a: 1} {
     }
@@ -44,6 +41,8 @@ error: Missing token TerminalRBrace.
 }
  ^
 
+//! > ===
+
 //! > Test if inside if condition
 
 //! > test_comments
@@ -52,13 +51,10 @@ error: Missing token TerminalRBrace.
 //! > test_function_name
 get_diagnostics
 
-//! > test_params
-code
-
 //! > test_output_params
 expected_diagnostics
 
-//! > code
+//! > cairo_code
 func f() {
     if 0 == if x {1} else {2} {
     }

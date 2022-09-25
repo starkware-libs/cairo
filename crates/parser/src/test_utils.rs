@@ -8,6 +8,7 @@ use filesystem::db::{init_files_group, FilesDatabase, FilesGroup};
 use filesystem::ids::{FileId, FileLongId, VirtualFile};
 use syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use syntax::node::{SyntaxNode, TypedSyntaxNode};
+use utils::ordered_hash_map::OrderedHashMap;
 
 use crate::db::ParserDatabase;
 use crate::parser::Parser;
@@ -49,8 +50,11 @@ pub fn read_file(filename: &str) -> String {
         .unwrap_or_else(|_| panic!("Something went wrong reading file {}", filename))
 }
 
-pub fn get_diagnostics(db: &mut ParserDatabaseForTesting, inputs: Vec<String>) -> Vec<String> {
-    let code = &inputs[0];
+pub fn get_diagnostics(
+    db: &mut ParserDatabaseForTesting,
+    inputs: OrderedHashMap<String, String>,
+) -> Vec<String> {
+    let code = &inputs["cairo_code"];
 
     let mut diagnostics = DiagnosticsBuilder::new();
     let file_id = db.intern_file(FileLongId::Virtual(VirtualFile {
