@@ -12,7 +12,7 @@ pub fn get_formatted_file(
     config: FormatterConfig,
 ) -> String {
     let mut formatter = Formatter::new(db, config);
-    formatter.format_node(syntax_root);
+    formatter.format_node(syntax_root, false);
     formatter.result
 }
 
@@ -44,20 +44,20 @@ struct PendingLineState {
     /// The text to be emitted.
     text: String,
     /// Should the next space between tokens be ignored.
-    force_no_space_after: bool,
+    no_space_after: bool,
     /// Current indentation of the produced line.
     indentation: String,
 }
 
 impl PendingLineState {
     pub fn new() -> Self {
-        Self { text: String::new(), force_no_space_after: true, indentation: String::new() }
+        Self { text: String::new(), no_space_after: true, indentation: String::new() }
     }
     /// Resets the line state to a clean state.
     pub fn reset(&mut self, indentation: String) {
         self.indentation = indentation;
         self.text.clear();
-        self.force_no_space_after = true;
+        self.no_space_after = true;
     }
     /// Appends text to the current line.
     pub fn is_empty(&self) -> bool {
@@ -115,14 +115,14 @@ impl<'a> Formatter<'a> {
             empty_lines_allowance: 0,
         }
     }
-    fn format_node(&mut self, syntax_node: &SyntaxNode) {
+    fn format_node(&mut self, syntax_node: &SyntaxNode, no_space_after: bool) {
         if syntax_node.text(self.db).is_some() {
             panic!("Token reached before terminal.");
         }
         if syntax_node.kind(self.db).is_terminal() {
-            self.format_terminal(syntax_node);
+            self.format_terminal(syntax_node, no_space_after);
         } else {
-            self.format_internal(syntax_node);
+            self.format_internal(syntax_node, no_space_after);
         }
 
         if syntax_node.force_line_break(self.db) && !self.line_state.is_empty() {
@@ -130,21 +130,24 @@ impl<'a> Formatter<'a> {
         }
     }
 
-    fn format_internal(&mut self, syntax_node: &SyntaxNode) {
+    fn format_internal(&mut self, syntax_node: &SyntaxNode, no_space_after: bool) {
         let indent_change = if syntax_node.should_change_indent(self.db) { 1 } else { 0 };
         let allowed_empty_between = syntax_node.allowed_empty_between(self.db);
+        let no_space_after = no_space_after || syntax_node.force_no_space_after(self.db);
 
-        for child in syntax_node.children(self.db) {
+        let children = syntax_node.children(self.db);
+        let n_children = children.len();
+        for (i, child) in children.enumerate() {
             self.current_indent += indent_change;
             if self.line_state.is_empty() {
                 self.line_state.reset(self.get_indentation())
             }
-            self.format_node(&child);
+            self.format_node(&child, no_space_after && i == n_children - 1);
             self.empty_lines_allowance = allowed_empty_between;
             self.current_indent -= indent_change;
         }
     }
-    fn format_terminal(&mut self, syntax_node: &SyntaxNode) {
+    fn format_terminal(&mut self, syntax_node: &SyntaxNode, no_space_after: bool) {
         // TODO(spapini): Introduce a Terminal and a Token enum in ast.rs to make this cleaner.
         let mut children = syntax_node.children(self.db);
         let leading_trivia = ast::Trivia::from_syntax_node(self.db, children.next().unwrap());
@@ -154,7 +157,7 @@ impl<'a> Formatter<'a> {
         // The first newlines is the leading trivia correspond exactly to empty lines.
         self.format_trivia(leading_trivia, self.empty_lines_allowance);
         self.empty_lines_allowance = 0;
-        self.format_token(&token);
+        self.format_token(&token, no_space_after || syntax_node.force_no_space_after(self.db));
         let allowed_newlines = if syntax_node.allow_newline_after(self.db) { 1 } else { 0 };
         self.format_trivia(trailing_trivia, allowed_newlines);
     }
@@ -163,7 +166,7 @@ impl<'a> Formatter<'a> {
             match trivium {
                 ast::Trivium::SingleLineComment(_) => {
                     allowed_newlines = 2;
-                    self.format_token(&trivium.as_syntax_node());
+                    self.format_token(&trivium.as_syntax_node(), true);
                 }
                 ast::Trivium::Whitespace(_) => {}
                 ast::Trivium::Newline(_) => {
@@ -173,20 +176,21 @@ impl<'a> Formatter<'a> {
                     }
                 }
                 ast::Trivium::Skipped(_) => {
-                    self.format_token(&trivium.as_syntax_node());
+                    self.format_token(&trivium.as_syntax_node(), false);
                 }
             }
         }
     }
-    fn format_token(&mut self, syntax_node: &SyntaxNode) {
+    fn format_token(&mut self, syntax_node: &SyntaxNode, no_space_after: bool) {
+        let no_space_after = no_space_after || syntax_node.force_no_space_after(self.db);
         let text = syntax_node.text(self.db).unwrap();
-        self.append_token(text, syntax_node);
+        self.append_token(text, syntax_node, no_space_after);
     }
-    fn append_token(&mut self, text: SmolStr, syntax_node: &SyntaxNode) {
-        if !syntax_node.force_no_space_before(self.db) && !self.line_state.force_no_space_after {
+    fn append_token(&mut self, text: SmolStr, syntax_node: &SyntaxNode, no_space_after: bool) {
+        if !syntax_node.force_no_space_before(self.db) && !self.line_state.no_space_after {
             self.line_state.text += " ";
         }
-        self.line_state.force_no_space_after = syntax_node.force_no_space_after(self.db);
+        self.line_state.no_space_after = no_space_after;
         self.line_state.text += &text;
     }
     fn get_indentation(&self) -> String {
