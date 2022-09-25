@@ -8,6 +8,7 @@ use filesystem::ids::{CrateLongId, Directory};
 use parser::db::ParserDatabase;
 use pretty_assertions::assert_eq;
 use syntax::node::db::{SyntaxDatabase, SyntaxGroup};
+use utils::ordered_hash_map::OrderedHashMap;
 use utils::{extract_matches, OptionFrom};
 
 use crate::db::{SemanticDatabase, SemanticGroup};
@@ -197,21 +198,31 @@ pub fn setup_test_block(
 
 pub fn test_expr_diagnostics(
     db: &mut (dyn SemanticGroup + 'static),
-    inputs: Vec<String>,
+    inputs: OrderedHashMap<String, String>,
 ) -> Vec<String> {
     vec![
-        setup_test_expr(db, inputs[0].as_str(), inputs[1].as_str(), inputs[2].as_str())
-            .get_diagnostics(),
+        setup_test_expr(
+            db,
+            inputs["expr_code"].as_str(),
+            inputs["module_code"].as_str(),
+            inputs["function_body"].as_str(),
+        )
+        .get_diagnostics(),
     ]
 }
 
 pub fn test_function_diagnostics(
     db: &mut (dyn SemanticGroup + 'static),
-    inputs: Vec<String>,
+    inputs: OrderedHashMap<String, String>,
 ) -> Vec<String> {
     vec![
-        setup_test_function(db, inputs[0].as_str(), inputs[1].as_str(), inputs[2].as_str())
-            .get_diagnostics(),
+        setup_test_function(
+            db,
+            inputs["function"].as_str(),
+            inputs["function_name"].as_str(),
+            inputs["module_code"].as_str(),
+        )
+        .get_diagnostics(),
     ]
 }
 

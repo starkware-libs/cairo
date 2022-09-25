@@ -6,13 +6,10 @@
 //! > test_function_name
 get_diagnostics
 
-//! > test_params
-code
-
 //! > test_output_params
 expected_diagnostics
 
-//! > code
+//! > cairo_code
 func f() {
     match MyStruct{a: 1} {
     }
