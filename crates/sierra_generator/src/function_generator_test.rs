@@ -53,7 +53,7 @@ fn test_function_generator() {
             "store_temp<[0]>([10]) -> ([5])",
             "store_temp<[0]>([3]) -> ([6])",
             "function_call<user@[0]>([4], [5], [6]) -> ([7])",
-            "store_temp<[0]>([7]) -> ([8])",
+            "rename<[0]>([7]) -> ([8])",
             "return([8])",
         ]
     );
