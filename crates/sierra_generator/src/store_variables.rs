@@ -12,7 +12,7 @@ use utils::ordered_hash_map::OrderedHashMap;
 
 use crate::db::SierraGenGroup;
 use crate::pre_sierra;
-use crate::utils::{simple_statement, store_temp_libfunc_id};
+use crate::utils::{rename_libfunc_id, simple_statement, store_temp_libfunc_id};
 
 /// Automatically adds store_temp() statements to the given list of [pre_sierra::Statement].
 /// For example, a deferred reference (e.g., `[ap] + [fp - 3]`) needs to be stored as a temporary
@@ -67,6 +67,9 @@ impl<'a> AddStoreVariableStatements<'a> {
                 match &invocation.branches[..] {
                     [GenBranchInfo { target: GenBranchTarget::Fallthrough, results }] => {
                         // A simple invocation.
+                        // TODO(lior): consider not calling prepare_libfunc_arguments for functions
+                        //   that accept deferred, such as store_temp().
+                        self.prepare_libfunc_arguments(&invocation.args);
                         self.register_outputs(results, &output_infos[0].vars);
                     }
                     _ => {
@@ -88,13 +91,33 @@ impl<'a> AddStoreVariableStatements<'a> {
                 self.result.push(statement);
             }
             pre_sierra::Statement::PushValues(push_values) => {
-                for pre_sierra::PushValue { var, var_on_stack, ty } in push_values {
-                    // TODO(lior): If the variable is already in the correct place, only rename
-                    //   it, instead of adding a `store_temp()` statement.
-                    self.store_temp(var, var_on_stack, ty);
-                }
+                self.push_values(push_values);
             }
         }
+    }
+
+    /// Prepares the given `args` to be used as arguments for a libfunc.
+    fn prepare_libfunc_arguments(&mut self, args: &[sierra::ids::VarId]) {
+        for arg in args {
+            self.prepare_libfunc_argument(arg);
+        }
+    }
+
+    /// Prepares the given `arg` to be used as an argument for a libfunc.
+    fn prepare_libfunc_argument(&mut self, arg: &sierra::ids::VarId) {
+        if !self.deferred_variables.contains_key(arg) {
+            return;
+        }
+
+        self.store_temp_deferred(arg);
+    }
+
+    /// Adds a store_temp() instruction for the given deferred variable and removes it from the
+    /// `deferred_variables` map.
+    fn store_temp_deferred(&mut self, var: &sierra::ids::VarId) {
+        let ty = self.deferred_variables[var.clone()].clone();
+        self.store_temp(var, var, &ty);
+        self.deferred_variables.swap_remove(var);
     }
 
     /// Registers output variables of a libfunc. See `add_output`.
@@ -120,10 +143,31 @@ impl<'a> AddStoreVariableStatements<'a> {
         }
     }
 
+    fn push_values(&mut self, push_values: &Vec<pre_sierra::PushValue>) {
+        for pre_sierra::PushValue { var, var_on_stack, ty } in push_values {
+            if self.deferred_variables.contains_key(var) {
+                // Convert the deferred variable into a temporary variable, by calling
+                // `prepare_libfunc_argument`.
+                self.prepare_libfunc_argument(var);
+                // Note: the original variable may still be used after the following `rename`
+                // statement. In such a case, it will be dupped before the `rename`
+                // by `add_dups_and_drops()`.
+                self.rename_var(var, var_on_stack, ty);
+            } else {
+                // TODO(lior): If the variable is already in the correct place, only rename
+                //   it, instead of adding a `store_temp()` statement.
+                self.store_temp(var, var_on_stack, ty);
+            }
+        }
+    }
+
     /// Stores all the deffered variables and clears `deferred_variables`.
     /// The variables will be added according to the order of creation.
     fn store_all_deffered_variables(&mut self) {
-        // TODO(lior): Store all deferred variables.
+        for (var, ty) in self.deferred_variables.clone() {
+            self.store_temp(&var, &var, &ty);
+        }
+        self.clear_deffered_variables();
     }
 
     /// Clears all the deferred variables.
@@ -147,6 +191,19 @@ impl<'a> AddStoreVariableStatements<'a> {
     ) {
         self.result.push(simple_statement(
             store_temp_libfunc_id(self.db, ty.clone()),
+            &[var.clone()],
+            &[var_on_stack.clone()],
+        ));
+    }
+
+    fn rename_var(
+        &mut self,
+        var: &sierra::ids::VarId,
+        var_on_stack: &sierra::ids::VarId,
+        ty: &sierra::ids::ConcreteTypeId,
+    ) {
+        self.result.push(simple_statement(
+            rename_libfunc_id(self.db, ty.clone()),
             &[var.clone()],
             &[var_on_stack.clone()],
         ));

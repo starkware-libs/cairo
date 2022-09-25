@@ -105,7 +105,6 @@ fn handle_function_call(
     }
 
     // Check if this is a user defined function or a libcall.
-    let signature = context.get_db().concrete_function_signature(expr_function_call.function)?;
     let function_long_id =
         match context.get_db().lookup_intern_function(expr_function_call.function) {
             semantic::FunctionLongId::Concrete(concrete) => concrete,
@@ -153,15 +152,7 @@ fn handle_function_call(
                 &[res_var.clone()],
             ));
 
-            // TODO(lior): Remove the following store_temp once we have a better mechanism of
-            //   automatically adding such statements.
-            let res_var_on_stack = context.allocate_sierra_variable();
-            statements.push(simple_statement(
-                context.store_temp_libfunc_id(signature.return_type)?,
-                &[res_var],
-                &[res_var_on_stack.clone()],
-            ));
-            Some((statements, res_var_on_stack))
+            Some((statements, res_var))
         }
     }
 }
