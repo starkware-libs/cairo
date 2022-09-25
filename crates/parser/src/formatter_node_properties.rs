@@ -7,10 +7,10 @@ use syntax::node::SyntaxNode;
 
 use crate::formatter::SyntaxNodeFormat;
 
-fn token_parent_kind(db: &dyn SyntaxGroup, syntax_node: &SyntaxNode) -> Option<SyntaxKind> {
+fn parent_kind(db: &dyn SyntaxGroup, syntax_node: &SyntaxNode) -> Option<SyntaxKind> {
     Some(syntax_node.parent()?.kind(db))
 }
-fn token_parent_parent_kind(db: &dyn SyntaxGroup, syntax_node: &SyntaxNode) -> Option<SyntaxKind> {
+fn parent_parent_kind(db: &dyn SyntaxGroup, syntax_node: &SyntaxNode) -> Option<SyntaxKind> {
     Some(syntax_node.parent()?.parent()?.kind(db))
 }
 
@@ -18,14 +18,15 @@ impl SyntaxNodeFormat for SyntaxNode {
     fn force_no_space_before(&self, db: &dyn SyntaxGroup) -> bool {
         // TODO(yg): add more exhaustiveness protection? Here and elsewhere.
         match self.kind(db) {
-            SyntaxKind::TokenColon
+            SyntaxKind::TokenDot
+            | SyntaxKind::TokenColon
             | SyntaxKind::TokenColonColon
             | SyntaxKind::TokenComma
             | SyntaxKind::TokenSemicolon
             | SyntaxKind::TokenRParen => true,
             SyntaxKind::TokenLT | SyntaxKind::TokenGT
                 if matches!(
-                    token_parent_parent_kind(db, self),
+                    parent_parent_kind(db, self),
                     Some(SyntaxKind::PathSegmentWithGenericArgs | SyntaxKind::GenericArgs)
                 ) =>
             {
@@ -37,13 +38,25 @@ impl SyntaxNodeFormat for SyntaxNode {
 
     fn force_no_space_after(&self, db: &dyn SyntaxGroup) -> bool {
         match self.kind(db) {
-            SyntaxKind::TokenColonColon | SyntaxKind::TokenLParen => true,
-            SyntaxKind::TokenMinus => {
-                matches!(token_parent_parent_kind(db, self), Some(SyntaxKind::ExprUnary))
-            }
-            SyntaxKind::TokenLT | SyntaxKind::TokenGT
+            SyntaxKind::TokenDot | SyntaxKind::TokenColonColon | SyntaxKind::TokenLParen => true,
+            SyntaxKind::ExprPath | SyntaxKind::TerminalIdentifier
                 if matches!(
-                    token_parent_parent_kind(db, self),
+                    parent_kind(db, self),
+                    Some(
+                        SyntaxKind::ItemFreeFunction
+                            | SyntaxKind::ItemExternFunction
+                            | SyntaxKind::ExprFunctionCall
+                    )
+                ) =>
+            {
+                true
+            }
+            SyntaxKind::TokenMinus => {
+                matches!(parent_parent_kind(db, self), Some(SyntaxKind::ExprUnary))
+            }
+            SyntaxKind::TokenLT
+                if matches!(
+                    parent_parent_kind(db, self),
                     Some(SyntaxKind::PathSegmentWithGenericArgs | SyntaxKind::GenericArgs)
                 ) =>
             {
@@ -73,20 +86,21 @@ impl SyntaxNodeFormat for SyntaxNode {
             | SyntaxKind::StatementReturn
             | SyntaxKind::ItemFreeFunction
             | SyntaxKind::ItemExternFunction
+            | SyntaxKind::ItemExternType
             | SyntaxKind::ItemTrait
             | SyntaxKind::ItemImpl
             | SyntaxKind::ItemStruct
             | SyntaxKind::ItemEnum
             | SyntaxKind::ItemUse => true,
             SyntaxKind::TerminalComma
-                if matches!(token_parent_kind(db, self), Some(SyntaxKind::MatchArms)) =>
+                if matches!(parent_kind(db, self), Some(SyntaxKind::MatchArms)) =>
             {
                 true
             }
             SyntaxKind::TerminalLBrace => {
                 matches!(
-                    token_parent_kind(db, self),
-                    Some(SyntaxKind::ExprBlock | SyntaxKind::ExprMatch)
+                    parent_kind(db, self),
+                    Some(SyntaxKind::ExprBlock | SyntaxKind::ExprMatch | SyntaxKind::ItemEnum)
                 )
             }
             _ => false,
@@ -98,7 +112,7 @@ impl SyntaxNodeFormat for SyntaxNode {
             SyntaxKind::TerminalLParen => true,
             SyntaxKind::TerminalComma
                 if matches!(
-                    token_parent_kind(db, self),
+                    parent_kind(db, self),
                     Some(SyntaxKind::ParamList | SyntaxKind::ExprList | SyntaxKind::StructArgList)
                 ) =>
             {
