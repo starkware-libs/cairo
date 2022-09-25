@@ -158,13 +158,13 @@ fn test_match() {
             // match {
             "felt_jump_nz([0]) { label0([1]) fallthrough() }",
             // Branch 0.
-            "store_temp<[0]>([0]) -> ([2])",
+            "PushValues([0]: [0]) -> ([2])",
             "jump() { label1() }",
             // Branch otherwise.
             "label0:",
             "unwrap_nz<[0]>([1]) -> ([4])",
             "felt_const<7>() -> ([3])",
-            "store_temp<[0]>([3]) -> ([2])",
+            "PushValues([3]: [0]) -> ([2])",
             // Post match.
             "label1:",
         ]
