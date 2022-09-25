@@ -110,3 +110,12 @@ impl<Key: Hash + Eq, Value> FromIterator<(Key, Value)> for OrderedHashMap<Key, V
         Self(iter.into_iter().collect())
     }
 }
+
+impl<K, V, const N: usize> From<[(K, V); N]> for OrderedHashMap<K, V>
+where
+    K: Hash + Eq,
+{
+    fn from(init_map: [(K, V); N]) -> Self {
+        Self(IndexMap::from(init_map))
+    }
+}

@@ -6,9 +6,6 @@
 //! > test_function_name
 get_diagnostics
 
-//! > test_output_params
-expected_diagnostics
-
 //! > cairo_code
 func f() {
     if MyStruct{a: 0} == MyStruct{a: 1} {
@@ -50,9 +47,6 @@ error: Missing token TerminalRBrace.
 
 //! > test_function_name
 get_diagnostics
-
-//! > test_output_params
-expected_diagnostics
 
 //! > cairo_code
 func f() {

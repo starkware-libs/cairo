@@ -3,9 +3,6 @@
 //! > test_function_name
 get_diagnostics
 
-//! > test_output_params
-expected_diagnostics
-
 //! > cairo_code
 func f() {
     1 + * 2

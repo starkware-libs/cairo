@@ -198,9 +198,10 @@ pub fn setup_test_block(
 
 pub fn test_expr_diagnostics(
     db: &mut (dyn SemanticGroup + 'static),
-    inputs: OrderedHashMap<String, String>,
-) -> Vec<String> {
-    vec![
+    inputs: &OrderedHashMap<String, String>,
+) -> OrderedHashMap<String, String> {
+    OrderedHashMap::from([(
+        "expected_diagnostics".to_string(),
         setup_test_expr(
             db,
             inputs["expr_code"].as_str(),
@@ -208,14 +209,15 @@ pub fn test_expr_diagnostics(
             inputs["function_body"].as_str(),
         )
         .get_diagnostics(),
-    ]
+    )])
 }
 
 pub fn test_function_diagnostics(
     db: &mut (dyn SemanticGroup + 'static),
-    inputs: OrderedHashMap<String, String>,
-) -> Vec<String> {
-    vec![
+    inputs: &OrderedHashMap<String, String>,
+) -> OrderedHashMap<String, String> {
+    OrderedHashMap::from([(
+        "expected_diagnostics".to_string(),
         setup_test_function(
             db,
             inputs["function"].as_str(),
@@ -223,7 +225,7 @@ pub fn test_function_diagnostics(
             inputs["module_code"].as_str(),
         )
         .get_diagnostics(),
-    ]
+    )])
 }
 
 #[macro_export]
