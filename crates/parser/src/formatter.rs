@@ -1,7 +1,6 @@
 use smol_str::SmolStr;
 use syntax::node::db::SyntaxGroup;
-use syntax::node::kind::SyntaxKind;
-use syntax::node::SyntaxNode;
+use syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
 
 #[cfg(test)]
 #[path = "formatter_test.rs"]
@@ -13,7 +12,7 @@ pub fn get_formatted_file(
     config: FormatterConfig,
 ) -> String {
     let mut formatter = Formatter::new(db, config);
-    formatter.format_tree(syntax_root, 0, &mut NodePath::default());
+    formatter.format_node(syntax_root);
     formatter.result
 }
 
@@ -46,74 +45,48 @@ struct PendingLineState {
     text: String,
     /// Should the next space between tokens be ignored.
     force_no_space_after: bool,
+    /// Current indentation of the produced line.
+    indentation: String,
 }
 
 impl PendingLineState {
     pub fn new() -> Self {
-        Self { text: String::new(), force_no_space_after: true }
+        Self { text: String::new(), force_no_space_after: true, indentation: String::new() }
     }
     /// Resets the line state to a clean state.
-    pub fn reset(&mut self) {
+    pub fn reset(&mut self, indentation: String) {
+        self.indentation = indentation;
         self.text.clear();
         self.force_no_space_after = true;
     }
-}
-
-/// A list of all the node kinds (root-down) leading to the current node
-/// including the root and the current node, excluding tokens.
-/// Temporary until tokens are refactored to be syntax_nodes and will have a parent ptr.
-// TODO(Gil): Replace with parent calls when node/token refactor is done.
-pub struct NodePath {
-    kind_path: Vec<SyntaxKind>,
-    pub is_leading_trivia: bool,
-}
-
-impl NodePath {
-    pub fn new(kind_path: Vec<SyntaxKind>, is_leading_trivia: bool) -> Self {
-        Self { kind_path, is_leading_trivia }
+    /// Appends text to the current line.
+    pub fn is_empty(&self) -> bool {
+        self.text.is_empty()
     }
-    pub fn push(&mut self, kind: SyntaxKind) {
-        self.kind_path.push(kind);
-    }
-    pub fn pop(&mut self) {
-        self.kind_path.pop();
-    }
-    /// Checks if the nth ancestor syntax kind is of a certain kind.
-    /// It is 1-indexed, i.e. if n==1 the check is for the direct parent.
-    pub fn is_nth_ancestor_of_kind(&self, n: usize, kind: SyntaxKind) -> bool {
-        if n >= self.kind_path.len() {
-            false
-        } else {
-            self.kind_path[self.kind_path.len() - n - 1] == kind
-        }
-    }
-    /// Checks if the direct parent syntax kind is of a certain kind.
-    pub fn is_parent_of_kind(&self, kind: SyntaxKind) -> bool {
-        self.is_nth_ancestor_of_kind(1, kind)
+    pub fn build(&mut self) -> String {
+        let Self { text, indentation, .. } = &self;
+        if self.is_empty() { "".into() } else { format!("{indentation}{text}") }
     }
 }
 
-impl Default for NodePath {
-    fn default() -> Self {
-        Self::new(vec![], false)
-    }
-}
-
+// TODO(spapini): Intorduce the correct types here, to reflect the "applicable" nodes types.
 pub trait SyntaxNodeFormat {
     /// Returns true if a token should never have a space before it.
     /// Only applicable for token nodes.
-    fn force_no_space_before(&self, db: &dyn SyntaxGroup, node_path: &NodePath) -> bool;
+    fn force_no_space_before(&self, db: &dyn SyntaxGroup) -> bool;
     /// Returns true if a token should never have a space after it.
     /// Only applicable for token nodes.
-    fn force_no_space_after(&self, db: &dyn SyntaxGroup, node_path: &NodePath) -> bool;
+    fn force_no_space_after(&self, db: &dyn SyntaxGroup) -> bool;
     /// Returns true if the children of a node should be indented inwards relative to the parent.
     /// Only applicable for internal nodes.
-    fn should_change_indent(&self, db: &dyn SyntaxGroup, node_path: &NodePath) -> bool;
-    /// Returns true if the line should break after the node. Results in a call to finalize_line.
-    fn force_line_break(&self, db: &dyn SyntaxGroup, node_path: &NodePath) -> bool;
-    /// Returns true if the token should be ignored (e.g. spaces).
-    /// Only applicable for token nodes.
-    fn should_ignore(&self, db: &dyn SyntaxGroup, node_path: &NodePath) -> bool;
+    fn should_change_indent(&self, db: &dyn SyntaxGroup) -> bool;
+    /// Returns true if the line should break after the node.
+    fn force_line_break(&self, db: &dyn SyntaxGroup) -> bool;
+    /// Returns true if the line is allowed to break after the node.
+    /// Only applicable for terminal nodes.
+    fn allow_newline_after(&self, db: &dyn SyntaxGroup) -> bool;
+    /// Returns the number of allowed empty lines between two consecutive children of this node.
+    fn allowed_empty_between(&self, db: &dyn SyntaxGroup) -> usize;
 }
 
 struct Formatter<'a> {
@@ -124,6 +97,9 @@ struct Formatter<'a> {
     /// A list of precomputed indent strings (i.e. spaces) for reasonable indent sizes.
     /// The item in index `i` is a string representing `i` tabs.
     indents_list: Vec<String>,
+    /// Current indentation in tabs.
+    current_indent: usize,
+    empty_lines_allowance: usize,
 }
 
 impl<'a> Formatter<'a> {
@@ -135,91 +111,98 @@ impl<'a> Formatter<'a> {
             config,
             line_state: PendingLineState::new(),
             indents_list,
+            current_indent: 0,
+            empty_lines_allowance: 0,
         }
     }
-    fn format_tree(
-        &mut self,
-        syntax_node: &SyntaxNode,
-        current_indent: usize, // In tabs
-        current_node_path: &mut NodePath,
-    ) {
-        let green_node = syntax_node.green_node(self.db);
-        let kind = green_node.kind;
-        if kind.should_ignore(self.db, current_node_path) {
-            return;
+    fn format_node(&mut self, syntax_node: &SyntaxNode) {
+        if syntax_node.text(self.db).is_some() {
+            panic!("Token reached before terminal.");
         }
-        match green_node.details {
-            syntax::node::green::GreenNodeDetails::Token(text) => {
-                self.format_token(text, kind, current_indent, current_node_path);
-            }
-            syntax::node::green::GreenNodeDetails::Node { .. } => {
-                self.format_internal(syntax_node, kind, current_indent, current_node_path);
-            }
+        if syntax_node.kind(self.db).is_terminal() {
+            self.format_terminal(syntax_node);
+        } else {
+            self.format_internal(syntax_node);
         }
-    }
-    /// Should only be called with an internal syntax_node (i.e. non-token)
-    fn format_internal(
-        &mut self,
-        syntax_node: &SyntaxNode,
-        node_kind: SyntaxKind,
-        current_indent: usize,
-        current_node_path: &mut NodePath,
-    ) {
-        current_node_path.push(node_kind);
-        let indent_change =
-            if node_kind.should_change_indent(self.db, current_node_path) { 1 } else { 0 };
 
-        for (i, child) in syntax_node.children(self.db).enumerate() {
-            if node_kind.is_terminal() {
-                // First child of a terminal node is a leading trivia
-                current_node_path.is_leading_trivia = i == 0;
+        if syntax_node.force_line_break(self.db) && !self.line_state.is_empty() {
+            self.finalize_line();
+        }
+    }
+
+    fn format_internal(&mut self, syntax_node: &SyntaxNode) {
+        let indent_change = if syntax_node.should_change_indent(self.db) { 1 } else { 0 };
+        let allowed_empty_between = syntax_node.allowed_empty_between(self.db);
+
+        for child in syntax_node.children(self.db) {
+            self.current_indent += indent_change;
+            if self.line_state.is_empty() {
+                self.line_state.reset(self.get_indentation())
             }
-            self.format_tree(&child, current_indent + indent_change, current_node_path);
-        }
-        if node_kind.force_line_break(self.db, current_node_path) {
-            self.finalize_line(current_indent);
-        }
-        current_node_path.pop();
-    }
-    fn format_token(
-        &mut self,
-        text: SmolStr,
-        kind: SyntaxKind,
-        current_indent: usize,
-        current_node_path: &NodePath,
-    ) {
-        self.append_token(text, kind, current_node_path);
-        // TODO(Gil) Consider removing this and use terminal instead after the tokens refactor.
-        if kind.force_line_break(self.db, current_node_path) {
-            self.finalize_line(current_indent);
+            self.format_node(&child);
+            self.empty_lines_allowance = allowed_empty_between;
+            self.current_indent -= indent_change;
         }
     }
-    fn append_token(&mut self, text: SmolStr, kind: SyntaxKind, current_node_path: &NodePath) {
-        if !kind.force_no_space_before(self.db, current_node_path)
-            && !self.line_state.force_no_space_after
-        {
+    fn format_terminal(&mut self, syntax_node: &SyntaxNode) {
+        // TODO(spapini): Introduce a Terminal and a Token enum in ast.rs to make this cleaner.
+        let mut children = syntax_node.children(self.db);
+        let leading_trivia = ast::Trivia::from_syntax_node(self.db, children.next().unwrap());
+        let token = children.next().unwrap();
+        let trailing_trivia = ast::Trivia::from_syntax_node(self.db, children.next().unwrap());
+
+        // The first newlines is the leading trivia correspond exactly to empty lines.
+        self.format_trivia(leading_trivia, self.empty_lines_allowance);
+        self.empty_lines_allowance = 0;
+        self.format_token(&token);
+        let allowed_newlines = if syntax_node.allow_newline_after(self.db) { 1 } else { 0 };
+        self.format_trivia(trailing_trivia, allowed_newlines);
+    }
+    fn format_trivia(&mut self, trivia: syntax::node::ast::Trivia, mut allowed_newlines: usize) {
+        for trivium in trivia.elements(self.db) {
+            match trivium {
+                ast::Trivium::SingleLineComment(_) => {
+                    allowed_newlines = 2;
+                    self.format_token(&trivium.as_syntax_node());
+                }
+                ast::Trivium::Whitespace(_) => {}
+                ast::Trivium::Newline(_) => {
+                    if allowed_newlines > 0 {
+                        allowed_newlines -= 1;
+                        self.finalize_line();
+                    }
+                }
+                ast::Trivium::Skipped(_) => {
+                    self.format_token(&trivium.as_syntax_node());
+                }
+            }
+        }
+    }
+    fn format_token(&mut self, syntax_node: &SyntaxNode) {
+        let text = syntax_node.text(self.db).unwrap();
+        self.append_token(text, syntax_node);
+    }
+    fn append_token(&mut self, text: SmolStr, syntax_node: &SyntaxNode) {
+        if !syntax_node.force_no_space_before(self.db) && !self.line_state.force_no_space_after {
             self.line_state.text += " ";
         }
-        self.line_state.force_no_space_after =
-            kind.force_no_space_after(self.db, current_node_path);
+        self.line_state.force_no_space_after = syntax_node.force_no_space_after(self.db);
         self.line_state.text += &text;
     }
-    fn append_indentation(&mut self, current_indent: usize) {
-        if current_indent < self.indents_list.len() {
-            self.result += &self.indents_list[current_indent];
+    fn get_indentation(&self) -> String {
+        if self.current_indent < self.indents_list.len() {
+            self.indents_list[self.current_indent].clone()
         } else {
-            self.result += &" ".repeat(self.config.tab_size * current_indent);
+            " ".repeat(self.config.tab_size * self.current_indent)
         }
     }
     fn append_newline(&mut self) {
         self.result.push('\n');
     }
-    fn finalize_line(&mut self, current_indent: usize) {
-        // The line is never empty, so we can safely add indentation.
-        self.append_indentation(current_indent);
-        self.result.push_str(&self.line_state.text);
+    fn finalize_line(&mut self) {
+        self.result.push_str(&self.line_state.build());
         self.append_newline();
-        self.line_state.reset();
+        self.line_state.reset(self.get_indentation());
     }
 }
 
