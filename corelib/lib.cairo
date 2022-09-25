@@ -17,10 +17,11 @@ extern func felt_add(a: felt, b: felt) -> felt;
 extern func felt_sub(a: felt, b: felt) -> felt;
 extern func felt_mul(a: felt, b: felt) -> felt;
 
-extern type non_zero_felt;
-extern func non_zero_felt_dup(a: non_zero_felt) -> (non_zero_felt, non_zero_felt);
-extern func non_zero_felt_drop(a: non_zero_felt);
-extern func felt_div(a: felt, b: non_zero_felt) -> felt;
+extern type NonZero<T>;
+extern func unwrap_nz<T>(a: NonZero::<T>) -> T;
+extern func non_zero_felt_dup(a: NonZero::<felt>) -> (NonZero::<felt>, NonZero::<felt>);
+extern func non_zero_felt_drop(a: NonZero::<felt>);
+extern func felt_div(a: felt, b: NonZero::<felt>) -> felt;
 
 extern func felt_eq(a: felt, b: felt) -> bool;
 // TODO(spapini): Get RangeCheck implicit.
