@@ -16,7 +16,6 @@ fn parent_parent_kind(db: &dyn SyntaxGroup, syntax_node: &SyntaxNode) -> Option<
 
 impl SyntaxNodeFormat for SyntaxNode {
     fn force_no_space_before(&self, db: &dyn SyntaxGroup) -> bool {
-        // TODO(yg): add more exhaustiveness protection? Here and elsewhere.
         match self.kind(db) {
             SyntaxKind::TokenDot
             | SyntaxKind::TokenColon

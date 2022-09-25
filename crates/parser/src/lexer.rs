@@ -306,8 +306,6 @@ enum TokenKind {
     BadCharacters,
 }
 
-// TODO(yg): consider moving this match into lexer/SyntaxKind, return SyntaxKind from there and
-// make TokenKind private there.
 fn token_kind_to_terminal_syntax_kind(kind: TokenKind) -> SyntaxKind {
     match kind {
         TokenKind::Identifier => SyntaxKind::TerminalIdentifier,
