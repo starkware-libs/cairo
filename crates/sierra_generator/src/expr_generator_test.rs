@@ -188,13 +188,8 @@ fn test_call_libfunc() {
     let (statements, res) = generate_expr_code_for_test(&db, test_expr);
     assert_eq!(
         statements.iter().map(|x| replace_libfunc_ids(&db, x).to_string()).collect::<Vec<String>>(),
-        vec![
-            "felt_const<3>() -> ([0])",
-            "felt_const<6>() -> ([1])",
-            "felt_add([0], [1]) -> ([2])",
-            "store_temp<[0]>([2]) -> ([3])",
-        ]
+        vec!["felt_const<3>() -> ([0])", "felt_const<6>() -> ([1])", "felt_add([0], [1]) -> ([2])",]
     );
 
-    assert_eq!(res, sierra::ids::VarId::new(3));
+    assert_eq!(res, sierra::ids::VarId::new(2));
 }

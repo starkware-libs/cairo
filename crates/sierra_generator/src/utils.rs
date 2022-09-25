@@ -47,3 +47,14 @@ pub fn store_temp_libfunc_id(
         generic_args: vec![sierra::program::GenericArg::Type(ty)],
     })
 }
+
+/// Returns the [sierra::program::ConcreteLibFuncLongId] associated with `rename`.
+pub fn rename_libfunc_id(
+    db: &dyn SierraGenGroup,
+    ty: ConcreteTypeId,
+) -> sierra::ids::ConcreteLibFuncId {
+    db.intern_concrete_lib_func(sierra::program::ConcreteLibFuncLongId {
+        generic_id: sierra::ids::GenericLibFuncId::from_string("rename"),
+        generic_args: vec![sierra::program::GenericArg::Type(ty)],
+    })
+}

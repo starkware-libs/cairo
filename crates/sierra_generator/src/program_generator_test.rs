@@ -25,6 +25,7 @@ fn test_program_generator() {
     .module_id;
 
     let program = &*db.get_program_code(module_id).expect("").unwrap();
+    // TODO(lior): Remove the unnecessary store_temp()s at the end.
     assert_eq!(
         replace_libfunc_ids_in_program(&db, program).to_string(),
         indoc! {"
@@ -37,6 +38,7 @@ fn test_program_generator() {
             libfunc function_call<user@[0]> = function_call<user@[0]>;
             libfunc felt_dup = felt_dup;
             libfunc felt_add = felt_add;
+            libfunc rename<[0]> = rename<[0]>;
 
             felt_drop([0]) -> ();
             revoke_ap_tracking() -> ();
@@ -46,11 +48,11 @@ fn test_program_generator() {
             store_temp<[0]>([3]) -> ([4]);
             return([4]);
             revoke_ap_tracking() -> ();
-            felt_dup([0]) -> ([0], [4]);
-            felt_add([0], [4]) -> ([1]);
-            store_temp<[0]>([1]) -> ([2]);
-            store_temp<[0]>([2]) -> ([3]);
-            return([3]);
+            felt_dup([0]) -> ([0], [3]);
+            felt_add([0], [3]) -> ([1]);
+            store_temp<[0]>([1]) -> ([1]);
+            rename<[0]>([1]) -> ([2]);
+            return([2]);
 
             [1]@0([0]: [0]) -> ([0]);
             [0]@7([0]: [0]) -> ([0]);

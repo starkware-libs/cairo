@@ -45,15 +45,15 @@ fn test_function_generator() {
             "revoke_ap_tracking() -> ()",
             "felt_const<5>() -> ([2])",
             "felt_add([0], [2]) -> ([3])",
-            "store_temp<[0]>([3]) -> ([4])",
-            "felt_dup([4]) -> ([4], [10])",
+            "store_temp<[0]>([3]) -> ([3])",
+            "felt_dup([3]) -> ([3], [9])",
+            "rename<[0]>([9]) -> ([4])",
+            "felt_dup([3]) -> ([3], [10])",
             "store_temp<[0]>([10]) -> ([5])",
-            "felt_dup([4]) -> ([4], [11])",
-            "store_temp<[0]>([11]) -> ([6])",
-            "store_temp<[0]>([4]) -> ([7])",
-            "function_call<user@[0]>([5], [6], [7]) -> ([8])",
-            "store_temp<[0]>([8]) -> ([9])",
-            "return([9])",
+            "store_temp<[0]>([3]) -> ([6])",
+            "function_call<user@[0]>([4], [5], [6]) -> ([7])",
+            "store_temp<[0]>([7]) -> ([8])",
+            "return([8])",
         ]
     );
 }
