@@ -100,8 +100,13 @@ impl TestBuilder {
 ///
 /// The signature of `func` should be of the form:
 /// ```ignore
-/// fn func(db: &mut SomeCrateDatabaseForTesting, inputs: Vec<String>) -> Vec<String>;
+/// fn func(
+///     db: &mut SomeCrateDatabaseForTesting,
+///     inputs: &OrderedHashMap<String, String>
+/// ) -> OrderedHashMap<String, String>;
 /// ```
+/// And `func` can read the tags from the file from the input map. It should return the expected
+/// outputs with the same tags as the file, in the output map.
 ///
 /// The structure of the file must be of the following form:
 /// ```text
@@ -109,16 +114,6 @@ impl TestBuilder {
 ///
 /// //! > test_function_name
 /// test_to_upper
-///
-/// //! > test_params
-/// input1
-/// input2
-/// ...
-///
-/// //! > test_output_params
-/// expected_output1
-/// expected_output2
-/// ...
 ///
 /// //! > input1
 /// hello
@@ -162,16 +157,12 @@ macro_rules! test_file_test {
                 for (name, test) in tests {
                     assert_eq!(test["test_function_name"], stringify!($func));
 
-                    let expected_outputs: Vec<String> = test["test_output_params"]
-                        .split('\n')
-                        .map(|param_name| test[param_name].clone())
-                        .collect();
+                    let outputs = $func(&mut <$db_type>::default(), &test);
 
-                    let outputs = $func(&mut <$db_type>::default(), test);
-                    for (output, expected_output) in std::iter::zip(outputs, expected_outputs) {
+                    for (key, value) in outputs {
                         pretty_assertions::assert_eq!(
-                            output.trim(),
-                            expected_output,
+                            value.trim(),
+                            test[key.trim()],
                             "\"{name}\" failed."
                         );
                     }
