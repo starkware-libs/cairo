@@ -24,6 +24,10 @@ impl<Key: Hash + Eq, Value> OrderedHashMap<Key, Value> {
         self.0.keys()
     }
 
+    pub fn values(&self) -> indexmap::map::Values<'_, Key, Value> {
+        self.0.values()
+    }
+
     pub fn insert(&mut self, key: Key, value: Value) -> Option<Value> {
         self.0.insert(key, value)
     }
