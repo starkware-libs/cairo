@@ -16,8 +16,8 @@ impl DiagnosticEntry for SierraGeneratorDiagnostic {
             SierraGeneratorDiagnosticKind::NonZeroValueInMatch => {
                 "Match with a non-zero value is not supported."
             }
-            SierraGeneratorDiagnosticKind::CallLibFuncWithGenericArgs => {
-                "Calling a libfunc with generic arguments is not supported yet."
+            SierraGeneratorDiagnosticKind::CallLibFuncWithUnknownGenericArg => {
+                "Calling a libfunc with unknown generic argument."
             }
             SierraGeneratorDiagnosticKind::OnlyMatchZeroIsSupported => {
                 "Only match zero (match ... { 0 => ..., _ => ... }) is currently supported."
@@ -41,7 +41,7 @@ impl DiagnosticEntry for SierraGeneratorDiagnostic {
 pub enum SierraGeneratorDiagnosticKind {
     // TODO(lior): Remove once supported.
     NonZeroValueInMatch,
-    CallLibFuncWithGenericArgs,
+    CallLibFuncWithUnknownGenericArg,
     // TODO(lior): Remove once supported.
     OnlyMatchZeroIsSupported,
     InternalErrorUnknownVariable,

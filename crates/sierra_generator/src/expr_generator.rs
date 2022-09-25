@@ -136,18 +136,25 @@ fn handle_function_call(
             Some((statements, res_var))
         }
         GenericFunctionId::Extern(extern_id) => {
-            if !function_long_id.generic_args.is_empty() {
-                context.add_diagnostic(
-                    SierraGeneratorDiagnosticKind::CallLibFuncWithGenericArgs,
-                    expr_function_call.stable_ptr.untyped(),
-                );
-                return None;
+            let mut generic_args = vec![];
+            for generic_arg in &function_long_id.generic_args {
+                generic_args.push(match generic_arg {
+                    semantic::GenericArgumentId::Type(ty) => sierra::program::GenericArg::Type(
+                        context.get_db().get_concrete_type_id(*ty).or_else(|| {
+                            context.add_diagnostic(
+                                SierraGeneratorDiagnosticKind::CallLibFuncWithUnknownGenericArg,
+                                expr_function_call.stable_ptr.untyped(),
+                            );
+                            None
+                        })?,
+                    ),
+                });
             }
 
             // Call the libfunc.
             let res_var = context.allocate_sierra_variable();
             statements.push(simple_statement(
-                context.generic_libfunc_id(extern_id),
+                context.generic_libfunc_id(extern_id, generic_args),
                 &args.into_iter().map(|(var, _ty)| var).collect::<Vec<_>>()[..],
                 &[res_var.clone()],
             ));
