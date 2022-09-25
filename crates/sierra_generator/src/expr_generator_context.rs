@@ -168,8 +168,14 @@ impl<'a> ExprGeneratorContext<'a> {
     pub fn generic_libfunc_id(
         &self,
         extern_id: defs::ids::ExternFunctionId,
+        generic_args: Vec<sierra::program::GenericArg>,
     ) -> sierra::ids::ConcreteLibFuncId {
-        self.get_extension_id_without_generics(extern_id.name(self.db.upcast()))
+        self.db.intern_concrete_lib_func(sierra::program::ConcreteLibFuncLongId {
+            generic_id: sierra::ids::GenericLibFuncId::from_string(
+                extern_id.name(self.db.upcast()),
+            ),
+            generic_args,
+        })
     }
 
     /// Add a SierraGenerator diagnostic to the list of diagnostics.
