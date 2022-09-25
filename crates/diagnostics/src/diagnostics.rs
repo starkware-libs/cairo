@@ -29,8 +29,8 @@ pub struct DiagnosticLocation {
 /// A builder for Diagnostics, accumulating multiple diagnostic entries.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct DiagnosticsBuilder<TEntry: DiagnosticEntry> {
-    leaves: Vec<TEntry>,
-    subtrees: Vec<Diagnostics<TEntry>>,
+    pub leaves: Vec<TEntry>,
+    pub subtrees: Vec<Diagnostics<TEntry>>,
 }
 impl<TEntry: DiagnosticEntry> DiagnosticsBuilder<TEntry> {
     pub fn new() -> Self {
@@ -55,7 +55,7 @@ impl<TEntry: DiagnosticEntry> Default for DiagnosticsBuilder<TEntry> {
 
 /// A set of diagnostic entries that arose during a computation.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct Diagnostics<TEntry: DiagnosticEntry>(Arc<DiagnosticsBuilder<TEntry>>);
+pub struct Diagnostics<TEntry: DiagnosticEntry>(pub Arc<DiagnosticsBuilder<TEntry>>);
 impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
     pub fn new() -> Self {
         Self(DiagnosticsBuilder::default().into())

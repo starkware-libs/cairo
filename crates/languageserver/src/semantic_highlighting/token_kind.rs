@@ -32,6 +32,7 @@ impl SemanticTokenKind {
             | SyntaxKind::TokenFunction
             | SyntaxKind::TokenModule
             | SyntaxKind::TokenStruct
+            | SyntaxKind::TokenEnum
             | SyntaxKind::TokenLet
             | SyntaxKind::TokenReturn
             | SyntaxKind::TokenMatch

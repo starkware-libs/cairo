@@ -6,6 +6,7 @@ use defs::ids::{
 };
 use diagnostics::{Diagnostics, DiagnosticsBuilder};
 use filesystem::db::{AsFilesGroupMut, FilesGroup};
+use filesystem::ids::FileId;
 use parser::db::ParserGroup;
 use smol_str::SmolStr;
 use utils::ordered_hash_map::OrderedHashMap;
@@ -203,11 +204,14 @@ pub trait SemanticGroup:
     ) -> semantic::Statement;
 
     // Aggregates module level semantic diagnostics.
-    // TODO(spapini): use Arcs to Vec of Arcs of diagnostics.
     fn module_semantic_diagnostics(
         &self,
         module_id: ModuleId,
     ) -> Option<Diagnostics<SemanticDiagnostic>>;
+
+    // Aggregates file level semantic diagnostics.
+    fn file_semantic_diagnostics(&self, file_id: FileId)
+    -> Option<Diagnostics<SemanticDiagnostic>>;
 
     // Corelib.
     #[salsa::invoke(corelib::core_module)]
@@ -226,8 +230,6 @@ impl AsSemanticGroup for dyn SemanticGroup {
     }
 }
 
-// TODO(spapini): Implement this more efficiently, with Arcs where needed, and not clones.
-#[allow(clippy::single_match)]
 fn module_semantic_diagnostics(
     db: &dyn SemanticGroup,
     module_id: ModuleId,
@@ -250,6 +252,19 @@ fn module_semantic_diagnostics(
             ModuleItemId::Use(_) => {}
             ModuleItemId::ExternType(_) => {}
             ModuleItemId::ExternFunction(_) => {}
+        }
+    }
+    Some(diagnostics.build())
+}
+
+fn file_semantic_diagnostics(
+    db: &dyn SemanticGroup,
+    file_id: FileId,
+) -> Option<Diagnostics<SemanticDiagnostic>> {
+    let mut diagnostics = DiagnosticsBuilder::default();
+    for module_id in db.file_modules(file_id)? {
+        if let Some(module_diagnostics) = db.module_semantic_diagnostics(module_id) {
+            diagnostics.extend(module_diagnostics)
         }
     }
     Some(diagnostics.build())
