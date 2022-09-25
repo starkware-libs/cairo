@@ -5,7 +5,11 @@ func fib(a: felt, b: felt, n: felt) -> Array::<felt> {
 
 func helper(a: felt, b: felt, n: felt, arr: Array::<felt>) -> Array::<felt> {
     match arr.len - n {
-        0 => { arr }
-        _ => { helper(b, a + b, n, array_push::<felt>(arr, a)) }
+        0 => {
+            arr
+        },
+        _ => {
+            helper(b, a + b, n, array_push::<felt>(arr, a))
+        },
     }
 }
