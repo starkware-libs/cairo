@@ -2,22 +2,25 @@
 
 mod semantic_highlighting;
 
+use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 use std::sync::Arc;
 
 use db_utils::Upcast;
 use defs::db::DefsGroup;
 use defs::ids::FreeFunctionLongId;
-use diagnostics::DiagnosticEntry;
+use diagnostics::{DiagnosticEntry, Diagnostics};
 use filesystem::db::{AsFilesGroupMut, FilesGroup, FilesGroupEx, PrivRawFileContentQuery};
-use filesystem::ids::FileId;
+use filesystem::ids::{FileId, FileLongId};
 use filesystem::span::TextPosition;
 use parser::db::ParserGroup;
 use parser::formatter::{get_formatted_file, FormatterConfig};
+use parser::ParserDiagnostic;
 use project::ProjectConfig;
 use semantic::db::SemanticGroup;
 use semantic::items::free_function::SemanticExprLookup;
 use semantic::test_utils::SemanticDatabaseForTesting;
+use semantic::SemanticDiagnostic;
 use semantic_highlighting::token_kind::SemanticTokenKind;
 use semantic_highlighting::SemanticTokensTraverser;
 use serde_json::Value;
@@ -31,10 +34,21 @@ pub type RootDatabase = SemanticDatabaseForTesting;
 
 const MAX_CRATE_DETECTION_DEPTH: usize = 20;
 
+#[derive(Default, PartialEq, Eq)]
+pub struct FileDiagnostics {
+    pub parser: Diagnostics<ParserDiagnostic>,
+    pub semantic: Diagnostics<SemanticDiagnostic>,
+}
+#[derive(Default)]
+pub struct State {
+    pub file_diagnostics: HashMap<FileId, FileDiagnostics>,
+    pub open_files: HashSet<FileId>,
+}
 pub struct Backend {
     pub client: Client,
     // TODO(spapini): Remove this once we support ParallelDatabase.
     pub db_mutex: tokio::sync::Mutex<RootDatabase>,
+    pub state_mutex: tokio::sync::Mutex<State>,
 }
 fn from_pos(pos: TextPosition) -> Position {
     Position { line: pos.line as u32, character: pos.col as u32 }
@@ -47,36 +61,68 @@ impl Backend {
         let path = uri.to_file_path().expect("Only file URIs are supported.");
         FileId::new(db, path)
     }
-    fn add_diagnostic(
-        &self,
-        db: &(dyn SemanticGroup + 'static),
-        diags: &mut Vec<Diagnostic>,
-        location: diagnostics::DiagnosticLocation,
-        message: String,
-    ) {
-        let start =
-            from_pos(location.span.start.position_in_file(db.upcast(), location.file_id).unwrap());
-        let end =
-            from_pos(location.span.start.position_in_file(db.upcast(), location.file_id).unwrap());
-        diags.push(Diagnostic { range: Range { start, end }, message, ..Diagnostic::default() });
-    }
-    fn get_diagnostics(&self, db: &(dyn SemanticGroup + 'static), file: FileId) -> Vec<Diagnostic> {
-        // TODO(spapini): Version.
-        let mut diags = Vec::new();
-        for d in &db.file_syntax_diagnostics(file).get_all() {
-            let location = d.location(db.upcast());
-            let message = d.format(db.upcast());
-            self.add_diagnostic(db, &mut diags, location, message)
-        }
-        // TODO(spapini): Do this outer loop in semantic.
-        for module_id in db.file_modules(file).iter().flatten() {
-            for d in db.module_semantic_diagnostics(*module_id).unwrap().get_all() {
-                let location = d.location(db.upcast());
-                let message = d.format(db.upcast());
-                self.add_diagnostic(db, &mut diags, location, message)
+    async fn refresh_diagnostics(&self) {
+        let db = self.db().await;
+        let mut state = self.state_mutex.lock().await;
+
+        // Get all files.
+        let mut files_set = state.open_files.clone();
+        for crate_id in db.crates() {
+            for module_id in db.crate_modules(crate_id).iter() {
+                if let Some(file_id) = db.module_file(*module_id) {
+                    files_set.insert(file_id);
+                }
             }
         }
-        diags
+
+        // Get all diagnostics.
+        for file_id in files_set {
+            let uri = if let FileLongId::OnDisk(path) = db.lookup_intern_file(file_id) {
+                Url::from_file_path(path).unwrap()
+            } else {
+                continue;
+            };
+            eprintln!("Uri: {uri}.");
+            let new_file_diagnostics = FileDiagnostics {
+                parser: db.file_syntax_diagnostics(file_id),
+                semantic: db.file_semantic_diagnostics(file_id).unwrap_or_default(),
+            };
+            // Since we are using Arcs, this comparison should be efficient.
+            if let Some(old_file_diagnostics) = state.file_diagnostics.get(&file_id) {
+                if old_file_diagnostics == &new_file_diagnostics {
+                    eprintln!("Skipping.");
+                    continue;
+                }
+            }
+            let mut diags = Vec::new();
+            self.get_diagnostics((*db).upcast(), &mut diags, &new_file_diagnostics.parser);
+            self.get_diagnostics((*db).upcast(), &mut diags, &new_file_diagnostics.semantic);
+            state.file_diagnostics.insert(file_id, new_file_diagnostics);
+
+            self.client.publish_diagnostics(uri, diags, None).await
+        }
+    }
+    fn get_diagnostics<T: DiagnosticEntry>(
+        &self,
+        db: &T::DbType,
+        diags: &mut Vec<Diagnostic>,
+        diagnostics: &Diagnostics<T>,
+    ) {
+        for diagnostic in diagnostics.get_all() {
+            let location = diagnostic.location(db);
+            let message = diagnostic.format(db);
+            let start = from_pos(
+                location.span.start.position_in_file(db.upcast(), location.file_id).unwrap(),
+            );
+            let end = from_pos(
+                location.span.start.position_in_file(db.upcast(), location.file_id).unwrap(),
+            );
+            diags.push(Diagnostic {
+                range: Range { start, end },
+                message,
+                ..Diagnostic::default()
+            });
+        }
     }
 }
 
@@ -159,8 +205,9 @@ impl LanguageServer for Backend {
         detect_crate_for(&mut db, path);
 
         let file = self.file(&db, uri.clone());
-        let diags = self.get_diagnostics(&*db, file);
-        self.client.publish_diagnostics(uri, diags, None).await
+        self.state_mutex.lock().await.open_files.insert(file);
+        drop(db);
+        self.refresh_diagnostics().await;
     }
 
     async fn did_change(&self, params: DidChangeTextDocumentParams) {
@@ -175,8 +222,8 @@ impl LanguageServer for Backend {
         let uri = params.text_document.uri;
         let file = self.file(&db, uri.clone());
         db.override_file_content(file, Some(Arc::new(text.into())));
-        let diags = self.get_diagnostics(&*db, file);
-        self.client.publish_diagnostics(uri, diags, None).await
+        drop(db);
+        self.refresh_diagnostics().await;
     }
 
     async fn did_save(&self, params: DidSaveTextDocumentParams) {
@@ -189,7 +236,10 @@ impl LanguageServer for Backend {
     async fn did_close(&self, params: DidCloseTextDocumentParams) {
         let mut db = self.db().await;
         let file = self.file(&db, params.text_document.uri);
+        self.state_mutex.lock().await.open_files.remove(&file);
         db.override_file_content(file, None);
+        drop(db);
+        self.refresh_diagnostics().await;
     }
 
     async fn completion(&self, _: CompletionParams) -> Result<Option<CompletionResponse>> {
