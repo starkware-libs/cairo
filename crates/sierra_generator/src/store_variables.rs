@@ -41,6 +41,12 @@ struct AddStoreVariableStatements<'a> {
     /// A map from [sierra::ids::VarId] of a deferred reference
     /// (for example, `[ap - 1] + [ap - 2]`) to its type.
     deferred_variables: OrderedHashMap<sierra::ids::VarId, sierra::ids::ConcreteTypeId>,
+    /// A map from [sierra::ids::VarId] of variables that are located on the stack (`[ap - 2]`)
+    /// to their index on the stack, relative to `known_stack_size`. A variable with index `i`
+    /// is at `[ap - known_stack_size + i]`.
+    // TODO(lior): Consider unifying this with `deferred_variables`.
+    variables_on_stack: OrderedHashMap<sierra::ids::VarId, usize>,
+    known_stack_size: usize,
 }
 impl<'a> AddStoreVariableStatements<'a> {
     /// Constructs a new [AddStoreVariableStatements] object.
@@ -49,6 +55,8 @@ impl<'a> AddStoreVariableStatements<'a> {
             db,
             result: Vec::new(),
             deferred_variables: OrderedHashMap::default(),
+            variables_on_stack: OrderedHashMap::default(),
+            known_stack_size: 0,
         }
     }
 
@@ -64,6 +72,9 @@ impl<'a> AddStoreVariableStatements<'a> {
         match &statement {
             pre_sierra::Statement::Sierra(GenStatement::Invocation(invocation)) => {
                 let output_infos = get_output_info(invocation.libfunc_id.clone());
+                // Currently, treat every statement as if it has unknown `ap` change.
+                // TODO(lior): Call `clear_known_stack` only if the libfunc revokes `ap`.
+                self.clear_known_stack();
                 match &invocation.branches[..] {
                     [GenBranchInfo { target: GenBranchTarget::Fallthrough, results }] => {
                         // A simple invocation.
@@ -85,10 +96,12 @@ impl<'a> AddStoreVariableStatements<'a> {
                 // the return values onto the stack. The rest of the deferred variables are not
                 // needed.
                 self.clear_deffered_variables();
+                self.clear_known_stack();
             }
             pre_sierra::Statement::Label(_) => {
                 self.store_all_deffered_variables();
                 self.result.push(statement);
+                self.clear_known_stack();
             }
             pre_sierra::Statement::PushValues(push_values) => {
                 self.push_values(push_values);
@@ -125,6 +138,10 @@ impl<'a> AddStoreVariableStatements<'a> {
         for (var, output_info) in itertools::zip_eq(results, output_infos) {
             self.register_output(var.clone(), output_info);
         }
+        // Update `known_stack_size`. It is one more than the maximum of the indices in
+        // `variables_on_stack` (or 0 if empty).
+        self.known_stack_size =
+            self.variables_on_stack.values().max().map(|idx| idx + 1).unwrap_or(0);
     }
 
     /// Register an output variable of a libfunc.
@@ -132,12 +149,16 @@ impl<'a> AddStoreVariableStatements<'a> {
     /// If the variable is marked as Deferred output by the libfunc, it is added to
     /// `self.deferred_variables`.
     fn register_output(&mut self, res: sierra::ids::VarId, output_info: &OutputVarInfo) {
+        self.deferred_variables.swap_remove(&res);
+        self.variables_on_stack.swap_remove(&res);
         match output_info.ref_info {
             OutputVarReferenceInfo::Deferred => {
                 self.deferred_variables.insert(res, output_info.ty.clone());
             }
+            OutputVarReferenceInfo::NewTempVar { idx } => {
+                self.variables_on_stack.insert(res, self.known_stack_size + idx);
+            }
             OutputVarReferenceInfo::SameAsParam { .. }
-            | OutputVarReferenceInfo::NewTempVar { .. }
             | OutputVarReferenceInfo::NewLocalVar
             | OutputVarReferenceInfo::Const => {}
         }
@@ -175,6 +196,14 @@ impl<'a> AddStoreVariableStatements<'a> {
         self.deferred_variables.clear();
     }
 
+    /// Clears the known information about the stack.
+    ///
+    /// This is called where the change in the value of `ap` is not known at compile time.
+    fn clear_known_stack(&mut self) {
+        self.known_stack_size = 0;
+        self.variables_on_stack.clear();
+    }
+
     fn finalize(self) -> Vec<pre_sierra::Statement> {
         assert!(
             self.deferred_variables.is_empty(),
@@ -194,6 +223,9 @@ impl<'a> AddStoreVariableStatements<'a> {
             &[var.clone()],
             &[var_on_stack.clone()],
         ));
+
+        self.variables_on_stack.insert(var_on_stack.clone(), self.known_stack_size);
+        self.known_stack_size += 1;
     }
 
     fn rename_var(
@@ -207,5 +239,9 @@ impl<'a> AddStoreVariableStatements<'a> {
             &[var.clone()],
             &[var_on_stack.clone()],
         ));
+
+        if let Some(index_on_stack) = self.variables_on_stack.get(var).cloned() {
+            self.variables_on_stack.insert(var_on_stack.clone(), index_on_stack);
+        }
     }
 }

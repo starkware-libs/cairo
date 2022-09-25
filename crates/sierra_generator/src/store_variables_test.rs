@@ -21,6 +21,12 @@ fn get_output_info(db: &dyn SierraGenGroup, libfunc: ConcreteLibFuncId) -> Vec<O
             vec![OutputVarInfo { ty: dummy_type, ref_info: OutputVarReferenceInfo::Deferred }]
         }
         x if x == "nope" => vec![],
+        x if x == "function_call4" => (0..4)
+            .map(|idx| OutputVarInfo {
+                ty: dummy_type.clone(),
+                ref_info: OutputVarReferenceInfo::NewTempVar { idx },
+            })
+            .collect(),
         _ => panic!("get_signature() is not implemented for '{}'.", name),
     };
     vec![OutputBranchInfo { vars: single_branch }]
@@ -98,6 +104,31 @@ fn store_temp_push_values() {
             "store_temp<[0]>([6]) -> ([103])",
             "nope() -> ()",
             "return([6])",
+        ]
+    );
+}
+
+/// Tests the [PushValues](pre_sierra::Statement::PushValues) optimization.
+#[test]
+fn push_values_optimization() {
+    let db = SierraGenDatabaseForTesting::default();
+    let statements: Vec<pre_sierra::Statement> = vec![
+        dummy_simple_statement(&db, "function_call4", &[], &[0, 1, 2, 3]),
+        dummy_push_values(&db, &[(2, 102), (3, 103), (0, 100)]),
+    ];
+
+    assert_eq!(
+        add_store_statements(&db, statements, &(|libfunc| get_output_info(&db, libfunc)))
+            .iter()
+            .map(|statement| replace_libfunc_ids(&db, statement).to_string())
+            .collect::<Vec<String>>(),
+        vec![
+            "function_call4() -> ([0], [1], [2], [3])",
+            // TODO(lior): Change to rename once the optimization is implemented.
+            "store_temp<[0]>([2]) -> ([102])",
+            // TODO(lior): Change to rename once the optimization is implemented.
+            "store_temp<[0]>([3]) -> ([103])",
+            "store_temp<[0]>([0]) -> ([100])",
         ]
     );
 }
