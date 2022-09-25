@@ -4,7 +4,7 @@ mod test;
 
 use std::mem;
 
-use diagnostics::Diagnostics;
+use diagnostics::DiagnosticsBuilder;
 use filesystem::ids::FileId;
 use filesystem::span::{TextOffset, TextSpan};
 use syntax::node::ast::*;
@@ -32,7 +32,7 @@ pub struct Parser<'a> {
     offset: u32,
     /// The width of the current terminal being handled.
     current_width: u32,
-    diagnostics: &'a mut Diagnostics<ParserDiagnostic>,
+    diagnostics: &'a mut DiagnosticsBuilder<ParserDiagnostic>,
 }
 
 // try_parse_<something>: returns a green ID with a kind that represents 'something' or None if
@@ -57,7 +57,7 @@ impl<'a> Parser<'a> {
     /// Parses a file.
     pub fn parse_file(
         db: &'a dyn SyntaxGroup,
-        diagnostics: &mut Diagnostics<ParserDiagnostic>,
+        diagnostics: &mut DiagnosticsBuilder<ParserDiagnostic>,
         file_id: FileId,
         text: &'a str,
     ) -> SyntaxFile {

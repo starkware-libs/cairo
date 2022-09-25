@@ -32,7 +32,8 @@ fn test_function_generator() {
         "Unexpected item type."
     );
 
-    let function = db.get_function_code(foo).expect("").unwrap();
+    db.free_function_sierra_diagnostics(foo).expect("");
+    let function = db.free_function_sierra(foo).unwrap();
     assert_eq!(
         function
             .body

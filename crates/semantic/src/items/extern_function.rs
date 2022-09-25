@@ -70,7 +70,7 @@ pub fn priv_extern_function_declaration_data(
     let (params, _environment) =
         function_signature_params(&mut diagnostics, db, scope, &signature_syntax);
     Some(ExternFunctionDeclarationData {
-        diagnostics: diagnostics.diagnostics,
+        diagnostics: diagnostics.build(),
         signature: semantic::Signature { params, return_type },
         generic_params,
     })

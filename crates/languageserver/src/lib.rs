@@ -63,14 +63,14 @@ impl Backend {
     fn get_diagnostics(&self, db: &(dyn SemanticGroup + 'static), file: FileId) -> Vec<Diagnostic> {
         // TODO(spapini): Version.
         let mut diags = Vec::new();
-        for d in &db.file_syntax_diagnostics(file).0 {
+        for d in &db.file_syntax_diagnostics(file).get_all() {
             let location = d.location(db.upcast());
             let message = d.format(db.upcast());
             self.add_diagnostic(db, &mut diags, location, message)
         }
         // TODO(spapini): Do this outer loop in semantic.
         for module_id in db.file_modules(file).iter().flatten() {
-            for d in db.module_semantic_diagnostics(*module_id).unwrap().0 {
+            for d in db.module_semantic_diagnostics(*module_id).unwrap().get_all() {
                 let location = d.location(db.upcast());
                 let message = d.format(db.upcast());
                 self.add_diagnostic(db, &mut diags, location, message)

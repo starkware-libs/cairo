@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use db_utils::Upcast;
-use diagnostics::Diagnostics;
+use diagnostics::{Diagnostics, DiagnosticsBuilder};
 use filesystem::db::{init_files_group, FilesDatabase, FilesGroup};
 use filesystem::ids::{FileId, FileLongId, VirtualFile};
 use syntax::node::db::{SyntaxDatabase, SyntaxGroup};
@@ -39,9 +39,9 @@ pub fn get_syntax_root_and_diagnostics(
 ) -> (SyntaxNode, Diagnostics<ParserDiagnostic>) {
     let file_id = FileId::new(db, PathBuf::from(cairo_filename));
     let contents = db.file_content(file_id).unwrap();
-    let mut diagnostics = Diagnostics::new();
+    let mut diagnostics = DiagnosticsBuilder::new();
     let syntax_root = Parser::parse_file(db, &mut diagnostics, file_id, contents.as_str());
-    (syntax_root.as_syntax_node(), diagnostics)
+    (syntax_root.as_syntax_node(), diagnostics.build())
 }
 
 pub fn read_file(filename: &str) -> String {
@@ -52,14 +52,14 @@ pub fn read_file(filename: &str) -> String {
 pub fn get_diagnostics(db: &mut ParserDatabaseForTesting, inputs: Vec<String>) -> Vec<String> {
     let code = &inputs[0];
 
-    let mut diagnostics = Diagnostics::new();
+    let mut diagnostics = DiagnosticsBuilder::new();
     let file_id = db.intern_file(FileLongId::Virtual(VirtualFile {
         parent: None,
         name: "dummy_file.cairo".into(),
         content: Arc::new(code.into()),
     }));
     Parser::parse_file(db, &mut diagnostics, file_id, code);
-    vec![diagnostics.format(db)]
+    vec![diagnostics.build().format(db)]
 }
 
 #[macro_export]

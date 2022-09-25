@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use db_utils::Upcast;
-use diagnostics::Diagnostics;
+use diagnostics::{Diagnostics, DiagnosticsBuilder};
 use filesystem::db::FilesGroup;
 use filesystem::ids::FileId;
 use syntax::node::ast::SyntaxFile;
@@ -23,21 +23,21 @@ pub trait ParserGroup: SyntaxGroup + Upcast<dyn SyntaxGroup> + FilesGroup {
     /// Parses a file and returns its AST.
     fn file_syntax(&self, file_id: FileId) -> Option<Arc<SyntaxFile>>;
     /// Returns the parser diagnostics for this file.
-    fn file_syntax_diagnostics(&self, file_id: FileId) -> Arc<Diagnostics<ParserDiagnostic>>;
+    fn file_syntax_diagnostics(&self, file_id: FileId) -> Diagnostics<ParserDiagnostic>;
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct SyntaxData {
-    diagnostics: Arc<Diagnostics<ParserDiagnostic>>,
+    diagnostics: Diagnostics<ParserDiagnostic>,
     syntax: Option<Arc<SyntaxFile>>,
 }
 
 pub fn priv_file_syntax_data(db: &dyn ParserGroup, file_id: FileId) -> SyntaxData {
-    let mut diagnostics = Diagnostics::default();
+    let mut diagnostics = DiagnosticsBuilder::default();
     let syntax = db
         .file_content(file_id)
         .map(|s| Arc::new(Parser::parse_file(db.upcast(), &mut diagnostics, file_id, s.as_str())));
-    SyntaxData { diagnostics: Arc::new(diagnostics), syntax }
+    SyntaxData { diagnostics: diagnostics.build(), syntax }
 }
 
 pub fn file_syntax(db: &dyn ParserGroup, file_id: FileId) -> Option<Arc<SyntaxFile>> {
@@ -47,6 +47,6 @@ pub fn file_syntax(db: &dyn ParserGroup, file_id: FileId) -> Option<Arc<SyntaxFi
 pub fn file_syntax_diagnostics(
     db: &dyn ParserGroup,
     file_id: FileId,
-) -> Arc<Diagnostics<ParserDiagnostic>> {
+) -> Diagnostics<ParserDiagnostic> {
     db.priv_file_syntax_data(file_id).diagnostics
 }

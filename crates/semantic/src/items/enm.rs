@@ -70,5 +70,5 @@ pub fn priv_enum_semantic_data(db: &dyn SemanticGroup, enum_id: EnumId) -> Optio
         }
     }
 
-    Some(EnumData { diagnostics: diagnostics.diagnostics, variants })
+    Some(EnumData { diagnostics: diagnostics.build(), variants })
 }

@@ -1,13 +1,12 @@
 use std::sync::Arc;
 
-use diagnostics_proc_macros::with_diagnostics;
 use filesystem::db::FilesGroup;
 use filesystem::ids::{FileId, FileLongId, VirtualFile};
 use filesystem::span::{TextOffset, TextSpan};
 use filesystem::test_utils::FilesDatabaseForTesting;
 use indoc::indoc;
 
-use super::{DiagnosticEntry, DiagnosticLocation, Diagnostics, WithDiagnostics};
+use super::{DiagnosticEntry, DiagnosticLocation, DiagnosticsBuilder};
 
 // Test diagnostic.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -41,21 +40,14 @@ fn setup() -> (FilesDatabaseForTesting, FileId) {
 
 #[test]
 fn test_diagnostics() {
-    let (_db_val, file_id) = setup();
+    let (db_val, file_id) = setup();
 
-    let mut diagnostics: Diagnostics<SimpleDiag> = Diagnostics::default();
+    let mut diagnostics: DiagnosticsBuilder<SimpleDiag> = DiagnosticsBuilder::default();
     let diagnostic = SimpleDiag { file_id };
     diagnostics.add(diagnostic);
-}
 
-#[test]
-fn test_option_with_diagnostics() {
-    let (db_val, file_id) = setup();
-    let db = &db_val;
-
-    let res = dummy_compute_macro(2, file_id);
     assert_eq!(
-        res.diagnostics.format(db),
+        diagnostics.build().format(&db_val),
         indoc! { "
             error: Simple diagnostic.
              --> dummy_file.sierra:1:1
@@ -64,22 +56,4 @@ fn test_option_with_diagnostics() {
 
         " }
     );
-}
-#[with_diagnostics]
-fn dummy_compute_macro(
-    diagnostics: &mut Diagnostics<SimpleDiag>,
-    x: usize,
-    file_id: FileId,
-) -> Option<usize> {
-    let param = WithDiagnostics::pure(Some(x * x));
-    let res = param.propagate(diagnostics)?;
-    // This should add one diagnostic entry, and return.
-    dummy_compute_fail(file_id).propagate(diagnostics)?;
-    Some(res)
-}
-
-#[with_diagnostics]
-fn dummy_compute_fail(diagnostics: &mut Diagnostics<SimpleDiag>, file_id: FileId) -> Option<usize> {
-    diagnostics.add(SimpleDiag { file_id });
-    None
 }

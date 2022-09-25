@@ -16,4 +16,4 @@ pub mod test_utils;
 mod types;
 mod utils;
 
-pub use diagnostic::{Diagnostic, SierraGeneratorDiagnostic};
+pub use diagnostic::SierraGeneratorDiagnostic;
