@@ -109,7 +109,7 @@ impl<'a> Printer<'a> {
             return;
         }
 
-        let extra_indent = if is_last { "    " } else { "│   " };
+        let extra_indent = if is_last { "    " } else { "│   " };
         let indent = String::from(indent) + extra_indent;
         let node_kind = self.get_node_kind(kind.to_string());
         match node_kind {

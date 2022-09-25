@@ -99,9 +99,12 @@ impl TestBuilder {
 /// func - the function to be applied on the test params to generate the tested result.
 ///
 /// The signature of `func` should be of the form:
+/// ```ignore
 /// fn func(db: &mut SomeCrateDatabaseForTesting, inputs: Vec<String>) -> Vec<String>;
+/// ```
 ///
 /// The structure of the file must be of the following form:
+/// ```text
 /// //! > test description
 ///
 /// //! > test_function_name
@@ -130,17 +133,22 @@ impl TestBuilder {
 /// WORLD
 ///
 /// // <Optionally, have more tests with the same format, separated by "//! > ===" lines>
+/// ```
 ///
 /// Each crate should define its own wrapper for it with the relevant Database for testing, e.g.:
+/// ```ignore
 /// #[macro_export]
 /// macro_rules! parser_test {
 ///     ($test_name:ident, $filenames:expr, $func:ident) => {
 ///         utils::test_file_test!($test_name, $filenames, ParserDatabaseForTesting, $func);
 ///     };
 /// }
+/// ```
 ///
 /// Then, the call to the macro looks like:
+/// ```ignore
 /// parser_test!(unique_test_name, [<test_file1>, <test_file2], test_to_upper);
+/// ```
 #[macro_export]
 macro_rules! test_file_test {
     ($test_name:ident, $filenames:expr, $db_type:ty, $func:ident) => {

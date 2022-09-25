@@ -1,43 +1,43 @@
 └── root (kind: SyntaxFile)
-    ├── items (kind: ItemList)
-    │   ├── child #0 (kind: ItemUse)
-    │   │   ├── use_kw (kind: TokenUse): 'use'
-    │   │   ├── name (kind: ExprPath)
-    │   │   │   ├── item #0 (kind: PathSegmentSimple)
-    │   │   │   │   └── ident (kind: TokenIdentifier): 'std'
-    │   │   │   ├── separator #0 (kind: TokenColonColon): '::'
-    │   │   │   └── item #1 (kind: PathSegmentSimple)
-    │   │   │       └── ident (kind: TokenIdentifier): 'format'
-    │   │   └── semicolon (kind: TokenSemicolon): ';'
-    │   └── child #1 (kind: ItemFreeFunction)
-    │       ├── function_kw (kind: TokenFunction): 'func'
-    │       ├── name (kind: TokenIdentifier): 'foo'
-    │       ├── generic_params (kind: OptionGenericParamsEmpty) []
-    │       ├── signature (kind: FunctionSignature)
-    │       │   ├── lparen (kind: TokenLParen): '('
-    │       │   ├── parameters (kind: ParamList)
-    │       │   │   └── item #0 (kind: Param)
-    │       │   │       ├── name (kind: TokenIdentifier): 'a'
-    │       │   │       └── type_clause (kind: TypeClause)
-    │       │   │           ├── colon (kind: TokenColon): ':'
-    │       │   │           └── ty (kind: ExprPath)
-    │       │   │               └── item #0 (kind: PathSegmentSimple)
-    │       │   │                   └── ident (kind: TokenIdentifier): 'int'
-    │       │   ├── rparen (kind: TokenRParen): ')'
-    │       │   └── ret_ty (kind: ReturnTypeClause)
-    │       │       ├── arrow (kind: TokenArrow): '->'
-    │       │       └── ty (kind: ExprPath)
-    │       │           └── item #0 (kind: PathSegmentSimple)
-    │       │               └── ident (kind: TokenIdentifier): 'felt'
-    │       └── body (kind: ExprBlock)
-    │           ├── lbrace (kind: TokenLBrace): '{'
-    │           ├── statements (kind: StatementList)
-    │           │   └── child #0 (kind: StatementReturn)
-    │           │       ├── return_kw (kind: TokenReturn): 'return'
-    │           │       ├── expr (kind: ExprPath)
-    │           │       │   └── item #0 (kind: PathSegmentSimple)
-    │           │       │       └── ident (kind: TokenIdentifier): 'a'
-    │           │       └── semicolon (kind: TokenSemicolon): ';'
-    │           └── rbrace (kind: TokenRBrace): '}'
-    └── eof (kind: TokenEndOfFile).
+    ├── items (kind: ItemList)
+    │   ├── child #0 (kind: ItemUse)
+    │   │   ├── use_kw (kind: TokenUse): 'use'
+    │   │   ├── name (kind: ExprPath)
+    │   │   │   ├── item #0 (kind: PathSegmentSimple)
+    │   │   │   │   └── ident (kind: TokenIdentifier): 'std'
+    │   │   │   ├── separator #0 (kind: TokenColonColon): '::'
+    │   │   │   └── item #1 (kind: PathSegmentSimple)
+    │   │   │       └── ident (kind: TokenIdentifier): 'format'
+    │   │   └── semicolon (kind: TokenSemicolon): ';'
+    │   └── child #1 (kind: ItemFreeFunction)
+    │       ├── function_kw (kind: TokenFunction): 'func'
+    │       ├── name (kind: TokenIdentifier): 'foo'
+    │       ├── generic_params (kind: OptionGenericParamsEmpty) []
+    │       ├── signature (kind: FunctionSignature)
+    │       │   ├── lparen (kind: TokenLParen): '('
+    │       │   ├── parameters (kind: ParamList)
+    │       │   │   └── item #0 (kind: Param)
+    │       │   │       ├── name (kind: TokenIdentifier): 'a'
+    │       │   │       └── type_clause (kind: TypeClause)
+    │       │   │           ├── colon (kind: TokenColon): ':'
+    │       │   │           └── ty (kind: ExprPath)
+    │       │   │               └── item #0 (kind: PathSegmentSimple)
+    │       │   │                   └── ident (kind: TokenIdentifier): 'int'
+    │       │   ├── rparen (kind: TokenRParen): ')'
+    │       │   └── ret_ty (kind: ReturnTypeClause)
+    │       │       ├── arrow (kind: TokenArrow): '->'
+    │       │       └── ty (kind: ExprPath)
+    │       │           └── item #0 (kind: PathSegmentSimple)
+    │       │               └── ident (kind: TokenIdentifier): 'felt'
+    │       └── body (kind: ExprBlock)
+    │           ├── lbrace (kind: TokenLBrace): '{'
+    │           ├── statements (kind: StatementList)
+    │           │   └── child #0 (kind: StatementReturn)
+    │           │       ├── return_kw (kind: TokenReturn): 'return'
+    │           │       ├── expr (kind: ExprPath)
+    │           │       │   └── item #0 (kind: PathSegmentSimple)
+    │           │       │       └── ident (kind: TokenIdentifier): 'a'
+    │           │       └── semicolon (kind: TokenSemicolon): ';'
+    │           └── rbrace (kind: TokenRBrace): '}'
+    └── eof (kind: TokenEndOfFile).
 --------------------
