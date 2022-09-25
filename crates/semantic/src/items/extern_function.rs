@@ -39,7 +39,7 @@ pub fn extern_function_declaration_signature(
 ) -> Option<semantic::Signature> {
     Some(db.priv_extern_function_declaration_data(extern_function_id)?.signature)
 }
-/// Query implementation of [crate::db::SemanticGroup::extern_function_generic_params].
+/// Query implementation of [crate::db::SemanticGroup::extern_function_declaration_generic_params].
 pub fn extern_function_declaration_generic_params(
     db: &dyn SemanticGroup,
     extern_function_id: ExternFunctionId,
