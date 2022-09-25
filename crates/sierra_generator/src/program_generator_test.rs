@@ -37,16 +37,16 @@ fn test_program_generator() {
             libfunc felt_const<5> = felt_const<5>;
             libfunc store_temp<[0]> = store_temp<[0]>;
             libfunc function_call<user@[0]> = function_call<user@[0]>;
+            libfunc rename<[0]> = rename<[0]>;
             libfunc felt_dup = felt_dup;
             libfunc felt_add = felt_add;
-            libfunc rename<[0]> = rename<[0]>;
 
             felt_drop([0]) -> ();
             revoke_ap_tracking() -> ();
             felt_const<5>() -> ([1]);
             store_temp<[0]>([1]) -> ([2]);
             function_call<user@[0]>([2]) -> ([3]);
-            store_temp<[0]>([3]) -> ([4]);
+            rename<[0]>([3]) -> ([4]);
             return([4]);
             revoke_ap_tracking() -> ();
             felt_dup([0]) -> ([0], [3]);

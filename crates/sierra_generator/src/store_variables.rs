@@ -165,7 +165,14 @@ impl<'a> AddStoreVariableStatements<'a> {
     }
 
     fn push_values(&mut self, push_values: &Vec<pre_sierra::PushValue>) {
-        for pre_sierra::PushValue { var, var_on_stack, ty } in push_values {
+        if push_values.is_empty() {
+            return;
+        }
+
+        // Optimization: check if there is a prefix of `push_values` that is already on the stack.
+        let prefix_size = self.compute_on_stack_prefix_size(push_values);
+
+        for (i, pre_sierra::PushValue { var, var_on_stack, ty }) in push_values.iter().enumerate() {
             if self.deferred_variables.contains_key(var) {
                 // Convert the deferred variable into a temporary variable, by calling
                 // `prepare_libfunc_argument`.
@@ -175,11 +182,33 @@ impl<'a> AddStoreVariableStatements<'a> {
                 // by `add_dups_and_drops()`.
                 self.rename_var(var, var_on_stack, ty);
             } else {
-                // TODO(lior): If the variable is already in the correct place, only rename
-                //   it, instead of adding a `store_temp()` statement.
-                self.store_temp(var, var_on_stack, ty);
+                // Check if this is part of the prefix. If it is, rename instead of adding
+                // `store_temp`.
+                if i < prefix_size {
+                    self.rename_var(var, var_on_stack, ty);
+                } else {
+                    self.store_temp(var, var_on_stack, ty);
+                }
             }
         }
+    }
+
+    // Checks if there exists a prefix of `push_values`, that is already on the top of the stack.
+    // Returns the prefix size if exists, and 0 otherwise.
+    fn compute_on_stack_prefix_size(&self, push_values: &[pre_sierra::PushValue]) -> usize {
+        if let Some(index_on_stack) = self.variables_on_stack.get(&push_values[0].var) {
+            // Compute the prefix size, if exists.
+            let prefix_size = self.known_stack_size - index_on_stack;
+            // Check if this is indeed a prefix.
+            let is_prefix = (1..prefix_size).all(|i| {
+                self.variables_on_stack.get(&push_values[i].var).cloned()
+                    == Some(index_on_stack + i)
+            });
+            if is_prefix {
+                return prefix_size;
+            }
+        }
+        0
     }
 
     /// Stores all the deffered variables and clears `deferred_variables`.
