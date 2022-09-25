@@ -77,7 +77,7 @@ pub fn priv_free_function_declaration_data(
     let (params, environment) =
         function_signature_params(&mut diagnostics, db, scope, &signature_syntax);
     Some(FreeFunctionDeclarationData {
-        diagnostics: diagnostics.diagnostics,
+        diagnostics: diagnostics.build(),
         signature: semantic::Signature { params, return_type },
         generic_params,
         environment,
@@ -142,7 +142,7 @@ pub fn priv_free_function_definition_data(
     let expr_lookup: UnorderedHashMap<_, _> =
         exprs.iter().map(|(expr_id, expr)| (expr.stable_ptr(), expr_id)).collect();
     Some(FreeFunctionDefinitionData {
-        diagnostics: diagnostics.diagnostics,
+        diagnostics: diagnostics.build(),
         body,
         exprs,
         expr_lookup,

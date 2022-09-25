@@ -53,5 +53,5 @@ pub fn priv_extern_type_declaration_data(
         module_id,
         &type_syntax.generic_params(db.upcast()),
     );
-    Some(ExternTypeDeclarationData { diagnostics: diagnostics.diagnostics, generic_params })
+    Some(ExternTypeDeclarationData { diagnostics: diagnostics.build(), generic_params })
 }

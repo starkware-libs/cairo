@@ -5,8 +5,7 @@ mod test;
 use std::sync::Arc;
 
 use defs::ids::{FreeFunctionId, GenericFunctionId};
-use diagnostics::{Diagnostics, WithDiagnostics};
-use diagnostics_proc_macros::with_diagnostics;
+use diagnostics::{Diagnostics, DiagnosticsBuilder};
 use sierra::extensions::core::CoreLibFunc;
 use sierra::extensions::lib_func::OutputBranchInfo;
 use sierra::extensions::GenericLibFuncEx;
@@ -14,7 +13,6 @@ use sierra::ids::ConcreteLibFuncId;
 use sierra::program::Param;
 
 use crate::db::SierraGenGroup;
-use crate::diagnostic::Diagnostic;
 use crate::dup_and_drop::{calculate_statement_dups_and_drops, VarsDupsAndDrops};
 use crate::expr_generator::generate_expression_code;
 use crate::expr_generator_context::ExprGeneratorContext;
@@ -22,10 +20,42 @@ use crate::pre_sierra::{self, Statement};
 use crate::specialization_context::SierraSignatureSpecializationContext;
 use crate::store_variables::add_store_statements;
 use crate::utils::{return_statement, simple_statement};
+use crate::SierraGeneratorDiagnostic;
 
-#[with_diagnostics]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SierraFreeFunctionData {
+    pub diagnostics: Diagnostics<SierraGeneratorDiagnostic>,
+    pub function: Option<Arc<pre_sierra::Function>>,
+}
+
+/// Query implementation of [crate::db::SierraGenGroup::priv_free_function_sierra_data].
+pub fn priv_free_function_sierra_data(
+    db: &dyn SierraGenGroup,
+    function_id: FreeFunctionId,
+) -> SierraFreeFunctionData {
+    let mut diagnostics = DiagnosticsBuilder::new();
+    let function = get_function_code(&mut diagnostics, db, function_id);
+    SierraFreeFunctionData { diagnostics: diagnostics.build(), function }
+}
+
+/// Query implementation of [crate::db::SierraGenGroup::free_function_sierra_diagnostics].
+pub fn free_function_sierra_diagnostics(
+    db: &dyn SierraGenGroup,
+    function_id: FreeFunctionId,
+) -> Diagnostics<SierraGeneratorDiagnostic> {
+    db.priv_free_function_sierra_data(function_id).diagnostics
+}
+
+/// Query implementation of [crate::db::SierraGenGroup::free_function_sierra].
+pub fn free_function_sierra(
+    db: &dyn SierraGenGroup,
+    function_id: FreeFunctionId,
+) -> Option<Arc<pre_sierra::Function>> {
+    db.priv_free_function_sierra_data(function_id).function
+}
+
 pub fn get_function_code(
-    diagnostics: &mut Diagnostics<Diagnostic>,
+    diagnostics: &mut DiagnosticsBuilder<SierraGeneratorDiagnostic>,
     db: &dyn SierraGenGroup,
     function_id: FreeFunctionId,
 ) -> Option<Arc<pre_sierra::Function>> {

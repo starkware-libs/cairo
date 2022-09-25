@@ -24,7 +24,8 @@ fn test_program_generator() {
     .unwrap()
     .module_id;
 
-    let program = &*db.get_program_code(module_id).expect("").unwrap();
+    db.module_sierra_diagnostics(module_id).expect("");
+    let program = &*db.module_sierra_program(module_id).unwrap();
     // TODO(lior): Remove the unnecessary store_temp()s at the end.
     assert_eq!(
         replace_libfunc_ids_in_program(&db, program).to_string(),
@@ -76,7 +77,8 @@ fn test_type_dependency() {
     .unwrap()
     .module_id;
 
-    let program = &*db.get_program_code(module_id).expect("").unwrap();
+    db.module_sierra_diagnostics(module_id).expect("");
+    let program = &*db.module_sierra_program(module_id).unwrap();
     assert_eq!(
         replace_libfunc_ids_in_program(&db, program).to_string(),
         indoc! {"

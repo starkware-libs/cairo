@@ -26,8 +26,8 @@ fn compile_to_sierra(
     cairo_file: &str,
 ) -> (SierraGenDatabaseForTesting, Arc<sierra::program::Program>) {
     let (db, module_id) = setup(cairo_file);
-    let sierra_program =
-        db.get_program_code(module_id).expect("Creating sierra code should succeed").unwrap();
+    db.module_sierra_diagnostics(module_id).expect("Creating sierra code should succeed");
+    let sierra_program = db.module_sierra_program(module_id).unwrap();
     (db, sierra_program)
 }
 

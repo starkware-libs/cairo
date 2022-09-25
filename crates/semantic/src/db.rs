@@ -4,7 +4,7 @@ use defs::ids::{
     EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericFunctionId, GenericParamId,
     GenericTypeId, ModuleId, ModuleItemId, StructId,
 };
-use diagnostics::Diagnostics;
+use diagnostics::{Diagnostics, DiagnosticsBuilder};
 use filesystem::db::{AsFilesGroupMut, FilesGroup};
 use parser::db::ParserGroup;
 use smol_str::SmolStr;
@@ -232,23 +232,19 @@ fn module_semantic_diagnostics(
     db: &dyn SemanticGroup,
     module_id: ModuleId,
 ) -> Option<Diagnostics<SemanticDiagnostic>> {
-    let mut diagnostics = Diagnostics::default();
+    let mut diagnostics = DiagnosticsBuilder::default();
     for (_name, item) in db.module_items(module_id)?.items.iter() {
         match item {
             // Add signature diagnostics.
             ModuleItemId::FreeFunction(free_function) => {
-                diagnostics
-                    .0
-                    .extend(db.free_function_declaration_diagnostics(*free_function).0.clone());
-                diagnostics
-                    .0
-                    .extend(db.free_function_definition_diagnostics(*free_function).0.clone());
+                diagnostics.extend(db.free_function_declaration_diagnostics(*free_function));
+                diagnostics.extend(db.free_function_definition_diagnostics(*free_function));
             }
             ModuleItemId::Struct(struct_id) => {
-                diagnostics.0.extend(db.struct_semantic_diagnostics(*struct_id).0.clone());
+                diagnostics.extend(db.struct_semantic_diagnostics(*struct_id));
             }
             ModuleItemId::Enum(enum_id) => {
-                diagnostics.0.extend(db.enum_semantic_diagnostics(*enum_id).0.clone());
+                diagnostics.extend(db.enum_semantic_diagnostics(*enum_id));
             }
             ModuleItemId::Submodule(_) => {}
             ModuleItemId::Use(_) => {}
@@ -256,5 +252,5 @@ fn module_semantic_diagnostics(
             ModuleItemId::ExternFunction(_) => {}
         }
     }
-    Some(diagnostics)
+    Some(diagnostics.build())
 }

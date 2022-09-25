@@ -1,4 +1,4 @@
-use diagnostics::Diagnostics;
+use diagnostics::DiagnosticsBuilder;
 use indoc::indoc;
 use pretty_assertions::assert_eq;
 use semantic::test_utils::{setup_test_block, setup_test_expr, TestExpr};
@@ -6,17 +6,17 @@ use semantic::test_utils::{setup_test_block, setup_test_expr, TestExpr};
 use crate::expr_generator::generate_expression_code;
 use crate::expr_generator_context::ExprGeneratorContext;
 use crate::test_utils::{replace_libfunc_ids, SierraGenDatabaseForTesting};
-use crate::{diagnostics_test, pre_sierra, Diagnostic};
+use crate::{diagnostics_test, pre_sierra, SierraGeneratorDiagnostic};
 
 fn generate_expr_code_for_test(
     db: &SierraGenDatabaseForTesting,
     test_expr: TestExpr,
 ) -> (Vec<pre_sierra::Statement>, sierra::ids::VarId) {
-    let mut diagnostics = Diagnostics::<Diagnostic>::default();
+    let mut diagnostics = DiagnosticsBuilder::<SierraGeneratorDiagnostic>::default();
     let mut expr_generator_context =
         ExprGeneratorContext::new(db, test_expr.function_id, &mut diagnostics);
     let result = generate_expression_code(&mut expr_generator_context, test_expr.expr_id);
-    diagnostics.expect("");
+    diagnostics.build().expect("");
     result.unwrap()
 }
 
@@ -26,11 +26,11 @@ fn verify_exception(
     expected_diagnostics: &str,
     name: &str,
 ) {
-    let mut diagnostics = Diagnostics::<Diagnostic>::default();
+    let mut diagnostics = DiagnosticsBuilder::<SierraGeneratorDiagnostic>::default();
     let mut expr_generator_context =
         ExprGeneratorContext::new(db, test_expr.function_id, &mut diagnostics);
     generate_expression_code(&mut expr_generator_context, test_expr.expr_id);
-    assert_eq!(diagnostics.format(db).trim(), expected_diagnostics, "'{name}' failed.");
+    assert_eq!(diagnostics.build().format(db).trim(), expected_diagnostics, "'{name}' failed.");
 }
 
 #[test]
@@ -93,7 +93,7 @@ fn test_expr_generator_duplicate_variable() {
     let mut db = SierraGenDatabaseForTesting::default();
 
     let test_expr = setup_test_block(&mut db, "let x = 7; x", "", "").unwrap();
-    let mut diagnostics = Diagnostics::<Diagnostic>::default();
+    let mut diagnostics = DiagnosticsBuilder::<SierraGeneratorDiagnostic>::default();
     let mut expr_generator_context =
         ExprGeneratorContext::new(&db, test_expr.function_id, &mut diagnostics);
     // Call generate_expression_code with the same code twice, to simulate the
@@ -104,7 +104,7 @@ fn test_expr_generator_duplicate_variable() {
         generate_expression_code(&mut expr_generator_context, test_expr.expr_id).unwrap();
     // TODO(spapini): Fix so that the span below will only point to `x`.
     assert_eq!(
-        diagnostics.format(&db),
+        diagnostics.build().format(&db),
         indoc! {"
             error: Internal compiler error: found two definitions for the same variable.
              --> lib.cairo:3:1

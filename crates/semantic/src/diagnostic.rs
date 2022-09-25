@@ -4,7 +4,7 @@ mod test;
 
 use defs::diagnostic_utils::StableLocation;
 use defs::ids::{EnumId, LanguageElementId, ModuleId, StructId};
-use diagnostics::{DiagnosticEntry, DiagnosticLocation, Diagnostics};
+use diagnostics::{DiagnosticEntry, DiagnosticLocation, Diagnostics, DiagnosticsBuilder};
 use smol_str::SmolStr;
 use syntax::node::ids::SyntaxStablePtrId;
 use syntax::node::TypedSyntaxNode;
@@ -13,12 +13,15 @@ use crate::db::SemanticGroup;
 use crate::semantic;
 
 pub struct SemanticDiagnostics {
-    pub diagnostics: Diagnostics<SemanticDiagnostic>,
+    pub diagnostics: DiagnosticsBuilder<SemanticDiagnostic>,
     pub module_id: ModuleId,
 }
 impl SemanticDiagnostics {
     pub fn new(module_id: ModuleId) -> Self {
-        Self { module_id, diagnostics: Diagnostics::default() }
+        Self { module_id, diagnostics: DiagnosticsBuilder::default() }
+    }
+    pub fn build(self) -> Diagnostics<SemanticDiagnostic> {
+        self.diagnostics.build()
     }
     pub fn report<TNode: TypedSyntaxNode>(&mut self, node: &TNode, kind: SemanticDiagnosticKind) {
         self.diagnostics.add(SemanticDiagnostic {

@@ -73,5 +73,5 @@ pub fn priv_struct_semantic_data(
         }
     }
 
-    Some(StructData { diagnostics: diagnostics.diagnostics, members })
+    Some(StructData { diagnostics: diagnostics.build(), members })
 }
