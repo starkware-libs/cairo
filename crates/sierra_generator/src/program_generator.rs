@@ -1,9 +1,8 @@
 use std::collections::HashSet;
 use std::sync::Arc;
 
-use defs::db::ModuleItems;
-use defs::ids::ModuleItemId;
-use diagnostics::Diagnostics;
+use defs::ids::{ModuleId, ModuleItemId};
+use diagnostics::{Diagnostics, DiagnosticsBuilder};
 use itertools::chain;
 use sierra::extensions::core::CoreLibFunc;
 use sierra::extensions::GenericLibFuncEx;
@@ -12,20 +11,39 @@ use sierra::program;
 use utils::ordered_hash_set::OrderedHashSet;
 
 use crate::db::SierraGenGroup;
-use crate::diagnostic::Diagnostic;
 use crate::pre_sierra::{self};
 use crate::resolve_labels::{resolve_labels, LabelReplacer};
 use crate::specialization_context::SierraSignatureSpecializationContext;
+use crate::SierraGeneratorDiagnostic;
 
 #[cfg(test)]
 #[path = "program_generator_test.rs"]
 mod test;
 
-pub fn generate_program_code(
-    diagnostics: &mut Diagnostics<Diagnostic>,
+/// Query implementation of [crate::db::SierraGenGroup::module_sierra_diagnostics].
+pub fn module_sierra_diagnostics(
     db: &dyn SierraGenGroup,
-    module_items: &ModuleItems,
-) -> Option<program::Program> {
+    module_id: ModuleId,
+) -> Diagnostics<SierraGeneratorDiagnostic> {
+    let mut diagnostics = DiagnosticsBuilder::new();
+    let module_items = db.module_items(module_id).unwrap_or_default();
+    for (_name, item) in module_items.items.iter() {
+        match item {
+            ModuleItemId::FreeFunction(free_function_id) => {
+                diagnostics.extend(db.free_function_sierra_diagnostics(*free_function_id))
+            }
+            _ => todo!("Not supported yet."),
+        }
+    }
+    diagnostics.build()
+}
+
+/// Query implementation of [crate::db::SierraGenGroup::module_sierra_program].
+pub fn module_sierra_program(
+    db: &dyn SierraGenGroup,
+    module_id: ModuleId,
+) -> Option<Arc<sierra::program::Program>> {
+    let module_items = db.module_items(module_id)?;
     let mut functions: Vec<Arc<pre_sierra::Function>> = vec![];
     let mut statements: Vec<pre_sierra::Statement> = vec![];
 
@@ -37,7 +55,7 @@ pub fn generate_program_code(
             ModuleItemId::Use(_) => todo!("'use' lowering not supported yet."),
             ModuleItemId::FreeFunction(free_function_id) => {
                 let function: Arc<pre_sierra::Function> =
-                    db.get_function_code(*free_function_id).propagate(diagnostics)?;
+                    db.free_function_sierra(*free_function_id)?;
                 functions.push(function.clone());
                 statements.extend_from_slice(function.body.as_slice());
             }
@@ -55,7 +73,7 @@ pub fn generate_program_code(
     let label_replacer = LabelReplacer::from_statements(&statements);
     let resolved_statements = resolve_labels(statements, &label_replacer);
 
-    Some(program::Program {
+    Some(Arc::new(program::Program {
         type_declarations,
         libfunc_declarations,
         statements: resolved_statements,
@@ -70,7 +88,7 @@ pub fn generate_program_code(
                 )
             })
             .collect(),
-    })
+    }))
 }
 
 /// Generates the list of [sierra::program::LibFuncDeclaration] for the given list of

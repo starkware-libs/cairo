@@ -3,11 +3,13 @@
 mod test;
 
 use std::fmt::Write;
+use std::sync::Arc;
 
 use db_utils::Upcast;
 use filesystem::db::FilesGroup;
 use filesystem::ids::FileId;
 use filesystem::span::TextSpan;
+use itertools::Itertools;
 
 use crate::location_marks::get_location_marks;
 
@@ -24,22 +26,45 @@ pub struct DiagnosticLocation {
     pub span: TextSpan,
 }
 
-/// A set of diagnostic entries, accumulating multiple diagnostics that arise during a computation.
+/// A builder for Diagnostics, accumulating multiple diagnostic entries.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct Diagnostics<TEntry: DiagnosticEntry>(pub Vec<TEntry>);
+pub struct DiagnosticsBuilder<TEntry: DiagnosticEntry> {
+    leaves: Vec<TEntry>,
+    subtrees: Vec<Diagnostics<TEntry>>,
+}
+impl<TEntry: DiagnosticEntry> DiagnosticsBuilder<TEntry> {
+    pub fn new() -> Self {
+        Self { leaves: Default::default(), subtrees: Default::default() }
+    }
+    pub fn add(&mut self, diagnostic: TEntry) {
+        self.leaves.push(diagnostic);
+    }
+    pub fn extend(&mut self, diagnostics: Diagnostics<TEntry>) {
+        self.subtrees.push(diagnostics);
+    }
+    pub fn build(self) -> Diagnostics<TEntry> {
+        Diagnostics(Arc::new(self))
+    }
+}
+
+impl<TEntry: DiagnosticEntry> Default for DiagnosticsBuilder<TEntry> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// A set of diagnostic entries that arose during a computation.
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct Diagnostics<TEntry: DiagnosticEntry>(Arc<DiagnosticsBuilder<TEntry>>);
 impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
     pub fn new() -> Self {
-        Self(Vec::new())
+        Self(DiagnosticsBuilder::default().into())
     }
-    pub fn add<T>(&mut self, diagnostic: T)
-    where
-        TEntry: From<T>,
-    {
-        self.0.push(diagnostic.into());
-    }
+
     pub fn format(&self, db: &TEntry::DbType) -> String {
         let mut res = String::new();
-        for entry in &self.0 {
+        // Format leaves.
+        for entry in &self.0.leaves {
             let location = entry.location(db);
             let filename = location.file_id.file_name(db.upcast());
             let marks = get_location_marks(db.upcast(), &location);
@@ -50,95 +75,30 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
             let message = entry.format(db);
             writeln!(res, "error: {message}\n --> {filename}:{pos}\n{marks}\n").unwrap();
         }
+        // Format subtrees.
+        res += &self.0.subtrees.iter().map(|subtree| subtree.format(db)).join("");
         res
     }
 
     /// Asserts that no diagnostic has occurred, panicking with an error message on failure.
-    pub fn expect(self, error_message: &str) {
-        assert!(self.0.is_empty(), "{}\n{:?}", error_message, self);
+    pub fn expect(&self, error_message: &str) {
+        assert!(self.0.leaves.is_empty(), "{}\n{:?}", error_message, self);
+        for subtree in &self.0.subtrees {
+            subtree.expect(error_message);
+        }
+    }
+
+    // TODO(spapini): This is temporary. Remove once the logic in language server doesn't use this.
+    pub fn get_all(&self) -> Vec<TEntry> {
+        let mut res = self.0.leaves.clone();
+        for subtree in &self.0.subtrees {
+            res.extend(subtree.get_all())
+        }
+        res
     }
 }
 impl<TEntry: DiagnosticEntry> Default for Diagnostics<TEntry> {
     fn default() -> Self {
         Self::new()
-    }
-}
-
-/// Helper type for computations that may produce diagnostics.
-/// Should be used with the `with_diagnostics` macro. Example:
-///
-/// ```
-/// use diagnostics::{DiagnosticEntry, Diagnostics, WithDiagnostics};
-/// use diagnostics_proc_macros::with_diagnostics;
-/// # #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-/// # struct SimpleDiag {}
-/// # impl DiagnosticEntry for SimpleDiag {
-/// #     type DbType = dyn filesystem::db::FilesGroup;
-/// #     fn format(&self, _db: &dyn filesystem::db::FilesGroup) -> String {
-/// #         unimplemented!();
-/// #     }
-/// #     fn location(
-/// #         &self, _db: &dyn filesystem::db::FilesGroup
-/// #     ) -> diagnostics::DiagnosticLocation {
-/// #         unimplemented!();
-/// #     }
-/// # }
-/// #[with_diagnostics]
-/// fn dummy_compute_macro(diagnostics: &mut Diagnostics<SimpleDiag>, x: usize) -> Option<usize> {
-///     let param = WithDiagnostics::pure(Some(x * x));
-///     let res = param.propagate(diagnostics)?;
-///     Some(res * res)
-/// }
-/// ```
-/// The resulting function will have the signature:
-/// ```ignore
-/// fn dummy_compute_macro(x: usize) -> WithDiagnostics<Option<usize>>;
-/// ```
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct WithDiagnostics<T, TEntry: DiagnosticEntry> {
-    value: T,
-    diagnostics: Diagnostics<TEntry>,
-}
-impl<T, TEntry: DiagnosticEntry> WithDiagnostics<T, TEntry> {
-    /// Constructs a new [WithDiagnostics] object.
-    /// You should use the `with_diagnostics` macro instead of using this function explicitly.
-    pub fn new(value: T, diagnostics: Diagnostics<TEntry>) -> Self {
-        Self { value, diagnostics }
-    }
-
-    /// Returns the stored diagnostics.
-    pub fn get_diagnostics(&self) -> &Diagnostics<TEntry> {
-        &self.diagnostics
-    }
-
-    /// Returns the internal value and diagnostics.
-    pub fn split(self) -> (T, Diagnostics<TEntry>) {
-        (self.value, self.diagnostics)
-    }
-
-    /// Returns `value` without any diagnostics.
-    pub fn pure(value: T) -> Self {
-        Self { value, diagnostics: Diagnostics::default() }
-    }
-
-    /// Adds the diagnostics of `self` to the given `diagnostics` object and returns the value.
-    pub fn propagate<TCastableEntry: DiagnosticEntry + From<TEntry>>(
-        self,
-        diagnostics: &mut Diagnostics<TCastableEntry>,
-    ) -> T {
-        diagnostics.0.extend(self.diagnostics.0.into_iter().map(TCastableEntry::from));
-        self.value
-    }
-
-    /// Ignores the diagnostics of `self` and returns the value.
-    pub fn ignore(self) -> T {
-        self.value
-    }
-
-    /// Asserts that no diagnostic has occurred, panicking with an error message on failure.
-    /// Returns the wrapped value.
-    pub fn expect(self, error_message: &str) -> T {
-        self.diagnostics.expect(error_message);
-        self.value
     }
 }

@@ -1,13 +1,11 @@
 use std::sync::Arc;
 
 use defs::ids::{FreeFunctionId, ModuleId};
-use diagnostics::{Diagnostics, WithDiagnostics};
-use diagnostics_proc_macros::with_diagnostics;
+use diagnostics::Diagnostics;
 use semantic::db::{AsSemanticGroup, SemanticGroup};
 
-use crate::diagnostic::Diagnostic;
-use crate::pre_sierra;
-use crate::program_generator::generate_program_code;
+use crate::program_generator::{self};
+use crate::{function_generator, pre_sierra, SierraGeneratorDiagnostic};
 
 #[salsa::query_group(SierraGenDatabase)]
 pub trait SierraGenGroup: SemanticGroup + AsSemanticGroup {
@@ -45,18 +43,35 @@ pub trait SierraGenGroup: SemanticGroup + AsSemanticGroup {
         function_id: sierra::ids::FunctionId,
     ) -> Option<Arc<sierra::program::FunctionSignature>>;
 
-    /// Generates and returns the Sierra code (as [pre_sierra::Function]) for a given function.
-    #[salsa::invoke(crate::function_generator::get_function_code)]
-    fn get_function_code(
+    /// Private query to compute Sierra data about a free function.
+    #[salsa::invoke(function_generator::priv_free_function_sierra_data)]
+    fn priv_free_function_sierra_data(
         &self,
         function_id: FreeFunctionId,
-    ) -> WithDiagnostics<Option<Arc<pre_sierra::Function>>, Diagnostic>;
+    ) -> function_generator::SierraFreeFunctionData;
+    /// Returns the Sierra diagnostics of a free function.
+    #[salsa::invoke(function_generator::free_function_sierra_diagnostics)]
+    fn free_function_sierra_diagnostics(
+        &self,
+        function_id: FreeFunctionId,
+    ) -> Diagnostics<SierraGeneratorDiagnostic>;
+    /// Returns the Sierra code (as [pre_sierra::Function]) for a given free function.
+    #[salsa::invoke(function_generator::free_function_sierra)]
+    fn free_function_sierra(
+        &self,
+        function_id: FreeFunctionId,
+    ) -> Option<Arc<pre_sierra::Function>>;
 
-    /// Generates and returns the [sierra::program::Program] object for the given module.
-    fn get_program_code(
+    // TODO(spapini): A program is made of a crate, not a module.
+    /// Returns the [sierra::program::Program] object for the given module.
+    #[salsa::invoke(program_generator::module_sierra_program)]
+    fn module_sierra_program(&self, module_id: ModuleId) -> Option<Arc<sierra::program::Program>>;
+    /// Returns the Sierra diagnostics of a module.
+    #[salsa::invoke(program_generator::module_sierra_diagnostics)]
+    fn module_sierra_diagnostics(
         &self,
         module_id: ModuleId,
-    ) -> WithDiagnostics<Option<Arc<sierra::program::Program>>, Diagnostic>;
+    ) -> Diagnostics<SierraGeneratorDiagnostic>;
 }
 
 fn get_function_signature(
@@ -72,15 +87,4 @@ fn get_function_signature(
     let ret_types = vec![db.get_concrete_type_id(signature.return_type)?];
 
     Some(Arc::new(sierra::program::FunctionSignature { param_types, ret_types }))
-}
-
-#[with_diagnostics]
-fn get_program_code(
-    diagnostics: &mut Diagnostics<Diagnostic>,
-    db: &dyn SierraGenGroup,
-    module_id: ModuleId,
-) -> Option<Arc<sierra::program::Program>> {
-    let module_items = db.module_items(module_id)?;
-    let program: sierra::program::Program = generate_program_code(diagnostics, db, &module_items)?;
-    Some(Arc::new(program))
 }
