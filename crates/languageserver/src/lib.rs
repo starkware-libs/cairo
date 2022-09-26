@@ -9,7 +9,9 @@ use std::sync::Arc;
 use db_utils::Upcast;
 use debug::DebugWithDb;
 use defs::db::DefsGroup;
-use defs::ids::{FreeFunctionId, FreeFunctionLongId};
+use defs::ids::{
+    FreeFunctionId, FreeFunctionLongId, GenericFunctionId, GenericTypeId, LanguageElementId,
+};
 use diagnostics::{DiagnosticEntry, Diagnostics};
 use filesystem::db::{AsFilesGroupMut, FilesGroup, FilesGroupEx, PrivRawFileContentQuery};
 use filesystem::ids::{FileId, FileLongId};
@@ -21,11 +23,13 @@ use project::ProjectConfig;
 use semantic::db::SemanticGroup;
 use semantic::items::free_function::SemanticExprLookup;
 use semantic::test_utils::SemanticDatabaseForTesting;
-use semantic::SemanticDiagnostic;
+use semantic::{ConcreteFunction, ConcreteType, SemanticDiagnostic};
 use semantic_highlighting::token_kind::SemanticTokenKind;
 use semantic_highlighting::SemanticTokensTraverser;
 use serde_json::Value;
+use syntax::node::db::SyntaxGroup;
 use syntax::node::kind::SyntaxKind;
+use syntax::node::stable_ptr::SyntaxStablePtr;
 use syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
 use tower_lsp::jsonrpc::Result;
 use tower_lsp::lsp_types::*;
@@ -181,6 +185,7 @@ impl LanguageServer for Backend {
                 ),
                 document_formatting_provider: Some(OneOf::Left(true)),
                 hover_provider: Some(HoverProviderCapability::Simple(true)),
+                definition_provider: Some(OneOf::Left(true)),
                 ..ServerCapabilities::default()
             },
         })
@@ -312,59 +317,14 @@ impl LanguageServer for Backend {
     async fn hover(&self, params: HoverParams) -> Result<Option<Hover>> {
         let db = self.db().await;
         let file_uri = params.text_document_position_params.text_document.uri;
-        let file = self.file(&db, file_uri.clone());
-
-        // Get syntax for file.
-        let syntax = if let Some(syntax) = db.file_syntax(file) {
-            syntax
-        } else {
-            eprintln!("Formatting failed. File '{file_uri}' does not exist.");
-            return Ok(None);
-        };
-
-        // Get file summary.
-        let file_summary = if let Some(summary) = db.file_summary(file) {
-            summary
-        } else {
-            eprintln!("Hover failed. File '{file_uri}' does not exist.");
-            return Ok(None);
-        };
-
-        // Find offset for position.
+        let file = self.file(&db, file_uri);
         let position = params.text_document_position_params.position;
-        let line_offset =
-            if let Some(offset) = file_summary.line_offsets.get(position.line as usize) {
-                offset
+        let (node, free_function_id) =
+            if let Some(res) = get_node_and_function(&*db, file, position) {
+                res
             } else {
-                eprintln!("Hover failed. Position out of bounds.");
                 return Ok(None);
             };
-        // TODO(spapini): Check that character is not larger than line_length.
-        let node = syntax
-            .as_syntax_node()
-            .lookup_offset(&*db, line_offset.add(position.character as usize));
-
-        // Find module.
-        let modules: Vec<_> = db.file_modules(file).into_iter().flatten().collect();
-        if modules.len() != 1 {
-            eprintln!("Hover failed. Expected a single module for this file.");
-            return Ok(None);
-        }
-        let module_id = modules[0];
-
-        // Find containing function.
-        let mut item_node = node.clone();
-        while item_node.kind(&*db) != SyntaxKind::ItemFreeFunction {
-            if let Some(parent) = item_node.parent() {
-                item_node = parent;
-            } else {
-                eprintln!("Hover failed. Not inside a function.");
-                return Ok(None);
-            }
-        }
-        let function_node = ast::ItemFreeFunction::from_syntax_node(&*db, item_node);
-        let free_function_id =
-            db.intern_free_function(FreeFunctionLongId(module_id, function_node.stable_ptr()));
 
         // Build texts.
         let mut hints = Vec::new();
@@ -377,6 +337,163 @@ impl LanguageServer for Backend {
 
         Ok(Some(Hover { contents: HoverContents::Array(hints), range: None }))
     }
+
+    async fn goto_definition(
+        &self,
+        params: GotoDefinitionParams,
+    ) -> Result<Option<GotoDefinitionResponse>> {
+        let db = self.db().await;
+        let syntax_db = (*db).upcast();
+        let file_uri = params.text_document_position_params.text_document.uri;
+        let file = self.file(&db, file_uri.clone());
+        let position = params.text_document_position_params.position;
+        let (node, free_function_id) =
+            if let Some(res) = get_node_and_function(&*db, file, position) {
+                res
+            } else {
+                return Ok(None);
+            };
+
+        if node.kind(syntax_db) != SyntaxKind::TokenIdentifier {
+            return Ok(None);
+        }
+        let identifier =
+            ast::TerminalIdentifier::from_syntax_node(syntax_db, node.parent().unwrap());
+        let item = if let Some(item) =
+            db.lookup_resolved_item_by_ptr(free_function_id, identifier.stable_ptr())
+        {
+            item
+        } else {
+            return Ok(None);
+        };
+
+        let defs_db = (*db).upcast();
+        let (module_id, stable_ptr) = match item {
+            semantic::resolve_path::ResolvedItem::Module(item) => {
+                (item, db.intern_stable_ptr(SyntaxStablePtr::Root))
+            }
+            semantic::resolve_path::ResolvedItem::Function(item) => {
+                match db.lookup_intern_function(item) {
+                    semantic::FunctionLongId::Concrete(ConcreteFunction {
+                        generic_function: GenericFunctionId::Free(item),
+                        ..
+                    }) => (item.module(defs_db), item.stable_ptr(defs_db).untyped()),
+                    semantic::FunctionLongId::Concrete(ConcreteFunction {
+                        generic_function: GenericFunctionId::Extern(item),
+                        ..
+                    }) => (item.module(defs_db), item.stable_ptr(defs_db).untyped()),
+                    semantic::FunctionLongId::Missing => {
+                        return Ok(None);
+                    }
+                }
+            }
+            semantic::resolve_path::ResolvedItem::Type(item) => match db.lookup_intern_type(item) {
+                semantic::TypeLongId::Concrete(ConcreteType {
+                    generic_type: GenericTypeId::Extern(item),
+                    ..
+                }) => (item.module(defs_db), item.stable_ptr(defs_db).untyped()),
+                semantic::TypeLongId::Concrete(ConcreteType {
+                    generic_type: GenericTypeId::Struct(item),
+                    ..
+                }) => (item.module(defs_db), item.stable_ptr(defs_db).untyped()),
+                semantic::TypeLongId::Concrete(ConcreteType {
+                    generic_type: GenericTypeId::Enum(item),
+                    ..
+                }) => (item.module(defs_db), item.stable_ptr(defs_db).untyped()),
+                semantic::TypeLongId::GenericParameter(item) => {
+                    (item.module(defs_db), item.stable_ptr(defs_db).untyped())
+                }
+                _ => {
+                    return Ok(None);
+                }
+            },
+        };
+
+        let file = if let Some(file) = db.module_file(module_id) {
+            file
+        } else {
+            return Ok(None);
+        };
+        let uri = if let FileLongId::OnDisk(path) = db.lookup_intern_file(file) {
+            Url::from_file_path(path).unwrap()
+        } else {
+            return Ok(None);
+        };
+        let syntax = if let Some(syntax) = db.file_syntax(file) {
+            syntax
+        } else {
+            eprintln!("Formatting failed. File '{file_uri}' does not exist.");
+            return Ok(None);
+        };
+        let node = syntax.as_syntax_node().lookup_ptr(syntax_db, stable_ptr);
+        let span = node.span_without_trivia(syntax_db);
+
+        let start = from_pos(span.start.position_in_file((*db).upcast(), file).unwrap());
+        let end = from_pos(span.end.position_in_file((*db).upcast(), file).unwrap());
+
+        Ok(Some(GotoDefinitionResponse::Scalar(Location { uri, range: Range { start, end } })))
+    }
+}
+
+fn get_node_and_function(
+    db: &(dyn SemanticGroup + 'static),
+    file: FileId,
+    position: Position,
+) -> Option<(SyntaxNode, FreeFunctionId)> {
+    let syntax_db = db.upcast();
+    let filename = file.file_name(db.upcast());
+
+    // Get syntax for file.
+    let syntax = if let Some(syntax) = db.file_syntax(file) {
+        syntax
+    } else {
+        eprintln!("Formatting failed. File '{filename}' does not exist.");
+        return None;
+    };
+
+    // Get file summary.
+    let file_summary = if let Some(summary) = db.file_summary(file) {
+        summary
+    } else {
+        eprintln!("Hover failed. File '{filename}' does not exist.");
+        return None;
+    };
+
+    // Find offset for position.
+    let line_offset = if let Some(offset) = file_summary.line_offsets.get(position.line as usize) {
+        offset
+    } else {
+        eprintln!("Hover failed. Position out of bounds.");
+        return None;
+    };
+    // TODO(spapini): Check that character is not larger than line_length.
+    let node = syntax
+        .as_syntax_node()
+        .lookup_offset(syntax_db, line_offset.add(position.character as usize));
+
+    // Find module.
+    let modules: Vec<_> = db.file_modules(file).into_iter().flatten().collect();
+    if modules.len() != 1 {
+        eprintln!("Hover failed. Expected a single module for this file.");
+        return None;
+    }
+    let module_id = modules[0];
+
+    // Find containing function.
+    let mut item_node = node.clone();
+    while item_node.kind(syntax_db) != SyntaxKind::ItemFreeFunction {
+        if let Some(parent) = item_node.parent() {
+            item_node = parent;
+        } else {
+            eprintln!("Hover failed. Not inside a function.");
+            return None;
+        }
+    }
+    let function_node = ast::ItemFreeFunction::from_syntax_node(syntax_db, item_node);
+    let free_function_id =
+        db.intern_free_function(FreeFunctionLongId(module_id, function_node.stable_ptr()));
+
+    Some((node, free_function_id))
 }
 
 fn get_identifier_hint(
