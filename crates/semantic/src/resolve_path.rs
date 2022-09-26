@@ -2,8 +2,6 @@
 #[path = "resolve_path_test.rs"]
 mod test;
 
-use std::collections::HashMap;
-
 use defs::ids::{
     GenericFunctionId, GenericParamId, GenericTypeId, LanguageElementId, ModuleId, ModuleItemId,
 };
@@ -14,6 +12,7 @@ use syntax::node::ast::{self};
 use syntax::node::helpers::{GetIdentifier, PathSegmentEx};
 use syntax::node::ids::SyntaxStablePtrId;
 use syntax::node::TypedSyntaxNode;
+use utils::unordered_hash_map::UnorderedHashMap;
 use utils::{OptionFrom, OptionHelper};
 
 use crate::corelib::core_module;
@@ -53,9 +52,9 @@ pub struct Resolver<'db> {
     // Current module in which to resolve the path.
     pub module_id: ModuleId,
     // Generic parameters accessible to the resolver.
-    generic_params: HashMap<SmolStr, GenericParamId>,
+    generic_params: UnorderedHashMap<SmolStr, GenericParamId>,
     // Lookback map for resolved identifiers in path. Used in "Go to definition".
-    resolved_lookback: HashMap<ast::TerminalIdentifierPtr, ResolvedItem>,
+    pub resolved_lookback: UnorderedHashMap<ast::TerminalIdentifierPtr, ResolvedItem>,
 }
 impl<'db> Resolver<'db> {
     pub fn new(
@@ -70,7 +69,7 @@ impl<'db> Resolver<'db> {
                 .iter()
                 .map(|generic_param| (generic_param.name(db.upcast()), *generic_param))
                 .collect(),
-            resolved_lookback: HashMap::default(),
+            resolved_lookback: UnorderedHashMap::default(),
         }
     }
 

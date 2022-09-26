@@ -11,7 +11,7 @@ use super::generics::semantic_generic_params;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::{compute_expr_semantic, ComputationContext, Environment};
-use crate::resolve_path::Resolver;
+use crate::resolve_path::{ResolvedItem, Resolver};
 use crate::{semantic, ExprId, SemanticDiagnostic};
 
 #[cfg(test)]
@@ -93,6 +93,7 @@ pub struct FreeFunctionDefinitionData {
     exprs: Arena<semantic::Expr>,
     expr_lookup: UnorderedHashMap<ast::ExprPtr, ExprId>,
     statements: Arena<semantic::Statement>,
+    resolved_lookback: UnorderedHashMap<ast::TerminalIdentifierPtr, ResolvedItem>,
 }
 
 // Selectors.
@@ -125,28 +126,30 @@ pub fn priv_free_function_definition_data(
     let syntax = module_data.free_functions.get(&free_function_id)?.clone();
     // Compute signature semantic.
     let declaration = db.priv_free_function_declaration_data(free_function_id)?;
-    let mut resolver = Resolver::new(db, module_id, &declaration.generic_params);
+    let resolver = Resolver::new(db, module_id, &declaration.generic_params);
     let environment = declaration.environment;
     // Compute body semantic expr.
     let mut ctx = ComputationContext::new(
         db,
         &mut diagnostics,
-        &mut resolver,
+        resolver,
         declaration.signature.return_type,
         environment,
     );
     let expr = compute_expr_semantic(&mut ctx, ast::Expr::Block(syntax.body(db.upcast())));
     let body = ctx.exprs.alloc(expr);
-    let ComputationContext { exprs, statements, .. } = ctx;
+    let ComputationContext { exprs, statements, resolver, .. } = ctx;
 
     let expr_lookup: UnorderedHashMap<_, _> =
         exprs.iter().map(|(expr_id, expr)| (expr.stable_ptr(), expr_id)).collect();
+    let resolved_lookback = resolver.resolved_lookback;
     Some(FreeFunctionDefinitionData {
         diagnostics: diagnostics.build(),
         body,
         exprs,
         expr_lookup,
         statements,
+        resolved_lookback,
     })
 }
 
@@ -183,6 +186,14 @@ pub trait SemanticExprLookup: Upcast<dyn SemanticGroup> {
     ) -> Option<ExprId> {
         let definition_data = self.upcast().priv_free_function_definition_data(free_function_id)?;
         definition_data.expr_lookup.get(&ptr).copied()
+    }
+    fn lookup_resolved_item_by_ptr(
+        &self,
+        free_function_id: FreeFunctionId,
+        ptr: ast::TerminalIdentifierPtr,
+    ) -> Option<ResolvedItem> {
+        let definition_data = self.upcast().priv_free_function_definition_data(free_function_id)?;
+        definition_data.resolved_lookback.get(&ptr).copied()
     }
 }
 
