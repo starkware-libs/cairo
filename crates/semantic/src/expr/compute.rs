@@ -28,7 +28,7 @@ use crate::{semantic, ConcreteType, FunctionId, TypeId, TypeLongId, Variable};
 pub struct ComputationContext<'ctx> {
     pub db: &'ctx dyn SemanticGroup,
     diagnostics: &'ctx mut SemanticDiagnostics,
-    resolver: &'ctx mut Resolver<'ctx>,
+    pub resolver: Resolver<'ctx>,
     return_ty: TypeId,
     environment: Box<Environment>,
     pub exprs: Arena<semantic::Expr>,
@@ -38,7 +38,7 @@ impl<'ctx> ComputationContext<'ctx> {
     pub fn new(
         db: &'ctx dyn SemanticGroup,
         diagnostics: &'ctx mut SemanticDiagnostics,
-        resolver: &'ctx mut Resolver<'ctx>,
+        resolver: Resolver<'ctx>,
         return_ty: TypeId,
         environment: Environment,
     ) -> Self {
@@ -578,7 +578,7 @@ pub fn compute_statement_semantic(
                 ast::OptionTypeClause::TypeClause(type_clause) => {
                     let var_type_path = type_clause.ty(syntax_db);
                     let explicit_type =
-                        resolve_type(db, ctx.diagnostics, ctx.resolver, &var_type_path);
+                        resolve_type(db, ctx.diagnostics, &mut ctx.resolver, &var_type_path);
                     if explicit_type != inferred_type {
                         ctx.diagnostics.report(
                             &let_syntax.rhs(syntax_db),

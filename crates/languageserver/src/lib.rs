@@ -7,8 +7,9 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use db_utils::Upcast;
+use debug::DebugWithDb;
 use defs::db::DefsGroup;
-use defs::ids::FreeFunctionLongId;
+use defs::ids::{FreeFunctionId, FreeFunctionLongId};
 use diagnostics::{DiagnosticEntry, Diagnostics};
 use filesystem::db::{AsFilesGroupMut, FilesGroup, FilesGroupEx, PrivRawFileContentQuery};
 use filesystem::ids::{FileId, FileLongId};
@@ -25,7 +26,7 @@ use semantic_highlighting::token_kind::SemanticTokenKind;
 use semantic_highlighting::SemanticTokensTraverser;
 use serde_json::Value;
 use syntax::node::kind::SyntaxKind;
-use syntax::node::{ast, TypedSyntaxNode};
+use syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
 use tower_lsp::jsonrpc::Result;
 use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, LanguageServer};
@@ -339,7 +340,7 @@ impl LanguageServer for Backend {
                 return Ok(None);
             };
         // TODO(spapini): Check that character is not larger than line_length.
-        let mut node = syntax
+        let node = syntax
             .as_syntax_node()
             .lookup_offset(&*db, line_offset.add(position.character as usize));
 
@@ -351,48 +352,70 @@ impl LanguageServer for Backend {
         }
         let module_id = modules[0];
 
-        // Find containing expr.
-        while !is_expr(node.kind(&*db)) {
-            if let Some(parent) = node.parent() {
-                node = parent;
-            } else {
-                eprintln!("Hover failed. Not inside an expression.");
-                return Ok(None);
-            }
-        }
-        let expr_node = ast::Expr::from_syntax_node(&*db, node.clone());
-
         // Find containing function.
-        while node.kind(&*db) != SyntaxKind::ItemFreeFunction {
-            if let Some(parent) = node.parent() {
-                node = parent;
+        let mut item_node = node.clone();
+        while item_node.kind(&*db) != SyntaxKind::ItemFreeFunction {
+            if let Some(parent) = item_node.parent() {
+                item_node = parent;
             } else {
                 eprintln!("Hover failed. Not inside a function.");
                 return Ok(None);
             }
         }
-        let function_node = ast::ItemFreeFunction::from_syntax_node(&*db, node);
+        let function_node = ast::ItemFreeFunction::from_syntax_node(&*db, item_node);
         let free_function_id =
             db.intern_free_function(FreeFunctionLongId(module_id, function_node.stable_ptr()));
 
-        // Lookup semantic expression.
-        let expr_id = if let Some(expr_id) =
-            db.lookup_expr_by_ptr(free_function_id, expr_node.stable_ptr())
-        {
+        // Build texts.
+        let mut hints = Vec::new();
+        if let Some(hint) = get_expr_hint(&*db, free_function_id, node.clone()) {
+            hints.push(MarkedString::String(hint));
+        };
+        if let Some(hint) = get_identifier_hint(&*db, free_function_id, node) {
+            hints.push(MarkedString::String(hint));
+        };
+
+        Ok(Some(Hover { contents: HoverContents::Array(hints), range: None }))
+    }
+}
+
+fn get_identifier_hint(
+    db: &(dyn SemanticGroup + 'static),
+    free_function_id: FreeFunctionId,
+    node: SyntaxNode,
+) -> Option<String> {
+    let syntax_db = db.upcast();
+    if node.kind(syntax_db) != SyntaxKind::TokenIdentifier {
+        return None;
+    }
+    let identifier = ast::TerminalIdentifier::from_syntax_node(syntax_db, node.parent().unwrap());
+    let item = db.lookup_resolved_item_by_ptr(free_function_id, identifier.stable_ptr())?;
+    // TODO(spapini): Format this better.
+    Some(format!("`{:?}`", item.debug(db)))
+}
+
+fn get_expr_hint(
+    db: &(dyn SemanticGroup + 'static),
+    free_function_id: FreeFunctionId,
+    mut node: SyntaxNode,
+) -> Option<String> {
+    let syntax_db = db.upcast();
+    // Add type info if exists.
+    while !is_expr(node.kind(syntax_db)) {
+        node = node.parent()?;
+    }
+    let expr_node = ast::Expr::from_syntax_node(syntax_db, node);
+    // Lookup semantic expression.
+    let expr_id =
+        if let Some(expr_id) = db.lookup_expr_by_ptr(free_function_id, expr_node.stable_ptr()) {
             expr_id
         } else {
             eprintln!("Hover failed. Semantic model not found for expression.");
-            return Ok(None);
+            return None;
         };
-
-        // Semantic expression found.
-        let semantic_expr = db.expr_semantic(free_function_id, expr_id);
-
-        // Format the hover text.
-        let text = format!("Type: {}", semantic_expr.ty().format(&*db));
-
-        Ok(Some(Hover { contents: HoverContents::Scalar(MarkedString::String(text)), range: None }))
-    }
+    let semantic_expr = db.expr_semantic(free_function_id, expr_id);
+    // Format the hover text.
+    Some(format!("Type: `{}`", semantic_expr.ty().format(db)))
 }
 
 fn is_expr(kind: SyntaxKind) -> bool {
