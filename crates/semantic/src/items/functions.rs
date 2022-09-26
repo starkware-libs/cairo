@@ -10,7 +10,7 @@ use crate::corelib::unit_ty;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::Environment;
-use crate::resolve_path::ResolveScope;
+use crate::resolve_path::Resolver;
 use crate::types::{resolve_type, substitute_generics};
 use crate::{semantic, Parameter};
 
@@ -63,7 +63,7 @@ pub struct Signature {
 pub fn function_signature_return_type(
     diagnostics: &mut SemanticDiagnostics,
     db: &dyn SemanticGroup,
-    scope: &ResolveScope,
+    resolver: &mut Resolver<'_>,
     sig: &ast::FunctionSignature,
 ) -> semantic::TypeId {
     let ty_syntax = match sig.ret_ty(db.upcast()) {
@@ -74,14 +74,14 @@ pub fn function_signature_return_type(
             ret_type_clause.ty(db.upcast())
         }
     };
-    resolve_type(db, diagnostics, scope, &ty_syntax)
+    resolve_type(db, diagnostics, resolver, &ty_syntax)
 }
 
 /// Returns the parameters of the given function signature's AST.
 pub fn function_signature_params(
     diagnostics: &mut SemanticDiagnostics,
     db: &dyn SemanticGroup,
-    scope: ResolveScope,
+    resolver: &mut Resolver<'_>,
     sig: &ast::FunctionSignature,
 ) -> (Vec<semantic::Parameter>, Environment) {
     let syntax_db = db.upcast();
@@ -91,10 +91,10 @@ pub fn function_signature_params(
     let ast_params = sig.parameters(syntax_db).elements(syntax_db);
     for ast_param in ast_params.iter() {
         let name = ast_param.name(syntax_db).text(syntax_db);
-        let id = db.intern_param(ParamLongId(scope.module_id, ast_param.stable_ptr()));
+        let id = db.intern_param(ParamLongId(resolver.module_id, ast_param.stable_ptr()));
         let ty_syntax = ast_param.type_clause(syntax_db).ty(syntax_db);
         // TODO(yuval): Diagnostic?
-        let ty = resolve_type(db, diagnostics, &scope, &ty_syntax);
+        let ty = resolve_type(db, diagnostics, resolver, &ty_syntax);
         semantic_params.push(semantic::Parameter { id, ty });
         variables.insert(name, semantic::Variable { id: VarId::Param(id), ty });
     }

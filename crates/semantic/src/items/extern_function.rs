@@ -6,7 +6,7 @@ use super::functions::{function_signature_params, function_signature_return_type
 use super::generics::semantic_generic_params;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnostics;
-use crate::resolve_path::ResolveScope;
+use crate::resolve_path::Resolver;
 use crate::{semantic, SemanticDiagnostic};
 
 #[cfg(test)]
@@ -63,12 +63,12 @@ pub fn priv_extern_function_declaration_data(
         module_id,
         &function_syntax.generic_params(db.upcast()),
     );
-    let scope = ResolveScope::new(db, module_id, &generic_params);
+    let mut resolver = Resolver::new(db, module_id, &generic_params);
     let signature_syntax = function_syntax.signature(db.upcast());
     let return_type =
-        function_signature_return_type(&mut diagnostics, db, &scope, &signature_syntax);
+        function_signature_return_type(&mut diagnostics, db, &mut resolver, &signature_syntax);
     let (params, _environment) =
-        function_signature_params(&mut diagnostics, db, scope, &signature_syntax);
+        function_signature_params(&mut diagnostics, db, &mut resolver, &signature_syntax);
     Some(ExternFunctionDeclarationData {
         diagnostics: diagnostics.build(),
         signature: semantic::Signature { params, return_type },
