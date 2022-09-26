@@ -29,6 +29,7 @@ use syntax::node::{ast, TypedSyntaxNode};
 use tower_lsp::jsonrpc::Result;
 use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, LanguageServer};
+use utils::ordered_hash_set::OrderedHashSet;
 
 pub type RootDatabase = SemanticDatabaseForTesting;
 
@@ -65,8 +66,8 @@ impl Backend {
         let db = self.db().await;
         let mut state = self.state_mutex.lock().await;
 
-        // Get all files.
-        let mut files_set = state.open_files.clone();
+        // Get all files. Try to go over open files first.
+        let mut files_set: OrderedHashSet<_> = state.open_files.iter().copied().collect();
         for crate_id in db.crates() {
             for module_id in db.crate_modules(crate_id).iter() {
                 if let Some(file_id) = db.module_file(*module_id) {
@@ -76,13 +77,12 @@ impl Backend {
         }
 
         // Get all diagnostics.
-        for file_id in files_set {
+        for file_id in files_set.iter().copied() {
             let uri = if let FileLongId::OnDisk(path) = db.lookup_intern_file(file_id) {
                 Url::from_file_path(path).unwrap()
             } else {
                 continue;
             };
-            eprintln!("Uri: {uri}.");
             let new_file_diagnostics = FileDiagnostics {
                 parser: db.file_syntax_diagnostics(file_id),
                 semantic: db.file_semantic_diagnostics(file_id).unwrap_or_default(),
@@ -90,7 +90,6 @@ impl Backend {
             // Since we are using Arcs, this comparison should be efficient.
             if let Some(old_file_diagnostics) = state.file_diagnostics.get(&file_id) {
                 if old_file_diagnostics == &new_file_diagnostics {
-                    eprintln!("Skipping.");
                     continue;
                 }
             }
@@ -101,7 +100,23 @@ impl Backend {
 
             self.client.publish_diagnostics(uri, diags, None).await
         }
+
+        // Clear old diagnostics.
+        let old_files: Vec<_> = state.file_diagnostics.keys().copied().collect();
+        for file_id in old_files {
+            if files_set.contains(&file_id) {
+                continue;
+            }
+            state.file_diagnostics.remove(&file_id);
+            let uri = if let FileLongId::OnDisk(path) = db.lookup_intern_file(file_id) {
+                Url::from_file_path(path).unwrap()
+            } else {
+                continue;
+            };
+            self.client.publish_diagnostics(uri, Vec::new(), None).await;
+        }
     }
+
     fn get_diagnostics<T: DiagnosticEntry>(
         &self,
         db: &T::DbType,
