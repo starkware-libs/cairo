@@ -33,10 +33,13 @@ pub fn parse_test_file(
         if let Some(line) = line.strip_prefix(TAG_PREFIX) {
             if builder.current_test_name == None {
                 builder.set_test_name(line.into());
-            } else if line
-                .starts_with("============================================================")
-            {
+            } else if line.starts_with("===") {
                 // Separate tests.
+                assert_eq!(
+                    line,
+                    "==========================================================================",
+                    "Wrong test separator."
+                );
                 builder.new_test()
             } else {
                 builder.open_tag(line.into());
