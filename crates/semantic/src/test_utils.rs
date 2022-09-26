@@ -201,7 +201,7 @@ pub fn test_expr_diagnostics(
     inputs: &OrderedHashMap<String, String>,
 ) -> OrderedHashMap<String, String> {
     OrderedHashMap::from([(
-        "expected_diagnostics".to_string(),
+        "expected_diagnostics".into(),
         setup_test_expr(
             db,
             inputs["expr_code"].as_str(),
@@ -217,7 +217,7 @@ pub fn test_function_diagnostics(
     inputs: &OrderedHashMap<String, String>,
 ) -> OrderedHashMap<String, String> {
     OrderedHashMap::from([(
-        "expected_diagnostics".to_string(),
+        "expected_diagnostics".into(),
         setup_test_function(
             db,
             inputs["function"].as_str(),

@@ -63,7 +63,7 @@ pub fn get_diagnostics(
         content: Arc::new(code.into()),
     }));
     Parser::parse_file(db, &mut diagnostics, file_id, code);
-    OrderedHashMap::from([("expected_diagnostics".to_string(), diagnostics.build().format(db))])
+    OrderedHashMap::from([("expected_diagnostics".into(), diagnostics.build().format(db))])
 }
 
 #[macro_export]

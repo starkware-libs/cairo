@@ -33,10 +33,13 @@ pub fn parse_test_file(
         if let Some(line) = line.strip_prefix(TAG_PREFIX) {
             if builder.current_test_name == None {
                 builder.set_test_name(line.into());
-            } else if line
-                .starts_with("============================================================")
-            {
+            } else if line.starts_with("===") {
                 // Separate tests.
+                assert_eq!(
+                    line,
+                    "==========================================================================",
+                    "Wrong test separator."
+                );
                 builder.new_test()
             } else {
                 builder.open_tag(line.into());
@@ -129,9 +132,9 @@ impl TestBuilder {
 /// //! > expected_output2
 /// WORLD
 ///
-/// // <Optionally, have more tests with the same format, separated by:
-/// //     "//! > =========================================================================================="
-/// //   lines>
+/// //! > ==========================================================================
+///
+/// <another test>
 /// ```
 ///
 /// Each crate should define its own wrapper for it with the relevant Database for testing, e.g.:
@@ -166,7 +169,7 @@ macro_rules! test_file_test {
                     for (key, value) in outputs {
                         pretty_assertions::assert_eq!(
                             value.trim(),
-                            test[key.trim()],
+                            test[key],
                             "\"{name}\" failed."
                         );
                     }
