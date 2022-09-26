@@ -52,8 +52,8 @@ pub fn read_file(filename: &str) -> String {
 
 pub fn get_diagnostics(
     db: &mut ParserDatabaseForTesting,
-    inputs: OrderedHashMap<String, String>,
-) -> Vec<String> {
+    inputs: &OrderedHashMap<String, String>,
+) -> OrderedHashMap<String, String> {
     let code = &inputs["cairo_code"];
 
     let mut diagnostics = DiagnosticsBuilder::new();
@@ -63,7 +63,7 @@ pub fn get_diagnostics(
         content: Arc::new(code.into()),
     }));
     Parser::parse_file(db, &mut diagnostics, file_id, code);
-    vec![diagnostics.build().format(db)]
+    OrderedHashMap::from([("expected_diagnostics".into(), diagnostics.build().format(db))])
 }
 
 #[macro_export]

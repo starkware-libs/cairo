@@ -3,9 +3,6 @@
 //! > test_function_name
 test_function_diagnostics
 
-//! > test_output_params
-expected_diagnostics
-
 //! > function
 func foo(a: MyType) {
     a + a * a
@@ -33,15 +30,12 @@ error: Unexpected argument type. Expected: "core::felt", found: "test_crate::MyT
     a + a * a
     ^
 
-//! > ===
+//! > ==========================================================================
 
 //! > Test operators.
 
 //! > test_function_name
 test_function_diagnostics
-
-//! > test_output_params
-expected_diagnostics
 
 //! > function
 func foo(a: felt, b: bool) {
@@ -64,15 +58,12 @@ error: Unexpected argument type. Expected: "core::felt", found: "core::bool".
     a>a>a;
     ^*^
 
-//! > ===
+//! > ==========================================================================
 
 //! > Test generics substitution.
 
 //! > test_function_name
 test_function_diagnostics
-
-//! > test_output_params
-expected_diagnostics
 
 //! > function
 extern type A<S>;
