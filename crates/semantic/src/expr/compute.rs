@@ -20,7 +20,7 @@ use crate::corelib::{core_binary_operator, false_literal_expr, true_literal_expr
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
-use crate::resolve_path::{resolve_path, ResolveScope};
+use crate::resolve_path::Resolver;
 use crate::types::resolve_type;
 use crate::{semantic, ConcreteType, FunctionId, TypeId, TypeLongId, Variable};
 
@@ -28,7 +28,7 @@ use crate::{semantic, ConcreteType, FunctionId, TypeId, TypeLongId, Variable};
 pub struct ComputationContext<'ctx> {
     pub db: &'ctx dyn SemanticGroup,
     diagnostics: &'ctx mut SemanticDiagnostics,
-    scope: ResolveScope,
+    resolver: &'ctx mut Resolver<'ctx>,
     return_ty: TypeId,
     environment: Box<Environment>,
     pub exprs: Arena<semantic::Expr>,
@@ -38,14 +38,14 @@ impl<'ctx> ComputationContext<'ctx> {
     pub fn new(
         db: &'ctx dyn SemanticGroup,
         diagnostics: &'ctx mut SemanticDiagnostics,
-        scope: ResolveScope,
+        resolver: &'ctx mut Resolver<'ctx>,
         return_ty: TypeId,
         environment: Environment,
     ) -> Self {
         Self {
             db,
             diagnostics,
-            scope,
+            resolver,
             return_ty,
             environment: Box::new(environment),
             exprs: Arena::default(),
@@ -78,8 +78,8 @@ impl<'ctx> ComputationContext<'ctx> {
 pub type EnvVariables = HashMap<SmolStr, Variable>;
 
 // TODO(spapini): Consider using identifiers instead of SmolStr everywhere in the code.
-/// A state which contains all the variables defined at the current scope until now, and a pointer
-/// to the parent environment.
+/// A state which contains all the variables defined at the current resolver until now, and a
+/// pointer to the parent environment.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Environment {
     parent: Option<Box<Environment>>,
@@ -277,7 +277,7 @@ fn struct_ctor_expr(
     let path = ctor_syntax.path(syntax_db);
 
     // Extract struct.
-    let item = resolve_path(ctx.db, ctx.diagnostics, &ctx.scope, &path)?;
+    let item = ctx.resolver.resolve_path(ctx.diagnostics, &path)?;
     let ty = TypeId::option_from(item).on_none(|| ctx.diagnostics.report(&path, UnknownStruct))?;
     let generic_ty = ConcreteType::option_from(db.lookup_intern_type(ty))
         .on_none(|| ctx.diagnostics.report(&path, UnknownStruct))?
@@ -511,7 +511,7 @@ fn maybe_resolve_function(
 ) -> Option<(FunctionId, semantic::Signature)> {
     // TODO(spapini): Try to find function in multiple places (e.g. impls, or other modules for
     //   suggestions)
-    let item = resolve_path(ctx.db, ctx.diagnostics, &ctx.scope, path)?;
+    let item = ctx.resolver.resolve_path(ctx.diagnostics, path)?;
     let function =
         FunctionId::option_from(item).on_none(|| ctx.diagnostics.report(path, UnknownFunction))?;
     let signature = typecheck_function_call(ctx, path.stable_ptr().untyped(), function, args)?;
@@ -566,8 +566,8 @@ pub fn compute_statement_semantic(
     let syntax_db = db.upcast();
     let statement = match syntax {
         ast::Statement::Let(let_syntax) => {
-            let var_id =
-                db.intern_local_var(LocalVarLongId(ctx.scope.module_id, let_syntax.stable_ptr()));
+            let var_id = db
+                .intern_local_var(LocalVarLongId(ctx.resolver.module_id, let_syntax.stable_ptr()));
 
             let expr = compute_expr_semantic(ctx, let_syntax.rhs(syntax_db));
             let inferred_type = expr.ty();
@@ -578,7 +578,7 @@ pub fn compute_statement_semantic(
                 ast::OptionTypeClause::TypeClause(type_clause) => {
                     let var_type_path = type_clause.ty(syntax_db);
                     let explicit_type =
-                        resolve_type(db, ctx.diagnostics, &ctx.scope, &var_type_path);
+                        resolve_type(db, ctx.diagnostics, ctx.resolver, &var_type_path);
                     if explicit_type != inferred_type {
                         ctx.diagnostics.report(
                             &let_syntax.rhs(syntax_db),

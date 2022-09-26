@@ -8,7 +8,7 @@ use utils::ordered_hash_map::OrderedHashMap;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
-use crate::resolve_path::ResolveScope;
+use crate::resolve_path::Resolver;
 use crate::types::resolve_type;
 use crate::{semantic, SemanticDiagnostic};
 
@@ -54,7 +54,7 @@ pub fn priv_struct_semantic_data(
     let module_id = struct_id.module(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_id);
     // TODO(spapini): Add generic args when they are supported on structs.
-    let scope = ResolveScope::new(db, module_id, &[]);
+    let mut resolver = Resolver::new(db, module_id, &[]);
     let module_data = db.module_data(module_id)?;
     let struct_ast = module_data.structs.get(&struct_id)?;
     let syntax_db = db.upcast();
@@ -64,7 +64,7 @@ pub fn priv_struct_semantic_data(
         let ty = resolve_type(
             db,
             &mut diagnostics,
-            &scope,
+            &mut resolver,
             &member.type_clause(syntax_db).ty(syntax_db),
         );
         let member_name = member.name(syntax_db).text(syntax_db);
