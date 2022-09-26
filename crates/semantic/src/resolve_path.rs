@@ -7,10 +7,11 @@ use std::collections::HashMap;
 use defs::ids::{
     GenericFunctionId, GenericParamId, GenericTypeId, LanguageElementId, ModuleId, ModuleItemId,
 };
+use diagnostics_proc_macros::DebugWithDb;
 use filesystem::ids::CrateLongId;
 use smol_str::SmolStr;
 use syntax::node::ast::{self};
-use syntax::node::helpers::GetIdentifier;
+use syntax::node::helpers::{GetIdentifier, PathSegmentEx};
 use syntax::node::ids::SyntaxStablePtrId;
 use syntax::node::TypedSyntaxNode;
 use utils::{OptionFrom, OptionHelper};
@@ -25,6 +26,8 @@ use crate::{
     TypeLongId,
 };
 
+#[derive(Copy, Clone, PartialEq, Eq, Debug, DebugWithDb)]
+#[debug_db(dyn SemanticGroup + 'static)]
 pub enum ResolvedItem {
     Module(ModuleId),
     GenericFunction(GenericFunctionId),
@@ -44,45 +47,74 @@ impl OptionFrom<ResolvedItem> for TypeId {
     }
 }
 
-// Scope information needed to resolve paths.
-pub struct ResolveScope {
+// Resolves paths semantically.
+pub struct Resolver<'db> {
+    db: &'db dyn SemanticGroup,
     // Current module in which to resolve the path.
     pub module_id: ModuleId,
     // Generic parameters accessible to the resolver.
-    pub generic_params: HashMap<SmolStr, GenericParamId>,
+    generic_params: HashMap<SmolStr, GenericParamId>,
+    // Lookback map for resolved identifiers in path. Used in "Go to definition".
+    resolved_lookback: HashMap<ast::TerminalIdentifierPtr, ResolvedItem>,
 }
-impl ResolveScope {
+impl<'db> Resolver<'db> {
     pub fn new(
-        db: &dyn SemanticGroup,
+        db: &'db dyn SemanticGroup,
         module_id: ModuleId,
         generic_params: &[GenericParamId],
     ) -> Self {
         Self {
+            db,
             module_id,
             generic_params: generic_params
                 .iter()
                 .map(|generic_param| (generic_param.name(db.upcast()), *generic_param))
                 .collect(),
+            resolved_lookback: HashMap::default(),
         }
     }
-}
 
-/// Resolves a concrete item, given a path.
-/// Guaranteed to result in at most one diagnostic.
-pub fn resolve_path(
-    db: &dyn SemanticGroup,
-    diagnostics: &mut SemanticDiagnostics,
-    scope: &ResolveScope,
-    path: &ast::ExprPath,
-) -> Option<ResolvedItem> {
-    let syntax_db = db.upcast();
-    let elements_vec = path.elements(syntax_db);
-    let mut elements = elements_vec.iter().peekable();
+    // Relates a path segment to a ResolvedItem, and adds to a lookback map. This will be used in
+    // "Go to definition".
+    fn mark_for_lookback(
+        &mut self,
+        segment: &syntax::node::ast::PathSegment,
+        resolved_item: ResolvedItem,
+    ) -> ResolvedItem {
+        let identifier = segment.identifier_ast(self.db.upcast());
+        self.resolved_lookback.insert(identifier.stable_ptr(), resolved_item);
+        resolved_item
+    }
 
-    let mut item = determine_base_item(db, &mut elements, scope);
+    /// Resolves a concrete item, given a path.
+    /// Guaranteed to result in at most one diagnostic.
+    pub fn resolve_path(
+        &mut self,
+        diagnostics: &mut SemanticDiagnostics,
+        path: &ast::ExprPath,
+    ) -> Option<ResolvedItem> {
+        let syntax_db = self.db.upcast();
+        let elements_vec = path.elements(syntax_db);
+        let mut elements = elements_vec.iter().peekable();
 
-    // Follow modules.
-    for segment in elements {
+        let mut item = self.determine_base_item(&mut elements);
+
+        // Follow modules.
+        for segment in elements {
+            item = self.resolve_next(diagnostics, item, segment)?;
+            self.mark_for_lookback(segment, item);
+        }
+        Some(item)
+    }
+
+    /// Given the current resolved item, resolves the next segment.
+    fn resolve_next(
+        &mut self,
+        diagnostics: &mut SemanticDiagnostics,
+        item: ResolvedItem,
+        segment: &ast::PathSegment,
+    ) -> Option<ResolvedItem> {
+        let syntax_db = self.db.upcast();
         let ident = segment.identifier(syntax_db);
         let generic_args = if let ast::PathSegment::WithGenericArgs(generic_segment) = segment {
             generic_segment
@@ -91,7 +123,7 @@ pub fn resolve_path(
                 .elements(syntax_db)
                 .iter()
                 .map(|generic_arg_syntax| {
-                    let ty = resolve_type(db, diagnostics, scope, generic_arg_syntax);
+                    let ty = resolve_type(self.db, diagnostics, self, generic_arg_syntax);
                     GenericArgumentId::Type(ty)
                 })
                 .collect()
@@ -99,102 +131,108 @@ pub fn resolve_path(
             vec![]
         };
         if let ResolvedItem::Module(module_id) = item {
-            let module_item = db
+            let module_item = self
+                .db
                 .module_item_by_name(module_id, ident)
                 .on_none(|| diagnostics.report(segment, PathNotFound))?;
-            item = match module_item {
+            Some(match module_item {
                 ModuleItemId::Submodule(id) => {
-                    check_no_generics(diagnostics, segment);
+                    self.check_no_generics(diagnostics, segment);
                     ResolvedItem::Module(ModuleId::Submodule(id))
                 }
                 ModuleItemId::Use(_) => todo!("Follow uses."),
                 ModuleItemId::FreeFunction(id) => ResolvedItem::Function(specialize_function(
-                    db,
+                    self.db,
                     diagnostics,
                     segment.stable_ptr().untyped(),
                     GenericFunctionId::Free(id),
                     generic_args,
                 )?),
                 ModuleItemId::ExternFunction(id) => ResolvedItem::Function(specialize_function(
-                    db,
+                    self.db,
                     diagnostics,
                     segment.stable_ptr().untyped(),
                     GenericFunctionId::Extern(id),
                     generic_args,
                 )?),
                 ModuleItemId::Struct(id) => ResolvedItem::Type(specialize_type(
-                    db,
+                    self.db,
                     diagnostics,
                     segment.stable_ptr().untyped(),
                     GenericTypeId::Struct(id),
                     generic_args,
                 )?),
                 ModuleItemId::Enum(id) => ResolvedItem::Type(specialize_type(
-                    db,
+                    self.db,
                     diagnostics,
                     segment.stable_ptr().untyped(),
                     GenericTypeId::Enum(id),
                     generic_args,
                 )?),
                 ModuleItemId::ExternType(id) => ResolvedItem::Type(specialize_type(
-                    db,
+                    self.db,
                     diagnostics,
                     segment.stable_ptr().untyped(),
                     GenericTypeId::Extern(id),
                     generic_args,
                 )?),
-            };
-            continue;
-        };
-        diagnostics.report(segment, InvalidPath);
-        return None;
-    }
-    Some(item)
-}
-
-fn check_no_generics(
-    diagnostics: &mut SemanticDiagnostics,
-    segment: &syntax::node::ast::PathSegment,
-) -> Option<()> {
-    if let ast::PathSegment::WithGenericArgs(generics) = segment {
-        diagnostics.report(generics, InvalidPath);
-        None
-    } else {
-        Some(())
-    }
-}
-
-/// Determines the base module for the path resolving.
-fn determine_base_item(
-    db: &dyn SemanticGroup,
-    segments: &mut std::iter::Peekable<std::slice::Iter<'_, syntax::node::ast::PathSegment>>,
-    scope: &ResolveScope,
-) -> ResolvedItem {
-    let syntax_db = db.upcast();
-    let ident = segments.peek().unwrap().identifier(syntax_db);
-
-    // If a generic param with this name is found, use it.
-    if let Some(generic_param_id) = scope.generic_params.get(&ident) {
-        segments.next();
-        return ResolvedItem::Type(db.intern_type(TypeLongId::GenericParameter(*generic_param_id)));
+            })
+        } else {
+            diagnostics.report(segment, InvalidPath);
+            None
+        }
     }
 
-    // If an item with this name is found inside the current module, use the current module.
-    if db.module_item_by_name(scope.module_id, ident.clone()).is_some() {
-        return ResolvedItem::Module(scope.module_id);
+    fn check_no_generics(
+        &mut self,
+        diagnostics: &mut SemanticDiagnostics,
+        segment: &syntax::node::ast::PathSegment,
+    ) -> Option<()> {
+        if let ast::PathSegment::WithGenericArgs(generics) = segment {
+            diagnostics.report(generics, InvalidPath);
+            None
+        } else {
+            Some(())
+        }
     }
 
-    // If the first segment is a name of a crate, use the crate's root module as the base module.
-    let crate_id = db.intern_crate(CrateLongId(ident));
-    // TODO(spapini): Use a better interface to check if the crate exists (not using `dir`).
-    if db.crate_root_dir(crate_id).is_some() {
-        // Consume this segment.
-        segments.next();
-        return ResolvedItem::Module(ModuleId::CrateRoot(crate_id));
-    }
+    /// Determines the base module for the path resolving.
+    fn determine_base_item(
+        &mut self,
+        segments: &mut std::iter::Peekable<std::slice::Iter<'_, syntax::node::ast::PathSegment>>,
+    ) -> ResolvedItem {
+        let syntax_db = self.db.upcast();
+        let ident = segments.peek().unwrap().identifier(syntax_db);
 
-    // Last resort, use the `core` crate root module as the base module.
-    ResolvedItem::Module(core_module(db))
+        // If a generic param with this name is found, use it.
+        if let Some(generic_param_id) = self.generic_params.get(&ident) {
+            return self.mark_for_lookback(
+                segments.next().unwrap(),
+                ResolvedItem::Type(
+                    self.db.intern_type(TypeLongId::GenericParameter(*generic_param_id)),
+                ),
+            );
+        }
+
+        // If an item with this name is found inside the current module, use the current module.
+        if self.db.module_item_by_name(self.module_id, ident.clone()).is_some() {
+            return ResolvedItem::Module(self.module_id);
+        }
+
+        // If the first segment is a name of a crate, use the crate's root module as the base
+        // module.
+        let crate_id = self.db.intern_crate(CrateLongId(ident));
+        // TODO(spapini): Use a better interface to check if the crate exists (not using `dir`).
+        if self.db.crate_root_dir(crate_id).is_some() {
+            return self.mark_for_lookback(
+                segments.next().unwrap(),
+                ResolvedItem::Module(ModuleId::CrateRoot(crate_id)),
+            );
+        }
+
+        // Last resort, use the `core` crate root module as the base module.
+        ResolvedItem::Module(core_module(self.db))
+    }
 }
 
 /// Specializes a generic function.
