@@ -11,7 +11,7 @@ use utils::{OptionFrom, OptionHelper};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
-use crate::resolve_path::{resolve_path, ResolveScope};
+use crate::resolve_path::Resolver;
 use crate::{semantic, GenericArgumentId};
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
@@ -96,32 +96,32 @@ impl DebugWithDb<dyn SemanticGroup> for ConcreteType {
 pub fn resolve_type(
     db: &dyn SemanticGroup,
     diagnostics: &mut SemanticDiagnostics,
-    scope: &ResolveScope,
+    resolver: &mut Resolver<'_>,
     ty_syntax: &ast::Expr,
 ) -> TypeId {
-    maybe_resolve_type(db, diagnostics, scope, ty_syntax).unwrap_or_else(|| TypeId::missing(db))
+    maybe_resolve_type(db, diagnostics, resolver, ty_syntax).unwrap_or_else(|| TypeId::missing(db))
 }
 pub fn maybe_resolve_type(
     db: &dyn SemanticGroup,
     diagnostics: &mut SemanticDiagnostics,
-    scope: &ResolveScope,
+    resolver: &mut Resolver<'_>,
     ty_syntax: &ast::Expr,
 ) -> Option<TypeId> {
     let syntax_db = db.upcast();
     Some(match ty_syntax {
         ast::Expr::Path(path) => {
-            let item = resolve_path(db, diagnostics, scope, path)?;
+            let item = resolver.resolve_path(diagnostics, path)?;
             TypeId::option_from(item).on_none(|| diagnostics.report(path, UnknownStruct))?
         }
         ast::Expr::Parenthesized(expr_syntax) => {
-            resolve_type(db, diagnostics, scope, &expr_syntax.expr(syntax_db))
+            resolve_type(db, diagnostics, resolver, &expr_syntax.expr(syntax_db))
         }
         ast::Expr::Tuple(tuple_syntax) => {
             let sub_tys = tuple_syntax
                 .expressions(syntax_db)
                 .elements(syntax_db)
                 .into_iter()
-                .map(|subexpr_syntax| resolve_type(db, diagnostics, scope, &subexpr_syntax))
+                .map(|subexpr_syntax| resolve_type(db, diagnostics, resolver, &subexpr_syntax))
                 .collect();
             db.intern_type(TypeLongId::Tuple(sub_tys))
         }
