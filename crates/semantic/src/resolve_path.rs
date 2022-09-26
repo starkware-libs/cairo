@@ -2,8 +2,6 @@
 #[path = "resolve_path_test.rs"]
 mod test;
 
-use std::collections::HashMap;
-
 use defs::ids::{
     GenericFunctionId, GenericParamId, GenericTypeId, LanguageElementId, ModuleId, ModuleItemId,
 };
@@ -14,6 +12,7 @@ use syntax::node::ast::{self};
 use syntax::node::helpers::{GetIdentifier, PathSegmentEx};
 use syntax::node::ids::SyntaxStablePtrId;
 use syntax::node::TypedSyntaxNode;
+use utils::unordered_hash_map::UnorderedHashMap;
 use utils::{OptionFrom, OptionHelper};
 
 use crate::corelib::core_module;
@@ -26,12 +25,11 @@ use crate::{
     TypeLongId,
 };
 
+// TODO(spapini): Reintroduce GenericFunction and GenericType when they are supported.
 #[derive(Copy, Clone, PartialEq, Eq, Debug, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub enum ResolvedItem {
     Module(ModuleId),
-    GenericFunction(GenericFunctionId),
-    GenericType(GenericTypeId),
     Function(FunctionId),
     Type(TypeId),
 }
@@ -53,9 +51,9 @@ pub struct Resolver<'db> {
     // Current module in which to resolve the path.
     pub module_id: ModuleId,
     // Generic parameters accessible to the resolver.
-    generic_params: HashMap<SmolStr, GenericParamId>,
+    generic_params: UnorderedHashMap<SmolStr, GenericParamId>,
     // Lookback map for resolved identifiers in path. Used in "Go to definition".
-    resolved_lookback: HashMap<ast::TerminalIdentifierPtr, ResolvedItem>,
+    pub resolved_lookback: UnorderedHashMap<ast::TerminalIdentifierPtr, ResolvedItem>,
 }
 impl<'db> Resolver<'db> {
     pub fn new(
@@ -70,7 +68,7 @@ impl<'db> Resolver<'db> {
                 .iter()
                 .map(|generic_param| (generic_param.name(db.upcast()), *generic_param))
                 .collect(),
-            resolved_lookback: HashMap::default(),
+            resolved_lookback: UnorderedHashMap::default(),
         }
     }
 
@@ -140,7 +138,13 @@ impl<'db> Resolver<'db> {
                     self.check_no_generics(diagnostics, segment);
                     ResolvedItem::Module(ModuleId::Submodule(id))
                 }
-                ModuleItemId::Use(_) => todo!("Follow uses."),
+                ModuleItemId::Use(id) => {
+                    self.check_no_generics(diagnostics, segment);
+                    // TODO(spapini): Right now we call priv_use_semantic_data() directly for cycle
+                    // handling. Otherise, we need to handle cycle both on it and on the selector
+                    // use_resolved_item(). Fix this,
+                    self.db.priv_use_semantic_data(id)?.resolved_item?
+                }
                 ModuleItemId::FreeFunction(id) => ResolvedItem::Function(specialize_function(
                     self.db,
                     diagnostics,
