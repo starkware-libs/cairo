@@ -30,7 +30,7 @@ error: Unexpected argument type. Expected: "core::felt", found: "test_crate::MyT
     a + a * a
     ^
 
-//! > ===
+//! > ==========================================================================
 
 //! > Test operators.
 
@@ -58,7 +58,7 @@ error: Unexpected argument type. Expected: "core::felt", found: "core::bool".
     a>a>a;
     ^*^
 
-//! > ===
+//! > ==========================================================================
 
 //! > Test generics substitution.
 
