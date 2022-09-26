@@ -47,6 +47,9 @@ pub enum Statement {
     Label(Label),
     /// An instruction to push variables onto the stack. For example, used before calling functions
     /// and returning.
+    ///
+    /// Note that push values does not guarantee that new copies of the values will be pushed.
+    /// If a prefix of the values is already on the stack, they will not be re-pushed.
     PushValues(Vec<PushValue>),
 }
 impl std::fmt::Display for Statement {

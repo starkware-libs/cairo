@@ -124,11 +124,45 @@ fn push_values_optimization() {
             .collect::<Vec<String>>(),
         vec![
             "function_call4() -> ([0], [1], [2], [3])",
-            // TODO(lior): Change to rename once the optimization is implemented.
-            "store_temp<[0]>([2]) -> ([102])",
-            // TODO(lior): Change to rename once the optimization is implemented.
-            "store_temp<[0]>([3]) -> ([103])",
+            "rename<[0]>([2]) -> ([102])",
+            "rename<[0]>([3]) -> ([103])",
             "store_temp<[0]>([0]) -> ([100])",
+        ]
+    );
+}
+
+/// Tests a few consecutive invocations of [PushValues](pre_sierra::Statement::PushValues).
+#[test]
+fn consecutive_push_values() {
+    let db = SierraGenDatabaseForTesting::default();
+    let statements: Vec<pre_sierra::Statement> = vec![
+        dummy_push_values(&db, &[(0, 100), (1, 101)]),
+        dummy_push_values(&db, &[(100, 200), (101, 201), (2, 202), (3, 203)]),
+        dummy_push_values(&db, &[(101, 301), (202, 302), (203, 303), (4, 304)]),
+        dummy_push_values(&db, &[(304, 404)]),
+    ];
+
+    assert_eq!(
+        add_store_statements(&db, statements, &(|libfunc| get_output_info(&db, libfunc)))
+            .iter()
+            .map(|statement| replace_libfunc_ids(&db, statement).to_string())
+            .collect::<Vec<String>>(),
+        vec![
+            // First statement. Push [0] and [1].
+            "store_temp<[0]>([0]) -> ([100])",
+            "store_temp<[0]>([1]) -> ([101])",
+            // Second statement. Reuse [100] and [101]. Push [2] and [3].
+            "rename<[0]>([100]) -> ([200])",
+            "rename<[0]>([101]) -> ([201])",
+            "store_temp<[0]>([2]) -> ([202])",
+            "store_temp<[0]>([3]) -> ([203])",
+            // Third statement. Reuse [101], [202] and [203]. Push [4].
+            "rename<[0]>([101]) -> ([301])",
+            "rename<[0]>([202]) -> ([302])",
+            "rename<[0]>([203]) -> ([303])",
+            "store_temp<[0]>([4]) -> ([304])",
+            // Third statement. Reuse [304].
+            "rename<[0]>([304]) -> ([404])",
         ]
     );
 }
