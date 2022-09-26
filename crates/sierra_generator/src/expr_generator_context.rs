@@ -114,13 +114,6 @@ impl<'a> ExprGeneratorContext<'a> {
         })
     }
 
-    pub fn store_temp_libfunc_id(
-        &self,
-        ty: semantic::TypeId,
-    ) -> Option<sierra::ids::ConcreteLibFuncId> {
-        Some(crate::utils::store_temp_libfunc_id(self.db, self.db.get_concrete_type_id(ty)?))
-    }
-
     pub fn function_call_libfunc_id(
         &self,
         func: semantic::FunctionId,

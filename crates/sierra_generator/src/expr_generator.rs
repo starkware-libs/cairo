@@ -187,6 +187,13 @@ fn handle_felt_match(
                 return None;
             }
 
+            let block0_type = context.get_db().get_concrete_type_id(
+                context.get_db().expr_semantic(context.function_id(), *block0).ty(),
+            )?;
+            let block_otherwise_type = context.get_db().get_concrete_type_id(
+                context.get_db().expr_semantic(context.function_id(), *block_otherwise).ty(),
+            )?;
+
             // Generate two labels: for the second code block (otherwise) and for the end of the
             // match.
             let (otherwise_label, otherwise_label_id) = context.new_label();
@@ -226,13 +233,11 @@ fn handle_felt_match(
             // Generate the first block (0).
             let (block0_statements, block0_res) = generate_expression_code(context, *block0)?;
             statements.extend(block0_statements);
-            statements.push(simple_statement(
-                context.store_temp_libfunc_id(
-                    context.get_db().expr_semantic(context.function_id(), *block0).ty(),
-                )?,
-                &[block0_res],
-                &[output_var.clone()],
-            ));
+            statements.push(pre_sierra::Statement::PushValues(vec![pre_sierra::PushValue {
+                var: block0_res,
+                var_on_stack: output_var.clone(),
+                ty: block0_type,
+            }]));
             statements.push(jump_statement(context.jump_libfunc_id(), end_label_id));
 
             // Generate the second block (otherwise).
@@ -249,13 +254,11 @@ fn handle_felt_match(
             ));
 
             statements.extend(block_otherwise_statements);
-            statements.push(simple_statement(
-                context.store_temp_libfunc_id(
-                    context.get_db().expr_semantic(context.function_id(), *block_otherwise).ty(),
-                )?,
-                &[block_otherwise_res],
-                &[output_var.clone()],
-            ));
+            statements.push(pre_sierra::Statement::PushValues(vec![pre_sierra::PushValue {
+                var: block_otherwise_res,
+                var_on_stack: output_var.clone(),
+                ty: block_otherwise_type,
+            }]));
 
             // Post match.
             statements.push(end_label);
