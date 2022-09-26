@@ -57,6 +57,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::MemberSpecifiedMoreThanOnce => {
                 "Member specified more than once.".into()
             }
+            SemanticDiagnosticKind::UseCycle => {
+                "Cycle detected while resolving 'use' items.".into()
+            }
             SemanticDiagnosticKind::MissingMember { member_name } => {
                 format!("Missing member {member_name}.")
             }
@@ -127,6 +130,7 @@ pub enum SemanticDiagnosticKind {
     UnknownStruct,
     UnknownMember,
     MemberSpecifiedMoreThanOnce,
+    UseCycle,
     MissingMember { member_name: SmolStr },
     WrongNumberOfArguments { expected: usize, actual: usize },
     WrongNumberOfGenericArguments { expected: usize, actual: usize },

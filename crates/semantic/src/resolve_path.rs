@@ -138,7 +138,13 @@ impl<'db> Resolver<'db> {
                     self.check_no_generics(diagnostics, segment);
                     ResolvedItem::Module(ModuleId::Submodule(id))
                 }
-                ModuleItemId::Use(_) => todo!("Follow uses."),
+                ModuleItemId::Use(id) => {
+                    self.check_no_generics(diagnostics, segment);
+                    // TODO(spapini): Right now we call priv_use_semantic_data() directly for cycle
+                    // handling. Otherise, we need to handle cycle both on it and on the selector
+                    // use_resolved_item(). Fix this,
+                    self.db.priv_use_semantic_data(id)?.resolved_item?
+                }
                 ModuleItemId::FreeFunction(id) => ResolvedItem::Function(specialize_function(
                     self.db,
                     diagnostics,

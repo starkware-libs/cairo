@@ -2,7 +2,7 @@ use db_utils::Upcast;
 use defs::db::DefsGroup;
 use defs::ids::{
     EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericFunctionId, GenericParamId,
-    GenericTypeId, ModuleId, ModuleItemId, StructId,
+    GenericTypeId, ModuleId, ModuleItemId, StructId, UseId,
 };
 use diagnostics::{Diagnostics, DiagnosticsBuilder};
 use filesystem::db::{AsFilesGroupMut, FilesGroup};
@@ -11,6 +11,7 @@ use parser::db::ParserGroup;
 use smol_str::SmolStr;
 use utils::ordered_hash_map::OrderedHashMap;
 
+use crate::resolve_path::ResolvedItem;
 use crate::{corelib, items, semantic, types, FunctionId, SemanticDiagnostic};
 
 // Salsa database interface.
@@ -27,6 +28,19 @@ pub trait SemanticGroup:
     fn intern_function(&self, id: items::functions::FunctionLongId) -> semantic::FunctionId;
     #[salsa::interned]
     fn intern_type(&self, id: types::TypeLongId) -> semantic::TypeId;
+
+    // Use.
+    // ====
+    /// Private query to compute data about a use.
+    #[salsa::invoke(items::us::priv_use_semantic_data)]
+    #[salsa::cycle(items::us::priv_use_semantic_data_cycle)]
+    fn priv_use_semantic_data(&self, use_id: UseId) -> Option<items::us::UseData>;
+    /// Returns the semantic diagnostics of a use.
+    #[salsa::invoke(items::us::use_semantic_diagnostics)]
+    fn use_semantic_diagnostics(&self, use_id: UseId) -> Diagnostics<SemanticDiagnostic>;
+    /// Returns the semantic diagnostics of a use.
+    #[salsa::invoke(items::us::use_resolved_item)]
+    fn use_resolved_item(&self, use_id: UseId) -> Option<ResolvedItem>;
 
     // Struct.
     // =======
@@ -238,6 +252,9 @@ fn module_semantic_diagnostics(
     for (_name, item) in db.module_items(module_id)?.items.iter() {
         match item {
             // Add signature diagnostics.
+            ModuleItemId::Use(use_id) => {
+                diagnostics.extend(db.use_semantic_diagnostics(*use_id));
+            }
             ModuleItemId::FreeFunction(free_function) => {
                 diagnostics.extend(db.free_function_declaration_diagnostics(*free_function));
                 diagnostics.extend(db.free_function_definition_diagnostics(*free_function));
@@ -249,7 +266,6 @@ fn module_semantic_diagnostics(
                 diagnostics.extend(db.enum_semantic_diagnostics(*enum_id));
             }
             ModuleItemId::Submodule(_) => {}
-            ModuleItemId::Use(_) => {}
             ModuleItemId::ExternType(_) => {}
             ModuleItemId::ExternFunction(_) => {}
         }

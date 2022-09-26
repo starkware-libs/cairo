@@ -90,6 +90,7 @@ impl SyntaxNodeFormat for SyntaxNode {
             | SyntaxKind::ItemImpl
             | SyntaxKind::ItemStruct
             | SyntaxKind::ItemEnum
+            | SyntaxKind::ItemModule
             | SyntaxKind::ItemUse => true,
             SyntaxKind::TerminalComma
                 if matches!(parent_kind(db, self), Some(SyntaxKind::MatchArms)) =>
