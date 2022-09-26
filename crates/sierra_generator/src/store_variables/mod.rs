@@ -1,5 +1,7 @@
 //! Handles the automatic addition of store_temp() and store_local() statements.
 
+mod known_stack;
+
 #[cfg(test)]
 mod test;
 
@@ -11,6 +13,7 @@ use utils::ordered_hash_map::OrderedHashMap;
 
 use crate::db::SierraGenGroup;
 use crate::pre_sierra;
+use crate::store_variables::known_stack::KnownStack;
 use crate::utils::{rename_libfunc_id, simple_statement, store_temp_libfunc_id};
 
 /// Automatically adds store_temp() statements to the given list of [pre_sierra::Statement].
@@ -40,12 +43,8 @@ struct AddStoreVariableStatements<'a> {
     /// A map from [sierra::ids::VarId] of a deferred reference
     /// (for example, `[ap - 1] + [ap - 2]`) to its type.
     deferred_variables: OrderedHashMap<sierra::ids::VarId, sierra::ids::ConcreteTypeId>,
-    /// A map from [sierra::ids::VarId] of variables that are located on the stack (`[ap - 2]`)
-    /// to their index on the stack, relative to `known_stack_size`. A variable with index `i`
-    /// is at `[ap - known_stack_size + i]`.
-    // TODO(lior): Consider unifying this with `deferred_variables`.
-    variables_on_stack: OrderedHashMap<sierra::ids::VarId, usize>,
-    known_stack_size: usize,
+    /// The information known about the top of the stack.
+    known_stack: KnownStack,
 }
 impl<'a> AddStoreVariableStatements<'a> {
     /// Constructs a new [AddStoreVariableStatements] object.
@@ -54,8 +53,7 @@ impl<'a> AddStoreVariableStatements<'a> {
             db,
             result: Vec::new(),
             deferred_variables: OrderedHashMap::default(),
-            variables_on_stack: OrderedHashMap::default(),
-            known_stack_size: 0,
+            known_stack: KnownStack::default(),
         }
     }
 
@@ -139,8 +137,7 @@ impl<'a> AddStoreVariableStatements<'a> {
         }
         // Update `known_stack_size`. It is one more than the maximum of the indices in
         // `variables_on_stack` (or 0 if empty).
-        self.known_stack_size =
-            self.variables_on_stack.values().max().map(|idx| idx + 1).unwrap_or(0);
+        self.known_stack.update_offset_by_max();
     }
 
     /// Register an output variable of a libfunc.
@@ -149,13 +146,13 @@ impl<'a> AddStoreVariableStatements<'a> {
     /// `self.deferred_variables`.
     fn register_output(&mut self, res: sierra::ids::VarId, output_info: &OutputVarInfo) {
         self.deferred_variables.swap_remove(&res);
-        self.variables_on_stack.swap_remove(&res);
+        self.known_stack.remove_variable(&res);
         match output_info.ref_info {
             OutputVarReferenceInfo::Deferred => {
                 self.deferred_variables.insert(res, output_info.ty.clone());
             }
             OutputVarReferenceInfo::NewTempVar { idx } => {
-                self.variables_on_stack.insert(res, self.known_stack_size + idx);
+                self.known_stack.insert(res, idx);
             }
             OutputVarReferenceInfo::SameAsParam { .. }
             | OutputVarReferenceInfo::NewLocalVar
@@ -169,7 +166,7 @@ impl<'a> AddStoreVariableStatements<'a> {
         }
 
         // Optimization: check if there is a prefix of `push_values` that is already on the stack.
-        let prefix_size = self.compute_on_stack_prefix_size(push_values);
+        let prefix_size = self.known_stack.compute_on_stack_prefix_size(push_values);
 
         for (i, pre_sierra::PushValue { var, var_on_stack, ty }) in push_values.iter().enumerate() {
             if self.deferred_variables.contains_key(var) {
@@ -192,24 +189,6 @@ impl<'a> AddStoreVariableStatements<'a> {
         }
     }
 
-    // Checks if there exists a prefix of `push_values`, that is already on the top of the stack.
-    // Returns the prefix size if exists, and 0 otherwise.
-    fn compute_on_stack_prefix_size(&self, push_values: &[pre_sierra::PushValue]) -> usize {
-        if let Some(index_on_stack) = self.variables_on_stack.get(&push_values[0].var) {
-            // Compute the prefix size, if exists.
-            let prefix_size = self.known_stack_size - index_on_stack;
-            // Check if this is indeed a prefix.
-            let is_prefix = (1..prefix_size).all(|i| {
-                self.variables_on_stack.get(&push_values[i].var).cloned()
-                    == Some(index_on_stack + i)
-            });
-            if is_prefix {
-                return prefix_size;
-            }
-        }
-        0
-    }
-
     /// Stores all the deffered variables and clears `deferred_variables`.
     /// The variables will be added according to the order of creation.
     fn store_all_deffered_variables(&mut self) {
@@ -228,8 +207,7 @@ impl<'a> AddStoreVariableStatements<'a> {
     ///
     /// This is called where the change in the value of `ap` is not known at compile time.
     fn clear_known_stack(&mut self) {
-        self.known_stack_size = 0;
-        self.variables_on_stack.clear();
+        self.known_stack.clear();
     }
 
     fn finalize(self) -> Vec<pre_sierra::Statement> {
@@ -252,24 +230,21 @@ impl<'a> AddStoreVariableStatements<'a> {
             &[var_on_stack.clone()],
         ));
 
-        self.variables_on_stack.insert(var_on_stack.clone(), self.known_stack_size);
-        self.known_stack_size += 1;
+        self.known_stack.push(var_on_stack);
     }
 
     fn rename_var(
         &mut self,
-        var: &sierra::ids::VarId,
-        var_on_stack: &sierra::ids::VarId,
+        src: &sierra::ids::VarId,
+        dst: &sierra::ids::VarId,
         ty: &sierra::ids::ConcreteTypeId,
     ) {
         self.result.push(simple_statement(
             rename_libfunc_id(self.db, ty.clone()),
-            &[var.clone()],
-            &[var_on_stack.clone()],
+            &[src.clone()],
+            &[dst.clone()],
         ));
 
-        if let Some(index_on_stack) = self.variables_on_stack.get(var).cloned() {
-            self.variables_on_stack.insert(var_on_stack.clone(), index_on_stack);
-        }
+        self.known_stack.clone_if_on_stack(src, dst);
     }
 }
