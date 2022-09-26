@@ -25,12 +25,11 @@ use crate::{
     TypeLongId,
 };
 
+// TODO(spapini): Reintroduce GenericFunction and GenericType when they are supported.
 #[derive(Copy, Clone, PartialEq, Eq, Debug, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub enum ResolvedItem {
     Module(ModuleId),
-    GenericFunction(GenericFunctionId),
-    GenericType(GenericTypeId),
     Function(FunctionId),
     Type(TypeId),
 }

@@ -7,9 +7,9 @@ pub mod db;
 pub mod diagnostic;
 pub mod expr;
 pub mod items;
+pub mod resolve_path;
 pub mod types;
 
-mod resolve_path;
 mod semantic;
 
 pub use diagnostic::SemanticDiagnostic;
