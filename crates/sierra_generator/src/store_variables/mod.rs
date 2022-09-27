@@ -1,7 +1,6 @@
 //! Handles the automatic addition of store_temp() and store_local() statements.
 
 #[cfg(test)]
-#[path = "store_variables_test.rs"]
 mod test;
 
 use sierra::extensions::lib_func::{OutputBranchInfo, OutputVarInfo};
