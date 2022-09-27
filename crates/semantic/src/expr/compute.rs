@@ -4,7 +4,7 @@
 
 use std::collections::HashMap;
 
-use defs::ids::{GenericTypeId, LocalVarLongId, MemberId, StructId, VarId};
+use defs::ids::{GenericTypeId, LocalVarLongId, MemberId, VarId};
 use id_arena::Arena;
 use smol_str::SmolStr;
 use syntax::node::ast::{BinaryOperator, PathSegment};
@@ -13,15 +13,16 @@ use syntax::node::helpers::GetIdentifier;
 use syntax::node::ids::SyntaxStablePtrId;
 use syntax::node::{ast, Terminal, TypedSyntaxNode};
 use utils::ordered_hash_map::OrderedHashMap;
-use utils::{OptionFrom, OptionHelper};
+use utils::OptionHelper;
 
 use super::objects::*;
 use crate::corelib::{core_binary_operator, false_literal_expr, true_literal_expr, unit_ty};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
-use crate::resolve_path::Resolver;
-use crate::types::{resolve_type, ConcreteStruct};
+use crate::items::strct::SemanticStructEx;
+use crate::resolve_path::{specialize_function, ResolvedItem, Resolver};
+use crate::types::resolve_type;
 use crate::{semantic, ConcreteType, FunctionId, TypeId, TypeLongId, Variable};
 
 /// Context for computing the semantic model of expression trees.
@@ -277,15 +278,18 @@ fn struct_ctor_expr(
     let path = ctor_syntax.path(syntax_db);
 
     // Extract struct.
-    let item = ctx.resolver.resolve_path(ctx.diagnostics, &path)?;
-    let ty = TypeId::option_from(item).on_none(|| ctx.diagnostics.report(&path, UnknownStruct))?;
-    let generic_ty = ConcreteType::option_from(db.lookup_intern_type(ty))
-        .on_none(|| ctx.diagnostics.report(&path, UnknownStruct))?
-        .generic_type();
-    let struct_id = StructId::option_from(generic_ty)
-        .on_none(|| ctx.diagnostics.report(&path, UnknownStruct))?;
+    let ty =
+        resolve_type(ctx.db, ctx.diagnostics, &mut ctx.resolver, &ast::Expr::Path(path.clone()));
+    let concrete_struct = match db.lookup_intern_type(ty) {
+        TypeLongId::Concrete(ConcreteType::Struct(concrete_struct)) => concrete_struct,
+        _ => {
+            ctx.diagnostics.report(&path, NotAStruct);
+            return None;
+        }
+    };
 
-    let members = db.struct_members(struct_id).unwrap_or_default();
+    let members =
+        db.concrete_struct_members(ctx.diagnostics, &concrete_struct, path.stable_ptr().untyped())?;
     let mut member_exprs: OrderedHashMap<MemberId, ExprId> = OrderedHashMap::default();
     for arg in ctor_syntax.arguments(syntax_db).arguments(syntax_db).elements(syntax_db) {
         // TODO: Extract to a function for results.
@@ -334,12 +338,9 @@ fn struct_ctor_expr(
         }
     }
     Some(Expr::ExprStructCtor(ExprStructCtor {
-        struct_id,
+        struct_id: concrete_struct.struct_id,
         members: member_exprs.into_iter().collect(),
-        ty: db.intern_type(TypeLongId::Concrete(ConcreteType::Struct(ConcreteStruct {
-            struct_id,
-            generic_args: vec![],
-        }))),
+        ty: db.intern_type(TypeLongId::Concrete(ConcreteType::Struct(concrete_struct))),
         stable_ptr: ctor_syntax.stable_ptr().into(),
     }))
 }
@@ -512,8 +513,25 @@ fn maybe_resolve_function(
     // TODO(spapini): Try to find function in multiple places (e.g. impls, or other modules for
     //   suggestions)
     let item = ctx.resolver.resolve_path(ctx.diagnostics, path)?;
-    let function =
-        FunctionId::option_from(item).on_none(|| ctx.diagnostics.report(path, UnknownFunction))?;
+    let function = match item {
+        ResolvedItem::GenericFunction(generic_function) => specialize_function(
+            ctx.db,
+            ctx.diagnostics,
+            path.stable_ptr().untyped(),
+            generic_function,
+            vec![],
+        )?,
+        ResolvedItem::GenericType(GenericTypeId::Enum(_enum_id)) => {
+            // TODO(spapini): Handle enum variants.
+            ctx.diagnostics.report(path, Unsupported);
+            return None;
+        }
+        ResolvedItem::Function(function) => function,
+        _ => {
+            ctx.diagnostics.report(path, NotAFunction);
+            return None;
+        }
+    };
     let signature = typecheck_function_call(ctx, path.stable_ptr().untyped(), function, args)?;
     Some((function, signature))
 }
