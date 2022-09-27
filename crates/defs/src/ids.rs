@@ -26,6 +26,7 @@ use debug::debug::DebugWithDb;
 use filesystem::ids::CrateId;
 use smol_str::SmolStr;
 use syntax::node::helpers::GetIdentifier;
+use syntax::node::ids::SyntaxStablePtrId;
 use syntax::node::{ast, TypedSyntaxNode};
 use utils::OptionFrom;
 
@@ -35,6 +36,7 @@ use crate::db::DefsGroup;
 pub trait LanguageElementId {
     fn module(&self, db: &dyn DefsGroup) -> ModuleId;
     fn name(&self, db: &dyn DefsGroup) -> SmolStr;
+    fn untyped_stable_ptr(&self, db: &(dyn DefsGroup + 'static)) -> SyntaxStablePtrId;
     fn full_path(&self, db: &dyn DefsGroup) -> String {
         format!("{}::{}", self.module(db).full_path(db), self.name(db))
     }
@@ -85,6 +87,9 @@ macro_rules! define_language_element_id {
             fn name(&self, db: &dyn DefsGroup) -> SmolStr {
                 db.$lookup(*self).name(db)
             }
+            fn untyped_stable_ptr(&self, db: &(dyn DefsGroup + 'static)) -> SyntaxStablePtrId {
+                self.stable_ptr(db).untyped()
+            }
         }
     };
 }
@@ -130,6 +135,13 @@ macro_rules! define_language_element_id_as_enum {
                 match self {
                     $(
                         $enum_name::$variant(id) => id.name(db),
+                    )*
+                }
+            }
+            fn untyped_stable_ptr(&self, db: &(dyn DefsGroup + 'static)) -> SyntaxStablePtrId {
+                match self {
+                    $(
+                        $enum_name::$variant(id) => id.untyped_stable_ptr(db),
                     )*
                 }
             }
@@ -251,6 +263,13 @@ define_language_element_id_as_enum! {
     }
 }
 impl GenericTypeId {
+    pub fn stable_ptr(&self, db: &(dyn DefsGroup + 'static)) -> SyntaxStablePtrId {
+        match self {
+            GenericTypeId::Struct(item) => item.stable_ptr(db).untyped(),
+            GenericTypeId::Enum(item) => item.stable_ptr(db).untyped(),
+            GenericTypeId::Extern(item) => item.stable_ptr(db).untyped(),
+        }
+    }
     pub fn format(&self, db: &(dyn DefsGroup + 'static)) -> String {
         format!("{}::{}", self.module(db).full_path(db), self.name(db))
     }

@@ -9,9 +9,7 @@ use std::sync::Arc;
 use db_utils::Upcast;
 use debug::DebugWithDb;
 use defs::db::DefsGroup;
-use defs::ids::{
-    FreeFunctionId, FreeFunctionLongId, GenericFunctionId, GenericTypeId, LanguageElementId,
-};
+use defs::ids::{FreeFunctionId, FreeFunctionLongId, LanguageElementId};
 use diagnostics::{DiagnosticEntry, Diagnostics};
 use filesystem::db::{AsFilesGroupMut, FilesGroup, FilesGroupEx, PrivRawFileContentQuery};
 use filesystem::ids::{FileId, FileLongId};
@@ -23,7 +21,7 @@ use project::ProjectConfig;
 use semantic::db::SemanticGroup;
 use semantic::items::free_function::SemanticExprLookup;
 use semantic::test_utils::SemanticDatabaseForTesting;
-use semantic::{ConcreteFunction, ConcreteType, SemanticDiagnostic};
+use semantic::SemanticDiagnostic;
 use semantic_highlighting::token_kind::SemanticTokenKind;
 use semantic_highlighting::SemanticTokensTraverser;
 use serde_json::Value;
@@ -374,32 +372,20 @@ impl LanguageServer for Backend {
             }
             semantic::resolve_path::ResolvedItem::Function(item) => {
                 match db.lookup_intern_function(item) {
-                    semantic::FunctionLongId::Concrete(ConcreteFunction {
-                        generic_function: GenericFunctionId::Free(item),
-                        ..
-                    }) => (item.module(defs_db), item.stable_ptr(defs_db).untyped()),
-                    semantic::FunctionLongId::Concrete(ConcreteFunction {
-                        generic_function: GenericFunctionId::Extern(item),
-                        ..
-                    }) => (item.module(defs_db), item.stable_ptr(defs_db).untyped()),
+                    semantic::FunctionLongId::Concrete(concrete) => (
+                        concrete.generic_function.module(defs_db),
+                        concrete.generic_function.untyped_stable_ptr(defs_db),
+                    ),
                     semantic::FunctionLongId::Missing => {
                         return Ok(None);
                     }
                 }
             }
             semantic::resolve_path::ResolvedItem::Type(item) => match db.lookup_intern_type(item) {
-                semantic::TypeLongId::Concrete(ConcreteType {
-                    generic_type: GenericTypeId::Extern(item),
-                    ..
-                }) => (item.module(defs_db), item.stable_ptr(defs_db).untyped()),
-                semantic::TypeLongId::Concrete(ConcreteType {
-                    generic_type: GenericTypeId::Struct(item),
-                    ..
-                }) => (item.module(defs_db), item.stable_ptr(defs_db).untyped()),
-                semantic::TypeLongId::Concrete(ConcreteType {
-                    generic_type: GenericTypeId::Enum(item),
-                    ..
-                }) => (item.module(defs_db), item.stable_ptr(defs_db).untyped()),
+                semantic::TypeLongId::Concrete(concrete) => (
+                    concrete.generic_type().module(defs_db),
+                    concrete.generic_type().stable_ptr(defs_db),
+                ),
                 semantic::TypeLongId::GenericParameter(item) => {
                     (item.module(defs_db), item.stable_ptr(defs_db).untyped())
                 }
