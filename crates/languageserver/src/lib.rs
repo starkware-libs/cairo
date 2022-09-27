@@ -393,6 +393,10 @@ impl LanguageServer for Backend {
                     return Ok(None);
                 }
             },
+            semantic::resolve_path::ResolvedItem::GenericFunction(item) => {
+                (item.module(defs_db), item.untyped_stable_ptr(defs_db))
+            }
+            semantic::resolve_path::ResolvedItem::GenericType(_) => todo!(),
         };
 
         let file = if let Some(file) = db.module_file(module_id) {

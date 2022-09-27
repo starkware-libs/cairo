@@ -4,13 +4,13 @@ use db_utils::define_short_id;
 use debug::DebugWithDb;
 use defs::ids::{EnumId, ExternTypeId, GenericParamId, GenericTypeId, LanguageElementId, StructId};
 use itertools::Itertools;
-use syntax::node::ast;
-use utils::{OptionFrom, OptionHelper};
+use syntax::node::{ast, TypedSyntaxNode};
+use utils::OptionFrom;
 
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
-use crate::resolve_path::Resolver;
+use crate::resolve_path::{specialize_type, ResolvedItem, Resolver};
 use crate::{semantic, GenericArgumentId};
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
@@ -161,10 +161,17 @@ pub fn maybe_resolve_type(
 ) -> Option<TypeId> {
     let syntax_db = db.upcast();
     Some(match ty_syntax {
-        ast::Expr::Path(path) => {
-            let item = resolver.resolve_path(diagnostics, path)?;
-            TypeId::option_from(item).on_none(|| diagnostics.report(path, UnknownStruct))?
-        }
+        ast::Expr::Path(path) => match resolver.resolve_path(diagnostics, path)? {
+            ResolvedItem::GenericType(generic_type) => {
+                specialize_type(db, diagnostics, path.stable_ptr().untyped(), generic_type, vec![])?
+            }
+            ResolvedItem::Type(ty) => ty,
+
+            _ => {
+                diagnostics.report(path, NotAType);
+                return None;
+            }
+        },
         ast::Expr::Parenthesized(expr_syntax) => {
             resolve_type(db, diagnostics, resolver, &expr_syntax.expr(syntax_db))
         }
