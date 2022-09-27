@@ -22,10 +22,10 @@ pub fn core_felt_ty(db: &dyn SemanticGroup) -> TypeId {
         .module_item_by_name(core_module, "felt".into())
         .and_then(GenericTypeId::option_from)
         .unwrap();
-    db.intern_type(semantic::TypeLongId::Concrete(semantic::ConcreteType {
+    db.intern_type(semantic::TypeLongId::Concrete(semantic::ConcreteType::new(
         generic_type,
-        generic_args: vec![],
-    }))
+        vec![],
+    )))
 }
 
 pub fn core_bool_ty(db: &dyn SemanticGroup) -> TypeId {
@@ -35,10 +35,10 @@ pub fn core_bool_ty(db: &dyn SemanticGroup) -> TypeId {
         .module_item_by_name(core_module, "bool".into())
         .and_then(GenericTypeId::option_from)
         .unwrap();
-    db.intern_type(semantic::TypeLongId::Concrete(semantic::ConcreteType {
+    db.intern_type(semantic::TypeLongId::Concrete(semantic::ConcreteType::new(
         generic_type,
-        generic_args: vec![],
-    }))
+        vec![],
+    )))
 }
 
 /// Gets a semantic expression of the literal `false`. Uses the given `stable_ptr` in the returned

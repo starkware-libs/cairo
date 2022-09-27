@@ -178,7 +178,7 @@ pub fn statement_semantic(
         .clone()
 }
 
-pub trait SemanticExprLookup: Upcast<dyn SemanticGroup> {
+pub trait SemanticExprLookup<'a>: Upcast<dyn SemanticGroup + 'a> {
     fn lookup_expr_by_ptr(
         &self,
         free_function_id: FreeFunctionId,
@@ -197,4 +197,4 @@ pub trait SemanticExprLookup: Upcast<dyn SemanticGroup> {
     }
 }
 
-impl<T: Upcast<dyn SemanticGroup> + ?Sized> SemanticExprLookup for T {}
+impl<'a, T: Upcast<dyn SemanticGroup + 'a> + ?Sized> SemanticExprLookup<'a> for T {}

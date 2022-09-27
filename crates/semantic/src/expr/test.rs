@@ -27,7 +27,7 @@ fn test_expr_literal() {
     // Fix this.
     assert_eq!(
         format!("{:?}", expr.debug(&expr_formatter)),
-        "ExprLiteral(ExprLiteral { value: 7, ty: Concrete(ExternTypeId(core::felt)) })"
+        "ExprLiteral(ExprLiteral { value: 7, ty: core::felt })"
     );
 
     // Check expr.
@@ -53,12 +53,11 @@ fn test_expr_operator() {
         "ExprFunctionCall(ExprFunctionCall { function: Concrete(ExternFunctionId(core::felt_eq)), \
          args: [ExprFunctionCall(ExprFunctionCall { function: \
          Concrete(ExternFunctionId(core::felt_add)), args: [ExprLiteral(ExprLiteral { value: 5, \
-         ty: Concrete(ExternTypeId(core::felt)) }), ExprFunctionCall(ExprFunctionCall { function: \
+         ty: core::felt }), ExprFunctionCall(ExprFunctionCall { function: \
          Concrete(ExternFunctionId(core::felt_mul)), args: [ExprLiteral(ExprLiteral { value: 9, \
-         ty: Concrete(ExternTypeId(core::felt)) }), ExprLiteral(ExprLiteral { value: 3, ty: \
-         Concrete(ExternTypeId(core::felt)) })], ty: Concrete(ExternTypeId(core::felt)) })], ty: \
-         Concrete(ExternTypeId(core::felt)) }), ExprLiteral(ExprLiteral { value: 0, ty: \
-         Concrete(ExternTypeId(core::felt)) })], ty: Concrete(EnumId(core::bool)) })"
+         ty: core::felt }), ExprLiteral(ExprLiteral { value: 3, ty: core::felt })], ty: \
+         core::felt })], ty: core::felt }), ExprLiteral(ExprLiteral { value: 0, ty: core::felt \
+         })], ty: core::bool })"
     );
 }
 
@@ -115,21 +114,20 @@ fn test_member_access() {
         exprs,
         vec![
             "ExprMemberAccess(ExprMemberAccess { expr: ExprVar(ExprVar { var: \
-             ParamId(test_crate::a), ty: Concrete(StructId(test_crate::A)) }), member: \
-             MemberId(test_crate::a), ty: Tuple([Concrete(ExternTypeId(core::felt))]) })",
+             ParamId(test_crate::a), ty: test_crate::A }), member: MemberId(test_crate::a), ty: \
+             (core::felt) })",
             "ExprMemberAccess(ExprMemberAccess { expr: ExprVar(ExprVar { var: \
-             ParamId(test_crate::a), ty: Concrete(StructId(test_crate::A)) }), member: \
-             MemberId(test_crate::b), ty: Concrete(ExternTypeId(core::felt)) })",
+             ParamId(test_crate::a), ty: test_crate::A }), member: MemberId(test_crate::b), ty: \
+             core::felt })",
             "ExprMemberAccess(ExprMemberAccess { expr: ExprVar(ExprVar { var: \
-             ParamId(test_crate::a), ty: Concrete(StructId(test_crate::A)) }), member: \
-             MemberId(test_crate::c), ty: Concrete(StructId(test_crate::A)) })",
+             ParamId(test_crate::a), ty: test_crate::A }), member: MemberId(test_crate::c), ty: \
+             test_crate::A })",
             "ExprMemberAccess(ExprMemberAccess { expr: ExprMemberAccess(ExprMemberAccess { expr: \
              ExprMemberAccess(ExprMemberAccess { expr: ExprMemberAccess(ExprMemberAccess { expr: \
-             ExprVar(ExprVar { var: ParamId(test_crate::a), ty: Concrete(StructId(test_crate::A)) \
-             }), member: MemberId(test_crate::c), ty: Concrete(StructId(test_crate::A)) }), \
-             member: MemberId(test_crate::c), ty: Concrete(StructId(test_crate::A)) }), member: \
-             MemberId(test_crate::c), ty: Concrete(StructId(test_crate::A)) }), member: \
-             MemberId(test_crate::a), ty: Tuple([Concrete(ExternTypeId(core::felt))]) })"
+             ExprVar(ExprVar { var: ParamId(test_crate::a), ty: test_crate::A }), member: \
+             MemberId(test_crate::c), ty: test_crate::A }), member: MemberId(test_crate::c), ty: \
+             test_crate::A }), member: MemberId(test_crate::c), ty: test_crate::A }), member: \
+             MemberId(test_crate::a), ty: (core::felt) })",
         ]
     );
 }
@@ -213,8 +211,7 @@ fn test_tuple_type() {
     let param = &signature.params[0];
     assert_eq!(
         format!("{:?}", param.debug(db)),
-        "Parameter { id: ParamId(test_crate::a), ty: Tuple([Concrete(ExternTypeId(core::felt)), \
-         Tuple([]), Tuple([Concrete(ExternTypeId(core::felt))])]) }"
+        "Parameter { id: ParamId(test_crate::a), ty: (core::felt, (), (core::felt)) }"
     );
 }
 
@@ -253,12 +250,10 @@ fn test_let_statement() {
     assert_eq!(
         format!("{:?}", expr.debug(&expr_formatter)),
         "ExprBlock(ExprBlock { statements: [Let(StatementLet { var: LocalVariable { id: \
-         LocalVarId(test_crate::a), ty: Concrete(ExternTypeId(core::felt)) }, expr: \
-         ExprLiteral(ExprLiteral { value: 3, ty: Concrete(ExternTypeId(core::felt)) }) }), \
-         Let(StatementLet { var: LocalVariable { id: LocalVarId(test_crate::b), ty: \
-         Concrete(ExternTypeId(core::felt)) }, expr: ExprVar(ExprVar { var: \
-         LocalVarId(test_crate::a), ty: Concrete(ExternTypeId(core::felt)) }) })], tail: None, \
-         ty: Tuple([]) })"
+         LocalVarId(test_crate::a), ty: core::felt }, expr: ExprLiteral(ExprLiteral { value: 3, \
+         ty: core::felt }) }), Let(StatementLet { var: LocalVariable { id: \
+         LocalVarId(test_crate::b), ty: core::felt }, expr: ExprVar(ExprVar { var: \
+         LocalVarId(test_crate::a), ty: core::felt }) })], tail: None, ty: () })"
     );
 }
 
@@ -371,11 +366,10 @@ fn test_expr_match() {
     assert_eq!(
         format!("{:?}", expr.debug(&expr_formatter)),
         "ExprMatch(ExprMatch { matched_expr: ExprVar(ExprVar { var: ParamId(test_crate::a), ty: \
-         Concrete(ExternTypeId(core::felt)) }), arms: [MatchArm { pattern: Literal(ExprLiteral { \
-         value: 0, ty: Concrete(ExternTypeId(core::felt)) }), expression: ExprLiteral(ExprLiteral \
-         { value: 0, ty: Concrete(ExternTypeId(core::felt)) }) }, MatchArm { pattern: Otherwise, \
-         expression: ExprLiteral(ExprLiteral { value: 1, ty: Concrete(ExternTypeId(core::felt)) \
-         }) }], ty: Concrete(ExternTypeId(core::felt)) })"
+         core::felt }), arms: [MatchArm { pattern: Literal(ExprLiteral { value: 0, ty: core::felt \
+         }), expression: ExprLiteral(ExprLiteral { value: 0, ty: core::felt }) }, MatchArm { \
+         pattern: Otherwise, expression: ExprLiteral(ExprLiteral { value: 1, ty: core::felt }) \
+         }], ty: core::felt })"
     );
 }
 
@@ -504,7 +498,7 @@ fn test_expr_call_failures() {
             "{:?}",
             db.expr_semantic(test_expr.function_id, test_expr.expr_id).debug(&expr_formatter)
         ),
-        "ExprFunctionCall(ExprFunctionCall { function: Missing, args: [], ty: Missing })"
+        "ExprFunctionCall(ExprFunctionCall { function: Missing, args: [], ty: <missing> })"
     );
 }
 
@@ -571,10 +565,9 @@ fn test_expr_struct_ctor() {
     assert_eq!(
         format!("{:?}", expr.debug(&expr_formatter)),
         "ExprStructCtor(ExprStructCtor { struct_id: StructId(test_crate::A), members: \
-         [(MemberId(test_crate::a), ExprLiteral(ExprLiteral { value: 1, ty: \
-         Concrete(ExternTypeId(core::felt)) })), (MemberId(test_crate::b), ExprVar(ExprVar { var: \
-         LocalVarId(test_crate::b), ty: Concrete(ExternTypeId(core::felt)) }))], ty: \
-         Concrete(StructId(test_crate::A)) })"
+         [(MemberId(test_crate::a), ExprLiteral(ExprLiteral { value: 1, ty: core::felt })), \
+         (MemberId(test_crate::b), ExprVar(ExprVar { var: LocalVarId(test_crate::b), ty: \
+         core::felt }))], ty: test_crate::A })"
     );
 }
 
@@ -589,13 +582,10 @@ fn test_expr_tuple() {
         format!("{:?}", expr.debug(&expr_formatter)),
         "ExprTuple(ExprTuple { items: [ExprFunctionCall(ExprFunctionCall { function: \
          Concrete(ExternFunctionId(core::felt_add)), args: [ExprLiteral(ExprLiteral { value: 1, \
-         ty: Concrete(ExternTypeId(core::felt)) }), ExprLiteral(ExprLiteral { value: 2, ty: \
-         Concrete(ExternTypeId(core::felt)) })], ty: Concrete(ExternTypeId(core::felt)) }), \
-         ExprTuple(ExprTuple { items: [ExprLiteral(ExprLiteral { value: 2, ty: \
-         Concrete(ExternTypeId(core::felt)) }), ExprLiteral(ExprLiteral { value: 3, ty: \
-         Concrete(ExternTypeId(core::felt)) })], ty: Tuple([Concrete(ExternTypeId(core::felt)), \
-         Concrete(ExternTypeId(core::felt))]) })], ty: Tuple([Concrete(ExternTypeId(core::felt)), \
-         Tuple([Concrete(ExternTypeId(core::felt)), Concrete(ExternTypeId(core::felt))])]) })"
+         ty: core::felt }), ExprLiteral(ExprLiteral { value: 2, ty: core::felt })], ty: \
+         core::felt }), ExprTuple(ExprTuple { items: [ExprLiteral(ExprLiteral { value: 2, ty: \
+         core::felt }), ExprLiteral(ExprLiteral { value: 3, ty: core::felt })], ty: (core::felt, \
+         core::felt) })], ty: (core::felt, (core::felt, core::felt)) })"
     );
 }
 

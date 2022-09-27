@@ -11,7 +11,7 @@ pub fn get_concrete_type_id(
     match db.lookup_intern_type(type_id) {
         semantic::TypeLongId::Concrete(ty) => {
             let mut generic_args = vec![];
-            for arg in &ty.generic_args {
+            for arg in ty.generic_args() {
                 match arg {
                     semantic::GenericArgumentId::Type(ty) => {
                         generic_args
@@ -19,7 +19,7 @@ pub fn get_concrete_type_id(
                     }
                 }
             }
-            match ty.generic_type {
+            match ty.generic_type() {
                 defs::ids::GenericTypeId::Struct(_) => {
                     todo!("Add support for struct types when they are supported in Sierra.")
                 }

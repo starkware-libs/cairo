@@ -26,6 +26,7 @@ use debug::debug::DebugWithDb;
 use filesystem::ids::CrateId;
 use smol_str::SmolStr;
 use syntax::node::helpers::GetIdentifier;
+use syntax::node::ids::SyntaxStablePtrId;
 use syntax::node::{ast, TypedSyntaxNode};
 use utils::OptionFrom;
 
@@ -240,6 +241,14 @@ define_language_element_id_as_enum! {
         // TODO(spapini): impl functions.
     }
 }
+impl GenericFunctionId {
+    pub fn stable_ptr(&self, db: &(dyn DefsGroup + 'static)) -> SyntaxStablePtrId {
+        match self {
+            GenericFunctionId::Free(item) => item.stable_ptr(db).untyped(),
+            GenericFunctionId::Extern(item) => item.stable_ptr(db).untyped(),
+        }
+    }
+}
 
 define_language_element_id_as_enum! {
     /// Generic type ids enum.
@@ -251,6 +260,13 @@ define_language_element_id_as_enum! {
     }
 }
 impl GenericTypeId {
+    pub fn stable_ptr(&self, db: &(dyn DefsGroup + 'static)) -> SyntaxStablePtrId {
+        match self {
+            GenericTypeId::Struct(item) => item.stable_ptr(db).untyped(),
+            GenericTypeId::Enum(item) => item.stable_ptr(db).untyped(),
+            GenericTypeId::Extern(item) => item.stable_ptr(db).untyped(),
+        }
+    }
     pub fn format(&self, db: &(dyn DefsGroup + 'static)) -> String {
         format!("{}::{}", self.module(db).full_path(db), self.name(db))
     }

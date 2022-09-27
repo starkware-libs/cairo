@@ -2,8 +2,7 @@ use std::collections::HashMap;
 
 use db_utils::define_short_id;
 use debug::DebugWithDb;
-use defs::ids::{GenericParamId, GenericTypeId, LanguageElementId};
-use diagnostics_proc_macros::DebugWithDb;
+use defs::ids::{EnumId, ExternTypeId, GenericParamId, GenericTypeId, LanguageElementId, StructId};
 use itertools::Itertools;
 use syntax::node::ast;
 use utils::{OptionFrom, OptionHelper};
@@ -14,8 +13,7 @@ use crate::diagnostic::SemanticDiagnostics;
 use crate::resolve_path::Resolver;
 use crate::{semantic, GenericArgumentId};
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
-#[debug_db(dyn SemanticGroup + 'static)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum TypeLongId {
     Concrete(ConcreteType),
     /// Some expressions might have invalid types during processing, either due to errors or
@@ -36,27 +34,15 @@ impl TypeId {
         db.intern_type(TypeLongId::Missing)
     }
     pub fn format(&self, db: &(dyn SemanticGroup + 'static)) -> String {
-        match db.lookup_intern_type(*self) {
-            TypeLongId::Concrete(ConcreteType { generic_type, generic_args }) => {
-                // TODO(spapini): Format generics.
-                let generic_type_format = generic_type.format(db.upcast());
-                if generic_args.is_empty() {
-                    generic_type_format
-                } else {
-                    format!(
-                        "{}::<{}>",
-                        generic_type_format,
-                        generic_args
-                            .into_iter()
-                            .map(|arg| match arg {
-                                crate::GenericArgumentId::Type(ty) => ty.format(db),
-                            })
-                            .join(", ")
-                    )
-                }
-            }
+        db.lookup_intern_type(*self).format(db)
+    }
+}
+impl TypeLongId {
+    pub fn format(&self, db: &(dyn SemanticGroup + 'static)) -> String {
+        match self {
+            TypeLongId::Concrete(concrete) => concrete.format(db),
             TypeLongId::Tuple(inner_types) => {
-                format!("({})", inner_types.into_iter().map(|ty| ty.format(db)).join(", "))
+                format!("({})", inner_types.iter().map(|ty| ty.format(db)).join(", "))
             }
             TypeLongId::GenericParameter(generic_param) => {
                 generic_param.name(db.upcast()).to_string()
@@ -65,11 +51,69 @@ impl TypeId {
         }
     }
 }
+impl DebugWithDb<dyn SemanticGroup> for TypeLongId {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+        db: &(dyn SemanticGroup + 'static),
+    ) -> std::fmt::Result {
+        write!(f, "{}", self.format(db))
+    }
+}
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub struct ConcreteType {
-    pub generic_type: GenericTypeId,
-    pub generic_args: Vec<semantic::GenericArgumentId>,
+pub enum ConcreteType {
+    Struct(ConcreteStruct),
+    Enum(ConcreteEnum),
+    Extern(ConcreteExternType),
+}
+impl ConcreteType {
+    pub fn new(generic_ty: GenericTypeId, generic_args: Vec<semantic::GenericArgumentId>) -> Self {
+        match generic_ty {
+            GenericTypeId::Struct(id) => {
+                ConcreteType::Struct(ConcreteStruct { struct_id: id, generic_args })
+            }
+            GenericTypeId::Enum(id) => {
+                ConcreteType::Enum(ConcreteEnum { enum_id: id, generic_args })
+            }
+            GenericTypeId::Extern(id) => {
+                ConcreteType::Extern(ConcreteExternType { extern_type_id: id, generic_args })
+            }
+        }
+    }
+    pub fn generic_type(&self) -> GenericTypeId {
+        match self {
+            ConcreteType::Struct(concrete) => GenericTypeId::Struct(concrete.struct_id),
+            ConcreteType::Enum(concrete) => GenericTypeId::Enum(concrete.enum_id),
+            ConcreteType::Extern(concrete) => GenericTypeId::Extern(concrete.extern_type_id),
+        }
+    }
+    pub fn generic_args(&self) -> &[semantic::GenericArgumentId] {
+        match self {
+            ConcreteType::Struct(concrete) => &concrete.generic_args,
+            ConcreteType::Enum(concrete) => &concrete.generic_args,
+            ConcreteType::Extern(concrete) => &concrete.generic_args,
+        }
+    }
+    pub fn format(&self, db: &(dyn SemanticGroup + 'static)) -> String {
+        // TODO(spapini): Format generics.
+        let generic_type_format = self.generic_type().format(db.upcast());
+        let generic_args = self.generic_args();
+        if generic_args.is_empty() {
+            generic_type_format
+        } else {
+            format!(
+                "{}::<{}>",
+                generic_type_format,
+                generic_args
+                    .iter()
+                    .map(|arg| match arg {
+                        crate::GenericArgumentId::Type(ty) => ty.format(db),
+                    })
+                    .join(", ")
+            )
+        }
+    }
 }
 impl DebugWithDb<dyn SemanticGroup> for ConcreteType {
     fn fmt(
@@ -77,16 +121,24 @@ impl DebugWithDb<dyn SemanticGroup> for ConcreteType {
         f: &mut std::fmt::Formatter<'_>,
         db: &(dyn SemanticGroup + 'static),
     ) -> std::fmt::Result {
-        self.generic_type.fmt(f, db)?;
-        if !self.generic_args.is_empty() {
-            write!(f, "<")?;
-            for arg in self.generic_args.iter() {
-                write!(f, "{:?},", arg.debug(db))?;
-            }
-            write!(f, ">")?;
-        }
-        Ok(())
+        write!(f, "{}", self.format(db))
     }
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct ConcreteStruct {
+    pub struct_id: StructId,
+    pub generic_args: Vec<semantic::GenericArgumentId>,
+}
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct ConcreteEnum {
+    pub enum_id: EnumId,
+    pub generic_args: Vec<semantic::GenericArgumentId>,
+}
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct ConcreteExternType {
+    pub extern_type_id: ExternTypeId,
+    pub generic_args: Vec<semantic::GenericArgumentId>,
 }
 
 // TODO(yuval): move to a separate module "type".
@@ -151,17 +203,17 @@ pub fn substitute_generics(
     ty: crate::TypeId,
 ) -> TypeId {
     match db.lookup_intern_type(ty) {
-        TypeLongId::Concrete(concrete) => db.intern_type(TypeLongId::Concrete(ConcreteType {
-            generic_type: concrete.generic_type,
-            generic_args: concrete
-                .generic_args
-                .into_iter()
+        TypeLongId::Concrete(concrete) => db.intern_type(TypeLongId::Concrete(ConcreteType::new(
+            concrete.generic_type(),
+            concrete
+                .generic_args()
+                .iter()
                 .map(|generic_arg| {
                     let GenericArgumentId::Type(ty) = generic_arg;
-                    GenericArgumentId::Type(substitute_generics(db, substitution, ty))
+                    GenericArgumentId::Type(substitute_generics(db, substitution, *ty))
                 })
                 .collect(),
-        })),
+        ))),
         TypeLongId::Tuple(tys) => db.intern_type(TypeLongId::Tuple(
             tys.into_iter().map(|ty| substitute_generics(db, substitution, ty)).collect(),
         )),

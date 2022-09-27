@@ -60,8 +60,8 @@ fn test_enum() {
     assert_eq!(
         actual,
         indoc! {"
-            a: Variant { id: VariantId(test_crate::a), ty: Tuple([]) },
-            b: Variant { id: VariantId(test_crate::b), ty: Tuple([Concrete(ExternTypeId(core::felt)), Concrete(ExternTypeId(core::felt))]) },
-            c: Variant { id: VariantId(test_crate::c), ty: Tuple([]) }"}
+            a: Variant { id: VariantId(test_crate::a), ty: () },
+            b: Variant { id: VariantId(test_crate::b), ty: (core::felt, core::felt) },
+            c: Variant { id: VariantId(test_crate::c), ty: () }"}
     );
 }
