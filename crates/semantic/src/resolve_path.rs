@@ -13,7 +13,7 @@ use syntax::node::helpers::{GetIdentifier, PathSegmentEx};
 use syntax::node::ids::SyntaxStablePtrId;
 use syntax::node::TypedSyntaxNode;
 use utils::unordered_hash_map::UnorderedHashMap;
-use utils::{OptionFrom, OptionHelper};
+use utils::OptionHelper;
 
 use crate::corelib::core_module;
 use crate::db::SemanticGroup;
@@ -30,19 +30,10 @@ use crate::{
 #[debug_db(dyn SemanticGroup + 'static)]
 pub enum ResolvedItem {
     Module(ModuleId),
+    GenericFunction(GenericFunctionId),
+    GenericType(GenericTypeId),
     Function(FunctionId),
     Type(TypeId),
-}
-
-impl OptionFrom<ResolvedItem> for FunctionId {
-    fn option_from(other: ResolvedItem) -> Option<Self> {
-        if let ResolvedItem::Function(res) = other { Some(res) } else { None }
-    }
-}
-impl OptionFrom<ResolvedItem> for TypeId {
-    fn option_from(other: ResolvedItem) -> Option<Self> {
-        if let ResolvedItem::Type(res) = other { Some(res) } else { None }
-    }
 }
 
 // Resolves paths semantically.
@@ -115,18 +106,20 @@ impl<'db> Resolver<'db> {
         let syntax_db = self.db.upcast();
         let ident = segment.identifier(syntax_db);
         let generic_args = if let ast::PathSegment::WithGenericArgs(generic_segment) = segment {
-            generic_segment
-                .generic_args(syntax_db)
-                .generic_args(syntax_db)
-                .elements(syntax_db)
-                .iter()
-                .map(|generic_arg_syntax| {
-                    let ty = resolve_type(self.db, diagnostics, self, generic_arg_syntax);
-                    GenericArgumentId::Type(ty)
-                })
-                .collect()
+            Some(
+                generic_segment
+                    .generic_args(syntax_db)
+                    .generic_args(syntax_db)
+                    .elements(syntax_db)
+                    .iter()
+                    .map(|generic_arg_syntax| {
+                        let ty = resolve_type(self.db, diagnostics, self, generic_arg_syntax);
+                        GenericArgumentId::Type(ty)
+                    })
+                    .collect(),
+            )
         } else {
-            vec![]
+            None
         };
         if let ResolvedItem::Module(module_id) = item {
             let module_item = self
@@ -139,47 +132,109 @@ impl<'db> Resolver<'db> {
                     ResolvedItem::Module(ModuleId::Submodule(id))
                 }
                 ModuleItemId::Use(id) => {
-                    self.check_no_generics(diagnostics, segment);
                     // TODO(spapini): Right now we call priv_use_semantic_data() directly for cycle
                     // handling. Otherise, we need to handle cycle both on it and on the selector
                     // use_resolved_item(). Fix this,
-                    self.db.priv_use_semantic_data(id)?.resolved_item?
+                    let use_item = self.db.priv_use_semantic_data(id)?.resolved_item?;
+                    if let Some(generic_args) = generic_args {
+                        match use_item {
+                            ResolvedItem::GenericFunction(generic_function) => {
+                                ResolvedItem::Function(specialize_function(
+                                    self.db,
+                                    diagnostics,
+                                    segment.stable_ptr().untyped(),
+                                    generic_function,
+                                    generic_args,
+                                )?)
+                            }
+                            ResolvedItem::GenericType(generic_type) => {
+                                ResolvedItem::Type(specialize_type(
+                                    self.db,
+                                    diagnostics,
+                                    segment.stable_ptr().untyped(),
+                                    generic_type,
+                                    generic_args,
+                                )?)
+                            }
+                            _ => {
+                                diagnostics.report(segment, UnexpectedGenericArgs);
+                                return None;
+                            }
+                        }
+                    } else {
+                        use_item
+                    }
                 }
-                ModuleItemId::FreeFunction(id) => ResolvedItem::Function(specialize_function(
-                    self.db,
-                    diagnostics,
-                    segment.stable_ptr().untyped(),
-                    GenericFunctionId::Free(id),
-                    generic_args,
-                )?),
-                ModuleItemId::ExternFunction(id) => ResolvedItem::Function(specialize_function(
-                    self.db,
-                    diagnostics,
-                    segment.stable_ptr().untyped(),
-                    GenericFunctionId::Extern(id),
-                    generic_args,
-                )?),
-                ModuleItemId::Struct(id) => ResolvedItem::Type(specialize_type(
-                    self.db,
-                    diagnostics,
-                    segment.stable_ptr().untyped(),
-                    GenericTypeId::Struct(id),
-                    generic_args,
-                )?),
-                ModuleItemId::Enum(id) => ResolvedItem::Type(specialize_type(
-                    self.db,
-                    diagnostics,
-                    segment.stable_ptr().untyped(),
-                    GenericTypeId::Enum(id),
-                    generic_args,
-                )?),
-                ModuleItemId::ExternType(id) => ResolvedItem::Type(specialize_type(
-                    self.db,
-                    diagnostics,
-                    segment.stable_ptr().untyped(),
-                    GenericTypeId::Extern(id),
-                    generic_args,
-                )?),
+                ModuleItemId::FreeFunction(id) => {
+                    let generic_function = GenericFunctionId::Free(id);
+                    if let Some(generic_args) = generic_args {
+                        ResolvedItem::Function(specialize_function(
+                            self.db,
+                            diagnostics,
+                            segment.stable_ptr().untyped(),
+                            generic_function,
+                            generic_args,
+                        )?)
+                    } else {
+                        ResolvedItem::GenericFunction(generic_function)
+                    }
+                }
+                ModuleItemId::ExternFunction(id) => {
+                    let generic_function = GenericFunctionId::Extern(id);
+                    if let Some(generic_args) = generic_args {
+                        ResolvedItem::Function(specialize_function(
+                            self.db,
+                            diagnostics,
+                            segment.stable_ptr().untyped(),
+                            generic_function,
+                            generic_args,
+                        )?)
+                    } else {
+                        ResolvedItem::GenericFunction(generic_function)
+                    }
+                }
+                ModuleItemId::Struct(id) => {
+                    let generic_type = GenericTypeId::Struct(id);
+                    if let Some(generic_args) = generic_args {
+                        ResolvedItem::Type(specialize_type(
+                            self.db,
+                            diagnostics,
+                            segment.stable_ptr().untyped(),
+                            generic_type,
+                            generic_args,
+                        )?)
+                    } else {
+                        ResolvedItem::GenericType(generic_type)
+                    }
+                }
+                ModuleItemId::Enum(id) => {
+                    let generic_type = GenericTypeId::Enum(id);
+                    if let Some(generic_args) = generic_args {
+                        ResolvedItem::Type(specialize_type(
+                            self.db,
+                            diagnostics,
+                            segment.stable_ptr().untyped(),
+                            generic_type,
+                            generic_args,
+                        )?)
+                    } else {
+                        ResolvedItem::GenericType(generic_type)
+                    }
+                }
+                ModuleItemId::ExternType(id) => {
+                    let generic_type = GenericTypeId::Extern(id);
+                    if let Some(generic_args) = generic_args {
+                        ResolvedItem::Type(specialize_type(
+                            self.db,
+                            diagnostics,
+                            segment.stable_ptr().untyped(),
+                            generic_type,
+                            generic_args,
+                        )?)
+                    } else {
+                        ResolvedItem::GenericType(generic_type)
+                    }
+                }
             })
         } else {
             diagnostics.report(segment, InvalidPath);
@@ -272,7 +327,7 @@ pub fn specialize_function(
 }
 
 /// Specializes a generic type.
-fn specialize_type(
+pub fn specialize_type(
     db: &dyn SemanticGroup,
     diagnostics: &mut SemanticDiagnostics,
     stable_ptr: SyntaxStablePtrId,
