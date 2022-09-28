@@ -54,6 +54,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::NotAFunction => "Not a function.".into(),
             SemanticDiagnosticKind::UnknownType => "Unknown type.".into(),
             SemanticDiagnosticKind::UnknownStruct => "Unknown struct.".into(),
+            SemanticDiagnosticKind::UnknownEnum => "Unknown enum.".into(),
             SemanticDiagnosticKind::NotAStruct => "Not a struct.".into(),
             SemanticDiagnosticKind::NotAType => "Not a type.".into(),
             SemanticDiagnosticKind::UnexpectedGenericArgs => "Unexpected generic arguments".into(),
@@ -63,6 +64,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             }
             SemanticDiagnosticKind::UseCycle => {
                 "Cycle detected while resolving 'use' items.".into()
+            }
+            SemanticDiagnosticKind::ExpectedConcreteVariant => {
+                "Expected a concrete variant. Use `::<>` syntax.".to_string()
             }
             SemanticDiagnosticKind::MissingMember { member_name } => {
                 format!("Missing member {member_name}.")
@@ -111,7 +115,10 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 format!("Type {} has no members.", ty.format(db))
             }
             SemanticDiagnosticKind::NoSuchMember { struct_id, member_name } => {
-                format!("Struct {} has not member {member_name}", struct_id.full_path(db.upcast()))
+                format!("Struct {} has no member {member_name}", struct_id.full_path(db.upcast()))
+            }
+            SemanticDiagnosticKind::NoSuchVariant { enum_id, variant_name } => {
+                format!("Enum {} has no variant {variant_name}", enum_id.full_path(db.upcast()))
             }
             SemanticDiagnosticKind::InvalidMemberExpression => "Invalid member expression.".into(),
             SemanticDiagnosticKind::InvalidPath => "Invalid path.".into(),
@@ -133,12 +140,14 @@ pub enum SemanticDiagnosticKind {
     NotAFunction,
     UnknownType,
     UnknownStruct,
+    UnknownEnum,
     NotAStruct,
     NotAType,
     UnexpectedGenericArgs,
     UnknownMember,
     MemberSpecifiedMoreThanOnce,
     UseCycle,
+    ExpectedConcreteVariant,
     MissingMember { member_name: SmolStr },
     WrongNumberOfArguments { expected: usize, actual: usize },
     WrongNumberOfGenericArguments { expected: usize, actual: usize },
@@ -150,6 +159,7 @@ pub enum SemanticDiagnosticKind {
     IncompatibleMatchArms { match_ty: semantic::TypeId, arm_ty: semantic::TypeId },
     TypeHasNoMembers { ty: semantic::TypeId, member_name: SmolStr },
     NoSuchMember { struct_id: StructId, member_name: SmolStr },
+    NoSuchVariant { enum_id: EnumId, variant_name: SmolStr },
     InvalidMemberExpression,
     InvalidPath,
     PathNotFound,

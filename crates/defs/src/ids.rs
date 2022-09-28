@@ -263,13 +263,6 @@ define_language_element_id_as_enum! {
     }
 }
 impl GenericTypeId {
-    pub fn stable_ptr(&self, db: &(dyn DefsGroup + 'static)) -> SyntaxStablePtrId {
-        match self {
-            GenericTypeId::Struct(item) => item.stable_ptr(db).untyped(),
-            GenericTypeId::Enum(item) => item.stable_ptr(db).untyped(),
-            GenericTypeId::Extern(item) => item.stable_ptr(db).untyped(),
-        }
-    }
     pub fn format(&self, db: &(dyn DefsGroup + 'static)) -> String {
         format!("{}::{}", self.module(db).full_path(db), self.name(db))
     }
