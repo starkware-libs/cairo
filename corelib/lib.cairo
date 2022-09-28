@@ -17,8 +17,8 @@ extern func felt_add(a: felt, b: felt) -> felt;
 extern func felt_sub(a: felt, b: felt) -> felt;
 extern func felt_mul(a: felt, b: felt) -> felt;
 
-extern type NonZero<T>;
-extern func unwrap_nz<T>(a: NonZero::<T>) -> T;
+extern type NonZero < T >;
+extern func unwrap_nz< T > (a: NonZero::<T>) -> T;
 extern func non_zero_felt_dup(a: NonZero::<felt>) -> (NonZero::<felt>, NonZero::<felt>);
 extern func non_zero_felt_drop(a: NonZero::<felt>);
 extern func felt_div(a: felt, b: NonZero::<felt>) -> felt;
@@ -30,6 +30,8 @@ extern func felt_ge(a: felt, b: felt) -> (bool);
 extern func felt_lt(a: felt, b: felt) -> (bool);
 extern func felt_gt(a: felt, b: felt) -> (bool);
 
-extern type Ref<T>;
-extern func into_ref<T>(value: T) -> Ref::<T>;
-extern func deref<T>(ref: Ref::<T>) -> T;
+// Refs.
+mod ref;
+use ref::Ref;
+use ref::into_ref;
+use ref::deref;

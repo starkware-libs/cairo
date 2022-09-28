@@ -15,10 +15,11 @@ fn test_resolve_path() {
     let test_module = setup_test_module(
         db,
         indoc::indoc! {"
+            use core::Ref;
             extern type S<T>;
             extern func bar<T>(value: S::<felt>) -> S::<()>;
 
-            func foo<Q>(value: S::<felt>, b: Q) {
+            func foo<Q>(value: S::<felt>, b: Q, c: Ref::<Q>) {
                 bar::<(felt,Q)>(value);
                 let c = b;
             }
@@ -35,37 +36,11 @@ fn test_resolve_path() {
     let body = db.free_function_definition_body(free_function_id);
     assert_eq!(
         format!("{:?}", body.debug(&expr_formatter)),
-        "Some(ExprBlock(ExprBlock { statements: [\
-            Expr(ExprFunctionCall(ExprFunctionCall { \
-                function: Concrete(ExternFunctionId(\
-                    test_crate::bar)<\
-                        Type(Tuple([\
-                            Concrete(ExternTypeId(core::felt)), \
-                            GenericParameter(GenericParamId(test_crate::Q))\
-                        ])),\
-                    >), \
-                args: [\
-                    ExprVar(ExprVar { \
-                        var: ParamId(test_crate::value), \
-                        ty: Concrete(ExternTypeId(test_crate::S)<\
-                            Type(Concrete(ExternTypeId(core::felt))),\
-                        >) })\
-                ], \
-                ty: Concrete(ExternTypeId(test_crate::S)<\
-                    Type(Tuple([])),\
-                >) \
-            })), \
-            Let(StatementLet { \
-                var: LocalVariable { \
-                    id: LocalVarId(test_crate::c), \
-                    ty: GenericParameter(GenericParamId(test_crate::Q)) \
-                }, \
-                expr: ExprVar(ExprVar { \
-                    var: ParamId(test_crate::b), \
-                    ty: GenericParameter(GenericParamId(test_crate::Q)) \
-                }) })\
-            ], \
-            tail: None, \
-            ty: Tuple([]) }))"
+        "Some(ExprBlock(ExprBlock { statements: [Expr(ExprFunctionCall(ExprFunctionCall { \
+         function: Concrete(ExternFunctionId(test_crate::bar)<Type((core::felt, Q)),>), args: \
+         [ExprVar(ExprVar { var: ParamId(test_crate::value), ty: test_crate::S::<core::felt> })], \
+         ty: test_crate::S::<()> })), Let(StatementLet { var: LocalVariable { id: \
+         LocalVarId(test_crate::c), ty: Q }, expr: ExprVar(ExprVar { var: ParamId(test_crate::b), \
+         ty: Q }) })], tail: None, ty: () }))"
     );
 }

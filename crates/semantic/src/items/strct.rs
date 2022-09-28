@@ -1,7 +1,9 @@
+use db_utils::Upcast;
 use defs::ids::{LanguageElementId, MemberId, MemberLongId, StructId};
 use diagnostics::Diagnostics;
 use diagnostics_proc_macros::DebugWithDb;
 use smol_str::SmolStr;
+use syntax::node::ids::SyntaxStablePtrId;
 use syntax::node::{Terminal, TypedSyntaxNode};
 use utils::ordered_hash_map::OrderedHashMap;
 
@@ -9,7 +11,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::resolve_path::Resolver;
-use crate::types::resolve_type;
+use crate::types::{resolve_type, ConcreteStruct};
 use crate::{semantic, SemanticDiagnostic};
 
 #[cfg(test)]
@@ -75,3 +77,17 @@ pub fn priv_struct_semantic_data(
 
     Some(StructData { diagnostics: diagnostics.build(), members })
 }
+
+pub trait SemanticStructEx<'a>: Upcast<dyn SemanticGroup + 'a> {
+    fn concrete_struct_members(
+        &self,
+        _diagnostics: &mut SemanticDiagnostics,
+        concrete_struct: &ConcreteStruct,
+        _stable_ptr: SyntaxStablePtrId,
+    ) -> Option<OrderedHashMap<SmolStr, semantic::Member>> {
+        // TODO(spapini): substitute generic arguments.
+        self.upcast().struct_members(concrete_struct.struct_id)
+    }
+}
+
+impl<'a, T: Upcast<dyn SemanticGroup + 'a> + ?Sized> SemanticStructEx<'a> for T {}

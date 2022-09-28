@@ -30,6 +30,7 @@ impl FunctionId {
     }
 }
 
+// TODO(spapini): Refactor to an enum.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct ConcreteFunction {
     pub generic_function: GenericFunctionId,

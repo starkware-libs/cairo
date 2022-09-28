@@ -25,6 +25,7 @@ pub fn priv_use_semantic_data(db: &(dyn SemanticGroup), use_id: UseId) -> Option
     let module_data = db.module_data(module_id)?;
     let use_ast = module_data.uses.get(&use_id)?;
     let syntax_db = db.upcast();
+    // TODO(spapini): Allow only non concrete items.
     let resolved_item = resolver.resolve_path(&mut diagnostics, &use_ast.name(syntax_db));
     Some(UseData { diagnostics: diagnostics.build(), resolved_item })
 }
