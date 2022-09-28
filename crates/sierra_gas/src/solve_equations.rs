@@ -20,7 +20,7 @@ pub fn solve_equations(
             match orig_to_solver_var.entry(var.clone()) {
                 Entry::Occupied(_) => {}
                 Entry::Vacant(e) => {
-                    e.insert(vars.add(variable().integer().min(0).name(format!("{}", var))));
+                    e.insert(vars.add(variable().min(0).name(format!("{}", var))));
                 }
             }
         }
