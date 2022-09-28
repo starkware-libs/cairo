@@ -11,7 +11,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::resolve_path::Resolver;
-use crate::types::{resolve_type, ConcreteStruct};
+use crate::types::{resolve_type, ConcreteStructId};
 use crate::{semantic, SemanticDiagnostic};
 
 #[cfg(test)]
@@ -82,11 +82,11 @@ pub trait SemanticStructEx<'a>: Upcast<dyn SemanticGroup + 'a> {
     fn concrete_struct_members(
         &self,
         _diagnostics: &mut SemanticDiagnostics,
-        concrete_struct: &ConcreteStruct,
+        concrete_struct: ConcreteStructId,
         _stable_ptr: SyntaxStablePtrId,
     ) -> Option<OrderedHashMap<SmolStr, semantic::Member>> {
         // TODO(spapini): substitute generic arguments.
-        self.upcast().struct_members(concrete_struct.struct_id)
+        self.upcast().struct_members(concrete_struct.struct_id(self.upcast()))
     }
 }
 

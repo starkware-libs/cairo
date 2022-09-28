@@ -22,8 +22,8 @@ use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::items::strct::SemanticStructEx;
 use crate::resolve_path::{ResolvedConcreteItem, Resolver};
+use crate::semantic::{self, ConcreteTypeId, FunctionId, TypeId, TypeLongId, Variable};
 use crate::types::resolve_type;
-use crate::{semantic, ConcreteType, FunctionId, TypeId, TypeLongId, Variable};
 
 /// Context for computing the semantic model of expression trees.
 pub struct ComputationContext<'ctx> {
@@ -281,7 +281,7 @@ fn struct_ctor_expr(
     let ty =
         resolve_type(ctx.db, ctx.diagnostics, &mut ctx.resolver, &ast::Expr::Path(path.clone()));
     let concrete_struct = match db.lookup_intern_type(ty) {
-        TypeLongId::Concrete(ConcreteType::Struct(concrete_struct)) => concrete_struct,
+        TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct)) => concrete_struct,
         _ => {
             ctx.diagnostics.report(&path, NotAStruct);
             return None;
@@ -289,7 +289,7 @@ fn struct_ctor_expr(
     };
 
     let members =
-        db.concrete_struct_members(ctx.diagnostics, &concrete_struct, path.stable_ptr().untyped())?;
+        db.concrete_struct_members(ctx.diagnostics, concrete_struct, path.stable_ptr().untyped())?;
     let mut member_exprs: OrderedHashMap<MemberId, ExprId> = OrderedHashMap::default();
     for arg in ctor_syntax.arguments(syntax_db).arguments(syntax_db).elements(syntax_db) {
         // TODO: Extract to a function for results.
@@ -338,9 +338,9 @@ fn struct_ctor_expr(
         }
     }
     Some(Expr::ExprStructCtor(ExprStructCtor {
-        struct_id: concrete_struct.struct_id,
+        struct_id: concrete_struct.struct_id(db),
         members: member_exprs.into_iter().collect(),
-        ty: db.intern_type(TypeLongId::Concrete(ConcreteType::Struct(concrete_struct))),
+        ty: db.intern_type(TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct))),
         stable_ptr: ctor_syntax.stable_ptr().into(),
     }))
 }
@@ -410,7 +410,7 @@ fn member_access_expr(
     // Find MemberId.
     let member_name = expr_as_identifier(ctx, &rhs_syntax, syntax_db)?;
     match ctx.db.lookup_intern_type(lexpr.ty()) {
-        TypeLongId::Concrete(concrete) => match concrete.generic_type() {
+        TypeLongId::Concrete(concrete) => match concrete.generic_type(ctx.db) {
             GenericTypeId::Struct(struct_id) => {
                 let member = ctx
                     .db
