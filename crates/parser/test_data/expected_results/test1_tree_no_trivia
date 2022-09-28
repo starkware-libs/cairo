@@ -6,7 +6,7 @@
     │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   ├── child #1 (kind: ItemUse)
     │   │   ├── use_kw (kind: TokenUse): 'use'
-    │   │   ├── name (kind: ExprPath)
+    │   │   ├── name (kind: SimplePath)
     │   │   │   ├── item #0 (kind: PathSegmentSimple)
     │   │   │   │   └── ident (kind: TokenIdentifier): 'submod'
     │   │   │   ├── separator #0 (kind: TokenColonColon): '::'

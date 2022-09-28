@@ -2,7 +2,7 @@
     ├── items (kind: ItemList)
     │   ├── child #0 (kind: ItemUse)
     │   │   ├── use_kw (kind: TokenUse): 'use'
-    │   │   ├── name (kind: ExprPath)
+    │   │   ├── name (kind: SimplePath)
     │   │   │   ├── item #0 (kind: PathSegmentSimple)
     │   │   │   │   └── ident (kind: TokenIdentifier): 'std'
     │   │   │   ├── separator #0 (kind: TokenColonColon): '::'

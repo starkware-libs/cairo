@@ -220,7 +220,7 @@ impl<'a> Parser<'a> {
     /// Expected pattern: use<Path>;
     fn expect_use(&mut self) -> ItemUseGreen {
         let use_kw = self.take::<TerminalUse>();
-        let path = self.parse_path();
+        let path = self.parse_simple_path();
         let semicolon = self.parse_token::<TerminalSemicolon>();
         ItemUse::new_green(self.db, use_kw, path, semicolon)
     }
@@ -673,6 +673,22 @@ impl<'a> Parser<'a> {
         }
 
         ExprPath::new_green(self.db, children)
+    }
+
+    fn parse_simple_path(&mut self) -> SimplePathGreen {
+        let mut children: Vec<SimplePathElementOrSeparatorGreen> = vec![];
+        loop {
+            let (segment, optional_separator) = self.parse_path_segment();
+            children.push(segment.into());
+
+            if let Some(separator) = optional_separator {
+                children.push(separator.into());
+                continue;
+            }
+            break;
+        }
+
+        SimplePath::new_green(self.db, children)
     }
 
     /// Returns a PathSegment and and optional separator.
