@@ -294,5 +294,5 @@ fn specialize_type(
         generic_args.resize(generic_params.len(), GenericArgumentId::Type(TypeId::missing(db)));
     }
 
-    Some(db.intern_type(TypeLongId::Concrete(ConcreteType { generic_type, generic_args })))
+    Some(db.intern_type(TypeLongId::Concrete(ConcreteType::new(generic_type, generic_args))))
 }

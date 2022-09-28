@@ -21,7 +21,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::resolve_path::Resolver;
-use crate::types::resolve_type;
+use crate::types::{resolve_type, ConcreteStruct};
 use crate::{semantic, ConcreteType, FunctionId, TypeId, TypeLongId, Variable};
 
 /// Context for computing the semantic model of expression trees.
@@ -281,7 +281,7 @@ fn struct_ctor_expr(
     let ty = TypeId::option_from(item).on_none(|| ctx.diagnostics.report(&path, UnknownStruct))?;
     let generic_ty = ConcreteType::option_from(db.lookup_intern_type(ty))
         .on_none(|| ctx.diagnostics.report(&path, UnknownStruct))?
-        .generic_type;
+        .generic_type();
     let struct_id = StructId::option_from(generic_ty)
         .on_none(|| ctx.diagnostics.report(&path, UnknownStruct))?;
 
@@ -336,10 +336,10 @@ fn struct_ctor_expr(
     Some(Expr::ExprStructCtor(ExprStructCtor {
         struct_id,
         members: member_exprs.into_iter().collect(),
-        ty: db.intern_type(TypeLongId::Concrete(ConcreteType {
-            generic_type: GenericTypeId::Struct(struct_id),
+        ty: db.intern_type(TypeLongId::Concrete(ConcreteType::Struct(ConcreteStruct {
+            struct_id,
             generic_args: vec![],
-        })),
+        }))),
         stable_ptr: ctor_syntax.stable_ptr().into(),
     }))
 }
@@ -409,7 +409,7 @@ fn member_access_expr(
     // Find MemberId.
     let member_name = expr_as_identifier(ctx, &rhs_syntax, syntax_db)?;
     match ctx.db.lookup_intern_type(lexpr.ty()) {
-        TypeLongId::Concrete(concrete) => match concrete.generic_type {
+        TypeLongId::Concrete(concrete) => match concrete.generic_type() {
             GenericTypeId::Struct(struct_id) => {
                 let member = ctx
                     .db
