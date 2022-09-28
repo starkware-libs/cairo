@@ -1,6 +1,6 @@
 use thiserror::Error;
 
-use crate::ids::{FunctionId, GenericLibFuncId, GenericTypeId};
+use crate::ids::{ConcreteTypeId, FunctionId, GenericLibFuncId, GenericTypeId};
 use crate::program::GenericArg;
 
 /// Error occurring while specializing extensions.
@@ -16,6 +16,8 @@ pub enum SpecializationError {
     MissingFunction(FunctionId),
     #[error("Generic type was not specialized with such arguments")]
     TypeWasNotDeclared(GenericTypeId, Vec<GenericArg>),
+    #[error("Missing type info for the requested type")]
+    MissingTypeInfo(ConcreteTypeId),
 }
 
 /// Extension related errors.

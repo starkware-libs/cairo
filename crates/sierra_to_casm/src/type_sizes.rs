@@ -21,7 +21,9 @@ pub fn get_type_size_map(
             | CoreTypeConcrete::GasBuiltin(_)
             | CoreTypeConcrete::Integer(_)
             | CoreTypeConcrete::Ref(_) => Some(1),
-            CoreTypeConcrete::NonZero(NonZeroConcreteType { ty }) => type_sizes.get(ty).cloned(),
+            CoreTypeConcrete::NonZero(NonZeroConcreteType { ty, .. }) => {
+                type_sizes.get(ty).cloned()
+            }
             CoreTypeConcrete::Uninitialized(_) => Some(0),
         }?;
         type_sizes.insert(declaration.id.clone(), size);
