@@ -11,7 +11,7 @@ use super::generics::semantic_generic_params;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::{compute_expr_semantic, ComputationContext, Environment};
-use crate::resolve_path::{ResolvedItem, Resolver};
+use crate::resolve_path::{ResolvedGenericItem, ResolvedLookback, Resolver};
 use crate::{semantic, ExprId, SemanticDiagnostic};
 
 #[cfg(test)]
@@ -93,7 +93,7 @@ pub struct FreeFunctionDefinitionData {
     exprs: Arena<semantic::Expr>,
     expr_lookup: UnorderedHashMap<ast::ExprPtr, ExprId>,
     statements: Arena<semantic::Statement>,
-    resolved_lookback: UnorderedHashMap<ast::TerminalIdentifierPtr, ResolvedItem>,
+    resolved_lookback: ResolvedLookback,
 }
 
 // Selectors.
@@ -142,7 +142,7 @@ pub fn priv_free_function_definition_data(
 
     let expr_lookup: UnorderedHashMap<_, _> =
         exprs.iter().map(|(expr_id, expr)| (expr.stable_ptr(), expr_id)).collect();
-    let resolved_lookback = resolver.resolved_lookback;
+    let resolved_lookback = resolver.lookback;
     Some(FreeFunctionDefinitionData {
         diagnostics: diagnostics.build(),
         body,
@@ -187,13 +187,13 @@ pub trait SemanticExprLookup<'a>: Upcast<dyn SemanticGroup + 'a> {
         let definition_data = self.upcast().priv_free_function_definition_data(free_function_id)?;
         definition_data.expr_lookup.get(&ptr).copied()
     }
-    fn lookup_resolved_item_by_ptr(
+    fn lookup_resolved_generic_item_by_ptr(
         &self,
         free_function_id: FreeFunctionId,
         ptr: ast::TerminalIdentifierPtr,
-    ) -> Option<ResolvedItem> {
+    ) -> Option<ResolvedGenericItem> {
         let definition_data = self.upcast().priv_free_function_definition_data(free_function_id)?;
-        definition_data.resolved_lookback.get(&ptr).copied()
+        definition_data.resolved_lookback.generic.get(&ptr).copied()
     }
 }
 

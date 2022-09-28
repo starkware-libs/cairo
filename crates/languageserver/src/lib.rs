@@ -20,6 +20,7 @@ use parser::ParserDiagnostic;
 use project::ProjectConfig;
 use semantic::db::SemanticGroup;
 use semantic::items::free_function::SemanticExprLookup;
+use semantic::resolve_path::ResolvedGenericItem;
 use semantic::test_utils::SemanticDatabaseForTesting;
 use semantic::SemanticDiagnostic;
 use semantic_highlighting::token_kind::SemanticTokenKind;
@@ -358,7 +359,7 @@ impl LanguageServer for Backend {
         let identifier =
             ast::TerminalIdentifier::from_syntax_node(syntax_db, node.parent().unwrap());
         let item = if let Some(item) =
-            db.lookup_resolved_item_by_ptr(free_function_id, identifier.stable_ptr())
+            db.lookup_resolved_generic_item_by_ptr(free_function_id, identifier.stable_ptr())
         {
             item
         } else {
@@ -367,36 +368,15 @@ impl LanguageServer for Backend {
 
         let defs_db = (*db).upcast();
         let (module_id, stable_ptr) = match item {
-            semantic::resolve_path::ResolvedItem::Module(item) => {
+            ResolvedGenericItem::Module(item) => {
                 (item, db.intern_stable_ptr(SyntaxStablePtr::Root))
             }
-            semantic::resolve_path::ResolvedItem::Function(item) => {
-                match db.lookup_intern_function(item) {
-                    semantic::FunctionLongId::Concrete(concrete) => (
-                        concrete.generic_function.module(defs_db),
-                        concrete.generic_function.untyped_stable_ptr(defs_db),
-                    ),
-                    semantic::FunctionLongId::Missing => {
-                        return Ok(None);
-                    }
-                }
-            }
-            semantic::resolve_path::ResolvedItem::Type(item) => match db.lookup_intern_type(item) {
-                semantic::TypeLongId::Concrete(concrete) => (
-                    concrete.generic_type().module(defs_db),
-                    concrete.generic_type().stable_ptr(defs_db),
-                ),
-                semantic::TypeLongId::GenericParameter(item) => {
-                    (item.module(defs_db), item.stable_ptr(defs_db).untyped())
-                }
-                _ => {
-                    return Ok(None);
-                }
-            },
-            semantic::resolve_path::ResolvedItem::GenericFunction(item) => {
+            ResolvedGenericItem::GenericFunction(item) => {
                 (item.module(defs_db), item.untyped_stable_ptr(defs_db))
             }
-            semantic::resolve_path::ResolvedItem::GenericType(_) => todo!(),
+            ResolvedGenericItem::GenericType(generic_type) => {
+                (generic_type.module(defs_db), generic_type.stable_ptr(defs_db))
+            }
         };
 
         let file = if let Some(file) = db.module_file(module_id) {
@@ -496,7 +476,8 @@ fn get_identifier_hint(
         return None;
     }
     let identifier = ast::TerminalIdentifier::from_syntax_node(syntax_db, node.parent().unwrap());
-    let item = db.lookup_resolved_item_by_ptr(free_function_id, identifier.stable_ptr())?;
+    let item = db.lookup_resolved_generic_item_by_ptr(free_function_id, identifier.stable_ptr())?;
+    // TODO(spapini): Also include concrete item hints.
     // TODO(spapini): Format this better.
     Some(format!("`{:?}`", item.debug(db)))
 }
