@@ -14,6 +14,7 @@ pub enum SyntaxKind {
     PathSegmentSimple,
     PathSegmentWithGenericArgs,
     ExprPath,
+    SimplePath,
     ExprParenthesized,
     ExprUnary,
     ExprBinary,

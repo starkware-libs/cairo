@@ -29,7 +29,24 @@ impl GetIdentifier for ast::TerminalIdentifierGreen {
         }
     }
 }
+impl GetIdentifier for ast::SimplePathGreen {
+    /// Retrieves the text of the last identifier in the path.
+    fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        let children = match db.lookup_intern_green(self.0).details {
+            GreenNodeDetails::Node { children, width: _ } => children,
+            _ => panic!("Unexpected token"),
+        };
+        assert_eq!(children.len() & 1, 1, "Expected an odd number of elements in the path.");
+        ast::TerminalIdentifierGreen(*children.last().unwrap()).identifier(db)
+    }
+}
 impl GetIdentifier for ast::ExprPath {
+    /// Retrieves the identifier of the last segment of the path.
+    fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        self.elements(db).last().cloned().unwrap().identifier(db)
+    }
+}
+impl GetIdentifier for ast::SimplePath {
     /// Retrieves the identifier of the last segment of the path.
     fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
         self.elements(db).last().cloned().unwrap().identifier(db)

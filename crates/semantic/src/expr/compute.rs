@@ -512,7 +512,7 @@ fn maybe_resolve_function(
 ) -> Option<(FunctionId, semantic::Signature)> {
     // TODO(spapini): Try to find function in multiple places (e.g. impls, or other modules for
     //   suggestions)
-    let item = ctx.resolver.resolve_path(ctx.diagnostics, path)?;
+    let item = ctx.resolver.resolve_expr_path(ctx.diagnostics, path)?;
     let function = match item {
         ResolvedItem::GenericFunction(generic_function) => specialize_function(
             ctx.db,

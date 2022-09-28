@@ -21,7 +21,7 @@
     │   │   │   ├── token (kind: TokenUse): 'use'
     │   │   │   └── trailing_trivia (kind: Trivia)
     │   │   │       └── child #0 (kind: TokenWhitespace).
-    │   │   ├── name (kind: ExprPath)
+    │   │   ├── name (kind: SimplePath)
     │   │   │   ├── item #0 (kind: PathSegmentSimple)
     │   │   │   │   └── ident (kind: TerminalIdentifier)
     │   │   │   │       ├── leading_trivia (kind: Trivia) []

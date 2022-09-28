@@ -161,7 +161,7 @@ pub fn maybe_resolve_type(
 ) -> Option<TypeId> {
     let syntax_db = db.upcast();
     Some(match ty_syntax {
-        ast::Expr::Path(path) => match resolver.resolve_path(diagnostics, path)? {
+        ast::Expr::Path(path) => match resolver.resolve_expr_path(diagnostics, path)? {
             ResolvedItem::GenericType(generic_type) => {
                 specialize_type(db, diagnostics, path.stable_ptr().untyped(), generic_type, vec![])?
             }

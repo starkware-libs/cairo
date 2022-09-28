@@ -18,6 +18,7 @@ pub fn get_key_fields(kind: SyntaxKind, children: Vec<GreenId>) -> Vec<GreenId> 
         SyntaxKind::PathSegmentSimple => vec![],
         SyntaxKind::PathSegmentWithGenericArgs => vec![],
         SyntaxKind::ExprPath => vec![],
+        SyntaxKind::SimplePath => vec![],
         SyntaxKind::ExprParenthesized => vec![],
         SyntaxKind::ExprUnary => vec![],
         SyntaxKind::ExprBinary => vec![],

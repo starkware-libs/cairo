@@ -1384,6 +1384,84 @@ impl TypedSyntaxNode for ExprPath {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct SimplePath(ElementList<PathSegment, 2>);
+impl Deref for SimplePath {
+    type Target = ElementList<PathSegment, 2>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+impl SimplePath {
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        children: Vec<SimplePathElementOrSeparatorGreen>,
+    ) -> SimplePathGreen {
+        let width = children.iter().map(|id| db.lookup_intern_green(id.id()).width()).sum();
+        SimplePathGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::SimplePath,
+            details: GreenNodeDetails::Node {
+                children: children.iter().map(|x| x.id()).collect(),
+                width,
+            },
+        }))
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct SimplePathPtr(SyntaxStablePtrId);
+impl SimplePathPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub enum SimplePathElementOrSeparatorGreen {
+    Separator(TerminalColonColonGreen),
+    Element(PathSegmentGreen),
+}
+impl From<TerminalColonColonGreen> for SimplePathElementOrSeparatorGreen {
+    fn from(value: TerminalColonColonGreen) -> Self {
+        SimplePathElementOrSeparatorGreen::Separator(value)
+    }
+}
+impl From<PathSegmentGreen> for SimplePathElementOrSeparatorGreen {
+    fn from(value: PathSegmentGreen) -> Self {
+        SimplePathElementOrSeparatorGreen::Element(value)
+    }
+}
+impl SimplePathElementOrSeparatorGreen {
+    fn id(&self) -> GreenId {
+        match self {
+            SimplePathElementOrSeparatorGreen::Separator(green) => green.0,
+            SimplePathElementOrSeparatorGreen::Element(green) => green.0,
+        }
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct SimplePathGreen(pub GreenId);
+impl TypedSyntaxNode for SimplePath {
+    const KIND: Option<SyntaxKind> = Some(SyntaxKind::SimplePath);
+    type StablePtr = SimplePathPtr;
+    type Green = SimplePathGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        SimplePathGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::SimplePath,
+            details: GreenNodeDetails::Node { children: vec![], width: 0 },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        Self(ElementList::new(node))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        SimplePathPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprParenthesized {
     node: SyntaxNode,
     children: Vec<SyntaxNode>,
@@ -4924,7 +5002,7 @@ impl ItemUse {
     pub fn new_green(
         db: &dyn SyntaxGroup,
         use_kw: TerminalUseGreen,
-        name: ExprPathGreen,
+        name: SimplePathGreen,
         semicolon: TerminalSemicolonGreen,
     ) -> ItemUseGreen {
         let children: Vec<GreenId> = vec![use_kw.0, name.0, semicolon.0];
@@ -4939,8 +5017,8 @@ impl ItemUse {
     pub fn use_kw(&self, db: &dyn SyntaxGroup) -> TerminalUse {
         TerminalUse::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn name(&self, db: &dyn SyntaxGroup) -> ExprPath {
-        ExprPath::from_syntax_node(db, self.children[1].clone())
+    pub fn name(&self, db: &dyn SyntaxGroup) -> SimplePath {
+        SimplePath::from_syntax_node(db, self.children[1].clone())
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
         TerminalSemicolon::from_syntax_node(db, self.children[2].clone())
@@ -4949,10 +5027,10 @@ impl ItemUse {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ItemUsePtr(SyntaxStablePtrId);
 impl ItemUsePtr {
-    pub fn name_green(self, db: &dyn SyntaxGroup) -> ExprPathGreen {
+    pub fn name_green(self, db: &dyn SyntaxGroup) -> SimplePathGreen {
         let ptr = db.lookup_intern_stable_ptr(self.0);
         if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
-            ExprPathGreen(key_fields[0])
+            SimplePathGreen(key_fields[0])
         } else {
             panic!("Unexpected key field query on root.");
         }
@@ -4973,7 +5051,7 @@ impl TypedSyntaxNode for ItemUse {
             details: GreenNodeDetails::Node {
                 children: vec![
                     TerminalUse::missing(db).0,
-                    ExprPath::missing(db).0,
+                    SimplePath::missing(db).0,
                     TerminalSemicolon::missing(db).0,
                 ],
                 width: 0,

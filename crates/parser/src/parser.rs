@@ -220,7 +220,7 @@ impl<'a> Parser<'a> {
     /// Expected pattern: use<Path>;
     fn expect_use(&mut self) -> ItemUseGreen {
         let use_kw = self.take::<TerminalUse>();
-        let path = self.parse_path();
+        let path = self.parse_simple_path();
         let semicolon = self.parse_token::<TerminalSemicolon>();
         ItemUse::new_green(self.db, use_kw, path, semicolon)
     }
@@ -342,8 +342,8 @@ impl<'a> Parser<'a> {
         // TODO(yuval): support paths starting with "::".
         match self.peek().kind {
             SyntaxKind::TerminalIdentifier => {
-                // Call parse_path() and not expect_path(), because it's cheap.
-                let path = self.parse_path();
+                // Call parse_expr_path() and not expect_path(), because it's cheap.
+                let path = self.parse_expr_path();
                 match self.peek().kind {
                     SyntaxKind::TerminalLParen => Some(self.expect_function_call(path).into()),
                     SyntaxKind::TerminalLBrace if lbrace_allowed == LbraceAllowed::Allow => {
@@ -372,7 +372,7 @@ impl<'a> Parser<'a> {
     fn try_parse_type_expr(&mut self) -> Option<ExprGreen> {
         // TODO(yuval): support paths starting with "::".
         match self.peek().kind {
-            SyntaxKind::TerminalIdentifier => Some(self.parse_path().into()),
+            SyntaxKind::TerminalIdentifier => Some(self.parse_expr_path().into()),
             SyntaxKind::TerminalLParen => Some(self.expect_parenthesized_expr()),
             _ => {
                 // TODO(yuval): report to diagnostics.
@@ -659,7 +659,7 @@ impl<'a> Parser<'a> {
 
     /// Expected pattern: <PathSegment>(::<PathSegment>)*
     /// Returns a GreenId of a node with kind ExprPath.
-    fn parse_path(&mut self) -> ExprPathGreen {
+    fn parse_expr_path(&mut self) -> ExprPathGreen {
         let mut children: Vec<ExprPathElementOrSeparatorGreen> = vec![];
         loop {
             let (segment, optional_separator) = self.parse_path_segment();
@@ -673,6 +673,22 @@ impl<'a> Parser<'a> {
         }
 
         ExprPath::new_green(self.db, children)
+    }
+
+    fn parse_simple_path(&mut self) -> SimplePathGreen {
+        let mut children: Vec<SimplePathElementOrSeparatorGreen> = vec![];
+        loop {
+            let (segment, optional_separator) = self.parse_path_segment();
+            children.push(segment.into());
+
+            if let Some(separator) = optional_separator {
+                children.push(separator.into());
+                continue;
+            }
+            break;
+        }
+
+        SimplePath::new_green(self.db, children)
     }
 
     /// Returns a PathSegment and and optional separator.

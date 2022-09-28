@@ -68,7 +68,12 @@ pub fn get_spec() -> Vec<Node> {
             .node("seperator", "TerminalColonColon")
             .node("generic_args", "GenericArgs")
             .build(),
+        // ExprPath and SimplePath are used to keep track of the path type inside the code base.
+        // Currently they use the same syntax.
+        // A path inside an expression.
         separated_list_node("ExprPath", "PathSegment", "TerminalColonColon"),
+        // A path inside a using statement.
+        separated_list_node("SimplePath", "PathSegment", "TerminalColonColon"),
         StructBuilder::new("ExprParenthesized")
             .node("lparen", "TerminalLParen")
             .node("expr", "Expr")
@@ -290,7 +295,7 @@ pub fn get_spec() -> Vec<Node> {
             .build(),
         StructBuilder::new("ItemUse")
             .node("use_kw", "TerminalUse")
-            .key_node("name", "ExprPath")
+            .key_node("name", "SimplePath")
             .node("semicolon", "TerminalSemicolon")
             .build(),
         // Generics.

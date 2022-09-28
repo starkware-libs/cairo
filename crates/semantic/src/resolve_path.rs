@@ -75,17 +75,30 @@ impl<'db> Resolver<'db> {
         resolved_item
     }
 
-    /// Resolves a concrete item, given a path.
-    /// Guaranteed to result in at most one diagnostic.
-    pub fn resolve_path(
+    pub fn resolve_expr_path(
         &mut self,
         diagnostics: &mut SemanticDiagnostics,
         path: &ast::ExprPath,
     ) -> Option<ResolvedItem> {
-        let syntax_db = self.db.upcast();
-        let elements_vec = path.elements(syntax_db);
-        let mut elements = elements_vec.iter().peekable();
+        self.resolve_path_inner(diagnostics, &path.elements(self.db.upcast()))
+    }
 
+    pub fn resolve_simple_path(
+        &mut self,
+        diagnostics: &mut SemanticDiagnostics,
+        path: &ast::SimplePath,
+    ) -> Option<ResolvedItem> {
+        self.resolve_path_inner(diagnostics, &path.elements(self.db.upcast()))
+    }
+
+    /// Resolves a concrete item, given slice of path segments.
+    /// Guaranteed to result in at most one diagnostic.
+    pub fn resolve_path_inner(
+        &mut self,
+        diagnostics: &mut SemanticDiagnostics,
+        segments: &[syntax::node::ast::PathSegment],
+    ) -> Option<ResolvedItem> {
+        let mut elements = segments.iter().peekable();
         let mut item = self.determine_base_item(&mut elements);
 
         // Follow modules.
