@@ -375,7 +375,10 @@ impl LanguageServer for Backend {
                 (item.module(defs_db), item.untyped_stable_ptr(defs_db))
             }
             ResolvedGenericItem::GenericType(generic_type) => {
-                (generic_type.module(defs_db), generic_type.stable_ptr(defs_db))
+                (generic_type.module(defs_db), generic_type.untyped_stable_ptr(defs_db))
+            }
+            ResolvedGenericItem::Variant(variant) => {
+                (variant.id.module(defs_db), variant.id.stable_ptr(defs_db).untyped())
             }
         };
 
