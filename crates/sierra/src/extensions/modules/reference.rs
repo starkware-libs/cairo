@@ -4,6 +4,7 @@ use crate::extensions::lib_func::{
     LibFuncSignature, OutputVarInfo, SignatureOnlyConcreteLibFunc, SignatureSpecializationContext,
     SpecializationContext,
 };
+use crate::extensions::types::{TypeInfo, TypeSpecializationContext};
 use crate::extensions::{
     ConcreteType, NamedLibFunc, NamedType, OutputVarReferenceInfo, SpecializationError,
 };
@@ -16,14 +17,31 @@ pub struct RefType {}
 impl NamedType for RefType {
     type Concrete = RefConcreteType;
     const ID: GenericTypeId = GenericTypeId::new_inline("Ref");
-    fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError> {
-        Ok(RefConcreteType { ty: as_single_type(args)? })
+    fn specialize(
+        &self,
+        context: &dyn TypeSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
+        let ty = as_single_type(args)?;
+
+        Ok(RefConcreteType {
+            info: context
+                .get_type_info(&ty)
+                .ok_or_else(|| SpecializationError::MissingTypeInfo(ty.clone()))?
+                .clone(),
+            ty,
+        })
     }
 }
 pub struct RefConcreteType {
+    pub info: TypeInfo,
     pub ty: ConcreteTypeId,
 }
-impl ConcreteType for RefConcreteType {}
+impl ConcreteType for RefConcreteType {
+    fn info(&self) -> &TypeInfo {
+        &self.info
+    }
+}
 
 define_libfunc_hierarchy! {
     pub enum RefLibFunc {
