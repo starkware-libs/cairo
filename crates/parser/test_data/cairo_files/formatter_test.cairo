@@ -24,6 +24,8 @@ let z = 5; 5 + Struct{a: 5, b: Struct2{_gg: ()}}; let df =6;{let k = 1; let z = 
 }
 
 
+func gen< T >(){let x=1;}
+
 
 
 struct A{} struct B{}

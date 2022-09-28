@@ -26,6 +26,11 @@ func foo(x: T) -> S {
 }
 
 
+func gen<T>() {
+    let x = 1;
+}
+
+
 struct A { }
 struct B { }
 
