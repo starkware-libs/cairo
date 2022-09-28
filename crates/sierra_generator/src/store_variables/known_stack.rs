@@ -6,7 +6,9 @@ use crate::pre_sierra;
 pub struct KnownStack {
     /// A map from [sierra::ids::VarId] of variables that are located on the stack
     /// (e.g., `[ap - 2]`) to their index on the stack, relative to `offset`.
-    /// A variable with index `i` is at `[ap - offset + i]`.
+    ///
+    /// A variable with index `i` is at the (`offset-i`)-th slot from the top of the stack.
+    /// In particular, the top element has `i = offset - 1`.
     variables_on_stack: OrderedHashMap<sierra::ids::VarId, usize>,
     offset: usize,
 }
@@ -23,7 +25,8 @@ impl KnownStack {
         self.variables_on_stack.clear();
     }
 
-    /// Marks that the given variable appears on the stack at `[ap + idx]`.
+    /// Marks that the given variable appears on slot `idx` of the stack (note that `0` here means
+    /// that the address is `ap`, and other indices will have larger addresses).
     pub fn insert(&mut self, var: sierra::ids::VarId, idx: usize) {
         self.variables_on_stack.insert(var, self.offset + idx);
     }
