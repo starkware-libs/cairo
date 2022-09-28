@@ -1,14 +1,15 @@
 use std::sync::Arc;
 
+use db_utils::Upcast;
 use defs::ids::{FreeFunctionId, ModuleId};
 use diagnostics::Diagnostics;
-use semantic::db::{AsSemanticGroup, SemanticGroup};
+use semantic::db::SemanticGroup;
 
 use crate::program_generator::{self};
 use crate::{function_generator, pre_sierra, SierraGeneratorDiagnostic};
 
 #[salsa::query_group(SierraGenDatabase)]
-pub trait SierraGenGroup: SemanticGroup + AsSemanticGroup {
+pub trait SierraGenGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     #[salsa::interned]
     fn intern_label_id(&self, id: pre_sierra::LabelLongId) -> pre_sierra::LabelId;
 
