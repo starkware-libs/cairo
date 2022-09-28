@@ -11,7 +11,7 @@ use parser::db::ParserGroup;
 use smol_str::SmolStr;
 use utils::ordered_hash_map::OrderedHashMap;
 
-use crate::resolve_path::ResolvedItem;
+use crate::resolve_path::ResolvedGenericItem;
 use crate::{corelib, items, semantic, types, FunctionId, SemanticDiagnostic};
 
 // Salsa database interface.
@@ -40,7 +40,7 @@ pub trait SemanticGroup:
     fn use_semantic_diagnostics(&self, use_id: UseId) -> Diagnostics<SemanticDiagnostic>;
     /// Returns the semantic diagnostics of a use.
     #[salsa::invoke(items::us::use_resolved_item)]
-    fn use_resolved_item(&self, use_id: UseId) -> Option<ResolvedItem>;
+    fn use_resolved_item(&self, use_id: UseId) -> Option<ResolvedGenericItem>;
 
     // Struct.
     // =======
