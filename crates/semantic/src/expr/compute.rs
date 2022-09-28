@@ -10,7 +10,6 @@ use smol_str::SmolStr;
 use syntax::node::ast::{BinaryOperator, PathSegment};
 use syntax::node::db::SyntaxGroup;
 use syntax::node::helpers::GetIdentifier;
-use syntax::node::ids::SyntaxStablePtrId;
 use syntax::node::{ast, Terminal, TypedSyntaxNode};
 use utils::ordered_hash_map::OrderedHashMap;
 use utils::OptionHelper;
@@ -22,8 +21,8 @@ use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::items::strct::SemanticStructEx;
 use crate::resolve_path::{ResolvedConcreteItem, Resolver};
-use crate::semantic::{self, ConcreteTypeId, FunctionId, TypeId, TypeLongId, Variable};
-use crate::types::resolve_type;
+use crate::semantic::{self, FunctionId, TypeId, TypeLongId, Variable};
+use crate::types::{resolve_type, ConcreteTypeId};
 
 /// Context for computing the semantic model of expression trees.
 pub struct ComputationContext<'ctx> {
@@ -131,22 +130,9 @@ pub fn maybe_compute_expr_semantic(
                 return member_access_expr(ctx, lexpr, rhs_syntax, stable_ptr);
             }
             let rexpr = compute_expr_semantic(ctx, rhs_syntax);
-            let arg_exprs = [lexpr, rexpr];
             let function = core_binary_operator(db, ctx.diagnostics, &binary_op)
                 .on_none(|| ctx.diagnostics.report(&binary_op, UnknownBinaryOperator))?;
-            let signature = typecheck_function_call(
-                ctx,
-                binary_op.stable_ptr().untyped(),
-                function,
-                &arg_exprs,
-            )?;
-            let args = arg_exprs.into_iter().map(|expr| ctx.exprs.alloc(expr)).collect();
-            Expr::ExprFunctionCall(ExprFunctionCall {
-                function,
-                args,
-                ty: signature.return_type,
-                stable_ptr,
-            })
+            expr_function_call(ctx, function, vec![lexpr, rexpr], syntax.stable_ptr())?
         }
         ast::Expr::Tuple(tuple_syntax) => {
             let mut items: Vec<ExprId> = vec![];
@@ -164,21 +150,51 @@ pub fn maybe_compute_expr_semantic(
         }
         ast::Expr::FunctionCall(call_syntax) => {
             let path = call_syntax.path(syntax_db);
-            let arg_exprs: Vec<_> = call_syntax
-                .arguments(syntax_db)
+            let item = ctx.resolver.resolve_concrete_path(ctx.diagnostics, &path)?;
+            let args_syntax = call_syntax.arguments(syntax_db);
+            let arg_exprs: Vec<_> = args_syntax
                 .expressions(syntax_db)
                 .elements(syntax_db)
                 .into_iter()
                 .map(|arg_syntax| compute_expr_semantic(ctx, arg_syntax))
                 .collect();
-            let (function, signature) = resolve_function(ctx, path, &arg_exprs);
-            let args = arg_exprs.into_iter().map(|expr| ctx.exprs.alloc(expr)).collect();
-            Expr::ExprFunctionCall(ExprFunctionCall {
-                function,
-                args,
-                ty: signature.return_type,
-                stable_ptr: call_syntax.stable_ptr().into(),
-            })
+            match item {
+                ResolvedConcreteItem::Function(function) => {
+                    expr_function_call(ctx, function, arg_exprs, syntax.stable_ptr())?
+                }
+                ResolvedConcreteItem::Variant(concrete_variant) => {
+                    if arg_exprs.len() != 1 {
+                        ctx.diagnostics.report(
+                            &args_syntax,
+                            WrongNumberOfArguments { expected: 1, actual: arg_exprs.len() },
+                        );
+                        return None;
+                    }
+                    let arg = arg_exprs[0].clone();
+                    if concrete_variant.ty != arg.ty() {
+                        ctx.diagnostics.report(
+                            &args_syntax,
+                            WrongArgumentType {
+                                expected_ty: concrete_variant.ty,
+                                actual_ty: arg.ty(),
+                            },
+                        );
+                        return None;
+                    }
+                    semantic::Expr::ExprEnumVariantCtor(semantic::ExprEnumVariantCtor {
+                        enum_variant_id: concrete_variant.id,
+                        value_expr: ctx.exprs.alloc(arg),
+                        ty: db.intern_type(TypeLongId::Concrete(ConcreteTypeId::Enum(
+                            concrete_variant.concrete_enum_id,
+                        ))),
+                        stable_ptr: syntax.stable_ptr(),
+                    })
+                }
+                _ => {
+                    ctx.diagnostics.report(&path, NotAFunction);
+                    return None;
+                }
+            }
         }
         ast::Expr::StructCtorCall(ctor_syntax) => struct_ctor_expr(ctx, ctor_syntax)?,
         ast::Expr::Block(block_syntax) => {
@@ -488,65 +504,29 @@ pub fn resolve_variable_by_name(
     None
 }
 
-/// Resolves a concrete function given a context and a path expression.
-/// Returns the generic function and the concrete function.
-fn resolve_function(
-    ctx: &mut ComputationContext<'_>,
-    path: ast::ExprPath,
-    args: &[Expr],
-) -> (FunctionId, semantic::Signature) {
-    maybe_resolve_function(ctx, &path, args).unwrap_or_else(|| {
-        (
-            FunctionId::missing(ctx.db),
-            semantic::Signature { params: vec![], return_type: TypeId::missing(ctx.db) },
-        )
-    })
-}
-/// Resolves a concrete function given a context and a path expression.
-/// Returns the generic function and the concrete function, or returns a SemanticDiagnosticKind on
-/// error,
-fn maybe_resolve_function(
-    ctx: &mut ComputationContext<'_>,
-    path: &ast::ExprPath,
-    args: &[Expr],
-) -> Option<(FunctionId, semantic::Signature)> {
-    // TODO(spapini): Try to find function in multiple places (e.g. impls, or other modules for
-    //   suggestions)
-    let item = ctx.resolver.resolve_concrete_path(ctx.diagnostics, path)?;
-    let function = match item {
-        ResolvedConcreteItem::Function(function) => function,
-        _ => {
-            ctx.diagnostics.report(path, NotAFunction);
-            return None;
-        }
-    };
-    let signature = typecheck_function_call(ctx, path.stable_ptr().untyped(), function, args)?;
-    Some((function, signature))
-}
-
 /// Typechecks a function call.
-fn typecheck_function_call(
+fn expr_function_call(
     ctx: &mut ComputationContext<'_>,
-    stable_ptr: SyntaxStablePtrId,
     function: FunctionId,
-    args: &[Expr],
-) -> Option<semantic::Signature> {
+    arg_exprs: Vec<Expr>,
+    stable_ptr: ast::ExprPtr,
+) -> Option<Expr> {
     // TODO(spapini): Better location for these diagnsotics after the refactor for generics resolve.
     let signature = ctx
         .db
         .concrete_function_signature(function)
-        .on_none(|| ctx.diagnostics.report_by_ptr(stable_ptr, UnknownFunction))?;
+        .on_none(|| ctx.diagnostics.report_by_ptr(stable_ptr.untyped(), UnknownFunction))?;
 
-    if args.len() != signature.params.len() {
+    if arg_exprs.len() != signature.params.len() {
         ctx.diagnostics.report_by_ptr(
-            stable_ptr,
-            WrongNumberOfArguments { expected: signature.params.len(), actual: args.len() },
+            stable_ptr.untyped(),
+            WrongNumberOfArguments { expected: signature.params.len(), actual: arg_exprs.len() },
         );
         return None;
     }
 
     // Check argument types.
-    for (arg, param) in args.iter().zip(signature.params.iter()) {
+    for (arg, param) in arg_exprs.iter().zip(signature.params.iter()) {
         let arg_typ = arg.ty();
         let param_typ = param.ty;
         // Don't add diagnostic if the type is missing (a diagnostic should have already been
@@ -560,7 +540,13 @@ fn typecheck_function_call(
         }
     }
 
-    Some(signature)
+    let args = arg_exprs.into_iter().map(|expr| ctx.exprs.alloc(expr)).collect();
+    Some(Expr::ExprFunctionCall(ExprFunctionCall {
+        function,
+        args,
+        ty: signature.return_type,
+        stable_ptr,
+    }))
 }
 
 /// Computes the semantic model of a statement.
@@ -585,7 +571,7 @@ pub fn compute_statement_semantic(
                     let var_type_path = type_clause.ty(syntax_db);
                     let explicit_type =
                         resolve_type(db, ctx.diagnostics, &mut ctx.resolver, &var_type_path);
-                    if explicit_type != inferred_type {
+                    if inferred_type != TypeId::missing(db) && explicit_type != inferred_type {
                         ctx.diagnostics.report(
                             &let_syntax.rhs(syntax_db),
                             WrongArgumentType {
