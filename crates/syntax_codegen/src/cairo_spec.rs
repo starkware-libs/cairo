@@ -69,6 +69,7 @@ pub fn get_spec() -> Vec<Node> {
             .node("generic_args", "GenericArgs")
             .build(),
         separated_list_node("ExprPath", "PathSegment", "TerminalColonColon"),
+        separated_list_node("SimplePath", "PathSegment", "TerminalColonColon"),
         StructBuilder::new("ExprParenthesized")
             .node("lparen", "TerminalLParen")
             .node("expr", "Expr")
@@ -290,7 +291,7 @@ pub fn get_spec() -> Vec<Node> {
             .build(),
         StructBuilder::new("ItemUse")
             .node("use_kw", "TerminalUse")
-            .key_node("name", "ExprPath")
+            .key_node("name", "SimplePath")
             .node("semicolon", "TerminalSemicolon")
             .build(),
         // Generics.

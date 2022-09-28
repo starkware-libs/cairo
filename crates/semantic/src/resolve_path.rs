@@ -80,16 +80,12 @@ impl<'db> Resolver<'db> {
     pub fn resolve_path(
         &mut self,
         diagnostics: &mut SemanticDiagnostics,
-        path: &ast::ExprPath,
+        segments: &[syntax::node::ast::PathSegment],
     ) -> Option<ResolvedItem> {
-        let syntax_db = self.db.upcast();
-        let elements_vec = path.elements(syntax_db);
-        let mut elements = elements_vec.iter().peekable();
-
-        let mut item = self.determine_base_item(&mut elements);
+        let mut item = self.determine_base_item(&mut segments.iter().peekable());
 
         // Follow modules.
-        for segment in elements {
+        for segment in segments {
             item = self.resolve_next(diagnostics, item, segment)?;
             self.mark_for_lookback(segment, item);
         }
