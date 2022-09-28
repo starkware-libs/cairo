@@ -7,6 +7,7 @@ mod expr_generator;
 mod expr_generator_context;
 mod function_generator;
 mod id_allocator;
+mod next_statement_index_fetch;
 pub mod pre_sierra;
 mod program_generator;
 mod resolve_labels;

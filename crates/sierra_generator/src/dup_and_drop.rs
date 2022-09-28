@@ -6,11 +6,11 @@ use std::collections::HashSet;
 
 use itertools::{chain, Itertools};
 use sierra::ids::VarId;
-use sierra::program::{GenBranchTarget, Param};
+use sierra::program::Param;
 use utils::ordered_hash_set::{self, OrderedHashSet};
-use utils::unordered_hash_map::UnorderedHashMap;
 
-use crate::pre_sierra::{LabelId, Statement};
+use crate::next_statement_index_fetch::NextStatementIndexFetch;
+use crate::pre_sierra::Statement;
 
 /// Variables that needs to be dupped and dropped in a statement.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
@@ -26,7 +26,7 @@ pub fn calculate_statement_dups_and_drops(
     params: &[Param],
     statements: &[Statement],
 ) -> Vec<VarsDupsAndDrops> {
-    let next_statement_index_fetch = &NextStatementIndexFetch::new(statements);
+    let next_statement_index_fetch = &NextStatementIndexFetch::new(statements, true);
     let mut statement_required_vars = vec![None; statements.len()];
     let statement_existing_vars = get_existing_vars_per_statement(
         statements,
@@ -249,38 +249,6 @@ fn calculate_required_vars_for_statement(
                 "Unexpected pre_sierra::Statement::PushValues in \
                  calculate_required_vars_for_statement()."
             )
-        }
-    }
-}
-
-/// Helper to fetch the next statement index from a branch target.
-struct NextStatementIndexFetch {
-    label_to_statement: UnorderedHashMap<LabelId, usize>,
-}
-impl NextStatementIndexFetch {
-    fn new(statements: &[Statement]) -> Self {
-        Self {
-            // TODO(orizi): Consider somehow merging implementation with `get_label_id_to_index`.
-            label_to_statement: statements
-                .iter()
-                .enumerate()
-                .filter_map(|(i, s)| match s {
-                    Statement::Sierra(_) => None,
-                    Statement::Label(label) => Some((label.id, i)),
-                    Statement::PushValues(_) => panic!(
-                        "Unexpected pre_sierra::Statement::PushValues in \
-                         NextStatementIndexFetch::new()."
-                    ),
-                })
-                .collect(),
-        }
-    }
-    fn get(&self, index: usize, target: &GenBranchTarget<LabelId>) -> usize {
-        match target {
-            sierra::program::GenBranchTarget::Fallthrough => index + 1,
-            sierra::program::GenBranchTarget::Statement(label) => {
-                *self.label_to_statement.get(label).unwrap()
-            }
         }
     }
 }
