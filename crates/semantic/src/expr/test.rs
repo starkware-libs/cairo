@@ -15,6 +15,8 @@ use crate::test_utils::{
 };
 use crate::{semantic, semantic_test};
 
+semantic_test!(expr_diagnostics_tests, ["src/expr/test_data/tests"], test_function_diagnostics);
+
 #[test]
 fn test_expr_literal() {
     let mut db_val = SemanticDatabaseForTesting::default();
@@ -60,8 +62,6 @@ fn test_expr_operator() {
          })], ty: core::bool })"
     );
 }
-
-semantic_test!(expr_diagnostics_tests, ["src/expr/test_data/tests"], test_function_diagnostics);
 
 #[test]
 fn test_member_access() {
@@ -154,7 +154,7 @@ fn test_member_access_failures() {
     assert_eq!(
         diagnostics,
         indoc! {"
-            error: Struct test_crate::A has not member f
+            error: Struct test_crate::A has no member f
              --> lib.cairo:7:7
                 a.f
                   ^
@@ -498,7 +498,7 @@ fn test_expr_call_failures() {
             "{:?}",
             db.expr_semantic(test_expr.function_id, test_expr.expr_id).debug(&expr_formatter)
         ),
-        "ExprFunctionCall(ExprFunctionCall { function: Missing, args: [], ty: <missing> })"
+        "Missing { ty: <missing>, stable_ptr: ExprPtr(SyntaxStablePtrId(26)) }"
     );
 }
 

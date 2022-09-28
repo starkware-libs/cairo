@@ -193,7 +193,7 @@ pub trait SemanticExprLookup<'a>: Upcast<dyn SemanticGroup + 'a> {
         ptr: ast::TerminalIdentifierPtr,
     ) -> Option<ResolvedGenericItem> {
         let definition_data = self.upcast().priv_free_function_definition_data(free_function_id)?;
-        definition_data.resolved_lookback.generic.get(&ptr).copied()
+        definition_data.resolved_lookback.generic.get(&ptr).cloned()
     }
 }
 
