@@ -22,7 +22,8 @@ pub fn core_felt_ty(db: &dyn SemanticGroup) -> TypeId {
         .module_item_by_name(core_module, "felt".into())
         .and_then(GenericTypeId::option_from)
         .unwrap();
-    db.intern_type(semantic::TypeLongId::Concrete(semantic::ConcreteType::new(
+    db.intern_type(semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::new(
+        db,
         generic_type,
         vec![],
     )))
@@ -35,7 +36,8 @@ pub fn core_bool_ty(db: &dyn SemanticGroup) -> TypeId {
         .module_item_by_name(core_module, "bool".into())
         .and_then(GenericTypeId::option_from)
         .unwrap();
-    db.intern_type(semantic::TypeLongId::Concrete(semantic::ConcreteType::new(
+    db.intern_type(semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::new(
+        db,
         generic_type,
         vec![],
     )))

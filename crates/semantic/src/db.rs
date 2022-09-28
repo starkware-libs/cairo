@@ -27,6 +27,15 @@ pub trait SemanticGroup:
     #[salsa::interned]
     fn intern_function(&self, id: items::functions::FunctionLongId) -> semantic::FunctionId;
     #[salsa::interned]
+    fn intern_concrete_struct(&self, id: types::ConcreteStructLongId) -> types::ConcreteStructId;
+    #[salsa::interned]
+    fn intern_concrete_enum(&self, id: types::ConcreteEnumLongId) -> types::ConcreteEnumId;
+    #[salsa::interned]
+    fn intern_concrete_extern_type(
+        &self,
+        id: types::ConcreteExternTypeLongId,
+    ) -> types::ConcreteExternTypeId;
+    #[salsa::interned]
     fn intern_type(&self, id: types::TypeLongId) -> semantic::TypeId;
 
     // Use.
@@ -232,16 +241,6 @@ pub trait SemanticGroup:
     fn core_module(&self) -> ModuleId;
     #[salsa::invoke(corelib::core_felt_ty)]
     fn core_felt_ty(&self) -> semantic::TypeId;
-}
-
-pub trait AsSemanticGroup {
-    fn as_semantic_group(&self) -> &(dyn SemanticGroup + 'static);
-}
-
-impl AsSemanticGroup for dyn SemanticGroup {
-    fn as_semantic_group(&self) -> &(dyn SemanticGroup + 'static) {
-        self
-    }
 }
 
 fn module_semantic_diagnostics(

@@ -3,7 +3,7 @@ use defs::db::{DefsDatabase, DefsGroup};
 use filesystem::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup};
 use parser::db::ParserDatabase;
 use salsa::{InternId, InternKey};
-use semantic::db::{AsSemanticGroup, SemanticDatabase};
+use semantic::db::{SemanticDatabase, SemanticGroup};
 use sierra::ids::{ConcreteLibFuncId, GenericLibFuncId};
 use sierra::program::ConcreteLibFuncLongId;
 use syntax::node::db::{SyntaxDatabase, SyntaxGroup};
@@ -51,8 +51,8 @@ impl Upcast<dyn DefsGroup> for SierraGenDatabaseForTesting {
         self
     }
 }
-impl AsSemanticGroup for SierraGenDatabaseForTesting {
-    fn as_semantic_group(&self) -> &(dyn semantic::db::SemanticGroup + 'static) {
+impl Upcast<dyn SemanticGroup> for SierraGenDatabaseForTesting {
+    fn upcast(&self) -> &(dyn semantic::db::SemanticGroup + 'static) {
         self
     }
 }

@@ -21,7 +21,7 @@ use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::types::resolve_type;
 use crate::{
-    ConcreteFunction, ConcreteType, FunctionId, FunctionLongId, GenericArgumentId, TypeId,
+    ConcreteFunction, ConcreteTypeId, FunctionId, FunctionLongId, GenericArgumentId, TypeId,
     TypeLongId,
 };
 
@@ -55,7 +55,7 @@ impl ResolvedConcreteItem {
             }
             ResolvedConcreteItem::Type(ty) => {
                 if let TypeLongId::Concrete(concrete) = db.lookup_intern_type(*ty) {
-                    ResolvedGenericItem::GenericType(concrete.generic_type())
+                    ResolvedGenericItem::GenericType(concrete.generic_type(db))
                 } else {
                     return None;
                 }
@@ -447,5 +447,5 @@ pub fn specialize_type(
         generic_args.resize(generic_params.len(), GenericArgumentId::Type(TypeId::missing(db)));
     }
 
-    Some(db.intern_type(TypeLongId::Concrete(ConcreteType::new(generic_type, generic_args))))
+    Some(db.intern_type(TypeLongId::Concrete(ConcreteTypeId::new(db, generic_type, generic_args))))
 }
