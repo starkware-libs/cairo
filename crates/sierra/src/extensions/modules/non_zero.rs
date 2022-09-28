@@ -3,6 +3,7 @@ use crate::extensions::lib_func::{
     LibFuncSignature, OutputVarInfo, SierraApChange, SignatureOnlyConcreteLibFunc,
     SignatureSpecializationContext, SpecializationContext,
 };
+use crate::extensions::types::{TypeInfo, TypeSpecializationContext};
 use crate::extensions::{
     ConcreteType, NamedLibFunc, NamedType, OutputVarReferenceInfo, SpecializationError,
 };
@@ -15,14 +16,25 @@ pub struct NonZeroType {}
 impl NamedType for NonZeroType {
     type Concrete = NonZeroConcreteType;
     const ID: GenericTypeId = GenericTypeId::new_inline("NonZero");
-    fn specialize(&self, args: &[GenericArg]) -> Result<Self::Concrete, SpecializationError> {
-        Ok(NonZeroConcreteType { ty: as_single_type(args)? })
+
+    fn specialize(
+        &self,
+        context: &dyn TypeSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
+        let ty = as_single_type(args)?;
+        Ok(NonZeroConcreteType { info: context.get_type_info_as_result(ty.clone())?, ty })
     }
 }
 pub struct NonZeroConcreteType {
+    pub info: TypeInfo,
     pub ty: ConcreteTypeId,
 }
-impl ConcreteType for NonZeroConcreteType {}
+impl ConcreteType for NonZeroConcreteType {
+    fn info(&self) -> &TypeInfo {
+        &self.info
+    }
+}
 
 /// LibFunc for unwrapping a NonZero<T> back into a T.
 #[derive(Default)]

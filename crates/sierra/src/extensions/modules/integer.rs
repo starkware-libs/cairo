@@ -2,19 +2,23 @@ use super::arithmetic::{ArithmeticTraits, ConstLibFunc, OperationLibFunc};
 use super::jump_not_zero::{JumpNotZeroLibFunc, JumpNotZeroTraits};
 use super::pod::{DropLibFunc, DuplicateLibFunc, PodTraits};
 use crate::define_libfunc_hierarchy;
-use crate::extensions::{ConcreteType, NamedType, NoGenericArgsGenericType};
+use crate::extensions::types::{InfoOnlyConcreteType, TypeInfo};
+use crate::extensions::{NamedType, NoGenericArgsGenericType};
 use crate::ids::{GenericLibFuncId, GenericTypeId};
 
 /// Type for int.
 #[derive(Default)]
 pub struct IntegerType {}
 impl NoGenericArgsGenericType for IntegerType {
-    type Concrete = IntegerConcreteType;
+    type Concrete = InfoOnlyConcreteType;
     const ID: GenericTypeId = GenericTypeId::new_inline("int");
+
+    fn specialize(&self) -> Self::Concrete {
+        InfoOnlyConcreteType {
+            info: TypeInfo { storable: true, droppable: true, duplicatable: true },
+        }
+    }
 }
-#[derive(Default)]
-pub struct IntegerConcreteType {}
-impl ConcreteType for IntegerConcreteType {}
 
 define_libfunc_hierarchy! {
     pub enum IntegerLibFunc {

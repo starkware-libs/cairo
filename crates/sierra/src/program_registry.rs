@@ -4,8 +4,9 @@ use std::collections::HashMap;
 use thiserror::Error;
 
 use crate::extensions::lib_func::{ConcreteTypeIdMap, FunctionMap, SpecializationContext};
+use crate::extensions::types::{TypeInfo, TypeSpecializationContext};
 use crate::extensions::{
-    ExtensionError, GenericLibFunc, GenericLibFuncEx, GenericType, GenericTypeEx,
+    ConcreteType, ExtensionError, GenericLibFunc, GenericLibFuncEx, GenericType, GenericTypeEx,
 };
 use crate::ids::{ConcreteLibFuncId, ConcreteTypeId, FunctionId, GenericTypeId};
 use crate::program::{Function, GenericArg, Program, TypeDeclaration};
@@ -99,6 +100,17 @@ fn get_functions(program: &Program) -> Result<FunctionMap, ProgramRegistryError>
     Ok(functions)
 }
 
+struct TypeSpecializationContextForRegistry<'a, TType: GenericType> {
+    pub concrete_types: &'a TypeMap<TType::Concrete>,
+}
+impl<TType: GenericType> TypeSpecializationContext
+    for TypeSpecializationContextForRegistry<'_, TType>
+{
+    fn get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo> {
+        self.concrete_types.get(&id).map(|ty| ty.info().clone())
+    }
+}
+
 /// Creates the type-id to concrete type map, and the reverse map from generic-id and arguments to
 /// concrete-id.
 fn get_concrete_types_maps<TType: GenericType>(
@@ -108,6 +120,7 @@ fn get_concrete_types_maps<TType: GenericType>(
     let mut concrete_type_ids = HashMap::<(GenericTypeId, &[GenericArg]), ConcreteTypeId>::new();
     for declaration in &program.type_declarations {
         let concrete_type = TType::specialize_by_id(
+            &TypeSpecializationContextForRegistry::<TType> { concrete_types: &concrete_types },
             &declaration.long_id.generic_id,
             &declaration.long_id.generic_args,
         )

@@ -247,7 +247,7 @@ fn fib_program() {
 #[test_case(indoc! {"
                 type NonZeroFelt = NonZero<felt>;
                 type felt = felt;
-            "}, "Failed building type information";
+            "}, "Error from program registry";
             "type ordering bad for building size map")]
 #[test_case(indoc! {"
                 type felt = felt;
