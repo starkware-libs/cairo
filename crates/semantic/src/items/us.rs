@@ -4,14 +4,14 @@ use diagnostics_proc_macros::DebugWithDb;
 
 use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics};
-use crate::resolve_path::{ResolvedItem, Resolver};
+use crate::resolve_path::{ResolvedGenericItem, Resolver};
 use crate::SemanticDiagnostic;
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct UseData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
-    pub resolved_item: Option<ResolvedItem>,
+    pub resolved_item: Option<ResolvedGenericItem>,
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_struct_semantic_data].
@@ -25,8 +25,7 @@ pub fn priv_use_semantic_data(db: &(dyn SemanticGroup), use_id: UseId) -> Option
     let module_data = db.module_data(module_id)?;
     let use_ast = module_data.uses.get(&use_id)?;
     let syntax_db = db.upcast();
-    // TODO(spapini): Allow only non concrete items.
-    let resolved_item = resolver.resolve_path(&mut diagnostics, &use_ast.name(syntax_db));
+    let resolved_item = resolver.resolve_generic_path(&mut diagnostics, &use_ast.name(syntax_db));
     Some(UseData { diagnostics: diagnostics.build(), resolved_item })
 }
 
@@ -58,6 +57,6 @@ pub fn use_semantic_diagnostics(
 }
 
 /// Query implementation of [crate::db::SemanticGroup::use_resolved_item].
-pub fn use_resolved_item(db: &dyn SemanticGroup, use_id: UseId) -> Option<ResolvedItem> {
+pub fn use_resolved_item(db: &dyn SemanticGroup, use_id: UseId) -> Option<ResolvedGenericItem> {
     db.priv_use_semantic_data(use_id).and_then(|data| data.resolved_item)
 }

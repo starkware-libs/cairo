@@ -21,7 +21,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::items::strct::SemanticStructEx;
-use crate::resolve_path::{specialize_function, ResolvedItem, Resolver};
+use crate::resolve_path::{ResolvedConcreteItem, Resolver};
 use crate::types::resolve_type;
 use crate::{semantic, ConcreteType, FunctionId, TypeId, TypeLongId, Variable};
 
@@ -512,21 +512,9 @@ fn maybe_resolve_function(
 ) -> Option<(FunctionId, semantic::Signature)> {
     // TODO(spapini): Try to find function in multiple places (e.g. impls, or other modules for
     //   suggestions)
-    let item = ctx.resolver.resolve_path(ctx.diagnostics, path)?;
+    let item = ctx.resolver.resolve_concrete_path(ctx.diagnostics, path)?;
     let function = match item {
-        ResolvedItem::GenericFunction(generic_function) => specialize_function(
-            ctx.db,
-            ctx.diagnostics,
-            path.stable_ptr().untyped(),
-            generic_function,
-            vec![],
-        )?,
-        ResolvedItem::GenericType(GenericTypeId::Enum(_enum_id)) => {
-            // TODO(spapini): Handle enum variants.
-            ctx.diagnostics.report(path, Unsupported);
-            return None;
-        }
-        ResolvedItem::Function(function) => function,
+        ResolvedConcreteItem::Function(function) => function,
         _ => {
             ctx.diagnostics.report(path, NotAFunction);
             return None;
