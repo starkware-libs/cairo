@@ -1,5 +1,5 @@
 use crate::extensions::lib_func::{
-    LibFuncSignature, SignatureOnlyConcreteLibFunc, SignatureSpecializationContext,
+    LibFuncSignature, SierraApChange, SignatureOnlyConcreteLibFunc, SignatureSpecializationContext,
     SpecializationContext,
 };
 use crate::extensions::{NoGenericArgsGenericLibFunc, SpecializationError};
@@ -18,7 +18,7 @@ impl NoGenericArgsGenericLibFunc for RevokeApTrackingLibFunc {
         &self,
         _context: &dyn SignatureSpecializationContext,
     ) -> Result<LibFuncSignature, SpecializationError> {
-        Ok(LibFuncSignature::new_non_branch(vec![], vec![]))
+        Ok(LibFuncSignature::new_non_branch(vec![], vec![], SierraApChange::NotImplemented))
     }
 
     fn specialize(
