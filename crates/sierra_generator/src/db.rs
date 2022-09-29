@@ -103,11 +103,11 @@ fn get_type_info(
     concrete_type_id: sierra::ids::ConcreteTypeId,
 ) -> Option<Arc<sierra::extensions::types::TypeInfo>> {
     let long_id = db.lookup_intern_concrete_type(concrete_type_id);
-    sierra::extensions::core::CoreType::specialize_by_id(
+    let concrete_ty = sierra::extensions::core::CoreType::specialize_by_id(
         &SierraSignatureSpecializationContext(db),
         &long_id.generic_id,
         &long_id.generic_args,
     )
-    .expect("Got failure while specializing type.")
-    .map(|ty| Arc::new(ty.info().clone()))
+    .expect("Got failure while specializing type.");
+    Some(Arc::new(concrete_ty.info().clone()))
 }
