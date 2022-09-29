@@ -5,7 +5,8 @@ use crate::extensions::arithmetic::{
     OperationWithConstConcreteLibFunc, Operator,
 };
 use crate::extensions::core::CoreConcreteLibFunc::{
-    self, ApTracking, Felt, FunctionCall, Gas, Integer, Mem, UnconditionalJump, UnwrapNonZero,
+    self, ApTracking, Drop, Dup, Felt, FunctionCall, Gas, Integer, Mem, UnconditionalJump,
+    UnwrapNonZero,
 };
 use crate::extensions::felt::FeltConcrete;
 use crate::extensions::function_call::FunctionCallConcreteLibFunc;
@@ -29,6 +30,14 @@ pub fn simulate<
     simulate_function: SimulateFunction,
 ) -> Result<(Vec<CoreValue>, usize), LibFuncSimulationError> {
     match libfunc {
+        Drop(_) => match &inputs[..] {
+            [_] => Ok((vec![], 0)),
+            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+        },
+        Dup(_) => match &inputs[..] {
+            [value] => Ok((vec![value.clone(), value.clone()], 0)),
+            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+        },
         FunctionCall(FunctionCallConcreteLibFunc { function, .. }) => {
             Ok((simulate_function(&function.id, inputs)?, 0))
         }
@@ -158,18 +167,6 @@ fn simulate_integer_libfunc(
             [_] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
         },
-        IntegerConcrete::Duplicate(_) => match inputs {
-            [CoreValue::Integer(value)] => {
-                Ok((vec![CoreValue::Integer(*value), CoreValue::Integer(*value)], 0))
-            }
-            [_] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
-            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
-        },
-        IntegerConcrete::Drop(_) => match inputs {
-            [CoreValue::Integer(_)] => Ok((vec![], 0)),
-            [_] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
-            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
-        },
         IntegerConcrete::JumpNotZero(_) => {
             match inputs {
                 [CoreValue::Integer(value)] if *value != 0 => {
@@ -249,18 +246,6 @@ fn simulate_felt_libfunc(
                 })],
                 0,
             )),
-            [_] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
-            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
-        },
-        FeltConcrete::Duplicate(_) => match inputs {
-            [CoreValue::Felt(value)] => {
-                Ok((vec![CoreValue::Felt(*value), CoreValue::Felt(*value)], 0))
-            }
-            [_] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
-            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
-        },
-        FeltConcrete::Drop(_) => match inputs {
-            [CoreValue::Felt(_)] => Ok((vec![], 0)),
             [_] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
         },
