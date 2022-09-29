@@ -1,3 +1,6 @@
+use std::{cmp, fmt};
+
+use itertools::Itertools;
 use smol_str::SmolStr;
 use syntax::node::db::SyntaxGroup;
 use syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
@@ -38,11 +41,199 @@ impl Default for FormatterConfig {
     }
 }
 
+#[derive(Clone)]
+/// Properties defining the behaviour of a break line point
+pub struct BreakLinePointProperties {
+    /// Breaking precedence, lower values will break first.
+    pub precedence: usize,
+    /// Dangling break points will be aligned with all similar break points.
+    /// If not dangling, a tabsize indentation will be added when broken.
+    pub dangling: bool,
+}
+
+impl BreakLinePointProperties {
+    pub fn new(precedence: usize, dangling: bool) -> Self {
+        Self { precedence, dangling }
+    }
+}
+
+/// The possible parts of lines trees.
+#[derive(Clone)]
+enum LineComponent {
+    /// A simple string to be printed.
+    Token(String),
+    /// An optional break line point, that will be used if the line is too long.
+    BreakLinePoint(BreakLinePointProperties),
+}
+
+impl LineComponent {
+    pub fn width(&self) -> usize {
+        match self {
+            Self::Token(s) => s.len(),
+            Self::BreakLinePoint(_) => 0,
+        }
+    }
+}
+
+impl fmt::Display for LineComponent {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Token(s) => write!(f, "{s}"),
+            Self::BreakLinePoint(_) => write!(f, ""),
+        }
+    }
+}
+
+/// An intermidiate representation of a code line. Used to accomulate the line parts,
+/// and break it if too long.
+#[derive(Clone)]
+struct LineTree {
+    children: Vec<LineComponent>,
+}
+
+impl fmt::Display for LineTree {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.children.iter().map(|child| child.to_string()).join(""))
+    }
+}
+
+impl LineTree {
+    pub fn new() -> Self {
+        Self { children: vec![] }
+    }
+    pub fn clear(&mut self) {
+        self.children.clear();
+    }
+    pub fn is_empty(&self) -> bool {
+        self.children.is_empty()
+    }
+    /// Adds a line component as the next child.
+    fn push_child(&mut self, new_comp: LineComponent) {
+        self.children.push(new_comp);
+    }
+    pub fn push_str(&mut self, s: &str) {
+        self.push_child(LineComponent::Token(s.to_string()));
+    }
+    pub fn push_break_line_point(&mut self, properties: BreakLinePointProperties) {
+        self.push_child(LineComponent::BreakLinePoint(properties));
+    }
+    /// The width, in number of chars, of the whole LineTree.
+    pub fn width(&self) -> usize {
+        self.width_between(0, self.children.len())
+    }
+    /// The width, in number of chars, between the s-th (inclusive) and t-th (exclusive) children.
+    pub fn width_between(&self, s: usize, t: usize) -> usize {
+        self.children[s..t].iter().fold(0, |sum, node| sum + node.width())
+    }
+    /// Returns the minimum break line point precidence from within all the break line points
+    /// which are a direct child of this tree, or None if there are no such break line points.
+    pub fn get_min_break_precedence(&self) -> Option<usize> {
+        let mut min_properties: Option<usize> = None;
+        for child in self.children.iter() {
+            if let LineComponent::BreakLinePoint(properties) = child {
+                min_properties = Some(cmp::min(
+                    properties.precedence,
+                    min_properties.unwrap_or(properties.precedence),
+                ));
+            }
+        }
+        min_properties
+    }
+    /// Retruns a vector of the positions of all the break line point children which have the
+    /// specified precedence.
+    pub fn get_break_point_positions_by_precedence(&self, precedence: usize) -> Vec<usize> {
+        let mut positions = vec![];
+        for (i, child) in self.children.iter().enumerate() {
+            if let LineComponent::BreakLinePoint(properties) = child {
+                if properties.precedence == precedence {
+                    positions.push(i);
+                }
+            }
+        }
+        positions
+    }
+    /// Returns a vector of the positions of all the break line point children which have the
+    /// minimum precedence from within all the break line point children.
+    pub fn get_min_precedence_break_point_positions(&self) -> Vec<usize> {
+        if let Some(precedence) = self.get_min_break_precedence() {
+            self.get_break_point_positions_by_precedence(precedence)
+        } else {
+            vec![]
+        }
+    }
+    /// Returns a vec of strings, representing the code in the LineTree,
+    /// each one with len < max_Width (if possible).
+    pub fn to_broken_string_by_width(&self, max_line_width: usize, tab_size: usize) -> Vec<String> {
+        if self.width() < max_line_width {
+            return vec![self.to_string()];
+        }
+        let sub_trees = self.to_broken_tree_by_width(max_line_width, tab_size);
+        if sub_trees.len() == 1 {
+            // Can't break tree to fit within width
+            // TODO(Gil): raise something
+            return vec![self.to_string()];
+        }
+        // Keep breaking recursivley the new lines if they are still too long
+        sub_trees
+            .iter()
+            .flat_map(|tree| tree.to_broken_string_by_width(max_line_width, tab_size))
+            .collect()
+    }
+
+    /// Breaks the LineTree into a vector of LineTrees
+    /// according to the lowest precidence break line point found in the LineTree.
+    pub fn to_broken_tree_by_width(&self, max_line_width: usize, tab_size: usize) -> Vec<LineTree> {
+        let mut breaking_positions = self.get_min_precedence_break_point_positions();
+        if breaking_positions.is_empty() {
+            return vec![self.clone()];
+        }
+        let mut is_dangling_break = if let LineComponent::BreakLinePoint(properties) =
+            &self.children[breaking_positions[0]]
+        {
+            properties.dangling
+        } else {
+            // It's a break line point since its from breaking positions.
+            unreachable!();
+        };
+        let mut trees: Vec<LineTree> = vec![LineTree::new()];
+        let mut added_indent = 0;
+        let mut prev_position = 0;
+        // Dangling break is overridden if it will cause the line to still be too long.
+        if is_dangling_break
+            && (breaking_positions.len() == 1
+                || self.width_between(0, breaking_positions[1]) > max_line_width)
+        {
+            is_dangling_break = false;
+            added_indent = tab_size;
+        }
+
+        breaking_positions.push(self.children.len()); // Dummy break line point, simplifies the loop.
+
+        // Iterate over the break line points and collect each part between them into one new
+        // LineTree.
+        for (i, position) in breaking_positions.iter().enumerate() {
+            for j in prev_position..*position {
+                trees.last_mut().unwrap().push_child(self.children[j].clone());
+            }
+            if i == 0 && is_dangling_break {
+                added_indent = trees.last_mut().unwrap().width();
+            } else if *position < self.children.len() {
+                trees.push(LineTree::new());
+                if added_indent > 0 {
+                    trees.last_mut().unwrap().push_str(&" ".repeat(added_indent));
+                }
+            }
+            prev_position = position + 1;
+        }
+        trees
+    }
+}
+
 /// A struct holding all the data of the pending line to be emitted.
 /// TODO(Gil): change to a more complex struct to handle line breaking.
 struct PendingLineState {
-    /// The text to be emitted.
-    text: String,
+    /// Intermidiate representation of the text to be emitted.
+    line_buffer: LineTree,
     /// Should the next space between tokens be ignored.
     no_space_after: bool,
     /// Current indentation of the produced line.
@@ -51,21 +242,16 @@ struct PendingLineState {
 
 impl PendingLineState {
     pub fn new() -> Self {
-        Self { text: String::new(), no_space_after: true, indentation: String::new() }
+        Self { line_buffer: LineTree::new(), no_space_after: true, indentation: String::new() }
     }
     /// Resets the line state to a clean state.
     pub fn reset(&mut self, indentation: String) {
         self.indentation = indentation;
-        self.text.clear();
+        self.line_buffer.clear();
         self.no_space_after = true;
     }
-    /// Appends text to the current line.
     pub fn is_empty(&self) -> bool {
-        self.text.is_empty()
-    }
-    pub fn build(&mut self) -> String {
-        let Self { text, indentation, .. } = &self;
-        if self.is_empty() { "".into() } else { format!("{indentation}{text}") }
+        self.line_buffer.is_empty()
     }
 }
 
@@ -87,6 +273,13 @@ pub trait SyntaxNodeFormat {
     fn allow_newline_after(&self, db: &dyn SyntaxGroup) -> bool;
     /// Returns the number of allowed empty lines between two consecutive children of this node.
     fn allowed_empty_between(&self, db: &dyn SyntaxGroup) -> usize;
+    /// Returns true if there should be an optional break line point before the node.
+    fn add_break_line_point_before(&self, db: &dyn SyntaxGroup) -> bool;
+    /// Returns true if there should be an optional break line point after the node.
+    fn add_break_line_point_after(&self, db: &dyn SyntaxGroup) -> bool;
+    /// Returns true if the list is optionally breakable.
+    /// Only applicable for separated lists kind nodes.
+    fn get_break_line_point_properties(&self, db: &dyn SyntaxGroup) -> BreakLinePointProperties;
 }
 
 struct Formatter<'a> {
@@ -188,10 +381,19 @@ impl<'a> Formatter<'a> {
     }
     fn append_token(&mut self, text: SmolStr, syntax_node: &SyntaxNode, no_space_after: bool) {
         if !syntax_node.force_no_space_before(self.db) && !self.line_state.no_space_after {
-            self.line_state.text += " ";
+            self.line_state.line_buffer.push_str(" ");
         }
         self.line_state.no_space_after = no_space_after;
-        self.line_state.text += &text;
+        if syntax_node.add_break_line_point_before(self.db) {
+            self.append_break_line_point(syntax_node.get_break_line_point_properties(self.db));
+        }
+        self.line_state.line_buffer.push_str(&text);
+        if syntax_node.add_break_line_point_after(self.db) {
+            self.append_break_line_point(syntax_node.get_break_line_point_properties(self.db));
+        }
+    }
+    fn append_break_line_point(&mut self, properties: BreakLinePointProperties) {
+        self.line_state.line_buffer.push_break_line_point(properties);
     }
     fn get_indentation(&self) -> String {
         if self.current_indent < self.indents_list.len() {
@@ -204,8 +406,17 @@ impl<'a> Formatter<'a> {
         self.result.push('\n');
     }
     fn finalize_line(&mut self) {
-        self.result.push_str(&self.line_state.build());
-        self.append_newline();
+        let lines = self.line_state.line_buffer.to_broken_string_by_width(
+            self.config.max_line_length - self.current_indent,
+            self.config.tab_size,
+        );
+        for line in lines {
+            if !line.is_empty() {
+                self.result.push_str(&self.get_indentation());
+                self.result.push_str(&line);
+            }
+            self.append_newline();
+        }
         self.line_state.reset(self.get_indentation());
     }
 }
