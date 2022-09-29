@@ -1,4 +1,5 @@
 use super::error::{ExtensionError, SpecializationError};
+use super::types::TypeInfo;
 use crate::ids::{ConcreteTypeId, FunctionId, GenericLibFuncId, GenericTypeId};
 use crate::program::{Function, FunctionSignature, GenericArg};
 
@@ -10,6 +11,9 @@ pub trait SignatureSpecializationContext {
         id: GenericTypeId,
         generic_args: &[GenericArg],
     ) -> Option<ConcreteTypeId>;
+
+    /// Returns the type info for a given concrete type.
+    fn get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo>;
 
     /// Returns the function's signature object associated with the given [FunctionId].
     fn get_function_signature(&self, function_id: &FunctionId) -> Option<FunctionSignature>;
@@ -33,6 +37,9 @@ pub trait SignatureSpecializationContextEx: SignatureSpecializationContext {
         id: GenericTypeId,
         generic_args: &[GenericArg],
     ) -> Result<ConcreteTypeId, SpecializationError>;
+
+    /// Wraps `get_type_info` with a result object.
+    fn get_type_info_as_result(&self, id: ConcreteTypeId) -> Result<TypeInfo, SpecializationError>;
     /// Returns the concrete id of a generic-type-id wrapping the type of a concrete-type-id.
     fn get_wrapped_concrete_type(
         &self,
@@ -55,6 +62,9 @@ impl<TSignatureSpecializationContext: SignatureSpecializationContext + ?Sized>
     ) -> Result<ConcreteTypeId, SpecializationError> {
         <Self as SignatureSpecializationContext>::get_concrete_type(self, id.clone(), generic_args)
             .ok_or_else(|| SpecializationError::TypeWasNotDeclared(id, generic_args.to_vec()))
+    }
+    fn get_type_info_as_result(&self, id: ConcreteTypeId) -> Result<TypeInfo, SpecializationError> {
+        self.get_type_info(id.clone()).ok_or(SpecializationError::MissingTypeInfo(id))
     }
     fn get_wrapped_concrete_type(
         &self,

@@ -7,7 +7,9 @@ use super::LibFuncSimulationError::{
 use super::{core, SimulationError};
 use crate::extensions::core::CoreLibFunc;
 use crate::extensions::lib_func::{SignatureSpecializationContext, SpecializationContext};
+use crate::extensions::types::TypeInfo;
 use crate::extensions::GenericLibFunc;
+use crate::ids::ConcreteTypeId;
 use crate::program::{Function, GenericArg, StatementIdx};
 
 fn type_arg(name: &str) -> GenericArg {
@@ -57,6 +59,18 @@ impl SignatureSpecializationContext for MockSpecializationContext {
                 Some("UninitializedInt".into())
             }
             (id, &[]) if id == "GasBuiltin".into() => Some("GasBuiltin".into()),
+            _ => None,
+        }
+    }
+
+    fn get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo> {
+        match id {
+            id if id == "int".into() || id == "NonZeroInt".into() => {
+                Some(TypeInfo { storable: true, droppable: true, duplicatable: true })
+            }
+            id if id == "UninitializedInt".into() => {
+                Some(TypeInfo { storable: false, droppable: true, duplicatable: false })
+            }
             _ => None,
         }
     }

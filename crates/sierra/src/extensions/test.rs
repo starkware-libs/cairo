@@ -22,8 +22,19 @@ struct MockSpecializationContext {}
 impl TypeSpecializationContext for MockSpecializationContext {
     fn get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo> {
         match id {
-            id if id == "T".into() => {
+            id if id == "T".into()
+                || id == "felt".into()
+                || id == "int".into()
+                || id == "NonZeroFelt".into()
+                || id == "NonZeroInt".into() =>
+            {
                 Some(TypeInfo { storable: true, droppable: true, duplicatable: true })
+            }
+            id if id == "UninitializedFelt".into() || id == "UninitializedInt".into() => {
+                Some(TypeInfo { storable: false, droppable: true, duplicatable: false })
+            }
+            id if id == "GasBuiltin".into() => {
+                Some(TypeInfo { storable: true, droppable: false, duplicatable: false })
             }
             _ => None,
         }
@@ -57,6 +68,10 @@ impl SignatureSpecializationContext for MockSpecializationContext {
             (id, &[]) if id == "GasBuiltin".into() => Some("GasBuiltin".into()),
             _ => None,
         }
+    }
+
+    fn get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo> {
+        <Self as TypeSpecializationContext>::get_type_info(self, id)
     }
 
     fn get_function_signature(&self, function_id: &FunctionId) -> Option<FunctionSignature> {
