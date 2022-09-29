@@ -5,7 +5,7 @@ use syntax::node::db::SyntaxGroup;
 use syntax::node::kind::SyntaxKind;
 use syntax::node::SyntaxNode;
 
-use crate::formatter::{BreakLinePointProperties, SyntaxNodeFormat};
+use crate::formatter::{BreakLinePointProperties, BreakLinePointType, SyntaxNodeFormat};
 
 fn parent_kind(db: &dyn SyntaxGroup, syntax_node: &SyntaxNode) -> Option<SyntaxKind> {
     Some(syntax_node.parent()?.kind(db))
@@ -107,19 +107,9 @@ impl SyntaxNodeFormat for SyntaxNode {
         }
     }
 
-    fn allow_newline_after(&self, db: &dyn SyntaxGroup) -> bool {
-        match self.kind(db) {
-            SyntaxKind::TerminalLParen => true,
-            SyntaxKind::TerminalComma
-                if matches!(
-                    parent_kind(db, self),
-                    Some(SyntaxKind::ParamList | SyntaxKind::ExprList | SyntaxKind::StructArgList)
-                ) =>
-            {
-                true
-            }
-            _ => false,
-        }
+    // TODO(gil): consider removing this function as it is no longer used.
+    fn allow_newline_after(&self, _db: &dyn SyntaxGroup) -> bool {
+        false
     }
 
     fn allowed_empty_between(&self, db: &dyn SyntaxGroup) -> usize {
@@ -141,14 +131,34 @@ impl SyntaxNodeFormat for SyntaxNode {
     fn add_break_line_point_after(&self, _db: &dyn SyntaxGroup) -> bool {
         false
     }
+    fn is_breakable_list(&self, db: &dyn SyntaxGroup) -> bool {
+        matches!(
+            self.kind(db),
+            SyntaxKind::StructArgList | SyntaxKind::ParamList | SyntaxKind::ExprList
+        )
+    }
     fn get_break_line_point_properties(&self, db: &dyn SyntaxGroup) -> BreakLinePointProperties {
         match self.kind(db) {
-            SyntaxKind::TokenPlus | SyntaxKind::TokenMinus => {
-                BreakLinePointProperties { precedence: 100, dangling: true }
-            }
-            SyntaxKind::TokenMul | SyntaxKind::TokenDiv => {
-                BreakLinePointProperties { precedence: 101, dangling: true }
-            }
+            SyntaxKind::ExprList => BreakLinePointProperties {
+                precedence: 10,
+                break_type: BreakLinePointType::ListBreak,
+            },
+            SyntaxKind::StructArgList => BreakLinePointProperties {
+                precedence: 11,
+                break_type: BreakLinePointType::ListBreak,
+            },
+            SyntaxKind::ParamList => BreakLinePointProperties {
+                precedence: 12,
+                break_type: BreakLinePointType::ListBreak,
+            },
+            SyntaxKind::TokenPlus | SyntaxKind::TokenMinus => BreakLinePointProperties {
+                precedence: 100,
+                break_type: BreakLinePointType::Dangling,
+            },
+            SyntaxKind::TokenMul | SyntaxKind::TokenDiv => BreakLinePointProperties {
+                precedence: 101,
+                break_type: BreakLinePointType::Dangling,
+            },
             _ => unreachable!(),
         }
     }
