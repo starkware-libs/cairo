@@ -42,26 +42,52 @@ impl Default for FormatterConfig {
 }
 
 #[derive(Clone)]
-/// Properties defining the behaviour of a break line point.
-pub struct BreakLinePointProperties {
-    /// Breaking precedence, lower values will break first.
-    pub precedence: usize,
-    /// Is the break point uses dangling behaviour.
-    /// Defined in get_break_line_point_properties.
+/// Defines the break point behaviour.
+/// Defined in get_break_line_point_properties.
+pub enum BreakLinePointType {
     /// Dangling points are usually operators which should be aligned to the first operator, i.e.:
     /// let x = 1 + 2
     ///           + 3
     ///           + 4
+    Dangling,
     /// Non-dangling are not aligned to a token above, but instead just indented by tabsize.
     /// For example, method calls, i.e.:
     /// a_variable.function1()
     ///     .function2()
     ///     .function3()
-    pub dangling: bool,
+    NonDangling,
+    /// List breaks are similar to non-dangling points, but have a non-indented trailing suffix.
+    /// Should only be used for seperated lists.
+    /// For example, struct c`tor:
+    /// let x = Struct {
+    ///     first_arg: first_arg,
+    ///     second_arg: second_arg,
+    /// };
+    ListBreak,
+}
+impl BreakLinePointType {
+    pub fn is_dangling(&self) -> bool {
+        matches!(self, BreakLinePointType::Dangling)
+    }
+    pub fn is_nondangling(&self) -> bool {
+        matches!(self, BreakLinePointType::NonDangling)
+    }
+    pub fn is_list_break(&self) -> bool {
+        matches!(self, BreakLinePointType::ListBreak)
+    }
+}
+
+#[derive(Clone)]
+/// Properties defining the behaviour of a break line point.
+pub struct BreakLinePointProperties {
+    /// Breaking precedence, lower values will break first.
+    pub precedence: usize,
+    /// The breaking behaviour type.
+    pub break_type: BreakLinePointType,
 }
 impl BreakLinePointProperties {
-    pub fn new(precedence: usize, dangling: bool) -> Self {
-        Self { precedence, dangling }
+    pub fn new(precedence: usize, break_type: BreakLinePointType) -> Self {
+        Self { precedence, break_type }
     }
 }
 
@@ -81,7 +107,6 @@ impl LineComponent {
         }
     }
 }
-
 impl fmt::Display for LineComponent {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -201,10 +226,10 @@ impl LineTree {
         if breaking_positions.is_empty() {
             return vec![self.clone()];
         }
-        let mut is_dangling_break = if let LineComponent::BreakLinePoint(properties) =
+        let mut break_line_point_type = if let LineComponent::BreakLinePoint(properties) =
             &self.children[breaking_positions[0]]
         {
-            properties.dangling
+            properties.break_type.clone()
         } else {
             unreachable!("Index is taken from a break line points positions vector.");
         };
@@ -212,11 +237,11 @@ impl LineTree {
         let mut added_indent = 0;
         let mut prev_position = 0;
         // Dangling break is overridden if it will cause the line to still be too long.
-        if is_dangling_break
+        if break_line_point_type.is_dangling()
             && (breaking_positions.len() == 1
                 || self.width_between(0, breaking_positions[1]) > max_line_width)
         {
-            is_dangling_break = false;
+            break_line_point_type = BreakLinePointType::NonDangling;
             added_indent = tab_size;
         }
 
@@ -228,9 +253,17 @@ impl LineTree {
             for j in prev_position..*position {
                 trees.last_mut().unwrap().push_child(self.children[j].clone());
             }
-            if i == 0 && is_dangling_break {
+            if i == 0 && break_line_point_type.is_dangling() {
                 added_indent = trees.last_mut().unwrap().width();
             } else if *position < self.children.len() {
+                if break_line_point_type.is_list_break() {
+                    if i == 0 {
+                        added_indent += tab_size;
+                    }
+                    if i == breaking_positions.len() - 2 {
+                        added_indent -= tab_size;
+                    }
+                }
                 trees.push(LineTree::new());
                 if added_indent > 0 {
                     trees.last_mut().unwrap().push_str(&" ".repeat(added_indent));
@@ -292,6 +325,8 @@ pub trait SyntaxNodeFormat {
     fn add_break_line_point_after(&self, db: &dyn SyntaxGroup) -> bool;
     /// Returns true if the list is optionally breakable.
     /// Only applicable for separated lists kind nodes.
+    fn is_breakable_list(&self, db: &dyn SyntaxGroup) -> bool;
+    /// Returns the BreakPointProperties associated with the specipic node kind.
     fn get_break_line_point_properties(&self, db: &dyn SyntaxGroup) -> BreakLinePointProperties;
 }
 
@@ -340,7 +375,9 @@ impl<'a> Formatter<'a> {
         let indent_change = if syntax_node.should_change_indent(self.db) { 1 } else { 0 };
         let allowed_empty_between = syntax_node.allowed_empty_between(self.db);
         let no_space_after = no_space_after || syntax_node.force_no_space_after(self.db);
-
+        if syntax_node.is_breakable_list(self.db) {
+            self.append_break_line_point(syntax_node.get_break_line_point_properties(self.db));
+        }
         let children = syntax_node.children(self.db);
         let n_children = children.len();
         for (i, child) in children.enumerate() {
@@ -351,6 +388,13 @@ impl<'a> Formatter<'a> {
             self.format_node(&child, no_space_after && i == n_children - 1);
             self.empty_lines_allowance = allowed_empty_between;
             self.current_indent -= indent_change;
+            // If this is a breakable list is breakable a breakpoint is added after each separator
+            if i % 2 == 1 && i != n_children - 1 && syntax_node.is_breakable_list(self.db) {
+                self.append_break_line_point(syntax_node.get_break_line_point_properties(self.db));
+            }
+        }
+        if syntax_node.is_breakable_list(self.db) {
+            self.append_break_line_point(syntax_node.get_break_line_point_properties(self.db));
         }
     }
     fn format_terminal(&mut self, syntax_node: &SyntaxNode, no_space_after: bool) {

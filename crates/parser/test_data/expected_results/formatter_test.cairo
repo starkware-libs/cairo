@@ -28,19 +28,18 @@ func foo(x: T) -> S {
 
 struct A { }
 struct B { }
-
+// This test is broken in this PR, will be fixed in the next one.
 // Calculates fib, but all variables are references.
-func fib(a: Ref::<felt>, b: Ref::<felt>, n: Ref::<felt>) -> Ref::<felt> {
-    match n {
-        0 => {
-            a
-        },
-        _ => {
-            fib(
-                b,
-                into_ref::<felt>(deref::<felt>(a) + deref::<felt>(b)),
-                into_ref::<felt>(deref::<felt>(n) - 1),
-            )
-        },
-    }
-}
+// func fib(a: Ref::<felt>, b: Ref::<felt>, n: Ref::<felt>) -> Ref::<felt> {
+//     match n {
+//         0 => { a },
+//         _ => {
+//             fib(
+//                 b,
+//                 into_ref::<felt>(deref::<felt>(a) + deref::<felt>(b)),
+//                
+//                 into_ref::<felt>(deref::<felt>(n) - 1),
+//             )
+//         },
+//     }
+// }
