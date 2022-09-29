@@ -1,16 +1,14 @@
-use std::collections::HashMap;
-
 use test_case::test_case;
 
 use super::core::{CoreLibFunc, CoreType};
-use super::lib_func::SpecializationContext;
+use super::lib_func::{SignatureSpecializationContext, SpecializationContext};
 use super::types::{TypeInfo, TypeSpecializationContext};
 use super::SpecializationError::{
     self, MissingFunction, UnsupportedGenericArg, UnsupportedId, WrongNumberOfGenericArgs,
 };
 use crate::extensions::{GenericLibFunc, GenericType};
-use crate::ids::ConcreteTypeId;
-use crate::program::{Function, GenericArg, StatementIdx};
+use crate::ids::{ConcreteTypeId, FunctionId, GenericTypeId};
+use crate::program::{Function, FunctionSignature, GenericArg, StatementIdx};
 
 fn type_arg(name: &str) -> GenericArg {
     GenericArg::Type(name.into())
@@ -20,12 +18,65 @@ fn value_arg(v: i64) -> GenericArg {
     GenericArg::Value(v)
 }
 
-struct MockTypeSpecializationContext {}
-impl TypeSpecializationContext for MockTypeSpecializationContext {
+struct MockSpecializationContext {}
+
+impl TypeSpecializationContext for MockSpecializationContext {
     fn get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo> {
-        match id.debug_name.as_ref().map(|s| s.as_str()) {
-            Some("T") => Some(TypeInfo { storable: true, droppable: true, duplicatable: true }),
-            _ => panic!("Unexpected call to {id}"),
+        match id {
+            id if id == "T".into() => {
+                Some(TypeInfo { storable: true, droppable: true, duplicatable: true })
+            }
+            _ => None,
+        }
+    }
+}
+
+impl SignatureSpecializationContext for MockSpecializationContext {
+    fn get_concrete_type(
+        &self,
+        id: GenericTypeId,
+        generic_args: &[GenericArg],
+    ) -> Option<ConcreteTypeId> {
+        match (id, &generic_args) {
+            (id, &[]) if id == "felt".into() => Some("felt".into()),
+            (id, &[]) if id == "int".into() => Some("int".into()),
+            (id, &[GenericArg::Type(ty)]) if id == "NonZero".into() && ty == &"felt".into() => {
+                Some("NonZeroFelt".into())
+            }
+            (id, &[GenericArg::Type(ty)]) if id == "NonZero".into() && ty == &"int".into() => {
+                Some("NonZeroInt".into())
+            }
+            (id, &[GenericArg::Type(ty)])
+                if id == "uninitialized".into() && ty == &"felt".into() =>
+            {
+                Some("UninitializedFelt".into())
+            }
+            (id, &[GenericArg::Type(ty)])
+                if id == "uninitialized".into() && ty == &"int".into() =>
+            {
+                Some("UninitializedInt".into())
+            }
+            (id, &[]) if id == "GasBuiltin".into() => Some("GasBuiltin".into()),
+            _ => None,
+        }
+    }
+
+    fn get_function_signature(&self, function_id: &FunctionId) -> Option<FunctionSignature> {
+        self.get_function(function_id).map(|f| f.signature)
+    }
+}
+
+impl SpecializationContext for MockSpecializationContext {
+    fn upcast(&self) -> &dyn SignatureSpecializationContext {
+        self
+    }
+
+    fn get_function(&self, function_id: &FunctionId) -> Option<Function> {
+        match function_id {
+            id if id == &"RegisteredFunction".into() => {
+                Some(Function::new("RegisteredFunction".into(), vec![], vec![], StatementIdx(5)))
+            }
+            _ => None,
         }
     }
 }
@@ -50,7 +101,7 @@ fn find_type_specialization(
 ) -> Result<(), SpecializationError> {
     CoreType::by_id(&id.into())
         .ok_or(UnsupportedId)?
-        .specialize(&MockTypeSpecializationContext {}, &generic_args)
+        .specialize(&MockSpecializationContext {}, &generic_args)
         .map(|_| ())
 }
 
@@ -118,26 +169,8 @@ fn find_libfunc_specialization(
     id: &str,
     generic_args: Vec<GenericArg>,
 ) -> Result<(), SpecializationError> {
-    let functions = &HashMap::from([(
-        "RegisteredFunction".into(),
-        Function::new("RegisteredFunction".into(), vec![], vec![], StatementIdx(5)),
-    )]);
     CoreLibFunc::by_id(&id.into())
         .ok_or(UnsupportedId)?
-        .specialize(
-            SpecializationContext {
-                concrete_type_ids: &HashMap::from([
-                    (("felt".into(), &[][..]), "felt".into()),
-                    (("int".into(), &[][..]), "int".into()),
-                    (("NonZero".into(), &[type_arg("int")][..]), "NonZeroInt".into()),
-                    (("NonZero".into(), &[type_arg("felt")][..]), "NonZeroFelt".into()),
-                    (("uninitialized".into(), &[type_arg("int")][..]), "UninitializedInt".into()),
-                    (("uninitialized".into(), &[type_arg("felt")][..]), "UninitializedFelt".into()),
-                    (("GasBuiltin".into(), &[][..]), "GasBuiltin".into()),
-                ]),
-                functions,
-            },
-            &generic_args,
-        )
+        .specialize(&MockSpecializationContext {}, &generic_args)
         .map(|_| ())
 }
