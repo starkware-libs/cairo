@@ -20,7 +20,7 @@ fn good_flow() {
             libfunc finalize_locals = finalize_locals;
             libfunc felt_add = felt_add;
             libfunc felt_sub = felt_sub;
-            libfunc felt_dup = felt_dup;
+            libfunc felt_dup = dup<felt>;
             libfunc felt_jump_nz = felt_jump_nz;
             libfunc felt_into_ref = into_ref<felt>;
             libfunc felt_deref = deref<felt>;
@@ -164,7 +164,7 @@ fn fib_program() {
             "Missing reference")]
 #[test_case(indoc! {"
                 type felt = felt;
-                libfunc felt_dup = felt_dup;
+                libfunc felt_dup = dup<felt>;
 
                 felt_dup([1]) -> ([1], [2]);
                 felt_dup([2]) -> ([1], [2]);
@@ -278,7 +278,7 @@ fn fib_program() {
             "fallthrough mismatch")]
 #[test_case(indoc! {"
                 type felt = felt;
-                libfunc felt_dup = felt_dup;
+                libfunc felt_dup = dup<felt>;
 
                 felt_dup([1]) -> ([1], [2]);
                 return ([1]);
@@ -294,7 +294,7 @@ fn fib_program() {
             "Failed building type information")]
 #[test_case(indoc! {"
                 type felt = felt;
-                libfunc felt_dup = felt_dup;
+                libfunc felt_dup = dup<felt>;
 
                 felt_dup([1]) -> ([1], [2]);
                 return ([1]);
@@ -306,8 +306,8 @@ fn fib_program() {
                 type felt = felt;
                 type NonZeroFelt = NonZero<felt>;
 
-                libfunc felt_dup = felt_dup;
-                libfunc felt_drop = felt_drop;
+                libfunc felt_dup = dup<felt>;
+                libfunc felt_drop = drop<felt>;
                 libfunc felt_jump_nz = felt_jump_nz;
                 libfunc store_temp_felt = store_temp<felt>;
                 libfunc store_temp_nz_felt = store_temp<NonZeroFelt>;
@@ -326,8 +326,8 @@ fn fib_program() {
 #[test_case(indoc! {"
                 type felt = felt;
 
-                libfunc felt_dup = felt_dup;
-                libfunc felt_drop = felt_drop;
+                libfunc felt_dup = dup<felt>;
+                libfunc felt_drop = drop<felt>;
                 libfunc store_temp_felt = store_temp<felt>;
                 libfunc call_foo = function_call<user@foo>;
 
@@ -347,7 +347,7 @@ fn fib_program() {
 
                 libfunc revoke_ap_tracking = revoke_ap_tracking;
 
-                libfunc felt_drop = felt_drop;
+                libfunc felt_drop = drop<felt>;
                 libfunc felt_jump_nz = felt_jump_nz;
                 libfunc felt_unwrap_nz = unwrap_nz<felt>;
                 libfunc jump = jump;
@@ -408,7 +408,7 @@ fn fib_program() {
 
                 libfunc alloc_local_felt = alloc_local<felt>;
                 libfunc store_local_felt = store_local<felt>;
-                libfunc felt_drop = felt_drop;
+                libfunc felt_drop = drop<felt>;
 
                 alloc_local_felt() -> ([2]);
                 store_local_felt([2], [1]) -> ([2]);

@@ -506,18 +506,8 @@ pub fn compile_invocation(
         CoreConcreteLibFunc::Felt(FeltConcrete::Operation(OperationConcreteLibFunc::Binary(
             felt_op,
         ))) => handle_felt_op(invocation, felt_op, refs, environment),
-        CoreConcreteLibFunc::Felt(FeltConcrete::Duplicate(felt_dup)) => {
-            handle_felt_dup(felt_dup, refs, environment)
-        }
         CoreConcreteLibFunc::Felt(FeltConcrete::JumpNotZero(jnz)) => {
             handle_jump_nz(invocation, jnz, refs, environment)
-        }
-        CoreConcreteLibFunc::Felt(FeltConcrete::Drop(libfunc)) => {
-            Ok(CompiledInvocation::only_reference_changes(
-                [].into_iter(),
-                &libfunc.output_types(),
-                environment,
-            ))
         }
         CoreConcreteLibFunc::Felt(FeltConcrete::Const(libfunc)) => {
             Ok(CompiledInvocation::only_reference_changes(
@@ -526,6 +516,15 @@ pub fn compile_invocation(
                 &libfunc.output_types(),
                 environment,
             ))
+        }
+        CoreConcreteLibFunc::Drop(libfunc) => Ok(CompiledInvocation::only_reference_changes(
+            [].into_iter(),
+            &libfunc.output_types(),
+            environment,
+        )),
+        CoreConcreteLibFunc::Duplicate(felt_dup) => {
+            // TODO(orizi): Handle other types.
+            handle_felt_dup(felt_dup, refs, environment)
         }
         CoreConcreteLibFunc::Mem(MemConcreteLibFunc::StoreTemp(store_temp)) => {
             handle_store_temp(invocation, store_temp, refs, environment, type_sizes)

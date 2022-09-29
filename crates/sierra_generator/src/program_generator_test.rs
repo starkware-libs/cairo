@@ -32,16 +32,16 @@ fn test_program_generator() {
         indoc! {"
             type [0] = felt;
 
-            libfunc felt_drop = felt_drop;
+            libfunc drop<[0]> = drop<[0]>;
             libfunc revoke_ap_tracking = revoke_ap_tracking;
             libfunc felt_const<5> = felt_const<5>;
             libfunc store_temp<[0]> = store_temp<[0]>;
             libfunc function_call<user@[0]> = function_call<user@[0]>;
             libfunc rename<[0]> = rename<[0]>;
-            libfunc felt_dup = felt_dup;
+            libfunc dup<[0]> = dup<[0]>;
             libfunc felt_add = felt_add;
 
-            felt_drop([0]) -> ();
+            drop<[0]>([0]) -> ();
             revoke_ap_tracking() -> ();
             felt_const<5>() -> ([1]);
             store_temp<[0]>([1]) -> ([2]);
@@ -49,7 +49,7 @@ fn test_program_generator() {
             rename<[0]>([3]) -> ([4]);
             return([4]);
             revoke_ap_tracking() -> ();
-            felt_dup([0]) -> ([0], [3]);
+            dup<[0]>([0]) -> ([0], [3]);
             felt_add([0], [3]) -> ([1]);
             store_temp<[0]>([1]) -> ([1]);
             rename<[0]>([1]) -> ([2]);

@@ -61,11 +61,12 @@ impl<TType: GenericType, TLibFunc: GenericLibFunc> ProgramRegistry<TType, TLibFu
     ) -> Result<ProgramRegistry<TType, TLibFunc>, ProgramRegistryError> {
         let functions = get_functions(program)?;
         let (concrete_types, concrete_type_ids) = get_concrete_types_maps::<TType>(program)?;
-        let concrete_libfuncs = get_concrete_libfuncs::<TLibFunc>(
+        let concrete_libfuncs = get_concrete_libfuncs::<TType, TLibFunc>(
             program,
             &SpecializationContextForRegistry {
                 functions: &functions,
                 concrete_type_ids: &concrete_type_ids,
+                concrete_types: &concrete_types,
             },
         )?;
         Ok(ProgramRegistry { functions, concrete_types, concrete_libfuncs })
@@ -156,11 +157,14 @@ fn get_concrete_types_maps<TType: GenericType>(
 }
 
 /// Context required for specialization process.
-pub struct SpecializationContextForRegistry<'a> {
+pub struct SpecializationContextForRegistry<'a, TType: GenericType> {
     pub functions: &'a FunctionMap,
     pub concrete_type_ids: &'a ConcreteTypeIdMap<'a>,
+    pub concrete_types: &'a TypeMap<TType::Concrete>,
 }
-impl SignatureSpecializationContext for SpecializationContextForRegistry<'_> {
+impl<TType: GenericType> SignatureSpecializationContext
+    for SpecializationContextForRegistry<'_, TType>
+{
     fn get_concrete_type(
         &self,
         id: GenericTypeId,
@@ -173,11 +177,11 @@ impl SignatureSpecializationContext for SpecializationContextForRegistry<'_> {
         self.get_function(function_id).map(|f| f.signature)
     }
 
-    fn get_type_info(&self, _id: ConcreteTypeId) -> Option<TypeInfo> {
-        todo!()
+    fn get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo> {
+        self.concrete_types.get(&id).map(|ty| ty.info().clone())
     }
 }
-impl SpecializationContext for SpecializationContextForRegistry<'_> {
+impl<TType: GenericType> SpecializationContext for SpecializationContextForRegistry<'_, TType> {
     fn get_function(&self, function_id: &FunctionId) -> Option<Function> {
         self.functions.get(function_id).cloned()
     }
@@ -188,9 +192,9 @@ impl SpecializationContext for SpecializationContextForRegistry<'_> {
 }
 
 /// Creates the libfuncs map.
-fn get_concrete_libfuncs<TLibFunc: GenericLibFunc>(
+fn get_concrete_libfuncs<TType: GenericType, TLibFunc: GenericLibFunc>(
     program: &Program,
-    context: &SpecializationContextForRegistry<'_>,
+    context: &SpecializationContextForRegistry<'_, TType>,
 ) -> Result<LibFuncMap<TLibFunc::Concrete>, ProgramRegistryError> {
     let mut concrete_libfuncs = HashMap::new();
     for declaration in &program.libfunc_declarations {
