@@ -152,7 +152,13 @@ fn add_dups_and_drops(
         .flat_map(|(mut statement, VarsDupsAndDrops { mut dups, drops })| {
             let mut expanded_statement: Vec<Statement> = drops
                 .into_iter()
-                .map(|var| simple_statement(context.felt_drop_libfunc_id(), &[var], &[]))
+                .map(|var| {
+                    simple_statement(
+                        context.drop_libfunc_id(context.get_db().core_felt_ty()).unwrap(),
+                        &[var],
+                        &[],
+                    )
+                })
                 .collect();
             if let Statement::Sierra(sierra::program::GenStatement::Invocation(invocation)) =
                 &mut statement
@@ -161,7 +167,7 @@ fn add_dups_and_drops(
                     if dups.contains(arg) {
                         let usage_var = context.allocate_sierra_variable();
                         expanded_statement.push(simple_statement(
-                            context.felt_dup_libfunc_id(),
+                            context.dup_libfunc_id(context.get_db().core_felt_ty()).unwrap(),
                             &[arg.clone()],
                             &[arg.clone(), usage_var.clone()],
                         ));
