@@ -1,5 +1,5 @@
 use pretty_assertions::assert_eq;
-use sierra::extensions::lib_func::{OutputBranchInfo, OutputVarInfo};
+use sierra::extensions::lib_func::{OutputBranchInfo, OutputVarInfo, SierraApChange};
 use sierra::extensions::OutputVarReferenceInfo;
 use sierra::ids::{ConcreteLibFuncId, ConcreteTypeId};
 
@@ -29,7 +29,7 @@ fn get_output_info(db: &dyn SierraGenGroup, libfunc: ConcreteLibFuncId) -> Vec<O
             .collect(),
         _ => panic!("get_signature() is not implemented for '{}'.", name),
     };
-    vec![OutputBranchInfo { vars: single_branch }]
+    vec![OutputBranchInfo { vars: single_branch, ap_change: SierraApChange::NotImplemented }]
 }
 
 #[test]

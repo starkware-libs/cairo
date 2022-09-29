@@ -1,5 +1,5 @@
 use crate::extensions::lib_func::{
-    LibFuncSignature, OutputBranchInfo, SignatureOnlyConcreteLibFunc,
+    LibFuncSignature, OutputBranchInfo, SierraApChange, SignatureOnlyConcreteLibFunc,
     SignatureSpecializationContext, SpecializationContext,
 };
 use crate::extensions::{NoGenericArgsGenericLibFunc, SpecializationError};
@@ -17,7 +17,7 @@ impl NoGenericArgsGenericLibFunc for UnconditionalJumpLibFunc {
     ) -> Result<LibFuncSignature, SpecializationError> {
         Ok(LibFuncSignature {
             input_types: vec![],
-            output_info: vec![OutputBranchInfo { vars: vec![] }],
+            output_info: vec![OutputBranchInfo { vars: vec![], ap_change: SierraApChange::Known }],
             fallthrough: None,
         })
     }

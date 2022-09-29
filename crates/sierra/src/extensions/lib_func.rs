@@ -252,9 +252,25 @@ pub struct OutputVarInfo {
 ///
 /// See [OutputVarInfo].
 pub struct OutputBranchInfo {
+    /// Information about the new variables created in the branch.
     pub vars: Vec<OutputVarInfo>,
+    /// Information about the change in the `ap` register in the branch.
+    pub ap_change: SierraApChange,
 }
 
+/// Describes the effect on the `ap` register in a given libfunc branch.
+// TODO(ilya): Try to combine this with the ApChange of `sierra_to_casm`.
+pub enum SierraApChange {
+    /// The libfunc changes `ap` in an unknown way.
+    Unknown,
+    /// The libfunc changes `ap` by pushing new tempvars, as described by
+    /// [OutputVarReferenceInfo::NewTempVar] in [`OutputBranchInfo::vars`].
+    Known,
+    /// Indicates that the value of ApChange was not assigned properly yet. Behaves as `Unknown`.
+    /// This will be removed, once all places using it are fixed.
+    // TODO(lior): Remove this value once it is no longer used.
+    NotImplemented,
+}
 /// Trait for a specialized library function.
 pub trait ConcreteLibFunc {
     /// The input types for calling the library function.
@@ -290,10 +306,11 @@ impl LibFuncSignature {
     pub fn new_non_branch(
         input_types: Vec<ConcreteTypeId>,
         output_info: Vec<OutputVarInfo>,
+        ap_change: SierraApChange,
     ) -> Self {
         Self {
             input_types,
-            output_info: vec![OutputBranchInfo { vars: output_info }],
+            output_info: vec![OutputBranchInfo { vars: output_info, ap_change }],
             fallthrough: Some(0),
         }
     }
