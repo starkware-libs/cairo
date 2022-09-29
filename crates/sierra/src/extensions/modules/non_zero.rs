@@ -1,7 +1,7 @@
 use super::as_single_type;
 use crate::extensions::lib_func::{
-    LibFuncSignature, OutputVarInfo, SignatureOnlyConcreteLibFunc, SignatureSpecializationContext,
-    SpecializationContext,
+    LibFuncSignature, OutputVarInfo, SierraApChange, SignatureOnlyConcreteLibFunc,
+    SignatureSpecializationContext, SpecializationContext,
 };
 use crate::extensions::{
     ConcreteType, NamedLibFunc, NamedType, OutputVarReferenceInfo, SpecializationError,
@@ -43,6 +43,7 @@ impl NamedLibFunc for UnwrapNonZeroLibFunc {
                 ty,
                 ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
             }],
+            SierraApChange::Known,
         ))
     }
 

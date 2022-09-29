@@ -2,8 +2,8 @@ use super::as_single_type;
 use super::uninitialized::UninitializedType;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
-    LibFuncSignature, OutputVarInfo, SignatureOnlyConcreteLibFunc, SignatureSpecializationContext,
-    SpecializationContext,
+    LibFuncSignature, OutputVarInfo, SierraApChange, SignatureOnlyConcreteLibFunc,
+    SignatureSpecializationContext, SpecializationContext,
 };
 use crate::extensions::{
     NamedLibFunc, NamedType, NoGenericArgsGenericLibFunc, OutputVarReferenceInfo,
@@ -39,6 +39,7 @@ impl NamedLibFunc for StoreTempLibFunc {
         Ok(LibFuncSignature::new_non_branch(
             vec![ty.clone()],
             vec![OutputVarInfo { ty, ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 } }],
+            SierraApChange::Known,
         ))
     }
 
@@ -74,7 +75,7 @@ impl NamedLibFunc for AlignTempsLibFunc {
         _context: &dyn SignatureSpecializationContext,
         _args: &[GenericArg],
     ) -> Result<LibFuncSignature, SpecializationError> {
-        Ok(LibFuncSignature::new_non_branch(vec![], vec![]))
+        Ok(LibFuncSignature::new_non_branch(vec![], vec![], SierraApChange::NotImplemented))
     }
 
     fn specialize(
@@ -118,6 +119,7 @@ impl NamedLibFunc for StoreLocalLibFunc {
                 ty.clone(),
             ],
             vec![OutputVarInfo { ty, ref_info: OutputVarReferenceInfo::NewLocalVar }],
+            SierraApChange::NotImplemented,
         ))
     }
 
@@ -152,7 +154,7 @@ impl NoGenericArgsGenericLibFunc for FinalizeLocalsLibFunc {
         &self,
         _context: &dyn SignatureSpecializationContext,
     ) -> Result<LibFuncSignature, SpecializationError> {
-        Ok(LibFuncSignature::new_non_branch(vec![], vec![]))
+        Ok(LibFuncSignature::new_non_branch(vec![], vec![], SierraApChange::NotImplemented))
     }
 
     fn specialize(
@@ -193,6 +195,7 @@ impl NamedLibFunc for AllocLocalLibFunc {
                 ty: context.get_wrapped_concrete_type(UninitializedType::id(), ty)?,
                 ref_info: OutputVarReferenceInfo::NewLocalVar,
             }],
+            SierraApChange::NotImplemented,
         ))
     }
 
@@ -225,6 +228,7 @@ impl NamedLibFunc for RenameLibFunc {
                 ty,
                 ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
             }],
+            SierraApChange::Known,
         ))
     }
 

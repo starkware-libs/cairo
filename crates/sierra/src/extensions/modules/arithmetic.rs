@@ -3,7 +3,8 @@ use std::marker::PhantomData;
 use super::non_zero::NonZeroType;
 use crate::define_concrete_libfunc_hierarchy;
 use crate::extensions::lib_func::{
-    LibFuncSignature, OutputVarInfo, SignatureSpecializationContext, SpecializationContext,
+    LibFuncSignature, OutputVarInfo, SierraApChange, SignatureSpecializationContext,
+    SpecializationContext,
 };
 use crate::extensions::{
     GenericLibFunc, NamedLibFunc, NamedType, OutputVarReferenceInfo, SignatureBasedConcreteLibFunc,
@@ -81,6 +82,7 @@ impl<TArithmeticTraits: ArithmeticTraits> GenericLibFunc for OperationLibFunc<TA
                     },
                 ],
                 vec![OutputVarInfo { ty, ref_info: OutputVarReferenceInfo::Deferred }],
+                SierraApChange::NotImplemented,
             )),
             [GenericArg::Value(c)] => {
                 if matches!(self.operator, Operator::Div | Operator::Mod) && *c == 0 {
@@ -89,6 +91,7 @@ impl<TArithmeticTraits: ArithmeticTraits> GenericLibFunc for OperationLibFunc<TA
                     Ok(LibFuncSignature::new_non_branch(
                         vec![ty.clone()],
                         vec![OutputVarInfo { ty, ref_info: OutputVarReferenceInfo::Deferred }],
+                        SierraApChange::NotImplemented,
                     ))
                 }
             }
@@ -171,6 +174,7 @@ impl<TArithmeticTraits: ArithmeticTraits> NamedLibFunc for ConstLibFunc<TArithme
                 ty: context.get_concrete_type(TArithmeticTraits::GENERIC_TYPE_ID, &[])?,
                 ref_info: OutputVarReferenceInfo::Const,
             }],
+            SierraApChange::NotImplemented,
         ))
     }
 
