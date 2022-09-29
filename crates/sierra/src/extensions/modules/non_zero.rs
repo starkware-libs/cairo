@@ -1,7 +1,7 @@
 use super::as_single_type;
 use crate::extensions::lib_func::{
     LibFuncSignature, OutputVarInfo, SierraApChange, SignatureOnlyConcreteLibFunc,
-    SignatureSpecializationContext, SpecializationContext,
+    SignatureSpecializationContext, SignatureSpecializationContextEx, SpecializationContext,
 };
 use crate::extensions::types::{TypeInfo, TypeSpecializationContext, TypeSpecializationContextEx};
 use crate::extensions::{
@@ -61,9 +61,11 @@ impl NamedLibFunc for UnwrapNonZeroLibFunc {
 
     fn specialize(
         &self,
-        context: SpecializationContext<'_>,
+        context: &dyn SpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(SignatureOnlyConcreteLibFunc { signature: self.specialize_signature(&context, args)? })
+        Ok(SignatureOnlyConcreteLibFunc {
+            signature: self.specialize_signature(context.upcast(), args)?,
+        })
     }
 }

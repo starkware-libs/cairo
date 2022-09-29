@@ -2,7 +2,8 @@
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     LibFuncSignature, OutputBranchInfo, OutputVarInfo, SierraApChange,
-    SignatureOnlyConcreteLibFunc, SignatureSpecializationContext, SpecializationContext,
+    SignatureOnlyConcreteLibFunc, SignatureSpecializationContext, SignatureSpecializationContextEx,
+    SpecializationContext,
 };
 use crate::extensions::types::{InfoOnlyConcreteType, TypeInfo};
 use crate::extensions::{
@@ -42,7 +43,7 @@ impl NoGenericArgsGenericLibFunc for GetGasLibFunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibFuncSignature, SpecializationError> {
-        let gas_builtin_type = context.get_concrete_type(GasBuiltinType::id(), &[])?;
+        let gas_builtin_type = context.get_concrete_type_as_result(GasBuiltinType::id(), &[])?;
         Ok(LibFuncSignature {
             input_types: vec![gas_builtin_type.clone()],
             output_info: vec![
@@ -69,9 +70,9 @@ impl NoGenericArgsGenericLibFunc for GetGasLibFunc {
 
     fn specialize(
         &self,
-        context: SpecializationContext<'_>,
+        context: &dyn SpecializationContext,
     ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(SignatureOnlyConcreteLibFunc { signature: self.specialize_signature(&context)? })
+        Ok(SignatureOnlyConcreteLibFunc { signature: self.specialize_signature(context.upcast())? })
     }
 }
 
@@ -86,7 +87,7 @@ impl NoGenericArgsGenericLibFunc for RefundGasLibFunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibFuncSignature, SpecializationError> {
-        let gas_builtin_type = context.get_concrete_type(GasBuiltinType::id(), &[])?;
+        let gas_builtin_type = context.get_concrete_type_as_result(GasBuiltinType::id(), &[])?;
         Ok(LibFuncSignature::new_non_branch(
             vec![gas_builtin_type.clone()],
             vec![OutputVarInfo {
@@ -99,8 +100,8 @@ impl NoGenericArgsGenericLibFunc for RefundGasLibFunc {
 
     fn specialize(
         &self,
-        context: SpecializationContext<'_>,
+        context: &dyn SpecializationContext,
     ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(SignatureOnlyConcreteLibFunc { signature: self.specialize_signature(&context)? })
+        Ok(SignatureOnlyConcreteLibFunc { signature: self.specialize_signature(context.upcast())? })
     }
 }

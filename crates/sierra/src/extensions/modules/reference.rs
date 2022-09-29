@@ -2,7 +2,7 @@ use super::as_single_type;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     LibFuncSignature, OutputVarInfo, SierraApChange, SignatureOnlyConcreteLibFunc,
-    SignatureSpecializationContext, SpecializationContext,
+    SignatureSpecializationContext, SignatureSpecializationContextEx, SpecializationContext,
 };
 use crate::extensions::types::{TypeInfo, TypeSpecializationContext, TypeSpecializationContextEx};
 use crate::extensions::{
@@ -68,10 +68,12 @@ impl NamedLibFunc for IntoRefLibFunc {
 
     fn specialize(
         &self,
-        context: SpecializationContext<'_>,
+        context: &dyn SpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(SignatureOnlyConcreteLibFunc { signature: self.specialize_signature(&context, args)? })
+        Ok(SignatureOnlyConcreteLibFunc {
+            signature: self.specialize_signature(context.upcast(), args)?,
+        })
     }
 }
 
@@ -97,9 +99,11 @@ impl NamedLibFunc for DerefLibFunc {
 
     fn specialize(
         &self,
-        context: SpecializationContext<'_>,
+        context: &dyn SpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(SignatureOnlyConcreteLibFunc { signature: self.specialize_signature(&context, args)? })
+        Ok(SignatureOnlyConcreteLibFunc {
+            signature: self.specialize_signature(context.upcast(), args)?,
+        })
     }
 }
