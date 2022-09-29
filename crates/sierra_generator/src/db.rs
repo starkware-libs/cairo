@@ -4,8 +4,10 @@ use db_utils::Upcast;
 use defs::ids::{FreeFunctionId, ModuleId};
 use diagnostics::Diagnostics;
 use semantic::db::SemanticGroup;
+use sierra::extensions::{ConcreteType, GenericTypeEx};
 
 use crate::program_generator::{self};
+use crate::specialization_context::SierraSignatureSpecializationContext;
 use crate::{function_generator, pre_sierra, SierraGeneratorDiagnostic};
 
 #[salsa::query_group(SierraGenDatabase)]
@@ -43,6 +45,12 @@ pub trait SierraGenGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
         &self,
         function_id: sierra::ids::FunctionId,
     ) -> Option<Arc<sierra::program::FunctionSignature>>;
+
+    /// Returns the [sierra::extensions::types::TypeInfo] object for the given type id.
+    fn get_type_info(
+        &self,
+        concrete_type_id: sierra::ids::ConcreteTypeId,
+    ) -> Option<Arc<sierra::extensions::types::TypeInfo>>;
 
     /// Private query to compute Sierra data about a free function.
     #[salsa::invoke(function_generator::priv_free_function_sierra_data)]
@@ -88,4 +96,18 @@ fn get_function_signature(
     let ret_types = vec![db.get_concrete_type_id(signature.return_type)?];
 
     Some(Arc::new(sierra::program::FunctionSignature { param_types, ret_types }))
+}
+
+fn get_type_info(
+    db: &dyn SierraGenGroup,
+    concrete_type_id: sierra::ids::ConcreteTypeId,
+) -> Option<Arc<sierra::extensions::types::TypeInfo>> {
+    let long_id = db.lookup_intern_concrete_type(concrete_type_id);
+    let concrete_ty = sierra::extensions::core::CoreType::specialize_by_id(
+        &SierraSignatureSpecializationContext(db),
+        &long_id.generic_id,
+        &long_id.generic_args,
+    )
+    .expect("Got failure while specializing type.");
+    Some(Arc::new(concrete_ty.info().clone()))
 }
