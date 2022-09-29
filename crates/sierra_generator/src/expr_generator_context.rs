@@ -107,6 +107,19 @@ impl<'a> ExprGeneratorContext<'a> {
         })
     }
 
+    fn get_libfunc_id_on_generic_type(
+        &self,
+        name: impl Into<SmolStr>,
+        ty: semantic::TypeId,
+    ) -> Option<sierra::ids::ConcreteLibFuncId> {
+        Some(self.db.intern_concrete_lib_func(sierra::program::ConcreteLibFuncLongId {
+            generic_id: sierra::ids::GenericLibFuncId::from_string(name),
+            generic_args: vec![sierra::program::GenericArg::Type(
+                self.db.get_concrete_type_id(ty)?,
+            )],
+        }))
+    }
+
     pub fn felt_const_libfunc_id(&self, value: usize) -> sierra::ids::ConcreteLibFuncId {
         self.db.intern_concrete_lib_func(sierra::program::ConcreteLibFuncLongId {
             generic_id: sierra::ids::GenericLibFuncId::from_string("felt_const"),
@@ -126,12 +139,12 @@ impl<'a> ExprGeneratorContext<'a> {
         })
     }
 
-    pub fn felt_drop_libfunc_id(&self) -> sierra::ids::ConcreteLibFuncId {
-        self.get_extension_id_without_generics("felt_drop")
+    pub fn drop_libfunc_id(&self, ty: semantic::TypeId) -> Option<sierra::ids::ConcreteLibFuncId> {
+        self.get_libfunc_id_on_generic_type("drop", ty)
     }
 
-    pub fn felt_dup_libfunc_id(&self) -> sierra::ids::ConcreteLibFuncId {
-        self.get_extension_id_without_generics("felt_dup")
+    pub fn dup_libfunc_id(&self, ty: semantic::TypeId) -> Option<sierra::ids::ConcreteLibFuncId> {
+        self.get_libfunc_id_on_generic_type("dup", ty)
     }
 
     pub fn felt_jump_nz_libfunc_id(&self) -> sierra::ids::ConcreteLibFuncId {
@@ -150,12 +163,7 @@ impl<'a> ExprGeneratorContext<'a> {
         &self,
         ty: semantic::TypeId,
     ) -> Option<sierra::ids::ConcreteLibFuncId> {
-        Some(self.db.intern_concrete_lib_func(sierra::program::ConcreteLibFuncLongId {
-            generic_id: sierra::ids::GenericLibFuncId::from_string("unwrap_nz"),
-            generic_args: vec![sierra::program::GenericArg::Type(
-                self.db.get_concrete_type_id(ty)?,
-            )],
-        }))
+        self.get_libfunc_id_on_generic_type("unwrap_nz", ty)
     }
 
     pub fn generic_libfunc_id(
