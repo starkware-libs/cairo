@@ -3,7 +3,7 @@ use super::uninitialized::UninitializedType;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     LibFuncSignature, OutputVarInfo, SignatureOnlyConcreteLibFunc, SignatureSpecializationContext,
-    SpecializationContext,
+    SignatureSpecializationContextEx, SpecializationContext,
 };
 use crate::extensions::{
     NamedLibFunc, NamedType, NoGenericArgsGenericLibFunc, OutputVarReferenceInfo,
@@ -44,11 +44,14 @@ impl NamedLibFunc for StoreTempLibFunc {
 
     fn specialize(
         &self,
-        context: SpecializationContext<'_>,
+        context: &dyn SpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
         let ty = as_single_type(args)?;
-        Ok(StoreTempConcreteLibFunc { ty, signature: self.specialize_signature(&context, args)? })
+        Ok(StoreTempConcreteLibFunc {
+            ty,
+            signature: self.specialize_signature(context.upcast(), args)?,
+        })
     }
 }
 
@@ -79,12 +82,12 @@ impl NamedLibFunc for AlignTempsLibFunc {
 
     fn specialize(
         &self,
-        context: SpecializationContext<'_>,
+        context: &dyn SpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
         Ok(AlignTempsConcreteLibFunc {
             ty: as_single_type(args)?,
-            signature: self.specialize_signature(&context, args)?,
+            signature: self.specialize_signature(context.upcast(), args)?,
         })
     }
 }
@@ -123,11 +126,14 @@ impl NamedLibFunc for StoreLocalLibFunc {
 
     fn specialize(
         &self,
-        context: SpecializationContext<'_>,
+        context: &dyn SpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
         let ty = as_single_type(args)?;
-        Ok(StoreLocalConcreteLibFunc { ty, signature: self.specialize_signature(&context, args)? })
+        Ok(StoreLocalConcreteLibFunc {
+            ty,
+            signature: self.specialize_signature(context.upcast(), args)?,
+        })
     }
 }
 
@@ -157,10 +163,13 @@ impl NoGenericArgsGenericLibFunc for FinalizeLocalsLibFunc {
 
     fn specialize(
         &self,
-        context: SpecializationContext<'_>,
+        context: &dyn SpecializationContext,
     ) -> Result<Self::Concrete, SpecializationError> {
         Ok(SignatureOnlyConcreteLibFunc {
-            signature: <Self as NoGenericArgsGenericLibFunc>::specialize_signature(self, &context)?,
+            signature: <Self as NoGenericArgsGenericLibFunc>::specialize_signature(
+                self,
+                context.upcast(),
+            )?,
         })
     }
 }
@@ -198,11 +207,14 @@ impl NamedLibFunc for AllocLocalLibFunc {
 
     fn specialize(
         &self,
-        context: SpecializationContext<'_>,
+        context: &dyn SpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
         let ty = as_single_type(args)?;
-        Ok(AllocLocalConcreteLibFunc { ty, signature: self.specialize_signature(&context, args)? })
+        Ok(AllocLocalConcreteLibFunc {
+            ty,
+            signature: self.specialize_signature(context.upcast(), args)?,
+        })
     }
 }
 
@@ -230,9 +242,11 @@ impl NamedLibFunc for RenameLibFunc {
 
     fn specialize(
         &self,
-        context: SpecializationContext<'_>,
+        context: &dyn SpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(SignatureOnlyConcreteLibFunc { signature: self.specialize_signature(&context, args)? })
+        Ok(SignatureOnlyConcreteLibFunc {
+            signature: self.specialize_signature(context.upcast(), args)?,
+        })
     }
 }
