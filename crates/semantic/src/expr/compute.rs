@@ -242,6 +242,10 @@ pub fn maybe_compute_expr_semantic(
                         let semantic_literal = literal_to_semantic(ctx, &literal)?;
                         semantic::Pattern::Literal(semantic_literal)
                     }
+                    _ => {
+                        ctx.diagnostics.report(syntax, Unsupported);
+                        return None;
+                    }
                 };
                 let expr_syntax = syntax_arm.expression(syntax_db);
                 let expr_semantic = compute_expr_semantic(ctx, expr_syntax.clone());
