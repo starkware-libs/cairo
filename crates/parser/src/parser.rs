@@ -548,12 +548,70 @@ impl<'a> Parser<'a> {
     /// Returns a GreenId of a node with some Pattern kind (see [syntax::node::ast::Pattern]) or
     /// None if a pattern can't be parsed.
     fn try_parse_pattern(&mut self) -> Option<PatternGreen> {
-        // TODO(yuval): Support more options.
-        match self.peek().kind {
-            SyntaxKind::TerminalLiteralNumber => Some(self.take::<TerminalLiteralNumber>().into()),
-            SyntaxKind::TerminalUnderscore => Some(self.take::<TerminalUnderscore>().into()),
-            _ => None,
-        }
+        // TODO(yuval): Support tuple and "Or" patterns.
+        Some(match self.peek().kind {
+            SyntaxKind::TerminalLiteralNumber => self.take::<TerminalLiteralNumber>().into(),
+            SyntaxKind::TerminalUnderscore => self.take::<TerminalUnderscore>().into(),
+            SyntaxKind::TerminalIdentifier => {
+                let path = self.parse_path();
+                match self.peek().kind {
+                    SyntaxKind::TerminalLBrace => {
+                        let lbrace = self.take::<TerminalLBrace>();
+                        let params = PatternStructParamList::new_green(
+                            self.db,
+                            self.parse_separated_list::<
+                                PatternStructParam,
+                                TerminalComma,
+                                PatternStructParamListElementOrSeparatorGreen>
+                            (
+                                Self::try_parse_pattern_struct_param,
+                                is_of_kind!(rparen, block, rbrace, top_level),
+                                SyntaxKind::TerminalComma,
+                                "struct pattern parameter",
+                            ),
+                        );
+                        let rbrace = self.take::<TerminalRBrace>();
+                        PatternStruct::new_green(self.db, path, lbrace, params, rbrace).into()
+                    }
+                    SyntaxKind::TerminalLParen => {
+                        // Enum pattern.
+                        // Even if the next token is not lparen, this is the best course to take.
+                        let lparen = self.take::<TerminalLParen>();
+                        let pattern = self.parse_pattern();
+                        let rparen = self.take::<TerminalRParen>();
+                        PatternEnum::new_green(self.db, path, lparen, pattern, rparen).into()
+                    }
+                    _ => path.into(),
+                }
+            }
+            _ => return None,
+        })
+    }
+    /// Returns a GreenId of a node with some Pattern kind (see [syntax::node::ast::Pattern]).
+    fn parse_pattern(&mut self) -> PatternGreen {
+        // If not found, return a missing underscore pattern.
+        self.try_parse_pattern().unwrap_or_else(|| self.take::<TerminalUnderscore>().into())
+    }
+
+    /// Returns a GreenId of a syntax in side a struct pattern. Example:
+    /// `MyStruct { param0, param1: _, .. }`.
+    fn try_parse_pattern_struct_param(&mut self) -> Option<PatternStructParamGreen> {
+        Some(match self.peek().kind {
+            SyntaxKind::TerminalIdentifier => {
+                let name = self.take::<TerminalIdentifier>();
+                if self.peek().kind == SyntaxKind::TerminalColon {
+                    let colon = self.take::<TerminalColon>();
+                    let pattern = self.parse_pattern();
+                    PatternStructParamWithExpr::new_green(self.db, name, colon, pattern).into()
+                } else {
+                    name.into()
+                }
+            }
+            SyntaxKind::TerminalDotDot => self.take::<TerminalDotDot>().into(),
+            _ => {
+                return None;
+            }
+        })
     }
 
     // ------------------------------- Statements -------------------------------

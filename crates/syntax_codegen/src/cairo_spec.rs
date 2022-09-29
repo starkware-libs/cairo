@@ -123,31 +123,60 @@ pub fn get_spec() -> Vec<Node> {
             .node("statements", "StatementList")
             .node("rbrace", "TerminalRBrace")
             .build(),
-        EnumBuilder::new("Pattern")
-                .node_with_explicit_kind("Underscore", "TerminalUnderscore")
-                // TODO(yuval): support more options.
-                .node_with_explicit_kind("Literal", "TerminalLiteralNumber")
-                .build(),
+        separated_list_node("MatchArms", "MatchArm", "TerminalComma"),
+        StructBuilder::new("ExprMatch")
+            .node("match_kw", "TerminalMatch")
+            // TODO(yuval): change to SimpleExpr
+            .node("expr", "Expr")
+            .node("lbrace", "TerminalLBrace")
+            .node("arms", "MatchArms")
+            .node("rbrace", "TerminalRBrace")
+            .build(),
         StructBuilder::new("MatchArm")
             .node("pattern", "Pattern")
             .node("arrow", "TerminalMatchArrow")
             .node("expression", "Expr")
             .build(),
-        separated_list_node("MatchArms", "MatchArm", "TerminalComma"),
-        StructBuilder::new("ExprMatch")
-                .node("match_kw", "TerminalMatch")
-                // TODO(yuval): change to SimpleExpr
-                .node("expr", "Expr")
-                .node("lbrace", "TerminalLBrace")
-                .node("arms", "MatchArms")
-                .node("rbrace", "TerminalRBrace")
-                .build(),
         StructBuilder::new("ExprIf")
             .node("if_kw", "TerminalIf")
             .node("condition", "Expr")
             .node("if_block", "ExprBlock")
             .node("else_kw", "TerminalElse")
             .node("else_block", "ExprBlock")
+            .build(),
+        // ---Patterns ---
+        // TODO(spapini): Support "Or" patterns (e.g. 1 | 2).
+        // TODO(spapini): Support tuple patterns (e.g. (x, _)).
+        EnumBuilder::new("Pattern")
+            .node_with_explicit_kind("Underscore", "TerminalUnderscore")
+            .node_with_explicit_kind("Literal", "TerminalLiteralNumber")
+            .node("Struct")
+            .node("Enum")
+            .node_with_explicit_kind("Path", "ExprPath")
+            .build(),
+        StructBuilder::new("PatternStruct")
+            // TODO(spapini): Use SimplePath instead - which is not an expr.
+            .node("path", "ExprPath")
+            .node("lbrace", "TerminalLBrace")
+            .node("params", "PatternStructParamList")
+            .node("rbrace", "TerminalRBrace")
+            .build(),
+        separated_list_node("PatternStructParamList", "PatternStructParam", "TerminalComma"),
+        EnumBuilder::new("PatternStructParam")
+            .node_with_explicit_kind("Single", "TerminalIdentifier")
+            .node("WithExpr")
+            .node_with_explicit_kind("Tail", "TerminalDotDot")
+            .build(),
+        StructBuilder::new("PatternStructParamWithExpr")
+            .node("name", "TerminalIdentifier")
+            .node("colon", "TerminalColon")
+            .node("pattern", "Pattern")
+            .build(),
+        StructBuilder::new("PatternEnum")
+            .node("path", "ExprPath")
+            .node("lparen", "TerminalLParen")
+            .node("pattern", "Pattern")
+            .node("rparen", "TerminalRParen")
             .build(),
         // --- Type clauses ---
         // TODO(yuval): support SimpleExpr instead of ExprPath
