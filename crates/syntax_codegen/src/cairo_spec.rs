@@ -14,34 +14,6 @@ pub fn get_spec() -> Vec<Node> {
             .node_with_explicit_kind("Newline", "TokenNewline")
             .node_with_explicit_kind("Skipped", "TokenSkipped")
             .build(),
-        // --- Function calls ---
-        StructBuilder::new("StructArgExpr")
-            .node("colon", "TerminalColon")
-            .node("expr", "Expr")
-            .build(),
-        EnumBuilder::new("OptionStructArgExpr")
-            .node("Empty")
-            .node_with_explicit_kind("Some", "StructArgExpr")
-            .build(),
-        StructBuilder::new("OptionStructArgExprEmpty").build(),
-        StructBuilder::new("StructArgSingle")
-            .key_node("identifier", "TerminalIdentifier")
-            .node("arg_expr", "OptionStructArgExpr")
-            .build(),
-        StructBuilder::new("StructArgTail")
-            .node("dotdot", "TerminalDotDot")
-            .node("expression", "Expr")
-            .build(),
-        EnumBuilder::new("StructArg")
-            .node_with_explicit_kind("StructArgSingle", "StructArgSingle")
-            .node_with_explicit_kind("StructArgTail", "StructArgTail")
-            .build(),
-        separated_list_node("StructArgList", "StructArg", "TerminalComma"),
-        StructBuilder::new("ArgListBraced")
-            .node("lbrace", "TerminalLBrace")
-            .node("arguments", "StructArgList")
-            .node("rbrace", "TerminalRBrace")
-            .build(),
         // --- Expressions ---
         EnumBuilder::new("Expr")
             .missing("Missing")
@@ -105,14 +77,14 @@ pub fn get_spec() -> Vec<Node> {
             .node("expressions", "ExprList")
             .node("rparen", "TerminalRParen")
             .build(),
+        StructBuilder::new("ExprFunctionCall")
+            .node("path", "ExprPath")
+            .node("arguments", "ExprListParenthesized")
+            .build(),
         StructBuilder::new("ExprListParenthesized")
             .node("lparen", "TerminalLParen")
             .node("expressions", "ExprList")
             .node("rparen", "TerminalRParen")
-            .build(),
-        StructBuilder::new("ExprFunctionCall")
-            .node("path", "ExprPath")
-            .node("arguments", "ExprListParenthesized")
             .build(),
         StructBuilder::new("ExprStructCtorCall")
             .node("path", "ExprPath")
@@ -123,7 +95,6 @@ pub fn get_spec() -> Vec<Node> {
             .node("statements", "StatementList")
             .node("rbrace", "TerminalRBrace")
             .build(),
-        separated_list_node("MatchArms", "MatchArm", "TerminalComma"),
         StructBuilder::new("ExprMatch")
             .node("match_kw", "TerminalMatch")
             // TODO(yuval): change to SimpleExpr
@@ -132,6 +103,7 @@ pub fn get_spec() -> Vec<Node> {
             .node("arms", "MatchArms")
             .node("rbrace", "TerminalRBrace")
             .build(),
+        separated_list_node("MatchArms", "MatchArm", "TerminalComma"),
         StructBuilder::new("MatchArm")
             .node("pattern", "Pattern")
             .node("arrow", "TerminalMatchArrow")
@@ -143,6 +115,34 @@ pub fn get_spec() -> Vec<Node> {
             .node("if_block", "ExprBlock")
             .node("else_kw", "TerminalElse")
             .node("else_block", "ExprBlock")
+            .build(),
+        // --- Struct ctror ---
+        StructBuilder::new("StructArgExpr")
+            .node("colon", "TerminalColon")
+            .node("expr", "Expr")
+            .build(),
+        EnumBuilder::new("OptionStructArgExpr")
+            .node("Empty")
+            .node_with_explicit_kind("Some", "StructArgExpr")
+            .build(),
+        StructBuilder::new("OptionStructArgExprEmpty").build(),
+        StructBuilder::new("StructArgSingle")
+            .key_node("identifier", "TerminalIdentifier")
+            .node("arg_expr", "OptionStructArgExpr")
+            .build(),
+        StructBuilder::new("StructArgTail")
+            .node("dotdot", "TerminalDotDot")
+            .node("expression", "Expr")
+            .build(),
+        EnumBuilder::new("StructArg")
+            .node_with_explicit_kind("StructArgSingle", "StructArgSingle")
+            .node_with_explicit_kind("StructArgTail", "StructArgTail")
+            .build(),
+        separated_list_node("StructArgList", "StructArg", "TerminalComma"),
+        StructBuilder::new("ArgListBraced")
+            .node("lbrace", "TerminalLBrace")
+            .node("arguments", "StructArgList")
+            .node("rbrace", "TerminalRBrace")
             .build(),
         // ---Patterns ---
         // TODO(spapini): Support "Or" patterns (e.g. 1 | 2).
