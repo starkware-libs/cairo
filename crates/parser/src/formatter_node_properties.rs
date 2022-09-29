@@ -5,7 +5,7 @@ use syntax::node::db::SyntaxGroup;
 use syntax::node::kind::SyntaxKind;
 use syntax::node::SyntaxNode;
 
-use crate::formatter::SyntaxNodeFormat;
+use crate::formatter::{BreakLinePointProperties, SyntaxNodeFormat};
 
 fn parent_kind(db: &dyn SyntaxGroup, syntax_node: &SyntaxNode) -> Option<SyntaxKind> {
     Some(syntax_node.parent()?.kind(db))
@@ -127,6 +127,29 @@ impl SyntaxNodeFormat for SyntaxNode {
             SyntaxKind::ItemList => 2,
             SyntaxKind::StatementList => 1,
             _ => 0,
+        }
+    }
+    fn add_break_line_point_before(&self, db: &dyn SyntaxGroup) -> bool {
+        matches!(
+            self.kind(db),
+            SyntaxKind::TokenPlus
+                | SyntaxKind::TokenMinus
+                | SyntaxKind::TokenMul
+                | SyntaxKind::TokenDiv
+        )
+    }
+    fn add_break_line_point_after(&self, _db: &dyn SyntaxGroup) -> bool {
+        false
+    }
+    fn get_break_line_point_properties(&self, db: &dyn SyntaxGroup) -> BreakLinePointProperties {
+        match self.kind(db) {
+            SyntaxKind::TokenPlus | SyntaxKind::TokenMinus => {
+                BreakLinePointProperties { precedence: 100, dangling: true }
+            }
+            SyntaxKind::TokenMul | SyntaxKind::TokenDiv => {
+                BreakLinePointProperties { precedence: 101, dangling: true }
+            }
+            _ => unreachable!(),
         }
     }
 }
