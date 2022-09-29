@@ -161,7 +161,6 @@ fn test_match() {
             "jump() { label1() }",
             // Branch otherwise.
             "label0:",
-            "unwrap_nz<[0]>([1]) -> ([4])",
             "felt_const<7>() -> ([3])",
             "PushValues([3]: [0]) -> ([2])",
             // Post match.
