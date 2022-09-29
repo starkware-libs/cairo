@@ -1,4 +1,5 @@
 use sierra::extensions::lib_func::SignatureSpecializationContext;
+use sierra::extensions::types::TypeSpecializationContext;
 use sierra::program::ConcreteTypeLongId;
 
 use crate::db::SierraGenGroup;
@@ -21,10 +22,26 @@ impl SignatureSpecializationContext for SierraSignatureSpecializationContext<'_>
         }))
     }
 
+    fn get_type_info(
+        &self,
+        id: sierra::ids::ConcreteTypeId,
+    ) -> Option<sierra::extensions::types::TypeInfo> {
+        <Self as TypeSpecializationContext>::get_type_info(self, id)
+    }
+
     fn get_function_signature(
         &self,
         function_id: &sierra::ids::FunctionId,
     ) -> Option<sierra::program::FunctionSignature> {
         self.0.get_function_signature(function_id.clone()).map(|signature| (*signature).clone())
+    }
+}
+
+impl TypeSpecializationContext for SierraSignatureSpecializationContext<'_> {
+    fn get_type_info(
+        &self,
+        id: sierra::ids::ConcreteTypeId,
+    ) -> Option<sierra::extensions::types::TypeInfo> {
+        self.0.get_type_info(id).map(|info| (*info).clone())
     }
 }
