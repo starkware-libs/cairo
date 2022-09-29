@@ -110,14 +110,12 @@ impl<'a> ExprGeneratorContext<'a> {
     fn get_libfunc_id_with_generic_arg(
         &self,
         name: impl Into<SmolStr>,
-        ty: semantic::TypeId,
-    ) -> Option<sierra::ids::ConcreteLibFuncId> {
-        Some(self.db.intern_concrete_lib_func(sierra::program::ConcreteLibFuncLongId {
+        ty: sierra::ids::ConcreteTypeId,
+    ) -> sierra::ids::ConcreteLibFuncId {
+        self.db.intern_concrete_lib_func(sierra::program::ConcreteLibFuncLongId {
             generic_id: sierra::ids::GenericLibFuncId::from_string(name),
-            generic_args: vec![sierra::program::GenericArg::Type(
-                self.db.get_concrete_type_id(ty)?,
-            )],
-        }))
+            generic_args: vec![sierra::program::GenericArg::Type(ty)],
+        })
     }
 
     pub fn felt_const_libfunc_id(&self, value: usize) -> sierra::ids::ConcreteLibFuncId {
@@ -139,11 +137,17 @@ impl<'a> ExprGeneratorContext<'a> {
         })
     }
 
-    pub fn drop_libfunc_id(&self, ty: semantic::TypeId) -> Option<sierra::ids::ConcreteLibFuncId> {
+    pub fn drop_libfunc_id(
+        &self,
+        ty: sierra::ids::ConcreteTypeId,
+    ) -> sierra::ids::ConcreteLibFuncId {
         self.get_libfunc_id_with_generic_arg("drop", ty)
     }
 
-    pub fn dup_libfunc_id(&self, ty: semantic::TypeId) -> Option<sierra::ids::ConcreteLibFuncId> {
+    pub fn dup_libfunc_id(
+        &self,
+        ty: sierra::ids::ConcreteTypeId,
+    ) -> sierra::ids::ConcreteLibFuncId {
         self.get_libfunc_id_with_generic_arg("dup", ty)
     }
 
@@ -157,13 +161,6 @@ impl<'a> ExprGeneratorContext<'a> {
 
     pub fn revoke_ap_tracking_libfunc_id(&self) -> sierra::ids::ConcreteLibFuncId {
         self.get_libfunc_id_without_generics("revoke_ap_tracking")
-    }
-
-    pub fn unwrap_nz_libfunc_id(
-        &self,
-        ty: semantic::TypeId,
-    ) -> Option<sierra::ids::ConcreteLibFuncId> {
-        self.get_libfunc_id_with_generic_arg("unwrap_nz", ty)
     }
 
     pub fn generic_libfunc_id(
