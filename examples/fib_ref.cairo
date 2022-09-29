@@ -1,6 +1,6 @@
 // Calculates fib, but all variables are references.
 func fib(a: Ref::<felt>, b: Ref::<felt>, n: Ref::<felt>) -> Ref::<felt> {
-    match n {
+    match deref::<felt>(n) {
         0 => {
             a
         },
