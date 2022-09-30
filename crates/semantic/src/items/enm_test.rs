@@ -54,14 +54,20 @@ fn test_enum() {
         .enum_variants(enum_id)
         .unwrap()
         .iter()
-        .map(|(name, member)| format!("{name}: {:?}", member.debug(db)))
+        .map(|(name, variant_id)| {
+            format!(
+                "{name}: {:?}, ty: {:?}",
+                variant_id.debug(db),
+                db.variant_semantic(enum_id, *variant_id).unwrap().ty.debug(db)
+            )
+        })
         .collect::<Vec<_>>()
         .join(",\n");
     assert_eq!(
         actual,
         indoc! {"
-            a: Variant { enum_id: EnumId(test_crate::A), id: VariantId(test_crate::a), ty: () },
-            b: Variant { enum_id: EnumId(test_crate::A), id: VariantId(test_crate::b), ty: (core::felt, core::felt) },
-            c: Variant { enum_id: EnumId(test_crate::A), id: VariantId(test_crate::c), ty: () }"}
+            a: VariantId(test_crate::a), ty: (),
+            b: VariantId(test_crate::b), ty: (core::felt, core::felt),
+            c: VariantId(test_crate::c), ty: ()"}
     );
 }

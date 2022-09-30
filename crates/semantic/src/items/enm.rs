@@ -21,7 +21,8 @@ mod test;
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct EnumData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
-    variants: OrderedHashMap<SmolStr, Variant>,
+    variants: OrderedHashMap<SmolStr, VariantId>,
+    variant_semantic: OrderedHashMap<VariantId, Variant>,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
@@ -51,8 +52,17 @@ pub fn enum_semantic_diagnostics(
 pub fn enum_variants(
     db: &dyn SemanticGroup,
     enum_id: EnumId,
-) -> Option<OrderedHashMap<SmolStr, Variant>> {
+) -> Option<OrderedHashMap<SmolStr, VariantId>> {
     Some(db.priv_enum_semantic_data(enum_id)?.variants)
+}
+/// Query implementation of [crate::db::SemanticGroup::variant_semantic].
+pub fn variant_semantic(
+    db: &dyn SemanticGroup,
+    enum_id: EnumId,
+    variant_id: VariantId,
+) -> Option<Variant> {
+    let data = db.priv_enum_semantic_data(enum_id)?;
+    data.variant_semantic.get(&variant_id).cloned()
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_enum_semantic_data].
@@ -67,6 +77,7 @@ pub fn priv_enum_semantic_data(db: &dyn SemanticGroup, enum_id: EnumId) -> Optio
     let enum_ast = module_data.enums.get(&enum_id)?;
     let syntax_db = db.upcast();
     let mut variants = OrderedHashMap::default();
+    let mut variant_semantic = OrderedHashMap::default();
     for variant in enum_ast.variants(syntax_db).elements(syntax_db) {
         let id = db.intern_variant(VariantLongId(module_id, variant.stable_ptr()));
         let ty = resolve_type(
@@ -76,14 +87,13 @@ pub fn priv_enum_semantic_data(db: &dyn SemanticGroup, enum_id: EnumId) -> Optio
             &variant.type_clause(syntax_db).ty(syntax_db),
         );
         let variant_name = variant.name(syntax_db).text(syntax_db);
-        if let Some(_other_variant) =
-            variants.insert(variant_name.clone(), Variant { enum_id, id, ty })
-        {
+        if let Some(_other_variant) = variants.insert(variant_name.clone(), id) {
             diagnostics.report(&variant, EnumVariantRedefinition { enum_id, variant_name })
         }
+        variant_semantic.insert(id, Variant { enum_id, id, ty });
     }
 
-    Some(EnumData { diagnostics: diagnostics.build(), variants })
+    Some(EnumData { diagnostics: diagnostics.build(), variants, variant_semantic })
 }
 
 pub trait SemanticEnumEx<'a>: Upcast<dyn SemanticGroup + 'a> {

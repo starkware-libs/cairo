@@ -3,6 +3,7 @@
 mod test;
 
 use defs::ids::GenericFunctionId;
+use semantic::expr::pattern::PatternLiteral;
 use sierra::program;
 
 use crate::diagnostic::SierraGeneratorDiagnosticKind;
@@ -64,10 +65,18 @@ fn handle_block(
             semantic::Statement::Let(statement_let) => {
                 let (cur_statements, res) = generate_expression_code(context, statement_let.expr)?;
                 statements.extend(cur_statements);
+                let var =
+                    if let semantic::Pattern::Variable(semantic::PatternVariable { var, .. }) =
+                        statement_let.pattern
+                    {
+                        var
+                    } else {
+                        todo!("None variable patterns are not supported yet");
+                    };
                 context.register_variable(
-                    defs::ids::VarId::Local(statement_let.var.id),
+                    defs::ids::VarId::Local(var.id),
                     res,
-                    statement_let.var.stable_ptr(context.get_db().upcast()).untyped(),
+                    var.stable_ptr(context.get_db().upcast()).untyped(),
                 );
             }
             semantic::Statement::Return(_) => todo!(),
@@ -172,9 +181,12 @@ fn handle_felt_match(
 ) -> Option<(Vec<pre_sierra::Statement>, sierra::ids::VarId)> {
     match &expr_match.arms[..] {
         [
-            semantic::MatchArm { pattern: semantic::Pattern::Literal(literal), expression: block0 },
             semantic::MatchArm {
-                pattern: semantic::Pattern::Otherwise,
+                pattern: semantic::Pattern::Literal(PatternLiteral { literal, .. }),
+                expression: block0,
+            },
+            semantic::MatchArm {
+                pattern: semantic::Pattern::Otherwise(_),
                 expression: block_otherwise,
             },
         ] => {
