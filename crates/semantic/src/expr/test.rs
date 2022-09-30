@@ -249,11 +249,10 @@ fn test_let_statement() {
 
     assert_eq!(
         format!("{:?}", expr.debug(&expr_formatter)),
-        "ExprBlock(ExprBlock { statements: [Let(StatementLet { var: LocalVariable { id: \
-         LocalVarId(test_crate::a), ty: core::felt }, expr: ExprLiteral(ExprLiteral { value: 3, \
-         ty: core::felt }) }), Let(StatementLet { var: LocalVariable { id: \
-         LocalVarId(test_crate::b), ty: core::felt }, expr: ExprVar(ExprVar { var: \
-         LocalVarId(test_crate::a), ty: core::felt }) })], tail: None, ty: () })"
+        "ExprBlock(ExprBlock { statements: [Let(StatementLet { pattern: Variable(a), expr: \
+         ExprLiteral(ExprLiteral { value: 3, ty: core::felt }) }), Let(StatementLet { pattern: \
+         Variable(b), expr: ExprVar(ExprVar { var: LocalVarId(test_crate::a), ty: core::felt }) \
+         })], tail: None, ty: () })"
     );
 }
 

@@ -123,6 +123,20 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::InvalidMemberExpression => "Invalid member expression.".into(),
             SemanticDiagnosticKind::InvalidPath => "Invalid path.".into(),
             SemanticDiagnosticKind::PathNotFound => "Path not found.".into(),
+            SemanticDiagnosticKind::UnexpectedLiteralPattern { ty } => format!(
+                "Unexpected type for literal pattern. Expected: felt. Got: {}",
+                ty.format(db),
+            ),
+            SemanticDiagnosticKind::UnexpectedEnumPattern { ty } => {
+                format!("Unexpected type for enum pattern. {} is not an enum.", ty.format(db),)
+            }
+            SemanticDiagnosticKind::WrongEnum { expected_enum, actual_enum } => {
+                format!(
+                    "Wrong enum in pattern. Expected: {}. Got: {}.",
+                    expected_enum.full_path(db.upcast()),
+                    actual_enum.full_path(db.upcast())
+                )
+            }
         }
     }
 
@@ -163,4 +177,7 @@ pub enum SemanticDiagnosticKind {
     InvalidMemberExpression,
     InvalidPath,
     PathNotFound,
+    UnexpectedLiteralPattern { ty: semantic::TypeId },
+    UnexpectedEnumPattern { ty: semantic::TypeId },
+    WrongEnum { expected_enum: EnumId, actual_enum: EnumId },
 }
