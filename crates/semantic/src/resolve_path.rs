@@ -4,9 +4,7 @@ mod test;
 
 use std::iter::Peekable;
 
-use defs::ids::{
-    GenericFunctionId, GenericParamId, GenericTypeId, LanguageElementId, ModuleId, ModuleItemId,
-};
+use defs::ids::{GenericFunctionId, GenericParamId, GenericTypeId, ModuleId, ModuleItemId};
 use diagnostics_proc_macros::DebugWithDb;
 use filesystem::ids::CrateLongId;
 use smol_str::SmolStr;
