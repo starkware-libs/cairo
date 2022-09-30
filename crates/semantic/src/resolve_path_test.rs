@@ -39,8 +39,7 @@ fn test_resolve_path() {
         "Some(ExprBlock(ExprBlock { statements: [Expr(ExprFunctionCall(ExprFunctionCall { \
          function: Concrete(ExternFunctionId(test_crate::bar)<Type((core::felt, Q)),>), args: \
          [ExprVar(ExprVar { var: ParamId(test_crate::value), ty: test_crate::S::<core::felt> })], \
-         ty: test_crate::S::<()> })), Let(StatementLet { var: LocalVariable { id: \
-         LocalVarId(test_crate::c), ty: Q }, expr: ExprVar(ExprVar { var: ParamId(test_crate::b), \
-         ty: Q }) })], tail: None, ty: () }))"
+         ty: test_crate::S::<()> })), Let(StatementLet { pattern: Variable(c), expr: \
+         ExprVar(ExprVar { var: ParamId(test_crate::b), ty: Q }) })], tail: None, ty: () }))"
     );
 }

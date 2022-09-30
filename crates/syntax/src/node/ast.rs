@@ -3726,14 +3726,14 @@ impl StatementLet {
     pub fn new_green(
         db: &dyn SyntaxGroup,
         let_kw: TerminalLetGreen,
-        name: TerminalIdentifierGreen,
+        pattern: PatternGreen,
         type_clause: OptionTypeClauseGreen,
         eq: TerminalEqGreen,
         rhs: ExprGreen,
         semicolon: TerminalSemicolonGreen,
     ) -> StatementLetGreen {
         let children: Vec<GreenId> =
-            vec![let_kw.0, name.0, type_clause.0, eq.0, rhs.0, semicolon.0];
+            vec![let_kw.0, pattern.0, type_clause.0, eq.0, rhs.0, semicolon.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         StatementLetGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::StatementLet,
@@ -3745,8 +3745,8 @@ impl StatementLet {
     pub fn let_kw(&self, db: &dyn SyntaxGroup) -> TerminalLet {
         TerminalLet::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[1].clone())
+    pub fn pattern(&self, db: &dyn SyntaxGroup) -> Pattern {
+        Pattern::from_syntax_node(db, self.children[1].clone())
     }
     pub fn type_clause(&self, db: &dyn SyntaxGroup) -> OptionTypeClause {
         OptionTypeClause::from_syntax_node(db, self.children[2].clone())
@@ -3764,10 +3764,10 @@ impl StatementLet {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct StatementLetPtr(SyntaxStablePtrId);
 impl StatementLetPtr {
-    pub fn name_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
+    pub fn pattern_green(self, db: &dyn SyntaxGroup) -> PatternGreen {
         let ptr = db.lookup_intern_stable_ptr(self.0);
         if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
-            TerminalIdentifierGreen(key_fields[0])
+            PatternGreen(key_fields[0])
         } else {
             panic!("Unexpected key field query on root.");
         }
@@ -3788,7 +3788,7 @@ impl TypedSyntaxNode for StatementLet {
             details: GreenNodeDetails::Node {
                 children: vec![
                     TerminalLet::missing(db).0,
-                    TerminalIdentifier::missing(db).0,
+                    Pattern::missing(db).0,
                     OptionTypeClause::missing(db).0,
                     TerminalEq::missing(db).0,
                     Expr::missing(db).0,

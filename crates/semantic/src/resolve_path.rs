@@ -8,10 +8,9 @@ use defs::ids::{GenericFunctionId, GenericParamId, GenericTypeId, ModuleId, Modu
 use diagnostics_proc_macros::DebugWithDb;
 use filesystem::ids::CrateLongId;
 use smol_str::SmolStr;
-use syntax::node::ast::{self};
 use syntax::node::helpers::PathSegmentEx;
 use syntax::node::ids::SyntaxStablePtrId;
-use syntax::node::{Terminal, TypedSyntaxNode};
+use syntax::node::{ast, Terminal, TypedSyntaxNode};
 use utils::unordered_hash_map::UnorderedHashMap;
 use utils::OptionHelper;
 
@@ -312,11 +311,15 @@ impl<'db> Resolver<'db> {
                         .db
                         .enum_variants(enum_id)
                         .on_none(|| diagnostics.report(identifier, UnknownEnum))?;
-                    let variant = variants.get(&ident).on_none(|| {
-                        diagnostics
-                            .report(identifier, NoSuchVariant { enum_id, variant_name: ident })
-                    })?;
-                    let concrete_variant = self.db.concrete_enum_variant(concrete_enum_id, variant);
+                    let variant = variants
+                        .get(&ident)
+                        .and_then(|id| self.db.variant_semantic(enum_id, *id))
+                        .on_none(|| {
+                            diagnostics
+                                .report(identifier, NoSuchVariant { enum_id, variant_name: ident })
+                        })?;
+                    let concrete_variant =
+                        self.db.concrete_enum_variant(concrete_enum_id, &variant);
                     Some(ResolvedConcreteItem::Variant(concrete_variant))
                 } else {
                     diagnostics.report(identifier, InvalidPath);
@@ -389,13 +392,16 @@ impl<'db> Resolver<'db> {
                     .db
                     .enum_variants(*enum_id)
                     .on_none(|| diagnostics.report(identifier, UnknownEnum))?;
-                let variant = variants.get(&ident).on_none(|| {
-                    diagnostics.report(
-                        identifier,
-                        NoSuchVariant { enum_id: *enum_id, variant_name: ident },
-                    )
-                })?;
-                Some(ResolvedGenericItem::Variant(variant.clone()))
+                let variant = variants
+                    .get(&ident)
+                    .and_then(|id| self.db.variant_semantic(*enum_id, *id))
+                    .on_none(|| {
+                        diagnostics.report(
+                            identifier,
+                            NoSuchVariant { enum_id: *enum_id, variant_name: ident },
+                        )
+                    })?;
+                Some(ResolvedGenericItem::Variant(variant))
             }
             _ => {
                 diagnostics.report(identifier, InvalidPath);
