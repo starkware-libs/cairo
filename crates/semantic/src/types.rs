@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use db_utils::define_short_id;
 use debug::DebugWithDb;
-use defs::ids::{EnumId, ExternTypeId, GenericParamId, GenericTypeId, LanguageElementId, StructId};
+use defs::ids::{EnumId, ExternTypeId, GenericParamId, GenericTypeId, StructId};
 use itertools::Itertools;
 use syntax::node::ast;
 use utils::OptionFrom;
