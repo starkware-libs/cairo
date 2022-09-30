@@ -1,4 +1,3 @@
-use defs::ids::LanguageElementId;
 use sierra::program::ConcreteTypeLongId;
 
 use crate::db::SierraGenGroup;
