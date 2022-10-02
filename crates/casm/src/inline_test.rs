@@ -24,8 +24,11 @@ fn test_assert() {
         [fp - 5] = 1, ap++;
         [fp - 5] = [ap + 1];
         %{ memory[ap + 0] = memory[ap + 9] < memory[fp + 9] %}
+        jmp 123 if [ap + 17] != 0;
+        jmp rel [fp - 19] if [ap + 17] != 0;
         call abs 5, ap++;
         call rel y, ap++;
+        ret;
     };
 
     let code = join(ctx.instructions.iter().map(Instruction::to_string), "\n");
@@ -44,7 +47,10 @@ fn test_assert() {
             [fp + -5] = 1, ap++
             [fp + -5] = [ap + 1]
             %{ memory[ap + 0] = memory[ap + 9] < memory[fp + 9] %}
+            jmp rel 123 if [ap + 17] != 0
+            jmp rel [fp + -19] if [ap + 17] != 0
             call abs 5, ap++
-            call rel [fp + 5], ap++"}
+            call rel [fp + 5], ap++
+            ret"}
     );
 }

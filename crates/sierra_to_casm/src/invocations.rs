@@ -446,7 +446,7 @@ impl CompiledInvocationBuilder<'_> {
                 CellExpression::DoubleDeref(operand) => Instruction {
                     body: InstructionBody::AssertEq(AssertEqInstruction {
                         a: dst,
-                        b: ResOperand::DoubleDeref(operand),
+                        b: ResOperand::DoubleDeref(operand, 0),
                     }),
                     inc_ap,
                     hints: vec![],
@@ -454,7 +454,7 @@ impl CompiledInvocationBuilder<'_> {
                 CellExpression::IntoSingleCellRef(operand) => Instruction {
                     body: InstructionBody::AssertEq(AssertEqInstruction {
                         a: operand,
-                        b: ResOperand::DoubleDeref(dst),
+                        b: ResOperand::DoubleDeref(dst, 0),
                     }),
                     inc_ap,
                     hints: vec![Hint::AllocSegment { dst }],
