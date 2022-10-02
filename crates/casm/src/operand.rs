@@ -22,7 +22,7 @@ impl Display for Register {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ResOperand {
     Deref(CellRef),
-    DoubleDeref(CellRef),
+    DoubleDeref(CellRef, i16),
     Immediate(i128),
     BinOp(BinOpOperand),
 }
@@ -30,7 +30,7 @@ impl Display for ResOperand {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ResOperand::Deref(operand) => write!(f, "{}", operand),
-            ResOperand::DoubleDeref(operand) => write!(f, "[{}]", operand),
+            ResOperand::DoubleDeref(operand, offset) => write!(f, "[{} + {}]", operand, offset),
             ResOperand::Immediate(operand) => write!(f, "{}", operand),
             ResOperand::BinOp(operand) => write!(f, "{}", operand),
         }
