@@ -1,7 +1,7 @@
 use assert_matches::assert_matches;
 use debug::DebugWithDb;
 use defs::db::DefsGroup;
-use defs::ids::{LanguageElementId, ModuleItemId, VarId};
+use defs::ids::{ModuleItemId, VarId};
 use indoc::indoc;
 use pretty_assertions::assert_eq;
 use utils::extract_matches;

@@ -1,8 +1,8 @@
 use super::as_single_type;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
-    LibFuncSignature, OutputVarInfo, SignatureOnlyConcreteLibFunc, SignatureSpecializationContext,
-    SpecializationContext,
+    LibFuncSignature, OutputVarInfo, SierraApChange, SignatureOnlyConcreteLibFunc,
+    SignatureSpecializationContext, SpecializationContext,
 };
 use crate::extensions::{
     ConcreteType, NamedLibFunc, NamedType, OutputVarReferenceInfo, SpecializationError,
@@ -51,6 +51,7 @@ impl NamedLibFunc for IntoRefLibFunc {
                 ty: context.get_wrapped_concrete_type(RefType::id(), ty)?,
                 ref_info: OutputVarReferenceInfo::Deferred,
             }],
+            SierraApChange::NotImplemented,
         ))
     }
 
@@ -79,6 +80,7 @@ impl NamedLibFunc for DerefLibFunc {
         Ok(LibFuncSignature::new_non_branch(
             vec![context.get_wrapped_concrete_type(RefType::id(), ty.clone())?],
             vec![OutputVarInfo { ty, ref_info: OutputVarReferenceInfo::Deferred }],
+            SierraApChange::NotImplemented,
         ))
     }
 
