@@ -69,7 +69,10 @@ impl ApplyApChange for DerefOperand {
 
 impl ApplyApChange for DoubleDerefOperand {
     fn apply_ap_change(self, ap_change: ApChange) -> Result<Self, ApChangeError> {
-        Ok(DoubleDerefOperand { inner_deref: self.inner_deref.apply_ap_change(ap_change)? })
+        Ok(DoubleDerefOperand {
+            inner_deref: self.inner_deref.apply_ap_change(ap_change)?,
+            offset: self.offset,
+        })
     }
 }
 

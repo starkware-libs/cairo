@@ -20,8 +20,11 @@ fn test_assert() {
         [fp - 5] = [ap + 1] * y;
         [fp - 5] = 1, ap++;
         [fp - 5] = [ap + 1];
+        jnz 123 if [ap + 17];
+        jnz rel [fp - 19] if [ap + 17];
         call abs 5, ap++;
         call rel y, ap++;
+        ret;
     };
 
     let code = ctx.instructions.iter().map(Instruction::to_string).collect::<Vec<_>>().join("\n");
@@ -36,7 +39,10 @@ fn test_assert() {
             [fp + -5] = [ap + 1] * [fp + 5]
             [fp + -5] = 1, ap++
             [fp + -5] = [ap + 1]
+            jmp rel 123 if [ap + 17] != 0
+            jmp rel [fp + -19] if [ap + 17] != 0
             call abs 5, ap++
-            call rel [fp + 5], ap++"}
+            call rel [fp + 5], ap++
+            ret"}
     );
 }

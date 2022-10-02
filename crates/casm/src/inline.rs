@@ -60,6 +60,16 @@ macro_rules! casm_inner {
         $crate::append_instruction!($ctx, body $(,$ap++)?);
         $crate::casm_inner!($ctx, $($tok)*)
     };
+    // TODO(alont) Consider conforming with the old Cairo convention (jmp ... if ... !=0).
+    ($ctx:ident, jnz rel $target:tt if $cond:tt $(,$ap:ident++)? ; $($tok:tt)*) => {
+        let body = InstructionBody::Jnz(JnzInstruction {
+            jump_offset: $crate::deref_or_immediate!($target),
+            condition: $crate::deref!($cond),
+        });
+        $crate::append_instruction!($ctx, body $(,$ap++)?);
+        $crate::casm_inner!($ctx, $($tok)*)
+    };
+    // Allow the condition to be expressed as an expression.
     ($ctx:ident, jnz rel $target:tt if $cond:expr $(,$ap:ident++)? ; $($tok:tt)*) => {
         let body = InstructionBody::Jnz(JnzInstruction {
             jump_offset: $crate::deref_or_immediate!($target),
@@ -68,7 +78,7 @@ macro_rules! casm_inner {
         $crate::append_instruction!($ctx, body $(,$ap++)?);
         $crate::casm_inner!($ctx, $($tok)*)
     };
-    ($ctx:ident, jnz $target:tt if $cond:expr $(,$ap:ident++)? ; $($tok:tt)*) => {
+    ($ctx:ident, jnz $target:tt if $cond:tt $(,$ap:ident++)? ; $($tok:tt)*) => {
         let body = InstructionBody::Jnz(JnzInstruction {
             jump_offset: $crate::deref_or_immediate!($target),
             condition: $crate::deref!($cond),
@@ -80,6 +90,11 @@ macro_rules! casm_inner {
         let body = InstructionBody::AddAp(AddApInstruction {
             operand: $crate::res!($operand),
         });
+        $crate::append_instruction!($ctx, body $(,$ap++)?);
+        $crate::casm_inner!($ctx, $($tok)*)
+    };
+    ($ctx:ident, ret $(,$ap:ident++)? ; $($tok:tt)*) => {
+        let body = InstructionBody::Ret(RetInstruction {});
         $crate::append_instruction!($ctx, body $(,$ap++)?);
         $crate::casm_inner!($ctx, $($tok)*)
     };
@@ -163,8 +178,9 @@ macro_rules! res {
             b: $crate::deref_or_immediate!($b),
         })
     };
+    // TODO(alont): Add support for double dereference outer offset.
     ([[$a:expr]]) => {
-        ResOperand::DoubleDeref(DoubleDerefOperand { inner_deref: $a })
+        ResOperand::DoubleDeref(DoubleDerefOperand { inner_deref: $a, offset: 0 })
     };
     ($a:tt) => {
         ResOperand::from($crate::deref_or_immediate!($a))

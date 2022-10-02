@@ -188,10 +188,9 @@ impl CompiledInvocationBuilder<'_> {
     /// Handles a felt operation with the given op.
     fn build_felt_op(self, op: FeltOperator) -> Result<CompiledInvocation, InvocationError> {
         let (expr_a, expr_b) = match self.refs {
-            [
-                ReferenceValue { expression: expr_a, .. },
-                ReferenceValue { expression: expr_b, .. },
-            ] => (expr_a, expr_b),
+            [ReferenceValue { expression: expr_a, .. }, ReferenceValue { expression: expr_b, .. }] => {
+                (expr_a, expr_b)
+            }
             refs => {
                 return Err(InvocationError::WrongNumberOfArguments {
                     expected: 2,
@@ -330,7 +329,10 @@ impl CompiledInvocationBuilder<'_> {
             ReferenceExpression::DoubleDeref(operand) => (dst, ResOperand::DoubleDeref(operand)),
             ReferenceExpression::IntoSingleCellRef(operand) => {
                 hints.push(Hint::AllocSegment { dst });
-                (operand, ResOperand::DoubleDeref(DoubleDerefOperand { inner_deref: dst }))
+                (
+                    operand,
+                    ResOperand::DoubleDeref(DoubleDerefOperand { inner_deref: dst, offset: 0 }),
+                )
             }
             ReferenceExpression::Immediate(operand) => (dst, ResOperand::Immediate(operand)),
             ReferenceExpression::BinOp(BinOpExpression { op, a, b }) => match op {
@@ -436,10 +438,9 @@ impl CompiledInvocationBuilder<'_> {
     /// Handles store_local for the given type.
     fn build_store_local(self, ty: &ConcreteTypeId) -> Result<CompiledInvocation, InvocationError> {
         let (dst, src_expr) = match self.refs {
-            [
-                ReferenceValue { expression: ReferenceExpression::Deref(dst), .. },
-                ReferenceValue { expression: src_expr, .. },
-            ] => Ok((dst, src_expr)),
+            [ReferenceValue { expression: ReferenceExpression::Deref(dst), .. }, ReferenceValue { expression: src_expr, .. }] => {
+                Ok((dst, src_expr))
+            }
             [_, _] => Err(InvocationError::InvalidReferenceExpressionForArgument),
             refs => {
                 Err(InvocationError::WrongNumberOfArguments { expected: 2, actual: refs.len() })
@@ -500,10 +501,9 @@ impl CompiledInvocationBuilder<'_> {
         };
 
         let target_statement_id = match self.invocation.branches.as_slice() {
-            [
-                BranchInfo { target: BranchTarget::Fallthrough, .. },
-                BranchInfo { target: BranchTarget::Statement(statement_id), .. },
-            ] => statement_id,
+            [BranchInfo { target: BranchTarget::Fallthrough, .. }, BranchInfo { target: BranchTarget::Statement(statement_id), .. }] => {
+                statement_id
+            }
             _ => panic!("malformed invocation"),
         };
 
@@ -588,8 +588,11 @@ impl CompiledInvocationBuilder<'_> {
         };
         if let ReferenceExpression::Deref(operand) = expression {
             Ok(self.build_only_reference_changes(
-                [ReferenceExpression::DoubleDeref(DoubleDerefOperand { inner_deref: *operand })]
-                    .into_iter(),
+                [ReferenceExpression::DoubleDeref(DoubleDerefOperand {
+                    inner_deref: *operand,
+                    offset: 0,
+                })]
+                .into_iter(),
             ))
         } else {
             Err(InvocationError::InvalidReferenceExpressionForArgument)
@@ -634,10 +637,9 @@ impl CompiledInvocationBuilder<'_> {
     /// Handles instruction for appending an element to an array.
     fn build_array_append(self) -> Result<CompiledInvocation, InvocationError> {
         let (expr_arr, expr_elem) = match self.refs {
-            [
-                ReferenceValue { expression: ReferenceExpression::Deref(expr_arr), .. },
-                ReferenceValue { expression: ReferenceExpression::Deref(expr_elem), .. },
-            ] => (expr_arr, expr_elem),
+            [ReferenceValue { expression: ReferenceExpression::Deref(expr_arr), .. }, ReferenceValue { expression: ReferenceExpression::Deref(expr_elem), .. }] => {
+                (expr_arr, expr_elem)
+            }
             [_, _] => return Err(InvocationError::InvalidReferenceExpressionForArgument),
             refs => {
                 return Err(InvocationError::WrongNumberOfArguments {
