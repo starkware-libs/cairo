@@ -28,6 +28,8 @@ pub enum SyntaxKind {
     ArgListBraced,
     PatternStruct,
     PatternStructParamList,
+    PatternTuple,
+    PatternList,
     PatternStructParamWithExpr,
     PatternEnum,
     TypeClause,
