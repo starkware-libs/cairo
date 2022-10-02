@@ -2,7 +2,8 @@ use super::arithmetic::{ArithmeticTraits, ConstLibFunc, OperationLibFunc};
 use super::jump_not_zero::{JumpNotZeroLibFunc, JumpNotZeroTraits};
 use super::pod::{DropLibFunc, DuplicateLibFunc, PodTraits};
 use crate::define_libfunc_hierarchy;
-use crate::extensions::{ConcreteType, NamedType, NoGenericArgsGenericType};
+use crate::extensions::types::{InfoOnlyConcreteType, TypeInfo};
+use crate::extensions::{NamedType, NoGenericArgsGenericType};
 use crate::ids::{GenericLibFuncId, GenericTypeId};
 
 /// Type for felt.
@@ -10,12 +11,15 @@ use crate::ids::{GenericLibFuncId, GenericTypeId};
 #[derive(Default)]
 pub struct FeltType {}
 impl NoGenericArgsGenericType for FeltType {
-    type Concrete = FeltConcreteType;
+    type Concrete = InfoOnlyConcreteType;
     const ID: GenericTypeId = GenericTypeId::new_inline("felt");
+
+    fn specialize(&self) -> Self::Concrete {
+        InfoOnlyConcreteType {
+            info: TypeInfo { storable: true, droppable: true, duplicatable: true },
+        }
+    }
 }
-#[derive(Default)]
-pub struct FeltConcreteType {}
-impl ConcreteType for FeltConcreteType {}
 
 define_libfunc_hierarchy! {
     pub enum FeltLibFunc {

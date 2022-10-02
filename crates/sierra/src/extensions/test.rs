@@ -4,10 +4,12 @@ use test_case::test_case;
 
 use super::core::{CoreLibFunc, CoreType};
 use super::lib_func::SpecializationContext;
+use super::types::{TypeInfo, TypeSpecializationContext};
 use super::SpecializationError::{
     self, MissingFunction, UnsupportedGenericArg, UnsupportedId, WrongNumberOfGenericArgs,
 };
 use crate::extensions::{GenericLibFunc, GenericType};
+use crate::ids::ConcreteTypeId;
 use crate::program::{Function, GenericArg, StatementIdx};
 
 fn type_arg(name: &str) -> GenericArg {
@@ -16,6 +18,16 @@ fn type_arg(name: &str) -> GenericArg {
 
 fn value_arg(v: i64) -> GenericArg {
     GenericArg::Value(v)
+}
+
+struct MockTypeSpecializationContext {}
+impl TypeSpecializationContext for MockTypeSpecializationContext {
+    fn get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo> {
+        match id.debug_name.as_ref().map(|s| s.as_str()) {
+            Some("T") => Some(TypeInfo { storable: true, droppable: true, duplicatable: true }),
+            _ => panic!("Unexpected call to {id}"),
+        }
+    }
 }
 
 #[test_case("NoneExistent", vec![] => Err(UnsupportedId); "NoneExistent")]
@@ -36,7 +48,10 @@ fn find_type_specialization(
     id: &str,
     generic_args: Vec<GenericArg>,
 ) -> Result<(), SpecializationError> {
-    CoreType::by_id(&id.into()).ok_or(UnsupportedId)?.specialize(&generic_args).map(|_| ())
+    CoreType::by_id(&id.into())
+        .ok_or(UnsupportedId)?
+        .specialize(&MockTypeSpecializationContext {}, &generic_args)
+        .map(|_| ())
 }
 
 #[test_case("NoneExistent", vec![] => Err(UnsupportedId); "NoneExistent")]
