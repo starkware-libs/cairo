@@ -21,6 +21,7 @@ pub fn get_formatted_file(
     formatter.get_result()
 }
 
+#[derive(Clone)]
 pub struct FormatterConfig {
     tab_size: usize,
     max_line_length: usize,

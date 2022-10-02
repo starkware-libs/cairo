@@ -34,6 +34,7 @@ impl Upcast<dyn SyntaxGroup> for ParserDatabaseForTesting {
     }
 }
 
+// TODO(gil): Move this method into the parser lib.
 pub fn get_syntax_root_and_diagnostics(
     db: &ParserDatabaseForTesting,
     cairo_filename: &str,
