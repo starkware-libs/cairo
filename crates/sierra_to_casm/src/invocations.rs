@@ -281,7 +281,7 @@ fn handle_store(
             (dst, ResOperand::DoubleDeref(operand.clone()))
         }
         ReferenceExpression::IntoSingleCellRef(operand) => {
-            // TODO(orizi): Add hint to actually initialize [ap + 0] with the address.
+            // TODO(orizi): Add hint to actually initialize 'dst' with the address.
             (*operand, ResOperand::DoubleDeref(DoubleDerefOperand { inner_deref: dst }))
         }
         ReferenceExpression::Immediate(operand) => (dst, ResOperand::Immediate(*operand)),
