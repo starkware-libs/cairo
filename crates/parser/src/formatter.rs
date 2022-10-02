@@ -96,6 +96,10 @@ impl BreakLinePointProperties {
 enum LineComponent {
     /// A simple string to be printed.
     Token(String),
+    /// An internal LineBuilder, everything inside won't be broken unless no breakpoints in top
+    /// level. For example, ExprParenthesized will be collected into an internal LineBuilder
+    /// and will be broken only if there are no operators in the top level of the LineTree.
+    Internal(LineBuilder),
     /// An optional break line point, that will be used if the line is too long.
     BreakLinePoint(BreakLinePointProperties),
 }
@@ -103,6 +107,7 @@ impl LineComponent {
     pub fn width(&self) -> usize {
         match self {
             Self::Token(s) => s.len(),
+            Self::Internal(builder) => builder.width(),
             Self::BreakLinePoint(_) => 0,
         }
     }
@@ -111,6 +116,7 @@ impl fmt::Display for LineComponent {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Token(s) => write!(f, "{s}"),
+            Self::Internal(builder) => write!(f, "{builder}"),
             Self::BreakLinePoint(_) => write!(f, ""),
         }
     }
@@ -121,6 +127,7 @@ impl fmt::Display for LineComponent {
 #[derive(Clone)]
 struct LineBuilder {
     children: Vec<LineComponent>,
+    is_sub_builder_open: bool,
 }
 impl fmt::Display for LineBuilder {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -130,19 +137,57 @@ impl fmt::Display for LineBuilder {
 impl LineBuilder {
     /// Creates a new intermediate line.
     pub fn new() -> Self {
-        Self { children: vec![] }
+        Self { children: vec![], is_sub_builder_open: false }
     }
     /// Clears the line. Represent an empty line after the call.
     pub fn clear(&mut self) {
         self.children.clear();
+        self.is_sub_builder_open = false;
     }
     /// Is the line empty.
     fn is_empty(&self) -> bool {
         self.children.is_empty()
     }
-    /// Adds a line component as the next child.
+    /// Adds a a sub-builder as the next child.
+    /// All subsequent children will be added to this sub builder until set as closed.
+    fn open_sub_builder(&mut self) {
+        if self.is_sub_builder_open {
+            match self.children.last_mut() {
+                Some(LineComponent::Internal(sub_builder)) => {
+                    sub_builder.open_sub_builder();
+                }
+                _ => unreachable!("Sub-builder is open, last child must be a builder."),
+            }
+        } else {
+            self.push_child(LineComponent::Internal(LineBuilder::new()));
+            self.is_sub_builder_open = true;
+        }
+    }
+    /// Sets the last child, which is assumed to be a LineBuilder, as close.
+    /// New children will be siblings of this subtree.
+    fn close_sub_builder(&mut self) {
+        match self.children.last_mut() {
+            Some(LineComponent::Internal(sub_builder)) => {
+                if sub_builder.is_sub_builder_open {
+                    sub_builder.close_sub_builder();
+                } else {
+                    self.is_sub_builder_open = false;
+                }
+            }
+            _ => unreachable!("Sub-builder is open, last child must be a builder."),
+        }
+    }
+    /// Adds a line component as the next child. If the last child is an open LineBuilder the child
+    /// is recursively appended to the sub builder.
     fn push_child(&mut self, new_comp: LineComponent) {
-        self.children.push(new_comp);
+        if self.is_sub_builder_open {
+            match self.children.last_mut() {
+                Some(LineComponent::Internal(sub_builder)) => sub_builder.push_child(new_comp),
+                _ => unreachable!("Sub-builder is open, last child must be a builder."),
+            }
+        } else {
+            self.children.push(new_comp);
+        }
     }
     /// Adds a string to the end of the line.
     pub fn push_str(&mut self, s: &str) {
@@ -209,14 +254,20 @@ impl LineBuilder {
         if self.width() < max_line_width {
             return vec![self.to_string()];
         }
-        let sub_trees = self.to_broken_tree_by_width(max_line_width, tab_size);
-        if sub_trees.len() == 1 {
-            // Can't break tree to fit within width
-            // TODO(Gil): Propagate error to user.
-            return vec![self.to_string()];
+        let mut sub_builders = self.to_broken_tree_by_width(max_line_width, tab_size);
+        // While the line is not broken into several lines, try to flatten it and then break it.
+        while sub_builders.len() == 1 {
+            if !sub_builders[0].is_flat() {
+                sub_builders =
+                    sub_builders[0].flatten().to_broken_tree_by_width(max_line_width, tab_size);
+            } else {
+                // Can't break tree to fit within width
+                // TODO(Gil): Propagate error to user.
+                return vec![self.to_string()];
+            }
         }
         // Keep breaking recursively the new lines if they are still too long
-        sub_trees
+        sub_builders
             .iter()
             .flat_map(|tree| tree.to_broken_string_by_width(max_line_width, tab_size))
             .collect()
@@ -250,7 +301,7 @@ impl LineBuilder {
         breaking_positions.push(self.children.len()); // Dummy break line point, simplifies the loop.
 
         // Iterate over the break line points and collect each part between them into one new
-        // LineTree.
+        // LineBuilder.
         for (i, position) in breaking_positions.iter().enumerate() {
             for j in prev_position..*position {
                 trees.last_mut().unwrap().push_child(self.children[j].clone());
@@ -292,6 +343,34 @@ impl LineBuilder {
                 },
             )
             .join("\n")
+    }
+    /// Creates a new LineBuilder where each subchild which is a LineBuilder, is replaced by all
+    /// its children.
+    fn flatten(&self) -> LineBuilder {
+        println!("Flatten!");
+        let mut flattened_tree = LineBuilder::new();
+        for child in self.children.iter() {
+            match child {
+                LineComponent::Internal(sub_tree) => {
+                    for sub_child in sub_tree.children.iter() {
+                        flattened_tree.push_child(sub_child.clone());
+                    }
+                }
+                // Breakpoints which are direct children of self are removed.
+                LineComponent::BreakLinePoint(_) => {}
+                _ => flattened_tree.push_child(child.clone()),
+            }
+        }
+        flattened_tree
+    }
+    /// Returns whether or not the line contains an internal LineBuilder.
+    fn is_flat(&self) -> bool {
+        for child in self.children.iter() {
+            if let LineComponent::Internal(_) = child {
+                return false;
+            }
+        }
+        true
     }
 }
 
@@ -348,6 +427,11 @@ pub trait SyntaxNodeFormat {
     fn is_breakable_list(&self, db: &dyn SyntaxGroup) -> bool;
     /// Returns the BreakPointProperties associated with the specific node kind.
     fn get_break_line_point_properties(&self, db: &dyn SyntaxGroup) -> BreakLinePointProperties;
+    /// Returns true if the node is protected from breaking unless no other break points exsists.
+    /// For example break points inside ExprParenthesized should only be used if there are no break
+    /// points outside the the parenthesis.
+    /// Only applicable for internal nodes.
+    fn is_protected_breaking_node(&self, db: &dyn SyntaxGroup) -> bool;
 }
 
 struct Formatter<'a> {
@@ -395,6 +479,10 @@ impl<'a> Formatter<'a> {
         let indent_change = if syntax_node.should_change_indent(self.db) { 1 } else { 0 };
         let allowed_empty_between = syntax_node.allowed_empty_between(self.db);
         let no_space_after = no_space_after || syntax_node.force_no_space_after(self.db);
+
+        if syntax_node.is_protected_breaking_node(self.db) {
+            self.line_state.line_buffer.open_sub_builder();
+        }
         if syntax_node.is_breakable_list(self.db) {
             self.append_break_line_point(syntax_node.get_break_line_point_properties(self.db));
         }
@@ -415,6 +503,9 @@ impl<'a> Formatter<'a> {
         }
         if syntax_node.is_breakable_list(self.db) {
             self.append_break_line_point(syntax_node.get_break_line_point_properties(self.db));
+        }
+        if syntax_node.is_protected_breaking_node(self.db) {
+            self.line_state.line_buffer.close_sub_builder();
         }
     }
     fn format_terminal(&mut self, syntax_node: &SyntaxNode, no_space_after: bool) {
