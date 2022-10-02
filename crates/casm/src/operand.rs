@@ -131,9 +131,10 @@ impl Display for BinOpOperand {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct DoubleDerefOperand {
     pub inner_deref: DerefOperand,
+    pub offset: i16,
 }
 impl Display for DoubleDerefOperand {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "[{}]", self.inner_deref)
+        write!(f, "[{} + {}]", self.inner_deref, self.offset)
     }
 }

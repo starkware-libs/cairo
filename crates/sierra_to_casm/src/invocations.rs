@@ -331,7 +331,10 @@ impl CompiledInvocationBuilder<'_> {
             ReferenceExpression::DoubleDeref(operand) => (dst, ResOperand::DoubleDeref(operand)),
             ReferenceExpression::IntoSingleCellRef(operand) => {
                 hints.push(Hint::AllocSegment { dst });
-                (operand, ResOperand::DoubleDeref(DoubleDerefOperand { inner_deref: dst }))
+                (
+                    operand,
+                    ResOperand::DoubleDeref(DoubleDerefOperand { inner_deref: dst, offset: 0 }),
+                )
             }
             ReferenceExpression::Immediate(operand) => (dst, ResOperand::Immediate(operand)),
             ReferenceExpression::BinOp(BinOpExpression { op, a, b }) => match op {
@@ -592,8 +595,11 @@ impl CompiledInvocationBuilder<'_> {
         };
         if let ReferenceExpression::Deref(operand) = expression {
             Ok(self.build_only_reference_changes(
-                [ReferenceExpression::DoubleDeref(DoubleDerefOperand { inner_deref: *operand })]
-                    .into_iter(),
+                [ReferenceExpression::DoubleDeref(DoubleDerefOperand {
+                    inner_deref: *operand,
+                    offset: 0,
+                })]
+                .into_iter(),
             ))
         } else {
             Err(InvocationError::InvalidReferenceExpressionForArgument)

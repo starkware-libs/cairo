@@ -151,8 +151,8 @@ fn strip_comments_and_linebreaks(program: &str) -> String {
 
                 // box_and_back:
                 %{ memory[ap + 0] = segments.add() %}
-                [fp + -3] = [[ap + 0]], ap++;
-                [ap + 0] = [[ap + -1]], ap++;
+                [fp + -3] = [[ap + 0] + 0], ap++;
+                [ap + 0] = [[ap + -1] + 0], ap++;
                 ret;
 
                 // box_and_back_wrapper:
