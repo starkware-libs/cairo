@@ -5,11 +5,11 @@ use parser::db::ParserDatabase;
 use salsa::{InternId, InternKey};
 use semantic::db::{SemanticDatabase, SemanticGroup};
 use sierra::ids::{ConcreteLibFuncId, GenericLibFuncId};
-use sierra::program::ConcreteLibFuncLongId;
+use sierra::program;
 use syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 
 use crate::db::{SierraGenDatabase, SierraGenGroup};
-use crate::pre_sierra::{self, PushValue};
+use crate::pre_sierra;
 use crate::utils::{return_statement, simple_statement};
 
 #[salsa::database(
@@ -118,13 +118,37 @@ pub fn dummy_simple_statement(
     let outputs_vec: Vec<sierra::ids::VarId> =
         outputs.iter().map(|x| sierra::ids::VarId::from_usize(*x)).collect();
     simple_statement(
-        db.intern_concrete_lib_func(ConcreteLibFuncLongId {
+        db.intern_concrete_lib_func(program::ConcreteLibFuncLongId {
             generic_id: GenericLibFuncId::from_string(name),
             generic_args: vec![],
         }),
         &inputs_vec,
         &outputs_vec,
     )
+}
+
+/// Returns a vector of variable ids based on the inputs mapped into varaible ids.
+pub fn as_var_id_vec(ids: &[&str]) -> Vec<sierra::ids::VarId> {
+    ids.iter().map(|id| (*id).into()).collect()
+}
+
+/// Generates a dummy statement with two branches. One branch is Fallthrough and the other is to the
+/// given label.
+pub fn dummy_simple_branch(name: &str, args: &[&str], target: usize) -> pre_sierra::Statement {
+    pre_sierra::Statement::Sierra(program::GenStatement::Invocation(program::GenInvocation {
+        libfunc_id: name.into(),
+        args: as_var_id_vec(args),
+        branches: vec![
+            program::GenBranchInfo {
+                target: program::GenBranchTarget::Statement(label_id_from_usize(target)),
+                results: vec![],
+            },
+            program::GenBranchInfo {
+                target: program::GenBranchTarget::Fallthrough,
+                results: vec![],
+            },
+        ],
+    }))
 }
 
 /// Generates a dummy return statement.
@@ -136,9 +160,12 @@ pub fn dummy_return_statement(args: &[usize]) -> pre_sierra::Statement {
 
 /// Generates a dummy label.
 pub fn dummy_label(id: usize) -> pre_sierra::Statement {
-    pre_sierra::Statement::Label(pre_sierra::Label {
-        id: pre_sierra::LabelId::from_intern_id(InternId::from(id)),
-    })
+    pre_sierra::Statement::Label(pre_sierra::Label { id: label_id_from_usize(id) })
+}
+
+/// Returns the [pre_sierra::LabelId] for the given `id`.
+pub fn label_id_from_usize(id: usize) -> pre_sierra::LabelId {
+    pre_sierra::LabelId::from_intern_id(InternId::from(id))
 }
 
 /// Generates a dummy [PushValues](pre_sierra::Statement::PushValues) statement.
@@ -153,7 +180,7 @@ pub fn dummy_push_values(
     pre_sierra::Statement::PushValues(
         values
             .iter()
-            .map(|(src, dst)| PushValue {
+            .map(|(src, dst)| pre_sierra::PushValue {
                 var: sierra::ids::VarId::from_usize(*src),
                 var_on_stack: sierra::ids::VarId::from_usize(*dst),
                 ty: felt_ty.clone(),
