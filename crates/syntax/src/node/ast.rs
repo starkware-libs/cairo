@@ -1112,6 +1112,7 @@ pub enum BinaryOperator {
     Plus(TerminalPlus),
     Minus(TerminalMinus),
     EqEq(TerminalEqEq),
+    Eq(TerminalEq),
     AndAnd(TerminalAndAnd),
     OrOr(TerminalOrOr),
     LE(TerminalLE),
@@ -1158,6 +1159,11 @@ impl From<TerminalMinusPtr> for BinaryOperatorPtr {
 }
 impl From<TerminalEqEqPtr> for BinaryOperatorPtr {
     fn from(value: TerminalEqEqPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalEqPtr> for BinaryOperatorPtr {
+    fn from(value: TerminalEqPtr) -> Self {
         Self(value.0)
     }
 }
@@ -1226,6 +1232,11 @@ impl From<TerminalEqEqGreen> for BinaryOperatorGreen {
         Self(value.0)
     }
 }
+impl From<TerminalEqGreen> for BinaryOperatorGreen {
+    fn from(value: TerminalEqGreen) -> Self {
+        Self(value.0)
+    }
+}
 impl From<TerminalAndAndGreen> for BinaryOperatorGreen {
     fn from(value: TerminalAndAndGreen) -> Self {
         Self(value.0)
@@ -1281,6 +1292,7 @@ impl TypedSyntaxNode for BinaryOperator {
             SyntaxKind::TerminalEqEq => {
                 BinaryOperator::EqEq(TerminalEqEq::from_syntax_node(db, node))
             }
+            SyntaxKind::TerminalEq => BinaryOperator::Eq(TerminalEq::from_syntax_node(db, node)),
             SyntaxKind::TerminalAndAnd => {
                 BinaryOperator::AndAnd(TerminalAndAnd::from_syntax_node(db, node))
             }
@@ -1305,6 +1317,7 @@ impl TypedSyntaxNode for BinaryOperator {
             BinaryOperator::Plus(x) => x.as_syntax_node(),
             BinaryOperator::Minus(x) => x.as_syntax_node(),
             BinaryOperator::EqEq(x) => x.as_syntax_node(),
+            BinaryOperator::Eq(x) => x.as_syntax_node(),
             BinaryOperator::AndAnd(x) => x.as_syntax_node(),
             BinaryOperator::OrOr(x) => x.as_syntax_node(),
             BinaryOperator::LE(x) => x.as_syntax_node(),

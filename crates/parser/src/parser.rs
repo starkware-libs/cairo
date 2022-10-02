@@ -273,6 +273,7 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalDiv => self.take::<TerminalDiv>().into(),
             SyntaxKind::TerminalPlus => self.take::<TerminalPlus>().into(),
             SyntaxKind::TerminalMinus => self.take::<TerminalMinus>().into(),
+            SyntaxKind::TerminalEq => self.take::<TerminalEq>().into(),
             SyntaxKind::TerminalEqEq => self.take::<TerminalEqEq>().into(),
             SyntaxKind::TerminalLT => self.take::<TerminalLT>().into(),
             SyntaxKind::TerminalGT => self.take::<TerminalGT>().into(),
