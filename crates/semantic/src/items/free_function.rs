@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use db_utils::Upcast;
 use defs::ids::{FreeFunctionId, GenericParamId, LanguageElementId};
 use diagnostics::Diagnostics;
@@ -89,11 +91,17 @@ pub fn priv_free_function_declaration_data(
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct FreeFunctionDefinitionData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
-    body: semantic::ExprId,
-    exprs: Arena<semantic::Expr>,
     expr_lookup: UnorderedHashMap<ast::ExprPtr, ExprId>,
-    statements: Arena<semantic::Statement>,
     resolved_lookback: ResolvedLookback,
+    definition: Arc<FreeFunctionDefinition>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
+#[debug_db(dyn SemanticGroup + 'static)]
+pub struct FreeFunctionDefinition {
+    pub exprs: Arena<semantic::Expr>,
+    pub statements: Arena<semantic::Statement>,
+    pub body: semantic::ExprId,
 }
 
 // Selectors.
@@ -111,7 +119,14 @@ pub fn free_function_definition_body(
     db: &dyn SemanticGroup,
     free_function_id: FreeFunctionId,
 ) -> Option<semantic::ExprId> {
-    Some(db.priv_free_function_definition_data(free_function_id)?.body)
+    Some(db.priv_free_function_definition_data(free_function_id)?.definition.body)
+}
+/// Query implementation of [crate::db::SemanticGroup::free_function_definition].
+pub fn free_function_definition(
+    db: &dyn SemanticGroup,
+    free_function_id: FreeFunctionId,
+) -> Option<Arc<FreeFunctionDefinition>> {
+    Some(db.priv_free_function_definition_data(free_function_id)?.definition)
 }
 
 // Computation.
@@ -145,11 +160,9 @@ pub fn priv_free_function_definition_data(
     let resolved_lookback = resolver.lookback;
     Some(FreeFunctionDefinitionData {
         diagnostics: diagnostics.build(),
-        body,
-        exprs,
         expr_lookup,
-        statements,
         resolved_lookback,
+        definition: Arc::new(FreeFunctionDefinition { exprs, statements, body }),
     })
 }
 
@@ -160,7 +173,13 @@ pub fn expr_semantic(
     free_function_id: FreeFunctionId,
     id: semantic::ExprId,
 ) -> semantic::Expr {
-    db.priv_free_function_definition_data(free_function_id).unwrap().exprs.get(id).unwrap().clone()
+    db.priv_free_function_definition_data(free_function_id)
+        .unwrap()
+        .definition
+        .exprs
+        .get(id)
+        .unwrap()
+        .clone()
 }
 
 /// Query implementation of [crate::db::SemanticGroup::statement_semantic].
@@ -172,6 +191,7 @@ pub fn statement_semantic(
 ) -> semantic::Statement {
     db.priv_free_function_definition_data(free_function_id)
         .unwrap()
+        .definition
         .statements
         .get(id)
         .unwrap()
