@@ -11,6 +11,7 @@ pub fn get_binary_operator_precedence(kind: SyntaxKind) -> Option<usize> {
     match kind {
         // TODO(spapini): This should precede unary operators.
         SyntaxKind::TerminalDot => Some(0),
+
         // TODO(yuval): support unary-only/non-binary operators. "not" can't be binary.
         SyntaxKind::TerminalNot => Some(1),
         SyntaxKind::TerminalMul | SyntaxKind::TerminalDiv => Some(2),
@@ -22,6 +23,7 @@ pub fn get_binary_operator_precedence(kind: SyntaxKind) -> Option<usize> {
         | SyntaxKind::TerminalGE => Some(4),
         SyntaxKind::TerminalAndAnd => Some(5),
         SyntaxKind::TerminalOrOr => Some(6),
+        SyntaxKind::TerminalEq => Some(7),
 
         // TODO(yuval): add more operators.
         _ => None,
