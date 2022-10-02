@@ -16,20 +16,35 @@ fn get_output_info(db: &dyn SierraGenGroup, libfunc: ConcreteLibFuncId) -> Vec<O
     let libfunc_long_id = db.lookup_intern_concrete_lib_func(libfunc);
     let dummy_type = ConcreteTypeId::from_usize(0);
     let name = libfunc_long_id.generic_id.debug_name.unwrap();
-    let single_branch = match name {
+    match name {
         x if x == "felt_add" => {
-            vec![OutputVarInfo { ty: dummy_type, ref_info: OutputVarReferenceInfo::Deferred }]
+            let vars =
+                vec![OutputVarInfo { ty: dummy_type, ref_info: OutputVarReferenceInfo::Deferred }];
+            vec![OutputBranchInfo { vars, ap_change: SierraApChange::NotImplemented }]
         }
-        x if x == "nope" => vec![],
-        x if x == "function_call4" => (0..4)
-            .map(|idx| OutputVarInfo {
-                ty: dummy_type.clone(),
-                ref_info: OutputVarReferenceInfo::NewTempVar { idx },
-            })
-            .collect(),
+        x if x == "nope" => {
+            vec![OutputBranchInfo { vars: vec![], ap_change: SierraApChange::NotImplemented }]
+        }
+        x if x == "function_call4" => {
+            let vars: Vec<_> = (0..4)
+                .map(|idx| OutputVarInfo {
+                    ty: dummy_type.clone(),
+                    ref_info: OutputVarReferenceInfo::NewTempVar { idx },
+                })
+                .collect();
+            vec![OutputBranchInfo { vars, ap_change: SierraApChange::NotImplemented }]
+        }
+        x if x == "jump" => {
+            vec![OutputBranchInfo { vars: vec![], ap_change: SierraApChange::Known }]
+        }
+        x if x == "branch" => {
+            vec![
+                OutputBranchInfo { vars: vec![], ap_change: SierraApChange::Known },
+                OutputBranchInfo { vars: vec![], ap_change: SierraApChange::Known },
+            ]
+        }
         _ => panic!("get_signature() is not implemented for '{}'.", name),
-    };
-    vec![OutputBranchInfo { vars: single_branch, ap_change: SierraApChange::NotImplemented }]
+    }
 }
 
 #[test]
