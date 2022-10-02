@@ -4,10 +4,11 @@
 
 use std::collections::HashMap;
 
+use ast::{BinaryOperator, PathSegment};
 use defs::ids::{GenericTypeId, LocalVarLongId, MemberId};
 use id_arena::Arena;
+use itertools::zip_eq;
 use smol_str::SmolStr;
-use syntax::node::ast::{BinaryOperator, PathSegment};
 use syntax::node::db::SyntaxGroup;
 use syntax::node::helpers::{GetIdentifier, PathSegmentEx};
 use syntax::node::{ast, Terminal, TypedSyntaxNode};
@@ -15,7 +16,9 @@ use utils::ordered_hash_map::OrderedHashMap;
 use utils::OptionHelper;
 
 use super::objects::*;
-use super::pattern::{Pattern, PatternEnum, PatternLiteral, PatternOtherwise, PatternVariable};
+use super::pattern::{
+    Pattern, PatternEnum, PatternLiteral, PatternOtherwise, PatternTuple, PatternVariable,
+};
 use crate::corelib::{
     core_binary_operator, core_felt_ty, false_literal_expr, true_literal_expr, unit_ty,
 };
@@ -239,44 +242,50 @@ pub fn maybe_compute_expr_semantic(
         // TODO(yuval): verify exhaustiveness.
         ast::Expr::Match(expr_match) => {
             let syntax_arms = expr_match.arms(syntax_db).elements(syntax_db);
-            let mut semantic_arms = Vec::new();
             let mut match_type: Option<TypeId> = None;
             let expr = compute_expr_semantic(ctx, &expr_match.expr(syntax_db));
-            for syntax_arm in syntax_arms {
-                let arm_expr_syntax = syntax_arm.expression(syntax_db);
-                let (pattern, arm_expr) = ctx.run_in_subscope(|new_ctx| {
-                    // Typecheck pattern, and introduce the new variables to the subscope.
-                    // Note that if the arm expr is a block, there will be *another* subscope for
-                    // it.
-                    let pattern = compute_pattern_semantic(
-                        new_ctx,
-                        syntax_arm.pattern(syntax_db),
-                        expr.ty(),
-                    )?;
-                    let variables = pattern.variables();
-                    for v in variables {
-                        new_ctx
-                            .environment
-                            .variables
-                            .insert(v.name.clone(), Variable::Local(v.var.clone()));
-                    }
-                    let arm_expr = compute_expr_semantic(new_ctx, &arm_expr_syntax);
-                    Some((pattern, arm_expr))
-                })?;
 
-                let arm_ty = arm_expr.ty();
-                semantic_arms.push(MatchArm { pattern, expression: ctx.exprs.alloc(arm_expr) });
+            // Run compute_pattern_semantic on every arm, even if other arms failed, to get as many
+            // diagnostics as possible.
+            let pattern_and_expr_options: Vec<_> = syntax_arms
+                .iter()
+                .map(|syntax_arm| {
+                    let arm_expr_syntax = syntax_arm.expression(syntax_db);
+                    ctx.run_in_subscope(|new_ctx| {
+                        // Typecheck pattern, and introduce the new variables to the subscope.
+                        // Note that if the arm expr is a block, there will be *another* subscope
+                        // for it.
+                        let pattern = compute_pattern_semantic(
+                            new_ctx,
+                            syntax_arm.pattern(syntax_db),
+                            expr.ty(),
+                        )?;
+                        let variables = pattern.variables();
+                        for v in variables {
+                            new_ctx
+                                .environment
+                                .variables
+                                .insert(v.name.clone(), Variable::Local(v.var.clone()));
+                        }
+                        let arm_expr = compute_expr_semantic(new_ctx, &arm_expr_syntax);
+                        Some((pattern, arm_expr))
+                    })
+                })
+                .collect();
 
-                if arm_ty == TypeId::missing(ctx.db) {
+            // Unify arm types.
+            let missing_ty = TypeId::missing(ctx.db);
+            for (_, expr) in pattern_and_expr_options.iter().flatten() {
+                let arm_ty = expr.ty();
+                if arm_ty == missing_ty {
                     continue;
                 }
 
-                // Unify arm types.
                 match match_type {
                     Some(ty) if ty == arm_ty => {}
                     Some(ty) => {
-                        ctx.diagnostics.report(
-                            &arm_expr_syntax,
+                        ctx.diagnostics.report_by_ptr(
+                            expr.stable_ptr().untyped(),
                             IncompatibleMatchArms { match_ty: ty, arm_ty },
                         );
                         match_type = Some(TypeId::missing(db));
@@ -285,6 +294,18 @@ pub fn maybe_compute_expr_semantic(
                     None => match_type = Some(arm_ty),
                 }
             }
+
+            // Compute semantic representation of the match arms.
+            let pattern_and_exprs: Vec<_> =
+                pattern_and_expr_options.into_iter().collect::<Option<_>>()?;
+            let semantic_arms = pattern_and_exprs
+                .into_iter()
+                .map(|(pattern, arm_expr)| MatchArm {
+                    pattern,
+                    expression: ctx.exprs.alloc(arm_expr),
+                })
+                .collect();
+
             Expr::ExprMatch(ExprMatch {
                 matched_expr: ctx.exprs.alloc(expr),
                 arms: semantic_arms,
@@ -385,9 +406,49 @@ fn compute_pattern_semantic(
                 var: LocalVariable { id: var_id, ty },
             })
         }
-        _ => {
-            ctx.diagnostics.report(&pattern_syntax, Unsupported);
+        ast::Pattern::Struct(pattern_struct) => {
+            // Check that type is an struct, and get the concrete struct from it.
+            let _concrete_struct =
+                if let TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_struct)) =
+                    ctx.db.lookup_intern_type(ty)
+                {
+                    concrete_struct
+                } else {
+                    ctx.diagnostics.report(&pattern_struct, UnexpectedEnumPattern { ty });
+                    return None;
+                };
+
+            // TODO(spapini): Support struct patterns.
+            ctx.diagnostics.report(&pattern_struct, Unsupported);
             return None;
+        }
+        ast::Pattern::Tuple(pattern_tuple) => {
+            let tys = if let TypeLongId::Tuple(tys) = ctx.db.lookup_intern_type(ty) {
+                tys
+            } else {
+                ctx.diagnostics.report(&pattern_tuple, UnexpectedTuplePattern { ty });
+                return None;
+            };
+
+            let patterns_ast = pattern_tuple.patterns(syntax_db).elements(syntax_db);
+            if tys.len() != patterns_ast.len() {
+                ctx.diagnostics.report(
+                    &pattern_tuple,
+                    WrongNumberOfGenericArguments {
+                        expected: tys.len(),
+                        actual: patterns_ast.len(),
+                    },
+                );
+                return None;
+            }
+            // Iterator of Option<Pattern?, for each field.
+            let pattern_options = zip_eq(patterns_ast.into_iter(), tys).map(|(pattern_ast, ty)| {
+                Some(Box::new(compute_pattern_semantic(ctx, pattern_ast, ty)?))
+            });
+            // If all are Some, collect into a Vec.
+            let field_patterns: Vec<_> = pattern_options.collect::<Option<_>>()?;
+
+            Pattern::Tuple(PatternTuple { field_patterns, ty })
         }
     })
 }

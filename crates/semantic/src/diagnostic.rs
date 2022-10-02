@@ -130,6 +130,12 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::UnexpectedEnumPattern { ty } => {
                 format!("Unexpected type for enum pattern. {} is not an enum.", ty.format(db),)
             }
+            SemanticDiagnosticKind::UnexpectedStructPattern { ty } => {
+                format!("Unexpected type for struct pattern. {} is not a struct.", ty.format(db),)
+            }
+            SemanticDiagnosticKind::UnexpectedTuplePattern { ty } => {
+                format!("Unexpected type for tuple pattern. {} is not a tuple.", ty.format(db),)
+            }
             SemanticDiagnosticKind::WrongEnum { expected_enum, actual_enum } => {
                 format!(
                     "Wrong enum in pattern. Expected: {}. Got: {}.",
@@ -179,5 +185,7 @@ pub enum SemanticDiagnosticKind {
     PathNotFound,
     UnexpectedLiteralPattern { ty: semantic::TypeId },
     UnexpectedEnumPattern { ty: semantic::TypeId },
+    UnexpectedStructPattern { ty: semantic::TypeId },
+    UnexpectedTuplePattern { ty: semantic::TypeId },
     WrongEnum { expected_enum: EnumId, actual_enum: EnumId },
 }
