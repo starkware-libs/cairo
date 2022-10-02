@@ -23,10 +23,19 @@ impl SyntaxNodeFormat for SyntaxNode {
             | SyntaxKind::TokenComma
             | SyntaxKind::TokenSemicolon
             | SyntaxKind::TokenRParen => true,
+            SyntaxKind::TokenLParen
+                if matches!(parent_parent_kind(db, self), Some(SyntaxKind::FunctionSignature)) =>
+            {
+                true
+            }
             SyntaxKind::TokenLT | SyntaxKind::TokenGT
                 if matches!(
                     parent_parent_kind(db, self),
-                    Some(SyntaxKind::PathSegmentWithGenericArgs | SyntaxKind::GenericArgs)
+                    Some(
+                        SyntaxKind::PathSegmentWithGenericArgs
+                            | SyntaxKind::GenericArgs
+                            | SyntaxKind::WrappedGenericParamList
+                    )
                 ) =>
             {
                 true
@@ -56,7 +65,11 @@ impl SyntaxNodeFormat for SyntaxNode {
             SyntaxKind::TokenLT
                 if matches!(
                     parent_parent_kind(db, self),
-                    Some(SyntaxKind::PathSegmentWithGenericArgs | SyntaxKind::GenericArgs)
+                    Some(
+                        SyntaxKind::PathSegmentWithGenericArgs
+                            | SyntaxKind::GenericArgs
+                            | SyntaxKind::WrappedGenericParamList
+                    )
                 ) =>
             {
                 true
@@ -135,6 +148,15 @@ impl SyntaxNodeFormat for SyntaxNode {
         matches!(
             self.kind(db),
             SyntaxKind::StructArgList | SyntaxKind::ParamList | SyntaxKind::ExprList
+        )
+    }
+    fn is_protected_breaking_node(&self, db: &dyn SyntaxGroup) -> bool {
+        matches!(
+            self.kind(db),
+            SyntaxKind::ExprParenthesized
+                | SyntaxKind::StructArgList
+                | SyntaxKind::ParamList
+                | SyntaxKind::ExprList
         )
     }
     fn get_break_line_point_properties(&self, db: &dyn SyntaxGroup) -> BreakLinePointProperties {
