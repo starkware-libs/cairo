@@ -163,8 +163,9 @@ macro_rules! res {
             b: $crate::deref_or_immediate!($b),
         })
     };
+    // TODO(alont): Add support for double dereference outer offset.
     ([[$a:expr]]) => {
-        ResOperand::DoubleDeref(DoubleDerefOperand { inner_deref: $a })
+        ResOperand::DoubleDeref(DoubleDerefOperand { inner_deref: $a, offset: 0 })
     };
     ($a:tt) => {
         ResOperand::from($crate::deref_or_immediate!($a))

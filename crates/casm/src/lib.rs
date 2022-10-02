@@ -1,6 +1,7 @@
 //! Cairo assembly representation, formatting and construction utilities.
 
 pub mod ap_change;
+pub mod assembler;
 pub mod hints;
 pub mod inline;
 pub mod instructions;

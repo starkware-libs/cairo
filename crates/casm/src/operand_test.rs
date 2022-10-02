@@ -11,9 +11,12 @@ fn test_deref_operand_format() {
 #[test]
 fn test_double_deref_op_format() {
     assert_eq!(
-        DoubleDerefOperand { inner_deref: DerefOperand { register: Register::AP, offset: 5 } }
-            .to_string(),
-        "[[ap + 5]]"
+        DoubleDerefOperand {
+            inner_deref: DerefOperand { register: Register::AP, offset: 5 },
+            offset: 0
+        }
+        .to_string(),
+        "[[ap + 5] + 0]"
     );
 }
 
