@@ -1,6 +1,7 @@
 use std::collections::VecDeque;
 
 use casm::ap_change::ApChange;
+use casm::hints::Hint;
 use casm::instructions::{
     AddApInstruction, AssertEqInstruction, CallInstruction, Instruction, InstructionBody,
     JnzInstruction, JumpInstruction,
@@ -217,13 +218,13 @@ fn handle_function_call(
 
     // TODO(ilya, 10/10/2022): Support functions with known ap change.
     Ok(CompiledInvocation::new(
-        vec![Instruction {
-            body: InstructionBody::Call(CallInstruction {
+        vec![Instruction::new(
+            InstructionBody::Call(CallInstruction {
                 target: DerefOrImmediate::Immediate(ImmediateOperand { value: 0 }),
                 relative: true,
             }),
-            inc_ap: false,
-        }],
+            false,
+        )],
         vec![RelocationEntry {
             instruction_idx: 0,
             relocation: Relocation::RelativeStatementId(func_call.function.entry_point),
@@ -248,10 +249,9 @@ fn handle_store_temp(
     };
 
     let dst = DerefOperand { register: Register::AP, offset: 0 };
-    let assert_instruction = handle_store(type_sizes, invocation, &store_temp.ty, dst, expression)?;
-
+    let instruction = handle_store(type_sizes, invocation, &store_temp.ty, dst, expression, true)?;
     Ok(CompiledInvocation::new(
-        vec![Instruction { body: InstructionBody::AssertEq(assert_instruction), inc_ap: true }],
+        vec![instruction],
         vec![],
         [ApChange::Known(1)].into_iter(),
         [[ReferenceExpression::Deref(DerefOperand { register: Register::AP, offset: -1 })]
@@ -268,12 +268,15 @@ fn handle_store(
     src_type: &ConcreteTypeId,
     dst: DerefOperand,
     src_expr: &ReferenceExpression,
-) -> Result<AssertEqInstruction, InvocationError> {
+    inc_ap: bool,
+) -> Result<Instruction, InvocationError> {
     match type_sizes.get(src_type) {
         Some(1) => Ok(()),
         Some(0) => Err(InvocationError::NotSized(invocation.clone())),
         _ => Err(InvocationError::NotImplemented(invocation.clone())),
     }?;
+
+    let mut hints = vec![];
 
     let (dst_operand, res_operand) = match src_expr {
         ReferenceExpression::Deref(operand) => (dst, ResOperand::Deref(*operand)),
@@ -281,7 +284,7 @@ fn handle_store(
             (dst, ResOperand::DoubleDeref(operand.clone()))
         }
         ReferenceExpression::IntoSingleCellRef(operand) => {
-            // TODO(orizi): Add hint to actually initialize [ap + 0] with the address.
+            hints.push(Hint::AllocSegment { dst });
             (*operand, ResOperand::DoubleDeref(DoubleDerefOperand { inner_deref: dst }))
         }
         ReferenceExpression::Immediate(operand) => (dst, ResOperand::Immediate(*operand)),
@@ -304,7 +307,11 @@ fn handle_store(
             _ => return Err(InvocationError::NotImplemented(invocation.clone())),
         },
     };
-    Ok(AssertEqInstruction { a: dst_operand, b: res_operand })
+    Ok(Instruction {
+        body: InstructionBody::AssertEq(AssertEqInstruction { a: dst_operand, b: res_operand }),
+        inc_ap,
+        hints,
+    })
 }
 
 fn handle_jump_nz(
@@ -327,13 +334,13 @@ fn handle_jump_nz(
     };
 
     Ok(CompiledInvocation::new(
-        vec![Instruction {
-            body: InstructionBody::Jnz(JnzInstruction {
+        vec![Instruction::new(
+            InstructionBody::Jnz(JnzInstruction {
                 jump_offset: DerefOrImmediate::Immediate(ImmediateOperand { value: 0 }),
                 condition: *condition,
             }),
-            inc_ap: false,
-        }],
+            false,
+        )],
         vec![RelocationEntry {
             instruction_idx: 0,
             relocation: Relocation::RelativeStatementId(*target_statement_id),
@@ -356,13 +363,13 @@ fn handle_jump(
     };
 
     Ok(CompiledInvocation::new(
-        vec![Instruction {
-            body: InstructionBody::Jump(JumpInstruction {
+        vec![Instruction::new(
+            InstructionBody::Jump(JumpInstruction {
                 target: DerefOrImmediate::Immediate(ImmediateOperand { value: 0 }),
                 relative: true,
             }),
-            inc_ap: false,
-        }],
+            false,
+        )],
         vec![RelocationEntry {
             instruction_idx: 0,
             relocation: Relocation::RelativeStatementId(*target_statement_id),
@@ -381,12 +388,12 @@ fn handle_finalize_locals(
     let (n_slots, frame_state) =
         frame_state::handle_finalize_locals(environment.frame_state, environment.ap_tracking)?;
     Ok(CompiledInvocation::new(
-        vec![Instruction {
-            body: InstructionBody::AddAp(AddApInstruction {
+        vec![Instruction::new(
+            InstructionBody::AddAp(AddApInstruction {
                 operand: ResOperand::Immediate(ImmediateOperand { value: n_slots as i128 }),
             }),
-            inc_ap: false,
-        }],
+            false,
+        )],
         vec![],
         [ApChange::Known(n_slots)].into_iter(),
         [[].into_iter()].into_iter(),
@@ -482,10 +489,9 @@ fn handle_store_local(
         _ => Err(InvocationError::WrongNumberOfArguments),
     }?;
 
-    let assert_instruction = handle_store(type_sizes, invocation, &libfunc.ty, *dst, src_expr)?;
-
+    let instruction = handle_store(type_sizes, invocation, &libfunc.ty, *dst, src_expr, false)?;
     Ok(CompiledInvocation::new(
-        vec![Instruction { body: InstructionBody::AssertEq(assert_instruction), inc_ap: false }],
+        vec![instruction],
         vec![],
         [ApChange::Known(0)].into_iter(),
         [[ReferenceExpression::Deref(*dst)].into_iter()].into_iter(),

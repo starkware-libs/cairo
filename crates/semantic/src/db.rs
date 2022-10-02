@@ -2,7 +2,7 @@ use db_utils::Upcast;
 use defs::db::DefsGroup;
 use defs::ids::{
     EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericFunctionId, GenericParamId,
-    GenericTypeId, ModuleId, ModuleItemId, StructId, UseId,
+    GenericTypeId, ModuleId, ModuleItemId, StructId, UseId, VariantId,
 };
 use diagnostics::{Diagnostics, DiagnosticsBuilder};
 use filesystem::db::{AsFilesGroupMut, FilesGroup};
@@ -76,7 +76,11 @@ pub trait SemanticGroup:
     fn enum_semantic_diagnostics(&self, enum_id: EnumId) -> Diagnostics<SemanticDiagnostic>;
     /// Returns the members of an enum.
     #[salsa::invoke(items::enm::enum_variants)]
-    fn enum_variants(&self, enum_id: EnumId) -> Option<OrderedHashMap<SmolStr, semantic::Variant>>;
+    fn enum_variants(&self, enum_id: EnumId) -> Option<OrderedHashMap<SmolStr, VariantId>>;
+    /// Returns the semantic model of a variant.
+    #[salsa::invoke(items::enm::variant_semantic)]
+    fn variant_semantic(&self, enum_id: EnumId, variant_id: VariantId)
+    -> Option<semantic::Variant>;
 
     // Free function.
     // ==============

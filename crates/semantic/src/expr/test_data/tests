@@ -149,3 +149,29 @@ error: Variable A not found.
  --> lib.cairo:18:17
     let a : A = A;
                 ^
+//! > ==========================================================================
+
+//! > Test match
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+enum A {
+    a: (),
+    b: felt,
+}
+
+func foo(b: A) -> felt {
+	match b {
+      A::a(x) => { 1 },
+      A::b(x) => { x },
+	}
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics

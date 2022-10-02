@@ -249,11 +249,10 @@ fn test_let_statement() {
 
     assert_eq!(
         format!("{:?}", expr.debug(&expr_formatter)),
-        "ExprBlock(ExprBlock { statements: [Let(StatementLet { var: LocalVariable { id: \
-         LocalVarId(test_crate::a), ty: core::felt }, expr: ExprLiteral(ExprLiteral { value: 3, \
-         ty: core::felt }) }), Let(StatementLet { var: LocalVariable { id: \
-         LocalVarId(test_crate::b), ty: core::felt }, expr: ExprVar(ExprVar { var: \
-         LocalVarId(test_crate::a), ty: core::felt }) })], tail: None, ty: () })"
+        "ExprBlock(ExprBlock { statements: [Let(StatementLet { pattern: Variable(a), expr: \
+         ExprLiteral(ExprLiteral { value: 3, ty: core::felt }) }), Let(StatementLet { pattern: \
+         Variable(b), expr: ExprVar(ExprVar { var: LocalVarId(test_crate::a), ty: core::felt }) \
+         })], tail: None, ty: () })"
     );
 }
 
@@ -366,10 +365,11 @@ fn test_expr_match() {
     assert_eq!(
         format!("{:?}", expr.debug(&expr_formatter)),
         "ExprMatch(ExprMatch { matched_expr: ExprVar(ExprVar { var: ParamId(test_crate::a), ty: \
-         core::felt }), arms: [MatchArm { pattern: Literal(ExprLiteral { value: 0, ty: core::felt \
-         }), expression: ExprLiteral(ExprLiteral { value: 0, ty: core::felt }) }, MatchArm { \
-         pattern: Otherwise, expression: ExprLiteral(ExprLiteral { value: 1, ty: core::felt }) \
-         }], ty: core::felt })"
+         core::felt }), arms: [MatchArm { pattern: Literal(PatternLiteral { literal: ExprLiteral \
+         { value: 0, ty: core::felt }, ty: core::felt }), expression: ExprLiteral(ExprLiteral { \
+         value: 0, ty: core::felt }) }, MatchArm { pattern: Otherwise(PatternOtherwise { ty: \
+         core::felt }), expression: ExprLiteral(ExprLiteral { value: 1, ty: core::felt }) }], ty: \
+         core::felt })"
     );
 }
 

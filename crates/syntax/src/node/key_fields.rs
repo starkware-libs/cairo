@@ -40,7 +40,7 @@ pub fn get_key_fields(kind: SyntaxKind, children: Vec<GreenId>) -> Vec<GreenId> 
         SyntaxKind::OptionReturnTypeClauseEmpty => vec![],
         SyntaxKind::StatementList => vec![],
         SyntaxKind::StatementMissing => vec![],
-        SyntaxKind::StatementLet => vec![/* name */ children[1]],
+        SyntaxKind::StatementLet => vec![/* pattern */ children[1]],
         SyntaxKind::OptionSemicolonEmpty => vec![],
         SyntaxKind::StatementExpr => vec![],
         SyntaxKind::StatementReturn => vec![],

@@ -102,14 +102,13 @@ fn test_expr_generator_duplicate_variable() {
         generate_expression_code(&mut expr_generator_context, test_expr.expr_id).unwrap();
     let (statements1, res1) =
         generate_expression_code(&mut expr_generator_context, test_expr.expr_id).unwrap();
-    // TODO(spapini): Fix so that the span below will only point to `x`.
     assert_eq!(
         diagnostics.build().format(&db),
         indoc! {"
             error: Internal compiler error: found two definitions for the same variable.
-             --> lib.cairo:3:1
+             --> lib.cairo:3:5
             let x = 7; x
-            ^********^
+                ^
 
             "},
     );

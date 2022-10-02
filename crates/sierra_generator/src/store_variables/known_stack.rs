@@ -10,7 +10,7 @@ use utils::unordered_hash_set::UnorderedHashSet;
 use crate::pre_sierra;
 
 /// Represents the information known about the top of the stack at a given point in the code.
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct KnownStack {
     /// A map from [sierra::ids::VarId] of variables that are located on the stack
     /// (e.g., `[ap - 2]`) to their index on the stack, relative to `offset`.
@@ -21,10 +21,6 @@ pub struct KnownStack {
     offset: usize,
 }
 impl KnownStack {
-    pub fn default() -> KnownStack {
-        Self { variables_on_stack: OrderedHashMap::default(), offset: 0 }
-    }
-
     /// Clears the known information about the stack.
     ///
     /// This is called where the change in the value of `ap` is not known at compile time.
