@@ -1,11 +1,11 @@
 use debug::DebugWithDb;
-use defs::db::DefsGroup;
-use defs::ids::{LocalVarId, MemberId, StructId, VarId, VariantId};
+use defs::ids::{MemberId, StructId, VarId, VariantId};
 use diagnostics_proc_macros::DebugWithDb;
 use id_arena::Id;
-use syntax::node::ast::{self, StatementLetPtr};
+use syntax::node::ast::{self};
 
 use super::fmt::ExprFormatter;
+use super::pattern::Pattern;
 use crate::{semantic, FunctionId};
 
 pub type ExprId = Id<Expr>;
@@ -47,20 +47,8 @@ pub enum Statement {
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
 #[debug_db(ExprFormatter<'_>)]
 pub struct StatementLet {
-    pub var: LocalVariable,
+    pub pattern: Pattern,
     pub expr: ExprId,
-}
-
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
-#[debug_db(ExprFormatter<'_>)]
-pub struct LocalVariable {
-    pub id: LocalVarId,
-    pub ty: semantic::TypeId,
-}
-impl LocalVariable {
-    pub fn stable_ptr(&self, db: &dyn DefsGroup) -> StatementLetPtr {
-        self.id.stable_ptr(db)
-    }
 }
 
 // Expressions.
@@ -157,13 +145,6 @@ pub struct ExprMatch {
 pub struct MatchArm {
     pub pattern: Pattern,
     pub expression: ExprId,
-}
-
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
-#[debug_db(ExprFormatter<'_>)]
-pub enum Pattern {
-    Otherwise,
-    Literal(ExprLiteral),
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]

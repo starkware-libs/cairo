@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use db_utils::define_short_id;
 use debug::DebugWithDb;
-use defs::ids::{GenericFunctionId, GenericParamId, ParamLongId, VarId};
+use defs::ids::{GenericFunctionId, GenericParamId, ParamLongId};
 use diagnostics_proc_macros::DebugWithDb;
 use syntax::node::{ast, Terminal, TypedSyntaxNode};
 
@@ -96,8 +96,9 @@ pub fn function_signature_params(
         let ty_syntax = ast_param.type_clause(syntax_db).ty(syntax_db);
         // TODO(yuval): Diagnostic?
         let ty = resolve_type(db, diagnostics, resolver, &ty_syntax);
-        semantic_params.push(semantic::Parameter { id, ty });
-        variables.insert(name, semantic::Variable { id: VarId::Param(id), ty });
+        let param = semantic::Parameter { id, ty };
+        semantic_params.push(param.clone());
+        variables.insert(name, semantic::Variable::Param(param));
     }
 
     (semantic_params, Environment::new(variables))

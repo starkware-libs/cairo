@@ -296,21 +296,22 @@ define_language_element_id!(
     lookup_intern_generic_param,
     name
 );
-// TODO(spapini): change this to a binding inside a pattern. And then, have better printing.
-define_language_element_id!(LocalVarId, LocalVarLongId, ast::StatementLet, lookup_intern_local_var);
+// TODO(spapini): change this to a binding inside a pattern.
+// TODO(spapini): Override full_path to include parents, for better debug.
+define_language_element_id!(
+    LocalVarId,
+    LocalVarLongId,
+    ast::TerminalIdentifier,
+    lookup_intern_local_var
+);
 impl DebugWithDb<dyn DefsGroup> for LocalVarLongId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &dyn DefsGroup) -> std::fmt::Result {
         let syntax_db = db.upcast();
         let LocalVarLongId(module_id, ptr) = self;
         let file_id = db.module_file(*module_id).ok_or(std::fmt::Error)?;
         let root = db.file_syntax(file_id).ok_or(std::fmt::Error)?;
-        let let_statement_ast = ast::StatementLet::from_ptr(syntax_db, &*root, *ptr);
-        write!(
-            f,
-            "LocalVarId({}::{})",
-            module_id.full_path(db),
-            let_statement_ast.name(syntax_db).text(syntax_db)
-        )
+        let text = ast::TerminalIdentifier::from_ptr(syntax_db, &*root, *ptr).text(syntax_db);
+        write!(f, "LocalVarId({}::{})", module_id.full_path(db), text)
     }
 }
 

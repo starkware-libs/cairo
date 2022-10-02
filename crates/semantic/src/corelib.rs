@@ -72,7 +72,7 @@ fn get_enum_variant(
 ) -> semantic::Expr {
     let bool_enum = ctx.db.module_item_by_name(module_id, enum_name.into()).unwrap();
     let bool_enum_id = extract_matches!(bool_enum, ModuleItemId::Enum);
-    let variant_id = ctx.db.enum_variants(bool_enum_id).unwrap()[variant_name].id;
+    let variant_id = ctx.db.enum_variants(bool_enum_id).unwrap()[variant_name];
     semantic::Expr::ExprEnumVariantCtor(semantic::ExprEnumVariantCtor {
         enum_variant_id: variant_id,
         value_expr: unit_expr(ctx, stable_ptr),

@@ -136,7 +136,7 @@ pub fn priv_free_function_definition_data(
         declaration.signature.return_type,
         environment,
     );
-    let expr = compute_expr_semantic(&mut ctx, ast::Expr::Block(syntax.body(db.upcast())));
+    let expr = compute_expr_semantic(&mut ctx, &ast::Expr::Block(syntax.body(db.upcast())));
     let body = ctx.exprs.alloc(expr);
     let ComputationContext { exprs, statements, resolver, .. } = ctx;
 
