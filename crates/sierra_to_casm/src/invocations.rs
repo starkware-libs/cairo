@@ -176,10 +176,9 @@ impl CompiledInvocationBuilder<'_> {
     /// Handles a felt operation with the given op.
     fn build_felt_op(self, op: FeltOperator) -> Result<CompiledInvocation, InvocationError> {
         let (expr_a, expr_b) = match self.refs {
-            [
-                ReferenceValue { expression: expr_a, .. },
-                ReferenceValue { expression: expr_b, .. },
-            ] => (expr_a, expr_b),
+            [ReferenceValue { expression: expr_a, .. }, ReferenceValue { expression: expr_b, .. }] => {
+                (expr_a, expr_b)
+            }
             refs => {
                 return Err(InvocationError::WrongNumberOfArguments {
                     expected: 2,
@@ -326,7 +325,7 @@ impl CompiledInvocationBuilder<'_> {
                 CellExpression::DoubleDeref(operand) => Instruction {
                     body: InstructionBody::AssertEq(AssertEqInstruction {
                         a: dst,
-                        b: ResOperand::DoubleDeref(operand),
+                        b: ResOperand::DoubleDeref(operand, 0),
                     }),
                     inc_ap,
                     hints: vec![],
@@ -334,7 +333,7 @@ impl CompiledInvocationBuilder<'_> {
                 CellExpression::IntoSingleCellRef(operand) => Instruction {
                     body: InstructionBody::AssertEq(AssertEqInstruction {
                         a: operand,
-                        b: ResOperand::DoubleDeref(dst),
+                        b: ResOperand::DoubleDeref(dst, 0),
                     }),
                     inc_ap,
                     hints: vec![Hint::AllocSegment { dst }],
@@ -434,10 +433,9 @@ impl CompiledInvocationBuilder<'_> {
     /// Handles store_local for the given type.
     fn build_store_local(self, ty: &ConcreteTypeId) -> Result<CompiledInvocation, InvocationError> {
         let (dst_expr, src_expr) = match self.refs {
-            [
-                ReferenceValue { expression: dst_expr, .. },
-                ReferenceValue { expression: src_expr, .. },
-            ] => Ok((dst_expr, src_expr)),
+            [ReferenceValue { expression: dst_expr, .. }, ReferenceValue { expression: src_expr, .. }] => {
+                Ok((dst_expr, src_expr))
+            }
             refs => {
                 Err(InvocationError::WrongNumberOfArguments { expected: 2, actual: refs.len() })
             }
@@ -498,10 +496,9 @@ impl CompiledInvocationBuilder<'_> {
         .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
 
         let target_statement_id = match self.invocation.branches.as_slice() {
-            [
-                BranchInfo { target: BranchTarget::Fallthrough, .. },
-                BranchInfo { target: BranchTarget::Statement(statement_id), .. },
-            ] => statement_id,
+            [BranchInfo { target: BranchTarget::Fallthrough, .. }, BranchInfo { target: BranchTarget::Statement(statement_id), .. }] => {
+                statement_id
+            }
             _ => panic!("malformed invocation"),
         };
 
@@ -666,10 +663,8 @@ impl CompiledInvocationBuilder<'_> {
     /// Handles instruction for appending an element to an array.
     fn build_array_append(self) -> Result<CompiledInvocation, InvocationError> {
         let (mut array_view, element_to_append) = match self.refs {
-            [
-                ReferenceValue { expression: expr_arr, .. },
-                ReferenceValue { expression: expr_elem, .. },
-            ] => {
+            [ReferenceValue { expression: expr_arr, .. }, ReferenceValue { expression: expr_elem, .. }] =>
+            {
                 let array_view = ArrayView::try_get_view(expr_arr)
                     .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?;
                 let elem_val = match expr_elem
@@ -723,10 +718,9 @@ impl CompiledInvocationBuilder<'_> {
             .get(&self.idx)
             .ok_or(InvocationError::UnknownVariableData)?;
         let (range_check_expression, gas_counter_expression) = match self.refs {
-            [
-                ReferenceValue { expression: range_check_expression, .. },
-                ReferenceValue { expression: gas_counter_expression, .. },
-            ] => (range_check_expression, gas_counter_expression),
+            [ReferenceValue { expression: range_check_expression, .. }, ReferenceValue { expression: gas_counter_expression, .. }] => {
+                (range_check_expression, gas_counter_expression)
+            }
             refs => {
                 return Err(InvocationError::WrongNumberOfArguments {
                     expected: 2,

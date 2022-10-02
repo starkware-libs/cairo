@@ -88,6 +88,11 @@ macro_rules! casm_extend {
         $crate::append_instruction!($ctx, body $(,$ap++)?);
         $crate::casm_extend!($ctx, $($tok)*)
     };
+    ($ctx:ident, ret $(,$ap:ident++)? ; $($tok:tt)*) => {
+        let body = InstructionBody::Ret(RetInstruction {});
+        $crate::append_instruction!($ctx, body $(,$ap++)?);
+        $crate::casm_extend!($ctx, $($tok)*)
+    };
     ($ctx:ident, %{ memory $dst:tt = segments . add ( ) %} $($tok:tt)*) => {
         $ctx.current_hints.push($crate::hints::Hint::AllocSegment{dst: $crate::deref!($dst)});
         $crate::casm_extend!($ctx, $($tok)*)
@@ -205,7 +210,10 @@ macro_rules! res {
         })
     };
     ([[$a:expr]]) => {
-        $crate::operand::ResOperand::DoubleDeref($a)
+        $crate::operand::ResOperand::DoubleDeref($a, 0)
+    };
+    ([[$a:expr] + $b:expr]) => {
+        $crate::operand::ResOperand::DoubleDeref($a, $b)
     };
     ($a:tt) => {
         $crate::operand::ResOperand::from($crate::deref_or_immediate!($a))
