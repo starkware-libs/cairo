@@ -107,6 +107,7 @@ impl SyntaxNodeFormat for SyntaxNode {
         }
     }
 
+    // TODO(gil): consider removing this function as it is no longer used.
     fn allow_newline_after(&self, _db: &dyn SyntaxGroup) -> bool {
         false
     }
