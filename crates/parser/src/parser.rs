@@ -584,6 +584,21 @@ impl<'a> Parser<'a> {
                     _ => path.into(),
                 }
             }
+            SyntaxKind::TerminalLParen => {
+                let lparen = self.take::<TerminalLParen>();
+                let patterns = PatternList::new_green(self.db,  self.parse_separated_list::<
+                    Pattern,
+                    TerminalComma,
+                    PatternListElementOrSeparatorGreen>
+                (
+                    Self::try_parse_pattern,
+                    is_of_kind!(rparen, block, rbrace, top_level),
+                    SyntaxKind::TerminalComma,
+                    "pattern",
+                ));
+                let rparen = self.take::<TerminalRParen>();
+                PatternTuple::new_green(self.db, lparen, patterns, rparen).into()
+            }
             _ => return None,
         })
     }
