@@ -18,6 +18,10 @@ impl salsa::Database for DatabaseImpl {}
     "test_data/cairo_files/formatter_test.cairo",
     "test_data/expected_results/formatter_test.cairo"
 )]
+#[test_case(
+    "test_data/cairo_files/formatter_linebreaking.cairo",
+    "test_data/expected_results/formatter_linebreaking.cairo"
+)]
 fn format_and_compare_file(unformatted_filename: &str, expected_filename: &str) {
     let db_val = ParserDatabaseForTesting::default();
     let db = &db_val;
