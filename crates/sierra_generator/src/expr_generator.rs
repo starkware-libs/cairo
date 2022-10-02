@@ -19,7 +19,7 @@ pub fn generate_expression_code(
     expr_id: semantic::ExprId,
 ) -> Option<(Vec<pre_sierra::Statement>, sierra::ids::VarId)> {
     match &context.get_db().expr_semantic(context.function_id(), expr_id) {
-        semantic::Expr::ExprTuple(_) => todo!(),
+        semantic::Expr::ExprTuple(_) | semantic::Expr::ExprAssignment(_) => todo!(),
         semantic::Expr::ExprBlock(expr_block) => handle_block(context, expr_block),
         semantic::Expr::ExprFunctionCall(expr_function_call) => {
             handle_function_call(context, expr_function_call)

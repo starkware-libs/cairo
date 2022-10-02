@@ -122,6 +122,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             }
             SemanticDiagnosticKind::InvalidMemberExpression => "Invalid member expression.".into(),
             SemanticDiagnosticKind::InvalidPath => "Invalid path.".into(),
+            SemanticDiagnosticKind::InvalidLhsForAssignment => {
+                "invalid left-hand side of assignment.".into()
+            }
             SemanticDiagnosticKind::PathNotFound => "Path not found.".into(),
             SemanticDiagnosticKind::UnexpectedLiteralPattern { ty } => format!(
                 "Unexpected type for literal pattern. Expected: felt. Got: {}",
@@ -180,6 +183,7 @@ pub enum SemanticDiagnosticKind {
     TypeHasNoMembers { ty: semantic::TypeId, member_name: SmolStr },
     NoSuchMember { struct_id: StructId, member_name: SmolStr },
     NoSuchVariant { enum_id: EnumId, variant_name: SmolStr },
+    InvalidLhsForAssignment,
     InvalidMemberExpression,
     InvalidPath,
     PathNotFound,
