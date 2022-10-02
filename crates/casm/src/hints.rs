@@ -7,6 +7,7 @@ use crate::operand::DerefOperand;
 mod test;
 
 // Represents a cairo hint.
+#[derive(Debug, Eq, PartialEq)]
 pub enum Hint {
     AllocSegment { dst: DerefOperand },
 }

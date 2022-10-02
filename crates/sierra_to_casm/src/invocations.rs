@@ -217,13 +217,13 @@ fn handle_function_call(
 
     // TODO(ilya, 10/10/2022): Support functions with known ap change.
     Ok(CompiledInvocation::new(
-        vec![Instruction {
-            body: InstructionBody::Call(CallInstruction {
+        vec![Instruction::new(
+            InstructionBody::Call(CallInstruction {
                 target: DerefOrImmediate::Immediate(ImmediateOperand { value: 0 }),
                 relative: true,
             }),
-            inc_ap: false,
-        }],
+            false,
+        )],
         vec![RelocationEntry {
             instruction_idx: 0,
             relocation: Relocation::RelativeStatementId(func_call.function.entry_point),
@@ -251,7 +251,7 @@ fn handle_store_temp(
     let assert_instruction = handle_store(type_sizes, invocation, &store_temp.ty, dst, expression)?;
 
     Ok(CompiledInvocation::new(
-        vec![Instruction { body: InstructionBody::AssertEq(assert_instruction), inc_ap: true }],
+        vec![Instruction::new(InstructionBody::AssertEq(assert_instruction), true)],
         vec![],
         [ApChange::Known(1)].into_iter(),
         [[ReferenceExpression::Deref(DerefOperand { register: Register::AP, offset: -1 })]
@@ -327,13 +327,13 @@ fn handle_jump_nz(
     };
 
     Ok(CompiledInvocation::new(
-        vec![Instruction {
-            body: InstructionBody::Jnz(JnzInstruction {
+        vec![Instruction::new(
+            InstructionBody::Jnz(JnzInstruction {
                 jump_offset: DerefOrImmediate::Immediate(ImmediateOperand { value: 0 }),
                 condition: *condition,
             }),
-            inc_ap: false,
-        }],
+            false,
+        )],
         vec![RelocationEntry {
             instruction_idx: 0,
             relocation: Relocation::RelativeStatementId(*target_statement_id),
@@ -356,13 +356,13 @@ fn handle_jump(
     };
 
     Ok(CompiledInvocation::new(
-        vec![Instruction {
-            body: InstructionBody::Jump(JumpInstruction {
+        vec![Instruction::new(
+            InstructionBody::Jump(JumpInstruction {
                 target: DerefOrImmediate::Immediate(ImmediateOperand { value: 0 }),
                 relative: true,
             }),
-            inc_ap: false,
-        }],
+            false,
+        )],
         vec![RelocationEntry {
             instruction_idx: 0,
             relocation: Relocation::RelativeStatementId(*target_statement_id),
@@ -381,12 +381,12 @@ fn handle_finalize_locals(
     let (n_slots, frame_state) =
         frame_state::handle_finalize_locals(environment.frame_state, environment.ap_tracking)?;
     Ok(CompiledInvocation::new(
-        vec![Instruction {
-            body: InstructionBody::AddAp(AddApInstruction {
+        vec![Instruction::new(
+            InstructionBody::AddAp(AddApInstruction {
                 operand: ResOperand::Immediate(ImmediateOperand { value: n_slots as i128 }),
             }),
-            inc_ap: false,
-        }],
+            false,
+        )],
         vec![],
         [ApChange::Known(n_slots)].into_iter(),
         [[].into_iter()].into_iter(),
@@ -485,7 +485,7 @@ fn handle_store_local(
     let assert_instruction = handle_store(type_sizes, invocation, &libfunc.ty, *dst, src_expr)?;
 
     Ok(CompiledInvocation::new(
-        vec![Instruction { body: InstructionBody::AssertEq(assert_instruction), inc_ap: false }],
+        vec![Instruction::new(InstructionBody::AssertEq(assert_instruction), false)],
         vec![],
         [ApChange::Known(0)].into_iter(),
         [[ReferenceExpression::Deref(*dst)].into_iter()].into_iter(),
