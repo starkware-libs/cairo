@@ -104,6 +104,10 @@ enum LineComponent {
     /// More generally, any break point inside a child LineBuilder will be ignored unless there
     /// are no breakpoint which are direct children of the parent LineBuilder.
     Internal(LineBuilder),
+    /// Represent a space in the code.
+    Space,
+    /// Represent a leading indent.
+    Indent(usize),
     /// An optional break line point, that will be used if the line is too long.
     BreakLinePoint(BreakLinePointProperties),
 }
@@ -112,6 +116,8 @@ impl LineComponent {
         match self {
             Self::Token(s) => s.len(),
             Self::Internal(builder) => builder.width(),
+            Self::Space => 1,
+            Self::Indent(n) => *n,
             Self::BreakLinePoint(_) => 0,
         }
     }
@@ -121,6 +127,8 @@ impl fmt::Display for LineComponent {
         match self {
             Self::Token(s) => write!(f, "{s}"),
             Self::Internal(builder) => write!(f, "{builder}"),
+            Self::Space => write!(f, " "),
+            Self::Indent(n) => write!(f, "{}", " ".repeat(*n)),
             Self::BreakLinePoint(_) => write!(f, ""),
         }
     }
@@ -169,11 +177,19 @@ impl LineBuilder {
     fn push_child(&mut self, new_comp: LineComponent) {
         self.get_active_builder().children.push(new_comp);
     }
-    /// Adds a string to the end of the line.
+    /// Appends a string to the line.
     pub fn push_str(&mut self, s: &str) {
         self.push_child(LineComponent::Token(s.to_string()));
     }
-    /// Adds an optional break line point.
+    /// Appends a space to the line.
+    pub fn push_space(&mut self) {
+        self.push_child(LineComponent::Space);
+    }
+    /// Appends an indent to the line.
+    pub fn push_indent(&mut self, n: usize) {
+        self.push_child(LineComponent::Indent(n));
+    }
+    /// Appends an optional break line point.
     pub fn push_break_line_point(&mut self, properties: BreakLinePointProperties) {
         self.push_child(LineComponent::BreakLinePoint(properties));
     }
@@ -284,7 +300,15 @@ impl LineBuilder {
         // LineBuilder.
         for (i, position) in breaking_positions.iter().enumerate() {
             for j in prev_position..*position {
-                trees.last_mut().unwrap().push_child(self.children[j].clone());
+                match &self.children[j] {
+                    LineComponent::Space => {
+                        // Ignore spaces at the start of a line
+                        if !trees.last_mut().unwrap().is_only_indents() {
+                            trees.last_mut().unwrap().push_space();
+                        }
+                    }
+                    _ => trees.last_mut().unwrap().push_child(self.children[j].clone()),
+                }
             }
             if i == 0 && break_line_point_type.is_dangling() {
                 added_indent = trees.last_mut().unwrap().width();
@@ -303,7 +327,7 @@ impl LineBuilder {
                 }
                 trees.push(LineBuilder::new());
                 if added_indent > 0 {
-                    trees.last_mut().unwrap().push_str(&" ".repeat(added_indent));
+                    trees.last_mut().unwrap().push_indent(added_indent);
                 }
             }
             prev_position = position + 1;
@@ -362,6 +386,10 @@ impl LineBuilder {
     /// Returns whether or not the line contains an internal LineBuilder.
     fn is_flat(&self) -> bool {
         !self.children.iter().any(|child| matches!(child, LineComponent::Internal(_)))
+    }
+    /// Returns whether the line contains only indents.
+    fn is_only_indents(&self) -> bool {
+        !self.children.iter().any(|child| !matches!(child, LineComponent::Indent(_)))
     }
 }
 
@@ -540,7 +568,7 @@ impl<'a> Formatter<'a> {
     }
     fn append_token(&mut self, text: SmolStr, syntax_node: &SyntaxNode, no_space_after: bool) {
         if !syntax_node.force_no_space_before(self.db) && !self.line_state.no_space_after {
-            self.line_state.line_buffer.push_str(" ");
+            self.line_state.line_buffer.push_space();
         }
         self.line_state.no_space_after = no_space_after;
         if syntax_node.add_break_line_point_before(self.db) {
