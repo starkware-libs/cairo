@@ -151,6 +151,7 @@ pub fn get_spec() -> Vec<Node> {
             .node_with_explicit_kind("Underscore", "TerminalUnderscore")
             .node_with_explicit_kind("Literal", "TerminalLiteralNumber")
             .node("Struct")
+            .node("Tuple")
             .node("Enum")
             .node_with_explicit_kind("Path", "ExprPath")
             .build(),
@@ -162,6 +163,12 @@ pub fn get_spec() -> Vec<Node> {
             .node("rbrace", "TerminalRBrace")
             .build(),
         separated_list_node("PatternStructParamList", "PatternStructParam", "TerminalComma"),
+        StructBuilder::new("PatternTuple")
+            .node("lparen", "TerminalLParen")
+            .node("patterns", "PatternList")
+            .node("rparen", "TerminalRParen")
+            .build(),
+        separated_list_node("PatternList", "Pattern", "TerminalComma"),
         EnumBuilder::new("PatternStructParam")
             .node_with_explicit_kind("Single", "TerminalIdentifier")
             .node("WithExpr")
