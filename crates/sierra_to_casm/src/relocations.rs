@@ -29,6 +29,7 @@ impl Relocation {
                             relative: true,
                         }),
                     inc_ap: false,
+                    ..
                 }
                 | Instruction {
                     body:
@@ -37,6 +38,7 @@ impl Relocation {
                             condition: _,
                         }),
                     inc_ap: false,
+                    ..
                 }
                 | Instruction {
                     body:
@@ -45,6 +47,7 @@ impl Relocation {
                             relative: true,
                         }),
                     inc_ap: false,
+                    ..
                 } => {
                     *value +=
                         statement_offsets[statement_id.0] as i128 - instruction_offset as i128;

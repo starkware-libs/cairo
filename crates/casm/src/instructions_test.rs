@@ -1,3 +1,6 @@
+use indoc::indoc;
+
+use crate::hints::Hint;
 use crate::instructions::{
     AddApInstruction, AssertEqInstruction, CallInstruction, Instruction, InstructionBody,
     JnzInstruction, JumpInstruction, RetInstruction,
@@ -6,23 +9,23 @@ use crate::operand::{DerefOperand, DerefOrImmediate, ImmediateOperand, Register,
 
 #[test]
 fn test_jump_format() {
-    let abs_jmp_insn = Instruction {
-        body: InstructionBody::Jump(JumpInstruction {
+    let abs_jmp_insn = Instruction::new(
+        InstructionBody::Jump(JumpInstruction {
             target: DerefOrImmediate::Immediate(ImmediateOperand { value: 3 }),
             relative: false,
         }),
-        inc_ap: false,
-    };
+        false,
+    );
 
     assert_eq!(abs_jmp_insn.to_string(), "jmp abs 3");
 
-    let rel_jmp_insn = Instruction {
-        body: InstructionBody::Jump(JumpInstruction {
+    let rel_jmp_insn = Instruction::new(
+        InstructionBody::Jump(JumpInstruction {
             target: DerefOrImmediate::Immediate(ImmediateOperand { value: -5 }),
             relative: true,
         }),
-        inc_ap: true,
-    };
+        true,
+    );
 
     assert_eq!(rel_jmp_insn.to_string(), "jmp rel -5, ap++");
 }
@@ -76,4 +79,25 @@ fn test_add_ap_format() {
     let addap_insn: InstructionBody = InstructionBody::AddAp(AddApInstruction { operand });
 
     assert_eq!(addap_insn.to_string(), "ap += 205");
+}
+
+#[test]
+fn test_instruction_with_hint() {
+    let dst = DerefOperand { register: Register::AP, offset: 5 };
+    let abs_jmp_insn = Instruction {
+        body: InstructionBody::Jump(JumpInstruction {
+            target: DerefOrImmediate::Immediate(ImmediateOperand { value: 3 }),
+            relative: false,
+        }),
+        inc_ap: false,
+        hints: vec![Hint::AllocSegment { dst }],
+    };
+
+    assert_eq!(
+        abs_jmp_insn.to_string(),
+        indoc! {"
+            %{ memory[ap + 5] = segments.add() %}
+            jmp abs 3"
+        }
+    );
 }

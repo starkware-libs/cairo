@@ -1,5 +1,7 @@
 use std::fmt::Display;
+use std::vec;
 
+use crate::hints::Hint;
 use crate::operand::{DerefOperand, DerefOrImmediate, ResOperand};
 
 #[cfg(test)]
@@ -47,10 +49,20 @@ impl Display for InstructionBody {
 pub struct Instruction {
     pub body: InstructionBody,
     pub inc_ap: bool,
+    pub hints: Vec<Hint>,
+}
+impl Instruction {
+    pub fn new(body: InstructionBody, inc_ap: bool) -> Self {
+        Self { body, inc_ap, hints: vec![] }
+    }
 }
 
 impl Display for Instruction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for hint in &self.hints {
+            writeln!(f, "{}", hint)?;
+        }
+
         write!(f, "{}", self.body)?;
         if self.inc_ap {
             write!(f, ", ap++")?

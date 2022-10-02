@@ -49,12 +49,12 @@ macro_rules! casm_inner {
 #[macro_export]
 macro_rules! append_instruction {
     ($ctx:ident, $body:ident) => {
-        let instr = Instruction { body: $body, inc_ap: false };
+        let instr = Instruction::new($body, false);
         $ctx.current_code_offset += instr.body.op_size();
         $ctx.instructions.push(instr);
     };
     ($ctx:ident, $body:ident,ap + +) => {
-        let instr = Instruction { body: $body, inc_ap: true };
+        let instr = Instruction::new($body, true);
         $ctx.current_code_offset += instr.body.op_size();
         $ctx.instructions.push(instr);
     };

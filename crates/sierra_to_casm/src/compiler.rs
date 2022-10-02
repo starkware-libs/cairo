@@ -119,10 +119,7 @@ pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
 
                 let ret_instruction = RetInstruction {};
                 program_offset += ret_instruction.op_size();
-                instructions.push(Instruction {
-                    body: InstructionBody::Ret(ret_instruction),
-                    inc_ap: false,
-                });
+                instructions.push(Instruction::new(InstructionBody::Ret(ret_instruction), false));
             }
             Statement::Invocation(invocation) => {
                 let (annotations, invoke_refs) = program_annotations
