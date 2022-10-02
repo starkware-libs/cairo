@@ -1,8 +1,6 @@
 use std::fmt::Display;
 
-use crate::operand::{
-    self, DerefOperand, DerefOrImmediate, ImmediateOperand, Register, ResOperand,
-};
+use crate::operand::{DerefOperand, DerefOrImmediate, ResOperand};
 
 #[cfg(test)]
 #[path = "instructions_test.rs"]

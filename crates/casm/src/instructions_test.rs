@@ -1,26 +1,8 @@
-use std::fmt::Display;
-
 use crate::instructions::{
     AddApInstruction, AssertEqInstruction, CallInstruction, Instruction, InstructionBody,
     JnzInstruction, JumpInstruction, RetInstruction,
 };
 use crate::operand::{DerefOperand, DerefOrImmediate, ImmediateOperand, Register, ResOperand};
-
-fn test_jump_or_call<Inst>() {
-    let abs_jmp_insn = JumpInstruction {
-        target: DerefOrImmediate::Immediate(ImmediateOperand { value: 3 }),
-        relative: false,
-    };
-
-    assert_eq!(abs_jmp_insn.to_string(), "jmp abs 3");
-
-    let rel_jmp_insn: InstructionBody = InstructionBody::Jump(JumpInstruction {
-        target: DerefOrImmediate::Immediate(ImmediateOperand { value: -5 }),
-        relative: true,
-    });
-
-    assert_eq!(rel_jmp_insn.to_string(), "jmp rel -5");
-}
 
 #[test]
 fn test_jump_format() {
