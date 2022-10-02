@@ -11,8 +11,8 @@ fn test_deref_operand_format() {
 #[test]
 fn test_double_deref_op_format() {
     assert_eq!(
-        ResOperand::DoubleDeref(CellRef { register: Register::AP, offset: 5 }).to_string(),
-        "[[ap + 5]]"
+        ResOperand::DoubleDeref(CellRef { register: Register::AP, offset: 5 }, 12).to_string(),
+        "[[ap + 5] + 12]"
     );
 }
 

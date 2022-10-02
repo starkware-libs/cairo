@@ -37,7 +37,7 @@ pub trait ApplyApChange: Sized {
 impl ApplyApChange for ResOperand {
     fn apply_ap_change(self, ap_change: ApChange) -> Result<Self, ApChangeError> {
         Ok(match self {
-            ResOperand::Deref(operand) | ResOperand::DoubleDeref(operand) => {
+            ResOperand::Deref(operand) | ResOperand::DoubleDeref(operand, _) => {
                 ResOperand::Deref(operand.apply_ap_change(ap_change)?)
             }
             ResOperand::Immediate(operand) => ResOperand::Immediate(operand),
