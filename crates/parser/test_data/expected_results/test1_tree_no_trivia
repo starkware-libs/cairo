@@ -162,6 +162,14 @@
     │   │       │   │   ├── rhs (kind: TokenTrue): 'true'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   ├── child #6 (kind: StatementExpr)
+    │   │       │   │   ├── expr (kind: ExprBinary)
+    │   │       │   │   │   ├── lhs (kind: ExprPath)
+    │   │       │   │   │   │   └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │   │       └── ident (kind: TokenIdentifier): 'z'
+    │   │       │   │   │   ├── op (kind: TokenEq): '='
+    │   │       │   │   │   └── rhs (kind: TokenLiteralNumber): '5'
+    │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
+    │   │       │   ├── child #7 (kind: StatementExpr)
     │   │       │   │   ├── expr (kind: ExprFunctionCall)
     │   │       │   │   │   ├── path (kind: ExprPath)
     │   │       │   │   │   │   └── item #0 (kind: PathSegmentSimple)
@@ -174,7 +182,7 @@
     │   │       │   │   │       │           └── ident (kind: TokenIdentifier): 'x'
     │   │       │   │   │       └── rparen (kind: TokenRParen): ')'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
-    │   │       │   ├── child #7 (kind: StatementExpr)
+    │   │       │   ├── child #8 (kind: StatementExpr)
     │   │       │   │   ├── expr (kind: ExprFunctionCall)
     │   │       │   │   │   ├── path (kind: ExprPath)
     │   │       │   │   │   │   └── item #0 (kind: PathSegmentWithGenericArgs)
@@ -195,7 +203,7 @@
     │   │       │   │   │       │           └── ident (kind: TokenIdentifier): 'x'
     │   │       │   │   │       └── rparen (kind: TokenRParen): ')'
     │   │       │   │   └── semicolon (kind: OptionSemicolonEmpty) []
-    │   │       │   └── child #8 (kind: StatementReturn)
+    │   │       │   └── child #9 (kind: StatementReturn)
     │   │       │       ├── return_kw (kind: TokenReturn): 'return'
     │   │       │       ├── expr (kind: ExprPath)
     │   │       │       │   └── item #0 (kind: PathSegmentSimple)
@@ -331,32 +339,32 @@ func foo(,var1: int,, var2: felt,) -> int {
                     ^
 
 error: Missing token TerminalRBrace.
- --> test1.cairo:26:1
+ --> test1.cairo:27:1
 func bar<A, B>() -> felt { }
 ^**^
 
 error: Missing token TerminalSemicolon.
- --> test1.cairo:29:47
+ --> test1.cairo:30:47
 extern func glee<A, b>(var1: int,) -> crate::S<int>;
                                               ^
 
 error: Skipped tokens. Expected element: item.
- --> test1.cairo:29:47
+ --> test1.cairo:30:47
 extern func glee<A, b>(var1: int,) -> crate::S<int>;
                                               ^
 
 error: Skipped tokens. Expected element: item.
- --> test1.cairo:29:48
+ --> test1.cairo:30:48
 extern func glee<A, b>(var1: int,) -> crate::S<int>;
                                                ^*^
 
 error: Skipped tokens. Expected element: item.
- --> test1.cairo:29:51
+ --> test1.cairo:30:51
 extern func glee<A, b>(var1: int,) -> crate::S<int>;
                                                   ^
 
 error: Skipped tokens. Expected element: item.
- --> test1.cairo:29:52
+ --> test1.cairo:30:52
 extern func glee<A, b>(var1: int,) -> crate::S<int>;
                                                    ^
 
