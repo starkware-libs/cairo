@@ -88,6 +88,7 @@ fn good_flow() {
             [ap + 0] = [fp + -3], ap++;
             call rel -11;
             ret;
+            %{ memory[ap + 0] = segments.add() %}
             [fp + -3] = [[ap + 0]], ap++;
             [ap + 0] = [[ap + -1]], ap++;
             ret;
