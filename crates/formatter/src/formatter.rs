@@ -5,41 +5,7 @@ use smol_str::SmolStr;
 use syntax::node::db::SyntaxGroup;
 use syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
 
-#[cfg(test)]
-#[path = "formatter_test.rs"]
-mod test;
-
-pub fn get_formatted_file(
-    db: &dyn SyntaxGroup,
-    syntax_root: &SyntaxNode,
-    config: FormatterConfig,
-) -> String {
-    let mut formatter = Formatter::new(db, config);
-    formatter.format_node(syntax_root, false);
-    formatter.result
-}
-
-pub struct FormatterConfig {
-    tab_size: usize,
-    max_line_length: usize,
-}
-
-// Config params
-// TODO(Gil): export to file and load from file
-const TAB_SIZE: usize = 4;
-const MAX_LINE_LENGTH: usize = 100;
-
-impl FormatterConfig {
-    pub fn new(tab_size: usize, max_line_length: usize) -> Self {
-        Self { tab_size, max_line_length }
-    }
-}
-
-impl Default for FormatterConfig {
-    fn default() -> Self {
-        Self::new(TAB_SIZE, MAX_LINE_LENGTH)
-    }
-}
+use crate::FormatterConfig;
 
 #[derive(Clone)]
 /// Defines the break point behaviour.
@@ -453,7 +419,7 @@ pub trait SyntaxNodeFormat {
     fn is_protected_breaking_node(&self, db: &dyn SyntaxGroup) -> bool;
 }
 
-struct Formatter<'a> {
+pub struct Formatter<'a> {
     db: &'a dyn SyntaxGroup,
     result: String,
     config: FormatterConfig,
@@ -467,7 +433,7 @@ struct Formatter<'a> {
 }
 
 impl<'a> Formatter<'a> {
-    fn new(db: &'a dyn SyntaxGroup, config: FormatterConfig) -> Self {
+    pub fn new(db: &'a dyn SyntaxGroup, config: FormatterConfig) -> Self {
         let indents_list = generate_indents_list(&config);
         Self {
             db,
@@ -479,7 +445,10 @@ impl<'a> Formatter<'a> {
             empty_lines_allowance: 0,
         }
     }
-    fn format_node(&mut self, syntax_node: &SyntaxNode, no_space_after: bool) {
+    pub fn get_result(&self) -> String {
+        self.result.clone()
+    }
+    pub fn format_node(&mut self, syntax_node: &SyntaxNode, no_space_after: bool) {
         if syntax_node.text(self.db).is_some() {
             panic!("Token reached before terminal.");
         }

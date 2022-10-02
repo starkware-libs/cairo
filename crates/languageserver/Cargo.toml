@@ -12,6 +12,7 @@ defs = { path = "../defs" }
 debug = { path = "../debug" }
 diagnostics = { path = "../diagnostics" }
 semantic = { path = "../semantic" }
+formatter = { path = "../formatter" }
 parser = { path = "../parser" }
 project = { path = "../project" }
 syntax = { path = "../syntax" }

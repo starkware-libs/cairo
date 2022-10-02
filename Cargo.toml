@@ -8,6 +8,7 @@ members = [
     "crates/diagnostics",
     "crates/diagnostics_proc_macros",
     "crates/filesystem",
+    "crates/formatter",
     "crates/languageserver",
     "crates/lowering",
     "crates/parser",
