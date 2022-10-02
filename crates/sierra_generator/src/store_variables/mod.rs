@@ -9,8 +9,8 @@ mod test;
 use sierra::extensions::lib_func::OutputBranchInfo;
 use sierra::ids::ConcreteLibFuncId;
 use sierra::program::{GenBranchInfo, GenBranchTarget, GenStatement};
+use state::State;
 
-use self::state::State;
 use crate::db::SierraGenGroup;
 use crate::pre_sierra;
 use crate::store_variables::known_stack::KnownStack;
@@ -44,12 +44,12 @@ struct AddStoreVariableStatements<'a> {
     result: Vec<pre_sierra::Statement>,
     /// The current information known about the state of the variables. None means the statement is
     /// not reachable from the previous statement.
-    state: Option<State>,
+    state_opt: Option<State>,
 }
 impl<'a> AddStoreVariableStatements<'a> {
     /// Constructs a new [AddStoreVariableStatements] object.
     fn new(db: &'a dyn SierraGenGroup) -> Self {
-        AddStoreVariableStatements { db, result: Vec::new(), state: Some(State::default()) }
+        AddStoreVariableStatements { db, result: Vec::new(), state_opt: Some(State::default()) }
     }
 
     /// Handles a single statement, including adding required store statements and the statement
@@ -66,14 +66,14 @@ impl<'a> AddStoreVariableStatements<'a> {
                 let output_infos = get_output_info(invocation.libfunc_id.clone());
                 // Currently, treat every statement as if it has unknown `ap` change.
                 // TODO(lior): Call `clear_known_stack` only if the libfunc revokes `ap`.
-                self.get_state().clear_known_stack();
+                self.state().clear_known_stack();
                 match &invocation.branches[..] {
                     [GenBranchInfo { target: GenBranchTarget::Fallthrough, results }] => {
                         // A simple invocation.
                         // TODO(lior): consider not calling prepare_libfunc_arguments for functions
                         //   that accept deferred, such as store_temp().
                         self.prepare_libfunc_arguments(&invocation.args);
-                        self.get_state().register_outputs(results, &output_infos[0].vars);
+                        self.state().register_outputs(results, &output_infos[0].vars);
                     }
                     _ => {
                         // This starts a branch. Store all deferred variables.
@@ -88,12 +88,12 @@ impl<'a> AddStoreVariableStatements<'a> {
                 // the return values onto the stack. The rest of the deferred variables are not
                 // needed.
                 self.clear_deffered_variables();
-                self.get_state().clear_known_stack();
+                self.state().clear_known_stack();
             }
             pre_sierra::Statement::Label(_) => {
                 self.store_all_deffered_variables();
                 self.result.push(statement);
-                self.get_state().clear_known_stack();
+                self.state().clear_known_stack();
             }
             pre_sierra::Statement::PushValues(push_values) => {
                 self.push_values(push_values);
@@ -110,7 +110,7 @@ impl<'a> AddStoreVariableStatements<'a> {
 
     /// Prepares the given `arg` to be used as an argument for a libfunc.
     fn prepare_libfunc_argument(&mut self, arg: &sierra::ids::VarId) {
-        if !self.get_state().deferred_variables.contains_key(arg) {
+        if !self.state().deferred_variables.contains_key(arg) {
             return;
         }
 
@@ -120,9 +120,9 @@ impl<'a> AddStoreVariableStatements<'a> {
     /// Adds a store_temp() instruction for the given deferred variable and removes it from the
     /// `deferred_variables` map.
     fn store_temp_deferred(&mut self, var: &sierra::ids::VarId) {
-        let ty = self.get_state().deferred_variables[var.clone()].clone();
+        let ty = self.state().deferred_variables[var.clone()].clone();
         self.store_temp(var, var, &ty);
-        self.get_state().deferred_variables.swap_remove(var);
+        self.state().deferred_variables.swap_remove(var);
     }
 
     fn push_values(&mut self, push_values: &Vec<pre_sierra::PushValue>) {
@@ -131,10 +131,10 @@ impl<'a> AddStoreVariableStatements<'a> {
         }
 
         // Optimization: check if there is a prefix of `push_values` that is already on the stack.
-        let prefix_size = self.get_known_stack().compute_on_stack_prefix_size(push_values);
+        let prefix_size = self.known_stack().compute_on_stack_prefix_size(push_values);
 
         for (i, pre_sierra::PushValue { var, var_on_stack, ty }) in push_values.iter().enumerate() {
-            if self.get_state().deferred_variables.contains_key(var) {
+            if self.state().deferred_variables.contains_key(var) {
                 // Convert the deferred variable into a temporary variable, by calling
                 // `prepare_libfunc_argument`.
                 self.prepare_libfunc_argument(var);
@@ -157,7 +157,7 @@ impl<'a> AddStoreVariableStatements<'a> {
     /// Stores all the deffered variables and clears `deferred_variables`.
     /// The variables will be added according to the order of creation.
     fn store_all_deffered_variables(&mut self) {
-        for (var, ty) in self.get_state().deferred_variables.clone() {
+        for (var, ty) in self.state().deferred_variables.clone() {
             self.store_temp(&var, &var, &ty);
         }
         self.clear_deffered_variables();
@@ -165,14 +165,14 @@ impl<'a> AddStoreVariableStatements<'a> {
 
     /// Clears all the deferred variables.
     fn clear_deffered_variables(&mut self) {
-        self.get_state().deferred_variables.clear();
+        self.state().deferred_variables.clear();
     }
 
     // TODO(lior): Remove "mut" on self once deferred_variables is no longer checked by this
     //   function.
     fn finalize(mut self) -> Vec<pre_sierra::Statement> {
         assert!(
-            self.get_state().deferred_variables.is_empty(),
+            self.state().deferred_variables.is_empty(),
             "Internal compiler error: Remaining unhandled deferred variables."
         );
         self.result
@@ -190,7 +190,7 @@ impl<'a> AddStoreVariableStatements<'a> {
             &[var_on_stack.clone()],
         ));
 
-        self.get_known_stack().push(var_on_stack);
+        self.known_stack().push(var_on_stack);
     }
 
     fn rename_var(
@@ -205,18 +205,18 @@ impl<'a> AddStoreVariableStatements<'a> {
             &[dst.clone()],
         ));
 
-        self.get_known_stack().clone_if_on_stack(src, dst);
+        self.known_stack().clone_if_on_stack(src, dst);
     }
 
     /// Returns the current state, assuming the current statement is reachable.
     /// Fails otherwise.
-    fn get_state(&mut self) -> &mut State {
-        self.state.as_mut().unwrap()
+    fn state(&mut self) -> &mut State {
+        self.state_opt.as_mut().unwrap()
     }
 
     /// Returns the current known stack, assuming the current statement is reachable.
     /// Fails otherwise.
-    fn get_known_stack(&mut self) -> &mut KnownStack {
-        &mut self.get_state().known_stack
+    fn known_stack(&mut self) -> &mut KnownStack {
+        &mut self.state().known_stack
     }
 }

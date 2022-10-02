@@ -4,6 +4,8 @@ use utils::ordered_hash_map::OrderedHashMap;
 
 use super::known_stack::KnownStack;
 
+/// Represents information known about the state of the variables.
+/// For example, which variable contains a deferred value and which variable is on the stack.
 #[derive(Clone, Debug, Default)]
 pub struct State {
     /// A map from [sierra::ids::VarId] of a deferred reference
