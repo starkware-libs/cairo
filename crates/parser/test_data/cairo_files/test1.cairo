@@ -19,6 +19,7 @@ func foo(,var1: int,, var2: felt,) -> int {
     };
     let x = true; // bla1
                   // bla2
+    z = 5;
     func1(x);
     func2::<int>(x)
     return x;

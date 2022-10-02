@@ -501,8 +501,8 @@
     │   │       │   │           ├── child #1 (kind: TokenSingleLineComment): '// bla1'
     │   │       │   │           └── child #2 (kind: TokenNewline).
     │   │       │   ├── child #6 (kind: StatementExpr)
-    │   │       │   │   ├── expr (kind: ExprFunctionCall)
-    │   │       │   │   │   ├── path (kind: ExprPath)
+    │   │       │   │   ├── expr (kind: ExprBinary)
+    │   │       │   │   │   ├── lhs (kind: ExprPath)
     │   │       │   │   │   │   └── item #0 (kind: PathSegmentSimple)
     │   │       │   │   │   │       └── ident (kind: TerminalIdentifier)
     │   │       │   │   │   │           ├── leading_trivia (kind: Trivia)
@@ -510,6 +510,30 @@
     │   │       │   │   │   │           │   ├── child #1 (kind: TokenSingleLineComment): '// bla2'
     │   │       │   │   │   │           │   ├── child #2 (kind: TokenNewline).
     │   │       │   │   │   │           │   └── child #3 (kind: TokenWhitespace).
+    │   │       │   │   │   │           ├── token (kind: TokenIdentifier): 'z'
+    │   │       │   │   │   │           └── trailing_trivia (kind: Trivia)
+    │   │       │   │   │   │               └── child #0 (kind: TokenWhitespace).
+    │   │       │   │   │   ├── op (kind: TerminalEq)
+    │   │       │   │   │   │   ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │   │   ├── token (kind: TokenEq): '='
+    │   │       │   │   │   │   └── trailing_trivia (kind: Trivia)
+    │   │       │   │   │   │       └── child #0 (kind: TokenWhitespace).
+    │   │       │   │   │   └── rhs (kind: TerminalLiteralNumber)
+    │   │       │   │   │       ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │       ├── token (kind: TokenLiteralNumber): '5'
+    │   │       │   │   │       └── trailing_trivia (kind: Trivia) []
+    │   │       │   │   └── semicolon (kind: TerminalSemicolon)
+    │   │       │   │       ├── leading_trivia (kind: Trivia) []
+    │   │       │   │       ├── token (kind: TokenSemicolon): ';'
+    │   │       │   │       └── trailing_trivia (kind: Trivia)
+    │   │       │   │           └── child #0 (kind: TokenNewline).
+    │   │       │   ├── child #7 (kind: StatementExpr)
+    │   │       │   │   ├── expr (kind: ExprFunctionCall)
+    │   │       │   │   │   ├── path (kind: ExprPath)
+    │   │       │   │   │   │   └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │   │       └── ident (kind: TerminalIdentifier)
+    │   │       │   │   │   │           ├── leading_trivia (kind: Trivia)
+    │   │       │   │   │   │           │   └── child #0 (kind: TokenWhitespace).
     │   │       │   │   │   │           ├── token (kind: TokenIdentifier): 'func1'
     │   │       │   │   │   │           └── trailing_trivia (kind: Trivia) []
     │   │       │   │   │   └── arguments (kind: ExprListParenthesized)
@@ -533,7 +557,7 @@
     │   │       │   │       ├── token (kind: TokenSemicolon): ';'
     │   │       │   │       └── trailing_trivia (kind: Trivia)
     │   │       │   │           └── child #0 (kind: TokenNewline).
-    │   │       │   ├── child #7 (kind: StatementExpr)
+    │   │       │   ├── child #8 (kind: StatementExpr)
     │   │       │   │   ├── expr (kind: ExprFunctionCall)
     │   │       │   │   │   ├── path (kind: ExprPath)
     │   │       │   │   │   │   └── item #0 (kind: PathSegmentWithGenericArgs)
@@ -580,7 +604,7 @@
     │   │       │   │   │           └── trailing_trivia (kind: Trivia)
     │   │       │   │   │               └── child #0 (kind: TokenNewline).
     │   │       │   │   └── semicolon (kind: OptionSemicolonEmpty) []
-    │   │       │   └── child #8 (kind: StatementReturn)
+    │   │       │   └── child #9 (kind: StatementReturn)
     │   │       │       ├── return_kw (kind: TerminalReturn)
     │   │       │       │   ├── leading_trivia (kind: Trivia)
     │   │       │       │   │   └── child #0 (kind: TokenWhitespace).
