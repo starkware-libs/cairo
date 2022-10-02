@@ -3,7 +3,7 @@
 mod test;
 
 use defs::diagnostic_utils::StableLocation;
-use defs::ids::{EnumId, LanguageElementId, ModuleId, StructId};
+use defs::ids::{EnumId, ModuleId, StructId, TopLevelLanguageElementId};
 use diagnostics::{DiagnosticEntry, DiagnosticLocation, Diagnostics, DiagnosticsBuilder};
 use smol_str::SmolStr;
 use syntax::node::ids::SyntaxStablePtrId;
