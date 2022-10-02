@@ -127,7 +127,7 @@ impl fmt::Display for LineBuilder {
         write!(f, "{}", self.children.iter().map(|child| child.to_string()).join(""))
     }
 }
-impl LineTree {
+impl LineBuilder {
     /// Creates a new intermediate line.
     pub fn new() -> Self {
         Self { children: vec![] }
@@ -223,8 +223,8 @@ impl LineTree {
     }
     /// Breaks the LineTree into a vector of LineTrees
     /// according to the lowest precedence break line point found in the LineTree.
-    fn to_broken_tree_by_width(&self, max_line_width: usize, tab_size: usize) -> Vec<LineTree> {
-        let mut breaking_positions = self.get_preceding_break_points_positions();
+    fn to_broken_tree_by_width(&self, max_line_width: usize, tab_size: usize) -> Vec<LineBuilder> {
+        let mut breaking_positions = self.get_preceding_break_points_indices();
         if breaking_positions.is_empty() {
             return vec![self.clone()];
         }
@@ -259,14 +259,18 @@ impl LineTree {
                 added_indent = trees.last_mut().unwrap().width();
             } else if *position < self.children.len() {
                 if break_line_point_type.is_list_break() {
+                    // In a breakable list, add indent after the first break point
+                    // (e.g. after "Struct{" to indent all struct builder args )
                     if i == 0 {
                         added_indent += tab_size;
                     }
+                    // In a breakable list, remove indent before the trailing tokens
+                    // (e.g. before "};" to unindent the closing brace)
                     if i == breaking_positions.len() - 2 {
                         added_indent -= tab_size;
                     }
                 }
-                trees.push(LineTree::new());
+                trees.push(LineBuilder::new());
                 if added_indent > 0 {
                     trees.last_mut().unwrap().push_str(&" ".repeat(added_indent));
                 }
@@ -342,7 +346,7 @@ pub trait SyntaxNodeFormat {
     /// Returns true if the list is optionally breakable.
     /// Only applicable for separated lists kind nodes.
     fn is_breakable_list(&self, db: &dyn SyntaxGroup) -> bool;
-    /// Returns the BreakPointProperties associated with the specipic node kind.
+    /// Returns the BreakPointProperties associated with the specific node kind.
     fn get_break_line_point_properties(&self, db: &dyn SyntaxGroup) -> BreakLinePointProperties;
 }
 
