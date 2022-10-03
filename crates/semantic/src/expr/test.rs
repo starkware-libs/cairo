@@ -123,6 +123,7 @@ fn test_member_access() {
                         db.statement_semantic(foo_id, *stmt_id),
                         semantic::Statement::Expr
                     )
+                    .expr
                 )
                 .debug(&expr_formatter)
             )
@@ -552,7 +553,8 @@ fn test_function_body() {
         extract_matches!(
             db.statement_semantic(test_function.function_id, statements[0]),
             crate::Statement::Expr
-        ),
+        )
+        .expr,
     );
     let semantic::ExprVar { var, ty: _, stable_ptr: _ } =
         extract_matches!(expr, crate::Expr::ExprVar);

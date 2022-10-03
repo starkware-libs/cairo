@@ -59,7 +59,7 @@ fn handle_block(
     for statement_id in expr_block.statements.iter().copied() {
         match context.get_db().statement_semantic(context.function_id(), statement_id) {
             semantic::Statement::Expr(expr) => {
-                let (cur_statements, _res) = generate_expression_code(context, expr)?;
+                let (cur_statements, _res) = generate_expression_code(context, expr.expr)?;
                 statements.extend(cur_statements);
             }
             semantic::Statement::Let(statement_let) => {
