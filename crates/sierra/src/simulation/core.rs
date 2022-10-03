@@ -4,8 +4,9 @@ use crate::extensions::arithmetic::{
     BinaryOperationConcreteLibFunc, ConstConcreteLibFunc, OperationConcreteLibFunc,
     OperationWithConstConcreteLibFunc, Operator,
 };
+use crate::extensions::array::ArrayConcreteLibFunc;
 use crate::extensions::core::CoreConcreteLibFunc::{
-    self, ApTracking, Drop, Dup, Felt, FunctionCall, Gas, Integer, Mem, UnconditionalJump,
+    self, ApTracking, Array, Drop, Dup, Felt, FunctionCall, Gas, Integer, Mem, UnconditionalJump,
     UnwrapNonZero,
 };
 use crate::extensions::felt::FeltConcrete;
@@ -67,6 +68,23 @@ pub fn simulate<
             }?;
             Ok((vec![CoreValue::GasBuiltin(gas_counter + count)], 0))
         }
+        Array(ArrayConcreteLibFunc::New(_)) => {
+            if inputs.is_empty() {
+                Ok((vec![CoreValue::Array(vec![])], 0))
+            } else {
+                Err(LibFuncSimulationError::WrongNumberOfArgs)
+            }
+        }
+        Array(ArrayConcreteLibFunc::Push(_)) => match &inputs[..] {
+            [CoreValue::Array(arr), value] => Ok((
+                vec![CoreValue::Array(
+                    itertools::chain(arr.iter().cloned(), [value.clone()]).collect(),
+                )],
+                0,
+            )),
+            [_, _] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+        },
         Integer(libfunc) => simulate_integer_libfunc(libfunc, &inputs),
         Felt(libfunc) => simulate_felt_libfunc(libfunc, &inputs),
         UnwrapNonZero(_) => match &inputs[..] {

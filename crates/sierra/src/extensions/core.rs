@@ -1,4 +1,5 @@
 use super::ap_tracking::RevokeApTrackingLibFunc;
+use super::array::{ArrayLibFunc, ArrayType};
 use super::drop::DropLibFunc;
 use super::duplicate::DupLibFunc;
 use super::modules::felt::{FeltLibFunc, FeltType};
@@ -14,6 +15,7 @@ use crate::{define_libfunc_hierarchy, define_type_hierarchy};
 
 define_type_hierarchy! {
     pub enum CoreType {
+        Array(ArrayType),
         Felt(FeltType),
         GasBuiltin(GasBuiltinType),
         Integer(IntegerType),
@@ -26,6 +28,7 @@ define_type_hierarchy! {
 define_libfunc_hierarchy! {
     pub enum CoreLibFunc {
         ApTracking(RevokeApTrackingLibFunc),
+        Array(ArrayLibFunc),
         Drop(DropLibFunc),
         Dup(DupLibFunc),
         Felt(FeltLibFunc),
