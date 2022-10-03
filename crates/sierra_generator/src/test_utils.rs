@@ -117,14 +117,14 @@ pub fn dummy_simple_statement(
         inputs.iter().map(|x| sierra::ids::VarId::from_usize(*x)).collect();
     let outputs_vec: Vec<sierra::ids::VarId> =
         outputs.iter().map(|x| sierra::ids::VarId::from_usize(*x)).collect();
-    simple_statement(
-        db.intern_concrete_lib_func(program::ConcreteLibFuncLongId {
-            generic_id: GenericLibFuncId::from_string(name),
-            generic_args: vec![],
-        }),
-        &inputs_vec,
-        &outputs_vec,
-    )
+    simple_statement(dummy_concrete_lib_func_id(db, name), &inputs_vec, &outputs_vec)
+}
+
+fn dummy_concrete_lib_func_id(db: &dyn SierraGenGroup, name: &str) -> ConcreteLibFuncId {
+    db.intern_concrete_lib_func(program::ConcreteLibFuncLongId {
+        generic_id: GenericLibFuncId::from_string(name),
+        generic_args: vec![],
+    })
 }
 
 /// Returns a vector of variable ids based on the inputs mapped into varaible ids.
@@ -134,9 +134,14 @@ pub fn as_var_id_vec(ids: &[&str]) -> Vec<sierra::ids::VarId> {
 
 /// Generates a dummy statement with two branches. One branch is Fallthrough and the other is to the
 /// given label.
-pub fn dummy_simple_branch(name: &str, args: &[&str], target: usize) -> pre_sierra::Statement {
+pub fn dummy_simple_branch(
+    db: &dyn SierraGenGroup,
+    name: &str,
+    args: &[&str],
+    target: usize,
+) -> pre_sierra::Statement {
     pre_sierra::Statement::Sierra(program::GenStatement::Invocation(program::GenInvocation {
-        libfunc_id: name.into(),
+        libfunc_id: dummy_concrete_lib_func_id(db, name),
         args: as_var_id_vec(args),
         branches: vec![
             program::GenBranchInfo {

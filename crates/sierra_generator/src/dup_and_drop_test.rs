@@ -4,7 +4,9 @@ use utils::ordered_hash_set::OrderedHashSet;
 
 use super::{calculate_statement_dups_and_drops, VarsDupsAndDrops};
 use crate::pre_sierra;
-use crate::test_utils::{as_var_id_vec, dummy_label, dummy_simple_branch};
+use crate::test_utils::{
+    as_var_id_vec, dummy_label, dummy_simple_branch, SierraGenDatabaseForTesting,
+};
 use crate::utils::{return_statement, simple_statement};
 
 /// Returns a vector of params based on inputs mapped into variable ids.
@@ -86,12 +88,13 @@ fn dup_reused() {
 
 #[test]
 fn branch() {
+    let db = SierraGenDatabaseForTesting::default();
     // All variable names are the concatenation of the indices of the statements that use them.
     assert_eq!(
         calculate_statement_dups_and_drops(
             &params(&["none", "0", "1", "3", "0_1", "0_3", "1_3", "0_1_3",]),
             &[
-                dummy_simple_branch("mock", &["0", "0_1", "0_3", "0_1_3"], 1),
+                dummy_simple_branch(&db, "mock", &["0", "0_1", "0_3", "0_1_3"], 1),
                 as_return_statement(&["1", "0_1", "1_3", "0_1_3"]),
                 dummy_label(1),
                 as_return_statement(&["3", "0_3", "1_3", "0_1_3"])
