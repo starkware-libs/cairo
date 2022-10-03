@@ -43,7 +43,7 @@ impl NoGenericArgsGenericLibFunc for GetGasLibFunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibFuncSignature, SpecializationError> {
-        let gas_builtin_type = context.get_concrete_type_as_result(GasBuiltinType::id(), &[])?;
+        let gas_builtin_type = context.get_concrete_type(GasBuiltinType::id(), &[])?;
         Ok(LibFuncSignature {
             param_signatures: vec![ParamSignature::new(gas_builtin_type.clone())],
             branch_signatures: vec![
@@ -87,7 +87,7 @@ impl NoGenericArgsGenericLibFunc for RefundGasLibFunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibFuncSignature, SpecializationError> {
-        let gas_builtin_type = context.get_concrete_type_as_result(GasBuiltinType::id(), &[])?;
+        let gas_builtin_type = context.get_concrete_type(GasBuiltinType::id(), &[])?;
         Ok(LibFuncSignature::new_non_branch(
             vec![gas_builtin_type.clone()],
             vec![OutputVarInfo {

@@ -31,7 +31,7 @@ impl SpecializationContext for MockSpecializationContext {
         self
     }
 
-    fn get_function(&self, function_id: &FunctionId) -> Option<Function> {
+    fn try_get_function(&self, function_id: &FunctionId) -> Option<Function> {
         ["drop_all_inputs", "identity", "unimplemented"]
             .into_iter()
             .map(|name| -> FunctionId { name.into() })
@@ -40,7 +40,7 @@ impl SpecializationContext for MockSpecializationContext {
     }
 }
 impl SignatureSpecializationContext for MockSpecializationContext {
-    fn get_concrete_type(
+    fn try_get_concrete_type(
         &self,
         id: GenericTypeId,
         generic_args: &[GenericArg],
@@ -63,7 +63,7 @@ impl SignatureSpecializationContext for MockSpecializationContext {
         }
     }
 
-    fn get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo> {
+    fn try_get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo> {
         if id == "int".into() || id == "NonZeroInt".into() {
             Some(TypeInfo { storable: true, droppable: true, duplicatable: true })
         } else if id == "UninitializedInt".into() {
@@ -73,8 +73,8 @@ impl SignatureSpecializationContext for MockSpecializationContext {
         }
     }
 
-    fn get_function_signature(&self, function_id: &FunctionId) -> Option<FunctionSignature> {
-        self.get_function(function_id).map(|f| f.signature)
+    fn try_get_function_signature(&self, function_id: &FunctionId) -> Option<FunctionSignature> {
+        self.try_get_function(function_id).map(|f| f.signature)
     }
 }
 

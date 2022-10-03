@@ -21,7 +21,7 @@ fn value_arg(v: i64) -> GenericArg {
 struct MockSpecializationContext {}
 
 impl TypeSpecializationContext for MockSpecializationContext {
-    fn get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo> {
+    fn try_get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo> {
         if id == "T".into()
             || id == "felt".into()
             || id == "int".into()
@@ -42,7 +42,7 @@ impl TypeSpecializationContext for MockSpecializationContext {
 }
 
 impl SignatureSpecializationContext for MockSpecializationContext {
-    fn get_concrete_type(
+    fn try_get_concrete_type(
         &self,
         id: GenericTypeId,
         generic_args: &[GenericArg],
@@ -77,12 +77,12 @@ impl SignatureSpecializationContext for MockSpecializationContext {
         }
     }
 
-    fn get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo> {
-        <Self as TypeSpecializationContext>::get_type_info(self, id)
+    fn try_get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo> {
+        <Self as TypeSpecializationContext>::try_get_type_info(self, id)
     }
 
-    fn get_function_signature(&self, function_id: &FunctionId) -> Option<FunctionSignature> {
-        self.get_function(function_id).map(|f| f.signature)
+    fn try_get_function_signature(&self, function_id: &FunctionId) -> Option<FunctionSignature> {
+        self.try_get_function(function_id).map(|f| f.signature)
     }
 }
 
@@ -91,7 +91,7 @@ impl SpecializationContext for MockSpecializationContext {
         self
     }
 
-    fn get_function(&self, function_id: &FunctionId) -> Option<Function> {
+    fn try_get_function(&self, function_id: &FunctionId) -> Option<Function> {
         match function_id {
             id if id == &"RegisteredFunction".into() => {
                 Some(Function::new("RegisteredFunction".into(), vec![], vec![], StatementIdx(5)))
