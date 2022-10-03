@@ -55,6 +55,12 @@ impl TestBuilder {
     /// Closes a tag if one is open, otherwise does nothing.
     fn close_open_tag(&mut self) {
         if let Some(tag) = &mut self.current_tag {
+            assert!(
+                !self.current_test.contains_key(&tag.name),
+                "Duplicate tag '{}' found in test (test name: {}).",
+                tag.name,
+                self.current_test_name.as_ref().unwrap_or(&"<unknown>".into())
+            );
             self.current_test.insert(std::mem::take(&mut tag.name), tag.content.trim().to_string());
             self.current_tag = None;
         }
