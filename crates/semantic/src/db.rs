@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use db_utils::Upcast;
 use defs::db::DefsGroup;
 use defs::ids::{
@@ -12,7 +14,9 @@ use smol_str::SmolStr;
 use utils::ordered_hash_map::OrderedHashMap;
 
 use crate::resolve_path::ResolvedGenericItem;
-use crate::{corelib, items, semantic, types, FunctionId, SemanticDiagnostic};
+use crate::{
+    corelib, items, semantic, types, FreeFunctionDefinition, FunctionId, SemanticDiagnostic,
+};
 
 // Salsa database interface.
 // All queries starting with priv_ are for internal use only by this crate.
@@ -129,6 +133,12 @@ pub trait SemanticGroup:
         &self,
         free_function_id: FreeFunctionId,
     ) -> Option<semantic::ExprId>;
+    /// Returns the definition of a free function.
+    #[salsa::invoke(items::free_function::free_function_definition)]
+    fn free_function_definition(
+        &self,
+        free_function_id: FreeFunctionId,
+    ) -> Option<Arc<FreeFunctionDefinition>>;
 
     // Extern function.
     // ================
