@@ -9,7 +9,7 @@ use crate::operand::{
 #[path = "ap_change_test.rs"]
 mod test;
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
 pub enum ApChange {
     Known(i16),
     Unknown,

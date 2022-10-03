@@ -1,9 +1,12 @@
+use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 
+use casm::ap_change::ApChange;
 use indoc::indoc;
 use pretty_assertions;
 use pretty_assertions::assert_eq;
+use sierra::program::StatementIdx;
 use sierra::ProgramParser;
 use test_case::test_case;
 
@@ -70,7 +73,7 @@ fn good_flow() {
         "})
         .unwrap();
     assert_eq!(
-        compile(&prog).unwrap().to_string(),
+        compile(&prog, &HashMap::new()).unwrap().to_string(),
         indoc! {"
             [ap + 0] = [fp + -4] + [fp + -3], ap++;
             [ap + 0] = [fp + -3], ap++;
@@ -122,7 +125,9 @@ fn locals_test() {
         "})
         .unwrap();
     assert_eq!(
-        compile(&prog).unwrap().to_string(),
+        compile(&prog, &HashMap::from([(StatementIdx(0), ApChange::Known(5))]))
+            .unwrap()
+            .to_string(),
         indoc! {"
             [ap + 0] = [fp + -4], ap++;
             [fp + 1] = [ap + -1];
@@ -141,7 +146,7 @@ fn fib_program() {
         [env!("CARGO_MANIFEST_DIR"), "../sierra/examples/fib_no_gas.sierra"].iter().collect();
     let prog = sierra::ProgramParser::new().parse(&fs::read_to_string(path).unwrap()).unwrap();
     pretty_assertions::assert_eq!(
-        compile(&prog).unwrap().to_string(),
+        compile(&prog, &HashMap::new()).unwrap().to_string(),
         indoc! {"
             jmp rel 4 if [fp + -3] != 0;
             [ap + 0] = [fp + -5], ap++;
@@ -434,7 +439,7 @@ fn fib_program() {
 fn compiler_errors(sierra_code: &str, expected_result: &str) {
     let prog = ProgramParser::new().parse(sierra_code).unwrap();
     assert_eq!(
-        match compile(&prog) {
+        match compile(&prog, &HashMap::new()) {
             Ok(compiled_program) => compiled_program.to_string(),
             Err(error) => error.to_string(),
         },
