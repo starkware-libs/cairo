@@ -105,9 +105,12 @@ pub fn compile(program: &Program) -> Result<CairoProgram, CompilationError> {
                     }
                     .into());
                 };
-                program_annotations
-                    .validate_return_type(&return_refs, &annotations.return_types)?;
-                program_annotations.validate_final_annotations(statement_idx, &annotations)?;
+
+                program_annotations.validate_final_annotations(
+                    statement_idx,
+                    &annotations,
+                    &return_refs,
+                )?;
                 check_references_on_stack(&type_sizes, &return_refs).map_err(
                     |error| match error {
                         InvocationError::InvalidReferenceExpressionForArgument => {

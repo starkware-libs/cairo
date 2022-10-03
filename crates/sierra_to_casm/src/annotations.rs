@@ -251,12 +251,14 @@ impl ProgramAnnotations {
         Ok(())
     }
 
-    /// Checks that the list of reference contains types matching the given types.
+    /// Validates the final annotation in a return statement.
     pub fn validate_final_annotations(
         &self,
         statement_idx: StatementIdx,
         annotations: &StatementAnnotations,
+        return_refs: &[ReferenceValue],
     ) -> Result<(), AnnotationError> {
+        self.validate_return_type(return_refs, &annotations.return_types)?;
         validate_final_environment(&annotations.environment)
             .map_err(|error| AnnotationError::InconsistentEnvironments { statement_idx, error })
     }
