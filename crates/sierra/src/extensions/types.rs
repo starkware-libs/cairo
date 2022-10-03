@@ -5,11 +5,11 @@ use crate::program::GenericArg;
 /// Trait for the specialization of types.
 pub trait TypeSpecializationContext {
     /// Returns the type informantion for the type with the given id.
-    fn get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo>;
+    fn try_get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo>;
 
-    /// Wraps `get_type_info` with a result object.
-    fn get_type_info_as_result(&self, id: ConcreteTypeId) -> Result<TypeInfo, SpecializationError> {
-        self.get_type_info(id.clone()).ok_or(SpecializationError::MissingTypeInfo(id))
+    /// Wraps [Self::try_get_type_info] with a result object.
+    fn get_type_info(&self, id: ConcreteTypeId) -> Result<TypeInfo, SpecializationError> {
+        self.try_get_type_info(id.clone()).ok_or(SpecializationError::MissingTypeInfo(id))
     }
 }
 
