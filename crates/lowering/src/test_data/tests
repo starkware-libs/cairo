@@ -1,4 +1,4 @@
-//! > Test unexpected argument types for operators.
+//! > Test unreachable code.
 
 //! > test_function_name
 test_function_lowering
@@ -6,6 +6,7 @@ test_function_lowering
 //! > function
 func foo(a: felt) -> felt {
     return a + a * a;
+    5;6;7;
 }
 
 //! > function_name
@@ -22,6 +23,6 @@ func foo(a: felt) -> felt {
 
 //! > lowering_diagnostics
 error: Unreachable code
- --> lib.cairo:2:12
-    return a + a * a;
-           ^*******^
+ --> lib.cairo:3:5
+    5;6;7;
+    ^****^

@@ -741,7 +741,7 @@ pub fn compute_statement_semantic(
 ) -> Option<StatementId> {
     let db = ctx.db;
     let syntax_db = db.upcast();
-    let statement = match syntax {
+    let statement = match &syntax {
         ast::Statement::Let(let_syntax) => {
             let expr = compute_expr_semantic(ctx, &let_syntax.rhs(syntax_db));
             let inferred_type = expr.ty();
@@ -771,11 +771,18 @@ pub fn compute_statement_semantic(
             for v in variables {
                 ctx.environment.variables.insert(v.name.clone(), Variable::Local(v.var.clone()));
             }
-            semantic::Statement::Let(semantic::StatementLet { pattern, expr: rhs_expr_id })
+            semantic::Statement::Let(semantic::StatementLet {
+                pattern,
+                expr: rhs_expr_id,
+                stable_ptr: syntax.stable_ptr(),
+            })
         }
         ast::Statement::Expr(expr_syntax) => {
             let expr = compute_expr_semantic(ctx, &expr_syntax.expr(syntax_db));
-            semantic::Statement::Expr(ctx.exprs.alloc(expr))
+            semantic::Statement::Expr(semantic::StatementExpr {
+                expr: ctx.exprs.alloc(expr),
+                stable_ptr: syntax.stable_ptr(),
+            })
         }
         ast::Statement::Return(return_syntax) => {
             let expr_syntax = return_syntax.expr(syntax_db);
@@ -786,7 +793,10 @@ pub fn compute_statement_semantic(
                     WrongReturnType { expected_ty: ctx.return_ty, actual_ty: expr.ty() },
                 )
             }
-            semantic::Statement::Return(ctx.exprs.alloc(expr))
+            semantic::Statement::Return(semantic::StatementReturn {
+                expr: ctx.exprs.alloc(expr),
+                stable_ptr: syntax.stable_ptr(),
+            })
         }
         ast::Statement::Missing(_) => todo!(),
     };

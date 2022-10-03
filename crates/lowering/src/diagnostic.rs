@@ -33,16 +33,25 @@ impl DiagnosticEntry for LoweringDiagnostic {
 
     fn format(&self, _db: &Self::DbType) -> String {
         match &self.kind {
-            LoweringDiagnosticKind::Unreachable => "Unreachable code".into(),
+            LoweringDiagnosticKind::Unreachable { .. } => "Unreachable code".into(),
         }
     }
 
+    #[allow(unreachable_patterns, clippy::single_match)]
     fn location(&self, db: &Self::DbType) -> DiagnosticLocation {
+        match &self.kind {
+            LoweringDiagnosticKind::Unreachable { last_statement_ptr } => {
+                return self
+                    .stable_location
+                    .diagnostic_location_until(db.upcast(), *last_statement_ptr);
+            }
+            _ => {}
+        }
         self.stable_location.diagnostic_location(db.upcast())
     }
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum LoweringDiagnosticKind {
-    Unreachable,
+    Unreachable { last_statement_ptr: SyntaxStablePtrId },
 }
