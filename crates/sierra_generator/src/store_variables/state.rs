@@ -1,4 +1,4 @@
-use sierra::extensions::lib_func::OutputVarInfo;
+use sierra::extensions::lib_func::{OutputBranchInfo, OutputVarInfo};
 use sierra::extensions::OutputVarReferenceInfo;
 use utils::ordered_hash_map::OrderedHashMap;
 
@@ -16,14 +16,25 @@ pub struct State {
 }
 impl State {
     /// Registers output variables of a libfunc. See `add_output`.
+    /// Clears the stack if needed.
     pub fn register_outputs(
         &mut self,
         results: &[sierra::ids::VarId],
-        output_infos: &[OutputVarInfo],
+        output_info: &OutputBranchInfo,
     ) {
-        for (var, output_info) in itertools::zip_eq(results, output_infos) {
-            self.register_output(var.clone(), output_info);
+        // Clear the stack if needed.
+        match output_info.ap_change {
+            sierra::extensions::lib_func::SierraApChange::NotImplemented
+            | sierra::extensions::lib_func::SierraApChange::Unknown => {
+                self.clear_known_stack();
+            }
+            sierra::extensions::lib_func::SierraApChange::Known => {}
         }
+
+        for (var, var_info) in itertools::zip_eq(results, &output_info.vars) {
+            self.register_output(var.clone(), var_info);
+        }
+
         // Update `known_stack_size`. It is one more than the maximum of the indices in
         // `variables_on_stack` (or 0 if empty).
         self.known_stack.update_offset_by_max();
@@ -52,7 +63,30 @@ impl State {
     /// Clears the known information about the stack.
     ///
     /// This is called where the change in the value of `ap` is not known at compile time.
-    pub fn clear_known_stack(&mut self) {
+    fn clear_known_stack(&mut self) {
         self.known_stack.clear();
+    }
+}
+
+/// Merges the information from two [State]s.
+/// Used to determine the state at the merge of two code branches.
+///
+/// If one of the given states is None, the second is returned.
+pub fn merge_optional_states(a_opt: Option<State>, b_opt: Option<State>) -> Option<State> {
+    match (a_opt, b_opt) {
+        (None, None) => None,
+        (None, Some(b)) => Some(b),
+        (Some(a), None) => Some(a),
+        (Some(a), Some(b)) => {
+            assert_eq!(
+                a.deferred_variables, b.deferred_variables,
+                "Internal compiler error: Branch merges with different list of deferred variables \
+                 is not supported yet."
+            );
+            Some(State {
+                deferred_variables: a.deferred_variables,
+                known_stack: a.known_stack.merge_with(&b.known_stack),
+            })
+        }
     }
 }

@@ -220,9 +220,9 @@ fn push_values_after_branch_merge() {
             "store_temp<[0]>([2]) -> ([102])",
             "label1:",
             // Here the two branches merge and the merged stack is [1], [2].
-            // Push [101], [102] and [3].
-            "store_temp<[0]>([101]) -> ([201])",
-            "store_temp<[0]>([102]) -> ([202])",
+            // Reuse [101] and [102]. Push [3].
+            "rename<[0]>([101]) -> ([201])",
+            "rename<[0]>([102]) -> ([202])",
             "store_temp<[0]>([3]) -> ([203])",
             // Return.
             "return([0])",
@@ -250,18 +250,20 @@ fn push_values_early_return() {
             .map(|statement| replace_libfunc_ids(&db, statement).to_string())
             .collect::<Vec<String>>(),
         vec![
+            // Push [0] and [1].
             "store_temp<[0]>([0]) -> ([100])",
             "store_temp<[0]>([1]) -> ([101])",
             "branch() { label0() fallthrough() }",
-            // Push [101], [2] and [3].
-            "store_temp<[0]>([101]) -> ([201])",
+            // Reuse [101]. Push [2] and [3].
+            "rename<[0]>([101]) -> ([201])",
             "store_temp<[0]>([2]) -> ([202])",
             "store_temp<[0]>([3]) -> ([203])",
             "return([0])",
             // This is not a merge of branches because of the "return" statement.
+            // The stack contains [0] and [1].
             "label0:",
-            // Push [101] and [2].
-            "store_temp<[0]>([101]) -> ([201])",
+            // Reuse [101]. Push [2].
+            "rename<[0]>([101]) -> ([201])",
             "store_temp<[0]>([2]) -> ([202])",
             "return([0])",
         ]

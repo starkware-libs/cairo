@@ -5,5 +5,4 @@ jmp rel 8;
 [ap + 0] = [fp + -5] + [fp + -4], ap++;
 [fp + -3] = [ap + 0] + 1, ap++;
 call rel -9;
-[ap + 0] = [ap + -1], ap++;
 ret;
