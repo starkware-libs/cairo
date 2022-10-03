@@ -75,7 +75,7 @@ pub enum Statement {
 
     // Tuples.
     TupleConstruct,
-    TupleDestruct,
+    TupleDestruct(StatementTupleDestruct),
 }
 
 /// A statement that binds a literal value to a variable.
@@ -143,4 +143,11 @@ pub struct MatchArm {
     pub arm_variables: Vec<VariableId>,
     /// A block to "call".
     pub block: BlockId,
+}
+
+/// A statement that destructs a tuple, introducing its elements as new variables.
+pub struct StatementTupleDestruct {
+    pub tys: Vec<semantic::TypeId>,
+    pub input: VariableId,
+    pub outputs: Vec<VariableId>,
 }
