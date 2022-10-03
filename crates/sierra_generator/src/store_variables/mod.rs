@@ -9,7 +9,9 @@ mod test;
 use sierra::extensions::lib_func::OutputBranchInfo;
 use sierra::ids::ConcreteLibFuncId;
 use sierra::program::{GenBranchInfo, GenBranchTarget, GenStatement};
-use state::State;
+use state::{merge_optional_states, State};
+use utils::extract_matches;
+use utils::ordered_hash_map::OrderedHashMap;
 
 use crate::db::SierraGenGroup;
 use crate::pre_sierra;
@@ -45,11 +47,22 @@ struct AddStoreVariableStatements<'a> {
     /// The current information known about the state of the variables. None means the statement is
     /// not reachable from the previous statement.
     state_opt: Option<State>,
+    /// A map from [LabelId](pre_sierra::LabelId) to the known state (so far).
+    ///
+    /// For every branch that does not continue to the next statement, the current known state is
+    /// added to the map. When the label is visited, it is merged with the known state, and removed
+    /// from the map.
+    future_states: OrderedHashMap<pre_sierra::LabelId, State>,
 }
 impl<'a> AddStoreVariableStatements<'a> {
     /// Constructs a new [AddStoreVariableStatements] object.
     fn new(db: &'a dyn SierraGenGroup) -> Self {
-        AddStoreVariableStatements { db, result: Vec::new(), state_opt: Some(State::default()) }
+        AddStoreVariableStatements {
+            db,
+            result: Vec::new(),
+            state_opt: Some(State::default()),
+            future_states: OrderedHashMap::default(),
+        }
     }
 
     /// Handles a single statement, including adding required store statements and the statement
@@ -64,20 +77,34 @@ impl<'a> AddStoreVariableStatements<'a> {
         match &statement {
             pre_sierra::Statement::Sierra(GenStatement::Invocation(invocation)) => {
                 let output_infos = get_output_info(invocation.libfunc_id.clone());
-                // Currently, treat every statement as if it has unknown `ap` change.
-                // TODO(lior): Call `clear_known_stack` only if the libfunc revokes `ap`.
-                self.state().clear_known_stack();
                 match &invocation.branches[..] {
                     [GenBranchInfo { target: GenBranchTarget::Fallthrough, results }] => {
                         // A simple invocation.
                         // TODO(lior): consider not calling prepare_libfunc_arguments for functions
                         //   that accept deferred, such as store_temp().
                         self.prepare_libfunc_arguments(&invocation.args);
-                        self.state().register_outputs(results, &output_infos[0].vars);
+                        self.state().register_outputs(results, &output_infos[0]);
                     }
                     _ => {
                         // This starts a branch. Store all deferred variables.
                         self.store_all_deffered_variables();
+
+                        // Go over the branches. The state of a branch that points to `Fallthrough`
+                        // is merged into `fallthrough_state`.
+                        let mut fallthrough_state: Option<State> = None;
+                        for (branch, output_info) in
+                            itertools::zip_eq(&invocation.branches, output_infos)
+                        {
+                            let mut state_at_branch = self.state().clone();
+                            state_at_branch.register_outputs(&branch.results, &output_info);
+
+                            self.add_future_state(
+                                &branch.target,
+                                state_at_branch,
+                                &mut fallthrough_state,
+                            );
+                        }
+                        self.state_opt = fallthrough_state;
                     }
                 }
                 self.result.push(statement);
@@ -88,12 +115,22 @@ impl<'a> AddStoreVariableStatements<'a> {
                 // the return values onto the stack. The rest of the deferred variables are not
                 // needed.
                 self.clear_deffered_variables();
-                self.state().clear_known_stack();
+                // The next statement is not reachable from this one. Set `state` to `None`.
+                self.state_opt = None;
             }
-            pre_sierra::Statement::Label(_) => {
-                self.store_all_deffered_variables();
+            pre_sierra::Statement::Label(pre_sierra::Label { id: label_id }) => {
+                if self.state_opt.is_some() {
+                    self.store_all_deffered_variables();
+                }
+
+                // Merge self.known_stack with the future_stack that corresponds to the label, if
+                // any.
+                self.state_opt = merge_optional_states(
+                    std::mem::take(&mut self.state_opt),
+                    self.future_states.swap_remove(label_id),
+                );
+
                 self.result.push(statement);
-                self.state().clear_known_stack();
             }
             pre_sierra::Statement::PushValues(push_values) => {
                 self.push_values(push_values);
@@ -168,12 +205,14 @@ impl<'a> AddStoreVariableStatements<'a> {
         self.state().deferred_variables.clear();
     }
 
-    // TODO(lior): Remove "mut" on self once deferred_variables is no longer checked by this
-    //   function.
-    fn finalize(mut self) -> Vec<pre_sierra::Statement> {
+    fn finalize(self) -> Vec<pre_sierra::Statement> {
         assert!(
-            self.state().deferred_variables.is_empty(),
-            "Internal compiler error: Remaining unhandled deferred variables."
+            self.state_opt.is_none(),
+            "Internal compiler error: Found a reachable statement at the end of the function."
+        );
+        assert!(
+            self.future_states.is_empty(),
+            "Internal compiler error: Unhandled label in 'store_variables'."
         );
         self.result
     }
@@ -218,5 +257,29 @@ impl<'a> AddStoreVariableStatements<'a> {
     /// Fails otherwise.
     fn known_stack(&mut self) -> &mut KnownStack {
         &mut self.state().known_stack
+    }
+
+    /// Merges the given `state` into the future state that corresponds to `target`.
+    /// If `target` refers to `Fallthrough`, `state` is merged into the input-output argument
+    /// `fallthrough_state`.
+    /// If it refers to a label, `state` is merged into `future_states`.
+    fn add_future_state(
+        &mut self,
+        target: &GenBranchTarget<pre_sierra::LabelId>,
+        state: State,
+        fallthrough_state: &mut Option<State>,
+    ) {
+        match target {
+            GenBranchTarget::Fallthrough => {
+                let new_state =
+                    merge_optional_states(std::mem::take(fallthrough_state), Some(state));
+                *fallthrough_state = new_state;
+            }
+            GenBranchTarget::Statement(label_id) => {
+                let new_state =
+                    merge_optional_states(self.future_states.swap_remove(label_id), Some(state));
+                self.future_states.insert(*label_id, extract_matches!(new_state, Some));
+            }
+        }
     }
 }
