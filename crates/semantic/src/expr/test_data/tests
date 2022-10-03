@@ -190,6 +190,7 @@ error: Wrong number of generic arguments. Expected 2, found: 3
       (A::b(x), 1, _) => { x },
       ^*************^
 
+//! > ==========================================================================
 
 //! > Test assignment.
 
