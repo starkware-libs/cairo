@@ -2,9 +2,7 @@
 func fib(a: Ref::<felt>, b: Ref::<felt>, n: Ref::<felt>) -> Ref::<felt> {
     let n_deref = deref::<felt>(n);
     match n_deref {
-        0 => {
-            a
-        },
+        0 => a,
         _ => {
             fib(
                 b,
