@@ -1,6 +1,6 @@
 use test_case::test_case;
 
-use super::value::CoreValue::{self, GasBuiltin, Integer, NonZero, Uninitialized};
+use super::value::CoreValue::{self, Array, GasBuiltin, Integer, NonZero, Uninitialized};
 use super::LibFuncSimulationError::{
     self, FunctionSimulationError, MemoryLayoutMismatch, WrongNumberOfArgs,
 };
@@ -54,6 +54,9 @@ impl SignatureSpecializationContext for MockSpecializationContext {
                 if id == "uninitialized".into() && ty == &"int".into() =>
             {
                 Some("UninitializedInt".into())
+            }
+            (id, &[GenericArg::Type(ty)]) if id == "Array".into() && ty == &"int".into() => {
+                Some("ArrayInt".into())
             }
             (id, &[]) if id == "GasBuiltin".into() => Some("GasBuiltin".into()),
             _ => None,
@@ -118,6 +121,9 @@ fn simulate_branch(
 
 /// Tests for simulation of a non branch invocations.
 #[test_case("refund_gas", vec![], vec![GasBuiltin(2)] => Ok(vec![GasBuiltin(6)]); "refund_gas(2)")]
+#[test_case("array_new", vec![type_arg("int")], vec![] => Ok(vec![Array(vec![])]); "array_new()")]
+#[test_case("array_append", vec![type_arg("int")], vec![Array(vec![]), Integer(4)] =>
+            Ok(vec![Array(vec![Integer(4)])]); "array_append([], 4)")]
 #[test_case("int_add", vec![], vec![Integer(2), Integer(3)] => Ok(vec![Integer(5)]); "int_add(2, 3)")]
 #[test_case("int_sub", vec![], vec![Integer(5), Integer(3)] => Ok(vec![Integer(2)]); "int_sub(5, 3)")]
 #[test_case("int_mul", vec![], vec![Integer(5), Integer(3)] => Ok(vec![Integer(15)]); "int_mul(5, 3)")]

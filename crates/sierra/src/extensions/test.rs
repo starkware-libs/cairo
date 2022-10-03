@@ -29,6 +29,8 @@ impl TypeSpecializationContext for MockSpecializationContext {
             || id == "NonZeroInt".into()
         {
             Some(TypeInfo { storable: true, droppable: true, duplicatable: true })
+        } else if id == "ArrayFelt".into() || id == "ArrayInt".into() {
+            Some(TypeInfo { storable: true, droppable: true, duplicatable: false })
         } else if id == "UninitializedFelt".into() || id == "UninitializedInt".into() {
             Some(TypeInfo { storable: false, droppable: true, duplicatable: false })
         } else if id == "GasBuiltin".into() {
@@ -48,6 +50,12 @@ impl SignatureSpecializationContext for MockSpecializationContext {
         match (id, &generic_args) {
             (id, &[]) if id == "felt".into() => Some("felt".into()),
             (id, &[]) if id == "int".into() => Some("int".into()),
+            (id, &[GenericArg::Type(ty)]) if id == "Array".into() && ty == &"felt".into() => {
+                Some("ArrayFelt".into())
+            }
+            (id, &[GenericArg::Type(ty)]) if id == "Array".into() && ty == &"int".into() => {
+                Some("ArrayInt".into())
+            }
             (id, &[GenericArg::Type(ty)]) if id == "NonZero".into() && ty == &"felt".into() => {
                 Some("NonZeroFelt".into())
             }
@@ -100,6 +108,11 @@ impl SpecializationContext for MockSpecializationContext {
 #[test_case("felt", vec![type_arg("T")] => Err(WrongNumberOfGenericArgs); "felt<T>")]
 #[test_case("int", vec![] => Ok(()); "int")]
 #[test_case("int", vec![type_arg("T")] => Err(WrongNumberOfGenericArgs); "int<T>")]
+#[test_case("Array", vec![type_arg("int")] => Ok(()); "Array<int>")]
+#[test_case("Array", vec![] => Err(WrongNumberOfGenericArgs); "Array")]
+#[test_case("Array", vec![value_arg(5)] => Err(UnsupportedGenericArg); "Array<5>")]
+#[test_case("Array", vec![type_arg("UninitializedFelt")] => Err(UnsupportedGenericArg);
+            "Array<UninitializedFelt>")]
 #[test_case("NonZero", vec![type_arg("T")] => Ok(()); "NonZero<T>")]
 #[test_case("NonZero", vec![] => Err(WrongNumberOfGenericArgs); "NonZero")]
 #[test_case("NonZero", vec![value_arg(5)] => Err(UnsupportedGenericArg); "NonZero<5>")]
@@ -124,6 +137,10 @@ fn find_type_specialization(
 #[test_case("function_call", vec![GenericArg::UserFunc("RegisteredFunction".into())] => Ok(());
             "function_call<&RegisteredFunction>")]
 #[test_case("function_call", vec![] => Err(UnsupportedGenericArg); "function_call")]
+#[test_case("array_new", vec![] => Err(WrongNumberOfGenericArgs); "array_new")]
+#[test_case("array_new", vec![type_arg("int")] => Ok(()); "array_new<int>")]
+#[test_case("array_append", vec![] => Err(WrongNumberOfGenericArgs); "array_append")]
+#[test_case("array_append", vec![type_arg("int")] => Ok(()); "array_append<int>")]
 #[test_case("get_gas", vec![value_arg(0)] => Err(WrongNumberOfGenericArgs); "get_gas<0>")]
 #[test_case("get_gas", vec![] => Ok(()); "get_gas")]
 #[test_case("refund_gas", vec![value_arg(0)] => Err(WrongNumberOfGenericArgs); "refund_gas<0>")]
