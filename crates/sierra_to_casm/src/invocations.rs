@@ -174,8 +174,8 @@ pub fn check_references_on_stack(
     Ok(())
 }
 
-fn handle_felt_dup(
-    felt_dup: &SignatureOnlyConcreteLibFunc,
+fn handle_dup(
+    libfunc: &SignatureOnlyConcreteLibFunc,
     refs: &[ReferenceValue],
     environment: Environment,
 ) -> Result<CompiledInvocation, InvocationError> {
@@ -186,7 +186,7 @@ fn handle_felt_dup(
 
     Ok(CompiledInvocation::only_reference_changes(
         [expression.clone(), expression.clone()].into_iter(),
-        &felt_dup.output_types(),
+        &libfunc.output_types(),
         environment,
     ))
 }
@@ -512,18 +512,8 @@ pub fn compile_invocation(
         CoreConcreteLibFunc::Felt(FeltConcrete::Operation(OperationConcreteLibFunc::Binary(
             felt_op,
         ))) => handle_felt_op(invocation, felt_op, refs, environment),
-        CoreConcreteLibFunc::Felt(FeltConcrete::Duplicate(felt_dup)) => {
-            handle_felt_dup(felt_dup, refs, environment)
-        }
         CoreConcreteLibFunc::Felt(FeltConcrete::JumpNotZero(jnz)) => {
             handle_jump_nz(invocation, jnz, refs, environment)
-        }
-        CoreConcreteLibFunc::Felt(FeltConcrete::Drop(libfunc)) => {
-            Ok(CompiledInvocation::only_reference_changes(
-                [].into_iter(),
-                &libfunc.output_types(),
-                environment,
-            ))
         }
         CoreConcreteLibFunc::Felt(FeltConcrete::Const(libfunc)) => {
             Ok(CompiledInvocation::only_reference_changes(
@@ -533,6 +523,12 @@ pub fn compile_invocation(
                 environment,
             ))
         }
+        CoreConcreteLibFunc::Drop(libfunc) => Ok(CompiledInvocation::only_reference_changes(
+            [].into_iter(),
+            &libfunc.output_types(),
+            environment,
+        )),
+        CoreConcreteLibFunc::Dup(felt_dup) => handle_dup(felt_dup, refs, environment),
         CoreConcreteLibFunc::Mem(MemConcreteLibFunc::StoreTemp(store_temp)) => {
             handle_store_temp(invocation, store_temp, refs, environment, type_sizes)
         }

@@ -3,7 +3,8 @@ use sierra::extensions::arithmetic::{
     Operator,
 };
 use sierra::extensions::core::CoreConcreteLibFunc::{
-    self, ApTracking, Felt, FunctionCall, Gas, Integer, Mem, Ref, UnconditionalJump, UnwrapNonZero,
+    self, ApTracking, Drop, Dup, Felt, FunctionCall, Gas, Integer, Mem, Ref, UnconditionalJump,
+    UnwrapNonZero,
 };
 use sierra::extensions::felt::FeltConcrete;
 use sierra::extensions::function_call::FunctionCallConcreteLibFunc;
@@ -43,7 +44,9 @@ pub fn core_libfunc_cost(
         }
         Integer(libfunc) => integer_libfunc_cost(libfunc),
         Felt(libfunc) => felt_libfunc_cost(libfunc),
-        ApTracking(_) | UnwrapNonZero(_) | Mem(Rename(_)) | Ref(_) => vec![CostExpr::from_const(0)],
+        Drop(_) | Dup(_) | ApTracking(_) | UnwrapNonZero(_) | Mem(Rename(_)) | Ref(_) => {
+            vec![CostExpr::from_const(0)]
+        }
         Mem(StoreLocal(_) | AllocLocal(_) | StoreTemp(_) | AlignTemps(_) | FinalizeLocals(_))
         | UnconditionalJump(_) => vec![CostExpr::from_const(1)],
     }
@@ -69,7 +72,7 @@ fn integer_libfunc_cost(libfunc: &IntegerConcrete) -> Vec<CostExpr> {
                 vec![CostExpr::from_const(5)]
             }
         },
-        IntegerConcrete::Const(_) | IntegerConcrete::Duplicate(_) | IntegerConcrete::Drop(_) => {
+        IntegerConcrete::Const(_) => {
             vec![CostExpr::from_const(0)]
         }
         IntegerConcrete::JumpNotZero(_) => {
@@ -81,10 +84,7 @@ fn integer_libfunc_cost(libfunc: &IntegerConcrete) -> Vec<CostExpr> {
 /// Returns costs for felt libfuncs.
 fn felt_libfunc_cost(libfunc: &FeltConcrete) -> Vec<CostExpr> {
     match libfunc {
-        FeltConcrete::Const(_)
-        | FeltConcrete::Operation(_)
-        | FeltConcrete::Duplicate(_)
-        | FeltConcrete::Drop(_) => vec![CostExpr::from_const(0)],
+        FeltConcrete::Const(_) | FeltConcrete::Operation(_) => vec![CostExpr::from_const(0)],
         FeltConcrete::JumpNotZero(_) => {
             vec![CostExpr::from_const(1), CostExpr::from_const(1)]
         }
