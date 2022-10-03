@@ -24,7 +24,7 @@ impl NamedType for ArrayType {
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
         let ty = as_single_type(args)?;
-        let info = context.get_type_info_as_result(ty.clone())?;
+        let info = context.get_type_info(ty.clone())?;
         if info.storable {
             Ok(ArrayConcreteType {
                 info: TypeInfo { duplicatable: false, droppable: info.droppable, storable: true },

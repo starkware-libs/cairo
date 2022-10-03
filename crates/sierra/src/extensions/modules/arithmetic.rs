@@ -70,7 +70,7 @@ impl<TArithmeticTraits: ArithmeticTraits> GenericLibFunc for OperationLibFunc<TA
         context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
     ) -> Result<LibFuncSignature, SpecializationError> {
-        let ty = context.get_concrete_type_as_result(TArithmeticTraits::GENERIC_TYPE_ID, &[])?;
+        let ty = context.get_concrete_type(TArithmeticTraits::GENERIC_TYPE_ID, &[])?;
         match args {
             [] => Ok(LibFuncSignature::new_non_branch(
                 vec![
@@ -171,7 +171,7 @@ impl<TArithmeticTraits: ArithmeticTraits> NamedLibFunc for ConstLibFunc<TArithme
         Ok(LibFuncSignature::new_non_branch(
             vec![],
             vec![OutputVarInfo {
-                ty: context.get_concrete_type_as_result(TArithmeticTraits::GENERIC_TYPE_ID, &[])?,
+                ty: context.get_concrete_type(TArithmeticTraits::GENERIC_TYPE_ID, &[])?,
                 ref_info: OutputVarReferenceInfo::Const,
             }],
             SierraApChange::NotImplemented,

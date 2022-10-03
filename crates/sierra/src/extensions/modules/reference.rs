@@ -24,7 +24,7 @@ impl NamedType for RefType {
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
         let ty = as_single_type(args)?;
-        Ok(RefConcreteType { info: context.get_type_info_as_result(ty.clone())?, ty })
+        Ok(RefConcreteType { info: context.get_type_info(ty.clone())?, ty })
     }
 }
 
