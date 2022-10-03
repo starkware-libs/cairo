@@ -49,6 +49,7 @@ impl ApplyApChange for BinOpExpression {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ReferenceExpression {
+    AllocateSegment,
     Deref(DerefOperand),
     DoubleDeref(DoubleDerefOperand),
     IntoSingleCellRef(DerefOperand),
@@ -59,6 +60,7 @@ pub enum ReferenceExpression {
 impl ApplyApChange for ReferenceExpression {
     fn apply_ap_change(self, ap_change: ApChange) -> Result<Self, ApChangeError> {
         Ok(match self {
+            ReferenceExpression::AllocateSegment => ReferenceExpression::AllocateSegment,
             ReferenceExpression::Deref(operand) => {
                 ReferenceExpression::Deref(operand.apply_ap_change(ap_change)?)
             }
