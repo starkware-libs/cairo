@@ -27,6 +27,13 @@ error: Unreachable code
     5;6;7;
     ^****^
 
+//! > lowering_format
+blk0:
+Inputs:
+  v0: core::felt, 
+Statements:
+End:
+  Return(v1, )
 
 //! > ==========================================================================
 
@@ -54,3 +61,12 @@ func foo(a: felt) -> felt {
 
 
 //! > lowering_diagnostics
+
+//! > lowering_format
+blk0:
+Inputs:
+  v0: core::felt, 
+Statements:
+  (v2: core::felt, v3: core::felt, ) <- tuple_destruct(v1)
+End:
+  Return(v4, )
