@@ -164,12 +164,12 @@ pub fn setup_test_expr(
         db.expr_semantic(test_function.function_id, test_function.body),
         semantic::Expr::Block
     );
-    let expr_id = extract_matches!(
+    let statement_expr = extract_matches!(
         db.statement_semantic(test_function.function_id, *statements.last().unwrap()),
         semantic::Statement::Expr
     );
     let semantic::ExprBlock { statements, tail, .. } = extract_matches!(
-        db.expr_semantic(test_function.function_id, expr_id),
+        db.expr_semantic(test_function.function_id, statement_expr.expr),
         semantic::Expr::Block
     );
     assert!(

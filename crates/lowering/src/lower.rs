@@ -103,15 +103,21 @@ impl<'db> Lowerer<'db> {
             semantic_variables: inputs,
             statements: vec![],
         };
-        for stmt_id in &expr_block.statements {
+        for (i, stmt_id) in expr_block.statements.iter().enumerate() {
             let stmt = &self.function_def.statements[*stmt_id];
             if let semantic::Statement::Return(expr_id) = stmt {
-                // Emit diagnostic fo the rest of the statements with unreachable.
-                // TODO(spapini): emit unreachable to the correct place.
-                self.diagnostics
-                    .report(self.function_def.exprs[*expr_id].stable_ptr().untyped(), Unreachable);
+                if i + 1 < expr_block.statements.len() {
+                    let start_stmt = &self.function_def.statements[expr_block.statements[i + 1]];
+                    let end_stmt =
+                        &self.function_def.statements[*expr_block.statements.last().unwrap()];
+                    // Emit diagnostic fo the rest of the statements with unreachable.
+                    self.diagnostics.report(
+                        start_stmt.stable_ptr().untyped(),
+                        Unreachable { last_statement_ptr: end_stmt.stable_ptr().untyped() },
+                    );
+                }
 
-                return self.finalize_block_return(scope, *expr_id);
+                return self.finalize_block_return(scope, expr_id.expr);
             }
 
             self.lower_statement(&mut scope, stmt)

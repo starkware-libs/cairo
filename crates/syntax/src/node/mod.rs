@@ -125,7 +125,7 @@ impl SyntaxNode {
         Some(token_node)
     }
 
-    fn span_start_without_trivia(&self, db: &dyn SyntaxGroup) -> TextOffset {
+    pub fn span_start_without_trivia(&self, db: &dyn SyntaxGroup) -> TextOffset {
         let green_node = self.green_node(db);
         match green_node.details {
             green::GreenNodeDetails::Node { .. } => {
@@ -142,7 +142,7 @@ impl SyntaxNode {
             green::GreenNodeDetails::Token(_) => self.offset(),
         }
     }
-    fn span_end_without_trivia(&self, db: &dyn SyntaxGroup) -> TextOffset {
+    pub fn span_end_without_trivia(&self, db: &dyn SyntaxGroup) -> TextOffset {
         let green_node = self.green_node(db);
         match green_node.details {
             green::GreenNodeDetails::Node { .. } => {
