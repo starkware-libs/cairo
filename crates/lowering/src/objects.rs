@@ -74,6 +74,23 @@ pub enum Statement {
     TupleConstruct,
     TupleDestruct(StatementTupleDestruct),
 }
+impl Statement {
+    pub fn outputs(&self) -> Vec<VariableId> {
+        match &self {
+            Statement::Literal(stmt) => vec![stmt.output],
+            Statement::Call(stmt) => stmt.outputs.clone(),
+            Statement::CallBlock(stmt) => stmt.outputs.clone(),
+            Statement::CallExtern(stmt) => stmt.outputs.clone(),
+            Statement::MatchExtern(stmt) => stmt.outputs.clone(),
+            Statement::StructConstruct => todo!(),
+            Statement::StructDestruct => todo!(),
+            Statement::EnumConstruct => todo!(),
+            Statement::MatchEnum => todo!(),
+            Statement::TupleConstruct => todo!(),
+            Statement::TupleDestruct(stmt) => stmt.outputs.clone(),
+        }
+    }
+}
 
 /// A statement that binds a literal value to a variable.
 pub struct StatementLiteral {

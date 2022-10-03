@@ -2,6 +2,7 @@ use semantic::db::SemanticGroup;
 use semantic::test_utils::{setup_test_function, SemanticDatabaseForTesting};
 use utils::ordered_hash_map::OrderedHashMap;
 
+use crate::fmt::FmtContext;
 use crate::lower::Lowerer;
 
 utils::test_file_test!(
@@ -28,5 +29,6 @@ fn test_function_lowering(
     OrderedHashMap::from([
         ("semantic_diagnostics".into(), semantic_diagnostics),
         ("lowering_diagnostics".into(), lowered.diagnostics.format(db)),
+        ("lowering_format".into(), format!("{}", FmtContext { db, lowered: &lowered })),
     ])
 }
