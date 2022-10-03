@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -47,7 +48,7 @@ fn cairo_to_sierra(name: &str, expected_code: &str) {
 fn cairo_to_casm(cairo_file: &str, expected_code: &str) {
     let (_db, sierra_program) = compile_to_sierra(cairo_file);
     assert_eq!(
-        sierra_to_casm::compiler::compile(&sierra_program).unwrap().to_string(),
+        sierra_to_casm::compiler::compile(&sierra_program, &HashMap::new()).unwrap().to_string(),
         expected_code.to_owned()
     );
 }
