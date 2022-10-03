@@ -1,4 +1,5 @@
 use super::error::{ExtensionError, SpecializationError};
+use super::types::TypeInfo;
 use crate::ids::{ConcreteTypeId, FunctionId, GenericLibFuncId, GenericTypeId};
 use crate::program::{Function, FunctionSignature, GenericArg};
 
@@ -19,6 +20,14 @@ pub trait SignatureSpecializationContext {
     ) -> Result<ConcreteTypeId, SpecializationError> {
         self.get_concrete_type(id.clone(), generic_args)
             .ok_or_else(|| SpecializationError::TypeWasNotDeclared(id, generic_args.to_vec()))
+    }
+
+    /// Returns the type info for a given concrete type.
+    fn get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo>;
+
+    /// Wraps `get_type_info` with a result object.
+    fn get_type_info_as_result(&self, id: ConcreteTypeId) -> Result<TypeInfo, SpecializationError> {
+        self.get_type_info(id.clone()).ok_or(SpecializationError::MissingTypeInfo(id))
     }
 
     /// Returns the function's signature object associated with the given [FunctionId].

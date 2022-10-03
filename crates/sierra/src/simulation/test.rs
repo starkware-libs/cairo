@@ -7,8 +7,10 @@ use super::LibFuncSimulationError::{
 use super::{core, SimulationError};
 use crate::extensions::core::CoreLibFunc;
 use crate::extensions::lib_func::{SignatureSpecializationContext, SpecializationContext};
+use crate::extensions::types::TypeInfo;
 use crate::extensions::GenericLibFunc;
-use crate::program::{Function, GenericArg, StatementIdx};
+use crate::ids::{ConcreteTypeId, FunctionId, GenericTypeId};
+use crate::program::{Function, FunctionSignature, GenericArg, StatementIdx};
 
 fn type_arg(name: &str) -> GenericArg {
     GenericArg::Type(name.into())
@@ -23,29 +25,26 @@ fn user_func_arg(name: &str) -> GenericArg {
 }
 
 struct MockSpecializationContext {}
+
 impl SpecializationContext for MockSpecializationContext {
     fn upcast(&self) -> &dyn SignatureSpecializationContext {
         self
     }
 
-    fn get_function(&self, function_id: &crate::ids::FunctionId) -> Option<Function> {
-        match function_id {
-            id if id == &"drop_all_inputs".into()
-                || id == &"identity".into()
-                || id == &"unimplemented".into() =>
-            {
-                Some(Function::new(id.clone(), vec![], vec![], StatementIdx(0)))
-            }
-            _ => None,
-        }
+    fn get_function(&self, function_id: &FunctionId) -> Option<Function> {
+        ["drop_all_inputs", "identity", "unimplemented"]
+            .into_iter()
+            .map(|name| -> FunctionId { name.into() })
+            .find(|id: &FunctionId| id == function_id)
+            .map(|_| Function::new(function_id.clone(), vec![], vec![], StatementIdx(0)))
     }
 }
 impl SignatureSpecializationContext for MockSpecializationContext {
     fn get_concrete_type(
         &self,
-        id: crate::ids::GenericTypeId,
+        id: GenericTypeId,
         generic_args: &[GenericArg],
-    ) -> Option<crate::ids::ConcreteTypeId> {
+    ) -> Option<ConcreteTypeId> {
         match (id, &generic_args) {
             (id, &[]) if id == "int".into() => Some("int".into()),
             (id, &[GenericArg::Type(ty)]) if id == "NonZero".into() && ty == &"int".into() => {
@@ -61,10 +60,17 @@ impl SignatureSpecializationContext for MockSpecializationContext {
         }
     }
 
-    fn get_function_signature(
-        &self,
-        function_id: &crate::ids::FunctionId,
-    ) -> Option<crate::program::FunctionSignature> {
+    fn get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo> {
+        if id == "int".into() || id == "NonZeroInt".into() {
+            Some(TypeInfo { storable: true, droppable: true, duplicatable: true })
+        } else if id == "UninitializedInt".into() {
+            Some(TypeInfo { storable: false, droppable: true, duplicatable: false })
+        } else {
+            None
+        }
+    }
+
+    fn get_function_signature(&self, function_id: &FunctionId) -> Option<FunctionSignature> {
         self.get_function(function_id).map(|f| f.signature)
     }
 }

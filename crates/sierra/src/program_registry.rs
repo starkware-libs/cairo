@@ -172,6 +172,10 @@ impl SignatureSpecializationContext for SpecializationContextForRegistry<'_> {
     fn get_function_signature(&self, function_id: &FunctionId) -> Option<FunctionSignature> {
         self.get_function(function_id).map(|f| f.signature)
     }
+
+    fn get_type_info(&self, _id: ConcreteTypeId) -> Option<TypeInfo> {
+        todo!()
+    }
 }
 impl SpecializationContext for SpecializationContextForRegistry<'_> {
     fn get_function(&self, function_id: &FunctionId) -> Option<Function> {
