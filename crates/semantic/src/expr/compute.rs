@@ -131,12 +131,31 @@ pub fn maybe_compute_expr_semantic(
         ast::Expr::Binary(binary_op_syntax) => {
             let stable_ptr = binary_op_syntax.stable_ptr().into();
             let binary_op = binary_op_syntax.op(syntax_db);
-            let lexpr = compute_expr_semantic(ctx, &binary_op_syntax.lhs(syntax_db));
+            let lhs_syntax = &binary_op_syntax.lhs(syntax_db);
+            let lexpr = compute_expr_semantic(ctx, lhs_syntax);
             let rhs_syntax = binary_op_syntax.rhs(syntax_db);
             if matches!(binary_op, BinaryOperator::Dot(_)) {
                 return member_access_expr(ctx, lexpr, rhs_syntax, stable_ptr);
             }
+
             let rexpr = compute_expr_semantic(ctx, &rhs_syntax);
+
+            if matches!(binary_op, BinaryOperator::Eq(_)) {
+                return match lexpr {
+                    Expr::ExprVar(ExprVar { var, .. }) => {
+                        Some(Expr::ExprAssignment(ExprAssignment {
+                            var,
+                            rhs: ctx.exprs.alloc(rexpr),
+                            ty: unit_ty(db),
+                            stable_ptr,
+                        }))
+                    }
+                    _ => {
+                        ctx.diagnostics.report(lhs_syntax, InvalidLhsForAssignment);
+                        None
+                    }
+                };
+            }
             let function = core_binary_operator(db, ctx.diagnostics, &binary_op)
                 .on_none(|| ctx.diagnostics.report(&binary_op, UnknownBinaryOperator))?;
             expr_function_call(ctx, function, vec![lexpr, rexpr], syntax.stable_ptr())?

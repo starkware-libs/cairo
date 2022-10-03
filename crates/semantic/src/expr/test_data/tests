@@ -189,3 +189,38 @@ error: Wrong number of generic arguments. Expected 2, found: 3
  --> lib.cairo:11:7
       (A::b(x), 1, _) => { x },
       ^*************^
+
+
+//! > Test assignment.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+func foo() {
+    a = 1 + 2;
+    let b = 1;
+    let c : felt = (b = 5);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern type MyType;
+
+//! > expected_diagnostics
+error: Variable a not found.
+ --> lib.cairo:3:5
+    a = 1 + 2;
+    ^
+
+error: invalid left-hand side of assignment.
+ --> lib.cairo:3:5
+    a = 1 + 2;
+    ^
+
+error: Unexpected argument type. Expected: "core::felt", found: "()".
+ --> lib.cairo:5:20
+    let c : felt = (b = 5);
+                   ^*****^
