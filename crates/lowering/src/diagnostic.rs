@@ -3,7 +3,6 @@ use defs::ids::ModuleId;
 use diagnostics::{DiagnosticEntry, DiagnosticLocation, Diagnostics, DiagnosticsBuilder};
 use semantic::db::SemanticGroup;
 use syntax::node::ids::SyntaxStablePtrId;
-use syntax::node::TypedSyntaxNode;
 
 pub struct LoweringDiagnostics {
     pub diagnostics: DiagnosticsBuilder<LoweringDiagnostic>,
@@ -16,13 +15,7 @@ impl LoweringDiagnostics {
     pub fn build(self) -> Diagnostics<LoweringDiagnostic> {
         self.diagnostics.build()
     }
-    pub fn report<TNode: TypedSyntaxNode>(&mut self, node: &TNode, kind: LoweringDiagnosticKind) {
-        self.diagnostics.add(LoweringDiagnostic {
-            stable_location: StableLocation::from_ast(self.module_id, node),
-            kind,
-        });
-    }
-    pub fn report_by_ptr(&mut self, stable_ptr: SyntaxStablePtrId, kind: LoweringDiagnosticKind) {
+    pub fn report(&mut self, stable_ptr: SyntaxStablePtrId, kind: LoweringDiagnosticKind) {
         self.diagnostics.add(LoweringDiagnostic {
             stable_location: StableLocation::new(self.module_id, stable_ptr),
             kind,
@@ -39,7 +32,9 @@ impl DiagnosticEntry for LoweringDiagnostic {
     type DbType = dyn SemanticGroup;
 
     fn format(&self, _db: &Self::DbType) -> String {
-        match self.kind {}
+        match &self.kind {
+            LoweringDiagnosticKind::Unreachable => "Unreachable code".into(),
+        }
     }
 
     fn location(&self, db: &Self::DbType) -> DiagnosticLocation {
@@ -48,4 +43,6 @@ impl DiagnosticEntry for LoweringDiagnostic {
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub enum LoweringDiagnosticKind {}
+pub enum LoweringDiagnosticKind {
+    Unreachable,
+}
