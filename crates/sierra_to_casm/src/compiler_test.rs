@@ -1,13 +1,24 @@
-use std::fs;
+use std::collections::HashMap;
 use std::path::PathBuf;
+use std::{fs, vec};
 
+use casm::ap_change::ApChange;
 use indoc::indoc;
 use pretty_assertions;
 use pretty_assertions::assert_eq;
+use sierra::ids::FunctionId;
 use sierra::ProgramParser;
 use test_case::test_case;
 
 use crate::compiler::compile;
+
+fn build_ap_change_map(data: Vec<(&str, i16)>) -> HashMap<FunctionId, ApChange> {
+    HashMap::from_iter(
+        data.into_iter().map(|(func_name, change)| {
+            (FunctionId::from_string(func_name), ApChange::Known(change))
+        }),
+    )
+}
 
 #[test]
 fn good_flow() {
@@ -70,7 +81,10 @@ fn good_flow() {
         "})
         .unwrap();
     assert_eq!(
-        compile(&prog).unwrap().to_string(),
+        match compile(&prog, &build_ap_change_map(vec![("ref_and_back", 2)])) {
+            Ok(compiled_program) => compiled_program.to_string(),
+            Err(error) => error.to_string(),
+        },
         indoc! {"
             [ap + 0] = [fp + -4] + [fp + -3], ap++;
             [ap + 0] = [fp + -3], ap++;
@@ -122,7 +136,7 @@ fn locals_test() {
         "})
         .unwrap();
     assert_eq!(
-        compile(&prog).unwrap().to_string(),
+        compile(&prog, &build_ap_change_map(vec![("test_program", 5)])).unwrap().to_string(),
         indoc! {"
             [ap + 0] = [fp + -4], ap++;
             [fp + 1] = [ap + -1];
@@ -141,7 +155,10 @@ fn fib_program() {
         [env!("CARGO_MANIFEST_DIR"), "../sierra/examples/fib_no_gas.sierra"].iter().collect();
     let prog = sierra::ProgramParser::new().parse(&fs::read_to_string(path).unwrap()).unwrap();
     pretty_assertions::assert_eq!(
-        compile(&prog).unwrap().to_string(),
+        match compile(&prog, &build_ap_change_map(vec![("ref_and_back", 2)])) {
+            Ok(compiled_program) => compiled_program.to_string(),
+            Err(error) => error.to_string(),
+        },
         indoc! {"
             jmp rel 4 if [fp + -3] != 0;
             [ap + 0] = [fp + -5], ap++;
@@ -160,7 +177,7 @@ fn fib_program() {
                 return([2]);
 
                 test_program@0() -> (felt);
-            "},
+            "}, vec![],
             "#0: [2] is undefined.";
             "Missing reference")]
 #[test_case(indoc! {"
@@ -172,21 +189,21 @@ fn fib_program() {
                 return();
 
                 test_program@0([1]: felt) -> ();
-            "},
+            "}, vec![],
             "#1->#2: [1] was overridden.";
             "Reference override")]
 #[test_case(indoc! {"
                 return([2]);
 
                 test_program@0([2]: felt) -> (felt);
-            "},
+            "}, vec![("test_program", 0)],
             "#0: Return arguments are not on the stack.";
             "Invalid return reference")]
 #[test_case(indoc! {"
                 store_temp_felt([1]) -> ([1]);
 
                 test_program@0([1]: felt) -> ();
-            "},
+            "}, vec![],
             "Error from program registry";
             "undeclared libfunc")]
 #[test_case(indoc! {"
@@ -194,7 +211,7 @@ fn fib_program() {
 
                 libfunc store_temp_felt = store_temp<felt>;
                 libfunc store_temp_felt = store_temp<felt>;
-            "},
+            "}, vec![],
             "Error from program registry";
             "Concrete libfunc Id used twice")]
 #[test_case(indoc! {"
@@ -204,7 +221,7 @@ fn fib_program() {
 
                 int_add([1], [2]) -> ([1]);
                 test_program@0([1]: int, [2]: int) -> ();
-            "},
+            "}, vec![],
             "#0: The requested functionality is not implemented yet.";
             "Not implemented")]
 #[test_case(indoc! {"
@@ -215,7 +232,7 @@ fn fib_program() {
                 felt_add([3], [4]) -> ([5]);
 
                 test_program@0([1]: felt, [2]: felt, [3]: felt) -> ();
-            "},
+            "}, vec![],
             "#1: One of the arguments does not satisfy the requirements of the libfunc.";
             "Invalid reference expression for felt_add")]
 #[test_case(indoc! {"
@@ -226,56 +243,56 @@ fn fib_program() {
                 return([3]);
 
                 test_program@0([1]: int, [2]: int) -> (felt);
-            "},
+            "}, vec![],
             "One of the arguments does not match the expected type of the libfunc or return \
-            statement.";
+ statement.";
             "Types mismatch")]
 #[test_case(indoc! {"
                 test_program@25() -> ();
-            "}, "InvalidStatementIdx";
+            "}, vec![], "InvalidStatementIdx";
             "Invalid entry point")]
 #[test_case(indoc! {"
                 return();
 
                 foo@0([1]: felt, [1]: felt) -> ();
-            "}, "Invalid function declaration.";
+            "},  vec![], "Invalid function declaration.";
             "Bad Declaration")]
 #[test_case(indoc! {"
             return();
-            "}, "MissingAnnotationsForStatement";
+            "}, vec![], "MissingAnnotationsForStatement";
             "Missing references for statement")]
 #[test_case(indoc! {"
                 type NonZeroFelt = NonZero<felt>;
                 type felt = felt;
-            "}, "Error from program registry";
+            "}, vec![], "Error from program registry";
             "type ordering bad for building size map")]
 #[test_case(indoc! {"
                 type felt = felt;
                 libfunc felt_add = felt_add;
                 felt_add([1], [2], [3]) -> ([4]);
                 test_program@0([1]: felt, [2]: felt, [3]: felt) -> ();
-            "}, "#0: Invocation mismatched to libfunc";
+            "}, vec![], "#0: Invocation mismatched to libfunc";
             "input count mismatch")]
 #[test_case(indoc! {"
                 type felt = felt;
                 libfunc felt_add = felt_add;
                 felt_add([1], [2]) -> ([3], [4]);
                 test_program@0([1]: felt, [2]: felt) -> ();
-            "}, "#0: Invocation mismatched to libfunc";
+            "}, vec![], "#0: Invocation mismatched to libfunc";
             "output type mismatch")]
 #[test_case(indoc! {"
                 type felt = felt;
                 libfunc felt_add = felt_add;
                 felt_add([1], [2]) { 0([3]) 1([3]) };
                 test_program@0([1]: felt, [2]: felt) -> ();
-            "}, "#0: Invocation mismatched to libfunc";
+            "}, vec![], "#0: Invocation mismatched to libfunc";
             "branch count mismatch")]
 #[test_case(indoc! {"
                 type felt = felt;
                 libfunc felt_add = felt_add;
                 felt_add([1], [2]) { 0([3]) };
                 test_program@0([1]: felt, [2]: felt) -> ();
-            "}, "#0: Invocation mismatched to libfunc";
+            "}, vec![], "#0: Invocation mismatched to libfunc";
             "fallthrough mismatch")]
 #[test_case(indoc! {"
                 type felt = felt;
@@ -284,14 +301,14 @@ fn fib_program() {
                 felt_dup([1]) -> ([1], [2]);
                 return ([1]);
                 test_program@0([1]: felt) -> ();
-            "}, "[2] is dangling at #1.";
+            "}, vec![], "[2] is dangling at #1.";
             "Dangling references")]
 #[test_case(indoc! {"
                 return();
 
                 foo@0([1]: felt) -> ();
                 bar@0([2]: felt) -> ();
-            "}, "#0: Inconsistent references annotations.";
+            "}, vec![], "#0: Inconsistent references annotations.";
             "Failed building type information")]
 #[test_case(indoc! {"
                 type felt = felt;
@@ -301,7 +318,7 @@ fn fib_program() {
                 return ([1]);
                 test_program@0([1]: felt) -> ();
                 foo@1([1]: felt) -> (felt);
-            "}, "#1: Inconsistent references annotations.";
+            "}, vec![], "#1: Inconsistent references annotations.";
             "Inconsistent return annotations.")]
 #[test_case(indoc! {"
                 type felt = felt;
@@ -321,8 +338,8 @@ fn fib_program() {
                 return ([1]);
 
                 test_program@0([1]: felt, [2]: felt) -> (felt);
-            "}, "One of the arguments does not match the expected type of the libfunc or return \
-            statement.";
+            "}, vec![("test_program", 1)], "One of the arguments does not match the expected type \
+of the libfunc or return statement.";
             "Invalid return type")]
 #[test_case(indoc! {"
                 type felt = felt;
@@ -340,7 +357,7 @@ fn fib_program() {
                 return();
 
                 foo@0([1]: felt) -> ();
-            "}, "#2->#3: Got 'Unknown ap change' error while moving [1].";
+            "}, vec![], "#2->#3: Got 'Unknown ap change' error while moving [1].";
             "Ap change error")]
 #[test_case(indoc! {"
                 type felt = felt;
@@ -361,7 +378,7 @@ fn fib_program() {
                 return ();
 
                 foo@0([1]: felt) -> ();
-            "}, "#5: Inconsistent ap tracking.";
+            "}, vec![], "#5: Inconsistent ap tracking.";
             "Inconsistent ap tracking.")]
 #[test_case(indoc! {"
                 libfunc finalize_locals = finalize_locals;
@@ -371,7 +388,7 @@ fn fib_program() {
                 return ();
 
                 test_program@0() -> ();
-            "}, "#1: finalize_locals is not allowed at this point.";
+            "}, vec![], "#1: finalize_locals is not allowed at this point.";
             "Invalid finalize_locals 1")]
 #[test_case(indoc! {"
                 type felt = felt;
@@ -386,7 +403,7 @@ fn fib_program() {
                 return ();
 
                 foo@0([1]: felt) -> ();
-            "}, "#2: finalize_locals is not allowed at this point.";
+            "}, vec![], "#2: finalize_locals is not allowed at this point.";
             "Invalid finalize_locals 2")]
 #[test_case(indoc! {"
                 type felt = felt;
@@ -401,7 +418,7 @@ fn fib_program() {
                 return ();
 
                 foo@0([1]: felt) -> ();
-            "}, "#2: alloc_local is not allowed at this point.";
+            "}, vec![], "#2: alloc_local is not allowed at this point.";
             "Invalid alloc_local ")]
 #[test_case(indoc! {"
                 type felt = felt;
@@ -417,7 +434,7 @@ fn fib_program() {
                 return ();
 
                 foo@0([1]: felt) -> ();
-            "}, "#3: locals were allocated but finalize_locals was not called.";
+            "}, vec![("foo", 0)], "#3: locals were allocated but finalize_locals was not called.";
             "missing finalize_locals ")]
 #[test_case(indoc! {"
                 type felt = felt;
@@ -429,12 +446,19 @@ fn fib_program() {
                 return ();
 
                 foo@0([1]:UninitializedFelt) -> ();
-            "}, "#0: The functionality is supported only for sized types.";
+            "}, vec![], "#0: The functionality is supported only for sized types.";
             "store_temp<uninitialized<felt>()")]
-fn compiler_errors(sierra_code: &str, expected_result: &str) {
+#[test_case(indoc! {"
+                return ();
+
+                foo@0() -> ();
+            "}, vec![("foo", 5)], "#0: Invalid Ap change annotation. \
+expected: ApChange::Known(5) got: ApChange::Known(0).";
+            "bad Ap change")]
+fn compiler_errors(sierra_code: &str, ap_change_data: Vec<(&str, i16)>, expected_result: &str) {
     let prog = ProgramParser::new().parse(sierra_code).unwrap();
     assert_eq!(
-        match compile(&prog) {
+        match compile(&prog, &build_ap_change_map(ap_change_data)) {
             Ok(compiled_program) => compiled_program.to_string(),
             Err(error) => error.to_string(),
         },
