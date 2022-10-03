@@ -10,7 +10,7 @@ use syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 
 use crate::db::{SierraGenDatabase, SierraGenGroup};
 use crate::pre_sierra;
-use crate::utils::{return_statement, simple_statement};
+use crate::utils::{jump_statement, return_statement, simple_statement};
 
 #[salsa::database(
     DefsDatabase,
@@ -166,6 +166,11 @@ pub fn dummy_return_statement(args: &[usize]) -> pre_sierra::Statement {
 /// Generates a dummy label.
 pub fn dummy_label(id: usize) -> pre_sierra::Statement {
     pre_sierra::Statement::Label(pre_sierra::Label { id: label_id_from_usize(id) })
+}
+
+/// Generates a dummy jump to label statement.
+pub fn dummy_jump_statement(db: &dyn SierraGenGroup, id: usize) -> pre_sierra::Statement {
+    jump_statement(dummy_concrete_lib_func_id(db, "jump"), label_id_from_usize(id))
 }
 
 /// Returns the [pre_sierra::LabelId] for the given `id`.
