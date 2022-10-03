@@ -41,6 +41,24 @@ fn test_expr_literal() {
 }
 
 #[test]
+fn test_expr_assignment() {
+    let mut db_val = SemanticDatabaseForTesting::default();
+    let test_expr = setup_test_expr(&mut db_val, "a = a * 3", "", "let a = 5;").unwrap();
+    let db = &db_val;
+    let expr = db.expr_semantic(test_expr.function_id, test_expr.expr_id);
+    let expr_formatter = ExprFormatter { db, free_function_id: test_expr.function_id };
+
+    assert_eq!(
+        format!("{:?}", expr.debug(&expr_formatter)),
+        "ExprAssignment(ExprAssignment { var: LocalVarId(test_crate::a), rhs: \
+         ExprFunctionCall(ExprFunctionCall { function: \
+         Concrete(ExternFunctionId(core::felt_mul)), args: [ExprVar(ExprVar { var: \
+         LocalVarId(test_crate::a), ty: core::felt }), ExprLiteral(ExprLiteral { value: 3, ty: \
+         core::felt })], ty: core::felt }), ty: () })"
+    );
+}
+
+#[test]
 fn test_expr_operator() {
     let mut db_val = SemanticDatabaseForTesting::default();
     let test_expr = setup_test_expr(&mut db_val, "5 + 9 * 3 == 0", "", "").unwrap();

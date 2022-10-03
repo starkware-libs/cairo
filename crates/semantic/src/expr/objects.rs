@@ -56,6 +56,7 @@ pub struct StatementLet {
 #[debug_db(ExprFormatter<'_>)]
 pub enum Expr {
     ExprTuple(ExprTuple),
+    ExprAssignment(ExprAssignment),
     ExprBlock(ExprBlock),
     ExprFunctionCall(ExprFunctionCall),
     ExprMatch(ExprMatch),
@@ -70,6 +71,7 @@ impl Expr {
     pub fn ty(&self) -> semantic::TypeId {
         match self {
             Expr::ExprTuple(expr) => expr.ty,
+            Expr::ExprAssignment(expr) => expr.ty,
             Expr::ExprBlock(expr) => expr.ty,
             Expr::ExprFunctionCall(expr) => expr.ty,
             Expr::ExprMatch(expr) => expr.ty,
@@ -83,6 +85,7 @@ impl Expr {
     }
     pub fn stable_ptr(&self) -> ast::ExprPtr {
         match self {
+            Expr::ExprAssignment(expr) => expr.stable_ptr,
             Expr::ExprTuple(expr) => expr.stable_ptr,
             Expr::ExprBlock(expr) => expr.stable_ptr,
             Expr::ExprFunctionCall(expr) => expr.stable_ptr,
@@ -145,6 +148,17 @@ pub struct ExprMatch {
 pub struct MatchArm {
     pub pattern: Pattern,
     pub expression: ExprId,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[debug_db(ExprFormatter<'_>)]
+pub struct ExprAssignment {
+    pub var: VarId,
+    pub rhs: semantic::ExprId,
+    // ExprAssignment is always of unit type.
+    pub ty: semantic::TypeId,
+    #[hide_field_debug_with_db]
+    pub stable_ptr: ast::ExprPtr,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]

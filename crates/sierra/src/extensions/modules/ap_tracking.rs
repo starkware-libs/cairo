@@ -23,10 +23,13 @@ impl NoGenericArgsGenericLibFunc for RevokeApTrackingLibFunc {
 
     fn specialize(
         &self,
-        context: SpecializationContext<'_>,
+        context: &dyn SpecializationContext,
     ) -> Result<Self::Concrete, SpecializationError> {
         Ok(SignatureOnlyConcreteLibFunc {
-            signature: <Self as NoGenericArgsGenericLibFunc>::specialize_signature(self, &context)?,
+            signature: <Self as NoGenericArgsGenericLibFunc>::specialize_signature(
+                self,
+                context.upcast(),
+            )?,
         })
     }
 }

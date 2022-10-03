@@ -34,7 +34,7 @@ impl<TJumpNotZeroTraits: JumpNotZeroTraits> NoGenericArgsGenericLibFunc
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibFuncSignature, SpecializationError> {
-        let ty = context.get_concrete_type(TJumpNotZeroTraits::GENERIC_TYPE_ID, &[])?;
+        let ty = context.get_concrete_type_as_result(TJumpNotZeroTraits::GENERIC_TYPE_ID, &[])?;
         Ok(LibFuncSignature {
             input_types: vec![ty.clone()],
             output_info: vec![
@@ -55,10 +55,13 @@ impl<TJumpNotZeroTraits: JumpNotZeroTraits> NoGenericArgsGenericLibFunc
 
     fn specialize(
         &self,
-        context: SpecializationContext<'_>,
+        context: &dyn SpecializationContext,
     ) -> Result<Self::Concrete, SpecializationError> {
         Ok(SignatureOnlyConcreteLibFunc {
-            signature: <Self as NoGenericArgsGenericLibFunc>::specialize_signature(self, &context)?,
+            signature: <Self as NoGenericArgsGenericLibFunc>::specialize_signature(
+                self,
+                context.upcast(),
+            )?,
         })
     }
 }

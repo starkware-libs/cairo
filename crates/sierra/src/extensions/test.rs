@@ -1,16 +1,14 @@
-use std::collections::HashMap;
-
 use test_case::test_case;
 
 use super::core::{CoreLibFunc, CoreType};
-use super::lib_func::SpecializationContext;
+use super::lib_func::{SignatureSpecializationContext, SpecializationContext};
 use super::types::{TypeInfo, TypeSpecializationContext};
 use super::SpecializationError::{
     self, MissingFunction, UnsupportedGenericArg, UnsupportedId, WrongNumberOfGenericArgs,
 };
 use crate::extensions::{GenericLibFunc, GenericType};
-use crate::ids::ConcreteTypeId;
-use crate::program::{Function, GenericArg, StatementIdx};
+use crate::ids::{ConcreteTypeId, FunctionId, GenericTypeId};
+use crate::program::{Function, FunctionSignature, GenericArg, StatementIdx};
 
 fn type_arg(name: &str) -> GenericArg {
     GenericArg::Type(name.into())
@@ -20,12 +18,77 @@ fn value_arg(v: i64) -> GenericArg {
     GenericArg::Value(v)
 }
 
-struct MockTypeSpecializationContext {}
-impl TypeSpecializationContext for MockTypeSpecializationContext {
+struct MockSpecializationContext {}
+
+impl TypeSpecializationContext for MockSpecializationContext {
     fn get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo> {
-        match id.debug_name.as_ref().map(|s| s.as_str()) {
-            Some("T") => Some(TypeInfo { storable: true, droppable: true, duplicatable: true }),
-            _ => panic!("Unexpected call to {id}"),
+        if id == "T".into()
+            || id == "felt".into()
+            || id == "int".into()
+            || id == "NonZeroFelt".into()
+            || id == "NonZeroInt".into()
+        {
+            Some(TypeInfo { storable: true, droppable: true, duplicatable: true })
+        } else if id == "UninitializedFelt".into() || id == "UninitializedInt".into() {
+            Some(TypeInfo { storable: false, droppable: true, duplicatable: false })
+        } else if id == "GasBuiltin".into() {
+            Some(TypeInfo { storable: true, droppable: false, duplicatable: false })
+        } else {
+            None
+        }
+    }
+}
+
+impl SignatureSpecializationContext for MockSpecializationContext {
+    fn get_concrete_type(
+        &self,
+        id: GenericTypeId,
+        generic_args: &[GenericArg],
+    ) -> Option<ConcreteTypeId> {
+        match (id, &generic_args) {
+            (id, &[]) if id == "felt".into() => Some("felt".into()),
+            (id, &[]) if id == "int".into() => Some("int".into()),
+            (id, &[GenericArg::Type(ty)]) if id == "NonZero".into() && ty == &"felt".into() => {
+                Some("NonZeroFelt".into())
+            }
+            (id, &[GenericArg::Type(ty)]) if id == "NonZero".into() && ty == &"int".into() => {
+                Some("NonZeroInt".into())
+            }
+            (id, &[GenericArg::Type(ty)])
+                if id == "uninitialized".into() && ty == &"felt".into() =>
+            {
+                Some("UninitializedFelt".into())
+            }
+            (id, &[GenericArg::Type(ty)])
+                if id == "uninitialized".into() && ty == &"int".into() =>
+            {
+                Some("UninitializedInt".into())
+            }
+            (id, &[]) if id == "GasBuiltin".into() => Some("GasBuiltin".into()),
+            _ => None,
+        }
+    }
+
+    fn get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo> {
+        <Self as TypeSpecializationContext>::get_type_info(self, id)
+    }
+
+    fn get_function_signature(&self, function_id: &FunctionId) -> Option<FunctionSignature> {
+        self.get_function(function_id).map(|f| f.signature)
+    }
+}
+
+impl SpecializationContext for MockSpecializationContext {
+    fn upcast(&self) -> &dyn SignatureSpecializationContext {
+        self
+    }
+
+    fn get_function(&self, function_id: &FunctionId) -> Option<Function> {
+        match function_id {
+            id if id == &"RegisteredFunction".into() => {
+                Some(Function::new("RegisteredFunction".into(), vec![], vec![], StatementIdx(5)))
+            }
+            _ => None,
         }
     }
 }
@@ -50,7 +113,7 @@ fn find_type_specialization(
 ) -> Result<(), SpecializationError> {
     CoreType::by_id(&id.into())
         .ok_or(UnsupportedId)?
-        .specialize(&MockTypeSpecializationContext {}, &generic_args)
+        .specialize(&MockSpecializationContext {}, &generic_args)
         .map(|_| ())
 }
 
@@ -69,8 +132,6 @@ fn find_type_specialization(
 #[test_case("felt_add", vec![value_arg(0)] =>  Ok(()); "felt_add<0>")]
 #[test_case("felt_mul", vec![] => Ok(()); "felt_mul")]
 #[test_case("felt_mul", vec![value_arg(0)] =>  Ok(()); "felt_mul<0>")]
-#[test_case("felt_dup", vec![] => Ok(()); "felt_dup")]
-#[test_case("felt_dup", vec![value_arg(0)] => Err(WrongNumberOfGenericArgs); "felt_dup<0>")]
 #[test_case("felt_jump_nz", vec![] => Ok(()); "felt_jump_nz<>")]
 #[test_case("felt_jump_nz", vec![type_arg("felt")] => Err(WrongNumberOfGenericArgs);
             "felt_jump_nz<int>")]
@@ -88,10 +149,12 @@ fn find_type_specialization(
 #[test_case("int_mod", vec![value_arg(0)] => Err(UnsupportedGenericArg); "int_mod<0>")]
 #[test_case("int_const", vec![value_arg(8)] => Ok(()); "int_const<8>")]
 #[test_case("int_const", vec![] => Err(UnsupportedGenericArg); "int_const")]
-#[test_case("int_drop", vec![] => Ok(()); "int_drop")]
-#[test_case("int_drop", vec![type_arg("T")] => Err(WrongNumberOfGenericArgs); "int_drop<T>")]
-#[test_case("int_dup", vec![] => Ok(()); "int_dup")]
-#[test_case("int_dup", vec![type_arg("T")] => Err(WrongNumberOfGenericArgs); "int_dup<T>")]
+#[test_case("drop", vec![type_arg("int")] => Ok(()); "drop<int>")]
+#[test_case("drop", vec![] => Err(WrongNumberOfGenericArgs); "drop<>")]
+#[test_case("drop", vec![type_arg("GasBuiltin")] => Err(UnsupportedGenericArg); "drop<GasBuiltin>")]
+#[test_case("dup", vec![type_arg("int")] => Ok(()); "dup<int>")]
+#[test_case("dup", vec![] => Err(WrongNumberOfGenericArgs); "dup<>")]
+#[test_case("dup", vec![type_arg("GasBuiltin")] => Err(UnsupportedGenericArg); "dup<GasBuiltin>")]
 #[test_case("int_jump_nz", vec![] => Ok(()); "int_jump_nz<>")]
 #[test_case("int_jump_nz", vec![type_arg("int")] => Err(WrongNumberOfGenericArgs);
             "int_jump_nz<int>")]
@@ -118,26 +181,8 @@ fn find_libfunc_specialization(
     id: &str,
     generic_args: Vec<GenericArg>,
 ) -> Result<(), SpecializationError> {
-    let functions = &HashMap::from([(
-        "RegisteredFunction".into(),
-        Function::new("RegisteredFunction".into(), vec![], vec![], StatementIdx(5)),
-    )]);
     CoreLibFunc::by_id(&id.into())
         .ok_or(UnsupportedId)?
-        .specialize(
-            SpecializationContext {
-                concrete_type_ids: &HashMap::from([
-                    (("felt".into(), &[][..]), "felt".into()),
-                    (("int".into(), &[][..]), "int".into()),
-                    (("NonZero".into(), &[type_arg("int")][..]), "NonZeroInt".into()),
-                    (("NonZero".into(), &[type_arg("felt")][..]), "NonZeroFelt".into()),
-                    (("uninitialized".into(), &[type_arg("int")][..]), "UninitializedInt".into()),
-                    (("uninitialized".into(), &[type_arg("felt")][..]), "UninitializedFelt".into()),
-                    (("GasBuiltin".into(), &[][..]), "GasBuiltin".into()),
-                ]),
-                functions,
-            },
-            &generic_args,
-        )
+        .specialize(&MockSpecializationContext {}, &generic_args)
         .map(|_| ())
 }

@@ -4,6 +4,8 @@ use crate::program::GenericArg;
 
 pub mod ap_tracking;
 pub mod arithmetic;
+pub mod drop;
+pub mod duplicate;
 pub mod felt;
 pub mod function_call;
 pub mod gas;
@@ -11,7 +13,6 @@ pub mod integer;
 pub mod jump_not_zero;
 pub mod mem;
 pub mod non_zero;
-pub mod pod;
 pub mod reference;
 pub mod unconditional_jump;
 pub mod uninitialized;

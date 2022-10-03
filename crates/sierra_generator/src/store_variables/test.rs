@@ -7,8 +7,8 @@ use crate::db::SierraGenGroup;
 use crate::pre_sierra;
 use crate::store_variables::add_store_statements;
 use crate::test_utils::{
-    dummy_label, dummy_push_values, dummy_return_statement, dummy_simple_statement,
-    replace_libfunc_ids, SierraGenDatabaseForTesting,
+    dummy_jump_statement, dummy_label, dummy_push_values, dummy_return_statement,
+    dummy_simple_branch, dummy_simple_statement, replace_libfunc_ids, SierraGenDatabaseForTesting,
 };
 
 /// Returns the [OutputVarReferenceInfo] information for a given libfunc.
@@ -16,20 +16,35 @@ fn get_output_info(db: &dyn SierraGenGroup, libfunc: ConcreteLibFuncId) -> Vec<O
     let libfunc_long_id = db.lookup_intern_concrete_lib_func(libfunc);
     let dummy_type = ConcreteTypeId::from_usize(0);
     let name = libfunc_long_id.generic_id.debug_name.unwrap();
-    let single_branch = match name {
-        x if x == "felt_add" => {
-            vec![OutputVarInfo { ty: dummy_type, ref_info: OutputVarReferenceInfo::Deferred }]
+    match name.as_str() {
+        "felt_add" => {
+            let vars =
+                vec![OutputVarInfo { ty: dummy_type, ref_info: OutputVarReferenceInfo::Deferred }];
+            vec![OutputBranchInfo { vars, ap_change: SierraApChange::NotImplemented }]
         }
-        x if x == "nope" => vec![],
-        x if x == "function_call4" => (0..4)
-            .map(|idx| OutputVarInfo {
-                ty: dummy_type.clone(),
-                ref_info: OutputVarReferenceInfo::NewTempVar { idx },
-            })
-            .collect(),
+        "nope" => {
+            vec![OutputBranchInfo { vars: vec![], ap_change: SierraApChange::NotImplemented }]
+        }
+        "function_call4" => {
+            let vars: Vec<_> = (0..4)
+                .map(|idx| OutputVarInfo {
+                    ty: dummy_type.clone(),
+                    ref_info: OutputVarReferenceInfo::NewTempVar { idx },
+                })
+                .collect();
+            vec![OutputBranchInfo { vars, ap_change: SierraApChange::NotImplemented }]
+        }
+        "jump" => {
+            vec![OutputBranchInfo { vars: vec![], ap_change: SierraApChange::Known }]
+        }
+        "branch" => {
+            vec![
+                OutputBranchInfo { vars: vec![], ap_change: SierraApChange::Known },
+                OutputBranchInfo { vars: vec![], ap_change: SierraApChange::Known },
+            ]
+        }
         _ => panic!("get_signature() is not implemented for '{}'.", name),
-    };
-    vec![OutputBranchInfo { vars: single_branch, ap_change: SierraApChange::NotImplemented }]
+    }
 }
 
 #[test]
@@ -115,6 +130,7 @@ fn push_values_optimization() {
     let statements: Vec<pre_sierra::Statement> = vec![
         dummy_simple_statement(&db, "function_call4", &[], &[0, 1, 2, 3]),
         dummy_push_values(&db, &[(2, 102), (3, 103), (0, 100)]),
+        dummy_return_statement(&[0]),
     ];
 
     assert_eq!(
@@ -127,6 +143,7 @@ fn push_values_optimization() {
             "rename<[0]>([2]) -> ([102])",
             "rename<[0]>([3]) -> ([103])",
             "store_temp<[0]>([0]) -> ([100])",
+            "return([0])",
         ]
     );
 }
@@ -140,6 +157,7 @@ fn consecutive_push_values() {
         dummy_push_values(&db, &[(100, 200), (101, 201), (2, 202), (3, 203)]),
         dummy_push_values(&db, &[(101, 301), (202, 302), (203, 303), (4, 304)]),
         dummy_push_values(&db, &[(304, 404)]),
+        dummy_return_statement(&[0]),
     ];
 
     assert_eq!(
@@ -163,6 +181,91 @@ fn consecutive_push_values() {
             "store_temp<[0]>([4]) -> ([304])",
             // Third statement. Reuse [304].
             "rename<[0]>([304]) -> ([404])",
+            // Return.
+            "return([0])",
+        ]
+    );
+}
+
+/// Tests a few consecutive invocations of [PushValues](pre_sierra::Statement::PushValues).
+#[test]
+fn push_values_after_branch_merge() {
+    let db = SierraGenDatabaseForTesting::default();
+    let statements: Vec<pre_sierra::Statement> = vec![
+        dummy_simple_branch(&db, "branch", &[], 0),
+        dummy_push_values(&db, &[(0, 100), (1, 101), (2, 102)]),
+        dummy_jump_statement(&db, 1),
+        dummy_label(0),
+        dummy_push_values(&db, &[(1, 101), (2, 102)]),
+        dummy_label(1),
+        dummy_push_values(&db, &[(101, 201), (102, 202), (3, 203)]),
+        dummy_return_statement(&[0]),
+    ];
+
+    assert_eq!(
+        add_store_statements(&db, statements, &(|libfunc| get_output_info(&db, libfunc)))
+            .iter()
+            .map(|statement| replace_libfunc_ids(&db, statement).to_string())
+            .collect::<Vec<String>>(),
+        vec![
+            "branch() { label0() fallthrough() }",
+            // Push [0], [1] and [2].
+            "store_temp<[0]>([0]) -> ([100])",
+            "store_temp<[0]>([1]) -> ([101])",
+            "store_temp<[0]>([2]) -> ([102])",
+            "jump() { label1() }",
+            "label0:",
+            // Push [1] and [2].
+            "store_temp<[0]>([1]) -> ([101])",
+            "store_temp<[0]>([2]) -> ([102])",
+            "label1:",
+            // Here the two branches merge and the merged stack is [1], [2].
+            // Reuse [101] and [102]. Push [3].
+            "rename<[0]>([101]) -> ([201])",
+            "rename<[0]>([102]) -> ([202])",
+            "store_temp<[0]>([3]) -> ([203])",
+            // Return.
+            "return([0])",
+        ]
+    );
+}
+
+/// Tests a few consecutive invocations of [PushValues](pre_sierra::Statement::PushValues).
+#[test]
+fn push_values_early_return() {
+    let db = SierraGenDatabaseForTesting::default();
+    let statements: Vec<pre_sierra::Statement> = vec![
+        dummy_push_values(&db, &[(0, 100), (1, 101)]),
+        dummy_simple_branch(&db, "branch", &[], 0),
+        dummy_push_values(&db, &[(101, 201), (2, 202), (3, 203)]),
+        dummy_return_statement(&[0]),
+        dummy_label(0),
+        dummy_push_values(&db, &[(101, 201), (2, 202)]),
+        dummy_return_statement(&[0]),
+    ];
+
+    assert_eq!(
+        add_store_statements(&db, statements, &(|libfunc| get_output_info(&db, libfunc)))
+            .iter()
+            .map(|statement| replace_libfunc_ids(&db, statement).to_string())
+            .collect::<Vec<String>>(),
+        vec![
+            // Push [0] and [1].
+            "store_temp<[0]>([0]) -> ([100])",
+            "store_temp<[0]>([1]) -> ([101])",
+            "branch() { label0() fallthrough() }",
+            // Reuse [101]. Push [2] and [3].
+            "rename<[0]>([101]) -> ([201])",
+            "store_temp<[0]>([2]) -> ([202])",
+            "store_temp<[0]>([3]) -> ([203])",
+            "return([0])",
+            // This is not a merge of branches because of the "return" statement.
+            // The stack contains [0] and [1].
+            "label0:",
+            // Reuse [101]. Push [2].
+            "rename<[0]>([101]) -> ([201])",
+            "store_temp<[0]>([2]) -> ([202])",
+            "return([0])",
         ]
     );
 }

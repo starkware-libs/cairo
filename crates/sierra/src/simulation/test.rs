@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use test_case::test_case;
 
 use super::value::CoreValue::{self, GasBuiltin, Integer, NonZero, Uninitialized};
@@ -8,9 +6,11 @@ use super::LibFuncSimulationError::{
 };
 use super::{core, SimulationError};
 use crate::extensions::core::CoreLibFunc;
-use crate::extensions::lib_func::SpecializationContext;
+use crate::extensions::lib_func::{SignatureSpecializationContext, SpecializationContext};
+use crate::extensions::types::TypeInfo;
 use crate::extensions::GenericLibFunc;
-use crate::program::{Function, GenericArg, StatementIdx};
+use crate::ids::{ConcreteTypeId, FunctionId, GenericTypeId};
+use crate::program::{Function, FunctionSignature, GenericArg, StatementIdx};
 
 fn type_arg(name: &str) -> GenericArg {
     GenericArg::Type(name.into())
@@ -24,41 +24,67 @@ fn user_func_arg(name: &str) -> GenericArg {
     GenericArg::UserFunc(name.into())
 }
 
+struct MockSpecializationContext {}
+
+impl SpecializationContext for MockSpecializationContext {
+    fn upcast(&self) -> &dyn SignatureSpecializationContext {
+        self
+    }
+
+    fn get_function(&self, function_id: &FunctionId) -> Option<Function> {
+        ["drop_all_inputs", "identity", "unimplemented"]
+            .into_iter()
+            .map(|name| -> FunctionId { name.into() })
+            .find(|id: &FunctionId| id == function_id)
+            .map(|_| Function::new(function_id.clone(), vec![], vec![], StatementIdx(0)))
+    }
+}
+impl SignatureSpecializationContext for MockSpecializationContext {
+    fn get_concrete_type(
+        &self,
+        id: GenericTypeId,
+        generic_args: &[GenericArg],
+    ) -> Option<ConcreteTypeId> {
+        match (id, &generic_args) {
+            (id, &[]) if id == "int".into() => Some("int".into()),
+            (id, &[GenericArg::Type(ty)]) if id == "NonZero".into() && ty == &"int".into() => {
+                Some("NonZeroInt".into())
+            }
+            (id, &[GenericArg::Type(ty)])
+                if id == "uninitialized".into() && ty == &"int".into() =>
+            {
+                Some("UninitializedInt".into())
+            }
+            (id, &[]) if id == "GasBuiltin".into() => Some("GasBuiltin".into()),
+            _ => None,
+        }
+    }
+
+    fn get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo> {
+        if id == "int".into() || id == "NonZeroInt".into() {
+            Some(TypeInfo { storable: true, droppable: true, duplicatable: true })
+        } else if id == "UninitializedInt".into() {
+            Some(TypeInfo { storable: false, droppable: true, duplicatable: false })
+        } else {
+            None
+        }
+    }
+
+    fn get_function_signature(&self, function_id: &FunctionId) -> Option<FunctionSignature> {
+        self.get_function(function_id).map(|f| f.signature)
+    }
+}
+
 /// Expects to find a libfunc and simulate it.
 fn simulate(
     id: &str,
     generic_args: Vec<GenericArg>,
     inputs: Vec<CoreValue>,
 ) -> Result<(Vec<CoreValue>, usize), LibFuncSimulationError> {
-    let mock_func_entry =
-        |id: &str| (id.into(), Function::new(id.into(), vec![], vec![], StatementIdx(0)));
     core::simulate(
         &CoreLibFunc::by_id(&id.into())
             .unwrap()
-            .specialize(
-                SpecializationContext {
-                    concrete_type_ids: &HashMap::from([
-                        (("int".into(), &[][..]), "int".into()),
-                        (("NonZero".into(), &[type_arg("int")][..]), "NonZeroInt".into()),
-                        (
-                            ("uninitialized".into(), &[type_arg("int")][..]),
-                            "UninitializedInt".into(),
-                        ),
-                        (("Deferred".into(), &[type_arg("int")][..]), "DeferredInt".into()),
-                        (("GasBuiltin".into(), &[][..]), "GasBuiltin".into()),
-                        (
-                            ("Deferred".into(), &[type_arg("GasBuiltin")][..]),
-                            "DeferredGasBuiltin".into(),
-                        ),
-                    ]),
-                    functions: &HashMap::from([
-                        mock_func_entry("drop_all_inputs"),
-                        mock_func_entry("identity"),
-                        mock_func_entry("unimplemented"),
-                    ]),
-                },
-                &generic_args,
-            )
+            .specialize(&MockSpecializationContext {}, &generic_args)
             .unwrap(),
         inputs,
         || Some(4),
@@ -103,8 +129,8 @@ fn simulate_branch(
 #[test_case("int_div", vec![value_arg(5)], vec![Integer(32)] => Ok(vec![Integer(6)]); "int_div<5>(32)")]
 #[test_case("int_mod", vec![value_arg(5)], vec![Integer(32)] => Ok(vec![Integer(2)]); "int_mod<5>(32)")]
 #[test_case("int_const", vec![value_arg(3)], vec![] => Ok(vec![Integer(3)]); "int_const<3>()")]
-#[test_case("int_dup", vec![], vec![Integer(24)] => Ok(vec![Integer(24), Integer(24)]); "int_dup(24)")]
-#[test_case("int_drop", vec![], vec![Integer(2)] => Ok(vec![]); "int_drop(2)")]
+#[test_case("dup", vec![type_arg("int")], vec![Integer(24)] => Ok(vec![Integer(24), Integer(24)]); "dup<int>(24)")]
+#[test_case("drop", vec![type_arg("int")], vec![Integer(2)] => Ok(vec![]); "drop<int>(2)")]
 #[test_case("unwrap_nz", vec![type_arg("int")], vec![NonZero(Box::new(Integer(6)))] => Ok(vec![Integer(6)]); "unwrap_nz<int>(6)")]
 #[test_case("store_temp", vec![type_arg("int")], vec![Integer(6)] => Ok(vec![Integer(6)]); "store_temp<int>(6)")]
 #[test_case("align_temps", vec![type_arg("int")], vec![] => Ok(vec![]); "align_temps<int>()")]
@@ -145,8 +171,8 @@ fn simulate_none_branch(
 #[test_case("int_mod", vec![value_arg(5)], vec![] => WrongNumberOfArgs; "int_mod<5>()")]
 #[test_case("int_const", vec![value_arg(3)], vec![Integer(1)] => WrongNumberOfArgs;
             "int_const<3>(1)")]
-#[test_case("int_dup", vec![], vec![] => WrongNumberOfArgs; "int_dup()")]
-#[test_case("int_drop", vec![], vec![] => WrongNumberOfArgs; "int_drop()")]
+#[test_case("dup", vec![type_arg("int")], vec![] => WrongNumberOfArgs; "dup<int>()")]
+#[test_case("drop", vec![type_arg("int")], vec![] => WrongNumberOfArgs; "drop<int>()")]
 #[test_case("int_jump_nz", vec![], vec![] => WrongNumberOfArgs; "int_jump_nz<int>()")]
 #[test_case("unwrap_nz", vec![type_arg("int")], vec![] => WrongNumberOfArgs; "unwrap_nz<int>()")]
 #[test_case("store_temp", vec![type_arg("int")], vec![] => WrongNumberOfArgs; "store_temp<int>()")]

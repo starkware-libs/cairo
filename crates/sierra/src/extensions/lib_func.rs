@@ -1,66 +1,73 @@
-use std::collections::HashMap;
-
 use super::error::{ExtensionError, SpecializationError};
+use super::types::TypeInfo;
 use crate::ids::{ConcreteTypeId, FunctionId, GenericLibFuncId, GenericTypeId};
 use crate::program::{Function, FunctionSignature, GenericArg};
 
-pub type FunctionMap = HashMap<FunctionId, Function>;
-/// Mapping from the arguments for generating a concrete type (the generic-id and the arguments) to
-/// the concrete-id that points to it.
-pub type ConcreteTypeIdMap<'a> = HashMap<(GenericTypeId, &'a [GenericArg]), ConcreteTypeId>;
-/// Context required for specialization process.
-pub struct SpecializationContext<'a> {
-    pub functions: &'a FunctionMap,
-    pub concrete_type_ids: &'a ConcreteTypeIdMap<'a>,
-}
-
+/// Trait for the specialization of libfunc signatures.
 pub trait SignatureSpecializationContext {
     /// Returns concrete type id given a generic type and the generic arguments.
     fn get_concrete_type(
         &self,
         id: GenericTypeId,
         generic_args: &[GenericArg],
-    ) -> Result<ConcreteTypeId, SpecializationError>;
+    ) -> Option<ConcreteTypeId>;
 
-    /// Returns the concrete id of a generic-type-id wrapping the type of a concrete-type-id.
+    /// Wraps [Self::get_concrete_type] with a result object.
+    fn get_concrete_type_as_result(
+        &self,
+        id: GenericTypeId,
+        generic_args: &[GenericArg],
+    ) -> Result<ConcreteTypeId, SpecializationError> {
+        self.get_concrete_type(id.clone(), generic_args)
+            .ok_or_else(|| SpecializationError::TypeWasNotDeclared(id, generic_args.to_vec()))
+    }
+
+    /// Returns the type info for a given concrete type.
+    fn get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo>;
+
+    /// Wraps `get_type_info` with a result object.
+    fn get_type_info_as_result(&self, id: ConcreteTypeId) -> Result<TypeInfo, SpecializationError> {
+        self.get_type_info(id.clone()).ok_or(SpecializationError::MissingTypeInfo(id))
+    }
+
+    /// Returns the function's signature object associated with the given [FunctionId].
+    fn get_function_signature(&self, function_id: &FunctionId) -> Option<FunctionSignature>;
+
+    /// Wraps [Self::get_function_signature] with a result object.
+    fn get_function_signature_as_result(
+        &self,
+        function_id: &FunctionId,
+    ) -> Result<FunctionSignature, SpecializationError> {
+        self.get_function_signature(function_id)
+            .ok_or_else(|| SpecializationError::MissingFunction(function_id.clone()))
+    }
+
+    /// Returns the concrete id of T<S> given generic type T and concrete type S.
     fn get_wrapped_concrete_type(
         &self,
         id: GenericTypeId,
         wrapped: ConcreteTypeId,
     ) -> Result<ConcreteTypeId, SpecializationError> {
-        self.get_concrete_type(id, &[GenericArg::Type(wrapped)])
+        self.get_concrete_type_as_result(id, &[GenericArg::Type(wrapped)])
     }
-
-    /// Returns the function's signature object associated with the given [FunctionId].
-    // TODO(lior): Return the function signature instead of the full Function object.
-    fn get_function_signature(
-        &self,
-        function_id: &FunctionId,
-    ) -> Result<FunctionSignature, SpecializationError>;
 }
 
-impl SignatureSpecializationContext for SpecializationContext<'_> {
-    fn get_concrete_type(
-        &self,
-        id: GenericTypeId,
-        generic_args: &[GenericArg],
-    ) -> Result<ConcreteTypeId, SpecializationError> {
-        self.concrete_type_ids
-            .get(&(id.clone(), generic_args))
-            .ok_or_else(|| SpecializationError::TypeWasNotDeclared(id, generic_args.to_vec()))
-            .cloned()
-    }
+/// Trait for the specialization of full libfuncs.
+pub trait SpecializationContext: SignatureSpecializationContext {
+    /// Upcasting to the [SignatureSpecializationContext], since trait upcasting is still
+    /// experimental.
+    fn upcast(&self) -> &dyn SignatureSpecializationContext;
 
-    fn get_function_signature(
+    /// Returns the function object associated with the given [FunctionId].
+    fn get_function(&self, function_id: &FunctionId) -> Option<Function>;
+
+    /// Wraps [Self::get_function] with a result object.
+    fn get_function_as_result(
         &self,
         function_id: &FunctionId,
-    ) -> Result<FunctionSignature, SpecializationError> {
-        Ok(self
-            .functions
-            .get(function_id)
-            .ok_or_else(|| SpecializationError::MissingFunction(function_id.clone()))?
-            .signature
-            .clone())
+    ) -> Result<Function, SpecializationError> {
+        self.get_function(function_id)
+            .ok_or_else(|| SpecializationError::MissingFunction(function_id.clone()))
     }
 }
 
@@ -81,7 +88,7 @@ pub trait GenericLibFunc: Sized {
     /// Creates the specialization with the template arguments.
     fn specialize(
         &self,
-        context: SpecializationContext<'_>,
+        context: &dyn SpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError>;
 }
@@ -95,7 +102,7 @@ pub trait GenericLibFuncEx: GenericLibFunc {
     ) -> Result<LibFuncSignature, ExtensionError>;
 
     fn specialize_by_id(
-        context: SpecializationContext<'_>,
+        context: &dyn SpecializationContext,
         libfunc_id: &GenericLibFuncId,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, ExtensionError>;
@@ -119,7 +126,7 @@ impl<TGenericLibFunc: GenericLibFunc> GenericLibFuncEx for TGenericLibFunc {
     }
 
     fn specialize_by_id(
-        context: SpecializationContext<'_>,
+        context: &dyn SpecializationContext,
         libfunc_id: &GenericLibFuncId,
         generic_args: &[GenericArg],
     ) -> Result<TGenericLibFunc::Concrete, ExtensionError> {
@@ -151,7 +158,7 @@ pub trait NamedLibFunc: Default {
     /// Creates the specialization with the template arguments.
     fn specialize(
         &self,
-        context: SpecializationContext<'_>,
+        context: &dyn SpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError>;
 }
@@ -172,7 +179,7 @@ impl<TNamedLibFunc: NamedLibFunc> GenericLibFunc for TNamedLibFunc {
 
     fn specialize(
         &self,
-        context: SpecializationContext<'_>,
+        context: &dyn SpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
         <Self as NamedLibFunc>::specialize(self, context, args)
@@ -191,7 +198,7 @@ pub trait NoGenericArgsGenericLibFunc: Default {
 
     fn specialize(
         &self,
-        context: SpecializationContext<'_>,
+        context: &dyn SpecializationContext,
     ) -> Result<Self::Concrete, SpecializationError>;
 }
 impl<T: NoGenericArgsGenericLibFunc> NamedLibFunc for T {
@@ -212,7 +219,7 @@ impl<T: NoGenericArgsGenericLibFunc> NamedLibFunc for T {
 
     fn specialize(
         &self,
-        context: SpecializationContext<'_>,
+        context: &dyn SpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
         if args.is_empty() {
@@ -453,7 +460,7 @@ macro_rules! define_libfunc_hierarchy {
             }
             fn specialize(
                     &self,
-                    context: $crate::extensions::lib_func::SpecializationContext<'_>,
+                    context: &dyn $crate::extensions::lib_func::SpecializationContext,
                     args: &[$crate::program::GenericArg],
             ) -> Result<Self::Concrete, $crate::extensions::SpecializationError>{
                 match self {

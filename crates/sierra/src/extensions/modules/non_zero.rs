@@ -61,9 +61,11 @@ impl NamedLibFunc for UnwrapNonZeroLibFunc {
 
     fn specialize(
         &self,
-        context: SpecializationContext<'_>,
+        context: &dyn SpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(SignatureOnlyConcreteLibFunc { signature: self.specialize_signature(&context, args)? })
+        Ok(SignatureOnlyConcreteLibFunc {
+            signature: self.specialize_signature(context.upcast(), args)?,
+        })
     }
 }
