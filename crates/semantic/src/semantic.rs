@@ -1,7 +1,7 @@
-use defs::ids::{ParamId, VarId};
+// Reexport objects
+pub use defs::ids::{ParamId, VarId};
 use diagnostics_proc_macros::DebugWithDb;
 
-// Reexport objects
 pub use super::expr::objects::*;
 use crate::db::SemanticGroup;
 pub use crate::expr::pattern::{
