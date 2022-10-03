@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use test_case::test_case;
 
 use super::value::CoreValue::{self, GasBuiltin, Integer, NonZero, Uninitialized};
@@ -8,7 +6,7 @@ use super::LibFuncSimulationError::{
 };
 use super::{core, SimulationError};
 use crate::extensions::core::CoreLibFunc;
-use crate::extensions::lib_func::SpecializationContext;
+use crate::extensions::lib_func::{SignatureSpecializationContext, SpecializationContext};
 use crate::extensions::GenericLibFunc;
 use crate::program::{Function, GenericArg, StatementIdx};
 
@@ -24,41 +22,63 @@ fn user_func_arg(name: &str) -> GenericArg {
     GenericArg::UserFunc(name.into())
 }
 
+struct MockSpecializationContext {}
+impl SpecializationContext for MockSpecializationContext {
+    fn upcast(&self) -> &dyn SignatureSpecializationContext {
+        self
+    }
+
+    fn get_function(&self, function_id: &crate::ids::FunctionId) -> Option<Function> {
+        match function_id {
+            id if id == &"drop_all_inputs".into()
+                || id == &"identity".into()
+                || id == &"unimplemented".into() =>
+            {
+                Some(Function::new(id.clone(), vec![], vec![], StatementIdx(0)))
+            }
+            _ => None,
+        }
+    }
+}
+impl SignatureSpecializationContext for MockSpecializationContext {
+    fn get_concrete_type(
+        &self,
+        id: crate::ids::GenericTypeId,
+        generic_args: &[GenericArg],
+    ) -> Option<crate::ids::ConcreteTypeId> {
+        match (id, &generic_args) {
+            (id, &[]) if id == "int".into() => Some("int".into()),
+            (id, &[GenericArg::Type(ty)]) if id == "NonZero".into() && ty == &"int".into() => {
+                Some("NonZeroInt".into())
+            }
+            (id, &[GenericArg::Type(ty)])
+                if id == "uninitialized".into() && ty == &"int".into() =>
+            {
+                Some("UninitializedInt".into())
+            }
+            (id, &[]) if id == "GasBuiltin".into() => Some("GasBuiltin".into()),
+            _ => None,
+        }
+    }
+
+    fn get_function_signature(
+        &self,
+        function_id: &crate::ids::FunctionId,
+    ) -> Option<crate::program::FunctionSignature> {
+        self.get_function(function_id).map(|f| f.signature)
+    }
+}
+
 /// Expects to find a libfunc and simulate it.
 fn simulate(
     id: &str,
     generic_args: Vec<GenericArg>,
     inputs: Vec<CoreValue>,
 ) -> Result<(Vec<CoreValue>, usize), LibFuncSimulationError> {
-    let mock_func_entry =
-        |id: &str| (id.into(), Function::new(id.into(), vec![], vec![], StatementIdx(0)));
     core::simulate(
         &CoreLibFunc::by_id(&id.into())
             .unwrap()
-            .specialize(
-                SpecializationContext {
-                    concrete_type_ids: &HashMap::from([
-                        (("int".into(), &[][..]), "int".into()),
-                        (("NonZero".into(), &[type_arg("int")][..]), "NonZeroInt".into()),
-                        (
-                            ("uninitialized".into(), &[type_arg("int")][..]),
-                            "UninitializedInt".into(),
-                        ),
-                        (("Deferred".into(), &[type_arg("int")][..]), "DeferredInt".into()),
-                        (("GasBuiltin".into(), &[][..]), "GasBuiltin".into()),
-                        (
-                            ("Deferred".into(), &[type_arg("GasBuiltin")][..]),
-                            "DeferredGasBuiltin".into(),
-                        ),
-                    ]),
-                    functions: &HashMap::from([
-                        mock_func_entry("drop_all_inputs"),
-                        mock_func_entry("identity"),
-                        mock_func_entry("unimplemented"),
-                    ]),
-                },
-                &generic_args,
-            )
+            .specialize(&MockSpecializationContext {}, &generic_args)
             .unwrap(),
         inputs,
         || Some(4),

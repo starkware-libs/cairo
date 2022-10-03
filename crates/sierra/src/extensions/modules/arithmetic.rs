@@ -70,7 +70,7 @@ impl<TArithmeticTraits: ArithmeticTraits> GenericLibFunc for OperationLibFunc<TA
         context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
     ) -> Result<LibFuncSignature, SpecializationError> {
-        let ty = context.get_concrete_type(TArithmeticTraits::GENERIC_TYPE_ID, &[])?;
+        let ty = context.get_concrete_type_as_result(TArithmeticTraits::GENERIC_TYPE_ID, &[])?;
         match args {
             [] => Ok(LibFuncSignature::new_non_branch(
                 vec![
@@ -101,13 +101,13 @@ impl<TArithmeticTraits: ArithmeticTraits> GenericLibFunc for OperationLibFunc<TA
 
     fn specialize(
         &self,
-        context: SpecializationContext<'_>,
+        context: &dyn SpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
         match args {
             [] => Ok(OperationConcreteLibFunc::Binary(BinaryOperationConcreteLibFunc {
                 operator: self.operator,
-                signature: self.specialize_signature(&context, args)?,
+                signature: self.specialize_signature(context.upcast(), args)?,
             })),
             [GenericArg::Value(c)] => {
                 if matches!(self.operator, Operator::Div | Operator::Mod) && *c == 0 {
@@ -116,7 +116,7 @@ impl<TArithmeticTraits: ArithmeticTraits> GenericLibFunc for OperationLibFunc<TA
                     Ok(OperationConcreteLibFunc::Const(OperationWithConstConcreteLibFunc {
                         operator: self.operator,
                         c: *c,
-                        signature: self.specialize_signature(&context, args)?,
+                        signature: self.specialize_signature(context.upcast(), args)?,
                     }))
                 }
             }
@@ -171,7 +171,7 @@ impl<TArithmeticTraits: ArithmeticTraits> NamedLibFunc for ConstLibFunc<TArithme
         Ok(LibFuncSignature::new_non_branch(
             vec![],
             vec![OutputVarInfo {
-                ty: context.get_concrete_type(TArithmeticTraits::GENERIC_TYPE_ID, &[])?,
+                ty: context.get_concrete_type_as_result(TArithmeticTraits::GENERIC_TYPE_ID, &[])?,
                 ref_info: OutputVarReferenceInfo::Const,
             }],
             SierraApChange::NotImplemented,
@@ -180,13 +180,17 @@ impl<TArithmeticTraits: ArithmeticTraits> NamedLibFunc for ConstLibFunc<TArithme
 
     fn specialize(
         &self,
-        context: SpecializationContext<'_>,
+        context: &dyn SpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
         match args {
             [GenericArg::Value(c)] => Ok(ConstConcreteLibFunc {
                 c: *c,
-                signature: <Self as NamedLibFunc>::specialize_signature(self, &context, args)?,
+                signature: <Self as NamedLibFunc>::specialize_signature(
+                    self,
+                    context.upcast(),
+                    args,
+                )?,
             }),
             _ => Err(SpecializationError::UnsupportedGenericArg),
         }
