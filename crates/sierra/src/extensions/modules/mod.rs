@@ -4,6 +4,7 @@ use crate::program::GenericArg;
 
 pub mod ap_tracking;
 pub mod arithmetic;
+pub mod array;
 pub mod drop;
 pub mod duplicate;
 pub mod felt;
