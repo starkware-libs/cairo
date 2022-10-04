@@ -176,7 +176,7 @@ fn collect_used_types(
             )
             .expect("Specialization failure.");
             chain!(
-                signature.input_types,
+                signature.param_signatures.into_iter().map(|param_signature| param_signature.ty),
                 signature
                     .branch_signatures
                     .into_iter()

@@ -2,8 +2,8 @@ use std::marker::PhantomData;
 
 use super::non_zero::NonZeroType;
 use crate::extensions::lib_func::{
-    BranchSignature, LibFuncSignature, OutputVarInfo, SierraApChange, SignatureOnlyConcreteLibFunc,
-    SignatureSpecializationContext, SpecializationContext,
+    BranchSignature, LibFuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
+    SignatureOnlyConcreteLibFunc, SignatureSpecializationContext, SpecializationContext,
 };
 use crate::extensions::{
     NamedType, NoGenericArgsGenericLibFunc, OutputVarReferenceInfo, SpecializationError,
@@ -36,7 +36,7 @@ impl<TJumpNotZeroTraits: JumpNotZeroTraits> NoGenericArgsGenericLibFunc
     ) -> Result<LibFuncSignature, SpecializationError> {
         let ty = context.get_concrete_type_as_result(TJumpNotZeroTraits::GENERIC_TYPE_ID, &[])?;
         Ok(LibFuncSignature {
-            input_types: vec![ty.clone()],
+            param_signatures: vec![ParamSignature::simple(ty.clone())],
             branch_signatures: vec![
                 // Success:
                 BranchSignature {
