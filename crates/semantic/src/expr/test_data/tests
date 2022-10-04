@@ -5,7 +5,7 @@ test_function_diagnostics
 
 //! > function
 func foo(a: MyType) {
-    a + a * a
+    a + a * a;
 }
 
 //! > function_name
@@ -17,17 +17,17 @@ extern type MyType;
 //! > expected_diagnostics
 error: Unexpected argument type. Expected: "core::felt", found: "test_crate::MyType".
  --> lib.cairo:3:9
-    a + a * a
+    a + a * a;
         ^
 
 error: Unexpected argument type. Expected: "core::felt", found: "test_crate::MyType".
  --> lib.cairo:3:13
-    a + a * a
+    a + a * a;
             ^
 
 error: Unexpected argument type. Expected: "core::felt", found: "test_crate::MyType".
  --> lib.cairo:3:5
-    a + a * a
+    a + a * a;
     ^
 
 //! > ==========================================================================

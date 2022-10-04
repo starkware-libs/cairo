@@ -73,7 +73,7 @@ fn get_enum_variant(
     let bool_enum = ctx.db.module_item_by_name(module_id, enum_name.into()).unwrap();
     let bool_enum_id = extract_matches!(bool_enum, ModuleItemId::Enum);
     let variant_id = ctx.db.enum_variants(bool_enum_id).unwrap()[variant_name];
-    semantic::Expr::ExprEnumVariantCtor(semantic::ExprEnumVariantCtor {
+    semantic::Expr::EnumVariantCtor(semantic::ExprEnumVariantCtor {
         enum_variant_id: variant_id,
         value_expr: unit_expr(ctx, stable_ptr),
         ty: core_bool_ty(ctx.db),
@@ -88,7 +88,7 @@ pub fn unit_ty(db: &dyn SemanticGroup) -> TypeId {
 /// builds a semantic unit expression. This is not necessarily located in the AST, so it is received
 /// as a param.
 pub fn unit_expr(ctx: &mut ComputationContext<'_>, stable_ptr: ast::ExprPtr) -> ExprId {
-    ctx.exprs.alloc(Expr::ExprTuple(ExprTuple {
+    ctx.exprs.alloc(Expr::Tuple(ExprTuple {
         items: Vec::new(),
         ty: ctx.db.intern_type(TypeLongId::Tuple(Vec::new())),
         stable_ptr,
