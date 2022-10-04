@@ -242,7 +242,7 @@ pub struct ParamSignature {
 }
 impl ParamSignature {
     /// Returns a [ParamSignature] with default attributes.
-    pub fn simple(ty: ConcreteTypeId) -> Self {
+    pub fn new(ty: ConcreteTypeId) -> Self {
         Self { ty, allow_add_const: false, allow_deferred: false }
     }
 }
@@ -334,8 +334,22 @@ impl LibFuncSignature {
         output_info: Vec<OutputVarInfo>,
         ap_change: SierraApChange,
     ) -> Self {
+        Self::new_non_branch_ex(
+            input_types.into_iter().map(ParamSignature::new).collect(),
+            output_info,
+            ap_change,
+        )
+    }
+
+    /// Same as [LibFuncSignature::new_non_branch], except that more complicated [ParamSignature]
+    /// are supported.
+    pub fn new_non_branch_ex(
+        param_signatures: Vec<ParamSignature>,
+        output_info: Vec<OutputVarInfo>,
+        ap_change: SierraApChange,
+    ) -> LibFuncSignature {
         Self {
-            param_signatures: input_types.into_iter().map(ParamSignature::simple).collect(),
+            param_signatures,
             branch_signatures: vec![BranchSignature { vars: output_info, ap_change }],
             fallthrough: Some(0),
         }
