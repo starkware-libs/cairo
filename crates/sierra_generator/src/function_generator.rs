@@ -9,7 +9,7 @@ use defs::ids::{FreeFunctionId, GenericFunctionId};
 use diagnostics::{Diagnostics, DiagnosticsBuilder};
 use itertools::zip_eq;
 use sierra::extensions::core::CoreLibFunc;
-use sierra::extensions::lib_func::OutputBranchInfo;
+use sierra::extensions::lib_func::BranchSignature;
 use sierra::extensions::GenericLibFuncEx;
 use sierra::ids::ConcreteLibFuncId;
 use sierra::program::Param;
@@ -107,7 +107,7 @@ pub fn get_function_code(
     let statements = add_store_statements(
         context.get_db(),
         statements,
-        &|concrete_lib_func_id: ConcreteLibFuncId| -> Vec<OutputBranchInfo> {
+        &|concrete_lib_func_id: ConcreteLibFuncId| -> Vec<BranchSignature> {
             let libfunc_long_id =
                 context.get_db().lookup_intern_concrete_lib_func(concrete_lib_func_id);
             // TODO(lior): replace expect() with a diagnostic (unless this can never happen).
@@ -117,7 +117,7 @@ pub fn get_function_code(
                 &libfunc_long_id.generic_args,
             )
             .expect("Specialization failure.")
-            .output_info
+            .branch_signatures
         },
     );
     let statements = add_dups_and_drops(&mut context, &parameters, statements);
@@ -212,7 +212,7 @@ fn get_var_types(
                 )
                 .unwrap();
                 for (branch_signature, branch_info) in
-                    zip_eq(signature.output_info, &invocation.branches)
+                    zip_eq(signature.branch_signatures, &invocation.branches)
                 {
                     for (var_signature, var) in zip_eq(branch_signature.vars, &branch_info.results)
                     {
