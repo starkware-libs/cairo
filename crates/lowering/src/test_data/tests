@@ -45,7 +45,7 @@ test_function_lowering
 //! > function
 func foo(a: felt) -> felt {
     let (_, b) = (1, a);
-    return 5;
+    5
 }
 
 //! > function_name
@@ -54,11 +54,6 @@ foo
 //! > module_code
 
 //! > semantic_diagnostics
-error: Unexpected return type. Expected: "core::felt", found: "()".
- --> lib.cairo:1:27
-func foo(a: felt) -> felt {
-                          ^
-
 
 //! > lowering_diagnostics
 
@@ -69,4 +64,4 @@ Inputs:
 Statements:
   (v2: core::felt, v3: core::felt, ) <- tuple_destruct(v1)
 End:
-  Return(v4, )
+  Callsite(v4, )

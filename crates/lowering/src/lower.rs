@@ -125,8 +125,8 @@ impl<'db> Lowerer<'db> {
 
             self.lower_statement(&mut scope, stmt)
         }
-        // TODO(spapini): Handle regular exit from a block.
-        todo!("Handle regular exit from a block.");
+
+        self.finalize_block_callsite(scope, expr_block.tail)
     }
 
     /// Finalizes lowering of a block that ends with a `return` statement.
@@ -138,13 +138,34 @@ impl<'db> Lowerer<'db> {
         // First, prepare the expr.
         let var_id = self.lower_expr(&mut scope, expr_id);
         self.take(&mut scope, var_id);
-        let BlockScope { inputs, living_variables: _, semantic_variables: _, statements } = scope;
+        let BlockScope { inputs, living_variables, semantic_variables: _, statements } = scope;
         // TODO(spapini): Find mut function parameters, and return them as well.
         self.blocks.alloc(Block {
             inputs,
             statements,
-            drops: vec![],
+            drops: living_variables.into_iter().collect(),
             end: BlockEnd::Return(vec![var_id]),
+        })
+    }
+
+    /// Finalizes lowering of a block that ends regularly, returning to callsite.
+    fn finalize_block_callsite(
+        &mut self,
+        mut scope: BlockScope,
+        expr_id: Option<semantic::ExprId>,
+    ) -> BlockId {
+        // First, prepare the expr.
+        let extra_vars = expr_id.map(|expr_id| {
+            let var_id = self.lower_expr(&mut scope, expr_id);
+            self.take(&mut scope, var_id)
+        });
+        let BlockScope { inputs, living_variables, semantic_variables: _, statements } = scope;
+        // TODO(spapini): Find mut function parameters, and return them as well.
+        self.blocks.alloc(Block {
+            inputs,
+            statements,
+            drops: living_variables.into_iter().collect(),
+            end: BlockEnd::Callsite(extra_vars.into_iter().collect()),
         })
     }
 
