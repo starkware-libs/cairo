@@ -48,7 +48,8 @@ impl State {
         self.deferred_variables.swap_remove(&res);
         self.known_stack.remove_variable(&res);
         match output_info.ref_info {
-            OutputVarReferenceInfo::Deferred => {
+            OutputVarReferenceInfo::Deferred(_) => {
+                // TODO(lior): Mark it as AddConst according to kind, instead of a regular Deferred.
                 self.deferred_variables.insert(res, output_info.ty.clone());
             }
             OutputVarReferenceInfo::NewTempVar { idx } => {
