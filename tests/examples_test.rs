@@ -34,8 +34,7 @@ fn compile_to_sierra(
 
 #[test_case("fib.cairo", include_str!("fib.sierra"); "fib")]
 #[test_case("fib_ref.cairo", include_str!("fib_ref.sierra"); "fib_ref")]
-#[test_case("fib_array.cairo", include_str!("fib_array.sierra") =>
-            ignore["Array not supported yet"]; "fib_array")]
+#[test_case("fib_array.cairo", include_str!("fib_array.sierra"); "fib_array")]
 fn cairo_to_sierra(name: &str, expected_code: &str) {
     let (db, sierra_program) = compile_to_sierra(name);
     assert_eq!(replace_libfunc_ids_in_program(&db, &sierra_program).to_string(), expected_code);
