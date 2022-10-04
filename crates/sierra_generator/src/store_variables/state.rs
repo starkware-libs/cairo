@@ -4,13 +4,32 @@ use utils::ordered_hash_map::OrderedHashMap;
 
 use super::known_stack::KnownStack;
 
+/// Represents the known information about a Sierra variable which contains a deferred value.
+/// For example, `[ap - 1] + [ap - 2]`.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct DeferredVariableInfo {
+    /// The type of the variable.
+    pub ty: sierra::ids::ConcreteTypeId,
+    /// The deferred type.
+    pub kind: DeferredVariableKind,
+}
+
+/// The type of a deferred variable.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum DeferredVariableKind {
+    /// See [OutputVarReferenceInfo::Deferred].
+    Generic,
+    /// See [OutputVarReferenceInfo::AddConst].
+    AddConst,
+}
+
 /// Represents information known about the state of the variables.
 /// For example, which variable contains a deferred value and which variable is on the stack.
 #[derive(Clone, Debug, Default)]
 pub struct State {
     /// A map from [sierra::ids::VarId] of a deferred reference
     /// (for example, `[ap - 1] + [ap - 2]`) to its type.
-    pub deferred_variables: OrderedHashMap<sierra::ids::VarId, sierra::ids::ConcreteTypeId>,
+    pub deferred_variables: OrderedHashMap<sierra::ids::VarId, DeferredVariableInfo>,
     /// The information known about the top of the stack.
     pub known_stack: KnownStack,
 }
@@ -49,7 +68,13 @@ impl State {
         self.known_stack.remove_variable(&res);
         match output_info.ref_info {
             OutputVarReferenceInfo::Deferred => {
-                self.deferred_variables.insert(res, output_info.ty.clone());
+                self.deferred_variables.insert(
+                    res,
+                    DeferredVariableInfo {
+                        ty: output_info.ty.clone(),
+                        kind: DeferredVariableKind::Generic,
+                    },
+                );
             }
             OutputVarReferenceInfo::NewTempVar { idx } => {
                 self.known_stack.insert(res, idx);
@@ -58,8 +83,13 @@ impl State {
             | OutputVarReferenceInfo::NewLocalVar
             | OutputVarReferenceInfo::Const => {}
             OutputVarReferenceInfo::AddConst { .. } => {
-                // TODO(lior): Mark it as AddConst, instead of a regular Deferred.
-                self.deferred_variables.insert(res, output_info.ty.clone());
+                self.deferred_variables.insert(
+                    res,
+                    DeferredVariableInfo {
+                        ty: output_info.ty.clone(),
+                        kind: DeferredVariableKind::AddConst,
+                    },
+                );
             }
         }
     }

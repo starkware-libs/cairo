@@ -147,24 +147,42 @@ impl<'a> AddStoreVariableStatements<'a> {
         param_signatures: &[ParamSignature],
     ) {
         for (arg, param_signature) in zip_eq(args, param_signatures) {
-            self.prepare_libfunc_argument(arg, param_signature.allow_deferred);
+            self.prepare_libfunc_argument(
+                arg,
+                param_signature.allow_deferred,
+                param_signature.allow_add_const,
+            );
         }
     }
 
     /// Prepares the given `arg` to be used as an argument for a libfunc.
-    fn prepare_libfunc_argument(&mut self, arg: &sierra::ids::VarId, allow_deferred: bool) {
-        if !self.state().deferred_variables.contains_key(arg) || allow_deferred {
-            return;
+    fn prepare_libfunc_argument(
+        &mut self,
+        arg: &sierra::ids::VarId,
+        allow_deferred: bool,
+        allow_add_const: bool,
+    ) {
+        if let Some(deferred_info) = self.state().deferred_variables.get(arg) {
+            match deferred_info.kind {
+                state::DeferredVariableKind::Generic => {
+                    if !allow_deferred {
+                        self.store_temp_deferred(arg)
+                    }
+                }
+                state::DeferredVariableKind::AddConst => {
+                    if !allow_add_const {
+                        self.store_temp_deferred(arg)
+                    }
+                }
+            };
         }
-
-        self.store_temp_deferred(arg);
     }
 
     /// Adds a store_temp() instruction for the given deferred variable and removes it from the
     /// `deferred_variables` map.
     fn store_temp_deferred(&mut self, var: &sierra::ids::VarId) {
-        let ty = self.state().deferred_variables[var.clone()].clone();
-        self.store_temp(var, var, &ty);
+        let deferred_info = self.state().deferred_variables[var.clone()].clone();
+        self.store_temp(var, var, &deferred_info.ty);
         self.state().deferred_variables.swap_remove(var);
     }
 
@@ -180,7 +198,7 @@ impl<'a> AddStoreVariableStatements<'a> {
             if self.state().deferred_variables.contains_key(var) {
                 // Convert the deferred variable into a temporary variable, by calling
                 // `prepare_libfunc_argument`.
-                self.prepare_libfunc_argument(var, false);
+                self.prepare_libfunc_argument(var, false, false);
                 // Note: the original variable may still be used after the following `rename`
                 // statement. In such a case, it will be dupped before the `rename`
                 // by `add_dups_and_drops()`.
@@ -200,8 +218,8 @@ impl<'a> AddStoreVariableStatements<'a> {
     /// Stores all the deffered variables and clears `deferred_variables`.
     /// The variables will be added according to the order of creation.
     fn store_all_deffered_variables(&mut self) {
-        for (var, ty) in self.state().deferred_variables.clone() {
-            self.store_temp(&var, &var, &ty);
+        for (var, deferred_info) in self.state().deferred_variables.clone() {
+            self.store_temp(&var, &var, &deferred_info.ty);
         }
         self.clear_deffered_variables();
     }
