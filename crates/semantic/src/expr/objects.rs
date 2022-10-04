@@ -39,9 +39,26 @@ impl DebugWithDb<ExprFormatter<'_>> for StatementId {
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
 #[debug_db(ExprFormatter<'_>)]
 pub enum Statement {
-    Expr(ExprId),
+    Expr(StatementExpr),
     Let(StatementLet),
-    Return(ExprId),
+    Return(StatementReturn),
+}
+impl Statement {
+    pub fn stable_ptr(&self) -> ast::StatementPtr {
+        match self {
+            Statement::Expr(stmt) => stmt.stable_ptr,
+            Statement::Let(stmt) => stmt.stable_ptr,
+            Statement::Return(stmt) => stmt.stable_ptr,
+        }
+    }
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[debug_db(ExprFormatter<'_>)]
+pub struct StatementExpr {
+    pub expr: ExprId,
+    #[hide_field_debug_with_db]
+    pub stable_ptr: ast::StatementPtr,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
@@ -49,6 +66,16 @@ pub enum Statement {
 pub struct StatementLet {
     pub pattern: Pattern,
     pub expr: ExprId,
+    #[hide_field_debug_with_db]
+    pub stable_ptr: ast::StatementPtr,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[debug_db(ExprFormatter<'_>)]
+pub struct StatementReturn {
+    pub expr: ExprId,
+    #[hide_field_debug_with_db]
+    pub stable_ptr: ast::StatementPtr,
 }
 
 // Expressions.
