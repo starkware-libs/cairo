@@ -45,7 +45,7 @@ impl NoGenericArgsGenericLibFunc for GetGasLibFunc {
     ) -> Result<LibFuncSignature, SpecializationError> {
         let gas_builtin_type = context.get_concrete_type_as_result(GasBuiltinType::id(), &[])?;
         Ok(LibFuncSignature {
-            param_signatures: vec![ParamSignature::simple(gas_builtin_type.clone())],
+            param_signatures: vec![ParamSignature::new(gas_builtin_type.clone())],
             branch_signatures: vec![
                 // Success:
                 BranchSignature {
