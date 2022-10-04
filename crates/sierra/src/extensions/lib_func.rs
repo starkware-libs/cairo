@@ -258,7 +258,7 @@ pub struct OutputVarInfo {
 /// for all the output variables in an output branch.
 ///
 /// See [OutputVarInfo].
-pub struct OutputBranchInfo {
+pub struct BranchSignature {
     /// Information about the new variables created in the branch.
     pub vars: Vec<OutputVarInfo>,
     /// Information about the change in the `ap` register in the branch.
@@ -271,7 +271,7 @@ pub enum SierraApChange {
     /// The libfunc changes `ap` in an unknown way.
     Unknown,
     /// The libfunc changes `ap` by pushing new tempvars, as described by
-    /// [OutputVarReferenceInfo::NewTempVar] in [`OutputBranchInfo::vars`].
+    /// [OutputVarReferenceInfo::NewTempVar] in [`BranchSignature::vars`].
     Known,
     /// Indicates that the value of ApChange was not assigned properly yet. Behaves as `Unknown`.
     /// This will be removed, once all places using it are fixed.
@@ -283,13 +283,13 @@ pub trait ConcreteLibFunc {
     /// The input types for calling the library function.
     fn input_types(&self) -> &[ConcreteTypeId];
     /// The output types and other information returning from a library function per branch.
-    fn output_info(&self) -> &[OutputBranchInfo];
+    fn branch_signatures(&self) -> &[BranchSignature];
     /// The index of the fallthrough branch of the library function if any.
     fn fallthrough(&self) -> Option<usize>;
 
     /// Returns the output types returning from a library function per branch.
     fn output_types(&self) -> Vec<Vec<ConcreteTypeId>> {
-        self.output_info()
+        self.branch_signatures()
             .iter()
             .map(|branch_info| {
                 branch_info.vars.iter().map(|var_info| var_info.ty.clone()).collect()
@@ -304,7 +304,7 @@ pub struct LibFuncSignature {
     pub input_types: Vec<ConcreteTypeId>,
     /// The output types and other information for the return values of a library function per
     /// branch.
-    pub output_info: Vec<OutputBranchInfo>,
+    pub branch_signatures: Vec<BranchSignature>,
     /// The index of the fallthrough branch of the library function if any.
     pub fallthrough: Option<usize>,
 }
@@ -317,7 +317,7 @@ impl LibFuncSignature {
     ) -> Self {
         Self {
             input_types,
-            output_info: vec![OutputBranchInfo { vars: output_info, ap_change }],
+            branch_signatures: vec![BranchSignature { vars: output_info, ap_change }],
             fallthrough: Some(0),
         }
     }
@@ -346,8 +346,8 @@ impl<TSignatureBasedConcreteLibFunc: SignatureBasedConcreteLibFunc> ConcreteLibF
     fn input_types(&self) -> &[ConcreteTypeId] {
         &self.signature().input_types
     }
-    fn output_info(&self) -> &[OutputBranchInfo] {
-        &self.signature().output_info
+    fn branch_signatures(&self) -> &[BranchSignature] {
+        &self.signature().branch_signatures
     }
     fn fallthrough(&self) -> Option<usize> {
         self.signature().fallthrough
@@ -380,7 +380,7 @@ macro_rules! define_concrete_libfunc_hierarchy {
                 }
             }
             $crate::extensions::lib_func::concrete_method_impl!{
-                fn output_info(&self) -> &[$crate::extensions::lib_func::OutputBranchInfo] {
+                fn branch_signatures(&self) -> &[$crate::extensions::lib_func::BranchSignature] {
                     $($variant_name => $variant,)*
                 }
             }
