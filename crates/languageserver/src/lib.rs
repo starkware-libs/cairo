@@ -34,6 +34,7 @@ use tower_lsp::jsonrpc::Result;
 use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, LanguageServer};
 use utils::ordered_hash_set::OrderedHashSet;
+use utils::OptionHelper;
 
 pub type RootDatabase = SemanticDatabaseForTesting;
 
@@ -387,6 +388,7 @@ impl LanguageServer for Backend {
         } else {
             return Ok(None);
         };
+
         let uri = if let FileLongId::OnDisk(path) = db.lookup_intern_file(file) {
             Url::from_file_path(path).unwrap()
         } else {
@@ -417,28 +419,19 @@ fn get_node_and_function(
     let filename = file.file_name(db.upcast());
 
     // Get syntax for file.
-    let syntax = if let Some(syntax) = db.file_syntax(file) {
-        syntax
-    } else {
+    let syntax = db.file_syntax(file).on_none(|| {
         eprintln!("Formatting failed. File '{filename}' does not exist.");
-        return None;
-    };
+    })?;
 
     // Get file summary.
-    let file_summary = if let Some(summary) = db.file_summary(file) {
-        summary
-    } else {
+    let file_summary = db.file_summary(file).on_none(|| {
         eprintln!("Hover failed. File '{filename}' does not exist.");
-        return None;
-    };
+    })?;
 
     // Find offset for position.
-    let line_offset = if let Some(offset) = file_summary.line_offsets.get(position.line as usize) {
-        offset
-    } else {
+    let line_offset = file_summary.line_offsets.get(position.line as usize).on_none(|| {
         eprintln!("Hover failed. Position out of bounds.");
-        return None;
-    };
+    })?;
     // TODO(spapini): Check that character is not larger than line_length.
     let node = syntax
         .as_syntax_node()
@@ -455,12 +448,9 @@ fn get_node_and_function(
     // Find containing function.
     let mut item_node = node.clone();
     while item_node.kind(syntax_db) != SyntaxKind::ItemFreeFunction {
-        if let Some(parent) = item_node.parent() {
-            item_node = parent;
-        } else {
+        item_node = item_node.parent().on_none(|| {
             eprintln!("Hover failed. Not inside a function.");
-            return None;
-        }
+        })?;
     }
     let function_node = ast::ItemFreeFunction::from_syntax_node(syntax_db, item_node);
     let free_function_id =
@@ -498,12 +488,9 @@ fn get_expr_hint(
     let expr_node = ast::Expr::from_syntax_node(syntax_db, node);
     // Lookup semantic expression.
     let expr_id =
-        if let Some(expr_id) = db.lookup_expr_by_ptr(free_function_id, expr_node.stable_ptr()) {
-            expr_id
-        } else {
+        db.lookup_expr_by_ptr(free_function_id, expr_node.stable_ptr()).on_none(|| {
             eprintln!("Hover failed. Semantic model not found for expression.");
-            return None;
-        };
+        })?;
     let semantic_expr = db.expr_semantic(free_function_id, expr_id);
     // Format the hover text.
     Some(format!("Type: `{}`", semantic_expr.ty().format(db)))

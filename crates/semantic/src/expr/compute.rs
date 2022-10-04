@@ -13,7 +13,7 @@ use syntax::node::db::SyntaxGroup;
 use syntax::node::helpers::{GetIdentifier, PathSegmentEx};
 use syntax::node::{ast, Terminal, TypedSyntaxNode};
 use utils::ordered_hash_map::OrderedHashMap;
-use utils::OptionHelper;
+use utils::{try_extract_matches, OptionHelper};
 
 use super::objects::*;
 use super::pattern::{
@@ -243,10 +243,7 @@ pub fn maybe_compute_expr_semantic(
                 let tail_semantic_expr =
                     tail.map(|tail_expr| compute_expr_semantic(new_ctx, &tail_expr));
 
-                let ty = match &tail_semantic_expr {
-                    Some(t) => t.ty(),
-                    None => unit_ty(db),
-                };
+                let ty = if let Some(t) = &tail_semantic_expr { t.ty() } else { unit_ty(db) };
                 Expr::Block(ExprBlock {
                     statements: statements_semantic,
                     tail: tail_semantic_expr.map(|expr| new_ctx.exprs.alloc(expr)),
@@ -366,24 +363,20 @@ fn compute_pattern_semantic(
         }
         ast::Pattern::Enum(enum_pattern) => {
             // Check that type is an enum, and get the concrete enum from it.
-            let concrete_enum = if let TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum)) =
-                ctx.db.lookup_intern_type(ty)
-            {
-                concrete_enum
-            } else {
-                ctx.diagnostics.report(&enum_pattern, UnexpectedEnumPattern { ty });
-                return None;
-            };
+            let concrete_enum =
+                try_extract_matches!(ctx.db.lookup_intern_type(ty), TypeLongId::Concrete)
+                    .and_then(|c| try_extract_matches!(c, ConcreteTypeId::Enum))
+                    .on_none(|| {
+                        ctx.diagnostics.report(&enum_pattern, UnexpectedEnumPattern { ty });
+                    })?;
 
             // Extract the enum variant from the path syntax.
             let path = enum_pattern.path(syntax_db);
             let item = ctx.resolver.resolve_generic_path(ctx.diagnostics, &path)?;
-            let generic_variant = if let ResolvedGenericItem::Variant(generic_variant) = item {
-                generic_variant
-            } else {
-                ctx.diagnostics.report(&path, UnknownEnum);
-                return None;
-            };
+            let generic_variant = try_extract_matches!(item, ResolvedGenericItem::Variant)
+                .on_none(|| {
+                    ctx.diagnostics.report(&path, UnknownEnum);
+                })?;
 
             // Check that these are the same enums.
             if generic_variant.enum_id != concrete_enum.enum_id(ctx.db) {
@@ -425,26 +418,21 @@ fn compute_pattern_semantic(
         ast::Pattern::Struct(pattern_struct) => {
             // Check that type is an struct, and get the concrete struct from it.
             let _concrete_struct =
-                if let TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_struct)) =
-                    ctx.db.lookup_intern_type(ty)
-                {
-                    concrete_struct
-                } else {
-                    ctx.diagnostics.report(&pattern_struct, UnexpectedEnumPattern { ty });
-                    return None;
-                };
+                try_extract_matches!(ctx.db.lookup_intern_type(ty), TypeLongId::Concrete)
+                    .and_then(|c| try_extract_matches!(c, ConcreteTypeId::Struct))
+                    .on_none(|| {
+                        ctx.diagnostics.report(&pattern_struct, UnexpectedEnumPattern { ty });
+                    })?;
 
             // TODO(spapini): Support struct patterns.
             ctx.diagnostics.report(&pattern_struct, Unsupported);
             return None;
         }
         ast::Pattern::Tuple(pattern_tuple) => {
-            let tys = if let TypeLongId::Tuple(tys) = ctx.db.lookup_intern_type(ty) {
-                tys
-            } else {
-                ctx.diagnostics.report(&pattern_tuple, UnexpectedTuplePattern { ty });
-                return None;
-            };
+            let tys = try_extract_matches!(ctx.db.lookup_intern_type(ty), TypeLongId::Tuple)
+                .on_none(|| {
+                    ctx.diagnostics.report(&pattern_tuple, UnexpectedTuplePattern { ty });
+                })?;
 
             let patterns_ast = pattern_tuple.patterns(syntax_db).elements(syntax_db);
             if tys.len() != patterns_ast.len() {
@@ -479,15 +467,13 @@ fn struct_ctor_expr(
     let path = ctor_syntax.path(syntax_db);
 
     // Extract struct.
-    let ty =
-        resolve_type(ctx.db, ctx.diagnostics, &mut ctx.resolver, &ast::Expr::Path(path.clone()));
-    let concrete_struct = match db.lookup_intern_type(ty) {
-        TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct)) => concrete_struct,
-        _ => {
+    let ty = resolve_type(db, ctx.diagnostics, &mut ctx.resolver, &ast::Expr::Path(path.clone()));
+
+    let concrete_struct = try_extract_matches!(ctx.db.lookup_intern_type(ty), TypeLongId::Concrete)
+        .and_then(|c| try_extract_matches!(c, ConcreteTypeId::Struct))
+        .on_none(|| {
             ctx.diagnostics.report(&path, NotAStruct);
-            return None;
-        }
-    };
+        })?;
 
     let members =
         db.concrete_struct_members(ctx.diagnostics, concrete_struct, path.stable_ptr().untyped())?;
@@ -553,16 +539,10 @@ fn get_tail_expression(
     syntax_db: &dyn SyntaxGroup,
     statements: &[ast::Statement],
 ) -> Option<ast::Expr> {
-    if statements.is_empty() {
-        return None;
-    }
-
-    if let Some(ast::Statement::Expr(statement_expr)) = statements.last() {
-        if let ast::OptionSemicolon::Empty(_) = statement_expr.semicolon(syntax_db) {
-            return Some(statement_expr.expr(syntax_db));
-        }
-    }
-    None
+    let last = statements.last()?;
+    let statement_expr = try_extract_matches!(last, ast::Statement::Expr)?;
+    try_extract_matches!(statement_expr.semicolon(syntax_db), ast::OptionSemicolon::Empty)?;
+    Some(statement_expr.expr(syntax_db))
 }
 
 /// Creates the semantic model of a literal expression from its AST.
