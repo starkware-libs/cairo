@@ -260,6 +260,8 @@ pub enum OutputVarReferenceInfo {
     Deferred,
     /// The output is a constant.
     Const,
+    /// The output is the addition of a constant to one of the parameters. For example, `x + 3`.
+    AddConst { param_idx: usize },
 }
 
 /// Contains information regarding an output variable in a single branch.

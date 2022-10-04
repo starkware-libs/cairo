@@ -57,6 +57,10 @@ impl State {
             OutputVarReferenceInfo::SameAsParam { .. }
             | OutputVarReferenceInfo::NewLocalVar
             | OutputVarReferenceInfo::Const => {}
+            OutputVarReferenceInfo::AddConst { .. } => {
+                // TODO(lior): Mark it as AddConst, instead of a regular Deferred.
+                self.deferred_variables.insert(res, output_info.ty.clone());
+            }
         }
     }
 

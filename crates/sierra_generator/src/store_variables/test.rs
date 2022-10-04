@@ -45,8 +45,7 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibFuncId) -
             branch_signatures: vec![BranchSignature {
                 vars: vec![OutputVarInfo {
                     ty: dummy_type,
-                    // TODO(lior): Change to AddConst once supported.
-                    ref_info: OutputVarReferenceInfo::Deferred,
+                    ref_info: OutputVarReferenceInfo::AddConst { param_idx: 0 },
                 }],
                 ap_change: SierraApChange::Known,
             }],
