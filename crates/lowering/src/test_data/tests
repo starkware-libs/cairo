@@ -1,0 +1,18 @@
+//! > Test unexpected argument types for operators.
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+func foo(a: felt) -> felt {
+    a + a * a
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
