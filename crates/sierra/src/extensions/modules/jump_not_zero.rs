@@ -36,7 +36,7 @@ impl<TJumpNotZeroTraits: JumpNotZeroTraits> NoGenericArgsGenericLibFunc
     ) -> Result<LibFuncSignature, SpecializationError> {
         let ty = context.get_concrete_type_as_result(TJumpNotZeroTraits::GENERIC_TYPE_ID, &[])?;
         Ok(LibFuncSignature {
-            param_signatures: vec![ParamSignature::simple(ty.clone())],
+            param_signatures: vec![ParamSignature::new(ty.clone())],
             branch_signatures: vec![
                 // Success:
                 BranchSignature {
