@@ -77,6 +77,23 @@ pub enum Statement {
     TupleConstruct,
     TupleDestruct(StatementTupleDestruct),
 }
+impl Statement {
+    pub fn outputs(&self) -> Vec<VariableId> {
+        match &self {
+            Statement::Literal(stmt) => vec![stmt.output],
+            Statement::CallUserFunc(stmt) => stmt.outputs.clone(),
+            Statement::CallBlock(stmt) => stmt.outputs.clone(),
+            Statement::CallExtern(stmt) => stmt.outputs.clone(),
+            Statement::MatchExtern(stmt) => stmt.outputs.clone(),
+            Statement::StructConstruct => todo!(),
+            Statement::StructDestruct => todo!(),
+            Statement::EnumConstruct => todo!(),
+            Statement::MatchEnum => todo!(),
+            Statement::TupleConstruct => todo!(),
+            Statement::TupleDestruct(stmt) => stmt.outputs.clone(),
+        }
+    }
+}
 
 /// A statement that binds a literal value to a variable.
 pub struct StatementLiteral {
@@ -131,7 +148,7 @@ pub struct StatementMatchExtern {
     // All blocks should have the same rets.
     pub arms: Vec<MatchArm>,
     /// New variables to be introduced into the current scope from the arm outputs.
-    pub end: Vec<VariableId>,
+    pub outputs: Vec<VariableId>,
 }
 
 pub struct MatchArm {
