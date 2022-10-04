@@ -23,7 +23,7 @@ impl NamedType for NonZeroType {
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
         let ty = as_single_type(args)?;
-        Ok(NonZeroConcreteType { info: context.get_type_info_as_result(ty.clone())?, ty })
+        Ok(NonZeroConcreteType { info: context.get_type_info(ty.clone())?, ty })
     }
 }
 pub struct NonZeroConcreteType {

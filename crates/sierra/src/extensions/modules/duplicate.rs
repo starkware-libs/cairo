@@ -20,7 +20,7 @@ impl NamedLibFunc for DupLibFunc {
         generic_args: &[GenericArg],
     ) -> Result<LibFuncSignature, SpecializationError> {
         let ty = as_single_type(generic_args)?;
-        let info = context.get_type_info_as_result(ty.clone())?;
+        let info = context.get_type_info(ty.clone())?;
         if !info.duplicatable {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
