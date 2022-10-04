@@ -110,14 +110,14 @@ pub fn replace_libfunc_ids_in_program(
 pub fn dummy_simple_statement(
     db: &dyn SierraGenGroup,
     name: &str,
-    inputs: &[usize],
-    outputs: &[usize],
+    inputs: &[&str],
+    outputs: &[&str],
 ) -> pre_sierra::Statement {
-    let inputs_vec: Vec<sierra::ids::VarId> =
-        inputs.iter().map(|x| sierra::ids::VarId::from_usize(*x)).collect();
-    let outputs_vec: Vec<sierra::ids::VarId> =
-        outputs.iter().map(|x| sierra::ids::VarId::from_usize(*x)).collect();
-    simple_statement(dummy_concrete_lib_func_id(db, name), &inputs_vec, &outputs_vec)
+    simple_statement(
+        dummy_concrete_lib_func_id(db, name),
+        &as_var_id_vec(inputs),
+        &as_var_id_vec(outputs),
+    )
 }
 
 fn dummy_concrete_lib_func_id(db: &dyn SierraGenGroup, name: &str) -> ConcreteLibFuncId {
@@ -157,10 +157,8 @@ pub fn dummy_simple_branch(
 }
 
 /// Generates a dummy return statement.
-pub fn dummy_return_statement(args: &[usize]) -> pre_sierra::Statement {
-    let args_vec: Vec<sierra::ids::VarId> =
-        args.iter().map(|x| sierra::ids::VarId::from_usize(*x)).collect();
-    return_statement(args_vec)
+pub fn dummy_return_statement(args: &[&str]) -> pre_sierra::Statement {
+    return_statement(as_var_id_vec(args))
 }
 
 /// Generates a dummy label.
@@ -184,15 +182,15 @@ pub fn label_id_from_usize(id: usize) -> pre_sierra::LabelId {
 /// the stack, and dst is the variable after placing it on the stack.
 pub fn dummy_push_values(
     db: &dyn SierraGenGroup,
-    values: &[(usize, usize)],
+    values: &[(&str, &str)],
 ) -> pre_sierra::Statement {
     let felt_ty = db.get_concrete_type_id(db.core_felt_ty()).expect("Can't find core::felt.");
     pre_sierra::Statement::PushValues(
         values
             .iter()
             .map(|(src, dst)| pre_sierra::PushValue {
-                var: sierra::ids::VarId::from_usize(*src),
-                var_on_stack: sierra::ids::VarId::from_usize(*dst),
+                var: (*src).into(),
+                var_on_stack: (*dst).into(),
                 ty: felt_ty.clone(),
             })
             .collect(),

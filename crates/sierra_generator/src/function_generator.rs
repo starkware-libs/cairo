@@ -2,15 +2,18 @@
 #[path = "function_generator_test.rs"]
 mod test;
 
+use std::collections::hash_map::Entry;
 use std::sync::Arc;
 
 use defs::ids::{FreeFunctionId, GenericFunctionId};
 use diagnostics::{Diagnostics, DiagnosticsBuilder};
+use itertools::zip_eq;
 use sierra::extensions::core::CoreLibFunc;
 use sierra::extensions::lib_func::OutputBranchInfo;
 use sierra::extensions::GenericLibFuncEx;
 use sierra::ids::ConcreteLibFuncId;
 use sierra::program::Param;
+use utils::unordered_hash_map::UnorderedHashMap;
 
 use crate::db::SierraGenGroup;
 use crate::dup_and_drop::{calculate_statement_dups_and_drops, VarsDupsAndDrops};
@@ -140,21 +143,22 @@ pub fn get_function_code(
 }
 
 /// Adds drops and duplicates of felts to the sierra code.
-/// Assumes no VarId is reused in the same line.
-// TODO(orizi): Currently only supports felt types.
+///
+/// Assumes no Sierra variable is reused in the same line.
 fn add_dups_and_drops(
     context: &mut ExprGeneratorContext<'_>,
     params: &[Param],
     statements: Vec<Statement>,
 ) -> Vec<Statement> {
     let statement_dups_and_drops = calculate_statement_dups_and_drops(params, &statements);
-    itertools::zip_eq(statements.into_iter(), statement_dups_and_drops.into_iter())
+    let var_types = get_var_types(params, &statements, context.get_db());
+    zip_eq(statements.into_iter(), statement_dups_and_drops.into_iter())
         .flat_map(|(mut statement, VarsDupsAndDrops { mut dups, drops })| {
             let mut expanded_statement: Vec<Statement> = drops
                 .into_iter()
                 .map(|var| {
                     simple_statement(
-                        context.drop_libfunc_id(context.get_db().core_felt_ty()).unwrap(),
+                        context.drop_libfunc_id(var_types[var.clone()].clone()),
                         &[var],
                         &[],
                     )
@@ -167,7 +171,7 @@ fn add_dups_and_drops(
                     if dups.contains(arg) {
                         let usage_var = context.allocate_sierra_variable();
                         expanded_statement.push(simple_statement(
-                            context.dup_libfunc_id(context.get_db().core_felt_ty()).unwrap(),
+                            context.dup_libfunc_id(var_types[arg.clone()].clone()),
                             &[arg.clone()],
                             &[arg.clone(), usage_var.clone()],
                         ));
@@ -184,4 +188,50 @@ fn add_dups_and_drops(
             expanded_statement
         })
         .collect()
+}
+
+/// Returns the types ([sierra::ids::ConcreteTypeId]) of all the Sierra variables in the given
+/// statements.
+///
+/// Assumes every Sierra variable has a single type.
+fn get_var_types(
+    params: &[Param],
+    statements: &[Statement],
+    db: &dyn SierraGenGroup,
+) -> UnorderedHashMap<sierra::ids::VarId, sierra::ids::ConcreteTypeId> {
+    let mut var_types =
+        UnorderedHashMap::from_iter(params.iter().map(|p| (p.id.clone(), p.ty.clone())));
+    for statement in statements {
+        match statement {
+            Statement::Sierra(sierra::program::GenStatement::Invocation(invocation)) => {
+                let long_id = db.lookup_intern_concrete_lib_func(invocation.libfunc_id.clone());
+                let signature = CoreLibFunc::specialize_signature_by_id(
+                    &SierraSignatureSpecializationContext(db),
+                    &long_id.generic_id,
+                    &long_id.generic_args,
+                )
+                .unwrap();
+                for (branch_signature, branch_info) in
+                    zip_eq(signature.output_info, &invocation.branches)
+                {
+                    for (var_signature, var) in zip_eq(branch_signature.vars, &branch_info.results)
+                    {
+                        match var_types.entry(var.clone()) {
+                            Entry::Occupied(e) => {
+                                assert_eq!(*e.get(), var_signature.ty);
+                            }
+                            Entry::Vacant(e) => {
+                                e.insert(var_signature.ty);
+                            }
+                        }
+                    }
+                }
+            }
+            Statement::Sierra(sierra::program::GenStatement::Return(_)) | Statement::Label(_) => {}
+            Statement::PushValues(_) => {
+                panic!("Unexpected pre_sierra::Statement::PushValues in get_var_types.")
+            }
+        }
+    }
+    var_types
 }

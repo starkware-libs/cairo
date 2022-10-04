@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use thiserror::Error;
 
 use crate::operand::{
@@ -9,10 +11,18 @@ use crate::operand::{
 #[path = "ap_change_test.rs"]
 mod test;
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
 pub enum ApChange {
     Known(i16),
     Unknown,
+}
+impl Display for ApChange {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ApChange::Known(change) => write!(f, "ApChange::Known({})", change),
+            ApChange::Unknown => write!(f, "ApChange::Unknown"),
+        }
+    }
 }
 
 #[derive(Debug, Error, Eq, PartialEq)]
