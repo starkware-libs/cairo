@@ -32,8 +32,10 @@ blk0:
 Inputs:
   v0: core::felt, 
 Statements:
+  (v1: core::felt, ) <- core::felt_mul(v0, v0, )
+  (v2: core::felt, ) <- core::felt_add(v0, v1, )
 End:
-  Return(v1, )
+  Return(v2, )
 
 //! > ==========================================================================
 
@@ -63,5 +65,40 @@ Inputs:
   v0: core::felt, 
 Statements:
   (v2: core::felt, v3: core::felt, ) <- tuple_destruct(v1)
+  (v4: core::felt, ) <- 5u
 End:
   Callsite(v4, )
+
+//! > ==========================================================================
+
+//! > Test compund expressions.
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+func foo(a: felt) -> felt {
+    foo(3) + 5 * a
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_format
+blk0:
+Inputs:
+  v0: core::felt, 
+Statements:
+  (v1: core::felt, ) <- 3u
+  (v2: core::felt, ) <- test_crate::foo(v1, )
+  (v3: core::felt, ) <- 5u
+  (v4: core::felt, ) <- core::felt_mul(v3, v0, )
+  (v5: core::felt, ) <- core::felt_add(v2, v4, )
+End:
+  Callsite(v5, )
