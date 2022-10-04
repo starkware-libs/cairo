@@ -1,14 +1,17 @@
 use defs::ids::{FreeFunctionId, LanguageElementId};
 use diagnostics::Diagnostics;
 use id_arena::Arena;
+use itertools::zip_eq;
 use semantic::db::SemanticGroup;
-use semantic::FreeFunctionDefinition;
+use semantic::TypeLongId;
 use utils::ordered_hash_map::OrderedHashMap;
 use utils::ordered_hash_set::OrderedHashSet;
 
 use crate::diagnostic::LoweringDiagnosticKind::*;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnostics};
-use crate::objects::{Block, BlockEnd, BlockId, Statement, Variable, VariableId};
+use crate::objects::{
+    Block, BlockEnd, BlockId, Statement, StatementTupleDestruct, Variable, VariableId,
+};
 
 // TODO(spapini): Remove.
 #[allow(dead_code)]
@@ -16,7 +19,7 @@ use crate::objects::{Block, BlockEnd, BlockId, Statement, Variable, VariableId};
 pub struct Lowerer<'db> {
     db: &'db dyn SemanticGroup,
     /// Semantic model for current function definition.
-    function_def: &'db FreeFunctionDefinition,
+    function_def: &'db semantic::FreeFunctionDefinition,
     /// Current emitted diagnostics.
     diagnostics: LoweringDiagnostics,
     /// Arena of allocated lowered variables.
@@ -146,8 +149,64 @@ impl<'db> Lowerer<'db> {
     }
 
     /// Lowers a semantic statement.
-    pub fn lower_statement(&self, _scope: &mut BlockScope, _stmt: &semantic::Statement) {
-        todo!()
+    pub fn lower_statement(&mut self, scope: &mut BlockScope, stmt: &semantic::Statement) {
+        match stmt {
+            semantic::Statement::Expr(semantic::StatementExpr { expr, stable_ptr: _ }) => {
+                self.lower_expr(scope, *expr);
+            }
+            semantic::Statement::Let(semantic::StatementLet { pattern, expr, stable_ptr: _ }) => {
+                let var_id = self.lower_expr(scope, *expr);
+                self.lower_single_pattern(scope, pattern, var_id);
+            }
+            semantic::Statement::Return(_) => unreachable!(),
+        }
+    }
+
+    // TODO:(spapini): Separate match pattern from non-match (single) patterns in the semantic
+    // model.
+    /// Lowers a single-pattern (pattern that does not appear in a match. This includes structs,
+    /// tuples, variables, etc...
+    /// Adds the bound variables to the scope.
+    /// Note that single patterns are the only way to bind new local variables in the semantic
+    /// model.
+    fn lower_single_pattern(
+        &mut self,
+        scope: &mut BlockScope,
+        pattern: &semantic::Pattern,
+        var_id: id_arena::Id<Variable>,
+    ) {
+        match pattern {
+            semantic::Pattern::Literal(_) => unreachable!(),
+            semantic::Pattern::Variable(semantic::PatternVariable { name: _, var: sem_var }) => {
+                assert_eq!(self.variables[var_id].ty, sem_var.ty, "Wrong type.");
+                scope.semantic_variables.insert(semantic::VarId::Local(sem_var.id), var_id);
+            }
+            semantic::Pattern::Struct(_) => todo!(),
+            semantic::Pattern::Tuple(semantic::PatternTuple { field_patterns, ty }) => {
+                let tys = if let TypeLongId::Tuple(tys) = self.db.lookup_intern_type(*ty) {
+                    tys
+                } else {
+                    panic!("Expected a tuple type.")
+                };
+                assert_eq!(
+                    tys.len(),
+                    field_patterns.len(),
+                    "Expected the same number of tuple args."
+                );
+                let outputs: Vec<_> = tys.iter().map(|ty| self.new_variable(scope, *ty)).collect();
+                let stmt = Statement::TupleDestruct(StatementTupleDestruct {
+                    tys,
+                    input: self.take(scope, var_id),
+                    outputs: outputs.clone(),
+                });
+                scope.statements.push(stmt);
+                for (var_id, pattern) in zip_eq(outputs, field_patterns) {
+                    self.lower_single_pattern(scope, pattern, var_id);
+                }
+            }
+            semantic::Pattern::Enum(_) => unreachable!(),
+            semantic::Pattern::Otherwise(_) => {}
+        }
     }
 
     /// Lowers a semantic expression.
@@ -162,11 +221,21 @@ impl<'db> Lowerer<'db> {
     }
 
     /// Takes a variable from the current block scope (i.e. moving/consuming it).
-    fn take(&self, scope: &mut BlockScope, var_id: VariableId) {
+    fn take(&self, scope: &mut BlockScope, var_id: VariableId) -> VariableId {
         let var = self.variables.get(var_id).unwrap();
-        if var.duplicatable {
-            return;
+        if !var.duplicatable {
+            scope.living_variables.swap_remove(&var_id);
         }
-        scope.living_variables.swap_remove(&var_id);
+        var_id
+    }
+
+    pub fn new_variable(
+        &mut self,
+        scope: &mut BlockScope,
+        ty: semantic::TypeId,
+    ) -> id_arena::Id<Variable> {
+        let var_id = self.variables.alloc(Variable { duplicatable: true, droppable: true, ty });
+        scope.living_variables.insert(var_id);
+        var_id
     }
 }
