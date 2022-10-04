@@ -78,7 +78,7 @@ impl Statement {
     pub fn outputs(&self) -> Vec<VariableId> {
         match &self {
             Statement::Literal(stmt) => vec![stmt.output],
-            Statement::Call(stmt) => stmt.outputs.clone(),
+            Statement::CallUserFunc(stmt) => stmt.outputs.clone(),
             Statement::CallBlock(stmt) => stmt.outputs.clone(),
             Statement::CallExtern(stmt) => stmt.outputs.clone(),
             Statement::MatchExtern(stmt) => stmt.outputs.clone(),
