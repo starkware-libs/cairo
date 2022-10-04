@@ -230,6 +230,23 @@ impl<T: NoGenericArgsGenericLibFunc> NamedLibFunc for T {
     }
 }
 
+/// Information regarding a parameter of the libfunc.
+pub struct ParamSignature {
+    /// The type of the parameter.
+    pub ty: ConcreteTypeId,
+    /// Whether the libfunc argument can be an expression of the form `[ap/fp + i] + [ap/fp + j]`.
+    /// For example, `store_temp()` and `store_local()`.
+    pub allow_deferred: bool,
+    /// Whether the libfunc argument can be an expression of the form `[ap + i] + const`.
+    pub allow_add_const: bool,
+}
+impl ParamSignature {
+    /// Returns a [ParamSignature] with default attributes.
+    pub fn simple(ty: ConcreteTypeId) -> Self {
+        Self { ty, allow_add_const: false, allow_deferred: false }
+    }
+}
+
 /// Information regarding the reference created as an output of a library function.
 /// For example, whether the reference is equal to one of the parameters (as in the dup() function),
 /// or whether it's newly allocated local variable.
@@ -280,8 +297,9 @@ pub enum SierraApChange {
 }
 /// Trait for a specialized library function.
 pub trait ConcreteLibFunc {
-    /// The input types for calling the library function.
-    fn input_types(&self) -> &[ConcreteTypeId];
+    /// The parameter types and other information for the parameters for calling a library
+    /// function.
+    fn param_signatures(&self) -> &[ParamSignature];
     /// The output types and other information returning from a library function per branch.
     fn branch_signatures(&self) -> &[BranchSignature];
     /// The index of the fallthrough branch of the library function if any.
@@ -300,8 +318,9 @@ pub trait ConcreteLibFunc {
 
 /// Represents the signature of a library function.
 pub struct LibFuncSignature {
-    /// The input types for calling a library function.
-    pub input_types: Vec<ConcreteTypeId>,
+    /// The parameter types and other information for the parameters for calling a library
+    /// function.
+    pub param_signatures: Vec<ParamSignature>,
     /// The output types and other information for the return values of a library function per
     /// branch.
     pub branch_signatures: Vec<BranchSignature>,
@@ -316,7 +335,7 @@ impl LibFuncSignature {
         ap_change: SierraApChange,
     ) -> Self {
         Self {
-            input_types,
+            param_signatures: input_types.into_iter().map(ParamSignature::simple).collect(),
             branch_signatures: vec![BranchSignature { vars: output_info, ap_change }],
             fallthrough: Some(0),
         }
@@ -343,8 +362,8 @@ impl SignatureBasedConcreteLibFunc for SignatureOnlyConcreteLibFunc {
 impl<TSignatureBasedConcreteLibFunc: SignatureBasedConcreteLibFunc> ConcreteLibFunc
     for TSignatureBasedConcreteLibFunc
 {
-    fn input_types(&self) -> &[ConcreteTypeId] {
-        &self.signature().input_types
+    fn param_signatures(&self) -> &[ParamSignature] {
+        &self.signature().param_signatures
     }
     fn branch_signatures(&self) -> &[BranchSignature] {
         &self.signature().branch_signatures
@@ -375,7 +394,7 @@ macro_rules! define_concrete_libfunc_hierarchy {
         }
         impl $crate::extensions::ConcreteLibFunc for $name {
             $crate::extensions::lib_func::concrete_method_impl! {
-                fn input_types(&self) -> &[$crate::ids::ConcreteTypeId] {
+                fn param_signatures(&self) -> &[$crate::extensions::lib_func::ParamSignature] {
                     $($variant_name => $variant,)*
                 }
             }
