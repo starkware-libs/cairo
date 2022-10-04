@@ -1,15 +1,14 @@
-// Returns an array of size n with fib values.
-func fib(a: felt, b: felt, n: felt) -> Array::<felt> {
-    helper(a, b, n, array_new::<felt>());
+// Returns an array of size n with the values of the Fibonacci sequence.
+func fib(n: felt) -> Array::<felt> {
+    fib_inner(1, 1, n, array_new::<felt>())
 }
 
-func helper(a: felt, b: felt, n: felt, arr: Array::<felt>) -> Array::<felt> {
-    match arr.len - n {
-        0 => {
-            arr
-        },
+func fib_inner(a: felt, b: felt, remaining: felt, arr: Array::<felt>) -> Array::<felt> {
+    match remaining {
+        0 => arr,
         _ => {
-            helper(b, a + b, n, array_push::<felt>(arr, a))
+            let arr = array_append::<felt>(arr, a);
+            fib_inner(b, a + b, remaining - 1, arr)
         },
     }
 }
