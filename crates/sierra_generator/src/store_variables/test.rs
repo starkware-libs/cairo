@@ -76,6 +76,21 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibFuncId) -
             ],
             fallthrough: Some(1),
         },
+        "store_temp" => LibFuncSignature {
+            param_signatures: vec![ParamSignature {
+                ty: dummy_type.clone(),
+                allow_deferred: true,
+                allow_add_const: true,
+            }],
+            branch_signatures: vec![BranchSignature {
+                vars: vec![OutputVarInfo {
+                    ty: dummy_type,
+                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
+                }],
+                ap_change: SierraApChange::Known,
+            }],
+            fallthrough: Some(0),
+        },
         _ => panic!("get_branch_signatures() is not implemented for '{}'.", name),
     }
 }
@@ -298,6 +313,42 @@ fn push_values_early_return() {
             // Reuse [101]. Push [2].
             "rename<[0]>(101) -> (201)",
             "store_temp<[0]>(2) -> (202)",
+            "return(0)",
+        ]
+    );
+}
+
+/// Tests a few consecutive invocations of [PushValues](pre_sierra::Statement::PushValues).
+#[test]
+fn store_temp_gets_deferred() {
+    let db = SierraGenDatabaseForTesting::default();
+    let statements: Vec<pre_sierra::Statement> = vec![
+        dummy_simple_statement(&db, "felt_add", &["0", "1"], &["2"]),
+        dummy_simple_statement(&db, "nope", &[], &[]),
+        dummy_simple_statement(&db, "store_temp", &["2"], &["3"]),
+        dummy_simple_statement(&db, "nope", &[], &[]),
+        dummy_simple_statement(&db, "felt_add", &["2", "2"], &["4"]),
+        dummy_simple_statement(&db, "felt_add", &["3", "3"], &["6"]),
+        dummy_return_statement(&["0"]),
+    ];
+
+    assert_eq!(
+        add_store_statements(&db, statements, &(|libfunc| get_lib_func_signature(&db, libfunc)))
+            .iter()
+            .map(|statement| replace_libfunc_ids(&db, statement).to_string())
+            .collect::<Vec<String>>(),
+        vec![
+            "felt_add(0, 1) -> (2)",
+            "nope() -> ()",
+            // Explicit call to store_temp() is not preceded by an implicit store_temp().
+            "store_temp(2) -> (3)",
+            "nope() -> ()",
+            // Since var 2 is still deferred an implicit store_temp() is added before felt_add().
+            "store_temp<[0]>(2) -> (2)",
+            "felt_add(2, 2) -> (4)",
+            // Var 3 is already on the stack.
+            "felt_add(3, 3) -> (6)",
+            // Return.
             "return(0)",
         ]
     );
