@@ -55,47 +55,47 @@ pub struct StatementLet {
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
 #[debug_db(ExprFormatter<'_>)]
 pub enum Expr {
-    ExprTuple(ExprTuple),
-    ExprAssignment(ExprAssignment),
-    ExprBlock(ExprBlock),
-    ExprFunctionCall(ExprFunctionCall),
-    ExprMatch(ExprMatch),
-    ExprVar(ExprVar),
-    ExprLiteral(ExprLiteral),
-    ExprMemberAccess(ExprMemberAccess),
-    ExprStructCtor(ExprStructCtor),
-    ExprEnumVariantCtor(ExprEnumVariantCtor),
-    Missing { ty: semantic::TypeId, stable_ptr: ast::ExprPtr },
+    Tuple(ExprTuple),
+    Assignment(ExprAssignment),
+    Block(ExprBlock),
+    FunctionCall(ExprFunctionCall),
+    Match(ExprMatch),
+    Var(ExprVar),
+    Literal(ExprLiteral),
+    MemberAccess(ExprMemberAccess),
+    StructCtor(ExprStructCtor),
+    EnumVariantCtor(ExprEnumVariantCtor),
+    Missing(ExprMissing),
 }
 impl Expr {
     pub fn ty(&self) -> semantic::TypeId {
         match self {
-            Expr::ExprTuple(expr) => expr.ty,
-            Expr::ExprAssignment(expr) => expr.ty,
-            Expr::ExprBlock(expr) => expr.ty,
-            Expr::ExprFunctionCall(expr) => expr.ty,
-            Expr::ExprMatch(expr) => expr.ty,
-            Expr::ExprVar(expr) => expr.ty,
-            Expr::ExprLiteral(expr) => expr.ty,
-            Expr::ExprMemberAccess(expr) => expr.ty,
-            Expr::ExprStructCtor(expr) => expr.ty,
-            Expr::ExprEnumVariantCtor(expr) => expr.ty,
-            Expr::Missing { ty, stable_ptr: _ } => *ty,
+            Expr::Tuple(expr) => expr.ty,
+            Expr::Assignment(expr) => expr.ty,
+            Expr::Block(expr) => expr.ty,
+            Expr::FunctionCall(expr) => expr.ty,
+            Expr::Match(expr) => expr.ty,
+            Expr::Var(expr) => expr.ty,
+            Expr::Literal(expr) => expr.ty,
+            Expr::MemberAccess(expr) => expr.ty,
+            Expr::StructCtor(expr) => expr.ty,
+            Expr::EnumVariantCtor(expr) => expr.ty,
+            Expr::Missing(expr) => expr.ty,
         }
     }
     pub fn stable_ptr(&self) -> ast::ExprPtr {
         match self {
-            Expr::ExprAssignment(expr) => expr.stable_ptr,
-            Expr::ExprTuple(expr) => expr.stable_ptr,
-            Expr::ExprBlock(expr) => expr.stable_ptr,
-            Expr::ExprFunctionCall(expr) => expr.stable_ptr,
-            Expr::ExprMatch(expr) => expr.stable_ptr,
-            Expr::ExprVar(expr) => expr.stable_ptr,
-            Expr::ExprLiteral(expr) => expr.stable_ptr,
-            Expr::ExprMemberAccess(expr) => expr.stable_ptr,
-            Expr::ExprStructCtor(expr) => expr.stable_ptr,
-            Expr::ExprEnumVariantCtor(expr) => expr.stable_ptr,
-            Expr::Missing { ty: _, stable_ptr } => *stable_ptr,
+            Expr::Assignment(expr) => expr.stable_ptr,
+            Expr::Tuple(expr) => expr.stable_ptr,
+            Expr::Block(expr) => expr.stable_ptr,
+            Expr::FunctionCall(expr) => expr.stable_ptr,
+            Expr::Match(expr) => expr.stable_ptr,
+            Expr::Var(expr) => expr.stable_ptr,
+            Expr::Literal(expr) => expr.stable_ptr,
+            Expr::MemberAccess(expr) => expr.stable_ptr,
+            Expr::StructCtor(expr) => expr.stable_ptr,
+            Expr::EnumVariantCtor(expr) => expr.stable_ptr,
+            Expr::Missing(expr) => expr.stable_ptr,
         }
     }
 }
@@ -205,6 +205,14 @@ pub struct ExprStructCtor {
 pub struct ExprEnumVariantCtor {
     pub enum_variant_id: VariantId,
     pub value_expr: ExprId,
+    pub ty: semantic::TypeId,
+    #[hide_field_debug_with_db]
+    pub stable_ptr: ast::ExprPtr,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[debug_db(ExprFormatter<'_>)]
+pub struct ExprMissing {
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
     pub stable_ptr: ast::ExprPtr,

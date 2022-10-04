@@ -11,7 +11,7 @@ use utils::unordered_hash_map::UnorderedHashMap;
 use super::functions::{function_signature_params, function_signature_return_type};
 use super::generics::semantic_generic_params;
 use crate::db::SemanticGroup;
-use crate::diagnostic::SemanticDiagnostics;
+use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics};
 use crate::expr::compute::{compute_expr_semantic, ComputationContext, Environment};
 use crate::resolve_path::{ResolvedGenericItem, ResolvedLookback, Resolver};
 use crate::{semantic, ExprId, SemanticDiagnostic};
@@ -152,6 +152,16 @@ pub fn priv_free_function_definition_data(
         environment,
     );
     let expr = compute_expr_semantic(&mut ctx, &ast::Expr::Block(syntax.body(db.upcast())));
+    if expr.ty() != declaration.signature.return_type && expr.ty() != semantic::TypeId::missing(db)
+    {
+        ctx.diagnostics.report(
+            &syntax.body(db.upcast()),
+            SemanticDiagnosticKind::WrongReturnType {
+                expected_ty: declaration.signature.return_type,
+                actual_ty: expr.ty(),
+            },
+        );
+    }
     let body = ctx.exprs.alloc(expr);
     let ComputationContext { exprs, statements, resolver, .. } = ctx;
 

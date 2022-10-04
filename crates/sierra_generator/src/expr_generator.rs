@@ -19,16 +19,16 @@ pub fn generate_expression_code(
     expr_id: semantic::ExprId,
 ) -> Option<(Vec<pre_sierra::Statement>, sierra::ids::VarId)> {
     match &context.get_db().expr_semantic(context.function_id(), expr_id) {
-        semantic::Expr::ExprTuple(_) | semantic::Expr::ExprAssignment(_) => todo!(),
-        semantic::Expr::ExprBlock(expr_block) => handle_block(context, expr_block),
-        semantic::Expr::ExprFunctionCall(expr_function_call) => {
+        semantic::Expr::Tuple(_) | semantic::Expr::Assignment(_) => todo!(),
+        semantic::Expr::Block(expr_block) => handle_block(context, expr_block),
+        semantic::Expr::FunctionCall(expr_function_call) => {
             handle_function_call(context, expr_function_call)
         }
-        semantic::Expr::ExprMatch(expr_match) => handle_felt_match(context, expr_match),
-        semantic::Expr::ExprVar(expr_var) => {
+        semantic::Expr::Match(expr_match) => handle_felt_match(context, expr_match),
+        semantic::Expr::Var(expr_var) => {
             Some((vec![], context.get_variable(expr_var.var, expr_var.stable_ptr.untyped())?))
         }
-        semantic::Expr::ExprLiteral(expr_literal) => {
+        semantic::Expr::Literal(expr_literal) => {
             let tmp_var = context.allocate_sierra_variable();
             Some((
                 vec![simple_statement(
@@ -39,10 +39,10 @@ pub fn generate_expression_code(
                 tmp_var,
             ))
         }
-        semantic::Expr::ExprMemberAccess(_) => todo!(),
-        semantic::Expr::ExprStructCtor(_) => todo!("Struct constructor not supported yet."),
-        semantic::Expr::ExprEnumVariantCtor(_) => todo!(),
-        semantic::Expr::Missing { .. } => {
+        semantic::Expr::MemberAccess(_) => todo!(),
+        semantic::Expr::StructCtor(_) => todo!("Struct constructor not supported yet."),
+        semantic::Expr::EnumVariantCtor(_) => todo!(),
+        semantic::Expr::Missing(_) => {
             // A diagnostic should have already been added by a previous stage.
             None
         }

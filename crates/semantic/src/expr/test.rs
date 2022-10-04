@@ -29,12 +29,12 @@ fn test_expr_literal() {
     // Fix this.
     assert_eq!(
         format!("{:?}", expr.debug(&expr_formatter)),
-        "ExprLiteral(ExprLiteral { value: 7, ty: core::felt })"
+        "Literal(ExprLiteral { value: 7, ty: core::felt })"
     );
 
     // Check expr.
     let semantic::ExprLiteral { value, ty, stable_ptr: _ } =
-        extract_matches!(expr, crate::Expr::ExprLiteral, "Expected a literal.");
+        extract_matches!(expr, crate::Expr::Literal, "Expected a literal.");
 
     assert_eq!(value, 7);
     assert_eq!(ty, db.core_felt_ty());
@@ -50,11 +50,10 @@ fn test_expr_assignment() {
 
     assert_eq!(
         format!("{:?}", expr.debug(&expr_formatter)),
-        "ExprAssignment(ExprAssignment { var: LocalVarId(test_crate::a), rhs: \
-         ExprFunctionCall(ExprFunctionCall { function: \
-         Concrete(ExternFunctionId(core::felt_mul)), args: [ExprVar(ExprVar { var: \
-         LocalVarId(test_crate::a), ty: core::felt }), ExprLiteral(ExprLiteral { value: 3, ty: \
-         core::felt })], ty: core::felt }), ty: () })"
+        "Assignment(ExprAssignment { var: LocalVarId(test_crate::a), rhs: \
+         FunctionCall(ExprFunctionCall { function: Concrete(ExternFunctionId(core::felt_mul)), \
+         args: [Var(ExprVar { var: LocalVarId(test_crate::a), ty: core::felt }), \
+         Literal(ExprLiteral { value: 3, ty: core::felt })], ty: core::felt }), ty: () })"
     );
 }
 
@@ -70,14 +69,13 @@ fn test_expr_operator() {
     // TODO(spapini): Have better whitespaces here somehow.
     assert_eq!(
         format!("{:?}", expr.debug(&expr_formatter)),
-        "ExprFunctionCall(ExprFunctionCall { function: Concrete(ExternFunctionId(core::felt_eq)), \
-         args: [ExprFunctionCall(ExprFunctionCall { function: \
-         Concrete(ExternFunctionId(core::felt_add)), args: [ExprLiteral(ExprLiteral { value: 5, \
-         ty: core::felt }), ExprFunctionCall(ExprFunctionCall { function: \
-         Concrete(ExternFunctionId(core::felt_mul)), args: [ExprLiteral(ExprLiteral { value: 9, \
-         ty: core::felt }), ExprLiteral(ExprLiteral { value: 3, ty: core::felt })], ty: \
-         core::felt })], ty: core::felt }), ExprLiteral(ExprLiteral { value: 0, ty: core::felt \
-         })], ty: core::bool })"
+        "FunctionCall(ExprFunctionCall { function: Concrete(ExternFunctionId(core::felt_eq)), \
+         args: [FunctionCall(ExprFunctionCall { function: \
+         Concrete(ExternFunctionId(core::felt_add)), args: [Literal(ExprLiteral { value: 5, ty: \
+         core::felt }), FunctionCall(ExprFunctionCall { function: \
+         Concrete(ExternFunctionId(core::felt_mul)), args: [Literal(ExprLiteral { value: 9, ty: \
+         core::felt }), Literal(ExprLiteral { value: 3, ty: core::felt })], ty: core::felt })], \
+         ty: core::felt }), Literal(ExprLiteral { value: 0, ty: core::felt })], ty: core::bool })"
     );
 }
 
@@ -109,7 +107,7 @@ fn test_member_access() {
     let expr_formatter = ExprFormatter { db, free_function_id: foo_id };
     let block = extract_matches!(
         db.expr_semantic(foo_id, db.free_function_definition_body(foo_id).unwrap()),
-        semantic::Expr::ExprBlock
+        semantic::Expr::Block
     );
     let exprs: Vec<_> = block
         .statements
@@ -131,18 +129,15 @@ fn test_member_access() {
     assert_eq!(
         exprs,
         vec![
-            "ExprMemberAccess(ExprMemberAccess { expr: ExprVar(ExprVar { var: \
-             ParamId(test_crate::a), ty: test_crate::A }), member: MemberId(test_crate::a), ty: \
-             (core::felt) })",
-            "ExprMemberAccess(ExprMemberAccess { expr: ExprVar(ExprVar { var: \
-             ParamId(test_crate::a), ty: test_crate::A }), member: MemberId(test_crate::b), ty: \
-             core::felt })",
-            "ExprMemberAccess(ExprMemberAccess { expr: ExprVar(ExprVar { var: \
-             ParamId(test_crate::a), ty: test_crate::A }), member: MemberId(test_crate::c), ty: \
-             test_crate::A })",
-            "ExprMemberAccess(ExprMemberAccess { expr: ExprMemberAccess(ExprMemberAccess { expr: \
-             ExprMemberAccess(ExprMemberAccess { expr: ExprMemberAccess(ExprMemberAccess { expr: \
-             ExprVar(ExprVar { var: ParamId(test_crate::a), ty: test_crate::A }), member: \
+            "MemberAccess(ExprMemberAccess { expr: Var(ExprVar { var: ParamId(test_crate::a), ty: \
+             test_crate::A }), member: MemberId(test_crate::a), ty: (core::felt) })",
+            "MemberAccess(ExprMemberAccess { expr: Var(ExprVar { var: ParamId(test_crate::a), ty: \
+             test_crate::A }), member: MemberId(test_crate::b), ty: core::felt })",
+            "MemberAccess(ExprMemberAccess { expr: Var(ExprVar { var: ParamId(test_crate::a), ty: \
+             test_crate::A }), member: MemberId(test_crate::c), ty: test_crate::A })",
+            "MemberAccess(ExprMemberAccess { expr: MemberAccess(ExprMemberAccess { expr: \
+             MemberAccess(ExprMemberAccess { expr: MemberAccess(ExprMemberAccess { expr: \
+             Var(ExprVar { var: ParamId(test_crate::a), ty: test_crate::A }), member: \
              MemberId(test_crate::c), ty: test_crate::A }), member: MemberId(test_crate::c), ty: \
              test_crate::A }), member: MemberId(test_crate::c), ty: test_crate::A }), member: \
              MemberId(test_crate::a), ty: (core::felt) })",
@@ -238,12 +233,29 @@ fn test_tuple_type() {
 fn test_function_with_return_type() {
     let mut db_val = SemanticDatabaseForTesting::default();
     let test_function =
-        setup_test_function(&mut db_val, "func foo() -> felt {}", "foo", "").unwrap();
+        setup_test_function(&mut db_val, "func foo() -> felt { 5 }", "foo", "").unwrap();
     let _db = &db_val;
     let signature = test_function.signature;
 
     // TODO(spapini): Verify params names and tests after StablePtr feature is added.
     let _ret_ty = signature.return_type;
+}
+
+#[test]
+fn test_function_with_return_type_failures() {
+    let mut db_val = SemanticDatabaseForTesting::default();
+    let diagnostics =
+        setup_test_function(&mut db_val, "func foo() -> felt { }", "foo", "").get_diagnostics();
+    assert_eq!(
+        diagnostics,
+        indoc! {r#"
+            error: Unexpected return type. Expected: "core::felt", found: "()".
+             --> lib.cairo:1:20
+            func foo() -> felt { }
+                               ^*^
+            
+        "#}
+    );
 }
 
 #[test]
@@ -267,10 +279,10 @@ fn test_let_statement() {
 
     assert_eq!(
         format!("{:?}", expr.debug(&expr_formatter)),
-        "ExprBlock(ExprBlock { statements: [Let(StatementLet { pattern: Variable(a), expr: \
-         ExprLiteral(ExprLiteral { value: 3, ty: core::felt }) }), Let(StatementLet { pattern: \
-         Variable(b), expr: ExprVar(ExprVar { var: LocalVarId(test_crate::a), ty: core::felt }) \
-         })], tail: None, ty: () })"
+        "Block(ExprBlock { statements: [Let(StatementLet { pattern: Variable(a), expr: \
+         Literal(ExprLiteral { value: 3, ty: core::felt }) }), Let(StatementLet { pattern: \
+         Variable(b), expr: Var(ExprVar { var: LocalVarId(test_crate::a), ty: core::felt }) })], \
+         tail: None, ty: () })"
     );
 }
 
@@ -306,7 +318,7 @@ fn test_expr_var() {
     let test_function = setup_test_function(
         &mut db_val,
         indoc! {"
-            func foo(a: felt) {
+            func foo(a: felt) -> felt {
                 a
             }
         "},
@@ -318,13 +330,13 @@ fn test_expr_var() {
 
     let semantic::ExprBlock { statements: _, tail, ty: _, stable_ptr: _ } = extract_matches!(
         db.expr_semantic(test_function.function_id, test_function.body),
-        crate::Expr::ExprBlock
+        crate::Expr::Block
     );
 
     // Check expr.
     let semantic::ExprVar { var: _, ty: _, stable_ptr: _ } = extract_matches!(
         db.expr_semantic(test_function.function_id, tail.unwrap()),
-        crate::Expr::ExprVar,
+        crate::Expr::Var,
         "Expected a variable."
     );
     // TODO(spapini): Check Var against param using param.id.
@@ -362,7 +374,7 @@ fn test_expr_match() {
     let test_function = setup_test_function(
         &mut db_val,
         indoc! {"
-            func foo(a: felt) {
+            func foo(a: felt) -> felt {
                 match a {
                     0 => 0,
                     _ => 1,
@@ -376,17 +388,17 @@ fn test_expr_match() {
     let db = &db_val;
     let semantic::ExprBlock { statements: _, tail, ty: _, stable_ptr: _ } = extract_matches!(
         db.expr_semantic(test_function.function_id, test_function.body),
-        crate::Expr::ExprBlock
+        crate::Expr::Block
     );
     let expr = db.expr_semantic(test_function.function_id, tail.unwrap());
     let expr_formatter = ExprFormatter { db, free_function_id: test_function.function_id };
     assert_eq!(
         format!("{:?}", expr.debug(&expr_formatter)),
-        "ExprMatch(ExprMatch { matched_expr: ExprVar(ExprVar { var: ParamId(test_crate::a), ty: \
+        "Match(ExprMatch { matched_expr: Var(ExprVar { var: ParamId(test_crate::a), ty: \
          core::felt }), arms: [MatchArm { pattern: Literal(PatternLiteral { literal: ExprLiteral \
-         { value: 0, ty: core::felt }, ty: core::felt }), expression: ExprLiteral(ExprLiteral { \
+         { value: 0, ty: core::felt }, ty: core::felt }), expression: Literal(ExprLiteral { \
          value: 0, ty: core::felt }) }, MatchArm { pattern: Otherwise(PatternOtherwise { ty: \
-         core::felt }), expression: ExprLiteral(ExprLiteral { value: 1, ty: core::felt }) }], ty: \
+         core::felt }), expression: Literal(ExprLiteral { value: 1, ty: core::felt }) }], ty: \
          core::felt })"
     );
 }
@@ -397,7 +409,7 @@ fn test_expr_match_failures() {
     let diagnostics = setup_test_function(
         &mut db_val,
         indoc! {"
-            func foo(a: felt, b: bool) {
+            func foo(a: felt, b: bool) -> felt {
                 match a {
                     0 => 0,
                     _ => b,
@@ -429,7 +441,7 @@ fn test_expr_block() {
 
     // Check expr.
     let semantic::ExprBlock { statements, tail, ty, stable_ptr: _ } =
-        extract_matches!(expr, crate::Expr::ExprBlock, "Expected a block.");
+        extract_matches!(expr, crate::Expr::Block, "Expected a block.");
     assert_eq!(ty, unit_ty(db));
     assert!(tail.is_none());
 
@@ -453,13 +465,13 @@ fn test_expr_block_with_tail_expression() {
 
     // Check expr.
     let semantic::ExprBlock { statements, tail, ty, stable_ptr: _ } =
-        extract_matches!(expr, crate::Expr::ExprBlock, "Expected a block.");
+        extract_matches!(expr, crate::Expr::Block, "Expected a block.");
     assert_eq!(ty, core_felt_ty(db));
 
     // Check tail expression.
     let semantic::ExprLiteral { value, ty: _, stable_ptr: _ } = extract_matches!(
         db.expr_semantic(test_expr.function_id, tail.unwrap()),
-        crate::Expr::ExprLiteral,
+        crate::Expr::Literal,
         "Expected a literal expression."
     );
     assert_eq!(value, 9);
@@ -486,7 +498,7 @@ fn test_expr_call() {
 
     // Check expr.
     let semantic::ExprFunctionCall { function: _, args, ty, stable_ptr: _ } =
-        extract_matches!(expr, crate::Expr::ExprFunctionCall, "Unexpected expr.");
+        extract_matches!(expr, crate::Expr::FunctionCall, "Unexpected expr.");
     assert!(args.is_empty());
     assert_eq!(ty, unit_ty(db));
 }
@@ -516,7 +528,7 @@ fn test_expr_call_failures() {
             "{:?}",
             db.expr_semantic(test_expr.function_id, test_expr.expr_id).debug(&expr_formatter)
         ),
-        "Missing { ty: <missing>, stable_ptr: ExprPtr(SyntaxStablePtrId(26)) }"
+        "Missing(ExprMissing { ty: <missing> })"
     );
 }
 
@@ -543,7 +555,7 @@ fn test_function_body() {
     // Test the resulting semantic function body.
     let semantic::ExprBlock { statements, .. } = extract_matches!(
         db.expr_semantic(test_function.function_id, body),
-        crate::Expr::ExprBlock,
+        crate::Expr::Block,
         "Expected a block."
     );
     assert_eq!(statements.len(), 1);
@@ -554,8 +566,7 @@ fn test_function_body() {
             crate::Statement::Expr
         ),
     );
-    let semantic::ExprVar { var, ty: _, stable_ptr: _ } =
-        extract_matches!(expr, crate::Expr::ExprVar);
+    let semantic::ExprVar { var, ty: _, stable_ptr: _ } = extract_matches!(expr, crate::Expr::Var);
     let param = extract_matches!(var, VarId::Param);
     assert_eq!(param.name(db), "a");
 }
@@ -582,10 +593,10 @@ fn test_expr_struct_ctor() {
     let expr_formatter = ExprFormatter { db, free_function_id: test_expr.function_id };
     assert_eq!(
         format!("{:?}", expr.debug(&expr_formatter)),
-        "ExprStructCtor(ExprStructCtor { struct_id: StructId(test_crate::A), members: \
-         [(MemberId(test_crate::a), ExprLiteral(ExprLiteral { value: 1, ty: core::felt })), \
-         (MemberId(test_crate::b), ExprVar(ExprVar { var: LocalVarId(test_crate::b), ty: \
-         core::felt }))], ty: test_crate::A })"
+        "StructCtor(ExprStructCtor { struct_id: StructId(test_crate::A), members: \
+         [(MemberId(test_crate::a), Literal(ExprLiteral { value: 1, ty: core::felt })), \
+         (MemberId(test_crate::b), Var(ExprVar { var: LocalVarId(test_crate::b), ty: core::felt \
+         }))], ty: test_crate::A })"
     );
 }
 
@@ -598,12 +609,12 @@ fn test_expr_tuple() {
     let expr_formatter = ExprFormatter { db, free_function_id: test_expr.function_id };
     assert_eq!(
         format!("{:?}", expr.debug(&expr_formatter)),
-        "ExprTuple(ExprTuple { items: [ExprFunctionCall(ExprFunctionCall { function: \
-         Concrete(ExternFunctionId(core::felt_add)), args: [ExprLiteral(ExprLiteral { value: 1, \
-         ty: core::felt }), ExprLiteral(ExprLiteral { value: 2, ty: core::felt })], ty: \
-         core::felt }), ExprTuple(ExprTuple { items: [ExprLiteral(ExprLiteral { value: 2, ty: \
-         core::felt }), ExprLiteral(ExprLiteral { value: 3, ty: core::felt })], ty: (core::felt, \
-         core::felt) })], ty: (core::felt, (core::felt, core::felt)) })"
+        "Tuple(ExprTuple { items: [FunctionCall(ExprFunctionCall { function: \
+         Concrete(ExternFunctionId(core::felt_add)), args: [Literal(ExprLiteral { value: 1, ty: \
+         core::felt }), Literal(ExprLiteral { value: 2, ty: core::felt })], ty: core::felt }), \
+         Tuple(ExprTuple { items: [Literal(ExprLiteral { value: 2, ty: core::felt }), \
+         Literal(ExprLiteral { value: 3, ty: core::felt })], ty: (core::felt, core::felt) })], \
+         ty: (core::felt, (core::felt, core::felt)) })"
     );
 }
 
@@ -617,7 +628,7 @@ fn test_expr_struct_ctor_failures() {
                 a: felt,
                 b: ()
             }
-            func foo(a: A){
+            func foo(a: A) -> A {
                 A {
                     b: 1,
                     a: 2,
