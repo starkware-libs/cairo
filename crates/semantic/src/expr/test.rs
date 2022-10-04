@@ -51,9 +51,9 @@ fn test_expr_assignment() {
     assert_eq!(
         format!("{:?}", expr.debug(&expr_formatter)),
         "Assignment(ExprAssignment { var: LocalVarId(test_crate::a), rhs: \
-         FunctionCall(ExprFunctionCall { function: Concrete(ExternFunctionId(core::felt_mul)), \
-         args: [Var(ExprVar { var: LocalVarId(test_crate::a), ty: core::felt }), \
-         Literal(ExprLiteral { value: 3, ty: core::felt })], ty: core::felt }), ty: () })"
+         FunctionCall(ExprFunctionCall { function: core::felt_mul, args: [Var(ExprVar { var: \
+         LocalVarId(test_crate::a), ty: core::felt }), Literal(ExprLiteral { value: 3, ty: \
+         core::felt })], ty: core::felt }), ty: () })"
     );
 }
 
@@ -69,13 +69,12 @@ fn test_expr_operator() {
     // TODO(spapini): Have better whitespaces here somehow.
     assert_eq!(
         format!("{:?}", expr.debug(&expr_formatter)),
-        "FunctionCall(ExprFunctionCall { function: Concrete(ExternFunctionId(core::felt_eq)), \
-         args: [FunctionCall(ExprFunctionCall { function: \
-         Concrete(ExternFunctionId(core::felt_add)), args: [Literal(ExprLiteral { value: 5, ty: \
-         core::felt }), FunctionCall(ExprFunctionCall { function: \
-         Concrete(ExternFunctionId(core::felt_mul)), args: [Literal(ExprLiteral { value: 9, ty: \
-         core::felt }), Literal(ExprLiteral { value: 3, ty: core::felt })], ty: core::felt })], \
-         ty: core::felt }), Literal(ExprLiteral { value: 0, ty: core::felt })], ty: core::bool })"
+        "FunctionCall(ExprFunctionCall { function: core::felt_eq, args: \
+         [FunctionCall(ExprFunctionCall { function: core::felt_add, args: [Literal(ExprLiteral { \
+         value: 5, ty: core::felt }), FunctionCall(ExprFunctionCall { function: core::felt_mul, \
+         args: [Literal(ExprLiteral { value: 9, ty: core::felt }), Literal(ExprLiteral { value: \
+         3, ty: core::felt })], ty: core::felt })], ty: core::felt }), Literal(ExprLiteral { \
+         value: 0, ty: core::felt })], ty: core::bool })"
     );
 }
 
@@ -611,12 +610,11 @@ fn test_expr_tuple() {
     let expr_formatter = ExprFormatter { db, free_function_id: test_expr.function_id };
     assert_eq!(
         format!("{:?}", expr.debug(&expr_formatter)),
-        "Tuple(ExprTuple { items: [FunctionCall(ExprFunctionCall { function: \
-         Concrete(ExternFunctionId(core::felt_add)), args: [Literal(ExprLiteral { value: 1, ty: \
-         core::felt }), Literal(ExprLiteral { value: 2, ty: core::felt })], ty: core::felt }), \
-         Tuple(ExprTuple { items: [Literal(ExprLiteral { value: 2, ty: core::felt }), \
-         Literal(ExprLiteral { value: 3, ty: core::felt })], ty: (core::felt, core::felt) })], \
-         ty: (core::felt, (core::felt, core::felt)) })"
+        "Tuple(ExprTuple { items: [FunctionCall(ExprFunctionCall { function: core::felt_add, \
+         args: [Literal(ExprLiteral { value: 1, ty: core::felt }), Literal(ExprLiteral { value: \
+         2, ty: core::felt })], ty: core::felt }), Tuple(ExprTuple { items: [Literal(ExprLiteral \
+         { value: 2, ty: core::felt }), Literal(ExprLiteral { value: 3, ty: core::felt })], ty: \
+         (core::felt, core::felt) })], ty: (core::felt, (core::felt, core::felt)) })"
     );
 }
 
