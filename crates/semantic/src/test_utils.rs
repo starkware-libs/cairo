@@ -157,16 +157,20 @@ pub fn setup_test_expr(
     module_code: &str,
     function_body: &str,
 ) -> WithStringDiagnostics<TestExpr> {
-    let function_code = format!("func test_func() {{ {function_body} {{\n{expr_code}\n}} }}");
+    let function_code = format!("func test_func() {{ {function_body} {{\n{expr_code}\n}}; }}");
     let (test_function, diagnostics) =
         setup_test_function(db, &function_code, "test_func", module_code).split();
-    let semantic::ExprBlock { tail: function_body_tail, .. } = extract_matches!(
+    let semantic::ExprBlock { statements, .. } = extract_matches!(
         db.expr_semantic(test_function.function_id, test_function.body),
-        semantic::Expr::ExprBlock
+        semantic::Expr::Block
+    );
+    let statement_expr = extract_matches!(
+        db.statement_semantic(test_function.function_id, *statements.last().unwrap()),
+        semantic::Statement::Expr
     );
     let semantic::ExprBlock { statements, tail, .. } = extract_matches!(
-        db.expr_semantic(test_function.function_id, function_body_tail.unwrap()),
-        semantic::Expr::ExprBlock
+        db.expr_semantic(test_function.function_id, statement_expr.expr),
+        semantic::Expr::Block
     );
     assert!(
         statements.is_empty(),

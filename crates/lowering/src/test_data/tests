@@ -1,0 +1,56 @@
+//! > Test unreachable code.
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+func foo(a: felt) -> felt {
+    return a + a * a;
+    5;6;7;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+error: Unexpected return type. Expected: "core::felt", found: "()".
+ --> lib.cairo:1:27
+func foo(a: felt) -> felt {
+                          ^
+  
+
+//! > lowering_diagnostics
+error: Unreachable code
+ --> lib.cairo:3:5
+    5;6;7;
+    ^****^
+
+
+//! > ==========================================================================
+
+//! > Test single patterns.
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+func foo(a: felt) -> felt {
+    let (_, b) = (1, a);
+    return 5;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+error: Unexpected return type. Expected: "core::felt", found: "()".
+ --> lib.cairo:1:27
+func foo(a: felt) -> felt {
+                          ^
+
+
+//! > lowering_diagnostics

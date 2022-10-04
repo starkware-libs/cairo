@@ -177,7 +177,11 @@ fn collect_used_types(
             .expect("Specialization failure.");
             chain!(
                 signature.input_types,
-                signature.output_info.into_iter().flat_map(|info| info.vars).map(|var| var.ty)
+                signature
+                    .branch_signatures
+                    .into_iter()
+                    .flat_map(|info| info.vars)
+                    .map(|var| var.ty)
             )
         })
         .collect()

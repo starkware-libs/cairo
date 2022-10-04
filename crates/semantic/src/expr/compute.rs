@@ -34,7 +34,7 @@ use crate::types::{resolve_type, ConcreteTypeId};
 /// Context for computing the semantic model of expression trees.
 pub struct ComputationContext<'ctx> {
     pub db: &'ctx dyn SemanticGroup,
-    diagnostics: &'ctx mut SemanticDiagnostics,
+    pub diagnostics: &'ctx mut SemanticDiagnostics,
     pub resolver: Resolver<'ctx>,
     return_ty: TypeId,
     environment: Box<Environment>,
@@ -100,9 +100,8 @@ impl Environment {
 
 /// Computes the semantic model of an expression.
 pub fn compute_expr_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::Expr) -> Expr {
-    maybe_compute_expr_semantic(ctx, syntax).unwrap_or_else(|| Expr::Missing {
-        ty: TypeId::missing(ctx.db),
-        stable_ptr: syntax.stable_ptr(),
+    maybe_compute_expr_semantic(ctx, syntax).unwrap_or_else(|| {
+        Expr::Missing(ExprMissing { ty: TypeId::missing(ctx.db), stable_ptr: syntax.stable_ptr() })
     })
 }
 
@@ -117,7 +116,7 @@ pub fn maybe_compute_expr_semantic(
     Some(match syntax {
         ast::Expr::Path(path) => resolve_variable(ctx, path)?,
         ast::Expr::Literal(literal_syntax) => {
-            Expr::ExprLiteral(literal_to_semantic(ctx, literal_syntax)?)
+            Expr::Literal(literal_to_semantic(ctx, literal_syntax)?)
         }
         ast::Expr::False(syntax) => true_literal_expr(ctx, syntax.stable_ptr().into()),
         ast::Expr::True(syntax) => false_literal_expr(ctx, syntax.stable_ptr().into()),
@@ -142,14 +141,12 @@ pub fn maybe_compute_expr_semantic(
 
             if matches!(binary_op, BinaryOperator::Eq(_)) {
                 return match lexpr {
-                    Expr::ExprVar(ExprVar { var, .. }) => {
-                        Some(Expr::ExprAssignment(ExprAssignment {
-                            var,
-                            rhs: ctx.exprs.alloc(rexpr),
-                            ty: unit_ty(db),
-                            stable_ptr,
-                        }))
-                    }
+                    Expr::Var(ExprVar { var, .. }) => Some(Expr::Assignment(ExprAssignment {
+                        var,
+                        rhs: ctx.exprs.alloc(rexpr),
+                        ty: unit_ty(db),
+                        stable_ptr,
+                    })),
                     _ => {
                         ctx.diagnostics.report(lhs_syntax, InvalidLhsForAssignment);
                         None
@@ -168,7 +165,7 @@ pub fn maybe_compute_expr_semantic(
                 types.push(expr_semantic.ty());
                 items.push(ctx.exprs.alloc(expr_semantic));
             }
-            Expr::ExprTuple(ExprTuple {
+            Expr::Tuple(ExprTuple {
                 items,
                 ty: db.intern_type(TypeLongId::Tuple(types)),
                 stable_ptr: tuple_syntax.stable_ptr().into(),
@@ -207,7 +204,7 @@ pub fn maybe_compute_expr_semantic(
                         );
                         return None;
                     }
-                    semantic::Expr::ExprEnumVariantCtor(semantic::ExprEnumVariantCtor {
+                    semantic::Expr::EnumVariantCtor(semantic::ExprEnumVariantCtor {
                         enum_variant_id: concrete_variant.id,
                         value_expr: ctx.exprs.alloc(arg),
                         ty: db.intern_type(TypeLongId::Concrete(ConcreteTypeId::Enum(
@@ -250,7 +247,7 @@ pub fn maybe_compute_expr_semantic(
                     Some(t) => t.ty(),
                     None => unit_ty(db),
                 };
-                Expr::ExprBlock(ExprBlock {
+                Expr::Block(ExprBlock {
                     statements: statements_semantic,
                     tail: tail_semantic_expr.map(|expr| new_ctx.exprs.alloc(expr)),
                     ty,
@@ -325,7 +322,7 @@ pub fn maybe_compute_expr_semantic(
                 })
                 .collect();
 
-            Expr::ExprMatch(ExprMatch {
+            Expr::Match(ExprMatch {
                 matched_expr: ctx.exprs.alloc(expr),
                 arms: semantic_arms,
                 ty: match match_type {
@@ -541,7 +538,7 @@ fn struct_ctor_expr(
             ctx.diagnostics.report(ctor_syntax, MissingMember { member_name: member_name.clone() });
         }
     }
-    Some(Expr::ExprStructCtor(ExprStructCtor {
+    Some(Expr::StructCtor(ExprStructCtor {
         struct_id: concrete_struct.struct_id(db),
         members: member_exprs.into_iter().collect(),
         ty: db.intern_type(TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct))),
@@ -624,7 +621,7 @@ fn member_access_expr(
                         ctx.diagnostics.report(&rhs_syntax, NoSuchMember { struct_id, member_name })
                     })?;
                 let lexpr_id = ctx.exprs.alloc(lexpr);
-                return Some(Expr::ExprMemberAccess(ExprMemberAccess {
+                return Some(Expr::MemberAccess(ExprMemberAccess {
                     expr: lexpr_id,
                     member: member.id,
                     ty: member.ty,
@@ -680,7 +677,7 @@ pub fn resolve_variable_by_name(
     let mut maybe_env = Some(&*ctx.environment);
     while let Some(env) = maybe_env {
         if let Some(var) = env.variables.get(&variable_name) {
-            return Some(Expr::ExprVar(ExprVar {
+            return Some(Expr::Var(ExprVar {
                 var: var.id(),
                 ty: var.ty(),
                 stable_ptr: path.stable_ptr().into(),
@@ -729,7 +726,7 @@ fn expr_function_call(
     }
 
     let args = arg_exprs.into_iter().map(|expr| ctx.exprs.alloc(expr)).collect();
-    Some(Expr::ExprFunctionCall(ExprFunctionCall {
+    Some(Expr::FunctionCall(ExprFunctionCall {
         function,
         args,
         ty: signature.return_type,
@@ -744,7 +741,7 @@ pub fn compute_statement_semantic(
 ) -> Option<StatementId> {
     let db = ctx.db;
     let syntax_db = db.upcast();
-    let statement = match syntax {
+    let statement = match &syntax {
         ast::Statement::Let(let_syntax) => {
             let expr = compute_expr_semantic(ctx, &let_syntax.rhs(syntax_db));
             let inferred_type = expr.ty();
@@ -774,11 +771,18 @@ pub fn compute_statement_semantic(
             for v in variables {
                 ctx.environment.variables.insert(v.name.clone(), Variable::Local(v.var.clone()));
             }
-            semantic::Statement::Let(semantic::StatementLet { pattern, expr: rhs_expr_id })
+            semantic::Statement::Let(semantic::StatementLet {
+                pattern,
+                expr: rhs_expr_id,
+                stable_ptr: syntax.stable_ptr(),
+            })
         }
         ast::Statement::Expr(expr_syntax) => {
             let expr = compute_expr_semantic(ctx, &expr_syntax.expr(syntax_db));
-            semantic::Statement::Expr(ctx.exprs.alloc(expr))
+            semantic::Statement::Expr(semantic::StatementExpr {
+                expr: ctx.exprs.alloc(expr),
+                stable_ptr: syntax.stable_ptr(),
+            })
         }
         ast::Statement::Return(return_syntax) => {
             let expr_syntax = return_syntax.expr(syntax_db);
@@ -789,7 +793,10 @@ pub fn compute_statement_semantic(
                     WrongReturnType { expected_ty: ctx.return_ty, actual_ty: expr.ty() },
                 )
             }
-            semantic::Statement::Return(ctx.exprs.alloc(expr))
+            semantic::Statement::Return(semantic::StatementReturn {
+                expr: ctx.exprs.alloc(expr),
+                stable_ptr: syntax.stable_ptr(),
+            })
         }
         ast::Statement::Missing(_) => todo!(),
     };

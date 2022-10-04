@@ -1,0 +1,26 @@
+[package]
+name = "lowering"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+db_utils = { path = "../db_utils" }
+debug = { path = "../debug" }
+defs = {path = "../defs"}
+diagnostics = { path = "../diagnostics" }
+diagnostics_proc_macros = { path = "../diagnostics_proc_macros" }
+filesystem = { path = "../filesystem" }
+id-arena = "2.2.1"
+itertools = "0.10.3"
+parser = { path = "../parser" }
+salsa = "0.16.1"
+semantic = { path = "../semantic" }
+smol_str = "0.1.23"
+syntax = { path = "../syntax" }
+utils = { path = "../utils" }
+
+[dev_dependencies]
+indoc = "1.0.7"
+pretty_assertions = "1.2.1"
+semantic = { path = "../semantic", features = ["testing"] }
+utils = { path = "../utils", features = ["testing"] }
