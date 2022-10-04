@@ -1,5 +1,7 @@
 use pretty_assertions::assert_eq;
-use sierra::extensions::lib_func::{BranchSignature, OutputVarInfo, SierraApChange};
+use sierra::extensions::lib_func::{
+    BranchSignature, LibFuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
+};
 use sierra::extensions::OutputVarReferenceInfo;
 use sierra::ids::{ConcreteLibFuncId, ConcreteTypeId};
 
@@ -12,22 +14,36 @@ use crate::test_utils::{
 };
 
 /// Returns the [OutputVarReferenceInfo] information for a given libfunc.
-fn get_branch_signatures(
-    db: &dyn SierraGenGroup,
-    libfunc: ConcreteLibFuncId,
-) -> Vec<BranchSignature> {
+fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibFuncId) -> LibFuncSignature {
     let libfunc_long_id = db.lookup_intern_concrete_lib_func(libfunc);
     let dummy_type = ConcreteTypeId::from_usize(0);
     let name = libfunc_long_id.generic_id.debug_name.unwrap();
     match name.as_str() {
         "felt_add" => {
-            let vars =
-                vec![OutputVarInfo { ty: dummy_type, ref_info: OutputVarReferenceInfo::Deferred }];
-            vec![BranchSignature { vars, ap_change: SierraApChange::NotImplemented }]
+            let vars = vec![OutputVarInfo {
+                ty: dummy_type.clone(),
+                ref_info: OutputVarReferenceInfo::Deferred,
+            }];
+            LibFuncSignature {
+                param_signatures: vec![
+                    ParamSignature::new(dummy_type.clone()),
+                    ParamSignature::new(dummy_type),
+                ],
+                branch_signatures: vec![BranchSignature {
+                    vars,
+                    ap_change: SierraApChange::NotImplemented,
+                }],
+                fallthrough: Some(0),
+            }
         }
-        "nope" => {
-            vec![BranchSignature { vars: vec![], ap_change: SierraApChange::NotImplemented }]
-        }
+        "nope" => LibFuncSignature {
+            param_signatures: vec![],
+            branch_signatures: vec![BranchSignature {
+                vars: vec![],
+                ap_change: SierraApChange::NotImplemented,
+            }],
+            fallthrough: Some(0),
+        },
         "function_call4" => {
             let vars: Vec<_> = (0..4)
                 .map(|idx| OutputVarInfo {
@@ -35,17 +51,31 @@ fn get_branch_signatures(
                     ref_info: OutputVarReferenceInfo::NewTempVar { idx },
                 })
                 .collect();
-            vec![BranchSignature { vars, ap_change: SierraApChange::NotImplemented }]
+            LibFuncSignature {
+                param_signatures: vec![],
+                branch_signatures: vec![BranchSignature {
+                    vars,
+                    ap_change: SierraApChange::NotImplemented,
+                }],
+                fallthrough: Some(0),
+            }
         }
-        "jump" => {
-            vec![BranchSignature { vars: vec![], ap_change: SierraApChange::Known }]
-        }
-        "branch" => {
-            vec![
+        "jump" => LibFuncSignature {
+            param_signatures: vec![],
+            branch_signatures: vec![BranchSignature {
+                vars: vec![],
+                ap_change: SierraApChange::Known,
+            }],
+            fallthrough: None,
+        },
+        "branch" => LibFuncSignature {
+            param_signatures: vec![],
+            branch_signatures: vec![
                 BranchSignature { vars: vec![], ap_change: SierraApChange::Known },
                 BranchSignature { vars: vec![], ap_change: SierraApChange::Known },
-            ]
-        }
+            ],
+            fallthrough: Some(1),
+        },
         _ => panic!("get_branch_signatures() is not implemented for '{}'.", name),
     }
 }
@@ -66,7 +96,7 @@ fn store_temp_simple() {
     ];
 
     assert_eq!(
-        add_store_statements(&db, statements, &(|libfunc| get_branch_signatures(&db, libfunc)))
+        add_store_statements(&db, statements, &(|libfunc| get_lib_func_signature(&db, libfunc)))
             .iter()
             .map(|statement| replace_libfunc_ids(&db, statement).to_string())
             .collect::<Vec<String>>(),
@@ -103,7 +133,7 @@ fn store_temp_push_values() {
     ];
 
     assert_eq!(
-        add_store_statements(&db, statements, &(|libfunc| get_branch_signatures(&db, libfunc)))
+        add_store_statements(&db, statements, &(|libfunc| get_lib_func_signature(&db, libfunc)))
             .iter()
             .map(|statement| replace_libfunc_ids(&db, statement).to_string())
             .collect::<Vec<String>>(),
@@ -137,7 +167,7 @@ fn push_values_optimization() {
     ];
 
     assert_eq!(
-        add_store_statements(&db, statements, &(|libfunc| get_branch_signatures(&db, libfunc)))
+        add_store_statements(&db, statements, &(|libfunc| get_lib_func_signature(&db, libfunc)))
             .iter()
             .map(|statement| replace_libfunc_ids(&db, statement).to_string())
             .collect::<Vec<String>>(),
@@ -164,7 +194,7 @@ fn consecutive_push_values() {
     ];
 
     assert_eq!(
-        add_store_statements(&db, statements, &(|libfunc| get_branch_signatures(&db, libfunc)))
+        add_store_statements(&db, statements, &(|libfunc| get_lib_func_signature(&db, libfunc)))
             .iter()
             .map(|statement| replace_libfunc_ids(&db, statement).to_string())
             .collect::<Vec<String>>(),
@@ -206,7 +236,7 @@ fn push_values_after_branch_merge() {
     ];
 
     assert_eq!(
-        add_store_statements(&db, statements, &(|libfunc| get_branch_signatures(&db, libfunc)))
+        add_store_statements(&db, statements, &(|libfunc| get_lib_func_signature(&db, libfunc)))
             .iter()
             .map(|statement| replace_libfunc_ids(&db, statement).to_string())
             .collect::<Vec<String>>(),
@@ -248,7 +278,7 @@ fn push_values_early_return() {
     ];
 
     assert_eq!(
-        add_store_statements(&db, statements, &(|libfunc| get_branch_signatures(&db, libfunc)))
+        add_store_statements(&db, statements, &(|libfunc| get_lib_func_signature(&db, libfunc)))
             .iter()
             .map(|statement| replace_libfunc_ids(&db, statement).to_string())
             .collect::<Vec<String>>(),
