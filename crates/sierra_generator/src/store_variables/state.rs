@@ -1,8 +1,27 @@
-use sierra::extensions::lib_func::{BranchSignature, OutputVarInfo};
+use sierra::extensions::lib_func::{BranchSignature, DeferredOutputKind, OutputVarInfo};
 use sierra::extensions::OutputVarReferenceInfo;
 use utils::ordered_hash_map::OrderedHashMap;
 
 use super::known_stack::KnownStack;
+
+/// Represents the known information about a Sierra variable which contains a deferred value.
+/// For example, `[ap - 1] + [ap - 2]`.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct DeferredVariableInfo {
+    /// The type of the variable.
+    pub ty: sierra::ids::ConcreteTypeId,
+    /// The deferred type.
+    pub kind: DeferredVariableKind,
+}
+
+/// The type of a deferred variable.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum DeferredVariableKind {
+    /// See [DeferredOutputKind::AddConst].
+    AddConst,
+    /// See [DeferredOutputKind::Generic].
+    Generic,
+}
 
 /// Represents information known about the state of the variables.
 /// For example, which variable contains a deferred value and which variable is on the stack.
@@ -10,7 +29,7 @@ use super::known_stack::KnownStack;
 pub struct State {
     /// A map from [sierra::ids::VarId] of a deferred reference
     /// (for example, `[ap - 1] + [ap - 2]`) to its type.
-    pub deferred_variables: OrderedHashMap<sierra::ids::VarId, sierra::ids::ConcreteTypeId>,
+    pub deferred_variables: OrderedHashMap<sierra::ids::VarId, DeferredVariableInfo>,
     /// The information known about the top of the stack.
     pub known_stack: KnownStack,
 }
@@ -47,13 +66,22 @@ impl State {
     fn register_output(&mut self, res: sierra::ids::VarId, output_info: &OutputVarInfo) {
         self.deferred_variables.swap_remove(&res);
         self.known_stack.remove_variable(&res);
-        match output_info.ref_info {
-            OutputVarReferenceInfo::Deferred(_) => {
-                // TODO(lior): Mark it as AddConst according to kind, instead of a regular Deferred.
-                self.deferred_variables.insert(res, output_info.ty.clone());
+        match &output_info.ref_info {
+            OutputVarReferenceInfo::Deferred(kind) => {
+                let deferred_variable_info_kind = match kind {
+                    DeferredOutputKind::AddConst { .. } => DeferredVariableKind::AddConst,
+                    DeferredOutputKind::Generic => DeferredVariableKind::Generic,
+                };
+                self.deferred_variables.insert(
+                    res,
+                    DeferredVariableInfo {
+                        ty: output_info.ty.clone(),
+                        kind: deferred_variable_info_kind,
+                    },
+                );
             }
             OutputVarReferenceInfo::NewTempVar { idx } => {
-                self.known_stack.insert(res, idx);
+                self.known_stack.insert(res, *idx);
             }
             OutputVarReferenceInfo::SameAsParam { .. }
             | OutputVarReferenceInfo::NewLocalVar
