@@ -3,9 +3,8 @@ use semantic::db::SemanticGroup;
 
 use crate::lower::Lowered;
 use crate::objects::{
-    Block, BlockEnd, BlockId, MatchArm, Statement, StatementCallBlock, StatementCallExtern,
-    StatementCallUserFunc, StatementLiteral, StatementMatchExtern, StatementTupleDestruct,
-    VariableId,
+    Block, BlockEnd, BlockId, MatchArm, Statement, StatementCall, StatementCallBlock,
+    StatementLiteral, StatementMatchExtern, StatementTupleDestruct, VariableId,
 };
 
 /// Holds all the information needed for formatting lowered representations.
@@ -109,9 +108,8 @@ impl DebugWithDb<LoweredFormatter<'_>> for Statement {
         write!(f, ") <- ")?;
         match self {
             Statement::Literal(stmt) => stmt.fmt(f, ctx),
-            Statement::CallUserFunc(stmt) => stmt.fmt(f, ctx),
+            Statement::Call(stmt) => stmt.fmt(f, ctx),
             Statement::CallBlock(stmt) => stmt.fmt(f, ctx),
-            Statement::CallExtern(stmt) => stmt.fmt(f, ctx),
             Statement::MatchExtern(stmt) => stmt.fmt(f, ctx),
             Statement::StructConstruct => todo!(),
             Statement::StructDestruct => todo!(),
@@ -133,23 +131,12 @@ impl DebugWithDb<LoweredFormatter<'_>> for StatementLiteral {
     }
 }
 
-impl DebugWithDb<LoweredFormatter<'_>> for StatementCallUserFunc {
+impl DebugWithDb<LoweredFormatter<'_>> for StatementCall {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
-        // TODO(spapini): Format function name better.
         write!(f, "{:?}(", self.function.debug(ctx.db))?;
         for var in &self.inputs {
             var.fmt(f, ctx)?;
-        }
-        write!(f, ")")
-    }
-}
-
-impl DebugWithDb<LoweredFormatter<'_>> for StatementCallExtern {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
-        // TODO(spapini): Format function name better.
-        write!(f, "{:?}(", self.function.debug(ctx.db))?;
-        for var in &self.inputs {
-            var.fmt(f, ctx)?;
+            write!(f, ", ")?;
         }
         write!(f, ")")
     }

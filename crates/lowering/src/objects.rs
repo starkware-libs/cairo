@@ -58,11 +58,8 @@ pub enum Statement {
     Literal(StatementLiteral),
 
     // Flow control.
-    CallUserFunc(StatementCallUserFunc),
+    Call(StatementCall),
     CallBlock(StatementCallBlock),
-
-    // Externs.
-    CallExtern(StatementCallExtern),
     MatchExtern(StatementMatchExtern),
 
     // Structs.
@@ -81,9 +78,8 @@ impl Statement {
     pub fn outputs(&self) -> Vec<VariableId> {
         match &self {
             Statement::Literal(stmt) => vec![stmt.output],
-            Statement::CallUserFunc(stmt) => stmt.outputs.clone(),
+            Statement::Call(stmt) => stmt.outputs.clone(),
             Statement::CallBlock(stmt) => stmt.outputs.clone(),
-            Statement::CallExtern(stmt) => stmt.outputs.clone(),
             Statement::MatchExtern(stmt) => stmt.outputs.clone(),
             Statement::StructConstruct => todo!(),
             Statement::StructDestruct => todo!(),
@@ -105,9 +101,8 @@ pub struct StatementLiteral {
 }
 
 /// A statement that calls a user function.
-pub struct StatementCallUserFunc {
-    // TODO(spapini): ConcreteFreeFunctionId once it exists.
-    /// A user function to "call".
+pub struct StatementCall {
+    /// A function to "call".
     pub function: semantic::FunctionId,
     /// Living variables in current scope to move to the function, as arguments.
     pub inputs: Vec<VariableId>,
@@ -123,17 +118,6 @@ pub struct StatementCallBlock {
     /// Living variables in current scope to move and be bound to the callee block inputs.
     pub inputs: Vec<VariableId>,
     /// New variables to be introduced into the current scope, moved from the callee block outputs.
-    pub outputs: Vec<VariableId>,
-}
-
-/// A statement that calls an extern function with a single branch.
-pub struct StatementCallExtern {
-    // TODO(spapini): ConcreteExternFunctionId once it exists.
-    /// A concrete external function to call.
-    pub function: semantic::FunctionId,
-    /// Living variables in current scope to move to the function, as arguments.
-    pub inputs: Vec<VariableId>,
-    /// New variables to be introduced into the current scope from the function outputs.
     pub outputs: Vec<VariableId>,
 }
 

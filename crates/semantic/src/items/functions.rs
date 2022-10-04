@@ -17,12 +17,24 @@ use crate::{semantic, Parameter};
 /// Function instance.
 /// For example: ImplA::foo<A, B>, or bar<A>.
 // TODO(spapini): Add a function pointer variant.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
-#[debug_db(dyn SemanticGroup + 'static)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum FunctionLongId {
     Concrete(ConcreteFunction),
     Missing,
 }
+impl DebugWithDb<dyn SemanticGroup> for FunctionLongId {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+        db: &(dyn SemanticGroup + 'static),
+    ) -> std::fmt::Result {
+        match self {
+            FunctionLongId::Concrete(concrete) => write!(f, "{:?}", concrete.debug(db)),
+            FunctionLongId::Missing => write!(f, "<missing>"),
+        }
+    }
+}
+
 define_short_id!(FunctionId, FunctionLongId, SemanticGroup, lookup_intern_function);
 impl FunctionId {
     pub fn missing(db: &dyn SemanticGroup) -> Self {
@@ -42,7 +54,7 @@ impl DebugWithDb<dyn SemanticGroup> for ConcreteFunction {
         f: &mut std::fmt::Formatter<'_>,
         db: &(dyn SemanticGroup + 'static),
     ) -> std::fmt::Result {
-        self.generic_function.fmt(f, db)?;
+        write!(f, "{}", self.generic_function.format(db.upcast()))?;
         if !self.generic_args.is_empty() {
             write!(f, "<")?;
             for arg in self.generic_args.iter() {

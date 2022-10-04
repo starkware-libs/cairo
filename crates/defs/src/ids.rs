@@ -316,11 +316,17 @@ impl DebugWithDb<dyn DefsGroup> for LocalVarLongId {
 }
 
 define_language_element_id_as_enum! {
+    #[toplevel]
     /// Generic function ids enum.
     pub enum GenericFunctionId {
         Free(FreeFunctionId),
         Extern(ExternFunctionId),
         // TODO(spapini): impl functions.
+    }
+}
+impl GenericFunctionId {
+    pub fn format(&self, db: &(dyn DefsGroup + 'static)) -> String {
+        format!("{}::{}", self.module(db).full_path(db), self.name(db))
     }
 }
 
