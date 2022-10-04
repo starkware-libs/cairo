@@ -1,8 +1,8 @@
 // Module providing the gas related extensions.
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
-    LibFuncSignature, OutputBranchInfo, OutputVarInfo, SierraApChange,
-    SignatureOnlyConcreteLibFunc, SignatureSpecializationContext, SpecializationContext,
+    BranchSignature, LibFuncSignature, OutputVarInfo, SierraApChange, SignatureOnlyConcreteLibFunc,
+    SignatureSpecializationContext, SpecializationContext,
 };
 use crate::extensions::types::{InfoOnlyConcreteType, TypeInfo};
 use crate::extensions::{
@@ -46,9 +46,9 @@ impl NoGenericArgsGenericLibFunc for GetGasLibFunc {
         let gas_builtin_type = context.get_concrete_type_as_result(GasBuiltinType::id(), &[])?;
         Ok(LibFuncSignature {
             input_types: vec![gas_builtin_type.clone()],
-            output_info: vec![
+            branch_signatures: vec![
                 // Success:
-                OutputBranchInfo {
+                BranchSignature {
                     vars: vec![OutputVarInfo {
                         ty: gas_builtin_type.clone(),
                         ref_info: OutputVarReferenceInfo::Deferred,
@@ -56,7 +56,7 @@ impl NoGenericArgsGenericLibFunc for GetGasLibFunc {
                     ap_change: SierraApChange::NotImplemented,
                 },
                 // Failure:
-                OutputBranchInfo {
+                BranchSignature {
                     vars: vec![OutputVarInfo {
                         ty: gas_builtin_type,
                         ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },

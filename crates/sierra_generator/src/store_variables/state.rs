@@ -1,4 +1,4 @@
-use sierra::extensions::lib_func::{OutputBranchInfo, OutputVarInfo};
+use sierra::extensions::lib_func::{BranchSignature, OutputVarInfo};
 use sierra::extensions::OutputVarReferenceInfo;
 use utils::ordered_hash_map::OrderedHashMap;
 
@@ -20,10 +20,10 @@ impl State {
     pub fn register_outputs(
         &mut self,
         results: &[sierra::ids::VarId],
-        output_info: &OutputBranchInfo,
+        branch_signature: &BranchSignature,
     ) {
         // Clear the stack if needed.
-        match output_info.ap_change {
+        match branch_signature.ap_change {
             sierra::extensions::lib_func::SierraApChange::NotImplemented
             | sierra::extensions::lib_func::SierraApChange::Unknown => {
                 self.clear_known_stack();
@@ -31,7 +31,7 @@ impl State {
             sierra::extensions::lib_func::SierraApChange::Known => {}
         }
 
-        for (var, var_info) in itertools::zip_eq(results, &output_info.vars) {
+        for (var, var_info) in itertools::zip_eq(results, &branch_signature.vars) {
             self.register_output(var.clone(), var_info);
         }
 
