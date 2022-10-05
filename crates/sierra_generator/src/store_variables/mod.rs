@@ -6,7 +6,8 @@ mod state;
 #[cfg(test)]
 mod test;
 
-use sierra::extensions::lib_func::LibFuncSignature;
+use itertools::zip_eq;
+use sierra::extensions::lib_func::{LibFuncSignature, ParamSignature};
 use sierra::ids::ConcreteLibFuncId;
 use sierra::program::{GenBranchInfo, GenBranchTarget, GenStatement};
 use state::{merge_optional_states, State};
@@ -80,9 +81,10 @@ impl<'a> AddStoreVariableStatements<'a> {
                 match &invocation.branches[..] {
                     [GenBranchInfo { target: GenBranchTarget::Fallthrough, results }] => {
                         // A simple invocation.
-                        // TODO(lior): consider not calling prepare_libfunc_arguments for functions
-                        //   that accept deferred, such as store_temp().
-                        self.prepare_libfunc_arguments(&invocation.args);
+                        self.prepare_libfunc_arguments(
+                            &invocation.args,
+                            &signature.param_signatures,
+                        );
                         self.state().register_outputs(results, &signature.branch_signatures[0]);
                     }
                     _ => {
@@ -93,7 +95,7 @@ impl<'a> AddStoreVariableStatements<'a> {
                         // is merged into `fallthrough_state`.
                         let mut fallthrough_state: Option<State> = None;
                         for (branch, branch_signature) in
-                            itertools::zip_eq(&invocation.branches, signature.branch_signatures)
+                            zip_eq(&invocation.branches, signature.branch_signatures)
                         {
                             let mut state_at_branch = self.state().clone();
                             state_at_branch.register_outputs(&branch.results, &branch_signature);
@@ -139,15 +141,19 @@ impl<'a> AddStoreVariableStatements<'a> {
     }
 
     /// Prepares the given `args` to be used as arguments for a libfunc.
-    fn prepare_libfunc_arguments(&mut self, args: &[sierra::ids::VarId]) {
-        for arg in args {
-            self.prepare_libfunc_argument(arg);
+    fn prepare_libfunc_arguments(
+        &mut self,
+        args: &[sierra::ids::VarId],
+        param_signatures: &[ParamSignature],
+    ) {
+        for (arg, param_signature) in zip_eq(args, param_signatures) {
+            self.prepare_libfunc_argument(arg, param_signature.allow_deferred);
         }
     }
 
     /// Prepares the given `arg` to be used as an argument for a libfunc.
-    fn prepare_libfunc_argument(&mut self, arg: &sierra::ids::VarId) {
-        if !self.state().deferred_variables.contains_key(arg) {
+    fn prepare_libfunc_argument(&mut self, arg: &sierra::ids::VarId, allow_deferred: bool) {
+        if !self.state().deferred_variables.contains_key(arg) || allow_deferred {
             return;
         }
 
@@ -174,7 +180,7 @@ impl<'a> AddStoreVariableStatements<'a> {
             if self.state().deferred_variables.contains_key(var) {
                 // Convert the deferred variable into a temporary variable, by calling
                 // `prepare_libfunc_argument`.
-                self.prepare_libfunc_argument(var);
+                self.prepare_libfunc_argument(var, false);
                 // Note: the original variable may still be used after the following `rename`
                 // statement. In such a case, it will be dupped before the `rename`
                 // by `add_dups_and_drops()`.
