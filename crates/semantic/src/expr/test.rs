@@ -24,6 +24,7 @@ semantic_test!(
         "src/expr/test_data/if",
         "src/expr/test_data/match",
         "src/expr/test_data/operators",
+        "src/expr/test_data/return",
     ],
     test_function_diagnostics
 );
