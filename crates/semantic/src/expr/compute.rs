@@ -220,38 +220,7 @@ pub fn maybe_compute_expr_semantic(
             }
         }
         ast::Expr::StructCtorCall(ctor_syntax) => struct_ctor_expr(ctx, ctor_syntax)?,
-        ast::Expr::Block(block_syntax) => {
-            ctx.run_in_subscope(|new_ctx| {
-                let mut statements = block_syntax.statements(syntax_db).elements(syntax_db);
-
-                // Remove the tail expression, if exists.
-                // TODO(spapini): Consider splitting tail expression in the parser.
-                let tail = get_tail_expression(syntax_db, statements.as_slice());
-                if tail.is_some() {
-                    statements.pop();
-                }
-
-                // Convert statements to semantic model.
-                let statements_semantic = statements
-                    .into_iter()
-                    .filter_map(|statement_syntax| {
-                        compute_statement_semantic(new_ctx, statement_syntax)
-                    })
-                    .collect();
-
-                // Convert tail expression (if exists) to semantic model.
-                let tail_semantic_expr =
-                    tail.map(|tail_expr| compute_expr_semantic(new_ctx, &tail_expr));
-
-                let ty = if let Some(t) = &tail_semantic_expr { t.ty() } else { unit_ty(db) };
-                Expr::Block(ExprBlock {
-                    statements: statements_semantic,
-                    tail: tail_semantic_expr.map(|expr| new_ctx.exprs.alloc(expr)),
-                    ty,
-                    stable_ptr: block_syntax.stable_ptr().into(),
-                })
-            })
-        }
+        ast::Expr::Block(block_syntax) => compute_expr_block_semantic(ctx, block_syntax),
         // TODO(yuval): verify exhaustiveness.
         ast::Expr::Match(expr_match) => {
             let syntax_arms = expr_match.arms(syntax_db).elements(syntax_db);
@@ -340,6 +309,42 @@ pub fn maybe_compute_expr_semantic(
             ctx.diagnostics.report(syntax, Unsupported);
             return None;
         }
+    })
+}
+
+/// Computes the semantic model of an expression of type [ast::ExprBlock].
+pub fn compute_expr_block_semantic(
+    ctx: &mut ComputationContext<'_>,
+    syntax: &ast::ExprBlock,
+) -> Expr {
+    let db = ctx.db;
+    let syntax_db = db.upcast();
+    ctx.run_in_subscope(|new_ctx| {
+        let mut statements = syntax.statements(syntax_db).elements(syntax_db);
+
+        // Remove the tail expression, if exists.
+        // TODO(spapini): Consider splitting tail expression in the parser.
+        let tail = get_tail_expression(syntax_db, statements.as_slice());
+        if tail.is_some() {
+            statements.pop();
+        }
+
+        // Convert statements to semantic model.
+        let statements_semantic = statements
+            .into_iter()
+            .filter_map(|statement_syntax| compute_statement_semantic(new_ctx, statement_syntax))
+            .collect();
+
+        // Convert tail expression (if exists) to semantic model.
+        let tail_semantic_expr = tail.map(|tail_expr| compute_expr_semantic(new_ctx, &tail_expr));
+
+        let ty = if let Some(t) = &tail_semantic_expr { t.ty() } else { unit_ty(db) };
+        Expr::Block(ExprBlock {
+            statements: statements_semantic,
+            tail: tail_semantic_expr.map(|expr| new_ctx.exprs.alloc(expr)),
+            ty,
+            stable_ptr: syntax.stable_ptr().into(),
+        })
     })
 }
 
