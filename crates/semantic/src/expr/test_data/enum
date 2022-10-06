@@ -1,0 +1,61 @@
+//! > Test enum
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+enum A {
+    a: (),
+    b: felt,
+}
+
+func foo() {
+    let a : A = A::a(());
+    let a : A = A::b(5);
+    let b : bool = bool::True(());
+    let b : bool = true;
+
+    // Failures.
+    let a : A = A::a();
+    let a : A = A::b(1,2);
+    let a : A = A::a::a(());
+    let a : A = A::c();
+    let a : A = A::d;
+    let a : A = A;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Wrong number of arguments. Expected 1, found: 0
+ --> lib.cairo:13:21
+    let a : A = A::a();
+                    ^^
+
+error: Wrong number of arguments. Expected 1, found: 2
+ --> lib.cairo:14:21
+    let a : A = A::b(1,2);
+                    ^***^
+
+error: Invalid path.
+ --> lib.cairo:15:23
+    let a : A = A::a::a(());
+                      ^
+
+error: Enum test_crate::A has no variant c
+ --> lib.cairo:16:20
+    let a : A = A::c();
+                   ^
+
+error: Unsupported feature.
+ --> lib.cairo:17:17
+    let a : A = A::d;
+                ^**^
+
+error: Variable A not found.
+ --> lib.cairo:18:17
+    let a : A = A;
+                ^

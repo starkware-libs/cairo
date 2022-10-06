@@ -17,7 +17,14 @@ use crate::{semantic, semantic_test};
 
 semantic_test!(
     expr_diagnostics_tests,
-    ["src/expr/test_data/tests", "src/expr/test_data/if"],
+    [
+        "src/expr/test_data/assignment",
+        "src/expr/test_data/enum",
+        "src/expr/test_data/generics",
+        "src/expr/test_data/if",
+        "src/expr/test_data/match",
+        "src/expr/test_data/operators",
+    ],
     test_function_diagnostics
 );
 
