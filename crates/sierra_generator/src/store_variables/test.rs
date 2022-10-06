@@ -397,7 +397,7 @@ fn consecutive_const_additions() {
             "felt_add(0, 1) -> (2)",
             "store_temp<[0]>(2) -> (2)",
             "felt_add3(2) -> (3)",
-            "store_temp<[0]>(3) -> (3)",
+            // There is no need to add a store_temp() instruction between two `felt_add3()`.
             "felt_add3(3) -> (4)",
             "store_temp<[0]>(4) -> (4)",
             "felt_add(0, 4) -> (5)",
@@ -405,7 +405,7 @@ fn consecutive_const_additions() {
             "felt_add(0, 5) -> (6)",
             "store_temp<[0]>(6) -> (6)",
             "felt_add3(6) -> (7)",
-            "store_temp<[0]>(7) -> (7)",
+            // There is no need to add a store_temp() instruction between two `felt_add3()`.
             "felt_add3(7) -> (8)",
             // Return.
             "store_temp<[0]>(8) -> (8)",
