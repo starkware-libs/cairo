@@ -1,0 +1,30 @@
+//! > Incompatible types in if blocks.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+func foo() {
+    let x = 7;
+    if x {
+        true
+    } else {
+        0
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: If blocks have incompatible types: "core::bool" and "core::felt"
+ --> lib.cairo:3:5
+    if x {
+    ^****^
+
+error: Unexpected return type. Expected: "()", found: "core::bool".
+ --> lib.cairo:1:12
+func foo() {
+           ^
