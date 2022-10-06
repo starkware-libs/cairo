@@ -11,6 +11,7 @@ use itertools::zip_eq;
 use smol_str::SmolStr;
 use syntax::node::db::SyntaxGroup;
 use syntax::node::helpers::{GetIdentifier, PathSegmentEx};
+use syntax::node::ids::SyntaxStablePtrId;
 use syntax::node::{ast, Terminal, TypedSyntaxNode};
 use utils::ordered_hash_map::OrderedHashMap;
 use utils::{try_extract_matches, OptionHelper};
@@ -257,12 +258,12 @@ pub fn maybe_compute_expr_semantic(
 
             // Unify arm types.
             let missing_ty = TypeId::missing(ctx.db);
+            let never_ty = TypeId::never(ctx.db);
             for (_, expr) in pattern_and_expr_options.iter().flatten() {
                 let arm_ty = expr.ty();
-                if arm_ty == missing_ty {
+                if arm_ty == missing_ty || arm_ty == never_ty {
                     continue;
                 }
-
                 match match_type {
                     Some(ty) if ty == arm_ty => {}
                     Some(ty) => {
@@ -291,13 +292,7 @@ pub fn maybe_compute_expr_semantic(
             Expr::Match(ExprMatch {
                 matched_expr: ctx.exprs.alloc(expr),
                 arms: semantic_arms,
-                ty: match match_type {
-                    Some(t) => t,
-                    None => {
-                        // TODO(spapini): Return never-type.
-                        TypeId::missing(db)
-                    }
-                },
+                ty: match_type.unwrap_or(never_ty),
                 stable_ptr: expr_match.stable_ptr().into(),
             })
         }
@@ -312,6 +307,21 @@ pub fn maybe_compute_expr_semantic(
     })
 }
 
+/// Tracker for having the first and last elements added to a range.
+#[derive(Default)]
+struct RangeTracker {
+    pub first: Option<SyntaxStablePtrId>,
+    pub last: Option<SyntaxStablePtrId>,
+}
+impl RangeTracker {
+    fn add(&mut self, ptr: SyntaxStablePtrId) {
+        if self.first.is_none() {
+            self.first = Some(ptr);
+        }
+        self.last = Some(ptr);
+    }
+}
+
 /// Computes the semantic model of an expression of type [ast::ExprBlock].
 pub fn compute_expr_block_semantic(
     ctx: &mut ComputationContext<'_>,
@@ -321,7 +331,6 @@ pub fn compute_expr_block_semantic(
     let syntax_db = db.upcast();
     ctx.run_in_subscope(|new_ctx| {
         let mut statements = syntax.statements(syntax_db).elements(syntax_db);
-
         // Remove the tail expression, if exists.
         // TODO(spapini): Consider splitting tail expression in the parser.
         let tail = get_tail_expression(syntax_db, statements.as_slice());
@@ -330,15 +339,47 @@ pub fn compute_expr_block_semantic(
         }
 
         // Convert statements to semantic model.
-        let statements_semantic = statements
-            .into_iter()
-            .filter_map(|statement_syntax| compute_statement_semantic(new_ctx, statement_syntax))
-            .collect();
+        let never_type = TypeId::never(new_ctx.db);
+        let mut unreachable_range: Option<RangeTracker> = None;
+        // let mut range_tracker = RangeTracker::default();
+        let mut statements_semantic = vec![];
+        for statement in statements.into_iter() {
+            if let Some(rng) = &mut unreachable_range {
+                rng.add(statement.stable_ptr().untyped());
+            }
+            if let Some(semantic) = compute_statement_semantic(new_ctx, statement) {
+                statements_semantic.push(semantic);
+                let ty = match &new_ctx.statements[semantic] {
+                    Statement::Expr(expr) => new_ctx.exprs[expr.expr].ty(),
+                    Statement::Let(lt) => lt.pattern.ty(new_ctx.db),
+                    Statement::Return(_) => TypeId::never(new_ctx.db),
+                };
+                if unreachable_range.is_none() && ty == never_type {
+                    unreachable_range = Some(RangeTracker::default());
+                }
+            }
+        }
+        if let Some(t) = &tail {
+            if let Some(rng) = &mut unreachable_range {
+                rng.add(t.stable_ptr().untyped());
+            }
+        }
+
+        if let Some(RangeTracker { first: Some(first), last: Some(last) }) = &unreachable_range {
+            new_ctx.diagnostics.report_by_ptr(*first, Unreachable { last_statement_ptr: *last });
+        }
 
         // Convert tail expression (if exists) to semantic model.
         let tail_semantic_expr = tail.map(|tail_expr| compute_expr_semantic(new_ctx, &tail_expr));
 
-        let ty = if let Some(t) = &tail_semantic_expr { t.ty() } else { unit_ty(db) };
+        let ty = if let Some(t) = &tail_semantic_expr {
+            t.ty()
+        } else if let Some(RangeTracker { first: None, last: None }) = unreachable_range {
+            // Last element was a return - so we assert the block's type to be a never type.
+            never_type
+        } else {
+            unit_ty(db)
+        };
         Expr::Block(ExprBlock {
             statements: statements_semantic,
             tail: tail_semantic_expr.map(|expr| new_ctx.exprs.alloc(expr)),
@@ -625,7 +666,7 @@ fn member_access_expr(
         TypeLongId::GenericParameter(_) => {
             ctx.diagnostics.report(&rhs_syntax, TypeHasNoMembers { ty: lexpr.ty(), member_name });
         }
-        TypeLongId::Missing => {}
+        TypeLongId::Missing | TypeLongId::Never => {}
     }
     None
 }

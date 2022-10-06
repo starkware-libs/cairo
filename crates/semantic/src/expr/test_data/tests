@@ -225,3 +225,101 @@ error: Unexpected argument type. Expected: "core::felt", found: "()".
  --> lib.cairo:5:20
     let c : felt = (b = 5);
                    ^*****^
+
+
+//! > ==========================================================================
+
+//! > Test basic return.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+func foo() -> felt {
+    return 1 + 2;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test unreachable tail statement.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+func foo() -> felt {
+    return 1 + 2;
+    35
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Unreachable code.
+ --> lib.cairo:3:5
+    35
+    ^^ 
+
+//! > ==========================================================================
+
+//! > Test unreachable last statements.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+func foo() -> felt {
+    return 1 + 2;
+    let r = 35;
+    r
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Unreachable code.
+ --> lib.cairo:3:5
+    let r = 35;
+    ^*********^
+
+//! > ==========================================================================
+
+//! > Test unreachable internal return.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+func foo(x: felt) -> felt {
+    match x {
+        0 => {return 5;},
+        1 => {return 6;},
+        2 => {return 9;},
+    }
+    let r = 35;
+    r
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Unreachable code.
+ --> lib.cairo:7:5
+    let r = 35;
+    ^*********^
