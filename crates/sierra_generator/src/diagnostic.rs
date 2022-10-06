@@ -28,6 +28,9 @@ impl DiagnosticEntry for SierraGeneratorDiagnostic {
             SierraGeneratorDiagnosticKind::InternalErrorDuplicatedVariable => {
                 r#"Internal compiler error: found two definitions for the same variable."#
             }
+            SierraGeneratorDiagnosticKind::IfIsNotSupported => {
+                r#"If blocks are not supported yet."#
+            }
         }
         .into()
     }
@@ -46,4 +49,6 @@ pub enum SierraGeneratorDiagnosticKind {
     OnlyMatchZeroIsSupported,
     InternalErrorUnknownVariable,
     InternalErrorDuplicatedVariable,
+    // TODO(lior): Remove once supported.
+    IfIsNotSupported,
 }

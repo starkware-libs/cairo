@@ -83,7 +83,11 @@ fn test_expr_generator() {
 
 diagnostics_test!(
     expr_generator_diagnostic_tests,
-    ["src/expr_generator_test_data/internal_compiler_error", "src/expr_generator_test_data/match"],
+    [
+        "src/expr_generator_test_data/internal_compiler_error",
+        "src/expr_generator_test_data/match",
+        "src/expr_generator_test_data/if"
+    ],
     SierraGenDatabaseForTesting::default(),
     setup_test_block
 );

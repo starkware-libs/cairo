@@ -1,0 +1,22 @@
+//! > Match with non zero value
+
+//! > Comment
+// TODO(ilya): Fix location span below.
+
+//! > Expr Code
+let x = 7;
+if x {
+    11
+} else {
+    22
+}
+
+//! > Module Code
+
+//! > Function Body
+
+//! > Expected Result
+error: If blocks are not supported yet.
+ --> lib.cairo:4:1
+if x {
+^****^
