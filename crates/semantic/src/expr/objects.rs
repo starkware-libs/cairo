@@ -87,6 +87,7 @@ pub enum Expr {
     Block(ExprBlock),
     FunctionCall(ExprFunctionCall),
     Match(ExprMatch),
+    If(ExprIf),
     Var(ExprVar),
     Literal(ExprLiteral),
     MemberAccess(ExprMemberAccess),
@@ -102,6 +103,7 @@ impl Expr {
             Expr::Block(expr) => expr.ty,
             Expr::FunctionCall(expr) => expr.ty,
             Expr::Match(expr) => expr.ty,
+            Expr::If(expr) => expr.ty,
             Expr::Var(expr) => expr.ty,
             Expr::Literal(expr) => expr.ty,
             Expr::MemberAccess(expr) => expr.ty,
@@ -117,6 +119,7 @@ impl Expr {
             Expr::Block(expr) => expr.stable_ptr,
             Expr::FunctionCall(expr) => expr.stable_ptr,
             Expr::Match(expr) => expr.stable_ptr,
+            Expr::If(expr) => expr.stable_ptr,
             Expr::Var(expr) => expr.stable_ptr,
             Expr::Literal(expr) => expr.stable_ptr,
             Expr::MemberAccess(expr) => expr.stable_ptr,
@@ -165,6 +168,17 @@ pub struct ExprFunctionCall {
 pub struct ExprMatch {
     pub matched_expr: ExprId,
     pub arms: Vec<MatchArm>,
+    pub ty: semantic::TypeId,
+    #[hide_field_debug_with_db]
+    pub stable_ptr: ast::ExprPtr,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[debug_db(ExprFormatter<'_>)]
+pub struct ExprIf {
+    pub condition: ExprId,
+    pub if_block: ExprId,
+    pub else_block: ExprId,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
     pub stable_ptr: ast::ExprPtr,

@@ -12,24 +12,26 @@ impl DiagnosticEntry for SierraGeneratorDiagnostic {
     type DbType = dyn SierraGenGroup;
 
     fn format(&self, _db: &Self::DbType) -> String {
-        match self.kind {
+        match &self.kind {
             SierraGeneratorDiagnosticKind::NonZeroValueInMatch => {
-                "Match with a non-zero value is not supported."
+                "Match with a non-zero value is not supported.".into()
             }
             SierraGeneratorDiagnosticKind::CallLibFuncWithUnknownGenericArg => {
-                "Calling a libfunc with unknown generic argument."
+                "Calling a libfunc with unknown generic argument.".into()
             }
             SierraGeneratorDiagnosticKind::OnlyMatchZeroIsSupported => {
-                "Only match zero (match ... { 0 => ..., _ => ... }) is currently supported."
+                "Only match zero (match ... { 0 => ..., _ => ... }) is currently supported.".into()
             }
             SierraGeneratorDiagnosticKind::InternalErrorUnknownVariable => {
-                "Internal compiler error: unknown variable."
+                "Internal compiler error: unknown variable.".into()
             }
             SierraGeneratorDiagnosticKind::InternalErrorDuplicatedVariable => {
-                r#"Internal compiler error: found two definitions for the same variable."#
+                r#"Internal compiler error: found two definitions for the same variable."#.into()
+            }
+            SierraGeneratorDiagnosticKind::Unsupported { feature_name } => {
+                format!("{feature_name} is not supported yet.")
             }
         }
-        .into()
     }
 
     fn location(&self, db: &Self::DbType) -> DiagnosticLocation {
@@ -46,4 +48,5 @@ pub enum SierraGeneratorDiagnosticKind {
     OnlyMatchZeroIsSupported,
     InternalErrorUnknownVariable,
     InternalErrorDuplicatedVariable,
+    Unsupported { feature_name: String },
 }
