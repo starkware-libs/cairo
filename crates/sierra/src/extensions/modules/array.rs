@@ -1,8 +1,8 @@
 use super::as_single_type;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
-    LibFuncSignature, OutputVarInfo, SierraApChange, SignatureOnlyConcreteLibFunc,
-    SignatureSpecializationContext, SpecializationContext,
+    DeferredOutputKind, LibFuncSignature, OutputVarInfo, SierraApChange,
+    SignatureOnlyConcreteLibFunc, SignatureSpecializationContext, SpecializationContext,
 };
 use crate::extensions::types::{TypeInfo, TypeSpecializationContext};
 use crate::extensions::{
@@ -72,7 +72,7 @@ impl NamedLibFunc for ArrayNewLibFunc {
             vec![],
             vec![OutputVarInfo {
                 ty: context.get_wrapped_concrete_type(ArrayType::id(), ty)?,
-                ref_info: OutputVarReferenceInfo::Deferred,
+                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
             }],
             SierraApChange::Known,
         ))
@@ -106,7 +106,10 @@ impl NamedLibFunc for ArrayAppendLibFunc {
         Ok(LibFuncSignature::new_non_branch(
             vec![arr_ty.clone(), ty],
             // TODO(lior): Change `Deferred` into `AddConst` once added.
-            vec![OutputVarInfo { ty: arr_ty, ref_info: OutputVarReferenceInfo::Deferred }],
+            vec![OutputVarInfo {
+                ty: arr_ty,
+                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+            }],
             SierraApChange::Known,
         ))
     }

@@ -3,8 +3,8 @@ use std::marker::PhantomData;
 use super::non_zero::NonZeroType;
 use crate::define_concrete_libfunc_hierarchy;
 use crate::extensions::lib_func::{
-    LibFuncSignature, OutputVarInfo, SierraApChange, SignatureSpecializationContext,
-    SpecializationContext,
+    DeferredOutputKind, LibFuncSignature, OutputVarInfo, SierraApChange,
+    SignatureSpecializationContext, SpecializationContext,
 };
 use crate::extensions::{
     GenericLibFunc, NamedLibFunc, NamedType, OutputVarReferenceInfo, SignatureBasedConcreteLibFunc,
@@ -81,7 +81,10 @@ impl<TArithmeticTraits: ArithmeticTraits> GenericLibFunc for OperationLibFunc<TA
                         ty.clone()
                     },
                 ],
-                vec![OutputVarInfo { ty, ref_info: OutputVarReferenceInfo::Deferred }],
+                vec![OutputVarInfo {
+                    ty,
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                }],
                 SierraApChange::NotImplemented,
             )),
             [GenericArg::Value(c)] => {
@@ -90,7 +93,10 @@ impl<TArithmeticTraits: ArithmeticTraits> GenericLibFunc for OperationLibFunc<TA
                 } else {
                     Ok(LibFuncSignature::new_non_branch(
                         vec![ty.clone()],
-                        vec![OutputVarInfo { ty, ref_info: OutputVarReferenceInfo::Deferred }],
+                        vec![OutputVarInfo {
+                            ty,
+                            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                        }],
                         SierraApChange::NotImplemented,
                     ))
                 }

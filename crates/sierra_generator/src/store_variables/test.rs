@@ -1,6 +1,7 @@
 use pretty_assertions::assert_eq;
 use sierra::extensions::lib_func::{
-    BranchSignature, LibFuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
+    BranchSignature, DeferredOutputKind, LibFuncSignature, OutputVarInfo, ParamSignature,
+    SierraApChange,
 };
 use sierra::extensions::OutputVarReferenceInfo;
 use sierra::ids::{ConcreteLibFuncId, ConcreteTypeId};
@@ -22,7 +23,7 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibFuncId) -
         "felt_add" => {
             let vars = vec![OutputVarInfo {
                 ty: dummy_type.clone(),
-                ref_info: OutputVarReferenceInfo::Deferred,
+                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
             }];
             LibFuncSignature {
                 param_signatures: vec![
@@ -45,8 +46,9 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibFuncId) -
             branch_signatures: vec![BranchSignature {
                 vars: vec![OutputVarInfo {
                     ty: dummy_type,
-                    // TODO(lior): Change to AddConst once supported.
-                    ref_info: OutputVarReferenceInfo::Deferred,
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                        param_idx: 0,
+                    }),
                 }],
                 ap_change: SierraApChange::Known,
             }],
