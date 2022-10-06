@@ -25,6 +25,7 @@ pub fn generate_expression_code(
             handle_function_call(context, expr_function_call)
         }
         semantic::Expr::Match(expr_match) => handle_felt_match(context, expr_match),
+        semantic::Expr::If(expr_if) => handle_if(context, expr_if),
         semantic::Expr::Var(expr_var) => {
             Some((vec![], context.get_variable(expr_var.var, expr_var.stable_ptr.untyped())?))
         }
@@ -275,4 +276,17 @@ fn handle_felt_match(
             None
         }
     }
+}
+
+/// Generates Sierra code for [semantic::ExprIf].
+/// Currently only a simple match-zero is supported.
+fn handle_if(
+    context: &mut ExprGeneratorContext<'_>,
+    expr_if: &semantic::ExprIf,
+) -> Option<(Vec<pre_sierra::Statement>, sierra::ids::VarId)> {
+    context.add_diagnostic(
+        SierraGeneratorDiagnosticKind::Unsupported { feature_name: "If block".into() },
+        expr_if.stable_ptr.untyped(),
+    );
+    None
 }
