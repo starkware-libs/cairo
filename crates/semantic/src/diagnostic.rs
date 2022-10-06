@@ -146,11 +146,17 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     actual_enum.full_path(db.upcast())
                 )
             }
+            SemanticDiagnosticKind::Unreachable { .. } => "Unreachable code.".into(),
         }
     }
 
     fn location(&self, db: &Self::DbType) -> DiagnosticLocation {
-        self.stable_location.diagnostic_location(db.upcast())
+        match &self.kind {
+            SemanticDiagnosticKind::Unreachable { last_statement_ptr } => {
+                self.stable_location.diagnostic_location_until(db.upcast(), *last_statement_ptr)
+            }
+            _ => self.stable_location.diagnostic_location(db.upcast()),
+        }
     }
 }
 
@@ -191,5 +197,6 @@ pub enum SemanticDiagnosticKind {
     UnexpectedEnumPattern { ty: semantic::TypeId },
     UnexpectedStructPattern { ty: semantic::TypeId },
     UnexpectedTuplePattern { ty: semantic::TypeId },
+    Unreachable { last_statement_ptr: SyntaxStablePtrId },
     WrongEnum { expected_enum: EnumId, actual_enum: EnumId },
 }

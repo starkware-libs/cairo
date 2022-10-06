@@ -11,6 +11,7 @@ use itertools::zip_eq;
 use smol_str::SmolStr;
 use syntax::node::db::SyntaxGroup;
 use syntax::node::helpers::{GetIdentifier, PathSegmentEx};
+use syntax::node::ids::SyntaxStablePtrId;
 use syntax::node::{ast, Terminal, TypedSyntaxNode};
 use utils::ordered_hash_map::OrderedHashMap;
 use utils::{try_extract_matches, OptionHelper};
@@ -223,7 +224,6 @@ pub fn maybe_compute_expr_semantic(
         ast::Expr::Block(block_syntax) => {
             ctx.run_in_subscope(|new_ctx| {
                 let mut statements = block_syntax.statements(syntax_db).elements(syntax_db);
-
                 // Remove the tail expression, if exists.
                 // TODO(spapini): Consider splitting tail expression in the parser.
                 let tail = get_tail_expression(syntax_db, statements.as_slice());
@@ -232,18 +232,45 @@ pub fn maybe_compute_expr_semantic(
                 }
 
                 // Convert statements to semantic model.
+                let never_type = TypeId::never(new_ctx.db);
+                let mut unreachable_stable_ptrs: Option<Vec<SyntaxStablePtrId>> = None;
                 let statements_semantic = statements
                     .into_iter()
                     .filter_map(|statement_syntax| {
-                        compute_statement_semantic(new_ctx, statement_syntax)
+                        if let Some(v) = &mut unreachable_stable_ptrs {
+                            v.push(statement_syntax.stable_ptr().untyped());
+                        }
+                        let (semantic, ty) = compute_statement_semantic(new_ctx, statement_syntax)?;
+                        if ty == never_type {
+                            unreachable_stable_ptrs.get_or_insert(vec![]);
+                        }
+                        Some(semantic)
                     })
                     .collect();
+                if let Some(v) = &mut unreachable_stable_ptrs {
+                    if let Some(t) = &tail {
+                        v.push(t.stable_ptr().untyped());
+                    }
+                    if let Some(node) = v.first() {
+                        new_ctx.diagnostics.report_by_ptr(
+                            *node,
+                            Unreachable { last_statement_ptr: *v.last().unwrap() },
+                        );
+                    }
+                }
 
                 // Convert tail expression (if exists) to semantic model.
                 let tail_semantic_expr =
                     tail.map(|tail_expr| compute_expr_semantic(new_ctx, &tail_expr));
 
-                let ty = if let Some(t) = &tail_semantic_expr { t.ty() } else { unit_ty(db) };
+                let ty = if let Some(t) = &tail_semantic_expr {
+                    t.ty()
+                } else if unreachable_stable_ptrs.map(|v| v.is_empty()) == Some(true) {
+                    // Last element was a return - so we assert the blocks type to be a never type.
+                    never_type
+                } else {
+                    unit_ty(db)
+                };
                 Expr::Block(ExprBlock {
                     statements: statements_semantic,
                     tail: tail_semantic_expr.map(|expr| new_ctx.exprs.alloc(expr)),
@@ -288,12 +315,12 @@ pub fn maybe_compute_expr_semantic(
 
             // Unify arm types.
             let missing_ty = TypeId::missing(ctx.db);
+            let never_ty = TypeId::never(ctx.db);
             for (_, expr) in pattern_and_expr_options.iter().flatten() {
                 let arm_ty = expr.ty();
-                if arm_ty == missing_ty {
+                if arm_ty == missing_ty || arm_ty == never_ty {
                     continue;
                 }
-
                 match match_type {
                     Some(ty) if ty == arm_ty => {}
                     Some(ty) => {
@@ -322,13 +349,7 @@ pub fn maybe_compute_expr_semantic(
             Expr::Match(ExprMatch {
                 matched_expr: ctx.exprs.alloc(expr),
                 arms: semantic_arms,
-                ty: match match_type {
-                    Some(t) => t,
-                    None => {
-                        // TODO(spapini): Return never-type.
-                        TypeId::missing(db)
-                    }
-                },
+                ty: match_type.unwrap_or(never_ty),
                 stable_ptr: expr_match.stable_ptr().into(),
             })
         }
@@ -620,7 +641,7 @@ fn member_access_expr(
         TypeLongId::GenericParameter(_) => {
             ctx.diagnostics.report(&rhs_syntax, TypeHasNoMembers { ty: lexpr.ty(), member_name });
         }
-        TypeLongId::Missing => {}
+        TypeLongId::Missing | TypeLongId::Never => {}
     }
     None
 }
@@ -714,14 +735,15 @@ fn expr_function_call(
     }))
 }
 
-/// Computes the semantic model of a statement.
+/// Computes the semantic model of a statement, and returns the type that correspond to the
+/// statement.
 pub fn compute_statement_semantic(
     ctx: &mut ComputationContext<'_>,
     syntax: ast::Statement,
-) -> Option<StatementId> {
+) -> Option<(StatementId, TypeId)> {
     let db = ctx.db;
     let syntax_db = db.upcast();
-    let statement = match &syntax {
+    let (statement, ty) = match &syntax {
         ast::Statement::Let(let_syntax) => {
             let expr = compute_expr_semantic(ctx, &let_syntax.rhs(syntax_db));
             let inferred_type = expr.ty();
@@ -751,18 +773,25 @@ pub fn compute_statement_semantic(
             for v in variables {
                 ctx.environment.variables.insert(v.name.clone(), Variable::Local(v.var.clone()));
             }
-            semantic::Statement::Let(semantic::StatementLet {
-                pattern,
-                expr: rhs_expr_id,
-                stable_ptr: syntax.stable_ptr(),
-            })
+            (
+                semantic::Statement::Let(semantic::StatementLet {
+                    pattern,
+                    expr: rhs_expr_id,
+                    stable_ptr: syntax.stable_ptr(),
+                }),
+                ty,
+            )
         }
         ast::Statement::Expr(expr_syntax) => {
             let expr = compute_expr_semantic(ctx, &expr_syntax.expr(syntax_db));
-            semantic::Statement::Expr(semantic::StatementExpr {
-                expr: ctx.exprs.alloc(expr),
-                stable_ptr: syntax.stable_ptr(),
-            })
+            let ty = expr.ty();
+            (
+                semantic::Statement::Expr(semantic::StatementExpr {
+                    expr: ctx.exprs.alloc(expr),
+                    stable_ptr: syntax.stable_ptr(),
+                }),
+                ty,
+            )
         }
         ast::Statement::Return(return_syntax) => {
             let expr_syntax = return_syntax.expr(syntax_db);
@@ -773,12 +802,15 @@ pub fn compute_statement_semantic(
                     WrongReturnType { expected_ty: ctx.return_ty, actual_ty: expr.ty() },
                 )
             }
-            semantic::Statement::Return(semantic::StatementReturn {
-                expr: ctx.exprs.alloc(expr),
-                stable_ptr: syntax.stable_ptr(),
-            })
+            (
+                semantic::Statement::Return(semantic::StatementReturn {
+                    expr: ctx.exprs.alloc(expr),
+                    stable_ptr: syntax.stable_ptr(),
+                }),
+                TypeId::never(db),
+            )
         }
         ast::Statement::Missing(_) => todo!(),
     };
-    Some(ctx.statements.alloc(statement))
+    Some((ctx.statements.alloc(statement), ty))
 }
