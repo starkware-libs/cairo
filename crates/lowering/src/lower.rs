@@ -256,6 +256,7 @@ impl<'db> Lowerer<'db> {
                 result_var
             }
             semantic::Expr::Match(_) => todo!(),
+            semantic::Expr::If(_) => todo!(),
             semantic::Expr::Var(expr) => self.take(scope, scope.semantic_variables[expr.var]),
             semantic::Expr::Literal(expr) => {
                 let output = self.new_variable(scope, expr.ty);

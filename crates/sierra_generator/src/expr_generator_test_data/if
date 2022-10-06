@@ -1,0 +1,19 @@
+//! > Match with non zero value
+
+//! > Expr Code
+let x = 7;
+if x {
+    11
+} else {
+    22
+}
+
+//! > Module Code
+
+//! > Function Body
+
+//! > Expected Result
+error: If block is not supported yet.
+ --> lib.cairo:4:1
+if x {
+^****^

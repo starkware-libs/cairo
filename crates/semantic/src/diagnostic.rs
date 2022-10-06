@@ -111,6 +111,13 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 match_ty.format(db),
                 arm_ty.format(db)
             ),
+            SemanticDiagnosticKind::IncompatibleIfBlockTypes { block_if_ty, block_else_ty } => {
+                format!(
+                    r#"If blocks have incompatible types: "{}" and "{}""#,
+                    block_if_ty.format(db),
+                    block_else_ty.format(db),
+                )
+            }
             SemanticDiagnosticKind::TypeHasNoMembers { ty, member_name: _ } => {
                 format!("Type {} has no members.", ty.format(db))
             }
@@ -180,6 +187,7 @@ pub enum SemanticDiagnosticKind {
     StructMemberRedefinition { struct_id: StructId, member_name: SmolStr },
     EnumVariantRedefinition { enum_id: EnumId, variant_name: SmolStr },
     IncompatibleMatchArms { match_ty: semantic::TypeId, arm_ty: semantic::TypeId },
+    IncompatibleIfBlockTypes { block_if_ty: semantic::TypeId, block_else_ty: semantic::TypeId },
     TypeHasNoMembers { ty: semantic::TypeId, member_name: SmolStr },
     NoSuchMember { struct_id: StructId, member_name: SmolStr },
     NoSuchVariant { enum_id: EnumId, variant_name: SmolStr },

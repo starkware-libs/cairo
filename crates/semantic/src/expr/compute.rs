@@ -301,10 +301,7 @@ pub fn maybe_compute_expr_semantic(
                 stable_ptr: expr_match.stable_ptr().into(),
             })
         }
-        ast::Expr::If(_expr_if) => {
-            ctx.diagnostics.report(syntax, Unsupported);
-            return None;
-        }
+        ast::Expr::If(expr_if) => compute_expr_if_semantic(ctx, expr_if),
         ast::Expr::Missing(_) => {
             ctx.diagnostics.report(syntax, Unsupported);
             return None;
@@ -345,6 +342,29 @@ pub fn compute_expr_block_semantic(
             ty,
             stable_ptr: syntax.stable_ptr().into(),
         })
+    })
+}
+
+/// Computes the semantic model of an expression of type [ast::ExprIf].
+fn compute_expr_if_semantic(ctx: &mut ComputationContext<'_>, syntax: &ast::ExprIf) -> Expr {
+    let syntax_db = ctx.db.upcast();
+
+    let expr = compute_expr_semantic(ctx, &syntax.condition(syntax_db));
+    let if_block = compute_expr_block_semantic(ctx, &syntax.if_block(syntax_db));
+    let else_block = compute_expr_block_semantic(ctx, &syntax.else_block(syntax_db));
+    let ty = if_block.ty();
+    if ty != else_block.ty() {
+        ctx.diagnostics.report(
+            syntax,
+            IncompatibleIfBlockTypes { block_if_ty: ty, block_else_ty: else_block.ty() },
+        );
+    }
+    Expr::If(ExprIf {
+        condition: ctx.exprs.alloc(expr),
+        if_block: ctx.exprs.alloc(if_block),
+        else_block: ctx.exprs.alloc(else_block),
+        ty,
+        stable_ptr: syntax.stable_ptr().into(),
     })
 }
 

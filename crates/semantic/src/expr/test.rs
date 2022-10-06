@@ -15,7 +15,11 @@ use crate::test_utils::{
 };
 use crate::{semantic, semantic_test};
 
-semantic_test!(expr_diagnostics_tests, ["src/expr/test_data/tests"], test_function_diagnostics);
+semantic_test!(
+    expr_diagnostics_tests,
+    ["src/expr/test_data/tests", "src/expr/test_data/if"],
+    test_function_diagnostics
+);
 
 #[test]
 fn test_expr_literal() {
@@ -253,7 +257,7 @@ fn test_function_with_return_type_failures() {
              --> lib.cairo:1:20
             func foo() -> felt { }
                                ^*^
-            
+
         "#}
     );
 }
