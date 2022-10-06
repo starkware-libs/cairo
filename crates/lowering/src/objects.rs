@@ -58,11 +58,8 @@ pub enum Statement {
     Literal(StatementLiteral),
 
     // Flow control.
-    CallUserFunc(StatementCallUserFunc),
+    Call(StatementCall),
     CallBlock(StatementCallBlock),
-
-    // Externs.
-    CallExtern(StatementCallExtern),
     MatchExtern(StatementMatchExtern),
 
     // Structs.
@@ -77,6 +74,22 @@ pub enum Statement {
     TupleConstruct,
     TupleDestruct(StatementTupleDestruct),
 }
+impl Statement {
+    pub fn outputs(&self) -> Vec<VariableId> {
+        match &self {
+            Statement::Literal(stmt) => vec![stmt.output],
+            Statement::Call(stmt) => stmt.outputs.clone(),
+            Statement::CallBlock(stmt) => stmt.outputs.clone(),
+            Statement::MatchExtern(stmt) => stmt.outputs.clone(),
+            Statement::StructConstruct => todo!(),
+            Statement::StructDestruct => todo!(),
+            Statement::EnumConstruct => todo!(),
+            Statement::MatchEnum => todo!(),
+            Statement::TupleConstruct => todo!(),
+            Statement::TupleDestruct(stmt) => stmt.outputs.clone(),
+        }
+    }
+}
 
 /// A statement that binds a literal value to a variable.
 pub struct StatementLiteral {
@@ -88,9 +101,8 @@ pub struct StatementLiteral {
 }
 
 /// A statement that calls a user function.
-pub struct StatementCallUserFunc {
-    // TODO(spapini): ConcreteFreeFunctionId once it exists.
-    /// A user function to "call".
+pub struct StatementCall {
+    /// A function to "call".
     pub function: semantic::FunctionId,
     /// Living variables in current scope to move to the function, as arguments.
     pub inputs: Vec<VariableId>,
@@ -109,17 +121,6 @@ pub struct StatementCallBlock {
     pub outputs: Vec<VariableId>,
 }
 
-/// A statement that calls an extern function with a single branch.
-pub struct StatementCallExtern {
-    // TODO(spapini): ConcreteExternFunctionId once it exists.
-    /// A concrete external function to call.
-    pub function: semantic::FunctionId,
-    /// Living variables in current scope to move to the function, as arguments.
-    pub inputs: Vec<VariableId>,
-    /// New variables to be introduced into the current scope from the function outputs.
-    pub outputs: Vec<VariableId>,
-}
-
 /// A statement that calls an extern function with branches, and "calls" a possibly different block
 /// for each branch.
 pub struct StatementMatchExtern {
@@ -131,7 +132,7 @@ pub struct StatementMatchExtern {
     // All blocks should have the same rets.
     pub arms: Vec<MatchArm>,
     /// New variables to be introduced into the current scope from the arm outputs.
-    pub end: Vec<VariableId>,
+    pub outputs: Vec<VariableId>,
 }
 
 pub struct MatchArm {

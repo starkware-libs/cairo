@@ -7,5 +7,6 @@ pub enum CoreValue {
     Integer(i64),
     NonZero(Box<CoreValue>),
     Ref(Box<CoreValue>),
+    Array(Vec<CoreValue>),
     Uninitialized,
 }

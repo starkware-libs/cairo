@@ -1,8 +1,8 @@
 // Module providing the gas related extensions.
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
-    BranchSignature, LibFuncSignature, OutputVarInfo, SierraApChange, SignatureOnlyConcreteLibFunc,
-    SignatureSpecializationContext, SpecializationContext,
+    BranchSignature, LibFuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
+    SignatureOnlyConcreteLibFunc, SignatureSpecializationContext, SpecializationContext,
 };
 use crate::extensions::types::{InfoOnlyConcreteType, TypeInfo};
 use crate::extensions::{
@@ -43,9 +43,9 @@ impl NoGenericArgsGenericLibFunc for GetGasLibFunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibFuncSignature, SpecializationError> {
-        let gas_builtin_type = context.get_concrete_type_as_result(GasBuiltinType::id(), &[])?;
+        let gas_builtin_type = context.get_concrete_type(GasBuiltinType::id(), &[])?;
         Ok(LibFuncSignature {
-            input_types: vec![gas_builtin_type.clone()],
+            param_signatures: vec![ParamSignature::new(gas_builtin_type.clone())],
             branch_signatures: vec![
                 // Success:
                 BranchSignature {
@@ -87,7 +87,7 @@ impl NoGenericArgsGenericLibFunc for RefundGasLibFunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibFuncSignature, SpecializationError> {
-        let gas_builtin_type = context.get_concrete_type_as_result(GasBuiltinType::id(), &[])?;
+        let gas_builtin_type = context.get_concrete_type(GasBuiltinType::id(), &[])?;
         Ok(LibFuncSignature::new_non_branch(
             vec![gas_builtin_type.clone()],
             vec![OutputVarInfo {

@@ -20,7 +20,7 @@ impl NamedLibFunc for FunctionCallLibFunc {
     ) -> Result<LibFuncSignature, SpecializationError> {
         match args {
             [GenericArg::UserFunc(function_id)] => {
-                let function = context.get_function_signature_as_result(function_id)?;
+                let function = context.get_function_signature(function_id)?;
                 Ok(LibFuncSignature::new_non_branch(
                     function.param_types.clone(),
                     function
@@ -46,7 +46,7 @@ impl NamedLibFunc for FunctionCallLibFunc {
     ) -> Result<Self::Concrete, SpecializationError> {
         match args {
             [GenericArg::UserFunc(function_id)] => Ok(Self::Concrete {
-                function: context.get_function_as_result(function_id)?,
+                function: context.get_function(function_id)?,
                 signature: self.specialize_signature(context.upcast(), args)?,
             }),
             _ => Err(SpecializationError::UnsupportedGenericArg),

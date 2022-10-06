@@ -11,7 +11,7 @@ use crate::db::SierraGenGroup;
 pub struct SierraSignatureSpecializationContext<'a>(pub &'a dyn SierraGenGroup);
 
 impl SignatureSpecializationContext for SierraSignatureSpecializationContext<'_> {
-    fn get_concrete_type(
+    fn try_get_concrete_type(
         &self,
         id: sierra::ids::GenericTypeId,
         generic_args: &[sierra::program::GenericArg],
@@ -22,14 +22,14 @@ impl SignatureSpecializationContext for SierraSignatureSpecializationContext<'_>
         }))
     }
 
-    fn get_type_info(
+    fn try_get_type_info(
         &self,
         id: sierra::ids::ConcreteTypeId,
     ) -> Option<sierra::extensions::types::TypeInfo> {
-        <Self as TypeSpecializationContext>::get_type_info(self, id)
+        <Self as TypeSpecializationContext>::try_get_type_info(self, id)
     }
 
-    fn get_function_signature(
+    fn try_get_function_signature(
         &self,
         function_id: &sierra::ids::FunctionId,
     ) -> Option<sierra::program::FunctionSignature> {
@@ -38,7 +38,7 @@ impl SignatureSpecializationContext for SierraSignatureSpecializationContext<'_>
 }
 
 impl TypeSpecializationContext for SierraSignatureSpecializationContext<'_> {
-    fn get_type_info(
+    fn try_get_type_info(
         &self,
         id: sierra::ids::ConcreteTypeId,
     ) -> Option<sierra::extensions::types::TypeInfo> {

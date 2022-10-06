@@ -116,7 +116,7 @@ struct TypeSpecializationContextForRegistry<'a, TType: GenericType> {
 impl<TType: GenericType> TypeSpecializationContext
     for TypeSpecializationContextForRegistry<'_, TType>
 {
-    fn get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo> {
+    fn try_get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo> {
         self.concrete_types.get(&id).map(|ty| ty.info().clone())
     }
 }
@@ -165,7 +165,7 @@ pub struct SpecializationContextForRegistry<'a, TType: GenericType> {
 impl<TType: GenericType> SignatureSpecializationContext
     for SpecializationContextForRegistry<'_, TType>
 {
-    fn get_concrete_type(
+    fn try_get_concrete_type(
         &self,
         id: GenericTypeId,
         generic_args: &[GenericArg],
@@ -173,16 +173,16 @@ impl<TType: GenericType> SignatureSpecializationContext
         self.concrete_type_ids.get(&(id, generic_args)).cloned()
     }
 
-    fn get_function_signature(&self, function_id: &FunctionId) -> Option<FunctionSignature> {
-        self.get_function(function_id).map(|f| f.signature)
+    fn try_get_function_signature(&self, function_id: &FunctionId) -> Option<FunctionSignature> {
+        self.try_get_function(function_id).map(|f| f.signature)
     }
 
-    fn get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo> {
+    fn try_get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo> {
         self.concrete_types.get(&id).map(|ty| ty.info().clone())
     }
 }
 impl<TType: GenericType> SpecializationContext for SpecializationContextForRegistry<'_, TType> {
-    fn get_function(&self, function_id: &FunctionId) -> Option<Function> {
+    fn try_get_function(&self, function_id: &FunctionId) -> Option<Function> {
         self.functions.get(function_id).cloned()
     }
 

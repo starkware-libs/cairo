@@ -16,7 +16,7 @@ impl NoGenericArgsGenericLibFunc for UnconditionalJumpLibFunc {
         _context: &dyn SignatureSpecializationContext,
     ) -> Result<LibFuncSignature, SpecializationError> {
         Ok(LibFuncSignature {
-            input_types: vec![],
+            param_signatures: vec![],
             branch_signatures: vec![BranchSignature {
                 vars: vec![],
                 ap_change: SierraApChange::Known,

@@ -32,3 +32,9 @@ mod ref;
 use ref::Ref;
 use ref::into_ref;
 use ref::deref;
+
+// Arrays.
+mod array;
+use array::Array;
+use array::array_new;
+use array::array_append;

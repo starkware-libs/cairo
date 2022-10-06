@@ -57,7 +57,7 @@ fn check_basic_structure(
     invocation: &Invocation,
     libfunc: &CoreConcreteLibFunc,
 ) -> Result<(), CompilationError> {
-    if invocation.args.len() != libfunc.input_types().len()
+    if invocation.args.len() != libfunc.param_signatures().len()
         || !itertools::equal(
             invocation.branches.iter().map(|branch| branch.results.len()),
             libfunc.output_types().iter().map(|types| types.len()),
@@ -139,7 +139,12 @@ pub fn compile(
                     .map_err(CompilationError::ProgramRegistryError)?;
                 check_basic_structure(statement_idx, invocation, libfunc)?;
 
-                check_types_match(&invoke_refs, libfunc.input_types())?;
+                let param_types: Vec<_> = libfunc
+                    .param_signatures()
+                    .iter()
+                    .map(|param_signature| param_signature.ty.clone())
+                    .collect();
+                check_types_match(&invoke_refs, &param_types)?;
                 let compiled_invocation = compile_invocation(
                     invocation,
                     libfunc,
