@@ -11,6 +11,7 @@ diagnostics = { path = "../diagnostics" }
 diagnostics_proc_macros = { path = "../diagnostics_proc_macros" }
 filesystem = { path = "../filesystem" }
 itertools = "0.10.3"
+lowering = { path = "../lowering" }
 parser = { path = "../parser" }
 salsa = "0.16.1"
 semantic = { path = "../semantic" }

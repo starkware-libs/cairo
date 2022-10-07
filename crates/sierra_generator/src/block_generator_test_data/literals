@@ -1,0 +1,27 @@
+//! > Test literals code.
+
+//! > test_function_name
+block_generator_test
+
+//! > function
+func foo() -> () {
+    let x = 5;
+    let y = 6;
+    let x = 7;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_gen_diagnostics
+
+//! > sierra_code
+felt_const<5>() -> ([0])
+felt_const<6>() -> ([1])
+felt_const<7>() -> ([2])

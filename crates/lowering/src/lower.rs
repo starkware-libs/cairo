@@ -14,8 +14,6 @@ use crate::objects::{
     Variable, VariableId,
 };
 
-// TODO(spapini): Remove.
-#[allow(dead_code)]
 /// Context for lowering a function.
 pub struct Lowerer<'db> {
     db: &'db dyn SemanticGroup,
