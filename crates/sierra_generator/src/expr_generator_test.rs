@@ -1,3 +1,5 @@
+// TODO(lior): Remove this file once block_generator.rs replaces it.
+
 use diagnostics::DiagnosticsBuilder;
 use indoc::indoc;
 use pretty_assertions::assert_eq;
@@ -14,7 +16,7 @@ fn generate_expr_code_for_test(
 ) -> (Vec<pre_sierra::Statement>, sierra::ids::VarId) {
     let mut diagnostics = DiagnosticsBuilder::<SierraGeneratorDiagnostic>::default();
     let mut expr_generator_context =
-        ExprGeneratorContext::new(db, test_expr.function_id, &mut diagnostics);
+        ExprGeneratorContext::new(db, None, test_expr.function_id, &mut diagnostics);
     let result = generate_expression_code(&mut expr_generator_context, test_expr.expr_id);
     diagnostics.build().expect("");
     result.unwrap()
@@ -28,7 +30,7 @@ fn verify_exception(
 ) {
     let mut diagnostics = DiagnosticsBuilder::<SierraGeneratorDiagnostic>::default();
     let mut expr_generator_context =
-        ExprGeneratorContext::new(db, test_expr.function_id, &mut diagnostics);
+        ExprGeneratorContext::new(db, None, test_expr.function_id, &mut diagnostics);
     generate_expression_code(&mut expr_generator_context, test_expr.expr_id);
     assert_eq!(diagnostics.build().format(db).trim(), expected_diagnostics, "'{name}' failed.");
 }
@@ -99,7 +101,7 @@ fn test_expr_generator_duplicate_variable() {
     let test_expr = setup_test_block(&mut db, "let x = 7; x", "", "").unwrap();
     let mut diagnostics = DiagnosticsBuilder::<SierraGeneratorDiagnostic>::default();
     let mut expr_generator_context =
-        ExprGeneratorContext::new(&db, test_expr.function_id, &mut diagnostics);
+        ExprGeneratorContext::new(&db, None, test_expr.function_id, &mut diagnostics);
     // Call generate_expression_code with the same code twice, to simulate the
     // InternalErrorDuplicatedVariable error.
     let (statements0, res0) =

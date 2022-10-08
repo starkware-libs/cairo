@@ -13,6 +13,8 @@ use crate::{pre_sierra, SierraGeneratorDiagnostic};
 /// Context for the methods that generate Sierra instructions for an expression.
 pub struct ExprGeneratorContext<'a> {
     db: &'a dyn SierraGenGroup,
+    // TODO(lior): Remove Option<> once the old expr_generator.rs is no longer used.
+    lowered: Option<&'a lowering::lower::Lowered>,
     function_id: FreeFunctionId,
     module_id: ModuleId,
     diagnostics: &'a mut DiagnosticsBuilder<SierraGeneratorDiagnostic>,
@@ -26,11 +28,13 @@ impl<'a> ExprGeneratorContext<'a> {
     /// Constructs an empty [ExprGeneratorContext].
     pub fn new(
         db: &'a dyn SierraGenGroup,
+        lowered: Option<&'a lowering::lower::Lowered>,
         function_id: FreeFunctionId,
         diagnostics: &'a mut DiagnosticsBuilder<SierraGeneratorDiagnostic>,
     ) -> Self {
         ExprGeneratorContext {
             db,
+            lowered,
             function_id,
             module_id: function_id.module(db.upcast()),
             diagnostics,
@@ -201,5 +205,9 @@ impl<'a> ExprGeneratorContext<'a> {
             stable_location: StableLocation::new(self.module_id, stable_ptr),
             kind,
         });
+    }
+
+    pub fn get_lowered_variable(&self, var: lowering::VariableId) -> &lowering::Variable {
+        &self.lowered.unwrap().variables[var]
     }
 }
