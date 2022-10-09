@@ -18,7 +18,9 @@ pub struct ExprGeneratorContext<'a> {
     diagnostics: &'a mut DiagnosticsBuilder<SierraGeneratorDiagnostic>,
     var_id_allocator: IdAllocator,
     label_id_allocator: IdAllocator,
-    variables: UnorderedHashMap<defs::ids::VarId, sierra::ids::VarId>,
+    // TODO(lior): Remove old_variables once not used.
+    old_variables: UnorderedHashMap<defs::ids::VarId, sierra::ids::VarId>,
+    variables: UnorderedHashMap<lowering::VariableId, sierra::ids::VarId>,
 }
 impl<'a> ExprGeneratorContext<'a> {
     /// Constructs an empty [ExprGeneratorContext].
@@ -34,6 +36,7 @@ impl<'a> ExprGeneratorContext<'a> {
             diagnostics,
             var_id_allocator: IdAllocator::default(),
             label_id_allocator: IdAllocator::default(),
+            old_variables: UnorderedHashMap::default(),
             variables: UnorderedHashMap::default(),
         }
     }
@@ -61,7 +64,7 @@ impl<'a> ExprGeneratorContext<'a> {
         sierra_var: sierra::ids::VarId,
         stable_ptr: SyntaxStablePtrId,
     ) {
-        if self.variables.insert(local_var_id, sierra_var).is_some() {
+        if self.old_variables.insert(local_var_id, sierra_var).is_some() {
             self.add_diagnostic(
                 SierraGeneratorDiagnosticKind::InternalErrorDuplicatedVariable,
                 stable_ptr,
@@ -76,7 +79,7 @@ impl<'a> ExprGeneratorContext<'a> {
         local_var: defs::ids::VarId,
         stable_ptr: SyntaxStablePtrId,
     ) -> Option<sierra::ids::VarId> {
-        let var = self.variables.get(&local_var);
+        let var = self.old_variables.get(&local_var);
         if var.is_none() {
             self.add_diagnostic(
                 SierraGeneratorDiagnosticKind::InternalErrorUnknownVariable,
@@ -85,6 +88,18 @@ impl<'a> ExprGeneratorContext<'a> {
             return None;
         }
         var.cloned()
+    }
+
+    /// Returns the Sierra variable that corresponds to [lowering::VariableId].
+    /// Allocates a new Sierra variable on the first call (for each variable).
+    pub fn get_sierra_variable(&mut self, var: lowering::VariableId) -> sierra::ids::VarId {
+        if let Some(sierra_var) = self.variables.get(&var) {
+            return sierra_var.clone();
+        }
+
+        let sierra_var = self.allocate_sierra_variable();
+        self.variables.insert(var, sierra_var.clone());
+        sierra_var
     }
 
     /// Generates a label id and a label statement.
