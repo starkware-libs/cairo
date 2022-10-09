@@ -4,6 +4,7 @@ pub mod annotations;
 pub mod compiler;
 pub mod environment;
 pub mod invocations;
+pub mod metadata;
 pub mod references;
 pub mod relocations;
 pub mod type_sizes;
