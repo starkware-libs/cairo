@@ -106,6 +106,14 @@ impl<'a> ExprGeneratorContext<'a> {
         sierra_var
     }
 
+    /// Same as [Self::get_sierra_variable] except that it operates of a list of variables.
+    pub fn get_sierra_variables(
+        &mut self,
+        vars: &[lowering::VariableId],
+    ) -> Vec<sierra::ids::VarId> {
+        vars.iter().map(|var| self.get_sierra_variable(*var)).collect()
+    }
+
     /// Generates a label id and a label statement.
     // TODO(lior): Consider using stable ids, instead of allocating sequential ids.
     pub fn new_label(&mut self) -> (pre_sierra::Statement, pre_sierra::LabelId) {

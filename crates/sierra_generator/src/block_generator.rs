@@ -65,13 +65,9 @@ fn generate_statement_call_code(
     context: &mut ExprGeneratorContext<'_>,
     statement: &lowering::StatementCall,
 ) -> Option<Vec<pre_sierra::Statement>> {
-    // Prepare the Sierra input variables.
-    let inputs: Vec<sierra::ids::VarId> =
-        statement.inputs.iter().map(|input| context.get_sierra_variable(*input)).collect();
-
-    // Prepare the Sierra output variables.
-    let outputs: Vec<sierra::ids::VarId> =
-        statement.outputs.iter().map(|output| context.get_sierra_variable(*output)).collect();
+    // Prepare the Sierra input and output variables.
+    let inputs = context.get_sierra_variables(&statement.inputs);
+    let outputs = context.get_sierra_variables(&statement.outputs);
 
     // Check if this is a user defined function or a libcall.
     let function_long_id = match context.get_db().lookup_intern_function(statement.function) {
