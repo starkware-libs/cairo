@@ -261,7 +261,6 @@ pub fn compute_expr_block_semantic(
 
     ctx.run_in_subscope(|new_ctx| {
         let mut statements = syntax.statements(syntax_db).elements(syntax_db);
-
         // Remove the tail expression, if exists.
         // TODO(spapini): Consider splitting tail expression in the parser.
         let tail = get_tail_expression(syntax_db, statements.as_slice());
@@ -270,15 +269,24 @@ pub fn compute_expr_block_semantic(
         }
 
         // Convert statements to semantic model.
-        let statements_semantic = statements
+        let statements_semantic: Vec<_> = statements
             .into_iter()
             .filter_map(|statement_syntax| compute_statement_semantic(new_ctx, statement_syntax))
             .collect();
 
         // Convert tail expression (if exists) to semantic model.
         let tail_semantic_expr = tail.map(|tail_expr| compute_expr_semantic(new_ctx, &tail_expr));
-
-        let ty = if let Some(t) = &tail_semantic_expr { t.ty() } else { unit_ty(db) };
+        let ty = if let Some(t) = &tail_semantic_expr {
+            t.ty()
+        } else if let Some(statement) = statements_semantic.last() {
+            if let Statement::Return(_) = &new_ctx.statements[*statement] {
+                TypeId::never(new_ctx.db)
+            } else {
+                unit_ty(db)
+            }
+        } else {
+            unit_ty(db)
+        };
         Some(Expr::Block(ExprBlock {
             statements: statements_semantic,
             tail: tail_semantic_expr.map(|expr| new_ctx.exprs.alloc(expr)),
@@ -325,9 +333,10 @@ fn compute_expr_match_semantic(
         .collect();
     // Unify arm types.
     let missing_ty = TypeId::missing(ctx.db);
+    let never_ty = TypeId::never(ctx.db);
     for (_, expr) in pattern_and_expr_options.iter().flatten() {
         let arm_ty = expr.ty();
-        if arm_ty == missing_ty {
+        if arm_ty == missing_ty || arm_ty == never_ty {
             continue;
         }
 
@@ -353,13 +362,7 @@ fn compute_expr_match_semantic(
     Some(Expr::Match(ExprMatch {
         matched_expr: ctx.exprs.alloc(expr),
         arms: semantic_arms,
-        ty: match match_type {
-            Some(t) => t,
-            None => {
-                // TODO(spapini): Return never-type.
-                TypeId::missing(db)
-            }
-        },
+        ty: match_type.unwrap_or(never_ty),
         stable_ptr: syntax.stable_ptr().into(),
     }))
 }
@@ -667,7 +670,7 @@ fn member_access_expr(
         TypeLongId::GenericParameter(_) => {
             ctx.diagnostics.report(&rhs_syntax, TypeHasNoMembers { ty: lexpr.ty(), member_name });
         }
-        TypeLongId::Missing => {}
+        TypeLongId::Missing | TypeLongId::Never => {}
     }
     None
 }

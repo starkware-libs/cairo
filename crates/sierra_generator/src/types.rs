@@ -39,6 +39,6 @@ pub fn get_concrete_type_id(
             todo!("Add support for tuple types when they are supported in Sierra.")
         }
         semantic::TypeLongId::GenericParameter(_) => todo!("Add support for generic parameters."),
-        semantic::TypeLongId::Missing => None,
+        semantic::TypeLongId::Missing | semantic::TypeLongId::Never => None,
     }
 }
