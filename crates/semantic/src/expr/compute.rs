@@ -113,38 +113,38 @@ pub fn maybe_compute_expr_semantic(
     let db = ctx.db;
     let syntax_db = db.upcast();
     // TODO: When Expr holds the syntax pointer, add it here as well.
-    Some(match syntax {
-        ast::Expr::Path(path) => resolve_variable(ctx, path)?,
+    match syntax {
+        ast::Expr::Path(path) => resolve_variable(ctx, path),
         ast::Expr::Literal(literal_syntax) => {
-            Expr::Literal(literal_to_semantic(ctx, literal_syntax)?)
+            Some(Expr::Literal(literal_to_semantic(ctx, literal_syntax)?))
         }
-        ast::Expr::False(syntax) => true_literal_expr(ctx, syntax.stable_ptr().into()),
-        ast::Expr::True(syntax) => false_literal_expr(ctx, syntax.stable_ptr().into()),
+        ast::Expr::False(syntax) => Some(true_literal_expr(ctx, syntax.stable_ptr().into())),
+        ast::Expr::True(syntax) => Some(false_literal_expr(ctx, syntax.stable_ptr().into())),
         ast::Expr::Parenthesized(paren_syntax) => {
-            compute_expr_semantic(ctx, &paren_syntax.expr(syntax_db))
+            maybe_compute_expr_semantic(ctx, &paren_syntax.expr(syntax_db))
         }
         ast::Expr::Unary(_) => {
             ctx.diagnostics.report(syntax, Unsupported);
-            return None;
+            None
         }
-        ast::Expr::Binary(binary_op_syntax) => compute_expr_binary_semantic(ctx, binary_op_syntax)?,
-        ast::Expr::Tuple(tuple_syntax) => compute_expr_tuple_semantic(ctx, tuple_syntax)?,
+        ast::Expr::Binary(binary_op_syntax) => compute_expr_binary_semantic(ctx, binary_op_syntax),
+        ast::Expr::Tuple(tuple_syntax) => compute_expr_tuple_semantic(ctx, tuple_syntax),
         ast::Expr::FunctionCall(call_syntax) => {
-            compute_expr_function_call_semantic(ctx, call_syntax)?
+            compute_expr_function_call_semantic(ctx, call_syntax)
         }
-        ast::Expr::StructCtorCall(ctor_syntax) => struct_ctor_expr(ctx, ctor_syntax)?,
-        ast::Expr::Block(block_syntax) => compute_expr_block_semantic(ctx, block_syntax)?,
-        ast::Expr::Match(expr_match) => compute_expr_match_semantic(ctx, expr_match)?,
-        ast::Expr::If(expr_if) => compute_expr_if_semantic(ctx, expr_if)?,
+        ast::Expr::StructCtorCall(ctor_syntax) => struct_ctor_expr(ctx, ctor_syntax),
+        ast::Expr::Block(block_syntax) => compute_expr_block_semantic(ctx, block_syntax),
+        ast::Expr::Match(expr_match) => compute_expr_match_semantic(ctx, expr_match),
+        ast::Expr::If(expr_if) => compute_expr_if_semantic(ctx, expr_if),
         ast::Expr::Missing(_) => {
             ctx.diagnostics.report(syntax, Unsupported);
-            return None;
+            None
         }
-    })
+    }
 }
 
 fn compute_expr_binary_semantic(
-    ctx: &mut ComputationContext,
+    ctx: &mut ComputationContext<'_>,
     syntax: &ast::ExprBinary,
 ) -> Option<Expr> {
     let db = ctx.db;
@@ -179,7 +179,7 @@ fn compute_expr_binary_semantic(
 }
 
 fn compute_expr_tuple_semantic(
-    ctx: &mut ComputationContext,
+    ctx: &mut ComputationContext<'_>,
     syntax: &ast::ExprTuple,
 ) -> Option<Expr> {
     let db = ctx.db;
@@ -200,7 +200,7 @@ fn compute_expr_tuple_semantic(
 }
 
 fn compute_expr_function_call_semantic(
-    ctx: &mut ComputationContext,
+    ctx: &mut ComputationContext<'_>,
     syntax: &ast::ExprFunctionCall,
 ) -> Option<Expr> {
     let db = ctx.db;
@@ -246,7 +246,7 @@ fn compute_expr_function_call_semantic(
         }
         _ => {
             ctx.diagnostics.report(&path, NotAFunction);
-            return None;
+            None
         }
     }
 }
@@ -289,7 +289,7 @@ pub fn compute_expr_block_semantic(
 }
 
 fn compute_expr_match_semantic(
-    ctx: &mut ComputationContext,
+    ctx: &mut ComputationContext<'_>,
     syntax: &ast::ExprMatch,
 ) -> Option<Expr> {
     // TODO(yuval): verify exhaustiveness.
