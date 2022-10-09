@@ -215,7 +215,13 @@ impl<'a> ExprGeneratorContext<'a> {
         });
     }
 
-    pub fn get_lowered_variable(&self, var: lowering::VariableId) -> &lowering::Variable {
+    /// Returns the [lowering::Variable] associated with [lowering::VariableId].
+    pub fn get_lowered_variable(&self, var: lowering::VariableId) -> &'a lowering::Variable {
         &self.lowered.unwrap().variables[var]
+    }
+
+    /// Returns the block ([lowering::Block]) associated with [lowering::BlockId].
+    pub fn get_lowered_block(&self, block_id: lowering::BlockId) -> &'a lowering::Block {
+        &self.lowered.unwrap().blocks[block_id]
     }
 }
