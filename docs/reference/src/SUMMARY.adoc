@@ -71,6 +71,7 @@ link:notation.adoc[Notation]
 *** Integer types
 *** String types
 *** link:unit-type.adoc[Unit type]
+*** link:never-type.adoc[Never type]
 *** Tuple types
 *** Struct types
 *** Enum types
