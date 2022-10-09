@@ -151,7 +151,7 @@ pub fn priv_free_function_definition_data(
         declaration.signature.return_type,
         environment,
     );
-    let expr = compute_expr_block_semantic(&mut ctx, &syntax.body(db.upcast()));
+    let expr = compute_expr_block_semantic(&mut ctx, &syntax.body(db.upcast()))?;
     if expr.ty() != declaration.signature.return_type && expr.ty() != semantic::TypeId::missing(db)
     {
         ctx.diagnostics.report(
