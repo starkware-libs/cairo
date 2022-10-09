@@ -52,7 +52,3 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: If blocks have incompatible types: "<never>" and "()"
- --> lib.cairo:3:5
-    if x {
-    ^****^
