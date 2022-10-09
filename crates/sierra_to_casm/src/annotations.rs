@@ -5,7 +5,7 @@ use std::iter;
 use casm::ap_change::{ApChange, ApChangeError, ApplyApChange};
 use itertools::zip_eq;
 use sierra::edit_state::{put_results, take_args};
-use sierra::ids::{ConcreteTypeId, FunctionId, VarId};
+use sierra::ids::{ConcreteTypeId, VarId};
 use sierra::program::{BranchInfo, Function, StatementIdx};
 use thiserror::Error;
 
@@ -15,6 +15,7 @@ use crate::environment::{
     validate_environment_equality, validate_final_environment, Environment, EnvironmentError,
 };
 use crate::invocations::BranchRefChanges;
+use crate::metadata::Metadata;
 use crate::references::{
     build_function_parameter_refs, check_types_match, ReferenceValue, ReferencesError,
     StatementRefs,
@@ -110,16 +111,16 @@ impl ProgramAnnotations {
     }
 
     /// Creates a ProgramAnnotations object based on 'n_statements', a given functions list
-    /// and ap_change info.
+    /// and metadata for the program.
     pub fn create(
         n_statements: usize,
         functions: &[Function],
-        ap_change_info: &HashMap<FunctionId, ApChange>,
+        metadata: &Metadata,
     ) -> Result<Self, AnnotationError> {
         let mut annotations = ProgramAnnotations::new(n_statements);
         let mut return_annotations: HashMap<ReturnProperties, ReturnAnnotation> = HashMap::new();
         for func in functions {
-            let ap_change = match ap_change_info.get(&func.id) {
+            let ap_change = match metadata.function_ap_change.get(&func.id) {
                 Some(ap_change) => *ap_change,
                 None => ApChange::Unknown,
             };

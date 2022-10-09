@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 
@@ -11,11 +10,17 @@ use sierra::ProgramParser;
 use test_case::test_case;
 
 use crate::compiler::compile;
+use crate::metadata::Metadata;
 
-fn build_ap_change_map(data: &[(&str, i16)]) -> HashMap<FunctionId, ApChange> {
-    data.iter()
-        .map(|(func_name, change)| (FunctionId::from_string(func_name), ApChange::Known(*change)))
-        .collect()
+fn build_metadata(ap_change_data: &[(&str, i16)]) -> Metadata {
+    Metadata {
+        function_ap_change: ap_change_data
+            .iter()
+            .map(|(func_name, change)| {
+                (FunctionId::from_string(func_name), ApChange::Known(*change))
+            })
+            .collect(),
+    }
 }
 
 #[test]
@@ -79,7 +84,7 @@ fn good_flow() {
         "})
         .unwrap();
     assert_eq!(
-        match compile(&prog, &build_ap_change_map(&[("ref_and_back", 2)])) {
+        match compile(&prog, &build_metadata(&[("ref_and_back", 2)])) {
             Ok(compiled_program) => compiled_program.to_string(),
             Err(error) => error.to_string(),
         },
@@ -134,7 +139,7 @@ fn locals_test() {
         "})
         .unwrap();
     assert_eq!(
-        compile(&prog, &build_ap_change_map(&[("test_program", 5)])).unwrap().to_string(),
+        compile(&prog, &build_metadata(&[("test_program", 5)])).unwrap().to_string(),
         indoc! {"
             [ap + 0] = [fp + -4], ap++;
             [fp + 1] = [ap + -1];
@@ -153,7 +158,7 @@ fn fib_program() {
         [env!("CARGO_MANIFEST_DIR"), "../sierra/examples/fib_no_gas.sierra"].iter().collect();
     let prog = sierra::ProgramParser::new().parse(&fs::read_to_string(path).unwrap()).unwrap();
     pretty_assertions::assert_eq!(
-        match compile(&prog, &build_ap_change_map(&[("ref_and_back", 2)])) {
+        match compile(&prog, &build_metadata(&[("ref_and_back", 2)])) {
             Ok(compiled_program) => compiled_program.to_string(),
             Err(error) => error.to_string(),
         },
@@ -456,7 +461,7 @@ expected: ApChange::Known(5) got: ApChange::Known(0).";
 fn compiler_errors(sierra_code: &str, ap_change_data: &[(&str, i16)], expected_result: &str) {
     let prog = ProgramParser::new().parse(sierra_code).unwrap();
     assert_eq!(
-        match compile(&prog, &build_ap_change_map(ap_change_data)) {
+        match compile(&prog, &build_metadata(ap_change_data)) {
             Ok(compiled_program) => compiled_program.to_string(),
             Err(error) => error.to_string(),
         },

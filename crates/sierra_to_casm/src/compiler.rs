@@ -1,17 +1,15 @@
-use std::collections::HashMap;
 use std::fmt::Display;
 
-use casm::ap_change::ApChange;
 use casm::instructions::{Instruction, InstructionBody, RetInstruction};
 use sierra::extensions::core::{CoreConcreteLibFunc, CoreLibFunc, CoreType};
 use sierra::extensions::ConcreteLibFunc;
-use sierra::ids::FunctionId;
 use sierra::program::{BranchTarget, Invocation, Program, Statement, StatementIdx};
 use sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use thiserror::Error;
 
 use crate::annotations::{AnnotationError, ProgramAnnotations, StatementAnnotations};
 use crate::invocations::{check_references_on_stack, compile_invocation, InvocationError};
+use crate::metadata::Metadata;
 use crate::references::{check_types_match, ReferencesError};
 use crate::relocations::{relocate_instructions, RelocationEntry};
 use crate::type_sizes::get_type_size_map;
@@ -75,10 +73,7 @@ fn check_basic_structure(
     }
 }
 
-pub fn compile(
-    program: &Program,
-    ap_change_info: &HashMap<FunctionId, ApChange>,
-) -> Result<CairoProgram, CompilationError> {
+pub fn compile(program: &Program, metadata: &Metadata) -> Result<CairoProgram, CompilationError> {
     let mut instructions = Vec::new();
     let mut relocations: Vec<RelocationEntry> = Vec::new();
 
@@ -90,7 +85,7 @@ pub fn compile(
     let type_sizes = get_type_size_map(program, &registry)
         .ok_or(CompilationError::FailedBuildingTypeInformation)?;
     let mut program_annotations =
-        ProgramAnnotations::create(program.statements.len(), &program.funcs, ap_change_info)?;
+        ProgramAnnotations::create(program.statements.len(), &program.funcs, metadata)?;
 
     let mut program_offset: usize = 0;
 
