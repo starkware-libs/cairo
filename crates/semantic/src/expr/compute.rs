@@ -296,6 +296,37 @@ pub fn compute_expr_block_semantic(
     })
 }
 
+/// Helper for merging the return types of branch blocks (match or if else).
+struct FlowMergeTypeHelper {
+    never_type: TypeId,
+    missing_type: TypeId,
+    final_type: Option<TypeId>,
+}
+impl FlowMergeTypeHelper {
+    fn new(db: &dyn SemanticGroup) -> Self {
+        Self { never_type: TypeId::never(db), missing_type: TypeId::missing(db), final_type: None }
+    }
+
+    /// Attempt merge a branch into the helper, on error will return the conflicting types.
+    fn try_merge_types(&mut self, ty: TypeId) -> Result<(), (TypeId, TypeId)> {
+        if ty != self.never_type && ty != self.missing_type {
+            if let Some(existing) = &self.final_type {
+                if ty != *existing {
+                    return Err((*existing, ty));
+                }
+            } else {
+                self.final_type = Some(ty);
+            }
+        }
+        Ok(())
+    }
+
+    /// Returns the merged type.
+    fn get_final_type(self) -> TypeId {
+        self.final_type.unwrap_or(self.never_type)
+    }
+}
+
 fn compute_expr_match_semantic(
     ctx: &mut ComputationContext<'_>,
     syntax: &ast::ExprMatch,
@@ -305,7 +336,6 @@ fn compute_expr_match_semantic(
     let syntax_db = db.upcast();
 
     let syntax_arms = syntax.arms(syntax_db).elements(syntax_db);
-    let mut match_type: Option<TypeId> = None;
     let expr = compute_expr_semantic(ctx, &syntax.expr(syntax_db));
     // Run compute_pattern_semantic on every arm, even if other arms failed, to get as many
     // diagnostics as possible.
@@ -332,25 +362,13 @@ fn compute_expr_match_semantic(
         })
         .collect();
     // Unify arm types.
-    let missing_ty = TypeId::missing(ctx.db);
-    let never_ty = TypeId::never(ctx.db);
+    let mut helper = FlowMergeTypeHelper::new(ctx.db);
     for (_, expr) in pattern_and_expr_options.iter().flatten() {
-        let arm_ty = expr.ty();
-        if arm_ty == missing_ty || arm_ty == never_ty {
-            continue;
-        }
-
-        match match_type {
-            Some(ty) if ty == arm_ty => {}
-            Some(ty) => {
-                ctx.diagnostics.report_by_ptr(
-                    expr.stable_ptr().untyped(),
-                    IncompatibleMatchArms { match_ty: ty, arm_ty },
-                );
-                match_type = Some(TypeId::missing(db));
-                break;
-            }
-            None => match_type = Some(arm_ty),
+        if let Err((match_ty, arm_ty)) = helper.try_merge_types(expr.ty()) {
+            ctx.diagnostics.report_by_ptr(
+                expr.stable_ptr().untyped(),
+                IncompatibleMatchArms { match_ty, arm_ty },
+            );
         }
     }
     // Compute semantic representation of the match arms.
@@ -362,7 +380,7 @@ fn compute_expr_match_semantic(
     Some(Expr::Match(ExprMatch {
         matched_expr: ctx.exprs.alloc(expr),
         arms: semantic_arms,
-        ty: match_type.unwrap_or(never_ty),
+        ty: helper.get_final_type(),
         stable_ptr: syntax.stable_ptr().into(),
     }))
 }
@@ -377,18 +395,18 @@ fn compute_expr_if_semantic(
     let expr = compute_expr_semantic(ctx, &syntax.condition(syntax_db));
     let if_block = compute_expr_block_semantic(ctx, &syntax.if_block(syntax_db))?;
     let else_block = compute_expr_block_semantic(ctx, &syntax.else_block(syntax_db))?;
-    let ty = if_block.ty();
-    if ty != else_block.ty() {
-        ctx.diagnostics.report(
-            syntax,
-            IncompatibleIfBlockTypes { block_if_ty: ty, block_else_ty: else_block.ty() },
-        );
-    }
+    let mut helper = FlowMergeTypeHelper::new(ctx.db);
+    helper
+        .try_merge_types(if_block.ty())
+        .and(helper.try_merge_types(else_block.ty()))
+        .unwrap_or_else(|(block_if_ty, block_else_ty)| {
+            ctx.diagnostics.report(syntax, IncompatibleIfBlockTypes { block_if_ty, block_else_ty });
+        });
     Some(Expr::If(ExprIf {
         condition: ctx.exprs.alloc(expr),
         if_block: ctx.exprs.alloc(if_block),
         else_block: ctx.exprs.alloc(else_block),
-        ty,
+        ty: helper.get_final_type(),
         stable_ptr: syntax.stable_ptr().into(),
     }))
 }
