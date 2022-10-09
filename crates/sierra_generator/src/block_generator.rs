@@ -4,6 +4,7 @@ mod test;
 
 use defs::ids::GenericFunctionId;
 use itertools::zip_eq;
+use sierra::ids::ConcreteLibFuncId;
 
 use crate::expr_generator_context::ExprGeneratorContext;
 use crate::pre_sierra;
@@ -69,11 +70,10 @@ fn generate_statement_call_code(
     let inputs = context.get_sierra_variables(&statement.inputs);
     let outputs = context.get_sierra_variables(&statement.outputs);
 
-    // Check if this is a user defined function or a libcall.
-    let function_long_id = match context.get_db().lookup_intern_function(statement.function) {
-        semantic::FunctionLongId::Concrete(concrete) => concrete,
-        semantic::FunctionLongId::Missing => todo!(),
-    };
+    // Check if this is a user defined function or a libfunc.
+    let (function_long_id, concrete_function_id) =
+        get_concrete_libfunc_id(context, statement.function);
+
     match function_long_id.generic_function {
         GenericFunctionId::Free(_) => {
             // Create [pre_sierra::PushValue] instances for the arguments.
@@ -96,12 +96,28 @@ fn generate_statement_call_code(
                 // Push the arguments.
                 pre_sierra::Statement::PushValues(push_values_vec),
                 // Call the function.
-                simple_statement(
-                    context.function_call_libfunc_id(statement.function),
-                    &args_on_stack,
-                    &outputs,
-                ),
+                simple_statement(concrete_function_id, &args_on_stack, &outputs),
             ])
+        }
+        GenericFunctionId::Extern(_) => {
+            Some(vec![simple_statement(concrete_function_id, &inputs, &outputs)])
+        }
+    }
+}
+
+/// Returns the [ConcreteLibFuncId] used for calling a function (either user defined or libfunc).
+fn get_concrete_libfunc_id(
+    context: &ExprGeneratorContext<'_>,
+    function: semantic::FunctionId,
+) -> (semantic::ConcreteFunction, ConcreteLibFuncId) {
+    // Check if this is a user defined function or a libfunc.
+    let function_long_id = match context.get_db().lookup_intern_function(function) {
+        semantic::FunctionLongId::Concrete(concrete) => concrete,
+        semantic::FunctionLongId::Missing => todo!(),
+    };
+    match function_long_id.generic_function {
+        GenericFunctionId::Free(_) => {
+            (function_long_id, context.function_call_libfunc_id(function))
         }
         GenericFunctionId::Extern(extern_id) => {
             let mut generic_args = vec![];
@@ -114,11 +130,7 @@ fn generate_statement_call_code(
                 });
             }
 
-            Some(vec![simple_statement(
-                context.generic_libfunc_id(extern_id, generic_args),
-                &inputs,
-                &outputs,
-            )])
+            (function_long_id, context.generic_libfunc_id(extern_id, generic_args))
         }
     }
 }
