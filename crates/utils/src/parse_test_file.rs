@@ -172,14 +172,16 @@ macro_rules! test_file_test {
             // TODO(mkaput): consider extracting this part into a function and passing macro args
             // via refs or closures. It may reduce compilation time sizeably.
             for filename in $filenames {
-                let tests = utils::parse_test_file(std::path::Path::new(filename))?;
+                let path: std::path::PathBuf =
+                    [env!("CARGO_MANIFEST_DIR"), filename].iter().collect();
+                let tests = utils::parse_test_file(path.as_path())?;
                 // TODO(alont): global tags for all tests in a file.
                 for (name, test) in tests {
                     assert_eq!(test.attributes["test_function_name"], stringify!($func));
 
                     let outputs = $func(&mut <$db_type>::default(), &test.attributes);
                     let line_num = test.line_num;
-                    let full_filename = std::fs::canonicalize(filename)?;
+                    let full_filename = std::fs::canonicalize(path.as_path())?;
                     let full_filename_str = full_filename.to_str().unwrap();
 
                     for (key, value) in outputs {
