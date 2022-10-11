@@ -2,8 +2,9 @@ use itertools::chain;
 use utils::ordered_hash_map::OrderedHashMap;
 use utils::ordered_hash_set::OrderedHashSet;
 
+use super::context::LoweringContext;
 use super::semantic_map::{SemanticVariableEntry, SemanticVariablesMap};
-use crate::lower::Lowerer;
+
 use crate::{Block, BlockEnd, Statement, VariableId};
 
 /// Wrapper around VariableId, guaranteeing that the variable is alive.
@@ -16,8 +17,8 @@ impl OwnedVariable {
     }
 
     /// Duplicates the variable if it is duplicatable.
-    pub fn try_duplicate(&self, lowerer: &Lowerer<'_>) -> Option<Self> {
-        if lowerer.variables[self.0].duplicatable { Some(OwnedVariable(self.0)) } else { None }
+    pub fn try_duplicate(&self, ctx: &LoweringContext<'_>) -> Option<Self> {
+        if ctx.variables[self.0].duplicatable { Some(OwnedVariable(self.0)) } else { None }
     }
 }
 
@@ -47,11 +48,15 @@ impl BlockScope {
     /// Adds a lowered statement to the block. Correctly handle updating liveness of variables.
     // TODO(spapini): Don't allow adding lowering::Statement directly. Instead have specific adding
     // functions to each statement kind, to enforce passing OwnedVariable instances.
-    pub fn add_statement(&mut self, lowerer: &Lowerer<'_>, stmt: Statement) -> Vec<OwnedVariable> {
+    pub fn add_statement(
+        &mut self,
+        ctx: &LoweringContext<'_>,
+        stmt: Statement,
+    ) -> Vec<OwnedVariable> {
         for input_var in stmt.inputs() {
             // The variables should all come from OwnedVariable instances. When the TODO above
             // is fixed, this will be fixed too.
-            self.get_var(lowerer, OwnedVariable(input_var));
+            self.get_var(ctx, OwnedVariable(input_var));
         }
         let owned_outputs =
             stmt.outputs().iter().map(|var_id| self.introduce_variable(*var_id)).collect();
@@ -73,12 +78,12 @@ impl BlockScope {
     /// This can be read as "borrowing" the semantic variable from an outer scope.
     pub fn get_or_pull_semantic_variable(
         &mut self,
-        lowerer: &mut Lowerer<'_>,
+        ctx: &mut LoweringContext<'_>,
         semantic_var_id: semantic::VarId,
     ) -> SemanticVariableEntry {
-        self.semantic_variables.get(lowerer, semantic_var_id).unwrap_or_else(|| {
-            self.pull_semantic_variable(lowerer, semantic_var_id).get_var(lowerer)
-        })
+        self.semantic_variables
+            .get(ctx, semantic_var_id)
+            .unwrap_or_else(|| self.pull_semantic_variable(ctx, semantic_var_id).get_var(ctx))
     }
 
     /// Seals a BlockScope from adding statements or variables. A sealed block should be finalized
@@ -100,11 +105,11 @@ impl BlockScope {
     /// variable, and marks it as input to the block.
     fn pull_semantic_variable(
         &mut self,
-        lowerer: &mut Lowerer<'_>,
+        ctx: &mut LoweringContext<'_>,
         semantic_var_id: semantic::VarId,
     ) -> &mut SemanticVariableEntry {
-        let ty = lowerer.semantic_defs[semantic_var_id].ty();
-        let var_id = lowerer.new_variable(ty);
+        let ty = ctx.semantic_defs[semantic_var_id].ty();
+        let var_id = ctx.new_variable(ty);
         let var = self.introduce_variable(var_id);
 
         assert!(
@@ -116,9 +121,9 @@ impl BlockScope {
     }
 
     /// Internal. Gets a variable, removing from `living_variables` if not duplicatable.
-    fn get_var(&mut self, lowerer: &Lowerer<'_>, var: OwnedVariable) -> VariableId {
+    fn get_var(&mut self, ctx: &LoweringContext<'_>, var: OwnedVariable) -> VariableId {
         let var_id = var.0;
-        if lowerer.variables[var_id].duplicatable {
+        if ctx.variables[var_id].duplicatable {
             return var_id;
         }
         self.take_var(var)
@@ -156,7 +161,7 @@ impl BlockSealed {
     // pub fn pushes_upper_bound(&self) -> OrderedHashSet<semantic::VarId> {}
     pub fn finalize(
         self,
-        lowerer: &mut Lowerer<'_>,
+        ctx: &mut LoweringContext<'_>,
         input_semantic_vars: &[semantic::VarId],
         output_semantic_vars: &[semantic::VarId],
     ) -> Block {
@@ -164,7 +169,7 @@ impl BlockSealed {
         // Pull extra semantic variables if necessary.
         for semantic_var_id in input_semantic_vars {
             if !block.pulled_semantic_vars.contains_key(semantic_var_id) {
-                block.pull_semantic_variable(lowerer, *semantic_var_id);
+                block.pull_semantic_variable(ctx, *semantic_var_id);
             }
         }
         // Make sure inputs contain all pulled semantic variables.
