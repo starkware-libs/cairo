@@ -1,14 +1,17 @@
-use core_libfunc_cost::FUNCTION_CALL_COST;
+use core_libfunc_cost_base::FUNCTION_CALL_COST;
 use cost_expr::Var;
 use gas_info::GasInfo;
 use sierra::extensions::core::{CoreLibFunc, CoreType};
 use sierra::program::{Program, StatementIdx};
 use sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use thiserror::Error;
+use utils::try_extract_matches;
 
-mod core_libfunc_cost;
+pub mod core_libfunc_cost;
+mod core_libfunc_cost_base;
+mod core_libfunc_cost_expr;
 mod cost_expr;
-mod gas_info;
+pub mod gas_info;
 mod generate_equations;
 mod solve_equations;
 
@@ -35,7 +38,7 @@ pub fn calc_gas_info(program: &Program) -> Result<GasInfo, CostError> {
             let libfunc = registry
                 .get_libfunc(libfunc_id)
                 .expect("Program registery creation would have already failed.");
-            core_libfunc_cost::core_libfunc_cost(statement_future_cost, idx, libfunc)
+            core_libfunc_cost_expr::core_libfunc_cost_expr(statement_future_cost, idx, libfunc)
         },
     )?;
     let solution = solve_equations::solve_equations(equations)?;
@@ -51,9 +54,8 @@ pub fn calc_gas_info(program: &Program) -> Result<GasInfo, CostError> {
         .collect();
     let variable_values = solution
         .into_iter()
-        .filter_map(|(var, value)| match var {
-            Var::LibFuncImplicitGasVariable(symbol) => Some((symbol, value)),
-            Var::StatementFuture(_) => None,
+        .filter_map(|(var, value)| {
+            Some((try_extract_matches!(var, Var::LibFuncImplicitGasVariable)?, value))
         })
         .collect();
     Ok(GasInfo { variable_values, function_costs })
