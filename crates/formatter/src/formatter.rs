@@ -423,12 +423,14 @@ pub struct Formatter<'a> {
     db: &'a dyn SyntaxGroup,
     result: String,
     config: FormatterConfig,
+    /// A buffer for the current line.
     line_state: PendingLineState,
     /// A list of precomputed indent strings (i.e. spaces) for reasonable indent sizes.
     /// The item in index `i` is a string representing `i` tabs.
     indents_list: Vec<String>,
     /// Current indentation in tabs.
     current_indent: usize,
+    /// The number of empty lines allowed after the current node.
     empty_lines_allowance: usize,
 }
 
@@ -445,9 +447,12 @@ impl<'a> Formatter<'a> {
             empty_lines_allowance: 0,
         }
     }
+    /// Returns the result of the formatter after format_node was called.
     pub fn get_result(&self) -> String {
         self.result.clone()
     }
+    /// Appends a formatted string, representing the syntax_node, to the result.
+    /// Should be called with a root syntax node to format a file.
     pub fn format_node(&mut self, syntax_node: &SyntaxNode, no_space_after: bool) {
         if syntax_node.text(self.db).is_some() {
             panic!("Token reached before terminal.");
@@ -462,7 +467,7 @@ impl<'a> Formatter<'a> {
             self.finalize_line();
         }
     }
-
+    /// Formats an internal node and appends the formatted string to the result.
     fn format_internal(&mut self, syntax_node: &SyntaxNode, no_space_after: bool) {
         let indent_change = if syntax_node.should_change_indent(self.db) { 1 } else { 0 };
         let allowed_empty_between = syntax_node.allowed_empty_between(self.db);
@@ -496,6 +501,7 @@ impl<'a> Formatter<'a> {
             self.line_state.line_buffer.close_sub_builder();
         }
     }
+    /// Formats a terminal node and appends the formatted string to the result.
     fn format_terminal(&mut self, syntax_node: &SyntaxNode, no_space_after: bool) {
         // TODO(spapini): Introduce a Terminal and a Token enum in ast.rs to make this cleaner.
         let mut children = syntax_node.children(self.db);
@@ -510,6 +516,7 @@ impl<'a> Formatter<'a> {
         let allowed_newlines = if syntax_node.allow_newline_after(self.db) { 1 } else { 0 };
         self.format_trivia(trailing_trivia, allowed_newlines);
     }
+    /// Appends a trivia node (if needed) to the result.
     fn format_trivia(&mut self, trivia: syntax::node::ast::Trivia, mut allowed_newlines: usize) {
         for trivium in trivia.elements(self.db) {
             match trivium {
@@ -530,11 +537,13 @@ impl<'a> Formatter<'a> {
             }
         }
     }
+    /// Formats a token node and it to the result.
     fn format_token(&mut self, syntax_node: &SyntaxNode, no_space_after: bool) {
         let no_space_after = no_space_after || syntax_node.force_no_space_after(self.db);
         let text = syntax_node.text(self.db).unwrap();
         self.append_token(text, syntax_node, no_space_after);
     }
+    /// Appends a token node to the result.
     fn append_token(&mut self, text: SmolStr, syntax_node: &SyntaxNode, no_space_after: bool) {
         if !syntax_node.force_no_space_before(self.db) && !self.line_state.no_space_after {
             self.line_state.line_buffer.push_space();
@@ -551,6 +560,7 @@ impl<'a> Formatter<'a> {
     fn append_break_line_point(&mut self, properties: BreakLinePointProperties) {
         self.line_state.line_buffer.push_break_line_point(properties);
     }
+    /// Returns the leading indentation according to the current indent and the tab size.
     fn get_indentation(&self) -> String {
         if self.current_indent < self.indents_list.len() {
             self.indents_list[self.current_indent].clone()
@@ -561,6 +571,7 @@ impl<'a> Formatter<'a> {
     fn append_newline(&mut self) {
         self.result.push('\n');
     }
+    /// Builds the pending line states into a string, and append it to the result.
     fn finalize_line(&mut self) {
         self.result.push_str(&self.line_state.line_buffer.build(
             self.config.max_line_length - self.current_indent * self.config.tab_size,
