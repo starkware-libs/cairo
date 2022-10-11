@@ -21,6 +21,7 @@
     │   │   │   ├── lparen (kind: TokenLParen): '('
     │   │   │   ├── parameters (kind: ParamList)
     │   │   │   │   ├── item #0 (kind: Param)
+    │   │   │   │   │   ├── modifiers (kind: ModifierList) []
     │   │   │   │   │   ├── name (kind: TokenIdentifier): 'var1'
     │   │   │   │   │   └── type_clause (kind: TypeClause)
     │   │   │   │   │       ├── colon (kind: TokenColon): ':'
@@ -29,6 +30,7 @@
     │   │   │   │   │               └── ident (kind: TokenIdentifier): 'int'
     │   │   │   │   ├── separator #0 (kind: TokenComma): ','
     │   │   │   │   ├── item #1 (kind: Param)
+    │   │   │   │   │   ├── modifiers (kind: ModifierList) []
     │   │   │   │   │   ├── name (kind: TokenIdentifier): 'var2'
     │   │   │   │   │   └── type_clause (kind: TypeClause)
     │   │   │   │   │       ├── colon (kind: TokenColon): ':'
@@ -261,6 +263,7 @@
     │   │   │   ├── lparen (kind: TokenLParen): '('
     │   │   │   ├── parameters (kind: ParamList)
     │   │   │   │   ├── item #0 (kind: Param)
+    │   │   │   │   │   ├── modifiers (kind: ModifierList) []
     │   │   │   │   │   ├── name (kind: TokenIdentifier): 'var1'
     │   │   │   │   │   └── type_clause (kind: TypeClause)
     │   │   │   │   │       ├── colon (kind: TokenColon): ':'
@@ -293,6 +296,7 @@
     │       ├── lbrace (kind: TokenLBrace): '{'
     │       ├── members (kind: ParamList)
     │       │   ├── item #0 (kind: Param)
+    │       │   │   ├── modifiers (kind: ModifierList) []
     │       │   │   ├── name (kind: TokenIdentifier): 'member'
     │       │   │   └── type_clause (kind: TypeClause)
     │       │   │       ├── colon (kind: TokenColon): ':'
@@ -301,6 +305,7 @@
     │       │   │               └── ident (kind: TokenIdentifier): 'bool'
     │       │   ├── separator #0 (kind: TokenComma): ','
     │       │   └── item #1 (kind: Param)
+    │       │       ├── modifiers (kind: ModifierList) []
     │       │       ├── name (kind: TokenIdentifier): 'member2'
     │       │       └── type_clause (kind: TypeClause)
     │       │           ├── colon (kind: TokenColon): ':'

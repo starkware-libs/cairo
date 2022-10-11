@@ -8,6 +8,7 @@
     │   │   │   ├── lparen (kind: TokenLParen): '('
     │   │   │   ├── parameters (kind: ParamList)
     │   │   │   │   └── item #0 (kind: Param)
+    │   │   │   │       ├── modifiers (kind: ModifierList) []
     │   │   │   │       ├── name (kind: TokenIdentifier): 'x'
     │   │   │   │       └── type_clause (kind: TypeClause)
     │   │   │   │           ├── colon (kind: TokenColon): ':'
@@ -141,6 +142,7 @@
     │   │   │   ├── lparen (kind: TokenLParen): '('
     │   │   │   ├── parameters (kind: ParamList)
     │   │   │   │   ├── item #0 (kind: Param)
+    │   │   │   │   │   ├── modifiers (kind: ModifierList) []
     │   │   │   │   │   ├── name (kind: TokenIdentifier): 'x'
     │   │   │   │   │   └── type_clause (kind: TypeClause)
     │   │   │   │   │       ├── colon (kind: TokenColon): ':'
@@ -149,6 +151,7 @@
     │   │   │   │   │               └── ident (kind: TokenIdentifier): 'T0'
     │   │   │   │   ├── separator #0 (kind: TokenComma): ','
     │   │   │   │   └── item #1 (kind: Param)
+    │   │   │   │       ├── modifiers (kind: ModifierList) []
     │   │   │   │       ├── name (kind: TokenIdentifier): 's'
     │   │   │   │       └── type_clause (kind: TypeClause)
     │   │   │   │           ├── colon (kind: TokenColon): ':'
@@ -213,6 +216,7 @@
     │       ├── lbrace (kind: TokenLBrace): '{'
     │       ├── members (kind: ParamList)
     │       │   ├── item #0 (kind: Param)
+    │       │   │   ├── modifiers (kind: ModifierList) []
     │       │   │   ├── name (kind: TokenIdentifier): 'x'
     │       │   │   └── type_clause (kind: TypeClause)
     │       │   │       ├── colon (kind: TokenColon): ':'
@@ -221,6 +225,7 @@
     │       │   │               └── ident (kind: TokenIdentifier): 'a'
     │       │   ├── separator #0 (kind: TokenComma): ','
     │       │   └── item #1 (kind: Param)
+    │       │       ├── modifiers (kind: ModifierList) []
     │       │       ├── name (kind: TokenIdentifier): 'y'
     │       │       └── type_clause (kind: TypeClause)
     │       │           ├── colon (kind: TokenColon): ':'
