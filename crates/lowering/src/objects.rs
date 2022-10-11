@@ -71,7 +71,7 @@ pub enum Statement {
     MatchEnum,
 
     // Tuples.
-    TupleConstruct,
+    TupleConstruct(StatementTupleConstruct),
     TupleDestruct(StatementTupleDestruct),
 }
 impl Statement {
@@ -85,7 +85,7 @@ impl Statement {
             Statement::StructDestruct => todo!(),
             Statement::EnumConstruct => todo!(),
             Statement::MatchEnum => todo!(),
-            Statement::TupleConstruct => todo!(),
+            Statement::TupleConstruct(stmt) => vec![stmt.output],
             Statement::TupleDestruct(stmt) => stmt.outputs.clone(),
         }
     }
@@ -144,6 +144,12 @@ pub struct MatchArm {
     pub arm_variables: Vec<VariableId>,
     /// A block to "call".
     pub block: BlockId,
+}
+
+/// A statement that constructs a tuple into a new variable.
+pub struct StatementTupleConstruct {
+    pub inputs: Vec<VariableId>,
+    pub output: VariableId,
 }
 
 /// A statement that destructs a tuple, introducing its elements as new variables.

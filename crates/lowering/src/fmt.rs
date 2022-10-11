@@ -6,6 +6,7 @@ use crate::objects::{
     Block, BlockEnd, BlockId, MatchArm, Statement, StatementCall, StatementCallBlock,
     StatementLiteral, StatementMatchExtern, StatementTupleDestruct, VariableId,
 };
+use crate::StatementTupleConstruct;
 
 /// Holds all the information needed for formatting lowered representations.
 /// Acts like a "db" for DebugWithDb.
@@ -115,7 +116,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for Statement {
             Statement::StructDestruct => todo!(),
             Statement::EnumConstruct => todo!(),
             Statement::MatchEnum => todo!(),
-            Statement::TupleConstruct => todo!(),
+            Statement::TupleConstruct(stmt) => stmt.fmt(f, ctx),
             Statement::TupleDestruct(stmt) => stmt.fmt(f, ctx),
         }
     }
@@ -147,6 +148,17 @@ impl DebugWithDb<LoweredFormatter<'_>> for StatementCallBlock {
         write!(f, "{:?}(", self.block)?;
         for var in &self.inputs {
             var.fmt(f, ctx)?;
+        }
+        write!(f, ")")
+    }
+}
+
+impl DebugWithDb<LoweredFormatter<'_>> for StatementTupleConstruct {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
+        write!(f, "tuple_construct(")?;
+        for var in &self.inputs {
+            var.fmt(f, ctx)?;
+            write!(f, ", ")?;
         }
         write!(f, ")")
     }
