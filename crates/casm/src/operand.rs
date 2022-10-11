@@ -37,7 +37,7 @@ impl Display for ResOperand {
     }
 }
 
-// Represents an operand of the form [reg + offset].
+/// Represents an operand of the form [reg + offset].
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct DerefOperand {
     pub register: Register,
@@ -47,6 +47,11 @@ impl Display for DerefOperand {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "[{} + {}]", self.register, self.offset)
     }
+}
+
+/// Returns an AP DerefOperand with the given offset.
+pub fn ap_deref_operand(offset: i16) -> DerefOperand {
+    DerefOperand { register: Register::AP, offset }
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
