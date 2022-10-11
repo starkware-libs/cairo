@@ -3,6 +3,7 @@ use diagnostics::Diagnostics;
 use id_arena::Arena;
 use itertools::zip_eq;
 use scope::{BlockScope, BlockScopeEnd, OwnedVariable};
+use semantic::corelib::unit_ty;
 use semantic::db::SemanticGroup;
 use semantic::TypeLongId;
 use utils::extract_matches;
@@ -65,7 +66,13 @@ impl<'db> Lowerer<'db> {
             lowerer.ctx.semantic_defs.insert(semantic_var.id(), semantic_var);
         }
 
-        let root_sealed_block = lowerer.lower_block(function_def.body);
+        // Fetch body block expr.
+        let semantic_block =
+            extract_matches!(&function_def.exprs[function_def.body], semantic::Expr::Block);
+        // Lower block to a BlockSealed.
+        // TODO(spapini): The `?` here is incorrect. In case of failure we should still return an
+        //   object with the correct diagnostics.
+        let root_sealed_block = lowerer.lower_block(semantic_block)?;
         let root_block = root_sealed_block.finalize(&mut lowerer.ctx, &input_semantic_var_ids, &[]);
         let root = lowerer.ctx.blocks.alloc(root_block);
         let LoweringContext { diagnostics, variables, blocks, .. } = lowerer.ctx;
@@ -73,48 +80,86 @@ impl<'db> Lowerer<'db> {
     }
 
     // Lowers a semantic block.
-    fn lower_block(&mut self, block_expr_id: semantic::ExprId) -> BlockSealed {
-        let expr = &self.function_def.exprs[block_expr_id];
-        let expr_block = extract_matches!(expr, semantic::Expr::Block);
+    fn lower_block<'a: 'b, 'b>(&mut self, expr_block: &semantic::ExprBlock) -> Option<BlockSealed> {
         let mut scope = BlockScope::default();
         for (i, stmt_id) in expr_block.statements.iter().enumerate() {
             let stmt = &self.function_def.statements[*stmt_id];
-            if let semantic::Statement::Return(expr_id) = stmt {
-                if i + 1 < expr_block.statements.len() {
-                    let start_stmt = &self.function_def.statements[expr_block.statements[i + 1]];
-                    let end_stmt =
-                        &self.function_def.statements[*expr_block.statements.last().unwrap()];
-                    // Emit diagnostic fo the rest of the statements with unreachable.
-                    self.ctx.diagnostics.report(
-                        start_stmt.stable_ptr().untyped(),
-                        Unreachable { last_statement_ptr: end_stmt.stable_ptr().untyped() },
-                    );
+            let lowered_stmt = self.lower_statement(&mut scope, stmt);
+
+            // If flow is not reachable anymore, no need to continue emitting statements.
+            match lowered_stmt {
+                Ok(()) => {}
+                Err(StatementLoweringFlowError::Failed) => return None,
+                Err(StatementLoweringFlowError::End(end)) => {
+                    if i + 1 < expr_block.statements.len() {
+                        let start_stmt =
+                            &self.function_def.statements[expr_block.statements[i + 1]];
+                        let end_stmt =
+                            &self.function_def.statements[*expr_block.statements.last().unwrap()];
+                        // Emit diagnostic fo the rest of the statements with unreachable.
+                        self.ctx.diagnostics.report(
+                            start_stmt.stable_ptr().untyped(),
+                            Unreachable { last_statement_ptr: end_stmt.stable_ptr().untyped() },
+                        );
+                        return Some(scope.seal(end));
+                    }
                 }
-
-                // TODO(spapini): Handle borrowing, muts, implicits ...
-                let returns = self.lower_expr(&mut scope, expr_id.expr);
-                return scope.seal(BlockScopeEnd::Return(vec![returns]));
-            }
-
-            self.lower_statement(&mut scope, stmt)
+            };
         }
 
-        let maybe_output = expr_block.tail.map(|expr_id| self.lower_expr(&mut scope, expr_id));
-        scope.seal(BlockScopeEnd::Callsite(maybe_output))
+        // Determine correct block end.
+        let end = match expr_block.tail {
+            Some(tail_expr) => {
+                let lowered_expr = self.lower_expr(&mut scope, tail_expr);
+                match lowered_expr {
+                    Ok(LoweredExpr::AtVariable(var)) => BlockScopeEnd::Callsite(Some(var)),
+                    Ok(LoweredExpr::Unit) => BlockScopeEnd::Callsite(None),
+                    Err(LoweringFlowError::Unreachable) => BlockScopeEnd::Unreachable,
+                    Err(LoweringFlowError::Failed) => {
+                        return None;
+                    }
+                }
+            }
+            None => BlockScopeEnd::Callsite(None),
+        };
+        Some(scope.seal(end))
     }
 
     /// Lowers a semantic statement.
-    pub fn lower_statement(&mut self, scope: &mut BlockScope, stmt: &semantic::Statement) {
+    pub fn lower_statement(
+        &mut self,
+        scope: &mut BlockScope,
+        stmt: &semantic::Statement,
+    ) -> Result<(), StatementLoweringFlowError> {
         match stmt {
             semantic::Statement::Expr(semantic::StatementExpr { expr, stable_ptr: _ }) => {
-                self.lower_expr(scope, *expr);
+                self.lower_expr(scope, *expr)?;
             }
             semantic::Statement::Let(semantic::StatementLet { pattern, expr, stable_ptr: _ }) => {
-                let var_id = self.lower_expr(scope, *expr);
-                self.lower_single_pattern(scope, pattern, var_id);
+                let lowered_expr = self.lower_expr(scope, *expr)?;
+                let var = match lowered_expr {
+                    LoweredExpr::AtVariable(var) => var,
+                    LoweredExpr::Unit => self.unit_var(scope),
+                };
+                self.lower_single_pattern(scope, pattern, var)
             }
-            semantic::Statement::Return(_) => unreachable!(),
+            semantic::Statement::Return(semantic::StatementReturn { expr, stable_ptr: _ }) => {
+                let lowered_expr = self.lower_expr(scope, *expr)?;
+                match lowered_expr {
+                    LoweredExpr::AtVariable(var) => {
+                        // TODO(spapini): Implicits and mutables.
+                        return Err(StatementLoweringFlowError::End(BlockScopeEnd::Return(vec![
+                            var,
+                        ])));
+                    }
+                    LoweredExpr::Unit => {
+                        // TODO(spapini): Implicits and mutables.
+                        return Err(StatementLoweringFlowError::End(BlockScopeEnd::Return(vec![])));
+                    }
+                }
+            }
         }
+        Ok(())
     }
 
     // TODO:(spapini): Separate match pattern from non-match (single) patterns in the semantic
@@ -156,7 +201,7 @@ impl<'db> Lowerer<'db> {
                     input: var.var_id(),
                     outputs,
                 });
-                let owned_outputs = scope.add_statement(&mut self.ctx, stmt);
+                let owned_outputs = scope.add_statement(&self.ctx, stmt);
                 for (var, pattern) in zip_eq(owned_outputs, field_patterns) {
                     self.lower_single_pattern(scope, pattern, var);
                 }
@@ -167,55 +212,58 @@ impl<'db> Lowerer<'db> {
     }
 
     /// Lowers a semantic expression.
-    fn lower_expr(&mut self, scope: &mut BlockScope, expr_id: semantic::ExprId) -> OwnedVariable {
+    fn lower_expr(
+        &mut self,
+        scope: &mut BlockScope,
+        expr_id: semantic::ExprId,
+    ) -> Result<LoweredExpr, LoweringFlowError> {
         let expr = &self.function_def.exprs[expr_id];
         match expr {
             semantic::Expr::Tuple(expr) => {
-                let inputs = expr
-                    .items
-                    .iter()
-                    .map(|arg_expr_id| self.lower_expr(scope, *arg_expr_id).var_id())
-                    .collect();
+                let inputs = self.lower_exprs_as_vars(&expr.items, scope)?;
 
+                // TODO(spapini): This logic currently gets rid of OwnedVariable, and needs to
+                //   ensure that the crated Statement only uses live variables. This could lead
+                //   to panics in add_statement. After the refactor mentioned at
+                //   [`BlockScope::add_statement()`], this should be better,
+                let inputs = inputs.iter().map(OwnedVariable::var_id).collect();
                 let result_var = self.ctx.new_variable(expr.ty);
                 let owned_outputs = scope.add_statement(
-                    &mut self.ctx,
+                    &self.ctx,
                     Statement::TupleConstruct(StatementTupleConstruct {
                         inputs,
                         output: result_var,
                     }),
                 );
-                owned_outputs.into_iter().next().unwrap()
+                Ok(LoweredExpr::AtVariable(owned_outputs.into_iter().next().unwrap()))
             }
             semantic::Expr::Assignment(_) => todo!(),
             semantic::Expr::Block(_) => todo!(),
             semantic::Expr::FunctionCall(expr) => {
+                let inputs = self.lower_exprs_as_vars(&expr.args, scope)?;
+
                 // TODO(spapini): This logic currently gets rid of OwnedVariable, and needs to
                 //   ensure that the crated Statement only uses live variables. This could lead
                 //   to panics in add_statement. After the refactor mentioned at
                 //   [`BlockScope::add_statement()`], this should be better,
-                let inputs = expr
-                    .args
-                    .iter()
-                    .map(|arg_expr_id| self.lower_expr(scope, *arg_expr_id).var_id())
-                    .collect();
-
-                // Allocate a new variable for the result of the function.
+                let inputs = inputs.iter().map(OwnedVariable::var_id).collect();
                 let result_var = self.ctx.new_variable(expr.ty);
                 let outputs = vec![result_var];
                 let owned_outputs = scope.add_statement(
-                    &mut self.ctx,
+                    &self.ctx,
                     Statement::Call(StatementCall { function: expr.function, inputs, outputs }),
                 );
-                owned_outputs.into_iter().next().unwrap()
+                Ok(LoweredExpr::AtVariable(owned_outputs.into_iter().next().unwrap()))
             }
             semantic::Expr::Match(_) => todo!(),
             semantic::Expr::If(_) => todo!(),
             // TODO(spapini): Convert to a diagnostic.
-            semantic::Expr::Var(expr) => scope
-                .get_or_pull_semantic_variable(&mut self.ctx, expr.var)
-                .var()
-                .expect("Value already moved."),
+            semantic::Expr::Var(expr) => Ok(LoweredExpr::AtVariable(
+                scope
+                    .get_or_pull_semantic_variable(&mut self.ctx, expr.var)
+                    .var()
+                    .expect("Value already moved."),
+            )),
             semantic::Expr::Literal(expr) => {
                 // TODO(spapini): This logic currently gets rid of OwnedVariable, and needs to
                 //   ensure that the crated Statement only uses live variables. This could lead
@@ -223,15 +271,69 @@ impl<'db> Lowerer<'db> {
                 //   [`BlockScope::add_statement()`], this should be better,
                 let output = self.ctx.new_variable(expr.ty);
                 let owned_outputs = scope.add_statement(
-                    &mut self.ctx,
+                    &self.ctx,
                     Statement::Literal(StatementLiteral { value: expr.value, output }),
                 );
-                owned_outputs.into_iter().next().unwrap()
+                Ok(LoweredExpr::AtVariable(owned_outputs.into_iter().next().unwrap()))
             }
             semantic::Expr::MemberAccess(_) => todo!(),
             semantic::Expr::StructCtor(_) => todo!(),
             semantic::Expr::EnumVariantCtor(_) => todo!(),
             semantic::Expr::Missing(_) => todo!(),
+        }
+    }
+
+    fn lower_exprs_as_vars(
+        &mut self,
+        exprs: &[semantic::ExprId],
+        scope: &mut BlockScope,
+    ) -> Result<Vec<OwnedVariable>, LoweringFlowError> {
+        let inputs = exprs
+            .iter()
+            .map(|arg_expr_id| Ok(self.lower_expr(scope, *arg_expr_id)?.var(self, scope)))
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(inputs)
+    }
+
+    fn unit_var(&mut self, scope: &mut BlockScope) -> OwnedVariable {
+        let output = self.ctx.new_variable(unit_ty(self.ctx.db));
+        let owned_outputs = scope.add_statement(
+            &self.ctx,
+            Statement::TupleConstruct(StatementTupleConstruct { inputs: vec![], output }),
+        );
+        owned_outputs.into_iter().next().unwrap()
+    }
+}
+
+#[allow(dead_code)]
+enum LoweredExpr {
+    AtVariable(OwnedVariable),
+    Unit,
+}
+impl LoweredExpr {
+    fn var(self, lowerer: &mut Lowerer<'_>, scope: &mut BlockScope) -> OwnedVariable {
+        match self {
+            LoweredExpr::AtVariable(var_id) => var_id,
+            LoweredExpr::Unit => lowerer.unit_var(scope),
+        }
+    }
+}
+#[allow(dead_code)]
+enum LoweringFlowError {
+    Failed,
+    Unreachable,
+}
+pub enum StatementLoweringFlowError {
+    Failed,
+    End(BlockScopeEnd),
+}
+impl From<LoweringFlowError> for StatementLoweringFlowError {
+    fn from(err: LoweringFlowError) -> Self {
+        match err {
+            LoweringFlowError::Failed => StatementLoweringFlowError::Failed,
+            LoweringFlowError::Unreachable => {
+                StatementLoweringFlowError::End(BlockScopeEnd::Unreachable)
+            }
         }
     }
 }
