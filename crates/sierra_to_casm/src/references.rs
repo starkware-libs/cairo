@@ -23,8 +23,8 @@ pub enum ReferencesError {
 
 pub type StatementRefs = HashMap<VarId, ReferenceValue>;
 
-/// A reference to a value.
-/// Corresponds to an argument or return value of a sierra statement.
+/// A Sierra reference to a value.
+/// Corresponds to an argument or return value of a Sierra statement.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ReferenceValue {
     pub expression: ReferenceExpression,
