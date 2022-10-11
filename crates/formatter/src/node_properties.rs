@@ -111,10 +111,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                 true
             }
             SyntaxKind::TerminalLBrace => {
-                matches!(
-                    parent_kind(db, self),
-                    Some(SyntaxKind::ExprBlock | SyntaxKind::ExprMatch | SyntaxKind::ItemEnum)
-                )
+                matches!(parent_kind(db, self), Some(SyntaxKind::ExprBlock | SyntaxKind::ExprMatch))
             }
             _ => false,
         }
