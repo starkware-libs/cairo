@@ -10,7 +10,7 @@ use crate::extensions::{
     ConcreteType, NamedLibFunc, NamedType, OutputVarReferenceInfo, SpecializationError,
 };
 use crate::ids::{ConcreteTypeId, GenericLibFuncId, GenericTypeId};
-use crate::program::GenericArg;
+use crate::program::{ConcreteTypeLongId, GenericArg};
 
 /// Type representing an array.
 #[derive(Default)]
@@ -28,7 +28,15 @@ impl NamedType for ArrayType {
         let info = context.get_type_info(ty.clone())?;
         if info.storable {
             Ok(ArrayConcreteType {
-                info: TypeInfo { duplicatable: false, droppable: info.droppable, storable: true },
+                info: TypeInfo {
+                    long_id: ConcreteTypeLongId {
+                        generic_id: Self::id(),
+                        generic_args: args.to_vec(),
+                    },
+                    duplicatable: false,
+                    droppable: info.droppable,
+                    storable: true,
+                },
                 ty,
             })
         } else {
