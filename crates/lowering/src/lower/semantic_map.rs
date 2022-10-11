@@ -1,7 +1,7 @@
 use utils::ordered_hash_map::OrderedHashMap;
 
+use super::context::LoweringContext;
 use super::scope::OwnedVariable;
-use crate::lower::Lowerer;
 
 /// The liveness state of a semantic variable.
 pub enum SemanticVariableEntry {
@@ -10,10 +10,10 @@ pub enum SemanticVariableEntry {
 }
 impl SemanticVariableEntry {
     /// Gets the variable, moving it if not duplicatable. See [`Self::take_var()`].
-    pub fn get_var(&mut self, lowerer: &Lowerer<'_>) -> SemanticVariableEntry {
+    pub fn get_var(&mut self, ctx: &LoweringContext<'_>) -> SemanticVariableEntry {
         match self {
             SemanticVariableEntry::Alive(var) => {
-                if let Some(var) = var.try_duplicate(lowerer) {
+                if let Some(var) = var.try_duplicate(ctx) {
                     SemanticVariableEntry::Alive(var)
                 } else {
                     self.take_var()
@@ -50,10 +50,10 @@ impl SemanticVariablesMap {
     /// Otherwise, gets the var from the map, duplicating if possible.
     pub fn get(
         &mut self,
-        lowerer: &Lowerer<'_>,
+        ctx: &LoweringContext<'_>,
         semantic_var_id: semantic::VarId,
     ) -> Option<SemanticVariableEntry> {
-        Some(self.semantic_variables.get_mut(&semantic_var_id)?.get_var(lowerer))
+        Some(self.semantic_variables.get_mut(&semantic_var_id)?.get_var(ctx))
     }
 
     /// Takes a semantic variable.

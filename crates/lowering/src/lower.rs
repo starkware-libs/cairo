@@ -8,31 +8,24 @@ use semantic::TypeLongId;
 use utils::extract_matches;
 use utils::unordered_hash_map::UnorderedHashMap;
 
+use self::context::LoweringContext;
 use self::scope::BlockSealed;
 use crate::diagnostic::LoweringDiagnosticKind::*;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnostics};
 use crate::objects::{
     Block, BlockId, Statement, StatementCall, StatementLiteral, StatementTupleConstruct,
-    StatementTupleDestruct, Variable, VariableId,
+    StatementTupleDestruct, Variable,
 };
 
+mod context;
 mod scope;
 mod semantic_map;
 
 /// Context for lowering a function.
 pub struct Lowerer<'db> {
-    pub db: &'db dyn SemanticGroup,
     /// Semantic model for current function definition.
     function_def: &'db semantic::FreeFunctionDefinition,
-    /// Current emitted diagnostics.
-    pub diagnostics: LoweringDiagnostics,
-    /// Arena of allocated lowered variables.
-    pub variables: Arena<Variable>,
-    /// Arena of allocated lowered blocks.
-    pub blocks: Arena<Block>,
-    /// Definitions encountered for semantic variables.
-    // TODO(spapini): consider moving to semantic model.
-    pub semantic_defs: UnorderedHashMap<semantic::VarId, semantic::Variable>,
+    ctx: LoweringContext<'db>,
 }
 
 /// A lowered function code.
@@ -48,25 +41,17 @@ pub struct Lowered {
 }
 
 impl<'db> Lowerer<'db> {
-    // TODO(spapini): Consider forbidding direct access in lowering.
-    // TODO(spapini): Consider splitting this struct to Arenas/Allocator, and rest of the logic.
-    /// Allocates a new variable with a specific semantic type, in the arena.
-    pub fn new_variable(&mut self, ty: semantic::TypeId) -> VariableId {
-        // TODO(spapini): Get the correct values here for the type.
-        self.variables.alloc(Variable { duplicatable: true, droppable: true, ty })
-    }
-
     /// Lowers a semantic free function.
     pub fn lower(db: &dyn SemanticGroup, free_function_id: FreeFunctionId) -> Option<Lowered> {
         let function_def = db.free_function_definition(free_function_id)?;
-        let mut lowerer = Lowerer {
+        let ctx = LoweringContext {
             db,
-            function_def: &*function_def,
             diagnostics: LoweringDiagnostics::new(free_function_id.module(db.upcast())),
             variables: Arena::default(),
             blocks: Arena::default(),
             semantic_defs: UnorderedHashMap::default(),
         };
+        let mut lowerer = Lowerer { function_def: &*function_def, ctx };
 
         let signature = db.free_function_declaration_signature(free_function_id)?;
 
@@ -77,13 +62,13 @@ impl<'db> Lowerer<'db> {
             input_semantic_vars.iter().map(|semantic_var| semantic_var.id()).collect();
         // TODO(spapini): Build semantic_defs in semantic model.
         for semantic_var in input_semantic_vars {
-            lowerer.semantic_defs.insert(semantic_var.id(), semantic_var);
+            lowerer.ctx.semantic_defs.insert(semantic_var.id(), semantic_var);
         }
 
         let root_sealed_block = lowerer.lower_block(function_def.body);
-        let root_block = root_sealed_block.finalize(&mut lowerer, &input_semantic_var_ids, &[]);
-        let root = lowerer.blocks.alloc(root_block);
-        let Lowerer { diagnostics, variables, blocks, .. } = lowerer;
+        let root_block = root_sealed_block.finalize(&mut lowerer.ctx, &input_semantic_var_ids, &[]);
+        let root = lowerer.ctx.blocks.alloc(root_block);
+        let LoweringContext { diagnostics, variables, blocks, .. } = lowerer.ctx;
         Some(Lowered { diagnostics: diagnostics.build(), root, variables, blocks })
     }
 
@@ -100,7 +85,7 @@ impl<'db> Lowerer<'db> {
                     let end_stmt =
                         &self.function_def.statements[*expr_block.statements.last().unwrap()];
                     // Emit diagnostic fo the rest of the statements with unreachable.
-                    self.diagnostics.report(
+                    self.ctx.diagnostics.report(
                         start_stmt.stable_ptr().untyped(),
                         Unreachable { last_statement_ptr: end_stmt.stable_ptr().untyped() },
                     );
@@ -152,7 +137,7 @@ impl<'db> Lowerer<'db> {
                 // Deposit the owned variable in the semantic variables store.
                 scope.put_semantic_variable(sem_var.id(), var);
                 // TODO(spapini): Build semantic_defs in semantic model.
-                self.semantic_defs.insert(sem_var.id(), sem_var);
+                self.ctx.semantic_defs.insert(sem_var.id(), sem_var);
             }
             semantic::Pattern::Struct(_) => todo!(),
             semantic::Pattern::Tuple(semantic::PatternTuple { field_patterns, ty }) => {
@@ -160,18 +145,18 @@ impl<'db> Lowerer<'db> {
                 //   ensure that the crated Statement only uses live variables. This could lead
                 //   to panics in add_statement. After the refactor mentioned at
                 //   [`BlockScope::add_statement()`], this should be better,
-                let tys = extract_matches!(self.db.lookup_intern_type(*ty), TypeLongId::Tuple);
+                let tys = extract_matches!(self.ctx.db.lookup_intern_type(*ty), TypeLongId::Tuple);
                 assert_eq!(
                     tys.len(),
                     field_patterns.len(),
                     "Expected the same number of tuple args."
                 );
-                let outputs: Vec<_> = tys.iter().map(|ty| self.new_variable(*ty)).collect();
+                let outputs: Vec<_> = tys.iter().map(|ty| self.ctx.new_variable(*ty)).collect();
                 let stmt = Statement::TupleDestruct(StatementTupleDestruct {
                     input: var.var_id(),
                     outputs,
                 });
-                let owned_outputs = scope.add_statement(self, stmt);
+                let owned_outputs = scope.add_statement(&self.ctx, stmt);
                 for (var, pattern) in zip_eq(owned_outputs, field_patterns) {
                     self.lower_single_pattern(scope, pattern, var);
                 }
@@ -192,9 +177,9 @@ impl<'db> Lowerer<'db> {
                     .map(|arg_expr_id| self.lower_expr(scope, *arg_expr_id).var_id())
                     .collect();
 
-                let result_var = self.new_variable(expr.ty);
+                let result_var = self.ctx.new_variable(expr.ty);
                 let owned_outputs = scope.add_statement(
-                    self,
+                    &self.ctx,
                     Statement::TupleConstruct(StatementTupleConstruct {
                         inputs,
                         output: result_var,
@@ -216,10 +201,10 @@ impl<'db> Lowerer<'db> {
                     .collect();
 
                 // Allocate a new variable for the result of the function.
-                let result_var = self.new_variable(expr.ty);
+                let result_var = self.ctx.new_variable(expr.ty);
                 let outputs = vec![result_var];
                 let owned_outputs = scope.add_statement(
-                    self,
+                    &self.ctx,
                     Statement::Call(StatementCall { function: expr.function, inputs, outputs }),
                 );
                 owned_outputs.into_iter().next().unwrap()
@@ -228,7 +213,7 @@ impl<'db> Lowerer<'db> {
             semantic::Expr::If(_) => todo!(),
             // TODO(spapini): Convert to a diagnostic.
             semantic::Expr::Var(expr) => scope
-                .get_or_pull_semantic_variable(self, expr.var)
+                .get_or_pull_semantic_variable(&mut self.ctx, expr.var)
                 .var()
                 .expect("Value already moved."),
             semantic::Expr::Literal(expr) => {
@@ -236,9 +221,9 @@ impl<'db> Lowerer<'db> {
                 //   ensure that the crated Statement only uses live variables. This could lead
                 //   to panics in add_statement. After the refactor mentioned at
                 //   [`BlockScope::add_statement()`], this should be better,
-                let output = self.new_variable(expr.ty);
+                let output = self.ctx.new_variable(expr.ty);
                 let owned_outputs = scope.add_statement(
-                    self,
+                    &self.ctx,
                     Statement::Literal(StatementLiteral { value: expr.value, output }),
                 );
                 owned_outputs.into_iter().next().unwrap()
