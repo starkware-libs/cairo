@@ -15,6 +15,11 @@ use crate::objects::{
 };
 use crate::StatementTupleConstruct;
 
+#[allow(dead_code)]
+mod semantic_map;
+#[allow(dead_code)]
+mod variable;
+
 /// Context for lowering a function.
 pub struct Lowerer<'db> {
     db: &'db dyn SemanticGroup,
