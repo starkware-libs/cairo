@@ -4,7 +4,7 @@ use submod::something;
 // Func foo
 // Second line
 ;
-func foo(,var1: int,, var2: felt,) -> int {
+func foo(,var1: int,, ref var2: felt,) -> int {
     let bla3 = --7; // succeeds, ok
     let bla4 = -!-!8; // succeeds, ok
     let x = 1;

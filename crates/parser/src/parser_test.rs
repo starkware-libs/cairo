@@ -241,6 +241,11 @@ pub fn fix_parser_tests() {
 
 parser_test!(
     diagnostic_tests,
-    ["src/parser_test_data/exprs", "src/parser_test_data/match", "src/parser_test_data/if"],
+    [
+        "src/parser_test_data/exprs",
+        "src/parser_test_data/func",
+        "src/parser_test_data/if",
+        "src/parser_test_data/match",
+    ],
     get_diagnostics
 );
