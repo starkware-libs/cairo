@@ -2,35 +2,36 @@ use defs::ids::{FreeFunctionId, LanguageElementId};
 use diagnostics::Diagnostics;
 use id_arena::Arena;
 use itertools::zip_eq;
+use scope::{BlockScope, BlockScopeEnd, OwnedVariable};
 use semantic::db::SemanticGroup;
 use semantic::TypeLongId;
-use utils::ordered_hash_map::OrderedHashMap;
-use utils::ordered_hash_set::OrderedHashSet;
+use utils::extract_matches;
+use utils::unordered_hash_map::UnorderedHashMap;
 
 use crate::diagnostic::LoweringDiagnosticKind::*;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnostics};
 use crate::objects::{
-    Block, BlockEnd, BlockId, Statement, StatementCall, StatementLiteral, StatementTupleDestruct,
-    Variable, VariableId,
+    Block, BlockId, Statement, StatementCall, StatementLiteral, StatementTupleConstruct,
+    StatementTupleDestruct, Variable, VariableId,
 };
-use crate::StatementTupleConstruct;
 
-#[allow(dead_code)]
+mod scope;
 mod semantic_map;
-#[allow(dead_code)]
-mod variable;
 
 /// Context for lowering a function.
 pub struct Lowerer<'db> {
-    db: &'db dyn SemanticGroup,
+    pub db: &'db dyn SemanticGroup,
     /// Semantic model for current function definition.
     function_def: &'db semantic::FreeFunctionDefinition,
     /// Current emitted diagnostics.
-    diagnostics: LoweringDiagnostics,
+    pub diagnostics: LoweringDiagnostics,
     /// Arena of allocated lowered variables.
-    variables: Arena<Variable>,
+    pub variables: Arena<Variable>,
     /// Arena of allocated lowered blocks.
-    blocks: Arena<Block>,
+    pub blocks: Arena<Block>,
+    /// Definitions encountered for semantic variables.
+    // TODO(spapini): consider moving to semantic model.
+    pub semantic_defs: UnorderedHashMap<semantic::VarId, semantic::Variable>,
 }
 
 /// A lowered function code.
@@ -45,20 +46,15 @@ pub struct Lowered {
     pub blocks: Arena<Block>,
 }
 
-/// Scope of a block, describing its current state.
-pub struct BlockScope {
-    /// Variables given as input to the current block.
-    pub inputs: Vec<VariableId>,
-    /// Living variables owned by this scope.
-    pub living_variables: OrderedHashSet<VariableId>,
-    /// Mapping from a semantic variable to its lowered variable. Note that there might be
-    /// lowered variables that did not originate from a semantic variable.
-    pub semantic_variables: OrderedHashMap<semantic::VarId, VariableId>,
-    /// Current sequence of lowered statements emitted.
-    pub statements: Vec<Statement>,
-}
-
 impl<'db> Lowerer<'db> {
+    // TODO(spapini): Consider forbidding direct access in lowering.
+    // TODO(spapini): Consider splitting this struct to Arenas/Allocator, and rest of the logic.
+    /// Allocates a new variable with a specific semantic type, in the arena.
+    pub fn new_variable(&mut self, ty: semantic::TypeId) -> VariableId {
+        // TODO(spapini): Get the correct values here for the type.
+        self.variables.alloc(Variable { duplicatable: true, droppable: true, ty })
+    }
+
     /// Lowers a semantic free function.
     pub fn lower(db: &dyn SemanticGroup, free_function_id: FreeFunctionId) -> Option<Lowered> {
         let function_def = db.free_function_definition(free_function_id)?;
@@ -68,27 +64,23 @@ impl<'db> Lowerer<'db> {
             diagnostics: LoweringDiagnostics::new(free_function_id.module(db.upcast())),
             variables: Arena::default(),
             blocks: Arena::default(),
+            semantic_defs: UnorderedHashMap::default(),
         };
 
         let signature = db.free_function_declaration_signature(free_function_id)?;
 
-        // Prepare params.
-        let inputs: OrderedHashMap<_, _> = signature
-            .params
-            .iter()
-            .map(|param| {
-                (
-                    semantic::VarId::Param(param.id),
-                    // TODO(spapini): Obtain the correct duplicatable, droppable from the type.
-                    lowerer.variables.alloc(Variable {
-                        duplicatable: true,
-                        droppable: true,
-                        ty: param.ty,
-                    }),
-                )
-            })
-            .collect();
-        let root = lowerer.lower_block(function_def.body, inputs);
+        // Params.
+        let input_semantic_vars: Vec<_> =
+            signature.params.iter().map(|param| semantic::Variable::Param(param.clone())).collect();
+        let input_semantic_var_ids: Vec<_> =
+            input_semantic_vars.iter().map(|semantic_var| semantic_var.id()).collect();
+        // TODO(spapini): Build semantic_defs in semantic model.
+        for semantic_var in input_semantic_vars {
+            lowerer.semantic_defs.insert(semantic_var.id(), semantic_var);
+        }
+
+        let root_block = lowerer.lower_block(function_def.body, input_semantic_var_ids);
+        let root = lowerer.blocks.alloc(root_block);
         let Lowerer { diagnostics, variables, blocks, .. } = lowerer;
         Some(Lowered { diagnostics: diagnostics.build(), root, variables, blocks })
     }
@@ -97,20 +89,14 @@ impl<'db> Lowerer<'db> {
     fn lower_block(
         &mut self,
         block_expr_id: semantic::ExprId,
-        inputs: OrderedHashMap<semantic::VarId, VariableId>,
-    ) -> BlockId {
+        input_semantic_var_ids: Vec<semantic::VarId>,
+    ) -> Block {
         let expr = &self.function_def.exprs[block_expr_id];
-        let expr_block = if let semantic::Expr::Block(expr_block) = expr {
-            expr_block
-        } else {
-            panic!("Expected a block")
-        };
-        let mut scope = BlockScope {
-            inputs: inputs.values().copied().collect(),
-            living_variables: inputs.values().copied().collect(),
-            semantic_variables: inputs,
-            statements: vec![],
-        };
+        let expr_block = extract_matches!(expr, semantic::Expr::Block);
+        let mut scope = BlockScope::default();
+        for semantic_var_id in input_semantic_var_ids {
+            scope.add_input_semantic_variable(self, semantic_var_id);
+        }
         for (i, stmt_id) in expr_block.statements.iter().enumerate() {
             let stmt = &self.function_def.statements[*stmt_id];
             if let semantic::Statement::Return(expr_id) = stmt {
@@ -125,53 +111,16 @@ impl<'db> Lowerer<'db> {
                     );
                 }
 
-                return self.finalize_block_return(scope, expr_id.expr);
+                // TODO(spapini): Handle borrowing, muts, implicits ...
+                let returns = self.lower_expr(&mut scope, expr_id.expr);
+                return scope.finalize(self, BlockScopeEnd::Return(vec![returns]));
             }
 
             self.lower_statement(&mut scope, stmt)
         }
 
-        self.finalize_block_callsite(scope, expr_block.tail)
-    }
-
-    /// Finalizes lowering of a block that ends with a `return` statement.
-    fn finalize_block_return(
-        &mut self,
-        mut scope: BlockScope,
-        expr_id: semantic::ExprId,
-    ) -> BlockId {
-        // First, prepare the expr.
-        let var_id = self.lower_expr(&mut scope, expr_id);
-        self.take(&mut scope, var_id);
-        let BlockScope { inputs, living_variables, semantic_variables: _, statements } = scope;
-        // TODO(spapini): Find mut function parameters, and return them as well.
-        self.blocks.alloc(Block {
-            inputs,
-            statements,
-            drops: living_variables.into_iter().collect(),
-            end: BlockEnd::Return(vec![var_id]),
-        })
-    }
-
-    /// Finalizes lowering of a block that ends regularly, returning to callsite.
-    fn finalize_block_callsite(
-        &mut self,
-        mut scope: BlockScope,
-        expr_id: Option<semantic::ExprId>,
-    ) -> BlockId {
-        // First, prepare the expr.
-        let extra_vars = expr_id.map(|expr_id| {
-            let var_id = self.lower_expr(&mut scope, expr_id);
-            self.take(&mut scope, var_id)
-        });
-        let BlockScope { inputs, living_variables, semantic_variables: _, statements } = scope;
-        // TODO(spapini): Find mut function parameters, and return them as well.
-        self.blocks.alloc(Block {
-            inputs,
-            statements,
-            drops: living_variables.into_iter().collect(),
-            end: BlockEnd::Callsite(extra_vars.into_iter().collect()),
-        })
+        let maybe_output = expr_block.tail.map(|expr_id| self.lower_expr(&mut scope, expr_id));
+        scope.finalize(self, BlockScopeEnd::Callsite(maybe_output))
     }
 
     /// Lowers a semantic statement.
@@ -199,35 +148,37 @@ impl<'db> Lowerer<'db> {
         &mut self,
         scope: &mut BlockScope,
         pattern: &semantic::Pattern,
-        var_id: id_arena::Id<Variable>,
+        var: OwnedVariable,
     ) {
         match pattern {
             semantic::Pattern::Literal(_) => unreachable!(),
             semantic::Pattern::Variable(semantic::PatternVariable { name: _, var: sem_var }) => {
-                assert_eq!(self.variables[var_id].ty, sem_var.ty, "Wrong type.");
-                scope.semantic_variables.insert(semantic::VarId::Local(sem_var.id), var_id);
+                let sem_var = semantic::Variable::Local(sem_var.clone());
+                // Deposit the owned variable in the semantic variables store.
+                scope.semantic_variables.put(sem_var.id(), var);
+                // TODO(spapini): Build semantic_defs in semantic model.
+                self.semantic_defs.insert(sem_var.id(), sem_var);
             }
             semantic::Pattern::Struct(_) => todo!(),
             semantic::Pattern::Tuple(semantic::PatternTuple { field_patterns, ty }) => {
-                let tys = if let TypeLongId::Tuple(tys) = self.db.lookup_intern_type(*ty) {
-                    tys
-                } else {
-                    panic!("Expected a tuple type.")
-                };
+                // TODO(spapini): This logic currently gets rid of OwnedVariable, and needs to
+                //   ensure that the crated Statement only uses live variables. This could lead
+                //   to panics in add_statement. After the refactor mentioned at
+                //   [`BlockScope::add_statement()`], this should be better,
+                let tys = extract_matches!(self.db.lookup_intern_type(*ty), TypeLongId::Tuple);
                 assert_eq!(
                     tys.len(),
                     field_patterns.len(),
                     "Expected the same number of tuple args."
                 );
-                let outputs: Vec<_> = tys.iter().map(|ty| self.new_variable(scope, *ty)).collect();
+                let outputs: Vec<_> = tys.iter().map(|ty| self.new_variable(*ty)).collect();
                 let stmt = Statement::TupleDestruct(StatementTupleDestruct {
-                    tys,
-                    input: self.take(scope, var_id),
-                    outputs: outputs.clone(),
+                    input: var.var_id(),
+                    outputs,
                 });
-                scope.statements.push(stmt);
-                for (var_id, pattern) in zip_eq(outputs, field_patterns) {
-                    self.lower_single_pattern(scope, pattern, var_id);
+                let owned_outputs = scope.add_statement(self, stmt);
+                for (var, pattern) in zip_eq(owned_outputs, field_patterns) {
+                    self.lower_single_pattern(scope, pattern, var);
                 }
             }
             semantic::Pattern::Enum(_) => unreachable!(),
@@ -236,75 +187,73 @@ impl<'db> Lowerer<'db> {
     }
 
     /// Lowers a semantic expression.
-    fn lower_expr(&mut self, scope: &mut BlockScope, expr_id: semantic::ExprId) -> VariableId {
+    fn lower_expr(&mut self, scope: &mut BlockScope, expr_id: semantic::ExprId) -> OwnedVariable {
         let expr = &self.function_def.exprs[expr_id];
         match expr {
             semantic::Expr::Tuple(expr) => {
                 let inputs = expr
                     .items
                     .iter()
-                    .map(|arg_expr_id| self.lower_expr(scope, *arg_expr_id))
+                    .map(|arg_expr_id| self.lower_expr(scope, *arg_expr_id).var_id())
                     .collect();
 
-                let result_var = self.new_variable(scope, expr.ty);
-                scope.statements.push(Statement::TupleConstruct(StatementTupleConstruct {
-                    inputs,
-                    output: result_var,
-                }));
-                result_var
+                let result_var = self.new_variable(expr.ty);
+                let owned_outputs = scope.add_statement(
+                    self,
+                    Statement::TupleConstruct(StatementTupleConstruct {
+                        inputs,
+                        output: result_var,
+                    }),
+                );
+                owned_outputs.into_iter().next().unwrap()
             }
             semantic::Expr::Assignment(_) => todo!(),
             semantic::Expr::Block(_) => todo!(),
             semantic::Expr::FunctionCall(expr) => {
+                // TODO(spapini): This logic currently gets rid of OwnedVariable, and needs to
+                //   ensure that the crated Statement only uses live variables. This could lead
+                //   to panics in add_statement. After the refactor mentioned at
+                //   [`BlockScope::add_statement()`], this should be better,
                 let inputs = expr
                     .args
                     .iter()
-                    .map(|arg_expr_id| self.lower_expr(scope, *arg_expr_id))
+                    .map(|arg_expr_id| self.lower_expr(scope, *arg_expr_id).var_id())
                     .collect();
 
                 // Allocate a new variable for the result of the function.
-                let result_var = self.new_variable(scope, expr.ty);
+                let result_var = self.new_variable(expr.ty);
                 let outputs = vec![result_var];
-                scope.statements.push(Statement::Call(StatementCall {
-                    function: expr.function,
-                    inputs,
-                    outputs,
-                }));
-                result_var
+                let owned_outputs = scope.add_statement(
+                    self,
+                    Statement::Call(StatementCall { function: expr.function, inputs, outputs }),
+                );
+                owned_outputs.into_iter().next().unwrap()
             }
             semantic::Expr::Match(_) => todo!(),
             semantic::Expr::If(_) => todo!(),
-            semantic::Expr::Var(expr) => self.take(scope, scope.semantic_variables[expr.var]),
+            // TODO(spapini): Convert to a diagnostic.
+            semantic::Expr::Var(expr) => scope
+                .semantic_variables
+                .get(self, expr.var)
+                .expect("Semantic variable not found.")
+                .var()
+                .expect("Value already moved."),
             semantic::Expr::Literal(expr) => {
-                let output = self.new_variable(scope, expr.ty);
-                scope
-                    .statements
-                    .push(Statement::Literal(StatementLiteral { value: expr.value, output }));
-                output
+                // TODO(spapini): This logic currently gets rid of OwnedVariable, and needs to
+                //   ensure that the crated Statement only uses live variables. This could lead
+                //   to panics in add_statement. After the refactor mentioned at
+                //   [`BlockScope::add_statement()`], this should be better,
+                let output = self.new_variable(expr.ty);
+                let owned_outputs = scope.add_statement(
+                    self,
+                    Statement::Literal(StatementLiteral { value: expr.value, output }),
+                );
+                owned_outputs.into_iter().next().unwrap()
             }
             semantic::Expr::MemberAccess(_) => todo!(),
             semantic::Expr::StructCtor(_) => todo!(),
             semantic::Expr::EnumVariantCtor(_) => todo!(),
             semantic::Expr::Missing(_) => todo!(),
         }
-    }
-
-    /// Takes a variable from the current block scope (i.e. moving/consuming it).
-    fn take(&self, scope: &mut BlockScope, var_id: VariableId) -> VariableId {
-        let var = self.variables.get(var_id).unwrap();
-        if !var.duplicatable {
-            scope.living_variables.swap_remove(&var_id);
-        }
-        var_id
-    }
-
-    pub fn new_variable(
-        &mut self,
-        scope: &mut BlockScope,
-        ty: semantic::TypeId,
-    ) -> id_arena::Id<Variable> {
-        let var_id = self.variables.alloc(Variable { duplicatable: true, droppable: true, ty });
-        scope.living_variables.insert(var_id);
-        var_id
     }
 }

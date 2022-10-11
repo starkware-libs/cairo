@@ -1,6 +1,6 @@
 use utils::ordered_hash_map::OrderedHashMap;
 
-use super::variable::OwnedVariable;
+use super::scope::OwnedVariable;
 use crate::lower::Lowerer;
 
 /// The liveness state of a semantic variable.
