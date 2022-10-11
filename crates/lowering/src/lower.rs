@@ -8,6 +8,7 @@ use semantic::TypeLongId;
 use utils::extract_matches;
 use utils::unordered_hash_map::UnorderedHashMap;
 
+use self::scope::BlockSealed;
 use crate::diagnostic::LoweringDiagnosticKind::*;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnostics};
 use crate::objects::{
@@ -79,24 +80,18 @@ impl<'db> Lowerer<'db> {
             lowerer.semantic_defs.insert(semantic_var.id(), semantic_var);
         }
 
-        let root_block = lowerer.lower_block(function_def.body, input_semantic_var_ids);
+        let root_sealed_block = lowerer.lower_block(function_def.body);
+        let root_block = root_sealed_block.finalize(&mut lowerer, &input_semantic_var_ids, &[]);
         let root = lowerer.blocks.alloc(root_block);
         let Lowerer { diagnostics, variables, blocks, .. } = lowerer;
         Some(Lowered { diagnostics: diagnostics.build(), root, variables, blocks })
     }
 
-    // Lowers a semantic block.
-    fn lower_block(
-        &mut self,
-        block_expr_id: semantic::ExprId,
-        input_semantic_var_ids: Vec<semantic::VarId>,
-    ) -> Block {
+    /// Lowers a semantic block.
+    fn lower_block(&mut self, block_expr_id: semantic::ExprId) -> BlockSealed {
         let expr = &self.function_def.exprs[block_expr_id];
         let expr_block = extract_matches!(expr, semantic::Expr::Block);
         let mut scope = BlockScope::default();
-        for semantic_var_id in input_semantic_var_ids {
-            scope.add_input_semantic_variable(self, semantic_var_id);
-        }
         for (i, stmt_id) in expr_block.statements.iter().enumerate() {
             let stmt = &self.function_def.statements[*stmt_id];
             if let semantic::Statement::Return(expr_id) = stmt {
@@ -113,14 +108,14 @@ impl<'db> Lowerer<'db> {
 
                 // TODO(spapini): Handle borrowing, muts, implicits ...
                 let returns = self.lower_expr(&mut scope, expr_id.expr);
-                return scope.finalize(self, BlockScopeEnd::Return(vec![returns]));
+                return scope.seal(BlockScopeEnd::Return(vec![returns]));
             }
 
             self.lower_statement(&mut scope, stmt)
         }
 
         let maybe_output = expr_block.tail.map(|expr_id| self.lower_expr(&mut scope, expr_id));
-        scope.finalize(self, BlockScopeEnd::Callsite(maybe_output))
+        scope.seal(BlockScopeEnd::Callsite(maybe_output))
     }
 
     /// Lowers a semantic statement.
@@ -155,7 +150,7 @@ impl<'db> Lowerer<'db> {
             semantic::Pattern::Variable(semantic::PatternVariable { name: _, var: sem_var }) => {
                 let sem_var = semantic::Variable::Local(sem_var.clone());
                 // Deposit the owned variable in the semantic variables store.
-                scope.semantic_variables.put(sem_var.id(), var);
+                scope.put_semantic_variable(sem_var.id(), var);
                 // TODO(spapini): Build semantic_defs in semantic model.
                 self.semantic_defs.insert(sem_var.id(), sem_var);
             }
@@ -233,9 +228,7 @@ impl<'db> Lowerer<'db> {
             semantic::Expr::If(_) => todo!(),
             // TODO(spapini): Convert to a diagnostic.
             semantic::Expr::Var(expr) => scope
-                .semantic_variables
-                .get(self, expr.var)
-                .expect("Semantic variable not found.")
+                .get_or_pull_semantic_variable(self, expr.var)
                 .var()
                 .expect("Value already moved."),
             semantic::Expr::Literal(expr) => {
