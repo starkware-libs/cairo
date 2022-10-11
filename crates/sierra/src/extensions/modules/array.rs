@@ -4,7 +4,8 @@ use crate::extensions::lib_func::{
     DeferredOutputKind, LibFuncSignature, OutputVarInfo, SierraApChange,
     SignatureOnlyConcreteLibFunc, SignatureSpecializationContext, SpecializationContext,
 };
-use crate::extensions::types::{TypeInfo, TypeSpecializationContext};
+use crate::extensions::type_specialization_context::TypeSpecializationContext;
+use crate::extensions::types::TypeInfo;
 use crate::extensions::{
     ConcreteType, NamedLibFunc, NamedType, OutputVarReferenceInfo, SpecializationError,
 };
