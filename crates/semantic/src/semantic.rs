@@ -21,6 +21,12 @@ pub use crate::types::{
 pub struct Parameter {
     pub id: ParamId,
     pub ty: TypeId,
+    pub modifiers: Modifiers,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct Modifiers {
+    pub is_ref: bool,
 }
 
 // TODO(yuval): consider making this an enum or the id an enum of ParamId/LocalVarId
