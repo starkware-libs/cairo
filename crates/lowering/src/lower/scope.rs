@@ -6,15 +6,12 @@ use super::context::LoweringContext;
 use super::semantic_map::{SemanticVariableEntry, SemanticVariablesMap};
 use crate::{Block, BlockEnd, Statement, VariableId};
 
+pub mod generators;
+
 /// Wrapper around VariableId, guaranteeing that the variable is alive.
 /// Thus, it does not implement copy nor clone.
 pub struct OwnedVariable(VariableId);
 impl OwnedVariable {
-    // TODO(spapini): Remove once statements are refactored.
-    pub fn var_id(&self) -> VariableId {
-        self.0
-    }
-
     /// Duplicates the variable if it is duplicatable.
     pub fn try_duplicate(&self, ctx: &LoweringContext<'_>) -> Option<Self> {
         if ctx.variables[self.0].duplicatable { Some(OwnedVariable(self.0)) } else { None }
@@ -44,25 +41,6 @@ pub enum BlockScopeEnd {
 }
 
 impl BlockScope {
-    /// Adds a lowered statement to the block. Correctly handle updating liveness of variables.
-    // TODO(spapini): Don't allow adding lowering::Statement directly. Instead have specific adding
-    // functions to each statement kind, to enforce passing OwnedVariable instances.
-    pub fn add_statement(
-        &mut self,
-        ctx: &LoweringContext<'_>,
-        stmt: Statement,
-    ) -> Vec<OwnedVariable> {
-        for input_var in stmt.inputs() {
-            // The variables should all come from OwnedVariable instances. When the TODO above
-            // is fixed, this will be fixed too.
-            self.get_var(ctx, OwnedVariable(input_var));
-        }
-        let owned_outputs =
-            stmt.outputs().iter().map(|var_id| self.introduce_variable(*var_id)).collect();
-        self.statements.push(stmt);
-        owned_outputs
-    }
-
     /// Puts a semantic variable and its owned lowered variable into the current scope.
     pub fn put_semantic_variable(&mut self, semantic_var_id: semantic::VarId, var: OwnedVariable) {
         self.semantic_variables.put(semantic_var_id, var);
@@ -104,11 +82,10 @@ impl BlockScope {
         semantic_var_id: semantic::VarId,
     ) -> &mut SemanticVariableEntry {
         let ty = ctx.semantic_defs[semantic_var_id].ty();
-        let var_id = ctx.new_variable(ty);
-        let var = self.introduce_variable(var_id);
+        let var = self.introduce_variable(ctx, ty);
 
         assert!(
-            self.pulled_semantic_vars.insert(semantic_var_id, var_id).is_none(),
+            self.pulled_semantic_vars.insert(semantic_var_id, var.0).is_none(),
             "Semantic variable introduced more than once as input to the block"
         );
 
@@ -132,7 +109,12 @@ impl BlockScope {
     }
 
     /// Internal. Introduces a new variable into `living_variables`.
-    fn introduce_variable(&mut self, var_id: VariableId) -> OwnedVariable {
+    fn introduce_variable(
+        &mut self,
+        ctx: &mut LoweringContext<'_>,
+        ty: semantic::TypeId,
+    ) -> OwnedVariable {
+        let var_id = ctx.new_variable(ty);
         assert!(self.living_variables.insert(var_id), "Unexpected reintroduced variable.");
         OwnedVariable(var_id)
     }
@@ -203,7 +185,7 @@ impl BlockSealed {
                         .expect("finalize() called with dead output semantic variables.")
                         .var()
                         .expect("Value already moved.")
-                        .var_id()
+                        .0
                 });
                 let outputs = chain!(maybe_output.into_iter(), pushes).collect();
                 BlockEnd::Callsite(outputs)
