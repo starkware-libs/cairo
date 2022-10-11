@@ -215,10 +215,10 @@ macro_rules! diagnostics_test {
                 for (name, test) in tests {
                     let test_expr = $func(
                         &mut db,
-                        $(&test[$param],)*
+                        $(&test.attributes[$param],)*
                     )
                     .unwrap();
-                    verify_exception(&db, test_expr, &test["Expected Result"], &name);
+                    verify_exception(&db, test_expr, &test.attributes["Expected Result"], &name);
                 }
             }
             Ok(())

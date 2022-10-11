@@ -2,7 +2,7 @@ use super::as_single_type;
 use super::uninitialized::UninitializedType;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
-    LibFuncSignature, OutputVarInfo, SierraApChange, SignatureOnlyConcreteLibFunc,
+    LibFuncSignature, OutputVarInfo, ParamSignature, SierraApChange, SignatureOnlyConcreteLibFunc,
     SignatureSpecializationContext, SpecializationContext,
 };
 use crate::extensions::{
@@ -36,8 +36,8 @@ impl NamedLibFunc for StoreTempLibFunc {
         args: &[GenericArg],
     ) -> Result<LibFuncSignature, SpecializationError> {
         let ty = as_single_type(args)?;
-        Ok(LibFuncSignature::new_non_branch(
-            vec![ty.clone()],
+        Ok(LibFuncSignature::new_non_branch_ex(
+            vec![ParamSignature { ty: ty.clone(), allow_deferred: true, allow_add_const: true }],
             vec![OutputVarInfo { ty, ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 } }],
             SierraApChange::Known,
         ))
@@ -116,10 +116,12 @@ impl NamedLibFunc for StoreLocalLibFunc {
         args: &[GenericArg],
     ) -> Result<LibFuncSignature, SpecializationError> {
         let ty = as_single_type(args)?;
-        Ok(LibFuncSignature::new_non_branch(
+        let uninitialized_type =
+            context.get_wrapped_concrete_type(UninitializedType::id(), ty.clone())?;
+        Ok(LibFuncSignature::new_non_branch_ex(
             vec![
-                context.get_wrapped_concrete_type(UninitializedType::id(), ty.clone())?,
-                ty.clone(),
+                ParamSignature::new(uninitialized_type),
+                ParamSignature { ty: ty.clone(), allow_deferred: true, allow_add_const: true },
             ],
             vec![OutputVarInfo { ty, ref_info: OutputVarReferenceInfo::NewLocalVar }],
             SierraApChange::NotImplemented,

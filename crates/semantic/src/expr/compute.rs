@@ -13,7 +13,7 @@ use syntax::node::db::SyntaxGroup;
 use syntax::node::helpers::{GetIdentifier, PathSegmentEx};
 use syntax::node::{ast, Terminal, TypedSyntaxNode};
 use utils::ordered_hash_map::OrderedHashMap;
-use utils::OptionHelper;
+use utils::{try_extract_matches, OptionHelper};
 
 use super::objects::*;
 use super::pattern::{
@@ -113,237 +113,302 @@ pub fn maybe_compute_expr_semantic(
     let db = ctx.db;
     let syntax_db = db.upcast();
     // TODO: When Expr holds the syntax pointer, add it here as well.
-    Some(match syntax {
-        ast::Expr::Path(path) => resolve_variable(ctx, path)?,
+    match syntax {
+        ast::Expr::Path(path) => resolve_variable(ctx, path),
         ast::Expr::Literal(literal_syntax) => {
-            Expr::Literal(literal_to_semantic(ctx, literal_syntax)?)
+            Some(Expr::Literal(literal_to_semantic(ctx, literal_syntax)?))
         }
-        ast::Expr::False(syntax) => true_literal_expr(ctx, syntax.stable_ptr().into()),
-        ast::Expr::True(syntax) => false_literal_expr(ctx, syntax.stable_ptr().into()),
+        ast::Expr::False(syntax) => Some(true_literal_expr(ctx, syntax.stable_ptr().into())),
+        ast::Expr::True(syntax) => Some(false_literal_expr(ctx, syntax.stable_ptr().into())),
         ast::Expr::Parenthesized(paren_syntax) => {
-            compute_expr_semantic(ctx, &paren_syntax.expr(syntax_db))
+            maybe_compute_expr_semantic(ctx, &paren_syntax.expr(syntax_db))
         }
         ast::Expr::Unary(_) => {
             ctx.diagnostics.report(syntax, Unsupported);
-            return None;
+            None
         }
-        ast::Expr::Binary(binary_op_syntax) => {
-            let stable_ptr = binary_op_syntax.stable_ptr().into();
-            let binary_op = binary_op_syntax.op(syntax_db);
-            let lhs_syntax = &binary_op_syntax.lhs(syntax_db);
-            let lexpr = compute_expr_semantic(ctx, lhs_syntax);
-            let rhs_syntax = binary_op_syntax.rhs(syntax_db);
-            if matches!(binary_op, BinaryOperator::Dot(_)) {
-                return member_access_expr(ctx, lexpr, rhs_syntax, stable_ptr);
-            }
-
-            let rexpr = compute_expr_semantic(ctx, &rhs_syntax);
-
-            if matches!(binary_op, BinaryOperator::Eq(_)) {
-                return match lexpr {
-                    Expr::Var(ExprVar { var, .. }) => Some(Expr::Assignment(ExprAssignment {
-                        var,
-                        rhs: ctx.exprs.alloc(rexpr),
-                        ty: unit_ty(db),
-                        stable_ptr,
-                    })),
-                    _ => {
-                        ctx.diagnostics.report(lhs_syntax, InvalidLhsForAssignment);
-                        None
-                    }
-                };
-            }
-            let function = core_binary_operator(db, ctx.diagnostics, &binary_op)
-                .on_none(|| ctx.diagnostics.report(&binary_op, UnknownBinaryOperator))?;
-            expr_function_call(ctx, function, vec![lexpr, rexpr], syntax.stable_ptr())?
-        }
-        ast::Expr::Tuple(tuple_syntax) => {
-            let mut items: Vec<ExprId> = vec![];
-            let mut types: Vec<TypeId> = vec![];
-            for expr_syntax in tuple_syntax.expressions(syntax_db).elements(syntax_db) {
-                let expr_semantic = compute_expr_semantic(ctx, &expr_syntax);
-                types.push(expr_semantic.ty());
-                items.push(ctx.exprs.alloc(expr_semantic));
-            }
-            Expr::Tuple(ExprTuple {
-                items,
-                ty: db.intern_type(TypeLongId::Tuple(types)),
-                stable_ptr: tuple_syntax.stable_ptr().into(),
-            })
-        }
+        ast::Expr::Binary(binary_op_syntax) => compute_expr_binary_semantic(ctx, binary_op_syntax),
+        ast::Expr::Tuple(tuple_syntax) => compute_expr_tuple_semantic(ctx, tuple_syntax),
         ast::Expr::FunctionCall(call_syntax) => {
-            let path = call_syntax.path(syntax_db);
-            let item = ctx.resolver.resolve_concrete_path(ctx.diagnostics, &path)?;
-            let args_syntax = call_syntax.arguments(syntax_db);
-            let arg_exprs: Vec<_> = args_syntax
-                .expressions(syntax_db)
-                .elements(syntax_db)
-                .into_iter()
-                .map(|arg_syntax| compute_expr_semantic(ctx, &arg_syntax))
-                .collect();
-            match item {
-                ResolvedConcreteItem::Function(function) => {
-                    expr_function_call(ctx, function, arg_exprs, syntax.stable_ptr())?
-                }
-                ResolvedConcreteItem::Variant(concrete_variant) => {
-                    if arg_exprs.len() != 1 {
-                        ctx.diagnostics.report(
-                            &args_syntax,
-                            WrongNumberOfArguments { expected: 1, actual: arg_exprs.len() },
-                        );
-                        return None;
-                    }
-                    let arg = arg_exprs[0].clone();
-                    if concrete_variant.ty != arg.ty() {
-                        ctx.diagnostics.report(
-                            &args_syntax,
-                            WrongArgumentType {
-                                expected_ty: concrete_variant.ty,
-                                actual_ty: arg.ty(),
-                            },
-                        );
-                        return None;
-                    }
-                    semantic::Expr::EnumVariantCtor(semantic::ExprEnumVariantCtor {
-                        enum_variant_id: concrete_variant.id,
-                        value_expr: ctx.exprs.alloc(arg),
-                        ty: db.intern_type(TypeLongId::Concrete(ConcreteTypeId::Enum(
-                            concrete_variant.concrete_enum_id,
-                        ))),
-                        stable_ptr: syntax.stable_ptr(),
-                    })
-                }
-                _ => {
-                    ctx.diagnostics.report(&path, NotAFunction);
-                    return None;
-                }
-            }
+            compute_expr_function_call_semantic(ctx, call_syntax)
         }
-        ast::Expr::StructCtorCall(ctor_syntax) => struct_ctor_expr(ctx, ctor_syntax)?,
-        ast::Expr::Block(block_syntax) => {
-            ctx.run_in_subscope(|new_ctx| {
-                let mut statements = block_syntax.statements(syntax_db).elements(syntax_db);
-
-                // Remove the tail expression, if exists.
-                // TODO(spapini): Consider splitting tail expression in the parser.
-                let tail = get_tail_expression(syntax_db, statements.as_slice());
-                if tail.is_some() {
-                    statements.pop();
-                }
-
-                // Convert statements to semantic model.
-                let statements_semantic = statements
-                    .into_iter()
-                    .filter_map(|statement_syntax| {
-                        compute_statement_semantic(new_ctx, statement_syntax)
-                    })
-                    .collect();
-
-                // Convert tail expression (if exists) to semantic model.
-                let tail_semantic_expr =
-                    tail.map(|tail_expr| compute_expr_semantic(new_ctx, &tail_expr));
-
-                let ty = match &tail_semantic_expr {
-                    Some(t) => t.ty(),
-                    None => unit_ty(db),
-                };
-                Expr::Block(ExprBlock {
-                    statements: statements_semantic,
-                    tail: tail_semantic_expr.map(|expr| new_ctx.exprs.alloc(expr)),
-                    ty,
-                    stable_ptr: block_syntax.stable_ptr().into(),
-                })
-            })
-        }
-        // TODO(yuval): verify exhaustiveness.
-        ast::Expr::Match(expr_match) => {
-            let syntax_arms = expr_match.arms(syntax_db).elements(syntax_db);
-            let mut match_type: Option<TypeId> = None;
-            let expr = compute_expr_semantic(ctx, &expr_match.expr(syntax_db));
-
-            // Run compute_pattern_semantic on every arm, even if other arms failed, to get as many
-            // diagnostics as possible.
-            let pattern_and_expr_options: Vec<_> = syntax_arms
-                .iter()
-                .map(|syntax_arm| {
-                    let arm_expr_syntax = syntax_arm.expression(syntax_db);
-                    ctx.run_in_subscope(|new_ctx| {
-                        // Typecheck pattern, and introduce the new variables to the subscope.
-                        // Note that if the arm expr is a block, there will be *another* subscope
-                        // for it.
-                        let pattern = compute_pattern_semantic(
-                            new_ctx,
-                            syntax_arm.pattern(syntax_db),
-                            expr.ty(),
-                        )?;
-                        let variables = pattern.variables();
-                        for v in variables {
-                            new_ctx
-                                .environment
-                                .variables
-                                .insert(v.name.clone(), Variable::Local(v.var.clone()));
-                        }
-                        let arm_expr = compute_expr_semantic(new_ctx, &arm_expr_syntax);
-                        Some((pattern, arm_expr))
-                    })
-                })
-                .collect();
-
-            // Unify arm types.
-            let missing_ty = TypeId::missing(ctx.db);
-            for (_, expr) in pattern_and_expr_options.iter().flatten() {
-                let arm_ty = expr.ty();
-                if arm_ty == missing_ty {
-                    continue;
-                }
-
-                match match_type {
-                    Some(ty) if ty == arm_ty => {}
-                    Some(ty) => {
-                        ctx.diagnostics.report_by_ptr(
-                            expr.stable_ptr().untyped(),
-                            IncompatibleMatchArms { match_ty: ty, arm_ty },
-                        );
-                        match_type = Some(TypeId::missing(db));
-                        break;
-                    }
-                    None => match_type = Some(arm_ty),
-                }
-            }
-
-            // Compute semantic representation of the match arms.
-            let pattern_and_exprs: Vec<_> =
-                pattern_and_expr_options.into_iter().collect::<Option<_>>()?;
-            let semantic_arms = pattern_and_exprs
-                .into_iter()
-                .map(|(pattern, arm_expr)| MatchArm {
-                    pattern,
-                    expression: ctx.exprs.alloc(arm_expr),
-                })
-                .collect();
-
-            Expr::Match(ExprMatch {
-                matched_expr: ctx.exprs.alloc(expr),
-                arms: semantic_arms,
-                ty: match match_type {
-                    Some(t) => t,
-                    None => {
-                        // TODO(spapini): Return never-type.
-                        TypeId::missing(db)
-                    }
-                },
-                stable_ptr: expr_match.stable_ptr().into(),
-            })
-        }
-        ast::Expr::If(_expr_if) => {
-            ctx.diagnostics.report(syntax, Unsupported);
-            return None;
-        }
+        ast::Expr::StructCtorCall(ctor_syntax) => struct_ctor_expr(ctx, ctor_syntax),
+        ast::Expr::Block(block_syntax) => compute_expr_block_semantic(ctx, block_syntax),
+        ast::Expr::Match(expr_match) => compute_expr_match_semantic(ctx, expr_match),
+        ast::Expr::If(expr_if) => compute_expr_if_semantic(ctx, expr_if),
         ast::Expr::Missing(_) => {
             ctx.diagnostics.report(syntax, Unsupported);
-            return None;
+            None
         }
+    }
+}
+
+fn compute_expr_binary_semantic(
+    ctx: &mut ComputationContext<'_>,
+    syntax: &ast::ExprBinary,
+) -> Option<Expr> {
+    let db = ctx.db;
+    let syntax_db = db.upcast();
+
+    let stable_ptr = syntax.stable_ptr().into();
+    let binary_op = syntax.op(syntax_db);
+    let lhs_syntax = &syntax.lhs(syntax_db);
+    let lexpr = compute_expr_semantic(ctx, lhs_syntax);
+    let rhs_syntax = syntax.rhs(syntax_db);
+    if matches!(binary_op, BinaryOperator::Dot(_)) {
+        return member_access_expr(ctx, lexpr, rhs_syntax, stable_ptr);
+    }
+    let rexpr = compute_expr_semantic(ctx, &rhs_syntax);
+    if matches!(binary_op, BinaryOperator::Eq(_)) {
+        return match lexpr {
+            Expr::Var(ExprVar { var, .. }) => Some(Expr::Assignment(ExprAssignment {
+                var,
+                rhs: ctx.exprs.alloc(rexpr),
+                ty: unit_ty(db),
+                stable_ptr,
+            })),
+            _ => {
+                ctx.diagnostics.report(lhs_syntax, InvalidLhsForAssignment);
+                None
+            }
+        };
+    }
+    let function = core_binary_operator(db, ctx.diagnostics, &binary_op)
+        .on_none(|| ctx.diagnostics.report(&binary_op, UnknownBinaryOperator))?;
+    expr_function_call(ctx, function, vec![lexpr, rexpr], stable_ptr)
+}
+
+fn compute_expr_tuple_semantic(
+    ctx: &mut ComputationContext<'_>,
+    syntax: &ast::ExprTuple,
+) -> Option<Expr> {
+    let db = ctx.db;
+    let syntax_db = db.upcast();
+
+    let mut items: Vec<ExprId> = vec![];
+    let mut types: Vec<TypeId> = vec![];
+    for expr_syntax in syntax.expressions(syntax_db).elements(syntax_db) {
+        let expr_semantic = compute_expr_semantic(ctx, &expr_syntax);
+        types.push(expr_semantic.ty());
+        items.push(ctx.exprs.alloc(expr_semantic));
+    }
+    Some(Expr::Tuple(ExprTuple {
+        items,
+        ty: db.intern_type(TypeLongId::Tuple(types)),
+        stable_ptr: syntax.stable_ptr().into(),
+    }))
+}
+
+fn compute_expr_function_call_semantic(
+    ctx: &mut ComputationContext<'_>,
+    syntax: &ast::ExprFunctionCall,
+) -> Option<Expr> {
+    let db = ctx.db;
+    let syntax_db = db.upcast();
+
+    let path = syntax.path(syntax_db);
+    let item = ctx.resolver.resolve_concrete_path(ctx.diagnostics, &path)?;
+    let args_syntax = syntax.arguments(syntax_db);
+    let arg_exprs: Vec<_> = args_syntax
+        .expressions(syntax_db)
+        .elements(syntax_db)
+        .into_iter()
+        .map(|arg_syntax| compute_expr_semantic(ctx, &arg_syntax))
+        .collect();
+    match item {
+        ResolvedConcreteItem::Function(function) => {
+            expr_function_call(ctx, function, arg_exprs, syntax.stable_ptr().into())
+        }
+        ResolvedConcreteItem::Variant(concrete_variant) => {
+            if arg_exprs.len() != 1 {
+                ctx.diagnostics.report(
+                    &args_syntax,
+                    WrongNumberOfArguments { expected: 1, actual: arg_exprs.len() },
+                );
+                return None;
+            }
+            let arg = arg_exprs[0].clone();
+            if concrete_variant.ty != arg.ty() {
+                ctx.diagnostics.report(
+                    &args_syntax,
+                    WrongArgumentType { expected_ty: concrete_variant.ty, actual_ty: arg.ty() },
+                );
+                return None;
+            }
+            Some(semantic::Expr::EnumVariantCtor(semantic::ExprEnumVariantCtor {
+                enum_variant_id: concrete_variant.id,
+                value_expr: ctx.exprs.alloc(arg),
+                ty: db.intern_type(TypeLongId::Concrete(ConcreteTypeId::Enum(
+                    concrete_variant.concrete_enum_id,
+                ))),
+                stable_ptr: syntax.stable_ptr().into(),
+            }))
+        }
+        _ => {
+            ctx.diagnostics.report(&path, NotAFunction);
+            None
+        }
+    }
+}
+
+/// Computes the semantic model of an expression of type [ast::ExprBlock].
+pub fn compute_expr_block_semantic(
+    ctx: &mut ComputationContext<'_>,
+    syntax: &ast::ExprBlock,
+) -> Option<Expr> {
+    let db = ctx.db;
+    let syntax_db = db.upcast();
+
+    ctx.run_in_subscope(|new_ctx| {
+        let mut statements = syntax.statements(syntax_db).elements(syntax_db);
+        // Remove the tail expression, if exists.
+        // TODO(spapini): Consider splitting tail expression in the parser.
+        let tail = get_tail_expression(syntax_db, statements.as_slice());
+        if tail.is_some() {
+            statements.pop();
+        }
+
+        // Convert statements to semantic model.
+        let statements_semantic: Vec<_> = statements
+            .into_iter()
+            .filter_map(|statement_syntax| compute_statement_semantic(new_ctx, statement_syntax))
+            .collect();
+
+        // Convert tail expression (if exists) to semantic model.
+        let tail_semantic_expr = tail.map(|tail_expr| compute_expr_semantic(new_ctx, &tail_expr));
+        let ty = if let Some(t) = &tail_semantic_expr {
+            t.ty()
+        } else if let Some(statement) = statements_semantic.last() {
+            if let Statement::Return(_) = &new_ctx.statements[*statement] {
+                TypeId::never(new_ctx.db)
+            } else {
+                unit_ty(db)
+            }
+        } else {
+            unit_ty(db)
+        };
+        Some(Expr::Block(ExprBlock {
+            statements: statements_semantic,
+            tail: tail_semantic_expr.map(|expr| new_ctx.exprs.alloc(expr)),
+            ty,
+            stable_ptr: syntax.stable_ptr().into(),
+        }))
     })
+}
+
+/// Helper for merging the return types of branch blocks (match or if else).
+struct FlowMergeTypeHelper {
+    never_type: TypeId,
+    missing_type: TypeId,
+    final_type: Option<TypeId>,
+}
+impl FlowMergeTypeHelper {
+    fn new(db: &dyn SemanticGroup) -> Self {
+        Self { never_type: TypeId::never(db), missing_type: TypeId::missing(db), final_type: None }
+    }
+
+    /// Attempt merge a branch into the helper, on error will return the conflicting types.
+    fn try_merge_types(&mut self, ty: TypeId) -> Result<(), (TypeId, TypeId)> {
+        if ty != self.never_type && ty != self.missing_type {
+            if let Some(existing) = &self.final_type {
+                if ty != *existing {
+                    return Err((*existing, ty));
+                }
+            } else {
+                self.final_type = Some(ty);
+            }
+        }
+        Ok(())
+    }
+
+    /// Returns the merged type.
+    fn get_final_type(self) -> TypeId {
+        self.final_type.unwrap_or(self.never_type)
+    }
+}
+
+fn compute_expr_match_semantic(
+    ctx: &mut ComputationContext<'_>,
+    syntax: &ast::ExprMatch,
+) -> Option<Expr> {
+    // TODO(yuval): verify exhaustiveness.
+    let db = ctx.db;
+    let syntax_db = db.upcast();
+
+    let syntax_arms = syntax.arms(syntax_db).elements(syntax_db);
+    let expr = compute_expr_semantic(ctx, &syntax.expr(syntax_db));
+    // Run compute_pattern_semantic on every arm, even if other arms failed, to get as many
+    // diagnostics as possible.
+    let pattern_and_expr_options: Vec<_> = syntax_arms
+        .iter()
+        .map(|syntax_arm| {
+            let arm_expr_syntax = syntax_arm.expression(syntax_db);
+            ctx.run_in_subscope(|new_ctx| {
+                // Typecheck pattern, and introduce the new variables to the subscope.
+                // Note that if the arm expr is a block, there will be *another* subscope
+                // for it.
+                let pattern =
+                    compute_pattern_semantic(new_ctx, syntax_arm.pattern(syntax_db), expr.ty())?;
+                let variables = pattern.variables();
+                for v in variables {
+                    new_ctx
+                        .environment
+                        .variables
+                        .insert(v.name.clone(), Variable::Local(v.var.clone()));
+                }
+                let arm_expr = compute_expr_semantic(new_ctx, &arm_expr_syntax);
+                Some((pattern, arm_expr))
+            })
+        })
+        .collect();
+    // Unify arm types.
+    let mut helper = FlowMergeTypeHelper::new(ctx.db);
+    for (_, expr) in pattern_and_expr_options.iter().flatten() {
+        if let Err((match_ty, arm_ty)) = helper.try_merge_types(expr.ty()) {
+            ctx.diagnostics.report_by_ptr(
+                expr.stable_ptr().untyped(),
+                IncompatibleMatchArms { match_ty, arm_ty },
+            );
+        }
+    }
+    // Compute semantic representation of the match arms.
+    let pattern_and_exprs: Vec<_> = pattern_and_expr_options.into_iter().collect::<Option<_>>()?;
+    let semantic_arms = pattern_and_exprs
+        .into_iter()
+        .map(|(pattern, arm_expr)| MatchArm { pattern, expression: ctx.exprs.alloc(arm_expr) })
+        .collect();
+    Some(Expr::Match(ExprMatch {
+        matched_expr: ctx.exprs.alloc(expr),
+        arms: semantic_arms,
+        ty: helper.get_final_type(),
+        stable_ptr: syntax.stable_ptr().into(),
+    }))
+}
+
+/// Computes the semantic model of an expression of type [ast::ExprIf].
+fn compute_expr_if_semantic(
+    ctx: &mut ComputationContext<'_>,
+    syntax: &ast::ExprIf,
+) -> Option<Expr> {
+    let syntax_db = ctx.db.upcast();
+
+    let expr = compute_expr_semantic(ctx, &syntax.condition(syntax_db));
+    let if_block = compute_expr_block_semantic(ctx, &syntax.if_block(syntax_db))?;
+    let else_block = compute_expr_block_semantic(ctx, &syntax.else_block(syntax_db))?;
+    let mut helper = FlowMergeTypeHelper::new(ctx.db);
+    helper
+        .try_merge_types(if_block.ty())
+        .and(helper.try_merge_types(else_block.ty()))
+        .unwrap_or_else(|(block_if_ty, block_else_ty)| {
+            ctx.diagnostics.report(syntax, IncompatibleIfBlockTypes { block_if_ty, block_else_ty });
+        });
+    Some(Expr::If(ExprIf {
+        condition: ctx.exprs.alloc(expr),
+        if_block: ctx.exprs.alloc(if_block),
+        else_block: ctx.exprs.alloc(else_block),
+        ty: helper.get_final_type(),
+        stable_ptr: syntax.stable_ptr().into(),
+    }))
 }
 
 /// Computes the semantic model of a pattern, or None if invalid.
@@ -366,24 +431,20 @@ fn compute_pattern_semantic(
         }
         ast::Pattern::Enum(enum_pattern) => {
             // Check that type is an enum, and get the concrete enum from it.
-            let concrete_enum = if let TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum)) =
-                ctx.db.lookup_intern_type(ty)
-            {
-                concrete_enum
-            } else {
-                ctx.diagnostics.report(&enum_pattern, UnexpectedEnumPattern { ty });
-                return None;
-            };
+            let concrete_enum =
+                try_extract_matches!(ctx.db.lookup_intern_type(ty), TypeLongId::Concrete)
+                    .and_then(|c| try_extract_matches!(c, ConcreteTypeId::Enum))
+                    .on_none(|| {
+                        ctx.diagnostics.report(&enum_pattern, UnexpectedEnumPattern { ty });
+                    })?;
 
             // Extract the enum variant from the path syntax.
             let path = enum_pattern.path(syntax_db);
             let item = ctx.resolver.resolve_generic_path(ctx.diagnostics, &path)?;
-            let generic_variant = if let ResolvedGenericItem::Variant(generic_variant) = item {
-                generic_variant
-            } else {
-                ctx.diagnostics.report(&path, UnknownEnum);
-                return None;
-            };
+            let generic_variant = try_extract_matches!(item, ResolvedGenericItem::Variant)
+                .on_none(|| {
+                    ctx.diagnostics.report(&path, UnknownEnum);
+                })?;
 
             // Check that these are the same enums.
             if generic_variant.enum_id != concrete_enum.enum_id(ctx.db) {
@@ -425,26 +486,21 @@ fn compute_pattern_semantic(
         ast::Pattern::Struct(pattern_struct) => {
             // Check that type is an struct, and get the concrete struct from it.
             let _concrete_struct =
-                if let TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_struct)) =
-                    ctx.db.lookup_intern_type(ty)
-                {
-                    concrete_struct
-                } else {
-                    ctx.diagnostics.report(&pattern_struct, UnexpectedEnumPattern { ty });
-                    return None;
-                };
+                try_extract_matches!(ctx.db.lookup_intern_type(ty), TypeLongId::Concrete)
+                    .and_then(|c| try_extract_matches!(c, ConcreteTypeId::Struct))
+                    .on_none(|| {
+                        ctx.diagnostics.report(&pattern_struct, UnexpectedEnumPattern { ty });
+                    })?;
 
             // TODO(spapini): Support struct patterns.
             ctx.diagnostics.report(&pattern_struct, Unsupported);
             return None;
         }
         ast::Pattern::Tuple(pattern_tuple) => {
-            let tys = if let TypeLongId::Tuple(tys) = ctx.db.lookup_intern_type(ty) {
-                tys
-            } else {
-                ctx.diagnostics.report(&pattern_tuple, UnexpectedTuplePattern { ty });
-                return None;
-            };
+            let tys = try_extract_matches!(ctx.db.lookup_intern_type(ty), TypeLongId::Tuple)
+                .on_none(|| {
+                    ctx.diagnostics.report(&pattern_tuple, UnexpectedTuplePattern { ty });
+                })?;
 
             let patterns_ast = pattern_tuple.patterns(syntax_db).elements(syntax_db);
             if tys.len() != patterns_ast.len() {
@@ -479,15 +535,13 @@ fn struct_ctor_expr(
     let path = ctor_syntax.path(syntax_db);
 
     // Extract struct.
-    let ty =
-        resolve_type(ctx.db, ctx.diagnostics, &mut ctx.resolver, &ast::Expr::Path(path.clone()));
-    let concrete_struct = match db.lookup_intern_type(ty) {
-        TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct)) => concrete_struct,
-        _ => {
+    let ty = resolve_type(db, ctx.diagnostics, &mut ctx.resolver, &ast::Expr::Path(path.clone()));
+
+    let concrete_struct = try_extract_matches!(ctx.db.lookup_intern_type(ty), TypeLongId::Concrete)
+        .and_then(|c| try_extract_matches!(c, ConcreteTypeId::Struct))
+        .on_none(|| {
             ctx.diagnostics.report(&path, NotAStruct);
-            return None;
-        }
-    };
+        })?;
 
     let members =
         db.concrete_struct_members(ctx.diagnostics, concrete_struct, path.stable_ptr().untyped())?;
@@ -553,16 +607,10 @@ fn get_tail_expression(
     syntax_db: &dyn SyntaxGroup,
     statements: &[ast::Statement],
 ) -> Option<ast::Expr> {
-    if statements.is_empty() {
-        return None;
-    }
-
-    if let Some(ast::Statement::Expr(statement_expr)) = statements.last() {
-        if let ast::OptionSemicolon::Empty(_) = statement_expr.semicolon(syntax_db) {
-            return Some(statement_expr.expr(syntax_db));
-        }
-    }
-    None
+    let last = statements.last()?;
+    let statement_expr = try_extract_matches!(last, ast::Statement::Expr)?;
+    try_extract_matches!(statement_expr.semicolon(syntax_db), ast::OptionSemicolon::Empty)?;
+    Some(statement_expr.expr(syntax_db))
 }
 
 /// Creates the semantic model of a literal expression from its AST.
@@ -640,7 +688,7 @@ fn member_access_expr(
         TypeLongId::GenericParameter(_) => {
             ctx.diagnostics.report(&rhs_syntax, TypeHasNoMembers { ty: lexpr.ty(), member_name });
         }
-        TypeLongId::Missing => {}
+        TypeLongId::Missing | TypeLongId::Never => {}
     }
     None
 }

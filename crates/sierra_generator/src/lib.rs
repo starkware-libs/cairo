@@ -1,5 +1,6 @@
 //! Lowering from the semantic model down to Sierra. See [semantic] and  [sierra]
 
+mod block_generator;
 pub mod db;
 mod diagnostic;
 mod dup_and_drop;

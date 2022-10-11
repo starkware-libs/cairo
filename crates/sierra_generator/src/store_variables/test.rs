@@ -1,5 +1,8 @@
 use pretty_assertions::assert_eq;
-use sierra::extensions::lib_func::{BranchSignature, OutputVarInfo, SierraApChange};
+use sierra::extensions::lib_func::{
+    BranchSignature, DeferredOutputKind, LibFuncSignature, OutputVarInfo, ParamSignature,
+    SierraApChange,
+};
 use sierra::extensions::OutputVarReferenceInfo;
 use sierra::ids::{ConcreteLibFuncId, ConcreteTypeId};
 
@@ -12,22 +15,53 @@ use crate::test_utils::{
 };
 
 /// Returns the [OutputVarReferenceInfo] information for a given libfunc.
-fn get_branch_signatures(
-    db: &dyn SierraGenGroup,
-    libfunc: ConcreteLibFuncId,
-) -> Vec<BranchSignature> {
+fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibFuncId) -> LibFuncSignature {
     let libfunc_long_id = db.lookup_intern_concrete_lib_func(libfunc);
     let dummy_type = ConcreteTypeId::from_usize(0);
     let name = libfunc_long_id.generic_id.debug_name.unwrap();
     match name.as_str() {
         "felt_add" => {
-            let vars =
-                vec![OutputVarInfo { ty: dummy_type, ref_info: OutputVarReferenceInfo::Deferred }];
-            vec![BranchSignature { vars, ap_change: SierraApChange::NotImplemented }]
+            let vars = vec![OutputVarInfo {
+                ty: dummy_type.clone(),
+                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+            }];
+            LibFuncSignature {
+                param_signatures: vec![
+                    ParamSignature::new(dummy_type.clone()),
+                    ParamSignature::new(dummy_type),
+                ],
+                branch_signatures: vec![BranchSignature {
+                    vars,
+                    ap_change: SierraApChange::NotImplemented,
+                }],
+                fallthrough: Some(0),
+            }
         }
-        "nope" => {
-            vec![BranchSignature { vars: vec![], ap_change: SierraApChange::NotImplemented }]
-        }
+        "felt_add3" => LibFuncSignature {
+            param_signatures: vec![ParamSignature {
+                ty: dummy_type.clone(),
+                allow_deferred: false,
+                allow_add_const: true,
+            }],
+            branch_signatures: vec![BranchSignature {
+                vars: vec![OutputVarInfo {
+                    ty: dummy_type,
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                        param_idx: 0,
+                    }),
+                }],
+                ap_change: SierraApChange::Known,
+            }],
+            fallthrough: Some(0),
+        },
+        "nope" => LibFuncSignature {
+            param_signatures: vec![],
+            branch_signatures: vec![BranchSignature {
+                vars: vec![],
+                ap_change: SierraApChange::NotImplemented,
+            }],
+            fallthrough: Some(0),
+        },
         "function_call4" => {
             let vars: Vec<_> = (0..4)
                 .map(|idx| OutputVarInfo {
@@ -35,17 +69,46 @@ fn get_branch_signatures(
                     ref_info: OutputVarReferenceInfo::NewTempVar { idx },
                 })
                 .collect();
-            vec![BranchSignature { vars, ap_change: SierraApChange::NotImplemented }]
+            LibFuncSignature {
+                param_signatures: vec![],
+                branch_signatures: vec![BranchSignature {
+                    vars,
+                    ap_change: SierraApChange::NotImplemented,
+                }],
+                fallthrough: Some(0),
+            }
         }
-        "jump" => {
-            vec![BranchSignature { vars: vec![], ap_change: SierraApChange::Known }]
-        }
-        "branch" => {
-            vec![
+        "jump" => LibFuncSignature {
+            param_signatures: vec![],
+            branch_signatures: vec![BranchSignature {
+                vars: vec![],
+                ap_change: SierraApChange::Known,
+            }],
+            fallthrough: None,
+        },
+        "branch" => LibFuncSignature {
+            param_signatures: vec![],
+            branch_signatures: vec![
                 BranchSignature { vars: vec![], ap_change: SierraApChange::Known },
                 BranchSignature { vars: vec![], ap_change: SierraApChange::Known },
-            ]
-        }
+            ],
+            fallthrough: Some(1),
+        },
+        "store_temp" => LibFuncSignature {
+            param_signatures: vec![ParamSignature {
+                ty: dummy_type.clone(),
+                allow_deferred: true,
+                allow_add_const: true,
+            }],
+            branch_signatures: vec![BranchSignature {
+                vars: vec![OutputVarInfo {
+                    ty: dummy_type,
+                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
+                }],
+                ap_change: SierraApChange::Known,
+            }],
+            fallthrough: Some(0),
+        },
         _ => panic!("get_branch_signatures() is not implemented for '{}'.", name),
     }
 }
@@ -66,7 +129,7 @@ fn store_temp_simple() {
     ];
 
     assert_eq!(
-        add_store_statements(&db, statements, &(|libfunc| get_branch_signatures(&db, libfunc)))
+        add_store_statements(&db, statements, &(|libfunc| get_lib_func_signature(&db, libfunc)))
             .iter()
             .map(|statement| replace_libfunc_ids(&db, statement).to_string())
             .collect::<Vec<String>>(),
@@ -103,7 +166,7 @@ fn store_temp_push_values() {
     ];
 
     assert_eq!(
-        add_store_statements(&db, statements, &(|libfunc| get_branch_signatures(&db, libfunc)))
+        add_store_statements(&db, statements, &(|libfunc| get_lib_func_signature(&db, libfunc)))
             .iter()
             .map(|statement| replace_libfunc_ids(&db, statement).to_string())
             .collect::<Vec<String>>(),
@@ -137,7 +200,7 @@ fn push_values_optimization() {
     ];
 
     assert_eq!(
-        add_store_statements(&db, statements, &(|libfunc| get_branch_signatures(&db, libfunc)))
+        add_store_statements(&db, statements, &(|libfunc| get_lib_func_signature(&db, libfunc)))
             .iter()
             .map(|statement| replace_libfunc_ids(&db, statement).to_string())
             .collect::<Vec<String>>(),
@@ -164,7 +227,7 @@ fn consecutive_push_values() {
     ];
 
     assert_eq!(
-        add_store_statements(&db, statements, &(|libfunc| get_branch_signatures(&db, libfunc)))
+        add_store_statements(&db, statements, &(|libfunc| get_lib_func_signature(&db, libfunc)))
             .iter()
             .map(|statement| replace_libfunc_ids(&db, statement).to_string())
             .collect::<Vec<String>>(),
@@ -206,7 +269,7 @@ fn push_values_after_branch_merge() {
     ];
 
     assert_eq!(
-        add_store_statements(&db, statements, &(|libfunc| get_branch_signatures(&db, libfunc)))
+        add_store_statements(&db, statements, &(|libfunc| get_lib_func_signature(&db, libfunc)))
             .iter()
             .map(|statement| replace_libfunc_ids(&db, statement).to_string())
             .collect::<Vec<String>>(),
@@ -248,7 +311,7 @@ fn push_values_early_return() {
     ];
 
     assert_eq!(
-        add_store_statements(&db, statements, &(|libfunc| get_branch_signatures(&db, libfunc)))
+        add_store_statements(&db, statements, &(|libfunc| get_lib_func_signature(&db, libfunc)))
             .iter()
             .map(|statement| replace_libfunc_ids(&db, statement).to_string())
             .collect::<Vec<String>>(),
@@ -269,6 +332,85 @@ fn push_values_early_return() {
             "rename<[0]>(101) -> (201)",
             "store_temp<[0]>(2) -> (202)",
             "return(0)",
+        ]
+    );
+}
+
+/// Tests a few consecutive invocations of [PushValues](pre_sierra::Statement::PushValues).
+#[test]
+fn store_temp_gets_deferred() {
+    let db = SierraGenDatabaseForTesting::default();
+    let statements: Vec<pre_sierra::Statement> = vec![
+        dummy_simple_statement(&db, "felt_add", &["0", "1"], &["2"]),
+        dummy_simple_statement(&db, "nope", &[], &[]),
+        dummy_simple_statement(&db, "store_temp", &["2"], &["3"]),
+        dummy_simple_statement(&db, "nope", &[], &[]),
+        dummy_simple_statement(&db, "felt_add", &["2", "2"], &["4"]),
+        dummy_simple_statement(&db, "felt_add", &["3", "3"], &["6"]),
+        dummy_return_statement(&["0"]),
+    ];
+
+    assert_eq!(
+        add_store_statements(&db, statements, &(|libfunc| get_lib_func_signature(&db, libfunc)))
+            .iter()
+            .map(|statement| replace_libfunc_ids(&db, statement).to_string())
+            .collect::<Vec<String>>(),
+        vec![
+            "felt_add(0, 1) -> (2)",
+            "nope() -> ()",
+            // Explicit call to store_temp() is not preceded by an implicit store_temp().
+            "store_temp(2) -> (3)",
+            "nope() -> ()",
+            // Since var 2 is still deferred an implicit store_temp() is added before felt_add().
+            "store_temp<[0]>(2) -> (2)",
+            "felt_add(2, 2) -> (4)",
+            // Var 3 is already on the stack.
+            "felt_add(3, 3) -> (6)",
+            // Return.
+            "return(0)",
+        ]
+    );
+}
+
+/// Tests a few consecutive invocations of [PushValues](pre_sierra::Statement::PushValues).
+#[test]
+fn consecutive_const_additions() {
+    let db = SierraGenDatabaseForTesting::default();
+    let statements: Vec<pre_sierra::Statement> = vec![
+        dummy_simple_statement(&db, "felt_add", &["0", "1"], &["2"]),
+        dummy_simple_statement(&db, "felt_add3", &["2"], &["3"]),
+        dummy_simple_statement(&db, "felt_add3", &["3"], &["4"]),
+        dummy_simple_statement(&db, "felt_add", &["0", "4"], &["5"]),
+        dummy_simple_statement(&db, "felt_add", &["0", "5"], &["6"]),
+        dummy_simple_statement(&db, "felt_add3", &["6"], &["7"]),
+        dummy_simple_statement(&db, "felt_add3", &["7"], &["8"]),
+        dummy_push_values(&db, &[("8", "9")]),
+        dummy_return_statement(&["9"]),
+    ];
+
+    assert_eq!(
+        add_store_statements(&db, statements, &(|libfunc| get_lib_func_signature(&db, libfunc)))
+            .iter()
+            .map(|statement| replace_libfunc_ids(&db, statement).to_string())
+            .collect::<Vec<String>>(),
+        vec![
+            "felt_add(0, 1) -> (2)",
+            "store_temp<[0]>(2) -> (2)",
+            "felt_add3(2) -> (3)",
+            // There is no need to add a store_temp() instruction between two `felt_add3()`.
+            "felt_add3(3) -> (4)",
+            "store_temp<[0]>(4) -> (4)",
+            "felt_add(0, 4) -> (5)",
+            "store_temp<[0]>(5) -> (5)",
+            "felt_add(0, 5) -> (6)",
+            "store_temp<[0]>(6) -> (6)",
+            "felt_add3(6) -> (7)",
+            // There is no need to add a store_temp() instruction between two `felt_add3()`.
+            "felt_add3(7) -> (8)",
+            // Return.
+            "store_temp<[0]>(8) -> (8)",
+            "rename<[0]>(8) -> (9)",
+            "return(9)",
         ]
     );
 }

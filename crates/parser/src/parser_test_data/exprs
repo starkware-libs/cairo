@@ -5,11 +5,11 @@ get_diagnostics
 
 //! > cairo_code
 func f() {
-    1 + * 2
+    1 + * 2 + {5}
 }
 
 //! > expected_diagnostics
 error: Missing tokens. Expected an expression.
  --> dummy_file.cairo:2:9
-    1 + * 2
+    1 + * 2 + {5}
         ^

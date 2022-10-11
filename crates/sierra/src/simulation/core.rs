@@ -1,11 +1,14 @@
+use utils::extract_matches;
+
 use super::value::CoreValue;
 use super::LibFuncSimulationError;
 use crate::extensions::arithmetic::{
     BinaryOperationConcreteLibFunc, ConstConcreteLibFunc, OperationConcreteLibFunc,
     OperationWithConstConcreteLibFunc, Operator,
 };
+use crate::extensions::array::ArrayConcreteLibFunc;
 use crate::extensions::core::CoreConcreteLibFunc::{
-    self, ApTracking, Drop, Dup, Felt, FunctionCall, Gas, Integer, Mem, UnconditionalJump,
+    self, ApTracking, Array, Drop, Dup, Felt, FunctionCall, Gas, Integer, Mem, UnconditionalJump,
     UnwrapNonZero,
 };
 use crate::extensions::felt::FeltConcrete;
@@ -67,6 +70,23 @@ pub fn simulate<
             }?;
             Ok((vec![CoreValue::GasBuiltin(gas_counter + count)], 0))
         }
+        Array(ArrayConcreteLibFunc::New(_)) => {
+            if inputs.is_empty() {
+                Ok((vec![CoreValue::Array(vec![])], 0))
+            } else {
+                Err(LibFuncSimulationError::WrongNumberOfArgs)
+            }
+        }
+        Array(ArrayConcreteLibFunc::Append(_)) => match &inputs[..] {
+            [CoreValue::Array(_), _] => {
+                let mut iter = inputs.into_iter();
+                let mut arr = extract_matches!(iter.next().unwrap(), CoreValue::Array);
+                arr.push(iter.next().unwrap());
+                Ok((vec![CoreValue::Array(arr)], 0))
+            }
+            [_, _] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+        },
         Integer(libfunc) => simulate_integer_libfunc(libfunc, &inputs),
         Felt(libfunc) => simulate_felt_libfunc(libfunc, &inputs),
         UnwrapNonZero(_) => match &inputs[..] {

@@ -2,9 +2,10 @@ use sierra::extensions::arithmetic::{
     BinaryOperationConcreteLibFunc, OperationConcreteLibFunc, OperationWithConstConcreteLibFunc,
     Operator,
 };
+use sierra::extensions::array::ArrayConcreteLibFunc;
 use sierra::extensions::core::CoreConcreteLibFunc::{
-    self, ApTracking, Drop, Dup, Felt, FunctionCall, Gas, Integer, Mem, Ref, UnconditionalJump,
-    UnwrapNonZero,
+    self, ApTracking, Array, Drop, Dup, Felt, FunctionCall, Gas, Integer, Mem, Ref,
+    UnconditionalJump, UnwrapNonZero,
 };
 use sierra::extensions::felt::FeltConcrete;
 use sierra::extensions::function_call::FunctionCallConcreteLibFunc;
@@ -42,6 +43,8 @@ pub fn core_libfunc_cost(
                 CostExpr::from_const(1) + CostExpr::from_var(Var::LibFuncImplicitGasVariable(*idx)),
             ]
         }
+        Array(ArrayConcreteLibFunc::New(_)) => vec![CostExpr::from_const(1)],
+        Array(ArrayConcreteLibFunc::Append(_)) => vec![CostExpr::from_const(2)],
         Integer(libfunc) => integer_libfunc_cost(libfunc),
         Felt(libfunc) => felt_libfunc_cost(libfunc),
         Drop(_) | Dup(_) | ApTracking(_) | UnwrapNonZero(_) | Mem(Rename(_)) | Ref(_) => {

@@ -1,0 +1,9 @@
+= Never type
+
+[source,bnf]
+----
+NEVER_TYPE : "<never>"
+----
+
+A _never type_ is a type of an expression that should not be evaluated in the encapsulating block,
+but should cause a flow control change - this may be caused by return or break statements.

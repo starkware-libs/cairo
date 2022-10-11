@@ -6,39 +6,39 @@ use crate::program::{Function, FunctionSignature, GenericArg};
 /// Trait for the specialization of libfunc signatures.
 pub trait SignatureSpecializationContext {
     /// Returns concrete type id given a generic type and the generic arguments.
-    fn get_concrete_type(
+    fn try_get_concrete_type(
         &self,
         id: GenericTypeId,
         generic_args: &[GenericArg],
     ) -> Option<ConcreteTypeId>;
 
-    /// Wraps [Self::get_concrete_type] with a result object.
-    fn get_concrete_type_as_result(
+    /// Wraps [Self::try_get_concrete_type] with a result object.
+    fn get_concrete_type(
         &self,
         id: GenericTypeId,
         generic_args: &[GenericArg],
     ) -> Result<ConcreteTypeId, SpecializationError> {
-        self.get_concrete_type(id.clone(), generic_args)
+        self.try_get_concrete_type(id.clone(), generic_args)
             .ok_or_else(|| SpecializationError::TypeWasNotDeclared(id, generic_args.to_vec()))
     }
 
     /// Returns the type info for a given concrete type.
-    fn get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo>;
+    fn try_get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo>;
 
-    /// Wraps `get_type_info` with a result object.
-    fn get_type_info_as_result(&self, id: ConcreteTypeId) -> Result<TypeInfo, SpecializationError> {
-        self.get_type_info(id.clone()).ok_or(SpecializationError::MissingTypeInfo(id))
+    /// Wraps [Self::try_get_type_info] with a result object.
+    fn get_type_info(&self, id: ConcreteTypeId) -> Result<TypeInfo, SpecializationError> {
+        self.try_get_type_info(id.clone()).ok_or(SpecializationError::MissingTypeInfo(id))
     }
 
     /// Returns the function's signature object associated with the given [FunctionId].
-    fn get_function_signature(&self, function_id: &FunctionId) -> Option<FunctionSignature>;
+    fn try_get_function_signature(&self, function_id: &FunctionId) -> Option<FunctionSignature>;
 
-    /// Wraps [Self::get_function_signature] with a result object.
-    fn get_function_signature_as_result(
+    /// Wraps [Self::try_get_function_signature] with a result object.
+    fn get_function_signature(
         &self,
         function_id: &FunctionId,
     ) -> Result<FunctionSignature, SpecializationError> {
-        self.get_function_signature(function_id)
+        self.try_get_function_signature(function_id)
             .ok_or_else(|| SpecializationError::MissingFunction(function_id.clone()))
     }
 
@@ -48,7 +48,7 @@ pub trait SignatureSpecializationContext {
         id: GenericTypeId,
         wrapped: ConcreteTypeId,
     ) -> Result<ConcreteTypeId, SpecializationError> {
-        self.get_concrete_type_as_result(id, &[GenericArg::Type(wrapped)])
+        self.get_concrete_type(id, &[GenericArg::Type(wrapped)])
     }
 }
 
@@ -59,14 +59,11 @@ pub trait SpecializationContext: SignatureSpecializationContext {
     fn upcast(&self) -> &dyn SignatureSpecializationContext;
 
     /// Returns the function object associated with the given [FunctionId].
-    fn get_function(&self, function_id: &FunctionId) -> Option<Function>;
+    fn try_get_function(&self, function_id: &FunctionId) -> Option<Function>;
 
-    /// Wraps [Self::get_function] with a result object.
-    fn get_function_as_result(
-        &self,
-        function_id: &FunctionId,
-    ) -> Result<Function, SpecializationError> {
-        self.get_function(function_id)
+    /// Wraps [Self::try_get_function] with a result object.
+    fn get_function(&self, function_id: &FunctionId) -> Result<Function, SpecializationError> {
+        self.try_get_function(function_id)
             .ok_or_else(|| SpecializationError::MissingFunction(function_id.clone()))
     }
 }
@@ -230,6 +227,23 @@ impl<T: NoGenericArgsGenericLibFunc> NamedLibFunc for T {
     }
 }
 
+/// Information regarding a parameter of the libfunc.
+pub struct ParamSignature {
+    /// The type of the parameter.
+    pub ty: ConcreteTypeId,
+    /// Whether the libfunc argument can be an expression of the form `[ap/fp + i] + [ap/fp + j]`.
+    /// For example, `store_temp()` and `store_local()`.
+    pub allow_deferred: bool,
+    /// Whether the libfunc argument can be an expression of the form `[ap + i] + const`.
+    pub allow_add_const: bool,
+}
+impl ParamSignature {
+    /// Returns a [ParamSignature] with default attributes.
+    pub fn new(ty: ConcreteTypeId) -> Self {
+        Self { ty, allow_add_const: false, allow_deferred: false }
+    }
+}
+
 /// Information regarding the reference created as an output of a library function.
 /// For example, whether the reference is equal to one of the parameters (as in the dup() function),
 /// or whether it's newly allocated local variable.
@@ -242,10 +256,20 @@ pub enum OutputVarReferenceInfo {
     /// The output was allocated as a local variable.
     NewLocalVar,
     /// The output is the result of a computation. For example `[ap] + [fp]`,
-    /// `[ap + 1] * [fp - 3]`.
-    Deferred,
+    /// `[ap + 1] * [fp - 3]`, `[ap] + 3`.
+    Deferred(DeferredOutputKind),
     /// The output is a constant.
     Const,
+}
+
+/// The type of a deferred output.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum DeferredOutputKind {
+    /// The output is the addition of a constant to one of the parameters. For example, `x + 3`.
+    AddConst { param_idx: usize },
+    /// The output is not one of the above (e.g., `[ap] + [fp]`, `[ap + 1] * [fp - 3]`,
+    /// `[ap] * 3`).
+    Generic,
 }
 
 /// Contains information regarding an output variable in a single branch.
@@ -280,8 +304,9 @@ pub enum SierraApChange {
 }
 /// Trait for a specialized library function.
 pub trait ConcreteLibFunc {
-    /// The input types for calling the library function.
-    fn input_types(&self) -> &[ConcreteTypeId];
+    /// The parameter types and other information for the parameters for calling a library
+    /// function.
+    fn param_signatures(&self) -> &[ParamSignature];
     /// The output types and other information returning from a library function per branch.
     fn branch_signatures(&self) -> &[BranchSignature];
     /// The index of the fallthrough branch of the library function if any.
@@ -300,8 +325,9 @@ pub trait ConcreteLibFunc {
 
 /// Represents the signature of a library function.
 pub struct LibFuncSignature {
-    /// The input types for calling a library function.
-    pub input_types: Vec<ConcreteTypeId>,
+    /// The parameter types and other information for the parameters for calling a library
+    /// function.
+    pub param_signatures: Vec<ParamSignature>,
     /// The output types and other information for the return values of a library function per
     /// branch.
     pub branch_signatures: Vec<BranchSignature>,
@@ -315,8 +341,22 @@ impl LibFuncSignature {
         output_info: Vec<OutputVarInfo>,
         ap_change: SierraApChange,
     ) -> Self {
+        Self::new_non_branch_ex(
+            input_types.into_iter().map(ParamSignature::new).collect(),
+            output_info,
+            ap_change,
+        )
+    }
+
+    /// Same as [LibFuncSignature::new_non_branch], except that more complicated [ParamSignature]
+    /// are supported.
+    pub fn new_non_branch_ex(
+        param_signatures: Vec<ParamSignature>,
+        output_info: Vec<OutputVarInfo>,
+        ap_change: SierraApChange,
+    ) -> LibFuncSignature {
         Self {
-            input_types,
+            param_signatures,
             branch_signatures: vec![BranchSignature { vars: output_info, ap_change }],
             fallthrough: Some(0),
         }
@@ -343,8 +383,8 @@ impl SignatureBasedConcreteLibFunc for SignatureOnlyConcreteLibFunc {
 impl<TSignatureBasedConcreteLibFunc: SignatureBasedConcreteLibFunc> ConcreteLibFunc
     for TSignatureBasedConcreteLibFunc
 {
-    fn input_types(&self) -> &[ConcreteTypeId] {
-        &self.signature().input_types
+    fn param_signatures(&self) -> &[ParamSignature] {
+        &self.signature().param_signatures
     }
     fn branch_signatures(&self) -> &[BranchSignature] {
         &self.signature().branch_signatures
@@ -375,7 +415,7 @@ macro_rules! define_concrete_libfunc_hierarchy {
         }
         impl $crate::extensions::ConcreteLibFunc for $name {
             $crate::extensions::lib_func::concrete_method_impl! {
-                fn input_types(&self) -> &[$crate::ids::ConcreteTypeId] {
+                fn param_signatures(&self) -> &[$crate::extensions::lib_func::ParamSignature] {
                     $($variant_name => $variant,)*
                 }
             }

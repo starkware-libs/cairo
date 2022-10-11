@@ -1,0 +1,35 @@
+//! > Test function call.
+
+//! > test_function_name
+block_generator_test
+
+//! > function
+func foo(z: MyStruct) -> () {
+    let x = bar(1, 2, z);
+    bar(x, x + x, z);
+}
+
+func bar(a: felt, b: felt, z: MyStruct) -> felt {
+    0
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern type MyStruct;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_gen_diagnostics
+
+//! > sierra_code
+felt_const<1>() -> ([0])
+felt_const<2>() -> ([1])
+PushValues([0]: [0], [1]: [0], [2]: [1]) -> ([4], [5], [6])
+function_call<user@[0]>([4], [5], [6]) -> ([3])
+felt_add([3], [3]) -> ([7])
+PushValues([3]: [0], [7]: [0], [2]: [1]) -> ([9], [10], [11])
+function_call<user@[0]>([9], [10], [11]) -> ([8])

@@ -37,9 +37,8 @@ fn test_resolve_path() {
     assert_eq!(
         format!("{:?}", body.debug(&expr_formatter)),
         "Some(Block(ExprBlock { statements: [Expr(StatementExpr { expr: \
-         FunctionCall(ExprFunctionCall { function: \
-         Concrete(ExternFunctionId(test_crate::bar)<Type((core::felt, Q)),>), args: [Var(ExprVar \
-         { var: ParamId(test_crate::value), ty: test_crate::S::<core::felt> })], ty: \
+         FunctionCall(ExprFunctionCall { function: test_crate::bar<Type((core::felt, Q)),>, args: \
+         [Var(ExprVar { var: ParamId(test_crate::value), ty: test_crate::S::<core::felt> })], ty: \
          test_crate::S::<()> }) }), Let(StatementLet { pattern: Variable(c), expr: Var(ExprVar { \
          var: ParamId(test_crate::b), ty: Q }) })], tail: None, ty: () }))"
     );

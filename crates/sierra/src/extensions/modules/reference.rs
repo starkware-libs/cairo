@@ -1,8 +1,8 @@
 use super::as_single_type;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
-    LibFuncSignature, OutputVarInfo, SierraApChange, SignatureOnlyConcreteLibFunc,
-    SignatureSpecializationContext, SpecializationContext,
+    DeferredOutputKind, LibFuncSignature, OutputVarInfo, SierraApChange,
+    SignatureOnlyConcreteLibFunc, SignatureSpecializationContext, SpecializationContext,
 };
 use crate::extensions::types::{TypeInfo, TypeSpecializationContext};
 use crate::extensions::{
@@ -24,7 +24,7 @@ impl NamedType for RefType {
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
         let ty = as_single_type(args)?;
-        Ok(RefConcreteType { info: context.get_type_info_as_result(ty.clone())?, ty })
+        Ok(RefConcreteType { info: context.get_type_info(ty.clone())?, ty })
     }
 }
 
@@ -62,7 +62,7 @@ impl NamedLibFunc for IntoRefLibFunc {
             vec![ty.clone()],
             vec![OutputVarInfo {
                 ty: context.get_wrapped_concrete_type(RefType::id(), ty)?,
-                ref_info: OutputVarReferenceInfo::Deferred,
+                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
             }],
             SierraApChange::NotImplemented,
         ))
@@ -94,7 +94,10 @@ impl NamedLibFunc for DerefLibFunc {
         let ty = as_single_type(args)?;
         Ok(LibFuncSignature::new_non_branch(
             vec![context.get_wrapped_concrete_type(RefType::id(), ty.clone())?],
-            vec![OutputVarInfo { ty, ref_info: OutputVarReferenceInfo::Deferred }],
+            vec![OutputVarInfo {
+                ty,
+                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+            }],
             SierraApChange::NotImplemented,
         ))
     }

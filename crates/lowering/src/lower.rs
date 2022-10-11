@@ -10,11 +10,10 @@ use utils::ordered_hash_set::OrderedHashSet;
 use crate::diagnostic::LoweringDiagnosticKind::*;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnostics};
 use crate::objects::{
-    Block, BlockEnd, BlockId, Statement, StatementTupleDestruct, Variable, VariableId,
+    Block, BlockEnd, BlockId, Statement, StatementCall, StatementLiteral, StatementTupleDestruct,
+    Variable, VariableId,
 };
 
-// TODO(spapini): Remove.
-#[allow(dead_code)]
 /// Context for lowering a function.
 pub struct Lowerer<'db> {
     db: &'db dyn SemanticGroup,
@@ -125,8 +124,8 @@ impl<'db> Lowerer<'db> {
 
             self.lower_statement(&mut scope, stmt)
         }
-        // TODO(spapini): Handle regular exit from a block.
-        todo!("Handle regular exit from a block.");
+
+        self.finalize_block_callsite(scope, expr_block.tail)
     }
 
     /// Finalizes lowering of a block that ends with a `return` statement.
@@ -138,13 +137,34 @@ impl<'db> Lowerer<'db> {
         // First, prepare the expr.
         let var_id = self.lower_expr(&mut scope, expr_id);
         self.take(&mut scope, var_id);
-        let BlockScope { inputs, living_variables: _, semantic_variables: _, statements } = scope;
+        let BlockScope { inputs, living_variables, semantic_variables: _, statements } = scope;
         // TODO(spapini): Find mut function parameters, and return them as well.
         self.blocks.alloc(Block {
             inputs,
             statements,
-            drops: vec![],
+            drops: living_variables.into_iter().collect(),
             end: BlockEnd::Return(vec![var_id]),
+        })
+    }
+
+    /// Finalizes lowering of a block that ends regularly, returning to callsite.
+    fn finalize_block_callsite(
+        &mut self,
+        mut scope: BlockScope,
+        expr_id: Option<semantic::ExprId>,
+    ) -> BlockId {
+        // First, prepare the expr.
+        let extra_vars = expr_id.map(|expr_id| {
+            let var_id = self.lower_expr(&mut scope, expr_id);
+            self.take(&mut scope, var_id)
+        });
+        let BlockScope { inputs, living_variables, semantic_variables: _, statements } = scope;
+        // TODO(spapini): Find mut function parameters, and return them as well.
+        self.blocks.alloc(Block {
+            inputs,
+            statements,
+            drops: living_variables.into_iter().collect(),
+            end: BlockEnd::Callsite(extra_vars.into_iter().collect()),
         })
     }
 
@@ -210,14 +230,44 @@ impl<'db> Lowerer<'db> {
     }
 
     /// Lowers a semantic expression.
-    fn lower_expr(&mut self, _scope: &mut BlockScope, expr_id: semantic::ExprId) -> VariableId {
-        // Dummy expression lowering.
-        // TODO(spapini): Replace this with real logic.
-        self.variables.alloc(Variable {
-            duplicatable: true,
-            droppable: true,
-            ty: self.function_def.exprs[expr_id].ty(),
-        })
+    fn lower_expr(&mut self, scope: &mut BlockScope, expr_id: semantic::ExprId) -> VariableId {
+        let expr = &self.function_def.exprs[expr_id];
+        match expr {
+            semantic::Expr::Tuple(_) => self.new_variable(scope, expr.ty()),
+            semantic::Expr::Assignment(_) => todo!(),
+            semantic::Expr::Block(_) => todo!(),
+            semantic::Expr::FunctionCall(expr) => {
+                let inputs = expr
+                    .args
+                    .iter()
+                    .map(|arg_expr_id| self.lower_expr(scope, *arg_expr_id))
+                    .collect();
+
+                // Allocate a new variable for the result of the function.
+                let result_var = self.new_variable(scope, expr.ty);
+                let outputs = vec![result_var];
+                scope.statements.push(Statement::Call(StatementCall {
+                    function: expr.function,
+                    inputs,
+                    outputs,
+                }));
+                result_var
+            }
+            semantic::Expr::Match(_) => todo!(),
+            semantic::Expr::If(_) => todo!(),
+            semantic::Expr::Var(expr) => self.take(scope, scope.semantic_variables[expr.var]),
+            semantic::Expr::Literal(expr) => {
+                let output = self.new_variable(scope, expr.ty);
+                scope
+                    .statements
+                    .push(Statement::Literal(StatementLiteral { value: expr.value, output }));
+                output
+            }
+            semantic::Expr::MemberAccess(_) => todo!(),
+            semantic::Expr::StructCtor(_) => todo!(),
+            semantic::Expr::EnumVariantCtor(_) => todo!(),
+            semantic::Expr::Missing(_) => todo!(),
+        }
     }
 
     /// Takes a variable from the current block scope (i.e. moving/consuming it).

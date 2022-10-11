@@ -1,3 +1,30 @@
+/// Macro to try to evaluate an expression as a pattern and extract its fields.
+/// # Examples:
+/// ```
+/// use utils::try_extract_matches;
+///
+/// #[derive(Debug, Clone, Copy)]
+/// struct Point {
+///     x: u32,
+///     y: u32,
+/// }
+/// #[derive(Debug)]
+/// enum MyEnum {
+///     Point(Point),
+///     Value(u32),
+/// }
+/// let p = MyEnum::Point(Point { x: 3, y: 5 });
+/// if let Some(Point { x, y: _ }) = try_extract_matches!(p, MyEnum::Point) {
+///     assert_eq!(x, 3);
+/// }
+/// ```
+#[macro_export]
+macro_rules! try_extract_matches {
+    ($e:expr, $variant:path) => {
+        if let $variant(x) = $e { Some(x) } else { None }
+    };
+}
+
 /// Macro to verify an expression matches a pattern and extract its fields.
 /// # Examples:
 /// ```

@@ -12,7 +12,7 @@ use super::functions::{function_signature_params, function_signature_return_type
 use super::generics::semantic_generic_params;
 use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics};
-use crate::expr::compute::{compute_expr_semantic, ComputationContext, Environment};
+use crate::expr::compute::{compute_expr_block_semantic, ComputationContext, Environment};
 use crate::resolve_path::{ResolvedGenericItem, ResolvedLookback, Resolver};
 use crate::{semantic, ExprId, SemanticDiagnostic};
 
@@ -151,8 +151,10 @@ pub fn priv_free_function_definition_data(
         declaration.signature.return_type,
         environment,
     );
-    let expr = compute_expr_semantic(&mut ctx, &ast::Expr::Block(syntax.body(db.upcast())));
-    if expr.ty() != declaration.signature.return_type && expr.ty() != semantic::TypeId::missing(db)
+    let expr = compute_expr_block_semantic(&mut ctx, &syntax.body(db.upcast()))?;
+    if expr.ty() != declaration.signature.return_type
+        && expr.ty() != semantic::TypeId::missing(db)
+        && expr.ty() != semantic::TypeId::never(db)
     {
         ctx.diagnostics.report(
             &syntax.body(db.upcast()),

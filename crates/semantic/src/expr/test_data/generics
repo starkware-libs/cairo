@@ -1,0 +1,25 @@
+//! > Test generics substitution.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+extern type A<S>;
+extern func bar<T>(x:T) -> A::<T>;
+
+func foo(a: A::<felt>) -> A::<A::<felt>> {
+    let res = bar::<A::<felt>>(a);
+    let bad : A::<A::<bool>> = res;
+    res
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Unexpected argument type. Expected: "test_crate::A::<test_crate::A::<core::bool>>", found: "test_crate::A::<test_crate::A::<core::felt>>".
+ --> lib.cairo:6:32
+    let bad : A::<A::<bool>> = res;
+                               ^*^

@@ -1,0 +1,60 @@
+
+//! > Test basic return.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+func foo() -> felt {
+    return 1 + 2;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test unreachable tail statement.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+func foo() -> felt {
+    return 1 + 2;
+    35
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test unreachable internal return.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+func foo(x: felt) -> felt {
+    match x {
+        0 => {return 5;},
+        1 => {return 6;},
+        2 => {return 9;},
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics

@@ -13,27 +13,34 @@ use crate::{pre_sierra, SierraGeneratorDiagnostic};
 /// Context for the methods that generate Sierra instructions for an expression.
 pub struct ExprGeneratorContext<'a> {
     db: &'a dyn SierraGenGroup,
+    // TODO(lior): Remove Option<> once the old expr_generator.rs is no longer used.
+    lowered: Option<&'a lowering::lower::Lowered>,
     function_id: FreeFunctionId,
     module_id: ModuleId,
     diagnostics: &'a mut DiagnosticsBuilder<SierraGeneratorDiagnostic>,
     var_id_allocator: IdAllocator,
     label_id_allocator: IdAllocator,
-    variables: UnorderedHashMap<defs::ids::VarId, sierra::ids::VarId>,
+    // TODO(lior): Remove old_variables once not used.
+    old_variables: UnorderedHashMap<defs::ids::VarId, sierra::ids::VarId>,
+    variables: UnorderedHashMap<lowering::VariableId, sierra::ids::VarId>,
 }
 impl<'a> ExprGeneratorContext<'a> {
     /// Constructs an empty [ExprGeneratorContext].
     pub fn new(
         db: &'a dyn SierraGenGroup,
+        lowered: Option<&'a lowering::lower::Lowered>,
         function_id: FreeFunctionId,
         diagnostics: &'a mut DiagnosticsBuilder<SierraGeneratorDiagnostic>,
     ) -> Self {
         ExprGeneratorContext {
             db,
+            lowered,
             function_id,
             module_id: function_id.module(db.upcast()),
             diagnostics,
             var_id_allocator: IdAllocator::default(),
             label_id_allocator: IdAllocator::default(),
+            old_variables: UnorderedHashMap::default(),
             variables: UnorderedHashMap::default(),
         }
     }
@@ -61,7 +68,7 @@ impl<'a> ExprGeneratorContext<'a> {
         sierra_var: sierra::ids::VarId,
         stable_ptr: SyntaxStablePtrId,
     ) {
-        if self.variables.insert(local_var_id, sierra_var).is_some() {
+        if self.old_variables.insert(local_var_id, sierra_var).is_some() {
             self.add_diagnostic(
                 SierraGeneratorDiagnosticKind::InternalErrorDuplicatedVariable,
                 stable_ptr,
@@ -76,7 +83,7 @@ impl<'a> ExprGeneratorContext<'a> {
         local_var: defs::ids::VarId,
         stable_ptr: SyntaxStablePtrId,
     ) -> Option<sierra::ids::VarId> {
-        let var = self.variables.get(&local_var);
+        let var = self.old_variables.get(&local_var);
         if var.is_none() {
             self.add_diagnostic(
                 SierraGeneratorDiagnosticKind::InternalErrorUnknownVariable,
@@ -85,6 +92,26 @@ impl<'a> ExprGeneratorContext<'a> {
             return None;
         }
         var.cloned()
+    }
+
+    /// Returns the Sierra variable that corresponds to [lowering::VariableId].
+    /// Allocates a new Sierra variable on the first call (for each variable).
+    pub fn get_sierra_variable(&mut self, var: lowering::VariableId) -> sierra::ids::VarId {
+        if let Some(sierra_var) = self.variables.get(&var) {
+            return sierra_var.clone();
+        }
+
+        let sierra_var = self.allocate_sierra_variable();
+        self.variables.insert(var, sierra_var.clone());
+        sierra_var
+    }
+
+    /// Same as [Self::get_sierra_variable] except that it operates of a list of variables.
+    pub fn get_sierra_variables(
+        &mut self,
+        vars: &[lowering::VariableId],
+    ) -> Vec<sierra::ids::VarId> {
+        vars.iter().map(|var| self.get_sierra_variable(*var)).collect()
     }
 
     /// Generates a label id and a label statement.
@@ -186,5 +213,15 @@ impl<'a> ExprGeneratorContext<'a> {
             stable_location: StableLocation::new(self.module_id, stable_ptr),
             kind,
         });
+    }
+
+    /// Returns the [lowering::Variable] associated with [lowering::VariableId].
+    pub fn get_lowered_variable(&self, var: lowering::VariableId) -> &'a lowering::Variable {
+        &self.lowered.unwrap().variables[var]
+    }
+
+    /// Returns the block ([lowering::Block]) associated with [lowering::BlockId].
+    pub fn get_lowered_block(&self, block_id: lowering::BlockId) -> &'a lowering::Block {
+        &self.lowered.unwrap().blocks[block_id]
     }
 }

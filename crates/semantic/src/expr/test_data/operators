@@ -1,0 +1,59 @@
+//! > Test unexpected argument types for operators.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+func foo(a: MyType) {
+    a + a * a;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern type MyType;
+
+//! > expected_diagnostics
+error: Unexpected argument type. Expected: "core::felt", found: "test_crate::MyType".
+ --> lib.cairo:3:9
+    a + a * a;
+        ^
+
+error: Unexpected argument type. Expected: "core::felt", found: "test_crate::MyType".
+ --> lib.cairo:3:13
+    a + a * a;
+            ^
+
+error: Unexpected argument type. Expected: "core::felt", found: "test_crate::MyType".
+ --> lib.cairo:3:5
+    a + a * a;
+    ^
+
+//! > ==========================================================================
+
+//! > Test operators.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+func foo(a: felt, b: bool) {
+    // Valid.
+    a + a * a - a;
+    b && b || b && (a == a || a > a)
+    && (a<a) && (a<=a) && (a>=a);
+    // Errors.
+    a>a>a;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Unexpected argument type. Expected: "core::felt", found: "core::bool".
+ --> lib.cairo:7:5
+    a>a>a;
+    ^*^
