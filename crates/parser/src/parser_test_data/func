@@ -1,0 +1,15 @@
+//! > Test missing token
+
+//! > test_function_name
+get_diagnostics
+
+//! > cairo_code
+func missing_id< T > (ref: Ref::<T>) -> T {
+
+}
+
+//! > expected_diagnostics
+error: Missing token TerminalIdentifier.
+ --> dummy_file.cairo:1:26
+func missing_id< T > (ref: Ref::<T>) -> T {
+                         ^

@@ -44,7 +44,6 @@ pub enum SyntaxKind {
     StatementReturn,
     Param,
     ModifierList,
-    Modifier,
     ParamList,
     FunctionSignature,
     ItemList,
@@ -171,6 +170,8 @@ pub enum SyntaxKind {
     TerminalEndOfFile,
     TokenBadCharacters,
     TerminalBadCharacters,
+    TokenRef,
+    TerminalRef,
 }
 impl SyntaxKind {
     pub fn is_terminal(&self) -> bool {
@@ -227,6 +228,7 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalMatchArrow
                 | SyntaxKind::TerminalEndOfFile
                 | SyntaxKind::TerminalBadCharacters
+                | SyntaxKind::TerminalRef
         )
     }
     pub fn is_token(&self) -> bool {
@@ -288,6 +290,7 @@ impl SyntaxKind {
                 | SyntaxKind::TokenMatchArrow
                 | SyntaxKind::TokenEndOfFile
                 | SyntaxKind::TokenBadCharacters
+                | SyntaxKind::TokenRef
         )
     }
 }
