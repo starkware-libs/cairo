@@ -243,7 +243,7 @@ pub fn get_spec() -> Vec<Node> {
             .node("type_clause", "TypeClause")
             .build(),
         list_node("ModifierList", "Modifier"),
-        StructBuilder::new("Modifier").build(),
+        EnumBuilder::new("Modifier").node_with_explicit_kind("Ref", "TerminalRef").build(),
         separated_list_node("ParamList", "Param", "TerminalComma"),
         // TODO(spapini): Add generic params.
         // This is an unnamed signature, e.g. "() -> Type".
@@ -416,5 +416,6 @@ pub fn get_spec() -> Vec<Node> {
     append_terminal_and_token(&mut nodes, "MatchArrow");
     append_terminal_and_token(&mut nodes, "EndOfFile");
     append_terminal_and_token(&mut nodes, "BadCharacters");
+    append_terminal_and_token(&mut nodes, "Ref");
     nodes
 }

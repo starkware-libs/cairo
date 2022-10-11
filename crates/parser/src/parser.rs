@@ -729,9 +729,24 @@ impl<'a> Parser<'a> {
 
     /// Returns a GreenId of a node with kind Param or None if a parameter can't be parsed.
     fn try_parse_param(&mut self) -> Option<ParamGreen> {
-        let name = self.try_parse_token::<TerminalIdentifier>()?;
+        let mut modifier_list = vec![];
+        if let Some(terminal_ref) = self.try_parse_token::<TerminalRef>() {
+            modifier_list.push(terminal_ref.into());
+        }
+        let name = if modifier_list.is_empty() {
+            self.try_parse_token::<TerminalIdentifier>()?
+        } else {
+            // If we had modifiers then the identifier is not optional.
+            self.parse_token::<TerminalIdentifier>()
+        };
+
         let type_clause = self.parse_type_clause();
-        Some(Param::new_green(self.db, ModifierList::new_green(self.db, vec![]), name, type_clause))
+        Some(Param::new_green(
+            self.db,
+            ModifierList::new_green(self.db, modifier_list),
+            name,
+            type_clause,
+        ))
     }
 
     /// Expected pattern: <PathSegment>(::<PathSegment>)*
