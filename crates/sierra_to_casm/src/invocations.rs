@@ -14,6 +14,7 @@ use itertools::zip_eq;
 use sierra::extensions::arithmetic::{
     BinaryOperationConcreteLibFunc, OperationConcreteLibFunc, Operator,
 };
+use sierra::extensions::array::ArrayConcreteLibFunc;
 use sierra::extensions::core::CoreConcreteLibFunc;
 use sierra::extensions::felt::FeltConcrete;
 use sierra::extensions::function_call::FunctionCallConcreteLibFunc;
@@ -273,6 +274,19 @@ impl CompiledInvocationBuilder<'_> {
                 ),
                 _ => return Err(InvocationError::NotImplemented(self.invocation.clone())),
             },
+            ReferenceExpression::AllocateSegment => {
+                // TODO(orizi): Remove unnecessary instruction in the case `inc_ap` is false.
+                hints.push(Hint::AllocSegment { dst });
+                return Ok(Instruction {
+                    body: InstructionBody::AddAp(AddApInstruction {
+                        operand: ResOperand::Immediate(ImmediateOperand {
+                            value: if inc_ap { 1 } else { 0 },
+                        }),
+                    }),
+                    inc_ap: false,
+                    hints,
+                });
+            }
         };
         Ok(Instruction {
             body: InstructionBody::AssertEq(AssertEqInstruction { a: dst_operand, b: res_operand }),
@@ -454,6 +468,45 @@ impl CompiledInvocationBuilder<'_> {
                 .into_iter(),
         ))
     }
+
+    /// Handles instruction for creating a new array.
+    fn build_array_new(self) -> Result<CompiledInvocation, InvocationError> {
+        if !self.refs.is_empty() {
+            return Err(InvocationError::WrongNumberOfArguments);
+        }
+        Ok(self.build_only_reference_changes([ReferenceExpression::AllocateSegment].into_iter()))
+    }
+
+    /// Handles instruction for appending an element to an array.
+    fn build_array_append(self) -> Result<CompiledInvocation, InvocationError> {
+        let (expr_arr, expr_elem) = match self.refs {
+            [
+                ReferenceValue { expression: ReferenceExpression::Deref(expr_arr), .. },
+                ReferenceValue { expression: ReferenceExpression::Deref(expr_elem), .. },
+            ] => (expr_arr, expr_elem),
+            [_, _] => return Err(InvocationError::InvalidReferenceExpressionForArgument),
+            _ => return Err(InvocationError::WrongNumberOfArguments),
+        };
+        // TODO(orizi): Handle non 1 sized types.
+        Ok(self.build(
+            vec![Instruction::new(
+                InstructionBody::AssertEq(AssertEqInstruction {
+                    a: *expr_elem,
+                    b: ResOperand::DoubleDeref(DoubleDerefOperand { inner_deref: *expr_arr }),
+                }),
+                false,
+            )],
+            vec![],
+            [ApChange::Known(0)].into_iter(),
+            [vec![ReferenceExpression::BinOp(BinOpExpression {
+                op: Operator::Add,
+                a: *expr_arr,
+                b: DerefOrImmediate::Immediate(ImmediateOperand { value: 1 }),
+            })]
+            .into_iter()]
+            .into_iter(),
+        ))
+    }
 }
 
 /// Given an invocation and concrete libfunc, creates a compiled representation of the Sierra
@@ -477,6 +530,8 @@ pub fn compile_invocation(
                 [ReferenceExpression::Immediate(ImmediateOperand { value: libfunc.c as i128 })]
                     .into_iter(),
             )),
+        CoreConcreteLibFunc::Array(ArrayConcreteLibFunc::New(_)) => builder.build_array_new(),
+        CoreConcreteLibFunc::Array(ArrayConcreteLibFunc::Append(_)) => builder.build_array_append(),
         CoreConcreteLibFunc::Drop(_) => Ok(builder.build_only_reference_changes([].into_iter())),
         CoreConcreteLibFunc::Dup(_) => builder.build_dup(),
         CoreConcreteLibFunc::Mem(MemConcreteLibFunc::StoreTemp(StoreTempConcreteLibFunc {

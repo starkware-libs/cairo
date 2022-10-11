@@ -96,7 +96,6 @@ pub fn compile(
 
     for (statement_id, statement) in program.statements.iter().enumerate() {
         let statement_idx = StatementIdx(statement_id);
-
         statement_offsets.push(program_offset);
 
         match statement {
