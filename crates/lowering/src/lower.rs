@@ -13,6 +13,7 @@ use crate::objects::{
     Block, BlockEnd, BlockId, Statement, StatementCall, StatementLiteral, StatementTupleDestruct,
     Variable, VariableId,
 };
+use crate::StatementTupleConstruct;
 
 /// Context for lowering a function.
 pub struct Lowerer<'db> {
@@ -233,7 +234,20 @@ impl<'db> Lowerer<'db> {
     fn lower_expr(&mut self, scope: &mut BlockScope, expr_id: semantic::ExprId) -> VariableId {
         let expr = &self.function_def.exprs[expr_id];
         match expr {
-            semantic::Expr::Tuple(_) => self.new_variable(scope, expr.ty()),
+            semantic::Expr::Tuple(expr) => {
+                let inputs = expr
+                    .items
+                    .iter()
+                    .map(|arg_expr_id| self.lower_expr(scope, *arg_expr_id))
+                    .collect();
+
+                let result_var = self.new_variable(scope, expr.ty);
+                scope.statements.push(Statement::TupleConstruct(StatementTupleConstruct {
+                    inputs,
+                    output: result_var,
+                }));
+                result_var
+            }
             semantic::Expr::Assignment(_) => todo!(),
             semantic::Expr::Block(_) => todo!(),
             semantic::Expr::FunctionCall(expr) => {

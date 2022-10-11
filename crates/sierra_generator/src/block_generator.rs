@@ -83,7 +83,7 @@ pub fn generate_statement_code(
         | lowering::Statement::StructDestruct
         | lowering::Statement::EnumConstruct
         | lowering::Statement::MatchEnum
-        | lowering::Statement::TupleConstruct
+        | lowering::Statement::TupleConstruct(_)
         | lowering::Statement::TupleDestruct(_) => {
             // TODO(lior): Replace with a diagnostic.
             todo!()
