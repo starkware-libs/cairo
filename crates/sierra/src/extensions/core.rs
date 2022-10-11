@@ -2,6 +2,7 @@ use super::ap_tracking::RevokeApTrackingLibFunc;
 use super::array::{ArrayLibFunc, ArrayType};
 use super::drop::DropLibFunc;
 use super::duplicate::DupLibFunc;
+use super::enm::{EnumLibFunc, EnumType};
 use super::modules::boxing::{BoxLibFunc, BoxType};
 use super::modules::felt::{FeltLibFunc, FeltType};
 use super::modules::function_call::FunctionCallLibFunc;
@@ -22,6 +23,7 @@ define_type_hierarchy! {
         Integer(IntegerType),
         NonZero(NonZeroType),
         Uninitialized(UninitializedType),
+        Enum(EnumType),
     }, CoreTypeConcrete
 }
 
@@ -39,5 +41,6 @@ define_libfunc_hierarchy! {
         Mem(MemLibFunc),
         UnwrapNonZero(UnwrapNonZeroLibFunc),
         UnconditionalJump(UnconditionalJumpLibFunc),
+        Enum(EnumLibFunc),
     }, CoreConcreteLibFunc
 }

@@ -26,6 +26,9 @@ pub fn get_type_size_map(
                 type_sizes.get(ty).cloned()
             }
             CoreTypeConcrete::Uninitialized(_) => Some(0),
+            // TODO(yuval/gil): the size should be the maximum size of the variants. Fix after we
+            // support sizes >1.
+            CoreTypeConcrete::Enum(_) => Some(1),
         }?;
         type_sizes.insert(declaration.id.clone(), size);
     }
