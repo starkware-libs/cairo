@@ -102,7 +102,7 @@ pub struct Param {
     pub ty: ConcreteTypeId,
 }
 
-/// Represents the index of a statement in the Program::statements vector.
+/// Represents the index of a Sierra statement in the Program::statements vector.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct StatementIdx(pub usize);
 impl StatementIdx {
@@ -135,10 +135,10 @@ pub enum GenStatement<StatementId> {
 pub struct GenInvocation<StatementId> {
     /// The called libfunc.
     pub libfunc_id: ConcreteLibFuncId,
-    /// The arguments consumed by the extension's invocation.
+    /// The arguments consumed by the libfunc's invocation.
     pub args: Vec<VarId>,
     /// The possible branches to continue to after the invocation.
-    /// The extension would continue to exactly one of the branches.
+    /// The program would continue to exactly one of the branches.
     pub branches: Vec<GenBranchInfo<StatementId>>,
 }
 
@@ -147,7 +147,7 @@ pub struct GenInvocation<StatementId> {
 pub struct GenBranchInfo<StatementId> {
     /// The target the branch continues the run through.
     pub target: GenBranchTarget<StatementId>,
-    /// The resulting identifiers from the extension call.
+    /// The resulting identifiers from the libfunc call.
     pub results: Vec<VarId>,
 }
 

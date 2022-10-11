@@ -20,6 +20,8 @@ pub mod value;
 pub enum LibFuncSimulationError {
     #[error("Expected different number of arguments")]
     WrongNumberOfArgs,
+    #[error("Expected a different type of an argument")]
+    WrongArgType,
     #[error("Expected a different memory layout")]
     MemoryLayoutMismatch,
     #[error("Could not resolve requested symbol value")]

@@ -110,7 +110,7 @@ impl Display for JumpInstruction {
     }
 }
 
-// Represents the InstructionBody "jmp rel <jump_offset> if condition != 0".
+/// Represents the InstructionBody "jmp rel <jump_offset> if condition != 0".
 #[derive(Debug, Eq, PartialEq)]
 pub struct JnzInstruction {
     pub jump_offset: DerefOrImmediate,
@@ -130,7 +130,7 @@ impl Display for JnzInstruction {
     }
 }
 
-// Return the size of instruction based on whether the res operand includes an immediate or not.
+/// Returns the size of instruction based on whether the res operand includes an immediate or not.
 pub fn op_size_based_on_res_operands(operand: &ResOperand) -> usize {
     match operand {
         ResOperand::Deref(_) => 1,
