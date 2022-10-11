@@ -17,6 +17,7 @@
     │       │   ├── [34mlparen[0m (kind: TokenLParen): '[1;32m([0m'
     │       │   ├── [36mparameters[0m (kind: ParamList)
     │       │   │   └── [36mitem #0[0m (kind: Param)
+    │       │   │       ├── [36mmodifiers[0m (kind: ModifierList)[95m [][0m
     │       │   │       ├── [34mname[0m (kind: TokenIdentifier): '[1;32ma[0m'
     │       │   │       └── [36mtype_clause[0m (kind: TypeClause)
     │       │   │           ├── [34mcolon[0m (kind: TokenColon): '[1;32m:[0m'

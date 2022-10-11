@@ -238,9 +238,12 @@ pub fn get_spec() -> Vec<Node> {
             .build(),
         // --- Parameters and Functions ---
         StructBuilder::new("Param")
+            .node("modifiers", "ModifierList")
             .key_node("name", "TerminalIdentifier")
             .node("type_clause", "TypeClause")
             .build(),
+        list_node("ModifierList", "Modifier"),
+        StructBuilder::new("Modifier").build(),
         separated_list_node("ParamList", "Param", "TerminalComma"),
         // TODO(spapini): Add generic params.
         // This is an unnamed signature, e.g. "() -> Type".

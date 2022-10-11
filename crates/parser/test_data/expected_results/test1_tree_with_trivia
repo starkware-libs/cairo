@@ -66,6 +66,7 @@
     │   │   │   │   └── trailing_trivia (kind: Trivia) []
     │   │   │   ├── parameters (kind: ParamList)
     │   │   │   │   ├── item #0 (kind: Param)
+    │   │   │   │   │   ├── modifiers (kind: ModifierList) []
     │   │   │   │   │   ├── name (kind: TerminalIdentifier)
     │   │   │   │   │   │   ├── leading_trivia (kind: Trivia)
     │   │   │   │   │   │   │   └── child #0 (kind: TokenSkipped): ','
@@ -88,6 +89,7 @@
     │   │   │   │   │   ├── token (kind: TokenComma): ','
     │   │   │   │   │   └── trailing_trivia (kind: Trivia) []
     │   │   │   │   ├── item #1 (kind: Param)
+    │   │   │   │   │   ├── modifiers (kind: ModifierList) []
     │   │   │   │   │   ├── name (kind: TerminalIdentifier)
     │   │   │   │   │   │   ├── leading_trivia (kind: Trivia)
     │   │   │   │   │   │   │   ├── child #0 (kind: TokenSkipped): ','
@@ -776,6 +778,7 @@
     │   │   │   │   └── trailing_trivia (kind: Trivia) []
     │   │   │   ├── parameters (kind: ParamList)
     │   │   │   │   ├── item #0 (kind: Param)
+    │   │   │   │   │   ├── modifiers (kind: ModifierList) []
     │   │   │   │   │   ├── name (kind: TerminalIdentifier)
     │   │   │   │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │   │   │   │   │   ├── token (kind: TokenIdentifier): 'var1'
@@ -875,6 +878,7 @@
     │       │       └── child #0 (kind: TokenNewline).
     │       ├── members (kind: ParamList)
     │       │   ├── item #0 (kind: Param)
+    │       │   │   ├── modifiers (kind: ModifierList) []
     │       │   │   ├── name (kind: TerminalIdentifier)
     │       │   │   │   ├── leading_trivia (kind: Trivia)
     │       │   │   │   │   └── child #0 (kind: TokenWhitespace).
@@ -898,6 +902,7 @@
     │       │   │   └── trailing_trivia (kind: Trivia)
     │       │   │       └── child #0 (kind: TokenNewline).
     │       │   └── item #1 (kind: Param)
+    │       │       ├── modifiers (kind: ModifierList) []
     │       │       ├── name (kind: TerminalIdentifier)
     │       │       │   ├── leading_trivia (kind: Trivia)
     │       │       │   │   └── child #0 (kind: TokenWhitespace).

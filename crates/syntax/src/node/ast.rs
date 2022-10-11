@@ -4286,10 +4286,11 @@ pub struct Param {
 impl Param {
     pub fn new_green(
         db: &dyn SyntaxGroup,
+        modifiers: ModifierListGreen,
         name: TerminalIdentifierGreen,
         type_clause: TypeClauseGreen,
     ) -> ParamGreen {
-        let children: Vec<GreenId> = vec![name.0, type_clause.0];
+        let children: Vec<GreenId> = vec![modifiers.0, name.0, type_clause.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         ParamGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::Param,
@@ -4298,11 +4299,14 @@ impl Param {
     }
 }
 impl Param {
+    pub fn modifiers(&self, db: &dyn SyntaxGroup) -> ModifierList {
+        ModifierList::from_syntax_node(db, self.children[0].clone())
+    }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[0].clone())
+        TerminalIdentifier::from_syntax_node(db, self.children[1].clone())
     }
     pub fn type_clause(&self, db: &dyn SyntaxGroup) -> TypeClause {
-        TypeClause::from_syntax_node(db, self.children[1].clone())
+        TypeClause::from_syntax_node(db, self.children[2].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -4330,7 +4334,11 @@ impl TypedSyntaxNode for Param {
         ParamGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::Param,
             details: GreenNodeDetails::Node {
-                children: vec![TerminalIdentifier::missing(db).0, TypeClause::missing(db).0],
+                children: vec![
+                    ModifierList::missing(db).0,
+                    TerminalIdentifier::missing(db).0,
+                    TypeClause::missing(db).0,
+                ],
                 width: 0,
             },
         }))
@@ -4355,6 +4363,115 @@ impl TypedSyntaxNode for Param {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         ParamPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct ModifierList(ElementList<Modifier, 1>);
+impl Deref for ModifierList {
+    type Target = ElementList<Modifier, 1>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+impl ModifierList {
+    pub fn new_green(db: &dyn SyntaxGroup, children: Vec<ModifierGreen>) -> ModifierListGreen {
+        let width = children.iter().map(|id| db.lookup_intern_green(id.0).width()).sum();
+        ModifierListGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::ModifierList,
+            details: GreenNodeDetails::Node {
+                children: children.iter().map(|x| x.0).collect(),
+                width,
+            },
+        }))
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ModifierListPtr(SyntaxStablePtrId);
+impl ModifierListPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ModifierListGreen(pub GreenId);
+impl TypedSyntaxNode for ModifierList {
+    const KIND: Option<SyntaxKind> = Some(SyntaxKind::ModifierList);
+    type StablePtr = ModifierListPtr;
+    type Green = ModifierListGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        ModifierListGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::ModifierList,
+            details: GreenNodeDetails::Node { children: vec![], width: 0 },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        Self(ElementList::new(node))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ModifierListPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct Modifier {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl Modifier {
+    pub fn new_green(db: &dyn SyntaxGroup) -> ModifierGreen {
+        let children: Vec<GreenId> = vec![];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        ModifierGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::Modifier,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+}
+impl Modifier {}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ModifierPtr(SyntaxStablePtrId);
+impl ModifierPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ModifierGreen(pub GreenId);
+impl TypedSyntaxNode for Modifier {
+    const KIND: Option<SyntaxKind> = Some(SyntaxKind::Modifier);
+    type StablePtr = ModifierPtr;
+    type Green = ModifierGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        ModifierGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::Modifier,
+            details: GreenNodeDetails::Node { children: vec![], width: 0 },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::Modifier,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::Modifier
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ModifierPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
