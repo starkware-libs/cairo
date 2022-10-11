@@ -22,7 +22,7 @@ error: Variable a not found.
     a = 1 + 2;
     ^
 
-error: invalid left-hand side of assignment.
+error: Invalid left-hand side of assignment.
  --> lib.cairo:3:5
     a = 1 + 2;
     ^

@@ -130,7 +130,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::InvalidMemberExpression => "Invalid member expression.".into(),
             SemanticDiagnosticKind::InvalidPath => "Invalid path.".into(),
             SemanticDiagnosticKind::InvalidLhsForAssignment => {
-                "invalid left-hand side of assignment.".into()
+                "Invalid left-hand side of assignment.".into()
             }
             SemanticDiagnosticKind::PathNotFound => "Path not found.".into(),
             SemanticDiagnosticKind::UnexpectedLiteralPattern { ty } => format!(
