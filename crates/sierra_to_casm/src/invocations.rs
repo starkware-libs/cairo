@@ -17,6 +17,7 @@ use sierra::extensions::arithmetic::{
 use sierra::extensions::array::ArrayConcreteLibFunc;
 use sierra::extensions::boxing::BoxConcreteLibFunc;
 use sierra::extensions::core::CoreConcreteLibFunc;
+use sierra::extensions::enm::EnumConcreteLibFunc;
 use sierra::extensions::felt::FeltConcrete;
 use sierra::extensions::function_call::FunctionCallConcreteLibFunc;
 use sierra::extensions::mem::{
@@ -563,6 +564,8 @@ pub fn compile_invocation(
             ty,
             ..
         })) => builder.build_store_local(ty),
+        CoreConcreteLibFunc::Enum(EnumConcreteLibFunc::Init(_)) => todo!("yg"),
+        CoreConcreteLibFunc::Enum(EnumConcreteLibFunc::Match(_)) => todo!("yg"),
         _ => Err(InvocationError::NotImplemented(invocation.clone())),
     }
 }

@@ -4,9 +4,10 @@ use sierra::extensions::arithmetic::{
 };
 use sierra::extensions::array::ArrayConcreteLibFunc;
 use sierra::extensions::core::CoreConcreteLibFunc::{
-    self, ApTracking, Array, Box, Drop, Dup, Felt, FunctionCall, Gas, Integer, Mem,
+    self, ApTracking, Array, Box, Drop, Dup, Enum, Felt, FunctionCall, Gas, Integer, Mem,
     UnconditionalJump, UnwrapNonZero,
 };
+use sierra::extensions::enm::EnumConcreteLibFunc;
 use sierra::extensions::felt::FeltConcrete;
 use sierra::extensions::function_call::FunctionCallConcreteLibFunc;
 use sierra::extensions::gas::GasConcreteLibFunc::{GetGas, RefundGas};
@@ -50,6 +51,8 @@ pub fn core_libfunc_cost_base<
         }
         Mem(StoreLocal(_) | AllocLocal(_) | StoreTemp(_) | AlignTemps(_) | FinalizeLocals(_))
         | UnconditionalJump(_) => vec![from_const(1)],
+        Enum(EnumConcreteLibFunc::Init(_)) => todo!("yg"),
+        Enum(EnumConcreteLibFunc::Match(_)) => todo!("yg"),
     }
 }
 

@@ -11,6 +11,7 @@ use crate::extensions::core::CoreConcreteLibFunc::{
     self, ApTracking, Array, Drop, Dup, Felt, FunctionCall, Gas, Integer, Mem, UnconditionalJump,
     UnwrapNonZero,
 };
+use crate::extensions::enm::EnumConcreteLibFunc;
 use crate::extensions::felt::FeltConcrete;
 use crate::extensions::function_call::FunctionCallConcreteLibFunc;
 use crate::extensions::gas::GasConcreteLibFunc::{GetGas, RefundGas};
@@ -20,9 +21,11 @@ use crate::extensions::mem::MemConcreteLibFunc::{
 };
 use crate::ids::FunctionId;
 
-/// Simulates the run of a single libfunc. Returns the value reperesentations of the outputs, and
-/// the chosen branch given the inputs. A function that provides the simulation of running a user
-/// function is also provided for the case where the extensions needs to simulate it.
+/// Simulates the run of a single libfunc. Returns the value representations of the outputs, and
+/// the chosen branch given the inputs.
+///
+/// `simulate_function` is a function that simulates running of a user function. It is provided here
+/// for the case where the extensions need to use it.
 pub fn simulate<
     GetStatementGasInfo: Fn() -> Option<i64>,
     SimulateFunction: Fn(&FunctionId, Vec<CoreValue>) -> Result<Vec<CoreValue>, LibFuncSimulationError>,
@@ -119,6 +122,28 @@ pub fn simulate<
             } else {
                 Err(LibFuncSimulationError::WrongNumberOfArgs)
             }
+        }
+        CoreConcreteLibFunc::Enum(EnumConcreteLibFunc::Init(sig)) => {
+            if inputs.len() != 1 {
+                return Err(LibFuncSimulationError::WrongNumberOfArgs);
+            }
+            let input = &inputs[0];
+            let index = sig.index;
+
+            // We don't verify here that the input type matches the signature.
+            Ok((vec![CoreValue::Enum { value: Box::new(input.clone()), index }], 0))
+        }
+        CoreConcreteLibFunc::Enum(EnumConcreteLibFunc::Match(_)) => {
+            if inputs.len() != 1 {
+                return Err(LibFuncSimulationError::WrongNumberOfArgs);
+            }
+            let input = &inputs[0];
+            let (value, index) = match input {
+                CoreValue::Enum { value, index } => (*value.clone(), index),
+                _ => return Err(LibFuncSimulationError::WrongArgType),
+            };
+
+            Ok((vec![value], *index))
         }
     }
 }

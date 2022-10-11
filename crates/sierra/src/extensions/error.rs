@@ -12,6 +12,12 @@ pub enum SpecializationError {
     WrongNumberOfGenericArgs,
     #[error("Provided generic arg is unsupported")]
     UnsupportedGenericArg,
+    #[error("index is out of a relevant range")]
+    IndexOutOfRange {
+        index: i64,
+        /// Range is [0, range_size - 1]
+        range_size: usize,
+    },
     #[error("Could not find the requested function")]
     MissingFunction(FunctionId),
     #[error("Generic type was not specialized with such arguments")]
