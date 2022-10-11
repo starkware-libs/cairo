@@ -3,7 +3,7 @@ use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::TypeInfo;
 use crate::extensions::{ConcreteType, NamedType, SpecializationError};
 use crate::ids::{ConcreteTypeId, GenericTypeId};
-use crate::program::GenericArg;
+use crate::program::{ConcreteTypeLongId, GenericArg};
 
 /// Uninitialized value of type T.
 #[derive(Default)]
@@ -18,7 +18,12 @@ impl NamedType for UninitializedType {
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
         Ok(UninitializedConcreteType {
-            info: TypeInfo { storable: false, droppable: true, duplicatable: false },
+            info: TypeInfo {
+                long_id: ConcreteTypeLongId { generic_id: Self::id(), generic_args: args.to_vec() },
+                storable: false,
+                droppable: true,
+                duplicatable: false,
+            },
             ty: as_single_type(args)?,
         })
     }

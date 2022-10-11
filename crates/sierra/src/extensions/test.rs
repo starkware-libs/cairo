@@ -10,6 +10,7 @@ use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::{GenericLibFunc, GenericType};
 use crate::ids::{ConcreteTypeId, FunctionId, GenericTypeId};
 use crate::program::{Function, FunctionSignature, GenericArg, StatementIdx};
+use crate::test_utils::no_args_long_id;
 
 fn type_arg(name: &str) -> GenericArg {
     GenericArg::Type(name.into())
@@ -29,13 +30,45 @@ impl TypeSpecializationContext for MockSpecializationContext {
             || id == "NonZeroFelt".into()
             || id == "NonZeroInt".into()
         {
-            Some(TypeInfo { storable: true, droppable: true, duplicatable: true })
+            let long_id = if id == "T".into() {
+                no_args_long_id("T")
+            } else if id == "felt".into() {
+                no_args_long_id("felt")
+            } else if id == "int".into() {
+                no_args_long_id("int")
+            } else if id == "NonZeroFelt".into() {
+                no_args_long_id("NonZeroFelt")
+            } else if id == "NonZeroInt".into() {
+                no_args_long_id("NonZeroInt")
+            } else {
+                unreachable!()
+            };
+            Some(TypeInfo { long_id, storable: true, droppable: true, duplicatable: true })
         } else if id == "ArrayFelt".into() || id == "ArrayInt".into() {
-            Some(TypeInfo { storable: true, droppable: true, duplicatable: false })
+            let long_id = if id == "ArrayFelt".into() {
+                no_args_long_id("ArrayFelt")
+            } else if id == "ArrayInt".into() {
+                no_args_long_id("ArrayInt")
+            } else {
+                unreachable!()
+            };
+            Some(TypeInfo { long_id, storable: true, droppable: true, duplicatable: false })
         } else if id == "UninitializedFelt".into() || id == "UninitializedInt".into() {
-            Some(TypeInfo { storable: false, droppable: true, duplicatable: false })
+            let long_id = if id == "UninitializedFelt".into() {
+                no_args_long_id("UninitializedFelt")
+            } else if id == "UninitializedInt".into() {
+                no_args_long_id("UninitializedInt")
+            } else {
+                unreachable!()
+            };
+            Some(TypeInfo { long_id, storable: false, droppable: true, duplicatable: false })
         } else if id == "GasBuiltin".into() {
-            Some(TypeInfo { storable: true, droppable: false, duplicatable: false })
+            Some(TypeInfo {
+                long_id: no_args_long_id("GasBuiltin"),
+                storable: true,
+                droppable: false,
+                duplicatable: false,
+            })
         } else {
             None
         }

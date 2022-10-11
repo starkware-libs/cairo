@@ -12,6 +12,7 @@ use crate::extensions::types::TypeInfo;
 use crate::extensions::GenericLibFunc;
 use crate::ids::{ConcreteTypeId, FunctionId, GenericTypeId};
 use crate::program::{Function, FunctionSignature, GenericArg, StatementIdx};
+use crate::test_utils::no_args_long_id;
 
 fn type_arg(name: &str) -> GenericArg {
     GenericArg::Type(name.into())
@@ -43,9 +44,21 @@ impl SpecializationContext for MockSpecializationContext {
 impl TypeSpecializationContext for MockSpecializationContext {
     fn try_get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo> {
         if id == "int".into() || id == "NonZeroInt".into() {
-            Some(TypeInfo { storable: true, droppable: true, duplicatable: true })
+            let long_id = if id == "int".into() {
+                no_args_long_id("int")
+            } else if id == "NonZeroInt".into() {
+                no_args_long_id("NonZeroInt")
+            } else {
+                unreachable!()
+            };
+            Some(TypeInfo { long_id, storable: true, droppable: true, duplicatable: true })
         } else if id == "UninitializedInt".into() {
-            Some(TypeInfo { storable: false, droppable: true, duplicatable: false })
+            Some(TypeInfo {
+                long_id: no_args_long_id("UninitializedInt"),
+                storable: false,
+                droppable: true,
+                duplicatable: false,
+            })
         } else {
             None
         }

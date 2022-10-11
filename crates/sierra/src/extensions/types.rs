@@ -1,7 +1,7 @@
 use super::error::{ExtensionError, SpecializationError};
 use super::type_specialization_context::TypeSpecializationContext;
 use crate::ids::GenericTypeId;
-use crate::program::GenericArg;
+use crate::program::{ConcreteTypeLongId, GenericArg};
 
 /// Trait for implementing a specialization generator for types.
 pub trait GenericType: Sized {
@@ -101,6 +101,8 @@ impl<T: NoGenericArgsGenericType> NamedType for T {
 /// Information on Sierra types required for generic libfunc calls.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct TypeInfo {
+    /// The long ID of the type.
+    pub long_id: ConcreteTypeLongId,
     /// Can the type be stored by any of the store commands.
     pub storable: bool,
     /// Can the type be (trivially) dropped.
