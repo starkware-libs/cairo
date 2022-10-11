@@ -204,10 +204,10 @@ impl ProgramAnnotations {
         Ok((StatementAnnotations { refs: statement_refs, ..statement_annotations }, taken_refs))
     }
 
-    // Propagate the annotations from the statement at 'statement_idx' to all the branches
-    // from said statement.
-    // 'annotations' is the result of calling get_annotations_after_take_args at
-    // 'statement_idx' and 'per_branch_ref_changes' are the reference changes at each branch.
+    /// Propagates the annotations from the statement at `statement_idx` to all the branches
+    /// from said statement.
+    /// `annotations` is the result of calling get_annotations_after_take_args at
+    /// `statement_idx` and `per_branch_ref_changes` are the reference changes at each branch.
     pub fn propagate_annotations(
         &mut self,
         statement_idx: StatementIdx,

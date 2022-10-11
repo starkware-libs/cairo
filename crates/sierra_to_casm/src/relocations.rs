@@ -8,8 +8,8 @@ type CodeOffset = usize;
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum Relocation {
-    // Adds program_offset(StatementId) and subtracts the program offset of the instruction
-    // that is being relocated.
+    /// Adds program_offset(StatementIdx) and subtracts the program offset of the casm instruction
+    /// that is being relocated.
     RelativeStatementId(StatementIdx),
 }
 
@@ -21,7 +21,7 @@ impl Relocation {
         instruction: &mut Instruction,
     ) {
         match self {
-            Relocation::RelativeStatementId(statement_id) => match instruction {
+            Relocation::RelativeStatementId(statement_idx) => match instruction {
                 Instruction {
                     body:
                         InstructionBody::Call(CallInstruction {
@@ -49,7 +49,7 @@ impl Relocation {
                     ..
                 } => {
                     *value +=
-                        statement_offsets[statement_id.0] as i128 - instruction_offset as i128;
+                        statement_offsets[statement_idx.0] as i128 - instruction_offset as i128;
                 }
                 _ => panic!("Bad relocation."),
             },
@@ -59,9 +59,9 @@ impl Relocation {
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct RelocationEntry {
-    // The index of the instruction that needs to be relocated.
+    /// The index of the casm instruction that needs to be relocated.
     pub instruction_idx: CodeOffset,
-    // The relocation the needs to be applied.
+    /// The relocation the needs to be applied.
     pub relocation: Relocation,
 }
 
@@ -86,7 +86,6 @@ pub fn relocate_instructions(
                 relocation.apply(program_offset, &statement_offsets, instruction);
                 relocation_entry = relocations_iter.next();
             }
-
             _ => (),
         };
 

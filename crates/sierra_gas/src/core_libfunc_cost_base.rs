@@ -4,9 +4,10 @@ use sierra::extensions::arithmetic::{
 };
 use sierra::extensions::array::ArrayConcreteLibFunc;
 use sierra::extensions::core::CoreConcreteLibFunc::{
-    self, ApTracking, Array, Box, Drop, Dup, Felt, FunctionCall, Gas, Integer, Mem,
+    self, ApTracking, Array, Box, Drop, Dup, Enum, Felt, FunctionCall, Gas, Integer, Mem,
     UnconditionalJump, UnwrapNonZero,
 };
+use sierra::extensions::enm::EnumConcreteLibFunc;
 use sierra::extensions::felt::FeltConcrete;
 use sierra::extensions::function_call::FunctionCallConcreteLibFunc;
 use sierra::extensions::gas::GasConcreteLibFunc::{GetGas, RefundGas};
@@ -21,7 +22,7 @@ pub const FUNCTION_CALL_COST: i32 = 2;
 /// Returns some cost value for a libfunc - a helper function to implement costing both for creating
 /// gas equations and getting actual gas usage after having a solution.
 pub fn core_libfunc_cost_base<
-    CostType: std::ops::Add<Output = CostType> + std::ops::Sub<Output = CostType>,
+    CostType: std::ops::Add<Output = CostType> + std::ops::Sub<Output = CostType> + Clone,
     FromConst: Fn(i32) -> CostType,
     FromFunction: FnOnce(&Function) -> CostType,
     FromVar: FnOnce() -> CostType,
@@ -50,6 +51,10 @@ pub fn core_libfunc_cost_base<
         }
         Mem(StoreLocal(_) | AllocLocal(_) | StoreTemp(_) | AlignTemps(_) | FinalizeLocals(_))
         | UnconditionalJump(_) => vec![from_const(1)],
+        Enum(EnumConcreteLibFunc::Init(_)) => vec![from_const(1)],
+        Enum(EnumConcreteLibFunc::Match(sig)) => {
+            vec![from_const(1); sig.signature.branch_signatures.len()]
+        }
     }
 }
 

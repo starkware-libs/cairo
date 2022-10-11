@@ -5,7 +5,8 @@ use super::core::{CoreLibFunc, CoreType};
 use super::lib_func::{SignatureSpecializationContext, SpecializationContext};
 use super::types::TypeInfo;
 use super::SpecializationError::{
-    self, MissingFunction, UnsupportedGenericArg, UnsupportedId, WrongNumberOfGenericArgs,
+    self, IndexOutOfRange, MissingFunction, UnsupportedGenericArg, UnsupportedId,
+    WrongNumberOfGenericArgs,
 };
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::{GenericLibFunc, GenericType};
@@ -35,6 +36,7 @@ impl TypeSpecializationContext for MockSpecializationContext {
         if id == "T".into()
             || id == "felt".into()
             || id == "int".into()
+            || id == "Option".into()
             || id == "NonZeroFelt".into()
             || id == "NonZeroInt".into()
         {
@@ -149,6 +151,12 @@ impl SpecializationContext for MockSpecializationContext {
 #[test_case("Box", vec![] => Err(WrongNumberOfGenericArgs); "Box<>")]
 #[test_case("Box", vec![value_arg(5)] => Err(UnsupportedGenericArg); "Box<5>")]
 #[test_case("uninitialized", vec![type_arg("T")] => Ok(()); "uninitialized<T>")]
+#[test_case("Enum", vec![] => Ok(()); "Enum<>")]
+#[test_case("Enum", vec![type_arg("int")] => Ok(()); "Enum<int>")]
+#[test_case("Enum", vec![type_arg("int"), type_arg("felt")] => Ok(()); "Enum<int,felt>")]
+#[test_case("Enum", vec![value_arg(5)] => Err(UnsupportedGenericArg); "Enum<5>")]
+#[test_case("Enum", vec![type_arg("UninitializedFelt")] => Err(UnsupportedGenericArg);
+            "Enum<UninitializedFelt>")]
 fn find_type_specialization(
     id: &str,
     generic_args: Vec<GenericArg>,
@@ -161,10 +169,10 @@ fn find_type_specialization(
 
 #[test_case("NoneExistent", vec![] => Err(UnsupportedId); "NoneExistent")]
 #[test_case("function_call", vec![GenericArg::UserFunc("UnregisteredFunction".into())]
-             => Err(MissingFunction("UnregisteredFunction".into()));
-             "function_call<&UnregisteredFunction>")]
-#[test_case("function_call", vec![GenericArg::UserFunc("RegisteredFunction".into())] => Ok(());
-            "function_call<&RegisteredFunction>")]
+            => Err(MissingFunction("UnregisteredFunction".into()));
+            "function_call<&UnregisteredFunction>")]
+#[test_case("function_call", vec![GenericArg::UserFunc("RegisteredFunction".into())]
+            => Ok(()); "function_call<&RegisteredFunction>")]
 #[test_case("function_call", vec![] => Err(UnsupportedGenericArg); "function_call")]
 #[test_case("array_new", vec![] => Err(WrongNumberOfGenericArgs); "array_new")]
 #[test_case("array_new", vec![type_arg("int")] => Ok(()); "array_new<int>")]
@@ -179,8 +187,8 @@ fn find_type_specialization(
 #[test_case("felt_mul", vec![] => Ok(()); "felt_mul")]
 #[test_case("felt_mul", vec![value_arg(0)] =>  Ok(()); "felt_mul<0>")]
 #[test_case("felt_jump_nz", vec![] => Ok(()); "felt_jump_nz<>")]
-#[test_case("felt_jump_nz", vec![type_arg("felt")] => Err(WrongNumberOfGenericArgs);
-            "felt_jump_nz<int>")]
+#[test_case("felt_jump_nz", vec![type_arg("felt")]
+            => Err(WrongNumberOfGenericArgs); "felt_jump_nz<int>")]
 #[test_case("int_add", vec![] => Ok(()); "int_add")]
 #[test_case("int_sub", vec![] => Ok(()); "int_sub")]
 #[test_case("int_mul", vec![] => Ok(()); "int_mul")]
@@ -202,8 +210,8 @@ fn find_type_specialization(
 #[test_case("dup", vec![] => Err(WrongNumberOfGenericArgs); "dup<>")]
 #[test_case("dup", vec![type_arg("GasBuiltin")] => Err(UnsupportedGenericArg); "dup<GasBuiltin>")]
 #[test_case("int_jump_nz", vec![] => Ok(()); "int_jump_nz<>")]
-#[test_case("int_jump_nz", vec![type_arg("int")] => Err(WrongNumberOfGenericArgs);
-            "int_jump_nz<int>")]
+#[test_case("int_jump_nz", vec![type_arg("int")]
+            => Err(WrongNumberOfGenericArgs); "int_jump_nz<int>")]
 #[test_case("unwrap_nz", vec![type_arg("int")] => Ok(()); "unwrap_nz<int>")]
 #[test_case("unwrap_nz", vec![] => Err(WrongNumberOfGenericArgs); "unwrap_nz")]
 #[test_case("store_temp", vec![type_arg("int")] => Ok(()); "store_temp<int>")]
@@ -214,8 +222,8 @@ fn find_type_specialization(
 #[test_case("store_local", vec![type_arg("int")] => Ok(()); "store_local<int>")]
 #[test_case("store_local", vec![] => Err(WrongNumberOfGenericArgs); "store_local")]
 #[test_case("finalize_locals", vec![] => Ok(()); "finalize_locals")]
-#[test_case("finalize_locals", vec![type_arg("int")] => Err(WrongNumberOfGenericArgs);
-            "finalize_locals<int>")]
+#[test_case("finalize_locals", vec![type_arg("int")]
+            => Err(WrongNumberOfGenericArgs); "finalize_locals<int>")]
 #[test_case("alloc_local", vec![type_arg("int")] => Ok(()); "alloc_local<int>")]
 #[test_case("alloc_local", vec![] => Err(WrongNumberOfGenericArgs); "alloc_local<>")]
 #[test_case("rename", vec![type_arg("int")] => Ok(()); "rename<int>")]
@@ -223,6 +231,25 @@ fn find_type_specialization(
 #[test_case("jump", vec![] => Ok(()); "jump")]
 #[test_case("jump", vec![type_arg("T")] => Err(WrongNumberOfGenericArgs); "jump<T>")]
 #[test_case("revoke_ap_tracking", vec![] => Ok(()); "revoke_ap_tracking")]
+#[test_case("enum_init", vec![type_arg("Option"), value_arg(0)] => Ok(()); "enum_init<Option,0>")]
+#[test_case("enum_init", vec![type_arg("Option"), value_arg(1)] => Ok(());"enum_init<Option,1>")]
+#[test_case("enum_init", vec![type_arg("Option"), value_arg(2)]
+            => Err(IndexOutOfRange{index: 2, range_size: 2}); "enum_init<Option,2>")]
+#[test_case("enum_init", vec![type_arg("Option"), value_arg(-3)]
+            => Err(IndexOutOfRange{index: -3, range_size: 2}); "enum_init<Option,-3>")]
+#[test_case("enum_init", vec![type_arg("Option")]
+            => Err(WrongNumberOfGenericArgs); "enum_init<Option>")]
+#[test_case("enum_init", vec![value_arg(0)] => Err(WrongNumberOfGenericArgs); "enum_init<0>")]
+#[test_case("enum_init", vec![] => Err(WrongNumberOfGenericArgs); "enum_init")]
+#[test_case("enum_init", vec![value_arg(0),type_arg("Option")]
+            => Err(UnsupportedGenericArg); "enum_init<0,Option>")]
+#[test_case("enum_init", vec![type_arg("Option"), type_arg("Option")]
+            => Err(UnsupportedGenericArg); "enum_init<Option,Option>")]
+#[test_case("enum_init", vec![value_arg(0), value_arg(0)]
+            => Err(UnsupportedGenericArg); "enum_init<0,0>")]
+#[test_case("enum_match", vec![type_arg("Option")] => Ok(()); "enum_match<Option>")]
+#[test_case("enum_match", vec![value_arg(4)] => Err(UnsupportedGenericArg); "enum_match<4>")]
+#[test_case("enum_match", vec![] => Err(WrongNumberOfGenericArgs); "enum_match")]
 fn find_libfunc_specialization(
     id: &str,
     generic_args: Vec<GenericArg>,

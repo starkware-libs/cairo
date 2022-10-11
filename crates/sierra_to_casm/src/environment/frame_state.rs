@@ -13,14 +13,14 @@ pub enum FrameStateError {
     FinalizeLocalsMissing(FrameState),
 }
 
-// The frame state of the current function.
-// This state keeps track of how many locals have been allocated and whether the
-// frame has been finalized.
+/// The frame state of the current function.
+/// This state keeps track of how many locals have been allocated and whether the
+/// frame has been finalized.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum FrameState {
-    // finalize_locals was called and the frame has been finalized.
+    /// finalize_locals was called and the frame has been finalized.
     Finalized,
-    // 'allocated' felts have been allocated for local variables.
+    /// 'allocated' felts have been allocated for local variables.
     Allocating { allocated: i16, last_ap_tracking: ApChange },
 }
 
