@@ -75,6 +75,20 @@ pub enum Statement {
     TupleDestruct(StatementTupleDestruct),
 }
 impl Statement {
+    pub fn inputs(&self) -> Vec<VariableId> {
+        match &self {
+            Statement::Literal(_stmt) => vec![],
+            Statement::Call(stmt) => stmt.inputs.clone(),
+            Statement::CallBlock(stmt) => stmt.inputs.clone(),
+            Statement::MatchExtern(stmt) => stmt.inputs.clone(),
+            Statement::StructConstruct => todo!(),
+            Statement::StructDestruct => todo!(),
+            Statement::EnumConstruct => todo!(),
+            Statement::MatchEnum => todo!(),
+            Statement::TupleConstruct(stmt) => stmt.inputs.clone(),
+            Statement::TupleDestruct(stmt) => vec![stmt.input],
+        }
+    }
     pub fn outputs(&self) -> Vec<VariableId> {
         match &self {
             Statement::Literal(stmt) => vec![stmt.output],
@@ -154,7 +168,6 @@ pub struct StatementTupleConstruct {
 
 /// A statement that destructs a tuple, introducing its elements as new variables.
 pub struct StatementTupleDestruct {
-    pub tys: Vec<semantic::TypeId>,
     pub input: VariableId,
     pub outputs: Vec<VariableId>,
 }
