@@ -15,11 +15,11 @@ fn test_resolve_path() {
     let test_module = setup_test_module(
         db,
         indoc::indoc! {"
-            use core::Ref;
+            use core::Box;
             extern type S<T>;
             extern func bar<T>(value: S::<felt>) -> S::<()>;
 
-            func foo<Q>(value: S::<felt>, b: Q, c: Ref::<Q>) {
+            func foo<Q>(value: S::<felt>, b: Q, c: Box::<Q>) {
                 bar::<(felt,Q)>(value);
                 let c = b;
             }

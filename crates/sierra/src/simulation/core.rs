@@ -94,7 +94,7 @@ pub fn simulate<
             [_] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
         },
-        Mem(Rename(_) | StoreTemp(_)) | CoreConcreteLibFunc::Ref(_) => {
+        Mem(Rename(_) | StoreTemp(_)) | CoreConcreteLibFunc::Box(_) => {
             if inputs.len() == 1 {
                 Ok((inputs, 0))
             } else {

@@ -15,6 +15,7 @@ use sierra::extensions::arithmetic::{
     BinaryOperationConcreteLibFunc, OperationConcreteLibFunc, Operator,
 };
 use sierra::extensions::array::ArrayConcreteLibFunc;
+use sierra::extensions::boxing::BoxConcreteLibFunc;
 use sierra::extensions::core::CoreConcreteLibFunc;
 use sierra::extensions::felt::FeltConcrete;
 use sierra::extensions::function_call::FunctionCallConcreteLibFunc;
@@ -22,7 +23,6 @@ use sierra::extensions::mem::{
     AllocLocalConcreteLibFunc, MemConcreteLibFunc, StoreLocalConcreteLibFunc,
     StoreTempConcreteLibFunc,
 };
-use sierra::extensions::reference::RefConcreteLibFunc;
 use sierra::extensions::ConcreteLibFunc;
 use sierra::ids::ConcreteTypeId;
 use sierra::program::{BranchInfo, BranchTarget, Invocation};
@@ -553,8 +553,8 @@ pub fn compile_invocation(
         CoreConcreteLibFunc::Mem(MemConcreteLibFunc::FinalizeLocals(_)) => {
             builder.build_finalize_locals()
         }
-        CoreConcreteLibFunc::Ref(RefConcreteLibFunc::Take(_)) => builder.build_into_ref(),
-        CoreConcreteLibFunc::Ref(RefConcreteLibFunc::Deref(_)) => builder.build_deref(),
+        CoreConcreteLibFunc::Box(BoxConcreteLibFunc::Into(_)) => builder.build_into_ref(),
+        CoreConcreteLibFunc::Box(BoxConcreteLibFunc::Unbox(_)) => builder.build_deref(),
         CoreConcreteLibFunc::Mem(MemConcreteLibFunc::AllocLocal(AllocLocalConcreteLibFunc {
             ty,
             ..

@@ -11,12 +11,12 @@ use crate::extensions::{
 use crate::ids::{ConcreteTypeId, GenericLibFuncId, GenericTypeId};
 use crate::program::GenericArg;
 
-/// Type wrapping a value as reference.
+/// Type wrapping a value.
 #[derive(Default)]
-pub struct RefType {}
-impl NamedType for RefType {
-    type Concrete = RefConcreteType;
-    const ID: GenericTypeId = GenericTypeId::new_inline("Ref");
+pub struct BoxType {}
+impl NamedType for BoxType {
+    type Concrete = BoxConcreteType;
+    const ID: GenericTypeId = GenericTypeId::new_inline("Box");
 
     fn specialize(
         &self,
@@ -24,33 +24,33 @@ impl NamedType for RefType {
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
         let ty = as_single_type(args)?;
-        Ok(RefConcreteType { info: context.get_type_info(ty.clone())?, ty })
+        Ok(BoxConcreteType { info: context.get_type_info(ty.clone())?, ty })
     }
 }
 
-pub struct RefConcreteType {
+pub struct BoxConcreteType {
     pub info: TypeInfo,
     pub ty: ConcreteTypeId,
 }
-impl ConcreteType for RefConcreteType {
+impl ConcreteType for BoxConcreteType {
     fn info(&self) -> &TypeInfo {
         &self.info
     }
 }
 
 define_libfunc_hierarchy! {
-    pub enum RefLibFunc {
-        Take(IntoRefLibFunc),
-        Deref(DerefLibFunc),
-    }, RefConcreteLibFunc
+    pub enum BoxLibFunc {
+        Into(IntoBoxLibFunc),
+        Unbox(UnboxLibFunc),
+    }, BoxConcreteLibFunc
 }
 
-/// LibFunc for wrapping an object of type T into a reference.
+/// LibFunc for wrapping an object of type T into a box.
 #[derive(Default)]
-pub struct IntoRefLibFunc {}
-impl NamedLibFunc for IntoRefLibFunc {
+pub struct IntoBoxLibFunc {}
+impl NamedLibFunc for IntoBoxLibFunc {
     type Concrete = SignatureOnlyConcreteLibFunc;
-    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("into_ref");
+    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("into_box");
 
     fn specialize_signature(
         &self,
@@ -61,7 +61,7 @@ impl NamedLibFunc for IntoRefLibFunc {
         Ok(LibFuncSignature::new_non_branch(
             vec![ty.clone()],
             vec![OutputVarInfo {
-                ty: context.get_wrapped_concrete_type(RefType::id(), ty)?,
+                ty: context.get_wrapped_concrete_type(BoxType::id(), ty)?,
                 ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
             }],
             SierraApChange::NotImplemented,
@@ -79,12 +79,12 @@ impl NamedLibFunc for IntoRefLibFunc {
     }
 }
 
-/// LibFunc for dereferencing a Ref<T> back into a T.
+/// LibFunc for unboxing a Box<T> back into a T.
 #[derive(Default)]
-pub struct DerefLibFunc {}
-impl NamedLibFunc for DerefLibFunc {
+pub struct UnboxLibFunc {}
+impl NamedLibFunc for UnboxLibFunc {
     type Concrete = SignatureOnlyConcreteLibFunc;
-    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("deref");
+    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("unbox");
 
     fn specialize_signature(
         &self,
@@ -93,7 +93,7 @@ impl NamedLibFunc for DerefLibFunc {
     ) -> Result<LibFuncSignature, SpecializationError> {
         let ty = as_single_type(args)?;
         Ok(LibFuncSignature::new_non_branch(
-            vec![context.get_wrapped_concrete_type(RefType::id(), ty.clone())?],
+            vec![context.get_wrapped_concrete_type(BoxType::id(), ty.clone())?],
             vec![OutputVarInfo {
                 ty,
                 ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),

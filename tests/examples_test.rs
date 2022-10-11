@@ -34,7 +34,7 @@ fn compile_to_sierra(
 }
 
 #[test_case("fib.cairo", include_str!("fib.sierra"); "fib")]
-#[test_case("fib_ref.cairo", include_str!("fib_ref.sierra"); "fib_ref")]
+#[test_case("fib_box.cairo", include_str!("fib_box.sierra"); "fib_box")]
 #[test_case("fib_array.cairo", include_str!("fib_array.sierra"); "fib_array")]
 fn cairo_to_sierra(name: &str, expected_code: &str) {
     let (db, sierra_program) = compile_to_sierra(name);
@@ -42,7 +42,7 @@ fn cairo_to_sierra(name: &str, expected_code: &str) {
 }
 
 #[test_case("fib.cairo", include_str!("fib.casm"); "fib")]
-#[test_case("fib_ref.cairo", include_str!("fib_ref.casm"); "fib_ref")]
+#[test_case("fib_box.cairo", include_str!("fib_box.casm"); "fib_box")]
 #[test_case("fib_array.cairo", include_str!("fib_array.casm"); "fib_array")]
 fn cairo_to_casm(cairo_file: &str, expected_code: &str) {
     let (_db, sierra_program) = compile_to_sierra(cairo_file);

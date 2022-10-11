@@ -27,11 +27,11 @@ extern func felt_gt(a: felt, b: felt) -> (bool);
 extern func dup < T >(obj: T) -> (T, T);
 extern func drop < T >(obj: T);
 
-// Refs.
-mod ref;
-use ref::Ref;
-use ref::into_ref;
-use ref::deref;
+// Boxes.
+mod box;
+use box::Box;
+use box::into_box;
+use box::unbox;
 
 // Arrays.
 mod array;

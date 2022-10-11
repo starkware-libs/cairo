@@ -4,7 +4,7 @@ use sierra::extensions::arithmetic::{
 };
 use sierra::extensions::array::ArrayConcreteLibFunc;
 use sierra::extensions::core::CoreConcreteLibFunc::{
-    self, ApTracking, Array, Drop, Dup, Felt, FunctionCall, Gas, Integer, Mem, Ref,
+    self, ApTracking, Array, Box, Drop, Dup, Felt, FunctionCall, Gas, Integer, Mem,
     UnconditionalJump, UnwrapNonZero,
 };
 use sierra::extensions::felt::FeltConcrete;
@@ -47,7 +47,7 @@ pub fn core_libfunc_cost(
         Array(ArrayConcreteLibFunc::Append(_)) => vec![CostExpr::from_const(2)],
         Integer(libfunc) => integer_libfunc_cost(libfunc),
         Felt(libfunc) => felt_libfunc_cost(libfunc),
-        Drop(_) | Dup(_) | ApTracking(_) | UnwrapNonZero(_) | Mem(Rename(_)) | Ref(_) => {
+        Drop(_) | Dup(_) | ApTracking(_) | UnwrapNonZero(_) | Mem(Rename(_)) | Box(_) => {
             vec![CostExpr::from_const(0)]
         }
         Mem(StoreLocal(_) | AllocLocal(_) | StoreTemp(_) | AlignTemps(_) | FinalizeLocals(_))
