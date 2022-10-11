@@ -4,6 +4,7 @@ use crate::define_libfunc_hierarchy;
 use crate::extensions::types::{InfoOnlyConcreteType, TypeInfo};
 use crate::extensions::{NamedType, NoGenericArgsGenericType};
 use crate::ids::{GenericLibFuncId, GenericTypeId};
+use crate::program::ConcreteTypeLongId;
 
 /// Type for int.
 #[derive(Default)]
@@ -14,7 +15,12 @@ impl NoGenericArgsGenericType for IntegerType {
 
     fn specialize(&self) -> Self::Concrete {
         InfoOnlyConcreteType {
-            info: TypeInfo { storable: true, droppable: true, duplicatable: true },
+            info: TypeInfo {
+                long_id: ConcreteTypeLongId { generic_id: Self::id(), generic_args: Vec::new() },
+                storable: true,
+                droppable: true,
+                duplicatable: true,
+            },
         }
     }
 }

@@ -11,6 +11,7 @@ use crate::extensions::{
     SpecializationError,
 };
 use crate::ids::{GenericLibFuncId, GenericTypeId};
+use crate::program::ConcreteTypeLongId;
 
 /// Type for gas actions.
 #[derive(Default)]
@@ -21,7 +22,12 @@ impl NoGenericArgsGenericType for GasBuiltinType {
 
     fn specialize(&self) -> Self::Concrete {
         InfoOnlyConcreteType {
-            info: TypeInfo { storable: true, droppable: false, duplicatable: false },
+            info: TypeInfo {
+                long_id: ConcreteTypeLongId { generic_id: Self::id(), generic_args: Vec::new() },
+                storable: true,
+                droppable: false,
+                duplicatable: false,
+            },
         }
     }
 }
