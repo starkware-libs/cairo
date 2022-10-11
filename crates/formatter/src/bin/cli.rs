@@ -11,9 +11,9 @@ use parser::test_utils::{get_syntax_root_and_diagnostics, ParserDatabaseForTesti
 /// Format a specific file and return whether it was already correctly formatted.
 fn format_file(file_path: &str, args: &FormatterArgs, config: &FormatterConfig) -> bool {
     if !is_cairo_file(file_path) {
-        eprintln!(
-            "{}",
-            format!("The file: {file_path}, is not a cairo file, nothing was done.").red()
+        eprintln_if_verbose(
+            &format!("The file: {file_path}, is not a cairo file, nothing was done.").red(),
+            args.verbose,
         );
         return true;
     }
@@ -22,8 +22,15 @@ fn format_file(file_path: &str, args: &FormatterArgs, config: &FormatterConfig) 
     let db_val = ParserDatabaseForTesting::default();
     let db = &db_val;
     let (syntax_root, diagnostics) = get_syntax_root_and_diagnostics(db, file_path);
-
-    diagnostics.expect("A parsing error occurred while trying to format the code.");
+    // Checks if the inner ParserDiagnostic is empty.
+    if !diagnostics.0.leaves.is_empty() {
+        eprintln!(
+            "{}",
+            format!("A parsing error occurred in file: {file_path}. The file was not formatted.")
+                .red()
+        );
+        return true;
+    }
     let formatted_file = get_formatted_file(db, &syntax_root, config.clone());
 
     let original_file = fs::read_to_string(file_path).unwrap();
@@ -33,10 +40,12 @@ fn format_file(file_path: &str, args: &FormatterArgs, config: &FormatterConfig) 
         if args.check {
             let patch = create_patch(&original_file, &formatted_file);
             let f = PatchFormatter::new().with_color();
+            println!("Diff in {file_path}:");
             print!("{}", f.fmt_patch(&patch));
-        } else {
-            fs::write(file_path, formatted_file).expect("Unable to write result to {file_path}.");
+        } else if fs::write(file_path, formatted_file).is_err() {
+            eprintln!("{}", format!("Unable to write result to {file_path}.").red());
         }
+
         false
     }
 }
@@ -51,6 +60,12 @@ fn format_directory(
 ) -> bool {
     if !args.recursive && recursion_depth > 0 {
         return true;
+    }
+    for sub_path in fs::read_dir(path).unwrap() {
+        if sub_path.unwrap().file_name() == ".cairofmtignore" {
+            println_if_verbose(&format!("The directory {path} was ignored."), args.verbose);
+            return true;
+        }
     }
     let mut all_correct = true;
     for sub_path in fs::read_dir(path).unwrap() {
@@ -110,11 +125,19 @@ fn println_if_verbose(s: &str, verbose: bool) {
     }
 }
 
+/// Outputs an error string if the verbose flag is true.
+fn eprintln_if_verbose(s: &str, verbose: bool) {
+    if verbose {
+        eprintln!("{s}");
+    }
+}
+
 /// Command line args parser.
 /// Exits with 0/1 if the input is formatted correctly/incorrectly.
+/// Ignores directories which contains a file named '.cairofmtignore'.
 // TODO(gil): add config file path.
 #[derive(Parser, Debug)]
-#[clap(version)]
+#[clap(version, verbatim_doc_comment)]
 struct FormatterArgs {
     /// Check mode, don't write the formatted files,
     /// just output the diff between the original and the formatted file.
@@ -138,8 +161,12 @@ fn main() -> ExitCode {
         args.verbose,
     );
     let mut all_correct = true;
-    for file in args.files.iter() {
-        all_correct &= format_path(file, &args, 0, &config);
+    if args.files.is_empty() {
+        all_correct = format_path(".", &args, 0, &config);
+    } else {
+        for file in args.files.iter() {
+            all_correct &= format_path(file, &args, 0, &config);
+        }
     }
     if !all_correct && args.check { ExitCode::FAILURE } else { ExitCode::SUCCESS }
 }
