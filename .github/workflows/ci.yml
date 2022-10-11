@@ -32,6 +32,19 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: cargo +nightly-2022-07-27 fmt --all -- --check
 
+  # Checks all .cairo files in the repo are formatted correctly.
+  cairofmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          name: "Rust Toolchain Setup"
+          profile: minimal
+          toolchain: nightly-2022-07-27
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo run --bin formatter_cli -- --check --recursive
+
   # Check for unnecessary dependencies.
   udeps:
     runs-on: ubuntu-latest
