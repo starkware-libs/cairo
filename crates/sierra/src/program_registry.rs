@@ -4,7 +4,8 @@ use std::collections::HashMap;
 use thiserror::Error;
 
 use crate::extensions::lib_func::{SignatureSpecializationContext, SpecializationContext};
-use crate::extensions::types::{TypeInfo, TypeSpecializationContext};
+use crate::extensions::type_specialization_context::TypeSpecializationContext;
+use crate::extensions::types::TypeInfo;
 use crate::extensions::{
     ConcreteType, ExtensionError, GenericLibFunc, GenericLibFuncEx, GenericType, GenericTypeEx,
 };
@@ -162,6 +163,11 @@ pub struct SpecializationContextForRegistry<'a, TType: GenericType> {
     pub concrete_type_ids: &'a ConcreteTypeIdMap<'a>,
     pub concrete_types: &'a TypeMap<TType::Concrete>,
 }
+impl<TType: GenericType> TypeSpecializationContext for SpecializationContextForRegistry<'_, TType> {
+    fn try_get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo> {
+        self.concrete_types.get(&id).map(|ty| ty.info().clone())
+    }
+}
 impl<TType: GenericType> SignatureSpecializationContext
     for SpecializationContextForRegistry<'_, TType>
 {
@@ -177,8 +183,8 @@ impl<TType: GenericType> SignatureSpecializationContext
         self.try_get_function(function_id).map(|f| f.signature)
     }
 
-    fn try_get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo> {
-        self.concrete_types.get(&id).map(|ty| ty.info().clone())
+    fn as_type_specialization_context(&self) -> &dyn TypeSpecializationContext {
+        self
     }
 }
 impl<TType: GenericType> SpecializationContext for SpecializationContextForRegistry<'_, TType> {

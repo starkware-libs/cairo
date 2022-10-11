@@ -1,17 +1,7 @@
 use super::error::{ExtensionError, SpecializationError};
-use crate::ids::{ConcreteTypeId, GenericTypeId};
+use super::type_specialization_context::TypeSpecializationContext;
+use crate::ids::GenericTypeId;
 use crate::program::GenericArg;
-
-/// Trait for the specialization of types.
-pub trait TypeSpecializationContext {
-    /// Returns the type informantion for the type with the given id.
-    fn try_get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo>;
-
-    /// Wraps [Self::try_get_type_info] with a result object.
-    fn get_type_info(&self, id: ConcreteTypeId) -> Result<TypeInfo, SpecializationError> {
-        self.try_get_type_info(id.clone()).ok_or(SpecializationError::MissingTypeInfo(id))
-    }
-}
 
 /// Trait for implementing a specialization generator for types.
 pub trait GenericType: Sized {
@@ -169,7 +159,7 @@ macro_rules! define_type_hierarchy {
             }
             fn specialize(
                     &self,
-                    context: &dyn $crate::extensions::types::TypeSpecializationContext,
+                    context: &dyn $crate::extensions::type_specialization_context::TypeSpecializationContext,
                     args: &[$crate::program::GenericArg]
             ) -> Result<Self::Concrete, $crate::extensions::SpecializationError>{
                 match self {

@@ -2,10 +2,11 @@ use test_case::test_case;
 
 use super::core::{CoreLibFunc, CoreType};
 use super::lib_func::{SignatureSpecializationContext, SpecializationContext};
-use super::types::{TypeInfo, TypeSpecializationContext};
+use super::types::TypeInfo;
 use super::SpecializationError::{
     self, MissingFunction, UnsupportedGenericArg, UnsupportedId, WrongNumberOfGenericArgs,
 };
+use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::{GenericLibFunc, GenericType};
 use crate::ids::{ConcreteTypeId, FunctionId, GenericTypeId};
 use crate::program::{Function, FunctionSignature, GenericArg, StatementIdx};
@@ -40,7 +41,6 @@ impl TypeSpecializationContext for MockSpecializationContext {
         }
     }
 }
-
 impl SignatureSpecializationContext for MockSpecializationContext {
     fn try_get_concrete_type(
         &self,
@@ -77,12 +77,12 @@ impl SignatureSpecializationContext for MockSpecializationContext {
         }
     }
 
-    fn try_get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo> {
-        <Self as TypeSpecializationContext>::try_get_type_info(self, id)
-    }
-
     fn try_get_function_signature(&self, function_id: &FunctionId) -> Option<FunctionSignature> {
         self.try_get_function(function_id).map(|f| f.signature)
+    }
+
+    fn as_type_specialization_context(&self) -> &dyn TypeSpecializationContext {
+        self
     }
 }
 

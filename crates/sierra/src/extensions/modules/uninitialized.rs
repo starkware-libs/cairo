@@ -1,5 +1,6 @@
 use super::as_single_type;
-use crate::extensions::types::{TypeInfo, TypeSpecializationContext};
+use crate::extensions::type_specialization_context::TypeSpecializationContext;
+use crate::extensions::types::TypeInfo;
 use crate::extensions::{ConcreteType, NamedType, SpecializationError};
 use crate::ids::{ConcreteTypeId, GenericTypeId};
 use crate::program::GenericArg;

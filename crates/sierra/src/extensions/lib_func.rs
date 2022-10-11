@@ -1,10 +1,10 @@
 use super::error::{ExtensionError, SpecializationError};
-use super::types::TypeInfo;
+use super::type_specialization_context::TypeSpecializationContext;
 use crate::ids::{ConcreteTypeId, FunctionId, GenericLibFuncId, GenericTypeId};
 use crate::program::{Function, FunctionSignature, GenericArg};
 
 /// Trait for the specialization of libfunc signatures.
-pub trait SignatureSpecializationContext {
+pub trait SignatureSpecializationContext: TypeSpecializationContext {
     /// Returns concrete type id given a generic type and the generic arguments.
     fn try_get_concrete_type(
         &self,
@@ -20,14 +20,6 @@ pub trait SignatureSpecializationContext {
     ) -> Result<ConcreteTypeId, SpecializationError> {
         self.try_get_concrete_type(id.clone(), generic_args)
             .ok_or_else(|| SpecializationError::TypeWasNotDeclared(id, generic_args.to_vec()))
-    }
-
-    /// Returns the type info for a given concrete type.
-    fn try_get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo>;
-
-    /// Wraps [Self::try_get_type_info] with a result object.
-    fn get_type_info(&self, id: ConcreteTypeId) -> Result<TypeInfo, SpecializationError> {
-        self.try_get_type_info(id.clone()).ok_or(SpecializationError::MissingTypeInfo(id))
     }
 
     /// Returns the function's signature object associated with the given [FunctionId].
@@ -50,6 +42,9 @@ pub trait SignatureSpecializationContext {
     ) -> Result<ConcreteTypeId, SpecializationError> {
         self.get_concrete_type(id, &[GenericArg::Type(wrapped)])
     }
+
+    /// Upcasting to the [TypeSpecializationContext], since trait upcasting is still experimental.
+    fn as_type_specialization_context(&self) -> &dyn TypeSpecializationContext;
 }
 
 /// Trait for the specialization of full libfuncs.
@@ -140,7 +135,7 @@ impl<TGenericLibFunc: GenericLibFunc> GenericLibFuncEx for TGenericLibFunc {
     }
 }
 
-/// Trait for implementing a specialization generator with with a simple id.
+/// Trait for implementing a specialization generator with a simple id.
 pub trait NamedLibFunc: Default {
     type Concrete: ConcreteLibFunc;
     const ID: GenericLibFuncId;

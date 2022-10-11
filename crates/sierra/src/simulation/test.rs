@@ -7,6 +7,7 @@ use super::LibFuncSimulationError::{
 use super::{core, SimulationError};
 use crate::extensions::core::CoreLibFunc;
 use crate::extensions::lib_func::{SignatureSpecializationContext, SpecializationContext};
+use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::TypeInfo;
 use crate::extensions::GenericLibFunc;
 use crate::ids::{ConcreteTypeId, FunctionId, GenericTypeId};
@@ -39,6 +40,17 @@ impl SpecializationContext for MockSpecializationContext {
             .map(|_| Function::new(function_id.clone(), vec![], vec![], StatementIdx(0)))
     }
 }
+impl TypeSpecializationContext for MockSpecializationContext {
+    fn try_get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo> {
+        if id == "int".into() || id == "NonZeroInt".into() {
+            Some(TypeInfo { storable: true, droppable: true, duplicatable: true })
+        } else if id == "UninitializedInt".into() {
+            Some(TypeInfo { storable: false, droppable: true, duplicatable: false })
+        } else {
+            None
+        }
+    }
+}
 impl SignatureSpecializationContext for MockSpecializationContext {
     fn try_get_concrete_type(
         &self,
@@ -63,18 +75,12 @@ impl SignatureSpecializationContext for MockSpecializationContext {
         }
     }
 
-    fn try_get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo> {
-        if id == "int".into() || id == "NonZeroInt".into() {
-            Some(TypeInfo { storable: true, droppable: true, duplicatable: true })
-        } else if id == "UninitializedInt".into() {
-            Some(TypeInfo { storable: false, droppable: true, duplicatable: false })
-        } else {
-            None
-        }
-    }
-
     fn try_get_function_signature(&self, function_id: &FunctionId) -> Option<FunctionSignature> {
         self.try_get_function(function_id).map(|f| f.signature)
+    }
+
+    fn as_type_specialization_context(&self) -> &dyn TypeSpecializationContext {
+        self
     }
 }
 

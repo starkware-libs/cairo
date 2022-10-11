@@ -1,5 +1,5 @@
 use sierra::extensions::lib_func::SignatureSpecializationContext;
-use sierra::extensions::types::TypeSpecializationContext;
+use sierra::extensions::type_specialization_context::TypeSpecializationContext;
 use sierra::program::ConcreteTypeLongId;
 
 use crate::db::SierraGenGroup;
@@ -10,6 +10,14 @@ use crate::db::SierraGenGroup;
 /// [specialize_signature_by_id](sierra::extensions::lib_func::GenericLibFuncEx::specialize_signature_by_id).
 pub struct SierraSignatureSpecializationContext<'a>(pub &'a dyn SierraGenGroup);
 
+impl TypeSpecializationContext for SierraSignatureSpecializationContext<'_> {
+    fn try_get_type_info(
+        &self,
+        id: sierra::ids::ConcreteTypeId,
+    ) -> Option<sierra::extensions::types::TypeInfo> {
+        self.0.get_type_info(id).map(|info| (*info).clone())
+    }
+}
 impl SignatureSpecializationContext for SierraSignatureSpecializationContext<'_> {
     fn try_get_concrete_type(
         &self,
@@ -22,26 +30,14 @@ impl SignatureSpecializationContext for SierraSignatureSpecializationContext<'_>
         }))
     }
 
-    fn try_get_type_info(
-        &self,
-        id: sierra::ids::ConcreteTypeId,
-    ) -> Option<sierra::extensions::types::TypeInfo> {
-        <Self as TypeSpecializationContext>::try_get_type_info(self, id)
-    }
-
     fn try_get_function_signature(
         &self,
         function_id: &sierra::ids::FunctionId,
     ) -> Option<sierra::program::FunctionSignature> {
         self.0.get_function_signature(function_id.clone()).map(|signature| (*signature).clone())
     }
-}
 
-impl TypeSpecializationContext for SierraSignatureSpecializationContext<'_> {
-    fn try_get_type_info(
-        &self,
-        id: sierra::ids::ConcreteTypeId,
-    ) -> Option<sierra::extensions::types::TypeInfo> {
-        self.0.get_type_info(id).map(|info| (*info).clone())
+    fn as_type_specialization_context(&self) -> &dyn TypeSpecializationContext {
+        self
     }
 }
