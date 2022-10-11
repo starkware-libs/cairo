@@ -236,7 +236,8 @@ fn test_tuple_type() {
     let param = &signature.params[0];
     assert_eq!(
         format!("{:?}", param.debug(db)),
-        "Parameter { id: ParamId(test_crate::a), ty: (core::felt, (), (core::felt)) }"
+        "Parameter { id: ParamId(test_crate::a), ty: (core::felt, (), (core::felt)), modifiers: \
+         Modifiers { is_ref: false } }"
     );
 }
 

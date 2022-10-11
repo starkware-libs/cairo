@@ -771,6 +771,10 @@ fn expr_function_call(
                 WrongArgumentType { expected_ty: param_typ, actual_ty: arg_typ },
             );
         }
+
+        if param.modifiers.is_ref && !matches!(arg, Expr::Var(_)) {
+            ctx.diagnostics.report_by_ptr(arg.stable_ptr().untyped(), RefArgNotAVariable);
+        }
     }
 
     let args = arg_exprs.into_iter().map(|expr| ctx.exprs.alloc(expr)).collect();
