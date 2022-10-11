@@ -17,7 +17,6 @@ use sierra::extensions::arithmetic::{
 use sierra::extensions::core::CoreConcreteLibFunc;
 use sierra::extensions::felt::FeltConcrete;
 use sierra::extensions::function_call::FunctionCallConcreteLibFunc;
-use sierra::extensions::lib_func::SignatureOnlyConcreteLibFunc;
 use sierra::extensions::mem::{
     AllocLocalConcreteLibFunc, MemConcreteLibFunc, StoreLocalConcreteLibFunc,
     StoreTempConcreteLibFunc,
@@ -85,75 +84,9 @@ pub struct CompiledInvocation {
     // The environment after the invocation.
     pub environment: Environment,
 }
-impl CompiledInvocation {
-    fn new(
-        instructions: Vec<Instruction>,
-        relocations: Vec<RelocationEntry>,
-        ap_changes: impl Iterator<Item = ApChange>,
-        output_expressions: impl Iterator<Item = impl Iterator<Item = ReferenceExpression>>,
-        output_types: &[Vec<ConcreteTypeId>],
-        environment: Environment,
-    ) -> Self {
-        Self {
-            instructions,
-            relocations,
-            results: zip_eq(ap_changes, zip_eq(output_expressions, output_types))
-                .map(|(ap_change, (expressions, types))| {
-                    BranchRefChanges::new(ap_change, expressions, types.iter().cloned())
-                })
-                .collect(),
-            environment,
-        }
-    }
 
-    // A constructor for the trivial case of fallthrough without any instructions.
-    fn only_reference_changes(
-        output_expressions: impl Iterator<Item = ReferenceExpression>,
-        output_types: &[Vec<ConcreteTypeId>],
-        environment: Environment,
-    ) -> Self {
-        Self::new(
-            vec![],
-            vec![],
-            [ApChange::Known(0)].into_iter(),
-            [output_expressions].into_iter(),
-            output_types,
-            environment,
-        )
-    }
-}
-
-fn handle_felt_op(
-    _invocation: &Invocation,
-    felt_op: &BinaryOperationConcreteLibFunc,
-    refs: &[ReferenceValue],
-    environment: Environment,
-) -> Result<CompiledInvocation, InvocationError> {
-    let (expr_a, expr_b) = match refs {
-        [ReferenceValue { expression: expr_a, .. }, ReferenceValue { expression: expr_b, .. }] => {
-            (expr_a, expr_b)
-        }
-        _ => return Err(InvocationError::WrongNumberOfArguments),
-    };
-
-    let ref_expression = match (expr_a, expr_b) {
-        (ReferenceExpression::Deref(a), ReferenceExpression::Deref(b)) => {
-            BinOpExpression { op: felt_op.operator, a: *a, b: DerefOrImmediate::Deref(*b) }
-        }
-        (ReferenceExpression::Deref(a), ReferenceExpression::Immediate(b)) => {
-            BinOpExpression { op: felt_op.operator, a: *a, b: DerefOrImmediate::Immediate(*b) }
-        }
-        _ => return Err(InvocationError::InvalidReferenceExpressionForArgument),
-    };
-    Ok(CompiledInvocation::only_reference_changes(
-        [ReferenceExpression::BinOp(ref_expression)].into_iter(),
-        &felt_op.output_types(),
-        environment,
-    ))
-}
-
-// Checks that the list of reference is contiguous on the stack and ends at ap - 1.
-// This is the requirement for function call and return statements.
+/// Checks that the list of reference is contiguous on the stack and ends at ap - 1.
+/// This is the requirement for function call and return statements.
 pub fn check_references_on_stack(
     type_sizes: &TypeSizeMap,
     refs: &[ReferenceValue],
@@ -174,332 +107,357 @@ pub fn check_references_on_stack(
     Ok(())
 }
 
-fn handle_dup(
-    libfunc: &SignatureOnlyConcreteLibFunc,
-    refs: &[ReferenceValue],
-    environment: Environment,
-) -> Result<CompiledInvocation, InvocationError> {
-    let expression = match refs {
-        [ReferenceValue { expression, .. }] => expression,
-        _ => return Err(InvocationError::WrongNumberOfArguments),
-    };
-
-    Ok(CompiledInvocation::only_reference_changes(
-        [expression.clone(), expression.clone()].into_iter(),
-        &libfunc.output_types(),
-        environment,
-    ))
+/// Helper for building compiled invocations.
+struct CompiledInvocationBuilder<'a> {
+    pub environment: Environment,
+    pub libfunc: &'a CoreConcreteLibFunc,
+    pub invocation: &'a Invocation,
+    pub refs: &'a [ReferenceValue],
+    pub type_sizes: &'a TypeSizeMap,
 }
-
-fn handle_function_call(
-    type_sizes: &TypeSizeMap,
-    func_call: &FunctionCallConcreteLibFunc,
-    refs: &[ReferenceValue],
-    environment: Environment,
-) -> Result<CompiledInvocation, InvocationError> {
-    check_references_on_stack(type_sizes, refs)?;
-
-    let output_types = func_call.output_types();
-    let fallthrough_outputs = &output_types[0];
-
-    let mut refs = VecDeque::with_capacity(fallthrough_outputs.len());
-
-    let mut offset = -1;
-    for output_type in fallthrough_outputs.iter().rev() {
-        refs.push_front(ReferenceExpression::Deref(DerefOperand {
-            register: Register::AP,
-            offset,
-        }));
-
-        offset -= type_sizes
-            .get(output_type)
-            .ok_or_else(|| InvocationError::UnknownTypeId(output_type.clone()))?;
+impl CompiledInvocationBuilder<'_> {
+    /// Creates a new invocation.
+    fn build(
+        self,
+        instructions: Vec<Instruction>,
+        relocations: Vec<RelocationEntry>,
+        ap_changes: impl Iterator<Item = ApChange>,
+        output_expressions: impl Iterator<Item = impl Iterator<Item = ReferenceExpression>>,
+    ) -> CompiledInvocation {
+        CompiledInvocation {
+            instructions,
+            relocations,
+            results: zip_eq(ap_changes, zip_eq(output_expressions, self.libfunc.output_types()))
+                .map(|(ap_change, (expressions, types))| {
+                    BranchRefChanges::new(ap_change, expressions, types.iter().cloned())
+                })
+                .collect(),
+            environment: self.environment,
+        }
     }
 
-    // TODO(ilya, 10/10/2022): Support functions with known ap change.
-    Ok(CompiledInvocation::new(
-        vec![Instruction::new(
-            InstructionBody::Call(CallInstruction {
-                target: DerefOrImmediate::Immediate(ImmediateOperand { value: 0 }),
-                relative: true,
-            }),
-            false,
-        )],
-        vec![RelocationEntry {
-            instruction_idx: 0,
-            relocation: Relocation::RelativeStatementId(func_call.function.entry_point),
-        }],
-        [ApChange::Unknown].into_iter(),
-        [refs.into_iter()].into_iter(),
-        &func_call.output_types(),
-        environment,
-    ))
-}
-
-fn handle_store_temp(
-    invocation: &Invocation,
-    store_temp: &StoreTempConcreteLibFunc,
-    refs: &[ReferenceValue],
-    environment: Environment,
-    type_sizes: &TypeSizeMap,
-) -> Result<CompiledInvocation, InvocationError> {
-    let expression = match refs {
-        [ReferenceValue { expression, .. }] => expression,
-        _ => return Err(InvocationError::WrongNumberOfArguments),
-    };
-
-    let dst = DerefOperand { register: Register::AP, offset: 0 };
-    let instruction = handle_store(type_sizes, invocation, &store_temp.ty, dst, expression, true)?;
-    Ok(CompiledInvocation::new(
-        vec![instruction],
-        vec![],
-        [ApChange::Known(1)].into_iter(),
-        [[ReferenceExpression::Deref(DerefOperand { register: Register::AP, offset: -1 })]
-            .into_iter()]
-        .into_iter(),
-        &store_temp.output_types(),
-        environment,
-    ))
-}
-
-fn handle_store(
-    type_sizes: &TypeSizeMap,
-    invocation: &sierra::program::GenInvocation<sierra::program::StatementIdx>,
-    src_type: &ConcreteTypeId,
-    dst: DerefOperand,
-    src_expr: &ReferenceExpression,
-    inc_ap: bool,
-) -> Result<Instruction, InvocationError> {
-    match type_sizes.get(src_type) {
-        Some(1) => Ok(()),
-        Some(0) => Err(InvocationError::NotSized(invocation.clone())),
-        _ => Err(InvocationError::NotImplemented(invocation.clone())),
-    }?;
-
-    let mut hints = vec![];
-
-    let (dst_operand, res_operand) = match src_expr {
-        ReferenceExpression::Deref(operand) => (dst, ResOperand::Deref(*operand)),
-        ReferenceExpression::DoubleDeref(operand) => {
-            (dst, ResOperand::DoubleDeref(operand.clone()))
-        }
-        ReferenceExpression::IntoSingleCellRef(operand) => {
-            hints.push(Hint::AllocSegment { dst });
-            (*operand, ResOperand::DoubleDeref(DoubleDerefOperand { inner_deref: dst }))
-        }
-        ReferenceExpression::Immediate(operand) => (dst, ResOperand::Immediate(*operand)),
-        ReferenceExpression::BinOp(BinOpExpression { op, a, b }) => match op {
-            Operator::Add => {
-                (dst, ResOperand::BinOp(BinOpOperand { op: Operation::Add, a: *a, b: b.clone() }))
-            }
-            Operator::Mul => {
-                (dst, ResOperand::BinOp(BinOpOperand { op: Operation::Mul, a: *a, b: b.clone() }))
-            }
-
-            // dst = a - b => a = dst + b
-            Operator::Sub => {
-                (*a, ResOperand::BinOp(BinOpOperand { op: Operation::Add, a: dst, b: b.clone() }))
-            }
-            // dst = a / b => a = dst * b
-            Operator::Div => {
-                (*a, ResOperand::BinOp(BinOpOperand { op: Operation::Mul, a: dst, b: b.clone() }))
-            }
-            _ => return Err(InvocationError::NotImplemented(invocation.clone())),
-        },
-    };
-    Ok(Instruction {
-        body: InstructionBody::AssertEq(AssertEqInstruction { a: dst_operand, b: res_operand }),
-        inc_ap,
-        hints,
-    })
-}
-
-fn handle_jump_nz(
-    invocation: &Invocation,
-    jnz: &SignatureOnlyConcreteLibFunc,
-    refs: &[ReferenceValue],
-    environment: Environment,
-) -> Result<CompiledInvocation, InvocationError> {
-    let condition = match refs {
-        [ReferenceValue { expression: ReferenceExpression::Deref(deref_operand), .. }] => {
-            deref_operand
-        }
-        [_] => return Err(InvocationError::InvalidReferenceExpressionForArgument),
-        _ => return Err(InvocationError::WrongNumberOfArguments),
-    };
-
-    let target_statement_id = match invocation.branches.as_slice() {
-        [BranchInfo { target: BranchTarget::Statement(statement_id), .. }, _] => statement_id,
-        _ => panic!("malformed invocation"),
-    };
-
-    Ok(CompiledInvocation::new(
-        vec![Instruction::new(
-            InstructionBody::Jnz(JnzInstruction {
-                jump_offset: DerefOrImmediate::Immediate(ImmediateOperand { value: 0 }),
-                condition: *condition,
-            }),
-            false,
-        )],
-        vec![RelocationEntry {
-            instruction_idx: 0,
-            relocation: Relocation::RelativeStatementId(*target_statement_id),
-        }],
-        [ApChange::Known(0), ApChange::Known(0)].into_iter(),
-        [vec![ReferenceExpression::Deref(*condition)].into_iter(), vec![].into_iter()].into_iter(),
-        &jnz.output_types(),
-        environment,
-    ))
-}
-
-fn handle_jump(
-    invocation: &Invocation,
-    libfunc: &SignatureOnlyConcreteLibFunc,
-    environment: Environment,
-) -> Result<CompiledInvocation, InvocationError> {
-    let target_statement_id = match invocation.branches.as_slice() {
-        [BranchInfo { target: BranchTarget::Statement(statement_id), .. }] => statement_id,
-        _ => panic!("malformed invocation"),
-    };
-
-    Ok(CompiledInvocation::new(
-        vec![Instruction::new(
-            InstructionBody::Jump(JumpInstruction {
-                target: DerefOrImmediate::Immediate(ImmediateOperand { value: 0 }),
-                relative: true,
-            }),
-            false,
-        )],
-        vec![RelocationEntry {
-            instruction_idx: 0,
-            relocation: Relocation::RelativeStatementId(*target_statement_id),
-        }],
-        [ApChange::Known(0)].into_iter(),
-        [vec![].into_iter()].into_iter(),
-        &libfunc.output_types(),
-        environment,
-    ))
-}
-
-fn handle_finalize_locals(
-    libfunc: &SignatureOnlyConcreteLibFunc,
-    environment: Environment,
-) -> Result<CompiledInvocation, InvocationError> {
-    let (n_slots, frame_state) =
-        frame_state::handle_finalize_locals(environment.frame_state, environment.ap_tracking)?;
-    Ok(CompiledInvocation::new(
-        vec![Instruction::new(
-            InstructionBody::AddAp(AddApInstruction {
-                operand: ResOperand::Immediate(ImmediateOperand { value: n_slots as i128 }),
-            }),
-            false,
-        )],
-        vec![],
-        [ApChange::Known(n_slots)].into_iter(),
-        [[].into_iter()].into_iter(),
-        &libfunc.output_types(),
-        Environment { frame_state, ..environment },
-    ))
-}
-
-fn handle_into_ref(
-    type_sizes: &TypeSizeMap,
-    libfunc: &SignatureOnlyConcreteLibFunc,
-    refs: &[ReferenceValue],
-    environment: Environment,
-) -> Result<CompiledInvocation, InvocationError> {
-    if type_sizes.get(&libfunc.output_types()[0][0]) != Some(&1) {
-        todo!("Add support for taking non-single cell references.");
+    /// Creates a new invocation with only reference changes.
+    fn build_only_reference_changes(
+        self,
+        output_expressions: impl Iterator<Item = ReferenceExpression>,
+    ) -> CompiledInvocation {
+        self.build(
+            vec![],
+            vec![],
+            [ApChange::Known(0)].into_iter(),
+            [output_expressions].into_iter(),
+        )
     }
-    let expression = match refs {
-        [ReferenceValue { expression, .. }] => expression,
-        _ => return Err(InvocationError::WrongNumberOfArguments),
-    };
-    if let ReferenceExpression::Deref(operand) = expression {
-        Ok(CompiledInvocation::only_reference_changes(
-            [ReferenceExpression::IntoSingleCellRef(*operand)].into_iter(),
-            &libfunc.output_types(),
-            environment,
+
+    /// Handles a felt operation with the given op.
+    fn build_felt_op(self, op: Operator) -> Result<CompiledInvocation, InvocationError> {
+        let (expr_a, expr_b) = match self.refs {
+            [
+                ReferenceValue { expression: expr_a, .. },
+                ReferenceValue { expression: expr_b, .. },
+            ] => (expr_a, expr_b),
+            _ => return Err(InvocationError::WrongNumberOfArguments),
+        };
+
+        let ref_expression = match (expr_a, expr_b) {
+            (ReferenceExpression::Deref(a), ReferenceExpression::Deref(b)) => {
+                BinOpExpression { op, a: *a, b: DerefOrImmediate::Deref(*b) }
+            }
+            (ReferenceExpression::Deref(a), ReferenceExpression::Immediate(b)) => {
+                BinOpExpression { op, a: *a, b: DerefOrImmediate::Immediate(*b) }
+            }
+            _ => return Err(InvocationError::InvalidReferenceExpressionForArgument),
+        };
+        Ok(self
+            .build_only_reference_changes([ReferenceExpression::BinOp(ref_expression)].into_iter()))
+    }
+
+    /// Handles a dup instruction.
+    fn build_dup(self) -> Result<CompiledInvocation, InvocationError> {
+        let expression = match self.refs {
+            [ReferenceValue { expression, .. }] => expression,
+            _ => return Err(InvocationError::WrongNumberOfArguments),
+        };
+
+        Ok(self.build_only_reference_changes([expression.clone(), expression.clone()].into_iter()))
+    }
+
+    /// Handles a function call.
+    fn build_function_call(
+        self,
+        func_call: &FunctionCallConcreteLibFunc,
+    ) -> Result<CompiledInvocation, InvocationError> {
+        check_references_on_stack(self.type_sizes, self.refs)?;
+
+        let output_types = func_call.output_types();
+        let fallthrough_outputs = &output_types[0];
+
+        let mut refs = VecDeque::with_capacity(fallthrough_outputs.len());
+
+        let mut offset = -1;
+        for output_type in fallthrough_outputs.iter().rev() {
+            refs.push_front(ReferenceExpression::Deref(DerefOperand {
+                register: Register::AP,
+                offset,
+            }));
+
+            offset -= self
+                .type_sizes
+                .get(output_type)
+                .ok_or_else(|| InvocationError::UnknownTypeId(output_type.clone()))?;
+        }
+
+        // TODO(ilya, 10/10/2022): Support functions with known ap change.
+        Ok(self.build(
+            vec![Instruction::new(
+                InstructionBody::Call(CallInstruction {
+                    target: DerefOrImmediate::Immediate(ImmediateOperand { value: 0 }),
+                    relative: true,
+                }),
+                false,
+            )],
+            vec![RelocationEntry {
+                instruction_idx: 0,
+                relocation: Relocation::RelativeStatementId(func_call.function.entry_point),
+            }],
+            [ApChange::Unknown].into_iter(),
+            [refs.into_iter()].into_iter(),
         ))
-    } else {
-        Err(InvocationError::InvalidReferenceExpressionForArgument)
     }
-}
 
-fn handle_deref(
-    libfunc: &SignatureOnlyConcreteLibFunc,
-    refs: &[ReferenceValue],
-    environment: Environment,
-) -> Result<CompiledInvocation, InvocationError> {
-    let expression = match refs {
-        [ReferenceValue { expression, .. }] => expression,
-        _ => return Err(InvocationError::WrongNumberOfArguments),
-    };
-    if let ReferenceExpression::Deref(operand) = expression {
-        Ok(CompiledInvocation::only_reference_changes(
-            [ReferenceExpression::DoubleDeref(DoubleDerefOperand { inner_deref: *operand })]
-                .into_iter(),
-            &libfunc.output_types(),
-            environment,
-        ))
-    } else {
-        Err(InvocationError::InvalidReferenceExpressionForArgument)
+    /// Returns a store instruction. Helper function for store_temp and store_local.
+    fn get_store_instruction(
+        &self,
+        src_type: &ConcreteTypeId,
+        dst: DerefOperand,
+        src_expr: &ReferenceExpression,
+        inc_ap: bool,
+    ) -> Result<Instruction, InvocationError> {
+        match self.type_sizes.get(src_type) {
+            Some(1) => Ok(()),
+            Some(0) => Err(InvocationError::NotSized(self.invocation.clone())),
+            _ => Err(InvocationError::NotImplemented(self.invocation.clone())),
+        }?;
+
+        let mut hints = vec![];
+
+        let (dst_operand, res_operand) = match src_expr {
+            ReferenceExpression::Deref(operand) => (dst, ResOperand::Deref(*operand)),
+            ReferenceExpression::DoubleDeref(operand) => {
+                (dst, ResOperand::DoubleDeref(operand.clone()))
+            }
+            ReferenceExpression::IntoSingleCellRef(operand) => {
+                hints.push(Hint::AllocSegment { dst });
+                (*operand, ResOperand::DoubleDeref(DoubleDerefOperand { inner_deref: dst }))
+            }
+            ReferenceExpression::Immediate(operand) => (dst, ResOperand::Immediate(*operand)),
+            ReferenceExpression::BinOp(BinOpExpression { op, a, b }) => match op {
+                Operator::Add => (
+                    dst,
+                    ResOperand::BinOp(BinOpOperand { op: Operation::Add, a: *a, b: b.clone() }),
+                ),
+                Operator::Mul => (
+                    dst,
+                    ResOperand::BinOp(BinOpOperand { op: Operation::Mul, a: *a, b: b.clone() }),
+                ),
+
+                // dst = a - b => a = dst + b
+                Operator::Sub => (
+                    *a,
+                    ResOperand::BinOp(BinOpOperand { op: Operation::Add, a: dst, b: b.clone() }),
+                ),
+                // dst = a / b => a = dst * b
+                Operator::Div => (
+                    *a,
+                    ResOperand::BinOp(BinOpOperand { op: Operation::Mul, a: dst, b: b.clone() }),
+                ),
+                _ => return Err(InvocationError::NotImplemented(self.invocation.clone())),
+            },
+        };
+        Ok(Instruction {
+            body: InstructionBody::AssertEq(AssertEqInstruction { a: dst_operand, b: res_operand }),
+            inc_ap,
+            hints,
+        })
     }
-}
 
-fn handle_alloc_local(
-    invocation: &Invocation,
-    libfunc: &AllocLocalConcreteLibFunc,
-    environment: Environment,
-    type_sizes: &TypeSizeMap,
-) -> Result<CompiledInvocation, InvocationError> {
-    let allocation_size = match type_sizes.get(&libfunc.ty) {
-        Some(0) => Err(InvocationError::NotSized(invocation.clone())),
-        Some(size) => Ok(*size),
-        _ => Err(InvocationError::NotImplemented(invocation.clone())),
-    }?;
+    /// Handles store_temp for the given type.
+    fn build_store_temp(self, ty: &ConcreteTypeId) -> Result<CompiledInvocation, InvocationError> {
+        let expression = match self.refs {
+            [ReferenceValue { expression, .. }] => expression,
+            _ => return Err(InvocationError::WrongNumberOfArguments),
+        };
 
-    let (slot, frame_state) = frame_state::handle_alloc_local(
-        environment.frame_state,
-        environment.ap_tracking,
-        allocation_size,
-    )?;
-
-    Ok(CompiledInvocation::only_reference_changes(
-        [ReferenceExpression::Deref(DerefOperand { register: Register::FP, offset: slot })]
+        let dst = DerefOperand { register: Register::AP, offset: 0 };
+        let instruction = self.get_store_instruction(ty, dst, expression, true)?;
+        Ok(self.build(
+            vec![instruction],
+            vec![],
+            [ApChange::Known(1)].into_iter(),
+            [[ReferenceExpression::Deref(DerefOperand { register: Register::AP, offset: -1 })]
+                .into_iter()]
             .into_iter(),
-        &libfunc.output_types(),
-        Environment { frame_state, ..environment },
-    ))
+        ))
+    }
+
+    /// Handles store_local for the given type.
+    fn build_store_local(self, ty: &ConcreteTypeId) -> Result<CompiledInvocation, InvocationError> {
+        let (dst, src_expr) = match self.refs {
+            [
+                ReferenceValue { expression: ReferenceExpression::Deref(dst), .. },
+                ReferenceValue { expression: src_expr, .. },
+            ] => Ok((dst, src_expr)),
+            [_, _] => Err(InvocationError::InvalidReferenceExpressionForArgument),
+            _ => Err(InvocationError::WrongNumberOfArguments),
+        }?;
+
+        let instruction = self.get_store_instruction(ty, *dst, src_expr, false)?;
+        Ok(self.build(
+            vec![instruction],
+            vec![],
+            [ApChange::Known(0)].into_iter(),
+            [[ReferenceExpression::Deref(*dst)].into_iter()].into_iter(),
+        ))
+    }
+
+    /// Handles a jump non zero instruction.
+    fn build_jump_nz(self) -> Result<CompiledInvocation, InvocationError> {
+        let condition = match self.refs {
+            [ReferenceValue { expression: ReferenceExpression::Deref(deref_operand), .. }] => {
+                deref_operand
+            }
+            [_] => return Err(InvocationError::InvalidReferenceExpressionForArgument),
+            _ => return Err(InvocationError::WrongNumberOfArguments),
+        };
+
+        let target_statement_id = match self.invocation.branches.as_slice() {
+            [BranchInfo { target: BranchTarget::Statement(statement_id), .. }, _] => statement_id,
+            _ => panic!("malformed invocation"),
+        };
+
+        Ok(self.build(
+            vec![Instruction::new(
+                InstructionBody::Jnz(JnzInstruction {
+                    jump_offset: DerefOrImmediate::Immediate(ImmediateOperand { value: 0 }),
+                    condition: *condition,
+                }),
+                false,
+            )],
+            vec![RelocationEntry {
+                instruction_idx: 0,
+                relocation: Relocation::RelativeStatementId(*target_statement_id),
+            }],
+            [ApChange::Known(0), ApChange::Known(0)].into_iter(),
+            [vec![ReferenceExpression::Deref(*condition)].into_iter(), vec![].into_iter()]
+                .into_iter(),
+        ))
+    }
+
+    /// Handles a jump instruction.
+    fn build_jump(self) -> Result<CompiledInvocation, InvocationError> {
+        let target_statement_id = match self.invocation.branches.as_slice() {
+            [BranchInfo { target: BranchTarget::Statement(statement_id), .. }] => statement_id,
+            _ => panic!("malformed invocation"),
+        };
+
+        Ok(self.build(
+            vec![Instruction::new(
+                InstructionBody::Jump(JumpInstruction {
+                    target: DerefOrImmediate::Immediate(ImmediateOperand { value: 0 }),
+                    relative: true,
+                }),
+                false,
+            )],
+            vec![RelocationEntry {
+                instruction_idx: 0,
+                relocation: Relocation::RelativeStatementId(*target_statement_id),
+            }],
+            [ApChange::Known(0)].into_iter(),
+            [vec![].into_iter()].into_iter(),
+        ))
+    }
+
+    /// Handles a locals alloction finalization instruction.
+    fn build_finalize_locals(mut self) -> Result<CompiledInvocation, InvocationError> {
+        let (n_slots, frame_state) = frame_state::handle_finalize_locals(
+            self.environment.frame_state,
+            self.environment.ap_tracking,
+        )?;
+        self.environment.frame_state = frame_state;
+        Ok(self.build(
+            vec![Instruction::new(
+                InstructionBody::AddAp(AddApInstruction {
+                    operand: ResOperand::Immediate(ImmediateOperand { value: n_slots as i128 }),
+                }),
+                false,
+            )],
+            vec![],
+            [ApChange::Known(n_slots)].into_iter(),
+            [[].into_iter()].into_iter(),
+        ))
+    }
+
+    /// Handles instruction for taking a reference.
+    fn build_into_ref(self) -> Result<CompiledInvocation, InvocationError> {
+        if self.type_sizes.get(&self.libfunc.output_types()[0][0]) != Some(&1) {
+            todo!("Add support for taking non-single cell references.");
+        }
+        let expression = match self.refs {
+            [ReferenceValue { expression, .. }] => expression,
+            _ => return Err(InvocationError::WrongNumberOfArguments),
+        };
+        if let ReferenceExpression::Deref(operand) = expression {
+            Ok(self.build_only_reference_changes(
+                [ReferenceExpression::IntoSingleCellRef(*operand)].into_iter(),
+            ))
+        } else {
+            Err(InvocationError::InvalidReferenceExpressionForArgument)
+        }
+    }
+
+    /// Handles instruction for dereferencing a reference.
+    fn build_deref(self) -> Result<CompiledInvocation, InvocationError> {
+        let expression = match self.refs {
+            [ReferenceValue { expression, .. }] => expression,
+            _ => return Err(InvocationError::WrongNumberOfArguments),
+        };
+        if let ReferenceExpression::Deref(operand) = expression {
+            Ok(self.build_only_reference_changes(
+                [ReferenceExpression::DoubleDeref(DoubleDerefOperand { inner_deref: *operand })]
+                    .into_iter(),
+            ))
+        } else {
+            Err(InvocationError::InvalidReferenceExpressionForArgument)
+        }
+    }
+
+    /// Handles the local variable allocation instruction.
+    fn build_alloc_local(
+        mut self,
+        ty: &ConcreteTypeId,
+    ) -> Result<CompiledInvocation, InvocationError> {
+        let allocation_size = match self.type_sizes.get(ty) {
+            Some(0) => Err(InvocationError::NotSized(self.invocation.clone())),
+            Some(size) => Ok(*size),
+            _ => Err(InvocationError::NotImplemented(self.invocation.clone())),
+        }?;
+
+        let (slot, frame_state) = frame_state::handle_alloc_local(
+            self.environment.frame_state,
+            self.environment.ap_tracking,
+            allocation_size,
+        )?;
+        self.environment.frame_state = frame_state;
+
+        Ok(self.build_only_reference_changes(
+            [ReferenceExpression::Deref(DerefOperand { register: Register::FP, offset: slot })]
+                .into_iter(),
+        ))
+    }
 }
 
-fn handle_store_local(
-    invocation: &Invocation,
-    libfunc: &StoreLocalConcreteLibFunc,
-    refs: &[ReferenceValue],
-    environment: Environment,
-    type_sizes: &TypeSizeMap,
-) -> Result<CompiledInvocation, InvocationError> {
-    let (dst, src_expr) = match refs {
-        [
-            ReferenceValue { expression: ReferenceExpression::Deref(dst), .. },
-            ReferenceValue { expression: src_expr, .. },
-        ] => Ok((dst, src_expr)),
-        [_, _] => Err(InvocationError::InvalidReferenceExpressionForArgument),
-        _ => Err(InvocationError::WrongNumberOfArguments),
-    }?;
-
-    let instruction = handle_store(type_sizes, invocation, &libfunc.ty, *dst, src_expr, false)?;
-    Ok(CompiledInvocation::new(
-        vec![instruction],
-        vec![],
-        [ApChange::Known(0)].into_iter(),
-        [[ReferenceExpression::Deref(*dst)].into_iter()].into_iter(),
-        &libfunc.output_types(),
-        environment,
-    ))
-}
-
+/// Given an invocation and concrete libfunc, creates a compiled representation of the Sierra
+/// command.
 pub fn compile_invocation(
     invocation: &Invocation,
     libfunc: &CoreConcreteLibFunc,
@@ -507,68 +465,49 @@ pub fn compile_invocation(
     type_sizes: &TypeSizeMap,
     environment: Environment,
 ) -> Result<CompiledInvocation, InvocationError> {
+    let builder = CompiledInvocationBuilder { environment, libfunc, refs, invocation, type_sizes };
     match libfunc {
         // TODO(ilya, 10/10/2022): Handle type.
         CoreConcreteLibFunc::Felt(FeltConcrete::Operation(OperationConcreteLibFunc::Binary(
-            felt_op,
-        ))) => handle_felt_op(invocation, felt_op, refs, environment),
-        CoreConcreteLibFunc::Felt(FeltConcrete::JumpNotZero(jnz)) => {
-            handle_jump_nz(invocation, jnz, refs, environment)
-        }
-        CoreConcreteLibFunc::Felt(FeltConcrete::Const(libfunc)) => {
-            Ok(CompiledInvocation::only_reference_changes(
+            BinaryOperationConcreteLibFunc { operator, .. },
+        ))) => builder.build_felt_op(*operator),
+        CoreConcreteLibFunc::Felt(FeltConcrete::JumpNotZero(_)) => builder.build_jump_nz(),
+        CoreConcreteLibFunc::Felt(FeltConcrete::Const(libfunc)) => Ok(builder
+            .build_only_reference_changes(
                 [ReferenceExpression::Immediate(ImmediateOperand { value: libfunc.c as i128 })]
                     .into_iter(),
-                &libfunc.output_types(),
-                environment,
-            ))
+            )),
+        CoreConcreteLibFunc::Drop(_) => Ok(builder.build_only_reference_changes([].into_iter())),
+        CoreConcreteLibFunc::Dup(_) => builder.build_dup(),
+        CoreConcreteLibFunc::Mem(MemConcreteLibFunc::StoreTemp(StoreTempConcreteLibFunc {
+            ty,
+            ..
+        })) => builder.build_store_temp(ty),
+        CoreConcreteLibFunc::Mem(MemConcreteLibFunc::Rename(_))
+        | CoreConcreteLibFunc::UnwrapNonZero(_) => {
+            Ok(builder.build_only_reference_changes(refs.iter().map(|r| r.expression.clone())))
         }
-        CoreConcreteLibFunc::Drop(libfunc) => Ok(CompiledInvocation::only_reference_changes(
-            [].into_iter(),
-            &libfunc.output_types(),
-            environment,
-        )),
-        CoreConcreteLibFunc::Dup(felt_dup) => handle_dup(felt_dup, refs, environment),
-        CoreConcreteLibFunc::Mem(MemConcreteLibFunc::StoreTemp(store_temp)) => {
-            handle_store_temp(invocation, store_temp, refs, environment, type_sizes)
-        }
-        CoreConcreteLibFunc::Mem(MemConcreteLibFunc::Rename(libfunc))
-        | CoreConcreteLibFunc::UnwrapNonZero(libfunc) => {
-            Ok(CompiledInvocation::only_reference_changes(
-                refs.iter().map(|r| r.expression.clone()),
-                &libfunc.output_types(),
-                environment,
-            ))
-        }
-        CoreConcreteLibFunc::FunctionCall(func_call) => {
-            handle_function_call(type_sizes, func_call, refs, environment)
-        }
-        CoreConcreteLibFunc::UnconditionalJump(libfunc) => {
-            handle_jump(invocation, libfunc, environment)
-        }
-        CoreConcreteLibFunc::ApTracking(libfunc) => Ok(CompiledInvocation::new(
+        CoreConcreteLibFunc::FunctionCall(func_call) => builder.build_function_call(func_call),
+        CoreConcreteLibFunc::UnconditionalJump(_) => builder.build_jump(),
+        CoreConcreteLibFunc::ApTracking(_) => Ok(builder.build(
             vec![],
             vec![],
             [ApChange::Unknown].into_iter(),
             [[].into_iter()].into_iter(),
-            &libfunc.output_types(),
-            environment,
         )),
-        CoreConcreteLibFunc::Mem(MemConcreteLibFunc::FinalizeLocals(libfunc)) => {
-            handle_finalize_locals(libfunc, environment)
+        CoreConcreteLibFunc::Mem(MemConcreteLibFunc::FinalizeLocals(_)) => {
+            builder.build_finalize_locals()
         }
-        CoreConcreteLibFunc::Ref(RefConcreteLibFunc::Take(libfunc)) => {
-            handle_into_ref(type_sizes, libfunc, refs, environment)
-        }
-        CoreConcreteLibFunc::Ref(RefConcreteLibFunc::Deref(libfunc)) => {
-            handle_deref(libfunc, refs, environment)
-        }
-        CoreConcreteLibFunc::Mem(MemConcreteLibFunc::AllocLocal(libfunc)) => {
-            handle_alloc_local(invocation, libfunc, environment, type_sizes)
-        }
-        CoreConcreteLibFunc::Mem(MemConcreteLibFunc::StoreLocal(libfunc)) => {
-            handle_store_local(invocation, libfunc, refs, environment, type_sizes)
-        }
+        CoreConcreteLibFunc::Ref(RefConcreteLibFunc::Take(_)) => builder.build_into_ref(),
+        CoreConcreteLibFunc::Ref(RefConcreteLibFunc::Deref(_)) => builder.build_deref(),
+        CoreConcreteLibFunc::Mem(MemConcreteLibFunc::AllocLocal(AllocLocalConcreteLibFunc {
+            ty,
+            ..
+        })) => builder.build_alloc_local(ty),
+        CoreConcreteLibFunc::Mem(MemConcreteLibFunc::StoreLocal(StoreLocalConcreteLibFunc {
+            ty,
+            ..
+        })) => builder.build_store_local(ty),
         _ => Err(InvocationError::NotImplemented(invocation.clone())),
     }
 }
