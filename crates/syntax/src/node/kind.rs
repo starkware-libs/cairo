@@ -43,6 +43,8 @@ pub enum SyntaxKind {
     StatementExpr,
     StatementReturn,
     Param,
+    ModifierList,
+    Modifier,
     ParamList,
     FunctionSignature,
     ItemList,
