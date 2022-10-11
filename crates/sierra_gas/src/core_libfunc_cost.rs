@@ -19,6 +19,9 @@ use sierra::program::StatementIdx;
 use crate::cost_expr::{CostExpr, Var};
 use crate::generate_equations::StatementFutureCost;
 
+/// The cost for the call of a user function.
+pub const FUNCTION_CALL_COST: i32 = 2;
+
 /// Returns an expression for the gas cost for core libfuncs.
 pub fn core_libfunc_cost(
     statement_future_cost: &mut dyn StatementFutureCost,
@@ -30,7 +33,7 @@ pub fn core_libfunc_cost(
         // function entry point and on - while also adding the call cost.
         FunctionCall(FunctionCallConcreteLibFunc { function, .. }) => {
             vec![
-                CostExpr::from_const(2)
+                CostExpr::from_const(FUNCTION_CALL_COST)
                     + statement_future_cost.get_future_cost(&function.entry_point).clone(),
             ]
         }

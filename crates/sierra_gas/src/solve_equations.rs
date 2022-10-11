@@ -3,7 +3,6 @@ use std::collections::HashMap;
 
 use good_lp::{default_solver, variable, variables, Expression, Solution, SolverModel};
 use itertools::chain;
-use sierra::program::StatementIdx;
 
 use super::CostError;
 use crate::cost_expr::{CostExpr, Var};
@@ -11,7 +10,7 @@ use crate::cost_expr::{CostExpr, Var};
 /// Solving a set of equations and returning the values of the symbols contained in them.
 pub fn solve_equations(
     equations: Vec<(CostExpr, CostExpr)>,
-) -> Result<HashMap<StatementIdx, i64>, CostError> {
+) -> Result<HashMap<Var, i64>, CostError> {
     let mut vars = variables!();
     let mut orig_to_solver_var = HashMap::new();
     // Add all variables to structure and map.
@@ -43,11 +42,6 @@ pub fn solve_equations(
     let solution = problem.solve().map_err(|_| CostError::SolvingGasEquationFailed)?;
     Ok(orig_to_solver_var
         .into_iter()
-        .filter_map(|(orig, solver)| match orig {
-            Var::LibFuncImplicitGasVariable(symbol) => {
-                Some((symbol, solution.value(solver) as i64))
-            }
-            Var::StatementFuture(_) => None,
-        })
+        .map(|(orig, solver)| (orig, solution.value(solver) as i64))
         .collect())
 }
