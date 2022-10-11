@@ -18,7 +18,12 @@ impl NamedType for UninitializedType {
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
         Ok(UninitializedConcreteType {
-            info: TypeInfo { storable: false, droppable: true, duplicatable: false },
+            info: TypeInfo {
+                long_id: Self::concrete_type_long_id(args),
+                storable: false,
+                droppable: true,
+                duplicatable: false,
+            },
             ty: as_single_type(args)?,
         })
     }

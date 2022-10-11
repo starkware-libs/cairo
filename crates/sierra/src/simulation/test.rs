@@ -1,3 +1,4 @@
+use bimap::BiMap;
 use test_case::test_case;
 
 use super::value::CoreValue::{self, Array, GasBuiltin, Integer, NonZero, Uninitialized};
@@ -11,7 +12,8 @@ use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::TypeInfo;
 use crate::extensions::GenericLibFunc;
 use crate::ids::{ConcreteTypeId, FunctionId, GenericTypeId};
-use crate::program::{Function, FunctionSignature, GenericArg, StatementIdx};
+use crate::program::{ConcreteTypeLongId, Function, FunctionSignature, GenericArg, StatementIdx};
+use crate::test_utils::build_bijective_mapping;
 
 fn type_arg(name: &str) -> GenericArg {
     GenericArg::Type(name.into())
@@ -25,7 +27,14 @@ fn user_func_arg(name: &str) -> GenericArg {
     GenericArg::UserFunc(name.into())
 }
 
-struct MockSpecializationContext {}
+struct MockSpecializationContext {
+    mapping: BiMap<ConcreteTypeId, ConcreteTypeLongId>,
+}
+impl MockSpecializationContext {
+    pub fn new() -> Self {
+        Self { mapping: build_bijective_mapping() }
+    }
+}
 
 impl SpecializationContext for MockSpecializationContext {
     fn upcast(&self) -> &dyn SignatureSpecializationContext {
@@ -43,9 +52,19 @@ impl SpecializationContext for MockSpecializationContext {
 impl TypeSpecializationContext for MockSpecializationContext {
     fn try_get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo> {
         if id == "int".into() || id == "NonZeroInt".into() {
-            Some(TypeInfo { storable: true, droppable: true, duplicatable: true })
+            Some(TypeInfo {
+                long_id: self.mapping.get_by_left(&id)?.clone(),
+                storable: true,
+                droppable: true,
+                duplicatable: true,
+            })
         } else if id == "UninitializedInt".into() {
-            Some(TypeInfo { storable: false, droppable: true, duplicatable: false })
+            Some(TypeInfo {
+                long_id: self.mapping.get_by_left(&id)?.clone(),
+                storable: false,
+                droppable: true,
+                duplicatable: false,
+            })
         } else {
             None
         }
@@ -93,7 +112,7 @@ fn simulate(
     core::simulate(
         &CoreLibFunc::by_id(&id.into())
             .unwrap()
-            .specialize(&MockSpecializationContext {}, &generic_args)
+            .specialize(&MockSpecializationContext::new(), &generic_args)
             .unwrap(),
         inputs,
         || Some(4),
