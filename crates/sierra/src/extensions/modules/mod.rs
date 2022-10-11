@@ -8,6 +8,7 @@ pub mod array;
 pub mod boxing;
 pub mod drop;
 pub mod duplicate;
+pub mod enm;
 pub mod felt;
 pub mod function_call;
 pub mod gas;

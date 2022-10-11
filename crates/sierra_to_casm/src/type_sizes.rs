@@ -26,6 +26,9 @@ pub fn get_type_size_map(
                 type_sizes.get(ty).cloned()
             }
             CoreTypeConcrete::Uninitialized(_) => Some(0),
+            CoreTypeConcrete::Enum(enum_type) => {
+                Some(1 + enum_type.variants.iter().map(|variant| type_sizes[variant]).max()?)
+            }
         }?;
         type_sizes.insert(declaration.id.clone(), size);
     }

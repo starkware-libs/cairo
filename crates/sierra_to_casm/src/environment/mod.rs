@@ -20,8 +20,8 @@ pub enum EnvironmentError {
 /// Part of the program annotations that libfuncs may access as part of their run.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Environment {
-    // The ap tracking from the beginning of the current function.
-    // Once it changes to ApChange::Unknown it remains in that state.
+    /// The ap tracking from the beginning of the current function.
+    /// Once it changes to ApChange::Unknown it remains in that state.
     pub ap_tracking: ApChange,
     pub frame_state: FrameState,
 }
