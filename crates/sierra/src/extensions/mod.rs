@@ -4,6 +4,7 @@ pub mod error;
 pub mod lib_func;
 /// All implementations of basic extensions are under this module.
 pub mod modules;
+pub mod type_specialization_context;
 pub mod types;
 
 pub use self::error::{ExtensionError, SpecializationError};
