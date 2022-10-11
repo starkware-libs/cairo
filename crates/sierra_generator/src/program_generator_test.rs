@@ -67,8 +67,8 @@ fn test_type_dependency() {
     let module_id = setup_test_module(
         &mut db,
         indoc! {"
-                func deref_twice(a: Ref::<Ref::<Ref::<felt>>>) -> Ref::<felt> {
-                    deref::<Ref::<felt>>(deref::<Ref::<Ref::<felt>>>(a))
+                func unbox_twice(a: Box::<Box::<Box::<felt>>>) -> Box::<felt> {
+                    unbox::<Box::<felt>>(unbox::<Box::<Box::<felt>>>(a))
                 }
             "},
     )
@@ -81,21 +81,21 @@ fn test_type_dependency() {
         replace_libfunc_ids_in_program(&db, program).to_string(),
         indoc! {"
             type [0] = felt;
-            type [1] = Ref<[0]>;
-            type [2] = Ref<[1]>;
-            type [3] = Ref<[2]>;
+            type [1] = Box<[0]>;
+            type [2] = Box<[1]>;
+            type [3] = Box<[2]>;
 
             libfunc revoke_ap_tracking = revoke_ap_tracking;
-            libfunc deref<[2]> = deref<[2]>;
+            libfunc unbox<[2]> = unbox<[2]>;
             libfunc store_temp<[2]> = store_temp<[2]>;
-            libfunc deref<[1]> = deref<[1]>;
+            libfunc unbox<[1]> = unbox<[1]>;
             libfunc store_temp<[1]> = store_temp<[1]>;
             libfunc rename<[1]> = rename<[1]>;
 
             revoke_ap_tracking() -> ();
-            deref<[2]>([0]) -> ([1]);
+            unbox<[2]>([0]) -> ([1]);
             store_temp<[2]>([1]) -> ([1]);
-            deref<[1]>([1]) -> ([2]);
+            unbox<[1]>([1]) -> ([2]);
             store_temp<[1]>([2]) -> ([2]);
             rename<[1]>([2]) -> ([3]);
             return([3]);

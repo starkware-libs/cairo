@@ -116,9 +116,9 @@ impl SpecializationContext for MockSpecializationContext {
 #[test_case("NonZero", vec![type_arg("T")] => Ok(()); "NonZero<T>")]
 #[test_case("NonZero", vec![] => Err(WrongNumberOfGenericArgs); "NonZero")]
 #[test_case("NonZero", vec![value_arg(5)] => Err(UnsupportedGenericArg); "NonZero<5>")]
-#[test_case("Ref", vec![type_arg("T")] => Ok(()); "Ref<T>")]
-#[test_case("Ref", vec![] => Err(WrongNumberOfGenericArgs); "Ref<>")]
-#[test_case("Ref", vec![value_arg(5)] => Err(UnsupportedGenericArg); "Ref<5>")]
+#[test_case("Box", vec![type_arg("T")] => Ok(()); "Box<T>")]
+#[test_case("Box", vec![] => Err(WrongNumberOfGenericArgs); "Box<>")]
+#[test_case("Box", vec![value_arg(5)] => Err(UnsupportedGenericArg); "Box<5>")]
 #[test_case("uninitialized", vec![type_arg("T")] => Ok(()); "uninitialized<T>")]
 fn find_type_specialization(
     id: &str,

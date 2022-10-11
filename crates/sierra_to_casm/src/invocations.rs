@@ -15,6 +15,7 @@ use sierra::extensions::arithmetic::{
     BinaryOperationConcreteLibFunc, OperationConcreteLibFunc, Operator,
 };
 use sierra::extensions::array::ArrayConcreteLibFunc;
+use sierra::extensions::boxing::BoxConcreteLibFunc;
 use sierra::extensions::core::CoreConcreteLibFunc;
 use sierra::extensions::felt::FeltConcrete;
 use sierra::extensions::function_call::FunctionCallConcreteLibFunc;
@@ -22,7 +23,6 @@ use sierra::extensions::mem::{
     AllocLocalConcreteLibFunc, MemConcreteLibFunc, StoreLocalConcreteLibFunc,
     StoreTempConcreteLibFunc,
 };
-use sierra::extensions::reference::RefConcreteLibFunc;
 use sierra::extensions::ConcreteLibFunc;
 use sierra::ids::ConcreteTypeId;
 use sierra::program::{BranchInfo, BranchTarget, Invocation};
@@ -411,8 +411,8 @@ impl CompiledInvocationBuilder<'_> {
         ))
     }
 
-    /// Handles instruction for taking a reference.
-    fn build_into_ref(self) -> Result<CompiledInvocation, InvocationError> {
+    /// Handles instruction for creating a box.
+    fn build_into_box(self) -> Result<CompiledInvocation, InvocationError> {
         if self.type_sizes.get(&self.libfunc.output_types()[0][0]) != Some(&1) {
             todo!("Add support for taking non-single cell references.");
         }
@@ -429,8 +429,8 @@ impl CompiledInvocationBuilder<'_> {
         }
     }
 
-    /// Handles instruction for dereferencing a reference.
-    fn build_deref(self) -> Result<CompiledInvocation, InvocationError> {
+    /// Handles instruction for unboxing a box.
+    fn build_unbox(self) -> Result<CompiledInvocation, InvocationError> {
         let expression = match self.refs {
             [ReferenceValue { expression, .. }] => expression,
             _ => return Err(InvocationError::WrongNumberOfArguments),
@@ -553,8 +553,8 @@ pub fn compile_invocation(
         CoreConcreteLibFunc::Mem(MemConcreteLibFunc::FinalizeLocals(_)) => {
             builder.build_finalize_locals()
         }
-        CoreConcreteLibFunc::Ref(RefConcreteLibFunc::Take(_)) => builder.build_into_ref(),
-        CoreConcreteLibFunc::Ref(RefConcreteLibFunc::Deref(_)) => builder.build_deref(),
+        CoreConcreteLibFunc::Box(BoxConcreteLibFunc::Into(_)) => builder.build_into_box(),
+        CoreConcreteLibFunc::Box(BoxConcreteLibFunc::Unbox(_)) => builder.build_unbox(),
         CoreConcreteLibFunc::Mem(MemConcreteLibFunc::AllocLocal(AllocLocalConcreteLibFunc {
             ty,
             ..
