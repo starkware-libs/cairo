@@ -5,6 +5,7 @@ use debug::DebugWithDb;
 use defs::ids::{GenericFunctionId, GenericParamId, ParamLongId};
 use diagnostics_proc_macros::DebugWithDb;
 use syntax::node::ast::Modifier;
+use syntax::node::db::SyntaxGroup;
 use syntax::node::{ast, Terminal, TypedSyntaxNode};
 
 use crate::corelib::unit_ty;
@@ -95,21 +96,32 @@ pub fn function_signature_return_type(
 /// Returns the modifiers of a variable, given the list of modifiers in the AST.
 pub fn compute_modifiers(
     diagnostics: &mut SemanticDiagnostics,
+    syntax_db: &dyn SyntaxGroup,
     modifier_list: &[Modifier],
 ) -> semantic::Modifiers {
+    let mut is_mut = false;
     let mut is_ref = false;
+
     for modifier in modifier_list {
         match modifier {
+            Modifier::Mut(terminal) => {
+                if is_mut {
+                    diagnostics
+                        .report(terminal, RepeatedModifier { modifier: terminal.text(syntax_db) });
+                }
+                is_mut = true
+            }
             Modifier::Ref(terminal) => {
                 if is_ref {
-                    diagnostics.report(terminal, RepeatedModifier { modifier: "ref".into() });
+                    diagnostics
+                        .report(terminal, RepeatedModifier { modifier: terminal.text(syntax_db) });
                 }
                 is_ref = true
             }
         }
     }
 
-    semantic::Modifiers { is_ref }
+    semantic::Modifiers { is_mut, is_ref }
 }
 
 /// Returns the parameters of the given function signature's AST.
@@ -128,7 +140,6 @@ pub fn function_signature_params(
         let name = ast_param.name(syntax_db).text(syntax_db);
         let id = db.intern_param(ParamLongId(resolver.module_id, ast_param.stable_ptr()));
         let ty_syntax = ast_param.type_clause(syntax_db).ty(syntax_db);
-
         // TODO(yuval): Diagnostic?
         let ty = resolve_type(db, diagnostics, resolver, &ty_syntax);
         let param = semantic::Parameter {
@@ -136,6 +147,7 @@ pub fn function_signature_params(
             ty,
             modifiers: compute_modifiers(
                 diagnostics,
+                syntax_db,
                 &ast_param.modifiers(syntax_db).elements(syntax_db),
             ),
         };

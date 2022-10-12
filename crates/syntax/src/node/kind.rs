@@ -108,6 +108,8 @@ pub enum SyntaxKind {
     TerminalUse,
     TokenRef,
     TerminalRef,
+    TokenMut,
+    TerminalMut,
     TokenAnd,
     TerminalAnd,
     TokenAndAnd,
@@ -197,6 +199,7 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalElse
                 | SyntaxKind::TerminalUse
                 | SyntaxKind::TerminalRef
+                | SyntaxKind::TerminalMut
                 | SyntaxKind::TerminalAnd
                 | SyntaxKind::TerminalAndAnd
                 | SyntaxKind::TerminalOrOr
@@ -259,6 +262,7 @@ impl SyntaxKind {
                 | SyntaxKind::TokenElse
                 | SyntaxKind::TokenUse
                 | SyntaxKind::TokenRef
+                | SyntaxKind::TokenMut
                 | SyntaxKind::TokenAnd
                 | SyntaxKind::TokenAndAnd
                 | SyntaxKind::TokenOrOr
