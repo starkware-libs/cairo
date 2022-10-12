@@ -25,7 +25,7 @@ impl OwnedVariable {
 /// Maintains the liveness state of lowered variables.
 /// Also maintains bound semantic variables. See [SemanticVariablesMap].
 #[derive(Default)]
-pub struct BlockScope {
+pub struct BlockScope<'a> {
     /// Variables given as inputs. Relevant for function blocks / match arm blocks, etc...
     inputs: Vec<VariableId>,
     /// Responsible for pulling from outer scopes. See [PullUnifier]. Exists for every non-root
