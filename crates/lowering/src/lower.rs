@@ -71,7 +71,7 @@ impl<'db> Lowerer<'db> {
         //   object with the correct diagnostics.
         let initial_scope = BlockScope::new_root(&mut lowerer.ctx, &input_semantic_var_ids);
         let root_sealed_block = lowerer.lower_block(initial_scope, semantic_block)?;
-        let root_block = root_sealed_block.finalize(&mut lowerer.ctx, &[], &[]);
+        let (root_block, _end_info) = root_sealed_block.finalize(&mut lowerer.ctx, &[], &[]);
         let root = lowerer.ctx.blocks.alloc(root_block);
         let LoweringContext { diagnostics, variables, blocks, .. } = lowerer.ctx;
         Some(Lowered { diagnostics: diagnostics.build(), root, variables, blocks })
