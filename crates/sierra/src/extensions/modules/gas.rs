@@ -21,7 +21,12 @@ impl NoGenericArgsGenericType for GasBuiltinType {
 
     fn specialize(&self) -> Self::Concrete {
         InfoOnlyConcreteType {
-            info: TypeInfo { storable: true, droppable: false, duplicatable: false },
+            info: TypeInfo {
+                long_id: Self::concrete_type_long_id(&[]),
+                storable: true,
+                droppable: false,
+                duplicatable: false,
+            },
         }
     }
 }

@@ -15,7 +15,12 @@ impl NoGenericArgsGenericType for FeltType {
 
     fn specialize(&self) -> Self::Concrete {
         InfoOnlyConcreteType {
-            info: TypeInfo { storable: true, droppable: true, duplicatable: true },
+            info: TypeInfo {
+                long_id: Self::concrete_type_long_id(&[]),
+                storable: true,
+                droppable: true,
+                duplicatable: true,
+            },
         }
     }
 }
