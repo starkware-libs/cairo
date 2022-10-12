@@ -731,6 +731,7 @@ impl<'a> Parser<'a> {
     fn try_parse_modifier(&mut self) -> Option<ModifierGreen> {
         match Some(self.peek().kind) {
             TerminalRef::KIND => Some(self.take::<TerminalRef>().into()),
+            TerminalMut::KIND => Some(self.take::<TerminalMut>().into()),
             _ => None,
         }
     }

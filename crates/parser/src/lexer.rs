@@ -132,6 +132,7 @@ impl<'a> Lexer<'a> {
             "else" => TokenKind::Else,
             "use" => TokenKind::Use,
             "ref" => TokenKind::Ref,
+            "mut" => TokenKind::Mut,
             "_" => TokenKind::Underscore,
             _ => TokenKind::Identifier,
         }
@@ -268,7 +269,10 @@ enum TokenKind {
     If,
     Else,
     Use,
+
+    // Modifiers.
     Ref,
+    Mut,
 
     // Punctuation.
     And,
@@ -355,6 +359,7 @@ fn token_kind_to_terminal_syntax_kind(kind: TokenKind) -> SyntaxKind {
         TokenKind::LParen => SyntaxKind::TerminalLParen,
         TokenKind::RParen => SyntaxKind::TerminalRParen,
         TokenKind::Ref => SyntaxKind::TerminalRef,
+        TokenKind::Mut => SyntaxKind::TerminalMut,
         TokenKind::Arrow => SyntaxKind::TerminalArrow,
         TokenKind::MatchArrow => SyntaxKind::TerminalMatchArrow,
         TokenKind::BadCharacters => SyntaxKind::TerminalBadCharacters,
