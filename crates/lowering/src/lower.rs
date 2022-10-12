@@ -69,16 +69,20 @@ impl<'db> Lowerer<'db> {
         // Lower block to a BlockSealed.
         // TODO(spapini): The `?` here is incorrect. In case of failure we should still return an
         //   object with the correct diagnostics.
-        let root_sealed_block = lowerer.lower_block(semantic_block)?;
-        let root_block = root_sealed_block.finalize(&mut lowerer.ctx, &input_semantic_var_ids, &[]);
+        let initial_scope = BlockScope::new_root(&mut lowerer.ctx, &input_semantic_var_ids);
+        let root_sealed_block = lowerer.lower_block(initial_scope, semantic_block)?;
+        let root_block = root_sealed_block.finalize(&mut lowerer.ctx, &[], &[]);
         let root = lowerer.ctx.blocks.alloc(root_block);
         let LoweringContext { diagnostics, variables, blocks, .. } = lowerer.ctx;
         Some(Lowered { diagnostics: diagnostics.build(), root, variables, blocks })
     }
 
     /// Lowers a semantic block.
-    fn lower_block(&mut self, expr_block: &semantic::ExprBlock) -> Option<BlockSealed> {
-        let mut scope = BlockScope::default();
+    fn lower_block(
+        &mut self,
+        mut scope: BlockScope,
+        expr_block: &semantic::ExprBlock,
+    ) -> Option<BlockSealed> {
         for (i, stmt_id) in expr_block.statements.iter().enumerate() {
             let stmt = &self.function_def.statements[*stmt_id];
             let lowered_stmt = self.lower_statement(&mut scope, stmt);
