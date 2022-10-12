@@ -79,7 +79,7 @@ impl Statement {
         match &self {
             Statement::Literal(_stmt) => vec![],
             Statement::Call(stmt) => stmt.inputs.clone(),
-            Statement::CallBlock(stmt) => stmt.inputs.clone(),
+            Statement::CallBlock(_) => vec![],
             Statement::MatchExtern(stmt) => stmt.inputs.clone(),
             Statement::StructConstruct => todo!(),
             Statement::StructDestruct => todo!(),
@@ -129,8 +129,6 @@ pub struct StatementCall {
 pub struct StatementCallBlock {
     /// A block to "call".
     pub block: BlockId,
-    /// Living variables in current scope to move and be bound to the callee block inputs.
-    pub inputs: Vec<VariableId>,
     /// New variables to be introduced into the current scope, moved from the callee block outputs.
     pub outputs: Vec<VariableId>,
 }

@@ -144,12 +144,12 @@ impl DebugWithDb<LoweredFormatter<'_>> for StatementCall {
 }
 
 impl DebugWithDb<LoweredFormatter<'_>> for StatementCallBlock {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}(", self.block)?;
-        for var in &self.inputs {
-            var.fmt(f, ctx)?;
-        }
-        write!(f, ")")
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+        _ctx: &LoweredFormatter<'_>,
+    ) -> std::fmt::Result {
+        write!(f, "{:?}()", self.block)
     }
 }
 
