@@ -106,6 +106,8 @@ pub enum SyntaxKind {
     TerminalElse,
     TokenUse,
     TerminalUse,
+    TokenRef,
+    TerminalRef,
     TokenAnd,
     TerminalAnd,
     TokenAndAnd,
@@ -170,8 +172,6 @@ pub enum SyntaxKind {
     TerminalEndOfFile,
     TokenBadCharacters,
     TerminalBadCharacters,
-    TokenRef,
-    TerminalRef,
 }
 impl SyntaxKind {
     pub fn is_terminal(&self) -> bool {
@@ -196,6 +196,7 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalIf
                 | SyntaxKind::TerminalElse
                 | SyntaxKind::TerminalUse
+                | SyntaxKind::TerminalRef
                 | SyntaxKind::TerminalAnd
                 | SyntaxKind::TerminalAndAnd
                 | SyntaxKind::TerminalOrOr
@@ -228,7 +229,6 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalMatchArrow
                 | SyntaxKind::TerminalEndOfFile
                 | SyntaxKind::TerminalBadCharacters
-                | SyntaxKind::TerminalRef
         )
     }
     pub fn is_token(&self) -> bool {
@@ -258,6 +258,7 @@ impl SyntaxKind {
                 | SyntaxKind::TokenIf
                 | SyntaxKind::TokenElse
                 | SyntaxKind::TokenUse
+                | SyntaxKind::TokenRef
                 | SyntaxKind::TokenAnd
                 | SyntaxKind::TokenAndAnd
                 | SyntaxKind::TokenOrOr
@@ -290,7 +291,6 @@ impl SyntaxKind {
                 | SyntaxKind::TokenMatchArrow
                 | SyntaxKind::TokenEndOfFile
                 | SyntaxKind::TokenBadCharacters
-                | SyntaxKind::TokenRef
         )
     }
 }

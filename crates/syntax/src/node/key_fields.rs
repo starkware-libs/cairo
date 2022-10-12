@@ -110,6 +110,8 @@ pub fn get_key_fields(kind: SyntaxKind, children: Vec<GreenId>) -> Vec<GreenId> 
         SyntaxKind::TerminalElse => vec![],
         SyntaxKind::TokenUse => vec![],
         SyntaxKind::TerminalUse => vec![],
+        SyntaxKind::TokenRef => vec![],
+        SyntaxKind::TerminalRef => vec![],
         SyntaxKind::TokenAnd => vec![],
         SyntaxKind::TerminalAnd => vec![],
         SyntaxKind::TokenAndAnd => vec![],
@@ -174,7 +176,5 @@ pub fn get_key_fields(kind: SyntaxKind, children: Vec<GreenId>) -> Vec<GreenId> 
         SyntaxKind::TerminalEndOfFile => vec![],
         SyntaxKind::TokenBadCharacters => vec![],
         SyntaxKind::TerminalBadCharacters => vec![],
-        SyntaxKind::TokenRef => vec![],
-        SyntaxKind::TerminalRef => vec![],
     }
 }

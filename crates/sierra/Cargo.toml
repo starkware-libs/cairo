@@ -19,5 +19,6 @@ utils = { path = "../utils" }
 
 [dev-dependencies]
 assert_matches = "1.5"
+bimap = "0.6.2"
 indoc = "1.0.7"
 test-case = "2.2.1"

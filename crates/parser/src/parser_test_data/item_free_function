@@ -1,0 +1,32 @@
+//! > Test an ItemFreeFunction syntax tree
+
+//! > test_function_name
+test_partial_parser_tree
+
+//! > test_params
+cairo_code
+top_level_kind
+ignored_kinds
+
+//! > test_output_params
+expected_tree
+
+//! > cairo_code
+func foo(a: int) -> felt {
+    return a;
+}
+
+//! > top_level_kind
+ItemFreeFunction
+
+//! > ignored_kinds
+ExprBlock
+FunctionSignature
+
+//! > expected_tree
+└── Top level kind: ItemFreeFunction
+    ├── function_kw (kind: TokenFunction): 'func'
+    ├── name (kind: TokenIdentifier): 'foo'
+    ├── generic_params (kind: OptionGenericParamsEmpty) []
+    ├── signature (kind: FunctionSignature) <ignored>
+    └── body (kind: ExprBlock) <ignored>

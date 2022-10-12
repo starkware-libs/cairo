@@ -6,7 +6,7 @@ use clap::Parser;
 use colored::Colorize;
 use diffy::{create_patch, PatchFormatter};
 use formatter::{get_formatted_file, FormatterConfig};
-use parser::test_utils::{get_syntax_root_and_diagnostics, ParserDatabaseForTesting};
+use parser::test_utils::{get_syntax_root_and_diagnostics_from_file, ParserDatabaseForTesting};
 
 /// Format a specific file and return whether it was already correctly formatted.
 fn format_file(file_path: &str, args: &FormatterArgs, config: &FormatterConfig) -> bool {
@@ -21,7 +21,7 @@ fn format_file(file_path: &str, args: &FormatterArgs, config: &FormatterConfig) 
     // TODO(gil): Shouldn't depend on parser::test_utils.
     let db_val = ParserDatabaseForTesting::default();
     let db = &db_val;
-    let (syntax_root, diagnostics) = get_syntax_root_and_diagnostics(db, file_path);
+    let (syntax_root, diagnostics) = get_syntax_root_and_diagnostics_from_file(db, file_path);
     // Checks if the inner ParserDiagnostic is empty.
     if !diagnostics.0.leaves.is_empty() {
         eprintln!(
