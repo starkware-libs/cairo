@@ -23,8 +23,8 @@ impl OwnedVariable {
 /// Also maintains bound semantic variables. See [SemanticVariablesMap].
 #[derive(Default)]
 pub struct BlockScope<'a> {
-    /// Variables given as external inputs.
-    external_inputs: Vec<VariableId>,
+    /// Variables given as inputs. Relevant for function blocks / match arm blocks, etc...
+    inputs: Vec<VariableId>,
     /// Responsible for pulling from outer scopes. See [PullUnifier]. Exists for every non-root
     /// block.
     pull_unifier: Option<&'a mut PullUnifier<'a>>,
@@ -54,7 +54,7 @@ impl<'a> BlockScope<'a> {
         for semantic_var_id in initial_semantic_var_ids {
             let ty = ctx.semantic_defs[*semantic_var_id].ty();
             let var = scope.introduce_variable(ctx, ty);
-            scope.external_inputs.push(var.0);
+            scope.inputs.push(var.0);
             scope.semantic_variables.put(*semantic_var_id, var);
         }
         scope
@@ -190,13 +190,6 @@ impl<'a> BlockSealed<'a> {
         }
         assert_eq!(block.pulled_semantic_vars.len(), pulls.len());
 
-        // Get input variables in order.
-        let inputs = chain!(
-            block.external_inputs.into_iter(),
-            pulls.iter().map(|semantic_var_id| block.pulled_semantic_vars[*semantic_var_id])
-        )
-        .collect();
-
         // Compute drops.
         let end = match end {
             BlockSealedEnd::Callsite(maybe_output) => {
@@ -218,7 +211,7 @@ impl<'a> BlockSealed<'a> {
         };
         let drops = block.living_variables.into_iter().collect();
 
-        Block { inputs, statements: block.statements, drops, end }
+        Block { inputs: block.inputs, statements: block.statements, drops, end }
     }
 }
 
