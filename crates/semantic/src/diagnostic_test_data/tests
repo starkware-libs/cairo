@@ -74,24 +74,29 @@ error: Path not found.
 
 //! > ==========================================================================
 
-//! > Test bad argument for ref param.
+//! > Test duplicate 'ref' and bad argument for ref param and .
 
 //! > test_function_name
 test_expr_diagnostics
 
 //! > expr_code
 {
-  foo(1);
 }
 
 //! > module_code
-func foo(ref v: felt) {
+func foo(ref ref v: felt) {
+  foo(1);
 }
 
 //! > function_body
 
 //! > expected_diagnostics
+error: `ref` modifier may not be repeated
+ --> lib.cairo:1:14
+func foo(ref ref v: felt) {
+             ^*^
+
 error: ref argument must be a variable.
- --> lib.cairo:5:7
+ --> lib.cairo:2:7
   foo(1);
       ^
