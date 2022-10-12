@@ -39,7 +39,6 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
-          name: "Rust Toolchain Setup"
           profile: minimal
           toolchain: nightly-2022-07-27
       - uses: Swatinem/rust-cache@v2
