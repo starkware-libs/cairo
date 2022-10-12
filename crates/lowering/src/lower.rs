@@ -10,13 +10,10 @@ use utils::extract_matches;
 use utils::unordered_hash_map::UnorderedHashMap;
 
 use self::context::LoweringContext;
-use self::scope::BlockSealed;
+use self::scope::{generators, BlockSealed};
 use crate::diagnostic::LoweringDiagnosticKind::*;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnostics};
-use crate::objects::{
-    Block, BlockId, Statement, StatementCall, StatementLiteral, StatementTupleConstruct,
-    StatementTupleDestruct, Variable,
-};
+use crate::objects::{Block, BlockId, Variable};
 
 mod context;
 mod scope;
@@ -186,23 +183,10 @@ impl<'db> Lowerer<'db> {
             }
             semantic::Pattern::Struct(_) => todo!(),
             semantic::Pattern::Tuple(semantic::PatternTuple { field_patterns, ty }) => {
-                // TODO(spapini): This logic currently gets rid of OwnedVariable, and needs to
-                //   ensure that the created Statement only uses live variables. This could lead
-                //   to panics in add_statement. After the refactor mentioned at
-                //   [`BlockScope::add_statement()`], this should be better,
                 let tys = extract_matches!(self.ctx.db.lookup_intern_type(*ty), TypeLongId::Tuple);
-                assert_eq!(
-                    tys.len(),
-                    field_patterns.len(),
-                    "Expected the same number of tuple args."
-                );
-                let outputs: Vec<_> = tys.iter().map(|ty| self.ctx.new_variable(*ty)).collect();
-                let stmt = Statement::TupleDestruct(StatementTupleDestruct {
-                    input: var.var_id(),
-                    outputs,
-                });
-                let owned_outputs = scope.add_statement(&self.ctx, stmt);
-                for (var, pattern) in zip_eq(owned_outputs, field_patterns) {
+                let outputs =
+                    generators::TupleDestruct { input: var, tys }.add(&mut self.ctx, scope);
+                for (var, pattern) in zip_eq(outputs, field_patterns) {
                     self.lower_single_pattern(scope, pattern, var);
                 }
             }
@@ -221,39 +205,18 @@ impl<'db> Lowerer<'db> {
         match expr {
             semantic::Expr::Tuple(expr) => {
                 let inputs = self.lower_exprs_as_vars(&expr.items, scope)?;
-
-                // TODO(spapini): This logic currently gets rid of OwnedVariable, and needs to
-                //   ensure that the created Statement only uses live variables. This could lead
-                //   to panics in add_statement. After the refactor mentioned at
-                //   [`BlockScope::add_statement()`], this should be better,
-                let inputs = inputs.iter().map(OwnedVariable::var_id).collect();
-                let result_var = self.ctx.new_variable(expr.ty);
-                let owned_outputs = scope.add_statement(
-                    &self.ctx,
-                    Statement::TupleConstruct(StatementTupleConstruct {
-                        inputs,
-                        output: result_var,
-                    }),
-                );
-                Ok(LoweredExpr::AtVariable(owned_outputs.into_iter().next().unwrap()))
+                Ok(LoweredExpr::AtVariable(
+                    generators::TupleConstruct { inputs, ty: expr.ty }.add(&mut self.ctx, scope),
+                ))
             }
             semantic::Expr::Assignment(_) => todo!(),
             semantic::Expr::Block(_) => todo!(),
             semantic::Expr::FunctionCall(expr) => {
                 let inputs = self.lower_exprs_as_vars(&expr.args, scope)?;
-
-                // TODO(spapini): This logic currently gets rid of OwnedVariable, and needs to
-                //   ensure that the created Statement only uses live variables. This could lead
-                //   to panics in add_statement. After the refactor mentioned at
-                //   [`BlockScope::add_statement()`], this should be better,
-                let inputs = inputs.iter().map(OwnedVariable::var_id).collect();
-                let result_var = self.ctx.new_variable(expr.ty);
-                let outputs = vec![result_var];
-                let owned_outputs = scope.add_statement(
-                    &self.ctx,
-                    Statement::Call(StatementCall { function: expr.function, inputs, outputs }),
-                );
-                Ok(LoweredExpr::AtVariable(owned_outputs.into_iter().next().unwrap()))
+                Ok(LoweredExpr::AtVariable(
+                    generators::Call { function: expr.function, inputs, ret_ty: expr.ty }
+                        .add(&mut self.ctx, scope),
+                ))
             }
             semantic::Expr::Match(_) => todo!(),
             semantic::Expr::If(_) => todo!(),
@@ -264,18 +227,9 @@ impl<'db> Lowerer<'db> {
                     .var()
                     .expect("Value already moved."),
             )),
-            semantic::Expr::Literal(expr) => {
-                // TODO(spapini): This logic currently gets rid of OwnedVariable, and needs to
-                //   ensure that the created Statement only uses live variables. This could lead
-                //   to panics in add_statement. After the refactor mentioned at
-                //   [`BlockScope::add_statement()`], this should be better,
-                let output = self.ctx.new_variable(expr.ty);
-                let owned_outputs = scope.add_statement(
-                    &self.ctx,
-                    Statement::Literal(StatementLiteral { value: expr.value, output }),
-                );
-                Ok(LoweredExpr::AtVariable(owned_outputs.into_iter().next().unwrap()))
-            }
+            semantic::Expr::Literal(expr) => Ok(LoweredExpr::AtVariable(
+                generators::Literal { value: expr.value, ty: expr.ty }.add(&mut self.ctx, scope),
+            )),
             semantic::Expr::MemberAccess(_) => todo!(),
             semantic::Expr::StructCtor(_) => todo!(),
             semantic::Expr::EnumVariantCtor(_) => todo!(),
@@ -298,12 +252,8 @@ impl<'db> Lowerer<'db> {
 
     /// Introduces a unit variable inplace.
     fn unit_var(&mut self, scope: &mut BlockScope) -> OwnedVariable {
-        let output = self.ctx.new_variable(unit_ty(self.ctx.db));
-        let owned_outputs = scope.add_statement(
-            &self.ctx,
-            Statement::TupleConstruct(StatementTupleConstruct { inputs: vec![], output }),
-        );
-        owned_outputs.into_iter().next().unwrap()
+        generators::TupleConstruct { inputs: vec![], ty: unit_ty(self.ctx.db) }
+            .add(&mut self.ctx, scope)
     }
 }
 

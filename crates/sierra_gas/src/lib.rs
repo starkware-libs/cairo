@@ -1,12 +1,17 @@
-use std::collections::HashMap;
-
+use core_libfunc_cost_base::FUNCTION_CALL_COST;
+use cost_expr::Var;
+use gas_info::GasInfo;
 use sierra::extensions::core::{CoreLibFunc, CoreType};
 use sierra::program::{Program, StatementIdx};
 use sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use thiserror::Error;
+use utils::try_extract_matches;
 
-mod core_libfunc_cost;
+pub mod core_libfunc_cost;
+mod core_libfunc_cost_base;
+mod core_libfunc_cost_expr;
 mod cost_expr;
+pub mod gas_info;
 mod generate_equations;
 mod solve_equations;
 
@@ -24,8 +29,8 @@ pub enum CostError {
     SolvingGasEquationFailed,
 }
 
-/// Calculates values for gas symbols for a given program.
-pub fn calc_gas_symbols(program: &Program) -> Result<HashMap<StatementIdx, i64>, CostError> {
+/// Calculates gas information for a given program.
+pub fn calc_gas_info(program: &Program) -> Result<GasInfo, CostError> {
     let registry = ProgramRegistry::<CoreType, CoreLibFunc>::new(program)?;
     let equations = generate_equations::generate_equations(
         program,
@@ -33,8 +38,25 @@ pub fn calc_gas_symbols(program: &Program) -> Result<HashMap<StatementIdx, i64>,
             let libfunc = registry
                 .get_libfunc(libfunc_id)
                 .expect("Program registery creation would have already failed.");
-            core_libfunc_cost::core_libfunc_cost(statement_future_cost, idx, libfunc)
+            core_libfunc_cost_expr::core_libfunc_cost_expr(statement_future_cost, idx, libfunc)
         },
     )?;
-    solve_equations::solve_equations(equations)
+    let solution = solve_equations::solve_equations(equations)?;
+    let function_costs = program
+        .funcs
+        .iter()
+        .map(|f| {
+            (
+                f.id.clone(),
+                solution[&Var::StatementFuture(f.entry_point)] + FUNCTION_CALL_COST as i64,
+            )
+        })
+        .collect();
+    let variable_values = solution
+        .into_iter()
+        .filter_map(|(var, value)| {
+            Some((try_extract_matches!(var, Var::LibFuncImplicitGasVariable)?, value))
+        })
+        .collect();
+    Ok(GasInfo { variable_values, function_costs })
 }
