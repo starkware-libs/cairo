@@ -64,14 +64,12 @@ impl Call {
     }
 }
 
-#[allow(dead_code)]
 /// Generator for StatementCallBlock.
 pub struct CallBlock {
     pub block: BlockId,
     pub end_info: BlockEndInfo,
 }
 /// Result of adding a CallBlock statement.
-#[allow(dead_code)]
 pub enum CallBlockResult {
     /// Block returns to call site with output variables.
     Callsite {
@@ -84,7 +82,6 @@ pub enum CallBlockResult {
     /// Block does not return to callsite, and thus the place after the call is unreachable.
     End,
 }
-#[allow(dead_code)]
 impl CallBlock {
     pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockScope) -> CallBlockResult {
         let (outputs, res) = match self.end_info {

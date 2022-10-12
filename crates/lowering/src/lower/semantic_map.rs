@@ -73,4 +73,12 @@ impl SemanticVariablesMap {
         self.semantic_variables.insert(semantic_var_id, SemanticVariableEntry::Alive(var));
         self.semantic_variables.get_mut(&semantic_var_id).unwrap()
     }
+
+    /// Iterates the living semantic variables.
+    pub fn alive(&self) -> impl Iterator<Item = &semantic::VarId> {
+        self.semantic_variables
+            .iter()
+            .filter(|(_, entry)| matches!(entry, SemanticVariableEntry::Alive(_)))
+            .map(|(semantic_var_id, _)| semantic_var_id)
+    }
 }
