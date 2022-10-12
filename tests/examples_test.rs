@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::fs;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -10,12 +11,13 @@ use sierra_generator::test_utils::{replace_libfunc_ids_in_program, SierraGenData
 use sierra_to_casm::metadata::Metadata;
 use test_case::test_case;
 
-fn setup(cairo_file: &str) -> (SierraGenDatabaseForTesting, ModuleId) {
+/// Setups the cairo lowerring to sierra db for the matching example.
+fn setup(name: &str) -> (SierraGenDatabaseForTesting, ModuleId) {
     let dir = env!("CARGO_MANIFEST_DIR");
     // Pop the "/tests" suffix.
     let mut path = PathBuf::from(dir).parent().unwrap().to_owned();
     path.push("examples");
-    path.push(cairo_file);
+    path.push(format!("{name}.cairo"));
 
     let mut db_val = SierraGenDatabaseForTesting::default();
     let db = &mut db_val;
@@ -24,28 +26,40 @@ fn setup(cairo_file: &str) -> (SierraGenDatabaseForTesting, ModuleId) {
     (db_val, module_id)
 }
 
-fn compile_to_sierra(
-    cairo_file: &str,
-) -> (SierraGenDatabaseForTesting, Arc<sierra::program::Program>) {
-    let (db, module_id) = setup(cairo_file);
+/// Returns the content of the relevant test file.
+fn get_expected_contents(name: &str, test_type: &str) -> String {
+    let path: PathBuf = [env!("CARGO_MANIFEST_DIR"), "test_data", &format!("{name}.{test_type}")]
+        .into_iter()
+        .collect();
+    fs::read_to_string(path).expect("Could not read file!")
+}
+
+/// Compiles the Cairo code for `name` to a Sierra program.
+fn compile_to_sierra(name: &str) -> (SierraGenDatabaseForTesting, Arc<sierra::program::Program>) {
+    let (db, module_id) = setup(name);
     db.module_sierra_diagnostics(module_id).expect("Creating sierra code should succeed");
     let sierra_program = db.module_sierra_program(module_id).unwrap();
     (db, sierra_program)
 }
 
-#[test_case("fib.cairo", include_str!("fib.sierra"); "fib")]
-#[test_case("fib_box.cairo", include_str!("fib_box.sierra"); "fib_box")]
-#[test_case("fib_array.cairo", include_str!("fib_array.sierra"); "fib_array")]
-fn cairo_to_sierra(name: &str, expected_code: &str) {
+/// Tests lowering from Cairo to Sierra.
+#[test_case("fib")]
+#[test_case("fib_box")]
+#[test_case("fib_array")]
+fn cairo_to_sierra(name: &str) {
     let (db, sierra_program) = compile_to_sierra(name);
-    assert_eq!(replace_libfunc_ids_in_program(&db, &sierra_program).to_string(), expected_code);
+    assert_eq!(
+        replace_libfunc_ids_in_program(&db, &sierra_program).to_string(),
+        get_expected_contents(name, "sierra")
+    );
 }
 
-#[test_case("fib.cairo", include_str!("fib.casm"); "fib")]
-#[test_case("fib_box.cairo", include_str!("fib_box.casm"); "fib_box")]
-#[test_case("fib_array.cairo", include_str!("fib_array.casm"); "fib_array")]
-fn cairo_to_casm(cairo_file: &str, expected_code: &str) {
-    let (_db, sierra_program) = compile_to_sierra(cairo_file);
+/// Tests lowering from Cairo to casm.
+#[test_case("fib")]
+#[test_case("fib_box")]
+#[test_case("fib_array")]
+fn cairo_to_casm(name: &str) {
+    let (_db, sierra_program) = compile_to_sierra(name);
     assert_eq!(
         sierra_to_casm::compiler::compile(
             &sierra_program,
@@ -53,6 +67,6 @@ fn cairo_to_casm(cairo_file: &str, expected_code: &str) {
         )
         .unwrap()
         .to_string(),
-        expected_code.to_owned()
+        get_expected_contents(name, "casm")
     );
 }
