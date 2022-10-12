@@ -28,7 +28,12 @@ impl NamedType for ArrayType {
         let info = context.get_type_info(ty.clone())?;
         if info.storable {
             Ok(ArrayConcreteType {
-                info: TypeInfo { duplicatable: false, droppable: info.droppable, storable: true },
+                info: TypeInfo {
+                    long_id: Self::concrete_type_long_id(args),
+                    duplicatable: false,
+                    droppable: info.droppable,
+                    storable: true,
+                },
                 ty,
             })
         } else {

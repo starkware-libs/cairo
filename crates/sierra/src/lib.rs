@@ -18,6 +18,8 @@ pub mod ids;
 pub mod program;
 pub mod program_registry;
 pub mod simulation;
+#[cfg(test)]
+mod test_utils;
 
 lalrpop_mod!(
     #[allow(clippy::all, unused_extern_crates)]
