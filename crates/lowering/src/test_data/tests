@@ -62,10 +62,10 @@ foo
 //! > lowering_format
 blk0:
 Inputs:
-  v1: core::felt, 
+  v0: core::felt, 
 Statements:
-  (v0: core::felt, ) <- 1u
-  (v2: (core::felt, core::felt), ) <- tuple_construct(v0, v1, )
+  (v1: core::felt, ) <- 1u
+  (v2: (core::felt, core::felt), ) <- tuple_construct(v1, v0, )
   (v3: core::felt, v4: core::felt, ) <- tuple_destruct(v2)
   (v5: core::felt, ) <- 5u
 End:
@@ -95,12 +95,12 @@ foo
 //! > lowering_format
 blk0:
 Inputs:
-  v3: core::felt, 
+  v0: core::felt, 
 Statements:
-  (v0: core::felt, ) <- 3u
-  (v1: core::felt, ) <- test_crate::foo(v0, )
-  (v2: core::felt, ) <- 5u
-  (v4: core::felt, ) <- core::felt_mul(v2, v3, )
-  (v5: core::felt, ) <- core::felt_add(v1, v4, )
+  (v1: core::felt, ) <- 3u
+  (v2: core::felt, ) <- test_crate::foo(v1, )
+  (v3: core::felt, ) <- 5u
+  (v4: core::felt, ) <- core::felt_mul(v3, v0, )
+  (v5: core::felt, ) <- core::felt_add(v2, v4, )
 End:
   Callsite(v5, )

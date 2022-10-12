@@ -22,7 +22,12 @@ impl OwnedVariable {
 /// Maintains the liveness state of lowered variables.
 /// Also maintains bound semantic variables. See [SemanticVariablesMap].
 #[derive(Default)]
-pub struct BlockScope {
+pub struct BlockScope<'a> {
+    /// Variables given as external inputs.
+    external_inputs: Vec<VariableId>,
+    /// Responsible for pulling from outer scopes. See [PullUnifier]. Exists for every non-root
+    /// block.
+    pull_unifier: Option<&'a mut PullUnifier<'a>>,
     /// Semantic variables pulled from higher scopes, to be used as inputs to the block.
     pulled_semantic_vars: OrderedHashMap<semantic::VarId, VariableId>,
     /// Living variables owned by this scope.
@@ -40,7 +45,21 @@ pub enum BlockScopeEnd {
     Unreachable,
 }
 
-impl BlockScope {
+impl<'a> BlockScope<'a> {
+    pub fn new_root<'b>(
+        ctx: &'b mut LoweringContext<'_>,
+        initial_semantic_var_ids: &[semantic::VarId],
+    ) -> Self {
+        let mut scope = Self::default();
+        for semantic_var_id in initial_semantic_var_ids {
+            let ty = ctx.semantic_defs[*semantic_var_id].ty();
+            let var = scope.introduce_variable(ctx, ty);
+            scope.external_inputs.push(var.0);
+            scope.semantic_variables.put(*semantic_var_id, var);
+        }
+        scope
+    }
+
     /// Puts a semantic variable and its owned lowered variable into the current scope.
     pub fn put_semantic_variable(&mut self, semantic_var_id: semantic::VarId, var: OwnedVariable) {
         self.semantic_variables.put(semantic_var_id, var);
@@ -54,14 +73,18 @@ impl BlockScope {
         ctx: &mut LoweringContext<'_>,
         semantic_var_id: semantic::VarId,
     ) -> SemanticVariableEntry {
-        self.semantic_variables
-            .get(ctx, semantic_var_id)
-            .unwrap_or_else(|| self.pull_semantic_variable(ctx, semantic_var_id).get_var(ctx))
+        self.semantic_variables.get(ctx, semantic_var_id).unwrap_or_else(|| {
+            self.pull_semantic_variable(ctx, semantic_var_id)
+                .expect(
+                    "Requested a non available variable. Semantic model should have caught this.",
+                )
+                .get_var(ctx)
+        })
     }
 
     /// Seals a BlockScope from adding statements or variables. A sealed block should be finalized
     /// with final pulls to get a [Block]. See [BlockSealed].
-    pub fn seal(mut self, end: BlockScopeEnd) -> BlockSealed {
+    pub fn seal(mut self, end: BlockScopeEnd) -> BlockSealed<'a> {
         let end = match end {
             BlockScopeEnd::Callsite(maybe_output) => {
                 BlockSealedEnd::Callsite(maybe_output.map(|var| self.take_var(var)))
@@ -80,16 +103,15 @@ impl BlockScope {
         &mut self,
         ctx: &mut LoweringContext<'_>,
         semantic_var_id: semantic::VarId,
-    ) -> &mut SemanticVariableEntry {
-        let ty = ctx.semantic_defs[semantic_var_id].ty();
-        let var = self.introduce_variable(ctx, ty);
+    ) -> Option<&mut SemanticVariableEntry> {
+        let var = self.pull_unifier.as_mut()?.pull(ctx, semantic_var_id)?;
 
         assert!(
             self.pulled_semantic_vars.insert(semantic_var_id, var.0).is_none(),
             "Semantic variable introduced more than once as input to the block"
         );
 
-        self.semantic_variables.put(semantic_var_id, var)
+        Some(self.semantic_variables.put(semantic_var_id, var))
     }
 
     /// Internal. Gets a variable, removing from `living_variables` if not duplicatable.
@@ -122,8 +144,8 @@ impl BlockScope {
 
 /// A block that was sealed after adding all the statements, just before determining the final
 /// inputs.
-pub struct BlockSealed {
-    block: BlockScope,
+pub struct BlockSealed<'a> {
+    block: BlockScope<'a>,
     end: BlockSealedEnd,
 }
 
@@ -133,7 +155,7 @@ pub enum BlockSealedEnd {
     Unreachable,
 }
 
-impl BlockSealed {
+impl<'a> BlockSealed<'a> {
     // TODO(spapini): Add the functions:
     //   pub fn pulls_lower_bound(&self) -> OrderedHashSet<semantic::VarId>
     //   pub fn pushes_upper_bound(&self) -> OrderedHashSet<semantic::VarId>
@@ -169,10 +191,11 @@ impl BlockSealed {
         assert_eq!(block.pulled_semantic_vars.len(), pulls.len());
 
         // Get input variables in order.
-        let inputs = pulls
-            .iter()
-            .map(|semantic_var_id| block.pulled_semantic_vars[*semantic_var_id])
-            .collect();
+        let inputs = chain!(
+            block.external_inputs.into_iter(),
+            pulls.iter().map(|semantic_var_id| block.pulled_semantic_vars[*semantic_var_id])
+        )
+        .collect();
 
         // Compute drops.
         let end = match end {
@@ -196,5 +219,42 @@ impl BlockSealed {
         let drops = block.living_variables.into_iter().collect();
 
         Block { inputs, statements: block.statements, drops, end }
+    }
+}
+
+/// Responsible for synchronizing pulls from out scopes between sibling branches.
+#[derive(Default)]
+pub struct PullUnifier<'a> {
+    parent_scope: Option<&'a mut BlockScope<'a>>,
+    pulled: OrderedHashMap<semantic::VarId, OwnedVariable>,
+}
+impl<'a> PullUnifier<'a> {
+    pub fn _new(parent_scope: &'a mut BlockScope<'a>) -> Self {
+        Self { parent_scope: Some(parent_scope), ..Self::default() }
+    }
+    pub fn _new_subscope(self: &'a mut PullUnifier<'a>) -> BlockScope<'a> {
+        BlockScope { pull_unifier: Some(self), ..BlockScope::default() }
+    }
+
+    /// Pulls a semantic variable from an outer scope.
+    pub fn pull(
+        &mut self,
+        ctx: &mut LoweringContext<'_>,
+        semantic_var_id: semantic::VarId,
+    ) -> Option<OwnedVariable> {
+        // Try to take ownership from parent scope if the semantic variable is not present.
+        if !self.pulled.contains_key(&semantic_var_id) {
+            if let Some(parent_scope) = &mut self.parent_scope {
+                if let Some(var) =
+                    parent_scope.get_or_pull_semantic_variable(ctx, semantic_var_id).var()
+                {
+                    self.pulled.insert(semantic_var_id, var);
+                }
+            }
+        }
+
+        // If we own it, give a copy.
+        let var = self.pulled.get(&semantic_var_id)?;
+        Some(OwnedVariable(var.0))
     }
 }

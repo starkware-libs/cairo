@@ -69,16 +69,20 @@ impl<'db> Lowerer<'db> {
         // Lower block to a BlockSealed.
         // TODO(spapini): The `?` here is incorrect. In case of failure we should still return an
         //   object with the correct diagnostics.
-        let root_sealed_block = lowerer.lower_block(semantic_block)?;
-        let root_block = root_sealed_block.finalize(&mut lowerer.ctx, &input_semantic_var_ids, &[]);
+        let initial_scope = BlockScope::new_root(&mut lowerer.ctx, &input_semantic_var_ids);
+        let root_sealed_block = lowerer.lower_block(initial_scope, semantic_block)?;
+        let root_block = root_sealed_block.finalize(&mut lowerer.ctx, &[], &[]);
         let root = lowerer.ctx.blocks.alloc(root_block);
         let LoweringContext { diagnostics, variables, blocks, .. } = lowerer.ctx;
         Some(Lowered { diagnostics: diagnostics.build(), root, variables, blocks })
     }
 
     /// Lowers a semantic block.
-    fn lower_block(&mut self, expr_block: &semantic::ExprBlock) -> Option<BlockSealed> {
-        let mut scope = BlockScope::default();
+    fn lower_block<'a>(
+        &mut self,
+        mut scope: BlockScope<'a>,
+        expr_block: &semantic::ExprBlock,
+    ) -> Option<BlockSealed<'a>> {
         for (i, stmt_id) in expr_block.statements.iter().enumerate() {
             let stmt = &self.function_def.statements[*stmt_id];
             let lowered_stmt = self.lower_statement(&mut scope, stmt);
@@ -125,7 +129,7 @@ impl<'db> Lowerer<'db> {
     /// Lowers a semantic statement.
     pub fn lower_statement(
         &mut self,
-        scope: &mut BlockScope,
+        scope: &mut BlockScope<'_>,
         stmt: &semantic::Statement,
     ) -> Result<(), StatementLoweringFlowError> {
         match stmt {
@@ -168,7 +172,7 @@ impl<'db> Lowerer<'db> {
     /// model.
     fn lower_single_pattern(
         &mut self,
-        scope: &mut BlockScope,
+        scope: &mut BlockScope<'_>,
         pattern: &semantic::Pattern,
         var: OwnedVariable,
     ) {
@@ -198,7 +202,7 @@ impl<'db> Lowerer<'db> {
     /// Lowers a semantic expression.
     fn lower_expr(
         &mut self,
-        scope: &mut BlockScope,
+        scope: &mut BlockScope<'_>,
         expr_id: semantic::ExprId,
     ) -> Result<LoweredExpr, LoweringFlowError> {
         let expr = &self.function_def.exprs[expr_id];
@@ -242,7 +246,7 @@ impl<'db> Lowerer<'db> {
     fn lower_exprs_as_vars(
         &mut self,
         exprs: &[semantic::ExprId],
-        scope: &mut BlockScope,
+        scope: &mut BlockScope<'_>,
     ) -> Result<Vec<OwnedVariable>, LoweringFlowError> {
         exprs
             .iter()
@@ -251,7 +255,7 @@ impl<'db> Lowerer<'db> {
     }
 
     /// Introduces a unit variable inplace.
-    fn unit_var(&mut self, scope: &mut BlockScope) -> OwnedVariable {
+    fn unit_var(&mut self, scope: &mut BlockScope<'_>) -> OwnedVariable {
         generators::TupleConstruct { inputs: vec![], ty: unit_ty(self.ctx.db) }
             .add(&mut self.ctx, scope)
     }
@@ -266,7 +270,7 @@ enum LoweredExpr {
     Unit,
 }
 impl LoweredExpr {
-    fn var(self, lowerer: &mut Lowerer<'_>, scope: &mut BlockScope) -> OwnedVariable {
+    fn var(self, lowerer: &mut Lowerer<'_>, scope: &mut BlockScope<'_>) -> OwnedVariable {
         match self {
             LoweredExpr::AtVariable(var_id) => var_id,
             LoweredExpr::Unit => lowerer.unit_var(scope),
