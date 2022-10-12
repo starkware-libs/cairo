@@ -1,3 +1,6 @@
+use std::cell::RefCell;
+use std::rc::Rc;
+
 use itertools::chain;
 use utils::ordered_hash_map::OrderedHashMap;
 use utils::ordered_hash_set::OrderedHashSet;
@@ -23,6 +26,11 @@ impl OwnedVariable {
 /// Also maintains bound semantic variables. See [SemanticVariablesMap].
 #[derive(Default)]
 pub struct BlockScope {
+    /// Variables given as inputs. Relevant for function blocks / match arm blocks, etc...
+    inputs: Vec<VariableId>,
+    /// Responsible for pulling from outer scopes. See [PullUnifier]. Exists for every non-root
+    /// block.
+    pull_unifier: Option<Rc<RefCell<PullUnifier>>>,
     /// Semantic variables pulled from higher scopes, to be used as inputs to the block.
     pulled_semantic_vars: OrderedHashMap<semantic::VarId, VariableId>,
     /// Living variables owned by this scope.
@@ -41,6 +49,24 @@ pub enum BlockScopeEnd {
 }
 
 impl BlockScope {
+    pub fn new_root(
+        ctx: &mut LoweringContext<'_>,
+        initial_semantic_var_ids: &[semantic::VarId],
+    ) -> Self {
+        let mut scope = Self::default();
+        for semantic_var_id in initial_semantic_var_ids {
+            let ty = ctx.semantic_defs[*semantic_var_id].ty();
+            let var = scope.introduce_variable(ctx, ty);
+            scope.inputs.push(var.0);
+            scope.semantic_variables.put(*semantic_var_id, var);
+        }
+        scope
+    }
+
+    pub fn new_subscope(pull_unifier: Rc<RefCell<PullUnifier>>) -> Self {
+        Self { pull_unifier: Some(pull_unifier), ..BlockScope::default() }
+    }
+
     /// Puts a semantic variable and its owned lowered variable into the current scope.
     pub fn put_semantic_variable(&mut self, semantic_var_id: semantic::VarId, var: OwnedVariable) {
         self.semantic_variables.put(semantic_var_id, var);
@@ -54,9 +80,13 @@ impl BlockScope {
         ctx: &mut LoweringContext<'_>,
         semantic_var_id: semantic::VarId,
     ) -> SemanticVariableEntry {
-        self.semantic_variables
-            .get(ctx, semantic_var_id)
-            .unwrap_or_else(|| self.pull_semantic_variable(ctx, semantic_var_id).get_var(ctx))
+        self.semantic_variables.get(ctx, semantic_var_id).unwrap_or_else(|| {
+            self.pull_semantic_variable(ctx, semantic_var_id)
+                .expect(
+                    "Requested a non available variable. Semantic model should have caught this.",
+                )
+                .get_var(ctx)
+        })
     }
 
     /// Seals a BlockScope from adding statements or variables. A sealed block should be finalized
@@ -80,16 +110,15 @@ impl BlockScope {
         &mut self,
         ctx: &mut LoweringContext<'_>,
         semantic_var_id: semantic::VarId,
-    ) -> &mut SemanticVariableEntry {
-        let ty = ctx.semantic_defs[semantic_var_id].ty();
-        let var = self.introduce_variable(ctx, ty);
+    ) -> Option<&mut SemanticVariableEntry> {
+        let var = self.pull_unifier.as_mut()?.borrow_mut().pull(ctx, semantic_var_id)?;
 
         assert!(
             self.pulled_semantic_vars.insert(semantic_var_id, var.0).is_none(),
             "Semantic variable introduced more than once as input to the block"
         );
 
-        self.semantic_variables.put(semantic_var_id, var)
+        Some(self.semantic_variables.put(semantic_var_id, var))
     }
 
     /// Internal. Gets a variable, removing from `living_variables` if not duplicatable.
@@ -168,12 +197,6 @@ impl BlockSealed {
         }
         assert_eq!(block.pulled_semantic_vars.len(), pulls.len());
 
-        // Get input variables in order.
-        let inputs = pulls
-            .iter()
-            .map(|semantic_var_id| block.pulled_semantic_vars[*semantic_var_id])
-            .collect();
-
         // Compute drops.
         let end = match end {
             BlockSealedEnd::Callsite(maybe_output) => {
@@ -195,6 +218,45 @@ impl BlockSealed {
         };
         let drops = block.living_variables.into_iter().collect();
 
-        Block { inputs, statements: block.statements, drops, end }
+        Block { inputs: block.inputs, statements: block.statements, drops, end }
+    }
+}
+
+/// Responsible for synchronizing pulls from outer scopes between sibling branches.
+#[derive(Default)]
+pub struct PullUnifier {
+    parent_scope: Box<BlockScope>,
+    pulled: OrderedHashMap<semantic::VarId, OwnedVariable>,
+}
+impl PullUnifier {
+    /// Creates a new instance of PullUnifier within a limited closure.
+    /// This is necessary for lifetime reasons.
+    pub fn with<T, F: FnOnce(Rc<RefCell<Self>>) -> T>(parent_scope: &mut BlockScope, f: F) -> T {
+        let new_parent_scope = Box::new(std::mem::take(parent_scope));
+        let pull_unifier =
+            Rc::new(RefCell::new(Self { parent_scope: new_parent_scope, ..Self::default() }));
+        let res = f(pull_unifier.clone());
+        *parent_scope = *pull_unifier.take().parent_scope;
+        res
+    }
+
+    /// Pulls a semantic variable from an outer scope.
+    pub fn pull(
+        &mut self,
+        ctx: &mut LoweringContext<'_>,
+        semantic_var_id: semantic::VarId,
+    ) -> Option<OwnedVariable> {
+        // Try to take ownership from parent scope if the semantic variable is not present.
+        if !self.pulled.contains_key(&semantic_var_id) {
+            if let Some(var) =
+                self.parent_scope.get_or_pull_semantic_variable(ctx, semantic_var_id).var()
+            {
+                self.pulled.insert(semantic_var_id, var);
+            }
+        }
+
+        // If we own it, give a copy.
+        let var = self.pulled.get(&semantic_var_id)?;
+        Some(OwnedVariable(var.0))
     }
 }
