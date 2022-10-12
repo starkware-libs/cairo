@@ -29,19 +29,28 @@ impl DebugWithDb<LoweredFormatter<'_>> for Lowered {
 
 impl DebugWithDb<LoweredFormatter<'_>> for Block {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
-        writeln!(f, "Inputs:")?;
-        write!(f, "  ")?;
+        write!(f, "Inputs:")?;
+        write!(f, " ")?;
         for var in &self.inputs {
             format_var_with_ty(*var, f, ctx)?;
             write!(f, ", ")?;
         }
+
         writeln!(f, "\nStatements:")?;
         for stmt in &self.statements {
             write!(f, "  ")?;
             stmt.fmt(f, ctx)?;
             writeln!(f)?;
         }
-        writeln!(f, "End:")?;
+
+        write!(f, "Drops:")?;
+        write!(f, " ")?;
+        for var in &self.drops {
+            var.fmt(f, ctx)?;
+            write!(f, ", ")?;
+        }
+
+        writeln!(f, "\nEnd:")?;
         self.end.fmt(f, ctx)?;
         writeln!(f)
     }
@@ -144,12 +153,8 @@ impl DebugWithDb<LoweredFormatter<'_>> for StatementCall {
 }
 
 impl DebugWithDb<LoweredFormatter<'_>> for StatementCallBlock {
-    fn fmt(
-        &self,
-        f: &mut std::fmt::Formatter<'_>,
-        _ctx: &LoweredFormatter<'_>,
-    ) -> std::fmt::Result {
-        write!(f, "{:?}()", self.block)
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}()", self.block.debug(ctx))
     }
 }
 

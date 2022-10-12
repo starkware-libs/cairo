@@ -29,11 +29,11 @@ error: Unreachable code
 
 //! > lowering_format
 blk0:
-Inputs:
-  v0: core::felt, 
+Inputs: v0: core::felt, 
 Statements:
   (v1: core::felt, ) <- core::felt_mul(v0, v0, )
   (v2: core::felt, ) <- core::felt_add(v0, v1, )
+Drops: v0, v1, 
 End:
   Return(v2, )
 
@@ -61,13 +61,13 @@ foo
 
 //! > lowering_format
 blk0:
-Inputs:
-  v0: core::felt, 
+Inputs: v0: core::felt, 
 Statements:
   (v1: core::felt, ) <- 1u
   (v2: (core::felt, core::felt), ) <- tuple_construct(v1, v0, )
   (v3: core::felt, v4: core::felt, ) <- tuple_destruct(v2)
   (v5: core::felt, ) <- 5u
+Drops: v0, v1, v2, v3, v4, 
 End:
   Callsite(v5, )
 
@@ -80,7 +80,9 @@ test_function_lowering
 
 //! > function
 func foo(a: felt) -> felt {
-    foo(3) + 5 * a
+  let x = {7;};
+  {x;}
+  foo(3) + 5 * {3; a+0}
 }
 
 //! > function_name
@@ -94,13 +96,42 @@ foo
 
 //! > lowering_format
 blk0:
-Inputs:
-  v0: core::felt, 
+Inputs: 
 Statements:
-  (v1: core::felt, ) <- 3u
-  (v2: core::felt, ) <- test_crate::foo(v1, )
-  (v3: core::felt, ) <- 5u
-  (v4: core::felt, ) <- core::felt_mul(v3, v0, )
-  (v5: core::felt, ) <- core::felt_add(v2, v4, )
+  (v1: core::felt, ) <- 7u
+Drops: v1, 
 End:
-  Callsite(v5, )
+  Callsite()
+
+blk1:
+Inputs: 
+Statements:
+Drops: 
+End:
+  Callsite(v2, )
+
+blk2:
+Inputs: 
+Statements:
+  (v7: core::felt, ) <- 3u
+  (v8: core::felt, ) <- 0u
+  (v9: core::felt, ) <- core::felt_add(v0, v8, )
+Drops: v7, v8, 
+End:
+  Callsite(v9, v0, )
+
+blk3:
+Inputs: v0: core::felt, 
+Statements:
+  () <- blk0()
+  (v2: (), ) <- tuple_construct()
+  (v3: (), ) <- blk1()
+  (v4: core::felt, ) <- 3u
+  (v5: core::felt, ) <- test_crate::foo(v4, )
+  (v6: core::felt, ) <- 5u
+  (v10: core::felt, v11: core::felt, ) <- blk2()
+  (v12: core::felt, ) <- core::felt_mul(v6, v10, )
+  (v13: core::felt, ) <- core::felt_add(v5, v12, )
+Drops: v0, v2, v3, v4, v5, v6, v10, v11, v12, 
+End:
+  Callsite(v13, )
