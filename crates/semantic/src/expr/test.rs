@@ -228,7 +228,8 @@ fn test_function_with_param() {
 fn test_tuple_type() {
     let mut db_val = SemanticDatabaseForTesting::default();
     let test_function =
-        setup_test_function(&mut db_val, "func foo(a: (felt, (), (felt,))) {}", "foo", "").unwrap();
+        setup_test_function(&mut db_val, "func foo(mut a: (felt, (), (felt,))) {}", "foo", "")
+            .unwrap();
     let db = &db_val;
     let signature = test_function.signature;
 
@@ -237,7 +238,7 @@ fn test_tuple_type() {
     assert_eq!(
         format!("{:?}", param.debug(db)),
         "Parameter { id: ParamId(test_crate::a), ty: (core::felt, (), (core::felt)), modifiers: \
-         Modifiers { is_ref: false } }"
+         Modifiers { is_mut: true, is_ref: false } }"
     );
 }
 

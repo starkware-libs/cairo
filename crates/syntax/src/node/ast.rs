@@ -4420,6 +4420,7 @@ impl TypedSyntaxNode for ModifierList {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum Modifier {
     Ref(TerminalRef),
+    Mut(TerminalMut),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ModifierPtr(SyntaxStablePtrId);
@@ -4433,8 +4434,18 @@ impl From<TerminalRefPtr> for ModifierPtr {
         Self(value.0)
     }
 }
+impl From<TerminalMutPtr> for ModifierPtr {
+    fn from(value: TerminalMutPtr) -> Self {
+        Self(value.0)
+    }
+}
 impl From<TerminalRefGreen> for ModifierGreen {
     fn from(value: TerminalRefGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalMutGreen> for ModifierGreen {
+    fn from(value: TerminalMutGreen) -> Self {
         Self(value.0)
     }
 }
@@ -4451,12 +4462,14 @@ impl TypedSyntaxNode for Modifier {
         let kind = node.kind(db);
         match kind {
             SyntaxKind::TerminalRef => Modifier::Ref(TerminalRef::from_syntax_node(db, node)),
+            SyntaxKind::TerminalMut => Modifier::Mut(TerminalMut::from_syntax_node(db, node)),
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "Modifier"),
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         match self {
             Modifier::Ref(x) => x.as_syntax_node(),
+            Modifier::Mut(x) => x.as_syntax_node(),
         }
     }
     fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
@@ -9410,6 +9423,146 @@ impl TypedSyntaxNode for TerminalRef {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         TerminalRefPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct TokenMut {
+    node: SyntaxNode,
+}
+impl Token for TokenMut {
+    fn new_green(db: &dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+        TokenMutGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::TokenMut,
+            details: GreenNodeDetails::Token(text),
+        }))
+    }
+    fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        extract_matches!(db.lookup_intern_green(self.node.0.green).details, GreenNodeDetails::Token)
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TokenMutPtr(SyntaxStablePtrId);
+impl TokenMutPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TokenMutGreen(pub GreenId);
+impl TokenMutGreen {
+    pub fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        extract_matches!(db.lookup_intern_green(self.0).details, GreenNodeDetails::Token)
+    }
+}
+impl TypedSyntaxNode for TokenMut {
+    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenMut);
+    type StablePtr = TokenMutPtr;
+    type Green = TokenMutGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        TokenMutGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::TokenMissing,
+            details: GreenNodeDetails::Token("".into()),
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        match db.lookup_intern_green(node.0.green).details {
+            GreenNodeDetails::Token(_) => Self { node },
+            GreenNodeDetails::Node { .. } => {
+                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenMut)
+            }
+        }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        TokenMutPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct TerminalMut {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl Terminal for TerminalMut {
+    type TokenType = TokenMut;
+    fn new_green(
+        db: &dyn SyntaxGroup,
+        leading_trivia: TriviaGreen,
+        token: <<TerminalMut as Terminal>::TokenType as TypedSyntaxNode>::Green,
+        trailing_trivia: TriviaGreen,
+    ) -> Self::Green {
+        let children: Vec<GreenId> = vec![leading_trivia.0, token.0, trailing_trivia.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        TerminalMutGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::TerminalMut,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+    fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        self.token(db).text(db)
+    }
+}
+impl TerminalMut {
+    pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
+        Trivia::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn token(&self, db: &dyn SyntaxGroup) -> TokenMut {
+        TokenMut::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
+        Trivia::from_syntax_node(db, self.children[2].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TerminalMutPtr(SyntaxStablePtrId);
+impl TerminalMutPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TerminalMutGreen(pub GreenId);
+impl TypedSyntaxNode for TerminalMut {
+    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalMut);
+    type StablePtr = TerminalMutPtr;
+    type Green = TerminalMutGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        TerminalMutGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::TerminalMut,
+            details: GreenNodeDetails::Node {
+                children: vec![
+                    Trivia::missing(db).0,
+                    TokenMut::missing(db).0,
+                    Trivia::missing(db).0,
+                ],
+                width: 0,
+            },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::TerminalMut,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::TerminalMut
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        TerminalMutPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]

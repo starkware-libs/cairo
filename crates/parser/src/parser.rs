@@ -729,8 +729,9 @@ impl<'a> Parser<'a> {
 
     /// Returns a GreenId of a node with kind Param or None if a parameter can't be parsed.
     fn try_parse_modifier(&mut self) -> Option<ModifierGreen> {
-        match Some(self.peek().kind) {
-            TerminalRef::KIND => Some(self.take::<TerminalRef>().into()),
+        match self.peek().kind {
+            SyntaxKind::TerminalRef => Some(self.take::<TerminalRef>().into()),
+            SyntaxKind::TerminalMut => Some(self.take::<TerminalMut>().into()),
             _ => None,
         }
     }

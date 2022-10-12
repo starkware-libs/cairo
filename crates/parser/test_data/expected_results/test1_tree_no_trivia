@@ -31,7 +31,8 @@
     │   │   │   │   ├── separator #0 (kind: TokenComma): ','
     │   │   │   │   ├── item #1 (kind: Param)
     │   │   │   │   │   ├── modifiers (kind: ModifierList)
-    │   │   │   │   │   │   └── child #0 (kind: TokenRef): 'ref'
+    │   │   │   │   │   │   ├── child #0 (kind: TokenMut): 'mut'
+    │   │   │   │   │   │   └── child #1 (kind: TokenRef): 'ref'
     │   │   │   │   │   ├── name (kind: TokenIdentifier): 'var2'
     │   │   │   │   │   └── type_clause (kind: TypeClause)
     │   │   │   │   │       ├── colon (kind: TokenColon): ':'
@@ -336,12 +337,12 @@ error: Skipped tokens. Expected element: item.
 
 error: Skipped tokens. Expected element: parameter.
  --> test1.cairo:7:10
-func foo(,var1: int,, ref var2: felt,) -> int {
+func foo(,var1: int,, mut ref var2: felt,) -> int {
          ^
 
 error: Skipped tokens. Expected element: parameter.
  --> test1.cairo:7:21
-func foo(,var1: int,, ref var2: felt,) -> int {
+func foo(,var1: int,, mut ref var2: felt,) -> int {
                     ^
 
 error: Missing token TerminalRBrace.

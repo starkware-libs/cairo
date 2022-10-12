@@ -97,9 +97,17 @@ pub fn compute_modifiers(
     diagnostics: &mut SemanticDiagnostics,
     modifier_list: &[Modifier],
 ) -> semantic::Modifiers {
+    let mut is_mut = false;
     let mut is_ref = false;
+
     for modifier in modifier_list {
         match modifier {
+            Modifier::Mut(terminal) => {
+                if is_mut {
+                    diagnostics.report(terminal, RepeatedModifier { modifier: "mut".into() });
+                }
+                is_mut = true
+            }
             Modifier::Ref(terminal) => {
                 if is_ref {
                     diagnostics.report(terminal, RepeatedModifier { modifier: "ref".into() });
@@ -109,7 +117,7 @@ pub fn compute_modifiers(
         }
     }
 
-    semantic::Modifiers { is_ref }
+    semantic::Modifiers { is_mut, is_ref }
 }
 
 /// Returns the parameters of the given function signature's AST.
@@ -128,7 +136,6 @@ pub fn function_signature_params(
         let name = ast_param.name(syntax_db).text(syntax_db);
         let id = db.intern_param(ParamLongId(resolver.module_id, ast_param.stable_ptr()));
         let ty_syntax = ast_param.type_clause(syntax_db).ty(syntax_db);
-
         // TODO(yuval): Diagnostic?
         let ty = resolve_type(db, diagnostics, resolver, &ty_syntax);
         let param = semantic::Parameter {

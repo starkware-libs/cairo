@@ -90,10 +90,15 @@
     │   │   │   │   │   └── trailing_trivia (kind: Trivia) []
     │   │   │   │   ├── item #1 (kind: Param)
     │   │   │   │   │   ├── modifiers (kind: ModifierList)
-    │   │   │   │   │   │   └── child #0 (kind: TerminalRef)
-    │   │   │   │   │   │       ├── leading_trivia (kind: Trivia)
-    │   │   │   │   │   │       │   ├── child #0 (kind: TokenSkipped): ','
-    │   │   │   │   │   │       │   └── child #1 (kind: TokenWhitespace).
+    │   │   │   │   │   │   ├── child #0 (kind: TerminalMut)
+    │   │   │   │   │   │   │   ├── leading_trivia (kind: Trivia)
+    │   │   │   │   │   │   │   │   ├── child #0 (kind: TokenSkipped): ','
+    │   │   │   │   │   │   │   │   └── child #1 (kind: TokenWhitespace).
+    │   │   │   │   │   │   │   ├── token (kind: TokenMut): 'mut'
+    │   │   │   │   │   │   │   └── trailing_trivia (kind: Trivia)
+    │   │   │   │   │   │   │       └── child #0 (kind: TokenWhitespace).
+    │   │   │   │   │   │   └── child #1 (kind: TerminalRef)
+    │   │   │   │   │   │       ├── leading_trivia (kind: Trivia) []
     │   │   │   │   │   │       ├── token (kind: TokenRef): 'ref'
     │   │   │   │   │   │       └── trailing_trivia (kind: Trivia)
     │   │   │   │   │   │           └── child #0 (kind: TokenWhitespace).
