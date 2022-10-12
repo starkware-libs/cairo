@@ -10,7 +10,7 @@ use utils::extract_matches;
 use utils::unordered_hash_map::UnorderedHashMap;
 
 use self::context::LoweringContext;
-use self::scope::{generators, BlockSealed};
+use self::scope::{generators, BlockSealed, PullUnifier, PullUnifierFinalized};
 use crate::diagnostic::LoweringDiagnosticKind::*;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnostics};
 use crate::objects::{Block, BlockId, Variable};
@@ -71,7 +71,8 @@ impl<'db> Lowerer<'db> {
         //   object with the correct diagnostics.
         let initial_scope = BlockScope::new_root(&mut lowerer.ctx, &input_semantic_var_ids);
         let root_sealed_block = lowerer.lower_block(initial_scope, semantic_block)?;
-        let (root_block, _end_info) = root_sealed_block.finalize(&mut lowerer.ctx, &[], &[]);
+        let (root_block, _end_info) =
+            root_sealed_block.finalize(&mut lowerer.ctx, &PullUnifierFinalized::default());
         let root = lowerer.ctx.blocks.alloc(root_block);
         let LoweringContext { diagnostics, variables, blocks, .. } = lowerer.ctx;
         Some(Lowered { diagnostics: diagnostics.build(), root, variables, blocks })
@@ -214,7 +215,29 @@ impl<'db> Lowerer<'db> {
                 ))
             }
             semantic::Expr::Assignment(_) => todo!(),
-            semantic::Expr::Block(_) => todo!(),
+            semantic::Expr::Block(expr) => {
+                let (block_sealed, finalized_unifier) = PullUnifier::with(scope, |pull_unifier| {
+                    let block_scope = BlockScope::new_subscope(pull_unifier);
+                    self.lower_block(block_scope, expr)
+                });
+                let (block, end_info) = block_sealed
+                    .ok_or(LoweringFlowError::Failed)?
+                    .finalize(&mut self.ctx, &finalized_unifier);
+                let call_block_generator =
+                    generators::CallBlock { block: self.ctx.blocks.alloc(block), end_info };
+                match call_block_generator.add(&mut self.ctx, scope) {
+                    generators::CallBlockResult::Callsite { maybe_output, pushes } => {
+                        for (semantic_var_id, var) in zip_eq(finalized_unifier.pushes, pushes) {
+                            scope.put_semantic_variable(semantic_var_id, var);
+                        }
+                        Ok(match maybe_output {
+                            Some(output) => LoweredExpr::AtVariable(output),
+                            None => LoweredExpr::Unit,
+                        })
+                    }
+                    generators::CallBlockResult::End => Err(LoweringFlowError::Unreachable),
+                }
+            }
             semantic::Expr::FunctionCall(expr) => {
                 let inputs = self.lower_exprs_as_vars(&expr.args, scope)?;
                 Ok(LoweredExpr::AtVariable(
@@ -261,7 +284,6 @@ impl<'db> Lowerer<'db> {
     }
 }
 
-#[allow(dead_code)]
 /// Representation of the value of a computed expression.
 enum LoweredExpr {
     /// The expression value lies in a variable.
@@ -278,7 +300,6 @@ impl LoweredExpr {
     }
 }
 
-#[allow(dead_code)]
 /// Cases where the flow of lowering an expression should halt.
 enum LoweringFlowError {
     /// Computation failure. A corresponding diagnostic should be emitted.
