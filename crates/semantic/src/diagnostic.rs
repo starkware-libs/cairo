@@ -154,6 +154,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     actual_enum.full_path(db.upcast())
                 )
             }
+            SemanticDiagnosticKind::RepeatedModifier { modifier } => {
+                format!("`{}` modifier may not be repeated", modifier,)
+            }
         }
     }
 
@@ -197,6 +200,7 @@ pub enum SemanticDiagnosticKind {
     InvalidMemberExpression,
     InvalidPath,
     PathNotFound,
+    RepeatedModifier { modifier: SmolStr },
     UnexpectedLiteralPattern { ty: semantic::TypeId },
     UnexpectedEnumPattern { ty: semantic::TypeId },
     UnexpectedStructPattern { ty: semantic::TypeId },
