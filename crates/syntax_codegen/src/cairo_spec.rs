@@ -384,6 +384,7 @@ pub fn get_spec() -> Vec<Node> {
     append_terminal_and_token(&mut nodes, "If");
     append_terminal_and_token(&mut nodes, "Else");
     append_terminal_and_token(&mut nodes, "Use");
+    append_terminal_and_token(&mut nodes, "Ref");
     append_terminal_and_token(&mut nodes, "And");
     append_terminal_and_token(&mut nodes, "AndAnd");
     append_terminal_and_token(&mut nodes, "OrOr");
@@ -416,6 +417,5 @@ pub fn get_spec() -> Vec<Node> {
     append_terminal_and_token(&mut nodes, "MatchArrow");
     append_terminal_and_token(&mut nodes, "EndOfFile");
     append_terminal_and_token(&mut nodes, "BadCharacters");
-    append_terminal_and_token(&mut nodes, "Ref");
     nodes
 }
