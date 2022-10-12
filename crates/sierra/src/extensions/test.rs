@@ -1,3 +1,4 @@
+use bimap::BiMap;
 use test_case::test_case;
 
 use super::core::{CoreLibFunc, CoreType};
@@ -9,7 +10,8 @@ use super::SpecializationError::{
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::{GenericLibFunc, GenericType};
 use crate::ids::{ConcreteTypeId, FunctionId, GenericTypeId};
-use crate::program::{Function, FunctionSignature, GenericArg, StatementIdx};
+use crate::program::{ConcreteTypeLongId, Function, FunctionSignature, GenericArg, StatementIdx};
+use crate::test_utils::build_bijective_mapping;
 
 fn type_arg(name: &str) -> GenericArg {
     GenericArg::Type(name.into())
@@ -19,7 +21,14 @@ fn value_arg(v: i64) -> GenericArg {
     GenericArg::Value(v)
 }
 
-struct MockSpecializationContext {}
+struct MockSpecializationContext {
+    mapping: BiMap<ConcreteTypeId, ConcreteTypeLongId>,
+}
+impl MockSpecializationContext {
+    pub fn new() -> Self {
+        Self { mapping: build_bijective_mapping() }
+    }
+}
 
 impl TypeSpecializationContext for MockSpecializationContext {
     fn try_get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo> {
@@ -29,13 +38,33 @@ impl TypeSpecializationContext for MockSpecializationContext {
             || id == "NonZeroFelt".into()
             || id == "NonZeroInt".into()
         {
-            Some(TypeInfo { storable: true, droppable: true, duplicatable: true })
+            Some(TypeInfo {
+                long_id: self.mapping.get_by_left(&id)?.clone(),
+                storable: true,
+                droppable: true,
+                duplicatable: true,
+            })
         } else if id == "ArrayFelt".into() || id == "ArrayInt".into() {
-            Some(TypeInfo { storable: true, droppable: true, duplicatable: false })
+            Some(TypeInfo {
+                long_id: self.mapping.get_by_left(&id)?.clone(),
+                storable: true,
+                droppable: true,
+                duplicatable: false,
+            })
         } else if id == "UninitializedFelt".into() || id == "UninitializedInt".into() {
-            Some(TypeInfo { storable: false, droppable: true, duplicatable: false })
+            Some(TypeInfo {
+                long_id: self.mapping.get_by_left(&id)?.clone(),
+                storable: false,
+                droppable: true,
+                duplicatable: false,
+            })
         } else if id == "GasBuiltin".into() {
-            Some(TypeInfo { storable: true, droppable: false, duplicatable: false })
+            Some(TypeInfo {
+                long_id: self.mapping.get_by_left(&id)?.clone(),
+                storable: true,
+                droppable: false,
+                duplicatable: false,
+            })
         } else {
             None
         }
@@ -126,7 +155,7 @@ fn find_type_specialization(
 ) -> Result<(), SpecializationError> {
     CoreType::by_id(&id.into())
         .ok_or(UnsupportedId)?
-        .specialize(&MockSpecializationContext {}, &generic_args)
+        .specialize(&MockSpecializationContext::new(), &generic_args)
         .map(|_| ())
 }
 
@@ -200,6 +229,6 @@ fn find_libfunc_specialization(
 ) -> Result<(), SpecializationError> {
     CoreLibFunc::by_id(&id.into())
         .ok_or(UnsupportedId)?
-        .specialize(&MockSpecializationContext {}, &generic_args)
+        .specialize(&MockSpecializationContext::new(), &generic_args)
         .map(|_| ())
 }
