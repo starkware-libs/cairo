@@ -180,7 +180,7 @@ impl BlockSealed {
         ctx: &mut LoweringContext<'_>,
         pulls: &[semantic::VarId],
         pushes: &[semantic::VarId],
-    ) -> Block {
+    ) -> (Block, BlockEndInfo) {
         let BlockSealed { mut block, end } = self;
         // Pull extra semantic variables if necessary.
         for semantic_var_id in pulls {
@@ -198,28 +198,48 @@ impl BlockSealed {
         assert_eq!(block.pulled_semantic_vars.len(), pulls.len());
 
         // Compute drops.
-        let end = match end {
+        let (end, end_info) = match end {
             BlockSealedEnd::Callsite(maybe_output) => {
-                let pushes = pushes.iter().map(|semantic_var_id| {
-                    // TODO(spapini): Convert to a diagnostic.
-                    block
-                        .semantic_variables
-                        .take(*semantic_var_id)
-                        .expect("finalize() called with dead output semantic variables.")
-                        .var()
-                        .expect("Value already moved.")
-                        .0
-                });
+                let pushes: Vec<_> = pushes
+                    .iter()
+                    .map(|semantic_var_id| {
+                        // TODO(spapini): Convert to a diagnostic.
+                        block
+                            .semantic_variables
+                            .take(*semantic_var_id)
+                            .expect("finalize() called with dead output semantic variables.")
+                            .var()
+                            .expect("Value already moved.")
+                            .0
+                    })
+                    .collect();
+                let maybe_output_ty = maybe_output.map(|var_id| ctx.variables[var_id].ty);
+                let push_tys = pushes.iter().map(|var_id| ctx.variables[*var_id].ty).collect();
                 let outputs = chain!(maybe_output.into_iter(), pushes).collect();
-                BlockEnd::Callsite(outputs)
+                (BlockEnd::Callsite(outputs), BlockEndInfo::Callsite { maybe_output_ty, push_tys })
             }
-            BlockSealedEnd::Return(returns) => BlockEnd::Return(returns),
-            BlockSealedEnd::Unreachable => BlockEnd::Unreachable,
+            BlockSealedEnd::Return(returns) => (BlockEnd::Return(returns), BlockEndInfo::End),
+            BlockSealedEnd::Unreachable => (BlockEnd::Unreachable, BlockEndInfo::End),
         };
+        // TODO(spapini): Fix this in case of return.
         let drops = block.living_variables.into_iter().collect();
 
-        Block { inputs: block.inputs, statements: block.statements, drops, end }
+        (Block { inputs: block.inputs, statements: block.statements, drops, end }, end_info)
     }
+}
+
+/// Describes the structure of the output variables of a finalized block.
+pub enum BlockEndInfo {
+    /// The block returns to callsite.
+    Callsite {
+        /// Type for the "block value" output variable if exists.
+        maybe_output_ty: Option<semantic::TypeId>,
+        /// Types for the push (rebind) output variables, that get bound to semantic variables at
+        /// the calling scope.
+        push_tys: Vec<semantic::TypeId>,
+    },
+    /// The block does not return to callsite, and thus, has no outputs.
+    End,
 }
 
 /// Responsible for synchronizing pulls from outer scopes between sibling branches.
