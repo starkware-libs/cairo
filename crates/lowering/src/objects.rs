@@ -4,6 +4,7 @@
 //! compound expression.
 
 use id_arena::Id;
+use semantic::{ConcreteEnumId, ConcreteVariant};
 
 pub type BlockId = Id<Block>;
 pub type VariableId = Id<Variable>;
@@ -68,7 +69,7 @@ pub enum Statement {
 
     // Enums.
     EnumConstruct,
-    MatchEnum,
+    MatchEnum(StatementMatchEnum),
 
     // Tuples.
     TupleConstruct(StatementTupleConstruct),
@@ -81,10 +82,10 @@ impl Statement {
             Statement::Call(stmt) => stmt.inputs.clone(),
             Statement::CallBlock(_) => vec![],
             Statement::MatchExtern(stmt) => stmt.inputs.clone(),
+            Statement::MatchEnum(stmt) => vec![stmt.input],
             Statement::StructConstruct => todo!(),
             Statement::StructDestruct => todo!(),
             Statement::EnumConstruct => todo!(),
-            Statement::MatchEnum => todo!(),
             Statement::TupleConstruct(stmt) => stmt.inputs.clone(),
             Statement::TupleDestruct(stmt) => vec![stmt.input],
         }
@@ -98,7 +99,7 @@ impl Statement {
             Statement::StructConstruct => todo!(),
             Statement::StructDestruct => todo!(),
             Statement::EnumConstruct => todo!(),
-            Statement::MatchEnum => todo!(),
+            Statement::MatchEnum(stmt) => stmt.outputs.clone(),
             Statement::TupleConstruct(stmt) => vec![stmt.output],
             Statement::TupleDestruct(stmt) => stmt.outputs.clone(),
         }
@@ -142,20 +143,9 @@ pub struct StatementMatchExtern {
     /// Living variables in current scope to move to the function, as arguments.
     pub inputs: Vec<VariableId>,
     // All blocks should have the same rets.
-    pub arms: Vec<MatchArm>,
+    pub arms: Vec<BlockId>,
     /// New variables to be introduced into the current scope from the arm outputs.
     pub outputs: Vec<VariableId>,
-}
-
-pub struct MatchArm {
-    /// New variables to be introduced into the current scope from the branch outputs.
-    /// These variables will move and be bound to the callee block inputs, in the same order.
-    /// Note: to have something a bit more complex, like moving extra variables from a higher
-    /// scope, or rearrange the variables, an intermediate block should be constructed with the
-    /// proper calls.
-    pub arm_variables: Vec<VariableId>,
-    /// A block to "call".
-    pub block: BlockId,
 }
 
 /// A statement that constructs a tuple into a new variable.
@@ -167,5 +157,16 @@ pub struct StatementTupleConstruct {
 /// A statement that destructs a tuple, introducing its elements as new variables.
 pub struct StatementTupleDestruct {
     pub input: VariableId,
+    pub outputs: Vec<VariableId>,
+}
+
+/// A statement that matches an enum, and "calls" a possibly different block for each branch.
+pub struct StatementMatchEnum {
+    pub concrete_enum: ConcreteEnumId,
+    /// Living variables in current scope to move to the function, as arguments.
+    pub input: VariableId,
+    // All blocks should have the same rets.
+    pub arms: Vec<(ConcreteVariant, BlockId)>,
+    /// New variables to be introduced into the current scope from the arm outputs.
     pub outputs: Vec<VariableId>,
 }
