@@ -10,7 +10,7 @@ use utils::extract_matches;
 use utils::unordered_hash_map::UnorderedHashMap;
 
 use self::context::LoweringContext;
-use self::scope::{generators, BlockSealed, PullUnifier, PullUnifierFinalized};
+use self::scope::{generators, BlockFlowMerger, BlockMergerFinalized, BlockSealed};
 use crate::diagnostic::LoweringDiagnosticKind::*;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnostics};
 use crate::objects::{Block, BlockId, Variable};
@@ -72,7 +72,7 @@ impl<'db> Lowerer<'db> {
         let initial_scope = BlockScope::new_root(&mut lowerer.ctx, &input_semantic_var_ids);
         let root_sealed_block = lowerer.lower_block(initial_scope, semantic_block)?;
         let (root_block, _end_info) =
-            root_sealed_block.finalize(&mut lowerer.ctx, &PullUnifierFinalized::default());
+            root_sealed_block.finalize(&mut lowerer.ctx, &BlockMergerFinalized::default());
         let root = lowerer.ctx.blocks.alloc(root_block);
         let LoweringContext { diagnostics, variables, blocks, .. } = lowerer.ctx;
         Some(Lowered { diagnostics: diagnostics.build(), root, variables, blocks })
@@ -216,18 +216,18 @@ impl<'db> Lowerer<'db> {
             }
             semantic::Expr::Assignment(_) => todo!(),
             semantic::Expr::Block(expr) => {
-                let (block_sealed, finalized_unifier) = PullUnifier::with(scope, |pull_unifier| {
-                    let block_scope = BlockScope::new_subscope(pull_unifier);
+                let (block_sealed, finalized_merger) = BlockFlowMerger::with(scope, |merger| {
+                    let block_scope = BlockScope::new_subscope(merger);
                     self.lower_block(block_scope, expr)
                 });
                 let (block, end_info) = block_sealed
                     .ok_or(LoweringFlowError::Failed)?
-                    .finalize(&mut self.ctx, &finalized_unifier);
+                    .finalize(&mut self.ctx, &finalized_merger);
                 let call_block_generator =
                     generators::CallBlock { block: self.ctx.blocks.alloc(block), end_info };
                 match call_block_generator.add(&mut self.ctx, scope) {
                     generators::CallBlockResult::Callsite { maybe_output, pushes } => {
-                        for (semantic_var_id, var) in zip_eq(finalized_unifier.pushes, pushes) {
+                        for (semantic_var_id, var) in zip_eq(finalized_merger.pushes, pushes) {
                             scope.put_semantic_variable(semantic_var_id, var);
                         }
                         Ok(match maybe_output {
@@ -250,7 +250,7 @@ impl<'db> Lowerer<'db> {
             // TODO(spapini): Convert to a diagnostic.
             semantic::Expr::Var(expr) => Ok(LoweredExpr::AtVariable(
                 scope
-                    .get_or_pull_semantic_variable(&mut self.ctx, expr.var)
+                    .use_semantic_variable(&mut self.ctx, expr.var)
                     .var()
                     .expect("Value already moved."),
             )),
