@@ -5,9 +5,10 @@ use itertools::zip_eq;
 use scope::{BlockScope, BlockScopeEnd, OwnedVariable};
 use semantic::corelib::{core_bool_enum, false_variant, true_variant, unit_ty};
 use semantic::db::SemanticGroup;
-use semantic::TypeLongId;
-use utils::extract_matches;
+use semantic::items::enm::SemanticEnumEx;
+use semantic::{ConcreteTypeId, TypeLongId};
 use utils::unordered_hash_map::UnorderedHashMap;
+use utils::{extract_matches, try_extract_matches};
 
 use self::context::LoweringContext;
 use self::scope::{generators, BlockFlowMerger, ContextLender};
@@ -116,6 +117,8 @@ impl<'db> Lowerer<'db> {
                 Ok(()) => {}
                 Err(StatementLoweringFlowError::Failed) => return None,
                 Err(StatementLoweringFlowError::End(end)) => {
+                    // TODO(spapini): We might want to report unreachable for expr that abruptly
+                    // ends, e.g. `5 + {return; 6}`.
                     if i + 1 < expr_block.statements.len() {
                         let start_stmt =
                             &self.function_def.statements[expr_block.statements[i + 1]];
@@ -126,8 +129,8 @@ impl<'db> Lowerer<'db> {
                             start_stmt.stable_ptr().untyped(),
                             Unreachable { last_statement_ptr: end_stmt.stable_ptr().untyped() },
                         );
-                        return Some(end);
                     }
+                    return Some(end);
                 }
             };
         }
@@ -247,22 +250,14 @@ impl<'db> Lowerer<'db> {
                     });
                 let block_sealed = block_sealed.ok_or(LoweringFlowError::Failed)?;
                 let block_finalized = finalized_merger.finalize_block(&mut self.ctx, block_sealed);
+
+                // Emit the statement.
                 let call_block_generator = generators::CallBlock {
                     block: block_finalized.block,
                     end_info: finalized_merger.end_info,
                 };
-                match call_block_generator.add(&mut self.ctx, scope) {
-                    generators::CallBlockResult::Callsite { maybe_output, pushes } => {
-                        for (semantic_var_id, var) in zip_eq(finalized_merger.pushes, pushes) {
-                            scope.put_semantic_variable(semantic_var_id, var);
-                        }
-                        Ok(match maybe_output {
-                            Some(output) => LoweredExpr::AtVariable(output),
-                            None => LoweredExpr::Unit,
-                        })
-                    }
-                    generators::CallBlockResult::End => Err(LoweringFlowError::Unreachable),
-                }
+                let block_result = call_block_generator.add(&mut self.ctx, scope);
+                lowered_expr_from_block_result(scope, block_result, finalized_merger.pushes)
             }
             semantic::Expr::FunctionCall(expr) => {
                 let inputs = self.lower_exprs_as_vars(&expr.args, scope)?;
@@ -271,7 +266,66 @@ impl<'db> Lowerer<'db> {
                         .add(&mut self.ctx, scope),
                 ))
             }
-            semantic::Expr::Match(_) => todo!(),
+            semantic::Expr::Match(expr) => {
+                let expr_var = extract_matches!(
+                    self.lower_expr(scope, expr.matched_expr)?,
+                    LoweredExpr::AtVariable
+                );
+
+                // TODO(spapini): Use diagnostics.
+                // TODO(spapini): Handle more than just enums.
+                let (concrete_enum_id, concrete_variants) = self.extract_concrete_enum(expr)?;
+
+                // Merge arm blocks.
+                let (res, mut finalized_merger) = BlockFlowMerger::with(
+                    self,
+                    scope,
+                    |lowerer, merger| -> Result<_, LoweringFlowError> {
+                        // Create a sealed block for each arm.
+                        let block_opts = zip_eq(&concrete_variants, &expr.arms).map(
+                            |(concrete_variant, arm)| {
+                                let semantic_var_id =
+                                    extract_var_pattern(&arm.pattern, concrete_variant)?;
+                                // Create a scope for the arm block.
+                                merger.run_in_subscope(
+                                    lowerer,
+                                    vec![concrete_variant.ty],
+                                    |lowerer, subscope, variables| {
+                                        // Bind the arm input variable to the semantic variable.
+                                        let [var] = <[_; 1]>::try_from(variables).ok().unwrap();
+                                        subscope.put_semantic_variable(semantic_var_id, var);
+
+                                        // Lower the block.
+                                        lowerer.lower_block(
+                                            subscope,
+                                            extract_matches!(
+                                                &lowerer.function_def.exprs[arm.expression],
+                                                semantic::Expr::Block
+                                            ),
+                                        )
+                                    },
+                                )
+                            },
+                        );
+                        block_opts.collect::<Option<Vec<_>>>().ok_or(LoweringFlowError::Failed)
+                    },
+                );
+                let finalized_blocks = res?
+                    .into_iter()
+                    .map(|sealed| finalized_merger.finalize_block(&mut self.ctx, sealed).block);
+
+                let arms = zip_eq(concrete_variants, finalized_blocks).collect();
+
+                // Emit the statement.
+                let match_generator = generators::MatchEnum {
+                    input: expr_var,
+                    concrete_enum_id,
+                    arms,
+                    end_info: finalized_merger.end_info,
+                };
+                let block_result = match_generator.add(&mut self.ctx, scope);
+                lowered_expr_from_block_result(scope, block_result, finalized_merger.pushes)
+            }
             semantic::Expr::If(expr) => {
                 // The condition cannot be unit.
                 let condition_var = extract_matches!(
@@ -312,6 +366,7 @@ impl<'db> Lowerer<'db> {
                     else_block_sealed.ok_or(LoweringFlowError::Failed)?,
                 );
 
+                // Emit the statement.
                 let match_generator = generators::MatchEnum {
                     input: condition_var,
                     concrete_enum_id: core_bool_enum(self.ctx.db),
@@ -321,18 +376,8 @@ impl<'db> Lowerer<'db> {
                     ],
                     end_info: finalized_merger.end_info,
                 };
-                match match_generator.add(&mut self.ctx, scope) {
-                    generators::CallBlockResult::Callsite { maybe_output, pushes } => {
-                        for (semantic_var_id, var) in zip_eq(finalized_merger.pushes, pushes) {
-                            scope.put_semantic_variable(semantic_var_id, var);
-                        }
-                        Ok(match maybe_output {
-                            Some(output) => LoweredExpr::AtVariable(output),
-                            None => LoweredExpr::Unit,
-                        })
-                    }
-                    generators::CallBlockResult::End => Err(LoweringFlowError::Unreachable),
-                }
+                let block_result = match_generator.add(&mut self.ctx, scope);
+                lowered_expr_from_block_result(scope, block_result, finalized_merger.pushes)
             }
             // TODO(spapini): Convert to a diagnostic.
             semantic::Expr::Var(expr) => Ok(LoweredExpr::AtVariable(
@@ -349,6 +394,38 @@ impl<'db> Lowerer<'db> {
             semantic::Expr::EnumVariantCtor(_) => todo!(),
             semantic::Expr::Missing(_) => todo!(),
         }
+    }
+
+    /// Extracts concrete enum and variants from a match expression. Assumes it is indeed a concrete
+    /// enum.
+    fn extract_concrete_enum(
+        &mut self,
+        expr: &semantic::ExprMatch,
+    ) -> Result<(semantic::ConcreteEnumId, Vec<semantic::ConcreteVariant>), LoweringFlowError> {
+        let concrete_ty = try_extract_matches!(
+            self.ctx.db.lookup_intern_type(self.function_def.exprs[expr.matched_expr].ty()),
+            TypeLongId::Concrete
+        )
+        .ok_or(LoweringFlowError::Failed)?;
+        let concrete_enum_id = try_extract_matches!(concrete_ty, ConcreteTypeId::Enum)
+            .ok_or(LoweringFlowError::Failed)?;
+        let enum_id = concrete_enum_id.enum_id(self.ctx.db);
+        let variants = self.ctx.db.enum_variants(enum_id).ok_or(LoweringFlowError::Failed)?;
+        let concrete_variants = variants
+            .values()
+            .map(|variant_id| {
+                let variant = self
+                    .ctx
+                    .db
+                    .variant_semantic(enum_id, *variant_id)
+                    .ok_or(LoweringFlowError::Failed)?;
+
+                Ok(self.ctx.db.concrete_enum_variant(concrete_enum_id, &variant))
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+
+        assert_eq!(expr.arms.len(), concrete_variants.len(), "Wrong number of arms.");
+        Ok((concrete_enum_id, concrete_variants))
     }
 
     /// Lowers a sequence of expressions and return them all. If the flow ended in the middle,
@@ -369,6 +446,44 @@ impl<'db> Lowerer<'db> {
         generators::TupleConstruct { inputs: vec![], ty: unit_ty(self.ctx.db) }
             .add(&mut self.ctx, scope)
     }
+}
+
+/// Converts a CallBlockResult for a LoweredExpr.
+/// Some statements end with a CallBlockResult (CallBlock, Match, etc..), which represents all
+/// the information of the "ending" of the call.
+/// Binds the semantic variables from the call
+/// Returns the proper flow error if needed.
+fn lowered_expr_from_block_result(
+    scope: &mut BlockScope,
+    block_result: generators::CallBlockResult,
+    pushed_semantic_vars: Vec<semantic::VarId>,
+) -> Result<LoweredExpr, LoweringFlowError> {
+    match block_result {
+        generators::CallBlockResult::Callsite { maybe_output, pushes } => {
+            for (semantic_var_id, var) in zip_eq(pushed_semantic_vars, pushes) {
+                scope.put_semantic_variable(semantic_var_id, var);
+            }
+            Ok(match maybe_output {
+                Some(output) => LoweredExpr::AtVariable(output),
+                None => LoweredExpr::Unit,
+            })
+        }
+        generators::CallBlockResult::End => Err(LoweringFlowError::Unreachable),
+    }
+}
+
+/// Checks that the pattern is an enum pattern for a concrete variant, and returns the semantic
+/// variable id.
+fn extract_var_pattern(
+    pattern: &semantic::Pattern,
+    concrete_variant: &semantic::ConcreteVariant,
+) -> Option<semantic::VarId> {
+    let enum_pattern = try_extract_matches!(&pattern, semantic::Pattern::Enum)?;
+    assert_eq!(&enum_pattern.variant, concrete_variant, "Wrong variant");
+    let var_pattern =
+        try_extract_matches!(&*enum_pattern.inner_pattern, semantic::Pattern::Variable)?;
+    let semantic_var_id = semantic::VarId::Local(var_pattern.var.id);
+    Some(semantic_var_id)
 }
 
 /// Representation of the value of a computed expression.
