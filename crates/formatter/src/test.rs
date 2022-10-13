@@ -1,7 +1,7 @@
+use std::fs;
+
 use filesystem::db::FilesDatabase;
-use parser::test_utils::{
-    get_syntax_root_and_diagnostics_from_file, read_file, ParserDatabaseForTesting,
-};
+use parser::utils::{get_syntax_root_and_diagnostics_from_file, SimpleParserDatabase};
 use pretty_assertions::assert_eq;
 use syntax::node::db::SyntaxDatabase;
 use test_case::test_case;
@@ -22,7 +22,7 @@ impl salsa::Database for DatabaseImpl {}
     "test_data/expected_results/linebreaking.cairo"
 )]
 fn format_and_compare_file(unformatted_filename: &str, expected_filename: &str) {
-    let db_val = ParserDatabaseForTesting::default();
+    let db_val = SimpleParserDatabase::default();
     let db = &db_val;
 
     let (syntax_root, diagnostics) =
@@ -30,6 +30,7 @@ fn format_and_compare_file(unformatted_filename: &str, expected_filename: &str) 
     diagnostics.expect("A parsing error occurred while trying to format the code.");
     let config = FormatterConfig::default();
     let formatted_file = get_formatted_file(db, &syntax_root, config);
-    let expected_file = read_file(expected_filename);
+    let expected_file =
+        fs::read_to_string(expected_filename).expect("Expected file does not exists.");
     assert_eq!(formatted_file, expected_file);
 }
