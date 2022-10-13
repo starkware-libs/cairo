@@ -2,13 +2,43 @@
 //! ownership of OwnedVariable.
 
 use itertools::chain;
+use semantic::{ConcreteEnumId, ConcreteVariant};
 
 use super::{BlockEndInfo, BlockScope, OwnedVariable};
 use crate::lower::context::LoweringContext;
 use crate::objects::{
     Statement, StatementCall, StatementLiteral, StatementTupleConstruct, StatementTupleDestruct,
 };
-use crate::{BlockId, StatementCallBlock};
+use crate::{BlockId, StatementCallBlock, StatementMatchEnum, VariableId};
+
+/// Generator for StatementMatchEnum.
+pub struct MatchEnum {
+    pub input: OwnedVariable,
+    pub concrete_enum_id: ConcreteEnumId,
+    pub arms: Vec<(ConcreteVariant, BlockId)>,
+    pub end_info: BlockEndInfo,
+}
+impl MatchEnum {
+    pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockScope) -> CallBlockResult {
+        let input = scope.use_var(ctx, self.input);
+
+        // Check that each arm has a single input of the correct type.
+        for (variant, block_id) in &self.arms {
+            let input_tys =
+                ctx.blocks[*block_id].inputs.iter().map(|var_id| ctx.variables[*var_id].ty);
+            itertools::assert_equal([variant.ty].into_iter(), input_tys);
+        }
+
+        let (outputs, res) = process_end_info(ctx, scope, self.end_info);
+        scope.statements.push(Statement::MatchEnum(StatementMatchEnum {
+            concrete_enum: self.concrete_enum_id,
+            input,
+            arms: self.arms,
+            outputs,
+        }));
+        res
+    }
+}
 
 /// Generator for StatementTupleConstruct.
 pub struct TupleConstruct {
@@ -84,18 +114,7 @@ pub enum CallBlockResult {
 }
 impl CallBlock {
     pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockScope) -> CallBlockResult {
-        let (outputs, res) = match self.end_info {
-            BlockEndInfo::Callsite { maybe_output_ty, push_tys } => {
-                let maybe_output = maybe_output_ty.map(|ty| scope.introduce_variable(ctx, ty));
-                let pushes =
-                    push_tys.into_iter().map(|ty| scope.introduce_variable(ctx, ty)).collect();
-                (
-                    chain!(&maybe_output, &pushes).map(|var| var.0).collect(),
-                    CallBlockResult::Callsite { maybe_output, pushes },
-                )
-            }
-            BlockEndInfo::End => (vec![], CallBlockResult::End),
-        };
+        let (outputs, res) = process_end_info(ctx, scope, self.end_info);
 
         // TODO(spapini): Support mut variables.
         scope
@@ -103,6 +122,27 @@ impl CallBlock {
             .push(Statement::CallBlock(StatementCallBlock { block: self.block, outputs }));
         res
     }
+}
+
+/// Given a block scope and an end info, extracts output variable ids and a structured
+/// representation of them as a [CallBlockResult].
+fn process_end_info(
+    ctx: &mut LoweringContext<'_>,
+    scope: &mut BlockScope,
+    end_info: BlockEndInfo,
+) -> (Vec<VariableId>, CallBlockResult) {
+    let (outputs, res) = match end_info {
+        BlockEndInfo::Callsite { maybe_output_ty, push_tys } => {
+            let maybe_output = maybe_output_ty.map(|ty| scope.introduce_variable(ctx, ty));
+            let pushes = push_tys.into_iter().map(|ty| scope.introduce_variable(ctx, ty)).collect();
+            (
+                chain!(&maybe_output, &pushes).map(|var| var.0).collect(),
+                CallBlockResult::Callsite { maybe_output, pushes },
+            )
+        }
+        BlockEndInfo::End => (vec![], CallBlockResult::End),
+    };
+    (outputs, res)
 }
 
 /// Generator for StatementLiteral.
