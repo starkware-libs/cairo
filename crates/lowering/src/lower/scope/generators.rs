@@ -17,7 +17,7 @@ pub struct TupleConstruct {
 }
 impl TupleConstruct {
     pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockScope) -> OwnedVariable {
-        let inputs = self.inputs.into_iter().map(|var| scope.get_var(ctx, var)).collect();
+        let inputs = self.inputs.into_iter().map(|var| scope.use_var(ctx, var)).collect();
         let output = scope.introduce_variable(ctx, self.ty);
         scope
             .statements
@@ -33,7 +33,7 @@ pub struct TupleDestruct {
 }
 impl TupleDestruct {
     pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockScope) -> Vec<OwnedVariable> {
-        let input = scope.get_var(ctx, self.input);
+        let input = scope.use_var(ctx, self.input);
         let outputs: Vec<_> =
             self.tys.into_iter().map(|ty| scope.introduce_variable(ctx, ty)).collect();
         scope.statements.push(Statement::TupleDestruct(StatementTupleDestruct {
@@ -52,7 +52,7 @@ pub struct Call {
 }
 impl Call {
     pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockScope) -> OwnedVariable {
-        let inputs = self.inputs.into_iter().map(|var| scope.get_var(ctx, var)).collect();
+        let inputs = self.inputs.into_iter().map(|var| scope.use_var(ctx, var)).collect();
         let output = scope.introduce_variable(ctx, self.ret_ty);
         // TODO(spapini): Support mut variables.
         scope.statements.push(Statement::Call(StatementCall {
