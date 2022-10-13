@@ -45,3 +45,25 @@ impl<T> OptionHelper for Option<T> {
         self
     }
 }
+
+/// Borrows a mutable reference as Box for the lifespan of this function. Runs the given closure
+/// with the boxed value as a parameter.
+/// The closure is expected to return a boxed value, whose changes will be reflected on the mutable
+/// reference.
+/// Example:
+/// ```
+/// use utils::borrow_as_box;
+/// let mut x = 5;
+/// borrow_as_box(&mut x, |mut x: Box<usize>| {
+///     *x += 1;
+///     (x, ())
+/// });
+/// assert_eq!(x, 6);
+/// ```
+pub fn borrow_as_box<T: Default, R, F: FnOnce(Box<T>) -> (Box<T>, R)>(ptr: &mut T, f: F) -> R {
+    // TODO(spapini): Consider replacing take with something the leaves the memory dangling, instead
+    // of filling with default().
+    let (boxed, res) = f(Box::new(std::mem::take(ptr)));
+    *ptr = *boxed;
+    res
+}
