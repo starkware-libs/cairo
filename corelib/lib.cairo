@@ -1,4 +1,4 @@
-enum bool { True: (), False: (), }
+enum bool { False: (), True: (), }
 extern func bool_and(a: bool, b: bool) -> bool;
 extern func bool_or(a: bool, b: bool) -> bool;
 extern func bool_not(a: bool) -> bool;
