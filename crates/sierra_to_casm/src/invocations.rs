@@ -12,7 +12,8 @@ use casm::operand::{
 };
 use itertools::zip_eq;
 use sierra::extensions::arithmetic::{
-    BinaryOperationConcreteLibFunc, OperationConcreteLibFunc, Operator,
+    BinaryOperationConcreteLibFunc, OperationConcreteLibFunc, OperationWithConstConcreteLibFunc,
+    Operator,
 };
 use sierra::extensions::array::ArrayConcreteLibFunc;
 use sierra::extensions::boxing::BoxConcreteLibFunc;
@@ -167,6 +168,29 @@ impl CompiledInvocationBuilder<'_> {
             (ReferenceExpression::Deref(a), ReferenceExpression::Immediate(b)) => {
                 BinOpExpression { op, a: *a, b: DerefOrImmediate::Immediate(*b) }
             }
+            _ => return Err(InvocationError::InvalidReferenceExpressionForArgument),
+        };
+        Ok(self
+            .build_only_reference_changes([ReferenceExpression::BinOp(ref_expression)].into_iter()))
+    }
+
+    /// Handles a felt operation with a const.
+    fn build_felt_op_with_const(
+        self,
+        op: Operator,
+        c: i64,
+    ) -> Result<CompiledInvocation, InvocationError> {
+        let expr = match self.refs {
+            [ReferenceValue { expression, .. }] => expression,
+            _ => return Err(InvocationError::WrongNumberOfArguments),
+        };
+
+        let ref_expression = match expr {
+            ReferenceExpression::Deref(a) => BinOpExpression {
+                op,
+                a: *a,
+                b: DerefOrImmediate::Immediate(ImmediateOperand { value: c as i128 }),
+            },
             _ => return Err(InvocationError::InvalidReferenceExpressionForArgument),
         };
         Ok(self
@@ -527,6 +551,9 @@ pub fn compile_invocation(
         CoreConcreteLibFunc::Felt(FeltConcrete::Operation(OperationConcreteLibFunc::Binary(
             BinaryOperationConcreteLibFunc { operator, .. },
         ))) => builder.build_felt_op(*operator),
+        CoreConcreteLibFunc::Felt(FeltConcrete::Operation(OperationConcreteLibFunc::Const(
+            OperationWithConstConcreteLibFunc { operator, c, .. },
+        ))) => builder.build_felt_op_with_const(*operator, *c),
         CoreConcreteLibFunc::Felt(FeltConcrete::JumpNotZero(_)) => builder.build_jump_nz(),
         CoreConcreteLibFunc::Felt(FeltConcrete::Const(libfunc)) => Ok(builder
             .build_only_reference_changes(
