@@ -180,20 +180,73 @@ fn read_sierra_example_file(name: &str) -> String {
                 ret;
             "};
             "fib_no_gas")]
-#[test_case(read_sierra_example_file("collatz").as_str(),
+#[test_case(read_sierra_example_file("collatz").replace("int", "felt").replace("Int", "Felt").as_str(),
             md_builder(&[], true),
             indoc! {"
-            "} => ignore["Gas usage lowering not supported yet."];
+            "} => ignore["Non-forward only code is not supported yet."];
             "collatz")]
-#[test_case(read_sierra_example_file("fib_jumps").as_str(),
+#[test_case(read_sierra_example_file("fib_jumps").replace("int", "felt").replace("Int", "Felt").as_str(),
             md_builder(&[], true),
             indoc! {"
-            "} => ignore["Gas usage lowering not supported yet."];
+                jmp rel 7 if [fp + -3] != 0;
+                [ap + 0] = [fp + -4] + 8, ap++;
+                [ap + 0] = 1, ap++;
+                ret;
+                [fp + -3] = [ap + 0] + 1, ap++;
+                jmp rel 7 if [ap + -1] != 0;
+                [ap + 0] = [fp + -4] + 6, ap++;
+                [ap + 0] = 1, ap++;
+                ret;
+                [ap + 0] = 1, ap++;
+                [ap + 0] = [ap + -2], ap++;
+                [ap + 0] = [ap + -1], ap++;
+                [ap + 0] = [fp + -4], ap++;
+                [ap + 0] = 1, ap++;
+                %{ memory[ap + 0] = 4 < memory[ap + -2] %}
+                jmp rel 7 if [ap + 0] != 0, ap++;
+                [ap + 0] = [ap + -2] + 0, ap++;
+                [ap + 0] = -1, ap++;
+                ret;
+                [ap + -4] = [ap + 0] + 1, ap++;
+                [ap + -3] = [ap + 0] + 5, ap++;
+                [ap + 0] = [ap + -4] + [ap + -8], ap++;
+                jmp rel -12 if [ap + -3] != 0;
+                [ap + 0] = [ap + -2] + 1, ap++;
+                [ap + 0] = [ap + -2], ap++;
+                ret;
+            "};
             "fib_jumps")]
-#[test_case(read_sierra_example_file("fib_recursive").as_str(),
+#[test_case(read_sierra_example_file("fib_recursive").replace("int", "felt").replace("Int", "Felt").as_str(),
             md_builder(&[], true),
             indoc! {"
-            "} => ignore["Gas usage lowering not supported yet."];
+                [ap + 0] = 1, ap++;
+                jmp rel 6 if [fp + -3] != 0;
+                [ap + 0] = [fp + -4] + 3, ap++;
+                [ap + 0] = [ap + -2], ap++;
+                ret;
+                [fp + -3] = [ap + 0] + 1, ap++;
+                jmp rel 6 if [ap + -1] != 0;
+                [ap + 0] = [fp + -4] + 1, ap++;
+                [ap + 0] = [ap + -3], ap++;
+                ret;
+                %{ memory[ap + 0] = 28 < memory[fp + -4] %}
+                jmp rel 7 if [ap + 0] != 0, ap++;
+                [ap + 0] = [fp + -4] + 0, ap++;
+                [ap + 0] = -10000, ap++;
+                ret;
+                ap += 2;
+                [fp + -4] = [ap + 0] + 29, ap++;
+                [ap + -5] = [fp + 3] + 1;
+                [ap + 0] = [ap + -5], ap++;
+                call rel -30;
+                [fp + 4] = [ap + -1];
+                [ap + 0] = [ap + -2], ap++;
+                [ap + 0] = [fp + 3], ap++;
+                call rel -35;
+                [ap + 0] = [ap + -2] + 0, ap++;
+                [ap + 0] = [fp + 4] + [ap + -2], ap++;
+                ret;
+            "};
             "fib_recursive")]
 fn sierra_to_casm(sierra_code: &str, builder: MetadataBuilder, expected_casm: &str) {
     let program = ProgramParser::new().parse(sierra_code).unwrap();
