@@ -1,12 +1,13 @@
 use debug::DebugWithDb;
 use semantic::db::SemanticGroup;
+use semantic::ConcreteVariant;
 
 use crate::lower::Lowered;
 use crate::objects::{
-    Block, BlockEnd, BlockId, MatchArm, Statement, StatementCall, StatementCallBlock,
-    StatementLiteral, StatementMatchExtern, StatementTupleDestruct, VariableId,
+    Block, BlockEnd, BlockId, Statement, StatementCall, StatementCallBlock, StatementLiteral,
+    StatementMatchExtern, StatementTupleDestruct, VariableId,
 };
-use crate::StatementTupleConstruct;
+use crate::{StatementMatchEnum, StatementTupleConstruct};
 
 /// Holds all the information needed for formatting lowered representations.
 /// Acts like a "db" for DebugWithDb.
@@ -124,7 +125,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for Statement {
             Statement::StructConstruct => todo!(),
             Statement::StructDestruct => todo!(),
             Statement::EnumConstruct => todo!(),
-            Statement::MatchEnum => todo!(),
+            Statement::MatchEnum(stmt) => stmt.fmt(f, ctx),
             Statement::TupleConstruct(stmt) => stmt.fmt(f, ctx),
             Statement::TupleDestruct(stmt) => stmt.fmt(f, ctx),
         }
@@ -155,6 +156,26 @@ impl DebugWithDb<LoweredFormatter<'_>> for StatementCall {
 impl DebugWithDb<LoweredFormatter<'_>> for StatementCallBlock {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         write!(f, "{:?}()", self.block.debug(ctx))
+    }
+}
+
+impl DebugWithDb<LoweredFormatter<'_>> for StatementMatchEnum {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
+        write!(f, "match_enum(")?;
+        self.input.fmt(f, ctx)?;
+        writeln!(f, ") {{")?;
+        for (variant, block) in &self.arms {
+            writeln!(f, "    {:?} => {:?},", variant.debug(ctx), block.debug(ctx))?;
+        }
+        write!(f, "  }}")
+    }
+}
+
+impl DebugWithDb<LoweredFormatter<'_>> for ConcreteVariant {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
+        let enum_name = self.concrete_enum_id.enum_id(ctx.db).name(ctx.db.upcast());
+        let variant_name = self.id.name(ctx.db.upcast());
+        write!(f, "{}::{}", enum_name, variant_name)
     }
 }
 
@@ -190,18 +211,5 @@ impl DebugWithDb<LoweredFormatter<'_>> for StatementMatchExtern {
             writeln!(f)?;
         }
         write!(f, "  }}")
-    }
-}
-
-impl DebugWithDb<LoweredFormatter<'_>> for MatchArm {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
-        write!(f, "    (")?;
-        for var in &self.arm_variables {
-            format_var_with_ty(*var, f, ctx)?;
-            write!(f, ", ")?;
-        }
-        write!(f, ") => ")?;
-        self.block.fmt(f, ctx)?;
-        write!(f, ",")
     }
 }

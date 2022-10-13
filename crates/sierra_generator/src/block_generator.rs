@@ -82,7 +82,7 @@ pub fn generate_statement_code(
         | lowering::Statement::StructConstruct
         | lowering::Statement::StructDestruct
         | lowering::Statement::EnumConstruct
-        | lowering::Statement::MatchEnum
+        | lowering::Statement::MatchEnum(_)
         | lowering::Statement::TupleConstruct(_)
         | lowering::Statement::TupleDestruct(_) => {
             // TODO(lior): Replace with a diagnostic.
@@ -172,7 +172,7 @@ fn generate_statement_match_extern_code(
     let branches: Vec<_> = zip_eq(&statement.arms, arm_targets)
         .map(|(arm, target)| program::GenBranchInfo {
             target,
-            results: context.get_sierra_variables(&arm.arm_variables),
+            results: context.get_sierra_variables(&context.get_lowered_block(*arm).inputs),
         })
         .collect();
 
@@ -190,7 +190,7 @@ fn generate_statement_match_extern_code(
         }
 
         // TODO(lior): Try to avoid the following clone().
-        let lowered_block = context.get_lowered_block(arm.block);
+        let lowered_block = context.get_lowered_block(*arm);
         let code = generate_block_code_and_push_values(context, lowered_block, &statement.outputs)?;
         statements.extend(code);
 
