@@ -6,7 +6,7 @@ use syntax::node::Token;
 
 use super::Lexer;
 use crate::lexer::LexerTerminal;
-use crate::test_utils::ParserDatabaseForTesting;
+use crate::utils::SimpleParserDatabase;
 
 // TODO(spapini): Use snapshot/regression tests.
 
@@ -212,7 +212,7 @@ fn test_source() -> FileId {
 
 #[test]
 fn test_lex_single_token() {
-    let db_val = ParserDatabaseForTesting::default();
+    let db_val = SimpleParserDatabase::default();
     let db = &db_val;
     for (kind, text) in terminal_kind_and_text() {
         let mut lexer = Lexer::from_text(db, test_source(), text);
@@ -233,7 +233,7 @@ fn test_lex_single_token() {
 
 #[test]
 fn test_lex_double_token() {
-    let db_val = ParserDatabaseForTesting::default();
+    let db_val = SimpleParserDatabase::default();
     let db = &db_val;
     for (kind0, text0) in terminal_kind_and_text() {
         for (kind1, text1) in terminal_kind_and_text() {
@@ -285,7 +285,7 @@ fn test_lex_double_token() {
 
 #[test]
 fn test_lex_token_with_trivia() {
-    let db_val = ParserDatabaseForTesting::default();
+    let db_val = SimpleParserDatabase::default();
     let db = &db_val;
     for (kind, expected_token_text) in terminal_kind_and_text() {
         for leading_trivia in trivia_texts() {
@@ -312,7 +312,7 @@ fn test_lex_token_with_trivia() {
 
 #[test]
 fn test_cases() {
-    let db_val = ParserDatabaseForTesting::default();
+    let db_val = SimpleParserDatabase::default();
     let db = &db_val;
     let res: Vec<LexerTerminal> =
         Lexer::from_text(db, test_source(), "let x: &T = @ 6; //  5+ 3;").collect();
@@ -388,7 +388,7 @@ fn test_cases() {
 
 #[test]
 fn test_bad_character() {
-    let db_val = ParserDatabaseForTesting::default();
+    let db_val = SimpleParserDatabase::default();
     let db = &db_val;
 
     let text = "@";

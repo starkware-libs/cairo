@@ -1,59 +1,12 @@
 use std::fs;
-use std::path::PathBuf;
 use std::sync::Arc;
 
-use db_utils::Upcast;
-use diagnostics::{Diagnostics, DiagnosticsBuilder};
-use filesystem::db::{init_files_group, FilesDatabase, FilesGroup};
+use filesystem::db::FilesGroup;
 use filesystem::ids::{FileId, FileLongId, VirtualFile};
 use smol_str::SmolStr;
-use syntax::node::db::{SyntaxDatabase, SyntaxGroup};
-use syntax::node::{SyntaxNode, TypedSyntaxNode};
 use utils::ordered_hash_map::OrderedHashMap;
 
-use crate::db::ParserDatabase;
-use crate::parser::Parser;
-use crate::ParserDiagnostic;
-
-// Test salsa database.
-#[salsa::database(ParserDatabase, SyntaxDatabase, FilesDatabase)]
-pub struct ParserDatabaseForTesting {
-    storage: salsa::Storage<ParserDatabaseForTesting>,
-}
-impl salsa::Database for ParserDatabaseForTesting {}
-impl Default for ParserDatabaseForTesting {
-    fn default() -> Self {
-        let mut res = Self { storage: Default::default() };
-        init_files_group(&mut res);
-        res
-    }
-}
-
-impl Upcast<dyn SyntaxGroup> for ParserDatabaseForTesting {
-    fn upcast(&self) -> &(dyn SyntaxGroup + 'static) {
-        self
-    }
-}
-
-// TODO(gil): Move these methods into the parser lib.
-pub fn get_syntax_root_and_diagnostics_from_file(
-    db: &ParserDatabaseForTesting,
-    cairo_filename: &str,
-) -> (SyntaxNode, Diagnostics<ParserDiagnostic>) {
-    let file_id = FileId::new(db, PathBuf::from(cairo_filename));
-    let contents = db.file_content(file_id).unwrap();
-    get_syntax_root_and_diagnostics(db, file_id, contents.as_str())
-}
-
-pub fn get_syntax_root_and_diagnostics(
-    db: &ParserDatabaseForTesting,
-    file_id: FileId,
-    contents: &str,
-) -> (SyntaxNode, Diagnostics<ParserDiagnostic>) {
-    let mut diagnostics = DiagnosticsBuilder::new();
-    let syntax_root = Parser::parse_file(db, &mut diagnostics, file_id, contents);
-    (syntax_root.as_syntax_node(), diagnostics.build())
-}
+use crate::utils::{get_syntax_root_and_diagnostics, SimpleParserDatabase};
 
 pub fn read_file(filename: &str) -> String {
     fs::read_to_string(filename)
@@ -61,7 +14,7 @@ pub fn read_file(filename: &str) -> String {
 }
 
 pub fn get_diagnostics(
-    db: &mut ParserDatabaseForTesting,
+    db: &mut SimpleParserDatabase,
     inputs: &OrderedHashMap<String, String>,
 ) -> OrderedHashMap<String, String> {
     let code = &inputs["cairo_code"];
@@ -74,7 +27,7 @@ pub fn get_diagnostics(
 // TODO(yuval): stop virtual files for tests anymore. See semantic tests.
 /// Creates a virtual file with the given content and returns its ID.
 pub fn create_virtual_file(
-    db: &ParserDatabaseForTesting,
+    db: &SimpleParserDatabase,
     file_name: impl Into<SmolStr>,
     content: &str,
 ) -> FileId {
@@ -88,6 +41,6 @@ pub fn create_virtual_file(
 #[macro_export]
 macro_rules! parser_test {
     ($test_name:ident, $filenames:expr, $func:ident) => {
-        utils::test_file_test!($test_name, $filenames, ParserDatabaseForTesting, $func);
+        utils::test_file_test!($test_name, $filenames, SimpleParserDatabase, $func);
     };
 }

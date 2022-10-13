@@ -6,7 +6,8 @@ use syntax::node::db::SyntaxGroup;
 use syntax::node::{SyntaxNode, Terminal, Token, TypedSyntaxNode};
 
 use crate::db::ParserGroup;
-use crate::test_utils::{create_virtual_file, ParserDatabaseForTesting};
+use crate::test_utils::create_virtual_file;
+use crate::utils::SimpleParserDatabase;
 
 fn build_empty_file_green_tree(db: &dyn SyntaxGroup) -> SyntaxFile {
     let eof_token = TokenEndOfFile::new_green(db, SmolStr::from(""));
@@ -27,7 +28,7 @@ fn build_empty_file_green_tree(db: &dyn SyntaxGroup) -> SyntaxFile {
 
 #[test]
 fn test_parser() {
-    let db = ParserDatabaseForTesting::default();
+    let db = SimpleParserDatabase::default();
 
     // Parse empty cairo file.
     let file_id = create_virtual_file(&db, "file.cairo", "");

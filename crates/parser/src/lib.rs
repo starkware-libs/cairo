@@ -9,5 +9,6 @@ pub mod parser;
 pub mod printer;
 pub mod recovery;
 pub mod test_utils;
+pub mod utils;
 
 pub use diagnostic::ParserDiagnostic;
