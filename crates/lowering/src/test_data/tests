@@ -82,6 +82,7 @@ test_function_lowering
 func foo(a: felt) -> felt {
   let x = {7;};
   {x;}
+  let y = if 1==1 { 6 } else { 7 };
   foo(3) + 5 * {3; a+0}
 }
 
@@ -111,27 +112,50 @@ End:
   Callsite(v2, )
 
 blk2:
-Inputs: 
+Inputs: v7: (), 
 Statements:
-  (v7: core::felt, ) <- 3u
-  (v8: core::felt, ) <- 0u
-  (v9: core::felt, ) <- core::felt_add(v0, v8, )
-Drops: v7, v8, 
+  (v8: core::felt, ) <- 6u
+Drops: v7, 
 End:
-  Callsite(v9, v0, )
+  Callsite(v8, )
 
 blk3:
+Inputs: v9: (), 
+Statements:
+  (v10: core::felt, ) <- 7u
+Drops: v9, 
+End:
+  Callsite(v10, )
+
+blk4:
+Inputs: 
+Statements:
+  (v15: core::felt, ) <- 3u
+  (v16: core::felt, ) <- 0u
+  (v17: core::felt, ) <- core::felt_add(v0, v16, )
+Drops: v15, v16, 
+End:
+  Callsite(v17, v0, )
+
+blk5:
 Inputs: v0: core::felt, 
 Statements:
   () <- blk0()
   (v2: (), ) <- tuple_construct()
   (v3: (), ) <- blk1()
-  (v4: core::felt, ) <- 3u
-  (v5: core::felt, ) <- test_crate::foo(v4, )
-  (v6: core::felt, ) <- 5u
-  (v10: core::felt, v11: core::felt, ) <- blk2()
-  (v12: core::felt, ) <- core::felt_mul(v6, v10, )
-  (v13: core::felt, ) <- core::felt_add(v5, v12, )
-Drops: v0, v2, v3, v4, v5, v6, v10, v11, v12, 
+  (v4: core::felt, ) <- 1u
+  (v5: core::felt, ) <- 1u
+  (v6: core::bool, ) <- core::felt_eq(v4, v5, )
+  (v11: core::felt, ) <- match_enum(v6) {
+    bool::True => blk2,
+    bool::False => blk3,
+  }
+  (v12: core::felt, ) <- 3u
+  (v13: core::felt, ) <- test_crate::foo(v12, )
+  (v14: core::felt, ) <- 5u
+  (v18: core::felt, v19: core::felt, ) <- blk4()
+  (v20: core::felt, ) <- core::felt_mul(v14, v18, )
+  (v21: core::felt, ) <- core::felt_add(v13, v20, )
+Drops: v0, v2, v3, v4, v5, v6, v11, v12, v13, v14, v18, v19, v20, 
 End:
-  Callsite(v13, )
+  Callsite(v21, )
