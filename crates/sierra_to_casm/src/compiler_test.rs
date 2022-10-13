@@ -36,6 +36,7 @@ fn read_sierra_example_file(name: &str) -> String {
 
                 libfunc finalize_locals = finalize_locals;
                 libfunc felt_add = felt_add;
+                libfunc felt_mul_2 = felt_mul<2>;
                 libfunc felt_sub = felt_sub;
                 libfunc felt_dup = dup<felt>;
                 libfunc felt_jump_nz = felt_jump_nz;
@@ -71,19 +72,21 @@ fn read_sierra_example_file(name: &str) -> String {
                 felt_dup([2]) -> ([2], [3]);                    // #18
                 felt_sub([1], [3]) -> ([1]);                    // #19
                 store_temp_felt([1]) -> ([1]);                  // #20
-                store_temp_felt([2]) -> ([2]);                  // #21
-                call_foo([1], [2]) -> ([1], [2]);               // #22
-                return ([1], [2]);                              // #23
+                felt_mul_2([1]) -> ([1]);                       // #21
+                store_temp_felt([1]) -> ([1]);                  // #22
+                store_temp_felt([2]) -> ([2]);                  // #23
+                call_foo([1], [2]) -> ([1], [2]);               // #24
+                return ([1], [2]);                              // #25
 
-                felt_into_box([1]) -> ([2]);                    // #24
-                store_temp_box_felt([2]) -> ([2]);              // #25
-                felt_unbox([2]) -> ([3]);                       // #26
-                store_temp_felt([3]) -> ([3]);                  // #27
-                return ([3]);                                   // #28
+                felt_into_box([1]) -> ([2]);                    // #26
+                store_temp_box_felt([2]) -> ([2]);              // #27
+                felt_unbox([2]) -> ([3]);                       // #28
+                store_temp_felt([3]) -> ([3]);                  // #29
+                return ([3]);                                   // #30
 
                 test_program@0([1]: felt, [2]: felt) -> (felt, felt, felt);
                 foo@10([1]: felt, [2]: felt) -> (felt, felt);
-                box_and_back@24([1]: felt) -> (felt);
+                box_and_back@26([1]: felt) -> (felt);
             "},
             &build_metadata(&[("box_and_back", 2)]),
             indoc! {"
@@ -100,8 +103,9 @@ fn read_sierra_example_file(name: &str) -> String {
                 ret;
                 jmp rel 2;
                 [fp + -4] = [ap + 0] + [fp + -3], ap++;
+                [ap + 0] = [ap + -1] * 2, ap++;
                 [ap + 0] = [fp + -3], ap++;
-                call rel -11;
+                call rel -13;
                 ret;
                 %{ memory[ap + 0] = segments.add() %}
                 [fp + -3] = [[ap + 0]], ap++;
