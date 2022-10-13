@@ -9,9 +9,10 @@ use utils::ordered_hash_map::OrderedHashMap;
 use crate::colored_printer::print_colored;
 use crate::parser_test;
 use crate::printer::{print_partial_tree, print_tree};
-use crate::test_utils::{
-    create_virtual_file, get_diagnostics, get_syntax_root_and_diagnostics,
-    get_syntax_root_and_diagnostics_from_file, read_file, ParserDatabaseForTesting,
+use crate::test_utils::{create_virtual_file, get_diagnostics, read_file};
+use crate::utils::{
+    get_syntax_root_and_diagnostics, get_syntax_root_and_diagnostics_from_file,
+    SimpleParserDatabase,
 };
 
 struct ParserTreeTestParams {
@@ -89,7 +90,7 @@ fn parse_and_compare_tree_maybe_fix(test_params: &ParserTreeTestParams, fix: boo
     // Make sure the colors are printed, even if the test doesn't run in a terminal.
     colored::control::set_override(true);
 
-    let db_val = ParserDatabaseForTesting::default();
+    let db_val = SimpleParserDatabase::default();
     let db = &db_val;
 
     let (syntax_root, diagnostics) =
@@ -139,7 +140,7 @@ fn parse_and_compare_colored_maybe_fix(test_params: &ParserColoredTestParams, fi
     // Make sure the colors are printed, even if the test doesn't run in a terminal.
     colored::control::set_override(true);
 
-    let db_val = ParserDatabaseForTesting::default();
+    let db_val = SimpleParserDatabase::default();
     let db = &db_val;
 
     let (syntax_root, _diagnostics) =
@@ -252,7 +253,7 @@ pub fn fix_parser_tests() {
 /// - expected_tree - the printed syntax tree of the given cairo_code, ignoring the irrelevant
 ///   kinds.
 pub fn test_partial_parser_tree(
-    db: &mut ParserDatabaseForTesting,
+    db: &mut SimpleParserDatabase,
     inputs: &OrderedHashMap<String, String>,
 ) -> OrderedHashMap<String, String> {
     // TODO(yuval): allow pointing to a code in another file.
