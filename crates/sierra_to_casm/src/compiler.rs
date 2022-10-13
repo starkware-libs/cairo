@@ -8,7 +8,9 @@ use sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use thiserror::Error;
 
 use crate::annotations::{AnnotationError, ProgramAnnotations, StatementAnnotations};
-use crate::invocations::{check_references_on_stack, compile_invocation, InvocationError};
+use crate::invocations::{
+    check_references_on_stack, compile_invocation, InvocationError, ProgramInfo,
+};
 use crate::metadata::Metadata;
 use crate::references::{check_types_match, ReferencesError};
 use crate::relocations::{relocate_instructions, RelocationEntry};
@@ -140,10 +142,11 @@ pub fn compile(program: &Program, metadata: &Metadata) -> Result<CairoProgram, C
                     .collect();
                 check_types_match(&invoke_refs, &param_types)?;
                 let compiled_invocation = compile_invocation(
+                    ProgramInfo { metadata, type_sizes: &type_sizes },
                     invocation,
                     libfunc,
+                    statement_idx,
                     &invoke_refs,
-                    &type_sizes,
                     annotations.environment,
                 )
                 .map_err(|error| CompilationError::InvocationError { statement_idx, error })?;
