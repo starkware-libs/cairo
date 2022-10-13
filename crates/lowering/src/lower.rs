@@ -3,7 +3,7 @@ use diagnostics::Diagnostics;
 use id_arena::Arena;
 use itertools::zip_eq;
 use scope::{BlockScope, BlockScopeEnd, OwnedVariable};
-use semantic::corelib::unit_ty;
+use semantic::corelib::{core_bool_enum, false_variant, true_variant, unit_ty};
 use semantic::db::SemanticGroup;
 use semantic::TypeLongId;
 use utils::extract_matches;
@@ -272,7 +272,68 @@ impl<'db> Lowerer<'db> {
                 ))
             }
             semantic::Expr::Match(_) => todo!(),
-            semantic::Expr::If(_) => todo!(),
+            semantic::Expr::If(expr) => {
+                // The condition cannot be unit.
+                let condition_var = extract_matches!(
+                    self.lower_expr(scope, expr.condition)?,
+                    LoweredExpr::AtVariable
+                );
+
+                // Lower both blocks.
+                let unit_ty = unit_ty(self.ctx.db);
+                let (res, mut finalized_merger) =
+                    BlockFlowMerger::with(self, scope, |lowerer, merger| {
+                        let [main_block_scope, else_block_scope] = [expr.if_block, expr.else_block]
+                            .map(|block_expr| {
+                                merger.run_in_subscope(
+                                    lowerer,
+                                    vec![unit_ty],
+                                    |lowerer, subscope, _| {
+                                        lowerer.lower_block(
+                                            subscope,
+                                            extract_matches!(
+                                                &lowerer.function_def.exprs[block_expr],
+                                                semantic::Expr::Block
+                                            ),
+                                        )
+                                    },
+                                )
+                            });
+                        Some((main_block_scope, else_block_scope))
+                    });
+                let (main_block_sealed, else_block_sealed) =
+                    res.ok_or(LoweringFlowError::Failed)?;
+                let main_finalized = finalized_merger.finalize_block(
+                    &mut self.ctx,
+                    main_block_sealed.ok_or(LoweringFlowError::Failed)?,
+                );
+                let else_finalized = finalized_merger.finalize_block(
+                    &mut self.ctx,
+                    else_block_sealed.ok_or(LoweringFlowError::Failed)?,
+                );
+
+                let match_generator = generators::MatchEnum {
+                    input: condition_var,
+                    concrete_enum_id: core_bool_enum(self.ctx.db),
+                    arms: vec![
+                        (true_variant(self.ctx.db), main_finalized.block),
+                        (false_variant(self.ctx.db), else_finalized.block),
+                    ],
+                    end_info: finalized_merger.end_info,
+                };
+                match match_generator.add(&mut self.ctx, scope) {
+                    generators::CallBlockResult::Callsite { maybe_output, pushes } => {
+                        for (semantic_var_id, var) in zip_eq(finalized_merger.pushes, pushes) {
+                            scope.put_semantic_variable(semantic_var_id, var);
+                        }
+                        Ok(match maybe_output {
+                            Some(output) => LoweredExpr::AtVariable(output),
+                            None => LoweredExpr::Unit,
+                        })
+                    }
+                    generators::CallBlockResult::End => Err(LoweringFlowError::Unreachable),
+                }
+            }
             // TODO(spapini): Convert to a diagnostic.
             semantic::Expr::Var(expr) => Ok(LoweredExpr::AtVariable(
                 scope
@@ -311,6 +372,7 @@ impl<'db> Lowerer<'db> {
 }
 
 /// Representation of the value of a computed expression.
+#[derive(Debug)]
 enum LoweredExpr {
     /// The expression value lies in a variable.
     AtVariable(OwnedVariable),
@@ -327,6 +389,7 @@ impl LoweredExpr {
 }
 
 /// Cases where the flow of lowering an expression should halt.
+#[derive(Debug)]
 enum LoweringFlowError {
     /// Computation failure. A corresponding diagnostic should be emitted.
     Failed,
