@@ -13,6 +13,7 @@ pub mod generators;
 
 /// Wrapper around VariableId, guaranteeing that the variable is alive.
 /// Thus, it does not implement copy nor clone.
+#[derive(Debug)]
 pub struct OwnedVariable(VariableId);
 impl OwnedVariable {
     /// Duplicates the variable if it is duplicatable.
