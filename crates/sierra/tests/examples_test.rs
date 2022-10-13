@@ -9,28 +9,25 @@ use sierra::simulation::value::CoreValue;
 use sierra::simulation::{self};
 use test_case::test_case;
 
-const COLLATZ: &str = "examples/collatz.sierra";
-const FIB_JUMPS: &str = "examples/fib_jumps.sierra";
-const FIB_NO_GAS: &str = "examples/fib_no_gas.sierra";
-const FIB_RECURSIVE: &str = "examples/fib_recursive.sierra";
-
 /// Returns a parsed example program from the example directory.
-fn get_example_program(path: &str) -> Program {
-    sierra::ProgramParser::new().parse(&fs::read_to_string(PathBuf::from(path)).unwrap()).unwrap()
+fn get_example_program(name: &str) -> Program {
+    let path: PathBuf =
+        [env!("CARGO_MANIFEST_DIR"), "examples", &format!("{name}.sierra")].into_iter().collect();
+    sierra::ProgramParser::new().parse(&fs::read_to_string(path).unwrap()).unwrap()
 }
 
-#[test_case(COLLATZ)]
-#[test_case(FIB_JUMPS)]
-#[test_case(FIB_NO_GAS)]
-#[test_case(FIB_RECURSIVE)]
+#[test_case("collatz")]
+#[test_case("fib_jumps")]
+#[test_case("fib_no_gas")]
+#[test_case("fib_recursive")]
 fn parse(name: &str) {
     get_example_program(name);
 }
 
-#[test_case(COLLATZ)]
-#[test_case(FIB_JUMPS)]
-#[test_case(FIB_NO_GAS)]
-#[test_case(FIB_RECURSIVE)]
+#[test_case("collatz")]
+#[test_case("fib_jumps")]
+#[test_case("fib_no_gas")]
+#[test_case("fib_recursive")]
 fn create_registry(name: &str) {
     ProgramRegistry::<CoreType, CoreLibFunc>::new(&get_example_program(name)).unwrap();
 }
@@ -46,7 +43,7 @@ fn create_registry(name: &str) {
 fn simulate_collatz((gb, n): (i64, i64), (new_gb, index): (i64, i64)) {
     assert_eq!(
         simulation::run(
-            &get_example_program(COLLATZ),
+            &get_example_program("collatz"),
             &HashMap::from([
                 (StatementIdx(7), 30),
                 (StatementIdx(10), 0),
@@ -74,7 +71,7 @@ fn simulate_collatz((gb, n): (i64, i64), (new_gb, index): (i64, i64)) {
 fn simulate_fib_jumps((gb, n): (i64, i64), (new_gb, fib): (i64, i64)) {
     assert_eq!(
         simulation::run(
-            &get_example_program(FIB_JUMPS),
+            &get_example_program("fib_jumps"),
             &HashMap::from([
                 (StatementIdx(1), 10),
                 (StatementIdx(10), 5),
@@ -101,7 +98,7 @@ fn simulate_fib_jumps((gb, n): (i64, i64), (new_gb, fib): (i64, i64)) {
 fn simulate_fib_no_gas(n: i128, fib: i128) {
     assert_eq!(
         simulation::run(
-            &get_example_program(FIB_NO_GAS),
+            &get_example_program("fib_no_gas"),
             &HashMap::new(),
             &"Fibonacci".into(),
             vec![
@@ -129,7 +126,7 @@ fn simulate_fib_no_gas(n: i128, fib: i128) {
 fn simulate_fib_recursive((gb, n): (i64, i64), (new_gb, fib): (i64, i64)) {
     assert_eq!(
         simulation::run(
-            &get_example_program(FIB_RECURSIVE),
+            &get_example_program("fib_recursive"),
             &HashMap::from([
                 (StatementIdx(3), 6),
                 (StatementIdx(11), 1),

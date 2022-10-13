@@ -7,17 +7,15 @@ use test_case::test_case;
 use crate::gas_info::GasInfo;
 use crate::{calc_gas_info, CostError};
 
-const COLLATZ: &str = "collatz.sierra";
-const FIB_JUMPS: &str = "fib_jumps.sierra";
-const FIB_RECURSIVE: &str = "fib_recursive.sierra";
-
 /// Returns a parsed example program from the example directory.
-fn get_example_program(path: &str) -> Program {
-    let path: PathBuf = [env!("CARGO_MANIFEST_DIR"), "../sierra/examples", path].iter().collect();
+fn get_example_program(name: &str) -> Program {
+    // Pop the "/sierra_gas" suffix.
+    let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).parent().unwrap().to_owned();
+    path.extend(["sierra", "examples", &format!("{name}.sierra")].into_iter());
     sierra::ProgramParser::new().parse(&fs::read_to_string(path).unwrap()).unwrap()
 }
 
-#[test_case(COLLATZ =>
+#[test_case("collatz" =>
             Ok(GasInfo {
                 variable_values: [
                     (StatementIdx(7), 30),
@@ -27,9 +25,8 @@ fn get_example_program(path: &str) -> Program {
                     (StatementIdx(41), 1),
                 ].into_iter().collect(),
                 function_costs: [("Collatz".into(), 15)].into_iter().collect()
-            });
-            "collatz")]
-#[test_case(FIB_JUMPS =>
+            }))]
+#[test_case("fib_jumps" =>
             Ok(GasInfo {
                 variable_values: [
                     (StatementIdx(1), 10),
@@ -41,7 +38,7 @@ fn get_example_program(path: &str) -> Program {
                 function_costs: [("Fibonacci".into(), 16)].into_iter().collect()
             });
             "fib_jumps")]
-#[test_case(FIB_RECURSIVE =>
+#[test_case("fib_recursive" =>
             Ok(GasInfo {
                 variable_values: [
                     (StatementIdx(3), 6),
@@ -51,8 +48,7 @@ fn get_example_program(path: &str) -> Program {
                     (StatementIdx(37), 0),
                 ].into_iter().collect(),
                 function_costs: [("Fibonacci".into(), 13)].into_iter().collect()
-            });
-            "fib_recursive")]
+            }))]
 fn solve_gas(path: &str) -> Result<GasInfo, CostError> {
     calc_gas_info(&get_example_program(path))
 }

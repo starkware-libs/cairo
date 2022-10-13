@@ -22,9 +22,10 @@ fn build_metadata(ap_change_data: &[(&str, i16)]) -> Metadata {
     }
 }
 
-fn read_sierra_example_file(filename: &str) -> String {
-    let path: PathBuf =
-        [env!("CARGO_MANIFEST_DIR"), "../sierra/examples/", filename].iter().collect();
+fn read_sierra_example_file(name: &str) -> String {
+    // Pop the "/sierra_to_casm" suffix.
+    let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).parent().unwrap().to_owned();
+    path.extend(["sierra", "examples", &format!("{name}.sierra")].into_iter());
     fs::read_to_string(path).unwrap()
 }
 
@@ -140,7 +141,7 @@ fn read_sierra_example_file(filename: &str) -> String {
                 ret;
             "};
             "alloc_local and store_local")]
-#[test_case(read_sierra_example_file("fib_no_gas.sierra").as_str(),
+#[test_case(read_sierra_example_file("fib_no_gas").as_str(),
             &build_metadata(&[]),
             indoc! {"
                 jmp rel 4 if [fp + -3] != 0;
@@ -153,17 +154,17 @@ fn read_sierra_example_file(filename: &str) -> String {
                 ret;
             "};
             "fib_no_gas")]
-#[test_case(read_sierra_example_file("collatz.sierra").as_str(),
+#[test_case(read_sierra_example_file("collatz").as_str(),
             &build_metadata(&[]),
             indoc! {"
             "} => ignore["Gas usage lowering not supported yet."];
             "collatz")]
-#[test_case(read_sierra_example_file("fib_jumps.sierra").as_str(),
+#[test_case(read_sierra_example_file("fib_jumps").as_str(),
             &build_metadata(&[]),
             indoc! {"
             "} => ignore["Gas usage lowering not supported yet."];
             "fib_jumps")]
-#[test_case(read_sierra_example_file("fib_recursive.sierra").as_str(),
+#[test_case(read_sierra_example_file("fib_recursive").as_str(),
             &build_metadata(&[]),
             indoc! {"
             "} => ignore["Gas usage lowering not supported yet."];
