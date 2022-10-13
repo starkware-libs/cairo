@@ -29,9 +29,9 @@ impl OwnedVariable {
 pub struct BlockScope {
     /// Variables given as inputs. Relevant for function blocks / match arm blocks, etc...
     inputs: Vec<VariableId>,
-    /// Responsible for pulling from outer scopes. See [PullUnifier]. Exists for every non-root
+    /// Responsible for pulling from outer scopes. See [BlockFlowMerger]. Exists for every non-root
     /// block.
-    pull_unifier: Option<Rc<RefCell<PullUnifier>>>,
+    merger: Option<Rc<RefCell<BlockFlowMerger>>>,
     /// Semantic variables pulled from higher scopes, to be used as inputs to the block.
     pulled_semantic_vars: OrderedHashMap<semantic::VarId, VariableId>,
     /// Living variables owned by this scope.
@@ -64,8 +64,8 @@ impl BlockScope {
         scope
     }
 
-    pub fn new_subscope(pull_unifier: Rc<RefCell<PullUnifier>>) -> Self {
-        Self { pull_unifier: Some(pull_unifier), ..BlockScope::default() }
+    pub fn new_subscope(merger: Rc<RefCell<BlockFlowMerger>>) -> Self {
+        Self { merger: Some(merger), ..BlockScope::default() }
     }
 
     /// Puts a semantic variable and its owned lowered variable into the current scope.
@@ -76,18 +76,26 @@ impl BlockScope {
     /// Returns the stored semantic variable if it exists in the scope. Otherwise, introduces it as
     /// an input and returns it.
     /// This can be read as "borrowing" the semantic variable from an outer scope.
-    pub fn get_or_pull_semantic_variable(
+    pub fn use_semantic_variable(
         &mut self,
         ctx: &mut LoweringContext<'_>,
         semantic_var_id: semantic::VarId,
     ) -> SemanticVariableEntry {
-        self.semantic_variables.get(ctx, semantic_var_id).unwrap_or_else(|| {
-            self.pull_semantic_variable(ctx, semantic_var_id)
-                .expect(
-                    "Requested a non available variable. Semantic model should have caught this.",
-                )
-                .get_var(ctx)
-        })
+        if let Some(var) = self.semantic_variables.get(ctx, semantic_var_id) {
+            return var;
+        }
+
+        let var = self
+            .merger
+            .as_mut()
+            .and_then(|merger| merger.borrow_mut().pull(ctx, semantic_var_id))
+            .expect("Requested a non available variable. Semantic model should have caught this.");
+
+        assert!(
+            self.pulled_semantic_vars.insert(semantic_var_id, var.0).is_none(),
+            "Semantic variable introduced more than once as input to the block"
+        );
+        self.semantic_variables.put(semantic_var_id, var).get_var(ctx)
     }
 
     /// Seals a BlockScope from adding statements or variables. A sealed block should be finalized
@@ -112,31 +120,14 @@ impl BlockScope {
         };
         // TODO(spapini): Make PullUnifier create a block scope accessible only within a closure,
         //   to force him looking at sealed blocks.
-        if let Some(unifier) = self.pull_unifier {
-            unifier.try_borrow_mut().unwrap().add_block_sealed(&sealed)
+        if let Some(merger) = self.merger {
+            merger.try_borrow_mut().unwrap().add_block_sealed(&sealed)
         }
         sealed
     }
 
-    /// Internal. Puts a semantic variable to the semantic store, binds it to a new lowered
-    /// variable, and marks it as input to the block.
-    fn pull_semantic_variable(
-        &mut self,
-        ctx: &mut LoweringContext<'_>,
-        semantic_var_id: semantic::VarId,
-    ) -> Option<&mut SemanticVariableEntry> {
-        let var = self.pull_unifier.as_mut()?.borrow_mut().pull(ctx, semantic_var_id)?;
-
-        assert!(
-            self.pulled_semantic_vars.insert(semantic_var_id, var.0).is_none(),
-            "Semantic variable introduced more than once as input to the block"
-        );
-
-        Some(self.semantic_variables.put(semantic_var_id, var))
-    }
-
     /// Internal. Gets a variable, removing from `living_variables` if not duplicatable.
-    fn get_var(&mut self, ctx: &LoweringContext<'_>, var: OwnedVariable) -> VariableId {
+    fn use_var(&mut self, ctx: &LoweringContext<'_>, var: OwnedVariable) -> VariableId {
         let var_id = var.0;
         if ctx.variables[var_id].duplicatable {
             return var_id;
@@ -196,7 +187,7 @@ impl BlockSealed {
     pub fn finalize(
         self,
         ctx: &mut LoweringContext<'_>,
-        pull_unifier_finalized: &PullUnifierFinalized,
+        merger_finalized: &BlockMergerFinalized,
     ) -> (Block, BlockEndInfo) {
         let BlockSealed {
             inputs,
@@ -207,7 +198,7 @@ impl BlockSealed {
             end,
         } = self;
         // Pull extra semantic variables if necessary.
-        for (semantic_var_id, var) in pull_unifier_finalized.pulls.iter() {
+        for (semantic_var_id, var) in merger_finalized.pulls.iter() {
             if !pulled_semantic_vars.contains_key(semantic_var_id) {
                 living_variables.insert(var.0);
             }
@@ -215,7 +206,7 @@ impl BlockSealed {
         // Compute drops.
         let (end, end_info) = match end {
             BlockSealedEnd::Callsite(maybe_output) => {
-                let pushes: Vec<_> = pull_unifier_finalized
+                let pushes: Vec<_> = merger_finalized
                     .pushes
                     .iter()
                     .map(|semantic_var_id| {
@@ -258,27 +249,31 @@ pub enum BlockEndInfo {
     End,
 }
 
-/// Responsible for synchronizing pulls from outer scopes between sibling branches.
+// TODO(spapini): Update doc and add example after refactor.
+/// Responsible for merging block flows.
+/// In a case where one or more blocks appear in parallel (e.g. match between multiple blocks),
+/// the created blocks should be fed into this object. After all blocks have been fed, finalize()
+/// should be called to get BlockMergerFinalized, which is used to finalize each sealed block.
 #[derive(Default)]
-pub struct PullUnifier {
+pub struct BlockFlowMerger {
     parent_scope: Box<BlockScope>,
     pulls: OrderedHashMap<semantic::VarId, OwnedVariable>,
-    can_push: Option<HashSet<semantic::VarId>>,
+    pushable: Option<HashSet<semantic::VarId>>,
     // TODO(spapini): Optimized pushes by using shouldnt_push.
 }
-impl PullUnifier {
-    /// Creates a new instance of PullUnifier within a limited closure.
+impl BlockFlowMerger {
+    /// Creates a new instance of [BlockFlowMerger] within a limited closure.
     /// This is necessary for lifetime reasons.
     pub fn with<T, F: FnOnce(Rc<RefCell<Self>>) -> T>(
         parent_scope: &mut BlockScope,
         f: F,
-    ) -> (T, PullUnifierFinalized) {
+    ) -> (T, BlockMergerFinalized) {
         let new_parent_scope = Box::new(std::mem::take(parent_scope));
-        let pull_unifier =
+        let merger =
             Rc::new(RefCell::new(Self { parent_scope: new_parent_scope, ..Self::default() }));
-        let res = f(pull_unifier.clone());
-        let unifier = pull_unifier.take();
-        let (finalized, returned_scope) = unifier.finalize();
+        let res = f(merger.clone());
+        let merger = merger.take();
+        let (finalized, returned_scope) = merger.finalize();
         *parent_scope = *returned_scope;
 
         (res, finalized)
@@ -292,9 +287,7 @@ impl PullUnifier {
     ) -> Option<OwnedVariable> {
         // Try to take ownership from parent scope if the semantic variable is not present.
         if !self.pulls.contains_key(&semantic_var_id) {
-            if let Some(var) =
-                self.parent_scope.get_or_pull_semantic_variable(ctx, semantic_var_id).var()
-            {
+            if let Some(var) = self.parent_scope.use_semantic_variable(ctx, semantic_var_id).var() {
                 self.pulls.insert(semantic_var_id, var);
             }
         }
@@ -304,7 +297,7 @@ impl PullUnifier {
         Some(OwnedVariable(var.0))
     }
 
-    /// Adds a sealed block to the unifier. This will help the unifier decide on the correct
+    /// Adds a sealed block to the merger. This will help the merger decide on the correct
     /// pulls and pushes.
     pub fn add_block_sealed(&mut self, block_sealed: &BlockSealed) {
         // TODO(spapini): Make this prettier.
@@ -312,26 +305,26 @@ impl PullUnifier {
             return;
         }
         let can_push: HashSet<_> = block_sealed.semantic_variables.alive().copied().collect();
-        if let Some(some_can_push) = &mut self.can_push {
+        if let Some(some_can_push) = &mut self.pushable {
             *some_can_push = some_can_push.intersection(&can_push).copied().collect();
         } else {
-            self.can_push = Some(can_push);
+            self.pushable = Some(can_push);
         }
     }
 
-    /// Finalizes the unifier, deciding on the correct pulls and pushes for all the blocks
+    /// Finalizes the merger, deciding on the correct pulls and pushes for all the blocks
     /// encountered.
-    pub fn finalize(self) -> (PullUnifierFinalized, Box<BlockScope>) {
-        let pushes: Vec<_> = self.can_push.unwrap().into_iter().collect();
+    pub fn finalize(self) -> (BlockMergerFinalized, Box<BlockScope>) {
+        let pushes: Vec<_> = self.pushable.unwrap().into_iter().collect();
         // TODO(spapini): Make stable.
         // TODO(spapini): Optimize pushes by maintaining shouldnt_push.
-        (PullUnifierFinalized { pulls: self.pulls, pushes }, self.parent_scope)
+        (BlockMergerFinalized { pulls: self.pulls, pushes }, self.parent_scope)
     }
 }
 
-/// Determined pulls and pushes. Generated after calling [`PullUnifier::finalize()`].
+/// Determined pulls and pushes. Generated after calling [`BlockFlowMerger::finalize()`].
 #[derive(Default)]
-pub struct PullUnifierFinalized {
+pub struct BlockMergerFinalized {
     pulls: OrderedHashMap<semantic::VarId, OwnedVariable>,
     pub pushes: Vec<semantic::VarId>,
 }
