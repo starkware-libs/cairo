@@ -6,6 +6,7 @@ use std::sync::Arc;
 use defs::ids::ModuleId;
 use pretty_assertions::assert_eq;
 use semantic::test_utils::setup_test_module;
+use sierra_gas::gas_info::GasInfo;
 use sierra_generator::db::SierraGenGroup;
 use sierra_generator::test_utils::{replace_libfunc_ids_in_program, SierraGenDatabaseForTesting};
 use sierra_to_casm::metadata::Metadata;
@@ -63,7 +64,13 @@ fn cairo_to_casm(name: &str) {
     assert_eq!(
         sierra_to_casm::compiler::compile(
             &sierra_program,
-            &Metadata { function_ap_change: HashMap::new() }
+            &Metadata {
+                function_ap_change: HashMap::new(),
+                gas_info: GasInfo {
+                    variable_values: HashMap::new(),
+                    function_costs: HashMap::new()
+                }
+            }
         )
         .unwrap()
         .to_string(),
