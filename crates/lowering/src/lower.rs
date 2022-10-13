@@ -3,14 +3,14 @@ use diagnostics::Diagnostics;
 use id_arena::Arena;
 use itertools::zip_eq;
 use scope::{BlockScope, BlockScopeEnd, OwnedVariable};
-use semantic::corelib::unit_ty;
+use semantic::corelib::{core_bool_enum, false_variant, true_variant, unit_ty};
 use semantic::db::SemanticGroup;
 use semantic::TypeLongId;
 use utils::extract_matches;
 use utils::unordered_hash_map::UnorderedHashMap;
 
 use self::context::LoweringContext;
-use self::scope::{generators, BlockFlowMerger, BlockMergerFinalized, BlockSealed};
+use self::scope::{generators, BlockFlowMerger, ContextLender};
 use crate::diagnostic::LoweringDiagnosticKind::*;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnostics};
 use crate::objects::{Block, BlockId, Variable};
@@ -24,6 +24,12 @@ pub struct Lowerer<'db> {
     /// Semantic model for current function definition.
     function_def: &'db semantic::FreeFunctionDefinition,
     ctx: LoweringContext<'db>,
+}
+
+impl<'db> ContextLender<'db> for Lowerer<'db> {
+    fn ctx(&mut self) -> &mut LoweringContext<'db> {
+        &mut self.ctx
+    }
 }
 
 /// A lowered function code.
@@ -56,8 +62,12 @@ impl<'db> Lowerer<'db> {
         // Params.
         let input_semantic_vars: Vec<_> =
             signature.params.iter().map(|param| semantic::Variable::Param(param.clone())).collect();
-        let input_semantic_var_ids: Vec<_> =
-            input_semantic_vars.iter().map(|semantic_var| semantic_var.id()).collect();
+        let (input_semantic_var_ids, input_semantic_var_tys): (Vec<_>, Vec<_>) =
+            input_semantic_vars
+                .iter()
+                .map(|semantic_var| (semantic_var.id(), semantic_var.ty()))
+                .unzip();
+
         // TODO(spapini): Build semantic_defs in semantic model.
         for semantic_var in input_semantic_vars {
             lowerer.ctx.semantic_defs.insert(semantic_var.id(), semantic_var);
@@ -67,13 +77,26 @@ impl<'db> Lowerer<'db> {
         let semantic_block =
             extract_matches!(&function_def.exprs[function_def.body], semantic::Expr::Block);
         // Lower block to a BlockSealed.
+        let (block_sealed, mut merger_finalized) =
+            BlockFlowMerger::with_root(&mut lowerer, |lowerer, merger| {
+                merger.run_in_subscope(
+                    lowerer,
+                    input_semantic_var_tys,
+                    |lowerer, scope, variables| {
+                        // Initialize params.
+                        for (semantic_var_id, var) in zip_eq(input_semantic_var_ids, variables) {
+                            scope.put_semantic_variable(semantic_var_id, var);
+                        }
+                        lowerer.lower_block(scope, semantic_block)
+                    },
+                )
+            });
+        // Root block must not push anything.
+        merger_finalized.pushes.clear();
         // TODO(spapini): The `?` here is incorrect. In case of failure we should still return an
         //   object with the correct diagnostics.
-        let initial_scope = BlockScope::new_root(&mut lowerer.ctx, &input_semantic_var_ids);
-        let root_sealed_block = lowerer.lower_block(initial_scope, semantic_block)?;
-        let (root_block, _end_info) =
-            root_sealed_block.finalize(&mut lowerer.ctx, &BlockMergerFinalized::default());
-        let root = lowerer.ctx.blocks.alloc(root_block);
+        let root_finalized = merger_finalized.finalize_block(&mut lowerer.ctx, block_sealed?);
+        let root = root_finalized.block;
         let LoweringContext { diagnostics, variables, blocks, .. } = lowerer.ctx;
         Some(Lowered { diagnostics: diagnostics.build(), root, variables, blocks })
     }
@@ -81,12 +104,12 @@ impl<'db> Lowerer<'db> {
     /// Lowers a semantic block.
     fn lower_block(
         &mut self,
-        mut scope: BlockScope,
+        scope: &mut BlockScope,
         expr_block: &semantic::ExprBlock,
-    ) -> Option<BlockSealed> {
+    ) -> Option<BlockScopeEnd> {
         for (i, stmt_id) in expr_block.statements.iter().enumerate() {
             let stmt = &self.function_def.statements[*stmt_id];
-            let lowered_stmt = self.lower_statement(&mut scope, stmt);
+            let lowered_stmt = self.lower_statement(scope, stmt);
 
             // If flow is not reachable anymore, no need to continue emitting statements.
             match lowered_stmt {
@@ -103,7 +126,7 @@ impl<'db> Lowerer<'db> {
                             start_stmt.stable_ptr().untyped(),
                             Unreachable { last_statement_ptr: end_stmt.stable_ptr().untyped() },
                         );
-                        return Some(scope.seal(end));
+                        return Some(end);
                     }
                 }
             };
@@ -112,7 +135,7 @@ impl<'db> Lowerer<'db> {
         // Determine correct block end.
         let end = match expr_block.tail {
             Some(tail_expr) => {
-                let lowered_expr = self.lower_expr(&mut scope, tail_expr);
+                let lowered_expr = self.lower_expr(scope, tail_expr);
                 match lowered_expr {
                     Ok(LoweredExpr::AtVariable(var)) => BlockScopeEnd::Callsite(Some(var)),
                     Ok(LoweredExpr::Unit) => BlockScopeEnd::Callsite(None),
@@ -124,7 +147,7 @@ impl<'db> Lowerer<'db> {
             }
             None => BlockScopeEnd::Callsite(None),
         };
-        Some(scope.seal(end))
+        Some(end)
     }
 
     /// Lowers a semantic statement.
@@ -216,15 +239,18 @@ impl<'db> Lowerer<'db> {
             }
             semantic::Expr::Assignment(_) => todo!(),
             semantic::Expr::Block(expr) => {
-                let (block_sealed, finalized_merger) = BlockFlowMerger::with(scope, |merger| {
-                    let block_scope = BlockScope::new_subscope(merger);
-                    self.lower_block(block_scope, expr)
-                });
-                let (block, end_info) = block_sealed
-                    .ok_or(LoweringFlowError::Failed)?
-                    .finalize(&mut self.ctx, &finalized_merger);
-                let call_block_generator =
-                    generators::CallBlock { block: self.ctx.blocks.alloc(block), end_info };
+                let (block_sealed, mut finalized_merger) =
+                    BlockFlowMerger::with(self, scope, |lowerer, merger| {
+                        merger.run_in_subscope(lowerer, vec![], |lowerer, subscope, _| {
+                            lowerer.lower_block(subscope, expr)
+                        })
+                    });
+                let block_sealed = block_sealed.ok_or(LoweringFlowError::Failed)?;
+                let block_finalized = finalized_merger.finalize_block(&mut self.ctx, block_sealed);
+                let call_block_generator = generators::CallBlock {
+                    block: block_finalized.block,
+                    end_info: finalized_merger.end_info,
+                };
                 match call_block_generator.add(&mut self.ctx, scope) {
                     generators::CallBlockResult::Callsite { maybe_output, pushes } => {
                         for (semantic_var_id, var) in zip_eq(finalized_merger.pushes, pushes) {
@@ -246,7 +272,68 @@ impl<'db> Lowerer<'db> {
                 ))
             }
             semantic::Expr::Match(_) => todo!(),
-            semantic::Expr::If(_) => todo!(),
+            semantic::Expr::If(expr) => {
+                // The condition cannot be unit.
+                let condition_var = extract_matches!(
+                    self.lower_expr(scope, expr.condition)?,
+                    LoweredExpr::AtVariable
+                );
+
+                // Lower both blocks.
+                let unit_ty = unit_ty(self.ctx.db);
+                let (res, mut finalized_merger) =
+                    BlockFlowMerger::with(self, scope, |lowerer, merger| {
+                        let [main_block_scope, else_block_scope] = [expr.if_block, expr.else_block]
+                            .map(|block_expr| {
+                                merger.run_in_subscope(
+                                    lowerer,
+                                    vec![unit_ty],
+                                    |lowerer, subscope, _| {
+                                        lowerer.lower_block(
+                                            subscope,
+                                            extract_matches!(
+                                                &lowerer.function_def.exprs[block_expr],
+                                                semantic::Expr::Block
+                                            ),
+                                        )
+                                    },
+                                )
+                            });
+                        Some((main_block_scope, else_block_scope))
+                    });
+                let (main_block_sealed, else_block_sealed) =
+                    res.ok_or(LoweringFlowError::Failed)?;
+                let main_finalized = finalized_merger.finalize_block(
+                    &mut self.ctx,
+                    main_block_sealed.ok_or(LoweringFlowError::Failed)?,
+                );
+                let else_finalized = finalized_merger.finalize_block(
+                    &mut self.ctx,
+                    else_block_sealed.ok_or(LoweringFlowError::Failed)?,
+                );
+
+                let match_generator = generators::MatchEnum {
+                    input: condition_var,
+                    concrete_enum_id: core_bool_enum(self.ctx.db),
+                    arms: vec![
+                        (true_variant(self.ctx.db), main_finalized.block),
+                        (false_variant(self.ctx.db), else_finalized.block),
+                    ],
+                    end_info: finalized_merger.end_info,
+                };
+                match match_generator.add(&mut self.ctx, scope) {
+                    generators::CallBlockResult::Callsite { maybe_output, pushes } => {
+                        for (semantic_var_id, var) in zip_eq(finalized_merger.pushes, pushes) {
+                            scope.put_semantic_variable(semantic_var_id, var);
+                        }
+                        Ok(match maybe_output {
+                            Some(output) => LoweredExpr::AtVariable(output),
+                            None => LoweredExpr::Unit,
+                        })
+                    }
+                    generators::CallBlockResult::End => Err(LoweringFlowError::Unreachable),
+                }
+            }
             // TODO(spapini): Convert to a diagnostic.
             semantic::Expr::Var(expr) => Ok(LoweredExpr::AtVariable(
                 scope
@@ -285,6 +372,7 @@ impl<'db> Lowerer<'db> {
 }
 
 /// Representation of the value of a computed expression.
+#[derive(Debug)]
 enum LoweredExpr {
     /// The expression value lies in a variable.
     AtVariable(OwnedVariable),
@@ -301,6 +389,7 @@ impl LoweredExpr {
 }
 
 /// Cases where the flow of lowering an expression should halt.
+#[derive(Debug)]
 enum LoweringFlowError {
     /// Computation failure. A corresponding diagnostic should be emitted.
     Failed,

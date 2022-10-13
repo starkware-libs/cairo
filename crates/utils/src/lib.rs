@@ -56,14 +56,14 @@ impl<T> OptionHelper for Option<T> {
 /// let mut x = 5;
 /// borrow_as_box(&mut x, |mut x: Box<usize>| {
 ///     *x += 1;
-///     (x, ())
+///     ((), x)
 /// });
 /// assert_eq!(x, 6);
 /// ```
-pub fn borrow_as_box<T: Default, R, F: FnOnce(Box<T>) -> (Box<T>, R)>(ptr: &mut T, f: F) -> R {
+pub fn borrow_as_box<T: Default, R, F: FnOnce(Box<T>) -> (R, Box<T>)>(ptr: &mut T, f: F) -> R {
     // TODO(spapini): Consider replacing take with something the leaves the memory dangling, instead
     // of filling with default().
-    let (boxed, res) = f(Box::new(std::mem::take(ptr)));
+    let (res, boxed) = f(Box::new(std::mem::take(ptr)));
     *ptr = *boxed;
     res
 }
