@@ -5,9 +5,10 @@ use itertools::zip_eq;
 use scope::{BlockScope, BlockScopeEnd, OwnedVariable};
 use semantic::corelib::{core_bool_enum, false_variant, true_variant, unit_ty};
 use semantic::db::SemanticGroup;
-use semantic::TypeLongId;
-use utils::extract_matches;
+use semantic::items::enm::SemanticEnumEx;
+use semantic::{ConcreteTypeId, TypeLongId};
 use utils::unordered_hash_map::UnorderedHashMap;
+use utils::{extract_matches, try_extract_matches};
 
 use self::context::LoweringContext;
 use self::scope::{generators, BlockFlowMerger, ContextLender};
@@ -116,6 +117,8 @@ impl<'db> Lowerer<'db> {
                 Ok(()) => {}
                 Err(StatementLoweringFlowError::Failed) => return None,
                 Err(StatementLoweringFlowError::End(end)) => {
+                    // TODO(spapini): We might want to report unreachable for expr that abruptly
+                    // ends, e.g. `5 + {return; 6}`.
                     if i + 1 < expr_block.statements.len() {
                         let start_stmt =
                             &self.function_def.statements[expr_block.statements[i + 1]];
@@ -126,8 +129,8 @@ impl<'db> Lowerer<'db> {
                             start_stmt.stable_ptr().untyped(),
                             Unreachable { last_statement_ptr: end_stmt.stable_ptr().untyped() },
                         );
-                        return Some(end);
                     }
+                    return Some(end);
                 }
             };
         }
@@ -271,7 +274,111 @@ impl<'db> Lowerer<'db> {
                         .add(&mut self.ctx, scope),
                 ))
             }
-            semantic::Expr::Match(_) => todo!(),
+            semantic::Expr::Match(expr) => {
+                let expr_var = extract_matches!(
+                    self.lower_expr(scope, expr.matched_expr)?,
+                    LoweredExpr::AtVariable
+                );
+
+                // TODO(spapini): Use diagnostics.
+                // TODO(spapini): Handle more than just enums.
+                let concrete_ty = try_extract_matches!(
+                    self.ctx.db.lookup_intern_type(self.function_def.exprs[expr.matched_expr].ty()),
+                    TypeLongId::Concrete
+                )
+                .ok_or(LoweringFlowError::Failed)?;
+                println!("{:?}", concrete_ty);
+                let concrete_enum_id = try_extract_matches!(concrete_ty, ConcreteTypeId::Enum)
+                    .ok_or(LoweringFlowError::Failed)?;
+                let enum_id = concrete_enum_id.enum_id(self.ctx.db);
+
+                let variants =
+                    self.ctx.db.enum_variants(enum_id).ok_or(LoweringFlowError::Failed)?;
+                let concrete_variants = variants
+                    .values()
+                    .map(|variant_id| {
+                        let variant = self
+                            .ctx
+                            .db
+                            .variant_semantic(enum_id, *variant_id)
+                            .ok_or(LoweringFlowError::Failed)?;
+
+                        Ok(self.ctx.db.concrete_enum_variant(concrete_enum_id, &variant))
+                    })
+                    .collect::<Result<Vec<_>, _>>()?;
+
+                let (res, mut finalized_merger) = BlockFlowMerger::with(
+                    self,
+                    scope,
+                    |lowerer, merger| -> Result<_, LoweringFlowError> {
+                        assert_eq!(expr.arms.len(), variants.len(), "Wrong number of arms.");
+                        let mut blocks = Vec::new();
+                        for (concrete_variant, arm) in zip_eq(&concrete_variants, &expr.arms) {
+                            // TODO: Check pattern.
+                            let enum_pattern =
+                                try_extract_matches!(&arm.pattern, semantic::Pattern::Enum)
+                                    .ok_or(LoweringFlowError::Failed)?;
+                            assert_eq!(&enum_pattern.variant, concrete_variant, "Wrong variant");
+                            let var_pattern = try_extract_matches!(
+                                &*enum_pattern.inner_pattern,
+                                semantic::Pattern::Variable
+                            )
+                            .ok_or(LoweringFlowError::Failed)?;
+                            let block_sealed = merger
+                                .run_in_subscope(
+                                    lowerer,
+                                    vec![concrete_variant.ty],
+                                    |lowerer, subscope, variables| {
+                                        // Bind the variable to the semantic variable introduced.
+                                        let [var] = <[_; 1]>::try_from(variables).ok().unwrap();
+                                        let semantic_var_id =
+                                            semantic::VarId::Local(var_pattern.var.id);
+                                        subscope.put_semantic_variable(semantic_var_id, var);
+
+                                        lowerer.lower_block(
+                                            subscope,
+                                            extract_matches!(
+                                                &lowerer.function_def.exprs[arm.expression],
+                                                semantic::Expr::Block
+                                            ),
+                                        )
+                                    },
+                                )
+                                .ok_or(LoweringFlowError::Failed)?;
+                            blocks.push(block_sealed);
+                        }
+                        Ok(blocks)
+                    },
+                );
+                let finalized_blocks = res?
+                    .into_iter()
+                    .map(|sealed| finalized_merger.finalize_block(&mut self.ctx, sealed));
+
+                let arms = zip_eq(
+                    concrete_variants,
+                    finalized_blocks.map(|finalized_block| finalized_block.block),
+                )
+                .collect();
+
+                let match_generator = generators::MatchEnum {
+                    input: expr_var,
+                    concrete_enum_id,
+                    arms,
+                    end_info: finalized_merger.end_info,
+                };
+                match match_generator.add(&mut self.ctx, scope) {
+                    generators::CallBlockResult::Callsite { maybe_output, pushes } => {
+                        for (semantic_var_id, var) in zip_eq(finalized_merger.pushes, pushes) {
+                            scope.put_semantic_variable(semantic_var_id, var);
+                        }
+                        Ok(match maybe_output {
+                            Some(output) => LoweredExpr::AtVariable(output),
+                            None => LoweredExpr::Unit,
+                        })
+                    }
+                    generators::CallBlockResult::End => Err(LoweringFlowError::Unreachable),
+                }
+            }
             semantic::Expr::If(expr) => {
                 // The condition cannot be unit.
                 let condition_var = extract_matches!(
