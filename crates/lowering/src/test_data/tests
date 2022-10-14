@@ -159,3 +159,69 @@ Statements:
 Drops: v0, v2, v3, v4, v5, v6, v11, v12, v13, v14, v18, v19, v20, 
 End:
   Callsite(v21, )
+
+//! > ==========================================================================
+
+//! > Test match enum.
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+func foo(x: MyEnum) -> felt {
+  match x {
+    MyEnum::A(inner) => {return 5;},
+    MyEnum::B(inner) => {inner},
+    MyEnum::C(inner) => {7}
+  }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum MyEnum {
+  A: (),
+  B: felt,
+  C: Box::<((), felt)>,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_format
+blk0:
+Inputs: v1: (), 
+Statements:
+  (v2: core::felt, ) <- 5u
+Drops: v1, 
+End:
+  Return(v2, )
+
+blk1:
+Inputs: v3: core::felt, 
+Statements:
+Drops: 
+End:
+  Callsite(v3, )
+
+blk2:
+Inputs: v4: core::box::Box::<((), core::felt)>, 
+Statements:
+  (v5: core::felt, ) <- 7u
+Drops: v4, 
+End:
+  Callsite(v5, )
+
+blk3:
+Inputs: v0: test_crate::MyEnum, 
+Statements:
+  (v6: core::felt, ) <- match_enum(v0) {
+    MyEnum::A => blk0,
+    MyEnum::B => blk1,
+    MyEnum::C => blk2,
+  }
+Drops: v0, 
+End:
+  Callsite(v6, )
