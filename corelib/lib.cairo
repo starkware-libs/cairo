@@ -21,9 +21,10 @@ extern func felt_ge(a: felt, b: felt) -> (bool);
 extern func felt_lt(a: felt, b: felt) -> (bool);
 extern func felt_gt(a: felt, b: felt) -> (bool);
 
+// TODO(lior): Replace the order of variants after replacing the order in jump_nz.
 enum JumpNzResult {
-    Zero: (),
     NonZero: (NonZero<felt>,),
+    Zero: (),
 }
 extern func felt_jump_nz(a: felt) -> JumpNzResult;
 

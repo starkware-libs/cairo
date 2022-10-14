@@ -1,0 +1,70 @@
+//! > Test match zero.
+
+//! > test_function_name
+block_generator_test
+
+//! > function
+func foo() -> felt {
+    let x = 10;
+    match x {
+        0 => 3,
+        _ => 4,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_gen_diagnostics
+
+//! > sierra_code
+felt_const<10>() -> ([0])
+felt_jump_nz([0]) { label0([1]) fallthrough([2]) }
+felt_const<3>() -> ([3])
+PushValues([3]: [0]) -> ([4])
+jump() { label1() }
+label0:
+felt_const<4>() -> ([5])
+PushValues([5]: [0]) -> ([4])
+jump() { label1() }
+label1:
+
+//! > ==========================================================================
+
+//! > Test match zero with non-zero value.
+
+//! > test_function_name
+block_generator_test
+
+//! > function
+func foo() -> felt {
+    let x = 7;
+    match x {
+        12 => x,
+        _ => 7,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Match with a non-zero value is not supported.
+ --> lib.cairo:4:9
+        12 => x,
+        ^^
+
+//! > sierra_gen_diagnostics
+
+//! > sierra_code
+
