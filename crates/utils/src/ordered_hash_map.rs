@@ -8,11 +8,11 @@ use itertools::zip_eq;
 pub struct OrderedHashMap<Key: Hash + Eq, Value>(IndexMap<Key, Value>);
 
 impl<Key: Hash + Eq, Value> OrderedHashMap<Key, Value> {
-    pub fn get(&self, key: &Key) -> Option<&Value> {
+    pub fn get<Q: ?Sized + Hash + Equivalent<Key>>(&self, key: &Q) -> Option<&Value> {
         self.0.get(key)
     }
 
-    pub fn get_mut(&mut self, key: &Key) -> Option<&mut Value> {
+    pub fn get_mut<Q: ?Sized + Hash + Equivalent<Key>>(&mut self, key: &Q) -> Option<&mut Value> {
         self.0.get_mut(key)
     }
 
