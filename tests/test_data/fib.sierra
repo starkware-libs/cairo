@@ -16,7 +16,7 @@ libfunc function_call<user@[0]> = function_call<user@[0]>;
 
 revoke_ap_tracking() -> ();
 dup<[0]>([2]) -> ([2], [13]);
-felt_jump_nz([13]) { 7([3]) fallthrough() };
+felt_jump_nz([13]) { fallthrough() 7([3]) };
 drop<[0]>([1]) -> ();
 drop<[0]>([2]) -> ();
 store_temp<[0]>([0]) -> ([4]);

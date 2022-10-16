@@ -345,7 +345,10 @@ impl CompiledInvocationBuilder<'_> {
         };
 
         let target_statement_id = match self.invocation.branches.as_slice() {
-            [BranchInfo { target: BranchTarget::Statement(statement_id), .. }, _] => statement_id,
+            [
+                BranchInfo { target: BranchTarget::Fallthrough, .. },
+                BranchInfo { target: BranchTarget::Statement(statement_id), .. },
+            ] => statement_id,
             _ => panic!("malformed invocation"),
         };
 
@@ -362,7 +365,7 @@ impl CompiledInvocationBuilder<'_> {
                 relocation: Relocation::RelativeStatementId(*target_statement_id),
             }],
             [ApChange::Known(0), ApChange::Known(0)].into_iter(),
-            [vec![ReferenceExpression::Deref(*condition)].into_iter(), vec![].into_iter()]
+            [vec![].into_iter(), vec![ReferenceExpression::Deref(*condition)].into_iter()]
                 .into_iter(),
         ))
     }

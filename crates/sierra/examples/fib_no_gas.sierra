@@ -12,7 +12,7 @@ libfunc felt_unwrap_nz = unwrap_nz<felt>;
 libfunc call_lib = function_call<user@Fibonacci>;
 
 // Statement #  0 - tests if n == 0.
-felt_jump_nz(n) { 4(n) fallthrough() };
+felt_jump_nz(n) { fallthrough() 4(n) };
 // Statement #  1 - n == 0, so we return a.
 felt_drop(b) -> ();
 store_temp_felt(a)  -> (a);

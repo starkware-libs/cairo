@@ -18,7 +18,7 @@ libfunc get_gas = get_gas;
 libfunc refund_gas = refund_gas;
 
 // Statement #  0 - tests if n == 0.
-int_jump_nz(n) { 6(n) fallthrough() };
+int_jump_nz(n) { fallthrough() 6(n) };
 // Statement #  1 - n == 0, so we return updated gb and 1.
 refund_gas(gb) -> (gb);
 store_temp_gb(gb) -> (gb);
@@ -29,7 +29,7 @@ return(gb, one);
 int_unwrap_nz(n) -> (n);
 int_sub_1(n) -> (n);
 store_temp_int(n) -> (n);
-int_jump_nz(n) { 15(n) fallthrough() };
+int_jump_nz(n) { fallthrough() 15(n) };
 // Statement # 10  - n == 1, so we return updated gb and 1.
 refund_gas(gb) -> (gb);
 store_temp_gb(gb) -> (gb);
@@ -67,7 +67,7 @@ int_sub_1(n) -> (n);
 store_temp_int(n) -> (n);
 store_temp_gb(gb) -> (gb);
 store_temp_int(a) -> (a);
-int_jump_nz(n) { 21(n) fallthrough() };
+int_jump_nz(n) { fallthrough() 21(n) };
 // Statement # 40 - n == 0, so we can return the latest a.
 int_drop(b) -> ();
 refund_gas(gb) -> (gb); // Statement 41.

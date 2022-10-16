@@ -44,7 +44,7 @@ int_dup(n) -> (n, parity);
 int_mod_2(parity) -> (parity);
 store_temp_int(parity) -> (parity);
 store_temp_gb(gb) -> (gb);
-int_jump_nz(parity) { 26(to_drop) fallthrough() };
+int_jump_nz(parity) { fallthrough() 26(to_drop) };
 // Statement # 20 - Handling even case. Adding [_, n/2, gb] to memory.
 align_temps() -> ();
 int_div_2(n) -> (n);
@@ -68,7 +68,7 @@ store_temp_int(counter) -> (counter);
 int_dup(n) -> (n, n_1);
 int_sub_1(n_1) -> (n_1);
 store_temp_int(n_1) -> (n_1);
-int_jump_nz(n_1) { 5(to_drop) fallthrough() };
+int_jump_nz(n_1) { fallthrough() 5(to_drop) };
 // Statement # 40 - n == 1 - we are done - returning the counter result.
 int_drop(n) -> ();
 refund_gas(gb) -> (gb); // Statement 41.

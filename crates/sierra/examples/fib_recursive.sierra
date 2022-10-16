@@ -24,7 +24,7 @@ libfunc call_fib = function_call<user@Fibonacci>;
 // Statement #  0 - tests if n == 0 and initiates 1 for the early return values.
 int_const_1() -> (one);
 store_temp_int(one) -> (one);
-int_jump_nz(n) { 7(n) fallthrough() };
+int_jump_nz(n) { fallthrough() 7(n) };
 // Statement #  3 - n == 0, so we return updated gb and 1.
 refund_gas(gb) -> (gb);
 store_temp_gb(gb) -> (gb);
@@ -34,7 +34,7 @@ return(gb, one);
 int_unwrap_nz(n) -> (n);
 int_sub_1(n) -> (n_1);
 store_temp_int(n_1) -> (n_1);
-int_jump_nz(n_1) { 15(n_1) fallthrough() };
+int_jump_nz(n_1) { fallthrough() 15(n_1) };
 // Statement # 11 - n == 1, so we return updated gb and 1.
 refund_gas(gb) -> (gb);
 store_temp_gb(gb) -> (gb);

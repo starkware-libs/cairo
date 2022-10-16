@@ -225,15 +225,15 @@ fn handle_felt_match(
                     libfunc_id: context.felt_jump_nz_libfunc_id(),
                     args: vec![match_expr_res],
                     branches: vec![
-                        // If not zero, jump to the "otherwise" block.
-                        program::GenBranchInfo {
-                            target: program::GenBranchTarget::Statement(otherwise_label_id),
-                            results: vec![context.allocate_sierra_variable()],
-                        },
                         // If zero, continue to the next instruction.
                         program::GenBranchInfo {
                             target: program::GenBranchTarget::Fallthrough,
                             results: vec![],
+                        },
+                        // If not zero, jump to the "otherwise" block.
+                        program::GenBranchInfo {
+                            target: program::GenBranchTarget::Statement(otherwise_label_id),
+                            results: vec![context.allocate_sierra_variable()],
                         },
                     ],
                 },

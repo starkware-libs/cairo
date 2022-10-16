@@ -33,7 +33,7 @@ rename<[1]>([8]) -> ([9]);
 return([9]);
 revoke_ap_tracking() -> ();
 dup<[0]>([2]) -> ([2], [16]);
-felt_jump_nz([16]) { 20([4]) fallthrough() };
+felt_jump_nz([16]) { fallthrough() 20([4]) };
 drop<[0]>([0]) -> ();
 drop<[0]>([1]) -> ();
 drop<[0]>([2]) -> ();
