@@ -38,7 +38,7 @@ pub struct Lowered {
     /// Diagnostics produced while lowering.
     pub diagnostics: Diagnostics<LoweringDiagnostic>,
     /// Block id for the start of the lwoered function.
-    pub root: BlockId,
+    pub root: Option<BlockId>,
     /// Arena of allocated lowered variables.
     pub variables: Arena<Variable>,
     /// Arena of allocated lowered blocks.
@@ -78,7 +78,7 @@ impl<'db> Lowerer<'db> {
         let semantic_block =
             extract_matches!(&function_def.exprs[function_def.body], semantic::Expr::Block);
         // Lower block to a BlockSealed.
-        let (block_sealed, mut merger_finalized) =
+        let (block_sealed_opt, mut merger_finalized) =
             BlockFlowMerger::with_root(&mut lowerer, |lowerer, merger| {
                 merger.run_in_subscope(
                     lowerer,
@@ -94,10 +94,9 @@ impl<'db> Lowerer<'db> {
             });
         // Root block must not push anything.
         merger_finalized.pushes.clear();
-        // TODO(spapini): The `?` here is incorrect. In case of failure we should still return an
-        //   object with the correct diagnostics.
-        let root_finalized = merger_finalized.finalize_block(&mut lowerer.ctx, block_sealed?);
-        let root = root_finalized.block;
+        let root = block_sealed_opt.map(|block_sealed| {
+            merger_finalized.finalize_block(&mut lowerer.ctx, block_sealed).block
+        });
         let LoweringContext { diagnostics, variables, blocks, .. } = lowerer.ctx;
         Some(Lowered { diagnostics: diagnostics.build(), root, variables, blocks })
     }
