@@ -1,5 +1,6 @@
 use defs::ids::{EnumId, GenericFunctionId, GenericTypeId, ModuleId, ModuleItemId};
 use filesystem::ids::CrateLongId;
+use smol_str::SmolStr;
 use syntax::node::ast::{self, BinaryOperator};
 use syntax::node::TypedSyntaxNode;
 use utils::{extract_matches, OptionFrom};
@@ -10,8 +11,8 @@ use crate::expr::compute::ComputationContext;
 use crate::resolve_path::specialize_function;
 use crate::types::ConcreteEnumLongId;
 use crate::{
-    semantic, ConcreteEnumId, ConcreteVariant, Expr, ExprId, ExprTuple, FunctionId, TypeId,
-    TypeLongId,
+    semantic, ConcreteEnumId, ConcreteFunction, ConcreteVariant, Expr, ExprId, ExprTuple,
+    FunctionId, FunctionLongId, GenericArgumentId, TypeId, TypeLongId,
 };
 
 pub fn core_module(db: &dyn SemanticGroup) -> ModuleId {
@@ -20,16 +21,28 @@ pub fn core_module(db: &dyn SemanticGroup) -> ModuleId {
 }
 
 pub fn core_felt_ty(db: &dyn SemanticGroup) -> TypeId {
+    get_core_ty_by_name(db, "felt".into(), vec![])
+}
+
+pub fn core_nonzero_ty(db: &dyn SemanticGroup, inner_type: TypeId) -> TypeId {
+    get_core_ty_by_name(db, "NonZero".into(), vec![GenericArgumentId::Type(inner_type)])
+}
+
+fn get_core_ty_by_name(
+    db: &dyn SemanticGroup,
+    name: SmolStr,
+    generic_args: Vec<GenericArgumentId>,
+) -> TypeId {
     let core_module = db.core_module();
     // This should not fail if the corelib is present.
     let generic_type = db
-        .module_item_by_name(core_module, "felt".into())
+        .module_item_by_name(core_module, name.clone())
         .and_then(GenericTypeId::option_from)
-        .unwrap();
+        .unwrap_or_else(|| panic!("Type '{name}' was not found in core lib."));
     db.intern_type(semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::new(
         db,
         generic_type,
-        vec![],
+        generic_args,
     )))
 }
 
@@ -162,4 +175,20 @@ pub fn core_binary_operator(
         .and_then(GenericFunctionId::option_from)
         .expect("Operator function not found in core lib.");
     specialize_function(db, diagnostics, binary_op.stable_ptr().untyped(), generic_function, vec![])
+}
+
+pub fn core_jump_nz_func(db: &dyn SemanticGroup) -> FunctionId {
+    get_non_generic_function(db, "felt_jump_nz".into())
+}
+
+fn get_non_generic_function(db: &dyn SemanticGroup, name: SmolStr) -> FunctionId {
+    let core_module = db.core_module();
+    let generic_function = db
+        .module_item_by_name(core_module, name.clone())
+        .and_then(GenericFunctionId::option_from)
+        .unwrap_or_else(|| panic!("Function '{name}' was not found in core lib."));
+    db.intern_function(FunctionLongId::Concrete(ConcreteFunction {
+        generic_function,
+        generic_args: vec![],
+    }))
 }
