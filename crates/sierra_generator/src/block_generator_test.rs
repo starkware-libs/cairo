@@ -30,7 +30,17 @@ fn block_generator_test(
 
     // Lower code.
     let lowered = Lowerer::lower(db, test_function.function_id).unwrap();
-    let block = &lowered.blocks[lowered.root];
+
+    if lowered.root.is_none() {
+        return OrderedHashMap::from([
+            ("semantic_diagnostics".into(), semantic_diagnostics),
+            ("lowering_diagnostics".into(), lowered.diagnostics.format(db)),
+            ("sierra_gen_diagnostics".into(), "".into()),
+            ("sierra_code".into(), "".into()),
+        ]);
+    }
+
+    let block = &lowered.blocks[lowered.root.unwrap()];
 
     // Generate (pre-)Sierra statements.
     let mut diagnostics = DiagnosticsBuilder::<SierraGeneratorDiagnostic>::default();
