@@ -38,7 +38,9 @@ impl<TJumpNotZeroTraits: JumpNotZeroTraits> NoGenericArgsGenericLibFunc
         Ok(LibFuncSignature {
             param_signatures: vec![ParamSignature::new(ty.clone())],
             branch_signatures: vec![
-                // Success:
+                // Zero.
+                BranchSignature { vars: vec![], ap_change: SierraApChange::Known },
+                // NonZero.
                 BranchSignature {
                     vars: vec![OutputVarInfo {
                         ty: context.get_wrapped_concrete_type(NonZeroType::id(), ty)?,
@@ -46,10 +48,8 @@ impl<TJumpNotZeroTraits: JumpNotZeroTraits> NoGenericArgsGenericLibFunc
                     }],
                     ap_change: SierraApChange::Known,
                 },
-                // Failure:
-                BranchSignature { vars: vec![], ap_change: SierraApChange::Known },
             ],
-            fallthrough: Some(1),
+            fallthrough: Some(0),
         })
     }
 

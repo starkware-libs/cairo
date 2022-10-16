@@ -24,7 +24,7 @@ revoke_ap_tracking() -> ();
 unbox<[0]>([2]) -> ([3]);
 store_temp<[0]>([3]) -> ([3]);
 dup<[0]>([3]) -> ([3], [18]);
-felt_jump_nz([18]) { 9([4]) fallthrough() };
+felt_jump_nz([18]) { fallthrough() 9([4]) };
 drop<[1]>([1]) -> ();
 drop<[0]>([3]) -> ();
 store_temp<[1]>([0]) -> ([5]);
