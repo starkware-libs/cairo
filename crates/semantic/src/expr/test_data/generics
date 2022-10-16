@@ -18,6 +18,7 @@ foo
 
 //! > module_code
 
+
 //! > expected_diagnostics
 error: Unexpected argument type. Expected: "test_crate::A::<test_crate::A::<core::bool>>", found: "test_crate::A::<test_crate::A::<core::felt>>".
  --> lib.cairo:6:32
