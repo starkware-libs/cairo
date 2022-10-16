@@ -1,4 +1,3 @@
-
 //! > Test basic return.
 
 //! > test_function_name
@@ -14,7 +13,9 @@ foo
 
 //! > module_code
 
+
 //! > expected_diagnostics
+
 
 //! > ==========================================================================
 
@@ -34,7 +35,9 @@ foo
 
 //! > module_code
 
+
 //! > expected_diagnostics
+
 
 //! > ==========================================================================
 
@@ -56,5 +59,6 @@ func foo(x: felt) -> felt {
 foo
 
 //! > module_code
+
 
 //! > expected_diagnostics

@@ -1,13 +1,15 @@
 #[cfg(test)]
 #[path = "parse_test_file_test.rs"]
 mod test;
-use std::fs::File;
+use std::fs;
 use std::io::{self, BufRead};
 use std::path::Path;
 
 use crate::ordered_hash_map::OrderedHashMap;
 
 const TAG_PREFIX: &str = "//! > ";
+const TEST_SEPARATOR: &str =
+    "==========================================================================";
 
 #[derive(Default)]
 struct Tag {
@@ -16,6 +18,7 @@ struct Tag {
 }
 
 /// Represents a single test from the test file.
+#[derive(Clone)]
 pub struct Test {
     pub attributes: OrderedHashMap<String, String>,
     pub line_num: usize,
@@ -30,7 +33,7 @@ struct TestBuilder {
 }
 
 pub fn parse_test_file(filename: &Path) -> io::Result<OrderedHashMap<String, Test>> {
-    let file = File::open(filename)?;
+    let file = fs::File::open(filename)?;
     let mut lines = io::BufReader::new(file).lines();
     let mut builder = TestBuilder::default();
     let mut line_num: usize = 0;
@@ -41,11 +44,7 @@ pub fn parse_test_file(filename: &Path) -> io::Result<OrderedHashMap<String, Tes
                 builder.set_test_name(line.into(), line_num);
             } else if line.starts_with("===") {
                 // Separate tests.
-                assert_eq!(
-                    line,
-                    "==========================================================================",
-                    "Wrong test separator."
-                );
+                assert_eq!(line, TEST_SEPARATOR, "Wrong test separator.");
                 builder.new_test()
             } else {
                 builder.open_tag(line.into());
@@ -55,6 +54,25 @@ pub fn parse_test_file(filename: &Path) -> io::Result<OrderedHashMap<String, Tes
         }
     }
     Ok(builder.finalize())
+}
+
+pub fn dump_to_test_file(
+    tests: OrderedHashMap<String, Test>,
+    filename: &str,
+) -> Result<(), std::io::Error> {
+    let mut test_strings = Vec::new();
+    for (name, test) in tests {
+        let mut lines = Vec::new();
+        lines.push(TAG_PREFIX.to_owned() + &name);
+        for (tag, content) in test.attributes {
+            lines.push(TAG_PREFIX.to_owned() + &tag + "\n" + &content);
+        }
+        test_strings.push(lines.join("\n\n"));
+    }
+    fs::write(
+        filename,
+        test_strings.join(&("\n\n".to_string() + TAG_PREFIX + TEST_SEPARATOR + "\n\n")),
+    )
 }
 
 impl TestBuilder {
@@ -175,6 +193,7 @@ macro_rules! test_file_test {
                 let path: std::path::PathBuf =
                     [env!("CARGO_MANIFEST_DIR"), filename].iter().collect();
                 let tests = utils::parse_test_file(path.as_path())?;
+                let mut new_tests = tests.clone();
                 // TODO(alont): global tags for all tests in a file.
                 for (name, test) in tests {
                     let outputs = $func(&mut <$db_type>::default(), &test.attributes);
@@ -194,12 +213,21 @@ macro_rules! test_file_test {
                     assert_eq!(get_attr("test_function_name"), stringify!($func));
 
                     for (key, value) in outputs {
-                        pretty_assertions::assert_eq!(
-                            value.trim(),
-                            get_attr(&key),
-                            "Test \"{name}\" failed.\nIn {full_filename_str}:{line_num}"
-                        );
+                        if std::env::var("FIX").is_ok() {
+                            let mut new_test = new_tests[name.clone()].clone();
+                            new_test.attributes.insert(key.clone(), value.trim().to_string());
+                            new_tests.insert(name.clone(), new_test);
+                        } else {
+                            pretty_assertions::assert_eq!(
+                                value.trim(),
+                                get_attr(&key),
+                                "Test \"{name}\" failed.\nIn {full_filename_str}:{line_num}"
+                            );
+                        }
                     }
+                }
+                if std::env::var("FIX").is_ok() {
+                    utils::parse_test_file::dump_to_test_file(new_tests, filename)?;
                 }
             }
             Ok(())

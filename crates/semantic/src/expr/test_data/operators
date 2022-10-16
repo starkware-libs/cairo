@@ -52,6 +52,7 @@ foo
 
 //! > module_code
 
+
 //! > expected_diagnostics
 error: Unexpected argument type. Expected: "core::felt", found: "core::bool".
  --> lib.cairo:7:5
