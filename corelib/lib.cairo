@@ -21,6 +21,12 @@ extern func felt_ge(a: felt, b: felt) -> (bool);
 extern func felt_lt(a: felt, b: felt) -> (bool);
 extern func felt_gt(a: felt, b: felt) -> (bool);
 
+enum JumpNzResult {
+    Zero: (),
+    NonZero: (NonZero<felt>,),
+}
+extern func felt_jump_nz(a: felt) -> JumpNzResult;
+
 extern func dup<T>(obj: T) -> (T, T);
 extern func drop<T>(obj: T);
 
