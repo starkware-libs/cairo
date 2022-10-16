@@ -136,21 +136,28 @@ impl<'db> Lowerer<'db> {
         }
 
         // Determine correct block end.
-        let end = match expr_block.tail {
-            Some(tail_expr) => {
-                let lowered_expr = self.lower_expr(scope, tail_expr);
-                match lowered_expr {
-                    Ok(LoweredExpr::AtVariable(var)) => BlockScopeEnd::Callsite(Some(var)),
-                    Ok(LoweredExpr::Unit) => BlockScopeEnd::Callsite(None),
-                    Err(LoweringFlowError::Unreachable) => BlockScopeEnd::Unreachable,
-                    Err(LoweringFlowError::Failed) => {
-                        return None;
-                    }
-                }
+        match expr_block.tail {
+            Some(tail_expr) => self.lower_tail_expr(scope, tail_expr),
+            None => Some(BlockScopeEnd::Callsite(None)),
+        }
+    }
+
+    /// Lowers an expression that is either a complete block, or the end (tail expreesion) of a
+    /// block.
+    pub fn lower_tail_expr(
+        &mut self,
+        scope: &mut BlockScope,
+        expr: semantic::ExprId,
+    ) -> Option<BlockScopeEnd> {
+        let lowered_expr = self.lower_expr(scope, expr);
+        Some(match lowered_expr {
+            Ok(LoweredExpr::AtVariable(var)) => BlockScopeEnd::Callsite(Some(var)),
+            Ok(LoweredExpr::Unit) => BlockScopeEnd::Callsite(None),
+            Err(LoweringFlowError::Unreachable) => BlockScopeEnd::Unreachable,
+            Err(LoweringFlowError::Failed) => {
+                return None;
             }
-            None => BlockScopeEnd::Callsite(None),
-        };
-        Some(end)
+        })
     }
 
     /// Lowers a semantic statement.
