@@ -177,17 +177,26 @@ macro_rules! test_file_test {
                 let tests = utils::parse_test_file(path.as_path())?;
                 // TODO(alont): global tags for all tests in a file.
                 for (name, test) in tests {
-                    assert_eq!(test.attributes["test_function_name"], stringify!($func));
-
                     let outputs = $func(&mut <$db_type>::default(), &test.attributes);
                     let line_num = test.line_num;
                     let full_filename = std::fs::canonicalize(path.as_path())?;
                     let full_filename_str = full_filename.to_str().unwrap();
 
+                    let get_attr = |key: &str| {
+                        test.attributes.get(key).unwrap_or_else(|| {
+                            panic!(
+                                "Missing attribute {key} in test '{name}'.\nIn \
+                                 {full_filename_str}:{line_num}"
+                            )
+                        })
+                    };
+
+                    assert_eq!(get_attr("test_function_name"), stringify!($func));
+
                     for (key, value) in outputs {
                         pretty_assertions::assert_eq!(
                             value.trim(),
-                            test.attributes[key],
+                            get_attr(&key),
                             "Test \"{name}\" failed.\nIn {full_filename_str}:{line_num}"
                         );
                     }
