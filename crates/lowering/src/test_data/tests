@@ -14,12 +14,12 @@ foo
 
 //! > module_code
 
+
 //! > semantic_diagnostics
 error: Unexpected return type. Expected: "core::felt", found: "()".
  --> lib.cairo:1:27
 func foo(a: felt) -> felt {
                           ^
-
 
 //! > lowering_diagnostics
 error: Unreachable code
@@ -55,9 +55,12 @@ foo
 
 //! > module_code
 
+
 //! > semantic_diagnostics
 
+
 //! > lowering_diagnostics
+
 
 //! > lowering_format
 blk0:
@@ -91,9 +94,12 @@ foo
 
 //! > module_code
 
+
 //! > semantic_diagnostics
 
+
 //! > lowering_diagnostics
+
 
 //! > lowering_format
 blk0:
@@ -188,7 +194,9 @@ enum MyEnum {
 
 //! > semantic_diagnostics
 
+
 //! > lowering_diagnostics
+
 
 //! > lowering_format
 blk0:

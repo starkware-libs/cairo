@@ -17,9 +17,12 @@ foo
 
 //! > module_code
 
+
 //! > semantic_diagnostics
 
+
 //! > lowering_diagnostics
+
 
 //! > lowering_format
 blk0:
@@ -71,7 +74,9 @@ foo
 
 //! > module_code
 
+
 //! > semantic_diagnostics
+
 
 //! > lowering_diagnostics
 error: Match with a non-zero value is not supported.
@@ -80,6 +85,7 @@ error: Match with a non-zero value is not supported.
         ^^
 
 //! > lowering_format
+
 
 //! > ==========================================================================
 
@@ -102,7 +108,9 @@ foo
 
 //! > module_code
 
+
 //! > semantic_diagnostics
+
 
 //! > lowering_diagnostics
 error: Only match zero (match ... { 0 => ..., _ => ... }) is currently supported.

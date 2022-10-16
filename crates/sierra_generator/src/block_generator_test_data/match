@@ -17,11 +17,15 @@ foo
 
 //! > module_code
 
+
 //! > semantic_diagnostics
+
 
 //! > lowering_diagnostics
 
+
 //! > sierra_gen_diagnostics
+
 
 //! > sierra_code
 felt_const<10>() -> ([0])

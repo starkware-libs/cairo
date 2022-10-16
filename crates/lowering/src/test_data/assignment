@@ -15,9 +15,12 @@ foo
 
 //! > module_code
 
+
 //! > semantic_diagnostics
 
+
 //! > lowering_diagnostics
+
 
 //! > lowering_format
 blk0:

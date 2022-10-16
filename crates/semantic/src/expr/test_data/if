@@ -18,6 +18,7 @@ foo
 
 //! > module_code
 
+
 //! > expected_diagnostics
 error: If blocks have incompatible types: "core::bool" and "core::felt"
  --> lib.cairo:3:5
@@ -50,5 +51,6 @@ func foo() -> bool {
 foo
 
 //! > module_code
+
 
 //! > expected_diagnostics
