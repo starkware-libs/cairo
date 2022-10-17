@@ -34,6 +34,12 @@ impl DiagnosticEntry for LoweringDiagnostic {
     fn format(&self, _db: &Self::DbType) -> String {
         match &self.kind {
             LoweringDiagnosticKind::Unreachable { .. } => "Unreachable code".into(),
+            LoweringDiagnosticKind::NonZeroValueInMatch => {
+                "Match with a non-zero value is not supported.".into()
+            }
+            LoweringDiagnosticKind::OnlyMatchZeroIsSupported => {
+                "Only match zero (match ... { 0 => ..., _ => ... }) is currently supported.".into()
+            }
         }
     }
 
@@ -54,4 +60,8 @@ impl DiagnosticEntry for LoweringDiagnostic {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum LoweringDiagnosticKind {
     Unreachable { last_statement_ptr: SyntaxStablePtrId },
+    // TODO(lior): Remove once supported.
+    NonZeroValueInMatch,
+    // TODO(lior): Remove once supported.
+    OnlyMatchZeroIsSupported,
 }
