@@ -60,7 +60,7 @@ fn read_sierra_example_file(name: &str) -> String {
                 return([7], [8], [4]);                          // #9
 
                 finalize_locals() -> ();                        // #10
-                felt_jump_nz([1]) { 16([1]) fallthrough() };    // #11
+                felt_jump_nz([1]) { fallthrough() 16([1]) };    // #11
                 felt_dup([2]) -> ([1], [2]);                    // #12
                 store_temp_felt([1]) -> ([1]);                  // #13
                 store_temp_felt([2]) -> ([2]);                  // #14
@@ -335,7 +335,7 @@ fn sierra_to_casm(sierra_code: &str, metadata: &Metadata, expected_casm: &str) {
                 libfunc store_temp_felt = store_temp<felt>;
                 libfunc store_temp_nz_felt = store_temp<NonZeroFelt>;
 
-                felt_jump_nz([1]) { 3([1]) fallthrough() };
+                felt_jump_nz([1]) { fallthrough() 3([1]) };
                 store_temp_felt([2]) -> ([2]);
                 return ([2]);
                 felt_drop([2]) -> ();
@@ -375,7 +375,7 @@ of the libfunc or return statement.";
                 libfunc felt_unwrap_nz = unwrap_nz<felt>;
                 libfunc jump = jump;
 
-                felt_jump_nz([1]) { 3([1]) fallthrough() };
+                felt_jump_nz([1]) { fallthrough() 3([1]) };
                 revoke_ap_tracking() -> ();
                 jump() { 5() };
                 felt_unwrap_nz([1]) -> ([1]);

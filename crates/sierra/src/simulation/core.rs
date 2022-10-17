@@ -189,14 +189,14 @@ fn simulate_integer_libfunc(
         },
         IntegerConcrete::JumpNotZero(_) => {
             match inputs {
+                [CoreValue::Integer(value)] if *value == 0 => {
+                    // Zero - jumping to the failure branch.
+                    Ok((vec![], 0))
+                }
                 [CoreValue::Integer(value)] if *value != 0 => {
                     // Non-zero - jumping to the success branch and providing a NonZero wrap to the
                     // given value.
-                    Ok((vec![CoreValue::NonZero(Box::new(CoreValue::Integer(*value)))], 0))
-                }
-                [CoreValue::Integer(value)] if *value == 0 => {
-                    // Zero - jumping to the failure branch.
-                    Ok((vec![], 1))
+                    Ok((vec![CoreValue::NonZero(Box::new(CoreValue::Integer(*value)))], 1))
                 }
                 [_] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
                 _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
@@ -271,14 +271,14 @@ fn simulate_felt_libfunc(
         },
         FeltConcrete::JumpNotZero(_) => {
             match inputs {
+                [CoreValue::Felt(value)] if *value == 0 => {
+                    // Zero - jumping to the failure branch.
+                    Ok((vec![], 0))
+                }
                 [CoreValue::Felt(value)] if *value != 0 => {
                     // Non-zero - jumping to the success branch and providing a NonZero wrap to the
                     // given value.
-                    Ok((vec![CoreValue::NonZero(Box::new(CoreValue::Felt(*value)))], 0))
-                }
-                [CoreValue::Felt(value)] if *value == 0 => {
-                    // Zero - jumping to the failure branch.
-                    Ok((vec![], 1))
+                    Ok((vec![CoreValue::NonZero(Box::new(CoreValue::Felt(*value)))], 1))
                 }
                 [_] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
                 _ => Err(LibFuncSimulationError::WrongNumberOfArgs),

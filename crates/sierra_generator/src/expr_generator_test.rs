@@ -161,7 +161,7 @@ fn test_match() {
             // let x = 7;
             "felt_const<7>() -> ([0])",
             // match {
-            "felt_jump_nz([0]) { label0([1]) fallthrough() }",
+            "felt_jump_nz([0]) { fallthrough() label0([1]) }",
             // Branch 0.
             "PushValues([0]: [0]) -> ([2])",
             "jump() { label1() }",

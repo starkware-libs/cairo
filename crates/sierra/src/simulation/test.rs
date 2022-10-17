@@ -133,8 +133,8 @@ fn simulate(
 
 #[test_case("get_gas", vec![], vec![GasBuiltin(5)] => Ok((vec![GasBuiltin(1)], 0)); "get_gas(5)")]
 #[test_case("get_gas", vec![], vec![GasBuiltin(2)] => Ok((vec![GasBuiltin(2)], 1)); "get_gas(2)")]
-#[test_case("int_jump_nz", vec![], vec![Integer(2)] => Ok((vec![NonZero(Box::new(Integer(2)))], 0)); "int_jump_nz(2)")]
-#[test_case("int_jump_nz", vec![], vec![Integer(0)] => Ok((vec![], 1)); "int_jump_nz(0)")]
+#[test_case("int_jump_nz", vec![], vec![Integer(2)] => Ok((vec![NonZero(Box::new(Integer(2)))], 1)); "int_jump_nz(2)")]
+#[test_case("int_jump_nz", vec![], vec![Integer(0)] => Ok((vec![], 0)); "int_jump_nz(0)")]
 #[test_case("jump", vec![], vec![] => Ok((vec![], 0)); "jump()")]
 fn simulate_branch(
     id: &str,
