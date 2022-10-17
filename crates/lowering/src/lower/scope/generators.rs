@@ -9,9 +9,9 @@ use crate::lower::context::LoweringContext;
 use crate::objects::{
     Statement, StatementCall, StatementLiteral, StatementTupleConstruct, StatementTupleDestruct,
 };
-use crate::{BlockId, StatementCallBlock, StatementMatchEnum, VariableId};
+use crate::{BlockId, StatementCallBlock, StatementMatchEnum, StatementMatchExtern, VariableId};
 
-/// Generator for StatementMatchEnum.
+/// Generator for [StatementMatchEnum].
 pub struct MatchEnum {
     pub input: OwnedVariable,
     pub concrete_enum_id: ConcreteEnumId,
@@ -40,7 +40,7 @@ impl MatchEnum {
     }
 }
 
-/// Generator for StatementTupleConstruct.
+/// Generator for [StatementTupleConstruct].
 pub struct TupleConstruct {
     pub inputs: Vec<OwnedVariable>,
     pub ty: semantic::TypeId,
@@ -56,7 +56,7 @@ impl TupleConstruct {
     }
 }
 
-/// Generator for StatementTupleDestruct.
+/// Generator for [StatementTupleDestruct].
 pub struct TupleDestruct {
     pub input: OwnedVariable,
     pub tys: Vec<semantic::TypeId>,
@@ -74,7 +74,7 @@ impl TupleDestruct {
     }
 }
 
-/// Generator for StatementCall.
+/// Generator for [StatementCall].
 pub struct Call {
     pub function: semantic::FunctionId,
     pub inputs: Vec<OwnedVariable>,
@@ -94,7 +94,7 @@ impl Call {
     }
 }
 
-/// Generator for StatementCallBlock.
+/// Generator for [StatementCallBlock].
 pub struct CallBlock {
     pub block: BlockId,
     pub end_info: BlockEndInfo,
@@ -120,6 +120,30 @@ impl CallBlock {
         scope
             .statements
             .push(Statement::CallBlock(StatementCallBlock { block: self.block, outputs }));
+        res
+    }
+}
+
+/// Generator for [StatementMatchExtern].
+pub struct MatchExtern {
+    pub function: semantic::FunctionId,
+    pub inputs: Vec<OwnedVariable>,
+    pub arms: Vec<BlockId>,
+    pub end_info: BlockEndInfo,
+}
+impl MatchExtern {
+    pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockScope) -> CallBlockResult {
+        let inputs = self.inputs.into_iter().map(|var| scope.use_var(ctx, var)).collect();
+
+        // TODO(lior): Check that each arm has the expected input.
+
+        let (outputs, res) = process_end_info(ctx, scope, self.end_info);
+        scope.statements.push(Statement::MatchExtern(StatementMatchExtern {
+            function: self.function,
+            inputs,
+            arms: self.arms,
+            outputs,
+        }));
         res
     }
 }
