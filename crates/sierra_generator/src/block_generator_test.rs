@@ -10,7 +10,11 @@ use crate::SierraGeneratorDiagnostic;
 
 utils::test_file_test!(
     lowering_test,
-    ["src/block_generator_test_data/literals", "src/block_generator_test_data/function_call"],
+    [
+        "src/block_generator_test_data/function_call",
+        "src/block_generator_test_data/literals",
+        "src/block_generator_test_data/match"
+    ],
     SierraGenDatabaseForTesting,
     block_generator_test
 );
