@@ -3,7 +3,10 @@ use diagnostics::Diagnostics;
 use id_arena::Arena;
 use itertools::zip_eq;
 use scope::{BlockScope, BlockScopeEnd, OwnedVariable};
-use semantic::corelib::{core_bool_enum, false_variant, true_variant, unit_ty};
+use semantic::corelib::{
+    core_bool_enum, core_felt_ty, core_jump_nz_func, core_nonzero_ty, false_variant, true_variant,
+    unit_ty,
+};
 use semantic::db::SemanticGroup;
 use semantic::items::enm::SemanticEnumEx;
 use semantic::{ConcreteTypeId, TypeLongId};
@@ -321,6 +324,10 @@ impl<'db> Lowerer<'db> {
         let expr_var =
             extract_matches!(self.lower_expr(scope, expr.matched_expr)?, LoweredExpr::AtVariable);
 
+        if self.function_def.exprs[expr.matched_expr].ty() == self.ctx.db.core_felt_ty() {
+            return self.lower_expr_match_felt(expr, expr_var, scope);
+        }
+
         // TODO(spapini): Use diagnostics.
         // TODO(spapini): Handle more than just enums.
         let (concrete_enum_id, concrete_variants) = self.extract_concrete_enum(expr)?;
@@ -365,6 +372,69 @@ impl<'db> Lowerer<'db> {
             input: expr_var,
             concrete_enum_id,
             arms,
+            end_info: finalized_merger.end_info,
+        };
+        let block_result = match_generator.add(&mut self.ctx, scope);
+        lowered_expr_from_block_result(scope, block_result, finalized_merger.pushes)
+    }
+
+    /// Lowers an expression of type [semantic::ExprMatch] where the matched expression is a felt.
+    /// Currently only a simple match-zero is supported.
+    fn lower_expr_match_felt(
+        &mut self,
+        expr: &semantic::ExprMatch,
+        expr_var: OwnedVariable,
+        scope: &mut BlockScope,
+    ) -> Result<LoweredExpr, LoweringFlowError> {
+        // Check that the match has the expected form.
+        let (literal, block0, block_otherwise) = if let [
+            semantic::MatchArm {
+                pattern: semantic::Pattern::Literal(semantic::PatternLiteral { literal, .. }),
+                expression: block0,
+            },
+            semantic::MatchArm {
+                pattern: semantic::Pattern::Otherwise(_),
+                expression: block_otherwise,
+            },
+        ] = &expr.arms[..]
+        {
+            (literal, block0, block_otherwise)
+        } else {
+            self.ctx.diagnostics.report(expr.stable_ptr.untyped(), OnlyMatchZeroIsSupported);
+            return Err(LoweringFlowError::Failed);
+        };
+
+        // Make sure literal is 0.
+        if literal.value != 0 {
+            self.ctx.diagnostics.report(literal.stable_ptr.untyped(), NonZeroValueInMatch);
+            return Err(LoweringFlowError::Failed);
+        }
+
+        // Lower both blocks.
+        let (res, mut finalized_merger) = BlockFlowMerger::with(self, scope, |lowerer, merger| {
+            let block0_end = merger.run_in_subscope(lowerer, vec![], |lowerer, subscope, _| {
+                lowerer.lower_tail_expr(subscope, *block0)
+            });
+            let non_zero_type = core_nonzero_ty(self.ctx.db, core_felt_ty(self.ctx.db));
+            let block_otherwise_end =
+                merger.run_in_subscope(lowerer, vec![non_zero_type], |lowerer, subscope, _| {
+                    lowerer.lower_tail_expr(subscope, *block_otherwise)
+                });
+            Some((block0_end, block_otherwise_end))
+        });
+        let (block0_sealed, block_otherwise_sealed) = res.ok_or(LoweringFlowError::Failed)?;
+        let block0_finalized = finalized_merger
+            .finalize_block(&mut self.ctx, block0_sealed.ok_or(LoweringFlowError::Failed)?);
+        let block_otherwise_finalized = finalized_merger.finalize_block(
+            &mut self.ctx,
+            block_otherwise_sealed.ok_or(LoweringFlowError::Failed)?,
+        );
+
+        // Emit the statement.
+        let match_generator = generators::MatchExtern {
+            function: core_jump_nz_func(self.ctx.db),
+            inputs: vec![expr_var],
+            arms: vec![block0_finalized.block, block_otherwise_finalized.block],
             end_info: finalized_merger.end_info,
         };
         let block_result = match_generator.add(&mut self.ctx, scope);
