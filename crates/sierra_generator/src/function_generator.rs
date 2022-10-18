@@ -8,6 +8,7 @@ use std::sync::Arc;
 use defs::ids::{FreeFunctionId, GenericFunctionId};
 use diagnostics::{Diagnostics, DiagnosticsBuilder};
 use itertools::zip_eq;
+use lowering::lower::Lowerer;
 use sierra::extensions::core::CoreLibFunc;
 use sierra::extensions::lib_func::LibFuncSignature;
 use sierra::extensions::GenericLibFuncEx;
@@ -15,9 +16,9 @@ use sierra::ids::ConcreteLibFuncId;
 use sierra::program::Param;
 use utils::unordered_hash_map::UnorderedHashMap;
 
+use crate::block_generator::generate_block_code;
 use crate::db::SierraGenGroup;
 use crate::dup_and_drop::{calculate_statement_dups_and_drops, VarsDupsAndDrops};
-use crate::expr_generator::generate_expression_code;
 use crate::expr_generator_context::ExprGeneratorContext;
 use crate::pre_sierra::{self, Statement};
 use crate::specialization_context::SierraSignatureSpecializationContext;
@@ -63,24 +64,24 @@ pub fn get_function_code(
     function_id: FreeFunctionId,
 ) -> Option<Arc<pre_sierra::Function>> {
     let signature = db.free_function_declaration_signature(function_id)?;
-    let body = db.free_function_definition_body(function_id)?;
-    let mut context = ExprGeneratorContext::new(db, None, function_id, diagnostics);
+    let lowered_function = Lowerer::lower(db.upcast(), function_id).unwrap();
+    let block = &lowered_function.blocks[lowered_function.root?];
+
+    let mut context =
+        ExprGeneratorContext::new(db, Some(&lowered_function), function_id, diagnostics);
 
     // Generate a label for the function's body.
     let (label, label_id) = context.new_label();
 
     // Generate Sierra variables for the function parameters.
     let mut parameters: Vec<sierra::program::Param> = Vec::new();
-    for param in signature.params {
-        let sierra_var = context.allocate_sierra_variable();
-        context.register_variable(
-            defs::ids::VarId::Param(param.id),
-            sierra_var.clone(),
-            param.id.stable_ptr(context.get_db().upcast()).untyped(),
-        );
+    for param_id in &block.inputs {
+        let var = &lowered_function.variables[*param_id];
 
-        parameters
-            .push(sierra::program::Param { id: sierra_var, ty: db.get_concrete_type_id(param.ty)? })
+        parameters.push(sierra::program::Param {
+            id: context.get_sierra_variable(*param_id),
+            ty: db.get_concrete_type_id(var.ty)?,
+        })
     }
 
     let ret_types = vec![db.get_concrete_type_id(signature.return_type)?];
@@ -91,18 +92,31 @@ pub fn get_function_code(
     statements.push(simple_statement(context.revoke_ap_tracking_libfunc_id(), &[], &[]));
 
     // Generate the function's body.
-    let (body_statements, res) = generate_expression_code(&mut context, body)?;
+    let body_statements = generate_block_code(&mut context, block)?;
     statements.extend(body_statements);
 
-    // Copy the result to the top of the stack before returning.
-    let return_variable_on_stack = context.allocate_sierra_variable();
-    statements.push(pre_sierra::Statement::PushValues(vec![pre_sierra::PushValue {
-        var: res,
-        var_on_stack: return_variable_on_stack.clone(),
-        ty: context.get_db().get_concrete_type_id(signature.return_type)?,
-    }]));
+    // Generate the return statement if necessary.
+    match &block.end {
+        lowering::BlockEnd::Callsite(returned_variables) => {
+            // Copy the result to the top of the stack before returning.
+            let mut return_variables_on_stack = vec![];
+            let mut push_values = vec![];
 
-    statements.push(return_statement(vec![return_variable_on_stack]));
+            for returned_variable in returned_variables {
+                let return_variable_on_stack = context.allocate_sierra_variable();
+                return_variables_on_stack.push(return_variable_on_stack.clone());
+                push_values.push(pre_sierra::PushValue {
+                    var: context.get_sierra_variable(*returned_variable),
+                    var_on_stack: return_variable_on_stack,
+                    ty: context.get_db().get_concrete_type_id(signature.return_type)?,
+                });
+            }
+
+            statements.push(pre_sierra::Statement::PushValues(push_values));
+            statements.push(return_statement(return_variables_on_stack));
+        }
+        lowering::BlockEnd::Return(_) | lowering::BlockEnd::Unreachable => {}
+    };
 
     let statements = add_store_statements(
         context.get_db(),

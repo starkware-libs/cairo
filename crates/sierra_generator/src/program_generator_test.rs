@@ -44,9 +44,9 @@ fn test_program_generator() {
             drop<[0]>([0]) -> ();
             revoke_ap_tracking() -> ();
             felt_const<5>() -> ([1]);
-            store_temp<[0]>([1]) -> ([2]);
-            function_call<user@[0]>([2]) -> ([3]);
-            rename<[0]>([3]) -> ([4]);
+            store_temp<[0]>([1]) -> ([3]);
+            function_call<user@[0]>([3]) -> ([2]);
+            rename<[0]>([2]) -> ([4]);
             return([4]);
             revoke_ap_tracking() -> ();
             dup<[0]>([0]) -> ([0], [3]);

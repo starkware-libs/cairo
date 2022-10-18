@@ -14,6 +14,7 @@ use crate::utils::{jump_statement, simple_statement};
 /// Generates Sierra code that computes a given expression.
 /// Returns a list of Sierra statements and the Sierra variable in which the result
 /// is stored.
+#[allow(dead_code)]
 pub fn generate_expression_code(
     context: &mut ExprGeneratorContext<'_>,
     expr_id: semantic::ExprId,
