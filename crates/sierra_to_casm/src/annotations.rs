@@ -11,6 +11,7 @@ use thiserror::Error;
 
 use crate::environment::ap_tracking::update_ap_tracking;
 use crate::environment::frame_state::FrameStateError;
+use crate::environment::gas_wallet::{GasWallet, GasWalletError};
 use crate::environment::{
     validate_environment_equality, validate_final_environment, Environment, EnvironmentError,
 };
@@ -43,6 +44,8 @@ pub enum AnnotationError {
     },
     #[error(transparent)]
     FrameStateError(#[from] FrameStateError),
+    #[error(transparent)]
+    GasWalletError(#[from] GasWalletError),
     #[error(transparent)]
     ReferencesError(#[from] ReferencesError),
 
@@ -116,6 +119,7 @@ impl ProgramAnnotations {
         n_statements: usize,
         functions: &[Function],
         metadata: &Metadata,
+        gas_usage_check: bool,
     ) -> Result<Self, AnnotationError> {
         let mut annotations = ProgramAnnotations::new(n_statements);
         let mut return_annotations: HashMap<ReturnProperties, ReturnAnnotation> = HashMap::new();
@@ -145,7 +149,13 @@ impl ProgramAnnotations {
                 StatementAnnotations {
                     refs: build_function_parameter_refs(func)?,
                     return_annotation,
-                    environment: Environment::default(),
+                    environment: if gas_usage_check {
+                        Environment::new(GasWallet::Value(
+                            metadata.gas_info.function_costs[&func.id],
+                        ))
+                    } else {
+                        Environment::new(GasWallet::Disabled)
+                    },
                 },
             )?
         }
@@ -262,6 +272,10 @@ impl ProgramAnnotations {
                             }
                         })?,
                         frame_state: annotations.environment.frame_state.clone(),
+                        gas_wallet: annotations
+                            .environment
+                            .gas_wallet
+                            .update(branch_result.gas_change)?,
                     },
                 },
             )?;

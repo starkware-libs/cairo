@@ -65,10 +65,12 @@ pub struct BranchRefChanges {
     /// should correspond to BranchInfo.results.
     pub refs: Vec<ReferenceValue>,
     pub ap_change: ApChange,
+    pub gas_change: i64,
 }
 impl BranchRefChanges {
     fn new(
         ap_change: ApChange,
+        gas_change: i64,
         expressions: impl Iterator<Item = ReferenceExpression>,
         types: impl Iterator<Item = ConcreteTypeId>,
     ) -> Self {
@@ -77,6 +79,7 @@ impl BranchRefChanges {
                 .map(|(expression, ty)| ReferenceValue { expression, ty })
                 .collect(),
             ap_change,
+            gas_change,
         }
     }
 }
@@ -135,14 +138,27 @@ impl CompiledInvocationBuilder<'_> {
         ap_changes: impl Iterator<Item = ApChange>,
         output_expressions: impl Iterator<Item = impl Iterator<Item = ReferenceExpression>>,
     ) -> CompiledInvocation {
+        let gas_changes = sierra_gas::core_libfunc_cost::core_libfunc_cost(
+            &self.program_info.metadata.gas_info,
+            &self.idx,
+            self.libfunc,
+        );
         CompiledInvocation {
             instructions,
             relocations,
-            results: zip_eq(ap_changes, zip_eq(output_expressions, self.libfunc.output_types()))
-                .map(|(ap_change, (expressions, types))| {
-                    BranchRefChanges::new(ap_change, expressions, types.iter().cloned())
-                })
-                .collect(),
+            results: zip_eq(
+                zip_eq(ap_changes, gas_changes),
+                zip_eq(output_expressions, self.libfunc.output_types()),
+            )
+            .map(|((ap_change, gas_change), (expressions, types))| {
+                BranchRefChanges::new(
+                    ap_change,
+                    -gas_change.unwrap_or(0),
+                    expressions,
+                    types.iter().cloned(),
+                )
+            })
+            .collect(),
             environment: self.environment,
         }
     }

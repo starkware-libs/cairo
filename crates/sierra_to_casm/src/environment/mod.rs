@@ -3,9 +3,11 @@ use frame_state::{FrameState, FrameStateError};
 use thiserror::Error;
 
 use self::frame_state::validate_final_frame_state;
+use self::gas_wallet::GasWallet;
 
 pub mod ap_tracking;
 pub mod frame_state;
+pub mod gas_wallet;
 
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum EnvironmentError {
@@ -13,6 +15,8 @@ pub enum EnvironmentError {
     InconsistentApTracking,
     #[error("Inconsistent frame state.")]
     InconsistentFrameState,
+    #[error("Inconsistent gas wallet state.")]
+    InconsistentGasWallet,
     #[error("{0}")]
     InvalidFinalFrameState(FrameStateError),
 }
@@ -24,13 +28,15 @@ pub struct Environment {
     /// Once it changes to ApChange::Unknown it remains in that state.
     pub ap_tracking: ApChange,
     pub frame_state: FrameState,
+    pub gas_wallet: GasWallet,
 }
-impl Default for Environment {
-    fn default() -> Self {
+impl Environment {
+    pub fn new(gas_wallet: GasWallet) -> Self {
         let ap_tracking = ApChange::Known(0);
         Self {
             ap_tracking,
             frame_state: FrameState::Allocating { allocated: 0, last_ap_tracking: ap_tracking },
+            gas_wallet,
         }
     }
 }
@@ -44,6 +50,8 @@ pub fn validate_environment_equality(
         Err(EnvironmentError::InconsistentApTracking)
     } else if a.frame_state != b.frame_state {
         Err(EnvironmentError::InconsistentFrameState)
+    } else if a.gas_wallet != b.gas_wallet {
+        Err(EnvironmentError::InconsistentGasWallet)
     } else {
         Ok(())
     }
