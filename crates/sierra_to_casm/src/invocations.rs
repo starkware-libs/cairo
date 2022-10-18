@@ -238,7 +238,13 @@ impl CompiledInvocationBuilder<'_> {
                 .ok_or_else(|| InvocationError::UnknownTypeId(output_type.clone()))?;
         }
 
-        // TODO(ilya, 10/10/2022): Support functions with known ap change.
+        let ap_change =
+            match self.program_info.metadata.function_ap_change.get(&func_call.function.id) {
+                // The call uses two stack slots.
+                Some(ApChange::Known(change)) => ApChange::Known(change + 2),
+                _ => ApChange::Unknown,
+            };
+
         Ok(self.build(
             vec![Instruction::new(
                 InstructionBody::Call(CallInstruction {
@@ -251,7 +257,7 @@ impl CompiledInvocationBuilder<'_> {
                 instruction_idx: 0,
                 relocation: Relocation::RelativeStatementId(func_call.function.entry_point),
             }],
-            [ApChange::Unknown].into_iter(),
+            [ap_change].into_iter(),
             [refs.into_iter()].into_iter(),
         ))
     }
