@@ -58,7 +58,7 @@ fn simulate_collatz((gb, n): (i64, i64), (new_gb, index): (i64, i64)) {
     );
 }
 
-#[test_case((1000, 0), (1010, 1); "0 => 1")]
+#[test_case((1000, 0), (1011, 1); "0 => 1")]
 #[test_case((1000, 1), (1005, 1); "1 => 1")]
 #[test_case((1000, 2), (988, 2); "2 => 2")]
 #[test_case((1000, 3), (975, 3); "3 => 3")]
@@ -73,11 +73,11 @@ fn simulate_fib_jumps((gb, n): (i64, i64), (new_gb, fib): (i64, i64)) {
         simulation::run(
             &get_example_program("fib_jumps"),
             &HashMap::from([
-                (StatementIdx(1), 10),
-                (StatementIdx(10), 5),
-                (StatementIdx(21), 13),
-                (StatementIdx(26), 0),
-                (StatementIdx(41), 1),
+                (StatementIdx(2), 11),
+                (StatementIdx(11), 5),
+                (StatementIdx(23), 13),
+                (StatementIdx(28), 0),
+                (StatementIdx(43), 1),
             ]),
             &"Fibonacci".into(),
             vec![CoreValue::GasBuiltin(gb), CoreValue::Integer(n)]

@@ -29,13 +29,13 @@ fn get_example_program(name: &str) -> Program {
 #[test_case("fib_jumps" =>
             Ok(GasInfo {
                 variable_values: [
-                    (StatementIdx(1), 10),
-                    (StatementIdx(10), 5),
-                    (StatementIdx(21), 13),
-                    (StatementIdx(26), 0),
-                    (StatementIdx(41), 1),
+                    (StatementIdx(2), 11),
+                    (StatementIdx(11), 6),
+                    (StatementIdx(23), 13),
+                    (StatementIdx(28), 0),
+                    (StatementIdx(43), 1),
                 ].into_iter().collect(),
-                function_costs: [("Fibonacci".into(), 16)].into_iter().collect()
+                function_costs: [("Fibonacci".into(), 17)].into_iter().collect()
             });
             "fib_jumps")]
 #[test_case("fib_recursive" =>
