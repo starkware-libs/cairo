@@ -1,0 +1,48 @@
+//! > Test enum constructor.
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+func foo(a: bool) -> felt {
+    let x = 2;
+    if a { x = 3; } else {}
+    x
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_format
+blk0:
+Inputs: v2: ()
+Statements:
+  (v3: core::felt) <- 3u
+Drops: v2, v1
+End:
+  Callsite(v3)
+
+blk1:
+Inputs: v4: ()
+Statements:
+Drops: v4
+End:
+  Callsite(v1)
+
+blk2:
+Inputs: v0: core::bool
+Statements:
+  (v1: core::felt) <- 2u
+  (v5: core::felt) <- match_enum(v0) {
+    bool::True => blk0,
+    bool::False => blk1,
+  }
+Drops: v0, v1
+End:
+  Callsite(v5)
