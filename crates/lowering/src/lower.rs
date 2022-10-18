@@ -263,7 +263,7 @@ impl<'db> Lowerer<'db> {
             )),
             semantic::Expr::MemberAccess(_) => todo!(),
             semantic::Expr::StructCtor(_) => todo!(),
-            semantic::Expr::EnumVariantCtor(_) => todo!(),
+            semantic::Expr::EnumVariantCtor(expr) => self.lower_expr_enum_ctor(expr, scope),
             semantic::Expr::Missing(_) => todo!(),
         }
     }
@@ -539,6 +539,21 @@ impl<'db> Lowerer<'db> {
     fn unit_var(&mut self, scope: &mut BlockScope) -> LivingVar {
         generators::TupleConstruct { inputs: vec![], ty: unit_ty(self.ctx.db) }
             .add(&mut self.ctx, scope)
+    }
+
+    /// Lowers an expression of type [semantic::ExprEnumVariantCtor].
+    fn lower_expr_enum_ctor(
+        &mut self,
+        expr: &semantic::ExprEnumVariantCtor,
+        scope: &mut BlockScope,
+    ) -> Result<LoweredExpr, LoweringFlowError> {
+        Ok(LoweredExpr::AtVariable(
+            generators::EnumConstruct {
+                input: self.lower_expr(scope, expr.value_expr)?.var(self, scope),
+                variant: expr.variant.clone(),
+            }
+            .add(&mut self.ctx, scope),
+        ))
     }
 }
 
