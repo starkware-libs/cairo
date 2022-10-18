@@ -16,32 +16,23 @@ use test_case::test_case;
 use crate::compiler::compile;
 use crate::metadata::Metadata;
 
-struct MetadataBuilder {
-    function_ap_change: HashMap<FunctionId, ApChange>,
+fn build_metadata(
+    program: &Program,
+    ap_change_data: &[(&str, i16)],
     calculate_gas_info: bool,
-}
-impl MetadataBuilder {
-    fn build(self, program: &Program) -> Metadata {
-        Metadata {
-            function_ap_change: self.function_ap_change,
-            gas_info: if self.calculate_gas_info {
-                calc_gas_info(program).expect("Failed calculating gas variables.")
-            } else {
-                GasInfo { variable_values: HashMap::new(), function_costs: HashMap::new() }
-            },
-        }
-    }
-}
-
-fn md_builder(ap_change_data: &[(&str, i16)], calculate_gas_info: bool) -> MetadataBuilder {
-    MetadataBuilder {
+) -> Metadata {
+    Metadata {
         function_ap_change: ap_change_data
             .iter()
             .map(|(func_name, change)| {
                 (FunctionId::from_string(func_name), ApChange::Known(*change))
             })
             .collect(),
-        calculate_gas_info,
+        gas_info: if calculate_gas_info {
+            calc_gas_info(program).expect("Failed calculating gas variables.")
+        } else {
+            GasInfo { variable_values: HashMap::new(), function_costs: HashMap::new() }
+        },
     }
 }
 
@@ -127,7 +118,7 @@ fn strip_comments_and_linebreaks(program: &str) -> String {
                 box_and_back@26([1]: felt) -> (felt);
                 box_and_back_wrapper@31([1]: felt) -> (felt);
             "},
-            md_builder(&[("box_and_back", 2), ("box_and_back_wrapper", 5)], false),
+            &[("box_and_back", 2), ("box_and_back_wrapper", 5)], false,
             indoc! {"
                 // test_program:
                 [ap + 0] = [fp + -4] + [fp + -3], ap++;
@@ -184,7 +175,7 @@ fn strip_comments_and_linebreaks(program: &str) -> String {
 
                 test_program@0([1]: felt, [2]: felt) -> (felt, felt);
             "},
-            md_builder(&[("test_program", 5)], false),
+            &[("test_program", 5)], false,
             indoc! {"
                 [ap + 0] = [fp + -4], ap++;
                 [fp + 1] = [ap + -1];
@@ -196,7 +187,7 @@ fn strip_comments_and_linebreaks(program: &str) -> String {
             "};
             "alloc_local and store_local")]
 #[test_case(read_sierra_example_file("fib_no_gas").as_str(),
-            md_builder(&[], false),
+            &[], false,
             indoc! {"
                 jmp rel 4 if [fp + -3] != 0;
                 [ap + 0] = [fp + -5], ap++;
@@ -209,12 +200,12 @@ fn strip_comments_and_linebreaks(program: &str) -> String {
             "};
             "fib_no_gas")]
 #[test_case(read_sierra_example_file("collatz").replace("int", "felt").replace("Int", "Felt").as_str(),
-            md_builder(&[], true),
+            &[], true,
             indoc! {"
             "} => ignore["Non-forward only code is not supported yet."];
             "collatz")]
 #[test_case(read_sierra_example_file("fib_jumps").replace("int", "felt").replace("Int", "Felt").as_str(),
-            md_builder(&[], true),
+            &[], true,
             indoc! {"
                 jmp rel 7 if [fp + -3] != 0;
                 [ap + 0] = [fp + -4] + 8, ap++;
@@ -252,7 +243,7 @@ fn strip_comments_and_linebreaks(program: &str) -> String {
             "};
             "fib_jumps")]
 #[test_case(read_sierra_example_file("fib_recursive").replace("int", "felt").replace("Int", "Felt").as_str(),
-            md_builder(&[], true),
+            &[], true,
             indoc! {"
                 [ap + 0] = 1, ap++;
                 jmp rel 6 if [fp + -3] != 0;
@@ -290,10 +281,21 @@ fn strip_comments_and_linebreaks(program: &str) -> String {
                 ret;
             "};
             "fib_recursive")]
-fn sierra_to_casm(sierra_code: &str, builder: MetadataBuilder, expected_casm: &str) {
+fn sierra_to_casm(
+    sierra_code: &str,
+    ap_change_data: &[(&str, i16)],
+    check_gas_usage: bool,
+    expected_casm: &str,
+) {
     let program = ProgramParser::new().parse(sierra_code).unwrap();
     pretty_assertions::assert_eq!(
-        compile(&program, &builder.build(&program)).expect("Compilation failed.").to_string(),
+        compile(
+            &program,
+            &build_metadata(&program, ap_change_data, check_gas_usage),
+            check_gas_usage
+        )
+        .expect("Compilation failed.")
+        .to_string(),
         strip_comments_and_linebreaks(expected_casm)
     );
 }
@@ -584,7 +586,7 @@ expected: ApChange::Known(5) got: ApChange::Known(0).";
 fn compiler_errors(sierra_code: &str, ap_change_data: &[(&str, i16)], expected_result: &str) {
     let program = ProgramParser::new().parse(sierra_code).unwrap();
     pretty_assertions::assert_eq!(
-        compile(&program, &md_builder(ap_change_data, false).build(&program))
+        compile(&program, &build_metadata(&program, ap_change_data, false), false)
             .expect_err("Compilation is expected to fail.")
             .to_string(),
         expected_result
