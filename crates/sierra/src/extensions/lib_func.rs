@@ -238,6 +238,11 @@ impl ParamSignature {
         Self { ty, allow_add_const: false, allow_deferred: false }
     }
 }
+impl From<ConcreteTypeId> for ParamSignature {
+    fn from(ty: ConcreteTypeId) -> Self {
+        Self::new(ty)
+    }
+}
 
 /// Information regarding the reference created as an output of a library function.
 /// For example, whether the reference is equal to one of the parameters (as in the dup() function),

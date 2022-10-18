@@ -8,6 +8,8 @@ pub fn build_bijective_mapping() -> BiMap<ConcreteTypeId, ConcreteTypeLongId> {
     elements.insert("T".into(), as_type_long_id("T", &[]));
     elements.insert("int".into(), as_type_long_id("int", &[]));
     elements.insert("felt".into(), as_type_long_id("felt", &[]));
+    // TODO(yuval): change one of the felts to unit type.
+    elements.insert("Option".into(), as_type_long_id("Enum", &["felt", "felt"]));
     elements.insert("NonZeroFelt".into(), as_type_long_id("NonZero", &["felt"]));
     elements.insert("NonZeroInt".into(), as_type_long_id("NonZero", &["int"]));
     elements.insert("ArrayFelt".into(), as_type_long_id("Array", &["felt"]));

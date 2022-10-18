@@ -8,5 +8,10 @@ pub enum CoreValue {
     NonZero(Box<CoreValue>),
     Ref(Box<CoreValue>),
     Array(Vec<CoreValue>),
+    Enum {
+        value: Box<CoreValue>,
+        /// The index of the relevant variant.
+        index: usize,
+    },
     Uninitialized,
 }
