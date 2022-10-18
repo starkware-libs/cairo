@@ -1,5 +1,5 @@
 use debug::DebugWithDb;
-use defs::ids::{MemberId, StructId, VarId, VariantId};
+use defs::ids::{MemberId, StructId, VarId};
 use diagnostics_proc_macros::DebugWithDb;
 use id_arena::Id;
 use syntax::node::ast::{self};
@@ -244,7 +244,7 @@ pub struct ExprStructCtor {
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
 #[debug_db(ExprFormatter<'_>)]
 pub struct ExprEnumVariantCtor {
-    pub enum_variant_id: VariantId,
+    pub variant: semantic::ConcreteVariant,
     pub value_expr: ExprId,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
