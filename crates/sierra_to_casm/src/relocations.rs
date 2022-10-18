@@ -37,7 +37,6 @@ impl Relocation {
                             jump_offset: DerefOrImmediate::Immediate(ImmediateOperand { value }),
                             condition: _,
                         }),
-                    inc_ap: false,
                     ..
                 }
                 | Instruction {
