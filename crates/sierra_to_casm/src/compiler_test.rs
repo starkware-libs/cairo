@@ -269,7 +269,7 @@ fn strip_comments_and_linebreaks(program: &str) -> String {
                 ret;
 
                 // Statement # 15 - Get gas for the recursive calls.
-                %{ memory[ap + 0] = 28 < memory[fp + -4] %}
+                %{ memory[ap + 0] = 26 < memory[fp + -4] %}
                 jmp rel 7 if [ap + 0] != 0, ap++;
                 [ap + 0] = [fp + -4] + 0, ap++;
                 [ap + 0] = -10000, ap++;
@@ -277,7 +277,7 @@ fn strip_comments_and_linebreaks(program: &str) -> String {
 
                 // Statement # 24 - Performing both recursive calculations and returning their sum.
                 ap += 2;
-                [fp + -4] = [ap + 0] + 29, ap++;
+                [fp + -4] = [ap + 0] + 27, ap++;
                 [ap + -5] = [fp + 3] + 1;
                 [ap + 0] = [ap + -5], ap++;
                 call rel -30;
