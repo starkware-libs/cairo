@@ -81,7 +81,7 @@ pub fn generate_statement_code(
         lowering::Statement::CallBlock(_)
         | lowering::Statement::StructConstruct
         | lowering::Statement::StructDestruct
-        | lowering::Statement::EnumConstruct
+        | lowering::Statement::EnumConstruct(_)
         | lowering::Statement::MatchEnum(_)
         | lowering::Statement::TupleConstruct(_)
         | lowering::Statement::TupleDestruct(_) => {

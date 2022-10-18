@@ -195,7 +195,7 @@ blk0:
 Inputs: v1: ()
 Statements:
   (v2: core::felt) <- 5u
-Drops: v1
+Drops: v1, v0
 End:
   Return(v2)
 
