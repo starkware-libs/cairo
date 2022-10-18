@@ -129,12 +129,16 @@ fn strip_comments_and_linebreaks(program: &str) -> String {
             "},
             md_builder(&[("box_and_back", 2), ("box_and_back_wrapper", 5)], false),
             indoc! {"
+                // test_program:
                 [ap + 0] = [fp + -4] + [fp + -3], ap++;
                 [ap + 0] = [fp + -3], ap++;
                 [ap + 0] = [ap + -2], ap++;
+                // call foo
                 call rel 4;
                 [ap + 0] = [ap + -1], ap++;
                 ret;
+
+                // foo:
                 ap += 0;
                 jmp rel 5 if [fp + -4] != 0;
                 [ap + 0] = [fp + -3], ap++;
@@ -146,10 +150,14 @@ fn strip_comments_and_linebreaks(program: &str) -> String {
                 [ap + 0] = [fp + -3], ap++;
                 call rel -13;
                 ret;
+
+                // box_and_back:
                 %{ memory[ap + 0] = segments.add() %}
                 [fp + -3] = [[ap + 0]], ap++;
                 [ap + 0] = [[ap + -1]], ap++;
                 ret;
+
+                // box_and_back_wrapper:
                 [ap + 0] = [fp + -3], ap++;
                 call rel -4;
                 ret;
