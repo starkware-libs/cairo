@@ -74,6 +74,7 @@ impl BlockScope {
                 self.pulled_semantic_vars.insert(semantic_var_id, var.0).is_none(),
                 "Semantic variable introduced more than once as input to the block"
             );
+            self.living_variables.insert(var.0);
             self.semantic_variables.put(semantic_var_id, var).get_var(ctx)
         })
     }
