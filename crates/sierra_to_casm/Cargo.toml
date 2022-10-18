@@ -13,4 +13,5 @@ test-case = "2.2.1"
 casm = { path = "../casm" }
 itertools = "0.10.3"
 sierra = { path = "../sierra" }
+sierra_gas = { path = "../sierra_gas" }
 thiserror = "1.0.32"

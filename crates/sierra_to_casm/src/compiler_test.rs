@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 
@@ -5,20 +6,41 @@ use casm::ap_change::ApChange;
 use indoc::indoc;
 use pretty_assertions;
 use sierra::ids::FunctionId;
+use sierra::program::Program;
 use sierra::ProgramParser;
+use sierra_gas::calc_gas_info;
+use sierra_gas::gas_info::GasInfo;
 use test_case::test_case;
 
 use crate::compiler::compile;
 use crate::metadata::Metadata;
 
-fn build_metadata(ap_change_data: &[(&str, i16)]) -> Metadata {
-    Metadata {
+struct MetadataBuilder {
+    function_ap_change: HashMap<FunctionId, ApChange>,
+    calculate_gas_info: bool,
+}
+impl MetadataBuilder {
+    fn build(self, program: &Program) -> Metadata {
+        Metadata {
+            function_ap_change: self.function_ap_change,
+            gas_info: if self.calculate_gas_info {
+                calc_gas_info(program).expect("Failed calculating gas variables.")
+            } else {
+                GasInfo { variable_values: HashMap::new(), function_costs: HashMap::new() }
+            },
+        }
+    }
+}
+
+fn md_builder(ap_change_data: &[(&str, i16)], calculate_gas_info: bool) -> MetadataBuilder {
+    MetadataBuilder {
         function_ap_change: ap_change_data
             .iter()
             .map(|(func_name, change)| {
                 (FunctionId::from_string(func_name), ApChange::Known(*change))
             })
             .collect(),
+        calculate_gas_info,
     }
 }
 
@@ -88,7 +110,7 @@ fn read_sierra_example_file(name: &str) -> String {
                 foo@10([1]: felt, [2]: felt) -> (felt, felt);
                 box_and_back@26([1]: felt) -> (felt);
             "},
-            &build_metadata(&[("box_and_back", 2)]),
+            md_builder(&[("box_and_back", 2)], false),
             indoc! {"
                 [ap + 0] = [fp + -4] + [fp + -3], ap++;
                 [ap + 0] = [fp + -3], ap++;
@@ -134,7 +156,7 @@ fn read_sierra_example_file(name: &str) -> String {
 
                 test_program@0([1]: felt, [2]: felt) -> (felt, felt);
             "},
-            &build_metadata(&[("test_program", 5)]),
+            md_builder(&[("test_program", 5)], false),
             indoc! {"
                 [ap + 0] = [fp + -4], ap++;
                 [fp + 1] = [ap + -1];
@@ -146,7 +168,7 @@ fn read_sierra_example_file(name: &str) -> String {
             "};
             "alloc_local and store_local")]
 #[test_case(read_sierra_example_file("fib_no_gas").as_str(),
-            &build_metadata(&[]),
+            md_builder(&[], false),
             indoc! {"
                 jmp rel 4 if [fp + -3] != 0;
                 [ap + 0] = [fp + -5], ap++;
@@ -159,24 +181,24 @@ fn read_sierra_example_file(name: &str) -> String {
             "};
             "fib_no_gas")]
 #[test_case(read_sierra_example_file("collatz").as_str(),
-            &build_metadata(&[]),
+            md_builder(&[], true),
             indoc! {"
             "} => ignore["Gas usage lowering not supported yet."];
             "collatz")]
 #[test_case(read_sierra_example_file("fib_jumps").as_str(),
-            &build_metadata(&[]),
+            md_builder(&[], true),
             indoc! {"
             "} => ignore["Gas usage lowering not supported yet."];
             "fib_jumps")]
 #[test_case(read_sierra_example_file("fib_recursive").as_str(),
-            &build_metadata(&[]),
+            md_builder(&[], true),
             indoc! {"
             "} => ignore["Gas usage lowering not supported yet."];
             "fib_recursive")]
-fn sierra_to_casm(sierra_code: &str, metadata: &Metadata, expected_casm: &str) {
+fn sierra_to_casm(sierra_code: &str, builder: MetadataBuilder, expected_casm: &str) {
     let program = ProgramParser::new().parse(sierra_code).unwrap();
     pretty_assertions::assert_eq!(
-        compile(&program, metadata).expect("Compilation failed.").to_string(),
+        compile(&program, &builder.build(&program)).expect("Compilation failed.").to_string(),
         expected_casm
     );
 }
@@ -465,9 +487,9 @@ of the libfunc or return statement.";
 expected: ApChange::Known(5) got: ApChange::Known(0).";
             "bad Ap change")]
 fn compiler_errors(sierra_code: &str, ap_change_data: &[(&str, i16)], expected_result: &str) {
-    let prog = ProgramParser::new().parse(sierra_code).unwrap();
+    let program = ProgramParser::new().parse(sierra_code).unwrap();
     pretty_assertions::assert_eq!(
-        compile(&prog, &build_metadata(ap_change_data))
+        compile(&program, &md_builder(ap_change_data, false).build(&program))
             .expect_err("Compilation is expected to fail.")
             .to_string(),
         expected_result
