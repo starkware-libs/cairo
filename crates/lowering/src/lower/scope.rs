@@ -74,9 +74,13 @@ impl BlockScope {
             BlockScopeEnd::Callsite(maybe_output) => BlockSealedEnd::Callsite(
                 maybe_output.map(|var| self.living_variables.take_var(var)),
             ),
-            BlockScopeEnd::Return(returns) => BlockSealedEnd::Return(
-                returns.into_iter().map(|var| self.living_variables.take_var(var)).collect(),
-            ),
+            BlockScopeEnd::Return(returns) => {
+                let mut drops = Vec::new();
+                let returns =
+                    returns.into_iter().map(|var| self.living_variables.take_var(var)).collect();
+                self.append_all_living_stack(&mut drops);
+                BlockSealedEnd::Return { returns, drops }
+            }
             BlockScopeEnd::Unreachable => BlockSealedEnd::Unreachable,
         };
         let sealed = BlockSealed {
@@ -87,6 +91,12 @@ impl BlockScope {
             end,
         };
         (sealed, self.merger)
+    }
+
+    /// Appends all the living variable in the call stack, from this scope to the root.
+    fn append_all_living_stack(&self, all_living: &mut Vec<VariableId>) {
+        all_living.extend(self.living_variables.get_all());
+        self.merger.append_all_living_stack(all_living);
     }
 }
 
@@ -103,7 +113,7 @@ pub struct BlockSealed {
 /// Represents how a block ends. See [BlockScopeEnd].
 pub enum BlockSealedEnd {
     Callsite(Option<UsableVariable>),
-    Return(Vec<UsableVariable>),
+    Return { returns: Vec<UsableVariable>, drops: Vec<VariableId> },
     Unreachable,
 }
 
@@ -132,7 +142,7 @@ impl BlockSealed {
             }
         }
         // Compute drops.
-        let (end, end_info) = match end {
+        let (end, end_info, drops) = match end {
             BlockSealedEnd::Callsite(maybe_output) => {
                 let pushes: Vec<_> = pushes
                     .iter()
@@ -150,16 +160,20 @@ impl BlockSealed {
                 let maybe_output_ty = maybe_output.map(|var_id| ctx.variables[var_id].ty);
                 let push_tys = pushes.iter().map(|var_id| ctx.variables[*var_id].ty).collect();
                 let outputs = chain!(maybe_output.into_iter(), pushes).collect();
-                (BlockEnd::Callsite(outputs), BlockEndInfo::Callsite { maybe_output_ty, push_tys })
+                let drops = living_variables.get_all();
+                (
+                    BlockEnd::Callsite(outputs),
+                    BlockEndInfo::Callsite { maybe_output_ty, push_tys },
+                    drops,
+                )
             }
-            BlockSealedEnd::Return(returns) => (
+            BlockSealedEnd::Return { returns, drops } => (
                 BlockEnd::Return(returns.iter().map(UsableVariable::var_id).collect()),
                 BlockEndInfo::End,
+                drops,
             ),
-            BlockSealedEnd::Unreachable => (BlockEnd::Unreachable, BlockEndInfo::End),
+            BlockSealedEnd::Unreachable => (BlockEnd::Unreachable, BlockEndInfo::End, vec![]),
         };
-        // TODO(spapini): Fix this in case of return.
-        let drops = living_variables.destroy();
 
         let block = ctx.blocks.alloc(Block { inputs, statements, drops, end });
         BlockFinalized { block, end_info }
@@ -306,6 +320,13 @@ impl BlockFlowMerger {
         Some(self.splitter.split(self.pulls.get(&semantic_var_id)?))
     }
 
+    /// Appends all the living variable in the call stack, from this scope to the root.
+    fn append_all_living_stack(&self, all_living: &mut Vec<VariableId>) {
+        if let Some(parent_scope) = &self.parent_scope {
+            parent_scope.append_all_living_stack(all_living);
+        }
+    }
+
     /// Adds a sealed block to the merger. This will help the merger decide on the correct
     /// pulls and pushes.
     fn add_block_sealed(
@@ -313,7 +334,6 @@ impl BlockFlowMerger {
         ctx: &LoweringContext<'_>,
         block_sealed: &BlockSealed,
     ) -> Option<()> {
-        // TODO(spapini): Make this prettier.
         let maybe_output = try_extract_matches!(&block_sealed.end, BlockSealedEnd::Callsite)?;
         self.maybe_output_ty = maybe_output.as_ref().map(|var| ctx.variables[var.var_id()].ty);
         let can_push: HashSet<_> = block_sealed.semantic_variables.alive().copied().collect();
