@@ -41,7 +41,7 @@ impl SemanticVariableEntry {
 #[derive(Default)]
 pub struct SemanticVariablesMap {
     /// Mapping from a semantic variable to its current liveness state.
-    semantic_variables: OrderedHashMap<semantic::VarId, SemanticVariableEntry>,
+    pub var_mapping: OrderedHashMap<semantic::VarId, SemanticVariableEntry>,
 }
 impl SemanticVariablesMap {
     /// Fetches a semantic variable.
@@ -53,12 +53,12 @@ impl SemanticVariablesMap {
         ctx: &LoweringContext<'_>,
         semantic_var_id: semantic::VarId,
     ) -> Option<SemanticVariableEntry> {
-        Some(self.semantic_variables.get_mut(&semantic_var_id)?.get(ctx))
+        Some(self.var_mapping.get_mut(&semantic_var_id)?.get(ctx))
     }
 
     /// Returns true if the variables exists in the map.
     pub fn contains(&mut self, semantic_var_id: semantic::VarId) -> bool {
-        self.semantic_variables.contains_key(&semantic_var_id)
+        self.var_mapping.contains_key(&semantic_var_id)
     }
 
     /// Takes a semantic variable.
@@ -66,7 +66,7 @@ impl SemanticVariablesMap {
     /// Otherwise, if it was moved, returns SemanticVariableState::Moved.
     /// Otherwise, moves the var from the map.
     pub fn take(&mut self, semantic_var_id: semantic::VarId) -> Option<SemanticVariableEntry> {
-        Some(self.semantic_variables.get_mut(&semantic_var_id)?.take())
+        Some(self.var_mapping.get_mut(&semantic_var_id)?.take())
     }
 
     /// Stores a semantic variable together with its owned lowered variable into the store.
@@ -75,15 +75,7 @@ impl SemanticVariablesMap {
         semantic_var_id: semantic::VarId,
         var: LivingVar,
     ) -> &mut SemanticVariableEntry {
-        self.semantic_variables.insert(semantic_var_id, SemanticVariableEntry::Alive(var));
-        self.semantic_variables.get_mut(&semantic_var_id).unwrap()
-    }
-
-    /// Iterates the living semantic variables.
-    pub fn moved(&self) -> impl Iterator<Item = &semantic::VarId> {
-        self.semantic_variables
-            .iter()
-            .filter(|(_, entry)| matches!(entry, SemanticVariableEntry::Moved))
-            .map(|(semantic_var_id, _)| semantic_var_id)
+        self.var_mapping.insert(semantic_var_id, SemanticVariableEntry::Alive(var));
+        self.var_mapping.get_mut(&semantic_var_id).unwrap()
     }
 }

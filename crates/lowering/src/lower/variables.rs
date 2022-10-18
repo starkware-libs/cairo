@@ -71,6 +71,11 @@ impl LivingVariables {
     pub fn get_all(&self) -> Vec<VariableId> {
         self.living_variables.iter().copied().collect()
     }
+
+    // Retrieves the set of living variables as an ordered vector in order to drop / destruct.
+    pub fn contains(&self, var_id: VariableId) -> bool {
+        self.living_variables.contains(&var_id)
+    }
 }
 
 /// A container for living variables that is allowed to "split" variables, even if they are not
