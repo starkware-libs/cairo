@@ -20,26 +20,28 @@ use sierra::program::Function;
 /// Returns some cost value for a libfunc - a helper function to implement costing both for creating
 /// gas equations and getting actual gas usage after having a solution.
 pub fn core_libfunc_cost_base<
-    CostType: std::ops::Add<Output = CostType> + std::ops::Sub<Output = CostType> + Clone,
+    CostType: Clone,
     FromConst: Fn(i32) -> CostType,
     FromFunction: FnOnce(&Function) -> CostType,
     FromVar: FnOnce() -> CostType,
+    AddCosts: FnOnce(CostType, CostType) -> CostType,
+    SubCosts: FnOnce(CostType, CostType) -> CostType,
 >(
     from_const: FromConst,
     from_function: FromFunction,
     from_var: FromVar,
+    add_costs: AddCosts,
+    sub_costs: SubCosts,
     libfunc: &CoreConcreteLibFunc,
 ) -> Vec<CostType> {
     match libfunc {
         // For the case of function calls - assumes a variable for the cost of running from a
         // function entry point and on - while also adding the call cost.
         FunctionCall(FunctionCallConcreteLibFunc { function, .. }) => {
-            vec![from_const(2) + from_function(function)]
+            vec![add_costs(from_const(2), from_function(function))]
         }
-        Gas(GetGas(_)) => vec![from_const(1) - from_var(), from_const(1)],
-        Gas(RefundGas(_)) => {
-            vec![from_const(1) + from_var()]
-        }
+        Gas(GetGas(_)) => vec![sub_costs(from_const(1), from_var()), from_const(1)],
+        Gas(RefundGas(_)) => vec![add_costs(from_const(1), from_var())],
         Array(ArrayConcreteLibFunc::New(_)) => vec![from_const(1)],
         Array(ArrayConcreteLibFunc::Append(_)) => vec![from_const(2)],
         Integer(libfunc) => integer_libfunc_cost(from_const, libfunc),
@@ -57,10 +59,7 @@ pub fn core_libfunc_cost_base<
 }
 
 /// Returns costs for integer libfuncs.
-fn integer_libfunc_cost<
-    CostType: std::ops::Add<Output = CostType> + std::ops::Sub<Output = CostType>,
-    FromConst: Fn(i32) -> CostType,
->(
+fn integer_libfunc_cost<CostType, FromConst: Fn(i32) -> CostType>(
     from_const: FromConst,
     libfunc: &IntegerConcrete,
 ) -> Vec<CostType> {
@@ -92,10 +91,7 @@ fn integer_libfunc_cost<
 }
 
 /// Returns costs for felt libfuncs.
-fn felt_libfunc_cost<
-    CostType: std::ops::Add<Output = CostType> + std::ops::Sub<Output = CostType>,
-    FromConst: Fn(i32) -> CostType,
->(
+fn felt_libfunc_cost<CostType, FromConst: Fn(i32) -> CostType>(
     from_const: FromConst,
     libfunc: &FeltConcrete,
 ) -> Vec<CostType> {

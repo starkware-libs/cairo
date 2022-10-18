@@ -15,6 +15,8 @@ pub fn core_libfunc_cost_expr(
         CostExpr::from_const,
         |function| statement_future_cost.get_future_cost(&function.entry_point).clone(),
         &|| CostExpr::from_var(Var::LibFuncImplicitGasVariable(*idx)),
+        |a, b| a + b,
+        |a, b| a - b,
         libfunc,
     )
 }
