@@ -728,10 +728,19 @@ impl<'a> Parser<'a> {
     }
 
     /// Returns a GreenId of a node with kind Param or None if a parameter can't be parsed.
+    fn try_parse_modifier(&mut self) -> Option<ModifierGreen> {
+        match Some(self.peek().kind) {
+            TerminalRef::KIND => Some(self.take::<TerminalRef>().into()),
+            _ => None,
+        }
+    }
+
+    /// Returns a GreenId of a node with kind Param or None if a parameter can't be parsed.
     fn try_parse_param(&mut self) -> Option<ParamGreen> {
         let mut modifier_list = vec![];
-        if let Some(terminal_ref) = self.try_parse_token::<TerminalRef>() {
-            modifier_list.push(terminal_ref.into());
+
+        while let Some(modifier) = self.try_parse_modifier() {
+            modifier_list.push(modifier);
         }
         let name = if modifier_list.is_empty() {
             self.try_parse_token::<TerminalIdentifier>()?

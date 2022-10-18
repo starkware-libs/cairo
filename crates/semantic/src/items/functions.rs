@@ -9,6 +9,7 @@ use syntax::node::{ast, Terminal, TypedSyntaxNode};
 
 use crate::corelib::unit_ty;
 use crate::db::SemanticGroup;
+use crate::diagnostic::SemanticDiagnosticKind::RepeatedModifier;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::Environment;
 use crate::resolve_path::Resolver;
@@ -92,11 +93,19 @@ pub fn function_signature_return_type(
 }
 
 /// Returns the modifiers of a variable, given the list of modifiers in the AST.
-pub fn compute_modifiers(modifier_list: &[Modifier]) -> semantic::Modifiers {
+pub fn compute_modifiers(
+    diagnostics: &mut SemanticDiagnostics,
+    modifier_list: &[Modifier],
+) -> semantic::Modifiers {
     let mut is_ref = false;
     for modifier in modifier_list {
         match modifier {
-            Modifier::Ref(_) => is_ref = true,
+            Modifier::Ref(terminal) => {
+                if is_ref {
+                    diagnostics.report(terminal, RepeatedModifier { modifier: "ref".into() });
+                }
+                is_ref = true
+            }
         }
     }
 
@@ -125,7 +134,10 @@ pub fn function_signature_params(
         let param = semantic::Parameter {
             id,
             ty,
-            modifiers: compute_modifiers(&ast_param.modifiers(syntax_db).elements(syntax_db)),
+            modifiers: compute_modifiers(
+                diagnostics,
+                &ast_param.modifiers(syntax_db).elements(syntax_db),
+            ),
         };
         semantic_params.push(param.clone());
         variables.insert(name, semantic::Variable::Param(param));
