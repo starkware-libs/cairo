@@ -4,6 +4,7 @@ use std::path::PathBuf;
 
 use casm::ap_change::ApChange;
 use indoc::indoc;
+use itertools::Itertools;
 use pretty_assertions;
 use sierra::ids::FunctionId;
 use sierra::program::Program;
@@ -49,6 +50,15 @@ fn read_sierra_example_file(name: &str) -> String {
     let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).parent().unwrap().to_owned();
     path.extend(["sierra", "examples", &format!("{name}.sierra")].into_iter());
     fs::read_to_string(path).unwrap()
+}
+
+/// Removes all comments and empty lines from the given program.
+fn strip_comments_and_linebreaks(program: &str) -> String {
+    return program
+        .split('\n')
+        .filter(|line| !(line.is_empty() || line.starts_with("//")))
+        .join("\n")
+        + "\n";
 }
 
 #[test_case(indoc! {"
@@ -192,11 +202,15 @@ fn read_sierra_example_file(name: &str) -> String {
                 [ap + 0] = [fp + -4] + 8, ap++;
                 [ap + 0] = 1, ap++;
                 ret;
+
+                // Statement #  7 - Calculates n - 1 and tests if n - 1 == 0.
                 [fp + -3] = [ap + 0] + 1, ap++;
                 jmp rel 7 if [ap + -1] != 0;
                 [ap + 0] = [fp + -4] + 6, ap++;
                 [ap + 0] = 1, ap++;
                 ret;
+
+                // Statement # 11  - n == 1, so we return updated gb and 1.
                 [ap + 0] = 1, ap++;
                 [ap + 0] = [ap + -2], ap++;
                 [ap + 0] = [ap + -1], ap++;
@@ -207,6 +221,9 @@ fn read_sierra_example_file(name: &str) -> String {
                 [ap + 0] = [ap + -2] + 0, ap++;
                 [ap + 0] = -1, ap++;
                 ret;
+
+                // Statement # 16
+                // Setting up the latest memory to be of the form [b=1, _, n=n-1, gb, a=1].
                 [ap + -4] = [ap + 0] + 1, ap++;
                 [ap + -3] = [ap + 0] + 5, ap++;
                 [ap + 0] = [ap + -4] + [ap + -8], ap++;
@@ -224,16 +241,23 @@ fn read_sierra_example_file(name: &str) -> String {
                 [ap + 0] = [fp + -4] + 3, ap++;
                 [ap + 0] = [ap + -2], ap++;
                 ret;
+
+                // Statement #  7 - calculating n - 1, and testing if n - 1 == 0.
                 [fp + -3] = [ap + 0] + 1, ap++;
                 jmp rel 6 if [ap + -1] != 0;
+                // Statement # 11 - n == 1, so we return updated gb and 1.
                 [ap + 0] = [fp + -4] + 1, ap++;
                 [ap + 0] = [ap + -3], ap++;
                 ret;
+
+                // Statement # 15 - Get gas for the recursive calls.
                 %{ memory[ap + 0] = 28 < memory[fp + -4] %}
                 jmp rel 7 if [ap + 0] != 0, ap++;
                 [ap + 0] = [fp + -4] + 0, ap++;
                 [ap + 0] = -10000, ap++;
                 ret;
+
+                // Statement # 24 - Performing both recursive calculations and returning their sum.
                 ap += 2;
                 [fp + -4] = [ap + 0] + 29, ap++;
                 [ap + -5] = [fp + 3] + 1;
@@ -252,7 +276,7 @@ fn sierra_to_casm(sierra_code: &str, builder: MetadataBuilder, expected_casm: &s
     let program = ProgramParser::new().parse(sierra_code).unwrap();
     pretty_assertions::assert_eq!(
         compile(&program, &builder.build(&program)).expect("Compilation failed.").to_string(),
-        expected_casm
+        strip_comments_and_linebreaks(expected_casm)
     );
 }
 
