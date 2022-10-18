@@ -7,8 +7,8 @@ use casm::instructions::{
     JnzInstruction, JumpInstruction,
 };
 use casm::operand::{
-    BinOpOperand, DerefOperand, DerefOrImmediate, DoubleDerefOperand, ImmediateOperand, Operation,
-    Register, ResOperand,
+    ap_deref_operand, BinOpOperand, DerefOperand, DerefOrImmediate, DoubleDerefOperand,
+    ImmediateOperand, Operation, Register, ResOperand,
 };
 use itertools::zip_eq;
 use sierra::extensions::arithmetic::{
@@ -18,6 +18,7 @@ use sierra::extensions::arithmetic::{
 use sierra::extensions::array::ArrayConcreteLibFunc;
 use sierra::extensions::boxing::BoxConcreteLibFunc;
 use sierra::extensions::core::CoreConcreteLibFunc;
+use sierra::extensions::enm::{EnumConcreteLibFunc, EnumInitConcreteLibFunc};
 use sierra::extensions::felt::FeltConcrete;
 use sierra::extensions::function_call::FunctionCallConcreteLibFunc;
 use sierra::extensions::gas::GasConcreteLibFunc;
@@ -43,6 +44,7 @@ pub enum InvocationError {
     InvalidReferenceExpressionForArgument,
     #[error("Unexpected error - an unregistered type id used.")]
     UnknownTypeId(ConcreteTypeId),
+    // TODO(yuval): add expected and actual.
     #[error("Expected a different number of arguments.")]
     WrongNumberOfArguments,
     #[error("The requested functionality is not implemented yet.")]
@@ -51,15 +53,17 @@ pub enum InvocationError {
     NotSized(Invocation),
     #[error("Expected variable data for statement not found.")]
     UnknownVariableData,
+    #[error("An integer overflow occurred.")]
+    IntegerOverflow,
     #[error(transparent)]
     FrameStateError(#[from] FrameStateError),
 }
 
-/// Describes the changes to the set of references at the branch target.
+/// Describes the changes to the set of references at a single branch target.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct BranchRefChanges {
-    // New references defined at a given branch.
-    // should correspond to BranchInfo.results.
+    /// New references defined at a given branch.
+    /// should correspond to BranchInfo.results.
     pub refs: Vec<ReferenceValue>,
     pub ap_change: ApChange,
 }
@@ -81,13 +85,14 @@ impl BranchRefChanges {
 /// The result from a compilation of a single invocation statement.
 #[derive(Debug, Eq, PartialEq)]
 pub struct CompiledInvocation {
-    // A vector instructions that implement the Invocation.
+    /// A vector of instructions that implement the invocation.
     pub instructions: Vec<Instruction>,
-    // A vector of static relocation.
+    /// A vector of static relocations.
     pub relocations: Vec<RelocationEntry>,
-    // A vector of BranchRefChanges, should correspond to Invocation.branches.
+    /// A vector of BranchRefChanges, should correspond to the branches of the invocation
+    /// statement.
     pub results: Vec<BranchRefChanges>,
-    // The environment after the invocation.
+    /// The environment after the invocation statement.
     pub environment: Environment,
 }
 
@@ -372,7 +377,15 @@ impl CompiledInvocationBuilder<'_> {
         ))
     }
 
-    /// Handles a jump non zero instruction.
+    /// Handles a jump non zero statement.
+    /// For example, this "Sierra statement"
+    /// ```ignore
+    /// felt_jump_nz(var=[ap-10]) { fallthrough() 1000(var) };
+    /// ```
+    /// translates to these casm instructions:
+    /// ```ignore
+    /// jmp rel <jump_offset_1000> if [ap-10] != 0
+    /// ```
     fn build_jump_nz(self) -> Result<CompiledInvocation, InvocationError> {
         let condition = match self.refs {
             [ReferenceValue { expression: ReferenceExpression::Deref(deref_operand), .. }] => {
@@ -633,6 +646,249 @@ impl CompiledInvocationBuilder<'_> {
             .into_iter(),
         ))
     }
+
+    /// Handles statement for initializing an enum.
+    /// For example, with this setup
+    /// ```ignore
+    /// type felt_ty = felt;
+    /// type unit_ty = Tuple;
+    /// type Option = Enum<felt_ty, unit_ty>;
+    /// libfunc init_option_some = enum_init<Option, 0>;
+    /// felt_const<8>() -> (felt8);
+    /// ````
+    /// this "Sierra statement"
+    /// ```ignore
+    /// init_option_some(felt8=[ap-5]) -> (some_id);
+    /// ```
+    /// translates to these casm instructions:
+    /// ```ignore
+    /// [ap] = 0; ap++
+    /// [ap] = [ap-5]; ap++
+    /// ```
+    fn build_enum_init(self, index: usize) -> Result<CompiledInvocation, InvocationError> {
+        let init_arg = match self.refs {
+            [ReferenceValue { expression: ReferenceExpression::Deref(operand), .. }] => operand,
+            [_] => return Err(InvocationError::InvalidReferenceExpressionForArgument),
+            _ => return Err(InvocationError::WrongNumberOfArguments),
+        };
+
+        let variant_selector = if self.invocation.branches.len() <= 2 {
+            // For num_branches <= 2, we use the index as the variant_selector as the `match`
+            // implementation jumps to the index 0 statement on 0, and to the index 1 statement on
+            // 1.
+            index as i128
+        } else {
+            // For num_branches > 2, the `enum_match` libfunc is implemented using a jump table. In
+            // order to optimize `enum_match`, we define the variant_selector as the relevant
+            // relative jump in case we match the actual variant.
+            //
+            // - To jump to the first variant (`index` == 0) we add "jump rel 1", as the jump
+            // instruction with a deref operand is of size 1.
+            // - To jump to the variant in index i, we add "jump rel (2 * i + 1)" as the rest of the
+            // jump instructions are with an immediate operand, which makes them of size
+            // 2.
+            if index.checked_mul(2).and_then(|x| x.checked_add(1)).is_none() {
+                return Err(InvocationError::IntegerOverflow);
+            }
+            (2 * index + 1) as i128
+        };
+
+        // TODO(yuval): once sizes > 1 are supported, change implementation to return a Sierra
+        // reference to be stored later.
+        Ok(self.build(
+            vec![
+                Instruction::new(
+                    InstructionBody::AssertEq(AssertEqInstruction {
+                        a: ap_deref_operand(0),
+                        b: ResOperand::Immediate(ImmediateOperand { value: variant_selector }),
+                    }),
+                    true,
+                ),
+                Instruction::new(
+                    InstructionBody::AssertEq(AssertEqInstruction {
+                        a: ap_deref_operand(0),
+                        b: ResOperand::Deref(*init_arg),
+                    }),
+                    true,
+                ),
+            ],
+            vec![],
+            [ApChange::Known(2)].into_iter(),
+            vec![[ReferenceExpression::Deref(ap_deref_operand(-2))].into_iter()].into_iter(),
+        ))
+    }
+
+    /// Handles statement for matching an enum.
+    fn build_enum_match(self) -> Result<CompiledInvocation, InvocationError> {
+        let matched_var = match self.refs {
+            [ReferenceValue { expression: ReferenceExpression::Deref(deref_operand), .. }] => {
+                deref_operand
+            }
+            [_] => return Err(InvocationError::InvalidReferenceExpressionForArgument),
+            _ => return Err(InvocationError::WrongNumberOfArguments),
+        };
+
+        let target_statement_ids = self.invocation.branches.iter().map(|b| match b {
+            BranchInfo { target: BranchTarget::Statement(stmnt_id), .. } => *stmnt_id,
+            _ => panic!("malformed invocation"),
+        });
+
+        let num_branches = self.invocation.branches.len();
+        if num_branches <= 2 {
+            self.build_enum_match_short(num_branches, matched_var, target_statement_ids)
+        } else {
+            self.build_enum_match_long(num_branches, matched_var, target_statement_ids)
+        }
+    }
+
+    /// Handles statement for matching an enum with 1 or 2 variants.
+    /// For example, with this setup
+    /// ```ignore
+    /// type felt_ty = felt;
+    /// type unit_ty = Tuple;
+    /// type Option = Enum<felt_ty, unit_ty>;
+    /// libfunc init_option_some = enum_init<Option, 0>;
+    /// felt_const<8>() -> (felt8);
+    /// init_option_some(felt8=[ap-5]) -> (enum_var);
+    /// ````
+    /// this "Sierra statement" (2-variants-enum)
+    /// ```ignore
+    /// match_option(enum_var=[ap-10]) {1000(some=[ap-9]), 2000(none=[ap-9])};
+    /// ```
+    /// translates to these casm instructions:
+    /// ```ignore
+    /// jmp rel <jump_offset_2000> if [ap-10] != 0
+    /// jmp rel <jump_offset_1000>
+    /// ```
+    /// Or this "Sierra statement" (single-variant-enum)
+    /// ```ignore
+    /// match_option(enum_var=[ap-10]) {1000(var=[ap-9])};
+    /// ```
+    /// translates to these casm instructions:
+    /// ```ignore
+    /// jmp rel <jump_offset_1000>
+    /// ```
+    ///
+    /// Assumes that num_branches == self.invocation.branches.len() ==
+    /// target_statement_ids_iter.len() and that num_branches <= 2.
+    fn build_enum_match_short(
+        self,
+        num_branches: usize,
+        matched_var: &DerefOperand,
+        mut target_statement_ids: impl Iterator<Item = StatementIdx>,
+    ) -> Result<CompiledInvocation, InvocationError> {
+        let mut instructions = Vec::new();
+        let mut relocations = Vec::new();
+        // Add the jump_nz instruction if we have 2 branches.
+        if num_branches == 2 {
+            instructions.push(Instruction::new(
+                InstructionBody::Jnz(JnzInstruction {
+                    jump_offset: DerefOrImmediate::Immediate(ImmediateOperand { value: 0 }),
+                    condition: *matched_var,
+                }),
+                false,
+            ));
+            // Add the first instruction of jumping to branch 1 if jmp_table_idx != 0 (1).
+            relocations.push(RelocationEntry {
+                instruction_idx: 0,
+                relocation: Relocation::RelativeStatementId(target_statement_ids.nth(1).unwrap()),
+            });
+        }
+
+        // TODO(yuval): this can be avoided with fallthrough.
+        // Add the jump instruction to branch 0, anyway.
+        instructions.push(Instruction::new(
+            InstructionBody::Jump(JumpInstruction {
+                target: DerefOrImmediate::Immediate(ImmediateOperand { value: 0 }),
+                relative: true,
+            }),
+            false,
+        ));
+        relocations.push(RelocationEntry {
+            instruction_idx: instructions.len() - 1,
+            relocation: Relocation::RelativeStatementId(target_statement_ids.next().unwrap()),
+        });
+
+        Ok(self.build(
+            instructions,
+            relocations,
+            vec![ApChange::Known(0); num_branches].into_iter(),
+            vec![
+                [ReferenceExpression::Deref(offset_in_struct(matched_var, 1))].into_iter();
+                num_branches
+            ]
+            .into_iter(),
+        ))
+    }
+
+    /// Handles statement for matching an enum with 3+ variants.
+    /// For example, with this setup
+    /// ```ignore
+    /// type felt_ty = felt;
+    /// type unit_ty = Tuple;
+    /// type Option = Enum<felt_ty, unit_ty>;
+    /// libfunc init_option_some = enum_init<Option, 0>;
+    /// felt_const<8>() -> (felt8);
+    /// init_option_some(felt8=[ap-5]) -> (enum_var);
+    /// ````
+    /// this "Sierra statement" (3-variants-enum)
+    /// ```ignore
+    /// match_option(enum_var=[ap-10]) {1000(pos=[ap-9]), 2000(neg=[ap-9]), 3000(zero=[ap-9])};
+    /// ```
+    /// translates to these casm instructions:
+    /// ```ignore
+    /// jmp rel [ap-10]
+    /// jmp rel <jump_offset_1000>
+    /// jmp rel <jump_offset_2000>
+    /// jmp rel <jump_offset_3000>
+    /// ```
+    /// Where in the first location of the enum_var there will be the jmp_table_idx (1 for the first
+    /// branch, 2 for the second and so on).
+    ///
+    /// Assumes that num_branches == self.invocation.branches.len() == target_statement_ids.len()
+    /// and that num_branches > 2.
+    fn build_enum_match_long(
+        self,
+        num_branches: usize,
+        matched_var: &DerefOperand,
+        target_statement_ids: impl Iterator<Item = StatementIdx>,
+    ) -> Result<CompiledInvocation, InvocationError> {
+        // The first instruction is the jmp to the relevant index in the jmp table.
+        let mut instructions = vec![Instruction::new(
+            InstructionBody::Jump(JumpInstruction {
+                target: DerefOrImmediate::Deref(*matched_var),
+                relative: true,
+            }),
+            false,
+        )];
+        let mut relocations = Vec::new();
+
+        for (i, stmnt_id) in target_statement_ids.enumerate() {
+            // Add the jump instruction to the relevant target.
+            instructions.push(Instruction::new(
+                InstructionBody::Jump(JumpInstruction {
+                    target: DerefOrImmediate::Immediate(ImmediateOperand { value: 0 }),
+                    relative: true,
+                }),
+                false,
+            ));
+            relocations.push(RelocationEntry {
+                instruction_idx: i + 1,
+                relocation: Relocation::RelativeStatementId(stmnt_id),
+            });
+        }
+
+        Ok(self.build(
+            instructions,
+            relocations,
+            vec![ApChange::Known(0); num_branches].into_iter(),
+            vec![
+                [ReferenceExpression::Deref(offset_in_struct(matched_var, 1))].into_iter();
+                num_branches
+            ]
+            .into_iter(),
+        ))
+    }
 }
 
 /// Information in the program level required for compiling an invocation.
@@ -641,8 +897,8 @@ pub struct ProgramInfo<'a> {
     pub type_sizes: &'a TypeSizeMap,
 }
 
-/// Given an invocation and concrete libfunc, creates a compiled representation of the Sierra
-/// command.
+/// Given a Sierra invocation statement and concrete libfunc, creates a compiled casm representation
+/// of the Sierra statement.
 pub fn compile_invocation(
     program_info: ProgramInfo<'_>,
     invocation: &Invocation,
@@ -702,6 +958,21 @@ pub fn compile_invocation(
             ty,
             ..
         })) => builder.build_store_local(ty),
+        CoreConcreteLibFunc::Enum(EnumConcreteLibFunc::Init(EnumInitConcreteLibFunc {
+            index,
+            ..
+        })) => builder.build_enum_init(*index),
+        CoreConcreteLibFunc::Enum(EnumConcreteLibFunc::Match(_)) => builder.build_enum_match(),
         _ => Err(InvocationError::NotImplemented(invocation.clone())),
     }
+}
+
+// TODO(yuval/gil): extract to some utils or use Gil's way.
+// TODO(yuval/gil): verify no i16 overflow.
+// TODO(yuval/gil): verify offset < strct-size.
+// TODO(yuval/gil): the new strct-size should be the original minus offset.
+/// Creates a new DerefOperand from the referenced DerefOperand, with an offset into it. That is, if
+/// `strct` is [reg + x], then offset_in_struct(&strct, y) is [reg + (x + y)].
+fn offset_in_struct(strct: &DerefOperand, offset: i16) -> DerefOperand {
+    DerefOperand { register: strct.register, offset: strct.offset + offset }
 }
