@@ -19,7 +19,7 @@ error: Unexpected return type. Expected: "core::felt", found: "()".
  --> lib.cairo:1:27
 func foo(a: felt) -> felt {
                           ^
-  
+
 
 //! > lowering_diagnostics
 error: Unreachable code
@@ -29,13 +29,13 @@ error: Unreachable code
 
 //! > lowering_format
 blk0:
-Inputs: v0: core::felt, 
+Inputs: v0: core::felt
 Statements:
-  (v1: core::felt, ) <- core::felt_mul(v0, v0, )
-  (v2: core::felt, ) <- core::felt_add(v0, v1, )
-Drops: v0, v1, 
+  (v1: core::felt) <- core::felt_mul(v0, v0)
+  (v2: core::felt) <- core::felt_add(v0, v1)
+Drops: v0, v1
 End:
-  Return(v2, )
+  Return(v2)
 
 //! > ==========================================================================
 
@@ -61,15 +61,15 @@ foo
 
 //! > lowering_format
 blk0:
-Inputs: v0: core::felt, 
+Inputs: v0: core::felt
 Statements:
-  (v1: core::felt, ) <- 1u
-  (v2: (core::felt, core::felt), ) <- tuple_construct(v1, v0, )
-  (v3: core::felt, v4: core::felt, ) <- tuple_destruct(v2)
-  (v5: core::felt, ) <- 5u
-Drops: v0, v1, v2, v3, v4, 
+  (v1: core::felt) <- 1u
+  (v2: (core::felt, core::felt)) <- tuple_construct(v1, v0)
+  (v3: core::felt, v4: core::felt) <- tuple_destruct(v2)
+  (v5: core::felt) <- 5u
+Drops: v0, v1, v2, v3, v4
 End:
-  Callsite(v5, )
+  Callsite(v5)
 
 //! > ==========================================================================
 
@@ -97,68 +97,68 @@ foo
 
 //! > lowering_format
 blk0:
-Inputs: 
+Inputs:
 Statements:
-  (v1: core::felt, ) <- 7u
-Drops: v1, 
+  (v1: core::felt) <- 7u
+Drops: v1
 End:
   Callsite()
 
 blk1:
-Inputs: 
+Inputs:
 Statements:
 Drops: 
 End:
-  Callsite(v2, )
+  Callsite(v2)
 
 blk2:
-Inputs: v7: (), 
+Inputs: v7: ()
 Statements:
-  (v8: core::felt, ) <- 6u
-Drops: v7, 
+  (v8: core::felt) <- 6u
+Drops: v7
 End:
-  Callsite(v8, )
+  Callsite(v8)
 
 blk3:
-Inputs: v9: (), 
+Inputs: v9: ()
 Statements:
-  (v10: core::felt, ) <- 7u
-Drops: v9, 
+  (v10: core::felt) <- 7u
+Drops: v9
 End:
-  Callsite(v10, )
+  Callsite(v10)
 
 blk4:
-Inputs: 
+Inputs:
 Statements:
-  (v15: core::felt, ) <- 3u
-  (v16: core::felt, ) <- 0u
-  (v17: core::felt, ) <- core::felt_add(v0, v16, )
-Drops: v15, v16, 
+  (v15: core::felt) <- 3u
+  (v16: core::felt) <- 0u
+  (v17: core::felt) <- core::felt_add(v0, v16)
+Drops: v15, v16
 End:
-  Callsite(v17, v0, )
+  Callsite(v17, v0)
 
 blk5:
-Inputs: v0: core::felt, 
+Inputs: v0: core::felt
 Statements:
   () <- blk0()
-  (v2: (), ) <- tuple_construct()
-  (v3: (), ) <- blk1()
-  (v4: core::felt, ) <- 1u
-  (v5: core::felt, ) <- 1u
-  (v6: core::bool, ) <- core::felt_eq(v4, v5, )
-  (v11: core::felt, ) <- match_enum(v6) {
+  (v2: ()) <- tuple_construct()
+  (v3: ()) <- blk1()
+  (v4: core::felt) <- 1u
+  (v5: core::felt) <- 1u
+  (v6: core::bool) <- core::felt_eq(v4, v5)
+  (v11: core::felt) <- match_enum(v6) {
     bool::True => blk2,
     bool::False => blk3,
   }
-  (v12: core::felt, ) <- 3u
-  (v13: core::felt, ) <- test_crate::foo(v12, )
-  (v14: core::felt, ) <- 5u
-  (v18: core::felt, v19: core::felt, ) <- blk4()
-  (v20: core::felt, ) <- core::felt_mul(v14, v18, )
-  (v21: core::felt, ) <- core::felt_add(v13, v20, )
-Drops: v0, v2, v3, v4, v5, v6, v11, v12, v13, v14, v18, v19, v20, 
+  (v12: core::felt) <- 3u
+  (v13: core::felt) <- test_crate::foo(v12)
+  (v14: core::felt) <- 5u
+  (v18: core::felt, v19: core::felt) <- blk4()
+  (v20: core::felt) <- core::felt_mul(v14, v18)
+  (v21: core::felt) <- core::felt_add(v13, v20)
+Drops: v0, v2, v3, v4, v5, v6, v11, v12, v13, v14, v18, v19, v20
 End:
-  Callsite(v21, )
+  Callsite(v21)
 
 //! > ==========================================================================
 
@@ -192,36 +192,36 @@ enum MyEnum {
 
 //! > lowering_format
 blk0:
-Inputs: v1: (), 
+Inputs: v1: ()
 Statements:
-  (v2: core::felt, ) <- 5u
-Drops: v1, 
+  (v2: core::felt) <- 5u
+Drops: v1
 End:
-  Return(v2, )
+  Return(v2)
 
 blk1:
-Inputs: v3: core::felt, 
+Inputs: v3: core::felt
 Statements:
 Drops: 
 End:
-  Callsite(v3, )
+  Callsite(v3)
 
 blk2:
-Inputs: v4: core::box::Box::<((), core::felt)>, 
+Inputs: v4: core::box::Box::<((), core::felt)>
 Statements:
-  (v5: core::felt, ) <- 7u
-Drops: v4, 
+  (v5: core::felt) <- 7u
+Drops: v4
 End:
-  Callsite(v5, )
+  Callsite(v5)
 
 blk3:
-Inputs: v0: test_crate::MyEnum, 
+Inputs: v0: test_crate::MyEnum
 Statements:
-  (v6: core::felt, ) <- match_enum(v0) {
+  (v6: core::felt) <- match_enum(v0) {
     MyEnum::A => blk0,
     MyEnum::B => blk1,
     MyEnum::C => blk2,
   }
-Drops: v0, 
+Drops: v0
 End:
-  Callsite(v6, )
+  Callsite(v6)

@@ -4,6 +4,7 @@ use db_utils::define_short_id;
 use debug::DebugWithDb;
 use defs::ids::{GenericFunctionId, GenericParamId, ParamLongId};
 use diagnostics_proc_macros::DebugWithDb;
+use syntax::node::ast::Modifier;
 use syntax::node::{ast, Terminal, TypedSyntaxNode};
 
 use crate::corelib::unit_ty;
@@ -90,6 +91,18 @@ pub fn function_signature_return_type(
     resolve_type(db, diagnostics, resolver, &ty_syntax)
 }
 
+/// Returns the modifiers of a variable, given the list of modifiers in the AST.
+pub fn compute_modifiers(modifier_list: &[Modifier]) -> semantic::Modifiers {
+    let mut is_ref = false;
+    for modifier in modifier_list {
+        match modifier {
+            Modifier::Ref(_) => is_ref = true,
+        }
+    }
+
+    semantic::Modifiers { is_ref }
+}
+
 /// Returns the parameters of the given function signature's AST.
 pub fn function_signature_params(
     diagnostics: &mut SemanticDiagnostics,
@@ -106,9 +119,14 @@ pub fn function_signature_params(
         let name = ast_param.name(syntax_db).text(syntax_db);
         let id = db.intern_param(ParamLongId(resolver.module_id, ast_param.stable_ptr()));
         let ty_syntax = ast_param.type_clause(syntax_db).ty(syntax_db);
+
         // TODO(yuval): Diagnostic?
         let ty = resolve_type(db, diagnostics, resolver, &ty_syntax);
-        let param = semantic::Parameter { id, ty };
+        let param = semantic::Parameter {
+            id,
+            ty,
+            modifiers: compute_modifiers(&ast_param.modifiers(syntax_db).elements(syntax_db)),
+        };
         semantic_params.push(param.clone());
         variables.insert(name, semantic::Variable::Param(param));
     }
@@ -167,10 +185,11 @@ pub fn concrete_function_signature(
             Some(Signature {
                 params: generic_signature
                     .params
-                    .iter()
+                    .into_iter()
                     .map(|param| Parameter {
                         id: param.id,
                         ty: substitute_generics(db, &substitution, param.ty),
+                        modifiers: param.modifiers,
                     })
                     .collect(),
                 return_type: substitute_generics(db, &substitution, generic_signature.return_type),

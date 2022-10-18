@@ -20,17 +20,19 @@ use sierra::extensions::boxing::BoxConcreteLibFunc;
 use sierra::extensions::core::CoreConcreteLibFunc;
 use sierra::extensions::felt::FeltConcrete;
 use sierra::extensions::function_call::FunctionCallConcreteLibFunc;
+use sierra::extensions::gas::GasConcreteLibFunc;
 use sierra::extensions::mem::{
     AllocLocalConcreteLibFunc, MemConcreteLibFunc, StoreLocalConcreteLibFunc,
     StoreTempConcreteLibFunc,
 };
 use sierra::extensions::ConcreteLibFunc;
 use sierra::ids::ConcreteTypeId;
-use sierra::program::{BranchInfo, BranchTarget, Invocation};
+use sierra::program::{BranchInfo, BranchTarget, Invocation, StatementIdx};
 use thiserror::Error;
 
 use crate::environment::frame_state::FrameStateError;
 use crate::environment::{frame_state, Environment};
+use crate::metadata::Metadata;
 use crate::references::{BinOpExpression, ReferenceExpression, ReferenceValue};
 use crate::relocations::{Relocation, RelocationEntry};
 use crate::type_sizes::TypeSizeMap;
@@ -47,6 +49,8 @@ pub enum InvocationError {
     NotImplemented(Invocation),
     #[error("The functionality is supported only for sized types.")]
     NotSized(Invocation),
+    #[error("Expected variable data for statement not found.")]
+    UnknownVariableData,
     #[error(transparent)]
     FrameStateError(#[from] FrameStateError),
 }
@@ -111,11 +115,12 @@ pub fn check_references_on_stack(
 
 /// Helper for building compiled invocations.
 struct CompiledInvocationBuilder<'a> {
-    pub environment: Environment,
-    pub libfunc: &'a CoreConcreteLibFunc,
+    pub program_info: ProgramInfo<'a>,
     pub invocation: &'a Invocation,
+    pub libfunc: &'a CoreConcreteLibFunc,
+    pub idx: StatementIdx,
     pub refs: &'a [ReferenceValue],
-    pub type_sizes: &'a TypeSizeMap,
+    pub environment: Environment,
 }
 impl CompiledInvocationBuilder<'_> {
     /// Creates a new invocation.
@@ -212,7 +217,7 @@ impl CompiledInvocationBuilder<'_> {
         self,
         func_call: &FunctionCallConcreteLibFunc,
     ) -> Result<CompiledInvocation, InvocationError> {
-        check_references_on_stack(self.type_sizes, self.refs)?;
+        check_references_on_stack(self.program_info.type_sizes, self.refs)?;
 
         let output_types = func_call.output_types();
         let fallthrough_outputs = &output_types[0];
@@ -227,6 +232,7 @@ impl CompiledInvocationBuilder<'_> {
             }));
 
             offset -= self
+                .program_info
                 .type_sizes
                 .get(output_type)
                 .ok_or_else(|| InvocationError::UnknownTypeId(output_type.clone()))?;
@@ -258,7 +264,7 @@ impl CompiledInvocationBuilder<'_> {
         src_expr: &ReferenceExpression,
         inc_ap: bool,
     ) -> Result<Instruction, InvocationError> {
-        match self.type_sizes.get(src_type) {
+        match self.program_info.type_sizes.get(src_type) {
             Some(1) => Ok(()),
             Some(0) => Err(InvocationError::NotSized(self.invocation.clone())),
             _ => Err(InvocationError::NotImplemented(self.invocation.clone())),
@@ -296,7 +302,9 @@ impl CompiledInvocationBuilder<'_> {
                     *a,
                     ResOperand::BinOp(BinOpOperand { op: Operation::Mul, a: dst, b: b.clone() }),
                 ),
-                _ => return Err(InvocationError::NotImplemented(self.invocation.clone())),
+                _ => {
+                    return Err(InvocationError::NotImplemented(self.invocation.clone()));
+                }
             },
             ReferenceExpression::AllocateSegment => {
                 // TODO(orizi): Remove unnecessary instruction in the case `inc_ap` is false.
@@ -440,7 +448,7 @@ impl CompiledInvocationBuilder<'_> {
 
     /// Handles instruction for creating a box.
     fn build_into_box(self) -> Result<CompiledInvocation, InvocationError> {
-        if self.type_sizes.get(&self.libfunc.output_types()[0][0]) != Some(&1) {
+        if self.program_info.type_sizes.get(&self.libfunc.output_types()[0][0]) != Some(&1) {
             todo!("Add support for taking non-single cell references.");
         }
         let expression = match self.refs {
@@ -477,7 +485,7 @@ impl CompiledInvocationBuilder<'_> {
         mut self,
         ty: &ConcreteTypeId,
     ) -> Result<CompiledInvocation, InvocationError> {
-        let allocation_size = match self.type_sizes.get(ty) {
+        let allocation_size = match self.program_info.type_sizes.get(ty) {
             Some(0) => Err(InvocationError::NotSized(self.invocation.clone())),
             Some(size) => Ok(*size),
             _ => Err(InvocationError::NotImplemented(self.invocation.clone())),
@@ -534,18 +542,111 @@ impl CompiledInvocationBuilder<'_> {
             .into_iter(),
         ))
     }
+
+    /// Handles the get gas invocation.
+    fn build_get_gas(self) -> Result<CompiledInvocation, InvocationError> {
+        // TODO(orizi): Add Range-Check usage.
+        let requested_count = self
+            .program_info
+            .metadata
+            .gas_info
+            .variable_values
+            .get(&self.idx)
+            .ok_or(InvocationError::UnknownVariableData)?;
+        let gas_counter_value = match self.refs {
+            [ReferenceValue { expression: ReferenceExpression::Deref(deref_operand), .. }] => {
+                deref_operand
+            }
+            [_] => return Err(InvocationError::InvalidReferenceExpressionForArgument),
+            _ => return Err(InvocationError::WrongNumberOfArguments),
+        };
+
+        let target_statement_id = match self.invocation.branches.as_slice() {
+            [BranchInfo { target: BranchTarget::Statement(statement_id), .. }, _] => statement_id,
+            _ => panic!("malformed invocation"),
+        };
+
+        Ok(self.build(
+            vec![Instruction {
+                body: InstructionBody::Jnz(JnzInstruction {
+                    jump_offset: DerefOrImmediate::Immediate(ImmediateOperand { value: 0 }),
+                    condition: DerefOperand { register: Register::AP, offset: 0 },
+                }),
+                inc_ap: true,
+                hints: vec![Hint::TestLessThan {
+                    lhs: DerefOrImmediate::Immediate(ImmediateOperand {
+                        value: (requested_count - 1) as i128,
+                    }),
+                    rhs: DerefOrImmediate::Deref(*gas_counter_value),
+                }],
+            }],
+            vec![RelocationEntry {
+                instruction_idx: 0,
+                relocation: Relocation::RelativeStatementId(*target_statement_id),
+            }],
+            [ApChange::Known(1), ApChange::Known(1)].into_iter(),
+            [
+                vec![ReferenceExpression::BinOp(BinOpExpression {
+                    op: Operator::Sub,
+                    a: *gas_counter_value,
+                    b: DerefOrImmediate::Immediate(ImmediateOperand {
+                        value: *requested_count as i128,
+                    }),
+                })]
+                .into_iter(),
+                vec![ReferenceExpression::Deref(*gas_counter_value)].into_iter(),
+            ]
+            .into_iter(),
+        ))
+    }
+
+    /// Handles the refund gas invocation.
+    fn build_refund_gas(self) -> Result<CompiledInvocation, InvocationError> {
+        let requested_count = self
+            .program_info
+            .metadata
+            .gas_info
+            .variable_values
+            .get(&self.idx)
+            .ok_or(InvocationError::UnknownVariableData)?;
+        let gas_counter_value = match self.refs {
+            [ReferenceValue { expression: ReferenceExpression::Deref(deref_operand), .. }] => {
+                deref_operand
+            }
+            [_] => return Err(InvocationError::InvalidReferenceExpressionForArgument),
+            _ => return Err(InvocationError::WrongNumberOfArguments),
+        };
+        Ok(self.build_only_reference_changes(
+            [ReferenceExpression::BinOp(BinOpExpression {
+                op: Operator::Add,
+                a: *gas_counter_value,
+                b: DerefOrImmediate::Immediate(ImmediateOperand {
+                    value: *requested_count as i128,
+                }),
+            })]
+            .into_iter(),
+        ))
+    }
+}
+
+/// Information in the program level required for compiling an invocation.
+pub struct ProgramInfo<'a> {
+    pub metadata: &'a Metadata,
+    pub type_sizes: &'a TypeSizeMap,
 }
 
 /// Given an invocation and concrete libfunc, creates a compiled representation of the Sierra
 /// command.
 pub fn compile_invocation(
+    program_info: ProgramInfo<'_>,
     invocation: &Invocation,
     libfunc: &CoreConcreteLibFunc,
+    idx: StatementIdx,
     refs: &[ReferenceValue],
-    type_sizes: &TypeSizeMap,
     environment: Environment,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let builder = CompiledInvocationBuilder { environment, libfunc, refs, invocation, type_sizes };
+    let builder =
+        CompiledInvocationBuilder { program_info, invocation, libfunc, idx, refs, environment };
     match libfunc {
         // TODO(ilya, 10/10/2022): Handle type.
         CoreConcreteLibFunc::Felt(FeltConcrete::Operation(OperationConcreteLibFunc::Binary(
@@ -560,6 +661,8 @@ pub fn compile_invocation(
                 [ReferenceExpression::Immediate(ImmediateOperand { value: libfunc.c as i128 })]
                     .into_iter(),
             )),
+        CoreConcreteLibFunc::Gas(GasConcreteLibFunc::GetGas(_)) => builder.build_get_gas(),
+        CoreConcreteLibFunc::Gas(GasConcreteLibFunc::RefundGas(_)) => builder.build_refund_gas(),
         CoreConcreteLibFunc::Array(ArrayConcreteLibFunc::New(_)) => builder.build_array_new(),
         CoreConcreteLibFunc::Array(ArrayConcreteLibFunc::Append(_)) => builder.build_array_append(),
         CoreConcreteLibFunc::Drop(_) => Ok(builder.build_only_reference_changes([].into_iter())),

@@ -31,10 +31,13 @@ impl DebugWithDb<LoweredFormatter<'_>> for Lowered {
 impl DebugWithDb<LoweredFormatter<'_>> for Block {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         write!(f, "Inputs:")?;
-        write!(f, " ")?;
-        for var in &self.inputs {
+        let mut inputs = self.inputs.iter().peekable();
+        while let Some(var) = inputs.next() {
+            write!(f, " ")?;
             format_var_with_ty(*var, f, ctx)?;
-            write!(f, ", ")?;
+            if inputs.peek().is_some() {
+                write!(f, ",")?;
+            }
         }
 
         writeln!(f, "\nStatements:")?;
@@ -46,9 +49,12 @@ impl DebugWithDb<LoweredFormatter<'_>> for Block {
 
         write!(f, "Drops:")?;
         write!(f, " ")?;
-        for var in &self.drops {
+        let mut drops = self.drops.iter().peekable();
+        while let Some(var) = drops.next() {
             var.fmt(f, ctx)?;
-            write!(f, ", ")?;
+            if drops.peek().is_some() {
+                write!(f, ", ")?;
+            }
         }
 
         writeln!(f, "\nEnd:")?;
@@ -72,9 +78,12 @@ impl DebugWithDb<LoweredFormatter<'_>> for BlockEnd {
                 return write!(f, "  Unreachable");
             }
         };
-        for var in outputs {
+        let mut outputs = outputs.iter().peekable();
+        while let Some(var) = outputs.next() {
             var.fmt(f, ctx)?;
-            write!(f, ", ")?;
+            if outputs.peek().is_some() {
+                write!(f, ", ")?;
+            }
         }
         write!(f, ")")
     }
@@ -112,9 +121,12 @@ impl DebugWithDb<LoweredFormatter<'_>> for VariableId {
 impl DebugWithDb<LoweredFormatter<'_>> for Statement {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         write!(f, "(")?;
-        for var in self.outputs() {
+        let mut outputs = self.outputs().into_iter().peekable();
+        while let Some(var) = outputs.next() {
             format_var_with_ty(var, f, ctx)?;
-            write!(f, ", ")?;
+            if outputs.peek().is_some() {
+                write!(f, ", ")?;
+            }
         }
         write!(f, ") <- ")?;
         match self {
@@ -145,9 +157,12 @@ impl DebugWithDb<LoweredFormatter<'_>> for StatementLiteral {
 impl DebugWithDb<LoweredFormatter<'_>> for StatementCall {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         write!(f, "{:?}(", self.function.debug(ctx.db))?;
-        for var in &self.inputs {
+        let mut inputs = self.inputs.iter().peekable();
+        while let Some(var) = inputs.next() {
             var.fmt(f, ctx)?;
-            write!(f, ", ")?;
+            if inputs.peek().is_some() {
+                write!(f, ", ")?;
+            }
         }
         write!(f, ")")
     }
@@ -182,9 +197,12 @@ impl DebugWithDb<LoweredFormatter<'_>> for ConcreteVariant {
 impl DebugWithDb<LoweredFormatter<'_>> for StatementTupleConstruct {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         write!(f, "tuple_construct(")?;
-        for var in &self.inputs {
+        let mut inputs = self.inputs.iter().peekable();
+        while let Some(var) = inputs.next() {
             var.fmt(f, ctx)?;
-            write!(f, ", ")?;
+            if inputs.peek().is_some() {
+                write!(f, ", ")?;
+            }
         }
         write!(f, ")")
     }
