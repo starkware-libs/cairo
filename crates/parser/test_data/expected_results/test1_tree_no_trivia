@@ -51,6 +51,7 @@
     │   │       ├── statements (kind: StatementList)
     │   │       │   ├── child #0 (kind: StatementLet)
     │   │       │   │   ├── let_kw (kind: TokenLet): 'let'
+    │   │       │   │   ├── modifiers (kind: ModifierList) []
     │   │       │   │   ├── pattern (kind: ExprPath)
     │   │       │   │   │   └── item #0 (kind: PathSegmentSimple)
     │   │       │   │   │       └── ident (kind: TokenIdentifier): 'bla3'
@@ -64,6 +65,7 @@
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   ├── child #1 (kind: StatementLet)
     │   │       │   │   ├── let_kw (kind: TokenLet): 'let'
+    │   │       │   │   ├── modifiers (kind: ModifierList) []
     │   │       │   │   ├── pattern (kind: ExprPath)
     │   │       │   │   │   └── item #0 (kind: PathSegmentSimple)
     │   │       │   │   │       └── ident (kind: TokenIdentifier): 'bla4'
@@ -81,6 +83,7 @@
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   ├── child #2 (kind: StatementLet)
     │   │       │   │   ├── let_kw (kind: TokenLet): 'let'
+    │   │       │   │   ├── modifiers (kind: ModifierList) []
     │   │       │   │   ├── pattern (kind: ExprPath)
     │   │       │   │   │   └── item #0 (kind: PathSegmentSimple)
     │   │       │   │   │       └── ident (kind: TokenIdentifier): 'x'
@@ -90,6 +93,7 @@
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   ├── child #3 (kind: StatementLet)
     │   │       │   │   ├── let_kw (kind: TokenLet): 'let'
+    │   │       │   │   ├── modifiers (kind: ModifierList) []
     │   │       │   │   ├── pattern (kind: ExprPath)
     │   │       │   │   │   └── item #0 (kind: PathSegmentSimple)
     │   │       │   │   │       └── ident (kind: TokenIdentifier): 'y'
@@ -122,6 +126,7 @@
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   ├── child #4 (kind: StatementLet)
     │   │       │   │   ├── let_kw (kind: TokenLet): 'let'
+    │   │       │   │   ├── modifiers (kind: ModifierList) []
     │   │       │   │   ├── pattern (kind: ExprPath)
     │   │       │   │   │   └── item #0 (kind: PathSegmentSimple)
     │   │       │   │   │       └── ident (kind: TokenIdentifier): 'z'
@@ -158,6 +163,7 @@
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   ├── child #5 (kind: StatementLet)
     │   │       │   │   ├── let_kw (kind: TokenLet): 'let'
+    │   │       │   │   ├── modifiers (kind: ModifierList) []
     │   │       │   │   ├── pattern (kind: ExprPath)
     │   │       │   │   │   └── item #0 (kind: PathSegmentSimple)
     │   │       │   │   │       └── ident (kind: TokenIdentifier): 'x'

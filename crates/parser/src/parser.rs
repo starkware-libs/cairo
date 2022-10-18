@@ -643,13 +643,23 @@ impl<'a> Parser<'a> {
                 let let_kw = self.take::<TerminalLet>();
                 // TODO(yuval): support patterns instead of only an identifier.
                 let name = self.parse_pattern();
+                let modifier_list = self.parse_modifier_list();
                 let type_clause = self.parse_option_type_clause();
                 let eq = self.parse_token::<TerminalEq>();
                 let rhs = self.parse_expr();
                 let semicolon = self.parse_token::<TerminalSemicolon>();
                 Some(
-                    StatementLet::new_green(self.db, let_kw, name, type_clause, eq, rhs, semicolon)
-                        .into(),
+                    StatementLet::new_green(
+                        self.db,
+                        let_kw,
+                        ModifierList::new_green(self.db, modifier_list),
+                        name,
+                        type_clause,
+                        eq,
+                        rhs,
+                        semicolon,
+                    )
+                    .into(),
                 )
             }
             SyntaxKind::TerminalReturn => {
@@ -727,13 +737,22 @@ impl<'a> Parser<'a> {
         )
     }
 
-    /// Returns a GreenId of a node with kind Param or None if a parameter can't be parsed.
+    /// Returns a GreenId of a node with kind Modifier or None if a parameter can't be parsed.
     fn try_parse_modifier(&mut self) -> Option<ModifierGreen> {
         match self.peek().kind {
             SyntaxKind::TerminalRef => Some(self.take::<TerminalRef>().into()),
             SyntaxKind::TerminalMut => Some(self.take::<TerminalMut>().into()),
             _ => None,
         }
+    }
+
+    fn parse_modifier_list(&mut self) -> Vec<ModifierGreen> {
+        let mut modifier_list = vec![];
+
+        while let Some(modifier) = self.try_parse_modifier() {
+            modifier_list.push(modifier);
+        }
+        return modifier_list;
     }
 
     /// Returns a GreenId of a node with kind Param or None if a parameter can't be parsed.

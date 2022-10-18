@@ -3909,6 +3909,7 @@ impl StatementLet {
     pub fn new_green(
         db: &dyn SyntaxGroup,
         let_kw: TerminalLetGreen,
+        modifiers: ModifierListGreen,
         pattern: PatternGreen,
         type_clause: OptionTypeClauseGreen,
         eq: TerminalEqGreen,
@@ -3916,7 +3917,7 @@ impl StatementLet {
         semicolon: TerminalSemicolonGreen,
     ) -> StatementLetGreen {
         let children: Vec<GreenId> =
-            vec![let_kw.0, pattern.0, type_clause.0, eq.0, rhs.0, semicolon.0];
+            vec![let_kw.0, modifiers.0, pattern.0, type_clause.0, eq.0, rhs.0, semicolon.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         StatementLetGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::StatementLet,
@@ -3928,20 +3929,23 @@ impl StatementLet {
     pub fn let_kw(&self, db: &dyn SyntaxGroup) -> TerminalLet {
         TerminalLet::from_syntax_node(db, self.children[0].clone())
     }
+    pub fn modifiers(&self, db: &dyn SyntaxGroup) -> ModifierList {
+        ModifierList::from_syntax_node(db, self.children[1].clone())
+    }
     pub fn pattern(&self, db: &dyn SyntaxGroup) -> Pattern {
-        Pattern::from_syntax_node(db, self.children[1].clone())
+        Pattern::from_syntax_node(db, self.children[2].clone())
     }
     pub fn type_clause(&self, db: &dyn SyntaxGroup) -> OptionTypeClause {
-        OptionTypeClause::from_syntax_node(db, self.children[2].clone())
+        OptionTypeClause::from_syntax_node(db, self.children[3].clone())
     }
     pub fn eq(&self, db: &dyn SyntaxGroup) -> TerminalEq {
-        TerminalEq::from_syntax_node(db, self.children[3].clone())
+        TerminalEq::from_syntax_node(db, self.children[4].clone())
     }
     pub fn rhs(&self, db: &dyn SyntaxGroup) -> Expr {
-        Expr::from_syntax_node(db, self.children[4].clone())
+        Expr::from_syntax_node(db, self.children[5].clone())
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
-        TerminalSemicolon::from_syntax_node(db, self.children[5].clone())
+        TerminalSemicolon::from_syntax_node(db, self.children[6].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -3971,6 +3975,7 @@ impl TypedSyntaxNode for StatementLet {
             details: GreenNodeDetails::Node {
                 children: vec![
                     TerminalLet::missing(db).0,
+                    ModifierList::missing(db).0,
                     Pattern::missing(db).0,
                     OptionTypeClause::missing(db).0,
                     TerminalEq::missing(db).0,

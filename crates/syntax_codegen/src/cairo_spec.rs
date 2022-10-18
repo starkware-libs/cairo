@@ -216,6 +216,7 @@ pub fn get_spec() -> Vec<Node> {
         StructBuilder::new("StatementMissing").build(),
         StructBuilder::new("StatementLet")
             .node("let_kw", "TerminalLet")
+            .node("modifiers", "ModifierList")
             .key_node("pattern", "Pattern")
             .node("type_clause", "OptionTypeClause")
             .node("eq", "TerminalEq")

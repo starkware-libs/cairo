@@ -67,6 +67,7 @@
     │   │       │   │   │   ├── token (kind: TokenLet): 'let'
     │   │       │   │   │   └── trailing_trivia (kind: Trivia)
     │   │       │   │   │       └── child #0 (kind: TokenWhitespace).
+    │   │       │   │   ├── modifiers (kind: ModifierList) []
     │   │       │   │   ├── pattern (kind: ExprPath)
     │   │       │   │   │   └── item #0 (kind: PathSegmentSimple)
     │   │       │   │   │       └── ident (kind: TerminalIdentifier)
@@ -112,6 +113,7 @@
     │   │       │   │   │   ├── token (kind: TokenLet): 'let'
     │   │       │   │   │   └── trailing_trivia (kind: Trivia)
     │   │       │   │   │       └── child #0 (kind: TokenWhitespace).
+    │   │       │   │   ├── modifiers (kind: ModifierList) []
     │   │       │   │   ├── pattern (kind: ExprPath)
     │   │       │   │   │   └── item #0 (kind: PathSegmentSimple)
     │   │       │   │   │       └── ident (kind: TerminalIdentifier)
@@ -186,6 +188,7 @@
     │   │       │   │   │   ├── token (kind: TokenLet): 'let'
     │   │       │   │   │   └── trailing_trivia (kind: Trivia)
     │   │       │   │   │       └── child #0 (kind: TokenWhitespace).
+    │   │       │   │   ├── modifiers (kind: ModifierList) []
     │   │       │   │   ├── pattern (kind: ExprPath)
     │   │       │   │   │   └── item #0 (kind: PathSegmentSimple)
     │   │       │   │   │       └── ident (kind: TerminalIdentifier)
