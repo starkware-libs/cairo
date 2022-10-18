@@ -1,22 +1,22 @@
 use utils::ordered_hash_map::OrderedHashMap;
 
 use super::context::LoweringContext;
-use super::scope::OwnedVariable;
+use super::variables::LivingVar;
 
 /// The liveness state of a semantic variable.
 pub enum SemanticVariableEntry {
-    Alive(OwnedVariable),
+    Alive(LivingVar),
     Moved,
 }
 impl SemanticVariableEntry {
     /// Gets the variable, moving it if not duplicatable. See [`Self::take_var()`].
-    pub fn get_var(&mut self, ctx: &LoweringContext<'_>) -> SemanticVariableEntry {
+    pub fn get(&mut self, ctx: &LoweringContext<'_>) -> SemanticVariableEntry {
         match self {
             SemanticVariableEntry::Alive(var) => {
                 if let Some(var) = var.try_duplicate(ctx) {
                     SemanticVariableEntry::Alive(var)
                 } else {
-                    self.take_var()
+                    self.take()
                 }
             }
             SemanticVariableEntry::Moved => SemanticVariableEntry::Moved,
@@ -24,12 +24,12 @@ impl SemanticVariableEntry {
     }
 
     /// Takes the variable and moves it. The current state will become SemanticVariableState::Moved.
-    fn take_var(&mut self) -> SemanticVariableEntry {
+    fn take(&mut self) -> SemanticVariableEntry {
         std::mem::replace(self, SemanticVariableEntry::Moved)
     }
 
-    /// Reveals the inner OwnedVariable if not Moved.
-    pub fn var(self) -> Option<OwnedVariable> {
+    /// Reveals the inner LivingVar if not Moved.
+    pub fn take_var(self) -> Option<LivingVar> {
         match self {
             SemanticVariableEntry::Alive(var) => Some(var),
             SemanticVariableEntry::Moved => None,
@@ -37,7 +37,7 @@ impl SemanticVariableEntry {
     }
 }
 
-/// Holds on to the [OwnedVariable] instance for semantic variables.
+/// Holds on to the [LivingVar] instance for semantic variables.
 #[derive(Default)]
 pub struct SemanticVariablesMap {
     /// Mapping from a semantic variable to its current liveness state.
@@ -53,7 +53,12 @@ impl SemanticVariablesMap {
         ctx: &LoweringContext<'_>,
         semantic_var_id: semantic::VarId,
     ) -> Option<SemanticVariableEntry> {
-        Some(self.semantic_variables.get_mut(&semantic_var_id)?.get_var(ctx))
+        Some(self.semantic_variables.get_mut(&semantic_var_id)?.get(ctx))
+    }
+
+    /// Returns true if the variables exists in the map.
+    pub fn contains(&mut self, semantic_var_id: semantic::VarId) -> bool {
+        self.semantic_variables.contains_key(&semantic_var_id)
     }
 
     /// Takes a semantic variable.
@@ -61,14 +66,14 @@ impl SemanticVariablesMap {
     /// Otherwise, if it was moved, returns SemanticVariableState::Moved.
     /// Otherwise, moves the var from the map.
     pub fn take(&mut self, semantic_var_id: semantic::VarId) -> Option<SemanticVariableEntry> {
-        Some(self.semantic_variables.get_mut(&semantic_var_id)?.take_var())
+        Some(self.semantic_variables.get_mut(&semantic_var_id)?.take())
     }
 
     /// Stores a semantic variable together with its owned lowered variable into the store.
     pub fn put(
         &mut self,
         semantic_var_id: semantic::VarId,
-        var: OwnedVariable,
+        var: LivingVar,
     ) -> &mut SemanticVariableEntry {
         self.semantic_variables.insert(semantic_var_id, SemanticVariableEntry::Alive(var));
         self.semantic_variables.get_mut(&semantic_var_id).unwrap()

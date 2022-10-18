@@ -4,7 +4,7 @@
 use itertools::chain;
 use semantic::{ConcreteEnumId, ConcreteVariant};
 
-use super::{BlockEndInfo, BlockScope, OwnedVariable};
+use super::{BlockEndInfo, BlockScope, LivingVar};
 use crate::lower::context::LoweringContext;
 use crate::objects::{
     Statement, StatementCall, StatementLiteral, StatementTupleConstruct, StatementTupleDestruct,
@@ -13,14 +13,14 @@ use crate::{BlockId, StatementCallBlock, StatementMatchEnum, StatementMatchExter
 
 /// Generator for [StatementMatchEnum].
 pub struct MatchEnum {
-    pub input: OwnedVariable,
+    pub input: LivingVar,
     pub concrete_enum_id: ConcreteEnumId,
     pub arms: Vec<(ConcreteVariant, BlockId)>,
     pub end_info: BlockEndInfo,
 }
 impl MatchEnum {
     pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockScope) -> CallBlockResult {
-        let input = scope.use_var(ctx, self.input);
+        let input = scope.living_variables.use_var(ctx, self.input).var_id();
 
         // Check that each arm has a single input of the correct type.
         for (variant, block_id) in &self.arms {
@@ -42,33 +42,41 @@ impl MatchEnum {
 
 /// Generator for [StatementTupleConstruct].
 pub struct TupleConstruct {
-    pub inputs: Vec<OwnedVariable>,
+    pub inputs: Vec<LivingVar>,
     pub ty: semantic::TypeId,
 }
 impl TupleConstruct {
-    pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockScope) -> OwnedVariable {
-        let inputs = self.inputs.into_iter().map(|var| scope.use_var(ctx, var)).collect();
-        let output = scope.introduce_variable(ctx, self.ty);
-        scope
-            .statements
-            .push(Statement::TupleConstruct(StatementTupleConstruct { inputs, output: output.0 }));
+    pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockScope) -> LivingVar {
+        let inputs = self
+            .inputs
+            .into_iter()
+            .map(|var| scope.living_variables.use_var(ctx, var).var_id())
+            .collect();
+        let output = scope.living_variables.introduce_new_var(ctx, self.ty);
+        scope.statements.push(Statement::TupleConstruct(StatementTupleConstruct {
+            inputs,
+            output: output.var_id(),
+        }));
         output
     }
 }
 
 /// Generator for [StatementTupleDestruct].
 pub struct TupleDestruct {
-    pub input: OwnedVariable,
+    pub input: LivingVar,
     pub tys: Vec<semantic::TypeId>,
 }
 impl TupleDestruct {
-    pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockScope) -> Vec<OwnedVariable> {
-        let input = scope.use_var(ctx, self.input);
-        let outputs: Vec<_> =
-            self.tys.into_iter().map(|ty| scope.introduce_variable(ctx, ty)).collect();
+    pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockScope) -> Vec<LivingVar> {
+        let input = scope.living_variables.use_var(ctx, self.input).var_id();
+        let outputs: Vec<_> = self
+            .tys
+            .into_iter()
+            .map(|ty| scope.living_variables.introduce_new_var(ctx, ty))
+            .collect();
         scope.statements.push(Statement::TupleDestruct(StatementTupleDestruct {
             input,
-            outputs: outputs.iter().map(|var| var.0).collect(),
+            outputs: outputs.iter().map(|var| var.var_id()).collect(),
         }));
         outputs
     }
@@ -77,18 +85,22 @@ impl TupleDestruct {
 /// Generator for [StatementCall].
 pub struct Call {
     pub function: semantic::FunctionId,
-    pub inputs: Vec<OwnedVariable>,
+    pub inputs: Vec<LivingVar>,
     pub ret_ty: semantic::TypeId,
 }
 impl Call {
-    pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockScope) -> OwnedVariable {
-        let inputs = self.inputs.into_iter().map(|var| scope.use_var(ctx, var)).collect();
-        let output = scope.introduce_variable(ctx, self.ret_ty);
+    pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockScope) -> LivingVar {
+        let inputs = self
+            .inputs
+            .into_iter()
+            .map(|var| scope.living_variables.use_var(ctx, var).var_id())
+            .collect();
+        let output = scope.living_variables.introduce_new_var(ctx, self.ret_ty);
         // TODO(spapini): Support mut variables.
         scope.statements.push(Statement::Call(StatementCall {
             function: self.function,
             inputs,
-            outputs: vec![output.0],
+            outputs: vec![output.var_id()],
         }));
         output
     }
@@ -104,10 +116,10 @@ pub enum CallBlockResult {
     /// Block returns to call site with output variables.
     Callsite {
         /// Variable for the "block value" output variable if exists.
-        maybe_output: Option<OwnedVariable>,
+        maybe_output: Option<LivingVar>,
         /// Variables for the push (rebind) output variables, that get bound to semantic variables
         /// at the calling scope.
-        pushes: Vec<OwnedVariable>,
+        pushes: Vec<LivingVar>,
     },
     /// Block does not return to callsite, and thus the place after the call is unreachable.
     End,
@@ -127,13 +139,17 @@ impl CallBlock {
 /// Generator for [StatementMatchExtern].
 pub struct MatchExtern {
     pub function: semantic::FunctionId,
-    pub inputs: Vec<OwnedVariable>,
+    pub inputs: Vec<LivingVar>,
     pub arms: Vec<BlockId>,
     pub end_info: BlockEndInfo,
 }
 impl MatchExtern {
     pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockScope) -> CallBlockResult {
-        let inputs = self.inputs.into_iter().map(|var| scope.use_var(ctx, var)).collect();
+        let inputs = self
+            .inputs
+            .into_iter()
+            .map(|var| scope.living_variables.use_var(ctx, var).var_id())
+            .collect();
 
         // TODO(lior): Check that each arm has the expected input.
 
@@ -157,10 +173,14 @@ fn process_end_info(
 ) -> (Vec<VariableId>, CallBlockResult) {
     let (outputs, res) = match end_info {
         BlockEndInfo::Callsite { maybe_output_ty, push_tys } => {
-            let maybe_output = maybe_output_ty.map(|ty| scope.introduce_variable(ctx, ty));
-            let pushes = push_tys.into_iter().map(|ty| scope.introduce_variable(ctx, ty)).collect();
+            let maybe_output =
+                maybe_output_ty.map(|ty| scope.living_variables.introduce_new_var(ctx, ty));
+            let pushes = push_tys
+                .into_iter()
+                .map(|ty| scope.living_variables.introduce_new_var(ctx, ty))
+                .collect();
             (
-                chain!(&maybe_output, &pushes).map(|var| var.0).collect(),
+                chain!(&maybe_output, &pushes).map(|var| var.var_id()).collect(),
                 CallBlockResult::Callsite { maybe_output, pushes },
             )
         }
@@ -176,11 +196,12 @@ pub struct Literal {
     pub ty: semantic::TypeId,
 }
 impl Literal {
-    pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockScope) -> OwnedVariable {
-        let output = scope.introduce_variable(ctx, self.ty);
-        scope
-            .statements
-            .push(Statement::Literal(StatementLiteral { value: self.value, output: output.0 }));
+    pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockScope) -> LivingVar {
+        let output = scope.living_variables.introduce_new_var(ctx, self.ty);
+        scope.statements.push(Statement::Literal(StatementLiteral {
+            value: self.value,
+            output: output.var_id(),
+        }));
         output
     }
 }
