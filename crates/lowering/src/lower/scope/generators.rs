@@ -9,7 +9,10 @@ use crate::lower::context::LoweringContext;
 use crate::objects::{
     Statement, StatementCall, StatementLiteral, StatementTupleConstruct, StatementTupleDestruct,
 };
-use crate::{BlockId, StatementCallBlock, StatementMatchEnum, StatementMatchExtern, VariableId};
+use crate::{
+    BlockId, StatementCallBlock, StatementEnumConstruct, StatementMatchEnum, StatementMatchExtern,
+    VariableId,
+};
 
 /// Generator for [StatementMatchEnum].
 pub struct MatchEnum {
@@ -37,6 +40,29 @@ impl MatchEnum {
             outputs,
         }));
         res
+    }
+}
+
+/// Generator for [StatementEnumConstruct].
+pub struct EnumConstruct {
+    pub input: LivingVar,
+    pub variant: ConcreteVariant,
+}
+impl EnumConstruct {
+    pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockScope) -> LivingVar {
+        let input = scope.living_variables.use_var(ctx, self.input).var_id();
+        let output = scope.living_variables.introduce_new_var(
+            ctx,
+            ctx.db.intern_type(semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::Enum(
+                self.variant.concrete_enum_id,
+            ))),
+        );
+        scope.statements.push(Statement::EnumConstruct(StatementEnumConstruct {
+            variant: self.variant,
+            input,
+            output: output.var_id(),
+        }));
+        output
     }
 }
 

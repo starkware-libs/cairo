@@ -68,7 +68,7 @@ pub enum Statement {
     StructDestruct,
 
     // Enums.
-    EnumConstruct,
+    EnumConstruct(StatementEnumConstruct),
     MatchEnum(StatementMatchEnum),
 
     // Tuples.
@@ -82,10 +82,10 @@ impl Statement {
             Statement::Call(stmt) => stmt.inputs.clone(),
             Statement::CallBlock(_) => vec![],
             Statement::MatchExtern(stmt) => stmt.inputs.clone(),
-            Statement::MatchEnum(stmt) => vec![stmt.input],
             Statement::StructConstruct => todo!(),
             Statement::StructDestruct => todo!(),
-            Statement::EnumConstruct => todo!(),
+            Statement::EnumConstruct(stmt) => vec![stmt.input],
+            Statement::MatchEnum(stmt) => vec![stmt.input],
             Statement::TupleConstruct(stmt) => stmt.inputs.clone(),
             Statement::TupleDestruct(stmt) => vec![stmt.input],
         }
@@ -98,7 +98,7 @@ impl Statement {
             Statement::MatchExtern(stmt) => stmt.outputs.clone(),
             Statement::StructConstruct => todo!(),
             Statement::StructDestruct => todo!(),
-            Statement::EnumConstruct => todo!(),
+            Statement::EnumConstruct(stmt) => vec![stmt.output],
             Statement::MatchEnum(stmt) => stmt.outputs.clone(),
             Statement::TupleConstruct(stmt) => vec![stmt.output],
             Statement::TupleDestruct(stmt) => stmt.outputs.clone(),
@@ -142,7 +142,7 @@ pub struct StatementMatchExtern {
     pub function: semantic::FunctionId,
     /// Living variables in current scope to move to the function, as arguments.
     pub inputs: Vec<VariableId>,
-    // All blocks should have the same rets.
+    /// Match arms. All blocks should have the same rets.
     pub arms: Vec<BlockId>,
     /// New variables to be introduced into the current scope from the arm outputs.
     pub outputs: Vec<VariableId>,
@@ -151,21 +151,34 @@ pub struct StatementMatchExtern {
 /// A statement that constructs a tuple into a new variable.
 pub struct StatementTupleConstruct {
     pub inputs: Vec<VariableId>,
+    /// The variable to bind the value to.
     pub output: VariableId,
 }
 
 /// A statement that destructs a tuple, introducing its elements as new variables.
 pub struct StatementTupleDestruct {
+    /// A living variable in current scope to destruct as a tuple.
     pub input: VariableId,
+    /// The variables to bind values to.
     pub outputs: Vec<VariableId>,
+}
+
+/// A statement that construct a variant of an enum with a single argument, and binds it to a
+/// variable.
+pub struct StatementEnumConstruct {
+    pub variant: ConcreteVariant,
+    /// A living variable in current scope to wrap with the variant.
+    pub input: VariableId,
+    /// The variable to bind the value to.
+    pub output: VariableId,
 }
 
 /// A statement that matches an enum, and "calls" a possibly different block for each branch.
 pub struct StatementMatchEnum {
     pub concrete_enum: ConcreteEnumId,
-    /// Living variables in current scope to move to the function, as arguments.
+    /// A living variable in current scope to match on.
     pub input: VariableId,
-    // All blocks should have the same rets.
+    /// Match arms. All blocks should have the same rets.
     pub arms: Vec<(ConcreteVariant, BlockId)>,
     /// New variables to be introduced into the current scope from the arm outputs.
     pub outputs: Vec<VariableId>,
