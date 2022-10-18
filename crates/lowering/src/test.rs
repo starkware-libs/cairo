@@ -8,7 +8,12 @@ use crate::lower::Lowerer;
 
 utils::test_file_test!(
     lowering_test,
-    ["src/test_data/tests", "src/test_data/match", "src/test_data/enums"],
+    [
+        "src/test_data/assignment",
+        "src/test_data/enums",
+        "src/test_data/match",
+        "src/test_data/tests",
+    ],
     SemanticDatabaseForTesting,
     test_function_lowering
 );
