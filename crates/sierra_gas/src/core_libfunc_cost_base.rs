@@ -17,8 +17,6 @@ use sierra::extensions::mem::MemConcreteLibFunc::{
 };
 use sierra::program::Function;
 
-pub const FUNCTION_CALL_COST: i32 = 2;
-
 /// Returns some cost value for a libfunc - a helper function to implement costing both for creating
 /// gas equations and getting actual gas usage after having a solution.
 pub fn core_libfunc_cost_base<
@@ -36,7 +34,7 @@ pub fn core_libfunc_cost_base<
         // For the case of function calls - assumes a variable for the cost of running from a
         // function entry point and on - while also adding the call cost.
         FunctionCall(FunctionCallConcreteLibFunc { function, .. }) => {
-            vec![from_const(FUNCTION_CALL_COST) + from_function(function)]
+            vec![from_const(2) + from_function(function)]
         }
         Gas(GetGas(_)) => vec![from_const(1) - from_var(), from_const(1)],
         Gas(RefundGas(_)) => {
