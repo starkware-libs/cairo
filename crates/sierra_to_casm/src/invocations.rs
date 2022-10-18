@@ -59,17 +59,22 @@ pub enum InvocationError {
     FrameStateError(#[from] FrameStateError),
 }
 
-/// Describes the changes to the set of references at a single branch target.
+/// Describes the changes to the set of references at a single branch target, as well as changes to
+/// the environment.
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct BranchRefChanges {
+pub struct BranchChanges {
     /// New references defined at a given branch.
     /// should correspond to BranchInfo.results.
     pub refs: Vec<ReferenceValue>,
+    /// The change to AP caused by the libfunc in the branch.
     pub ap_change: ApChange,
+    /// The change to the remaing gas value in the wallet.
+    pub gas_change: i64,
 }
-impl BranchRefChanges {
+impl BranchChanges {
     fn new(
         ap_change: ApChange,
+        gas_change: i64,
         expressions: impl Iterator<Item = ReferenceExpression>,
         types: impl Iterator<Item = ConcreteTypeId>,
     ) -> Self {
@@ -78,6 +83,7 @@ impl BranchRefChanges {
                 .map(|(expression, ty)| ReferenceValue { expression, ty })
                 .collect(),
             ap_change,
+            gas_change,
         }
     }
 }
@@ -91,7 +97,7 @@ pub struct CompiledInvocation {
     pub relocations: Vec<RelocationEntry>,
     /// A vector of BranchRefChanges, should correspond to the branches of the invocation
     /// statement.
-    pub results: Vec<BranchRefChanges>,
+    pub results: Vec<BranchChanges>,
     /// The environment after the invocation statement.
     pub environment: Environment,
 }
@@ -136,14 +142,27 @@ impl CompiledInvocationBuilder<'_> {
         ap_changes: impl Iterator<Item = ApChange>,
         output_expressions: impl Iterator<Item = impl Iterator<Item = ReferenceExpression>>,
     ) -> CompiledInvocation {
+        let gas_changes = sierra_gas::core_libfunc_cost::core_libfunc_cost(
+            &self.program_info.metadata.gas_info,
+            &self.idx,
+            self.libfunc,
+        );
         CompiledInvocation {
             instructions,
             relocations,
-            results: zip_eq(ap_changes, zip_eq(output_expressions, self.libfunc.output_types()))
-                .map(|(ap_change, (expressions, types))| {
-                    BranchRefChanges::new(ap_change, expressions, types.iter().cloned())
-                })
-                .collect(),
+            results: zip_eq(
+                zip_eq(ap_changes, gas_changes),
+                zip_eq(output_expressions, self.libfunc.output_types()),
+            )
+            .map(|((ap_change, gas_change), (expressions, types))| {
+                BranchChanges::new(
+                    ap_change,
+                    -gas_change.unwrap_or(0),
+                    expressions,
+                    types.iter().cloned(),
+                )
+            })
+            .collect(),
             environment: self.environment,
         }
     }
