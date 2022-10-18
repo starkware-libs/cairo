@@ -2,7 +2,7 @@ use defs::ids::{FreeFunctionId, LanguageElementId};
 use diagnostics::Diagnostics;
 use id_arena::Arena;
 use itertools::zip_eq;
-use scope::{BlockScope, BlockScopeEnd, OwnedVariable};
+use scope::{BlockScope, BlockScopeEnd};
 use semantic::corelib::{core_bool_enum, false_variant, true_variant, unit_ty};
 use semantic::db::SemanticGroup;
 use semantic::items::enm::SemanticEnumEx;
@@ -12,6 +12,7 @@ use utils::{extract_matches, try_extract_matches};
 
 use self::context::LoweringContext;
 use self::scope::{generators, BlockFlowMerger, ContextLender};
+use self::variables::LivingVar;
 use crate::diagnostic::LoweringDiagnosticKind::*;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnostics};
 use crate::objects::{Block, BlockId, Variable};
@@ -19,6 +20,7 @@ use crate::objects::{Block, BlockId, Variable};
 mod context;
 mod scope;
 mod semantic_map;
+mod variables;
 
 /// Context for lowering a function.
 pub struct Lowerer<'db> {
@@ -207,7 +209,7 @@ impl<'db> Lowerer<'db> {
         &mut self,
         scope: &mut BlockScope,
         pattern: &semantic::Pattern,
-        var: OwnedVariable,
+        var: LivingVar,
     ) {
         match pattern {
             semantic::Pattern::Literal(_) => unreachable!(),
@@ -250,7 +252,7 @@ impl<'db> Lowerer<'db> {
             semantic::Expr::Var(expr) => Ok(LoweredExpr::AtVariable(
                 scope
                     .use_semantic_variable(&mut self.ctx, expr.var)
-                    .var()
+                    .take_var()
                     .expect("Value already moved."),
             )),
             semantic::Expr::Literal(expr) => Ok(LoweredExpr::AtVariable(
@@ -456,7 +458,7 @@ impl<'db> Lowerer<'db> {
         &mut self,
         exprs: &[semantic::ExprId],
         scope: &mut BlockScope,
-    ) -> Result<Vec<OwnedVariable>, LoweringFlowError> {
+    ) -> Result<Vec<LivingVar>, LoweringFlowError> {
         exprs
             .iter()
             .map(|arg_expr_id| Ok(self.lower_expr(scope, *arg_expr_id)?.var(self, scope)))
@@ -464,7 +466,7 @@ impl<'db> Lowerer<'db> {
     }
 
     /// Introduces a unit variable inplace.
-    fn unit_var(&mut self, scope: &mut BlockScope) -> OwnedVariable {
+    fn unit_var(&mut self, scope: &mut BlockScope) -> LivingVar {
         generators::TupleConstruct { inputs: vec![], ty: unit_ty(self.ctx.db) }
             .add(&mut self.ctx, scope)
     }
@@ -512,12 +514,12 @@ fn extract_var_pattern(
 #[derive(Debug)]
 enum LoweredExpr {
     /// The expression value lies in a variable.
-    AtVariable(OwnedVariable),
+    AtVariable(LivingVar),
     /// The expression value is unit.
     Unit,
 }
 impl LoweredExpr {
-    fn var(self, lowerer: &mut Lowerer<'_>, scope: &mut BlockScope) -> OwnedVariable {
+    fn var(self, lowerer: &mut Lowerer<'_>, scope: &mut BlockScope) -> LivingVar {
         match self {
             LoweredExpr::AtVariable(var_id) => var_id,
             LoweredExpr::Unit => lowerer.unit_var(scope),
