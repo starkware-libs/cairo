@@ -71,3 +71,27 @@ error: Path not found.
  --> lib.cairo:8:3
   bad_module::foo();
   ^********^
+
+//! > ==========================================================================
+
+//! > Test bad argument for ref param.
+
+//! > test_function_name
+test_expr_diagnostics
+
+//! > expr_code
+{
+  foo(1);
+}
+
+//! > module_code
+func foo(ref v: felt) {
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+error: ref argument must be a variable.
+ --> lib.cairo:5:7
+  foo(1);
+      ^
