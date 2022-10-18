@@ -283,17 +283,16 @@ impl CompiledInvocationBuilder<'_> {
     }
 
     /// Returns a store instruction. Helper function for store_temp and store_local.
-    fn get_store_instruction(
+    fn get_store_instructions(
         &self,
         src_type: &ConcreteTypeId,
         dst: DerefOperand,
         src_expr: &ReferenceExpression,
         inc_ap: bool,
-    ) -> Result<Instruction, InvocationError> {
+    ) -> Result<Vec<Instruction>, InvocationError> {
         match self.program_info.type_sizes.get(src_type) {
-            Some(1) => Ok(()),
-            Some(0) => Err(InvocationError::NotSized(self.invocation.clone())),
-            _ => Err(InvocationError::NotImplemented(self.invocation.clone())),
+            Some(0) | None => Err(InvocationError::NotSized(self.invocation.clone())),
+            Some(_) => Ok(()),
         }?;
 
         let mut hints = vec![];
@@ -333,26 +332,36 @@ impl CompiledInvocationBuilder<'_> {
                 }
             },
             ReferenceExpression::AllocateSegment => {
-                // TODO(orizi): Remove unnecessary instruction in the case `inc_ap` is false.
                 hints.push(Hint::AllocSegment { dst });
-                return Ok(Instruction {
-                    body: InstructionBody::AddAp(AddApInstruction {
-                        operand: ResOperand::Immediate(ImmediateOperand {
-                            value: if inc_ap { 1 } else { 0 },
+                return Ok(if inc_ap {
+                    vec![Instruction {
+                        body: InstructionBody::AddAp(AddApInstruction {
+                            operand: ResOperand::Immediate(ImmediateOperand { value: 1 }),
                         }),
-                    }),
-                    inc_ap: false,
-                    hints,
+                        inc_ap: false,
+                        hints,
+                    }]
+                } else {
+                    vec![]
                 });
+            }
+            ReferenceExpression::Complex(sub_refs) => {
+                return Ok(sub_refs
+                    .iter()
+                    .map(|ref_expr| self.get_store_instructions(src_type, dst, ref_expr, inc_ap))
+                    .collect::<Result<Vec<_>, _>>()?
+                    .into_iter()
+                    .flatten()
+                    .collect());
             }
             // TODO(gil)
             ReferenceExpression::Enum(_) => todo!(),
         };
-        Ok(Instruction {
+        Ok(vec![Instruction {
             body: InstructionBody::AssertEq(AssertEqInstruction { a: dst_operand, b: res_operand }),
             inc_ap,
             hints,
-        })
+        }])
     }
 
     /// Handles store_temp for the given type.
@@ -368,11 +377,11 @@ impl CompiledInvocationBuilder<'_> {
         };
 
         let dst = DerefOperand { register: Register::AP, offset: 0 };
-        let instruction = self.get_store_instruction(ty, dst, expression, true)?;
+        let instructions = self.get_store_instructions(ty, dst, expression, true)?;
         Ok(self.build(
-            vec![instruction],
+            instructions,
             vec![],
-            [ApChange::Known(1)].into_iter(),
+            [ApChange::Known(1)].into_iter(), // TODO(Gil): change to type size
             [[ReferenceExpression::Deref(DerefOperand { register: Register::AP, offset: -1 })]
                 .into_iter()]
             .into_iter(),
@@ -392,9 +401,9 @@ impl CompiledInvocationBuilder<'_> {
             }
         }?;
 
-        let instruction = self.get_store_instruction(ty, *dst, src_expr, false)?;
+        let instructions = self.get_store_instructions(ty, *dst, src_expr, false)?;
         Ok(self.build(
-            vec![instruction],
+            instructions,
             vec![],
             [ApChange::Known(0)].into_iter(),
             [[ReferenceExpression::Deref(*dst)].into_iter()].into_iter(),
@@ -566,7 +575,7 @@ impl CompiledInvocationBuilder<'_> {
     fn build_array_new(self) -> Result<CompiledInvocation, InvocationError> {
         if !self.refs.is_empty() {
             return Err(InvocationError::WrongNumberOfArguments {
-                expected: 1,
+                expected: 0,
                 actual: self.refs.len(),
             });
         }
