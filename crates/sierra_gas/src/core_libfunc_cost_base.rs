@@ -49,7 +49,7 @@ pub fn core_libfunc_cost_base<Ops: CostOperations>(
         Gas(GetGas(_)) => {
             vec![ops.sub(ops.const_cost(1), ops.statement_var_cost()), ops.const_cost(1)]
         }
-        Gas(RefundGas(_)) => vec![ops.add(ops.const_cost(1), ops.statement_var_cost())],
+        Gas(RefundGas(_)) => vec![ops.statement_var_cost()],
         Array(ArrayConcreteLibFunc::New(_)) => vec![ops.const_cost(1)],
         Array(ArrayConcreteLibFunc::Append(_)) => vec![ops.const_cost(2)],
         Integer(libfunc) => integer_libfunc_cost(ops, libfunc),
