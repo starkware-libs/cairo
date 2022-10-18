@@ -246,7 +246,7 @@ impl<'db> Lowerer<'db> {
         let expr = &self.function_def.exprs[expr_id];
         match expr {
             semantic::Expr::Tuple(expr) => self.lower_expr_tuple(expr, scope),
-            semantic::Expr::Assignment(_) => todo!(),
+            semantic::Expr::Assignment(expr) => self.lower_expr_assignment(expr, scope),
             semantic::Expr::Block(expr) => self.lower_expr_block(scope, expr),
             semantic::Expr::FunctionCall(expr) => self.lower_expr_function_call(expr, scope),
             semantic::Expr::Match(expr) => self.lower_expr_match(expr, scope),
@@ -539,6 +539,18 @@ impl<'db> Lowerer<'db> {
     fn unit_var(&mut self, scope: &mut BlockScope) -> LivingVar {
         generators::TupleConstruct { inputs: vec![], ty: unit_ty(self.ctx.db) }
             .add(&mut self.ctx, scope)
+    }
+
+    /// Lowers an expression of type [semantic::ExprAssignment].
+    fn lower_expr_assignment(
+        &mut self,
+        expr: &semantic::ExprAssignment,
+        scope: &mut BlockScope,
+    ) -> Result<LoweredExpr, LoweringFlowError> {
+        scope.try_ensure_semantic_variable(&mut self.ctx, expr.var);
+        let var = self.lower_expr(scope, expr.rhs)?.var(self, scope);
+        scope.put_semantic_variable(expr.var, var);
+        Ok(LoweredExpr::Unit)
     }
 }
 
