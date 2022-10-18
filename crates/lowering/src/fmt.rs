@@ -176,7 +176,6 @@ impl DebugWithDb<LoweredFormatter<'_>> for StatementCallBlock {
 
 impl DebugWithDb<LoweredFormatter<'_>> for StatementMatchExtern {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
-        // TODO(spapini): Format function name better.
         write!(f, "match {:?}(", self.function.debug(ctx.db))?;
         for var in &self.inputs {
             var.fmt(f, ctx)?;

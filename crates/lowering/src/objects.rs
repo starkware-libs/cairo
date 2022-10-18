@@ -148,21 +148,6 @@ pub struct StatementMatchExtern {
     pub outputs: Vec<VariableId>,
 }
 
-/// A statement that constructs a tuple into a new variable.
-pub struct StatementTupleConstruct {
-    pub inputs: Vec<VariableId>,
-    /// The variable to bind the value to.
-    pub output: VariableId,
-}
-
-/// A statement that destructs a tuple, introducing its elements as new variables.
-pub struct StatementTupleDestruct {
-    /// A living variable in current scope to destruct as a tuple.
-    pub input: VariableId,
-    /// The variables to bind values to.
-    pub outputs: Vec<VariableId>,
-}
-
 /// A statement that construct a variant of an enum with a single argument, and binds it to a
 /// variable.
 pub struct StatementEnumConstruct {
@@ -181,5 +166,20 @@ pub struct StatementMatchEnum {
     /// Match arms. All blocks should have the same rets.
     pub arms: Vec<(ConcreteVariant, BlockId)>,
     /// New variables to be introduced into the current scope from the arm outputs.
+    pub outputs: Vec<VariableId>,
+}
+
+/// A statement that constructs a tuple into a new variable.
+pub struct StatementTupleConstruct {
+    pub inputs: Vec<VariableId>,
+    /// The variable to bind the value to.
+    pub output: VariableId,
+}
+
+/// A statement that destructs a tuple, introducing its elements as new variables.
+pub struct StatementTupleDestruct {
+    /// A living variable in current scope to destruct as a tuple.
+    pub input: VariableId,
+    /// The variables to bind values to.
     pub outputs: Vec<VariableId>,
 }

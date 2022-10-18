@@ -31,7 +31,6 @@ fn test_function_lowering(
     .split();
     let lowered = Lowerer::lower(db, test_function.function_id).unwrap();
 
-    // TODO(spapini): Test some textual representation of the output.
     let lowered_formatter = LoweredFormatter { db, lowered: &lowered };
     OrderedHashMap::from([
         ("semantic_diagnostics".into(), semantic_diagnostics),

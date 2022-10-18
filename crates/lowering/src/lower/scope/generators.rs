@@ -14,97 +14,20 @@ use crate::{
     VariableId,
 };
 
-/// Generator for [StatementMatchEnum].
-pub struct MatchEnum {
-    pub input: LivingVar,
-    pub concrete_enum_id: ConcreteEnumId,
-    pub arms: Vec<(ConcreteVariant, BlockId)>,
-    pub end_info: BlockEndInfo,
-}
-impl MatchEnum {
-    pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockScope) -> CallBlockResult {
-        let input = scope.living_variables.use_var(ctx, self.input).var_id();
-
-        // Check that each arm has a single input of the correct type.
-        for (variant, block_id) in &self.arms {
-            let input_tys =
-                ctx.blocks[*block_id].inputs.iter().map(|var_id| ctx.variables[*var_id].ty);
-            itertools::assert_equal([variant.ty].into_iter(), input_tys);
-        }
-
-        let (outputs, res) = process_end_info(ctx, scope, self.end_info);
-        scope.statements.push(Statement::MatchEnum(StatementMatchEnum {
-            concrete_enum: self.concrete_enum_id,
-            input,
-            arms: self.arms,
-            outputs,
-        }));
-        res
-    }
-}
-
-/// Generator for [StatementEnumConstruct].
-pub struct EnumConstruct {
-    pub input: LivingVar,
-    pub variant: ConcreteVariant,
-}
-impl EnumConstruct {
-    pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockScope) -> LivingVar {
-        let input = scope.living_variables.use_var(ctx, self.input).var_id();
-        let output = scope.living_variables.introduce_new_var(
-            ctx,
-            ctx.db.intern_type(semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::Enum(
-                self.variant.concrete_enum_id,
-            ))),
-        );
-        scope.statements.push(Statement::EnumConstruct(StatementEnumConstruct {
-            variant: self.variant,
-            input,
-            output: output.var_id(),
-        }));
-        output
-    }
-}
-
-/// Generator for [StatementTupleConstruct].
-pub struct TupleConstruct {
-    pub inputs: Vec<LivingVar>,
+/// Generator for [StatementLiteral].
+pub struct Literal {
+    // TODO(spapini): Fix literal type.
+    pub value: usize,
     pub ty: semantic::TypeId,
 }
-impl TupleConstruct {
+impl Literal {
     pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockScope) -> LivingVar {
-        let inputs = self
-            .inputs
-            .into_iter()
-            .map(|var| scope.living_variables.use_var(ctx, var).var_id())
-            .collect();
         let output = scope.living_variables.introduce_new_var(ctx, self.ty);
-        scope.statements.push(Statement::TupleConstruct(StatementTupleConstruct {
-            inputs,
+        scope.statements.push(Statement::Literal(StatementLiteral {
+            value: self.value,
             output: output.var_id(),
         }));
         output
-    }
-}
-
-/// Generator for [StatementTupleDestruct].
-pub struct TupleDestruct {
-    pub input: LivingVar,
-    pub tys: Vec<semantic::TypeId>,
-}
-impl TupleDestruct {
-    pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockScope) -> Vec<LivingVar> {
-        let input = scope.living_variables.use_var(ctx, self.input).var_id();
-        let outputs: Vec<_> = self
-            .tys
-            .into_iter()
-            .map(|ty| scope.living_variables.introduce_new_var(ctx, ty))
-            .collect();
-        scope.statements.push(Statement::TupleDestruct(StatementTupleDestruct {
-            input,
-            outputs: outputs.iter().map(|var| var.var_id()).collect(),
-        }));
-        outputs
     }
 }
 
@@ -215,19 +138,96 @@ fn process_end_info(
     (outputs, res)
 }
 
-/// Generator for StatementLiteral.
-pub struct Literal {
-    // TODO(spapini): Fix literal type.
-    pub value: usize,
-    pub ty: semantic::TypeId,
+/// Generator for [StatementEnumConstruct].
+pub struct EnumConstruct {
+    pub input: LivingVar,
+    pub variant: ConcreteVariant,
 }
-impl Literal {
+impl EnumConstruct {
     pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockScope) -> LivingVar {
-        let output = scope.living_variables.introduce_new_var(ctx, self.ty);
-        scope.statements.push(Statement::Literal(StatementLiteral {
-            value: self.value,
+        let input = scope.living_variables.use_var(ctx, self.input).var_id();
+        let output = scope.living_variables.introduce_new_var(
+            ctx,
+            ctx.db.intern_type(semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::Enum(
+                self.variant.concrete_enum_id,
+            ))),
+        );
+        scope.statements.push(Statement::EnumConstruct(StatementEnumConstruct {
+            variant: self.variant,
+            input,
             output: output.var_id(),
         }));
         output
+    }
+}
+
+/// Generator for [StatementMatchEnum].
+pub struct MatchEnum {
+    pub input: LivingVar,
+    pub concrete_enum_id: ConcreteEnumId,
+    pub arms: Vec<(ConcreteVariant, BlockId)>,
+    pub end_info: BlockEndInfo,
+}
+impl MatchEnum {
+    pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockScope) -> CallBlockResult {
+        let input = scope.living_variables.use_var(ctx, self.input).var_id();
+
+        // Check that each arm has a single input of the correct type.
+        for (variant, block_id) in &self.arms {
+            let input_tys =
+                ctx.blocks[*block_id].inputs.iter().map(|var_id| ctx.variables[*var_id].ty);
+            itertools::assert_equal([variant.ty].into_iter(), input_tys);
+        }
+
+        let (outputs, res) = process_end_info(ctx, scope, self.end_info);
+        scope.statements.push(Statement::MatchEnum(StatementMatchEnum {
+            concrete_enum: self.concrete_enum_id,
+            input,
+            arms: self.arms,
+            outputs,
+        }));
+        res
+    }
+}
+
+/// Generator for [StatementTupleConstruct].
+pub struct TupleConstruct {
+    pub inputs: Vec<LivingVar>,
+    pub ty: semantic::TypeId,
+}
+impl TupleConstruct {
+    pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockScope) -> LivingVar {
+        let inputs = self
+            .inputs
+            .into_iter()
+            .map(|var| scope.living_variables.use_var(ctx, var).var_id())
+            .collect();
+        let output = scope.living_variables.introduce_new_var(ctx, self.ty);
+        scope.statements.push(Statement::TupleConstruct(StatementTupleConstruct {
+            inputs,
+            output: output.var_id(),
+        }));
+        output
+    }
+}
+
+/// Generator for [StatementTupleDestruct].
+pub struct TupleDestruct {
+    pub input: LivingVar,
+    pub tys: Vec<semantic::TypeId>,
+}
+impl TupleDestruct {
+    pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockScope) -> Vec<LivingVar> {
+        let input = scope.living_variables.use_var(ctx, self.input).var_id();
+        let outputs: Vec<_> = self
+            .tys
+            .into_iter()
+            .map(|ty| scope.living_variables.introduce_new_var(ctx, ty))
+            .collect();
+        scope.statements.push(Statement::TupleDestruct(StatementTupleDestruct {
+            input,
+            outputs: outputs.iter().map(|var| var.var_id()).collect(),
+        }));
+        outputs
     }
 }
