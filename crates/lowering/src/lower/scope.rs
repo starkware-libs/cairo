@@ -44,6 +44,8 @@ pub enum BlockScopeEnd {
 
 impl BlockScope {
     /// Puts a semantic variable and its owned lowered variable into the current scope.
+    // TODO(spapini): Consider enforcing that semantic_var_id is pulled form a higher scope if
+    // possible.
     pub fn put_semantic_variable(&mut self, semantic_var_id: semantic::VarId, var: LivingVar) {
         self.semantic_variables.put(semantic_var_id, var);
     }
@@ -56,15 +58,24 @@ impl BlockScope {
         ctx: &mut LoweringContext<'_>,
         semantic_var_id: semantic::VarId,
     ) -> SemanticVariableEntry {
-        self.semantic_variables.get(ctx, semantic_var_id).unwrap_or_else(|| {
-            self.merger
-                .take_from_higher_scope(ctx, semantic_var_id)
-                .map(|var| {
-                    let var = self.living_variables.introduce_var(var);
-                    self.semantic_variables.put(semantic_var_id, var).get(ctx)
-                })
-                .unwrap_or(SemanticVariableEntry::Moved)
-        })
+        self.try_ensure_semantic_variable(ctx, semantic_var_id);
+        self.semantic_variables.get(ctx, semantic_var_id).unwrap_or(SemanticVariableEntry::Moved)
+    }
+
+    /// Tries to ensure that a semantic variable lives in the current scope.
+    /// If it doesn't currently live in the scope, try to pull forom a higher scope.
+    pub fn try_ensure_semantic_variable(
+        &mut self,
+        ctx: &mut LoweringContext<'_>,
+        semantic_var_id: semantic::VarId,
+    ) -> Option<()> {
+        if self.semantic_variables.contains(semantic_var_id) {
+            return Some(());
+        }
+        let var = self.merger.take_from_higher_scope(ctx, semantic_var_id)?;
+        let var = self.living_variables.introduce_var(var);
+        self.semantic_variables.put(semantic_var_id, var);
+        Some(())
     }
 
     /// Seals a BlockScope from adding statements or variables. A sealed block should be finalized
@@ -128,7 +139,7 @@ impl BlockSealed {
         // Pull extra semantic variables if necessary.
         for (semantic_var_id, var) in pulls.into_iter() {
             if !semantic_variables.contains(semantic_var_id) {
-                living_variables.introduce_var(var);
+                semantic_variables.put(semantic_var_id, living_variables.introduce_var(var));
             }
         }
         // Compute drops.
@@ -214,7 +225,7 @@ pub struct BlockFlowMerger {
     pulls: OrderedHashMap<semantic::VarId, LivingVar>,
     // TODO(spapini): This is not stable. Replace with OrderedHashSet when it supports
     // intersection.
-    pushable: Option<HashSet<semantic::VarId>>,
+    unpushable: HashSet<semantic::VarId>,
     maybe_output_ty: Option<semantic::TypeId>,
     // TODO(spapini): Optimize pushes by using shouldnt_push.
 }
@@ -316,12 +327,9 @@ impl BlockFlowMerger {
         // TODO(spapini): Make this prettier.
         let maybe_output = try_extract_matches!(&block_sealed.end, BlockSealedEnd::Callsite)?;
         self.maybe_output_ty = maybe_output.as_ref().map(|var| ctx.variables[var.var_id()].ty);
-        let can_push: HashSet<_> = block_sealed.semantic_variables.alive().copied().collect();
-        if let Some(some_can_push) = &mut self.pushable {
-            *some_can_push = some_can_push.intersection(&can_push).copied().collect();
-        } else {
-            self.pushable = Some(can_push);
-        };
+        let current_unpushable: HashSet<_> =
+            block_sealed.semantic_variables.moved().copied().collect();
+        self.unpushable = self.unpushable.union(&current_unpushable).copied().collect();
         Some(())
     }
 
@@ -331,15 +339,11 @@ impl BlockFlowMerger {
         self,
         ctx: &LoweringContext<'_>,
     ) -> (BlockMergerFinalized, Option<Box<BlockScope>>) {
-        let (pushes, end_info) = match self.pushable {
-            Some(pushes) => {
-                let pushes: Vec<_> = pushes.into_iter().collect();
-                let push_tys =
-                    pushes.iter().map(|var_id| ctx.semantic_defs[*var_id].ty()).collect();
-                (pushes, BlockEndInfo::Callsite { maybe_output_ty: self.maybe_output_ty, push_tys })
-            }
-            None => (vec![], BlockEndInfo::End),
-        };
+        let pull_set = self.pulls.iter().map(|(var, _)| var).copied().collect::<HashSet<_>>();
+        let pushable = pull_set.difference(&self.unpushable);
+        let pushes: Vec<_> = pushable.into_iter().copied().collect();
+        let push_tys = pushes.iter().map(|var_id| ctx.semantic_defs[*var_id].ty()).collect();
+        let end_info = BlockEndInfo::Callsite { maybe_output_ty: self.maybe_output_ty, push_tys };
         // TODO(spapini): Optimize pushes by maintaining shouldnt_push.
         (
             BlockMergerFinalized { end_info, splitter: self.splitter, pulls: self.pulls, pushes },

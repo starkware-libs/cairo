@@ -80,10 +80,10 @@ impl SemanticVariablesMap {
     }
 
     /// Iterates the living semantic variables.
-    pub fn alive(&self) -> impl Iterator<Item = &semantic::VarId> {
+    pub fn moved(&self) -> impl Iterator<Item = &semantic::VarId> {
         self.semantic_variables
             .iter()
-            .filter(|(_, entry)| matches!(entry, SemanticVariableEntry::Alive(_)))
+            .filter(|(_, entry)| matches!(entry, SemanticVariableEntry::Moved))
             .map(|(semantic_var_id, _)| semantic_var_id)
     }
 }
