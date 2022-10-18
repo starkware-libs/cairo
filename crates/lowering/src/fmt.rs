@@ -7,7 +7,7 @@ use crate::objects::{
     Block, BlockEnd, BlockId, Statement, StatementCall, StatementCallBlock, StatementLiteral,
     StatementMatchExtern, StatementTupleDestruct, VariableId,
 };
-use crate::{StatementMatchEnum, StatementTupleConstruct};
+use crate::{StatementEnumConstruct, StatementMatchEnum, StatementTupleConstruct};
 
 /// Holds all the information needed for formatting lowered representations.
 /// Acts like a "db" for DebugWithDb.
@@ -136,7 +136,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for Statement {
             Statement::MatchExtern(stmt) => stmt.fmt(f, ctx),
             Statement::StructConstruct => todo!(),
             Statement::StructDestruct => todo!(),
-            Statement::EnumConstruct => todo!(),
+            Statement::EnumConstruct(stmt) => stmt.fmt(f, ctx),
             Statement::MatchEnum(stmt) => stmt.fmt(f, ctx),
             Statement::TupleConstruct(stmt) => stmt.fmt(f, ctx),
             Statement::TupleDestruct(stmt) => stmt.fmt(f, ctx),
@@ -174,6 +174,30 @@ impl DebugWithDb<LoweredFormatter<'_>> for StatementCallBlock {
     }
 }
 
+impl DebugWithDb<LoweredFormatter<'_>> for StatementMatchExtern {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
+        // TODO(spapini): Format function name better.
+        write!(f, "match {:?}(", self.function.debug(ctx.db))?;
+        for var in &self.inputs {
+            var.fmt(f, ctx)?;
+        }
+        writeln!(f, ") {{")?;
+        for arm in &self.arms {
+            arm.fmt(f, ctx)?;
+            writeln!(f)?;
+        }
+        write!(f, "  }}")
+    }
+}
+
+impl DebugWithDb<LoweredFormatter<'_>> for ConcreteVariant {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
+        let enum_name = self.concrete_enum_id.enum_id(ctx.db).name(ctx.db.upcast());
+        let variant_name = self.id.name(ctx.db.upcast());
+        write!(f, "{}::{}", enum_name, variant_name)
+    }
+}
+
 impl DebugWithDb<LoweredFormatter<'_>> for StatementMatchEnum {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         write!(f, "match_enum(")?;
@@ -186,11 +210,13 @@ impl DebugWithDb<LoweredFormatter<'_>> for StatementMatchEnum {
     }
 }
 
-impl DebugWithDb<LoweredFormatter<'_>> for ConcreteVariant {
+impl DebugWithDb<LoweredFormatter<'_>> for StatementEnumConstruct {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
-        let enum_name = self.concrete_enum_id.enum_id(ctx.db).name(ctx.db.upcast());
-        let variant_name = self.id.name(ctx.db.upcast());
-        write!(f, "{}::{}", enum_name, variant_name)
+        let enum_name = self.variant.concrete_enum_id.enum_id(ctx.db).name(ctx.db.upcast());
+        let variant_name = self.variant.id.name(ctx.db.upcast());
+        write!(f, "{enum_name}::{variant_name}(",)?;
+        self.input.fmt(f, ctx)?;
+        write!(f, ")")
     }
 }
 
@@ -213,21 +239,5 @@ impl DebugWithDb<LoweredFormatter<'_>> for StatementTupleDestruct {
         write!(f, "tuple_destruct(")?;
         self.input.fmt(f, ctx)?;
         write!(f, ")")
-    }
-}
-
-impl DebugWithDb<LoweredFormatter<'_>> for StatementMatchExtern {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
-        // TODO(spapini): Format function name better.
-        write!(f, "match {:?}(", self.function.debug(ctx.db))?;
-        for var in &self.inputs {
-            var.fmt(f, ctx)?;
-        }
-        writeln!(f, ") {{")?;
-        for arm in &self.arms {
-            arm.fmt(f, ctx)?;
-            writeln!(f)?;
-        }
-        write!(f, "  }}")
     }
 }
