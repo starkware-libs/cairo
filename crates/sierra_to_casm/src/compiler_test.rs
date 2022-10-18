@@ -81,6 +81,8 @@ fn strip_comments_and_linebreaks(program: &str) -> String {
                 libfunc rename_felt = rename<felt>;
                 libfunc call_foo = function_call<user@foo>;
 
+                libfunc call_box_and_back = function_call<user@box_and_back>;
+
                 rename_felt([1]) -> ([1]);                      // #0
                 felt_dup([2]) -> ([2], [5]);                    // #1
                 felt_add([1], [2]) -> ([3]);                    // #2
@@ -116,11 +118,16 @@ fn strip_comments_and_linebreaks(program: &str) -> String {
                 store_temp_felt([3]) -> ([3]);                  // #29
                 return ([3]);                                   // #30
 
+                store_temp_felt([1]) -> ([1]);                  // #31
+                call_box_and_back([1]) -> ([1]);                // #32
+                return ([1]);                                   // #33
+
                 test_program@0([1]: felt, [2]: felt) -> (felt, felt, felt);
                 foo@10([1]: felt, [2]: felt) -> (felt, felt);
                 box_and_back@26([1]: felt) -> (felt);
+                box_and_back_wrapper@31([1]: felt) -> (felt);
             "},
-            md_builder(&[("box_and_back", 2)], false),
+            md_builder(&[("box_and_back", 2), ("box_and_back_wrapper", 5)], false),
             indoc! {"
                 [ap + 0] = [fp + -4] + [fp + -3], ap++;
                 [ap + 0] = [fp + -3], ap++;
@@ -142,6 +149,9 @@ fn strip_comments_and_linebreaks(program: &str) -> String {
                 %{ memory[ap + 0] = segments.add() %}
                 [fp + -3] = [[ap + 0]], ap++;
                 [ap + 0] = [[ap + -1]], ap++;
+                ret;
+                [ap + 0] = [fp + -3], ap++;
+                call rel -4;
                 ret;
             "};
             "good_flow")]
