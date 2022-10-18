@@ -149,9 +149,9 @@ fn generate_statement_match_extern_code(
     // Prepare the Sierra input and output variables.
     let args = context.get_sierra_variables(&statement.inputs);
 
-    // Generate labels for all the arms, except for the last (which will be Fallthrough).
+    // Generate labels for all the arms, except for the first (which will be Fallthrough).
     let arm_labels: Vec<(pre_sierra::Statement, pre_sierra::LabelId)> =
-        (0..statement.arms.len() - 1).map(|_i| context.new_label()).collect();
+        (1..statement.arms.len()).map(|_i| context.new_label()).collect();
     // Generate a label for the end of the match.
     let (end_label, end_label_id) = context.new_label();
 
@@ -162,10 +162,10 @@ fn generate_statement_match_extern_code(
 
     // Create the arm branches.
     let arm_targets: Vec<program::GenBranchTarget<pre_sierra::LabelId>> = chain!(
+        [program::GenBranchTarget::Fallthrough],
         arm_labels
             .iter()
             .map(|(_statement, label_id)| program::GenBranchTarget::Statement(*label_id)),
-        [program::GenBranchTarget::Fallthrough]
     )
     .collect();
 
@@ -182,11 +182,10 @@ fn generate_statement_match_extern_code(
     )));
 
     // Generate the blocks.
-    // Since the last block is Fallthrough, we handle the blocks in reverse order.
-    // TODO(lior): Consider skipping the rev() call.
-    for (i, arm) in enumerate(&statement.arms).rev() {
-        if i < arm_labels.len() {
-            statements.push(arm_labels[i].0.clone());
+    for (i, arm) in enumerate(&statement.arms) {
+        // Add a label for each of the arm blocks, except for the first.
+        if i > 0 {
+            statements.push(arm_labels[i - 1].0.clone());
         }
 
         // TODO(lior): Try to avoid the following clone().
@@ -194,7 +193,10 @@ fn generate_statement_match_extern_code(
         let code = generate_block_code_and_push_values(context, lowered_block, &statement.outputs)?;
         statements.extend(code);
 
-        statements.push(jump_statement(context.jump_libfunc_id(), end_label_id));
+        // Add jump statement to the end of the match. The last block does not require a jump.
+        if i < statement.arms.len() - 1 {
+            statements.push(jump_statement(context.jump_libfunc_id(), end_label_id));
+        }
     }
 
     // Post match.
