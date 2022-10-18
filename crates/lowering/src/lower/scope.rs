@@ -352,8 +352,19 @@ impl BlockFlowMerger {
     ) -> Option<()> {
         let maybe_output = try_extract_matches!(&block_sealed.end, BlockSealedEnd::Callsite)?;
         self.maybe_output_ty = maybe_output.as_ref().map(|var| ctx.variables[var.var_id()].ty);
-        let current_unpushable: HashSet<_> =
-            block_sealed.semantic_variables.moved().copied().collect();
+        let current_unpushable: HashSet<_> = block_sealed
+            .semantic_variables
+            .var_mapping
+            .iter()
+            .filter_map(|(var_id, entry)| match entry {
+                SemanticVariableEntry::Alive(var)
+                    if block_sealed.living_variables.contains(var.var_id()) =>
+                {
+                    None
+                }
+                _ => Some(*var_id),
+            })
+            .collect();
         self.moved_semantic_vars =
             self.moved_semantic_vars.union(&current_unpushable).copied().collect();
         Some(())
