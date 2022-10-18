@@ -67,10 +67,9 @@ impl LivingVariables {
         LivingVar(var.0)
     }
 
-    /// Destroys the scope, and retrieves the set of living variables as an ordered vector to drop /
-    /// destruct.
-    pub fn destroy(self) -> Vec<VariableId> {
-        self.living_variables.into_iter().collect()
+    /// Retrieves the set of living variables as an ordered vector in order to drop / destruct.
+    pub fn get_all(&self) -> Vec<VariableId> {
+        self.living_variables.iter().copied().collect()
     }
 }
 
