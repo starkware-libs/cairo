@@ -76,6 +76,7 @@ pub enum ReferenceExpression {
     IntoSingleCellRef(DerefOperand),
     Immediate(ImmediateOperand),
     BinOp(BinOpExpression),
+    Complex(Vec<ReferenceExpression>),
     Enum(EnumValue),
 }
 
@@ -97,6 +98,13 @@ impl ApplyApChange for ReferenceExpression {
             }
             ReferenceExpression::BinOp(operand) => {
                 ReferenceExpression::BinOp(operand.apply_ap_change(ap_change)?)
+            }
+            ReferenceExpression::Complex(elements) => {
+                let res_vec: Result<Vec<ReferenceExpression>, ApChangeError> = elements
+                    .into_iter()
+                    .map(|ref_expr| ref_expr.apply_ap_change(ap_change))
+                    .collect();
+                ReferenceExpression::Complex(res_vec?)
             }
             ReferenceExpression::Enum(enum_value) => {
                 ReferenceExpression::Enum(enum_value.apply_ap_change(ap_change)?)
