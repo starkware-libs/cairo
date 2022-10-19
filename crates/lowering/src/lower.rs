@@ -1,7 +1,7 @@
 use defs::ids::{FreeFunctionId, LanguageElementId};
 use diagnostics::Diagnostics;
 use id_arena::Arena;
-use itertools::zip_eq;
+use itertools::{chain, zip_eq};
 use scope::{BlockScope, BlockScopeEnd};
 use semantic::corelib::{
     core_bool_enum, core_felt_ty, core_jump_nz_func, core_nonzero_ty, false_variant, true_variant,
@@ -10,6 +10,7 @@ use semantic::corelib::{
 use semantic::db::SemanticGroup;
 use semantic::items::enm::SemanticEnumEx;
 use semantic::{ConcreteTypeId, TypeLongId};
+use syntax::node::ids::SyntaxStablePtrId;
 use utils::unordered_hash_map::UnorderedHashMap;
 use utils::{extract_matches, try_extract_matches};
 
@@ -251,14 +252,11 @@ impl<'db> Lowerer<'db> {
             semantic::Expr::FunctionCall(expr) => self.lower_expr_function_call(expr, scope),
             semantic::Expr::Match(expr) => self.lower_expr_match(expr, scope),
             semantic::Expr::If(expr) => self.lower_expr_if(scope, expr),
-            semantic::Expr::Var(expr) => Ok(LoweredExpr::AtVariable(
-                scope.use_semantic_variable(&mut self.ctx, expr.var).take_var().ok_or_else(
-                    || {
-                        self.ctx.diagnostics.report(expr.stable_ptr.untyped(), VariableMoved);
-                        LoweringFlowError::Failed
-                    },
-                )?,
-            )),
+            semantic::Expr::Var(expr) => Ok(LoweredExpr::AtVariable(self.use_semantic_var(
+                scope,
+                expr.var,
+                expr.stable_ptr.untyped(),
+            )?)),
             semantic::Expr::Literal(expr) => Ok(LoweredExpr::AtVariable(
                 generators::Literal { value: expr.value, ty: expr.ty }.add(&mut self.ctx, scope),
             )),
@@ -311,11 +309,29 @@ impl<'db> Lowerer<'db> {
         expr: &semantic::ExprFunctionCall,
         scope: &mut BlockScope,
     ) -> Result<LoweredExpr, LoweringFlowError> {
-        let inputs = self.lower_exprs_as_vars(&expr.args, scope)?;
-        Ok(LoweredExpr::AtVariable(
-            generators::Call { function: expr.function, inputs, ret_ty: expr.ty }
-                .add(&mut self.ctx, scope),
-        ))
+        // TODO(spapini): Use the correct stable pointer.
+        let (ref_tys, ref_inputs): (_, Vec<LivingVar>) = expr
+            .ref_args
+            .iter()
+            .map(|semantic_var_id| {
+                Ok((
+                    self.ctx.semantic_defs[*semantic_var_id].ty(),
+                    self.use_semantic_var(scope, *semantic_var_id, expr.stable_ptr.untyped())?,
+                ))
+            })
+            .collect::<Result<Vec<_>, _>>()?
+            .into_iter()
+            .unzip();
+        let arg_inputs = self.lower_exprs_as_vars(&expr.args, scope)?;
+        let inputs = chain!(ref_inputs, arg_inputs.into_iter()).collect();
+        let call_result =
+            generators::Call { function: expr.function, inputs, ref_tys, ret_ty: expr.ty }
+                .add(&mut self.ctx, scope);
+        // Rebind the ref variables.
+        for (semantic_var_id, output_var) in zip_eq(&expr.ref_args, call_result.ref_outputs) {
+            scope.put_semantic_variable(*semantic_var_id, output_var);
+        }
+        Ok(LoweredExpr::AtVariable(call_result.output))
     }
 
     /// Lowers an expression of type [semantic::ExprMatch].
@@ -567,6 +583,20 @@ impl<'db> Lowerer<'db> {
         let var = self.lower_expr(scope, expr.rhs)?.var(self, scope);
         scope.put_semantic_variable(expr.var, var);
         Ok(LoweredExpr::Unit)
+    }
+
+    /// Retrieves a LivingVar that corresponds to a semantic var in the current scope.
+    /// Moves it if necessary. If it is already moved, fails and emits a diagnostic.
+    fn use_semantic_var(
+        &mut self,
+        scope: &mut BlockScope,
+        semantic_var: semantic::VarId,
+        stable_ptr: SyntaxStablePtrId,
+    ) -> Result<LivingVar, LoweringFlowError> {
+        scope.use_semantic_variable(&mut self.ctx, semantic_var).take_var().ok_or_else(|| {
+            self.ctx.diagnostics.report(stable_ptr, VariableMoved);
+            LoweringFlowError::Failed
+        })
     }
 }
 

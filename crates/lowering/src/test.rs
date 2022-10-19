@@ -10,6 +10,7 @@ utils::test_file_test!(
     lowering_test,
     [
         "src/test_data/assignment",
+        "src/test_data/call",
         "src/test_data/enums",
         "src/test_data/match",
         "src/test_data/tests",
