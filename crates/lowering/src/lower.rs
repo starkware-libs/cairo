@@ -251,12 +251,13 @@ impl<'db> Lowerer<'db> {
             semantic::Expr::FunctionCall(expr) => self.lower_expr_function_call(expr, scope),
             semantic::Expr::Match(expr) => self.lower_expr_match(expr, scope),
             semantic::Expr::If(expr) => self.lower_expr_if(scope, expr),
-            // TODO(spapini): Convert to a diagnostic.
             semantic::Expr::Var(expr) => Ok(LoweredExpr::AtVariable(
-                scope
-                    .use_semantic_variable(&mut self.ctx, expr.var)
-                    .take_var()
-                    .expect("Value already moved."),
+                scope.use_semantic_variable(&mut self.ctx, expr.var).take_var().ok_or_else(
+                    || {
+                        self.ctx.diagnostics.report(expr.stable_ptr.untyped(), VariableMoved);
+                        LoweringFlowError::Failed
+                    },
+                )?,
             )),
             semantic::Expr::Literal(expr) => Ok(LoweredExpr::AtVariable(
                 generators::Literal { value: expr.value, ty: expr.ty }.add(&mut self.ctx, scope),
@@ -264,7 +265,7 @@ impl<'db> Lowerer<'db> {
             semantic::Expr::MemberAccess(_) => todo!(),
             semantic::Expr::StructCtor(_) => todo!(),
             semantic::Expr::EnumVariantCtor(expr) => self.lower_expr_enum_ctor(expr, scope),
-            semantic::Expr::Missing(_) => todo!(),
+            semantic::Expr::Missing(_) => Err(LoweringFlowError::Failed),
         }
     }
 
