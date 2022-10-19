@@ -144,6 +144,7 @@ impl BlockSealed {
         ctx: &mut LoweringContext<'_>,
         pulls: OrderedHashMap<semantic::VarId, UsableVariable>,
         pushes: &[semantic::VarId],
+        extra_outputs: &[semantic::VarId],
     ) -> BlockFinalized {
         let BlockSealed { inputs, mut living_variables, mut semantic_variables, statements, end } =
             self;
@@ -156,8 +157,7 @@ impl BlockSealed {
         // Compute drops.
         let (end, end_info, drops) = match end {
             BlockSealedEnd::Callsite(maybe_output) => {
-                let pushes: Vec<_> = pushes
-                    .iter()
+                let pushes: Vec<_> = chain!(pushes, extra_outputs)
                     .map(|semantic_var_id| {
                         // These should not panic by assumption of the function.
                         let var = semantic_variables
@@ -260,7 +260,7 @@ impl BlockFlowMerger {
         borrow_as_box(parent_scope, |boxed_parent_scope| {
             let mut merger = Self { parent_scope: Some(boxed_parent_scope), ..Self::default() };
             let res = f(ctx, &mut merger);
-            let (finalized, returned_scope) = merger.finalize(ctx.ctx());
+            let (finalized, returned_scope) = merger.finalize(ctx.ctx(), &[]);
             ((res, finalized), returned_scope.unwrap())
         })
     }
@@ -272,11 +272,12 @@ impl BlockFlowMerger {
     /// used for the root scope only.
     pub fn with_root<'a, Ctx: ContextLender<'a>, T, F: FnOnce(&mut Ctx, &mut Self) -> T>(
         ctx: &mut Ctx,
+        extra_outputs: &[semantic::VarId],
         f: F,
     ) -> (T, BlockMergerFinalized) {
         let mut merger = Self::default();
         let res = f(ctx, &mut merger);
-        let (finalized, _returned_scope) = merger.finalize(ctx.ctx());
+        let (finalized, _returned_scope) = merger.finalize(ctx.ctx(), extra_outputs);
 
         (res, finalized)
     }
@@ -374,15 +375,31 @@ impl BlockFlowMerger {
     fn finalize(
         self,
         ctx: &LoweringContext<'_>,
+        extra_outputs: &[semantic::VarId],
     ) -> (BlockMergerFinalized, Option<Box<BlockScope>>) {
         let pull_set = self.pulls.iter().map(|(var, _)| var).copied().collect::<HashSet<_>>();
-        let pushable = pull_set.difference(&self.moved_semantic_vars);
-        let pushes: Vec<_> = pushable.into_iter().copied().collect();
+        let pushable = pull_set.difference(&self.moved_semantic_vars).collect::<HashSet<_>>();
+
+        // Make the ordering stable.
+        let pushable = self
+            .pulls
+            .iter()
+            .filter_map(|(var_id, _)| if pushable.contains(var_id) { Some(var_id) } else { None });
+
+        let pushes: Vec<_> = pushable.copied().collect();
+        let extra_outputs: Vec<_> = extra_outputs.to_vec();
         let push_tys = pushes.iter().map(|var_id| ctx.semantic_defs[*var_id].ty()).collect();
         let end_info = BlockEndInfo::Callsite { maybe_output_ty: self.maybe_output_ty, push_tys };
+
         // TODO(spapini): Optimize pushes by maintaining shouldnt_push.
         (
-            BlockMergerFinalized { end_info, splitter: self.splitter, pulls: self.pulls, pushes },
+            BlockMergerFinalized {
+                end_info,
+                splitter: self.splitter,
+                pulls: self.pulls,
+                pushes,
+                extra_outputs,
+            },
             self.parent_scope,
         )
     }
@@ -394,6 +411,7 @@ pub struct BlockMergerFinalized {
     splitter: Splitter,
     pulls: OrderedHashMap<semantic::VarId, LivingVar>,
     pub pushes: Vec<semantic::VarId>,
+    extra_outputs: Vec<semantic::VarId>,
 }
 impl BlockMergerFinalized {
     /// Finalizes a sealed block.
@@ -404,6 +422,6 @@ impl BlockMergerFinalized {
     ) -> BlockFinalized {
         let pulls: OrderedHashMap<_, _> =
             self.pulls.iter().map(|(key, var)| (*key, self.splitter.split(var))).collect();
-        block_sealed.finalize(ctx, pulls, &self.pushes)
+        block_sealed.finalize(ctx, pulls, &self.pushes, &self.extra_outputs)
     }
 }

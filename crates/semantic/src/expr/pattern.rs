@@ -1,14 +1,12 @@
 use debug::DebugWithDb;
-use defs::db::DefsGroup;
-use defs::ids::{LocalVarId, StructId};
+use defs::ids::StructId;
 use diagnostics_proc_macros::DebugWithDb;
 use smol_str::SmolStr;
-use syntax::node::ast;
 
 use super::fmt::ExprFormatter;
 use crate::corelib::core_felt_ty;
 use crate::db::SemanticGroup;
-use crate::{semantic, ExprLiteral};
+use crate::{semantic, ExprLiteral, LocalVariable};
 
 /// Semantic representation of a Pattern.
 /// A pattern is a way to "destructure" values. A pattern may introduce new variables that are bound
@@ -73,19 +71,6 @@ pub struct PatternVariable {
 impl DebugWithDb<ExprFormatter<'_>> for PatternVariable {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, _db: &ExprFormatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.name)
-    }
-}
-
-/// Semantic model of a variable.
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
-#[debug_db(ExprFormatter<'_>)]
-pub struct LocalVariable {
-    pub id: LocalVarId,
-    pub ty: semantic::TypeId,
-}
-impl LocalVariable {
-    pub fn stable_ptr(&self, db: &dyn DefsGroup) -> ast::TerminalIdentifierPtr {
-        self.id.stable_ptr(db)
     }
 }
 

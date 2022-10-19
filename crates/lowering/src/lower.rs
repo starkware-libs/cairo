@@ -30,6 +30,8 @@ mod variables;
 pub struct Lowerer<'db> {
     /// Semantic model for current function definition.
     function_def: &'db semantic::FreeFunctionDefinition,
+    #[allow(dead_code)]
+    ref_params: &'db [semantic::VarId],
     ctx: LoweringContext<'db>,
 }
 
@@ -62,7 +64,6 @@ impl<'db> Lowerer<'db> {
             blocks: Arena::default(),
             semantic_defs: UnorderedHashMap::default(),
         };
-        let mut lowerer = Lowerer { function_def: &*function_def, ctx };
 
         let signature = db.free_function_declaration_signature(free_function_id)?;
 
@@ -74,6 +75,11 @@ impl<'db> Lowerer<'db> {
                 .iter()
                 .map(|semantic_var| (semantic_var.id(), semantic_var.ty()))
                 .unzip();
+        let ref_params: Vec<_> = input_semantic_vars
+            .iter()
+            .filter_map(|var| if var.modifiers().is_ref { Some(var.id()) } else { None })
+            .collect();
+        let mut lowerer = Lowerer { function_def: &*function_def, ref_params: &ref_params, ctx };
 
         // TODO(spapini): Build semantic_defs in semantic model.
         for semantic_var in input_semantic_vars {
@@ -85,7 +91,7 @@ impl<'db> Lowerer<'db> {
             extract_matches!(&function_def.exprs[function_def.body], semantic::Expr::Block);
         // Lower block to a BlockSealed.
         let (block_sealed_opt, mut merger_finalized) =
-            BlockFlowMerger::with_root(&mut lowerer, |lowerer, merger| {
+            BlockFlowMerger::with_root(&mut lowerer, &ref_params, |lowerer, merger| {
                 merger.run_in_subscope(
                     lowerer,
                     input_semantic_var_tys,
@@ -99,7 +105,7 @@ impl<'db> Lowerer<'db> {
                 )
             });
         // Root block must not push anything.
-        merger_finalized.pushes.clear();
+        assert!(merger_finalized.pushes.is_empty(), "No push should exist in root scope.");
         let root = block_sealed_opt.map(|block_sealed| {
             merger_finalized.finalize_block(&mut lowerer.ctx, block_sealed).block
         });

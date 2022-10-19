@@ -30,6 +30,7 @@ use crate::items::strct::SemanticStructEx;
 use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use crate::semantic::{self, FunctionId, LocalVariable, TypeId, TypeLongId, Variable};
 use crate::types::{resolve_type, ConcreteTypeId};
+use crate::Modifiers;
 
 /// Context for computing the semantic model of expression trees.
 pub struct ComputationContext<'ctx> {
@@ -479,7 +480,7 @@ fn compute_pattern_semantic(
 
             Pattern::Variable(PatternVariable {
                 name: identifier.text(syntax_db),
-                var: LocalVariable { id: var_id, ty },
+                var: LocalVariable { id: var_id, ty, modifiers: Modifiers::default() },
             })
         }
         ast::Pattern::Struct(pattern_struct) => {
