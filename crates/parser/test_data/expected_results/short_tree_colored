@@ -1,43 +1,43 @@
 └── [36mroot[0m (kind: SyntaxFile)
     ├── [36mitems[0m (kind: ItemList)
-    │   ├── [36mchild #0[0m (kind: ItemUse)
-    │   │   ├── [34muse_kw[0m (kind: TokenUse): '[1;32muse[0m'
-    │   │   ├── [36mname[0m (kind: ExprPath)
-    │   │   │   ├── [36mitem #0[0m (kind: PathSegmentSimple)
-    │   │   │   │   └── [34mident[0m (kind: TokenIdentifier): '[1;32mstd[0m'
-    │   │   │   ├── [34mseparator #0[0m (kind: TokenColonColon): '[1;32m::[0m'
-    │   │   │   └── [36mitem #1[0m (kind: PathSegmentSimple)
-    │   │   │       └── [34mident[0m (kind: TokenIdentifier): '[1;32mformat[0m'
-    │   │   └── [34msemicolon[0m (kind: TokenSemicolon): '[1;32m;[0m'
-    │   └── [36mchild #1[0m (kind: ItemFreeFunction)
-    │       ├── [34mfunction_kw[0m (kind: TokenFunction): '[1;32mfunc[0m'
-    │       ├── [34mname[0m (kind: TokenIdentifier): '[1;32mfoo[0m'
-    │       ├── [36mgeneric_params[0m (kind: OptionGenericParamsEmpty)[95m [][0m
-    │       ├── [36msignature[0m (kind: FunctionSignature)
-    │       │   ├── [34mlparen[0m (kind: TokenLParen): '[1;32m([0m'
-    │       │   ├── [36mparameters[0m (kind: ParamList)
-    │       │   │   └── [36mitem #0[0m (kind: Param)
-    │       │   │       ├── [36mmodifiers[0m (kind: ModifierList)[95m [][0m
-    │       │   │       ├── [34mname[0m (kind: TokenIdentifier): '[1;32ma[0m'
-    │       │   │       └── [36mtype_clause[0m (kind: TypeClause)
-    │       │   │           ├── [34mcolon[0m (kind: TokenColon): '[1;32m:[0m'
-    │       │   │           └── [36mty[0m (kind: ExprPath)
-    │       │   │               └── [36mitem #0[0m (kind: PathSegmentSimple)
-    │       │   │                   └── [34mident[0m (kind: TokenIdentifier): '[1;32mint[0m'
-    │       │   ├── [34mrparen[0m (kind: TokenRParen): '[1;32m)[0m'
-    │       │   └── [36mret_ty[0m (kind: ReturnTypeClause)
-    │       │       ├── [34marrow[0m (kind: TokenArrow): '[1;32m->[0m'
-    │       │       └── [36mty[0m (kind: ExprPath)
-    │       │           └── [36mitem #0[0m (kind: PathSegmentSimple)
-    │       │               └── [34mident[0m (kind: TokenIdentifier): '[1;32mfelt[0m'
-    │       └── [36mbody[0m (kind: ExprBlock)
-    │           ├── [34mlbrace[0m (kind: TokenLBrace): '[1;32m{[0m'
-    │           ├── [36mstatements[0m (kind: StatementList)
-    │           │   └── [36mchild #0[0m (kind: StatementReturn)
-    │           │       ├── [34mreturn_kw[0m (kind: TokenReturn): '[1;32mreturn[0m'
-    │           │       ├── [36mexpr[0m (kind: ExprPath)
-    │           │       │   └── [36mitem #0[0m (kind: PathSegmentSimple)
-    │           │       │       └── [34mident[0m (kind: TokenIdentifier): '[1;32ma[0m'
-    │           │       └── [34msemicolon[0m (kind: TokenSemicolon): '[1;32m;[0m'
-    │           └── [34mrbrace[0m (kind: TokenRBrace): '[1;32m}[0m'
+    │   ├── [36mchild #0[0m (kind: ItemUse)
+    │   │   ├── [34muse_kw[0m (kind: TokenUse): '[1;32muse[0m'
+    │   │   ├── [36mname[0m (kind: ExprPath)
+    │   │   │   ├── [36mitem #0[0m (kind: PathSegmentSimple)
+    │   │   │   │   └── [34mident[0m (kind: TokenIdentifier): '[1;32mstd[0m'
+    │   │   │   ├── [34mseparator #0[0m (kind: TokenColonColon): '[1;32m::[0m'
+    │   │   │   └── [36mitem #1[0m (kind: PathSegmentSimple)
+    │   │   │       └── [34mident[0m (kind: TokenIdentifier): '[1;32mformat[0m'
+    │   │   └── [34msemicolon[0m (kind: TokenSemicolon): '[1;32m;[0m'
+    │   └── [36mchild #1[0m (kind: ItemFreeFunction)
+    │       ├── [34mfunction_kw[0m (kind: TokenFunction): '[1;32mfunc[0m'
+    │       ├── [34mname[0m (kind: TokenIdentifier): '[1;32mfoo[0m'
+    │       ├── [36mgeneric_params[0m (kind: OptionGenericParamsEmpty)[95m [][0m
+    │       ├── [36msignature[0m (kind: FunctionSignature)
+    │       │   ├── [34mlparen[0m (kind: TokenLParen): '[1;32m([0m'
+    │       │   ├── [36mparameters[0m (kind: ParamList)
+    │       │   │   └── [36mitem #0[0m (kind: Param)
+    │       │   │       ├── [36mmodifiers[0m (kind: ModifierList)[95m [][0m
+    │       │   │       ├── [34mname[0m (kind: TokenIdentifier): '[1;32ma[0m'
+    │       │   │       └── [36mtype_clause[0m (kind: TypeClause)
+    │       │   │           ├── [34mcolon[0m (kind: TokenColon): '[1;32m:[0m'
+    │       │   │           └── [36mty[0m (kind: ExprPath)
+    │       │   │               └── [36mitem #0[0m (kind: PathSegmentSimple)
+    │       │   │                   └── [34mident[0m (kind: TokenIdentifier): '[1;32mint[0m'
+    │       │   ├── [34mrparen[0m (kind: TokenRParen): '[1;32m)[0m'
+    │       │   └── [36mret_ty[0m (kind: ReturnTypeClause)
+    │       │       ├── [34marrow[0m (kind: TokenArrow): '[1;32m->[0m'
+    │       │       └── [36mty[0m (kind: ExprPath)
+    │       │           └── [36mitem #0[0m (kind: PathSegmentSimple)
+    │       │               └── [34mident[0m (kind: TokenIdentifier): '[1;32mfelt[0m'
+    │       └── [36mbody[0m (kind: ExprBlock)
+    │           ├── [34mlbrace[0m (kind: TokenLBrace): '[1;32m{[0m'
+    │           ├── [36mstatements[0m (kind: StatementList)
+    │           │   └── [36mchild #0[0m (kind: StatementReturn)
+    │           │       ├── [34mreturn_kw[0m (kind: TokenReturn): '[1;32mreturn[0m'
+    │           │       ├── [36mexpr[0m (kind: ExprPath)
+    │           │       │   └── [36mitem #0[0m (kind: PathSegmentSimple)
+    │           │       │       └── [34mident[0m (kind: TokenIdentifier): '[1;32ma[0m'
+    │           │       └── [34msemicolon[0m (kind: TokenSemicolon): '[1;32m;[0m'
+    │           └── [34mrbrace[0m (kind: TokenRBrace): '[1;32m}[0m'
     └── [34meof[0m (kind: TokenEndOfFile).

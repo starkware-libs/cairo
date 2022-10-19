@@ -25,14 +25,14 @@ FunctionSignature
 └── Top level kind: FunctionSignature
     ├── lparen (kind: TokenLParen): '('
     ├── parameters (kind: ParamList)
-    │   └── item #0 (kind: Param)
-    │       ├── modifiers (kind: ModifierList) []
-    │       ├── name (kind: TokenIdentifier): 'a'
-    │       └── type_clause (kind: TypeClause)
-    │           ├── colon (kind: TokenColon): ':'
-    │           └── ty (kind: ExprPath)
-    │               └── item #0 (kind: PathSegmentSimple)
-    │                   └── ident (kind: TokenIdentifier): 'int'
+    │   └── item #0 (kind: Param)
+    │       ├── modifiers (kind: ModifierList) []
+    │       ├── name (kind: TokenIdentifier): 'a'
+    │       └── type_clause (kind: TypeClause)
+    │           ├── colon (kind: TokenColon): ':'
+    │           └── ty (kind: ExprPath)
+    │               └── item #0 (kind: PathSegmentSimple)
+    │                   └── ident (kind: TokenIdentifier): 'int'
     ├── rparen (kind: TokenRParen): ')'
     └── ret_ty (kind: ReturnTypeClause)
         ├── arrow (kind: TokenArrow): '->'
