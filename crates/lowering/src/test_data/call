@@ -10,6 +10,10 @@ func foo(ref a: felt) -> felt {
       bar(a, b);
     } else {
     }
+    if false {
+      return 6;
+    } else {
+    }
     5
 }
 
@@ -41,6 +45,21 @@ End:
   Callsite(v0, v2)
 
 blk2:
+Inputs: v13: ()
+Statements:
+  (v14: core::felt) <- 6u
+Drops: v13, v0, v1, v2, v3, v4, v9, v10, v11, v12
+End:
+  Return(v14, v9)
+
+blk3:
+Inputs: v15: ()
+Statements:
+Drops: v15
+End:
+  Callsite(v9)
+
+blk4:
 Inputs: v0: core::felt
 Statements:
   (v1: ()) <- tuple_construct()
@@ -51,7 +70,13 @@ Statements:
     bool::True => blk0,
     bool::False => blk1,
   }
-  (v11: core::felt) <- 5u
-Drops: v0, v1, v2, v3, v4, v10
+  (v11: ()) <- tuple_construct()
+  (v12: core::bool) <- bool::False(v11)
+  (v16: core::felt) <- match_enum(v12) {
+    bool::True => blk2,
+    bool::False => blk3,
+  }
+  (v17: core::felt) <- 5u
+Drops: v0, v1, v2, v3, v4, v9, v10, v11, v12
 End:
-  Callsite(v11, v9)
+  Callsite(v17, v16)

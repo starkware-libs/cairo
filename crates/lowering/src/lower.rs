@@ -190,19 +190,26 @@ impl<'db> Lowerer<'db> {
                 self.lower_single_pattern(scope, pattern, var)
             }
             semantic::Statement::Return(semantic::StatementReturn { expr, stable_ptr: _ }) => {
+                // Lower return expr.
                 let lowered_expr = self.lower_expr(scope, *expr)?;
-                match lowered_expr {
-                    LoweredExpr::AtVariable(var) => {
-                        // TODO(spapini): Implicits and mutables.
-                        return Err(StatementLoweringFlowError::End(BlockScopeEnd::Return(vec![
-                            var,
-                        ])));
-                    }
-                    LoweredExpr::Unit => {
-                        // TODO(spapini): Implicits and mutables.
-                        return Err(StatementLoweringFlowError::End(BlockScopeEnd::Return(vec![])));
-                    }
-                }
+                let value_vars = match lowered_expr {
+                    LoweredExpr::AtVariable(var) => vec![var],
+                    LoweredExpr::Unit => vec![],
+                };
+                // Find variables to output for ref vars.
+                let ref_vars = self
+                    .ref_params
+                    .iter()
+                    .map(|semantic_var_id| {
+                        self.use_semantic_var(
+                            scope,
+                            *semantic_var_id,
+                            semantic_var_id.untyped_stable_ptr(self.ctx.db.upcast()),
+                        )
+                    })
+                    .collect::<Result<Vec<_>, _>>()?;
+                let return_vars = chain!(value_vars, ref_vars).collect();
+                return Err(StatementLoweringFlowError::End(BlockScopeEnd::Return(return_vars)));
             }
         }
         Ok(())
