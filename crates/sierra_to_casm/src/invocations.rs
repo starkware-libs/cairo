@@ -7,8 +7,8 @@ use casm::instructions::{
     JnzInstruction, JumpInstruction,
 };
 use casm::operand::{
-    ap_deref_operand, BinOpOperand, DerefOperand, DerefOrImmediate, DoubleDerefOperand,
-    ImmediateOperand, Operation, Register, ResOperand,
+    BinOpOperand, DerefOperand, DerefOrImmediate, DoubleDerefOperand, ImmediateOperand, Operation,
+    Register, ResOperand,
 };
 use itertools::zip_eq;
 use sierra::extensions::arithmetic::{
@@ -30,11 +30,12 @@ use sierra::extensions::ConcreteLibFunc;
 use sierra::ids::ConcreteTypeId;
 use sierra::program::{BranchInfo, BranchTarget, Invocation, StatementIdx};
 use thiserror::Error;
+use utils::try_extract_matches;
 
 use crate::environment::frame_state::FrameStateError;
 use crate::environment::{frame_state, Environment};
 use crate::metadata::Metadata;
-use crate::references::{BinOpExpression, ReferenceExpression, ReferenceValue};
+use crate::references::{BinOpExpression, EnumValue, ReferenceExpression, ReferenceValue};
 use crate::relocations::{Relocation, RelocationEntry};
 use crate::type_sizes::TypeSizeMap;
 
@@ -344,6 +345,8 @@ impl CompiledInvocationBuilder<'_> {
                     hints,
                 });
             }
+            // TODO(gil)
+            ReferenceExpression::Enum(_) => todo!(),
         };
         Ok(Instruction {
             body: InstructionBody::AssertEq(AssertEqInstruction { a: dst_operand, b: res_operand }),
@@ -441,7 +444,7 @@ impl CompiledInvocationBuilder<'_> {
                 instruction_idx: 0,
                 relocation: Relocation::RelativeStatementId(*target_statement_id),
             }],
-            [ApChange::Known(0), ApChange::Known(0)].into_iter(),
+            itertools::repeat_n(ApChange::Known(0), 2).into_iter(),
             [vec![].into_iter(), vec![ReferenceExpression::Deref(*condition)].into_iter()]
                 .into_iter(),
         ))
@@ -752,36 +755,26 @@ impl CompiledInvocationBuilder<'_> {
             (2 * index + 1) as i128
         };
 
-        // TODO(yuval): once sizes > 1 are supported, change implementation to return a Sierra
-        // reference to be stored later.
-        Ok(self.build(
-            vec![
-                Instruction::new(
-                    InstructionBody::AssertEq(AssertEqInstruction {
-                        a: ap_deref_operand(0),
-                        b: ResOperand::Immediate(ImmediateOperand { value: variant_selector }),
-                    }),
-                    true,
-                ),
-                Instruction::new(
-                    InstructionBody::AssertEq(AssertEqInstruction {
-                        a: ap_deref_operand(0),
-                        b: ResOperand::Deref(*init_arg),
-                    }),
-                    true,
-                ),
-            ],
-            vec![],
-            [ApChange::Known(2)].into_iter(),
-            vec![[ReferenceExpression::Deref(ap_deref_operand(-2))].into_iter()].into_iter(),
+        Ok(self.build_only_reference_changes(
+            [ReferenceExpression::Enum(EnumValue {
+                variant_selector: Box::new(ReferenceExpression::Immediate(ImmediateOperand {
+                    value: variant_selector,
+                })),
+                inner_value: Box::new(ReferenceExpression::Deref(*init_arg)),
+            })]
+            .into_iter(),
         ))
     }
 
     /// Handles statement for matching an enum.
     fn build_enum_match(self) -> Result<CompiledInvocation, InvocationError> {
         let matched_var = match self.refs {
-            [ReferenceValue { expression: ReferenceExpression::Deref(deref_operand), .. }] => {
-                deref_operand
+            [ReferenceValue { expression: ReferenceExpression::Enum(enum_value), .. }] => {
+                // Verify variant_selector is of type deref. This is the case with an enum_value
+                // that was validly created and then stored.
+                try_extract_matches!(*enum_value.variant_selector, ReferenceExpression::Deref)
+                    .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+                enum_value
             }
             [_] => return Err(InvocationError::InvalidReferenceExpressionForArgument),
             refs => {
@@ -838,17 +831,22 @@ impl CompiledInvocationBuilder<'_> {
     fn build_enum_match_short(
         self,
         num_branches: usize,
-        matched_var: &DerefOperand,
+        matched_var: &EnumValue,
         mut target_statement_ids: impl Iterator<Item = StatementIdx>,
     ) -> Result<CompiledInvocation, InvocationError> {
         let mut instructions = Vec::new();
         let mut relocations = Vec::new();
         // Add the jump_nz instruction if we have 2 branches.
         if num_branches == 2 {
+            // TODO(yuval): remove the redundant try_extract_matches by having
+            // EnumValue+StoredEnumValue (see another todo in `EnumValue`).
+            let variant_selector =
+                try_extract_matches!(*matched_var.variant_selector, ReferenceExpression::Deref)
+                    .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
             instructions.push(Instruction::new(
                 InstructionBody::Jnz(JnzInstruction {
                     jump_offset: DerefOrImmediate::Immediate(ImmediateOperand { value: 0 }),
-                    condition: *matched_var,
+                    condition: variant_selector,
                 }),
                 false,
             ));
@@ -876,12 +874,9 @@ impl CompiledInvocationBuilder<'_> {
         Ok(self.build(
             instructions,
             relocations,
-            vec![ApChange::Known(0); num_branches].into_iter(),
-            vec![
-                [ReferenceExpression::Deref(offset_in_struct(matched_var, 1))].into_iter();
-                num_branches
-            ]
-            .into_iter(),
+            itertools::repeat_n(ApChange::Known(0), num_branches).into_iter(),
+            itertools::repeat_n(vec![*matched_var.inner_value.clone()].into_iter(), num_branches)
+                .into_iter(),
         ))
     }
 
@@ -914,13 +909,19 @@ impl CompiledInvocationBuilder<'_> {
     fn build_enum_match_long(
         self,
         num_branches: usize,
-        matched_var: &DerefOperand,
+        matched_var: &EnumValue,
         target_statement_ids: impl Iterator<Item = StatementIdx>,
     ) -> Result<CompiledInvocation, InvocationError> {
+        // TODO(yuval): remove the redundant try_extract_matches by having
+        // EnumValue+StoredEnumValue (see another todo in `EnumValue`).
+        let variant_selector =
+            try_extract_matches!(*matched_var.variant_selector, ReferenceExpression::Deref)
+                .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+
         // The first instruction is the jmp to the relevant index in the jmp table.
         let mut instructions = vec![Instruction::new(
             InstructionBody::Jump(JumpInstruction {
-                target: DerefOrImmediate::Deref(*matched_var),
+                target: DerefOrImmediate::Deref(variant_selector),
                 relative: true,
             }),
             false,
@@ -945,12 +946,9 @@ impl CompiledInvocationBuilder<'_> {
         Ok(self.build(
             instructions,
             relocations,
-            vec![ApChange::Known(0); num_branches].into_iter(),
-            vec![
-                [ReferenceExpression::Deref(offset_in_struct(matched_var, 1))].into_iter();
-                num_branches
-            ]
-            .into_iter(),
+            itertools::repeat_n(ApChange::Known(0), num_branches).into_iter(),
+            itertools::repeat_n(vec![*matched_var.inner_value.clone()].into_iter(), num_branches)
+                .into_iter(),
         ))
     }
 }
@@ -1029,14 +1027,4 @@ pub fn compile_invocation(
         CoreConcreteLibFunc::Enum(EnumConcreteLibFunc::Match(_)) => builder.build_enum_match(),
         _ => Err(InvocationError::NotImplemented(invocation.clone())),
     }
-}
-
-// TODO(yuval/gil): extract to some utils or use Gil's way.
-// TODO(yuval/gil): verify no i16 overflow.
-// TODO(yuval/gil): verify offset < strct-size.
-// TODO(yuval/gil): the new strct-size should be the original minus offset.
-/// Creates a new DerefOperand from the referenced DerefOperand, with an offset into it. That is, if
-/// `strct` is [reg + x], then offset_in_struct(&strct, y) is [reg + (x + y)].
-fn offset_in_struct(strct: &DerefOperand, offset: i16) -> DerefOperand {
-    DerefOperand { register: strct.register, offset: strct.offset + offset }
 }
