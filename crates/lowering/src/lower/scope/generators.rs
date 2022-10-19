@@ -35,23 +35,33 @@ impl Literal {
 pub struct Call {
     pub function: semantic::FunctionId,
     pub inputs: Vec<LivingVar>,
+    pub ref_tys: Vec<semantic::TypeId>,
     pub ret_ty: semantic::TypeId,
 }
+pub struct CallResult {
+    pub output: LivingVar,
+    pub ref_outputs: Vec<LivingVar>,
+}
 impl Call {
-    pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockScope) -> LivingVar {
+    pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockScope) -> CallResult {
         let inputs = self
             .inputs
             .into_iter()
             .map(|var| scope.living_variables.use_var(ctx, var).var_id())
             .collect();
         let output = scope.living_variables.introduce_new_var(ctx, self.ret_ty);
-        // TODO(spapini): Support mut variables.
+        let ref_outputs = self
+            .ref_tys
+            .into_iter()
+            .map(|ty| scope.living_variables.introduce_new_var(ctx, ty))
+            .collect();
+        let outputs = chain!([&output], &ref_outputs).map(|var| var.var_id()).collect();
         scope.statements.push(Statement::Call(StatementCall {
             function: self.function,
             inputs,
-            outputs: vec![output.var_id()],
+            outputs,
         }));
-        output
+        CallResult { output, ref_outputs }
     }
 }
 

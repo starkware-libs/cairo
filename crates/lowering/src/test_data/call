@@ -1,0 +1,35 @@
+//! > Test enum constructor.
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+func foo() -> felt {
+    let a = 2;
+    let b = true;
+    bar(a, b);
+    a
+}
+
+//! > function_name
+foo
+
+//! > module_code
+func bar(ref a: felt, b: bool) {
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_format
+blk0:
+Inputs:
+Statements:
+  (v0: core::felt) <- 2u
+  (v1: ()) <- tuple_construct()
+  (v2: core::bool) <- bool::True(v1)
+  (v3: (), v4: core::felt) <- test_crate::bar(v0, v2)
+Drops: v0, v1, v2, v3
+End:
+  Callsite(v4)
