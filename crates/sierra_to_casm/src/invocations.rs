@@ -44,9 +44,8 @@ pub enum InvocationError {
     InvalidReferenceExpressionForArgument,
     #[error("Unexpected error - an unregistered type id used.")]
     UnknownTypeId(ConcreteTypeId),
-    // TODO(yuval): add expected and actual.
     #[error("Expected a different number of arguments.")]
-    WrongNumberOfArguments,
+    WrongNumberOfArguments { expected: usize, actual: usize },
     #[error("The requested functionality is not implemented yet.")]
     NotImplemented(Invocation),
     #[error("The functionality is supported only for sized types.")]
@@ -168,7 +167,12 @@ impl CompiledInvocationBuilder<'_> {
                 ReferenceValue { expression: expr_a, .. },
                 ReferenceValue { expression: expr_b, .. },
             ] => (expr_a, expr_b),
-            _ => return Err(InvocationError::WrongNumberOfArguments),
+            refs => {
+                return Err(InvocationError::WrongNumberOfArguments {
+                    expected: 2,
+                    actual: refs.len(),
+                });
+            }
         };
 
         let ref_expression = match (expr_a, expr_b) {
@@ -192,7 +196,12 @@ impl CompiledInvocationBuilder<'_> {
     ) -> Result<CompiledInvocation, InvocationError> {
         let expr = match self.refs {
             [ReferenceValue { expression, .. }] => expression,
-            _ => return Err(InvocationError::WrongNumberOfArguments),
+            refs => {
+                return Err(InvocationError::WrongNumberOfArguments {
+                    expected: 1,
+                    actual: refs.len(),
+                });
+            }
         };
 
         let ref_expression = match expr {
@@ -211,7 +220,12 @@ impl CompiledInvocationBuilder<'_> {
     fn build_dup(self) -> Result<CompiledInvocation, InvocationError> {
         let expression = match self.refs {
             [ReferenceValue { expression, .. }] => expression,
-            _ => return Err(InvocationError::WrongNumberOfArguments),
+            refs => {
+                return Err(InvocationError::WrongNumberOfArguments {
+                    expected: 1,
+                    actual: refs.len(),
+                });
+            }
         };
 
         Ok(self.build_only_reference_changes([expression.clone(), expression.clone()].into_iter()))
@@ -342,7 +356,12 @@ impl CompiledInvocationBuilder<'_> {
     fn build_store_temp(self, ty: &ConcreteTypeId) -> Result<CompiledInvocation, InvocationError> {
         let expression = match self.refs {
             [ReferenceValue { expression, .. }] => expression,
-            _ => return Err(InvocationError::WrongNumberOfArguments),
+            refs => {
+                return Err(InvocationError::WrongNumberOfArguments {
+                    expected: 1,
+                    actual: refs.len(),
+                });
+            }
         };
 
         let dst = DerefOperand { register: Register::AP, offset: 0 };
@@ -365,7 +384,9 @@ impl CompiledInvocationBuilder<'_> {
                 ReferenceValue { expression: src_expr, .. },
             ] => Ok((dst, src_expr)),
             [_, _] => Err(InvocationError::InvalidReferenceExpressionForArgument),
-            _ => Err(InvocationError::WrongNumberOfArguments),
+            refs => {
+                Err(InvocationError::WrongNumberOfArguments { expected: 2, actual: refs.len() })
+            }
         }?;
 
         let instruction = self.get_store_instruction(ty, *dst, src_expr, false)?;
@@ -392,7 +413,12 @@ impl CompiledInvocationBuilder<'_> {
                 deref_operand
             }
             [_] => return Err(InvocationError::InvalidReferenceExpressionForArgument),
-            _ => return Err(InvocationError::WrongNumberOfArguments),
+            refs => {
+                return Err(InvocationError::WrongNumberOfArguments {
+                    expected: 1,
+                    actual: refs.len(),
+                });
+            }
         };
 
         let target_statement_id = match self.invocation.branches.as_slice() {
@@ -472,7 +498,12 @@ impl CompiledInvocationBuilder<'_> {
         }
         let expression = match self.refs {
             [ReferenceValue { expression, .. }] => expression,
-            _ => return Err(InvocationError::WrongNumberOfArguments),
+            refs => {
+                return Err(InvocationError::WrongNumberOfArguments {
+                    expected: 1,
+                    actual: refs.len(),
+                });
+            }
         };
         if let ReferenceExpression::Deref(operand) = expression {
             Ok(self.build_only_reference_changes(
@@ -487,7 +518,12 @@ impl CompiledInvocationBuilder<'_> {
     fn build_unbox(self) -> Result<CompiledInvocation, InvocationError> {
         let expression = match self.refs {
             [ReferenceValue { expression, .. }] => expression,
-            _ => return Err(InvocationError::WrongNumberOfArguments),
+            refs => {
+                return Err(InvocationError::WrongNumberOfArguments {
+                    expected: 1,
+                    actual: refs.len(),
+                });
+            }
         };
         if let ReferenceExpression::Deref(operand) = expression {
             Ok(self.build_only_reference_changes(
@@ -526,7 +562,10 @@ impl CompiledInvocationBuilder<'_> {
     /// Handles instruction for creating a new array.
     fn build_array_new(self) -> Result<CompiledInvocation, InvocationError> {
         if !self.refs.is_empty() {
-            return Err(InvocationError::WrongNumberOfArguments);
+            return Err(InvocationError::WrongNumberOfArguments {
+                expected: 1,
+                actual: self.refs.len(),
+            });
         }
         Ok(self.build_only_reference_changes([ReferenceExpression::AllocateSegment].into_iter()))
     }
@@ -539,7 +578,12 @@ impl CompiledInvocationBuilder<'_> {
                 ReferenceValue { expression: ReferenceExpression::Deref(expr_elem), .. },
             ] => (expr_arr, expr_elem),
             [_, _] => return Err(InvocationError::InvalidReferenceExpressionForArgument),
-            _ => return Err(InvocationError::WrongNumberOfArguments),
+            refs => {
+                return Err(InvocationError::WrongNumberOfArguments {
+                    expected: 2,
+                    actual: refs.len(),
+                });
+            }
         };
         // TODO(orizi): Handle non 1 sized types.
         Ok(self.build(
@@ -577,7 +621,12 @@ impl CompiledInvocationBuilder<'_> {
                 deref_operand
             }
             [_] => return Err(InvocationError::InvalidReferenceExpressionForArgument),
-            _ => return Err(InvocationError::WrongNumberOfArguments),
+            refs => {
+                return Err(InvocationError::WrongNumberOfArguments {
+                    expected: 1,
+                    actual: refs.len(),
+                });
+            }
         };
 
         let target_statement_id = match self.invocation.branches.as_slice() {
@@ -633,7 +682,12 @@ impl CompiledInvocationBuilder<'_> {
                 deref_operand
             }
             [_] => return Err(InvocationError::InvalidReferenceExpressionForArgument),
-            _ => return Err(InvocationError::WrongNumberOfArguments),
+            refs => {
+                return Err(InvocationError::WrongNumberOfArguments {
+                    expected: 1,
+                    actual: refs.len(),
+                });
+            }
         };
         Ok(self.build_only_reference_changes(
             [ReferenceExpression::BinOp(BinOpExpression {
@@ -669,7 +723,12 @@ impl CompiledInvocationBuilder<'_> {
         let init_arg = match self.refs {
             [ReferenceValue { expression: ReferenceExpression::Deref(operand), .. }] => operand,
             [_] => return Err(InvocationError::InvalidReferenceExpressionForArgument),
-            _ => return Err(InvocationError::WrongNumberOfArguments),
+            refs => {
+                return Err(InvocationError::WrongNumberOfArguments {
+                    expected: 1,
+                    actual: refs.len(),
+                });
+            }
         };
 
         let variant_selector = if self.invocation.branches.len() <= 2 {
@@ -725,7 +784,12 @@ impl CompiledInvocationBuilder<'_> {
                 deref_operand
             }
             [_] => return Err(InvocationError::InvalidReferenceExpressionForArgument),
-            _ => return Err(InvocationError::WrongNumberOfArguments),
+            refs => {
+                return Err(InvocationError::WrongNumberOfArguments {
+                    expected: 1,
+                    actual: refs.len(),
+                });
+            }
         };
 
         let target_statement_ids = self.invocation.branches.iter().map(|b| match b {

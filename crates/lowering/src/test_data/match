@@ -5,9 +5,10 @@ test_function_lowering
 
 //! > function
 func foo(a: felt) -> felt {
-    match a {
+    let x = 7;
+    match x {
         0 => a + 1,
-        _ => a + 2,
+        _ => x,
     }
 }
 
@@ -24,31 +25,30 @@ foo
 blk0:
 Inputs:
 Statements:
-  (v1: core::felt) <- 1u
-  (v2: core::felt) <- core::felt_add(v0, v1)
-Drops: v1
+  (v2: core::felt) <- 1u
+  (v3: core::felt) <- core::felt_add(v0, v2)
+Drops: v1, v2
 End:
-  Callsite(v2, v0)
+  Callsite(v3, v0)
 
 blk1:
-Inputs: v3: core::NonZero::<core::felt>
+Inputs: v4: core::NonZero::<core::felt>
 Statements:
-  (v4: core::felt) <- 2u
-  (v5: core::felt) <- core::felt_add(v0, v4)
-Drops: v3, v4
+Drops: v4
 End:
-  Callsite(v5, v0)
+  Callsite(v1, v0)
 
 blk2:
 Inputs: v0: core::felt
 Statements:
-  (v6: core::felt, v7: core::felt) <- match core::felt_jump_nz(v0) {
+  (v1: core::felt) <- 7u
+  (v5: core::felt, v6: core::felt) <- match core::felt_jump_nz(v1) {
 blk0
 blk1
   }
-Drops: v0, v7
+Drops: v0, v1, v6
 End:
-  Callsite(v6)
+  Callsite(v5)
 
 //! > ==========================================================================
 

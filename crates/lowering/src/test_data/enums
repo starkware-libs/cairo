@@ -1,0 +1,45 @@
+//! > Test enum constructor.
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+func foo(a: felt) -> MyEnum {
+    let x = true;
+    MyEnum::B({(); 5})
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum MyEnum {
+  A: (),
+  B: felt,
+  C: Box::<((), felt)>,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_format
+blk0:
+Inputs:
+Statements:
+  (v3: ()) <- tuple_construct()
+  (v4: core::felt) <- 5u
+Drops: v3
+End:
+  Callsite(v4)
+
+blk1:
+Inputs: v0: core::felt
+Statements:
+  (v1: ()) <- tuple_construct()
+  (v2: core::bool) <- bool::False(v1)
+  (v5: core::felt) <- blk0()
+  (v6: test_crate::MyEnum) <- MyEnum::B(v5)
+Drops: v0, v1, v2, v5
+End:
+  Callsite(v6)

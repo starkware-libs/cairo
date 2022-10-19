@@ -8,7 +8,12 @@ use crate::lower::Lowerer;
 
 utils::test_file_test!(
     lowering_test,
-    ["src/test_data/tests", "src/test_data/match"],
+    [
+        "src/test_data/assignment",
+        "src/test_data/enums",
+        "src/test_data/match",
+        "src/test_data/tests",
+    ],
     SemanticDatabaseForTesting,
     test_function_lowering
 );
@@ -26,7 +31,6 @@ fn test_function_lowering(
     .split();
     let lowered = Lowerer::lower(db, test_function.function_id).unwrap();
 
-    // TODO(spapini): Test some textual representation of the output.
     let lowered_formatter = LoweredFormatter { db, lowered: &lowered };
     OrderedHashMap::from([
         ("semantic_diagnostics".into(), semantic_diagnostics),

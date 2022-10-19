@@ -235,12 +235,11 @@ fn compute_expr_function_call_semantic(
                 );
                 return None;
             }
+            let concrete_enum_id = concrete_variant.concrete_enum_id;
             Some(semantic::Expr::EnumVariantCtor(semantic::ExprEnumVariantCtor {
-                enum_variant_id: concrete_variant.id,
+                variant: concrete_variant,
                 value_expr: ctx.exprs.alloc(arg),
-                ty: db.intern_type(TypeLongId::Concrete(ConcreteTypeId::Enum(
-                    concrete_variant.concrete_enum_id,
-                ))),
+                ty: db.intern_type(TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum_id))),
                 stable_ptr: syntax.stable_ptr().into(),
             }))
         }
