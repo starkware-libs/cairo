@@ -63,9 +63,9 @@ fn test_expr_assignment() {
     assert_eq!(
         format!("{:?}", expr.debug(&expr_formatter)),
         "Assignment(ExprAssignment { var: LocalVarId(test_crate::a), rhs: \
-         FunctionCall(ExprFunctionCall { function: core::felt_mul, args: [Var(ExprVar { var: \
-         LocalVarId(test_crate::a), ty: core::felt }), Literal(ExprLiteral { value: 3, ty: \
-         core::felt })], ty: core::felt }), ty: () })"
+         FunctionCall(ExprFunctionCall { function: core::felt_mul, ref_args: [], args: \
+         [Var(ExprVar { var: LocalVarId(test_crate::a), ty: core::felt }), Literal(ExprLiteral { \
+         value: 3, ty: core::felt })], ty: core::felt }), ty: () })"
     );
 }
 
@@ -81,12 +81,12 @@ fn test_expr_operator() {
     // TODO(spapini): Have better whitespaces here somehow.
     assert_eq!(
         format!("{:?}", expr.debug(&expr_formatter)),
-        "FunctionCall(ExprFunctionCall { function: core::felt_eq, args: \
-         [FunctionCall(ExprFunctionCall { function: core::felt_add, args: [Literal(ExprLiteral { \
-         value: 5, ty: core::felt }), FunctionCall(ExprFunctionCall { function: core::felt_mul, \
-         args: [Literal(ExprLiteral { value: 9, ty: core::felt }), Literal(ExprLiteral { value: \
-         3, ty: core::felt })], ty: core::felt })], ty: core::felt }), Literal(ExprLiteral { \
-         value: 0, ty: core::felt })], ty: core::bool })"
+        "FunctionCall(ExprFunctionCall { function: core::felt_eq, ref_args: [], args: \
+         [FunctionCall(ExprFunctionCall { function: core::felt_add, ref_args: [], args: \
+         [Literal(ExprLiteral { value: 5, ty: core::felt }), FunctionCall(ExprFunctionCall { \
+         function: core::felt_mul, ref_args: [], args: [Literal(ExprLiteral { value: 9, ty: \
+         core::felt }), Literal(ExprLiteral { value: 3, ty: core::felt })], ty: core::felt })], \
+         ty: core::felt }), Literal(ExprLiteral { value: 0, ty: core::felt })], ty: core::bool })"
     );
 }
 
@@ -228,7 +228,8 @@ fn test_function_with_param() {
 fn test_tuple_type() {
     let mut db_val = SemanticDatabaseForTesting::default();
     let test_function =
-        setup_test_function(&mut db_val, "func foo(a: (felt, (), (felt,))) {}", "foo", "").unwrap();
+        setup_test_function(&mut db_val, "func foo(mut a: (felt, (), (felt,))) {}", "foo", "")
+            .unwrap();
     let db = &db_val;
     let signature = test_function.signature;
 
@@ -237,7 +238,7 @@ fn test_tuple_type() {
     assert_eq!(
         format!("{:?}", param.debug(db)),
         "Parameter { id: ParamId(test_crate::a), ty: (core::felt, (), (core::felt)), modifiers: \
-         Modifiers { is_ref: false } }"
+         Modifiers { is_mut: true, is_ref: false } }"
     );
 }
 
@@ -510,8 +511,9 @@ fn test_expr_call() {
     let expr = db.expr_semantic(test_expr.function_id, test_expr.expr_id);
 
     // Check expr.
-    let semantic::ExprFunctionCall { function: _, args, ty, stable_ptr: _ } =
+    let semantic::ExprFunctionCall { function: _, ref_args, args, ty, stable_ptr: _ } =
         extract_matches!(expr, crate::Expr::FunctionCall, "Unexpected expr.");
+    assert!(ref_args.is_empty());
     assert!(args.is_empty());
     assert_eq!(ty, unit_ty(db));
 }
@@ -624,10 +626,11 @@ fn test_expr_tuple() {
     assert_eq!(
         format!("{:?}", expr.debug(&expr_formatter)),
         "Tuple(ExprTuple { items: [FunctionCall(ExprFunctionCall { function: core::felt_add, \
-         args: [Literal(ExprLiteral { value: 1, ty: core::felt }), Literal(ExprLiteral { value: \
-         2, ty: core::felt })], ty: core::felt }), Tuple(ExprTuple { items: [Literal(ExprLiteral \
-         { value: 2, ty: core::felt }), Literal(ExprLiteral { value: 3, ty: core::felt })], ty: \
-         (core::felt, core::felt) })], ty: (core::felt, (core::felt, core::felt)) })"
+         ref_args: [], args: [Literal(ExprLiteral { value: 1, ty: core::felt }), \
+         Literal(ExprLiteral { value: 2, ty: core::felt })], ty: core::felt }), Tuple(ExprTuple { \
+         items: [Literal(ExprLiteral { value: 2, ty: core::felt }), Literal(ExprLiteral { value: \
+         3, ty: core::felt })], ty: (core::felt, core::felt) })], ty: (core::felt, (core::felt, \
+         core::felt)) })"
     );
 }
 

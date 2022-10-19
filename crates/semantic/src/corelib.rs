@@ -8,6 +8,7 @@ use utils::{extract_matches, OptionFrom};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::ComputationContext;
+use crate::items::enm::SemanticEnumEx;
 use crate::resolve_path::specialize_function;
 use crate::types::ConcreteEnumLongId;
 use crate::{
@@ -72,18 +73,12 @@ pub fn core_bool_enum(db: &dyn SemanticGroup) -> ConcreteEnumId {
 
 /// Generates a ConcreteVariant instance for `false`.
 pub fn false_variant(db: &dyn SemanticGroup) -> ConcreteVariant {
-    let ty = unit_ty(db);
-    let concrete_enum_id = core_bool_enum(db);
-    let id = get_enum_variant_id(db, core_module(db), "bool", "False");
-    ConcreteVariant { concrete_enum_id, id, ty }
+    get_enum_concrete_variant(db, core_module(db), "bool", "False")
 }
 
 /// Generates a ConcreteVariant instance for `true`.
 pub fn true_variant(db: &dyn SemanticGroup) -> ConcreteVariant {
-    let ty = unit_ty(db);
-    let concrete_enum_id = core_bool_enum(db);
-    let id = get_enum_variant_id(db, core_module(db), "bool", "True");
-    ConcreteVariant { concrete_enum_id, id, ty }
+    get_enum_concrete_variant(db, core_module(db), "bool", "True")
 }
 
 /// Gets a semantic expression of the literal `false`. Uses the given `stable_ptr` in the returned
@@ -92,7 +87,7 @@ pub fn false_literal_expr(
     ctx: &mut ComputationContext<'_>,
     stable_ptr: ast::ExprPtr,
 ) -> semantic::Expr {
-    get_enum_variant_expr(ctx, core_module(ctx.db), "bool", "False", stable_ptr)
+    get_bool_variant_expr(ctx, core_module(ctx.db), "bool", "False", stable_ptr)
 }
 
 /// Gets a semantic expression of the literal `true`. Uses the given `stable_ptr` in the returned
@@ -101,38 +96,41 @@ pub fn true_literal_expr(
     ctx: &mut ComputationContext<'_>,
     stable_ptr: ast::ExprPtr,
 ) -> semantic::Expr {
-    get_enum_variant_expr(ctx, core_module(ctx.db), "bool", "True", stable_ptr)
+    get_bool_variant_expr(ctx, core_module(ctx.db), "bool", "True", stable_ptr)
 }
 
-/// Gets a semantic expression of the specified enum variant. Uses the given `stable_ptr` in the
-/// returned semantic expression.
-fn get_enum_variant_expr(
+/// Gets a semantic expression of the specified bool enum variant. Uses the given `stable_ptr` in
+/// the returned semantic expression.
+fn get_bool_variant_expr(
     ctx: &mut ComputationContext<'_>,
     module_id: ModuleId,
     enum_name: &str,
     variant_name: &str,
     stable_ptr: ast::ExprPtr,
 ) -> semantic::Expr {
-    let variant_id = get_enum_variant_id(ctx.db, module_id, enum_name, variant_name);
+    let concrete_variant = get_enum_concrete_variant(ctx.db, module_id, enum_name, variant_name);
     semantic::Expr::EnumVariantCtor(semantic::ExprEnumVariantCtor {
-        enum_variant_id: variant_id,
+        variant: concrete_variant,
         value_expr: unit_expr(ctx, stable_ptr),
         ty: core_bool_ty(ctx.db),
         stable_ptr,
     })
 }
 
-/// Gets a [defs::ids::VariantId] instance for an enum variant, by name.
-fn get_enum_variant_id(
+/// Gets a [ConcreteVariant] instance for an enum variant, by name.
+fn get_enum_concrete_variant(
     db: &dyn SemanticGroup,
     module_id: ModuleId,
     enum_name: &str,
     variant_name: &str,
-) -> defs::ids::VariantId {
-    let bool_enum = db.module_item_by_name(module_id, enum_name.into()).unwrap();
-    let bool_enum_id = extract_matches!(bool_enum, ModuleItemId::Enum);
-
-    db.enum_variants(bool_enum_id).unwrap()[variant_name]
+) -> ConcreteVariant {
+    let enum_item = db.module_item_by_name(module_id, enum_name.into()).unwrap();
+    let enum_id = extract_matches!(enum_item, ModuleItemId::Enum);
+    let concrete_enum_id =
+        db.intern_concrete_enum(ConcreteEnumLongId { enum_id, generic_args: vec![] });
+    let variant_id = db.enum_variants(enum_id).unwrap()[variant_name];
+    let variant = db.variant_semantic(enum_id, variant_id).unwrap();
+    db.concrete_enum_variant(concrete_enum_id, &variant)
 }
 
 /// Gets the unit type ().

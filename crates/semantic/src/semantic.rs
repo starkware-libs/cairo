@@ -26,6 +26,7 @@ pub struct Parameter {
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Modifiers {
+    pub is_mut: bool,
     pub is_ref: bool,
 }
 
