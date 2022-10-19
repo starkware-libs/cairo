@@ -118,8 +118,8 @@ pub fn maybe_compute_expr_semantic(
         ast::Expr::Literal(literal_syntax) => {
             Some(Expr::Literal(literal_to_semantic(ctx, literal_syntax)?))
         }
-        ast::Expr::False(syntax) => Some(true_literal_expr(ctx, syntax.stable_ptr().into())),
-        ast::Expr::True(syntax) => Some(false_literal_expr(ctx, syntax.stable_ptr().into())),
+        ast::Expr::False(syntax) => Some(false_literal_expr(ctx, syntax.stable_ptr().into())),
+        ast::Expr::True(syntax) => Some(true_literal_expr(ctx, syntax.stable_ptr().into())),
         ast::Expr::Parenthesized(paren_syntax) => {
             maybe_compute_expr_semantic(ctx, &paren_syntax.expr(syntax_db))
         }
