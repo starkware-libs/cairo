@@ -4,11 +4,13 @@
 test_function_lowering
 
 //! > function
-func foo() -> felt {
-    let a = 2;
+func foo(ref a: felt) -> felt {
     let b = true;
-    bar(a, b);
-    a
+    if true {
+      bar(a, b);
+    } else {
+    }
+    5
 }
 
 //! > function_name
@@ -24,12 +26,32 @@ func bar(ref a: felt, b: bool) {
 
 //! > lowering_format
 blk0:
-Inputs:
+Inputs: v5: ()
 Statements:
-  (v0: core::felt) <- 2u
+  (v6: (), v7: core::felt) <- test_crate::bar(v0, v2)
+Drops: v5, v0, v6
+End:
+  Callsite(v7, v2)
+
+blk1:
+Inputs: v8: ()
+Statements:
+Drops: v8
+End:
+  Callsite(v0, v2)
+
+blk2:
+Inputs: v0: core::felt
+Statements:
   (v1: ()) <- tuple_construct()
   (v2: core::bool) <- bool::True(v1)
-  (v3: (), v4: core::felt) <- test_crate::bar(v0, v2)
-Drops: v0, v1, v2, v3
+  (v3: ()) <- tuple_construct()
+  (v4: core::bool) <- bool::True(v3)
+  (v9: core::felt, v10: core::bool) <- match_enum(v4) {
+    bool::True => blk0,
+    bool::False => blk1,
+  }
+  (v11: core::felt) <- 5u
+Drops: v0, v1, v2, v3, v4, v10
 End:
-  Callsite(v4)
+  Callsite(v11, v9)

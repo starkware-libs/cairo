@@ -260,7 +260,7 @@ impl BlockFlowMerger {
         borrow_as_box(parent_scope, |boxed_parent_scope| {
             let mut merger = Self { parent_scope: Some(boxed_parent_scope), ..Self::default() };
             let res = f(ctx, &mut merger);
-            let (finalized, returned_scope) = merger.finalize(ctx.ctx());
+            let (finalized, returned_scope) = merger.finalize(ctx.ctx(), &[]);
             ((res, finalized), returned_scope.unwrap())
         })
     }
@@ -272,11 +272,12 @@ impl BlockFlowMerger {
     /// used for the root scope only.
     pub fn with_root<'a, Ctx: ContextLender<'a>, T, F: FnOnce(&mut Ctx, &mut Self) -> T>(
         ctx: &mut Ctx,
+        extra_outputs: &[semantic::VarId],
         f: F,
     ) -> (T, BlockMergerFinalized) {
         let mut merger = Self::default();
         let res = f(ctx, &mut merger);
-        let (finalized, _returned_scope) = merger.finalize(ctx.ctx());
+        let (finalized, _returned_scope) = merger.finalize(ctx.ctx(), extra_outputs);
 
         (res, finalized)
     }
@@ -374,10 +375,18 @@ impl BlockFlowMerger {
     fn finalize(
         self,
         ctx: &LoweringContext<'_>,
+        extra_outputs: &[semantic::VarId],
     ) -> (BlockMergerFinalized, Option<Box<BlockScope>>) {
         let pull_set = self.pulls.iter().map(|(var, _)| var).copied().collect::<HashSet<_>>();
-        let pushable = pull_set.difference(&self.moved_semantic_vars);
-        let pushes: Vec<_> = pushable.into_iter().copied().collect();
+        let pushable = pull_set.difference(&self.moved_semantic_vars).collect::<HashSet<_>>();
+
+        // Make the ordering stable.
+        let pushable = self
+            .pulls
+            .iter()
+            .filter_map(|(var_id, _)| if pushable.contains(var_id) { Some(var_id) } else { None });
+
+        let pushes: Vec<_> = chain!(pushable, extra_outputs).copied().collect();
         let push_tys = pushes.iter().map(|var_id| ctx.semantic_defs[*var_id].ty()).collect();
         let end_info = BlockEndInfo::Callsite { maybe_output_ty: self.maybe_output_ty, push_tys };
         // TODO(spapini): Optimize pushes by maintaining shouldnt_push.
