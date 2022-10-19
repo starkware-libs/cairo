@@ -196,6 +196,7 @@ fn push_values_optimization() {
     let statements: Vec<pre_sierra::Statement> = vec![
         dummy_simple_statement(&db, "function_call4", &[], &["0", "1", "2", "3"]),
         dummy_push_values(&db, &[("2", "102"), ("3", "103"), ("0", "100")]),
+        dummy_push_values(&db, &[("102", "202")]),
         dummy_return_statement(&["0"]),
     ];
 
@@ -209,6 +210,7 @@ fn push_values_optimization() {
             "rename<[0]>(2) -> (102)",
             "rename<[0]>(3) -> (103)",
             "store_temp<[0]>(0) -> (100)",
+            "store_temp<[0]>(102) -> (202)",
             "return(0)",
         ]
     );

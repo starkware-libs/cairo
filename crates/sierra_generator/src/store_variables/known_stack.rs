@@ -68,6 +68,9 @@ impl KnownStack {
         if let Some(index_on_stack) = self.variables_on_stack.get(&push_values[0].var) {
             // Compute the prefix size, if exists.
             let prefix_size = self.offset - index_on_stack;
+            if prefix_size > push_values.len() {
+                return 0;
+            }
             // Check if this is indeed a prefix.
             let is_prefix = (1..prefix_size).all(|i| {
                 self.variables_on_stack.get(&push_values[i].var).cloned()
