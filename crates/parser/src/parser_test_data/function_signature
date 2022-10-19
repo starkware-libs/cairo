@@ -3,14 +3,6 @@
 //! > test_function_name
 test_partial_parser_tree
 
-//! > test_params
-cairo_code
-top_level_kind
-ignored_kinds
-
-//! > test_output_params
-expected_tree
-
 //! > cairo_code
 func foo(a: int) -> felt {
     return a;
