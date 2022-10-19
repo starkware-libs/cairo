@@ -24,7 +24,7 @@ fn get_example_program(name: &str) -> Program {
                     (StatementIdx(32), 0),
                     (StatementIdx(41), 1),
                 ].into_iter().collect(),
-                function_costs: [("Collatz".into(), 15)].into_iter().collect()
+                function_costs: [("Collatz".into(), 13)].into_iter().collect()
             }))]
 #[test_case("fib_jumps" =>
             Ok(GasInfo {
@@ -35,7 +35,7 @@ fn get_example_program(name: &str) -> Program {
                     (StatementIdx(28), 0),
                     (StatementIdx(43), 1),
                 ].into_iter().collect(),
-                function_costs: [("Fibonacci".into(), 17)].into_iter().collect()
+                function_costs: [("Fibonacci".into(), 15)].into_iter().collect()
             });
             "fib_jumps")]
 #[test_case("fib_recursive" =>
@@ -47,7 +47,7 @@ fn get_example_program(name: &str) -> Program {
                     (StatementIdx(18), 0),
                     (StatementIdx(37), 0),
                 ].into_iter().collect(),
-                function_costs: [("Fibonacci".into(), 13)].into_iter().collect()
+                function_costs: [("Fibonacci".into(), 11)].into_iter().collect()
             }))]
 fn solve_gas(path: &str) -> Result<GasInfo, CostError> {
     calc_gas_info(&get_example_program(path))

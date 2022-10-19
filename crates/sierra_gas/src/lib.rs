@@ -1,4 +1,3 @@
-use core_libfunc_cost_base::FUNCTION_CALL_COST;
 use cost_expr::Var;
 use gas_info::GasInfo;
 use sierra::extensions::core::{CoreLibFunc, CoreType};
@@ -45,12 +44,7 @@ pub fn calc_gas_info(program: &Program) -> Result<GasInfo, CostError> {
     let function_costs = program
         .funcs
         .iter()
-        .map(|f| {
-            (
-                f.id.clone(),
-                solution[&Var::StatementFuture(f.entry_point)] + FUNCTION_CALL_COST as i64,
-            )
-        })
+        .map(|f| (f.id.clone(), solution[&Var::StatementFuture(f.entry_point)]))
         .collect();
     let variable_values = solution
         .into_iter()
