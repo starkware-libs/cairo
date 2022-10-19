@@ -138,8 +138,7 @@ impl BlockSealed {
     /// scope. The rest will be dropped. These will appear in the outputs of the block in case
     /// of a Callsite ending, before the optional extra output of the block (i.e. block value).
     ///
-    /// Pulls must include at least all the pulled variables in block.pulled_semantic_vars.
-    /// Pushes must include at most all the living semantic variables that were pulled.
+    /// Pushes are assumed to only include living semantic variables that were pulled.
     fn finalize(
         self,
         ctx: &mut LoweringContext<'_>,
@@ -160,12 +159,12 @@ impl BlockSealed {
                 let pushes: Vec<_> = pushes
                     .iter()
                     .map(|semantic_var_id| {
-                        // TODO(spapini): Convert to a diagnostic.
+                        // These should not panic by assumption of the function.
                         let var = semantic_variables
                             .take(*semantic_var_id)
-                            .expect("finalize() called with dead output semantic variables.")
+                            .expect("Pushed variable was never pulled.")
                             .take_var()
-                            .expect("Value already moved.");
+                            .expect("Pushed variable is dead.");
                         living_variables.take_var(var).var_id()
                     })
                     .collect();
