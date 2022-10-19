@@ -56,7 +56,7 @@ impl SemanticVariablesMap {
         Some(self.var_mapping.get_mut(&semantic_var_id)?.get(ctx))
     }
 
-    /// Returns true if the variables exists in the map.
+    /// Returns true if the variable exists in the map.
     pub fn contains(&mut self, semantic_var_id: semantic::VarId) -> bool {
         self.var_mapping.contains_key(&semantic_var_id)
     }
