@@ -70,7 +70,8 @@ fn cairo_to_casm(name: &str) {
                     variable_values: HashMap::new(),
                     function_costs: HashMap::new()
                 }
-            }
+            },
+            false
         )
         .unwrap()
         .to_string(),
