@@ -20,7 +20,6 @@ error: Unexpected return type. Expected: "core::felt", found: "()".
 func foo(a: felt) -> felt {
                           ^
 
-
 //! > lowering_diagnostics
 error: Unreachable code
  --> lib.cairo:3:5

@@ -10,11 +10,11 @@ bar
 
 //! > Another Test Example
 
+//! > Empty
+
 //! > Expression
 foo
 //! bar
 
 //! > Expected
 baz
-
-//! > Empty
