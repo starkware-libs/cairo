@@ -4,7 +4,7 @@
 test_partial_parser_tree
 
 //! > cairo_code
-func foo(a: int) -> felt {
+func foo(a: int, mut b: felt, ref c: int, mut ref d: felt) -> felt {
     return a;
 }
 
@@ -17,14 +17,45 @@ FunctionSignature
 └── Top level kind: FunctionSignature
     ├── lparen (kind: TokenLParen): '('
     ├── parameters (kind: ParamList)
-    │   └── item #0 (kind: Param)
-    │       ├── modifiers (kind: ModifierList) []
-    │       ├── name (kind: TokenIdentifier): 'a'
+    │   ├── item #0 (kind: Param)
+    │   │   ├── modifiers (kind: ModifierList) []
+    │   │   ├── name (kind: TokenIdentifier): 'a'
+    │   │   └── type_clause (kind: TypeClause)
+    │   │       ├── colon (kind: TokenColon): ':'
+    │   │       └── ty (kind: ExprPath)
+    │   │           └── item #0 (kind: PathSegmentSimple)
+    │   │               └── ident (kind: TokenIdentifier): 'int'
+    │   ├── separator #0 (kind: TokenComma): ','
+    │   ├── item #1 (kind: Param)
+    │   │   ├── modifiers (kind: ModifierList)
+    │   │   │   └── child #0 (kind: TokenMut): 'mut'
+    │   │   ├── name (kind: TokenIdentifier): 'b'
+    │   │   └── type_clause (kind: TypeClause)
+    │   │       ├── colon (kind: TokenColon): ':'
+    │   │       └── ty (kind: ExprPath)
+    │   │           └── item #0 (kind: PathSegmentSimple)
+    │   │               └── ident (kind: TokenIdentifier): 'felt'
+    │   ├── separator #1 (kind: TokenComma): ','
+    │   ├── item #2 (kind: Param)
+    │   │   ├── modifiers (kind: ModifierList)
+    │   │   │   └── child #0 (kind: TokenRef): 'ref'
+    │   │   ├── name (kind: TokenIdentifier): 'c'
+    │   │   └── type_clause (kind: TypeClause)
+    │   │       ├── colon (kind: TokenColon): ':'
+    │   │       └── ty (kind: ExprPath)
+    │   │           └── item #0 (kind: PathSegmentSimple)
+    │   │               └── ident (kind: TokenIdentifier): 'int'
+    │   ├── separator #2 (kind: TokenComma): ','
+    │   └── item #3 (kind: Param)
+    │       ├── modifiers (kind: ModifierList)
+    │       │   ├── child #0 (kind: TokenMut): 'mut'
+    │       │   └── child #1 (kind: TokenRef): 'ref'
+    │       ├── name (kind: TokenIdentifier): 'd'
     │       └── type_clause (kind: TypeClause)
     │           ├── colon (kind: TokenColon): ':'
     │           └── ty (kind: ExprPath)
     │               └── item #0 (kind: PathSegmentSimple)
-    │                   └── ident (kind: TokenIdentifier): 'int'
+    │                   └── ident (kind: TokenIdentifier): 'felt'
     ├── rparen (kind: TokenRParen): ')'
     └── ret_ty (kind: ReturnTypeClause)
         ├── arrow (kind: TokenArrow): '->'
