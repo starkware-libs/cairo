@@ -157,6 +157,7 @@ pub struct ExprBlock {
 #[debug_db(ExprFormatter<'_>)]
 pub struct ExprFunctionCall {
     pub function: FunctionId,
+    pub ref_args: Vec<VarId>,
     pub args: Vec<ExprId>,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]

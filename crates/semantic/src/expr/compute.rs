@@ -758,7 +758,9 @@ fn expr_function_call(
     }
 
     // Check argument types.
-    for (arg, param) in arg_exprs.iter().zip(signature.params.iter()) {
+    let mut ref_args = Vec::new();
+    let mut args = Vec::new();
+    for (arg, param) in arg_exprs.into_iter().zip(signature.params.iter()) {
         let arg_typ = arg.ty();
         let param_typ = param.ty;
         // Don't add diagnostic if the type is missing (a diagnostic should have already been
@@ -771,14 +773,18 @@ fn expr_function_call(
             );
         }
 
-        if param.modifiers.is_ref && !matches!(arg, Expr::Var(_)) {
-            ctx.diagnostics.report_by_ptr(arg.stable_ptr().untyped(), RefArgNotAVariable);
+        if param.modifiers.is_ref {
+            let expr_var = try_extract_matches!(&arg, Expr::Var).on_none(|| {
+                ctx.diagnostics.report_by_ptr(arg.stable_ptr().untyped(), RefArgNotAVariable);
+            })?;
+            ref_args.push(expr_var.var);
+        } else {
+            args.push(ctx.exprs.alloc(arg));
         }
     }
-
-    let args = arg_exprs.into_iter().map(|expr| ctx.exprs.alloc(expr)).collect();
     Some(Expr::FunctionCall(ExprFunctionCall {
         function,
+        ref_args,
         args,
         ty: signature.return_type,
         stable_ptr,
