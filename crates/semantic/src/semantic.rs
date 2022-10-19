@@ -1,12 +1,15 @@
+use defs::db::DefsGroup;
+use defs::ids::LocalVarId;
 // Reexport objects
 pub use defs::ids::{ParamId, VarId};
 use diagnostics_proc_macros::DebugWithDb;
+use syntax::node::ast;
 
 pub use super::expr::objects::*;
 use crate::db::SemanticGroup;
 pub use crate::expr::pattern::{
-    LocalVariable, Pattern, PatternEnum, PatternLiteral, PatternOtherwise, PatternStruct,
-    PatternTuple, PatternVariable,
+    Pattern, PatternEnum, PatternLiteral, PatternOtherwise, PatternStruct, PatternTuple,
+    PatternVariable,
 };
 pub use crate::items::enm::{ConcreteVariant, Variant};
 pub use crate::items::free_function::FreeFunctionDefinition;
@@ -16,6 +19,20 @@ pub use crate::types::{
     ConcreteEnumId, ConcreteExternTypeId, ConcreteStructId, ConcreteTypeId, TypeId, TypeLongId,
 };
 
+/// Semantic model of a variable.
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[debug_db(dyn SemanticGroup + 'static)]
+pub struct LocalVariable {
+    pub id: LocalVarId,
+    pub ty: TypeId,
+    pub modifiers: Modifiers,
+}
+impl LocalVariable {
+    pub fn stable_ptr(&self, db: &dyn DefsGroup) -> ast::TerminalIdentifierPtr {
+        self.id.stable_ptr(db)
+    }
+}
+
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct Parameter {
@@ -24,7 +41,7 @@ pub struct Parameter {
     pub modifiers: Modifiers,
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Default, Debug, Hash, PartialEq, Eq)]
 pub struct Modifiers {
     pub is_mut: bool,
     pub is_ref: bool,
@@ -48,6 +65,12 @@ impl Variable {
         match self {
             Variable::Local(local) => local.ty,
             Variable::Param(param) => param.ty,
+        }
+    }
+    pub fn modifiers(&self) -> &Modifiers {
+        match self {
+            Variable::Local(local) => &local.modifiers,
+            Variable::Param(param) => &param.modifiers,
         }
     }
 }
