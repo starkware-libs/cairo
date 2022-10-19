@@ -248,5 +248,6 @@ pub trait Terminal: TypedSyntaxNode {
         token: <<Self as Terminal>::TokenType as TypedSyntaxNode>::Green,
         trailing_trivia: TriviaGreen,
     ) -> <Self as TypedSyntaxNode>::Green;
+    /// Returns the text of the token of this terminal (excluding the trivia).
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr;
 }
