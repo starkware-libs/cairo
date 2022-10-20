@@ -78,6 +78,9 @@ pub trait SemanticGroup:
     /// Returns the semantic diagnostics of an enum.
     #[salsa::invoke(items::enm::enum_semantic_diagnostics)]
     fn enum_semantic_diagnostics(&self, enum_id: EnumId) -> Diagnostics<SemanticDiagnostic>;
+    /// Returns the generic parameters of an enum.
+    #[salsa::invoke(items::enm::enum_generic_params)]
+    fn enum_generic_params(&self, enum_id: EnumId) -> Option<Vec<GenericParamId>>;
     /// Returns the members of an enum.
     #[salsa::invoke(items::enm::enum_variants)]
     fn enum_variants(&self, enum_id: EnumId) -> Option<OrderedHashMap<SmolStr, VariantId>>;

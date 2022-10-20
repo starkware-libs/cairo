@@ -318,8 +318,10 @@ impl<'db> Resolver<'db> {
                             diagnostics
                                 .report(identifier, NoSuchVariant { enum_id, variant_name: ident })
                         })?;
-                    let concrete_variant =
-                        self.db.concrete_enum_variant(concrete_enum_id, &variant);
+                    let concrete_variant = self
+                        .db
+                        .concrete_enum_variant(concrete_enum_id, &variant)
+                        .on_none(|| diagnostics.report(identifier, PathNotFound))?;
                     Some(ResolvedConcreteItem::Variant(concrete_variant))
                 } else {
                     diagnostics.report(identifier, InvalidPath);

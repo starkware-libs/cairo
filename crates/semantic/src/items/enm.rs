@@ -1,16 +1,17 @@
 use db_utils::Upcast;
-use defs::ids::{EnumId, LanguageElementId, VariantId, VariantLongId};
+use defs::ids::{EnumId, GenericParamId, LanguageElementId, VariantId, VariantLongId};
 use diagnostics::Diagnostics;
 use diagnostics_proc_macros::DebugWithDb;
 use smol_str::SmolStr;
 use syntax::node::{Terminal, TypedSyntaxNode};
 use utils::ordered_hash_map::OrderedHashMap;
 
+use super::generics::semantic_generic_params;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::resolve_path::Resolver;
-use crate::types::resolve_type;
+use crate::types::{resolve_type, substitute_generics};
 use crate::{semantic, ConcreteEnumId, SemanticDiagnostic};
 
 #[cfg(test)]
@@ -21,6 +22,7 @@ mod test;
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct EnumData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
+    generic_params: Vec<GenericParamId>,
     variants: OrderedHashMap<SmolStr, VariantId>,
     variant_semantic: OrderedHashMap<VariantId, Variant>,
 }
@@ -41,13 +43,19 @@ pub struct ConcreteVariant {
     pub ty: semantic::TypeId,
 }
 
-/// Query implementation of [crate::db::SemanticGroup::struct_semantic_diagnostics].
+/// Query implementation of [crate::db::SemanticGroup::enum_semantic_diagnostics].
 pub fn enum_semantic_diagnostics(
     db: &dyn SemanticGroup,
     enum_id: EnumId,
 ) -> Diagnostics<SemanticDiagnostic> {
     db.priv_enum_semantic_data(enum_id).map(|data| data.diagnostics).unwrap_or_default()
 }
+
+/// Query implementation of [crate::db::SemanticGroup::enum_generic_params].
+pub fn enum_generic_params(db: &dyn SemanticGroup, enum_id: EnumId) -> Option<Vec<GenericParamId>> {
+    Some(db.priv_enum_semantic_data(enum_id)?.generic_params)
+}
+
 /// Query implementation of [crate::db::SemanticGroup::enum_variants].
 pub fn enum_variants(
     db: &dyn SemanticGroup,
@@ -55,6 +63,7 @@ pub fn enum_variants(
 ) -> Option<OrderedHashMap<SmolStr, VariantId>> {
     Some(db.priv_enum_semantic_data(enum_id)?.variants)
 }
+
 /// Query implementation of [crate::db::SemanticGroup::variant_semantic].
 pub fn variant_semantic(
     db: &dyn SemanticGroup,
@@ -72,10 +81,20 @@ pub fn priv_enum_semantic_data(db: &dyn SemanticGroup, enum_id: EnumId) -> Optio
     let module_id = enum_id.module(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_id);
     // TODO(spapini): Add generic args when they are supported on enums.
-    let mut resolver = Resolver::new(db, module_id, &[]);
     let module_data = db.module_data(module_id)?;
     let enum_ast = module_data.enums.get(&enum_id)?;
     let syntax_db = db.upcast();
+
+    // Generic params.
+    let generic_params = semantic_generic_params(
+        db,
+        &mut diagnostics,
+        module_id,
+        &enum_ast.generic_params(db.upcast()),
+    );
+    let mut resolver = Resolver::new(db, module_id, &generic_params);
+
+    // Variants.
     let mut variants = OrderedHashMap::default();
     let mut variant_semantic = OrderedHashMap::default();
     for variant in enum_ast.variants(syntax_db).elements(syntax_db) {
@@ -93,7 +112,7 @@ pub fn priv_enum_semantic_data(db: &dyn SemanticGroup, enum_id: EnumId) -> Optio
         variant_semantic.insert(id, Variant { enum_id, id, ty });
     }
 
-    Some(EnumData { diagnostics: diagnostics.build(), variants, variant_semantic })
+    Some(EnumData { diagnostics: diagnostics.build(), generic_params, variants, variant_semantic })
 }
 
 pub trait SemanticEnumEx<'a>: Upcast<dyn SemanticGroup + 'a> {
@@ -101,9 +120,16 @@ pub trait SemanticEnumEx<'a>: Upcast<dyn SemanticGroup + 'a> {
         &self,
         concrete_enum_id: ConcreteEnumId,
         variant: &Variant,
-    ) -> ConcreteVariant {
-        // TODO(spapini): substitute generic arguments.
-        ConcreteVariant { concrete_enum_id, id: variant.id, ty: variant.ty }
+    ) -> Option<ConcreteVariant> {
+        // TODO(spapini): Uphold the invariant that constructed ConcreteEnumId instances
+        //   always have the correct number of generic arguemnts.
+        let db = self.upcast();
+        let generic_params = db.enum_generic_params(concrete_enum_id.enum_id(db))?;
+        let generic_args = db.lookup_intern_concrete_enum(concrete_enum_id).generic_args;
+        let substitution = &generic_params.into_iter().zip(generic_args.into_iter()).collect();
+
+        let ty = substitute_generics(db, substitution, variant.ty);
+        Some(ConcreteVariant { concrete_enum_id, id: variant.id, ty })
     }
 }
 
