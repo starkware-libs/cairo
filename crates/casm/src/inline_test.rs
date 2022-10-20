@@ -7,15 +7,16 @@ use crate::{casm, deref};
 
 #[test]
 fn test_assert() {
-    let x = ResOperand::Immediate(ImmediateOperand { value: 1 });
+    let x = 1;
     let y = deref!([fp + 5]);
+    let z = 5;
 
     let ctx = casm! {
         [fp - 5] = x, ap++;
         [fp - 5] = [ap + 1] + [fp - 5], ap++;
         [fp + 5] = [ap + 1] + 2;
         [ap] = [ap + 1] * [fp - 5];
-        [fp - 5] = [ap + 1] * 2;
+        [fp - 5] = [ap + 1] * z;
         [fp - 5] = [ap + 1] * y;
         [fp - 5] = 1, ap++;
         [fp - 5] = [ap + 1];
@@ -30,9 +31,9 @@ fn test_assert() {
             [fp + -5] = 1, ap++
             [fp + -5] = [ap + 1] + [fp + -5], ap++
             [fp + 5] = [ap + 1] + 2
-            [ap + 0] = [ap + 1] + [fp + -5]
-            [fp + -5] = [ap + 1] + 2
-            [fp + -5] = [ap + 1] + [fp + 5]
+            [ap + 0] = [ap + 1] * [fp + -5]
+            [fp + -5] = [ap + 1] * 5
+            [fp + -5] = [ap + 1] * [fp + 5]
             [fp + -5] = 1, ap++
             [fp + -5] = [ap + 1]
             call abs 5, ap++
