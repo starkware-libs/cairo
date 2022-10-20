@@ -20,8 +20,6 @@ pub struct ExprGeneratorContext<'a> {
     diagnostics: &'a mut DiagnosticsBuilder<SierraGeneratorDiagnostic>,
     var_id_allocator: IdAllocator,
     label_id_allocator: IdAllocator,
-    // TODO(lior): Remove old_variables once not used.
-    old_variables: UnorderedHashMap<defs::ids::VarId, sierra::ids::VarId>,
     variables: UnorderedHashMap<lowering::VariableId, sierra::ids::VarId>,
 }
 impl<'a> ExprGeneratorContext<'a> {
@@ -40,7 +38,6 @@ impl<'a> ExprGeneratorContext<'a> {
             diagnostics,
             var_id_allocator: IdAllocator::default(),
             label_id_allocator: IdAllocator::default(),
-            old_variables: UnorderedHashMap::default(),
             variables: UnorderedHashMap::default(),
         }
     }
@@ -53,45 +50,6 @@ impl<'a> ExprGeneratorContext<'a> {
     /// Returns the SierraGenGroup salsa database.
     pub fn get_db(&self) -> &'a dyn SierraGenGroup {
         self.db
-    }
-
-    /// Returns the SierraGenGroup salsa database.
-    pub fn function_id(&self) -> FreeFunctionId {
-        self.function_id
-    }
-
-    /// Attaches a local variable with its Sierra variable.
-    /// See [Self::get_variable].
-    pub fn register_variable(
-        &mut self,
-        local_var_id: defs::ids::VarId,
-        sierra_var: sierra::ids::VarId,
-        stable_ptr: SyntaxStablePtrId,
-    ) {
-        if self.old_variables.insert(local_var_id, sierra_var).is_some() {
-            self.add_diagnostic(
-                SierraGeneratorDiagnosticKind::InternalErrorDuplicatedVariable,
-                stable_ptr,
-            );
-        }
-    }
-
-    /// Returns the Sierra variable associated with the given local variable.
-    /// See [Self::register_variable].
-    pub fn get_variable(
-        &mut self,
-        local_var: defs::ids::VarId,
-        stable_ptr: SyntaxStablePtrId,
-    ) -> Option<sierra::ids::VarId> {
-        let var = self.old_variables.get(&local_var);
-        if var.is_none() {
-            self.add_diagnostic(
-                SierraGeneratorDiagnosticKind::InternalErrorUnknownVariable,
-                stable_ptr,
-            );
-            return None;
-        }
-        var.cloned()
     }
 
     /// Returns the Sierra variable that corresponds to [lowering::VariableId].
@@ -178,10 +136,6 @@ impl<'a> ExprGeneratorContext<'a> {
         self.get_libfunc_id_with_generic_arg("dup", ty)
     }
 
-    pub fn felt_jump_nz_libfunc_id(&self) -> sierra::ids::ConcreteLibFuncId {
-        self.get_libfunc_id_without_generics("felt_jump_nz")
-    }
-
     pub fn jump_libfunc_id(&self) -> sierra::ids::ConcreteLibFuncId {
         self.get_libfunc_id_without_generics("jump")
     }
@@ -204,6 +158,7 @@ impl<'a> ExprGeneratorContext<'a> {
     }
 
     /// Add a SierraGenerator diagnostic to the list of diagnostics.
+    #[allow(dead_code)]
     pub fn add_diagnostic(
         &mut self,
         kind: SierraGeneratorDiagnosticKind,

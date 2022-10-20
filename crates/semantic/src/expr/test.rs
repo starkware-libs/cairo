@@ -24,6 +24,7 @@ semantic_test!(
         "src/expr/test_data/if",
         "src/expr/test_data/match",
         "src/expr/test_data/operators",
+        "src/expr/test_data/pattern",
         "src/expr/test_data/return",
     ],
     test_function_diagnostics
@@ -99,13 +100,16 @@ fn test_member_access() {
             struct A {
                 a: (felt,),
                 b: felt,
-                c: A,
+                c: B,
+            }
+            struct B {
+                a: felt
             }
             func foo(a: A){
                 (a).a;
                 a.b;
                 a.c;
-                a.c.c.c.a;
+                a.c.a;
             }
         "},
     )
@@ -146,13 +150,11 @@ fn test_member_access() {
             "MemberAccess(ExprMemberAccess { expr: Var(ExprVar { var: ParamId(test_crate::a), ty: \
              test_crate::A }), member: MemberId(test_crate::b), ty: core::felt })",
             "MemberAccess(ExprMemberAccess { expr: Var(ExprVar { var: ParamId(test_crate::a), ty: \
-             test_crate::A }), member: MemberId(test_crate::c), ty: test_crate::A })",
+             test_crate::A }), member: MemberId(test_crate::c), ty: test_crate::B })",
             "MemberAccess(ExprMemberAccess { expr: MemberAccess(ExprMemberAccess { expr: \
-             MemberAccess(ExprMemberAccess { expr: MemberAccess(ExprMemberAccess { expr: \
              Var(ExprVar { var: ParamId(test_crate::a), ty: test_crate::A }), member: \
-             MemberId(test_crate::c), ty: test_crate::A }), member: MemberId(test_crate::c), ty: \
-             test_crate::A }), member: MemberId(test_crate::c), ty: test_crate::A }), member: \
-             MemberId(test_crate::a), ty: (core::felt) })",
+             MemberId(test_crate::c), ty: test_crate::B }), member: MemberId(test_crate::a), ty: \
+             core::felt })",
         ]
     );
 }
@@ -165,7 +167,7 @@ fn test_member_access_failures() {
             struct A {
                 a: (felt,),
                 b: felt,
-                c: A,
+                c: felt,
             }
             func foo(a: A){
                 a.f

@@ -552,11 +552,20 @@ impl<'a> Parser<'a> {
     /// Returns a GreenId of a node with some Pattern kind (see [syntax::node::ast::Pattern]) or
     /// None if a pattern can't be parsed.
     fn try_parse_pattern(&mut self) -> Option<PatternGreen> {
+        let modifier_list = self.parse_modifier_list();
+        if !modifier_list.is_empty() {
+            let modifiers = ModifierList::new_green(self.db, modifier_list);
+            let name = self.parse_token::<TerminalIdentifier>();
+            return Some(PatternIdentifier::new_green(self.db, modifiers, name).into());
+        };
+
         // TODO(yuval): Support tuple and "Or" patterns.
         Some(match self.peek().kind {
             SyntaxKind::TerminalLiteralNumber => self.take::<TerminalLiteralNumber>().into(),
             SyntaxKind::TerminalUnderscore => self.take::<TerminalUnderscore>().into(),
             SyntaxKind::TerminalIdentifier => {
+                // TODO(ilya): Consider parsing a single identifier as PatternIdentifier rather
+                // then ExprPath.
                 let path = self.parse_path();
                 match self.peek().kind {
                     SyntaxKind::TerminalLBrace => {
@@ -725,7 +734,7 @@ impl<'a> Parser<'a> {
         )
     }
 
-    /// Returns a GreenId of a node with kind Param or None if a parameter can't be parsed.
+    /// Returns a GreenId of a node with kind Modifier or None if a parameter can't be parsed.
     fn try_parse_modifier(&mut self) -> Option<ModifierGreen> {
         match self.peek().kind {
             SyntaxKind::TerminalRef => Some(self.take::<TerminalRef>().into()),
@@ -734,13 +743,19 @@ impl<'a> Parser<'a> {
         }
     }
 
-    /// Returns a GreenId of a node with kind Param or None if a parameter can't be parsed.
-    fn try_parse_param(&mut self) -> Option<ParamGreen> {
+    /// Returns a vector of GreenIds with kind Modifier.
+    fn parse_modifier_list(&mut self) -> Vec<ModifierGreen> {
         let mut modifier_list = vec![];
 
         while let Some(modifier) = self.try_parse_modifier() {
             modifier_list.push(modifier);
         }
+        modifier_list
+    }
+
+    /// Returns a GreenId of a node with kind Param or None if a parameter can't be parsed.
+    fn try_parse_param(&mut self) -> Option<ParamGreen> {
+        let modifier_list = self.parse_modifier_list();
         let name = if modifier_list.is_empty() {
             self.try_parse_token::<TerminalIdentifier>()?
         } else {

@@ -63,6 +63,9 @@ pub trait SemanticGroup:
     /// Returns the semantic diagnostics of a struct.
     #[salsa::invoke(items::strct::struct_semantic_diagnostics)]
     fn struct_semantic_diagnostics(&self, struct_id: StructId) -> Diagnostics<SemanticDiagnostic>;
+    /// Returns the generic parameters of an enum.
+    #[salsa::invoke(items::strct::struct_generic_params)]
+    fn struct_generic_params(&self, struct_id: StructId) -> Option<Vec<GenericParamId>>;
     /// Returns the members of a struct.
     #[salsa::invoke(items::strct::struct_members)]
     fn struct_members(
@@ -243,13 +246,13 @@ pub trait SemanticGroup:
         id: semantic::StatementId,
     ) -> semantic::Statement;
 
-    // Aggregates module level semantic diagnostics.
+    /// Aggregates module level semantic diagnostics.
     fn module_semantic_diagnostics(
         &self,
         module_id: ModuleId,
     ) -> Option<Diagnostics<SemanticDiagnostic>>;
 
-    // Aggregates file level semantic diagnostics.
+    /// Aggregates file level semantic diagnostics.
     fn file_semantic_diagnostics(&self, file_id: FileId)
     -> Option<Diagnostics<SemanticDiagnostic>>;
 
@@ -283,7 +286,9 @@ fn module_semantic_diagnostics(
             }
             ModuleItemId::Submodule(_) => {}
             ModuleItemId::ExternType(_) => {}
-            ModuleItemId::ExternFunction(_) => {}
+            ModuleItemId::ExternFunction(extern_function) => {
+                diagnostics.extend(db.extern_function_declaration_diagnostics(*extern_function));
+            }
         }
     }
     Some(diagnostics.build())
