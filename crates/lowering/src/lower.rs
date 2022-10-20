@@ -105,7 +105,6 @@ impl<'db> Lowerer<'db> {
                 )
             });
         // Root block must not push anything.
-        assert!(merger_finalized.pushes.is_empty(), "No push should exist in root scope.");
         let root = block_sealed_opt.map(|block_sealed| {
             merger_finalized.finalize_block(&mut lowerer.ctx, block_sealed).block
         });
