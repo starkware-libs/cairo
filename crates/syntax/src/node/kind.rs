@@ -26,6 +26,7 @@ pub enum SyntaxKind {
     StructArgTail,
     StructArgList,
     ArgListBraced,
+    PatternIdentifier,
     PatternStruct,
     PatternStructParamList,
     PatternTuple,
