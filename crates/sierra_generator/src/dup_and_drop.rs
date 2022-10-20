@@ -100,7 +100,7 @@ fn get_existing_vars_per_statement(
     statement_required_vars: &mut Vec<Option<RequiredVarsSets>>,
 ) -> Vec<Option<OrderedHashSet<VarId>>> {
     // The calculated value for each statement.
-    let mut statement_existing_vars = vec![None; statements.len()];
+    let mut statement_existing_vars: Vec<Option<OrderedHashSet<_>>> = vec![None; statements.len()];
     statement_existing_vars[0] = Some(params.iter().map(|p| p.id.clone()).collect());
     for (i, statement) in statements.iter().enumerate() {
         match statement {
@@ -120,9 +120,9 @@ fn get_existing_vars_per_statement(
                         chain!(future_vars.iter(), branch.results.iter()).cloned().collect();
                     let entry = &mut statement_existing_vars[next_index];
                     if let Some(previous_value) = entry {
-                        // TODO(orizi): Make sure equality only for the enrties, not their order.
                         assert_eq!(
-                            *previous_value, next_existing_vars,
+                            previous_value.iter().collect::<HashSet<_>>(),
+                            next_existing_vars.iter().collect::<HashSet<_>>(),
                             "Got a different set of variables to the same entry point."
                         );
                     }
