@@ -1,0 +1,26 @@
+//! > Test a StatementLet syntax tree
+
+//! > test_function_name
+test_partial_parser_tree
+
+//! > cairo_code
+func f() {
+    let mut a = 17;
+}
+
+//! > top_level_kind
+StatementLet
+
+//! > ignored_kinds
+
+//! > expected_tree
+└── Top level kind: StatementLet
+    ├── let_kw (kind: TokenLet): 'let'
+    ├── pattern (kind: PatternIdentifier)
+    │   ├── modifiers (kind: ModifierList)
+    │   │   └── child #0 (kind: TokenMut): 'mut'
+    │   └── name (kind: TokenIdentifier): 'a'
+    ├── type_clause (kind: OptionTypeClauseEmpty) []
+    ├── eq (kind: TokenEq): '='
+    ├── rhs (kind: TokenLiteralNumber): '17'
+    └── semicolon (kind: TokenSemicolon): ';'
