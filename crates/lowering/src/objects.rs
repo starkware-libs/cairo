@@ -16,6 +16,7 @@ pub type VariableId = Id<Variable>;
 ///
 /// A block contains the list of variables to be dropped at its end. Other than these variables and
 /// the output variables, it is guaranteed that no other variable is alive.
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Block {
     /// Input variables to the block.
     pub inputs: Vec<VariableId>,
@@ -32,6 +33,7 @@ pub struct Block {
 }
 
 /// Describes what happens to the program flow at the end of a block.
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum BlockEnd {
     /// This block returns to the call-site, outputting variables to the call-site.
     Callsite(Vec<VariableId>),
@@ -43,6 +45,7 @@ pub enum BlockEnd {
 }
 
 /// Lowered variable representation.
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Variable {
     /// Can the type be (trivially) dropped.
     pub droppable: bool,
@@ -53,6 +56,7 @@ pub struct Variable {
 }
 
 /// Lowered statement.
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Statement {
     // Values.
     // TODO(spapini): Consts.
@@ -107,6 +111,7 @@ impl Statement {
 }
 
 /// A statement that binds a literal value to a variable.
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StatementLiteral {
     // TODO(spapini): Fix the type of `value`.
     /// The value of the literal.
@@ -116,6 +121,7 @@ pub struct StatementLiteral {
 }
 
 /// A statement that calls a user function.
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StatementCall {
     /// A function to "call".
     pub function: semantic::FunctionId,
@@ -127,6 +133,7 @@ pub struct StatementCall {
 
 /// A statement that jumps to another block. If that block ends with a BlockEnd::CallSite, the flow
 /// returns to the statement following this one.
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StatementCallBlock {
     /// A block to "call".
     pub block: BlockId,
@@ -136,6 +143,7 @@ pub struct StatementCallBlock {
 
 /// A statement that calls an extern function with branches, and "calls" a possibly different block
 /// for each branch.
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StatementMatchExtern {
     // TODO(spapini): ConcreteExternFunctionId once it exists.
     /// A concrete external function to call.
@@ -150,6 +158,7 @@ pub struct StatementMatchExtern {
 
 /// A statement that construct a variant of an enum with a single argument, and binds it to a
 /// variable.
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StatementEnumConstruct {
     pub variant: ConcreteVariant,
     /// A living variable in current scope to wrap with the variant.
@@ -159,6 +168,7 @@ pub struct StatementEnumConstruct {
 }
 
 /// A statement that matches an enum, and "calls" a possibly different block for each branch.
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StatementMatchEnum {
     pub concrete_enum: ConcreteEnumId,
     /// A living variable in current scope to match on.
@@ -170,6 +180,7 @@ pub struct StatementMatchEnum {
 }
 
 /// A statement that constructs a tuple into a new variable.
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StatementTupleConstruct {
     pub inputs: Vec<VariableId>,
     /// The variable to bind the value to.
@@ -177,6 +188,7 @@ pub struct StatementTupleConstruct {
 }
 
 /// A statement that destructs a tuple, introducing its elements as new variables.
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StatementTupleDestruct {
     /// A living variable in current scope to destruct as a tuple.
     pub input: VariableId,

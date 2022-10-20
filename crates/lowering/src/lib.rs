@@ -1,3 +1,4 @@
+pub mod db;
 pub mod diagnostic;
 pub mod fmt;
 pub mod lower;
