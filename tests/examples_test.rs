@@ -5,6 +5,7 @@ use std::sync::Arc;
 
 use defs::ids::ModuleId;
 use pretty_assertions::assert_eq;
+use semantic::db::SemanticGroup;
 use semantic::test_utils::setup_test_module;
 use sierra_gas::gas_info::GasInfo;
 use sierra_generator::db::SierraGenGroup;
@@ -77,4 +78,10 @@ fn cairo_to_casm(name: &str) {
         .to_string(),
         get_expected_contents(name, "casm")
     );
+}
+
+#[test_case("corelib_usage")]
+fn semantic_test(name: &str) {
+    let (db, module_id) = setup(name);
+    db.module_semantic_diagnostics(module_id).expect("Creating semantic model should succeed");
 }
