@@ -100,3 +100,34 @@ error: ref argument must be a variable.
  --> lib.cairo:2:7
   foo(1);
       ^
+
+//! > ==========================================================================
+
+//! > Test assignment to an immutable variable.
+
+//! > test_function_name
+test_expr_diagnostics
+
+//! > expr_code
+{
+  let b = 5;
+  b = 3;
+}
+
+//! > module_code
+func foo(a: felt) {
+  a = 2
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+error: Cannot assign to an immutable variable.
+ --> lib.cairo:2:3
+  a = 2
+  ^
+
+error: Cannot assign to an immutable variable.
+ --> lib.cairo:7:3
+  b = 3;
+  ^
