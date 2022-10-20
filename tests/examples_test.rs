@@ -5,6 +5,7 @@ use std::sync::Arc;
 
 use defs::ids::ModuleId;
 use pretty_assertions::assert_eq;
+use semantic::db::SemanticGroup;
 use semantic::test_utils::setup_test_module;
 use sierra_gas::gas_info::GasInfo;
 use sierra_generator::db::SierraGenGroup;
@@ -47,6 +48,7 @@ fn compile_to_sierra(name: &str) -> (SierraGenDatabaseForTesting, Arc<sierra::pr
 #[test_case("fib")]
 #[test_case("fib_box")]
 #[test_case("fib_array")]
+#[test_case("corelib_usage" => ignore["unsupported"])]
 fn cairo_to_sierra(name: &str) {
     let (db, sierra_program) = compile_to_sierra(name);
     assert_eq!(
@@ -59,6 +61,7 @@ fn cairo_to_sierra(name: &str) {
 #[test_case("fib")]
 #[test_case("fib_box")]
 #[test_case("fib_array")]
+#[test_case("corelib_usage" => ignore["unsupported"])]
 fn cairo_to_casm(name: &str) {
     let (_db, sierra_program) = compile_to_sierra(name);
     assert_eq!(
@@ -77,4 +80,13 @@ fn cairo_to_casm(name: &str) {
         .to_string(),
         get_expected_contents(name, "casm")
     );
+}
+
+#[test_case("fib")]
+#[test_case("fib_box")]
+#[test_case("fib_array")]
+#[test_case("corelib_usage")]
+fn semantic_test(name: &str) {
+    let (db, module_id) = setup(name);
+    db.module_semantic_diagnostics(module_id).expect("Creating semantic model should succeed");
 }
