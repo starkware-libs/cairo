@@ -292,3 +292,4 @@ parser_test!(
     ["src/parser_test_data/function_signature"],
     test_partial_parser_tree
 );
+parser_test!(let_statement, ["src/parser_test_data/let_statement"], test_partial_parser_tree);

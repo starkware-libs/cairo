@@ -477,14 +477,10 @@ fn compute_pattern_semantic(
             }
             // TODO(spapini): Make sure this is a simple identifier. In particular, no generics.
             let identifier = path.elements(syntax_db)[0].identifier_ast(syntax_db);
-            let var_id = ctx
-                .db
-                .intern_local_var(LocalVarLongId(ctx.resolver.module_id, identifier.stable_ptr()));
-
-            Pattern::Variable(PatternVariable {
-                name: identifier.text(syntax_db),
-                var: LocalVariable { id: var_id, ty, modifiers: Modifiers::default() },
-            })
+            create_variable_pattern(ctx, identifier, ty)
+        }
+        ast::Pattern::Identifier(identifier) => {
+            create_variable_pattern(ctx, identifier.name(syntax_db), ty)
         }
         ast::Pattern::Struct(pattern_struct) => {
             // Check that type is an struct, and get the concrete struct from it.
@@ -525,6 +521,21 @@ fn compute_pattern_semantic(
 
             Pattern::Tuple(PatternTuple { field_patterns, ty })
         }
+    })
+}
+
+/// Creates a variable pattern.
+fn create_variable_pattern(
+    ctx: &mut ComputationContext<'_>,
+    identifier: ast::TerminalIdentifier,
+    ty: TypeId,
+) -> Pattern {
+    let var_id =
+        ctx.db.intern_local_var(LocalVarLongId(ctx.resolver.module_id, identifier.stable_ptr()));
+
+    Pattern::Variable(PatternVariable {
+        name: identifier.text(ctx.db.upcast()),
+        var: LocalVariable { id: var_id, ty, modifiers: Modifiers::default() },
     })
 }
 
