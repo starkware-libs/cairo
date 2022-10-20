@@ -44,6 +44,45 @@ macro_rules! casm_inner {
         $crate::append_instruction!($ctx, body $(,$ap++)?);
         $crate::casm_inner!($ctx, $($tok)*)
     };
+    ($ctx:ident, jmp rel $target:expr $(,$ap:ident++)? ; $($tok:tt)*) => {
+        let body = InstructionBody::Jump(JumpInstruction {
+            target: $crate::deref_or_immediate!($target),
+            relative: true,
+        });
+        $crate::append_instruction!($ctx, body $(,$ap++)?);
+        $crate::casm_inner!($ctx, $($tok)*)
+    };
+    ($ctx:ident, jmp abs $target:tt $(,$ap:ident++)? ; $($tok:tt)*) => {
+        let body = InstructionBody::Jump(JumpInstruction {
+            target: $crate::deref_or_immediate!($target),
+            relative: false,
+        });
+        $crate::append_instruction!($ctx, body $(,$ap++)?);
+        $crate::casm_inner!($ctx, $($tok)*)
+    };
+    ($ctx:ident, jnz rel $target:tt if $cond:expr $(,$ap:ident++)? ; $($tok:tt)*) => {
+        let body = InstructionBody::Jnz(JnzInstruction {
+            jump_offset: $crate::deref_or_immediate!($target),
+            condition: $crate::deref!($cond),
+        });
+        $crate::append_instruction!($ctx, body $(,$ap++)?);
+        $crate::casm_inner!($ctx, $($tok)*)
+    };
+    ($ctx:ident, jnz $target:tt if $cond:expr $(,$ap:ident++)? ; $($tok:tt)*) => {
+        let body = InstructionBody::Jnz(JnzInstruction {
+            jump_offset: $crate::deref_or_immediate!($target),
+            condition: $crate::deref!($cond),
+        });
+        $crate::append_instruction!($ctx, body $(,$ap++)?);
+        $crate::casm_inner!($ctx, $($tok)*)
+    };
+    ($ctx:ident, ap += $operand:tt $(,$ap:ident++)? ; $($tok:tt)*) => {
+        let body = InstructionBody::AddAp(AddApInstruction {
+            operand: $crate::res!($operand),
+        });
+        $crate::append_instruction!($ctx, body $(,$ap++)?);
+        $crate::casm_inner!($ctx, $($tok)*)
+    };
 }
 
 #[macro_export]
@@ -62,10 +101,11 @@ macro_rules! append_instruction {
 
 #[allow(dead_code)]
 #[derive(Default)]
-struct CasmContext {
-    current_code_offset: usize,
-    instructions: Vec<Instruction>,
+pub struct CasmContext {
+    pub current_code_offset: usize,
+    pub instructions: Vec<Instruction>,
     // TODO(spapini): Branches.
+    // TODO(spapini): Relocations.
 }
 
 #[macro_export]
@@ -79,7 +119,7 @@ macro_rules! deref {
     ([$reg:ident]) => {
         DerefOperand { register: $crate::reg!($reg), offset: 0 }
     };
-    ($a:ident) => {
+    ($a:expr) => {
         $a
     };
 }
@@ -99,8 +139,11 @@ macro_rules! deref_or_immediate {
     ($a:literal) => {
         DerefOrImmediate::Immediate(ImmediateOperand { value: $a })
     };
-    ($a:tt) => {
-        DerefOrImmediate::Deref($crate::deref!($a))
+    ([$a:ident $($op:tt $offset:expr)?]) => {
+        DerefOrImmediate::Deref($crate::deref!([$a $($op $offset)?]))
+    };
+    ($a:expr) => {
+        DerefOrImmediate::from($a)
     };
 }
 
@@ -115,21 +158,15 @@ macro_rules! res {
     };
     ($a:tt * $b:tt) => {
         ResOperand::BinOp(BinOpOperand {
-            op: Operation::Add,
+            op: Operation::Mul,
             a: $crate::deref!($a),
             b: $crate::deref_or_immediate!($b),
         })
     };
-    ([$a:tt]) => {
-        todo!()
-    };
-    ($a:ident) => {
-        $a
-    };
-    ($a:literal) => {
-        ResOperand::Immediate(ImmediateOperand { value: $a })
+    ([[$a:expr]]) => {
+        ResOperand::DoubleDeref(DoubleDerefOperand { inner_deref: $a })
     };
     ($a:tt) => {
-        ResOperand::Deref($crate::deref!($a))
+        ResOperand::from($crate::deref_or_immediate!($a))
     };
 }

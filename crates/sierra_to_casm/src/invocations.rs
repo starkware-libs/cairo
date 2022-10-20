@@ -1,10 +1,10 @@
 use std::collections::VecDeque;
 
 use casm::ap_change::ApChange;
+use casm::casm;
 use casm::hints::Hint;
 use casm::instructions::{
-    AddApInstruction, AssertEqInstruction, CallInstruction, Instruction, InstructionBody,
-    JnzInstruction, JumpInstruction,
+    AddApInstruction, AssertEqInstruction, Instruction, InstructionBody, JnzInstruction,
 };
 use casm::operand::{
     BinOpOperand, DerefOperand, DerefOrImmediate, DoubleDerefOperand, ImmediateOperand, Operation,
@@ -285,13 +285,7 @@ impl CompiledInvocationBuilder<'_> {
             };
 
         Ok(self.build(
-            vec![Instruction::new(
-                InstructionBody::Call(CallInstruction {
-                    target: DerefOrImmediate::Immediate(ImmediateOperand { value: 0 }),
-                    relative: true,
-                }),
-                false,
-            )],
+            casm! { call rel 0; }.instructions,
             vec![RelocationEntry {
                 instruction_idx: 0,
                 relocation: Relocation::RelativeStatementId(func_call.function.entry_point),
@@ -463,13 +457,7 @@ impl CompiledInvocationBuilder<'_> {
         };
 
         Ok(self.build(
-            vec![Instruction::new(
-                InstructionBody::Jnz(JnzInstruction {
-                    jump_offset: DerefOrImmediate::Immediate(ImmediateOperand { value: 0 }),
-                    condition: *condition,
-                }),
-                false,
-            )],
+            casm! { jnz rel 0 if *condition; }.instructions,
             vec![RelocationEntry {
                 instruction_idx: 0,
                 relocation: Relocation::RelativeStatementId(*target_statement_id),
@@ -488,13 +476,7 @@ impl CompiledInvocationBuilder<'_> {
         };
 
         Ok(self.build(
-            vec![Instruction::new(
-                InstructionBody::Jump(JumpInstruction {
-                    target: DerefOrImmediate::Immediate(ImmediateOperand { value: 0 }),
-                    relative: true,
-                }),
-                false,
-            )],
+            casm! { jmp rel 0; }.instructions,
             vec![RelocationEntry {
                 instruction_idx: 0,
                 relocation: Relocation::RelativeStatementId(*target_statement_id),
@@ -512,12 +494,7 @@ impl CompiledInvocationBuilder<'_> {
         )?;
         self.environment.frame_state = frame_state;
         Ok(self.build(
-            vec![Instruction::new(
-                InstructionBody::AddAp(AddApInstruction {
-                    operand: ResOperand::Immediate(ImmediateOperand { value: n_slots as i128 }),
-                }),
-                false,
-            )],
+            casm! { ap += (n_slots as i128); }.instructions,
             vec![],
             [ApChange::Known(n_slots)].into_iter(),
             [[].into_iter()].into_iter(),
@@ -620,13 +597,7 @@ impl CompiledInvocationBuilder<'_> {
         };
         // TODO(orizi): Handle non 1 sized types.
         Ok(self.build(
-            vec![Instruction::new(
-                InstructionBody::AssertEq(AssertEqInstruction {
-                    a: *expr_elem,
-                    b: ResOperand::DoubleDeref(DoubleDerefOperand { inner_deref: *expr_arr }),
-                }),
-                false,
-            )],
+            casm! { (*expr_elem) = [[*expr_arr]]; }.instructions,
             vec![],
             [ApChange::Known(0)].into_iter(),
             [vec![ReferenceExpression::BinOp(BinOpExpression {
@@ -876,13 +847,7 @@ impl CompiledInvocationBuilder<'_> {
         let mut relocations = Vec::new();
         // Add the jump_nz instruction if we have 2 branches.
         if num_branches == 2 {
-            instructions.push(Instruction::new(
-                InstructionBody::Jnz(JnzInstruction {
-                    jump_offset: DerefOrImmediate::Immediate(ImmediateOperand { value: 0 }),
-                    condition: variant_selector,
-                }),
-                false,
-            ));
+            instructions.extend(casm! { jnz rel 0 if variant_selector; }.instructions);
             // Add the first instruction of jumping to branch 1 if jmp_table_idx != 0 (1).
             relocations.push(RelocationEntry {
                 instruction_idx: 0,
@@ -892,13 +857,7 @@ impl CompiledInvocationBuilder<'_> {
 
         // TODO(yuval): this can be avoided with fallthrough.
         // Add the jump instruction to branch 0, anyway.
-        instructions.push(Instruction::new(
-            InstructionBody::Jump(JumpInstruction {
-                target: DerefOrImmediate::Immediate(ImmediateOperand { value: 0 }),
-                relative: true,
-            }),
-            false,
-        ));
+        instructions.extend(casm! { jmp rel 0; }.instructions);
         relocations.push(RelocationEntry {
             instruction_idx: instructions.len() - 1,
             relocation: Relocation::RelativeStatementId(target_statement_ids.next().unwrap()),
@@ -947,24 +906,12 @@ impl CompiledInvocationBuilder<'_> {
         target_statement_ids: impl Iterator<Item = StatementIdx>,
     ) -> Result<CompiledInvocation, InvocationError> {
         // The first instruction is the jmp to the relevant index in the jmp table.
-        let mut instructions = vec![Instruction::new(
-            InstructionBody::Jump(JumpInstruction {
-                target: DerefOrImmediate::Deref(variant_selector),
-                relative: true,
-            }),
-            false,
-        )];
+        let mut instructions = casm! { jmp rel variant_selector; }.instructions;
         let mut relocations = Vec::new();
 
         for (i, stmnt_id) in target_statement_ids.enumerate() {
             // Add the jump instruction to the relevant target.
-            instructions.push(Instruction::new(
-                InstructionBody::Jump(JumpInstruction {
-                    target: DerefOrImmediate::Immediate(ImmediateOperand { value: 0 }),
-                    relative: true,
-                }),
-                false,
-            ));
+            instructions.extend(casm! { jmp rel 0; }.instructions);
             relocations.push(RelocationEntry {
                 instruction_idx: i + 1,
                 relocation: Relocation::RelativeStatementId(stmnt_id),
