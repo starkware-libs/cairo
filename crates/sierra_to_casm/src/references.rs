@@ -113,8 +113,8 @@ impl ApplyApChange for ReferenceExpression {
     }
 }
 
-/// Builds the HashMap of references to the parameters of a function.
-pub fn build_function_parameter_refs(func: &Function) -> Result<StatementRefs, ReferencesError> {
+/// Builds the HashMap of references to the arguments of a function.
+pub fn build_function_arguments_refs(func: &Function) -> Result<StatementRefs, ReferencesError> {
     let mut refs = HashMap::with_capacity(func.params.len());
 
     let mut offset = -3;

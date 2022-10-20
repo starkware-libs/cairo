@@ -18,7 +18,7 @@ use crate::environment::{
 use crate::invocations::BranchChanges;
 use crate::metadata::Metadata;
 use crate::references::{
-    build_function_parameter_refs, check_types_match, ReferenceValue, ReferencesError,
+    build_function_arguments_refs, check_types_match, ReferenceValue, ReferencesError,
     StatementRefs,
 };
 
@@ -147,7 +147,7 @@ impl ProgramAnnotations {
             annotations.set_or_assert(
                 func.entry_point,
                 StatementAnnotations {
-                    refs: build_function_parameter_refs(func)?,
+                    refs: build_function_arguments_refs(func)?,
                     return_annotation,
                     environment: if gas_usage_check {
                         Environment::new(GasWallet::Value(
