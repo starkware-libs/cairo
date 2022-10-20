@@ -283,7 +283,9 @@ fn module_semantic_diagnostics(
             }
             ModuleItemId::Submodule(_) => {}
             ModuleItemId::ExternType(_) => {}
-            ModuleItemId::ExternFunction(_) => {}
+            ModuleItemId::ExternFunction(extern_function) => {
+                diagnostics.extend(db.extern_function_declaration_diagnostics(*extern_function));
+            }
         }
     }
     Some(diagnostics.build())

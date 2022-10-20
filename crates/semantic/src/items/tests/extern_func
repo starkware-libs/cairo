@@ -1,0 +1,21 @@
+//! > Test extern func diagnostics.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+func foo() {
+    bar()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern func bar() -> bad_type;
+
+//! > expected_diagnostics
+error: Path not found.
+ --> lib.cairo:1:22
+extern func bar() -> bad_type;
+                     ^******^
