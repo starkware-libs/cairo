@@ -47,27 +47,6 @@ impl ApplyApChange for BinOpExpression {
     }
 }
 
-/// A struct representing an actual enum value in the Sierra program.
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct EnumValue {
-    // TODO(yuval): this is a bit of a hack. We might want to have 2 structs: EnumValue (with an
-    // integer as variant_selector), StoredEnumValue (with a ::Deref as variant_selector), with
-    // store_* translating EnumValue to StoredEnumValue.
-    /// This must be an ReferenceExpression::Immediate after enum_init, and must be
-    /// ReferenceExpression::Deref after store_*.
-    pub variant_selector: Box<ReferenceExpression>,
-    /// The inner value of the enum - can be any ReferenceExpression.
-    pub inner_value: Box<ReferenceExpression>,
-}
-impl ApplyApChange for EnumValue {
-    fn apply_ap_change(self, ap_change: ApChange) -> Result<Self, ApChangeError> {
-        Ok(EnumValue {
-            variant_selector: Box::new(self.variant_selector.apply_ap_change(ap_change)?),
-            inner_value: Box::new(self.inner_value.apply_ap_change(ap_change)?),
-        })
-    }
-}
-
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ReferenceExpression {
     AllocateSegment,
@@ -77,7 +56,6 @@ pub enum ReferenceExpression {
     Immediate(ImmediateOperand),
     BinOp(BinOpExpression),
     Complex(Vec<ReferenceExpression>),
-    Enum(EnumValue),
 }
 
 impl ApplyApChange for ReferenceExpression {
@@ -105,9 +83,6 @@ impl ApplyApChange for ReferenceExpression {
                     .map(|ref_expr| ref_expr.apply_ap_change(ap_change))
                     .collect();
                 ReferenceExpression::Complex(res_vec?)
-            }
-            ReferenceExpression::Enum(enum_value) => {
-                ReferenceExpression::Enum(enum_value.apply_ap_change(ap_change)?)
             }
         })
     }
@@ -142,7 +117,7 @@ pub fn build_function_arguments_refs(func: &Function) -> Result<StatementRefs, R
     Ok(refs)
 }
 
-/// Checks that the list of reference contains types matching the given types.
+/// Checks that the list of references contains types matching the given types.
 pub fn check_types_match(
     refs: &[ReferenceValue],
     types: &[ConcreteTypeId],
