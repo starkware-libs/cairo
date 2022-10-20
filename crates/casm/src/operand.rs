@@ -36,6 +36,14 @@ impl Display for ResOperand {
         }
     }
 }
+impl From<DerefOrImmediate> for ResOperand {
+    fn from(x: DerefOrImmediate) -> Self {
+        match x {
+            DerefOrImmediate::Deref(deref) => ResOperand::Deref(deref),
+            DerefOrImmediate::Immediate(imm) => ResOperand::Immediate(imm),
+        }
+    }
+}
 
 /// Represents an operand of the form [reg + offset].
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
@@ -76,6 +84,21 @@ impl Display for DerefOrImmediate {
             DerefOrImmediate::Deref(operand) => write!(f, "{}", operand),
             DerefOrImmediate::Immediate(operand) => write!(f, "{}", operand),
         }
+    }
+}
+impl From<i128> for DerefOrImmediate {
+    fn from(x: i128) -> Self {
+        DerefOrImmediate::Immediate(ImmediateOperand { value: x })
+    }
+}
+impl From<ImmediateOperand> for DerefOrImmediate {
+    fn from(x: ImmediateOperand) -> Self {
+        DerefOrImmediate::Immediate(x)
+    }
+}
+impl From<DerefOperand> for DerefOrImmediate {
+    fn from(x: DerefOperand) -> Self {
+        DerefOrImmediate::Deref(x)
     }
 }
 
