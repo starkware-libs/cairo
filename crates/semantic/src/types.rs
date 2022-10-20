@@ -240,9 +240,8 @@ pub fn generic_type_generic_params(
     db: &dyn SemanticGroup,
     generic_type: GenericTypeId,
 ) -> Option<Vec<GenericParamId>> {
-    // TODO(spapini): other types.
     match generic_type {
-        GenericTypeId::Struct(_) => Some(vec![]),
+        GenericTypeId::Struct(id) => db.struct_generic_params(id),
         GenericTypeId::Enum(id) => db.enum_generic_params(id),
         GenericTypeId::Extern(id) => db.extern_type_declaration_generic_params(id),
     }
