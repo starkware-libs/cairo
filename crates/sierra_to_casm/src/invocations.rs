@@ -35,7 +35,7 @@ use utils::try_extract_matches;
 use crate::environment::frame_state::FrameStateError;
 use crate::environment::{frame_state, Environment};
 use crate::metadata::Metadata;
-use crate::references::{BinOpExpression, EnumValue, ReferenceExpression, ReferenceValue};
+use crate::references::{BinOpExpression, ReferenceExpression, ReferenceValue, ReferencesError};
 use crate::relocations::{Relocation, RelocationEntry};
 use crate::type_sizes::TypeSizeMap;
 
@@ -376,8 +376,6 @@ impl CompiledInvocationBuilder<'_> {
                     .flatten()
                     .collect());
             }
-            // TODO(gil)
-            ReferenceExpression::Enum(_) => todo!(),
         };
         Ok(vec![Instruction {
             body: InstructionBody::AssertEq(AssertEqInstruction { a: dst_operand, b: res_operand }),
@@ -787,28 +785,20 @@ impl CompiledInvocationBuilder<'_> {
             (2 * index + 1) as i128
         };
 
-        Ok(self.build_only_reference_changes(
-            [ReferenceExpression::Enum(EnumValue {
-                variant_selector: Box::new(ReferenceExpression::Immediate(ImmediateOperand {
-                    value: variant_selector,
-                })),
-                inner_value: Box::new(ReferenceExpression::Deref(*init_arg)),
-            })]
-            .into_iter(),
-        ))
+        let enum_val = EnumValue {
+            variant_selector: ReferenceExpression::Immediate(ImmediateOperand {
+                value: variant_selector,
+            }),
+            inner_value: ReferenceExpression::Deref(*init_arg),
+        };
+        Ok(self.build_only_reference_changes([enum_val.into()].into_iter()))
     }
 
     /// Handles statement for matching an enum.
     fn build_enum_match(self) -> Result<CompiledInvocation, InvocationError> {
         let matched_var = match self.refs {
-            [ReferenceValue { expression: ReferenceExpression::Enum(enum_value), .. }] => {
-                // Verify variant_selector is of type deref. This is the case with an enum_value
-                // that was validly created and then stored.
-                try_extract_matches!(*enum_value.variant_selector, ReferenceExpression::Deref)
-                    .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
-                enum_value
-            }
-            [_] => return Err(InvocationError::InvalidReferenceExpressionForArgument),
+            [ReferenceValue { expression, .. }] => EnumValue::try_from(expression)
+                .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?,
             refs => {
                 return Err(InvocationError::WrongNumberOfArguments {
                     expected: 1,
@@ -816,6 +806,11 @@ impl CompiledInvocationBuilder<'_> {
                 });
             }
         };
+        // Verify variant_selector is of type deref. This is the case with an enum_value
+        // that was validly created and then stored.
+        let variant_selector =
+            try_extract_matches!(matched_var.variant_selector, ReferenceExpression::Deref)
+                .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
 
         let target_statement_ids = self.invocation.branches.iter().map(|b| match b {
             BranchInfo { target: BranchTarget::Statement(stmnt_id), .. } => *stmnt_id,
@@ -824,9 +819,19 @@ impl CompiledInvocationBuilder<'_> {
 
         let num_branches = self.invocation.branches.len();
         if num_branches <= 2 {
-            self.build_enum_match_short(num_branches, matched_var, target_statement_ids)
+            self.build_enum_match_short(
+                num_branches,
+                matched_var,
+                variant_selector,
+                target_statement_ids,
+            )
         } else {
-            self.build_enum_match_long(num_branches, matched_var, target_statement_ids)
+            self.build_enum_match_long(
+                num_branches,
+                matched_var,
+                variant_selector,
+                target_statement_ids,
+            )
         }
     }
 
@@ -863,18 +868,14 @@ impl CompiledInvocationBuilder<'_> {
     fn build_enum_match_short(
         self,
         num_branches: usize,
-        matched_var: &EnumValue,
+        matched_var: EnumValue,
+        variant_selector: DerefOperand,
         mut target_statement_ids: impl Iterator<Item = StatementIdx>,
     ) -> Result<CompiledInvocation, InvocationError> {
         let mut instructions = Vec::new();
         let mut relocations = Vec::new();
         // Add the jump_nz instruction if we have 2 branches.
         if num_branches == 2 {
-            // TODO(yuval): remove the redundant try_extract_matches by having
-            // EnumValue+StoredEnumValue (see another todo in `EnumValue`).
-            let variant_selector =
-                try_extract_matches!(*matched_var.variant_selector, ReferenceExpression::Deref)
-                    .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
             instructions.push(Instruction::new(
                 InstructionBody::Jnz(JnzInstruction {
                     jump_offset: DerefOrImmediate::Immediate(ImmediateOperand { value: 0 }),
@@ -907,7 +908,7 @@ impl CompiledInvocationBuilder<'_> {
             instructions,
             relocations,
             itertools::repeat_n(ApChange::Known(0), num_branches).into_iter(),
-            itertools::repeat_n(vec![*matched_var.inner_value.clone()].into_iter(), num_branches)
+            itertools::repeat_n(vec![matched_var.inner_value].into_iter(), num_branches)
                 .into_iter(),
         ))
     }
@@ -941,15 +942,10 @@ impl CompiledInvocationBuilder<'_> {
     fn build_enum_match_long(
         self,
         num_branches: usize,
-        matched_var: &EnumValue,
+        matched_var: EnumValue,
+        variant_selector: DerefOperand,
         target_statement_ids: impl Iterator<Item = StatementIdx>,
     ) -> Result<CompiledInvocation, InvocationError> {
-        // TODO(yuval): remove the redundant try_extract_matches by having
-        // EnumValue+StoredEnumValue (see another todo in `EnumValue`).
-        let variant_selector =
-            try_extract_matches!(*matched_var.variant_selector, ReferenceExpression::Deref)
-                .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
-
         // The first instruction is the jmp to the relevant index in the jmp table.
         let mut instructions = vec![Instruction::new(
             InstructionBody::Jump(JumpInstruction {
@@ -979,7 +975,7 @@ impl CompiledInvocationBuilder<'_> {
             instructions,
             relocations,
             itertools::repeat_n(ApChange::Known(0), num_branches).into_iter(),
-            itertools::repeat_n(vec![*matched_var.inner_value.clone()].into_iter(), num_branches)
+            itertools::repeat_n(vec![matched_var.inner_value].into_iter(), num_branches)
                 .into_iter(),
         ))
     }
@@ -1058,5 +1054,37 @@ pub fn compile_invocation(
         })) => builder.build_enum_init(*index),
         CoreConcreteLibFunc::Enum(EnumConcreteLibFunc::Match(_)) => builder.build_enum_match(),
         _ => Err(InvocationError::NotImplemented(invocation.clone())),
+    }
+}
+
+// ===================================== Complex structs =====================================
+
+/// A struct representing an actual enum value in the Sierra program.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct EnumValue {
+    // TODO(yuval): this is a bit of a hack. We might want to have 2 structs: EnumValue (with an
+    // integer as variant_selector), StoredEnumValue (with a ::Deref as variant_selector), with
+    // store_* translating EnumValue to StoredEnumValue.
+    /// This must be ReferenceExpression::Immediate after enum_init, and must be
+    /// ReferenceExpression::Deref after store_*.
+    pub variant_selector: ReferenceExpression,
+    /// The inner value of the enum - can be any ReferenceExpression.
+    pub inner_value: ReferenceExpression,
+}
+impl TryFrom<&ReferenceExpression> for EnumValue {
+    type Error = ReferencesError;
+
+    fn try_from(expr: &ReferenceExpression) -> Result<Self, Self::Error> {
+        let complex = try_extract_matches!(expr, ReferenceExpression::Complex)
+            .ok_or(ReferencesError::InvalidReferenceTypeForArgument)?;
+        if complex.len() != 2 {
+            return Err(ReferencesError::InvalidReferenceTypeForArgument);
+        }
+        Ok(EnumValue { variant_selector: complex[0].clone(), inner_value: complex[1].clone() })
+    }
+}
+impl From<EnumValue> for ReferenceExpression {
+    fn from(enum_val: EnumValue) -> Self {
+        ReferenceExpression::Complex(vec![enum_val.variant_selector, enum_val.inner_value])
     }
 }
