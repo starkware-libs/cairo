@@ -554,14 +554,9 @@ impl<'a> Parser<'a> {
     fn try_parse_pattern(&mut self) -> Option<PatternGreen> {
         let modifier_list = self.parse_modifier_list();
         if !modifier_list.is_empty() {
-            return Some(
-                PatternIdentifier::new_green(
-                    self.db,
-                    ModifierList::new_green(self.db, modifier_list),
-                    self.parse_token::<TerminalIdentifier>(),
-                )
-                .into(),
-            );
+            let modifiers = ModifierList::new_green(self.db, modifier_list);
+            let name = self.parse_token::<TerminalIdentifier>();
+            return Some(PatternIdentifier::new_green(self.db, modifiers, name).into());
         };
 
         // TODO(yuval): Support tuple and "Or" patterns.
@@ -739,7 +734,7 @@ impl<'a> Parser<'a> {
         )
     }
 
-    /// Returns a GreenId of a node with kind Param or None if a parameter can't be parsed.
+    /// Returns a GreenId of a node with kind Modifier or None if a parameter can't be parsed.
     fn try_parse_modifier(&mut self) -> Option<ModifierGreen> {
         match self.peek().kind {
             SyntaxKind::TerminalRef => Some(self.take::<TerminalRef>().into()),
@@ -748,6 +743,7 @@ impl<'a> Parser<'a> {
         }
     }
 
+    /// Returns a vector of GreenIds with kind Modifier.
     fn parse_modifier_list(&mut self) -> Vec<ModifierGreen> {
         let mut modifier_list = vec![];
 
