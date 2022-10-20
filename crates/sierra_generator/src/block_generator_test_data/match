@@ -30,12 +30,12 @@ foo
 felt_const<10>() -> ([0])
 felt_jump_nz([0]) { fallthrough() label0([1]) }
 felt_const<3>() -> ([2])
-PushValues([2]: [0]) -> ([3])
+PushValues([2]: felt) -> ([3])
 jump() { label1() }
 label0:
 felt_const<4>() -> ([4])
-PushValues([4]: [0]) -> ([5])
-PushValues([5]: [0]) -> ([3])
+PushValues([4]: felt) -> ([5])
+PushValues([5]: felt) -> ([3])
 label1:
 
 //! > ==========================================================================
@@ -68,9 +68,9 @@ foo
 //! > sierra_code
 felt_const<7>() -> ([0])
 felt_jump_nz([0]) { fallthrough() label0([1]) }
-PushValues([0]: [0]) -> ([2])
+PushValues([0]: felt) -> ([2])
 jump() { label1() }
 label0:
 felt_const<7>() -> ([3])
-PushValues([3]: [0]) -> ([2])
+PushValues([3]: felt) -> ([2])
 label1:

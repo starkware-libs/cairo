@@ -9,7 +9,7 @@ use semantic::db::SemanticGroup;
 use semantic::test_utils::setup_test_module;
 use sierra_gas::gas_info::GasInfo;
 use sierra_generator::db::SierraGenGroup;
-use sierra_generator::test_utils::{replace_libfunc_ids_in_program, SierraGenDatabaseForTesting};
+use sierra_generator::test_utils::{replace_sierra_ids_in_program, SierraGenDatabaseForTesting};
 use sierra_to_casm::metadata::Metadata;
 use test_case::test_case;
 
@@ -53,7 +53,7 @@ fn compile_to_sierra(name: &str) -> (SierraGenDatabaseForTesting, Arc<sierra::pr
 fn cairo_to_sierra(name: &str) {
     let (db, sierra_program) = compile_to_sierra(name);
     assert_eq!(
-        replace_libfunc_ids_in_program(&db, &sierra_program).to_string(),
+        replace_sierra_ids_in_program(&db, &sierra_program).to_string(),
         get_expected_contents(name, "sierra")
     );
 }
