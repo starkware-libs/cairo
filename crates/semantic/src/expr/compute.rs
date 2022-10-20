@@ -26,11 +26,11 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::items::enm::SemanticEnumEx;
+use crate::items::modifiers::compute_modifiers;
 use crate::items::strct::SemanticStructEx;
 use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use crate::semantic::{self, FunctionId, LocalVariable, TypeId, TypeLongId, Variable};
 use crate::types::{resolve_type, ConcreteTypeId};
-use crate::Modifiers;
 
 /// Context for computing the semantic model of expression trees.
 pub struct ComputationContext<'ctx> {
@@ -477,11 +477,14 @@ fn compute_pattern_semantic(
             }
             // TODO(spapini): Make sure this is a simple identifier. In particular, no generics.
             let identifier = path.elements(syntax_db)[0].identifier_ast(syntax_db);
-            create_variable_pattern(ctx, identifier, ty)
+            create_variable_pattern(ctx, identifier, &[], ty)
         }
-        ast::Pattern::Identifier(identifier) => {
-            create_variable_pattern(ctx, identifier.name(syntax_db), ty)
-        }
+        ast::Pattern::Identifier(identifier) => create_variable_pattern(
+            ctx,
+            identifier.name(syntax_db),
+            &identifier.modifiers(syntax_db).elements(syntax_db),
+            ty,
+        ),
         ast::Pattern::Struct(pattern_struct) => {
             // Check that type is an struct, and get the concrete struct from it.
             let _concrete_struct =
@@ -528,14 +531,20 @@ fn compute_pattern_semantic(
 fn create_variable_pattern(
     ctx: &mut ComputationContext<'_>,
     identifier: ast::TerminalIdentifier,
+    modifier_list: &[ast::Modifier],
     ty: TypeId,
 ) -> Pattern {
+    let syntax_db = ctx.db.upcast();
     let var_id =
         ctx.db.intern_local_var(LocalVarLongId(ctx.resolver.module_id, identifier.stable_ptr()));
 
     Pattern::Variable(PatternVariable {
-        name: identifier.text(ctx.db.upcast()),
-        var: LocalVariable { id: var_id, ty, modifiers: Modifiers::default() },
+        name: identifier.text(syntax_db),
+        var: LocalVariable {
+            id: var_id,
+            ty,
+            modifiers: compute_modifiers(ctx.diagnostics, syntax_db, modifier_list),
+        },
     })
 }
 
