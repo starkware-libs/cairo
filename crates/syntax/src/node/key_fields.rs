@@ -30,6 +30,7 @@ pub fn get_key_fields(kind: SyntaxKind, children: Vec<GreenId>) -> Vec<GreenId> 
         SyntaxKind::StructArgTail => vec![],
         SyntaxKind::StructArgList => vec![],
         SyntaxKind::ArgListBraced => vec![],
+        SyntaxKind::PatternIdentifier => vec![/* name */ children[1]],
         SyntaxKind::PatternStruct => vec![],
         SyntaxKind::PatternStructParamList => vec![],
         SyntaxKind::PatternTuple => vec![],

@@ -1,0 +1,17 @@
+//! > Incompatible types in if blocks.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+
+func foo(x: (felt, felt)) {
+    let mut mut ref ref b = x;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics

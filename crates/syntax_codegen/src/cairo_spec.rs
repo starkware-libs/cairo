@@ -151,10 +151,15 @@ pub fn get_spec() -> Vec<Node> {
         EnumBuilder::new("Pattern")
             .node_with_explicit_kind("Underscore", "TerminalUnderscore")
             .node_with_explicit_kind("Literal", "TerminalLiteralNumber")
+            .node("Identifier")
             .node("Struct")
             .node("Tuple")
             .node("Enum")
             .node_with_explicit_kind("Path", "ExprPath")
+            .build(),
+        StructBuilder::new("PatternIdentifier")
+            .node("modifiers", "ModifierList")
+            .key_node("name", "TerminalIdentifier")
             .build(),
         StructBuilder::new("PatternStruct")
             // TODO(spapini): Use SimplePath instead - which is not an expr.
