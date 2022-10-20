@@ -1,17 +1,17 @@
 use db_utils::Upcast;
-use defs::ids::{LanguageElementId, MemberId, MemberLongId, StructId};
+use defs::ids::{GenericParamId, LanguageElementId, MemberId, MemberLongId, StructId};
 use diagnostics::Diagnostics;
 use diagnostics_proc_macros::DebugWithDb;
 use smol_str::SmolStr;
-use syntax::node::ids::SyntaxStablePtrId;
 use syntax::node::{Terminal, TypedSyntaxNode};
 use utils::ordered_hash_map::OrderedHashMap;
 
+use super::generics::semantic_generic_params;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::resolve_path::Resolver;
-use crate::types::{resolve_type, ConcreteStructId};
+use crate::types::{resolve_type, substitute_generics, ConcreteStructId};
 use crate::{semantic, SemanticDiagnostic};
 
 #[cfg(test)]
@@ -22,6 +22,7 @@ mod test;
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct StructData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
+    generic_params: Vec<GenericParamId>,
     members: OrderedHashMap<SmolStr, Member>,
 }
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
@@ -38,6 +39,15 @@ pub fn struct_semantic_diagnostics(
 ) -> Diagnostics<SemanticDiagnostic> {
     db.priv_struct_semantic_data(struct_id).map(|data| data.diagnostics).unwrap_or_default()
 }
+
+/// Query implementation of [crate::db::SemanticGroup::struct_generic_params].
+pub fn struct_generic_params(
+    db: &dyn SemanticGroup,
+    struct_id: StructId,
+) -> Option<Vec<GenericParamId>> {
+    Some(db.priv_struct_semantic_data(struct_id)?.generic_params)
+}
+
 /// Query implementation of [crate::db::SemanticGroup::struct_members].
 pub fn struct_members(
     db: &dyn SemanticGroup,
@@ -56,10 +66,20 @@ pub fn priv_struct_semantic_data(
     let module_id = struct_id.module(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_id);
     // TODO(spapini): Add generic args when they are supported on structs.
-    let mut resolver = Resolver::new(db, module_id, &[]);
     let module_data = db.module_data(module_id)?;
     let struct_ast = module_data.structs.get(&struct_id)?;
     let syntax_db = db.upcast();
+
+    // Generic params.
+    let generic_params = semantic_generic_params(
+        db,
+        &mut diagnostics,
+        module_id,
+        &struct_ast.generic_params(db.upcast()),
+    );
+    let mut resolver = Resolver::new(db, module_id, &generic_params);
+
+    // Members.
     let mut members = OrderedHashMap::default();
     for member in struct_ast.members(syntax_db).elements(syntax_db) {
         let id = db.intern_member(MemberLongId(module_id, member.stable_ptr()));
@@ -75,18 +95,33 @@ pub fn priv_struct_semantic_data(
         }
     }
 
-    Some(StructData { diagnostics: diagnostics.build(), members })
+    Some(StructData { diagnostics: diagnostics.build(), generic_params, members })
 }
 
 pub trait SemanticStructEx<'a>: Upcast<dyn SemanticGroup + 'a> {
     fn concrete_struct_members(
         &self,
-        _diagnostics: &mut SemanticDiagnostics,
-        concrete_struct: ConcreteStructId,
-        _stable_ptr: SyntaxStablePtrId,
+        concrete_struct_id: ConcreteStructId,
     ) -> Option<OrderedHashMap<SmolStr, semantic::Member>> {
-        // TODO(spapini): substitute generic arguments.
-        self.upcast().struct_members(concrete_struct.struct_id(self.upcast()))
+        // TODO(spapini): Uphold the invariant that constructed ConcreteEnumId instances
+        //   always have the correct number of generic arguemnts.
+        let db = self.upcast();
+        let generic_params = db.struct_generic_params(concrete_struct_id.struct_id(db))?;
+        let generic_args = db.lookup_intern_concrete_struct(concrete_struct_id).generic_args;
+        let substitution = &generic_params.into_iter().zip(generic_args.into_iter()).collect();
+
+        let generic_members =
+            self.upcast().struct_members(concrete_struct_id.struct_id(self.upcast()))?;
+        Some(
+            generic_members
+                .into_iter()
+                .map(|(name, member)| {
+                    let ty = substitute_generics(db, substitution, member.ty);
+                    let member = semantic::Member { ty, ..member };
+                    (name, member)
+                })
+                .collect(),
+        )
     }
 }
 
