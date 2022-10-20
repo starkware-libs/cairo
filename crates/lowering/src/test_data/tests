@@ -108,56 +108,56 @@ Inputs:
 Statements:
 Drops: 
 End:
-  Callsite(v2)
+  Callsite()
 
 blk2:
-Inputs: v7: ()
+Inputs: v6: ()
 Statements:
-  (v8: core::felt) <- 6u
-Drops: v7
+  (v7: core::felt) <- 6u
+Drops: v6
 End:
-  Callsite(v8)
+  Callsite(v7)
 
 blk3:
-Inputs: v9: ()
+Inputs: v8: ()
 Statements:
-  (v10: core::felt) <- 7u
-Drops: v9
+  (v9: core::felt) <- 7u
+Drops: v8
 End:
-  Callsite(v10)
+  Callsite(v9)
 
 blk4:
 Inputs:
 Statements:
-  (v15: core::felt) <- 3u
-  (v16: core::felt) <- 0u
-  (v17: core::felt) <- core::felt_add(v0, v16)
-Drops: v15, v16
+  (v14: core::felt) <- 3u
+  (v15: core::felt) <- 0u
+  (v16: core::felt) <- core::felt_add(v0, v15)
+Drops: v14, v15
 End:
-  Callsite(v17, v0)
+  Callsite(v16)
 
 blk5:
 Inputs: v0: core::felt
 Statements:
   () <- blk0()
   (v2: ()) <- tuple_construct()
-  (v3: ()) <- blk1()
+  () <- blk1()
+  (v3: core::felt) <- 1u
   (v4: core::felt) <- 1u
-  (v5: core::felt) <- 1u
-  (v6: core::bool) <- core::felt_eq(v4, v5)
-  (v11: core::felt) <- match_enum(v6) {
+  (v5: core::bool) <- core::felt_eq(v3, v4)
+  (v10: core::felt) <- match_enum(v5) {
     bool::True => blk2,
     bool::False => blk3,
   }
-  (v12: core::felt) <- 3u
-  (v13: core::felt) <- test_crate::foo(v12)
-  (v14: core::felt) <- 5u
-  (v18: core::felt, v19: core::felt) <- blk4()
-  (v20: core::felt) <- core::felt_mul(v14, v18)
-  (v21: core::felt) <- core::felt_add(v13, v20)
-Drops: v0, v2, v3, v4, v5, v6, v11, v12, v13, v14, v18, v19, v20
+  (v11: core::felt) <- 3u
+  (v12: core::felt) <- test_crate::foo(v11)
+  (v13: core::felt) <- 5u
+  (v17: core::felt) <- blk4()
+  (v18: core::felt) <- core::felt_mul(v13, v17)
+  (v19: core::felt) <- core::felt_add(v12, v18)
+Drops: v0, v2, v3, v4, v5, v10, v11, v12, v13, v17, v18
 End:
-  Callsite(v21)
+  Callsite(v19)
 
 //! > ==========================================================================
 

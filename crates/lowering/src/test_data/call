@@ -35,29 +35,29 @@ Statements:
   (v6: (), v7: core::felt) <- test_crate::bar(v0, v2)
 Drops: v5, v0, v6
 End:
-  Callsite(v7, v2)
+  Callsite(v7)
 
 blk1:
 Inputs: v8: ()
 Statements:
 Drops: v8
 End:
-  Callsite(v0, v2)
+  Callsite(v0)
 
 blk2:
-Inputs: v13: ()
+Inputs: v12: ()
 Statements:
-  (v14: core::felt) <- 6u
-Drops: v13, v0, v1, v2, v3, v4, v9, v10, v11, v12
+  (v13: core::felt) <- 6u
+Drops: v12, v0, v1, v2, v3, v4, v9, v10, v11
 End:
-  Return(v14, v9)
+  Return(v13, v9)
 
 blk3:
-Inputs: v15: ()
+Inputs: v14: ()
 Statements:
-Drops: v15
+Drops: v14
 End:
-  Callsite(v9)
+  Callsite()
 
 blk4:
 Inputs: v0: core::felt
@@ -66,17 +66,17 @@ Statements:
   (v2: core::bool) <- bool::True(v1)
   (v3: ()) <- tuple_construct()
   (v4: core::bool) <- bool::True(v3)
-  (v9: core::felt, v10: core::bool) <- match_enum(v4) {
+  (v9: core::felt) <- match_enum(v4) {
     bool::True => blk0,
     bool::False => blk1,
   }
-  (v11: ()) <- tuple_construct()
-  (v12: core::bool) <- bool::False(v11)
-  (v16: core::felt) <- match_enum(v12) {
+  (v10: ()) <- tuple_construct()
+  (v11: core::bool) <- bool::False(v10)
+  () <- match_enum(v11) {
     bool::True => blk2,
     bool::False => blk3,
   }
-  (v17: core::felt) <- 5u
-Drops: v0, v1, v2, v3, v4, v9, v10, v11, v12
+  (v15: core::felt) <- 5u
+Drops: v0, v1, v2, v3, v4, v11, v10
 End:
-  Callsite(v17, v16)
+  Callsite(v15, v9)

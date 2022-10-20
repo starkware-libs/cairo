@@ -29,24 +29,24 @@ Statements:
   (v3: core::felt) <- core::felt_add(v0, v2)
 Drops: v1, v2
 End:
-  Callsite(v3, v0)
+  Callsite(v3)
 
 blk1:
 Inputs: v4: core::NonZero::<core::felt>
 Statements:
 Drops: v4
 End:
-  Callsite(v1, v0)
+  Callsite(v1)
 
 blk2:
 Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- 7u
-  (v5: core::felt, v6: core::felt) <- match core::felt_jump_nz(v1) {
+  (v5: core::felt) <- match core::felt_jump_nz(v1) {
 blk0
 blk1
   }
-Drops: v0, v1, v6
+Drops: v0, v1
 End:
   Callsite(v5)
 

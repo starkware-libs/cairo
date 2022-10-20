@@ -130,6 +130,16 @@ pub enum BlockSealedEnd {
     Unreachable,
 }
 
+/// Parameters for [`BlockSealed::finalize()`].
+pub struct BlockFinalizeParams<'a> {
+    // Variables that are pulled from the calling scope to current scope.
+    pulls: OrderedHashMap<semantic::VarId, UsableVariable>,
+    // Variables that are returned from current scope to the calling scope via block outputs.
+    pushes: &'a [semantic::VarId],
+    // Variables that are returned from current scope to the calling scope by not changing them.
+    bring_back: &'a [semantic::VarId],
+}
+
 impl BlockSealed {
     /// Finalizes a sealed block. Expected the final sequence of pulls and pushes.
     /// Pulls are all the semantic variables taken from outer scopes (including function params,
@@ -142,14 +152,12 @@ impl BlockSealed {
     fn finalize(
         self,
         ctx: &mut LoweringContext<'_>,
-        pulls: OrderedHashMap<semantic::VarId, UsableVariable>,
-        pushes: &[semantic::VarId],
-        extra_outputs: &[semantic::VarId],
+        params: BlockFinalizeParams<'_>,
     ) -> BlockFinalized {
         let BlockSealed { inputs, mut living_variables, mut semantic_variables, statements, end } =
             self;
         // Pull extra semantic variables if necessary.
-        for (semantic_var_id, var) in pulls.into_iter() {
+        for (semantic_var_id, var) in params.pulls.into_iter() {
             if !semantic_variables.contains(semantic_var_id) {
                 semantic_variables.put(semantic_var_id, living_variables.introduce_var(var));
             }
@@ -157,7 +165,17 @@ impl BlockSealed {
         // Compute drops.
         let (end, end_info, drops) = match end {
             BlockSealedEnd::Callsite(maybe_output) => {
-                let pushes: Vec<_> = chain!(pushes, extra_outputs)
+                for semantic_var_id in params.bring_back {
+                    // Take the variable from this scope if it exists, so we can bring it will stay
+                    // alive for the caller scope.
+                    semantic_variables
+                        .take(*semantic_var_id)
+                        .and_then(|entry| entry.take_var())
+                        .map(|var| living_variables.take_var(var));
+                }
+                let pushes: Vec<_> = params
+                    .pushes
+                    .iter()
                     .map(|semantic_var_id| {
                         // These should not panic by assumption of the function.
                         let var = semantic_variables
@@ -239,8 +257,8 @@ pub struct BlockFlowMerger {
     splitter: Splitter,
     /// Variables that were pulled from a higher scope, "used", are kept here.
     pulls: OrderedHashMap<semantic::VarId, LivingVar>,
-    // TODO(spapini): This is not stable. Replace with OrderedHashSet when it supports
-    // intersection.
+    /// All variables that were pulled, and then rebound to something else.
+    changed_semantic_vars: HashSet<semantic::VarId>,
     /// All variables that were pulled and consumed (moved) in at least one branch, and thus cannot
     /// be available in the parent scope anymore (i.e. cannot be pushed).
     moved_semantic_vars: HashSet<semantic::VarId>,
@@ -352,21 +370,31 @@ impl BlockFlowMerger {
     ) -> Option<()> {
         let maybe_output = try_extract_matches!(&block_sealed.end, BlockSealedEnd::Callsite)?;
         self.maybe_output_ty = maybe_output.as_ref().map(|var| ctx.variables[var.var_id()].ty);
-        let current_unpushable: HashSet<_> = block_sealed
-            .semantic_variables
-            .var_mapping
-            .iter()
-            .filter_map(|(var_id, entry)| match entry {
+        let mut current_moved = HashSet::new();
+        let mut current_changed = HashSet::new();
+        for (semantic_var_id, entry) in block_sealed.semantic_variables.var_mapping.iter() {
+            match entry {
                 SemanticVariableEntry::Alive(var)
                     if block_sealed.living_variables.contains(var.var_id()) =>
                 {
-                    None
+                    // Living variable.
+                    if let Some(pulled_var) = self.pulls.get(semantic_var_id) {
+                        if var.var_id() != pulled_var.var_id() {
+                            // Changed.
+                            current_changed.insert(*semantic_var_id);
+                        }
+                    }
                 }
-                _ => Some(*var_id),
-            })
-            .collect();
+                _ => {
+                    // Dead variable.
+                    current_moved.insert(*semantic_var_id);
+                }
+            }
+        }
         self.moved_semantic_vars =
-            self.moved_semantic_vars.union(&current_unpushable).copied().collect();
+            self.moved_semantic_vars.union(&current_moved).copied().collect();
+        self.changed_semantic_vars =
+            self.changed_semantic_vars.union(&current_changed).copied().collect();
         Some(())
     }
 
@@ -377,41 +405,47 @@ impl BlockFlowMerger {
         ctx: &LoweringContext<'_>,
         extra_outputs: &[semantic::VarId],
     ) -> (BlockMergerFinalized, Option<Box<BlockScope>>) {
-        let pull_set = self.pulls.iter().map(|(var, _)| var).copied().collect::<HashSet<_>>();
-        let pushable = pull_set.difference(&self.moved_semantic_vars).collect::<HashSet<_>>();
-
-        // Make the ordering stable.
-        let pushable = self
-            .pulls
-            .iter()
-            .filter_map(|(var_id, _)| if pushable.contains(var_id) { Some(var_id) } else { None });
-
-        let pushes: Vec<_> = pushable.copied().collect();
-        let extra_outputs: Vec<_> = extra_outputs.to_vec();
+        let mut pulls = OrderedHashMap::default();
+        let mut pushes = Vec::new();
+        let mut bring_back = Vec::new();
+        for (semantic_var_id, var) in self.pulls.into_iter() {
+            if self.moved_semantic_vars.contains(&semantic_var_id) {
+                // Variable was moved inside a block. Pull without pushing back.
+                pulls.insert(semantic_var_id, var);
+            } else if self.changed_semantic_vars.contains(&semantic_var_id) {
+                // Variable was not moved, but was changed. Pull and push for rebind in outer scope.
+                pulls.insert(semantic_var_id, var);
+                pushes.push(semantic_var_id);
+            } else {
+                // Semantic variable wasn't moved nor changed on any branch. Bring it back to
+                // calling scope if possible.
+                bring_back.push(semantic_var_id)
+            }
+        }
+        pushes.extend(extra_outputs.iter().copied());
         let push_tys = pushes.iter().map(|var_id| ctx.semantic_defs[*var_id].ty()).collect();
         let end_info = BlockEndInfo::Callsite { maybe_output_ty: self.maybe_output_ty, push_tys };
 
         // TODO(spapini): Optimize pushes by maintaining shouldnt_push.
         (
-            BlockMergerFinalized {
-                end_info,
-                splitter: self.splitter,
-                pulls: self.pulls,
-                pushes,
-                extra_outputs,
-            },
+            BlockMergerFinalized { end_info, splitter: self.splitter, pulls, pushes, bring_back },
             self.parent_scope,
         )
     }
 }
 
-/// Determined pulls and pushes. Generated after calling [`BlockFlowMerger::finalize()`].
+/// Used to finalize blocks. Generated after calling [`BlockFlowMerger::finalize()`].
 pub struct BlockMergerFinalized {
+    // End information for the block.
     pub end_info: BlockEndInfo,
+    /// Holds the pulled variables and allows splitting them for parallel branches. See [Splitter].
     splitter: Splitter,
+    // Variables that are pulled from the calling scope to current scope.
     pulls: OrderedHashMap<semantic::VarId, LivingVar>,
+    // Variables that are returned from current scope to the calling scope via block outputs.
     pub pushes: Vec<semantic::VarId>,
-    extra_outputs: Vec<semantic::VarId>,
+    // Variables that are returned from current scope to the calling scope by not changing them.
+    bring_back: Vec<semantic::VarId>,
 }
 impl BlockMergerFinalized {
     /// Finalizes a sealed block.
@@ -422,6 +456,8 @@ impl BlockMergerFinalized {
     ) -> BlockFinalized {
         let pulls: OrderedHashMap<_, _> =
             self.pulls.iter().map(|(key, var)| (*key, self.splitter.split(var))).collect();
-        block_sealed.finalize(ctx, pulls, &self.pushes, &self.extra_outputs)
+        let params =
+            BlockFinalizeParams { pulls, pushes: &self.pushes, bring_back: &self.bring_back };
+        block_sealed.finalize(ctx, params)
     }
 }
