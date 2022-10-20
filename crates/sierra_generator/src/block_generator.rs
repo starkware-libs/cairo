@@ -13,8 +13,6 @@ use crate::utils::{jump_statement, simple_statement};
 
 /// Generates Sierra code that computes a given [lowering::Block].
 /// Returns a list of Sierra statements.
-// TODO(lior): Remove dead_code attribute.
-#[allow(dead_code)]
 pub fn generate_block_code(
     context: &mut ExprGeneratorContext<'_>,
     block: &lowering::Block,
