@@ -11,6 +11,7 @@ db_utils = { path = "../db_utils" }
 defs = { path = "../defs" }
 debug = { path = "../debug" }
 diagnostics = { path = "../diagnostics" }
+lowering = { path = "../lowering" }
 semantic = { path = "../semantic" }
 formatter = { path = "../formatter" }
 parser = { path = "../parser" }

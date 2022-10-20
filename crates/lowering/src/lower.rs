@@ -42,6 +42,7 @@ impl<'db> ContextLender<'db> for Lowerer<'db> {
 }
 
 /// A lowered function code.
+#[derive(Debug, PartialEq, Eq)]
 pub struct Lowered {
     /// Diagnostics produced while lowering.
     pub diagnostics: Diagnostics<LoweringDiagnostic>,

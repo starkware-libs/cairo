@@ -1,11 +1,13 @@
 //! Cairo language server. Implements the LSP protocol over stdin/out.
 
+mod db;
 mod semantic_highlighting;
 
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 use std::sync::Arc;
 
+pub use db::RootDatabase;
 use db_utils::Upcast;
 use debug::DebugWithDb;
 use defs::db::DefsGroup;
@@ -15,13 +17,14 @@ use filesystem::db::{AsFilesGroupMut, FilesGroup, FilesGroupEx, PrivRawFileConte
 use filesystem::ids::{FileId, FileLongId};
 use filesystem::span::TextPosition;
 use formatter::{get_formatted_file, FormatterConfig};
+use lowering::db::LoweringGroup;
+use lowering::diagnostic::LoweringDiagnostic;
 use parser::db::ParserGroup;
 use parser::ParserDiagnostic;
 use project::ProjectConfig;
 use semantic::db::SemanticGroup;
 use semantic::items::free_function::SemanticExprLookup;
 use semantic::resolve_path::ResolvedGenericItem;
-use semantic::test_utils::SemanticDatabaseForTesting;
 use semantic::SemanticDiagnostic;
 use semantic_highlighting::token_kind::SemanticTokenKind;
 use semantic_highlighting::SemanticTokensTraverser;
@@ -36,14 +39,13 @@ use tower_lsp::{Client, LanguageServer};
 use utils::ordered_hash_set::OrderedHashSet;
 use utils::OptionHelper;
 
-pub type RootDatabase = SemanticDatabaseForTesting;
-
 const MAX_CRATE_DETECTION_DEPTH: usize = 20;
 
 #[derive(Default, PartialEq, Eq)]
 pub struct FileDiagnostics {
     pub parser: Diagnostics<ParserDiagnostic>,
     pub semantic: Diagnostics<SemanticDiagnostic>,
+    pub lowering: Diagnostics<LoweringDiagnostic>,
 }
 #[derive(Default)]
 pub struct State {
@@ -91,6 +93,7 @@ impl Backend {
             let new_file_diagnostics = FileDiagnostics {
                 parser: db.file_syntax_diagnostics(file_id),
                 semantic: db.file_semantic_diagnostics(file_id).unwrap_or_default(),
+                lowering: db.file_lowering_diagnostics(file_id).unwrap_or_default(),
             };
             // Since we are using Arcs, this comparison should be efficient.
             if let Some(old_file_diagnostics) = state.file_diagnostics.get(&file_id) {
@@ -101,6 +104,7 @@ impl Backend {
             let mut diags = Vec::new();
             self.get_diagnostics((*db).upcast(), &mut diags, &new_file_diagnostics.parser);
             self.get_diagnostics((*db).upcast(), &mut diags, &new_file_diagnostics.semantic);
+            self.get_diagnostics((*db).upcast(), &mut diags, &new_file_diagnostics.lowering);
             state.file_diagnostics.insert(file_id, new_file_diagnostics);
 
             self.client.publish_diagnostics(uri, diags, None).await
