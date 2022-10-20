@@ -195,16 +195,13 @@ pub fn concrete_function_signature(
         FunctionLongId::Concrete(ConcreteFunction { generic_function, generic_args, .. }) => {
             let generic_params = db.generic_function_generic_params(generic_function)?;
             if generic_params.len() != generic_args.len() {
-                // TODO(spapini): Make sure that construction of ConcreteFunction al ready checks
-                // for errors.
+                // TODO(spapini): Uphold the invariant that constructed ConcreteFunction instances
+                //   always have the correct number of generic arguemnts.
                 return None;
             }
-            let mut substitution = HashMap::new();
-            for (param, arg) in generic_params.iter().zip(generic_args.iter()) {
-                // TODO(spapini): When trait generics are supported, they need to be substituted
-                // one by one, not together.
-                substitution.insert(*param, *arg);
-            }
+            // TODO(spapini): When trait generics are supported, they need to be substituted
+            //   one by one, not together.
+            let substitution = generic_params.into_iter().zip(generic_args.into_iter()).collect();
             let generic_signature = db.generic_function_signature(generic_function)?;
             Some(Signature {
                 params: generic_signature

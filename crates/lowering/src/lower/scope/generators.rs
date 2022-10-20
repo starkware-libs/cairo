@@ -33,25 +33,42 @@ impl Literal {
 
 /// Generator for [StatementCall].
 pub struct Call {
+    /// Called function.
     pub function: semantic::FunctionId,
+    /// Inputs to function.
     pub inputs: Vec<LivingVar>,
+    /// Types for `ref` parameters of the function. An output variable will be introduced for each.
+    pub ref_tys: Vec<semantic::TypeId>,
+    /// Type for the return of the function. An output variable will be introduced.
     pub ret_ty: semantic::TypeId,
 }
+/// Result of adding a Call statement.
+pub struct CallResult {
+    /// Output variables for function `ref` parameters.
+    pub ref_outputs: Vec<LivingVar>,
+    /// Output variable for function return value.
+    pub output: LivingVar,
+}
 impl Call {
-    pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockScope) -> LivingVar {
+    pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockScope) -> CallResult {
         let inputs = self
             .inputs
             .into_iter()
             .map(|var| scope.living_variables.use_var(ctx, var).var_id())
             .collect();
         let output = scope.living_variables.introduce_new_var(ctx, self.ret_ty);
-        // TODO(spapini): Support mut variables.
+        let ref_outputs = self
+            .ref_tys
+            .into_iter()
+            .map(|ty| scope.living_variables.introduce_new_var(ctx, ty))
+            .collect();
+        let outputs = chain!([&output], &ref_outputs).map(|var| var.var_id()).collect();
         scope.statements.push(Statement::Call(StatementCall {
             function: self.function,
             inputs,
-            outputs: vec![output.var_id()],
+            outputs,
         }));
-        output
+        CallResult { output, ref_outputs }
     }
 }
 

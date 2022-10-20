@@ -579,7 +579,6 @@ impl<'a> Parser<'a> {
                     }
                     SyntaxKind::TerminalLParen => {
                         // Enum pattern.
-                        // Even if the next token is not lparen, this is the best course to take.
                         let lparen = self.take::<TerminalLParen>();
                         let pattern = self.parse_pattern();
                         let rparen = self.take::<TerminalRParen>();
@@ -641,7 +640,6 @@ impl<'a> Parser<'a> {
         match self.peek().kind {
             SyntaxKind::TerminalLet => {
                 let let_kw = self.take::<TerminalLet>();
-                // TODO(yuval): support patterns instead of only an identifier.
                 let name = self.parse_pattern();
                 let type_clause = self.parse_option_type_clause();
                 let eq = self.parse_token::<TerminalEq>();

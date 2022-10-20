@@ -8,7 +8,10 @@ func foo() -> felt {
     let x = 10;
     match x {
         0 => 3,
-        _ => 4,
+        _ => {
+            let y = 4;
+            y
+        }
     }
 }
 
@@ -31,5 +34,6 @@ PushValues([2]: [0]) -> ([3])
 jump() { label1() }
 label0:
 felt_const<4>() -> ([4])
-PushValues([4]: [0]) -> ([3])
+PushValues([4]: [0]) -> ([5])
+PushValues([5]: [0]) -> ([3])
 label1:

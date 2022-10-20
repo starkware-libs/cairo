@@ -1,0 +1,82 @@
+//! > Test enum constructor.
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+func foo(ref a: felt) -> felt {
+    let b = true;
+    if true {
+      bar(a, b);
+    } else {
+    }
+    if false {
+      return 6;
+    } else {
+    }
+    5
+}
+
+//! > function_name
+foo
+
+//! > module_code
+func bar(ref a: felt, b: bool) {
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_format
+blk0:
+Inputs: v5: ()
+Statements:
+  (v6: (), v7: core::felt) <- test_crate::bar(v0, v2)
+Drops: v5, v0, v6
+End:
+  Callsite(v7)
+
+blk1:
+Inputs: v8: ()
+Statements:
+Drops: v8
+End:
+  Callsite(v0)
+
+blk2:
+Inputs: v12: ()
+Statements:
+  (v13: core::felt) <- 6u
+Drops: v12, v0, v1, v2, v3, v4, v9, v10, v11
+End:
+  Return(v13, v9)
+
+blk3:
+Inputs: v14: ()
+Statements:
+Drops: v14
+End:
+  Callsite()
+
+blk4:
+Inputs: v0: core::felt
+Statements:
+  (v1: ()) <- tuple_construct()
+  (v2: core::bool) <- bool::True(v1)
+  (v3: ()) <- tuple_construct()
+  (v4: core::bool) <- bool::True(v3)
+  (v9: core::felt) <- match_enum(v4) {
+    bool::True => blk0,
+    bool::False => blk1,
+  }
+  (v10: ()) <- tuple_construct()
+  (v11: core::bool) <- bool::False(v10)
+  () <- match_enum(v11) {
+    bool::True => blk2,
+    bool::False => blk3,
+  }
+  (v15: core::felt) <- 5u
+Drops: v0, v1, v2, v3, v4, v11, v10
+End:
+  Callsite(v15, v9)

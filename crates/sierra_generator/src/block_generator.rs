@@ -78,8 +78,10 @@ pub fn generate_statement_code(
         lowering::Statement::MatchExtern(statement_match_extern) => {
             generate_statement_match_extern_code(context, statement_match_extern)
         }
-        lowering::Statement::CallBlock(_)
-        | lowering::Statement::StructConstruct
+        lowering::Statement::CallBlock(statement_call_block) => {
+            generate_statement_call_block_code(context, statement_call_block)
+        }
+        lowering::Statement::StructConstruct
         | lowering::Statement::StructDestruct
         | lowering::Statement::EnumConstruct(_)
         | lowering::Statement::MatchEnum(_)
@@ -233,4 +235,14 @@ fn get_concrete_libfunc_id(
             (function_long_id, context.generic_libfunc_id(extern_id, generic_args))
         }
     }
+}
+
+/// Generates Sierra code for [lowering::StatementCallBlock].
+fn generate_statement_call_block_code(
+    context: &mut ExprGeneratorContext<'_>,
+    statement: &lowering::StatementCallBlock,
+) -> Option<Vec<pre_sierra::Statement>> {
+    let lowered_block = context.get_lowered_block(statement.block);
+    // TODO(lior): Rename instead of using PushValues.
+    generate_block_code_and_push_values(context, lowered_block, &statement.outputs)
 }

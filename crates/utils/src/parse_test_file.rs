@@ -1,13 +1,15 @@
 #[cfg(test)]
 #[path = "parse_test_file_test.rs"]
 mod test;
-use std::fs::File;
+use std::fs;
 use std::io::{self, BufRead};
 use std::path::Path;
 
 use crate::ordered_hash_map::OrderedHashMap;
 
 const TAG_PREFIX: &str = "//! > ";
+const TEST_SEPARATOR: &str =
+    "==========================================================================";
 
 #[derive(Default)]
 struct Tag {
@@ -16,6 +18,7 @@ struct Tag {
 }
 
 /// Represents a single test from the test file.
+#[derive(Clone)]
 pub struct Test {
     pub attributes: OrderedHashMap<String, String>,
     pub line_num: usize,
@@ -30,7 +33,7 @@ struct TestBuilder {
 }
 
 pub fn parse_test_file(filename: &Path) -> io::Result<OrderedHashMap<String, Test>> {
-    let file = File::open(filename)?;
+    let file = fs::File::open(filename)?;
     let mut lines = io::BufReader::new(file).lines();
     let mut builder = TestBuilder::default();
     let mut line_num: usize = 0;
@@ -41,11 +44,7 @@ pub fn parse_test_file(filename: &Path) -> io::Result<OrderedHashMap<String, Tes
                 builder.set_test_name(line.into(), line_num);
             } else if line.starts_with("===") {
                 // Separate tests.
-                assert_eq!(
-                    line,
-                    "==========================================================================",
-                    "Wrong test separator."
-                );
+                assert_eq!(line, TEST_SEPARATOR, "Wrong test separator on line {line_num}.");
                 builder.new_test()
             } else {
                 builder.open_tag(line.into());
@@ -55,6 +54,29 @@ pub fn parse_test_file(filename: &Path) -> io::Result<OrderedHashMap<String, Tes
         }
     }
     Ok(builder.finalize())
+}
+
+pub fn dump_to_test_file(
+    tests: OrderedHashMap<String, Test>,
+    filename: &str,
+) -> Result<(), std::io::Error> {
+    let mut test_strings = Vec::new();
+    for (test_name, test) in tests {
+        let mut tag_strings = vec![TAG_PREFIX.to_string() + &test_name];
+        for (tag, content) in test.attributes {
+            tag_strings.push(
+                TAG_PREFIX.to_string()
+                    + &tag
+                    + if content.is_empty() { "" } else { "\n" }
+                    + &content,
+            );
+        }
+        test_strings.push(tag_strings.join("\n\n"));
+    }
+    fs::write(
+        filename,
+        test_strings.join(&("\n\n".to_string() + TAG_PREFIX + TEST_SEPARATOR + "\n\n")) + "\n",
+    )
 }
 
 impl TestBuilder {
@@ -171,12 +193,17 @@ macro_rules! test_file_test {
         fn $test_name() -> Result<(), std::io::Error> {
             // TODO(mkaput): consider extracting this part into a function and passing macro args
             // via refs or closures. It may reduce compilation time sizeably.
+            let is_fix_mode = std::env::var("CAIRO_FIX_TESTS").is_ok();
             for filename in $filenames {
                 let path: std::path::PathBuf =
                     [env!("CARGO_MANIFEST_DIR"), filename].iter().collect();
                 let tests = utils::parse_test_file(path.as_path())?;
+                let mut new_tests = utils::ordered_hash_map::OrderedHashMap::<
+                    String,
+                    utils::parse_test_file::Test,
+                >::default();
                 // TODO(alont): global tags for all tests in a file.
-                for (name, test) in tests {
+                for (test_name, test) in tests {
                     let outputs = $func(&mut <$db_type>::default(), &test.attributes);
                     let line_num = test.line_num;
                     let full_filename = std::fs::canonicalize(path.as_path())?;
@@ -185,7 +212,7 @@ macro_rules! test_file_test {
                     let get_attr = |key: &str| {
                         test.attributes.get(key).unwrap_or_else(|| {
                             panic!(
-                                "Missing attribute {key} in test '{name}'.\nIn \
+                                "Missing attribute {key} in test '{test_name}'.\nIn \
                                  {full_filename_str}:{line_num}"
                             )
                         })
@@ -193,13 +220,26 @@ macro_rules! test_file_test {
 
                     assert_eq!(get_attr("test_function_name"), stringify!($func));
 
-                    for (key, value) in outputs {
-                        pretty_assertions::assert_eq!(
-                            value.trim(),
-                            get_attr(&key),
-                            "Test \"{name}\" failed.\nIn {full_filename_str}:{line_num}"
-                        );
+                    if is_fix_mode {
+                        let mut new_test = test.clone();
+                        for (key, value) in outputs {
+                            new_test.attributes.insert(key.to_string(), value.trim().to_string());
+                        }
+                        new_tests.insert(test_name.to_string(), new_test);
+                    } else {
+                        for (key, value) in outputs {
+                            pretty_assertions::assert_eq!(
+                                value.trim(),
+                                get_attr(&key),
+                                "Test \"{test_name}\" failed.\nIn \
+                                 {full_filename_str}:{line_num}.\nRerun with CAIRO_FIX_TESTS=1 to \
+                                 fix."
+                            );
+                        }
                     }
+                }
+                if is_fix_mode {
+                    utils::parse_test_file::dump_to_test_file(new_tests, filename)?;
                 }
             }
             Ok(())

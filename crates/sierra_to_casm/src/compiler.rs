@@ -75,7 +75,11 @@ fn check_basic_structure(
     }
 }
 
-pub fn compile(program: &Program, metadata: &Metadata) -> Result<CairoProgram, CompilationError> {
+pub fn compile(
+    program: &Program,
+    metadata: &Metadata,
+    gas_usage_check: bool,
+) -> Result<CairoProgram, CompilationError> {
     let mut instructions = Vec::new();
     let mut relocations: Vec<RelocationEntry> = Vec::new();
 
@@ -86,8 +90,12 @@ pub fn compile(program: &Program, metadata: &Metadata) -> Result<CairoProgram, C
         .map_err(CompilationError::ProgramRegistryError)?;
     let type_sizes = get_type_size_map(program, &registry)
         .ok_or(CompilationError::FailedBuildingTypeInformation)?;
-    let mut program_annotations =
-        ProgramAnnotations::create(program.statements.len(), &program.funcs, metadata)?;
+    let mut program_annotations = ProgramAnnotations::create(
+        program.statements.len(),
+        &program.funcs,
+        metadata,
+        gas_usage_check,
+    )?;
 
     let mut program_offset: usize = 0;
 

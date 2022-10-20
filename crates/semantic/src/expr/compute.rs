@@ -30,6 +30,7 @@ use crate::items::strct::SemanticStructEx;
 use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use crate::semantic::{self, FunctionId, LocalVariable, TypeId, TypeLongId, Variable};
 use crate::types::{resolve_type, ConcreteTypeId};
+use crate::Modifiers;
 
 /// Context for computing the semantic model of expression trees.
 pub struct ComputationContext<'ctx> {
@@ -118,8 +119,8 @@ pub fn maybe_compute_expr_semantic(
         ast::Expr::Literal(literal_syntax) => {
             Some(Expr::Literal(literal_to_semantic(ctx, literal_syntax)?))
         }
-        ast::Expr::False(syntax) => Some(true_literal_expr(ctx, syntax.stable_ptr().into())),
-        ast::Expr::True(syntax) => Some(false_literal_expr(ctx, syntax.stable_ptr().into())),
+        ast::Expr::False(syntax) => Some(false_literal_expr(ctx, syntax.stable_ptr().into())),
+        ast::Expr::True(syntax) => Some(true_literal_expr(ctx, syntax.stable_ptr().into())),
         ast::Expr::Parenthesized(paren_syntax) => {
             maybe_compute_expr_semantic(ctx, &paren_syntax.expr(syntax_db))
         }
@@ -442,7 +443,7 @@ fn compute_pattern_semantic(
             let item = ctx.resolver.resolve_generic_path(ctx.diagnostics, &path)?;
             let generic_variant = try_extract_matches!(item, ResolvedGenericItem::Variant)
                 .on_none(|| {
-                    ctx.diagnostics.report(&path, UnknownEnum);
+                    ctx.diagnostics.report(&path, NotAVariant);
                 })?;
 
             // Check that these are the same enums.
@@ -456,7 +457,10 @@ fn compute_pattern_semantic(
                 );
                 return None;
             }
-            let concrete_variant = ctx.db.concrete_enum_variant(concrete_enum, &generic_variant);
+            let concrete_variant =
+                ctx.db.concrete_enum_variant(concrete_enum, &generic_variant).on_none(|| {
+                    ctx.diagnostics.report(&path, UnknownEnum);
+                })?;
 
             // Compute inner pattern.
             let ty = concrete_variant.ty;
@@ -479,7 +483,7 @@ fn compute_pattern_semantic(
 
             Pattern::Variable(PatternVariable {
                 name: identifier.text(syntax_db),
-                var: LocalVariable { id: var_id, ty },
+                var: LocalVariable { id: var_id, ty, modifiers: Modifiers::default() },
             })
         }
         ast::Pattern::Struct(pattern_struct) => {

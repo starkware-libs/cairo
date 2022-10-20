@@ -1,7 +1,7 @@
 use defs::ids::{FreeFunctionId, LanguageElementId};
 use diagnostics::Diagnostics;
 use id_arena::Arena;
-use itertools::zip_eq;
+use itertools::{chain, zip_eq};
 use scope::{BlockScope, BlockScopeEnd};
 use semantic::corelib::{
     core_bool_enum, core_felt_ty, core_jump_nz_func, core_nonzero_ty, false_variant, true_variant,
@@ -10,6 +10,7 @@ use semantic::corelib::{
 use semantic::db::SemanticGroup;
 use semantic::items::enm::SemanticEnumEx;
 use semantic::{ConcreteTypeId, TypeLongId};
+use syntax::node::ids::SyntaxStablePtrId;
 use utils::unordered_hash_map::UnorderedHashMap;
 use utils::{extract_matches, try_extract_matches};
 
@@ -29,6 +30,8 @@ mod variables;
 pub struct Lowerer<'db> {
     /// Semantic model for current function definition.
     function_def: &'db semantic::FreeFunctionDefinition,
+    #[allow(dead_code)]
+    ref_params: &'db [semantic::VarId],
     ctx: LoweringContext<'db>,
 }
 
@@ -42,7 +45,7 @@ impl<'db> ContextLender<'db> for Lowerer<'db> {
 pub struct Lowered {
     /// Diagnostics produced while lowering.
     pub diagnostics: Diagnostics<LoweringDiagnostic>,
-    /// Block id for the start of the lwoered function.
+    /// Block id for the start of the lowered function.
     pub root: Option<BlockId>,
     /// Arena of allocated lowered variables.
     pub variables: Arena<Variable>,
@@ -61,7 +64,6 @@ impl<'db> Lowerer<'db> {
             blocks: Arena::default(),
             semantic_defs: UnorderedHashMap::default(),
         };
-        let mut lowerer = Lowerer { function_def: &*function_def, ctx };
 
         let signature = db.free_function_declaration_signature(free_function_id)?;
 
@@ -73,6 +75,11 @@ impl<'db> Lowerer<'db> {
                 .iter()
                 .map(|semantic_var| (semantic_var.id(), semantic_var.ty()))
                 .unzip();
+        let ref_params: Vec<_> = input_semantic_vars
+            .iter()
+            .filter_map(|var| if var.modifiers().is_ref { Some(var.id()) } else { None })
+            .collect();
+        let mut lowerer = Lowerer { function_def: &*function_def, ref_params: &ref_params, ctx };
 
         // TODO(spapini): Build semantic_defs in semantic model.
         for semantic_var in input_semantic_vars {
@@ -84,7 +91,7 @@ impl<'db> Lowerer<'db> {
             extract_matches!(&function_def.exprs[function_def.body], semantic::Expr::Block);
         // Lower block to a BlockSealed.
         let (block_sealed_opt, mut merger_finalized) =
-            BlockFlowMerger::with_root(&mut lowerer, |lowerer, merger| {
+            BlockFlowMerger::with_root(&mut lowerer, &ref_params, |lowerer, merger| {
                 merger.run_in_subscope(
                     lowerer,
                     input_semantic_var_tys,
@@ -98,7 +105,6 @@ impl<'db> Lowerer<'db> {
                 )
             });
         // Root block must not push anything.
-        merger_finalized.pushes.clear();
         let root = block_sealed_opt.map(|block_sealed| {
             merger_finalized.finalize_block(&mut lowerer.ctx, block_sealed).block
         });
@@ -183,19 +189,26 @@ impl<'db> Lowerer<'db> {
                 self.lower_single_pattern(scope, pattern, var)
             }
             semantic::Statement::Return(semantic::StatementReturn { expr, stable_ptr: _ }) => {
+                // Lower return expr.
                 let lowered_expr = self.lower_expr(scope, *expr)?;
-                match lowered_expr {
-                    LoweredExpr::AtVariable(var) => {
-                        // TODO(spapini): Implicits and mutables.
-                        return Err(StatementLoweringFlowError::End(BlockScopeEnd::Return(vec![
-                            var,
-                        ])));
-                    }
-                    LoweredExpr::Unit => {
-                        // TODO(spapini): Implicits and mutables.
-                        return Err(StatementLoweringFlowError::End(BlockScopeEnd::Return(vec![])));
-                    }
-                }
+                let value_vars = match lowered_expr {
+                    LoweredExpr::AtVariable(var) => vec![var],
+                    LoweredExpr::Unit => vec![],
+                };
+                // Find variables to output for ref vars.
+                let ref_vars = self
+                    .ref_params
+                    .iter()
+                    .map(|semantic_var_id| {
+                        self.use_semantic_var(
+                            scope,
+                            *semantic_var_id,
+                            semantic_var_id.untyped_stable_ptr(self.ctx.db.upcast()),
+                        )
+                    })
+                    .collect::<Result<Vec<_>, _>>()?;
+                let return_vars = chain!(value_vars, ref_vars).collect();
+                return Err(StatementLoweringFlowError::End(BlockScopeEnd::Return(return_vars)));
             }
         }
         Ok(())
@@ -251,14 +264,11 @@ impl<'db> Lowerer<'db> {
             semantic::Expr::FunctionCall(expr) => self.lower_expr_function_call(expr, scope),
             semantic::Expr::Match(expr) => self.lower_expr_match(expr, scope),
             semantic::Expr::If(expr) => self.lower_expr_if(scope, expr),
-            semantic::Expr::Var(expr) => Ok(LoweredExpr::AtVariable(
-                scope.use_semantic_variable(&mut self.ctx, expr.var).take_var().ok_or_else(
-                    || {
-                        self.ctx.diagnostics.report(expr.stable_ptr.untyped(), VariableMoved);
-                        LoweringFlowError::Failed
-                    },
-                )?,
-            )),
+            semantic::Expr::Var(expr) => Ok(LoweredExpr::AtVariable(self.use_semantic_var(
+                scope,
+                expr.var,
+                expr.stable_ptr.untyped(),
+            )?)),
             semantic::Expr::Literal(expr) => Ok(LoweredExpr::AtVariable(
                 generators::Literal { value: expr.value, ty: expr.ty }.add(&mut self.ctx, scope),
             )),
@@ -311,11 +321,29 @@ impl<'db> Lowerer<'db> {
         expr: &semantic::ExprFunctionCall,
         scope: &mut BlockScope,
     ) -> Result<LoweredExpr, LoweringFlowError> {
-        let inputs = self.lower_exprs_as_vars(&expr.args, scope)?;
-        Ok(LoweredExpr::AtVariable(
-            generators::Call { function: expr.function, inputs, ret_ty: expr.ty }
-                .add(&mut self.ctx, scope),
-        ))
+        // TODO(spapini): Use the correct stable pointer.
+        let (ref_tys, ref_inputs): (_, Vec<LivingVar>) = expr
+            .ref_args
+            .iter()
+            .map(|semantic_var_id| {
+                Ok((
+                    self.ctx.semantic_defs[*semantic_var_id].ty(),
+                    self.use_semantic_var(scope, *semantic_var_id, expr.stable_ptr.untyped())?,
+                ))
+            })
+            .collect::<Result<Vec<_>, _>>()?
+            .into_iter()
+            .unzip();
+        let arg_inputs = self.lower_exprs_as_vars(&expr.args, scope)?;
+        let inputs = chain!(ref_inputs, arg_inputs.into_iter()).collect();
+        let call_result =
+            generators::Call { function: expr.function, inputs, ref_tys, ret_ty: expr.ty }
+                .add(&mut self.ctx, scope);
+        // Rebind the ref variables.
+        for (semantic_var_id, output_var) in zip_eq(&expr.ref_args, call_result.ref_outputs) {
+            scope.put_semantic_variable(*semantic_var_id, output_var);
+        }
+        Ok(LoweredExpr::AtVariable(call_result.output))
     }
 
     /// Lowers an expression of type [semantic::ExprMatch].
@@ -515,7 +543,10 @@ impl<'db> Lowerer<'db> {
                     .variant_semantic(enum_id, *variant_id)
                     .ok_or(LoweringFlowError::Failed)?;
 
-                Ok(self.ctx.db.concrete_enum_variant(concrete_enum_id, &variant))
+                self.ctx
+                    .db
+                    .concrete_enum_variant(concrete_enum_id, &variant)
+                    .ok_or(LoweringFlowError::Failed)
             })
             .collect::<Result<Vec<_>, _>>()?;
 
@@ -567,6 +598,20 @@ impl<'db> Lowerer<'db> {
         let var = self.lower_expr(scope, expr.rhs)?.var(self, scope);
         scope.put_semantic_variable(expr.var, var);
         Ok(LoweredExpr::Unit)
+    }
+
+    /// Retrieves a LivingVar that corresponds to a semantic var in the current scope.
+    /// Moves it if necessary. If it is already moved, fails and emits a diagnostic.
+    fn use_semantic_var(
+        &mut self,
+        scope: &mut BlockScope,
+        semantic_var: semantic::VarId,
+        stable_ptr: SyntaxStablePtrId,
+    ) -> Result<LivingVar, LoweringFlowError> {
+        scope.use_semantic_variable(&mut self.ctx, semantic_var).take_var().ok_or_else(|| {
+            self.ctx.diagnostics.report(stable_ptr, VariableMoved);
+            LoweringFlowError::Failed
+        })
     }
 }
 

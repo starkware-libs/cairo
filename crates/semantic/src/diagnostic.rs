@@ -55,6 +55,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::UnknownType => "Unknown type.".into(),
             SemanticDiagnosticKind::UnknownStruct => "Unknown struct.".into(),
             SemanticDiagnosticKind::UnknownEnum => "Unknown enum.".into(),
+            SemanticDiagnosticKind::NotAVariant => {
+                "Not a variant. Use the full name Enum::Variant.".into()
+            }
             SemanticDiagnosticKind::NotAStruct => "Not a struct.".into(),
             SemanticDiagnosticKind::NotAType => "Not a type.".into(),
             SemanticDiagnosticKind::UnexpectedGenericArgs => "Unexpected generic arguments".into(),
@@ -175,6 +178,7 @@ pub enum SemanticDiagnosticKind {
     UnknownType,
     UnknownStruct,
     UnknownEnum,
+    NotAVariant,
     NotAStruct,
     NotAType,
     UnexpectedGenericArgs,
