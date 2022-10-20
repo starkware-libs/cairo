@@ -4,15 +4,18 @@
 test_partial_parser_tree
 
 //! > cairo_code
-struct A{a:felt}
-func f(x: (A, felt)){
-    let (A{ a: mut a}, ref mut b) = x;
+struct A {
+    a: felt,
+}
+func f(x: (A, felt)) {
+    let (A { a: mut a }, ref mut b) = x;
 }
 
 //! > top_level_kind
 StatementLet
 
 //! > ignored_kinds
+ExprPath
 
 //! > expected_tree
 └── Top level kind: StatementLet
@@ -21,9 +24,7 @@ StatementLet
     │   ├── lparen (kind: TokenLParen): '('
     │   ├── patterns (kind: PatternList)
     │   │   ├── item #0 (kind: PatternStruct)
-    │   │   │   ├── path (kind: ExprPath)
-    │   │   │   │   └── item #0 (kind: PathSegmentSimple)
-    │   │   │   │       └── ident (kind: TokenIdentifier): 'A'
+    │   │   │   ├── path (kind: ExprPath) <ignored>
     │   │   │   ├── lbrace (kind: TokenLBrace): '{'
     │   │   │   ├── params (kind: PatternStructParamList)
     │   │   │   │   └── item #0 (kind: PatternStructParamWithExpr)
@@ -43,7 +44,5 @@ StatementLet
     │   └── rparen (kind: TokenRParen): ')'
     ├── type_clause (kind: OptionTypeClauseEmpty) []
     ├── eq (kind: TokenEq): '='
-    ├── rhs (kind: ExprPath)
-    │   └── item #0 (kind: PathSegmentSimple)
-    │       └── ident (kind: TokenIdentifier): 'x'
+    ├── rhs (kind: ExprPath) <ignored>
     └── semicolon (kind: TokenSemicolon): ';'
