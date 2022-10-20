@@ -11,7 +11,9 @@ extern func felt_sub(a: felt, b: felt) -> felt;
 extern func felt_mul(a: felt, b: felt) -> felt;
 
 extern type NonZero<T>;
+enum JumpNzResult<T> { Zero: (), NonZero: NonZero::<T>, }
 extern func unwrap_nz<T>(a: NonZero::<T>) -> T;
+
 extern func felt_div(a: felt, b: NonZero::<felt>) -> felt;
 
 extern func felt_eq(a: felt, b: felt) -> bool;
@@ -21,8 +23,7 @@ extern func felt_ge(a: felt, b: felt) -> (bool);
 extern func felt_lt(a: felt, b: felt) -> (bool);
 extern func felt_gt(a: felt, b: felt) -> (bool);
 
-enum JumpNzResult { Zero: (), NonZero: (NonZero::<felt>,), }
-extern func felt_jump_nz(a: felt) -> JumpNzResult;
+extern func felt_jump_nz(a: felt) -> JumpNzResult::<felt>;
 
 extern func dup<T>(obj: T) -> (T, T);
 extern func drop<T>(obj: T);
@@ -46,3 +47,16 @@ use result::Result;
 // Option.
 mod option;
 use option::Option;
+
+// Integer.
+mod integer;
+use integer::uint128;
+use integer::uint128_from_felt;
+use integer::uint128_to_felt;
+use integer::uint128_add;
+use integer::uint128_sub;
+use integer::uint128_mul;
+use integer::uint128_div;
+use integer::uint128_mod;
+
+use integer::uint128_jump_nz;
