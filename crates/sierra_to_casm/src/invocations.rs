@@ -376,8 +376,6 @@ impl CompiledInvocationBuilder<'_> {
                     .flatten()
                     .collect());
             }
-            // TODO(gil)
-            ReferenceExpression::Enum(_) => todo!(),
         };
         Ok(vec![Instruction {
             body: InstructionBody::AssertEq(AssertEqInstruction { a: dst_operand, b: res_operand }),
@@ -787,28 +785,20 @@ impl CompiledInvocationBuilder<'_> {
             (2 * index + 1) as i128
         };
 
-        Ok(self.build_only_reference_changes(
-            [ReferenceExpression::Enum(EnumValue {
-                variant_selector: Box::new(ReferenceExpression::Immediate(ImmediateOperand {
-                    value: variant_selector,
-                })),
-                inner_value: Box::new(ReferenceExpression::Deref(*init_arg)),
-            })]
-            .into_iter(),
-        ))
+        let enum_val = EnumValue {
+            variant_selector: ReferenceExpression::Immediate(ImmediateOperand {
+                value: variant_selector,
+            }),
+            inner_value: ReferenceExpression::Deref(*init_arg),
+        };
+        Ok(self.build_only_reference_changes([enum_val.into()].into_iter()))
     }
 
     /// Handles statement for matching an enum.
     fn build_enum_match(self) -> Result<CompiledInvocation, InvocationError> {
         let matched_var = match self.refs {
-            [ReferenceValue { expression: ReferenceExpression::Enum(enum_value), .. }] => {
-                // Verify variant_selector is of type deref. This is the case with an enum_value
-                // that was validly created and then stored.
-                try_extract_matches!(*enum_value.variant_selector, ReferenceExpression::Deref)
-                    .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
-                enum_value
-            }
-            [_] => return Err(InvocationError::InvalidReferenceExpressionForArgument),
+            [ReferenceValue { expression, .. }] => EnumValue::try_from(expression)
+                .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?,
             refs => {
                 return Err(InvocationError::WrongNumberOfArguments {
                     expected: 1,
@@ -816,6 +806,10 @@ impl CompiledInvocationBuilder<'_> {
                 });
             }
         };
+        // Verify variant_selector is of type deref. This is the case with an enum_value
+        // that was validly created and then stored.
+        try_extract_matches!(matched_var.variant_selector, ReferenceExpression::Deref)
+            .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
 
         let target_statement_ids = self.invocation.branches.iter().map(|b| match b {
             BranchInfo { target: BranchTarget::Statement(stmnt_id), .. } => *stmnt_id,
@@ -863,7 +857,7 @@ impl CompiledInvocationBuilder<'_> {
     fn build_enum_match_short(
         self,
         num_branches: usize,
-        matched_var: &EnumValue,
+        matched_var: EnumValue,
         mut target_statement_ids: impl Iterator<Item = StatementIdx>,
     ) -> Result<CompiledInvocation, InvocationError> {
         let mut instructions = Vec::new();
@@ -873,7 +867,7 @@ impl CompiledInvocationBuilder<'_> {
             // TODO(yuval): remove the redundant try_extract_matches by having
             // EnumValue+StoredEnumValue (see another todo in `EnumValue`).
             let variant_selector =
-                try_extract_matches!(*matched_var.variant_selector, ReferenceExpression::Deref)
+                try_extract_matches!(matched_var.variant_selector, ReferenceExpression::Deref)
                     .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
             instructions.push(Instruction::new(
                 InstructionBody::Jnz(JnzInstruction {
@@ -907,7 +901,7 @@ impl CompiledInvocationBuilder<'_> {
             instructions,
             relocations,
             itertools::repeat_n(ApChange::Known(0), num_branches).into_iter(),
-            itertools::repeat_n(vec![*matched_var.inner_value.clone()].into_iter(), num_branches)
+            itertools::repeat_n(vec![matched_var.inner_value].into_iter(), num_branches)
                 .into_iter(),
         ))
     }
@@ -941,13 +935,13 @@ impl CompiledInvocationBuilder<'_> {
     fn build_enum_match_long(
         self,
         num_branches: usize,
-        matched_var: &EnumValue,
+        matched_var: EnumValue,
         target_statement_ids: impl Iterator<Item = StatementIdx>,
     ) -> Result<CompiledInvocation, InvocationError> {
         // TODO(yuval): remove the redundant try_extract_matches by having
         // EnumValue+StoredEnumValue (see another todo in `EnumValue`).
         let variant_selector =
-            try_extract_matches!(*matched_var.variant_selector, ReferenceExpression::Deref)
+            try_extract_matches!(matched_var.variant_selector, ReferenceExpression::Deref)
                 .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
 
         // The first instruction is the jmp to the relevant index in the jmp table.
@@ -979,7 +973,7 @@ impl CompiledInvocationBuilder<'_> {
             instructions,
             relocations,
             itertools::repeat_n(ApChange::Known(0), num_branches).into_iter(),
-            itertools::repeat_n(vec![*matched_var.inner_value.clone()].into_iter(), num_branches)
+            itertools::repeat_n(vec![matched_var.inner_value].into_iter(), num_branches)
                 .into_iter(),
         ))
     }
