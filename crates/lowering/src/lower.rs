@@ -544,7 +544,10 @@ impl<'db> Lowerer<'db> {
                     .variant_semantic(enum_id, *variant_id)
                     .ok_or(LoweringFlowError::Failed)?;
 
-                Ok(self.ctx.db.concrete_enum_variant(concrete_enum_id, &variant))
+                self.ctx
+                    .db
+                    .concrete_enum_variant(concrete_enum_id, &variant)
+                    .ok_or(LoweringFlowError::Failed)
             })
             .collect::<Result<Vec<_>, _>>()?;
 

@@ -130,7 +130,7 @@ fn get_enum_concrete_variant(
         db.intern_concrete_enum(ConcreteEnumLongId { enum_id, generic_args: vec![] });
     let variant_id = db.enum_variants(enum_id).unwrap()[variant_name];
     let variant = db.variant_semantic(enum_id, variant_id).unwrap();
-    db.concrete_enum_variant(concrete_enum_id, &variant)
+    db.concrete_enum_variant(concrete_enum_id, &variant).unwrap()
 }
 
 /// Gets the unit type ().

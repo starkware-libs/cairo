@@ -443,7 +443,7 @@ fn compute_pattern_semantic(
             let item = ctx.resolver.resolve_generic_path(ctx.diagnostics, &path)?;
             let generic_variant = try_extract_matches!(item, ResolvedGenericItem::Variant)
                 .on_none(|| {
-                    ctx.diagnostics.report(&path, UnknownEnum);
+                    ctx.diagnostics.report(&path, NotAVariant);
                 })?;
 
             // Check that these are the same enums.
@@ -457,7 +457,10 @@ fn compute_pattern_semantic(
                 );
                 return None;
             }
-            let concrete_variant = ctx.db.concrete_enum_variant(concrete_enum, &generic_variant);
+            let concrete_variant =
+                ctx.db.concrete_enum_variant(concrete_enum, &generic_variant).on_none(|| {
+                    ctx.diagnostics.report(&path, UnknownEnum);
+                })?;
 
             // Compute inner pattern.
             let ty = concrete_variant.ty;

@@ -1,0 +1,21 @@
+//! > Test enum generics.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+func foo(a: A::<felt>) -> felt {
+    match a {
+        A::Variant0(t) => {t}
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum A<T> {
+    Variant0: T
+}
+
+//! > expected_diagnostics
