@@ -45,7 +45,7 @@ impl<'db> ContextLender<'db> for Lowerer<'db> {
 pub struct Lowered {
     /// Diagnostics produced while lowering.
     pub diagnostics: Diagnostics<LoweringDiagnostic>,
-    /// Block id for the start of the lwoered function.
+    /// Block id for the start of the lowered function.
     pub root: Option<BlockId>,
     /// Arena of allocated lowered variables.
     pub variables: Arena<Variable>,
@@ -543,7 +543,10 @@ impl<'db> Lowerer<'db> {
                     .variant_semantic(enum_id, *variant_id)
                     .ok_or(LoweringFlowError::Failed)?;
 
-                Ok(self.ctx.db.concrete_enum_variant(concrete_enum_id, &variant))
+                self.ctx
+                    .db
+                    .concrete_enum_variant(concrete_enum_id, &variant)
+                    .ok_or(LoweringFlowError::Failed)
             })
             .collect::<Result<Vec<_>, _>>()?;
 

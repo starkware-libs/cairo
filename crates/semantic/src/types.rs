@@ -243,7 +243,7 @@ pub fn generic_type_generic_params(
     // TODO(spapini): other types.
     match generic_type {
         GenericTypeId::Struct(_) => Some(vec![]),
-        GenericTypeId::Enum(_) => Some(vec![]),
+        GenericTypeId::Enum(id) => db.enum_generic_params(id),
         GenericTypeId::Extern(id) => db.extern_type_declaration_generic_params(id),
     }
 }
