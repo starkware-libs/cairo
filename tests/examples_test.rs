@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
-use std::sync::Arc;
 
 use defs::ids::ModuleId;
 use lowering::db::LoweringGroup;
@@ -48,11 +47,11 @@ fn get_expected_contents(name: &str, test_type: &str) -> String {
 }
 
 /// Compiles the Cairo code for `name` to a Sierra program.
-fn compile_to_sierra(name: &str) -> (SierraGenDatabaseForTesting, Arc<sierra::program::Program>) {
+fn compile_to_sierra(name: &str) -> sierra::program::Program {
     let (db, module_id) = setup(name);
 
     let sierra_program = db.module_sierra_program(module_id).unwrap();
-    (db, sierra_program)
+    replace_sierra_ids_in_program(&db, &sierra_program)
 }
 
 /// Tests lowering from Cairo to Sierra.
@@ -62,11 +61,7 @@ fn compile_to_sierra(name: &str) -> (SierraGenDatabaseForTesting, Arc<sierra::pr
 #[test_case("fib_uint128" => ignore["uint128 extension yet to be added."])]
 #[test_case("corelib_usage" => ignore["unsupported"])]
 fn cairo_to_sierra(name: &str) {
-    let (db, sierra_program) = compile_to_sierra(name);
-    assert_eq!(
-        replace_sierra_ids_in_program(&db, &sierra_program).to_string(),
-        get_expected_contents(name, "sierra")
-    );
+    assert_eq!(compile_to_sierra(name).to_string(), get_expected_contents(name, "sierra"));
 }
 
 /// Tests lowering from Cairo to casm.
@@ -76,10 +71,9 @@ fn cairo_to_sierra(name: &str) {
 #[test_case("fib_uint128" => ignore["uint128 extension yet to be lowered to casm."])]
 #[test_case("corelib_usage" => ignore["unsupported"])]
 fn cairo_to_casm(name: &str) {
-    let (_db, sierra_program) = compile_to_sierra(name);
     assert_eq!(
         sierra_to_casm::compiler::compile(
-            &sierra_program,
+            &compile_to_sierra(name),
             &Metadata {
                 function_ap_change: HashMap::new(),
                 gas_info: GasInfo {
