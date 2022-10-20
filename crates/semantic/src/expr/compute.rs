@@ -469,7 +469,7 @@ fn compute_pattern_semantic(
             Pattern::Enum(PatternEnum { variant: concrete_variant, inner_pattern, ty })
         }
         ast::Pattern::Path(path) => {
-            // A path of length 1 is an identifier, which will will result in a variable pattern.
+            // A path of length 1 is an identifier, which will result in a variable pattern.
             // Currently, other paths are not supported (and not clear if ever will be).
             if path.elements(syntax_db).len() > 1 {
                 ctx.diagnostics.report(&path, Unsupported);
