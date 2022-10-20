@@ -5,7 +5,7 @@ use utils::ordered_hash_map::OrderedHashMap;
 
 use super::generate_block_code;
 use crate::expr_generator_context::ExprGeneratorContext;
-use crate::test_utils::{replace_libfunc_ids, SierraGenDatabaseForTesting};
+use crate::test_utils::{replace_sierra_ids, SierraGenDatabaseForTesting};
 use crate::SierraGeneratorDiagnostic;
 
 utils::test_file_test!(
@@ -54,7 +54,7 @@ fn block_generator_test(
     let expected_sierra_code = statements_opt.map_or("None".into(), |statements| {
         statements
             .iter()
-            .map(|x| replace_libfunc_ids(db, x).to_string())
+            .map(|x| replace_sierra_ids(db, x).to_string())
             .collect::<Vec<String>>()
             .join("\n")
     });
