@@ -5,7 +5,7 @@
 use std::collections::HashMap;
 
 use ast::{BinaryOperator, PathSegment};
-use defs::ids::{GenericTypeId, LocalVarLongId, MemberId};
+use defs::ids::{LocalVarLongId, MemberId};
 use id_arena::Arena;
 use itertools::zip_eq;
 use smol_str::SmolStr;
@@ -26,11 +26,11 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::items::enm::SemanticEnumEx;
+use crate::items::modifiers::compute_modifiers;
 use crate::items::strct::SemanticStructEx;
 use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use crate::semantic::{self, FunctionId, LocalVariable, TypeId, TypeLongId, Variable};
 use crate::types::{resolve_type, ConcreteTypeId};
-use crate::Modifiers;
 
 /// Context for computing the semantic model of expression trees.
 pub struct ComputationContext<'ctx> {
@@ -469,7 +469,7 @@ fn compute_pattern_semantic(
             Pattern::Enum(PatternEnum { variant: concrete_variant, inner_pattern, ty })
         }
         ast::Pattern::Path(path) => {
-            // A path of length 1 is an identifier, which will will result in a variable pattern.
+            // A path of length 1 is an identifier, which will result in a variable pattern.
             // Currently, other paths are not supported (and not clear if ever will be).
             if path.elements(syntax_db).len() > 1 {
                 ctx.diagnostics.report(&path, Unsupported);
@@ -477,15 +477,14 @@ fn compute_pattern_semantic(
             }
             // TODO(spapini): Make sure this is a simple identifier. In particular, no generics.
             let identifier = path.elements(syntax_db)[0].identifier_ast(syntax_db);
-            let var_id = ctx
-                .db
-                .intern_local_var(LocalVarLongId(ctx.resolver.module_id, identifier.stable_ptr()));
-
-            Pattern::Variable(PatternVariable {
-                name: identifier.text(syntax_db),
-                var: LocalVariable { id: var_id, ty, modifiers: Modifiers::default() },
-            })
+            create_variable_pattern(ctx, identifier, &[], ty)
         }
+        ast::Pattern::Identifier(identifier) => create_variable_pattern(
+            ctx,
+            identifier.name(syntax_db),
+            &identifier.modifiers(syntax_db).elements(syntax_db),
+            ty,
+        ),
         ast::Pattern::Struct(pattern_struct) => {
             // Check that type is an struct, and get the concrete struct from it.
             let _concrete_struct =
@@ -528,6 +527,27 @@ fn compute_pattern_semantic(
     })
 }
 
+/// Creates a variable pattern.
+fn create_variable_pattern(
+    ctx: &mut ComputationContext<'_>,
+    identifier: ast::TerminalIdentifier,
+    modifier_list: &[ast::Modifier],
+    ty: TypeId,
+) -> Pattern {
+    let syntax_db = ctx.db.upcast();
+    let var_id =
+        ctx.db.intern_local_var(LocalVarLongId(ctx.resolver.module_id, identifier.stable_ptr()));
+
+    Pattern::Variable(PatternVariable {
+        name: identifier.text(syntax_db),
+        var: LocalVariable {
+            id: var_id,
+            ty,
+            modifiers: compute_modifiers(ctx.diagnostics, syntax_db, modifier_list),
+        },
+    })
+}
+
 /// Creates a struct constructor semantic expression from its AST.
 fn struct_ctor_expr(
     ctx: &mut ComputationContext<'_>,
@@ -546,8 +566,7 @@ fn struct_ctor_expr(
             ctx.diagnostics.report(&path, NotAStruct);
         })?;
 
-    let members =
-        db.concrete_struct_members(ctx.diagnostics, concrete_struct, path.stable_ptr().untyped())?;
+    let members = db.concrete_struct_members(concrete_struct)?;
     let mut member_exprs: OrderedHashMap<MemberId, ExprId> = OrderedHashMap::default();
     for arg in ctor_syntax.arguments(syntax_db).arguments(syntax_db).elements(syntax_db) {
         // TODO: Extract to a function for results.
@@ -662,14 +681,20 @@ fn member_access_expr(
     // Find MemberId.
     let member_name = expr_as_identifier(ctx, &rhs_syntax, syntax_db)?;
     match ctx.db.lookup_intern_type(lexpr.ty()) {
-        TypeLongId::Concrete(concrete) => match concrete.generic_type(ctx.db) {
-            GenericTypeId::Struct(struct_id) => {
+        TypeLongId::Concrete(concrete) => match concrete {
+            ConcreteTypeId::Struct(concrete_struct_id) => {
                 let member = ctx
                     .db
-                    .struct_members(struct_id)
+                    .concrete_struct_members(concrete_struct_id)
                     .and_then(|members| members.get(&member_name).cloned())
                     .on_none(|| {
-                        ctx.diagnostics.report(&rhs_syntax, NoSuchMember { struct_id, member_name })
+                        ctx.diagnostics.report(
+                            &rhs_syntax,
+                            NoSuchMember {
+                                struct_id: concrete_struct_id.struct_id(ctx.db),
+                                member_name,
+                            },
+                        )
                     })?;
                 let lexpr_id = ctx.exprs.alloc(lexpr);
                 return Some(Expr::MemberAccess(ExprMemberAccess {

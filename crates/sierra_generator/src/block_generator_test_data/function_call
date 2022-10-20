@@ -33,3 +33,77 @@ function_call<user@[0]>([4], [5], [6]) -> ([3])
 felt_add([3], [3]) -> ([7])
 PushValues([3]: [0], [7]: [0], [2]: [1]) -> ([9], [10], [11])
 function_call<user@[0]>([9], [10], [11]) -> ([8])
+
+//! > ==========================================================================
+
+//! > Test function call 2.
+
+//! > test_function_name
+block_generator_test
+
+//! > function
+func foo() -> felt {
+    let x = 7;
+    bar(x, 7);
+    bar2(bar(x, 7), bar(x, 7))
+}
+
+//! > function_name
+foo
+
+//! > module_code
+func bar(a: felt, b: felt) -> felt {
+    0
+}
+func bar2(a: felt, b: felt) -> felt {
+    0
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_gen_diagnostics
+
+//! > sierra_code
+felt_const<7>() -> ([0])
+felt_const<7>() -> ([1])
+PushValues([0]: [0], [1]: [0]) -> ([3], [4])
+function_call<user@[0]>([3], [4]) -> ([2])
+felt_const<7>() -> ([5])
+PushValues([0]: [0], [5]: [0]) -> ([7], [8])
+function_call<user@[0]>([7], [8]) -> ([6])
+felt_const<7>() -> ([9])
+PushValues([0]: [0], [9]: [0]) -> ([11], [12])
+function_call<user@[0]>([11], [12]) -> ([10])
+PushValues([6]: [0], [10]: [0]) -> ([14], [15])
+function_call<user@[1]>([14], [15]) -> ([13])
+
+//! > ==========================================================================
+
+//! > Call libfunc explicitly
+
+//! > test_function_name
+block_generator_test
+
+//! > function
+func foo() -> felt {
+    my_libfunc(3, 6)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern func my_libfunc(a: felt, b: felt) -> felt;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_gen_diagnostics
+
+//! > sierra_code
+felt_const<3>() -> ([0])
+felt_const<6>() -> ([1])
+my_libfunc([0], [1]) -> ([2])
