@@ -246,13 +246,13 @@ pub trait SemanticGroup:
         id: semantic::StatementId,
     ) -> semantic::Statement;
 
-    // Aggregates module level semantic diagnostics.
+    /// Aggregates module level semantic diagnostics.
     fn module_semantic_diagnostics(
         &self,
         module_id: ModuleId,
     ) -> Option<Diagnostics<SemanticDiagnostic>>;
 
-    // Aggregates file level semantic diagnostics.
+    /// Aggregates file level semantic diagnostics.
     fn file_semantic_diagnostics(&self, file_id: FileId)
     -> Option<Diagnostics<SemanticDiagnostic>>;
 
