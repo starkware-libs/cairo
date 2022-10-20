@@ -53,7 +53,7 @@ pub fn core_bool_ty(db: &dyn SemanticGroup) -> TypeId {
     let generic_type = db
         .module_item_by_name(core_module, "bool".into())
         .and_then(GenericTypeId::option_from)
-        .unwrap();
+        .expect("Type bool was not found in core lib.");
     db.intern_type(semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::new(
         db,
         generic_type,
@@ -66,8 +66,10 @@ pub fn core_bool_ty(db: &dyn SemanticGroup) -> TypeId {
 pub fn core_bool_enum(db: &dyn SemanticGroup) -> ConcreteEnumId {
     let core_module = db.core_module();
     // This should not fail if the corelib is present.
-    let enum_id =
-        db.module_item_by_name(core_module, "bool".into()).and_then(EnumId::option_from).unwrap();
+    let enum_id = db
+        .module_item_by_name(core_module, "bool".into())
+        .and_then(EnumId::option_from)
+        .expect("Type bool was not found in core lib.");
     db.intern_concrete_enum(ConcreteEnumLongId { enum_id, generic_args: vec![] })
 }
 
@@ -118,19 +120,21 @@ fn get_bool_variant_expr(
 }
 
 /// Gets a [ConcreteVariant] instance for an enum variant, by name.
+/// Assume the variant exists.
 fn get_enum_concrete_variant(
     db: &dyn SemanticGroup,
     module_id: ModuleId,
     enum_name: &str,
     variant_name: &str,
 ) -> ConcreteVariant {
+    // All unwraps assume that the enum and variant exist.
     let enum_item = db.module_item_by_name(module_id, enum_name.into()).unwrap();
     let enum_id = extract_matches!(enum_item, ModuleItemId::Enum);
     let concrete_enum_id =
         db.intern_concrete_enum(ConcreteEnumLongId { enum_id, generic_args: vec![] });
     let variant_id = db.enum_variants(enum_id).unwrap()[variant_name];
     let variant = db.variant_semantic(enum_id, variant_id).unwrap();
-    db.concrete_enum_variant(concrete_enum_id, &variant)
+    db.concrete_enum_variant(concrete_enum_id, &variant).unwrap()
 }
 
 /// Gets the unit type ().
