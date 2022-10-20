@@ -63,6 +63,9 @@ pub trait SemanticGroup:
     /// Returns the semantic diagnostics of a struct.
     #[salsa::invoke(items::strct::struct_semantic_diagnostics)]
     fn struct_semantic_diagnostics(&self, struct_id: StructId) -> Diagnostics<SemanticDiagnostic>;
+    /// Returns the generic parameters of an enum.
+    #[salsa::invoke(items::strct::struct_generic_params)]
+    fn struct_generic_params(&self, struct_id: StructId) -> Option<Vec<GenericParamId>>;
     /// Returns the members of a struct.
     #[salsa::invoke(items::strct::struct_members)]
     fn struct_members(

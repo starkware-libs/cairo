@@ -5,7 +5,7 @@
 use std::collections::HashMap;
 
 use ast::{BinaryOperator, PathSegment};
-use defs::ids::{GenericTypeId, LocalVarLongId, MemberId};
+use defs::ids::{LocalVarLongId, MemberId};
 use id_arena::Arena;
 use itertools::zip_eq;
 use smol_str::SmolStr;
@@ -546,8 +546,7 @@ fn struct_ctor_expr(
             ctx.diagnostics.report(&path, NotAStruct);
         })?;
 
-    let members =
-        db.concrete_struct_members(ctx.diagnostics, concrete_struct, path.stable_ptr().untyped())?;
+    let members = db.concrete_struct_members(concrete_struct)?;
     let mut member_exprs: OrderedHashMap<MemberId, ExprId> = OrderedHashMap::default();
     for arg in ctor_syntax.arguments(syntax_db).arguments(syntax_db).elements(syntax_db) {
         // TODO: Extract to a function for results.
@@ -662,14 +661,20 @@ fn member_access_expr(
     // Find MemberId.
     let member_name = expr_as_identifier(ctx, &rhs_syntax, syntax_db)?;
     match ctx.db.lookup_intern_type(lexpr.ty()) {
-        TypeLongId::Concrete(concrete) => match concrete.generic_type(ctx.db) {
-            GenericTypeId::Struct(struct_id) => {
+        TypeLongId::Concrete(concrete) => match concrete {
+            ConcreteTypeId::Struct(concrete_struct_id) => {
                 let member = ctx
                     .db
-                    .struct_members(struct_id)
+                    .concrete_struct_members(concrete_struct_id)
                     .and_then(|members| members.get(&member_name).cloned())
                     .on_none(|| {
-                        ctx.diagnostics.report(&rhs_syntax, NoSuchMember { struct_id, member_name })
+                        ctx.diagnostics.report(
+                            &rhs_syntax,
+                            NoSuchMember {
+                                struct_id: concrete_struct_id.struct_id(ctx.db),
+                                member_name,
+                            },
+                        )
                     })?;
                 let lexpr_id = ctx.exprs.alloc(lexpr);
                 return Some(Expr::MemberAccess(ExprMemberAccess {
