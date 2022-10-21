@@ -14,8 +14,28 @@ enum IfCondition {
 
 /// Analyzes the condition of an if statement into an [IfCondition] tree, to allow different
 /// optimizations.
-fn analyze_condition(_ctx: &LoweringContext<'_>, expr_id: semantic::ExprId) -> IfCondition {
+fn analyze_condition(ctx: &LoweringContext<'_>, expr_id: semantic::ExprId) -> IfCondition {
+    let expr = &ctx.function_def.exprs[expr_id];
+    if let semantic::Expr::FunctionCall(function_call) = expr {
+        if function_call.function == corelib::felt_eq(ctx.db)
+            && function_call.args.len() == 2
+            && is_zero(ctx, function_call.args[1])
+        {
+            return IfCondition::EqZero(function_call.args[0]);
+        };
+    };
+
     IfCondition::BoolExpr(expr_id)
+}
+
+fn is_zero(ctx: &LoweringContext<'_>, expr_id: semantic::ExprId) -> bool {
+    let expr = &ctx.function_def.exprs[expr_id];
+    if let semantic::Expr::Literal(literal) = expr {
+        if literal.value == 0 {
+            return true;
+        }
+    }
+    false
 }
 
 /// Lowers an expression of type [semantic::ExprIf].
@@ -58,7 +78,14 @@ pub fn lower_expr_if(
             else_finalized.block,
             finalized_merger,
         ),
-        IfCondition::EqZero(_condition) => todo!(),
+        IfCondition::EqZero(condition) => lower_expr_if_eq_zero(
+            ctx,
+            scope,
+            condition,
+            main_finalized,
+            else_finalized,
+            finalized_merger,
+        ),
     }
 }
 
@@ -83,6 +110,29 @@ pub fn lower_expr_if_bool(
             (corelib::true_variant(ctx.db), main_finalized),
             (corelib::false_variant(ctx.db), else_finalized),
         ],
+        end_info: finalized_merger.end_info,
+    };
+    let block_result = match_generator.add(ctx, scope);
+    lowered_expr_from_block_result(scope, block_result, finalized_merger.pushes)
+}
+
+/// Lowers an expression of type [semantic::ExprIf].
+pub fn lower_expr_if_eq_zero(
+    ctx: &mut LoweringContext<'_>,
+    scope: &mut BlockScope,
+    condition: semantic::ExprId,
+    main_finalized: BlockFinalized,
+    else_finalized: BlockFinalized,
+    finalized_merger: BlockMergerFinalized,
+) -> Result<LoweredExpr, LoweringFlowError> {
+    let condition_var =
+        extract_matches!(lower_expr(ctx, scope, condition)?, LoweredExpr::AtVariable);
+
+    // Emit the statement.
+    let match_generator = generators::MatchExtern {
+        function: corelib::core_jump_nz_func(ctx.db),
+        inputs: vec![condition_var],
+        arms: vec![main_finalized.block, else_finalized.block],
         end_info: finalized_merger.end_info,
     };
     let block_result = match_generator.add(ctx, scope);

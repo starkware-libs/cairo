@@ -92,12 +92,10 @@ End:
 blk2:
 Inputs: v0: core::felt
 Statements:
-  (v4: core::felt) <- 0u
-  (v5: core::bool) <- core::felt_eq(v0, v4)
-  (v6: core::felt) <- match_enum(v5) {
-    bool::True => blk0,
-    bool::False => blk1,
+  (v4: core::felt) <- match core::felt_jump_nz(v0) {
+blk0
+blk1
   }
-Drops: v0, v4, v5
+Drops: v0
 End:
-  Callsite(v6)
+  Callsite(v4)
