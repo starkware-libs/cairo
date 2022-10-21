@@ -140,9 +140,40 @@ pub fn lower_expr_if_eq_zero(
     let match_generator = generators::MatchExtern {
         function: corelib::core_jump_nz_func(ctx.db),
         inputs: vec![condition_var],
-        arms: vec![main_finalized.block, else_finalized.block],
+        // Does it make sense to pass scope??
+        arms: vec![
+            main_finalized.block,
+            ignore_nonzero_value(ctx, scope, else_finalized, finalized_merger).block,
+        ],
         end_info: finalized_merger.end_info,
     };
     let block_result = match_generator.add(ctx, scope);
     lowered_expr_from_block_result(scope, block_result, finalized_merger.pushes)
+}
+
+// TODO: document.
+pub fn ignore_nonzero_value(
+    ctx: &mut LoweringContext<'_>,
+    scope: &mut BlockScope,
+    inner_block_finalized: BlockFinalized,
+    finalized_merger: BlockMergerFinalized,
+) -> BlockFinalized {
+    let (block_sealed, mut finalized_merger) = BlockFlowMerger::with(ctx, scope, |ctx, merger| {
+        merger.run_in_subscope(ctx, vec![], |ctx, subscope, _| {
+            let call_block_generator = generators::CallBlock {
+                block: inner_block_finalized.block,
+                end_info: inner_block_finalized.end_info,
+            };
+            let block_result = call_block_generator.add(ctx, scope);
+            lowered_expr_to_block_scope_end(lowered_expr_from_block_result(
+                scope,
+                block_result,
+                // TODO: Is using finalized_merger here correct?
+                finalized_merger.pushes,
+            ))
+        })
+    });
+    // TODO: fix unwrap.
+    let block_sealed = block_sealed.ok_or(LoweringFlowError::Failed).unwrap();
+    finalized_merger.finalize_block(ctx, block_sealed)
 }
