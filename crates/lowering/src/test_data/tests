@@ -72,7 +72,7 @@ End:
 
 //! > ==========================================================================
 
-//! > Test compund expressions.
+//! > Test compound expressions.
 
 //! > test_function_name
 test_function_lowering
@@ -81,8 +81,8 @@ test_function_lowering
 func foo(a: felt) -> felt {
   let x = {7;};
   {x;}
-  let y = if 1==1 { 6 } else { 7 };
-  foo(3) + 5 * {3; a+0}
+  let y = if 1 == 1 { 6 } else { 7 };
+  foo(3) + 5 * {3; a + 0}
 }
 
 //! > function_name
