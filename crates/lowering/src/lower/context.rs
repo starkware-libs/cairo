@@ -19,4 +19,6 @@ pub struct LoweringContext<'db> {
     /// Definitions encountered for semantic variables.
     // TODO(spapini): consider moving to semantic model.
     pub semantic_defs: UnorderedHashMap<semantic::VarId, semantic::Variable>,
+    // TODO(spapini): Document.
+    pub ref_params: &'db [semantic::VarId],
 }
