@@ -109,20 +109,20 @@ End:
   Callsite()
 
 blk2:
-Inputs: v6: ()
+Inputs: v3: ()
 Statements:
-  (v7: core::felt) <- 6u
-Drops: v6
+  (v4: core::felt) <- 6u
+Drops: v3
 End:
-  Callsite(v7)
+  Callsite(v4)
 
 blk3:
-Inputs: v8: ()
+Inputs: v5: ()
 Statements:
-  (v9: core::felt) <- 7u
-Drops: v8
+  (v6: core::felt) <- 7u
+Drops: v5
 End:
-  Callsite(v9)
+  Callsite(v6)
 
 blk4:
 Inputs:
@@ -140,10 +140,10 @@ Statements:
   () <- blk0()
   (v2: ()) <- tuple_construct()
   () <- blk1()
-  (v3: core::felt) <- 1u
-  (v4: core::felt) <- 1u
-  (v5: core::bool) <- core::felt_eq(v3, v4)
-  (v10: core::felt) <- match_enum(v5) {
+  (v7: core::felt) <- 1u
+  (v8: core::felt) <- 1u
+  (v9: core::bool) <- core::felt_eq(v7, v8)
+  (v10: core::felt) <- match_enum(v9) {
     bool::True => blk2,
     bool::False => blk3,
   }
@@ -153,7 +153,7 @@ Statements:
   (v17: core::felt) <- blk4()
   (v18: core::felt) <- core::felt_mul(v13, v17)
   (v19: core::felt) <- core::felt_add(v12, v18)
-Drops: v0, v2, v3, v4, v5, v10, v11, v12, v13, v17, v18
+Drops: v0, v2, v7, v8, v9, v10, v11, v12, v13, v17, v18
 End:
   Callsite(v19)
 

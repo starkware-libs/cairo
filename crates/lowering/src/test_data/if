@@ -75,29 +75,29 @@ foo
 
 //! > lowering_format
 blk0:
-Inputs: v3: ()
+Inputs: v1: ()
 Statements:
-  (v4: core::felt) <- 1u
-Drops: v3, v0
+  (v2: core::felt) <- 1u
+Drops: v1, v0
 End:
-  Callsite(v4)
+  Callsite(v2)
 
 blk1:
-Inputs: v5: ()
+Inputs: v3: ()
 Statements:
-Drops: v5
+Drops: v3
 End:
   Callsite(v0)
 
 blk2:
 Inputs: v0: core::felt
 Statements:
-  (v1: core::felt) <- 0u
-  (v2: core::bool) <- core::felt_eq(v0, v1)
-  (v6: core::felt) <- match_enum(v2) {
+  (v4: core::felt) <- 0u
+  (v5: core::bool) <- core::felt_eq(v0, v4)
+  (v6: core::felt) <- match_enum(v5) {
     bool::True => blk0,
     bool::False => blk1,
   }
-Drops: v0, v1, v2
+Drops: v0, v4, v5
 End:
   Callsite(v6)

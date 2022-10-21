@@ -30,32 +30,32 @@ func bar(ref a: felt, b: bool) {
 
 //! > lowering_format
 blk0:
-Inputs: v5: ()
+Inputs: v3: ()
 Statements:
-  (v6: (), v7: core::felt) <- test_crate::bar(v0, v2)
-Drops: v5, v0, v6
+  (v4: (), v5: core::felt) <- test_crate::bar(v0, v2)
+Drops: v3, v0, v4
 End:
-  Callsite(v7)
+  Callsite(v5)
 
 blk1:
-Inputs: v8: ()
+Inputs: v6: ()
 Statements:
-Drops: v8
+Drops: v6
 End:
   Callsite(v0)
 
 blk2:
-Inputs: v12: ()
+Inputs: v10: ()
 Statements:
-  (v13: core::felt) <- 6u
-Drops: v12, v0, v1, v2, v3, v4, v9, v10, v11
+  (v11: core::felt) <- 6u
+Drops: v10, v0, v1, v2, v7, v8, v9
 End:
-  Return(v13, v9)
+  Return(v11, v9)
 
 blk3:
-Inputs: v14: ()
+Inputs: v12: ()
 Statements:
-Drops: v14
+Drops: v12
 End:
   Callsite()
 
@@ -64,19 +64,19 @@ Inputs: v0: core::felt
 Statements:
   (v1: ()) <- tuple_construct()
   (v2: core::bool) <- bool::True(v1)
-  (v3: ()) <- tuple_construct()
-  (v4: core::bool) <- bool::True(v3)
-  (v9: core::felt) <- match_enum(v4) {
+  (v7: ()) <- tuple_construct()
+  (v8: core::bool) <- bool::True(v7)
+  (v9: core::felt) <- match_enum(v8) {
     bool::True => blk0,
     bool::False => blk1,
   }
-  (v10: ()) <- tuple_construct()
-  (v11: core::bool) <- bool::False(v10)
-  () <- match_enum(v11) {
+  (v13: ()) <- tuple_construct()
+  (v14: core::bool) <- bool::False(v13)
+  () <- match_enum(v14) {
     bool::True => blk2,
     bool::False => blk3,
   }
   (v15: core::felt) <- 5u
-Drops: v0, v1, v2, v3, v4, v11, v10
+Drops: v0, v1, v2, v7, v8, v14, v13
 End:
   Callsite(v15, v9)
