@@ -7,7 +7,7 @@ use filesystem::ids::FileId;
 use semantic::db::SemanticGroup;
 
 use crate::diagnostic::LoweringDiagnostic;
-use crate::lower::{Lowered, Lowerer};
+use crate::lower::{lower, Lowered};
 
 // Salsa database interface.
 #[salsa::query_group(LoweringDatabase)]
@@ -30,7 +30,7 @@ fn free_function_lowered(
     db: &dyn LoweringGroup,
     free_function_id: FreeFunctionId,
 ) -> Option<Arc<Lowered>> {
-    Some(Arc::new(Lowerer::lower(db.upcast(), free_function_id)?))
+    Some(Arc::new(lower(db.upcast(), free_function_id)?))
 }
 
 fn module_lowering_diagnostics(

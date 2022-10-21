@@ -4,7 +4,7 @@ use semantic::test_utils::{setup_test_function, SemanticDatabaseForTesting};
 use utils::ordered_hash_map::OrderedHashMap;
 
 use crate::fmt::LoweredFormatter;
-use crate::lower::Lowerer;
+use crate::lower::lower;
 
 utils::test_file_test!(
     lowering_test,
@@ -30,7 +30,7 @@ fn test_function_lowering(
         inputs["module_code"].as_str(),
     )
     .split();
-    let lowered = Lowerer::lower(db, test_function.function_id).unwrap();
+    let lowered = lower(db, test_function.function_id).unwrap();
 
     let lowered_formatter = LoweredFormatter { db, lowered: &lowered };
     OrderedHashMap::from([
