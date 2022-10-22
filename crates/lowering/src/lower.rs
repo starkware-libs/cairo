@@ -1,4 +1,4 @@
-use defs::ids::{FreeFunctionId, LanguageElementId};
+use defs::ids::{FreeFunctionId, GenericFunctionId, LanguageElementId};
 use diagnostics::Diagnostics;
 use id_arena::Arena;
 use itertools::{chain, zip_eq};
@@ -15,6 +15,7 @@ use utils::unordered_hash_map::UnorderedHashMap;
 use utils::{extract_matches, try_extract_matches};
 
 use self::context::LoweringContext;
+use self::external::{extern_facade_expr, extern_facade_tys};
 use self::scope::{generators, BlockFlowMerger};
 use self::variables::LivingVar;
 use crate::diagnostic::LoweringDiagnosticKind::*;
@@ -22,6 +23,7 @@ use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnostics};
 use crate::objects::{Block, BlockId, Variable};
 
 mod context;
+mod external;
 mod scope;
 mod semantic_map;
 mod variables;
@@ -323,14 +325,49 @@ fn lower_expr_function_call(
         .unzip();
     let arg_inputs = lower_exprs_as_vars(ctx, &expr.args, scope)?;
     let inputs = chain!(ref_inputs, arg_inputs.into_iter()).collect();
-    let call_result =
-        generators::Call { function: expr.function, inputs, ref_tys, ret_ty: expr.ty }
-            .add(ctx, scope);
+
+    let (ref_outputs, res) =
+        analyze_function_call(ctx, scope, expr.function, inputs, ref_tys, expr.ty);
+
     // Rebind the ref variables.
-    for (semantic_var_id, output_var) in zip_eq(&expr.ref_args, call_result.ref_outputs) {
+    for (semantic_var_id, output_var) in zip_eq(&expr.ref_args, ref_outputs) {
         scope.put_semantic_variable(*semantic_var_id, output_var);
     }
-    Ok(LoweredExpr::AtVariable(call_result.output))
+    Ok(res)
+}
+
+fn analyze_function_call(
+    ctx: &mut LoweringContext<'_>,
+    scope: &mut BlockScope,
+    function: semantic::FunctionId,
+    inputs: Vec<LivingVar>,
+    ref_tys: Vec<semantic::TypeId>,
+    ret_ty: semantic::TypeId,
+) -> (Vec<LivingVar>, LoweredExpr) {
+    // If the function is not extern, simply call it.
+    if !matches!(
+        ctx.db.lookup_intern_function(function),
+        semantic::FunctionLongId::Concrete(semantic::ConcreteFunction {
+            generic_function: GenericFunctionId::Extern(_),
+            ..
+        })
+    ) {
+        let call_result =
+            generators::Call { function, inputs, ref_tys, ret_tys: vec![ret_ty] }.add(ctx, scope);
+        let ref_outputs = call_result.ref_outputs;
+        let res = LoweredExpr::AtVariable(call_result.returns.into_iter().next().unwrap());
+        return (ref_outputs, res);
+    };
+
+    // Extern function
+    // If the return type is an enum, it's an enum facade.
+    // TODO(spapini): Handle Enum correctly.
+    // TODO: Add a LoweredExpr variant to delay Enum creation, and possibly avoid wrapping when
+    //   matching straight away. But carefully, so we won't reorder calls with side effects.
+    let ret_tys = extern_facade_tys(ctx, ret_ty);
+    let call_result = generators::Call { function, inputs, ref_tys, ret_tys }.add(ctx, scope);
+    let ref_outputs = call_result.ref_outputs;
+    (ref_outputs, extern_facade_expr(ctx, ret_ty, call_result.returns))
 }
 
 /// Lowers an expression of type [semantic::ExprMatch].
@@ -630,7 +667,7 @@ fn extract_var_pattern(
 
 /// Representation of the value of a computed expression.
 #[derive(Debug)]
-enum LoweredExpr {
+pub enum LoweredExpr {
     /// The expression value lies in a variable.
     AtVariable(LivingVar),
     /// The expression value is unit.
