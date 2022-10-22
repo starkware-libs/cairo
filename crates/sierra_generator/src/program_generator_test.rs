@@ -1,4 +1,5 @@
 use indoc::indoc;
+use lowering::db::LoweringGroup;
 use pretty_assertions::assert_eq;
 use semantic::test_utils::setup_test_module;
 
@@ -24,6 +25,7 @@ fn test_program_generator() {
     .unwrap()
     .module_id;
 
+    db.module_lowering_diagnostics(module_id).expect("");
     db.module_sierra_diagnostics(module_id).expect("");
     let program = &*db.module_sierra_program(module_id).unwrap();
     // TODO(lior): Remove the unnecessary store_temp()s at the end.
@@ -75,6 +77,7 @@ fn test_type_dependency() {
     .unwrap()
     .module_id;
 
+    db.module_lowering_diagnostics(module_id).expect("");
     db.module_sierra_diagnostics(module_id).expect("");
     let program = &*db.module_sierra_program(module_id).unwrap();
     assert_eq!(
