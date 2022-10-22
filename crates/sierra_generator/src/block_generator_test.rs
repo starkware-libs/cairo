@@ -49,7 +49,7 @@ fn block_generator_test(
     // Generate (pre-)Sierra statements.
     let mut diagnostics = DiagnosticsBuilder::<SierraGeneratorDiagnostic>::default();
     let mut expr_generator_context =
-        ExprGeneratorContext::new(db, Some(&lowered), test_function.function_id, &mut diagnostics);
+        ExprGeneratorContext::new(db, &lowered, test_function.function_id, &mut diagnostics);
     let statements_opt = generate_block_code(&mut expr_generator_context, block);
     let expected_sierra_code = statements_opt.map_or("None".into(), |statements| {
         statements
