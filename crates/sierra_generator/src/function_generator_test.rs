@@ -1,6 +1,7 @@
 use defs::db::DefsGroup;
 use defs::ids::ModuleItemId;
 use indoc::indoc;
+use lowering::db::LoweringGroup;
 use pretty_assertions::assert_eq;
 use semantic::test_utils::setup_test_module;
 use utils::extract_matches;
@@ -32,6 +33,7 @@ fn test_function_generator() {
         "Unexpected item type."
     );
 
+    db.module_lowering_diagnostics(module_id).expect("");
     db.free_function_sierra_diagnostics(foo).expect("");
     let function = db.free_function_sierra(foo).unwrap();
     assert_eq!(

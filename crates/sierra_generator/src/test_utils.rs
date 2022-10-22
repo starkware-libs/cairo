@@ -1,6 +1,7 @@
 use db_utils::Upcast;
 use defs::db::{DefsDatabase, DefsGroup};
 use filesystem::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup};
+use lowering::db::{LoweringDatabase, LoweringGroup};
 use parser::db::ParserDatabase;
 use salsa::{InternId, InternKey};
 use semantic::db::{SemanticDatabase, SemanticGroup};
@@ -14,11 +15,12 @@ use crate::utils::{jump_statement, return_statement, simple_statement};
 
 #[salsa::database(
     DefsDatabase,
+    FilesDatabase,
+    LoweringDatabase,
+    ParserDatabase,
     SemanticDatabase,
     SierraGenDatabase,
-    ParserDatabase,
-    SyntaxDatabase,
-    FilesDatabase
+    SyntaxDatabase
 )]
 pub struct SierraGenDatabaseForTesting {
     storage: salsa::Storage<SierraGenDatabaseForTesting>,
@@ -53,6 +55,11 @@ impl Upcast<dyn DefsGroup> for SierraGenDatabaseForTesting {
 }
 impl Upcast<dyn SemanticGroup> for SierraGenDatabaseForTesting {
     fn upcast(&self) -> &(dyn semantic::db::SemanticGroup + 'static) {
+        self
+    }
+}
+impl Upcast<dyn LoweringGroup> for SierraGenDatabaseForTesting {
+    fn upcast(&self) -> &(dyn lowering::db::LoweringGroup + 'static) {
         self
     }
 }

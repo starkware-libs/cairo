@@ -3,7 +3,7 @@ use std::sync::Arc;
 use db_utils::Upcast;
 use defs::ids::{FreeFunctionId, ModuleId};
 use diagnostics::Diagnostics;
-use semantic::db::SemanticGroup;
+use lowering::db::LoweringGroup;
 use sierra::extensions::{ConcreteType, GenericTypeEx};
 
 use crate::program_generator::{self};
@@ -11,7 +11,7 @@ use crate::specialization_context::SierraSignatureSpecializationContext;
 use crate::{function_generator, pre_sierra, SierraGeneratorDiagnostic};
 
 #[salsa::query_group(SierraGenDatabase)]
-pub trait SierraGenGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
+pub trait SierraGenGroup: LoweringGroup + Upcast<dyn LoweringGroup> {
     #[salsa::interned]
     fn intern_label_id(&self, id: pre_sierra::LabelLongId) -> pre_sierra::LabelId;
 
