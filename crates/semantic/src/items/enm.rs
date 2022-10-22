@@ -115,14 +115,16 @@ pub fn priv_enum_semantic_data(db: &dyn SemanticGroup, enum_id: EnumId) -> Optio
     Some(EnumData { diagnostics: diagnostics.build(), generic_params, variants, variant_semantic })
 }
 
+// TODO(spapini): Consider making these queries.
 pub trait SemanticEnumEx<'a>: Upcast<dyn SemanticGroup + 'a> {
+    /// Retrieves the [ConcreteVariant] for a [ConcreteEnumId] and a [Variant].
     fn concrete_enum_variant(
         &self,
         concrete_enum_id: ConcreteEnumId,
         variant: &Variant,
     ) -> Option<ConcreteVariant> {
         // TODO(spapini): Uphold the invariant that constructed ConcreteEnumId instances
-        //   always have the correct number of generic arguemnts.
+        //   always have the correct number of generic arguments.
         let db = self.upcast();
         let generic_params = db.enum_generic_params(concrete_enum_id.enum_id(db))?;
         let generic_args = db.lookup_intern_concrete_enum(concrete_enum_id).generic_args;
@@ -130,6 +132,26 @@ pub trait SemanticEnumEx<'a>: Upcast<dyn SemanticGroup + 'a> {
 
         let ty = substitute_generics(db, substitution, variant.ty);
         Some(ConcreteVariant { concrete_enum_id, id: variant.id, ty })
+    }
+
+    /// Retrieves all the [ConcreteVariant]s for a [ConcreteEnumId].
+    fn concrete_enum_variants(
+        &self,
+        concrete_enum_id: ConcreteEnumId,
+    ) -> Option<Vec<ConcreteVariant>> {
+        // TODO(spapini): Uphold the invariant that constructed ConcreteEnumId instances
+        //   always have the correct number of generic arguments.
+        let db = self.upcast();
+        let enum_id = concrete_enum_id.enum_id(db);
+        db.enum_variants(enum_id)?
+            .into_iter()
+            .map(|(_, variant_id)| {
+                db.concrete_enum_variant(
+                    concrete_enum_id,
+                    &db.variant_semantic(enum_id, variant_id)?,
+                )
+            })
+            .collect()
     }
 }
 
