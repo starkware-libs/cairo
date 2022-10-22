@@ -3,10 +3,7 @@ use diagnostics::Diagnostics;
 use id_arena::Arena;
 use itertools::{chain, zip_eq};
 use scope::{BlockScope, BlockScopeEnd};
-use semantic::corelib::{
-    core_bool_enum, core_felt_ty, core_jump_nz_func, core_nonzero_ty, false_variant, true_variant,
-    unit_ty,
-};
+use semantic::corelib::{core_felt_ty, core_jump_nz_func, core_nonzero_ty};
 use semantic::db::SemanticGroup;
 use semantic::items::enm::SemanticEnumEx;
 use semantic::{ConcreteTypeId, TypeLongId};
@@ -14,7 +11,8 @@ use syntax::node::ids::SyntaxStablePtrId;
 use utils::unordered_hash_map::UnorderedHashMap;
 use utils::{extract_matches, try_extract_matches};
 
-use self::context::LoweringContext;
+use self::context::{LoweredExpr, LoweringContext, LoweringFlowError, StatementLoweringFlowError};
+use self::lower_if::lower_expr_if;
 use self::scope::{generators, BlockFlowMerger};
 use self::variables::LivingVar;
 use crate::diagnostic::LoweringDiagnosticKind::*;
@@ -22,6 +20,7 @@ use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnostics};
 use crate::objects::{Block, BlockId, Variable};
 
 mod context;
+mod lower_if;
 mod scope;
 mod semantic_map;
 mod variables;
@@ -457,54 +456,6 @@ fn lower_expr_match_felt(
     lowered_expr_from_block_result(scope, block_result, finalized_merger.pushes)
 }
 
-/// Lowers an expression of type [semantic::ExprIf].
-fn lower_expr_if(
-    ctx: &mut LoweringContext<'_>,
-    scope: &mut BlockScope,
-    expr: &semantic::ExprIf,
-) -> Result<LoweredExpr, LoweringFlowError> {
-    // The condition cannot be unit.
-    let condition_var =
-        extract_matches!(lower_expr(ctx, scope, expr.condition)?, LoweredExpr::AtVariable);
-
-    // Lower both blocks.
-    let unit_ty = unit_ty(ctx.db);
-    let (res, mut finalized_merger) = BlockFlowMerger::with(ctx, scope, |ctx, merger| {
-        let [main_block_scope, else_block_scope] =
-            [expr.if_block, expr.else_block].map(|block_expr| {
-                merger.run_in_subscope(ctx, vec![unit_ty], |ctx, subscope, _| {
-                    lower_block(
-                        ctx,
-                        subscope,
-                        extract_matches!(
-                            &ctx.function_def.exprs[block_expr],
-                            semantic::Expr::Block
-                        ),
-                    )
-                })
-            });
-        Some((main_block_scope, else_block_scope))
-    });
-    let (main_block_sealed, else_block_sealed) = res.ok_or(LoweringFlowError::Failed)?;
-    let main_finalized =
-        finalized_merger.finalize_block(ctx, main_block_sealed.ok_or(LoweringFlowError::Failed)?);
-    let else_finalized =
-        finalized_merger.finalize_block(ctx, else_block_sealed.ok_or(LoweringFlowError::Failed)?);
-
-    // Emit the statement.
-    let match_generator = generators::MatchEnum {
-        input: condition_var,
-        concrete_enum_id: core_bool_enum(ctx.db),
-        arms: vec![
-            (true_variant(ctx.db), main_finalized.block),
-            (false_variant(ctx.db), else_finalized.block),
-        ],
-        end_info: finalized_merger.end_info,
-    };
-    let block_result = match_generator.add(ctx, scope);
-    lowered_expr_from_block_result(scope, block_result, finalized_merger.pushes)
-}
-
 /// Extracts concrete enum and variants from a match expression. Assumes it is indeed a concrete
 /// enum.
 fn extract_concrete_enum(
@@ -626,52 +577,4 @@ fn extract_var_pattern(
         try_extract_matches!(&*enum_pattern.inner_pattern, semantic::Pattern::Variable)?;
     let semantic_var_id = semantic::VarId::Local(var_pattern.var.id);
     Some(semantic_var_id)
-}
-
-/// Representation of the value of a computed expression.
-#[derive(Debug)]
-enum LoweredExpr {
-    /// The expression value lies in a variable.
-    AtVariable(LivingVar),
-    /// The expression value is unit.
-    Tuple(Vec<LoweredExpr>),
-}
-impl LoweredExpr {
-    fn var(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockScope) -> LivingVar {
-        match self {
-            LoweredExpr::AtVariable(var_id) => var_id,
-            LoweredExpr::Tuple(exprs) => {
-                let inputs: Vec<_> = exprs.into_iter().map(|expr| expr.var(ctx, scope)).collect();
-                let tys = inputs.iter().map(|var| ctx.variables[var.var_id()].ty).collect();
-                let ty = ctx.db.intern_type(semantic::TypeLongId::Tuple(tys));
-                generators::TupleConstruct { inputs, ty }.add(ctx, scope)
-            }
-        }
-    }
-}
-
-/// Cases where the flow of lowering an expression should halt.
-#[derive(Debug)]
-enum LoweringFlowError {
-    /// Computation failure. A corresponding diagnostic should be emitted.
-    Failed,
-    /// The current computation is unreachable.
-    Unreachable,
-}
-/// Cases where the flow of lowering a statement should halt.
-pub enum StatementLoweringFlowError {
-    /// Computation failure. A corresponding diagnostic should be emitted.
-    Failed,
-    /// The block should end after this statement.
-    End(BlockScopeEnd),
-}
-impl From<LoweringFlowError> for StatementLoweringFlowError {
-    fn from(err: LoweringFlowError) -> Self {
-        match err {
-            LoweringFlowError::Failed => StatementLoweringFlowError::Failed,
-            LoweringFlowError::Unreachable => {
-                StatementLoweringFlowError::End(BlockScopeEnd::Unreachable)
-            }
-        }
-    }
 }
