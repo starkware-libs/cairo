@@ -1,0 +1,103 @@
+//! > Test boolean if.
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+func foo(a: bool, x: felt) -> felt {
+    if a {
+        1
+    } else {
+        x
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_format
+blk0:
+Inputs: v2: ()
+Statements:
+  (v3: core::felt) <- 1u
+Drops: v2, v1
+End:
+  Callsite(v3)
+
+blk1:
+Inputs: v4: ()
+Statements:
+Drops: v4
+End:
+  Callsite(v1)
+
+blk2:
+Inputs: v0: core::bool, v1: core::felt
+Statements:
+  (v5: core::felt) <- match_enum(v0) {
+    bool::True => blk0,
+    bool::False => blk1,
+  }
+Drops: v0, v1
+End:
+  Callsite(v5)
+
+//! > ==========================================================================
+
+//! > Test if analyzer.
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+func foo(x: felt) -> felt {
+    if x == 0 {
+        1
+    } else {
+        x
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_format
+blk0:
+Inputs: v3: ()
+Statements:
+  (v4: core::felt) <- 1u
+Drops: v3, v0
+End:
+  Callsite(v4)
+
+blk1:
+Inputs: v5: ()
+Statements:
+Drops: v5
+End:
+  Callsite(v0)
+
+blk2:
+Inputs: v0: core::felt
+Statements:
+  (v1: core::felt) <- 0u
+  (v2: core::bool) <- core::felt_eq(v0, v1)
+  (v6: core::felt) <- match_enum(v2) {
+    bool::True => blk0,
+    bool::False => blk1,
+  }
+Drops: v0, v1, v2
+End:
+  Callsite(v6)
