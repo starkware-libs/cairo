@@ -230,11 +230,6 @@ pub enum BlockEndInfo {
     End,
 }
 
-/// A trait for a context object that holds a LoweringContext and can lend it.
-pub trait ContextLender<'a> {
-    fn ctx(&mut self) -> &mut LoweringContext<'a>;
-}
-
 /// Responsible for merging block flows.
 /// In a case where one or more blocks appear in parallel (e.g. match between multiple blocks),
 /// the created blocks should be fed into this object. After all blocks have been fed, finalize()
@@ -270,15 +265,15 @@ impl BlockFlowMerger {
     /// Finalizes the merger and returns a [BlockMergerFinalized] instance used for finalizing
     /// blocks.
     /// For the root merger - when there is no parent scope, use [`BlockFlowMerger::with_root()`].
-    pub fn with<'a, Ctx: ContextLender<'a>, T, F: FnOnce(&mut Ctx, &mut Self) -> T>(
-        ctx: &mut Ctx,
+    pub fn with<T, F: FnOnce(&mut LoweringContext<'_>, &mut Self) -> T>(
+        ctx: &mut LoweringContext<'_>,
         parent_scope: &mut BlockScope,
         f: F,
     ) -> (T, BlockMergerFinalized) {
         borrow_as_box(parent_scope, |boxed_parent_scope| {
             let mut merger = Self { parent_scope: Some(boxed_parent_scope), ..Self::default() };
             let res = f(ctx, &mut merger);
-            let (finalized, returned_scope) = merger.finalize(ctx.ctx(), &[]);
+            let (finalized, returned_scope) = merger.finalize(ctx, &[]);
             ((res, finalized), returned_scope.unwrap())
         })
     }
@@ -288,14 +283,14 @@ impl BlockFlowMerger {
     /// blocks.
     /// Similar to [`BlockFlowMerger::with()`], except gets no parent_scope, and thus, should be
     /// used for the root scope only.
-    pub fn with_root<'a, Ctx: ContextLender<'a>, T, F: FnOnce(&mut Ctx, &mut Self) -> T>(
-        ctx: &mut Ctx,
+    pub fn with_root<T, F: FnOnce(&mut LoweringContext<'_>, &mut Self) -> T>(
+        ctx: &mut LoweringContext<'_>,
         extra_outputs: &[semantic::VarId],
         f: F,
     ) -> (T, BlockMergerFinalized) {
         let mut merger = Self::default();
         let res = f(ctx, &mut merger);
-        let (finalized, _returned_scope) = merger.finalize(ctx.ctx(), extra_outputs);
+        let (finalized, _returned_scope) = merger.finalize(ctx, extra_outputs);
 
         (res, finalized)
     }
@@ -305,12 +300,10 @@ impl BlockFlowMerger {
     /// rest of the blocks created with this function.
     /// Returns the a [BlockSealed] for that block.
     pub fn run_in_subscope<
-        'a,
-        Ctx: ContextLender<'a>,
-        F: FnOnce(&mut Ctx, &mut BlockScope, Vec<LivingVar>) -> Option<BlockScopeEnd>,
+        F: FnOnce(&mut LoweringContext<'_>, &mut BlockScope, Vec<LivingVar>) -> Option<BlockScopeEnd>,
     >(
         &mut self,
-        ctx: &mut Ctx,
+        ctx: &mut LoweringContext<'_>,
         input_tys: Vec<semantic::TypeId>,
         f: F,
     ) -> Option<BlockSealed> {
@@ -320,7 +313,7 @@ impl BlockFlowMerger {
             // Set inputs.
             let input_vars: Vec<_> = input_tys
                 .into_iter()
-                .map(|ty| block_scope.living_variables.introduce_new_var(ctx.ctx(), ty))
+                .map(|ty| block_scope.living_variables.introduce_new_var(ctx, ty))
                 .collect();
             block_scope.inputs = input_vars.iter().map(|var| var.var_id()).collect();
             if let Some(block_end) = f(ctx, &mut block_scope, input_vars) {
@@ -330,7 +323,7 @@ impl BlockFlowMerger {
                 (None, block_scope.merger)
             }
         })?;
-        self.add_block_sealed(ctx.ctx(), &block_sealed);
+        self.add_block_sealed(ctx, &block_sealed);
         Some(block_sealed)
     }
 

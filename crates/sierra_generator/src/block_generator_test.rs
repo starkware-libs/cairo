@@ -1,5 +1,5 @@
 use diagnostics::DiagnosticsBuilder;
-use lowering::lower::Lowerer;
+use lowering::lower::lower;
 use semantic::test_utils::setup_test_function;
 use utils::ordered_hash_map::OrderedHashMap;
 
@@ -33,7 +33,7 @@ fn block_generator_test(
     .split();
 
     // Lower code.
-    let lowered = Lowerer::lower(db, test_function.function_id).unwrap();
+    let lowered = lower(db, test_function.function_id).unwrap();
 
     if lowered.root.is_none() {
         return OrderedHashMap::from([
