@@ -27,19 +27,18 @@ enum MyEnum {
 blk0:
 Inputs:
 Statements:
-  (v3: ()) <- tuple_construct()
-  (v4: core::felt) <- 5u
-Drops: v3
+  (v3: core::felt) <- 5u
+Drops: 
 End:
-  Callsite(v4)
+  Callsite(v3)
 
 blk1:
 Inputs: v0: core::felt
 Statements:
   (v1: ()) <- tuple_construct()
   (v2: core::bool) <- bool::True(v1)
-  (v5: core::felt) <- blk0()
-  (v6: test_crate::MyEnum) <- MyEnum::B(v5)
-Drops: v0, v1, v2, v5
+  (v4: core::felt) <- blk0()
+  (v5: test_crate::MyEnum) <- MyEnum::B(v4)
+Drops: v0, v1, v2, v4
 End:
-  Callsite(v6)
+  Callsite(v5)
