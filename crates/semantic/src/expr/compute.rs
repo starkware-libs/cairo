@@ -174,7 +174,7 @@ fn compute_expr_binary_semantic(
             }
         };
     }
-    let function = core_binary_operator(db, ctx.diagnostics, &binary_op)
+    let function = core_binary_operator(db, &binary_op)
         .on_none(|| ctx.diagnostics.report(&binary_op, UnknownBinaryOperator))?;
     expr_function_call(ctx, function, vec![lexpr, rexpr], stable_ptr)
 }
