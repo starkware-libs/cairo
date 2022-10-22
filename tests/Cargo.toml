@@ -7,6 +7,7 @@ edition = "2021"
 defs = { path = "../crates/defs" }
 diagnostics = { path = "../crates/diagnostics" }
 filesystem = { path = "../crates/filesystem" }
+lowering = { path = "../crates/lowering" }
 parser = { path = "../crates/parser" }
 pretty_assertions = "1.2.1"
 semantic = { path = "../crates/semantic", features = ["testing"] }
