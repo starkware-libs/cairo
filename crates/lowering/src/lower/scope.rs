@@ -189,7 +189,7 @@ impl BlockSealed {
                 let maybe_output = maybe_output.as_ref().map(UsableVariable::var_id);
                 let maybe_output_ty = maybe_output.map(|var_id| ctx.variables[var_id].ty);
                 let push_tys = pushes.iter().map(|var_id| ctx.variables[*var_id].ty).collect();
-                let outputs = chain!(maybe_output.into_iter(), pushes).collect();
+                let outputs = chain!(pushes, maybe_output.into_iter()).collect();
                 let drops = living_variables.get_all();
                 (
                     BlockEnd::Callsite(outputs),
