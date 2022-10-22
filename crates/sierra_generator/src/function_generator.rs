@@ -66,8 +66,7 @@ pub fn get_function_code(
     let lowered_function = &*db.free_function_lowered(function_id)?;
     let block = &lowered_function.blocks[lowered_function.root?];
 
-    let mut context =
-        ExprGeneratorContext::new(db, Some(lowered_function), function_id, diagnostics);
+    let mut context = ExprGeneratorContext::new(db, lowered_function, function_id, diagnostics);
 
     // Generate a label for the function's body.
     let (label, label_id) = context.new_label();
