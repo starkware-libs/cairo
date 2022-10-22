@@ -48,8 +48,10 @@ impl DebugWithDb<LoweredFormatter<'_>> for Block {
         }
 
         write!(f, "Drops:")?;
-        write!(f, " ")?;
         let mut drops = self.drops.iter().peekable();
+        if drops.peek().is_some() {
+            write!(f, " ")?;
+        }
         while let Some(var) = drops.next() {
             var.fmt(f, ctx)?;
             if drops.peek().is_some() {
