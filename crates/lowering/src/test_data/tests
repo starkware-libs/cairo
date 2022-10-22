@@ -63,12 +63,10 @@ blk0:
 Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- 1u
-  (v2: (core::felt, core::felt)) <- tuple_construct(v1, v0)
-  (v3: core::felt, v4: core::felt) <- tuple_destruct(v2)
-  (v5: core::felt) <- 5u
-Drops: v0, v1, v2, v3, v4
+  (v2: core::felt) <- 5u
+Drops: v0, v1
 End:
-  Callsite(v5)
+  Callsite(v2)
 
 //! > ==========================================================================
 

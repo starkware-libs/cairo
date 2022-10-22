@@ -145,8 +145,8 @@ pub fn lower_tail_expr(
 ) -> Option<BlockScopeEnd> {
     let lowered_expr = lower_expr(ctx, scope, expr);
     Some(match lowered_expr {
-        Ok(LoweredExpr::AtVariable(var)) => BlockScopeEnd::Callsite(Some(var)),
-        Ok(LoweredExpr::Unit) => BlockScopeEnd::Callsite(None),
+        Ok(LoweredExpr::Tuple(tys)) if tys.is_empty() => BlockScopeEnd::Callsite(None),
+        Ok(lowered_expr) => BlockScopeEnd::Callsite(Some(lowered_expr.var(ctx, scope))),
         Err(LoweringFlowError::Unreachable) => BlockScopeEnd::Unreachable,
         Err(LoweringFlowError::Failed) => {
             return None;
@@ -166,18 +166,14 @@ pub fn lower_statement(
         }
         semantic::Statement::Let(semantic::StatementLet { pattern, expr, stable_ptr: _ }) => {
             let lowered_expr = lower_expr(ctx, scope, *expr)?;
-            let var = match lowered_expr {
-                LoweredExpr::AtVariable(var) => var,
-                LoweredExpr::Unit => unit_var(ctx, scope),
-            };
-            lower_single_pattern(ctx, scope, pattern, var)
+            lower_single_pattern(ctx, scope, pattern, lowered_expr)
         }
         semantic::Statement::Return(semantic::StatementReturn { expr, stable_ptr: _ }) => {
             // Lower return expr.
             let lowered_expr = lower_expr(ctx, scope, *expr)?;
             let value_vars = match lowered_expr {
-                LoweredExpr::AtVariable(var) => vec![var],
-                LoweredExpr::Unit => vec![],
+                LoweredExpr::Tuple(tys) if tys.is_empty() => vec![],
+                _ => vec![lowered_expr.var(ctx, scope)],
             };
             // Find variables to output for ref vars.
             let ref_vars = ctx
@@ -210,21 +206,30 @@ fn lower_single_pattern(
     ctx: &mut LoweringContext<'_>,
     scope: &mut BlockScope,
     pattern: &semantic::Pattern,
-    var: LivingVar,
+    lowered_expr: LoweredExpr,
 ) {
     match pattern {
         semantic::Pattern::Literal(_) => unreachable!(),
         semantic::Pattern::Variable(semantic::PatternVariable { name: _, var: sem_var }) => {
             let sem_var = semantic::Variable::Local(sem_var.clone());
             // Deposit the owned variable in the semantic variables store.
+            let var = lowered_expr.var(ctx, scope);
             scope.put_semantic_variable(sem_var.id(), var);
             // TODO(spapini): Build semantic_defs in semantic model.
             ctx.semantic_defs.insert(sem_var.id(), sem_var);
         }
         semantic::Pattern::Struct(_) => todo!(),
         semantic::Pattern::Tuple(semantic::PatternTuple { field_patterns, ty }) => {
-            let tys = extract_matches!(ctx.db.lookup_intern_type(*ty), TypeLongId::Tuple);
-            let outputs = generators::TupleDestruct { input: var, tys }.add(ctx, scope);
+            let outputs = if let LoweredExpr::Tuple(exprs) = lowered_expr {
+                exprs
+            } else {
+                let tys = extract_matches!(ctx.db.lookup_intern_type(*ty), TypeLongId::Tuple);
+                generators::TupleDestruct { input: lowered_expr.var(ctx, scope), tys }
+                    .add(ctx, scope)
+                    .into_iter()
+                    .map(LoweredExpr::AtVariable)
+                    .collect()
+            };
             for (var, pattern) in zip_eq(outputs, field_patterns) {
                 lower_single_pattern(ctx, scope, pattern, var);
             }
@@ -270,8 +275,12 @@ fn lower_expr_tuple(
     expr: &semantic::ExprTuple,
     scope: &mut BlockScope,
 ) -> Result<LoweredExpr, LoweringFlowError> {
-    let inputs = lower_exprs_as_vars(ctx, &expr.items, scope)?;
-    Ok(LoweredExpr::AtVariable(generators::TupleConstruct { inputs, ty: expr.ty }.add(ctx, scope)))
+    let inputs = expr
+        .items
+        .iter()
+        .map(|arg_expr_id| lower_expr(ctx, scope, *arg_expr_id))
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(LoweredExpr::Tuple(inputs))
 }
 
 /// Lowers an expression of type [semantic::ExprBlock].
@@ -540,11 +549,6 @@ fn lower_exprs_as_vars(
         .collect::<Result<Vec<_>, _>>()
 }
 
-/// Introduces a unit variable inplace.
-fn unit_var(ctx: &mut LoweringContext<'_>, scope: &mut BlockScope) -> LivingVar {
-    generators::TupleConstruct { inputs: vec![], ty: unit_ty(ctx.db) }.add(ctx, scope)
-}
-
 /// Lowers an expression of type [semantic::ExprEnumVariantCtor].
 fn lower_expr_enum_ctor(
     ctx: &mut LoweringContext<'_>,
@@ -569,7 +573,7 @@ fn lower_expr_assignment(
     scope.try_ensure_semantic_variable(ctx, expr.var);
     let var = lower_expr(ctx, scope, expr.rhs)?.var(ctx, scope);
     scope.put_semantic_variable(expr.var, var);
-    Ok(LoweredExpr::Unit)
+    Ok(LoweredExpr::Tuple(vec![]))
 }
 
 /// Retrieves a LivingVar that corresponds to a semantic var in the current scope.
@@ -603,7 +607,7 @@ fn lowered_expr_from_block_result(
             }
             Ok(match maybe_output {
                 Some(output) => LoweredExpr::AtVariable(output),
-                None => LoweredExpr::Unit,
+                None => LoweredExpr::Tuple(vec![]),
             })
         }
         generators::CallBlockResult::End => Err(LoweringFlowError::Unreachable),
@@ -630,13 +634,18 @@ enum LoweredExpr {
     /// The expression value lies in a variable.
     AtVariable(LivingVar),
     /// The expression value is unit.
-    Unit,
+    Tuple(Vec<LoweredExpr>),
 }
 impl LoweredExpr {
     fn var(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockScope) -> LivingVar {
         match self {
             LoweredExpr::AtVariable(var_id) => var_id,
-            LoweredExpr::Unit => unit_var(ctx, scope),
+            LoweredExpr::Tuple(exprs) => {
+                let inputs: Vec<_> = exprs.into_iter().map(|expr| expr.var(ctx, scope)).collect();
+                let tys = inputs.iter().map(|var| ctx.variables[var.var_id()].ty).collect();
+                let ty = ctx.db.intern_type(semantic::TypeLongId::Tuple(tys));
+                generators::TupleConstruct { inputs, ty }.add(ctx, scope)
+            }
         }
     }
 }
