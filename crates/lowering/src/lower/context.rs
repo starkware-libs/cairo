@@ -8,6 +8,8 @@ use crate::objects::{Block, Variable};
 /// Context for the lowering phase.
 pub struct LoweringContext<'db> {
     pub db: &'db dyn SemanticGroup,
+    /// Semantic model for current function definition.
+    pub function_def: &'db semantic::FreeFunctionDefinition,
     /// Current emitted diagnostics.
     pub diagnostics: LoweringDiagnostics,
     /// Arena of allocated lowered variables.

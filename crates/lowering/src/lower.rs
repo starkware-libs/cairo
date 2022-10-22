@@ -28,8 +28,6 @@ mod variables;
 
 /// Context for lowering a function.
 pub struct Lowerer<'db> {
-    /// Semantic model for current function definition.
-    function_def: &'db semantic::FreeFunctionDefinition,
     #[allow(dead_code)]
     ref_params: &'db [semantic::VarId],
     ctx: LoweringContext<'db>,
@@ -60,6 +58,7 @@ impl<'db> Lowerer<'db> {
         let function_def = db.free_function_definition(free_function_id)?;
         let ctx = LoweringContext {
             db,
+            function_def: &*function_def,
             diagnostics: LoweringDiagnostics::new(free_function_id.module(db.upcast())),
             variables: Arena::default(),
             blocks: Arena::default(),
@@ -80,7 +79,7 @@ impl<'db> Lowerer<'db> {
             .iter()
             .filter_map(|var| if var.modifiers().is_ref { Some(var.id()) } else { None })
             .collect();
-        let mut lowerer = Lowerer { function_def: &*function_def, ref_params: &ref_params, ctx };
+        let mut lowerer = Lowerer { ref_params: &ref_params, ctx };
 
         // TODO(spapini): Build semantic_defs in semantic model.
         for semantic_var in input_semantic_vars {
@@ -120,7 +119,7 @@ impl<'db> Lowerer<'db> {
         expr_block: &semantic::ExprBlock,
     ) -> Option<BlockScopeEnd> {
         for (i, stmt_id) in expr_block.statements.iter().enumerate() {
-            let stmt = &self.function_def.statements[*stmt_id];
+            let stmt = &self.ctx.function_def.statements[*stmt_id];
             let lowered_stmt = self.lower_statement(scope, stmt);
 
             // If flow is not reachable anymore, no need to continue emitting statements.
@@ -132,9 +131,9 @@ impl<'db> Lowerer<'db> {
                     // ends, e.g. `5 + {return; 6}`.
                     if i + 1 < expr_block.statements.len() {
                         let start_stmt =
-                            &self.function_def.statements[expr_block.statements[i + 1]];
-                        let end_stmt =
-                            &self.function_def.statements[*expr_block.statements.last().unwrap()];
+                            &self.ctx.function_def.statements[expr_block.statements[i + 1]];
+                        let end_stmt = &self.ctx.function_def.statements
+                            [*expr_block.statements.last().unwrap()];
                         // Emit diagnostic fo the rest of the statements with unreachable.
                         self.ctx.diagnostics.report(
                             start_stmt.stable_ptr().untyped(),
@@ -257,7 +256,7 @@ impl<'db> Lowerer<'db> {
         scope: &mut BlockScope,
         expr_id: semantic::ExprId,
     ) -> Result<LoweredExpr, LoweringFlowError> {
-        let expr = &self.function_def.exprs[expr_id];
+        let expr = &self.ctx.function_def.exprs[expr_id];
         match expr {
             semantic::Expr::Tuple(expr) => self.lower_expr_tuple(expr, scope),
             semantic::Expr::Assignment(expr) => self.lower_expr_assignment(expr, scope),
@@ -356,7 +355,7 @@ impl<'db> Lowerer<'db> {
         let expr_var =
             extract_matches!(self.lower_expr(scope, expr.matched_expr)?, LoweredExpr::AtVariable);
 
-        if self.function_def.exprs[expr.matched_expr].ty() == self.ctx.db.core_felt_ty() {
+        if self.ctx.function_def.exprs[expr.matched_expr].ty() == self.ctx.db.core_felt_ty() {
             return self.lower_expr_match_felt(expr, expr_var, scope);
         }
 
@@ -384,7 +383,7 @@ impl<'db> Lowerer<'db> {
                                 lowerer.lower_block(
                                     subscope,
                                     extract_matches!(
-                                        &lowerer.function_def.exprs[arm.expression],
+                                        &lowerer.ctx.function_def.exprs[arm.expression],
                                         semantic::Expr::Block
                                     ),
                                 )
@@ -492,7 +491,7 @@ impl<'db> Lowerer<'db> {
                         lowerer.lower_block(
                             subscope,
                             extract_matches!(
-                                &lowerer.function_def.exprs[block_expr],
+                                &lowerer.ctx.function_def.exprs[block_expr],
                                 semantic::Expr::Block
                             ),
                         )
@@ -527,7 +526,7 @@ impl<'db> Lowerer<'db> {
         expr: &semantic::ExprMatch,
     ) -> Result<(semantic::ConcreteEnumId, Vec<semantic::ConcreteVariant>), LoweringFlowError> {
         let concrete_ty = try_extract_matches!(
-            self.ctx.db.lookup_intern_type(self.function_def.exprs[expr.matched_expr].ty()),
+            self.ctx.db.lookup_intern_type(self.ctx.function_def.exprs[expr.matched_expr].ty()),
             TypeLongId::Concrete
         )
         .ok_or(LoweringFlowError::Failed)?;
