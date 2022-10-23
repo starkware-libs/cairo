@@ -28,7 +28,7 @@ blk0:
 Inputs:
 Statements:
   (v3: core::felt) <- 5u
-Drops: 
+Drops:
 End:
   Callsite(v3)
 

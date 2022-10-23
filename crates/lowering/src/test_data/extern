@@ -1,0 +1,37 @@
+//! > Test extern functio calling.
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+func foo(ref a: felt, b: felt) {
+    f(a,b);
+    g(a,b);
+    h(a,b);
+    i(a,b);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern func f(ref a: felt, b: felt) -> felt;
+extern func g(ref a: felt, b: felt) -> (felt,);
+extern func h(ref a: felt, b: felt) -> (felt,felt);
+extern func i(ref a: felt, b: felt) -> ((felt,),);
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_format
+blk0:
+Inputs: v0: core::felt, v1: core::felt
+Statements:
+  (v3: core::felt, v2: core::felt) <- test_crate::f(v0, v1)
+  (v5: core::felt, v4: core::felt) <- test_crate::g(v3, v1)
+  (v8: core::felt, v6: core::felt, v7: core::felt) <- test_crate::h(v5, v1)
+  (v10: core::felt, v9: (core::felt)) <- test_crate::i(v8, v1)
+Drops: v0, v1, v2, v3, v4, v5, v6, v7, v8, v9
+End:
+  Callsite(v10)
