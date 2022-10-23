@@ -9,6 +9,8 @@ use sierra::ids::{ConcreteTypeId, VarId};
 use sierra::program::{Function, StatementIdx};
 use thiserror::Error;
 
+use crate::type_sizes::TypeSizeMap;
+
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum ReferencesError {
     #[error("Invalid function declaration.")]
@@ -88,20 +90,33 @@ impl ApplyApChange for ReferenceExpression {
     }
 }
 
-/// Builds the HashMap of references to the arguments of a function.
-pub fn build_function_arguments_refs(func: &Function) -> Result<StatementRefs, ReferencesError> {
+/// Builds the HashMap of references to the parameters of a function.
+pub fn build_function_arguments_refs(
+    func: &Function,
+    type_sizes: &TypeSizeMap,
+) -> Result<StatementRefs, ReferencesError> {
     let mut refs = HashMap::with_capacity(func.params.len());
-
     let mut offset = -3;
     for param in func.params.iter().rev() {
+        let size = type_sizes.get(&param.ty).unwrap();
         if refs
             .insert(
                 param.id.clone(),
                 ReferenceValue {
-                    expression: ReferenceExpression::Deref(DerefOperand {
-                        register: Register::FP,
-                        offset,
-                    }),
+                    expression: if *size == 1 {
+                        ReferenceExpression::Deref(DerefOperand { register: Register::FP, offset })
+                    } else {
+                        ReferenceExpression::Complex(
+                            ((offset - size + 1)..offset + 1)
+                                .map(|i| {
+                                    ReferenceExpression::Deref(DerefOperand {
+                                        register: Register::FP,
+                                        offset: i,
+                                    })
+                                })
+                                .collect(),
+                        )
+                    },
                     ty: param.ty.clone(),
                 },
             )
@@ -109,11 +124,8 @@ pub fn build_function_arguments_refs(func: &Function) -> Result<StatementRefs, R
         {
             return Err(ReferencesError::InvalidFunctionDeclaration(func.clone()));
         }
-        // TODO(ilya, 10/10/2022): Get size from type.
-        let size = 1;
         offset -= size;
     }
-
     Ok(refs)
 }
 
