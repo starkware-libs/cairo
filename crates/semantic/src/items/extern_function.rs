@@ -1,4 +1,4 @@
-use defs::ids::{ExternFunctionId, GenericParamId, LanguageElementId};
+use defs::ids::{ExternFunctionId, GenericFunctionId, GenericParamId, LanguageElementId};
 use diagnostics::Diagnostics;
 use diagnostics_proc_macros::DebugWithDb;
 
@@ -67,8 +67,13 @@ pub fn priv_extern_function_declaration_data(
     let signature_syntax = function_syntax.signature(db.upcast());
     let return_type =
         function_signature_return_type(&mut diagnostics, db, &mut resolver, &signature_syntax);
-    let (params, _environment) =
-        function_signature_params(&mut diagnostics, db, &mut resolver, &signature_syntax);
+    let (params, _environment) = function_signature_params(
+        &mut diagnostics,
+        db,
+        &mut resolver,
+        &signature_syntax,
+        GenericFunctionId::Extern(extern_function_id),
+    );
     Some(ExternFunctionDeclarationData {
         diagnostics: diagnostics.build(),
         signature: semantic::Signature { params, return_type },

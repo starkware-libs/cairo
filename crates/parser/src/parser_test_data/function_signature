@@ -84,5 +84,3 @@ FunctionSignature
         │               └── item #0 (kind: PathSegmentSimple)
         │                   └── ident (kind: TokenIdentifier): 'Hash'
         └── rparen (kind: TokenRParen): ')'
-
-
