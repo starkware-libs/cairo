@@ -1,19 +1,18 @@
 use sierra::extensions::array::ArrayConcreteLibFunc;
 use sierra::extensions::core::CoreConcreteLibFunc::{
-    self, ApTracking, Array, Box, Drop, Dup, Enum, Felt, FunctionCall, Gas, Integer, Mem,
+    self, ApTracking, Array, Box, Drop, Dup, Enum, Felt, FunctionCall, Gas, Mem, Uint128,
     UnconditionalJump, UnwrapNonZero,
 };
 use sierra::extensions::enm::EnumConcreteLibFunc;
 use sierra::extensions::felt::FeltConcrete;
 use sierra::extensions::function_call::FunctionCallConcreteLibFunc;
 use sierra::extensions::gas::GasConcreteLibFunc::{BurnGas, GetGas, RefundGas};
-use sierra::extensions::integer::IntegerConcrete;
+use sierra::extensions::integer::{
+    IntOperator, Uint128BinaryOperationConcreteLibFunc, Uint128Concrete,
+    Uint128OperationConcreteLibFunc, Uint128OperationWithConstConcreteLibFunc,
+};
 use sierra::extensions::mem::MemConcreteLibFunc::{
     AlignTemps, AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
-};
-use sierra::extensions::wrapping_arithmetic::{
-    BinaryOperationConcreteLibFunc, OperationConcreteLibFunc, OperationWithConstConcreteLibFunc,
-    Operator,
 };
 use sierra::program::Function;
 
@@ -52,7 +51,7 @@ pub fn core_libfunc_cost_base<Ops: CostOperations>(
         Gas(RefundGas(_)) | Gas(BurnGas(_)) => vec![ops.statement_var_cost()],
         Array(ArrayConcreteLibFunc::New(_)) => vec![ops.const_cost(1)],
         Array(ArrayConcreteLibFunc::Append(_)) => vec![ops.const_cost(2)],
-        Integer(libfunc) => integer_libfunc_cost(ops, libfunc),
+        Uint128(libfunc) => integer_libfunc_cost(ops, libfunc),
         Felt(libfunc) => felt_libfunc_cost(ops, libfunc),
         Drop(_) | Dup(_) | ApTracking(_) | UnwrapNonZero(_) | Mem(Rename(_)) | Box(_) => {
             vec![ops.const_cost(0)]
@@ -69,30 +68,30 @@ pub fn core_libfunc_cost_base<Ops: CostOperations>(
 /// Returns costs for integer libfuncs.
 fn integer_libfunc_cost<Ops: CostOperations>(
     ops: &Ops,
-    libfunc: &IntegerConcrete,
+    libfunc: &Uint128Concrete,
 ) -> Vec<Ops::CostType> {
     // TODO(orizi): When sierra_to_casm actually supports integers - fix costs.
     match libfunc {
-        IntegerConcrete::WrappingOp(OperationConcreteLibFunc::Binary(
-            BinaryOperationConcreteLibFunc { operator, .. },
+        Uint128Concrete::Operation(Uint128OperationConcreteLibFunc::Binary(
+            Uint128BinaryOperationConcreteLibFunc { operator, .. },
         )) => match operator {
-            Operator::Add | Operator::Sub => vec![ops.const_cost(5)],
-            Operator::Mul | Operator::Div | Operator::Mod => {
+            IntOperator::WrappingAdd | IntOperator::WrappingSub => vec![ops.const_cost(5)],
+            IntOperator::WrappingMul | IntOperator::Div | IntOperator::Mod => {
                 vec![ops.const_cost(7)]
             }
         },
-        IntegerConcrete::WrappingOp(OperationConcreteLibFunc::Const(
-            OperationWithConstConcreteLibFunc { operator, .. },
+        Uint128Concrete::Operation(Uint128OperationConcreteLibFunc::Const(
+            Uint128OperationWithConstConcreteLibFunc { operator, .. },
         )) => match operator {
-            Operator::Add | Operator::Sub => vec![ops.const_cost(3)],
-            Operator::Mul | Operator::Div | Operator::Mod => {
+            IntOperator::WrappingAdd | IntOperator::WrappingSub => vec![ops.const_cost(3)],
+            IntOperator::WrappingMul | IntOperator::Div | IntOperator::Mod => {
                 vec![ops.const_cost(5)]
             }
         },
-        IntegerConcrete::Const(_) => {
+        Uint128Concrete::Const(_) => {
             vec![ops.const_cost(0)]
         }
-        IntegerConcrete::JumpNotZero(_) => {
+        Uint128Concrete::JumpNotZero(_) => {
             vec![ops.const_cost(1), ops.const_cost(1)]
         }
     }

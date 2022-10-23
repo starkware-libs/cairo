@@ -4,7 +4,7 @@ use casm::ap_change::{ApChange, ApChangeError, ApplyApChange};
 use casm::operand::{
     DerefOperand, DerefOrImmediate, DoubleDerefOperand, ImmediateOperand, Register,
 };
-use sierra::extensions::wrapping_arithmetic::Operator;
+use sierra::extensions::felt::FeltOperator;
 use sierra::ids::{ConcreteTypeId, VarId};
 use sierra::program::{Function, StatementIdx};
 use thiserror::Error;
@@ -35,7 +35,7 @@ pub struct ReferenceValue {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct BinOpExpression {
-    pub op: Operator,
+    pub op: FeltOperator,
     pub a: DerefOperand,
     pub b: DerefOrImmediate,
 }
