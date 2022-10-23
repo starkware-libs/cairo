@@ -17,7 +17,7 @@ foo
 extern type MyType;
 
 //! > expected_diagnostics
-error: Variable a not found.
+error: Variable "a" not found.
  --> lib.cairo:3:5
     a = 1 + 2;
     ^
