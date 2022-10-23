@@ -46,31 +46,39 @@ pub struct Modifiers {
     pub is_mut: bool,
     pub is_ref: bool,
 }
+impl Modifiers {
+    pub fn new_implicit() -> Modifiers {
+        Modifiers { is_mut: true, is_ref: true }
+    }
+}
 
-// TODO(yuval): consider making this an enum or the id an enum of ParamId/LocalVarId
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub enum Variable {
     Local(LocalVariable),
     Param(Parameter),
+    ImplicitParam(Parameter),
 }
 impl Variable {
     pub fn id(&self) -> VarId {
         match self {
             Variable::Local(local) => VarId::Local(local.id),
             Variable::Param(param) => VarId::Param(param.id),
+            Variable::ImplicitParam(implicit_param) => VarId::Param(implicit_param.id),
         }
     }
     pub fn ty(&self) -> TypeId {
         match self {
             Variable::Local(local) => local.ty,
             Variable::Param(param) => param.ty,
+            Variable::ImplicitParam(implicit_param) => implicit_param.ty,
         }
     }
     pub fn modifiers(&self) -> &Modifiers {
         match self {
             Variable::Local(local) => &local.modifiers,
             Variable::Param(param) => &param.modifiers,
+            Variable::ImplicitParam(implicit_param) => &implicit_param.modifiers,
         }
     }
 }

@@ -28,5 +28,8 @@ fn test_extern_function() {
         ModuleItemId::ExternFunction
     );
     let signature = db.extern_function_declaration_signature(extern_function_id).unwrap();
-    assert_eq!(format!("{:?}", signature.debug(db)), "Signature { params: [], return_type: () }");
+    assert_eq!(
+        format!("{:?}", signature.debug(db)),
+        "Signature { params: [], return_type: (), implicits: [] }"
+    );
 }

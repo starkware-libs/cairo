@@ -8,7 +8,10 @@ use id_arena::Arena;
 use syntax::node::ast;
 use utils::unordered_hash_map::UnorderedHashMap;
 
-use super::functions::{function_signature_params, function_signature_return_type};
+use super::functions::{
+    function_signature_implicit_parameters, function_signature_params,
+    function_signature_return_type,
+};
 use super::generics::semantic_generic_params;
 use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics};
@@ -73,19 +76,29 @@ pub fn priv_free_function_declaration_data(
         &function_syntax.generic_params(db.upcast()),
     );
     let mut resolver = Resolver::new(db, module_id, &generic_params);
+    let mut environment = Environment::default();
     let signature_syntax = function_syntax.signature(db.upcast());
     let return_type =
         function_signature_return_type(&mut diagnostics, db, &mut resolver, &signature_syntax);
-    let (params, environment) = function_signature_params(
+    let params = function_signature_params(
         &mut diagnostics,
         db,
         &mut resolver,
         &signature_syntax,
         GenericFunctionId::Free(free_function_id),
+        &mut environment,
+    );
+    let implicits = function_signature_implicit_parameters(
+        &mut diagnostics,
+        db,
+        &mut resolver,
+        &signature_syntax,
+        GenericFunctionId::Free(free_function_id),
+        &mut environment,
     );
     Some(FreeFunctionDeclarationData {
         diagnostics: diagnostics.build(),
-        signature: semantic::Signature { params, return_type },
+        signature: semantic::Signature { params, return_type, implicits },
         generic_params,
         environment,
     })
