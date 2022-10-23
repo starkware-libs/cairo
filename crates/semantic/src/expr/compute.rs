@@ -5,7 +5,7 @@
 use std::collections::HashMap;
 
 use ast::{BinaryOperator, PathSegment};
-use defs::ids::{LocalVarLongId, MemberId};
+use defs::ids::{GenericFunctionId, LocalVarLongId, MemberId};
 use id_arena::Arena;
 use itertools::zip_eq;
 use smol_str::SmolStr;
@@ -31,6 +31,7 @@ use crate::items::strct::SemanticStructEx;
 use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use crate::semantic::{self, FunctionId, LocalVariable, TypeId, TypeLongId, Variable};
 use crate::types::{resolve_type, ConcreteTypeId};
+use crate::Parameter;
 
 /// Context for computing the semantic model of expression trees.
 pub struct ComputationContext<'ctx> {
@@ -88,14 +89,35 @@ pub type EnvVariables = HashMap<SmolStr, Variable>;
 // TODO(spapini): Consider using identifiers instead of SmolStr everywhere in the code.
 /// A state which contains all the variables defined at the current resolver until now, and a
 /// pointer to the parent environment.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Default)]
 pub struct Environment {
     parent: Option<Box<Environment>>,
     variables: EnvVariables,
 }
 impl Environment {
-    pub fn new(variables: EnvVariables) -> Self {
-        Self { parent: None, variables }
+    /// Adds a parameter to the environment.
+    /// Returns true on success and false on failure.
+    pub fn add_param(
+        &mut self,
+        diagnostics: &mut SemanticDiagnostics,
+        name: &SmolStr,
+        semantic_param: Parameter,
+        ast_param: &ast::Param,
+        function_id: GenericFunctionId,
+    ) -> bool {
+        match self.variables.entry(name.clone()) {
+            std::collections::hash_map::Entry::Occupied(_) => {
+                diagnostics.report(
+                    ast_param,
+                    ParamNameRedefinition { function_id, param_name: name.clone() },
+                );
+                false
+            }
+            std::collections::hash_map::Entry::Vacant(entry) => {
+                entry.insert(Variable::Param(semantic_param));
+                true
+            }
+        }
     }
 }
 

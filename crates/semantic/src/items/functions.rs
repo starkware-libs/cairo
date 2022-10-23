@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use db_utils::define_short_id;
 use debug::DebugWithDb;
 use defs::ids::{GenericFunctionId, GenericParamId, ParamLongId};
@@ -97,19 +95,19 @@ pub fn function_signature_params(
     db: &dyn SemanticGroup,
     resolver: &mut Resolver<'_>,
     sig: &ast::FunctionSignature,
+    function_id: GenericFunctionId,
 ) -> (Vec<semantic::Parameter>, Environment) {
     let syntax_db = db.upcast();
 
     let mut semantic_params = Vec::new();
-    let mut variables = HashMap::new();
     let ast_params = sig.parameters(syntax_db).elements(syntax_db);
+    let mut env = Environment::default();
     for ast_param in ast_params.iter() {
         let name = ast_param.name(syntax_db).text(syntax_db);
         let id = db.intern_param(ParamLongId(resolver.module_id, ast_param.stable_ptr()));
         let ty_syntax = ast_param.type_clause(syntax_db).ty(syntax_db);
-        // TODO(yuval): Diagnostic?
         let ty = resolve_type(db, diagnostics, resolver, &ty_syntax);
-        let param = semantic::Parameter {
+        let semantic_param = semantic::Parameter {
             id,
             ty,
             modifiers: compute_modifiers(
@@ -118,11 +116,12 @@ pub fn function_signature_params(
                 &ast_param.modifiers(syntax_db).elements(syntax_db),
             ),
         };
-        semantic_params.push(param.clone());
-        variables.insert(name, semantic::Variable::Param(param));
+        if env.add_param(diagnostics, &name, semantic_param.clone(), ast_param, function_id) {
+            semantic_params.push(semantic_param);
+        }
     }
 
-    (semantic_params, Environment::new(variables))
+    (semantic_params, env)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::generic_function_signature].

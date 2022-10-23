@@ -3,7 +3,7 @@
 mod test;
 
 use defs::diagnostic_utils::StableLocation;
-use defs::ids::{EnumId, ModuleId, StructId, TopLevelLanguageElementId};
+use defs::ids::{EnumId, GenericFunctionId, ModuleId, StructId, TopLevelLanguageElementId};
 use diagnostics::{DiagnosticEntry, DiagnosticLocation, Diagnostics, DiagnosticsBuilder};
 use smol_str::SmolStr;
 use syntax::node::ids::SyntaxStablePtrId;
@@ -109,6 +109,12 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     enum_id.full_path(db.upcast())
                 )
             }
+            SemanticDiagnosticKind::ParamNameRedefinition { function_id, param_name } => {
+                format!(
+                    r#"Redefinition of parameter name "{param_name}" in function "{}"."#,
+                    function_id.full_path(db.upcast())
+                )
+            }
             SemanticDiagnosticKind::IncompatibleMatchArms { match_ty, arm_ty } => format!(
                 r#"Match arms have incompatible types: "{}" and "{}""#,
                 match_ty.format(db),
@@ -203,6 +209,7 @@ pub enum SemanticDiagnosticKind {
     VariableNotFound { name: SmolStr },
     StructMemberRedefinition { struct_id: StructId, member_name: SmolStr },
     EnumVariantRedefinition { enum_id: EnumId, variant_name: SmolStr },
+    ParamNameRedefinition { function_id: GenericFunctionId, param_name: SmolStr },
     IncompatibleMatchArms { match_ty: semantic::TypeId, arm_ty: semantic::TypeId },
     IncompatibleIfBlockTypes { block_if_ty: semantic::TypeId, block_else_ty: semantic::TypeId },
     TypeHasNoMembers { ty: semantic::TypeId, member_name: SmolStr },
