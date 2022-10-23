@@ -171,7 +171,15 @@ impl<'a> Parser<'a> {
         let params = self.parse_param_list();
         let rparen = self.parse_token::<TerminalRParen>();
         let return_type_clause = self.parse_option_return_type_clause();
-        FunctionSignature::new_green(self.db, lparen, params, rparen, return_type_clause)
+        let with_clause = self.parse_option_with_clause();
+        FunctionSignature::new_green(
+            self.db,
+            lparen,
+            params,
+            rparen,
+            return_type_clause,
+            with_clause,
+        )
     }
 
     /// Assumes the current token is Extern.
@@ -718,6 +726,28 @@ impl<'a> Parser<'a> {
             ReturnTypeClause::new_green(self.db, arrow, return_type).into()
         } else {
             OptionReturnTypeClauseEmpty::new_green(self.db).into()
+        }
+    }
+
+    /// Returns a GreenId of a node with kind WithClause or OptionWithClauseEmpty if a with-clause
+    /// can't be parsed.
+    fn parse_option_with_clause(&mut self) -> OptionWithClauseGreen {
+        if self.peek().kind == SyntaxKind::TerminalWith {
+            let with_kw = self.take::<TerminalWith>();
+            let lparen = self.parse_token::<TerminalLParen>();
+            let implicits = ParamList::new_green(
+                self.db,
+                self.parse_separated_list::<Param, TerminalComma, ParamListElementOrSeparatorGreen>(
+                    Self::try_parse_param,
+                    is_of_kind!(rparen, block, lbrace, rbrace, top_level),
+                    SyntaxKind::TerminalComma,
+                    "implicit param",
+                ),
+            );
+            let rparen = self.parse_token::<TerminalRParen>();
+            WithClause::new_green(self.db, with_kw, lparen, implicits, rparen).into()
+        } else {
+            OptionWithClauseEmpty::new_green(self.db).into()
         }
     }
 
