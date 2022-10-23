@@ -39,15 +39,15 @@ pub struct Call {
     pub inputs: Vec<LivingVar>,
     /// Types for `ref` parameters of the function. An output variable will be introduced for each.
     pub ref_tys: Vec<semantic::TypeId>,
-    /// Type for the return of the function. An output variable will be introduced.
-    pub ret_ty: semantic::TypeId,
+    /// Types for the returns of the function. An output variable will be introduced for each.
+    pub ret_tys: Vec<semantic::TypeId>,
 }
 /// Result of adding a Call statement.
 pub struct CallResult {
+    /// Output variables for function return value.
+    pub returns: Vec<LivingVar>,
     /// Output variables for function `ref` parameters.
     pub ref_outputs: Vec<LivingVar>,
-    /// Output variable for function return value.
-    pub output: LivingVar,
 }
 impl Call {
     pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockScope) -> CallResult {
@@ -56,19 +56,23 @@ impl Call {
             .into_iter()
             .map(|var| scope.living_variables.use_var(ctx, var).var_id())
             .collect();
-        let output = scope.living_variables.introduce_new_var(ctx, self.ret_ty);
+        let returns = self
+            .ret_tys
+            .into_iter()
+            .map(|ty| scope.living_variables.introduce_new_var(ctx, ty))
+            .collect();
         let ref_outputs = self
             .ref_tys
             .into_iter()
             .map(|ty| scope.living_variables.introduce_new_var(ctx, ty))
             .collect();
-        let outputs = chain!([&output], &ref_outputs).map(|var| var.var_id()).collect();
+        let outputs = chain!(&ref_outputs, &returns).map(|var: &LivingVar| var.var_id()).collect();
         scope.statements.push(Statement::Call(StatementCall {
             function: self.function,
             inputs,
             outputs,
         }));
-        CallResult { output, ref_outputs }
+        CallResult { returns, ref_outputs }
     }
 }
 
@@ -81,11 +85,11 @@ pub struct CallBlock {
 pub enum CallBlockResult {
     /// Block returns to call site with output variables.
     Callsite {
-        /// Variable for the "block value" output variable if exists.
-        maybe_output: Option<LivingVar>,
         /// Variables for the push (rebind) output variables, that get bound to semantic variables
         /// at the calling scope.
         pushes: Vec<LivingVar>,
+        /// Variable for the "block value" output variable if exists.
+        maybe_output: Option<LivingVar>,
     },
     /// Block does not return to callsite, and thus the place after the call is unreachable.
     End,
@@ -146,7 +150,7 @@ fn process_end_info(
                 .map(|ty| scope.living_variables.introduce_new_var(ctx, ty))
                 .collect();
             (
-                chain!(&maybe_output, &pushes).map(|var| var.var_id()).collect(),
+                chain!(&pushes, &maybe_output).map(|var: &LivingVar| var.var_id()).collect(),
                 CallBlockResult::Callsite { maybe_output, pushes },
             )
         }
