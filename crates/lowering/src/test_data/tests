@@ -104,7 +104,7 @@ End:
 blk1:
 Inputs:
 Statements:
-Drops: 
+Drops:
 End:
   Callsite()
 
@@ -167,7 +167,7 @@ test_function_lowering
 //! > function
 func foo(x: MyEnum) -> felt {
   match x {
-    MyEnum::A(inner) => {{return 5;}},
+    MyEnum::A(inner) => {return 5;},
     MyEnum::B(inner) => {inner},
     MyEnum::C(inner) => {7}
   }
@@ -197,36 +197,52 @@ End:
   Return(v2)
 
 blk1:
-Inputs: v1: ()
+Inputs:
 Statements:
-  () <- blk0()
-Drops: 
-End:
-  Unreachable
-
-blk2:
-Inputs: v3: core::felt
-Statements:
-Drops: 
+Drops:
 End:
   Callsite(v3)
 
-blk3:
-Inputs: v4: core::box::Box::<((), core::felt)>
+blk2:
+Inputs:
 Statements:
-  (v5: core::felt) <- 7u
-Drops: v4
+  (v6: core::felt) <- 7u
+Drops:
 End:
-  Callsite(v5)
+  Callsite(v6)
+
+blk3:
+Inputs: v1: ()
+Statements:
+  () <- blk0()
+Drops:
+End:
+  Unreachable
 
 blk4:
+Inputs: v3: core::felt
+Statements:
+  (v4: core::felt) <- blk1()
+Drops: v3
+End:
+  Callsite(v4)
+
+blk5:
+Inputs: v5: core::box::Box::<((), core::felt)>
+Statements:
+  (v7: core::felt) <- blk2()
+Drops: v5
+End:
+  Callsite(v7)
+
+blk6:
 Inputs: v0: test_crate::MyEnum
 Statements:
-  (v6: core::felt) <- match_enum(v0) {
-    MyEnum::A => blk1,
-    MyEnum::B => blk2,
-    MyEnum::C => blk3,
+  (v8: core::felt) <- match_enum(v0) {
+    MyEnum::A => blk3,
+    MyEnum::B => blk4,
+    MyEnum::C => blk5,
   }
 Drops: v0
 End:
-  Callsite(v6)
+  Callsite(v8)
