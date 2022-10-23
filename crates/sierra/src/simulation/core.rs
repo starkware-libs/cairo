@@ -2,10 +2,6 @@ use utils::extract_matches;
 
 use super::value::CoreValue;
 use super::LibFuncSimulationError;
-use crate::extensions::arithmetic::{
-    BinaryOperationConcreteLibFunc, ConstConcreteLibFunc, OperationConcreteLibFunc,
-    OperationWithConstConcreteLibFunc, Operator,
-};
 use crate::extensions::array::ArrayConcreteLibFunc;
 use crate::extensions::core::CoreConcreteLibFunc::{
     self, ApTracking, Array, Drop, Dup, Enum, Felt, FunctionCall, Gas, Integer, Mem,
@@ -18,6 +14,10 @@ use crate::extensions::gas::GasConcreteLibFunc::{GetGas, RefundGas};
 use crate::extensions::integer::IntegerConcrete;
 use crate::extensions::mem::MemConcreteLibFunc::{
     AlignTemps, AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
+};
+use crate::extensions::wrapping_arithmetic::{
+    BinaryOperationConcreteLibFunc, ConstConcreteLibFunc, OperationConcreteLibFunc,
+    OperationWithConstConcreteLibFunc, Operator,
 };
 use crate::ids::FunctionId;
 
@@ -148,33 +148,33 @@ fn simulate_integer_libfunc(
     match libfunc {
         IntegerConcrete::Const(ConstConcreteLibFunc { c, .. }) => {
             if inputs.is_empty() {
-                Ok((vec![CoreValue::Integer(*c)], 0))
+                Ok((vec![CoreValue::Uint128(*c as u128)], 0))
             } else {
                 Err(LibFuncSimulationError::WrongNumberOfArgs)
             }
         }
-        IntegerConcrete::Operation(OperationConcreteLibFunc::Binary(
+        IntegerConcrete::WrappingOp(OperationConcreteLibFunc::Binary(
             BinaryOperationConcreteLibFunc { operator, .. },
         )) => match (inputs, operator) {
             (
-                [CoreValue::Integer(lhs), CoreValue::Integer(rhs)],
+                [CoreValue::Uint128(lhs), CoreValue::Uint128(rhs)],
                 Operator::Add | Operator::Sub | Operator::Mul,
             ) => Ok((
-                vec![CoreValue::Integer(match operator {
-                    Operator::Add => lhs + rhs,
-                    Operator::Sub => lhs - rhs,
-                    Operator::Mul => lhs * rhs,
+                vec![CoreValue::Uint128(match operator {
+                    Operator::Add => lhs.wrapping_add(*rhs),
+                    Operator::Sub => lhs.wrapping_sub(*rhs),
+                    Operator::Mul => lhs.wrapping_mul(*rhs),
                     _ => unreachable!("Arm only handles these cases."),
                 })],
                 0,
             )),
             (
-                [CoreValue::Integer(lhs), CoreValue::NonZero(non_zero)],
+                [CoreValue::Uint128(lhs), CoreValue::NonZero(non_zero)],
                 Operator::Div | Operator::Mod,
             ) => {
-                if let CoreValue::Integer(rhs) = **non_zero {
+                if let CoreValue::Uint128(rhs) = **non_zero {
                     Ok((
-                        vec![CoreValue::Integer(match operator {
+                        vec![CoreValue::Uint128(match operator {
                             Operator::Div => lhs / rhs,
                             Operator::Mod => lhs % rhs,
                             _ => unreachable!("Arm only handles these cases."),
@@ -188,16 +188,16 @@ fn simulate_integer_libfunc(
             ([_, _], _) => Err(LibFuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
         },
-        IntegerConcrete::Operation(OperationConcreteLibFunc::Const(
+        IntegerConcrete::WrappingOp(OperationConcreteLibFunc::Const(
             OperationWithConstConcreteLibFunc { operator, c, .. },
         )) => match inputs {
-            [CoreValue::Integer(value)] => Ok((
-                vec![CoreValue::Integer(match operator {
-                    Operator::Add => value + c,
-                    Operator::Sub => value - c,
-                    Operator::Mul => value * c,
-                    Operator::Div => value / c,
-                    Operator::Mod => value % c,
+            [CoreValue::Uint128(value)] => Ok((
+                vec![CoreValue::Uint128(match operator {
+                    Operator::Add => value.wrapping_add(*c as u128),
+                    Operator::Sub => value.wrapping_sub(*c as u128),
+                    Operator::Mul => value.wrapping_mul(*c as u128),
+                    Operator::Div => value / *c as u128,
+                    Operator::Mod => value % *c as u128,
                 })],
                 0,
             )),
@@ -206,14 +206,14 @@ fn simulate_integer_libfunc(
         },
         IntegerConcrete::JumpNotZero(_) => {
             match inputs {
-                [CoreValue::Integer(value)] if *value == 0 => {
+                [CoreValue::Uint128(value)] if *value == 0 => {
                     // Zero - jumping to the failure branch.
                     Ok((vec![], 0))
                 }
-                [CoreValue::Integer(value)] if *value != 0 => {
+                [CoreValue::Uint128(value)] if *value != 0 => {
                     // Non-zero - jumping to the success branch and providing a NonZero wrap to the
                     // given value.
-                    Ok((vec![CoreValue::NonZero(Box::new(CoreValue::Integer(*value)))], 1))
+                    Ok((vec![CoreValue::NonZero(Box::new(CoreValue::Uint128(*value)))], 1))
                 }
                 [_] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
                 _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
@@ -256,7 +256,7 @@ fn simulate_felt_libfunc(
             ) => {
                 if let CoreValue::Felt(_rhs) = **non_zero {
                     Ok((
-                        vec![CoreValue::Integer(match operator {
+                        vec![CoreValue::Uint128(match operator {
                             Operator::Div => todo!("Support full felt operations."),
                             Operator::Mod => 0,
                             _ => unreachable!("Arm only handles these cases."),
