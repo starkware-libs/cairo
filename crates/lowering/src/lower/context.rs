@@ -1,10 +1,15 @@
 use id_arena::Arena;
+use itertools::{chain, zip_eq};
 use semantic::db::SemanticGroup;
+use semantic::items::enm::SemanticEnumEx;
 use utils::unordered_hash_map::UnorderedHashMap;
 
+use super::scope::generators::CallBlockResult;
 use super::scope::{generators, BlockScope, BlockScopeEnd};
 use super::variables::LivingVar;
 use crate::diagnostic::LoweringDiagnostics;
+use crate::lower::external::{extern_facade_expr, extern_facade_return_tys};
+use crate::lower::scope::BlockFlowMerger;
 use crate::objects::{Block, Variable};
 
 /// Context for the lowering phase.
@@ -32,6 +37,8 @@ pub enum LoweredExpr {
     AtVariable(LivingVar),
     /// The expression value is a tuple.
     Tuple(Vec<LoweredExpr>),
+    /// The expression value is an enum result from an extern call.
+    ExternEnum(LoweredExprExternEnum),
 }
 impl LoweredExpr {
     pub fn var(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockScope) -> LivingVar {
@@ -43,6 +50,69 @@ impl LoweredExpr {
                 let ty = ctx.db.intern_type(semantic::TypeLongId::Tuple(tys));
                 generators::TupleConstruct { inputs, ty }.add(ctx, scope)
             }
+            LoweredExpr::ExternEnum(extern_enum) => extern_enum.var(ctx, scope),
+        }
+    }
+}
+
+/// Lazy expression value of an extern call returning an enum.
+#[derive(Debug)]
+pub struct LoweredExprExternEnum {
+    pub function: semantic::FunctionId,
+    pub concrete_enum_id: semantic::ConcreteEnumId,
+    pub inputs: Vec<LivingVar>,
+    pub ref_args: Vec<semantic::VarId>,
+}
+impl LoweredExprExternEnum {
+    pub fn var(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockScope) -> LivingVar {
+        let concrete_variants = ctx.db.concrete_enum_variants(self.concrete_enum_id).unwrap();
+        let (blocks, mut finalized_merger) =
+            BlockFlowMerger::with(ctx, scope, &self.ref_args, |ctx, merger| {
+                let block_opts = concrete_variants.into_iter().map(|concrete_variant| {
+                    let variant_input_tys = extern_facade_return_tys(ctx, concrete_variant.ty);
+                    let ref_tys = self
+                        .ref_args
+                        .iter()
+                        .map(|semantic_var_id| ctx.semantic_defs[*semantic_var_id].ty());
+                    let input_tys = chain!(ref_tys, variant_input_tys.into_iter()).collect();
+                    merger.run_in_subscope(ctx, input_tys, |ctx, subscope, mut arm_inputs| {
+                        let ref_outputs: Vec<_> =
+                            arm_inputs.drain(0..self.ref_args.len()).collect();
+                        let input = extern_facade_expr(ctx, concrete_variant.ty, arm_inputs)
+                            .var(ctx, subscope);
+                        let res = generators::EnumConstruct { input, variant: concrete_variant }
+                            .add(ctx, subscope);
+
+                        // Rebind the ref variables.
+                        for (semantic_var_id, output_var) in zip_eq(&self.ref_args, ref_outputs) {
+                            subscope.put_semantic_variable(*semantic_var_id, output_var);
+                        }
+
+                        Some(BlockScopeEnd::Callsite(Some(res)))
+                    })
+                });
+                block_opts.collect::<Option<Vec<_>>>().ok_or(LoweringFlowError::Failed)
+            });
+        let arms = blocks
+            .unwrap()
+            .into_iter()
+            .map(|sealed| finalized_merger.finalize_block(ctx, sealed).block)
+            .collect();
+        let call_block_result = generators::MatchExtern {
+            function: self.function,
+            inputs: self.inputs,
+            arms,
+            end_info: finalized_merger.end_info,
+        }
+        .add(ctx, scope);
+        if let CallBlockResult::Callsite { pushes, maybe_output: Some(output) } = call_block_result
+        {
+            for (semantic_var_id, output_var) in zip_eq(&self.ref_args, pushes) {
+                scope.put_semantic_variable(*semantic_var_id, output_var);
+            }
+            output
+        } else {
+            todo!("Handle empty enums.");
         }
     }
 }

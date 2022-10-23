@@ -12,12 +12,11 @@ pub fn lower_expr_if(
     expr: &semantic::ExprIf,
 ) -> Result<LoweredExpr, LoweringFlowError> {
     // The condition cannot be unit.
-    let condition_var =
-        extract_matches!(lower_expr(ctx, scope, expr.condition)?, LoweredExpr::AtVariable);
+    let condition_var = lower_expr(ctx, scope, expr.condition)?.var(ctx, scope);
 
     // Lower both blocks.
     let unit_ty = corelib::unit_ty(ctx.db);
-    let (res, mut finalized_merger) = BlockFlowMerger::with(ctx, scope, |ctx, merger| {
+    let (res, mut finalized_merger) = BlockFlowMerger::with(ctx, scope, &[], |ctx, merger| {
         let [main_block_scope, else_block_scope] =
             [expr.if_block, expr.else_block].map(|block_expr| {
                 merger.run_in_subscope(ctx, vec![unit_ty], |ctx, subscope, _| {

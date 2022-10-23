@@ -4,6 +4,7 @@ use super::context::LoweringContext;
 use super::variables::LivingVar;
 
 /// The liveness state of a semantic variable.
+#[derive(Debug)]
 pub enum SemanticVariableEntry {
     Alive(LivingVar),
     Moved,

@@ -11,7 +11,10 @@ use syntax::node::ids::SyntaxStablePtrId;
 use utils::unordered_hash_map::UnorderedHashMap;
 use utils::{extract_matches, try_extract_matches};
 
-use self::context::{LoweredExpr, LoweringContext, LoweringFlowError, StatementLoweringFlowError};
+use self::context::{
+    LoweredExpr, LoweredExprExternEnum, LoweringContext, LoweringFlowError,
+    StatementLoweringFlowError,
+};
 use self::external::{extern_facade_expr, extern_facade_return_tys};
 use self::lower_if::lower_expr_if;
 use self::scope::{generators, BlockFlowMerger};
@@ -87,7 +90,6 @@ pub fn lower(db: &dyn SemanticGroup, free_function_id: FreeFunctionId) -> Option
                 lower_block(ctx, scope, semantic_block)
             })
         });
-    // Root block must not push anything.
     let root = block_sealed_opt
         .map(|block_sealed| merger_finalized.finalize_block(&mut ctx, block_sealed).block);
     Some(Lowered {
@@ -290,9 +292,10 @@ fn lower_expr_block(
     scope: &mut BlockScope,
     expr: &semantic::ExprBlock,
 ) -> Result<LoweredExpr, LoweringFlowError> {
-    let (block_sealed, mut finalized_merger) = BlockFlowMerger::with(ctx, scope, |ctx, merger| {
-        merger.run_in_subscope(ctx, vec![], |ctx, subscope, _| lower_block(ctx, subscope, expr))
-    });
+    let (block_sealed, mut finalized_merger) =
+        BlockFlowMerger::with(ctx, scope, &[], |ctx, merger| {
+            merger.run_in_subscope(ctx, vec![], |ctx, subscope, _| lower_block(ctx, subscope, expr))
+        });
     let block_sealed = block_sealed.ok_or(LoweringFlowError::Failed)?;
     let block_finalized = finalized_merger.finalize_block(ctx, block_sealed);
 
@@ -316,7 +319,7 @@ fn lower_expr_function_call(
         .map(|semantic_var_id| {
             Ok((
                 ctx.semantic_defs[*semantic_var_id].ty(),
-                use_semantic_var(ctx, scope, *semantic_var_id, expr.stable_ptr.untyped())?,
+                take_semantic_var(ctx, scope, *semantic_var_id, expr.stable_ptr.untyped())?,
             ))
         })
         .collect::<Result<Vec<_>, _>>()?
@@ -324,6 +327,17 @@ fn lower_expr_function_call(
         .unzip();
     let arg_inputs = lower_exprs_as_vars(ctx, &expr.args, scope)?;
     let inputs = chain!(ref_inputs, arg_inputs.into_iter()).collect();
+
+    if let semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::Enum(concrete_enum_id)) =
+        ctx.db.lookup_intern_type(expr.ty)
+    {
+        return Ok(LoweredExpr::ExternEnum(LoweredExprExternEnum {
+            function: expr.function,
+            concrete_enum_id,
+            inputs,
+            ref_args: expr.ref_args.clone(),
+        }));
+    }
 
     let (ref_outputs, res) =
         perform_function_call(ctx, scope, expr.function, inputs, ref_tys, expr.ty);
@@ -362,10 +376,6 @@ fn perform_function_call(
     };
 
     // Extern function
-    // If the return type is an enum, it's an enum facade.
-    // TODO(spapini): Handle Enum correctly.
-    // TODO: Add a LoweredExpr variant to delay Enum creation, and possibly avoid wrapping when
-    //   matching straight away. But carefully, so we won't reorder calls with side effects.
     let ret_tys = extern_facade_return_tys(ctx, ret_ty);
     let call_result = generators::Call { function, inputs, ref_tys, ret_tys }.add(ctx, scope);
     let ref_outputs = call_result.ref_outputs;
@@ -391,7 +401,7 @@ fn lower_expr_match(
 
     // Merge arm blocks.
     let (res, mut finalized_merger) =
-        BlockFlowMerger::with(ctx, scope, |ctx, merger| -> Result<_, LoweringFlowError> {
+        BlockFlowMerger::with(ctx, scope, &[], |ctx, merger| -> Result<_, LoweringFlowError> {
             // Create a sealed block for each arm.
             let block_opts =
                 zip_eq(&concrete_variants, &expr.arms).map(|(concrete_variant, arm)| {
@@ -461,7 +471,7 @@ fn lower_expr_match_felt(
     }
 
     // Lower both blocks.
-    let (res, mut finalized_merger) = BlockFlowMerger::with(ctx, scope, |ctx, merger| {
+    let (res, mut finalized_merger) = BlockFlowMerger::with(ctx, scope, &[], |ctx, merger| {
         let block0_end = merger.run_in_subscope(ctx, vec![], |ctx, subscope, _| {
             lower_tail_expr(ctx, subscope, *block0)
         });
@@ -569,6 +579,20 @@ fn use_semantic_var(
     stable_ptr: SyntaxStablePtrId,
 ) -> Result<LivingVar, LoweringFlowError> {
     scope.use_semantic_variable(ctx, semantic_var).take_var().ok_or_else(|| {
+        ctx.diagnostics.report(stable_ptr, VariableMoved);
+        LoweringFlowError::Failed
+    })
+}
+
+/// Retrieves a LivingVar that corresponds to a semantic var in the current scope.
+/// Always moves. If it is already moved, fails and emits a diagnostic.
+fn take_semantic_var(
+    ctx: &mut LoweringContext<'_>,
+    scope: &mut BlockScope,
+    semantic_var: semantic::VarId,
+    stable_ptr: SyntaxStablePtrId,
+) -> Result<LivingVar, LoweringFlowError> {
+    scope.take_semantic_variable(ctx, semantic_var).take_var().ok_or_else(|| {
         ctx.diagnostics.report(stable_ptr, VariableMoved);
         LoweringFlowError::Failed
     })
