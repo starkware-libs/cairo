@@ -1,0 +1,30 @@
+//! > Test modifier followed by path.
+
+//! > test_function_name
+get_diagnostics
+
+//! > cairo_code
+func f() {
+    let ref abc::def = 5;
+}
+
+//! > expected_diagnostics
+error: Missing token TerminalEq.
+ --> dummy_file.cairo:2:16
+    let ref abc::def = 5;
+               ^^
+
+error: Missing tokens. Expected an expression.
+ --> dummy_file.cairo:2:16
+    let ref abc::def = 5;
+               ^^
+
+error: Missing token TerminalSemicolon.
+ --> dummy_file.cairo:2:16
+    let ref abc::def = 5;
+               ^^
+
+error: Skipped tokens. Expected element: statement.
+ --> dummy_file.cairo:2:16
+    let ref abc::def = 5;
+               ^^
