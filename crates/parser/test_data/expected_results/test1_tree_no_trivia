@@ -41,11 +41,12 @@
     │   │   │   │   │               └── ident (kind: TokenIdentifier): 'felt'
     │   │   │   │   └── separator #1 (kind: TokenComma): ','
     │   │   │   ├── rparen (kind: TokenRParen): ')'
-    │   │   │   └── ret_ty (kind: ReturnTypeClause)
-    │   │   │       ├── arrow (kind: TokenArrow): '->'
-    │   │   │       └── ty (kind: ExprPath)
-    │   │   │           └── item #0 (kind: PathSegmentSimple)
-    │   │   │               └── ident (kind: TokenIdentifier): 'int'
+    │   │   │   ├── ret_ty (kind: ReturnTypeClause)
+    │   │   │   │   ├── arrow (kind: TokenArrow): '->'
+    │   │   │   │   └── ty (kind: ExprPath)
+    │   │   │   │       └── item #0 (kind: PathSegmentSimple)
+    │   │   │   │           └── ident (kind: TokenIdentifier): 'int'
+    │   │   │   └── with_clause (kind: OptionWithClauseEmpty) []
     │   │   └── body (kind: ExprBlock)
     │   │       ├── lbrace (kind: TokenLBrace): '{'
     │   │       ├── statements (kind: StatementList)
@@ -230,11 +231,12 @@
     │   │   │   ├── lparen (kind: TokenLParen): '('
     │   │   │   ├── parameters (kind: ParamList) []
     │   │   │   ├── rparen (kind: TokenRParen): ')'
-    │   │   │   └── ret_ty (kind: ReturnTypeClause)
-    │   │   │       ├── arrow (kind: TokenArrow): '->'
-    │   │   │       └── ty (kind: ExprPath)
-    │   │   │           └── item #0 (kind: PathSegmentSimple)
-    │   │   │               └── ident (kind: TokenIdentifier): 'felt'
+    │   │   │   ├── ret_ty (kind: ReturnTypeClause)
+    │   │   │   │   ├── arrow (kind: TokenArrow): '->'
+    │   │   │   │   └── ty (kind: ExprPath)
+    │   │   │   │       └── item #0 (kind: PathSegmentSimple)
+    │   │   │   │           └── ident (kind: TokenIdentifier): 'felt'
+    │   │   │   └── with_clause (kind: OptionWithClauseEmpty) []
     │   │   └── body (kind: ExprBlock)
     │   │       ├── lbrace (kind: TokenLBrace): '{'
     │   │       ├── statements (kind: StatementList) []
@@ -274,14 +276,15 @@
     │   │   │   │   │               └── ident (kind: TokenIdentifier): 'int'
     │   │   │   │   └── separator #0 (kind: TokenComma): ','
     │   │   │   ├── rparen (kind: TokenRParen): ')'
-    │   │   │   └── ret_ty (kind: ReturnTypeClause)
-    │   │   │       ├── arrow (kind: TokenArrow): '->'
-    │   │   │       └── ty (kind: ExprPath)
-    │   │   │           ├── item #0 (kind: PathSegmentSimple)
-    │   │   │           │   └── ident (kind: TokenIdentifier): 'crate'
-    │   │   │           ├── separator #0 (kind: TokenColonColon): '::'
-    │   │   │           └── item #1 (kind: PathSegmentSimple)
-    │   │   │               └── ident (kind: TokenIdentifier): 'S'
+    │   │   │   ├── ret_ty (kind: ReturnTypeClause)
+    │   │   │   │   ├── arrow (kind: TokenArrow): '->'
+    │   │   │   │   └── ty (kind: ExprPath)
+    │   │   │   │       ├── item #0 (kind: PathSegmentSimple)
+    │   │   │   │       │   └── ident (kind: TokenIdentifier): 'crate'
+    │   │   │   │       ├── separator #0 (kind: TokenColonColon): '::'
+    │   │   │   │       └── item #1 (kind: PathSegmentSimple)
+    │   │   │   │           └── ident (kind: TokenIdentifier): 'S'
+    │   │   │   └── with_clause (kind: OptionWithClauseEmpty) []
     │   │   └── semicolon: Missing
     │   └── child #6 (kind: ItemStruct)
     │       ├── struct_kw (kind: TokenStruct): 'struct'
