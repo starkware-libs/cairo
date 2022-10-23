@@ -167,7 +167,7 @@ test_function_lowering
 //! > function
 func foo(x: MyEnum) -> felt {
   match x {
-    MyEnum::A(inner) => {return 5;},
+    MyEnum::A(inner) => {{return 5;}},
     MyEnum::B(inner) => {inner},
     MyEnum::C(inner) => {7}
   }
@@ -189,7 +189,7 @@ enum MyEnum {
 
 //! > lowering_format
 blk0:
-Inputs: v1: ()
+Inputs:
 Statements:
   (v2: core::felt) <- 5u
 Drops: v1, v0
@@ -197,13 +197,21 @@ End:
   Return(v2)
 
 blk1:
+Inputs: v1: ()
+Statements:
+  () <- blk0()
+Drops: 
+End:
+  Unreachable
+
+blk2:
 Inputs: v3: core::felt
 Statements:
 Drops: 
 End:
   Callsite(v3)
 
-blk2:
+blk3:
 Inputs: v4: core::box::Box::<((), core::felt)>
 Statements:
   (v5: core::felt) <- 7u
@@ -211,13 +219,13 @@ Drops: v4
 End:
   Callsite(v5)
 
-blk3:
+blk4:
 Inputs: v0: test_crate::MyEnum
 Statements:
   (v6: core::felt) <- match_enum(v0) {
-    MyEnum::A => blk0,
-    MyEnum::B => blk1,
-    MyEnum::C => blk2,
+    MyEnum::A => blk1,
+    MyEnum::B => blk2,
+    MyEnum::C => blk3,
   }
 Drops: v0
 End:
