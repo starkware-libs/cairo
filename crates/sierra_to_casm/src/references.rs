@@ -4,7 +4,7 @@ use casm::ap_change::{ApChange, ApChangeError, ApplyApChange};
 use casm::operand::{
     DerefOperand, DerefOrImmediate, DoubleDerefOperand, ImmediateOperand, Register,
 };
-use sierra::extensions::arithmetic::Operator;
+use sierra::extensions::wrapping_arithmetic::Operator;
 use sierra::ids::{ConcreteTypeId, VarId};
 use sierra::program::{Function, StatementIdx};
 use thiserror::Error;

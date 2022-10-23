@@ -35,7 +35,7 @@ impl TypeSpecializationContext for MockSpecializationContext {
     fn try_get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo> {
         if id == "T".into()
             || id == "felt".into()
-            || id == "int".into()
+            || id == "uint128".into()
             || id == "Option".into()
             || id == "NonZeroFelt".into()
             || id == "NonZeroInt".into()
@@ -46,14 +46,14 @@ impl TypeSpecializationContext for MockSpecializationContext {
                 droppable: true,
                 duplicatable: true,
             })
-        } else if id == "ArrayFelt".into() || id == "ArrayInt".into() {
+        } else if id == "ArrayFelt".into() || id == "ArrayUint128".into() {
             Some(TypeInfo {
                 long_id: self.mapping.get_by_left(&id)?.clone(),
                 storable: true,
                 droppable: true,
                 duplicatable: false,
             })
-        } else if id == "UninitializedFelt".into() || id == "UninitializedInt".into() {
+        } else if id == "UninitializedFelt".into() || id == "UninitializedUint128".into() {
             Some(TypeInfo {
                 long_id: self.mapping.get_by_left(&id)?.clone(),
                 storable: false,
@@ -78,34 +78,12 @@ impl SignatureSpecializationContext for MockSpecializationContext {
         id: GenericTypeId,
         generic_args: &[GenericArg],
     ) -> Option<ConcreteTypeId> {
-        match (id, &generic_args) {
-            (id, &[]) if id == "felt".into() => Some("felt".into()),
-            (id, &[]) if id == "int".into() => Some("int".into()),
-            (id, &[GenericArg::Type(ty)]) if id == "Array".into() && ty == &"felt".into() => {
-                Some("ArrayFelt".into())
-            }
-            (id, &[GenericArg::Type(ty)]) if id == "Array".into() && ty == &"int".into() => {
-                Some("ArrayInt".into())
-            }
-            (id, &[GenericArg::Type(ty)]) if id == "NonZero".into() && ty == &"felt".into() => {
-                Some("NonZeroFelt".into())
-            }
-            (id, &[GenericArg::Type(ty)]) if id == "NonZero".into() && ty == &"int".into() => {
-                Some("NonZeroInt".into())
-            }
-            (id, &[GenericArg::Type(ty)])
-                if id == "uninitialized".into() && ty == &"felt".into() =>
-            {
-                Some("UninitializedFelt".into())
-            }
-            (id, &[GenericArg::Type(ty)])
-                if id == "uninitialized".into() && ty == &"int".into() =>
-            {
-                Some("UninitializedInt".into())
-            }
-            (id, &[]) if id == "GasBuiltin".into() => Some("GasBuiltin".into()),
-            _ => None,
-        }
+        self.mapping
+            .get_by_right(&ConcreteTypeLongId {
+                generic_id: id,
+                generic_args: generic_args.to_vec(),
+            })
+            .cloned()
     }
 
     fn try_get_function_signature(&self, function_id: &FunctionId) -> Option<FunctionSignature> {
@@ -137,9 +115,9 @@ impl SpecializationContext for MockSpecializationContext {
 #[test_case("GasBuiltin", vec![type_arg("T")] => Err(WrongNumberOfGenericArgs); "GasBuiltin<T>")]
 #[test_case("felt", vec![] => Ok(()); "felt")]
 #[test_case("felt", vec![type_arg("T")] => Err(WrongNumberOfGenericArgs); "felt<T>")]
-#[test_case("int", vec![] => Ok(()); "int")]
-#[test_case("int", vec![type_arg("T")] => Err(WrongNumberOfGenericArgs); "int<T>")]
-#[test_case("Array", vec![type_arg("int")] => Ok(()); "Array<int>")]
+#[test_case("uint128", vec![] => Ok(()); "uint128")]
+#[test_case("uint128", vec![type_arg("T")] => Err(WrongNumberOfGenericArgs); "uint128<T>")]
+#[test_case("Array", vec![type_arg("uint128")] => Ok(()); "Array<uint128>")]
 #[test_case("Array", vec![] => Err(WrongNumberOfGenericArgs); "Array")]
 #[test_case("Array", vec![value_arg(5)] => Err(UnsupportedGenericArg); "Array<5>")]
 #[test_case("Array", vec![type_arg("UninitializedFelt")] => Err(UnsupportedGenericArg);
@@ -150,10 +128,10 @@ impl SpecializationContext for MockSpecializationContext {
 #[test_case("Box", vec![type_arg("T")] => Ok(()); "Box<T>")]
 #[test_case("Box", vec![] => Err(WrongNumberOfGenericArgs); "Box<>")]
 #[test_case("Box", vec![value_arg(5)] => Err(UnsupportedGenericArg); "Box<5>")]
-#[test_case("uninitialized", vec![type_arg("T")] => Ok(()); "uninitialized<T>")]
+#[test_case("Uninitialized", vec![type_arg("T")] => Ok(()); "Uninitialized<T>")]
 #[test_case("Enum", vec![] => Ok(()); "Enum<>")]
-#[test_case("Enum", vec![type_arg("int")] => Ok(()); "Enum<int>")]
-#[test_case("Enum", vec![type_arg("int"), type_arg("felt")] => Ok(()); "Enum<int,felt>")]
+#[test_case("Enum", vec![type_arg("uint128")] => Ok(()); "Enum<uint128>")]
+#[test_case("Enum", vec![type_arg("uint128"), type_arg("felt")] => Ok(()); "Enum<uint128,felt>")]
 #[test_case("Enum", vec![value_arg(5)] => Err(UnsupportedGenericArg); "Enum<5>")]
 #[test_case("Enum", vec![type_arg("UninitializedFelt")] => Err(UnsupportedGenericArg);
             "Enum<UninitializedFelt>")]
@@ -175,9 +153,9 @@ fn find_type_specialization(
             => Ok(()); "function_call<&RegisteredFunction>")]
 #[test_case("function_call", vec![] => Err(UnsupportedGenericArg); "function_call")]
 #[test_case("array_new", vec![] => Err(WrongNumberOfGenericArgs); "array_new")]
-#[test_case("array_new", vec![type_arg("int")] => Ok(()); "array_new<int>")]
+#[test_case("array_new", vec![type_arg("uint128")] => Ok(()); "array_new<uint128>")]
 #[test_case("array_append", vec![] => Err(WrongNumberOfGenericArgs); "array_append")]
-#[test_case("array_append", vec![type_arg("int")] => Ok(()); "array_append<int>")]
+#[test_case("array_append", vec![type_arg("uint128")] => Ok(()); "array_append<uint128>")]
 #[test_case("get_gas", vec![value_arg(0)] => Err(WrongNumberOfGenericArgs); "get_gas<0>")]
 #[test_case("get_gas", vec![] => Ok(()); "get_gas")]
 #[test_case("refund_gas", vec![value_arg(0)] => Err(WrongNumberOfGenericArgs); "refund_gas<0>")]
@@ -189,44 +167,44 @@ fn find_type_specialization(
 #[test_case("felt_jump_nz", vec![] => Ok(()); "felt_jump_nz<>")]
 #[test_case("felt_jump_nz", vec![type_arg("felt")]
             => Err(WrongNumberOfGenericArgs); "felt_jump_nz<int>")]
-#[test_case("int_add", vec![] => Ok(()); "int_add")]
-#[test_case("int_sub", vec![] => Ok(()); "int_sub")]
-#[test_case("int_mul", vec![] => Ok(()); "int_mul")]
-#[test_case("int_div", vec![] => Ok(()); "int_div")]
-#[test_case("int_mod", vec![] => Ok(()); "int_mod")]
-#[test_case("int_add", vec![value_arg(2)] => Ok(()); "int_add<2>")]
-#[test_case("int_sub", vec![value_arg(5)] => Ok(()); "int_sub<5>")]
-#[test_case("int_mul", vec![value_arg(7)] => Ok(()); "int_mul<7>")]
-#[test_case("int_div", vec![value_arg(9)] => Ok(()); "int_div<9>")]
-#[test_case("int_div", vec![value_arg(0)] => Err(UnsupportedGenericArg); "int_div<0>")]
-#[test_case("int_mod", vec![value_arg(1)] => Ok(()); "int_mod<1>")]
-#[test_case("int_mod", vec![value_arg(0)] => Err(UnsupportedGenericArg); "int_mod<0>")]
-#[test_case("int_const", vec![value_arg(8)] => Ok(()); "int_const<8>")]
-#[test_case("int_const", vec![] => Err(UnsupportedGenericArg); "int_const")]
-#[test_case("drop", vec![type_arg("int")] => Ok(()); "drop<int>")]
+#[test_case("uint128_wrapping_add", vec![] => Ok(()); "uint128_wrapping_add")]
+#[test_case("uint128_wrapping_sub", vec![] => Ok(()); "uint128_wrapping_sub")]
+#[test_case("uint128_wrapping_mul", vec![] => Ok(()); "uint128_wrapping_mul")]
+#[test_case("uint128_div", vec![] => Ok(()); "uint128_div")]
+#[test_case("uint128_mod", vec![] => Ok(()); "uint128_mod")]
+#[test_case("uint128_wrapping_add", vec![value_arg(2)] => Ok(()); "int_add<2>")]
+#[test_case("uint128_wrapping_sub", vec![value_arg(5)] => Ok(()); "int_sub<5>")]
+#[test_case("uint128_wrapping_mul", vec![value_arg(7)] => Ok(()); "int_mul<7>")]
+#[test_case("uint128_div", vec![value_arg(9)] => Ok(()); "uint128_div<9>")]
+#[test_case("uint128_div", vec![value_arg(0)] => Err(UnsupportedGenericArg); "uint128_div<0>")]
+#[test_case("uint128_mod", vec![value_arg(1)] => Ok(()); "uint128_mod<1>")]
+#[test_case("uint128_mod", vec![value_arg(0)] => Err(UnsupportedGenericArg); "uint128_mod<0>")]
+#[test_case("uint128_const", vec![value_arg(8)] => Ok(()); "uint128_const<8>")]
+#[test_case("uint128_const", vec![] => Err(UnsupportedGenericArg); "uint128_const")]
+#[test_case("drop", vec![type_arg("uint128")] => Ok(()); "drop<uint128>")]
 #[test_case("drop", vec![] => Err(WrongNumberOfGenericArgs); "drop<>")]
 #[test_case("drop", vec![type_arg("GasBuiltin")] => Err(UnsupportedGenericArg); "drop<GasBuiltin>")]
-#[test_case("dup", vec![type_arg("int")] => Ok(()); "dup<int>")]
+#[test_case("dup", vec![type_arg("uint128")] => Ok(()); "dup<uint128>")]
 #[test_case("dup", vec![] => Err(WrongNumberOfGenericArgs); "dup<>")]
 #[test_case("dup", vec![type_arg("GasBuiltin")] => Err(UnsupportedGenericArg); "dup<GasBuiltin>")]
-#[test_case("int_jump_nz", vec![] => Ok(()); "int_jump_nz<>")]
-#[test_case("int_jump_nz", vec![type_arg("int")]
-            => Err(WrongNumberOfGenericArgs); "int_jump_nz<int>")]
-#[test_case("unwrap_nz", vec![type_arg("int")] => Ok(()); "unwrap_nz<int>")]
+#[test_case("uint128_jump_nz", vec![] => Ok(()); "uint128_jump_nz<>")]
+#[test_case("uint128_jump_nz", vec![type_arg("uint128")]
+            => Err(WrongNumberOfGenericArgs); "uint128_jump_nz<uint128>")]
+#[test_case("unwrap_nz", vec![type_arg("uint128")] => Ok(()); "unwrap_nz<uint128>")]
 #[test_case("unwrap_nz", vec![] => Err(WrongNumberOfGenericArgs); "unwrap_nz")]
-#[test_case("store_temp", vec![type_arg("int")] => Ok(()); "store_temp<int>")]
+#[test_case("store_temp", vec![type_arg("uint128")] => Ok(()); "store_temp<uint128>")]
 #[test_case("store_temp", vec![] => Err(WrongNumberOfGenericArgs); "store_temp")]
-#[test_case("align_temps", vec![type_arg("int")] => Ok(()); "align_temps<int>")]
+#[test_case("align_temps", vec![type_arg("uint128")] => Ok(()); "align_temps<uint128>")]
 #[test_case("align_temps", vec![value_arg(3)] => Err(UnsupportedGenericArg); "align_temps<3>")]
 #[test_case("align_temps", vec![] => Err(WrongNumberOfGenericArgs); "align_temps")]
-#[test_case("store_local", vec![type_arg("int")] => Ok(()); "store_local<int>")]
+#[test_case("store_local", vec![type_arg("uint128")] => Ok(()); "store_local<uint128>")]
 #[test_case("store_local", vec![] => Err(WrongNumberOfGenericArgs); "store_local")]
 #[test_case("finalize_locals", vec![] => Ok(()); "finalize_locals")]
-#[test_case("finalize_locals", vec![type_arg("int")]
-            => Err(WrongNumberOfGenericArgs); "finalize_locals<int>")]
-#[test_case("alloc_local", vec![type_arg("int")] => Ok(()); "alloc_local<int>")]
+#[test_case("finalize_locals", vec![type_arg("uint128")]
+            => Err(WrongNumberOfGenericArgs); "finalize_locals<uint128>")]
+#[test_case("alloc_local", vec![type_arg("uint128")] => Ok(()); "alloc_local<uint128>")]
 #[test_case("alloc_local", vec![] => Err(WrongNumberOfGenericArgs); "alloc_local<>")]
-#[test_case("rename", vec![type_arg("int")] => Ok(()); "rename<int>")]
+#[test_case("rename", vec![type_arg("uint128")] => Ok(()); "rename<uint128>")]
 #[test_case("rename", vec![] => Err(WrongNumberOfGenericArgs); "rename")]
 #[test_case("jump", vec![] => Ok(()); "jump")]
 #[test_case("jump", vec![type_arg("T")] => Err(WrongNumberOfGenericArgs); "jump<T>")]

@@ -23,8 +23,8 @@ pub enum Operator {
     Mod,
 }
 
-/// Trait for implementing arithmetic operations for an arithmetic type.
-pub trait ArithmeticTraits: Default {
+/// Trait for implementing wrapping arithmetic operations for an arithmetic type.
+pub trait WrappingArithmeticTraits: Default {
     /// The add library function id.
     const ADD: GenericLibFuncId;
     /// The sub library function id.
@@ -42,16 +42,18 @@ pub trait ArithmeticTraits: Default {
 }
 
 /// Libfunc for arithmetic operations.
-pub struct OperationLibFunc<TArithmeticTraits: ArithmeticTraits> {
+pub struct OperationLibFunc<TArithmeticTraits: WrappingArithmeticTraits> {
     pub operator: Operator,
     _phantom: PhantomData<TArithmeticTraits>,
 }
-impl<TArithmeticTraits: ArithmeticTraits> OperationLibFunc<TArithmeticTraits> {
+impl<TArithmeticTraits: WrappingArithmeticTraits> OperationLibFunc<TArithmeticTraits> {
     fn new(operator: Operator) -> Self {
         Self { operator, _phantom: PhantomData::<TArithmeticTraits>::default() }
     }
 }
-impl<TArithmeticTraits: ArithmeticTraits> GenericLibFunc for OperationLibFunc<TArithmeticTraits> {
+impl<TArithmeticTraits: WrappingArithmeticTraits> GenericLibFunc
+    for OperationLibFunc<TArithmeticTraits>
+{
     type Concrete = OperationConcreteLibFunc;
 
     fn by_id(id: &GenericLibFuncId) -> Option<Self> {
@@ -162,10 +164,10 @@ impl SignatureBasedConcreteLibFunc for OperationWithConstConcreteLibFunc {
 
 /// LibFunc for creating a constant.
 #[derive(Default)]
-pub struct ConstLibFunc<TArithmeticTraits: ArithmeticTraits> {
+pub struct ConstLibFunc<TArithmeticTraits: WrappingArithmeticTraits> {
     _phantom: PhantomData<TArithmeticTraits>,
 }
-impl<TArithmeticTraits: ArithmeticTraits> NamedLibFunc for ConstLibFunc<TArithmeticTraits> {
+impl<TArithmeticTraits: WrappingArithmeticTraits> NamedLibFunc for ConstLibFunc<TArithmeticTraits> {
     type Concrete = ConstConcreteLibFunc;
     const ID: GenericLibFuncId = TArithmeticTraits::CONST;
 
