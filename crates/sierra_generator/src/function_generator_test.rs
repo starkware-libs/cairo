@@ -7,7 +7,7 @@ use semantic::test_utils::setup_test_module;
 use utils::extract_matches;
 
 use crate::db::SierraGenGroup;
-use crate::test_utils::{replace_libfunc_ids, SierraGenDatabaseForTesting};
+use crate::test_utils::{replace_sierra_ids, SierraGenDatabaseForTesting};
 
 #[test]
 fn test_function_generator() {
@@ -40,22 +40,22 @@ fn test_function_generator() {
         function
             .body
             .iter()
-            .map(|x| replace_libfunc_ids(&db, x).to_string())
+            .map(|x| replace_sierra_ids(&db, x).to_string())
             .collect::<Vec<String>>(),
         vec![
             "label0:",
-            "drop<[0]>([1]) -> ()",
+            "drop<felt>([1]) -> ()",
             "revoke_ap_tracking() -> ()",
             "felt_const<5>() -> ([2])",
             "felt_add([0], [2]) -> ([3])",
-            "store_temp<[0]>([3]) -> ([3])",
-            "dup<[0]>([3]) -> ([3], [9])",
-            "rename<[0]>([9]) -> ([5])",
-            "dup<[0]>([3]) -> ([3], [10])",
-            "store_temp<[0]>([10]) -> ([6])",
-            "store_temp<[0]>([3]) -> ([7])",
-            "function_call<user@[0]>([5], [6], [7]) -> ([4])",
-            "rename<[0]>([4]) -> ([8])",
+            "store_temp<felt>([3]) -> ([3])",
+            "dup<felt>([3]) -> ([3], [9])",
+            "rename<felt>([9]) -> ([5])",
+            "dup<felt>([3]) -> ([3], [10])",
+            "store_temp<felt>([10]) -> ([6])",
+            "store_temp<felt>([3]) -> ([7])",
+            "function_call<user@test_crate::bar>([5], [6], [7]) -> ([4])",
+            "rename<felt>([4]) -> ([8])",
             "return([8])",
         ]
     );

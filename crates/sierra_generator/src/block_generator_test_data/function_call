@@ -28,11 +28,11 @@ extern type MyStruct;
 //! > sierra_code
 felt_const<1>() -> ([0])
 felt_const<2>() -> ([1])
-PushValues([0]: [0], [1]: [0], [2]: [1]) -> ([4], [5], [6])
-function_call<user@[0]>([4], [5], [6]) -> ([3])
+PushValues([0]: felt, [1]: felt, [2]: MyStruct) -> ([4], [5], [6])
+function_call<user@test_crate::bar>([4], [5], [6]) -> ([3])
 felt_add([3], [3]) -> ([7])
-PushValues([3]: [0], [7]: [0], [2]: [1]) -> ([9], [10], [11])
-function_call<user@[0]>([9], [10], [11]) -> ([8])
+PushValues([3]: felt, [7]: felt, [2]: MyStruct) -> ([9], [10], [11])
+function_call<user@test_crate::bar>([9], [10], [11]) -> ([8])
 
 //! > ==========================================================================
 
@@ -68,16 +68,16 @@ func bar2(a: felt, b: felt) -> felt {
 //! > sierra_code
 felt_const<7>() -> ([0])
 felt_const<7>() -> ([1])
-PushValues([0]: [0], [1]: [0]) -> ([3], [4])
-function_call<user@[0]>([3], [4]) -> ([2])
+PushValues([0]: felt, [1]: felt) -> ([3], [4])
+function_call<user@test_crate::bar>([3], [4]) -> ([2])
 felt_const<7>() -> ([5])
-PushValues([0]: [0], [5]: [0]) -> ([7], [8])
-function_call<user@[0]>([7], [8]) -> ([6])
+PushValues([0]: felt, [5]: felt) -> ([7], [8])
+function_call<user@test_crate::bar>([7], [8]) -> ([6])
 felt_const<7>() -> ([9])
-PushValues([0]: [0], [9]: [0]) -> ([11], [12])
-function_call<user@[0]>([11], [12]) -> ([10])
-PushValues([6]: [0], [10]: [0]) -> ([14], [15])
-function_call<user@[1]>([14], [15]) -> ([13])
+PushValues([0]: felt, [9]: felt) -> ([11], [12])
+function_call<user@test_crate::bar>([11], [12]) -> ([10])
+PushValues([6]: felt, [10]: felt) -> ([14], [15])
+function_call<user@test_crate::bar2>([14], [15]) -> ([13])
 
 //! > ==========================================================================
 

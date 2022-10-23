@@ -4,7 +4,7 @@ use pretty_assertions::assert_eq;
 use semantic::test_utils::setup_test_module;
 
 use crate::db::SierraGenGroup;
-use crate::test_utils::{replace_libfunc_ids_in_program, SierraGenDatabaseForTesting};
+use crate::test_utils::{replace_sierra_ids_in_program, SierraGenDatabaseForTesting};
 
 #[test]
 fn test_program_generator() {
@@ -30,35 +30,35 @@ fn test_program_generator() {
     let program = &*db.module_sierra_program(module_id).unwrap();
     // TODO(lior): Remove the unnecessary store_temp()s at the end.
     assert_eq!(
-        replace_libfunc_ids_in_program(&db, program).to_string(),
+        replace_sierra_ids_in_program(&db, program).to_string(),
         indoc! {"
-            type [0] = felt;
+            type felt = felt;
 
-            libfunc drop<[0]> = drop<[0]>;
+            libfunc drop<felt> = drop<felt>;
             libfunc revoke_ap_tracking = revoke_ap_tracking;
             libfunc felt_const<5> = felt_const<5>;
-            libfunc store_temp<[0]> = store_temp<[0]>;
-            libfunc function_call<user@[0]> = function_call<user@[0]>;
-            libfunc rename<[0]> = rename<[0]>;
-            libfunc dup<[0]> = dup<[0]>;
+            libfunc store_temp<felt> = store_temp<felt>;
+            libfunc function_call<user@test_crate::bar> = function_call<user@test_crate::bar>;
+            libfunc rename<felt> = rename<felt>;
+            libfunc dup<felt> = dup<felt>;
             libfunc felt_add = felt_add;
 
-            drop<[0]>([0]) -> ();
+            drop<felt>([0]) -> ();
             revoke_ap_tracking() -> ();
             felt_const<5>() -> ([1]);
-            store_temp<[0]>([1]) -> ([3]);
-            function_call<user@[0]>([3]) -> ([2]);
-            rename<[0]>([2]) -> ([4]);
+            store_temp<felt>([1]) -> ([3]);
+            function_call<user@test_crate::bar>([3]) -> ([2]);
+            rename<felt>([2]) -> ([4]);
             return([4]);
             revoke_ap_tracking() -> ();
-            dup<[0]>([0]) -> ([0], [3]);
+            dup<felt>([0]) -> ([0], [3]);
             felt_add([0], [3]) -> ([1]);
-            store_temp<[0]>([1]) -> ([1]);
-            rename<[0]>([1]) -> ([2]);
+            store_temp<felt>([1]) -> ([1]);
+            rename<felt>([1]) -> ([2]);
             return([2]);
 
-            [1]@0([0]: [0]) -> ([0]);
-            [0]@7([0]: [0]) -> ([0]);
+            test_crate::foo@0([0]: felt) -> (felt);
+            test_crate::bar@7([0]: felt) -> (felt);
         "},
     );
 }
@@ -81,29 +81,29 @@ fn test_type_dependency() {
     db.module_sierra_diagnostics(module_id).expect("");
     let program = &*db.module_sierra_program(module_id).unwrap();
     assert_eq!(
-        replace_libfunc_ids_in_program(&db, program).to_string(),
+        replace_sierra_ids_in_program(&db, program).to_string(),
         indoc! {"
-            type [0] = felt;
-            type [1] = Box<[0]>;
-            type [2] = Box<[1]>;
-            type [3] = Box<[2]>;
+            type felt = felt;
+            type Box<felt> = Box<felt>;
+            type Box<Box<felt>> = Box<Box<felt>>;
+            type Box<Box<Box<felt>>> = Box<Box<Box<felt>>>;
 
             libfunc revoke_ap_tracking = revoke_ap_tracking;
-            libfunc unbox<[2]> = unbox<[2]>;
-            libfunc store_temp<[2]> = store_temp<[2]>;
-            libfunc unbox<[1]> = unbox<[1]>;
-            libfunc store_temp<[1]> = store_temp<[1]>;
-            libfunc rename<[1]> = rename<[1]>;
+            libfunc unbox<Box<Box<felt>>> = unbox<Box<Box<felt>>>;
+            libfunc store_temp<Box<Box<felt>>> = store_temp<Box<Box<felt>>>;
+            libfunc unbox<Box<felt>> = unbox<Box<felt>>;
+            libfunc store_temp<Box<felt>> = store_temp<Box<felt>>;
+            libfunc rename<Box<felt>> = rename<Box<felt>>;
 
             revoke_ap_tracking() -> ();
-            unbox<[2]>([0]) -> ([1]);
-            store_temp<[2]>([1]) -> ([1]);
-            unbox<[1]>([1]) -> ([2]);
-            store_temp<[1]>([2]) -> ([2]);
-            rename<[1]>([2]) -> ([3]);
+            unbox<Box<Box<felt>>>([0]) -> ([1]);
+            store_temp<Box<Box<felt>>>([1]) -> ([1]);
+            unbox<Box<felt>>([1]) -> ([2]);
+            store_temp<Box<felt>>([2]) -> ([2]);
+            rename<Box<felt>>([2]) -> ([3]);
             return([3]);
 
-            [0]@0([0]: [3]) -> ([1]);
+            test_crate::unbox_twice@0([0]: Box<Box<Box<felt>>>) -> (Box<felt>);
         "},
     );
 }
