@@ -405,15 +405,8 @@ fn lower_expr_match(
                             let [var] = <[_; 1]>::try_from(variables).ok().unwrap();
                             subscope.put_semantic_variable(semantic_var_id, var);
 
-                            // Lower the block.
-                            lower_block(
-                                ctx,
-                                subscope,
-                                extract_matches!(
-                                    &ctx.function_def.exprs[arm.expression],
-                                    semantic::Expr::Block
-                                ),
-                            )
+                            // Lower the arm expression.
+                            lower_tail_expr(ctx, subscope, arm.expression)
                         },
                     )
                 });
