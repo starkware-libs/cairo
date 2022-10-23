@@ -258,6 +258,7 @@ pub struct BlockFlowMerger {
     /// be available in the parent scope anymore (i.e. cannot be pushed).
     moved_semantic_vars: HashSet<semantic::VarId>,
     maybe_output_ty: Option<semantic::TypeId>,
+    reachable: bool,
     // TODO(spapini): Optimize pushes by using shouldnt_push.
 }
 impl BlockFlowMerger {
@@ -362,6 +363,7 @@ impl BlockFlowMerger {
         block_sealed: &BlockSealed,
     ) -> Option<()> {
         let maybe_output = try_extract_matches!(&block_sealed.end, BlockSealedEnd::Callsite)?;
+        self.reachable = true;
         self.maybe_output_ty = maybe_output.as_ref().map(|var| ctx.variables[var.var_id()].ty);
         let mut current_moved = HashSet::new();
         let mut current_changed = HashSet::new();
@@ -417,7 +419,11 @@ impl BlockFlowMerger {
         }
         pushes.extend(extra_outputs.iter().copied());
         let push_tys = pushes.iter().map(|var_id| ctx.semantic_defs[*var_id].ty()).collect();
-        let end_info = BlockEndInfo::Callsite { maybe_output_ty: self.maybe_output_ty, push_tys };
+        let end_info = if self.reachable {
+            BlockEndInfo::Callsite { maybe_output_ty: self.maybe_output_ty, push_tys }
+        } else {
+            BlockEndInfo::End
+        };
 
         // TODO(spapini): Optimize pushes by maintaining shouldnt_push.
         (
