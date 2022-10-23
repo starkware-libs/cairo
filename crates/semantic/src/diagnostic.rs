@@ -72,7 +72,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 "Expected a concrete variant. Use `::<>` syntax.".to_string()
             }
             SemanticDiagnosticKind::MissingMember { member_name } => {
-                format!("Missing member {member_name}.")
+                format!(r#"Missing member "{member_name}"."#)
             }
             SemanticDiagnosticKind::WrongNumberOfArguments { expected, actual } => {
                 format!("Wrong number of arguments. Expected {expected}, found: {actual}")
@@ -95,7 +95,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 )
             }
             SemanticDiagnosticKind::VariableNotFound { name } => {
-                format!("Variable {name} not found.")
+                format!(r#"Variable "{name}" not found."#)
             }
             SemanticDiagnosticKind::StructMemberRedefinition { struct_id, member_name } => {
                 format!(
@@ -122,13 +122,19 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 )
             }
             SemanticDiagnosticKind::TypeHasNoMembers { ty, member_name: _ } => {
-                format!("Type {} has no members.", ty.format(db))
+                format!(r#"Type "{}" has no members."#, ty.format(db))
             }
             SemanticDiagnosticKind::NoSuchMember { struct_id, member_name } => {
-                format!("Struct {} has no member {member_name}", struct_id.full_path(db.upcast()))
+                format!(
+                    r#"Struct "{}" has no member "{member_name}""#,
+                    struct_id.full_path(db.upcast())
+                )
             }
             SemanticDiagnosticKind::NoSuchVariant { enum_id, variant_name } => {
-                format!("Enum {} has no variant {variant_name}", enum_id.full_path(db.upcast()))
+                format!(
+                    r#"Enum "{}" has no variant "{variant_name}""#,
+                    enum_id.full_path(db.upcast())
+                )
             }
             SemanticDiagnosticKind::InvalidMemberExpression => "Invalid member expression.".into(),
             SemanticDiagnosticKind::InvalidPath => "Invalid path.".into(),
@@ -138,27 +144,30 @@ impl DiagnosticEntry for SemanticDiagnostic {
             }
             SemanticDiagnosticKind::PathNotFound => "Path not found.".into(),
             SemanticDiagnosticKind::UnexpectedLiteralPattern { ty } => format!(
-                "Unexpected type for literal pattern. Expected: felt. Got: {}",
+                r#"Unexpected type for literal pattern. Expected: felt. Got: "{}""#,
                 ty.format(db),
             ),
             SemanticDiagnosticKind::UnexpectedEnumPattern { ty } => {
-                format!("Unexpected type for enum pattern. {} is not an enum.", ty.format(db),)
+                format!(r#"Unexpected type for enum pattern. "{}" is not an enum."#, ty.format(db),)
             }
             SemanticDiagnosticKind::UnexpectedStructPattern { ty } => {
-                format!("Unexpected type for struct pattern. {} is not a struct.", ty.format(db),)
+                format!(
+                    r#"Unexpected type for struct pattern. "{}" is not a struct."#,
+                    ty.format(db),
+                )
             }
             SemanticDiagnosticKind::UnexpectedTuplePattern { ty } => {
-                format!("Unexpected type for tuple pattern. {} is not a tuple.", ty.format(db),)
+                format!(r#"Unexpected type for tuple pattern. "{}" is not a tuple."#, ty.format(db),)
             }
             SemanticDiagnosticKind::WrongEnum { expected_enum, actual_enum } => {
                 format!(
-                    "Wrong enum in pattern. Expected: {}. Got: {}.",
+                    r#"Wrong enum in pattern. Expected: "{}". Got: "{}"."#,
                     expected_enum.full_path(db.upcast()),
                     actual_enum.full_path(db.upcast())
                 )
             }
             SemanticDiagnosticKind::RepeatedModifier { modifier } => {
-                format!("`{}` modifier may not be repeated", modifier,)
+                format!("`{}` modifier may not be repeated", modifier)
             }
         }
     }

@@ -27,7 +27,7 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Unexpected type for literal pattern. Expected: felt. Got: test_crate::A
+error: Unexpected type for literal pattern. Expected: felt. Got: "test_crate::A"
  --> lib.cairo:10:8
       (7, 1) => { x },
        ^

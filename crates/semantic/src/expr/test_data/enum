@@ -45,7 +45,7 @@ error: Invalid path.
     let a : A = A::a::a(());
                       ^
 
-error: Enum test_crate::A has no variant c
+error: Enum "test_crate::A" has no variant "c"
  --> lib.cairo:16:20
     let a : A = A::c();
                    ^
@@ -55,7 +55,7 @@ error: Unsupported feature.
     let a : A = A::d;
                 ^**^
 
-error: Variable A not found.
+error: Variable "A" not found.
  --> lib.cairo:18:17
     let a : A = A;
                 ^

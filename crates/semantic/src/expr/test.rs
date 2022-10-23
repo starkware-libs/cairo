@@ -180,8 +180,8 @@ fn test_member_access_failures() {
     .get_diagnostics();
     assert_eq!(
         diagnostics,
-        indoc! {"
-            error: Struct test_crate::A has no member f
+        indoc! {r#"
+            error: Struct "test_crate::A" has no member "f"
              --> lib.cairo:7:7
                 a.f
                   ^
@@ -201,12 +201,12 @@ fn test_member_access_failures() {
                 a.4.4;
                     ^
 
-            error: Type core::felt has no members.
+            error: Type "core::felt" has no members.
              --> lib.cairo:10:7
                 5.a;
                   ^
 
-        "}
+        "#}
     );
 }
 
@@ -681,7 +681,7 @@ fn test_expr_struct_ctor_failures() {
                     ..d,
                     ^*^
 
-            error: Missing member b.
+            error: Missing member "b".
              --> lib.cairo:6:5
                 A {
                 ^*^
