@@ -1,16 +1,16 @@
-use super::arithmetic::{ArithmeticTraits, ConstLibFunc, OperationLibFunc};
 use super::jump_not_zero::{JumpNotZeroLibFunc, JumpNotZeroTraits};
+use super::wrapping_arithmetic::{ConstLibFunc, OperationLibFunc, WrappingArithmeticTraits};
 use crate::define_libfunc_hierarchy;
 use crate::extensions::types::{InfoOnlyConcreteType, TypeInfo};
 use crate::extensions::{NamedType, NoGenericArgsGenericType};
 use crate::ids::{GenericLibFuncId, GenericTypeId};
 
-/// Type for int.
+/// Type for uint128.
 #[derive(Default)]
 pub struct IntegerType {}
 impl NoGenericArgsGenericType for IntegerType {
     type Concrete = InfoOnlyConcreteType;
-    const ID: GenericTypeId = GenericTypeId::new_inline("int");
+    const ID: GenericTypeId = GenericTypeId::new_inline("uint128");
 
     fn specialize(&self) -> Self::Concrete {
         InfoOnlyConcreteType {
@@ -26,7 +26,7 @@ impl NoGenericArgsGenericType for IntegerType {
 
 define_libfunc_hierarchy! {
     pub enum IntegerLibFunc {
-        Operation(IntOperationLibFunc),
+        WrappingOp(IntWrappingOpLibFunc),
         Const(IntConstLibFunc),
         JumpNotZero(IntJumpNotZeroLibFunc),
     }, IntegerConcrete
@@ -34,19 +34,19 @@ define_libfunc_hierarchy! {
 
 #[derive(Default)]
 pub struct IntegerTraits {}
-impl ArithmeticTraits for IntegerTraits {
-    const ADD: GenericLibFuncId = GenericLibFuncId::new_inline("int_add");
-    const SUB: GenericLibFuncId = GenericLibFuncId::new_inline("int_sub");
-    const MUL: GenericLibFuncId = GenericLibFuncId::new_inline("int_mul");
-    const DIV: GenericLibFuncId = GenericLibFuncId::new_inline("int_div");
-    const MOD: GenericLibFuncId = GenericLibFuncId::new_inline("int_mod");
-    const CONST: GenericLibFuncId = GenericLibFuncId::new_inline("int_const");
+impl WrappingArithmeticTraits for IntegerTraits {
+    const ADD: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_wrapping_add");
+    const SUB: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_wrapping_sub");
+    const MUL: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_wrapping_mul");
+    const DIV: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_div");
+    const MOD: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_mod");
+    const CONST: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_const");
     const GENERIC_TYPE_ID: GenericTypeId = <IntegerType as NamedType>::ID;
 }
 impl JumpNotZeroTraits for IntegerTraits {
-    const JUMP_NOT_ZERO: GenericLibFuncId = GenericLibFuncId::new_inline("int_jump_nz");
+    const JUMP_NOT_ZERO: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_jump_nz");
     const GENERIC_TYPE_ID: GenericTypeId = <IntegerType as NamedType>::ID;
 }
-pub type IntOperationLibFunc = OperationLibFunc<IntegerTraits>;
+pub type IntWrappingOpLibFunc = OperationLibFunc<IntegerTraits>;
 pub type IntConstLibFunc = ConstLibFunc<IntegerTraits>;
 pub type IntJumpNotZeroLibFunc = JumpNotZeroLibFunc<IntegerTraits>;
