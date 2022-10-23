@@ -1,0 +1,19 @@
+//! > Test free function diagnostics.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+func foo(a: bool, a: felt) {
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Redefinition of parameter name "a" in function "test_crate::foo".
+ --> lib.cairo:1:19
+func foo(a: bool, a: felt) {
+                  ^*****^

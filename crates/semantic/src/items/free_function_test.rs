@@ -7,7 +7,10 @@ use utils::extract_matches;
 use crate::db::SemanticGroup;
 use crate::expr::fmt::ExprFormatter;
 use crate::items::free_function::SemanticExprLookup;
-use crate::test_utils::{setup_test_module, SemanticDatabaseForTesting};
+use crate::semantic_test;
+use crate::test_utils::{setup_test_module, test_function_diagnostics, SemanticDatabaseForTesting};
+
+semantic_test!(diagnostics_tests, ["src/items/tests/free_function"], test_function_diagnostics);
 
 #[test]
 fn test_expr_lookup() {
