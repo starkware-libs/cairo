@@ -46,6 +46,8 @@ pub enum SyntaxKind {
     Param,
     ModifierList,
     ParamList,
+    WithClause,
+    OptionWithClauseEmpty,
     FunctionSignature,
     ItemList,
     ItemModule,
@@ -107,6 +109,8 @@ pub enum SyntaxKind {
     TerminalElse,
     TokenUse,
     TerminalUse,
+    TokenWith,
+    TerminalWith,
     TokenRef,
     TerminalRef,
     TokenMut,
@@ -199,6 +203,7 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalIf
                 | SyntaxKind::TerminalElse
                 | SyntaxKind::TerminalUse
+                | SyntaxKind::TerminalWith
                 | SyntaxKind::TerminalRef
                 | SyntaxKind::TerminalMut
                 | SyntaxKind::TerminalAnd
@@ -262,6 +267,7 @@ impl SyntaxKind {
                 | SyntaxKind::TokenIf
                 | SyntaxKind::TokenElse
                 | SyntaxKind::TokenUse
+                | SyntaxKind::TokenWith
                 | SyntaxKind::TokenRef
                 | SyntaxKind::TokenMut
                 | SyntaxKind::TokenAnd

@@ -3,7 +3,7 @@ use crate::spec::{
     StructBuilder,
 };
 
-// The specific syntax specification of Cairo.
+/// The specific syntax specification of Cairo.
 pub fn get_spec() -> Vec<Node> {
     let mut nodes = vec![
         // --- Terminal ---
@@ -241,7 +241,7 @@ pub fn get_spec() -> Vec<Node> {
             .node("expr", "Expr")
             .node("semicolon", "TerminalSemicolon")
             .build(),
-        // --- Parameters and Functions ---
+        // --- Functions ---
         StructBuilder::new("Param")
             .node("modifiers", "ModifierList")
             .key_node("name", "TerminalIdentifier")
@@ -253,6 +253,17 @@ pub fn get_spec() -> Vec<Node> {
             .node_with_explicit_kind("Mut", "TerminalMut")
             .build(),
         separated_list_node("ParamList", "Param", "TerminalComma"),
+        StructBuilder::new("WithClause")
+            .node("with_kw", "TerminalWith")
+            .node("lparen", "TerminalLParen")
+            .node("implicits", "ParamList")
+            .node("rparen", "TerminalRParen")
+            .build(),
+        EnumBuilder::new("OptionWithClause")
+            .node("Empty")
+            .node_with_explicit_kind("WithClause", "WithClause")
+            .build(),
+        StructBuilder::new("OptionWithClauseEmpty").build(),
         // TODO(spapini): Add generic params.
         // This is an unnamed signature, e.g. "() -> Type".
         StructBuilder::new("FunctionSignature")
@@ -260,6 +271,7 @@ pub fn get_spec() -> Vec<Node> {
             .node("parameters", "ParamList")
             .node("rparen", "TerminalRParen")
             .node("ret_ty", "OptionReturnTypeClause")
+            .node("with_clause", "OptionWithClause")
             .build(),
         // --- Items ---
         EnumBuilder::new("Item")
@@ -392,6 +404,7 @@ pub fn get_spec() -> Vec<Node> {
     append_terminal_and_token(&mut nodes, "If");
     append_terminal_and_token(&mut nodes, "Else");
     append_terminal_and_token(&mut nodes, "Use");
+    append_terminal_and_token(&mut nodes, "With");
     append_terminal_and_token(&mut nodes, "Ref");
     append_terminal_and_token(&mut nodes, "Mut");
     append_terminal_and_token(&mut nodes, "And");
