@@ -15,16 +15,15 @@ use sierra::extensions::array::ArrayConcreteLibFunc;
 use sierra::extensions::boxing::BoxConcreteLibFunc;
 use sierra::extensions::core::CoreConcreteLibFunc;
 use sierra::extensions::enm::{EnumConcreteLibFunc, EnumInitConcreteLibFunc};
-use sierra::extensions::felt::FeltConcrete;
+use sierra::extensions::felt::{
+    FeltBinaryOperationConcreteLibFunc, FeltConcrete, FeltOperationConcreteLibFunc,
+    FeltOperationWithConstConcreteLibFunc, FeltOperator,
+};
 use sierra::extensions::function_call::FunctionCallConcreteLibFunc;
 use sierra::extensions::gas::GasConcreteLibFunc;
 use sierra::extensions::mem::{
     AllocLocalConcreteLibFunc, MemConcreteLibFunc, StoreLocalConcreteLibFunc,
     StoreTempConcreteLibFunc,
-};
-use sierra::extensions::wrapping_arithmetic::{
-    BinaryOperationConcreteLibFunc, OperationConcreteLibFunc, OperationWithConstConcreteLibFunc,
-    Operator,
 };
 use sierra::extensions::ConcreteLibFunc;
 use sierra::ids::ConcreteTypeId;
@@ -181,7 +180,7 @@ impl CompiledInvocationBuilder<'_> {
     }
 
     /// Handles a felt operation with the given op.
-    fn build_felt_op(self, op: Operator) -> Result<CompiledInvocation, InvocationError> {
+    fn build_felt_op(self, op: FeltOperator) -> Result<CompiledInvocation, InvocationError> {
         let (expr_a, expr_b) = match self.refs {
             [
                 ReferenceValue { expression: expr_a, .. },
@@ -211,8 +210,8 @@ impl CompiledInvocationBuilder<'_> {
     /// Handles a felt operation with a const.
     fn build_felt_op_with_const(
         self,
-        op: Operator,
-        c: i64,
+        op: FeltOperator,
+        c: i128,
     ) -> Result<CompiledInvocation, InvocationError> {
         let expr = match self.refs {
             [ReferenceValue { expression, .. }] => expression,
@@ -228,7 +227,7 @@ impl CompiledInvocationBuilder<'_> {
             ReferenceExpression::Deref(a) => BinOpExpression {
                 op,
                 a: *a,
-                b: DerefOrImmediate::Immediate(ImmediateOperand { value: c as i128 }),
+                b: DerefOrImmediate::Immediate(ImmediateOperand { value: c }),
             },
             _ => return Err(InvocationError::InvalidReferenceExpressionForArgument),
         };
@@ -322,28 +321,25 @@ impl CompiledInvocationBuilder<'_> {
             }
             ReferenceExpression::Immediate(operand) => (dst, ResOperand::Immediate(*operand)),
             ReferenceExpression::BinOp(BinOpExpression { op, a, b }) => match op {
-                Operator::Add => (
+                FeltOperator::Add => (
                     dst,
                     ResOperand::BinOp(BinOpOperand { op: Operation::Add, a: *a, b: b.clone() }),
                 ),
-                Operator::Mul => (
+                FeltOperator::Mul => (
                     dst,
                     ResOperand::BinOp(BinOpOperand { op: Operation::Mul, a: *a, b: b.clone() }),
                 ),
 
                 // dst = a - b => a = dst + b
-                Operator::Sub => (
+                FeltOperator::Sub => (
                     *a,
                     ResOperand::BinOp(BinOpOperand { op: Operation::Add, a: dst, b: b.clone() }),
                 ),
                 // dst = a / b => a = dst * b
-                Operator::Div => (
+                FeltOperator::Div => (
                     *a,
                     ResOperand::BinOp(BinOpOperand { op: Operation::Mul, a: dst, b: b.clone() }),
                 ),
-                _ => {
-                    return Err(InvocationError::NotImplemented(self.invocation.clone()));
-                }
             },
             // TODO(Gil): remove early return in here and in the next arm to make the behavior
             // uniform.
@@ -601,7 +597,7 @@ impl CompiledInvocationBuilder<'_> {
             vec![],
             [ApChange::Known(0)].into_iter(),
             [vec![ReferenceExpression::BinOp(BinOpExpression {
-                op: Operator::Add,
+                op: FeltOperator::Add,
                 a: *expr_arr,
                 b: DerefOrImmediate::Immediate(ImmediateOperand { value: 1 }),
             })]
@@ -659,7 +655,7 @@ impl CompiledInvocationBuilder<'_> {
             [ApChange::Known(1), ApChange::Known(1)].into_iter(),
             [
                 vec![ReferenceExpression::BinOp(BinOpExpression {
-                    op: Operator::Sub,
+                    op: FeltOperator::Sub,
                     a: *gas_counter_value,
                     b: DerefOrImmediate::Immediate(ImmediateOperand {
                         value: *requested_count as i128,
@@ -695,7 +691,7 @@ impl CompiledInvocationBuilder<'_> {
         };
         Ok(self.build_only_reference_changes(
             [ReferenceExpression::BinOp(BinOpExpression {
-                op: Operator::Add,
+                op: FeltOperator::Add,
                 a: *gas_counter_value,
                 b: DerefOrImmediate::Immediate(ImmediateOperand {
                     value: *requested_count as i128,
@@ -948,12 +944,19 @@ pub fn compile_invocation(
         CompiledInvocationBuilder { program_info, invocation, libfunc, idx, refs, environment };
     match libfunc {
         // TODO(ilya, 10/10/2022): Handle type.
-        CoreConcreteLibFunc::Felt(FeltConcrete::Operation(OperationConcreteLibFunc::Binary(
-            BinaryOperationConcreteLibFunc { operator, .. },
-        ))) => builder.build_felt_op(*operator),
-        CoreConcreteLibFunc::Felt(FeltConcrete::Operation(OperationConcreteLibFunc::Const(
-            OperationWithConstConcreteLibFunc { operator, c, .. },
-        ))) => builder.build_felt_op_with_const(*operator, *c),
+        CoreConcreteLibFunc::Felt(FeltConcrete::Operation(
+            FeltOperationConcreteLibFunc::Binary(FeltBinaryOperationConcreteLibFunc {
+                operator,
+                ..
+            }),
+        )) => builder.build_felt_op(*operator),
+        CoreConcreteLibFunc::Felt(FeltConcrete::Operation(
+            FeltOperationConcreteLibFunc::Const(FeltOperationWithConstConcreteLibFunc {
+                operator,
+                c,
+                ..
+            }),
+        )) => builder.build_felt_op_with_const(*operator, *c),
         CoreConcreteLibFunc::Felt(FeltConcrete::JumpNotZero(_)) => builder.build_jump_nz(),
         CoreConcreteLibFunc::Felt(FeltConcrete::Const(libfunc)) => Ok(builder
             .build_only_reference_changes(
