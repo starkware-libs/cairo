@@ -500,8 +500,7 @@ fn lower_optimized_extern_match(
             block_opts.collect::<Option<Vec<_>>>().ok_or(LoweringFlowError::Failed)
         },
     );
-    let arms = blocks
-        .unwrap()
+    let arms = blocks?
         .into_iter()
         .map(|sealed| finalized_merger.finalize_block(ctx, sealed).block)
         .collect();

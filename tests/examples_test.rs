@@ -92,7 +92,7 @@ fn cairo_to_casm(name: &str) {
 #[test_case("fib")]
 #[test_case("fib_box")]
 #[test_case("fib_array")]
-#[test_case("fib_uint128" => ignore["uint128 does not pass lowering."])]
+#[test_case("fib_uint128" => ignore["uint128 does not pass sierra gen."])]
 #[test_case("corelib_usage")]
 fn lowering_test(name: &str) {
     setup(name);
