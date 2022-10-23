@@ -11,12 +11,12 @@ fn basic_insertion() {
         ProgramRegistry::<CoreType, CoreLibFunc>::new(
             &ProgramParser::new()
                 .parse(indoc! {"
-                    type int = int;
+                    type uint128 = uint128;
                     type GasBuiltin = GasBuiltin;
-                    type NonZeroInt = NonZero<int>;
-                    libfunc rename_int = rename<int>;
+                    type NonZeroInt = NonZero<uint128>;
+                    libfunc rename_uint128 = rename<uint128>;
                     libfunc rename_gb = rename<GasBuiltin>;
-                    Func1@1(a: int, gb: GasBuiltin) -> (GasBuiltin);
+                    Func1@1(a: uint128, gb: GasBuiltin) -> (GasBuiltin);
                     Func2@6() -> ();
                 "})
                 .unwrap()
@@ -48,7 +48,7 @@ fn type_id_double_declaration() {
         ProgramRegistry::<CoreType, CoreLibFunc>::new(
             &ProgramParser::new()
                 .parse(indoc! {"
-                    type used_id = int;
+                    type used_id = uint128;
                     type used_id = GasBuiltin;
                     "})
                 .unwrap()
@@ -64,15 +64,15 @@ fn concrete_type_double_declaration() {
         ProgramRegistry::<CoreType, CoreLibFunc>::new(
             &ProgramParser::new()
                 .parse(indoc! {"
-                    type int1 = int;
-                    type int2 = int;
+                    type int1 = uint128;
+                    type int2 = uint128;
                 "})
                 .unwrap()
         )
         .map(|_| ()),
         Err(ProgramRegistryError::TypeAlreadyDeclared(TypeDeclaration {
             id: "int2".into(),
-            long_id: ConcreteTypeLongId { generic_id: "int".into(), generic_args: vec![] },
+            long_id: ConcreteTypeLongId { generic_id: "uint128".into(), generic_args: vec![] },
         }))
     );
 }
@@ -83,9 +83,9 @@ fn libfunc_id_double_declaration() {
         ProgramRegistry::<CoreType, CoreLibFunc>::new(
             &ProgramParser::new()
                 .parse(indoc! {"
-                    type int = int;
+                    type uint128 = uint128;
                     type GasBuiltin = GasBuiltin;
-                    libfunc used_id = rename<int>;
+                    libfunc used_id = rename<uint128>;
                     libfunc used_id = rename<GasBuiltin>;
                 "})
                 .unwrap()

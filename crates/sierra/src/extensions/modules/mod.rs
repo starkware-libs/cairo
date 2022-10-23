@@ -3,7 +3,6 @@ use crate::ids::ConcreteTypeId;
 use crate::program::GenericArg;
 
 pub mod ap_tracking;
-pub mod arithmetic;
 pub mod array;
 pub mod boxing;
 pub mod drop;
@@ -18,6 +17,7 @@ pub mod mem;
 pub mod non_zero;
 pub mod unconditional_jump;
 pub mod uninitialized;
+pub mod wrapping_arithmetic;
 
 /// Helper for extracting the type from the template arguments.
 fn as_single_type(args: &[GenericArg]) -> Result<ConcreteTypeId, SpecializationError> {

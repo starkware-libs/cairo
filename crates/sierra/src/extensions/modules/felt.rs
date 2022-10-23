@@ -1,5 +1,5 @@
-use super::arithmetic::{ArithmeticTraits, ConstLibFunc, OperationLibFunc};
 use super::jump_not_zero::{JumpNotZeroLibFunc, JumpNotZeroTraits};
+use super::wrapping_arithmetic::{ConstLibFunc, OperationLibFunc, WrappingArithmeticTraits};
 use crate::define_libfunc_hierarchy;
 use crate::extensions::types::{InfoOnlyConcreteType, TypeInfo};
 use crate::extensions::{NamedType, NoGenericArgsGenericType};
@@ -35,7 +35,7 @@ define_libfunc_hierarchy! {
 
 #[derive(Default)]
 pub struct FeltTraits {}
-impl ArithmeticTraits for FeltTraits {
+impl WrappingArithmeticTraits for FeltTraits {
     const ADD: GenericLibFuncId = GenericLibFuncId::new_inline("felt_add");
     const SUB: GenericLibFuncId = GenericLibFuncId::new_inline("felt_sub");
     const MUL: GenericLibFuncId = GenericLibFuncId::new_inline("felt_mul");

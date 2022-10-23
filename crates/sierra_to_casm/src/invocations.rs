@@ -11,10 +11,6 @@ use casm::operand::{
     Register, ResOperand,
 };
 use itertools::zip_eq;
-use sierra::extensions::arithmetic::{
-    BinaryOperationConcreteLibFunc, OperationConcreteLibFunc, OperationWithConstConcreteLibFunc,
-    Operator,
-};
 use sierra::extensions::array::ArrayConcreteLibFunc;
 use sierra::extensions::boxing::BoxConcreteLibFunc;
 use sierra::extensions::core::CoreConcreteLibFunc;
@@ -25,6 +21,10 @@ use sierra::extensions::gas::GasConcreteLibFunc;
 use sierra::extensions::mem::{
     AllocLocalConcreteLibFunc, MemConcreteLibFunc, StoreLocalConcreteLibFunc,
     StoreTempConcreteLibFunc,
+};
+use sierra::extensions::wrapping_arithmetic::{
+    BinaryOperationConcreteLibFunc, OperationConcreteLibFunc, OperationWithConstConcreteLibFunc,
+    Operator,
 };
 use sierra::extensions::ConcreteLibFunc;
 use sierra::ids::ConcreteTypeId;

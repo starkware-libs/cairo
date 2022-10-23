@@ -1,7 +1,3 @@
-use sierra::extensions::arithmetic::{
-    BinaryOperationConcreteLibFunc, OperationConcreteLibFunc, OperationWithConstConcreteLibFunc,
-    Operator,
-};
 use sierra::extensions::array::ArrayConcreteLibFunc;
 use sierra::extensions::core::CoreConcreteLibFunc::{
     self, ApTracking, Array, Box, Drop, Dup, Enum, Felt, FunctionCall, Gas, Integer, Mem,
@@ -14,6 +10,10 @@ use sierra::extensions::gas::GasConcreteLibFunc::{GetGas, RefundGas};
 use sierra::extensions::integer::IntegerConcrete;
 use sierra::extensions::mem::MemConcreteLibFunc::{
     AlignTemps, AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
+};
+use sierra::extensions::wrapping_arithmetic::{
+    BinaryOperationConcreteLibFunc, OperationConcreteLibFunc, OperationWithConstConcreteLibFunc,
+    Operator,
 };
 use sierra::program::Function;
 

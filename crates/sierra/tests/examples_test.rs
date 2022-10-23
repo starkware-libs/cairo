@@ -39,8 +39,8 @@ fn create_registry(name: &str) {
 // 10 ->  5 -> 16 ->  8 ->  4 ->  2 ->  1
 #[test_case((800, 7), (343, 16); "7 => 16")]
 // Out of gas.
-#[test_case((400, 7), (26, -1); "Out of gas.")]
-fn simulate_collatz((gb, n): (i64, i64), (new_gb, index): (i64, i64)) {
+#[test_case((400, 7), (26, u128::MAX); "Out of gas.")]
+fn simulate_collatz((gb, n): (i64, u128), (new_gb, index): (i64, u128)) {
     assert_eq!(
         simulation::run(
             &get_example_program("collatz"),
@@ -52,9 +52,9 @@ fn simulate_collatz((gb, n): (i64, i64), (new_gb, index): (i64, i64)) {
                 (StatementIdx(41), 1),
             ]),
             &"Collatz".into(),
-            vec![CoreValue::GasBuiltin(gb), CoreValue::Integer(n)]
+            vec![CoreValue::GasBuiltin(gb), CoreValue::Uint128(n)]
         ),
-        Ok(vec![CoreValue::GasBuiltin(new_gb), CoreValue::Integer(index)])
+        Ok(vec![CoreValue::GasBuiltin(new_gb), CoreValue::Uint128(index)])
     );
 }
 
@@ -67,8 +67,8 @@ fn simulate_collatz((gb, n): (i64, i64), (new_gb, index): (i64, i64)) {
 #[test_case((1000, 6), (936, 13); "6 => 13")]
 #[test_case((1000, 7), (923, 21); "7 => 21")]
 #[test_case((1000, 8), (910, 34); "8 => 34")]
-#[test_case((100, 80), (9, -1); "Out of gas.")]
-fn simulate_fib_jumps((gb, n): (i64, i64), (new_gb, fib): (i64, i64)) {
+#[test_case((100, 80), (9, u128::MAX); "Out of gas.")]
+fn simulate_fib_jumps((gb, n): (i64, u128), (new_gb, fib): (i64, u128)) {
     assert_eq!(
         simulation::run(
             &get_example_program("fib_jumps"),
@@ -80,9 +80,9 @@ fn simulate_fib_jumps((gb, n): (i64, i64), (new_gb, fib): (i64, i64)) {
                 (StatementIdx(43), 1),
             ]),
             &"Fibonacci".into(),
-            vec![CoreValue::GasBuiltin(gb), CoreValue::Integer(n)]
+            vec![CoreValue::GasBuiltin(gb), CoreValue::Uint128(n)]
         ),
-        Ok(vec![CoreValue::GasBuiltin(new_gb), CoreValue::Integer(fib)])
+        Ok(vec![CoreValue::GasBuiltin(new_gb), CoreValue::Uint128(fib)])
     );
 }
 
@@ -122,8 +122,8 @@ fn simulate_fib_no_gas(n: i128, fib: i128) {
 #[test_case((1000, 6), (534, 13); "6 => 13")]
 #[test_case((1000, 7), (221, 21); "7 => 21")]
 #[test_case((1500, 8), (213, 34); "8 => 34")]
-#[test_case((100, 80), (16, -30000); "Out of gas.")]
-fn simulate_fib_recursive((gb, n): (i64, i64), (new_gb, fib): (i64, i64)) {
+#[test_case((100, 80), (16, u128::MAX.wrapping_mul(/*error_count=*/3)); "Out of gas.")]
+fn simulate_fib_recursive((gb, n): (i64, u128), (new_gb, fib): (i64, u128)) {
     assert_eq!(
         simulation::run(
             &get_example_program("fib_recursive"),
@@ -135,8 +135,8 @@ fn simulate_fib_recursive((gb, n): (i64, i64), (new_gb, fib): (i64, i64)) {
                 (StatementIdx(37), 0),
             ]),
             &"Fibonacci".into(),
-            vec![CoreValue::GasBuiltin(gb), CoreValue::Integer(n)]
+            vec![CoreValue::GasBuiltin(gb), CoreValue::Uint128(n)]
         ),
-        Ok(vec![CoreValue::GasBuiltin(new_gb), CoreValue::Integer(fib)])
+        Ok(vec![CoreValue::GasBuiltin(new_gb), CoreValue::Uint128(fib)])
     );
 }
