@@ -388,16 +388,21 @@ fn lower_expr_match(
     expr: &semantic::ExprMatch,
     scope: &mut BlockScope,
 ) -> Result<LoweredExpr, LoweringFlowError> {
-    let expr_var =
-        extract_matches!(lower_expr(ctx, scope, expr.matched_expr)?, LoweredExpr::AtVariable);
+    let lowered_expr = lower_expr(ctx, scope, expr.matched_expr)?;
 
     if ctx.function_def.exprs[expr.matched_expr].ty() == ctx.db.core_felt_ty() {
-        return lower_expr_match_felt(ctx, expr, expr_var, scope);
+        let var = lowered_expr.var(ctx, scope);
+        return lower_expr_match_felt(ctx, expr, var, scope);
     }
 
     // TODO(spapini): Use diagnostics.
     // TODO(spapini): Handle more than just enums.
+    if let LoweredExpr::ExternEnum(extern_enum) = lowered_expr {
+        return lower_optimized_extern_match(ctx, scope, extern_enum, &expr.arms);
+    }
+
     let (concrete_enum_id, concrete_variants) = extract_concrete_enum(ctx, expr)?;
+    let expr_var = lowered_expr.var(ctx, scope);
 
     // Merge arm blocks.
     let (res, mut finalized_merger) =
@@ -435,6 +440,78 @@ fn lower_expr_match(
         end_info: finalized_merger.end_info,
     };
     let block_result = match_generator.add(ctx, scope);
+    lowered_expr_from_block_result(scope, block_result, finalized_merger.pushes)
+}
+
+/// Lowers a match expression on a LoweredExpr::ExternEnum lowered expression.
+fn lower_optimized_extern_match(
+    ctx: &mut LoweringContext<'_>,
+    scope: &mut BlockScope,
+    extern_enum: LoweredExprExternEnum,
+    match_arms: &[semantic::MatchArm],
+) -> Result<LoweredExpr, LoweringFlowError> {
+    let concrete_variants = ctx.db.concrete_enum_variants(extern_enum.concrete_enum_id).unwrap();
+    if match_arms.len() != concrete_variants.len() {
+        return Err(LoweringFlowError::Failed);
+    }
+    // Merge arm blocks.
+    let (blocks, mut finalized_merger) = BlockFlowMerger::with(
+        ctx,
+        scope,
+        &extern_enum.ref_args,
+        |ctx, merger| -> Result<_, LoweringFlowError> {
+            // Create a sealed block for each arm.
+            let block_opts =
+                zip_eq(&concrete_variants, match_arms).map(|(concrete_variant, arm)| {
+                    let variant_input_tys = extern_facade_return_tys(ctx, concrete_variant.ty);
+                    let ref_tys = extern_enum
+                        .ref_args
+                        .iter()
+                        .map(|semantic_var_id| ctx.semantic_defs[*semantic_var_id].ty());
+                    let input_tys = chain!(ref_tys, variant_input_tys.into_iter()).collect();
+
+                    // Create a scope for the arm block.
+                    merger.run_in_subscope(ctx, input_tys, |ctx, subscope, mut arm_inputs| {
+                        let ref_outputs: Vec<_> =
+                            arm_inputs.drain(0..extern_enum.ref_args.len()).collect();
+                        let variant_expr = extern_facade_expr(ctx, concrete_variant.ty, arm_inputs);
+                        let enum_pattern =
+                            try_extract_matches!(&arm.pattern, semantic::Pattern::Enum)?;
+                        // TODO(spapini): Convert to a diagnostic.
+                        assert_eq!(&enum_pattern.variant, concrete_variant, "Wrong variant");
+                        lower_single_pattern(
+                            ctx,
+                            subscope,
+                            &enum_pattern.inner_pattern,
+                            variant_expr,
+                        );
+
+                        // Rebind the ref variables.
+                        for (semantic_var_id, output_var) in
+                            zip_eq(&extern_enum.ref_args, ref_outputs)
+                        {
+                            subscope.put_semantic_variable(*semantic_var_id, output_var);
+                        }
+
+                        // Lower the arm expression.
+                        lower_tail_expr(ctx, subscope, arm.expression)
+                    })
+                });
+            block_opts.collect::<Option<Vec<_>>>().ok_or(LoweringFlowError::Failed)
+        },
+    );
+    let arms = blocks
+        .unwrap()
+        .into_iter()
+        .map(|sealed| finalized_merger.finalize_block(ctx, sealed).block)
+        .collect();
+    let block_result = generators::MatchExtern {
+        function: extern_enum.function,
+        inputs: extern_enum.inputs,
+        arms,
+        end_info: finalized_merger.end_info,
+    }
+    .add(ctx, scope);
     lowered_expr_from_block_result(scope, block_result, finalized_merger.pushes)
 }
 
