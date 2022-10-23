@@ -25,11 +25,12 @@
     │       │   │               └── [36mitem #0[0m (kind: PathSegmentSimple)
     │       │   │                   └── [34mident[0m (kind: TokenIdentifier): '[1;32mint[0m'
     │       │   ├── [34mrparen[0m (kind: TokenRParen): '[1;32m)[0m'
-    │       │   └── [36mret_ty[0m (kind: ReturnTypeClause)
-    │       │       ├── [34marrow[0m (kind: TokenArrow): '[1;32m->[0m'
-    │       │       └── [36mty[0m (kind: ExprPath)
-    │       │           └── [36mitem #0[0m (kind: PathSegmentSimple)
-    │       │               └── [34mident[0m (kind: TokenIdentifier): '[1;32mfelt[0m'
+    │       │   ├── [36mret_ty[0m (kind: ReturnTypeClause)
+    │       │   │   ├── [34marrow[0m (kind: TokenArrow): '[1;32m->[0m'
+    │       │   │   └── [36mty[0m (kind: ExprPath)
+    │       │   │       └── [36mitem #0[0m (kind: PathSegmentSimple)
+    │       │   │           └── [34mident[0m (kind: TokenIdentifier): '[1;32mfelt[0m'
+    │       │   └── [36mwith_clause[0m (kind: OptionWithClauseEmpty)[95m [][0m
     │       └── [36mbody[0m (kind: ExprBlock)
     │           ├── [34mlbrace[0m (kind: TokenLBrace): '[1;32m{[0m'
     │           ├── [36mstatements[0m (kind: StatementList)

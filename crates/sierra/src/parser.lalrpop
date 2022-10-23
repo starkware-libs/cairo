@@ -41,33 +41,33 @@ Param: Param = {
 Params = Comma<Param>;
 
 GenericLibFuncId: GenericLibFuncId = {
-    <id:Label> => GenericLibFuncId::from_string(id),
+    <id:PathLabel> => GenericLibFuncId::from_string(id),
     "[" <id:UnsignedInt> "]" => GenericLibFuncId::new(id),
 }
 
 ConcreteLibFuncId: ConcreteLibFuncId = {
-    <id:Label> => ConcreteLibFuncId::from_string(id),
+    <id:ConcreteLabel> => ConcreteLibFuncId::from_string(id),
     "[" <id:UnsignedInt> "]" => ConcreteLibFuncId::new(id),
 }
 
 FunctionId: FunctionId = {
-    <id:Label> => FunctionId::from_string(id),
+    <id:ConcreteLabel> => FunctionId::from_string(id),
     "[" <id:UnsignedInt> "]" => FunctionId::new(id),
 }
 
 VarId: VarId = {
-    <id:Label> => VarId::from_string(id),
+    <id:BasicLabel> => VarId::from_string(id),
     "[" <id:UnsignedInt> "]" => VarId::new(id),
 }
 VarIds = Comma<VarId>;
 
 GenericTypeId: GenericTypeId = {
-    <id:Label> => GenericTypeId::from_string(id),
+    <id:PathLabel> => GenericTypeId::from_string(id),
     "[" <id:UnsignedInt> "]" => GenericTypeId::new(id),
 }
 
 ConcreteTypeId: ConcreteTypeId = {
-    <id:Label> => ConcreteTypeId::from_string(id),
+    <id:ConcreteLabel> => ConcreteTypeId::from_string(id),
     "[" <id:UnsignedInt> "]" => ConcreteTypeId::new(id),
 }
 ConcreteTypeIds = Comma<ConcreteTypeId>;
@@ -123,8 +123,26 @@ BranchTarget: BranchTarget = {
      <id:StatementIdx> => BranchTarget::Statement(id),
 }
 
-Label: String = {
+BasicLabel: String = {
     r"[a-zA-Z_][a-zA-Z_0-9]*" => <>.to_string(),
+}
+
+// `BasicLabel`s joined by "::".
+PathLabel: String = {
+    BasicLabel => <>,
+    <path_label:PathLabel> "::" <basic_label:BasicLabel> => format!("{path_label}::{basic_label}>"),
+}
+
+// `GenericArg`s joined by ",".
+GenericArgsString: String = {
+    GenericArg => <>.to_string(),
+    <head:GenericArgsString> "," <tail:GenericArg> => format!("{head}, {tail}"),
+}
+
+// Label that can also include generic arguments.
+ConcreteLabel: String = {
+    <base:PathLabel> "<" <generic_args:GenericArgsString> ">" => format!("{base}<{generic_args}>"),
+    PathLabel => <>,
 }
 
 UnsignedInt: u64 = {

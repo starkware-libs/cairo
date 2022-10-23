@@ -4,7 +4,7 @@
 test_partial_parser_tree
 
 //! > cairo_code
-func foo(a: int, mut b: felt, ref c: int, mut ref d: felt) -> felt {
+func foo(a: int, mut b: felt, ref c: int, mut ref d: felt) -> felt with(rc: RangeCheck, h: Hash) {
     return a;
 }
 
@@ -57,8 +57,32 @@ FunctionSignature
     │               └── item #0 (kind: PathSegmentSimple)
     │                   └── ident (kind: TokenIdentifier): 'felt'
     ├── rparen (kind: TokenRParen): ')'
-    └── ret_ty (kind: ReturnTypeClause)
-        ├── arrow (kind: TokenArrow): '->'
-        └── ty (kind: ExprPath)
-            └── item #0 (kind: PathSegmentSimple)
-                └── ident (kind: TokenIdentifier): 'felt'
+    ├── ret_ty (kind: ReturnTypeClause)
+    │   ├── arrow (kind: TokenArrow): '->'
+    │   └── ty (kind: ExprPath)
+    │       └── item #0 (kind: PathSegmentSimple)
+    │           └── ident (kind: TokenIdentifier): 'felt'
+    └── with_clause (kind: WithClause)
+        ├── with_kw (kind: TokenWith): 'with'
+        ├── lparen (kind: TokenLParen): '('
+        ├── implicits (kind: ParamList)
+        │   ├── item #0 (kind: Param)
+        │   │   ├── modifiers (kind: ModifierList) []
+        │   │   ├── name (kind: TokenIdentifier): 'rc'
+        │   │   └── type_clause (kind: TypeClause)
+        │   │       ├── colon (kind: TokenColon): ':'
+        │   │       └── ty (kind: ExprPath)
+        │   │           └── item #0 (kind: PathSegmentSimple)
+        │   │               └── ident (kind: TokenIdentifier): 'RangeCheck'
+        │   ├── separator #0 (kind: TokenComma): ','
+        │   └── item #1 (kind: Param)
+        │       ├── modifiers (kind: ModifierList) []
+        │       ├── name (kind: TokenIdentifier): 'h'
+        │       └── type_clause (kind: TypeClause)
+        │           ├── colon (kind: TokenColon): ':'
+        │           └── ty (kind: ExprPath)
+        │               └── item #0 (kind: PathSegmentSimple)
+        │                   └── ident (kind: TokenIdentifier): 'Hash'
+        └── rparen (kind: TokenRParen): ')'
+
+

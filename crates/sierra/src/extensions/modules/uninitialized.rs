@@ -10,7 +10,7 @@ use crate::program::GenericArg;
 pub struct UninitializedType {}
 impl NamedType for UninitializedType {
     type Concrete = UninitializedConcreteType;
-    const ID: GenericTypeId = GenericTypeId::new_inline("uninitialized");
+    const ID: GenericTypeId = GenericTypeId::new_inline("Uninitialized");
 
     fn specialize(
         &self,

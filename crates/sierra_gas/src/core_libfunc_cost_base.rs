@@ -1,7 +1,3 @@
-use sierra::extensions::arithmetic::{
-    BinaryOperationConcreteLibFunc, OperationConcreteLibFunc, OperationWithConstConcreteLibFunc,
-    Operator,
-};
 use sierra::extensions::array::ArrayConcreteLibFunc;
 use sierra::extensions::core::CoreConcreteLibFunc::{
     self, ApTracking, Array, Box, Drop, Dup, Enum, Felt, FunctionCall, Gas, Integer, Mem,
@@ -14,6 +10,10 @@ use sierra::extensions::gas::GasConcreteLibFunc::{GetGas, RefundGas};
 use sierra::extensions::integer::IntegerConcrete;
 use sierra::extensions::mem::MemConcreteLibFunc::{
     AlignTemps, AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
+};
+use sierra::extensions::wrapping_arithmetic::{
+    BinaryOperationConcreteLibFunc, OperationConcreteLibFunc, OperationWithConstConcreteLibFunc,
+    Operator,
 };
 use sierra::program::Function;
 
@@ -73,7 +73,7 @@ fn integer_libfunc_cost<Ops: CostOperations>(
 ) -> Vec<Ops::CostType> {
     // TODO(orizi): When sierra_to_casm actually supports integers - fix costs.
     match libfunc {
-        IntegerConcrete::Operation(OperationConcreteLibFunc::Binary(
+        IntegerConcrete::WrappingOp(OperationConcreteLibFunc::Binary(
             BinaryOperationConcreteLibFunc { operator, .. },
         )) => match operator {
             Operator::Add | Operator::Sub => vec![ops.const_cost(5)],
@@ -81,7 +81,7 @@ fn integer_libfunc_cost<Ops: CostOperations>(
                 vec![ops.const_cost(7)]
             }
         },
-        IntegerConcrete::Operation(OperationConcreteLibFunc::Const(
+        IntegerConcrete::WrappingOp(OperationConcreteLibFunc::Const(
             OperationWithConstConcreteLibFunc { operator, .. },
         )) => match operator {
             Operator::Add | Operator::Sub => vec![ops.const_cost(3)],
