@@ -8,7 +8,6 @@ use std::sync::Arc;
 use defs::ids::{FreeFunctionId, GenericFunctionId};
 use diagnostics::{Diagnostics, DiagnosticsBuilder};
 use itertools::zip_eq;
-use lowering::lower::lower;
 use sierra::extensions::core::CoreLibFunc;
 use sierra::extensions::lib_func::LibFuncSignature;
 use sierra::extensions::GenericLibFuncEx;
@@ -64,11 +63,11 @@ pub fn get_function_code(
     function_id: FreeFunctionId,
 ) -> Option<Arc<pre_sierra::Function>> {
     let signature = db.free_function_declaration_signature(function_id)?;
-    let lowered_function = lower(db.upcast(), function_id).unwrap();
+    let lowered_function = &*db.free_function_lowered(function_id)?;
     let block = &lowered_function.blocks[lowered_function.root?];
 
     let mut context =
-        ExprGeneratorContext::new(db, Some(&lowered_function), function_id, diagnostics);
+        ExprGeneratorContext::new(db, Some(lowered_function), function_id, diagnostics);
 
     // Generate a label for the function's body.
     let (label, label_id) = context.new_label();
