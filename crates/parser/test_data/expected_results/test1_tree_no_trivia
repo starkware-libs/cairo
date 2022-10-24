@@ -16,7 +16,7 @@
     │   ├── child #2 (kind: ItemFreeFunction)
     │   │   ├── function_kw (kind: TokenFunction): 'func'
     │   │   ├── name (kind: TokenIdentifier): 'foo'
-    │   │   ├── generic_params (kind: OptionGenericParamsEmpty) []
+    │   │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
     │   │   ├── signature (kind: FunctionSignature)
     │   │   │   ├── lparen (kind: TokenLParen): '('
     │   │   │   ├── parameters (kind: ParamList)
@@ -111,7 +111,7 @@
     │   │       │   │   │   │   │       ├── statements (kind: StatementList)
     │   │       │   │   │   │   │       │   └── child #0 (kind: StatementExpr)
     │   │       │   │   │   │   │       │       ├── expr (kind: TokenLiteralNumber): '1'
-    │   │       │   │   │   │   │       │       └── semicolon (kind: OptionSemicolonEmpty) []
+    │   │       │   │   │   │   │       │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │   │       │   │   │   │   │       └── rbrace (kind: TokenRBrace): '}'
     │   │       │   │   │   │   ├── separator #0 (kind: TokenComma): ','
     │   │       │   │   │   │   ├── item #1 (kind: MatchArm)
@@ -146,7 +146,7 @@
     │   │       │   │   │   │   ├── statements (kind: StatementList)
     │   │       │   │   │   │   │   └── child #0 (kind: StatementExpr)
     │   │       │   │   │   │   │       ├── expr (kind: TokenLiteralNumber): '1'
-    │   │       │   │   │   │   │       └── semicolon (kind: OptionSemicolonEmpty) []
+    │   │       │   │   │   │   │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │   │       │   │   │   │   └── rbrace (kind: TokenRBrace): '}'
     │   │       │   │   │   └── else_clause (kind: ElseClause)
     │   │       │   │   │       ├── else_kw (kind: TokenElse): 'else'
@@ -155,7 +155,7 @@
     │   │       │   │   │           ├── statements (kind: StatementList)
     │   │       │   │   │           │   └── child #0 (kind: StatementExpr)
     │   │       │   │   │           │       ├── expr (kind: TokenLiteralNumber): '2'
-    │   │       │   │   │           │       └── semicolon (kind: OptionSemicolonEmpty) []
+    │   │       │   │   │           │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │   │       │   │   │           └── rbrace (kind: TokenRBrace): '}'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   ├── child #5 (kind: StatementLet)
@@ -208,7 +208,7 @@
     │   │       │   │   │       │       └── item #0 (kind: PathSegmentSimple)
     │   │       │   │   │       │           └── ident (kind: TokenIdentifier): 'x'
     │   │       │   │   │       └── rparen (kind: TokenRParen): ')'
-    │   │       │   │   └── semicolon (kind: OptionSemicolonEmpty) []
+    │   │       │   │   └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │   │       │   └── child #9 (kind: StatementReturn)
     │   │       │       ├── return_kw (kind: TokenReturn): 'return'
     │   │       │       ├── expr (kind: ExprPath)

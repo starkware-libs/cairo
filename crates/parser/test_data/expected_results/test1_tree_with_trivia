@@ -58,7 +58,7 @@
     │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │   │   ├── token (kind: TokenIdentifier): 'foo'
     │   │   │   └── trailing_trivia (kind: Trivia) []
-    │   │   ├── generic_params (kind: OptionGenericParamsEmpty) []
+    │   │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
     │   │   ├── signature (kind: FunctionSignature)
     │   │   │   ├── lparen (kind: TerminalLParen)
     │   │   │   │   ├── leading_trivia (kind: Trivia) []
@@ -333,7 +333,7 @@
     │   │       │   │   │   │   │       │       │   ├── token (kind: TokenLiteralNumber): '1'
     │   │       │   │   │   │   │       │       │   └── trailing_trivia (kind: Trivia)
     │   │       │   │   │   │   │       │       │       └── child #0 (kind: TokenWhitespace).
-    │   │       │   │   │   │   │       │       └── semicolon (kind: OptionSemicolonEmpty) []
+    │   │       │   │   │   │   │       │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │   │       │   │   │   │   │       └── rbrace (kind: TerminalRBrace)
     │   │       │   │   │   │   │           ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │   │   │           ├── token (kind: TokenRBrace): '}'
@@ -445,7 +445,7 @@
     │   │       │   │   │   │   │       │   ├── token (kind: TokenLiteralNumber): '1'
     │   │       │   │   │   │   │       │   └── trailing_trivia (kind: Trivia)
     │   │       │   │   │   │   │       │       └── child #0 (kind: TokenNewline).
-    │   │       │   │   │   │   │       └── semicolon (kind: OptionSemicolonEmpty) []
+    │   │       │   │   │   │   │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │   │       │   │   │   │   └── rbrace (kind: TerminalRBrace)
     │   │       │   │   │   │       ├── leading_trivia (kind: Trivia)
     │   │       │   │   │   │       │   └── child #0 (kind: TokenWhitespace).
@@ -472,7 +472,7 @@
     │   │       │   │   │           │       │   ├── token (kind: TokenLiteralNumber): '2'
     │   │       │   │   │           │       │   └── trailing_trivia (kind: Trivia)
     │   │       │   │   │           │       │       └── child #0 (kind: TokenNewline).
-    │   │       │   │   │           │       └── semicolon (kind: OptionSemicolonEmpty) []
+    │   │       │   │   │           │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │   │       │   │   │           └── rbrace (kind: TerminalRBrace)
     │   │       │   │   │               ├── leading_trivia (kind: Trivia)
     │   │       │   │   │               │   └── child #0 (kind: TokenWhitespace).
@@ -617,7 +617,7 @@
     │   │       │   │   │           ├── token (kind: TokenRParen): ')'
     │   │       │   │   │           └── trailing_trivia (kind: Trivia)
     │   │       │   │   │               └── child #0 (kind: TokenNewline).
-    │   │       │   │   └── semicolon (kind: OptionSemicolonEmpty) []
+    │   │       │   │   └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │   │       │   └── child #9 (kind: StatementReturn)
     │   │       │       ├── return_kw (kind: TerminalReturn)
     │   │       │       │   ├── leading_trivia (kind: Trivia)
