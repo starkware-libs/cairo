@@ -27,12 +27,12 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::items::enm::SemanticEnumEx;
-use crate::items::modifiers::compute_modifiers;
+use crate::items::modifiers::compute_mutability;
 use crate::items::strct::SemanticStructEx;
 use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use crate::semantic::{self, FunctionId, LocalVariable, TypeId, TypeLongId, Variable};
 use crate::types::{resolve_type, ConcreteTypeId};
-use crate::Parameter;
+use crate::{Mutability, Parameter};
 
 /// Context for computing the semantic model of expression trees.
 pub struct ComputationContext<'ctx> {
@@ -195,7 +195,7 @@ fn compute_expr_binary_semantic(
                 // The semantic_var must be valid as 'lexpr' is a result of compute_expr_semantic.
                 let semantic_var = ctx.semantic_defs.get(&var).unwrap();
 
-                if !semantic_var.modifiers().is_mut {
+                if !semantic_var.is_mut() {
                     ctx.diagnostics.report(syntax, AssignmentToImmutableVar);
                 }
                 Some(Expr::Assignment(ExprAssignment {
@@ -573,7 +573,7 @@ fn compute_pattern_semantic(
     })
 }
 
-/// Creates a variable pattern.
+/// Creates a local variable pattern.
 fn create_variable_pattern(
     ctx: &mut ComputationContext<'_>,
     identifier: ast::TerminalIdentifier,
@@ -584,13 +584,17 @@ fn create_variable_pattern(
     let var_id =
         ctx.db.intern_local_var(LocalVarLongId(ctx.resolver.module_id, identifier.stable_ptr()));
 
+    let is_mut = match compute_mutability(ctx.diagnostics, syntax_db, modifier_list) {
+        Mutability::Immutable => false,
+        Mutability::Mutable => true,
+        Mutability::Reference => {
+            ctx.diagnostics.report(&identifier, ReferenceLocalVariable);
+            false
+        }
+    };
     Pattern::Variable(PatternVariable {
         name: identifier.text(syntax_db),
-        var: LocalVariable {
-            id: var_id,
-            ty,
-            modifiers: compute_modifiers(ctx.diagnostics, syntax_db, modifier_list),
-        },
+        var: LocalVariable { id: var_id, ty, is_mut },
     })
 }
 
@@ -848,7 +852,7 @@ fn expr_function_call(
             );
         }
 
-        if param.modifiers.is_ref {
+        if param.mutability == Mutability::Reference {
             let expr_var = try_extract_matches!(&arg, Expr::Var).on_none(|| {
                 ctx.diagnostics.report_by_ptr(arg.stable_ptr().untyped(), RefArgNotAVariable);
             })?;

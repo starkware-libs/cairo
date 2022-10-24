@@ -1,0 +1,86 @@
+//! > Repeated modifiers for a local variable (first modifier is `mut`).
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+func foo() {
+    let mut ref mut ref ref a = 3;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: `ref` modifier was specified after another modifier (`mut`). Only a single modifier is allowed. 
+ --> lib.cairo:2:13
+    let mut ref mut ref ref a = 3;
+            ^*^
+
+error: `mut` modifier was specified after another modifier (`mut`). Only a single modifier is allowed. 
+ --> lib.cairo:2:17
+    let mut ref mut ref ref a = 3;
+                ^*^
+
+error: `ref` modifier was specified after another modifier (`mut`). Only a single modifier is allowed. 
+ --> lib.cairo:2:21
+    let mut ref mut ref ref a = 3;
+                    ^*^
+
+error: `ref` modifier was specified after another modifier (`mut`). Only a single modifier is allowed. 
+ --> lib.cairo:2:25
+    let mut ref mut ref ref a = 3;
+                        ^*^
+
+//! > ==========================================================================
+
+//! > Repeated modifiers for a local variable (first modifier is `ref`).
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+func foo() {
+    let ref mut a = 3;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: `mut` modifier was specified after another modifier (`ref`). Only a single modifier is allowed. 
+ --> lib.cairo:2:13
+    let ref mut a = 3;
+            ^*^
+
+error: `ref` is only allowed for function parameters, not for local variables.
+ --> lib.cairo:2:17
+    let ref mut a = 3;
+                ^
+
+//! > ==========================================================================
+
+//! > Unsupported ref modifier for a local variable.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+func foo() {
+    let ref a = 3;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: `ref` is only allowed for function parameters, not for local variables.
+ --> lib.cairo:2:13
+    let ref a = 3;
+            ^

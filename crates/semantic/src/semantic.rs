@@ -25,7 +25,7 @@ pub use crate::types::{
 pub struct LocalVariable {
     pub id: LocalVarId,
     pub ty: TypeId,
-    pub modifiers: Modifiers,
+    pub is_mut: bool,
 }
 impl LocalVariable {
     pub fn stable_ptr(&self, db: &dyn DefsGroup) -> ast::TerminalIdentifierPtr {
@@ -38,18 +38,19 @@ impl LocalVariable {
 pub struct Parameter {
     pub id: ParamId,
     pub ty: TypeId,
-    pub modifiers: Modifiers,
+    pub mutability: Mutability,
 }
 
-#[derive(Clone, Default, Debug, Hash, PartialEq, Eq)]
-pub struct Modifiers {
-    pub is_mut: bool,
-    pub is_ref: bool,
-}
-impl Modifiers {
-    pub fn new_implicit() -> Modifiers {
-        Modifiers { is_mut: true, is_ref: true }
-    }
+/// The mutability attribute of a variable.
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+pub enum Mutability {
+    /// The variable can't be changed.
+    Immutable,
+    /// The variable can be changed locally.
+    Mutable,
+    /// Only relevant for a parameter.
+    /// The parameter is an in-out parameter and a change in it affects the outer scope.
+    Reference,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
@@ -74,11 +75,12 @@ impl Variable {
             Variable::ImplicitParam(implicit_param) => implicit_param.ty,
         }
     }
-    pub fn modifiers(&self) -> &Modifiers {
+    pub fn is_mut(&self) -> bool {
         match self {
-            Variable::Local(local) => &local.modifiers,
-            Variable::Param(param) => &param.modifiers,
-            Variable::ImplicitParam(implicit_param) => &implicit_param.modifiers,
+            Variable::Local(local) => local.is_mut,
+            Variable::Param(param) | Variable::ImplicitParam(param) => {
+                param.mutability != Mutability::Immutable
+            }
         }
     }
 }
