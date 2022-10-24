@@ -119,10 +119,10 @@ impl TestBuilder {
 
     fn new_test(&mut self) {
         self.close_open_tag();
-        self.tests.insert(
-            self.current_test_name.as_ref().expect("No name found for test.").into(),
-            std::mem::take(&mut self.current_test).unwrap(),
-        );
+        let name = self.current_test_name.as_ref().expect("No name found for test.");
+        let old_test =
+            self.tests.insert(name.clone(), std::mem::take(&mut self.current_test).unwrap());
+        assert!(old_test.is_none(), "Found two tests named {name}.");
         self.current_test_name = None;
         self.current_tag = None;
     }
