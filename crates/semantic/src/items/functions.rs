@@ -110,7 +110,7 @@ pub fn function_signature_params(
         let semantic_param = semantic::Parameter {
             id,
             ty,
-            modifiers: compute_modifiers(
+            mutability: compute_modifiers(
                 diagnostics,
                 syntax_db,
                 &ast_param.modifiers(syntax_db).elements(syntax_db),
@@ -176,7 +176,7 @@ pub fn concrete_function_signature(
                     .map(|param| Parameter {
                         id: param.id,
                         ty: substitute_generics(db, &substitution, param.ty),
-                        modifiers: param.modifiers,
+                        mutability: param.mutability,
                     })
                     .collect(),
                 return_type: substitute_generics(db, &substitution, generic_signature.return_type),

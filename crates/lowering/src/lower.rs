@@ -58,7 +58,7 @@ pub fn lower(db: &dyn SemanticGroup, free_function_id: FreeFunctionId) -> Option
         .unzip();
     let ref_params: Vec<_> = input_semantic_vars
         .iter()
-        .filter_map(|var| if var.modifiers().is_ref { Some(var.id()) } else { None })
+        .filter_map(|var| if var.is_ref() { Some(var.id()) } else { None })
         .collect();
 
     let mut ctx = LoweringContext {

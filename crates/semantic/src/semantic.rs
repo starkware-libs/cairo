@@ -3,6 +3,7 @@ use defs::ids::LocalVarId;
 // Reexport objects
 pub use defs::ids::{ParamId, VarId};
 use diagnostics_proc_macros::DebugWithDb;
+use smol_str::SmolStr;
 use syntax::node::ast;
 
 pub use super::expr::objects::*;
@@ -25,7 +26,7 @@ pub use crate::types::{
 pub struct LocalVariable {
     pub id: LocalVarId,
     pub ty: TypeId,
-    pub modifiers: Modifiers,
+    pub is_mut: bool,
 }
 impl LocalVariable {
     pub fn stable_ptr(&self, db: &dyn DefsGroup) -> ast::TerminalIdentifierPtr {
@@ -38,13 +39,30 @@ impl LocalVariable {
 pub struct Parameter {
     pub id: ParamId,
     pub ty: TypeId,
-    pub modifiers: Modifiers,
+    pub mutability: Mutability,
 }
 
-#[derive(Clone, Default, Debug, Hash, PartialEq, Eq)]
-pub struct Modifiers {
-    pub is_mut: bool,
-    pub is_ref: bool,
+/// The mutability attribute of a variable.
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+pub enum Mutability {
+    /// The variable can't be changed.
+    Immutable,
+    /// The variable can be changed locally.
+    Mutable,
+    /// Only relevant for a parameter.
+    /// The parameter is an in-out parameter and a change in it affects the outer scope.
+    Reference,
+}
+impl Mutability {
+    pub fn get_relevant_modifier(&self) -> SmolStr {
+        match *self {
+            Mutability::Immutable => "",
+            Mutability::Mutable => "mut",
+            Mutability::Reference => "ref",
+        }
+        .to_string()
+        .into()
+    }
 }
 
 // TODO(yuval): consider making this an enum or the id an enum of ParamId/LocalVarId
@@ -67,10 +85,16 @@ impl Variable {
             Variable::Param(param) => param.ty,
         }
     }
-    pub fn modifiers(&self) -> &Modifiers {
+    pub fn is_mut(&self) -> bool {
         match self {
-            Variable::Local(local) => &local.modifiers,
-            Variable::Param(param) => &param.modifiers,
+            Variable::Local(local) => local.is_mut,
+            Variable::Param(param) => param.mutability != Mutability::Immutable,
+        }
+    }
+    pub fn is_ref(&self) -> bool {
+        match self {
+            Variable::Local(_) => false,
+            Variable::Param(param) => param.mutability == Mutability::Reference,
         }
     }
 }
