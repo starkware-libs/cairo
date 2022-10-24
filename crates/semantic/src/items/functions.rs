@@ -12,7 +12,7 @@ use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::Environment;
 use crate::resolve_path::Resolver;
 use crate::types::{resolve_type, substitute_generics};
-use crate::{semantic, Modifiers, Parameter};
+use crate::{semantic, Mutability, Parameter};
 
 /// Function instance.
 /// For example: ImplA::foo<A, B>, or bar<A>.
@@ -183,7 +183,7 @@ pub fn concrete_function_signature(
             let concretize_param = |param: semantic::Parameter| Parameter {
                 id: param.id,
                 ty: substitute_generics(db, &substitution_map, param.ty),
-                modifiers: param.modifiers,
+                mutability: param.mutability,
             };
             Some(Signature {
                 params: generic_signature.params.into_iter().map(concretize_param).collect(),
@@ -238,16 +238,16 @@ fn ast_param_to_semantic(
     let ty_syntax = ast_param.type_clause(syntax_db).ty(syntax_db);
     let ty = resolve_type(db, diagnostics, resolver, &ty_syntax);
 
-    let modifiers = if implicit_param {
-        Modifiers::new_implicit()
+    let mutability = if implicit_param {
+        Mutability::Reference
     } else {
-        modifiers::compute_modifiers(
+        modifiers::compute_mutability(
             diagnostics,
             syntax_db,
             &ast_param.modifiers(syntax_db).elements(syntax_db),
         )
     };
 
-    let semantic_param = semantic::Parameter { id, ty, modifiers };
+    let semantic_param = semantic::Parameter { id, ty, mutability };
     (name, semantic_param)
 }

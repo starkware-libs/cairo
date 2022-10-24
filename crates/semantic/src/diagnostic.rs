@@ -175,8 +175,14 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     actual_enum.full_path(db.upcast())
                 )
             }
-            SemanticDiagnosticKind::RepeatedModifier { modifier } => {
-                format!("`{}` modifier may not be repeated", modifier)
+            SemanticDiagnosticKind::RedundantModifier { current_modifier, previous_modifier } => {
+                format!(
+                    "`{current_modifier}` modifier was specified after another modifier \
+                     (`{previous_modifier}`). Only a single modifier is allowed. "
+                )
+            }
+            SemanticDiagnosticKind::ReferenceLocalVariable { variable } => {
+                format!(r#"`ref` is not a valid modifier for a local variable: "{variable}"."#)
             }
         }
     }
@@ -224,7 +230,8 @@ pub enum SemanticDiagnosticKind {
     InvalidMemberExpression,
     InvalidPath,
     PathNotFound,
-    RepeatedModifier { modifier: SmolStr },
+    RedundantModifier { current_modifier: SmolStr, previous_modifier: SmolStr },
+    ReferenceLocalVariable { variable: SmolStr },
     UnexpectedLiteralPattern { ty: semantic::TypeId },
     UnexpectedEnumPattern { ty: semantic::TypeId },
     UnexpectedStructPattern { ty: semantic::TypeId },
