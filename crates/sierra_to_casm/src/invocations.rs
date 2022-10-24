@@ -671,14 +671,17 @@ impl CompiledInvocationBuilder<'_> {
             .variable_values
             .get(&self.idx)
             .ok_or(InvocationError::UnknownVariableData)?;
-        let gas_counter_value = match self.refs {
-            [ReferenceValue { expression: ReferenceExpression::Deref(deref_operand), .. }] => {
-                deref_operand
-            }
-            [_] => return Err(InvocationError::InvalidReferenceExpressionForArgument),
+        let (range_check, gas_counter_value) = match self.refs {
+            [
+                ReferenceValue { expression: ReferenceExpression::Deref(range_check), .. },
+                ReferenceValue {
+                    expression: ReferenceExpression::Deref(gas_counter_value), ..
+                },
+            ] => (*range_check, *gas_counter_value),
+            [_, _] => return Err(InvocationError::InvalidReferenceExpressionForArgument),
             refs => {
                 return Err(InvocationError::WrongNumberOfArguments {
-                    expected: 1,
+                    expected: 2,
                     actual: refs.len(),
                 });
             }
@@ -689,35 +692,72 @@ impl CompiledInvocationBuilder<'_> {
             _ => panic!("malformed invocation"),
         };
 
-        Ok(self.build(
-            vec![Instruction {
-                body: InstructionBody::Jnz(JnzInstruction {
-                    jump_offset: DerefOrImmediate::Immediate(ImmediateOperand { value: 0 }),
-                    condition: DerefOperand { register: Register::AP, offset: 0 },
+        let mut instructions = vec![Instruction {
+            // Jumping to after the next 3 intructions.
+            body: InstructionBody::Jnz(JnzInstruction {
+                jump_offset: DerefOrImmediate::Immediate(ImmediateOperand { value: 4 }),
+                condition: DerefOperand { register: Register::AP, offset: 0 },
+            }),
+            inc_ap: true,
+            hints: vec![Hint::TestLessThan {
+                lhs: DerefOrImmediate::Deref(gas_counter_value),
+                rhs: DerefOrImmediate::Immediate(ImmediateOperand {
+                    value: *requested_count as i128,
                 }),
-                inc_ap: true,
-                hints: vec![Hint::TestLessThan {
-                    lhs: DerefOrImmediate::Immediate(ImmediateOperand {
-                        value: (requested_count - 1) as i128,
-                    }),
-                    rhs: DerefOrImmediate::Deref(*gas_counter_value),
-                }],
             }],
+        }];
+
+        let x = -requested_count as i128;
+        let y = -1 - *requested_count as i128;
+        instructions.extend(
+            casm! {
+                // gas_counter >= requested_count:
+                [ap + 0] = gas_counter_value + x, ap++;
+                [ap - 1] = [[range_check]];
+                jmp rel 0; // Fixed in relocations.
+                // gas_counter < requested_count:
+                // TODO(orizi): Make into one command when wider constants are supported.
+                [ap + 0] = gas_counter_value + y, ap++;
+                [ap + 0] = 0, ap++;
+                [ap - 1] = [ap + 0] + [ap - 2], ap++;
+                [ap - 1] = [[range_check]];
+            }
+            .instructions
+            .into_iter(),
+        );
+
+        Ok(self.build(
+            instructions,
             vec![RelocationEntry {
-                instruction_idx: 0,
+                instruction_idx: 3,
                 relocation: Relocation::RelativeStatementId(*target_statement_id),
             }],
-            [ApChange::Known(1), ApChange::Known(1)].into_iter(),
+            [ApChange::Known(2), ApChange::Known(4)].into_iter(),
             [
-                vec![ReferenceExpression::BinOp(BinOpExpression {
-                    op: FeltOperator::Sub,
-                    a: *gas_counter_value,
-                    b: DerefOrImmediate::Immediate(ImmediateOperand {
-                        value: *requested_count as i128,
+                vec![
+                    ReferenceExpression::BinOp(BinOpExpression {
+                        op: FeltOperator::Add,
+                        a: range_check,
+                        b: DerefOrImmediate::Immediate(ImmediateOperand { value: 1 }),
                     }),
-                })]
+                    ReferenceExpression::BinOp(BinOpExpression {
+                        op: FeltOperator::Sub,
+                        a: gas_counter_value,
+                        b: DerefOrImmediate::Immediate(ImmediateOperand {
+                            value: *requested_count as i128,
+                        }),
+                    }),
+                ]
                 .into_iter(),
-                vec![ReferenceExpression::Deref(*gas_counter_value)].into_iter(),
+                vec![
+                    ReferenceExpression::BinOp(BinOpExpression {
+                        op: FeltOperator::Add,
+                        a: range_check,
+                        b: DerefOrImmediate::Immediate(ImmediateOperand { value: 1 }),
+                    }),
+                    ReferenceExpression::Deref(gas_counter_value),
+                ]
+                .into_iter(),
             ]
             .into_iter(),
         ))

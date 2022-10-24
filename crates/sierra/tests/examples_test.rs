@@ -46,43 +46,43 @@ fn simulate_collatz((gb, n): (i64, u128), (new_gb, index): (i64, u128)) {
             &get_example_program("collatz"),
             &HashMap::from([
                 (StatementIdx(7), 30),
-                (StatementIdx(10), 0),
-                (StatementIdx(23), 2),
-                (StatementIdx(32), 0),
-                (StatementIdx(41), 1),
+                (StatementIdx(11), 0),
+                (StatementIdx(25), 2),
+                (StatementIdx(34), 0),
+                (StatementIdx(43), 1),
             ]),
             &"Collatz".into(),
-            vec![CoreValue::GasBuiltin(gb), CoreValue::Uint128(n)]
+            vec![CoreValue::RangeCheck, CoreValue::GasBuiltin(gb), CoreValue::Uint128(n)]
         ),
-        Ok(vec![CoreValue::GasBuiltin(new_gb), CoreValue::Uint128(index)])
+        Ok(vec![CoreValue::RangeCheck, CoreValue::GasBuiltin(new_gb), CoreValue::Uint128(index)])
     );
 }
 
 #[test_case((1000, 0), (1011, 1); "0 => 1")]
-#[test_case((1000, 1), (1005, 1); "1 => 1")]
-#[test_case((1000, 2), (988, 2); "2 => 2")]
-#[test_case((1000, 3), (975, 3); "3 => 3")]
-#[test_case((1000, 4), (962, 5); "4 => 5")]
-#[test_case((1000, 5), (949, 8); "5 => 8")]
-#[test_case((1000, 6), (936, 13); "6 => 13")]
-#[test_case((1000, 7), (923, 21); "7 => 21")]
-#[test_case((1000, 8), (910, 34); "8 => 34")]
-#[test_case((100, 80), (9, u128::MAX); "Out of gas.")]
+#[test_case((1000, 1), (1006, 1); "1 => 1")]
+#[test_case((1000, 2), (987, 2); "2 => 2")]
+#[test_case((1000, 3), (973, 3); "3 => 3")]
+#[test_case((1000, 4), (959, 5); "4 => 5")]
+#[test_case((1000, 5), (945, 8); "5 => 8")]
+#[test_case((1000, 6), (931, 13); "6 => 13")]
+#[test_case((1000, 7), (917, 21); "7 => 21")]
+#[test_case((1000, 8), (903, 34); "8 => 34")]
+#[test_case((100, 80), (2, u128::MAX); "Out of gas.")]
 fn simulate_fib_jumps((gb, n): (i64, u128), (new_gb, fib): (i64, u128)) {
     assert_eq!(
         simulation::run(
             &get_example_program("fib_jumps"),
             &HashMap::from([
-                (StatementIdx(2), 11),
-                (StatementIdx(11), 5),
-                (StatementIdx(23), 13),
-                (StatementIdx(28), 0),
-                (StatementIdx(43), 1),
+                (StatementIdx(3), 11),
+                (StatementIdx(13), 6),
+                (StatementIdx(27), 14),
+                (StatementIdx(33), 0),
+                (StatementIdx(50), 1),
             ]),
             &"Fibonacci".into(),
-            vec![CoreValue::GasBuiltin(gb), CoreValue::Uint128(n)]
+            vec![CoreValue::RangeCheck, CoreValue::GasBuiltin(gb), CoreValue::Uint128(n)]
         ),
-        Ok(vec![CoreValue::GasBuiltin(new_gb), CoreValue::Uint128(fib)])
+        Ok(vec![CoreValue::RangeCheck, CoreValue::GasBuiltin(new_gb), CoreValue::Uint128(fib)])
     );
 }
 
@@ -115,28 +115,28 @@ fn simulate_fib_no_gas(n: i128, fib: i128) {
 
 #[test_case((1000, 0), (1006, 1); "0 => 1")]
 #[test_case((1000, 1), (1001, 1); "1 => 1")]
-#[test_case((1000, 2), (965, 2); "2 => 2")]
-#[test_case((1000, 3), (924, 3); "3 => 3")]
-#[test_case((1000, 4), (847, 5); "4 => 5")]
-#[test_case((1000, 5), (729, 8); "5 => 8")]
-#[test_case((1000, 6), (534, 13); "6 => 13")]
-#[test_case((1000, 7), (221, 21); "7 => 21")]
-#[test_case((1500, 8), (213, 34); "8 => 34")]
-#[test_case((100, 80), (16, u128::MAX.wrapping_mul(/*error_count=*/3)); "Out of gas.")]
+#[test_case((1000, 2), (962, 2); "2 => 2")]
+#[test_case((1000, 3), (918, 3); "3 => 3")]
+#[test_case((1000, 4), (835, 5); "4 => 5")]
+#[test_case((1000, 5), (708, 8); "5 => 8")]
+#[test_case((1000, 6), (498, 13); "6 => 13")]
+#[test_case((1000, 7), (161, 21); "7 => 21")]
+#[test_case((1500, 8), (114, 34); "8 => 34")]
+#[test_case((100, 80), (10, u128::MAX.wrapping_mul(/*error_count=*/3)); "Out of gas.")]
 fn simulate_fib_recursive((gb, n): (i64, u128), (new_gb, fib): (i64, u128)) {
     assert_eq!(
         simulation::run(
             &get_example_program("fib_recursive"),
             &HashMap::from([
                 (StatementIdx(3), 6),
-                (StatementIdx(11), 1),
-                (StatementIdx(17), 42),
-                (StatementIdx(18), 0),
-                (StatementIdx(37), 0),
+                (StatementIdx(12), 1),
+                (StatementIdx(19), 45),
+                (StatementIdx(21), 0),
+                (StatementIdx(42), 0),
             ]),
             &"Fibonacci".into(),
-            vec![CoreValue::GasBuiltin(gb), CoreValue::Uint128(n)]
+            vec![CoreValue::RangeCheck, CoreValue::GasBuiltin(gb), CoreValue::Uint128(n)]
         ),
-        Ok(vec![CoreValue::GasBuiltin(new_gb), CoreValue::Uint128(fib)])
+        Ok(vec![CoreValue::RangeCheck, CoreValue::GasBuiltin(new_gb), CoreValue::Uint128(fib)])
     );
 }
