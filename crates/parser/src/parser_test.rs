@@ -174,9 +174,9 @@ fn compare_printed_and_expected_maybe_fix(
                 .expect("Failed writing to the expected output file");
         } else {
             panic!(
-                "assertion failed: printed != expected.\nTo automatically fix this, run:\n`cargo \
+                "assertion failed: printed != expected.\nTo automatically fix this, run:\n  cargo \
                  test -p parser -F fix_parser_tests --tests parser::test::fix_parser_tests -- \
-                 --nocapture`.\nNote to carefully review it and not to blindly paste it there, as \
+                 --nocapture\nNote to carefully review it and not to blindly paste it there, as \
                  this loses the whole point of the test.\nTo debug this without fixing, use \
                  _debug_failure()."
             );

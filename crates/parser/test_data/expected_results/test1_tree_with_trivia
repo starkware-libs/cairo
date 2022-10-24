@@ -452,31 +452,32 @@
     │   │       │   │   │   │       ├── token (kind: TokenRBrace): '}'
     │   │       │   │   │   │       └── trailing_trivia (kind: Trivia)
     │   │       │   │   │   │           └── child #0 (kind: TokenWhitespace).
-    │   │       │   │   │   ├── else_kw (kind: TerminalElse)
-    │   │       │   │   │   │   ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │   │   ├── token (kind: TokenElse): 'else'
-    │   │       │   │   │   │   └── trailing_trivia (kind: Trivia)
-    │   │       │   │   │   │       └── child #0 (kind: TokenWhitespace).
-    │   │       │   │   │   └── else_block (kind: ExprBlock)
-    │   │       │   │   │       ├── lbrace (kind: TerminalLBrace)
+    │   │       │   │   │   └── else_clause (kind: ElseClause)
+    │   │       │   │   │       ├── else_kw (kind: TerminalElse)
     │   │       │   │   │       │   ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │       │   ├── token (kind: TokenLBrace): '{'
+    │   │       │   │   │       │   ├── token (kind: TokenElse): 'else'
     │   │       │   │   │       │   └── trailing_trivia (kind: Trivia)
-    │   │       │   │   │       │       └── child #0 (kind: TokenNewline).
-    │   │       │   │   │       ├── statements (kind: StatementList)
-    │   │       │   │   │       │   └── child #0 (kind: StatementExpr)
-    │   │       │   │   │       │       ├── expr (kind: TerminalLiteralNumber)
-    │   │       │   │   │       │       │   ├── leading_trivia (kind: Trivia)
-    │   │       │   │   │       │       │   │   └── child #0 (kind: TokenWhitespace).
-    │   │       │   │   │       │       │   ├── token (kind: TokenLiteralNumber): '2'
-    │   │       │   │   │       │       │   └── trailing_trivia (kind: Trivia)
-    │   │       │   │   │       │       │       └── child #0 (kind: TokenNewline).
-    │   │       │   │   │       │       └── semicolon (kind: OptionSemicolonEmpty) []
-    │   │       │   │   │       └── rbrace (kind: TerminalRBrace)
-    │   │       │   │   │           ├── leading_trivia (kind: Trivia)
-    │   │       │   │   │           │   └── child #0 (kind: TokenWhitespace).
-    │   │       │   │   │           ├── token (kind: TokenRBrace): '}'
-    │   │       │   │   │           └── trailing_trivia (kind: Trivia) []
+    │   │       │   │   │       │       └── child #0 (kind: TokenWhitespace).
+    │   │       │   │   │       └── else_block (kind: ExprBlock)
+    │   │       │   │   │           ├── lbrace (kind: TerminalLBrace)
+    │   │       │   │   │           │   ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │           │   ├── token (kind: TokenLBrace): '{'
+    │   │       │   │   │           │   └── trailing_trivia (kind: Trivia)
+    │   │       │   │   │           │       └── child #0 (kind: TokenNewline).
+    │   │       │   │   │           ├── statements (kind: StatementList)
+    │   │       │   │   │           │   └── child #0 (kind: StatementExpr)
+    │   │       │   │   │           │       ├── expr (kind: TerminalLiteralNumber)
+    │   │       │   │   │           │       │   ├── leading_trivia (kind: Trivia)
+    │   │       │   │   │           │       │   │   └── child #0 (kind: TokenWhitespace).
+    │   │       │   │   │           │       │   ├── token (kind: TokenLiteralNumber): '2'
+    │   │       │   │   │           │       │   └── trailing_trivia (kind: Trivia)
+    │   │       │   │   │           │       │       └── child #0 (kind: TokenNewline).
+    │   │       │   │   │           │       └── semicolon (kind: OptionSemicolonEmpty) []
+    │   │       │   │   │           └── rbrace (kind: TerminalRBrace)
+    │   │       │   │   │               ├── leading_trivia (kind: Trivia)
+    │   │       │   │   │               │   └── child #0 (kind: TokenWhitespace).
+    │   │       │   │   │               ├── token (kind: TokenRBrace): '}'
+    │   │       │   │   │               └── trailing_trivia (kind: Trivia) []
     │   │       │   │   └── semicolon (kind: TerminalSemicolon)
     │   │       │   │       ├── leading_trivia (kind: Trivia) []
     │   │       │   │       ├── token (kind: TokenSemicolon): ';'
