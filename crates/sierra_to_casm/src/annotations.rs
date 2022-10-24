@@ -21,6 +21,7 @@ use crate::references::{
     build_function_arguments_refs, check_types_match, ReferenceValue, ReferencesError,
     StatementRefs,
 };
+use crate::type_sizes::TypeSizeMap;
 
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum AnnotationError {
@@ -120,6 +121,7 @@ impl ProgramAnnotations {
         functions: &[Function],
         metadata: &Metadata,
         gas_usage_check: bool,
+        type_sizes: &TypeSizeMap,
     ) -> Result<Self, AnnotationError> {
         let mut annotations = ProgramAnnotations::new(n_statements);
         let mut return_annotations: HashMap<ReturnProperties, ReturnAnnotation> = HashMap::new();
@@ -147,7 +149,7 @@ impl ProgramAnnotations {
             annotations.set_or_assert(
                 func.entry_point,
                 StatementAnnotations {
-                    refs: build_function_arguments_refs(func)?,
+                    refs: build_function_arguments_refs(func, type_sizes)?,
                     return_annotation,
                     environment: if gas_usage_check {
                         Environment::new(GasWallet::Value(
