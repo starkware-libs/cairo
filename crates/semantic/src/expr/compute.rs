@@ -5,7 +5,7 @@
 use std::collections::HashMap;
 
 use ast::{BinaryOperator, PathSegment};
-use defs::ids::{GenericFunctionId, LocalVarLongId, MemberId};
+use defs::ids::{GenericFunctionId, LocalVarLongId, MemberId, VarId};
 use id_arena::Arena;
 use itertools::zip_eq;
 use smol_str::SmolStr;
@@ -53,9 +53,13 @@ impl<'ctx> ComputationContext<'ctx> {
         resolver: Resolver<'ctx>,
         return_ty: TypeId,
         environment: Environment,
+        params: OrderedHashMap<semantic::VarId, semantic::Parameter>,
     ) -> Self {
-        let semantic_defs =
-            environment.variables.values().by_ref().map(|var| (var.id(), var.clone())).collect();
+        let semantic_defs = environment
+            .variables
+            .values()
+            .map(|var_id| (*var_id, Variable::Param(params.get(var_id).unwrap().clone())))
+            .collect();
         Self {
             db,
             diagnostics,
@@ -91,7 +95,7 @@ impl<'ctx> ComputationContext<'ctx> {
 }
 
 // TODO(ilya): Change value to VarId.
-pub type EnvVariables = HashMap<SmolStr, Variable>;
+pub type EnvVariables = HashMap<SmolStr, VarId>;
 
 // TODO(spapini): Consider using identifiers instead of SmolStr everywhere in the code.
 /// A state which contains all the variables defined at the current resolver until now, and a
@@ -121,7 +125,7 @@ impl Environment {
                 false
             }
             std::collections::hash_map::Entry::Vacant(entry) => {
-                entry.insert(Variable::Param(semantic_param));
+                entry.insert(VarId::Param(semantic_param.id));
                 true
             }
         }
@@ -388,10 +392,7 @@ fn compute_expr_match_semantic(
                     compute_pattern_semantic(new_ctx, syntax_arm.pattern(syntax_db), expr.ty())?;
                 let variables = pattern.variables();
                 for v in variables {
-                    new_ctx
-                        .environment
-                        .variables
-                        .insert(v.name.clone(), Variable::Local(v.var.clone()));
+                    new_ctx.environment.variables.insert(v.name.clone(), VarId::Local(v.var.id));
                 }
                 let arm_expr = compute_expr_semantic(new_ctx, &arm_expr_syntax);
                 Some((pattern, arm_expr))
@@ -789,10 +790,10 @@ pub fn resolve_variable_by_name(
     let variable_name = identifier.text(ctx.db.upcast());
     let mut maybe_env = Some(&*ctx.environment);
     while let Some(env) = maybe_env {
-        if let Some(var) = env.variables.get(&variable_name) {
+        if let Some(var_id) = env.variables.get(&variable_name) {
             return Some(Expr::Var(ExprVar {
-                var: var.id(),
-                ty: var.ty(),
+                var: *var_id,
+                ty: ctx.semantic_defs.get(var_id).unwrap().ty(),
                 stable_ptr: path.stable_ptr().into(),
             }));
         }
@@ -826,7 +827,7 @@ fn expr_function_call(
     // Check argument types.
     let mut ref_args = Vec::new();
     let mut args = Vec::new();
-    for (arg, param) in arg_exprs.into_iter().zip(signature.params.iter()) {
+    for (arg, param) in arg_exprs.into_iter().zip(signature.params.values()) {
         let arg_typ = arg.ty();
         let param_typ = param.ty;
         // Don't add diagnostic if the type is missing (a diagnostic should have already been
@@ -892,9 +893,9 @@ pub fn compute_statement_semantic(
             let pattern = compute_pattern_semantic(ctx, let_syntax.pattern(syntax_db), ty)?;
             let variables = pattern.variables();
             for v in variables {
-                let var_def = Variable::Local(v.var.clone());
-                ctx.environment.variables.insert(v.name.clone(), var_def.clone());
-                ctx.semantic_defs.insert(var_def.id(), var_def);
+                let var_id = VarId::Local(v.var.id);
+                ctx.environment.variables.insert(v.name.clone(), var_id);
+                ctx.semantic_defs.insert(var_id, Variable::Local(v.var.clone()));
             }
             semantic::Statement::Let(semantic::StatementLet {
                 pattern,

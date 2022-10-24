@@ -155,6 +155,7 @@ pub fn priv_free_function_definition_data(
         resolver,
         declaration.signature.return_type,
         environment,
+        declaration.signature.params
     );
     let expr = compute_expr_block_semantic(&mut ctx, &syntax.body(db.upcast()))?;
     if expr.ty() != declaration.signature.return_type

@@ -90,7 +90,7 @@ fn get_function_signature(
     let semantic_function_id = db.lookup_intern_sierra_function(function_id);
     let signature = db.concrete_function_signature(semantic_function_id)?;
     let mut param_types = Vec::new();
-    for param in signature.params {
+    for param in signature.params.values() {
         param_types.push(db.get_concrete_type_id(param.ty)?);
     }
     let ret_types = vec![db.get_concrete_type_id(signature.return_type)?];

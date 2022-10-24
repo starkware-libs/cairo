@@ -221,7 +221,7 @@ fn test_function_with_param() {
 
     // TODO(spapini): Verify params names and tests after StablePtr feature is added.
     assert_eq!(signature.params.len(), 1);
-    let param = &signature.params[0];
+    let param = signature.params.values().next().unwrap();
     let _param_ty = param.ty;
 }
 
@@ -236,7 +236,7 @@ fn test_tuple_type() {
     let signature = test_function.signature;
 
     assert_eq!(signature.params.len(), 1);
-    let param = &signature.params[0];
+    let param = signature.params.values().next().unwrap();
     assert_eq!(
         format!("{:?}", param.debug(db)),
         "Parameter { id: ParamId(test_crate::a), ty: (core::felt, (), (core::felt)), modifiers: \

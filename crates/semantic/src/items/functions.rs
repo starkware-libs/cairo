@@ -1,8 +1,9 @@
 use db_utils::define_short_id;
 use debug::DebugWithDb;
-use defs::ids::{GenericFunctionId, GenericParamId, ParamLongId};
+use defs::ids::{GenericFunctionId, GenericParamId, ParamLongId, VarId};
 use diagnostics_proc_macros::DebugWithDb;
 use syntax::node::{ast, Terminal, TypedSyntaxNode};
+use utils::ordered_hash_map::OrderedHashMap;
 
 use crate::corelib::unit_ty;
 use crate::db::SemanticGroup;
@@ -68,7 +69,7 @@ impl DebugWithDb<dyn SemanticGroup> for ConcreteFunction {
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct Signature {
-    pub params: Vec<semantic::Parameter>,
+    pub params: OrderedHashMap<semantic::VarId, semantic::Parameter>,
     pub return_type: semantic::TypeId,
 }
 
@@ -96,10 +97,10 @@ pub fn function_signature_params(
     resolver: &mut Resolver<'_>,
     sig: &ast::FunctionSignature,
     function_id: GenericFunctionId,
-) -> (Vec<semantic::Parameter>, Environment) {
+) -> (OrderedHashMap<semantic::VarId, semantic::Parameter>, Environment) {
     let syntax_db = db.upcast();
 
-    let mut semantic_params = Vec::new();
+    let mut semantic_params = OrderedHashMap::default();
     let ast_params = sig.parameters(syntax_db).elements(syntax_db);
     let mut env = Environment::default();
     for ast_param in ast_params.iter() {
@@ -117,7 +118,7 @@ pub fn function_signature_params(
             ),
         };
         if env.add_param(diagnostics, &name, semantic_param.clone(), ast_param, function_id) {
-            semantic_params.push(semantic_param);
+            semantic_params.insert(VarId::Param(semantic_param.id), semantic_param);
         }
     }
 
@@ -173,10 +174,15 @@ pub fn concrete_function_signature(
                 params: generic_signature
                     .params
                     .into_iter()
-                    .map(|param| Parameter {
-                        id: param.id,
-                        ty: substitute_generics(db, &substitution, param.ty),
-                        modifiers: param.modifiers,
+                    .map(|(var_id, param)| {
+                        (
+                            var_id,
+                            Parameter {
+                                id: param.id,
+                                ty: substitute_generics(db, &substitution, param.ty),
+                                modifiers: param.modifiers,
+                            },
+                        )
                     })
                     .collect(),
                 return_type: substitute_generics(db, &substitution, generic_signature.return_type),
