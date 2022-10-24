@@ -4,6 +4,7 @@ pub enum CoreValue {
     // TODO(orizi): Use actual felt object.
     Felt(i128),
     GasBuiltin(i64),
+    RangeCheck,
     Uint128(u128),
     NonZero(Box<CoreValue>),
     Ref(Box<CoreValue>),

@@ -54,16 +54,16 @@ pub fn simulate<
             let count = get_statement_gas_info()
                 .ok_or(LibFuncSimulationError::UnresolvedStatementGasInfo)?;
             let gas_counter = match &inputs[..] {
-                [CoreValue::GasBuiltin(value)] => Ok(value),
-                [_] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
+                [CoreValue::RangeCheck, CoreValue::GasBuiltin(value)] => Ok(value),
+                [_, _] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
                 _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
             }?;
             if *gas_counter >= count {
                 // Have enough gas - return reduced counter and jump to success branch.
-                Ok((vec![CoreValue::GasBuiltin(gas_counter - count)], 0))
+                Ok((vec![CoreValue::RangeCheck, CoreValue::GasBuiltin(gas_counter - count)], 0))
             } else {
                 // Don't have enough gas - return the same counter and jump to failure branch.
-                Ok((vec![CoreValue::GasBuiltin(*gas_counter)], 1))
+                Ok((vec![CoreValue::RangeCheck, CoreValue::GasBuiltin(*gas_counter)], 1))
             }
         }
         Gas(RefundGas(_)) => {
