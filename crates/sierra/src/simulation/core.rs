@@ -10,7 +10,7 @@ use crate::extensions::core::CoreConcreteLibFunc::{
 use crate::extensions::enm::{EnumConcreteLibFunc, EnumInitConcreteLibFunc};
 use crate::extensions::felt::FeltConcrete;
 use crate::extensions::function_call::FunctionCallConcreteLibFunc;
-use crate::extensions::gas::GasConcreteLibFunc::{GetGas, RefundGas};
+use crate::extensions::gas::GasConcreteLibFunc::{BurnGas, GetGas, RefundGas};
 use crate::extensions::integer::IntegerConcrete;
 use crate::extensions::mem::MemConcreteLibFunc::{
     AlignTemps, AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
@@ -72,6 +72,10 @@ pub fn simulate<
                 _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
             }?;
             Ok((vec![CoreValue::GasBuiltin(gas_counter + count)], 0))
+        }
+        Gas(BurnGas(_)) => {
+            get_statement_gas_info().ok_or(LibFuncSimulationError::UnresolvedStatementGasInfo)?;
+            Ok((vec![], 0))
         }
         Array(ArrayConcreteLibFunc::New(_)) => {
             if inputs.is_empty() {
