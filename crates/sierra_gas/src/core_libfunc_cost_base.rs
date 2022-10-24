@@ -6,7 +6,7 @@ use sierra::extensions::core::CoreConcreteLibFunc::{
 use sierra::extensions::enm::EnumConcreteLibFunc;
 use sierra::extensions::felt::FeltConcrete;
 use sierra::extensions::function_call::FunctionCallConcreteLibFunc;
-use sierra::extensions::gas::GasConcreteLibFunc::{GetGas, RefundGas};
+use sierra::extensions::gas::GasConcreteLibFunc::{BurnGas, GetGas, RefundGas};
 use sierra::extensions::integer::IntegerConcrete;
 use sierra::extensions::mem::MemConcreteLibFunc::{
     AlignTemps, AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
@@ -49,7 +49,7 @@ pub fn core_libfunc_cost_base<Ops: CostOperations>(
         Gas(GetGas(_)) => {
             vec![ops.sub(ops.const_cost(1), ops.statement_var_cost()), ops.const_cost(1)]
         }
-        Gas(RefundGas(_)) => vec![ops.statement_var_cost()],
+        Gas(RefundGas(_)) | Gas(BurnGas(_)) => vec![ops.statement_var_cost()],
         Array(ArrayConcreteLibFunc::New(_)) => vec![ops.const_cost(1)],
         Array(ArrayConcreteLibFunc::Append(_)) => vec![ops.const_cost(2)],
         Integer(libfunc) => integer_libfunc_cost(ops, libfunc),
