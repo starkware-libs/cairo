@@ -9,7 +9,7 @@ use sierra::program;
 
 use crate::expr_generator_context::ExprGeneratorContext;
 use crate::pre_sierra;
-use crate::utils::{jump_statement, simple_statement};
+use crate::utils::{jump_statement, return_statement, simple_statement};
 
 /// Generates Sierra code that computes a given [lowering::Block].
 /// Returns a list of Sierra statements.
@@ -58,6 +58,35 @@ pub fn generate_block_code_and_push_values(
         lowering::BlockEnd::Return(_) => unimplemented!(),
         lowering::BlockEnd::Unreachable => {}
     }
+    Some(statements)
+}
+
+/// Generates Sierra code for a `return` statement.
+/// Pushes the given returned values on the top of the stack, and returns from the function.
+///
+/// Returns a list of Sierra statements.
+pub fn generate_return_code(
+    context: &mut ExprGeneratorContext<'_>,
+    returned_variables: &Vec<id_arena::Id<lowering::Variable>>,
+) -> Option<Vec<pre_sierra::Statement>> {
+    let mut statements: Vec<pre_sierra::Statement> = vec![];
+    // Copy the result to the top of the stack before returning.
+    let mut return_variables_on_stack = vec![];
+    let mut push_values = vec![];
+
+    for returned_variable in returned_variables {
+        let return_variable_on_stack = context.allocate_sierra_variable();
+        return_variables_on_stack.push(return_variable_on_stack.clone());
+        let var_ty = context.get_lowered_variable(*returned_variable).ty;
+        push_values.push(pre_sierra::PushValue {
+            var: context.get_sierra_variable(*returned_variable),
+            var_on_stack: return_variable_on_stack,
+            ty: context.get_db().get_concrete_type_id(var_ty)?,
+        });
+    }
+
+    statements.push(pre_sierra::Statement::PushValues(push_values));
+    statements.push(return_statement(return_variables_on_stack));
     Some(statements)
 }
 
