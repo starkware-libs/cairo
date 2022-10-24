@@ -33,6 +33,7 @@ impl NoGenericArgsGenericType for GasBuiltinType {
 
 define_libfunc_hierarchy! {
     pub enum GasLibFunc {
+        BurnGas(BurnGasLibFunc),
         GetGas(GetGasLibFunc),
         RefundGas(RefundGasLibFunc),
     }, GasConcreteLibFunc
@@ -102,6 +103,30 @@ impl NoGenericArgsGenericLibFunc for RefundGasLibFunc {
             }],
             SierraApChange::NotImplemented,
         ))
+    }
+
+    fn specialize(
+        &self,
+        context: &dyn SpecializationContext,
+    ) -> Result<Self::Concrete, SpecializationError> {
+        Ok(SignatureOnlyConcreteLibFunc { signature: self.specialize_signature(context.upcast())? })
+    }
+}
+
+/// LibFunc for burning gas.
+/// Used to equalize gas costs across merging paths without using the gas builtin.
+/// If the gas builtin is available, it is typically better to use refund_gas.
+#[derive(Default)]
+pub struct BurnGasLibFunc {}
+impl NoGenericArgsGenericLibFunc for BurnGasLibFunc {
+    type Concrete = SignatureOnlyConcreteLibFunc;
+    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("burn_gas");
+
+    fn specialize_signature(
+        &self,
+        _context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibFuncSignature, SpecializationError> {
+        Ok(LibFuncSignature::new_non_branch(vec![], vec![], SierraApChange::Known))
     }
 
     fn specialize(

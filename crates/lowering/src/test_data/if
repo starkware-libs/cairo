@@ -77,48 +77,25 @@ foo
 blk0:
 Inputs:
 Statements:
-  (v2: ()) <- tuple_construct()
-  (v3: core::bool) <- bool::False(v2)
-Drops: v2
+  (v1: core::felt) <- 1u
+Drops: v0
 End:
-  Callsite(v3)
+  Callsite(v1)
 
 blk1:
-Inputs:
+Inputs: v2: core::NonZero::<core::felt>
 Statements:
-  (v4: ()) <- tuple_construct()
-  (v5: core::bool) <- bool::True(v4)
-Drops: v4
-End:
-  Callsite(v5)
-
-blk2:
-Inputs: v7: ()
-Statements:
-  (v8: core::felt) <- 1u
-Drops: v7, v0
-End:
-  Callsite(v8)
-
-blk3:
-Inputs: v9: ()
-Statements:
-Drops: v9
+Drops: v2
 End:
   Callsite(v0)
 
-blk4:
+blk2:
 Inputs: v0: core::felt
 Statements:
-  (v1: core::felt) <- 0u
-  (v6: core::bool) <- match core::felt_eq(v0, v1) {
+  (v3: core::felt) <- match core::felt_jump_nz(v0) {
     () => blk0,
-    () => blk1,
+    (v2) => blk1,
   }
-  (v10: core::felt) <- match_enum(v6) {
-    bool::True => blk2,
-    bool::False => blk3,
-  }
-Drops: v0, v1, v6
+Drops: v0
 End:
-  Callsite(v10)
+  Callsite(v3)

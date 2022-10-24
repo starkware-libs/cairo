@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use casm::ap_change::ApChange;
+use casm::ap_change::{ApChange, ApplyApChange};
 use casm::casm;
 use casm::hints::Hint;
 use casm::instructions::{
@@ -104,19 +104,25 @@ pub struct CompiledInvocation {
 
 /// Checks that the list of reference is contiguous on the stack and ends at ap - 1.
 /// This is the requirement for function call and return statements.
-pub fn check_references_on_stack(
-    type_sizes: &TypeSizeMap,
-    refs: &[ReferenceValue],
-) -> Result<(), InvocationError> {
+pub fn check_references_on_stack(refs: &[ReferenceValue]) -> Result<(), InvocationError> {
     let mut expected_offset: i16 = -1;
     for return_ref in refs.iter().rev() {
-        match return_ref.expression {
+        match &return_ref.expression {
             ReferenceExpression::Deref(DerefOperand { register: Register::AP, offset })
-                if offset == expected_offset =>
+                if *offset == expected_offset =>
             {
-                expected_offset -= type_sizes
-                    .get(&return_ref.ty)
-                    .ok_or_else(|| InvocationError::UnknownTypeId(return_ref.ty.clone()))?;
+                expected_offset -= 1;
+            }
+            ReferenceExpression::Complex(complex_expr) => {
+                for expr in complex_expr.iter().rev() {
+                    match expr {
+                        ReferenceExpression::Deref(DerefOperand {
+                            register: Register::AP,
+                            offset,
+                        }) if *offset == expected_offset => expected_offset -= 1,
+                        _ => return Err(InvocationError::InvalidReferenceExpressionForArgument),
+                    }
+                }
             }
             _ => return Err(InvocationError::InvalidReferenceExpressionForArgument),
         }
@@ -256,7 +262,7 @@ impl CompiledInvocationBuilder<'_> {
         self,
         func_call: &FunctionCallConcreteLibFunc,
     ) -> Result<CompiledInvocation, InvocationError> {
-        check_references_on_stack(self.program_info.type_sizes, self.refs)?;
+        check_references_on_stack(self.refs)?;
 
         let output_types = func_call.output_types();
         let fallthrough_outputs = &output_types[0];
@@ -265,16 +271,23 @@ impl CompiledInvocationBuilder<'_> {
 
         let mut offset = -1;
         for output_type in fallthrough_outputs.iter().rev() {
-            refs.push_front(ReferenceExpression::Deref(DerefOperand {
-                register: Register::AP,
-                offset,
-            }));
+            let size = self.program_info.type_sizes[output_type];
 
-            offset -= self
-                .program_info
-                .type_sizes
-                .get(output_type)
-                .ok_or_else(|| InvocationError::UnknownTypeId(output_type.clone()))?;
+            refs.push_front(if size == 1 {
+                ReferenceExpression::Deref(DerefOperand { register: Register::AP, offset })
+            } else {
+                ReferenceExpression::Complex(
+                    ((offset - size + 1)..offset + 1)
+                        .map(|i| {
+                            ReferenceExpression::Deref(DerefOperand {
+                                register: Register::AP,
+                                offset: i,
+                            })
+                        })
+                        .collect(),
+                )
+            });
+            offset -= size;
         }
 
         let ap_change =
@@ -302,6 +315,7 @@ impl CompiledInvocationBuilder<'_> {
         dst: DerefOperand,
         src_expr: &ReferenceExpression,
         inc_ap: bool,
+        ap_change: &mut i16,
     ) -> Result<Vec<Instruction>, InvocationError> {
         match self.program_info.type_sizes.get(src_type) {
             Some(0) => return Err(InvocationError::NotSized(self.invocation.clone())),
@@ -311,36 +325,31 @@ impl CompiledInvocationBuilder<'_> {
 
         let mut hints = vec![];
 
+        let src_expr = src_expr.clone().apply_ap_change(ApChange::Known(*ap_change)).unwrap();
         let (dst_operand, res_operand) = match src_expr {
-            ReferenceExpression::Deref(operand) => (dst, ResOperand::Deref(*operand)),
-            ReferenceExpression::DoubleDeref(operand) => {
-                (dst, ResOperand::DoubleDeref(operand.clone()))
-            }
+            ReferenceExpression::Deref(operand) => (dst, ResOperand::Deref(operand)),
+            ReferenceExpression::DoubleDeref(operand) => (dst, ResOperand::DoubleDeref(operand)),
             ReferenceExpression::IntoSingleCellRef(operand) => {
                 hints.push(Hint::AllocSegment { dst });
-                (*operand, ResOperand::DoubleDeref(DoubleDerefOperand { inner_deref: dst }))
+                (operand, ResOperand::DoubleDeref(DoubleDerefOperand { inner_deref: dst }))
             }
-            ReferenceExpression::Immediate(operand) => (dst, ResOperand::Immediate(*operand)),
+            ReferenceExpression::Immediate(operand) => (dst, ResOperand::Immediate(operand)),
             ReferenceExpression::BinOp(BinOpExpression { op, a, b }) => match op {
-                Operator::Add => (
-                    dst,
-                    ResOperand::BinOp(BinOpOperand { op: Operation::Add, a: *a, b: b.clone() }),
-                ),
-                Operator::Mul => (
-                    dst,
-                    ResOperand::BinOp(BinOpOperand { op: Operation::Mul, a: *a, b: b.clone() }),
-                ),
+                Operator::Add => {
+                    (dst, ResOperand::BinOp(BinOpOperand { op: Operation::Add, a, b }))
+                }
+                Operator::Mul => {
+                    (dst, ResOperand::BinOp(BinOpOperand { op: Operation::Mul, a, b }))
+                }
 
                 // dst = a - b => a = dst + b
-                Operator::Sub => (
-                    *a,
-                    ResOperand::BinOp(BinOpOperand { op: Operation::Add, a: dst, b: b.clone() }),
-                ),
+                Operator::Sub => {
+                    (a, ResOperand::BinOp(BinOpOperand { op: Operation::Add, a: dst, b }))
+                }
                 // dst = a / b => a = dst * b
-                Operator::Div => (
-                    *a,
-                    ResOperand::BinOp(BinOpOperand { op: Operation::Mul, a: dst, b: b.clone() }),
-                ),
+                Operator::Div => {
+                    (a, ResOperand::BinOp(BinOpOperand { op: Operation::Mul, a: dst, b }))
+                }
                 _ => {
                     return Err(InvocationError::NotImplemented(self.invocation.clone()));
                 }
@@ -364,13 +373,18 @@ impl CompiledInvocationBuilder<'_> {
             ReferenceExpression::Complex(elements) => {
                 return Ok(elements
                     .iter()
-                    .map(|ref_expr| self.get_store_instructions(src_type, dst, ref_expr, inc_ap))
+                    .map(|ref_expr| {
+                        self.get_store_instructions(src_type, dst, ref_expr, inc_ap, ap_change)
+                    })
                     .collect::<Result<Vec<_>, _>>()?
                     .into_iter()
                     .flatten()
                     .collect());
             }
         };
+        if inc_ap {
+            *ap_change += 1;
+        }
         Ok(vec![Instruction {
             body: InstructionBody::AssertEq(AssertEqInstruction { a: dst_operand, b: res_operand }),
             inc_ap,
@@ -391,16 +405,36 @@ impl CompiledInvocationBuilder<'_> {
         };
 
         let dst = DerefOperand { register: Register::AP, offset: 0 };
-        let instructions = self.get_store_instructions(ty, dst, expression, true)?;
+        let instructions = self.get_store_instructions(ty, dst, expression, true, &mut 0)?;
         let type_size = self.program_info.type_sizes[ty];
-        Ok(self.build(
-            instructions,
-            vec![],
-            [ApChange::Known(type_size)].into_iter(),
-            [[ReferenceExpression::Deref(DerefOperand { register: Register::AP, offset: -1 })]
+        if let ReferenceExpression::Complex(_) = expression {
+            Ok(self.build(
+                instructions,
+                vec![],
+                [ApChange::Known(type_size)].into_iter(),
+                [[ReferenceExpression::Complex(
+                    (-type_size..0)
+                        .map(|i| {
+                            ReferenceExpression::Deref(DerefOperand {
+                                register: Register::AP,
+                                offset: i,
+                            })
+                        })
+                        .collect(),
+                )]
                 .into_iter()]
-            .into_iter(),
-        ))
+                .into_iter(),
+            ))
+        } else {
+            Ok(self.build(
+                instructions,
+                vec![],
+                [ApChange::Known(type_size)].into_iter(),
+                [[ReferenceExpression::Deref(DerefOperand { register: Register::AP, offset: -1 })]
+                    .into_iter()]
+                .into_iter(),
+            ))
+        }
     }
 
     /// Handles store_local for the given type.
@@ -416,13 +450,34 @@ impl CompiledInvocationBuilder<'_> {
             }
         }?;
 
-        let instructions = self.get_store_instructions(ty, *dst, src_expr, false)?;
-        Ok(self.build(
-            instructions,
-            vec![],
-            [ApChange::Known(0)].into_iter(),
-            [[ReferenceExpression::Deref(*dst)].into_iter()].into_iter(),
-        ))
+        let instructions = self.get_store_instructions(ty, *dst, src_expr, false, &mut 0)?;
+        let type_size = self.program_info.type_sizes[ty];
+        if let ReferenceExpression::Complex(_) = src_expr {
+            Ok(self.build(
+                instructions,
+                vec![],
+                [ApChange::Known(0)].into_iter(),
+                [[ReferenceExpression::Complex(
+                    (-type_size..0)
+                        .map(|i| {
+                            ReferenceExpression::Deref(DerefOperand {
+                                register: Register::FP,
+                                offset: i,
+                            })
+                        })
+                        .collect(),
+                )]
+                .into_iter()]
+                .into_iter(),
+            ))
+        } else {
+            Ok(self.build(
+                instructions,
+                vec![],
+                [ApChange::Known(0)].into_iter(),
+                [[ReferenceExpression::Deref(*dst)].into_iter()].into_iter(),
+            ))
+        }
     }
 
     /// Handles a jump non zero statement.
