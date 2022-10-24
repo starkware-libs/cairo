@@ -114,9 +114,17 @@ pub fn get_spec() -> Vec<Node> {
             .node("if_kw", "TerminalIf")
             .node("condition", "Expr")
             .node("if_block", "ExprBlock")
+            .node("else_clause", "OptionElseClause")
+            .build(),
+        StructBuilder::new("ElseClause")
             .node("else_kw", "TerminalElse")
             .node("else_block", "ExprBlock")
             .build(),
+        EnumBuilder::new("OptionElseClause")
+            .node("Empty")
+            .node_with_explicit_kind("ElseClause", "ElseClause")
+            .build(),
+        StructBuilder::new("OptionElseClauseEmpty").build(),
         // --- Struct ctror ---
         StructBuilder::new("StructArgExpr")
             .node("colon", "TerminalColon")

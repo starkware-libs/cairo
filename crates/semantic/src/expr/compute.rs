@@ -431,7 +431,14 @@ fn compute_expr_if_semantic(
 
     let expr = compute_expr_semantic(ctx, &syntax.condition(syntax_db));
     let if_block = compute_expr_block_semantic(ctx, &syntax.if_block(syntax_db))?;
-    let else_block = compute_expr_block_semantic(ctx, &syntax.else_block(syntax_db))?;
+
+    let else_block = match syntax.else_clause(syntax_db) {
+        ast::OptionElseClause::Empty(_) => unimplemented!(),
+        ast::OptionElseClause::ElseClause(else_clause) => {
+            compute_expr_block_semantic(ctx, &else_clause.else_block(syntax_db))?
+        }
+    };
+
     let mut helper = FlowMergeTypeHelper::new(ctx.db);
     helper
         .try_merge_types(if_block.ty())
