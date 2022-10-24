@@ -18,25 +18,10 @@ error: Skipped tokens. Expected element: statement.
     if MyStruct{a: 0} == MyStruct{a: 1} {
                  ^
 
-error: Missing token TerminalElse.
- --> dummy_file.cairo:2:23
-    if MyStruct{a: 0} == MyStruct{a: 1} {
-                      ^^
-
-error: Missing token TerminalLBrace.
- --> dummy_file.cairo:2:23
-    if MyStruct{a: 0} == MyStruct{a: 1} {
-                      ^^
-
 error: Skipped tokens. Expected element: statement.
  --> dummy_file.cairo:2:23
     if MyStruct{a: 0} == MyStruct{a: 1} {
                       ^^
-
-error: Missing token TerminalRBrace.
- --> dummy_file.cairo:4:2
-}
- ^
 
 //! > ==========================================================================
 
@@ -64,21 +49,6 @@ error: Missing token TerminalLBrace.
  --> dummy_file.cairo:2:13
     if 0 == if x {1} else {2} {
             ^^
-
-error: Missing token TerminalElse.
- --> dummy_file.cairo:4:2
-}
- ^
-
-error: Missing token TerminalLBrace.
- --> dummy_file.cairo:4:2
-}
- ^
-
-error: Missing token TerminalRBrace.
- --> dummy_file.cairo:4:2
-}
- ^
 
 error: Missing token TerminalRBrace.
  --> dummy_file.cairo:4:2

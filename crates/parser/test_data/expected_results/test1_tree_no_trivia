@@ -148,14 +148,15 @@
     │   │       │   │   │   │   │       ├── expr (kind: TokenLiteralNumber): '1'
     │   │       │   │   │   │   │       └── semicolon (kind: OptionSemicolonEmpty) []
     │   │       │   │   │   │   └── rbrace (kind: TokenRBrace): '}'
-    │   │       │   │   │   ├── else_kw (kind: TokenElse): 'else'
-    │   │       │   │   │   └── else_block (kind: ExprBlock)
-    │   │       │   │   │       ├── lbrace (kind: TokenLBrace): '{'
-    │   │       │   │   │       ├── statements (kind: StatementList)
-    │   │       │   │   │       │   └── child #0 (kind: StatementExpr)
-    │   │       │   │   │       │       ├── expr (kind: TokenLiteralNumber): '2'
-    │   │       │   │   │       │       └── semicolon (kind: OptionSemicolonEmpty) []
-    │   │       │   │   │       └── rbrace (kind: TokenRBrace): '}'
+    │   │       │   │   │   └── else_clause (kind: ElseClause)
+    │   │       │   │   │       ├── else_kw (kind: TokenElse): 'else'
+    │   │       │   │   │       └── else_block (kind: ExprBlock)
+    │   │       │   │   │           ├── lbrace (kind: TokenLBrace): '{'
+    │   │       │   │   │           ├── statements (kind: StatementList)
+    │   │       │   │   │           │   └── child #0 (kind: StatementExpr)
+    │   │       │   │   │           │       ├── expr (kind: TokenLiteralNumber): '2'
+    │   │       │   │   │           │       └── semicolon (kind: OptionSemicolonEmpty) []
+    │   │       │   │   │           └── rbrace (kind: TokenRBrace): '}'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   ├── child #5 (kind: StatementLet)
     │   │       │   │   ├── let_kw (kind: TokenLet): 'let'

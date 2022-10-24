@@ -24,6 +24,8 @@ pub fn get_key_fields(kind: SyntaxKind, children: Vec<GreenId>) -> Vec<GreenId> 
         SyntaxKind::MatchArms => vec![],
         SyntaxKind::MatchArm => vec![],
         SyntaxKind::ExprIf => vec![],
+        SyntaxKind::ElseClause => vec![],
+        SyntaxKind::OptionElseClauseEmpty => vec![],
         SyntaxKind::StructArgExpr => vec![],
         SyntaxKind::OptionStructArgExprEmpty => vec![],
         SyntaxKind::StructArgSingle => vec![/* identifier */ children[0]],
