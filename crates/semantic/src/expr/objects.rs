@@ -179,7 +179,7 @@ pub struct ExprMatch {
 pub struct ExprIf {
     pub condition: ExprId,
     pub if_block: ExprId,
-    pub else_block: ExprId,
+    pub else_block: Option<ExprId>,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
     pub stable_ptr: ast::ExprPtr,

@@ -432,24 +432,26 @@ fn compute_expr_if_semantic(
     let expr = compute_expr_semantic(ctx, &syntax.condition(syntax_db));
     let if_block = compute_expr_block_semantic(ctx, &syntax.if_block(syntax_db))?;
 
-    let else_block = match syntax.else_clause(syntax_db) {
-        ast::OptionElseClause::Empty(_) => unimplemented!(),
+    let (else_block_opt, else_block_ty) = match syntax.else_clause(syntax_db) {
+        ast::OptionElseClause::Empty(_) => (None, unit_ty(ctx.db)),
         ast::OptionElseClause::ElseClause(else_clause) => {
-            compute_expr_block_semantic(ctx, &else_clause.else_block(syntax_db))?
+            let else_block = compute_expr_block_semantic(ctx, &else_clause.else_block(syntax_db))?;
+            let ty = else_block.ty();
+            (Some(else_block), ty)
         }
     };
 
     let mut helper = FlowMergeTypeHelper::new(ctx.db);
     helper
         .try_merge_types(if_block.ty())
-        .and(helper.try_merge_types(else_block.ty()))
+        .and(helper.try_merge_types(else_block_ty))
         .unwrap_or_else(|(block_if_ty, block_else_ty)| {
             ctx.diagnostics.report(syntax, IncompatibleIfBlockTypes { block_if_ty, block_else_ty });
         });
     Some(Expr::If(ExprIf {
         condition: ctx.exprs.alloc(expr),
         if_block: ctx.exprs.alloc(if_block),
-        else_block: ctx.exprs.alloc(else_block),
+        else_block: else_block_opt.map(|else_block| ctx.exprs.alloc(else_block)),
         ty: helper.get_final_type(),
         stable_ptr: syntax.stable_ptr().into(),
     }))

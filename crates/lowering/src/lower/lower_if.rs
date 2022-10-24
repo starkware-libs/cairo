@@ -57,19 +57,25 @@ pub fn lower_expr_if_bool(
     // Lower both blocks.
     let unit_ty = corelib::unit_ty(ctx.db);
     let (res, mut finalized_merger) = BlockFlowMerger::with(ctx, scope, &[], |ctx, merger| {
-        let [main_block_scope, else_block_scope] =
-            [expr.if_block, expr.else_block].map(|block_expr| {
-                merger.run_in_subscope(ctx, vec![unit_ty], |ctx, subscope, _| {
-                    lower_block(
-                        ctx,
-                        subscope,
-                        extract_matches!(
-                            &ctx.function_def.exprs[block_expr],
-                            semantic::Expr::Block
-                        ),
-                    )
-                })
-            });
+        let main_block_scope = merger.run_in_subscope(ctx, vec![unit_ty], |ctx, subscope, _| {
+            lower_block(
+                ctx,
+                subscope,
+                extract_matches!(&ctx.function_def.exprs[expr.if_block], semantic::Expr::Block),
+            )
+        });
+        let else_block_scope = merger.run_in_subscope(ctx, vec![unit_ty], |ctx, subscope, _| {
+            lower_block(
+                ctx,
+                subscope,
+                extract_matches!(
+                    // TODO(lior): Support missing else block.
+                    &ctx.function_def.exprs
+                        [expr.else_block.expect("Missing else block is not supported yet.")],
+                    semantic::Expr::Block
+                ),
+            )
+        });
         Some((main_block_scope, else_block_scope))
     });
 
@@ -119,7 +125,9 @@ pub fn lower_expr_if_eq_zero(
                     ctx,
                     subscope,
                     extract_matches!(
-                        &ctx.function_def.exprs[expr.else_block],
+                        // TODO(lior): Support missing else block.
+                        &ctx.function_def.exprs
+                            [expr.else_block.expect("Support missing else block.")],
                         semantic::Expr::Block
                     ),
                 )
