@@ -193,6 +193,33 @@ fn strip_comments_and_linebreaks(program: &str) -> String {
                 ret;
             "};
             "alloc_local and store_local")]
+#[test_case(indoc! {"
+                type felt = felt;
+                type NonZeroFelt = NonZero<felt>;
+
+                libfunc store_temp_nz_felt = store_temp<NonZeroFelt>;
+                libfunc nz_felt_drop = drop<NonZeroFelt>;
+                libfunc felt_jump_nz = felt_jump_nz;
+                libfunc burn_gas = burn_gas;
+
+
+                felt_jump_nz([1]) { fallthrough() 3([1]) };
+                burn_gas() -> ();
+                return ();
+                store_temp_nz_felt([1]) -> ([1]);
+                nz_felt_drop([1]) -> ();
+                return ();
+
+                test_program@0([1]: felt) -> ();
+            "},
+            &[], true,
+            indoc! {"
+                jmp rel 3 if [fp + -3] != 0;
+                ret;
+                [ap + 0] = [fp + -3], ap++;
+                ret;
+            "};
+            "burn gas")]
 #[test_case(read_sierra_example_file("fib_no_gas").as_str(),
             &[], false,
             indoc! {"

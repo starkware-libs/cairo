@@ -1020,6 +1020,9 @@ pub fn compile_invocation(
             )),
         CoreConcreteLibFunc::Gas(GasConcreteLibFunc::GetGas(_)) => builder.build_get_gas(),
         CoreConcreteLibFunc::Gas(GasConcreteLibFunc::RefundGas(_)) => builder.build_refund_gas(),
+        CoreConcreteLibFunc::Gas(GasConcreteLibFunc::BurnGas(_)) => {
+            Ok(builder.build_only_reference_changes([].into_iter()))
+        }
         CoreConcreteLibFunc::Array(ArrayConcreteLibFunc::New(_)) => builder.build_array_new(),
         CoreConcreteLibFunc::Array(ArrayConcreteLibFunc::Append(_)) => builder.build_array_append(),
         CoreConcreteLibFunc::Drop(_) => Ok(builder.build_only_reference_changes([].into_iter())),
