@@ -321,6 +321,8 @@ fn sierra_to_casm(
             "#1->#2: [1] was overridden.";
             "Reference override")]
 #[test_case(indoc! {"
+                type felt = felt;
+
                 return([2]);
 
                 test_program@0([2]: felt) -> (felt);
@@ -328,6 +330,8 @@ fn sierra_to_casm(
             "#0: Return arguments are not on the stack.";
             "Invalid return reference")]
 #[test_case(indoc! {"
+                type felt = felt;
+
                 store_temp_felt([1]) -> ([1]);
 
                 test_program@0([1]: felt) -> ();
@@ -432,6 +436,8 @@ fn sierra_to_casm(
             "}, &[], "[2] is dangling at #1.";
             "Dangling references")]
 #[test_case(indoc! {"
+                type felt = felt;
+
                 return();
 
                 foo@0([1]: felt) -> ();

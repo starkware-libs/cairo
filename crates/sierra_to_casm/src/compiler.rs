@@ -95,6 +95,7 @@ pub fn compile(
         &program.funcs,
         metadata,
         gas_usage_check,
+        &type_sizes,
     )?;
 
     let mut program_offset: usize = 0;
@@ -121,14 +122,12 @@ pub fn compile(
                     &annotations,
                     &return_refs,
                 )?;
-                check_references_on_stack(&type_sizes, &return_refs).map_err(
-                    |error| match error {
-                        InvocationError::InvalidReferenceExpressionForArgument => {
-                            CompilationError::ReturnArgumentsNotOnStack { statement_idx }
-                        }
-                        _ => CompilationError::InvocationError { statement_idx, error },
-                    },
-                )?;
+                check_references_on_stack(&return_refs).map_err(|error| match error {
+                    InvocationError::InvalidReferenceExpressionForArgument => {
+                        CompilationError::ReturnArgumentsNotOnStack { statement_idx }
+                    }
+                    _ => CompilationError::InvocationError { statement_idx, error },
+                })?;
 
                 let ret_instruction = RetInstruction {};
                 program_offset += ret_instruction.op_size();
