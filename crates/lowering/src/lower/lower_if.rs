@@ -3,7 +3,9 @@ use utils::extract_matches;
 
 use super::context::{LoweredExpr, LoweringContext, LoweringFlowError};
 use super::scope::{generators, BlockFlowMerger, BlockScope, BlockScopeEnd};
-use super::{lower_block, lower_expr, lowered_expr_from_block_result};
+use super::{
+    lower_block, lower_expr, lowered_expr_from_block_result, lowered_expr_to_block_scope_end,
+};
 
 #[allow(dead_code)]
 enum IfCondition {
@@ -147,6 +149,6 @@ fn lower_optional_else_block(
             scope,
             extract_matches!(&ctx.function_def.exprs[else_block], semantic::Expr::Block),
         ),
-        None => unimplemented!("Missing else block is not supported yet."),
+        None => lowered_expr_to_block_scope_end(ctx, scope, Ok(LoweredExpr::Tuple(vec![]))),
     }
 }
