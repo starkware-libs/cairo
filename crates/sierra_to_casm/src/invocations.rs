@@ -632,14 +632,33 @@ impl CompiledInvocationBuilder<'_> {
                 actual: self.refs.len(),
             });
         }
-        Ok(self.build_only_reference_changes([ReferenceExpression::AllocateSegment].into_iter()))
+
+        Ok(self.build(
+            vec![Instruction {
+                body: InstructionBody::AddAp(AddApInstruction {
+                    operand: ResOperand::Immediate(ImmediateOperand { value: 1 }),
+                }),
+                inc_ap: false,
+                hints: vec![Hint::AllocSegment {
+                    dst: DerefOperand { register: Register::AP, offset: 0 },
+                }],
+            }],
+            vec![],
+            [ApChange::Known(1)].into_iter(),
+            [[ReferenceExpression::Complex(vec![
+                ReferenceExpression::Deref(DerefOperand { register: Register::AP, offset: -1 }),
+                ReferenceExpression::Deref(DerefOperand { register: Register::AP, offset: -1 }),
+            ])]
+            .into_iter()]
+            .into_iter(),
+        ))
     }
 
     /// Handles instruction for appending an element to an array.
     fn build_array_append(self) -> Result<CompiledInvocation, InvocationError> {
         let (expr_arr, expr_elem) = match self.refs {
             [
-                ReferenceValue { expression: ReferenceExpression::Deref(expr_arr), .. },
+                ReferenceValue { expression: ReferenceExpression::Complex(expr_arr), .. },
                 ReferenceValue { expression: ReferenceExpression::Deref(expr_elem), .. },
             ] => (expr_arr, expr_elem),
             [_, _] => return Err(InvocationError::InvalidReferenceExpressionForArgument),
@@ -650,16 +669,28 @@ impl CompiledInvocationBuilder<'_> {
                 });
             }
         };
-        // TODO(orizi): Handle non 1 sized types.
+        let expr_arr_start = if let ReferenceExpression::Deref(expr) = expr_arr[0] {
+            expr
+        } else {
+            return Err(InvocationError::InvalidReferenceExpressionForArgument);
+        };
+        let expr_arr_end = if let ReferenceExpression::Deref(expr) = expr_arr[1] {
+            expr
+        } else {
+            return Err(InvocationError::InvalidReferenceExpressionForArgument);
+        };
         Ok(self.build(
-            casm! { (*expr_elem) = [[*expr_arr]]; }.instructions,
+            casm! { (*expr_elem) = [[expr_arr_end]]; }.instructions,
             vec![],
             [ApChange::Known(0)].into_iter(),
-            [vec![ReferenceExpression::BinOp(BinOpExpression {
-                op: Operator::Add,
-                a: *expr_arr,
-                b: DerefOrImmediate::Immediate(ImmediateOperand { value: 1 }),
-            })]
+            [vec![ReferenceExpression::Complex(vec![
+                ReferenceExpression::Deref(expr_arr_start),
+                ReferenceExpression::BinOp(BinOpExpression {
+                    op: Operator::Add,
+                    a: expr_arr_end,
+                    b: DerefOrImmediate::Immediate(ImmediateOperand { value: 1 }),
+                }),
+            ])]
             .into_iter()]
             .into_iter(),
         ))
