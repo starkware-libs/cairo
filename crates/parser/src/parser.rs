@@ -543,10 +543,16 @@ impl<'a> Parser<'a> {
         let if_kw = self.take::<TerminalIf>();
         let condition = self.parse_simple_expression(MAX_PRECEDENCE, LbraceAllowed::Forbid);
         let if_block = self.parse_block();
-        // TODO(lior): Make else block optional.
-        let else_kw = self.parse_token::<TerminalElse>();
-        let else_block = self.parse_block();
-        ExprIf::new_green(self.db, if_kw, condition, if_block, else_kw, else_block)
+
+        let else_clause: OptionElseClauseGreen = if self.peek().kind == SyntaxKind::TerminalElse {
+            let else_kw = self.take::<TerminalElse>();
+            let else_block = self.parse_block();
+            ElseClause::new_green(self.db, else_kw, else_block).into()
+        } else {
+            OptionElseClauseEmpty::new_green(self.db).into()
+        };
+
+        ExprIf::new_green(self.db, if_kw, condition, if_block, else_clause)
     }
 
     /// Returns a GreenId of a node with a MatchArm kind or None if a match arm can't be parsed.

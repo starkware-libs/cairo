@@ -20,6 +20,8 @@ pub enum SyntaxKind {
     MatchArms,
     MatchArm,
     ExprIf,
+    ElseClause,
+    OptionElseClauseEmpty,
     StructArgExpr,
     OptionStructArgExprEmpty,
     StructArgSingle,
