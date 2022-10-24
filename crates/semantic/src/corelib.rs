@@ -169,6 +169,10 @@ pub fn core_binary_operator(
     Some(get_core_function_id(db, function_name.into(), vec![]))
 }
 
+pub fn felt_eq(db: &dyn SemanticGroup) -> FunctionId {
+    get_core_function_id(db, "felt_eq".into(), vec![])
+}
+
 pub fn core_jump_nz_func(db: &dyn SemanticGroup) -> FunctionId {
     get_core_function_id(db, "felt_jump_nz".into(), vec![])
 }
