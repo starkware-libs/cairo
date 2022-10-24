@@ -20,6 +20,7 @@ pub fn get_type_size_map(
             CoreTypeConcrete::Felt(_)
             | CoreTypeConcrete::GasBuiltin(_)
             | CoreTypeConcrete::Uint128(_)
+            | CoreTypeConcrete::RangeCheck(_)
             | CoreTypeConcrete::Box(_) => Some(1),
             CoreTypeConcrete::Array(_) => Some(1),
             CoreTypeConcrete::NonZero(NonZeroConcreteType { ty, .. }) => {
