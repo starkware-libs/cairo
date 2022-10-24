@@ -4,7 +4,6 @@
 test_function_diagnostics
 
 //! > function
-
 func foo(x: (felt, felt)) {
     let mut ref mut ref ref b = x;
 }

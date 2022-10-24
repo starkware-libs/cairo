@@ -64,6 +64,18 @@ impl BlockScope {
         self.semantic_variables.get(ctx, semantic_var_id).unwrap_or(SemanticVariableEntry::Moved)
     }
 
+    /// Returns the stored semantic variable if it exists in the scope. Otherwise, pulls from a
+    /// higher scope and returns it.
+    /// Move the variable.
+    pub fn take_semantic_variable(
+        &mut self,
+        ctx: &mut LoweringContext<'_>,
+        semantic_var_id: semantic::VarId,
+    ) -> SemanticVariableEntry {
+        self.try_ensure_semantic_variable(ctx, semantic_var_id);
+        self.semantic_variables.take(semantic_var_id).unwrap_or(SemanticVariableEntry::Moved)
+    }
+
     /// Tries to ensure that a semantic variable lives in the current scope.
     /// If it doesn't currently live in the scope, try to pull from a higher scope.
     pub fn try_ensure_semantic_variable(
@@ -269,12 +281,13 @@ impl BlockFlowMerger {
     pub fn with<T, F: FnOnce(&mut LoweringContext<'_>, &mut Self) -> T>(
         ctx: &mut LoweringContext<'_>,
         parent_scope: &mut BlockScope,
+        extra_outputs: &[semantic::VarId],
         f: F,
     ) -> (T, BlockMergerFinalized) {
         borrow_as_box(parent_scope, |boxed_parent_scope| {
             let mut merger = Self { parent_scope: Some(boxed_parent_scope), ..Self::default() };
             let res = f(ctx, &mut merger);
-            let (finalized, returned_scope) = merger.finalize(ctx, &[]);
+            let (finalized, returned_scope) = merger.finalize(ctx, extra_outputs);
             ((res, finalized), returned_scope.unwrap())
         })
     }
@@ -417,6 +430,7 @@ impl BlockFlowMerger {
                 bring_back.push(semantic_var_id)
             }
         }
+        // TODO(spapini): extra_outputs might not be alive. Currently, this panics.
         pushes.extend(extra_outputs.iter().copied());
         let push_tys = pushes.iter().map(|var_id| ctx.semantic_defs[*var_id].ty()).collect();
         let end_info = if self.reachable {

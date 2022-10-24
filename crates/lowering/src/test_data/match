@@ -43,8 +43,8 @@ Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- 7u
   (v5: core::felt) <- match core::felt_jump_nz(v1) {
-blk0
-blk1
+    () => blk0,
+    (v4) => blk1,
   }
 Drops: v0, v1
 End:

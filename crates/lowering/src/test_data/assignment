@@ -5,7 +5,7 @@ test_function_lowering
 
 //! > function
 func foo(a: bool) -> felt {
-    let x = 2;
+    let mut x = 2;
     if a { x = 3; } else {}
     x
 }

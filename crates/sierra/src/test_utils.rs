@@ -6,16 +6,16 @@ use crate::program::{ConcreteTypeLongId, GenericArg};
 pub fn build_bijective_mapping() -> BiMap<ConcreteTypeId, ConcreteTypeLongId> {
     let mut elements = BiMap::new();
     elements.insert("T".into(), as_type_long_id("T", &[]));
-    elements.insert("int".into(), as_type_long_id("int", &[]));
+    elements.insert("uint128".into(), as_type_long_id("uint128", &[]));
     elements.insert("felt".into(), as_type_long_id("felt", &[]));
     // TODO(yuval): change one of the felts to unit type.
     elements.insert("Option".into(), as_type_long_id("Enum", &["felt", "felt"]));
     elements.insert("NonZeroFelt".into(), as_type_long_id("NonZero", &["felt"]));
-    elements.insert("NonZeroInt".into(), as_type_long_id("NonZero", &["int"]));
+    elements.insert("NonZeroUint128".into(), as_type_long_id("NonZero", &["uint128"]));
     elements.insert("ArrayFelt".into(), as_type_long_id("Array", &["felt"]));
-    elements.insert("ArrayInt".into(), as_type_long_id("Array", &["int"]));
+    elements.insert("ArrayUint128".into(), as_type_long_id("Array", &["uint128"]));
     elements.insert("UninitializedFelt".into(), as_type_long_id("Uninitialized", &["felt"]));
-    elements.insert("UninitializedInt".into(), as_type_long_id("Uninitialized", &["int"]));
+    elements.insert("UninitializedUint128".into(), as_type_long_id("Uninitialized", &["uint128"]));
     elements.insert("GasBuiltin".into(), as_type_long_id("GasBuiltin", &[]));
     elements
 }

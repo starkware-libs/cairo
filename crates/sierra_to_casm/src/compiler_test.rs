@@ -16,6 +16,7 @@ use test_case::test_case;
 use crate::compiler::compile;
 use crate::metadata::Metadata;
 
+/// Builds the metadata for a Sierra program.
 fn build_metadata(
     program: &Program,
     ap_change_data: &[(&str, i16)],
@@ -36,11 +37,17 @@ fn build_metadata(
     }
 }
 
+/// Reads an example Sierra program that matches `name`.
 fn read_sierra_example_file(name: &str) -> String {
     // Pop the "/sierra_to_casm" suffix.
     let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).parent().unwrap().to_owned();
     path.extend(["sierra", "examples", &format!("{name}.sierra")].into_iter());
     fs::read_to_string(path).unwrap()
+}
+
+/// Transform a Sierra program written for `uint128` to be for `felt`.
+fn transform_program_uint128_to_felt(program: String) -> String {
+    program.replace("uint128_wrapping_", "felt_").replace("uint128", "felt").replace("Int", "Felt")
 }
 
 /// Removes all comments and empty lines from the given program.
@@ -156,7 +163,7 @@ fn strip_comments_and_linebreaks(program: &str) -> String {
             "good_flow")]
 #[test_case(indoc! {"
                 type felt = felt;
-                type UninitializedFelt = uninitialized<felt>;
+                type UninitializedFelt = Uninitialized<felt>;
 
                 libfunc finalize_locals = finalize_locals;
                 libfunc alloc_local_felt = alloc_local<felt>;
@@ -199,12 +206,12 @@ fn strip_comments_and_linebreaks(program: &str) -> String {
                 ret;
             "};
             "fib_no_gas")]
-#[test_case(read_sierra_example_file("collatz").replace("int", "felt").replace("Int", "Felt").as_str(),
+#[test_case(transform_program_uint128_to_felt(read_sierra_example_file("collatz")).as_str(),
             &[], true,
             indoc! {"
             "} => ignore["Non-forward only code is not supported yet."];
             "collatz")]
-#[test_case(read_sierra_example_file("fib_jumps").replace("int", "felt").replace("Int", "Felt").as_str(),
+#[test_case(transform_program_uint128_to_felt(read_sierra_example_file("fib_jumps")).as_str(),
             &[], true,
             indoc! {"
                 jmp rel 7 if [fp + -3] != 0;
@@ -242,7 +249,7 @@ fn strip_comments_and_linebreaks(program: &str) -> String {
                 ret;
             "};
             "fib_jumps")]
-#[test_case(read_sierra_example_file("fib_recursive").replace("int", "felt").replace("Int", "Felt").as_str(),
+#[test_case(transform_program_uint128_to_felt(read_sierra_example_file("fib_recursive")).as_str(),
             &[], true,
             indoc! {"
                 [ap + 0] = 1, ap++;
@@ -263,7 +270,7 @@ fn strip_comments_and_linebreaks(program: &str) -> String {
                 %{ memory[ap + 0] = 26 < memory[fp + -4] %}
                 jmp rel 7 if [ap + 0] != 0, ap++;
                 [ap + 0] = [fp + -4] + 0, ap++;
-                [ap + 0] = -10000, ap++;
+                [ap + 0] = -1, ap++;
                 ret;
 
                 // Statement # 24 - Performing both recursive calculations and returning their sum.
@@ -347,12 +354,12 @@ fn sierra_to_casm(
             "Error from program registry";
             "Concrete libfunc Id used twice")]
 #[test_case(indoc! {"
-                type int = int;
+                type uint128 = uint128;
 
-                libfunc int_add = int_add;
+                libfunc uint128_wrapping_add = uint128_wrapping_add;
 
-                int_add([1], [2]) -> ([1]);
-                test_program@0([1]: int, [2]: int) -> ();
+                uint128_wrapping_add([1], [2]) -> ([1]);
+                test_program@0([1]: uint128, [2]: uint128) -> ();
             "}, &[],
             "#0: The requested functionality is not implemented yet.";
             "Not implemented")]
@@ -369,12 +376,12 @@ fn sierra_to_casm(
             "Invalid reference expression for felt_add")]
 #[test_case(indoc! {"
                 type felt = felt;
-                type int = int;
+                type uint128 = uint128;
                 libfunc felt_add = felt_add;
                 felt_add([1], [2]) -> ([3]);
                 return([3]);
 
-                test_program@0([1]: int, [2]: int) -> (felt);
+                test_program@0([1]: uint128, [2]: uint128) -> (felt);
             "}, &[],
             "One of the arguments does not match the expected type of the libfunc or return \
  statement.";
@@ -541,7 +548,7 @@ of the libfunc or return statement.";
             "Invalid finalize_locals 2")]
 #[test_case(indoc! {"
                 type felt = felt;
-                type UninitializedFelt = uninitialized<felt>;
+                type UninitializedFelt = Uninitialized<felt>;
 
                 libfunc alloc_local_felt = alloc_local<felt>;
                 libfunc store_temp_felt = store_temp<felt>;
@@ -556,7 +563,7 @@ of the libfunc or return statement.";
             "Invalid alloc_local ")]
 #[test_case(indoc! {"
                 type felt = felt;
-                type UninitializedFelt = uninitialized<felt>;
+                type UninitializedFelt = Uninitialized<felt>;
 
                 libfunc alloc_local_felt = alloc_local<felt>;
                 libfunc store_local_felt = store_local<felt>;
@@ -572,7 +579,7 @@ of the libfunc or return statement.";
             "missing finalize_locals ")]
 #[test_case(indoc! {"
                 type felt = felt;
-                type UninitializedFelt = uninitialized<felt>;
+                type UninitializedFelt = Uninitialized<felt>;
 
                 libfunc store_temp_felt = store_temp<UninitializedFelt>;
 
@@ -581,7 +588,7 @@ of the libfunc or return statement.";
 
                 foo@0([1]:UninitializedFelt) -> ();
             "}, &[], "#0: The functionality is supported only for sized types.";
-            "store_temp<uninitialized<felt>()")]
+            "store_temp<Uninitialized<felt>()")]
 #[test_case(indoc! {"
                 return ();
 

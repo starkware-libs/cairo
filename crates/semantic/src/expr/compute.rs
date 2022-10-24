@@ -5,7 +5,7 @@
 use std::collections::HashMap;
 
 use ast::{BinaryOperator, PathSegment};
-use defs::ids::{LocalVarLongId, MemberId};
+use defs::ids::{GenericFunctionId, LocalVarLongId, MemberId};
 use id_arena::Arena;
 use itertools::zip_eq;
 use smol_str::SmolStr;
@@ -13,6 +13,7 @@ use syntax::node::db::SyntaxGroup;
 use syntax::node::helpers::{GetIdentifier, PathSegmentEx};
 use syntax::node::{ast, Terminal, TypedSyntaxNode};
 use utils::ordered_hash_map::OrderedHashMap;
+use utils::unordered_hash_map::UnorderedHashMap;
 use utils::{try_extract_matches, OptionHelper};
 
 use super::objects::*;
@@ -31,6 +32,7 @@ use crate::items::strct::SemanticStructEx;
 use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use crate::semantic::{self, FunctionId, LocalVariable, TypeId, TypeLongId, Variable};
 use crate::types::{resolve_type, ConcreteTypeId};
+use crate::Parameter;
 
 /// Context for computing the semantic model of expression trees.
 pub struct ComputationContext<'ctx> {
@@ -41,6 +43,8 @@ pub struct ComputationContext<'ctx> {
     environment: Box<Environment>,
     pub exprs: Arena<semantic::Expr>,
     pub statements: Arena<semantic::Statement>,
+    /// Definitions of semantic variables.
+    pub semantic_defs: UnorderedHashMap<semantic::VarId, semantic::Variable>,
 }
 impl<'ctx> ComputationContext<'ctx> {
     pub fn new(
@@ -50,6 +54,8 @@ impl<'ctx> ComputationContext<'ctx> {
         return_ty: TypeId,
         environment: Environment,
     ) -> Self {
+        let semantic_defs =
+            environment.variables.values().by_ref().map(|var| (var.id(), var.clone())).collect();
         Self {
             db,
             diagnostics,
@@ -58,6 +64,7 @@ impl<'ctx> ComputationContext<'ctx> {
             environment: Box::new(environment),
             exprs: Arena::default(),
             statements: Arena::default(),
+            semantic_defs,
         }
     }
 
@@ -83,19 +90,41 @@ impl<'ctx> ComputationContext<'ctx> {
     }
 }
 
+// TODO(ilya): Change value to VarId.
 pub type EnvVariables = HashMap<SmolStr, Variable>;
 
 // TODO(spapini): Consider using identifiers instead of SmolStr everywhere in the code.
 /// A state which contains all the variables defined at the current resolver until now, and a
 /// pointer to the parent environment.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Default)]
 pub struct Environment {
     parent: Option<Box<Environment>>,
     variables: EnvVariables,
 }
 impl Environment {
-    pub fn new(variables: EnvVariables) -> Self {
-        Self { parent: None, variables }
+    /// Adds a parameter to the environment.
+    /// Returns true on success and false on failure.
+    pub fn add_param(
+        &mut self,
+        diagnostics: &mut SemanticDiagnostics,
+        name: &SmolStr,
+        semantic_param: Parameter,
+        ast_param: &ast::Param,
+        function_id: GenericFunctionId,
+    ) -> bool {
+        match self.variables.entry(name.clone()) {
+            std::collections::hash_map::Entry::Occupied(_) => {
+                diagnostics.report(
+                    ast_param,
+                    ParamNameRedefinition { function_id, param_name: name.clone() },
+                );
+                false
+            }
+            std::collections::hash_map::Entry::Vacant(entry) => {
+                entry.insert(Variable::Param(semantic_param));
+                true
+            }
+        }
     }
 }
 
@@ -162,12 +191,20 @@ fn compute_expr_binary_semantic(
     let rexpr = compute_expr_semantic(ctx, &rhs_syntax);
     if matches!(binary_op, BinaryOperator::Eq(_)) {
         return match lexpr {
-            Expr::Var(ExprVar { var, .. }) => Some(Expr::Assignment(ExprAssignment {
-                var,
-                rhs: ctx.exprs.alloc(rexpr),
-                ty: unit_ty(db),
-                stable_ptr,
-            })),
+            Expr::Var(ExprVar { var, .. }) => {
+                // The semantic_var must be valid as 'lexpr' is a result of compute_expr_semantic.
+                let semantic_var = ctx.semantic_defs.get(&var).unwrap();
+
+                if !semantic_var.modifiers().is_mut {
+                    ctx.diagnostics.report(syntax, AssignmentToImmutableVar);
+                }
+                Some(Expr::Assignment(ExprAssignment {
+                    var,
+                    rhs: ctx.exprs.alloc(rexpr),
+                    ty: unit_ty(db),
+                    stable_ptr,
+                }))
+            }
             _ => {
                 ctx.diagnostics.report(lhs_syntax, InvalidLhsForAssignment);
                 None
@@ -855,7 +892,9 @@ pub fn compute_statement_semantic(
             let pattern = compute_pattern_semantic(ctx, let_syntax.pattern(syntax_db), ty)?;
             let variables = pattern.variables();
             for v in variables {
-                ctx.environment.variables.insert(v.name.clone(), Variable::Local(v.var.clone()));
+                let var_def = Variable::Local(v.var.clone());
+                ctx.environment.variables.insert(v.name.clone(), var_def.clone());
+                ctx.semantic_defs.insert(var_def.id(), var_def);
             }
             semantic::Statement::Let(semantic::StatementLet {
                 pattern,

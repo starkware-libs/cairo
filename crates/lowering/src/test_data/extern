@@ -1,4 +1,4 @@
-//! > Test extern functio calling.
+//! > Test extern function calling.
 
 //! > test_function_name
 test_function_lowering
@@ -35,3 +35,165 @@ Statements:
 Drops: v0, v1, v2, v3, v4, v5, v6, v7, v8, v9
 End:
   Callsite(v10)
+
+//! > ==========================================================================
+
+//! > Test extern function enum calling.
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+func foo(ref a: felt, b: felt) {
+  let x = f(a, b);
+  match x {
+    MyEnum::A(y) => (),
+    MyEnum::B(y) => (),
+    MyEnum::C(y) => (),
+  }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum MyEnum {
+  A: felt,
+  B: (felt,),
+  C: (felt, felt),
+}
+extern func f(ref a: felt, b: felt) -> MyEnum;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_format
+blk0:
+Inputs: v2: core::felt, v3: core::felt
+Statements:
+  (v4: test_crate::MyEnum) <- MyEnum::A(v3)
+Drops: v3
+End:
+  Callsite(v2, v4)
+
+blk1:
+Inputs: v5: core::felt, v6: core::felt
+Statements:
+  (v7: (core::felt)) <- tuple_construct(v6)
+  (v8: test_crate::MyEnum) <- MyEnum::B(v7)
+Drops: v7, v6
+End:
+  Callsite(v5, v8)
+
+blk2:
+Inputs: v9: core::felt, v10: core::felt, v11: core::felt
+Statements:
+  (v12: (core::felt, core::felt)) <- tuple_construct(v10, v11)
+  (v13: test_crate::MyEnum) <- MyEnum::C(v12)
+Drops: v12, v10, v11
+End:
+  Callsite(v9, v13)
+
+blk3:
+Inputs: v16: core::felt
+Statements:
+Drops: v16
+End:
+  Callsite()
+
+blk4:
+Inputs: v17: (core::felt)
+Statements:
+Drops: v17
+End:
+  Callsite()
+
+blk5:
+Inputs: v18: (core::felt, core::felt)
+Statements:
+Drops: v18
+End:
+  Callsite()
+
+blk6:
+Inputs: v0: core::felt, v1: core::felt
+Statements:
+  (v15: core::felt, v14: test_crate::MyEnum) <- match test_crate::f(v0, v1) {
+    (v2, v3) => blk0,
+    (v5, v6) => blk1,
+    (v9, v10, v11) => blk2,
+  }
+  () <- match_enum(v14) {
+    MyEnum::A => blk3,
+    MyEnum::B => blk4,
+    MyEnum::C => blk5,
+  }
+Drops: v0, v1, v14
+End:
+  Callsite(v15)
+
+//! > ==========================================================================
+
+//! > Test extern function enum calling with optimization.
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+func foo(ref a: felt, b: felt) -> felt {
+  match f(a, b) {
+    MyEnum::A(y) => y,
+    MyEnum::B((y,)) => y,
+    MyEnum::C((y,_)) => y,
+  }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum MyEnum {
+  A: felt,
+  B: (felt,),
+  C: (felt, felt),
+}
+extern func f(ref a: felt, b: felt) -> MyEnum;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_format
+blk0:
+Inputs: v2: core::felt, v3: core::felt
+Statements:
+Drops:
+End:
+  Callsite(v2, v3)
+
+blk1:
+Inputs: v4: core::felt, v5: core::felt
+Statements:
+Drops:
+End:
+  Callsite(v4, v5)
+
+blk2:
+Inputs: v6: core::felt, v7: core::felt, v8: core::felt
+Statements:
+Drops: v8
+End:
+  Callsite(v6, v7)
+
+blk3:
+Inputs: v0: core::felt, v1: core::felt
+Statements:
+  (v10: core::felt, v9: core::felt) <- match test_crate::f(v0, v1) {
+    (v2, v3) => blk0,
+    (v4, v5) => blk1,
+    (v6, v7, v8) => blk2,
+  }
+Drops: v0, v1
+End:
+  Callsite(v10, v9)

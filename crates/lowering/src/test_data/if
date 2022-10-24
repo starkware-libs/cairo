@@ -75,29 +75,50 @@ foo
 
 //! > lowering_format
 blk0:
-Inputs: v3: ()
+Inputs:
 Statements:
-  (v4: core::felt) <- 1u
-Drops: v3, v0
+  (v2: ()) <- tuple_construct()
+  (v3: core::bool) <- bool::False(v2)
+Drops: v2
 End:
-  Callsite(v4)
+  Callsite(v3)
 
 blk1:
-Inputs: v5: ()
+Inputs:
 Statements:
-Drops: v5
+  (v4: ()) <- tuple_construct()
+  (v5: core::bool) <- bool::True(v4)
+Drops: v4
+End:
+  Callsite(v5)
+
+blk2:
+Inputs: v7: ()
+Statements:
+  (v8: core::felt) <- 1u
+Drops: v7, v0
+End:
+  Callsite(v8)
+
+blk3:
+Inputs: v9: ()
+Statements:
+Drops: v9
 End:
   Callsite(v0)
 
-blk2:
+blk4:
 Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- 0u
-  (v2: core::bool) <- core::felt_eq(v0, v1)
-  (v6: core::felt) <- match_enum(v2) {
-    bool::True => blk0,
-    bool::False => blk1,
+  (v6: core::bool) <- match core::felt_eq(v0, v1) {
+    () => blk0,
+    () => blk1,
   }
-Drops: v0, v1, v2
+  (v10: core::felt) <- match_enum(v6) {
+    bool::True => blk2,
+    bool::False => blk3,
+  }
+Drops: v0, v1, v6
 End:
-  Callsite(v6)
+  Callsite(v10)

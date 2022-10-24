@@ -48,8 +48,10 @@ impl DebugWithDb<LoweredFormatter<'_>> for Block {
         }
 
         write!(f, "Drops:")?;
-        write!(f, " ")?;
         let mut drops = self.drops.iter().peekable();
+        if drops.peek().is_some() {
+            write!(f, " ")?;
+        }
         while let Some(var) = drops.next() {
             var.fmt(f, ctx)?;
             if drops.peek().is_some() {
@@ -177,13 +179,24 @@ impl DebugWithDb<LoweredFormatter<'_>> for StatementCallBlock {
 impl DebugWithDb<LoweredFormatter<'_>> for StatementMatchExtern {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         write!(f, "match {:?}(", self.function.debug(ctx.db))?;
-        for var in &self.inputs {
+        let mut inputs = self.inputs.iter().peekable();
+        while let Some(var) = inputs.next() {
             var.fmt(f, ctx)?;
+            if inputs.peek().is_some() {
+                write!(f, ", ")?;
+            }
         }
         writeln!(f, ") {{")?;
         for arm in &self.arms {
-            arm.fmt(f, ctx)?;
-            writeln!(f)?;
+            write!(f, "    (")?;
+            let mut inputs = ctx.lowered.blocks[*arm].inputs.iter().peekable();
+            while let Some(var) = inputs.next() {
+                var.fmt(f, ctx)?;
+                if inputs.peek().is_some() {
+                    write!(f, ", ")?;
+                }
+            }
+            writeln!(f, ") => {:?},", arm.debug(ctx))?;
         }
         write!(f, "  }}")
     }
