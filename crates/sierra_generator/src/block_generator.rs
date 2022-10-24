@@ -29,12 +29,13 @@ pub fn generate_block_code(
 /// Pushes the values "returned" by the block on the top of the stack, and binds them to
 /// the given `binds` variables.
 ///
-/// Returns a list of Sierra statements.
+/// Returns a list of Sierra statements and a boolean indicating whether the block may continue to
+/// the next instruction (true) or not (false).
 pub fn generate_block_code_and_push_values(
     context: &mut ExprGeneratorContext<'_>,
     block: &lowering::Block,
     binds: &[lowering::VariableId],
-) -> Option<Vec<pre_sierra::Statement>> {
+) -> Option<(Vec<pre_sierra::Statement>, bool)> {
     let mut statements = generate_block_code(context, block)?;
     match &block.end {
         lowering::BlockEnd::Callsite(inner_outputs) => {
@@ -54,11 +55,15 @@ pub fn generate_block_code_and_push_values(
                 })
             }
             statements.push(pre_sierra::Statement::PushValues(push_values));
+            Some((statements, true))
         }
-        lowering::BlockEnd::Return(_) => unimplemented!(),
-        lowering::BlockEnd::Unreachable => {}
+        lowering::BlockEnd::Return(returned_variables) => {
+            assert!(binds.is_empty(), "binds is expected to be empty when BlockEnd is Return.");
+            statements.extend(generate_return_code(context, returned_variables)?);
+            Some((statements, false))
+        }
+        lowering::BlockEnd::Unreachable => Some((statements, false)),
     }
-    Some(statements)
 }
 
 /// Generates Sierra code for a `return` statement.
@@ -219,11 +224,12 @@ fn generate_statement_match_extern_code(
 
         // TODO(lior): Try to avoid the following clone().
         let lowered_block = context.get_lowered_block(*arm);
-        let code = generate_block_code_and_push_values(context, lowered_block, &statement.outputs)?;
+        let (code, is_reachable) =
+            generate_block_code_and_push_values(context, lowered_block, &statement.outputs)?;
         statements.extend(code);
 
         // Add jump statement to the end of the match. The last block does not require a jump.
-        if i < statement.arms.len() - 1 {
+        if i < statement.arms.len() - 1 && is_reachable {
             statements.push(jump_statement(context.jump_libfunc_id(), end_label_id));
         }
     }
@@ -271,5 +277,5 @@ fn generate_statement_call_block_code(
 ) -> Option<Vec<pre_sierra::Statement>> {
     let lowered_block = context.get_lowered_block(statement.block);
     // TODO(lior): Rename instead of using PushValues.
-    generate_block_code_and_push_values(context, lowered_block, &statement.outputs)
+    Some(generate_block_code_and_push_values(context, lowered_block, &statement.outputs)?.0)
 }
