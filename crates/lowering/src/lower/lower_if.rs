@@ -2,7 +2,7 @@ use semantic::corelib;
 use utils::extract_matches;
 
 use super::context::{LoweredExpr, LoweringContext, LoweringFlowError};
-use super::scope::{generators, BlockFlowMerger, BlockScope};
+use super::scope::{generators, BlockFlowMerger, BlockScope, BlockScopeEnd};
 use super::{lower_block, lower_expr, lowered_expr_from_block_result};
 
 #[allow(dead_code)]
@@ -57,19 +57,16 @@ pub fn lower_expr_if_bool(
     // Lower both blocks.
     let unit_ty = corelib::unit_ty(ctx.db);
     let (res, mut finalized_merger) = BlockFlowMerger::with(ctx, scope, &[], |ctx, merger| {
-        let [main_block_scope, else_block_scope] =
-            [expr.if_block, expr.else_block].map(|block_expr| {
-                merger.run_in_subscope(ctx, vec![unit_ty], |ctx, subscope, _| {
-                    lower_block(
-                        ctx,
-                        subscope,
-                        extract_matches!(
-                            &ctx.function_def.exprs[block_expr],
-                            semantic::Expr::Block
-                        ),
-                    )
-                })
-            });
+        let main_block_scope = merger.run_in_subscope(ctx, vec![unit_ty], |ctx, subscope, _| {
+            lower_block(
+                ctx,
+                subscope,
+                extract_matches!(&ctx.function_def.exprs[expr.if_block], semantic::Expr::Block),
+            )
+        });
+        let else_block_scope = merger.run_in_subscope(ctx, vec![unit_ty], |ctx, subscope, _| {
+            lower_optional_else_block(ctx, subscope, expr.else_block)
+        });
         Some((main_block_scope, else_block_scope))
     });
 
@@ -115,14 +112,7 @@ pub fn lower_expr_if_eq_zero(
         let non_zero_type = corelib::core_nonzero_ty(ctx.db, corelib::core_felt_ty(ctx.db));
         let else_block_scope =
             merger.run_in_subscope(ctx, vec![non_zero_type], |ctx, subscope, _| {
-                lower_block(
-                    ctx,
-                    subscope,
-                    extract_matches!(
-                        &ctx.function_def.exprs[expr.else_block],
-                        semantic::Expr::Block
-                    ),
-                )
+                lower_optional_else_block(ctx, subscope, expr.else_block)
             });
         Some((main_block_scope, else_block_scope))
     });
@@ -142,4 +132,21 @@ pub fn lower_expr_if_eq_zero(
     };
     let block_result = match_generator.add(ctx, scope);
     lowered_expr_from_block_result(scope, block_result, finalized_merger.pushes)
+}
+
+/// Lowers an optional else block. If the else block is missing it is replaced with a block
+/// returning a unit.
+fn lower_optional_else_block(
+    ctx: &mut LoweringContext<'_>,
+    scope: &mut BlockScope,
+    else_block_opt: Option<semantic::ExprId>,
+) -> Option<BlockScopeEnd> {
+    match else_block_opt {
+        Some(else_block) => lower_block(
+            ctx,
+            scope,
+            extract_matches!(&ctx.function_def.exprs[else_block], semantic::Expr::Block),
+        ),
+        None => unimplemented!("Missing else block is not supported yet."),
+    }
 }
