@@ -641,7 +641,7 @@ fn struct_ctor_expr(
             ast::OptionStructArgExpr::Empty(_) => {
                 resolve_variable_by_name(ctx, &arg_identifier, &path)?
             }
-            ast::OptionStructArgExpr::Some(arg_expr) => {
+            ast::OptionStructArgExpr::StructArgExpr(arg_expr) => {
                 compute_expr_semantic(ctx, &arg_expr.expr(syntax_db))
             }
         };
@@ -681,7 +681,7 @@ fn get_tail_expression(
 ) -> Option<ast::Expr> {
     let last = statements.last()?;
     let statement_expr = try_extract_matches!(last, ast::Statement::Expr)?;
-    try_extract_matches!(statement_expr.semicolon(syntax_db), ast::OptionSemicolon::Empty)?;
+    try_extract_matches!(statement_expr.semicolon(syntax_db), ast::OptionTerminalSemicolon::Empty)?;
     Some(statement_expr.expr(syntax_db))
 }
 
