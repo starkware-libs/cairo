@@ -145,6 +145,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::InvalidMemberExpression => "Invalid member expression.".into(),
             SemanticDiagnosticKind::InvalidPath => "Invalid path.".into(),
             SemanticDiagnosticKind::RefArgNotAVariable => "ref argument must be a variable.".into(),
+            SemanticDiagnosticKind::AssignmentToImmutableVar => {
+                "Cannot assign to an immutable variable.".into()
+            }
             SemanticDiagnosticKind::InvalidLhsForAssignment => {
                 "Invalid left-hand side of assignment.".into()
             }
@@ -216,6 +219,7 @@ pub enum SemanticDiagnosticKind {
     NoSuchMember { struct_id: StructId, member_name: SmolStr },
     NoSuchVariant { enum_id: EnumId, variant_name: SmolStr },
     RefArgNotAVariable,
+    AssignmentToImmutableVar,
     InvalidLhsForAssignment,
     InvalidMemberExpression,
     InvalidPath,
