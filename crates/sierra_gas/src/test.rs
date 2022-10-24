@@ -18,36 +18,36 @@ fn get_example_program(name: &str) -> Program {
 #[test_case("collatz" =>
             Ok(GasInfo {
                 variable_values: [
-                    (StatementIdx(7), 29),
-                    (StatementIdx(10), 0),
-                    (StatementIdx(23), 2),
-                    (StatementIdx(32), 0),
-                    (StatementIdx(41), 1),
+                    (StatementIdx(7), 30),
+                    (StatementIdx(11), 0),
+                    (StatementIdx(25), 2),
+                    (StatementIdx(34), 0),
+                    (StatementIdx(43), 1),
                 ].into_iter().collect(),
-                function_costs: [("Collatz".into(), 12)].into_iter().collect()
+                function_costs: [("Collatz".into(), 13)].into_iter().collect()
             }))]
 #[test_case("fib_jumps" =>
             Ok(GasInfo {
                 variable_values: [
-                    (StatementIdx(2), 11),
-                    (StatementIdx(11), 6),
-                    (StatementIdx(23), 13),
-                    (StatementIdx(28), 0),
-                    (StatementIdx(43), 1),
+                    (StatementIdx(3), 13),
+                    (StatementIdx(13), 8),
+                    (StatementIdx(27), 14),
+                    (StatementIdx(33), 0),
+                    (StatementIdx(50), 1),
                 ].into_iter().collect(),
-                function_costs: [("Fibonacci".into(), 14)].into_iter().collect()
+                function_costs: [("Fibonacci".into(), 17)].into_iter().collect()
             });
             "fib_jumps")]
 #[test_case("fib_recursive" =>
             Ok(GasInfo {
                 variable_values: [
                     (StatementIdx(3), 6),
-                    (StatementIdx(11), 1),
-                    (StatementIdx(17), 41),
-                    (StatementIdx(18), 0),
-                    (StatementIdx(37), 0),
+                    (StatementIdx(12), 1),
+                    (StatementIdx(19), 45),
+                    (StatementIdx(21), 0),
+                    (StatementIdx(42), 0),
                 ].into_iter().collect(),
-                function_costs: [("Fibonacci".into(), 10)].into_iter().collect()
+                function_costs: [("Fibonacci".into(), 11)].into_iter().collect()
             }))]
 fn solve_gas(path: &str) -> Result<GasInfo, CostError> {
     calc_gas_info(&get_example_program(path))
