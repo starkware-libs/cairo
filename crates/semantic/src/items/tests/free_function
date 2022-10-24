@@ -1,4 +1,4 @@
-//! > Test free function diagnostics.
+//! > Test free function param redefinition.
 
 //! > test_function_name
 test_function_diagnostics
@@ -17,3 +17,65 @@ error: Redefinition of parameter name "a" in function "test_crate::foo".
  --> lib.cairo:1:19
 func foo(a: bool, a: felt) {
                   ^*****^
+
+//! > ==========================================================================
+
+//! > Test valid free function with implicit params.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+func foo(a: bool) with(f: felt, b: bool) {
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test free function implicit param redefinition.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+func foo() with(a: bool, a: felt) {
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Redefinition of parameter name "a" in function "test_crate::foo".
+ --> lib.cairo:1:26
+func foo() with(a: bool, a: felt) {
+                         ^*****^
+
+//! > ==========================================================================
+
+//! > Test free function implicit param redefinition of param.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+func foo(a: bool) with(a: felt) {
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Redefinition of parameter name "a" in function "test_crate::foo".
+ --> lib.cairo:1:24
+func foo(a: bool) with(a: felt) {
+                       ^*****^
