@@ -11,7 +11,7 @@
     │   │   │   ├── token (kind: TokenIdentifier): 'foo'
     │   │   │   └── trailing_trivia (kind: Trivia)
     │   │   │       └── child #0 (kind: TokenWhitespace).
-    │   │   ├── generic_params (kind: OptionGenericParamsEmpty) []
+    │   │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
     │   │   ├── signature (kind: FunctionSignature)
     │   │   │   ├── lparen (kind: TerminalLParen)
     │   │   │   │   ├── leading_trivia (kind: Trivia) []
@@ -361,7 +361,7 @@
     │   │       │       │               ├── token (kind: TokenIdentifier): 'y'
     │   │       │       │               └── trailing_trivia (kind: Trivia)
     │   │       │       │                   └── child #0 (kind: TokenNewline).
-    │   │       │       └── semicolon (kind: OptionSemicolonEmpty) []
+    │   │       │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │   │       └── rbrace (kind: TerminalRBrace)
     │   │           ├── leading_trivia (kind: Trivia) []
     │   │           ├── token (kind: TokenRBrace): '}'
@@ -400,7 +400,7 @@
     │   │   │   ├── token (kind: TokenIdentifier): 'bar'
     │   │   │   └── trailing_trivia (kind: Trivia)
     │   │   │       └── child #0 (kind: TokenWhitespace).
-    │   │   ├── generic_params (kind: OptionGenericParamsEmpty) []
+    │   │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
     │   │   ├── signature (kind: FunctionSignature)
     │   │   │   ├── lparen (kind: TerminalLParen)
     │   │   │   │   ├── leading_trivia (kind: Trivia) []
@@ -570,7 +570,7 @@
     │   │       │       │                   ├── token (kind: TokenRParen): ')'
     │   │       │       │                   └── trailing_trivia (kind: Trivia)
     │   │       │       │                       └── child #0 (kind: TokenNewline).
-    │   │       │       └── semicolon (kind: OptionSemicolonEmpty) []
+    │   │       │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │   │       └── rbrace (kind: TerminalRBrace)
     │   │           ├── leading_trivia (kind: Trivia)
     │   │           │   └── child #0 (kind: TokenWhitespace).
@@ -588,7 +588,7 @@
     │       │   ├── leading_trivia (kind: Trivia) []
     │       │   ├── token (kind: TokenIdentifier): 'A'
     │       │   └── trailing_trivia (kind: Trivia) []
-    │       ├── generic_params (kind: OptionGenericParamsEmpty) []
+    │       ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
     │       ├── lbrace (kind: TerminalLBrace)
     │       │   ├── leading_trivia (kind: Trivia) []
     │       │   ├── token (kind: TokenLBrace): '{'
