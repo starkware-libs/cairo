@@ -2,7 +2,7 @@ use std::fmt::Display;
 use std::vec;
 
 use crate::hints::Hint;
-use crate::operand::{DerefOperand, DerefOrImmediate, ResOperand};
+use crate::operand::{CellRef, DerefOrImmediate, ResOperand};
 
 #[cfg(test)]
 #[path = "instructions_test.rs"]
@@ -114,7 +114,7 @@ impl Display for JumpInstruction {
 #[derive(Debug, Eq, PartialEq)]
 pub struct JnzInstruction {
     pub jump_offset: DerefOrImmediate,
-    pub condition: DerefOperand,
+    pub condition: CellRef,
 }
 impl JnzInstruction {
     pub fn op_size(&self) -> usize {
@@ -146,7 +146,7 @@ pub fn op_size_based_on_res_operands(operand: &ResOperand) -> usize {
 // Represents the InstructionBody "a = b" for two operands a, b.
 #[derive(Debug, Eq, PartialEq)]
 pub struct AssertEqInstruction {
-    pub a: DerefOperand,
+    pub a: CellRef,
     pub b: ResOperand,
 }
 impl AssertEqInstruction {

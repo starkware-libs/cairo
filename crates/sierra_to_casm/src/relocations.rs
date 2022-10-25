@@ -1,7 +1,7 @@
 use casm::instructions::{
     CallInstruction, Instruction, InstructionBody, JnzInstruction, JumpInstruction,
 };
-use casm::operand::{DerefOrImmediate, ImmediateOperand};
+use casm::operand::DerefOrImmediate;
 use sierra::program::StatementIdx;
 
 type CodeOffset = usize;
@@ -25,7 +25,7 @@ impl Relocation {
                 Instruction {
                     body:
                         InstructionBody::Call(CallInstruction {
-                            target: DerefOrImmediate::Immediate(ImmediateOperand { value }),
+                            target: DerefOrImmediate::Immediate(value),
                             relative: true,
                         }),
                     inc_ap: false,
@@ -34,7 +34,7 @@ impl Relocation {
                 | Instruction {
                     body:
                         InstructionBody::Jnz(JnzInstruction {
-                            jump_offset: DerefOrImmediate::Immediate(ImmediateOperand { value }),
+                            jump_offset: DerefOrImmediate::Immediate(value),
                             condition: _,
                         }),
                     ..
@@ -42,7 +42,7 @@ impl Relocation {
                 | Instruction {
                     body:
                         InstructionBody::Jump(JumpInstruction {
-                            target: DerefOrImmediate::Immediate(ImmediateOperand { value }),
+                            target: DerefOrImmediate::Immediate(value),
                             relative: true,
                         }),
                     inc_ap: false,

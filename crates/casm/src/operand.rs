@@ -21,16 +21,16 @@ impl Display for Register {
 // Represents the rhs operand of an assert equal InstructionBody.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ResOperand {
-    Deref(DerefOperand),
-    DoubleDeref(DoubleDerefOperand),
-    Immediate(ImmediateOperand),
+    Deref(CellRef),
+    DoubleDeref(CellRef),
+    Immediate(i128),
     BinOp(BinOpOperand),
 }
 impl Display for ResOperand {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ResOperand::Deref(operand) => write!(f, "{}", operand),
-            ResOperand::DoubleDeref(operand) => write!(f, "{}", operand),
+            ResOperand::DoubleDeref(operand) => write!(f, "[{}]", operand),
             ResOperand::Immediate(operand) => write!(f, "{}", operand),
             ResOperand::BinOp(operand) => write!(f, "{}", operand),
         }
@@ -47,36 +47,25 @@ impl From<DerefOrImmediate> for ResOperand {
 
 /// Represents an operand of the form [reg + offset].
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub struct DerefOperand {
+pub struct CellRef {
     pub register: Register,
     pub offset: i16,
 }
-impl Display for DerefOperand {
+impl Display for CellRef {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "[{} + {}]", self.register, self.offset)
     }
 }
 
 /// Returns an AP DerefOperand with the given offset.
-pub fn ap_deref_operand(offset: i16) -> DerefOperand {
-    DerefOperand { register: Register::AP, offset }
-}
-
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub struct ImmediateOperand {
-    // TODO(ilya, 10/10/2022): What type do we want to use here.
-    pub value: i128,
-}
-impl Display for ImmediateOperand {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.value)
-    }
+pub fn ap_cell_ref(offset: i16) -> CellRef {
+    CellRef { register: Register::AP, offset }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum DerefOrImmediate {
-    Deref(DerefOperand),
-    Immediate(ImmediateOperand),
+    Deref(CellRef),
+    Immediate(i128),
 }
 impl Display for DerefOrImmediate {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -88,16 +77,11 @@ impl Display for DerefOrImmediate {
 }
 impl From<i128> for DerefOrImmediate {
     fn from(x: i128) -> Self {
-        DerefOrImmediate::Immediate(ImmediateOperand { value: x })
-    }
-}
-impl From<ImmediateOperand> for DerefOrImmediate {
-    fn from(x: ImmediateOperand) -> Self {
         DerefOrImmediate::Immediate(x)
     }
 }
-impl From<DerefOperand> for DerefOrImmediate {
-    fn from(x: DerefOperand) -> Self {
+impl From<CellRef> for DerefOrImmediate {
+    fn from(x: CellRef) -> Self {
         DerefOrImmediate::Deref(x)
     }
 }
@@ -119,21 +103,11 @@ impl Display for Operation {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct BinOpOperand {
     pub op: Operation,
-    pub a: DerefOperand,
+    pub a: CellRef,
     pub b: DerefOrImmediate,
 }
 impl Display for BinOpOperand {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{} {} {}", self.a, self.op, self.b)
-    }
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct DoubleDerefOperand {
-    pub inner_deref: DerefOperand,
-}
-impl Display for DoubleDerefOperand {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "[{}]", self.inner_deref)
     }
 }

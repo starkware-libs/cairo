@@ -1,9 +1,7 @@
 use std::collections::HashMap;
 
 use casm::ap_change::{ApChange, ApChangeError, ApplyApChange};
-use casm::operand::{
-    DerefOperand, DerefOrImmediate, DoubleDerefOperand, ImmediateOperand, Register,
-};
+use casm::operand::{CellRef, DerefOrImmediate, Register};
 use sierra::extensions::felt::FeltOperator;
 use sierra::ids::{ConcreteTypeId, VarId};
 use sierra::program::{Function, StatementIdx};
@@ -36,7 +34,7 @@ pub struct ReferenceValue {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct BinOpExpression {
     pub op: FeltOperator,
-    pub a: DerefOperand,
+    pub a: CellRef,
     pub b: DerefOrImmediate,
 }
 impl ApplyApChange for BinOpExpression {
@@ -52,10 +50,10 @@ impl ApplyApChange for BinOpExpression {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ReferenceExpression {
     AllocateSegment,
-    Deref(DerefOperand),
-    DoubleDeref(DoubleDerefOperand),
-    IntoSingleCellRef(DerefOperand),
-    Immediate(ImmediateOperand),
+    Deref(CellRef),
+    DoubleDeref(CellRef),
+    IntoSingleCellRef(CellRef),
+    Immediate(i128),
     BinOp(BinOpExpression),
     Complex(Vec<ReferenceExpression>),
 }
@@ -73,9 +71,7 @@ impl ApplyApChange for ReferenceExpression {
             ReferenceExpression::IntoSingleCellRef(operand) => {
                 ReferenceExpression::IntoSingleCellRef(operand.apply_ap_change(ap_change)?)
             }
-            ReferenceExpression::Immediate(operand) => {
-                ReferenceExpression::Immediate(operand.apply_ap_change(ap_change)?)
-            }
+            ReferenceExpression::Immediate(operand) => ReferenceExpression::Immediate(operand),
             ReferenceExpression::BinOp(operand) => {
                 ReferenceExpression::BinOp(operand.apply_ap_change(ap_change)?)
             }
@@ -106,12 +102,12 @@ pub fn build_function_arguments_refs(
                 param.id.clone(),
                 ReferenceValue {
                     expression: if *size == 1 {
-                        ReferenceExpression::Deref(DerefOperand { register: Register::FP, offset })
+                        ReferenceExpression::Deref(CellRef { register: Register::FP, offset })
                     } else {
                         ReferenceExpression::Complex(
                             ((offset - size + 1)..offset + 1)
                                 .map(|i| {
-                                    ReferenceExpression::Deref(DerefOperand {
+                                    ReferenceExpression::Deref(CellRef {
                                         register: Register::FP,
                                         offset: i,
                                     })
