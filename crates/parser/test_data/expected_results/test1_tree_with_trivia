@@ -140,7 +140,7 @@
     │   │   │   │               ├── token (kind: TokenIdentifier): 'int'
     │   │   │   │               └── trailing_trivia (kind: Trivia)
     │   │   │   │                   └── child #0 (kind: TokenWhitespace).
-    │   │   │   └── with_clause (kind: OptionWithClauseEmpty) []
+    │   │   │   └── implicits_clause (kind: OptionImplicitsClauseEmpty) []
     │   │   └── body (kind: ExprBlock)
     │   │       ├── lbrace (kind: TerminalLBrace)
     │   │       │   ├── leading_trivia (kind: Trivia) []
@@ -700,7 +700,7 @@
     │   │   │   │               ├── token (kind: TokenIdentifier): 'felt'
     │   │   │   │               └── trailing_trivia (kind: Trivia)
     │   │   │   │                   └── child #0 (kind: TokenWhitespace).
-    │   │   │   └── with_clause (kind: OptionWithClauseEmpty) []
+    │   │   │   └── implicits_clause (kind: OptionImplicitsClauseEmpty) []
     │   │   └── body (kind: ExprBlock)
     │   │       ├── lbrace (kind: TerminalLBrace)
     │   │       │   ├── leading_trivia (kind: Trivia) []
@@ -838,7 +838,7 @@
     │   │   │   │               ├── leading_trivia (kind: Trivia) []
     │   │   │   │               ├── token (kind: TokenIdentifier): 'S'
     │   │   │   │               └── trailing_trivia (kind: Trivia) []
-    │   │   │   └── with_clause (kind: OptionWithClauseEmpty) []
+    │   │   │   └── implicits_clause (kind: OptionImplicitsClauseEmpty) []
     │   │   └── semicolon (kind: TerminalSemicolon)
     │   │       ├── leading_trivia (kind: Trivia) []
     │   │       ├── token: Missing

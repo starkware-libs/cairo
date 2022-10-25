@@ -30,7 +30,7 @@
     │       │   │   └── ty (kind: ExprPath)
     │       │   │       └── item #0 (kind: PathSegmentSimple)
     │       │   │           └── ident (kind: TokenIdentifier): 'felt'
-    │       │   └── with_clause (kind: OptionWithClauseEmpty) []
+    │       │   └── implicits_clause (kind: OptionImplicitsClauseEmpty) []
     │       └── body (kind: ExprBlock)
     │           ├── lbrace (kind: TokenLBrace): '{'
     │           ├── statements (kind: StatementList)

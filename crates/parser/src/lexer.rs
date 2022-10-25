@@ -131,7 +131,7 @@ impl<'a> Lexer<'a> {
             "if" => TokenKind::If,
             "else" => TokenKind::Else,
             "use" => TokenKind::Use,
-            "with" => TokenKind::With,
+            "implicits" => TokenKind::Implicits,
             "ref" => TokenKind::Ref,
             "mut" => TokenKind::Mut,
             "_" => TokenKind::Underscore,
@@ -270,7 +270,7 @@ enum TokenKind {
     If,
     Else,
     Use,
-    With,
+    Implicits,
 
     // Modifiers.
     Ref,
@@ -332,7 +332,7 @@ fn token_kind_to_terminal_syntax_kind(kind: TokenKind) -> SyntaxKind {
         TokenKind::If => SyntaxKind::TerminalIf,
         TokenKind::Else => SyntaxKind::TerminalElse,
         TokenKind::Use => SyntaxKind::TerminalUse,
-        TokenKind::With => SyntaxKind::TerminalWith,
+        TokenKind::Implicits => SyntaxKind::TerminalImplicits,
         TokenKind::And => SyntaxKind::TerminalAnd,
         TokenKind::AndAnd => SyntaxKind::TerminalAndAnd,
         TokenKind::OrOr => SyntaxKind::TerminalOrOr,
