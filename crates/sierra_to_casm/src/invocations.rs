@@ -480,10 +480,8 @@ impl CompiledInvocationBuilder<'_> {
     /// jmp rel <jump_offset_1000> if [ap-10] != 0
     /// ```
     fn build_jump_nz(self) -> Result<CompiledInvocation, InvocationError> {
-        let condition = match self.refs {
-            [ReferenceValue { expression: ReferenceExpression::Deref(condition), .. }] => {
-                *condition
-            }
+        let value = match self.refs {
+            [ReferenceValue { expression: ReferenceExpression::Deref(value), .. }] => *value,
             [_] => return Err(InvocationError::InvalidReferenceExpressionForArgument),
             refs => {
                 return Err(InvocationError::WrongNumberOfArguments {
@@ -502,14 +500,13 @@ impl CompiledInvocationBuilder<'_> {
         };
 
         Ok(self.build(
-            casm! { jnz rel 0 if condition; }.instructions,
+            casm! { jmp rel 0 if value != 0; }.instructions,
             vec![RelocationEntry {
                 instruction_idx: 0,
                 relocation: Relocation::RelativeStatementId(*target_statement_id),
             }],
             itertools::repeat_n(ApChange::Known(0), 2).into_iter(),
-            [vec![].into_iter(), vec![ReferenceExpression::Deref(condition)].into_iter()]
-                .into_iter(),
+            [vec![].into_iter(), vec![ReferenceExpression::Deref(value)].into_iter()].into_iter(),
         ))
     }
 
@@ -690,7 +687,7 @@ impl CompiledInvocationBuilder<'_> {
         // The code up to the failure branch.
         let mut before_failure_branch = casm! {
             %{ memory[ap + 0] = memory gas_counter_value < (*requested_count as i128) %}
-            jnz rel 0 if [ap + 0], ap++;
+            jmp rel 0 if [ap + 0] != 0, ap++;
             // gas_counter >= requested_count:
             [ap + 0] = gas_counter_value_for_branches + (-requested_count as i128), ap++;
             [ap - 1] = [[range_check.apply_ap_change(ApChange::Known(2)).unwrap()]];
@@ -926,7 +923,7 @@ impl CompiledInvocationBuilder<'_> {
         let mut relocations = Vec::new();
         // Add the jump_nz instruction if we have 2 branches.
         if num_branches == 2 {
-            instructions.extend(casm! { jnz rel 0 if variant_selector; }.instructions);
+            instructions.extend(casm! { jmp rel 0 if variant_selector != 0; }.instructions);
             // Add the first instruction of jumping to branch 1 if jmp_table_idx != 0 (1).
             relocations.push(RelocationEntry {
                 instruction_idx: 0,

@@ -61,7 +61,7 @@ macro_rules! casm_extend {
         $crate::append_instruction!($ctx, body $(,$ap++)?);
         $crate::casm_extend!($ctx, $($tok)*)
     };
-    ($ctx:ident, jnz rel $target:tt if $cond:tt $(,$ap:ident++)? ; $($tok:tt)*) => {
+    ($ctx:ident, jmp rel $target:tt if $cond:tt != 0 $(,$ap:ident++)? ; $($tok:tt)*) => {
         let body = InstructionBody::Jnz(JnzInstruction {
             jump_offset: $crate::deref_or_immediate!($target),
             condition: $crate::deref!($cond),
@@ -69,7 +69,7 @@ macro_rules! casm_extend {
         $crate::append_instruction!($ctx, body $(,$ap++)?);
         $crate::casm_extend!($ctx, $($tok)*)
     };
-    ($ctx:ident, jnz $target:tt if $cond:tt $(,$ap:ident++)? ; $($tok:tt)*) => {
+    ($ctx:ident, jmp $target:tt if $cond:tt != 0 $(,$ap:ident++)? ; $($tok:tt)*) => {
         let body = InstructionBody::Jnz(JnzInstruction {
             jump_offset: $crate::deref_or_immediate!($target),
             condition: $crate::deref!($cond),
