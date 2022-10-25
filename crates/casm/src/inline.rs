@@ -11,14 +11,14 @@ macro_rules! casm {
             use $crate::instructions::*;
             use $crate::inline::CasmContext;
             let mut ctx = CasmContext::default();
-            $crate::casm_inner!(ctx, $($tok)*);
+            $crate::casm_extend!(ctx, $($tok)*);
             ctx
         }
     }
 }
 
 #[macro_export]
-macro_rules! casm_inner {
+macro_rules! casm_extend {
     ($ctx:ident,) => {};
     ($ctx:ident, $dst:tt = $a:tt $(+ $b0:tt)? $(* $b1:tt)? $(,$ap:ident++)? ; $($tok:tt)*) => {
         let body = InstructionBody::AssertEq(AssertEqInstruction {
@@ -26,7 +26,7 @@ macro_rules! casm_inner {
             b: $crate::res!($a $(+ $b0)? $(* $b1)?),
         });
         $crate::append_instruction!($ctx, body $(,$ap++)?);
-        $crate::casm_inner!($ctx, $($tok)*)
+        $crate::casm_extend!($ctx, $($tok)*)
     };
     ($ctx:ident, call rel $target:tt $(,$ap:ident++)? ; $($tok:tt)*) => {
         let body = InstructionBody::Call(CallInstruction {
@@ -34,7 +34,7 @@ macro_rules! casm_inner {
             relative: true,
         });
         $crate::append_instruction!($ctx, body $(,$ap++)?);
-        $crate::casm_inner!($ctx, $($tok)*)
+        $crate::casm_extend!($ctx, $($tok)*)
     };
     ($ctx:ident, call abs $target:tt $(,$ap:ident++)? ; $($tok:tt)*) => {
         let body = InstructionBody::Call(CallInstruction {
@@ -42,7 +42,7 @@ macro_rules! casm_inner {
             relative: false,
         });
         $crate::append_instruction!($ctx, body $(,$ap++)?);
-        $crate::casm_inner!($ctx, $($tok)*)
+        $crate::casm_extend!($ctx, $($tok)*)
     };
     ($ctx:ident, jmp rel $target:expr $(,$ap:ident++)? ; $($tok:tt)*) => {
         let body = InstructionBody::Jump(JumpInstruction {
@@ -50,7 +50,7 @@ macro_rules! casm_inner {
             relative: true,
         });
         $crate::append_instruction!($ctx, body $(,$ap++)?);
-        $crate::casm_inner!($ctx, $($tok)*)
+        $crate::casm_extend!($ctx, $($tok)*)
     };
     ($ctx:ident, jmp abs $target:tt $(,$ap:ident++)? ; $($tok:tt)*) => {
         let body = InstructionBody::Jump(JumpInstruction {
@@ -58,7 +58,7 @@ macro_rules! casm_inner {
             relative: false,
         });
         $crate::append_instruction!($ctx, body $(,$ap++)?);
-        $crate::casm_inner!($ctx, $($tok)*)
+        $crate::casm_extend!($ctx, $($tok)*)
     };
     ($ctx:ident, jnz rel $target:tt if $cond:expr $(,$ap:ident++)? ; $($tok:tt)*) => {
         let body = InstructionBody::Jnz(JnzInstruction {
@@ -66,7 +66,7 @@ macro_rules! casm_inner {
             condition: $crate::deref!($cond),
         });
         $crate::append_instruction!($ctx, body $(,$ap++)?);
-        $crate::casm_inner!($ctx, $($tok)*)
+        $crate::casm_extend!($ctx, $($tok)*)
     };
     ($ctx:ident, jnz $target:tt if $cond:expr $(,$ap:ident++)? ; $($tok:tt)*) => {
         let body = InstructionBody::Jnz(JnzInstruction {
@@ -74,14 +74,14 @@ macro_rules! casm_inner {
             condition: $crate::deref!($cond),
         });
         $crate::append_instruction!($ctx, body $(,$ap++)?);
-        $crate::casm_inner!($ctx, $($tok)*)
+        $crate::casm_extend!($ctx, $($tok)*)
     };
     ($ctx:ident, ap += $operand:tt $(,$ap:ident++)? ; $($tok:tt)*) => {
         let body = InstructionBody::AddAp(AddApInstruction {
             operand: $crate::res!($operand),
         });
         $crate::append_instruction!($ctx, body $(,$ap++)?);
-        $crate::casm_inner!($ctx, $($tok)*)
+        $crate::casm_extend!($ctx, $($tok)*)
     };
 }
 
