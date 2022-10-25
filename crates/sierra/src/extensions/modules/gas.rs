@@ -1,4 +1,5 @@
 // Module providing the gas related extensions.
+use super::range_check::RangeCheckType;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibFuncSignature, OutputVarInfo, ParamSignature,
@@ -51,23 +52,43 @@ impl NoGenericArgsGenericLibFunc for GetGasLibFunc {
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibFuncSignature, SpecializationError> {
         let gas_builtin_type = context.get_concrete_type(GasBuiltinType::id(), &[])?;
+        let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
         Ok(LibFuncSignature {
-            param_signatures: vec![ParamSignature::new(gas_builtin_type.clone())],
+            param_signatures: vec![
+                ParamSignature::new(range_check_type.clone()),
+                ParamSignature::new(gas_builtin_type.clone()),
+            ],
             branch_signatures: vec![
                 // Success:
                 BranchSignature {
-                    vars: vec![OutputVarInfo {
-                        ty: gas_builtin_type.clone(),
-                        ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
-                    }],
+                    vars: vec![
+                        OutputVarInfo {
+                            ty: range_check_type.clone(),
+                            ref_info: OutputVarReferenceInfo::Deferred(
+                                DeferredOutputKind::AddConst { param_idx: 0 },
+                            ),
+                        },
+                        OutputVarInfo {
+                            ty: gas_builtin_type.clone(),
+                            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                        },
+                    ],
                     ap_change: SierraApChange::NotImplemented,
                 },
                 // Failure:
                 BranchSignature {
-                    vars: vec![OutputVarInfo {
-                        ty: gas_builtin_type,
-                        ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
-                    }],
+                    vars: vec![
+                        OutputVarInfo {
+                            ty: range_check_type,
+                            ref_info: OutputVarReferenceInfo::Deferred(
+                                DeferredOutputKind::AddConst { param_idx: 0 },
+                            ),
+                        },
+                        OutputVarInfo {
+                            ty: gas_builtin_type,
+                            ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },
+                        },
+                    ],
                     ap_change: SierraApChange::NotImplemented,
                 },
             ],

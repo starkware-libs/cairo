@@ -1,11 +1,13 @@
 type uint128 = uint128;
 type GasBuiltin = GasBuiltin;
+type RangeCheck = RangeCheck;
 type NonZeroInt = NonZero<uint128>;
 
 libfunc revoke_ap_tracking = revoke_ap_tracking;
 libfunc store_temp_uint128 = store_temp<uint128>;
 libfunc store_temp_nz_uint128 = store_temp<NonZeroInt>;
 libfunc store_temp_gb = store_temp<GasBuiltin>;
+libfunc store_temp_rc = store_temp<RangeCheck>;
 libfunc rename_uint128 = rename<uint128>;
 libfunc uint128_const_1 = uint128_const<1>;
 libfunc uint128_const_minus_1 = uint128_const<-1>;
@@ -20,62 +22,69 @@ libfunc refund_gas = refund_gas;
 
 revoke_ap_tracking() -> ();
 // Statement #  1 - tests if n == 0.
-uint128_jump_nz(n) { fallthrough() 7(n) };
+uint128_jump_nz(n) { fallthrough() 8(n) };
 // Statement #  2 - n == 0, so we return updated gb and 1.
+store_temp_rc(rc) -> (rc);
 refund_gas(gb) -> (gb);
 store_temp_gb(gb) -> (gb);
 uint128_const_1() -> (one);
 store_temp_uint128(one) -> (one);
-return(gb, one);
-// Statement #  7 - Calculates n - 1 and tests if n - 1 == 0.
+return(rc, gb, one);
+// Statement #  8 - Calculates n - 1 and tests if n - 1 == 0.
 uint128_unwrap_nz(n) -> (n);
 uint128_sub_1(n) -> (n);
 store_temp_uint128(n) -> (n);
-uint128_jump_nz(n) { fallthrough() 16(n) };
-// Statement # 11  - n == 1, so we return updated gb and 1.
+uint128_jump_nz(n) { fallthrough() 18(n) };
+// Statement # 12  - n == 1, so we return updated gb and 1.
+store_temp_rc(rc) -> (rc);
 refund_gas(gb) -> (gb);
 store_temp_gb(gb) -> (gb);
 uint128_const_1() -> (one);
 store_temp_uint128(one) -> (one);
-return(gb, one);
-// Statement # 16
-// Setting up the latest memory to be of the form [b=1, _, n=n-1, gb, a=1].
+return(rc, gb, one);
+// Statement # 18
+// Setting up the latest memory to be of the form [b=1, _, _, n=n-1, rc, gb, a=1].
 uint128_const_1() -> (b);
 store_temp_uint128(b) -> (b);
 store_temp_nz_uint128(n) -> (n); // Adding a value to local memory for alignment with the main loop.
+store_temp_nz_uint128(n) -> (n); // Adding a value to local memory for alignment with the main loop.
 store_temp_nz_uint128(n) -> (n);
+store_temp_rc(rc) -> (rc);
 store_temp_gb(gb) -> (gb);
 uint128_const_1() -> (a);
 store_temp_uint128(a) -> (a);
-// Statement # 23 - Getting gas for the main loop.
-get_gas(gb) { 33(gb) fallthrough(gb) };
-// Statement # 24  - Ran out of gas - returning updated gb and -1.
+// Statement # 27 - Getting gas for the main loop.
+get_gas(rc, gb) { 38(rc, gb) fallthrough(rc, gb) };
+// Statement # 28  - Ran out of gas - returning updated gb and -1.
 uint128_drop(a) -> ();
 uint128_drop(b) -> ();
 uint128_unwrap_nz(n) -> (n);
 uint128_drop(n) -> ();
-refund_gas(gb) -> (gb); // Statement 27.
+store_temp_rc(rc) -> (rc);
+refund_gas(gb) -> (gb); // Statement 32.
 store_temp_gb(gb) -> (gb);
 uint128_const_minus_1() -> (err);
 store_temp_uint128(err) -> (err);
-return(gb, err);
-// Statement # 33
-// The main loop - given [b, _, n, gb, a, _] - adds [n-1, updated_gb, a+b]
-// Memory cells form is now [b'=a, _, n'=n-1, gb'=updated_gb, a'=a+b]
+return(rc, gb, err);
+// Statement # 38
+// The main loop - given [b, _, _, n, rc, gb, a, _, _] - adds [n-1, updated_rc, updated_gb, a+b]
+// Memory cells form is now [b'=a, _, _, n'=n-1, rc'=updated_rc, gb'=updated_gb, a'=a+b]
 uint128_dup(a) -> (a, prev_a);
 uint128_add(a, b) -> (a);
 rename_uint128(prev_a) -> (b);
 uint128_unwrap_nz(n) -> (n);
 uint128_sub_1(n) -> (n);
 store_temp_uint128(n) -> (n);
+store_temp_rc(rc) -> (rc);
 store_temp_gb(gb) -> (gb);
 store_temp_uint128(a) -> (a);
-uint128_jump_nz(n) { fallthrough() 23(n) };
-// Statement # 42 - n == 0, so we can return the latest a.
+uint128_jump_nz(n) { fallthrough() 27(n) };
+// Statement # 48 - n == 0, so we can return the latest a.
 uint128_drop(b) -> ();
-refund_gas(gb) -> (gb); // Statement 43.
+store_temp_rc(rc) -> (rc);
+refund_gas(gb) -> (gb); // Statement 50.
 store_temp_gb(gb) -> (gb);
 store_temp_uint128(a) -> (a);
-return(gb, a);
+return(rc, gb, a);
 
-Fibonacci@0(gb: GasBuiltin, n: uint128) -> (GasBuiltin, uint128);
+Fibonacci@0(rc: RangeCheck, gb: GasBuiltin, n: uint128) -> (RangeCheck, GasBuiltin, uint128);

@@ -10,7 +10,7 @@ use casm::operand::{
     BinOpOperand, DerefOperand, DerefOrImmediate, DoubleDerefOperand, ImmediateOperand, Operation,
     Register, ResOperand,
 };
-use itertools::zip_eq;
+use itertools::{chain, zip_eq};
 use sierra::extensions::array::ArrayConcreteLibFunc;
 use sierra::extensions::boxing::BoxConcreteLibFunc;
 use sierra::extensions::core::CoreConcreteLibFunc;
@@ -29,7 +29,7 @@ use sierra::extensions::ConcreteLibFunc;
 use sierra::ids::ConcreteTypeId;
 use sierra::program::{BranchInfo, BranchTarget, Invocation, StatementIdx};
 use thiserror::Error;
-use utils::try_extract_matches;
+use utils::{extract_matches, try_extract_matches};
 
 use crate::environment::frame_state::FrameStateError;
 use crate::environment::{frame_state, Environment};
@@ -671,14 +671,17 @@ impl CompiledInvocationBuilder<'_> {
             .variable_values
             .get(&self.idx)
             .ok_or(InvocationError::UnknownVariableData)?;
-        let gas_counter_value = match self.refs {
-            [ReferenceValue { expression: ReferenceExpression::Deref(deref_operand), .. }] => {
-                deref_operand
-            }
-            [_] => return Err(InvocationError::InvalidReferenceExpressionForArgument),
+        let (range_check, gas_counter_value) = match self.refs {
+            [
+                ReferenceValue { expression: ReferenceExpression::Deref(range_check), .. },
+                ReferenceValue {
+                    expression: ReferenceExpression::Deref(gas_counter_value), ..
+                },
+            ] => (*range_check, *gas_counter_value),
+            [_, _] => return Err(InvocationError::InvalidReferenceExpressionForArgument),
             refs => {
                 return Err(InvocationError::WrongNumberOfArguments {
-                    expected: 1,
+                    expected: 2,
                     actual: refs.len(),
                 });
             }
@@ -689,35 +692,85 @@ impl CompiledInvocationBuilder<'_> {
             _ => panic!("malformed invocation"),
         };
 
-        Ok(self.build(
-            vec![Instruction {
-                body: InstructionBody::Jnz(JnzInstruction {
-                    jump_offset: DerefOrImmediate::Immediate(ImmediateOperand { value: 0 }),
-                    condition: DerefOperand { register: Register::AP, offset: 0 },
+        let mut non_deterministic_jump = Instruction {
+            // Jump over the success branch.
+            body: InstructionBody::Jnz(JnzInstruction {
+                // Fixing this when all required sizes are known.
+                jump_offset: DerefOrImmediate::Immediate(ImmediateOperand { value: 0 }),
+                condition: DerefOperand { register: Register::AP, offset: 0 },
+            }),
+            inc_ap: true,
+            hints: vec![Hint::TestLessThan {
+                lhs: DerefOrImmediate::Deref(gas_counter_value),
+                rhs: DerefOrImmediate::Immediate(ImmediateOperand {
+                    value: *requested_count as i128,
                 }),
-                inc_ap: true,
-                hints: vec![Hint::TestLessThan {
-                    lhs: DerefOrImmediate::Immediate(ImmediateOperand {
-                        value: (requested_count - 1) as i128,
-                    }),
-                    rhs: DerefOrImmediate::Deref(*gas_counter_value),
-                }],
             }],
+        };
+        let gas_counter_value_for_branches =
+            gas_counter_value.apply_ap_change(ApChange::Known(1)).unwrap();
+        let success_branch = casm! {
+            // gas_counter >= requested_count:
+            [ap + 0] = gas_counter_value_for_branches + (-requested_count as i128), ap++;
+            [ap - 1] = [[range_check.apply_ap_change(ApChange::Known(2)).unwrap()]];
+            jmp rel 0; // Fixed in relocations.
+        };
+        let branch_offset =
+            non_deterministic_jump.body.op_size() + success_branch.current_code_offset;
+        extract_matches!(
+            &mut extract_matches!(&mut non_deterministic_jump.body, InstructionBody::Jnz)
+                .jump_offset,
+            DerefOrImmediate::Immediate
+        )
+        .value = branch_offset as i128;
+        let relocation_index = success_branch.instructions.len();
+        let failure_branch = casm! {
+            // gas_counter < requested_count:
+            // TODO(orizi): Make into one command when wider constants are supported.
+            [ap + 0] = gas_counter_value_for_branches + (1 - *requested_count as i128), ap++;
+            [ap + 0] = [ap - 1] * (-1), ap++;
+            [ap - 1] = [[range_check.apply_ap_change(ApChange::Known(3)).unwrap()]];
+        };
+
+        Ok(self.build(
+            chain!(
+                [non_deterministic_jump],
+                success_branch.instructions,
+                failure_branch.instructions
+            )
+            .collect(),
             vec![RelocationEntry {
-                instruction_idx: 0,
+                instruction_idx: relocation_index,
                 relocation: Relocation::RelativeStatementId(*target_statement_id),
             }],
-            [ApChange::Known(1), ApChange::Known(1)].into_iter(),
+            [ApChange::Known(2), ApChange::Known(3)].into_iter(),
             [
-                vec![ReferenceExpression::BinOp(BinOpExpression {
-                    op: FeltOperator::Sub,
-                    a: *gas_counter_value,
-                    b: DerefOrImmediate::Immediate(ImmediateOperand {
-                        value: *requested_count as i128,
+                vec![
+                    ReferenceExpression::BinOp(BinOpExpression {
+                        op: FeltOperator::Add,
+                        a: range_check.apply_ap_change(ApChange::Known(2)).unwrap(),
+                        b: DerefOrImmediate::Immediate(ImmediateOperand { value: 1 }),
                     }),
-                })]
+                    ReferenceExpression::BinOp(BinOpExpression {
+                        op: FeltOperator::Sub,
+                        a: gas_counter_value.apply_ap_change(ApChange::Known(2)).unwrap(),
+                        b: DerefOrImmediate::Immediate(ImmediateOperand {
+                            value: *requested_count as i128,
+                        }),
+                    }),
+                ]
                 .into_iter(),
-                vec![ReferenceExpression::Deref(*gas_counter_value)].into_iter(),
+                vec![
+                    ReferenceExpression::BinOp(BinOpExpression {
+                        op: FeltOperator::Add,
+                        a: range_check.apply_ap_change(ApChange::Known(3)).unwrap(),
+                        b: DerefOrImmediate::Immediate(ImmediateOperand { value: 1 }),
+                    }),
+                    ReferenceExpression::Deref(
+                        gas_counter_value.apply_ap_change(ApChange::Known(3)).unwrap(),
+                    ),
+                ]
+                .into_iter(),
             ]
             .into_iter(),
         ))
@@ -745,13 +798,17 @@ impl CompiledInvocationBuilder<'_> {
             }
         };
         Ok(self.build_only_reference_changes(
-            [ReferenceExpression::BinOp(BinOpExpression {
-                op: FeltOperator::Add,
-                a: *gas_counter_value,
-                b: DerefOrImmediate::Immediate(ImmediateOperand {
-                    value: *requested_count as i128,
-                }),
-            })]
+            [if *requested_count == 0 {
+                ReferenceExpression::Deref(*gas_counter_value)
+            } else {
+                ReferenceExpression::BinOp(BinOpExpression {
+                    op: FeltOperator::Add,
+                    a: *gas_counter_value,
+                    b: DerefOrImmediate::Immediate(ImmediateOperand {
+                        value: *requested_count as i128,
+                    }),
+                })
+            }]
             .into_iter(),
         ))
     }
