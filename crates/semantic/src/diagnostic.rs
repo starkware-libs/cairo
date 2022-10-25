@@ -178,6 +178,21 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::RepeatedModifier { modifier } => {
                 format!("`{}` modifier may not be repeated", modifier)
             }
+            SemanticDiagnosticKind::VariableOfTypeNotFound { ty } => {
+                format!(
+                    r#"Variable of type "{}" doesn't exist. It is required for the function call as
+                            an implicit argument."#,
+                    ty.format(db)
+                )
+            }
+            SemanticDiagnosticKind::VariableOfTypeFoundMoreThanOnce { ty } => {
+                format!(
+                    r#"Multiple variable of type "{}" exist. Exactly a single variable of this type
+                            must exist for it to be used as an implicit argument of the function
+                            call."#,
+                    ty.format(db)
+                )
+            }
         }
     }
 
@@ -210,6 +225,8 @@ pub enum SemanticDiagnosticKind {
     WrongArgumentType { expected_ty: semantic::TypeId, actual_ty: semantic::TypeId },
     WrongReturnType { expected_ty: semantic::TypeId, actual_ty: semantic::TypeId },
     VariableNotFound { name: SmolStr },
+    VariableOfTypeNotFound { ty: semantic::TypeId },
+    VariableOfTypeFoundMoreThanOnce { ty: semantic::TypeId },
     StructMemberRedefinition { struct_id: StructId, member_name: SmolStr },
     EnumVariantRedefinition { enum_id: EnumId, variant_name: SmolStr },
     ParamNameRedefinition { function_id: GenericFunctionId, param_name: SmolStr },

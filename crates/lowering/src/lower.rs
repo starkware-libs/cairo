@@ -50,8 +50,8 @@ pub fn lower(db: &dyn SemanticGroup, free_function_id: FreeFunctionId) -> Option
     let signature = db.free_function_declaration_signature(free_function_id)?;
 
     // Params.
-    let input_semantic_vars: Vec<_> =
-        signature.params.iter().map(|param| semantic::Variable::Param(param.clone())).collect();
+    let input_semantic_vars: Vec<semantic::Variable> =
+        signature.all_params().cloned().map(semantic::Variable::Param).collect();
     let (input_semantic_var_ids, input_semantic_var_tys): (Vec<_>, Vec<_>) = input_semantic_vars
         .iter()
         .map(|semantic_var| (semantic_var.id(), semantic_var.ty()))
