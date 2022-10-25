@@ -17,10 +17,14 @@ fn test_assert() {
         [fp - 5] = [ap + 1] + [fp - 5], ap++;
         [fp + 5] = [ap + 1] + 2;
         [ap] = [ap + 1] * [fp - 5];
+        %{ memory[ap + 5] = segments.add() %}
         [fp - 5] = [ap + 1] * z;
         [fp - 5] = [ap + 1] * y;
+        %{ memory[ap + 0] = memory[fp - 3] < 45 %}
+        %{ memory[ap + 0] = 13 < memory[fp + 9] %}
         [fp - 5] = 1, ap++;
         [fp - 5] = [ap + 1];
+        %{ memory[ap + 0] = memory[ap + 9] < memory[fp + 9] %}
         call abs 5, ap++;
         call rel y, ap++;
     };
@@ -33,10 +37,14 @@ fn test_assert() {
             [fp + -5] = [ap + 1] + [fp + -5], ap++
             [fp + 5] = [ap + 1] + 2
             [ap + 0] = [ap + 1] * [fp + -5]
+            %{ memory[ap + 5] = segments.add() %}
             [fp + -5] = [ap + 1] * 5
             [fp + -5] = [ap + 1] * [fp + 5]
+            %{ memory[ap + 0] = memory[fp + -3] < 45 %}
+            %{ memory[ap + 0] = 13 < memory[fp + 9] %}
             [fp + -5] = 1, ap++
             [fp + -5] = [ap + 1]
+            %{ memory[ap + 0] = memory[ap + 9] < memory[fp + 9] %}
             call abs 5, ap++
             call rel [fp + 5], ap++"}
     );
