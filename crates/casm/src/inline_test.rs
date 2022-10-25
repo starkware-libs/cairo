@@ -1,9 +1,10 @@
 use indoc::indoc;
+use itertools::join;
 use pretty_assertions::assert_eq;
 
 use crate::instructions::*;
 use crate::operand::*;
-use crate::{casm, deref};
+use crate::{casm, casm_extend, deref};
 
 #[test]
 fn test_assert() {
@@ -24,7 +25,7 @@ fn test_assert() {
         call rel y, ap++;
     };
 
-    let code = ctx.instructions.iter().map(Instruction::to_string).collect::<Vec<_>>().join("\n");
+    let code = join(ctx.instructions.iter().map(Instruction::to_string), "\n");
     assert_eq!(
         code,
         indoc! {"
@@ -38,5 +39,24 @@ fn test_assert() {
             [fp + -5] = [ap + 1]
             call abs 5, ap++
             call rel [fp + 5], ap++"}
+    );
+}
+
+#[test]
+fn test_extend() {
+    let mut ctx = casm! {
+        [fp - 0] = 1, ap++;
+    };
+
+    casm_extend! {ctx,
+        [fp - 1] = 2, ap++;
+    };
+
+    let code = join(ctx.instructions.iter().map(Instruction::to_string), "\n");
+    assert_eq!(
+        code,
+        indoc! {"
+            [fp + 0] = 1, ap++
+            [fp + -1] = 2, ap++"}
     );
 }
