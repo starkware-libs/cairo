@@ -15,14 +15,14 @@ use sierra::ids::ConcreteLibFuncId;
 use sierra::program::Param;
 use utils::unordered_hash_map::UnorderedHashMap;
 
-use crate::block_generator::generate_block_code;
+use crate::block_generator::{generate_block_code, generate_return_code};
 use crate::db::SierraGenGroup;
 use crate::dup_and_drop::{calculate_statement_dups_and_drops, VarsDupsAndDrops};
 use crate::expr_generator_context::ExprGeneratorContext;
 use crate::pre_sierra::{self, Statement};
 use crate::specialization_context::SierraSignatureSpecializationContext;
 use crate::store_variables::add_store_statements;
-use crate::utils::{return_statement, simple_statement};
+use crate::utils::simple_statement;
 use crate::SierraGeneratorDiagnostic;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -96,22 +96,7 @@ pub fn get_function_code(
     // Generate the return statement if necessary.
     match &block.end {
         lowering::BlockEnd::Callsite(returned_variables) => {
-            // Copy the result to the top of the stack before returning.
-            let mut return_variables_on_stack = vec![];
-            let mut push_values = vec![];
-
-            for returned_variable in returned_variables {
-                let return_variable_on_stack = context.allocate_sierra_variable();
-                return_variables_on_stack.push(return_variable_on_stack.clone());
-                push_values.push(pre_sierra::PushValue {
-                    var: context.get_sierra_variable(*returned_variable),
-                    var_on_stack: return_variable_on_stack,
-                    ty: context.get_db().get_concrete_type_id(signature.return_type)?,
-                });
-            }
-
-            statements.push(pre_sierra::Statement::PushValues(push_values));
-            statements.push(return_statement(return_variables_on_stack));
+            statements.extend(generate_return_code(&mut context, returned_variables)?);
         }
         lowering::BlockEnd::Return(_) | lowering::BlockEnd::Unreachable => {}
     };
