@@ -1,9 +1,11 @@
 type uint128 = uint128;
 type GasBuiltin = GasBuiltin;
+type RangeCheck = RangeCheck;
 type NonZeroInt = NonZero<uint128>;
 
 libfunc store_temp_uint128 = store_temp<uint128>;
 libfunc store_temp_gb = store_temp<GasBuiltin>;
+libfunc store_temp_rc = store_temp<RangeCheck>;
 libfunc uint128_const_0 = uint128_const<0>;
 libfunc uint128_const_minus_1 = uint128_const<-1>;
 libfunc uint128_mod_2 = uint128_mod<2>;
@@ -25,34 +27,36 @@ store_temp_uint128(n) -> (n);
 store_temp_gb(gb) -> (gb);
 uint128_const_0() -> (counter);
 store_temp_uint128(counter) -> (counter);
-jump() { 36() };
+jump() { 38() };
 // Statement #  5 - Getting gas for main loop.
 // Unwrapping and ignoring jump_nz result, as we don't use it.
 uint128_unwrap_nz(to_drop) -> (to_drop);
 uint128_drop(to_drop) -> ();
-get_gas(gb) { 15(gb) fallthrough(gb) };
+get_gas(rc, gb) { 16(rc, gb) fallthrough(rc, gb) };
 // Statement #  8 - Ran out of gas - returning updated gb and -1.
 uint128_drop(n) -> ();
 uint128_drop(counter) -> ();
-refund_gas(gb) -> (gb); // Statement 10.
+store_temp_rc(rc) -> (rc);
+refund_gas(gb) -> (gb); // Statement 11.
 store_temp_gb(gb) -> (gb);
 uint128_const_minus_1() -> (err);
 store_temp_uint128(err) -> (err);
-return(gb, err);
-// Statement # 15 - Testing if n is odd or even.
+return(rc, gb, err);
+// Statement # 17 - Testing if n is odd or even.
+store_temp_rc(rc) -> (rc);
 uint128_dup(n) -> (n, parity);
 uint128_mod_2(parity) -> (parity);
 store_temp_uint128(parity) -> (parity);
 store_temp_gb(gb) -> (gb);
-uint128_jump_nz(parity) { fallthrough() 26(to_drop) };
-// Statement # 20 - Handling even case. Adding [_, n/2, gb] to memory.
+uint128_jump_nz(parity) { fallthrough() 28(to_drop) };
+// Statement # 22 - Handling even case. Adding [_, n/2, gb] to memory.
 align_temps() -> ();
 uint128_div_2(n) -> (n);
 store_temp_uint128(n) -> (n);
-refund_gas(gb) -> (gb); // Statement 23.
+refund_gas(gb) -> (gb); // Statement 25.
 store_temp_gb(gb) -> (gb);
-jump() { 34() };
-// Statement # 26 - Handling odd case. Adding [n*3, n*3+1, gb] to memory.
+jump() { 36() };
+// Statement # 28 - Handling odd case. Adding [n*3, n*3+1, gb] to memory.
 uint128_unwrap_nz(to_drop) -> (to_drop);
 uint128_drop(to_drop) -> ();
 uint128_mul_3(n) -> (n);
@@ -61,19 +65,20 @@ uint128_add_1(n) -> (n);
 store_temp_uint128(n) -> (n);
 refund_gas(gb) -> (gb); // Aligning gas usage. Statement 32.
 store_temp_gb(gb) -> (gb);
-// Statement # 34 - Adding [counter + 1]. Memory now looks like [n', gb', counter'].
+// Statement # 36 - Adding [counter + 1]. Memory now looks like [n', gb', counter'].
 uint128_add_1(counter) -> (counter);
 store_temp_uint128(counter) -> (counter);
-// Statement # 36 - Testing if n == 1 - to check if we need to stop running.
+// Statement # 38 - Testing if n == 1 - to check if we need to stop running.
 uint128_dup(n) -> (n, n_1);
 uint128_sub_1(n_1) -> (n_1);
 store_temp_uint128(n_1) -> (n_1);
 uint128_jump_nz(n_1) { fallthrough() 5(to_drop) };
-// Statement # 40 - n == 1 - we are done - returning the counter result.
+// Statement # 42 - n == 1 - we are done - returning the counter result.
 uint128_drop(n) -> ();
-refund_gas(gb) -> (gb); // Statement 41.
+refund_gas(gb) -> (gb); // Statement 43.
+store_temp_rc(rc) -> (rc);
 store_temp_gb(gb) -> (gb);
 store_temp_uint128(counter) -> (counter);
-return(gb, counter);
+return(rc, gb, counter);
 
-Collatz@0(gb: GasBuiltin, n: uint128) -> (GasBuiltin, uint128);
+Collatz@0(rc: RangeCheck, gb: GasBuiltin, n: uint128) -> (RangeCheck, GasBuiltin, uint128);
