@@ -735,11 +735,11 @@ impl<'a> Parser<'a> {
         }
     }
 
-    /// Returns a GreenId of a node with kind WithClause or OptionWithClauseEmpty if a with-clause
-    /// can't be parsed.
-    fn parse_option_with_clause(&mut self) -> OptionWithClauseGreen {
-        if self.peek().kind == SyntaxKind::TerminalWith {
-            let with_kw = self.take::<TerminalWith>();
+    /// Returns a GreenId of a node with kind ImplicitsClause or OptionImplicitsClauseEmpty if a
+    /// with-clause can't be parsed.
+    fn parse_option_with_clause(&mut self) -> OptionImplicitsClauseGreen {
+        if self.peek().kind == SyntaxKind::TerminalImplicits {
+            let with_kw = self.take::<TerminalImplicits>();
             let lparen = self.parse_token::<TerminalLParen>();
             let implicits = ParamList::new_green(
                 self.db,
@@ -751,9 +751,9 @@ impl<'a> Parser<'a> {
                 ),
             );
             let rparen = self.parse_token::<TerminalRParen>();
-            WithClause::new_green(self.db, with_kw, lparen, implicits, rparen).into()
+            ImplicitsClause::new_green(self.db, with_kw, lparen, implicits, rparen).into()
         } else {
-            OptionWithClauseEmpty::new_green(self.db).into()
+            OptionImplicitsClauseEmpty::new_green(self.db).into()
         }
     }
 

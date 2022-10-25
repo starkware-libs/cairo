@@ -261,17 +261,17 @@ pub fn get_spec() -> Vec<Node> {
             .node_with_explicit_kind("Mut", "TerminalMut")
             .build(),
         separated_list_node("ParamList", "Param", "TerminalComma"),
-        StructBuilder::new("WithClause")
-            .node("with_kw", "TerminalWith")
+        StructBuilder::new("ImplicitsClause")
+            .node("implicits_kw", "TerminalImplicits")
             .node("lparen", "TerminalLParen")
             .node("implicits", "ParamList")
             .node("rparen", "TerminalRParen")
             .build(),
-        EnumBuilder::new("OptionWithClause")
+        EnumBuilder::new("OptionImplicitsClause")
             .node("Empty")
-            .node_with_explicit_kind("WithClause", "WithClause")
+            .node_with_explicit_kind("ImplicitsClause", "ImplicitsClause")
             .build(),
-        StructBuilder::new("OptionWithClauseEmpty").build(),
+        StructBuilder::new("OptionImplicitsClauseEmpty").build(),
         // TODO(spapini): Add generic params.
         // This is an unnamed signature, e.g. "() -> Type".
         StructBuilder::new("FunctionSignature")
@@ -279,7 +279,7 @@ pub fn get_spec() -> Vec<Node> {
             .node("parameters", "ParamList")
             .node("rparen", "TerminalRParen")
             .node("ret_ty", "OptionReturnTypeClause")
-            .node("with_clause", "OptionWithClause")
+            .node("implicits_clause", "OptionImplicitsClause")
             .build(),
         // --- Items ---
         EnumBuilder::new("Item")
@@ -412,7 +412,7 @@ pub fn get_spec() -> Vec<Node> {
     append_terminal_and_token(&mut nodes, "If");
     append_terminal_and_token(&mut nodes, "Else");
     append_terminal_and_token(&mut nodes, "Use");
-    append_terminal_and_token(&mut nodes, "With");
+    append_terminal_and_token(&mut nodes, "Implicits");
     append_terminal_and_token(&mut nodes, "Ref");
     append_terminal_and_token(&mut nodes, "Mut");
     append_terminal_and_token(&mut nodes, "And");

@@ -35,6 +35,40 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
+error: Missing token TerminalLBrace.
+ --> lib.cairo:1:19
+func foo(a: bool) with(f: felt, b: bool) {
+                  ^**^
+
+error: Missing token TerminalComma.
+ --> lib.cairo:1:25
+func foo(a: bool) with(f: felt, b: bool) {
+                        ^
+
+error: Skipped tokens. Expected element: expression.
+ --> lib.cairo:1:25
+func foo(a: bool) with(f: felt, b: bool) {
+                        ^
+
+error: Missing token TerminalComma.
+ --> lib.cairo:1:34
+func foo(a: bool) with(f: felt, b: bool) {
+                                 ^
+
+error: Skipped tokens. Expected element: expression.
+ --> lib.cairo:1:34
+func foo(a: bool) with(f: felt, b: bool) {
+                                 ^
+
+error: Missing token TerminalRBrace.
+ --> lib.cairo:2:2
+}
+ ^
+
+error: Path not found.
+ --> lib.cairo:1:19
+func foo(a: bool) with(f: felt, b: bool) {
+                  ^**^
 
 //! > ==========================================================================
 
@@ -53,10 +87,40 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Redefinition of parameter name "a" in function "test_crate::foo".
- --> lib.cairo:1:26
+error: Missing token TerminalLBrace.
+ --> lib.cairo:1:12
 func foo() with(a: bool, a: felt) {
-                         ^*****^
+           ^**^
+
+error: Missing token TerminalComma.
+ --> lib.cairo:1:18
+func foo() with(a: bool, a: felt) {
+                 ^
+
+error: Skipped tokens. Expected element: expression.
+ --> lib.cairo:1:18
+func foo() with(a: bool, a: felt) {
+                 ^
+
+error: Missing token TerminalComma.
+ --> lib.cairo:1:27
+func foo() with(a: bool, a: felt) {
+                          ^
+
+error: Skipped tokens. Expected element: expression.
+ --> lib.cairo:1:27
+func foo() with(a: bool, a: felt) {
+                          ^
+
+error: Missing token TerminalRBrace.
+ --> lib.cairo:2:2
+}
+ ^
+
+error: Path not found.
+ --> lib.cairo:1:12
+func foo() with(a: bool, a: felt) {
+           ^**^
 
 //! > ==========================================================================
 
@@ -75,7 +139,27 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Redefinition of parameter name "a" in function "test_crate::foo".
- --> lib.cairo:1:24
+error: Missing token TerminalLBrace.
+ --> lib.cairo:1:19
 func foo(a: bool) with(a: felt) {
-                       ^*****^
+                  ^**^
+
+error: Missing token TerminalComma.
+ --> lib.cairo:1:25
+func foo(a: bool) with(a: felt) {
+                        ^
+
+error: Skipped tokens. Expected element: expression.
+ --> lib.cairo:1:25
+func foo(a: bool) with(a: felt) {
+                        ^
+
+error: Missing token TerminalRBrace.
+ --> lib.cairo:2:2
+}
+ ^
+
+error: Path not found.
+ --> lib.cairo:1:19
+func foo(a: bool) with(a: felt) {
+                  ^**^

@@ -103,9 +103,9 @@ pub fn function_signature_implicit_parameters(
 ) -> Vec<semantic::Parameter> {
     let syntax_db = db.upcast();
 
-    let ast_params = match sig.with_clause(syntax_db) {
-        ast::OptionWithClause::Empty(_) => Vec::new(),
-        ast::OptionWithClause::WithClause(with_clause) => {
+    let ast_params = match sig.implicits_clause(syntax_db) {
+        ast::OptionImplicitsClause::Empty(_) => Vec::new(),
+        ast::OptionImplicitsClause::ImplicitsClause(with_clause) => {
             with_clause.implicits(syntax_db).elements(syntax_db)
         }
     };
