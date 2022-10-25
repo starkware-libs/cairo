@@ -3,9 +3,7 @@ use std::collections::VecDeque;
 use casm::ap_change::{ApChange, ApplyApChange};
 use casm::casm;
 use casm::hints::Hint;
-use casm::instructions::{
-    AddApInstruction, AssertEqInstruction, Instruction, InstructionBody, JnzInstruction,
-};
+use casm::instructions::{AddApInstruction, AssertEqInstruction, Instruction, InstructionBody};
 use casm::operand::{BinOpOperand, CellRef, DerefOrImmediate, Operation, Register, ResOperand};
 use itertools::{chain, zip_eq};
 use sierra::extensions::array::ArrayConcreteLibFunc;
@@ -483,8 +481,8 @@ impl CompiledInvocationBuilder<'_> {
     /// ```
     fn build_jump_nz(self) -> Result<CompiledInvocation, InvocationError> {
         let condition = match self.refs {
-            [ReferenceValue { expression: ReferenceExpression::Deref(deref_operand), .. }] => {
-                deref_operand
+            [ReferenceValue { expression: ReferenceExpression::Deref(condition), .. }] => {
+                *condition
             }
             [_] => return Err(InvocationError::InvalidReferenceExpressionForArgument),
             refs => {
@@ -504,13 +502,13 @@ impl CompiledInvocationBuilder<'_> {
         };
 
         Ok(self.build(
-            casm! { jnz rel 0 if *condition; }.instructions,
+            casm! { jnz rel 0 if condition; }.instructions,
             vec![RelocationEntry {
                 instruction_idx: 0,
                 relocation: Relocation::RelativeStatementId(*target_statement_id),
             }],
             itertools::repeat_n(ApChange::Known(0), 2).into_iter(),
-            [vec![].into_iter(), vec![ReferenceExpression::Deref(*condition)].into_iter()]
+            [vec![].into_iter(), vec![ReferenceExpression::Deref(condition)].into_iter()]
                 .into_iter(),
         ))
     }
@@ -687,35 +685,27 @@ impl CompiledInvocationBuilder<'_> {
             _ => panic!("malformed invocation"),
         };
 
-        let mut non_deterministic_jump = Instruction {
-            // Jump over the success branch.
-            body: InstructionBody::Jnz(JnzInstruction {
-                // Fixing this when all required sizes are known.
-                jump_offset: DerefOrImmediate::Immediate(0),
-                condition: CellRef { register: Register::AP, offset: 0 },
-            }),
-            inc_ap: true,
-            hints: vec![Hint::TestLessThan {
-                lhs: DerefOrImmediate::Deref(gas_counter_value),
-                rhs: DerefOrImmediate::Immediate(*requested_count as i128),
-            }],
-        };
         let gas_counter_value_for_branches =
             gas_counter_value.apply_ap_change(ApChange::Known(1)).unwrap();
-        let success_branch = casm! {
+        // The code up to the failure branch.
+        let mut before_failure_branch = casm! {
+            %{ memory[ap + 0] = memory gas_counter_value < (*requested_count as i128) %}
+            jnz rel 0 if [ap + 0], ap++;
             // gas_counter >= requested_count:
             [ap + 0] = gas_counter_value_for_branches + (-requested_count as i128), ap++;
             [ap - 1] = [[range_check.apply_ap_change(ApChange::Known(2)).unwrap()]];
             jmp rel 0; // Fixed in relocations.
         };
-        let branch_offset =
-            non_deterministic_jump.body.op_size() + success_branch.current_code_offset;
+        let branch_offset = before_failure_branch.current_code_offset;
         *extract_matches!(
-            &mut extract_matches!(&mut non_deterministic_jump.body, InstructionBody::Jnz)
-                .jump_offset,
+            &mut extract_matches!(
+                &mut before_failure_branch.instructions[0].body,
+                InstructionBody::Jnz
+            )
+            .jump_offset,
             DerefOrImmediate::Immediate
         ) = branch_offset as i128;
-        let relocation_index = success_branch.instructions.len();
+        let relocation_index = before_failure_branch.instructions.len() - 1;
         let failure_branch = casm! {
             // gas_counter < requested_count:
             // TODO(orizi): Make into one command when wider constants are supported.
@@ -725,12 +715,7 @@ impl CompiledInvocationBuilder<'_> {
         };
 
         Ok(self.build(
-            chain!(
-                [non_deterministic_jump],
-                success_branch.instructions,
-                failure_branch.instructions
-            )
-            .collect(),
+            chain!(before_failure_branch.instructions, failure_branch.instructions).collect(),
             vec![RelocationEntry {
                 instruction_idx: relocation_index,
                 relocation: Relocation::RelativeStatementId(*target_statement_id),

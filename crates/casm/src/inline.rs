@@ -61,7 +61,7 @@ macro_rules! casm_extend {
         $crate::append_instruction!($ctx, body $(,$ap++)?);
         $crate::casm_extend!($ctx, $($tok)*)
     };
-    ($ctx:ident, jnz rel $target:tt if $cond:expr $(,$ap:ident++)? ; $($tok:tt)*) => {
+    ($ctx:ident, jnz rel $target:tt if $cond:tt $(,$ap:ident++)? ; $($tok:tt)*) => {
         let body = InstructionBody::Jnz(JnzInstruction {
             jump_offset: $crate::deref_or_immediate!($target),
             condition: $crate::deref!($cond),
@@ -69,7 +69,7 @@ macro_rules! casm_extend {
         $crate::append_instruction!($ctx, body $(,$ap++)?);
         $crate::casm_extend!($ctx, $($tok)*)
     };
-    ($ctx:ident, jnz $target:tt if $cond:expr $(,$ap:ident++)? ; $($tok:tt)*) => {
+    ($ctx:ident, jnz $target:tt if $cond:tt $(,$ap:ident++)? ; $($tok:tt)*) => {
         let body = InstructionBody::Jnz(JnzInstruction {
             jump_offset: $crate::deref_or_immediate!($target),
             condition: $crate::deref!($cond),
@@ -95,14 +95,14 @@ macro_rules! casm_extend {
         });
         $crate::casm_extend!($ctx, $($tok)*)
     };
-    ($ctx:ident, %{ memory [ ap + 0 ] = memory $lhs:tt < $rhs:literal %} $($tok:tt)*) => {
+    ($ctx:ident, %{ memory [ ap + 0 ] = memory $lhs:tt < $rhs:tt %} $($tok:tt)*) => {
         $ctx.current_hints.push($crate::hints::Hint::TestLessThan{
             lhs: $crate::deref!($lhs).into(),
             rhs: $crate::operand::DerefOrImmediate::Immediate($rhs),
         });
         $crate::casm_extend!($ctx, $($tok)*)
     };
-    ($ctx:ident, %{ memory [ ap + 0 ] = $lhs:literal < memory $rhs:tt %} $($tok:tt)*) => {
+    ($ctx:ident, %{ memory [ ap + 0 ] = $lhs:tt < memory $rhs:tt %} $($tok:tt)*) => {
         $ctx.current_hints.push($crate::hints::Hint::TestLessThan{
             lhs: $crate::operand::DerefOrImmediate::Immediate($lhs),
             rhs: $crate::deref!($rhs).into(),
