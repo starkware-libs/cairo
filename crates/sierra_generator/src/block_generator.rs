@@ -228,9 +228,14 @@ fn generate_statement_match_extern_code(
             generate_block_code_and_push_values(context, lowered_block, &statement.outputs)?;
         statements.extend(code);
 
-        // Add jump statement to the end of the match. The last block does not require a jump.
-        if i < statement.arms.len() - 1 && is_reachable {
-            statements.push(jump_statement(context.jump_libfunc_id(), end_label_id));
+        if is_reachable {
+            // Add burn_gas to equalize gas costs across the merging paths.
+            statements.push(simple_statement(context.burn_gas_libfunc_id(), &[], &[]));
+
+            // Add jump statement to the end of the match. The last block does not require a jump.
+            if i < statement.arms.len() - 1 {
+                statements.push(jump_statement(context.jump_libfunc_id(), end_label_id));
+            }
         }
     }
 
