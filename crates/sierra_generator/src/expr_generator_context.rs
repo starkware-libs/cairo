@@ -135,6 +135,10 @@ impl<'a> ExprGeneratorContext<'a> {
         self.get_libfunc_id_with_generic_arg("dup", ty)
     }
 
+    pub fn burn_gas_libfunc_id(&self) -> sierra::ids::ConcreteLibFuncId {
+        self.get_libfunc_id_without_generics("burn_gas")
+    }
+
     pub fn jump_libfunc_id(&self) -> sierra::ids::ConcreteLibFuncId {
         self.get_libfunc_id_without_generics("jump")
     }

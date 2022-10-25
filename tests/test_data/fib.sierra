@@ -6,6 +6,7 @@ libfunc dup<felt> = dup<felt>;
 libfunc felt_jump_nz = felt_jump_nz;
 libfunc drop<felt> = drop<felt>;
 libfunc store_temp<felt> = store_temp<felt>;
+libfunc burn_gas = burn_gas;
 libfunc jump = jump;
 libfunc drop<NonZero<felt>> = drop<NonZero<felt>>;
 libfunc felt_add = felt_add;
@@ -16,11 +17,12 @@ libfunc function_call<user@test_crate::fib> = function_call<user@test_crate::fib
 
 revoke_ap_tracking() -> ();
 dup<felt>([2]) -> ([2], [13]);
-felt_jump_nz([13]) { fallthrough() 7([3]) };
+felt_jump_nz([13]) { fallthrough() 8([3]) };
 drop<felt>([1]) -> ();
 drop<felt>([2]) -> ();
 store_temp<felt>([0]) -> ([4]);
-jump() { 19() };
+burn_gas() -> ();
+jump() { 21() };
 drop<NonZero<felt>>([3]) -> ();
 dup<felt>([1]) -> ([1], [14]);
 felt_add([0], [14]) -> ([5]);
@@ -33,6 +35,7 @@ store_temp<felt>([7]) -> ([7]);
 rename<felt>([7]) -> ([11]);
 function_call<user@test_crate::fib>([9], [10], [11]) -> ([8]);
 rename<felt>([8]) -> ([4]);
+burn_gas() -> ();
 rename<felt>([4]) -> ([12]);
 return([12]);
 
