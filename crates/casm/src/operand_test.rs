@@ -1,32 +1,32 @@
-use super::{BinOpOperand, DerefOrImmediate, DoubleDerefOperand, Operation};
-use crate::operand::{DerefOperand, ImmediateOperand, Register};
+use super::{BinOpOperand, DerefOrImmediate, Operation};
+use crate::operand::{CellRef, Register, ResOperand};
 
 #[test]
 fn test_deref_operand_format() {
-    assert_eq!(DerefOperand { register: Register::AP, offset: 5 }.to_string(), "[ap + 5]");
+    assert_eq!(CellRef { register: Register::AP, offset: 5 }.to_string(), "[ap + 5]");
 
-    assert_eq!(DerefOperand { register: Register::FP, offset: -3 }.to_string(), "[fp + -3]");
+    assert_eq!(CellRef { register: Register::FP, offset: -3 }.to_string(), "[fp + -3]");
 }
 
 #[test]
 fn test_double_deref_op_format() {
     assert_eq!(
-        DoubleDerefOperand { inner_deref: DerefOperand { register: Register::AP, offset: 5 } }
-            .to_string(),
+        ResOperand::DoubleDeref(CellRef { register: Register::AP, offset: 5 }).to_string(),
         "[[ap + 5]]"
     );
 }
 
 #[test]
 fn test_immediate_format() {
-    assert_eq!(ImmediateOperand { value: 1400 }.to_string(), "1400");
+    assert_eq!(DerefOrImmediate::Immediate(1400).to_string(), "1400");
 }
 
 #[test]
 fn test_bin_op_format() {
-    let a = DerefOperand { register: Register::FP, offset: -3 };
-    let b = ImmediateOperand { value: 1400 };
-
-    let bin_op = BinOpOperand { op: Operation::Mul, a, b: DerefOrImmediate::Immediate(b) };
+    let bin_op = BinOpOperand {
+        op: Operation::Mul,
+        a: CellRef { register: Register::FP, offset: -3 },
+        b: DerefOrImmediate::Immediate(1400),
+    };
     assert_eq!(bin_op.to_string(), "[fp + -3] * 1400")
 }

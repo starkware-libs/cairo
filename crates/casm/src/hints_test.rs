@@ -1,9 +1,9 @@
 use crate::hints::Hint;
-use crate::operand::{DerefOperand, DerefOrImmediate, ImmediateOperand, Register};
+use crate::operand::{CellRef, DerefOrImmediate, Register};
 
 #[test]
 fn test_alloc_segment_format() {
-    let dst = DerefOperand { register: Register::AP, offset: 5 };
+    let dst = CellRef { register: Register::AP, offset: 5 };
     let hint = Hint::AllocSegment { dst };
 
     assert_eq!(hint.to_string(), "%{ memory[ap + 5] = segments.add() %}");
@@ -11,9 +11,9 @@ fn test_alloc_segment_format() {
 
 #[test]
 fn test_less_than_format() {
-    let ap_based = DerefOrImmediate::Deref(DerefOperand { register: Register::AP, offset: 6 });
-    let fp_based = DerefOrImmediate::Deref(DerefOperand { register: Register::FP, offset: 4 });
-    let immediate = DerefOrImmediate::Immediate(ImmediateOperand { value: 3 });
+    let ap_based = DerefOrImmediate::Deref(CellRef { register: Register::AP, offset: 6 });
+    let fp_based = DerefOrImmediate::Deref(CellRef { register: Register::FP, offset: 4 });
+    let immediate = DerefOrImmediate::Immediate(3);
 
     assert_eq!(
         Hint::TestLessThan { lhs: ap_based.clone(), rhs: fp_based.clone() }.to_string(),
