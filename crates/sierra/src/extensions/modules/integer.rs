@@ -1,5 +1,6 @@
 use super::jump_not_zero::{JumpNotZeroLibFunc, JumpNotZeroTraits};
 use super::non_zero::NonZeroType;
+use super::range_check::RangeCheckType;
 use crate::extensions::lib_func::{
     DeferredOutputKind, LibFuncSignature, OutputVarInfo, SierraApChange,
     SignatureSpecializationContext, SpecializationContext,
@@ -92,9 +93,11 @@ impl GenericLibFunc for Uint128OperationLibFunc {
         args: &[GenericArg],
     ) -> Result<LibFuncSignature, SpecializationError> {
         let ty = context.get_concrete_type(Uint128Type::id(), &[])?;
+        let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
         match args {
             [] => Ok(LibFuncSignature::new_non_branch(
                 vec![
+                    range_check_type.clone(),
                     ty.clone(),
                     if matches!(self.operator, IntOperator::Div | IntOperator::Mod) {
                         context.get_wrapped_concrete_type(NonZeroType::id(), ty.clone())?
@@ -102,10 +105,18 @@ impl GenericLibFunc for Uint128OperationLibFunc {
                         ty.clone()
                     },
                 ],
-                vec![OutputVarInfo {
-                    ty,
-                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
-                }],
+                vec![
+                    OutputVarInfo {
+                        ty: range_check_type,
+                        ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                            param_idx: 0,
+                        }),
+                    },
+                    OutputVarInfo {
+                        ty,
+                        ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                    },
+                ],
                 SierraApChange::Known,
             )),
             [GenericArg::Value(c)] => {
@@ -113,11 +124,21 @@ impl GenericLibFunc for Uint128OperationLibFunc {
                     Err(SpecializationError::UnsupportedGenericArg)
                 } else {
                     Ok(LibFuncSignature::new_non_branch(
-                        vec![ty.clone()],
-                        vec![OutputVarInfo {
-                            ty,
-                            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
-                        }],
+                        vec![range_check_type.clone(), ty.clone()],
+                        vec![
+                            OutputVarInfo {
+                                ty: range_check_type,
+                                ref_info: OutputVarReferenceInfo::Deferred(
+                                    DeferredOutputKind::AddConst { param_idx: 0 },
+                                ),
+                            },
+                            OutputVarInfo {
+                                ty,
+                                ref_info: OutputVarReferenceInfo::Deferred(
+                                    DeferredOutputKind::Generic,
+                                ),
+                            },
+                        ],
                         SierraApChange::Known,
                     ))
                 }

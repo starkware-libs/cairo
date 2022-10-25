@@ -1,7 +1,9 @@
 use bimap::BiMap;
 use test_case::test_case;
 
-use super::value::CoreValue::{self, Array, GasBuiltin, NonZero, Uint128, Uninitialized};
+use super::value::CoreValue::{
+    self, Array, GasBuiltin, NonZero, RangeCheck, Uint128, Uninitialized,
+};
 use super::LibFuncSimulationError::{
     self, FunctionSimulationError, MemoryLayoutMismatch, WrongNumberOfArgs,
 };
@@ -121,10 +123,10 @@ fn simulate(
     )
 }
 
-#[test_case("get_gas", vec![], vec![CoreValue::RangeCheck, GasBuiltin(5)]
-             => Ok((vec![CoreValue::RangeCheck, GasBuiltin(1)], 0)); "get_gas(5)")]
-#[test_case("get_gas", vec![], vec![CoreValue::RangeCheck, GasBuiltin(2)]
-             => Ok((vec![CoreValue::RangeCheck, GasBuiltin(2)], 1)); "get_gas(2)")]
+#[test_case("get_gas", vec![], vec![RangeCheck, GasBuiltin(5)]
+             => Ok((vec![RangeCheck, GasBuiltin(1)], 0)); "get_gas(5)")]
+#[test_case("get_gas", vec![], vec![RangeCheck, GasBuiltin(2)]
+             => Ok((vec![RangeCheck, GasBuiltin(2)], 1)); "get_gas(2)")]
 #[test_case("uint128_jump_nz", vec![], vec![Uint128(2)] => Ok((vec![NonZero(Box::new(Uint128(2)))], 1)); "uint128_jump_nz(2)")]
 #[test_case("uint128_jump_nz", vec![], vec![Uint128(0)] => Ok((vec![], 0)); "uint128_jump_nz(0)")]
 #[test_case("jump", vec![], vec![] => Ok((vec![], 0)); "jump()")]
@@ -141,25 +143,25 @@ fn simulate_branch(
 #[test_case("array_new", vec![type_arg("uint128")], vec![] => Ok(vec![Array(vec![])]); "array_new()")]
 #[test_case("array_append", vec![type_arg("uint128")], vec![Array(vec![]), Uint128(4)] =>
             Ok(vec![Array(vec![Uint128(4)])]); "array_append([], 4)")]
-#[test_case("uint128_wrapping_add", vec![], vec![Uint128(2), Uint128(3)] => Ok(vec![Uint128(5)]);
+#[test_case("uint128_wrapping_add", vec![], vec![RangeCheck, Uint128(2), Uint128(3)] => Ok(vec![RangeCheck, Uint128(5)]);
             "uint128_wrapping_add(2, 3)")]
-#[test_case("uint128_wrapping_sub", vec![], vec![Uint128(5), Uint128(3)] => Ok(vec![Uint128(2)]);
+#[test_case("uint128_wrapping_sub", vec![], vec![RangeCheck, Uint128(5), Uint128(3)] => Ok(vec![RangeCheck, Uint128(2)]);
             "uint128_wrapping_sub(5, 3)")]
-#[test_case("uint128_wrapping_mul", vec![], vec![Uint128(5), Uint128(3)] => Ok(vec![Uint128(15)]);
+#[test_case("uint128_wrapping_mul", vec![], vec![RangeCheck, Uint128(5), Uint128(3)] => Ok(vec![RangeCheck, Uint128(15)]);
             "uint128_wrapping_mul(5, 3)")]
-#[test_case("uint128_div", vec![], vec![Uint128(32), NonZero(Box::new(Uint128(5)))]
-             => Ok(vec![Uint128(6)]); "uint128_div(32, 5)")]
-#[test_case("uint128_mod", vec![], vec![Uint128(32), NonZero(Box::new(Uint128(5)))]
-             => Ok(vec![Uint128(2)]); "uint128_mod(32, 5)")]
-#[test_case("uint128_wrapping_add", vec![value_arg(3)], vec![Uint128(2)] => Ok(vec![Uint128(5)]);
+#[test_case("uint128_div", vec![], vec![RangeCheck, Uint128(32), NonZero(Box::new(Uint128(5)))]
+             => Ok(vec![RangeCheck, Uint128(6)]); "uint128_div(32, 5)")]
+#[test_case("uint128_mod", vec![], vec![RangeCheck, Uint128(32), NonZero(Box::new(Uint128(5)))]
+             => Ok(vec![RangeCheck, Uint128(2)]); "uint128_mod(32, 5)")]
+#[test_case("uint128_wrapping_add", vec![value_arg(3)], vec![RangeCheck, Uint128(2)] => Ok(vec![RangeCheck, Uint128(5)]);
             "uint128_wrapping_add<3>(2)")]
-#[test_case("uint128_wrapping_sub", vec![value_arg(3)], vec![Uint128(5)] => Ok(vec![Uint128(2)]);
+#[test_case("uint128_wrapping_sub", vec![value_arg(3)], vec![RangeCheck, Uint128(5)] => Ok(vec![RangeCheck, Uint128(2)]);
             "uint128_wrapping_sub<3>(5)")]
-#[test_case("uint128_wrapping_mul", vec![value_arg(3)], vec![Uint128(5)] => Ok(vec![Uint128(15)]);
+#[test_case("uint128_wrapping_mul", vec![value_arg(3)], vec![RangeCheck, Uint128(5)] => Ok(vec![RangeCheck, Uint128(15)]);
             "uint128_wrapping_mul<3>(5)")]
-#[test_case("uint128_div", vec![value_arg(5)], vec![Uint128(32)] => Ok(vec![Uint128(6)]);
+#[test_case("uint128_div", vec![value_arg(5)], vec![RangeCheck, Uint128(32)] => Ok(vec![RangeCheck, Uint128(6)]);
             "uint128_div<5>(32)")]
-#[test_case("uint128_mod", vec![value_arg(5)], vec![Uint128(32)] => Ok(vec![Uint128(2)]);
+#[test_case("uint128_mod", vec![value_arg(5)], vec![RangeCheck, Uint128(32)] => Ok(vec![RangeCheck, Uint128(2)]);
             "uint128_mod<5>(32)")]
 #[test_case("uint128_const", vec![value_arg(3)], vec![] => Ok(vec![Uint128(3)]);
             "uint128_const<3>()")]
@@ -192,25 +194,25 @@ fn simulate_none_branch(
     })
 }
 
-#[test_case("get_gas", vec![], vec![CoreValue::RangeCheck, Uninitialized] => MemoryLayoutMismatch;
+#[test_case("get_gas", vec![], vec![RangeCheck, Uninitialized] => MemoryLayoutMismatch;
             "get_gas(empty)")]
 #[test_case("get_gas", vec![], vec![] => WrongNumberOfArgs; "get_gas()")]
 #[test_case("refund_gas", vec![], vec![Uninitialized] => MemoryLayoutMismatch;
             "refund_gas(empty)")]
 #[test_case("refund_gas", vec![], vec![] => WrongNumberOfArgs; "refund_gas()")]
-#[test_case("uint128_wrapping_add", vec![], vec![Uint128(1)] => WrongNumberOfArgs;
+#[test_case("uint128_wrapping_add", vec![], vec![RangeCheck, Uint128(1)] => WrongNumberOfArgs;
             "uint128_wrapping_add(1)")]
-#[test_case("uint128_wrapping_sub", vec![], vec![Uint128(1)] => WrongNumberOfArgs;
+#[test_case("uint128_wrapping_sub", vec![], vec![RangeCheck, Uint128(1)] => WrongNumberOfArgs;
             "uint128_wrapping_sub(1)")]
-#[test_case("uint128_wrapping_mul", vec![], vec![Uint128(1)] => WrongNumberOfArgs;
+#[test_case("uint128_wrapping_mul", vec![], vec![RangeCheck, Uint128(1)] => WrongNumberOfArgs;
             "uint128_wrapping_mul(1)")]
-#[test_case("uint128_div", vec![], vec![Uint128(1)] => WrongNumberOfArgs; "uint128_div(1)")]
-#[test_case("uint128_mod", vec![], vec![Uint128(1)] => WrongNumberOfArgs; "uint128_mod(1)")]
-#[test_case("uint128_wrapping_add", vec![value_arg(3)], vec![] => WrongNumberOfArgs;
+#[test_case("uint128_div", vec![], vec![RangeCheck, Uint128(1)] => WrongNumberOfArgs; "uint128_div(1)")]
+#[test_case("uint128_mod", vec![], vec![RangeCheck, Uint128(1)] => WrongNumberOfArgs; "uint128_mod(1)")]
+#[test_case("uint128_wrapping_add", vec![value_arg(3)], vec![RangeCheck] => WrongNumberOfArgs;
             "uint128_wrapping_add<3>()")]
-#[test_case("uint128_wrapping_sub", vec![value_arg(3)], vec![] => WrongNumberOfArgs;
+#[test_case("uint128_wrapping_sub", vec![value_arg(3)], vec![RangeCheck] => WrongNumberOfArgs;
             "uint128_wrapping_sub<3>()")]
-#[test_case("uint128_wrapping_mul", vec![value_arg(3)], vec![] => WrongNumberOfArgs;
+#[test_case("uint128_wrapping_mul", vec![value_arg(3)], vec![RangeCheck] => WrongNumberOfArgs;
             "uint128_wrapping_mul<3>()")]
 #[test_case("uint128_div", vec![value_arg(5)], vec![] => WrongNumberOfArgs; "uint128_div<5>()")]
 #[test_case("uint128_mod", vec![value_arg(5)], vec![] => WrongNumberOfArgs; "uint128_mod<5>()")]

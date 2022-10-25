@@ -33,23 +33,23 @@ fn create_registry(name: &str) {
 }
 
 // 5 -> 16 -> 8 -> 4 -> 2 -> 1
-#[test_case((800, 5), (659, 5); "5 => 5")]
+#[test_case((800, 5), (638, 5); "5 => 5")]
 //  0     1     2     3     4     5     6     7     8     9
 //  7 -> 22 -> 11 -> 34 -> 17 -> 52 -> 26 -> 13 -> 40 -> 20 ->
 // 10 ->  5 -> 16 ->  8 ->  4 ->  2 ->  1
-#[test_case((800, 7), (343, 16); "7 => 16")]
+#[test_case((800, 7), (274, 16); "7 => 16")]
 // Out of gas.
-#[test_case((400, 7), (26, u128::MAX); "Out of gas.")]
+#[test_case((400, 7), (1, u128::MAX); "Out of gas.")]
 fn simulate_collatz((gb, n): (i64, u128), (new_gb, index): (i64, u128)) {
     assert_eq!(
         simulation::run(
             &get_example_program("collatz"),
             &HashMap::from([
-                (StatementIdx(7), 30),
+                (StatementIdx(7), 35),
                 (StatementIdx(11), 0),
-                (StatementIdx(25), 2),
-                (StatementIdx(34), 0),
-                (StatementIdx(43), 1),
+                (StatementIdx(27), 3),
+                (StatementIdx(38), 0),
+                (StatementIdx(49), 1),
             ]),
             &"Collatz".into(),
             vec![CoreValue::RangeCheck, CoreValue::GasBuiltin(gb), CoreValue::Uint128(n)]
