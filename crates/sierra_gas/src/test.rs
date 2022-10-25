@@ -29,25 +29,25 @@ fn get_example_program(name: &str) -> Program {
 #[test_case("fib_jumps" =>
             Ok(GasInfo {
                 variable_values: [
-                    (StatementIdx(3), 13),
+                    (StatementIdx(3), 10),
                     (StatementIdx(13), 8),
-                    (StatementIdx(27), 14),
+                    (StatementIdx(27), 6),
                     (StatementIdx(33), 0),
                     (StatementIdx(50), 1),
                 ].into_iter().collect(),
-                function_costs: [("Fibonacci".into(), 17)].into_iter().collect()
+                function_costs: [("Fibonacci".into(), 14)].into_iter().collect()
             });
             "fib_jumps")]
 #[test_case("fib_recursive" =>
             Ok(GasInfo {
                 variable_values: [
-                    (StatementIdx(3), 6),
+                    (StatementIdx(3), 3),
                     (StatementIdx(12), 1),
-                    (StatementIdx(19), 45),
+                    (StatementIdx(19), 31),
                     (StatementIdx(21), 0),
                     (StatementIdx(42), 0),
                 ].into_iter().collect(),
-                function_costs: [("Fibonacci".into(), 11)].into_iter().collect()
+                function_costs: [("Fibonacci".into(), 8)].into_iter().collect()
             }))]
 fn solve_gas(path: &str) -> Result<GasInfo, CostError> {
     calc_gas_info(&get_example_program(path))
