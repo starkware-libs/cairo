@@ -11,6 +11,7 @@ use super::modules::integer::{Uint128LibFunc, Uint128Type};
 use super::modules::mem::MemLibFunc;
 use super::modules::non_zero::{NonZeroType, UnwrapNonZeroLibFunc};
 use super::modules::unconditional_jump::UnconditionalJumpLibFunc;
+use super::range_check::RangeCheckType;
 use super::uninitialized::UninitializedType;
 use crate::{define_libfunc_hierarchy, define_type_hierarchy};
 
@@ -22,6 +23,7 @@ define_type_hierarchy! {
         GasBuiltin(GasBuiltinType),
         Uint128(Uint128Type),
         NonZero(NonZeroType),
+        RangeCheck(RangeCheckType),
         Uninitialized(UninitializedType),
         Enum(EnumType),
     }, CoreTypeConcrete
