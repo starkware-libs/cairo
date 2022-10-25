@@ -29,5 +29,6 @@ PushValues([2]: felt) -> ([3])
 return([3])
 label0:
 PushValues() -> ()
+burn_gas() -> ()
 label1:
 felt_const<2>() -> ([4])
