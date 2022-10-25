@@ -29,7 +29,9 @@ use utils::{extract_matches, try_extract_matches};
 use crate::environment::frame_state::FrameStateError;
 use crate::environment::{frame_state, Environment};
 use crate::metadata::Metadata;
-use crate::references::{BinOpExpression, ReferenceExpression, ReferenceValue, ReferencesError};
+use crate::references::{
+    BinOpExpression, CellExpression, ReferenceExpression, ReferenceValue, ReferencesError,
+};
 use crate::relocations::{Relocation, RelocationEntry};
 use crate::type_sizes::TypeSizeMap;
 
@@ -101,25 +103,15 @@ pub struct CompiledInvocation {
 pub fn check_references_on_stack(refs: &[ReferenceValue]) -> Result<(), InvocationError> {
     let mut expected_offset: i16 = -1;
     for return_ref in refs.iter().rev() {
-        match &return_ref.expression {
-            ReferenceExpression::Deref(CellRef { register: Register::AP, offset })
-                if *offset == expected_offset =>
-            {
-                expected_offset -= 1;
-            }
-            ReferenceExpression::Complex(complex_expr) => {
-                for expr in complex_expr.iter().rev() {
-                    match expr {
-                        ReferenceExpression::Deref(CellRef { register: Register::AP, offset })
-                            if *offset == expected_offset =>
-                        {
-                            expected_offset -= 1
-                        }
-                        _ => return Err(InvocationError::InvalidReferenceExpressionForArgument),
-                    }
+        for cell_expr in return_ref.expression.cells.iter().rev() {
+            match cell_expr {
+                CellExpression::Deref(CellRef { register: Register::AP, offset })
+                    if *offset == expected_offset =>
+                {
+                    expected_offset -= 1;
                 }
+                _ => return Err(InvocationError::InvalidReferenceExpressionForArgument),
             }
-            _ => return Err(InvocationError::InvalidReferenceExpressionForArgument),
         }
     }
     Ok(())
@@ -195,18 +187,24 @@ impl CompiledInvocationBuilder<'_> {
                 });
             }
         };
-
-        let ref_expression = match (expr_a, expr_b) {
-            (ReferenceExpression::Deref(a), ReferenceExpression::Deref(b)) => {
-                BinOpExpression { op, a: *a, b: DerefOrImmediate::Deref(*b) }
+        let cell_a = expr_a
+            .try_unpack_single()
+            .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?;
+        let cell_b = expr_b
+            .try_unpack_single()
+            .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?;
+        let bin_expression = match (cell_a, cell_b) {
+            (CellExpression::Deref(a), CellExpression::Deref(b)) => {
+                BinOpExpression { op, a, b: DerefOrImmediate::Deref(b) }
             }
-            (ReferenceExpression::Deref(a), ReferenceExpression::Immediate(b)) => {
-                BinOpExpression { op, a: *a, b: DerefOrImmediate::Immediate(*b) }
+            (CellExpression::Deref(a), CellExpression::Immediate(b)) => {
+                BinOpExpression { op, a, b: DerefOrImmediate::Immediate(b) }
             }
             _ => return Err(InvocationError::InvalidReferenceExpressionForArgument),
         };
-        Ok(self
-            .build_only_reference_changes([ReferenceExpression::BinOp(ref_expression)].into_iter()))
+        Ok(self.build_only_reference_changes(
+            [ReferenceExpression::from_cell(CellExpression::BinOp(bin_expression))].into_iter(),
+        ))
     }
 
     /// Handles a felt operation with a const.
@@ -224,15 +222,17 @@ impl CompiledInvocationBuilder<'_> {
                 });
             }
         };
-
-        let ref_expression = match expr {
-            ReferenceExpression::Deref(a) => {
-                BinOpExpression { op, a: *a, b: DerefOrImmediate::Immediate(c) }
-            }
-            _ => return Err(InvocationError::InvalidReferenceExpressionForArgument),
+        let cell_expr = expr
+            .try_unpack_single()
+            .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?;
+        let ref_expression = if let CellExpression::Deref(a) = cell_expr {
+            BinOpExpression { op, a, b: DerefOrImmediate::Immediate(c as i128) }
+        } else {
+            return Err(InvocationError::InvalidReferenceExpressionForArgument);
         };
-        Ok(self
-            .build_only_reference_changes([ReferenceExpression::BinOp(ref_expression)].into_iter()))
+        Ok(self.build_only_reference_changes(
+            [ReferenceExpression::from_cell(CellExpression::BinOp(ref_expression))].into_iter(),
+        ))
     }
 
     /// Handles a dup instruction.
@@ -246,7 +246,6 @@ impl CompiledInvocationBuilder<'_> {
                 });
             }
         };
-
         Ok(self.build_only_reference_changes([expression.clone(), expression.clone()].into_iter()))
     }
 
@@ -264,21 +263,15 @@ impl CompiledInvocationBuilder<'_> {
 
         let mut offset = -1;
         for output_type in fallthrough_outputs.iter().rev() {
-            let size = self.program_info.type_sizes[output_type];
-
-            refs.push_front(if size == 1 {
-                ReferenceExpression::Deref(CellRef { register: Register::AP, offset })
-            } else {
-                ReferenceExpression::Complex(
-                    ((offset - size + 1)..offset + 1)
-                        .map(|i| {
-                            ReferenceExpression::Deref(CellRef {
-                                register: Register::AP,
-                                offset: i,
-                            })
-                        })
-                        .collect(),
-                )
+            let size = self
+                .program_info
+                .type_sizes
+                .get(output_type)
+                .ok_or(InvocationError::UnknownVariableData)?;
+            refs.push_front(ReferenceExpression {
+                cells: ((offset - size + 1)..(offset + 1))
+                    .map(|i| CellExpression::Deref(CellRef { register: Register::AP, offset: i }))
+                    .collect(),
             });
             offset -= size;
         }
@@ -305,10 +298,9 @@ impl CompiledInvocationBuilder<'_> {
     fn get_store_instructions(
         &self,
         src_type: &ConcreteTypeId,
-        dst: CellRef,
+        mut dst: CellRef,
         src_expr: &ReferenceExpression,
         inc_ap: bool,
-        ap_change: &mut i16,
     ) -> Result<Vec<Instruction>, InvocationError> {
         match self.program_info.type_sizes.get(src_type) {
             Some(0) => return Err(InvocationError::NotSized(self.invocation.clone())),
@@ -316,70 +308,98 @@ impl CompiledInvocationBuilder<'_> {
             Some(_) => {}
         };
 
-        let mut hints = vec![];
-
-        let src_expr = src_expr.clone().apply_ap_change(ApChange::Known(*ap_change)).unwrap();
-        let (dst_operand, res_operand) = match src_expr {
-            ReferenceExpression::Deref(operand) => (dst, ResOperand::Deref(operand)),
-            ReferenceExpression::DoubleDeref(operand) => (dst, ResOperand::DoubleDeref(operand)),
-            ReferenceExpression::IntoSingleCellRef(operand) => {
-                hints.push(Hint::AllocSegment { dst });
-                (operand, ResOperand::DoubleDeref(dst))
-            }
-            ReferenceExpression::Immediate(operand) => (dst, ResOperand::Immediate(operand)),
-            ReferenceExpression::BinOp(BinOpExpression { op, a, b }) => match op {
-                FeltOperator::Add => {
-                    (dst, ResOperand::BinOp(BinOpOperand { op: Operation::Add, a, b }))
-                }
-                FeltOperator::Mul => {
-                    (dst, ResOperand::BinOp(BinOpOperand { op: Operation::Mul, a, b }))
-                }
-
-                // dst = a - b => a = dst + b
-                FeltOperator::Sub => {
-                    (a, ResOperand::BinOp(BinOpOperand { op: Operation::Add, a: dst, b }))
-                }
-                // dst = a / b => a = dst * b
-                FeltOperator::Div => {
-                    (a, ResOperand::BinOp(BinOpOperand { op: Operation::Mul, a: dst, b }))
-                }
-            },
-            // TODO(Gil): remove early return in here and in the next arm to make the behavior
-            // uniform.
-            ReferenceExpression::AllocateSegment => {
-                hints.push(Hint::AllocSegment { dst });
-                return Ok(if inc_ap {
-                    vec![Instruction {
-                        body: InstructionBody::AddAp(AddApInstruction {
-                            operand: ResOperand::Immediate(1),
+        let mut instructions = vec![];
+        let mut ap_change = 0;
+        // TODO(Gil): Consider using the casm! macros and add an if inc_ap.
+        for cell_expr_orig in src_expr.cells.iter() {
+            let cell_expr =
+                cell_expr_orig.clone().apply_ap_change(ApChange::Known(ap_change)).unwrap();
+            instructions.push(match cell_expr {
+                CellExpression::Deref(operand) => Instruction {
+                    body: InstructionBody::AssertEq(AssertEqInstruction {
+                        a: dst,
+                        b: ResOperand::Deref(operand),
+                    }),
+                    inc_ap,
+                    hints: vec![],
+                },
+                CellExpression::DoubleDeref(operand) => Instruction {
+                    body: InstructionBody::AssertEq(AssertEqInstruction {
+                        a: dst,
+                        b: ResOperand::DoubleDeref(operand),
+                    }),
+                    inc_ap,
+                    hints: vec![],
+                },
+                CellExpression::IntoSingleCellRef(operand) => Instruction {
+                    body: InstructionBody::AssertEq(AssertEqInstruction {
+                        a: operand,
+                        b: ResOperand::DoubleDeref(dst),
+                    }),
+                    inc_ap,
+                    hints: vec![Hint::AllocSegment { dst }],
+                },
+                CellExpression::Immediate(operand) => Instruction {
+                    body: InstructionBody::AssertEq(AssertEqInstruction {
+                        a: dst,
+                        b: ResOperand::Immediate(operand),
+                    }),
+                    inc_ap,
+                    hints: vec![],
+                },
+                CellExpression::BinOp(BinOpExpression { op, a, b }) => match op {
+                    FeltOperator::Add => Instruction {
+                        body: InstructionBody::AssertEq(AssertEqInstruction {
+                            a: dst,
+                            b: ResOperand::BinOp(BinOpOperand { op: Operation::Add, a, b }),
                         }),
-                        inc_ap: false,
-                        hints,
-                    }]
-                } else {
-                    vec![]
-                });
+                        inc_ap,
+                        hints: vec![],
+                    },
+                    FeltOperator::Mul => Instruction {
+                        body: InstructionBody::AssertEq(AssertEqInstruction {
+                            a: dst,
+                            b: ResOperand::BinOp(BinOpOperand { op: Operation::Mul, a, b }),
+                        }),
+                        inc_ap,
+                        hints: vec![],
+                    },
+
+                    // dst = a - b => a = dst + b
+                    FeltOperator::Sub => Instruction {
+                        body: InstructionBody::AssertEq(AssertEqInstruction {
+                            a,
+                            b: ResOperand::BinOp(BinOpOperand { op: Operation::Add, a: dst, b }),
+                        }),
+                        inc_ap,
+                        hints: vec![],
+                    },
+                    // dst = a / b => a = dst * b
+                    FeltOperator::Div => Instruction {
+                        body: InstructionBody::AssertEq(AssertEqInstruction {
+                            a,
+                            b: ResOperand::BinOp(BinOpOperand { op: Operation::Mul, a: dst, b }),
+                        }),
+                        inc_ap,
+                        hints: vec![],
+                    },
+                },
+                CellExpression::AllocateSegment => Instruction {
+                    body: InstructionBody::AddAp(AddApInstruction {
+                        operand: ResOperand::Immediate(if inc_ap { 1 } else { 0 }),
+                    }),
+                    inc_ap: false,
+                    hints: vec![Hint::AllocSegment { dst }],
+                },
+            });
+            if let Register::FP = dst.register {
+                dst.offset += 1;
             }
-            ReferenceExpression::Complex(elements) => {
-                return Ok(elements
-                    .iter()
-                    .map(|ref_expr| {
-                        self.get_store_instructions(src_type, dst, ref_expr, inc_ap, ap_change)
-                    })
-                    .collect::<Result<Vec<_>, _>>()?
-                    .into_iter()
-                    .flatten()
-                    .collect());
+            if inc_ap {
+                ap_change += 1;
             }
-        };
-        if inc_ap {
-            *ap_change += 1;
         }
-        Ok(vec![Instruction {
-            body: InstructionBody::AssertEq(AssertEqInstruction { a: dst_operand, b: res_operand }),
-            inc_ap,
-            hints,
-        }])
+        Ok(instructions)
     }
 
     /// Handles store_temp for the given type.
@@ -395,79 +415,59 @@ impl CompiledInvocationBuilder<'_> {
         };
 
         let dst = CellRef { register: Register::AP, offset: 0 };
-        let instructions = self.get_store_instructions(ty, dst, expression, true, &mut 0)?;
+        let instructions = self.get_store_instructions(ty, dst, expression, true)?;
         let type_size = self.program_info.type_sizes[ty];
-        if let ReferenceExpression::Complex(_) = expression {
-            Ok(self.build(
-                instructions,
-                vec![],
-                [ApChange::Known(type_size)].into_iter(),
-                [[ReferenceExpression::Complex(
-                    (-type_size..0)
-                        .map(|i| {
-                            ReferenceExpression::Deref(CellRef {
-                                register: Register::AP,
-                                offset: i,
-                            })
-                        })
-                        .collect(),
-                )]
-                .into_iter()]
-                .into_iter(),
-            ))
-        } else {
-            Ok(self.build(
-                instructions,
-                vec![],
-                [ApChange::Known(type_size)].into_iter(),
-                [[ReferenceExpression::Deref(CellRef { register: Register::AP, offset: -1 })]
-                    .into_iter()]
-                .into_iter(),
-            ))
-        }
+        Ok(self.build(
+            instructions,
+            vec![],
+            [ApChange::Known(type_size)].into_iter(),
+            [[ReferenceExpression {
+                cells: (-type_size..0)
+                    .map(|i| CellExpression::Deref(CellRef { register: Register::AP, offset: i }))
+                    .collect(),
+            }]
+            .into_iter()]
+            .into_iter(),
+        ))
     }
 
     /// Handles store_local for the given type.
     fn build_store_local(self, ty: &ConcreteTypeId) -> Result<CompiledInvocation, InvocationError> {
-        let (dst, src_expr) = match self.refs {
+        let (dst_expr, src_expr) = match self.refs {
             [
-                ReferenceValue { expression: ReferenceExpression::Deref(dst), .. },
+                ReferenceValue { expression: dst_expr, .. },
                 ReferenceValue { expression: src_expr, .. },
-            ] => Ok((dst, src_expr)),
-            [_, _] => Err(InvocationError::InvalidReferenceExpressionForArgument),
+            ] => Ok((dst_expr, src_expr)),
             refs => {
                 Err(InvocationError::WrongNumberOfArguments { expected: 2, actual: refs.len() })
             }
         }?;
-
-        let instructions = self.get_store_instructions(ty, *dst, src_expr, false, &mut 0)?;
+        let dst = try_extract_matches!(
+            dst_expr
+                .try_unpack_single()
+                .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?,
+            CellExpression::Deref
+        )
+        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+        let instructions = self.get_store_instructions(ty, dst, src_expr, false)?;
         let type_size = self.program_info.type_sizes[ty];
-        if let ReferenceExpression::Complex(_) = src_expr {
-            Ok(self.build(
-                instructions,
-                vec![],
-                [ApChange::Known(0)].into_iter(),
-                [[ReferenceExpression::Complex(
-                    (-type_size..0)
-                        .map(|i| {
-                            ReferenceExpression::Deref(CellRef {
-                                register: Register::FP,
-                                offset: i,
-                            })
+        Ok(self.build(
+            instructions,
+            vec![],
+            [ApChange::Known(0)].into_iter(),
+            [[ReferenceExpression {
+                cells: (0..type_size)
+                    .map(|i| {
+                        CellExpression::Deref(CellRef {
+                            register: Register::FP,
+                            offset: dst.offset + i,
                         })
-                        .collect(),
-                )]
-                .into_iter()]
-                .into_iter(),
-            ))
-        } else {
-            Ok(self.build(
-                instructions,
-                vec![],
-                [ApChange::Known(0)].into_iter(),
-                [[ReferenceExpression::Deref(*dst)].into_iter()].into_iter(),
-            ))
-        }
+                    })
+                    .collect(),
+            }]
+            .into_iter()]
+            .into_iter(),
+        ))
     }
 
     /// Handles a jump non zero statement.
@@ -480,9 +480,8 @@ impl CompiledInvocationBuilder<'_> {
     /// jmp rel <jump_offset_1000> if [ap-10] != 0
     /// ```
     fn build_jump_nz(self) -> Result<CompiledInvocation, InvocationError> {
-        let value = match self.refs {
-            [ReferenceValue { expression: ReferenceExpression::Deref(value), .. }] => *value,
-            [_] => return Err(InvocationError::InvalidReferenceExpressionForArgument),
+        let dst_expr = match self.refs {
+            [ReferenceValue { expression, .. }] => expression,
             refs => {
                 return Err(InvocationError::WrongNumberOfArguments {
                     expected: 1,
@@ -490,6 +489,13 @@ impl CompiledInvocationBuilder<'_> {
                 });
             }
         };
+        let value = try_extract_matches!(
+            dst_expr
+                .try_unpack_single()
+                .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?,
+            CellExpression::Deref
+        )
+        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
 
         let target_statement_id = match self.invocation.branches.as_slice() {
             [
@@ -506,7 +512,11 @@ impl CompiledInvocationBuilder<'_> {
                 relocation: Relocation::RelativeStatementId(*target_statement_id),
             }],
             itertools::repeat_n(ApChange::Known(0), 2).into_iter(),
-            [vec![].into_iter(), vec![ReferenceExpression::Deref(value)].into_iter()].into_iter(),
+            [
+                vec![].into_iter(),
+                vec![ReferenceExpression::from_cell(CellExpression::Deref(value))].into_iter(),
+            ]
+            .into_iter(),
         ))
     }
 
@@ -557,9 +567,13 @@ impl CompiledInvocationBuilder<'_> {
                 });
             }
         };
-        if let ReferenceExpression::Deref(operand) = expression {
+        if let CellExpression::Deref(operand) = expression
+            .try_unpack_single()
+            .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?
+        {
             Ok(self.build_only_reference_changes(
-                [ReferenceExpression::IntoSingleCellRef(*operand)].into_iter(),
+                [ReferenceExpression::from_cell(CellExpression::IntoSingleCellRef(operand))]
+                    .into_iter(),
             ))
         } else {
             Err(InvocationError::InvalidReferenceExpressionForArgument)
@@ -577,9 +591,12 @@ impl CompiledInvocationBuilder<'_> {
                 });
             }
         };
-        if let ReferenceExpression::Deref(operand) = expression {
+        if let CellExpression::Deref(operand) = expression
+            .try_unpack_single()
+            .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?
+        {
             Ok(self.build_only_reference_changes(
-                [ReferenceExpression::DoubleDeref(*operand)].into_iter(),
+                [ReferenceExpression::from_cell(CellExpression::DoubleDeref(operand))].into_iter(),
             ))
         } else {
             Err(InvocationError::InvalidReferenceExpressionForArgument)
@@ -605,8 +622,11 @@ impl CompiledInvocationBuilder<'_> {
         self.environment.frame_state = frame_state;
 
         Ok(self.build_only_reference_changes(
-            [ReferenceExpression::Deref(CellRef { register: Register::FP, offset: slot })]
-                .into_iter(),
+            [ReferenceExpression::from_cell(CellExpression::Deref(CellRef {
+                register: Register::FP,
+                offset: slot,
+            }))]
+            .into_iter(),
         ))
     }
 
@@ -632,10 +652,12 @@ impl CompiledInvocationBuilder<'_> {
             }],
             vec![],
             [ApChange::Known(1)].into_iter(),
-            [[ReferenceExpression::Complex(vec![
-                ReferenceExpression::Deref(CellRef { register: Register::AP, offset: -1 }),
-                ReferenceExpression::Deref(CellRef { register: Register::AP, offset: -1 }),
-            ])]
+            [[ReferenceExpression {
+                cells: vec![
+                    CellExpression::Deref(CellRef { register: Register::AP, offset: -1 }),
+                    CellExpression::Deref(CellRef { register: Register::AP, offset: -1 }),
+                ],
+            }]
             .into_iter()]
             .into_iter(),
         ))
@@ -648,14 +670,17 @@ impl CompiledInvocationBuilder<'_> {
                 ReferenceValue { expression: expr_arr, .. },
                 ReferenceValue { expression: expr_elem, .. },
             ] => {
-                let array_val = ArrayView::try_get_view(expr_arr)
+                let array_view = ArrayView::try_get_view(expr_arr)
                     .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?;
-                let elem_val = match expr_elem {
-                    ReferenceExpression::Deref(op) => DerefOrImmediate::Deref(*op),
-                    ReferenceExpression::Immediate(op) => DerefOrImmediate::Immediate(*op),
+                let elem_val = match expr_elem
+                    .try_unpack_single()
+                    .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?
+                {
+                    CellExpression::Deref(op) => DerefOrImmediate::Deref(op),
+                    CellExpression::Immediate(op) => DerefOrImmediate::Immediate(op),
                     _ => return Err(InvocationError::InvalidReferenceExpressionForArgument),
                 };
-                (array_val, elem_val)
+                (array_view, elem_val)
             }
             refs => {
                 return Err(InvocationError::WrongNumberOfArguments {
@@ -697,14 +722,11 @@ impl CompiledInvocationBuilder<'_> {
             .variable_values
             .get(&self.idx)
             .ok_or(InvocationError::UnknownVariableData)?;
-        let (range_check, gas_counter_value) = match self.refs {
+        let (range_check_expression, gas_counter_expression) = match self.refs {
             [
-                ReferenceValue { expression: ReferenceExpression::Deref(range_check), .. },
-                ReferenceValue {
-                    expression: ReferenceExpression::Deref(gas_counter_value), ..
-                },
-            ] => (*range_check, *gas_counter_value),
-            [_, _] => return Err(InvocationError::InvalidReferenceExpressionForArgument),
+                ReferenceValue { expression: range_check_expression, .. },
+                ReferenceValue { expression: gas_counter_expression, .. },
+            ] => (range_check_expression, gas_counter_expression),
             refs => {
                 return Err(InvocationError::WrongNumberOfArguments {
                     expected: 2,
@@ -712,6 +734,20 @@ impl CompiledInvocationBuilder<'_> {
                 });
             }
         };
+        let gas_counter_value = try_extract_matches!(
+            gas_counter_expression
+                .try_unpack_single()
+                .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?,
+            CellExpression::Deref
+        )
+        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+        let range_check = try_extract_matches!(
+            range_check_expression
+                .try_unpack_single()
+                .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?,
+            CellExpression::Deref
+        )
+        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
 
         let target_statement_id = match self.invocation.branches.as_slice() {
             [BranchInfo { target: BranchTarget::Statement(statement_id), .. }, _] => statement_id,
@@ -756,27 +792,27 @@ impl CompiledInvocationBuilder<'_> {
             [ApChange::Known(2), ApChange::Known(3)].into_iter(),
             [
                 vec![
-                    ReferenceExpression::BinOp(BinOpExpression {
+                    ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
                         op: FeltOperator::Add,
                         a: range_check.apply_ap_change(ApChange::Known(2)).unwrap(),
                         b: DerefOrImmediate::Immediate(1),
-                    }),
-                    ReferenceExpression::BinOp(BinOpExpression {
+                    })),
+                    ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
                         op: FeltOperator::Sub,
                         a: gas_counter_value.apply_ap_change(ApChange::Known(2)).unwrap(),
                         b: DerefOrImmediate::Immediate(*requested_count as i128),
-                    }),
+                    })),
                 ]
                 .into_iter(),
                 vec![
-                    ReferenceExpression::BinOp(BinOpExpression {
+                    ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
                         op: FeltOperator::Add,
                         a: range_check.apply_ap_change(ApChange::Known(3)).unwrap(),
                         b: DerefOrImmediate::Immediate(1),
-                    }),
-                    ReferenceExpression::Deref(
+                    })),
+                    ReferenceExpression::from_cell(CellExpression::Deref(
                         gas_counter_value.apply_ap_change(ApChange::Known(3)).unwrap(),
-                    ),
+                    )),
                 ]
                 .into_iter(),
             ]
@@ -793,11 +829,8 @@ impl CompiledInvocationBuilder<'_> {
             .variable_values
             .get(&self.idx)
             .ok_or(InvocationError::UnknownVariableData)?;
-        let gas_counter_value = match self.refs {
-            [ReferenceValue { expression: ReferenceExpression::Deref(deref_operand), .. }] => {
-                deref_operand
-            }
-            [_] => return Err(InvocationError::InvalidReferenceExpressionForArgument),
+        let expression = match self.refs {
+            [ReferenceValue { expression, .. }] => expression,
             refs => {
                 return Err(InvocationError::WrongNumberOfArguments {
                     expected: 1,
@@ -805,15 +838,23 @@ impl CompiledInvocationBuilder<'_> {
                 });
             }
         };
+        let gas_counter_value = try_extract_matches!(
+            expression
+                .try_unpack_single()
+                .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?,
+            CellExpression::Deref
+        )
+        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+
         Ok(self.build_only_reference_changes(
             [if *requested_count == 0 {
-                ReferenceExpression::Deref(*gas_counter_value)
+                ReferenceExpression::from_cell(CellExpression::Deref(gas_counter_value))
             } else {
-                ReferenceExpression::BinOp(BinOpExpression {
+                ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
                     op: FeltOperator::Add,
-                    a: *gas_counter_value,
+                    a: gas_counter_value,
                     b: DerefOrImmediate::Immediate(*requested_count as i128),
-                })
+                }))
             }]
             .into_iter(),
         ))
@@ -838,9 +879,8 @@ impl CompiledInvocationBuilder<'_> {
     /// [ap] = [ap-5]; ap++
     /// ```
     fn build_enum_init(self, index: usize) -> Result<CompiledInvocation, InvocationError> {
-        let init_arg = match self.refs {
-            [ReferenceValue { expression: ReferenceExpression::Deref(operand), .. }] => operand,
-            [_] => return Err(InvocationError::InvalidReferenceExpressionForArgument),
+        let expression = match self.refs {
+            [ReferenceValue { expression, .. }] => expression,
             refs => {
                 return Err(InvocationError::WrongNumberOfArguments {
                     expected: 1,
@@ -848,6 +888,13 @@ impl CompiledInvocationBuilder<'_> {
                 });
             }
         };
+        let init_arg = try_extract_matches!(
+            expression
+                .try_unpack_single()
+                .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?,
+            CellExpression::Deref
+        )
+        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
 
         let variant_selector = if self.invocation.branches.len() <= 2 {
             // For num_branches <= 2, we use the index as the variant_selector as the `match`
@@ -871,8 +918,8 @@ impl CompiledInvocationBuilder<'_> {
         };
 
         let enum_val = EnumView {
-            variant_selector: ReferenceExpression::Immediate(variant_selector),
-            inner_value: ReferenceExpression::Deref(*init_arg),
+            variant_selector: CellExpression::Immediate(variant_selector),
+            inner_value: CellExpression::Deref(init_arg),
         };
         Ok(self.build_only_reference_changes([enum_val.to_reference_expression()].into_iter()))
     }
@@ -892,7 +939,7 @@ impl CompiledInvocationBuilder<'_> {
         // Verify variant_selector is of type deref. This is the case with an enum_value
         // that was validly created and then stored.
         let variant_selector =
-            try_extract_matches!(matched_var.variant_selector, ReferenceExpression::Deref)
+            try_extract_matches!(matched_var.variant_selector, CellExpression::Deref)
                 .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
 
         let target_statement_ids = self.invocation.branches.iter().map(|b| match b {
@@ -979,8 +1026,11 @@ impl CompiledInvocationBuilder<'_> {
             instructions,
             relocations,
             itertools::repeat_n(ApChange::Known(0), num_branches).into_iter(),
-            itertools::repeat_n(vec![matched_var.inner_value].into_iter(), num_branches)
-                .into_iter(),
+            itertools::repeat_n(
+                vec![ReferenceExpression::from_cell(matched_var.inner_value)].into_iter(),
+                num_branches,
+            )
+            .into_iter(),
         ))
     }
 
@@ -1034,8 +1084,11 @@ impl CompiledInvocationBuilder<'_> {
             instructions,
             relocations,
             itertools::repeat_n(ApChange::Known(0), num_branches).into_iter(),
-            itertools::repeat_n(vec![matched_var.inner_value].into_iter(), num_branches)
-                .into_iter(),
+            itertools::repeat_n(
+                vec![ReferenceExpression::from_cell(matched_var.inner_value)].into_iter(),
+                num_branches,
+            )
+            .into_iter(),
         ))
     }
 }
@@ -1076,7 +1129,8 @@ pub fn compile_invocation(
         CoreConcreteLibFunc::Felt(FeltConcrete::JumpNotZero(_)) => builder.build_jump_nz(),
         CoreConcreteLibFunc::Felt(FeltConcrete::Const(libfunc)) => Ok(builder
             .build_only_reference_changes(
-                [ReferenceExpression::Immediate(libfunc.c as i128)].into_iter(),
+                [ReferenceExpression::from_cell(CellExpression::Immediate(libfunc.c as i128))]
+                    .into_iter(),
             )),
         CoreConcreteLibFunc::Gas(GasConcreteLibFunc::GetGas(_)) => builder.build_get_gas(),
         CoreConcreteLibFunc::Gas(GasConcreteLibFunc::RefundGas(_)) => builder.build_refund_gas(),
@@ -1132,24 +1186,22 @@ pub fn compile_invocation(
 pub struct EnumView {
     /// This would be ReferenceExpression::Immediate after enum_init, and would be
     /// ReferenceExpression::Deref after store_*.
-    pub variant_selector: ReferenceExpression,
+    pub variant_selector: CellExpression,
     /// The inner value of the enum - can be any ReferenceExpression.
-    pub inner_value: ReferenceExpression,
+    pub inner_value: CellExpression,
 }
 
 impl ReferenceExpressionView for EnumView {
     type Error = ReferencesError;
 
     fn try_get_view(expr: &ReferenceExpression) -> Result<Self, Self::Error> {
-        let complex = try_extract_matches!(expr, ReferenceExpression::Complex)
-            .ok_or(ReferencesError::InvalidReferenceTypeForArgument)?;
-        if complex.len() != 2 {
+        if expr.cells.len() != 2 {
             return Err(ReferencesError::InvalidReferenceTypeForArgument);
         }
-        Ok(EnumView { variant_selector: complex[0].clone(), inner_value: complex[1].clone() })
+        Ok(EnumView { variant_selector: expr.cells[0].clone(), inner_value: expr.cells[1].clone() })
     }
     fn to_reference_expression(self) -> ReferenceExpression {
-        ReferenceExpression::Complex(vec![self.variant_selector, self.inner_value])
+        ReferenceExpression { cells: vec![self.variant_selector, self.inner_value] }
     }
 }
 
@@ -1171,16 +1223,14 @@ impl ReferenceExpressionView for ArrayView {
     type Error = ReferencesError;
 
     fn try_get_view(expr: &ReferenceExpression) -> Result<Self, Self::Error> {
-        let complex = try_extract_matches!(expr, ReferenceExpression::Complex)
-            .ok_or(ReferencesError::InvalidReferenceTypeForArgument)?;
-        if complex.len() != 2 {
+        if expr.cells.len() != 2 {
             return Err(ReferencesError::InvalidReferenceTypeForArgument);
         };
-        let start = try_extract_matches!(complex[0], ReferenceExpression::Deref)
+        let start = try_extract_matches!(expr.cells[0], CellExpression::Deref)
             .ok_or(ReferencesError::InvalidReferenceTypeForArgument)?;
-        let (end, end_offset) = match &complex[1] {
-            ReferenceExpression::Deref(op) => (*op, 0u16),
-            ReferenceExpression::BinOp(binop) => {
+        let (end, end_offset) = match &expr.cells[1] {
+            CellExpression::Deref(op) => (*op, 0u16),
+            CellExpression::BinOp(binop) => {
                 if binop.op != FeltOperator::Add {
                     return Err(ReferencesError::InvalidReferenceTypeForArgument);
                 }
@@ -1199,18 +1249,20 @@ impl ReferenceExpressionView for ArrayView {
     }
 
     fn to_reference_expression(self) -> ReferenceExpression {
-        let start_ref = ReferenceExpression::Deref(self.start);
+        let start_ref = CellExpression::Deref(self.start);
         if self.end_offset == 0 {
-            ReferenceExpression::Complex(vec![start_ref, ReferenceExpression::Deref(self.end)])
+            ReferenceExpression { cells: vec![start_ref, CellExpression::Deref(self.end)] }
         } else {
-            ReferenceExpression::Complex(vec![
-                start_ref,
-                ReferenceExpression::BinOp(BinOpExpression {
-                    op: FeltOperator::Add,
-                    a: self.end,
-                    b: DerefOrImmediate::Immediate(self.end_offset as i128),
-                }),
-            ])
+            ReferenceExpression {
+                cells: vec![
+                    CellExpression::Deref(self.start),
+                    CellExpression::BinOp(BinOpExpression {
+                        op: FeltOperator::Add,
+                        a: self.end,
+                        b: DerefOrImmediate::Immediate(self.end_offset as i128),
+                    }),
+                ],
+            }
         }
     }
 }
