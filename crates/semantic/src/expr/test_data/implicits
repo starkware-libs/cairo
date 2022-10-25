@@ -1,0 +1,71 @@
+//! > Implicit parameter found
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+func foo() {
+    let x = 7;
+    bar()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+func bar() implicits(a: felt) {
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Implicit parameter type exists more than once
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+func foo() {
+    let x = 7;
+    let y = 8;
+    bar()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+func bar() implicits(a: felt) {
+}
+
+//! > expected_diagnostics
+error: Multiple variable of type "core::felt" exist. Exactly a single variable of this type must exist for it to be used as an implicit argument of the function call.
+ --> lib.cairo:6:5
+    bar()
+    ^***^
+
+//! > ==========================================================================
+
+//! > Implicit parameter type does not exist
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+func foo() {
+    bar()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+func bar() implicits(a: felt) {
+}
+
+//! > expected_diagnostics
+error: Variable of type "core::felt" doesn't exist. It is required for the function call as an implicit argument.
+ --> lib.cairo:4:5
+    bar()
+    ^***^
