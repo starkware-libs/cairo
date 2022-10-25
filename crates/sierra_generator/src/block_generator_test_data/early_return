@@ -26,6 +26,7 @@ foo
 felt_jump_nz([0]) { fallthrough() label0([1]) }
 felt_const<1>() -> ([2])
 PushValues([2]: felt) -> ([3])
+burn_gas() -> ()
 return([3])
 label0:
 PushValues() -> ()

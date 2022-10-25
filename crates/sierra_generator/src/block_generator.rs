@@ -91,7 +91,10 @@ pub fn generate_return_code(
     }
 
     statements.push(pre_sierra::Statement::PushValues(push_values));
+    // Add burn_gas to equalize gas costs across all return paths.
+    statements.push(simple_statement(context.burn_gas_libfunc_id(), &[], &[]));
     statements.push(return_statement(return_variables_on_stack));
+
     Some(statements)
 }
 
