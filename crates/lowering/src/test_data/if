@@ -99,3 +99,55 @@ Statements:
 Drops: v0
 End:
   Callsite(v3)
+
+//! > ==========================================================================
+
+//! > Test if without else.
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+func foo(x: felt) -> felt {
+    if x == 0 {
+        return 10;
+    }
+    20
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_format
+blk0:
+Inputs:
+Statements:
+  (v1: core::felt) <- 10u
+Drops: v0
+End:
+  Return(v1)
+
+blk1:
+Inputs: v2: core::NonZero::<core::felt>
+Statements:
+Drops: v2
+End:
+  Callsite()
+
+blk2:
+Inputs: v0: core::felt
+Statements:
+  () <- match core::felt_jump_nz(v0) {
+    () => blk0,
+    (v2) => blk1,
+  }
+  (v3: core::felt) <- 20u
+Drops: v0
+End:
+  Callsite(v3)

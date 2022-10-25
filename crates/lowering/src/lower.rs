@@ -147,6 +147,15 @@ pub fn lower_tail_expr(
     expr: semantic::ExprId,
 ) -> Option<BlockScopeEnd> {
     let lowered_expr = lower_expr(ctx, scope, expr);
+    lowered_expr_to_block_scope_end(ctx, scope, lowered_expr)
+}
+
+/// Converts [Result<LoweredExpr, LoweringFlowError>] into `BlockScopeEnd`.
+pub fn lowered_expr_to_block_scope_end(
+    ctx: &mut LoweringContext<'_>,
+    scope: &mut BlockScope,
+    lowered_expr: Result<LoweredExpr, LoweringFlowError>,
+) -> Option<BlockScopeEnd> {
     Some(match lowered_expr {
         Ok(LoweredExpr::Tuple(tys)) if tys.is_empty() => BlockScopeEnd::Callsite(None),
         Ok(lowered_expr) => BlockScopeEnd::Callsite(Some(lowered_expr.var(ctx, scope))),
