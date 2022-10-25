@@ -40,6 +40,7 @@ fn test_program_generator() {
             libfunc store_temp<felt> = store_temp<felt>;
             libfunc function_call<user@test_crate::bar> = function_call<user@test_crate::bar>;
             libfunc rename<felt> = rename<felt>;
+            libfunc burn_gas = burn_gas;
             libfunc dup<felt> = dup<felt>;
             libfunc felt_add = felt_add;
 
@@ -49,16 +50,18 @@ fn test_program_generator() {
             store_temp<felt>([1]) -> ([3]);
             function_call<user@test_crate::bar>([3]) -> ([2]);
             rename<felt>([2]) -> ([4]);
+            burn_gas() -> ();
             return([4]);
             revoke_ap_tracking() -> ();
             dup<felt>([0]) -> ([0], [3]);
             felt_add([0], [3]) -> ([1]);
             store_temp<felt>([1]) -> ([1]);
             rename<felt>([1]) -> ([2]);
+            burn_gas() -> ();
             return([2]);
 
             test_crate::foo@0([0]: felt) -> (felt);
-            test_crate::bar@7([0]: felt) -> (felt);
+            test_crate::bar@8([0]: felt) -> (felt);
         "},
     );
 }
@@ -94,6 +97,7 @@ fn test_type_dependency() {
             libfunc unbox<Box<felt>> = unbox<Box<felt>>;
             libfunc store_temp<Box<felt>> = store_temp<Box<felt>>;
             libfunc rename<Box<felt>> = rename<Box<felt>>;
+            libfunc burn_gas = burn_gas;
 
             revoke_ap_tracking() -> ();
             unbox<Box<Box<felt>>>([0]) -> ([1]);
@@ -101,6 +105,7 @@ fn test_type_dependency() {
             unbox<Box<felt>>([1]) -> ([2]);
             store_temp<Box<felt>>([2]) -> ([2]);
             rename<Box<felt>>([2]) -> ([3]);
+            burn_gas() -> ();
             return([3]);
 
             test_crate::unbox_twice@0([0]: Box<Box<Box<felt>>>) -> (Box<felt>);

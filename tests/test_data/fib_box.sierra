@@ -53,6 +53,7 @@ function_call<user@test_crate::fib>([14], [15], [16]) -> ([13]);
 rename<Box<felt>>([13]) -> ([5]);
 burn_gas() -> ();
 rename<Box<felt>>([5]) -> ([17]);
+burn_gas() -> ();
 return([17]);
 
 test_crate::fib@0([0]: Box<felt>, [1]: Box<felt>, [2]: Box<felt>) -> (Box<felt>);
