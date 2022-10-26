@@ -340,7 +340,7 @@ fn gen_common_list_code(name: &str, green_name: &str, ptr_name: &str) -> rust::T
         #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
         pub struct $green_name(pub GreenId);
         impl TypedSyntaxNode for $name {
-            const KIND: Option<SyntaxKind> = Some(SyntaxKind::$name);
+            const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::$name);
             type StablePtr = $ptr_name;
             type Green = $green_name;
             fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -430,7 +430,7 @@ fn gen_enum_code(
         #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
         pub struct $(&green_name)(pub GreenId);
         impl TypedSyntaxNode for $(&name){
-            const KIND: Option<SyntaxKind> = None;
+            const OPTIONAL_KIND: Option<SyntaxKind> = None;
             type StablePtr = $(&ptr_name);
             type Green = $(&green_name);
             // TODO(yuval): consider adding new_green()
@@ -497,7 +497,7 @@ fn gen_token_code(name: String) -> rust::Tokens {
             }
         }
         impl TypedSyntaxNode for $(&name){
-            const KIND: Option<SyntaxKind> = Some(SyntaxKind::$(&name));
+            const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::$(&name));
             type StablePtr = $(&ptr_name);
             type Green = $(&green_name);
             fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -569,6 +569,7 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
         let token_name = name.replace("Terminal", "Token");
         quote! {
             impl Terminal for $(&name) {
+                const KIND: SyntaxKind = SyntaxKind::$(&name);
                 type TokenType = $(&token_name);
                 fn new_green(
                     db: &dyn SyntaxGroup,
@@ -626,7 +627,7 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
         #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
         pub struct $(&green_name)(pub GreenId);
         impl TypedSyntaxNode for $(&name){
-            const KIND: Option<SyntaxKind> = Some(SyntaxKind::$(&name));
+            const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::$(&name));
             type StablePtr = $(&ptr_name);
             type Green = $(&green_name);
             fn missing(db: &dyn SyntaxGroup) -> Self::Green {

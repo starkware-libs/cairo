@@ -45,7 +45,7 @@ impl TriviaPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TriviaGreen(pub GreenId);
 impl TypedSyntaxNode for Trivia {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::Trivia);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Trivia);
     type StablePtr = TriviaPtr;
     type Green = TriviaGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -124,7 +124,7 @@ impl From<TokenSkippedGreen> for TriviumGreen {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TriviumGreen(pub GreenId);
 impl TypedSyntaxNode for Trivium {
-    const KIND: Option<SyntaxKind> = None;
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
     type StablePtr = TriviumPtr;
     type Green = TriviumGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -326,7 +326,7 @@ impl From<ExprMissingGreen> for ExprGreen {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ExprGreen(pub GreenId);
 impl TypedSyntaxNode for Expr {
-    const KIND: Option<SyntaxKind> = None;
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
     type StablePtr = ExprPtr;
     type Green = ExprGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -441,7 +441,7 @@ impl ExprListElementOrSeparatorGreen {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ExprListGreen(pub GreenId);
 impl TypedSyntaxNode for ExprList {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprList);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprList);
     type StablePtr = ExprListPtr;
     type Green = ExprListGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -489,7 +489,7 @@ impl ExprMissingPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ExprMissingGreen(pub GreenId);
 impl TypedSyntaxNode for ExprMissing {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprMissing);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprMissing);
     type StablePtr = ExprMissingPtr;
     type Green = ExprMissingGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -555,7 +555,7 @@ impl From<PathSegmentSimpleGreen> for PathSegmentGreen {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct PathSegmentGreen(pub GreenId);
 impl TypedSyntaxNode for PathSegment {
-    const KIND: Option<SyntaxKind> = None;
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
     type StablePtr = PathSegmentPtr;
     type Green = PathSegmentGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -619,7 +619,7 @@ impl PathSegmentSimplePtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct PathSegmentSimpleGreen(pub GreenId);
 impl TypedSyntaxNode for PathSegmentSimple {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::PathSegmentSimple);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::PathSegmentSimple);
     type StablePtr = PathSegmentSimplePtr;
     type Green = PathSegmentSimpleGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -694,7 +694,7 @@ impl PathSegmentWithGenericArgsPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct PathSegmentWithGenericArgsGreen(pub GreenId);
 impl TypedSyntaxNode for PathSegmentWithGenericArgs {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::PathSegmentWithGenericArgs);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::PathSegmentWithGenericArgs);
     type StablePtr = PathSegmentWithGenericArgsPtr;
     type Green = PathSegmentWithGenericArgsGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -788,7 +788,7 @@ impl ExprPathElementOrSeparatorGreen {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ExprPathGreen(pub GreenId);
 impl TypedSyntaxNode for ExprPath {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprPath);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprPath);
     type StablePtr = ExprPathPtr;
     type Green = ExprPathGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -851,7 +851,7 @@ impl ExprParenthesizedPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ExprParenthesizedGreen(pub GreenId);
 impl TypedSyntaxNode for ExprParenthesized {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprParenthesized);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprParenthesized);
     type StablePtr = ExprParenthesizedPtr;
     type Green = ExprParenthesizedGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -926,7 +926,7 @@ impl ExprUnaryPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ExprUnaryGreen(pub GreenId);
 impl TypedSyntaxNode for ExprUnary {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprUnary);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprUnary);
     type StablePtr = ExprUnaryPtr;
     type Green = ExprUnaryGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -995,7 +995,7 @@ impl From<TerminalMinusGreen> for UnaryOperatorGreen {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct UnaryOperatorGreen(pub GreenId);
 impl TypedSyntaxNode for UnaryOperator {
-    const KIND: Option<SyntaxKind> = None;
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
     type StablePtr = UnaryOperatorPtr;
     type Green = UnaryOperatorGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -1065,7 +1065,7 @@ impl ExprBinaryPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ExprBinaryGreen(pub GreenId);
 impl TypedSyntaxNode for ExprBinary {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprBinary);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprBinary);
     type StablePtr = ExprBinaryPtr;
     type Green = ExprBinaryGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -1270,7 +1270,7 @@ impl From<TerminalGTGreen> for BinaryOperatorGreen {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct BinaryOperatorGreen(pub GreenId);
 impl TypedSyntaxNode for BinaryOperator {
-    const KIND: Option<SyntaxKind> = None;
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
     type StablePtr = BinaryOperatorPtr;
     type Green = BinaryOperatorGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -1374,7 +1374,7 @@ impl ExprTuplePtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ExprTupleGreen(pub GreenId);
 impl TypedSyntaxNode for ExprTuple {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprTuple);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprTuple);
     type StablePtr = ExprTuplePtr;
     type Green = ExprTupleGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -1449,7 +1449,7 @@ impl ExprFunctionCallPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ExprFunctionCallGreen(pub GreenId);
 impl TypedSyntaxNode for ExprFunctionCall {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprFunctionCall);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprFunctionCall);
     type StablePtr = ExprFunctionCallPtr;
     type Green = ExprFunctionCallGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -1524,7 +1524,7 @@ impl ExprListParenthesizedPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ExprListParenthesizedGreen(pub GreenId);
 impl TypedSyntaxNode for ExprListParenthesized {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprListParenthesized);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprListParenthesized);
     type StablePtr = ExprListParenthesizedPtr;
     type Green = ExprListParenthesizedGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -1599,7 +1599,7 @@ impl ExprStructCtorCallPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ExprStructCtorCallGreen(pub GreenId);
 impl TypedSyntaxNode for ExprStructCtorCall {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprStructCtorCall);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprStructCtorCall);
     type StablePtr = ExprStructCtorCallPtr;
     type Green = ExprStructCtorCallGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -1674,7 +1674,7 @@ impl ExprBlockPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ExprBlockGreen(pub GreenId);
 impl TypedSyntaxNode for ExprBlock {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprBlock);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprBlock);
     type StablePtr = ExprBlockPtr;
     type Green = ExprBlockGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -1761,7 +1761,7 @@ impl ExprMatchPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ExprMatchGreen(pub GreenId);
 impl TypedSyntaxNode for ExprMatch {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprMatch);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprMatch);
     type StablePtr = ExprMatchPtr;
     type Green = ExprMatchGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -1857,7 +1857,7 @@ impl MatchArmsElementOrSeparatorGreen {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct MatchArmsGreen(pub GreenId);
 impl TypedSyntaxNode for MatchArms {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::MatchArms);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::MatchArms);
     type StablePtr = MatchArmsPtr;
     type Green = MatchArmsGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -1920,7 +1920,7 @@ impl MatchArmPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct MatchArmGreen(pub GreenId);
 impl TypedSyntaxNode for MatchArm {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::MatchArm);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::MatchArm);
     type StablePtr = MatchArmPtr;
     type Green = MatchArmGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -2003,7 +2003,7 @@ impl ExprIfPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ExprIfGreen(pub GreenId);
 impl TypedSyntaxNode for ExprIf {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprIf);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprIf);
     type StablePtr = ExprIfPtr;
     type Green = ExprIfGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -2079,7 +2079,7 @@ impl ElseClausePtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ElseClauseGreen(pub GreenId);
 impl TypedSyntaxNode for ElseClause {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::ElseClause);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ElseClause);
     type StablePtr = ElseClausePtr;
     type Green = ElseClauseGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -2148,7 +2148,7 @@ impl From<ElseClauseGreen> for OptionElseClauseGreen {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct OptionElseClauseGreen(pub GreenId);
 impl TypedSyntaxNode for OptionElseClause {
-    const KIND: Option<SyntaxKind> = None;
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
     type StablePtr = OptionElseClausePtr;
     type Green = OptionElseClauseGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -2208,7 +2208,7 @@ impl OptionElseClauseEmptyPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct OptionElseClauseEmptyGreen(pub GreenId);
 impl TypedSyntaxNode for OptionElseClauseEmpty {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::OptionElseClauseEmpty);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::OptionElseClauseEmpty);
     type StablePtr = OptionElseClauseEmptyPtr;
     type Green = OptionElseClauseEmptyGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -2276,7 +2276,7 @@ impl StructArgExprPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct StructArgExprGreen(pub GreenId);
 impl TypedSyntaxNode for StructArgExpr {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::StructArgExpr);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::StructArgExpr);
     type StablePtr = StructArgExprPtr;
     type Green = StructArgExprGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -2345,7 +2345,7 @@ impl From<StructArgExprGreen> for OptionStructArgExprGreen {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct OptionStructArgExprGreen(pub GreenId);
 impl TypedSyntaxNode for OptionStructArgExpr {
-    const KIND: Option<SyntaxKind> = None;
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
     type StablePtr = OptionStructArgExprPtr;
     type Green = OptionStructArgExprGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -2405,7 +2405,7 @@ impl OptionStructArgExprEmptyPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct OptionStructArgExprEmptyGreen(pub GreenId);
 impl TypedSyntaxNode for OptionStructArgExprEmpty {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::OptionStructArgExprEmpty);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::OptionStructArgExprEmpty);
     type StablePtr = OptionStructArgExprEmptyPtr;
     type Green = OptionStructArgExprEmptyGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -2481,7 +2481,7 @@ impl StructArgSinglePtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct StructArgSingleGreen(pub GreenId);
 impl TypedSyntaxNode for StructArgSingle {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::StructArgSingle);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::StructArgSingle);
     type StablePtr = StructArgSinglePtr;
     type Green = StructArgSingleGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -2555,7 +2555,7 @@ impl StructArgTailPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct StructArgTailGreen(pub GreenId);
 impl TypedSyntaxNode for StructArgTail {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::StructArgTail);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::StructArgTail);
     type StablePtr = StructArgTailPtr;
     type Green = StructArgTailGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -2624,7 +2624,7 @@ impl From<StructArgTailGreen> for StructArgGreen {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct StructArgGreen(pub GreenId);
 impl TypedSyntaxNode for StructArg {
-    const KIND: Option<SyntaxKind> = None;
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
     type StablePtr = StructArgPtr;
     type Green = StructArgGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -2711,7 +2711,7 @@ impl StructArgListElementOrSeparatorGreen {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct StructArgListGreen(pub GreenId);
 impl TypedSyntaxNode for StructArgList {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::StructArgList);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::StructArgList);
     type StablePtr = StructArgListPtr;
     type Green = StructArgListGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -2774,7 +2774,7 @@ impl ArgListBracedPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ArgListBracedGreen(pub GreenId);
 impl TypedSyntaxNode for ArgListBraced {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::ArgListBraced);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ArgListBraced);
     type StablePtr = ArgListBracedPtr;
     type Green = ArgListBracedGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -2902,7 +2902,7 @@ impl From<ExprPathGreen> for PatternGreen {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct PatternGreen(pub GreenId);
 impl TypedSyntaxNode for Pattern {
-    const KIND: Option<SyntaxKind> = None;
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
     type StablePtr = PatternPtr;
     type Green = PatternGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -2990,7 +2990,7 @@ impl PatternIdentifierPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct PatternIdentifierGreen(pub GreenId);
 impl TypedSyntaxNode for PatternIdentifier {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::PatternIdentifier);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::PatternIdentifier);
     type StablePtr = PatternIdentifierPtr;
     type Green = PatternIdentifierGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -3069,7 +3069,7 @@ impl PatternStructPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct PatternStructGreen(pub GreenId);
 impl TypedSyntaxNode for PatternStruct {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::PatternStruct);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::PatternStruct);
     type StablePtr = PatternStructPtr;
     type Green = PatternStructGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -3164,7 +3164,7 @@ impl PatternStructParamListElementOrSeparatorGreen {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct PatternStructParamListGreen(pub GreenId);
 impl TypedSyntaxNode for PatternStructParamList {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::PatternStructParamList);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::PatternStructParamList);
     type StablePtr = PatternStructParamListPtr;
     type Green = PatternStructParamListGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -3227,7 +3227,7 @@ impl PatternTuplePtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct PatternTupleGreen(pub GreenId);
 impl TypedSyntaxNode for PatternTuple {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::PatternTuple);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::PatternTuple);
     type StablePtr = PatternTuplePtr;
     type Green = PatternTupleGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -3321,7 +3321,7 @@ impl PatternListElementOrSeparatorGreen {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct PatternListGreen(pub GreenId);
 impl TypedSyntaxNode for PatternList {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::PatternList);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::PatternList);
     type StablePtr = PatternListPtr;
     type Green = PatternListGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -3389,7 +3389,7 @@ impl From<TerminalDotDotGreen> for PatternStructParamGreen {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct PatternStructParamGreen(pub GreenId);
 impl TypedSyntaxNode for PatternStructParam {
-    const KIND: Option<SyntaxKind> = None;
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
     type StablePtr = PatternStructParamPtr;
     type Green = PatternStructParamGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -3468,7 +3468,7 @@ impl PatternStructParamWithExprPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct PatternStructParamWithExprGreen(pub GreenId);
 impl TypedSyntaxNode for PatternStructParamWithExpr {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::PatternStructParamWithExpr);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::PatternStructParamWithExpr);
     type StablePtr = PatternStructParamWithExprPtr;
     type Green = PatternStructParamWithExprGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -3551,7 +3551,7 @@ impl PatternEnumPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct PatternEnumGreen(pub GreenId);
 impl TypedSyntaxNode for PatternEnum {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::PatternEnum);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::PatternEnum);
     type StablePtr = PatternEnumPtr;
     type Green = PatternEnumGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -3627,7 +3627,7 @@ impl TypeClausePtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TypeClauseGreen(pub GreenId);
 impl TypedSyntaxNode for TypeClause {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TypeClause);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TypeClause);
     type StablePtr = TypeClausePtr;
     type Green = TypeClauseGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -3696,7 +3696,7 @@ impl From<TypeClauseGreen> for OptionTypeClauseGreen {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct OptionTypeClauseGreen(pub GreenId);
 impl TypedSyntaxNode for OptionTypeClause {
-    const KIND: Option<SyntaxKind> = None;
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
     type StablePtr = OptionTypeClausePtr;
     type Green = OptionTypeClauseGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -3756,7 +3756,7 @@ impl OptionTypeClauseEmptyPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct OptionTypeClauseEmptyGreen(pub GreenId);
 impl TypedSyntaxNode for OptionTypeClauseEmpty {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::OptionTypeClauseEmpty);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::OptionTypeClauseEmpty);
     type StablePtr = OptionTypeClauseEmptyPtr;
     type Green = OptionTypeClauseEmptyGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -3824,7 +3824,7 @@ impl ReturnTypeClausePtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ReturnTypeClauseGreen(pub GreenId);
 impl TypedSyntaxNode for ReturnTypeClause {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::ReturnTypeClause);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ReturnTypeClause);
     type StablePtr = ReturnTypeClausePtr;
     type Green = ReturnTypeClauseGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -3893,7 +3893,7 @@ impl From<ReturnTypeClauseGreen> for OptionReturnTypeClauseGreen {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct OptionReturnTypeClauseGreen(pub GreenId);
 impl TypedSyntaxNode for OptionReturnTypeClause {
-    const KIND: Option<SyntaxKind> = None;
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
     type StablePtr = OptionReturnTypeClausePtr;
     type Green = OptionReturnTypeClauseGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -3953,7 +3953,7 @@ impl OptionReturnTypeClauseEmptyPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct OptionReturnTypeClauseEmptyGreen(pub GreenId);
 impl TypedSyntaxNode for OptionReturnTypeClauseEmpty {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::OptionReturnTypeClauseEmpty);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::OptionReturnTypeClauseEmpty);
     type StablePtr = OptionReturnTypeClauseEmptyPtr;
     type Green = OptionReturnTypeClauseEmptyGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -4041,7 +4041,7 @@ impl From<StatementMissingGreen> for StatementGreen {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct StatementGreen(pub GreenId);
 impl TypedSyntaxNode for Statement {
-    const KIND: Option<SyntaxKind> = None;
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
     type StablePtr = StatementPtr;
     type Green = StatementGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -4106,7 +4106,7 @@ impl StatementListPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct StatementListGreen(pub GreenId);
 impl TypedSyntaxNode for StatementList {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::StatementList);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::StatementList);
     type StablePtr = StatementListPtr;
     type Green = StatementListGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -4154,7 +4154,7 @@ impl StatementMissingPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct StatementMissingGreen(pub GreenId);
 impl TypedSyntaxNode for StatementMissing {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::StatementMissing);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::StatementMissing);
     type StablePtr = StatementMissingPtr;
     type Green = StatementMissingGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -4247,7 +4247,7 @@ impl StatementLetPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct StatementLetGreen(pub GreenId);
 impl TypedSyntaxNode for StatementLet {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::StatementLet);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::StatementLet);
     type StablePtr = StatementLetPtr;
     type Green = StatementLetGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -4323,7 +4323,7 @@ impl From<TerminalSemicolonGreen> for OptionSemicolonGreen {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct OptionSemicolonGreen(pub GreenId);
 impl TypedSyntaxNode for OptionSemicolon {
-    const KIND: Option<SyntaxKind> = None;
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
     type StablePtr = OptionSemicolonPtr;
     type Green = OptionSemicolonGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -4382,7 +4382,7 @@ impl OptionSemicolonEmptyPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct OptionSemicolonEmptyGreen(pub GreenId);
 impl TypedSyntaxNode for OptionSemicolonEmpty {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::OptionSemicolonEmpty);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::OptionSemicolonEmpty);
     type StablePtr = OptionSemicolonEmptyPtr;
     type Green = OptionSemicolonEmptyGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -4450,7 +4450,7 @@ impl StatementExprPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct StatementExprGreen(pub GreenId);
 impl TypedSyntaxNode for StatementExpr {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::StatementExpr);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::StatementExpr);
     type StablePtr = StatementExprPtr;
     type Green = StatementExprGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -4525,7 +4525,7 @@ impl StatementReturnPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct StatementReturnGreen(pub GreenId);
 impl TypedSyntaxNode for StatementReturn {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::StatementReturn);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::StatementReturn);
     type StablePtr = StatementReturnPtr;
     type Green = StatementReturnGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -4612,7 +4612,7 @@ impl ParamPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ParamGreen(pub GreenId);
 impl TypedSyntaxNode for Param {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::Param);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Param);
     type StablePtr = ParamPtr;
     type Green = ParamGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -4680,7 +4680,7 @@ impl ModifierListPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ModifierListGreen(pub GreenId);
 impl TypedSyntaxNode for ModifierList {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::ModifierList);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ModifierList);
     type StablePtr = ModifierListPtr;
     type Green = ModifierListGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -4737,7 +4737,7 @@ impl From<TerminalMutGreen> for ModifierGreen {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ModifierGreen(pub GreenId);
 impl TypedSyntaxNode for Modifier {
-    const KIND: Option<SyntaxKind> = None;
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
     type StablePtr = ModifierPtr;
     type Green = ModifierGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -4820,7 +4820,7 @@ impl ParamListElementOrSeparatorGreen {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ParamListGreen(pub GreenId);
 impl TypedSyntaxNode for ParamList {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::ParamList);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ParamList);
     type StablePtr = ParamListPtr;
     type Green = ParamListGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -4887,7 +4887,7 @@ impl ImplicitsClausePtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ImplicitsClauseGreen(pub GreenId);
 impl TypedSyntaxNode for ImplicitsClause {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::ImplicitsClause);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ImplicitsClause);
     type StablePtr = ImplicitsClausePtr;
     type Green = ImplicitsClauseGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -4961,7 +4961,7 @@ impl From<ImplicitsClauseGreen> for OptionImplicitsClauseGreen {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct OptionImplicitsClauseGreen(pub GreenId);
 impl TypedSyntaxNode for OptionImplicitsClause {
-    const KIND: Option<SyntaxKind> = None;
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
     type StablePtr = OptionImplicitsClausePtr;
     type Green = OptionImplicitsClauseGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -5021,7 +5021,7 @@ impl OptionImplicitsClauseEmptyPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct OptionImplicitsClauseEmptyGreen(pub GreenId);
 impl TypedSyntaxNode for OptionImplicitsClauseEmpty {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::OptionImplicitsClauseEmpty);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::OptionImplicitsClauseEmpty);
     type StablePtr = OptionImplicitsClauseEmptyPtr;
     type Green = OptionImplicitsClauseEmptyGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -5102,7 +5102,7 @@ impl FunctionSignaturePtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct FunctionSignatureGreen(pub GreenId);
 impl TypedSyntaxNode for FunctionSignature {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::FunctionSignature);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::FunctionSignature);
     type StablePtr = FunctionSignaturePtr;
     type Green = FunctionSignatureGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -5254,7 +5254,7 @@ impl From<ItemEnumGreen> for ItemGreen {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ItemGreen(pub GreenId);
 impl TypedSyntaxNode for Item {
-    const KIND: Option<SyntaxKind> = None;
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
     type StablePtr = ItemPtr;
     type Green = ItemGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -5331,7 +5331,7 @@ impl ItemListPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ItemListGreen(pub GreenId);
 impl TypedSyntaxNode for ItemList {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::ItemList);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ItemList);
     type StablePtr = ItemListPtr;
     type Green = ItemListGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -5402,7 +5402,7 @@ impl ItemModulePtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ItemModuleGreen(pub GreenId);
 impl TypedSyntaxNode for ItemModule {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::ItemModule);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ItemModule);
     type StablePtr = ItemModulePtr;
     type Green = ItemModuleGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -5498,7 +5498,7 @@ impl ItemFreeFunctionPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ItemFreeFunctionGreen(pub GreenId);
 impl TypedSyntaxNode for ItemFreeFunction {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::ItemFreeFunction);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ItemFreeFunction);
     type StablePtr = ItemFreeFunctionPtr;
     type Green = ItemFreeFunctionGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -5600,7 +5600,7 @@ impl ItemExternFunctionPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ItemExternFunctionGreen(pub GreenId);
 impl TypedSyntaxNode for ItemExternFunction {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::ItemExternFunction);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ItemExternFunction);
     type StablePtr = ItemExternFunctionPtr;
     type Green = ItemExternFunctionGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -5699,7 +5699,7 @@ impl ItemExternTypePtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ItemExternTypeGreen(pub GreenId);
 impl TypedSyntaxNode for ItemExternType {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::ItemExternType);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ItemExternType);
     type StablePtr = ItemExternTypePtr;
     type Green = ItemExternTypeGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -5801,7 +5801,7 @@ impl ItemTraitPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ItemTraitGreen(pub GreenId);
 impl TypedSyntaxNode for ItemTrait {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::ItemTrait);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ItemTrait);
     type StablePtr = ItemTraitPtr;
     type Green = ItemTraitGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -5920,7 +5920,7 @@ impl ItemImplPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ItemImplGreen(pub GreenId);
 impl TypedSyntaxNode for ItemImpl {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::ItemImpl);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ItemImpl);
     type StablePtr = ItemImplPtr;
     type Green = ItemImplGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -6025,7 +6025,7 @@ impl ItemStructPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ItemStructGreen(pub GreenId);
 impl TypedSyntaxNode for ItemStruct {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::ItemStruct);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ItemStruct);
     type StablePtr = ItemStructPtr;
     type Green = ItemStructGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -6128,7 +6128,7 @@ impl ItemEnumPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ItemEnumGreen(pub GreenId);
 impl TypedSyntaxNode for ItemEnum {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::ItemEnum);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ItemEnum);
     type StablePtr = ItemEnumPtr;
     type Green = ItemEnumGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -6218,7 +6218,7 @@ impl ItemUsePtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ItemUseGreen(pub GreenId);
 impl TypedSyntaxNode for ItemUse {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::ItemUse);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ItemUse);
     type StablePtr = ItemUsePtr;
     type Green = ItemUseGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -6297,7 +6297,7 @@ impl GenericArgsPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct GenericArgsGreen(pub GreenId);
 impl TypedSyntaxNode for GenericArgs {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::GenericArgs);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::GenericArgs);
     type StablePtr = GenericArgsPtr;
     type Green = GenericArgsGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -6391,7 +6391,7 @@ impl GenericArgListElementOrSeparatorGreen {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct GenericArgListGreen(pub GreenId);
 impl TypedSyntaxNode for GenericArgList {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::GenericArgList);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::GenericArgList);
     type StablePtr = GenericArgListPtr;
     type Green = GenericArgListGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -6448,7 +6448,7 @@ impl From<WrappedGenericParamListGreen> for OptionGenericParamsGreen {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct OptionGenericParamsGreen(pub GreenId);
 impl TypedSyntaxNode for OptionGenericParams {
-    const KIND: Option<SyntaxKind> = None;
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
     type StablePtr = OptionGenericParamsPtr;
     type Green = OptionGenericParamsGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -6508,7 +6508,7 @@ impl OptionGenericParamsEmptyPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct OptionGenericParamsEmptyGreen(pub GreenId);
 impl TypedSyntaxNode for OptionGenericParamsEmpty {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::OptionGenericParamsEmpty);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::OptionGenericParamsEmpty);
     type StablePtr = OptionGenericParamsEmptyPtr;
     type Green = OptionGenericParamsEmptyGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -6580,7 +6580,7 @@ impl WrappedGenericParamListPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct WrappedGenericParamListGreen(pub GreenId);
 impl TypedSyntaxNode for WrappedGenericParamList {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::WrappedGenericParamList);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::WrappedGenericParamList);
     type StablePtr = WrappedGenericParamListPtr;
     type Green = WrappedGenericParamListGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -6674,7 +6674,7 @@ impl GenericParamListElementOrSeparatorGreen {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct GenericParamListGreen(pub GreenId);
 impl TypedSyntaxNode for GenericParamList {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::GenericParamList);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::GenericParamList);
     type StablePtr = GenericParamListPtr;
     type Green = GenericParamListGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -6734,7 +6734,7 @@ impl GenericParamPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct GenericParamGreen(pub GreenId);
 impl TypedSyntaxNode for GenericParam {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::GenericParam);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::GenericParam);
     type StablePtr = GenericParamPtr;
     type Green = GenericParamGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -6805,7 +6805,7 @@ impl SyntaxFilePtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct SyntaxFileGreen(pub GreenId);
 impl TypedSyntaxNode for SyntaxFile {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::SyntaxFile);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::SyntaxFile);
     type StablePtr = SyntaxFilePtr;
     type Green = SyntaxFileGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -6869,7 +6869,7 @@ impl TokenSingleLineCommentGreen {
     }
 }
 impl TypedSyntaxNode for TokenSingleLineComment {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenSingleLineComment);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenSingleLineComment);
     type StablePtr = TokenSingleLineCommentPtr;
     type Green = TokenSingleLineCommentGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -6927,7 +6927,7 @@ impl TokenWhitespaceGreen {
     }
 }
 impl TypedSyntaxNode for TokenWhitespace {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenWhitespace);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenWhitespace);
     type StablePtr = TokenWhitespacePtr;
     type Green = TokenWhitespaceGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -6984,7 +6984,7 @@ impl TokenNewlineGreen {
     }
 }
 impl TypedSyntaxNode for TokenNewline {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenNewline);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenNewline);
     type StablePtr = TokenNewlinePtr;
     type Green = TokenNewlineGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -7041,7 +7041,7 @@ impl TokenMissingGreen {
     }
 }
 impl TypedSyntaxNode for TokenMissing {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenMissing);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenMissing);
     type StablePtr = TokenMissingPtr;
     type Green = TokenMissingGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -7098,7 +7098,7 @@ impl TokenSkippedGreen {
     }
 }
 impl TypedSyntaxNode for TokenSkipped {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenSkipped);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenSkipped);
     type StablePtr = TokenSkippedPtr;
     type Green = TokenSkippedGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -7155,7 +7155,7 @@ impl TokenIdentifierGreen {
     }
 }
 impl TypedSyntaxNode for TokenIdentifier {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenIdentifier);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenIdentifier);
     type StablePtr = TokenIdentifierPtr;
     type Green = TokenIdentifierGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -7188,6 +7188,7 @@ pub struct TerminalIdentifier {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalIdentifier {
+    const KIND: SyntaxKind = SyntaxKind::TerminalIdentifier;
     type TokenType = TokenIdentifier;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -7227,7 +7228,7 @@ impl TerminalIdentifierPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalIdentifierGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalIdentifier {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalIdentifier);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalIdentifier);
     type StablePtr = TerminalIdentifierPtr;
     type Green = TerminalIdentifierGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -7295,7 +7296,7 @@ impl TokenLiteralNumberGreen {
     }
 }
 impl TypedSyntaxNode for TokenLiteralNumber {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenLiteralNumber);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenLiteralNumber);
     type StablePtr = TokenLiteralNumberPtr;
     type Green = TokenLiteralNumberGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -7329,6 +7330,7 @@ pub struct TerminalLiteralNumber {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalLiteralNumber {
+    const KIND: SyntaxKind = SyntaxKind::TerminalLiteralNumber;
     type TokenType = TokenLiteralNumber;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -7368,7 +7370,7 @@ impl TerminalLiteralNumberPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalLiteralNumberGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalLiteralNumber {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalLiteralNumber);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalLiteralNumber);
     type StablePtr = TerminalLiteralNumberPtr;
     type Green = TerminalLiteralNumberGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -7436,7 +7438,7 @@ impl TokenFalseGreen {
     }
 }
 impl TypedSyntaxNode for TokenFalse {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenFalse);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenFalse);
     type StablePtr = TokenFalsePtr;
     type Green = TokenFalseGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -7469,6 +7471,7 @@ pub struct TerminalFalse {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalFalse {
+    const KIND: SyntaxKind = SyntaxKind::TerminalFalse;
     type TokenType = TokenFalse;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -7508,7 +7511,7 @@ impl TerminalFalsePtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalFalseGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalFalse {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalFalse);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalFalse);
     type StablePtr = TerminalFalsePtr;
     type Green = TerminalFalseGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -7576,7 +7579,7 @@ impl TokenTrueGreen {
     }
 }
 impl TypedSyntaxNode for TokenTrue {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenTrue);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenTrue);
     type StablePtr = TokenTruePtr;
     type Green = TokenTrueGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -7609,6 +7612,7 @@ pub struct TerminalTrue {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalTrue {
+    const KIND: SyntaxKind = SyntaxKind::TerminalTrue;
     type TokenType = TokenTrue;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -7648,7 +7652,7 @@ impl TerminalTruePtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalTrueGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalTrue {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalTrue);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalTrue);
     type StablePtr = TerminalTruePtr;
     type Green = TerminalTrueGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -7716,7 +7720,7 @@ impl TokenExternGreen {
     }
 }
 impl TypedSyntaxNode for TokenExtern {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenExtern);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenExtern);
     type StablePtr = TokenExternPtr;
     type Green = TokenExternGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -7749,6 +7753,7 @@ pub struct TerminalExtern {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalExtern {
+    const KIND: SyntaxKind = SyntaxKind::TerminalExtern;
     type TokenType = TokenExtern;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -7788,7 +7793,7 @@ impl TerminalExternPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalExternGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalExtern {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalExtern);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalExtern);
     type StablePtr = TerminalExternPtr;
     type Green = TerminalExternGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -7856,7 +7861,7 @@ impl TokenTypeGreen {
     }
 }
 impl TypedSyntaxNode for TokenType {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenType);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenType);
     type StablePtr = TokenTypePtr;
     type Green = TokenTypeGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -7889,6 +7894,7 @@ pub struct TerminalType {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalType {
+    const KIND: SyntaxKind = SyntaxKind::TerminalType;
     type TokenType = TokenType;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -7928,7 +7934,7 @@ impl TerminalTypePtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalTypeGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalType {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalType);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalType);
     type StablePtr = TerminalTypePtr;
     type Green = TerminalTypeGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -7996,7 +8002,7 @@ impl TokenFunctionGreen {
     }
 }
 impl TypedSyntaxNode for TokenFunction {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenFunction);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenFunction);
     type StablePtr = TokenFunctionPtr;
     type Green = TokenFunctionGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -8029,6 +8035,7 @@ pub struct TerminalFunction {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalFunction {
+    const KIND: SyntaxKind = SyntaxKind::TerminalFunction;
     type TokenType = TokenFunction;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -8068,7 +8075,7 @@ impl TerminalFunctionPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalFunctionGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalFunction {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalFunction);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalFunction);
     type StablePtr = TerminalFunctionPtr;
     type Green = TerminalFunctionGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -8136,7 +8143,7 @@ impl TokenModuleGreen {
     }
 }
 impl TypedSyntaxNode for TokenModule {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenModule);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenModule);
     type StablePtr = TokenModulePtr;
     type Green = TokenModuleGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -8169,6 +8176,7 @@ pub struct TerminalModule {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalModule {
+    const KIND: SyntaxKind = SyntaxKind::TerminalModule;
     type TokenType = TokenModule;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -8208,7 +8216,7 @@ impl TerminalModulePtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalModuleGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalModule {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalModule);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalModule);
     type StablePtr = TerminalModulePtr;
     type Green = TerminalModuleGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -8276,7 +8284,7 @@ impl TokenEnumGreen {
     }
 }
 impl TypedSyntaxNode for TokenEnum {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenEnum);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenEnum);
     type StablePtr = TokenEnumPtr;
     type Green = TokenEnumGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -8309,6 +8317,7 @@ pub struct TerminalEnum {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalEnum {
+    const KIND: SyntaxKind = SyntaxKind::TerminalEnum;
     type TokenType = TokenEnum;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -8348,7 +8357,7 @@ impl TerminalEnumPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalEnumGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalEnum {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalEnum);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalEnum);
     type StablePtr = TerminalEnumPtr;
     type Green = TerminalEnumGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -8416,7 +8425,7 @@ impl TokenStructGreen {
     }
 }
 impl TypedSyntaxNode for TokenStruct {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenStruct);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenStruct);
     type StablePtr = TokenStructPtr;
     type Green = TokenStructGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -8449,6 +8458,7 @@ pub struct TerminalStruct {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalStruct {
+    const KIND: SyntaxKind = SyntaxKind::TerminalStruct;
     type TokenType = TokenStruct;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -8488,7 +8498,7 @@ impl TerminalStructPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalStructGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalStruct {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalStruct);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalStruct);
     type StablePtr = TerminalStructPtr;
     type Green = TerminalStructGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -8556,7 +8566,7 @@ impl TokenTraitGreen {
     }
 }
 impl TypedSyntaxNode for TokenTrait {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenTrait);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenTrait);
     type StablePtr = TokenTraitPtr;
     type Green = TokenTraitGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -8589,6 +8599,7 @@ pub struct TerminalTrait {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalTrait {
+    const KIND: SyntaxKind = SyntaxKind::TerminalTrait;
     type TokenType = TokenTrait;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -8628,7 +8639,7 @@ impl TerminalTraitPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalTraitGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalTrait {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalTrait);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalTrait);
     type StablePtr = TerminalTraitPtr;
     type Green = TerminalTraitGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -8696,7 +8707,7 @@ impl TokenImplGreen {
     }
 }
 impl TypedSyntaxNode for TokenImpl {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenImpl);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenImpl);
     type StablePtr = TokenImplPtr;
     type Green = TokenImplGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -8729,6 +8740,7 @@ pub struct TerminalImpl {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalImpl {
+    const KIND: SyntaxKind = SyntaxKind::TerminalImpl;
     type TokenType = TokenImpl;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -8768,7 +8780,7 @@ impl TerminalImplPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalImplGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalImpl {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalImpl);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalImpl);
     type StablePtr = TerminalImplPtr;
     type Green = TerminalImplGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -8836,7 +8848,7 @@ impl TokenForGreen {
     }
 }
 impl TypedSyntaxNode for TokenFor {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenFor);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenFor);
     type StablePtr = TokenForPtr;
     type Green = TokenForGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -8869,6 +8881,7 @@ pub struct TerminalFor {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalFor {
+    const KIND: SyntaxKind = SyntaxKind::TerminalFor;
     type TokenType = TokenFor;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -8908,7 +8921,7 @@ impl TerminalForPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalForGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalFor {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalFor);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalFor);
     type StablePtr = TerminalForPtr;
     type Green = TerminalForGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -8976,7 +8989,7 @@ impl TokenLetGreen {
     }
 }
 impl TypedSyntaxNode for TokenLet {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenLet);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenLet);
     type StablePtr = TokenLetPtr;
     type Green = TokenLetGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -9009,6 +9022,7 @@ pub struct TerminalLet {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalLet {
+    const KIND: SyntaxKind = SyntaxKind::TerminalLet;
     type TokenType = TokenLet;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -9048,7 +9062,7 @@ impl TerminalLetPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalLetGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalLet {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalLet);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalLet);
     type StablePtr = TerminalLetPtr;
     type Green = TerminalLetGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -9116,7 +9130,7 @@ impl TokenReturnGreen {
     }
 }
 impl TypedSyntaxNode for TokenReturn {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenReturn);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenReturn);
     type StablePtr = TokenReturnPtr;
     type Green = TokenReturnGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -9149,6 +9163,7 @@ pub struct TerminalReturn {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalReturn {
+    const KIND: SyntaxKind = SyntaxKind::TerminalReturn;
     type TokenType = TokenReturn;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -9188,7 +9203,7 @@ impl TerminalReturnPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalReturnGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalReturn {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalReturn);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalReturn);
     type StablePtr = TerminalReturnPtr;
     type Green = TerminalReturnGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -9256,7 +9271,7 @@ impl TokenMatchGreen {
     }
 }
 impl TypedSyntaxNode for TokenMatch {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenMatch);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenMatch);
     type StablePtr = TokenMatchPtr;
     type Green = TokenMatchGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -9289,6 +9304,7 @@ pub struct TerminalMatch {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalMatch {
+    const KIND: SyntaxKind = SyntaxKind::TerminalMatch;
     type TokenType = TokenMatch;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -9328,7 +9344,7 @@ impl TerminalMatchPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalMatchGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalMatch {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalMatch);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalMatch);
     type StablePtr = TerminalMatchPtr;
     type Green = TerminalMatchGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -9396,7 +9412,7 @@ impl TokenIfGreen {
     }
 }
 impl TypedSyntaxNode for TokenIf {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenIf);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenIf);
     type StablePtr = TokenIfPtr;
     type Green = TokenIfGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -9429,6 +9445,7 @@ pub struct TerminalIf {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalIf {
+    const KIND: SyntaxKind = SyntaxKind::TerminalIf;
     type TokenType = TokenIf;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -9468,7 +9485,7 @@ impl TerminalIfPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalIfGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalIf {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalIf);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalIf);
     type StablePtr = TerminalIfPtr;
     type Green = TerminalIfGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -9536,7 +9553,7 @@ impl TokenElseGreen {
     }
 }
 impl TypedSyntaxNode for TokenElse {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenElse);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenElse);
     type StablePtr = TokenElsePtr;
     type Green = TokenElseGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -9569,6 +9586,7 @@ pub struct TerminalElse {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalElse {
+    const KIND: SyntaxKind = SyntaxKind::TerminalElse;
     type TokenType = TokenElse;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -9608,7 +9626,7 @@ impl TerminalElsePtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalElseGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalElse {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalElse);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalElse);
     type StablePtr = TerminalElsePtr;
     type Green = TerminalElseGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -9676,7 +9694,7 @@ impl TokenUseGreen {
     }
 }
 impl TypedSyntaxNode for TokenUse {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenUse);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenUse);
     type StablePtr = TokenUsePtr;
     type Green = TokenUseGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -9709,6 +9727,7 @@ pub struct TerminalUse {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalUse {
+    const KIND: SyntaxKind = SyntaxKind::TerminalUse;
     type TokenType = TokenUse;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -9748,7 +9767,7 @@ impl TerminalUsePtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalUseGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalUse {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalUse);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalUse);
     type StablePtr = TerminalUsePtr;
     type Green = TerminalUseGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -9816,7 +9835,7 @@ impl TokenImplicitsGreen {
     }
 }
 impl TypedSyntaxNode for TokenImplicits {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenImplicits);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenImplicits);
     type StablePtr = TokenImplicitsPtr;
     type Green = TokenImplicitsGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -9849,6 +9868,7 @@ pub struct TerminalImplicits {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalImplicits {
+    const KIND: SyntaxKind = SyntaxKind::TerminalImplicits;
     type TokenType = TokenImplicits;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -9888,7 +9908,7 @@ impl TerminalImplicitsPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalImplicitsGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalImplicits {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalImplicits);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalImplicits);
     type StablePtr = TerminalImplicitsPtr;
     type Green = TerminalImplicitsGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -9956,7 +9976,7 @@ impl TokenRefGreen {
     }
 }
 impl TypedSyntaxNode for TokenRef {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenRef);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenRef);
     type StablePtr = TokenRefPtr;
     type Green = TokenRefGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -9989,6 +10009,7 @@ pub struct TerminalRef {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalRef {
+    const KIND: SyntaxKind = SyntaxKind::TerminalRef;
     type TokenType = TokenRef;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -10028,7 +10049,7 @@ impl TerminalRefPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalRefGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalRef {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalRef);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalRef);
     type StablePtr = TerminalRefPtr;
     type Green = TerminalRefGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -10096,7 +10117,7 @@ impl TokenMutGreen {
     }
 }
 impl TypedSyntaxNode for TokenMut {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenMut);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenMut);
     type StablePtr = TokenMutPtr;
     type Green = TokenMutGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -10129,6 +10150,7 @@ pub struct TerminalMut {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalMut {
+    const KIND: SyntaxKind = SyntaxKind::TerminalMut;
     type TokenType = TokenMut;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -10168,7 +10190,7 @@ impl TerminalMutPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalMutGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalMut {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalMut);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalMut);
     type StablePtr = TerminalMutPtr;
     type Green = TerminalMutGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -10236,7 +10258,7 @@ impl TokenAndGreen {
     }
 }
 impl TypedSyntaxNode for TokenAnd {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenAnd);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenAnd);
     type StablePtr = TokenAndPtr;
     type Green = TokenAndGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -10269,6 +10291,7 @@ pub struct TerminalAnd {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalAnd {
+    const KIND: SyntaxKind = SyntaxKind::TerminalAnd;
     type TokenType = TokenAnd;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -10308,7 +10331,7 @@ impl TerminalAndPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalAndGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalAnd {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalAnd);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalAnd);
     type StablePtr = TerminalAndPtr;
     type Green = TerminalAndGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -10376,7 +10399,7 @@ impl TokenAndAndGreen {
     }
 }
 impl TypedSyntaxNode for TokenAndAnd {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenAndAnd);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenAndAnd);
     type StablePtr = TokenAndAndPtr;
     type Green = TokenAndAndGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -10409,6 +10432,7 @@ pub struct TerminalAndAnd {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalAndAnd {
+    const KIND: SyntaxKind = SyntaxKind::TerminalAndAnd;
     type TokenType = TokenAndAnd;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -10448,7 +10472,7 @@ impl TerminalAndAndPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalAndAndGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalAndAnd {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalAndAnd);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalAndAnd);
     type StablePtr = TerminalAndAndPtr;
     type Green = TerminalAndAndGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -10516,7 +10540,7 @@ impl TokenOrOrGreen {
     }
 }
 impl TypedSyntaxNode for TokenOrOr {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenOrOr);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenOrOr);
     type StablePtr = TokenOrOrPtr;
     type Green = TokenOrOrGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -10549,6 +10573,7 @@ pub struct TerminalOrOr {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalOrOr {
+    const KIND: SyntaxKind = SyntaxKind::TerminalOrOr;
     type TokenType = TokenOrOr;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -10588,7 +10613,7 @@ impl TerminalOrOrPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalOrOrGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalOrOr {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalOrOr);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalOrOr);
     type StablePtr = TerminalOrOrPtr;
     type Green = TerminalOrOrGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -10656,7 +10681,7 @@ impl TokenEqEqGreen {
     }
 }
 impl TypedSyntaxNode for TokenEqEq {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenEqEq);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenEqEq);
     type StablePtr = TokenEqEqPtr;
     type Green = TokenEqEqGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -10689,6 +10714,7 @@ pub struct TerminalEqEq {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalEqEq {
+    const KIND: SyntaxKind = SyntaxKind::TerminalEqEq;
     type TokenType = TokenEqEq;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -10728,7 +10754,7 @@ impl TerminalEqEqPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalEqEqGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalEqEq {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalEqEq);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalEqEq);
     type StablePtr = TerminalEqEqPtr;
     type Green = TerminalEqEqGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -10796,7 +10822,7 @@ impl TokenNeqGreen {
     }
 }
 impl TypedSyntaxNode for TokenNeq {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenNeq);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenNeq);
     type StablePtr = TokenNeqPtr;
     type Green = TokenNeqGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -10829,6 +10855,7 @@ pub struct TerminalNeq {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalNeq {
+    const KIND: SyntaxKind = SyntaxKind::TerminalNeq;
     type TokenType = TokenNeq;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -10868,7 +10895,7 @@ impl TerminalNeqPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalNeqGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalNeq {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalNeq);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalNeq);
     type StablePtr = TerminalNeqPtr;
     type Green = TerminalNeqGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -10936,7 +10963,7 @@ impl TokenGEGreen {
     }
 }
 impl TypedSyntaxNode for TokenGE {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenGE);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenGE);
     type StablePtr = TokenGEPtr;
     type Green = TokenGEGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -10969,6 +10996,7 @@ pub struct TerminalGE {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalGE {
+    const KIND: SyntaxKind = SyntaxKind::TerminalGE;
     type TokenType = TokenGE;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -11008,7 +11036,7 @@ impl TerminalGEPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalGEGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalGE {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalGE);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalGE);
     type StablePtr = TerminalGEPtr;
     type Green = TerminalGEGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -11076,7 +11104,7 @@ impl TokenGTGreen {
     }
 }
 impl TypedSyntaxNode for TokenGT {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenGT);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenGT);
     type StablePtr = TokenGTPtr;
     type Green = TokenGTGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -11109,6 +11137,7 @@ pub struct TerminalGT {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalGT {
+    const KIND: SyntaxKind = SyntaxKind::TerminalGT;
     type TokenType = TokenGT;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -11148,7 +11177,7 @@ impl TerminalGTPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalGTGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalGT {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalGT);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalGT);
     type StablePtr = TerminalGTPtr;
     type Green = TerminalGTGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -11216,7 +11245,7 @@ impl TokenLEGreen {
     }
 }
 impl TypedSyntaxNode for TokenLE {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenLE);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenLE);
     type StablePtr = TokenLEPtr;
     type Green = TokenLEGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -11249,6 +11278,7 @@ pub struct TerminalLE {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalLE {
+    const KIND: SyntaxKind = SyntaxKind::TerminalLE;
     type TokenType = TokenLE;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -11288,7 +11318,7 @@ impl TerminalLEPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalLEGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalLE {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalLE);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalLE);
     type StablePtr = TerminalLEPtr;
     type Green = TerminalLEGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -11356,7 +11386,7 @@ impl TokenLTGreen {
     }
 }
 impl TypedSyntaxNode for TokenLT {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenLT);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenLT);
     type StablePtr = TokenLTPtr;
     type Green = TokenLTGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -11389,6 +11419,7 @@ pub struct TerminalLT {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalLT {
+    const KIND: SyntaxKind = SyntaxKind::TerminalLT;
     type TokenType = TokenLT;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -11428,7 +11459,7 @@ impl TerminalLTPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalLTGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalLT {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalLT);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalLT);
     type StablePtr = TerminalLTPtr;
     type Green = TerminalLTGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -11496,7 +11527,7 @@ impl TokenNotGreen {
     }
 }
 impl TypedSyntaxNode for TokenNot {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenNot);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenNot);
     type StablePtr = TokenNotPtr;
     type Green = TokenNotGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -11529,6 +11560,7 @@ pub struct TerminalNot {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalNot {
+    const KIND: SyntaxKind = SyntaxKind::TerminalNot;
     type TokenType = TokenNot;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -11568,7 +11600,7 @@ impl TerminalNotPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalNotGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalNot {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalNot);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalNot);
     type StablePtr = TerminalNotPtr;
     type Green = TerminalNotGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -11636,7 +11668,7 @@ impl TokenPlusGreen {
     }
 }
 impl TypedSyntaxNode for TokenPlus {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenPlus);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenPlus);
     type StablePtr = TokenPlusPtr;
     type Green = TokenPlusGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -11669,6 +11701,7 @@ pub struct TerminalPlus {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalPlus {
+    const KIND: SyntaxKind = SyntaxKind::TerminalPlus;
     type TokenType = TokenPlus;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -11708,7 +11741,7 @@ impl TerminalPlusPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalPlusGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalPlus {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalPlus);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalPlus);
     type StablePtr = TerminalPlusPtr;
     type Green = TerminalPlusGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -11776,7 +11809,7 @@ impl TokenMinusGreen {
     }
 }
 impl TypedSyntaxNode for TokenMinus {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenMinus);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenMinus);
     type StablePtr = TokenMinusPtr;
     type Green = TokenMinusGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -11809,6 +11842,7 @@ pub struct TerminalMinus {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalMinus {
+    const KIND: SyntaxKind = SyntaxKind::TerminalMinus;
     type TokenType = TokenMinus;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -11848,7 +11882,7 @@ impl TerminalMinusPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalMinusGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalMinus {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalMinus);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalMinus);
     type StablePtr = TerminalMinusPtr;
     type Green = TerminalMinusGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -11916,7 +11950,7 @@ impl TokenMulGreen {
     }
 }
 impl TypedSyntaxNode for TokenMul {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenMul);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenMul);
     type StablePtr = TokenMulPtr;
     type Green = TokenMulGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -11949,6 +11983,7 @@ pub struct TerminalMul {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalMul {
+    const KIND: SyntaxKind = SyntaxKind::TerminalMul;
     type TokenType = TokenMul;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -11988,7 +12023,7 @@ impl TerminalMulPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalMulGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalMul {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalMul);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalMul);
     type StablePtr = TerminalMulPtr;
     type Green = TerminalMulGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -12056,7 +12091,7 @@ impl TokenDivGreen {
     }
 }
 impl TypedSyntaxNode for TokenDiv {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenDiv);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenDiv);
     type StablePtr = TokenDivPtr;
     type Green = TokenDivGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -12089,6 +12124,7 @@ pub struct TerminalDiv {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalDiv {
+    const KIND: SyntaxKind = SyntaxKind::TerminalDiv;
     type TokenType = TokenDiv;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -12128,7 +12164,7 @@ impl TerminalDivPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalDivGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalDiv {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalDiv);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalDiv);
     type StablePtr = TerminalDivPtr;
     type Green = TerminalDivGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -12196,7 +12232,7 @@ impl TokenColonGreen {
     }
 }
 impl TypedSyntaxNode for TokenColon {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenColon);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenColon);
     type StablePtr = TokenColonPtr;
     type Green = TokenColonGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -12229,6 +12265,7 @@ pub struct TerminalColon {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalColon {
+    const KIND: SyntaxKind = SyntaxKind::TerminalColon;
     type TokenType = TokenColon;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -12268,7 +12305,7 @@ impl TerminalColonPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalColonGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalColon {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalColon);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalColon);
     type StablePtr = TerminalColonPtr;
     type Green = TerminalColonGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -12336,7 +12373,7 @@ impl TokenColonColonGreen {
     }
 }
 impl TypedSyntaxNode for TokenColonColon {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenColonColon);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenColonColon);
     type StablePtr = TokenColonColonPtr;
     type Green = TokenColonColonGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -12369,6 +12406,7 @@ pub struct TerminalColonColon {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalColonColon {
+    const KIND: SyntaxKind = SyntaxKind::TerminalColonColon;
     type TokenType = TokenColonColon;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -12408,7 +12446,7 @@ impl TerminalColonColonPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalColonColonGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalColonColon {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalColonColon);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalColonColon);
     type StablePtr = TerminalColonColonPtr;
     type Green = TerminalColonColonGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -12476,7 +12514,7 @@ impl TokenCommaGreen {
     }
 }
 impl TypedSyntaxNode for TokenComma {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenComma);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenComma);
     type StablePtr = TokenCommaPtr;
     type Green = TokenCommaGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -12509,6 +12547,7 @@ pub struct TerminalComma {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalComma {
+    const KIND: SyntaxKind = SyntaxKind::TerminalComma;
     type TokenType = TokenComma;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -12548,7 +12587,7 @@ impl TerminalCommaPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalCommaGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalComma {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalComma);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalComma);
     type StablePtr = TerminalCommaPtr;
     type Green = TerminalCommaGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -12616,7 +12655,7 @@ impl TokenDotGreen {
     }
 }
 impl TypedSyntaxNode for TokenDot {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenDot);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenDot);
     type StablePtr = TokenDotPtr;
     type Green = TokenDotGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -12649,6 +12688,7 @@ pub struct TerminalDot {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalDot {
+    const KIND: SyntaxKind = SyntaxKind::TerminalDot;
     type TokenType = TokenDot;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -12688,7 +12728,7 @@ impl TerminalDotPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalDotGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalDot {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalDot);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalDot);
     type StablePtr = TerminalDotPtr;
     type Green = TerminalDotGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -12756,7 +12796,7 @@ impl TokenDotDotGreen {
     }
 }
 impl TypedSyntaxNode for TokenDotDot {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenDotDot);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenDotDot);
     type StablePtr = TokenDotDotPtr;
     type Green = TokenDotDotGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -12789,6 +12829,7 @@ pub struct TerminalDotDot {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalDotDot {
+    const KIND: SyntaxKind = SyntaxKind::TerminalDotDot;
     type TokenType = TokenDotDot;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -12828,7 +12869,7 @@ impl TerminalDotDotPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalDotDotGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalDotDot {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalDotDot);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalDotDot);
     type StablePtr = TerminalDotDotPtr;
     type Green = TerminalDotDotGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -12896,7 +12937,7 @@ impl TokenEqGreen {
     }
 }
 impl TypedSyntaxNode for TokenEq {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenEq);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenEq);
     type StablePtr = TokenEqPtr;
     type Green = TokenEqGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -12929,6 +12970,7 @@ pub struct TerminalEq {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalEq {
+    const KIND: SyntaxKind = SyntaxKind::TerminalEq;
     type TokenType = TokenEq;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -12968,7 +13010,7 @@ impl TerminalEqPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalEqGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalEq {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalEq);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalEq);
     type StablePtr = TerminalEqPtr;
     type Green = TerminalEqGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -13036,7 +13078,7 @@ impl TokenSemicolonGreen {
     }
 }
 impl TypedSyntaxNode for TokenSemicolon {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenSemicolon);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenSemicolon);
     type StablePtr = TokenSemicolonPtr;
     type Green = TokenSemicolonGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -13069,6 +13111,7 @@ pub struct TerminalSemicolon {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalSemicolon {
+    const KIND: SyntaxKind = SyntaxKind::TerminalSemicolon;
     type TokenType = TokenSemicolon;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -13108,7 +13151,7 @@ impl TerminalSemicolonPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalSemicolonGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalSemicolon {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalSemicolon);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalSemicolon);
     type StablePtr = TerminalSemicolonPtr;
     type Green = TerminalSemicolonGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -13176,7 +13219,7 @@ impl TokenUnderscoreGreen {
     }
 }
 impl TypedSyntaxNode for TokenUnderscore {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenUnderscore);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenUnderscore);
     type StablePtr = TokenUnderscorePtr;
     type Green = TokenUnderscoreGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -13209,6 +13252,7 @@ pub struct TerminalUnderscore {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalUnderscore {
+    const KIND: SyntaxKind = SyntaxKind::TerminalUnderscore;
     type TokenType = TokenUnderscore;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -13248,7 +13292,7 @@ impl TerminalUnderscorePtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalUnderscoreGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalUnderscore {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalUnderscore);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalUnderscore);
     type StablePtr = TerminalUnderscorePtr;
     type Green = TerminalUnderscoreGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -13316,7 +13360,7 @@ impl TokenLBraceGreen {
     }
 }
 impl TypedSyntaxNode for TokenLBrace {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenLBrace);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenLBrace);
     type StablePtr = TokenLBracePtr;
     type Green = TokenLBraceGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -13349,6 +13393,7 @@ pub struct TerminalLBrace {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalLBrace {
+    const KIND: SyntaxKind = SyntaxKind::TerminalLBrace;
     type TokenType = TokenLBrace;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -13388,7 +13433,7 @@ impl TerminalLBracePtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalLBraceGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalLBrace {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalLBrace);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalLBrace);
     type StablePtr = TerminalLBracePtr;
     type Green = TerminalLBraceGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -13456,7 +13501,7 @@ impl TokenRBraceGreen {
     }
 }
 impl TypedSyntaxNode for TokenRBrace {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenRBrace);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenRBrace);
     type StablePtr = TokenRBracePtr;
     type Green = TokenRBraceGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -13489,6 +13534,7 @@ pub struct TerminalRBrace {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalRBrace {
+    const KIND: SyntaxKind = SyntaxKind::TerminalRBrace;
     type TokenType = TokenRBrace;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -13528,7 +13574,7 @@ impl TerminalRBracePtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalRBraceGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalRBrace {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalRBrace);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalRBrace);
     type StablePtr = TerminalRBracePtr;
     type Green = TerminalRBraceGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -13596,7 +13642,7 @@ impl TokenLBrackGreen {
     }
 }
 impl TypedSyntaxNode for TokenLBrack {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenLBrack);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenLBrack);
     type StablePtr = TokenLBrackPtr;
     type Green = TokenLBrackGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -13629,6 +13675,7 @@ pub struct TerminalLBrack {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalLBrack {
+    const KIND: SyntaxKind = SyntaxKind::TerminalLBrack;
     type TokenType = TokenLBrack;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -13668,7 +13715,7 @@ impl TerminalLBrackPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalLBrackGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalLBrack {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalLBrack);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalLBrack);
     type StablePtr = TerminalLBrackPtr;
     type Green = TerminalLBrackGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -13736,7 +13783,7 @@ impl TokenRBrackGreen {
     }
 }
 impl TypedSyntaxNode for TokenRBrack {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenRBrack);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenRBrack);
     type StablePtr = TokenRBrackPtr;
     type Green = TokenRBrackGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -13769,6 +13816,7 @@ pub struct TerminalRBrack {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalRBrack {
+    const KIND: SyntaxKind = SyntaxKind::TerminalRBrack;
     type TokenType = TokenRBrack;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -13808,7 +13856,7 @@ impl TerminalRBrackPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalRBrackGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalRBrack {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalRBrack);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalRBrack);
     type StablePtr = TerminalRBrackPtr;
     type Green = TerminalRBrackGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -13876,7 +13924,7 @@ impl TokenLParenGreen {
     }
 }
 impl TypedSyntaxNode for TokenLParen {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenLParen);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenLParen);
     type StablePtr = TokenLParenPtr;
     type Green = TokenLParenGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -13909,6 +13957,7 @@ pub struct TerminalLParen {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalLParen {
+    const KIND: SyntaxKind = SyntaxKind::TerminalLParen;
     type TokenType = TokenLParen;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -13948,7 +13997,7 @@ impl TerminalLParenPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalLParenGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalLParen {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalLParen);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalLParen);
     type StablePtr = TerminalLParenPtr;
     type Green = TerminalLParenGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -14016,7 +14065,7 @@ impl TokenRParenGreen {
     }
 }
 impl TypedSyntaxNode for TokenRParen {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenRParen);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenRParen);
     type StablePtr = TokenRParenPtr;
     type Green = TokenRParenGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -14049,6 +14098,7 @@ pub struct TerminalRParen {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalRParen {
+    const KIND: SyntaxKind = SyntaxKind::TerminalRParen;
     type TokenType = TokenRParen;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -14088,7 +14138,7 @@ impl TerminalRParenPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalRParenGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalRParen {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalRParen);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalRParen);
     type StablePtr = TerminalRParenPtr;
     type Green = TerminalRParenGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -14156,7 +14206,7 @@ impl TokenArrowGreen {
     }
 }
 impl TypedSyntaxNode for TokenArrow {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenArrow);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenArrow);
     type StablePtr = TokenArrowPtr;
     type Green = TokenArrowGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -14189,6 +14239,7 @@ pub struct TerminalArrow {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalArrow {
+    const KIND: SyntaxKind = SyntaxKind::TerminalArrow;
     type TokenType = TokenArrow;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -14228,7 +14279,7 @@ impl TerminalArrowPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalArrowGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalArrow {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalArrow);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalArrow);
     type StablePtr = TerminalArrowPtr;
     type Green = TerminalArrowGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -14296,7 +14347,7 @@ impl TokenMatchArrowGreen {
     }
 }
 impl TypedSyntaxNode for TokenMatchArrow {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenMatchArrow);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenMatchArrow);
     type StablePtr = TokenMatchArrowPtr;
     type Green = TokenMatchArrowGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -14329,6 +14380,7 @@ pub struct TerminalMatchArrow {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalMatchArrow {
+    const KIND: SyntaxKind = SyntaxKind::TerminalMatchArrow;
     type TokenType = TokenMatchArrow;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -14368,7 +14420,7 @@ impl TerminalMatchArrowPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalMatchArrowGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalMatchArrow {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalMatchArrow);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalMatchArrow);
     type StablePtr = TerminalMatchArrowPtr;
     type Green = TerminalMatchArrowGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -14436,7 +14488,7 @@ impl TokenEndOfFileGreen {
     }
 }
 impl TypedSyntaxNode for TokenEndOfFile {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenEndOfFile);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenEndOfFile);
     type StablePtr = TokenEndOfFilePtr;
     type Green = TokenEndOfFileGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -14469,6 +14521,7 @@ pub struct TerminalEndOfFile {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalEndOfFile {
+    const KIND: SyntaxKind = SyntaxKind::TerminalEndOfFile;
     type TokenType = TokenEndOfFile;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -14508,7 +14561,7 @@ impl TerminalEndOfFilePtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalEndOfFileGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalEndOfFile {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalEndOfFile);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalEndOfFile);
     type StablePtr = TerminalEndOfFilePtr;
     type Green = TerminalEndOfFileGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -14576,7 +14629,7 @@ impl TokenBadCharactersGreen {
     }
 }
 impl TypedSyntaxNode for TokenBadCharacters {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenBadCharacters);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenBadCharacters);
     type StablePtr = TokenBadCharactersPtr;
     type Green = TokenBadCharactersGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
@@ -14610,6 +14663,7 @@ pub struct TerminalBadCharacters {
     children: Vec<SyntaxNode>,
 }
 impl Terminal for TerminalBadCharacters {
+    const KIND: SyntaxKind = SyntaxKind::TerminalBadCharacters;
     type TokenType = TokenBadCharacters;
     fn new_green(
         db: &dyn SyntaxGroup,
@@ -14649,7 +14703,7 @@ impl TerminalBadCharactersPtr {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TerminalBadCharactersGreen(pub GreenId);
 impl TypedSyntaxNode for TerminalBadCharacters {
-    const KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalBadCharacters);
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalBadCharacters);
     type StablePtr = TerminalBadCharactersPtr;
     type Green = TerminalBadCharactersGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
