@@ -12,7 +12,7 @@
     │   └── [36mchild #1[0m (kind: ItemFreeFunction)
     │       ├── [34mfunction_kw[0m (kind: TokenFunction): '[1;32mfunc[0m'
     │       ├── [34mname[0m (kind: TokenIdentifier): '[1;32mfoo[0m'
-    │       ├── [36mgeneric_params[0m (kind: OptionGenericParamsEmpty)[95m [][0m
+    │       ├── [36mgeneric_params[0m (kind: OptionWrappedGenericParamListEmpty)[95m [][0m
     │       ├── [36msignature[0m (kind: FunctionSignature)
     │       │   ├── [34mlparen[0m (kind: TokenLParen): '[1;32m([0m'
     │       │   ├── [36mparameters[0m (kind: ParamList)

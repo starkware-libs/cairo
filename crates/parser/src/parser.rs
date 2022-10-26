@@ -684,7 +684,7 @@ impl<'a> Parser<'a> {
                     let optional_semicolon = if self.peek().kind == SyntaxKind::TerminalSemicolon {
                         self.take::<TerminalSemicolon>().into()
                     } else {
-                        OptionSemicolonEmpty::new_green(self.db).into()
+                        OptionTerminalSemicolonEmpty::new_green(self.db).into()
                     };
                     Some(StatementExpr::new_green(self.db, expr, optional_semicolon).into())
                 }
@@ -887,9 +887,9 @@ impl<'a> Parser<'a> {
         WrappedGenericParamList::new_green(self.db, langle, generic_params, rangle)
     }
 
-    fn parse_optional_generic_params(&mut self) -> OptionGenericParamsGreen {
+    fn parse_optional_generic_params(&mut self) -> OptionWrappedGenericParamListGreen {
         if self.peek().kind != SyntaxKind::TerminalLT {
-            return OptionGenericParamsEmpty::new_green(self.db).into();
+            return OptionWrappedGenericParamListEmpty::new_green(self.db).into();
         }
         self.expect_generic_params().into()
     }

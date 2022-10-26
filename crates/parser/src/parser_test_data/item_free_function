@@ -19,6 +19,6 @@ FunctionSignature
 └── Top level kind: ItemFreeFunction
     ├── function_kw (kind: TokenFunction): 'func'
     ├── name (kind: TokenIdentifier): 'foo'
-    ├── generic_params (kind: OptionGenericParamsEmpty) []
+    ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
     ├── signature (kind: FunctionSignature) <ignored>
     └── body (kind: ExprBlock) <ignored>

@@ -42,7 +42,7 @@ pub enum SyntaxKind {
     StatementList,
     StatementMissing,
     StatementLet,
-    OptionSemicolonEmpty,
+    OptionTerminalSemicolonEmpty,
     StatementExpr,
     StatementReturn,
     Param,
@@ -63,16 +63,10 @@ pub enum SyntaxKind {
     ItemUse,
     GenericArgs,
     GenericArgList,
-    OptionGenericParamsEmpty,
+    OptionWrappedGenericParamListEmpty,
     WrappedGenericParamList,
     GenericParamList,
     GenericParam,
-    SyntaxFile,
-    TokenSingleLineComment,
-    TokenWhitespace,
-    TokenNewline,
-    TokenMissing,
-    TokenSkipped,
     TokenIdentifier,
     TerminalIdentifier,
     TokenLiteralNumber,
@@ -181,6 +175,12 @@ pub enum SyntaxKind {
     TerminalEndOfFile,
     TokenBadCharacters,
     TerminalBadCharacters,
+    SyntaxFile,
+    TokenSingleLineComment,
+    TokenWhitespace,
+    TokenNewline,
+    TokenMissing,
+    TokenSkipped,
 }
 impl SyntaxKind {
     pub fn is_terminal(&self) -> bool {
@@ -245,12 +245,7 @@ impl SyntaxKind {
     pub fn is_token(&self) -> bool {
         matches!(
             *self,
-            SyntaxKind::TokenSingleLineComment
-                | SyntaxKind::TokenWhitespace
-                | SyntaxKind::TokenNewline
-                | SyntaxKind::TokenMissing
-                | SyntaxKind::TokenSkipped
-                | SyntaxKind::TokenIdentifier
+            SyntaxKind::TokenIdentifier
                 | SyntaxKind::TokenLiteralNumber
                 | SyntaxKind::TokenFalse
                 | SyntaxKind::TokenTrue
@@ -304,6 +299,11 @@ impl SyntaxKind {
                 | SyntaxKind::TokenMatchArrow
                 | SyntaxKind::TokenEndOfFile
                 | SyntaxKind::TokenBadCharacters
+                | SyntaxKind::TokenSingleLineComment
+                | SyntaxKind::TokenWhitespace
+                | SyntaxKind::TokenNewline
+                | SyntaxKind::TokenMissing
+                | SyntaxKind::TokenSkipped
         )
     }
 }
