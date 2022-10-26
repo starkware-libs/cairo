@@ -130,6 +130,14 @@ fn simulate(
 #[test_case("uint128_jump_nz", vec![], vec![Uint128(2)] => Ok((vec![NonZero(Box::new(Uint128(2)))], 1)); "uint128_jump_nz(2)")]
 #[test_case("uint128_jump_nz", vec![], vec![Uint128(0)] => Ok((vec![], 0)); "uint128_jump_nz(0)")]
 #[test_case("jump", vec![], vec![] => Ok((vec![], 0)); "jump()")]
+#[test_case("uint128_add", vec![], vec![RangeCheck, Uint128(2), Uint128(3)] => Ok((vec![RangeCheck, Uint128(5)], 0));
+            "uint128_add(2, 3)")]
+#[test_case("uint128_sub", vec![], vec![RangeCheck, Uint128(5), Uint128(3)] => Ok((vec![RangeCheck, Uint128(2)], 0));
+            "uint128_sub(5, 3)")]
+#[test_case("uint128_mul", vec![], vec![RangeCheck, Uint128(5), Uint128(3)] => Ok((vec![RangeCheck, Uint128(15)], 0));
+            "uint128_mul(5, 3)")]
+#[test_case("uint128_sub", vec![], vec![RangeCheck, Uint128(3), Uint128(5)] => Ok((vec![RangeCheck], 1));
+            "uint128_sub(3, 5)")]
 fn simulate_branch(
     id: &str,
     generic_args: Vec<GenericArg>,

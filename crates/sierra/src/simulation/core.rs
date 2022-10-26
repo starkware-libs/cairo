@@ -198,25 +198,59 @@ fn simulate_integer_libfunc(
                     Err(LibFuncSimulationError::MemoryLayoutMismatch)
                 }
             }
+            (
+                [CoreValue::RangeCheck, CoreValue::Uint128(lhs), CoreValue::Uint128(rhs)],
+                IntOperator::Add | IntOperator::Sub | IntOperator::Mul,
+            ) => Ok(
+                match match operator {
+                    IntOperator::Add => lhs.checked_add(*rhs),
+                    IntOperator::Sub => lhs.checked_sub(*rhs),
+                    IntOperator::Mul => lhs.checked_mul(*rhs),
+                    _ => unreachable!("Arm only handles these cases."),
+                } {
+                    Some(result) => (vec![CoreValue::RangeCheck, CoreValue::Uint128(result)], 0),
+                    None => (vec![CoreValue::RangeCheck], 1),
+                },
+            ),
             ([_, _, _], _) => Err(LibFuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
         },
         Uint128Concrete::Operation(Uint128OperationConcreteLibFunc::Const(
             Uint128OperationWithConstConcreteLibFunc { operator, c, .. },
         )) => match inputs {
-            [CoreValue::RangeCheck, CoreValue::Uint128(value)] => Ok((
-                vec![
-                    CoreValue::RangeCheck,
-                    CoreValue::Uint128(match operator {
-                        IntOperator::WrappingAdd => value.wrapping_add(*c),
-                        IntOperator::WrappingSub => value.wrapping_sub(*c),
-                        IntOperator::WrappingMul => value.wrapping_mul(*c),
-                        IntOperator::Div => value / *c,
-                        IntOperator::Mod => value % *c,
-                    }),
-                ],
-                0,
-            )),
+            [CoreValue::RangeCheck, CoreValue::Uint128(value)] => Ok(match operator {
+                IntOperator::WrappingAdd
+                | IntOperator::WrappingSub
+                | IntOperator::WrappingMul
+                | IntOperator::Div
+                | IntOperator::Mod => (
+                    vec![
+                        CoreValue::RangeCheck,
+                        CoreValue::Uint128(match operator {
+                            IntOperator::WrappingAdd => value.wrapping_add(*c),
+                            IntOperator::WrappingSub => value.wrapping_sub(*c),
+                            IntOperator::WrappingMul => value.wrapping_mul(*c),
+                            IntOperator::Div => value / *c,
+                            IntOperator::Mod => value % *c,
+                            _ => unreachable!("Arm only handles these cases."),
+                        }),
+                    ],
+                    0,
+                ),
+                IntOperator::Add | IntOperator::Sub | IntOperator::Mul => {
+                    match match operator {
+                        IntOperator::Add => value.checked_add(*c),
+                        IntOperator::Sub => value.checked_sub(*c),
+                        IntOperator::Mul => value.checked_mul(*c),
+                        _ => unreachable!("Arm only handles these cases."),
+                    } {
+                        Some(result) => {
+                            (vec![CoreValue::RangeCheck, CoreValue::Uint128(result)], 0)
+                        }
+                        None => (vec![CoreValue::RangeCheck], 1),
+                    }
+                }
+            }),
             [_, _] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
         },

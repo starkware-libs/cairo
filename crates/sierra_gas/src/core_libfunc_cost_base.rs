@@ -79,6 +79,9 @@ fn integer_libfunc_cost<Ops: CostOperations>(
             IntOperator::WrappingMul | IntOperator::Div | IntOperator::Mod => {
                 vec![ops.const_cost(7)]
             }
+            IntOperator::Add | IntOperator::Sub | IntOperator::Mul => {
+                vec![ops.const_cost(3), ops.const_cost(4)]
+            }
         },
         Uint128Concrete::Operation(Uint128OperationConcreteLibFunc::Const(
             Uint128OperationWithConstConcreteLibFunc { operator, .. },
@@ -86,6 +89,9 @@ fn integer_libfunc_cost<Ops: CostOperations>(
             IntOperator::WrappingAdd | IntOperator::WrappingSub => vec![ops.const_cost(3)],
             IntOperator::WrappingMul | IntOperator::Div | IntOperator::Mod => {
                 vec![ops.const_cost(5)]
+            }
+            IntOperator::Add | IntOperator::Sub | IntOperator::Mul => {
+                vec![ops.const_cost(3), ops.const_cost(4)]
             }
         },
         Uint128Concrete::Const(_) => {

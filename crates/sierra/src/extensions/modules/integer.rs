@@ -2,8 +2,8 @@ use super::jump_not_zero::{JumpNotZeroLibFunc, JumpNotZeroTraits};
 use super::non_zero::NonZeroType;
 use super::range_check::RangeCheckType;
 use crate::extensions::lib_func::{
-    DeferredOutputKind, LibFuncSignature, OutputVarInfo, SierraApChange,
-    SignatureSpecializationContext, SpecializationContext,
+    BranchSignature, DeferredOutputKind, LibFuncSignature, OutputVarInfo, ParamSignature,
+    SierraApChange, SignatureSpecializationContext, SpecializationContext,
 };
 use crate::extensions::types::{InfoOnlyConcreteType, TypeInfo};
 use crate::extensions::{
@@ -55,6 +55,9 @@ pub enum IntOperator {
     WrappingAdd,
     WrappingSub,
     WrappingMul,
+    Add,
+    Sub,
+    Mul,
     Div,
     Mod,
 }
@@ -75,12 +78,18 @@ impl GenericLibFunc for Uint128OperationLibFunc {
         const WRAPPING_ADD: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_wrapping_add");
         const WRAPPING_SUB: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_wrapping_sub");
         const WRAPPING_MUL: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_wrapping_mul");
+        const ADD: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_add");
+        const SUB: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_sub");
+        const MUL: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_mul");
         const DIV: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_div");
         const MOD: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_mod");
         match id {
             id if id == &WRAPPING_ADD => Some(Self::new(IntOperator::WrappingAdd)),
             id if id == &WRAPPING_SUB => Some(Self::new(IntOperator::WrappingSub)),
             id if id == &WRAPPING_MUL => Some(Self::new(IntOperator::WrappingMul)),
+            id if id == &ADD => Some(Self::new(IntOperator::Add)),
+            id if id == &SUB => Some(Self::new(IntOperator::Sub)),
+            id if id == &MUL => Some(Self::new(IntOperator::Mul)),
             id if id == &DIV => Some(Self::new(IntOperator::Div)),
             id if id == &MOD => Some(Self::new(IntOperator::Mod)),
             _ => None,
@@ -94,16 +103,12 @@ impl GenericLibFunc for Uint128OperationLibFunc {
     ) -> Result<LibFuncSignature, SpecializationError> {
         let ty = context.get_concrete_type(Uint128Type::id(), &[])?;
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
-        match args {
-            [] => Ok(LibFuncSignature::new_non_branch(
+        match (args, self.operator) {
+            ([], IntOperator::Div | IntOperator::Mod) => Ok(LibFuncSignature::new_non_branch(
                 vec![
                     range_check_type.clone(),
                     ty.clone(),
-                    if matches!(self.operator, IntOperator::Div | IntOperator::Mod) {
-                        context.get_wrapped_concrete_type(NonZeroType::id(), ty.clone())?
-                    } else {
-                        ty.clone()
-                    },
+                    context.get_wrapped_concrete_type(NonZeroType::id(), ty.clone())?,
                 ],
                 vec![
                     OutputVarInfo {
@@ -119,15 +124,36 @@ impl GenericLibFunc for Uint128OperationLibFunc {
                 ],
                 SierraApChange::Known,
             )),
-            [GenericArg::Value(c)] => {
-                if matches!(self.operator, IntOperator::Div | IntOperator::Mod) && *c == 0 {
-                    Err(SpecializationError::UnsupportedGenericArg)
-                } else {
-                    Ok(LibFuncSignature::new_non_branch(
-                        vec![range_check_type.clone(), ty.clone()],
-                        vec![
+            (
+                [],
+                IntOperator::WrappingAdd | IntOperator::WrappingSub | IntOperator::WrappingMul,
+            ) => Ok(LibFuncSignature::new_non_branch(
+                vec![range_check_type.clone(), ty.clone(), ty.clone()],
+                vec![
+                    OutputVarInfo {
+                        ty: range_check_type,
+                        ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                            param_idx: 0,
+                        }),
+                    },
+                    OutputVarInfo {
+                        ty,
+                        ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                    },
+                ],
+                SierraApChange::Known,
+            )),
+            ([], IntOperator::Add | IntOperator::Sub | IntOperator::Mul) => Ok(LibFuncSignature {
+                param_signatures: vec![
+                    ParamSignature::new(range_check_type.clone()),
+                    ParamSignature::new(ty.clone()),
+                    ParamSignature::new(ty.clone()),
+                ],
+                branch_signatures: vec![
+                    BranchSignature {
+                        vars: vec![
                             OutputVarInfo {
-                                ty: range_check_type,
+                                ty: range_check_type.clone(),
                                 ref_info: OutputVarReferenceInfo::Deferred(
                                     DeferredOutputKind::AddConst { param_idx: 0 },
                                 ),
@@ -139,9 +165,93 @@ impl GenericLibFunc for Uint128OperationLibFunc {
                                 ),
                             },
                         ],
-                        SierraApChange::Known,
-                    ))
-                }
+                        ap_change: SierraApChange::Known,
+                    },
+                    BranchSignature {
+                        vars: vec![OutputVarInfo {
+                            ty: range_check_type,
+                            ref_info: OutputVarReferenceInfo::Deferred(
+                                DeferredOutputKind::AddConst { param_idx: 0 },
+                            ),
+                        }],
+                        ap_change: SierraApChange::Known,
+                    },
+                ],
+                fallthrough: Some(0),
+            }),
+            ([GenericArg::Value(c)], IntOperator::Div | IntOperator::Mod) if *c != 0 => {
+                Ok(LibFuncSignature::new_non_branch(
+                    vec![range_check_type.clone(), ty.clone()],
+                    vec![
+                        OutputVarInfo {
+                            ty: range_check_type,
+                            ref_info: OutputVarReferenceInfo::Deferred(
+                                DeferredOutputKind::AddConst { param_idx: 0 },
+                            ),
+                        },
+                        OutputVarInfo {
+                            ty,
+                            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                        },
+                    ],
+                    SierraApChange::Known,
+                ))
+            }
+            (
+                [GenericArg::Value(_c)],
+                IntOperator::WrappingAdd | IntOperator::WrappingSub | IntOperator::WrappingMul,
+            ) => Ok(LibFuncSignature::new_non_branch(
+                vec![range_check_type.clone(), ty.clone()],
+                vec![
+                    OutputVarInfo {
+                        ty: range_check_type,
+                        ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                            param_idx: 0,
+                        }),
+                    },
+                    OutputVarInfo {
+                        ty,
+                        ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                    },
+                ],
+                SierraApChange::Known,
+            )),
+            ([GenericArg::Value(_c)], IntOperator::Add | IntOperator::Sub | IntOperator::Mul) => {
+                Ok(LibFuncSignature {
+                    param_signatures: vec![
+                        ParamSignature::new(range_check_type.clone()),
+                        ParamSignature::new(ty.clone()),
+                    ],
+                    branch_signatures: vec![
+                        BranchSignature {
+                            vars: vec![
+                                OutputVarInfo {
+                                    ty: range_check_type.clone(),
+                                    ref_info: OutputVarReferenceInfo::Deferred(
+                                        DeferredOutputKind::AddConst { param_idx: 0 },
+                                    ),
+                                },
+                                OutputVarInfo {
+                                    ty,
+                                    ref_info: OutputVarReferenceInfo::Deferred(
+                                        DeferredOutputKind::Generic,
+                                    ),
+                                },
+                            ],
+                            ap_change: SierraApChange::Known,
+                        },
+                        BranchSignature {
+                            vars: vec![OutputVarInfo {
+                                ty: range_check_type,
+                                ref_info: OutputVarReferenceInfo::Deferred(
+                                    DeferredOutputKind::AddConst { param_idx: 0 },
+                                ),
+                            }],
+                            ap_change: SierraApChange::Known,
+                        },
+                    ],
+                    fallthrough: Some(0),
+                })
             }
             _ => Err(SpecializationError::UnsupportedGenericArg),
         }
