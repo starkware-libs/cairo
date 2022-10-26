@@ -14,6 +14,7 @@ func f() {
       1 => {},
       Struct{a, b: _, .., a: A::Variant(4)} => {},
       x => {},
+      bool::False() => {}
     }
 }
 
@@ -47,3 +48,8 @@ error: Missing tokens. Expected an expression.
  --> dummy_file.cairo:2:24
     match MyStruct{a: 1} {
                        ^
+
+error: Missing token TerminalUnderscore.
+ --> dummy_file.cairo:8:19
+      bool::False() => {}
+                  ^
