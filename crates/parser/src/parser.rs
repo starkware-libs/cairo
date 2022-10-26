@@ -288,7 +288,7 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalLE => self.take::<TerminalLE>().into(),
             SyntaxKind::TerminalGE => self.take::<TerminalGE>().into(),
             SyntaxKind::TerminalAndAnd => self.take::<TerminalAndAnd>().into(),
-            SyntaxKind::TerminalOrOr => self.take::<TerminalAndAnd>().into(),
+            SyntaxKind::TerminalOrOr => self.take::<TerminalOrOr>().into(),
             _ => unreachable!(),
         }
     }
@@ -631,7 +631,12 @@ impl<'a> Parser<'a> {
     /// Returns a GreenId of a node with some Pattern kind (see [syntax::node::ast::Pattern]).
     fn parse_pattern(&mut self) -> PatternGreen {
         // If not found, return a missing underscore pattern.
-        self.try_parse_pattern().unwrap_or_else(|| self.take::<TerminalUnderscore>().into())
+        self.try_parse_pattern().unwrap_or_else(|| {
+            self.create_and_report_missing::<TerminalUnderscore>(
+                ParserDiagnosticKind::MissingToken(SyntaxKind::TerminalUnderscore),
+            )
+            .into()
+        })
     }
 
     /// Returns a GreenId of a syntax in side a struct pattern. Example:
@@ -1043,6 +1048,7 @@ impl<'a> Parser<'a> {
     /// to this token as leading trivia.
     fn take<Terminal: syntax::node::Terminal>(&mut self) -> Terminal::Green {
         let token = self.take_raw();
+        assert_eq!(Some(token.kind), Terminal::KIND);
         self.add_trivia_to_terminal::<Terminal>(token)
     }
 
