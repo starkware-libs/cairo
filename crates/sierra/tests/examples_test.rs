@@ -67,8 +67,8 @@ fn simulate_collatz((gb, n): (i64, u128), (new_gb, index): (i64, u128)) {
 #[test_case((1000, 6), (931, 13); "6 => 13")]
 #[test_case((1000, 7), (917, 21); "7 => 21")]
 #[test_case((1000, 8), (903, 34); "8 => 34")]
-#[test_case((100, 80), (2, u128::MAX); "Out of gas.")]
-fn simulate_fib_jumps((gb, n): (i64, u128), (new_gb, fib): (i64, u128)) {
+#[test_case((100, 80), (2, -1); "Out of gas.")]
+fn simulate_fib_jumps((gb, n): (i64, i128), (new_gb, fib): (i64, i128)) {
     assert_eq!(
         simulation::run(
             &get_example_program("fib_jumps"),
@@ -80,9 +80,9 @@ fn simulate_fib_jumps((gb, n): (i64, u128), (new_gb, fib): (i64, u128)) {
                 (StatementIdx(50), 1),
             ]),
             &"Fibonacci".into(),
-            vec![CoreValue::RangeCheck, CoreValue::GasBuiltin(gb), CoreValue::Uint128(n)]
+            vec![CoreValue::RangeCheck, CoreValue::GasBuiltin(gb), CoreValue::Felt(n)]
         ),
-        Ok(vec![CoreValue::RangeCheck, CoreValue::GasBuiltin(new_gb), CoreValue::Uint128(fib)])
+        Ok(vec![CoreValue::RangeCheck, CoreValue::GasBuiltin(new_gb), CoreValue::Felt(fib)])
     );
 }
 
@@ -122,8 +122,8 @@ fn simulate_fib_no_gas(n: i128, fib: i128) {
 #[test_case((1000, 6), (498, 13); "6 => 13")]
 #[test_case((1000, 7), (161, 21); "7 => 21")]
 #[test_case((1500, 8), (114, 34); "8 => 34")]
-#[test_case((100, 80), (10, u128::MAX.wrapping_mul(/*error_count=*/3)); "Out of gas.")]
-fn simulate_fib_recursive((gb, n): (i64, u128), (new_gb, fib): (i64, u128)) {
+#[test_case((100, 80), (10, -3); "Out of gas.")]
+fn simulate_fib_recursive((gb, n): (i64, i128), (new_gb, fib): (i64, i128)) {
     assert_eq!(
         simulation::run(
             &get_example_program("fib_recursive"),
@@ -135,8 +135,8 @@ fn simulate_fib_recursive((gb, n): (i64, u128), (new_gb, fib): (i64, u128)) {
                 (StatementIdx(42), 0),
             ]),
             &"Fibonacci".into(),
-            vec![CoreValue::RangeCheck, CoreValue::GasBuiltin(gb), CoreValue::Uint128(n)]
+            vec![CoreValue::RangeCheck, CoreValue::GasBuiltin(gb), CoreValue::Felt(n)]
         ),
-        Ok(vec![CoreValue::RangeCheck, CoreValue::GasBuiltin(new_gb), CoreValue::Uint128(fib)])
+        Ok(vec![CoreValue::RangeCheck, CoreValue::GasBuiltin(new_gb), CoreValue::Felt(fib)])
     );
 }

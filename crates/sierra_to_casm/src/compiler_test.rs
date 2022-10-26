@@ -45,11 +45,6 @@ fn read_sierra_example_file(name: &str) -> String {
     fs::read_to_string(path).unwrap()
 }
 
-/// Transform a Sierra program written for `uint128` to be for `felt`.
-fn transform_program_uint128_to_felt(program: String) -> String {
-    program.replace("uint128_wrapping_", "felt_").replace("uint128", "felt").replace("Int", "Felt")
-}
-
 /// Removes all comments and empty lines from the given program.
 fn strip_comments_and_linebreaks(program: &str) -> String {
     return program
@@ -233,12 +228,7 @@ fn strip_comments_and_linebreaks(program: &str) -> String {
                 ret;
             "};
             "fib_no_gas")]
-#[test_case(transform_program_uint128_to_felt(read_sierra_example_file("collatz")).as_str(),
-            &[], true,
-            indoc! {"
-            "} => ignore["Non-forward only code is not supported yet."];
-            "collatz")]
-#[test_case(transform_program_uint128_to_felt(read_sierra_example_file("fib_jumps")).as_str(),
+#[test_case(read_sierra_example_file("fib_jumps").as_str(),
             &[], true,
             indoc! {"
                 jmp rel 8 if [fp + -3] != 0;
@@ -294,7 +284,7 @@ fn strip_comments_and_linebreaks(program: &str) -> String {
                 ret;
             "};
             "fib_jumps")]
-#[test_case(transform_program_uint128_to_felt(read_sierra_example_file("fib_recursive")).as_str(),
+#[test_case(read_sierra_example_file("fib_recursive").as_str(),
             &[], true,
             indoc! {"
                 [ap + 0] = 1, ap++;
