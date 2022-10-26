@@ -4,6 +4,7 @@ use db_utils::Upcast;
 use defs::ids::{FreeFunctionId, ModuleId};
 use diagnostics::Diagnostics;
 use lowering::db::LoweringGroup;
+use semantic::Mutability;
 use sierra::extensions::{ConcreteType, GenericTypeEx};
 
 use crate::program_generator::{self};
@@ -90,10 +91,17 @@ fn get_function_signature(
     let semantic_function_id = db.lookup_intern_sierra_function(function_id);
     let signature = db.concrete_function_signature(semantic_function_id)?;
     let mut param_types = Vec::new();
+    let mut ret_types = Vec::new();
     for param in signature.params {
-        param_types.push(db.get_concrete_type_id(param.ty)?);
+        let concrete_type_id = db.get_concrete_type_id(param.ty)?;
+        param_types.push(concrete_type_id.clone());
+        if param.mutability == Mutability::Reference {
+            ret_types.push(concrete_type_id);
+        }
     }
-    let ret_types = vec![db.get_concrete_type_id(signature.return_type)?];
+
+    // TODO(ilya): Handle tuple and struct types.
+    ret_types.push(db.get_concrete_type_id(signature.return_type)?);
 
     Some(Arc::new(sierra::program::FunctionSignature { param_types, ret_types }))
 }
