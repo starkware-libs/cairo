@@ -54,19 +54,8 @@ store_temp_gb(gb) -> (gb);
 felt_const_1() -> (a);
 store_temp_felt(a) -> (a);
 // Statement # 27 - Getting gas for the main loop.
-get_gas(rc, gb) { 38(rc, gb) fallthrough(rc, gb) };
-// Statement # 28  - Ran out of gas - returning updated gb and -1.
-felt_drop(a) -> ();
-felt_drop(b) -> ();
-felt_unwrap_nz(n) -> (n);
-felt_drop(n) -> ();
-store_temp_rc(rc) -> (rc);
-refund_gas(gb) -> (gb); // Statement 32.
-store_temp_gb(gb) -> (gb);
-felt_const_minus_1() -> (err);
-store_temp_felt(err) -> (err);
-return(rc, gb, err);
-// Statement # 38
+get_gas(rc, gb) { fallthrough(rc, gb) 44(rc, gb)  };
+// Statement # 28
 // The main loop - given [b, _, _, n, rc, gb, a, _, _] - adds [n-1, updated_rc, updated_gb, a+b]
 // Memory cells form is now [b'=a, _, _, n'=n-1, rc'=updated_rc, gb'=updated_gb, a'=a+b]
 felt_dup(a) -> (a, prev_a);
@@ -79,12 +68,24 @@ store_temp_rc(rc) -> (rc);
 store_temp_gb(gb) -> (gb);
 store_temp_felt(a) -> (a);
 felt_jump_nz(n) { fallthrough() 27(n) };
-// Statement # 48 - n == 0, so we can return the latest a.
+// Statement # 38 - n == 0, so we can return the latest a.
 felt_drop(b) -> ();
 store_temp_rc(rc) -> (rc);
-refund_gas(gb) -> (gb); // Statement 50.
+refund_gas(gb) -> (gb); // Statement 40.
 store_temp_gb(gb) -> (gb);
 store_temp_felt(a) -> (a);
 return(rc, gb, a);
+
+// Statement # 44  - Ran out of gas - returning updated gb and -1.
+felt_drop(a) -> ();
+felt_drop(b) -> ();
+felt_unwrap_nz(n) -> (n);
+felt_drop(n) -> ();
+store_temp_rc(rc) -> (rc);
+refund_gas(gb) -> (gb); // Statement 49.
+store_temp_gb(gb) -> (gb);
+felt_const_minus_1() -> (err);
+store_temp_felt(err) -> (err);
+return(rc, gb, err);
 
 Fibonacci@0(rc: RangeCheck, gb: GasBuiltin, n: felt) -> (RangeCheck, GasBuiltin, felt);
