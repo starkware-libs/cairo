@@ -92,7 +92,7 @@ impl NoGenericArgsGenericLibFunc for GetGasLibFunc {
                     ap_change: SierraApChange::NotImplemented,
                 },
             ],
-            fallthrough: Some(1),
+            fallthrough: Some(0),
         })
     }
 
