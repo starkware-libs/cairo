@@ -189,6 +189,7 @@ pub fn get_spec() -> Vec<Node> {
             .node_with_explicit_kind("Tail", "TerminalDotDot")
             .build(),
         StructBuilder::new("PatternStructParamWithExpr")
+            // TODO(yuval): replace with ParamName
             .node("name", "TerminalIdentifier")
             .node("colon", "TerminalColon")
             .node("pattern", "Pattern")
@@ -250,9 +251,13 @@ pub fn get_spec() -> Vec<Node> {
             .node("semicolon", "TerminalSemicolon")
             .build(),
         // --- Functions ---
+        EnumBuilder::new("ParamName")
+            .node_with_explicit_kind("Underscore", "TerminalUnderscore")
+            .node_with_explicit_kind("Name", "TerminalIdentifier")
+            .build(),
         StructBuilder::new("Param")
             .node("modifiers", "ModifierList")
-            .key_node("name", "TerminalIdentifier")
+            .key_node("name", "ParamName")
             .node("type_clause", "TypeClause")
             .build(),
         list_node("ModifierList", "Modifier"),
@@ -345,6 +350,7 @@ pub fn get_spec() -> Vec<Node> {
             .key_node("name", "TerminalIdentifier")
             .node("generic_params", "OptionGenericParams")
             .node("lbrace", "TerminalLBrace")
+            // TODO(yuval): struct should not be implemented using a Param...
             .node("members", "ParamList")
             .node("rbrace", "TerminalRBrace")
             .build(),
@@ -353,6 +359,7 @@ pub fn get_spec() -> Vec<Node> {
             .key_node("name", "TerminalIdentifier")
             .node("generic_params", "OptionGenericParams")
             .node("lbrace", "TerminalLBrace")
+            // TODO(yuval): enum should not be implemented using a Param...
             .node("variants", "ParamList")
             .node("rbrace", "TerminalRBrace")
             .build(),
