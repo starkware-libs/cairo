@@ -79,3 +79,20 @@ error: Redefinition of parameter name "a" in function "test_crate::foo".
  --> lib.cairo:1:29
 func foo(a: bool) implicits(a: felt) {
                             ^*****^
+//! > ==========================================================================
+
+//! > Test valid free function with unnamed parameters (both normal and implicit)
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+func foo(_: bool, a: bool, _: felt) implicits(_: bool, b: felt, _: felt) {
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics

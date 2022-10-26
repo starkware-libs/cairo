@@ -4565,6 +4565,72 @@ impl TypedSyntaxNode for StatementReturn {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum ParamName {
+    Underscore(TerminalUnderscore),
+    Name(TerminalIdentifier),
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ParamNamePtr(SyntaxStablePtrId);
+impl ParamNamePtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+impl From<TerminalUnderscorePtr> for ParamNamePtr {
+    fn from(value: TerminalUnderscorePtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalIdentifierPtr> for ParamNamePtr {
+    fn from(value: TerminalIdentifierPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalUnderscoreGreen> for ParamNameGreen {
+    fn from(value: TerminalUnderscoreGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalIdentifierGreen> for ParamNameGreen {
+    fn from(value: TerminalIdentifierGreen) -> Self {
+        Self(value.0)
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ParamNameGreen(pub GreenId);
+impl TypedSyntaxNode for ParamName {
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
+    type StablePtr = ParamNamePtr;
+    type Green = ParamNameGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        panic!("No missing variant.");
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::TerminalUnderscore => {
+                ParamName::Underscore(TerminalUnderscore::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalIdentifier => {
+                ParamName::Name(TerminalIdentifier::from_syntax_node(db, node))
+            }
+            _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "ParamName"),
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        match self {
+            ParamName::Underscore(x) => x.as_syntax_node(),
+            ParamName::Name(x) => x.as_syntax_node(),
+        }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ParamNamePtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Param {
     node: SyntaxNode,
     children: Vec<SyntaxNode>,
@@ -4573,7 +4639,7 @@ impl Param {
     pub fn new_green(
         db: &dyn SyntaxGroup,
         modifiers: ModifierListGreen,
-        name: TerminalIdentifierGreen,
+        name: ParamNameGreen,
         type_clause: TypeClauseGreen,
     ) -> ParamGreen {
         let children: Vec<GreenId> = vec![modifiers.0, name.0, type_clause.0];
@@ -4588,8 +4654,8 @@ impl Param {
     pub fn modifiers(&self, db: &dyn SyntaxGroup) -> ModifierList {
         ModifierList::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[1].clone())
+    pub fn name(&self, db: &dyn SyntaxGroup) -> ParamName {
+        ParamName::from_syntax_node(db, self.children[1].clone())
     }
     pub fn type_clause(&self, db: &dyn SyntaxGroup) -> TypeClause {
         TypeClause::from_syntax_node(db, self.children[2].clone())
@@ -4598,10 +4664,10 @@ impl Param {
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ParamPtr(SyntaxStablePtrId);
 impl ParamPtr {
-    pub fn name_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
+    pub fn name_green(self, db: &dyn SyntaxGroup) -> ParamNameGreen {
         let ptr = db.lookup_intern_stable_ptr(self.0);
         if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
-            TerminalIdentifierGreen(key_fields[0])
+            ParamNameGreen(key_fields[0])
         } else {
             panic!("Unexpected key field query on root.");
         }
@@ -4622,7 +4688,7 @@ impl TypedSyntaxNode for Param {
             details: GreenNodeDetails::Node {
                 children: vec![
                     ModifierList::missing(db).0,
-                    TerminalIdentifier::missing(db).0,
+                    ParamName::missing(db).0,
                     TypeClause::missing(db).0,
                 ],
                 width: 0,
