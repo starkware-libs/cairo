@@ -5,13 +5,13 @@
 ap += 1;
 call rel 3;
 ret;
-jmp rel 5 if [fp + -4] != 0;
+jmp rel 4 if [fp + -4] != 0;
 [ap + 0] = [fp + -3], ap++;
-jmp rel 11;
+ret;
 [fp + -6] = [[fp + -3]];
 [ap + 0] = [fp + -5], ap++;
 [ap + 0] = [fp + -6] + [fp + -5], ap++;
 [fp + -4] = [ap + 0] + 1, ap++;
 [ap + 0] = [fp + -3] + 1, ap++;
-call rel -12;
+call rel -11;
 ret;

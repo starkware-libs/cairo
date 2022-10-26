@@ -4,7 +4,7 @@
 test_partial_parser_tree
 
 //! > cairo_code
-func foo(a: int, mut b: felt, ref c: int, mut ref d: felt) -> felt with(rc: RangeCheck, h: Hash) {
+func foo(a: int, mut b: felt, ref c: int, mut ref d: felt) -> felt implicits(rc: RangeCheck, h: Hash) {
     return a;
 }
 
@@ -62,8 +62,8 @@ FunctionSignature
     │   └── ty (kind: ExprPath)
     │       └── item #0 (kind: PathSegmentSimple)
     │           └── ident (kind: TokenIdentifier): 'felt'
-    └── with_clause (kind: WithClause)
-        ├── with_kw (kind: TokenWith): 'with'
+    └── implicits_clause (kind: ImplicitsClause)
+        ├── implicits_kw (kind: TokenImplicits): 'implicits'
         ├── lparen (kind: TokenLParen): '('
         ├── implicits (kind: ParamList)
         │   ├── item #0 (kind: Param)

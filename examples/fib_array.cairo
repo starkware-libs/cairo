@@ -4,11 +4,10 @@ func fib(n: felt) -> Array::<felt> {
 }
 
 func fib_inner(a: felt, b: felt, remaining: felt, arr: Array::<felt>) -> Array::<felt> {
-    match remaining {
-        0 => arr,
-        _ => {
-            let arr = array_append::<felt>(arr, a);
-            fib_inner(b, a + b, remaining - 1, arr)
-        },
+    if remaining == 0 {
+        return arr;
     }
+
+    let arr = array_append::<felt>(arr, a);
+    fib_inner(b, a + b, remaining - 1, arr)
 }

@@ -39,7 +39,7 @@ impl SemanticTokenKind {
             | SyntaxKind::TokenIf
             | SyntaxKind::TokenElse
             | SyntaxKind::TokenUse
-            | SyntaxKind::TokenWith
+            | SyntaxKind::TokenImplicits
             | SyntaxKind::TokenRef
             | SyntaxKind::TokenMut => SemanticTokenKind::Keyword,
             SyntaxKind::TokenAnd
