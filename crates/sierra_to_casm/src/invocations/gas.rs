@@ -64,45 +64,50 @@ fn build_get_gas(
     )
     .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
 
-    let target_statement_id = match builder.invocation.branches.as_slice() {
-        [BranchInfo { target: BranchTarget::Statement(statement_id), .. }, _] => statement_id,
+    let failure_handle_statement_id = match builder.invocation.branches.as_slice() {
+        [
+            BranchInfo { target: BranchTarget::Fallthrough, .. },
+            BranchInfo { target: BranchTarget::Statement(statement_id), .. },
+        ] => statement_id,
         _ => panic!("malformed invocation"),
     };
 
     let gas_counter_value_for_branches =
         gas_counter_value.apply_ap_change(ApChange::Known(1)).unwrap();
-    // The code up to the failure branch.
-    let mut before_failure_branch = casm! {
-        %{ memory[ap + 0] = memory gas_counter_value < (*requested_count as i128) %}
+    // The code up to the success branch.
+    let mut before_success_branch = casm! {
+        %{ memory[ap + 0] = ((*requested_count + 1) as i128) < memory gas_counter_value %}
         jmp rel 0 if [ap + 0] != 0, ap++;
-        // gas_counter >= requested_count:
-        [ap + 0] = gas_counter_value_for_branches + (-requested_count as i128), ap++;
-        [ap - 1] = [[range_check.apply_ap_change(ApChange::Known(2)).unwrap()]];
+
+        // requested_count + 1 >= gas_counter_value => requested_count > gas_counter:
+        // TODO(orizi): Make into one command when wider constants are supported.
+        [ap + 0] = gas_counter_value_for_branches + (1 - *requested_count as i128), ap++;
+        [ap + 0] = [ap - 1] * (-1), ap++;
+        [ap - 1] = [[range_check.apply_ap_change(ApChange::Known(3)).unwrap()]];
+
         jmp rel 0; // Fixed in relocations.
     };
-    let branch_offset = before_failure_branch.current_code_offset;
+    let branch_offset = before_success_branch.current_code_offset;
     *extract_matches!(
         &mut extract_matches!(
-            &mut before_failure_branch.instructions[0].body,
+            &mut before_success_branch.instructions[0].body,
             InstructionBody::Jnz
         )
         .jump_offset,
         DerefOrImmediate::Immediate
     ) = branch_offset.to_bigint().unwrap();
-    let relocation_index = before_failure_branch.instructions.len() - 1;
-    let failure_branch = casm! {
-        // gas_counter < requested_count:
-        // TODO(orizi): Make into one command when wider constants are supported.
-        [ap + 0] = gas_counter_value_for_branches + (1 - *requested_count as i128), ap++;
-        [ap + 0] = [ap - 1] * (-1), ap++;
-        [ap - 1] = [[range_check.apply_ap_change(ApChange::Known(3)).unwrap()]];
+    let relocation_index = before_success_branch.instructions.len() - 1;
+    let success_branch = casm! {
+       // requested_count + 1 < gas_counter_value => requested_count <= gas_counter:
+       [ap + 0] = gas_counter_value_for_branches + (-requested_count as i128), ap++;
+       [ap - 1] = [[range_check.apply_ap_change(ApChange::Known(2)).unwrap()]];
     };
 
     Ok(builder.build(
-        chain!(before_failure_branch.instructions, failure_branch.instructions).collect(),
+        chain!(before_success_branch.instructions, success_branch.instructions).collect(),
         vec![RelocationEntry {
             instruction_idx: relocation_index,
-            relocation: Relocation::RelativeStatementId(*target_statement_id),
+            relocation: Relocation::RelativeStatementId(*failure_handle_statement_id),
         }],
         [ApChange::Known(2), ApChange::Known(3)].into_iter(),
         [

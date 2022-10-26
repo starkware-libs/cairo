@@ -286,32 +286,31 @@ fn strip_comments_and_linebreaks(program: &str) -> String {
                 [ap + 0] = [fp + -4], ap++;
                 [ap + 0] = 1, ap++;
                 // Statement # 27 - Getting gas for the main loop.
-                %{ memory[ap + 0] = memory[ap + -2] < 6 %}
-                jmp rel 7 if [ap + 0] != 0, ap++;
-                [ap + 0] = [ap + -3] + -6, ap++;
-                [ap + -1] = [[ap + -5] + 0];
-                jmp rel 13;
+                %{ memory[ap + 0] = 7 < memory[ap + -2] %}
+                jmp rel 9 if [ap + 0] != 0, ap++;
                 [ap + 0] = [ap + -3] + -5, ap++;
                 [ap + 0] = [ap + -1] * -1, ap++;
                 [ap + -1] = [[ap + -6] + 0];
-                // Statement # 28  - Ran out of gas - returning updated gb and -1.
-                [ap + 0] = [ap + -6] + 1, ap++;
-                [ap + 0] = [ap + -6], ap++;
-                [ap + 0] = -1, ap++;
-                ret;
+                jmp rel 19;
 
-                // Statement # 38
+                // Statement # 28
                 // The main loop - given [b, _, _, n, rc, gb, a, _, _] - adds [n-1, updated_rc, updated_gb, a+b]
                 // Memory cells form is now [b'=a, _, _, n'=n-1, rc'=updated_rc, gb'=updated_gb, a'=a+b]
+                [ap + 0] = [ap + -3] + -6, ap++;
+                [ap + -1] = [[ap + -5] + 0];
                 [ap + -6] = [ap + 0] + 1, ap++;
                 [ap + 0] = [ap + -6] + 1, ap++;
                 [ap + -6] = [ap + 0] + 6, ap++;
                 [ap + 0] = [ap + -6] + [ap + -12], ap++;
-                jmp rel -25 if [ap + -4] != 0;
+                jmp rel -19 if [ap + -4] != 0;
                 // Statement # 48 - n == 0, so we can return the latest a.
                 [ap + 0] = [ap + -3], ap++;
                 [ap + 0] = [ap + -3] + 1, ap++;
                 [ap + 0] = [ap + -3], ap++;
+                ret;
+                [ap + 0] = [ap + -6] + 1, ap++;
+                [ap + 0] = [ap + -6], ap++;
+                [ap + 0] = -1, ap++;
                 ret;
             "};
             "fib_jumps")]
@@ -335,34 +334,36 @@ fn strip_comments_and_linebreaks(program: &str) -> String {
                 ret;
 
                 // Statement # 17 - Get gas for the recursive calls.
-                %{ memory[ap + 0] = memory[fp + -4] < 31 %}
-                jmp rel 7 if [ap + 0] != 0, ap++;
-                [ap + 0] = [fp + -4] + -31, ap++;
-                [ap + -1] = [[fp + -5] + 0];
-                jmp rel 13;
+                %{ memory[ap + 0] = 32 < memory[fp + -4] %}
+                jmp rel 9 if [ap + 0] != 0, ap++;
                 [ap + 0] = [fp + -4] + -30, ap++;
                 [ap + 0] = [ap + -1] * -1, ap++;
                 [ap + -1] = [[fp + -5] + 0];
-                [ap + 0] = [fp + -5] + 1, ap++;
-                [ap + 0] = [fp + -4], ap++;
-                [ap + 0] = -1, ap++;
-                ret;
+                jmp rel 26;
+                [ap + 0] = [fp + -4] + -31, ap++;
+                [ap + -1] = [[fp + -5] + 0];
 
-                // Statement # 27 - Performing both recursive calculations and returning their sum.
+                // Statement # 21 - Performing both recursive calculations and returning their sum.
                 ap += 2;
                 [ap + 0] = [fp + -5] + 1, ap++;
                 [fp + -4] = [ap + 0] + 31, ap++;
                 [ap + -7] = [fp + 4] + 1;
                 [ap + 0] = [ap + -7], ap++;
-                call rel -45;
+                call rel -39;
                 [fp + 5] = [ap + -1];
                 [ap + 0] = [ap + -3], ap++;
                 [ap + 0] = [ap + -3], ap++;
                 [ap + 0] = [fp + 4], ap++;
-                call rel -51;
+                call rel -45;
                 [ap + 0] = [ap + -3], ap++;
                 [ap + 0] = [ap + -3], ap++;
                 [ap + 0] = [fp + 5] + [ap + -3], ap++;
+                ret;
+
+                // Statement # 41 - Ran out of gas - returning update gb and error value.
+                [ap + 0] = [fp + -5] + 1, ap++;
+                [ap + 0] = [fp + -4], ap++;
+                [ap + 0] = -1, ap++;
                 ret;
             "};
             "fib_recursive")]
