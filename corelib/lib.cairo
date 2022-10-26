@@ -60,3 +60,9 @@ use integer::uint128_div;
 use integer::uint128_mod;
 
 use integer::uint128_jump_nz;
+
+
+// Gas
+mod gas;
+use gas::GasBuiltin;
+use gas::get_gas;
