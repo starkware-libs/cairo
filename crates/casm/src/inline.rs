@@ -1,5 +1,5 @@
 use crate::hints::Hint;
-use crate::instructions::*;
+use crate::instructions::Instruction;
 
 #[cfg(test)]
 #[path = "inline_test.rs"]
@@ -9,9 +9,13 @@ mod test;
 macro_rules! casm {
     {$($tok:tt)*} => {
         {
+            #[allow(unused_imports)]
             use $crate::instructions::*;
-            use $crate::inline::CasmContext;
-            let mut ctx = CasmContext::default();
+
+            #[allow(unused_imports)]
+            use $crate::operand::*;
+
+            let mut ctx = $crate::inline::CasmContext::default();
             $crate::casm_extend!(ctx, $($tok)*);
             ctx
         }
@@ -98,13 +102,13 @@ macro_rules! casm_extend {
     ($ctx:ident, %{ memory [ ap + 0 ] = memory $lhs:tt < $rhs:tt %} $($tok:tt)*) => {
         $ctx.current_hints.push($crate::hints::Hint::TestLessThan{
             lhs: $crate::deref!($lhs).into(),
-            rhs: $crate::operand::DerefOrImmediate::Immediate($rhs),
+            rhs: DerefOrImmediate::Immediate($rhs),
         });
         $crate::casm_extend!($ctx, $($tok)*)
     };
     ($ctx:ident, %{ memory [ ap + 0 ] = $lhs:tt < memory $rhs:tt %} $($tok:tt)*) => {
         $ctx.current_hints.push($crate::hints::Hint::TestLessThan{
-            lhs: $crate::operand::DerefOrImmediate::Immediate($lhs),
+            lhs: DerefOrImmediate::Immediate($lhs),
             rhs: $crate::deref!($rhs).into(),
         });
         $crate::casm_extend!($ctx, $($tok)*)
@@ -113,17 +117,25 @@ macro_rules! casm_extend {
 
 #[macro_export]
 macro_rules! append_instruction {
-    ($ctx:ident, $body:ident) => {
-        let instr = Instruction { body: $body, inc_ap: false, hints: $ctx.current_hints };
+    ($ctx:ident, $body:ident $(,$ap:ident++)?) => {
+        let instr = $crate::instructions::Instruction {
+            body: $body,
+            inc_ap: $crate::is_inc_ap!($($ap++)?),
+            hints: $ctx.current_hints,
+        };
         $ctx.current_code_offset += instr.body.op_size();
         $ctx.current_hints = vec![];
         $ctx.instructions.push(instr);
     };
-    ($ctx:ident, $body:ident,ap + +) => {
-        let instr = Instruction { body: $body, inc_ap: true, hints: $ctx.current_hints };
-        $ctx.current_code_offset += instr.body.op_size();
-        $ctx.current_hints = vec![];
-        $ctx.instructions.push(instr);
+}
+
+#[macro_export]
+macro_rules! is_inc_ap {
+    () => {
+        false
+    };
+    (ap + +) => {
+        true
     };
 }
 
@@ -140,13 +152,13 @@ pub struct CasmContext {
 #[macro_export]
 macro_rules! deref {
     ([$reg:ident + $offset:expr]) => {
-        CellRef { register: $crate::reg!($reg), offset: $offset }
+        $crate::operand::CellRef { register: $crate::reg!($reg), offset: $offset }
     };
     ([$reg:ident - $offset:expr]) => {
-        CellRef { register: $crate::reg!($reg), offset: -$offset }
+        $crate::operand::CellRef { register: $crate::reg!($reg), offset: -$offset }
     };
     ([$reg:ident]) => {
-        CellRef { register: $crate::reg!($reg), offset: 0 }
+        $crate::operand::CellRef { register: $crate::reg!($reg), offset: 0 }
     };
     ($a:expr) => {
         $a
@@ -156,46 +168,46 @@ macro_rules! deref {
 #[macro_export]
 macro_rules! reg {
     (ap) => {
-        Register::AP
+        $crate::operand::Register::AP
     };
     (fp) => {
-        Register::FP
+        $crate::operand::Register::FP
     };
 }
 
 #[macro_export]
 macro_rules! deref_or_immediate {
     ($a:literal) => {
-        DerefOrImmediate::Immediate($a)
+        $crate::operand::DerefOrImmediate::Immediate($a)
     };
     ([$a:ident $($op:tt $offset:expr)?]) => {
-        DerefOrImmediate::Deref($crate::deref!([$a $($op $offset)?]))
+        $crate::operand::DerefOrImmediate::Deref($crate::deref!([$a $($op $offset)?]))
     };
     ($a:expr) => {
-        DerefOrImmediate::from($a)
+        $crate::operand::DerefOrImmediate::from($a)
     };
 }
 
 #[macro_export]
 macro_rules! res {
     ($a:tt + $b:tt) => {
-        ResOperand::BinOp(BinOpOperand {
-            op: Operation::Add,
+        $crate::operand::ResOperand::BinOp($crate::operand::BinOpOperand {
+            op: $crate::operand::Operation::Add,
             a: $crate::deref!($a),
             b: $crate::deref_or_immediate!($b),
         })
     };
     ($a:tt * $b:tt) => {
-        ResOperand::BinOp(BinOpOperand {
-            op: Operation::Mul,
+        $crate::operand::ResOperand::BinOp($crate::operand::BinOpOperand {
+            op: $crate::operand::Operation::Mul,
             a: $crate::deref!($a),
             b: $crate::deref_or_immediate!($b),
         })
     };
     ([[$a:expr]]) => {
-        ResOperand::DoubleDeref($a)
+        $crate::operand::ResOperand::DoubleDeref($a)
     };
     ($a:tt) => {
-        ResOperand::from($crate::deref_or_immediate!($a))
+        $crate::operand::ResOperand::from($crate::deref_or_immediate!($a))
     };
 }
