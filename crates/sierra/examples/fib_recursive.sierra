@@ -47,16 +47,8 @@ return(rc, gb, one);
 // Statement # 17 - Get gas for the recursive calls.
 felt_unwrap_nz(n_1) -> (n_1);
 felt_drop(one) -> ();
-get_gas(rc, gb) { 27(rc, gb) fallthrough(rc, gb) }; // Statement 20.
-// Statement # 21 - Ran out of gas - returning update gb and error value.
-store_temp_rc(rc) -> (rc);
-refund_gas(gb) -> (gb);
-store_temp_gb(gb) -> (gb);
-felt_drop(n_1) -> ();
-felt_const_minus_1() -> (minus);
-store_temp_felt(minus) -> (minus);
-return(rc, gb, minus);
-// Statement # 27 - Performing both recursive calculations and returning their sum.
+get_gas(rc, gb) { fallthrough(rc, gb) 41(rc, gb) }; // Statement 20.
+// Statement # 21 - Performing both recursive calculations and returning their sum.
 alloc_local_felt() -> (l_n_2);
 alloc_local_felt() -> (l_r1);
 finalize_locals() -> ();
@@ -72,11 +64,20 @@ store_temp_rc(rc) -> (rc);
 store_temp_gb(gb) -> (gb);
 store_temp_felt(n_2) -> (n_2);
 call_fib(rc, gb, n_2) -> (rc, gb, r2);
-refund_gas(gb) -> (gb); // Statement 41.
+refund_gas(gb) -> (gb); // Statement 35.
 store_temp_rc(rc) -> (rc);
 store_temp_gb(gb) -> (gb);
 felt_add(r1, r2) -> (r);
 store_temp_felt(r) -> (r);
 return(rc, gb, r);
+
+// Statement # 41 - Ran out of gas - returning update gb and error value.
+store_temp_rc(rc) -> (rc);
+refund_gas(gb) -> (gb);
+store_temp_gb(gb) -> (gb);
+felt_drop(n_1) -> ();
+felt_const_minus_1() -> (minus);
+store_temp_felt(minus) -> (minus);
+return(rc, gb, minus);
 
 Fibonacci@0(rc: RangeCheck, gb: GasBuiltin, n: felt) -> (RangeCheck, GasBuiltin, felt);
