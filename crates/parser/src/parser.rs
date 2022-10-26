@@ -103,7 +103,7 @@ impl<'a> Parser<'a> {
         &mut self,
     ) -> Terminal::Green {
         self.create_and_report_missing::<Terminal>(ParserDiagnosticKind::MissingToken(
-            Terminal::KIND.unwrap(),
+            Terminal::KIND,
         ))
     }
 
@@ -975,7 +975,7 @@ impl<'a> Parser<'a> {
                     break;
                 }
                 None => self.create_and_report_missing::<Separator>(
-                    ParserDiagnosticKind::MissingToken(Separator::KIND.unwrap()),
+                    ParserDiagnosticKind::MissingToken(Separator::KIND),
                 ),
                 Some(separator) => separator,
             };
@@ -1044,14 +1044,14 @@ impl<'a> Parser<'a> {
     /// to this token as leading trivia.
     fn take<Terminal: syntax::node::Terminal>(&mut self) -> Terminal::Green {
         let token = self.take_raw();
-        assert_eq!(Some(token.kind), Terminal::KIND);
+        assert_eq!(token.kind, Terminal::KIND);
         self.add_trivia_to_terminal::<Terminal>(token)
     }
 
     /// If the current terminal is of kind `Terminal`, returns its Green wrapper. Otherwise, returns
     /// None.
     fn try_parse_token<Terminal: syntax::node::Terminal>(&mut self) -> Option<Terminal::Green> {
-        if Terminal::KIND == Some(self.peek().kind) {
+        if Terminal::KIND == self.peek().kind {
             Some(self.take::<Terminal>())
         } else {
             // TODO(yuval): report to diagnostics.
