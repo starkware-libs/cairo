@@ -160,6 +160,24 @@ fn simulate_integer_libfunc(
                 Err(LibFuncSimulationError::WrongNumberOfArgs)
             }
         }
+        Uint128Concrete::FromFelt(_) => match inputs {
+            [CoreValue::RangeCheck, CoreValue::Felt(value)] => {
+                if *value >= 0 {
+                    Ok((vec![CoreValue::RangeCheck, CoreValue::Uint128(*value as u128)], 0))
+                } else {
+                    Ok((vec![CoreValue::RangeCheck], 1))
+                }
+            }
+            [_, _] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+        },
+        Uint128Concrete::ToFelt(_) => match inputs {
+            [CoreValue::RangeCheck, CoreValue::Uint128(value)] => {
+                Ok((vec![CoreValue::Felt(*value as i128)], 0))
+            }
+            [_] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+        },
         Uint128Concrete::Operation(Uint128OperationConcreteLibFunc::Binary(
             Uint128BinaryOperationConcreteLibFunc { operator, .. },
         )) => match (inputs, operator) {
