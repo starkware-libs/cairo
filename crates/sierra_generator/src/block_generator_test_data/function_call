@@ -9,7 +9,7 @@ func foo(z: MyStruct) -> () {
     bar(x, x + x, z);
 }
 
-func bar(a: felt, b: felt, z: MyStruct) -> felt {
+func bar(a: felt, b: felt, ref z: MyStruct) -> felt {
     0
 }
 
@@ -28,11 +28,11 @@ extern type MyStruct;
 //! > sierra_code
 felt_const<1>() -> ([0])
 felt_const<2>() -> ([1])
-PushValues([0]: felt, [1]: felt, [2]: MyStruct) -> ([4], [5], [6])
-function_call<user@test_crate::bar>([4], [5], [6]) -> ([3])
-felt_add([3], [3]) -> ([7])
-PushValues([3]: felt, [7]: felt, [2]: MyStruct) -> ([9], [10], [11])
-function_call<user@test_crate::bar>([9], [10], [11]) -> ([8])
+PushValues([2]: MyStruct, [0]: felt, [1]: felt) -> ([5], [6], [7])
+function_call<user@test_crate::bar>([5], [6], [7]) -> ([3], [4])
+felt_add([4], [4]) -> ([8])
+PushValues([3]: MyStruct, [4]: felt, [8]: felt) -> ([11], [12], [13])
+function_call<user@test_crate::bar>([11], [12], [13]) -> ([9], [10])
 
 //! > ==========================================================================
 
