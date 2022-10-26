@@ -1,3 +1,4 @@
+use crate::hints::Hint;
 use crate::instructions::*;
 
 #[cfg(test)]
@@ -83,18 +84,45 @@ macro_rules! casm_extend {
         $crate::append_instruction!($ctx, body $(,$ap++)?);
         $crate::casm_extend!($ctx, $($tok)*)
     };
+    ($ctx:ident, %{ memory $dst:tt = segments . add ( ) %} $($tok:tt)*) => {
+        $ctx.current_hints.push($crate::hints::Hint::AllocSegment{dst: $crate::deref!($dst)});
+        $crate::casm_extend!($ctx, $($tok)*)
+    };
+    ($ctx:ident, %{ memory [ ap + 0 ] = memory $lhs:tt < memory $rhs:tt %} $($tok:tt)*) => {
+        $ctx.current_hints.push($crate::hints::Hint::TestLessThan{
+            lhs: $crate::deref!($lhs).into(),
+            rhs: $crate::deref!($rhs).into(),
+        });
+        $crate::casm_extend!($ctx, $($tok)*)
+    };
+    ($ctx:ident, %{ memory [ ap + 0 ] = memory $lhs:tt < $rhs:literal %} $($tok:tt)*) => {
+        $ctx.current_hints.push($crate::hints::Hint::TestLessThan{
+            lhs: $crate::deref!($lhs).into(),
+            rhs: $crate::operand::DerefOrImmediate::Immediate($rhs),
+        });
+        $crate::casm_extend!($ctx, $($tok)*)
+    };
+    ($ctx:ident, %{ memory [ ap + 0 ] = $lhs:literal < memory $rhs:tt %} $($tok:tt)*) => {
+        $ctx.current_hints.push($crate::hints::Hint::TestLessThan{
+            lhs: $crate::operand::DerefOrImmediate::Immediate($lhs),
+            rhs: $crate::deref!($rhs).into(),
+        });
+        $crate::casm_extend!($ctx, $($tok)*)
+    };
 }
 
 #[macro_export]
 macro_rules! append_instruction {
     ($ctx:ident, $body:ident) => {
-        let instr = Instruction::new($body, false);
+        let instr = Instruction { body: $body, inc_ap: false, hints: $ctx.current_hints };
         $ctx.current_code_offset += instr.body.op_size();
+        $ctx.current_hints = vec![];
         $ctx.instructions.push(instr);
     };
     ($ctx:ident, $body:ident,ap + +) => {
-        let instr = Instruction::new($body, true);
+        let instr = Instruction { body: $body, inc_ap: true, hints: $ctx.current_hints };
         $ctx.current_code_offset += instr.body.op_size();
+        $ctx.current_hints = vec![];
         $ctx.instructions.push(instr);
     };
 }
@@ -103,6 +131,7 @@ macro_rules! append_instruction {
 #[derive(Default)]
 pub struct CasmContext {
     pub current_code_offset: usize,
+    pub current_hints: Vec<Hint>,
     pub instructions: Vec<Instruction>,
     // TODO(spapini): Branches.
     // TODO(spapini): Relocations.
