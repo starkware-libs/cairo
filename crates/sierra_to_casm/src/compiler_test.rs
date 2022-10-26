@@ -402,11 +402,12 @@ fn sierra_to_casm(
             "Concrete libfunc Id used twice")]
 #[test_case(indoc! {"
                 type uint128 = uint128;
+                type RangeCheck = RangeCheck;
 
                 libfunc uint128_wrapping_add = uint128_wrapping_add;
 
-                uint128_wrapping_add([1], [2]) -> ([1]);
-                test_program@0([1]: uint128, [2]: uint128) -> ();
+                uint128_wrapping_add([1], [2], [3]) -> ([1], [2]);
+                test_program@0([1]: RangeCheck, [2]: uint128, [3]: uint128) -> ();
             "}, &[],
             "#0: The requested functionality is not implemented yet.";
             "Not implemented")]

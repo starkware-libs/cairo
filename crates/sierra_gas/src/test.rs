@@ -18,13 +18,13 @@ fn get_example_program(name: &str) -> Program {
 #[test_case("collatz" =>
             Ok(GasInfo {
                 variable_values: [
-                    (StatementIdx(7), 30),
+                    (StatementIdx(7), 35),
                     (StatementIdx(11), 0),
-                    (StatementIdx(25), 2),
-                    (StatementIdx(34), 0),
-                    (StatementIdx(43), 1),
+                    (StatementIdx(27), 3),
+                    (StatementIdx(38), 0),
+                    (StatementIdx(49), 1),
                 ].into_iter().collect(),
-                function_costs: [("Collatz".into(), 13)].into_iter().collect()
+                function_costs: [("Collatz".into(), 14)].into_iter().collect()
             }))]
 #[test_case("fib_jumps" =>
             Ok(GasInfo {

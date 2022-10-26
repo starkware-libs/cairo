@@ -164,51 +164,60 @@ fn simulate_integer_libfunc(
             Uint128BinaryOperationConcreteLibFunc { operator, .. },
         )) => match (inputs, operator) {
             (
-                [CoreValue::Uint128(lhs), CoreValue::Uint128(rhs)],
+                [CoreValue::RangeCheck, CoreValue::Uint128(lhs), CoreValue::Uint128(rhs)],
                 IntOperator::WrappingAdd | IntOperator::WrappingSub | IntOperator::WrappingMul,
             ) => Ok((
-                vec![CoreValue::Uint128(match operator {
-                    IntOperator::WrappingAdd => lhs.wrapping_add(*rhs),
-                    IntOperator::WrappingSub => lhs.wrapping_sub(*rhs),
-                    IntOperator::WrappingMul => lhs.wrapping_mul(*rhs),
-                    _ => unreachable!("Arm only handles these cases."),
-                })],
+                vec![
+                    CoreValue::RangeCheck,
+                    CoreValue::Uint128(match operator {
+                        IntOperator::WrappingAdd => lhs.wrapping_add(*rhs),
+                        IntOperator::WrappingSub => lhs.wrapping_sub(*rhs),
+                        IntOperator::WrappingMul => lhs.wrapping_mul(*rhs),
+                        _ => unreachable!("Arm only handles these cases."),
+                    }),
+                ],
                 0,
             )),
             (
-                [CoreValue::Uint128(lhs), CoreValue::NonZero(non_zero)],
+                [CoreValue::RangeCheck, CoreValue::Uint128(lhs), CoreValue::NonZero(non_zero)],
                 IntOperator::Div | IntOperator::Mod,
             ) => {
                 if let CoreValue::Uint128(rhs) = **non_zero {
                     Ok((
-                        vec![CoreValue::Uint128(match operator {
-                            IntOperator::Div => lhs / rhs,
-                            IntOperator::Mod => lhs % rhs,
-                            _ => unreachable!("Arm only handles these cases."),
-                        })],
+                        vec![
+                            CoreValue::RangeCheck,
+                            CoreValue::Uint128(match operator {
+                                IntOperator::Div => lhs / rhs,
+                                IntOperator::Mod => lhs % rhs,
+                                _ => unreachable!("Arm only handles these cases."),
+                            }),
+                        ],
                         0,
                     ))
                 } else {
                     Err(LibFuncSimulationError::MemoryLayoutMismatch)
                 }
             }
-            ([_, _], _) => Err(LibFuncSimulationError::MemoryLayoutMismatch),
+            ([_, _, _], _) => Err(LibFuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
         },
         Uint128Concrete::Operation(Uint128OperationConcreteLibFunc::Const(
             Uint128OperationWithConstConcreteLibFunc { operator, c, .. },
         )) => match inputs {
-            [CoreValue::Uint128(value)] => Ok((
-                vec![CoreValue::Uint128(match operator {
-                    IntOperator::WrappingAdd => value.wrapping_add(*c),
-                    IntOperator::WrappingSub => value.wrapping_sub(*c),
-                    IntOperator::WrappingMul => value.wrapping_mul(*c),
-                    IntOperator::Div => value / *c,
-                    IntOperator::Mod => value % *c,
-                })],
+            [CoreValue::RangeCheck, CoreValue::Uint128(value)] => Ok((
+                vec![
+                    CoreValue::RangeCheck,
+                    CoreValue::Uint128(match operator {
+                        IntOperator::WrappingAdd => value.wrapping_add(*c),
+                        IntOperator::WrappingSub => value.wrapping_sub(*c),
+                        IntOperator::WrappingMul => value.wrapping_mul(*c),
+                        IntOperator::Div => value / *c,
+                        IntOperator::Mod => value % *c,
+                    }),
+                ],
                 0,
             )),
-            [_] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
+            [_, _] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
         },
         Uint128Concrete::JumpNotZero(_) => {

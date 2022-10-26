@@ -27,7 +27,7 @@ store_temp_uint128(n) -> (n);
 store_temp_gb(gb) -> (gb);
 uint128_const_0() -> (counter);
 store_temp_uint128(counter) -> (counter);
-jump() { 38() };
+jump() { 43() };
 // Statement #  5 - Getting gas for main loop.
 // Unwrapping and ignoring jump_nz result, as we don't use it.
 uint128_unwrap_nz(to_drop) -> (to_drop);
@@ -42,40 +42,46 @@ store_temp_gb(gb) -> (gb);
 uint128_const_minus_1() -> (err);
 store_temp_uint128(err) -> (err);
 return(rc, gb, err);
-// Statement # 17 - Testing if n is odd or even.
+// Statement # 16 - Testing if n is odd or even.
 store_temp_rc(rc) -> (rc);
 uint128_dup(n) -> (n, parity);
-uint128_mod_2(parity) -> (parity);
+uint128_mod_2(rc, parity) -> (rc, parity);
+store_temp_rc(rc) -> (rc);
 store_temp_uint128(parity) -> (parity);
 store_temp_gb(gb) -> (gb);
-uint128_jump_nz(parity) { fallthrough() 28(to_drop) };
-// Statement # 22 - Handling even case. Adding [_, n/2, gb] to memory.
+uint128_jump_nz(parity) { fallthrough() 30(to_drop) };
+// Statement # 23 - Handling even case. Adding [_, n/2, gb] to memory.
 align_temps() -> ();
-uint128_div_2(n) -> (n);
+uint128_div_2(rc, n) -> (rc, n);
+store_temp_rc(rc) -> (rc);
 store_temp_uint128(n) -> (n);
-refund_gas(gb) -> (gb); // Statement 25.
+refund_gas(gb) -> (gb); // Statement 27.
 store_temp_gb(gb) -> (gb);
-jump() { 36() };
-// Statement # 28 - Handling odd case. Adding [n*3, n*3+1, gb] to memory.
+jump() { 40() };
+// Statement # 30 - Handling odd case. Adding [n*3, n*3+1, gb] to memory.
 uint128_unwrap_nz(to_drop) -> (to_drop);
 uint128_drop(to_drop) -> ();
-uint128_mul_3(n) -> (n);
+uint128_mul_3(rc, n) -> (rc, n);
+store_temp_rc(rc) -> (rc);
 store_temp_uint128(n) -> (n);
-uint128_add_1(n) -> (n);
+uint128_add_1(rc, n) -> (rc, n);
+store_temp_rc(rc) -> (rc);
 store_temp_uint128(n) -> (n);
-refund_gas(gb) -> (gb); // Aligning gas usage. Statement 32.
+refund_gas(gb) -> (gb); // Aligning gas usage. Statement 38.
 store_temp_gb(gb) -> (gb);
-// Statement # 36 - Adding [counter + 1]. Memory now looks like [n', gb', counter'].
-uint128_add_1(counter) -> (counter);
+// Statement # 40 - Adding [counter + 1]. Memory now looks like [n', gb', counter'].
+uint128_add_1(rc, counter) -> (rc, counter);
+store_temp_rc(rc) -> (rc);
 store_temp_uint128(counter) -> (counter);
-// Statement # 38 - Testing if n == 1 - to check if we need to stop running.
+// Statement # 43 - Testing if n == 1 - to check if we need to stop running.
 uint128_dup(n) -> (n, n_1);
-uint128_sub_1(n_1) -> (n_1);
+uint128_sub_1(rc, n_1) -> (rc, n_1);
+store_temp_rc(rc) -> (rc);
 store_temp_uint128(n_1) -> (n_1);
 uint128_jump_nz(n_1) { fallthrough() 5(to_drop) };
-// Statement # 42 - n == 1 - we are done - returning the counter result.
+// Statement # 48 - n == 1 - we are done - returning the counter result.
 uint128_drop(n) -> ();
-refund_gas(gb) -> (gb); // Statement 43.
+refund_gas(gb) -> (gb); // Statement 49.
 store_temp_rc(rc) -> (rc);
 store_temp_gb(gb) -> (gb);
 store_temp_uint128(counter) -> (counter);
