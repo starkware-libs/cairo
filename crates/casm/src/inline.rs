@@ -111,13 +111,13 @@ pub struct CasmContext {
 #[macro_export]
 macro_rules! deref {
     ([$reg:ident + $offset:expr]) => {
-        DerefOperand { register: $crate::reg!($reg), offset: $offset }
+        CellRef { register: $crate::reg!($reg), offset: $offset }
     };
     ([$reg:ident - $offset:expr]) => {
-        DerefOperand { register: $crate::reg!($reg), offset: -$offset }
+        CellRef { register: $crate::reg!($reg), offset: -$offset }
     };
     ([$reg:ident]) => {
-        DerefOperand { register: $crate::reg!($reg), offset: 0 }
+        CellRef { register: $crate::reg!($reg), offset: 0 }
     };
     ($a:expr) => {
         $a
@@ -137,7 +137,7 @@ macro_rules! reg {
 #[macro_export]
 macro_rules! deref_or_immediate {
     ($a:literal) => {
-        DerefOrImmediate::Immediate(ImmediateOperand { value: $a })
+        DerefOrImmediate::Immediate($a)
     };
     ([$a:ident $($op:tt $offset:expr)?]) => {
         DerefOrImmediate::Deref($crate::deref!([$a $($op $offset)?]))
@@ -164,7 +164,7 @@ macro_rules! res {
         })
     };
     ([[$a:expr]]) => {
-        ResOperand::DoubleDeref(DoubleDerefOperand { inner_deref: $a })
+        ResOperand::DoubleDeref($a)
     };
     ($a:tt) => {
         ResOperand::from($crate::deref_or_immediate!($a))

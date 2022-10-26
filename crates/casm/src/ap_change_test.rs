@@ -1,11 +1,11 @@
 use super::{BinOpOperand, DerefOrImmediate};
 use crate::ap_change::{ApChange, ApChangeError, ApplyApChange};
-use crate::operand::{DerefOperand, Operation, Register, ResOperand};
+use crate::operand::{CellRef, Operation, Register, ResOperand};
 
 #[test]
 fn test_res_operand_ap_change() {
-    let fp_based_operand = DerefOperand { register: Register::FP, offset: -3 };
-    let ap_based_operand = DerefOperand { register: Register::AP, offset: 3 };
+    let fp_based_operand = CellRef { register: Register::FP, offset: -3 };
+    let ap_based_operand = CellRef { register: Register::AP, offset: 3 };
 
     let operand = ResOperand::BinOp(BinOpOperand {
         op: Operation::Mul,
@@ -25,7 +25,7 @@ fn test_res_operand_ap_change() {
 
 #[test]
 fn test_overflow() {
-    let ap_based_operand = DerefOperand { register: Register::AP, offset: i16::MIN };
+    let ap_based_operand = CellRef { register: Register::AP, offset: i16::MIN };
 
     assert_eq!(
         ap_based_operand.apply_ap_change(ApChange::Known(1)),
