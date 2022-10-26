@@ -91,7 +91,7 @@ func foo(ref ref v: felt) {
 //! > function_body
 
 //! > expected_diagnostics
-error: `ref` modifier may not be repeated
+error: `ref` modifier was specified after another modifier (`ref`). Only a single modifier is allowed. 
  --> lib.cairo:1:14
 func foo(ref ref v: felt) {
              ^*^

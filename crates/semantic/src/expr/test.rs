@@ -22,6 +22,7 @@ semantic_test!(
         "src/expr/test_data/enum",
         "src/expr/test_data/generics",
         "src/expr/test_data/if",
+        "src/expr/test_data/let_statement",
         "src/expr/test_data/match",
         "src/expr/test_data/operators",
         "src/expr/test_data/pattern",
@@ -239,8 +240,8 @@ fn test_tuple_type() {
     let param = &signature.params[0];
     assert_eq!(
         format!("{:?}", param.debug(db)),
-        "Parameter { id: ParamId(test_crate::a), ty: (core::felt, (), (core::felt)), modifiers: \
-         Modifiers { is_mut: true, is_ref: false } }"
+        "Parameter { id: ParamId(test_crate::a), ty: (core::felt, (), (core::felt)), mutability: \
+         Mutable }"
     );
 }
 

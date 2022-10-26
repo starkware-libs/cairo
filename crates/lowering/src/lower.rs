@@ -6,7 +6,7 @@ use scope::{BlockScope, BlockScopeEnd};
 use semantic::corelib::{core_felt_ty, core_jump_nz_func, core_nonzero_ty};
 use semantic::db::SemanticGroup;
 use semantic::items::enm::SemanticEnumEx;
-use semantic::{ConcreteTypeId, TypeLongId};
+use semantic::{ConcreteTypeId, Mutability, TypeLongId, VarId};
 use syntax::node::ids::SyntaxStablePtrId;
 use utils::unordered_hash_map::UnorderedHashMap;
 use utils::{extract_matches, try_extract_matches};
@@ -50,16 +50,23 @@ pub fn lower(db: &dyn SemanticGroup, free_function_id: FreeFunctionId) -> Option
     let signature = db.free_function_declaration_signature(free_function_id)?;
 
     // Params.
+    let ref_params: Vec<_> = signature
+        .params
+        .iter()
+        .filter_map(|param| {
+            if param.mutability == Mutability::Reference {
+                Some(VarId::Param(param.id))
+            } else {
+                None
+            }
+        })
+        .collect();
     let input_semantic_vars: Vec<_> =
         signature.params.iter().map(|param| semantic::Variable::Param(param.clone())).collect();
     let (input_semantic_var_ids, input_semantic_var_tys): (Vec<_>, Vec<_>) = input_semantic_vars
         .iter()
         .map(|semantic_var| (semantic_var.id(), semantic_var.ty()))
         .unzip();
-    let ref_params: Vec<_> = input_semantic_vars
-        .iter()
-        .filter_map(|var| if var.modifiers().is_ref { Some(var.id()) } else { None })
-        .collect();
 
     let mut ctx = LoweringContext {
         db,

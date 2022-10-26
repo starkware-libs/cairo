@@ -1,11 +1,10 @@
-//! > Incompatible types in if blocks.
+//! > pattern type for a param.
 
 //! > test_function_name
 test_function_diagnostics
 
 //! > function
 func foo(x: (felt, felt)) {
-    let mut ref mut ref ref b = x;
 }
 
 //! > function_name
@@ -14,17 +13,3 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: `mut` modifier may not be repeated
- --> lib.cairo:2:17
-    let mut ref mut ref ref b = x;
-                ^*^
-
-error: `ref` modifier may not be repeated
- --> lib.cairo:2:21
-    let mut ref mut ref ref b = x;
-                    ^*^
-
-error: `ref` modifier may not be repeated
- --> lib.cairo:2:25
-    let mut ref mut ref ref b = x;
-                        ^*^
