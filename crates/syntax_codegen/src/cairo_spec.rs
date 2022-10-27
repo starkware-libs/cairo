@@ -1,20 +1,18 @@
-use crate::spec::{
-    append_terminal_and_token, list_node, separated_list_node, token_node, EnumBuilder, Node,
-    StructBuilder,
-};
+use crate::spec::{EnumBuilder, Node, NodesAggregator, StructBuilder};
 
 /// The specific syntax specification of Cairo.
 pub fn get_spec() -> Vec<Node> {
-    let mut nodes = vec![
-        // --- Terminal ---
-        list_node("Trivia", "Trivium"),
+    NodesAggregator::default()
+    .add_list("Trivia", "Trivium")
+    .add_enum(
         EnumBuilder::new("Trivium")
             .node_with_explicit_kind("SingleLineComment", "TokenSingleLineComment")
             .node_with_explicit_kind("Whitespace", "TokenWhitespace")
             .node_with_explicit_kind("Newline", "TokenNewline")
-            .node_with_explicit_kind("Skipped", "TokenSkipped")
-            .build(),
-        // --- Expressions ---
+            .node_with_explicit_kind("Skipped", "TokenSkipped"),
+    )
+    // --- Expressions ---
+    .add_enum(
         EnumBuilder::new("Expr")
             .missing("Missing")
             .node("Path")
@@ -29,423 +27,391 @@ pub fn get_spec() -> Vec<Node> {
             .node("StructCtorCall")
             .node("Block")
             .node("Match")
-            .node("If")
-            .build(),
-        separated_list_node("ExprList", "Expr", "TerminalComma"),
-        StructBuilder::new("ExprMissing").build(),
-        EnumBuilder::new("PathSegment").missing("Simple").node("WithGenericArgs").build(),
-        StructBuilder::new("PathSegmentSimple").node("ident", "TerminalIdentifier").build(),
-        StructBuilder::new("PathSegmentWithGenericArgs")
-            .node("ident", "TerminalIdentifier")
-            .node("seperator", "TerminalColonColon")
-            .node("generic_args", "GenericArgs")
-            .build(),
-        separated_list_node("ExprPath", "PathSegment", "TerminalColonColon"),
-        StructBuilder::new("ExprParenthesized")
-            .node("lparen", "TerminalLParen")
-            .node("expr", "Expr")
-            .node("rparen", "TerminalRParen")
-            .build(),
-        StructBuilder::new("ExprUnary").node("op", "UnaryOperator").node("expr", "Expr").build(),
-        EnumBuilder::new("UnaryOperator")
+            .node("If"),
+    )
+    .add_separated_list("ExprList", "Expr", "TerminalComma")
+    .add_struct(StructBuilder::new("ExprMissing"))
+    .add_enum(EnumBuilder::new("PathSegment").missing("Simple").node("WithGenericArgs"))
+    .add_struct(StructBuilder::new("PathSegmentSimple").node("ident", "TerminalIdentifier"))
+    .add_struct(StructBuilder::new("PathSegmentWithGenericArgs")
+        .node("ident", "TerminalIdentifier")
+        .node("seperator", "TerminalColonColon")
+        .node("generic_args", "GenericArgs")
+        )
+    .add_separated_list("ExprPath", "PathSegment", "TerminalColonColon")
+    .add_struct(StructBuilder::new("ExprParenthesized")
+        .node("lparen", "TerminalLParen")
+        .node("expr", "Expr")
+        .node("rparen", "TerminalRParen")
+        )
+    .add_struct(StructBuilder::new("ExprUnary").node("op", "UnaryOperator").node("expr", "Expr"))
+    .add_enum(EnumBuilder::new("UnaryOperator")
+        .node_with_explicit_kind("Not", "TerminalNot")
+        .node_with_explicit_kind("Minus", "TerminalMinus")
+        )
+    .add_struct(StructBuilder::new("ExprBinary")
+        .node("lhs", "Expr")
+        .node("op", "BinaryOperator")
+        .node("rhs", "Expr")
+        )
+    .add_enum(EnumBuilder::new("BinaryOperator")
+            .node_with_explicit_kind("Dot", "TerminalDot")
             .node_with_explicit_kind("Not", "TerminalNot")
+            .node_with_explicit_kind("Mul", "TerminalMul")
+            .node_with_explicit_kind("Div", "TerminalDiv")
+            .node_with_explicit_kind("Plus", "TerminalPlus")
             .node_with_explicit_kind("Minus", "TerminalMinus")
-            .build(),
-        StructBuilder::new("ExprBinary")
-            .node("lhs", "Expr")
-            .node("op", "BinaryOperator")
-            .node("rhs", "Expr")
-            .build(),
-        EnumBuilder::new("BinaryOperator")
-                .node_with_explicit_kind("Dot", "TerminalDot")
-                .node_with_explicit_kind("Not", "TerminalNot")
-                .node_with_explicit_kind("Mul", "TerminalMul")
-                .node_with_explicit_kind("Div", "TerminalDiv")
-                .node_with_explicit_kind("Plus", "TerminalPlus")
-                .node_with_explicit_kind("Minus", "TerminalMinus")
-                .node_with_explicit_kind("EqEq", "TerminalEqEq")
-                .node_with_explicit_kind("Eq", "TerminalEq")
-                // TODO(yuval): not yet implemented in parser.
-                .node_with_explicit_kind("AndAnd", "TerminalAndAnd")
-                .node_with_explicit_kind("OrOr", "TerminalOrOr")
-                .node_with_explicit_kind("LE", "TerminalLE")
-                .node_with_explicit_kind("GE", "TerminalGE")
-                .node_with_explicit_kind("LT", "TerminalLT")
-                .node_with_explicit_kind("GT", "TerminalGT")
-                .build(),
-        StructBuilder::new("ExprTuple")
-            .node("lparen", "TerminalLParen")
-            .node("expressions", "ExprList")
-            .node("rparen", "TerminalRParen")
-            .build(),
-        StructBuilder::new("ExprFunctionCall")
-            .node("path", "ExprPath")
-            .node("arguments", "ExprListParenthesized")
-            .build(),
-        StructBuilder::new("ExprListParenthesized")
-            .node("lparen", "TerminalLParen")
-            .node("expressions", "ExprList")
-            .node("rparen", "TerminalRParen")
-            .build(),
-        StructBuilder::new("ExprStructCtorCall")
-            .node("path", "ExprPath")
-            .node("arguments", "ArgListBraced")
-            .build(),
-        StructBuilder::new("ExprBlock")
-            .node("lbrace", "TerminalLBrace")
-            .node("statements", "StatementList")
-            .node("rbrace", "TerminalRBrace")
-            .build(),
-        StructBuilder::new("ExprMatch")
-            .node("match_kw", "TerminalMatch")
-            // TODO(yuval): change to SimpleExpr
-            .node("expr", "Expr")
-            .node("lbrace", "TerminalLBrace")
-            .node("arms", "MatchArms")
-            .node("rbrace", "TerminalRBrace")
-            .build(),
-        separated_list_node("MatchArms", "MatchArm", "TerminalComma"),
-        StructBuilder::new("MatchArm")
-            .node("pattern", "Pattern")
-            .node("arrow", "TerminalMatchArrow")
-            .node("expression", "Expr")
-            .build(),
-        StructBuilder::new("ExprIf")
-            .node("if_kw", "TerminalIf")
-            .node("condition", "Expr")
-            .node("if_block", "ExprBlock")
-            .node("else_clause", "OptionElseClause")
-            .build(),
-        StructBuilder::new("ElseClause")
-            .node("else_kw", "TerminalElse")
-            .node("else_block", "ExprBlock")
-            .build(),
-        EnumBuilder::new("OptionElseClause")
-            .node("Empty")
-            .node_with_explicit_kind("ElseClause", "ElseClause")
-            .build(),
-        StructBuilder::new("OptionElseClauseEmpty").build(),
-        // --- Struct ctror ---
-        StructBuilder::new("StructArgExpr")
-            .node("colon", "TerminalColon")
-            .node("expr", "Expr")
-            .build(),
-        EnumBuilder::new("OptionStructArgExpr")
-            .node("Empty")
-            .node_with_explicit_kind("Some", "StructArgExpr")
-            .build(),
-        StructBuilder::new("OptionStructArgExprEmpty").build(),
-        StructBuilder::new("StructArgSingle")
-            .key_node("identifier", "TerminalIdentifier")
-            .node("arg_expr", "OptionStructArgExpr")
-            .build(),
-        StructBuilder::new("StructArgTail")
-            .node("dotdot", "TerminalDotDot")
-            .node("expression", "Expr")
-            .build(),
-        EnumBuilder::new("StructArg")
-            .node_with_explicit_kind("StructArgSingle", "StructArgSingle")
-            .node_with_explicit_kind("StructArgTail", "StructArgTail")
-            .build(),
-        separated_list_node("StructArgList", "StructArg", "TerminalComma"),
-        StructBuilder::new("ArgListBraced")
-            .node("lbrace", "TerminalLBrace")
-            .node("arguments", "StructArgList")
-            .node("rbrace", "TerminalRBrace")
-            .build(),
-        // ---Patterns ---
-        // TODO(spapini): Support "Or" patterns (e.g. 1 | 2).
-        // TODO(spapini): Support tuple patterns (e.g. (x, _)).
-        EnumBuilder::new("Pattern")
-            .node_with_explicit_kind("Underscore", "TerminalUnderscore")
-            .node_with_explicit_kind("Literal", "TerminalLiteralNumber")
-            .node("Identifier")
-            .node("Struct")
-            .node("Tuple")
-            .node("Enum")
-            .node_with_explicit_kind("Path", "ExprPath")
-            .build(),
-        StructBuilder::new("PatternIdentifier")
-            .node("modifiers", "ModifierList")
-            .key_node("name", "TerminalIdentifier")
-            .build(),
-        StructBuilder::new("PatternStruct")
-            // TODO(spapini): Use SimplePath instead - which is not an expr.
-            .node("path", "ExprPath")
-            .node("lbrace", "TerminalLBrace")
-            .node("params", "PatternStructParamList")
-            .node("rbrace", "TerminalRBrace")
-            .build(),
-        separated_list_node("PatternStructParamList", "PatternStructParam", "TerminalComma"),
-        StructBuilder::new("PatternTuple")
-            .node("lparen", "TerminalLParen")
-            .node("patterns", "PatternList")
-            .node("rparen", "TerminalRParen")
-            .build(),
-        separated_list_node("PatternList", "Pattern", "TerminalComma"),
-        EnumBuilder::new("PatternStructParam")
-            .node_with_explicit_kind("Single", "TerminalIdentifier")
-            .node("WithExpr")
-            .node_with_explicit_kind("Tail", "TerminalDotDot")
-            .build(),
-        StructBuilder::new("PatternStructParamWithExpr")
-            .node("name", "TerminalIdentifier")
-            .node("colon", "TerminalColon")
-            .node("pattern", "Pattern")
-            .build(),
-        StructBuilder::new("PatternEnum")
-            .node("path", "ExprPath")
-            .node("lparen", "TerminalLParen")
-            .node("pattern", "Pattern")
-            .node("rparen", "TerminalRParen")
-            .build(),
-        // --- Type clauses ---
-        // TODO(yuval): support SimpleExpr instead of ExprPath
-        StructBuilder::new("TypeClause").node("colon", "TerminalColon").node("ty", "Expr").build(),
-        // TODO(yuval): refactor ::new_option to have the relevant kind directly as a child, like
-        // here.
-        EnumBuilder::new("OptionTypeClause")
-            .node("Empty")
-            .node_with_explicit_kind("TypeClause", "TypeClause")
-            .build(),
-        StructBuilder::new("OptionTypeClauseEmpty").build(),
-        StructBuilder::new("ReturnTypeClause")
-            .node("arrow", "TerminalArrow")
-            .node("ty", "Expr")
-            .build(),
-        EnumBuilder::new("OptionReturnTypeClause")
-            .node("Empty")
-            .node_with_explicit_kind("ReturnTypeClause", "ReturnTypeClause")
-            .build(),
-        StructBuilder::new("OptionReturnTypeClauseEmpty").build(),
-        // --- Statements ---
-        EnumBuilder::new("Statement")
-            .missing("Missing")
-            .node("Let")
-            .node("Expr")
-            .node("Return")
-            .build(),
-        list_node("StatementList", "Statement"),
-        StructBuilder::new("StatementMissing").build(),
-        StructBuilder::new("StatementLet")
-            .node("let_kw", "TerminalLet")
-            .key_node("pattern", "Pattern")
-            .node("type_clause", "OptionTypeClause")
-            .node("eq", "TerminalEq")
-            .node("rhs", "Expr")
-            .node("semicolon", "TerminalSemicolon")
-            .build(),
-        EnumBuilder::new("OptionSemicolon")
-            .node("Empty")
-            .node_with_explicit_kind("Some", "TerminalSemicolon")
-            .build(),
-        StructBuilder::new("OptionSemicolonEmpty").build(),
-        StructBuilder::new("StatementExpr")
-            .node("expr", "Expr")
-            .node("semicolon", "OptionSemicolon")
-            .build(),
-        StructBuilder::new("StatementReturn")
-            .node("return_kw", "TerminalReturn")
-            .node("expr", "Expr")
-            .node("semicolon", "TerminalSemicolon")
-            .build(),
-        // --- Functions ---
-        StructBuilder::new("Param")
-            .node("modifiers", "ModifierList")
-            .key_node("name", "TerminalIdentifier")
-            .node("type_clause", "TypeClause")
-            .build(),
-        list_node("ModifierList", "Modifier"),
-        EnumBuilder::new("Modifier")
-            .node_with_explicit_kind("Ref", "TerminalRef")
-            .node_with_explicit_kind("Mut", "TerminalMut")
-            .build(),
-        separated_list_node("ParamList", "Param", "TerminalComma"),
-        StructBuilder::new("ImplicitsClause")
-            .node("implicits_kw", "TerminalImplicits")
-            .node("lparen", "TerminalLParen")
-            .node("implicits", "ParamList")
-            .node("rparen", "TerminalRParen")
-            .build(),
-        EnumBuilder::new("OptionImplicitsClause")
-            .node("Empty")
-            .node_with_explicit_kind("ImplicitsClause", "ImplicitsClause")
-            .build(),
-        StructBuilder::new("OptionImplicitsClauseEmpty").build(),
-        // TODO(spapini): Add generic params.
-        // This is an unnamed signature, e.g. "() -> Type".
-        StructBuilder::new("FunctionSignature")
-            .node("lparen", "TerminalLParen")
-            .node("parameters", "ParamList")
-            .node("rparen", "TerminalRParen")
-            .node("ret_ty", "OptionReturnTypeClause")
-            .node("implicits_clause", "OptionImplicitsClause")
-            .build(),
-        // --- Items ---
-        EnumBuilder::new("Item")
-            .node("Module")
-            .node("Use")
-            .node("FreeFunction")
-            .node("ExternFunction")
-            .node("ExternType")
-            .node("Trait")
-            .node("Impl")
-            .node("Struct")
-            .node("Enum")
-            .build(),
-        list_node("ItemList", "Item"),
-        StructBuilder::new("ItemModule")
-            .node("module_kw", "TerminalModule")
-            .key_node("name", "TerminalIdentifier")
-            .node("semicolon", "TerminalSemicolon")
-            .build(),
-        StructBuilder::new("ItemFreeFunction")
-            .node("function_kw", "TerminalFunction")
-            .key_node("name", "TerminalIdentifier")
-            .node("generic_params", "OptionGenericParams")
-            .node("signature", "FunctionSignature")
-            .node("body", "ExprBlock")
-            .build(),
-        StructBuilder::new("ItemExternFunction")
-            .node("extern_kw", "TerminalExtern")
-            .node("function_kw", "TerminalFunction")
-            .key_node("name", "TerminalIdentifier")
-            .node("generic_params", "OptionGenericParams")
-            .node("signature", "FunctionSignature")
-            .node("semicolon", "TerminalSemicolon")
-            .build(),
-        StructBuilder::new("ItemExternType")
-            .node("extern_kw", "TerminalExtern")
-            .node("type_kw", "TerminalType")
-            .key_node("name", "TerminalIdentifier")
-            .node("generic_params", "OptionGenericParams")
-            .node("semicolon", "TerminalSemicolon")
-            .build(),
-        // TODO(spapini): consider having specific ItemLists here.
-        StructBuilder::new("ItemTrait")
-            .node("trait_kw", "TerminalTrait")
-            .key_node("name", "TerminalIdentifier")
-            .node("generic_params", "OptionGenericParams")
-            .node("lbrace", "TerminalLBrace")
-            .node("items", "ItemList")
-            .node("rbrace", "TerminalRBrace")
-            .build(),
-        StructBuilder::new("ItemImpl")
-            .node("impl_kw", "TerminalImpl")
-            .key_node("name", "TerminalIdentifier")
-            .node("generic_params", "OptionGenericParams")
-            .node("for_kw", "TerminalFor")
-            .node("trait_name", "TerminalIdentifier")
-            .node("lbrace", "TerminalLBrace")
-            .node("items", "ItemList")
-            .node("rbrace", "TerminalRBrace")
-            .build(),
-        StructBuilder::new("ItemStruct")
-            .node("struct_kw", "TerminalStruct")
-            .key_node("name", "TerminalIdentifier")
-            .node("generic_params", "OptionGenericParams")
-            .node("lbrace", "TerminalLBrace")
-            .node("members", "ParamList")
-            .node("rbrace", "TerminalRBrace")
-            .build(),
-        StructBuilder::new("ItemEnum")
-            .node("enumkw", "TerminalEnum")
-            .key_node("name", "TerminalIdentifier")
-            .node("generic_params", "OptionGenericParams")
-            .node("lbrace", "TerminalLBrace")
-            .node("variants", "ParamList")
-            .node("rbrace", "TerminalRBrace")
-            .build(),
-        StructBuilder::new("ItemUse")
-            .node("use_kw", "TerminalUse")
-            .key_node("name", "ExprPath")
-            .node("semicolon", "TerminalSemicolon")
-            .build(),
-        // Generics.
-        StructBuilder::new("GenericArgs")
-            .node("langle", "TerminalLT")
-            .node("generic_args", "GenericArgList")
-            .node("rangle", "TerminalGT")
-            .build(),
-        separated_list_node("GenericArgList", "Expr", "TerminalComma"),
-        EnumBuilder::new("OptionGenericParams")
-            .node("Empty")
-            .node_with_explicit_kind("Some", "WrappedGenericParamList")
-            .build(),
-        StructBuilder::new("OptionGenericParamsEmpty").build(),
-        StructBuilder::new("WrappedGenericParamList")
-            .node("langle", "TerminalLT")
-            .node("generic_params", "GenericParamList")
-            .node("rangle", "TerminalGT")
-            .build(),
-        separated_list_node("GenericParamList", "GenericParam", "TerminalComma"),
-        // TODO(spapini): Remove this indirection.
-        StructBuilder::new("GenericParam").key_node("name", "TerminalIdentifier").build(),
-        // Meta.
-        StructBuilder::new("SyntaxFile")
-            .node("items", "ItemList")
-            .node("eof", "TerminalEndOfFile")
-            .build(),
-        token_node("SingleLineComment"),
-        token_node("Whitespace"),
-        token_node("Newline"),
-        token_node("Missing"),
-        token_node("Skipped"),
-    ];
-    // Tokens + Terminals
-    append_terminal_and_token(&mut nodes, "Identifier");
-    append_terminal_and_token(&mut nodes, "LiteralNumber");
-    append_terminal_and_token(&mut nodes, "False");
-    append_terminal_and_token(&mut nodes, "True");
-    append_terminal_and_token(&mut nodes, "Extern");
-    append_terminal_and_token(&mut nodes, "Type");
-    append_terminal_and_token(&mut nodes, "Function");
-    append_terminal_and_token(&mut nodes, "Module");
-    append_terminal_and_token(&mut nodes, "Enum");
-    append_terminal_and_token(&mut nodes, "Struct");
-    append_terminal_and_token(&mut nodes, "Trait");
-    append_terminal_and_token(&mut nodes, "Impl");
-    append_terminal_and_token(&mut nodes, "For");
-    append_terminal_and_token(&mut nodes, "Let");
-    append_terminal_and_token(&mut nodes, "Return");
-    append_terminal_and_token(&mut nodes, "Match");
-    append_terminal_and_token(&mut nodes, "If");
-    append_terminal_and_token(&mut nodes, "Else");
-    append_terminal_and_token(&mut nodes, "Use");
-    append_terminal_and_token(&mut nodes, "Implicits");
-    append_terminal_and_token(&mut nodes, "Ref");
-    append_terminal_and_token(&mut nodes, "Mut");
-    append_terminal_and_token(&mut nodes, "And");
-    append_terminal_and_token(&mut nodes, "AndAnd");
-    append_terminal_and_token(&mut nodes, "OrOr");
-    append_terminal_and_token(&mut nodes, "EqEq");
-    append_terminal_and_token(&mut nodes, "Neq");
-    append_terminal_and_token(&mut nodes, "GE");
-    append_terminal_and_token(&mut nodes, "GT");
-    append_terminal_and_token(&mut nodes, "LE");
-    append_terminal_and_token(&mut nodes, "LT");
-    append_terminal_and_token(&mut nodes, "Not");
-    append_terminal_and_token(&mut nodes, "Plus");
-    append_terminal_and_token(&mut nodes, "Minus");
-    append_terminal_and_token(&mut nodes, "Mul");
-    append_terminal_and_token(&mut nodes, "Div");
-    append_terminal_and_token(&mut nodes, "Colon");
-    append_terminal_and_token(&mut nodes, "ColonColon");
-    append_terminal_and_token(&mut nodes, "Comma");
-    append_terminal_and_token(&mut nodes, "Dot");
-    append_terminal_and_token(&mut nodes, "DotDot");
-    append_terminal_and_token(&mut nodes, "Eq");
-    append_terminal_and_token(&mut nodes, "Semicolon");
-    append_terminal_and_token(&mut nodes, "Underscore");
-    append_terminal_and_token(&mut nodes, "LBrace");
-    append_terminal_and_token(&mut nodes, "RBrace");
-    append_terminal_and_token(&mut nodes, "LBrack");
-    append_terminal_and_token(&mut nodes, "RBrack");
-    append_terminal_and_token(&mut nodes, "LParen");
-    append_terminal_and_token(&mut nodes, "RParen");
-    append_terminal_and_token(&mut nodes, "Arrow");
-    append_terminal_and_token(&mut nodes, "MatchArrow");
-    append_terminal_and_token(&mut nodes, "EndOfFile");
-    append_terminal_and_token(&mut nodes, "BadCharacters");
-    nodes
+            .node_with_explicit_kind("EqEq", "TerminalEqEq")
+            .node_with_explicit_kind("Eq", "TerminalEq")
+            // TODO(yuval): not yet implemented in parser.
+            .node_with_explicit_kind("AndAnd", "TerminalAndAnd")
+            .node_with_explicit_kind("OrOr", "TerminalOrOr")
+            .node_with_explicit_kind("LE", "TerminalLE")
+            .node_with_explicit_kind("GE", "TerminalGE")
+            .node_with_explicit_kind("LT", "TerminalLT")
+            .node_with_explicit_kind("GT", "TerminalGT")
+            )
+    .add_struct(StructBuilder::new("ExprTuple")
+        .node("lparen", "TerminalLParen")
+        .node("expressions", "ExprList")
+        .node("rparen", "TerminalRParen")
+        )
+    .add_struct(StructBuilder::new("ExprFunctionCall")
+        .node("path", "ExprPath")
+        .node("arguments", "ExprListParenthesized")
+        )
+    .add_struct(StructBuilder::new("ExprListParenthesized")
+        .node("lparen", "TerminalLParen")
+        .node("expressions", "ExprList")
+        .node("rparen", "TerminalRParen")
+        )
+    .add_struct(StructBuilder::new("ExprStructCtorCall")
+        .node("path", "ExprPath")
+        .node("arguments", "ArgListBraced")
+        )
+    .add_struct(StructBuilder::new("ExprBlock")
+        .node("lbrace", "TerminalLBrace")
+        .node("statements", "StatementList")
+        .node("rbrace", "TerminalRBrace")
+        )
+    .add_struct(StructBuilder::new("ExprMatch")
+        .node("match_kw", "TerminalMatch")
+        // TODO(yuval): change to SimpleExpr
+        .node("expr", "Expr")
+        .node("lbrace", "TerminalLBrace")
+        .node("arms", "MatchArms")
+        .node("rbrace", "TerminalRBrace")
+        )
+    .add_separated_list("MatchArms", "MatchArm", "TerminalComma")
+    .add_struct(StructBuilder::new("MatchArm")
+        .node("pattern", "Pattern")
+        .node("arrow", "TerminalMatchArrow")
+        .node("expression", "Expr")
+        )
+    .add_struct(StructBuilder::new("ExprIf")
+        .node("if_kw", "TerminalIf")
+        .node("condition", "Expr")
+        .node("if_block", "ExprBlock")
+        .node("else_clause", "OptionElseClause")
+        )
+    .add_struct(StructBuilder::new("ElseClause")
+        .node("else_kw", "TerminalElse")
+        .node("else_block", "ExprBlock")
+        )
+    .add_option("ElseClause")
+    // --- Struct ctor ---
+    .add_struct(StructBuilder::new("StructArgExpr")
+        .node("colon", "TerminalColon")
+        .node("expr", "Expr")
+        )
+    .add_option("StructArgExpr")
+    .add_struct(StructBuilder::new("StructArgSingle")
+        .key_node("identifier", "TerminalIdentifier")
+        .node("arg_expr", "OptionStructArgExpr")
+        )
+    .add_struct(StructBuilder::new("StructArgTail")
+        .node("dotdot", "TerminalDotDot")
+        .node("expression", "Expr")
+        )
+    .add_enum(EnumBuilder::new("StructArg")
+        .node_with_explicit_kind("StructArgSingle", "StructArgSingle")
+        .node_with_explicit_kind("StructArgTail", "StructArgTail")
+        )
+    .add_separated_list("StructArgList", "StructArg", "TerminalComma")
+    .add_struct(StructBuilder::new("ArgListBraced")
+        .node("lbrace", "TerminalLBrace")
+        .node("arguments", "StructArgList")
+        .node("rbrace", "TerminalRBrace")
+        )
+    // ---Patterns ---
+    // TODO(spapini): Support "Or" patterns (e.g. 1 | 2).
+    // TODO(spapini): Support tuple patterns (e.g. (x, _)).
+    .add_enum(EnumBuilder::new("Pattern")
+        .node_with_explicit_kind("Underscore", "TerminalUnderscore")
+        .node_with_explicit_kind("Literal", "TerminalLiteralNumber")
+        .node("Identifier")
+        .node("Struct")
+        .node("Tuple")
+        .node("Enum")
+        .node_with_explicit_kind("Path", "ExprPath")
+        )
+    .add_struct(StructBuilder::new("PatternIdentifier")
+        .node("modifiers", "ModifierList")
+        .key_node("name", "TerminalIdentifier")
+        )
+    .add_struct(StructBuilder::new("PatternStruct")
+        // TODO(spapini): Use SimplePath instead - which is not an expr.
+        .node("path", "ExprPath")
+        .node("lbrace", "TerminalLBrace")
+        .node("params", "PatternStructParamList")
+        .node("rbrace", "TerminalRBrace")
+        )
+    .add_separated_list("PatternStructParamList", "PatternStructParam", "TerminalComma")
+    .add_struct(StructBuilder::new("PatternTuple")
+        .node("lparen", "TerminalLParen")
+        .node("patterns", "PatternList")
+        .node("rparen", "TerminalRParen")
+        )
+    .add_separated_list("PatternList", "Pattern", "TerminalComma")
+    .add_enum(EnumBuilder::new("PatternStructParam")
+        .node_with_explicit_kind("Single", "TerminalIdentifier")
+        .node("WithExpr")
+        .node_with_explicit_kind("Tail", "TerminalDotDot")
+        )
+    .add_struct(StructBuilder::new("PatternStructParamWithExpr")
+        .node("name", "TerminalIdentifier")
+        .node("colon", "TerminalColon")
+        .node("pattern", "Pattern")
+        )
+    .add_struct(StructBuilder::new("PatternEnum")
+        .node("path", "ExprPath")
+        .node("lparen", "TerminalLParen")
+        .node("pattern", "Pattern")
+        .node("rparen", "TerminalRParen")
+        )
+    // --- Type clauses ---
+    // TODO(yuval): support SimpleExpr instead of ExprPath
+    .add_struct(StructBuilder::new("TypeClause").node("colon", "TerminalColon").node("ty", "Expr"))
+    .add_option("TypeClause")
+    .add_struct(StructBuilder::new("ReturnTypeClause")
+        .node("arrow", "TerminalArrow")
+        .node("ty", "Expr")
+        )
+    .add_option("ReturnTypeClause")
+    // --- Statements ---
+    .add_enum(EnumBuilder::new("Statement")
+        .missing("Missing")
+        .node("Let")
+        .node("Expr")
+        .node("Return")
+        )
+    .add_list("StatementList", "Statement")
+    .add_struct(StructBuilder::new("StatementMissing"))
+    .add_struct(StructBuilder::new("StatementLet")
+        .node("let_kw", "TerminalLet")
+        .key_node("pattern", "Pattern")
+        .node("type_clause", "OptionTypeClause")
+        .node("eq", "TerminalEq")
+        .node("rhs", "Expr")
+        .node("semicolon", "TerminalSemicolon")
+        )
+    .add_option("TerminalSemicolon")
+    .add_struct(StructBuilder::new("StatementExpr")
+        .node("expr", "Expr")
+        .node("semicolon", "OptionTerminalSemicolon")
+        )
+    .add_struct(StructBuilder::new("StatementReturn")
+        .node("return_kw", "TerminalReturn")
+        .node("expr", "Expr")
+        .node("semicolon", "TerminalSemicolon")
+        )
+    // --- Functions ---
+    .add_struct(StructBuilder::new("Param")
+        .node("modifiers", "ModifierList")
+        .key_node("name", "TerminalIdentifier")
+        .node("type_clause", "TypeClause")
+        )
+    .add_list("ModifierList", "Modifier")
+    .add_enum(EnumBuilder::new("Modifier")
+        .node_with_explicit_kind("Ref", "TerminalRef")
+        .node_with_explicit_kind("Mut", "TerminalMut")
+        )
+    .add_separated_list("ParamList", "Param", "TerminalComma")
+    .add_struct(StructBuilder::new("ImplicitsClause")
+        .node("implicits_kw", "TerminalImplicits")
+        .node("lparen", "TerminalLParen")
+        .node("implicits", "ParamList")
+        .node("rparen", "TerminalRParen")
+        )
+    .add_option("ImplicitsClause")
+    // TODO(spapini): Add generic params.
+    // This is an unnamed signature, e.g. "() -> Type".
+    .add_struct(StructBuilder::new("FunctionSignature")
+        .node("lparen", "TerminalLParen")
+        .node("parameters", "ParamList")
+        .node("rparen", "TerminalRParen")
+        .node("ret_ty", "OptionReturnTypeClause")
+        .node("implicits_clause", "OptionImplicitsClause")
+        )
+    // --- Items ---
+    .add_enum(EnumBuilder::new("Item")
+        .node("Module")
+        .node("Use")
+        .node("FreeFunction")
+        .node("ExternFunction")
+        .node("ExternType")
+        .node("Trait")
+        .node("Impl")
+        .node("Struct")
+        .node("Enum")
+        )
+    .add_list("ItemList", "Item")
+    .add_struct(StructBuilder::new("ItemModule")
+        .node("module_kw", "TerminalModule")
+        .key_node("name", "TerminalIdentifier")
+        .node("semicolon", "TerminalSemicolon")
+        )
+    .add_struct(StructBuilder::new("ItemFreeFunction")
+        .node("function_kw", "TerminalFunction")
+        .key_node("name", "TerminalIdentifier")
+        .node("generic_params", "OptionWrappedGenericParamList")
+        .node("signature", "FunctionSignature")
+        .node("body", "ExprBlock")
+        )
+    .add_struct(StructBuilder::new("ItemExternFunction")
+        .node("extern_kw", "TerminalExtern")
+        .node("function_kw", "TerminalFunction")
+        .key_node("name", "TerminalIdentifier")
+        .node("generic_params", "OptionWrappedGenericParamList")
+        .node("signature", "FunctionSignature")
+        .node("semicolon", "TerminalSemicolon")
+        )
+    .add_struct(StructBuilder::new("ItemExternType")
+        .node("extern_kw", "TerminalExtern")
+        .node("type_kw", "TerminalType")
+        .key_node("name", "TerminalIdentifier")
+        .node("generic_params", "OptionWrappedGenericParamList")
+        .node("semicolon", "TerminalSemicolon")
+        )
+    // TODO(spapini): consider having specific ItemLists here.
+    .add_struct(StructBuilder::new("ItemTrait")
+        .node("trait_kw", "TerminalTrait")
+        .key_node("name", "TerminalIdentifier")
+        .node("generic_params", "OptionWrappedGenericParamList")
+        .node("lbrace", "TerminalLBrace")
+        .node("items", "ItemList")
+        .node("rbrace", "TerminalRBrace")
+        )
+    .add_struct(StructBuilder::new("ItemImpl")
+        .node("impl_kw", "TerminalImpl")
+        .key_node("name", "TerminalIdentifier")
+        .node("generic_params", "OptionWrappedGenericParamList")
+        .node("for_kw", "TerminalFor")
+        .node("trait_name", "TerminalIdentifier")
+        .node("lbrace", "TerminalLBrace")
+        .node("items", "ItemList")
+        .node("rbrace", "TerminalRBrace")
+        )
+    .add_struct(StructBuilder::new("ItemStruct")
+        .node("struct_kw", "TerminalStruct")
+        .key_node("name", "TerminalIdentifier")
+        .node("generic_params", "OptionWrappedGenericParamList")
+        .node("lbrace", "TerminalLBrace")
+        .node("members", "ParamList")
+        .node("rbrace", "TerminalRBrace")
+        )
+    .add_struct(StructBuilder::new("ItemEnum")
+        .node("enumkw", "TerminalEnum")
+        .key_node("name", "TerminalIdentifier")
+        .node("generic_params", "OptionWrappedGenericParamList")
+        .node("lbrace", "TerminalLBrace")
+        .node("variants", "ParamList")
+        .node("rbrace", "TerminalRBrace")
+        )
+    .add_struct(StructBuilder::new("ItemUse")
+        .node("use_kw", "TerminalUse")
+        .key_node("name", "ExprPath")
+        .node("semicolon", "TerminalSemicolon")
+        )
+    // --- Generics ---
+    .add_struct(StructBuilder::new("GenericArgs")
+        .node("langle", "TerminalLT")
+        .node("generic_args", "GenericArgList")
+        .node("rangle", "TerminalGT")
+        )
+    .add_separated_list("GenericArgList", "Expr", "TerminalComma")
+    .add_option("WrappedGenericParamList")
+    .add_struct(StructBuilder::new("WrappedGenericParamList")
+        .node("langle", "TerminalLT")
+        .node("generic_params", "GenericParamList")
+        .node("rangle", "TerminalGT")
+        )
+    .add_separated_list("GenericParamList", "GenericParam", "TerminalComma")
+    // TODO(spapini): Remove this indirection.
+    .add_struct(StructBuilder::new("GenericParam").key_node("name", "TerminalIdentifier"))
+    // --- Tokens + Terminals ---
+    .add_token_and_terminal("Identifier")
+    .add_token_and_terminal("LiteralNumber")
+    .add_token_and_terminal("False")
+    .add_token_and_terminal("True")
+    .add_token_and_terminal("Extern")
+    .add_token_and_terminal("Type")
+    .add_token_and_terminal("Function")
+    .add_token_and_terminal("Module")
+    .add_token_and_terminal("Enum")
+    .add_token_and_terminal("Struct")
+    .add_token_and_terminal("Trait")
+    .add_token_and_terminal("Impl")
+    .add_token_and_terminal("For")
+    .add_token_and_terminal("Let")
+    .add_token_and_terminal("Return")
+    .add_token_and_terminal("Match")
+    .add_token_and_terminal("If")
+    .add_token_and_terminal("Else")
+    .add_token_and_terminal("Use")
+    .add_token_and_terminal("Implicits")
+    .add_token_and_terminal("Ref")
+    .add_token_and_terminal("Mut")
+    .add_token_and_terminal("And")
+    .add_token_and_terminal("AndAnd")
+    .add_token_and_terminal("OrOr")
+    .add_token_and_terminal("EqEq")
+    .add_token_and_terminal("Neq")
+    .add_token_and_terminal("GE")
+    .add_token_and_terminal("GT")
+    .add_token_and_terminal("LE")
+    .add_token_and_terminal("LT")
+    .add_token_and_terminal("Not")
+    .add_token_and_terminal("Plus")
+    .add_token_and_terminal("Minus")
+    .add_token_and_terminal("Mul")
+    .add_token_and_terminal("Div")
+    .add_token_and_terminal("Colon")
+    .add_token_and_terminal("ColonColon")
+    .add_token_and_terminal("Comma")
+    .add_token_and_terminal("Dot")
+    .add_token_and_terminal("DotDot")
+    .add_token_and_terminal("Eq")
+    .add_token_and_terminal("Semicolon")
+    .add_token_and_terminal("Underscore")
+    .add_token_and_terminal("LBrace")
+    .add_token_and_terminal("RBrace")
+    .add_token_and_terminal("LBrack")
+    .add_token_and_terminal("RBrack")
+    .add_token_and_terminal("LParen")
+    .add_token_and_terminal("RParen")
+    .add_token_and_terminal("Arrow")
+    .add_token_and_terminal("MatchArrow")
+    .add_token_and_terminal("EndOfFile")
+    .add_token_and_terminal("BadCharacters")
+    // --- Meta ---
+    .add_struct(StructBuilder::new("SyntaxFile")
+        .node("items", "ItemList")
+        .node("eof", "TerminalEndOfFile")
+        )
+    .add_token("SingleLineComment")
+    .add_token("Whitespace")
+    .add_token("Newline")
+    .add_token("Missing")
+    .add_token("Skipped").get()
 }

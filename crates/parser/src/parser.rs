@@ -288,7 +288,7 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalLE => self.take::<TerminalLE>().into(),
             SyntaxKind::TerminalGE => self.take::<TerminalGE>().into(),
             SyntaxKind::TerminalAndAnd => self.take::<TerminalAndAnd>().into(),
-            SyntaxKind::TerminalOrOr => self.take::<TerminalAndAnd>().into(),
+            SyntaxKind::TerminalOrOr => self.take::<TerminalOrOr>().into(),
             _ => unreachable!(),
         }
     }
@@ -402,7 +402,6 @@ impl<'a> Parser<'a> {
             self.parse_separated_list::<Expr, TerminalComma, ExprListElementOrSeparatorGreen>(
                 Self::try_parse_expr,
                 is_of_kind!(rparen, block, rbrace, top_level),
-                SyntaxKind::TerminalComma,
                 "expression",
             ),
         );
@@ -419,7 +418,6 @@ impl<'a> Parser<'a> {
             self.parse_separated_list::<StructArg, TerminalComma, StructArgListElementOrSeparatorGreen>(
                 Self::try_parse_struct_ctor_argument,
                 is_of_kind!(rparen, block, rbrace, top_level),
-                SyntaxKind::TerminalComma,
                 "struct constructor argument",
             ),
         );
@@ -453,7 +451,6 @@ impl<'a> Parser<'a> {
             .parse_separated_list::<Expr, TerminalComma, ExprListElementOrSeparatorGreen>(
                 Self::try_parse_expr,
                 is_of_kind!(rparen, block, rbrace, top_level),
-                SyntaxKind::TerminalComma,
                 "expression",
             );
         let rparen = self.parse_token::<TerminalRParen>();
@@ -529,7 +526,6 @@ impl<'a> Parser<'a> {
             self.parse_separated_list::<MatchArm, TerminalComma, MatchArmsElementOrSeparatorGreen>(
                 Self::try_parse_match_arm,
                 is_of_kind!(block, rbrace, top_level),
-                SyntaxKind::TerminalComma,
                 "match arm",
             ),
         );
@@ -593,7 +589,6 @@ impl<'a> Parser<'a> {
                             (
                                 Self::try_parse_pattern_struct_param,
                                 is_of_kind!(rparen, block, rbrace, top_level),
-                                SyntaxKind::TerminalComma,
                                 "struct pattern parameter",
                             ),
                         );
@@ -619,7 +614,6 @@ impl<'a> Parser<'a> {
                 (
                     Self::try_parse_pattern,
                     is_of_kind!(rparen, block, rbrace, top_level),
-                    SyntaxKind::TerminalComma,
                     "pattern",
                 ));
                 let rparen = self.take::<TerminalRParen>();
@@ -631,7 +625,12 @@ impl<'a> Parser<'a> {
     /// Returns a GreenId of a node with some Pattern kind (see [syntax::node::ast::Pattern]).
     fn parse_pattern(&mut self) -> PatternGreen {
         // If not found, return a missing underscore pattern.
-        self.try_parse_pattern().unwrap_or_else(|| self.take::<TerminalUnderscore>().into())
+        self.try_parse_pattern().unwrap_or_else(|| {
+            self.create_and_report_missing::<TerminalUnderscore>(
+                ParserDiagnosticKind::MissingToken(SyntaxKind::TerminalUnderscore),
+            )
+            .into()
+        })
     }
 
     /// Returns a GreenId of a syntax in side a struct pattern. Example:
@@ -685,7 +684,7 @@ impl<'a> Parser<'a> {
                     let optional_semicolon = if self.peek().kind == SyntaxKind::TerminalSemicolon {
                         self.take::<TerminalSemicolon>().into()
                     } else {
-                        OptionSemicolonEmpty::new_green(self.db).into()
+                        OptionTerminalSemicolonEmpty::new_green(self.db).into()
                     };
                     Some(StatementExpr::new_green(self.db, expr, optional_semicolon).into())
                 }
@@ -746,7 +745,6 @@ impl<'a> Parser<'a> {
                 self.parse_separated_list::<Param, TerminalComma, ParamListElementOrSeparatorGreen>(
                     Self::try_parse_param,
                     is_of_kind!(rparen, block, lbrace, rbrace, top_level),
-                    SyntaxKind::TerminalComma,
                     "implicit param",
                 ),
             );
@@ -764,7 +762,6 @@ impl<'a> Parser<'a> {
             self.parse_separated_list::<Param, TerminalComma, ParamListElementOrSeparatorGreen>(
                 Self::try_parse_param,
                 is_of_kind!(rparen, block, lbrace, rbrace, top_level),
-                SyntaxKind::TerminalComma,
                 "parameter",
             ),
         )
@@ -867,7 +864,6 @@ impl<'a> Parser<'a> {
             self.parse_separated_list::<Expr, TerminalComma, GenericArgListElementOrSeparatorGreen>(
                 Self::try_parse_type_expr,
                 is_of_kind!(rangle, rparen, block, lbrace, rbrace, top_level),
-                SyntaxKind::TerminalComma,
                 "generic arg",
             ),
         );
@@ -884,7 +880,6 @@ impl<'a> Parser<'a> {
             self.parse_separated_list::<GenericParam, TerminalComma, GenericParamListElementOrSeparatorGreen>(
                 Self::try_parse_generic_param,
                 is_of_kind!(rangle, rparen, block, lbrace, rbrace, top_level),
-                SyntaxKind::TerminalComma,
                 "generic param",
             ),
         );
@@ -892,9 +887,9 @@ impl<'a> Parser<'a> {
         WrappedGenericParamList::new_green(self.db, langle, generic_params, rangle)
     }
 
-    fn parse_optional_generic_params(&mut self) -> OptionGenericParamsGreen {
+    fn parse_optional_generic_params(&mut self) -> OptionWrappedGenericParamListGreen {
         if self.peek().kind != SyntaxKind::TerminalLT {
-            return OptionGenericParamsEmpty::new_green(self.db).into();
+            return OptionWrappedGenericParamListEmpty::new_green(self.db).into();
         }
         self.expect_generic_params().into()
     }
@@ -948,7 +943,6 @@ impl<'a> Parser<'a> {
         &mut self,
         try_parse_list_element: fn(&mut Self) -> Option<Element::Green>,
         should_stop: fn(SyntaxKind) -> bool,
-        separator: SyntaxKind,
         element_name: &'static str,
     ) -> Vec<ElementOrSeparatorGreen>
     where
@@ -974,7 +968,7 @@ impl<'a> Parser<'a> {
                     break;
                 }
                 None => self.create_and_report_missing::<Separator>(
-                    ParserDiagnosticKind::MissingToken(separator),
+                    ParserDiagnosticKind::MissingToken(Separator::KIND.unwrap()),
                 ),
                 Some(separator) => separator,
             };
@@ -1043,6 +1037,7 @@ impl<'a> Parser<'a> {
     /// to this token as leading trivia.
     fn take<Terminal: syntax::node::Terminal>(&mut self) -> Terminal::Green {
         let token = self.take_raw();
+        assert_eq!(Some(token.kind), Terminal::KIND);
         self.add_trivia_to_terminal::<Terminal>(token)
     }
 

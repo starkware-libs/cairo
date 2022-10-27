@@ -37,6 +37,7 @@ function_call<user@test_crate::fib>([9], [10], [11]) -> ([8]);
 rename<felt>([8]) -> ([4]);
 burn_gas() -> ();
 rename<felt>([4]) -> ([12]);
+burn_gas() -> ();
 return([12]);
 
 test_crate::fib@0([0]: felt, [1]: felt, [2]: felt) -> (felt);

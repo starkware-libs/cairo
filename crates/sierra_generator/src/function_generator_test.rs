@@ -56,6 +56,7 @@ fn test_function_generator() {
             "store_temp<felt>([3]) -> ([7])",
             "function_call<user@test_crate::bar>([5], [6], [7]) -> ([4])",
             "rename<felt>([4]) -> ([8])",
+            "burn_gas() -> ()",
             "return([8])",
         ]
     );

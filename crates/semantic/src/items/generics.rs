@@ -9,13 +9,13 @@ pub fn semantic_generic_params(
     db: &dyn SemanticGroup,
     _diagnostics: &mut SemanticDiagnostics,
     module_id: ModuleId,
-    generic_args: &ast::OptionGenericParams,
+    generic_args: &ast::OptionWrappedGenericParamList,
 ) -> Vec<GenericParamId> {
     let syntax_db = db.upcast();
 
     match generic_args {
-        syntax::node::ast::OptionGenericParams::Empty(_) => vec![],
-        syntax::node::ast::OptionGenericParams::Some(syntax) => syntax
+        syntax::node::ast::OptionWrappedGenericParamList::Empty(_) => vec![],
+        syntax::node::ast::OptionWrappedGenericParamList::WrappedGenericParamList(syntax) => syntax
             .generic_params(syntax_db)
             .elements(syntax_db)
             .iter()

@@ -47,41 +47,67 @@ impl ApplyApChange for BinOpExpression {
     }
 }
 
+/// The expression representing a cell in the Sierra intermediate memory.
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub enum ReferenceExpression {
+pub enum CellExpression {
     AllocateSegment,
     Deref(CellRef),
     DoubleDeref(CellRef),
     IntoSingleCellRef(CellRef),
     Immediate(i128),
     BinOp(BinOpExpression),
-    Complex(Vec<ReferenceExpression>),
+}
+
+/// A collection of Cell Expression which represents one logical object.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ReferenceExpression {
+    pub cells: Vec<CellExpression>,
+}
+
+impl ReferenceExpression {
+    /// Builds a reference expression containing only a single cell
+    pub fn from_cell(cell_expr: CellExpression) -> Self {
+        Self { cells: vec![cell_expr] }
+    }
+    /// If there is only onw cell in the ReferenceExpression returns the contained CellExpression.
+    pub fn try_unpack_single(&self) -> Result<CellExpression, ReferencesError> {
+        if let [cell_expr] = &self.cells[..] {
+            Ok(cell_expr.clone())
+        } else {
+            Err(ReferencesError::InvalidReferenceTypeForArgument)
+        }
+    }
+}
+
+impl ApplyApChange for CellExpression {
+    fn apply_ap_change(self, ap_change: ApChange) -> Result<Self, ApChangeError> {
+        Ok(match self {
+            CellExpression::AllocateSegment => CellExpression::AllocateSegment,
+            CellExpression::Deref(operand) => {
+                CellExpression::Deref(operand.apply_ap_change(ap_change)?)
+            }
+            CellExpression::DoubleDeref(operand) => {
+                CellExpression::DoubleDeref(operand.apply_ap_change(ap_change)?)
+            }
+            CellExpression::IntoSingleCellRef(operand) => {
+                CellExpression::IntoSingleCellRef(operand.apply_ap_change(ap_change)?)
+            }
+            CellExpression::Immediate(operand) => CellExpression::Immediate(operand),
+            CellExpression::BinOp(operand) => {
+                CellExpression::BinOp(operand.apply_ap_change(ap_change)?)
+            }
+        })
+    }
 }
 
 impl ApplyApChange for ReferenceExpression {
     fn apply_ap_change(self, ap_change: ApChange) -> Result<Self, ApChangeError> {
-        Ok(match self {
-            ReferenceExpression::AllocateSegment => ReferenceExpression::AllocateSegment,
-            ReferenceExpression::Deref(operand) => {
-                ReferenceExpression::Deref(operand.apply_ap_change(ap_change)?)
-            }
-            ReferenceExpression::DoubleDeref(operand) => {
-                ReferenceExpression::DoubleDeref(operand.apply_ap_change(ap_change)?)
-            }
-            ReferenceExpression::IntoSingleCellRef(operand) => {
-                ReferenceExpression::IntoSingleCellRef(operand.apply_ap_change(ap_change)?)
-            }
-            ReferenceExpression::Immediate(operand) => ReferenceExpression::Immediate(operand),
-            ReferenceExpression::BinOp(operand) => {
-                ReferenceExpression::BinOp(operand.apply_ap_change(ap_change)?)
-            }
-            ReferenceExpression::Complex(elements) => {
-                let res_vec: Result<Vec<ReferenceExpression>, ApChangeError> = elements
-                    .into_iter()
-                    .map(|ref_expr| ref_expr.apply_ap_change(ap_change))
-                    .collect();
-                ReferenceExpression::Complex(res_vec?)
-            }
+        Ok(ReferenceExpression {
+            cells: self
+                .cells
+                .into_iter()
+                .map(|cell_expr| cell_expr.apply_ap_change(ap_change))
+                .collect::<Result<Vec<_>, _>>()?,
         })
     }
 }
@@ -101,19 +127,12 @@ pub fn build_function_arguments_refs(
             .insert(
                 param.id.clone(),
                 ReferenceValue {
-                    expression: if *size == 1 {
-                        ReferenceExpression::Deref(CellRef { register: Register::FP, offset })
-                    } else {
-                        ReferenceExpression::Complex(
-                            ((offset - size + 1)..offset + 1)
-                                .map(|i| {
-                                    ReferenceExpression::Deref(CellRef {
-                                        register: Register::FP,
-                                        offset: i,
-                                    })
-                                })
-                                .collect(),
-                        )
+                    expression: ReferenceExpression {
+                        cells: ((offset - size + 1)..(offset + 1))
+                            .map(|i| {
+                                CellExpression::Deref(CellRef { register: Register::FP, offset: i })
+                            })
+                            .collect(),
                     },
                     ty: param.ty.clone(),
                 },

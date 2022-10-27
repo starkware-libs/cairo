@@ -22,6 +22,7 @@ semantic_test!(
         "src/expr/test_data/enum",
         "src/expr/test_data/generics",
         "src/expr/test_data/if",
+        "src/expr/test_data/implicits",
         "src/expr/test_data/let_statement",
         "src/expr/test_data/match",
         "src/expr/test_data/operators",

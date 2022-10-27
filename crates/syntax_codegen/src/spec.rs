@@ -28,25 +28,6 @@ pub struct Variant {
 
 // Helpers to build AST specifications.
 
-/// Builds spec for a token node (similar to an empty struct).
-pub fn token_node(pure_name: &str) -> Node {
-    Node { name: format!("Token{pure_name}"), kind: NodeKind::Token }
-}
-/// Builds spec for a token node (similar to an empty struct).
-pub fn terminal_node(pure_name: &str) -> Node {
-    StructBuilder::new_terminal(format!("Terminal{pure_name}").as_str())
-        .node("leading_trivia", "Trivia")
-        .node("token", format!("Token{pure_name}").as_str())
-        .node("trailing_trivia", "Trivia")
-        .build()
-}
-/// Appends a terminal and a token of the relevant names. e.g. for pure_name="Identifier" it creates
-/// TokenIdentifier and TerminalIdentifier.
-pub fn append_terminal_and_token(nodes: &mut Vec<Node>, pure_name: &str) {
-    nodes.push(token_node(pure_name));
-    nodes.push(terminal_node(pure_name));
-}
-
 /// Builds spec for a struct node.
 pub struct StructBuilder {
     name: String,
@@ -89,11 +70,6 @@ impl EnumBuilder {
     pub fn new(name: &str) -> Self {
         Self { name: name.into(), variants: Vec::new(), missing_variant: None }
     }
-    pub fn new_option(name: &str) -> Self {
-        Self { name: name.into(), variants: Vec::new(), missing_variant: None }
-            .node("None")
-            .node("Some")
-    }
     pub fn missing(mut self, name: &str) -> EnumBuilder {
         let kind_name = self.name.clone() + name;
         self.missing_variant = Some(Variant { name: name.to_string(), kind: kind_name });
@@ -117,17 +93,91 @@ impl EnumBuilder {
         }
     }
 }
-/// Builds spec for a list of syntax elements.
-pub fn list_node(name: &str, element_type: &str) -> Node {
-    Node { name: name.into(), kind: NodeKind::List { element_type: element_type.into() } }
+
+/// A tool to aggregate/gather nodes in various forms and eventually emit them as a vector.
+#[derive(Default)]
+pub struct NodesAggregator {
+    nodes: Vec<Node>,
 }
-/// Builds spec for a list of syntax elements separated by a terminal.
-pub fn separated_list_node(name: &str, element_type: &str, separator_type: &str) -> Node {
-    Node {
-        name: name.into(),
-        kind: NodeKind::SeparatedList {
-            element_type: element_type.into(),
-            separator_type: separator_type.into(),
-        },
+impl NodesAggregator {
+    /// Gets all the aggregated nodes.
+    pub fn get(self) -> Vec<Node> {
+        self.nodes
+    }
+
+    /// Adds a struct node.
+    pub fn add_struct(mut self, builder: StructBuilder) -> Self {
+        self.nodes.push(builder.build());
+        self
+    }
+
+    /// Adds an enum node.
+    pub fn add_enum(mut self, builder: EnumBuilder) -> Self {
+        self.nodes.push(builder.build());
+        self
+    }
+
+    /// Adds a node for a list of syntax elements.
+    pub fn add_list(mut self, name: &str, element_type: &str) -> Self {
+        self.nodes.push(Node {
+            name: name.into(),
+            kind: NodeKind::List { element_type: element_type.into() },
+        });
+        self
+    }
+
+    /// Adds a node for a list of syntax elements separated by a terminal.
+    pub fn add_separated_list(
+        mut self,
+        name: &str,
+        element_type: &str,
+        separator_type: &str,
+    ) -> Self {
+        self.nodes.push(Node {
+            name: name.into(),
+            kind: NodeKind::SeparatedList {
+                element_type: element_type.into(),
+                separator_type: separator_type.into(),
+            },
+        });
+        self
+    }
+
+    /// Adds a node for a token node (similar to an empty struct).
+    pub fn add_token(mut self, pure_name: &str) -> Self {
+        self.nodes.push(Node { name: format!("Token{pure_name}"), kind: NodeKind::Token });
+        self
+    }
+
+    /// Adds a node for a token node (similar to an empty struct).
+    pub fn add_terminal(self, pure_name: &str) -> Self {
+        self.add_struct(
+            StructBuilder::new_terminal(format!("Terminal{pure_name}").as_str())
+                .node("leading_trivia", "Trivia")
+                .node("token", format!("Token{pure_name}").as_str())
+                .node("trailing_trivia", "Trivia"),
+        )
+    }
+
+    /// Adds a token node and a terminal node of the relevant names. e.g. for pure_name="Identifier"
+    /// it creates TokenIdentifier and TerminalIdentifier.
+    pub fn add_token_and_terminal(self, pure_name: &str) -> Self {
+        self.add_token(pure_name).add_terminal(pure_name)
+    }
+
+    /// Adds an enum node for an option with 2 variants: empty and non-empty. Creates the empty
+    /// struct to be used for the empty variant. The Type for the non-empty variant is `name`
+    /// and it should exist independently of this call.
+    ///
+    /// For example, for name=TypeClause, creates an enum OptionTypeClause with variants
+    /// Empty(OptionTypeClauseEmpty) and TypeClause(TypeClause), where OptionTypeClauseEmpty is
+    /// created here and TypeClause should exist independently.
+    pub fn add_option(self, name: &str) -> Self {
+        self.add_enum(
+            EnumBuilder::new(format!("Option{name}").as_str())
+                .node("Empty")
+                .node_with_explicit_kind(name, name),
+        )
+        .add_struct(StructBuilder::new(format!("Option{name}Empty").as_str()))
     }
 }
