@@ -97,6 +97,16 @@ impl<'a> Parser<'a> {
         T::missing(self.db)
     }
 
+    /// Returns the missing terminal and adds the corresponding missing token
+    /// diagnostic report.
+    fn create_and_report_missing_terminal<Terminal: syntax::node::Terminal>(
+        &mut self,
+    ) -> Terminal::Green {
+        self.create_and_report_missing::<Terminal>(ParserDiagnosticKind::MissingToken(
+            Terminal::KIND.unwrap(),
+        ))
+    }
+
     pub fn parse_syntax_file(mut self) -> SyntaxFileGreen {
         let items = ItemList::new_green(
             self.db,
@@ -626,10 +636,7 @@ impl<'a> Parser<'a> {
     fn parse_pattern(&mut self) -> PatternGreen {
         // If not found, return a missing underscore pattern.
         self.try_parse_pattern().unwrap_or_else(|| {
-            self.create_and_report_missing::<TerminalUnderscore>(
-                ParserDiagnosticKind::MissingToken(SyntaxKind::TerminalUnderscore),
-            )
-            .into()
+            self.create_and_report_missing_terminal::<TerminalUnderscore>().into()
         })
     }
 
@@ -1057,9 +1064,7 @@ impl<'a> Parser<'a> {
     fn parse_token<Terminal: syntax::node::Terminal>(&mut self) -> Terminal::Green {
         match self.try_parse_token::<Terminal>() {
             Some(green) => green,
-            None => self.create_and_report_missing::<Terminal>(ParserDiagnosticKind::MissingToken(
-                Terminal::KIND.unwrap(),
-            )),
+            None => self.create_and_report_missing_terminal::<Terminal>(),
         }
     }
 }
