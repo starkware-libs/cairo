@@ -73,4 +73,4 @@ rename<felt>([18]) -> ([32]);
 burn_gas() -> ();
 return([30], [31], [32]);
 
-test_crate::fib@0([0]: RangeCheck, [1]: GasBuiltin, [2]: felt, [3]: felt, [4]: felt) -> (felt);
+test_crate::fib@0([0]: RangeCheck, [1]: GasBuiltin, [2]: felt, [3]: felt, [4]: felt) -> (RangeCheck, GasBuiltin, felt);
