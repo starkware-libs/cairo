@@ -224,7 +224,7 @@ impl<'db> ExactSizeIterator for SyntaxNodeChildIterator<'db> {
 /// the ast module.
 pub trait TypedSyntaxNode {
     /// The relevant SyntaxKind. None for enums.
-    const KIND: Option<SyntaxKind>;
+    const OPTIONAL_KIND: Option<SyntaxKind>;
     type StablePtr;
     type Green;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green;
@@ -241,6 +241,7 @@ pub trait Token: TypedSyntaxNode {
 }
 
 pub trait Terminal: TypedSyntaxNode {
+    const KIND: SyntaxKind;
     type TokenType: Token;
     fn new_green(
         db: &dyn SyntaxGroup,
