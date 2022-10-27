@@ -300,9 +300,8 @@
     │       │   │       └── name (kind: TokenIdentifier): 'B'
     │       │   └── rangle (kind: TokenGT): '>'
     │       ├── lbrace (kind: TokenLBrace): '{'
-    │       ├── members (kind: ParamList)
-    │       │   ├── item #0 (kind: Param)
-    │       │   │   ├── modifiers (kind: ModifierList) []
+    │       ├── members (kind: MemberList)
+    │       │   ├── item #0 (kind: Member)
     │       │   │   ├── name (kind: TokenIdentifier): 'member'
     │       │   │   └── type_clause (kind: TypeClause)
     │       │   │       ├── colon (kind: TokenColon): ':'
@@ -310,8 +309,7 @@
     │       │   │           └── item #0 (kind: PathSegmentSimple)
     │       │   │               └── ident (kind: TokenIdentifier): 'bool'
     │       │   ├── separator #0 (kind: TokenComma): ','
-    │       │   └── item #1 (kind: Param)
-    │       │       ├── modifiers (kind: ModifierList) []
+    │       │   └── item #1 (kind: Member)
     │       │       ├── name (kind: TokenIdentifier): 'member2'
     │       │       └── type_clause (kind: TypeClause)
     │       │           ├── colon (kind: TokenColon): ':'

@@ -105,11 +105,7 @@ pub fn priv_enum_semantic_data(db: &dyn SemanticGroup, enum_id: EnumId) -> Optio
             &mut resolver,
             &variant.type_clause(syntax_db).ty(syntax_db),
         );
-        let variant_name = match variant.name(syntax_db) {
-            // TODO(yuval): enum should not be implemented using a Param...
-            syntax::node::ast::ParamName::Underscore(_) => unreachable!(),
-            syntax::node::ast::ParamName::Name(name) => name.text(syntax_db),
-        };
+        let variant_name = variant.name(syntax_db).text(syntax_db);
         if let Some(_other_variant) = variants.insert(variant_name.clone(), id) {
             diagnostics.report(&variant, EnumVariantRedefinition { enum_id, variant_name })
         }

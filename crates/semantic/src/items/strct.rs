@@ -89,11 +89,7 @@ pub fn priv_struct_semantic_data(
             &mut resolver,
             &member.type_clause(syntax_db).ty(syntax_db),
         );
-        let member_name = match member.name(syntax_db) {
-            // TODO(yuval): struct should not be implemented using a Param...
-            syntax::node::ast::ParamName::Underscore(_) => unreachable!(),
-            syntax::node::ast::ParamName::Name(name) => name.text(syntax_db),
-        };
+        let member_name = member.name(syntax_db).text(syntax_db);
         if let Some(_other_member) = members.insert(member_name.clone(), Member { id, ty }) {
             diagnostics.report(&member, StructMemberRedefinition { struct_id, member_name })
         }

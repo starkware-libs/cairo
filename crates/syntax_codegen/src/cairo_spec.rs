@@ -286,6 +286,13 @@ pub fn get_spec() -> Vec<Node> {
             .node("ret_ty", "OptionReturnTypeClause")
             .node("implicits_clause", "OptionImplicitsClause")
             .build(),
+        // --- Struct Members ---
+        // Struct member and enum variant have the same structure.
+        StructBuilder::new("Member")
+            .key_node("name", "TerminalIdentifier")
+            .node("type_clause", "TypeClause")
+            .build(),
+        separated_list_node("MemberList", "Member", "TerminalComma"),
         // --- Items ---
         EnumBuilder::new("Item")
             .node("Module")
@@ -350,8 +357,7 @@ pub fn get_spec() -> Vec<Node> {
             .key_node("name", "TerminalIdentifier")
             .node("generic_params", "OptionGenericParams")
             .node("lbrace", "TerminalLBrace")
-            // TODO(yuval): struct should not be implemented using a Param...
-            .node("members", "ParamList")
+            .node("members", "MemberList")
             .node("rbrace", "TerminalRBrace")
             .build(),
         StructBuilder::new("ItemEnum")
@@ -359,8 +365,7 @@ pub fn get_spec() -> Vec<Node> {
             .key_node("name", "TerminalIdentifier")
             .node("generic_params", "OptionGenericParams")
             .node("lbrace", "TerminalLBrace")
-            // TODO(yuval): enum should not be implemented using a Param...
-            .node("variants", "ParamList")
+            .node("variants", "MemberList")
             .node("rbrace", "TerminalRBrace")
             .build(),
         StructBuilder::new("ItemUse")
