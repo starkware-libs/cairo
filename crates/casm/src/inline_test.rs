@@ -2,9 +2,8 @@ use indoc::indoc;
 use itertools::join;
 use pretty_assertions::assert_eq;
 
-use crate::instructions::*;
-use crate::operand::*;
-use crate::{casm, casm_extend, deref};
+use crate::instructions::Instruction;
+use crate::{casm, deref};
 
 #[test]
 fn test_assert() {
@@ -47,24 +46,5 @@ fn test_assert() {
             %{ memory[ap + 0] = memory[ap + 9] < memory[fp + 9] %}
             call abs 5, ap++
             call rel [fp + 5], ap++"}
-    );
-}
-
-#[test]
-fn test_extend() {
-    let mut ctx = casm! {
-        [fp - 0] = 1, ap++;
-    };
-
-    casm_extend! {ctx,
-        [fp - 1] = 2, ap++;
-    };
-
-    let code = join(ctx.instructions.iter().map(Instruction::to_string), "\n");
-    assert_eq!(
-        code,
-        indoc! {"
-            [fp + 0] = 1, ap++
-            [fp + -1] = 2, ap++"}
     );
 }
