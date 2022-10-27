@@ -13,9 +13,7 @@ func fib(ref rc: RangeCheck, a: uint128, b: uint128, n: uint128) -> felt {
                 },
             };
             // TODO(orizi): Use uint128 literal when supported.
-                let one = match uint128_from_felt(rc, {
-                    1
-            }) {
+            let one = match uint128_from_felt(rc, 1) {
                 Option::Some (t) => t,
                 Option::None (_) => {
                     return 0;
