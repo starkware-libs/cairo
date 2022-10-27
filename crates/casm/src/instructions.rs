@@ -134,7 +134,7 @@ impl Display for JnzInstruction {
 pub fn op_size_based_on_res_operands(operand: &ResOperand) -> usize {
     match operand {
         ResOperand::Deref(_) => 1,
-        ResOperand::DoubleDeref(_) => 1,
+        ResOperand::DoubleDeref(_, _) => 1,
         ResOperand::Immediate(_) => 2,
         ResOperand::BinOp(op) => match op.b {
             DerefOrImmediate::Immediate(_) => 2,

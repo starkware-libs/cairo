@@ -146,8 +146,8 @@ fn strip_comments_and_linebreaks(program: &str) -> String {
 
                 // box_and_back:
                 %{ memory[ap + 0] = segments.add() %}
-                [fp + -3] = [[ap + 0]], ap++;
-                [ap + 0] = [[ap + -1]], ap++;
+                [fp + -3] = [[ap + 0] + 0], ap++;
+                [ap + 0] = [[ap + -1] + 0], ap++;
                 ret;
 
                 // box_and_back_wrapper:
@@ -258,11 +258,11 @@ fn strip_comments_and_linebreaks(program: &str) -> String {
                 %{ memory[ap + 0] = memory[ap + -2] < 6 %}
                 jmp rel 7 if [ap + 0] != 0, ap++;
                 [ap + 0] = [ap + -3] + -6, ap++;
-                [ap + -1] = [[ap + -5]];
+                [ap + -1] = [[ap + -5] + 0];
                 jmp rel 13;
                 [ap + 0] = [ap + -3] + -5, ap++;
                 [ap + 0] = [ap + -1] * -1, ap++;
-                [ap + -1] = [[ap + -6]];
+                [ap + -1] = [[ap + -6] + 0];
                 // Statement # 28  - Ran out of gas - returning updated gb and -1.
                 [ap + 0] = [ap + -6] + 1, ap++;
                 [ap + 0] = [ap + -6], ap++;
@@ -307,11 +307,11 @@ fn strip_comments_and_linebreaks(program: &str) -> String {
                 %{ memory[ap + 0] = memory[fp + -4] < 31 %}
                 jmp rel 7 if [ap + 0] != 0, ap++;
                 [ap + 0] = [fp + -4] + -31, ap++;
-                [ap + -1] = [[fp + -5]];
+                [ap + -1] = [[fp + -5] + 0];
                 jmp rel 13;
                 [ap + 0] = [fp + -4] + -30, ap++;
                 [ap + 0] = [ap + -1] * -1, ap++;
-                [ap + -1] = [[fp + -5]];
+                [ap + -1] = [[fp + -5] + 0];
                 [ap + 0] = [fp + -5] + 1, ap++;
                 [ap + 0] = [fp + -4], ap++;
                 [ap + 0] = -1, ap++;
