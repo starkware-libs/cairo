@@ -51,6 +51,8 @@ pub enum SyntaxKind {
     ImplicitsClause,
     OptionImplicitsClauseEmpty,
     FunctionSignature,
+    Member,
+    MemberList,
     ItemList,
     ItemModule,
     ItemFreeFunction,

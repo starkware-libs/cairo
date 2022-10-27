@@ -5210,6 +5210,163 @@ impl TypedSyntaxNode for FunctionSignature {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct Member {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl Member {
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        name: TerminalIdentifierGreen,
+        type_clause: TypeClauseGreen,
+    ) -> MemberGreen {
+        let children: Vec<GreenId> = vec![name.0, type_clause.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        MemberGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::Member,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+}
+impl Member {
+    pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
+        TerminalIdentifier::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn type_clause(&self, db: &dyn SyntaxGroup) -> TypeClause {
+        TypeClause::from_syntax_node(db, self.children[1].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct MemberPtr(SyntaxStablePtrId);
+impl MemberPtr {
+    pub fn name_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
+        let ptr = db.lookup_intern_stable_ptr(self.0);
+        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
+            TerminalIdentifierGreen(key_fields[0])
+        } else {
+            panic!("Unexpected key field query on root.");
+        }
+    }
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct MemberGreen(pub GreenId);
+impl TypedSyntaxNode for Member {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Member);
+    type StablePtr = MemberPtr;
+    type Green = MemberGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        MemberGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::Member,
+            details: GreenNodeDetails::Node {
+                children: vec![TerminalIdentifier::missing(db).0, TypeClause::missing(db).0],
+                width: 0,
+            },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::Member,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::Member
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        MemberPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct MemberList(ElementList<Member, 2>);
+impl Deref for MemberList {
+    type Target = ElementList<Member, 2>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+impl MemberList {
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        children: Vec<MemberListElementOrSeparatorGreen>,
+    ) -> MemberListGreen {
+        let width = children.iter().map(|id| db.lookup_intern_green(id.id()).width()).sum();
+        MemberListGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::MemberList,
+            details: GreenNodeDetails::Node {
+                children: children.iter().map(|x| x.id()).collect(),
+                width,
+            },
+        }))
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct MemberListPtr(SyntaxStablePtrId);
+impl MemberListPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub enum MemberListElementOrSeparatorGreen {
+    Separator(TerminalCommaGreen),
+    Element(MemberGreen),
+}
+impl From<TerminalCommaGreen> for MemberListElementOrSeparatorGreen {
+    fn from(value: TerminalCommaGreen) -> Self {
+        MemberListElementOrSeparatorGreen::Separator(value)
+    }
+}
+impl From<MemberGreen> for MemberListElementOrSeparatorGreen {
+    fn from(value: MemberGreen) -> Self {
+        MemberListElementOrSeparatorGreen::Element(value)
+    }
+}
+impl MemberListElementOrSeparatorGreen {
+    fn id(&self) -> GreenId {
+        match self {
+            MemberListElementOrSeparatorGreen::Separator(green) => green.0,
+            MemberListElementOrSeparatorGreen::Element(green) => green.0,
+        }
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct MemberListGreen(pub GreenId);
+impl TypedSyntaxNode for MemberList {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::MemberList);
+    type StablePtr = MemberListPtr;
+    type Green = MemberListGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        MemberListGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::MemberList,
+            details: GreenNodeDetails::Node { children: vec![], width: 0 },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        Self(ElementList::new(node))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        MemberListPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum Item {
     Module(ItemModule),
     Use(ItemUse),
@@ -6042,7 +6199,7 @@ impl ItemStruct {
         name: TerminalIdentifierGreen,
         generic_params: OptionWrappedGenericParamListGreen,
         lbrace: TerminalLBraceGreen,
-        members: ParamListGreen,
+        members: MemberListGreen,
         rbrace: TerminalRBraceGreen,
     ) -> ItemStructGreen {
         let children: Vec<GreenId> =
@@ -6067,8 +6224,8 @@ impl ItemStruct {
     pub fn lbrace(&self, db: &dyn SyntaxGroup) -> TerminalLBrace {
         TerminalLBrace::from_syntax_node(db, self.children[3].clone())
     }
-    pub fn members(&self, db: &dyn SyntaxGroup) -> ParamList {
-        ParamList::from_syntax_node(db, self.children[4].clone())
+    pub fn members(&self, db: &dyn SyntaxGroup) -> MemberList {
+        MemberList::from_syntax_node(db, self.children[4].clone())
     }
     pub fn rbrace(&self, db: &dyn SyntaxGroup) -> TerminalRBrace {
         TerminalRBrace::from_syntax_node(db, self.children[5].clone())
@@ -6104,7 +6261,7 @@ impl TypedSyntaxNode for ItemStruct {
                     TerminalIdentifier::missing(db).0,
                     OptionWrappedGenericParamList::missing(db).0,
                     TerminalLBrace::missing(db).0,
-                    ParamList::missing(db).0,
+                    MemberList::missing(db).0,
                     TerminalRBrace::missing(db).0,
                 ],
                 width: 0,
@@ -6145,7 +6302,7 @@ impl ItemEnum {
         name: TerminalIdentifierGreen,
         generic_params: OptionWrappedGenericParamListGreen,
         lbrace: TerminalLBraceGreen,
-        variants: ParamListGreen,
+        variants: MemberListGreen,
         rbrace: TerminalRBraceGreen,
     ) -> ItemEnumGreen {
         let children: Vec<GreenId> =
@@ -6170,8 +6327,8 @@ impl ItemEnum {
     pub fn lbrace(&self, db: &dyn SyntaxGroup) -> TerminalLBrace {
         TerminalLBrace::from_syntax_node(db, self.children[3].clone())
     }
-    pub fn variants(&self, db: &dyn SyntaxGroup) -> ParamList {
-        ParamList::from_syntax_node(db, self.children[4].clone())
+    pub fn variants(&self, db: &dyn SyntaxGroup) -> MemberList {
+        MemberList::from_syntax_node(db, self.children[4].clone())
     }
     pub fn rbrace(&self, db: &dyn SyntaxGroup) -> TerminalRBrace {
         TerminalRBrace::from_syntax_node(db, self.children[5].clone())
@@ -6207,7 +6364,7 @@ impl TypedSyntaxNode for ItemEnum {
                     TerminalIdentifier::missing(db).0,
                     OptionWrappedGenericParamList::missing(db).0,
                     TerminalLBrace::missing(db).0,
-                    ParamList::missing(db).0,
+                    MemberList::missing(db).0,
                     TerminalRBrace::missing(db).0,
                 ],
                 width: 0,
