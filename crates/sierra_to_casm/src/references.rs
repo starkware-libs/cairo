@@ -57,6 +57,7 @@ pub enum CellExpression {
     DoubleDeref(CellRef),
     IntoSingleCellRef(CellRef),
     Immediate(BigInt),
+    Padding,
     BinOp(BinOpExpression),
 }
 
@@ -71,7 +72,7 @@ impl ReferenceExpression {
     pub fn from_cell(cell_expr: CellExpression) -> Self {
         Self { cells: vec![cell_expr] }
     }
-    /// If there is only onw cell in the ReferenceExpression returns the contained CellExpression.
+    /// If there is only one cell in the ReferenceExpression returns the contained CellExpression.
     pub fn try_unpack_single(&self) -> Result<CellExpression, ReferencesError> {
         if let [cell_expr] = &self.cells[..] {
             Ok(cell_expr.clone())
@@ -84,7 +85,6 @@ impl ReferenceExpression {
 impl ApplyApChange for CellExpression {
     fn apply_ap_change(self, ap_change: ApChange) -> Result<Self, ApChangeError> {
         Ok(match self {
-            CellExpression::AllocateSegment => CellExpression::AllocateSegment,
             CellExpression::Deref(operand) => {
                 CellExpression::Deref(operand.apply_ap_change(ap_change)?)
             }
@@ -94,10 +94,12 @@ impl ApplyApChange for CellExpression {
             CellExpression::IntoSingleCellRef(operand) => {
                 CellExpression::IntoSingleCellRef(operand.apply_ap_change(ap_change)?)
             }
-            CellExpression::Immediate(operand) => CellExpression::Immediate(operand),
             CellExpression::BinOp(operand) => {
                 CellExpression::BinOp(operand.apply_ap_change(ap_change)?)
             }
+            expr @ (CellExpression::AllocateSegment
+            | CellExpression::Padding
+            | CellExpression::Immediate(_)) => expr,
         })
     }
 }

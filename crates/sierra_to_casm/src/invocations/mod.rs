@@ -37,6 +37,8 @@ pub enum InvocationError {
     NotImplemented(Invocation),
     #[error("The functionality is supported only for sized types.")]
     NotSized(Invocation),
+    #[error("Expected type data not found.")]
+    UnknownTypeData,
     #[error("Expected variable data for statement not found.")]
     UnknownVariableData,
     #[error("An integer overflow occurred.")]
@@ -204,10 +206,13 @@ pub fn compile_invocation(
 /// enum/array).
 trait ReferenceExpressionView: Sized {
     type Error;
-
     /// Extracts the specific view from the reference expressions. Can include validations and thus
     /// returns a result.
-    fn try_get_view(expr: &ReferenceExpression) -> Result<Self, Self::Error>;
+    fn try_get_view(
+        expr: &ReferenceExpression,
+        program_info: &ProgramInfo<'_>,
+        libfunc: &CoreConcreteLibFunc,
+    ) -> Result<Self, Self::Error>;
     /// Converts the view into a ReferenceExpression.
     fn to_reference_expression(self) -> ReferenceExpression;
 }
