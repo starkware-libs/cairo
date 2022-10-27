@@ -59,7 +59,7 @@ fn compile_to_sierra(name: &str) -> sierra::program::Program {
 #[test_case("fib")]
 #[test_case("fib_box")]
 #[test_case("fib_array")]
-#[test_case("fib_uint128" => ignore["uint128 extension yet to be added."])]
+#[test_case("fib_uint128")]
 #[test_case("fib_gas")]
 #[test_case("corelib_usage" => ignore["unsupported"])]
 fn cairo_to_sierra(name: &str) {
@@ -70,7 +70,7 @@ fn cairo_to_sierra(name: &str) {
 #[test_case("fib", false)]
 #[test_case("fib_box", false)]
 #[test_case("fib_array", false)]
-#[test_case("fib_uint128", false => ignore["uint128 extension yet to be lowered to casm."])]
+#[test_case("fib_uint128", false)]
 #[test_case("fib_gas", true)]
 #[test_case("corelib_usage", false => ignore["unsupported"])]
 fn cairo_to_casm(name: &str, enable_gas_checks: bool) {
@@ -96,7 +96,7 @@ fn cairo_to_casm(name: &str, enable_gas_checks: bool) {
 #[test_case("fib")]
 #[test_case("fib_box")]
 #[test_case("fib_array")]
-#[test_case("fib_uint128" => ignore["uint128 does not pass sierra gen."])]
+#[test_case("fib_uint128")]
 #[test_case("fib_gas")]
 #[test_case("corelib_usage")]
 fn lowering_test(name: &str) {
