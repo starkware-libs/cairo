@@ -1,14 +1,18 @@
 use casm::ap_change::ApChange;
 use casm::casm;
 use casm::operand::CellRef;
+use itertools::{chain, repeat_n};
 use num_bigint::ToBigInt;
 use sierra::extensions::enm::{EnumConcreteLibFunc, EnumInitConcreteLibFunc};
+use sierra::extensions::ConcreteLibFunc;
+use sierra::ids::ConcreteTypeId;
 use sierra::program::{BranchInfo, BranchTarget, StatementIdx};
 use utils::try_extract_matches;
 
 use super::{
     CompiledInvocation, CompiledInvocationBuilder, InvocationError, ReferenceExpressionView,
 };
+use crate::invocations::ProgramInfo;
 use crate::references::{CellExpression, ReferenceExpression, ReferenceValue, ReferencesError};
 use crate::relocations::{Relocation, RelocationEntry};
 
@@ -56,13 +60,7 @@ fn build_enum_init(
             });
         }
     };
-    let init_arg = try_extract_matches!(
-        expression
-            .try_unpack_single()
-            .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?,
-        CellExpression::Deref
-    )
-    .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
+    let init_arg_cells = &expression.cells;
 
     let variant_selector = if builder.invocation.branches.len() <= 2 {
         // For num_branches <= 2, we use the index as the variant_selector as the `match`
@@ -85,20 +83,41 @@ fn build_enum_init(
         2 * index + 1
     };
 
+    let variant_size = builder
+        .program_info
+        .type_sizes
+        .get(&builder.libfunc.param_signatures()[0].ty)
+        .ok_or(InvocationError::UnknownTypeData)?
+        .to_owned();
+    if init_arg_cells.len() != variant_size {
+        return Err(InvocationError::InvalidReferenceExpressionForArgument);
+    }
+    // Pad the variant to match the size of the largest variant
+    let concrete_enum_type = &builder.libfunc.output_types()[0][0];
+    let enum_size = get_enum_size(&builder.program_info, concrete_enum_type)
+        .ok_or(InvocationError::UnknownTypeData)?;
+    let num_padding = enum_size - 1 - variant_size;
+    let inner_value =
+        chain!(init_arg_cells.clone(), repeat_n(CellExpression::Padding, num_padding)).collect();
+
     let enum_val = EnumView {
         variant_selector: CellExpression::Immediate(variant_selector.to_bigint().unwrap()),
-        inner_value: CellExpression::Deref(init_arg),
+        inner_value,
     };
-    Ok(builder.build_only_reference_changes([enum_val.to_reference_expression()].into_iter()))
+    let output_expressions = [enum_val.to_reference_expression()].into_iter();
+    Ok(builder.build_only_reference_changes(output_expressions))
 }
 
 /// Handles statement for matching an enum.
 fn build_enum_match(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
+    let concrete_enum_type = &builder.libfunc.param_signatures()[0].ty;
     let matched_var = match builder.refs {
-        [ReferenceValue { expression, .. }] => EnumView::try_get_view(expression)
-            .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?,
+        [ReferenceValue { expression, .. }] => {
+            EnumView::try_get_view(expression, &builder.program_info, concrete_enum_type)
+                .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?
+        }
         refs => {
             return Err(InvocationError::WrongNumberOfArguments {
                 expected: 1,
@@ -117,22 +136,44 @@ fn build_enum_match(
         _ => panic!("malformed invocation"),
     });
 
+    let mut branch_output_sizes: Vec<usize> = Vec::new();
+    for branch_outputs in &builder.libfunc.output_types() {
+        // Each branch has a single output.
+        let branch_output = &branch_outputs[0];
+        let branch_output_size = builder
+            .program_info
+            .type_sizes
+            .get(branch_output)
+            .ok_or(InvocationError::UnknownTypeData)?;
+        branch_output_sizes.push(*branch_output_size);
+    }
+    let output_expressions = branch_output_sizes.into_iter().map(|size| {
+        // The size of an output must be smaller than the size of `matched_var.inner_value` as the
+        // size of inner_value is fixed and is calculated as the max of the sizes of all the
+        // variants (which are the outputs in all the branches). Thus it is guaranteed that the
+        // iter we generate here is of size `size` (and not less).
+        vec![ReferenceExpression {
+            cells: matched_var.inner_value.iter().take(size).cloned().collect(),
+        }]
+        .into_iter()
+    });
+
     let num_branches = builder.invocation.branches.len();
     if num_branches <= 2 {
         build_enum_match_short(
             builder,
             num_branches,
-            matched_var,
             variant_selector,
             target_statement_ids,
+            output_expressions,
         )
     } else {
         build_enum_match_long(
             builder,
             num_branches,
-            matched_var,
             variant_selector,
             target_statement_ids,
+            output_expressions,
         )
     }
 }
@@ -166,13 +207,13 @@ fn build_enum_match(
 /// ```
 ///
 /// Assumes that num_branches == builder.invocation.branches.len() ==
-/// target_statement_ids_iter.len() and that num_branches <= 2.
+/// target_statement_ids.len() == output_expressions.len() and that num_branches <= 2.
 fn build_enum_match_short(
     builder: CompiledInvocationBuilder<'_>,
     num_branches: usize,
-    matched_var: EnumView,
     variant_selector: CellRef,
     mut target_statement_ids: impl Iterator<Item = StatementIdx>,
+    output_expressions: impl Iterator<Item = impl Iterator<Item = ReferenceExpression>>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let mut instructions = Vec::new();
     let mut relocations = Vec::new();
@@ -198,11 +239,7 @@ fn build_enum_match_short(
         instructions,
         relocations,
         itertools::repeat_n(ApChange::Known(0), num_branches).into_iter(),
-        itertools::repeat_n(
-            vec![ReferenceExpression::from_cell(matched_var.inner_value)].into_iter(),
-            num_branches,
-        )
-        .into_iter(),
+        output_expressions,
     ))
 }
 
@@ -230,14 +267,14 @@ fn build_enum_match_short(
 /// Where in the first location of the enum_var there will be the jmp_table_idx (1 for the first
 /// branch, 2 for the second and so on).
 ///
-/// Assumes that num_branches == builder.invocation.branches.len() == target_statement_ids.len()
-/// and that num_branches > 2.
+/// Assumes that num_branches == self.invocation.branches.len() ==
+/// target_statement_ids.len() == output_expressions.len() and that num_branches > 2.
 fn build_enum_match_long(
     builder: CompiledInvocationBuilder<'_>,
     num_branches: usize,
-    matched_var: EnumView,
     variant_selector: CellRef,
     target_statement_ids: impl Iterator<Item = StatementIdx>,
+    output_expressions: impl Iterator<Item = impl Iterator<Item = ReferenceExpression>>,
 ) -> Result<CompiledInvocation, InvocationError> {
     // The first instruction is the jmp to the relevant index in the jmp table.
     let mut instructions = casm! { jmp rel variant_selector; }.instructions;
@@ -256,11 +293,7 @@ fn build_enum_match_long(
         instructions,
         relocations,
         itertools::repeat_n(ApChange::Known(0), num_branches).into_iter(),
-        itertools::repeat_n(
-            vec![ReferenceExpression::from_cell(matched_var.inner_value)].into_iter(),
-            num_branches,
-        )
-        .into_iter(),
+        output_expressions,
     ))
 }
 
@@ -270,20 +303,50 @@ pub struct EnumView {
     /// This would be ReferenceExpression::Immediate after enum_init, and would be
     /// ReferenceExpression::Deref after store_*.
     pub variant_selector: CellExpression,
-    /// The inner value of the enum - can be any ReferenceExpression.
-    pub inner_value: CellExpression,
+    /// The inner value of the enum (a flat vector of cell expressions), padded with
+    /// CellExpression::Padding to match the size of the largest variant.
+    pub inner_value: Vec<CellExpression>,
 }
 
 impl ReferenceExpressionView for EnumView {
     type Error = ReferencesError;
 
-    fn try_get_view(expr: &ReferenceExpression) -> Result<Self, Self::Error> {
-        if expr.cells.len() != 2 {
+    fn try_get_view(
+        expr: &ReferenceExpression,
+        program_info: &ProgramInfo<'_>,
+        enum_concrete_type: &ConcreteTypeId,
+    ) -> Result<Self, Self::Error> {
+        let enum_size = get_enum_size(program_info, enum_concrete_type)
+            .ok_or(ReferencesError::InvalidReferenceTypeForArgument)?;
+        // Verify the size.
+        if expr.cells.len() != enum_size {
             return Err(ReferencesError::InvalidReferenceTypeForArgument);
         }
-        Ok(EnumView { variant_selector: expr.cells[0].clone(), inner_value: expr.cells[1].clone() })
+
+        let mut expr_cells_iter = expr.cells.iter();
+        let variant_selector =
+            expr_cells_iter.next().ok_or(ReferencesError::InvalidReferenceTypeForArgument)?.clone();
+
+        Ok(EnumView { variant_selector, inner_value: expr_cells_iter.cloned().collect() })
     }
+
     fn to_reference_expression(self) -> ReferenceExpression {
-        ReferenceExpression { cells: vec![self.variant_selector, self.inner_value] }
+        ReferenceExpression {
+            cells: chain!(
+                // Variant selector
+                vec![self.variant_selector].into_iter(),
+                // actual value's cells
+                self.inner_value.into_iter(),
+            )
+            .collect(),
+        }
     }
+}
+
+/// Gets the size of the given concrete enum type.
+fn get_enum_size(
+    program_info: &ProgramInfo<'_>,
+    concrete_enum_type: &ConcreteTypeId,
+) -> Option<usize> {
+    Some(program_info.type_sizes.get(concrete_enum_type)?.to_owned())
 }
