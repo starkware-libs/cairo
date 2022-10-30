@@ -235,6 +235,7 @@ define_language_element_id_as_enum! {
         Submodule(SubmoduleId),
         Use(UseId),
         FreeFunction(FreeFunctionId),
+        Trait(TraitId),
         Struct(StructId),
         Enum(EnumId),
         ExternType(ExternTypeId),
@@ -256,6 +257,7 @@ define_language_element_id!(
     lookup_intern_free_function,
     name
 );
+define_language_element_id!(TraitId, TraitLongId, ast::ItemTrait, lookup_intern_trait, name);
 define_language_element_id!(
     ExternFunctionId,
     ExternFunctionLongId,
@@ -346,7 +348,7 @@ impl GenericTypeId {
     }
 }
 
-// Conversion from ModuleItemId to GenericFunctionId.
+/// Conversion from ModuleItemId to GenericFunctionId.
 impl OptionFrom<ModuleItemId> for GenericFunctionId {
     fn option_from(item: ModuleItemId) -> Option<Self> {
         match item {
@@ -354,12 +356,15 @@ impl OptionFrom<ModuleItemId> for GenericFunctionId {
             ModuleItemId::ExternFunction(id) => Some(GenericFunctionId::Extern(id)),
             ModuleItemId::Submodule(_)
             | ModuleItemId::Use(_)
+            | ModuleItemId::Trait(_)
             | ModuleItemId::Struct(_)
             | ModuleItemId::Enum(_)
             | ModuleItemId::ExternType(_) => None,
         }
     }
 }
+
+/// Conversion from ModuleItemId to GenericTypeId.
 impl OptionFrom<ModuleItemId> for GenericTypeId {
     fn option_from(item: ModuleItemId) -> Option<Self> {
         match item {
@@ -369,6 +374,7 @@ impl OptionFrom<ModuleItemId> for GenericTypeId {
             ModuleItemId::Submodule(_)
             | ModuleItemId::Use(_)
             | ModuleItemId::FreeFunction(_)
+            | ModuleItemId::Trait(_)
             | ModuleItemId::ExternFunction(_) => None,
         }
     }

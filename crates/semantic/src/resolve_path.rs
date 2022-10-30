@@ -436,6 +436,7 @@ impl<'db> Resolver<'db> {
             ModuleItemId::ExternType(id) => {
                 ResolvedGenericItem::GenericType(GenericTypeId::Extern(id))
             }
+            ModuleItemId::Trait(_) => todo!("Unsupported"),
         })
     }
 
