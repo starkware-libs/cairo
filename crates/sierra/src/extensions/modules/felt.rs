@@ -1,3 +1,6 @@
+use num_bigint::BigInt;
+use num_traits::Zero;
+
 use super::jump_not_zero::{JumpNotZeroLibFunc, JumpNotZeroTraits};
 use super::non_zero::NonZeroType;
 use crate::extensions::lib_func::{
@@ -107,7 +110,7 @@ impl GenericLibFunc for FeltOperationLibFunc {
                 SierraApChange::Known,
             )),
             [GenericArg::Value(c)] => {
-                if matches!(self.operator, FeltOperator::Div) && *c == 0 {
+                if matches!(self.operator, FeltOperator::Div) && c.is_zero() {
                     Err(SpecializationError::UnsupportedGenericArg)
                 } else {
                     Ok(LibFuncSignature::new_non_branch(
@@ -135,12 +138,12 @@ impl GenericLibFunc for FeltOperationLibFunc {
                 signature: self.specialize_signature(context.upcast(), args)?,
             })),
             [GenericArg::Value(c)] => {
-                if matches!(self.operator, FeltOperator::Div) && *c == 0 {
+                if matches!(self.operator, FeltOperator::Div) && c.is_zero() {
                     Err(SpecializationError::UnsupportedGenericArg)
                 } else {
                     Ok(FeltOperationConcreteLibFunc::Const(FeltOperationWithConstConcreteLibFunc {
                         operator: self.operator,
-                        c: *c as i128,
+                        c: c.clone(),
                         signature: self.specialize_signature(context.upcast(), args)?,
                     }))
                 }
@@ -163,7 +166,7 @@ impl SignatureBasedConcreteLibFunc for FeltBinaryOperationConcreteLibFunc {
 /// Felt operations with a const.
 pub struct FeltOperationWithConstConcreteLibFunc {
     pub operator: FeltOperator,
-    pub c: i128,
+    pub c: BigInt,
     pub signature: LibFuncSignature,
 }
 define_concrete_libfunc_hierarchy! {
@@ -208,7 +211,7 @@ impl NamedLibFunc for FeltConstLibFunc {
     ) -> Result<Self::Concrete, SpecializationError> {
         match args {
             [GenericArg::Value(c)] => Ok(FeltConstConcreteLibFunc {
-                c: *c as i128,
+                c: c.clone(),
                 signature: <Self as NamedLibFunc>::specialize_signature(
                     self,
                     context.upcast(),
@@ -221,7 +224,7 @@ impl NamedLibFunc for FeltConstLibFunc {
 }
 
 pub struct FeltConstConcreteLibFunc {
-    pub c: i128,
+    pub c: BigInt,
     pub signature: LibFuncSignature,
 }
 impl SignatureBasedConcreteLibFunc for FeltConstConcreteLibFunc {

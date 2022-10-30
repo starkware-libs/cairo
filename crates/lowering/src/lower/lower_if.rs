@@ -1,3 +1,4 @@
+use num_traits::Zero;
 use semantic::corelib;
 use utils::extract_matches;
 
@@ -32,7 +33,7 @@ fn analyze_condition(ctx: &LoweringContext<'_>, expr_id: semantic::ExprId) -> If
 
 fn is_zero(ctx: &LoweringContext<'_>, expr_id: semantic::ExprId) -> bool {
     let expr = &ctx.function_def.exprs[expr_id];
-    matches!(expr, semantic::Expr::Literal(literal) if literal.value == 0)
+    matches!(expr, semantic::Expr::Literal(literal) if literal.value.is_zero())
 }
 
 /// Lowers an expression of type [semantic::ExprIf].
