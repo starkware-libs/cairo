@@ -3,6 +3,7 @@ use casm::casm;
 use casm::hints::Hint;
 use casm::instructions::{AddApInstruction, Instruction, InstructionBody};
 use casm::operand::{CellRef, DerefOrImmediate, Register, ResOperand};
+use num_bigint::ToBigInt;
 use sierra::extensions::array::ArrayConcreteLibFunc;
 use sierra::extensions::felt::FeltOperator;
 use utils::try_extract_matches;
@@ -39,7 +40,7 @@ fn build_array_new(
     Ok(builder.build(
         // TODO(Gil): change to casm! macro when hints are supported.
         vec![Instruction {
-            body: InstructionBody::AddAp(AddApInstruction { operand: ResOperand::Immediate(1) }),
+            body: InstructionBody::AddAp(AddApInstruction { operand: ResOperand::from(1) }),
             inc_ap: false,
             hints: vec![Hint::AllocSegment { dst: CellRef { register: Register::AP, offset: 0 } }],
         }],
@@ -72,7 +73,7 @@ fn build_array_append(
                 .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?
             {
                 CellExpression::Deref(op) => DerefOrImmediate::Deref(op),
-                CellExpression::Immediate(op) => DerefOrImmediate::Immediate(op),
+                CellExpression::Immediate(op) => DerefOrImmediate::from(op),
                 _ => return Err(InvocationError::InvalidReferenceExpressionForArgument),
             };
             (array_view, elem_val)
@@ -138,9 +139,11 @@ impl ReferenceExpressionView for ArrayView {
                 }
                 (
                     binop.a,
-                    try_extract_matches!(binop.b, DerefOrImmediate::Immediate)
-                        .ok_or(ReferencesError::InvalidReferenceTypeForArgument)?
-                        as u16,
+                    u16::try_from(
+                        try_extract_matches!(binop.b.clone(), DerefOrImmediate::Immediate)
+                            .ok_or(ReferencesError::InvalidReferenceTypeForArgument)?,
+                    )
+                    .unwrap(),
                 )
             }
             _ => {
@@ -161,7 +164,7 @@ impl ReferenceExpressionView for ArrayView {
                     CellExpression::BinOp(BinOpExpression {
                         op: FeltOperator::Add,
                         a: self.end,
-                        b: DerefOrImmediate::Immediate(self.end_offset as i128),
+                        b: DerefOrImmediate::Immediate(self.end_offset.to_bigint().unwrap()),
                     }),
                 ],
             }

@@ -1,4 +1,5 @@
 use bimap::BiMap;
+use num_bigint::ToBigInt;
 use test_case::test_case;
 
 use super::core::{CoreLibFunc, CoreType};
@@ -19,7 +20,7 @@ fn type_arg(name: &str) -> GenericArg {
 }
 
 fn value_arg(v: i64) -> GenericArg {
-    GenericArg::Value(v)
+    GenericArg::Value(v.to_bigint().unwrap())
 }
 
 struct MockSpecializationContext {
@@ -214,9 +215,9 @@ fn find_type_specialization(
 #[test_case("enum_init", vec![type_arg("Option"), value_arg(0)] => Ok(()); "enum_init<Option,0>")]
 #[test_case("enum_init", vec![type_arg("Option"), value_arg(1)] => Ok(());"enum_init<Option,1>")]
 #[test_case("enum_init", vec![type_arg("Option"), value_arg(2)]
-            => Err(IndexOutOfRange{index: 2, range_size: 2}); "enum_init<Option,2>")]
+            => Err(IndexOutOfRange{index: 2.to_bigint().unwrap(), range_size: 2}); "enum_init<Option,2>")]
 #[test_case("enum_init", vec![type_arg("Option"), value_arg(-3)]
-            => Err(IndexOutOfRange{index: -3, range_size: 2}); "enum_init<Option,-3>")]
+            => Err(IndexOutOfRange{index: -(3.to_bigint().unwrap()), range_size: 2}); "enum_init<Option,-3>")]
 #[test_case("enum_init", vec![type_arg("Option")]
             => Err(WrongNumberOfGenericArgs); "enum_init<Option>")]
 #[test_case("enum_init", vec![value_arg(0)] => Err(WrongNumberOfGenericArgs); "enum_init<0>")]

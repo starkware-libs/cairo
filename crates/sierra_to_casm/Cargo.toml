@@ -12,6 +12,7 @@ test-case = "2.2.1"
 [dependencies]
 casm = { path = "../casm" }
 itertools = "0.10.3"
+num-bigint = "0.4.3"
 sierra = { path = "../sierra" }
 sierra_gas = { path = "../sierra_gas" }
 thiserror = "1.0.32"

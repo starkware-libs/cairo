@@ -3,6 +3,7 @@ use casm::casm;
 use casm::instructions::InstructionBody;
 use casm::operand::DerefOrImmediate;
 use itertools::chain;
+use num_bigint::ToBigInt;
 use sierra::extensions::felt::FeltOperator;
 use sierra::extensions::gas::GasConcreteLibFunc;
 use sierra::program::{BranchInfo, BranchTarget};
@@ -87,7 +88,7 @@ fn build_get_gas(
         )
         .jump_offset,
         DerefOrImmediate::Immediate
-    ) = branch_offset as i128;
+    ) = branch_offset.to_bigint().unwrap();
     let relocation_index = before_failure_branch.instructions.len() - 1;
     let failure_branch = casm! {
         // gas_counter < requested_count:
@@ -109,12 +110,12 @@ fn build_get_gas(
                 ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
                     op: FeltOperator::Add,
                     a: range_check.apply_ap_change(ApChange::Known(2)).unwrap(),
-                    b: DerefOrImmediate::Immediate(1),
+                    b: DerefOrImmediate::from(1),
                 })),
                 ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
                     op: FeltOperator::Sub,
                     a: gas_counter_value.apply_ap_change(ApChange::Known(2)).unwrap(),
-                    b: DerefOrImmediate::Immediate(*requested_count as i128),
+                    b: DerefOrImmediate::Immediate(requested_count.to_bigint().unwrap()),
                 })),
             ]
             .into_iter(),
@@ -122,7 +123,7 @@ fn build_get_gas(
                 ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
                     op: FeltOperator::Add,
                     a: range_check.apply_ap_change(ApChange::Known(3)).unwrap(),
-                    b: DerefOrImmediate::Immediate(1),
+                    b: DerefOrImmediate::from(1),
                 })),
                 ReferenceExpression::from_cell(CellExpression::Deref(
                     gas_counter_value.apply_ap_change(ApChange::Known(3)).unwrap(),
@@ -169,7 +170,7 @@ fn build_refund_gas(
             ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
                 op: FeltOperator::Add,
                 a: gas_counter_value,
-                b: DerefOrImmediate::Immediate(*requested_count as i128),
+                b: DerefOrImmediate::Immediate(requested_count.to_bigint().unwrap()),
             }))
         }]
         .into_iter(),

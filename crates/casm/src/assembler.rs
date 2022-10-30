@@ -204,7 +204,7 @@ impl DerefOrImmediate {
     fn to_res_operand(&self) -> ResOperand {
         match self {
             DerefOrImmediate::Deref(operand) => ResOperand::Deref(*operand),
-            DerefOrImmediate::Immediate(operand) => ResOperand::Immediate(*operand),
+            DerefOrImmediate::Immediate(operand) => ResOperand::Immediate(operand.clone()),
         }
     }
     fn to_res_description(&self) -> ResDescription {

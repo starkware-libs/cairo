@@ -1,3 +1,5 @@
+use num_traits::Zero;
+
 use super::felt::FeltType;
 use super::jump_not_zero::{JumpNotZeroLibFunc, JumpNotZeroTraits};
 use super::non_zero::NonZeroType;
@@ -183,7 +185,7 @@ impl GenericLibFunc for Uint128OperationLibFunc {
                 ],
                 fallthrough: Some(0),
             }),
-            ([GenericArg::Value(c)], IntOperator::Div | IntOperator::Mod) if *c != 0 => {
+            ([GenericArg::Value(c)], IntOperator::Div | IntOperator::Mod) if !c.is_zero() => {
                 Ok(LibFuncSignature::new_non_branch(
                     vec![range_check_type.clone(), ty.clone()],
                     vec![
@@ -274,13 +276,13 @@ impl GenericLibFunc for Uint128OperationLibFunc {
                 }))
             }
             [GenericArg::Value(c)] => {
-                if matches!(self.operator, IntOperator::Div | IntOperator::Mod) && *c == 0 {
+                if matches!(self.operator, IntOperator::Div | IntOperator::Mod) && c.is_zero() {
                     Err(SpecializationError::UnsupportedGenericArg)
                 } else {
                     Ok(Uint128OperationConcreteLibFunc::Const(
                         Uint128OperationWithConstConcreteLibFunc {
                             operator: self.operator,
-                            c: *c as u128,
+                            c: u128::try_from(c).unwrap(),
                             signature: self.specialize_signature(context.upcast(), args)?,
                         },
                     ))
@@ -349,7 +351,7 @@ impl NamedLibFunc for Uint128ConstLibFunc {
     ) -> Result<Self::Concrete, SpecializationError> {
         match args {
             [GenericArg::Value(c)] => Ok(Uint128ConstConcreteLibFunc {
-                c: *c as u128,
+                c: u128::try_from(c).unwrap(),
                 signature: <Self as NamedLibFunc>::specialize_signature(
                     self,
                     context.upcast(),

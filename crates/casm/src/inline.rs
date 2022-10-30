@@ -107,13 +107,13 @@ macro_rules! casm_extend {
     ($ctx:ident, %{ memory [ ap + 0 ] = memory $lhs:tt < $rhs:tt %} $($tok:tt)*) => {
         $ctx.current_hints.push($crate::hints::Hint::TestLessThan{
             lhs: $crate::deref!($lhs).into(),
-            rhs: DerefOrImmediate::Immediate($rhs),
+            rhs: $crate::deref_or_immediate!($rhs),
         });
         $crate::casm_extend!($ctx, $($tok)*)
     };
     ($ctx:ident, %{ memory [ ap + 0 ] = $lhs:tt < memory $rhs:tt %} $($tok:tt)*) => {
         $ctx.current_hints.push($crate::hints::Hint::TestLessThan{
-            lhs: DerefOrImmediate::Immediate($lhs),
+            lhs: $crate::deref_or_immediate!($lhs),
             rhs: $crate::deref!($rhs).into(),
         });
         $crate::casm_extend!($ctx, $($tok)*)
@@ -182,9 +182,6 @@ macro_rules! reg {
 
 #[macro_export]
 macro_rules! deref_or_immediate {
-    ($a:literal) => {
-        $crate::operand::DerefOrImmediate::Immediate($a)
-    };
     ([$a:ident $($op:tt $offset:expr)?]) => {
         $crate::operand::DerefOrImmediate::Deref($crate::deref!([$a $($op $offset)?]))
     };

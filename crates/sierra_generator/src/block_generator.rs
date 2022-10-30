@@ -134,7 +134,11 @@ fn generate_statement_literal_code(
     statement: &lowering::StatementLiteral,
 ) -> Option<Vec<pre_sierra::Statement>> {
     let output_var = context.get_sierra_variable(statement.output);
-    Some(vec![simple_statement(context.felt_const_libfunc_id(statement.value), &[], &[output_var])])
+    Some(vec![simple_statement(
+        context.felt_const_libfunc_id(statement.value.clone()),
+        &[],
+        &[output_var],
+    )])
 }
 
 /// Generates Sierra code for [lowering::StatementCall].
