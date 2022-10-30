@@ -215,6 +215,37 @@ fn strip_comments_and_linebreaks(program: &str) -> String {
                 ret;
             "};
             "burn gas")]
+#[test_case(indoc! {"
+                type uint128 = uint128;
+                type RangeCheck = RangeCheck;
+
+                libfunc revoke_ap_tracking = revoke_ap_tracking;
+                libfunc uint128_add = uint128_add;
+                libfunc drop<uint128> = drop<uint128>;
+                libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+
+
+                revoke_ap_tracking() -> ();
+                uint128_add([1], [2], [3]) {fallthrough([1], [2]) 3([1]) };
+                drop<uint128>([2]) -> ();
+                store_temp<RangeCheck>([1]) -> ([1]);
+                return ([1]);
+
+                test_program@0([1]: RangeCheck, [2]: uint128, [3]: uint128) -> (RangeCheck);
+            "},
+            &[], false,
+            indoc! {"
+                [ap + 0] = [fp + -4] + [fp + -3], ap++;
+                %{ memory[ap + 0] = 340282366920938463463374607431768211455 < memory[ap + -1] %}
+                jmp rel 7 if [ap + 0] != 0, ap++;
+                [ap + 0] = [ap + -2] + -340282366920938463463374607431768211456, ap++;
+                [ap + -1] = [[fp + -5] + 0];
+                jmp rel 3;
+                [ap + -2] = [[fp + -5] + 0];
+                [ap + 0] = [fp + -5] + 1, ap++;
+                ret;
+            "};
+            "u128")]
 #[test_case(read_sierra_example_file("fib_no_gas").as_str(),
             &[], false,
             indoc! {"
