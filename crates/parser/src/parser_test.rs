@@ -294,3 +294,5 @@ parser_test!(
     test_partial_parser_tree
 );
 parser_test!(let_statement, ["src/parser_test_data/let_statement"], test_partial_parser_tree);
+
+parser_test!(literal, ["src/parser_test_data/literal"], test_partial_parser_tree);
