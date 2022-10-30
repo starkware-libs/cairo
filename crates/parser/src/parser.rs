@@ -137,6 +137,8 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalExtern => Some(self.expect_extern_item()),
             SyntaxKind::TerminalFunction => Some(self.expect_free_function().into()),
             SyntaxKind::TerminalUse => Some(self.expect_use().into()),
+            SyntaxKind::TerminalTrait => Some(self.expect_trait().into()),
+            SyntaxKind::TerminalImpl => Some(self.expect_impl().into()),
             _ => None,
         }
     }
@@ -259,6 +261,40 @@ impl<'a> Parser<'a> {
             signature,
             function_body,
         )
+    }
+
+    /// Assumes the current token is Trait.
+    fn expect_trait(&mut self) -> ItemTraitGreen {
+        let trait_kw = self.take::<TerminalTrait>();
+        let name = self.parse_token::<TerminalIdentifier>();
+        let generic_params = self.parse_optional_generic_params();
+        let body = if self.peek().kind == SyntaxKind::TerminalLBrace {
+            let lbrace = self.parse_token::<TerminalLBrace>();
+            let rbrace = self.parse_token::<TerminalRBrace>();
+            TraitBody::new_green(self.db, lbrace, rbrace).into()
+        } else {
+            self.parse_token::<TerminalSemicolon>().into()
+        };
+
+        ItemTrait::new_green(self.db, trait_kw, name, generic_params, body)
+    }
+
+    /// Assumes the current token is Impl.
+    fn expect_impl(&mut self) -> ItemImplGreen {
+        let impl_kw = self.take::<TerminalImpl>();
+        let name = self.parse_token::<TerminalIdentifier>();
+        let generic_params = self.parse_optional_generic_params();
+        let for_kw = self.parse_token::<TerminalFor>();
+        let trait_path = self.parse_path();
+        let body = if self.peek().kind == SyntaxKind::TerminalLBrace {
+            let lbrace = self.parse_token::<TerminalLBrace>();
+            let rbrace = self.parse_token::<TerminalRBrace>();
+            ImplBody::new_green(self.db, lbrace, rbrace).into()
+        } else {
+            self.parse_token::<TerminalSemicolon>().into()
+        };
+
+        ItemImpl::new_green(self.db, impl_kw, name, generic_params, for_kw, trait_path, body)
     }
 
     // ------------------------------- Expressions -------------------------------
