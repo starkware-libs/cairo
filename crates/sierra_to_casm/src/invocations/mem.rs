@@ -9,6 +9,7 @@ use sierra::extensions::mem::{
     StoreTempConcreteLibFunc,
 };
 use sierra::ids::ConcreteTypeId;
+use utils::casts::usize_as_i16;
 use utils::try_extract_matches;
 
 use super::{misc, CompiledInvocation, CompiledInvocationBuilder, InvocationError};
@@ -168,7 +169,7 @@ fn build_store_temp(
         vec![],
         [ApChange::Known(type_size)].into_iter(),
         [[ReferenceExpression {
-            cells: (-type_size..0)
+            cells: (-usize_as_i16(type_size)..0)
                 .map(|i| CellExpression::Deref(CellRef { register: Register::AP, offset: i }))
                 .collect(),
         }]
@@ -207,7 +208,7 @@ fn build_store_local(
                 .map(|i| {
                     CellExpression::Deref(CellRef {
                         register: Register::FP,
-                        offset: dst.offset + i,
+                        offset: dst.offset + usize_as_i16(i),
                     })
                 })
                 .collect(),
@@ -255,7 +256,7 @@ fn build_alloc_local(
     Ok(builder.build_only_reference_changes(
         [ReferenceExpression::from_cell(CellExpression::Deref(CellRef {
             register: Register::FP,
-            offset: slot,
+            offset: usize_as_i16(slot),
         }))]
         .into_iter(),
     ))

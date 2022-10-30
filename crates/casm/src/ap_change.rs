@@ -1,6 +1,7 @@
 use std::fmt::Display;
 
 use thiserror::Error;
+use utils::casts::usize_as_i16;
 
 use crate::operand::{BinOpOperand, CellRef, DerefOrImmediate, Register, ResOperand};
 
@@ -10,7 +11,7 @@ mod test;
 
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
 pub enum ApChange {
-    Known(i16),
+    Known(usize),
     Unknown,
 }
 impl Display for ApChange {
@@ -53,7 +54,9 @@ impl ApplyApChange for CellRef {
                 ApChange::Unknown => Err(ApChangeError::UnknownApChange),
                 ApChange::Known(ap_change) => Ok(CellRef {
                     register: Register::AP,
-                    offset: offset.checked_sub(ap_change).ok_or(ApChangeError::OffsetOverflow)?,
+                    offset: offset
+                        .checked_sub(usize_as_i16(ap_change))
+                        .ok_or(ApChangeError::OffsetOverflow)?,
                 }),
             },
             CellRef { register: Register::FP, offset: _ } => Ok(self),
