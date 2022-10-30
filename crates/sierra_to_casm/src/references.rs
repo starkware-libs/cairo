@@ -7,6 +7,7 @@ use sierra::extensions::felt::FeltOperator;
 use sierra::ids::{ConcreteTypeId, VarId};
 use sierra::program::{Function, StatementIdx};
 use thiserror::Error;
+use utils::casts::usize_as_i16;
 
 use crate::type_sizes::TypeSizeMap;
 
@@ -119,7 +120,7 @@ pub fn build_function_arguments_refs(
     type_sizes: &TypeSizeMap,
 ) -> Result<StatementRefs, ReferencesError> {
     let mut refs = HashMap::with_capacity(func.params.len());
-    let mut offset = -3;
+    let mut offset = -3_i16;
     for param in func.params.iter().rev() {
         let size = type_sizes
             .get(&param.ty)
@@ -129,7 +130,7 @@ pub fn build_function_arguments_refs(
                 param.id.clone(),
                 ReferenceValue {
                     expression: ReferenceExpression {
-                        cells: ((offset - size + 1)..(offset + 1))
+                        cells: ((offset - usize_as_i16(*size) + 1)..(offset + 1))
                             .map(|i| {
                                 CellExpression::Deref(CellRef { register: Register::FP, offset: i })
                             })
@@ -142,7 +143,7 @@ pub fn build_function_arguments_refs(
         {
             return Err(ReferencesError::InvalidFunctionDeclaration(func.clone()));
         }
-        offset -= size;
+        offset -= usize_as_i16(*size);
     }
     Ok(refs)
 }
