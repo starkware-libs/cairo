@@ -1,0 +1,107 @@
+//! > Test empty traits and impls.
+
+//! > test_function_name
+test_partial_parser_tree
+
+//! > cairo_code
+trait Foo<T>;
+impl FooImpl<S> of Foo::<S>;
+
+//! > top_level_kind
+SyntaxFile
+
+//! > ignored_kinds
+
+//! > expected_tree
+└── Top level kind: SyntaxFile
+    ├── items (kind: ItemList)
+    │   ├── child #0 (kind: ItemTrait)
+    │   │   ├── trait_kw (kind: TokenTrait): 'trait'
+    │   │   ├── name (kind: TokenIdentifier): 'Foo'
+    │   │   ├── generic_params (kind: WrappedGenericParamList)
+    │   │   │   ├── langle (kind: TokenLT): '<'
+    │   │   │   ├── generic_params (kind: GenericParamList)
+    │   │   │   │   └── item #0 (kind: GenericParam)
+    │   │   │   │       └── name (kind: TokenIdentifier): 'T'
+    │   │   │   └── rangle (kind: TokenGT): '>'
+    │   │   └── body (kind: TokenSemicolon): ';'
+    │   └── child #1 (kind: ItemImpl)
+    │       ├── impl_kw (kind: TokenImpl): 'impl'
+    │       ├── name (kind: TokenIdentifier): 'FooImpl'
+    │       ├── generic_params (kind: WrappedGenericParamList)
+    │       │   ├── langle (kind: TokenLT): '<'
+    │       │   ├── generic_params (kind: GenericParamList)
+    │       │   │   └── item #0 (kind: GenericParam)
+    │       │   │       └── name (kind: TokenIdentifier): 'S'
+    │       │   └── rangle (kind: TokenGT): '>'
+    │       ├── of_kw (kind: TokenOf): 'of'
+    │       ├── trait_path (kind: ExprPath)
+    │       │   └── item #0 (kind: PathSegmentWithGenericArgs)
+    │       │       ├── ident (kind: TokenIdentifier): 'Foo'
+    │       │       ├── seperator (kind: TokenColonColon): '::'
+    │       │       └── generic_args (kind: GenericArgs)
+    │       │           ├── langle (kind: TokenLT): '<'
+    │       │           ├── generic_args (kind: GenericArgList)
+    │       │           │   └── item #0 (kind: ExprPath)
+    │       │           │       └── item #0 (kind: PathSegmentSimple)
+    │       │           │           └── ident (kind: TokenIdentifier): 'S'
+    │       │           └── rangle (kind: TokenGT): '>'
+    │       └── body (kind: TokenSemicolon): ';'
+    └── eof (kind: TokenEndOfFile).
+
+//! > ==========================================================================
+
+//! > Test nonempty traits and impls.
+
+//! > test_function_name
+test_partial_parser_tree
+
+//! > cairo_code
+trait Foo<T> {}
+impl FooImpl<S> of Foo::<S> {}
+
+//! > top_level_kind
+SyntaxFile
+
+//! > ignored_kinds
+
+//! > expected_tree
+└── Top level kind: SyntaxFile
+    ├── items (kind: ItemList)
+    │   ├── child #0 (kind: ItemTrait)
+    │   │   ├── trait_kw (kind: TokenTrait): 'trait'
+    │   │   ├── name (kind: TokenIdentifier): 'Foo'
+    │   │   ├── generic_params (kind: WrappedGenericParamList)
+    │   │   │   ├── langle (kind: TokenLT): '<'
+    │   │   │   ├── generic_params (kind: GenericParamList)
+    │   │   │   │   └── item #0 (kind: GenericParam)
+    │   │   │   │       └── name (kind: TokenIdentifier): 'T'
+    │   │   │   └── rangle (kind: TokenGT): '>'
+    │   │   └── body (kind: TraitBody)
+    │   │       ├── lbrace (kind: TokenLBrace): '{'
+    │   │       └── rbrace (kind: TokenRBrace): '}'
+    │   └── child #1 (kind: ItemImpl)
+    │       ├── impl_kw (kind: TokenImpl): 'impl'
+    │       ├── name (kind: TokenIdentifier): 'FooImpl'
+    │       ├── generic_params (kind: WrappedGenericParamList)
+    │       │   ├── langle (kind: TokenLT): '<'
+    │       │   ├── generic_params (kind: GenericParamList)
+    │       │   │   └── item #0 (kind: GenericParam)
+    │       │   │       └── name (kind: TokenIdentifier): 'S'
+    │       │   └── rangle (kind: TokenGT): '>'
+    │       ├── of_kw (kind: TokenOf): 'of'
+    │       ├── trait_path (kind: ExprPath)
+    │       │   └── item #0 (kind: PathSegmentWithGenericArgs)
+    │       │       ├── ident (kind: TokenIdentifier): 'Foo'
+    │       │       ├── seperator (kind: TokenColonColon): '::'
+    │       │       └── generic_args (kind: GenericArgs)
+    │       │           ├── langle (kind: TokenLT): '<'
+    │       │           ├── generic_args (kind: GenericArgList)
+    │       │           │   └── item #0 (kind: ExprPath)
+    │       │           │       └── item #0 (kind: PathSegmentSimple)
+    │       │           │           └── ident (kind: TokenIdentifier): 'S'
+    │       │           └── rangle (kind: TokenGT): '>'
+    │       └── body (kind: ImplBody)
+    │           ├── lbrace (kind: TokenLBrace): '{'
+    │           └── rbrace (kind: TokenRBrace): '}'
+    └── eof (kind: TokenEndOfFile).

@@ -59,7 +59,9 @@ pub enum SyntaxKind {
     ItemExternFunction,
     ItemExternType,
     ItemTrait,
+    TraitBody,
     ItemImpl,
+    ImplBody,
     ItemStruct,
     ItemEnum,
     ItemUse,
@@ -93,8 +95,8 @@ pub enum SyntaxKind {
     TerminalTrait,
     TokenImpl,
     TerminalImpl,
-    TokenFor,
-    TerminalFor,
+    TokenOf,
+    TerminalOf,
     TokenLet,
     TerminalLet,
     TokenReturn,
@@ -200,7 +202,7 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalStruct
                 | SyntaxKind::TerminalTrait
                 | SyntaxKind::TerminalImpl
-                | SyntaxKind::TerminalFor
+                | SyntaxKind::TerminalOf
                 | SyntaxKind::TerminalLet
                 | SyntaxKind::TerminalReturn
                 | SyntaxKind::TerminalMatch
@@ -259,7 +261,7 @@ impl SyntaxKind {
                 | SyntaxKind::TokenStruct
                 | SyntaxKind::TokenTrait
                 | SyntaxKind::TokenImpl
-                | SyntaxKind::TokenFor
+                | SyntaxKind::TokenOf
                 | SyntaxKind::TokenLet
                 | SyntaxKind::TokenReturn
                 | SyntaxKind::TokenMatch

@@ -20,6 +20,9 @@ fn terminal_kind_to_text(kind: SyntaxKind) -> Vec<&'static str> {
         SyntaxKind::TerminalExtern => vec!["extern"],
         SyntaxKind::TerminalType => vec!["type"],
         SyntaxKind::TerminalFunction => vec!["func"],
+        SyntaxKind::TerminalTrait => vec!["trait"],
+        SyntaxKind::TerminalImpl => vec!["impl"],
+        SyntaxKind::TerminalOf => vec!["of"],
         SyntaxKind::TerminalLet => vec!["let"],
         SyntaxKind::TerminalModule => vec!["mod"],
         SyntaxKind::TerminalStruct => vec!["struct"],
@@ -77,6 +80,9 @@ fn terminal_kinds() -> Vec<SyntaxKind> {
         SyntaxKind::TerminalExtern,
         SyntaxKind::TerminalType,
         SyntaxKind::TerminalFunction,
+        SyntaxKind::TerminalTrait,
+        SyntaxKind::TerminalImpl,
+        SyntaxKind::TerminalOf,
         SyntaxKind::TerminalModule,
         SyntaxKind::TerminalStruct,
         SyntaxKind::TerminalEnum,
@@ -162,6 +168,9 @@ fn is_identifier_like(kind: SyntaxKind) -> bool {
             | SyntaxKind::TerminalExtern
             | SyntaxKind::TerminalType
             | SyntaxKind::TerminalFunction
+            | SyntaxKind::TerminalTrait
+            | SyntaxKind::TerminalImpl
+            | SyntaxKind::TerminalOf
             | SyntaxKind::TerminalModule
             | SyntaxKind::TerminalStruct
             | SyntaxKind::TerminalEnum
