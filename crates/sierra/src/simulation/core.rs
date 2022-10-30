@@ -1,3 +1,5 @@
+use num_bigint::ToBigInt;
+use num_traits::Zero;
 use utils::extract_matches;
 
 use super::value::CoreValue;
@@ -24,6 +26,7 @@ use crate::extensions::mem::MemConcreteLibFunc::{
 };
 use crate::ids::FunctionId;
 
+// TODO(spapini): Proper errors when converting from bigint to u128.
 /// Simulates the run of a single libfunc. Returns the value representations of the outputs, and
 /// the chosen branch given the inputs.
 ///
@@ -161,20 +164,16 @@ fn simulate_integer_libfunc(
             }
         }
         Uint128Concrete::FromFelt(_) => match inputs {
-            [CoreValue::RangeCheck, CoreValue::Felt(value)] => {
-                // TODO(orizi): Also check that value < 2**128 when we have a better felt type.
-                if *value >= 0 {
-                    Ok((vec![CoreValue::RangeCheck, CoreValue::Uint128(*value as u128)], 0))
-                } else {
-                    Ok((vec![CoreValue::RangeCheck], 1))
-                }
-            }
+            [CoreValue::RangeCheck, CoreValue::Felt(value)] => Ok(match u128::try_from(value) {
+                Ok(value) => (vec![CoreValue::RangeCheck, CoreValue::Uint128(value)], 0),
+                Err(_) => (vec![CoreValue::RangeCheck], 1),
+            }),
             [_, _] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
         },
         Uint128Concrete::ToFelt(_) => match inputs {
             [CoreValue::RangeCheck, CoreValue::Uint128(value)] => {
-                Ok((vec![CoreValue::Felt(*value as i128)], 0))
+                Ok((vec![CoreValue::Felt(value.to_bigint().unwrap())], 0))
             }
             [_] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
@@ -299,7 +298,7 @@ fn simulate_felt_libfunc(
     match libfunc {
         FeltConcrete::Const(FeltConstConcreteLibFunc { c, .. }) => {
             if inputs.is_empty() {
-                Ok((vec![CoreValue::Felt(*c as i128)], 0))
+                Ok((vec![CoreValue::Felt(c.to_bigint().unwrap())], 0))
             } else {
                 Err(LibFuncSimulationError::WrongNumberOfArgs)
             }
@@ -320,7 +319,7 @@ fn simulate_felt_libfunc(
                 0,
             )),
             ([CoreValue::Felt(_lhs), CoreValue::NonZero(non_zero)], FeltOperator::Div) => {
-                if let CoreValue::Felt(_rhs) = **non_zero {
+                if let CoreValue::Felt(_rhs) = *non_zero.clone() {
                     todo!("Support felt_div operation.")
                 } else {
                     Err(LibFuncSimulationError::MemoryLayoutMismatch)
@@ -334,9 +333,9 @@ fn simulate_felt_libfunc(
         )) => match inputs {
             [CoreValue::Felt(value)] => Ok((
                 vec![CoreValue::Felt(match operator {
-                    FeltOperator::Add => value + *c,
-                    FeltOperator::Sub => value - *c,
-                    FeltOperator::Mul => value * *c,
+                    FeltOperator::Add => value + c.clone(),
+                    FeltOperator::Sub => value - c.clone(),
+                    FeltOperator::Mul => value * c.clone(),
                     FeltOperator::Div => todo!("Support full felt operations."),
                 })],
                 0,
@@ -346,14 +345,14 @@ fn simulate_felt_libfunc(
         },
         FeltConcrete::JumpNotZero(_) => {
             match inputs {
-                [CoreValue::Felt(value)] if *value == 0 => {
+                [CoreValue::Felt(value)] if value.is_zero() => {
                     // Zero - jumping to the failure branch.
                     Ok((vec![], 0))
                 }
-                [CoreValue::Felt(value)] if *value != 0 => {
+                [CoreValue::Felt(value)] if !value.is_zero() => {
                     // Non-zero - jumping to the success branch and providing a NonZero wrap to the
                     // given value.
-                    Ok((vec![CoreValue::NonZero(Box::new(CoreValue::Felt(*value)))], 1))
+                    Ok((vec![CoreValue::NonZero(Box::new(CoreValue::Felt(value.clone())))], 1))
                 }
                 [_] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
                 _ => Err(LibFuncSimulationError::WrongNumberOfArgs),

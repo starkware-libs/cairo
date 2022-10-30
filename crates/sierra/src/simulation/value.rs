@@ -1,8 +1,10 @@
+use num_bigint::BigInt;
+
 /// The logical value of a variable for Sierra simulation.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum CoreValue {
     // TODO(orizi): Use actual felt object.
-    Felt(i128),
+    Felt(BigInt),
     GasBuiltin(i64),
     RangeCheck,
     Uint128(u128),

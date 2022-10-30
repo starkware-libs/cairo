@@ -1,5 +1,7 @@
 use std::fmt::Display;
 
+use num_bigint::{BigInt, ToBigInt};
+
 #[cfg(test)]
 #[path = "operand_test.rs"]
 mod test;
@@ -23,7 +25,7 @@ impl Display for Register {
 pub enum ResOperand {
     Deref(CellRef),
     DoubleDeref(CellRef, i16),
-    Immediate(i128),
+    Immediate(BigInt),
     BinOp(BinOpOperand),
 }
 impl Display for ResOperand {
@@ -42,6 +44,11 @@ impl From<DerefOrImmediate> for ResOperand {
             DerefOrImmediate::Deref(deref) => ResOperand::Deref(deref),
             DerefOrImmediate::Immediate(imm) => ResOperand::Immediate(imm),
         }
+    }
+}
+impl From<i128> for ResOperand {
+    fn from(imm: i128) -> Self {
+        ResOperand::Immediate(imm.to_bigint().unwrap())
     }
 }
 
@@ -65,7 +72,7 @@ pub fn ap_cell_ref(offset: i16) -> CellRef {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum DerefOrImmediate {
     Deref(CellRef),
-    Immediate(i128),
+    Immediate(BigInt),
 }
 impl Display for DerefOrImmediate {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -77,6 +84,11 @@ impl Display for DerefOrImmediate {
 }
 impl From<i128> for DerefOrImmediate {
     fn from(x: i128) -> Self {
+        DerefOrImmediate::Immediate(x.to_bigint().unwrap())
+    }
+}
+impl From<BigInt> for DerefOrImmediate {
+    fn from(x: BigInt) -> Self {
         DerefOrImmediate::Immediate(x)
     }
 }

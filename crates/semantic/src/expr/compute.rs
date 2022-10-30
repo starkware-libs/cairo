@@ -8,6 +8,7 @@ use ast::{BinaryOperator, PathSegment};
 use defs::ids::{GenericFunctionId, LocalVarLongId, MemberId, VarId};
 use id_arena::Arena;
 use itertools::zip_eq;
+use num_bigint::BigInt;
 use smol_str::SmolStr;
 use syntax::node::db::SyntaxGroup;
 use syntax::node::helpers::{GetIdentifier, PathSegmentEx};
@@ -694,7 +695,7 @@ fn literal_to_semantic(
     let syntax_db = db.upcast();
     let text = literal_syntax.text(syntax_db);
     let value = text
-        .parse::<usize>()
+        .parse::<BigInt>()
         .ok()
         .on_none(|| ctx.diagnostics.report(literal_syntax, UnknownLiteral))?;
     let ty = db.core_felt_ty();

@@ -129,7 +129,7 @@ fn get_store_instructions(
             },
             CellExpression::AllocateSegment => Instruction {
                 body: InstructionBody::AddAp(AddApInstruction {
-                    operand: ResOperand::Immediate(if inc_ap { 1 } else { 0 }),
+                    operand: ResOperand::from(if inc_ap { 1 } else { 0 }),
                 }),
                 inc_ap: false,
                 hints: vec![Hint::AllocSegment { dst }],

@@ -1,6 +1,7 @@
 use casm::ap_change::ApChange;
 use casm::casm;
 use casm::operand::CellRef;
+use num_bigint::ToBigInt;
 use sierra::extensions::enm::{EnumConcreteLibFunc, EnumInitConcreteLibFunc};
 use sierra::program::{BranchInfo, BranchTarget, StatementIdx};
 use utils::try_extract_matches;
@@ -67,7 +68,7 @@ fn build_enum_init(
         // For num_branches <= 2, we use the index as the variant_selector as the `match`
         // implementation jumps to the index 0 statement on 0, and to the index 1 statement on
         // 1.
-        index as i128
+        index
     } else {
         // For num_branches > 2, the `enum_match` libfunc is implemented using a jump table. In
         // order to optimize `enum_match`, we define the variant_selector as the relevant
@@ -81,11 +82,11 @@ fn build_enum_init(
         if index.checked_mul(2).and_then(|x| x.checked_add(1)).is_none() {
             return Err(InvocationError::IntegerOverflow);
         }
-        (2 * index + 1) as i128
+        2 * index + 1
     };
 
     let enum_val = EnumView {
-        variant_selector: CellExpression::Immediate(variant_selector),
+        variant_selector: CellExpression::Immediate(variant_selector.to_bigint().unwrap()),
         inner_value: CellExpression::Deref(init_arg),
     };
     Ok(builder.build_only_reference_changes([enum_val.to_reference_expression()].into_iter()))

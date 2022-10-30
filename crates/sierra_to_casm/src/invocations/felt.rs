@@ -1,4 +1,5 @@
 use casm::operand::DerefOrImmediate;
+use num_bigint::BigInt;
 use sierra::extensions::felt::{
     FeltBinaryOperationConcreteLibFunc, FeltConcrete, FeltOperationConcreteLibFunc,
     FeltOperationWithConstConcreteLibFunc, FeltOperator,
@@ -19,10 +20,10 @@ pub fn build(
         )) => build_felt_op(builder, *operator),
         FeltConcrete::Operation(FeltOperationConcreteLibFunc::Const(
             FeltOperationWithConstConcreteLibFunc { operator, c, .. },
-        )) => build_felt_op_with_const(builder, *operator, *c),
+        )) => build_felt_op_with_const(builder, *operator, c.clone()),
         FeltConcrete::JumpNotZero(_) => build_jump_nz(builder),
         FeltConcrete::Const(libfunc) => Ok(builder.build_only_reference_changes(
-            [ReferenceExpression::from_cell(CellExpression::Immediate(libfunc.c as i128))]
+            [ReferenceExpression::from_cell(CellExpression::Immediate(libfunc.c.clone()))]
                 .into_iter(),
         )),
     }
@@ -68,7 +69,7 @@ fn build_felt_op(
 fn build_felt_op_with_const(
     builder: CompiledInvocationBuilder<'_>,
     op: FeltOperator,
-    c: i128,
+    c: BigInt,
 ) -> Result<CompiledInvocation, InvocationError> {
     let expr = match builder.refs {
         [ReferenceValue { expression, .. }] => expression,
@@ -83,7 +84,7 @@ fn build_felt_op_with_const(
         .try_unpack_single()
         .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?;
     let ref_expression = if let CellExpression::Deref(a) = cell_expr {
-        BinOpExpression { op, a, b: DerefOrImmediate::Immediate(c as i128) }
+        BinOpExpression { op, a, b: DerefOrImmediate::Immediate(c) }
     } else {
         return Err(InvocationError::InvalidReferenceExpressionForArgument);
     };

@@ -3,6 +3,7 @@ use casm::casm;
 use casm::instructions::InstructionBody;
 use casm::operand::{ap_cell_ref, DerefOrImmediate};
 use itertools::chain;
+use num_bigint::ToBigInt;
 use sierra::extensions::felt::FeltOperator;
 use sierra::extensions::integer::{
     IntOperator, Uint128BinaryOperationConcreteLibFunc, Uint128Concrete,
@@ -30,8 +31,10 @@ pub fn build(
         )) => Err(InvocationError::NotImplemented(builder.invocation.clone())),
         Uint128Concrete::JumpNotZero(_) => build_jump_nz(builder),
         Uint128Concrete::Const(libfunc) => Ok(builder.build_only_reference_changes(
-            [ReferenceExpression::from_cell(CellExpression::Immediate(libfunc.c as i128))]
-                .into_iter(),
+            [ReferenceExpression::from_cell(CellExpression::Immediate(
+                libfunc.c.to_bigint().unwrap(),
+            ))]
+            .into_iter(),
         )),
         Uint128Concrete::FromFelt(_) => {
             Err(InvocationError::NotImplemented(builder.invocation.clone()))
@@ -109,7 +112,7 @@ fn build_uint128_op(
                 )
                 .jump_offset,
                 DerefOrImmediate::Immediate
-            ) = branch_offset as i128;
+            ) = branch_offset.to_bigint().unwrap();
             let relocation_index = before_success_branch.instructions.len() - 1;
             let success_branch = casm! {
                 // No overflow:
@@ -128,7 +131,7 @@ fn build_uint128_op(
                         ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
                             op: FeltOperator::Add,
                             a: range_check.apply_ap_change(ApChange::Known(2)).unwrap(),
-                            b: DerefOrImmediate::Immediate(1),
+                            b: DerefOrImmediate::from(1),
                         })),
                         ReferenceExpression::from_cell(CellExpression::Deref(ap_cell_ref(-2))),
                     ]
@@ -136,7 +139,7 @@ fn build_uint128_op(
                     vec![ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
                         op: FeltOperator::Add,
                         a: range_check.apply_ap_change(ApChange::Known(3)).unwrap(),
-                        b: DerefOrImmediate::Immediate(1),
+                        b: DerefOrImmediate::from(1),
                     }))]
                     .into_iter(),
                 ]

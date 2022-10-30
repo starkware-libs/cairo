@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 
+use num_bigint::ToBigInt;
 use sierra::extensions::core::{CoreLibFunc, CoreType};
 use sierra::program::{Program, StatementIdx};
 use sierra::program_registry::ProgramRegistry;
@@ -80,9 +81,17 @@ fn simulate_fib_jumps((gb, n): (i64, i128), (new_gb, fib): (i64, i128)) {
                 (StatementIdx(50), 1),
             ]),
             &"Fibonacci".into(),
-            vec![CoreValue::RangeCheck, CoreValue::GasBuiltin(gb), CoreValue::Felt(n)]
+            vec![
+                CoreValue::RangeCheck,
+                CoreValue::GasBuiltin(gb),
+                CoreValue::Felt(n.to_bigint().unwrap())
+            ]
         ),
-        Ok(vec![CoreValue::RangeCheck, CoreValue::GasBuiltin(new_gb), CoreValue::Felt(fib)])
+        Ok(vec![
+            CoreValue::RangeCheck,
+            CoreValue::GasBuiltin(new_gb),
+            CoreValue::Felt(fib.to_bigint().unwrap())
+        ])
     );
 }
 
@@ -103,13 +112,13 @@ fn simulate_fib_no_gas(n: i128, fib: i128) {
             &"Fibonacci".into(),
             vec![
                 // a=
-                CoreValue::Felt(1),
+                CoreValue::Felt(1.to_bigint().unwrap()),
                 // b=
-                CoreValue::Felt(1),
-                CoreValue::Felt(n)
+                CoreValue::Felt(1.to_bigint().unwrap()),
+                CoreValue::Felt(n.to_bigint().unwrap())
             ]
         ),
-        Ok(vec![CoreValue::Felt(fib)])
+        Ok(vec![CoreValue::Felt(fib.to_bigint().unwrap())])
     );
 }
 
@@ -135,8 +144,16 @@ fn simulate_fib_recursive((gb, n): (i64, i128), (new_gb, fib): (i64, i128)) {
                 (StatementIdx(42), 0),
             ]),
             &"Fibonacci".into(),
-            vec![CoreValue::RangeCheck, CoreValue::GasBuiltin(gb), CoreValue::Felt(n)]
+            vec![
+                CoreValue::RangeCheck,
+                CoreValue::GasBuiltin(gb),
+                CoreValue::Felt(n.to_bigint().unwrap())
+            ]
         ),
-        Ok(vec![CoreValue::RangeCheck, CoreValue::GasBuiltin(new_gb), CoreValue::Felt(fib)])
+        Ok(vec![
+            CoreValue::RangeCheck,
+            CoreValue::GasBuiltin(new_gb),
+            CoreValue::Felt(fib.to_bigint().unwrap())
+        ])
     );
 }

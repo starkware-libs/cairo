@@ -2,6 +2,7 @@ use debug::DebugWithDb;
 use defs::ids::{MemberId, StructId, VarId};
 use diagnostics_proc_macros::DebugWithDb;
 use id_arena::Id;
+use num_bigint::BigInt;
 use syntax::node::ast::{self};
 
 use super::fmt::ExprFormatter;
@@ -215,8 +216,7 @@ pub struct ExprVar {
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
 #[debug_db(ExprFormatter<'_>)]
 pub struct ExprLiteral {
-    // TODO(spapini): Fix the type of `value`.
-    pub value: usize,
+    pub value: BigInt,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
     pub stable_ptr: ast::ExprPtr,

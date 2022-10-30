@@ -13,7 +13,7 @@ fn test_alloc_segment_format() {
 fn test_less_than_format() {
     let ap_based = DerefOrImmediate::Deref(CellRef { register: Register::AP, offset: 6 });
     let fp_based = DerefOrImmediate::Deref(CellRef { register: Register::FP, offset: 4 });
-    let immediate = DerefOrImmediate::Immediate(3);
+    let immediate = DerefOrImmediate::from(3);
 
     assert_eq!(
         Hint::TestLessThan { lhs: ap_based.clone(), rhs: fp_based.clone() }.to_string(),
