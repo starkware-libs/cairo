@@ -235,9 +235,10 @@ define_language_element_id_as_enum! {
         Submodule(SubmoduleId),
         Use(UseId),
         FreeFunction(FreeFunctionId),
-        Trait(TraitId),
         Struct(StructId),
         Enum(EnumId),
+        Trait(TraitId),
+        Impl(ImplId),
         ExternType(ExternTypeId),
         ExternFunction(ExternFunctionId),
     }
@@ -257,7 +258,6 @@ define_language_element_id!(
     lookup_intern_free_function,
     name
 );
-define_language_element_id!(TraitId, TraitLongId, ast::ItemTrait, lookup_intern_trait, name);
 define_language_element_id!(
     ExternFunctionId,
     ExternFunctionLongId,
@@ -274,6 +274,8 @@ define_language_element_id!(
     lookup_intern_extern_type,
     name
 );
+define_language_element_id!(TraitId, TraitLongId, ast::ItemTrait, lookup_intern_trait, name);
+define_language_element_id!(ImplId, ImplLongId, ast::ItemImpl, lookup_intern_impl, name);
 
 // Struct items.
 // TODO(spapini): Override full_path for to include parents, for better debug.
@@ -357,6 +359,7 @@ impl OptionFrom<ModuleItemId> for GenericFunctionId {
             ModuleItemId::Submodule(_)
             | ModuleItemId::Use(_)
             | ModuleItemId::Trait(_)
+            | ModuleItemId::Impl(_)
             | ModuleItemId::Struct(_)
             | ModuleItemId::Enum(_)
             | ModuleItemId::ExternType(_) => None,
@@ -375,6 +378,7 @@ impl OptionFrom<ModuleItemId> for GenericTypeId {
             | ModuleItemId::Use(_)
             | ModuleItemId::FreeFunction(_)
             | ModuleItemId::Trait(_)
+            | ModuleItemId::Impl(_)
             | ModuleItemId::ExternFunction(_) => None,
         }
     }

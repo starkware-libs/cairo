@@ -4,7 +4,7 @@ use db_utils::Upcast;
 use defs::db::DefsGroup;
 use defs::ids::{
     EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericFunctionId, GenericParamId,
-    GenericTypeId, ModuleId, ModuleItemId, StructId, TraitId, UseId, VariantId,
+    GenericTypeId, ImplId, ModuleId, ModuleItemId, StructId, TraitId, UseId, VariantId,
 };
 use diagnostics::{Diagnostics, DiagnosticsBuilder};
 use filesystem::db::{AsFilesGroupMut, FilesGroup};
@@ -103,6 +103,18 @@ pub trait SemanticGroup:
     /// Returns the generic parameters of a trait.
     #[salsa::invoke(items::trt::trait_generic_params)]
     fn trait_generic_params(&self, trait_id: TraitId) -> Option<Vec<GenericParamId>>;
+
+    // Impl.
+    // =======
+    /// Private query to compute data about an impl.
+    #[salsa::invoke(items::trt::priv_impl_semantic_data)]
+    fn priv_impl_semantic_data(&self, impl_id: ImplId) -> Option<items::trt::ImplData>;
+    /// Returns the semantic diagnostics of an impl.
+    #[salsa::invoke(items::trt::impl_semantic_diagnostics)]
+    fn impl_semantic_diagnostics(&self, impl_id: ImplId) -> Diagnostics<SemanticDiagnostic>;
+    /// Returns the generic parameters of an impl.
+    #[salsa::invoke(items::trt::impl_generic_params)]
+    fn impl_generic_params(&self, impl_id: ImplId) -> Option<Vec<GenericParamId>>;
 
     // Free function.
     // ==============
@@ -298,6 +310,9 @@ fn module_semantic_diagnostics(
             }
             ModuleItemId::Trait(trait_id) => {
                 diagnostics.extend(db.trait_semantic_diagnostics(*trait_id));
+            }
+            ModuleItemId::Impl(impl_id) => {
+                diagnostics.extend(db.impl_semantic_diagnostics(*impl_id));
             }
             ModuleItemId::Submodule(_) => {}
             ModuleItemId::ExternType(_) => {}

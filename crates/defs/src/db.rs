@@ -27,8 +27,6 @@ pub trait DefsGroup:
     #[salsa::interned]
     fn intern_free_function(&self, id: FreeFunctionLongId) -> FreeFunctionId;
     #[salsa::interned]
-    fn intern_trait(&self, id: TraitLongId) -> TraitId;
-    #[salsa::interned]
     fn intern_struct(&self, id: StructLongId) -> StructId;
     #[salsa::interned]
     fn intern_enum(&self, id: EnumLongId) -> EnumId;
@@ -36,6 +34,10 @@ pub trait DefsGroup:
     fn intern_member(&self, id: MemberLongId) -> MemberId;
     #[salsa::interned]
     fn intern_variant(&self, id: VariantLongId) -> VariantId;
+    #[salsa::interned]
+    fn intern_trait(&self, id: TraitLongId) -> TraitId;
+    #[salsa::interned]
+    fn intern_impl(&self, id: ImplLongId) -> ImplId;
     #[salsa::interned]
     fn intern_extern_type(&self, id: ExternTypeLongId) -> ExternTypeId;
     #[salsa::interned]
@@ -132,6 +134,7 @@ pub struct ModuleData {
     pub structs: OrderedHashMap<StructId, ast::ItemStruct>,
     pub enums: OrderedHashMap<EnumId, ast::ItemEnum>,
     pub traits: OrderedHashMap<TraitId, ast::ItemTrait>,
+    pub impls: OrderedHashMap<ImplId, ast::ItemImpl>,
     pub extern_types: OrderedHashMap<ExternTypeId, ast::ItemExternType>,
     pub extern_functions: OrderedHashMap<ExternFunctionId, ast::ItemExternFunction>,
 }
@@ -178,7 +181,10 @@ fn module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Option<ModuleData> {
                 let item_id = db.intern_trait(TraitLongId(module_id, trt.stable_ptr()));
                 res.traits.insert(item_id, trt);
             }
-            ast::Item::Impl(_imp) => todo!(),
+            ast::Item::Impl(imp) => {
+                let item_id = db.intern_impl(ImplLongId(module_id, imp.stable_ptr()));
+                res.impls.insert(item_id, imp);
+            }
             ast::Item::Struct(strct) => {
                 let item_id = db.intern_struct(StructLongId(module_id, strct.stable_ptr()));
                 res.structs.insert(item_id, strct);
@@ -233,6 +239,10 @@ fn module_items(db: &dyn DefsGroup, module_id: ModuleId) -> Option<ModuleItems> 
             module_data.traits.iter().map(|(trait_id, syntax)| (
                 syntax.name(syntax_db).text(syntax_db),
                 ModuleItemId::Trait(*trait_id)
+            )),
+            module_data.impls.iter().map(|(impl_id, syntax)| (
+                syntax.name(syntax_db).text(syntax_db),
+                ModuleItemId::Impl(*impl_id)
             )),
         )
         .collect(),
