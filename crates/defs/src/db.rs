@@ -27,6 +27,8 @@ pub trait DefsGroup:
     #[salsa::interned]
     fn intern_free_function(&self, id: FreeFunctionLongId) -> FreeFunctionId;
     #[salsa::interned]
+    fn intern_trait(&self, id: TraitLongId) -> TraitId;
+    #[salsa::interned]
     fn intern_struct(&self, id: StructLongId) -> StructId;
     #[salsa::interned]
     fn intern_enum(&self, id: EnumLongId) -> EnumId;
@@ -129,6 +131,7 @@ pub struct ModuleData {
     pub free_functions: OrderedHashMap<FreeFunctionId, ast::ItemFreeFunction>,
     pub structs: OrderedHashMap<StructId, ast::ItemStruct>,
     pub enums: OrderedHashMap<EnumId, ast::ItemEnum>,
+    pub traits: OrderedHashMap<TraitId, ast::ItemTrait>,
     pub extern_types: OrderedHashMap<ExternTypeId, ast::ItemExternType>,
     pub extern_functions: OrderedHashMap<ExternFunctionId, ast::ItemExternFunction>,
 }
@@ -171,7 +174,10 @@ fn module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Option<ModuleData> {
                     db.intern_extern_type(ExternTypeLongId(module_id, extern_type.stable_ptr()));
                 res.extern_types.insert(item_id, extern_type);
             }
-            ast::Item::Trait(_tr) => todo!(),
+            ast::Item::Trait(trt) => {
+                let item_id = db.intern_trait(TraitLongId(module_id, trt.stable_ptr()));
+                res.traits.insert(item_id, trt);
+            }
             ast::Item::Impl(_imp) => todo!(),
             ast::Item::Struct(strct) => {
                 let item_id = db.intern_struct(StructLongId(module_id, strct.stable_ptr()));
@@ -223,6 +229,10 @@ fn module_items(db: &dyn DefsGroup, module_id: ModuleId) -> Option<ModuleItems> 
             module_data.enums.iter().map(|(enum_id, syntax)| (
                 syntax.name(syntax_db).text(syntax_db),
                 ModuleItemId::Enum(*enum_id)
+            )),
+            module_data.traits.iter().map(|(trait_id, syntax)| (
+                syntax.name(syntax_db).text(syntax_db),
+                ModuleItemId::Trait(*trait_id)
             )),
         )
         .collect(),

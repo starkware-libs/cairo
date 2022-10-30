@@ -80,7 +80,6 @@ pub fn priv_enum_semantic_data(db: &dyn SemanticGroup, enum_id: EnumId) -> Optio
     // selector.
     let module_id = enum_id.module(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_id);
-    // TODO(spapini): Add generic args when they are supported on enums.
     let module_data = db.module_data(module_id)?;
     let enum_ast = module_data.enums.get(&enum_id)?;
     let syntax_db = db.upcast();

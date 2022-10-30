@@ -6,4 +6,5 @@ pub mod functions;
 pub mod generics;
 pub mod modifiers;
 pub mod strct;
+pub mod trt;
 pub mod us;
