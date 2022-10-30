@@ -72,7 +72,7 @@ fn build_uint128_op(
     match op {
         IntOperator::Add | IntOperator::Sub => {
             let failure_handle_statement_id = match builder.invocation.branches.as_slice() {
-                [BranchInfo { target: BranchTarget::Statement(statement_id), .. }, _] => {
+                [_, BranchInfo { target: BranchTarget::Statement(statement_id), .. }] => {
                     statement_id
                 }
                 _ => panic!("malformed invocation"),
