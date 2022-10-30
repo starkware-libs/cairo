@@ -30,6 +30,9 @@ impl SemanticTokenKind {
             | SyntaxKind::TokenExtern
             | SyntaxKind::TokenType
             | SyntaxKind::TokenFunction
+            | SyntaxKind::TokenTrait
+            | SyntaxKind::TokenImpl
+            | SyntaxKind::TokenFor
             | SyntaxKind::TokenModule
             | SyntaxKind::TokenStruct
             | SyntaxKind::TokenEnum
