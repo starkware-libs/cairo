@@ -284,7 +284,7 @@ impl<'a> Parser<'a> {
         let impl_kw = self.take::<TerminalImpl>();
         let name = self.parse_token::<TerminalIdentifier>();
         let generic_params = self.parse_optional_generic_params();
-        let for_kw = self.take::<TerminalFor>();
+        let for_kw = self.parse_token::<TerminalFor>();
         let trait_path = self.parse_path();
         let body = if self.peek().kind == SyntaxKind::TerminalLBrace {
             let lbrace = self.parse_token::<TerminalLBrace>();

@@ -1,4 +1,11 @@
+mod traits;
+use traits::Copy;
+use traits::Drop;
+
 enum bool { False: (), True: (), }
+impl BoolCopy for Copy::<bool>;
+impl BoolDrop for Drop::<bool>;
+
 extern func bool_and(a: bool, b: bool) -> bool;
 extern func bool_or(a: bool, b: bool) -> bool;
 extern func bool_not(a: bool) -> bool;
@@ -6,11 +13,15 @@ extern func bool_not(a: bool) -> bool;
 extern type RangeCheck;
 
 extern type felt;
+impl FeltCopy for Copy::<felt>;
+impl FeltDrop for Drop::<felt>;
+
 extern func felt_add(a: felt, b: felt) -> felt;
 extern func felt_sub(a: felt, b: felt) -> felt;
 extern func felt_mul(a: felt, b: felt) -> felt;
 
 extern type NonZero<T>;
+// TODO(spapini): Add generic impls for NonZero for Copy, Drop.
 enum JumpNzResult<T> { Zero: (), NonZero: NonZero::<T>, }
 extern func unwrap_nz<T>(a: NonZero::<T>) -> T;
 
@@ -25,6 +36,7 @@ extern func felt_gt(a: felt, b: felt) -> (bool);
 
 extern func felt_jump_nz(a: felt) -> JumpNzResult::<felt>;
 
+// TODO(spapini): Remove.
 extern func dup<T>(obj: T) -> (T, T);
 extern func drop<T>(obj: T);
 
