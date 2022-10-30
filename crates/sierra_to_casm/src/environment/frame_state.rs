@@ -20,7 +20,11 @@ pub enum FrameStateError {
 pub enum FrameState {
     /// finalize_locals was called and the frame has been finalized.
     Finalized,
-    /// 'allocated' felts have been allocated for local variables.
+    /// finalize_locals wasn't called yet.
+    /// 'allocated' is the maximal stack slot that was allocated for a local variable.
+    /// last_ap_tracking is the last ap_tracking that was seen by this module.
+    /// Assuming last_ap_tracking is ApChange::Known(offset)
+    /// Then the stack slots [offset, allocated - offset] are reserved for locals.
     Allocating { allocated: i16, last_ap_tracking: ApChange },
 }
 
