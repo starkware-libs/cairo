@@ -20,7 +20,9 @@ pub enum FrameStateError {
 pub enum FrameState {
     /// finalize_locals was called and the frame has been finalized.
     Finalized,
-    /// 'allocated' felts have been allocated for local variables.
+    /// finalize_locals wasn't called yet.
+    /// 'allocated' is the number of stack slot that were allocated for a local variables.
+    /// last_ap_tracking is the last ap_tracking that was seen by this module.
     Allocating { allocated: i16, last_ap_tracking: ApChange },
 }
 
@@ -32,15 +34,13 @@ pub fn handle_finalize_locals(
     match frame_state {
         FrameState::Finalized => Err(FrameStateError::InvalidFinalizeLocals(frame_state)),
         FrameState::Allocating { allocated, last_ap_tracking } => {
-            let allocated = match ap_tracking {
+            match ap_tracking {
                 // TODO(ilya, 10/10/2022): Do we want to support allocating 0 locals?
-                ApChange::Known(_) if allocated == 0 => Ok(0),
-                ApChange::Known(offset) if ap_tracking == last_ap_tracking => {
-                    Ok(allocated - offset)
+                ApChange::Known(_) if allocated == 0 || (ap_tracking == last_ap_tracking) => {
+                    Ok((allocated, FrameState::Finalized))
                 }
                 _ => Err(FrameStateError::InvalidFinalizeLocals(frame_state)),
-            }?;
-            Ok((allocated, FrameState::Finalized))
+            }
         }
     }
 }
@@ -53,22 +53,19 @@ pub fn handle_alloc_local(
 ) -> Result<(i16, FrameState), FrameStateError> {
     match frame_state {
         FrameState::Finalized => Err(FrameStateError::InvalidAllocLocal(frame_state)),
-
-        FrameState::Allocating { allocated, last_ap_tracking } => {
-            let allocated = match ap_tracking {
-                ApChange::Known(offset) if allocated == 0 => Ok(offset),
-                ApChange::Known(_) if ap_tracking == last_ap_tracking => Ok(allocated),
-                _ => Err(FrameStateError::InvalidAllocLocal(frame_state)),
-            }?;
-
-            Ok((
-                allocated,
+        FrameState::Allocating { allocated, last_ap_tracking } => match ap_tracking {
+            // Ap change is forbidden between allocations of locals, so the allocation is
+            // valid if this is the first local that is being allocated or if the
+            // ap_tracking didn't change.
+            ApChange::Known(offset) if allocated == 0 || (ap_tracking == last_ap_tracking) => Ok((
+                offset + allocated,
                 FrameState::Allocating {
                     allocated: allocated + allocation_size,
                     last_ap_tracking: ap_tracking,
                 },
-            ))
-        }
+            )),
+            _ => Err(FrameStateError::InvalidAllocLocal(frame_state)),
+        },
     }
 }
 
