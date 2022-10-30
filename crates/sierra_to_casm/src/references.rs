@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use casm::ap_change::{ApChange, ApChangeError, ApplyApChange};
 use casm::operand::{CellRef, DerefOrImmediate, Register};
+use num_bigint::BigInt;
 use sierra::extensions::felt::FeltOperator;
 use sierra::ids::{ConcreteTypeId, VarId};
 use sierra::program::{Function, StatementIdx};
@@ -54,7 +55,7 @@ pub enum CellExpression {
     Deref(CellRef),
     DoubleDeref(CellRef),
     IntoSingleCellRef(CellRef),
-    Immediate(i128),
+    Immediate(BigInt),
     BinOp(BinOpExpression),
 }
 

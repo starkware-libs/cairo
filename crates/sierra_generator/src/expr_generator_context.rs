@@ -1,6 +1,7 @@
 use defs::diagnostic_utils::StableLocation;
 use defs::ids::{FreeFunctionId, LanguageElementId, ModuleId};
 use diagnostics::DiagnosticsBuilder;
+use num_bigint::BigInt;
 use smol_str::SmolStr;
 use syntax::node::ids::SyntaxStablePtrId;
 use utils::unordered_hash_map::UnorderedHashMap;
@@ -102,10 +103,10 @@ impl<'a> ExprGeneratorContext<'a> {
         })
     }
 
-    pub fn felt_const_libfunc_id(&self, value: usize) -> sierra::ids::ConcreteLibFuncId {
+    pub fn felt_const_libfunc_id(&self, value: BigInt) -> sierra::ids::ConcreteLibFuncId {
         self.db.intern_concrete_lib_func(sierra::program::ConcreteLibFuncLongId {
             generic_id: sierra::ids::GenericLibFuncId::from_string("felt_const"),
-            generic_args: vec![sierra::program::GenericArg::Value(value as i64)],
+            generic_args: vec![sierra::program::GenericArg::Value(value)],
         })
     }
 

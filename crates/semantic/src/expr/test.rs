@@ -3,6 +3,7 @@ use debug::DebugWithDb;
 use defs::db::DefsGroup;
 use defs::ids::{ModuleItemId, VarId};
 use indoc::indoc;
+use num_bigint::ToBigInt;
 use pretty_assertions::assert_eq;
 use utils::extract_matches;
 
@@ -51,7 +52,7 @@ fn test_expr_literal() {
     let semantic::ExprLiteral { value, ty, stable_ptr: _ } =
         extract_matches!(expr, crate::Expr::Literal, "Expected a literal.");
 
-    assert_eq!(value, 7);
+    assert_eq!(value, 7.to_bigint().unwrap());
     assert_eq!(ty, db.core_felt_ty());
 }
 
@@ -492,7 +493,7 @@ fn test_expr_block_with_tail_expression() {
         crate::Expr::Literal,
         "Expected a literal expression."
     );
-    assert_eq!(value, 9);
+    assert_eq!(value, 9.to_bigint().unwrap());
 
     // Check statements.
     match statements[..] {

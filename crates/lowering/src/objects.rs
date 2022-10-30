@@ -4,6 +4,7 @@
 //! compound expression.
 
 use id_arena::Id;
+use num_bigint::BigInt;
 use semantic::{ConcreteEnumId, ConcreteVariant};
 
 pub type BlockId = Id<Block>;
@@ -113,9 +114,8 @@ impl Statement {
 /// A statement that binds a literal value to a variable.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StatementLiteral {
-    // TODO(spapini): Fix the type of `value`.
     /// The value of the literal.
-    pub value: usize,
+    pub value: BigInt,
     /// The variable to bind the value to.
     pub output: VariableId,
 }
