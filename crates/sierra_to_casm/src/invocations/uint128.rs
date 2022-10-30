@@ -3,7 +3,7 @@ use casm::casm;
 use casm::instructions::InstructionBody;
 use casm::operand::{ap_cell_ref, DerefOrImmediate};
 use itertools::chain;
-use num_bigint::ToBigInt;
+use num_bigint::{BigInt, ToBigInt};
 use sierra::extensions::felt::FeltOperator;
 use sierra::extensions::integer::{
     IntOperator, Uint128BinaryOperationConcreteLibFunc, Uint128Concrete,
@@ -77,27 +77,26 @@ fn build_uint128_op(
                 }
                 _ => panic!("malformed invocation"),
             };
-            // TODO(orizi): Fix to the actual limit.
-            const UINT128_LIMIT: i128 = u64::MAX as i128;
+            let uint128_limit: BigInt = u128::MAX.to_bigint().unwrap() + 1;
             // The code up to the success branch.
             let mut before_success_branch = match op {
                 IntOperator::Add => casm! {
                     [ap + 0] = a + b, ap++;
-                    %{ memory[ap + 0] = (UINT128_LIMIT - 1) < memory [ap - 1] %}
+                    %{ memory[ap + 0] = (uint128_limit.clone() - 1) < memory [ap - 1] %}
                     jmp rel 0 if [ap + 0] != 0, ap++;
                     // Overflow:
                     // Here we know that 2**128 <= a + b < 2 * (2**128 - 1).
-                    [ap + 0] = [ap - 2] + (-UINT128_LIMIT), ap++;
+                    [ap + 0] = [ap - 2] + (-uint128_limit), ap++;
                     [ap - 1] = [[range_check.apply_ap_change(ApChange::Known(3)).unwrap()]];
                     jmp rel 0; // Fixed in relocations.
                 },
                 IntOperator::Sub => casm! {
                     a = [ap + 0] + b, ap++;
-                    %{ memory[ap + 0] = (UINT128_LIMIT - 1) < memory [ap - 1] %}
+                    %{ memory[ap + 0] = (uint128_limit.clone() - 1) < memory [ap - 1] %}
                     jmp rel 0 if [ap + 0] != 0, ap++;
                     // Underflow:
                     // Here we know that 0 - (2**128 - 1) <= a - b < 0.
-                    [ap + 0] = [ap - 2] + UINT128_LIMIT, ap++;
+                    [ap + 0] = [ap - 2] + uint128_limit, ap++;
                     [ap - 1] = [[range_check.apply_ap_change(ApChange::Known(3)).unwrap()]];
                     jmp rel 0; // Fixed in relocations.
                 },
