@@ -148,7 +148,7 @@ impl NoGenericArgsGenericLibFunc for BurnGasLibFunc {
         &self,
         _context: &dyn SignatureSpecializationContext,
     ) -> Result<LibFuncSignature, SpecializationError> {
-        Ok(LibFuncSignature::new_non_branch(vec![], vec![], SierraApChange::Known))
+        Ok(LibFuncSignature::new_non_branch(vec![], vec![], SierraApChange::Known(0)))
     }
 
     fn specialize(

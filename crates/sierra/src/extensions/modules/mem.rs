@@ -32,14 +32,15 @@ impl NamedLibFunc for StoreTempLibFunc {
 
     fn specialize_signature(
         &self,
-        _context: &dyn SignatureSpecializationContext,
+        context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
     ) -> Result<LibFuncSignature, SpecializationError> {
         let ty = as_single_type(args)?;
+        let type_size = context.as_type_specialization_context().get_type_info(ty.clone())?.size;
         Ok(LibFuncSignature::new_non_branch_ex(
             vec![ParamSignature { ty: ty.clone(), allow_deferred: true, allow_add_const: true }],
             vec![OutputVarInfo { ty, ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 } }],
-            SierraApChange::Known,
+            SierraApChange::Known(type_size),
         ))
     }
 
@@ -242,7 +243,7 @@ impl NamedLibFunc for RenameLibFunc {
                 ty,
                 ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
             }],
-            SierraApChange::Known,
+            SierraApChange::Known(0),
         ))
     }
 

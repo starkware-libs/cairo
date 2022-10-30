@@ -129,7 +129,7 @@ impl GenericLibFunc for Uint128OperationLibFunc {
                         ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                     },
                 ],
-                SierraApChange::Known,
+                SierraApChange::NotImplemented,
             )),
             (
                 [],
@@ -148,7 +148,7 @@ impl GenericLibFunc for Uint128OperationLibFunc {
                         ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                     },
                 ],
-                SierraApChange::Known,
+                SierraApChange::NotImplemented,
             )),
             ([], IntOperator::Add | IntOperator::Sub | IntOperator::Mul) => Ok(LibFuncSignature {
                 param_signatures: vec![
@@ -172,7 +172,7 @@ impl GenericLibFunc for Uint128OperationLibFunc {
                                 ),
                             },
                         ],
-                        ap_change: SierraApChange::Known,
+                        ap_change: SierraApChange::NotImplemented,
                     },
                     BranchSignature {
                         vars: vec![OutputVarInfo {
@@ -181,7 +181,7 @@ impl GenericLibFunc for Uint128OperationLibFunc {
                                 DeferredOutputKind::AddConst { param_idx: 0 },
                             ),
                         }],
-                        ap_change: SierraApChange::Known,
+                        ap_change: SierraApChange::NotImplemented,
                     },
                 ],
                 fallthrough: Some(0),
@@ -201,7 +201,7 @@ impl GenericLibFunc for Uint128OperationLibFunc {
                             ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                         },
                     ],
-                    SierraApChange::Known,
+                    SierraApChange::NotImplemented,
                 ))
             }
             (
@@ -221,7 +221,7 @@ impl GenericLibFunc for Uint128OperationLibFunc {
                         ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                     },
                 ],
-                SierraApChange::Known,
+                SierraApChange::NotImplemented,
             )),
             ([GenericArg::Value(_c)], IntOperator::Add | IntOperator::Sub | IntOperator::Mul) => {
                 Ok(LibFuncSignature {
@@ -245,7 +245,7 @@ impl GenericLibFunc for Uint128OperationLibFunc {
                                     ),
                                 },
                             ],
-                            ap_change: SierraApChange::Known,
+                            ap_change: SierraApChange::NotImplemented,
                         },
                         BranchSignature {
                             vars: vec![OutputVarInfo {
@@ -254,7 +254,7 @@ impl GenericLibFunc for Uint128OperationLibFunc {
                                     DeferredOutputKind::AddConst { param_idx: 0 },
                                 ),
                             }],
-                            ap_change: SierraApChange::Known,
+                            ap_change: SierraApChange::NotImplemented,
                         },
                     ],
                     fallthrough: Some(0),
@@ -405,7 +405,7 @@ impl NoGenericArgsGenericLibFunc for Uint128FromFeltLibFunc {
                             ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },
                         },
                     ],
-                    ap_change: SierraApChange::Known,
+                    ap_change: SierraApChange::Known(2),
                 },
                 BranchSignature {
                     vars: vec![OutputVarInfo {
@@ -414,7 +414,7 @@ impl NoGenericArgsGenericLibFunc for Uint128FromFeltLibFunc {
                             param_idx: 0,
                         }),
                     }],
-                    ap_change: SierraApChange::Known,
+                    ap_change: SierraApChange::Known(3),
                 },
             ],
             fallthrough: Some(0),
@@ -451,7 +451,7 @@ impl NoGenericArgsGenericLibFunc for Uint128ToFeltLibFunc {
                 ty: context.get_concrete_type(FeltType::id(), &[])?,
                 ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },
             }],
-            SierraApChange::Known,
+            SierraApChange::NotImplemented,
         ))
     }
 

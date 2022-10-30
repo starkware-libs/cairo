@@ -56,7 +56,7 @@ impl NamedLibFunc for UnwrapNonZeroLibFunc {
                 ty,
                 ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
             }],
-            SierraApChange::Known,
+            SierraApChange::Known(0),
         ))
     }
 
