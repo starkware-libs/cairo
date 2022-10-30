@@ -107,7 +107,15 @@ impl<'a> Lexer<'a> {
 
     // Token matchers.
     fn take_token_literal_number(&mut self) -> TokenKind {
-        self.take_while(|c| c.is_ascii_digit());
+        if self.peek() == Some('0') {
+            self.take();
+            if self.peek() == Some('x') {
+                self.take();
+                self.take_while(|c| c.is_ascii_hexdigit());
+            }
+        } else {
+            self.take_while(|c| c.is_ascii_digit());
+        }
         TokenKind::LiteralNumber
     }
 

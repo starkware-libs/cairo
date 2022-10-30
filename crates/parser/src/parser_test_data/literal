@@ -1,0 +1,17 @@
+//! > Test a StatementLet syntax tree
+
+//! > test_function_name
+test_partial_parser_tree
+
+//! > cairo_code
+func f() {
+    let a = 0x123;
+}
+
+//! > top_level_kind
+TerminalLiteralNumber
+
+//! > ignored_kinds
+
+//! > expected_tree
+├── rhs (kind: TokenLiteralNumber): '0x123'
