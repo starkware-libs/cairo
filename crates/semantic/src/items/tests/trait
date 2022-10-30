@@ -16,3 +16,27 @@ impl MyImpl of MyTrait::<A>;
 impl MyImpl2<T> of MyTrait::<T>;
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test enum generics failures.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+func foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+struct A {}
+trait MyTrait<T>;
+impl MyImpl3 of NonExistingTrait;
+
+//! > expected_diagnostics
+error: Path not found.
+ --> lib.cairo:3:17
+impl MyImpl3 of NonExistingTrait;
+                ^**************^
