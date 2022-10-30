@@ -51,6 +51,8 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::UnknownLiteral => "Unknown literal.".into(),
             SemanticDiagnosticKind::UnknownBinaryOperator => "Unknown binary operator.".into(),
             SemanticDiagnosticKind::UnknownFunction => "Unknown function.".into(),
+            SemanticDiagnosticKind::UnknownTrait => "Unknown trait.".into(),
+            SemanticDiagnosticKind::UnknownImpl => "Unknown impl.".into(),
             SemanticDiagnosticKind::NotAFunction => "Not a function.".into(),
             SemanticDiagnosticKind::UnknownType => "Unknown type.".into(),
             SemanticDiagnosticKind::UnknownStruct => "Unknown struct.".into(),
@@ -60,6 +62,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
             }
             SemanticDiagnosticKind::NotAStruct => "Not a struct.".into(),
             SemanticDiagnosticKind::NotAType => "Not a type.".into(),
+            SemanticDiagnosticKind::NotATrait => "Not a trait.".into(),
             SemanticDiagnosticKind::UnexpectedGenericArgs => "Unexpected generic arguments".into(),
             SemanticDiagnosticKind::UnknownMember => "Unknown member.".into(),
             SemanticDiagnosticKind::MemberSpecifiedMoreThanOnce => {
@@ -211,6 +214,8 @@ pub enum SemanticDiagnosticKind {
     UnknownLiteral,
     UnknownBinaryOperator,
     UnknownFunction,
+    UnknownTrait,
+    UnknownImpl,
     NotAFunction,
     UnknownType,
     UnknownStruct,
@@ -218,6 +223,7 @@ pub enum SemanticDiagnosticKind {
     NotAVariant,
     NotAStruct,
     NotAType,
+    NotATrait,
     UnexpectedGenericArgs,
     UnknownMember,
     MemberSpecifiedMoreThanOnce,
