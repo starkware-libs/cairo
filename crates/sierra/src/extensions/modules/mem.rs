@@ -39,7 +39,7 @@ impl NamedLibFunc for StoreTempLibFunc {
         Ok(LibFuncSignature::new_non_branch_ex(
             vec![ParamSignature { ty: ty.clone(), allow_deferred: true, allow_add_const: true }],
             vec![OutputVarInfo { ty, ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 } }],
-            SierraApChange::Known,
+            SierraApChange::NotImplemented,
         ))
     }
 
@@ -242,7 +242,7 @@ impl NamedLibFunc for RenameLibFunc {
                 ty,
                 ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
             }],
-            SierraApChange::Known,
+            SierraApChange::Known(0),
         ))
     }
 

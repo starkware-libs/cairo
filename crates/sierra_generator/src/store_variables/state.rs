@@ -47,7 +47,7 @@ impl State {
             | sierra::extensions::lib_func::SierraApChange::Unknown => {
                 self.clear_known_stack();
             }
-            sierra::extensions::lib_func::SierraApChange::Known => {}
+            sierra::extensions::lib_func::SierraApChange::Known(_) => {}
         }
 
         for (var, var_info) in itertools::zip_eq(results, &branch_signature.vars) {

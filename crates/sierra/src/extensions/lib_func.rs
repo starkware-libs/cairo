@@ -296,7 +296,7 @@ pub enum SierraApChange {
     Unknown,
     /// The libfunc changes `ap` by pushing new tempvars, as described by
     /// [OutputVarReferenceInfo::NewTempVar] in [`BranchSignature::vars`].
-    Known,
+    Known(usize),
     /// Indicates that the value of ApChange was not assigned properly yet. Behaves as `Unknown`.
     /// This will be removed, once all places using it are fixed.
     // TODO(lior): Remove this value once it is no longer used.

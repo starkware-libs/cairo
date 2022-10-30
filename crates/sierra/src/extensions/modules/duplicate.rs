@@ -37,7 +37,7 @@ impl NamedLibFunc for DupLibFunc {
                     ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
                 },
             ],
-            SierraApChange::Known,
+            SierraApChange::Known(0),
         ))
     }
 

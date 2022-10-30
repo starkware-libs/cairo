@@ -22,7 +22,7 @@ impl NamedLibFunc for DropLibFunc {
         let ty = as_single_type(generic_args)?;
         let info = context.get_type_info(ty.clone())?;
         if info.droppable {
-            Ok(LibFuncSignature::new_non_branch(vec![ty], vec![], SierraApChange::Known))
+            Ok(LibFuncSignature::new_non_branch(vec![ty], vec![], SierraApChange::Known(0)))
         } else {
             Err(SpecializationError::UnsupportedGenericArg)
         }
