@@ -10,6 +10,9 @@ func foo() {}
 foo
 
 //! > module_code
+struct A {}
 trait MyTrait<T>;
+impl MyImpl for MyTrait::<A>;
+impl MyImpl2<T> for MyTrait::<T>;
 
 //! > expected_diagnostics
