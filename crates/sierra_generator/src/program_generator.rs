@@ -61,6 +61,7 @@ pub fn module_sierra_program(
             }
             ModuleItemId::Struct(_) => todo!("'struct' lowering not supported yet."),
             ModuleItemId::Enum(_) => todo!("'enum' lowering not supported yet."),
+            ModuleItemId::Trait(_) => {}
             ModuleItemId::ExternType(_) => {}
             ModuleItemId::ExternFunction(_) => todo!("'extern func' lowering not supported yet."),
         }
