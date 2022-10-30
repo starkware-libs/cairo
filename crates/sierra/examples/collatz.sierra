@@ -32,17 +32,9 @@ jump() { 43() };
 // Unwrapping and ignoring jump_nz result, as we don't use it.
 uint128_unwrap_nz(to_drop) -> (to_drop);
 uint128_drop(to_drop) -> ();
-get_gas(rc, gb) { 16(rc, gb) fallthrough(rc, gb) };
-// Statement #  8 - Ran out of gas - returning updated gb and -1.
-uint128_drop(n) -> ();
-uint128_drop(counter) -> ();
-store_temp_rc(rc) -> (rc);
-refund_gas(gb) -> (gb); // Statement 11.
-store_temp_gb(gb) -> (gb);
-uint128_const_minus_1() -> (err);
-store_temp_uint128(err) -> (err);
-return(rc, gb, err);
-// Statement # 16 - Testing if n is odd or even.
+get_gas(rc, gb) { fallthrough(rc, gb) 22(rc, gb) };
+
+// Statement # 8 - Testing if n is odd or even.
 store_temp_rc(rc) -> (rc);
 uint128_dup(n) -> (n, parity);
 uint128_mod_2(rc, parity) -> (rc, parity);
@@ -50,14 +42,25 @@ store_temp_rc(rc) -> (rc);
 store_temp_uint128(parity) -> (parity);
 store_temp_gb(gb) -> (gb);
 uint128_jump_nz(parity) { fallthrough() 30(to_drop) };
-// Statement # 23 - Handling even case. Adding [_, n/2, gb] to memory.
+// Statement # 15 - Handling even case. Adding [_, n/2, gb] to memory.
 align_temps() -> ();
 uint128_div_2(rc, n) -> (rc, n);
 store_temp_rc(rc) -> (rc);
 store_temp_uint128(n) -> (n);
-refund_gas(gb) -> (gb); // Statement 27.
+refund_gas(gb) -> (gb); // Statement 19.
 store_temp_gb(gb) -> (gb);
 jump() { 40() };
+
+// Statement #  22 - Ran out of gas - returning updated gb and -1.
+uint128_drop(n) -> ();
+uint128_drop(counter) -> ();
+store_temp_rc(rc) -> (rc);
+refund_gas(gb) -> (gb); // Statement 25.
+store_temp_gb(gb) -> (gb);
+uint128_const_minus_1() -> (err);
+store_temp_uint128(err) -> (err);
+return(rc, gb, err);
+
 // Statement # 30 - Handling odd case. Adding [n*3, n*3+1, gb] to memory.
 uint128_unwrap_nz(to_drop) -> (to_drop);
 uint128_drop(to_drop) -> ();

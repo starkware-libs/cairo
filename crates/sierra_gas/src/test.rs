@@ -19,8 +19,8 @@ fn get_example_program(name: &str) -> Program {
             Ok(GasInfo {
                 variable_values: [
                     (StatementIdx(7), 35),
-                    (StatementIdx(11), 0),
-                    (StatementIdx(27), 3),
+                    (StatementIdx(19), 3),
+                    (StatementIdx(25), 0),
                     (StatementIdx(38), 0),
                     (StatementIdx(49), 1),
                 ].into_iter().collect(),
@@ -32,8 +32,8 @@ fn get_example_program(name: &str) -> Program {
                     (StatementIdx(3), 10),
                     (StatementIdx(13), 8),
                     (StatementIdx(27), 6),
-                    (StatementIdx(33), 0),
-                    (StatementIdx(50), 1),
+                    (StatementIdx(40), 1),
+                    (StatementIdx(49), 0),
                 ].into_iter().collect(),
                 function_costs: [("Fibonacci".into(), 14)].into_iter().collect()
             });
@@ -44,7 +44,7 @@ fn get_example_program(name: &str) -> Program {
                     (StatementIdx(3), 3),
                     (StatementIdx(12), 1),
                     (StatementIdx(19), 31),
-                    (StatementIdx(21), 0),
+                    (StatementIdx(35), 0),
                     (StatementIdx(42), 0),
                 ].into_iter().collect(),
                 function_costs: [("Fibonacci".into(), 8)].into_iter().collect()
