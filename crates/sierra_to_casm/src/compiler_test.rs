@@ -19,7 +19,7 @@ use crate::metadata::Metadata;
 /// Builds the metadata for a Sierra program.
 fn build_metadata(
     program: &Program,
-    ap_change_data: &[(&str, i16)],
+    ap_change_data: &[(&str, usize)],
     calculate_gas_info: bool,
 ) -> Metadata {
     Metadata {
@@ -368,7 +368,7 @@ fn strip_comments_and_linebreaks(program: &str) -> String {
             "fib_recursive")]
 fn sierra_to_casm(
     sierra_code: &str,
-    ap_change_data: &[(&str, i16)],
+    ap_change_data: &[(&str, usize)],
     check_gas_usage: bool,
     expected_casm: &str,
 ) {
@@ -675,7 +675,7 @@ of the libfunc or return statement.";
             "}, &[("foo", 5)], "#0: Invalid Ap change annotation. \
 expected: ApChange::Known(5) got: ApChange::Known(0).";
             "bad Ap change")]
-fn compiler_errors(sierra_code: &str, ap_change_data: &[(&str, i16)], expected_result: &str) {
+fn compiler_errors(sierra_code: &str, ap_change_data: &[(&str, usize)], expected_result: &str) {
     let program = ProgramParser::new().parse(sierra_code).unwrap();
     pretty_assertions::assert_eq!(
         compile(&program, &build_metadata(&program, ap_change_data, false), false)
