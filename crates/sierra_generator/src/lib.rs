@@ -18,4 +18,5 @@ pub mod test_utils;
 mod types;
 mod utils;
 
+pub use ap_change::ApChange;
 pub use diagnostic::SierraGeneratorDiagnostic;
