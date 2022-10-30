@@ -1,0 +1,27 @@
+//! > Test a syntax tree with literals
+
+//! > test_function_name
+test_partial_parser_tree
+
+//! > cairo_code
+func f() {
+    let a = 0x123 + 456;
+}
+
+//! > top_level_kind
+StatementLet
+
+//! > ignored_kinds
+ExprPath
+
+//! > expected_tree
+└── Top level kind: StatementLet
+    ├── let_kw (kind: TokenLet): 'let'
+    ├── pattern (kind: ExprPath) <ignored>
+    ├── type_clause (kind: OptionTypeClauseEmpty) []
+    ├── eq (kind: TokenEq): '='
+    ├── rhs (kind: ExprBinary)
+    │   ├── lhs (kind: TokenLiteralNumber): '0x123'
+    │   ├── op (kind: TokenPlus): '+'
+    │   └── rhs (kind: TokenLiteralNumber): '456'
+    └── semicolon (kind: TokenSemicolon): ';'
