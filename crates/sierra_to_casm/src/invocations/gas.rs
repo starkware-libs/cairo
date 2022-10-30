@@ -76,10 +76,10 @@ fn build_get_gas(
         gas_counter_value.apply_ap_change(ApChange::Known(1)).unwrap();
     // The code up to the success branch.
     let mut before_success_branch = casm! {
-        %{ memory[ap + 0] = ((*requested_count + 1) as i128) < memory gas_counter_value %}
+        %{ memory[ap + 0] = ((*requested_count - 1) as i128) < memory gas_counter_value %}
         jmp rel 0 if [ap + 0] != 0, ap++;
 
-        // requested_count + 1 >= gas_counter_value => requested_count > gas_counter:
+        // requested_count - 1 >= gas_counter_value => requested_count > gas_counter:
         // TODO(orizi): Make into one command when wider constants are supported.
         [ap + 0] = gas_counter_value_for_branches + (1 - *requested_count as i128), ap++;
         [ap + 0] = [ap - 1] * (-1), ap++;
@@ -98,7 +98,7 @@ fn build_get_gas(
     ) = branch_offset.to_bigint().unwrap();
     let relocation_index = before_success_branch.instructions.len() - 1;
     let success_branch = casm! {
-       // requested_count + 1 < gas_counter_value => requested_count <= gas_counter:
+       // requested_count - 1 < gas_counter_value => requested_count <= gas_counter:
        [ap + 0] = gas_counter_value_for_branches + (-requested_count as i128), ap++;
        [ap - 1] = [[range_check.apply_ap_change(ApChange::Known(2)).unwrap()]];
     };
