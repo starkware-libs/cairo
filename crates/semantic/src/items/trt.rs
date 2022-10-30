@@ -1,11 +1,15 @@
+use db_utils::define_short_id;
 use defs::ids::{GenericParamId, ImplId, LanguageElementId, TraitId};
 use diagnostics::Diagnostics;
 use diagnostics_proc_macros::DebugWithDb;
+use utils::{try_extract_matches, OptionHelper};
 
 use super::generics::semantic_generic_params;
 use crate::db::SemanticGroup;
+use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
-use crate::SemanticDiagnostic;
+use crate::resolve_path::{ResolvedConcreteItem, Resolver};
+use crate::{GenericArgumentId, SemanticDiagnostic};
 
 #[cfg(test)]
 mod test {
@@ -14,6 +18,14 @@ mod test {
 
     semantic_test!(diagnostics_tests, ["src/items/tests/trait"], test_function_diagnostics);
 }
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[debug_db(dyn SemanticGroup + 'static)]
+pub struct ConcreteTraitLongId {
+    pub trait_id: TraitId,
+    pub generic_args: Vec<GenericArgumentId>,
+}
+define_short_id!(ConcreteTraitId, ConcreteTraitLongId, SemanticGroup, lookup_intern_concrete_trait);
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
@@ -59,12 +71,20 @@ pub fn priv_trait_semantic_data(db: &dyn SemanticGroup, trait_id: TraitId) -> Op
     Some(TraitData { diagnostics: diagnostics.build(), generic_params })
 }
 
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[debug_db(dyn SemanticGroup + 'static)]
+pub struct ConcreteImplLongId {
+    pub impl_id: ImplId,
+    pub generic_args: Vec<GenericArgumentId>,
+}
+define_short_id!(ConcreteImplId, ConcreteImplLongId, SemanticGroup, lookup_intern_concrete_impl);
+
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct ImplData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
     generic_params: Vec<GenericParamId>,
-    // TODO(spapini): Resolve concrete trait.
+    concrete_trait: Option<ConcreteTraitId>,
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_semantic_diagnostics].
@@ -89,6 +109,7 @@ pub fn priv_impl_semantic_data(db: &dyn SemanticGroup, impl_id: ImplId) -> Optio
     // TODO(spapini): Add generic args when they are supported on enums.
     let module_data = db.module_data(module_id)?;
     let impl_ast = module_data.impls.get(&impl_id)?;
+    let syntax_db = db.upcast();
 
     // Generic params.
     let generic_params = semantic_generic_params(
@@ -97,6 +118,15 @@ pub fn priv_impl_semantic_data(db: &dyn SemanticGroup, impl_id: ImplId) -> Optio
         module_id,
         &impl_ast.generic_params(db.upcast()),
     );
+    let mut resolver = Resolver::new(db, module_id, &generic_params);
 
-    Some(ImplData { diagnostics: diagnostics.build(), generic_params })
+    let trait_path_syntax = impl_ast.trait_path(syntax_db);
+    let concrete_trait = resolver
+        .resolve_concrete_path(&mut diagnostics, &trait_path_syntax)
+        .and_then(|option_concrete_path| {
+            try_extract_matches!(option_concrete_path, ResolvedConcreteItem::Trait)
+                .on_none(|| diagnostics.report(&trait_path_syntax, NotATrait))
+        });
+
+    Some(ImplData { diagnostics: diagnostics.build(), generic_params, concrete_trait })
 }

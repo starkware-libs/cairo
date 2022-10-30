@@ -14,5 +14,10 @@ struct A {}
 trait MyTrait<T>;
 impl MyImpl for MyTrait::<A>;
 impl MyImpl2<T> for MyTrait::<T>;
+impl MyImpl3 for MyImpl;
 
 //! > expected_diagnostics
+error: Not a trait.
+ --> lib.cairo:5:18
+impl MyImpl3 for MyImpl;
+                 ^****^
