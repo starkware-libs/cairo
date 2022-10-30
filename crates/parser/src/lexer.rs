@@ -105,8 +105,21 @@ impl<'a> Lexer<'a> {
         TokenSingleLineComment::new_green(self.db, SmolStr::from(self.consume_span())).into()
     }
 
-    // Token matchers.
+    /// Token matchers.
+    /// =================================================================================
+
+    /// Takes an hex or decimal number.
     fn take_token_literal_number(&mut self) -> TokenKind {
+        if self.peek() == Some('0') {
+            self.take();
+            if self.peek() == Some('x') {
+                self.take();
+                self.take_while(|c| c.is_ascii_hexdigit());
+                return TokenKind::LiteralNumber;
+            }
+        }
+
+        // The token does not start with '0x'. Parse the token as a decimal number.
         self.take_while(|c| c.is_ascii_digit());
         TokenKind::LiteralNumber
     }
