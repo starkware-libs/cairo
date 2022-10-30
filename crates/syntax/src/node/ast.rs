@@ -5751,12 +5751,9 @@ impl ItemTrait {
         trait_kw: TerminalTraitGreen,
         name: TerminalIdentifierGreen,
         generic_params: OptionWrappedGenericParamListGreen,
-        lbrace: TerminalLBraceGreen,
-        items: ItemListGreen,
-        rbrace: TerminalRBraceGreen,
+        body: MaybeTraitBodyGreen,
     ) -> ItemTraitGreen {
-        let children: Vec<GreenId> =
-            vec![trait_kw.0, name.0, generic_params.0, lbrace.0, items.0, rbrace.0];
+        let children: Vec<GreenId> = vec![trait_kw.0, name.0, generic_params.0, body.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         ItemTraitGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::ItemTrait,
@@ -5774,14 +5771,8 @@ impl ItemTrait {
     pub fn generic_params(&self, db: &dyn SyntaxGroup) -> OptionWrappedGenericParamList {
         OptionWrappedGenericParamList::from_syntax_node(db, self.children[2].clone())
     }
-    pub fn lbrace(&self, db: &dyn SyntaxGroup) -> TerminalLBrace {
-        TerminalLBrace::from_syntax_node(db, self.children[3].clone())
-    }
-    pub fn items(&self, db: &dyn SyntaxGroup) -> ItemList {
-        ItemList::from_syntax_node(db, self.children[4].clone())
-    }
-    pub fn rbrace(&self, db: &dyn SyntaxGroup) -> TerminalRBrace {
-        TerminalRBrace::from_syntax_node(db, self.children[5].clone())
+    pub fn body(&self, db: &dyn SyntaxGroup) -> MaybeTraitBody {
+        MaybeTraitBody::from_syntax_node(db, self.children[3].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -5813,9 +5804,7 @@ impl TypedSyntaxNode for ItemTrait {
                     TerminalTrait::missing(db).0,
                     TerminalIdentifier::missing(db).0,
                     OptionWrappedGenericParamList::missing(db).0,
-                    TerminalLBrace::missing(db).0,
-                    ItemList::missing(db).0,
-                    TerminalRBrace::missing(db).0,
+                    MaybeTraitBody::missing(db).0,
                 ],
                 width: 0,
             },
@@ -5844,6 +5833,143 @@ impl TypedSyntaxNode for ItemTrait {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum MaybeTraitBody {
+    Some(TraitBody),
+    None(TerminalSemicolon),
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct MaybeTraitBodyPtr(SyntaxStablePtrId);
+impl MaybeTraitBodyPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+impl From<TraitBodyPtr> for MaybeTraitBodyPtr {
+    fn from(value: TraitBodyPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalSemicolonPtr> for MaybeTraitBodyPtr {
+    fn from(value: TerminalSemicolonPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TraitBodyGreen> for MaybeTraitBodyGreen {
+    fn from(value: TraitBodyGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalSemicolonGreen> for MaybeTraitBodyGreen {
+    fn from(value: TerminalSemicolonGreen) -> Self {
+        Self(value.0)
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct MaybeTraitBodyGreen(pub GreenId);
+impl TypedSyntaxNode for MaybeTraitBody {
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
+    type StablePtr = MaybeTraitBodyPtr;
+    type Green = MaybeTraitBodyGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        panic!("No missing variant.");
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::TraitBody => MaybeTraitBody::Some(TraitBody::from_syntax_node(db, node)),
+            SyntaxKind::TerminalSemicolon => {
+                MaybeTraitBody::None(TerminalSemicolon::from_syntax_node(db, node))
+            }
+            _ => {
+                panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "MaybeTraitBody")
+            }
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        match self {
+            MaybeTraitBody::Some(x) => x.as_syntax_node(),
+            MaybeTraitBody::None(x) => x.as_syntax_node(),
+        }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        MaybeTraitBodyPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct TraitBody {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl TraitBody {
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        lbrace: TerminalLBraceGreen,
+        rbrace: TerminalRBraceGreen,
+    ) -> TraitBodyGreen {
+        let children: Vec<GreenId> = vec![lbrace.0, rbrace.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        TraitBodyGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::TraitBody,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+}
+impl TraitBody {
+    pub fn lbrace(&self, db: &dyn SyntaxGroup) -> TerminalLBrace {
+        TerminalLBrace::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn rbrace(&self, db: &dyn SyntaxGroup) -> TerminalRBrace {
+        TerminalRBrace::from_syntax_node(db, self.children[1].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TraitBodyPtr(SyntaxStablePtrId);
+impl TraitBodyPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TraitBodyGreen(pub GreenId);
+impl TypedSyntaxNode for TraitBody {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TraitBody);
+    type StablePtr = TraitBodyPtr;
+    type Green = TraitBodyGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        TraitBodyGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::TraitBody,
+            details: GreenNodeDetails::Node {
+                children: vec![TerminalLBrace::missing(db).0, TerminalRBrace::missing(db).0],
+                width: 0,
+            },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::TraitBody,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::TraitBody
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        TraitBodyPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ItemImpl {
     node: SyntaxNode,
     children: Vec<SyntaxNode>,
@@ -5855,21 +5981,11 @@ impl ItemImpl {
         name: TerminalIdentifierGreen,
         generic_params: OptionWrappedGenericParamListGreen,
         for_kw: TerminalForGreen,
-        trait_name: TerminalIdentifierGreen,
-        lbrace: TerminalLBraceGreen,
-        items: ItemListGreen,
-        rbrace: TerminalRBraceGreen,
+        trait_path: ExprPathGreen,
+        body: MaybeImplBodyGreen,
     ) -> ItemImplGreen {
-        let children: Vec<GreenId> = vec![
-            impl_kw.0,
-            name.0,
-            generic_params.0,
-            for_kw.0,
-            trait_name.0,
-            lbrace.0,
-            items.0,
-            rbrace.0,
-        ];
+        let children: Vec<GreenId> =
+            vec![impl_kw.0, name.0, generic_params.0, for_kw.0, trait_path.0, body.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         ItemImplGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::ItemImpl,
@@ -5890,17 +6006,11 @@ impl ItemImpl {
     pub fn for_kw(&self, db: &dyn SyntaxGroup) -> TerminalFor {
         TerminalFor::from_syntax_node(db, self.children[3].clone())
     }
-    pub fn trait_name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[4].clone())
+    pub fn trait_path(&self, db: &dyn SyntaxGroup) -> ExprPath {
+        ExprPath::from_syntax_node(db, self.children[4].clone())
     }
-    pub fn lbrace(&self, db: &dyn SyntaxGroup) -> TerminalLBrace {
-        TerminalLBrace::from_syntax_node(db, self.children[5].clone())
-    }
-    pub fn items(&self, db: &dyn SyntaxGroup) -> ItemList {
-        ItemList::from_syntax_node(db, self.children[6].clone())
-    }
-    pub fn rbrace(&self, db: &dyn SyntaxGroup) -> TerminalRBrace {
-        TerminalRBrace::from_syntax_node(db, self.children[7].clone())
+    pub fn body(&self, db: &dyn SyntaxGroup) -> MaybeImplBody {
+        MaybeImplBody::from_syntax_node(db, self.children[5].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -5933,10 +6043,8 @@ impl TypedSyntaxNode for ItemImpl {
                     TerminalIdentifier::missing(db).0,
                     OptionWrappedGenericParamList::missing(db).0,
                     TerminalFor::missing(db).0,
-                    TerminalIdentifier::missing(db).0,
-                    TerminalLBrace::missing(db).0,
-                    ItemList::missing(db).0,
-                    TerminalRBrace::missing(db).0,
+                    ExprPath::missing(db).0,
+                    MaybeImplBody::missing(db).0,
                 ],
                 width: 0,
             },
@@ -5962,6 +6070,141 @@ impl TypedSyntaxNode for ItemImpl {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         ItemImplPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum MaybeImplBody {
+    Some(ImplBody),
+    None(TerminalSemicolon),
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct MaybeImplBodyPtr(SyntaxStablePtrId);
+impl MaybeImplBodyPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+impl From<ImplBodyPtr> for MaybeImplBodyPtr {
+    fn from(value: ImplBodyPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalSemicolonPtr> for MaybeImplBodyPtr {
+    fn from(value: TerminalSemicolonPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ImplBodyGreen> for MaybeImplBodyGreen {
+    fn from(value: ImplBodyGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalSemicolonGreen> for MaybeImplBodyGreen {
+    fn from(value: TerminalSemicolonGreen) -> Self {
+        Self(value.0)
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct MaybeImplBodyGreen(pub GreenId);
+impl TypedSyntaxNode for MaybeImplBody {
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
+    type StablePtr = MaybeImplBodyPtr;
+    type Green = MaybeImplBodyGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        panic!("No missing variant.");
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::ImplBody => MaybeImplBody::Some(ImplBody::from_syntax_node(db, node)),
+            SyntaxKind::TerminalSemicolon => {
+                MaybeImplBody::None(TerminalSemicolon::from_syntax_node(db, node))
+            }
+            _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "MaybeImplBody"),
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        match self {
+            MaybeImplBody::Some(x) => x.as_syntax_node(),
+            MaybeImplBody::None(x) => x.as_syntax_node(),
+        }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        MaybeImplBodyPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct ImplBody {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl ImplBody {
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        lbrace: TerminalLBraceGreen,
+        rbrace: TerminalRBraceGreen,
+    ) -> ImplBodyGreen {
+        let children: Vec<GreenId> = vec![lbrace.0, rbrace.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        ImplBodyGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::ImplBody,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+}
+impl ImplBody {
+    pub fn lbrace(&self, db: &dyn SyntaxGroup) -> TerminalLBrace {
+        TerminalLBrace::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn rbrace(&self, db: &dyn SyntaxGroup) -> TerminalRBrace {
+        TerminalRBrace::from_syntax_node(db, self.children[1].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ImplBodyPtr(SyntaxStablePtrId);
+impl ImplBodyPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ImplBodyGreen(pub GreenId);
+impl TypedSyntaxNode for ImplBody {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ImplBody);
+    type StablePtr = ImplBodyPtr;
+    type Green = ImplBodyGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        ImplBodyGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::ImplBody,
+            details: GreenNodeDetails::Node {
+                children: vec![TerminalLBrace::missing(db).0, TerminalRBrace::missing(db).0],
+                width: 0,
+            },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::ImplBody,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::ImplBody
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ImplBodyPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
