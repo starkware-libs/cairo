@@ -216,9 +216,8 @@
     │       ├── name (kind: TokenIdentifier): 'A'
     │       ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
     │       ├── lbrace (kind: TokenLBrace): '{'
-    │       ├── members (kind: ParamList)
-    │       │   ├── item #0 (kind: Param)
-    │       │   │   ├── modifiers (kind: ModifierList) []
+    │       ├── members (kind: MemberList)
+    │       │   ├── item #0 (kind: Member)
     │       │   │   ├── name (kind: TokenIdentifier): 'x'
     │       │   │   └── type_clause (kind: TypeClause)
     │       │   │       ├── colon (kind: TokenColon): ':'
@@ -226,8 +225,7 @@
     │       │   │           └── item #0 (kind: PathSegmentSimple)
     │       │   │               └── ident (kind: TokenIdentifier): 'a'
     │       │   ├── separator #0 (kind: TokenComma): ','
-    │       │   └── item #1 (kind: Param)
-    │       │       ├── modifiers (kind: ModifierList) []
+    │       │   └── item #1 (kind: Member)
     │       │       ├── name (kind: TokenIdentifier): 'y'
     │       │       └── type_clause (kind: TypeClause)
     │       │           ├── colon (kind: TokenColon): ':'
