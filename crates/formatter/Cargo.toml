@@ -8,7 +8,7 @@ name = "formatter_cli"
 path = "src/bin/cli.rs"
 
 [dependencies]
-clap = {version = "4.0.8", features = ["derive"]}
+clap = {version = "4.0", features = ["derive"]}
 filesystem = { path = "../filesystem" }
 itertools = "0.10.3"
 salsa = "0.16.1"
