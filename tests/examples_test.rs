@@ -7,6 +7,7 @@ use lowering::db::LoweringGroup;
 use pretty_assertions::assert_eq;
 use semantic::db::SemanticGroup;
 use semantic::test_utils::setup_test_module;
+use sierra_gas::calc_gas_info;
 use sierra_gas::gas_info::GasInfo;
 use sierra_generator::db::SierraGenGroup;
 use sierra_generator::test_utils::{replace_sierra_ids_in_program, SierraGenDatabaseForTesting};
@@ -58,7 +59,7 @@ fn compile_to_sierra(name: &str) -> sierra::program::Program {
 #[test_case("fib")]
 #[test_case("fib_box")]
 #[test_case("fib_array")]
-#[test_case("fib_uint128" => ignore["uint128 extension yet to be added."])]
+#[test_case("fib_uint128")]
 #[test_case("fib_gas")]
 #[test_case("corelib_usage" => ignore["unsupported"])]
 fn cairo_to_sierra(name: &str) {
@@ -66,24 +67,25 @@ fn cairo_to_sierra(name: &str) {
 }
 
 /// Tests lowering from Cairo to casm.
-#[test_case("fib")]
-#[test_case("fib_box")]
-#[test_case("fib_array")]
-#[test_case("fib_uint128" => ignore["uint128 extension yet to be lowered to casm."])]
-#[test_case("fib_gas" => ignore["gas info not calculated."])]
-#[test_case("corelib_usage" => ignore["unsupported"])]
-fn cairo_to_casm(name: &str) {
+#[test_case("fib", false)]
+#[test_case("fib_box", false)]
+#[test_case("fib_array", false)]
+#[test_case("fib_uint128", false)]
+#[test_case("fib_gas", true)]
+#[test_case("corelib_usage", false => ignore["unsupported"])]
+fn cairo_to_casm(name: &str, enable_gas_checks: bool) {
+    let program = compile_to_sierra(name);
+    let gas_info = if enable_gas_checks {
+        calc_gas_info(&program).expect("Failed calculating gas variables.")
+    } else {
+        GasInfo { variable_values: HashMap::new(), function_costs: HashMap::new() }
+    };
+
     assert_eq!(
         sierra_to_casm::compiler::compile(
-            &compile_to_sierra(name),
-            &Metadata {
-                function_ap_change: HashMap::new(),
-                gas_info: GasInfo {
-                    variable_values: HashMap::new(),
-                    function_costs: HashMap::new()
-                }
-            },
-            false
+            &program,
+            &Metadata { function_ap_change: HashMap::new(), gas_info },
+            enable_gas_checks,
         )
         .unwrap()
         .to_string(),
@@ -94,7 +96,7 @@ fn cairo_to_casm(name: &str) {
 #[test_case("fib")]
 #[test_case("fib_box")]
 #[test_case("fib_array")]
-#[test_case("fib_uint128" => ignore["uint128 does not pass sierra gen."])]
+#[test_case("fib_uint128")]
 #[test_case("fib_gas")]
 #[test_case("corelib_usage")]
 fn lowering_test(name: &str) {
