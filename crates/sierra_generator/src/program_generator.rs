@@ -80,10 +80,11 @@ pub fn module_sierra_program(
         funcs: functions
             .into_iter()
             .map(|function| {
+                let sierra_signature = db.get_function_signature(function.id.clone()).unwrap();
                 program::Function::new(
                     function.id.clone(),
                     function.parameters.clone(),
-                    function.ret_types.clone(),
+                    sierra_signature.ret_types.clone(),
                     label_replacer.handle_label_id(function.entry_point),
                 )
             })

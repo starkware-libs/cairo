@@ -9,7 +9,7 @@ use sierra::extensions::{ConcreteType, GenericTypeEx};
 
 use crate::program_generator::{self};
 use crate::specialization_context::SierraSignatureSpecializationContext;
-use crate::{function_generator, pre_sierra, SierraGeneratorDiagnostic};
+use crate::{ap_change, function_generator, pre_sierra, SierraGeneratorDiagnostic};
 
 #[salsa::query_group(SierraGenDatabase)]
 pub trait SierraGenGroup: LoweringGroup + Upcast<dyn LoweringGroup> {
@@ -82,6 +82,13 @@ pub trait SierraGenGroup: LoweringGroup + Upcast<dyn LoweringGroup> {
         &self,
         module_id: ModuleId,
     ) -> Diagnostics<SierraGeneratorDiagnostic>;
+
+    /// Returns `true` if the function calls (possibly indirectly) itself, or if it calls (possibly
+    /// indirectly) such a function. For example, if f0 calls f1, f1 calls f2, f2 calls f3, and f3
+    /// calls f2, then [Self::contains_cycle] will return `true` for all of these functions.
+    #[salsa::invoke(ap_change::contains_cycle)]
+    #[salsa::cycle(ap_change::contains_cycle_handle_cycle)]
+    fn contains_cycle(&self, function_id: FreeFunctionId) -> Option<bool>;
 }
 
 fn get_function_signature(

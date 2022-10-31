@@ -1,8 +1,12 @@
+use sierra::extensions::core::CoreLibFunc;
+use sierra::extensions::lib_func::LibFuncSignature;
+use sierra::extensions::GenericLibFuncEx;
 use sierra::ids::{ConcreteLibFuncId, ConcreteTypeId};
 use sierra::program;
 
 use crate::db::SierraGenGroup;
 use crate::pre_sierra;
+use crate::specialization_context::SierraSignatureSpecializationContext;
 
 pub fn simple_statement(
     libfunc_id: ConcreteLibFuncId,
@@ -57,4 +61,19 @@ pub fn rename_libfunc_id(
         generic_id: sierra::ids::GenericLibFuncId::from_string("rename"),
         generic_args: vec![sierra::program::GenericArg::Type(ty)],
     })
+}
+
+/// Returns the [LibFuncSignature] of the given function.
+pub fn get_libfunc_signature(
+    db: &dyn SierraGenGroup,
+    concrete_lib_func_id: ConcreteLibFuncId,
+) -> LibFuncSignature {
+    let libfunc_long_id = db.lookup_intern_concrete_lib_func(concrete_lib_func_id);
+    // TODO(lior): replace expect() with a diagnostic (unless this can never happen).
+    CoreLibFunc::specialize_signature_by_id(
+        &SierraSignatureSpecializationContext(db),
+        &libfunc_long_id.generic_id,
+        &libfunc_long_id.generic_args,
+    )
+    .expect("Specialization failure.")
 }

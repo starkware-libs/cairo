@@ -203,7 +203,7 @@ pub fn lower_statement(
                     )
                 })
                 .collect::<Result<Vec<_>, _>>()?;
-            let return_vars = chain!(value_vars, ref_vars).collect();
+            let return_vars = chain!(ref_vars, value_vars).collect();
             return Err(StatementLoweringFlowError::End(BlockScopeEnd::Return(return_vars)));
         }
     }
@@ -337,6 +337,7 @@ fn lower_expr_function_call(
         .collect::<Result<Vec<_>, _>>()?
         .into_iter()
         .unzip();
+    // TODO(orizi): Support ref args that are not the first arguments.
     let arg_inputs = lower_exprs_as_vars(ctx, &expr.args, scope)?;
     let inputs = chain!(ref_inputs, arg_inputs.into_iter()).collect();
 
