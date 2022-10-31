@@ -3,6 +3,7 @@
 
 use crate::ids::*;
 use crate::program::*;
+use num_bigint::BigInt;
 
 grammar;
 
@@ -78,7 +79,7 @@ StatementIdx: StatementIdx = {
 
 GenericArg: GenericArg = {
     ConcreteTypeId => GenericArg::Type(<>),
-    <v:SignedInt> => GenericArg::Value(v),
+    <v:BigInt> => GenericArg::Value(v),
     "user@" <id:FunctionId> => GenericArg::UserFunc(id),
     "lib@" <id:ConcreteLibFuncId> => GenericArg::LibFunc(id),
 }
@@ -145,13 +146,16 @@ ConcreteLabel: String = {
     PathLabel => <>,
 }
 
+BigInt: BigInt = {
+    r"-?[1-9][0-9]*|0" => <>.parse().unwrap(),
+}
+
 UnsignedInt: u64 = {
-    r"[1-9][0-9]*|0" => <>.parse().unwrap(),
+    BigInt => u64::try_from(<>).unwrap(),
 }
 
 SignedInt: i64 = {
-    UnsignedInt => <> as i64,
-    "-" <unsigned:UnsignedInt> => -(unsigned as i64),
+    BigInt => i64::try_from(<>).unwrap(),
 }
 
 match {

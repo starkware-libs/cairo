@@ -2,6 +2,7 @@ use defs::ids::{FreeFunctionId, GenericFunctionId, LanguageElementId};
 use diagnostics::Diagnostics;
 use id_arena::Arena;
 use itertools::{chain, zip_eq};
+use num_traits::Zero;
 use scope::{BlockScope, BlockScopeEnd};
 use semantic::corelib::{core_felt_ty, core_jump_nz_func, core_nonzero_ty};
 use semantic::db::SemanticGroup;
@@ -202,7 +203,7 @@ pub fn lower_statement(
                     )
                 })
                 .collect::<Result<Vec<_>, _>>()?;
-            let return_vars = chain!(value_vars, ref_vars).collect();
+            let return_vars = chain!(ref_vars, value_vars).collect();
             return Err(StatementLoweringFlowError::End(BlockScopeEnd::Return(return_vars)));
         }
     }
@@ -274,7 +275,7 @@ fn lower_expr(
             expr.stable_ptr.untyped(),
         )?)),
         semantic::Expr::Literal(expr) => Ok(LoweredExpr::AtVariable(
-            generators::Literal { value: expr.value, ty: expr.ty }.add(ctx, scope),
+            generators::Literal { value: expr.value.clone(), ty: expr.ty }.add(ctx, scope),
         )),
         semantic::Expr::MemberAccess(_) => todo!(),
         semantic::Expr::StructCtor(_) => todo!(),
@@ -336,6 +337,7 @@ fn lower_expr_function_call(
         .collect::<Result<Vec<_>, _>>()?
         .into_iter()
         .unzip();
+    // TODO(orizi): Support ref args that are not the first arguments.
     let arg_inputs = lower_exprs_as_vars(ctx, &expr.args, scope)?;
     let inputs = chain!(ref_inputs, arg_inputs.into_iter()).collect();
 
@@ -552,7 +554,7 @@ fn lower_expr_match_felt(
     };
 
     // Make sure literal is 0.
-    if literal.value != 0 {
+    if !literal.value.is_zero() {
         ctx.diagnostics.report(literal.stable_ptr.untyped(), NonZeroValueInMatch);
         return Err(LoweringFlowError::Failed);
     }

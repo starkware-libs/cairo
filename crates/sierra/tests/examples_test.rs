@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 
+use num_bigint::ToBigInt;
 use sierra::extensions::core::{CoreLibFunc, CoreType};
 use sierra::program::{Program, StatementIdx};
 use sierra::program_registry::ProgramRegistry;
@@ -46,8 +47,8 @@ fn simulate_collatz((gb, n): (i64, u128), (new_gb, index): (i64, u128)) {
             &get_example_program("collatz"),
             &HashMap::from([
                 (StatementIdx(7), 35),
-                (StatementIdx(11), 0),
-                (StatementIdx(27), 3),
+                (StatementIdx(19), 3),
+                (StatementIdx(25), 0),
                 (StatementIdx(38), 0),
                 (StatementIdx(49), 1),
             ]),
@@ -76,13 +77,21 @@ fn simulate_fib_jumps((gb, n): (i64, i128), (new_gb, fib): (i64, i128)) {
                 (StatementIdx(3), 11),
                 (StatementIdx(13), 6),
                 (StatementIdx(27), 14),
-                (StatementIdx(33), 0),
-                (StatementIdx(50), 1),
+                (StatementIdx(40), 1),
+                (StatementIdx(49), 0),
             ]),
             &"Fibonacci".into(),
-            vec![CoreValue::RangeCheck, CoreValue::GasBuiltin(gb), CoreValue::Felt(n)]
+            vec![
+                CoreValue::RangeCheck,
+                CoreValue::GasBuiltin(gb),
+                CoreValue::Felt(n.to_bigint().unwrap())
+            ]
         ),
-        Ok(vec![CoreValue::RangeCheck, CoreValue::GasBuiltin(new_gb), CoreValue::Felt(fib)])
+        Ok(vec![
+            CoreValue::RangeCheck,
+            CoreValue::GasBuiltin(new_gb),
+            CoreValue::Felt(fib.to_bigint().unwrap())
+        ])
     );
 }
 
@@ -103,13 +112,13 @@ fn simulate_fib_no_gas(n: i128, fib: i128) {
             &"Fibonacci".into(),
             vec![
                 // a=
-                CoreValue::Felt(1),
+                CoreValue::Felt(1.to_bigint().unwrap()),
                 // b=
-                CoreValue::Felt(1),
-                CoreValue::Felt(n)
+                CoreValue::Felt(1.to_bigint().unwrap()),
+                CoreValue::Felt(n.to_bigint().unwrap())
             ]
         ),
-        Ok(vec![CoreValue::Felt(fib)])
+        Ok(vec![CoreValue::Felt(fib.to_bigint().unwrap())])
     );
 }
 
@@ -131,12 +140,20 @@ fn simulate_fib_recursive((gb, n): (i64, i128), (new_gb, fib): (i64, i128)) {
                 (StatementIdx(3), 6),
                 (StatementIdx(12), 1),
                 (StatementIdx(19), 45),
-                (StatementIdx(21), 0),
+                (StatementIdx(35), 0),
                 (StatementIdx(42), 0),
             ]),
             &"Fibonacci".into(),
-            vec![CoreValue::RangeCheck, CoreValue::GasBuiltin(gb), CoreValue::Felt(n)]
+            vec![
+                CoreValue::RangeCheck,
+                CoreValue::GasBuiltin(gb),
+                CoreValue::Felt(n.to_bigint().unwrap())
+            ]
         ),
-        Ok(vec![CoreValue::RangeCheck, CoreValue::GasBuiltin(new_gb), CoreValue::Felt(fib)])
+        Ok(vec![
+            CoreValue::RangeCheck,
+            CoreValue::GasBuiltin(new_gb),
+            CoreValue::Felt(fib.to_bigint().unwrap())
+        ])
     );
 }

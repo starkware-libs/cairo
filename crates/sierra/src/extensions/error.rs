@@ -1,3 +1,4 @@
+use num_bigint::BigInt;
 use thiserror::Error;
 
 use crate::ids::{ConcreteTypeId, FunctionId, GenericLibFuncId, GenericTypeId};
@@ -14,7 +15,7 @@ pub enum SpecializationError {
     UnsupportedGenericArg,
     #[error("index is out of a relevant range")]
     IndexOutOfRange {
-        index: i64,
+        index: BigInt,
         /// Range is [0, range_size - 1]
         range_size: usize,
     },

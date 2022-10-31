@@ -11,14 +11,14 @@ fn test_deref_operand_format() {
 #[test]
 fn test_double_deref_op_format() {
     assert_eq!(
-        ResOperand::DoubleDeref(CellRef { register: Register::AP, offset: 5 }).to_string(),
-        "[[ap + 5]]"
+        ResOperand::DoubleDeref(CellRef { register: Register::AP, offset: 5 }, 12).to_string(),
+        "[[ap + 5] + 12]"
     );
 }
 
 #[test]
 fn test_immediate_format() {
-    assert_eq!(DerefOrImmediate::Immediate(1400).to_string(), "1400");
+    assert_eq!(DerefOrImmediate::from(1400).to_string(), "1400");
 }
 
 #[test]
@@ -26,7 +26,7 @@ fn test_bin_op_format() {
     let bin_op = BinOpOperand {
         op: Operation::Mul,
         a: CellRef { register: Register::FP, offset: -3 },
-        b: DerefOrImmediate::Immediate(1400),
+        b: DerefOrImmediate::from(1400),
     };
     assert_eq!(bin_op.to_string(), "[fp + -3] * 1400")
 }

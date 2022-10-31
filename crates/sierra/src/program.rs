@@ -1,3 +1,5 @@
+use num_bigint::BigInt;
+
 use crate::ids::{
     ConcreteLibFuncId, ConcreteTypeId, FunctionId, GenericLibFuncId, GenericTypeId, VarId,
 };
@@ -118,7 +120,7 @@ impl StatementIdx {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum GenericArg {
     Type(ConcreteTypeId),
-    Value(i64),
+    Value(BigInt),
     UserFunc(FunctionId),
     LibFunc(ConcreteLibFuncId),
 }

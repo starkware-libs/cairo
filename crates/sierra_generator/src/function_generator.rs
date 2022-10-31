@@ -31,7 +31,7 @@ pub struct SierraFreeFunctionData {
     pub function: Option<Arc<pre_sierra::Function>>,
 }
 
-/// Query implementation of [crate::db::SierraGenGroup::priv_free_function_sierra_data].
+/// Query implementation of [SierraGenGroup::priv_free_function_sierra_data].
 pub fn priv_free_function_sierra_data(
     db: &dyn SierraGenGroup,
     function_id: FreeFunctionId,
@@ -41,7 +41,7 @@ pub fn priv_free_function_sierra_data(
     SierraFreeFunctionData { diagnostics: diagnostics.build(), function }
 }
 
-/// Query implementation of [crate::db::SierraGenGroup::free_function_sierra_diagnostics].
+/// Query implementation of [SierraGenGroup::free_function_sierra_diagnostics].
 pub fn free_function_sierra_diagnostics(
     db: &dyn SierraGenGroup,
     function_id: FreeFunctionId,
@@ -49,7 +49,7 @@ pub fn free_function_sierra_diagnostics(
     db.priv_free_function_sierra_data(function_id).diagnostics
 }
 
-/// Query implementation of [crate::db::SierraGenGroup::free_function_sierra].
+/// Query implementation of [SierraGenGroup::free_function_sierra].
 pub fn free_function_sierra(
     db: &dyn SierraGenGroup,
     function_id: FreeFunctionId,

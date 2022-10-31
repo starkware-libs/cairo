@@ -13,6 +13,7 @@ filesystem = { path = "../filesystem" }
 id-arena = "2.2.1"
 itertools = "0.10.3"
 lowering = { path = "../lowering" }
+num-bigint = "0.4.3"
 parser = { path = "../parser" }
 salsa = "0.16.1"
 semantic = { path = "../semantic" }

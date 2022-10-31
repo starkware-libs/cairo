@@ -2,6 +2,7 @@
 //! ownership of OwnedVariable.
 
 use itertools::chain;
+use num_bigint::BigInt;
 use semantic::{ConcreteEnumId, ConcreteVariant};
 
 use super::{BlockEndInfo, BlockScope, LivingVar};
@@ -16,8 +17,7 @@ use crate::{
 
 /// Generator for [StatementLiteral].
 pub struct Literal {
-    // TODO(spapini): Fix literal type.
-    pub value: usize,
+    pub value: BigInt,
     pub ty: semantic::TypeId,
 }
 impl Literal {

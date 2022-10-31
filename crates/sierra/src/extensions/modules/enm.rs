@@ -15,6 +15,8 @@
 //! match_option(none_id) {1000(some), 2000(none)};
 //! ```
 
+use num_bigint::ToBigInt;
+use num_traits::Signed;
 use utils::try_extract_matches;
 
 use super::as_single_type;
@@ -125,7 +127,9 @@ impl EnumInitLibFunc {
         args: &[GenericArg],
     ) -> Result<EnumInitConcreteLibFunc, SpecializationError> {
         let (enum_type, index) = match args {
-            [GenericArg::Type(enum_type), GenericArg::Value(index)] => (enum_type.clone(), *index),
+            [GenericArg::Type(enum_type), GenericArg::Value(index)] => {
+                (enum_type.clone(), index.clone())
+            }
             [_, _] => return Err(SpecializationError::UnsupportedGenericArg),
             _ => return Err(SpecializationError::WrongNumberOfGenericArgs),
         };
@@ -134,10 +138,11 @@ impl EnumInitLibFunc {
             EnumConcreteType::new(context.as_type_specialization_context(), &generic_args)?
                 .variants;
         let num_variants = variant_types.len();
-        if index < 0 || index as usize >= num_variants {
+        if index.is_negative() || index >= num_variants.to_bigint().unwrap() {
             return Err(SpecializationError::IndexOutOfRange { index, range_size: num_variants });
         }
-        let variant_type = variant_types[index as usize].clone();
+        let index: usize = index.try_into().unwrap();
+        let variant_type = variant_types[index].clone();
         Ok(EnumInitConcreteLibFunc {
             signature: LibFuncSignature::new_non_branch(
                 vec![variant_type],
@@ -147,7 +152,7 @@ impl EnumInitLibFunc {
                 }],
                 SierraApChange::Known,
             ),
-            index: index as usize,
+            index,
         })
     }
 }
