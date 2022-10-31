@@ -109,11 +109,19 @@ impl Environment {
     pub fn add_param(
         &mut self,
         diagnostics: &mut SemanticDiagnostics,
-        name: &SmolStr,
+        name: &Option<SmolStr>,
         semantic_param: Parameter,
         ast_param: &ast::Param,
         function_id: GenericFunctionId,
     ) -> bool {
+        // Unnamed params ('_' / implicit) are not added to the variable list.
+        // TODO(yuval): add unnamed params to environment for implicits by-type lookup. Consider
+        // whether unnamed *normal* params should be differentiated from implicit params.
+        let name = match name {
+            Some(name) => name,
+            None => return true,
+        };
+
         match self.variables.entry(name.clone()) {
             std::collections::hash_map::Entry::Occupied(_) => {
                 diagnostics.report(

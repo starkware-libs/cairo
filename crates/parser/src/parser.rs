@@ -797,10 +797,10 @@ impl<'a> Parser<'a> {
     fn try_parse_param(&mut self) -> Option<ParamGreen> {
         let modifier_list = self.parse_modifier_list();
         let name = if modifier_list.is_empty() {
-            self.try_parse_token::<TerminalIdentifier>()?
+            self.try_parse_param_name()?
         } else {
-            // If we had modifiers then the identifier is not optional.
-            self.parse_token::<TerminalIdentifier>()
+            // If we had modifiers then the identifier is not optional and can't be '_'.
+            self.parse_token::<TerminalIdentifier>().into()
         };
 
         let type_clause = self.parse_type_clause();
@@ -810,6 +810,16 @@ impl<'a> Parser<'a> {
             name,
             type_clause,
         ))
+    }
+
+    /// Returns a GreenId of a node with some ParamName kind (see [syntax::node::ast::ParamName]) or
+    /// None if a param name can't be parsed.
+    fn try_parse_param_name(&mut self) -> Option<ParamNameGreen> {
+        match self.peek().kind {
+            SyntaxKind::TerminalUnderscore => Some(self.take::<TerminalUnderscore>().into()),
+            SyntaxKind::TerminalIdentifier => Some(self.take::<TerminalIdentifier>().into()),
+            _ => None,
+        }
     }
 
     /// Expected pattern: <PathSegment>(::<PathSegment>)*

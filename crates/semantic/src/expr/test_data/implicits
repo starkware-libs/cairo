@@ -69,3 +69,27 @@ error: Variable of type "core::felt" doesn't exist. It is required for the funct
  --> lib.cairo:4:5
     bar()
     ^***^
+
+//! > ==========================================================================
+
+//! > Valid function call with unnamed parameters (both normal and implicit)
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+func foo() {
+    let x = 7;
+    let b: bool = bool::True(());
+    let unit: (felt, felt) = (3, 5);
+    bar(x, 5, b)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+func bar(_: felt, a: felt, _: bool) implicits(_: felt, b: bool, _: (felt, felt)) {
+}
+
+//! > expected_diagnostics
