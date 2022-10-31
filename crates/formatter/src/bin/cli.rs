@@ -131,10 +131,8 @@ fn eprintln_if_verbose(s: &str, verbose: bool) {
     }
 }
 
-/// Command line args parser.
-/// Exits with 0/1 if the input is formatted correctly/incorrectly.
-/// Ignores directories which contains a file named '.cairofmtignore'.
-// TODO(gil): add config file path.
+/// Sierra to casm compiler.
+/// Exits with 0/1 if the the compilation fails.
 #[derive(Parser, Debug)]
 #[clap(version, verbatim_doc_comment)]
 struct FormatterArgs {
