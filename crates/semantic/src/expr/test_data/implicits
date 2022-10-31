@@ -93,3 +93,28 @@ func bar(_: felt, a: felt, _: bool) implicits(_: felt, b: bool, _: (felt, felt))
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Lookup implicit arguments for a function call also among unnamed implicit params of the current function.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+func foo() {
+    let x = 7;
+    bar()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+func bar() implicits(_: felt) {
+    baz()
+}
+func baz() implicits(_: felt) {
+}
+
+//! > expected_diagnostics

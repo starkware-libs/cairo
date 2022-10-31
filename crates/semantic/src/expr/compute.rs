@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use ast::{BinaryOperator, PathSegment};
 use defs::ids::{GenericFunctionId, LocalVarLongId, MemberId, VarId};
 use id_arena::Arena;
-use itertools::zip_eq;
+use itertools::{chain, zip_eq};
 use num_bigint::BigInt;
 use num_traits::Num;
 use smol_str::SmolStr;
@@ -56,8 +56,13 @@ impl<'ctx> ComputationContext<'ctx> {
         return_ty: TypeId,
         environment: Environment,
     ) -> Self {
-        let semantic_defs =
-            environment.variables.values().by_ref().map(|var| (var.id(), var.clone())).collect();
+        let semantic_defs = environment
+            .variables
+            .values()
+            .by_ref()
+            .chain(environment.unnamed_variables.iter())
+            .map(|var| (var.id(), var.clone()))
+            .collect();
         Self {
             db,
             diagnostics,
@@ -102,6 +107,7 @@ pub type EnvVariables = HashMap<SmolStr, Variable>;
 pub struct Environment {
     parent: Option<Box<Environment>>,
     variables: EnvVariables,
+    unnamed_variables: Vec<Variable>,
 }
 impl Environment {
     /// Adds a parameter to the environment.
@@ -114,12 +120,12 @@ impl Environment {
         ast_param: &ast::Param,
         function_id: GenericFunctionId,
     ) -> bool {
-        // Unnamed params ('_' / implicit) are not added to the variable list.
-        // TODO(yuval): add unnamed params to environment for implicits by-type lookup. Consider
-        // whether unnamed *normal* params should be differentiated from implicit params.
         let name = match name {
             Some(name) => name,
-            None => return true,
+            None => {
+                self.unnamed_variables.push(Variable::Param(semantic_param));
+                return true;
+            }
         };
 
         match self.variables.entry(name.clone()) {
@@ -397,6 +403,8 @@ fn compute_expr_match_semantic(
                 let pattern =
                     compute_pattern_semantic(new_ctx, syntax_arm.pattern(syntax_db), expr.ty())?;
                 let variables = pattern.variables();
+                // TODO(yuval): allow unnamed variables. Add them here to
+                // new_ctx.environment.unnamed_variables.
                 for v in variables {
                     new_ctx
                         .environment
@@ -840,7 +848,7 @@ pub fn resolve_variable_by_type(
     let mut maybe_env = Some(&*ctx.environment);
     let mut found_var = None;
     while let Some(env) = maybe_env {
-        for var in env.variables.values() {
+        for var in chain!(env.variables.values(), env.unnamed_variables.iter()) {
             if var.ty() == var_type {
                 if found_var.is_some() {
                     ctx.diagnostics.report_by_ptr(
@@ -957,6 +965,8 @@ pub fn compute_statement_semantic(
 
             let pattern = compute_pattern_semantic(ctx, let_syntax.pattern(syntax_db), ty)?;
             let variables = pattern.variables();
+            // TODO(yuval): allow unnamed variables. Add them here to
+            // ctx.environment.unnamed_variables
             for v in variables {
                 let var_def = Variable::Local(v.var.clone());
                 ctx.environment.variables.insert(v.name.clone(), var_def.clone());
