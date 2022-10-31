@@ -12,3 +12,4 @@ utils = { path = "../utils" }
 indoc = "1.0.7"
 itertools = "0.10.3"
 pretty_assertions = "1.2.1"
+test-case = "2.2.1"

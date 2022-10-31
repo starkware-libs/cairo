@@ -8,45 +8,45 @@ use crate::operand::{DerefOrImmediate, Operation, Register, ResOperand};
 mod test;
 
 /// Cairo instruction structure flags.
-#[derive(Debug, PartialEq)]
-enum Op1Addr {
+#[derive(Debug, Eq, PartialEq)]
+pub enum Op1Addr {
     Imm,
     AP,
     FP,
     Op0,
 }
-#[derive(Debug, PartialEq)]
-enum Res {
+#[derive(Debug, Eq, PartialEq)]
+pub enum Res {
     Op1,
     Add,
     Mul,
     Unconstrained,
 }
-#[derive(Debug, PartialEq)]
-enum PcUpdate {
+#[derive(Debug, Eq, PartialEq)]
+pub enum PcUpdate {
     Regular,
     Jump,
     JumpRel,
     Jnz,
 }
 
-#[derive(Debug, PartialEq)]
-enum ApUpdate {
+#[derive(Debug, Eq, PartialEq)]
+pub enum ApUpdate {
     Regular,
     Add,
     Add1,
     Add2,
 }
 
-#[derive(Debug, PartialEq)]
-enum FpUpdate {
+#[derive(Debug, Eq, PartialEq)]
+pub enum FpUpdate {
     Regular,
     ApPlus2,
     Dst,
 }
 
-#[derive(Debug, PartialEq)]
-enum Opcode {
+#[derive(Debug, Eq, PartialEq)]
+pub enum Opcode {
     Nop,
     AssertEq,
     Call,
@@ -55,20 +55,20 @@ enum Opcode {
 
 /// The low level representation of a cairo instruction.
 #[allow(dead_code)]
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct InstructionRepr {
-    off0: i16,
-    off1: i16,
-    off2: i16,
-    imm: Option<BigInt>,
-    dst_register: Register,
-    op0_register: Register,
-    op1_addr: Op1Addr,
-    res: Res,
-    pc_update: PcUpdate,
-    ap_update: ApUpdate,
-    fp_update: FpUpdate,
-    opcode: Opcode,
+    pub off0: i16,
+    pub off1: i16,
+    pub off2: i16,
+    pub imm: Option<BigInt>,
+    pub dst_register: Register,
+    pub op0_register: Register,
+    pub op1_addr: Op1Addr,
+    pub res: Res,
+    pub pc_update: PcUpdate,
+    pub ap_update: ApUpdate,
+    pub fp_update: FpUpdate,
+    pub opcode: Opcode,
 }
 
 impl Instruction {
