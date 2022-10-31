@@ -13,8 +13,8 @@ func non_cyclic2() -> felt {
 }
 
 //! > result
-non_cyclic: ap_change=Some(Known(0)), has_cycles=Some(false)
-non_cyclic2: ap_change=Some(Known(0)), has_cycles=Some(false)
+non_cyclic: ap_change=Some(Unknown), has_cycles=Some(false)
+non_cyclic2: ap_change=Some(Unknown), has_cycles=Some(false)
 
 //! > ==========================================================================
 
@@ -39,7 +39,7 @@ func calls_simple_cycle(x: felt) -> felt {
 
 //! > result
 simple_cycle: ap_change=Some(Unknown), has_cycles=Some(true)
-calls_simple_cycle: ap_change=Some(Known(0)), has_cycles=Some(true)
+calls_simple_cycle: ap_change=Some(Unknown), has_cycles=Some(true)
 
 //! > ==========================================================================
 
@@ -63,6 +63,6 @@ func call_cycle_of_len2(x: felt) -> felt {
 }
 
 //! > result
-cycle_of_len2_a: ap_change=Some(Known(0)), has_cycles=Some(true)
-cycle_of_len2_b: ap_change=Some(Known(0)), has_cycles=Some(true)
-call_cycle_of_len2: ap_change=Some(Known(0)), has_cycles=Some(true)
+cycle_of_len2_a: ap_change=Some(Unknown), has_cycles=Some(true)
+cycle_of_len2_b: ap_change=Some(Unknown), has_cycles=Some(true)
+call_cycle_of_len2: ap_change=Some(Unknown), has_cycles=Some(true)
