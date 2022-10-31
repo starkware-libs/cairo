@@ -236,7 +236,7 @@ fn strip_comments_and_linebreaks(program: &str) -> String {
             &[], false,
             indoc! {"
                 [ap + 0] = [fp + -4] + [fp + -3], ap++;
-                %{ memory[ap + 0] = 340282366920938463463374607431768211455 < memory[ap + -1] %}
+                %{ memory[ap + 0] = memory[ap + -1] < 340282366920938463463374607431768211456 %}
                 jmp rel 7 if [ap + 0] != 0, ap++;
                 [ap + 0] = [ap + -2] + -340282366920938463463374607431768211456, ap++;
                 [ap + -1] = [[fp + -5] + 0];

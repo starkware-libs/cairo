@@ -77,7 +77,7 @@ fn build_uint128_op(
             let mut before_success_branch = match op {
                 IntOperator::Add => casm! {
                     [ap + 0] = a + b, ap++;
-                    %{ memory[ap + 0] = (uint128_limit.clone() - 1) < memory [ap - 1] %}
+                    %{ memory[ap + 0] = memory [ap - 1] < (uint128_limit.clone()) %}
                     jmp rel 0 if [ap + 0] != 0, ap++;
                     // Overflow:
                     // Here we know that 2**128 <= a + b < 2 * (2**128 - 1).
@@ -87,7 +87,7 @@ fn build_uint128_op(
                 },
                 IntOperator::Sub => casm! {
                     a = [ap + 0] + b, ap++;
-                    %{ memory[ap + 0] = (uint128_limit.clone() - 1) < memory [ap - 1] %}
+                    %{ memory[ap + 0] = memory [ap - 1] < (uint128_limit.clone())  %}
                     jmp rel 0 if [ap + 0] != 0, ap++;
                     // Underflow:
                     // Here we know that 0 - (2**128 - 1) <= a - b < 0.
@@ -155,17 +155,20 @@ fn build_uint128_op(
 fn build_uint128_from_felt(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let get_deref = |expr: &ReferenceExpression| {
-        expr.try_unpack_single()
-            .ok()
-            .and_then(|cell| try_extract_matches!(cell, CellExpression::Deref))
-            .ok_or(InvocationError::InvalidReferenceExpressionForArgument)
-    };
-    let (range_check, value) = match builder.refs {
+    let (range_check, value_cell) = match builder.refs {
         [
             ReferenceValue { expression: range_check_expression, .. },
             ReferenceValue { expression: expr_value, .. },
-        ] => (get_deref(range_check_expression)?, get_deref(expr_value)?),
+        ] => (
+            range_check_expression
+                .try_unpack_single()
+                .ok()
+                .and_then(|cell| try_extract_matches!(cell, CellExpression::Deref))
+                .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?,
+            expr_value
+                .try_unpack_single()
+                .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?,
+        ),
         refs => {
             return Err(InvocationError::WrongNumberOfArguments {
                 expected: 2,
@@ -177,64 +180,104 @@ fn build_uint128_from_felt(
         [_, BranchInfo { target: BranchTarget::Statement(statement_id), .. }] => statement_id,
         _ => panic!("malformed invocation"),
     };
-    // TODO(orizi): Fix to the actual limit.
-    const UINT128_LIMIT: i128 = u64::MAX as i128;
-    // The code up to the success branch.
-    let mut before_success_branch = casm! {
-        %{ memory[ap + 0] = (UINT128_LIMIT - 1) < memory [ap - 1] %}
-        jmp rel 0 if [ap + 0] != 0, ap++;
-        // Overflow:
-        // TODO(orizi): Add hint to extract number into its 128 bits parts instead of the next 2
-        // lines.
-        [ap + 0] = 0, ap++;
-        [ap + 0] = value, ap++;
-        [ap + 0] = [ap - 2] * UINT128_LIMIT, ap++;
-        value = [ap - 1] + [ap - 2];
-        [ap - 2] = [[range_check.apply_ap_change(ApChange::Known(4)).unwrap()]];
-        [ap - 3] = [[range_check.apply_ap_change(ApChange::Known(4)).unwrap()] + 1];
-        jmp rel 0; // Fixed in relocations.
-    };
-    let branch_offset = before_success_branch.current_code_offset;
-    *extract_matches!(
-        &mut extract_matches!(
-            &mut before_success_branch.instructions[0].body,
-            InstructionBody::Jnz
-        )
-        .jump_offset,
-        DerefOrImmediate::Immediate
-    ) = BigInt::from(branch_offset);
-    let relocation_index = before_success_branch.instructions.len() - 1;
-    let success_branch = casm! {
-        // No overflow:
-        value = [[range_check.apply_ap_change(ApChange::Known(1)).unwrap()]];
-    };
+    let uint128_limit: BigInt = BigInt::from(u128::MAX) + 1;
+    match value_cell {
+        CellExpression::Deref(value) => {
+            // The code up to the success branch.
+            let mut before_success_branch = casm! {
+                %{ memory[ap + 0] = memory [ap - 1] < (uint128_limit.clone()) %}
+                jmp rel 0 if [ap + 0] != 0, ap++;
+                // Overflow:
+                // TODO(orizi): Add hint to extract number into its 128 bits parts instead of the next 2
+                // lines.
+                [ap + 0] = 0, ap++;
+                [ap + 0] = value, ap++;
+                [ap + 0] = [ap - 2] * uint128_limit, ap++;
+                value = [ap - 1] + [ap - 2];
+                [ap - 2] = [[range_check.apply_ap_change(ApChange::Known(4)).unwrap()]];
+                [ap - 3] = [[range_check.apply_ap_change(ApChange::Known(4)).unwrap()] + 1];
+                jmp rel 0; // Fixed in relocations.
+            };
+            let branch_offset = before_success_branch.current_code_offset;
+            *extract_matches!(
+                &mut extract_matches!(
+                    &mut before_success_branch.instructions[0].body,
+                    InstructionBody::Jnz
+                )
+                .jump_offset,
+                DerefOrImmediate::Immediate
+            ) = BigInt::from(branch_offset);
+            let relocation_index = before_success_branch.instructions.len() - 1;
+            let success_branch = casm! {
+                // No overflow:
+                value = [[range_check.apply_ap_change(ApChange::Known(1)).unwrap()]];
+            };
 
-    Ok(builder.build(
-        chain!(before_success_branch.instructions, success_branch.instructions).collect(),
-        vec![RelocationEntry {
-            instruction_idx: relocation_index,
-            relocation: Relocation::RelativeStatementId(*failure_handle_statement_id),
-        }],
-        [ApChange::Known(1), ApChange::Known(4)].into_iter(),
-        [
-            vec![
-                ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
-                    op: FeltOperator::Add,
-                    a: range_check.apply_ap_change(ApChange::Known(2)).unwrap(),
-                    b: DerefOrImmediate::Immediate(BigInt::from(1)),
-                })),
-                ReferenceExpression::from_cell(CellExpression::Deref(
-                    value.apply_ap_change(ApChange::Known(2)).unwrap(),
-                )),
+            Ok(builder.build(
+                chain!(before_success_branch.instructions, success_branch.instructions).collect(),
+                vec![RelocationEntry {
+                    instruction_idx: relocation_index,
+                    relocation: Relocation::RelativeStatementId(*failure_handle_statement_id),
+                }],
+                [ApChange::Known(1), ApChange::Known(4)].into_iter(),
+                [
+                    vec![
+                        ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
+                            op: FeltOperator::Add,
+                            a: range_check.apply_ap_change(ApChange::Known(1)).unwrap(),
+                            b: DerefOrImmediate::Immediate(BigInt::from(1)),
+                        })),
+                        ReferenceExpression::from_cell(CellExpression::Deref(
+                            value.apply_ap_change(ApChange::Known(1)).unwrap(),
+                        )),
+                    ]
+                    .into_iter(),
+                    vec![ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
+                        op: FeltOperator::Add,
+                        a: range_check.apply_ap_change(ApChange::Known(4)).unwrap(),
+                        b: DerefOrImmediate::Immediate(BigInt::from(2)),
+                    }))]
+                    .into_iter(),
+                ]
+                .into_iter(),
+            ))
+        }
+        CellExpression::Immediate(value) => {
+            let output_expressions = [
+                vec![
+                    ReferenceExpression::from_cell(CellExpression::Deref(
+                        range_check.apply_ap_change(ApChange::Known(1)).unwrap(),
+                    )),
+                    ReferenceExpression::from_cell(CellExpression::Immediate(value.clone())),
+                ]
+                .into_iter(),
+                vec![ReferenceExpression::from_cell(CellExpression::Deref(
+                    range_check.apply_ap_change(ApChange::Known(4)).unwrap(),
+                ))]
+                .into_iter(),
             ]
-            .into_iter(),
-            vec![ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
-                op: FeltOperator::Add,
-                a: range_check.apply_ap_change(ApChange::Known(4)).unwrap(),
-                b: DerefOrImmediate::Immediate(BigInt::from(2)),
-            }))]
-            .into_iter(),
-        ]
-        .into_iter(),
-    ))
+            .into_iter();
+            let ap_changes = [ApChange::Known(1), ApChange::Known(4)].into_iter();
+
+            Ok(if value >= BigInt::from(0) && value < uint128_limit {
+                builder.build(
+                    casm! { ap += 1; }.instructions,
+                    vec![],
+                    ap_changes,
+                    output_expressions,
+                )
+            } else {
+                builder.build(
+                    casm! {  ap += 4; jmp rel 0; }.instructions,
+                    vec![RelocationEntry {
+                        instruction_idx: 0,
+                        relocation: Relocation::RelativeStatementId(*failure_handle_statement_id),
+                    }],
+                    ap_changes,
+                    output_expressions,
+                )
+            })
+        }
+        _ => Err(InvocationError::InvalidReferenceExpressionForArgument),
+    }
 }
