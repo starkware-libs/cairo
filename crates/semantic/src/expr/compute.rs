@@ -9,6 +9,7 @@ use defs::ids::{GenericFunctionId, LocalVarLongId, MemberId, VarId};
 use id_arena::Arena;
 use itertools::zip_eq;
 use num_bigint::BigInt;
+use num_traits::Num;
 use smol_str::SmolStr;
 use syntax::node::db::SyntaxGroup;
 use syntax::node::helpers::{GetIdentifier, PathSegmentEx};
@@ -694,10 +695,13 @@ fn literal_to_semantic(
     let db = ctx.db;
     let syntax_db = db.upcast();
     let text = literal_syntax.text(syntax_db);
-    let value = text
-        .parse::<BigInt>()
-        .ok()
-        .on_none(|| ctx.diagnostics.report(literal_syntax, UnknownLiteral))?;
+
+    let value = match text.strip_prefix("0x") {
+        Some(num_no_prefix) => BigInt::from_str_radix(num_no_prefix, 16).ok(),
+        None => text.parse::<BigInt>().ok(),
+    }
+    .on_none(|| ctx.diagnostics.report(literal_syntax, UnknownLiteral))?;
+
     let ty = db.core_felt_ty();
     Some(ExprLiteral { value, ty, stable_ptr: literal_syntax.stable_ptr().into() })
 }
