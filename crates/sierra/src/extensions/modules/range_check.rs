@@ -16,6 +16,7 @@ impl NoGenericArgsGenericType for RangeCheckType {
                 storable: true,
                 droppable: false,
                 duplicatable: false,
+                size: 1,
             },
         }
     }

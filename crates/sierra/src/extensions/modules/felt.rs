@@ -31,6 +31,7 @@ impl NoGenericArgsGenericType for FeltType {
                 storable: true,
                 droppable: true,
                 duplicatable: true,
+                size: 1,
             },
         }
     }

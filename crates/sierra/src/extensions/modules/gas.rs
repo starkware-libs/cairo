@@ -27,6 +27,7 @@ impl NoGenericArgsGenericType for GasBuiltinType {
                 storable: true,
                 droppable: false,
                 duplicatable: false,
+                size: 1,
             },
         }
     }
