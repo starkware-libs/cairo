@@ -22,7 +22,7 @@ use crate::expr_generator_context::ExprGeneratorContext;
 use crate::pre_sierra::{self, Statement};
 use crate::specialization_context::SierraSignatureSpecializationContext;
 use crate::store_variables::add_store_statements;
-use crate::utils::simple_statement;
+use crate::utils::{get_libfunc_signature, simple_statement};
 use crate::SierraGeneratorDiagnostic;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -105,15 +105,7 @@ pub fn get_function_code(
         context.get_db(),
         statements,
         &|concrete_lib_func_id: ConcreteLibFuncId| -> LibFuncSignature {
-            let libfunc_long_id =
-                context.get_db().lookup_intern_concrete_lib_func(concrete_lib_func_id);
-            // TODO(lior): replace expect() with a diagnostic (unless this can never happen).
-            CoreLibFunc::specialize_signature_by_id(
-                &SierraSignatureSpecializationContext(context.get_db()),
-                &libfunc_long_id.generic_id,
-                &libfunc_long_id.generic_args,
-            )
-            .expect("Specialization failure.")
+            get_libfunc_signature(context.get_db(), concrete_lib_func_id)
         },
     );
     let statements = add_dups_and_drops(&mut context, &parameters, statements);
