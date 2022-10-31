@@ -3,11 +3,13 @@
 mod test;
 
 use defs::ids::FreeFunctionId;
+use itertools::zip_eq;
 use sierra::program::{GenBranchTarget, GenStatement};
 use utils::ordered_hash_map::OrderedHashMap;
 
 use crate::db::SierraGenGroup;
 use crate::pre_sierra;
+use crate::utils::get_libfunc_signature;
 
 /// Query implementation of [SierraGenGroup::contains_cycle].
 pub fn contains_cycle(db: &dyn SierraGenGroup, function_id: FreeFunctionId) -> Option<bool> {
@@ -74,10 +76,24 @@ pub fn get_ap_change(db: &dyn SierraGenGroup, function_id: FreeFunctionId) -> Op
                 // Mark the next instruction as unreachable. This will be overridden if we have a
                 // Fallthrough branch.
                 current_ap_change_opt = None;
+
+                let signature = get_libfunc_signature(db, invocation.libfunc_id.clone());
+
                 // Go over the branches.
-                for branch in &invocation.branches {
-                    // TODO(lior): Replace ap_change with the actual ap-change of the branch.
-                    let branch_ap_change = 0;
+                for (branch, branch_signature) in
+                    zip_eq(&invocation.branches, signature.branch_signatures)
+                {
+                    let branch_ap_change = match branch_signature.ap_change {
+                        sierra::extensions::lib_func::SierraApChange::Known => {
+                            // TODO(lior): Replace ap_change with the actual ap-change of the
+                            // libfunc.
+                            0
+                        }
+                        sierra::extensions::lib_func::SierraApChange::Unknown
+                        | sierra::extensions::lib_func::SierraApChange::NotImplemented => {
+                            return Some(ApChange::Unknown);
+                        }
+                    };
                     let new_ap_change = current_ap_change + branch_ap_change;
                     match branch.target {
                         GenBranchTarget::Fallthrough => {
