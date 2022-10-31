@@ -23,6 +23,7 @@ impl NamedType for UninitializedType {
                 storable: false,
                 droppable: true,
                 duplicatable: false,
+                size: 0,
             },
             ty: as_single_type(args)?,
         })

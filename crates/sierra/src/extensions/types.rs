@@ -113,6 +113,8 @@ pub struct TypeInfo {
     pub droppable: bool,
     /// Can the type be (trivially) duplicated.
     pub duplicatable: bool,
+
+    pub size: usize,
 }
 
 /// Trait for a specialized type.

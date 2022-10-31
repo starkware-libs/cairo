@@ -33,6 +33,7 @@ impl NamedType for ArrayType {
                     duplicatable: false,
                     droppable: info.droppable,
                     storable: true,
+                    size: 2,
                 },
                 ty,
             })

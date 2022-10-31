@@ -62,6 +62,8 @@ impl EnumConcreteType {
         let mut duplicatable = true;
         let mut droppable = true;
         let mut variants: Vec<ConcreteTypeId> = Vec::new();
+
+        let mut size = 0;
         for arg in args {
             let ty = try_extract_matches!(arg, GenericArg::Type)
                 .ok_or(SpecializationError::UnsupportedGenericArg)?
@@ -77,6 +79,7 @@ impl EnumConcreteType {
                 droppable = false;
             }
             variants.push(ty);
+            size += info.size;
         }
         Ok(EnumConcreteType {
             info: TypeInfo {
@@ -87,6 +90,7 @@ impl EnumConcreteType {
                 duplicatable,
                 droppable,
                 storable: true,
+                size,
             },
             variants,
         })

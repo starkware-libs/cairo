@@ -32,6 +32,7 @@ impl NoGenericArgsGenericType for Uint128Type {
                 storable: true,
                 droppable: true,
                 duplicatable: true,
+                size: 1,
             },
         }
     }
