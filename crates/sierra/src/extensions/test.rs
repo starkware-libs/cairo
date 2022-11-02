@@ -19,6 +19,10 @@ fn type_arg(name: &str) -> GenericArg {
     GenericArg::Type(name.into())
 }
 
+fn user_type_arg(name: &str) -> GenericArg {
+    GenericArg::UserType(name.into())
+}
+
 fn value_arg(v: i64) -> GenericArg {
     GenericArg::Value(v.to_bigint().unwrap())
 }
@@ -132,12 +136,18 @@ impl SpecializationContext for MockSpecializationContext {
 #[test_case("Box", vec![] => Err(WrongNumberOfGenericArgs); "Box<>")]
 #[test_case("Box", vec![value_arg(5)] => Err(UnsupportedGenericArg); "Box<5>")]
 #[test_case("Uninitialized", vec![type_arg("T")] => Ok(()); "Uninitialized<T>")]
-#[test_case("Enum", vec![] => Ok(()); "Enum<>")]
-#[test_case("Enum", vec![type_arg("uint128")] => Ok(()); "Enum<uint128>")]
-#[test_case("Enum", vec![type_arg("uint128"), type_arg("felt")] => Ok(()); "Enum<uint128,felt>")]
-#[test_case("Enum", vec![value_arg(5)] => Err(UnsupportedGenericArg); "Enum<5>")]
-#[test_case("Enum", vec![type_arg("UninitializedFelt")] => Err(UnsupportedGenericArg);
-            "Enum<UninitializedFelt>")]
+#[test_case("Enum", vec![user_type_arg("name")] => Ok(()); "Enum<name>")]
+#[test_case("Enum", vec![user_type_arg("name"), type_arg("uint128")] => Ok(());
+            "Enum<name, uint128>")]
+#[test_case("Enum", vec![user_type_arg("name"), type_arg("uint128"), type_arg("felt")] => Ok(());
+            "Enum<name, uint128, felt>")]
+#[test_case("Enum", vec![user_type_arg("name"), value_arg(5)] => Err(UnsupportedGenericArg);
+            "Enum<name, 5>")]
+#[test_case("Enum", vec![user_type_arg("name"), type_arg("UninitializedFelt")]
+            => Err(UnsupportedGenericArg);
+            "Enum<name, UninitializedFelt>")]
+#[test_case("Enum", vec![type_arg("uint128"), type_arg("felt")] => Err(UnsupportedGenericArg);
+            "Enum<uint128, felt>")]
 fn find_type_specialization(
     id: &str,
     generic_args: Vec<GenericArg>,
