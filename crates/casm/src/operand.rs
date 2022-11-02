@@ -51,6 +51,16 @@ impl From<i128> for ResOperand {
         ResOperand::Immediate(imm.to_bigint().unwrap())
     }
 }
+impl From<i32> for ResOperand {
+    fn from(imm: i32) -> Self {
+        ResOperand::Immediate(imm.to_bigint().unwrap())
+    }
+}
+impl From<usize> for ResOperand {
+    fn from(imm: usize) -> Self {
+        ResOperand::Immediate(imm.to_bigint().unwrap())
+    }
+}
 
 /// Represents an operand of the form [reg + offset].
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
