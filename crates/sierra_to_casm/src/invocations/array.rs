@@ -6,11 +6,14 @@ use casm::operand::{CellRef, DerefOrImmediate, Register, ResOperand};
 use num_bigint::ToBigInt;
 use sierra::extensions::array::ArrayConcreteLibFunc;
 use sierra::extensions::felt::FeltOperator;
+use sierra::extensions::ConcreteLibFunc;
+use sierra::ids::ConcreteTypeId;
 use utils::try_extract_matches;
 
 use super::{
     CompiledInvocation, CompiledInvocationBuilder, InvocationError, ReferenceExpressionView,
 };
+use crate::invocations::ProgramInfo;
 use crate::references::{
     BinOpExpression, CellExpression, ReferenceExpression, ReferenceValue, ReferencesError,
 };
@@ -66,8 +69,10 @@ fn build_array_append(
             ReferenceValue { expression: expr_arr, .. },
             ReferenceValue { expression: expr_elem, .. },
         ] => {
-            let array_view = ArrayView::try_get_view(expr_arr)
-                .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?;
+            let concrete_array_type = &builder.libfunc.param_signatures()[0].ty;
+            let array_view =
+                ArrayView::try_get_view(expr_arr, &builder.program_info, concrete_array_type)
+                    .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?;
             let elem_val = match expr_elem
                 .try_unpack_single()
                 .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?
@@ -98,11 +103,13 @@ fn build_array_append(
         DerefOrImmediate::Deref(op) => {
             let instructions = casm! { op = [[array_view.end]]; }.instructions;
             array_view.end_offset += 1;
+            let output_expressions =
+                [vec![array_view.to_reference_expression()].into_iter()].into_iter();
             Ok(builder.build(
                 instructions,
                 vec![],
                 [ApChange::Known(0)].into_iter(),
-                [vec![array_view.to_reference_expression()].into_iter()].into_iter(),
+                output_expressions,
             ))
         }
     }
@@ -125,7 +132,11 @@ pub struct ArrayView {
 impl ReferenceExpressionView for ArrayView {
     type Error = ReferencesError;
 
-    fn try_get_view(expr: &ReferenceExpression) -> Result<Self, Self::Error> {
+    fn try_get_view(
+        expr: &ReferenceExpression,
+        _program_info: &ProgramInfo<'_>,
+        _concrete_type_id: &ConcreteTypeId,
+    ) -> Result<Self, Self::Error> {
         if expr.cells.len() != 2 {
             return Err(ReferencesError::InvalidReferenceTypeForArgument);
         };
@@ -140,7 +151,7 @@ impl ReferenceExpressionView for ArrayView {
                 (
                     binop.a,
                     u16::try_from(
-                        try_extract_matches!(binop.b.clone(), DerefOrImmediate::Immediate)
+                        try_extract_matches!(&binop.b, DerefOrImmediate::Immediate)
                             .ok_or(ReferencesError::InvalidReferenceTypeForArgument)?,
                     )
                     .unwrap(),
