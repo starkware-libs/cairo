@@ -52,8 +52,7 @@ pub fn lower(db: &dyn SemanticGroup, free_function_id: FreeFunctionId) -> Option
 
     // Params.
     let ref_params: Vec<_> = signature
-        .params
-        .iter()
+        .all_params()
         .filter(|param| param.mutability == Mutability::Reference)
         .map(|param| VarId::Param(param.id))
         .collect();

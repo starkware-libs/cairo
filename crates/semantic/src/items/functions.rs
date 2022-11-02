@@ -78,7 +78,7 @@ pub struct Signature {
 impl Signature {
     /// Gets references of all the params of the signature (both normal and implicits).
     pub fn all_params(&self) -> impl Iterator<Item = &semantic::Parameter> {
-        chain!(self.params.iter(), self.implicits.iter())
+        chain!(self.implicits.iter(), self.params.iter())
     }
 }
 
