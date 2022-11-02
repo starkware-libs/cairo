@@ -23,6 +23,7 @@ mod function_call;
 mod gas;
 mod mem;
 mod misc;
+mod strct;
 mod uint128;
 
 #[derive(Error, Debug, Eq, PartialEq)]
@@ -199,6 +200,7 @@ pub fn compile_invocation(
         CoreConcreteLibFunc::ApTracking(_) => misc::build_revoke_ap_tracking(builder),
         CoreConcreteLibFunc::Box(libfunc) => boxing::build(libfunc, builder),
         CoreConcreteLibFunc::Enum(libfunc) => enm::build(libfunc, builder),
+        CoreConcreteLibFunc::Struct(libfunc) => strct::build(libfunc, builder),
     }
 }
 
