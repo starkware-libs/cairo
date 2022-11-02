@@ -1,0 +1,15 @@
+//! > Test trait.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+func foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait<T>;
+
+//! > expected_diagnostics

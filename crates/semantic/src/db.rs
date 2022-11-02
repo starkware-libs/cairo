@@ -4,7 +4,7 @@ use db_utils::Upcast;
 use defs::db::DefsGroup;
 use defs::ids::{
     EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericFunctionId, GenericParamId,
-    GenericTypeId, ModuleId, ModuleItemId, StructId, UseId, VariantId,
+    GenericTypeId, ModuleId, ModuleItemId, StructId, TraitId, UseId, VariantId,
 };
 use diagnostics::{Diagnostics, DiagnosticsBuilder};
 use filesystem::db::{AsFilesGroupMut, FilesGroup};
@@ -91,6 +91,18 @@ pub trait SemanticGroup:
     #[salsa::invoke(items::enm::variant_semantic)]
     fn variant_semantic(&self, enum_id: EnumId, variant_id: VariantId)
     -> Option<semantic::Variant>;
+
+    // Trait.
+    // =======
+    /// Private query to compute data about a trait.
+    #[salsa::invoke(items::trt::priv_trait_semantic_data)]
+    fn priv_trait_semantic_data(&self, trait_id: TraitId) -> Option<items::trt::TraitData>;
+    /// Returns the semantic diagnostics of a trait.
+    #[salsa::invoke(items::trt::trait_semantic_diagnostics)]
+    fn trait_semantic_diagnostics(&self, trait_id: TraitId) -> Diagnostics<SemanticDiagnostic>;
+    /// Returns the generic parameters of a trait.
+    #[salsa::invoke(items::trt::trait_generic_params)]
+    fn trait_generic_params(&self, trait_id: TraitId) -> Option<Vec<GenericParamId>>;
 
     // Free function.
     // ==============
@@ -283,6 +295,9 @@ fn module_semantic_diagnostics(
             }
             ModuleItemId::Enum(enum_id) => {
                 diagnostics.extend(db.enum_semantic_diagnostics(*enum_id));
+            }
+            ModuleItemId::Trait(trait_id) => {
+                diagnostics.extend(db.trait_semantic_diagnostics(*trait_id));
             }
             ModuleItemId::Submodule(_) => {}
             ModuleItemId::ExternType(_) => {}
