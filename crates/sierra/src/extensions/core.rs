@@ -12,6 +12,7 @@ use super::modules::mem::MemLibFunc;
 use super::modules::non_zero::{NonZeroType, UnwrapNonZeroLibFunc};
 use super::modules::unconditional_jump::UnconditionalJumpLibFunc;
 use super::range_check::RangeCheckType;
+use super::strct::{StructLibFunc, StructType};
 use super::uninitialized::UninitializedType;
 use crate::{define_libfunc_hierarchy, define_type_hierarchy};
 
@@ -26,6 +27,7 @@ define_type_hierarchy! {
         RangeCheck(RangeCheckType),
         Uninitialized(UninitializedType),
         Enum(EnumType),
+        Struct(StructType),
     }, CoreTypeConcrete
 }
 
@@ -44,5 +46,6 @@ define_libfunc_hierarchy! {
         UnwrapNonZero(UnwrapNonZeroLibFunc),
         UnconditionalJump(UnconditionalJumpLibFunc),
         Enum(EnumLibFunc),
+        Struct(StructLibFunc),
     }, CoreConcreteLibFunc
 }
