@@ -68,6 +68,8 @@ define_identity!("The identity of a concrete library function.", ConcreteLibFunc
 
 define_identity!("The identity of a user function.", FunctionId);
 
+define_identity!("The identity of a user type.", UserTypeId);
+
 define_identity!("The identity of a variable.", VarId);
 
 define_identity!("The identity of a generic type.", GenericTypeId);
