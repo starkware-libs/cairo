@@ -1,6 +1,8 @@
 use sierra::extensions::strct::StructConcreteLibFunc;
+use sierra::extensions::ConcreteLibFunc;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
+use crate::references::{ReferenceExpression, ReferenceValue};
 
 /// Builds instructions for Sierra struct operations.
 pub fn build(
@@ -8,8 +10,38 @@ pub fn build(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
-        StructConcreteLibFunc::Construct(_) | StructConcreteLibFunc::Deconstruct(_) => {
-            Err(InvocationError::NotImplemented(builder.invocation.clone()))
+        StructConcreteLibFunc::Construct(_) => {
+            let cells = builder
+                .refs
+                .iter()
+                .flat_map(|ref_value| &ref_value.expression.cells)
+                .cloned()
+                .collect();
+            Ok(builder.build_only_reference_changes([ReferenceExpression { cells }].into_iter()))
+        }
+        StructConcreteLibFunc::Deconstruct(libfunc) => {
+            let struct_type = &libfunc.param_signatures()[0].ty;
+            let cells = match builder.refs {
+                [ReferenceValue { expression: ReferenceExpression { cells }, .. }]
+                    if cells.len() == builder.program_info.type_sizes[struct_type] =>
+                {
+                    cells
+                }
+                _ => return Err(InvocationError::InvalidReferenceExpressionForArgument),
+            };
+            let mut offset = 0;
+            let mut output_types = libfunc.output_types();
+            if output_types.len() != 1 {
+                unreachable!("Wrong number of branches configured.");
+            }
+            let mut outputs = vec![];
+            for ty in output_types.remove(0) {
+                let size = builder.program_info.type_sizes[&ty];
+                outputs
+                    .push(ReferenceExpression { cells: cells[offset..(offset + size)].to_vec() });
+                offset += size;
+            }
+            Ok(builder.build_only_reference_changes(outputs.into_iter()))
         }
     }
 }
