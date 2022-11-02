@@ -1,7 +1,8 @@
 use smol_str::SmolStr;
 
-use super::ast::{self, TokenIdentifierGreen};
+use super::ast::{self, TerminalIdentifierGreen, TokenIdentifierGreen};
 use super::db::SyntaxGroup;
+use super::kind::SyntaxKind;
 use super::Terminal;
 use crate::node::green::GreenNodeDetails;
 
@@ -33,6 +34,21 @@ impl GetIdentifier for ast::ExprPath {
     /// Retrieves the identifier of the last segment of the path.
     fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
         self.elements(db).last().cloned().unwrap().identifier(db)
+    }
+}
+impl GetIdentifier for ast::ParamNameGreen {
+    fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        let green_node = db.lookup_intern_green(self.0);
+
+        match green_node.details {
+            GreenNodeDetails::Token(_) => "Unexpected token".into(),
+            GreenNodeDetails::Node { .. } => match green_node.kind {
+                SyntaxKind::TerminalIdentifier => TerminalIdentifierGreen(self.0).identifier(db),
+                // All '_' params will be named with the same name...
+                SyntaxKind::TerminalUnderscore => "_".into(),
+                _ => "Unexpected identifier for param name".into(),
+            },
+        }
     }
 }
 

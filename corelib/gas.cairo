@@ -1,3 +1,5 @@
 extern type GasBuiltin;
 
-extern func get_gas(ref rc: RangeCheck, ref gb: GasBuiltin) -> bool;
+enum GetGasResult { Success: (), Failure: (), }
+
+extern func get_gas(ref rc: RangeCheck, ref gb: GasBuiltin) -> GetGasResult;
