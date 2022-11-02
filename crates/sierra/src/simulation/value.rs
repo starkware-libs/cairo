@@ -16,5 +16,6 @@ pub enum CoreValue {
         /// The index of the relevant variant.
         index: usize,
     },
+    Struct(Vec<CoreValue>),
     Uninitialized,
 }

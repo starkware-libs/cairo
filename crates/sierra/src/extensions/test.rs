@@ -44,6 +44,8 @@ impl TypeSpecializationContext for MockSpecializationContext {
             || id == "Option".into()
             || id == "NonZeroFelt".into()
             || id == "NonZeroInt".into()
+            || id == "Tuple<>".into()
+            || id == "Uint128AndFelt".into()
         {
             Some(TypeInfo {
                 long_id: self.mapping.get_by_left(&id)?.clone(),
@@ -156,6 +158,18 @@ impl SpecializationContext for MockSpecializationContext {
             "Enum<name, UninitializedFelt>")]
 #[test_case("Enum", vec![type_arg("uint128"), type_arg("felt")] => Err(UnsupportedGenericArg);
             "Enum<uint128, felt>")]
+#[test_case("Struct", vec![user_type_arg("Unit")] => Ok(()); "Struct<Unit>")]
+#[test_case("Struct", vec![user_type_arg("Wrap"), type_arg("uint128")] => Ok(());
+            "Struct<Wrap, uint128>")]
+#[test_case("Struct", vec![user_type_arg("Pair"), type_arg("uint128"), type_arg("felt")] => Ok(());
+            "Struct<Pair, uint128, felt>")]
+#[test_case("Struct", vec![user_type_arg("name"), value_arg(5)] => Err(UnsupportedGenericArg);
+            "Struct<name, 5>")]
+#[test_case("Struct", vec![user_type_arg("name"), type_arg("UninitializedFelt")]
+            => Err(UnsupportedGenericArg);
+            "Struct<name, UninitializedFelt>")]
+#[test_case("Struct", vec![type_arg("uint128"), type_arg("felt")] => Err(UnsupportedGenericArg);
+            "Struct<uint128, felt>")]
 fn find_type_specialization(
     id: &str,
     generic_args: Vec<GenericArg>,
@@ -249,6 +263,14 @@ fn find_type_specialization(
 #[test_case("enum_match", vec![type_arg("Option")] => Ok(()); "enum_match<Option>")]
 #[test_case("enum_match", vec![value_arg(4)] => Err(UnsupportedGenericArg); "enum_match<4>")]
 #[test_case("enum_match", vec![] => Err(WrongNumberOfGenericArgs); "enum_match")]
+#[test_case("struct_construct", vec![type_arg("Uint128AndFelt")] => Ok(());
+            "struct_construct<Uint128AndFelt>")]
+#[test_case("struct_construct", vec![value_arg(4)] => Err(UnsupportedGenericArg);
+            "struct_construct<4>")]
+#[test_case("struct_deconstruct", vec![type_arg("Uint128AndFelt")] => Ok(());
+            "struct_deconstruct<Uint128AndFelt>")]
+#[test_case("struct_deconstruct", vec![value_arg(4)] => Err(UnsupportedGenericArg);
+            "struct_deconstruct<4>")]
 fn find_libfunc_specialization(
     id: &str,
     generic_args: Vec<GenericArg>,

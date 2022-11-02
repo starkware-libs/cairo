@@ -6,7 +6,7 @@ use super::value::CoreValue;
 use super::LibFuncSimulationError;
 use crate::extensions::array::ArrayConcreteLibFunc;
 use crate::extensions::core::CoreConcreteLibFunc::{
-    self, ApTracking, Array, Drop, Dup, Enum, Felt, FunctionCall, Gas, Mem, Uint128,
+    self, ApTracking, Array, Drop, Dup, Enum, Felt, FunctionCall, Gas, Mem, Struct, Uint128,
     UnconditionalJump, UnwrapNonZero,
 };
 use crate::extensions::enm::{EnumConcreteLibFunc, EnumInitConcreteLibFunc};
@@ -24,6 +24,7 @@ use crate::extensions::integer::{
 use crate::extensions::mem::MemConcreteLibFunc::{
     AlignTemps, AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
 };
+use crate::extensions::strct::StructConcreteLibFunc;
 use crate::ids::FunctionId;
 
 // TODO(spapini): Proper errors when converting from bigint to u128.
@@ -144,6 +145,15 @@ pub fn simulate<
         }
         Enum(EnumConcreteLibFunc::Match(_)) => match &inputs[..] {
             [CoreValue::Enum { value, index }] => Ok((vec![*value.clone()], *index)),
+            [_] => Err(LibFuncSimulationError::WrongArgType),
+            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+        },
+        Struct(StructConcreteLibFunc::Construct(_)) => Ok((vec![CoreValue::Struct(inputs)], 0)),
+        Struct(StructConcreteLibFunc::Deconstruct(_)) => match &inputs[..] {
+            [CoreValue::Struct(_)] => {
+                // Extracting the values instead of cloning them, as the match is on a reference.
+                Ok((extract_matches!(inputs.into_iter().next().unwrap(), CoreValue::Struct), 0))
+            }
             [_] => Err(LibFuncSimulationError::WrongArgType),
             _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
         },
