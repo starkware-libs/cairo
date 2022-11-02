@@ -99,7 +99,7 @@ fn get_function_signature(
     let signature = db.concrete_function_signature(semantic_function_id)?;
     let mut param_types = Vec::new();
     let mut ret_types = Vec::new();
-    for param in signature.params {
+    for param in signature.all_params() {
         let concrete_type_id = db.get_concrete_type_id(param.ty)?;
         param_types.push(concrete_type_id.clone());
         if param.mutability == Mutability::Reference {
