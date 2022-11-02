@@ -56,6 +56,11 @@ FunctionId: FunctionId = {
     "[" <id:UnsignedInt> "]" => FunctionId::new(id),
 }
 
+UserTypeId: UserTypeId = {
+    <id:ConcreteLabel> => UserTypeId::from_string(id),
+    "[" <id:UnsignedInt> "]" => UserTypeId::new(id),
+}
+
 VarId: VarId = {
     <id:BasicLabel> => VarId::from_string(id),
     "[" <id:UnsignedInt> "]" => VarId::new(id),
@@ -81,6 +86,7 @@ GenericArg: GenericArg = {
     ConcreteTypeId => GenericArg::Type(<>),
     <v:BigInt> => GenericArg::Value(v),
     "user@" <id:FunctionId> => GenericArg::UserFunc(id),
+    "ut@" <id:UserTypeId> => GenericArg::UserType(id),
     "lib@" <id:ConcreteLibFuncId> => GenericArg::LibFunc(id),
 }
 GenericArgs = Comma<GenericArg>;

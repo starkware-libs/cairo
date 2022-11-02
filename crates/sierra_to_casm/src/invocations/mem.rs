@@ -3,6 +3,7 @@ use casm::casm;
 use casm::hints::Hint;
 use casm::instructions::{AddApInstruction, AssertEqInstruction, Instruction, InstructionBody};
 use casm::operand::{BinOpOperand, CellRef, Operation, Register, ResOperand};
+use num_bigint::ToBigInt;
 use sierra::extensions::felt::FeltOperator;
 use sierra::extensions::mem::{
     AllocLocalConcreteLibFunc, MemConcreteLibFunc, StoreLocalConcreteLibFunc,
@@ -135,6 +136,15 @@ fn get_store_instructions(
                 inc_ap: false,
                 hints: vec![Hint::AllocSegment { dst }],
             },
+            // TODO(yuval): Change the logic here to do ap += num_padding for consequent paddings.
+            CellExpression::Padding => Instruction {
+                body: InstructionBody::AssertEq(AssertEqInstruction {
+                    a: dst,
+                    b: ResOperand::Immediate(0.to_bigint().unwrap()),
+                }),
+                inc_ap,
+                hints: vec![],
+            },
         });
         if let Register::FP = dst.register {
             dst.offset += 1;
@@ -218,7 +228,7 @@ fn build_store_local(
     ))
 }
 
-/// Handles a locals alloction finalization instruction.
+/// Handles a locals allocation finalization instruction.
 fn build_finalize_locals(
     mut builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
