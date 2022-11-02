@@ -48,7 +48,17 @@ impl From<DerefOrImmediate> for ResOperand {
 }
 impl From<i128> for ResOperand {
     fn from(imm: i128) -> Self {
-        ResOperand::Immediate(imm.to_bigint().unwrap())
+        ResOperand::Immediate(BigInt::from(imm))
+    }
+}
+impl From<i32> for ResOperand {
+    fn from(imm: i32) -> Self {
+        ResOperand::Immediate(BigInt::from(imm))
+    }
+}
+impl From<usize> for ResOperand {
+    fn from(imm: usize) -> Self {
+        ResOperand::Immediate(BigInt::from(imm))
     }
 }
 
