@@ -59,10 +59,15 @@ impl EnumConcreteType {
         context: &dyn TypeSpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self, SpecializationError> {
+        let mut args_iter = args.iter();
+        args_iter
+            .next()
+            .and_then(|arg| try_extract_matches!(arg, GenericArg::UserType))
+            .ok_or(SpecializationError::UnsupportedGenericArg)?;
         let mut duplicatable = true;
         let mut droppable = true;
         let mut variants: Vec<ConcreteTypeId> = Vec::new();
-        for arg in args {
+        for arg in args_iter {
             let ty = try_extract_matches!(arg, GenericArg::Type)
                 .ok_or(SpecializationError::UnsupportedGenericArg)?
                 .clone();
