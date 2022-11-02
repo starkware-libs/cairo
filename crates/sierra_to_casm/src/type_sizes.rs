@@ -30,6 +30,9 @@ pub fn get_type_size_map(
             CoreTypeConcrete::Enum(enum_type) => {
                 Some(1 + enum_type.variants.iter().map(|variant| type_sizes[variant]).max()?)
             }
+            CoreTypeConcrete::Struct(struct_type) => {
+                Some(struct_type.members.iter().map(|member| type_sizes[member]).sum())
+            }
         }?;
         type_sizes.insert(declaration.id.clone(), size);
     }
