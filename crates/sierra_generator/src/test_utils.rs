@@ -180,7 +180,7 @@ fn replace_generic_args(db: &dyn SierraGenGroup, generic_args: &mut Vec<program:
             program::GenericArg::LibFunc(id) => {
                 *id = replace_libfunc_id(db, id);
             }
-            program::GenericArg::Value(_) => {}
+            program::GenericArg::Value(_) | program::GenericArg::UserType(_) => {}
         }
     }
 }

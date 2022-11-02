@@ -1,7 +1,8 @@
 use num_bigint::BigInt;
 
 use crate::ids::{
-    ConcreteLibFuncId, ConcreteTypeId, FunctionId, GenericLibFuncId, GenericTypeId, VarId,
+    ConcreteLibFuncId, ConcreteTypeId, FunctionId, GenericLibFuncId, GenericTypeId, UserTypeId,
+    VarId,
 };
 
 /// A full Sierra program.
@@ -119,6 +120,7 @@ impl StatementIdx {
 /// Possible arguments for generic type.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum GenericArg {
+    UserType(UserTypeId),
     Type(ConcreteTypeId),
     Value(BigInt),
     UserFunc(FunctionId),

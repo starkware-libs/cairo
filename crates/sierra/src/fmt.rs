@@ -3,7 +3,8 @@ use std::fmt;
 use utils::write_comma_separated;
 
 use crate::ids::{
-    ConcreteLibFuncId, ConcreteTypeId, FunctionId, GenericLibFuncId, GenericTypeId, VarId,
+    ConcreteLibFuncId, ConcreteTypeId, FunctionId, GenericLibFuncId, GenericTypeId, UserTypeId,
+    VarId,
 };
 use crate::program::{
     ConcreteLibFuncLongId, ConcreteTypeLongId, Function, GenBranchInfo, GenBranchTarget,
@@ -90,6 +91,7 @@ macro_rules! display_identity {
 display_identity!(GenericLibFuncId);
 display_identity!(ConcreteLibFuncId);
 display_identity!(FunctionId);
+display_identity!(UserTypeId);
 display_identity!(VarId);
 display_identity!(GenericTypeId);
 display_identity!(ConcreteTypeId);
@@ -100,6 +102,7 @@ impl fmt::Display for GenericArg {
             GenericArg::Type(id) => write!(f, "{id}"),
             GenericArg::Value(v) => write!(f, "{v}"),
             GenericArg::UserFunc(id) => write!(f, "user@{id}"),
+            GenericArg::UserType(id) => write!(f, "ut@{id}"),
             GenericArg::LibFunc(id) => write!(f, "lib@{id}"),
         }
     }
