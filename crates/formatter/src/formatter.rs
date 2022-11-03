@@ -3,6 +3,7 @@ use std::fmt;
 use itertools::Itertools;
 use smol_str::SmolStr;
 use syntax::node::db::SyntaxGroup;
+use syntax::node::kind::SyntaxKind;
 use syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
 
 use crate::FormatterConfig;
@@ -503,6 +504,10 @@ impl<'a> Formatter<'a> {
     }
     /// Formats a terminal node and appends the formatted string to the result.
     fn format_terminal(&mut self, syntax_node: &SyntaxNode, no_space_after: bool) {
+        // Early return on EOF to prevent the printing of unnecessary newlines.
+        if syntax_node.kind(self.db) == SyntaxKind::TerminalEndOfFile {
+            return;
+        }
         // TODO(spapini): Introduce a Terminal and a Token enum in ast.rs to make this cleaner.
         let mut children = syntax_node.children(self.db);
         let leading_trivia = ast::Trivia::from_syntax_node(self.db, children.next().unwrap());
@@ -511,10 +516,8 @@ impl<'a> Formatter<'a> {
 
         // The first newlines is the leading trivia correspond exactly to empty lines.
         self.format_trivia(leading_trivia, self.empty_lines_allowance);
-        self.empty_lines_allowance = 0;
         self.format_token(&token, no_space_after || syntax_node.force_no_space_after(self.db));
-        let allowed_newlines = if syntax_node.allow_newline_after(self.db) { 1 } else { 0 };
-        self.format_trivia(trailing_trivia, allowed_newlines);
+        self.format_trivia(trailing_trivia, self.empty_lines_allowance);
     }
     /// Appends a trivia node (if needed) to the result.
     fn format_trivia(&mut self, trivia: syntax::node::ast::Trivia, mut allowed_newlines: usize) {
@@ -541,6 +544,9 @@ impl<'a> Formatter<'a> {
     fn format_token(&mut self, syntax_node: &SyntaxNode, no_space_after: bool) {
         let no_space_after = no_space_after || syntax_node.force_no_space_after(self.db);
         let text = syntax_node.text(self.db).unwrap();
+        if !text.is_empty() {
+            self.empty_lines_allowance = 0;
+        }
         self.append_token(text, syntax_node, no_space_after);
     }
     /// Appends a token node to the result.
