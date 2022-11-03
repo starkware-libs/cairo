@@ -15,6 +15,8 @@
 //! match_option(none_id) {1000(some), 2000(none)};
 //! ```
 
+use std::cmp;
+
 use num_bigint::ToBigInt;
 use num_traits::Signed;
 use utils::try_extract_matches;
@@ -59,10 +61,16 @@ impl EnumConcreteType {
         context: &dyn TypeSpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self, SpecializationError> {
+        let mut args_iter = args.iter();
+        args_iter
+            .next()
+            .and_then(|arg| try_extract_matches!(arg, GenericArg::UserType))
+            .ok_or(SpecializationError::UnsupportedGenericArg)?;
         let mut duplicatable = true;
         let mut droppable = true;
         let mut variants: Vec<ConcreteTypeId> = Vec::new();
-        for arg in args {
+        let mut variant_max_size = 0;
+        for arg in args_iter {
             let ty = try_extract_matches!(arg, GenericArg::Type)
                 .ok_or(SpecializationError::UnsupportedGenericArg)?
                 .clone();
@@ -77,6 +85,7 @@ impl EnumConcreteType {
                 droppable = false;
             }
             variants.push(ty);
+            variant_max_size = cmp::max(variant_max_size, info.size);
         }
         Ok(EnumConcreteType {
             info: TypeInfo {
@@ -87,6 +96,7 @@ impl EnumConcreteType {
                 duplicatable,
                 droppable,
                 storable: true,
+                size: 1 + variant_max_size,
             },
             variants,
         })
@@ -150,7 +160,7 @@ impl EnumInitLibFunc {
                     ty: enum_type,
                     ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
                 }],
-                SierraApChange::Known,
+                SierraApChange::NotImplemented,
             ),
             index,
         })
@@ -201,7 +211,7 @@ impl NamedLibFunc for EnumMatchLibFunc {
                     ty,
                     ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
                 }],
-                ap_change: SierraApChange::Known,
+                ap_change: SierraApChange::NotImplemented,
             })
             .collect();
 

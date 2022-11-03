@@ -3,7 +3,6 @@ use casm::casm;
 use casm::hints::Hint;
 use casm::instructions::{AddApInstruction, AssertEqInstruction, Instruction, InstructionBody};
 use casm::operand::{BinOpOperand, CellRef, Operation, Register, ResOperand};
-use num_bigint::ToBigInt;
 use sierra::extensions::felt::FeltOperator;
 use sierra::extensions::mem::{
     AllocLocalConcreteLibFunc, MemConcreteLibFunc, StoreLocalConcreteLibFunc,
@@ -54,105 +53,107 @@ fn get_store_instructions(
         Some(_) => {}
     };
 
+    let mut sequential_padding: usize = 0;
     let mut instructions = vec![];
     let mut ap_change = 0;
     // TODO(Gil): Consider using the casm! macros and add an if inc_ap.
     for cell_expr_orig in src_expr.cells.iter() {
         let cell_expr = cell_expr_orig.clone().apply_ap_change(ApChange::Known(ap_change)).unwrap();
-        instructions.push(match cell_expr {
-            CellExpression::Deref(operand) => Instruction {
-                body: InstructionBody::AssertEq(AssertEqInstruction {
-                    a: dst,
-                    b: ResOperand::Deref(operand),
-                }),
-                inc_ap,
-                hints: vec![],
-            },
-            CellExpression::DoubleDeref(operand) => Instruction {
-                body: InstructionBody::AssertEq(AssertEqInstruction {
-                    a: dst,
-                    b: ResOperand::DoubleDeref(operand, 0),
-                }),
-                inc_ap,
-                hints: vec![],
-            },
-            CellExpression::IntoSingleCellRef(operand) => Instruction {
-                body: InstructionBody::AssertEq(AssertEqInstruction {
-                    a: operand,
-                    b: ResOperand::DoubleDeref(dst, 0),
-                }),
-                inc_ap,
-                hints: vec![Hint::AllocSegment { dst }],
-            },
-            CellExpression::Immediate(operand) => Instruction {
-                body: InstructionBody::AssertEq(AssertEqInstruction {
-                    a: dst,
-                    b: ResOperand::Immediate(operand),
-                }),
-                inc_ap,
-                hints: vec![],
-            },
-            CellExpression::BinOp(BinOpExpression { op, a, b }) => match op {
-                FeltOperator::Add => Instruction {
-                    body: InstructionBody::AssertEq(AssertEqInstruction {
-                        a: dst,
-                        b: ResOperand::BinOp(BinOpOperand { op: Operation::Add, a, b }),
-                    }),
-                    inc_ap,
-                    hints: vec![],
-                },
-                FeltOperator::Mul => Instruction {
-                    body: InstructionBody::AssertEq(AssertEqInstruction {
-                        a: dst,
-                        b: ResOperand::BinOp(BinOpOperand { op: Operation::Mul, a, b }),
-                    }),
-                    inc_ap,
-                    hints: vec![],
-                },
 
-                // dst = a - b => a = dst + b
-                FeltOperator::Sub => Instruction {
+        // Padding is separately handled as it doesn't always generate an instruction.
+        if cell_expr == CellExpression::Padding {
+            sequential_padding += 1;
+        } else {
+            maybe_add_padding_add_ap_instruction(&mut instructions, &mut sequential_padding);
+
+            instructions.push(match cell_expr {
+                CellExpression::Deref(operand) => Instruction {
                     body: InstructionBody::AssertEq(AssertEqInstruction {
-                        a,
-                        b: ResOperand::BinOp(BinOpOperand { op: Operation::Add, a: dst, b }),
+                        a: dst,
+                        b: ResOperand::Deref(operand),
                     }),
                     inc_ap,
                     hints: vec![],
                 },
-                // dst = a / b => a = dst * b
-                FeltOperator::Div => Instruction {
+                CellExpression::DoubleDeref(operand) => Instruction {
                     body: InstructionBody::AssertEq(AssertEqInstruction {
-                        a,
-                        b: ResOperand::BinOp(BinOpOperand { op: Operation::Mul, a: dst, b }),
+                        a: dst,
+                        b: ResOperand::DoubleDeref(operand, 0),
                     }),
                     inc_ap,
                     hints: vec![],
                 },
-            },
-            CellExpression::AllocateSegment => Instruction {
-                body: InstructionBody::AddAp(AddApInstruction {
-                    operand: ResOperand::from(if inc_ap { 1 } else { 0 }),
-                }),
-                inc_ap: false,
-                hints: vec![Hint::AllocSegment { dst }],
-            },
-            // TODO(yuval): Change the logic here to do ap += num_padding for consequent paddings.
-            CellExpression::Padding => Instruction {
-                body: InstructionBody::AssertEq(AssertEqInstruction {
-                    a: dst,
-                    b: ResOperand::Immediate(0.to_bigint().unwrap()),
-                }),
-                inc_ap,
-                hints: vec![],
-            },
-        });
-        if let Register::FP = dst.register {
-            dst.offset += 1;
-        }
-        if inc_ap {
-            ap_change += 1;
+                CellExpression::IntoSingleCellRef(operand) => Instruction {
+                    body: InstructionBody::AssertEq(AssertEqInstruction {
+                        a: operand,
+                        b: ResOperand::DoubleDeref(dst, 0),
+                    }),
+                    inc_ap,
+                    hints: vec![Hint::AllocSegment { dst }],
+                },
+                CellExpression::Immediate(operand) => Instruction {
+                    body: InstructionBody::AssertEq(AssertEqInstruction {
+                        a: dst,
+                        b: ResOperand::Immediate(operand),
+                    }),
+                    inc_ap,
+                    hints: vec![],
+                },
+                CellExpression::BinOp(BinOpExpression { op, a, b }) => match op {
+                    FeltOperator::Add => Instruction {
+                        body: InstructionBody::AssertEq(AssertEqInstruction {
+                            a: dst,
+                            b: ResOperand::BinOp(BinOpOperand { op: Operation::Add, a, b }),
+                        }),
+                        inc_ap,
+                        hints: vec![],
+                    },
+                    FeltOperator::Mul => Instruction {
+                        body: InstructionBody::AssertEq(AssertEqInstruction {
+                            a: dst,
+                            b: ResOperand::BinOp(BinOpOperand { op: Operation::Mul, a, b }),
+                        }),
+                        inc_ap,
+                        hints: vec![],
+                    },
+
+                    // dst = a - b => a = dst + b
+                    FeltOperator::Sub => Instruction {
+                        body: InstructionBody::AssertEq(AssertEqInstruction {
+                            a,
+                            b: ResOperand::BinOp(BinOpOperand { op: Operation::Add, a: dst, b }),
+                        }),
+                        inc_ap,
+                        hints: vec![],
+                    },
+                    // dst = a / b => a = dst * b
+                    FeltOperator::Div => Instruction {
+                        body: InstructionBody::AssertEq(AssertEqInstruction {
+                            a,
+                            b: ResOperand::BinOp(BinOpOperand { op: Operation::Mul, a: dst, b }),
+                        }),
+                        inc_ap,
+                        hints: vec![],
+                    },
+                },
+                CellExpression::AllocateSegment => Instruction {
+                    body: InstructionBody::AddAp(AddApInstruction {
+                        operand: ResOperand::from(if inc_ap { 1 } else { 0 }),
+                    }),
+                    inc_ap: false,
+                    hints: vec![Hint::AllocSegment { dst }],
+                },
+                CellExpression::Padding => unreachable!("Padding arm is handled separately"),
+            });
+            if let Register::FP = dst.register {
+                dst.offset += 1;
+            }
+            if inc_ap {
+                ap_change += 1;
+            }
         }
     }
+    maybe_add_padding_add_ap_instruction(&mut instructions, &mut sequential_padding);
     Ok(instructions)
 }
 
@@ -270,4 +271,24 @@ fn build_alloc_local(
         }))]
         .into_iter(),
     ))
+}
+
+/// Adds an "ap +=" instruction for the recent paddings, if needed. Should be called when the
+/// sequence of padding cells is stopped.
+fn maybe_add_padding_add_ap_instruction(
+    instructions: &mut Vec<Instruction>,
+    sequential_padding: &mut usize,
+) {
+    if *sequential_padding == 0 {
+        return;
+    }
+
+    instructions.push(Instruction {
+        body: InstructionBody::AddAp(AddApInstruction {
+            operand: ResOperand::from(*sequential_padding),
+        }),
+        inc_ap: false,
+        hints: vec![],
+    });
+    *sequential_padding = 0;
 }
