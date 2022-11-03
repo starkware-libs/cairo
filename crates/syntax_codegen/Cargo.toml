@@ -11,5 +11,5 @@ name = "generate_syntax"
 path = "src/bin/generate_syntax.rs"
 
 [dependencies]
-genco = "0.17.0"
-xshell = "0.2.2"
+genco.workspace = true
+xshell.workspace = true

@@ -6,4 +6,4 @@ edition.workspace = true
 [dev_dependencies]
 db_utils = { path = "../db_utils" }
 diagnostics_proc_macros = { path = "../diagnostics_proc_macros" }
-salsa = "0.16.1"
+salsa.workspace = true
