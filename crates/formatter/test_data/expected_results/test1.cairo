@@ -22,6 +22,7 @@ func foo(x: T) -> S {
         // 445.
 
         5; // Comment.
+
     } // Comment.
 }
 
