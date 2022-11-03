@@ -122,11 +122,11 @@ impl SyntaxNodeFormat for SyntaxNode {
         false
     }
 
-    fn allowed_empty_between(&self, db: &dyn SyntaxGroup) -> usize {
+    fn allowed_empty_between(&self, db: &dyn SyntaxGroup) -> Option<usize> {
         match self.kind(db) {
-            SyntaxKind::ItemList => 2,
-            SyntaxKind::StatementList => 1,
-            _ => 0,
+            SyntaxKind::ItemList => Some(2),
+            SyntaxKind::StatementList => Some(1),
+            _ => None,
         }
     }
     fn add_break_line_point_before(&self, db: &dyn SyntaxGroup) -> bool {

@@ -3,6 +3,7 @@ use std::fmt;
 use itertools::Itertools;
 use smol_str::SmolStr;
 use syntax::node::db::SyntaxGroup;
+use syntax::node::kind::SyntaxKind;
 use syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
 
 use crate::FormatterConfig;
@@ -402,7 +403,7 @@ pub trait SyntaxNodeFormat {
     /// Only applicable for terminal nodes.
     fn allow_newline_after(&self, db: &dyn SyntaxGroup) -> bool;
     /// Returns the number of allowed empty lines between two consecutive children of this node.
-    fn allowed_empty_between(&self, db: &dyn SyntaxGroup) -> usize;
+    fn allowed_empty_between(&self, db: &dyn SyntaxGroup) -> Option<usize>;
     /// Returns true if there should be an optional break line point before the node.
     fn add_break_line_point_before(&self, db: &dyn SyntaxGroup) -> bool;
     /// Returns true if there should be an optional break line point after the node.
@@ -470,7 +471,7 @@ impl<'a> Formatter<'a> {
     /// Formats an internal node and appends the formatted string to the result.
     fn format_internal(&mut self, syntax_node: &SyntaxNode, no_space_after: bool) {
         let indent_change = if syntax_node.should_change_indent(self.db) { 1 } else { 0 };
-        let allowed_empty_between = syntax_node.allowed_empty_between(self.db);
+        let allowed_empty_between_opt = syntax_node.allowed_empty_between(self.db);
         let no_space_after = no_space_after || syntax_node.force_no_space_after(self.db);
 
         if syntax_node.is_protected_breaking_node(self.db) {
@@ -487,7 +488,11 @@ impl<'a> Formatter<'a> {
                 self.line_state.reset(self.get_indentation())
             }
             self.format_node(&child, no_space_after && i == n_children - 1);
-            self.empty_lines_allowance = allowed_empty_between;
+            // Allow for empty lines between items of a node until a new node with a different
+            // empty line allowance is processed.
+            if let Some(allowed_empty_between) = allowed_empty_between_opt {
+                self.empty_lines_allowance = allowed_empty_between;
+            }
             self.current_indent -= indent_change;
             // If this is a breakable list is breakable a breakpoint is added after each separator
             if i % 2 == 1 && i != n_children - 1 && syntax_node.is_breakable_list(self.db) {
@@ -503,6 +508,10 @@ impl<'a> Formatter<'a> {
     }
     /// Formats a terminal node and appends the formatted string to the result.
     fn format_terminal(&mut self, syntax_node: &SyntaxNode, no_space_after: bool) {
+        // Early return on EOF to prevent the printing of unnecessary newlines.
+        if syntax_node.kind(self.db) == SyntaxKind::TerminalEndOfFile {
+            return;
+        }
         // TODO(spapini): Introduce a Terminal and a Token enum in ast.rs to make this cleaner.
         let mut children = syntax_node.children(self.db);
         let leading_trivia = ast::Trivia::from_syntax_node(self.db, children.next().unwrap());
@@ -511,10 +520,8 @@ impl<'a> Formatter<'a> {
 
         // The first newlines is the leading trivia correspond exactly to empty lines.
         self.format_trivia(leading_trivia, self.empty_lines_allowance);
-        self.empty_lines_allowance = 0;
         self.format_token(&token, no_space_after || syntax_node.force_no_space_after(self.db));
-        let allowed_newlines = if syntax_node.allow_newline_after(self.db) { 1 } else { 0 };
-        self.format_trivia(trailing_trivia, allowed_newlines);
+        self.format_trivia(trailing_trivia, self.empty_lines_allowance);
     }
     /// Appends a trivia node (if needed) to the result.
     fn format_trivia(&mut self, trivia: syntax::node::ast::Trivia, mut allowed_newlines: usize) {
@@ -541,6 +548,9 @@ impl<'a> Formatter<'a> {
     fn format_token(&mut self, syntax_node: &SyntaxNode, no_space_after: bool) {
         let no_space_after = no_space_after || syntax_node.force_no_space_after(self.db);
         let text = syntax_node.text(self.db).unwrap();
+        if !text.is_empty() {
+            self.empty_lines_allowance = 0;
+        }
         self.append_token(text, syntax_node, no_space_after);
     }
     /// Appends a token node to the result.
