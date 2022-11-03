@@ -108,7 +108,7 @@ impl GenericLibFunc for FeltOperationLibFunc {
                     ty,
                     ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                 }],
-                SierraApChange::Known,
+                SierraApChange::Known(0),
             )),
             [GenericArg::Value(c)] => {
                 if matches!(self.operator, FeltOperator::Div) && c.is_zero() {
@@ -120,7 +120,7 @@ impl GenericLibFunc for FeltOperationLibFunc {
                             ty,
                             ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                         }],
-                        SierraApChange::Known,
+                        SierraApChange::Known(0),
                     ))
                 }
             }

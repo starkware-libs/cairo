@@ -19,7 +19,7 @@ impl NoGenericArgsGenericLibFunc for UnconditionalJumpLibFunc {
             param_signatures: vec![],
             branch_signatures: vec![BranchSignature {
                 vars: vec![],
-                ap_change: SierraApChange::Known,
+                ap_change: SierraApChange::Known(0),
             }],
             fallthrough: None,
         })

@@ -81,7 +81,7 @@ impl NamedLibFunc for ArrayNewLibFunc {
                 ty: context.get_wrapped_concrete_type(ArrayType::id(), ty)?,
                 ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
             }],
-            SierraApChange::Known,
+            SierraApChange::Known(1),
         ))
     }
 
@@ -117,7 +117,7 @@ impl NamedLibFunc for ArrayAppendLibFunc {
                 ty: arr_ty,
                 ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
             }],
-            SierraApChange::Known,
+            SierraApChange::Known(0),
         ))
     }
 

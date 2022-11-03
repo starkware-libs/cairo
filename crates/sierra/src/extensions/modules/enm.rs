@@ -160,7 +160,7 @@ impl EnumInitLibFunc {
                     ty: enum_type,
                     ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
                 }],
-                SierraApChange::Known,
+                SierraApChange::NotImplemented,
             ),
             index,
         })
@@ -211,7 +211,7 @@ impl NamedLibFunc for EnumMatchLibFunc {
                     ty,
                     ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
                 }],
-                ap_change: SierraApChange::Known,
+                ap_change: SierraApChange::NotImplemented,
             })
             .collect();
 
