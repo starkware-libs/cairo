@@ -4,10 +4,13 @@
 get_diagnostics
 
 //! > cairo_code
+//! ;
+#[asdas]
+#[abc]
 func missing_id<T> (ref: Ref::<T>) { }
 
 //! > expected_diagnostics
 error: Missing token TerminalIdentifier.
- --> dummy_file.cairo:1:24
+ --> dummy_file.cairo:4:24
 func missing_id<T> (ref: Ref::<T>) { }
                        ^

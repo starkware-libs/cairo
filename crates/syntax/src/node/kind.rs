@@ -54,6 +54,8 @@ pub enum SyntaxKind {
     Member,
     MemberList,
     ItemList,
+    Attribute,
+    AttributeList,
     ItemModule,
     ItemFreeFunction,
     ItemExternFunction,
@@ -179,6 +181,8 @@ pub enum SyntaxKind {
     TerminalEndOfFile,
     TokenBadCharacters,
     TerminalBadCharacters,
+    TokenHash,
+    TerminalHash,
     SyntaxFile,
     TokenSingleLineComment,
     TokenWhitespace,
@@ -244,6 +248,7 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalMatchArrow
                 | SyntaxKind::TerminalEndOfFile
                 | SyntaxKind::TerminalBadCharacters
+                | SyntaxKind::TerminalHash
         )
     }
     pub fn is_token(&self) -> bool {
@@ -303,6 +308,7 @@ impl SyntaxKind {
                 | SyntaxKind::TokenMatchArrow
                 | SyntaxKind::TokenEndOfFile
                 | SyntaxKind::TokenBadCharacters
+                | SyntaxKind::TokenHash
                 | SyntaxKind::TokenSingleLineComment
                 | SyntaxKind::TokenWhitespace
                 | SyntaxKind::TokenNewline
