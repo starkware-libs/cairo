@@ -9,12 +9,6 @@ mod test;
 macro_rules! casm {
     {$($tok:tt)*} => {
         {
-            #[allow(unused_imports)]
-            use $crate::instructions::*;
-
-            #[allow(unused_imports)]
-            use $crate::operand::*;
-
             let mut ctx = $crate::inline::CasmContext::default();
             $crate::casm_extend!(ctx, $($tok)*);
             ctx
@@ -26,70 +20,86 @@ macro_rules! casm {
 macro_rules! casm_extend {
     ($ctx:ident,) => {};
     ($ctx:ident, $dst:tt = $a:tt $(+ $b0:tt)? $(* $b1:tt)? $(,$ap:ident++)? ; $($tok:tt)*) => {
-        let body = InstructionBody::AssertEq(AssertEqInstruction {
-            a: $crate::deref!($dst),
-            b: $crate::res!($a $(+ $b0)? $(* $b1)?),
-        });
+        let body = $crate::instructions::InstructionBody::AssertEq(
+            $crate::instructions::AssertEqInstruction {
+                a: $crate::deref!($dst),
+                b: $crate::res!($a $(+ $b0)? $(* $b1)?),
+            }
+        );
         $crate::append_instruction!($ctx, body $(,$ap++)?);
         $crate::casm_extend!($ctx, $($tok)*)
     };
     ($ctx:ident, call rel $target:tt $(,$ap:ident++)? ; $($tok:tt)*) => {
-        let body = InstructionBody::Call(CallInstruction {
-            target: $crate::deref_or_immediate!($target),
-            relative: true,
-        });
+        let body = $crate::instructions::InstructionBody::Call(
+            $crate::instructions::CallInstruction {
+                target: $crate::deref_or_immediate!($target),
+                relative: true,
+            }
+        );
         $crate::append_instruction!($ctx, body $(,$ap++)?);
         $crate::casm_extend!($ctx, $($tok)*)
     };
     ($ctx:ident, call abs $target:tt $(,$ap:ident++)? ; $($tok:tt)*) => {
-        let body = InstructionBody::Call(CallInstruction {
-            target: $crate::deref_or_immediate!($target),
-            relative: false,
-        });
+        let body = $crate::instructions::InstructionBody::Call(
+            $crate::instructions::CallInstruction {
+                target: $crate::deref_or_immediate!($target),
+                relative: false,
+            }
+        );
         $crate::append_instruction!($ctx, body $(,$ap++)?);
         $crate::casm_extend!($ctx, $($tok)*)
     };
     ($ctx:ident, jmp rel $target:expr $(,$ap:ident++)? ; $($tok:tt)*) => {
-        let body = InstructionBody::Jump(JumpInstruction {
-            target: $crate::deref_or_immediate!($target),
-            relative: true,
-        });
+        let body = $crate::instructions::InstructionBody::Jump(
+            $crate::instructions::JumpInstruction {
+                target: $crate::deref_or_immediate!($target),
+                relative: true,
+            }
+        );
         $crate::append_instruction!($ctx, body $(,$ap++)?);
         $crate::casm_extend!($ctx, $($tok)*)
     };
     ($ctx:ident, jmp abs $target:tt $(,$ap:ident++)? ; $($tok:tt)*) => {
-        let body = InstructionBody::Jump(JumpInstruction {
-            target: $crate::deref_or_immediate!($target),
-            relative: false,
-        });
+        let body = $crate::instructions::InstructionBody::Jump(
+            $crate::instructions::JumpInstruction {
+                target: $crate::deref_or_immediate!($target),
+                relative: false,
+            }
+        );
         $crate::append_instruction!($ctx, body $(,$ap++)?);
         $crate::casm_extend!($ctx, $($tok)*)
     };
     ($ctx:ident, jmp rel $target:tt if $cond:tt != 0 $(,$ap:ident++)? ; $($tok:tt)*) => {
-        let body = InstructionBody::Jnz(JnzInstruction {
-            jump_offset: $crate::deref_or_immediate!($target),
-            condition: $crate::deref!($cond),
-        });
+        let body = $crate::instructions::InstructionBody::Jnz(
+            $crate::instructions::JnzInstruction {
+                jump_offset: $crate::deref_or_immediate!($target),
+                condition: $crate::deref!($cond),
+            }
+        );
         $crate::append_instruction!($ctx, body $(,$ap++)?);
         $crate::casm_extend!($ctx, $($tok)*)
     };
     ($ctx:ident, jmp $target:tt if $cond:tt != 0 $(,$ap:ident++)? ; $($tok:tt)*) => {
-        let body = InstructionBody::Jnz(JnzInstruction {
-            jump_offset: $crate::deref_or_immediate!($target),
-            condition: $crate::deref!($cond),
-        });
+        let body = $crate::instructions::InstructionBody::Jnz(
+            $crate::instructions::JnzInstruction {
+                jump_offset: $crate::deref_or_immediate!($target),
+                condition: $crate::deref!($cond),
+            }
+        );
         $crate::append_instruction!($ctx, body $(,$ap++)?);
         $crate::casm_extend!($ctx, $($tok)*)
     };
     ($ctx:ident, ap += $operand:tt $(,$ap:ident++)? ; $($tok:tt)*) => {
-        let body = InstructionBody::AddAp(AddApInstruction {
-            operand: $crate::res!($operand),
-        });
+        let body = $crate::instructions::InstructionBody::AddAp(
+            $crate::instructions::AddApInstruction { operand: $crate::res!($operand) }
+        );
         $crate::append_instruction!($ctx, body $(,$ap++)?);
         $crate::casm_extend!($ctx, $($tok)*)
     };
     ($ctx:ident, ret $(,$ap:ident++)? ; $($tok:tt)*) => {
-        let body = InstructionBody::Ret(RetInstruction {});
+        let body = $crate::instructions::InstructionBody::Ret(
+            $crate::instructions::RetInstruction {}
+        );
         $crate::append_instruction!($ctx, body $(,$ap++)?);
         $crate::casm_extend!($ctx, $($tok)*)
     };
