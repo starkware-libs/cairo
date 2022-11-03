@@ -52,6 +52,7 @@ fn module_lowering_diagnostics(
             ModuleItemId::Struct(_) => {}
             ModuleItemId::Enum(_) => {}
             ModuleItemId::Trait(_) => {}
+            ModuleItemId::Impl(_) => {}
             ModuleItemId::ExternType(_) => {}
             ModuleItemId::ExternFunction(_) => {}
         }
