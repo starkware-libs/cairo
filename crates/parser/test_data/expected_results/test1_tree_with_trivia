@@ -1,6 +1,7 @@
 └── root (kind: SyntaxFile)
     ├── items (kind: ItemList)
     │   ├── child #0 (kind: ItemModule)
+    │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── module_kw (kind: TerminalModule)
     │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │   │   ├── token (kind: TokenModule): 'mod'
@@ -16,6 +17,7 @@
     │   │       └── trailing_trivia (kind: Trivia)
     │   │           └── child #0 (kind: TokenNewline).
     │   ├── child #1 (kind: ItemUse)
+    │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── use_kw (kind: TerminalUse)
     │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │   │   ├── token (kind: TokenUse): 'use'
@@ -42,6 +44,7 @@
     │   │       └── trailing_trivia (kind: Trivia)
     │   │           └── child #0 (kind: TokenNewline).
     │   ├── child #2 (kind: ItemFreeFunction)
+    │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── function_kw (kind: TerminalFunction)
     │   │   │   ├── leading_trivia (kind: Trivia)
     │   │   │   │   ├── child #0 (kind: TokenNewline).
@@ -641,6 +644,7 @@
     │   │           ├── token: Missing
     │   │           └── trailing_trivia (kind: Trivia) []
     │   ├── child #3 (kind: ItemFreeFunction)
+    │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── function_kw (kind: TerminalFunction)
     │   │   │   ├── leading_trivia (kind: Trivia)
     │   │   │   │   └── child #0 (kind: TokenNewline).
@@ -745,6 +749,7 @@
     │   │       └── trailing_trivia (kind: Trivia)
     │   │           └── child #0 (kind: TokenNewline).
     │   ├── child #5 (kind: ItemExternFunction)
+    │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── extern_kw (kind: TerminalExtern)
     │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │   │   ├── token (kind: TokenExtern): 'extern'
@@ -844,6 +849,7 @@
     │   │       ├── token: Missing
     │   │       └── trailing_trivia (kind: Trivia) []
     │   └── child #6 (kind: ItemStruct)
+    │       ├── attributes (kind: AttributeList) []
     │       ├── struct_kw (kind: TerminalStruct)
     │       │   ├── leading_trivia (kind: Trivia)
     │       │   │   ├── child #0 (kind: TokenSkipped): '<'
