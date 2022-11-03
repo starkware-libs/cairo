@@ -514,6 +514,7 @@ impl<'a> Formatter<'a> {
         self.empty_lines_allowance = 0;
         self.format_token(&token, no_space_after || syntax_node.force_no_space_after(self.db));
         let allowed_newlines = if syntax_node.allow_newline_after(self.db) { 1 } else { 0 };
+        // println!("{}", allowed_newlines);
         self.format_trivia(trailing_trivia, allowed_newlines);
     }
     /// Appends a trivia node (if needed) to the result.

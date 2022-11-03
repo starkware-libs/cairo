@@ -104,7 +104,10 @@ impl SyntaxNodeFormat for SyntaxNode {
             | SyntaxKind::ItemStruct
             | SyntaxKind::ItemEnum
             | SyntaxKind::ItemModule
-            | SyntaxKind::ItemUse => true,
+            | SyntaxKind::ItemUse => {
+                println!("{}", self.kind(db));
+                return true;
+            }
             SyntaxKind::TerminalComma
                 if matches!(parent_kind(db, self), Some(SyntaxKind::MatchArms)) =>
             {
@@ -118,8 +121,11 @@ impl SyntaxNodeFormat for SyntaxNode {
     }
 
     // TODO(gil): consider removing this function as it is no longer used.
-    fn allow_newline_after(&self, _db: &dyn SyntaxGroup) -> bool {
-        false
+    fn allow_newline_after(&self, db: &dyn SyntaxGroup) -> bool {
+        match self.kind(db) {
+            SyntaxKind::Attributes => true,
+            _ => false,
+        }
     }
 
     fn allowed_empty_between(&self, db: &dyn SyntaxGroup) -> usize {

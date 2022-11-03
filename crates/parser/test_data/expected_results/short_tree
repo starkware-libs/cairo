@@ -10,6 +10,7 @@
     │   │   │       └── ident (kind: TokenIdentifier): 'format'
     │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   └── child #1 (kind: ItemFreeFunction)
+    │       ├── attributes (kind: OptionAttributesEmpty) []
     │       ├── function_kw (kind: TokenFunction): 'func'
     │       ├── name (kind: TokenIdentifier): 'foo'
     │       ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []

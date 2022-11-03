@@ -49,6 +49,7 @@ fn is_empty_kind(kind: SyntaxKind) -> bool {
             | SyntaxKind::OptionReturnTypeClauseEmpty
             | SyntaxKind::OptionTerminalSemicolonEmpty
             | SyntaxKind::OptionWrappedGenericParamListEmpty
+            | SyntaxKind::OptionAttributesEmpty
     )
 }
 

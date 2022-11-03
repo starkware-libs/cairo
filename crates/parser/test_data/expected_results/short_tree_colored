@@ -10,6 +10,7 @@
     │   │   │       └── [34mident[0m (kind: TokenIdentifier): '[1;32mformat[0m'
     │   │   └── [34msemicolon[0m (kind: TokenSemicolon): '[1;32m;[0m'
     │   └── [36mchild #1[0m (kind: ItemFreeFunction)
+    │       ├── [36mattributes[0m (kind: OptionAttributesEmpty)[95m [][0m
     │       ├── [34mfunction_kw[0m (kind: TokenFunction): '[1;32mfunc[0m'
     │       ├── [34mname[0m (kind: TokenIdentifier): '[1;32mfoo[0m'
     │       ├── [36mgeneric_params[0m (kind: OptionWrappedGenericParamListEmpty)[95m [][0m

@@ -42,6 +42,7 @@
     │   │       └── trailing_trivia (kind: Trivia)
     │   │           └── child #0 (kind: TokenNewline).
     │   ├── child #2 (kind: ItemFreeFunction)
+    │   │   ├── attributes (kind: OptionAttributesEmpty) []
     │   │   ├── function_kw (kind: TerminalFunction)
     │   │   │   ├── leading_trivia (kind: Trivia)
     │   │   │   │   ├── child #0 (kind: TokenNewline).
@@ -641,6 +642,7 @@
     │   │           ├── token: Missing
     │   │           └── trailing_trivia (kind: Trivia) []
     │   ├── child #3 (kind: ItemFreeFunction)
+    │   │   ├── attributes (kind: OptionAttributesEmpty) []
     │   │   ├── function_kw (kind: TerminalFunction)
     │   │   │   ├── leading_trivia (kind: Trivia)
     │   │   │   │   └── child #0 (kind: TokenNewline).

@@ -14,6 +14,7 @@
     │   │   │       └── ident (kind: TokenIdentifier): 'something'
     │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   ├── child #2 (kind: ItemFreeFunction)
+    │   │   ├── attributes (kind: OptionAttributesEmpty) []
     │   │   ├── function_kw (kind: TokenFunction): 'func'
     │   │   ├── name (kind: TokenIdentifier): 'foo'
     │   │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
@@ -217,6 +218,7 @@
     │   │       │       └── semicolon (kind: TokenSemicolon): ';'
     │   │       └── rbrace: Missing
     │   ├── child #3 (kind: ItemFreeFunction)
+    │   │   ├── attributes (kind: OptionAttributesEmpty) []
     │   │   ├── function_kw (kind: TokenFunction): 'func'
     │   │   ├── name (kind: TokenIdentifier): 'bar'
     │   │   ├── generic_params (kind: WrappedGenericParamList)

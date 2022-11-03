@@ -135,7 +135,11 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalStruct => Some(self.expect_struct().into()),
             SyntaxKind::TerminalEnum => Some(self.expect_enum().into()),
             SyntaxKind::TerminalExtern => Some(self.expect_extern_item()),
-            SyntaxKind::TerminalFunction => Some(self.expect_free_function().into()),
+
+            // TODO(ilya): Support attributes on structs.
+            SyntaxKind::TerminalFunction | SyntaxKind::TerminalHashTag => {
+                Some(self.expect_free_function().into())
+            }
             SyntaxKind::TerminalUse => Some(self.expect_use().into()),
             SyntaxKind::TerminalTrait => Some(self.expect_trait().into()),
             SyntaxKind::TerminalImpl => Some(self.expect_impl().into()),
@@ -245,9 +249,25 @@ impl<'a> Parser<'a> {
         ItemUse::new_green(self.db, use_kw, path, semicolon)
     }
 
+    /// Assumes the current token is attribute.
+    /// Expected pattern:  # [ identifier ].
+    fn parse_optional_attributes(&mut self) -> OptionAttributesGreen {
+        if self.peek().kind != SyntaxKind::TerminalHashTag {
+            return OptionAttributesEmpty::new_green(self.db).into();
+        }
+
+        let hashtag = self.parse_token::<TerminalHashTag>();
+        let lbrack = self.parse_token::<TerminalLBrack>();
+        let attr = self.parse_token::<TerminalIdentifier>();
+        let rbrack = self.parse_token::<TerminalRBrack>();
+
+        Attributes::new_green(self.db, hashtag, lbrack, attr, rbrack).into()
+    }
+
     /// Assumes the current token is Function.
     /// Expected pattern: <FunctionSignature><Block>
     fn expect_free_function(&mut self) -> ItemFreeFunctionGreen {
+        let attributes = self.parse_optional_attributes();
         let function_kw = self.take::<TerminalFunction>();
         let name = self.parse_token::<TerminalIdentifier>();
         let generic_params = self.parse_optional_generic_params();
@@ -255,6 +275,7 @@ impl<'a> Parser<'a> {
         let function_body = self.parse_block();
         ItemFreeFunction::new_green(
             self.db,
+            attributes,
             function_kw,
             name,
             generic_params,
