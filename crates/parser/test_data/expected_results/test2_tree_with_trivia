@@ -1,6 +1,7 @@
 └── root (kind: SyntaxFile)
     ├── items (kind: ItemList)
     │   ├── child #0 (kind: ItemFreeFunction)
+    │   │   ├── attributes (kind: OptionAttributesEmpty) []
     │   │   ├── function_kw (kind: TerminalFunction)
     │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │   │   ├── token (kind: TokenFunction): 'func'
@@ -387,6 +388,7 @@
     │   │       ├── token: Missing
     │   │       └── trailing_trivia (kind: Trivia) []
     │   ├── child #2 (kind: ItemFreeFunction)
+    │   │   ├── attributes (kind: OptionAttributesEmpty) []
     │   │   ├── function_kw (kind: TerminalFunction)
     │   │   │   ├── leading_trivia (kind: Trivia)
     │   │   │   │   ├── child #0 (kind: TokenSkipped): '{'

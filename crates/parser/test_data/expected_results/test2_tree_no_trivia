@@ -1,6 +1,7 @@
 └── root (kind: SyntaxFile)
     ├── items (kind: ItemList)
     │   ├── child #0 (kind: ItemFreeFunction)
+    │   │   ├── attributes (kind: OptionAttributesEmpty) []
     │   │   ├── function_kw (kind: TokenFunction): 'func'
     │   │   ├── name (kind: TokenIdentifier): 'foo'
     │   │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
@@ -136,6 +137,7 @@
     │   │   ├── name (kind: TokenIdentifier): 'my_mod'
     │   │   └── semicolon: Missing
     │   ├── child #2 (kind: ItemFreeFunction)
+    │   │   ├── attributes (kind: OptionAttributesEmpty) []
     │   │   ├── function_kw (kind: TokenFunction): 'func'
     │   │   ├── name (kind: TokenIdentifier): 'bar'
     │   │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []

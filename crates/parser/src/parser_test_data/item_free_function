@@ -4,6 +4,7 @@
 test_partial_parser_tree
 
 //! > cairo_code
+#[external]
 func foo(a: int) -> felt {
     return a;
 }
@@ -17,6 +18,11 @@ FunctionSignature
 
 //! > expected_tree
 └── Top level kind: ItemFreeFunction
+    ├── attributes (kind: Attributes)
+    │   ├── hashtag (kind: TokenHashTag): '#'
+    │   ├── lbrack (kind: TokenLBrack): '['
+    │   ├── attr (kind: TokenIdentifier): 'external'
+    │   └── rbrack (kind: TokenRBrack): ']'
     ├── function_kw (kind: TokenFunction): 'func'
     ├── name (kind: TokenIdentifier): 'foo'
     ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
