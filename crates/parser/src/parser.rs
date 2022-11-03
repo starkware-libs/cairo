@@ -127,50 +127,70 @@ impl<'a> Parser<'a> {
     /// If can't parse as a top level item, keeps skipping tokens until it can.
     /// Returns None only when it reaches EOF.
     pub fn try_parse_top_level_item(&mut self) -> Option<ItemGreen> {
+        let attributes = self.parse_attribute_list();
+
         match self.peek().kind {
-            SyntaxKind::TerminalModule => Some(self.expect_module().into()),
-            SyntaxKind::TerminalStruct => Some(self.expect_struct().into()),
-            SyntaxKind::TerminalEnum => Some(self.expect_enum().into()),
-            SyntaxKind::TerminalExtern => Some(self.expect_extern_item()),
-            SyntaxKind::TerminalFunction => Some(self.expect_free_function().into()),
-            SyntaxKind::TerminalUse => Some(self.expect_use().into()),
-            SyntaxKind::TerminalTrait => Some(self.expect_trait().into()),
-            SyntaxKind::TerminalImpl => Some(self.expect_impl().into()),
+            SyntaxKind::TerminalModule => Some(self.expect_module(attributes).into()),
+            SyntaxKind::TerminalStruct => Some(self.expect_struct(attributes).into()),
+            SyntaxKind::TerminalEnum => Some(self.expect_enum(attributes).into()),
+            SyntaxKind::TerminalExtern => Some(self.expect_extern_item(attributes)),
+            SyntaxKind::TerminalFunction => Some(self.expect_free_function(attributes).into()),
+            SyntaxKind::TerminalUse => Some(self.expect_use(attributes).into()),
+            SyntaxKind::TerminalTrait => Some(self.expect_trait(attributes).into()),
+            SyntaxKind::TerminalImpl => Some(self.expect_impl(attributes).into()),
             _ => None,
         }
     }
 
     /// Assumes the current token is Module.
     /// Expected pattern: mod<Identifier>\{<ItemList>\}
-    fn expect_module(&mut self) -> ItemModuleGreen {
+    fn expect_module(&mut self, attributes: AttributeListGreen) -> ItemModuleGreen {
         let module_kw = self.take::<TerminalModule>();
         let name = self.parse_token::<TerminalIdentifier>();
         let semicolon = self.parse_token::<TerminalSemicolon>();
-        ItemModule::new_green(self.db, module_kw, name, semicolon)
+        ItemModule::new_green(self.db, attributes, module_kw, name, semicolon)
     }
 
     /// Assumes the current token is Struct.
     /// Expected pattern: struct<Identifier>{<ParamList>}
-    fn expect_struct(&mut self) -> ItemStructGreen {
+    fn expect_struct(&mut self, attributes: AttributeListGreen) -> ItemStructGreen {
         let struct_kw = self.take::<TerminalStruct>();
         let name = self.parse_token::<TerminalIdentifier>();
         let generic_params = self.parse_optional_generic_params();
         let lbrace = self.parse_token::<TerminalLBrace>();
         let members = self.parse_member_list();
         let rbrace = self.parse_token::<TerminalRBrace>();
-        ItemStruct::new_green(self.db, struct_kw, name, generic_params, lbrace, members, rbrace)
+        ItemStruct::new_green(
+            self.db,
+            attributes,
+            struct_kw,
+            name,
+            generic_params,
+            lbrace,
+            members,
+            rbrace,
+        )
     }
 
     /// Assumes the current token is Enum.
     /// Expected pattern: enum<Identifier>{<ParamList>}
-    fn expect_enum(&mut self) -> ItemEnumGreen {
+    fn expect_enum(&mut self, attributes: AttributeListGreen) -> ItemEnumGreen {
         let enum_kw = self.take::<TerminalEnum>();
         let name = self.parse_token::<TerminalIdentifier>();
         let generic_params = self.parse_optional_generic_params();
         let lbrace = self.parse_token::<TerminalLBrace>();
         let variants = self.parse_member_list();
         let rbrace = self.parse_token::<TerminalRBrace>();
-        ItemEnum::new_green(self.db, enum_kw, name, generic_params, lbrace, variants, rbrace)
+        ItemEnum::new_green(
+            self.db,
+            attributes,
+            enum_kw,
+            name,
+            generic_params,
+            lbrace,
+            variants,
+            rbrace,
+        )
     }
 
     /// Expected pattern: <ParenthesizedParamList><ReturnTypeClause>
@@ -193,7 +213,7 @@ impl<'a> Parser<'a> {
 
     /// Assumes the current token is Extern.
     /// Expected pattern: extern(<FunctionSignature>|type<Identifier>);
-    fn expect_extern_item(&mut self) -> ItemGreen {
+    fn expect_extern_item(&mut self, attributes: AttributeListGreen) -> ItemGreen {
         let extern_kw = self.take::<TerminalExtern>();
         match self.peek().kind {
             SyntaxKind::TerminalFunction => {
@@ -204,6 +224,7 @@ impl<'a> Parser<'a> {
                 let semicolon = self.parse_token::<TerminalSemicolon>();
                 ItemExternFunction::new_green(
                     self.db,
+                    attributes,
                     extern_kw,
                     function_kw,
                     name,
@@ -235,16 +256,42 @@ impl<'a> Parser<'a> {
 
     /// Assumes the current token is Use.
     /// Expected pattern: use<Path>;
-    fn expect_use(&mut self) -> ItemUseGreen {
+    fn expect_use(&mut self, attributes: AttributeListGreen) -> ItemUseGreen {
         let use_kw = self.take::<TerminalUse>();
         let path = self.parse_path();
         let semicolon = self.parse_token::<TerminalSemicolon>();
-        ItemUse::new_green(self.db, use_kw, path, semicolon)
+        ItemUse::new_green(self.db, attributes, use_kw, path, semicolon)
+    }
+
+    /// Returns a GreenId of a node with an attribute kind or None if an attribute can't be parsed.
+    fn try_parse_attribute(&mut self) -> Option<AttributeGreen> {
+        match self.peek().kind {
+            SyntaxKind::TerminalHash => {
+                // TODO(ilya): Support attributes with values, i.e. #[derive(Copy, Clone)].
+                let hash = self.take::<TerminalHash>();
+                let lbrack = self.parse_token::<TerminalLBrack>();
+                let attr = self.parse_token::<TerminalIdentifier>();
+                let rbrack = self.parse_token::<TerminalRBrack>();
+
+                Some(Attribute::new_green(self.db, hash, lbrack, attr, rbrack))
+            }
+            _ => None,
+        }
+    }
+
+    /// Parses an attribute list.
+    fn parse_attribute_list(&mut self) -> AttributeListGreen {
+        let expected_elements =
+            "Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/Attribute";
+        AttributeList::new_green(
+            self.db,
+            self.parse_list(Self::try_parse_attribute, is_of_kind!(top_level), expected_elements),
+        )
     }
 
     /// Assumes the current token is Function.
     /// Expected pattern: <FunctionSignature><Block>
-    fn expect_free_function(&mut self) -> ItemFreeFunctionGreen {
+    fn expect_free_function(&mut self, attributes: AttributeListGreen) -> ItemFreeFunctionGreen {
         let function_kw = self.take::<TerminalFunction>();
         let name = self.parse_token::<TerminalIdentifier>();
         let generic_params = self.parse_optional_generic_params();
@@ -252,6 +299,7 @@ impl<'a> Parser<'a> {
         let function_body = self.parse_block();
         ItemFreeFunction::new_green(
             self.db,
+            attributes,
             function_kw,
             name,
             generic_params,
@@ -261,7 +309,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Assumes the current token is Trait.
-    fn expect_trait(&mut self) -> ItemTraitGreen {
+    fn expect_trait(&mut self, attributes: AttributeListGreen) -> ItemTraitGreen {
         let trait_kw = self.take::<TerminalTrait>();
         let name = self.parse_token::<TerminalIdentifier>();
         let generic_params = self.parse_optional_generic_params();
@@ -274,11 +322,11 @@ impl<'a> Parser<'a> {
             self.parse_token::<TerminalSemicolon>().into()
         };
 
-        ItemTrait::new_green(self.db, trait_kw, name, generic_params, body)
+        ItemTrait::new_green(self.db, attributes, trait_kw, name, generic_params, body)
     }
 
     /// Assumes the current token is Impl.
-    fn expect_impl(&mut self) -> ItemImplGreen {
+    fn expect_impl(&mut self, attributes: AttributeListGreen) -> ItemImplGreen {
         let impl_kw = self.take::<TerminalImpl>();
         let name = self.parse_token::<TerminalIdentifier>();
         let generic_params = self.parse_optional_generic_params();
@@ -293,7 +341,16 @@ impl<'a> Parser<'a> {
             self.parse_token::<TerminalSemicolon>().into()
         };
 
-        ItemImpl::new_green(self.db, impl_kw, name, generic_params, of_kw, trait_path, body)
+        ItemImpl::new_green(
+            self.db,
+            attributes,
+            impl_kw,
+            name,
+            generic_params,
+            of_kw,
+            trait_path,
+            body,
+        )
     }
 
     // ------------------------------- Expressions -------------------------------
