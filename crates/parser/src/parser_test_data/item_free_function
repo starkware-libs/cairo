@@ -4,6 +4,8 @@
 test_partial_parser_tree
 
 //! > cairo_code
+#[external]
+#[view]
 func foo(a: int) -> felt {
     return a;
 }
@@ -17,6 +19,17 @@ FunctionSignature
 
 //! > expected_tree
 └── Top level kind: ItemFreeFunction
+    ├── attributes (kind: AttributeList)
+    │   ├── child #0 (kind: Attribute)
+    │   │   ├── hash (kind: TokenHash): '#'
+    │   │   ├── lbrack (kind: TokenLBrack): '['
+    │   │   ├── attr (kind: TokenIdentifier): 'external'
+    │   │   └── rbrack (kind: TokenRBrack): ']'
+    │   └── child #1 (kind: Attribute)
+    │       ├── hash (kind: TokenHash): '#'
+    │       ├── lbrack (kind: TokenLBrack): '['
+    │       ├── attr (kind: TokenIdentifier): 'view'
+    │       └── rbrack (kind: TokenRBrack): ']'
     ├── function_kw (kind: TokenFunction): 'func'
     ├── name (kind: TokenIdentifier): 'foo'
     ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
