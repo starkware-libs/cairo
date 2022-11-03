@@ -1,6 +1,7 @@
 └── root (kind: SyntaxFile)
     ├── items (kind: ItemList)
     │   ├── child #0 (kind: ItemFreeFunction)
+    │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── function_kw (kind: TokenFunction): 'func'
     │   │   ├── name (kind: TokenIdentifier): 'foo'
     │   │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
@@ -132,10 +133,12 @@
     │   │       │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │   │       └── rbrace (kind: TokenRBrace): '}'
     │   ├── child #1 (kind: ItemModule)
+    │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── module_kw (kind: TokenModule): 'mod'
     │   │   ├── name (kind: TokenIdentifier): 'my_mod'
     │   │   └── semicolon: Missing
     │   ├── child #2 (kind: ItemFreeFunction)
+    │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── function_kw (kind: TokenFunction): 'func'
     │   │   ├── name (kind: TokenIdentifier): 'bar'
     │   │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
@@ -212,6 +215,7 @@
     │   │       │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │   │       └── rbrace (kind: TokenRBrace): '}'
     │   └── child #3 (kind: ItemStruct)
+    │       ├── attributes (kind: AttributeList) []
     │       ├── struct_kw (kind: TokenStruct): 'struct'
     │       ├── name (kind: TokenIdentifier): 'A'
     │       ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
