@@ -40,7 +40,7 @@ pub fn parse_test_file(filename: &Path) -> io::Result<OrderedHashMap<String, Tes
     while let Some(Ok(line)) = lines.next() {
         line_num += 1;
         if let Some(line) = line.strip_prefix(TAG_PREFIX) {
-            if builder.current_test_name == None {
+            if builder.current_test_name.is_none() {
                 builder.set_test_name(line.into(), line_num);
             } else if line.starts_with("===") {
                 // Separate tests.
