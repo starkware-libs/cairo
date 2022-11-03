@@ -1,4 +1,4 @@
-edition = "2018"
+edition = "2021"
 newline_style = "unix"
 use_field_init_shorthand = true
 use_small_heuristics = "Max"
@@ -27,7 +27,7 @@ wrap_comments = true
 #         "--",
 #         "rustfmt",
 #         "--edition",
-#         "2018",
+#         "2021",
 #         "--"
 #     ]
 # and run "rustup toolchain install nightly-2022-07-27".
