@@ -7,9 +7,9 @@ edition.workspace = true
 db_utils = { path = "../db_utils" }
 debug = { path = "../debug" }
 filesystem = { path = "../filesystem" }
-salsa = "0.16.1"
-smol_str = "0.1.23"
+salsa.workspace = true
+smol_str.workspace = true
 utils = { path = "../utils" }
 
 [dev-dependencies]
-pretty_assertions = "1.2.1"
+pretty_assertions.workspace = true
