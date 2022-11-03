@@ -52,7 +52,6 @@ impl ApplyApChange for BinOpExpression {
 /// The expression representing a cell in the Sierra intermediate memory.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum CellExpression {
-    AllocateSegment,
     Deref(CellRef),
     DoubleDeref(CellRef),
     IntoSingleCellRef(CellRef),
@@ -97,9 +96,7 @@ impl ApplyApChange for CellExpression {
             CellExpression::BinOp(operand) => {
                 CellExpression::BinOp(operand.apply_ap_change(ap_change)?)
             }
-            expr @ (CellExpression::AllocateSegment
-            | CellExpression::Padding
-            | CellExpression::Immediate(_)) => expr,
+            expr @ (CellExpression::Padding | CellExpression::Immediate(_)) => expr,
         })
     }
 }
