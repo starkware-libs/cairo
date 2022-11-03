@@ -1,6 +1,7 @@
 └── root (kind: SyntaxFile)
     ├── items (kind: ItemList)
     │   ├── child #0 (kind: ItemFreeFunction)
+    │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── function_kw (kind: TerminalFunction)
     │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │   │   ├── token (kind: TokenFunction): 'func'
@@ -368,6 +369,7 @@
     │   │           └── trailing_trivia (kind: Trivia)
     │   │               └── child #0 (kind: TokenNewline).
     │   ├── child #1 (kind: ItemModule)
+    │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── module_kw (kind: TerminalModule)
     │   │   │   ├── leading_trivia (kind: Trivia)
     │   │   │   │   ├── child #0 (kind: TokenNewline).
@@ -387,6 +389,7 @@
     │   │       ├── token: Missing
     │   │       └── trailing_trivia (kind: Trivia) []
     │   ├── child #2 (kind: ItemFreeFunction)
+    │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── function_kw (kind: TerminalFunction)
     │   │   │   ├── leading_trivia (kind: Trivia)
     │   │   │   │   ├── child #0 (kind: TokenSkipped): '{'
@@ -578,6 +581,7 @@
     │   │           └── trailing_trivia (kind: Trivia)
     │   │               └── child #0 (kind: TokenNewline).
     │   └── child #3 (kind: ItemStruct)
+    │       ├── attributes (kind: AttributeList) []
     │       ├── struct_kw (kind: TerminalStruct)
     │       │   ├── leading_trivia (kind: Trivia)
     │       │   │   └── child #0 (kind: TokenWhitespace).

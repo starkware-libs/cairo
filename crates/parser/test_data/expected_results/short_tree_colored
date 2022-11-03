@@ -1,6 +1,7 @@
 └── [36mroot[0m (kind: SyntaxFile)
     ├── [36mitems[0m (kind: ItemList)
     │   ├── [36mchild #0[0m (kind: ItemUse)
+    │   │   ├── [36mattributes[0m (kind: AttributeList)[95m [][0m
     │   │   ├── [34muse_kw[0m (kind: TokenUse): '[1;32muse[0m'
     │   │   ├── [36mname[0m (kind: ExprPath)
     │   │   │   ├── [36mitem #0[0m (kind: PathSegmentSimple)
@@ -10,6 +11,7 @@
     │   │   │       └── [34mident[0m (kind: TokenIdentifier): '[1;32mformat[0m'
     │   │   └── [34msemicolon[0m (kind: TokenSemicolon): '[1;32m;[0m'
     │   └── [36mchild #1[0m (kind: ItemFreeFunction)
+    │       ├── [36mattributes[0m (kind: AttributeList)[95m [][0m
     │       ├── [34mfunction_kw[0m (kind: TokenFunction): '[1;32mfunc[0m'
     │       ├── [34mname[0m (kind: TokenIdentifier): '[1;32mfoo[0m'
     │       ├── [36mgeneric_params[0m (kind: OptionWrappedGenericParamListEmpty)[95m [][0m
