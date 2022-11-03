@@ -7,5 +7,5 @@ edition.workspace = true
 testing = []
 
 [dependencies]
-indexmap = "1.9.1"
-itertools = "0.10.3"
+indexmap.workspace = true
+itertools.workspace = true
