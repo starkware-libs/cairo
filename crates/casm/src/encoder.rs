@@ -39,7 +39,7 @@ impl InstructionRepr {
             flags |= 1 << OP0_REG_BIT;
         }
         assert_eq!(
-            self.imm != None,
+            self.imm.is_some(),
             self.op1_addr == Op1Addr::Imm,
             "Immediate must appear iff op1_addr is Op1Addr.IMM"
         );

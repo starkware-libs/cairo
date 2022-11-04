@@ -38,7 +38,7 @@ fn function_id_double_declaration() {
                 .unwrap()
         )
         .map(|_| ()),
-        Err(ProgramRegistryError::FunctionIdAlreadyExists("used_id".into()))
+        Err(Box::new(ProgramRegistryError::FunctionIdAlreadyExists("used_id".into())))
     );
 }
 
@@ -54,7 +54,7 @@ fn type_id_double_declaration() {
                 .unwrap()
         )
         .map(|_| ()),
-        Err(ProgramRegistryError::TypeConcreteIdAlreadyExists("used_id".into()))
+        Err(Box::new(ProgramRegistryError::TypeConcreteIdAlreadyExists("used_id".into())))
     );
 }
 
@@ -70,10 +70,10 @@ fn concrete_type_double_declaration() {
                 .unwrap()
         )
         .map(|_| ()),
-        Err(ProgramRegistryError::TypeAlreadyDeclared(TypeDeclaration {
+        Err(Box::new(ProgramRegistryError::TypeAlreadyDeclared(Box::new(TypeDeclaration {
             id: "int2".into(),
             long_id: ConcreteTypeLongId { generic_id: "uint128".into(), generic_args: vec![] },
-        }))
+        }))))
     );
 }
 
@@ -91,6 +91,6 @@ fn libfunc_id_double_declaration() {
                 .unwrap()
         )
         .map(|_| ()),
-        Err(ProgramRegistryError::LibFuncConcreteIdAlreadyExists("used_id".into()))
+        Err(Box::new(ProgramRegistryError::LibFuncConcreteIdAlreadyExists("used_id".into())))
     );
 }

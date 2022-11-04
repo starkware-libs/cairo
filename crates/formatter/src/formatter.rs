@@ -469,7 +469,7 @@ impl<'a> Formatter<'a> {
     }
     /// Formats an internal node and appends the formatted string to the result.
     fn format_internal(&mut self, syntax_node: &SyntaxNode, no_space_after: bool) {
-        let indent_change = if syntax_node.should_change_indent(self.db) { 1 } else { 0 };
+        let indent_change = usize::from(syntax_node.should_change_indent(self.db));
         let allowed_empty_between = syntax_node.allowed_empty_between(self.db);
         let no_space_after = no_space_after || syntax_node.force_no_space_after(self.db);
 
@@ -513,7 +513,7 @@ impl<'a> Formatter<'a> {
         self.format_trivia(leading_trivia, self.empty_lines_allowance);
         self.empty_lines_allowance = 0;
         self.format_token(&token, no_space_after || syntax_node.force_no_space_after(self.db));
-        let allowed_newlines = if syntax_node.allow_newline_after(self.db) { 1 } else { 0 };
+        let allowed_newlines = usize::from(syntax_node.allow_newline_after(self.db));
         self.format_trivia(trailing_trivia, allowed_newlines);
     }
     /// Appends a trivia node (if needed) to the result.

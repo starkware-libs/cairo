@@ -34,7 +34,7 @@ pub enum LibFuncSimulationError {
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum SimulationError {
     #[error("error from the program registry")]
-    ProgramRegistryError(#[from] ProgramRegistryError),
+    ProgramRegistryError(#[from] Box<ProgramRegistryError>),
     #[error("error from editing a variable state")]
     EditStateError(EditStateError, StatementIdx),
     #[error("error from simulating a libfunc")]

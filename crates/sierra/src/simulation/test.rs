@@ -1,5 +1,5 @@
 use bimap::BiMap;
-use num_bigint::ToBigInt;
+use num_bigint::BigInt;
 use test_case::test_case;
 
 use super::value::CoreValue::{
@@ -23,7 +23,7 @@ fn type_arg(name: &str) -> GenericArg {
 }
 
 fn value_arg(v: i64) -> GenericArg {
-    GenericArg::Value(v.to_bigint().unwrap())
+    GenericArg::Value(BigInt::from(v))
 }
 
 fn user_func_arg(name: &str) -> GenericArg {
