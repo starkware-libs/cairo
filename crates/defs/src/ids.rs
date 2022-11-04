@@ -314,7 +314,7 @@ impl DebugWithDb<dyn DefsGroup> for LocalVarLongId {
         let LocalVarLongId(module_id, ptr) = self;
         let file_id = db.module_file(*module_id).ok_or(std::fmt::Error)?;
         let root = db.file_syntax(file_id).ok_or(std::fmt::Error)?;
-        let text = ast::TerminalIdentifier::from_ptr(syntax_db, &*root, *ptr).text(syntax_db);
+        let text = ast::TerminalIdentifier::from_ptr(syntax_db, &root, *ptr).text(syntax_db);
         write!(f, "LocalVarId({}::{})", module_id.full_path(db), text)
     }
 }

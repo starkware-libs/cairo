@@ -21,7 +21,7 @@ mod test;
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum CostError {
     #[error("error from the program registry")]
-    ProgramRegistryError(#[from] ProgramRegistryError),
+    ProgramRegistryError(#[from] Box<ProgramRegistryError>),
     #[error("found an illegal statement index during cost calculations")]
     StatementOutOfBounds(StatementIdx),
     #[error("failed solving the symbol tables")]

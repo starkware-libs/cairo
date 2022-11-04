@@ -65,7 +65,7 @@ pub fn lower(db: &dyn SemanticGroup, free_function_id: FreeFunctionId) -> Option
 
     let mut ctx = LoweringContext {
         db,
-        function_def: &*function_def,
+        function_def: &function_def,
         diagnostics: LoweringDiagnostics::new(free_function_id.module(db.upcast())),
         variables: Arena::default(),
         blocks: Arena::default(),

@@ -25,7 +25,7 @@ pub enum CompilationError {
     #[error("Failed building type information")]
     FailedBuildingTypeInformation,
     #[error("Error from program registry")]
-    ProgramRegistryError(ProgramRegistryError),
+    ProgramRegistryError(Box<ProgramRegistryError>),
     #[error(transparent)]
     AnnotationError(#[from] AnnotationError),
     #[error("#{statement_idx}: {error}")]
