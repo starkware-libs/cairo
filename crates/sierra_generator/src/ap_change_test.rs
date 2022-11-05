@@ -20,10 +20,8 @@ fn contains_cycles_test(
     inputs: &OrderedHashMap<String, String>,
 ) -> OrderedHashMap<String, String> {
     // Parse code and create semantic model.
-    let (test_module, semantic_diagnostics) =
-        setup_test_module(db, inputs["module_code"].as_str()).split();
+    let test_module = setup_test_module(db, inputs["module_code"].as_str()).unwrap();
 
-    assert_eq!(semantic_diagnostics, "", "Unexpected diagnostics.");
     db.module_lowering_diagnostics(test_module.module_id)
         .unwrap()
         .expect_with_db(db, "Unexpected diagnostics.");
