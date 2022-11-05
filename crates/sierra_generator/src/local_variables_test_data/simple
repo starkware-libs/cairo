@@ -19,7 +19,6 @@ func foo(x: felt) -> felt {
 }
 
 //! > module_code
-
 // Revokes ap since this function is recursive.
 func revoke_ap() -> felt {
     revoke_ap()
