@@ -110,18 +110,6 @@ impl<'a> ExprGeneratorContext<'a> {
         })
     }
 
-    pub fn function_call_libfunc_id(
-        &self,
-        func: semantic::FunctionId,
-    ) -> sierra::ids::ConcreteLibFuncId {
-        self.db.intern_concrete_lib_func(sierra::program::ConcreteLibFuncLongId {
-            generic_id: sierra::ids::GenericLibFuncId::from_string("function_call"),
-            generic_args: vec![sierra::program::GenericArg::UserFunc(
-                self.db.intern_sierra_function(func),
-            )],
-        })
-    }
-
     pub fn drop_libfunc_id(
         &self,
         ty: sierra::ids::ConcreteTypeId,
@@ -146,19 +134,6 @@ impl<'a> ExprGeneratorContext<'a> {
 
     pub fn revoke_ap_tracking_libfunc_id(&self) -> sierra::ids::ConcreteLibFuncId {
         self.get_libfunc_id_without_generics("revoke_ap_tracking")
-    }
-
-    pub fn generic_libfunc_id(
-        &self,
-        extern_id: defs::ids::ExternFunctionId,
-        generic_args: Vec<sierra::program::GenericArg>,
-    ) -> sierra::ids::ConcreteLibFuncId {
-        self.db.intern_concrete_lib_func(sierra::program::ConcreteLibFuncLongId {
-            generic_id: sierra::ids::GenericLibFuncId::from_string(
-                extern_id.name(self.db.upcast()),
-            ),
-            generic_args,
-        })
     }
 
     /// Add a SierraGenerator diagnostic to the list of diagnostics.
