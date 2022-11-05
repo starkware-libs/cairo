@@ -34,7 +34,7 @@ pub struct State {
     pub known_stack: KnownStack,
 }
 impl State {
-    /// Registers output variables of a libfunc. See `add_output`.
+    /// Registers output variables of a libfunc. See [Self::register_outputs].
     /// Clears the stack if needed.
     pub fn register_outputs(
         &mut self,
