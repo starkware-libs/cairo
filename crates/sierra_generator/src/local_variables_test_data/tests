@@ -1,0 +1,25 @@
+//! > Simple local variables
+
+//! > test_function_name
+check_find_local_variables
+
+//! > function_name
+foo
+
+//! > function_code
+func foo() -> felt {
+    0
+}
+
+//! > module_code
+
+//! > lowering_format
+blk0:
+Inputs:
+Statements:
+  (v0: core::felt) <- 0u
+Drops:
+End:
+  Callsite(v0)
+
+//! > local_variables
