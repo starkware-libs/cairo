@@ -1,6 +1,6 @@
 use crate::extensions::lib_func::{
-    LibFuncSignature, OutputVarInfo, SierraApChange, SignatureBasedConcreteLibFunc,
-    SignatureSpecializationContext, SpecializationContext,
+    LibFuncSignature, OutputVarInfo, SignatureBasedConcreteLibFunc, SignatureSpecializationContext,
+    SpecializationContext,
 };
 use crate::extensions::{NamedLibFunc, OutputVarReferenceInfo, SpecializationError};
 use crate::ids::GenericLibFuncId;
@@ -21,6 +21,7 @@ impl NamedLibFunc for FunctionCallLibFunc {
         match args {
             [GenericArg::UserFunc(function_id)] => {
                 let function = context.get_function_signature(function_id)?;
+                let ap_change = context.get_function_ap_change(function_id)?;
                 Ok(LibFuncSignature::new_non_branch(
                     function.param_types.clone(),
                     function
@@ -32,7 +33,7 @@ impl NamedLibFunc for FunctionCallLibFunc {
                             ref_info: OutputVarReferenceInfo::NewTempVar { idx: i },
                         })
                         .collect(),
-                    SierraApChange::NotImplemented,
+                    ap_change,
                 ))
             }
             _ => Err(SpecializationError::UnsupportedGenericArg),
