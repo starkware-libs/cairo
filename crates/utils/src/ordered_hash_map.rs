@@ -20,6 +20,10 @@ impl<Key: Hash + Eq, Value> OrderedHashMap<Key, Value> {
         self.0.iter()
     }
 
+    pub fn iter_mut(&mut self) -> indexmap::map::IterMut<'_, Key, Value> {
+        self.0.iter_mut()
+    }
+
     pub fn keys(&self) -> indexmap::map::Keys<'_, Key, Value> {
         self.0.keys()
     }
