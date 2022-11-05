@@ -34,6 +34,20 @@ pub trait SignatureSpecializationContext: TypeSpecializationContext {
             .ok_or_else(|| SpecializationError::MissingFunction(function_id.clone()))
     }
 
+    /// Returns the ap-change of the given function.
+    /// Note that this function is implemented only in the high-level compiler. It returns
+    /// [SierraApChange::NotImplemented] when Sierra is compiled to casm.
+    fn try_get_function_ap_change(&self, function_id: &FunctionId) -> Option<SierraApChange>;
+
+    /// Wraps [Self::try_get_function_ap_change] with a result object.
+    fn get_function_ap_change(
+        &self,
+        function_id: &FunctionId,
+    ) -> Result<SierraApChange, SpecializationError> {
+        self.try_get_function_ap_change(function_id)
+            .ok_or_else(|| SpecializationError::MissingFunction(function_id.clone()))
+    }
+
     /// Returns the concrete id of T<S> given generic type T and concrete type S.
     fn get_wrapped_concrete_type(
         &self,
@@ -247,6 +261,7 @@ impl From<ConcreteTypeId> for ParamSignature {
 /// Information regarding the reference created as an output of a library function.
 /// For example, whether the reference is equal to one of the parameters (as in the dup() function),
 /// or whether it's newly allocated local variable.
+#[derive(Debug)]
 pub enum OutputVarReferenceInfo {
     /// The output value is exactly the same as one of the parameters.
     SameAsParam { param_idx: usize },
@@ -273,6 +288,7 @@ pub enum DeferredOutputKind {
 }
 
 /// Contains information regarding an output variable in a single branch.
+#[derive(Debug)]
 pub struct OutputVarInfo {
     pub ty: ConcreteTypeId,
     pub ref_info: OutputVarReferenceInfo,
@@ -282,6 +298,7 @@ pub struct OutputVarInfo {
 /// for all the output variables in an output branch.
 ///
 /// See [OutputVarInfo].
+#[derive(Debug)]
 pub struct BranchSignature {
     /// Information about the new variables created in the branch.
     pub vars: Vec<OutputVarInfo>,
@@ -291,6 +308,7 @@ pub struct BranchSignature {
 
 /// Describes the effect on the `ap` register in a given libfunc branch.
 // TODO(ilya): Try to combine this with the ApChange of `sierra_to_casm`.
+#[derive(Debug)]
 pub enum SierraApChange {
     /// The libfunc changes `ap` in an unknown way.
     Unknown,

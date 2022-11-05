@@ -56,6 +56,12 @@ pub enum ApChange {
 
 /// Query implementation of [SierraGenGroup::get_ap_change].
 pub fn get_ap_change(db: &dyn SierraGenGroup, function_id: FreeFunctionId) -> Option<ApChange> {
+    // The implementation of get_ap_change() may call this function recursively. To guarantee no
+    // salsa query cycles are created, we first verify that there are no cycles.
+    if db.contains_cycle(function_id)? {
+        return Some(ApChange::Unknown);
+    }
+
     let function = &*db.free_function_sierra(function_id)?;
 
     // The ap change from the beginning of the function to the current instruction.
