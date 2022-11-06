@@ -721,10 +721,9 @@ fn extract_var_pattern(
     pattern: &semantic::Pattern,
     concrete_variant: &semantic::ConcreteVariant,
 ) -> Option<semantic::VarId> {
-    let enum_pattern = try_extract_matches!(&pattern, semantic::Pattern::Enum)?;
+    let enum_pattern = extract_matches!(&pattern, semantic::Pattern::Enum);
     assert_eq!(&enum_pattern.variant, concrete_variant, "Wrong variant");
-    let var_pattern =
-        try_extract_matches!(&*enum_pattern.inner_pattern, semantic::Pattern::Variable)?;
+    let var_pattern = extract_matches!(&*enum_pattern.inner_pattern, semantic::Pattern::Variable);
     let semantic_var_id = semantic::VarId::Local(var_pattern.var.id);
     Some(semantic_var_id)
 }

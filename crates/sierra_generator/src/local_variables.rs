@@ -117,7 +117,20 @@ fn inner_find_local_variables(
             lowering::Statement::StructConstruct => todo!(),
             lowering::Statement::StructDestructure => todo!(),
             lowering::Statement::EnumConstruct(_) => todo!(),
-            lowering::Statement::MatchEnum(_) => todo!(),
+            lowering::Statement::MatchEnum(statement_match_enum) => {
+                for (_variant, block_id) in &statement_match_enum.arms {
+                    let mut state_clone = state.clone();
+
+                    for var_id in &lowered_function.blocks[*block_id].inputs {
+                        state_clone.set_variable_status(*var_id, VariableStatus::TemporaryVariable);
+                    }
+
+                    inner_find_local_variables(db, lowered_function, *block_id, state_clone, res)?;
+                }
+                state.revoke_temporary_variables();
+                known_ap_change = false;
+                state.mark_outputs_as_temporary(statement);
+            }
             lowering::Statement::TupleConstruct(_) => todo!(),
             lowering::Statement::TupleDestructure(_) => todo!(),
         }
