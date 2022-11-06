@@ -109,7 +109,7 @@ test_function_lowering
 
 //! > function
 func foo(x: felt) -> felt {
-    if x == 0 {
+    if 0 == x {
         return 10;
     }
     20
@@ -151,3 +151,59 @@ Statements:
 Drops: v0
 End:
   Callsite(v3)
+
+//! > ==========================================================================
+
+//! > Test if x == y
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+func foo(x: felt, y: felt, z: felt, w: felt) -> felt {
+    if x + y == z - w {
+        0
+    } else {
+        1
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_format
+blk0:
+Inputs:
+Statements:
+  (v7: core::felt) <- 0u
+Drops:
+End:
+  Callsite(v7)
+
+blk1:
+Inputs: v8: core::NonZero::<core::felt>
+Statements:
+  (v9: core::felt) <- 1u
+Drops: v8
+End:
+  Callsite(v9)
+
+blk2:
+Inputs: v0: core::felt, v1: core::felt, v2: core::felt, v3: core::felt
+Statements:
+  (v4: core::felt) <- core::felt_add(v0, v1)
+  (v5: core::felt) <- core::felt_sub(v2, v3)
+  (v6: core::felt) <- core::felt_sub(v4, v5)
+  (v10: core::felt) <- match core::felt_jump_nz(v6) {
+    () => blk0,
+    (v8) => blk1,
+  }
+Drops: v0, v1, v2, v3, v4, v5, v6
+End:
+  Callsite(v10)
