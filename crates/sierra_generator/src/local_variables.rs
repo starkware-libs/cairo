@@ -93,7 +93,12 @@ fn inner_find_local_variables(
                 state.mark_outputs_as_temporary(statement);
             }
             lowering::Statement::MatchExtern(statement_match_extern) => {
-                for block_id in &statement_match_extern.arms {
+                let (_, concrete_function_id) =
+                    get_concrete_libfunc_id(db, statement_match_extern.function);
+                let libfunc_signature = get_libfunc_signature(db, concrete_function_id);
+                for (block_id, branch_signature) in
+                    zip_eq(&statement_match_extern.arms, libfunc_signature.branch_signatures)
+                {
                     inner_find_local_variables(
                         db,
                         lowered_function,
