@@ -31,74 +31,6 @@ fn find_local_variables(
     Some(res)
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum VariableStatus {
-    TemporaryVariable,
-    Revoked,
-}
-
-#[derive(Clone, Debug)]
-struct LocalVariablesState {
-    variables: OrderedHashMap<VariableId, VariableStatus>,
-}
-impl LocalVariablesState {
-    fn default() -> Self {
-        LocalVariablesState { variables: OrderedHashMap::default() }
-    }
-
-    /// Marks all temporary variables as revoked.
-    fn revoke_temporary_variables(&mut self) {
-        for (_var_id, status) in self.variables.iter_mut() {
-            if *status == VariableStatus::TemporaryVariable {
-                *status = VariableStatus::Revoked;
-            }
-        }
-    }
-
-    /// Registers output variables of a libfunc.
-    fn register_outputs(&mut self, var_ids: &[VariableId], var_infos: &[OutputVarInfo]) {
-        for (var_id, var_info) in zip_eq(var_ids, var_infos) {
-            match var_info.ref_info {
-                sierra::extensions::OutputVarReferenceInfo::SameAsParam { .. } => todo!(),
-                sierra::extensions::OutputVarReferenceInfo::NewTempVar { .. }
-                | sierra::extensions::OutputVarReferenceInfo::Deferred(_)
-                | sierra::extensions::OutputVarReferenceInfo::Const => {
-                    self.set_variable_status(*var_id, VariableStatus::TemporaryVariable);
-                }
-                sierra::extensions::OutputVarReferenceInfo::NewLocalVar => {}
-            }
-        }
-    }
-
-    fn set_variable_status(&mut self, var_id: VariableId, status: VariableStatus) {
-        assert!(
-            self.variables.insert(var_id, status).is_none(),
-            "Variable {var_id:?} defined more than once."
-        );
-    }
-
-    /// Prepares the given `args` to be used as arguments for a libfunc.
-    fn use_variables(&mut self, var_ids: &[VariableId], res: &mut OrderedHashSet<VariableId>) {
-        for var_id in var_ids {
-            self.use_variable(*var_id, res);
-        }
-    }
-
-    /// Prepares the given `arg` to be used as an argument for a libfunc.
-    fn use_variable(&mut self, var_id: VariableId, res: &mut OrderedHashSet<VariableId>) {
-        if let Some(VariableStatus::Revoked) = self.variables.get(&var_id) {
-            res.insert(var_id);
-        }
-    }
-
-    /// Marks all the outputs of the statement as [VariableStatus::TemporaryVariable].
-    fn mark_outputs_as_temporary(&mut self, statement: &lowering::Statement) {
-        for var_id in statement.outputs() {
-            self.set_variable_status(var_id, VariableStatus::TemporaryVariable);
-        }
-    }
-}
-
 /// Helper function for [find_local_variables].
 ///
 /// Returns true if the code has a known ap change.
@@ -170,4 +102,72 @@ fn inner_find_local_variables(
         }
     }
     Some(known_ap_change)
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum VariableStatus {
+    TemporaryVariable,
+    Revoked,
+}
+
+#[derive(Clone, Debug)]
+struct LocalVariablesState {
+    variables: OrderedHashMap<VariableId, VariableStatus>,
+}
+impl LocalVariablesState {
+    fn default() -> Self {
+        LocalVariablesState { variables: OrderedHashMap::default() }
+    }
+
+    /// Marks all temporary variables as revoked.
+    fn revoke_temporary_variables(&mut self) {
+        for (_var_id, status) in self.variables.iter_mut() {
+            if *status == VariableStatus::TemporaryVariable {
+                *status = VariableStatus::Revoked;
+            }
+        }
+    }
+
+    /// Registers output variables of a libfunc.
+    fn register_outputs(&mut self, var_ids: &[VariableId], var_infos: &[OutputVarInfo]) {
+        for (var_id, var_info) in zip_eq(var_ids, var_infos) {
+            match var_info.ref_info {
+                sierra::extensions::OutputVarReferenceInfo::SameAsParam { .. } => todo!(),
+                sierra::extensions::OutputVarReferenceInfo::NewTempVar { .. }
+                | sierra::extensions::OutputVarReferenceInfo::Deferred(_)
+                | sierra::extensions::OutputVarReferenceInfo::Const => {
+                    self.set_variable_status(*var_id, VariableStatus::TemporaryVariable);
+                }
+                sierra::extensions::OutputVarReferenceInfo::NewLocalVar => {}
+            }
+        }
+    }
+
+    fn set_variable_status(&mut self, var_id: VariableId, status: VariableStatus) {
+        assert!(
+            self.variables.insert(var_id, status).is_none(),
+            "Variable {var_id:?} defined more than once."
+        );
+    }
+
+    /// Prepares the given `args` to be used as arguments for a libfunc.
+    fn use_variables(&mut self, var_ids: &[VariableId], res: &mut OrderedHashSet<VariableId>) {
+        for var_id in var_ids {
+            self.use_variable(*var_id, res);
+        }
+    }
+
+    /// Prepares the given `arg` to be used as an argument for a libfunc.
+    fn use_variable(&mut self, var_id: VariableId, res: &mut OrderedHashSet<VariableId>) {
+        if let Some(VariableStatus::Revoked) = self.variables.get(&var_id) {
+            res.insert(var_id);
+        }
+    }
+
+    /// Marks all the outputs of the statement as [VariableStatus::TemporaryVariable].
+    fn mark_outputs_as_temporary(&mut self, statement: &lowering::Statement) {
+        for var_id in statement.outputs() {
+            self.set_variable_status(var_id, VariableStatus::TemporaryVariable);
+        }
+    }
 }
