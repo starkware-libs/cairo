@@ -10,7 +10,9 @@ use super::LibFuncSimulationError::{
 };
 use super::{core, SimulationError};
 use crate::extensions::core::CoreLibFunc;
-use crate::extensions::lib_func::{SignatureSpecializationContext, SpecializationContext};
+use crate::extensions::lib_func::{
+    SierraApChange, SignatureSpecializationContext, SpecializationContext,
+};
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::TypeInfo;
 use crate::extensions::GenericLibFunc;
@@ -95,6 +97,10 @@ impl SignatureSpecializationContext for MockSpecializationContext {
 
     fn as_type_specialization_context(&self) -> &dyn TypeSpecializationContext {
         self
+    }
+
+    fn try_get_function_ap_change(&self, _function_id: &FunctionId) -> Option<SierraApChange> {
+        Some(SierraApChange::NotImplemented)
     }
 }
 
