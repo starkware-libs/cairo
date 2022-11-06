@@ -109,7 +109,21 @@ fn inner_find_local_variables(
             lowering::Statement::StructConstruct => todo!(),
             lowering::Statement::StructDestruct => todo!(),
             lowering::Statement::EnumConstruct(_) => todo!(),
-            lowering::Statement::MatchEnum(_) => todo!(),
+            lowering::Statement::MatchEnum(statement_match_enum) => {
+                // TODO(lior): How to treat variant?
+                for (variant, block_id) in &statement_match_enum.arms {
+                    inner_find_local_variables(
+                        db,
+                        lowered_function,
+                        *block_id,
+                        state.clone(),
+                        res,
+                    )?;
+                }
+                state.revoke_temporary_variables();
+                known_ap_change = false;
+                state.mark_outputs_as_temporary(statement);
+            }
             lowering::Statement::TupleConstruct(_) => todo!(),
             lowering::Statement::TupleDestruct(_) => todo!(),
         }
