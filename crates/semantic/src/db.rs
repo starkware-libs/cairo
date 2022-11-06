@@ -40,6 +40,16 @@ pub trait SemanticGroup:
         id: types::ConcreteExternTypeLongId,
     ) -> types::ConcreteExternTypeId;
     #[salsa::interned]
+    fn intern_concrete_trait(
+        &self,
+        id: items::trt::ConcreteTraitLongId,
+    ) -> items::trt::ConcreteTraitId;
+    #[salsa::interned]
+    fn intern_concrete_impl(
+        &self,
+        id: items::trt::ConcreteImplLongId,
+    ) -> items::trt::ConcreteImplId;
+    #[salsa::interned]
     fn intern_type(&self, id: types::TypeLongId) -> semantic::TypeId;
 
     // Use.
