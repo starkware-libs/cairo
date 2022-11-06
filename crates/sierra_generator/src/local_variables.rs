@@ -101,6 +101,13 @@ fn inner_find_local_variables(
             lowering::Statement::TupleDestruct(_) => todo!(),
         }
     }
+
+    match &block.end {
+        lowering::BlockEnd::Callsite(vars) | lowering::BlockEnd::Return(vars) => {
+            state.use_variables(vars, res);
+        }
+        lowering::BlockEnd::Unreachable => {}
+    }
     Some(known_ap_change)
 }
 
