@@ -348,9 +348,9 @@ func foo(,var1: int,, mut ref var2: felt,) -> int {
                     ^
 
 error: Missing token TerminalRBrace.
- --> test1.cairo:27:1
-func bar<A, B>() -> felt { }
-^**^
+ --> test1.cairo:25:14
+    return x;
+             ^
 
 error: Missing token TerminalSemicolon.
  --> test1.cairo:30:47
