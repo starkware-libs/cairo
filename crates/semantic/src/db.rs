@@ -148,6 +148,12 @@ pub trait SemanticGroup:
         &self,
         free_function_id: FreeFunctionId,
     ) -> Option<semantic::Signature>;
+    /// Returns the attributes of a free function declaration.
+    #[salsa::invoke(items::free_function::free_function_declaration_attributes)]
+    fn free_function_declaration_attributes(
+        &self,
+        free_function_id: FreeFunctionId,
+    ) -> Option<Vec<items::free_function::Attribute>>;
     /// Returns the generic params of a free function declaration.
     #[salsa::invoke(items::free_function::free_function_declaration_generic_params)]
     fn free_function_declaration_generic_params(
