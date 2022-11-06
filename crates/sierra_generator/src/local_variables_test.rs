@@ -12,6 +12,7 @@ utils::test_file_test!(
     local_variables,
     [
         "src/local_variables_test_data/block",
+        "src/local_variables_test_data/match_enum",
         "src/local_variables_test_data/match_extern",
         "src/local_variables_test_data/simple",
     ],
@@ -42,10 +43,9 @@ fn check_find_local_variables(
     let lowered_str = format!("{:?}", lowered_function.debug(&lowered_formatter));
 
     let local_variables_str = find_local_variables(db, lowered_function)
-        .unwrap()
-        .iter()
-        .map(|var_id| format!("{:?}", var_id.debug(&lowered_formatter)))
-        .join(", ");
+        .map_or("None".into(), |x| {
+            x.iter().map(|var_id| format!("{:?}", var_id.debug(&lowered_formatter))).join(", ")
+        });
 
     OrderedHashMap::from([
         ("lowering_format".into(), lowered_str),
