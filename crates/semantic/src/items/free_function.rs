@@ -5,7 +5,8 @@ use defs::ids::{FreeFunctionId, GenericFunctionId, GenericParamId, LanguageEleme
 use diagnostics::Diagnostics;
 use diagnostics_proc_macros::DebugWithDb;
 use id_arena::Arena;
-use syntax::node::ast;
+use smol_str::SmolStr;
+use syntax::node::{ast, Terminal};
 use utils::unordered_hash_map::UnorderedHashMap;
 
 use super::functions::{
@@ -23,6 +24,11 @@ use crate::{semantic, ExprId, SemanticDiagnostic};
 #[path = "free_function_test.rs"]
 mod test;
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Attribute {
+    id: SmolStr,
+}
+
 // Declaration.
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
@@ -31,6 +37,7 @@ pub struct FreeFunctionDeclarationData {
     signature: semantic::Signature,
     generic_params: Vec<GenericParamId>,
     environment: Environment,
+    attributes: Vec<Attribute>,
 }
 
 // Selectors.
@@ -49,6 +56,14 @@ pub fn free_function_declaration_signature(
     free_function_id: FreeFunctionId,
 ) -> Option<semantic::Signature> {
     Some(db.priv_free_function_declaration_data(free_function_id)?.signature)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::free_function_declaration_attributes].
+pub fn free_function_declaration_attributes(
+    db: &dyn SemanticGroup,
+    free_function_id: FreeFunctionId,
+) -> Option<Vec<Attribute>> {
+    Some(db.priv_free_function_declaration_data(free_function_id)?.attributes)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::free_function_declaration_generic_params].
@@ -96,11 +111,19 @@ pub fn priv_free_function_declaration_data(
         GenericFunctionId::Free(free_function_id),
         &mut environment,
     );
+
+    let attributes = function_syntax
+        .attributes(db.upcast())
+        .elements(db.upcast())
+        .into_iter()
+        .map(|attribute| Attribute { id: attribute.attr(db.upcast()).text(db.upcast()) })
+        .collect();
     Some(FreeFunctionDeclarationData {
         diagnostics: diagnostics.build(),
         signature: semantic::Signature { params, return_type, implicits },
         generic_params,
         environment,
+        attributes,
     })
 }
 
