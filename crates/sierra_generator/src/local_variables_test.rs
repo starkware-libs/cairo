@@ -10,7 +10,7 @@ use crate::test_utils::SierraGenDatabaseForTesting;
 
 utils::test_file_test!(
     local_variables,
-    ["src/local_variables_test_data/tests",],
+    ["src/local_variables_test_data/block", "src/local_variables_test_data/simple",],
     SierraGenDatabaseForTesting,
     check_find_local_variables
 );

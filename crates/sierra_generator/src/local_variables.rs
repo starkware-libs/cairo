@@ -90,16 +90,27 @@ impl LocalVariablesState {
             res.insert(var_id);
         }
     }
+
+    /// Marks all the outputs of the statement as [VariableStatus::TemporaryVariable].
+    fn mark_outputs_as_temporary(&mut self, statement: &lowering::Statement) {
+        for var_id in statement.outputs() {
+            self.set_variable_status(var_id, VariableStatus::TemporaryVariable);
+        }
+    }
 }
 
+/// Helper function for [find_local_variables].
+///
+/// Returns true if the code has a known ap change.
 fn inner_find_local_variables(
     db: &dyn SierraGenGroup,
     lowered_function: &Lowered,
     block_id: BlockId,
     mut state: LocalVariablesState,
     res: &mut OrderedHashSet<VariableId>,
-) -> Option<()> {
+) -> Option<bool> {
     let block = &lowered_function.blocks[block_id];
+    let mut known_ap_change = true;
     for statement in &block.statements {
         // All the input variables should be available.
         state.use_variables(&statement.inputs(), res);
@@ -125,14 +136,30 @@ fn inner_find_local_variables(
 
                 match libfunc_signature.branch_signatures[0].ap_change {
                     sierra::extensions::lib_func::SierraApChange::Known(_) => {}
-                    _ => state.revoke_temporary_variables(),
+                    _ => {
+                        state.revoke_temporary_variables();
+                        known_ap_change = false;
+                    }
                 }
                 state.register_outputs(
                     &statement_call.outputs,
                     &libfunc_signature.branch_signatures[0].vars,
                 );
             }
-            lowering::Statement::CallBlock(_) => todo!(),
+            lowering::Statement::CallBlock(statement_call_block) => {
+                let block_known_ap_change = inner_find_local_variables(
+                    db,
+                    lowered_function,
+                    statement_call_block.block,
+                    state.clone(),
+                    res,
+                )?;
+                if !block_known_ap_change {
+                    state.revoke_temporary_variables();
+                    known_ap_change = false;
+                }
+                state.mark_outputs_as_temporary(statement);
+            }
             lowering::Statement::MatchExtern(_) => todo!(),
             lowering::Statement::StructConstruct => todo!(),
             lowering::Statement::StructDestruct => todo!(),
@@ -142,5 +169,5 @@ fn inner_find_local_variables(
             lowering::Statement::TupleDestruct(_) => todo!(),
         }
     }
-    Some(())
+    Some(known_ap_change)
 }
