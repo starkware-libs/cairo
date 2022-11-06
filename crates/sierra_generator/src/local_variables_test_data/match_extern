@@ -1,0 +1,187 @@
+//! > Match extern
+
+//! > test_function_name
+check_find_local_variables
+
+//! > function_name
+foo
+
+//! > function_code
+func foo(x: felt) -> felt {
+    match felt_jump_nz(x) {
+        JumpNzResult::Zero(_) => 1,
+        JumpNzResult::NonZero(y) => {
+            revoke_ap()
+            // y is not revoked, since it's the same as x, which is local.
+            unwrap_nz::<felt>(y)
+        },
+    }
+    let x2 = x + x;
+    match felt_jump_nz(x2) {
+        JumpNzResult::Zero(_) => 1,
+        JumpNzResult::NonZero(y) => {
+            revoke_ap()
+            // x2 is revoked, since y is identical to x2.
+            unwrap_nz::<felt>(y)
+        },
+    }
+}
+
+//! > module_code
+// Revokes ap since this function is recursive.
+func revoke_ap() -> felt {
+    revoke_ap()
+}
+
+//! > lowering_format
+blk0:
+Inputs:
+Statements:
+  (v3: core::felt) <- test_crate::revoke_ap()
+  (v4: core::felt) <- core::unwrap_nz<Type(core::felt),>(v2)
+Drops: v3
+End:
+  Callsite(v4)
+
+blk1:
+Inputs:
+Statements:
+  (v1: core::felt) <- 1u
+Drops:
+End:
+  Callsite(v1)
+
+blk2:
+Inputs: v2: core::NonZero::<core::felt>
+Statements:
+  (v5: core::felt) <- blk0()
+Drops: v2
+End:
+  Callsite(v5)
+
+blk3:
+Inputs:
+Statements:
+  (v10: core::felt) <- test_crate::revoke_ap()
+  (v11: core::felt) <- core::unwrap_nz<Type(core::felt),>(v9)
+Drops: v10
+End:
+  Callsite(v11)
+
+blk4:
+Inputs:
+Statements:
+  (v8: core::felt) <- 1u
+Drops:
+End:
+  Callsite(v8)
+
+blk5:
+Inputs: v9: core::NonZero::<core::felt>
+Statements:
+  (v12: core::felt) <- blk3()
+Drops: v9
+End:
+  Callsite(v12)
+
+blk6:
+Inputs: v0: core::felt
+Statements:
+  (v6: core::felt) <- match core::felt_jump_nz(v0) {
+    () => blk1,
+    (v2) => blk2,
+  }
+  (v7: core::felt) <- core::felt_add(v0, v0)
+  (v13: core::felt) <- match core::felt_jump_nz(v7) {
+    () => blk4,
+    (v9) => blk5,
+  }
+Drops: v0, v6, v7
+End:
+  Callsite(v13)
+
+//! > local_variables
+v7
+
+//! > ==========================================================================
+
+//! > Match extern - if
+
+//! > test_function_name
+check_find_local_variables
+
+//! > function_name
+foo
+
+//! > function_code
+func foo(x: felt) -> felt {
+    let x1 = x + x;
+    let x2 = x1 + x1;
+    let x3 = if x2 == 0 { 1 } else { 2 };
+    // The "if" revokes "x1".
+    x1 + x3
+    let x4 = if x1 == 0 { 1 } else { 2 };
+    revoke_ap();
+    x4
+}
+
+//! > module_code
+// Revokes ap since this function is recursive.
+func revoke_ap() -> felt {
+    revoke_ap()
+}
+
+//! > lowering_format
+blk0:
+Inputs:
+Statements:
+  (v3: core::felt) <- 1u
+Drops:
+End:
+  Callsite(v3)
+
+blk1:
+Inputs: v4: core::NonZero::<core::felt>
+Statements:
+  (v5: core::felt) <- 2u
+Drops: v4
+End:
+  Callsite(v5)
+
+blk2:
+Inputs:
+Statements:
+  (v8: core::felt) <- 1u
+Drops:
+End:
+  Callsite(v8)
+
+blk3:
+Inputs: v9: core::NonZero::<core::felt>
+Statements:
+  (v10: core::felt) <- 2u
+Drops: v9
+End:
+  Callsite(v10)
+
+blk4:
+Inputs: v0: core::felt
+Statements:
+  (v1: core::felt) <- core::felt_add(v0, v0)
+  (v2: core::felt) <- core::felt_add(v1, v1)
+  (v6: core::felt) <- match core::felt_jump_nz(v2) {
+    () => blk0,
+    (v4) => blk1,
+  }
+  (v7: core::felt) <- core::felt_add(v1, v6)
+  (v11: core::felt) <- match core::felt_jump_nz(v1) {
+    () => blk2,
+    (v9) => blk3,
+  }
+  (v12: core::felt) <- test_crate::revoke_ap()
+Drops: v0, v1, v2, v6, v7, v12
+End:
+  Callsite(v11)
+
+//! > local_variables
+v1, v11
