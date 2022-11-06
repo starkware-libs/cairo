@@ -4,12 +4,11 @@ mod test;
 
 use defs::ids::GenericFunctionId;
 use itertools::{chain, enumerate, zip_eq};
-use sierra::ids::ConcreteLibFuncId;
 use sierra::program;
 
 use crate::expr_generator_context::ExprGeneratorContext;
 use crate::pre_sierra;
-use crate::utils::{jump_statement, return_statement, simple_statement};
+use crate::utils::{get_concrete_libfunc_id, jump_statement, return_statement, simple_statement};
 
 /// Generates Sierra code that computes a given [lowering::Block].
 /// Returns a list of Sierra statements.
@@ -151,7 +150,8 @@ fn generate_statement_call_code(
     let outputs = context.get_sierra_variables(&statement.outputs);
 
     // Check if this is a user defined function or a libfunc.
-    let (function_long_id, libfunc_id) = get_concrete_libfunc_id(context, statement.function);
+    let (function_long_id, libfunc_id) =
+        get_concrete_libfunc_id(context.get_db(), statement.function);
 
     match function_long_id.generic_function {
         GenericFunctionId::Free(_) => {
@@ -197,7 +197,8 @@ fn generate_statement_match_extern_code(
     let (end_label, end_label_id) = context.new_label();
 
     // Get the [ConcreteLibFuncId].
-    let (_function_long_id, libfunc_id) = get_concrete_libfunc_id(context, statement.function);
+    let (_function_long_id, libfunc_id) =
+        get_concrete_libfunc_id(context.get_db(), statement.function);
 
     let mut statements: Vec<pre_sierra::Statement> = vec![];
 
@@ -250,36 +251,6 @@ fn generate_statement_match_extern_code(
     statements.push(end_label);
 
     Some(statements)
-}
-
-/// Returns the [ConcreteLibFuncId] used for calling a function (either user defined or libfunc).
-fn get_concrete_libfunc_id(
-    context: &ExprGeneratorContext<'_>,
-    function: semantic::FunctionId,
-) -> (semantic::ConcreteFunction, ConcreteLibFuncId) {
-    // Check if this is a user defined function or a libfunc.
-    let function_long_id = match context.get_db().lookup_intern_function(function) {
-        semantic::FunctionLongId::Concrete(concrete) => concrete,
-        semantic::FunctionLongId::Missing => todo!(),
-    };
-    match function_long_id.generic_function {
-        GenericFunctionId::Free(_) => {
-            (function_long_id, context.function_call_libfunc_id(function))
-        }
-        GenericFunctionId::Extern(extern_id) => {
-            let mut generic_args = vec![];
-            for generic_arg in &function_long_id.generic_args {
-                generic_args.push(match generic_arg {
-                    semantic::GenericArgumentId::Type(ty) => sierra::program::GenericArg::Type(
-                        // TODO(lior): How should the following unwrap() be handled?
-                        context.get_db().get_concrete_type_id(*ty).unwrap(),
-                    ),
-                });
-            }
-
-            (function_long_id, context.generic_libfunc_id(extern_id, generic_args))
-        }
-    }
 }
 
 /// Generates Sierra code for [lowering::StatementCallBlock].

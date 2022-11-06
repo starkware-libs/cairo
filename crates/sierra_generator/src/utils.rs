@@ -1,7 +1,8 @@
+use defs::ids::GenericFunctionId;
 use sierra::extensions::core::CoreLibFunc;
 use sierra::extensions::lib_func::LibFuncSignature;
 use sierra::extensions::GenericLibFuncEx;
-use sierra::ids::{ConcreteLibFuncId, ConcreteTypeId};
+use sierra::ids::{ConcreteLibFuncId, ConcreteTypeId, GenericLibFuncId};
 use sierra::program;
 
 use crate::db::SierraGenGroup;
@@ -76,4 +77,55 @@ pub fn get_libfunc_signature(
         &libfunc_long_id.generic_args,
     )
     .expect("Specialization failure.")
+}
+
+/// Returns the [ConcreteLibFuncId] for calling a user-defined function.
+pub fn function_call_libfunc_id(
+    db: &dyn SierraGenGroup,
+    func: semantic::FunctionId,
+) -> ConcreteLibFuncId {
+    db.intern_concrete_lib_func(sierra::program::ConcreteLibFuncLongId {
+        generic_id: GenericLibFuncId::from_string("function_call"),
+        generic_args: vec![sierra::program::GenericArg::UserFunc(db.intern_sierra_function(func))],
+    })
+}
+
+/// Returns the [ConcreteLibFuncId] used for calling a libfunc.
+pub fn generic_libfunc_id(
+    db: &dyn SierraGenGroup,
+    extern_id: defs::ids::ExternFunctionId,
+    generic_args: Vec<sierra::program::GenericArg>,
+) -> ConcreteLibFuncId {
+    db.intern_concrete_lib_func(sierra::program::ConcreteLibFuncLongId {
+        generic_id: GenericLibFuncId::from_string(extern_id.name(db.upcast())),
+        generic_args,
+    })
+}
+
+/// Returns the [ConcreteLibFuncId] used for calling a function (either user-defined or libfunc).
+pub fn get_concrete_libfunc_id(
+    db: &dyn SierraGenGroup,
+    function: semantic::FunctionId,
+) -> (semantic::ConcreteFunction, ConcreteLibFuncId) {
+    // Check if this is a user-defined function or a libfunc.
+    let function_long_id = match db.lookup_intern_function(function) {
+        semantic::FunctionLongId::Concrete(concrete) => concrete,
+        semantic::FunctionLongId::Missing => todo!(),
+    };
+    match function_long_id.generic_function {
+        GenericFunctionId::Free(_) => (function_long_id, function_call_libfunc_id(db, function)),
+        GenericFunctionId::Extern(extern_id) => {
+            let mut generic_args = vec![];
+            for generic_arg in &function_long_id.generic_args {
+                generic_args.push(match generic_arg {
+                    semantic::GenericArgumentId::Type(ty) => sierra::program::GenericArg::Type(
+                        // TODO(lior): How should the following unwrap() be handled?
+                        db.get_concrete_type_id(*ty).unwrap(),
+                    ),
+                });
+            }
+
+            (function_long_id, generic_libfunc_id(db, extern_id, generic_args))
+        }
+    }
 }
