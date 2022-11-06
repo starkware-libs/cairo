@@ -1,6 +1,7 @@
 use std::fmt;
 
 use itertools::Itertools;
+use parser::colored_printer::is_empty_kind;
 use smol_str::SmolStr;
 use syntax::node::db::SyntaxGroup;
 use syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
@@ -487,7 +488,10 @@ impl<'a> Formatter<'a> {
                 self.line_state.reset(self.get_indentation())
             }
             self.format_node(&child, no_space_after && i == n_children - 1);
-            self.empty_lines_allowance = allowed_empty_between;
+
+            if !is_empty_kind(child.kind(self.db)) {
+                self.empty_lines_allowance = allowed_empty_between;
+            }
             self.current_indent -= indent_change;
             // If this is a breakable list is breakable a breakpoint is added after each separator
             if i % 2 == 1 && i != n_children - 1 && syntax_node.is_breakable_list(self.db) {

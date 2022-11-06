@@ -41,7 +41,7 @@ impl<'a> ColoredPrinter<'a> {
 fn is_missing_kind(kind: SyntaxKind) -> bool {
     matches!(kind, SyntaxKind::ExprMissing | SyntaxKind::StatementMissing)
 }
-fn is_empty_kind(kind: SyntaxKind) -> bool {
+pub fn is_empty_kind(kind: SyntaxKind) -> bool {
     matches!(
         kind,
         SyntaxKind::OptionStructArgExprEmpty
