@@ -3,6 +3,7 @@ use semantic::corelib;
 use utils::extract_matches;
 
 use super::context::{LoweredExpr, LoweringContext, LoweringFlowError};
+use super::external::extern_facade_expr;
 use super::scope::{generators, BlockFlowMerger, BlockScope, BlockScopeEnd};
 use super::{
     lower_block, lower_expr, lowered_expr_from_block_result, lowered_expr_to_block_scope_end,
@@ -11,7 +12,7 @@ use super::{
 #[allow(dead_code)]
 enum IfCondition {
     BoolExpr(semantic::ExprId),
-    EqZero(semantic::ExprId),
+    Eq(semantic::ExprId, semantic::ExprId),
 }
 
 /// Analyzes the condition of an if statement into an [IfCondition] tree, to allow different
@@ -20,11 +21,8 @@ enum IfCondition {
 fn analyze_condition(ctx: &LoweringContext<'_>, expr_id: semantic::ExprId) -> IfCondition {
     let expr = &ctx.function_def.exprs[expr_id];
     if let semantic::Expr::FunctionCall(function_call) = expr {
-        if function_call.function == corelib::felt_eq(ctx.db.upcast())
-            && function_call.args.len() == 2
-            && is_zero(ctx, function_call.args[1])
-        {
-            return IfCondition::EqZero(function_call.args[0]);
+        if function_call.function == corelib::felt_eq(ctx.db) && function_call.args.len() == 2 {
+            return IfCondition::Eq(function_call.args[0], function_call.args[1]);
         };
     };
 
@@ -44,7 +42,7 @@ pub fn lower_expr_if(
 ) -> Result<LoweredExpr, LoweringFlowError> {
     match analyze_condition(ctx, expr.condition) {
         IfCondition::BoolExpr(_) => lower_expr_if_bool(ctx, scope, expr),
-        IfCondition::EqZero(tested_expr) => lower_expr_if_eq_zero(ctx, scope, expr, tested_expr),
+        IfCondition::Eq(expr_a, expr_b) => lower_expr_if_eq_zero(ctx, scope, expr, expr_a, expr_b),
     }
 }
 
@@ -100,10 +98,26 @@ pub fn lower_expr_if_eq_zero(
     ctx: &mut LoweringContext<'_>,
     scope: &mut BlockScope,
     expr: &semantic::ExprIf,
-    tested_expr: semantic::ExprId,
+    expr_a: semantic::ExprId,
+    expr_b: semantic::ExprId,
 ) -> Result<LoweredExpr, LoweringFlowError> {
-    // The condition cannot be unit.
-    let condition_var = lower_expr(ctx, scope, tested_expr)?.var(ctx, scope);
+    let condition_var = if is_zero(ctx, expr_b) {
+        lower_expr(ctx, scope, expr_a)?.var(ctx, scope)
+    } else if is_zero(ctx, expr_a) {
+        lower_expr(ctx, scope, expr_b)?.var(ctx, scope)
+    } else {
+        let lowered_a = lower_expr(ctx, scope, expr_a)?.var(ctx, scope);
+        let lowered_b = lower_expr(ctx, scope, expr_b)?.var(ctx, scope);
+        let ret_ty = corelib::core_felt_ty(ctx.db);
+        let call_result = generators::Call {
+            function: corelib::felt_sub(ctx.db),
+            inputs: vec![lowered_a, lowered_b],
+            ref_tys: vec![],
+            ret_tys: vec![ret_ty],
+        }
+        .add(ctx, scope);
+        extern_facade_expr(ctx, ret_ty, call_result.returns).var(ctx, scope)
+    };
 
     let semantic_db = ctx.db.upcast();
 
