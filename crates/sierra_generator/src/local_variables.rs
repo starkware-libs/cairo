@@ -92,7 +92,20 @@ fn inner_find_local_variables(
                 }
                 state.mark_outputs_as_temporary(statement);
             }
-            lowering::Statement::MatchExtern(_) => todo!(),
+            lowering::Statement::MatchExtern(statement_match_extern) => {
+                for block_id in &statement_match_extern.arms {
+                    inner_find_local_variables(
+                        db,
+                        lowered_function,
+                        *block_id,
+                        state.clone(),
+                        res,
+                    )?;
+                }
+                state.revoke_temporary_variables();
+                known_ap_change = false;
+                state.mark_outputs_as_temporary(statement);
+            }
             lowering::Statement::StructConstruct => todo!(),
             lowering::Statement::StructDestruct => todo!(),
             lowering::Statement::EnumConstruct(_) => todo!(),
