@@ -41,14 +41,14 @@ func f() {
 
 //! > expected_diagnostics
 error: Missing tokens. Expected an expression.
- --> dummy_file.cairo:2:13
+ --> dummy_file.cairo:2:12
     if 0 == if x {1} else {2} {
-            ^^
+           ^
 
 error: Missing token TerminalLBrace.
- --> dummy_file.cairo:2:13
+ --> dummy_file.cairo:2:12
     if 0 == if x {1} else {2} {
-            ^^
+           ^
 
 error: Missing token TerminalRBrace.
  --> dummy_file.cairo:4:2

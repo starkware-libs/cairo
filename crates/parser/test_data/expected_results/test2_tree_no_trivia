@@ -236,9 +236,9 @@
     └── eof (kind: TokenEndOfFile).
 --------------------
 error: Missing tokens. Expected an expression.
- --> test2.cairo:5:13
+ --> test2.cairo:5:12
     let z = ;
-            ^
+           ^
 
 error: Missing token TerminalSemicolon.
  --> test2.cairo:13:11
