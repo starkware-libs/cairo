@@ -24,7 +24,7 @@ error: Missing token TerminalSemicolon.
     let ref abc::def = 5;
                ^
 
-error: Skipped tokens. Expected element: statement.
+error: Skipped tokens. Expected: statement.
  --> dummy_file.cairo:2:16
     let ref abc::def = 5;
                ^^

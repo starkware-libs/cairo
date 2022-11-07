@@ -13,12 +13,12 @@ func f() {
 }
 
 //! > expected_diagnostics
-error: Skipped tokens. Expected element: statement.
+error: Skipped tokens. Expected: statement.
  --> dummy_file.cairo:2:18
     if MyStruct{a: 0} == MyStruct{a: 1} {
                  ^
 
-error: Skipped tokens. Expected element: statement.
+error: Skipped tokens. Expected: statement.
  --> dummy_file.cairo:2:23
     if MyStruct{a: 0} == MyStruct{a: 1} {
                       ^^
