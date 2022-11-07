@@ -114,12 +114,17 @@ fn get_function_code(
         lowering::BlockEnd::Return(_) | lowering::BlockEnd::Unreachable => {}
     };
 
+    let sierra_local_variables: OrderedHashSet<_> = local_variables
+        .iter()
+        .map(|lowering_var_id| context.get_sierra_variable(*lowering_var_id))
+        .collect();
     let statements = add_store_statements(
         context.get_db(),
         statements,
         &|concrete_lib_func_id: ConcreteLibFuncId| -> LibFuncSignature {
             get_libfunc_signature(context.get_db(), concrete_lib_func_id)
         },
+        sierra_local_variables,
     );
     let statements = add_dups_and_drops(&mut context, &parameters, statements);
 
