@@ -188,8 +188,7 @@ fn get_core_function_id(
         .module_item_by_name(core_module, name.clone())
         .and_then(GenericFunctionId::option_from)
         .unwrap_or_else(|| panic!("Function '{name}' was not found in core lib."));
-    db.intern_function(FunctionLongId::Concrete(ConcreteFunction {
-        generic_function,
-        generic_args,
-    }))
+    db.intern_function(FunctionLongId {
+        function: ConcreteFunction { generic_function, generic_args },
+    })
 }

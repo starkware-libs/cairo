@@ -1,5 +1,4 @@
 use defs::ids::GenericFunctionId;
-use semantic::FunctionLongId;
 use sierra::extensions::lib_func::{SierraApChange, SignatureSpecializationContext};
 use sierra::extensions::type_specialization_context::TypeSpecializationContext;
 use sierra::program::ConcreteTypeLongId;
@@ -48,25 +47,21 @@ impl SignatureSpecializationContext for SierraSignatureSpecializationContext<'_>
         &self,
         function_id: &sierra::ids::FunctionId,
     ) -> Option<SierraApChange> {
-        let function_long_id = self
+        let concrete_function = self
             .0
-            .lookup_intern_function(self.0.lookup_intern_sierra_function(function_id.clone()));
-        match function_long_id {
-            FunctionLongId::Concrete(concrete_function) => {
-                match concrete_function.generic_function {
-                    GenericFunctionId::Free(free_function_id) => {
-                        self.0.get_ap_change(free_function_id).map(|ap_change| match ap_change {
-                            ApChange::Known(value) => SierraApChange::Known(value),
-                            ApChange::Unknown => SierraApChange::Unknown,
-                        })
-                    }
-                    GenericFunctionId::Extern(_) => panic!(
-                        "Internal compiler error: get_function_ap_change() should only be used \
-                         for user defined functions."
-                    ),
-                }
+            .lookup_intern_function(self.0.lookup_intern_sierra_function(function_id.clone()))
+            .function;
+        match concrete_function.generic_function {
+            GenericFunctionId::Free(free_function_id) => {
+                self.0.get_ap_change(free_function_id).map(|ap_change| match ap_change {
+                    ApChange::Known(value) => SierraApChange::Known(value),
+                    ApChange::Unknown => SierraApChange::Unknown,
+                })
             }
-            FunctionLongId::Missing => None,
+            GenericFunctionId::Extern(_) => panic!(
+                "Internal compiler error: get_function_ap_change() should only be used for user \
+                 defined functions."
+            ),
         }
     }
 }
