@@ -63,6 +63,14 @@ pub fn store_temp_libfunc_id(
     get_libfunc_id_with_generic_arg(db, "store_temp", ty)
 }
 
+/// Returns the [sierra::program::ConcreteLibFuncLongId] associated with `store_local`.
+pub fn store_local_libfunc_id(
+    db: &dyn SierraGenGroup,
+    ty: ConcreteTypeId,
+) -> sierra::ids::ConcreteLibFuncId {
+    get_libfunc_id_with_generic_arg(db, "store_local", ty)
+}
+
 pub fn struct_construct_libfunc_id(
     db: &dyn SierraGenGroup,
     ty: sierra::ids::ConcreteTypeId,
