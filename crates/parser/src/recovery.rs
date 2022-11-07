@@ -45,6 +45,9 @@ macro_rules! top_level {
     () => {
         SyntaxKind::TerminalExtern
             | SyntaxKind::TerminalType
+            | SyntaxKind::TerminalEnum
+            | SyntaxKind::TerminalTrait
+            | SyntaxKind::TerminalImpl
             | SyntaxKind::TerminalFunction
             | SyntaxKind::TerminalModule
             | SyntaxKind::TerminalStruct

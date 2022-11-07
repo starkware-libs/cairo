@@ -1,6 +1,7 @@
 └── root (kind: SyntaxFile)
     ├── items (kind: ItemList)
     │   ├── child #0 (kind: ItemFreeFunction)
+    │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── function_kw (kind: TokenFunction): 'func'
     │   │   ├── name (kind: TokenIdentifier): 'foo'
     │   │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
@@ -132,10 +133,12 @@
     │   │       │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │   │       └── rbrace (kind: TokenRBrace): '}'
     │   ├── child #1 (kind: ItemModule)
+    │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── module_kw (kind: TokenModule): 'mod'
     │   │   ├── name (kind: TokenIdentifier): 'my_mod'
     │   │   └── semicolon: Missing
     │   ├── child #2 (kind: ItemFreeFunction)
+    │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── function_kw (kind: TokenFunction): 'func'
     │   │   ├── name (kind: TokenIdentifier): 'bar'
     │   │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
@@ -212,6 +215,7 @@
     │   │       │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │   │       └── rbrace (kind: TokenRBrace): '}'
     │   └── child #3 (kind: ItemStruct)
+    │       ├── attributes (kind: AttributeList) []
     │       ├── struct_kw (kind: TokenStruct): 'struct'
     │       ├── name (kind: TokenIdentifier): 'A'
     │       ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
@@ -245,7 +249,7 @@ error: Missing token TerminalSemicolon.
 mod my_mod{
           ^
 
-error: Skipped tokens. Expected: item.
+error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/Attribute.
  --> test2.cairo:13:11
 mod my_mod{
           ^
@@ -260,17 +264,17 @@ error: Missing tokens. Expected an expression.
         x.a *+-. s.s * foo(1,3)
                ^
 
-error: Skipped tokens. Expected: item.
+error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/Attribute.
  --> test2.cairo:22:1
 }
 ^
 
-error: Skipped tokens. Expected: item.
+error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/Attribute.
  --> test2.cairo:24:1
 skipped tokens
 ^*****^
 
-error: Skipped tokens. Expected: item.
+error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/Attribute.
  --> test2.cairo:24:9
 skipped tokens
         ^****^
