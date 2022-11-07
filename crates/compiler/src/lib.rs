@@ -1,3 +1,3 @@
 //! Cairo to Sierra compiler.
 
-mod db;
+pub mod db;
