@@ -1,6 +1,6 @@
 use sierra::extensions::array::ArrayConcreteLibFunc;
 use sierra::extensions::core::CoreConcreteLibFunc::{
-    self, ApTracking, Array, Box, Drop, Dup, Enum, Felt, FunctionCall, Gas, Mem, Uint128,
+    self, ApTracking, Array, Box, Drop, Dup, Enum, Felt, FunctionCall, Gas, Mem, Struct, Uint128,
     UnconditionalJump, UnwrapNonZero,
 };
 use sierra::extensions::enm::EnumConcreteLibFunc;
@@ -14,6 +14,7 @@ use sierra::extensions::integer::{
 use sierra::extensions::mem::MemConcreteLibFunc::{
     AlignTemps, AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
 };
+use sierra::extensions::strct::StructConcreteLibFunc;
 use sierra::program::Function;
 
 /// The operation required for extracting a libfunc's cost.
@@ -61,6 +62,9 @@ pub fn core_libfunc_cost_base<Ops: CostOperations>(
         Enum(EnumConcreteLibFunc::Init(_)) => vec![ops.const_cost(1)],
         Enum(EnumConcreteLibFunc::Match(sig)) => {
             vec![ops.const_cost(1); sig.signature.branch_signatures.len()]
+        }
+        Struct(StructConcreteLibFunc::Construct(_) | StructConcreteLibFunc::Deconstruct(_)) => {
+            vec![ops.const_cost(0)]
         }
     }
 }
