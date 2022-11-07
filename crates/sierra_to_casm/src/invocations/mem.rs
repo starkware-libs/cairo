@@ -38,12 +38,11 @@ pub fn build(
     }
 }
 
-/// Adds a single instruction to a casm context, and sets increase ap.
+/// Adds a single instruction to a casm context.
 macro_rules! add_instruction {
-    ($ctx:ident, $inc_ap:ident, $($tok:tt)*) => {{
-        casm_extend! {$ctx, $($tok)* ;};
-        $ctx.instructions.last_mut().unwrap().inc_ap = $inc_ap;
-    }};
+    ($ctx:ident, $($tok:tt)*) => {{
+        casm_extend! {$ctx, $($tok)* ;}
+    }}
 }
 
 /// Returns a store instruction. Helper function for store_temp and store_local.
@@ -73,7 +72,7 @@ fn get_store_instructions(
         }
         if sequential_padding > 0 {
             match dst.register {
-                Register::AP => add_instruction!(ctx, false, ap += sequential_padding),
+                Register::AP => add_instruction!(ctx, ap += sequential_padding),
                 Register::FP => {
                     dst.offset += sequential_padding;
                 }
@@ -84,33 +83,33 @@ fn get_store_instructions(
         let cell_expr =
             cell_expr_orig.clone().apply_ap_change(ApChange::Known(ap_change as usize)).unwrap();
         match cell_expr {
-            CellExpression::Deref(operand) => add_instruction!(ctx, inc_ap, dst = operand),
+            CellExpression::Deref(operand) => add_instruction!(ctx, dst = operand),
             CellExpression::DoubleDeref(operand) => {
-                add_instruction!(ctx, inc_ap, dst = [[operand]])
+                add_instruction!(ctx, dst = [[operand]])
             }
             CellExpression::IntoSingleCellRef(operand) => add_instruction!(
                 ctx,
-                inc_ap,
                 %{ memory dst = segments.add() %}
                 operand = [[dst]]
             ),
-            CellExpression::Immediate(operand) => add_instruction!(ctx, inc_ap, dst = operand),
+            CellExpression::Immediate(operand) => add_instruction!(ctx, dst = operand),
             CellExpression::BinOp(BinOpExpression { op, a, b }) => match op {
-                FeltOperator::Add => add_instruction!(ctx, inc_ap, dst = a + b),
-                FeltOperator::Mul => add_instruction!(ctx, inc_ap, dst = a * b),
+                FeltOperator::Add => add_instruction!(ctx, dst = a + b),
+                FeltOperator::Mul => add_instruction!(ctx, dst = a * b),
                 // dst = a - b => a = dst + b
-                FeltOperator::Sub => add_instruction!(ctx, inc_ap, a = dst + b),
+                FeltOperator::Sub => add_instruction!(ctx, a = dst + b),
                 // dst = a / b => a = dst * b
-                FeltOperator::Div => add_instruction!(ctx, inc_ap, a = dst * b),
+                FeltOperator::Div => add_instruction!(ctx, a = dst * b),
             },
             CellExpression::Padding => unreachable!("Padding arm is handled separately"),
         }
         if inc_ap {
             ap_change += 1;
+            ctx.instructions.last_mut().unwrap().inc_ap = true;
         }
     }
     if sequential_padding > 0 && dst.register == Register::AP {
-        add_instruction!(ctx, false, ap += (sequential_padding as i128));
+        add_instruction!(ctx, ap += (sequential_padding as i128));
     }
     Ok(ctx.instructions)
 }
