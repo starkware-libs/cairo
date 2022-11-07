@@ -61,6 +61,7 @@ fn compile_to_sierra(name: &str) -> sierra::program::Program {
 #[test_case("fib_array")]
 #[test_case("fib_uint128")]
 #[test_case("fib_gas")]
+#[test_case("enum_flow")]
 #[test_case("corelib_usage" => ignore["unsupported"])]
 fn cairo_to_sierra(name: &str) {
     assert_eq!(compile_to_sierra(name).to_string(), get_expected_contents(name, "sierra"));
@@ -72,6 +73,7 @@ fn cairo_to_sierra(name: &str) {
 #[test_case("fib_array", false)]
 #[test_case("fib_uint128", false)]
 #[test_case("fib_gas", true)]
+#[test_case("enum_flow", false)]
 #[test_case("corelib_usage", false => ignore["unsupported"])]
 fn cairo_to_casm(name: &str, enable_gas_checks: bool) {
     let program = compile_to_sierra(name);
