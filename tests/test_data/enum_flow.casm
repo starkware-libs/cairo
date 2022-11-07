@@ -1,0 +1,8 @@
+[ap + 0] = 1, ap++;
+[ap + 0] = 10, ap++;
+call rel 5;
+[ap + 0] = 115, ap++;
+ret;
+[ap + 0] = [fp + -4], ap++;
+[ap + 0] = [fp + -3], ap++;
+ret;

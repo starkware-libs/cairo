@@ -32,6 +32,7 @@ pub fn module_sierra_diagnostics(
             ModuleItemId::FreeFunction(free_function_id) => {
                 diagnostics.extend(db.free_function_sierra_diagnostics(*free_function_id))
             }
+            ModuleItemId::Enum(_) => {}
             _ => todo!("Not supported yet."),
         }
     }
@@ -60,7 +61,7 @@ pub fn module_sierra_program(
                 statements.extend_from_slice(function.body.as_slice());
             }
             ModuleItemId::Struct(_) => todo!("'struct' lowering not supported yet."),
-            ModuleItemId::Enum(_) => todo!("'enum' lowering not supported yet."),
+            ModuleItemId::Enum(_) => {}
             ModuleItemId::Trait(_) => {}
             ModuleItemId::Impl(_) => {}
             ModuleItemId::ExternType(_) => {}

@@ -24,8 +24,8 @@ use utils::try_extract_matches;
 use super::as_single_type;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
-    BranchSignature, LibFuncSignature, OutputVarInfo, SierraApChange, SignatureOnlyConcreteLibFunc,
-    SignatureSpecializationContext, SpecializationContext,
+    BranchSignature, DeferredOutputKind, LibFuncSignature, OutputVarInfo, SierraApChange,
+    SignatureOnlyConcreteLibFunc, SignatureSpecializationContext, SpecializationContext,
 };
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::TypeInfo;
@@ -158,9 +158,9 @@ impl EnumInitLibFunc {
                 vec![variant_type],
                 vec![OutputVarInfo {
                     ty: enum_type,
-                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                 }],
-                SierraApChange::NotImplemented,
+                SierraApChange::Known(0),
             ),
             index,
         })

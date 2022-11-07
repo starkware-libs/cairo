@@ -1,3 +1,4 @@
+use itertools::chain;
 use sierra::program::ConcreteTypeLongId;
 
 use crate::db::SierraGenGroup;
@@ -22,8 +23,27 @@ pub fn get_concrete_type_id(
                 defs::ids::GenericTypeId::Struct(_) => {
                     todo!("Add support for struct types when they are supported in Sierra.")
                 }
-                defs::ids::GenericTypeId::Enum(_) => {
-                    todo!("Add support for enum types when they are supported in Sierra.")
+                defs::ids::GenericTypeId::Enum(enm) => {
+                    // TODO(Gil): Consider interning the UserType.
+                    let generic_args = chain!(
+                        [sierra::program::GenericArg::UserType(
+                            enm.name(db.upcast()).to_string().into()
+                        )],
+                        db.enum_variants(enm)?.into_iter().map(|(_, varinat_id)| {
+                            db.variant_semantic(enm, varinat_id)
+                                .map(|variant| {
+                                    sierra::program::GenericArg::Type(
+                                        db.get_concrete_type_id(variant.ty).unwrap(),
+                                    )
+                                })
+                                .unwrap()
+                        })
+                    )
+                    .collect();
+                    Some(db.intern_concrete_type(ConcreteTypeLongId {
+                        generic_id: "Enum".into(),
+                        generic_args,
+                    }))
                 }
                 defs::ids::GenericTypeId::Extern(extrn) => {
                     Some(db.intern_concrete_type(ConcreteTypeLongId {

@@ -110,6 +110,20 @@ impl<'a> ExprGeneratorContext<'a> {
         })
     }
 
+    pub fn enum_init_libfunc_id(
+        &self,
+        ty: sierra::ids::ConcreteTypeId,
+        variant_idx: usize,
+    ) -> sierra::ids::ConcreteLibFuncId {
+        self.db.intern_concrete_lib_func(sierra::program::ConcreteLibFuncLongId {
+            generic_id: sierra::ids::GenericLibFuncId::from_string("enum_init"),
+            generic_args: vec![
+                sierra::program::GenericArg::Type(ty),
+                sierra::program::GenericArg::Value(variant_idx.into()),
+            ],
+        })
+    }
+
     pub fn drop_libfunc_id(
         &self,
         ty: sierra::ids::ConcreteTypeId,
