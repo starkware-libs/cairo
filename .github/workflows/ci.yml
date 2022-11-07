@@ -13,7 +13,7 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           components: rustfmt
-          toolchain: nightly-2022-07-27
+          toolchain: nightly-2022-11-03
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - run: |
@@ -27,9 +27,9 @@ jobs:
         with:
           profile: minimal
           components: rustfmt
-          toolchain: nightly-2022-07-27
+          toolchain: nightly-2022-11-03
       - uses: Swatinem/rust-cache@v2
-      - run: cargo +nightly-2022-07-27 fmt --all -- --check
+      - run: cargo +nightly-2022-11-03 fmt --all -- --check
 
   # Checks all .cairo files in the repo are formatted correctly.
   cairofmt:
@@ -39,7 +39,7 @@ jobs:
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: nightly-2022-07-27
+          toolchain: nightly-2022-11-03
       - uses: Swatinem/rust-cache@v2
       - run: cargo run --bin formatter_cli -- --check --recursive
 
@@ -52,7 +52,7 @@ jobs:
         name: "Rust Toolchain Setup"
         with:
           profile: minimal
-          toolchain: nightly-2022-07-27
+          toolchain: nightly-2022-11-03
       - uses: actions/cache@v2
         name: "Cache Setup"
         with:
@@ -67,7 +67,7 @@ jobs:
           tar -xzf cargo-udeps-v0.1.30-x86_64-unknown-linux-gnu.tar.gz;
           cargo-udeps-v0.1.30-x86_64-unknown-linux-gnu/cargo-udeps udeps
         env:
-          RUSTUP_TOOLCHAIN: nightly-2022-07-27
+          RUSTUP_TOOLCHAIN: nightly-2022-11-03
 
   clippy:
     runs-on: ubuntu-latest
