@@ -9,7 +9,7 @@ use sierra::extensions::{ConcreteType, GenericTypeEx};
 
 use crate::program_generator::{self};
 use crate::specialization_context::SierraSignatureSpecializationContext;
-use crate::{ap_change, function_generator, pre_sierra, SierraGeneratorDiagnostic};
+use crate::{ap_change, function_generator, pre_sierra, ApChange, SierraGeneratorDiagnostic};
 
 #[salsa::query_group(SierraGenDatabase)]
 pub trait SierraGenGroup: LoweringGroup + Upcast<dyn LoweringGroup> {
@@ -89,6 +89,11 @@ pub trait SierraGenGroup: LoweringGroup + Upcast<dyn LoweringGroup> {
     #[salsa::invoke(ap_change::contains_cycle)]
     #[salsa::cycle(ap_change::contains_cycle_handle_cycle)]
     fn contains_cycle(&self, function_id: FreeFunctionId) -> Option<bool>;
+
+    /// Returns the ap change of a given function if it is known at compile time or
+    /// [ApChange::Unknown] otherwise.
+    #[salsa::invoke(ap_change::get_ap_change)]
+    fn get_ap_change(&self, function_id: FreeFunctionId) -> Option<ApChange>;
 }
 
 fn get_function_signature(

@@ -32,6 +32,8 @@ pub struct Parser<'a> {
     offset: u32,
     /// The width of the current terminal being handled.
     current_width: u32,
+    /// The length of the trailing trivia following the last read token.
+    last_trivia_length: u32,
     diagnostics: &'a mut DiagnosticsBuilder<ParserDiagnostic>,
 }
 
@@ -71,6 +73,7 @@ impl<'a> Parser<'a> {
             pending_trivia: Vec::new(),
             offset: 0,
             current_width: 0,
+            last_trivia_length: 0,
             diagnostics,
         };
         let green = parser.parse_syntax_file();
@@ -82,17 +85,11 @@ impl<'a> Parser<'a> {
         &mut self,
         missing_kind: ParserDiagnosticKind,
     ) -> T::Green {
-        let next_offset = (self.offset
-            + self.current_width
-            + self.peek().leading_trivia.iter().map(|t| t.0.width(self.db)).sum::<u32>())
-            as usize;
+        let next_offset = (self.offset + self.current_width - self.last_trivia_length) as usize;
         self.diagnostics.add(ParserDiagnostic {
             file_id: self.file_id,
             kind: missing_kind,
-            span: TextSpan {
-                start: TextOffset(next_offset),
-                end: TextOffset(next_offset + self.peek().text.len() as usize),
-            },
+            span: TextSpan { start: TextOffset(next_offset), end: TextOffset(next_offset + 1) },
         });
         T::missing(self.db)
     }
@@ -1061,6 +1058,8 @@ impl<'a> Parser<'a> {
     fn take_raw(&mut self) -> LexerTerminal {
         self.offset += self.current_width;
         self.current_width = self.next_terminal.width(self.db);
+        self.last_trivia_length =
+            self.next_terminal.trailing_trivia.iter().map(|y| y.0.width(self.db)).sum();
         let next_terminal = self.lexer.next().unwrap();
         std::mem::replace(&mut self.next_terminal, next_terminal)
     }

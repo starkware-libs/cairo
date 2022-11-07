@@ -385,6 +385,12 @@ impl LanguageServer for Backend {
             ResolvedGenericItem::Variant(variant) => {
                 (variant.id.module(defs_db), variant.id.stable_ptr(defs_db).untyped())
             }
+            ResolvedGenericItem::Trait(trt) => {
+                (trt.module(defs_db), trt.stable_ptr(defs_db).untyped())
+            }
+            ResolvedGenericItem::Impl(imp) => {
+                (imp.module(defs_db), imp.stable_ptr(defs_db).untyped())
+            }
         };
 
         let file = if let Some(file) = db.module_file(module_id) {

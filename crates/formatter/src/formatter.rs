@@ -482,11 +482,16 @@ impl<'a> Formatter<'a> {
         let children = syntax_node.children(self.db);
         let n_children = children.len();
         for (i, child) in children.enumerate() {
+            if child.width(self.db) == 0 {
+                continue;
+            }
+
             self.current_indent += indent_change;
             if self.line_state.is_empty() {
                 self.line_state.reset(self.get_indentation())
             }
             self.format_node(&child, no_space_after && i == n_children - 1);
+
             self.empty_lines_allowance = allowed_empty_between;
             self.current_indent -= indent_change;
             // If this is a breakable list is breakable a breakpoint is added after each separator

@@ -1,8 +1,11 @@
-use sierra::extensions::lib_func::SignatureSpecializationContext;
+use defs::ids::GenericFunctionId;
+use semantic::FunctionLongId;
+use sierra::extensions::lib_func::{SierraApChange, SignatureSpecializationContext};
 use sierra::extensions::type_specialization_context::TypeSpecializationContext;
 use sierra::program::ConcreteTypeLongId;
 
 use crate::db::SierraGenGroup;
+use crate::ApChange;
 
 /// A wrapper over the [SierraGenGroup] salsa database, that provides the
 /// [SignatureSpecializationContext] functionality.
@@ -39,5 +42,31 @@ impl SignatureSpecializationContext for SierraSignatureSpecializationContext<'_>
 
     fn as_type_specialization_context(&self) -> &dyn TypeSpecializationContext {
         self
+    }
+
+    fn try_get_function_ap_change(
+        &self,
+        function_id: &sierra::ids::FunctionId,
+    ) -> Option<SierraApChange> {
+        let function_long_id = self
+            .0
+            .lookup_intern_function(self.0.lookup_intern_sierra_function(function_id.clone()));
+        match function_long_id {
+            FunctionLongId::Concrete(concrete_function) => {
+                match concrete_function.generic_function {
+                    GenericFunctionId::Free(free_function_id) => {
+                        self.0.get_ap_change(free_function_id).map(|ap_change| match ap_change {
+                            ApChange::Known(value) => SierraApChange::Known(value),
+                            ApChange::Unknown => SierraApChange::Unknown,
+                        })
+                    }
+                    GenericFunctionId::Extern(_) => panic!(
+                        "Internal compiler error: get_function_ap_change() should only be used \
+                         for user defined functions."
+                    ),
+                }
+            }
+            FunctionLongId::Missing => None,
+        }
     }
 }

@@ -3,7 +3,7 @@ use num_bigint::BigInt;
 use test_case::test_case;
 
 use super::core::{CoreLibFunc, CoreType};
-use super::lib_func::{SignatureSpecializationContext, SpecializationContext};
+use super::lib_func::{SierraApChange, SignatureSpecializationContext, SpecializationContext};
 use super::types::TypeInfo;
 use super::SpecializationError::{
     self, IndexOutOfRange, MissingFunction, UnsupportedGenericArg, UnsupportedId,
@@ -101,6 +101,10 @@ impl SignatureSpecializationContext for MockSpecializationContext {
 
     fn as_type_specialization_context(&self) -> &dyn TypeSpecializationContext {
         self
+    }
+
+    fn try_get_function_ap_change(&self, _function_id: &FunctionId) -> Option<SierraApChange> {
+        Some(SierraApChange::NotImplemented)
     }
 }
 
