@@ -19,6 +19,7 @@ members = [
     "crates/sierra_generator",
     "crates/sierra_to_casm",
     "crates/syntax",
+    "crates/starknet",
     "crates/syntax_codegen",
     "tests",
 ]
