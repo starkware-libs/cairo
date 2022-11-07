@@ -3,7 +3,6 @@ use semantic::corelib;
 use utils::extract_matches;
 
 use super::context::{LoweredExpr, LoweringContext, LoweringFlowError};
-use super::external::extern_facade_expr;
 use super::scope::{generators, BlockFlowMerger, BlockScope, BlockScopeEnd};
 use super::{
     lower_block, lower_expr, lowered_expr_from_block_result, lowered_expr_to_block_scope_end,
@@ -21,7 +20,9 @@ enum IfCondition {
 fn analyze_condition(ctx: &LoweringContext<'_>, expr_id: semantic::ExprId) -> IfCondition {
     let expr = &ctx.function_def.exprs[expr_id];
     if let semantic::Expr::FunctionCall(function_call) = expr {
-        if function_call.function == corelib::felt_eq(ctx.db) && function_call.args.len() == 2 {
+        if function_call.function == corelib::felt_eq(ctx.db.upcast())
+            && function_call.args.len() == 2
+        {
             return IfCondition::Eq(function_call.args[0], function_call.args[1]);
         };
     };
@@ -108,15 +109,15 @@ pub fn lower_expr_if_eq_zero(
     } else {
         let lowered_a = lower_expr(ctx, scope, expr_a)?.var(ctx, scope);
         let lowered_b = lower_expr(ctx, scope, expr_b)?.var(ctx, scope);
-        let ret_ty = corelib::core_felt_ty(ctx.db);
+        let ret_ty = corelib::core_felt_ty(ctx.db.upcast());
         let call_result = generators::Call {
-            function: corelib::felt_sub(ctx.db),
+            function: corelib::felt_sub(ctx.db.upcast()),
             inputs: vec![lowered_a, lowered_b],
             ref_tys: vec![],
             ret_tys: vec![ret_ty],
         }
         .add(ctx, scope);
-        extern_facade_expr(ctx, ret_ty, call_result.returns).var(ctx, scope)
+        call_result.returns.into_iter().next().unwrap()
     };
 
     let semantic_db = ctx.db.upcast();
