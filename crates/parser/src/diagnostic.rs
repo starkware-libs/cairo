@@ -25,9 +25,8 @@ impl DiagnosticEntry for ParserDiagnostic {
 
     fn format(&self, _db: &dyn FilesGroup) -> String {
         match self.kind {
-            // TODO(yuval): replace line breaks with "\n".
             ParserDiagnosticKind::SkippedElement { element_name } => {
-                format!("Skipped tokens. Expected element: {element_name}.")
+                format!("Skipped tokens. Expected: {element_name}.")
             }
             ParserDiagnosticKind::MissingToken(kind) => {
                 format!("Missing token {kind:?}.")
