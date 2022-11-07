@@ -53,6 +53,17 @@ pub fn store_temp_libfunc_id(
     })
 }
 
+/// Returns the [sierra::program::ConcreteLibFuncLongId] associated with `store_local`.
+pub fn store_local_libfunc_id(
+    db: &dyn SierraGenGroup,
+    ty: ConcreteTypeId,
+) -> sierra::ids::ConcreteLibFuncId {
+    db.intern_concrete_lib_func(sierra::program::ConcreteLibFuncLongId {
+        generic_id: sierra::ids::GenericLibFuncId::from_string("store_local"),
+        generic_args: vec![sierra::program::GenericArg::Type(ty)],
+    })
+}
+
 /// Returns the [sierra::program::ConcreteLibFuncLongId] associated with `rename`.
 pub fn rename_libfunc_id(
     db: &dyn SierraGenGroup,

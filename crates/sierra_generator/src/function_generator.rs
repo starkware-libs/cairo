@@ -13,12 +13,14 @@ use sierra::extensions::lib_func::LibFuncSignature;
 use sierra::extensions::GenericLibFuncEx;
 use sierra::ids::ConcreteLibFuncId;
 use sierra::program::Param;
+use utils::ordered_hash_set::OrderedHashSet;
 use utils::unordered_hash_map::UnorderedHashMap;
 
 use crate::block_generator::{generate_block_code, generate_return_code};
 use crate::db::SierraGenGroup;
 use crate::dup_and_drop::{calculate_statement_dups_and_drops, VarsDupsAndDrops};
 use crate::expr_generator_context::ExprGeneratorContext;
+use crate::local_variables::find_local_variables;
 use crate::pre_sierra::{self, Statement};
 use crate::specialization_context::SierraSignatureSpecializationContext;
 use crate::store_variables::add_store_statements;
@@ -66,6 +68,9 @@ fn get_function_code(
     let lowered_function = &*db.free_function_lowered(function_id)?;
     let block = &lowered_function.blocks[lowered_function.root?];
 
+    // Find the local variables.
+    let local_variables = find_local_variables(db, lowered_function)?;
+
     let mut context = ExprGeneratorContext::new(db, lowered_function, function_id, diagnostics);
 
     // Generate a label for the function's body.
@@ -101,12 +106,17 @@ fn get_function_code(
         lowering::BlockEnd::Return(_) | lowering::BlockEnd::Unreachable => {}
     };
 
+    let sierra_local_variables: OrderedHashSet<_> = local_variables
+        .iter()
+        .map(|lowering_var_id| context.get_sierra_variable(*lowering_var_id))
+        .collect();
     let statements = add_store_statements(
         context.get_db(),
         statements,
         &|concrete_lib_func_id: ConcreteLibFuncId| -> LibFuncSignature {
             get_libfunc_signature(context.get_db(), concrete_lib_func_id)
         },
+        sierra_local_variables,
     );
     let statements = add_dups_and_drops(&mut context, &parameters, statements);
 

@@ -15,8 +15,7 @@ use crate::utils::{get_concrete_libfunc_id, get_libfunc_signature};
 
 /// Given the lowering of a function, returns the set of variables which should be stored as local
 /// variables.
-#[allow(dead_code)]
-fn find_local_variables(
+pub fn find_local_variables(
     db: &dyn SierraGenGroup,
     lowered_function: &Lowered,
 ) -> Option<OrderedHashSet<VariableId>> {
