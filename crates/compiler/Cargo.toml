@@ -4,12 +4,19 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+clap.workspace = true
 defs = { path = "../defs" }
 db_utils = { path = "../db_utils" }
 filesystem = { path = "../filesystem" }
 lowering = { path = "../lowering" }
 semantic = { path = "../semantic" }
+sierra = { path = "../sierra" }
 sierra_generator = { path = "../sierra_generator" }
 syntax = { path = "../syntax" }
 parser = { path = "../parser" }
-salsa = "0.16.1"
+project = { path = "../project" }
+salsa.workspace = true
+
+[[bin]]
+name = "cairo-compile"
+path = "src/cli.rs"
