@@ -5,6 +5,7 @@ use sierra::extensions::lib_func::{
 };
 use sierra::extensions::OutputVarReferenceInfo;
 use sierra::ids::ConcreteLibFuncId;
+use utils::ordered_hash_map::OrderedHashMap;
 
 use crate::db::SierraGenGroup;
 use crate::pre_sierra;
@@ -115,6 +116,26 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibFuncId) -
     }
 }
 
+/// Helper function for tests of [add_store_statements].
+///
+/// Calls [add_store_statements] on the given `statements` and returns the result as a vector of
+/// strings.
+fn test_add_store_statements(
+    db: &SierraGenDatabaseForTesting,
+    statements: Vec<pre_sierra::Statement>,
+    local_variables: OrderedHashMap<sierra::ids::VarId, sierra::ids::VarId>,
+) -> Vec<String> {
+    add_store_statements(
+        db,
+        statements,
+        &(|libfunc| get_lib_func_signature(db, libfunc)),
+        local_variables,
+    )
+    .iter()
+    .map(|statement| replace_sierra_ids(db, statement).to_string())
+    .collect()
+}
+
 #[test]
 fn store_temp_simple() {
     let db = SierraGenDatabaseForTesting::default();
@@ -131,10 +152,7 @@ fn store_temp_simple() {
     ];
 
     assert_eq!(
-        add_store_statements(&db, statements, &(|libfunc| get_lib_func_signature(&db, libfunc)))
-            .iter()
-            .map(|statement| replace_sierra_ids(&db, statement).to_string())
-            .collect::<Vec<String>>(),
+        test_add_store_statements(&db, statements, OrderedHashMap::default()),
         vec![
             "felt_add(0, 1) -> (2)",
             "nope() -> ()",
@@ -149,6 +167,32 @@ fn store_temp_simple() {
             "felt_add(5, 5) -> (6)",
             "return()",
         ]
+    );
+}
+
+#[test]
+fn store_local_simple() {
+    let db = SierraGenDatabaseForTesting::default();
+    let statements: Vec<pre_sierra::Statement> = vec![
+        dummy_simple_statement(&db, "felt_add", &["0", "1"], &["2"]),
+        dummy_simple_statement(&db, "nope", &[], &[]),
+        dummy_simple_statement(&db, "felt_add", &["2", "3"], &["4"]),
+        dummy_return_statement(&[]),
+    ];
+
+    assert_eq!(
+        test_add_store_statements(
+            &db,
+            statements,
+            OrderedHashMap::from_iter(vec![("2".into(), "5".into())])
+        ),
+        vec![
+            "felt_add(0, 1) -> (2)",
+            "nope() -> ()",
+            "store_local<felt>(5, 2) -> (2)",
+            "felt_add(2, 3) -> (4)",
+            "return()",
+        ],
     );
 }
 
@@ -168,10 +212,7 @@ fn store_temp_push_values() {
     ];
 
     assert_eq!(
-        add_store_statements(&db, statements, &(|libfunc| get_lib_func_signature(&db, libfunc)))
-            .iter()
-            .map(|statement| replace_sierra_ids(&db, statement).to_string())
-            .collect::<Vec<String>>(),
+        test_add_store_statements(&db, statements, OrderedHashMap::default()),
         vec![
             "felt_add(0, 1) -> (2)",
             "nope() -> ()",
@@ -203,10 +244,7 @@ fn push_values_optimization() {
     ];
 
     assert_eq!(
-        add_store_statements(&db, statements, &(|libfunc| get_lib_func_signature(&db, libfunc)))
-            .iter()
-            .map(|statement| replace_sierra_ids(&db, statement).to_string())
-            .collect::<Vec<String>>(),
+        test_add_store_statements(&db, statements, OrderedHashMap::default()),
         vec![
             "function_call4() -> (0, 1, 2, 3)",
             "rename<felt>(2) -> (102)",
@@ -231,10 +269,7 @@ fn consecutive_push_values() {
     ];
 
     assert_eq!(
-        add_store_statements(&db, statements, &(|libfunc| get_lib_func_signature(&db, libfunc)))
-            .iter()
-            .map(|statement| replace_sierra_ids(&db, statement).to_string())
-            .collect::<Vec<String>>(),
+        test_add_store_statements(&db, statements, OrderedHashMap::default()),
         vec![
             // First statement. Push [0] and [1].
             "store_temp<felt>(0) -> (100)",
@@ -273,10 +308,7 @@ fn push_values_after_branch_merge() {
     ];
 
     assert_eq!(
-        add_store_statements(&db, statements, &(|libfunc| get_lib_func_signature(&db, libfunc)))
-            .iter()
-            .map(|statement| replace_sierra_ids(&db, statement).to_string())
-            .collect::<Vec<String>>(),
+        test_add_store_statements(&db, statements, OrderedHashMap::default()),
         vec![
             "branch() { label0() fallthrough() }",
             // Push [0], [1] and [2].
@@ -315,10 +347,7 @@ fn push_values_early_return() {
     ];
 
     assert_eq!(
-        add_store_statements(&db, statements, &(|libfunc| get_lib_func_signature(&db, libfunc)))
-            .iter()
-            .map(|statement| replace_sierra_ids(&db, statement).to_string())
-            .collect::<Vec<String>>(),
+        test_add_store_statements(&db, statements, OrderedHashMap::default()),
         vec![
             // Push [0] and [1].
             "store_temp<felt>(0) -> (100)",
@@ -355,10 +384,7 @@ fn store_temp_gets_deferred() {
     ];
 
     assert_eq!(
-        add_store_statements(&db, statements, &(|libfunc| get_lib_func_signature(&db, libfunc)))
-            .iter()
-            .map(|statement| replace_sierra_ids(&db, statement).to_string())
-            .collect::<Vec<String>>(),
+        test_add_store_statements(&db, statements, OrderedHashMap::default()),
         vec![
             "felt_add(0, 1) -> (2)",
             "nope() -> ()",
@@ -393,10 +419,7 @@ fn consecutive_const_additions() {
     ];
 
     assert_eq!(
-        add_store_statements(&db, statements, &(|libfunc| get_lib_func_signature(&db, libfunc)))
-            .iter()
-            .map(|statement| replace_sierra_ids(&db, statement).to_string())
-            .collect::<Vec<String>>(),
+        test_add_store_statements(&db, statements, OrderedHashMap::default()),
         vec![
             "felt_add(0, 1) -> (2)",
             "store_temp<felt>(2) -> (2)",

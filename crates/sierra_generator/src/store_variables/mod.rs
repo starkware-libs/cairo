@@ -17,22 +17,28 @@ use utils::ordered_hash_map::OrderedHashMap;
 use crate::db::SierraGenGroup;
 use crate::pre_sierra;
 use crate::store_variables::known_stack::KnownStack;
-use crate::utils::{rename_libfunc_id, simple_statement, store_temp_libfunc_id};
+use crate::utils::{
+    rename_libfunc_id, simple_statement, store_local_libfunc_id, store_temp_libfunc_id,
+};
 
 /// Automatically adds store_temp() statements to the given list of [pre_sierra::Statement].
 /// For example, a deferred reference (e.g., `[ap] + [fp - 3]`) needs to be stored as a temporary
 /// or local variable before being included in additional computation.
 /// The function will add the necessary `store_temp()` instruction before the first use of the
 /// deferred reference.
+///
+/// `local_variables` is a map from variables that should be stored as local to their allocated
+/// space.
 pub fn add_store_statements<GetLibFuncSignature>(
     db: &dyn SierraGenGroup,
     statements: Vec<pre_sierra::Statement>,
     get_lib_func_signature: &GetLibFuncSignature,
+    local_variables: OrderedHashMap<sierra::ids::VarId, sierra::ids::VarId>,
 ) -> Vec<pre_sierra::Statement>
 where
     GetLibFuncSignature: Fn(ConcreteLibFuncId) -> LibFuncSignature,
 {
-    let mut handler = AddStoreVariableStatements::new(db);
+    let mut handler = AddStoreVariableStatements::new(db, local_variables);
     // Go over the statements, restarting whenever we see a branch or a label.
     for statement in statements.into_iter() {
         handler.handle_statement(statement, get_lib_func_signature);
@@ -42,6 +48,9 @@ where
 
 struct AddStoreVariableStatements<'a> {
     db: &'a dyn SierraGenGroup,
+    /// A map from variables that should be stored as local to their allocated
+    /// space.
+    local_variables: OrderedHashMap<sierra::ids::VarId, sierra::ids::VarId>,
     /// A list of output statements (the original statement, together with the added statements,
     /// such as "store_temp").
     result: Vec<pre_sierra::Statement>,
@@ -57,9 +66,13 @@ struct AddStoreVariableStatements<'a> {
 }
 impl<'a> AddStoreVariableStatements<'a> {
     /// Constructs a new [AddStoreVariableStatements] object.
-    fn new(db: &'a dyn SierraGenGroup) -> Self {
+    fn new(
+        db: &'a dyn SierraGenGroup,
+        local_variables: OrderedHashMap<sierra::ids::VarId, sierra::ids::VarId>,
+    ) -> Self {
         AddStoreVariableStatements {
             db,
+            local_variables,
             result: Vec::new(),
             state_opt: Some(State::default()),
             future_states: OrderedHashMap::default(),
@@ -166,23 +179,28 @@ impl<'a> AddStoreVariableStatements<'a> {
             match deferred_info.kind {
                 state::DeferredVariableKind::Generic => {
                     if !allow_deferred {
-                        self.store_temp_deferred(arg)
+                        self.store_deferred(arg)
                     }
                 }
                 state::DeferredVariableKind::AddConst => {
                     if !allow_add_const {
-                        self.store_temp_deferred(arg)
+                        self.store_deferred(arg)
                     }
                 }
             };
         }
     }
 
-    /// Adds a store_temp() instruction for the given deferred variable and removes it from the
-    /// `deferred_variables` map.
-    fn store_temp_deferred(&mut self, var: &sierra::ids::VarId) {
+    /// Adds a store_temp() or store_local() instruction for the given deferred variable and removes
+    /// it from the `deferred_variables` map.
+    fn store_deferred(&mut self, var: &sierra::ids::VarId) {
         let deferred_info = self.state().deferred_variables[var.clone()].clone();
-        self.store_temp(var, var, &deferred_info.ty);
+        // Check if this variable should be a local variable.
+        if let Some(uninitialized_local_var_id) = self.local_variables.get(var).cloned() {
+            self.store_local(var, var, &uninitialized_local_var_id, &deferred_info.ty);
+        } else {
+            self.store_temp(var, var, &deferred_info.ty);
+        }
         self.state().deferred_variables.swap_remove(var);
     }
 
@@ -254,6 +272,20 @@ impl<'a> AddStoreVariableStatements<'a> {
         ));
 
         self.known_stack().push(var_on_stack);
+    }
+
+    fn store_local(
+        &mut self,
+        var: &sierra::ids::VarId,
+        var_on_stack: &sierra::ids::VarId,
+        uninitialized_local_var_id: &sierra::ids::VarId,
+        ty: &sierra::ids::ConcreteTypeId,
+    ) {
+        self.result.push(simple_statement(
+            store_local_libfunc_id(self.db, ty.clone()),
+            &[uninitialized_local_var_id.clone(), var.clone()],
+            &[var_on_stack.clone()],
+        ));
     }
 
     fn rename_var(
