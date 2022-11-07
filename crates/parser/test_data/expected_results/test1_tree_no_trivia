@@ -332,17 +332,17 @@
     │       └── rbrace (kind: TokenRBrace): '}'
     └── eof (kind: TokenEndOfFile).
 --------------------
-error: Skipped tokens. Expected element: item.
+error: Skipped tokens. Expected: item.
  --> test1.cairo:6:1
 ;
 ^
 
-error: Skipped tokens. Expected element: parameter.
+error: Skipped tokens. Expected: parameter.
  --> test1.cairo:7:10
 func foo(,var1: int,, mut ref var2: felt,) -> int {
          ^
 
-error: Skipped tokens. Expected element: parameter.
+error: Skipped tokens. Expected: parameter.
  --> test1.cairo:7:21
 func foo(,var1: int,, mut ref var2: felt,) -> int {
                     ^
@@ -357,22 +357,22 @@ error: Missing token TerminalSemicolon.
 extern func glee<A, b>(var1: int,) -> crate::S<int>;
                                               ^
 
-error: Skipped tokens. Expected element: item.
+error: Skipped tokens. Expected: item.
  --> test1.cairo:30:47
 extern func glee<A, b>(var1: int,) -> crate::S<int>;
                                               ^
 
-error: Skipped tokens. Expected element: item.
+error: Skipped tokens. Expected: item.
  --> test1.cairo:30:48
 extern func glee<A, b>(var1: int,) -> crate::S<int>;
                                                ^*^
 
-error: Skipped tokens. Expected element: item.
+error: Skipped tokens. Expected: item.
  --> test1.cairo:30:51
 extern func glee<A, b>(var1: int,) -> crate::S<int>;
                                                   ^
 
-error: Skipped tokens. Expected element: item.
+error: Skipped tokens. Expected: item.
  --> test1.cairo:30:52
 extern func glee<A, b>(var1: int,) -> crate::S<int>;
                                                    ^

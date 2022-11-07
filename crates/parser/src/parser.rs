@@ -974,16 +974,17 @@ impl<'a> Parser<'a> {
     // ------------------------------- Helpers -------------------------------
 
     /// Parses a list of elements (without separators), where the elements are parsed using
-    /// `try_parse_list_element`. The `closing` token indicates when to stop parsing.
-    /// Returns the list of green ids of the elements. If it can't parse an element and the current
-    /// token is not `closing`, skips the current token and tries again.
-    // TODO(yuval): we want more advanced logic here - decide if token is missing or skipped
-    // according to context. Same for the other list-parsing functions.
+    /// `try_parse_list_element`.
+    /// Returns the list of green ids of the elements.
+    ///
+    /// `should_stop` is a predicate to decide how to proceed in case an element can't be parsed,
+    /// according to the current token. If it returns true, the parsing of the list stops. If it
+    /// returns false, the current token is skipped and we try to parse an element again.
     fn parse_list<ElementGreen>(
         &mut self,
         try_parse_list_element: fn(&mut Self) -> Option<ElementGreen>,
         should_stop: fn(SyntaxKind) -> bool,
-        element_name: &'static str,
+        expected_element: &'static str,
     ) -> Vec<ElementGreen> {
         let mut children: Vec<ElementGreen> = Vec::new();
         loop {
@@ -994,7 +995,9 @@ impl<'a> Parser<'a> {
                 if should_stop(self.peek().kind) {
                     break;
                 }
-                self.skip_token(ParserDiagnosticKind::SkippedElement { element_name });
+                self.skip_token(ParserDiagnosticKind::SkippedElement {
+                    element_name: expected_element,
+                });
             }
         }
         children
@@ -1002,11 +1005,19 @@ impl<'a> Parser<'a> {
 
     /// Parses a list of elements with `separator`s, where the elements are parsed using
     /// `try_parse_list_element`. The separator may or may not appear in the end of the list.
-    /// The `closing` token indicates when to stop parsing.
-    /// Return the list of elements and separators. This list contains alternating children:
-    /// [element, separator, element, separator, ...]. Both elements and separators may be missing.
+    /// Returns the list of elements and separators. This list contains alternating children:
+    /// [element, separator, element, separator, ...]. Separators may be missing.
     /// The length of the list is either 2 * #elements - 1 or 2 * #elements (a separator for each
     /// element or for each element but the last one).
+    ///
+    /// `should_stop` is a predicate to decide how to proceed in case an element or a separator
+    /// can't be parsed, according to the current token.
+    /// When parsing an element:
+    /// If it returns true, the parsing of the list stops. If it returns false, the current token
+    /// is skipped and we try to parse an element again.
+    /// When parsing a separator:
+    /// If it returns true, the parsing of the list stops. If it returns false, a missing separator
+    /// is added and we continue to try to parse another element (with the same token).
     fn parse_separated_list<
         Element: TypedSyntaxNode,
         Separator: syntax::node::Terminal,
@@ -1015,7 +1026,7 @@ impl<'a> Parser<'a> {
         &mut self,
         try_parse_list_element: fn(&mut Self) -> Option<Element::Green>,
         should_stop: fn(SyntaxKind) -> bool,
-        element_name: &'static str,
+        expected_element: &'static str,
     ) -> Vec<ElementOrSeparatorGreen>
     where
         ElementOrSeparatorGreen: From<Separator::Green> + From<Element::Green>,
@@ -1027,7 +1038,9 @@ impl<'a> Parser<'a> {
                     break;
                 }
                 None => {
-                    self.skip_token(ParserDiagnosticKind::SkippedElement { element_name });
+                    self.skip_token(ParserDiagnosticKind::SkippedElement {
+                        element_name: expected_element,
+                    });
                     continue;
                 }
                 Some(element) => {
