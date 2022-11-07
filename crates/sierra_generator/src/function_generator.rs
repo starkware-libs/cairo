@@ -95,7 +95,7 @@ fn get_function_code(
 
     let mut statements: Vec<pre_sierra::Statement> = vec![label];
 
-    let (_sierra_local_variables, allocate_local_statements) =
+    let (sierra_local_variables, allocate_local_statements) =
         allocate_local_variables(&mut context, &local_variables)?;
     statements.extend(allocate_local_statements);
 
@@ -120,6 +120,7 @@ fn get_function_code(
         &|concrete_lib_func_id: ConcreteLibFuncId| -> LibFuncSignature {
             get_libfunc_signature(context.get_db(), concrete_lib_func_id)
         },
+        sierra_local_variables,
     );
     let statements = add_dups_and_drops(&mut context, &parameters, statements);
 
