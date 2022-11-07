@@ -108,15 +108,12 @@ pub fn get_concrete_libfunc_id(
     function: semantic::FunctionId,
 ) -> (semantic::ConcreteFunction, ConcreteLibFuncId) {
     // Check if this is a user-defined function or a libfunc.
-    let function_long_id = match db.lookup_intern_function(function) {
-        semantic::FunctionLongId::Concrete(concrete) => concrete,
-        semantic::FunctionLongId::Missing => todo!(),
-    };
-    match function_long_id.generic_function {
-        GenericFunctionId::Free(_) => (function_long_id, function_call_libfunc_id(db, function)),
+    let concrete_function = db.lookup_intern_function(function).function;
+    match concrete_function.generic_function {
+        GenericFunctionId::Free(_) => (concrete_function, function_call_libfunc_id(db, function)),
         GenericFunctionId::Extern(extern_id) => {
             let mut generic_args = vec![];
-            for generic_arg in &function_long_id.generic_args {
+            for generic_arg in &concrete_function.generic_args {
                 generic_args.push(match generic_arg {
                     semantic::GenericArgumentId::Type(ty) => sierra::program::GenericArg::Type(
                         // TODO(lior): How should the following unwrap() be handled?
@@ -125,7 +122,7 @@ pub fn get_concrete_libfunc_id(
                 });
             }
 
-            (function_long_id, generic_libfunc_id(db, extern_id, generic_args))
+            (concrete_function, generic_libfunc_id(db, extern_id, generic_args))
         }
     }
 }
