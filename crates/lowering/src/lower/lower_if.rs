@@ -3,7 +3,6 @@ use semantic::corelib;
 use utils::extract_matches;
 
 use super::context::{LoweredExpr, LoweringContext, LoweringFlowError};
-use super::external::extern_facade_expr;
 use super::scope::{generators, BlockFlowMerger, BlockScope, BlockScopeEnd};
 use super::{
     lower_block, lower_expr, lowered_expr_from_block_result, lowered_expr_to_block_scope_end,
@@ -114,7 +113,7 @@ pub fn lower_expr_if_eq_zero(
             ret_tys: vec![ret_ty],
         }
         .add(ctx, scope);
-        extern_facade_expr(ctx, ret_ty, call_result.returns).var(ctx, scope)
+        call_result.returns.into_iter().next().unwrap()
     };
 
     // Lower both blocks.
