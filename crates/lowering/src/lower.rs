@@ -238,7 +238,7 @@ fn lower_single_pattern(
                 exprs
             } else {
                 let tys = extract_matches!(ctx.db.lookup_intern_type(*ty), TypeLongId::Tuple);
-                generators::TupleDestruct { input: lowered_expr.var(ctx, scope), tys }
+                generators::TupleDestructure { input: lowered_expr.var(ctx, scope), tys }
                     .add(ctx, scope)
                     .into_iter()
                     .map(LoweredExpr::AtVariable)
