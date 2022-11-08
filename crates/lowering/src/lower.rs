@@ -238,7 +238,7 @@ fn lower_single_pattern(
                 exprs
             } else {
                 let tys = extract_matches!(ctx.db.lookup_intern_type(*ty), TypeLongId::Tuple);
-                generators::TupleDestruct { input: lowered_expr.var(ctx, scope), tys }
+                generators::TupleDestructure { input: lowered_expr.var(ctx, scope), tys }
                     .add(ctx, scope)
                     .into_iter()
                     .map(LoweredExpr::AtVariable)
@@ -383,11 +383,8 @@ fn perform_function_call(
 ) -> (Vec<LivingVar>, LoweredExpr) {
     // If the function is not extern, simply call it.
     if !matches!(
-        ctx.db.lookup_intern_function(function),
-        semantic::FunctionLongId::Concrete(semantic::ConcreteFunction {
-            generic_function: GenericFunctionId::Extern(_),
-            ..
-        })
+        ctx.db.lookup_intern_function(function).function,
+        semantic::ConcreteFunction { generic_function: GenericFunctionId::Extern(_), .. }
     ) {
         let call_result =
             generators::Call { function, inputs, ref_tys, ret_tys: vec![ret_ty] }.add(ctx, scope);

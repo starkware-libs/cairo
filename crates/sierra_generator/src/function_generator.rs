@@ -57,7 +57,7 @@ pub fn free_function_sierra(
     db.priv_free_function_sierra_data(function_id).function
 }
 
-pub fn get_function_code(
+fn get_function_code(
     diagnostics: &mut DiagnosticsBuilder<SierraGeneratorDiagnostic>,
     db: &dyn SierraGenGroup,
     function_id: FreeFunctionId,
@@ -114,13 +114,13 @@ pub fn get_function_code(
     // be regarded as private.
     Some(
         pre_sierra::Function {
-            id: db.intern_sierra_function(db.intern_function(semantic::FunctionLongId::Concrete(
-                semantic::ConcreteFunction {
+            id: db.intern_sierra_function(db.intern_function(semantic::FunctionLongId {
+                function: semantic::ConcreteFunction {
                     generic_function: GenericFunctionId::Free(function_id),
                     // TODO(lior): Add generic arguments.
                     generic_args: vec![],
                 },
-            ))),
+            })),
             body: statements,
             entry_point: label_id,
             parameters,

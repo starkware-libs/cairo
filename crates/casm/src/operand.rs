@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use num_bigint::{BigInt, ToBigInt};
+use num_bigint::BigInt;
 
 #[cfg(test)]
 #[path = "operand_test.rs"]
@@ -92,14 +92,9 @@ impl Display for DerefOrImmediate {
         }
     }
 }
-impl From<i128> for DerefOrImmediate {
-    fn from(x: i128) -> Self {
-        DerefOrImmediate::Immediate(x.to_bigint().unwrap())
-    }
-}
-impl From<BigInt> for DerefOrImmediate {
-    fn from(x: BigInt) -> Self {
-        DerefOrImmediate::Immediate(x)
+impl<T: Into<BigInt>> From<T> for DerefOrImmediate {
+    fn from(x: T) -> Self {
+        DerefOrImmediate::Immediate(x.into())
     }
 }
 impl From<CellRef> for DerefOrImmediate {

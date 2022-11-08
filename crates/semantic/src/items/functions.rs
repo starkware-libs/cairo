@@ -17,11 +17,10 @@ use crate::{semantic, Mutability, Parameter};
 
 /// Function instance.
 /// For example: ImplA::foo<A, B>, or bar<A>.
-// TODO(spapini): Add a function pointer variant.
+// TODO(spapini): Make it an enum and add a function pointer variant.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub enum FunctionLongId {
-    Concrete(ConcreteFunction),
-    Missing,
+pub struct FunctionLongId {
+    pub function: ConcreteFunction,
 }
 impl DebugWithDb<dyn SemanticGroup> for FunctionLongId {
     fn fmt(
@@ -29,19 +28,11 @@ impl DebugWithDb<dyn SemanticGroup> for FunctionLongId {
         f: &mut std::fmt::Formatter<'_>,
         db: &(dyn SemanticGroup + 'static),
     ) -> std::fmt::Result {
-        match self {
-            FunctionLongId::Concrete(concrete) => write!(f, "{:?}", concrete.debug(db)),
-            FunctionLongId::Missing => write!(f, "<missing>"),
-        }
+        write!(f, "{:?}", self.function.debug(db))
     }
 }
 
 define_short_id!(FunctionId, FunctionLongId, SemanticGroup, lookup_intern_function);
-impl FunctionId {
-    pub fn missing(db: &dyn SemanticGroup) -> Self {
-        db.intern_function(FunctionLongId::Missing)
-    }
-}
 
 // TODO(spapini): Refactor to an enum.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
@@ -174,36 +165,28 @@ pub fn concrete_function_signature(
     db: &dyn SemanticGroup,
     function_id: FunctionId,
 ) -> Option<Signature> {
-    match db.lookup_intern_function(function_id) {
-        FunctionLongId::Concrete(ConcreteFunction { generic_function, generic_args, .. }) => {
-            let generic_params = db.generic_function_generic_params(generic_function)?;
-            if generic_params.len() != generic_args.len() {
-                // TODO(spapini): Uphold the invariant that constructed ConcreteFunction instances
-                //   always have the correct number of generic arguemnts.
-                return None;
-            }
-            // TODO(spapini): When trait generics are supported, they need to be substituted
-            //   one by one, not together.
-            let substitution_map =
-                generic_params.into_iter().zip(generic_args.into_iter()).collect();
-            let generic_signature = db.generic_function_signature(generic_function)?;
-            let concretize_param = |param: semantic::Parameter| Parameter {
-                id: param.id,
-                ty: substitute_generics(db, &substitution_map, param.ty),
-                mutability: param.mutability,
-            };
-            Some(Signature {
-                params: generic_signature.params.into_iter().map(concretize_param).collect(),
-                return_type: substitute_generics(
-                    db,
-                    &substitution_map,
-                    generic_signature.return_type,
-                ),
-                implicits: generic_signature.implicits.into_iter().map(concretize_param).collect(),
-            })
-        }
-        FunctionLongId::Missing => None,
+    let ConcreteFunction { generic_function, generic_args, .. } =
+        db.lookup_intern_function(function_id).function;
+    let generic_params = db.generic_function_generic_params(generic_function)?;
+    if generic_params.len() != generic_args.len() {
+        // TODO(spapini): Uphold the invariant that constructed ConcreteFunction instances
+        //   always have the correct number of generic arguemnts.
+        return None;
     }
+    // TODO(spapini): When trait generics are supported, they need to be substituted
+    //   one by one, not together.
+    let substitution_map = generic_params.into_iter().zip(generic_args.into_iter()).collect();
+    let generic_signature = db.generic_function_signature(generic_function)?;
+    let concretize_param = |param: semantic::Parameter| Parameter {
+        id: param.id,
+        ty: substitute_generics(db, &substitution_map, param.ty),
+        mutability: param.mutability,
+    };
+    Some(Signature {
+        params: generic_signature.params.into_iter().map(concretize_param).collect(),
+        return_type: substitute_generics(db, &substitution_map, generic_signature.return_type),
+        implicits: generic_signature.implicits.into_iter().map(concretize_param).collect(),
+    })
 }
 
 /// For a given list of AST parameters, returns the list of semantic parameters along with the

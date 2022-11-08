@@ -5,7 +5,7 @@ use semantic::ConcreteVariant;
 use crate::lower::Lowered;
 use crate::objects::{
     Block, BlockEnd, BlockId, Statement, StatementCall, StatementCallBlock, StatementLiteral,
-    StatementMatchExtern, StatementTupleDestruct, VariableId,
+    StatementMatchExtern, StatementTupleDestructure, VariableId,
 };
 use crate::{StatementEnumConstruct, StatementMatchEnum, StatementTupleConstruct};
 
@@ -137,11 +137,11 @@ impl DebugWithDb<LoweredFormatter<'_>> for Statement {
             Statement::CallBlock(stmt) => stmt.fmt(f, ctx),
             Statement::MatchExtern(stmt) => stmt.fmt(f, ctx),
             Statement::StructConstruct => todo!(),
-            Statement::StructDestruct => todo!(),
+            Statement::StructDestructure => todo!(),
             Statement::EnumConstruct(stmt) => stmt.fmt(f, ctx),
             Statement::MatchEnum(stmt) => stmt.fmt(f, ctx),
             Statement::TupleConstruct(stmt) => stmt.fmt(f, ctx),
-            Statement::TupleDestruct(stmt) => stmt.fmt(f, ctx),
+            Statement::TupleDestructure(stmt) => stmt.fmt(f, ctx),
         }
     }
 }
@@ -246,9 +246,9 @@ impl DebugWithDb<LoweredFormatter<'_>> for StatementTupleConstruct {
     }
 }
 
-impl DebugWithDb<LoweredFormatter<'_>> for StatementTupleDestruct {
+impl DebugWithDb<LoweredFormatter<'_>> for StatementTupleDestructure {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
-        write!(f, "tuple_destruct(")?;
+        write!(f, "tuple_destructure(")?;
         self.input.fmt(f, ctx)?;
         write!(f, ")")
     }

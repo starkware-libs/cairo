@@ -1,0 +1,44 @@
+//! > Simple local variables
+
+//! > test_function_name
+check_find_local_variables
+
+//! > function_name
+foo
+
+//! > function_code
+func foo(x: felt) -> felt {
+    let y0 = x + x;
+    let y1 = y0 + y0;
+    let y2 = y1 + y1;  // Note: y2 is not used below.
+    revoke_ap();
+    let z = x + y1;
+    revoke_ap();
+    let w = x + y1 + z;
+    x
+}
+
+//! > module_code
+// Revokes ap since this function is recursive.
+func revoke_ap() -> felt {
+    revoke_ap()
+}
+
+//! > lowering_format
+blk0:
+Inputs: v0: core::felt
+Statements:
+  (v1: core::felt) <- core::felt_add(v0, v0)
+  (v2: core::felt) <- core::felt_add(v1, v1)
+  (v3: core::felt) <- core::felt_add(v2, v2)
+  (v4: core::felt) <- test_crate::revoke_ap()
+  (v5: core::felt) <- core::felt_add(v0, v2)
+  (v6: core::felt) <- test_crate::revoke_ap()
+  (v7: core::felt) <- core::felt_add(v0, v2)
+  (v8: core::felt) <- core::felt_add(v7, v5)
+Drops: v8, v1, v2, v3, v4, v5, v6, v7
+End:
+  Callsite(v0)
+
+//! > local_variables
+v2, v5
