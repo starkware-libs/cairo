@@ -19,6 +19,8 @@ fn test_expr_lookup() {
     let test_module = setup_test_module(
         db,
         indoc::indoc! {"
+            #[external]
+            #[my_attr]
             func foo<A, B>(a: felt) -> felt {
                 let x = 5 + 5;
                 match 1 * (1) {
@@ -85,5 +87,11 @@ fn test_expr_lookup() {
              Block(ExprBlock { statements: [], tail: Some(Literal(ExprLiteral { value: 6, ty: \
              core::felt })), ty: core::felt }) }], ty: core::felt })",
         ]
+    );
+
+    let attributes = db.free_function_declaration_attributes(free_function_id).unwrap();
+    assert_eq!(
+        format!("{:?}", attributes),
+        "[Attribute { id: \"external\" }, Attribute { id: \"my_attr\" }]"
     );
 }

@@ -10,6 +10,6 @@ func f() {
 
 //! > expected_diagnostics
 error: Missing tokens. Expected an expression.
- --> dummy_file.cairo:2:9
+ --> dummy_file.cairo:2:8
     1 + * 2 + {5}
-        ^
+       ^
