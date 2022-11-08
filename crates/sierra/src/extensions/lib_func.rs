@@ -35,8 +35,6 @@ pub trait SignatureSpecializationContext: TypeSpecializationContext {
     }
 
     /// Returns the ap-change of the given function.
-    /// Note that this function is implemented only in the high-level compiler. It returns
-    /// [SierraApChange::NotImplemented] when Sierra is compiled to casm.
     fn try_get_function_ap_change(&self, function_id: &FunctionId) -> Option<SierraApChange>;
 
     /// Wraps [Self::try_get_function_ap_change] with a result object.
@@ -308,7 +306,7 @@ pub struct BranchSignature {
 
 /// Describes the effect on the `ap` register in a given libfunc branch.
 // TODO(ilya): Try to combine this with the ApChange of `sierra_to_casm`.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum SierraApChange {
     /// The libfunc changes `ap` in an unknown way.
     Unknown,

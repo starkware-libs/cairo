@@ -59,8 +59,9 @@ pub struct ProgramRegistry<TType: GenericType, TLibFunc: GenericLibFunc> {
 }
 impl<TType: GenericType, TLibFunc: GenericLibFunc> ProgramRegistry<TType, TLibFunc> {
     /// Create a registry for the program.
-    pub fn new(
+    pub fn with_ap_change(
         program: &Program,
+        function_ap_change: HashMap<FunctionId, SierraApChange>,
     ) -> Result<ProgramRegistry<TType, TLibFunc>, Box<ProgramRegistryError>> {
         let functions = get_functions(program)?;
         let (concrete_types, concrete_type_ids) = get_concrete_types_maps::<TType>(program)?;
@@ -70,9 +71,16 @@ impl<TType: GenericType, TLibFunc: GenericLibFunc> ProgramRegistry<TType, TLibFu
                 functions: &functions,
                 concrete_type_ids: &concrete_type_ids,
                 concrete_types: &concrete_types,
+                function_ap_change,
             },
         )?;
         Ok(ProgramRegistry { functions, concrete_types, concrete_libfuncs })
+    }
+
+    pub fn new(
+        program: &Program,
+    ) -> Result<ProgramRegistry<TType, TLibFunc>, Box<ProgramRegistryError>> {
+        Self::with_ap_change(program, HashMap::default())
     }
     /// Get a function from the input program.
     pub fn get_function<'a>(
@@ -170,6 +178,8 @@ pub struct SpecializationContextForRegistry<'a, TType: GenericType> {
     pub functions: &'a FunctionMap,
     pub concrete_type_ids: &'a ConcreteTypeIdMap<'a>,
     pub concrete_types: &'a TypeMap<TType::Concrete>,
+    /// AP changes information for Sierra user functions.
+    pub function_ap_change: HashMap<FunctionId, SierraApChange>,
 }
 impl<TType: GenericType> TypeSpecializationContext for SpecializationContextForRegistry<'_, TType> {
     fn try_get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo> {
@@ -195,8 +205,11 @@ impl<TType: GenericType> SignatureSpecializationContext
         self
     }
 
-    fn try_get_function_ap_change(&self, _function_id: &FunctionId) -> Option<SierraApChange> {
-        Some(SierraApChange::NotImplemented)
+    fn try_get_function_ap_change(&self, function_id: &FunctionId) -> Option<SierraApChange> {
+        Some(match self.function_ap_change.get(function_id) {
+            Some(ap_change) => ap_change.clone(),
+            None => SierraApChange::Unknown,
+        })
     }
 }
 impl<TType: GenericType> SpecializationContext for SpecializationContextForRegistry<'_, TType> {

@@ -86,8 +86,11 @@ pub fn compile(
     // Maps statement_idx to program_offset.
     let mut statement_offsets = Vec::with_capacity(program.statements.len());
 
-    let registry = ProgramRegistry::<CoreType, CoreLibFunc>::new(program)
-        .map_err(CompilationError::ProgramRegistryError)?;
+    let registry = ProgramRegistry::<CoreType, CoreLibFunc>::with_ap_change(
+        program,
+        metadata.function_ap_change.clone(),
+    )
+    .map_err(CompilationError::ProgramRegistryError)?;
     let type_sizes = get_type_size_map(program, &registry)
         .ok_or(CompilationError::FailedBuildingTypeInformation)?;
     let mut program_annotations = ProgramAnnotations::create(

@@ -2,10 +2,10 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 
-use casm::ap_change::ApChange;
 use indoc::indoc;
 use itertools::Itertools;
 use pretty_assertions;
+use sierra::extensions::lib_func::SierraApChange;
 use sierra::ids::FunctionId;
 use sierra::program::Program;
 use sierra::ProgramParser;
@@ -26,7 +26,7 @@ fn build_metadata(
         function_ap_change: ap_change_data
             .iter()
             .map(|(func_name, change)| {
-                (FunctionId::from_string(func_name), ApChange::Known(*change))
+                (FunctionId::from_string(func_name), SierraApChange::Known(*change))
             })
             .collect(),
         gas_info: if calculate_gas_info {
