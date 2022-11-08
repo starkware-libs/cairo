@@ -34,7 +34,7 @@ error: Missing token TerminalComma.
     match MyStruct{a: 1} {
                     ^
 
-error: Skipped tokens. Expected element: match arm.
+error: Skipped tokens. Expected: match arm.
  --> dummy_file.cairo:2:21
     match MyStruct{a: 1} {
                     ^

@@ -1,0 +1,43 @@
+//! > Missing semicolon
+
+//! > test_function_name
+get_diagnostics
+
+//! > cairo_code
+func f() {
+    let x = 123
+    let y = 4   let z = 5
+    let y = 6 // comment
+    let w = 7 +
+}
+
+//! > expected_diagnostics
+error: Missing token TerminalSemicolon.
+ --> dummy_file.cairo:2:16
+    let x = 123
+               ^
+
+error: Missing token TerminalSemicolon.
+ --> dummy_file.cairo:3:14
+    let y = 4   let z = 5
+             ^
+
+error: Missing token TerminalSemicolon.
+ --> dummy_file.cairo:3:26
+    let y = 4   let z = 5
+                         ^
+
+error: Missing token TerminalSemicolon.
+ --> dummy_file.cairo:4:14
+    let y = 6 // comment
+             ^
+
+error: Missing tokens. Expected an expression.
+ --> dummy_file.cairo:5:16
+    let w = 7 +
+               ^
+
+error: Missing token TerminalSemicolon.
+ --> dummy_file.cairo:5:16
+    let w = 7 +
+               ^

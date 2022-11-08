@@ -1,10 +1,12 @@
 └── root (kind: SyntaxFile)
     ├── items (kind: ItemList)
     │   ├── child #0 (kind: ItemModule)
+    │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── module_kw (kind: TokenModule): 'mod'
     │   │   ├── name (kind: TokenIdentifier): 'submod'
     │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   ├── child #1 (kind: ItemUse)
+    │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── use_kw (kind: TokenUse): 'use'
     │   │   ├── name (kind: ExprPath)
     │   │   │   ├── item #0 (kind: PathSegmentSimple)
@@ -14,6 +16,7 @@
     │   │   │       └── ident (kind: TokenIdentifier): 'something'
     │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   ├── child #2 (kind: ItemFreeFunction)
+    │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── function_kw (kind: TokenFunction): 'func'
     │   │   ├── name (kind: TokenIdentifier): 'foo'
     │   │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
@@ -217,6 +220,7 @@
     │   │       │       └── semicolon (kind: TokenSemicolon): ';'
     │   │       └── rbrace: Missing
     │   ├── child #3 (kind: ItemFreeFunction)
+    │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── function_kw (kind: TokenFunction): 'func'
     │   │   ├── name (kind: TokenIdentifier): 'bar'
     │   │   ├── generic_params (kind: WrappedGenericParamList)
@@ -252,6 +256,7 @@
     │   │   │   └── rangle (kind: TokenGT): '>'
     │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   ├── child #5 (kind: ItemExternFunction)
+    │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── extern_kw (kind: TokenExtern): 'extern'
     │   │   ├── function_kw (kind: TokenFunction): 'func'
     │   │   ├── name (kind: TokenIdentifier): 'glee'
@@ -288,6 +293,7 @@
     │   │   │   └── implicits_clause (kind: OptionImplicitsClauseEmpty) []
     │   │   └── semicolon: Missing
     │   └── child #6 (kind: ItemStruct)
+    │       ├── attributes (kind: AttributeList) []
     │       ├── struct_kw (kind: TokenStruct): 'struct'
     │       ├── name (kind: TokenIdentifier): 'A'
     │       ├── generic_params (kind: WrappedGenericParamList)
@@ -332,47 +338,47 @@
     │       └── rbrace (kind: TokenRBrace): '}'
     └── eof (kind: TokenEndOfFile).
 --------------------
-error: Skipped tokens. Expected element: item.
+error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/Attribute.
  --> test1.cairo:6:1
 ;
 ^
 
-error: Skipped tokens. Expected element: parameter.
+error: Skipped tokens. Expected: parameter.
  --> test1.cairo:7:10
 func foo(,var1: int,, mut ref var2: felt,) -> int {
          ^
 
-error: Skipped tokens. Expected element: parameter.
+error: Skipped tokens. Expected: parameter.
  --> test1.cairo:7:21
 func foo(,var1: int,, mut ref var2: felt,) -> int {
                     ^
 
 error: Missing token TerminalRBrace.
- --> test1.cairo:27:1
-func bar<A, B>() -> felt { }
-^**^
+ --> test1.cairo:25:14
+    return x;
+             ^
 
 error: Missing token TerminalSemicolon.
  --> test1.cairo:30:47
 extern func glee<A, b>(var1: int,) -> crate::S<int>;
                                               ^
 
-error: Skipped tokens. Expected element: item.
+error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/Attribute.
  --> test1.cairo:30:47
 extern func glee<A, b>(var1: int,) -> crate::S<int>;
                                               ^
 
-error: Skipped tokens. Expected element: item.
+error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/Attribute.
  --> test1.cairo:30:48
 extern func glee<A, b>(var1: int,) -> crate::S<int>;
                                                ^*^
 
-error: Skipped tokens. Expected element: item.
+error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/Attribute.
  --> test1.cairo:30:51
 extern func glee<A, b>(var1: int,) -> crate::S<int>;
                                                   ^
 
-error: Skipped tokens. Expected element: item.
+error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/Attribute.
  --> test1.cairo:30:52
 extern func glee<A, b>(var1: int,) -> crate::S<int>;
                                                    ^

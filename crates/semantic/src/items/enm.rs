@@ -2,6 +2,7 @@ use db_utils::Upcast;
 use defs::ids::{EnumId, GenericParamId, LanguageElementId, VariantId, VariantLongId};
 use diagnostics::Diagnostics;
 use diagnostics_proc_macros::DebugWithDb;
+use itertools::enumerate;
 use smol_str::SmolStr;
 use syntax::node::{Terminal, TypedSyntaxNode};
 use utils::ordered_hash_map::OrderedHashMap;
@@ -33,6 +34,8 @@ pub struct Variant {
     pub enum_id: EnumId,
     pub id: VariantId,
     pub ty: semantic::TypeId,
+    /// The index of the variant from within the variant list.
+    pub idx: usize,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
@@ -41,6 +44,8 @@ pub struct ConcreteVariant {
     pub concrete_enum_id: ConcreteEnumId,
     pub id: VariantId,
     pub ty: semantic::TypeId,
+    /// The index of the variant from within the variant list.
+    pub idx: usize,
 }
 
 /// Query implementation of [crate::db::SemanticGroup::enum_semantic_diagnostics].
@@ -96,7 +101,7 @@ pub fn priv_enum_semantic_data(db: &dyn SemanticGroup, enum_id: EnumId) -> Optio
     // Variants.
     let mut variants = OrderedHashMap::default();
     let mut variant_semantic = OrderedHashMap::default();
-    for variant in enum_ast.variants(syntax_db).elements(syntax_db) {
+    for (variant_idx, variant) in enumerate(enum_ast.variants(syntax_db).elements(syntax_db)) {
         let id = db.intern_variant(VariantLongId(module_id, variant.stable_ptr()));
         let ty = resolve_type(
             db,
@@ -108,7 +113,7 @@ pub fn priv_enum_semantic_data(db: &dyn SemanticGroup, enum_id: EnumId) -> Optio
         if let Some(_other_variant) = variants.insert(variant_name.clone(), id) {
             diagnostics.report(&variant, EnumVariantRedefinition { enum_id, variant_name })
         }
-        variant_semantic.insert(id, Variant { enum_id, id, ty });
+        variant_semantic.insert(id, Variant { enum_id, id, ty, idx: variant_idx });
     }
 
     Some(EnumData { diagnostics: diagnostics.build(), generic_params, variants, variant_semantic })
@@ -130,7 +135,7 @@ pub trait SemanticEnumEx<'a>: Upcast<dyn SemanticGroup + 'a> {
         let substitution = &generic_params.into_iter().zip(generic_args.into_iter()).collect();
 
         let ty = substitute_generics(db, substitution, variant.ty);
-        Some(ConcreteVariant { concrete_enum_id, id: variant.id, ty })
+        Some(ConcreteVariant { concrete_enum_id, id: variant.id, ty, idx: variant.idx })
     }
 
     /// Retrieves all the [ConcreteVariant]s for a [ConcreteEnumId].
