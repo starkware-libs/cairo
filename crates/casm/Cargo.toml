@@ -4,6 +4,7 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+cairo-rs = { git = "https://github.com/lambdaclass/cairo-rs" }
 thiserror.workspace = true
 num-bigint.workspace = true
 utils = { path = "../utils" }
