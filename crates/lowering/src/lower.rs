@@ -340,15 +340,21 @@ fn lower_expr_function_call(
     let arg_inputs = lower_exprs_as_vars(ctx, &expr.args, scope)?;
     let inputs = chain!(ref_inputs, arg_inputs.into_iter()).collect();
 
-    if let semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::Enum(concrete_enum_id)) =
-        ctx.db.lookup_intern_type(expr.ty)
-    {
-        return Ok(LoweredExpr::ExternEnum(LoweredExprExternEnum {
-            function: expr.function,
-            concrete_enum_id,
-            inputs,
-            ref_args: expr.ref_args.clone(),
-        }));
+    // The following is relevant only to extern functions.
+    if matches!(
+        ctx.db.lookup_intern_function(expr.function).function,
+        semantic::ConcreteFunction { generic_function: GenericFunctionId::Extern(_), .. }
+    ) {
+        if let semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::Enum(concrete_enum_id)) =
+            ctx.db.lookup_intern_type(expr.ty)
+        {
+            return Ok(LoweredExpr::ExternEnum(LoweredExprExternEnum {
+                function: expr.function,
+                concrete_enum_id,
+                inputs,
+                ref_args: expr.ref_args.clone(),
+            }));
+        }
     }
 
     let (ref_outputs, res) =
