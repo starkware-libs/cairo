@@ -139,7 +139,6 @@ fn build_store_temp(
     Ok(builder.build(
         instructions,
         vec![],
-        [ApChange::Known(type_size)].into_iter(),
         [[ReferenceExpression {
             cells: (-usize_as_i16(type_size)..0)
                 .map(|i| CellExpression::Deref(CellRef { register: Register::AP, offset: i }))
@@ -174,7 +173,6 @@ fn build_store_local(
     Ok(builder.build(
         instructions,
         vec![],
-        [ApChange::Known(0)].into_iter(),
         [[ReferenceExpression {
             cells: (0..type_size)
                 .map(|i| {
@@ -202,7 +200,6 @@ fn build_finalize_locals(
     Ok(builder.build(
         casm! { ap += (n_slots as i128); }.instructions,
         vec![],
-        [ApChange::Known(n_slots)].into_iter(),
         [[].into_iter()].into_iter(),
     ))
 }

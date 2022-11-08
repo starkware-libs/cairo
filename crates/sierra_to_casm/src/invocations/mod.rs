@@ -126,8 +126,6 @@ impl CompiledInvocationBuilder<'_> {
         self,
         instructions: Vec<Instruction>,
         relocations: Vec<RelocationEntry>,
-        // TODO(ilya): Remove ap_changes param.
-        ap_changes: impl Iterator<Item = ApChange>,
         output_expressions: impl Iterator<Item = impl Iterator<Item = ReferenceExpression>>,
     ) -> CompiledInvocation {
         let gas_changes = sierra_gas::core_libfunc_cost::core_libfunc_cost(
@@ -140,13 +138,10 @@ impl CompiledInvocationBuilder<'_> {
             instructions,
             relocations,
             results: zip_eq(
-                zip_eq(
-                    zip_eq(self.libfunc.branch_signatures(), gas_changes),
-                    zip_eq(output_expressions, self.libfunc.output_types()),
-                ),
-                ap_changes,
+                zip_eq(self.libfunc.branch_signatures(), gas_changes),
+                zip_eq(output_expressions, self.libfunc.output_types()),
             )
-            .map(|(((branch_signature, gas_change), (expressions, types)), old_ap_change)| {
+            .map(|((branch_signature, gas_change), (expressions, types))| {
                 let ap_change = match branch_signature.ap_change {
                     SierraApChange::Known(x) => ApChange::Known(x),
                     SierraApChange::NotImplemented => panic!("AP change not implemented."),
@@ -156,7 +151,6 @@ impl CompiledInvocationBuilder<'_> {
                     },
                     _ => ApChange::Unknown,
                 };
-                assert_eq!(ap_change, old_ap_change);
 
                 BranchChanges::new(
                     ap_change,
@@ -175,12 +169,7 @@ impl CompiledInvocationBuilder<'_> {
         self,
         output_expressions: impl Iterator<Item = ReferenceExpression>,
     ) -> CompiledInvocation {
-        self.build(
-            vec![],
-            vec![],
-            [ApChange::Known(0)].into_iter(),
-            [output_expressions].into_iter(),
-        )
+        self.build(vec![], vec![], [output_expressions].into_iter())
     }
 }
 

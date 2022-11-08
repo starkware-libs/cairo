@@ -1,4 +1,3 @@
-use casm::ap_change::ApChange;
 use casm::casm;
 use sierra::program::{BranchInfo, BranchTarget};
 use utils::try_extract_matches;
@@ -11,7 +10,7 @@ use crate::relocations::{Relocation, RelocationEntry};
 pub fn build_revoke_ap_tracking(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    Ok(builder.build(vec![], vec![], [ApChange::Unknown].into_iter(), [[].into_iter()].into_iter()))
+    Ok(builder.build(vec![], vec![], [[].into_iter()].into_iter()))
 }
 
 /// Handles a dup instruction.
@@ -80,7 +79,6 @@ pub fn build_jump_nz(
             instruction_idx: 0,
             relocation: Relocation::RelativeStatementId(*target_statement_id),
         }],
-        itertools::repeat_n(ApChange::Known(0), 2).into_iter(),
         [
             vec![].into_iter(),
             vec![ReferenceExpression::from_cell(CellExpression::Deref(value))].into_iter(),
@@ -104,7 +102,6 @@ pub fn build_jump(
             instruction_idx: 0,
             relocation: Relocation::RelativeStatementId(*target_statement_id),
         }],
-        [ApChange::Known(0)].into_iter(),
         [vec![].into_iter()].into_iter(),
     ))
 }
