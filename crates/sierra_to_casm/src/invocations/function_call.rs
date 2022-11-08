@@ -4,6 +4,7 @@ use casm::ap_change::ApChange;
 use casm::casm;
 use casm::operand::{CellRef, Register};
 use sierra::extensions::function_call::FunctionCallConcreteLibFunc;
+use sierra::extensions::lib_func::SierraApChange;
 use sierra::extensions::ConcreteLibFunc;
 use utils::casts::usize_as_i16;
 
@@ -43,7 +44,7 @@ pub fn build(
     let ap_change = match builder.program_info.metadata.function_ap_change.get(&libfunc.function.id)
     {
         // The call uses two stack slots.
-        Some(ApChange::Known(change)) => ApChange::Known(change + 2),
+        Some(SierraApChange::Known(change)) => ApChange::Known(change + 2),
         _ => ApChange::Unknown,
     };
 
