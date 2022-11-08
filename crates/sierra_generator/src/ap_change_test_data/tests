@@ -1,0 +1,68 @@
+//! > No cycles.
+
+//! > test_function_name
+contains_cycles_test
+
+//! > module_code
+func non_cyclic() -> felt {
+    non_cyclic2()
+}
+
+func non_cyclic2() -> felt {
+    0
+}
+
+//! > result
+non_cyclic: ap_change=Some(Unknown), has_cycles=Some(false)
+non_cyclic2: ap_change=Some(Unknown), has_cycles=Some(false)
+
+//! > ==========================================================================
+
+//! > Simple cycle.
+
+//! > test_function_name
+contains_cycles_test
+
+//! > module_code
+func simple_cycle(x: felt) -> felt {
+    if x == 0 {
+        {
+            return simple_cycle(x);
+        }
+    }
+    0
+}
+
+func calls_simple_cycle(x: felt) -> felt {
+    simple_cycle(x)
+}
+
+//! > result
+simple_cycle: ap_change=Some(Unknown), has_cycles=Some(true)
+calls_simple_cycle: ap_change=Some(Unknown), has_cycles=Some(true)
+
+//! > ==========================================================================
+
+//! > Longer cycle.
+
+//! > test_function_name
+contains_cycles_test
+
+//! > module_code
+// a calls b, which then calls a.
+func cycle_of_len2_a(x: felt) -> felt {
+    cycle_of_len2_b(x)
+}
+
+func cycle_of_len2_b(x: felt) -> felt {
+    cycle_of_len2_a(x)
+}
+
+func call_cycle_of_len2(x: felt) -> felt {
+    cycle_of_len2_a(x)
+}
+
+//! > result
+cycle_of_len2_a: ap_change=Some(Unknown), has_cycles=Some(true)
+cycle_of_len2_b: ap_change=Some(Unknown), has_cycles=Some(true)
+call_cycle_of_len2: ap_change=Some(Unknown), has_cycles=Some(true)

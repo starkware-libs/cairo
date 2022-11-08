@@ -57,7 +57,7 @@ pub fn free_function_sierra(
     db.priv_free_function_sierra_data(function_id).function
 }
 
-pub fn get_function_code(
+fn get_function_code(
     diagnostics: &mut DiagnosticsBuilder<SierraGeneratorDiagnostic>,
     db: &dyn SierraGenGroup,
     function_id: FreeFunctionId,

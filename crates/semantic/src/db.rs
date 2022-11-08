@@ -40,6 +40,16 @@ pub trait SemanticGroup:
         id: types::ConcreteExternTypeLongId,
     ) -> types::ConcreteExternTypeId;
     #[salsa::interned]
+    fn intern_concrete_trait(
+        &self,
+        id: items::trt::ConcreteTraitLongId,
+    ) -> items::trt::ConcreteTraitId;
+    #[salsa::interned]
+    fn intern_concrete_impl(
+        &self,
+        id: items::trt::ConcreteImplLongId,
+    ) -> items::trt::ConcreteImplId;
+    #[salsa::interned]
     fn intern_type(&self, id: types::TypeLongId) -> semantic::TypeId;
 
     // Use.
@@ -138,6 +148,12 @@ pub trait SemanticGroup:
         &self,
         free_function_id: FreeFunctionId,
     ) -> Option<semantic::Signature>;
+    /// Returns the attributes of a free function declaration.
+    #[salsa::invoke(items::free_function::free_function_declaration_attributes)]
+    fn free_function_declaration_attributes(
+        &self,
+        free_function_id: FreeFunctionId,
+    ) -> Option<Vec<items::free_function::Attribute>>;
     /// Returns the generic params of a free function declaration.
     #[salsa::invoke(items::free_function::free_function_declaration_generic_params)]
     fn free_function_declaration_generic_params(

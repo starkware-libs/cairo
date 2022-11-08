@@ -3,7 +3,9 @@ use std::collections::HashMap;
 
 use thiserror::Error;
 
-use crate::extensions::lib_func::{SignatureSpecializationContext, SpecializationContext};
+use crate::extensions::lib_func::{
+    SierraApChange, SignatureSpecializationContext, SpecializationContext,
+};
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::TypeInfo;
 use crate::extensions::{
@@ -191,6 +193,10 @@ impl<TType: GenericType> SignatureSpecializationContext
 
     fn as_type_specialization_context(&self) -> &dyn TypeSpecializationContext {
         self
+    }
+
+    fn try_get_function_ap_change(&self, _function_id: &FunctionId) -> Option<SierraApChange> {
+        Some(SierraApChange::NotImplemented)
     }
 }
 impl<TType: GenericType> SpecializationContext for SpecializationContextForRegistry<'_, TType> {
