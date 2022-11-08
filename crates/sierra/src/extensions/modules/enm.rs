@@ -117,6 +117,8 @@ define_libfunc_hierarchy! {
 
 pub struct EnumInitConcreteLibFunc {
     pub signature: LibFuncSignature,
+    /// The number of variants of the enum.
+    pub num_variants: usize,
     /// The index of the relevant variant from the enum.
     pub index: usize,
 }
@@ -162,6 +164,7 @@ impl EnumInitLibFunc {
                 }],
                 SierraApChange::Known(0),
             ),
+            num_variants,
             index,
         })
     }
@@ -209,9 +212,9 @@ impl NamedLibFunc for EnumMatchLibFunc {
             .map(|ty| BranchSignature {
                 vars: vec![OutputVarInfo {
                     ty,
-                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
+                    ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
                 }],
-                ap_change: SierraApChange::NotImplemented,
+                ap_change: SierraApChange::Known(0),
             })
             .collect();
 
