@@ -1,23 +1,23 @@
 [package]
 name = "formatter"
-version = "0.1.0"
-edition = "2021"
+version.workspace = true
+edition.workspace = true
 
 [[bin]]
 name = "formatter_cli"
 path = "src/bin/cli.rs"
 
 [dependencies]
-clap = {version = "4.0", features = ["derive"]}
+clap.workspace = true
 filesystem = { path = "../filesystem" }
-itertools = "0.10.3"
-salsa = "0.16.1"
-smol_str = "0.1.23"
+itertools.workspace = true
+salsa.workspace = true
+smol_str.workspace = true
 parser = { path = "../parser" }
 syntax = { path = "../syntax" }
-diffy = "0.3.0"
-colored = "2"
+diffy.workspace = true
+colored.workspace = true
 
 [dev-dependencies]
-pretty_assertions = "1.2.1"
-test-case = "2.2.1"
+pretty_assertions.workspace = true
+test-case.workspace = true

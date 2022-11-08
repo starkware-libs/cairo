@@ -1,24 +1,23 @@
 [package]
 name = "sierra_to_casm"
-version = "0.1.0"
-edition = "2021"
-
-[dev-dependencies]
-assert_matches = "1.5"
-indoc = "1.0.7"
-pretty_assertions = "1.2.1"
-test-case = "2.2.1"
+version.workspace = true
+edition.workspace = true
 
 [dependencies]
 casm = { path = "../casm" }
-clap = {version = "4.0", features = ["derive"]}
-itertools = "0.10.3"
-num-bigint = "0.4.3"
+clap.workspace = true
+itertools.workspace = true
+num-bigint.workspace = true
 sierra = { path = "../sierra" }
 sierra_gas = { path = "../sierra_gas" }
-thiserror = "1.0.32"
+thiserror.workspace = true
 utils = { path = "../utils" }
 
+[dev-dependencies]
+assert_matches.workspace = true
+indoc.workspace = true
+pretty_assertions.workspace = true
+test-case.workspace = true
 
 [[bin]]
 name = "sierra-compile"
