@@ -1,11 +1,11 @@
 [package]
 name = "utils"
-version = "0.1.0"
-edition = "2021"
+version.workspace = true
+edition.workspace = true
 
 [features]
 testing = []
 
 [dependencies]
-indexmap = "1.9.1"
-itertools = "0.10.3"
+indexmap.workspace = true
+itertools.workspace = true

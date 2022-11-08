@@ -1,13 +1,13 @@
 [package]
 name = "project"
-version = "0.1.0"
-edition = "2021"
+version.workspace = true
+edition.workspace = true
 
 [dependencies]
-serde = { version = "1.0.130", features = ["derive"] }
-smol_str = "0.1.23"
-thiserror = { version = "1.0.31" }
-toml = "0.4.2"
+serde.workspace = true
+smol_str.workspace = true
+thiserror.workspace = true
+toml.workspace = true
 
 [dev-dependencies]
-indoc = "1.0.7"
+indoc.workspace = true

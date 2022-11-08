@@ -1,16 +1,16 @@
 [package]
 name = "diagnostics"
-version = "0.1.0"
-edition = "2021"
+version.workspace = true
+edition.workspace = true
 
 [dependencies]
 db_utils = { path = "../db_utils" }
 filesystem = { path = "../filesystem" }
-itertools = "0.10.3"
-salsa = "0.16.1"
+itertools.workspace = true
+salsa.workspace = true
 
 
 [dev_dependencies]
 diagnostics_proc_macros = { path = "../diagnostics_proc_macros" }
-indoc = "1.0.7"
-pretty_assertions = "1.2.1"
+indoc.workspace = true
+pretty_assertions.workspace = true

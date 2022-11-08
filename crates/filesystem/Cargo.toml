@@ -1,12 +1,12 @@
 [package]
 name = "filesystem"
-version = "0.1.0"
-edition = "2021"
+version.workspace = true
+edition.workspace = true
 
 [dependencies]
 db_utils = { path = "../db_utils" }
 debug = { path = "../debug" }
-path-clean = "0.1.0"
+path-clean.workspace = true
 project = { path = "../project" }
-salsa = "0.16.1"
-smol_str = "0.1.23"
+salsa.workspace = true
+smol_str.workspace = true

@@ -1,24 +1,24 @@
 [package]
 name = "parser"
-version = "0.1.0"
-edition = "2021"
+version.workspace = true
+edition.workspace = true
 
 [features]
 fix_parser_tests = ["utils/testing"]
 
 [dependencies]
-colored = "2"
+colored.workspace = true
 db_utils = { path = "../db_utils" }
 diagnostics = { path = "../diagnostics" }
 filesystem = { path = "../filesystem" }
-itertools = "0.10.3"
-salsa = "0.16.1"
-smol_str = "0.1.23"
+itertools.workspace = true
+salsa.workspace = true
+smol_str.workspace = true
 syntax = { path = "../syntax" }
 syntax_codegen = { path = "../syntax_codegen" }
 utils = { path = "../utils" }
 
 [dev-dependencies]
-pretty_assertions = "1.2.1"
-test-case = "2.2.1"
+pretty_assertions.workspace = true
+test-case.workspace = true
 utils = { path = "../utils", features=["testing"] }

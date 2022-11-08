@@ -1,7 +1,7 @@
 [package]
 name = "languageserver"
-version = "0.1.0"
-edition = "2021"
+version.workspace = true
+edition.workspace = true
 
 [[bin]]
 name = "languageserver"
@@ -18,9 +18,9 @@ parser = { path = "../parser" }
 project = { path = "../project" }
 syntax = { path = "../syntax" }
 filesystem = { path = "../filesystem" }
-tokio = { version = "1.18.2", features = ["full","sync"] }
-tower-lsp = "0.17.0"
-lsp = { version = "0.93", package = "lsp-types" }
-serde_json = "1.0"
-salsa = "0.16.1"
+tokio.workspace = true
+tower-lsp.workspace = true
+lsp.workspace = true
+serde_json.workspace = true
+salsa.workspace = true
 utils = { path = "../utils" }
