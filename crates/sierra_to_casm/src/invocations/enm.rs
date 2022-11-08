@@ -160,21 +160,9 @@ fn build_enum_match(
 
     let num_branches = builder.invocation.branches.len();
     if num_branches <= 2 {
-        build_enum_match_short(
-            builder,
-            num_branches,
-            variant_selector,
-            target_statement_ids,
-            output_expressions,
-        )
+        build_enum_match_short(builder, variant_selector, target_statement_ids, output_expressions)
     } else {
-        build_enum_match_long(
-            builder,
-            num_branches,
-            variant_selector,
-            target_statement_ids,
-            output_expressions,
-        )
+        build_enum_match_long(builder, variant_selector, target_statement_ids, output_expressions)
     }
 }
 
@@ -206,17 +194,18 @@ fn build_enum_match(
 /// jmp rel <jump_offset_1000>
 /// ```
 ///
-/// Assumes that num_branches == builder.invocation.branches.len() ==
-/// target_statement_ids.len() == output_expressions.len() and that num_branches <= 2.
+/// Assumes that builder.invocation.branches.len() == target_statement_ids.len() ==
+/// output_expressions.len() and that builder.invocation.branches.len() <= 2.
 fn build_enum_match_short(
     builder: CompiledInvocationBuilder<'_>,
-    num_branches: usize,
     variant_selector: CellRef,
-    mut target_statement_ids: impl Iterator<Item = StatementIdx>,
+    mut target_statement_ids: impl ExactSizeIterator<Item = StatementIdx>,
     output_expressions: impl Iterator<Item = impl Iterator<Item = ReferenceExpression>>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let mut instructions = Vec::new();
     let mut relocations = Vec::new();
+
+    let num_branches = target_statement_ids.len();
     // Add the jump_nz instruction if we have 2 branches.
     if num_branches == 2 {
         instructions.extend(casm! { jmp rel 0 if variant_selector != 0; }.instructions);
@@ -267,19 +256,19 @@ fn build_enum_match_short(
 /// Where in the first location of the enum_var there will be the jmp_table_idx (1 for the first
 /// branch, 2 for the second and so on).
 ///
-/// Assumes that num_branches == self.invocation.branches.len() ==
-/// target_statement_ids.len() == output_expressions.len() and that num_branches > 2.
+/// Assumes that self.invocation.branches.len() == target_statement_ids.len()
+/// == output_expressions.len() and that self.invocation.branches.len() > 2.
 fn build_enum_match_long(
     builder: CompiledInvocationBuilder<'_>,
-    num_branches: usize,
     variant_selector: CellRef,
-    target_statement_ids: impl Iterator<Item = StatementIdx>,
+    target_statement_ids: impl ExactSizeIterator<Item = StatementIdx>,
     output_expressions: impl Iterator<Item = impl Iterator<Item = ReferenceExpression>>,
 ) -> Result<CompiledInvocation, InvocationError> {
     // The first instruction is the jmp to the relevant index in the jmp table.
     let mut instructions = casm! { jmp rel variant_selector; }.instructions;
     let mut relocations = Vec::new();
 
+    let num_branches = target_statement_ids.len();
     for (i, stmnt_id) in target_statement_ids.enumerate() {
         // Add the jump instruction to the relevant target.
         instructions.extend(casm! { jmp rel 0; }.instructions);
