@@ -69,11 +69,12 @@ impl ResolvedConcreteItem {
                     return None;
                 }
             }
-            ResolvedConcreteItem::Variant(ConcreteVariant { concrete_enum_id, id, ty }) => {
+            ResolvedConcreteItem::Variant(ConcreteVariant { concrete_enum_id, id, ty, idx }) => {
                 ResolvedGenericItem::Variant(Variant {
                     enum_id: concrete_enum_id.enum_id(db),
                     id: *id,
                     ty: *ty,
+                    idx: *idx,
                 })
             }
             ResolvedConcreteItem::Trait(concrete_trait) => ResolvedGenericItem::Trait(
