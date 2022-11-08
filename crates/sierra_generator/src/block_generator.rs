@@ -116,11 +116,11 @@ pub fn generate_statement_code(
             generate_statement_call_block_code(context, statement_call_block)
         }
         lowering::Statement::StructConstruct
-        | lowering::Statement::StructDestruct
+        | lowering::Statement::StructDestructure
         | lowering::Statement::EnumConstruct(_)
         | lowering::Statement::MatchEnum(_)
         | lowering::Statement::TupleConstruct(_)
-        | lowering::Statement::TupleDestruct(_) => {
+        | lowering::Statement::TupleDestructure(_) => {
             // TODO(lior): Replace with a diagnostic.
             todo!()
         }

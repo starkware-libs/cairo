@@ -10,7 +10,7 @@ use crate::{semantic, ExprLiteral, LocalVariable};
 
 /// Semantic representation of a Pattern.
 /// A pattern is a way to "destructure" values. A pattern may introduce new variables that are bound
-/// to inner values of a specific value. For example, a tuple pattern destructs a tuple
+/// to inner values of a specific value. For example, a tuple pattern destructures a tuple
 /// and may result in new variables for an elements of that tuple.
 /// This is used both in let statements and match statements.
 // TODO(spapini): Replace this doc with a reference to the language documentation about patterns,
@@ -74,7 +74,7 @@ impl DebugWithDb<ExprFormatter<'_>> for PatternVariable {
     }
 }
 
-/// A pattern that destructs a struct to its fields.
+/// A pattern that destructures a struct to its fields.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
 #[debug_db(ExprFormatter<'_>)]
 pub struct PatternStruct {
@@ -84,7 +84,7 @@ pub struct PatternStruct {
     pub ty: semantic::TypeId,
 }
 
-/// A pattern that destructs a tuple to its fields.
+/// A pattern that destructures a tuple to its fields.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
 #[debug_db(ExprFormatter<'_>)]
 pub struct PatternTuple {
@@ -92,7 +92,7 @@ pub struct PatternTuple {
     pub ty: semantic::TypeId,
 }
 
-/// A pattern that destructs a specific variant of an enum to its inner value.
+/// A pattern that destructures a specific variant of an enum to its inner value.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
 #[debug_db(ExprFormatter<'_>)]
 pub struct PatternEnum {
