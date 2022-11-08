@@ -4,6 +4,7 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+assert_matches.workspace = true
 casm = { path = "../casm" }
 clap.workspace = true
 itertools.workspace = true
@@ -14,7 +15,6 @@ thiserror.workspace = true
 utils = { path = "../utils" }
 
 [dev-dependencies]
-assert_matches.workspace = true
 indoc.workspace = true
 pretty_assertions.workspace = true
 test-case.workspace = true
