@@ -70,7 +70,7 @@ pub enum Statement {
 
     // Structs.
     StructConstruct,
-    StructDestruct,
+    StructDestructure,
 
     // Enums.
     EnumConstruct(StatementEnumConstruct),
@@ -78,7 +78,7 @@ pub enum Statement {
 
     // Tuples.
     TupleConstruct(StatementTupleConstruct),
-    TupleDestruct(StatementTupleDestruct),
+    TupleDestructure(StatementTupleDestructure),
 }
 impl Statement {
     pub fn inputs(&self) -> Vec<VariableId> {
@@ -88,11 +88,11 @@ impl Statement {
             Statement::CallBlock(_) => vec![],
             Statement::MatchExtern(stmt) => stmt.inputs.clone(),
             Statement::StructConstruct => todo!(),
-            Statement::StructDestruct => todo!(),
+            Statement::StructDestructure => todo!(),
             Statement::EnumConstruct(stmt) => vec![stmt.input],
             Statement::MatchEnum(stmt) => vec![stmt.input],
             Statement::TupleConstruct(stmt) => stmt.inputs.clone(),
-            Statement::TupleDestruct(stmt) => vec![stmt.input],
+            Statement::TupleDestructure(stmt) => vec![stmt.input],
         }
     }
     pub fn outputs(&self) -> Vec<VariableId> {
@@ -102,11 +102,11 @@ impl Statement {
             Statement::CallBlock(stmt) => stmt.outputs.clone(),
             Statement::MatchExtern(stmt) => stmt.outputs.clone(),
             Statement::StructConstruct => todo!(),
-            Statement::StructDestruct => todo!(),
+            Statement::StructDestructure => todo!(),
             Statement::EnumConstruct(stmt) => vec![stmt.output],
             Statement::MatchEnum(stmt) => stmt.outputs.clone(),
             Statement::TupleConstruct(stmt) => vec![stmt.output],
-            Statement::TupleDestruct(stmt) => stmt.outputs.clone(),
+            Statement::TupleDestructure(stmt) => stmt.outputs.clone(),
         }
     }
 }
@@ -187,10 +187,10 @@ pub struct StatementTupleConstruct {
     pub output: VariableId,
 }
 
-/// A statement that destructs a tuple, introducing its elements as new variables.
+/// A statement that destructures a tuple, introducing its elements as new variables.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct StatementTupleDestruct {
-    /// A living variable in current scope to destruct as a tuple.
+pub struct StatementTupleDestructure {
+    /// A living variable in current scope to destructure as a tuple.
     pub input: VariableId,
     /// The variables to bind values to.
     pub outputs: Vec<VariableId>,

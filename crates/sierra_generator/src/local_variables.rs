@@ -94,11 +94,11 @@ fn inner_find_local_variables(
             }
             lowering::Statement::MatchExtern(_) => todo!(),
             lowering::Statement::StructConstruct => todo!(),
-            lowering::Statement::StructDestruct => todo!(),
+            lowering::Statement::StructDestructure => todo!(),
             lowering::Statement::EnumConstruct(_) => todo!(),
             lowering::Statement::MatchEnum(_) => todo!(),
             lowering::Statement::TupleConstruct(_) => todo!(),
-            lowering::Statement::TupleDestruct(_) => todo!(),
+            lowering::Statement::TupleDestructure(_) => todo!(),
         }
     }
     Some(known_ap_change)

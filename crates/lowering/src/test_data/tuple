@@ -26,7 +26,7 @@ Statements:
   (v0: core::felt) <- 1u
   (v1: core::felt) <- 2u
   (v2: (core::felt, core::felt)) <- tuple_construct(v0, v1)
-  (v3: core::felt, v4: core::felt) <- tuple_destruct(v2)
+  (v3: core::felt, v4: core::felt) <- tuple_destructure(v2)
   (v5: core::felt) <- 1u
   (v6: core::felt) <- 2u
 Drops: v0, v1, v2, v3, v4, v5, v6

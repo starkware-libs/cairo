@@ -8,7 +8,7 @@ use semantic::{ConcreteEnumId, ConcreteVariant};
 use super::{BlockEndInfo, BlockScope, LivingVar};
 use crate::lower::context::LoweringContext;
 use crate::objects::{
-    Statement, StatementCall, StatementLiteral, StatementTupleConstruct, StatementTupleDestruct,
+    Statement, StatementCall, StatementLiteral, StatementTupleConstruct, StatementTupleDestructure,
 };
 use crate::{
     BlockId, StatementCallBlock, StatementEnumConstruct, StatementMatchEnum, StatementMatchExtern,
@@ -232,12 +232,12 @@ impl TupleConstruct {
     }
 }
 
-/// Generator for [StatementTupleDestruct].
-pub struct TupleDestruct {
+/// Generator for [StatementTupleDestructure].
+pub struct TupleDestructure {
     pub input: LivingVar,
     pub tys: Vec<semantic::TypeId>,
 }
-impl TupleDestruct {
+impl TupleDestructure {
     pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockScope) -> Vec<LivingVar> {
         let input = scope.living_variables.use_var(ctx, self.input).var_id();
         let outputs: Vec<_> = self
@@ -245,7 +245,7 @@ impl TupleDestruct {
             .into_iter()
             .map(|ty| scope.living_variables.introduce_new_var(ctx, ty))
             .collect();
-        scope.statements.push(Statement::TupleDestruct(StatementTupleDestruct {
+        scope.statements.push(Statement::TupleDestructure(StatementTupleDestructure {
             input,
             outputs: outputs.iter().map(|var| var.var_id()).collect(),
         }));
