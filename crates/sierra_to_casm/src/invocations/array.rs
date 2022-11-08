@@ -1,4 +1,3 @@
-use casm::ap_change::ApChange;
 use casm::casm;
 use casm::hints::Hint;
 use casm::instructions::{AddApInstruction, Instruction, InstructionBody};
@@ -48,7 +47,6 @@ fn build_array_new(
             hints: vec![Hint::AllocSegment { dst: CellRef { register: Register::AP, offset: 0 } }],
         }],
         vec![],
-        [ApChange::Known(1)].into_iter(),
         [[ReferenceExpression {
             cells: vec![
                 CellExpression::Deref(CellRef { register: Register::AP, offset: -1 }),
@@ -105,12 +103,7 @@ fn build_array_append(
             array_view.end_offset += 1;
             let output_expressions =
                 [vec![array_view.to_reference_expression()].into_iter()].into_iter();
-            Ok(builder.build(
-                instructions,
-                vec![],
-                [ApChange::Known(0)].into_iter(),
-                output_expressions,
-            ))
+            Ok(builder.build(instructions, vec![], output_expressions))
         }
     }
 }

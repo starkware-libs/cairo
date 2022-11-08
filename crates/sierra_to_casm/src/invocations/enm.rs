@@ -1,4 +1,3 @@
-use casm::ap_change::ApChange;
 use casm::casm;
 use casm::operand::CellRef;
 use itertools::{chain, repeat_n};
@@ -224,12 +223,7 @@ fn build_enum_match_short(
         relocation: Relocation::RelativeStatementId(target_statement_ids.next().unwrap()),
     });
 
-    Ok(builder.build(
-        instructions,
-        relocations,
-        itertools::repeat_n(ApChange::Known(0), num_branches).into_iter(),
-        output_expressions,
-    ))
+    Ok(builder.build(instructions, relocations, output_expressions))
 }
 
 /// Handles statement for matching an enum with 3+ variants.
@@ -268,7 +262,6 @@ fn build_enum_match_long(
     let mut instructions = casm! { jmp rel variant_selector; }.instructions;
     let mut relocations = Vec::new();
 
-    let num_branches = target_statement_ids.len();
     for (i, stmnt_id) in target_statement_ids.enumerate() {
         // Add the jump instruction to the relevant target.
         instructions.extend(casm! { jmp rel 0; }.instructions);
@@ -278,12 +271,7 @@ fn build_enum_match_long(
         });
     }
 
-    Ok(builder.build(
-        instructions,
-        relocations,
-        itertools::repeat_n(ApChange::Known(0), num_branches).into_iter(),
-        output_expressions,
-    ))
+    Ok(builder.build(instructions, relocations, output_expressions))
 }
 
 /// A struct representing an actual enum value in the Sierra program.

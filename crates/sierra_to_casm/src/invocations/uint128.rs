@@ -119,7 +119,6 @@ fn build_uint128_op(
                     instruction_idx: relocation_index,
                     relocation: Relocation::RelativeStatementId(*failure_handle_statement_id),
                 }],
-                [ApChange::Known(2), ApChange::Known(3)].into_iter(),
                 [
                     vec![
                         ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
@@ -219,7 +218,6 @@ fn build_uint128_from_felt(
                     instruction_idx: relocation_index,
                     relocation: Relocation::RelativeStatementId(*failure_handle_statement_id),
                 }],
-                [ApChange::Known(1), ApChange::Known(4)].into_iter(),
                 [
                     vec![
                         ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
@@ -257,15 +255,9 @@ fn build_uint128_from_felt(
                 .into_iter(),
             ]
             .into_iter();
-            let ap_changes = [ApChange::Known(1), ApChange::Known(4)].into_iter();
 
             Ok(if value >= BigInt::from(0) && value < uint128_limit {
-                builder.build(
-                    casm! { ap += 1; }.instructions,
-                    vec![],
-                    ap_changes,
-                    output_expressions,
-                )
+                builder.build(casm! { ap += 1; }.instructions, vec![], output_expressions)
             } else {
                 builder.build(
                     casm! {  ap += 4; jmp rel 0; }.instructions,
@@ -273,7 +265,6 @@ fn build_uint128_from_felt(
                         instruction_idx: 0,
                         relocation: Relocation::RelativeStatementId(*failure_handle_statement_id),
                     }],
-                    ap_changes,
                     output_expressions,
                 )
             })
