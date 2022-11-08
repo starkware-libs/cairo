@@ -55,13 +55,9 @@ impl ResolvedConcreteItem {
     pub fn generic(&self, db: &dyn SemanticGroup) -> Option<ResolvedGenericItem> {
         Some(match self {
             ResolvedConcreteItem::Module(item) => ResolvedGenericItem::Module(*item),
-            ResolvedConcreteItem::Function(function) => {
-                if let FunctionLongId::Concrete(concrete) = db.lookup_intern_function(*function) {
-                    ResolvedGenericItem::GenericFunction(concrete.generic_function)
-                } else {
-                    return None;
-                }
-            }
+            ResolvedConcreteItem::Function(function) => ResolvedGenericItem::GenericFunction(
+                db.lookup_intern_function(*function).function.generic_function,
+            ),
             ResolvedConcreteItem::Type(ty) => {
                 if let TypeLongId::Concrete(concrete) = db.lookup_intern_type(*ty) {
                     ResolvedGenericItem::GenericType(concrete.generic_type(db))
@@ -566,10 +562,9 @@ pub fn specialize_function(
 
     conform_generic_args(db, diagnostics, generic_params, &mut generic_args, stable_ptr);
 
-    Some(db.intern_function(FunctionLongId::Concrete(ConcreteFunction {
-        generic_function,
-        generic_args,
-    })))
+    Some(db.intern_function(FunctionLongId {
+        function: ConcreteFunction { generic_function, generic_args },
+    }))
 }
 
 /// Specializes a generic type.

@@ -17,20 +17,14 @@ pub fn contains_cycle(db: &dyn SierraGenGroup, function_id: FreeFunctionId) -> O
     for (_, block) in &lowered_function.blocks {
         for statement in &block.statements {
             if let lowering::Statement::Call(statement_call) = statement {
-                match db.lookup_intern_function(statement_call.function) {
-                    semantic::FunctionLongId::Concrete(concrete) => {
-                        match concrete.generic_function {
-                            defs::ids::GenericFunctionId::Free(free_function_id) => {
-                                if db.contains_cycle(free_function_id)? {
-                                    return Some(true);
-                                }
-                            }
-                            defs::ids::GenericFunctionId::Extern(_) => {}
+                let concrete = db.lookup_intern_function(statement_call.function).function;
+                match concrete.generic_function {
+                    defs::ids::GenericFunctionId::Free(free_function_id) => {
+                        if db.contains_cycle(free_function_id)? {
+                            return Some(true);
                         }
                     }
-                    semantic::FunctionLongId::Missing => {
-                        return None;
-                    }
+                    defs::ids::GenericFunctionId::Extern(_) => {}
                 }
             }
         }
