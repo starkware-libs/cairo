@@ -124,6 +124,20 @@ impl<'a> ExprGeneratorContext<'a> {
         })
     }
 
+    pub fn struct_construct_libfunc_id(
+        &self,
+        ty: sierra::ids::ConcreteTypeId,
+    ) -> sierra::ids::ConcreteLibFuncId {
+        self.get_libfunc_id_with_generic_arg("struct_construct", ty)
+    }
+
+    pub fn struct_deconstruct_libfunc_id(
+        &self,
+        ty: sierra::ids::ConcreteTypeId,
+    ) -> sierra::ids::ConcreteLibFuncId {
+        self.get_libfunc_id_with_generic_arg("struct_deconstruct", ty)
+    }
+
     pub fn drop_libfunc_id(
         &self,
         ty: sierra::ids::ConcreteTypeId,
