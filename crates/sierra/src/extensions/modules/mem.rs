@@ -125,7 +125,7 @@ impl NamedLibFunc for StoreLocalLibFunc {
                 ParamSignature { ty: ty.clone(), allow_deferred: true, allow_add_const: true },
             ],
             vec![OutputVarInfo { ty, ref_info: OutputVarReferenceInfo::NewLocalVar }],
-            SierraApChange::NotImplemented,
+            SierraApChange::Known(0),
         ))
     }
 
@@ -163,7 +163,7 @@ impl NoGenericArgsGenericLibFunc for FinalizeLocalsLibFunc {
         &self,
         _context: &dyn SignatureSpecializationContext,
     ) -> Result<LibFuncSignature, SpecializationError> {
-        Ok(LibFuncSignature::new_non_branch(vec![], vec![], SierraApChange::NotImplemented))
+        Ok(LibFuncSignature::new_non_branch(vec![], vec![], SierraApChange::FinalizeLocals))
     }
 
     fn specialize(
@@ -207,7 +207,7 @@ impl NamedLibFunc for AllocLocalLibFunc {
                 ty: context.get_wrapped_concrete_type(UninitializedType::id(), ty)?,
                 ref_info: OutputVarReferenceInfo::NewLocalVar,
             }],
-            SierraApChange::NotImplemented,
+            SierraApChange::Known(0),
         ))
     }
 

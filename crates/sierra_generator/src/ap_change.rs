@@ -85,7 +85,8 @@ pub fn get_ap_change(db: &dyn SierraGenGroup, function_id: FreeFunctionId) -> Op
                     let branch_ap_change = match branch_signature.ap_change {
                         sierra::extensions::lib_func::SierraApChange::Known(value) => value,
                         sierra::extensions::lib_func::SierraApChange::Unknown
-                        | sierra::extensions::lib_func::SierraApChange::NotImplemented => {
+                        | sierra::extensions::lib_func::SierraApChange::NotImplemented
+                        | sierra::extensions::lib_func::SierraApChange::FinalizeLocals => {
                             return Some(ApChange::Unknown);
                         }
                     };

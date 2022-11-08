@@ -65,7 +65,7 @@ impl NamedLibFunc for IntoBoxLibFunc {
                 ty: context.get_wrapped_concrete_type(BoxType::id(), ty)?,
                 ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
             }],
-            SierraApChange::NotImplemented,
+            SierraApChange::Known(0),
         ))
     }
 
@@ -99,7 +99,7 @@ impl NamedLibFunc for UnboxLibFunc {
                 ty,
                 ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
             }],
-            SierraApChange::NotImplemented,
+            SierraApChange::Known(0),
         ))
     }
 

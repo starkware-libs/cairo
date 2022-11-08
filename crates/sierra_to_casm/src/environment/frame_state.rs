@@ -19,7 +19,7 @@ pub enum FrameStateError {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum FrameState {
     /// finalize_locals was called and the frame has been finalized.
-    Finalized,
+    Finalized { allocated: usize },
     /// `finalize_locals` wasn't called yet.
     /// `allocated` is the number of stack slot that were already allocated for local variables.
     /// `last_ap_tracking` is the ap_tracking that was passed to the most recent call of
@@ -50,14 +50,14 @@ pub fn handle_finalize_locals(
     ap_tracking: ApChange,
 ) -> Result<(usize, FrameState), FrameStateError> {
     match frame_state {
-        FrameState::Finalized => Err(FrameStateError::InvalidFinalizeLocals(frame_state)),
+        FrameState::Finalized { .. } => Err(FrameStateError::InvalidFinalizeLocals(frame_state)),
         FrameState::Allocating { allocated, last_ap_tracking } => {
             match ap_tracking {
                 // TODO(ilya, 10/10/2022): Do we want to support allocating 0 locals?
                 ApChange::Known(_)
                     if is_valid_transition(allocated, ap_tracking, last_ap_tracking) =>
                 {
-                    Ok((allocated, FrameState::Finalized))
+                    Ok((allocated, FrameState::Finalized { allocated }))
                 }
                 _ => Err(FrameStateError::InvalidFinalizeLocals(frame_state)),
             }
@@ -72,7 +72,7 @@ pub fn handle_alloc_local(
     allocation_size: usize,
 ) -> Result<(usize, FrameState), FrameStateError> {
     match frame_state {
-        FrameState::Finalized => Err(FrameStateError::InvalidAllocLocal(frame_state)),
+        FrameState::Finalized { .. } => Err(FrameStateError::InvalidAllocLocal(frame_state)),
         FrameState::Allocating { allocated, last_ap_tracking } => match ap_tracking {
             ApChange::Known(offset)
                 if is_valid_transition(allocated, ap_tracking, last_ap_tracking) =>

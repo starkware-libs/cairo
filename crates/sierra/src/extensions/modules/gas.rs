@@ -74,7 +74,7 @@ impl NoGenericArgsGenericLibFunc for GetGasLibFunc {
                             ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                         },
                     ],
-                    ap_change: SierraApChange::NotImplemented,
+                    ap_change: SierraApChange::Known(2),
                 },
                 // Failure:
                 BranchSignature {
@@ -90,7 +90,7 @@ impl NoGenericArgsGenericLibFunc for GetGasLibFunc {
                             ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },
                         },
                     ],
-                    ap_change: SierraApChange::NotImplemented,
+                    ap_change: SierraApChange::Known(3),
                 },
             ],
             fallthrough: Some(0),
@@ -123,7 +123,7 @@ impl NoGenericArgsGenericLibFunc for RefundGasLibFunc {
                 ty: gas_builtin_type,
                 ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
             }],
-            SierraApChange::NotImplemented,
+            SierraApChange::Known(0),
         ))
     }
 
