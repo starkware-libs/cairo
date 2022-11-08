@@ -3,7 +3,7 @@ use casm::instructions::Instruction;
 use casm::operand::{CellRef, Register};
 use itertools::zip_eq;
 use sierra::extensions::core::CoreConcreteLibFunc;
-use sierra::extensions::lib_func::SierraApChange;
+use sierra::extensions::lib_func::{BranchSignature, SierraApChange};
 use sierra::extensions::ConcreteLibFunc;
 use sierra::ids::ConcreteTypeId;
 use sierra::program::{Invocation, StatementIdx};
@@ -66,11 +66,14 @@ impl BranchChanges {
         ap_change: ApChange,
         gas_change: i64,
         expressions: impl Iterator<Item = ReferenceExpression>,
-        types: impl Iterator<Item = ConcreteTypeId>,
+        branch_signature: &BranchSignature,
     ) -> Self {
         Self {
-            refs: zip_eq(expressions, types)
-                .map(|(expression, ty)| ReferenceValue { expression, ty })
+            refs: zip_eq(expressions, &branch_signature.vars)
+                .map(|(expression, var_info)| ReferenceValue {
+                    expression,
+                    ty: var_info.ty.clone(),
+                })
                 .collect(),
             ap_change,
             gas_change,
@@ -139,9 +142,9 @@ impl CompiledInvocationBuilder<'_> {
             relocations,
             results: zip_eq(
                 zip_eq(self.libfunc.branch_signatures(), gas_changes),
-                zip_eq(output_expressions, self.libfunc.output_types()),
+                output_expressions,
             )
-            .map(|((branch_signature, gas_change), (expressions, types))| {
+            .map(|((branch_signature, gas_change), expressions)| {
                 let ap_change = match branch_signature.ap_change {
                     SierraApChange::Known(x) => ApChange::Known(x),
                     SierraApChange::NotImplemented => panic!("AP change not implemented."),
@@ -156,7 +159,7 @@ impl CompiledInvocationBuilder<'_> {
                     ap_change,
                     -gas_change.unwrap_or(0),
                     expressions,
-                    types.iter().cloned(),
+                    branch_signature,
                 )
             })
             .collect(),
