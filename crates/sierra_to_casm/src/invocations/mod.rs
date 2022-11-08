@@ -1,10 +1,11 @@
+use assert_matches::assert_matches;
 use casm::ap_change::ApChange;
 use casm::instructions::Instruction;
 use casm::operand::{CellRef, Register};
 use itertools::zip_eq;
 use sierra::extensions::core::CoreConcreteLibFunc;
 use sierra::extensions::lib_func::{BranchSignature, SierraApChange};
-use sierra::extensions::ConcreteLibFunc;
+use sierra::extensions::{ConcreteLibFunc, OutputVarReferenceInfo};
 use sierra::ids::ConcreteTypeId;
 use sierra::program::{Invocation, StatementIdx};
 use thiserror::Error;
@@ -70,9 +71,21 @@ impl BranchChanges {
     ) -> Self {
         Self {
             refs: zip_eq(expressions, &branch_signature.vars)
-                .map(|(expression, var_info)| ReferenceValue {
-                    expression,
-                    ty: var_info.ty.clone(),
+                .map(|(expression, var_info)| {
+                    // TODO(ilya): Consider doing a more strict test.
+                    match var_info.ref_info {
+                        OutputVarReferenceInfo::NewTempVar { .. } => assert_matches!(
+                            expression.cells.as_slice(),
+                            [CellExpression::Deref(CellRef { register: Register::AP, .. }), ..]
+                        ),
+                        OutputVarReferenceInfo::NewLocalVar { .. } => assert_matches!(
+                            expression.cells.as_slice(),
+                            [CellExpression::Deref(CellRef { register: Register::FP, .. }), ..]
+                        ),
+                        _ => (),
+                    };
+
+                    ReferenceValue { expression, ty: var_info.ty.clone() }
                 })
                 .collect(),
             ap_change,
