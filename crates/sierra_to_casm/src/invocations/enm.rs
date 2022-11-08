@@ -22,8 +22,8 @@ pub fn build(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
-        EnumConcreteLibFunc::Init(EnumInitConcreteLibFunc { index, .. }) => {
-            build_enum_init(builder, *index)
+        EnumConcreteLibFunc::Init(EnumInitConcreteLibFunc { index, num_variants, .. }) => {
+            build_enum_init(builder, *index, *num_variants)
         }
         EnumConcreteLibFunc::Match(_) => build_enum_match(builder),
     }
@@ -50,6 +50,7 @@ pub fn build(
 fn build_enum_init(
     builder: CompiledInvocationBuilder<'_>,
     index: usize,
+    num_variants: usize,
 ) -> Result<CompiledInvocation, InvocationError> {
     let expression = match builder.refs {
         [ReferenceValue { expression, .. }] => expression,
@@ -61,8 +62,7 @@ fn build_enum_init(
         }
     };
     let init_arg_cells = &expression.cells;
-
-    let variant_selector = if builder.invocation.branches.len() <= 2 {
+    let variant_selector = if num_variants <= 2 {
         // For num_branches <= 2, we use the index as the variant_selector as the `match`
         // implementation jumps to the index 0 statement on 0, and to the index 1 statement on
         // 1.
@@ -217,13 +217,14 @@ fn build_enum_match_short(
 ) -> Result<CompiledInvocation, InvocationError> {
     let mut instructions = Vec::new();
     let mut relocations = Vec::new();
+    let first_target_statement = target_statement_ids.next().unwrap();
     // Add the jump_nz instruction if we have 2 branches.
     if num_branches == 2 {
         instructions.extend(casm! { jmp rel 0 if variant_selector != 0; }.instructions);
         // Add the first instruction of jumping to branch 1 if jmp_table_idx != 0 (1).
         relocations.push(RelocationEntry {
             instruction_idx: 0,
-            relocation: Relocation::RelativeStatementId(target_statement_ids.nth(1).unwrap()),
+            relocation: Relocation::RelativeStatementId(target_statement_ids.next().unwrap()),
         });
     }
 
@@ -232,7 +233,7 @@ fn build_enum_match_short(
     instructions.extend(casm! { jmp rel 0; }.instructions);
     relocations.push(RelocationEntry {
         instruction_idx: instructions.len() - 1,
-        relocation: Relocation::RelativeStatementId(target_statement_ids.next().unwrap()),
+        relocation: Relocation::RelativeStatementId(first_target_statement),
     });
 
     Ok(builder.build(

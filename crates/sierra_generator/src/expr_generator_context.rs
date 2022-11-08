@@ -124,6 +124,13 @@ impl<'a> ExprGeneratorContext<'a> {
         })
     }
 
+    pub fn match_enum_libfunc_id(
+        &self,
+        ty: sierra::ids::ConcreteTypeId,
+    ) -> sierra::ids::ConcreteLibFuncId {
+        self.get_libfunc_id_with_generic_arg("enum_match", ty)
+    }
+
     pub fn drop_libfunc_id(
         &self,
         ty: sierra::ids::ConcreteTypeId,
