@@ -201,7 +201,7 @@ impl NamedLibFunc for FeltConstLibFunc {
                 ty: context.get_concrete_type(FeltType::id(), &[])?,
                 ref_info: OutputVarReferenceInfo::Const,
             }],
-            SierraApChange::NotImplemented,
+            SierraApChange::Known(0),
         ))
     }
 

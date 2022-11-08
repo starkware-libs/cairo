@@ -3,12 +3,13 @@ use casm::instructions::Instruction;
 use casm::operand::{CellRef, Register};
 use itertools::zip_eq;
 use sierra::extensions::core::CoreConcreteLibFunc;
+use sierra::extensions::lib_func::SierraApChange;
 use sierra::extensions::ConcreteLibFunc;
 use sierra::ids::ConcreteTypeId;
 use sierra::program::{Invocation, StatementIdx};
 use thiserror::Error;
 
-use crate::environment::frame_state::FrameStateError;
+use crate::environment::frame_state::{FrameState, FrameStateError};
 use crate::environment::Environment;
 use crate::metadata::Metadata;
 use crate::references::{CellExpression, ReferenceExpression, ReferenceValue};
@@ -125,6 +126,7 @@ impl CompiledInvocationBuilder<'_> {
         self,
         instructions: Vec<Instruction>,
         relocations: Vec<RelocationEntry>,
+        // TODO(ilya): Remove ap_changes param.
         ap_changes: impl Iterator<Item = ApChange>,
         output_expressions: impl Iterator<Item = impl Iterator<Item = ReferenceExpression>>,
     ) -> CompiledInvocation {
@@ -133,14 +135,29 @@ impl CompiledInvocationBuilder<'_> {
             &self.idx,
             self.libfunc,
         );
+
         CompiledInvocation {
             instructions,
             relocations,
             results: zip_eq(
-                zip_eq(ap_changes, gas_changes),
-                zip_eq(output_expressions, self.libfunc.output_types()),
+                zip_eq(
+                    zip_eq(self.libfunc.branch_signatures(), gas_changes),
+                    zip_eq(output_expressions, self.libfunc.output_types()),
+                ),
+                ap_changes,
             )
-            .map(|((ap_change, gas_change), (expressions, types))| {
+            .map(|(((branch_signature, gas_change), (expressions, types)), old_ap_change)| {
+                let ap_change = match branch_signature.ap_change {
+                    SierraApChange::Known(x) => ApChange::Known(x),
+                    SierraApChange::NotImplemented => panic!("AP change not implemented."),
+                    SierraApChange::FinalizeLocals => match self.environment.frame_state {
+                        FrameState::Finalized { allocated } => ApChange::Known(allocated),
+                        _ => panic!("Unexpected frame state."),
+                    },
+                    _ => ApChange::Unknown,
+                };
+                assert_eq!(ap_change, old_ap_change);
+
                 BranchChanges::new(
                     ap_change,
                     -gas_change.unwrap_or(0),

@@ -306,13 +306,15 @@ pub struct BranchSignature {
 
 /// Describes the effect on the `ap` register in a given libfunc branch.
 // TODO(ilya): Try to combine this with the ApChange of `sierra_to_casm`.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum SierraApChange {
     /// The libfunc changes `ap` in an unknown way.
     Unknown,
     /// The libfunc changes `ap` by pushing new tempvars, as described by
     /// [OutputVarReferenceInfo::NewTempVar] in [`BranchSignature::vars`].
     Known(usize),
+    // The libfunc allocates locals, the `ap` change depends on the environment.
+    FinalizeLocals,
     /// Indicates that the value of ApChange was not assigned properly yet. Behaves as `Unknown`.
     /// This will be removed, once all places using it are fixed.
     // TODO(lior): Remove this value once it is no longer used.

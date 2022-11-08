@@ -172,7 +172,7 @@ impl GenericLibFunc for Uint128OperationLibFunc {
                                 ),
                             },
                         ],
-                        ap_change: SierraApChange::NotImplemented,
+                        ap_change: SierraApChange::Known(2),
                     },
                     BranchSignature {
                         vars: vec![OutputVarInfo {
@@ -181,7 +181,7 @@ impl GenericLibFunc for Uint128OperationLibFunc {
                                 DeferredOutputKind::AddConst { param_idx: 0 },
                             ),
                         }],
-                        ap_change: SierraApChange::NotImplemented,
+                        ap_change: SierraApChange::Known(3),
                     },
                 ],
                 fallthrough: Some(0),
@@ -341,7 +341,7 @@ impl NamedLibFunc for Uint128ConstLibFunc {
                 ty: context.get_concrete_type(Uint128Type::id(), &[])?,
                 ref_info: OutputVarReferenceInfo::Const,
             }],
-            SierraApChange::NotImplemented,
+            SierraApChange::Known(0),
         ))
     }
 
@@ -405,7 +405,7 @@ impl NoGenericArgsGenericLibFunc for Uint128FromFeltLibFunc {
                             ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },
                         },
                     ],
-                    ap_change: SierraApChange::Known(2),
+                    ap_change: SierraApChange::Known(1),
                 },
                 BranchSignature {
                     vars: vec![OutputVarInfo {
@@ -414,7 +414,7 @@ impl NoGenericArgsGenericLibFunc for Uint128FromFeltLibFunc {
                             param_idx: 0,
                         }),
                     }],
-                    ap_change: SierraApChange::Known(3),
+                    ap_change: SierraApChange::Known(4),
                 },
             ],
             fallthrough: Some(0),
@@ -451,7 +451,7 @@ impl NoGenericArgsGenericLibFunc for Uint128ToFeltLibFunc {
                 ty: context.get_concrete_type(FeltType::id(), &[])?,
                 ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },
             }],
-            SierraApChange::NotImplemented,
+            SierraApChange::Known(0),
         ))
     }
 

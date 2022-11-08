@@ -18,7 +18,7 @@ impl NoGenericArgsGenericLibFunc for RevokeApTrackingLibFunc {
         &self,
         _context: &dyn SignatureSpecializationContext,
     ) -> Result<LibFuncSignature, SpecializationError> {
-        Ok(LibFuncSignature::new_non_branch(vec![], vec![], SierraApChange::NotImplemented))
+        Ok(LibFuncSignature::new_non_branch(vec![], vec![], SierraApChange::Unknown))
     }
 
     fn specialize(
