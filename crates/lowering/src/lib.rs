@@ -8,3 +8,6 @@ pub mod objects;
 mod test;
 
 pub use self::objects::*;
+
+#[cfg(any(feature = "testing", test))]
+pub mod test_utils;

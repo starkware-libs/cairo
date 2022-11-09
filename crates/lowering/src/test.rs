@@ -1,10 +1,10 @@
 use debug::DebugWithDb;
-use semantic::db::SemanticGroup;
-use semantic::test_utils::{setup_test_function, SemanticDatabaseForTesting};
+use semantic::test_utils::setup_test_function;
 use utils::ordered_hash_map::OrderedHashMap;
 
 use crate::fmt::LoweredFormatter;
 use crate::lower::lower;
+use crate::test_utils::LoweringDatabaseForTesting;
 
 utils::test_file_test!(
     lowering_test,
@@ -18,12 +18,12 @@ utils::test_file_test!(
         "src/test_data/tests",
         "src/test_data/tuple",
     ],
-    SemanticDatabaseForTesting,
+    LoweringDatabaseForTesting,
     test_function_lowering
 );
 
 fn test_function_lowering(
-    db: &mut (dyn SemanticGroup + 'static),
+    db: &mut LoweringDatabaseForTesting,
     inputs: &OrderedHashMap<String, String>,
 ) -> OrderedHashMap<String, String> {
     let (test_function, semantic_diagnostics) = setup_test_function(

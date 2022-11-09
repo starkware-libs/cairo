@@ -5,7 +5,6 @@ use itertools::{chain, zip_eq};
 use num_traits::Zero;
 use scope::{BlockScope, BlockScopeEnd};
 use semantic::corelib::{core_felt_ty, core_jump_nz_func, core_nonzero_ty};
-use semantic::db::SemanticGroup;
 use semantic::items::enm::SemanticEnumEx;
 use semantic::{ConcreteTypeId, Mutability, TypeLongId, VarId};
 use syntax::node::ids::SyntaxStablePtrId;
@@ -20,6 +19,7 @@ use self::external::{extern_facade_expr, extern_facade_return_tys};
 use self::lower_if::lower_expr_if;
 use self::scope::{generators, BlockFlowMerger};
 use self::variables::LivingVar;
+use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnosticKind::*;
 use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnostics};
 use crate::objects::{Block, BlockId, Variable};
@@ -45,7 +45,7 @@ pub struct Lowered {
 }
 
 /// Lowers a semantic free function.
-pub fn lower(db: &dyn SemanticGroup, free_function_id: FreeFunctionId) -> Option<Lowered> {
+pub fn lower(db: &dyn LoweringGroup, free_function_id: FreeFunctionId) -> Option<Lowered> {
     let function_def = db.free_function_definition(free_function_id)?;
 
     let signature = db.free_function_declaration_signature(free_function_id)?;
@@ -561,12 +561,14 @@ fn lower_expr_match_felt(
         return Err(LoweringFlowError::Failed);
     }
 
+    let semantic_db = ctx.db.upcast();
+
     // Lower both blocks.
     let (res, mut finalized_merger) = BlockFlowMerger::with(ctx, scope, &[], |ctx, merger| {
         let block0_end = merger.run_in_subscope(ctx, vec![], |ctx, subscope, _| {
             lower_tail_expr(ctx, subscope, *block0)
         });
-        let non_zero_type = core_nonzero_ty(ctx.db, core_felt_ty(ctx.db));
+        let non_zero_type = core_nonzero_ty(semantic_db, core_felt_ty(semantic_db));
         let block_otherwise_end =
             merger.run_in_subscope(ctx, vec![non_zero_type], |ctx, subscope, _| {
                 lower_tail_expr(ctx, subscope, *block_otherwise)
@@ -581,7 +583,7 @@ fn lower_expr_match_felt(
 
     // Emit the statement.
     let match_generator = generators::MatchExtern {
-        function: core_jump_nz_func(ctx.db),
+        function: core_jump_nz_func(semantic_db),
         inputs: vec![expr_var],
         arms: vec![block0_finalized.block, block_otherwise_finalized.block],
         end_info: finalized_merger.end_info,
@@ -603,7 +605,7 @@ fn extract_concrete_enum(
     .ok_or(LoweringFlowError::Failed)?;
     let concrete_enum_id =
         try_extract_matches!(concrete_ty, ConcreteTypeId::Enum).ok_or(LoweringFlowError::Failed)?;
-    let enum_id = concrete_enum_id.enum_id(ctx.db);
+    let enum_id = concrete_enum_id.enum_id(ctx.db.upcast());
     let variants = ctx.db.enum_variants(enum_id).ok_or(LoweringFlowError::Failed)?;
     let concrete_variants = variants
         .values()
