@@ -52,11 +52,9 @@ fn get_store_instructions(
     mut dst: CellRef,
     src_expr: &ReferenceExpression,
 ) -> Result<Vec<Instruction>, InvocationError> {
-    match builder.program_info.type_sizes.get(src_type) {
-        Some(0) => return Err(InvocationError::NotSized(builder.invocation.clone())),
-        None => return Err(InvocationError::NotImplemented(builder.invocation.clone())),
-        Some(_) => {}
-    };
+    if builder.program_info.type_sizes.get(src_type).is_none() {
+        return Err(InvocationError::NotSized(builder.invocation.clone()));
+    }
     let mut ctx = casm!();
     let mut ap_change = 0;
     let inc_ap = match dst.register {
@@ -209,11 +207,11 @@ fn build_alloc_local(
     mut builder: CompiledInvocationBuilder<'_>,
     ty: &ConcreteTypeId,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let allocation_size = match builder.program_info.type_sizes.get(ty) {
-        Some(0) => Err(InvocationError::NotSized(builder.invocation.clone())),
-        Some(size) => Ok(*size),
-        _ => Err(InvocationError::NotImplemented(builder.invocation.clone())),
-    }?;
+    let allocation_size = *builder
+        .program_info
+        .type_sizes
+        .get(ty)
+        .ok_or_else(|| InvocationError::NotSized(builder.invocation.clone()))?;
 
     let (slot, frame_state) = frame_state::handle_alloc_local(
         builder.environment.frame_state,
