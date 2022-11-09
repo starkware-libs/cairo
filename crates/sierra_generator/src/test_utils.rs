@@ -9,6 +9,7 @@ use semantic::db::{SemanticDatabase, SemanticGroup};
 use sierra::ids::{ConcreteLibFuncId, GenericLibFuncId};
 use sierra::program;
 use syntax::node::db::{SyntaxDatabase, SyntaxGroup};
+use utils::extract_matches;
 
 use crate::db::{SierraGenDatabase, SierraGenGroup};
 use crate::pre_sierra::{self, PushValue};
@@ -154,6 +155,20 @@ fn replace_type_id(
 ) -> sierra::ids::ConcreteTypeId {
     let mut long_id = db.lookup_intern_concrete_type(id.clone());
     replace_generic_args(db, &mut long_id.generic_args);
+    if long_id.generic_id == "Enum".into() || long_id.generic_id == "Struct".into() {
+        long_id.generic_id =
+            extract_matches!(&long_id.generic_args[0], program::GenericArg::UserType)
+                .to_string()
+                .into();
+        if long_id.generic_id == "Tuple".into() {
+            long_id.generic_args = long_id.generic_args.into_iter().skip(1).collect();
+            if long_id.generic_args.is_empty() {
+                long_id.generic_id = "Unit".into();
+            }
+        } else {
+            long_id.generic_args.clear();
+        }
+    }
     long_id.to_string().into()
 }
 

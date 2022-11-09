@@ -1,32 +1,32 @@
 type felt = felt;
-type Enum<ut@MyEnum, felt, felt> = Enum<ut@MyEnum, felt, felt>;
+type MyEnum = Enum<ut@MyEnum, felt, felt>;
 
 libfunc revoke_ap_tracking = revoke_ap_tracking;
 libfunc felt_const<10> = felt_const<10>;
-libfunc enum_init<Enum<ut@MyEnum, felt, felt>, 1> = enum_init<Enum<ut@MyEnum, felt, felt>, 1>;
-libfunc store_temp<Enum<ut@MyEnum, felt, felt>> = store_temp<Enum<ut@MyEnum, felt, felt>>;
-libfunc rename<Enum<ut@MyEnum, felt, felt>> = rename<Enum<ut@MyEnum, felt, felt>>;
+libfunc enum_init<MyEnum, 1> = enum_init<MyEnum, 1>;
+libfunc store_temp<MyEnum> = store_temp<MyEnum>;
+libfunc rename<MyEnum> = rename<MyEnum>;
 libfunc function_call<user@test_crate::foo> = function_call<user@test_crate::foo>;
-libfunc drop<Enum<ut@MyEnum, felt, felt>> = drop<Enum<ut@MyEnum, felt, felt>>;
+libfunc drop<MyEnum> = drop<MyEnum>;
 libfunc felt_const<115> = felt_const<115>;
 libfunc store_temp<felt> = store_temp<felt>;
 libfunc burn_gas = burn_gas;
 
 revoke_ap_tracking() -> ();
 felt_const<10>() -> ([0]);
-enum_init<Enum<ut@MyEnum, felt, felt>, 1>([0]) -> ([1]);
-store_temp<Enum<ut@MyEnum, felt, felt>>([1]) -> ([1]);
-rename<Enum<ut@MyEnum, felt, felt>>([1]) -> ([3]);
+enum_init<MyEnum, 1>([0]) -> ([1]);
+store_temp<MyEnum>([1]) -> ([1]);
+rename<MyEnum>([1]) -> ([3]);
 function_call<user@test_crate::foo>([3]) -> ([2]);
-drop<Enum<ut@MyEnum, felt, felt>>([2]) -> ();
+drop<MyEnum>([2]) -> ();
 felt_const<115>() -> ([4]);
 store_temp<felt>([4]) -> ([5]);
 burn_gas() -> ();
 return([5]);
 revoke_ap_tracking() -> ();
-store_temp<Enum<ut@MyEnum, felt, felt>>([0]) -> ([1]);
+store_temp<MyEnum>([0]) -> ([1]);
 burn_gas() -> ();
 return([1]);
 
 test_crate::main@0() -> (felt);
-test_crate::foo@11([0]: Enum<ut@MyEnum, felt, felt>) -> (Enum<ut@MyEnum, felt, felt>);
+test_crate::foo@11([0]: MyEnum) -> (MyEnum);
