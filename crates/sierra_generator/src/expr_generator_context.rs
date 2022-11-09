@@ -177,9 +177,12 @@ impl<'a> ExprGeneratorContext<'a> {
         });
     }
 
-    /// Returns the [lowering::Variable] associated with [lowering::VariableId].
-    pub fn get_lowered_variable(&self, var: lowering::VariableId) -> &'a lowering::Variable {
-        &self.lowered.variables[var]
+    /// Returns the [sierra::ids::ConcreteTypeId] associated with [lowering::VariableId].
+    pub fn get_variable_sierra_type(
+        &self,
+        var: lowering::VariableId,
+    ) -> Option<sierra::ids::ConcreteTypeId> {
+        self.db.get_concrete_type_id(self.lowered.variables[var].ty)
     }
 
     /// Returns the block ([lowering::Block]) associated with [lowering::BlockId].
