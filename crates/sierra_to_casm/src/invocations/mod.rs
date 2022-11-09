@@ -165,7 +165,7 @@ impl CompiledInvocationBuilder<'_> {
                         FrameState::Finalized { allocated } => ApChange::Known(allocated),
                         _ => panic!("Unexpected frame state."),
                     },
-                    _ => ApChange::Unknown,
+                    SierraApChange::Unknown => ApChange::Unknown,
                 };
 
                 BranchChanges::new(
