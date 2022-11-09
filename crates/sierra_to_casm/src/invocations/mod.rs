@@ -72,19 +72,25 @@ impl BranchChanges {
         Self {
             refs: zip_eq(expressions, &branch_signature.vars)
                 .map(|(expression, var_info)| {
-                    // TODO(ilya): Consider doing a more strict test.
                     match var_info.ref_info {
-                        OutputVarReferenceInfo::NewTempVar { .. } => assert_matches!(
-                            expression.cells.as_slice(),
-                            [CellExpression::Deref(CellRef { register: Register::AP, .. }), ..]
-                        ),
-                        OutputVarReferenceInfo::NewLocalVar { .. } => assert_matches!(
-                            expression.cells.as_slice(),
-                            [CellExpression::Deref(CellRef { register: Register::FP, .. }), ..]
-                        ),
+                        OutputVarReferenceInfo::NewTempVar { .. } => {
+                            expression.cells.iter().for_each(|cell| {
+                                assert_matches!(
+                                    cell,
+                                    CellExpression::Deref(CellRef { register: Register::AP, .. })
+                                )
+                            });
+                        }
+                        OutputVarReferenceInfo::NewLocalVar { .. } => {
+                            expression.cells.iter().for_each(|cell| {
+                                assert_matches!(
+                                    cell,
+                                    CellExpression::Deref(CellRef { register: Register::FP, .. })
+                                )
+                            });
+                        }
                         _ => (),
                     };
-
                     ReferenceValue { expression, ty: var_info.ty.clone() }
                 })
                 .collect(),
