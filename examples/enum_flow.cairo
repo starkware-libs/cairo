@@ -1,5 +1,6 @@
 enum MyEnumShort { a: felt, b: felt }
 enum MyEnumLong { a: felt, b: felt, c: felt }
+enum MyEnumGeneric<S, T> { a: T, b: S, c: T }
 func main() -> felt {
     let es0 = MyEnumShort::a(10);
     let es1 = MyEnumShort::b(11);
@@ -12,6 +13,9 @@ func main() -> felt {
     match_long(el0);
     match_long(el1);
     match_long(el2);
+    let eg1: MyEnumGeneric::<(), felt> = MyEnumGeneric::<(), felt>::a(30);
+    let eg2: MyEnumGeneric::<(), felt> = MyEnumGeneric::<(), felt>::b(());
+    let eg3: MyEnumGeneric::<(), felt> = MyEnumGeneric::<(), felt>::c(32);
     300
 }
 
