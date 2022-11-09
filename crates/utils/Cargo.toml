@@ -9,3 +9,6 @@ testing = []
 [dependencies]
 indexmap.workspace = true
 itertools.workspace = true
+
+[dev-dependencies]
+test-case.workspace = true
