@@ -11,7 +11,7 @@ use super::{
 #[allow(dead_code)]
 enum IfCondition {
     BoolExpr(semantic::ExprId),
-    EqZero(semantic::ExprId),
+    Eq(semantic::ExprId, semantic::ExprId),
 }
 
 /// Analyzes the condition of an if statement into an [IfCondition] tree, to allow different
@@ -22,9 +22,8 @@ fn analyze_condition(ctx: &LoweringContext<'_>, expr_id: semantic::ExprId) -> If
     if let semantic::Expr::FunctionCall(function_call) = expr {
         if function_call.function == corelib::felt_eq(ctx.db.upcast())
             && function_call.args.len() == 2
-            && is_zero(ctx, function_call.args[1])
         {
-            return IfCondition::EqZero(function_call.args[0]);
+            return IfCondition::Eq(function_call.args[0], function_call.args[1]);
         };
     };
 
@@ -44,7 +43,7 @@ pub fn lower_expr_if(
 ) -> Result<LoweredExpr, LoweringFlowError> {
     match analyze_condition(ctx, expr.condition) {
         IfCondition::BoolExpr(_) => lower_expr_if_bool(ctx, scope, expr),
-        IfCondition::EqZero(tested_expr) => lower_expr_if_eq_zero(ctx, scope, expr, tested_expr),
+        IfCondition::Eq(expr_a, expr_b) => lower_expr_if_eq_zero(ctx, scope, expr, expr_a, expr_b),
     }
 }
 
@@ -100,10 +99,26 @@ pub fn lower_expr_if_eq_zero(
     ctx: &mut LoweringContext<'_>,
     scope: &mut BlockScope,
     expr: &semantic::ExprIf,
-    tested_expr: semantic::ExprId,
+    expr_a: semantic::ExprId,
+    expr_b: semantic::ExprId,
 ) -> Result<LoweredExpr, LoweringFlowError> {
-    // The condition cannot be unit.
-    let condition_var = lower_expr(ctx, scope, tested_expr)?.var(ctx, scope);
+    let condition_var = if is_zero(ctx, expr_b) {
+        lower_expr(ctx, scope, expr_a)?.var(ctx, scope)
+    } else if is_zero(ctx, expr_a) {
+        lower_expr(ctx, scope, expr_b)?.var(ctx, scope)
+    } else {
+        let lowered_a = lower_expr(ctx, scope, expr_a)?.var(ctx, scope);
+        let lowered_b = lower_expr(ctx, scope, expr_b)?.var(ctx, scope);
+        let ret_ty = corelib::core_felt_ty(ctx.db.upcast());
+        let call_result = generators::Call {
+            function: corelib::felt_sub(ctx.db.upcast()),
+            inputs: vec![lowered_a, lowered_b],
+            ref_tys: vec![],
+            ret_tys: vec![ret_ty],
+        }
+        .add(ctx, scope);
+        call_result.returns.into_iter().next().unwrap()
+    };
 
     let semantic_db = ctx.db.upcast();
 
