@@ -1,4 +1,5 @@
 use itertools::chain;
+use semantic::items::enm::SemanticEnumEx;
 use sierra::program::ConcreteTypeLongId;
 
 use crate::db::SierraGenGroup;
@@ -10,48 +11,45 @@ pub fn get_concrete_type_id(
 ) -> Option<sierra::ids::ConcreteTypeId> {
     match db.lookup_intern_type(type_id) {
         semantic::TypeLongId::Concrete(ty) => {
-            let mut generic_args = vec![];
-            for arg in ty.generic_args(db.upcast()) {
-                match arg {
-                    semantic::GenericArgumentId::Type(ty) => {
-                        generic_args
-                            .push(sierra::program::GenericArg::Type(db.get_concrete_type_id(ty)?));
-                    }
-                }
-            }
-            match ty.generic_type(db.upcast()) {
-                defs::ids::GenericTypeId::Struct(_) => {
-                    todo!("Add support for struct types when they are supported in Sierra.")
-                }
-                defs::ids::GenericTypeId::Enum(enm) => {
-                    // TODO(Gil): Consider interning the UserType.
-                    let generic_args = chain!(
-                        [sierra::program::GenericArg::UserType(
-                            enm.name(db.upcast()).to_string().into()
-                        )],
-                        db.enum_variants(enm)?.into_iter().map(|(_, varinat_id)| {
-                            db.variant_semantic(enm, varinat_id)
-                                .map(|variant| {
-                                    sierra::program::GenericArg::Type(
-                                        db.get_concrete_type_id(variant.ty).unwrap(),
-                                    )
-                                })
-                                .unwrap()
+            match ty {
+                semantic::ConcreteTypeId::Struct(_) => todo!(),
+                semantic::ConcreteTypeId::Enum(enm) => {
+                    let generic_args: Option<_> = chain!(
+                        [Some(sierra::program::GenericArg::UserType(
+                            type_id.format(db.upcast()).into()
+                        ))],
+                        db.concrete_enum_variants(enm)?.into_iter().map(|concrete_variant| {
+                            Some(sierra::program::GenericArg::Type(
+                                db.get_concrete_type_id(concrete_variant.ty)?,
+                            ))
                         })
                     )
                     .collect();
                     Some(db.intern_concrete_type(ConcreteTypeLongId {
                         generic_id: "Enum".into(),
-                        generic_args,
+                        generic_args: generic_args?,
                     }))
                 }
-                defs::ids::GenericTypeId::Extern(extrn) => {
-                    Some(db.intern_concrete_type(ConcreteTypeLongId {
-                        generic_id: sierra::ids::GenericTypeId::from_string(
-                            extrn.name(db.upcast()),
-                        ),
-                        generic_args,
-                    }))
+                semantic::ConcreteTypeId::Extern(extrn) => {
+                    Some(
+                        db.intern_concrete_type(ConcreteTypeLongId {
+                            generic_id: sierra::ids::GenericTypeId::from_string(
+                                // TODO(Gil): Implement name for semantic::ConcreteTypeId
+                                extrn.extern_type_id(db.upcast()).name(db.upcast()),
+                            ),
+                            generic_args: ty
+                                .generic_args(db.upcast())
+                                .into_iter()
+                                .map(|arg| match arg {
+                                    semantic::GenericArgumentId::Type(ty) => {
+                                        sierra::program::GenericArg::Type(
+                                            db.get_concrete_type_id(ty).unwrap(),
+                                        )
+                                    }
+                                })
+                                .collect(),
+                        }),
+                    )
                 }
             }
         }
@@ -67,7 +65,8 @@ pub fn get_concrete_type_id(
                 .collect(),
             }),
         ),
-        semantic::TypeLongId::GenericParameter(_) => todo!("Add support for generic parameters."),
-        semantic::TypeLongId::Missing | semantic::TypeLongId::Never => None,
+        semantic::TypeLongId::GenericParameter(_)
+        | semantic::TypeLongId::Missing
+        | semantic::TypeLongId::Never => None,
     }
 }
