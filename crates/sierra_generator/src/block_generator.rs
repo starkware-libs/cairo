@@ -40,17 +40,17 @@ pub fn generate_block_code_and_push_values(
         lowering::BlockEnd::Callsite(inner_outputs) => {
             let mut push_values = Vec::<pre_sierra::PushValue>::new();
             for (output, inner_output) in zip_eq(binds, inner_outputs) {
-                let var_ty = context.get_lowered_variable(*inner_output).ty;
-                let var_on_stack_ty = context.get_lowered_variable(*output).ty;
+                let ty = context.get_variable_sierra_type(*inner_output)?;
+                let var_on_stack_ty = context.get_variable_sierra_type(*output)?;
                 assert_eq!(
-                    var_ty, var_on_stack_ty,
+                    ty, var_on_stack_ty,
                     "Internal compiler error: Inconsistent types in \
                      generate_block_code_and_push_values()."
                 );
                 push_values.push(pre_sierra::PushValue {
                     var: context.get_sierra_variable(*inner_output),
                     var_on_stack: context.get_sierra_variable(*output),
-                    ty: context.get_db().get_concrete_type_id(var_ty)?,
+                    ty,
                 })
             }
             statements.push(pre_sierra::Statement::PushValues(push_values));
@@ -81,11 +81,10 @@ pub fn generate_return_code(
     for returned_variable in returned_variables {
         let return_variable_on_stack = context.allocate_sierra_variable();
         return_variables_on_stack.push(return_variable_on_stack.clone());
-        let var_ty = context.get_lowered_variable(*returned_variable).ty;
         push_values.push(pre_sierra::PushValue {
             var: context.get_sierra_variable(*returned_variable),
             var_on_stack: return_variable_on_stack,
-            ty: context.get_db().get_concrete_type_id(var_ty)?,
+            ty: context.get_variable_sierra_type(*returned_variable)?,
         });
     }
 
@@ -168,11 +167,10 @@ fn generate_statement_call_code(
                 // Allocate a temporary Sierra variable that represents the argument placed on the
                 // stack.
                 let arg_on_stack = context.allocate_sierra_variable();
-                let ty = context.get_lowered_variable(*var_id).ty;
                 push_values_vec.push(pre_sierra::PushValue {
                     var,
                     var_on_stack: arg_on_stack.clone(),
-                    ty: context.get_db().get_concrete_type_id(ty)?,
+                    ty: context.get_variable_sierra_type(*var_id)?,
                 });
                 args_on_stack.push(arg_on_stack);
             }
@@ -274,12 +272,14 @@ fn generate_statement_enum_construct(
     context: &mut ExprGeneratorContext<'_>,
     statement: &lowering::StatementEnumConstruct,
 ) -> Option<Vec<pre_sierra::Statement>> {
-    let input_sierra_variable = context.get_sierra_variable(statement.input);
-    let output_sierra_variable = context.get_sierra_variable(statement.output);
-    let concrete_enum_type =
-        context.get_db().get_concrete_type_id(context.get_lowered_variable(statement.output).ty)?;
-    let libfunc_id = context.enum_init_libfunc_id(concrete_enum_type, statement.variant.idx);
-    Some(vec![simple_statement(libfunc_id, &[input_sierra_variable], &[output_sierra_variable])])
+    Some(vec![simple_statement(
+        context.enum_init_libfunc_id(
+            context.get_variable_sierra_type(statement.output)?,
+            statement.variant.idx,
+        ),
+        &[context.get_sierra_variable(statement.input)],
+        &[context.get_sierra_variable(statement.output)],
+    )])
 }
 
 /// Generates Sierra code for [lowering::StatementTupleConstruct].
@@ -287,10 +287,8 @@ fn generate_statement_tuple_constuct_code(
     context: &mut ExprGeneratorContext<'_>,
     statement: &lowering::StatementTupleConstruct,
 ) -> Option<Vec<pre_sierra::Statement>> {
-    let concrete_tuple_type =
-        context.get_db().get_concrete_type_id(context.get_lowered_variable(statement.output).ty)?;
     Some(vec![simple_statement(
-        context.struct_construct_libfunc_id(concrete_tuple_type),
+        context.struct_construct_libfunc_id(context.get_variable_sierra_type(statement.output)?),
         &context.get_sierra_variables(&statement.inputs),
         &[context.get_sierra_variable(statement.output)],
     )])
@@ -301,10 +299,8 @@ fn generate_statement_tuple_destructure_code(
     context: &mut ExprGeneratorContext<'_>,
     statement: &lowering::StatementTupleDestructure,
 ) -> Option<Vec<pre_sierra::Statement>> {
-    let concrete_tuple_type =
-        context.get_db().get_concrete_type_id(context.get_lowered_variable(statement.input).ty)?;
     Some(vec![simple_statement(
-        context.struct_deconstruct_libfunc_id(concrete_tuple_type),
+        context.struct_deconstruct_libfunc_id(context.get_variable_sierra_type(statement.input)?),
         &[context.get_sierra_variable(statement.input)],
         &context.get_sierra_variables(&statement.outputs),
     )])
