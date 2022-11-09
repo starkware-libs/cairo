@@ -20,7 +20,7 @@ enum IfCondition {
 fn analyze_condition(ctx: &LoweringContext<'_>, expr_id: semantic::ExprId) -> IfCondition {
     let expr = &ctx.function_def.exprs[expr_id];
     if let semantic::Expr::FunctionCall(function_call) = expr {
-        if function_call.function == corelib::felt_eq(ctx.db)
+        if function_call.function == corelib::felt_eq(ctx.db.upcast())
             && function_call.args.len() == 2
             && is_zero(ctx, function_call.args[1])
         {
@@ -57,8 +57,10 @@ pub fn lower_expr_if_bool(
     // The condition cannot be unit.
     let condition_var = lower_expr(ctx, scope, expr.condition)?.var(ctx, scope);
 
+    let semantic_db = ctx.db.upcast();
+
     // Lower both blocks.
-    let unit_ty = corelib::unit_ty(ctx.db);
+    let unit_ty = corelib::unit_ty(semantic_db);
     let (res, mut finalized_merger) = BlockFlowMerger::with(ctx, scope, &[], |ctx, merger| {
         let main_block_scope = merger.run_in_subscope(ctx, vec![unit_ty], |ctx, subscope, _| {
             lower_block(
@@ -82,10 +84,10 @@ pub fn lower_expr_if_bool(
     // Emit the statement.
     let match_generator = generators::MatchEnum {
         input: condition_var,
-        concrete_enum_id: corelib::core_bool_enum(ctx.db),
+        concrete_enum_id: corelib::core_bool_enum(semantic_db),
         arms: vec![
-            (corelib::true_variant(ctx.db), main_finalized.block),
-            (corelib::false_variant(ctx.db), else_finalized.block),
+            (corelib::true_variant(semantic_db), main_finalized.block),
+            (corelib::false_variant(semantic_db), else_finalized.block),
         ],
         end_info: finalized_merger.end_info,
     };
@@ -103,6 +105,8 @@ pub fn lower_expr_if_eq_zero(
     // The condition cannot be unit.
     let condition_var = lower_expr(ctx, scope, tested_expr)?.var(ctx, scope);
 
+    let semantic_db = ctx.db.upcast();
+
     // Lower both blocks.
     let (res, mut finalized_merger) = BlockFlowMerger::with(ctx, scope, &[], |ctx, merger| {
         let main_block_scope = merger.run_in_subscope(ctx, vec![], |ctx, subscope, _| {
@@ -112,7 +116,8 @@ pub fn lower_expr_if_eq_zero(
                 extract_matches!(&ctx.function_def.exprs[expr.if_block], semantic::Expr::Block),
             )
         });
-        let non_zero_type = corelib::core_nonzero_ty(ctx.db, corelib::core_felt_ty(ctx.db));
+        let non_zero_type =
+            corelib::core_nonzero_ty(semantic_db, corelib::core_felt_ty(semantic_db));
         let else_block_scope =
             merger.run_in_subscope(ctx, vec![non_zero_type], |ctx, subscope, _| {
                 lower_optional_else_block(ctx, subscope, expr.else_block)
@@ -128,7 +133,7 @@ pub fn lower_expr_if_eq_zero(
 
     // Emit the statement.
     let match_generator = generators::MatchExtern {
-        function: corelib::core_jump_nz_func(ctx.db),
+        function: corelib::core_jump_nz_func(semantic_db),
         inputs: vec![condition_var],
         arms: vec![main_finalized.block, else_finalized.block],
         end_info: finalized_merger.end_info,
