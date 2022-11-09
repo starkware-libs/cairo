@@ -55,9 +55,18 @@ pub fn get_concrete_type_id(
                 }
             }
         }
-        semantic::TypeLongId::Tuple(_) => {
-            todo!("Add support for tuple types when they are supported in Sierra.")
-        }
+        semantic::TypeLongId::Tuple(inner_types) => Some(
+            db.intern_concrete_type(ConcreteTypeLongId {
+                generic_id: "Struct".into(),
+                generic_args: chain!(
+                    [sierra::program::GenericArg::UserType("Tuple".into())],
+                    inner_types.into_iter().map(|ty| sierra::program::GenericArg::Type(
+                        db.get_concrete_type_id(ty).unwrap()
+                    ))
+                )
+                .collect(),
+            }),
+        ),
         semantic::TypeLongId::GenericParameter(_) => todo!("Add support for generic parameters."),
         semantic::TypeLongId::Missing | semantic::TypeLongId::Never => None,
     }

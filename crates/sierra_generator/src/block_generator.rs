@@ -118,11 +118,15 @@ pub fn generate_statement_code(
         lowering::Statement::EnumConstruct(statement_enum_construct) => {
             generate_statement_enum_construct(context, statement_enum_construct)
         }
-        lowering::Statement::StructConstruct
-        | lowering::Statement::StructDestructure
-        | lowering::Statement::MatchEnum(_)
-        | lowering::Statement::TupleConstruct(_)
-        | lowering::Statement::TupleDestructure(_) => {
+        lowering::Statement::TupleConstruct(statement) => {
+            generate_statement_tuple_constuct_code(context, statement)
+        }
+        lowering::Statement::TupleDestructure(statement) => {
+            generate_statement_tuple_destructure_code(context, statement)
+        }
+        lowering::Statement::MatchEnum(_)
+        | lowering::Statement::StructConstruct
+        | lowering::Statement::StructDestructure => {
             // TODO(lior): Replace with a diagnostic.
             todo!()
         }
@@ -276,4 +280,32 @@ fn generate_statement_enum_construct(
         context.get_db().get_concrete_type_id(context.get_lowered_variable(statement.output).ty)?;
     let libfunc_id = context.enum_init_libfunc_id(concrete_enum_type, statement.variant.idx);
     Some(vec![simple_statement(libfunc_id, &[input_sierra_variable], &[output_sierra_variable])])
+}
+
+/// Generates Sierra code for [lowering::StatementTupleConstruct].
+fn generate_statement_tuple_constuct_code(
+    context: &mut ExprGeneratorContext<'_>,
+    statement: &lowering::StatementTupleConstruct,
+) -> Option<Vec<pre_sierra::Statement>> {
+    let concrete_tuple_type =
+        context.get_db().get_concrete_type_id(context.get_lowered_variable(statement.output).ty)?;
+    Some(vec![simple_statement(
+        context.struct_construct_libfunc_id(concrete_tuple_type),
+        &context.get_sierra_variables(&statement.inputs),
+        &[context.get_sierra_variable(statement.output)],
+    )])
+}
+
+/// Generates Sierra code for [lowering::StatementTupleDestructure].
+fn generate_statement_tuple_destructure_code(
+    context: &mut ExprGeneratorContext<'_>,
+    statement: &lowering::StatementTupleDestructure,
+) -> Option<Vec<pre_sierra::Statement>> {
+    let concrete_tuple_type =
+        context.get_db().get_concrete_type_id(context.get_lowered_variable(statement.input).ty)?;
+    Some(vec![simple_statement(
+        context.struct_deconstruct_libfunc_id(concrete_tuple_type),
+        &[context.get_sierra_variable(statement.input)],
+        &context.get_sierra_variables(&statement.outputs),
+    )])
 }
