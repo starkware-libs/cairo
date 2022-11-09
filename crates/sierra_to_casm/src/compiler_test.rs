@@ -661,13 +661,15 @@ of the libfunc or return statement.";
                 type felt = felt;
                 type UninitializedFelt = Uninitialized<felt>;
 
+                libfunc alloc_local_felt = alloc_local<felt>;
                 libfunc store_temp_felt = store_temp<UninitializedFelt>;
 
+                alloc_local_felt() -> ([1]);
                 store_temp_felt([1]) -> ([1]);
                 return ();
 
-                foo@0([1]:UninitializedFelt) -> ();
-            "}, &[], "#0: The functionality is supported only for sized types.";
+                foo@0() -> ();
+            "}, &[], "#1: The functionality is supported only for sized types.";
             "store_temp<Uninitialized<felt>()")]
 #[test_case(indoc! {"
                 return ();
