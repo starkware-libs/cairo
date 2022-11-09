@@ -28,6 +28,10 @@ mod misc;
 mod strct;
 mod uint128;
 
+#[cfg(test)]
+#[path = "test.rs"]
+mod test;
+
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum InvocationError {
     #[error("One of the arguments does not satisfy the requirements of the libfunc.")]

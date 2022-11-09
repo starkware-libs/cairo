@@ -52,7 +52,7 @@ impl Display for CairoProgram {
 }
 
 /// Ensure the basic structure of the invocation is the same as the library function.
-fn check_basic_structure(
+pub fn check_basic_structure(
     statement_idx: StatementIdx,
     invocation: &Invocation,
     libfunc: &CoreConcreteLibFunc,
