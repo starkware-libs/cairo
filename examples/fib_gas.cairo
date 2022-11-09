@@ -1,16 +1,18 @@
 // Calculates fib...
 
-// TODO(ilya): Return an error in case of out of gas.
-func fib(a: felt, b: felt, n: felt) -> felt implicits (rc: RangeCheck, gb: GasBuiltin) {
+// TODO(orizi): Replace with Option when generic enums are fully supported.
+enum OptionFelt { Some: felt, None: (), }
+
+func fib(a: felt, b: felt, n: felt) -> OptionFelt implicits (rc: RangeCheck, gb: GasBuiltin) {
     match get_gas() {
         GetGasResult::Success (()) => {
         },
         GetGasResult::Failure (()) => {
-            return 1111111;
+            return OptionFelt::None(());
         },
     }
     match n {
-        0 => a,
+        0 => OptionFelt::Some(a),
         _ => fib(b, a + b, n - 1),
     }
 }
