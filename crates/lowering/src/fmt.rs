@@ -1,7 +1,7 @@
 use debug::DebugWithDb;
-use semantic::db::SemanticGroup;
 use semantic::ConcreteVariant;
 
+use crate::db::LoweringGroup;
 use crate::lower::Lowered;
 use crate::objects::{
     Block, BlockEnd, BlockId, Statement, StatementCall, StatementCallBlock, StatementLiteral,
@@ -12,7 +12,7 @@ use crate::{StatementEnumConstruct, StatementMatchEnum, StatementTupleConstruct}
 /// Holds all the information needed for formatting lowered representations.
 /// Acts like a "db" for DebugWithDb.
 pub struct LoweredFormatter<'db> {
-    pub db: &'db (dyn SemanticGroup + 'static),
+    pub db: &'db (dyn LoweringGroup + 'static),
     pub lowered: &'db Lowered,
 }
 
@@ -97,7 +97,7 @@ fn format_var_with_ty(
     ctx: &LoweredFormatter<'_>,
 ) -> std::fmt::Result {
     var_id.fmt(f, ctx)?;
-    write!(f, ": {}", ctx.lowered.variables[var_id].ty.format(ctx.db))
+    write!(f, ": {}", ctx.lowered.variables[var_id].ty.format(ctx.db.upcast()))
 }
 
 impl DebugWithDb<LoweredFormatter<'_>> for BlockId {
@@ -204,7 +204,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for StatementMatchExtern {
 
 impl DebugWithDb<LoweredFormatter<'_>> for ConcreteVariant {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
-        let enum_name = self.concrete_enum_id.enum_id(ctx.db).name(ctx.db.upcast());
+        let enum_name = self.concrete_enum_id.enum_id(ctx.db.upcast()).name(ctx.db.upcast());
         let variant_name = self.id.name(ctx.db.upcast());
         write!(f, "{}::{}", enum_name, variant_name)
     }
@@ -224,7 +224,8 @@ impl DebugWithDb<LoweredFormatter<'_>> for StatementMatchEnum {
 
 impl DebugWithDb<LoweredFormatter<'_>> for StatementEnumConstruct {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
-        let enum_name = self.variant.concrete_enum_id.enum_id(ctx.db).name(ctx.db.upcast());
+        let enum_name =
+            self.variant.concrete_enum_id.enum_id(ctx.db.upcast()).name(ctx.db.upcast());
         let variant_name = self.variant.id.name(ctx.db.upcast());
         write!(f, "{enum_name}::{variant_name}(",)?;
         self.input.fmt(f, ctx)?;

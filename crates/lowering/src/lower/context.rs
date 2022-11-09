@@ -1,12 +1,12 @@
 use id_arena::Arena;
 use itertools::{chain, zip_eq};
-use semantic::db::SemanticGroup;
 use semantic::items::enm::SemanticEnumEx;
 use utils::unordered_hash_map::UnorderedHashMap;
 
 use super::scope::generators::CallBlockResult;
 use super::scope::{generators, BlockScope, BlockScopeEnd};
 use super::variables::LivingVar;
+use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnostics;
 use crate::lower::external::{extern_facade_expr, extern_facade_return_tys};
 use crate::lower::scope::BlockFlowMerger;
@@ -14,7 +14,7 @@ use crate::objects::{Block, Variable};
 
 /// Context for the lowering phase.
 pub struct LoweringContext<'db> {
-    pub db: &'db dyn SemanticGroup,
+    pub db: &'db dyn LoweringGroup,
     /// Semantic model for current function definition.
     pub function_def: &'db semantic::FreeFunctionDefinition,
     /// Current emitted diagnostics.
