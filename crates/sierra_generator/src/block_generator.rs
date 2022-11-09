@@ -315,8 +315,10 @@ fn generate_statement_match_enum(
     let matched_enum = context.get_sierra_variable(statement.input);
     let concrete_enum_type = context.get_variable_sierra_type(statement.input)?;
     // Generate labels for all the arms.
-    let (arm_label_statements, arm_label_ids): (Vec<pre_sierra::Statement>, Vec<pre_sierra::LabelId>) =
-        (0..statement.arms.len()).map(|_i| context.new_label()).unzip();
+    let (arm_label_statements, arm_label_ids): (
+        Vec<pre_sierra::Statement>,
+        Vec<pre_sierra::LabelId>,
+    ) = (0..statement.arms.len()).map(|_i| context.new_label()).unzip();
     // Generate a label for the end of the match.
     let (end_label, end_label_id) = context.new_label();
 
@@ -330,12 +332,12 @@ fn generate_statement_match_enum(
         .collect();
 
     let libfunc_id = context.match_enum_libfunc_id(concrete_enum_type);
-    
+
     // Call the match libfunc.
     statements.push(pre_sierra::Statement::Sierra(program::GenStatement::Invocation(
         program::GenInvocation { libfunc_id, args: vec![matched_enum], branches },
     )));
-    
+
     // Generate the blocks.
     // TODO(Gil): Consider unifying with the similar logic in generate_statement_match_extern_code.
     for (i, (label_statement, (_variant, arm))) in
