@@ -26,12 +26,15 @@ pub fn get_type_size_map(
             CoreTypeConcrete::NonZero(NonZeroConcreteType { ty, .. }) => {
                 type_sizes.get(ty).cloned()
             }
-            CoreTypeConcrete::Uninitialized(_) => Some(0),
             CoreTypeConcrete::Enum(enum_type) => {
                 Some(1 + enum_type.variants.iter().map(|variant| type_sizes[variant]).max()?)
             }
             CoreTypeConcrete::Struct(struct_type) => {
                 Some(struct_type.members.iter().map(|member| type_sizes[member]).sum())
+            }
+            CoreTypeConcrete::Uninitialized(_) => {
+                // Any size operations on `Uninitialized` are not supported.
+                continue;
             }
         }?;
         type_sizes.insert(declaration.id.clone(), size);
