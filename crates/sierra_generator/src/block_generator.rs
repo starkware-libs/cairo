@@ -115,9 +115,11 @@ pub fn generate_statement_code(
         lowering::Statement::CallBlock(statement_call_block) => {
             generate_statement_call_block_code(context, statement_call_block)
         }
+        lowering::Statement::EnumConstruct(statement_enum_construct) => {
+            generate_statement_enum_construct(context, statement_enum_construct)
+        }
         lowering::Statement::StructConstruct
         | lowering::Statement::StructDestructure
-        | lowering::Statement::EnumConstruct(_)
         | lowering::Statement::MatchEnum(_)
         | lowering::Statement::TupleConstruct(_)
         | lowering::Statement::TupleDestructure(_) => {
@@ -261,4 +263,17 @@ fn generate_statement_call_block_code(
     let lowered_block = context.get_lowered_block(statement.block);
     // TODO(lior): Rename instead of using PushValues.
     Some(generate_block_code_and_push_values(context, lowered_block, &statement.outputs)?.0)
+}
+
+/// Generates Sierra code for [lowering::StatementEnumConstruct].
+fn generate_statement_enum_construct(
+    context: &mut ExprGeneratorContext<'_>,
+    statement: &lowering::StatementEnumConstruct,
+) -> Option<Vec<pre_sierra::Statement>> {
+    let input_sierra_variable = context.get_sierra_variable(statement.input);
+    let output_sierra_variable = context.get_sierra_variable(statement.output);
+    let concrete_enum_type =
+        context.get_db().get_concrete_type_id(context.get_lowered_variable(statement.output).ty)?;
+    let libfunc_id = context.enum_init_libfunc_id(concrete_enum_type, statement.variant.idx);
+    Some(vec![simple_statement(libfunc_id, &[input_sierra_variable], &[output_sierra_variable])])
 }
