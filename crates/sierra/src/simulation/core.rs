@@ -1,4 +1,4 @@
-use num_bigint::ToBigInt;
+use num_bigint::{BigInt, ToBigInt};
 use num_traits::Zero;
 use utils::extract_matches;
 
@@ -297,6 +297,13 @@ fn simulate_integer_libfunc(
                 _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
             }
         }
+        Uint128Concrete::IsLessThan(_) => match inputs {
+            [CoreValue::RangeCheck, CoreValue::Uint128(_value)] => {
+                Ok((vec![CoreValue::RangeCheck, CoreValue::Felt(BigInt::zero())], 1))
+            }
+            [_] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+        },
     }
 }
 

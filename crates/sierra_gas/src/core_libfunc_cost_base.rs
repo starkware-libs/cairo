@@ -107,6 +107,9 @@ fn integer_libfunc_cost<Ops: CostOperations>(
         Uint128Concrete::JumpNotZero(_) => {
             vec![ops.const_cost(1), ops.const_cost(1)]
         }
+        Uint128Concrete::IsLessThan(_) => {
+            vec![ops.const_cost(0)]
+        }
     }
 }
 

@@ -9,6 +9,7 @@ casm = { path = "../casm" }
 clap.workspace = true
 itertools.workspace = true
 num-bigint.workspace = true
+num-traits.workspace = true
 sierra = { path = "../sierra" }
 sierra_gas = { path = "../sierra_gas" }
 thiserror.workspace = true

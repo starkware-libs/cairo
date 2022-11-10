@@ -4,6 +4,7 @@ use casm::instructions::InstructionBody;
 use casm::operand::{ap_cell_ref, DerefOrImmediate};
 use itertools::chain;
 use num_bigint::{BigInt, ToBigInt};
+use num_traits::Zero;
 use sierra::extensions::felt::FeltOperator;
 use sierra::extensions::integer::{
     IntOperator, Uint128BinaryOperationConcreteLibFunc, Uint128Concrete,
@@ -37,6 +38,7 @@ pub fn build(
         )),
         Uint128Concrete::FromFelt(_) => build_uint128_from_felt(builder),
         Uint128Concrete::ToFelt(_) => misc::build_identity(builder),
+        Uint128Concrete::IsLessThan(_) => build_uint128_is_lt(builder),
     }
 }
 
@@ -271,4 +273,46 @@ fn build_uint128_from_felt(
         }
         _ => Err(InvocationError::InvalidReferenceExpressionForArgument),
     }
+}
+
+fn build_uint128_is_lt(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let (range_check, _value_a, _value_b) = match builder.refs {
+        [
+            ReferenceValue { expression: range_check_expression, .. },
+            ReferenceValue { expression: expr_a, .. },
+            ReferenceValue { expression: expr_b, .. },
+        ] => (
+            range_check_expression
+                .try_unpack_single()
+                .ok()
+                .and_then(|cell| try_extract_matches!(cell, CellExpression::Deref))
+                .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?,
+            expr_a
+                .try_unpack_single()
+                .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?,
+            expr_b
+                .try_unpack_single()
+                .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?,
+        ),
+        refs => {
+            return Err(InvocationError::WrongNumberOfArguments {
+                expected: 3,
+                actual: refs.len(),
+            });
+        }
+    };
+    Ok(builder.build(
+        casm! { [ap + 0] = 0, ap++; }.instructions,
+        vec![],
+        [vec![
+            ReferenceExpression::from_cell(CellExpression::Deref(
+                range_check.apply_ap_change(ApChange::Known(1)).unwrap(),
+            )),
+            ReferenceExpression::from_cell(CellExpression::Immediate(BigInt::zero())),
+        ]
+        .into_iter()]
+        .into_iter(),
+    ))
 }
