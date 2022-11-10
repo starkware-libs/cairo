@@ -15,6 +15,7 @@ utils::test_file_test!(
         "src/test_data/extern",
         "src/test_data/if",
         "src/test_data/match",
+        "src/test_data/struct",
         "src/test_data/tests",
         "src/test_data/tuple",
     ],
