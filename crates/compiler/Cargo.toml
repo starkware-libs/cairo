@@ -1,0 +1,15 @@
+[package]
+name = "compiler"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+defs = { path = "../defs" }
+db_utils = { path = "../db_utils" }
+filesystem = { path = "../filesystem" }
+lowering = { path = "../lowering" }
+semantic = { path = "../semantic" }
+sierra_generator = { path = "../sierra_generator" }
+syntax = { path = "../syntax" }
+parser = { path = "../parser" }
+salsa = "0.16.1"

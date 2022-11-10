@@ -2,6 +2,7 @@
 
 members = [
     "crates/casm",
+    "crates/compiler",
     "crates/db_utils",
     "crates/defs",
     "crates/debug",
