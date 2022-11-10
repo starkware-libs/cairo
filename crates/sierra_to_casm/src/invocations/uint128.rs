@@ -10,10 +10,12 @@ use sierra::extensions::integer::{
     Uint128OperationConcreteLibFunc, Uint128OperationWithConstConcreteLibFunc,
 };
 use sierra::program::{BranchInfo, BranchTarget};
-use utils::{extract_matches, try_extract_matches};
+use utils::extract_matches;
 
 use super::{misc, CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::references::{BinOpExpression, CellExpression, ReferenceExpression, ReferenceValue};
+use crate::references::{
+    get_deref, BinOpExpression, CellExpression, ReferenceExpression, ReferenceValue,
+};
 use crate::relocations::{Relocation, RelocationEntry};
 
 #[cfg(test)]
@@ -39,6 +41,7 @@ pub fn build(
         )),
         Uint128Concrete::FromFelt(_) => build_uint128_from_felt(builder),
         Uint128Concrete::ToFelt(_) => misc::build_identity(builder),
+        Uint128Concrete::IsLessThan(_) => build_uint128_is_lt(builder),
     }
 }
 
@@ -47,12 +50,6 @@ fn build_uint128_op(
     builder: CompiledInvocationBuilder<'_>,
     op: IntOperator,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let get_deref = |expr: &ReferenceExpression| {
-        expr.try_unpack_single()
-            .ok()
-            .and_then(|cell| try_extract_matches!(cell, CellExpression::Deref))
-            .ok_or(InvocationError::InvalidReferenceExpressionForArgument)
-    };
     let (range_check, a, b) = match builder.refs {
         [
             ReferenceValue { expression: range_check_expression, .. },
@@ -161,11 +158,7 @@ fn build_uint128_from_felt(
             ReferenceValue { expression: range_check_expression, .. },
             ReferenceValue { expression: expr_value, .. },
         ] => (
-            range_check_expression
-                .try_unpack_single()
-                .ok()
-                .and_then(|cell| try_extract_matches!(cell, CellExpression::Deref))
-                .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?,
+            get_deref(range_check_expression)?,
             expr_value
                 .try_unpack_single()
                 .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?,
@@ -266,7 +259,7 @@ fn build_uint128_from_felt(
                 builder.build(casm! { ap += 1; }.instructions, vec![], output_expressions)
             } else {
                 builder.build(
-                    casm! {  ap += 4; jmp rel 0; }.instructions,
+                    casm! { ap += 4; jmp rel 0; }.instructions,
                     vec![RelocationEntry {
                         instruction_idx: 0,
                         relocation: Relocation::RelativeStatementId(*failure_handle_statement_id),
@@ -277,4 +270,80 @@ fn build_uint128_from_felt(
         }
         _ => Err(InvocationError::InvalidReferenceExpressionForArgument),
     }
+}
+
+fn build_uint128_is_lt(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    // Fetch and verify input references.
+    let (range_check, a, b) = match builder.refs {
+        [
+            ReferenceValue { expression: range_check_expression, .. },
+            ReferenceValue { expression: expr_a, .. },
+            ReferenceValue { expression: expr_b, .. },
+        ] => (get_deref(range_check_expression)?, get_deref(expr_a)?, get_deref(expr_b)?),
+        refs => {
+            return Err(InvocationError::WrongNumberOfArguments {
+                expected: 3,
+                actual: refs.len(),
+            });
+        }
+    };
+
+    // Fetch the jump target.
+    let target_statement_id = match builder.invocation.branches.as_slice() {
+        [
+            BranchInfo { target: BranchTarget::Fallthrough, .. },
+            BranchInfo { target: BranchTarget::Statement(target_statement_id), .. },
+        ] => target_statement_id,
+        _ => panic!("malformed invocation"),
+    };
+
+    // Split the code into two blocks, to get the offset of the first block as the jump target in
+    // case a<b.
+    let mut not_less_than_code = casm! {
+        // Check if a<b.
+        %{ memory[ap + 0] = memory a < memory b %}
+        jmp rel 0 if [ap + 0] != 0, ap++;  // Mem: [a, b, a<b, ->ap].
+        // a>=b if and only if a-b>=0.
+        b = [ap + 0] + a, ap++;  // Compute a-b.
+        [ap + 0] = [[range_check.unchecked_apply_known_ap_change(2)]];
+        jmp rel 0; // Fixed in relocations.
+    };
+    let less_than_code = casm! {
+        // a<b if and only if b-a-1>=0.
+        [ap + 0] = a + 1, ap++; // Compute a+1.
+        b = [ap + 0] + [ap + -1], ap++; // Compute b-a-1.
+        [ap + 0] = [[range_check.unchecked_apply_known_ap_change(3)]];
+    };
+
+    // Since the jump offset of the positive (X<Y) case depends only on the above CASM code,
+    // compute it here and manually replace the value in the `jmp`.
+    // The target should be just after the `jmp rel 0` statement, which ends the X>=Y case.
+    let less_than_offset = not_less_than_code.current_code_offset;
+    *extract_matches!(
+        &mut extract_matches!(&mut not_less_than_code.instructions[0].body, InstructionBody::Jnz)
+            .jump_offset,
+        DerefOrImmediate::Immediate
+    ) = BigInt::from(less_than_offset);
+
+    let relocation_index = not_less_than_code.instructions.len() - 1;
+    Ok(builder.build(
+        chain!(not_less_than_code.instructions, less_than_code.instructions).collect(),
+        vec![RelocationEntry {
+            instruction_idx: relocation_index,
+            relocation: Relocation::RelativeStatementId(*target_statement_id),
+        }],
+        [
+            vec![ReferenceExpression::from_cell(CellExpression::Deref(
+                range_check.unchecked_apply_known_ap_change(2),
+            ))]
+            .into_iter(),
+            vec![ReferenceExpression::from_cell(CellExpression::Deref(
+                range_check.unchecked_apply_known_ap_change(3),
+            ))]
+            .into_iter(),
+        ]
+        .into_iter(),
+    ))
 }
