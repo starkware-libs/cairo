@@ -297,6 +297,13 @@ fn simulate_integer_libfunc(
                 _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
             }
         }
+        Uint128Concrete::IsLessThan(_) => match inputs {
+            [CoreValue::RangeCheck, CoreValue::Uint128(_), CoreValue::Uint128(_)] => {
+                Ok((vec![CoreValue::RangeCheck], 0))
+            }
+            [_] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+        },
     }
 }
 
