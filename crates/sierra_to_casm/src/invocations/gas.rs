@@ -1,4 +1,4 @@
-use casm::ap_change::{ApChange, ApplyApChange};
+use casm::ap_change::ApplyApChange;
 use casm::casm;
 use casm::instructions::InstructionBody;
 use casm::operand::DerefOrImmediate;
@@ -72,8 +72,6 @@ fn build_get_gas(
         _ => panic!("malformed invocation"),
     };
 
-    let gas_counter_value_for_branches =
-        gas_counter_value.apply_ap_change(ApChange::Known(1)).unwrap();
     // The code up to the success branch.
     let mut before_success_branch = casm! {
         %{ memory[ap + 0] = ((*requested_count - 1) as i128) < memory gas_counter_value %}
@@ -81,9 +79,9 @@ fn build_get_gas(
 
         // requested_count - 1 >= gas_counter_value => requested_count > gas_counter:
         // TODO(orizi): Make into one command when wider constants are supported.
-        [ap + 0] = gas_counter_value_for_branches + (1 - *requested_count as i128), ap++;
+        [ap + 0] = (gas_counter_value.unchecked_apply_known_ap_change(1)) + (1 - *requested_count as i128), ap++;
         [ap + 0] = [ap - 1] * (-1), ap++;
-        [ap - 1] = [[range_check.apply_ap_change(ApChange::Known(3)).unwrap()]];
+        [ap - 1] = [[range_check.unchecked_apply_known_ap_change(3)]];
 
         jmp rel 0; // Fixed in relocations.
     };
@@ -99,8 +97,8 @@ fn build_get_gas(
     let relocation_index = before_success_branch.instructions.len() - 1;
     let success_branch = casm! {
        // requested_count - 1 < gas_counter_value => requested_count <= gas_counter:
-       [ap + 0] = gas_counter_value_for_branches + (-requested_count as i128), ap++;
-       [ap - 1] = [[range_check.apply_ap_change(ApChange::Known(2)).unwrap()]];
+       [ap + 0] = (gas_counter_value.unchecked_apply_known_ap_change(1)) + (-requested_count as i128), ap++;
+       [ap - 1] = [[range_check.unchecked_apply_known_ap_change(2)]];
     };
 
     Ok(builder.build(
@@ -113,12 +111,12 @@ fn build_get_gas(
             vec![
                 ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
                     op: FeltOperator::Add,
-                    a: range_check.apply_ap_change(ApChange::Known(2)).unwrap(),
+                    a: range_check.unchecked_apply_known_ap_change(2),
                     b: DerefOrImmediate::from(1),
                 })),
                 ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
                     op: FeltOperator::Sub,
-                    a: gas_counter_value.apply_ap_change(ApChange::Known(2)).unwrap(),
+                    a: gas_counter_value.unchecked_apply_known_ap_change(2),
                     b: DerefOrImmediate::Immediate(requested_count.to_bigint().unwrap()),
                 })),
             ]
@@ -126,11 +124,11 @@ fn build_get_gas(
             vec![
                 ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
                     op: FeltOperator::Add,
-                    a: range_check.apply_ap_change(ApChange::Known(3)).unwrap(),
+                    a: range_check.unchecked_apply_known_ap_change(3),
                     b: DerefOrImmediate::from(1),
                 })),
                 ReferenceExpression::from_cell(CellExpression::Deref(
-                    gas_counter_value.apply_ap_change(ApChange::Known(3)).unwrap(),
+                    gas_counter_value.unchecked_apply_known_ap_change(3),
                 )),
             ]
             .into_iter(),
