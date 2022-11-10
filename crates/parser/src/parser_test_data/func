@@ -4,11 +4,16 @@
 get_diagnostics
 
 //! > cairo_code
-#[asdas]
+#[extern]
 #[abc]
 func missing_id<T> (ref: Ref::<T>) { }
 
 //! > expected_diagnostics
+error: 'extern' is a reserved identifier.
+ --> dummy_file.cairo:1:3
+#[extern]
+  ^****^
+
 error: Missing token TerminalIdentifier.
  --> dummy_file.cairo:3:24
 func missing_id<T> (ref: Ref::<T>) { }

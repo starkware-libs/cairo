@@ -2,6 +2,7 @@ use diagnostics::DiagnosticEntry;
 use filesystem::db::FilesGroup;
 use filesystem::ids::FileId;
 use filesystem::span::TextSpan;
+use smol_str::SmolStr;
 use syntax::node::kind::SyntaxKind;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -19,6 +20,7 @@ pub enum ParserDiagnosticKind {
     MissingPathSegment,
     MissingTypeClause,
     MissingTypeExpression,
+    ReservedIdentifier { identifier: SmolStr },
 }
 impl DiagnosticEntry for ParserDiagnostic {
     type DbType = dyn FilesGroup;
@@ -42,6 +44,9 @@ impl DiagnosticEntry for ParserDiagnostic {
             }
             ParserDiagnosticKind::MissingTypeExpression => {
                 "Missing tokens. Expected a type expression.".to_string()
+            }
+            ParserDiagnosticKind::ReservedIdentifier { ref identifier } => {
+                format!("'{identifier}' is a reserved identifier.")
             }
         }
     }
