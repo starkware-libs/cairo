@@ -42,3 +42,39 @@ End:
 
 //! > local_variables
 v2, v5
+
+//! > ==========================================================================
+
+//! > Return revoked value
+
+//! > test_function_name
+check_find_local_variables
+
+//! > function_name
+foo
+
+//! > function_code
+func foo(x: felt) -> felt {
+    let y0 = x + x;
+    revoke_ap();
+    return y0;
+}
+
+//! > module_code
+// Revokes ap since this function is recursive.
+func revoke_ap() -> felt {
+    revoke_ap()
+}
+
+//! > lowering_format
+blk0:
+Inputs: v0: core::felt
+Statements:
+  (v1: core::felt) <- core::felt_add(v0, v0)
+  (v2: core::felt) <- test_crate::revoke_ap()
+Drops: v0, v2
+End:
+  Return(v1)
+
+//! > local_variables
+v1
