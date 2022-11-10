@@ -215,6 +215,36 @@ fn strip_comments_and_linebreaks(program: &str) -> String {
                 ret;
             "};
             "burn gas")]
+#[test_case(indoc!{"
+                type RangeCheck = RangeCheck;
+                type uint128 = uint128;
+
+                libfunc revoke_ap_tracking = revoke_ap_tracking;
+                libfunc uint128_lt = uint128_lt;
+                libfunc store_uint128 = store_temp<uint128>;
+                libfunc store_rc = store_temp<RangeCheck>;
+
+                revoke_ap_tracking() -> ();
+                uint128_lt([1], [2], [3]) {fallthrough([1]) 2([1]) };
+                store_rc([1]) -> ([1]);
+                return ([1]);
+
+                test_program@0([1]: RangeCheck, [2]: uint128, [3]: uint128) -> (RangeCheck);
+            "}, &[], false, indoc!{"
+                %{ memory[ap + 0] = memory[fp + -4] < memory[fp + -3] %}
+                jmp rel 6 if [ap + 0] != 0, ap++;
+                // a >= b.
+                [fp + -3] = [ap + 0] + [fp + -4], ap++;
+                [ap + 0] = [[fp + -5] + 0];
+                jmp rel 6;
+                // a < b.
+                [ap + 0] = [fp + -4] + 1, ap++;
+                [fp + -3] = [ap + 0] + [ap + -1], ap++;
+                [ap + 0] = [[fp + -5] + 0];
+                // Store range_check and return.
+                [ap + 0] = [fp + -5] + 1, ap++;
+                ret;
+            "}; "uint128_lt")]
 #[test_case(indoc! {"
                 type uint128 = uint128;
                 type RangeCheck = RangeCheck;
@@ -223,7 +253,6 @@ fn strip_comments_and_linebreaks(program: &str) -> String {
                 libfunc uint128_add = uint128_add;
                 libfunc drop<uint128> = drop<uint128>;
                 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
-
 
                 revoke_ap_tracking() -> ();
                 uint128_add([1], [2], [3]) {fallthrough([1], [2]) 3([1]) };
