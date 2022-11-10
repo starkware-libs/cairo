@@ -26,6 +26,9 @@ fn test_assert() {
         %{ memory[ap + 0] = memory[ap + 9] < memory[fp + 9] %}
         jmp 123 if [ap + 17] != 0;
         jmp rel [fp - 19] if [ap + 17] != 0;
+        %{ (memory[ap + 0], memory[ap + 1]) = divmod(memory[ap + 9], memory[fp + 9]) %}
+        %{ (memory[ap + 0], memory[ap + 1]) = divmod(50, memory[fp + 9]) %}
+        %{ (memory[ap + 0], memory[ap + 1]) = divmod(memory[ap + 9], 2) %}
         call abs 5, ap++;
         call rel y, ap++;
         ret;
@@ -49,6 +52,9 @@ fn test_assert() {
             %{ memory[ap + 0] = memory[ap + 9] < memory[fp + 9] %}
             jmp rel 123 if [ap + 17] != 0
             jmp rel [fp + -19] if [ap + 17] != 0
+            %{ (memory[ap + 0], memory[ap + 1]) = divmod(memory[ap + 9], memory[fp + 9]) %}
+            %{ (memory[ap + 0], memory[ap + 1]) = divmod(50, memory[fp + 9]) %}
+            %{ (memory[ap + 0], memory[ap + 1]) = divmod(memory[ap + 9], 2) %}
             call abs 5, ap++
             call rel [fp + 5], ap++
             ret"}
