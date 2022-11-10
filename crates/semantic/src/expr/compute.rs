@@ -5,7 +5,7 @@
 use std::collections::HashMap;
 
 use ast::{BinaryOperator, PathSegment};
-use defs::ids::{GenericFunctionId, LocalVarLongId, MemberId, VarId};
+use defs::ids::{GenericFunctionId, LocalVarLongId, MemberId};
 use id_arena::Arena;
 use itertools::{chain, zip_eq};
 use num_bigint::BigInt;
@@ -33,7 +33,7 @@ use crate::items::modifiers::compute_mutability;
 use crate::items::strct::SemanticStructEx;
 use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use crate::semantic::{self, FunctionId, LocalVariable, TypeId, TypeLongId, Variable};
-use crate::types::{resolve_type, ConcreteTypeId};
+use crate::types::{resolve_type, ConcreteTypeId, VarId};
 use crate::{Mutability, Parameter};
 
 /// Context for computing the semantic model of expression trees.
@@ -46,7 +46,7 @@ pub struct ComputationContext<'ctx> {
     pub exprs: Arena<semantic::Expr>,
     pub statements: Arena<semantic::Statement>,
     /// Definitions of semantic variables.
-    pub semantic_defs: UnorderedHashMap<semantic::VarId, semantic::Variable>,
+    pub semantic_defs: UnorderedHashMap<VarId, semantic::Variable>,
 }
 impl<'ctx> ComputationContext<'ctx> {
     pub fn new(

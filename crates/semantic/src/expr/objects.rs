@@ -1,5 +1,5 @@
 use debug::DebugWithDb;
-use defs::ids::{MemberId, StructId, VarId};
+use defs::ids::{MemberId, StructId};
 use diagnostics_proc_macros::DebugWithDb;
 use id_arena::Id;
 use num_bigint::BigInt;
@@ -7,7 +7,7 @@ use syntax::node::ast::{self};
 
 use super::fmt::ExprFormatter;
 use super::pattern::Pattern;
-use crate::{semantic, FunctionId};
+use crate::{semantic, FunctionId, VarId};
 
 pub type ExprId = Id<Expr>;
 pub type StatementId = Id<Statement>;

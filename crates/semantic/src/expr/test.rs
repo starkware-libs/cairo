@@ -1,7 +1,7 @@
 use assert_matches::assert_matches;
 use debug::DebugWithDb;
 use defs::db::DefsGroup;
-use defs::ids::{ModuleItemId, VarId};
+use defs::ids::ModuleItemId;
 use indoc::indoc;
 use num_bigint::ToBigInt;
 use pretty_assertions::assert_eq;
@@ -14,7 +14,7 @@ use crate::test_utils::{
     setup_test_expr, setup_test_function, setup_test_module, test_function_diagnostics,
     SemanticDatabaseForTesting, TestModule,
 };
-use crate::{semantic, semantic_test};
+use crate::{semantic, semantic_test, VarId};
 
 semantic_test!(
     expr_diagnostics_tests,

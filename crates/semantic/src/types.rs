@@ -2,7 +2,10 @@ use std::collections::HashMap;
 
 use db_utils::define_short_id;
 use debug::DebugWithDb;
-use defs::ids::{EnumId, ExternTypeId, GenericParamId, GenericTypeId, StructId};
+use defs::define_language_element_id_as_enum;
+use defs::ids::{
+    EnumId, ExternTypeId, GenericParamId, GenericTypeId, LocalVarId, ParamId, StructId,
+};
 use itertools::Itertools;
 use syntax::node::ast;
 use utils::OptionFrom;
@@ -279,4 +282,13 @@ pub fn substitute_generics(
             .unwrap_or(ty),
         TypeLongId::Missing | TypeLongId::Never => ty,
     }
+}
+
+define_language_element_id_as_enum! {
+    /// Id for any variable definition.
+    pub enum VarId {
+        Param(ParamId),
+        Local(LocalVarId),
+        // TODO(spapini): Add var from pattern matching.
+    }, SemanticGroup
 }

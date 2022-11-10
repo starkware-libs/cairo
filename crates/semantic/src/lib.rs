@@ -13,6 +13,7 @@ pub mod types;
 mod semantic;
 
 pub use diagnostic::SemanticDiagnostic;
+pub use types::*;
 
 pub use self::semantic::*;
 

@@ -109,13 +109,14 @@ macro_rules! define_language_element_id {
 }
 
 /// Defines and implements LanguageElementId for a subset of other language elements.
+#[macro_export]
 macro_rules! define_language_element_id_as_enum {
     (
         #[toplevel]
         #[doc = $doc:expr]
         pub enum $enum_name:ident {
             $($variant:ident ($variant_ty:ty),)*
-        }
+        }, $db_group:ident
     ) => {
         toplevel_enum! {
             pub enum $enum_name {
@@ -126,21 +127,21 @@ macro_rules! define_language_element_id_as_enum {
             #[doc = $doc]
             pub enum $enum_name {
                 $($variant($variant_ty),)*
-            }
+            }, $db_group
         }
     };
     (
         #[doc = $doc:expr]
         pub enum $enum_name:ident {
             $($variant:ident ($variant_ty:ty),)*
-        }
+        }, $db_group:ident
     ) => {
         #[doc = $doc]
         #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
         pub enum $enum_name {
             $($variant($variant_ty),)*
         }
-        impl<T: ?Sized + db_utils::Upcast<dyn DefsGroup + 'static>> debug::DebugWithDb<T>
+        impl<T: ?Sized + db_utils::Upcast<dyn $db_group + 'static>> debug::DebugWithDb<T>
             for $enum_name
         {
             fn fmt(
@@ -148,7 +149,7 @@ macro_rules! define_language_element_id_as_enum {
                 f: &mut std::fmt::Formatter<'_>,
                 db: &T,
             ) -> std::fmt::Result {
-                let db : &(dyn DefsGroup + 'static) = db.upcast();
+                let db : &(dyn $db_group + 'static) = db.upcast();
                 match self {
                     $(
                         $enum_name::$variant(id) => id.fmt(f, db),
@@ -156,15 +157,15 @@ macro_rules! define_language_element_id_as_enum {
                 }
             }
         }
-        impl LanguageElementId for $enum_name {
-            fn module(&self, db: &dyn DefsGroup) -> ModuleId {
+        impl $crate::ids::LanguageElementId for $enum_name {
+            fn module(&self, db: &dyn $crate::db::DefsGroup) -> $crate::ids::ModuleId {
                 match self {
                     $(
-                        $enum_name::$variant(id) => id.module(db),
+                        $enum_name::$variant(id) => id.module(db.upcast()),
                     )*
                 }
             }
-            fn untyped_stable_ptr(&self, db: &(dyn DefsGroup + 'static)) -> SyntaxStablePtrId {
+            fn untyped_stable_ptr(&self, db: &(dyn $crate::db::DefsGroup + 'static)) -> syntax::node::ids::SyntaxStablePtrId {
                 match self {
                     $(
                         $enum_name::$variant(id) => id.untyped_stable_ptr(db),
@@ -241,7 +242,7 @@ define_language_element_id_as_enum! {
         Impl(ImplId),
         ExternType(ExternTypeId),
         ExternFunction(ExternFunctionId),
-    }
+    }, DefsGroup
 }
 define_language_element_id!(
     SubmoduleId,
@@ -282,15 +283,6 @@ define_language_element_id!(ImplId, ImplLongId, ast::ItemImpl, lookup_intern_imp
 define_language_element_id!(MemberId, MemberLongId, ast::Member, lookup_intern_member, name);
 define_language_element_id!(VariantId, VariantLongId, ast::Member, lookup_intern_variant, name);
 
-define_language_element_id_as_enum! {
-    /// Id for any variable definition.
-    pub enum VarId {
-        Param(ParamId),
-        Local(LocalVarId),
-        // TODO(spapini): Add var from pattern matching.
-    }
-}
-
 // TODO(spapini): Override full_path for to include parents, for better debug.
 define_language_element_id!(ParamId, ParamLongId, ast::Param, lookup_intern_param, name);
 define_language_element_id!(
@@ -326,7 +318,7 @@ define_language_element_id_as_enum! {
         Free(FreeFunctionId),
         Extern(ExternFunctionId),
         // TODO(spapini): impl functions.
-    }
+    }, DefsGroup
 }
 impl GenericFunctionId {
     pub fn format(&self, db: &(dyn DefsGroup + 'static)) -> String {
@@ -342,7 +334,7 @@ define_language_element_id_as_enum! {
         Enum(EnumId),
         Extern(ExternTypeId),
         // TODO(spapini): enums, associated types in impls.
-    }
+    }, DefsGroup
 }
 impl GenericTypeId {
     pub fn format(&self, db: &(dyn DefsGroup + 'static)) -> String {

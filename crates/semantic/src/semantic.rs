@@ -1,7 +1,7 @@
 use defs::db::DefsGroup;
 use defs::ids::LocalVarId;
 // Reexport objects
-pub use defs::ids::{ParamId, VarId};
+pub use defs::ids::ParamId;
 use diagnostics_proc_macros::DebugWithDb;
 use syntax::node::ast;
 
@@ -18,6 +18,7 @@ pub use crate::items::strct::Member;
 pub use crate::types::{
     ConcreteEnumId, ConcreteExternTypeId, ConcreteStructId, ConcreteTypeId, TypeId, TypeLongId,
 };
+use crate::VarId;
 
 /// Semantic model of a variable.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
