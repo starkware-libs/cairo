@@ -16,15 +16,30 @@ fn test_less_than_format() {
     let immediate = DerefOrImmediate::from(3);
 
     assert_eq!(
-        Hint::TestLessThan { lhs: ap_based.clone(), rhs: fp_based.clone() }.to_string(),
+        Hint::TestLessThan {
+            lhs: ap_based.clone(),
+            rhs: fp_based.clone(),
+            dst: CellRef { register: Register::AP, offset: 0 }
+        }
+        .to_string(),
         "%{ memory[ap + 0] = memory[ap + 6] < memory[fp + 4] %}"
     );
     assert_eq!(
-        Hint::TestLessThan { lhs: fp_based, rhs: immediate.clone() }.to_string(),
+        Hint::TestLessThan {
+            lhs: fp_based,
+            rhs: immediate.clone(),
+            dst: CellRef { register: Register::AP, offset: 0 }
+        }
+        .to_string(),
         "%{ memory[ap + 0] = memory[fp + 4] < 3 %}"
     );
     assert_eq!(
-        Hint::TestLessThan { lhs: immediate, rhs: ap_based }.to_string(),
+        Hint::TestLessThan {
+            lhs: immediate,
+            rhs: ap_based,
+            dst: CellRef { register: Register::AP, offset: 0 }
+        }
+        .to_string(),
         "%{ memory[ap + 0] = 3 < memory[ap + 6] %}"
     );
 }
