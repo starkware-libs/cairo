@@ -1,0 +1,71 @@
+//! > Test struct constructor.
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+func foo(a: felt) -> MyStruct {
+    MyStruct{a: (), c: (3, 7), b: a}
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct MyStruct {
+  a: (),
+  b: felt,
+  c: (felt, felt),
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_format
+blk0:
+Inputs: v0: core::felt
+Statements:
+  (v1: ()) <- tuple_construct()
+  (v2: core::felt) <- 3u
+  (v3: core::felt) <- 7u
+  (v4: (core::felt, core::felt)) <- tuple_construct(v2, v3)
+  (v5: test_crate::MyStruct) <- tuple_construct(v1, v0, v4)
+Drops: v0, v1, v2, v3, v4
+End:
+  Callsite(v5)
+
+//! > ==========================================================================
+
+//! > Test struct member access.
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+func foo(s: MyStruct) -> felt {
+    s.b
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct MyStruct {
+  a: (),
+  b: felt,
+  c: (felt, felt),
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_format
+blk0:
+Inputs: v0: test_crate::MyStruct
+Statements:
+  (v1: (), v2: core::felt, v3: (core::felt, core::felt)) <- tuple_destructure(v0)
+Drops: v0, v1, v3
+End:
+  Callsite(v2)

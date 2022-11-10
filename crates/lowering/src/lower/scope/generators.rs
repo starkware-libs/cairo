@@ -8,7 +8,8 @@ use semantic::{ConcreteEnumId, ConcreteVariant};
 use super::{BlockEndInfo, BlockScope, LivingVar};
 use crate::lower::context::LoweringContext;
 use crate::objects::{
-    Statement, StatementCall, StatementLiteral, StatementTupleConstruct, StatementTupleDestructure,
+    Statement, StatementCall, StatementLiteral, StatementStructConstruct,
+    StatementStructDestructure,
 };
 use crate::{
     BlockId, StatementCallBlock, StatementEnumConstruct, StatementMatchEnum, StatementMatchExtern,
@@ -211,33 +212,15 @@ impl MatchEnum {
     }
 }
 
-/// Generator for [StatementTupleConstruct].
-pub struct TupleConstruct {
-    pub inputs: Vec<LivingVar>,
-    pub ty: semantic::TypeId,
-}
-impl TupleConstruct {
-    pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockScope) -> LivingVar {
-        let inputs = self
-            .inputs
-            .into_iter()
-            .map(|var| scope.living_variables.use_var(ctx, var).var_id())
-            .collect();
-        let output = scope.living_variables.introduce_new_var(ctx, self.ty);
-        scope.statements.push(Statement::TupleConstruct(StatementTupleConstruct {
-            inputs,
-            output: output.var_id(),
-        }));
-        output
-    }
-}
-
-/// Generator for [StatementTupleDestructure].
-pub struct TupleDestructure {
+/// Generator for [StatementStructDestructure].
+pub struct StructDestructure<StatementVariant: Fn(StatementStructDestructure) -> Statement> {
     pub input: LivingVar,
     pub tys: Vec<semantic::TypeId>,
+    pub statement_variant: StatementVariant,
 }
-impl TupleDestructure {
+impl<StatementVariant: Fn(StatementStructDestructure) -> Statement>
+    StructDestructure<StatementVariant>
+{
     pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockScope) -> Vec<LivingVar> {
         let input = scope.living_variables.use_var(ctx, self.input).var_id();
         let outputs: Vec<_> = self
@@ -245,10 +228,55 @@ impl TupleDestructure {
             .into_iter()
             .map(|ty| scope.living_variables.introduce_new_var(ctx, ty))
             .collect();
-        scope.statements.push(Statement::TupleDestructure(StatementTupleDestructure {
+        scope.statements.push((self.statement_variant)(StatementStructDestructure {
             input,
             outputs: outputs.iter().map(|var| var.var_id()).collect(),
         }));
         outputs
+    }
+}
+
+/// Generator for [StatementStructDestructure] as member access.
+pub struct StructMemberAccess<StatementVariant: Fn(StatementStructDestructure) -> Statement> {
+    pub input: LivingVar,
+    pub member_tys: Vec<semantic::TypeId>,
+    pub member_idx: usize,
+    pub statement_variant: StatementVariant,
+}
+impl<StatementVariant: Fn(StatementStructDestructure) -> Statement>
+    StructMemberAccess<StatementVariant>
+{
+    pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockScope) -> LivingVar {
+        StructDestructure {
+            input: self.input,
+            tys: self.member_tys,
+            statement_variant: self.statement_variant,
+        }
+        .add(ctx, scope)
+        .remove(self.member_idx)
+    }
+}
+
+/// Generator for [StatementStructConstruct].
+pub struct StructConstruct<StatementVariant: Fn(StatementStructConstruct) -> Statement> {
+    pub inputs: Vec<LivingVar>,
+    pub ty: semantic::TypeId,
+    pub statement_variant: StatementVariant,
+}
+impl<StatementVariant: Fn(StatementStructConstruct) -> Statement>
+    StructConstruct<StatementVariant>
+{
+    pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockScope) -> LivingVar {
+        let inputs = self
+            .inputs
+            .into_iter()
+            .map(|var| scope.living_variables.use_var(ctx, var).var_id())
+            .collect();
+        let output = scope.living_variables.introduce_new_var(ctx, self.ty);
+        scope.statements.push((self.statement_variant)(StatementStructConstruct {
+            inputs,
+            output: output.var_id(),
+        }));
+        output
     }
 }
