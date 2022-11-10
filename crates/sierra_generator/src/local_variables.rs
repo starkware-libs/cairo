@@ -101,6 +101,15 @@ fn inner_find_local_variables(
             lowering::Statement::TupleDestructure(_) => todo!(),
         }
     }
+
+    // TODO(lior): Handle block.drops.
+
+    match &block.end {
+        lowering::BlockEnd::Callsite(vars) | lowering::BlockEnd::Return(vars) => {
+            state.use_variables(vars, res);
+        }
+        lowering::BlockEnd::Unreachable => {}
+    }
     Some(known_ap_change)
 }
 
