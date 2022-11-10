@@ -183,17 +183,17 @@ fn build_uint128_from_felt(
         CellExpression::Deref(value) => {
             // The code up to the success branch.
             let mut before_success_branch = casm! {
-                %{ memory[ap + 0] = memory [ap - 1] < (uint128_limit.clone()) %}
+                %{ memory[ap + 0] = memory value < (uint128_limit.clone()) %}
                 jmp rel 0 if [ap + 0] != 0, ap++;
                 // Overflow:
-                // TODO(orizi): Add hint to extract number into its 128 bits parts instead of the next 2
-                // lines.
-                [ap + 0] = 0, ap++;
-                [ap + 0] = value, ap++;
+                %{ (memory[ap + 0], memory[ap + 1]) = divmod(memory (apply_known_ap_change(range_check, 1)), (uint128_limit.clone())) %}
+                ap += 2;
                 [ap + 0] = [ap - 2] * uint128_limit, ap++;
-                value = [ap - 1] + [ap - 2];
-                [ap - 2] = [[apply_known_ap_change(range_check, 4)]];
-                [ap - 3] = [[apply_known_ap_change(range_check, 4)] + 1];
+                (apply_known_ap_change(value, 3)) = [ap - 1] + [ap - 2];
+                [ap - 1] = [ap + 0] + 1, ap++;
+                [ap - 1] = [[(apply_known_ap_change(range_check, 5))]]; // q > 0.
+                [ap - 2] = [[(apply_known_ap_change(range_check, 5))] + 1]; // q < uint128 limit.
+                [ap - 3] = [[(apply_known_ap_change(range_check, 5))] + 2]; // r < uint128 limit.
                 jmp rel 0; // Fixed in relocations.
             };
             let branch_offset = before_success_branch.current_code_offset;
@@ -231,7 +231,7 @@ fn build_uint128_from_felt(
                     .into_iter(),
                     vec![ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
                         op: FeltOperator::Add,
-                        a: apply_known_ap_change(range_check, 4),
+                        a: apply_known_ap_change(range_check, 5),
                         b: DerefOrImmediate::Immediate(BigInt::from(2)),
                     }))]
                     .into_iter(),
