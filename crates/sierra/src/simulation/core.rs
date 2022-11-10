@@ -297,6 +297,15 @@ fn simulate_integer_libfunc(
                 _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
             }
         }
+        Uint128Concrete::LessThan(_) => match inputs {
+            [CoreValue::RangeCheck, CoreValue::Uint128(a), CoreValue::Uint128(b)] => {
+                // "Failure" branch (branch 0) is the case a >= b. usize::from(bool) is guaranteed
+                // to return 0 or 1: https://rust-lang.github.io/rust-clippy/master/index.html#bool_to_int_with_if.
+                Ok((vec![CoreValue::RangeCheck], usize::from(a < b)))
+            }
+            [_, _, _] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+        },
     }
 }
 
