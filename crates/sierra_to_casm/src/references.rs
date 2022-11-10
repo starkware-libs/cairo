@@ -8,8 +8,10 @@ use sierra::ids::{ConcreteTypeId, VarId};
 use sierra::program::{Function, StatementIdx};
 use thiserror::Error;
 use utils::casts::usize_as_i16;
+use utils::try_extract_matches;
 use {casm, sierra};
 
+use crate::invocations::InvocationError;
 use crate::type_sizes::TypeSizeMap;
 
 #[derive(Error, Debug, Eq, PartialEq)]
@@ -176,4 +178,12 @@ pub fn check_types_match(
     } else {
         Err(ReferencesError::InvalidReferenceTypeForArgument)
     }
+}
+
+/// Extract the cell reference from the reference expression.
+pub fn try_unpack_deref(expr: &ReferenceExpression) -> Result<CellRef, InvocationError> {
+    expr.try_unpack_single()
+        .ok()
+        .and_then(|cell| try_extract_matches!(cell, CellExpression::Deref))
+        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)
 }
