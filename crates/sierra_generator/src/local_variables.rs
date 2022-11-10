@@ -74,6 +74,7 @@ fn inner_find_local_variables(
                     }
                 }
                 state.register_outputs(
+                    &statement_call.inputs,
                     &statement_call.outputs,
                     &libfunc_signature.branch_signatures[0].vars,
                 );
@@ -117,10 +118,15 @@ fn inner_find_local_variables(
 enum VariableStatus {
     TemporaryVariable,
     Revoked,
+    /// Indicates that the variable is essentially the same as another variable.
+    /// If this variables needs to be stored as local variable, the aliased variable will be stored
+    /// instead.
+    Alias(VariableId),
 }
 
 #[derive(Clone, Debug)]
 struct LocalVariablesState {
+    /// A map from a variable id to its status. See [VariableStatus].
     variables: OrderedHashMap<VariableId, VariableStatus>,
 }
 impl LocalVariablesState {
@@ -138,10 +144,17 @@ impl LocalVariablesState {
     }
 
     /// Registers output variables of a libfunc.
-    fn register_outputs(&mut self, var_ids: &[VariableId], var_infos: &[OutputVarInfo]) {
+    fn register_outputs(
+        &mut self,
+        params: &[VariableId],
+        var_ids: &[VariableId],
+        var_infos: &[OutputVarInfo],
+    ) {
         for (var_id, var_info) in zip_eq(var_ids, var_infos) {
             match var_info.ref_info {
-                sierra::extensions::OutputVarReferenceInfo::SameAsParam { .. } => todo!(),
+                sierra::extensions::OutputVarReferenceInfo::SameAsParam { param_idx } => {
+                    self.set_variable_status(*var_id, VariableStatus::Alias(params[param_idx]));
+                }
                 sierra::extensions::OutputVarReferenceInfo::NewTempVar { .. }
                 | sierra::extensions::OutputVarReferenceInfo::Deferred(_)
                 | sierra::extensions::OutputVarReferenceInfo::Const => {
@@ -168,8 +181,15 @@ impl LocalVariablesState {
 
     /// Prepares the given `arg` to be used as an argument for a libfunc.
     fn use_variable(&mut self, var_id: VariableId, res: &mut OrderedHashSet<VariableId>) {
-        if let Some(VariableStatus::Revoked) = self.variables.get(&var_id) {
-            res.insert(var_id);
+        match self.variables.get(&var_id) {
+            Some(VariableStatus::Revoked) => {
+                res.insert(var_id);
+            }
+            Some(VariableStatus::Alias(alias)) => {
+                // Recursively visit `alias`.
+                self.use_variable(*alias, res);
+            }
+            Some(VariableStatus::TemporaryVariable) | None => {}
         }
     }
 

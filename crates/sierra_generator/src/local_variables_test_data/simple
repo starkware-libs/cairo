@@ -78,3 +78,48 @@ End:
 
 //! > local_variables
 v1
+
+//! > ==========================================================================
+
+//! > SameAsParam
+
+//! > test_function_name
+check_find_local_variables
+
+//! > function_name
+foo
+
+//! > function_code
+func foo(x: felt) -> felt {
+    let y = x + x;
+    let z = y + y;
+    let (z0, z1) = dup::<felt>(z);
+    let (z2, z3) = dup::<felt>(z1);
+    let (z4, z5) = dup::<felt>(z2);
+    revoke_ap();
+    z4 + z5
+}
+
+//! > module_code
+// Revokes ap since this function is recursive.
+func revoke_ap() -> felt {
+    revoke_ap()
+}
+
+//! > lowering_format
+blk0:
+Inputs: v0: core::felt
+Statements:
+  (v1: core::felt) <- core::felt_add(v0, v0)
+  (v2: core::felt) <- core::felt_add(v1, v1)
+  (v3: core::felt, v4: core::felt) <- core::dup<Type(core::felt),>(v2)
+  (v5: core::felt, v6: core::felt) <- core::dup<Type(core::felt),>(v4)
+  (v7: core::felt, v8: core::felt) <- core::dup<Type(core::felt),>(v5)
+  (v9: core::felt) <- test_crate::revoke_ap()
+  (v10: core::felt) <- core::felt_add(v7, v8)
+Drops: v0, v1, v2, v3, v4, v5, v6, v7, v8, v9
+End:
+  Callsite(v10)
+
+//! > local_variables
+v2
