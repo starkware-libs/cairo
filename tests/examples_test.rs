@@ -32,7 +32,7 @@ fn get_expected_contents(name: &str, test_type: &str) -> String {
     let path: PathBuf = [env!("CARGO_MANIFEST_DIR"), "test_data", &format!("{name}.{test_type}")]
         .into_iter()
         .collect();
-    fs::read_to_string(path).expect("Could not read file!")
+    fs::read_to_string(path.clone()).unwrap_or_else(|_| panic!("Could not read file: '{path:?}'"))
 }
 
 /// Compiles the Cairo code for `name` to a Sierra program.
