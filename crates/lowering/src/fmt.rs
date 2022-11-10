@@ -5,9 +5,9 @@ use crate::db::LoweringGroup;
 use crate::lower::Lowered;
 use crate::objects::{
     Block, BlockEnd, BlockId, Statement, StatementCall, StatementCallBlock, StatementLiteral,
-    StatementMatchExtern, StatementTupleDestructure, VariableId,
+    StatementMatchExtern, StatementStructDestructure, VariableId,
 };
-use crate::{StatementEnumConstruct, StatementMatchEnum, StatementTupleConstruct};
+use crate::{StatementEnumConstruct, StatementMatchEnum, StatementStructConstruct};
 
 /// Holds all the information needed for formatting lowered representations.
 /// Acts like a "db" for DebugWithDb.
@@ -136,12 +136,10 @@ impl DebugWithDb<LoweredFormatter<'_>> for Statement {
             Statement::Call(stmt) => stmt.fmt(f, ctx),
             Statement::CallBlock(stmt) => stmt.fmt(f, ctx),
             Statement::MatchExtern(stmt) => stmt.fmt(f, ctx),
-            Statement::StructConstruct => todo!(),
-            Statement::StructDestructure => todo!(),
+            Statement::StructConstruct(stmt) => stmt.fmt(f, ctx),
+            Statement::StructDestructure(stmt) => stmt.fmt(f, ctx),
             Statement::EnumConstruct(stmt) => stmt.fmt(f, ctx),
             Statement::MatchEnum(stmt) => stmt.fmt(f, ctx),
-            Statement::TupleConstruct(stmt) => stmt.fmt(f, ctx),
-            Statement::TupleDestructure(stmt) => stmt.fmt(f, ctx),
         }
     }
 }
@@ -233,7 +231,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for StatementEnumConstruct {
     }
 }
 
-impl DebugWithDb<LoweredFormatter<'_>> for StatementTupleConstruct {
+impl DebugWithDb<LoweredFormatter<'_>> for StatementStructConstruct {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         write!(f, "tuple_construct(")?;
         let mut inputs = self.inputs.iter().peekable();
@@ -247,7 +245,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for StatementTupleConstruct {
     }
 }
 
-impl DebugWithDb<LoweredFormatter<'_>> for StatementTupleDestructure {
+impl DebugWithDb<LoweredFormatter<'_>> for StatementStructDestructure {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         write!(f, "tuple_destructure(")?;
         self.input.fmt(f, ctx)?;
