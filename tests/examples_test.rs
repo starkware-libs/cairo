@@ -103,7 +103,7 @@ fn cairo_to_casm(name: &str, enable_gas_checks: bool) {
 #[test_case("fib_counter")]
 #[test_case("fib_uint128")]
 #[test_case("fib_gas")]
-#[test_case("corelib_usage")]
+#[test_case("corelib_usage" => ignore["unsupported"])]
 fn lowering_test(name: &str) {
     setup(name);
 }

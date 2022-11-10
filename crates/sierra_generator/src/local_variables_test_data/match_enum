@@ -1,0 +1,90 @@
+//! > Match enum
+
+//! > test_function_name
+check_find_local_variables
+
+//! > function_name
+foo
+
+//! > function_code
+func foo(x: MyEnum) -> felt {
+  let w1 = 2;
+  let y = match x {
+    MyEnum::A(a) => {
+      revoke_ap()
+      a + a
+    },
+    MyEnum::B(b) => {
+      // 'b' is not revoked.
+      b + b + b
+    }
+  };
+  // 'w1' is revoked because of the revoke_ap() inside the match.
+  let w2 = w1 + w1;
+  revoke_ap();
+  // 'y' is revoked.
+  y
+}
+
+//! > module_code
+// Revokes ap since this function is recursive.
+func revoke_ap() -> felt {
+    revoke_ap()
+}
+
+enum MyEnum {
+  A: felt,
+  B: felt,
+}
+
+//! > lowering_format
+blk0:
+Inputs:
+Statements:
+  (v3: core::felt) <- test_crate::revoke_ap()
+  (v4: core::felt) <- core::felt_add(v2, v2)
+Drops: v3
+End:
+  Callsite(v4)
+
+blk1:
+Inputs:
+Statements:
+  (v7: core::felt) <- core::felt_add(v6, v6)
+  (v8: core::felt) <- core::felt_add(v7, v6)
+Drops: v7
+End:
+  Callsite(v8)
+
+blk2:
+Inputs: v2: core::felt
+Statements:
+  (v5: core::felt) <- blk0()
+Drops: v2
+End:
+  Callsite(v5)
+
+blk3:
+Inputs: v6: core::felt
+Statements:
+  (v9: core::felt) <- blk1()
+Drops: v6
+End:
+  Callsite(v9)
+
+blk4:
+Inputs: v0: test_crate::MyEnum
+Statements:
+  (v1: core::felt) <- 2u
+  (v10: core::felt) <- match_enum(v0) {
+    MyEnum::A => blk2,
+    MyEnum::B => blk3,
+  }
+  (v11: core::felt) <- core::felt_add(v1, v1)
+  (v12: core::felt) <- test_crate::revoke_ap()
+Drops: v0, v1, v12, v11
+End:
+  Callsite(v10)
+
+//! > local_variables
+v2, v1, v10
