@@ -117,15 +117,16 @@ pub fn generate_statement_code(
         lowering::Statement::EnumConstruct(statement_enum_construct) => {
             generate_statement_enum_construct(context, statement_enum_construct)
         }
+        lowering::Statement::MatchEnum(statement_match_enum) => {
+            generate_statement_match_enum(context, statement_match_enum)
+        }
         lowering::Statement::TupleConstruct(statement) => {
             generate_statement_tuple_constuct_code(context, statement)
         }
         lowering::Statement::TupleDestructure(statement) => {
             generate_statement_tuple_destructure_code(context, statement)
         }
-        lowering::Statement::MatchEnum(_)
-        | lowering::Statement::StructConstruct
-        | lowering::Statement::StructDestructure => {
+        lowering::Statement::StructConstruct | lowering::Statement::StructDestructure => {
             // TODO(lior): Replace with a diagnostic.
             todo!()
         }
@@ -304,4 +305,63 @@ fn generate_statement_tuple_destructure_code(
         &[context.get_sierra_variable(statement.input)],
         &context.get_sierra_variables(&statement.outputs),
     )])
+}
+
+/// Generates Sierra code for [lowering::StatementMatchEnum].
+fn generate_statement_match_enum(
+    context: &mut ExprGeneratorContext<'_>,
+    statement: &lowering::StatementMatchEnum,
+) -> Option<Vec<pre_sierra::Statement>> {
+    let matched_enum = context.get_sierra_variable(statement.input);
+    let concrete_enum_type = context.get_variable_sierra_type(statement.input)?;
+    // Generate labels for all the arms.
+    let (arm_label_statements, arm_label_ids): (
+        Vec<pre_sierra::Statement>,
+        Vec<pre_sierra::LabelId>,
+    ) = (0..statement.arms.len()).map(|_i| context.new_label()).unzip();
+    // Generate a label for the end of the match.
+    let (end_label, end_label_id) = context.new_label();
+
+    let mut statements: Vec<pre_sierra::Statement> = vec![];
+
+    let branches: Vec<_> = zip_eq(&statement.arms, arm_label_ids)
+        .map(|((_variant, arm), label_id)| program::GenBranchInfo {
+            target: program::GenBranchTarget::Statement(label_id),
+            results: context.get_sierra_variables(&context.get_lowered_block(*arm).inputs),
+        })
+        .collect();
+
+    let libfunc_id = context.match_enum_libfunc_id(concrete_enum_type);
+
+    // Call the match libfunc.
+    statements.push(pre_sierra::Statement::Sierra(program::GenStatement::Invocation(
+        program::GenInvocation { libfunc_id, args: vec![matched_enum], branches },
+    )));
+
+    // Generate the blocks.
+    // TODO(Gil): Consider unifying with the similar logic in generate_statement_match_extern_code.
+    for (i, (label_statement, (_variant, arm))) in
+        enumerate(zip_eq(arm_label_statements, &statement.arms))
+    {
+        statements.push(label_statement);
+
+        let lowered_block = context.get_lowered_block(*arm);
+        let (code, is_reachable) =
+            generate_block_code_and_push_values(context, lowered_block, &statement.outputs)?;
+        statements.extend(code);
+
+        if is_reachable {
+            // Add burn_gas to equalize gas costs across the merging paths.
+            statements.push(simple_statement(context.burn_gas_libfunc_id(), &[], &[]));
+
+            // Add jump statement to the end of the match. The last block does not require a jump.
+            if i < statement.arms.len() - 1 {
+                statements.push(jump_statement(context.jump_libfunc_id(), end_label_id));
+            }
+        }
+    }
+    // Post match.
+    statements.push(end_label);
+
+    Some(statements)
 }
