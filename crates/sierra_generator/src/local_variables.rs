@@ -93,7 +93,27 @@ fn inner_find_local_variables(
                 }
                 state.mark_outputs_as_temporary(statement);
             }
-            lowering::Statement::MatchExtern(_) => todo!(),
+            lowering::Statement::MatchExtern(statement_match_extern) => {
+                let (_, concrete_function_id) =
+                    get_concrete_libfunc_id(db, statement_match_extern.function);
+                let libfunc_signature = get_libfunc_signature(db, concrete_function_id);
+                for (block_id, branch_signature) in
+                    zip_eq(&statement_match_extern.arms, libfunc_signature.branch_signatures)
+                {
+                    let mut state_clone = state.clone();
+
+                    state_clone.register_outputs(
+                        &statement_match_extern.inputs,
+                        &lowered_function.blocks[*block_id].inputs,
+                        &branch_signature.vars,
+                    );
+
+                    inner_find_local_variables(db, lowered_function, *block_id, state_clone, res)?;
+                }
+                state.revoke_temporary_variables();
+                known_ap_change = false;
+                state.mark_outputs_as_temporary(statement);
+            }
             lowering::Statement::StructConstruct => todo!(),
             lowering::Statement::StructDestructure => todo!(),
             lowering::Statement::EnumConstruct(_) => todo!(),

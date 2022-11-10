@@ -36,6 +36,7 @@ impl Pattern {
             Pattern::Otherwise(pattern_otherwise) => pattern_otherwise.ty,
         }
     }
+
     pub fn variables(&self) -> Vec<&PatternVariable> {
         match self {
             Pattern::Variable(variable) => vec![variable],

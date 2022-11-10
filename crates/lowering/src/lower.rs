@@ -490,8 +490,8 @@ fn lower_optimized_extern_match(
                         let ref_outputs: Vec<_> =
                             arm_inputs.drain(0..extern_enum.ref_args.len()).collect();
                         let variant_expr = extern_facade_expr(ctx, concrete_variant.ty, arm_inputs);
-                        let enum_pattern =
-                            try_extract_matches!(&arm.pattern, semantic::Pattern::Enum)?;
+                        // TODO(spapini): Convert to a diagnostic.
+                        let enum_pattern = extract_matches!(&arm.pattern, semantic::Pattern::Enum);
                         // TODO(spapini): Convert to a diagnostic.
                         assert_eq!(&enum_pattern.variant, concrete_variant, "Wrong variant");
                         lower_single_pattern(
