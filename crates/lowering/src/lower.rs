@@ -238,7 +238,7 @@ fn lower_single_pattern(
                 exprs
             } else {
                 let tys = extract_matches!(ctx.db.lookup_intern_type(*ty), TypeLongId::Tuple);
-                generators::TupleDestructure { input: lowered_expr.var(ctx, scope), tys }
+                generators::StructDestructure { input: lowered_expr.var(ctx, scope), tys }
                     .add(ctx, scope)
                     .into_iter()
                     .map(LoweredExpr::AtVariable)
@@ -276,8 +276,8 @@ fn lower_expr(
         semantic::Expr::Literal(expr) => Ok(LoweredExpr::AtVariable(
             generators::Literal { value: expr.value.clone(), ty: expr.ty }.add(ctx, scope),
         )),
-        semantic::Expr::MemberAccess(_) => todo!(),
-        semantic::Expr::StructCtor(_) => todo!(),
+        semantic::Expr::MemberAccess(expr) => lower_expr_member_access(ctx, expr, scope),
+        semantic::Expr::StructCtor(expr) => lower_expr_struct_ctor(ctx, expr, scope),
         semantic::Expr::EnumVariantCtor(expr) => lower_expr_enum_ctor(ctx, expr, scope),
         semantic::Expr::Missing(_) => Err(LoweringFlowError::Failed),
     }
@@ -649,6 +649,61 @@ fn lower_expr_enum_ctor(
         }
         .add(ctx, scope),
     ))
+}
+
+/// Lowers an expression of type [semantic::ExprMemberAccess].
+fn lower_expr_member_access(
+    ctx: &mut LoweringContext<'_>,
+    expr: &semantic::ExprMemberAccess,
+    scope: &mut BlockScope,
+) -> Result<LoweredExpr, LoweringFlowError> {
+    let members = extract_concrete_struct_members(ctx, ctx.function_def.exprs[expr.expr].ty())?;
+    let member_idx = members
+        .iter()
+        .position(|member| member.id == expr.member)
+        .ok_or(LoweringFlowError::Failed)?;
+    Ok(LoweredExpr::AtVariable(
+        generators::StructMemberAccess {
+            input: lower_expr(ctx, scope, expr.expr)?.var(ctx, scope),
+            member_tys: members.into_iter().map(|member| member.ty).collect(),
+            member_idx,
+        }
+        .add(ctx, scope),
+    ))
+}
+
+/// Lowers an expression of type [semantic::ExprStructCtor].
+fn lower_expr_struct_ctor(
+    ctx: &mut LoweringContext<'_>,
+    expr: &semantic::ExprStructCtor,
+    scope: &mut BlockScope,
+) -> Result<LoweredExpr, LoweringFlowError> {
+    let members = extract_concrete_struct_members(ctx, expr.ty)?;
+    let member_expr = UnorderedHashMap::from_iter(expr.members.iter().cloned());
+    Ok(LoweredExpr::AtVariable(
+        generators::StructConstruct {
+            inputs: members
+                .into_iter()
+                .map(|member| Ok(lower_expr(ctx, scope, member_expr[member.id])?.var(ctx, scope)))
+                .collect::<Result<Vec<_>, _>>()?,
+            ty: expr.ty,
+        }
+        .add(ctx, scope),
+    ))
+}
+
+/// Extracts concrete struct and members. Assumes it is indeed a concrete struct.
+fn extract_concrete_struct_members(
+    ctx: &mut LoweringContext<'_>,
+    ty: semantic::TypeId,
+) -> Result<Vec<semantic::Member>, LoweringFlowError> {
+    let concrete_ty = try_extract_matches!(ctx.db.lookup_intern_type(ty), TypeLongId::Concrete)
+        .ok_or(LoweringFlowError::Failed)?;
+    let concrete_struct_id = try_extract_matches!(concrete_ty, ConcreteTypeId::Struct)
+        .ok_or(LoweringFlowError::Failed)?;
+    let struct_id = concrete_struct_id.struct_id(ctx.db.upcast());
+    let members = ctx.db.struct_members(struct_id).ok_or(LoweringFlowError::Failed)?;
+    Ok(members.into_iter().map(|(_, member)| member).collect())
 }
 
 /// Lowers an expression of type [semantic::ExprAssignment].
