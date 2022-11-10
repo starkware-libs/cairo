@@ -68,17 +68,13 @@ pub enum Statement {
     CallBlock(StatementCallBlock),
     MatchExtern(StatementMatchExtern),
 
-    // Structs.
-    StructConstruct,
-    StructDestructure,
+    // Structs (including tuples).
+    StructConstruct(StatementStructConstruct),
+    StructDestructure(StatementStructDestructure),
 
     // Enums.
     EnumConstruct(StatementEnumConstruct),
     MatchEnum(StatementMatchEnum),
-
-    // Tuples.
-    TupleConstruct(StatementTupleConstruct),
-    TupleDestructure(StatementTupleDestructure),
 }
 impl Statement {
     pub fn inputs(&self) -> Vec<VariableId> {
@@ -87,12 +83,10 @@ impl Statement {
             Statement::Call(stmt) => stmt.inputs.clone(),
             Statement::CallBlock(_) => vec![],
             Statement::MatchExtern(stmt) => stmt.inputs.clone(),
-            Statement::StructConstruct => todo!(),
-            Statement::StructDestructure => todo!(),
+            Statement::StructConstruct(stmt) => stmt.inputs.clone(),
+            Statement::StructDestructure(stmt) => vec![stmt.input],
             Statement::EnumConstruct(stmt) => vec![stmt.input],
             Statement::MatchEnum(stmt) => vec![stmt.input],
-            Statement::TupleConstruct(stmt) => stmt.inputs.clone(),
-            Statement::TupleDestructure(stmt) => vec![stmt.input],
         }
     }
     pub fn outputs(&self) -> Vec<VariableId> {
@@ -101,12 +95,10 @@ impl Statement {
             Statement::Call(stmt) => stmt.outputs.clone(),
             Statement::CallBlock(stmt) => stmt.outputs.clone(),
             Statement::MatchExtern(stmt) => stmt.outputs.clone(),
-            Statement::StructConstruct => todo!(),
-            Statement::StructDestructure => todo!(),
+            Statement::StructConstruct(stmt) => vec![stmt.output],
+            Statement::StructDestructure(stmt) => stmt.outputs.clone(),
             Statement::EnumConstruct(stmt) => vec![stmt.output],
             Statement::MatchEnum(stmt) => stmt.outputs.clone(),
-            Statement::TupleConstruct(stmt) => vec![stmt.output],
-            Statement::TupleDestructure(stmt) => stmt.outputs.clone(),
         }
     }
 }
@@ -179,18 +171,19 @@ pub struct StatementMatchEnum {
     pub outputs: Vec<VariableId>,
 }
 
-/// A statement that constructs a tuple into a new variable.
+/// A statement that constructs a struct (tuple included) into a new variable.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct StatementTupleConstruct {
+pub struct StatementStructConstruct {
     pub inputs: Vec<VariableId>,
     /// The variable to bind the value to.
     pub output: VariableId,
 }
 
-/// A statement that destructures a tuple, introducing its elements as new variables.
+/// A statement that destructures a struct (tuple included), introducing its elements as new
+/// variables.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct StatementTupleDestructure {
-    /// A living variable in current scope to destructure as a tuple.
+pub struct StatementStructDestructure {
+    /// A living variable in current scope to destructure.
     pub input: VariableId,
     /// The variables to bind values to.
     pub outputs: Vec<VariableId>,

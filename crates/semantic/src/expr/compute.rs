@@ -770,6 +770,7 @@ fn member_access_expr(
                 let lexpr_id = ctx.exprs.alloc(lexpr);
                 return Some(Expr::MemberAccess(ExprMemberAccess {
                     expr: lexpr_id,
+                    struct_id: concrete_struct_id.struct_id(ctx.db),
                     member: member.id,
                     ty: member.ty,
                     stable_ptr,
