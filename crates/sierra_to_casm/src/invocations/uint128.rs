@@ -182,17 +182,21 @@ fn build_uint128_from_felt(
         CellExpression::Deref(value) => {
             // The code up to the success branch.
             let mut before_success_branch = casm! {
-                %{ memory[ap + 0] = memory [ap - 1] < (uint128_limit.clone()) %}
-                jmp rel 0 if [ap + 0] != 0, ap++;
+                %{ memory[ap + 0] = memory value < (uint128_limit.clone()) %}
+                jmp rel 0 if [ap + 0] != 0, ap++; // Jump to success branch. Address updated later.
                 // Overflow:
-                // TODO(orizi): Add hint to extract number into its 128 bits parts instead of the next 2
-                // lines.
-                [ap + 0] = 0, ap++;
-                [ap + 0] = value, ap++;
+                %{ (memory[ap + 0], memory[ap + 1]) = divmod(
+                    memory (range_check.unchecked_apply_known_ap_change(1)),
+                    (uint128_limit.clone())
+                ) %}
+                ap += 2;
                 [ap + 0] = [ap - 2] * uint128_limit, ap++;
-                value = [ap - 1] + [ap - 2];
-                [ap - 2] = [[range_check.unchecked_apply_known_ap_change(4)]];
-                [ap - 3] = [[range_check.unchecked_apply_known_ap_change(4)] + 1];
+                (value.unchecked_apply_known_ap_change(3)) = [ap - 1] + [ap - 2];
+                [ap - 1] = [ap + 0] + 1, ap++;
+                // Range checking that: q > 0 && q < uint128_limit && r < uint128_limit.
+                [ap - 1] = [[(range_check.unchecked_apply_known_ap_change(5))]];
+                [ap - 2] = [[(range_check.unchecked_apply_known_ap_change(5))] + 1];
+                [ap - 3] = [[(range_check.unchecked_apply_known_ap_change(5))] + 2];
                 jmp rel 0; // Fixed in relocations.
             };
             let branch_offset = before_success_branch.current_code_offset;
@@ -230,7 +234,7 @@ fn build_uint128_from_felt(
                     .into_iter(),
                     vec![ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
                         op: FeltOperator::Add,
-                        a: range_check.unchecked_apply_known_ap_change(4),
+                        a: range_check.unchecked_apply_known_ap_change(5),
                         b: DerefOrImmediate::Immediate(BigInt::from(2)),
                     }))]
                     .into_iter(),
