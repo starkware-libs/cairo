@@ -215,6 +215,29 @@ fn strip_comments_and_linebreaks(program: &str) -> String {
                 ret;
             "};
             "burn gas")]
+#[test_case(indoc!{"
+                type RangeCheck = RangeCheck;
+                type uint128 = uint128;
+
+                libfunc uint128_is_lt = uint128_is_lt;
+                libfunc store_uint128 = store_temp<uint128>;
+                libfunc store_rc = store_temp<RangeCheck>;
+
+                uint128_is_lt(rc, [1], [2]) -> (rc, [3]);
+                store_rc(rc) -> (rc);
+                store_uint128([3]) -> ([3]);
+                return (rc, [3]);
+
+                test_program@0(rc: RangeCheck, [1]: uint128, [2]: uint128) -> (RangeCheck, uint128);
+            "}, &[], false, indoc!{"
+                // is_lt
+                [ap + 0] = 0, ap++;
+                // Store and return. In order, the frame has [rc,[1],[2],ret_addr,old_fp], so RC is
+                // current fp minus 5.
+                [ap + 0] = [fp + -5], ap++;
+                [ap + 0] = 0, ap++;
+                ret;
+            "}; "is_lt")]
 #[test_case(indoc! {"
                 type uint128 = uint128;
                 type RangeCheck = RangeCheck;
