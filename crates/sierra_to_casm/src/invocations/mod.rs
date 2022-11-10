@@ -1,5 +1,5 @@
 use assert_matches::assert_matches;
-use casm::ap_change::ApChange;
+use casm::ap_change::{ApChange, ApplyApChange};
 use casm::instructions::Instruction;
 use casm::operand::{CellRef, Register};
 use itertools::zip_eq;
@@ -250,4 +250,9 @@ trait ReferenceExpressionView: Sized {
     ) -> Result<Self, Self::Error>;
     /// Converts the view into a ReferenceExpression.
     fn to_reference_expression(self) -> ReferenceExpression;
+}
+
+/// Applies a known ap change to a cell.
+fn apply_known_ap_change(cell: CellRef, change: i16) -> CellRef {
+    cell.apply_ap_change(ApChange::Known(change as usize)).unwrap()
 }
