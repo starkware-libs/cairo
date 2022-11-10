@@ -11,6 +11,7 @@ use crate::diagnostic::LoweringDiagnostics;
 use crate::lower::external::{extern_facade_expr, extern_facade_return_tys};
 use crate::lower::scope::BlockFlowMerger;
 use crate::objects::{Block, Variable};
+use crate::Statement;
 
 /// Context for the lowering phase.
 pub struct LoweringContext<'db> {
@@ -48,7 +49,12 @@ impl LoweredExpr {
                 let inputs: Vec<_> = exprs.into_iter().map(|expr| expr.var(ctx, scope)).collect();
                 let tys = inputs.iter().map(|var| ctx.variables[var.var_id()].ty).collect();
                 let ty = ctx.db.intern_type(semantic::TypeLongId::Tuple(tys));
-                generators::TupleConstruct { inputs, ty }.add(ctx, scope)
+                generators::StructConstruct {
+                    inputs,
+                    ty,
+                    statement_variant: Statement::TupleConstruct,
+                }
+                .add(ctx, scope)
             }
             LoweredExpr::ExternEnum(extern_enum) => extern_enum.var(ctx, scope),
         }

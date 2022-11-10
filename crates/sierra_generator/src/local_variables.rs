@@ -114,8 +114,8 @@ fn inner_find_local_variables(
                 known_ap_change = false;
                 state.mark_outputs_as_temporary(statement);
             }
-            lowering::Statement::StructConstruct => todo!(),
-            lowering::Statement::StructDestructure => todo!(),
+            lowering::Statement::StructConstruct(_) => todo!(),
+            lowering::Statement::StructDestructure(_) => todo!(),
             lowering::Statement::EnumConstruct(_) => todo!(),
             lowering::Statement::MatchEnum(_) => todo!(),
             lowering::Statement::TupleConstruct(_) => todo!(),
