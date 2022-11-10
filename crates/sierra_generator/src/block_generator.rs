@@ -120,15 +120,13 @@ pub fn generate_statement_code(
         lowering::Statement::MatchEnum(statement_match_enum) => {
             generate_statement_match_enum(context, statement_match_enum)
         }
-        lowering::Statement::TupleConstruct(statement) => {
-            generate_statement_tuple_constuct_code(context, statement)
+        lowering::Statement::TupleConstruct(statement)
+        | lowering::Statement::StructConstruct(statement) => {
+            generate_statement_struct_construct_code(context, statement)
         }
-        lowering::Statement::TupleDestructure(statement) => {
-            generate_statement_tuple_destructure_code(context, statement)
-        }
-        lowering::Statement::StructConstruct(_) | lowering::Statement::StructDestructure(_) => {
-            // TODO(lior): Replace with a diagnostic.
-            todo!()
+        lowering::Statement::TupleDestructure(statement)
+        | lowering::Statement::StructDestructure(statement) => {
+            generate_statement_struct_destructure_code(context, statement)
         }
     }
 }
@@ -283,8 +281,8 @@ fn generate_statement_enum_construct(
     )])
 }
 
-/// Generates Sierra code for [lowering::StatementTupleConstruct].
-fn generate_statement_tuple_constuct_code(
+/// Generates Sierra code for [lowering::StatementStructConstruct].
+fn generate_statement_struct_construct_code(
     context: &mut ExprGeneratorContext<'_>,
     statement: &lowering::StatementStructConstruct,
 ) -> Option<Vec<pre_sierra::Statement>> {
@@ -295,8 +293,8 @@ fn generate_statement_tuple_constuct_code(
     )])
 }
 
-/// Generates Sierra code for [lowering::StatementTupleDestructure].
-fn generate_statement_tuple_destructure_code(
+/// Generates Sierra code for [lowering::StatementStructDestructure].
+fn generate_statement_struct_destructure_code(
     context: &mut ExprGeneratorContext<'_>,
     statement: &lowering::StatementStructDestructure,
 ) -> Option<Vec<pre_sierra::Statement>> {
