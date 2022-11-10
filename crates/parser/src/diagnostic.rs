@@ -19,6 +19,7 @@ pub enum ParserDiagnosticKind {
     MissingPathSegment,
     MissingTypeClause,
     MissingTypeExpression,
+    ReservedIdentifier { identifier: &'static str },
 }
 impl DiagnosticEntry for ParserDiagnostic {
     type DbType = dyn FilesGroup;
@@ -42,6 +43,9 @@ impl DiagnosticEntry for ParserDiagnostic {
             }
             ParserDiagnosticKind::MissingTypeExpression => {
                 "Missing tokens. Expected a type expression.".to_string()
+            }
+            ParserDiagnosticKind::ReservedIdentifier { identifier } => {
+                format!("'{identifier}' is a reserved identifier.")
             }
         }
     }

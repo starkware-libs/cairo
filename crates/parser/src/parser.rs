@@ -263,6 +263,18 @@ impl<'a> Parser<'a> {
         ItemUse::new_green(self.db, attributes, use_kw, path, semicolon)
     }
 
+    /// Returns a GreenId of a node with an identifer kind.
+    fn parse_identifier(&mut self) -> TerminalIdentifierGreen {
+        match self.peek().kind {
+            // TODO(ilya): Add more keywords.
+            SyntaxKind::TerminalExtern => {
+                self.skip_token(ParserDiagnosticKind::ReservedIdentifier { identifier: "extern" });
+                TerminalIdentifier::missing(self.db)
+            }
+            _ => self.parse_token::<TerminalIdentifier>(),
+        }
+    }
+
     /// Returns a GreenId of a node with an attribute kind or None if an attribute can't be parsed.
     fn try_parse_attribute(&mut self) -> Option<AttributeGreen> {
         match self.peek().kind {
@@ -270,7 +282,7 @@ impl<'a> Parser<'a> {
                 // TODO(ilya): Support attributes with values, i.e. #[derive(Copy, Clone)].
                 let hash = self.take::<TerminalHash>();
                 let lbrack = self.parse_token::<TerminalLBrack>();
-                let attr = self.parse_token::<TerminalIdentifier>();
+                let attr = self.parse_identifier();
                 let rbrack = self.parse_token::<TerminalRBrack>();
 
                 Some(Attribute::new_green(self.db, hash, lbrack, attr, rbrack))
