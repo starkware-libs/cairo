@@ -1,5 +1,5 @@
 use assert_matches::assert_matches;
-use casm::ap_change::ApChange;
+use casm::ap_change::{ApChange, ApChangeError};
 use casm::instructions::Instruction;
 use casm::operand::{CellRef, Register};
 use itertools::zip_eq;
@@ -50,6 +50,8 @@ pub enum InvocationError {
     UnknownVariableData,
     #[error("An integer overflow occurred.")]
     IntegerOverflow,
+    #[error(transparent)]
+    ApChangeError(#[from] ApChangeError),
     #[error(transparent)]
     FrameStateError(#[from] FrameStateError),
 }

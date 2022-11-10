@@ -41,6 +41,7 @@ impl NoGenericArgsGenericType for Uint128Type {
 define_libfunc_hierarchy! {
     pub enum Uint128LibFunc {
         Operation(Uint128OperationLibFunc),
+        IsLessThan(Uint128IsLessThanLibFunc),
         Const(Uint128ConstLibFunc),
         FromFelt(Uint128FromFeltLibFunc),
         ToFelt(Uint128ToFeltLibFunc),
@@ -371,6 +372,50 @@ pub struct Uint128ConstConcreteLibFunc {
 impl SignatureBasedConcreteLibFunc for Uint128ConstConcreteLibFunc {
     fn signature(&self) -> &LibFuncSignature {
         &self.signature
+    }
+}
+
+/// LibFunc for comparing uint128s.
+#[derive(Default)]
+pub struct Uint128IsLessThanLibFunc {}
+impl NoGenericArgsGenericLibFunc for Uint128IsLessThanLibFunc {
+    type Concrete = SignatureOnlyConcreteLibFunc;
+    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_is_lt");
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibFuncSignature, SpecializationError> {
+        let ty = context.get_concrete_type(Uint128Type::id(), &[])?;
+        let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
+        Ok(LibFuncSignature::new_non_branch(
+            vec![range_check_type.clone(), ty.clone(), ty],
+            vec![
+                OutputVarInfo {
+                    ty: range_check_type,
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                        param_idx: 0,
+                    }),
+                },
+                OutputVarInfo {
+                    ty: context.get_concrete_type(Uint128Type::id(), &[])?,
+                    ref_info: OutputVarReferenceInfo::Const,
+                },
+            ],
+            SierraApChange::Known(1),
+        ))
+    }
+
+    fn specialize(
+        &self,
+        context: &dyn SpecializationContext,
+    ) -> Result<Self::Concrete, SpecializationError> {
+        Ok(SignatureOnlyConcreteLibFunc {
+            signature: <Self as NoGenericArgsGenericLibFunc>::specialize_signature(
+                self,
+                context.upcast(),
+            )?,
+        })
     }
 }
 
