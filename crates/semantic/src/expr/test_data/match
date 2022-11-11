@@ -4,18 +4,13 @@
 test_function_diagnostics
 
 //! > function
-enum A {
-    a: (),
-    b: felt,
-}
-
 func foo(b: A) -> felt {
-	match (b, 4) {
-      (A::a(x), _) => { 1 },
-      (A::b(x), 1) => { x },
-      (7, 1) => { x },
-      (A::b(x), 1, _) => { x },
-	}
+    match (b, 4) {
+        (A::a(x), _) => { 1 },
+        (A::b(x), 1) => { x },
+        (7, 1) => { x },
+        (A::b(x), 1, _) => { x },
+    }
     let x = (5,true);
     let (y,_) = x;
     y
@@ -25,14 +20,48 @@ func foo(b: A) -> felt {
 foo
 
 //! > module_code
+enum A {
+    a: (),
+    b: felt,
+}
 
 //! > expected_diagnostics
 error: Unexpected type for literal pattern. Expected: felt. Got: "test_crate::A"
- --> lib.cairo:10:8
-      (7, 1) => { x },
-       ^
+ --> lib.cairo:9:10
+        (7, 1) => { x },
+         ^
 
 error: Wrong number of generic arguments. Expected 2, found: 3
- --> lib.cairo:11:7
-      (A::b(x), 1, _) => { x },
-      ^*************^
+ --> lib.cairo:10:9
+        (A::b(x), 1, _) => { x },
+        ^*************^
+
+//! > ==========================================================================
+
+//! > Match with missing type
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+func foo(a: bool) -> felt {
+    match a + 1 {
+        A::a(_) => 0,
+        A::b(_) => 1,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum A {
+    a: (),
+    b: felt,
+}
+
+//! > expected_diagnostics
+error: Binary operator '+' is not supported for types 'core::bool' and 'core::felt'.
+ --> lib.cairo:6:13
+    match a + 1 {
+            ^
