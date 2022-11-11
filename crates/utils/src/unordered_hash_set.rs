@@ -34,6 +34,7 @@ impl<Key: Hash + Eq> UnorderedHashSet<Key> {
         self.0.is_empty()
     }
 
+    /// Clears the set, removing all values.
     pub fn clear(&mut self) {
         self.0.clear()
     }
