@@ -227,7 +227,7 @@ fn compute_expr_binary_semantic(
             }
         };
     }
-    let function = match core_binary_operator(db, &binary_op) {
+    let function = match core_binary_operator(db, &binary_op, lexpr.ty(), rexpr.ty()) {
         Err(err_kind) => {
             ctx.diagnostics.report(&binary_op, err_kind);
             return None;

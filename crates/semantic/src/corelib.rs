@@ -1,4 +1,4 @@
-use defs::ids::{EnumId, GenericFunctionId, GenericTypeId, ModuleId, ModuleItemId};
+use defs::ids::{EnumId, GenericFunctionId, GenericTypeId, ModuleId, ModuleItemId, SubmoduleId};
 use filesystem::ids::CrateLongId;
 use smol_str::SmolStr;
 use syntax::node::ast::{self, BinaryOperator};
@@ -20,22 +20,31 @@ pub fn core_module(db: &dyn SemanticGroup) -> ModuleId {
 }
 
 pub fn core_felt_ty(db: &dyn SemanticGroup) -> TypeId {
-    get_core_ty_by_name(db, "felt".into(), vec![])
+    get_core_ty_by_name(db, db.core_module(), "felt".into(), vec![])
+}
+
+pub fn core_uint128_ty(db: &dyn SemanticGroup) -> TypeId {
+    get_core_ty_by_name(db, get_core_submodule(db, "integer"), "uint128".into(), vec![])
 }
 
 pub fn core_nonzero_ty(db: &dyn SemanticGroup, inner_type: TypeId) -> TypeId {
-    get_core_ty_by_name(db, "NonZero".into(), vec![GenericArgumentId::Type(inner_type)])
+    get_core_ty_by_name(
+        db,
+        db.core_module(),
+        "NonZero".into(),
+        vec![GenericArgumentId::Type(inner_type)],
+    )
 }
 
 fn get_core_ty_by_name(
     db: &dyn SemanticGroup,
+    module: ModuleId,
     name: SmolStr,
     generic_args: Vec<GenericArgumentId>,
 ) -> TypeId {
-    let core_module = db.core_module();
     // This should not fail if the corelib is present.
     let generic_type = db
-        .module_item_by_name(core_module, name.clone())
+        .module_item_by_name(module, name.clone())
         .and_then(GenericTypeId::option_from)
         .unwrap_or_else(|| panic!("Type '{name}' was not found in core lib."));
     db.intern_type(semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::new(
@@ -43,6 +52,15 @@ fn get_core_ty_by_name(
         generic_type,
         generic_args,
     )))
+}
+
+fn get_core_submodule(db: &dyn SemanticGroup, submodule: &str) -> ModuleId {
+    let core_module = db.core_module();
+    let submodule_id = db
+        .module_item_by_name(core_module, submodule.into())
+        .and_then(SubmoduleId::option_from)
+        .unwrap_or_else(|| panic!("Submodule 'core::{submodule}' was not found."));
+    ModuleId::Submodule(submodule_id)
 }
 
 pub fn core_bool_ty(db: &dyn SemanticGroup) -> TypeId {
@@ -152,45 +170,75 @@ pub fn unit_expr(ctx: &mut ComputationContext<'_>, stable_ptr: ast::ExprPtr) -> 
 pub fn core_binary_operator(
     db: &dyn SemanticGroup,
     binary_op: &BinaryOperator,
+    type1: TypeId,
+    type2: TypeId,
 ) -> Result<FunctionId, SemanticDiagnosticKind> {
-    let function_name = match binary_op {
-        BinaryOperator::Plus(_) => "felt_add",
-        BinaryOperator::Minus(_) => "felt_sub",
-        BinaryOperator::Mul(_) => "felt_mul",
-        BinaryOperator::Div(_) => "felt_div",
-        BinaryOperator::EqEq(_) => "felt_eq",
-        BinaryOperator::AndAnd(_) => "bool_and",
-        BinaryOperator::OrOr(_) => "bool_or",
-        BinaryOperator::LE(_) => "felt_le",
-        BinaryOperator::GE(_) => "felt_ge",
-        BinaryOperator::LT(_) => "felt_lt",
-        BinaryOperator::GT(_) => "felt_gt",
+    // TODO(lior): Replace current hard-coded implementation with an implementation that is based on
+    //   traits.
+    let felt = core_felt_ty(db);
+    let uint128 = core_uint128_ty(db);
+    let (module, function_name) = match binary_op {
+        BinaryOperator::Plus(_) => {
+            if type1 == felt && type2 == felt {
+                (db.core_module(), "felt_add")
+            } else if type1 == uint128 && type2 == uint128 {
+                (get_core_submodule(db, "integer"), "uint128_add")
+            } else {
+                return Err(SemanticDiagnosticKind::UnsupportedBinaryOperator {
+                    op: "+".into(),
+                    type1,
+                    type2,
+                });
+            }
+        }
+        BinaryOperator::Minus(_) => {
+            if type1 == felt && type2 == felt {
+                (db.core_module(), "felt_sub")
+            } else if type1 == uint128 && type2 == uint128 {
+                (get_core_submodule(db, "integer"), "uint128_sub")
+            } else {
+                return Err(SemanticDiagnosticKind::UnsupportedBinaryOperator {
+                    op: "-".into(),
+                    type1,
+                    type2,
+                });
+            }
+        }
+        BinaryOperator::Mul(_) => (db.core_module(), "felt_mul"),
+        BinaryOperator::Div(_) => (db.core_module(), "felt_div"),
+        BinaryOperator::EqEq(_) => (db.core_module(), "felt_eq"),
+        BinaryOperator::AndAnd(_) => (db.core_module(), "bool_and"),
+        BinaryOperator::OrOr(_) => (db.core_module(), "bool_or"),
+        BinaryOperator::LE(_) => (db.core_module(), "felt_le"),
+        BinaryOperator::GE(_) => (db.core_module(), "felt_ge"),
+        BinaryOperator::LT(_) => (db.core_module(), "felt_lt"),
+        BinaryOperator::GT(_) => (db.core_module(), "felt_gt"),
         _ => return Err(SemanticDiagnosticKind::UnknownBinaryOperator),
     };
-    Ok(get_core_function_id(db, function_name.into(), vec![]))
+    Ok(get_core_function_id(db, module, function_name.into(), vec![]))
 }
 
 pub fn felt_eq(db: &dyn SemanticGroup) -> FunctionId {
-    get_core_function_id(db, "felt_eq".into(), vec![])
+    get_core_function_id(db, db.core_module(), "felt_eq".into(), vec![])
 }
 
 pub fn felt_sub(db: &dyn SemanticGroup) -> FunctionId {
-    get_core_function_id(db, "felt_sub".into(), vec![])
+    get_core_function_id(db, db.core_module(), "felt_sub".into(), vec![])
 }
 
 pub fn core_jump_nz_func(db: &dyn SemanticGroup) -> FunctionId {
-    get_core_function_id(db, "felt_jump_nz".into(), vec![])
+    get_core_function_id(db, db.core_module(), "felt_jump_nz".into(), vec![])
 }
 
 /// Given a core library function name and its generic arguments, returns [FunctionId].
 fn get_core_function_id(
     db: &dyn SemanticGroup,
+    module: ModuleId,
     name: SmolStr,
     generic_args: Vec<GenericArgumentId>,
 ) -> FunctionId {
-    let core_module = db.core_module();
     let generic_function = db
-        .module_item_by_name(core_module, name.clone())
+        .module_item_by_name(module, name.clone())
         .and_then(GenericFunctionId::option_from)
         .unwrap_or_else(|| panic!("Function '{name}' was not found in core lib."));
     db.intern_function(FunctionLongId {

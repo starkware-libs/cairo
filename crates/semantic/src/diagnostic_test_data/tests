@@ -45,6 +45,11 @@ error: Path not found.
 1 + foo()
     ^*^
 
+error: Binary operator '+' is not supported for types 'core::felt' and '<missing>'.
+ --> lib.cairo:3:3
+1 + foo()
+  ^
+
 //! > ==========================================================================
 
 //! > Test function lookup

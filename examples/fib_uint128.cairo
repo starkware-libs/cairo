@@ -18,7 +18,7 @@ func fib(a: uint128, b: uint128, n: uint128) -> Option::<uint128> implicits (rc:
                     return Option::<uint128>::None(());
                 },
             };
-            let new_n = match uint128_sub(n, one) {
+            let new_n = match n - one {
                 Option::Some (t) => t,
                 Option::None (_) => {
                     return Option::<uint128>::None(());
