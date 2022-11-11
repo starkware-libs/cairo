@@ -9,6 +9,7 @@ pub struct OrderedHashSet<Key: Hash + Eq>(IndexSet<Key>);
 pub type Iter<'a, Key> = indexmap::set::Iter<'a, Key>;
 
 impl<Key: Hash + Eq> OrderedHashSet<Key> {
+    /// Return an iterator over the values of the set, in their order.
     pub fn iter(&self) -> Iter<'_, Key> {
         self.0.iter()
     }
@@ -35,6 +36,9 @@ impl<Key: Hash + Eq> OrderedHashSet<Key> {
         self.0.is_empty()
     }
 
+    /// Remove all elements in the set, while preserving its capacity.
+    ///
+    /// Computes in O(n) time.
     pub fn clear(&mut self) {
         self.0.clear()
     }

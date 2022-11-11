@@ -10,18 +10,43 @@ use std::ops::Index;
 pub struct UnorderedHashMap<Key: Hash + Eq, Value>(HashMap<Key, Value>);
 
 impl<Key: Hash + Eq, Value> UnorderedHashMap<Key, Value> {
-    pub fn get(&self, key: &Key) -> Option<&Value> {
+    /// Returns a reference to the value corresponding to the key.
+    ///
+    /// The key may be any borrowed form of the map's key type, but `Hash` and `Eq` on the borrowed
+    /// form must match those for the key type.
+    pub fn get<Q: ?Sized>(&self, key: &Q) -> Option<&Value>
+    where
+        Key: Borrow<Q>,
+        Q: Hash + Eq,
+    {
         self.0.get(key)
     }
 
+    /// Inserts a key-value pair into the map.
+    ///
+    /// If the map did not have this key present, None is returned.
+    ///
+    /// If the map did have this key present, the value is updated, and the old value is returned.
+    /// The key is not updated, though; this matters for types that can be == without being
+    /// identical.
     pub fn insert(&mut self, key: Key, value: Value) -> Option<Value> {
         self.0.insert(key, value)
     }
 
-    pub fn remove(&mut self, key: &Key) -> Option<Value> {
+    /// Removes a key from the map, returning the value at the key if the key was previously in the
+    /// map.
+    ///
+    /// The key may be any borrowed form of the map's key type, but Hash and Eq on the borrowed form
+    /// must match those for the key type.
+    pub fn remove<Q: ?Sized>(&mut self, key: &Q) -> Option<Value>
+    where
+        Key: Borrow<Q>,
+        Q: Hash + Eq,
+    {
         self.0.remove(key)
     }
 
+    /// Gets the given key's corresponding entry in the map for in-place manipulation.
     pub fn entry(&mut self, key: Key) -> hash_map::Entry<'_, Key, Value> {
         self.0.entry(key)
     }
