@@ -5,6 +5,7 @@ use syntax::node::ast::{self, BinaryOperator};
 use utils::{extract_matches, OptionFrom};
 
 use crate::db::SemanticGroup;
+use crate::diagnostic::SemanticDiagnosticKind;
 use crate::expr::compute::ComputationContext;
 use crate::items::enm::SemanticEnumEx;
 use crate::types::ConcreteEnumLongId;
@@ -151,7 +152,7 @@ pub fn unit_expr(ctx: &mut ComputationContext<'_>, stable_ptr: ast::ExprPtr) -> 
 pub fn core_binary_operator(
     db: &dyn SemanticGroup,
     binary_op: &BinaryOperator,
-) -> Option<FunctionId> {
+) -> Result<FunctionId, SemanticDiagnosticKind> {
     let function_name = match binary_op {
         BinaryOperator::Plus(_) => "felt_add",
         BinaryOperator::Minus(_) => "felt_sub",
@@ -164,9 +165,9 @@ pub fn core_binary_operator(
         BinaryOperator::GE(_) => "felt_ge",
         BinaryOperator::LT(_) => "felt_lt",
         BinaryOperator::GT(_) => "felt_gt",
-        _ => return None,
+        _ => return Err(SemanticDiagnosticKind::UnknownBinaryOperator),
     };
-    Some(get_core_function_id(db, function_name.into(), vec![]))
+    Ok(get_core_function_id(db, function_name.into(), vec![]))
 }
 
 pub fn felt_eq(db: &dyn SemanticGroup) -> FunctionId {

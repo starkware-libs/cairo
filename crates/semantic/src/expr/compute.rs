@@ -227,8 +227,13 @@ fn compute_expr_binary_semantic(
             }
         };
     }
-    let function = core_binary_operator(db, &binary_op)
-        .on_none(|| ctx.diagnostics.report(&binary_op, UnknownBinaryOperator))?;
+    let function = match core_binary_operator(db, &binary_op) {
+        Err(err_kind) => {
+            ctx.diagnostics.report(&binary_op, err_kind);
+            return None;
+        }
+        Ok(function) => function,
+    };
     expr_function_call(ctx, function, vec![lexpr, rexpr], stable_ptr)
 }
 
