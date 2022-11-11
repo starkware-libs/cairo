@@ -448,7 +448,7 @@ impl<'db> Resolver<'db> {
             ModuleItemId::Submodule(id) => ResolvedGenericItem::Module(ModuleId::Submodule(id)),
             ModuleItemId::Use(id) => {
                 // TODO(spapini): Right now we call priv_use_semantic_data() directly for cycle
-                // handling. Otherise, we need to handle cycle both on it and on the selector
+                // handling. Otherwise, we need to handle cycle both on it and on the selector
                 // use_resolved_item(). Fix this,
                 self.db.priv_use_semantic_data(id)?.resolved_item?
             }
