@@ -263,6 +263,21 @@ impl<'a> Parser<'a> {
         ItemUse::new_green(self.db, attributes, use_kw, path, semicolon)
     }
 
+    /// Returns a GreenId of a node with an identifier kind.
+    fn parse_identifier(&mut self) -> TerminalIdentifierGreen {
+        match self.peek().kind {
+            // TODO(ilya): Add more keywords.
+            // TODO(ilya): consider autogenerate this to ensure no keywords are forgotten.
+            SyntaxKind::TerminalExtern => {
+                self.skip_token(ParserDiagnosticKind::ReservedIdentifier {
+                    identifier: self.peek().text.clone(),
+                });
+                TerminalIdentifier::missing(self.db)
+            }
+            _ => self.parse_token::<TerminalIdentifier>(),
+        }
+    }
+
     /// Returns a GreenId of a node with an attribute kind or None if an attribute can't be parsed.
     fn try_parse_attribute(&mut self) -> Option<AttributeGreen> {
         match self.peek().kind {
@@ -270,7 +285,7 @@ impl<'a> Parser<'a> {
                 // TODO(ilya): Support attributes with values, i.e. #[derive(Copy, Clone)].
                 let hash = self.take::<TerminalHash>();
                 let lbrack = self.parse_token::<TerminalLBrack>();
-                let attr = self.parse_token::<TerminalIdentifier>();
+                let attr = self.parse_identifier();
                 let rbrack = self.parse_token::<TerminalRBrack>();
 
                 Some(Attribute::new_green(self.db, hash, lbrack, attr, rbrack))
@@ -1198,6 +1213,9 @@ impl<'a> Parser<'a> {
 
     /// If the current token is of kind `token_kind`, returns a GreenId of a node with this kind.
     /// Otherwise, returns Token::Missing.
+    ///
+    /// Note that this function should not be called for 'TerminalIdentifier',
+    /// parse_identifier should be used instead.
     fn parse_token<Terminal: syntax::node::Terminal>(&mut self) -> Terminal::Green {
         match self.try_parse_token::<Terminal>() {
             Some(green) => green,
