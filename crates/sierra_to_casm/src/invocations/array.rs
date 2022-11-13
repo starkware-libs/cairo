@@ -1,7 +1,5 @@
 use casm::casm;
-use casm::hints::Hint;
-use casm::instructions::{AddApInstruction, Instruction, InstructionBody};
-use casm::operand::{CellRef, DerefOrImmediate, Register, ResOperand};
+use casm::operand::{ap_cell_ref, CellRef, DerefOrImmediate};
 use num_bigint::ToBigInt;
 use sierra::extensions::array::ArrayConcreteLibFunc;
 use sierra::extensions::felt::FeltOperator;
@@ -40,17 +38,16 @@ fn build_array_new(
     }
 
     Ok(builder.build(
-        // TODO(Gil): change to casm! macro when hints are supported.
-        vec![Instruction {
-            body: InstructionBody::AddAp(AddApInstruction { operand: ResOperand::from(1) }),
-            inc_ap: false,
-            hints: vec![Hint::AllocSegment { dst: CellRef { register: Register::AP, offset: 0 } }],
-        }],
+        casm! {
+            %{ memory[ap + 0] = segments.add() %}
+            ap += 1;
+        }
+        .instructions,
         vec![],
         [[ReferenceExpression {
             cells: vec![
-                CellExpression::Deref(CellRef { register: Register::AP, offset: -1 }),
-                CellExpression::Deref(CellRef { register: Register::AP, offset: -1 }),
+                CellExpression::Deref(ap_cell_ref(-1)),
+                CellExpression::Deref(ap_cell_ref(-1)),
             ],
         }]
         .into_iter()]

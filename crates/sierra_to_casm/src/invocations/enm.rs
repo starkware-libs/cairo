@@ -1,5 +1,5 @@
-use casm::casm;
 use casm::operand::CellRef;
+use casm::{casm, casm_extend};
 use itertools::{chain, repeat_n};
 use num_bigint::ToBigInt;
 use sierra::extensions::enm::{EnumConcreteLibFunc, EnumInitConcreteLibFunc};
@@ -259,19 +259,19 @@ fn build_enum_match_long(
     output_expressions: impl Iterator<Item = impl Iterator<Item = ReferenceExpression>>,
 ) -> Result<CompiledInvocation, InvocationError> {
     // The first instruction is the jmp to the relevant index in the jmp table.
-    let mut instructions = casm! { jmp rel variant_selector; }.instructions;
+    let mut ctx = casm! { jmp rel variant_selector; };
     let mut relocations = Vec::new();
 
     for (i, stmnt_id) in target_statement_ids.enumerate() {
         // Add the jump instruction to the relevant target.
-        instructions.extend(casm! { jmp rel 0; }.instructions);
+        casm_extend!(ctx, jmp rel 0;);
         relocations.push(RelocationEntry {
             instruction_idx: i + 1,
             relocation: Relocation::RelativeStatementId(stmnt_id),
         });
     }
 
-    Ok(builder.build(instructions, relocations, output_expressions))
+    Ok(builder.build(ctx.instructions, relocations, output_expressions))
 }
 
 /// A struct representing an actual enum value in the Sierra program.
