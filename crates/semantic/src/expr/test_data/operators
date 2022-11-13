@@ -38,7 +38,7 @@ error: Unexpected argument type. Expected: "core::felt", found: "test_crate::MyT
 test_function_diagnostics
 
 //! > function
-func foo(a: felt, b: bool) {
+func foo(a: felt, b: bool) implicits (rc:RangeCheck) {
     // Valid.
     a + a * a - a;
     b && b || b && (a == a || a > a)
