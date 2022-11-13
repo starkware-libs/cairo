@@ -10,7 +10,7 @@ mod test;
 #[derive(Debug, Eq, PartialEq)]
 pub enum Hint {
     AllocSegment { dst: CellRef },
-    TestLessThan { lhs: DerefOrImmediate, rhs: DerefOrImmediate },
+    TestLessThan { lhs: DerefOrImmediate, rhs: DerefOrImmediate, dst: CellRef },
 }
 
 impl Display for Hint {
@@ -22,8 +22,8 @@ impl Display for Hint {
         write!(f, "%{{ ")?;
         match self {
             Hint::AllocSegment { dst } => write!(f, "memory{dst} = segments.add()")?,
-            Hint::TestLessThan { lhs, rhs } => {
-                write!(f, "memory[ap + 0] = ")?;
+            Hint::TestLessThan { lhs, rhs, dst } => {
+                write!(f, "memory{dst} = ")?;
                 fmt_access_or_const(f, lhs)?;
                 write!(f, " < ")?;
                 fmt_access_or_const(f, rhs)?;
