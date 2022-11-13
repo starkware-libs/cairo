@@ -4,7 +4,8 @@ func foo(x: Option::<(felt, felt)>) -> Option::<felt> {
             let (x, y) = x;
             Option::<felt>::Some(x)
         },
-        Option::None (_) => {
+        // TODO(spapini): Replace with _.
+        Option::None (o) => {
             return Option::<felt>::None(());
         },
     }

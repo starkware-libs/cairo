@@ -17,7 +17,7 @@ use self::context::{
 };
 use self::external::{extern_facade_expr, extern_facade_return_tys};
 use self::lower_if::lower_expr_if;
-use self::scope::{generators, BlockFlowMerger};
+use self::scope::{generators, BlockFlowMerger, OuterVarInfo};
 use self::variables::LivingVar;
 use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnosticKind::*;
@@ -314,7 +314,7 @@ fn lower_expr_block(
     let call_block_generator =
         generators::CallBlock { block: block_finalized.block, end_info: finalized_merger.end_info };
     let block_result = call_block_generator.add(ctx, scope);
-    lowered_expr_from_block_result(scope, block_result, finalized_merger.pushes)
+    lowered_expr_from_block_result(scope, block_result, finalized_merger.outer_var_info)
 }
 
 /// Lowers an expression of type [semantic::ExprFunctionCall].
@@ -455,7 +455,7 @@ fn lower_expr_match(
         end_info: finalized_merger.end_info,
     };
     let block_result = match_generator.add(ctx, scope);
-    lowered_expr_from_block_result(scope, block_result, finalized_merger.pushes)
+    lowered_expr_from_block_result(scope, block_result, finalized_merger.outer_var_info)
 }
 
 /// Lowers a match expression on a LoweredExpr::ExternEnum lowered expression.
@@ -526,7 +526,7 @@ fn lower_optimized_extern_match(
         end_info: finalized_merger.end_info,
     }
     .add(ctx, scope);
-    lowered_expr_from_block_result(scope, block_result, finalized_merger.pushes)
+    lowered_expr_from_block_result(scope, block_result, finalized_merger.outer_var_info)
 }
 
 /// Lowers an expression of type [semantic::ExprMatch] where the matched expression is a felt.
@@ -589,7 +589,7 @@ fn lower_expr_match_felt(
         end_info: finalized_merger.end_info,
     };
     let block_result = match_generator.add(ctx, scope);
-    lowered_expr_from_block_result(scope, block_result, finalized_merger.pushes)
+    lowered_expr_from_block_result(scope, block_result, finalized_merger.outer_var_info)
 }
 
 /// Extracts concrete enum and variants from a match expression. Assumes it is indeed a concrete
@@ -742,11 +742,14 @@ fn take_semantic_var(
 fn lowered_expr_from_block_result(
     scope: &mut BlockScope,
     block_result: generators::CallBlockResult,
-    pushed_semantic_vars: Vec<semantic::VarId>,
+    outer_var_info: OuterVarInfo,
 ) -> Result<LoweredExpr, LoweringFlowError> {
     match block_result {
         generators::CallBlockResult::Callsite { maybe_output, pushes } => {
-            for (semantic_var_id, var) in zip_eq(pushed_semantic_vars, pushes) {
+            for (semantic_var_id, var) in zip_eq(outer_var_info.pushes, pushes) {
+                scope.put_semantic_variable(semantic_var_id, var);
+            }
+            for (semantic_var_id, var) in outer_var_info.bring_back {
                 scope.put_semantic_variable(semantic_var_id, var);
             }
             Ok(match maybe_output {
