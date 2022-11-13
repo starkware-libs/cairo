@@ -8,30 +8,53 @@ use itertools::zip_eq;
 pub struct OrderedHashMap<Key: Hash + Eq, Value>(IndexMap<Key, Value>);
 
 impl<Key: Hash + Eq, Value> OrderedHashMap<Key, Value> {
+    /// Return a reference to the value stored for key, if it is present, else None.
+    ///
+    /// Computes in O(1) time (average).
     pub fn get<Q: ?Sized + Hash + Equivalent<Key>>(&self, key: &Q) -> Option<&Value> {
         self.0.get(key)
     }
 
+    /// Return a mutable reference to the value stored for key, if it is present, else None.
+    ///
+    /// Computes in O(1) time (average).
     pub fn get_mut<Q: ?Sized + Hash + Equivalent<Key>>(&mut self, key: &Q) -> Option<&mut Value> {
         self.0.get_mut(key)
     }
 
+    /// Return an iterator over the key-value pairs of the map, in their order.
     pub fn iter(&self) -> indexmap::map::Iter<'_, Key, Value> {
         self.0.iter()
     }
 
+    /// Return a mutable iterator over the key-value pairs of the map, in their order.
     pub fn iter_mut(&mut self) -> indexmap::map::IterMut<'_, Key, Value> {
         self.0.iter_mut()
     }
 
+    /// Return an iterator over the keys of the map, in their order.
     pub fn keys(&self) -> indexmap::map::Keys<'_, Key, Value> {
         self.0.keys()
     }
 
+    /// Return an iterator over the values of the map, in their order.
     pub fn values(&self) -> indexmap::map::Values<'_, Key, Value> {
         self.0.values()
     }
 
+    /// Insert a key-value pair in the map.
+    ///
+    /// If an equivalent key already exists in the map: the key remains and retains in its place in
+    /// the order, its corresponding value is updated with value and the older value is returned
+    /// inside Some(_).
+    ///
+    /// If no equivalent key existed in the map: the new key-value pair is inserted, last in order,
+    /// and None is returned.
+    ///
+    /// Computes in O(1) time (amortized average).
+    ///
+    /// See also entry if you you want to insert or modify or if you need to get the index of the
+    /// corresponding key-value pair.
     pub fn insert(&mut self, key: Key, value: Value) -> Option<Value> {
         self.0.insert(key, value)
     }
