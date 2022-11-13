@@ -43,6 +43,17 @@ fn as_felts(nums: &[i128]) -> Vec<BigInt> {
     5,
     &[1, 5, 0, 3, 4]
 )]
+#[test_case(
+    casm! {
+        [ap] = 39, ap++;
+        %{ memory[ap] = 13 < memory[ap - 1] %}
+        ap += 1;
+        [ap] = [ap - 1] + 83, ap++;
+        ret;
+    },
+    3,
+    &[39, 1, 84]
+)]
 fn test_runner(function: CasmContext, n_returns: usize, expected: &[i128]) {
     assert_eq!(run_function(function, n_returns), as_felts(expected));
 }
