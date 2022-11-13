@@ -157,8 +157,6 @@ Drops: v0, v2, v3, v4, v5, v9, v10, v11, v12, v16, v17
 End:
   Callsite(v18)
 
-
-
 //! > ==========================================================================
 
 //! > Test match enum.
@@ -245,6 +243,6 @@ Statements:
     MyEnum::B => blk4,
     MyEnum::C => blk5,
   }
-Drops: v0
+Drops:
 End:
   Callsite(v8)
