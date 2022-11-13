@@ -226,6 +226,7 @@ pub struct ExprLiteral {
 #[debug_db(ExprFormatter<'_>)]
 pub struct ExprMemberAccess {
     pub expr: semantic::ExprId,
+    pub struct_id: StructId,
     pub member: MemberId,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
