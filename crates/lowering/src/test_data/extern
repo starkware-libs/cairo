@@ -129,7 +129,7 @@ Statements:
     MyEnum::B => blk4,
     MyEnum::C => blk5,
   }
-Drops: v0, v1, v14
+Drops: v0, v1
 End:
   Callsite(v15)
 

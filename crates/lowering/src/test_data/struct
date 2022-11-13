@@ -66,6 +66,6 @@ blk0:
 Inputs: v0: test_crate::MyStruct
 Statements:
   (v1: (), v2: core::felt, v3: (core::felt, core::felt)) <- tuple_destructure(v0)
-Drops: v0, v1, v3
+Drops: v1, v3
 End:
   Callsite(v2)
