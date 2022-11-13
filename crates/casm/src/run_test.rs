@@ -1,39 +1,22 @@
-use cairo_rs::types::relocatable::{MaybeRelocatable, Relocatable};
-use cairo_rs::vm::vm_core::VirtualMachine;
 use num_bigint::BigInt;
 use test_case::test_case;
 
 use crate::casm;
 use crate::inline::CasmContext;
-use crate::run::{get_prime, mod_prime, run};
-
-// Returns n values from the execution segment of vm. Panics if memory isn't set.
-fn get_vm_execution(vm: VirtualMachine, n: usize) -> Vec<BigInt> {
-    vm.get_range(&MaybeRelocatable::from(Relocatable::from((1, 0))), n)
-        .expect("Unable to get range from VM.")
-        .into_iter()
-        .map(|x| {
-            if let MaybeRelocatable::Int(value) = x.unwrap().as_ref() {
-                value.clone()
-            } else {
-                panic!("Memory not set.");
-            }
-        })
-        .collect()
-}
+use crate::run::run_function;
 
 fn as_felts(nums: &[i128]) -> Vec<BigInt> {
-    nums.iter().map(|num| mod_prime(BigInt::from(*num))).collect()
+    nums.iter().map(|num| (BigInt::from(*num))).collect()
 }
 
 #[test_case(
     casm! {
         [ap] = (-5), ap++;
         [ap] = 7, ap++;
-        jmp rel -2;
+        ret;
     },
-    6,
-    as_felts(&[0, -5, 7, 7, 7])
+    2,
+    &[-5, 7]
 )]
 #[test_case(
     casm! {
@@ -41,22 +24,25 @@ fn as_felts(nums: &[i128]) -> Vec<BigInt> {
         [ap] = 123, ap++;
         [ap] = 456, ap++;
         [fp] = [ap - 2] + [ap - 1];
+        ret;
     },
-    4,
-    as_felts(&[0, 579, 123, 456])
+    3,
+    &[579, 123, 456]
 )]
 #[test_case(
     casm! {
-        [ap] = 0, ap++;
-        jmp rel 2 if [ap] != 0;
         [ap] = 1, ap++;
         jmp rel 2 if [ap - 1] != 0;
-        [ap] = 2, ap++;
+        [ap] = 5, ap++;
+        [ap] = 0, ap++;
+        jmp rel 2 if [ap - 1] != 0;
+        [ap] = 3, ap++;
+        [ap] = 4, ap++;
+        ret;
     },
     5,
-    as_felts(&[0, 0, 1, 2])
+    &[1, 5, 0, 3, 4]
 )]
-fn test_runner(program: CasmContext, n_steps: usize, expected: Vec<BigInt>) {
-    let vm = run(program.instructions, get_prime(), n_steps);
-    assert_eq!(get_vm_execution(vm, expected.len()), expected);
+fn test_runner(function: CasmContext, n_returns: usize, expected: &[i128]) {
+    assert_eq!(run_function(function, n_returns), as_felts(expected));
 }
