@@ -11,6 +11,7 @@ mod test;
 pub enum Hint {
     AllocSegment { dst: CellRef },
     TestLessThan { lhs: DerefOrImmediate, rhs: DerefOrImmediate, dst: CellRef },
+    DivMod { lhs: DerefOrImmediate, rhs: DerefOrImmediate, quotient: CellRef, remainder: CellRef },
 }
 
 impl Display for Hint {
@@ -27,6 +28,13 @@ impl Display for Hint {
                 fmt_access_or_const(f, lhs)?;
                 write!(f, " < ")?;
                 fmt_access_or_const(f, rhs)?;
+            }
+            Hint::DivMod { lhs, rhs, quotient, remainder } => {
+                write!(f, "(memory{quotient}, memory{remainder}) = divmod(")?;
+                fmt_access_or_const(f, lhs)?;
+                write!(f, ", ")?;
+                fmt_access_or_const(f, rhs)?;
+                write!(f, ")")?;
             }
         }
         write!(f, " %}}")
