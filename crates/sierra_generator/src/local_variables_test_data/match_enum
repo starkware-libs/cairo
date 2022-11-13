@@ -82,7 +82,7 @@ Statements:
   }
   (v11: core::felt) <- core::felt_add(v1, v1)
   (v12: core::felt) <- test_crate::revoke_ap()
-Drops: v0, v1, v12, v11
+Drops: v1, v12, v11
 End:
   Callsite(v10)
 
