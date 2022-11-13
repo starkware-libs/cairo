@@ -3,19 +3,19 @@ use std::fs;
 use std::path::PathBuf;
 
 use defs::ids::ModuleId;
+use filesystem::ids::CrateId;
 use lowering::db::LoweringGroup;
 use pretty_assertions::assert_eq;
 use semantic::db::SemanticGroup;
-use semantic::test_utils::setup_test_module;
+use semantic::test_utils::setup_test_crate;
 use sierra_gas::calc_gas_info;
 use sierra_gas::gas_info::GasInfo;
 use sierra_generator::db::SierraGenGroup;
 use sierra_generator::test_utils::{replace_sierra_ids_in_program, SierraGenDatabaseForTesting};
 use sierra_to_casm::metadata::Metadata;
 use test_case::test_case;
-
 /// Setups the cairo lowering to sierra db for the matching example.
-fn setup(name: &str) -> (SierraGenDatabaseForTesting, ModuleId) {
+fn setup(name: &str) -> (SierraGenDatabaseForTesting, CrateId) {
     let dir = env!("CARGO_MANIFEST_DIR");
     // Pop the "/tests" suffix.
     let mut path = PathBuf::from(dir).parent().unwrap().to_owned();
@@ -24,9 +24,10 @@ fn setup(name: &str) -> (SierraGenDatabaseForTesting, ModuleId) {
 
     let mut db_val = SierraGenDatabaseForTesting::default();
     let db = &mut db_val;
-    let module_id =
-        setup_test_module(db, &std::fs::read_to_string(path).unwrap()).unwrap().module_id;
+    let crate_id = setup_test_crate(db, &std::fs::read_to_string(path).unwrap());
 
+    // TODO(ilya): Get crate diagnostics.
+    let module_id = ModuleId::CrateRoot(crate_id);
     db.module_semantic_diagnostics(module_id)
         .unwrap()
         .expect_with_db(db, "Unexpected semantic diagnostics");
@@ -36,7 +37,7 @@ fn setup(name: &str) -> (SierraGenDatabaseForTesting, ModuleId) {
     db.module_sierra_diagnostics(module_id)
         .expect_with_db(db, "Unexpected Sierra generation diagnostics.");
 
-    (db_val, module_id)
+    (db_val, crate_id)
 }
 
 /// Returns the content of the relevant test file.
@@ -49,9 +50,9 @@ fn get_expected_contents(name: &str, test_type: &str) -> String {
 
 /// Compiles the Cairo code for `name` to a Sierra program.
 fn compile_to_sierra(name: &str) -> sierra::program::Program {
-    let (db, module_id) = setup(name);
+    let (db, crate_id) = setup(name);
 
-    let sierra_program = db.module_sierra_program(module_id).unwrap();
+    let sierra_program = db.crate_sierra_program(crate_id).unwrap();
     replace_sierra_ids_in_program(&db, &sierra_program)
 }
 
