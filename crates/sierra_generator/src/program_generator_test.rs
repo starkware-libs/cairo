@@ -1,18 +1,12 @@
 use indoc::indoc;
-use lowering::db::LoweringGroup;
 use pretty_assertions::assert_eq;
-use semantic::test_utils::setup_test_module;
 
-use crate::db::SierraGenGroup;
-use crate::test_utils::{replace_sierra_ids_in_program, SierraGenDatabaseForTesting};
+use crate::test_utils::checked_compile_to_sierra;
 
 #[test]
 fn test_program_generator() {
-    let mut db = SierraGenDatabaseForTesting::default();
     // TODO(lior): Make bar return something like felt_add(5, bar()).
-    let module_id = setup_test_module(
-        &mut db,
-        indoc! {"
+    let program = checked_compile_to_sierra(indoc! {"
                 func foo(a: felt) -> felt {
                     bar(5)
                 }
@@ -20,17 +14,11 @@ fn test_program_generator() {
                 func bar(a: felt) -> felt {
                     felt_add(a, a)
                 }
-            "},
-    )
-    .unwrap()
-    .module_id;
+            "});
 
-    db.module_lowering_diagnostics(module_id).expect("");
-    db.module_sierra_diagnostics(module_id).expect("");
-    let program = &*db.module_sierra_program(module_id).unwrap();
     // TODO(lior): Remove the unnecessary store_temp()s at the end.
     assert_eq!(
-        replace_sierra_ids_in_program(&db, program).to_string(),
+        program.to_string(),
         indoc! {"
             type felt = felt;
 
@@ -68,23 +56,14 @@ fn test_program_generator() {
 
 #[test]
 fn test_type_dependency() {
-    let mut db = SierraGenDatabaseForTesting::default();
-    let module_id = setup_test_module(
-        &mut db,
-        indoc! {"
+    let program = checked_compile_to_sierra(indoc! {"
                 func unbox_twice(a: Box::<Box::<Box::<felt>>>) -> Box::<felt> {
                     unbox::<Box::<felt>>(unbox::<Box::<Box::<felt>>>(a))
                 }
-            "},
-    )
-    .unwrap()
-    .module_id;
+            "});
 
-    db.module_lowering_diagnostics(module_id).expect("");
-    db.module_sierra_diagnostics(module_id).expect("");
-    let program = &*db.module_sierra_program(module_id).unwrap();
     assert_eq!(
-        replace_sierra_ids_in_program(&db, program).to_string(),
+        program.to_string(),
         indoc! {"
             type felt = felt;
             type Box<felt> = Box<felt>;
