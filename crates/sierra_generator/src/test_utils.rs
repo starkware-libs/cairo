@@ -1,11 +1,13 @@
 use db_utils::Upcast;
 use debug::DebugWithDb;
 use defs::db::{DefsDatabase, DefsGroup};
+use defs::ids::ModuleId;
 use filesystem::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup};
 use lowering::db::{LoweringDatabase, LoweringGroup};
 use parser::db::ParserDatabase;
 use salsa::{InternId, InternKey};
 use semantic::db::{SemanticDatabase, SemanticGroup};
+use semantic::test_utils::setup_test_crate;
 use sierra::ids::{ConcreteLibFuncId, GenericLibFuncId};
 use sierra::program;
 use syntax::node::db::{SyntaxDatabase, SyntaxGroup};
@@ -330,4 +332,24 @@ macro_rules! diagnostics_test {
             "Function Body"
         );
     };
+}
+
+/// Compiles 'content' to sierra and replaces the sierra ids to make it readable.
+pub fn checked_compile_to_sierra(content: &str) -> sierra::program::Program {
+    let mut db_val = SierraGenDatabaseForTesting::default();
+    let db = &mut db_val;
+    let crate_id = setup_test_crate(db, content);
+
+    let module_id = ModuleId::CrateRoot(crate_id);
+    db.module_semantic_diagnostics(module_id)
+        .unwrap()
+        .expect_with_db(db, "Unexpected semantic diagnostics");
+    db.module_lowering_diagnostics(module_id)
+        .unwrap()
+        .expect_with_db(db, "Unexpected lowering diagnostics.");
+    db.module_sierra_diagnostics(module_id)
+        .expect_with_db(db, "Unexpected Sierra generation diagnostics.");
+
+    let program = db.module_sierra_program(module_id).unwrap();
+    replace_sierra_ids_in_program(db, &program)
 }

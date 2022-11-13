@@ -4,7 +4,7 @@ use db_utils::Upcast;
 use defs::db::{DefsDatabase, DefsGroup};
 use defs::ids::{FreeFunctionId, GenericFunctionId, ModuleId};
 use filesystem::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup, FilesGroupEx};
-use filesystem::ids::{CrateLongId, Directory};
+use filesystem::ids::{CrateId, CrateLongId, Directory};
 use parser::db::ParserDatabase;
 use pretty_assertions::assert_eq;
 use syntax::node::db::{SyntaxDatabase, SyntaxGroup};
@@ -79,17 +79,24 @@ pub struct TestModule {
     pub module_id: ModuleId,
 }
 
-/// Sets up a module with given content, and returns its module id.
-pub fn setup_test_module(
-    db: &mut (dyn SemanticGroup + 'static),
-    content: &str,
-) -> WithStringDiagnostics<TestModule> {
+/// Sets up a crate with given content, and returns its crate id.
+pub fn setup_test_crate(db: &mut (dyn SemanticGroup + 'static), content: &str) -> CrateId {
     let crate_id = db.intern_crate(CrateLongId("test_crate".into()));
     let directory = Directory("src".into());
     db.set_crate_root(crate_id, Some(directory));
     let file_id = db.module_file(ModuleId::CrateRoot(crate_id)).unwrap();
     db.as_files_group_mut().override_file_content(file_id, Some(Arc::new(content.to_string())));
+    crate_id
+}
+
+/// Sets up a module with given content, and returns its module id.
+pub fn setup_test_module(
+    db: &mut (dyn SemanticGroup + 'static),
+    content: &str,
+) -> WithStringDiagnostics<TestModule> {
+    let crate_id = setup_test_crate(db, content);
     let module_id = ModuleId::CrateRoot(crate_id);
+    let file_id = db.module_file(module_id).unwrap();
 
     let syntax_diagnostics = db.file_syntax_diagnostics(file_id).format(Upcast::upcast(db));
     let semantic_diagnostics = db.module_semantic_diagnostics(module_id).unwrap().format(db);
