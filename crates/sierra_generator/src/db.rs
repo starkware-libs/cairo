@@ -3,6 +3,7 @@ use std::sync::Arc;
 use db_utils::Upcast;
 use defs::ids::{FreeFunctionId, ModuleId};
 use diagnostics::Diagnostics;
+use filesystem::ids::CrateId;
 use lowering::db::LoweringGroup;
 use semantic::Mutability;
 use sierra::extensions::{ConcreteType, GenericTypeEx};
@@ -72,10 +73,10 @@ pub trait SierraGenGroup: LoweringGroup + Upcast<dyn LoweringGroup> {
         function_id: FreeFunctionId,
     ) -> Option<Arc<pre_sierra::Function>>;
 
-    // TODO(spapini): A program is made of a crate, not a module.
-    /// Returns the [sierra::program::Program] object for the given module.
-    #[salsa::invoke(program_generator::module_sierra_program)]
-    fn module_sierra_program(&self, module_id: ModuleId) -> Option<Arc<sierra::program::Program>>;
+    /// Returns the [pre_sierra::Library] object for the given module.
+    #[salsa::invoke(program_generator::module_sierra_library)]
+    fn module_sierra_library(&self, module_id: ModuleId) -> Option<Arc<pre_sierra::Library>>;
+
     /// Returns the Sierra diagnostics of a module.
     #[salsa::invoke(program_generator::module_sierra_diagnostics)]
     fn module_sierra_diagnostics(
@@ -94,6 +95,10 @@ pub trait SierraGenGroup: LoweringGroup + Upcast<dyn LoweringGroup> {
     /// [ApChange::Unknown] otherwise.
     #[salsa::invoke(ap_change::get_ap_change)]
     fn get_ap_change(&self, function_id: FreeFunctionId) -> Option<ApChange>;
+
+    /// Returns the [sierra::program::Program] object for the given crate.
+    #[salsa::invoke(program_generator::crate_sierra_program)]
+    fn crate_sierra_program(&self, crt: CrateId) -> Option<Arc<sierra::program::Program>>;
 }
 
 fn get_function_signature(

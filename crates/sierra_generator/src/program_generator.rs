@@ -3,6 +3,7 @@ use std::sync::Arc;
 
 use defs::ids::{ModuleId, ModuleItemId};
 use diagnostics::{Diagnostics, DiagnosticsBuilder};
+use filesystem::ids::CrateId;
 use itertools::chain;
 use sierra::extensions::core::CoreLibFunc;
 use sierra::extensions::GenericLibFuncEx;
@@ -45,11 +46,11 @@ pub fn module_sierra_diagnostics(
     diagnostics.build()
 }
 
-/// Query implementation of [crate::db::SierraGenGroup::module_sierra_program].
-pub fn module_sierra_program(
+/// Query implementation of [crate::db::SierraGenGroup::module_sierra_library].
+pub fn module_sierra_library(
     db: &dyn SierraGenGroup,
     module_id: ModuleId,
-) -> Option<Arc<sierra::program::Program>> {
+) -> Option<Arc<pre_sierra::Library>> {
     let module_items = db.module_items(module_id)?;
     let mut functions: Vec<Arc<pre_sierra::Function>> = vec![];
     let mut statements: Vec<pre_sierra::Statement> = vec![];
@@ -74,31 +75,8 @@ pub fn module_sierra_program(
             ModuleItemId::ExternFunction(_) => todo!("'extern func' lowering not supported yet."),
         }
     }
-    let libfunc_declarations =
-        generate_libfunc_declarations(db, collect_used_libfuncs(&statements).iter());
-    let type_declarations =
-        generate_type_declarations(db, collect_used_types(db, &libfunc_declarations).iter());
-    // Resolve labels.
-    let label_replacer = LabelReplacer::from_statements(&statements);
-    let resolved_statements = resolve_labels(statements, &label_replacer);
 
-    Some(Arc::new(program::Program {
-        type_declarations,
-        libfunc_declarations,
-        statements: resolved_statements,
-        funcs: functions
-            .into_iter()
-            .map(|function| {
-                let sierra_signature = db.get_function_signature(function.id.clone()).unwrap();
-                program::Function::new(
-                    function.id.clone(),
-                    function.parameters.clone(),
-                    sierra_signature.ret_types.clone(),
-                    label_replacer.handle_label_id(function.entry_point),
-                )
-            })
-            .collect(),
-    }))
+    Some(Arc::new(pre_sierra::Library { statements, functions }))
 }
 
 /// Generates the list of [sierra::program::LibFuncDeclaration] for the given list of
@@ -195,4 +173,45 @@ fn collect_used_types(
             )
         })
         .collect()
+}
+
+pub fn crate_sierra_program(
+    db: &dyn SierraGenGroup,
+    crt: CrateId,
+) -> Option<Arc<sierra::program::Program>> {
+    let mut functions: Vec<Arc<pre_sierra::Function>> = vec![];
+    let mut statements: Vec<pre_sierra::Statement> = vec![];
+    let modules = db.crate_modules(crt);
+    for module in modules.iter() {
+        let pre_sierra_library = db.module_sierra_library(*module)?;
+
+        functions.extend_from_slice(&pre_sierra_library.functions);
+        statements.extend_from_slice(&pre_sierra_library.statements);
+    }
+
+    let libfunc_declarations =
+        generate_libfunc_declarations(db, collect_used_libfuncs(&statements).iter());
+    let type_declarations =
+        generate_type_declarations(db, collect_used_types(db, &libfunc_declarations).iter());
+    // Resolve labels.
+    let label_replacer = LabelReplacer::from_statements(&statements);
+    let resolved_statements = resolve_labels(statements, &label_replacer);
+
+    Some(Arc::new(program::Program {
+        type_declarations,
+        libfunc_declarations,
+        statements: resolved_statements,
+        funcs: functions
+            .into_iter()
+            .map(|function| {
+                let sierra_signature = db.get_function_signature(function.id.clone()).unwrap();
+                program::Function::new(
+                    function.id.clone(),
+                    function.parameters.clone(),
+                    sierra_signature.ret_types.clone(),
+                    label_replacer.handle_label_id(function.entry_point),
+                )
+            })
+            .collect(),
+    }))
 }
