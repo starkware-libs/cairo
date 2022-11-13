@@ -2,12 +2,10 @@ use std::collections::HashMap;
 use std::vec;
 
 use casm::ap_change::ApChange;
-use casm::operand::DerefOrImmediate;
-use casm::{casm, deref};
+use casm::casm;
 use itertools::{zip_eq, Itertools};
 use pretty_assertions::assert_eq;
 use sierra::extensions::core::{CoreLibFunc, CoreType};
-use sierra::extensions::felt::FeltOperator;
 use sierra::extensions::lib_func::{SignatureSpecializationContext, SpecializationContext};
 use sierra::extensions::type_specialization_context::TypeSpecializationContext;
 use sierra::extensions::types::TypeInfo;
@@ -21,14 +19,13 @@ use crate::environment::gas_wallet::GasWallet;
 use crate::environment::Environment;
 use crate::invocations::{compile_invocation, BranchChanges};
 use crate::metadata::Metadata;
-use crate::references::{BinOpExpression, CellExpression, ReferenceExpression, ReferenceValue};
+use crate::ref_expr;
+use crate::references::{ReferenceExpression, ReferenceValue};
 
-fn as_ref_expr(cell_expr: CellExpression) -> ReferenceExpression {
-    ReferenceExpression::from_cell(cell_expr)
-}
-
-struct TestSpecializationContext {}
-impl TypeSpecializationContext for TestSpecializationContext {
+/// Specialization context for libfuncs and types, based on string names only, allows building
+/// libfuncs without salsa db or program registry.
+struct MockSpecializationContext {}
+impl TypeSpecializationContext for MockSpecializationContext {
     fn try_get_type_info(&self, id: ConcreteTypeId) -> Option<TypeInfo> {
         let long_id =
             sierra::ConcreteTypeLongIdParser::new().parse(id.to_string().as_str()).unwrap();
@@ -40,7 +37,7 @@ impl TypeSpecializationContext for TestSpecializationContext {
         )
     }
 }
-impl SignatureSpecializationContext for TestSpecializationContext {
+impl SignatureSpecializationContext for MockSpecializationContext {
     fn try_get_concrete_type(
         &self,
         id: sierra::ids::GenericTypeId,
@@ -75,7 +72,7 @@ impl SignatureSpecializationContext for TestSpecializationContext {
         self
     }
 }
-impl SpecializationContext for TestSpecializationContext {
+impl SpecializationContext for MockSpecializationContext {
     fn upcast(&self) -> &dyn SignatureSpecializationContext {
         self
     }
@@ -92,7 +89,7 @@ impl SpecializationContext for TestSpecializationContext {
 fn compile_libfunc(libfunc: &str, refs: Vec<ReferenceExpression>) -> CompiledInvocation {
     let long_id =
         sierra::ConcreteLibFuncLongIdParser::new().parse(libfunc.to_string().as_str()).unwrap();
-    let context = TestSpecializationContext {};
+    let context = MockSpecializationContext {};
     let libfunc =
         CoreLibFunc::specialize_by_id(&context, &long_id.generic_id, &long_id.generic_args)
             .unwrap();
@@ -138,17 +135,10 @@ fn compile_libfunc(libfunc: &str, refs: Vec<ReferenceExpression>) -> CompiledInv
 
 #[test]
 fn test_felt_add() {
-    let refs: Vec<ReferenceExpression> = [deref!([fp + 5]), deref!([ap + 5])]
-        .map(|x| as_ref_expr(CellExpression::Deref(x)))
-        .into_iter()
-        .collect();
-    let compiled_invocation = compile_libfunc("felt_add", refs);
+    let compiled_invocation =
+        compile_libfunc("felt_add", vec![ref_expr!([fp + 5]), ref_expr!([ap + 5])]);
 
-    let expected_ref = as_ref_expr(CellExpression::BinOp(BinOpExpression {
-        op: FeltOperator::Add,
-        a: deref!([fp + 5]),
-        b: DerefOrImmediate::Deref(deref!([ap + 5])),
-    }));
+    let expected_ref = ref_expr!([fp + 5] + [ap + 5]);
     let felt_ty = ConcreteTypeId::from_string("felt");
     let expected = CompiledInvocation {
         instructions: vec![],
@@ -165,14 +155,10 @@ fn test_felt_add() {
 
 #[test]
 fn test_store_temp() {
-    let refs = vec![as_ref_expr(CellExpression::BinOp(BinOpExpression {
-        op: FeltOperator::Add,
-        a: deref!([fp + 5]),
-        b: DerefOrImmediate::Deref(deref!([ap + 5])),
-    }))];
-    let compiled_invocation = compile_libfunc("store_temp<felt>", refs);
+    let compiled_invocation =
+        compile_libfunc("store_temp<felt>", vec![ref_expr!([fp + 5] + [ap + 5])]);
 
-    let expected_ref = as_ref_expr(CellExpression::Deref(deref!([ap + -1])));
+    let expected_ref = ref_expr!([ap - 1]);
     let felt_ty = ConcreteTypeId::from_string("felt");
     let expected = CompiledInvocation {
         instructions: casm! {[ap + 0] = [fp + 5] + [ap + 5], ap++;}.instructions,

@@ -8,6 +8,7 @@ use sierra::ids::{ConcreteTypeId, VarId};
 use sierra::program::{Function, StatementIdx};
 use thiserror::Error;
 use utils::casts::usize_as_i16;
+use {casm, sierra};
 
 use crate::type_sizes::TypeSizeMap;
 
