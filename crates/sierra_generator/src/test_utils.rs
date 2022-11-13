@@ -350,6 +350,6 @@ pub fn checked_compile_to_sierra(content: &str) -> sierra::program::Program {
     db.module_sierra_diagnostics(module_id)
         .expect_with_db(db, "Unexpected Sierra generation diagnostics.");
 
-    let program = db.module_sierra_program(module_id).unwrap();
+    let program = db.crate_sierra_program(crate_id).unwrap();
     replace_sierra_ids_in_program(db, &program)
 }
