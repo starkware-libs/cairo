@@ -7,7 +7,7 @@ use crate::operand::{CellRef, DerefOrImmediate};
 mod test;
 
 // Represents a cairo hint.
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub enum Hint {
     AllocSegment { dst: CellRef },
     TestLessThan { lhs: DerefOrImmediate, rhs: DerefOrImmediate, dst: CellRef },
