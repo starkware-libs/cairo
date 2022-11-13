@@ -7,3 +7,4 @@ pub mod hints;
 pub mod inline;
 pub mod instructions;
 pub mod operand;
+pub mod run;
