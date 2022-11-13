@@ -1,7 +1,15 @@
+use std::collections::HashMap;
+
+use cairo_rs::hint_processor::builtin_hint_processor::builtin_hint_processor_definition::BuiltinHintProcessor;
+use cairo_rs::serde::deserialize_program::ReferenceManager;
+use cairo_rs::types::program::Program;
 use cairo_rs::types::relocatable::MaybeRelocatable;
+use cairo_rs::vm::errors::vm_errors::VirtualMachineError;
+use cairo_rs::vm::runners::cairo_runner::CairoRunner;
 use cairo_rs::vm::vm_core::VirtualMachine;
 use num_bigint::BigInt;
 
+use crate::inline::CasmContext;
 use crate::instructions::Instruction;
 
 #[cfg(test)]
@@ -13,42 +21,53 @@ fn get_prime() -> BigInt {
     (BigInt::from(1) << 251) + 17 * (BigInt::from(1) << 192) + 1
 }
 
-/// A mod function that doesn't preserve sign.
-fn mod_prime(n: BigInt) -> BigInt {
-    let prime = get_prime();
-    ((n % &prime) + &prime) % prime
-}
-
-/// Takes a vector of casm instructions and runs them on the Lambdaclass VM for n_steps.
-pub fn run(program: Vec<Instruction>, prime: BigInt, n_steps: usize) -> VirtualMachine {
-    // Encode program instructions to cairo memory.
-    let instructions: Vec<_> = program
+/// Runs program on layout with prime, and returns the resulting VM.
+#[allow(clippy::result_large_err)]
+pub fn run(
+    program: Vec<Instruction>,
+    layout: &str,
+    prime: BigInt,
+) -> Result<VirtualMachine, VirtualMachineError> {
+    let data: Vec<MaybeRelocatable> = program
         .iter()
         .flat_map(|inst| inst.assemble().encode())
-        .map(|x| MaybeRelocatable::Int(mod_prime(x)))
+        .map(MaybeRelocatable::from)
         .collect();
+
+    let hint_processor = BuiltinHintProcessor::new_empty();
+
+    let program = Program {
+        builtins: Vec::new(),
+        prime: prime.clone(),
+        data,
+        constants: HashMap::new(),
+        main: Some(0),
+        start: None,
+        end: None,
+        hints: HashMap::new(),
+        reference_manager: ReferenceManager { references: Vec::new() },
+        identifiers: HashMap::new(),
+    };
+    let mut runner = CairoRunner::new(&program, layout, false)?;
     let mut vm = VirtualMachine::new(prime, false);
 
-    // Define the program and execution segments.
-    let program_base = vm.add_memory_segment();
-    let execution_base = vm.add_memory_segment();
+    let end = runner.initialize(&mut vm)?;
 
-    // Set the initial PC to be at the start of the program, and load the program data.
-    vm.set_pc(program_base.clone());
-    vm.load_data(&MaybeRelocatable::from(program_base), instructions)
-        .expect("VM failed to load program data.");
+    runner.run_until_pc(end, &mut vm, &hint_processor)?;
 
-    // Define the initial stack for the program (currently a fake return address), write it at the
-    // beginning of the execution segment and set AP and FP to point to the next memory cell.
-    let stack = vec![MaybeRelocatable::Int(BigInt::from(0))];
-    vm.set_ap(stack.len());
-    vm.set_fp(stack.len());
-    vm.load_data(&MaybeRelocatable::from(execution_base), stack)
-        .expect("VM failed to load program data.");
+    Ok(vm)
+}
 
-    // Perform n instruction steps of the VM.
-    for _ in 0..n_steps {
-        vm.step_instruction().expect("VM failed to run instruction.");
-    }
-    vm
+/// Runs `function` and returns `n_returns` return values.
+pub fn run_function(function: CasmContext, n_returns: usize) -> Vec<BigInt> {
+    run(function.instructions, "plain", get_prime())
+        .expect("Virtual machine failed")
+        .get_return_values(n_returns)
+        .expect("Return memory cells not set.")
+        .iter()
+        .map(|ret_val| match ret_val {
+            MaybeRelocatable::Int(value) => value.clone(),
+            MaybeRelocatable::RelocatableValue(_) => panic!("Return value can't be relocatable."),
+        })
+        .collect()
 }
