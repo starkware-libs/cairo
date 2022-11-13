@@ -33,7 +33,13 @@ pub fn module_sierra_diagnostics(
                 diagnostics.extend(db.free_function_sierra_diagnostics(*free_function_id))
             }
             ModuleItemId::Enum(_) => {}
-            _ => todo!("Not supported yet."),
+            ModuleItemId::Struct(_) => {}
+            ModuleItemId::Submodule(_)
+            | ModuleItemId::Use(_)
+            | ModuleItemId::Trait(_)
+            | ModuleItemId::Impl(_)
+            | ModuleItemId::ExternType(_)
+            | ModuleItemId::ExternFunction(_) => todo!("Not supported yet."),
         }
     }
     diagnostics.build()
@@ -60,7 +66,7 @@ pub fn module_sierra_program(
                 functions.push(function.clone());
                 statements.extend_from_slice(function.body.as_slice());
             }
-            ModuleItemId::Struct(_) => todo!("'struct' lowering not supported yet."),
+            ModuleItemId::Struct(_) => {}
             ModuleItemId::Enum(_) => {}
             ModuleItemId::Trait(_) => {}
             ModuleItemId::Impl(_) => {}
