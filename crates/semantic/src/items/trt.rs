@@ -1,5 +1,5 @@
 use db_utils::define_short_id;
-use defs::ids::{GenericParamId, ImplId, LanguageElementId, TraitId};
+use defs::ids::{GenericParamId, ImplId, LanguageElementId, ModuleId, TraitId};
 use diagnostics::Diagnostics;
 use diagnostics_proc_macros::DebugWithDb;
 use utils::{try_extract_matches, OptionHelper};
@@ -125,4 +125,29 @@ pub fn priv_impl_semantic_data(db: &dyn SemanticGroup, impl_id: ImplId) -> Optio
         });
 
     Some(ImplData { diagnostics: diagnostics.build(), generic_params, concrete_trait })
+}
+
+/// Query implementation of [crate::db::SemanticGroup::find_impls_at_module].
+pub fn find_impls_at_module(
+    db: &dyn SemanticGroup,
+    module_id: ModuleId,
+    concrete_trait_id: ConcreteTraitId,
+) -> Option<Vec<ConcreteImplId>> {
+    let mut res = Vec::new();
+    let impls = db.module_data(module_id)?.impls;
+    // TODO(spapini): Index better.
+    for impl_id in impls.keys().copied() {
+        let Some(imp_data)= db.priv_impl_semantic_data(impl_id) else {continue};
+        if !imp_data.generic_params.is_empty() {
+            // TODO(spapini): Infer generics and substitute.
+            continue;
+        }
+
+        if imp_data.concrete_trait == Some(concrete_trait_id) {
+            let concrete_impl_id =
+                db.intern_concrete_impl(ConcreteImplLongId { impl_id, generic_args: vec![] });
+            res.push(concrete_impl_id);
+        }
+    }
+    Some(res)
 }

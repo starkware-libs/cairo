@@ -4,8 +4,8 @@ use traits::Drop;
 
 enum bool { False: (), True: (), }
 // TODO(spapini): Make unnamed.
-impl BoolCopy for Copy::<bool>;
-impl BoolDrop for Drop::<bool>;
+impl BoolCopy of Copy::<bool>;
+impl BoolDrop of Drop::<bool>;
 
 extern func bool_and(a: bool, b: bool) -> bool;
 extern func bool_or(a: bool, b: bool) -> bool;
@@ -15,8 +15,8 @@ extern type RangeCheck;
 
 extern type felt;
 // TODO(spapini): Make unnamed.
-impl FeltCopy for Copy::<felt>;
-impl FeltDrop for Drop::<felt>;
+impl FeltCopy of Copy::<felt>;
+impl FeltDrop of Drop::<felt>;
 
 extern func felt_add(a: felt, b: felt) -> felt;
 extern func felt_sub(a: felt, b: felt) -> felt;
