@@ -9,7 +9,7 @@ use sierra::extensions::type_specialization_context::TypeSpecializationContext;
 use sierra::extensions::types::TypeInfo;
 use sierra::extensions::{ConcreteLibFunc, ConcreteType, GenericLibFuncEx, GenericTypeEx};
 use sierra::ids::{ConcreteTypeId, VarId};
-use sierra::program::{Invocation, StatementIdx};
+use sierra::program::{BranchInfo, BranchTarget, Invocation, StatementIdx};
 use sierra_gas::gas_info::GasInfo;
 
 use super::{compile_invocation, CompiledInvocation, ProgramInfo};
@@ -197,7 +197,10 @@ impl ReducedCompiledInvocation {
     }
 }
 
-// Compiles the last libfunc invocation in sierra_code.
+/// Compiles a libfunc into a [ReducedCompiledInvocation].
+/// Uses `refs` as its inputs, and incrementing indices for input and output var ids.
+/// For branches, uses the index of the branch as the target [StatementIdx] for relocation purposes
+/// (excluding fallthrough branches, that uses fallthrough as the target).
 pub fn compile_libfunc(libfunc: &str, refs: Vec<ReferenceExpression>) -> ReducedCompiledInvocation {
     let long_id =
         sierra::ConcreteLibFuncLongIdParser::new().parse(libfunc.to_string().as_str()).unwrap();
@@ -236,7 +239,19 @@ pub fn compile_libfunc(libfunc: &str, refs: Vec<ReferenceExpression>) -> Reduced
             &Invocation {
                 libfunc_id: "".into(),
                 args: (0..args.len()).map(VarId::from_usize).collect(),
-                branches: vec![],
+                branches: libfunc
+                    .branch_signatures()
+                    .iter()
+                    .enumerate()
+                    .map(|(i, branch)| BranchInfo {
+                        target: if libfunc.fallthrough() == Some(i) {
+                            BranchTarget::Fallthrough
+                        } else {
+                            BranchTarget::Statement(StatementIdx(i))
+                        },
+                        results: (0..branch.vars.len()).map(VarId::from_usize).collect(),
+                    })
+                    .collect(),
             },
             &libfunc,
             StatementIdx(0),
