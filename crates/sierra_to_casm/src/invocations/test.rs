@@ -3,6 +3,7 @@ use std::vec;
 
 use casm::ap_change::ApChange;
 use casm::casm;
+use casm::instructions::Instruction;
 use itertools::{zip_eq, Itertools};
 use pretty_assertions::assert_eq;
 use sierra::extensions::core::{CoreLibFunc, CoreType};
@@ -17,10 +18,11 @@ use sierra_gas::gas_info::GasInfo;
 use super::{CompiledInvocation, ProgramInfo};
 use crate::environment::gas_wallet::GasWallet;
 use crate::environment::Environment;
-use crate::invocations::{compile_invocation, BranchChanges};
+use crate::invocations::compile_invocation;
 use crate::metadata::Metadata;
 use crate::ref_expr;
 use crate::references::{ReferenceExpression, ReferenceValue};
+use crate::relocations::RelocationEntry;
 
 /// Specialization context for libfuncs and types, based on string names only, allows building
 /// libfuncs without salsa db or program registry.
@@ -85,8 +87,47 @@ impl SpecializationContext for MockSpecializationContext {
     }
 }
 
+/// Information from [BranchChanges] we should test when only testing a libfunc lowering by itself.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ReducedBranchChanges {
+    /// New references defined at a given branch.
+    /// should correspond to BranchInfo.results.
+    pub refs: Vec<ReferenceExpression>,
+    /// The change to AP caused by the libfunc in the branch.
+    pub ap_change: ApChange,
+}
+
+/// Information from [CompiledInvocation] we should test when only testing a libfunc lowering by
+/// itself.
+#[derive(Debug, Eq, PartialEq)]
+struct ReducedCompiledInvocation {
+    /// A vector of instructions that implement the invocation.
+    pub instructions: Vec<Instruction>,
+    /// A vector of static relocations.
+    pub relocations: Vec<RelocationEntry>,
+    /// A vector of ReducedBranchChanges, should correspond to the branches of the invocation
+    /// statement.
+    pub results: Vec<ReducedBranchChanges>,
+}
+impl ReducedCompiledInvocation {
+    fn new(compiled_invocation: CompiledInvocation) -> ReducedCompiledInvocation {
+        ReducedCompiledInvocation {
+            instructions: compiled_invocation.instructions,
+            relocations: compiled_invocation.relocations,
+            results: compiled_invocation
+                .results
+                .into_iter()
+                .map(|result| ReducedBranchChanges {
+                    refs: result.refs.into_iter().map(|r| r.expression).collect(),
+                    ap_change: result.ap_change,
+                })
+                .collect(),
+        }
+    }
+}
+
 // Compiles the last libfunc invocation in sierra_code.
-fn compile_libfunc(libfunc: &str, refs: Vec<ReferenceExpression>) -> CompiledInvocation {
+fn compile_libfunc(libfunc: &str, refs: Vec<ReferenceExpression>) -> ReducedCompiledInvocation {
     let long_id =
         sierra::ConcreteLibFuncLongIdParser::new().parse(libfunc.to_string().as_str()).unwrap();
     let context = MockSpecializationContext {};
@@ -118,57 +159,49 @@ fn compile_libfunc(libfunc: &str, refs: Vec<ReferenceExpression>) -> CompiledInv
         .collect();
 
     let environment = Environment::new(GasWallet::Disabled);
-    compile_invocation(
-        program_info,
-        &Invocation {
-            libfunc_id: "".into(),
-            args: (0..args.len()).map(VarId::from_usize).collect(),
-            branches: vec![],
-        },
-        &libfunc,
-        StatementIdx(0),
-        &args,
-        environment,
+    ReducedCompiledInvocation::new(
+        compile_invocation(
+            program_info,
+            &Invocation {
+                libfunc_id: "".into(),
+                args: (0..args.len()).map(VarId::from_usize).collect(),
+                branches: vec![],
+            },
+            &libfunc,
+            StatementIdx(0),
+            &args,
+            environment,
+        )
+        .expect("Failed to compile invocation."),
     )
-    .expect("Failed to compile invocation.")
 }
 
 #[test]
 fn test_felt_add() {
-    let compiled_invocation =
-        compile_libfunc("felt_add", vec![ref_expr!([fp + 5]), ref_expr!([ap + 5])]);
-
-    let expected_ref = ref_expr!([fp + 5] + [ap + 5]);
-    let felt_ty = ConcreteTypeId::from_string("felt");
-    let expected = CompiledInvocation {
-        instructions: vec![],
-        relocations: vec![],
-        results: vec![BranchChanges {
-            refs: vec![ReferenceValue { expression: expected_ref, ty: felt_ty }],
-            ap_change: ApChange::Known(0),
-            gas_change: 0,
-        }],
-        environment: Environment::new(GasWallet::Disabled),
-    };
-    assert_eq!(compiled_invocation, expected);
+    assert_eq!(
+        compile_libfunc("felt_add", vec![ref_expr!([fp + 5]), ref_expr!([ap + 5])]),
+        ReducedCompiledInvocation {
+            instructions: vec![],
+            relocations: vec![],
+            results: vec![ReducedBranchChanges {
+                refs: vec![ref_expr!([fp + 5] + [ap + 5])],
+                ap_change: ApChange::Known(0)
+            }]
+        }
+    );
 }
 
 #[test]
 fn test_store_temp() {
-    let compiled_invocation =
-        compile_libfunc("store_temp<felt>", vec![ref_expr!([fp + 5] + [ap + 5])]);
-
-    let expected_ref = ref_expr!([ap - 1]);
-    let felt_ty = ConcreteTypeId::from_string("felt");
-    let expected = CompiledInvocation {
-        instructions: casm! {[ap + 0] = [fp + 5] + [ap + 5], ap++;}.instructions,
-        relocations: vec![],
-        results: vec![BranchChanges {
-            refs: vec![ReferenceValue { expression: expected_ref, ty: felt_ty }],
-            ap_change: ApChange::Known(1),
-            gas_change: -1,
-        }],
-        environment: Environment::new(GasWallet::Disabled),
-    };
-    assert_eq!(compiled_invocation, expected);
+    assert_eq!(
+        compile_libfunc("store_temp<felt>", vec![ref_expr!([fp + 5] + [ap + 5])]),
+        ReducedCompiledInvocation {
+            instructions: casm! {[ap + 0] = [fp + 5] + [ap + 5], ap++;}.instructions,
+            relocations: vec![],
+            results: vec![ReducedBranchChanges {
+                refs: vec![ref_expr!([ap - 1])],
+                ap_change: ApChange::Known(1)
+            }]
+        }
+    );
 }
