@@ -15,6 +15,7 @@ mod program_generator;
 mod resolve_labels;
 mod specialization_context;
 mod store_variables;
+#[cfg(any(feature = "testing", test))]
 pub mod test_utils;
 mod types;
 mod utils;
