@@ -3,6 +3,9 @@ name = "sierra_generator"
 version.workspace = true
 edition.workspace = true
 
+[features]
+testing = []
+
 [dependencies]
 db_utils = { path = "../db_utils" }
 debug = { path = "../debug" }
