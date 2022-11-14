@@ -4,9 +4,8 @@ use utils::ordered_hash_set::OrderedHashSet;
 
 use super::{calculate_statement_dups_and_drops, VarsDupsAndDrops};
 use crate::pre_sierra;
-use crate::test_utils::{
-    as_var_id_vec, dummy_label, dummy_simple_branch, SierraGenDatabaseForTesting,
-};
+use crate::replace_ids::{as_var_id_vec, dummy_label, dummy_simple_branch};
+use crate::test_utils::SierraGenDatabaseForTesting;
 use crate::utils::{return_statement, simple_statement};
 
 /// Returns a vector of params based on inputs mapped into variable ids.
