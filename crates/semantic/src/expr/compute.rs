@@ -186,6 +186,7 @@ pub fn maybe_compute_expr_semantic(
             ctx.diagnostics.report(syntax, Unsupported);
             None
         }
+        ast::Expr::ErrorPropagate(_) => todo!(),
     }
 }
 

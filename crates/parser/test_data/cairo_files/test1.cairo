@@ -17,6 +17,7 @@ func foo(,var1: int,, mut ref var2: felt,) -> int {
     } else {
         2
     };
+    let w = calc_with_error(x, y?, z)?;
     let x = true; // bla1
                   // bla2
     z = 5;

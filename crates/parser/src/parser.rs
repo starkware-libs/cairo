@@ -409,13 +409,24 @@ impl<'a> Parser<'a> {
     /// Returns a GreenId of a node with an Expr.* kind (see [syntax::node::ast::Expr]) or None if
     /// an expression can't be parsed.
     fn try_parse_expr(&mut self) -> Option<ExprGreen> {
-        match self.peek().kind {
+        let mut expr = match self.peek().kind {
             // Call parse_block() and not expect_block() because it's cheap.
             SyntaxKind::TerminalLBrace => Some(self.parse_block().into()),
             SyntaxKind::TerminalMatch => Some(self.expect_match_expr().into()),
             SyntaxKind::TerminalIf => Some(self.expect_if_expr().into()),
             _ => self.try_parse_simple_expression(MAX_PRECEDENCE, LbraceAllowed::Allow),
+        }?;
+        // If we have a valid expression, checks if it is wrapped with error propagation and wraps
+        // accordingly.
+        while self.peek().kind == SyntaxKind::TerminalQuestionMark {
+            expr = ExprErrorPropagate::new_green(
+                self.db,
+                expr,
+                self.parse_token::<TerminalQuestionMark>(),
+            )
+            .into();
         }
+        Some(expr)
     }
     /// Returns a GreenId of a node with an Expr.* kind (see [syntax::node::ast::Expr]) or a node
     /// with kind ExprMissing if an expression can't be parsed.
