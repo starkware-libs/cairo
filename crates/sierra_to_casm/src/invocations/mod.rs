@@ -9,6 +9,7 @@ use sierra::extensions::{ConcreteLibFunc, OutputVarReferenceInfo};
 use sierra::ids::ConcreteTypeId;
 use sierra::program::{Invocation, StatementIdx};
 use thiserror::Error;
+use {casm, sierra};
 
 use crate::environment::frame_state::{FrameState, FrameStateError};
 use crate::environment::Environment;
@@ -29,8 +30,9 @@ mod strct;
 mod uint128;
 
 #[cfg(test)]
-#[path = "test.rs"]
 mod test;
+#[cfg(test)]
+mod test_utils;
 
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum InvocationError {
