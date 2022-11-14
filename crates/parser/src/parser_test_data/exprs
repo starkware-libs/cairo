@@ -5,11 +5,25 @@ get_diagnostics
 
 //! > cairo_code
 func f() {
-    1 + * 2 + {5}
+    {4} - 1 + * 2 + {5}
 }
 
 //! > expected_diagnostics
 error: Missing tokens. Expected an expression.
- --> dummy_file.cairo:2:8
-    1 + * 2 + {5}
-       ^
+ --> dummy_file.cairo:2:14
+    {4} - 1 + * 2 + {5}
+             ^
+
+//! > ==========================================================================
+
+//! > Test complex expression
+
+//! > test_function_name
+get_diagnostics
+
+//! > cairo_code
+func f() {
+    {5} + match x { E::V1(_) => 4, E::V2(_) => 2 } - if cond { 32 } else { 1 }
+}
+
+//! > expected_diagnostics
