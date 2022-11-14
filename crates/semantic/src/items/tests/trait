@@ -46,3 +46,71 @@ error: Not a trait.
  --> lib.cairo:4:17
 impl MyImpl4 of foo;
                 ^*^
+
+//! > ==========================================================================
+
+//! > Test copy and dup impls.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+func foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+struct Linear {}
+
+struct A {}
+enum B {}
+struct C { x: felt, y: Linear }
+enum D { X: felt, Y: Linear }
+extern type E;
+
+impl ACopy of Copy::<A>;
+impl ADrop of Drop::<A>;
+impl BCopy of Copy::<B>;
+impl BDrop of Drop::<B>;
+impl CCopy of Copy::<C>;
+impl CDrop of Drop::<C>;
+impl DCopy of Copy::<D>;
+impl DDrop of Drop::<D>;
+impl ECopy of Copy::<E>;
+impl EDrop of Drop::<E>;
+impl TCopy of Copy::<()>;
+impl TDrop of Drop::<()>;
+impl T2Copy of Copy::<(felt, Linear)>;
+impl T2Drop of Drop::<(felt, Linear)>;
+
+//! > expected_diagnostics
+error: Invalid copy trait implementation.
+ --> lib.cairo:13:1
+impl CCopy of Copy::<C>;
+^**********************^
+
+error: Invalid drop trait implementation.
+ --> lib.cairo:14:1
+impl CDrop of Drop::<C>;
+^**********************^
+
+error: Invalid copy trait implementation.
+ --> lib.cairo:15:1
+impl DCopy of Copy::<D>;
+^**********************^
+
+error: Invalid drop trait implementation.
+ --> lib.cairo:16:1
+impl DDrop of Drop::<D>;
+^**********************^
+
+error: Invalid copy trait implementation.
+ --> lib.cairo:21:1
+impl T2Copy of Copy::<(felt, Linear)>;
+^************************************^
+
+error: Invalid drop trait implementation.
+ --> lib.cairo:22:1
+impl T2Drop of Drop::<(felt, Linear)>;
+^************************************^

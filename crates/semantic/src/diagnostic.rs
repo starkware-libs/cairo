@@ -200,6 +200,12 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     ty.format(db)
                 )
             }
+            SemanticDiagnosticKind::InvalidCopyTraitImpl => {
+                "Invalid copy trait implementation.".into()
+            }
+            SemanticDiagnosticKind::InvalidDropTraitImpl => {
+                "Invalid drop trait implementation.".into()
+            }
         }
     }
 
@@ -258,4 +264,6 @@ pub enum SemanticDiagnosticKind {
     UnexpectedStructPattern { ty: semantic::TypeId },
     UnexpectedTuplePattern { ty: semantic::TypeId },
     WrongEnum { expected_enum: EnumId, actual_enum: EnumId },
+    InvalidCopyTraitImpl,
+    InvalidDropTraitImpl,
 }

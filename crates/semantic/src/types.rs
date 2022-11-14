@@ -7,7 +7,7 @@ use itertools::Itertools;
 use syntax::node::ast;
 use utils::OptionFrom;
 
-use crate::corelib::{copy_trait, drop_trait};
+use crate::corelib::{concrete_copy_trait, concrete_drop_trait};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
@@ -297,8 +297,10 @@ pub fn type_info(db: &dyn SemanticGroup, ty: TypeId) -> Option<TypeInfo> {
         TypeLongId::Concrete(concrete_type_id) => {
             // Look for Copy and Drop trait in the defining module.
             let module = concrete_type_id.generic_type(db).module(db.upcast());
-            let droppable = !db.find_impls_at_module(module, drop_trait(db, ty))?.is_empty();
-            let duplicatable = !db.find_impls_at_module(module, copy_trait(db, ty))?.is_empty();
+            let droppable =
+                !db.find_impls_at_module(module, concrete_drop_trait(db, ty))?.is_empty();
+            let duplicatable =
+                !db.find_impls_at_module(module, concrete_copy_trait(db, ty))?.is_empty();
             TypeInfo { droppable, duplicatable }
         }
         TypeLongId::Tuple(tys) => {
