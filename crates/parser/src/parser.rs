@@ -752,7 +752,7 @@ impl<'a> Parser<'a> {
                         // Enum pattern.
                         let lparen = self.take::<TerminalLParen>();
                         let pattern = self.parse_pattern();
-                        let rparen = self.take::<TerminalRParen>();
+                        let rparen = self.parse_token::<TerminalRParen>();
                         PatternEnum::new_green(self.db, path, lparen, pattern, rparen).into()
                     }
                     _ => path.into(),
@@ -769,7 +769,7 @@ impl<'a> Parser<'a> {
                     is_of_kind!(rparen, block, rbrace, top_level),
                     "pattern",
                 ));
-                let rparen = self.take::<TerminalRParen>();
+                let rparen = self.parse_token::<TerminalRParen>();
                 PatternTuple::new_green(self.db, lparen, patterns, rparen).into()
             }
             _ => return None,
