@@ -29,12 +29,12 @@ extern func unwrap_nz<T>(a: NonZero::<T>) -> T;
 
 extern func felt_div(a: felt, b: NonZero::<felt>) -> felt;
 
+// TODO(orizi): Consider removing and replacing with `jump_nz(a - b)`.
 extern func felt_eq(a: felt, b: felt) -> bool;
-// TODO(spapini): Get RangeCheck implicit.
-extern func felt_le(a: felt, b: felt) -> (bool);
-extern func felt_ge(a: felt, b: felt) -> (bool);
-extern func felt_lt(a: felt, b: felt) -> (bool);
-extern func felt_gt(a: felt, b: felt) -> (bool);
+extern func felt_le(a: felt, b: felt) -> bool implicits (rc: RangeCheck);
+extern func felt_ge(a: felt, b: felt) -> bool implicits (rc: RangeCheck);
+extern func felt_lt(a: felt, b: felt) -> bool implicits (rc: RangeCheck);
+extern func felt_gt(a: felt, b: felt) -> bool implicits (rc: RangeCheck);
 
 extern func felt_jump_nz(a: felt) -> JumpNzResult::<felt>;
 
