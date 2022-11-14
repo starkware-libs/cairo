@@ -16,6 +16,10 @@ use super::{misc, CompiledInvocation, CompiledInvocationBuilder, InvocationError
 use crate::references::{BinOpExpression, CellExpression, ReferenceExpression, ReferenceValue};
 use crate::relocations::{Relocation, RelocationEntry};
 
+#[cfg(test)]
+#[path = "uint128_test.rs"]
+mod test;
+
 /// Builds instructions for Sierra uint128 operations.
 pub fn build(
     libfunc: &Uint128Concrete,
