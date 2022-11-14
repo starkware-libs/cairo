@@ -2,14 +2,19 @@ use db_utils::define_short_id;
 use defs::ids::{GenericParamId, ImplId, LanguageElementId, ModuleId, TraitId};
 use diagnostics::Diagnostics;
 use diagnostics_proc_macros::DebugWithDb;
-use utils::{try_extract_matches, OptionHelper};
+use syntax::node::ids::SyntaxStablePtrId;
+use syntax::node::TypedSyntaxNode;
+use utils::{extract_matches, try_extract_matches, OptionHelper};
 
+use super::enm::SemanticEnumEx;
 use super::generics::semantic_generic_params;
+use super::strct::SemanticStructEx;
+use crate::corelib::{copy_trait, drop_trait};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::resolve_path::{ResolvedConcreteItem, Resolver};
-use crate::{GenericArgumentId, SemanticDiagnostic};
+use crate::{GenericArgumentId, SemanticDiagnostic, TypeId, TypeLongId};
 
 #[cfg(test)]
 #[path = "trt_test.rs"]
@@ -76,33 +81,35 @@ define_short_id!(ConcreteImplId, ConcreteImplLongId, SemanticGroup, lookup_inter
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
-pub struct ImplData {
+pub struct ImplDeclarationData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
     generic_params: Vec<GenericParamId>,
     /// The concrete trait this impl implements, or None if cannot be resolved.
     concrete_trait: Option<ConcreteTraitId>,
 }
 
-/// Query implementation of [crate::db::SemanticGroup::impl_semantic_diagnostics].
-pub fn impl_semantic_diagnostics(
+/// Query implementation of [crate::db::SemanticGroup::impl_semantic_declaration_diagnostics].
+pub fn impl_semantic_declaration_diagnostics(
     db: &dyn SemanticGroup,
     impl_id: ImplId,
 ) -> Diagnostics<SemanticDiagnostic> {
-    db.priv_impl_semantic_data(impl_id).map(|data| data.diagnostics).unwrap_or_default()
+    db.priv_impl_declaration_data(impl_id).map(|data| data.diagnostics).unwrap_or_default()
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_generic_params].
 pub fn impl_generic_params(db: &dyn SemanticGroup, impl_id: ImplId) -> Option<Vec<GenericParamId>> {
-    Some(db.priv_impl_semantic_data(impl_id)?.generic_params)
+    Some(db.priv_impl_declaration_data(impl_id)?.generic_params)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::priv_impl_semantic_data].
-pub fn priv_impl_semantic_data(db: &dyn SemanticGroup, impl_id: ImplId) -> Option<ImplData> {
+/// Query implementation of [crate::db::SemanticGroup::priv_impl_declaration_data].
+pub fn priv_impl_declaration_data(
+    db: &dyn SemanticGroup,
+    impl_id: ImplId,
+) -> Option<ImplDeclarationData> {
     // TODO(spapini): When asts are rooted on items, don't query module_data directly. Use a
     // selector.
     let module_id = impl_id.module(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_id);
-    // TODO(spapini): Add generic args when they are supported on enums.
     let module_data = db.module_data(module_id)?;
     let impl_ast = module_data.impls.get(&impl_id)?;
     let syntax_db = db.upcast();
@@ -124,7 +131,97 @@ pub fn priv_impl_semantic_data(db: &dyn SemanticGroup, impl_id: ImplId) -> Optio
                 .on_none(|| diagnostics.report(&trait_path_syntax, NotATrait))
         });
 
-    Some(ImplData { diagnostics: diagnostics.build(), generic_params, concrete_trait })
+    Some(ImplDeclarationData { diagnostics: diagnostics.build(), generic_params, concrete_trait })
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
+#[debug_db(dyn SemanticGroup + 'static)]
+pub struct ImplDefinitionData {
+    diagnostics: Diagnostics<SemanticDiagnostic>,
+}
+
+/// Query implementation of [crate::db::SemanticGroup::impl_semantic_definition_diagnostics].
+pub fn impl_semantic_definition_diagnostics(
+    db: &dyn SemanticGroup,
+    impl_id: ImplId,
+) -> Diagnostics<SemanticDiagnostic> {
+    db.priv_impl_definition_data(impl_id).map(|data| data.diagnostics).unwrap_or_default()
+}
+
+/// Query implementation of [crate::db::SemanticGroup::priv_impl_definition_data].
+pub fn priv_impl_definition_data(
+    db: &dyn SemanticGroup,
+    impl_id: ImplId,
+) -> Option<ImplDefinitionData> {
+    let module_id = impl_id.module(db.upcast());
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
+
+    let declaration_data = db.priv_impl_declaration_data(impl_id)?;
+    let concrete_trait = declaration_data.concrete_trait?;
+
+    let module_data = db.module_data(module_id)?;
+    let impl_ast = module_data.impls.get(&impl_id)?;
+    check_special_impls(db, &mut diagnostics, concrete_trait, impl_ast.stable_ptr().untyped());
+
+    Some(ImplDefinitionData { diagnostics: diagnostics.build() })
+}
+
+/// Handle special cases such as Copy and Drop checking.
+fn check_special_impls(
+    db: &dyn SemanticGroup,
+    diagnostics: &mut SemanticDiagnostics,
+    concrete_trait: ConcreteTraitId,
+    stable_ptr: SyntaxStablePtrId,
+) -> Option<()> {
+    let ConcreteTraitLongId { trait_id, generic_args } =
+        db.lookup_intern_concrete_trait(concrete_trait);
+    let copy = copy_trait(db);
+    let drop = drop_trait(db);
+
+    if trait_id == copy {
+        let tys = get_inner_types(db, extract_matches!(generic_args[0], GenericArgumentId::Type))?;
+        if !tys.into_iter().filter_map(|ty| db.type_info(ty)).all(|info| info.duplicatable) {
+            diagnostics.report_by_ptr(stable_ptr, InvalidCopyTraitImpl);
+            return None;
+        }
+    }
+    if trait_id == drop {
+        let tys = get_inner_types(db, extract_matches!(generic_args[0], GenericArgumentId::Type))?;
+        if !tys.into_iter().filter_map(|ty| db.type_info(ty)).all(|info| info.droppable) {
+            diagnostics.report_by_ptr(stable_ptr, InvalidDropTraitImpl);
+            return None;
+        }
+    }
+
+    Some(())
+}
+
+/// Retrieves all the inner types (members of a struct / tuple or variants of an enum).
+/// These are the types that are required to implement some trait,
+/// in order for the original type to be able to implement this trait.
+fn get_inner_types(db: &dyn SemanticGroup, ty: TypeId) -> Option<Vec<TypeId>> {
+    Some(match db.lookup_intern_type(ty) {
+        TypeLongId::Concrete(concrete_type_id) => {
+            // Look for Copy and Drop trait in the defining module.
+            match concrete_type_id {
+                crate::ConcreteTypeId::Struct(concrete_struct_id) => db
+                    .concrete_struct_members(concrete_struct_id)?
+                    .values()
+                    .map(|member| member.ty)
+                    .collect(),
+                crate::ConcreteTypeId::Enum(concrete_enum_id) => db
+                    .concrete_enum_variants(concrete_enum_id)?
+                    .into_iter()
+                    .map(|variant| variant.ty)
+                    .collect(),
+                crate::ConcreteTypeId::Extern(_) => vec![],
+            }
+        }
+        TypeLongId::Tuple(tys) => tys,
+        TypeLongId::GenericParameter(_) | TypeLongId::Never | TypeLongId::Missing => {
+            return None;
+        }
+    })
 }
 
 /// Query implementation of [crate::db::SemanticGroup::find_impls_at_module].
@@ -137,7 +234,7 @@ pub fn find_impls_at_module(
     let impls = db.module_data(module_id)?.impls;
     // TODO(spapini): Index better.
     for impl_id in impls.keys().copied() {
-        let Some(imp_data)= db.priv_impl_semantic_data(impl_id) else {continue};
+        let Some(imp_data)= db.priv_impl_declaration_data(impl_id) else {continue};
         if !imp_data.generic_params.is_empty() {
             // TODO(spapini): Infer generics and substitute.
             continue;

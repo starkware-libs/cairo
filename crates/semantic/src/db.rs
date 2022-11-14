@@ -117,16 +117,31 @@ pub trait SemanticGroup:
 
     // Impl.
     // =======
-    /// Private query to compute data about an impl.
-    #[salsa::invoke(items::trt::priv_impl_semantic_data)]
-    fn priv_impl_semantic_data(&self, impl_id: ImplId) -> Option<items::trt::ImplData>;
-    /// Returns the semantic diagnostics of an impl.
-    #[salsa::invoke(items::trt::impl_semantic_diagnostics)]
-    fn impl_semantic_diagnostics(&self, impl_id: ImplId) -> Diagnostics<SemanticDiagnostic>;
+    /// Private query to compute declaration data about an impl.
+    #[salsa::invoke(items::trt::priv_impl_declaration_data)]
+    fn priv_impl_declaration_data(
+        &self,
+        impl_id: ImplId,
+    ) -> Option<items::trt::ImplDeclarationData>;
+    /// Returns the semantic declaration diagnostics of an impl.
+    #[salsa::invoke(items::trt::impl_semantic_declaration_diagnostics)]
+    fn impl_semantic_declaration_diagnostics(
+        &self,
+        impl_id: ImplId,
+    ) -> Diagnostics<SemanticDiagnostic>;
     /// Returns the generic parameters of an impl.
     #[salsa::invoke(items::trt::impl_generic_params)]
     fn impl_generic_params(&self, impl_id: ImplId) -> Option<Vec<GenericParamId>>;
-    /// Returns the generic parameters of an impl.
+    /// Private query to compute data about an impl.
+    #[salsa::invoke(items::trt::priv_impl_definition_data)]
+    fn priv_impl_definition_data(&self, impl_id: ImplId) -> Option<items::trt::ImplDefinitionData>;
+    /// Returns the semantic definition diagnostics of an impl.
+    #[salsa::invoke(items::trt::impl_semantic_definition_diagnostics)]
+    fn impl_semantic_definition_diagnostics(
+        &self,
+        impl_id: ImplId,
+    ) -> Diagnostics<SemanticDiagnostic>;
+    /// Find implementation for a concrete trait in a module.
     #[salsa::invoke(items::trt::find_impls_at_module)]
     fn find_impls_at_module(
         &self,
@@ -343,7 +358,8 @@ fn module_semantic_diagnostics(
                 diagnostics.extend(db.trait_semantic_diagnostics(*trait_id));
             }
             ModuleItemId::Impl(impl_id) => {
-                diagnostics.extend(db.impl_semantic_diagnostics(*impl_id));
+                diagnostics.extend(db.impl_semantic_declaration_diagnostics(*impl_id));
+                diagnostics.extend(db.impl_semantic_definition_diagnostics(*impl_id));
             }
             ModuleItemId::Submodule(_) => {}
             ModuleItemId::ExternType(_) => {}
