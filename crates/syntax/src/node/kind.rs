@@ -22,6 +22,7 @@ pub enum SyntaxKind {
     ExprIf,
     ElseClause,
     OptionElseClauseEmpty,
+    ExprErrorPropagate,
     StructArgExpr,
     OptionStructArgExprEmpty,
     StructArgSingle,
@@ -161,6 +162,8 @@ pub enum SyntaxKind {
     TerminalEq,
     TokenSemicolon,
     TerminalSemicolon,
+    TokenQuestionMark,
+    TerminalQuestionMark,
     TokenUnderscore,
     TerminalUnderscore,
     TokenLBrace,
@@ -239,6 +242,7 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalDotDot
                 | SyntaxKind::TerminalEq
                 | SyntaxKind::TerminalSemicolon
+                | SyntaxKind::TerminalQuestionMark
                 | SyntaxKind::TerminalUnderscore
                 | SyntaxKind::TerminalLBrace
                 | SyntaxKind::TerminalRBrace
@@ -299,6 +303,7 @@ impl SyntaxKind {
                 | SyntaxKind::TokenDotDot
                 | SyntaxKind::TokenEq
                 | SyntaxKind::TokenSemicolon
+                | SyntaxKind::TokenQuestionMark
                 | SyntaxKind::TokenUnderscore
                 | SyntaxKind::TokenLBrace
                 | SyntaxKind::TokenRBrace
