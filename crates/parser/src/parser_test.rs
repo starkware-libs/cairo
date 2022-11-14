@@ -279,6 +279,7 @@ parser_test!(
         "src/parser_test_data/if",
         "src/parser_test_data/match",
         "src/parser_test_data/pattern",
+        "src/parser_test_data/semicolon",
     ],
     get_diagnostics
 );
