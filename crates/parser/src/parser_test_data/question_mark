@@ -1,0 +1,17 @@
+//! > Handling question mark.
+
+//! > test_function_name
+get_diagnostics
+
+//! > cairo_code
+func f() {
+    let x = calc()?;
+    let y = calc1(calc2()?)?;
+    let z = w?;
+    let block_eval = { other_expr }?;
+    let block_eval = 7 + { other_expr };
+    let multi = error_of_errors????;
+    let super_expr = (a? + b?)?;
+}
+
+//! > expected_diagnostics
