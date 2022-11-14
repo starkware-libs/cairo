@@ -66,6 +66,8 @@ pub fn get_key_fields(kind: SyntaxKind, children: Vec<GreenId>) -> Vec<GreenId> 
         SyntaxKind::ItemExternType => vec![/* name */ children[2]],
         SyntaxKind::ItemTrait => vec![/* name */ children[2]],
         SyntaxKind::TraitBody => vec![],
+        SyntaxKind::TraitItemList => vec![],
+        SyntaxKind::TraitItemFunction => vec![/* name */ children[2]],
         SyntaxKind::ItemImpl => vec![/* name */ children[2]],
         SyntaxKind::ImplBody => vec![],
         SyntaxKind::ItemStruct => vec![/* name */ children[2]],

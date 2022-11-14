@@ -6294,9 +6294,10 @@ impl TraitBody {
     pub fn new_green(
         db: &dyn SyntaxGroup,
         lbrace: TerminalLBraceGreen,
+        items: TraitItemListGreen,
         rbrace: TerminalRBraceGreen,
     ) -> TraitBodyGreen {
-        let children: Vec<GreenId> = vec![lbrace.0, rbrace.0];
+        let children: Vec<GreenId> = vec![lbrace.0, items.0, rbrace.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         TraitBodyGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::TraitBody,
@@ -6308,8 +6309,11 @@ impl TraitBody {
     pub fn lbrace(&self, db: &dyn SyntaxGroup) -> TerminalLBrace {
         TerminalLBrace::from_syntax_node(db, self.children[0].clone())
     }
+    pub fn items(&self, db: &dyn SyntaxGroup) -> TraitItemList {
+        TraitItemList::from_syntax_node(db, self.children[1].clone())
+    }
     pub fn rbrace(&self, db: &dyn SyntaxGroup) -> TerminalRBrace {
-        TerminalRBrace::from_syntax_node(db, self.children[1].clone())
+        TerminalRBrace::from_syntax_node(db, self.children[2].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -6329,7 +6333,11 @@ impl TypedSyntaxNode for TraitBody {
         TraitBodyGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::TraitBody,
             details: GreenNodeDetails::Node {
-                children: vec![TerminalLBrace::missing(db).0, TerminalRBrace::missing(db).0],
+                children: vec![
+                    TerminalLBrace::missing(db).0,
+                    TraitItemList::missing(db).0,
+                    TerminalRBrace::missing(db).0,
+                ],
                 width: 0,
             },
         }))
@@ -6354,6 +6362,212 @@ impl TypedSyntaxNode for TraitBody {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         TraitBodyPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct TraitItemList(ElementList<TraitItem, 1>);
+impl Deref for TraitItemList {
+    type Target = ElementList<TraitItem, 1>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+impl TraitItemList {
+    pub fn new_green(db: &dyn SyntaxGroup, children: Vec<TraitItemGreen>) -> TraitItemListGreen {
+        let width = children.iter().map(|id| db.lookup_intern_green(id.0).width()).sum();
+        TraitItemListGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::TraitItemList,
+            details: GreenNodeDetails::Node {
+                children: children.iter().map(|x| x.0).collect(),
+                width,
+            },
+        }))
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TraitItemListPtr(SyntaxStablePtrId);
+impl TraitItemListPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TraitItemListGreen(pub GreenId);
+impl TypedSyntaxNode for TraitItemList {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TraitItemList);
+    type StablePtr = TraitItemListPtr;
+    type Green = TraitItemListGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        TraitItemListGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::TraitItemList,
+            details: GreenNodeDetails::Node { children: vec![], width: 0 },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        Self(ElementList::new(node))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        TraitItemListPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum TraitItem {
+    Function(TraitItemFunction),
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TraitItemPtr(SyntaxStablePtrId);
+impl TraitItemPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+impl From<TraitItemFunctionPtr> for TraitItemPtr {
+    fn from(value: TraitItemFunctionPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TraitItemFunctionGreen> for TraitItemGreen {
+    fn from(value: TraitItemFunctionGreen) -> Self {
+        Self(value.0)
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TraitItemGreen(pub GreenId);
+impl TypedSyntaxNode for TraitItem {
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
+    type StablePtr = TraitItemPtr;
+    type Green = TraitItemGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        panic!("No missing variant.");
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::TraitItemFunction => {
+                TraitItem::Function(TraitItemFunction::from_syntax_node(db, node))
+            }
+            _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "TraitItem"),
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        match self {
+            TraitItem::Function(x) => x.as_syntax_node(),
+        }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        TraitItemPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct TraitItemFunction {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl TraitItemFunction {
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        attributes: AttributeListGreen,
+        function_kw: TerminalFunctionGreen,
+        name: TerminalIdentifierGreen,
+        generic_params: OptionWrappedGenericParamListGreen,
+        signature: FunctionSignatureGreen,
+        semicolon: TerminalSemicolonGreen,
+    ) -> TraitItemFunctionGreen {
+        let children: Vec<GreenId> =
+            vec![attributes.0, function_kw.0, name.0, generic_params.0, signature.0, semicolon.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        TraitItemFunctionGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::TraitItemFunction,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+}
+impl TraitItemFunction {
+    pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
+        AttributeList::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn function_kw(&self, db: &dyn SyntaxGroup) -> TerminalFunction {
+        TerminalFunction::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
+        TerminalIdentifier::from_syntax_node(db, self.children[2].clone())
+    }
+    pub fn generic_params(&self, db: &dyn SyntaxGroup) -> OptionWrappedGenericParamList {
+        OptionWrappedGenericParamList::from_syntax_node(db, self.children[3].clone())
+    }
+    pub fn signature(&self, db: &dyn SyntaxGroup) -> FunctionSignature {
+        FunctionSignature::from_syntax_node(db, self.children[4].clone())
+    }
+    pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
+        TerminalSemicolon::from_syntax_node(db, self.children[5].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TraitItemFunctionPtr(SyntaxStablePtrId);
+impl TraitItemFunctionPtr {
+    pub fn name_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
+        let ptr = db.lookup_intern_stable_ptr(self.0);
+        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
+            TerminalIdentifierGreen(key_fields[0])
+        } else {
+            panic!("Unexpected key field query on root.");
+        }
+    }
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TraitItemFunctionGreen(pub GreenId);
+impl TypedSyntaxNode for TraitItemFunction {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TraitItemFunction);
+    type StablePtr = TraitItemFunctionPtr;
+    type Green = TraitItemFunctionGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        TraitItemFunctionGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::TraitItemFunction,
+            details: GreenNodeDetails::Node {
+                children: vec![
+                    AttributeList::missing(db).0,
+                    TerminalFunction::missing(db).0,
+                    TerminalIdentifier::missing(db).0,
+                    OptionWrappedGenericParamList::missing(db).0,
+                    FunctionSignature::missing(db).0,
+                    TerminalSemicolon::missing(db).0,
+                ],
+                width: 0,
+            },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::TraitItemFunction,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::TraitItemFunction
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        TraitItemFunctionPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
