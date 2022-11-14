@@ -71,6 +71,7 @@ impl Display for Instruction {
     }
 }
 
+/// Represents a call instruction "call rel/abs target".
 #[derive(Debug, Eq, PartialEq)]
 pub struct CallInstruction {
     pub target: DerefOrImmediate,
@@ -90,7 +91,7 @@ impl CallInstruction {
     }
 }
 
-// Represents the InstructionBody "jmp rel/abs".
+/// Represents the InstructionBody "jmp rel/abs target".
 #[derive(Debug, Eq, PartialEq)]
 pub struct JumpInstruction {
     pub target: DerefOrImmediate,
@@ -143,7 +144,7 @@ pub fn op_size_based_on_res_operands(operand: &ResOperand) -> usize {
     }
 }
 
-// Represents the InstructionBody "a = b" for two operands a, b.
+/// Represents the InstructionBody "a = b" for two operands a, b.
 #[derive(Debug, Eq, PartialEq)]
 pub struct AssertEqInstruction {
     pub a: CellRef,
@@ -160,6 +161,7 @@ impl Display for AssertEqInstruction {
     }
 }
 
+/// Represents a return instruction, "ret".
 #[derive(Debug, Eq, PartialEq)]
 pub struct RetInstruction {}
 impl Display for RetInstruction {
@@ -174,7 +176,7 @@ impl RetInstruction {
     }
 }
 
-// Represents the InstructionBody "a = b" for two operands a, b.
+/// Represents the InstructionBody "ap += op" for a given operand op.
 #[derive(Debug, Eq, PartialEq)]
 pub struct AddApInstruction {
     pub operand: ResOperand,
