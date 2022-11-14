@@ -409,13 +409,13 @@ impl BlockFlowMerger {
     /// Finalizes the merger, deciding on the correct pulls and pushes for all the blocks
     /// encountered.
     fn finalize(
-        self,
+        mut self,
         ctx: &LoweringContext<'_>,
         extra_outputs: &[semantic::VarId],
     ) -> (BlockMergerFinalized, Option<Box<BlockScope>>) {
         let mut pulls = OrderedHashMap::default();
         let mut pushes = Vec::new();
-        let mut bring_back = Vec::new();
+        let mut bring_back = OrderedHashMap::default();
         for (semantic_var_id, var) in self.pulls.into_iter() {
             if self.moved_semantic_vars.contains(&semantic_var_id) {
                 // Variable was moved inside a block. Pull without pushing back.
@@ -427,7 +427,11 @@ impl BlockFlowMerger {
             } else {
                 // Semantic variable wasn't moved nor changed on any branch. Bring it back to
                 // calling scope if possible.
-                bring_back.push(semantic_var_id)
+                let parent_scope = self.parent_scope.as_mut().unwrap();
+                if !parent_scope.living_variables.contains(var.var_id()) {
+                    parent_scope.living_variables.introduce_var(self.splitter.split(&var));
+                }
+                bring_back.insert(semantic_var_id, var);
             }
         }
         // TODO(spapini): extra_outputs might not be alive. Currently, this panics.
@@ -441,24 +445,34 @@ impl BlockFlowMerger {
 
         // TODO(spapini): Optimize pushes by maintaining shouldnt_push.
         (
-            BlockMergerFinalized { end_info, splitter: self.splitter, pulls, pushes, bring_back },
+            BlockMergerFinalized {
+                end_info,
+                pulls,
+                splitter: self.splitter,
+                outer_var_info: OuterVarInfo { pushes, bring_back },
+            },
             self.parent_scope,
         )
     }
 }
 
+/// Information about the effect on the variables of the outer scope.
+pub struct OuterVarInfo {
+    /// Variables that are returned from current scope to the calling scope via block outputs.
+    pub pushes: Vec<semantic::VarId>,
+    /// Variables that are returned from current scope to the calling scope by not changing them.
+    pub bring_back: OrderedHashMap<semantic::VarId, LivingVar>,
+}
 /// Used to finalize blocks. Generated after calling [`BlockFlowMerger::finalize()`].
 pub struct BlockMergerFinalized {
-    // End information for the block.
+    /// End information for the block.
     pub end_info: BlockEndInfo,
     /// Holds the pulled variables and allows splitting them for parallel branches. See [Splitter].
     splitter: Splitter,
-    // Variables that are pulled from the calling scope to current scope.
+    /// Variables that are pulled from the calling scope to current scope.
     pulls: OrderedHashMap<semantic::VarId, LivingVar>,
-    // Variables that are returned from current scope to the calling scope via block outputs.
-    pub pushes: Vec<semantic::VarId>,
-    // Variables that are returned from current scope to the calling scope by not changing them.
-    bring_back: Vec<semantic::VarId>,
+    /// Information about the effect on the variables of the outer scope.
+    pub outer_var_info: OuterVarInfo,
 }
 impl BlockMergerFinalized {
     /// Finalizes a sealed block.
@@ -469,8 +483,11 @@ impl BlockMergerFinalized {
     ) -> BlockFinalized {
         let pulls: OrderedHashMap<_, _> =
             self.pulls.iter().map(|(key, var)| (*key, self.splitter.split(var))).collect();
-        let params =
-            BlockFinalizeParams { pulls, pushes: &self.pushes, bring_back: &self.bring_back };
+        let params = BlockFinalizeParams {
+            pulls,
+            pushes: &self.outer_var_info.pushes,
+            bring_back: &self.outer_var_info.bring_back.keys().copied().collect::<Vec<_>>(),
+        };
         block_sealed.finalize(ctx, params)
     }
 }

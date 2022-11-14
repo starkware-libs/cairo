@@ -34,10 +34,10 @@ pub fn module_sierra_diagnostics(
             }
             ModuleItemId::Enum(_) => {}
             ModuleItemId::Struct(_) => {}
+            ModuleItemId::Impl(_) => {}
             ModuleItemId::Submodule(_)
             | ModuleItemId::Use(_)
             | ModuleItemId::Trait(_)
-            | ModuleItemId::Impl(_)
             | ModuleItemId::ExternType(_)
             | ModuleItemId::ExternFunction(_) => todo!("Not supported yet."),
         }

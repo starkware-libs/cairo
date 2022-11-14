@@ -1,4 +1,6 @@
 extern type uint128;
+impl Uint128Copy of Copy::<uint128>;
+impl Uint128Drop of Drop::<uint128>;
 
 extern func uint128_from_felt(a: felt) -> Option::<uint128> implicits (rc: RangeCheck);
 extern func uint128_to_felt(a: uint128) -> felt;

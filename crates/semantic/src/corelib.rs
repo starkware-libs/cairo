@@ -8,6 +8,8 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind;
 use crate::expr::compute::ComputationContext;
 use crate::items::enm::SemanticEnumEx;
+use crate::items::trt::ConcreteTraitId;
+use crate::resolve_path::ResolvedGenericItem;
 use crate::types::ConcreteEnumLongId;
 use crate::{
     semantic, ConcreteEnumId, ConcreteFunction, ConcreteVariant, Expr, ExprId, ExprTuple,
@@ -196,4 +198,27 @@ fn get_core_function_id(
     db.intern_function(FunctionLongId {
         function: ConcreteFunction { generic_function, generic_args },
     })
+}
+
+pub fn copy_trait(db: &dyn SemanticGroup, ty: TypeId) -> ConcreteTraitId {
+    get_core_trait_by_name(db, "Copy".into(), vec![GenericArgumentId::Type(ty)])
+}
+
+pub fn drop_trait(db: &dyn SemanticGroup, ty: TypeId) -> ConcreteTraitId {
+    get_core_trait_by_name(db, "Drop".into(), vec![GenericArgumentId::Type(ty)])
+}
+
+/// Given a core library trait name and its generic arguments, returns [ConcreteTraitId].
+fn get_core_trait_by_name(
+    db: &dyn SemanticGroup,
+    name: SmolStr,
+    generic_args: Vec<GenericArgumentId>,
+) -> ConcreteTraitId {
+    let core_module = db.core_module();
+    // This should not fail if the corelib is present.
+    let use_id =
+        extract_matches!(db.module_item_by_name(core_module, name).unwrap(), ModuleItemId::Use);
+    let trait_id =
+        extract_matches!(db.use_resolved_item(use_id).unwrap(), ResolvedGenericItem::Trait);
+    db.intern_concrete_trait(semantic::ConcreteTraitLongId { trait_id, generic_args })
 }

@@ -2,11 +2,12 @@ use std::collections::HashMap;
 
 use db_utils::define_short_id;
 use debug::DebugWithDb;
-use defs::ids::{EnumId, ExternTypeId, GenericParamId, GenericTypeId, StructId};
+use defs::ids::{EnumId, ExternTypeId, GenericParamId, GenericTypeId, LanguageElementId, StructId};
 use itertools::Itertools;
 use syntax::node::ast;
 use utils::OptionFrom;
 
+use crate::corelib::{copy_trait, drop_trait};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
@@ -279,4 +280,37 @@ pub fn substitute_generics(
             .unwrap_or(ty),
         TypeLongId::Missing | TypeLongId::Never => ty,
     }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Default)]
+pub struct TypeInfo {
+    /// Can the type be (trivially) dropped.
+    pub droppable: bool,
+    /// Can the type be (trivially) duplicated.
+    pub duplicatable: bool,
+}
+
+/// Query implementation of [crate::db::SemanticGroup::type_info].
+pub fn type_info(db: &dyn SemanticGroup, ty: TypeId) -> Option<TypeInfo> {
+    // TODO(spapini): Validate Copy and Drop for structs and enums.
+    Some(match db.lookup_intern_type(ty) {
+        TypeLongId::Concrete(concrete_type_id) => {
+            // Look for Copy and Drop trait in the defining module.
+            let module = concrete_type_id.generic_type(db).module(db.upcast());
+            let droppable = !db.find_impls_at_module(module, drop_trait(db, ty))?.is_empty();
+            let duplicatable = !db.find_impls_at_module(module, copy_trait(db, ty))?.is_empty();
+            TypeInfo { droppable, duplicatable }
+        }
+        TypeLongId::Tuple(tys) => {
+            let infos = tys.into_iter().map(|ty| db.type_info(ty)).collect::<Option<Vec<_>>>()?;
+            let droppable = infos.iter().all(|info| info.droppable);
+            let duplicatable = infos.iter().all(|info| info.duplicatable);
+            TypeInfo { droppable, duplicatable }
+        }
+        TypeLongId::GenericParameter(_) => todo!(),
+        TypeLongId::Never => TypeInfo { droppable: true, duplicatable: true },
+        TypeLongId::Missing => {
+            return None;
+        }
+    })
 }

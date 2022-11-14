@@ -13,6 +13,7 @@ use parser::db::ParserGroup;
 use smol_str::SmolStr;
 use utils::ordered_hash_map::OrderedHashMap;
 
+use crate::items::trt::{ConcreteImplId, ConcreteTraitId};
 use crate::resolve_path::ResolvedGenericItem;
 use crate::{
     corelib, items, semantic, types, FreeFunctionDefinition, FunctionId, SemanticDiagnostic,
@@ -125,6 +126,13 @@ pub trait SemanticGroup:
     /// Returns the generic parameters of an impl.
     #[salsa::invoke(items::trt::impl_generic_params)]
     fn impl_generic_params(&self, impl_id: ImplId) -> Option<Vec<GenericParamId>>;
+    /// Returns the generic parameters of an impl.
+    #[salsa::invoke(items::trt::find_impls_at_module)]
+    fn find_impls_at_module(
+        &self,
+        module_id: ModuleId,
+        concrete_trait_id: ConcreteTraitId,
+    ) -> Option<Vec<ConcreteImplId>>;
 
     // Free function.
     // ==============
@@ -270,6 +278,13 @@ pub trait SemanticGroup:
         &self,
         generic_type: GenericTypeId,
     ) -> Option<Vec<GenericParamId>>;
+
+    // Concrete type.
+    // =================
+    /// Returns the generic_type of a generic function. This include free types, extern
+    /// types, etc...
+    #[salsa::invoke(types::type_info)]
+    fn type_info(&self, ty: types::TypeId) -> Option<types::TypeInfo>;
 
     // Expression.
     // ===========
