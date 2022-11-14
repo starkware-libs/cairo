@@ -165,12 +165,87 @@
     │   │       │   │   ├── let_kw (kind: TokenLet): 'let'
     │   │       │   │   ├── pattern (kind: ExprPath)
     │   │       │   │   │   └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │       └── ident (kind: TokenIdentifier): 'block_combination'
+    │   │       │   │   ├── type_clause (kind: OptionTypeClauseEmpty) []
+    │   │       │   │   ├── eq (kind: TokenEq): '='
+    │   │       │   │   ├── rhs (kind: ExprBinary)
+    │   │       │   │   │   ├── lhs (kind: ExprBinary)
+    │   │       │   │   │   │   ├── lhs (kind: ExprBlock)
+    │   │       │   │   │   │   │   ├── lbrace (kind: TokenLBrace): '{'
+    │   │       │   │   │   │   │   ├── statements (kind: StatementList)
+    │   │       │   │   │   │   │   │   └── child #0 (kind: StatementExpr)
+    │   │       │   │   │   │   │   │       ├── expr (kind: TokenLiteralNumber): '5'
+    │   │       │   │   │   │   │   │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
+    │   │       │   │   │   │   │   └── rbrace (kind: TokenRBrace): '}'
+    │   │       │   │   │   │   ├── op (kind: TokenPlus): '+'
+    │   │       │   │   │   │   └── rhs (kind: ExprMatch)
+    │   │       │   │   │   │       ├── match_kw (kind: TokenMatch): 'match'
+    │   │       │   │   │   │       ├── expr (kind: ExprPath)
+    │   │       │   │   │   │       │   └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │   │       │       └── ident (kind: TokenIdentifier): 'x'
+    │   │       │   │   │   │       ├── lbrace (kind: TokenLBrace): '{'
+    │   │       │   │   │   │       ├── arms (kind: MatchArms)
+    │   │       │   │   │   │       │   ├── item #0 (kind: MatchArm)
+    │   │       │   │   │   │       │   │   ├── pattern (kind: PatternEnum)
+    │   │       │   │   │   │       │   │   │   ├── path (kind: ExprPath)
+    │   │       │   │   │   │       │   │   │   │   ├── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │   │       │   │   │   │   │   └── ident (kind: TokenIdentifier): 'E'
+    │   │       │   │   │   │       │   │   │   │   ├── separator #0 (kind: TokenColonColon): '::'
+    │   │       │   │   │   │       │   │   │   │   └── item #1 (kind: PathSegmentSimple)
+    │   │       │   │   │   │       │   │   │   │       └── ident (kind: TokenIdentifier): 'V1'
+    │   │       │   │   │   │       │   │   │   ├── lparen (kind: TokenLParen): '('
+    │   │       │   │   │   │       │   │   │   ├── pattern (kind: TokenUnderscore): '_'
+    │   │       │   │   │   │       │   │   │   └── rparen (kind: TokenRParen): ')'
+    │   │       │   │   │   │       │   │   ├── arrow (kind: TokenMatchArrow): '=>'
+    │   │       │   │   │   │       │   │   └── expression (kind: TokenLiteralNumber): '4'
+    │   │       │   │   │   │       │   ├── separator #0 (kind: TokenComma): ','
+    │   │       │   │   │   │       │   └── item #1 (kind: MatchArm)
+    │   │       │   │   │   │       │       ├── pattern (kind: PatternEnum)
+    │   │       │   │   │   │       │       │   ├── path (kind: ExprPath)
+    │   │       │   │   │   │       │       │   │   ├── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │   │       │       │   │   │   └── ident (kind: TokenIdentifier): 'E'
+    │   │       │   │   │   │       │       │   │   ├── separator #0 (kind: TokenColonColon): '::'
+    │   │       │   │   │   │       │       │   │   └── item #1 (kind: PathSegmentSimple)
+    │   │       │   │   │   │       │       │   │       └── ident (kind: TokenIdentifier): 'V2'
+    │   │       │   │   │   │       │       │   ├── lparen (kind: TokenLParen): '('
+    │   │       │   │   │   │       │       │   ├── pattern (kind: TokenUnderscore): '_'
+    │   │       │   │   │   │       │       │   └── rparen (kind: TokenRParen): ')'
+    │   │       │   │   │   │       │       ├── arrow (kind: TokenMatchArrow): '=>'
+    │   │       │   │   │   │       │       └── expression (kind: TokenLiteralNumber): '2'
+    │   │       │   │   │   │       └── rbrace (kind: TokenRBrace): '}'
+    │   │       │   │   │   ├── op (kind: TokenMinus): '-'
+    │   │       │   │   │   └── rhs (kind: ExprIf)
+    │   │       │   │   │       ├── if_kw (kind: TokenIf): 'if'
+    │   │       │   │   │       ├── condition (kind: ExprPath)
+    │   │       │   │   │       │   └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │       │       └── ident (kind: TokenIdentifier): 'cond'
+    │   │       │   │   │       ├── if_block (kind: ExprBlock)
+    │   │       │   │   │       │   ├── lbrace (kind: TokenLBrace): '{'
+    │   │       │   │   │       │   ├── statements (kind: StatementList)
+    │   │       │   │   │       │   │   └── child #0 (kind: StatementExpr)
+    │   │       │   │   │       │   │       ├── expr (kind: TokenLiteralNumber): '32'
+    │   │       │   │   │       │   │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
+    │   │       │   │   │       │   └── rbrace (kind: TokenRBrace): '}'
+    │   │       │   │   │       └── else_clause (kind: ElseClause)
+    │   │       │   │   │           ├── else_kw (kind: TokenElse): 'else'
+    │   │       │   │   │           └── else_block (kind: ExprBlock)
+    │   │       │   │   │               ├── lbrace (kind: TokenLBrace): '{'
+    │   │       │   │   │               ├── statements (kind: StatementList)
+    │   │       │   │   │               │   └── child #0 (kind: StatementExpr)
+    │   │       │   │   │               │       ├── expr (kind: TokenLiteralNumber): '1'
+    │   │       │   │   │               │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
+    │   │       │   │   │               └── rbrace (kind: TokenRBrace): '}'
+    │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
+    │   │       │   ├── child #6 (kind: StatementLet)
+    │   │       │   │   ├── let_kw (kind: TokenLet): 'let'
+    │   │       │   │   ├── pattern (kind: ExprPath)
+    │   │       │   │   │   └── item #0 (kind: PathSegmentSimple)
     │   │       │   │   │       └── ident (kind: TokenIdentifier): 'x'
     │   │       │   │   ├── type_clause (kind: OptionTypeClauseEmpty) []
     │   │       │   │   ├── eq (kind: TokenEq): '='
     │   │       │   │   ├── rhs (kind: TokenTrue): 'true'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
-    │   │       │   ├── child #6 (kind: StatementExpr)
+    │   │       │   ├── child #7 (kind: StatementExpr)
     │   │       │   │   ├── expr (kind: ExprBinary)
     │   │       │   │   │   ├── lhs (kind: ExprPath)
     │   │       │   │   │   │   └── item #0 (kind: PathSegmentSimple)
@@ -178,7 +253,7 @@
     │   │       │   │   │   ├── op (kind: TokenEq): '='
     │   │       │   │   │   └── rhs (kind: TokenLiteralNumber): '5'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
-    │   │       │   ├── child #7 (kind: StatementExpr)
+    │   │       │   ├── child #8 (kind: StatementExpr)
     │   │       │   │   ├── expr (kind: ExprFunctionCall)
     │   │       │   │   │   ├── path (kind: ExprPath)
     │   │       │   │   │   │   └── item #0 (kind: PathSegmentSimple)
@@ -191,7 +266,7 @@
     │   │       │   │   │       │           └── ident (kind: TokenIdentifier): 'x'
     │   │       │   │   │       └── rparen (kind: TokenRParen): ')'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
-    │   │       │   ├── child #8 (kind: StatementExpr)
+    │   │       │   ├── child #9 (kind: StatementExpr)
     │   │       │   │   ├── expr (kind: ExprFunctionCall)
     │   │       │   │   │   ├── path (kind: ExprPath)
     │   │       │   │   │   │   └── item #0 (kind: PathSegmentWithGenericArgs)
@@ -212,7 +287,7 @@
     │   │       │   │   │       │           └── ident (kind: TokenIdentifier): 'x'
     │   │       │   │   │       └── rparen (kind: TokenRParen): ')'
     │   │       │   │   └── semicolon (kind: OptionTerminalSemicolonEmpty) []
-    │   │       │   └── child #9 (kind: StatementReturn)
+    │   │       │   └── child #10 (kind: StatementReturn)
     │   │       │       ├── return_kw (kind: TokenReturn): 'return'
     │   │       │       ├── expr (kind: ExprPath)
     │   │       │       │   └── item #0 (kind: PathSegmentSimple)
@@ -354,32 +429,32 @@ func foo(,var1: int,, mut ref var2: felt,) -> int {
                     ^
 
 error: Missing token TerminalRBrace.
- --> test1.cairo:25:14
+ --> test1.cairo:27:14
     return x;
              ^
 
 error: Missing token TerminalSemicolon.
- --> test1.cairo:30:47
+ --> test1.cairo:32:47
 extern func glee<A, b>(var1: int,) -> crate::S<int>;
                                               ^
 
 error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/Attribute.
- --> test1.cairo:30:47
+ --> test1.cairo:32:47
 extern func glee<A, b>(var1: int,) -> crate::S<int>;
                                               ^
 
 error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/Attribute.
- --> test1.cairo:30:48
+ --> test1.cairo:32:48
 extern func glee<A, b>(var1: int,) -> crate::S<int>;
                                                ^*^
 
 error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/Attribute.
- --> test1.cairo:30:51
+ --> test1.cairo:32:51
 extern func glee<A, b>(var1: int,) -> crate::S<int>;
                                                   ^
 
 error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/Attribute.
- --> test1.cairo:30:52
+ --> test1.cairo:32:52
 extern func glee<A, b>(var1: int,) -> crate::S<int>;
                                                    ^
 
