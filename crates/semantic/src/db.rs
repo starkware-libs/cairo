@@ -10,7 +10,7 @@ use defs::ids::{
 };
 use diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use filesystem::db::{AsFilesGroupMut, FilesGroup};
-use filesystem::ids::FileId;
+use filesystem::ids::{FileId, FileLongId};
 use parser::db::ParserGroup;
 use smol_str::SmolStr;
 use syntax::node::ast;
@@ -549,12 +549,18 @@ fn module_semantic_diagnostics(
                     if db.file_content(file_id).is_none() {
                         // Note that the error location is in the parent module, not the
                         // submodule.
+
+                        let path = match db.lookup_intern_file(file_id) {
+                            FileLongId::OnDisk(path) => path.display().to_string(),
+                            FileLongId::Virtual(_) => panic!("Expected OnDisk file."),
+                        };
+
                         diagnostics.add(SemanticDiagnostic {
                             stable_location: StableLocation::new(
                                 submodule_id.module_file(db.upcast()),
                                 submodule_id.stable_ptr(db.upcast()).untyped(),
                             ),
-                            kind: SemanticDiagnosticKind::FileNotFound,
+                            kind: SemanticDiagnosticKind::ModuleFileNotFound { path },
                         });
                     }
                 }

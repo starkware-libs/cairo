@@ -61,7 +61,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
 
     fn format(&self, db: &Self::DbType) -> String {
         match &self.kind {
-            SemanticDiagnosticKind::FileNotFound => "File not found.".into(),
+            SemanticDiagnosticKind::ModuleFileNotFound { path } => {
+                format!("Module file not found. Expected path: {path}")
+            }
             SemanticDiagnosticKind::Unsupported => "Unsupported feature.".into(),
             SemanticDiagnosticKind::UnknownLiteral => "Unknown literal.".into(),
             SemanticDiagnosticKind::UnsupportedUnaryOperator { op, ty } => {
@@ -397,7 +399,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum SemanticDiagnosticKind {
-    FileNotFound,
+    ModuleFileNotFound {
+        path: String,
+    },
     Unsupported,
     UnknownLiteral,
     UnsupportedUnaryOperator {

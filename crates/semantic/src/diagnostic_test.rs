@@ -29,15 +29,24 @@ semantic_test!(
 fn test_missing_module_file() {
     let mut db_val = SemanticDatabaseForTesting::default();
     let db = &mut db_val;
-    let crate_id = setup_test_crate(db, "mod abc;");
+    let crate_id = setup_test_crate(
+        db,
+        "
+    mod a {
+        mod abc;
+    }",
+    );
+
+    let submodule_id =
+        *db.module_submodules(ModuleId::CrateRoot(crate_id)).unwrap().first().unwrap();
 
     assert_eq!(
-        db.module_semantic_diagnostics(ModuleId::CrateRoot(crate_id)).unwrap().format(db),
+        db.module_semantic_diagnostics(submodule_id).unwrap().format(db),
         indoc! {"
-            error: File not found.
-             --> lib.cairo:1:1
-            mod abc;
-            ^******^
+            error: Module file not found. Expected path: src/a/abc.cairo
+             --> lib.cairo:3:9
+                    mod abc;
+                    ^******^
 
             "
         },
