@@ -11,6 +11,7 @@ use crate::corelib::{concrete_copy_trait, concrete_drop_trait};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
+use crate::items::trt::{find_impls_at_context, ImplLookupContext};
 use crate::resolve_path::{ResolvedConcreteItem, Resolver};
 use crate::{semantic, GenericArgumentId};
 
@@ -291,20 +292,32 @@ pub struct TypeInfo {
 }
 
 /// Query implementation of [crate::db::SemanticGroup::type_info].
-pub fn type_info(db: &dyn SemanticGroup, ty: TypeId) -> Option<TypeInfo> {
+pub fn type_info(
+    db: &dyn SemanticGroup,
+    mut lookup_context: ImplLookupContext,
+    ty: TypeId,
+) -> Option<TypeInfo> {
     // TODO(spapini): Validate Copy and Drop for structs and enums.
     Some(match db.lookup_intern_type(ty) {
         TypeLongId::Concrete(concrete_type_id) => {
-            // Look for Copy and Drop trait in the defining module.
             let module = concrete_type_id.generic_type(db).module(db.upcast());
+            // Look for Copy and Drop trait also in the defining module.
+            if !lookup_context.extra_modules.contains(&module) {
+                lookup_context.extra_modules.push(module);
+            }
             let droppable =
-                !db.find_impls_at_module(module, concrete_drop_trait(db, ty))?.is_empty();
+                !find_impls_at_context(db, &lookup_context, concrete_drop_trait(db, ty))?
+                    .is_empty();
             let duplicatable =
-                !db.find_impls_at_module(module, concrete_copy_trait(db, ty))?.is_empty();
+                !find_impls_at_context(db, &lookup_context, concrete_copy_trait(db, ty))?
+                    .is_empty();
             TypeInfo { droppable, duplicatable }
         }
         TypeLongId::Tuple(tys) => {
-            let infos = tys.into_iter().map(|ty| db.type_info(ty)).collect::<Option<Vec<_>>>()?;
+            let infos = tys
+                .into_iter()
+                .map(|ty| db.type_info(lookup_context.clone(), ty))
+                .collect::<Option<Vec<_>>>()?;
             let droppable = infos.iter().all(|info| info.droppable);
             let duplicatable = infos.iter().all(|info| info.duplicatable);
             TypeInfo { droppable, duplicatable }

@@ -1,4 +1,7 @@
+impl MyCopy of Copy::<Option::<(felt, felt)>>;
+
 func foo(x: Option::<(felt, felt)>) -> Option::<felt> {
+    let y = x;
     match x {
         Option::Some (x) => {
             let (x, y) = x;
