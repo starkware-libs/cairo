@@ -1,9 +1,9 @@
-use casm::ap_change::{ApChange, ApplyApChange};
+use casm::ap_change::ApplyApChange;
 use casm::casm;
 use casm::instructions::InstructionBody;
 use casm::operand::{ap_cell_ref, DerefOrImmediate};
 use itertools::chain;
-use num_bigint::{BigInt, ToBigInt};
+use num_bigint::BigInt;
 use sierra::extensions::felt::FeltOperator;
 use sierra::extensions::integer::{
     IntOperator, Uint128BinaryOperationConcreteLibFunc, Uint128Concrete,
@@ -30,10 +30,8 @@ pub fn build(
         )) => Err(InvocationError::NotImplemented(builder.invocation.clone())),
         Uint128Concrete::JumpNotZero(_) => misc::build_jump_nz(builder),
         Uint128Concrete::Const(libfunc) => Ok(builder.build_only_reference_changes(
-            [ReferenceExpression::from_cell(CellExpression::Immediate(
-                libfunc.c.to_bigint().unwrap(),
-            ))]
-            .into_iter(),
+            [ReferenceExpression::from_cell(CellExpression::Immediate(BigInt::from(libfunc.c)))]
+                .into_iter(),
         )),
         Uint128Concrete::FromFelt(_) => build_uint128_from_felt(builder),
         Uint128Concrete::ToFelt(_) => misc::build_identity(builder),
@@ -72,7 +70,7 @@ fn build_uint128_op(
                 }
                 _ => panic!("malformed invocation"),
             };
-            let uint128_limit: BigInt = u128::MAX.to_bigint().unwrap() + 1;
+            let uint128_limit: BigInt = BigInt::from(u128::MAX) + 1;
             // The code up to the success branch.
             let mut before_success_branch = match op {
                 IntOperator::Add => casm! {
@@ -82,7 +80,7 @@ fn build_uint128_op(
                     // Overflow:
                     // Here we know that 2**128 <= a + b < 2 * (2**128 - 1).
                     [ap + 0] = [ap - 2] + (-uint128_limit), ap++;
-                    [ap - 1] = [[range_check.apply_ap_change(ApChange::Known(3)).unwrap()]];
+                    [ap - 1] = [[range_check.unchecked_apply_known_ap_change(3)]];
                     jmp rel 0; // Fixed in relocations.
                 },
                 IntOperator::Sub => casm! {
@@ -92,7 +90,7 @@ fn build_uint128_op(
                     // Underflow:
                     // Here we know that 0 - (2**128 - 1) <= a - b < 0.
                     [ap + 0] = [ap - 2] + uint128_limit, ap++;
-                    [ap - 1] = [[range_check.apply_ap_change(ApChange::Known(3)).unwrap()]];
+                    [ap - 1] = [[range_check.unchecked_apply_known_ap_change(3)]];
                     jmp rel 0; // Fixed in relocations.
                 },
                 _ => unreachable!("Only supported options in arm."),
@@ -106,11 +104,11 @@ fn build_uint128_op(
                 )
                 .jump_offset,
                 DerefOrImmediate::Immediate
-            ) = branch_offset.to_bigint().unwrap();
+            ) = BigInt::from(branch_offset);
             let relocation_index = before_success_branch.instructions.len() - 1;
             let success_branch = casm! {
                 // No overflow:
-                [ap - 2] = [[range_check.apply_ap_change(ApChange::Known(2)).unwrap()]];
+                [ap - 2] = [[range_check.unchecked_apply_known_ap_change(2)]];
             };
 
             Ok(builder.build(
@@ -123,7 +121,7 @@ fn build_uint128_op(
                     vec![
                         ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
                             op: FeltOperator::Add,
-                            a: range_check.apply_ap_change(ApChange::Known(2)).unwrap(),
+                            a: range_check.unchecked_apply_known_ap_change(2),
                             b: DerefOrImmediate::from(1),
                         })),
                         ReferenceExpression::from_cell(CellExpression::Deref(ap_cell_ref(-2))),
@@ -131,7 +129,7 @@ fn build_uint128_op(
                     .into_iter(),
                     vec![ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
                         op: FeltOperator::Add,
-                        a: range_check.apply_ap_change(ApChange::Known(3)).unwrap(),
+                        a: range_check.unchecked_apply_known_ap_change(3),
                         b: DerefOrImmediate::from(1),
                     }))]
                     .into_iter(),
@@ -193,8 +191,8 @@ fn build_uint128_from_felt(
                 [ap + 0] = value, ap++;
                 [ap + 0] = [ap - 2] * uint128_limit, ap++;
                 value = [ap - 1] + [ap - 2];
-                [ap - 2] = [[range_check.apply_ap_change(ApChange::Known(4)).unwrap()]];
-                [ap - 3] = [[range_check.apply_ap_change(ApChange::Known(4)).unwrap()] + 1];
+                [ap - 2] = [[range_check.unchecked_apply_known_ap_change(4)]];
+                [ap - 3] = [[range_check.unchecked_apply_known_ap_change(4)] + 1];
                 jmp rel 0; // Fixed in relocations.
             };
             let branch_offset = before_success_branch.current_code_offset;
@@ -209,7 +207,7 @@ fn build_uint128_from_felt(
             let relocation_index = before_success_branch.instructions.len() - 1;
             let success_branch = casm! {
                 // No overflow:
-                value = [[range_check.apply_ap_change(ApChange::Known(1)).unwrap()]];
+                value = [[(range_check.unchecked_apply_known_ap_change(1))]];
             };
 
             Ok(builder.build(
@@ -222,17 +220,17 @@ fn build_uint128_from_felt(
                     vec![
                         ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
                             op: FeltOperator::Add,
-                            a: range_check.apply_ap_change(ApChange::Known(1)).unwrap(),
+                            a: range_check.unchecked_apply_known_ap_change(1),
                             b: DerefOrImmediate::Immediate(BigInt::from(1)),
                         })),
                         ReferenceExpression::from_cell(CellExpression::Deref(
-                            value.apply_ap_change(ApChange::Known(1)).unwrap(),
+                            value.unchecked_apply_known_ap_change(1),
                         )),
                     ]
                     .into_iter(),
                     vec![ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
                         op: FeltOperator::Add,
-                        a: range_check.apply_ap_change(ApChange::Known(4)).unwrap(),
+                        a: range_check.unchecked_apply_known_ap_change(4),
                         b: DerefOrImmediate::Immediate(BigInt::from(2)),
                     }))]
                     .into_iter(),
@@ -244,13 +242,13 @@ fn build_uint128_from_felt(
             let output_expressions = [
                 vec![
                     ReferenceExpression::from_cell(CellExpression::Deref(
-                        range_check.apply_ap_change(ApChange::Known(1)).unwrap(),
+                        range_check.unchecked_apply_known_ap_change(1),
                     )),
                     ReferenceExpression::from_cell(CellExpression::Immediate(value.clone())),
                 ]
                 .into_iter(),
                 vec![ReferenceExpression::from_cell(CellExpression::Deref(
-                    range_check.apply_ap_change(ApChange::Known(4)).unwrap(),
+                    range_check.unchecked_apply_known_ap_change(4),
                 ))]
                 .into_iter(),
             ]
