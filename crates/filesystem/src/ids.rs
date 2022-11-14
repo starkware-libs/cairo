@@ -38,6 +38,13 @@ impl FileId {
             FileLongId::Virtual(vf) => vf.name.to_string(),
         }
     }
+
+    pub fn full_path(self, db: &dyn FilesGroup) -> String {
+        match db.lookup_intern_file(self) {
+            FileLongId::OnDisk(path) => path.to_str().unwrap_or("<unknown>").to_string(),
+            FileLongId::Virtual(vf) => vf.name.to_string(),
+        }
+    }
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
