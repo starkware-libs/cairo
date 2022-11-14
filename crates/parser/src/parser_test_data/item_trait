@@ -59,7 +59,9 @@ SyntaxFile
 test_partial_parser_tree
 
 //! > cairo_code
-trait Foo<T> {}
+trait Foo<T> {
+    func foo<S>(x: T, y: S);
+}
 impl FooImpl<S> of Foo::<S> {}
 
 //! > top_level_kind
@@ -82,6 +84,41 @@ SyntaxFile
     │   │   │   └── rangle (kind: TokenGT): '>'
     │   │   └── body (kind: TraitBody)
     │   │       ├── lbrace (kind: TokenLBrace): '{'
+    │   │       ├── items (kind: TraitItemList)
+    │   │       │   └── child #0 (kind: TraitItemFunction)
+    │   │       │       ├── attributes (kind: AttributeList) []
+    │   │       │       ├── function_kw (kind: TokenFunction): 'func'
+    │   │       │       ├── name (kind: TokenIdentifier): 'foo'
+    │   │       │       ├── generic_params (kind: WrappedGenericParamList)
+    │   │       │       │   ├── langle (kind: TokenLT): '<'
+    │   │       │       │   ├── generic_params (kind: GenericParamList)
+    │   │       │       │   │   └── item #0 (kind: GenericParam)
+    │   │       │       │   │       └── name (kind: TokenIdentifier): 'S'
+    │   │       │       │   └── rangle (kind: TokenGT): '>'
+    │   │       │       ├── signature (kind: FunctionSignature)
+    │   │       │       │   ├── lparen (kind: TokenLParen): '('
+    │   │       │       │   ├── parameters (kind: ParamList)
+    │   │       │       │   │   ├── item #0 (kind: Param)
+    │   │       │       │   │   │   ├── modifiers (kind: ModifierList) []
+    │   │       │       │   │   │   ├── name (kind: TokenIdentifier): 'x'
+    │   │       │       │   │   │   └── type_clause (kind: TypeClause)
+    │   │       │       │   │   │       ├── colon (kind: TokenColon): ':'
+    │   │       │       │   │   │       └── ty (kind: ExprPath)
+    │   │       │       │   │   │           └── item #0 (kind: PathSegmentSimple)
+    │   │       │       │   │   │               └── ident (kind: TokenIdentifier): 'T'
+    │   │       │       │   │   ├── separator #0 (kind: TokenComma): ','
+    │   │       │       │   │   └── item #1 (kind: Param)
+    │   │       │       │   │       ├── modifiers (kind: ModifierList) []
+    │   │       │       │   │       ├── name (kind: TokenIdentifier): 'y'
+    │   │       │       │   │       └── type_clause (kind: TypeClause)
+    │   │       │       │   │           ├── colon (kind: TokenColon): ':'
+    │   │       │       │   │           └── ty (kind: ExprPath)
+    │   │       │       │   │               └── item #0 (kind: PathSegmentSimple)
+    │   │       │       │   │                   └── ident (kind: TokenIdentifier): 'S'
+    │   │       │       │   ├── rparen (kind: TokenRParen): ')'
+    │   │       │       │   ├── ret_ty (kind: OptionReturnTypeClauseEmpty) []
+    │   │       │       │   └── implicits_clause (kind: OptionImplicitsClauseEmpty) []
+    │   │       │       └── semicolon (kind: TokenSemicolon): ';'
     │   │       └── rbrace (kind: TokenRBrace): '}'
     │   └── child #1 (kind: ItemImpl)
     │       ├── attributes (kind: AttributeList) []

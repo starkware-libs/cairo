@@ -300,7 +300,11 @@ impl<'a> Parser<'a> {
             "Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/Attribute";
         AttributeList::new_green(
             self.db,
-            self.parse_list(Self::try_parse_attribute, is_of_kind!(top_level), expected_elements),
+            self.parse_list(
+                Self::try_parse_attribute,
+                is_of_kind!(rbrace, top_level),
+                expected_elements,
+            ),
         )
     }
 
@@ -330,14 +334,46 @@ impl<'a> Parser<'a> {
         let generic_params = self.parse_optional_generic_params();
         let body = if self.peek().kind == SyntaxKind::TerminalLBrace {
             let lbrace = self.take::<TerminalLBrace>();
-            // TODO(spapini): Parse associated items.
+            let items = TraitItemList::new_green(
+                self.db,
+                self.parse_list(Self::try_parse_trait_item, is_of_kind!(rbrace), "trait item"),
+            );
             let rbrace = self.parse_token::<TerminalRBrace>();
-            TraitBody::new_green(self.db, lbrace, rbrace).into()
+            TraitBody::new_green(self.db, lbrace, items, rbrace).into()
         } else {
             self.parse_token::<TerminalSemicolon>().into()
         };
 
         ItemTrait::new_green(self.db, attributes, trait_kw, name, generic_params, body)
+    }
+
+    /// Returns a GreenId of a node with a TraitItem.* kind (see [syntax::node::ast::TraitItem]).
+    pub fn try_parse_trait_item(&mut self) -> Option<TraitItemGreen> {
+        let attributes = self.parse_attribute_list();
+
+        match self.peek().kind {
+            SyntaxKind::TerminalFunction => Some(self.expect_trait_function(attributes).into()),
+            _ => None,
+        }
+    }
+
+    /// Assumes the current token is Function.
+    /// Expected pattern: <FunctionSignature><SemiColon>
+    fn expect_trait_function(&mut self, attributes: AttributeListGreen) -> TraitItemFunctionGreen {
+        let function_kw = self.take::<TerminalFunction>();
+        let name = self.parse_token::<TerminalIdentifier>();
+        let generic_params = self.parse_optional_generic_params();
+        let signature = self.expect_function_signature();
+        let semicolon = self.parse_token::<TerminalSemicolon>();
+        TraitItemFunction::new_green(
+            self.db,
+            attributes,
+            function_kw,
+            name,
+            generic_params,
+            signature,
+            semicolon,
+        )
     }
 
     /// Assumes the current token is Impl.

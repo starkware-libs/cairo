@@ -62,6 +62,8 @@ pub enum SyntaxKind {
     ItemExternType,
     ItemTrait,
     TraitBody,
+    TraitItemList,
+    TraitItemFunction,
     ItemImpl,
     ImplBody,
     ItemStruct,
