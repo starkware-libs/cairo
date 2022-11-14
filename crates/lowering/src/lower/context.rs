@@ -1,6 +1,7 @@
 use id_arena::Arena;
 use itertools::{chain, zip_eq};
 use semantic::items::enm::SemanticEnumEx;
+use semantic::items::trt::ImplLookupContext;
 use utils::unordered_hash_map::UnorderedHashMap;
 
 use super::scope::generators::CallBlockResult;
@@ -28,6 +29,8 @@ pub struct LoweringContext<'db> {
     pub semantic_defs: UnorderedHashMap<semantic::VarId, semantic::Variable>,
     // TODO(spapini): Document.
     pub ref_params: &'db [semantic::VarId],
+    // Lookup context for impls.
+    pub lookup_context: ImplLookupContext,
 }
 
 /// Representation of the value of a computed expression.
