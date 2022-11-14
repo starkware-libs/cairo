@@ -15,7 +15,7 @@ use smol_str::SmolStr;
 use utils::ordered_hash_map::OrderedHashMap;
 
 use crate::diagnostic::SemanticDiagnosticKind;
-use crate::items::trt::{ConcreteImplId, ConcreteTraitId};
+use crate::items::trt::{ConcreteImplId, ConcreteTraitId, ImplLookupContext};
 use crate::resolve_path::ResolvedGenericItem;
 use crate::{
     corelib, items, semantic, types, FreeFunctionDefinition, FunctionId, SemanticDiagnostic,
@@ -301,7 +301,11 @@ pub trait SemanticGroup:
     /// Returns the generic_type of a generic function. This include free types, extern
     /// types, etc...
     #[salsa::invoke(types::type_info)]
-    fn type_info(&self, ty: types::TypeId) -> Option<types::TypeInfo>;
+    fn type_info(
+        &self,
+        lookup_context: ImplLookupContext,
+        ty: types::TypeId,
+    ) -> Option<types::TypeInfo>;
 
     // Expression.
     // ===========

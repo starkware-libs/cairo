@@ -13,7 +13,7 @@ use crate::corelib::{copy_trait, drop_trait};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
-use crate::resolve_path::{ResolvedConcreteItem, Resolver};
+use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use crate::{GenericArgumentId, SemanticDiagnostic, TypeId, TypeLongId};
 
 #[cfg(test)]
@@ -161,7 +161,19 @@ pub fn priv_impl_definition_data(
 
     let module_data = db.module_data(module_id)?;
     let impl_ast = module_data.impls.get(&impl_id)?;
-    check_special_impls(db, &mut diagnostics, concrete_trait, impl_ast.stable_ptr().untyped());
+
+    let lookup_context = ImplLookupContext {
+        module_id,
+        extra_modules: vec![],
+        generic_params: declaration_data.generic_params,
+    };
+    check_special_impls(
+        db,
+        &mut diagnostics,
+        lookup_context,
+        concrete_trait,
+        impl_ast.stable_ptr().untyped(),
+    );
 
     Some(ImplDefinitionData { diagnostics: diagnostics.build() })
 }
@@ -170,6 +182,7 @@ pub fn priv_impl_definition_data(
 fn check_special_impls(
     db: &dyn SemanticGroup,
     diagnostics: &mut SemanticDiagnostics,
+    lookup_context: ImplLookupContext,
     concrete_trait: ConcreteTraitId,
     stable_ptr: SyntaxStablePtrId,
 ) -> Option<()> {
@@ -180,14 +193,22 @@ fn check_special_impls(
 
     if trait_id == copy {
         let tys = get_inner_types(db, extract_matches!(generic_args[0], GenericArgumentId::Type))?;
-        if !tys.into_iter().filter_map(|ty| db.type_info(ty)).all(|info| info.duplicatable) {
+        if !tys
+            .into_iter()
+            .filter_map(|ty| db.type_info(lookup_context.clone(), ty))
+            .all(|info| info.duplicatable)
+        {
             diagnostics.report_by_ptr(stable_ptr, InvalidCopyTraitImpl);
             return None;
         }
     }
     if trait_id == drop {
         let tys = get_inner_types(db, extract_matches!(generic_args[0], GenericArgumentId::Type))?;
-        if !tys.into_iter().filter_map(|ty| db.type_info(ty)).all(|info| info.droppable) {
+        if !tys
+            .into_iter()
+            .filter_map(|ty| db.type_info(lookup_context.clone(), ty))
+            .all(|info| info.droppable)
+        {
             diagnostics.report_by_ptr(stable_ptr, InvalidDropTraitImpl);
             return None;
         }
@@ -244,6 +265,39 @@ pub fn find_impls_at_module(
             let concrete_impl_id =
                 db.intern_concrete_impl(ConcreteImplLongId { impl_id, generic_args: vec![] });
             res.push(concrete_impl_id);
+        }
+    }
+    Some(res)
+}
+
+#[allow(dead_code)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct ImplLookupContext {
+    pub module_id: ModuleId,
+    pub extra_modules: Vec<ModuleId>,
+    pub generic_params: Vec<GenericParamId>,
+}
+
+/// Finds all the implementations for a concrete trait, in a specific lookup context.
+pub fn find_impls_at_context(
+    db: &dyn SemanticGroup,
+    lookup_context: &ImplLookupContext,
+    concrete_trait_id: ConcreteTraitId,
+) -> Option<Vec<ConcreteImplId>> {
+    let mut res = Vec::new();
+    // TODO(spapini): Lookup in generic_params once impl generic params are supported.
+    res.extend(find_impls_at_module(db, lookup_context.module_id, concrete_trait_id)?);
+    for module_id in &lookup_context.extra_modules {
+        if let Some(imps) = find_impls_at_module(db, *module_id, concrete_trait_id) {
+            res.extend(imps);
+        }
+    }
+    for submodule in db.module_submodules(lookup_context.module_id)? {
+        res.extend(find_impls_at_module(db, submodule, concrete_trait_id)?);
+    }
+    for use_id in db.module_data(lookup_context.module_id)?.uses.keys() {
+        if let Some(ResolvedGenericItem::Module(submodule)) = db.use_resolved_item(*use_id) {
+            res.extend(find_impls_at_module(db, submodule, concrete_trait_id)?);
         }
     }
     Some(res)
