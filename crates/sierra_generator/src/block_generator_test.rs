@@ -5,7 +5,8 @@ use utils::ordered_hash_map::OrderedHashMap;
 
 use super::generate_block_code;
 use crate::expr_generator_context::ExprGeneratorContext;
-use crate::test_utils::{replace_sierra_ids, SierraGenDatabaseForTesting};
+use crate::replace_ids::replace_sierra_ids;
+use crate::test_utils::SierraGenDatabaseForTesting;
 use crate::SierraGeneratorDiagnostic;
 
 utils::test_file_test!(

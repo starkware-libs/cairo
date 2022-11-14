@@ -11,7 +11,8 @@ use semantic::test_utils::setup_test_crate;
 use sierra_gas::calc_gas_info;
 use sierra_gas::gas_info::GasInfo;
 use sierra_generator::db::SierraGenGroup;
-use sierra_generator::test_utils::{replace_sierra_ids_in_program, SierraGenDatabaseForTesting};
+use sierra_generator::replace_ids::replace_sierra_ids_in_program;
+use sierra_generator::test_utils::SierraGenDatabaseForTesting;
 use sierra_to_casm::metadata::Metadata;
 use test_case::test_case;
 /// Setups the cairo lowering to sierra db for the matching example.
