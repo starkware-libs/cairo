@@ -30,8 +30,6 @@ mod strct;
 mod uint128;
 
 #[cfg(test)]
-mod test;
-#[cfg(test)]
 mod test_utils;
 
 #[derive(Error, Debug, Eq, PartialEq)]

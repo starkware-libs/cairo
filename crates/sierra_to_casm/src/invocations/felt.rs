@@ -9,6 +9,10 @@ use super::misc::build_jump_nz;
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::references::{BinOpExpression, CellExpression, ReferenceExpression, ReferenceValue};
 
+#[cfg(test)]
+#[path = "felt_test.rs"]
+mod test;
+
 /// Builds instructions for Sierra felt operations.
 pub fn build(
     libfunc: &FeltConcrete,
