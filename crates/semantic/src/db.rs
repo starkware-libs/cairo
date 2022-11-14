@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use db_utils::Upcast;
 use defs::db::DefsGroup;
+use defs::diagnostic_utils::StableLocation;
 use defs::ids::{
     EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericFunctionId, GenericParamId,
     GenericTypeId, ImplId, ModuleId, ModuleItemId, StructId, TraitId, UseId, VariantId,
@@ -13,6 +14,7 @@ use parser::db::ParserGroup;
 use smol_str::SmolStr;
 use utils::ordered_hash_map::OrderedHashMap;
 
+use crate::diagnostic::SemanticDiagnosticKind;
 use crate::items::trt::{ConcreteImplId, ConcreteTraitId};
 use crate::resolve_path::ResolvedGenericItem;
 use crate::{
@@ -361,7 +363,20 @@ fn module_semantic_diagnostics(
                 diagnostics.extend(db.impl_semantic_declaration_diagnostics(*impl_id));
                 diagnostics.extend(db.impl_semantic_definition_diagnostics(*impl_id));
             }
-            ModuleItemId::Submodule(_) => {}
+            ModuleItemId::Submodule(id) => {
+                if let Some(file_id) = db.module_file(ModuleId::Submodule(*id)) {
+                    if db.file_content(file_id).is_none() {
+                        // Note that the error location is in the parent module, not the submodule.
+                        diagnostics.add(SemanticDiagnostic {
+                            stable_location: StableLocation::new(
+                                module_id,
+                                id.stable_ptr(db.upcast()).untyped(),
+                            ),
+                            kind: SemanticDiagnosticKind::FileNotFound,
+                        });
+                    }
+                }
+            }
             ModuleItemId::ExternType(_) => {}
             ModuleItemId::ExternFunction(extern_function) => {
                 diagnostics.extend(db.extern_function_declaration_diagnostics(*extern_function));
