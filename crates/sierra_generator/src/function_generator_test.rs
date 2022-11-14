@@ -7,7 +7,8 @@ use semantic::test_utils::setup_test_module;
 use utils::extract_matches;
 
 use crate::db::SierraGenGroup;
-use crate::test_utils::{replace_sierra_ids, SierraGenDatabaseForTesting};
+use crate::replace_ids::replace_sierra_ids;
+use crate::test_utils::SierraGenDatabaseForTesting;
 
 #[test]
 fn test_function_generator() {
