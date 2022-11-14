@@ -6,6 +6,7 @@ use num_traits::Zero;
 use scope::{BlockScope, BlockScopeEnd};
 use semantic::corelib::{core_felt_ty, core_jump_nz_func, core_nonzero_ty};
 use semantic::items::enm::SemanticEnumEx;
+use semantic::items::trt::ImplLookupContext;
 use semantic::{ConcreteTypeId, Mutability, TypeLongId, VarId};
 use syntax::node::ids::SyntaxStablePtrId;
 use utils::unordered_hash_map::UnorderedHashMap;
@@ -47,7 +48,7 @@ pub struct Lowered {
 /// Lowers a semantic free function.
 pub fn lower(db: &dyn LoweringGroup, free_function_id: FreeFunctionId) -> Option<Lowered> {
     let function_def = db.free_function_definition(free_function_id)?;
-
+    let generic_params = db.free_function_declaration_generic_params(free_function_id)?;
     let signature = db.free_function_declaration_signature(free_function_id)?;
 
     // Params.
@@ -71,6 +72,11 @@ pub fn lower(db: &dyn LoweringGroup, free_function_id: FreeFunctionId) -> Option
         blocks: Arena::default(),
         semantic_defs: UnorderedHashMap::default(),
         ref_params: &ref_params,
+        lookup_context: ImplLookupContext {
+            module_id: free_function_id.module(db.upcast()),
+            extra_modules: vec![],
+            generic_params,
+        },
     };
 
     // TODO(spapini): Build semantic_defs in semantic model.
