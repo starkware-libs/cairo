@@ -126,7 +126,8 @@ SyntaxFile
     │   │       │       │   │                   └── ident (kind: TokenIdentifier): 'S'
     │   │       │       │   ├── rparen (kind: TokenRParen): ')'
     │   │       │       │   ├── ret_ty (kind: OptionReturnTypeClauseEmpty) []
-    │   │       │       │   └── implicits_clause (kind: OptionImplicitsClauseEmpty) []
+    │   │       │       │   ├── implicits_clause (kind: OptionImplicitsClauseEmpty) []
+    │   │       │       │   └── optional_no_panic (kind: OptionTerminalNoPanicEmpty) []
     │   │       │       └── semicolon (kind: TokenSemicolon): ';'
     │   │       └── rbrace (kind: TokenRBrace): '}'
     │   └── child #1 (kind: ItemImpl)

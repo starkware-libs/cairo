@@ -51,6 +51,7 @@ pub enum SyntaxKind {
     ParamList,
     ImplicitsClause,
     OptionImplicitsClauseEmpty,
+    OptionTerminalNoPanicEmpty,
     FunctionSignature,
     Member,
     MemberList,
@@ -120,6 +121,8 @@ pub enum SyntaxKind {
     TerminalRef,
     TokenMut,
     TerminalMut,
+    TokenNoPanic,
+    TerminalNoPanic,
     TokenAnd,
     TerminalAnd,
     TokenAndAnd,
@@ -221,6 +224,7 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalImplicits
                 | SyntaxKind::TerminalRef
                 | SyntaxKind::TerminalMut
+                | SyntaxKind::TerminalNoPanic
                 | SyntaxKind::TerminalAnd
                 | SyntaxKind::TerminalAndAnd
                 | SyntaxKind::TerminalOrOr
@@ -282,6 +286,7 @@ impl SyntaxKind {
                 | SyntaxKind::TokenImplicits
                 | SyntaxKind::TokenRef
                 | SyntaxKind::TokenMut
+                | SyntaxKind::TokenNoPanic
                 | SyntaxKind::TokenAnd
                 | SyntaxKind::TokenAndAnd
                 | SyntaxKind::TokenOrOr

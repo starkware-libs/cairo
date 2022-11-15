@@ -201,6 +201,12 @@ impl<'a> Parser<'a> {
         let rparen = self.parse_token::<TerminalRParen>();
         let return_type_clause = self.parse_option_return_type_clause();
         let implicits_clause = self.parse_option_implicits_clause();
+        let optional_no_panic = if self.peek().kind == SyntaxKind::TerminalNoPanic {
+            self.take::<TerminalNoPanic>().into()
+        } else {
+            OptionTerminalNoPanicEmpty::new_green(self.db).into()
+        };
+
         FunctionSignature::new_green(
             self.db,
             lparen,
@@ -208,6 +214,7 @@ impl<'a> Parser<'a> {
             rparen,
             return_type_clause,
             implicits_clause,
+            optional_no_panic,
         )
     }
 
