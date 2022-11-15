@@ -76,7 +76,7 @@ fn setup_single_file_crate(db: &mut RootDatabase, path: &Path) -> Result<(), ()>
                 return Err(());
             }
 
-            let crate_id = db.intern_crate(CrateLongId("contract_crate".into()));
+            let crate_id = db.intern_crate(CrateLongId(file_stemp.into()));
             db.set_crate_root(crate_id, Some(Directory(path.parent().unwrap().to_path_buf())));
 
             let module_id = ModuleId::CrateRoot(crate_id);
