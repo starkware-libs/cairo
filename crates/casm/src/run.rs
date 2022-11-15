@@ -21,8 +21,12 @@ fn mod_prime(n: BigInt) -> BigInt {
 
 /// Takes a vector of casm instructions and runs them on the Lambdaclass VM for n_steps.
 pub fn run(program: Vec<Instruction>, prime: BigInt, n_steps: usize) -> VirtualMachine {
-    // Encode program instructions to integers.
-    let data: Vec<BigInt> = program.iter().flat_map(|inst| inst.assemble().encode()).collect();
+    // Encode program instructions to cairo memory.
+    let instructions: Vec<_> = program
+        .iter()
+        .flat_map(|inst| inst.assemble().encode())
+        .map(|x| MaybeRelocatable::Int(mod_prime(x)))
+        .collect();
     let mut vm = VirtualMachine::new(prime, false);
 
     // Define the program and execution segments.
@@ -31,11 +35,8 @@ pub fn run(program: Vec<Instruction>, prime: BigInt, n_steps: usize) -> VirtualM
 
     // Set the initial PC to be at the start of the program, and load the program data.
     vm.set_pc(program_base.clone());
-    vm.load_data(
-        &MaybeRelocatable::from(program_base),
-        data.iter().map(|x| MaybeRelocatable::Int(mod_prime(x.clone()))).collect(),
-    )
-    .expect("VM failed to load program data.");
+    vm.load_data(&MaybeRelocatable::from(program_base), instructions)
+        .expect("VM failed to load program data.");
 
     // Define the initial stack for the program (currently a fake return address), write it at the
     // beginning of the execution segment and set AP and FP to point to the next memory cell.
