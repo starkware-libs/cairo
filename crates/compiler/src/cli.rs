@@ -102,7 +102,7 @@ fn main() -> ExitCode {
         return ExitCode::FAILURE;
     };
 
-    let Some(sierra_program) = db.crate_sierra_program(crate_id) else {
+    let Some(sierra_program) = db.get_sierra_program() else {
         print_diagnostics(db, crate_id);
         return ExitCode::FAILURE;
     };
