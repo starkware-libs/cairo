@@ -17,6 +17,7 @@ use sierra_generator::db::SierraGenGroup;
 mod db;
 use db::RootDatabase;
 use parser::db::ParserGroup;
+use sierra_generator::replace_ids::replace_sierra_ids_in_program;
 
 /// Command line args parser.
 /// Exits with 0/1 if the input is formatted correctly/incorrectly.
@@ -25,10 +26,11 @@ use parser::db::ParserGroup;
 struct Args {
     /// The file to compile
     path: String,
-
     /// The output file name (default: stdout).
-    #[arg(short, long)]
     output: Option<String>,
+    /// Replaces sierra ids with human readable ones.
+    #[arg(short, long, default_value_t = false)]
+    replace_ids: bool,
 }
 
 /// Prints the diagnostics to stderr.
@@ -110,10 +112,14 @@ fn main() -> ExitCode {
         return ExitCode::FAILURE;
     }
 
-    let Some(sierra_program) = db.get_sierra_program() else {
+    let Some(mut sierra_program) = db.get_sierra_program() else {
         print_diagnostics(db);
         return ExitCode::FAILURE;
     };
+
+    if args.replace_ids {
+        sierra_program = Arc::new(replace_sierra_ids_in_program(db, &sierra_program));
+    }
 
     match args.output {
         Some(path) => {
