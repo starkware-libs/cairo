@@ -24,6 +24,7 @@ use super::pattern::{
 };
 use crate::corelib::{
     core_binary_operator, core_felt_ty, false_literal_expr, true_literal_expr, unit_ty,
+    unwrap_error_propagation_type,
 };
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
@@ -182,11 +183,11 @@ pub fn maybe_compute_expr_semantic(
         ast::Expr::Block(block_syntax) => compute_expr_block_semantic(ctx, block_syntax),
         ast::Expr::Match(expr_match) => compute_expr_match_semantic(ctx, expr_match),
         ast::Expr::If(expr_if) => compute_expr_if_semantic(ctx, expr_if),
+        ast::Expr::ErrorPropagate(expr) => compute_expr_error_propagate_semantic(ctx, expr),
         ast::Expr::Missing(_) => {
             ctx.diagnostics.report(syntax, Unsupported);
             None
         }
-        ast::Expr::ErrorPropagate(_) => todo!(),
     }
 }
 
@@ -477,6 +478,43 @@ fn compute_expr_if_semantic(
         if_block: ctx.exprs.alloc(if_block),
         else_block: else_block_opt.map(|else_block| ctx.exprs.alloc(else_block)),
         ty: helper.get_final_type(),
+        stable_ptr: syntax.stable_ptr().into(),
+    }))
+}
+
+/// Computes the semantic model of an expression of type [ast::ExprErrorPropagate].
+fn compute_expr_error_propagate_semantic(
+    ctx: &mut ComputationContext<'_>,
+    syntax: &ast::ExprErrorPropagate,
+) -> Option<Expr> {
+    let syntax_db = ctx.db.upcast();
+    let inner = compute_expr_semantic(ctx, &syntax.expr(syntax_db));
+    let (ok_variant, err_variant) =
+        unwrap_error_propagation_type(ctx.db, inner.ty()).on_none(|| {
+            ctx.diagnostics.report(syntax, ErrorPropagateOnNonErrorType { ty: inner.ty() });
+        })?;
+    let (_, func_err_variant) =
+        unwrap_error_propagation_type(ctx.db, ctx.return_ty).on_none(|| {
+            ctx.diagnostics.report(
+                syntax,
+                IncompatibleErrorPropagateType { return_ty: ctx.return_ty, err_ty: err_variant.ty },
+            );
+        })?;
+    // TODO(orizi): When auto conversion of types is added, try to convert the error type.
+    if func_err_variant.ty != err_variant.ty
+        || func_err_variant.concrete_enum_id.enum_id(ctx.db)
+            != err_variant.concrete_enum_id.enum_id(ctx.db)
+    {
+        ctx.diagnostics.report(
+            syntax,
+            IncompatibleErrorPropagateType { return_ty: ctx.return_ty, err_ty: err_variant.ty },
+        );
+    }
+    Some(Expr::PropagateError(ExprPropagateError {
+        inner: ctx.exprs.alloc(inner),
+        ok_variant,
+        err_variant,
+        func_err_variant,
         stable_ptr: syntax.stable_ptr().into(),
     }))
 }
