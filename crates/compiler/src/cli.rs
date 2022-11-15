@@ -25,7 +25,10 @@ use parser::db::ParserGroup;
 struct Args {
     /// The file to compile
     path: String,
-    output: String,
+
+    /// The output file name (default: stdout).
+    #[arg(short, long)]
+    output: Option<String>,
 }
 
 /// Prints the diagnostics to stderr.
@@ -112,6 +115,12 @@ fn main() -> ExitCode {
         return ExitCode::FAILURE;
     };
 
-    fs::write(args.output, format!("{}", sierra_program)).expect("Failed to write output.");
+    match args.output {
+        Some(path) => {
+            fs::write(path, format!("{}", sierra_program)).expect("Failed to write output.")
+        }
+        None => println!("{}", sierra_program),
+    }
+
     ExitCode::SUCCESS
 }
