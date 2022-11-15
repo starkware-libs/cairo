@@ -3,7 +3,6 @@ use std::sync::Arc;
 use db_utils::Upcast;
 use defs::ids::{FreeFunctionId, ModuleId};
 use diagnostics::Diagnostics;
-use filesystem::ids::CrateId;
 use lowering::db::LoweringGroup;
 use semantic::Mutability;
 use sierra::extensions::{ConcreteType, GenericTypeEx};
@@ -96,9 +95,9 @@ pub trait SierraGenGroup: LoweringGroup + Upcast<dyn LoweringGroup> {
     #[salsa::invoke(ap_change::get_ap_change)]
     fn get_ap_change(&self, function_id: FreeFunctionId) -> Option<ApChange>;
 
-    /// Returns the [sierra::program::Program] object for the given crate.
-    #[salsa::invoke(program_generator::crate_sierra_program)]
-    fn crate_sierra_program(&self, crt: CrateId) -> Option<Arc<sierra::program::Program>>;
+    /// Returns the [sierra::program::Program] object of the loaded crates.
+    #[salsa::invoke(program_generator::get_sierra_program)]
+    fn get_sierra_program(&self) -> Option<Arc<sierra::program::Program>>;
 }
 
 fn get_function_signature(
