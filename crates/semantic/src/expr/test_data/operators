@@ -25,10 +25,10 @@ error: Unexpected argument type. Expected: "core::felt", found: "test_crate::MyT
     a + a * a;
             ^
 
-error: Unexpected argument type. Expected: "core::felt", found: "test_crate::MyType".
- --> lib.cairo:3:5
+error: Binary operator '+' is not supported for types 'test_crate::MyType' and 'core::felt'.
+ --> lib.cairo:3:7
     a + a * a;
-    ^
+      ^
 
 //! > ==========================================================================
 
@@ -45,6 +45,7 @@ func foo(a: felt, b: bool) implicits (rc:RangeCheck) {
     && (a<a) && (a<=a) && (a>=a);
     // Errors.
     a>a>a;
+    a - b
 }
 
 //! > function_name
@@ -57,3 +58,8 @@ error: Unexpected argument type. Expected: "core::felt", found: "core::bool".
  --> lib.cairo:7:5
     a>a>a;
     ^*^
+
+error: Binary operator '-' is not supported for types 'core::felt' and 'core::bool'.
+ --> lib.cairo:8:7
+    a - b
+      ^

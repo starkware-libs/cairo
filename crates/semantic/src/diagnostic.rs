@@ -51,6 +51,13 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::Unsupported => "Unsupported feature.".into(),
             SemanticDiagnosticKind::UnknownLiteral => "Unknown literal.".into(),
             SemanticDiagnosticKind::UnknownBinaryOperator => "Unknown binary operator.".into(),
+            SemanticDiagnosticKind::UnsupportedBinaryOperator { op, type1, type2 } => {
+                format!(
+                    "Binary operator '{op}' is not supported for types '{}' and '{}'.",
+                    type1.format(db),
+                    type2.format(db)
+                )
+            }
             SemanticDiagnosticKind::UnknownFunction => "Unknown function.".into(),
             SemanticDiagnosticKind::UnknownTrait => "Unknown trait.".into(),
             SemanticDiagnosticKind::UnknownImpl => "Unknown impl.".into(),
@@ -221,6 +228,7 @@ pub enum SemanticDiagnosticKind {
     Unsupported,
     UnknownLiteral,
     UnknownBinaryOperator,
+    UnsupportedBinaryOperator { op: SmolStr, type1: semantic::TypeId, type2: semantic::TypeId },
     UnknownFunction,
     UnknownTrait,
     UnknownImpl,

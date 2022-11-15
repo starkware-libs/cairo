@@ -2,7 +2,7 @@ use defs::ids::{EnumId, GenericFunctionId, GenericTypeId, ModuleId, ModuleItemId
 use filesystem::ids::CrateLongId;
 use smol_str::SmolStr;
 use syntax::node::ast::{self, BinaryOperator};
-use utils::{extract_matches, OptionFrom};
+use utils::{extract_matches, try_extract_matches, OptionFrom};
 
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind;
@@ -25,6 +25,10 @@ pub fn core_felt_ty(db: &dyn SemanticGroup) -> TypeId {
     get_core_ty_by_name(db, "felt".into(), vec![])
 }
 
+pub fn core_uint128_ty(db: &dyn SemanticGroup) -> TypeId {
+    get_core_ty_by_name(db, "uint128".into(), vec![])
+}
+
 pub fn core_nonzero_ty(db: &dyn SemanticGroup, inner_type: TypeId) -> TypeId {
     get_core_ty_by_name(db, "NonZero".into(), vec![GenericArgumentId::Type(inner_type)])
 }
@@ -36,10 +40,19 @@ fn get_core_ty_by_name(
 ) -> TypeId {
     let core_module = db.core_module();
     // This should not fail if the corelib is present.
-    let generic_type = db
+    let module_item_id = db
         .module_item_by_name(core_module, name.clone())
-        .and_then(GenericTypeId::option_from)
         .unwrap_or_else(|| panic!("Type '{name}' was not found in core lib."));
+    let generic_type = match module_item_id {
+        ModuleItemId::Use(use_id) => {
+            db.use_resolved_item(use_id).and_then(|resolved_generic_item| {
+                try_extract_matches!(resolved_generic_item, ResolvedGenericItem::GenericType)
+            })
+        }
+        _ => GenericTypeId::option_from(module_item_id),
+    }
+    .unwrap_or_else(|| panic!("{name} is not a type."));
+
     db.intern_type(semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::new(
         db,
         generic_type,
@@ -154,10 +167,41 @@ pub fn unit_expr(ctx: &mut ComputationContext<'_>, stable_ptr: ast::ExprPtr) -> 
 pub fn core_binary_operator(
     db: &dyn SemanticGroup,
     binary_op: &BinaryOperator,
+    type1: TypeId,
+    type2: TypeId,
 ) -> Result<FunctionId, SemanticDiagnosticKind> {
+    // TODO(lior): Replace current hard-coded implementation with an implementation that is based on
+    //   traits.
+    // TODO(lior): Add type checking for all of the operators.
+    let felt = core_felt_ty(db);
+    let uint128 = core_uint128_ty(db);
     let function_name = match binary_op {
-        BinaryOperator::Plus(_) => "felt_add",
-        BinaryOperator::Minus(_) => "felt_sub",
+        BinaryOperator::Plus(_) => {
+            if type1 == felt && type2 == felt {
+                "felt_add"
+            } else if type1 == uint128 && type2 == uint128 {
+                "uint128_add"
+            } else {
+                return Err(SemanticDiagnosticKind::UnsupportedBinaryOperator {
+                    op: "+".into(),
+                    type1,
+                    type2,
+                });
+            }
+        }
+        BinaryOperator::Minus(_) => {
+            if type1 == felt && type2 == felt {
+                "felt_sub"
+            } else if type1 == uint128 && type2 == uint128 {
+                "uint128_sub"
+            } else {
+                return Err(SemanticDiagnosticKind::UnsupportedBinaryOperator {
+                    op: "-".into(),
+                    type1,
+                    type2,
+                });
+            }
+        }
         BinaryOperator::Mul(_) => "felt_mul",
         BinaryOperator::Div(_) => "felt_div",
         BinaryOperator::EqEq(_) => "felt_eq",
@@ -191,10 +235,19 @@ fn get_core_function_id(
     generic_args: Vec<GenericArgumentId>,
 ) -> FunctionId {
     let core_module = db.core_module();
-    let generic_function = db
+    let module_item_id = db
         .module_item_by_name(core_module, name.clone())
-        .and_then(GenericFunctionId::option_from)
         .unwrap_or_else(|| panic!("Function '{name}' was not found in core lib."));
+    let generic_function = match module_item_id {
+        ModuleItemId::Use(use_id) => {
+            db.use_resolved_item(use_id).and_then(|resolved_generic_item| {
+                try_extract_matches!(resolved_generic_item, ResolvedGenericItem::GenericFunction)
+            })
+        }
+        _ => GenericFunctionId::option_from(module_item_id),
+    }
+    .unwrap_or_else(|| panic!("{name} is not a function."));
+
     db.intern_function(FunctionLongId {
         function: ConcreteFunction { generic_function, generic_args },
     })
