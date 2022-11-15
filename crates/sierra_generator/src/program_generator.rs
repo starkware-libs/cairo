@@ -3,7 +3,6 @@ use std::sync::Arc;
 
 use defs::ids::{ModuleId, ModuleItemId};
 use diagnostics::{Diagnostics, DiagnosticsBuilder};
-use filesystem::ids::CrateId;
 use itertools::chain;
 use sierra::extensions::core::CoreLibFunc;
 use sierra::extensions::GenericLibFuncEx;
@@ -175,18 +174,18 @@ fn collect_used_types(
         .collect()
 }
 
-pub fn crate_sierra_program(
-    db: &dyn SierraGenGroup,
-    crt: CrateId,
-) -> Option<Arc<sierra::program::Program>> {
+pub fn get_sierra_program(db: &dyn SierraGenGroup) -> Option<Arc<sierra::program::Program>> {
     let mut functions: Vec<Arc<pre_sierra::Function>> = vec![];
     let mut statements: Vec<pre_sierra::Statement> = vec![];
-    let modules = db.crate_modules(crt);
-    for module in modules.iter() {
-        let pre_sierra_library = db.module_sierra_library(*module)?;
 
-        functions.extend_from_slice(&pre_sierra_library.functions);
-        statements.extend_from_slice(&pre_sierra_library.statements);
+    for crate_id in db.crates() {
+        let modules = db.crate_modules(crate_id);
+        for module in modules.iter() {
+            let pre_sierra_library = db.module_sierra_library(*module)?;
+
+            functions.extend_from_slice(&pre_sierra_library.functions);
+            statements.extend_from_slice(&pre_sierra_library.statements);
+        }
     }
 
     let libfunc_declarations =

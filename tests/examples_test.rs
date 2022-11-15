@@ -50,9 +50,9 @@ fn get_expected_contents(name: &str, test_type: &str) -> String {
 
 /// Compiles the Cairo code for `name` to a Sierra program.
 fn checked_compile_to_sierra(name: &str) -> sierra::program::Program {
-    let (db, crate_id) = setup(name);
+    let (db, _) = setup(name);
 
-    let sierra_program = db.crate_sierra_program(crate_id).unwrap();
+    let sierra_program = db.get_sierra_program().unwrap();
     replace_sierra_ids_in_program(&db, &sierra_program)
 }
 
