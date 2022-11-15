@@ -5,14 +5,8 @@ use std::sync::Arc;
 
 use clap::Parser;
 use compiler::db::RootDatabase;
+use compiler::diagnostics::check_diagnostics;
 use compiler::project::setup_project;
-use defs::db::DefsGroup;
-use defs::ids::ModuleId;
-use filesystem::db::FilesGroup;
-use filesystem::ids::FileLongId;
-use lowering::db::LoweringGroup;
-use parser::db::ParserGroup;
-use semantic::db::SemanticGroup;
 use sierra_generator::db::SierraGenGroup;
 use sierra_generator::replace_ids::replace_sierra_ids_in_program;
 
@@ -30,36 +24,6 @@ struct Args {
     replace_ids: bool,
 }
 
-/// Prints the diagnostics to stderr.
-fn print_diagnostics(db: &mut RootDatabase) {
-    for crate_id in db.crates() {
-        for module_id in &*db.crate_modules(crate_id) {
-            if let Some(file_id) = db.module_file(*module_id) {
-                if db.file_content(file_id).is_none() {
-                    if let ModuleId::CrateRoot(_) = *module_id {
-                        match db.lookup_intern_file(file_id) {
-                            FileLongId::OnDisk(path) => eprintln!("{} not found", path.display()),
-                            FileLongId::Virtual(_) => panic!("Missing virtual file."),
-                        }
-                    }
-                } else {
-                    eprint!("{}", db.file_syntax_diagnostics(file_id).format(db));
-                }
-
-                if let Some(diag) = db.module_semantic_diagnostics(*module_id) {
-                    eprint!("{}", diag.format(db));
-                }
-
-                if let Some(diag) = db.module_lowering_diagnostics(*module_id) {
-                    eprint!("{}", diag.format(db));
-                }
-
-                eprint!("{}", db.module_sierra_diagnostics(*module_id).format(db));
-            }
-        }
-    }
-}
-
 fn main() -> ExitCode {
     let args = Args::parse();
 
@@ -71,8 +35,12 @@ fn main() -> ExitCode {
         return ExitCode::FAILURE;
     }
 
+    if check_diagnostics(db) {
+        return ExitCode::FAILURE;
+    }
+
     let Some(mut sierra_program) = db.get_sierra_program() else {
-        print_diagnostics(db);
+        eprintln!("Compilation failed without any diagnostics.");
         return ExitCode::FAILURE;
     };
 
