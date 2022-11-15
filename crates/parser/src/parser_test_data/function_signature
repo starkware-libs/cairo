@@ -4,7 +4,7 @@
 test_partial_parser_tree
 
 //! > cairo_code
-func foo(a: int, mut b: felt, ref c: int, mut ref d: felt) -> felt implicits(rc: RangeCheck, h: Hash) {
+func foo(a: int, mut b: felt, ref c: int, mut ref d: felt) -> felt implicits(rc: RangeCheck, h: Hash) nopanic {
     return a;
 }
 
@@ -62,25 +62,26 @@ FunctionSignature
     │   └── ty (kind: ExprPath)
     │       └── item #0 (kind: PathSegmentSimple)
     │           └── ident (kind: TokenIdentifier): 'felt'
-    └── implicits_clause (kind: ImplicitsClause)
-        ├── implicits_kw (kind: TokenImplicits): 'implicits'
-        ├── lparen (kind: TokenLParen): '('
-        ├── implicits (kind: ParamList)
-        │   ├── item #0 (kind: Param)
-        │   │   ├── modifiers (kind: ModifierList) []
-        │   │   ├── name (kind: TokenIdentifier): 'rc'
-        │   │   └── type_clause (kind: TypeClause)
-        │   │       ├── colon (kind: TokenColon): ':'
-        │   │       └── ty (kind: ExprPath)
-        │   │           └── item #0 (kind: PathSegmentSimple)
-        │   │               └── ident (kind: TokenIdentifier): 'RangeCheck'
-        │   ├── separator #0 (kind: TokenComma): ','
-        │   └── item #1 (kind: Param)
-        │       ├── modifiers (kind: ModifierList) []
-        │       ├── name (kind: TokenIdentifier): 'h'
-        │       └── type_clause (kind: TypeClause)
-        │           ├── colon (kind: TokenColon): ':'
-        │           └── ty (kind: ExprPath)
-        │               └── item #0 (kind: PathSegmentSimple)
-        │                   └── ident (kind: TokenIdentifier): 'Hash'
-        └── rparen (kind: TokenRParen): ')'
+    ├── implicits_clause (kind: ImplicitsClause)
+    │   ├── implicits_kw (kind: TokenImplicits): 'implicits'
+    │   ├── lparen (kind: TokenLParen): '('
+    │   ├── implicits (kind: ParamList)
+    │   │   ├── item #0 (kind: Param)
+    │   │   │   ├── modifiers (kind: ModifierList) []
+    │   │   │   ├── name (kind: TokenIdentifier): 'rc'
+    │   │   │   └── type_clause (kind: TypeClause)
+    │   │   │       ├── colon (kind: TokenColon): ':'
+    │   │   │       └── ty (kind: ExprPath)
+    │   │   │           └── item #0 (kind: PathSegmentSimple)
+    │   │   │               └── ident (kind: TokenIdentifier): 'RangeCheck'
+    │   │   ├── separator #0 (kind: TokenComma): ','
+    │   │   └── item #1 (kind: Param)
+    │   │       ├── modifiers (kind: ModifierList) []
+    │   │       ├── name (kind: TokenIdentifier): 'h'
+    │   │       └── type_clause (kind: TypeClause)
+    │   │           ├── colon (kind: TokenColon): ':'
+    │   │           └── ty (kind: ExprPath)
+    │   │               └── item #0 (kind: PathSegmentSimple)
+    │   │                   └── ident (kind: TokenIdentifier): 'Hash'
+    │   └── rparen (kind: TokenRParen): ')'
+    └── optional_no_panic (kind: TokenNoPanic): 'nopanic'

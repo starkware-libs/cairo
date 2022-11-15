@@ -22,7 +22,8 @@
     │   │   │   │   └── ty (kind: ExprPath)
     │   │   │   │       └── item #0 (kind: PathSegmentSimple)
     │   │   │   │           └── ident (kind: TokenIdentifier): 'S'
-    │   │   │   └── implicits_clause (kind: OptionImplicitsClauseEmpty) []
+    │   │   │   ├── implicits_clause (kind: OptionImplicitsClauseEmpty) []
+    │   │   │   └── optional_no_panic (kind: OptionTerminalNoPanicEmpty) []
     │   │   └── body (kind: ExprBlock)
     │   │       ├── lbrace (kind: TokenLBrace): '{'
     │   │       ├── statements (kind: StatementList)
@@ -168,7 +169,8 @@
     │   │   │   │   └── ty (kind: ExprPath)
     │   │   │   │       └── item #0 (kind: PathSegmentSimple)
     │   │   │   │           └── ident (kind: TokenIdentifier): 'X'
-    │   │   │   └── implicits_clause (kind: OptionImplicitsClauseEmpty) []
+    │   │   │   ├── implicits_clause (kind: OptionImplicitsClauseEmpty) []
+    │   │   │   └── optional_no_panic (kind: OptionTerminalNoPanicEmpty) []
     │   │   └── body (kind: ExprBlock)
     │   │       ├── lbrace (kind: TokenLBrace): '{'
     │   │       ├── statements (kind: StatementList)
