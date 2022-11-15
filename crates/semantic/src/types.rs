@@ -11,7 +11,7 @@ use crate::corelib::{concrete_copy_trait, concrete_drop_trait};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
-use crate::items::trt::{find_impls_at_context, ImplLookupContext};
+use crate::items::imp::{find_impls_at_context, ImplLookupContext};
 use crate::resolve_path::{ResolvedConcreteItem, Resolver};
 use crate::{semantic, GenericArgumentId};
 

@@ -21,7 +21,8 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::items::enm::{ConcreteVariant, SemanticEnumEx};
-use crate::items::trt::{ConcreteImplId, ConcreteImplLongId, ConcreteTraitId, ConcreteTraitLongId};
+use crate::items::imp::{ConcreteImplId, ConcreteImplLongId};
+use crate::items::trt::{ConcreteTraitId, ConcreteTraitLongId};
 use crate::types::resolve_type;
 use crate::{
     ConcreteFunction, ConcreteTypeId, FunctionId, FunctionLongId, GenericArgumentId, TypeId,
