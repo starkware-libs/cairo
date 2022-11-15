@@ -1,3 +1,4 @@
+pub mod attribute;
 pub mod enm;
 pub mod extern_function;
 pub mod extern_type;

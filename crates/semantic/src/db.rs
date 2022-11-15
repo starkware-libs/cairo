@@ -15,6 +15,7 @@ use smol_str::SmolStr;
 use utils::ordered_hash_map::OrderedHashMap;
 
 use crate::diagnostic::SemanticDiagnosticKind;
+use crate::items::attribute::Attribute;
 use crate::items::trt::{ConcreteImplId, ConcreteTraitId, ImplLookupContext};
 use crate::resolve_path::ResolvedGenericItem;
 use crate::{
@@ -116,6 +117,9 @@ pub trait SemanticGroup:
     /// Returns the generic parameters of a trait.
     #[salsa::invoke(items::trt::trait_generic_params)]
     fn trait_generic_params(&self, trait_id: TraitId) -> Option<Vec<GenericParamId>>;
+    /// Returns the attributes of a trait.
+    #[salsa::invoke(items::trt::trait_attributes)]
+    fn trait_attributes(&self, trait_id: TraitId) -> Option<Vec<Attribute>>;
 
     // Impl.
     // =======
@@ -178,7 +182,7 @@ pub trait SemanticGroup:
     fn free_function_declaration_attributes(
         &self,
         free_function_id: FreeFunctionId,
-    ) -> Option<Vec<items::free_function::Attribute>>;
+    ) -> Option<Vec<Attribute>>;
     /// Returns the generic params of a free function declaration.
     #[salsa::invoke(items::free_function::free_function_declaration_generic_params)]
     fn free_function_declaration_generic_params(
