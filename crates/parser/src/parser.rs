@@ -409,13 +409,7 @@ impl<'a> Parser<'a> {
     /// Returns a GreenId of a node with an Expr.* kind (see [syntax::node::ast::Expr]) or None if
     /// an expression can't be parsed.
     fn try_parse_expr(&mut self) -> Option<ExprGreen> {
-        match self.peek().kind {
-            // Call parse_block() and not expect_block() because it's cheap.
-            SyntaxKind::TerminalLBrace => Some(self.parse_block().into()),
-            SyntaxKind::TerminalMatch => Some(self.expect_match_expr().into()),
-            SyntaxKind::TerminalIf => Some(self.expect_if_expr().into()),
-            _ => self.try_parse_simple_expression(MAX_PRECEDENCE, LbraceAllowed::Allow),
-        }
+        self.try_parse_expr_limited(MAX_PRECEDENCE, LbraceAllowed::Allow)
     }
     /// Returns a GreenId of a node with an Expr.* kind (see [syntax::node::ast::Expr]) or a node
     /// with kind ExprMissing if an expression can't be parsed.
@@ -453,18 +447,20 @@ impl<'a> Parser<'a> {
         }
     }
 
-    /// Returns a GreenId of a node with an Expr.* kind (see [syntax::node::ast::Expr]), excluding
-    /// ExprBlock, or None if such an expression can't be parsed.
+    /// Returns a GreenId of a node with an Expr.* kind (see [syntax::node::ast::Expr]) or None if
+    /// such an expression can't be parsed.
     ///
+    /// Parsing will be limited by:
+    /// `parent_precedence` - parsing of boolean operators limited to this.
     /// `lbrace_allowed` - See [LbraceAllowed].
-    fn try_parse_simple_expression(
+    fn try_parse_expr_limited(
         &mut self,
         parent_precedence: usize,
         lbrace_allowed: LbraceAllowed,
     ) -> Option<ExprGreen> {
         let mut expr = if let Some(precedence) = get_unary_operator_precedence(self.peek().kind) {
             let op = self.parse_unary_operator();
-            let expr = self.parse_simple_expression(precedence, lbrace_allowed);
+            let expr = self.parse_expr_limited(precedence, lbrace_allowed);
             ExprUnary::new_green(self.db, op, expr).into()
         } else {
             self.try_parse_atom(lbrace_allowed)?
@@ -475,7 +471,7 @@ impl<'a> Parser<'a> {
                 return Some(expr);
             }
             let op = self.parse_binary_operator();
-            let rhs = self.parse_simple_expression(precedence, lbrace_allowed);
+            let rhs = self.parse_expr_limited(precedence, lbrace_allowed);
             expr = ExprBinary::new_green(self.db, expr, op, rhs).into();
         }
         Some(expr)
@@ -484,12 +480,12 @@ impl<'a> Parser<'a> {
     /// ExprBlock, or ExprMissing if such an expression can't be parsed.
     ///
     /// `lbrace_allowed` - See [LbraceAllowed].
-    fn parse_simple_expression(
+    fn parse_expr_limited(
         &mut self,
         parent_precedence: usize,
         lbrace_allowed: LbraceAllowed,
     ) -> ExprGreen {
-        match self.try_parse_simple_expression(parent_precedence, lbrace_allowed) {
+        match self.try_parse_expr_limited(parent_precedence, lbrace_allowed) {
             Some(green) => green,
             None => self.create_and_report_missing::<Expr>(ParserDiagnosticKind::MissingExpression),
         }
@@ -524,6 +520,12 @@ impl<'a> Parser<'a> {
             }
             SyntaxKind::TerminalLBrace if lbrace_allowed == LbraceAllowed::Allow => {
                 Some(self.parse_block().into())
+            }
+            SyntaxKind::TerminalMatch if lbrace_allowed == LbraceAllowed::Allow => {
+                Some(self.expect_match_expr().into())
+            }
+            SyntaxKind::TerminalIf if lbrace_allowed == LbraceAllowed::Allow => {
+                Some(self.expect_if_expr().into())
             }
             _ => {
                 // TODO(yuval): report to diagnostics.
@@ -672,7 +674,7 @@ impl<'a> Parser<'a> {
     /// Expected pattern: match <expr> \{<MatchArm>*\}
     fn expect_match_expr(&mut self) -> ExprMatchGreen {
         let match_kw = self.take::<TerminalMatch>();
-        let expr = self.parse_simple_expression(MAX_PRECEDENCE, LbraceAllowed::Forbid);
+        let expr = self.parse_expr_limited(MAX_PRECEDENCE, LbraceAllowed::Forbid);
         let lbrace = self.parse_token::<TerminalLBrace>();
         let arms = MatchArms::new_green(
             self.db,
@@ -690,7 +692,7 @@ impl<'a> Parser<'a> {
     /// Expected pattern: `if <expr> <block> [else <block>]`.
     fn expect_if_expr(&mut self) -> ExprIfGreen {
         let if_kw = self.take::<TerminalIf>();
-        let condition = self.parse_simple_expression(MAX_PRECEDENCE, LbraceAllowed::Forbid);
+        let condition = self.parse_expr_limited(MAX_PRECEDENCE, LbraceAllowed::Forbid);
         let if_block = self.parse_block();
 
         let else_clause: OptionElseClauseGreen = if self.peek().kind == SyntaxKind::TerminalElse {

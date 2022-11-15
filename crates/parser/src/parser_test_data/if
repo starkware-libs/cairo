@@ -18,11 +18,6 @@ error: Skipped tokens. Expected: statement.
     if MyStruct{a: 0} == MyStruct{a: 1} {
                  ^
 
-error: Skipped tokens. Expected: statement.
- --> dummy_file.cairo:2:23
-    if MyStruct{a: 0} == MyStruct{a: 1} {
-                      ^^
-
 //! > ==========================================================================
 
 //! > Test if inside if condition
