@@ -1,0 +1,38 @@
+//! > Test loops
+
+//! > test_runner_name
+test_partial_parser_tree
+
+//! > cairo_code
+fn f() {
+    let x = loop {
+        break 5;
+};
+}
+
+//! > top_level_kind
+StatementLet
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: StatementLet
+    ├── let_kw (kind: TokenLet): 'let'
+    ├── pattern (kind: ExprPath)
+    │   └── item #0 (kind: PathSegmentSimple)
+    │       └── ident (kind: TokenIdentifier): 'x'
+    ├── type_clause (kind: OptionTypeClauseEmpty) []
+    ├── eq (kind: TokenEq): '='
+    ├── rhs (kind: ExprLoop)
+    │   ├── loop_kw (kind: TokenLoop): 'loop'
+    │   └── body (kind: ExprBlock)
+    │       ├── lbrace (kind: TokenLBrace): '{'
+    │       ├── statements (kind: StatementList)
+    │       │   └── child #0 (kind: StatementBreak)
+    │       │       ├── break_kw (kind: TokenBreak): 'break'
+    │       │       ├── expr (kind: TokenLiteralNumber): '5'
+    │       │       └── semicolon (kind: TokenSemicolon): ';'
+    │       └── rbrace (kind: TokenRBrace): '}'
+    └── semicolon (kind: TokenSemicolon): ';'
