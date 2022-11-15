@@ -1,5 +1,5 @@
 use db_utils::Upcast;
-use defs::db::{DefsDatabase, DefsGroup};
+use defs::db::{init_defs_group, DefsDatabase, DefsGroup};
 use filesystem::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup};
 use parser::db::ParserDatabase;
 use semantic::db::{SemanticDatabase, SemanticGroup};
@@ -23,6 +23,7 @@ impl Default for LoweringDatabaseForTesting {
     fn default() -> Self {
         let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
+        init_defs_group(&mut res);
         res
     }
 }
