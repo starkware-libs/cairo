@@ -6,6 +6,7 @@ use syntax::node::ids::SyntaxStablePtrId;
 use syntax::node::TypedSyntaxNode;
 use utils::{extract_matches, try_extract_matches, OptionHelper};
 
+use super::attribute::{ast_attributes_to_semantic, Attribute};
 use super::enm::SemanticEnumEx;
 use super::generics::semantic_generic_params;
 use super::strct::SemanticStructEx;
@@ -33,6 +34,7 @@ define_short_id!(ConcreteTraitId, ConcreteTraitLongId, SemanticGroup, lookup_int
 pub struct TraitData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
     generic_params: Vec<GenericParamId>,
+    attributes: Vec<Attribute>,
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_semantic_diagnostics].
@@ -51,10 +53,17 @@ pub fn trait_generic_params(
     Some(db.priv_trait_semantic_data(trait_id)?.generic_params)
 }
 
+/// Query implementation of [crate::db::SemanticGroup::trait_attributes].
+pub fn trait_attributes(db: &dyn SemanticGroup, trait_id: TraitId) -> Option<Vec<Attribute>> {
+    Some(db.priv_trait_semantic_data(trait_id)?.attributes)
+}
+
 /// Query implementation of [crate::db::SemanticGroup::priv_trait_semantic_data].
 pub fn priv_trait_semantic_data(db: &dyn SemanticGroup, trait_id: TraitId) -> Option<TraitData> {
     // TODO(spapini): When asts are rooted on items, don't query module_data directly. Use a
     // selector.
+
+    let syntax_db = db.upcast();
     let module_id = trait_id.module(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_id);
     let module_data = db.module_data(module_id)?;
@@ -65,10 +74,11 @@ pub fn priv_trait_semantic_data(db: &dyn SemanticGroup, trait_id: TraitId) -> Op
         db,
         &mut diagnostics,
         module_id,
-        &trait_ast.generic_params(db.upcast()),
+        &trait_ast.generic_params(syntax_db),
     );
 
-    Some(TraitData { diagnostics: diagnostics.build(), generic_params })
+    let attributes = ast_attributes_to_semantic(syntax_db, trait_ast.attributes(syntax_db));
+    Some(TraitData { attributes, diagnostics: diagnostics.build(), generic_params })
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
