@@ -5,10 +5,10 @@ use defs::ids::{FreeFunctionId, GenericFunctionId, GenericParamId, LanguageEleme
 use diagnostics::Diagnostics;
 use diagnostics_proc_macros::DebugWithDb;
 use id_arena::Arena;
-use smol_str::SmolStr;
-use syntax::node::{ast, Terminal};
+use syntax::node::ast;
 use utils::unordered_hash_map::UnorderedHashMap;
 
+use super::attribute::{ast_attributes_to_semantic, Attribute};
 use super::functions::{
     function_signature_implicit_parameters, function_signature_params,
     function_signature_return_type,
@@ -23,11 +23,6 @@ use crate::{semantic, ExprId, SemanticDiagnostic};
 #[cfg(test)]
 #[path = "free_function_test.rs"]
 mod test;
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Attribute {
-    id: SmolStr,
-}
 
 // Declaration.
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
@@ -114,13 +109,7 @@ pub fn priv_free_function_declaration_data(
         &mut environment,
     );
 
-    // TODO(ilya): Consider checking for attribute repetitions.
-    let attributes = function_syntax
-        .attributes(syntax_db)
-        .elements(syntax_db)
-        .into_iter()
-        .map(|attribute| Attribute { id: attribute.attr(syntax_db).text(syntax_db) })
-        .collect();
+    let attributes = ast_attributes_to_semantic(syntax_db, function_syntax.attributes(syntax_db));
     Some(FreeFunctionDeclarationData {
         diagnostics: diagnostics.build(),
         signature: semantic::Signature { params, return_type, implicits },
