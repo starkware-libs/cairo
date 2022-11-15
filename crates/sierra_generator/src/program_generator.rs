@@ -40,7 +40,7 @@ pub fn module_sierra_diagnostics(
             | ModuleItemId::Use(_)
             | ModuleItemId::Trait(_)
             | ModuleItemId::ExternType(_)
-            | ModuleItemId::ExternFunction(_) => todo!("Not supported yet."),
+            | ModuleItemId::ExternFunction(_) => {}
         }
     }
     diagnostics.build()
@@ -60,7 +60,7 @@ pub fn module_sierra_library(
     for (_name, item) in module_items.items.iter() {
         match item {
             ModuleItemId::Submodule(_) => {}
-            ModuleItemId::Use(_) => todo!("'use' lowering not supported yet."),
+            ModuleItemId::Use(_) => {}
             ModuleItemId::FreeFunction(free_function_id) => {
                 let function: Arc<pre_sierra::Function> =
                     db.free_function_sierra(*free_function_id)?;
@@ -72,7 +72,7 @@ pub fn module_sierra_library(
             ModuleItemId::Trait(_) => {}
             ModuleItemId::Impl(_) => {}
             ModuleItemId::ExternType(_) => {}
-            ModuleItemId::ExternFunction(_) => todo!("'extern func' lowering not supported yet."),
+            ModuleItemId::ExternFunction(_) => {}
         }
     }
 
