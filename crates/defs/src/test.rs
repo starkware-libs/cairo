@@ -7,9 +7,10 @@ use filesystem::ids::{CrateLongId, Directory, FileLongId};
 use indoc::indoc;
 use parser::db::ParserDatabase;
 use syntax::node::db::{SyntaxDatabase, SyntaxGroup};
+use syntax::node::{ast, Terminal};
 use utils::extract_matches;
 
-use crate::db::{DefsDatabase, DefsGroup};
+use crate::db::{init_defs_group, DefsDatabase, DefsGroup, MacroPlugin};
 use crate::ids::{ModuleId, ModuleItemId};
 
 #[salsa::database(DefsDatabase, ParserDatabase, SyntaxDatabase, FilesDatabase)]
@@ -21,6 +22,7 @@ impl Default for DatabaseForTesting {
     fn default() -> Self {
         let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
+        init_defs_group(&mut res);
         res
     }
 }
@@ -145,5 +147,53 @@ fn test_submodules() {
     assert_eq!(
         db.file_modules(db.module_file(subsubmodule_id).unwrap()).unwrap(),
         vec![subsubmodule_id]
+    );
+}
+
+#[derive(Debug)]
+struct DummyPlugin {}
+
+impl MacroPlugin for DummyPlugin {
+    fn generate_code(
+        &self,
+        db: &dyn SyntaxGroup,
+        item_ast: syntax::node::ast::Item,
+    ) -> Option<(smol_str::SmolStr, String)> {
+        match item_ast {
+            ast::Item::Struct(struct_ast) => {
+                Some(("virt".into(), format!("func foo(x:{}){{}}", struct_ast.name(db).text(db))))
+            }
+            ast::Item::FreeFunction(_) => Some(("virt2".into(), "extern type B;".into())),
+            _ => None,
+        }
+    }
+}
+
+#[test]
+fn test_plugin() {
+    let mut db_val = DatabaseForTesting::default();
+    let db = &mut db_val;
+
+    let crate_id = db.intern_crate(CrateLongId("test_crate".into()));
+    let root = Directory("src".into());
+    db.set_crate_root(crate_id, Some(root));
+    db.set_macro_plugins(vec![Arc::new(DummyPlugin {})]);
+
+    // Main module file.
+    set_file_content(db, "src/lib.cairo", "struct A{}");
+
+    // Find submodules.
+    let module_id = ModuleId::CrateRoot(crate_id);
+    let submodule_id = db.module_submodules(module_id).unwrap().pop().unwrap();
+    let subsubmodule_id = db.module_submodules(submodule_id).unwrap().pop().unwrap();
+
+    assert_eq!(
+        format!("{:?}", db.module_item_by_name(submodule_id, "foo".into()).debug(db)),
+        "Some(FreeFunctionId(test_crate::virt::foo))"
+    );
+
+    assert_eq!(
+        format!("{:?}", db.module_item_by_name(subsubmodule_id, "B".into()).debug(db)),
+        "Some(ExternTypeId(test_crate::virt::virt2::B))"
     );
 }
