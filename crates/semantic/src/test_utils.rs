@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use db_utils::Upcast;
-use defs::db::{DefsDatabase, DefsGroup};
+use defs::db::{init_defs_group, DefsDatabase, DefsGroup};
 use defs::ids::{FreeFunctionId, GenericFunctionId, ModuleId};
 use filesystem::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup, FilesGroupEx};
 use filesystem::ids::{CrateId, CrateLongId, Directory};
@@ -23,6 +23,7 @@ impl Default for SemanticDatabaseForTesting {
     fn default() -> Self {
         let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
+        init_defs_group(&mut res);
         res
     }
 }

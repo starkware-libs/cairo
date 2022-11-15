@@ -23,7 +23,7 @@
 
 use db_utils::define_short_id;
 use debug::debug::DebugWithDb;
-use filesystem::ids::CrateId;
+use filesystem::ids::{CrateId, FileId};
 use smol_str::SmolStr;
 use syntax::node::helpers::GetIdentifier;
 use syntax::node::ids::SyntaxStablePtrId;
@@ -212,6 +212,7 @@ macro_rules! toplevel_enum {
 pub enum ModuleId {
     CrateRoot(CrateId),
     Submodule(SubmoduleId),
+    VirtualSubmodule(VirtualSubmoduleId),
 }
 impl ModuleId {
     pub fn full_path(&self, db: &dyn DefsGroup) -> String {
@@ -219,6 +220,10 @@ impl ModuleId {
             ModuleId::CrateRoot(id) => db.lookup_intern_crate(*id).0.to_string(),
             ModuleId::Submodule(id) => {
                 format!("{}::{}", id.module(db).full_path(db), id.name(db))
+            }
+            ModuleId::VirtualSubmodule(virtual_submodule_id) => {
+                let virtual_submodule = db.lookup_intern_virtual_submodule(*virtual_submodule_id);
+                format!("{}::{}", virtual_submodule.parent.full_path(db), virtual_submodule.name)
             }
         }
     }
@@ -228,6 +233,16 @@ impl DebugWithDb<dyn DefsGroup> for ModuleId {
         write!(f, "ModuleId({})", self.full_path(db))
     }
 }
+
+/// A virtual sub module is a module create by a macro plugin. All plugin generated code is placed
+/// in such submodules to avoid namespace pollution.
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct VirtualSubmodule {
+    pub name: SmolStr,
+    pub parent: ModuleId,
+    pub file: FileId,
+}
+define_short_id!(VirtualSubmoduleId, VirtualSubmodule, DefsGroup, lookup_intern_virtual_submodule);
 
 define_language_element_id_as_enum! {
     /// Id for direct children of a module.
