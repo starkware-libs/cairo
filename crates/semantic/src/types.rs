@@ -42,9 +42,6 @@ impl TypeId {
     pub fn format(&self, db: &(dyn SemanticGroup + 'static)) -> String {
         db.lookup_intern_type(*self).format(db)
     }
-    pub fn is_missing(&self, db: &dyn SemanticGroup) -> bool {
-        *self == TypeId::missing(db)
-    }
 }
 impl TypeLongId {
     pub fn format(&self, db: &(dyn SemanticGroup + 'static)) -> String {

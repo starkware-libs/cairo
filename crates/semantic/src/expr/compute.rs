@@ -506,7 +506,7 @@ fn compute_pattern_semantic(
                     .on_none(|| {
                         // Don't add a diagnostic if the type is missing.
                         // A diagnostic should've already been added.
-                        if !ty.is_missing(ctx.db) {
+                        if ty != TypeId::missing(ctx.db) {
                             ctx.diagnostics.report(&enum_pattern, UnexpectedEnumPattern { ty });
                         }
                     })?;
@@ -566,7 +566,7 @@ fn compute_pattern_semantic(
                     .on_none(|| {
                         // Don't add a diagnostic if the type is missing.
                         // A diagnostic should've already been added.
-                        if !ty.is_missing(ctx.db) {
+                        if ty != TypeId::missing(ctx.db) {
                             ctx.diagnostics.report(&pattern_struct, UnexpectedEnumPattern { ty });
                         }
                     })?;
@@ -913,7 +913,7 @@ fn expr_function_call(
         // Don't add diagnostic if the type is missing (a diagnostic should have already been
         // added).
         // TODO(lior): Add a test to missing type once possible.
-        if arg_typ != param_typ && !arg_typ.is_missing(ctx.db) {
+        if arg_typ != param_typ && arg_typ != TypeId::missing(ctx.db) {
             ctx.diagnostics.report_by_ptr(
                 arg.stable_ptr().untyped(),
                 WrongArgumentType { expected_ty: param_typ, actual_ty: arg_typ },
@@ -964,7 +964,7 @@ pub fn compute_statement_semantic(
                     let var_type_path = type_clause.ty(syntax_db);
                     let explicit_type =
                         resolve_type(db, ctx.diagnostics, &mut ctx.resolver, &var_type_path);
-                    if !inferred_type.is_missing(db) && explicit_type != inferred_type {
+                    if inferred_type != TypeId::missing(db) && explicit_type != inferred_type {
                         ctx.diagnostics.report(
                             &let_syntax.rhs(syntax_db),
                             WrongArgumentType {
