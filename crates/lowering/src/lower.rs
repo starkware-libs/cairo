@@ -286,6 +286,7 @@ fn lower_expr(
         semantic::Expr::StructCtor(expr) => lower_expr_struct_ctor(ctx, expr, scope),
         semantic::Expr::EnumVariantCtor(expr) => lower_expr_enum_ctor(ctx, expr, scope),
         semantic::Expr::Missing(_) => Err(LoweringFlowError::Failed),
+        semantic::Expr::PropagateError(_) => todo!(),
     }
 }
 

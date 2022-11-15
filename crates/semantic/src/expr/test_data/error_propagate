@@ -1,0 +1,157 @@
+//! > Test basic error propagation on Option.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+func foo() -> Option::<felt> {
+    with_err()?;
+    Option::<felt>::None(())
+}
+
+//! > function_name
+foo
+
+//! > module_code
+func with_err() -> Option::<felt> {
+    Option::<felt>::None(())
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test bad function for error propagation on Option.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+func foo() -> felt {
+    with_err()?;
+    1
+}
+
+//! > function_name
+foo
+
+//! > module_code
+func with_err() -> Option::<felt> {
+    Option::<felt>::None(())
+}
+
+//! > expected_diagnostics
+error: Return type "core::felt" does not wrap error "()"
+ --> lib.cairo:5:5
+    with_err()?;
+    ^*********^
+
+//! > ==========================================================================
+
+//! > Test basic error propagation on Result.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+func foo() -> Result::<felt, uint128> {
+    with_err()?;
+    Result::<felt, uint128>::Ok(with_err2()?)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+func with_err() -> Result::<(), uint128> {
+    Result::<(), uint128>::Ok(())
+}
+
+func with_err2() -> Result::<felt, uint128> {
+    Result::<felt, uint128>::Ok((0))
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test bad function for error propagation on Result.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+func foo() -> felt {
+    with_err()?;
+    1
+}
+
+//! > function_name
+foo
+
+//! > module_code
+func with_err() -> Result::<felt, uint128> {
+    Result::<felt, uint128>::Ok((0))
+}
+
+//! > expected_diagnostics
+error: Return type "core::felt" does not wrap error "core::integer::uint128"
+ --> lib.cairo:5:5
+    with_err()?;
+    ^*********^
+
+//! > ==========================================================================
+
+//! > Test error propagation on mismatching Result types.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+func foo() -> Result::<felt, uint128> {
+    with_other_err()?;
+    Result::<felt, felt>::Ok((0))
+}
+
+//! > function_name
+foo
+
+//! > module_code
+func with_other_err() -> Result::<felt, felt> {
+    Result::<felt, felt>::Ok((0))
+}
+
+//! > expected_diagnostics
+error: Return type "core::result::Result::<core::felt, core::integer::uint128>" does not wrap error "core::felt"
+ --> lib.cairo:5:5
+    with_other_err()?;
+    ^***************^
+
+error: Unexpected return type. Expected: "core::result::Result::<core::felt, core::integer::uint128>", found: "core::result::Result::<core::felt, core::felt>".
+ --> lib.cairo:4:39
+func foo() -> Result::<felt, uint128> {
+                                      ^
+
+//! > ==========================================================================
+
+//! > Test bad operand for error propagation.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+func foo() -> felt {
+    6?;
+    35
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Type "core::felt" can not error propagate
+ --> lib.cairo:2:5
+    6?;
+    ^^

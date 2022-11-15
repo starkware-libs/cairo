@@ -21,6 +21,7 @@ semantic_test!(
     [
         "src/expr/test_data/assignment",
         "src/expr/test_data/enum",
+        "src/expr/test_data/error_propagate",
         "src/expr/test_data/generics",
         "src/expr/test_data/if",
         "src/expr/test_data/implicits",
