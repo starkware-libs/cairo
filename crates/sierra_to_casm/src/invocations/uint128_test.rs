@@ -81,3 +81,40 @@ fn test_sub() {
         }
     );
 }
+
+#[test]
+fn test_lt() {
+    assert_eq!(
+        compile_libfunc(
+            "uint128_lt",
+            vec![ref_expr!([fp - 5]), ref_expr!([ap - 7]), ref_expr!([ap - 6])]
+        ),
+        ReducedCompiledInvocation {
+            instructions: casm! {
+                %{ memory[ap + 0] = memory[ap - 7] < memory[ap - 6] %}
+                jmp rel 6 if [ap + 0] != 0, ap++;
+                [ap + -7] = [ap + 0] + [ap + -8], ap++;
+                [ap + 0] = [[deref!([fp + -5])]];
+                jmp rel 0;
+                [ap + 0] = [ap + -8] + 1, ap++;
+                [ap + -8] = [ap + 0] + [ap + -1], ap++;
+                [ap + 0] = [[deref!([fp - 5])]];
+            }
+            .instructions,
+            relocations: vec![RelocationEntry {
+                instruction_idx: 3,
+                relocation: Relocation::RelativeStatementId(StatementIdx(1))
+            }],
+            results: vec![
+                ReducedBranchChanges {
+                    refs: vec![ref_expr!([fp - 5] + 1)],
+                    ap_change: ApChange::Known(2)
+                },
+                ReducedBranchChanges {
+                    refs: vec![ref_expr!([fp - 5] + 1)],
+                    ap_change: ApChange::Known(3)
+                }
+            ]
+        }
+    );
+}
