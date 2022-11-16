@@ -7,7 +7,7 @@ pub struct Node {
 pub enum NodeKind {
     Enum { variants: Vec<Variant>, missing_variant: Option<Variant> },
     Struct { members: Vec<Member> },
-    Terminal { members: Vec<Member> },
+    Terminal { is_keyword: bool, members: Vec<Member> },
     List { element_type: String },
     SeparatedList { element_type: String, separator_type: String },
     Token,
@@ -33,13 +33,14 @@ pub struct StructBuilder {
     name: String,
     members: Vec<Member>,
     is_terminal: bool,
+    is_keyword: bool,
 }
 impl StructBuilder {
     pub fn new(name: &str) -> Self {
-        Self { name: name.into(), members: Vec::new(), is_terminal: false }
+        Self { name: name.into(), members: Vec::new(), is_terminal: false, is_keyword: false }
     }
-    pub fn new_terminal(name: &str) -> Self {
-        Self { name: name.into(), members: Vec::new(), is_terminal: true }
+    pub fn new_terminal(name: &str, is_keyword: bool) -> Self {
+        Self { name: name.into(), members: Vec::new(), is_terminal: true, is_keyword }
     }
     pub fn node(mut self, field: &str, kind: &str) -> StructBuilder {
         self.members.push(Member { name: field.into(), kind: kind.into(), key: false });
@@ -53,7 +54,7 @@ impl StructBuilder {
         Node {
             name: self.name,
             kind: if self.is_terminal {
-                NodeKind::Terminal { members: self.members }
+                NodeKind::Terminal { is_keyword: self.is_keyword, members: self.members }
             } else {
                 NodeKind::Struct { members: self.members }
             },
@@ -150,19 +151,25 @@ impl NodesAggregator {
     }
 
     /// Adds a node for a token node (similar to an empty struct).
-    pub fn add_terminal(self, pure_name: &str) -> Self {
+    pub fn add_terminal(self, pure_name: &str, is_keyword: bool) -> Self {
         self.add_struct(
-            StructBuilder::new_terminal(format!("Terminal{pure_name}").as_str())
+            StructBuilder::new_terminal(format!("Terminal{pure_name}").as_str(), is_keyword)
                 .node("leading_trivia", "Trivia")
                 .node("token", format!("Token{pure_name}").as_str())
                 .node("trailing_trivia", "Trivia"),
         )
     }
 
-    /// Adds a token node and a terminal node of the relevant names. e.g. for pure_name="Identifier"
-    /// it creates TokenIdentifier and TerminalIdentifier.
+    /// Adds a token node and a keyword terminal node of the relevant names. e.g. for
+    /// pure_name="Identifier" it creates TokenIdentifier and TerminalIdentifier.
+    pub fn add_token_and_keyword_terminal(self, pure_name: &str) -> Self {
+        self.add_token(pure_name).add_terminal(pure_name, true)
+    }
+
+    /// Adds a token node and a non-keyword terminal node of the relevant names. e.g. for
+    /// pure_name="Identifier" it creates TokenIdentifier and TerminalIdentifier.
     pub fn add_token_and_terminal(self, pure_name: &str) -> Self {
-        self.add_token(pure_name).add_terminal(pure_name)
+        self.add_token(pure_name).add_terminal(pure_name, false)
     }
 
     /// Adds an enum node for an option with 2 variants: empty and non-empty. Creates the empty

@@ -21,6 +21,7 @@ pub enum ParserDiagnosticKind {
     MissingTypeClause,
     MissingTypeExpression,
     ReservedIdentifier { identifier: SmolStr },
+    UnderscoreNoAllowedAsIdentifier,
 }
 impl DiagnosticEntry for ParserDiagnostic {
     type DbType = dyn FilesGroup;
@@ -47,6 +48,9 @@ impl DiagnosticEntry for ParserDiagnostic {
             }
             ParserDiagnosticKind::ReservedIdentifier { ref identifier } => {
                 format!("'{identifier}' is a reserved identifier.")
+            }
+            ParserDiagnosticKind::UnderscoreNoAllowedAsIdentifier => {
+                "An underscore ('_') is not allowed as an identifier here.".to_string()
             }
         }
     }

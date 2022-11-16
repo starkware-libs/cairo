@@ -328,6 +328,32 @@ impl SyntaxKind {
                 | SyntaxKind::TokenSkipped
         )
     }
+    pub fn is_keyword(&self) -> bool {
+        matches!(
+            *self,
+            SyntaxKind::TerminalFalse
+                | SyntaxKind::TerminalTrue
+                | SyntaxKind::TerminalExtern
+                | SyntaxKind::TerminalType
+                | SyntaxKind::TerminalFunction
+                | SyntaxKind::TerminalModule
+                | SyntaxKind::TerminalEnum
+                | SyntaxKind::TerminalStruct
+                | SyntaxKind::TerminalTrait
+                | SyntaxKind::TerminalImpl
+                | SyntaxKind::TerminalOf
+                | SyntaxKind::TerminalLet
+                | SyntaxKind::TerminalReturn
+                | SyntaxKind::TerminalMatch
+                | SyntaxKind::TerminalIf
+                | SyntaxKind::TerminalElse
+                | SyntaxKind::TerminalUse
+                | SyntaxKind::TerminalImplicits
+                | SyntaxKind::TerminalRef
+                | SyntaxKind::TerminalMut
+                | SyntaxKind::TerminalNoPanic
+        )
+    }
 }
 impl fmt::Display for SyntaxKind {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

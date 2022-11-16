@@ -66,6 +66,7 @@ fn generate_kinds_code() -> rust::Tokens {
     };
     let mut kinds = rust::Tokens::new();
     let mut token_kinds = rust::Tokens::new();
+    let mut keyword_kinds = rust::Tokens::new();
     let mut terminal_kinds = rust::Tokens::new();
 
     // SyntaxKind.
@@ -81,10 +82,11 @@ fn generate_kinds_code() -> rust::Tokens {
     }
 
     let mut first_token = true;
+    let mut first_keyword = true;
     let mut first_terminal = true;
     for Node { name, kind } in spec.into_iter() {
         match kind {
-            NodeKind::Token { .. } => {
+            NodeKind::Token => {
                 if first_token {
                     token_kinds.extend(quote! {
                         SyntaxKind::$name
@@ -96,16 +98,28 @@ fn generate_kinds_code() -> rust::Tokens {
                     });
                 }
             }
-            NodeKind::Terminal { .. } => {
+            NodeKind::Terminal { is_keyword, .. } => {
                 if first_terminal {
                     terminal_kinds.extend(quote! {
-                        SyntaxKind::$name
+                        SyntaxKind::$(name.clone())
                     });
                     first_terminal = false;
                 } else {
                     terminal_kinds.extend(quote! {
-                        | SyntaxKind::$name
+                        | SyntaxKind::$(name.clone())
                     });
+                }
+                if is_keyword {
+                    if first_keyword {
+                        keyword_kinds.extend(quote! {
+                            SyntaxKind::$name
+                        });
+                        first_keyword = false;
+                    } else {
+                        keyword_kinds.extend(quote! {
+                            | SyntaxKind::$name
+                        });
+                    }
                 }
             }
             _ => {}
@@ -130,6 +144,12 @@ fn generate_kinds_code() -> rust::Tokens {
                     $token_kinds
                 )
             }
+            pub fn is_keyword(&self) -> bool {
+                matches!(
+                    *self,
+                    $keyword_kinds
+                )
+            }
         }
         impl fmt::Display for SyntaxKind {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -146,7 +166,7 @@ fn generate_key_fields_code() -> rust::Tokens {
 
     for Node { name, kind } in spec.into_iter() {
         match kind {
-            NodeKind::Struct { members } | NodeKind::Terminal { members } => {
+            NodeKind::Struct { members } | NodeKind::Terminal { members, .. } => {
                 let mut fields = rust::Tokens::new();
                 for (i, member) in members.into_iter().enumerate() {
                     let field_name = member.name;
@@ -158,7 +178,7 @@ fn generate_key_fields_code() -> rust::Tokens {
                     SyntaxKind::$name => vec![$fields],
                 });
             }
-            NodeKind::List { .. } | NodeKind::SeparatedList { .. } | NodeKind::Token => {
+            NodeKind::List { .. } | NodeKind::SeparatedList { .. } | NodeKind::Token { .. } => {
                 arms.extend(quote! {
                     SyntaxKind::$name => vec![],
                 });
@@ -211,8 +231,8 @@ fn generate_ast_code() -> rust::Tokens {
                 gen_enum_code(name, variants, missing_variant)
             }
             NodeKind::Struct { members } => gen_struct_code(name, members, false),
-            NodeKind::Terminal { members } => gen_struct_code(name, members, true),
-            NodeKind::Token => gen_token_code(name),
+            NodeKind::Terminal { members, .. } => gen_struct_code(name, members, true),
+            NodeKind::Token { .. } => gen_token_code(name),
             NodeKind::List { element_type } => gen_list_code(name, element_type),
             NodeKind::SeparatedList { element_type, separator_type } => {
                 gen_separated_list_code(name, element_type, separator_type)
