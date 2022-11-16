@@ -29,6 +29,8 @@ pub trait DefsGroup:
     #[salsa::interned]
     fn intern_free_function(&self, id: FreeFunctionLongId) -> FreeFunctionId;
     #[salsa::interned]
+    fn intern_impl_function(&self, id: ImplFunctionLongId) -> ImplFunctionId;
+    #[salsa::interned]
     fn intern_struct(&self, id: StructLongId) -> StructId;
     #[salsa::interned]
     fn intern_enum(&self, id: EnumLongId) -> EnumId;
