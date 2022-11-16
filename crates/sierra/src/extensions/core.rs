@@ -1,5 +1,6 @@
 use super::ap_tracking::RevokeApTrackingLibFunc;
 use super::array::{ArrayLibFunc, ArrayType};
+use super::dict_felt_to::{DictFeltToLibFunc, DictFeltToType};
 use super::drop::DropLibFunc;
 use super::duplicate::DupLibFunc;
 use super::enm::{EnumLibFunc, EnumType};
@@ -28,6 +29,7 @@ define_type_hierarchy! {
         Uninitialized(UninitializedType),
         Enum(EnumType),
         Struct(StructType),
+        DictFeltTo(DictFeltToType),
     }, CoreTypeConcrete
 }
 
@@ -47,5 +49,6 @@ define_libfunc_hierarchy! {
         UnconditionalJump(UnconditionalJumpLibFunc),
         Enum(EnumLibFunc),
         Struct(StructLibFunc),
+        DictFeltTo(DictFeltToLibFunc),
     }, CoreConcreteLibFunc
 }

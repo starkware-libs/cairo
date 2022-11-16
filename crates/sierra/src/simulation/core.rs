@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use num_bigint::ToBigInt;
 use num_traits::Zero;
 use utils::extract_matches;
@@ -9,6 +11,7 @@ use crate::extensions::core::CoreConcreteLibFunc::{
     self, ApTracking, Array, Drop, Dup, Enum, Felt, FunctionCall, Gas, Mem, Struct, Uint128,
     UnconditionalJump, UnwrapNonZero,
 };
+use crate::extensions::dict_felt_to::DictFeltToConcreteLibFunc;
 use crate::extensions::enm::{EnumConcreteLibFunc, EnumInitConcreteLibFunc};
 use crate::extensions::felt::{
     FeltBinaryOperationConcreteLibFunc, FeltConcrete, FeltConstConcreteLibFunc,
@@ -155,6 +158,36 @@ pub fn simulate<
                 Ok((extract_matches!(inputs.into_iter().next().unwrap(), CoreValue::Struct), 0))
             }
             [_] => Err(LibFuncSimulationError::WrongArgType),
+            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+        },
+        CoreConcreteLibFunc::DictFeltTo(DictFeltToConcreteLibFunc::New(_)) => {
+            if inputs.is_empty() {
+                Ok((vec![CoreValue::Dict(HashMap::new())], 0))
+            } else {
+                Err(LibFuncSimulationError::WrongNumberOfArgs)
+            }
+        }
+        CoreConcreteLibFunc::DictFeltTo(DictFeltToConcreteLibFunc::Read(_)) => {
+            match &inputs[..] {
+                [CoreValue::Dict(map), CoreValue::Felt(key)] => {
+                    // Returns 0 as a defualt value.
+                    // TODO(Gil): correct this behaviour when dict behaviour is decided on key not
+                    // found.
+                    Ok((vec![map.get(key).map_or(CoreValue::Felt(0.into()), |x| x.clone())], 0))
+                }
+                [_, _] => Err(LibFuncSimulationError::WrongArgType),
+                _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+            }
+        }
+        CoreConcreteLibFunc::DictFeltTo(DictFeltToConcreteLibFunc::Write(_)) => match &inputs[..] {
+            [CoreValue::Dict(_), CoreValue::Felt(_), _] => {
+                let mut iter = inputs.into_iter();
+                let mut dict = extract_matches!(iter.next().unwrap(), CoreValue::Dict);
+                let key = extract_matches!(iter.next().unwrap(), CoreValue::Felt);
+                dict.insert(key, iter.next().unwrap());
+                Ok((vec![CoreValue::Dict(dict)], 0))
+            }
+            [_, _, _] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
         },
     }
