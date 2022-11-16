@@ -6837,9 +6837,10 @@ impl ImplBody {
     pub fn new_green(
         db: &dyn SyntaxGroup,
         lbrace: TerminalLBraceGreen,
+        items: ItemListGreen,
         rbrace: TerminalRBraceGreen,
     ) -> ImplBodyGreen {
-        let children: Vec<GreenId> = vec![lbrace.0, rbrace.0];
+        let children: Vec<GreenId> = vec![lbrace.0, items.0, rbrace.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         ImplBodyGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::ImplBody,
@@ -6851,8 +6852,11 @@ impl ImplBody {
     pub fn lbrace(&self, db: &dyn SyntaxGroup) -> TerminalLBrace {
         TerminalLBrace::from_syntax_node(db, self.children[0].clone())
     }
+    pub fn items(&self, db: &dyn SyntaxGroup) -> ItemList {
+        ItemList::from_syntax_node(db, self.children[1].clone())
+    }
     pub fn rbrace(&self, db: &dyn SyntaxGroup) -> TerminalRBrace {
-        TerminalRBrace::from_syntax_node(db, self.children[1].clone())
+        TerminalRBrace::from_syntax_node(db, self.children[2].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -6872,7 +6876,11 @@ impl TypedSyntaxNode for ImplBody {
         ImplBodyGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::ImplBody,
             details: GreenNodeDetails::Node {
-                children: vec![TerminalLBrace::missing(db).0, TerminalRBrace::missing(db).0],
+                children: vec![
+                    TerminalLBrace::missing(db).0,
+                    ItemList::missing(db).0,
+                    TerminalRBrace::missing(db).0,
+                ],
                 width: 0,
             },
         }))
