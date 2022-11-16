@@ -20,7 +20,7 @@ use crate::items::imp::{ConcreteImplId, ImplLookupContext};
 use crate::items::trt::ConcreteTraitId;
 use crate::resolve_path::ResolvedGenericItem;
 use crate::{
-    corelib, items, semantic, types, FreeFunctionDefinition, FunctionId, SemanticDiagnostic,
+    corelib, items, semantic, types, FreeFunctionDefinition, FunctionId, SemanticDiagnostic, TypeId,
 };
 
 // Salsa database interface.
@@ -184,6 +184,12 @@ pub trait SemanticGroup:
         &self,
         free_function_id: FreeFunctionId,
     ) -> Option<Vec<Attribute>>;
+    /// Returns the explicit implicits of a signature of a free function declaration.
+    #[salsa::invoke(items::free_function::free_function_declaration_implicits)]
+    fn free_function_declaration_implicits(
+        &self,
+        free_function_id: FreeFunctionId,
+    ) -> Option<Vec<TypeId>>;
     /// Returns the generic params of a free function declaration.
     #[salsa::invoke(items::free_function::free_function_declaration_generic_params)]
     fn free_function_declaration_generic_params(
@@ -209,6 +215,20 @@ pub trait SemanticGroup:
         &self,
         free_function_id: FreeFunctionId,
     ) -> Option<semantic::ExprId>;
+    /// Returns the direct callees of a free function definition. The items in the vector are
+    /// unique.
+    #[salsa::invoke(items::free_function::free_function_definition_direct_callees)]
+    fn free_function_definition_direct_callees(
+        &self,
+        free_function_id: FreeFunctionId,
+    ) -> Option<Vec<FunctionId>>;
+    /// Returns the free function direct callees of a free function definition (i.e. excluding
+    /// libfunc callees). The items in the vector are unique.
+    #[salsa::invoke(items::free_function::free_function_definition_direct_free_function_callees)]
+    fn free_function_definition_direct_free_function_callees(
+        &self,
+        free_function_id: FreeFunctionId,
+    ) -> Option<Vec<FreeFunctionId>>;
     /// Returns the definition of a free function.
     #[salsa::invoke(items::free_function::free_function_definition)]
     fn free_function_definition(
@@ -244,6 +264,12 @@ pub trait SemanticGroup:
         &self,
         extern_function_id: ExternFunctionId,
     ) -> Option<Vec<GenericParamId>>;
+    /// Returns the explicit implicits of an extern function declaration.
+    #[salsa::invoke(items::extern_function::extern_function_declaration_implicits)]
+    fn extern_function_declaration_implicits(
+        &self,
+        extern_function_id: ExternFunctionId,
+    ) -> Option<Vec<TypeId>>;
 
     // Extern type.
     // ============

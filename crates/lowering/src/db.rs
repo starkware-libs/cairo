@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::sync::Arc;
 
 use db_utils::Upcast;
@@ -5,6 +6,7 @@ use defs::ids::{FreeFunctionId, ModuleId, ModuleItemId};
 use diagnostics::{Diagnostics, DiagnosticsBuilder};
 use filesystem::ids::FileId;
 use semantic::db::SemanticGroup;
+use semantic::TypeId;
 
 use crate::diagnostic::LoweringDiagnostic;
 use crate::lower::{lower, Lowered};
@@ -24,7 +26,51 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     /// Aggregates file level lowering diagnostics.
     fn file_lowering_diagnostics(&self, file_id: FileId)
     -> Option<Diagnostics<LoweringDiagnostic>>;
+
+    // --- Queries related to implicits ---
+
+    /// Returns the representative of the function's strongly connected component. The
+    /// representative is consistently chosen for all the functions in the same SCC.
+    #[salsa::invoke(crate::lower::implicits::function_scc_representative)]
+    fn function_scc_representative(&self, function: FreeFunctionId) -> SCCRepresentative;
+
+    /// Returns the explicit implicits required by all the functions in the SCC of this function.
+    /// These are all the implicit parameters that are explicitly declared in the functions of
+    /// the given function's SCC.
+    ///
+    /// For better caching, this function should be called only with the representative of the SCC.
+    #[salsa::invoke(crate::lower::implicits::function_scc_explicit_implicits)]
+    fn function_scc_explicit_implicits(
+        &self,
+        function: SCCRepresentative,
+    ) -> Option<HashSet<TypeId>>;
+
+    /// Returns all the implicit parameters that the function requires (according to both its
+    /// signature and the functions it calls). The items in the returned vector are unique and the
+    /// order is consistent, but not necessarily related to the order of the explicit implicits in
+    /// the signature of the function.
+    #[salsa::invoke(crate::lower::implicits::function_all_implicits)]
+    fn function_all_implicits(&self, function: semantic::FunctionId) -> Option<Vec<TypeId>>;
+
+    /// Returns all the implicit parameters that the free function requires (according to both its
+    /// signature and the functions it calls).
+    #[salsa::invoke(crate::lower::implicits::free_function_all_implicits)]
+    fn free_function_all_implicits(&self, function: FreeFunctionId) -> Option<HashSet<TypeId>>;
+
+    /// Returns all the implicit parameters that the free function requires (according to both its
+    /// signature and the functions it calls). The items in the returned vector are unique and the
+    /// order is consistent, but not necessarily related to the order of the explicit implicits in
+    /// the signature of the function.
+    #[salsa::invoke(crate::lower::implicits::free_function_all_implicits_vec)]
+    fn free_function_all_implicits_vec(&self, function: FreeFunctionId) -> Option<Vec<TypeId>>;
+
+    /// Returns all the functions in the same strongly connected component as the given function.
+    #[salsa::invoke(crate::lower::implicits::function_scc)]
+    fn function_scc(&self, function_id: FreeFunctionId) -> Vec<FreeFunctionId>;
 }
+
+#[derive(Debug, Eq, PartialEq, Clone, Hash)]
+pub struct SCCRepresentative(pub FreeFunctionId);
 
 fn free_function_lowered(
     db: &dyn LoweringGroup,

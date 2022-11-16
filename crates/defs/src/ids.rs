@@ -273,6 +273,17 @@ define_language_element_id!(
     lookup_intern_free_function,
     name
 );
+impl PartialOrd for FreeFunctionId {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.0.partial_cmp(&other.0)
+    }
+}
+impl Ord for FreeFunctionId {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.0.cmp(&other.0)
+    }
+}
+
 define_language_element_id!(
     ExternFunctionId,
     ExternFunctionLongId,

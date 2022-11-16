@@ -27,6 +27,7 @@ use crate::objects::{Block, BlockId, Variable};
 
 mod context;
 mod external;
+pub mod implicits;
 mod lower_if;
 mod scope;
 mod semantic_map;
