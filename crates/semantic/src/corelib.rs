@@ -154,6 +154,39 @@ pub fn unit_ty(db: &dyn SemanticGroup) -> TypeId {
     db.intern_type(semantic::TypeLongId::Tuple(vec![]))
 }
 
+/// Attempts to unwrap error propagation types (Option, Result).
+/// Returns None if not one of these types.
+pub fn unwrap_error_propagation_type(
+    db: &dyn SemanticGroup,
+    ty: TypeId,
+) -> Option<(ConcreteVariant, ConcreteVariant)> {
+    match db.lookup_intern_type(ty) {
+        // Only enums may be `Result` and `Option` types.
+        TypeLongId::Concrete(semantic::ConcreteTypeId::Enum(enm)) => {
+            let name = enm.enum_id(db.upcast()).name(db.upcast());
+            if name == "Option" || name == "Result" {
+                if let [ok_variant, err_variant] = db.concrete_enum_variants(enm)?.as_slice() {
+                    Some((ok_variant.clone(), err_variant.clone()))
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        }
+        TypeLongId::GenericParameter(_) => todo!(
+            "When generic types are supported, if type is of matching type, allow unwrapping it \
+             to type."
+        ),
+        TypeLongId::Concrete(
+            semantic::ConcreteTypeId::Struct(_) | semantic::ConcreteTypeId::Extern(_),
+        )
+        | TypeLongId::Tuple(_)
+        | TypeLongId::Never
+        | TypeLongId::Missing => None,
+    }
+}
+
 /// builds a semantic unit expression. This is not necessarily located in the AST, so it is received
 /// as a param.
 pub fn unit_expr(ctx: &mut ComputationContext<'_>, stable_ptr: ast::ExprPtr) -> ExprId {
