@@ -205,45 +205,38 @@ pub fn core_binary_operator(
 ) -> Result<FunctionId, SemanticDiagnosticKind> {
     // TODO(lior): Replace current hard-coded implementation with an implementation that is based on
     //   traits.
-    // TODO(lior): Add type checking for all of the operators.
     let felt = core_felt_ty(db);
     let uint128 = core_uint128_ty(db);
+    let bool_ty = core_bool_ty(db);
+    let unsupported_operator = |op: &str| {
+        Err(SemanticDiagnosticKind::UnsupportedBinaryOperator { op: op.into(), type1, type2 })
+    };
     let function_name = match binary_op {
-        BinaryOperator::Plus(_) => {
-            if type1 == felt && type2 == felt {
-                "felt_add"
-            } else if type1 == uint128 && type2 == uint128 {
-                "uint128_add"
-            } else {
-                return Err(SemanticDiagnosticKind::UnsupportedBinaryOperator {
-                    op: "+".into(),
-                    type1,
-                    type2,
-                });
-            }
-        }
-        BinaryOperator::Minus(_) => {
-            if type1 == felt && type2 == felt {
-                "felt_sub"
-            } else if type1 == uint128 && type2 == uint128 {
-                "uint128_sub"
-            } else {
-                return Err(SemanticDiagnosticKind::UnsupportedBinaryOperator {
-                    op: "-".into(),
-                    type1,
-                    type2,
-                });
-            }
-        }
-        BinaryOperator::Mul(_) => "felt_mul",
-        BinaryOperator::Div(_) => "felt_div",
-        BinaryOperator::EqEq(_) => "felt_eq",
-        BinaryOperator::AndAnd(_) => "bool_and",
-        BinaryOperator::OrOr(_) => "bool_or",
-        BinaryOperator::LE(_) => "felt_le",
-        BinaryOperator::GE(_) => "felt_ge",
-        BinaryOperator::LT(_) => "felt_lt",
-        BinaryOperator::GT(_) => "felt_gt",
+        BinaryOperator::Plus(_) if [type1, type2] == [felt, felt] => "felt_add",
+        BinaryOperator::Plus(_) if [type1, type2] == [uint128, uint128] => "uint128_add",
+        BinaryOperator::Plus(_) => return unsupported_operator("+"),
+        BinaryOperator::Minus(_) if [type1, type2] == [felt, felt] => "felt_sub",
+        BinaryOperator::Minus(_) if [type1, type2] == [uint128, uint128] => "uint128_sub",
+        BinaryOperator::Minus(_) => return unsupported_operator("-"),
+        BinaryOperator::Mul(_) if [type1, type2] == [felt, felt] => "felt_mul",
+        BinaryOperator::Mul(_) => return unsupported_operator("*"),
+        BinaryOperator::Div(_) if [type1, type2] == [felt, felt] => "felt_div",
+        BinaryOperator::Div(_) => return unsupported_operator("/"),
+        BinaryOperator::EqEq(_) if [type1, type2] == [felt, felt] => "felt_eq",
+        BinaryOperator::EqEq(_) => return unsupported_operator("=="),
+        BinaryOperator::AndAnd(_) if [type1, type2] == [bool_ty, bool_ty] => "bool_and",
+        BinaryOperator::AndAnd(_) => return unsupported_operator("&&"),
+        BinaryOperator::OrOr(_) if [type1, type2] == [bool_ty, bool_ty] => "bool_or",
+        BinaryOperator::OrOr(_) => return unsupported_operator("||"),
+        BinaryOperator::LE(_) if [type1, type2] == [felt, felt] => "felt_le",
+        BinaryOperator::LE(_) => return unsupported_operator("<="),
+        BinaryOperator::GE(_) if [type1, type2] == [felt, felt] => "felt_ge",
+        BinaryOperator::GE(_) => return unsupported_operator(">="),
+        BinaryOperator::LT(_) if [type1, type2] == [felt, felt] => "felt_lt",
+        BinaryOperator::LT(_) if [type1, type2] == [uint128, uint128] => "uint128_lt",
+        BinaryOperator::LT(_) => return unsupported_operator("<"),
+        BinaryOperator::GT(_) if [type1, type2] == [felt, felt] => "felt_gt",
+        BinaryOperator::GT(_) => return unsupported_operator(">"),
         _ => return Err(SemanticDiagnosticKind::UnknownBinaryOperator),
     };
     Ok(get_core_function_id(db, function_name.into(), vec![]))
