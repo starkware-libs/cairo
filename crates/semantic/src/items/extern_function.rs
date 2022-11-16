@@ -11,7 +11,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::Environment;
 use crate::resolve_path::Resolver;
-use crate::{semantic, SemanticDiagnostic};
+use crate::{semantic, SemanticDiagnostic, TypeId};
 
 #[cfg(test)]
 #[path = "extern_function_test.rs"]
@@ -49,6 +49,20 @@ pub fn extern_function_declaration_generic_params(
     extern_function_id: ExternFunctionId,
 ) -> Option<Vec<GenericParamId>> {
     Some(db.priv_extern_function_declaration_data(extern_function_id)?.generic_params)
+}
+/// Query implementation of [crate::db::SemanticGroup::extern_function_declaration_implicits].
+pub fn extern_function_declaration_implicits(
+    db: &dyn SemanticGroup,
+    extern_function_id: ExternFunctionId,
+) -> Option<Vec<TypeId>> {
+    Some(
+        db.priv_extern_function_declaration_data(extern_function_id)?
+            .signature
+            .implicits
+            .into_iter()
+            .map(|param| param.ty)
+            .collect(),
+    )
 }
 
 // Computation.
