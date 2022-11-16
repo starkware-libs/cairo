@@ -115,19 +115,19 @@ fn compute_scc_recursive<Node: GraphNode>(ctx: &mut SccAlgoContext<Node>, curren
     }
 
     // `current_node` is a root of an SCC. Conclude this SCC.
+    // Push the nodes from the latest to earliest in the call hierarchy, so that the reverse of the
+    // SCC vector would form a valid path on the graph.
     let mut scc = Vec::new();
     while let Some(other_node_id) = ctx.stack.pop() {
+        let other_node = ctx.known_nodes.get_mut(&other_node_id).unwrap();
+        other_node.on_stack = false;
+        scc.push(other_node_id.clone());
+
+        // Stop once the popped node is the current node which is the root on the SCC.
         if other_node_id == current_node_id {
             break;
         }
-
-        let other_node = ctx.known_nodes.get_mut(&other_node_id).unwrap();
-        other_node.on_stack = false;
-        scc.push(other_node.node.get_id())
     }
-    // Push the current node in the end so that the reverse of the SCC vector would form a valid
-    // path on the graph (as the nodes were popped from the stack in reverse order).
-    scc.push(current_node_id.clone());
 
     // If this SCC is the one we are looking for, update it in ctx. Otherwise, throw this
     // SCC away.
