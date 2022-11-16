@@ -72,11 +72,6 @@ error: `enum` is not allowed inside impl.
     enum DummyEnum {}
     ^**^
 
-error: `func` is not allowed inside impl.
- --> lib.cairo:17:5
-    func my_bar() {
-    ^**^
-
 //! > ==========================================================================
 
 //! > Test enum generics failures.

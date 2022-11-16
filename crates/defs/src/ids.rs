@@ -285,6 +285,14 @@ impl Ord for FreeFunctionId {
 }
 
 define_language_element_id!(
+    ImplFunctionId,
+    ImplFunctionLongId,
+    ast::ItemFreeFunction,
+    lookup_intern_impl_function,
+    name
+);
+
+define_language_element_id!(
     ExternFunctionId,
     ExternFunctionLongId,
     ast::ItemExternFunction,
