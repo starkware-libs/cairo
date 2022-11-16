@@ -22,6 +22,7 @@ impl SyntaxNodeFormat for SyntaxNode {
             | SyntaxKind::TokenColonColon
             | SyntaxKind::TokenComma
             | SyntaxKind::TokenSemicolon
+            | SyntaxKind::TokenQuestionMark
             | SyntaxKind::TokenRParen => true,
             SyntaxKind::TokenLParen
                 if matches!(parent_parent_kind(db, self), Some(SyntaxKind::FunctionSignature)) =>
