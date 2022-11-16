@@ -224,6 +224,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::InvalidDropTraitImpl => {
                 "Invalid drop trait implementation.".into()
             }
+            SemanticDiagnosticKind::InvalidImplItem { item_kw } => {
+                format!("`{}` is not allowed inside impl.", item_kw)
+            }
         }
     }
 
@@ -288,4 +291,5 @@ pub enum SemanticDiagnosticKind {
     WrongEnum { expected_enum: EnumId, actual_enum: EnumId },
     InvalidCopyTraitImpl,
     InvalidDropTraitImpl,
+    InvalidImplItem { item_kw: SmolStr },
 }

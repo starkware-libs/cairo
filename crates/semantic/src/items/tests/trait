@@ -13,9 +13,69 @@ foo
 struct A {}
 trait MyTrait<T>;
 impl MyImpl of MyTrait::<A>;
-impl MyImpl2<T> of MyTrait::<T>;
+impl MyImpl2<T> of MyTrait::<T> {
+    mod a;
+    use b;
+    extern func extern_func();
+    extern type DummyType;
+
+    trait DummyTrait;
+    impl DummyImpl of MyTrait::<T>;
+
+    struct DummyStruct {}
+
+    enum DummyEnum {}
+
+    func my_bar() {
+
+    }
+}
 
 //! > expected_diagnostics
+error: `mod` is not allowed inside impl.
+ --> lib.cairo:5:5
+    mod a;
+    ^*^
+
+error: `use` is not allowed inside impl.
+ --> lib.cairo:6:5
+    use b;
+    ^*^
+
+error: `extern` is not allowed inside impl.
+ --> lib.cairo:7:5
+    extern func extern_func();
+    ^****^
+
+error: `extern` is not allowed inside impl.
+ --> lib.cairo:8:5
+    extern type DummyType;
+    ^****^
+
+error: `trait` is not allowed inside impl.
+ --> lib.cairo:10:5
+    trait DummyTrait;
+    ^***^
+
+error: `impl` is not allowed inside impl.
+ --> lib.cairo:11:5
+    impl DummyImpl of MyTrait::<T>;
+    ^**^
+
+error: `struct` is not allowed inside impl.
+ --> lib.cairo:13:5
+    struct DummyStruct {}
+    ^****^
+
+error: `enum` is not allowed inside impl.
+ --> lib.cairo:15:5
+    enum DummyEnum {}
+    ^**^
+
+error: `func` is not allowed inside impl.
+ --> lib.cairo:17:5
+    func my_bar() {
+    ^**^
 
 //! > ==========================================================================
 
