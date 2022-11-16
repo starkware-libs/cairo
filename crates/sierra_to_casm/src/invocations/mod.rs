@@ -25,6 +25,7 @@ mod function_call;
 mod gas;
 mod mem;
 mod misc;
+mod dict_felt_to;
 mod strct;
 mod uint128;
 
@@ -229,6 +230,7 @@ pub fn compile_invocation(
         CoreConcreteLibFunc::Box(libfunc) => boxing::build(libfunc, builder),
         CoreConcreteLibFunc::Enum(libfunc) => enm::build(libfunc, builder),
         CoreConcreteLibFunc::Struct(libfunc) => strct::build(libfunc, builder),
+        CoreConcreteLibFunc::DictFeltTo(libfunc) => dict_felt_to::build(libfunc, builder),
     }
 }
 
