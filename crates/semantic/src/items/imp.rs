@@ -6,6 +6,7 @@ use syntax::node::ids::SyntaxStablePtrId;
 use syntax::node::TypedSyntaxNode;
 use utils::{extract_matches, try_extract_matches, OptionHelper};
 
+use super::attribute::{ast_attributes_to_semantic, Attribute};
 use super::enm::SemanticEnumEx;
 use super::generics::semantic_generic_params;
 use super::strct::SemanticStructEx;
@@ -33,6 +34,7 @@ pub struct ImplDeclarationData {
     generic_params: Vec<GenericParamId>,
     /// The concrete trait this impl implements, or None if cannot be resolved.
     concrete_trait: Option<ConcreteTraitId>,
+    attributes: Vec<Attribute>,
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_semantic_declaration_diagnostics].
@@ -78,7 +80,13 @@ pub fn priv_impl_declaration_data(
                 .on_none(|| diagnostics.report(&trait_path_syntax, NotATrait))
         });
 
-    Some(ImplDeclarationData { diagnostics: diagnostics.build(), generic_params, concrete_trait })
+    let attributes = ast_attributes_to_semantic(syntax_db, impl_ast.attributes(syntax_db));
+    Some(ImplDeclarationData {
+        diagnostics: diagnostics.build(),
+        generic_params,
+        concrete_trait,
+        attributes,
+    })
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
