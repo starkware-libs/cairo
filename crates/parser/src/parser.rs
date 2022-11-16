@@ -385,9 +385,12 @@ impl<'a> Parser<'a> {
         let trait_path = self.parse_path();
         let body = if self.peek().kind == SyntaxKind::TerminalLBrace {
             let lbrace = self.take::<TerminalLBrace>();
-            // TODO(spapini): Parse associated items.
+            let items = ItemList::new_green(
+                self.db,
+                self.parse_list(Self::try_parse_top_level_item, is_of_kind!(rbrace), "item"),
+            );
             let rbrace = self.parse_token::<TerminalRBrace>();
-            ImplBody::new_green(self.db, lbrace, rbrace).into()
+            ImplBody::new_green(self.db, lbrace, items, rbrace).into()
         } else {
             self.parse_token::<TerminalSemicolon>().into()
         };
