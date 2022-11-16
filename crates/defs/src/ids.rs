@@ -24,6 +24,7 @@
 use db_utils::define_short_id;
 use debug::debug::DebugWithDb;
 use filesystem::ids::{CrateId, FileId};
+use salsa::InternKey;
 use smol_str::SmolStr;
 use syntax::node::helpers::GetIdentifier;
 use syntax::node::ids::SyntaxStablePtrId;
@@ -273,6 +274,12 @@ define_language_element_id!(
     lookup_intern_free_function,
     name
 );
+impl From<FreeFunctionId> for u32 {
+    fn from(id: FreeFunctionId) -> Self {
+        u32::from(id.as_intern_id())
+    }
+}
+
 define_language_element_id!(
     ExternFunctionId,
     ExternFunctionLongId,
