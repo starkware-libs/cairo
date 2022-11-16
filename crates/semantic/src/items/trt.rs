@@ -70,5 +70,5 @@ pub fn priv_trait_semantic_data(db: &dyn SemanticGroup, trait_id: TraitId) -> Op
     );
 
     let attributes = ast_attributes_to_semantic(syntax_db, trait_ast.attributes(syntax_db));
-    Some(TraitData { attributes, diagnostics: diagnostics.build(), generic_params })
+    Some(TraitData { diagnostics: diagnostics.build(), generic_params, attributes })
 }
