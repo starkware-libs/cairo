@@ -27,7 +27,8 @@ pub fn get_spec() -> Vec<Node> {
             .node("StructCtorCall")
             .node("Block")
             .node("Match")
-            .node("If"),
+            .node("If")
+            .node("ErrorPropagate"),
     )
     .add_separated_list("ExprList", "Expr", "TerminalComma")
     .add_struct(StructBuilder::new("ExprMissing"))
@@ -119,6 +120,7 @@ pub fn get_spec() -> Vec<Node> {
         .node("else_block", "ExprBlock")
         )
     .add_option("ElseClause")
+    .add_struct(StructBuilder::new("ExprErrorPropagate").node("expr", "Expr").node("op", "TerminalQuestionMark"))
     // --- Struct ctor ---
     .add_struct(StructBuilder::new("StructArgExpr")
         .node("colon", "TerminalColon")
@@ -359,7 +361,7 @@ pub fn get_spec() -> Vec<Node> {
         )
     .add_struct(StructBuilder::new("ImplBody")
             .node("lbrace", "TerminalLBrace")
-            // TODO(spapini): Associated items.
+            .node("items", "ItemList")
             .node("rbrace", "TerminalRBrace")
         )
     .add_struct(StructBuilder::new("ItemStruct")
@@ -446,6 +448,7 @@ pub fn get_spec() -> Vec<Node> {
     .add_token_and_terminal("DotDot")
     .add_token_and_terminal("Eq")
     .add_token_and_terminal("Semicolon")
+    .add_token_and_terminal("QuestionMark")
     .add_token_and_terminal("Underscore")
     .add_token_and_terminal("LBrace")
     .add_token_and_terminal("RBrace")

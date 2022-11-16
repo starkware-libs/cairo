@@ -153,6 +153,16 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     enum_id.full_path(db.upcast())
                 )
             }
+            SemanticDiagnosticKind::IncompatibleErrorPropagateType { return_ty, err_ty } => {
+                format!(
+                    r#"Return type "{}" does not wrap error "{}""#,
+                    return_ty.format(db),
+                    err_ty.format(db)
+                )
+            }
+            SemanticDiagnosticKind::ErrorPropagateOnNonErrorType { ty } => {
+                format!(r#"Type "{}" can not error propagate"#, ty.format(db))
+            }
             SemanticDiagnosticKind::InvalidMemberExpression => "Invalid member expression.".into(),
             SemanticDiagnosticKind::InvalidPath => "Invalid path.".into(),
             SemanticDiagnosticKind::RefArgNotAVariable => "ref argument must be a variable.".into(),
@@ -261,6 +271,8 @@ pub enum SemanticDiagnosticKind {
     TypeHasNoMembers { ty: semantic::TypeId, member_name: SmolStr },
     NoSuchMember { struct_id: StructId, member_name: SmolStr },
     NoSuchVariant { enum_id: EnumId, variant_name: SmolStr },
+    IncompatibleErrorPropagateType { return_ty: semantic::TypeId, err_ty: semantic::TypeId },
+    ErrorPropagateOnNonErrorType { ty: semantic::TypeId },
     RefArgNotAVariable,
     AssignmentToImmutableVar,
     InvalidLhsForAssignment,
