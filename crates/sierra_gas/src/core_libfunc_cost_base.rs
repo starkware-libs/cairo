@@ -1,8 +1,9 @@
 use sierra::extensions::array::ArrayConcreteLibFunc;
 use sierra::extensions::core::CoreConcreteLibFunc::{
-    self, ApTracking, Array, Box, Drop, Dup, Enum, Felt, FunctionCall, Gas, Mem, Struct, Uint128,
-    UnconditionalJump, UnwrapNonZero,
+    self, ApTracking, Array, Box, Dict, Drop, Dup, Enum, Felt, FunctionCall, Gas, Mem, Struct,
+    Uint128, UnconditionalJump, UnwrapNonZero,
 };
+use sierra::extensions::dict::DictConcreteLibFunc;
 use sierra::extensions::enm::EnumConcreteLibFunc;
 use sierra::extensions::felt::FeltConcrete;
 use sierra::extensions::function_call::FunctionCallConcreteLibFunc;
@@ -65,6 +66,16 @@ pub fn core_libfunc_cost_base<Ops: CostOperations>(
         }
         Struct(StructConcreteLibFunc::Construct(_) | StructConcreteLibFunc::Deconstruct(_)) => {
             vec![ops.const_cost(0)]
+        }
+        // TODO(Gil): verify the dict costs
+        Dict(DictConcreteLibFunc::New(_)) => {
+            vec![ops.const_cost(1)]
+        }
+        Dict(DictConcreteLibFunc::Read(_)) => {
+            vec![ops.const_cost(4)]
+        }
+        Dict(DictConcreteLibFunc::Write(_)) => {
+            vec![ops.const_cost(4)]
         }
     }
 }
