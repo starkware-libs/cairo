@@ -250,6 +250,7 @@ pub fn get_spec() -> Vec<Node> {
         .node("rparen", "TerminalRParen")
         )
     .add_option("ImplicitsClause")
+    .add_option("TerminalNoPanic")
     // TODO(spapini): Add generic params.
     // This is an unnamed signature, e.g. "() -> Type".
     .add_struct(StructBuilder::new("FunctionSignature")
@@ -258,6 +259,7 @@ pub fn get_spec() -> Vec<Node> {
         .node("rparen", "TerminalRParen")
         .node("ret_ty", "OptionReturnTypeClause")
         .node("implicits_clause", "OptionImplicitsClause")
+        .node("optional_no_panic", "OptionTerminalNoPanic")
         )
     // --- Struct Members ---
     // Struct member and enum variant have the same structure.
@@ -427,6 +429,7 @@ pub fn get_spec() -> Vec<Node> {
     .add_token_and_terminal("Implicits")
     .add_token_and_terminal("Ref")
     .add_token_and_terminal("Mut")
+    .add_token_and_terminal("NoPanic")
     .add_token_and_terminal("And")
     .add_token_and_terminal("AndAnd")
     .add_token_and_terminal("OrOr")

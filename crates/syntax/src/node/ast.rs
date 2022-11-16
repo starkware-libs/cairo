@@ -5206,6 +5206,132 @@ impl TypedSyntaxNode for OptionImplicitsClauseEmpty {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum OptionTerminalNoPanic {
+    Empty(OptionTerminalNoPanicEmpty),
+    TerminalNoPanic(TerminalNoPanic),
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct OptionTerminalNoPanicPtr(SyntaxStablePtrId);
+impl OptionTerminalNoPanicPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+impl From<OptionTerminalNoPanicEmptyPtr> for OptionTerminalNoPanicPtr {
+    fn from(value: OptionTerminalNoPanicEmptyPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalNoPanicPtr> for OptionTerminalNoPanicPtr {
+    fn from(value: TerminalNoPanicPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<OptionTerminalNoPanicEmptyGreen> for OptionTerminalNoPanicGreen {
+    fn from(value: OptionTerminalNoPanicEmptyGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalNoPanicGreen> for OptionTerminalNoPanicGreen {
+    fn from(value: TerminalNoPanicGreen) -> Self {
+        Self(value.0)
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct OptionTerminalNoPanicGreen(pub GreenId);
+impl TypedSyntaxNode for OptionTerminalNoPanic {
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
+    type StablePtr = OptionTerminalNoPanicPtr;
+    type Green = OptionTerminalNoPanicGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        panic!("No missing variant.");
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::OptionTerminalNoPanicEmpty => {
+                OptionTerminalNoPanic::Empty(OptionTerminalNoPanicEmpty::from_syntax_node(db, node))
+            }
+            SyntaxKind::TerminalNoPanic => {
+                OptionTerminalNoPanic::TerminalNoPanic(TerminalNoPanic::from_syntax_node(db, node))
+            }
+            _ => panic!(
+                "Unexpected syntax kind {:?} when constructing {}.",
+                kind, "OptionTerminalNoPanic"
+            ),
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        match self {
+            OptionTerminalNoPanic::Empty(x) => x.as_syntax_node(),
+            OptionTerminalNoPanic::TerminalNoPanic(x) => x.as_syntax_node(),
+        }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        OptionTerminalNoPanicPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct OptionTerminalNoPanicEmpty {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl OptionTerminalNoPanicEmpty {
+    pub fn new_green(db: &dyn SyntaxGroup) -> OptionTerminalNoPanicEmptyGreen {
+        let children: Vec<GreenId> = vec![];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        OptionTerminalNoPanicEmptyGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::OptionTerminalNoPanicEmpty,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+}
+impl OptionTerminalNoPanicEmpty {}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct OptionTerminalNoPanicEmptyPtr(SyntaxStablePtrId);
+impl OptionTerminalNoPanicEmptyPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct OptionTerminalNoPanicEmptyGreen(pub GreenId);
+impl TypedSyntaxNode for OptionTerminalNoPanicEmpty {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::OptionTerminalNoPanicEmpty);
+    type StablePtr = OptionTerminalNoPanicEmptyPtr;
+    type Green = OptionTerminalNoPanicEmptyGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        OptionTerminalNoPanicEmptyGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::OptionTerminalNoPanicEmpty,
+            details: GreenNodeDetails::Node { children: vec![], width: 0 },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::OptionTerminalNoPanicEmpty,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::OptionTerminalNoPanicEmpty
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        OptionTerminalNoPanicEmptyPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct FunctionSignature {
     node: SyntaxNode,
     children: Vec<SyntaxNode>,
@@ -5218,9 +5344,16 @@ impl FunctionSignature {
         rparen: TerminalRParenGreen,
         ret_ty: OptionReturnTypeClauseGreen,
         implicits_clause: OptionImplicitsClauseGreen,
+        optional_no_panic: OptionTerminalNoPanicGreen,
     ) -> FunctionSignatureGreen {
-        let children: Vec<GreenId> =
-            vec![lparen.0, parameters.0, rparen.0, ret_ty.0, implicits_clause.0];
+        let children: Vec<GreenId> = vec![
+            lparen.0,
+            parameters.0,
+            rparen.0,
+            ret_ty.0,
+            implicits_clause.0,
+            optional_no_panic.0,
+        ];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         FunctionSignatureGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::FunctionSignature,
@@ -5243,6 +5376,9 @@ impl FunctionSignature {
     }
     pub fn implicits_clause(&self, db: &dyn SyntaxGroup) -> OptionImplicitsClause {
         OptionImplicitsClause::from_syntax_node(db, self.children[4].clone())
+    }
+    pub fn optional_no_panic(&self, db: &dyn SyntaxGroup) -> OptionTerminalNoPanic {
+        OptionTerminalNoPanic::from_syntax_node(db, self.children[5].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -5268,6 +5404,7 @@ impl TypedSyntaxNode for FunctionSignature {
                     TerminalRParen::missing(db).0,
                     OptionReturnTypeClause::missing(db).0,
                     OptionImplicitsClause::missing(db).0,
+                    OptionTerminalNoPanic::missing(db).0,
                 ],
                 width: 0,
             },
@@ -10837,6 +10974,147 @@ impl TypedSyntaxNode for TerminalMut {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         TerminalMutPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct TokenNoPanic {
+    node: SyntaxNode,
+}
+impl Token for TokenNoPanic {
+    fn new_green(db: &dyn SyntaxGroup, text: SmolStr) -> Self::Green {
+        TokenNoPanicGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::TokenNoPanic,
+            details: GreenNodeDetails::Token(text),
+        }))
+    }
+    fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        extract_matches!(db.lookup_intern_green(self.node.0.green).details, GreenNodeDetails::Token)
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TokenNoPanicPtr(SyntaxStablePtrId);
+impl TokenNoPanicPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TokenNoPanicGreen(pub GreenId);
+impl TokenNoPanicGreen {
+    pub fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        extract_matches!(db.lookup_intern_green(self.0).details, GreenNodeDetails::Token)
+    }
+}
+impl TypedSyntaxNode for TokenNoPanic {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenNoPanic);
+    type StablePtr = TokenNoPanicPtr;
+    type Green = TokenNoPanicGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        TokenNoPanicGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::TokenMissing,
+            details: GreenNodeDetails::Token("".into()),
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        match db.lookup_intern_green(node.0.green).details {
+            GreenNodeDetails::Token(_) => Self { node },
+            GreenNodeDetails::Node { .. } => {
+                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenNoPanic)
+            }
+        }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        TokenNoPanicPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct TerminalNoPanic {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl Terminal for TerminalNoPanic {
+    const KIND: SyntaxKind = SyntaxKind::TerminalNoPanic;
+    type TokenType = TokenNoPanic;
+    fn new_green(
+        db: &dyn SyntaxGroup,
+        leading_trivia: TriviaGreen,
+        token: <<TerminalNoPanic as Terminal>::TokenType as TypedSyntaxNode>::Green,
+        trailing_trivia: TriviaGreen,
+    ) -> Self::Green {
+        let children: Vec<GreenId> = vec![leading_trivia.0, token.0, trailing_trivia.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        TerminalNoPanicGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::TerminalNoPanic,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+    fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        self.token(db).text(db)
+    }
+}
+impl TerminalNoPanic {
+    pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
+        Trivia::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn token(&self, db: &dyn SyntaxGroup) -> TokenNoPanic {
+        TokenNoPanic::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
+        Trivia::from_syntax_node(db, self.children[2].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TerminalNoPanicPtr(SyntaxStablePtrId);
+impl TerminalNoPanicPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct TerminalNoPanicGreen(pub GreenId);
+impl TypedSyntaxNode for TerminalNoPanic {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalNoPanic);
+    type StablePtr = TerminalNoPanicPtr;
+    type Green = TerminalNoPanicGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        TerminalNoPanicGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::TerminalNoPanic,
+            details: GreenNodeDetails::Node {
+                children: vec![
+                    Trivia::missing(db).0,
+                    TokenNoPanic::missing(db).0,
+                    Trivia::missing(db).0,
+                ],
+                width: 0,
+            },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::TerminalNoPanic,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::TerminalNoPanic
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        TerminalNoPanicPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
