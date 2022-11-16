@@ -5,12 +5,17 @@ test_partial_parser_tree
 
 //! > cairo_code
 trait Foo<T>;
-impl FooImpl<S> of Foo::<S>;
+impl FooImpl<S> of Foo::<S> {
+    func foo(a: int) -> felt {
+        return a;
+    }
+}
 
 //! > top_level_kind
 SyntaxFile
 
 //! > ignored_kinds
+ItemFreeFunction
 
 //! > expected_tree
 └── Top level kind: SyntaxFile
@@ -48,7 +53,11 @@ SyntaxFile
     │       │           │       └── item #0 (kind: PathSegmentSimple)
     │       │           │           └── ident (kind: TokenIdentifier): 'S'
     │       │           └── rangle (kind: TokenGT): '>'
-    │       └── body (kind: TokenSemicolon): ';'
+    │       └── body (kind: ImplBody)
+    │           ├── lbrace (kind: TokenLBrace): '{'
+    │           ├── items (kind: ItemList)
+    │           │   └── child #0 (kind: ItemFreeFunction) <ignored>
+    │           └── rbrace (kind: TokenRBrace): '}'
     └── eof (kind: TokenEndOfFile).
 
 //! > ==========================================================================
@@ -117,7 +126,8 @@ SyntaxFile
     │   │       │       │   │                   └── ident (kind: TokenIdentifier): 'S'
     │   │       │       │   ├── rparen (kind: TokenRParen): ')'
     │   │       │       │   ├── ret_ty (kind: OptionReturnTypeClauseEmpty) []
-    │   │       │       │   └── implicits_clause (kind: OptionImplicitsClauseEmpty) []
+    │   │       │       │   ├── implicits_clause (kind: OptionImplicitsClauseEmpty) []
+    │   │       │       │   └── optional_no_panic (kind: OptionTerminalNoPanicEmpty) []
     │   │       │       └── semicolon (kind: TokenSemicolon): ';'
     │   │       └── rbrace (kind: TokenRBrace): '}'
     │   └── child #1 (kind: ItemImpl)
@@ -144,5 +154,6 @@ SyntaxFile
     │       │           └── rangle (kind: TokenGT): '>'
     │       └── body (kind: ImplBody)
     │           ├── lbrace (kind: TokenLBrace): '{'
+    │           ├── items (kind: ItemList) []
     │           └── rbrace (kind: TokenRBrace): '}'
     └── eof (kind: TokenEndOfFile).

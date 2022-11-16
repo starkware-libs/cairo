@@ -57,7 +57,6 @@ pub fn generate_block_code_and_push_values(
             Some((statements, true))
         }
         lowering::BlockEnd::Return(returned_variables) => {
-            assert!(binds.is_empty(), "binds is expected to be empty when BlockEnd is Return.");
             statements.extend(generate_return_code(context, returned_variables)?);
             Some((statements, false))
         }

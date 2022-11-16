@@ -201,6 +201,12 @@ impl<'a> Parser<'a> {
         let rparen = self.parse_token::<TerminalRParen>();
         let return_type_clause = self.parse_option_return_type_clause();
         let implicits_clause = self.parse_option_implicits_clause();
+        let optional_no_panic = if self.peek().kind == SyntaxKind::TerminalNoPanic {
+            self.take::<TerminalNoPanic>().into()
+        } else {
+            OptionTerminalNoPanicEmpty::new_green(self.db).into()
+        };
+
         FunctionSignature::new_green(
             self.db,
             lparen,
@@ -208,6 +214,7 @@ impl<'a> Parser<'a> {
             rparen,
             return_type_clause,
             implicits_clause,
+            optional_no_panic,
         )
     }
 
@@ -385,9 +392,12 @@ impl<'a> Parser<'a> {
         let trait_path = self.parse_path();
         let body = if self.peek().kind == SyntaxKind::TerminalLBrace {
             let lbrace = self.take::<TerminalLBrace>();
-            // TODO(spapini): Parse associated items.
+            let items = ItemList::new_green(
+                self.db,
+                self.parse_list(Self::try_parse_top_level_item, is_of_kind!(rbrace), "item"),
+            );
             let rbrace = self.parse_token::<TerminalRBrace>();
-            ImplBody::new_green(self.db, lbrace, rbrace).into()
+            ImplBody::new_green(self.db, lbrace, items, rbrace).into()
         } else {
             self.parse_token::<TerminalSemicolon>().into()
         };
@@ -466,6 +476,15 @@ impl<'a> Parser<'a> {
             self.try_parse_atom(lbrace_allowed)?
         };
 
+        // ? operator has the highest precedence, so we now find all the usages after.
+        while self.peek().kind == SyntaxKind::TerminalQuestionMark {
+            expr = ExprErrorPropagate::new_green(
+                self.db,
+                expr,
+                self.parse_token::<TerminalQuestionMark>(),
+            )
+            .into();
+        }
         while let Some(precedence) = get_binary_operator_precedence(self.peek().kind) {
             if precedence >= parent_precedence {
                 return Some(expr);

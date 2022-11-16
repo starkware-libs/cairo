@@ -41,6 +41,7 @@ impl NoGenericArgsGenericType for Uint128Type {
 define_libfunc_hierarchy! {
     pub enum Uint128LibFunc {
         Operation(Uint128OperationLibFunc),
+        LessThan(Uint128LessThanLibFunc),
         Const(Uint128ConstLibFunc),
         FromFelt(Uint128FromFeltLibFunc),
         ToFelt(Uint128ToFeltLibFunc),
@@ -371,6 +372,55 @@ pub struct Uint128ConstConcreteLibFunc {
 impl SignatureBasedConcreteLibFunc for Uint128ConstConcreteLibFunc {
     fn signature(&self) -> &LibFuncSignature {
         &self.signature
+    }
+}
+
+/// LibFunc for comparing uint128s.
+#[derive(Default)]
+pub struct Uint128LessThanLibFunc {}
+impl NoGenericArgsGenericLibFunc for Uint128LessThanLibFunc {
+    type Concrete = SignatureOnlyConcreteLibFunc;
+    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_lt");
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibFuncSignature, SpecializationError> {
+        let uint128_ty = context.get_concrete_type(Uint128Type::id(), &[])?;
+        let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
+        let branch_signatures = [2_usize, 3_usize]
+            .iter()
+            .map(|ap_change| BranchSignature {
+                vars: vec![OutputVarInfo {
+                    ty: range_check_type.clone(),
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                        param_idx: 0,
+                    }),
+                }],
+                ap_change: SierraApChange::Known(*ap_change),
+            })
+            .collect();
+        Ok(LibFuncSignature {
+            param_signatures: vec![
+                ParamSignature::new(range_check_type),
+                ParamSignature::new(uint128_ty.clone()),
+                ParamSignature::new(uint128_ty),
+            ],
+            branch_signatures,
+            fallthrough: Some(0),
+        })
+    }
+
+    fn specialize(
+        &self,
+        context: &dyn SpecializationContext,
+    ) -> Result<Self::Concrete, SpecializationError> {
+        Ok(SignatureOnlyConcreteLibFunc {
+            signature: <Self as NoGenericArgsGenericLibFunc>::specialize_signature(
+                self,
+                context.upcast(),
+            )?,
+        })
     }
 }
 

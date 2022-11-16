@@ -150,6 +150,7 @@ impl<'a> Lexer<'a> {
             "implicits" => TokenKind::Implicits,
             "ref" => TokenKind::Ref,
             "mut" => TokenKind::Mut,
+            "nopanic" => TokenKind::NoPanic,
             "_" => TokenKind::Underscore,
             _ => TokenKind::Identifier,
         }
@@ -185,6 +186,7 @@ impl<'a> Lexer<'a> {
                 '0'..='9' => self.take_token_literal_number(),
                 ',' => self.take_token_of_kind(TokenKind::Comma),
                 ';' => self.take_token_of_kind(TokenKind::Semicolon),
+                '?' => self.take_token_of_kind(TokenKind::QuestionMark),
                 '{' => self.take_token_of_kind(TokenKind::LBrace),
                 '}' => self.take_token_of_kind(TokenKind::RBrace),
                 '[' => self.take_token_of_kind(TokenKind::LBrack),
@@ -291,6 +293,7 @@ enum TokenKind {
     Else,
     Use,
     Implicits,
+    NoPanic,
 
     // Modifiers.
     Ref,
@@ -320,6 +323,7 @@ enum TokenKind {
     Eq,
     Hash,
     Semicolon,
+    QuestionMark,
     Underscore,
     LBrace,
     RBrace,
@@ -357,6 +361,7 @@ fn token_kind_to_terminal_syntax_kind(kind: TokenKind) -> SyntaxKind {
         TokenKind::Else => SyntaxKind::TerminalElse,
         TokenKind::Use => SyntaxKind::TerminalUse,
         TokenKind::Implicits => SyntaxKind::TerminalImplicits,
+        TokenKind::NoPanic => SyntaxKind::TerminalNoPanic,
         TokenKind::And => SyntaxKind::TerminalAnd,
         TokenKind::AndAnd => SyntaxKind::TerminalAndAnd,
         TokenKind::OrOr => SyntaxKind::TerminalOrOr,
@@ -379,6 +384,7 @@ fn token_kind_to_terminal_syntax_kind(kind: TokenKind) -> SyntaxKind {
         TokenKind::Eq => SyntaxKind::TerminalEq,
         TokenKind::Hash => SyntaxKind::TerminalHash,
         TokenKind::Semicolon => SyntaxKind::TerminalSemicolon,
+        TokenKind::QuestionMark => SyntaxKind::TerminalQuestionMark,
         TokenKind::Underscore => SyntaxKind::TerminalUnderscore,
         TokenKind::LBrace => SyntaxKind::TerminalLBrace,
         TokenKind::RBrace => SyntaxKind::TerminalRBrace,
