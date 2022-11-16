@@ -25,6 +25,7 @@ mod function_call;
 mod gas;
 mod mem;
 mod misc;
+mod single_cell_dict;
 mod strct;
 mod uint128;
 
@@ -229,7 +230,7 @@ pub fn compile_invocation(
         CoreConcreteLibFunc::Box(libfunc) => boxing::build(libfunc, builder),
         CoreConcreteLibFunc::Enum(libfunc) => enm::build(libfunc, builder),
         CoreConcreteLibFunc::Struct(libfunc) => strct::build(libfunc, builder),
-        CoreConcreteLibFunc::SingleCellDict(_) => todo!(),
+        CoreConcreteLibFunc::SingleCellDict(libfunc) => single_cell_dict::build(libfunc, builder),
     }
 }
 
