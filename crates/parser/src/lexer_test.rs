@@ -168,31 +168,8 @@ fn need_separator(
 }
 
 fn is_identifier_like(kind: SyntaxKind) -> bool {
-    matches!(
-        kind,
-        SyntaxKind::TerminalIdentifier
-            | SyntaxKind::TerminalFalse
-            | SyntaxKind::TerminalTrue
-            | SyntaxKind::TerminalExtern
-            | SyntaxKind::TerminalType
-            | SyntaxKind::TerminalFunction
-            | SyntaxKind::TerminalTrait
-            | SyntaxKind::TerminalImpl
-            | SyntaxKind::TerminalOf
-            | SyntaxKind::TerminalModule
-            | SyntaxKind::TerminalStruct
-            | SyntaxKind::TerminalEnum
-            | SyntaxKind::TerminalLet
-            | SyntaxKind::TerminalMut
-            | SyntaxKind::TerminalRef
-            | SyntaxKind::TerminalNoPanic
-            | SyntaxKind::TerminalReturn
-            | SyntaxKind::TerminalMatch
-            | SyntaxKind::TerminalIf
-            | SyntaxKind::TerminalElse
-            | SyntaxKind::TerminalUse
-            | SyntaxKind::TerminalUnderscore
-    )
+    matches!(kind, SyntaxKind::TerminalIdentifier | SyntaxKind::TerminalUnderscore)
+        || kind.is_keyword_terminal()
 }
 
 fn terminal_kind_and_text() -> Vec<(SyntaxKind, &'static str)> {

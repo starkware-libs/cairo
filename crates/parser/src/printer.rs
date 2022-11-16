@@ -199,7 +199,7 @@ impl<'a> Printer<'a> {
         let node_kind = self.get_node_kind(kind.to_string());
         match node_kind {
             NodeKind::Struct { members: expected_children }
-            | NodeKind::Terminal { members: expected_children } => {
+            | NodeKind::Terminal { members: expected_children, .. } => {
                 self.print_internal_struct(
                     &children,
                     &expected_children,

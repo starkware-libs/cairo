@@ -1,0 +1,292 @@
+//! > Module name - underscore not supported
+
+//! > test_function_name
+get_diagnostics
+
+//! > cairo_code
+mod _;
+
+//! > expected_diagnostics
+error: An underscore ('_') is not allowed as an identifier in this context.
+ --> dummy_file.cairo:1:5
+mod _;
+    ^
+
+//! > ==========================================================================
+
+//! > Struct name - underscore not supported
+
+//! > test_function_name
+get_diagnostics
+
+//! > cairo_code
+struct _ {}
+
+//! > expected_diagnostics
+error: An underscore ('_') is not allowed as an identifier in this context.
+ --> dummy_file.cairo:1:8
+struct _ {}
+       ^
+
+//! > ==========================================================================
+
+//! > Enum name - underscore not supported
+
+//! > test_function_name
+get_diagnostics
+
+//! > cairo_code
+enum _ {}
+
+//! > expected_diagnostics
+error: An underscore ('_') is not allowed as an identifier in this context.
+ --> dummy_file.cairo:1:6
+enum _ {}
+     ^
+
+//! > ==========================================================================
+
+//! > Extern function name - underscore not supported
+
+//! > test_function_name
+get_diagnostics
+
+//! > cairo_code
+extern func _();
+
+//! > expected_diagnostics
+error: An underscore ('_') is not allowed as an identifier in this context.
+ --> dummy_file.cairo:1:13
+extern func _();
+            ^
+
+//! > ==========================================================================
+
+//! > Extern type name - underscore not supported
+
+//! > test_function_name
+get_diagnostics
+
+//! > cairo_code
+extern type _;
+
+//! > expected_diagnostics
+error: An underscore ('_') is not allowed as an identifier in this context.
+ --> dummy_file.cairo:1:13
+extern type _;
+            ^
+
+//! > ==========================================================================
+
+//! > Attribute name - underscore not supported
+
+//! > test_function_name
+get_diagnostics
+
+//! > cairo_code
+#[_]
+func foo() {}
+
+//! > expected_diagnostics
+error: An underscore ('_') is not allowed as an identifier in this context.
+ --> dummy_file.cairo:1:3
+#[_]
+  ^
+
+//! > ==========================================================================
+
+//! > Free function name - underscore not supported
+
+//! > test_function_name
+get_diagnostics
+
+//! > cairo_code
+func _() {}
+
+//! > expected_diagnostics
+error: An underscore ('_') is not allowed as an identifier in this context.
+ --> dummy_file.cairo:1:6
+func _() {}
+     ^
+
+//! > ==========================================================================
+
+//! > Trait name - underscore not supported
+
+//! > test_function_name
+get_diagnostics
+
+//! > cairo_code
+trait _ {}
+
+//! > expected_diagnostics
+error: An underscore ('_') is not allowed as an identifier in this context.
+ --> dummy_file.cairo:1:7
+trait _ {}
+      ^
+
+//! > ==========================================================================
+
+//! > Trait function name - underscore not supported
+
+//! > test_function_name
+get_diagnostics
+
+//! > cairo_code
+trait trt {
+    func _();
+}
+
+//! > expected_diagnostics
+error: An underscore ('_') is not allowed as an identifier in this context.
+ --> dummy_file.cairo:2:10
+    func _();
+         ^
+
+//! > ==========================================================================
+
+//! > Impl name - underscore not supported
+
+//! > test_function_name
+get_diagnostics
+
+//! > cairo_code
+impl _ of MyTrait {}
+
+//! > expected_diagnostics
+error: An underscore ('_') is not allowed as an identifier in this context.
+ --> dummy_file.cairo:1:6
+impl _ of MyTrait {}
+     ^
+
+//! > ==========================================================================
+
+//! > Struct c'tor single argument - underscore not supported
+
+//! > test_function_name
+get_diagnostics
+
+//! > cairo_code
+func foo() {
+    A { _ }
+}
+
+//! > expected_diagnostics
+error: An underscore ('_') is not allowed as an identifier in this context.
+ --> dummy_file.cairo:2:9
+    A { _ }
+        ^
+
+//! > ==========================================================================
+
+//! > Pattern with modifiers - underscore not supported
+
+//! > test_function_name
+get_diagnostics
+
+//! > cairo_code
+func foo() {
+    let ref _ = 3;
+}
+
+//! > expected_diagnostics
+error: An underscore ('_') is not allowed as an identifier in this context.
+ --> dummy_file.cairo:2:13
+    let ref _ = 3;
+            ^
+
+//! > ==========================================================================
+
+//! > Pattern's struct parameter - underscore not supported
+
+//! > test_function_name
+get_diagnostics
+
+//! > cairo_code
+func foo() {
+    let MyStruct { _ } = 3;
+}
+
+//! > expected_diagnostics
+error: An underscore ('_') is not allowed as an identifier in this context.
+ --> dummy_file.cairo:2:20
+    let MyStruct { _ } = 3;
+                   ^
+
+//! > ==========================================================================
+
+//! > Param name with modifiers - underscore not supported
+
+//! > test_function_name
+get_diagnostics
+
+//! > cairo_code
+func f(ref _: felt) {}
+
+//! > expected_diagnostics
+error: An underscore ('_') is not allowed as an identifier in this context.
+ --> dummy_file.cairo:1:12
+func f(ref _: felt) {}
+           ^
+
+//! > ==========================================================================
+
+//! > Param name without modifiers - underscore *is* supported
+
+//! > test_function_name
+get_diagnostics
+
+//! > cairo_code
+func f(_: felt) {}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Struct member name - underscore not supported
+
+//! > test_function_name
+get_diagnostics
+
+//! > cairo_code
+struct A {
+    _: felt
+}
+
+//! > expected_diagnostics
+error: An underscore ('_') is not allowed as an identifier in this context.
+ --> dummy_file.cairo:2:5
+    _: felt
+    ^
+
+//! > ==========================================================================
+
+//! > Path segment - underscore not supported
+
+//! > test_function_name
+get_diagnostics
+
+//! > cairo_code
+use _::foo;
+
+//! > expected_diagnostics
+error: An underscore ('_') is not allowed as an identifier in this context.
+ --> dummy_file.cairo:1:5
+use _::foo;
+    ^
+
+//! > ==========================================================================
+
+//! > Generic parameter - underscore not supported
+
+//! > test_function_name
+get_diagnostics
+
+//! > cairo_code
+struct A<_> {}
+
+//! > expected_diagnostics
+error: An underscore ('_') is not allowed as an identifier in this context.
+ --> dummy_file.cairo:1:10
+struct A<_> {}
+         ^
