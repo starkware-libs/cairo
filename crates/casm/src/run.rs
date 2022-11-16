@@ -121,6 +121,9 @@ impl HintProcessor for CairoHintProcessor {
                 )?;
                 vm.insert_value(&cell_ref_to_relocatable(*remainder, vm), lhs_val % rhs_val)?;
             }
+            Hint::AllocDictFeltTo { .. } => todo!(),
+            Hint::DictFeltToRead { .. } => todo!(),
+            Hint::DictFeltToWrite { .. } => todo!(),
         };
         Ok(())
     }

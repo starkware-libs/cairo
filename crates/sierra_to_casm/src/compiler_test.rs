@@ -396,6 +396,93 @@ fn strip_comments_and_linebreaks(program: &str) -> String {
                 ret;
             "};
             "fib_recursive")]
+#[test_case(indoc! {"
+                type felt = felt;
+                type DictFeltToFelt = DictFeltTo<felt>;
+                type UninitializedFelt = Uninitialized<felt>;
+
+                libfunc felt_const<10> = felt_const<10>;
+                libfunc felt_const<11> = felt_const<11>;
+                libfunc felt_const<12> = felt_const<12>;
+                libfunc felt_const<13> = felt_const<13>;
+                libfunc store_temp_felt = store_temp<felt>;
+                libfunc dict_felt_to_new<felt> = dict_felt_to_new<felt>;
+                libfunc dict_felt_to_write<felt> = dict_felt_to_write<felt>;
+                libfunc dict_felt_to_read<felt> = dict_felt_to_read<felt>;
+                libfunc store_temp_dict_felt_to_felt = store_temp<DictFeltToFelt>;
+
+                felt_const<10>() -> ([0]);
+                store_temp_felt([0]) -> ([0]);
+                felt_const<11>() -> ([1]);
+                store_temp_felt([1]) -> ([1]);
+                felt_const<12>() -> ([2]);
+                store_temp_felt([2]) -> ([2]);
+                dict_felt_to_new<felt>([2]) -> ([3]);
+                dict_felt_to_write<felt>([3], [0], [1]) -> ([4]);
+                felt_const<10>() -> ([5]);
+                store_temp_felt([5]) -> ([5]);
+                felt_const<13>() -> ([6]);
+                store_temp_felt([6]) -> ([6]);
+                dict_felt_to_write<felt>([4], [5], [6]) -> ([7]);
+                felt_const<10>() -> ([8]);
+                store_temp_felt([8]) -> ([8]);
+                dict_felt_to_read<felt>([7], [8]) -> ([9], [10]);
+                store_temp_dict_felt_to_felt([9]) -> ([9]);
+                store_temp_felt([10]) -> ([10]);
+                return ([9], [10]);
+                test_program@0() -> (DictFeltToFelt, felt);
+            "},
+            &[("test_program", 13)], false,
+            indoc! {"
+                [ap + 0] = 10, ap++;
+                [ap + 0] = 11, ap++;
+                [ap + 0] = 12, ap++;
+                %{ 
+                if '__dict_manager' not in globals():
+                    from starkware.cairo.common.dict import DictManager
+                    __dict_manager = DictManager()
+                memory[ap + 0] = __dict_manager.new_default_dict(segments, memory[ap + -1])
+                 %}
+                ap += 1;
+                %{ 
+                dict_tracker = __dict_manager.get_tracker(memory[ap + -1] + 0)
+                dict_tracker.current_ptr += 3
+                memory[ap + 0] = dict_tracker.data[memory[ap + -4]]
+                dict_tracker.data[memory[ap + -4]] = memory[ap + -3]
+                 %}
+                ap += 1;
+                [ap + -5] = [[ap + -2] + 0];
+                [ap + -1] = [[ap + -2] + 1];
+                [ap + -4] = [[ap + -2] + 2];
+                [ap + 0] = 10, ap++;
+                [ap + 0] = 13, ap++;
+                %{ 
+                dict_tracker = __dict_manager.get_tracker(memory[ap + -4] + 3)
+                dict_tracker.current_ptr += 3
+                memory[ap + 0] = dict_tracker.data[memory[ap + -2]]
+                dict_tracker.data[memory[ap + -2]] = memory[ap + -1]
+                 %}
+                ap += 1;
+                [ap + -3] = [[ap + -5] + 3];
+                [ap + -1] = [[ap + -5] + 4];
+                [ap + -2] = [[ap + -5] + 5];
+                [ap + 0] = 10, ap++;
+                %{ 
+                dict_tracker = __dict_manager.get_tracker(memory[ap + -6] + 6)
+                dict_tracker.current_ptr += 3
+                memory[ap + 0] = dict_tracker.data[memory[ap + -1]]
+                 %}
+                ap += 1;
+                [ap + -2] = [[ap + -7] + 6];
+                [ap + -1] = [[ap + -7] + 7];
+                [ap + -1] = [[ap + -7] + 8];
+                [ap + 0] = [ap + -7], ap++;
+                [ap + 0] = [ap + -8] + 9, ap++;
+                [ap + 0] = [ap + -3], ap++;
+                ret;
+            "};
+            "dict test")]
+
 fn sierra_to_casm(
     sierra_code: &str,
     ap_change_data: &[(&str, usize)],
