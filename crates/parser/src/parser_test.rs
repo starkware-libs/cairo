@@ -281,6 +281,8 @@ parser_test!(
         "src/parser_test_data/pattern",
         "src/parser_test_data/question_mark",
         "src/parser_test_data/semicolon",
+        "src/parser_test_data/reserved_identifier",
+        "src/parser_test_data/underscore_not_supported",
     ],
     get_diagnostics
 );
