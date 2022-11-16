@@ -6,7 +6,7 @@ use num_traits::Zero;
 use scope::{BlockScope, BlockScopeEnd};
 use semantic::corelib::{core_felt_ty, core_jump_nz_func, core_nonzero_ty};
 use semantic::items::enm::SemanticEnumEx;
-use semantic::items::trt::ImplLookupContext;
+use semantic::items::imp::ImplLookupContext;
 use semantic::{ConcreteTypeId, Mutability, TypeLongId, VarId};
 use syntax::node::ids::SyntaxStablePtrId;
 use utils::unordered_hash_map::UnorderedHashMap;

@@ -1,7 +1,7 @@
 use id_arena::Arena;
 use itertools::{chain, zip_eq};
 use semantic::items::enm::SemanticEnumEx;
-use semantic::items::trt::ImplLookupContext;
+use semantic::items::imp::ImplLookupContext;
 use utils::unordered_hash_map::UnorderedHashMap;
 
 use super::scope::generators::CallBlockResult;

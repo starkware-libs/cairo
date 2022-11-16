@@ -16,7 +16,8 @@ use utils::ordered_hash_map::OrderedHashMap;
 
 use crate::diagnostic::SemanticDiagnosticKind;
 use crate::items::attribute::Attribute;
-use crate::items::trt::{ConcreteImplId, ConcreteTraitId, ImplLookupContext};
+use crate::items::imp::{ConcreteImplId, ImplLookupContext};
+use crate::items::trt::ConcreteTraitId;
 use crate::resolve_path::ResolvedGenericItem;
 use crate::{
     corelib, items, semantic, types, FreeFunctionDefinition, FunctionId, SemanticDiagnostic,
@@ -51,8 +52,8 @@ pub trait SemanticGroup:
     #[salsa::interned]
     fn intern_concrete_impl(
         &self,
-        id: items::trt::ConcreteImplLongId,
-    ) -> items::trt::ConcreteImplId;
+        id: items::imp::ConcreteImplLongId,
+    ) -> items::imp::ConcreteImplId;
     #[salsa::interned]
     fn intern_type(&self, id: types::TypeLongId) -> semantic::TypeId;
 
@@ -124,31 +125,31 @@ pub trait SemanticGroup:
     // Impl.
     // =======
     /// Private query to compute declaration data about an impl.
-    #[salsa::invoke(items::trt::priv_impl_declaration_data)]
+    #[salsa::invoke(items::imp::priv_impl_declaration_data)]
     fn priv_impl_declaration_data(
         &self,
         impl_id: ImplId,
-    ) -> Option<items::trt::ImplDeclarationData>;
+    ) -> Option<items::imp::ImplDeclarationData>;
     /// Returns the semantic declaration diagnostics of an impl.
-    #[salsa::invoke(items::trt::impl_semantic_declaration_diagnostics)]
+    #[salsa::invoke(items::imp::impl_semantic_declaration_diagnostics)]
     fn impl_semantic_declaration_diagnostics(
         &self,
         impl_id: ImplId,
     ) -> Diagnostics<SemanticDiagnostic>;
     /// Returns the generic parameters of an impl.
-    #[salsa::invoke(items::trt::impl_generic_params)]
+    #[salsa::invoke(items::imp::impl_generic_params)]
     fn impl_generic_params(&self, impl_id: ImplId) -> Option<Vec<GenericParamId>>;
     /// Private query to compute data about an impl.
-    #[salsa::invoke(items::trt::priv_impl_definition_data)]
-    fn priv_impl_definition_data(&self, impl_id: ImplId) -> Option<items::trt::ImplDefinitionData>;
+    #[salsa::invoke(items::imp::priv_impl_definition_data)]
+    fn priv_impl_definition_data(&self, impl_id: ImplId) -> Option<items::imp::ImplDefinitionData>;
     /// Returns the semantic definition diagnostics of an impl.
-    #[salsa::invoke(items::trt::impl_semantic_definition_diagnostics)]
+    #[salsa::invoke(items::imp::impl_semantic_definition_diagnostics)]
     fn impl_semantic_definition_diagnostics(
         &self,
         impl_id: ImplId,
     ) -> Diagnostics<SemanticDiagnostic>;
     /// Find implementation for a concrete trait in a module.
-    #[salsa::invoke(items::trt::find_impls_at_module)]
+    #[salsa::invoke(items::imp::find_impls_at_module)]
     fn find_impls_at_module(
         &self,
         module_id: ModuleId,
