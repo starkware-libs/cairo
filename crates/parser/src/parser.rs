@@ -466,6 +466,15 @@ impl<'a> Parser<'a> {
             self.try_parse_atom(lbrace_allowed)?
         };
 
+        // ? operator has the highest precedence, so we now find all the usages after.
+        while self.peek().kind == SyntaxKind::TerminalQuestionMark {
+            expr = ExprErrorPropagate::new_green(
+                self.db,
+                expr,
+                self.parse_token::<TerminalQuestionMark>(),
+            )
+            .into();
+        }
         while let Some(precedence) = get_binary_operator_precedence(self.peek().kind) {
             if precedence >= parent_precedence {
                 return Some(expr);
