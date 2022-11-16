@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use num_bigint::BigInt;
 
 /// The logical value of a variable for Sierra simulation.
@@ -11,6 +13,7 @@ pub enum CoreValue {
     NonZero(Box<CoreValue>),
     Ref(Box<CoreValue>),
     Array(Vec<CoreValue>),
+    Dict(HashMap<BigInt, CoreValue>),
     Enum {
         value: Box<CoreValue>,
         /// The index of the relevant variant.

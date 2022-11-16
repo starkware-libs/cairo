@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use num_bigint::ToBigInt;
 use num_traits::Zero;
 use utils::extract_matches;
@@ -24,6 +26,7 @@ use crate::extensions::integer::{
 use crate::extensions::mem::MemConcreteLibFunc::{
     AlignTemps, AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
 };
+use crate::extensions::single_cell_dict::SingleCellDictConcreteLibFunc;
 use crate::extensions::strct::StructConcreteLibFunc;
 use crate::ids::FunctionId;
 
@@ -157,6 +160,38 @@ pub fn simulate<
             [_] => Err(LibFuncSimulationError::WrongArgType),
             _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
         },
+        CoreConcreteLibFunc::SingleCellDict(SingleCellDictConcreteLibFunc::New(_)) => {
+            if inputs.is_empty() {
+                Ok((vec![CoreValue::Dict(HashMap::new())], 0))
+            } else {
+                Err(LibFuncSimulationError::WrongNumberOfArgs)
+            }
+        }
+        CoreConcreteLibFunc::SingleCellDict(SingleCellDictConcreteLibFunc::Read(_)) => {
+            match &inputs[..] {
+                [CoreValue::Dict(map), CoreValue::Felt(key)] => {
+                    // Returns 0 as a defualt value.
+                    // TODO(Gil): correct this behaviour when dict behaviour is decided on key not
+                    // found.
+                    Ok((vec![map.get(key).map_or(CoreValue::Felt(0.into()), |x| x.clone())], 0))
+                }
+                [_, _] => Err(LibFuncSimulationError::WrongArgType),
+                _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+            }
+        }
+        CoreConcreteLibFunc::SingleCellDict(SingleCellDictConcreteLibFunc::Write(_)) => {
+            match &inputs[..] {
+                [CoreValue::Dict(_), CoreValue::Felt(_), _] => {
+                    let mut iter = inputs.into_iter();
+                    let mut dict = extract_matches!(iter.next().unwrap(), CoreValue::Dict);
+                    let key = extract_matches!(iter.next().unwrap(), CoreValue::Felt);
+                    dict.insert(key, iter.next().unwrap());
+                    Ok((vec![CoreValue::Dict(dict)], 0))
+                }
+                [_, _, _] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
+                _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+            }
+        }
     }
 }
 
