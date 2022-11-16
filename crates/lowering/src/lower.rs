@@ -331,6 +331,7 @@ fn lower_expr_function_call(
     scope: &mut BlockScope,
 ) -> Result<LoweredExpr, LoweringFlowError> {
     // TODO(spapini): Use the correct stable pointer.
+    let arg_inputs = lower_exprs_as_vars(ctx, &expr.args, scope)?;
     let (ref_tys, ref_inputs): (_, Vec<LivingVar>) = expr
         .ref_args
         .iter()
@@ -344,7 +345,6 @@ fn lower_expr_function_call(
         .into_iter()
         .unzip();
     // TODO(orizi): Support ref args that are not the first arguments.
-    let arg_inputs = lower_exprs_as_vars(ctx, &expr.args, scope)?;
     let inputs = chain!(ref_inputs, arg_inputs.into_iter()).collect();
 
     // The following is relevant only to extern functions.

@@ -33,7 +33,7 @@ blk0:
 Inputs: v5: ()
 Statements:
   (v7: core::felt, v6: ()) <- test_crate::bar(v0, v2)
-Drops: v5, v0, v6
+Drops: v5, v6, v0
 End:
   Callsite(v7)
 
