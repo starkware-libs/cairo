@@ -23,28 +23,9 @@ pub enum SemanticTokenKind {
 impl SemanticTokenKind {
     pub fn from_syntax_kind(kind: SyntaxKind) -> Option<Self> {
         Some(match kind {
+            _ if kind.is_keyword_token() => SemanticTokenKind::Keyword,
             SyntaxKind::TokenIdentifier => SemanticTokenKind::Variable,
             SyntaxKind::TokenLiteralNumber => SemanticTokenKind::Number,
-            SyntaxKind::TokenFalse
-            | SyntaxKind::TokenTrue
-            | SyntaxKind::TokenExtern
-            | SyntaxKind::TokenType
-            | SyntaxKind::TokenFunction
-            | SyntaxKind::TokenTrait
-            | SyntaxKind::TokenImpl
-            | SyntaxKind::TokenOf
-            | SyntaxKind::TokenModule
-            | SyntaxKind::TokenStruct
-            | SyntaxKind::TokenEnum
-            | SyntaxKind::TokenLet
-            | SyntaxKind::TokenReturn
-            | SyntaxKind::TokenMatch
-            | SyntaxKind::TokenIf
-            | SyntaxKind::TokenElse
-            | SyntaxKind::TokenUse
-            | SyntaxKind::TokenImplicits
-            | SyntaxKind::TokenRef
-            | SyntaxKind::TokenMut => SemanticTokenKind::Keyword,
             SyntaxKind::TokenAnd
             | SyntaxKind::TokenAndAnd
             | SyntaxKind::TokenOrOr
