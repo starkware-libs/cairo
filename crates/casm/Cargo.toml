@@ -8,9 +8,9 @@ cairo-rs = { git = "https://github.com/lambdaclass/cairo-rs", rev="3a2dead" }
 thiserror.workspace = true
 num-bigint.workspace = true
 utils = { path = "../utils" }
+indoc.workspace = true
 
 [dev-dependencies]
-indoc.workspace = true
 itertools.workspace = true
 pretty_assertions.workspace = true
 test-case.workspace = true
