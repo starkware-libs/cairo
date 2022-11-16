@@ -361,7 +361,7 @@ pub fn get_spec() -> Vec<Node> {
         )
     .add_struct(StructBuilder::new("ImplBody")
             .node("lbrace", "TerminalLBrace")
-            // TODO(spapini): Associated items.
+            .node("items", "ItemList")
             .node("rbrace", "TerminalRBrace")
         )
     .add_struct(StructBuilder::new("ItemStruct")
