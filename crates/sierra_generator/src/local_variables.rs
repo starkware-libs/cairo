@@ -11,7 +11,10 @@ use utils::ordered_hash_set::OrderedHashSet;
 
 use crate::db::SierraGenGroup;
 use crate::replace_ids::replace_libfunc_id;
-use crate::utils::{get_concrete_libfunc_id, get_libfunc_signature};
+use crate::utils::{
+    get_concrete_libfunc_id, get_libfunc_signature, struct_construct_libfunc_id,
+    struct_deconstruct_libfunc_id,
+};
 
 /// Given the lowering of a function, returns the set of variables which should be stored as local
 /// variables.
@@ -118,8 +121,32 @@ fn inner_find_local_variables(
                 known_ap_change = false;
                 state.mark_outputs_as_temporary(statement);
             }
-            lowering::Statement::StructConstruct(_) => todo!(),
-            lowering::Statement::StructDestructure(_) => todo!(),
+            lowering::Statement::StructConstruct(statement_struct_construct) => {
+                let ty = db.get_concrete_type_id(
+                    lowered_function.variables[statement_struct_construct.output].ty,
+                )?;
+                handle_function_call(
+                    db,
+                    &mut state,
+                    &mut known_ap_change,
+                    struct_construct_libfunc_id(db, ty),
+                    &statement_struct_construct.inputs,
+                    &[statement_struct_construct.output],
+                );
+            }
+            lowering::Statement::StructDestructure(statement_struct_destructure) => {
+                let ty = db.get_concrete_type_id(
+                    lowered_function.variables[statement_struct_destructure.input].ty,
+                )?;
+                handle_function_call(
+                    db,
+                    &mut state,
+                    &mut known_ap_change,
+                    struct_deconstruct_libfunc_id(db, ty),
+                    &[statement_struct_destructure.input],
+                    &statement_struct_destructure.outputs,
+                );
+            }
             lowering::Statement::EnumConstruct(_) => todo!(),
         }
     }

@@ -15,6 +15,7 @@ utils::test_file_test!(
         "src/local_variables_test_data/match_enum",
         "src/local_variables_test_data/match_extern",
         "src/local_variables_test_data/simple",
+        "src/local_variables_test_data/struct",
     ],
     SierraGenDatabaseForTesting,
     check_find_local_variables
