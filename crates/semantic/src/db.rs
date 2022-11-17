@@ -124,7 +124,10 @@ pub trait SemanticGroup:
     fn trait_attributes(&self, trait_id: TraitId) -> Option<Vec<Attribute>>;
     /// Returns the functions of a trait.
     #[salsa::invoke(items::trt::trait_functions)]
-    fn trait_functions(&self, trait_id: TraitId) -> Option<Vec<TraitFunctionId>>;
+    fn trait_functions(
+        &self,
+        trait_id: TraitId,
+    ) -> Option<OrderedHashMap<SmolStr, TraitFunctionId>>;
 
     // Trait function.
     // ================
@@ -204,11 +207,18 @@ pub trait SemanticGroup:
         &self,
         impl_function_id: ImplFunctionId,
     ) -> Option<Vec<GenericParamId>>;
-    /// Private query to compute data about a impl function.
-    #[salsa::invoke(items::imp::priv_impl_function_declaration_data)]
-    fn priv_impl_function_data(
+    /// Returns the semantic diagnostics of a impl function declaration -
+    /// its signature excluding its body.
+    #[salsa::invoke(items::imp::impl_function_declaration_diagnostics)]
+    fn impl_function_declaration_diagnostics(
         &self,
-        function_id: ImplFunctionId,
+        impl_function_id: ImplFunctionId,
+    ) -> Diagnostics<SemanticDiagnostic>;
+    /// Private query to compute data about a impl function declaration.
+    #[salsa::invoke(items::imp::priv_impl_function_declaration_data)]
+    fn priv_impl_function_declaration_data(
+        &self,
+        impl_function_id: ImplFunctionId,
     ) -> Option<items::imp::ImplFunctionDeclarationData>;
 
     // Free function.

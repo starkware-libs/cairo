@@ -35,8 +35,9 @@ fn test_trait() {
         "[Attribute { id: \"contract\" }]"
     );
 
-    let [trait_function_id] = <[_; 1]>::try_from(db.trait_functions(trait_id).unwrap()).unwrap();
-    let signature = db.trait_function_signature(trait_function_id).unwrap();
+    let trait_functions = db.trait_functions(trait_id).unwrap();
+    let trait_function_id = trait_functions.get("foo").unwrap();
+    let signature = db.trait_function_signature(*trait_function_id).unwrap();
     assert_eq!(
         format!("{signature:?}"),
         "Signature { params: [Parameter { id: ParamId(0), ty: TypeId(1), mutability: Immutable \
