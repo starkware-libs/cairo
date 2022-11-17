@@ -82,58 +82,18 @@ fn generate_kinds_code() -> rust::Tokens {
         }
     }
 
-    let mut first_token = true;
-    let mut first_keyword_token = true;
-    let mut first_terminal = true;
-    let mut first_keyword_terminal = true;
     for Node { name, kind } in spec.into_iter() {
         match kind {
             NodeKind::Token { is_keyword } => {
-                if first_token {
-                    token_kinds.extend(quote! {
-                        SyntaxKind::$(name.clone())
-                    });
-                    first_token = false;
-                } else {
-                    token_kinds.extend(quote! {
-                        | SyntaxKind::$(name.clone())
-                    });
-                }
+                append_rust_token(&mut token_kinds, &name);
                 if is_keyword {
-                    if first_keyword_token {
-                        keyword_token_kinds.extend(quote! {
-                            SyntaxKind::$name
-                        });
-                        first_keyword_token = false;
-                    } else {
-                        keyword_token_kinds.extend(quote! {
-                            | SyntaxKind::$name
-                        });
-                    }
+                    append_rust_token(&mut keyword_token_kinds, &name);
                 }
             }
             NodeKind::Terminal { is_keyword, .. } => {
-                if first_terminal {
-                    terminal_kinds.extend(quote! {
-                        SyntaxKind::$(name.clone())
-                    });
-                    first_terminal = false;
-                } else {
-                    terminal_kinds.extend(quote! {
-                        | SyntaxKind::$(name.clone())
-                    });
-                }
+                append_rust_token(&mut terminal_kinds, &name);
                 if is_keyword {
-                    if first_keyword_terminal {
-                        keyword_terminal_kinds.extend(quote! {
-                            SyntaxKind::$name
-                        });
-                        first_keyword_terminal = false;
-                    } else {
-                        keyword_terminal_kinds.extend(quote! {
-                            | SyntaxKind::$name
-                        });
-                    }
+                    append_rust_token(&mut keyword_terminal_kinds, &name);
                 }
             }
             _ => {}
@@ -697,5 +657,14 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
                 $(&ptr_name)(self.node.0.stable_ptr)
             }
         }
+    }
+}
+
+/// Appends the given rust token to the given list
+fn append_rust_token(list: &mut rust::Tokens, name: &str) {
+    if list.is_empty() {
+        list.append(format!("SyntaxKind::{name}"));
+    } else {
+        list.append(format!("| SyntaxKind::{name}"));
     }
 }
