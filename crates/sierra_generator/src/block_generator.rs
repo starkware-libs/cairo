@@ -183,6 +183,7 @@ fn generate_statement_call_code(
         GenericFunctionId::TraitFunction(_) => {
             panic!("Trait function should be replaced with concrete functions.")
         }
+        GenericFunctionId::ImplFunction(_) => todo!(),
     }
 }
 

@@ -36,5 +36,12 @@ fn test_impl() {
 
     assert_eq!(format!("{:?}", db.impl_generic_params(impl_id).unwrap()), "[]");
 
+    let func_ids = db.impl_functions(impl_id).unwrap();
     assert_eq!(format!("{:?}", db.impl_functions(impl_id).unwrap()), "[ImplFunctionId(0)]");
+
+    assert_eq!(
+        format!("{:?}", db.impl_function_signature(func_ids[0]).unwrap()),
+        "Signature { params: [Parameter { id: ParamId(0), ty: TypeId(1), mutability: Immutable \
+         }], return_type: TypeId(0), implicits: [] }"
+    );
 }
