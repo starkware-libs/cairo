@@ -78,7 +78,7 @@ pub fn replace_sierra_ids_in_program(
 }
 
 /// Helper for [replace_sierra_ids] and [replace_sierra_ids_in_program] replacing libfunc ids.
-fn replace_libfunc_id(
+pub fn replace_libfunc_id(
     db: &dyn SierraGenGroup,
     id: &sierra::ids::ConcreteLibFuncId,
 ) -> sierra::ids::ConcreteLibFuncId {
