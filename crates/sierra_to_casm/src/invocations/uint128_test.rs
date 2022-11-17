@@ -93,7 +93,7 @@ fn test_lt() {
             instructions: casm! {
                 %{ memory[ap + 0] = memory[ap - 7] < memory[ap - 6] %}
                 jmp rel 6 if [ap + 0] != 0, ap++;
-                [ap + -7] = [ap + 0] + [ap + -8], ap++;
+                [ap + -8] = [ap + 0] + [ap + -7], ap++;
                 [ap + 0] = [[deref!([fp + -5])]];
                 jmp rel 0;
                 [ap + 0] = [ap + -8] + 1, ap++;

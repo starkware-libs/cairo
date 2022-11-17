@@ -314,7 +314,7 @@ fn build_uint128_lt(
         %{ memory[ap + 0] = memory a < memory b %}
         jmp rel 0 if [ap + 0] != 0, ap++;
         // a>=b if and only if a-b>=0.
-        (b.unchecked_apply_known_ap_change(1)) = [ap + 0] + (a.unchecked_apply_known_ap_change(1)), ap++;  // Compute a-b.
+        (a.unchecked_apply_known_ap_change(1)) = [ap + 0] + (b.unchecked_apply_known_ap_change(1)), ap++;  // Compute a-b.
         [ap + 0] = [[range_check.unchecked_apply_known_ap_change(2)]];
         jmp rel 0; // Fixed in relocations.
     };

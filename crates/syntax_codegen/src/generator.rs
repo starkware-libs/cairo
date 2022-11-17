@@ -254,7 +254,7 @@ fn gen_list_code(name: String, element_type: String) -> rust::Tokens {
             }
         }
         #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-        pub struct $(&ptr_name)(SyntaxStablePtrId);
+        pub struct $(&ptr_name)(pub SyntaxStablePtrId);
         impl $(&ptr_name) {
             pub fn untyped(&self) -> SyntaxStablePtrId {
                 self.0
@@ -302,7 +302,7 @@ fn gen_separated_list_code(
             }
         }
         #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-        pub struct $(&ptr_name)(SyntaxStablePtrId);
+        pub struct $(&ptr_name)(pub SyntaxStablePtrId);
         impl $(&ptr_name) {
             pub fn untyped(&self) -> SyntaxStablePtrId {
                 self.0
@@ -419,7 +419,7 @@ fn gen_enum_code(
             $enum_body
         }
         #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-        pub struct $(&ptr_name)(SyntaxStablePtrId);
+        pub struct $(&ptr_name)(pub SyntaxStablePtrId);
         impl $(&ptr_name) {
             pub fn untyped(&self) -> SyntaxStablePtrId {
                 self.0
@@ -483,7 +483,7 @@ fn gen_token_code(name: String) -> rust::Tokens {
             }
         }
         #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-        pub struct $(&ptr_name)(SyntaxStablePtrId);
+        pub struct $(&ptr_name)(pub SyntaxStablePtrId);
         impl $(&ptr_name) {
             pub fn untyped(&self) -> SyntaxStablePtrId {
                 self.0
@@ -616,7 +616,7 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
             $body
         }
         #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-        pub struct $(&ptr_name)(SyntaxStablePtrId);
+        pub struct $(&ptr_name)(pub SyntaxStablePtrId);
         impl $(&ptr_name) {
             $ptr_getters
 

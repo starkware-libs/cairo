@@ -39,12 +39,12 @@ impl TypeId {
     pub fn never(db: &dyn SemanticGroup) -> Self {
         db.intern_type(TypeLongId::Never)
     }
-    pub fn format(&self, db: &(dyn SemanticGroup + 'static)) -> String {
+    pub fn format(&self, db: &dyn SemanticGroup) -> String {
         db.lookup_intern_type(*self).format(db)
     }
 }
 impl TypeLongId {
-    pub fn format(&self, db: &(dyn SemanticGroup + 'static)) -> String {
+    pub fn format(&self, db: &dyn SemanticGroup) -> String {
         match self {
             TypeLongId::Concrete(concrete) => concrete.format(db),
             TypeLongId::Tuple(inner_types) => {
@@ -125,7 +125,7 @@ impl ConcreteTypeId {
             ConcreteTypeId::Extern(id) => db.lookup_intern_concrete_extern_type(*id).generic_args,
         }
     }
-    pub fn format(&self, db: &(dyn SemanticGroup + 'static)) -> String {
+    pub fn format(&self, db: &dyn SemanticGroup) -> String {
         // TODO(spapini): Format generics.
         let generic_type_format = self.generic_type(db).format(db.upcast());
         let generic_args = self.generic_args(db);

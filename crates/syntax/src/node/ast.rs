@@ -36,7 +36,7 @@ impl Trivia {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TriviaPtr(SyntaxStablePtrId);
+pub struct TriviaPtr(pub SyntaxStablePtrId);
 impl TriviaPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -75,7 +75,7 @@ pub enum Trivium {
     Skipped(TokenSkipped),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TriviumPtr(SyntaxStablePtrId);
+pub struct TriviumPtr(pub SyntaxStablePtrId);
 impl TriviumPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -178,7 +178,7 @@ pub enum Expr {
     Missing(ExprMissing),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ExprPtr(SyntaxStablePtrId);
+pub struct ExprPtr(pub SyntaxStablePtrId);
 impl ExprPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -424,7 +424,7 @@ impl ExprList {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ExprListPtr(SyntaxStablePtrId);
+pub struct ExprListPtr(pub SyntaxStablePtrId);
 impl ExprListPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -495,7 +495,7 @@ impl ExprMissing {
 }
 impl ExprMissing {}
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ExprMissingPtr(SyntaxStablePtrId);
+pub struct ExprMissingPtr(pub SyntaxStablePtrId);
 impl ExprMissingPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -541,7 +541,7 @@ pub enum PathSegment {
     Simple(PathSegmentSimple),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct PathSegmentPtr(SyntaxStablePtrId);
+pub struct PathSegmentPtr(pub SyntaxStablePtrId);
 impl PathSegmentPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -625,7 +625,7 @@ impl PathSegmentSimple {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct PathSegmentSimplePtr(SyntaxStablePtrId);
+pub struct PathSegmentSimplePtr(pub SyntaxStablePtrId);
 impl PathSegmentSimplePtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -700,7 +700,7 @@ impl PathSegmentWithGenericArgs {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct PathSegmentWithGenericArgsPtr(SyntaxStablePtrId);
+pub struct PathSegmentWithGenericArgsPtr(pub SyntaxStablePtrId);
 impl PathSegmentWithGenericArgsPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -771,7 +771,7 @@ impl ExprPath {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ExprPathPtr(SyntaxStablePtrId);
+pub struct ExprPathPtr(pub SyntaxStablePtrId);
 impl ExprPathPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -857,7 +857,7 @@ impl ExprParenthesized {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ExprParenthesizedPtr(SyntaxStablePtrId);
+pub struct ExprParenthesizedPtr(pub SyntaxStablePtrId);
 impl ExprParenthesizedPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -932,7 +932,7 @@ impl ExprUnary {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ExprUnaryPtr(SyntaxStablePtrId);
+pub struct ExprUnaryPtr(pub SyntaxStablePtrId);
 impl ExprUnaryPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -981,7 +981,7 @@ pub enum UnaryOperator {
     Minus(TerminalMinus),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct UnaryOperatorPtr(SyntaxStablePtrId);
+pub struct UnaryOperatorPtr(pub SyntaxStablePtrId);
 impl UnaryOperatorPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -1071,7 +1071,7 @@ impl ExprBinary {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ExprBinaryPtr(SyntaxStablePtrId);
+pub struct ExprBinaryPtr(pub SyntaxStablePtrId);
 impl ExprBinaryPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -1136,7 +1136,7 @@ pub enum BinaryOperator {
     GT(TerminalGT),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct BinaryOperatorPtr(SyntaxStablePtrId);
+pub struct BinaryOperatorPtr(pub SyntaxStablePtrId);
 impl BinaryOperatorPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -1380,7 +1380,7 @@ impl ExprTuple {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ExprTuplePtr(SyntaxStablePtrId);
+pub struct ExprTuplePtr(pub SyntaxStablePtrId);
 impl ExprTuplePtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -1455,7 +1455,7 @@ impl ExprFunctionCall {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ExprFunctionCallPtr(SyntaxStablePtrId);
+pub struct ExprFunctionCallPtr(pub SyntaxStablePtrId);
 impl ExprFunctionCallPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -1530,7 +1530,7 @@ impl ExprListParenthesized {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ExprListParenthesizedPtr(SyntaxStablePtrId);
+pub struct ExprListParenthesizedPtr(pub SyntaxStablePtrId);
 impl ExprListParenthesizedPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -1605,7 +1605,7 @@ impl ExprStructCtorCall {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ExprStructCtorCallPtr(SyntaxStablePtrId);
+pub struct ExprStructCtorCallPtr(pub SyntaxStablePtrId);
 impl ExprStructCtorCallPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -1680,7 +1680,7 @@ impl ExprBlock {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ExprBlockPtr(SyntaxStablePtrId);
+pub struct ExprBlockPtr(pub SyntaxStablePtrId);
 impl ExprBlockPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -1767,7 +1767,7 @@ impl ExprMatch {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ExprMatchPtr(SyntaxStablePtrId);
+pub struct ExprMatchPtr(pub SyntaxStablePtrId);
 impl ExprMatchPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -1840,7 +1840,7 @@ impl MatchArms {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct MatchArmsPtr(SyntaxStablePtrId);
+pub struct MatchArmsPtr(pub SyntaxStablePtrId);
 impl MatchArmsPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -1926,7 +1926,7 @@ impl MatchArm {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct MatchArmPtr(SyntaxStablePtrId);
+pub struct MatchArmPtr(pub SyntaxStablePtrId);
 impl MatchArmPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -2009,7 +2009,7 @@ impl ExprIf {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ExprIfPtr(SyntaxStablePtrId);
+pub struct ExprIfPtr(pub SyntaxStablePtrId);
 impl ExprIfPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -2085,7 +2085,7 @@ impl ElseClause {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ElseClausePtr(SyntaxStablePtrId);
+pub struct ElseClausePtr(pub SyntaxStablePtrId);
 impl ElseClausePtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -2134,7 +2134,7 @@ pub enum OptionElseClause {
     ElseClause(ElseClause),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct OptionElseClausePtr(SyntaxStablePtrId);
+pub struct OptionElseClausePtr(pub SyntaxStablePtrId);
 impl OptionElseClausePtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -2214,7 +2214,7 @@ impl OptionElseClauseEmpty {
 }
 impl OptionElseClauseEmpty {}
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct OptionElseClauseEmptyPtr(SyntaxStablePtrId);
+pub struct OptionElseClauseEmptyPtr(pub SyntaxStablePtrId);
 impl OptionElseClauseEmptyPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -2282,7 +2282,7 @@ impl ExprErrorPropagate {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ExprErrorPropagatePtr(SyntaxStablePtrId);
+pub struct ExprErrorPropagatePtr(pub SyntaxStablePtrId);
 impl ExprErrorPropagatePtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -2353,7 +2353,7 @@ impl StructArgExpr {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct StructArgExprPtr(SyntaxStablePtrId);
+pub struct StructArgExprPtr(pub SyntaxStablePtrId);
 impl StructArgExprPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -2402,7 +2402,7 @@ pub enum OptionStructArgExpr {
     StructArgExpr(StructArgExpr),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct OptionStructArgExprPtr(SyntaxStablePtrId);
+pub struct OptionStructArgExprPtr(pub SyntaxStablePtrId);
 impl OptionStructArgExprPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -2482,7 +2482,7 @@ impl OptionStructArgExprEmpty {
 }
 impl OptionStructArgExprEmpty {}
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct OptionStructArgExprEmptyPtr(SyntaxStablePtrId);
+pub struct OptionStructArgExprEmptyPtr(pub SyntaxStablePtrId);
 impl OptionStructArgExprEmptyPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -2550,7 +2550,7 @@ impl StructArgSingle {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct StructArgSinglePtr(SyntaxStablePtrId);
+pub struct StructArgSinglePtr(pub SyntaxStablePtrId);
 impl StructArgSinglePtr {
     pub fn identifier_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
         let ptr = db.lookup_intern_stable_ptr(self.0);
@@ -2632,7 +2632,7 @@ impl StructArgTail {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct StructArgTailPtr(SyntaxStablePtrId);
+pub struct StructArgTailPtr(pub SyntaxStablePtrId);
 impl StructArgTailPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -2681,7 +2681,7 @@ pub enum StructArg {
     StructArgTail(StructArgTail),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct StructArgPtr(SyntaxStablePtrId);
+pub struct StructArgPtr(pub SyntaxStablePtrId);
 impl StructArgPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -2765,7 +2765,7 @@ impl StructArgList {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct StructArgListPtr(SyntaxStablePtrId);
+pub struct StructArgListPtr(pub SyntaxStablePtrId);
 impl StructArgListPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -2851,7 +2851,7 @@ impl ArgListBraced {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ArgListBracedPtr(SyntaxStablePtrId);
+pub struct ArgListBracedPtr(pub SyntaxStablePtrId);
 impl ArgListBracedPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -2909,7 +2909,7 @@ pub enum Pattern {
     Path(ExprPath),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct PatternPtr(SyntaxStablePtrId);
+pub struct PatternPtr(pub SyntaxStablePtrId);
 impl PatternPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -3059,7 +3059,7 @@ impl PatternIdentifier {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct PatternIdentifierPtr(SyntaxStablePtrId);
+pub struct PatternIdentifierPtr(pub SyntaxStablePtrId);
 impl PatternIdentifierPtr {
     pub fn name_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
         let ptr = db.lookup_intern_stable_ptr(self.0);
@@ -3146,7 +3146,7 @@ impl PatternStruct {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct PatternStructPtr(SyntaxStablePtrId);
+pub struct PatternStructPtr(pub SyntaxStablePtrId);
 impl PatternStructPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -3218,7 +3218,7 @@ impl PatternStructParamList {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct PatternStructParamListPtr(SyntaxStablePtrId);
+pub struct PatternStructParamListPtr(pub SyntaxStablePtrId);
 impl PatternStructParamListPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -3304,7 +3304,7 @@ impl PatternTuple {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct PatternTuplePtr(SyntaxStablePtrId);
+pub struct PatternTuplePtr(pub SyntaxStablePtrId);
 impl PatternTuplePtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -3375,7 +3375,7 @@ impl PatternList {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct PatternListPtr(SyntaxStablePtrId);
+pub struct PatternListPtr(pub SyntaxStablePtrId);
 impl PatternListPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -3436,7 +3436,7 @@ pub enum PatternStructParam {
     Tail(TerminalDotDot),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct PatternStructParamPtr(SyntaxStablePtrId);
+pub struct PatternStructParamPtr(pub SyntaxStablePtrId);
 impl PatternStructParamPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -3545,7 +3545,7 @@ impl PatternStructParamWithExpr {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct PatternStructParamWithExprPtr(SyntaxStablePtrId);
+pub struct PatternStructParamWithExprPtr(pub SyntaxStablePtrId);
 impl PatternStructParamWithExprPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -3628,7 +3628,7 @@ impl PatternEnum {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct PatternEnumPtr(SyntaxStablePtrId);
+pub struct PatternEnumPtr(pub SyntaxStablePtrId);
 impl PatternEnumPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -3704,7 +3704,7 @@ impl TypeClause {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TypeClausePtr(SyntaxStablePtrId);
+pub struct TypeClausePtr(pub SyntaxStablePtrId);
 impl TypeClausePtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -3753,7 +3753,7 @@ pub enum OptionTypeClause {
     TypeClause(TypeClause),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct OptionTypeClausePtr(SyntaxStablePtrId);
+pub struct OptionTypeClausePtr(pub SyntaxStablePtrId);
 impl OptionTypeClausePtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -3833,7 +3833,7 @@ impl OptionTypeClauseEmpty {
 }
 impl OptionTypeClauseEmpty {}
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct OptionTypeClauseEmptyPtr(SyntaxStablePtrId);
+pub struct OptionTypeClauseEmptyPtr(pub SyntaxStablePtrId);
 impl OptionTypeClauseEmptyPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -3901,7 +3901,7 @@ impl ReturnTypeClause {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ReturnTypeClausePtr(SyntaxStablePtrId);
+pub struct ReturnTypeClausePtr(pub SyntaxStablePtrId);
 impl ReturnTypeClausePtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -3950,7 +3950,7 @@ pub enum OptionReturnTypeClause {
     ReturnTypeClause(ReturnTypeClause),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct OptionReturnTypeClausePtr(SyntaxStablePtrId);
+pub struct OptionReturnTypeClausePtr(pub SyntaxStablePtrId);
 impl OptionReturnTypeClausePtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -4030,7 +4030,7 @@ impl OptionReturnTypeClauseEmpty {
 }
 impl OptionReturnTypeClauseEmpty {}
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct OptionReturnTypeClauseEmptyPtr(SyntaxStablePtrId);
+pub struct OptionReturnTypeClauseEmptyPtr(pub SyntaxStablePtrId);
 impl OptionReturnTypeClauseEmptyPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -4078,7 +4078,7 @@ pub enum Statement {
     Missing(StatementMissing),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct StatementPtr(SyntaxStablePtrId);
+pub struct StatementPtr(pub SyntaxStablePtrId);
 impl StatementPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -4183,7 +4183,7 @@ impl StatementList {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct StatementListPtr(SyntaxStablePtrId);
+pub struct StatementListPtr(pub SyntaxStablePtrId);
 impl StatementListPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -4231,7 +4231,7 @@ impl StatementMissing {
 }
 impl StatementMissing {}
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct StatementMissingPtr(SyntaxStablePtrId);
+pub struct StatementMissingPtr(pub SyntaxStablePtrId);
 impl StatementMissingPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -4316,7 +4316,7 @@ impl StatementLet {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct StatementLetPtr(SyntaxStablePtrId);
+pub struct StatementLetPtr(pub SyntaxStablePtrId);
 impl StatementLetPtr {
     pub fn pattern_green(self, db: &dyn SyntaxGroup) -> PatternGreen {
         let ptr = db.lookup_intern_stable_ptr(self.0);
@@ -4380,7 +4380,7 @@ pub enum OptionTerminalSemicolon {
     TerminalSemicolon(TerminalSemicolon),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct OptionTerminalSemicolonPtr(SyntaxStablePtrId);
+pub struct OptionTerminalSemicolonPtr(pub SyntaxStablePtrId);
 impl OptionTerminalSemicolonPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -4460,7 +4460,7 @@ impl OptionTerminalSemicolonEmpty {
 }
 impl OptionTerminalSemicolonEmpty {}
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct OptionTerminalSemicolonEmptyPtr(SyntaxStablePtrId);
+pub struct OptionTerminalSemicolonEmptyPtr(pub SyntaxStablePtrId);
 impl OptionTerminalSemicolonEmptyPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -4528,7 +4528,7 @@ impl StatementExpr {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct StatementExprPtr(SyntaxStablePtrId);
+pub struct StatementExprPtr(pub SyntaxStablePtrId);
 impl StatementExprPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -4603,7 +4603,7 @@ impl StatementReturn {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct StatementReturnPtr(SyntaxStablePtrId);
+pub struct StatementReturnPtr(pub SyntaxStablePtrId);
 impl StatementReturnPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -4656,7 +4656,7 @@ pub enum ParamName {
     Name(TerminalIdentifier),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ParamNamePtr(SyntaxStablePtrId);
+pub struct ParamNamePtr(pub SyntaxStablePtrId);
 impl ParamNamePtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -4748,7 +4748,7 @@ impl Param {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ParamPtr(SyntaxStablePtrId);
+pub struct ParamPtr(pub SyntaxStablePtrId);
 impl ParamPtr {
     pub fn name_green(self, db: &dyn SyntaxGroup) -> ParamNameGreen {
         let ptr = db.lookup_intern_stable_ptr(self.0);
@@ -4824,7 +4824,7 @@ impl ModifierList {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ModifierListPtr(SyntaxStablePtrId);
+pub struct ModifierListPtr(pub SyntaxStablePtrId);
 impl ModifierListPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -4861,7 +4861,7 @@ pub enum Modifier {
     Mut(TerminalMut),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ModifierPtr(SyntaxStablePtrId);
+pub struct ModifierPtr(pub SyntaxStablePtrId);
 impl ModifierPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -4941,7 +4941,7 @@ impl ParamList {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ParamListPtr(SyntaxStablePtrId);
+pub struct ParamListPtr(pub SyntaxStablePtrId);
 impl ParamListPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -5031,7 +5031,7 @@ impl ImplicitsClause {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ImplicitsClausePtr(SyntaxStablePtrId);
+pub struct ImplicitsClausePtr(pub SyntaxStablePtrId);
 impl ImplicitsClausePtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -5085,7 +5085,7 @@ pub enum OptionImplicitsClause {
     ImplicitsClause(ImplicitsClause),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct OptionImplicitsClausePtr(SyntaxStablePtrId);
+pub struct OptionImplicitsClausePtr(pub SyntaxStablePtrId);
 impl OptionImplicitsClausePtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -5165,7 +5165,7 @@ impl OptionImplicitsClauseEmpty {
 }
 impl OptionImplicitsClauseEmpty {}
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct OptionImplicitsClauseEmptyPtr(SyntaxStablePtrId);
+pub struct OptionImplicitsClauseEmptyPtr(pub SyntaxStablePtrId);
 impl OptionImplicitsClauseEmptyPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -5211,7 +5211,7 @@ pub enum OptionTerminalNoPanic {
     TerminalNoPanic(TerminalNoPanic),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct OptionTerminalNoPanicPtr(SyntaxStablePtrId);
+pub struct OptionTerminalNoPanicPtr(pub SyntaxStablePtrId);
 impl OptionTerminalNoPanicPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -5291,7 +5291,7 @@ impl OptionTerminalNoPanicEmpty {
 }
 impl OptionTerminalNoPanicEmpty {}
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct OptionTerminalNoPanicEmptyPtr(SyntaxStablePtrId);
+pub struct OptionTerminalNoPanicEmptyPtr(pub SyntaxStablePtrId);
 impl OptionTerminalNoPanicEmptyPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -5382,7 +5382,7 @@ impl FunctionSignature {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct FunctionSignaturePtr(SyntaxStablePtrId);
+pub struct FunctionSignaturePtr(pub SyntaxStablePtrId);
 impl FunctionSignaturePtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -5460,7 +5460,7 @@ impl Member {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct MemberPtr(SyntaxStablePtrId);
+pub struct MemberPtr(pub SyntaxStablePtrId);
 impl MemberPtr {
     pub fn name_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
         let ptr = db.lookup_intern_stable_ptr(self.0);
@@ -5535,7 +5535,7 @@ impl MemberList {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct MemberListPtr(SyntaxStablePtrId);
+pub struct MemberListPtr(pub SyntaxStablePtrId);
 impl MemberListPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -5602,7 +5602,7 @@ pub enum Item {
     Enum(ItemEnum),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ItemPtr(SyntaxStablePtrId);
+pub struct ItemPtr(pub SyntaxStablePtrId);
 impl ItemPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -5769,7 +5769,7 @@ impl ItemList {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ItemListPtr(SyntaxStablePtrId);
+pub struct ItemListPtr(pub SyntaxStablePtrId);
 impl ItemListPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -5836,7 +5836,7 @@ impl Attribute {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct AttributePtr(SyntaxStablePtrId);
+pub struct AttributePtr(pub SyntaxStablePtrId);
 impl AttributePtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -5905,7 +5905,7 @@ impl AttributeList {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct AttributeListPtr(SyntaxStablePtrId);
+pub struct AttributeListPtr(pub SyntaxStablePtrId);
 impl AttributeListPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -5972,7 +5972,7 @@ impl ItemModule {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ItemModulePtr(SyntaxStablePtrId);
+pub struct ItemModulePtr(pub SyntaxStablePtrId);
 impl ItemModulePtr {
     pub fn name_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
         let ptr = db.lookup_intern_stable_ptr(self.0);
@@ -6073,7 +6073,7 @@ impl ItemFreeFunction {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ItemFreeFunctionPtr(SyntaxStablePtrId);
+pub struct ItemFreeFunctionPtr(pub SyntaxStablePtrId);
 impl ItemFreeFunctionPtr {
     pub fn name_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
         let ptr = db.lookup_intern_stable_ptr(self.0);
@@ -6187,7 +6187,7 @@ impl ItemExternFunction {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ItemExternFunctionPtr(SyntaxStablePtrId);
+pub struct ItemExternFunctionPtr(pub SyntaxStablePtrId);
 impl ItemExternFunctionPtr {
     pub fn name_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
         let ptr = db.lookup_intern_stable_ptr(self.0);
@@ -6287,7 +6287,7 @@ impl ItemExternType {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ItemExternTypePtr(SyntaxStablePtrId);
+pub struct ItemExternTypePtr(pub SyntaxStablePtrId);
 impl ItemExternTypePtr {
     pub fn name_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
         let ptr = db.lookup_intern_stable_ptr(self.0);
@@ -6385,7 +6385,7 @@ impl ItemTrait {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ItemTraitPtr(SyntaxStablePtrId);
+pub struct ItemTraitPtr(pub SyntaxStablePtrId);
 impl ItemTraitPtr {
     pub fn name_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
         let ptr = db.lookup_intern_stable_ptr(self.0);
@@ -6448,7 +6448,7 @@ pub enum MaybeTraitBody {
     None(TerminalSemicolon),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct MaybeTraitBodyPtr(SyntaxStablePtrId);
+pub struct MaybeTraitBodyPtr(pub SyntaxStablePtrId);
 impl MaybeTraitBodyPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -6540,7 +6540,7 @@ impl TraitBody {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TraitBodyPtr(SyntaxStablePtrId);
+pub struct TraitBodyPtr(pub SyntaxStablePtrId);
 impl TraitBodyPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -6608,7 +6608,7 @@ impl TraitItemList {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TraitItemListPtr(SyntaxStablePtrId);
+pub struct TraitItemListPtr(pub SyntaxStablePtrId);
 impl TraitItemListPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -6644,7 +6644,7 @@ pub enum TraitItem {
     Function(TraitItemFunction),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TraitItemPtr(SyntaxStablePtrId);
+pub struct TraitItemPtr(pub SyntaxStablePtrId);
 impl TraitItemPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -6735,7 +6735,7 @@ impl TraitItemFunction {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TraitItemFunctionPtr(SyntaxStablePtrId);
+pub struct TraitItemFunctionPtr(pub SyntaxStablePtrId);
 impl TraitItemFunctionPtr {
     pub fn name_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
         let ptr = db.lookup_intern_stable_ptr(self.0);
@@ -6842,7 +6842,7 @@ impl ItemImpl {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ItemImplPtr(SyntaxStablePtrId);
+pub struct ItemImplPtr(pub SyntaxStablePtrId);
 impl ItemImplPtr {
     pub fn name_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
         let ptr = db.lookup_intern_stable_ptr(self.0);
@@ -6907,7 +6907,7 @@ pub enum MaybeImplBody {
     None(TerminalSemicolon),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct MaybeImplBodyPtr(SyntaxStablePtrId);
+pub struct MaybeImplBodyPtr(pub SyntaxStablePtrId);
 impl MaybeImplBodyPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -6997,7 +6997,7 @@ impl ImplBody {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ImplBodyPtr(SyntaxStablePtrId);
+pub struct ImplBodyPtr(pub SyntaxStablePtrId);
 impl ImplBodyPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -7100,7 +7100,7 @@ impl ItemStruct {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ItemStructPtr(SyntaxStablePtrId);
+pub struct ItemStructPtr(pub SyntaxStablePtrId);
 impl ItemStructPtr {
     pub fn name_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
         let ptr = db.lookup_intern_stable_ptr(self.0);
@@ -7208,7 +7208,7 @@ impl ItemEnum {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ItemEnumPtr(SyntaxStablePtrId);
+pub struct ItemEnumPtr(pub SyntaxStablePtrId);
 impl ItemEnumPtr {
     pub fn name_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
         let ptr = db.lookup_intern_stable_ptr(self.0);
@@ -7303,7 +7303,7 @@ impl ItemUse {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ItemUsePtr(SyntaxStablePtrId);
+pub struct ItemUsePtr(pub SyntaxStablePtrId);
 impl ItemUsePtr {
     pub fn name_green(self, db: &dyn SyntaxGroup) -> ExprPathGreen {
         let ptr = db.lookup_intern_stable_ptr(self.0);
@@ -7391,7 +7391,7 @@ impl GenericArgs {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct GenericArgsPtr(SyntaxStablePtrId);
+pub struct GenericArgsPtr(pub SyntaxStablePtrId);
 impl GenericArgsPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -7462,7 +7462,7 @@ impl GenericArgList {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct GenericArgListPtr(SyntaxStablePtrId);
+pub struct GenericArgListPtr(pub SyntaxStablePtrId);
 impl GenericArgListPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -7522,7 +7522,7 @@ pub enum OptionWrappedGenericParamList {
     WrappedGenericParamList(WrappedGenericParamList),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct OptionWrappedGenericParamListPtr(SyntaxStablePtrId);
+pub struct OptionWrappedGenericParamListPtr(pub SyntaxStablePtrId);
 impl OptionWrappedGenericParamListPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -7604,7 +7604,7 @@ impl OptionWrappedGenericParamListEmpty {
 }
 impl OptionWrappedGenericParamListEmpty {}
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct OptionWrappedGenericParamListEmptyPtr(SyntaxStablePtrId);
+pub struct OptionWrappedGenericParamListEmptyPtr(pub SyntaxStablePtrId);
 impl OptionWrappedGenericParamListEmptyPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -7676,7 +7676,7 @@ impl WrappedGenericParamList {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct WrappedGenericParamListPtr(SyntaxStablePtrId);
+pub struct WrappedGenericParamListPtr(pub SyntaxStablePtrId);
 impl WrappedGenericParamListPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -7747,7 +7747,7 @@ impl GenericParamList {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct GenericParamListPtr(SyntaxStablePtrId);
+pub struct GenericParamListPtr(pub SyntaxStablePtrId);
 impl GenericParamListPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -7822,7 +7822,7 @@ impl GenericParam {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct GenericParamPtr(SyntaxStablePtrId);
+pub struct GenericParamPtr(pub SyntaxStablePtrId);
 impl GenericParamPtr {
     pub fn name_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
         let ptr = db.lookup_intern_stable_ptr(self.0);
@@ -7889,7 +7889,7 @@ impl Token for TokenIdentifier {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenIdentifierPtr(SyntaxStablePtrId);
+pub struct TokenIdentifierPtr(pub SyntaxStablePtrId);
 impl TokenIdentifierPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -7967,7 +7967,7 @@ impl TerminalIdentifier {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalIdentifierPtr(SyntaxStablePtrId);
+pub struct TerminalIdentifierPtr(pub SyntaxStablePtrId);
 impl TerminalIdentifierPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -8030,7 +8030,7 @@ impl Token for TokenLiteralNumber {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenLiteralNumberPtr(SyntaxStablePtrId);
+pub struct TokenLiteralNumberPtr(pub SyntaxStablePtrId);
 impl TokenLiteralNumberPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -8109,7 +8109,7 @@ impl TerminalLiteralNumber {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalLiteralNumberPtr(SyntaxStablePtrId);
+pub struct TerminalLiteralNumberPtr(pub SyntaxStablePtrId);
 impl TerminalLiteralNumberPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -8172,7 +8172,7 @@ impl Token for TokenFalse {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenFalsePtr(SyntaxStablePtrId);
+pub struct TokenFalsePtr(pub SyntaxStablePtrId);
 impl TokenFalsePtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -8250,7 +8250,7 @@ impl TerminalFalse {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalFalsePtr(SyntaxStablePtrId);
+pub struct TerminalFalsePtr(pub SyntaxStablePtrId);
 impl TerminalFalsePtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -8313,7 +8313,7 @@ impl Token for TokenTrue {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenTruePtr(SyntaxStablePtrId);
+pub struct TokenTruePtr(pub SyntaxStablePtrId);
 impl TokenTruePtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -8391,7 +8391,7 @@ impl TerminalTrue {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalTruePtr(SyntaxStablePtrId);
+pub struct TerminalTruePtr(pub SyntaxStablePtrId);
 impl TerminalTruePtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -8454,7 +8454,7 @@ impl Token for TokenExtern {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenExternPtr(SyntaxStablePtrId);
+pub struct TokenExternPtr(pub SyntaxStablePtrId);
 impl TokenExternPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -8532,7 +8532,7 @@ impl TerminalExtern {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalExternPtr(SyntaxStablePtrId);
+pub struct TerminalExternPtr(pub SyntaxStablePtrId);
 impl TerminalExternPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -8595,7 +8595,7 @@ impl Token for TokenType {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenTypePtr(SyntaxStablePtrId);
+pub struct TokenTypePtr(pub SyntaxStablePtrId);
 impl TokenTypePtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -8673,7 +8673,7 @@ impl TerminalType {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalTypePtr(SyntaxStablePtrId);
+pub struct TerminalTypePtr(pub SyntaxStablePtrId);
 impl TerminalTypePtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -8736,7 +8736,7 @@ impl Token for TokenFunction {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenFunctionPtr(SyntaxStablePtrId);
+pub struct TokenFunctionPtr(pub SyntaxStablePtrId);
 impl TokenFunctionPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -8814,7 +8814,7 @@ impl TerminalFunction {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalFunctionPtr(SyntaxStablePtrId);
+pub struct TerminalFunctionPtr(pub SyntaxStablePtrId);
 impl TerminalFunctionPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -8877,7 +8877,7 @@ impl Token for TokenModule {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenModulePtr(SyntaxStablePtrId);
+pub struct TokenModulePtr(pub SyntaxStablePtrId);
 impl TokenModulePtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -8955,7 +8955,7 @@ impl TerminalModule {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalModulePtr(SyntaxStablePtrId);
+pub struct TerminalModulePtr(pub SyntaxStablePtrId);
 impl TerminalModulePtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -9018,7 +9018,7 @@ impl Token for TokenEnum {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenEnumPtr(SyntaxStablePtrId);
+pub struct TokenEnumPtr(pub SyntaxStablePtrId);
 impl TokenEnumPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -9096,7 +9096,7 @@ impl TerminalEnum {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalEnumPtr(SyntaxStablePtrId);
+pub struct TerminalEnumPtr(pub SyntaxStablePtrId);
 impl TerminalEnumPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -9159,7 +9159,7 @@ impl Token for TokenStruct {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenStructPtr(SyntaxStablePtrId);
+pub struct TokenStructPtr(pub SyntaxStablePtrId);
 impl TokenStructPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -9237,7 +9237,7 @@ impl TerminalStruct {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalStructPtr(SyntaxStablePtrId);
+pub struct TerminalStructPtr(pub SyntaxStablePtrId);
 impl TerminalStructPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -9300,7 +9300,7 @@ impl Token for TokenTrait {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenTraitPtr(SyntaxStablePtrId);
+pub struct TokenTraitPtr(pub SyntaxStablePtrId);
 impl TokenTraitPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -9378,7 +9378,7 @@ impl TerminalTrait {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalTraitPtr(SyntaxStablePtrId);
+pub struct TerminalTraitPtr(pub SyntaxStablePtrId);
 impl TerminalTraitPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -9441,7 +9441,7 @@ impl Token for TokenImpl {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenImplPtr(SyntaxStablePtrId);
+pub struct TokenImplPtr(pub SyntaxStablePtrId);
 impl TokenImplPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -9519,7 +9519,7 @@ impl TerminalImpl {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalImplPtr(SyntaxStablePtrId);
+pub struct TerminalImplPtr(pub SyntaxStablePtrId);
 impl TerminalImplPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -9582,7 +9582,7 @@ impl Token for TokenOf {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenOfPtr(SyntaxStablePtrId);
+pub struct TokenOfPtr(pub SyntaxStablePtrId);
 impl TokenOfPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -9660,7 +9660,7 @@ impl TerminalOf {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalOfPtr(SyntaxStablePtrId);
+pub struct TerminalOfPtr(pub SyntaxStablePtrId);
 impl TerminalOfPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -9723,7 +9723,7 @@ impl Token for TokenLet {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenLetPtr(SyntaxStablePtrId);
+pub struct TokenLetPtr(pub SyntaxStablePtrId);
 impl TokenLetPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -9801,7 +9801,7 @@ impl TerminalLet {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalLetPtr(SyntaxStablePtrId);
+pub struct TerminalLetPtr(pub SyntaxStablePtrId);
 impl TerminalLetPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -9864,7 +9864,7 @@ impl Token for TokenReturn {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenReturnPtr(SyntaxStablePtrId);
+pub struct TokenReturnPtr(pub SyntaxStablePtrId);
 impl TokenReturnPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -9942,7 +9942,7 @@ impl TerminalReturn {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalReturnPtr(SyntaxStablePtrId);
+pub struct TerminalReturnPtr(pub SyntaxStablePtrId);
 impl TerminalReturnPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -10005,7 +10005,7 @@ impl Token for TokenMatch {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenMatchPtr(SyntaxStablePtrId);
+pub struct TokenMatchPtr(pub SyntaxStablePtrId);
 impl TokenMatchPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -10083,7 +10083,7 @@ impl TerminalMatch {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalMatchPtr(SyntaxStablePtrId);
+pub struct TerminalMatchPtr(pub SyntaxStablePtrId);
 impl TerminalMatchPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -10146,7 +10146,7 @@ impl Token for TokenIf {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenIfPtr(SyntaxStablePtrId);
+pub struct TokenIfPtr(pub SyntaxStablePtrId);
 impl TokenIfPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -10224,7 +10224,7 @@ impl TerminalIf {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalIfPtr(SyntaxStablePtrId);
+pub struct TerminalIfPtr(pub SyntaxStablePtrId);
 impl TerminalIfPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -10287,7 +10287,7 @@ impl Token for TokenElse {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenElsePtr(SyntaxStablePtrId);
+pub struct TokenElsePtr(pub SyntaxStablePtrId);
 impl TokenElsePtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -10365,7 +10365,7 @@ impl TerminalElse {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalElsePtr(SyntaxStablePtrId);
+pub struct TerminalElsePtr(pub SyntaxStablePtrId);
 impl TerminalElsePtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -10428,7 +10428,7 @@ impl Token for TokenUse {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenUsePtr(SyntaxStablePtrId);
+pub struct TokenUsePtr(pub SyntaxStablePtrId);
 impl TokenUsePtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -10506,7 +10506,7 @@ impl TerminalUse {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalUsePtr(SyntaxStablePtrId);
+pub struct TerminalUsePtr(pub SyntaxStablePtrId);
 impl TerminalUsePtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -10569,7 +10569,7 @@ impl Token for TokenImplicits {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenImplicitsPtr(SyntaxStablePtrId);
+pub struct TokenImplicitsPtr(pub SyntaxStablePtrId);
 impl TokenImplicitsPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -10647,7 +10647,7 @@ impl TerminalImplicits {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalImplicitsPtr(SyntaxStablePtrId);
+pub struct TerminalImplicitsPtr(pub SyntaxStablePtrId);
 impl TerminalImplicitsPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -10710,7 +10710,7 @@ impl Token for TokenRef {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenRefPtr(SyntaxStablePtrId);
+pub struct TokenRefPtr(pub SyntaxStablePtrId);
 impl TokenRefPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -10788,7 +10788,7 @@ impl TerminalRef {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalRefPtr(SyntaxStablePtrId);
+pub struct TerminalRefPtr(pub SyntaxStablePtrId);
 impl TerminalRefPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -10851,7 +10851,7 @@ impl Token for TokenMut {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenMutPtr(SyntaxStablePtrId);
+pub struct TokenMutPtr(pub SyntaxStablePtrId);
 impl TokenMutPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -10929,7 +10929,7 @@ impl TerminalMut {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalMutPtr(SyntaxStablePtrId);
+pub struct TerminalMutPtr(pub SyntaxStablePtrId);
 impl TerminalMutPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -10992,7 +10992,7 @@ impl Token for TokenNoPanic {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenNoPanicPtr(SyntaxStablePtrId);
+pub struct TokenNoPanicPtr(pub SyntaxStablePtrId);
 impl TokenNoPanicPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -11070,7 +11070,7 @@ impl TerminalNoPanic {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalNoPanicPtr(SyntaxStablePtrId);
+pub struct TerminalNoPanicPtr(pub SyntaxStablePtrId);
 impl TerminalNoPanicPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -11133,7 +11133,7 @@ impl Token for TokenAnd {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenAndPtr(SyntaxStablePtrId);
+pub struct TokenAndPtr(pub SyntaxStablePtrId);
 impl TokenAndPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -11211,7 +11211,7 @@ impl TerminalAnd {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalAndPtr(SyntaxStablePtrId);
+pub struct TerminalAndPtr(pub SyntaxStablePtrId);
 impl TerminalAndPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -11274,7 +11274,7 @@ impl Token for TokenAndAnd {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenAndAndPtr(SyntaxStablePtrId);
+pub struct TokenAndAndPtr(pub SyntaxStablePtrId);
 impl TokenAndAndPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -11352,7 +11352,7 @@ impl TerminalAndAnd {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalAndAndPtr(SyntaxStablePtrId);
+pub struct TerminalAndAndPtr(pub SyntaxStablePtrId);
 impl TerminalAndAndPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -11415,7 +11415,7 @@ impl Token for TokenOrOr {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenOrOrPtr(SyntaxStablePtrId);
+pub struct TokenOrOrPtr(pub SyntaxStablePtrId);
 impl TokenOrOrPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -11493,7 +11493,7 @@ impl TerminalOrOr {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalOrOrPtr(SyntaxStablePtrId);
+pub struct TerminalOrOrPtr(pub SyntaxStablePtrId);
 impl TerminalOrOrPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -11556,7 +11556,7 @@ impl Token for TokenEqEq {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenEqEqPtr(SyntaxStablePtrId);
+pub struct TokenEqEqPtr(pub SyntaxStablePtrId);
 impl TokenEqEqPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -11634,7 +11634,7 @@ impl TerminalEqEq {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalEqEqPtr(SyntaxStablePtrId);
+pub struct TerminalEqEqPtr(pub SyntaxStablePtrId);
 impl TerminalEqEqPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -11697,7 +11697,7 @@ impl Token for TokenNeq {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenNeqPtr(SyntaxStablePtrId);
+pub struct TokenNeqPtr(pub SyntaxStablePtrId);
 impl TokenNeqPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -11775,7 +11775,7 @@ impl TerminalNeq {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalNeqPtr(SyntaxStablePtrId);
+pub struct TerminalNeqPtr(pub SyntaxStablePtrId);
 impl TerminalNeqPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -11838,7 +11838,7 @@ impl Token for TokenGE {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenGEPtr(SyntaxStablePtrId);
+pub struct TokenGEPtr(pub SyntaxStablePtrId);
 impl TokenGEPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -11916,7 +11916,7 @@ impl TerminalGE {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalGEPtr(SyntaxStablePtrId);
+pub struct TerminalGEPtr(pub SyntaxStablePtrId);
 impl TerminalGEPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -11979,7 +11979,7 @@ impl Token for TokenGT {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenGTPtr(SyntaxStablePtrId);
+pub struct TokenGTPtr(pub SyntaxStablePtrId);
 impl TokenGTPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -12057,7 +12057,7 @@ impl TerminalGT {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalGTPtr(SyntaxStablePtrId);
+pub struct TerminalGTPtr(pub SyntaxStablePtrId);
 impl TerminalGTPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -12120,7 +12120,7 @@ impl Token for TokenLE {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenLEPtr(SyntaxStablePtrId);
+pub struct TokenLEPtr(pub SyntaxStablePtrId);
 impl TokenLEPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -12198,7 +12198,7 @@ impl TerminalLE {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalLEPtr(SyntaxStablePtrId);
+pub struct TerminalLEPtr(pub SyntaxStablePtrId);
 impl TerminalLEPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -12261,7 +12261,7 @@ impl Token for TokenLT {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenLTPtr(SyntaxStablePtrId);
+pub struct TokenLTPtr(pub SyntaxStablePtrId);
 impl TokenLTPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -12339,7 +12339,7 @@ impl TerminalLT {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalLTPtr(SyntaxStablePtrId);
+pub struct TerminalLTPtr(pub SyntaxStablePtrId);
 impl TerminalLTPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -12402,7 +12402,7 @@ impl Token for TokenNot {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenNotPtr(SyntaxStablePtrId);
+pub struct TokenNotPtr(pub SyntaxStablePtrId);
 impl TokenNotPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -12480,7 +12480,7 @@ impl TerminalNot {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalNotPtr(SyntaxStablePtrId);
+pub struct TerminalNotPtr(pub SyntaxStablePtrId);
 impl TerminalNotPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -12543,7 +12543,7 @@ impl Token for TokenPlus {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenPlusPtr(SyntaxStablePtrId);
+pub struct TokenPlusPtr(pub SyntaxStablePtrId);
 impl TokenPlusPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -12621,7 +12621,7 @@ impl TerminalPlus {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalPlusPtr(SyntaxStablePtrId);
+pub struct TerminalPlusPtr(pub SyntaxStablePtrId);
 impl TerminalPlusPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -12684,7 +12684,7 @@ impl Token for TokenMinus {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenMinusPtr(SyntaxStablePtrId);
+pub struct TokenMinusPtr(pub SyntaxStablePtrId);
 impl TokenMinusPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -12762,7 +12762,7 @@ impl TerminalMinus {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalMinusPtr(SyntaxStablePtrId);
+pub struct TerminalMinusPtr(pub SyntaxStablePtrId);
 impl TerminalMinusPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -12825,7 +12825,7 @@ impl Token for TokenMul {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenMulPtr(SyntaxStablePtrId);
+pub struct TokenMulPtr(pub SyntaxStablePtrId);
 impl TokenMulPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -12903,7 +12903,7 @@ impl TerminalMul {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalMulPtr(SyntaxStablePtrId);
+pub struct TerminalMulPtr(pub SyntaxStablePtrId);
 impl TerminalMulPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -12966,7 +12966,7 @@ impl Token for TokenDiv {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenDivPtr(SyntaxStablePtrId);
+pub struct TokenDivPtr(pub SyntaxStablePtrId);
 impl TokenDivPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -13044,7 +13044,7 @@ impl TerminalDiv {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalDivPtr(SyntaxStablePtrId);
+pub struct TerminalDivPtr(pub SyntaxStablePtrId);
 impl TerminalDivPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -13107,7 +13107,7 @@ impl Token for TokenColon {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenColonPtr(SyntaxStablePtrId);
+pub struct TokenColonPtr(pub SyntaxStablePtrId);
 impl TokenColonPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -13185,7 +13185,7 @@ impl TerminalColon {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalColonPtr(SyntaxStablePtrId);
+pub struct TerminalColonPtr(pub SyntaxStablePtrId);
 impl TerminalColonPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -13248,7 +13248,7 @@ impl Token for TokenColonColon {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenColonColonPtr(SyntaxStablePtrId);
+pub struct TokenColonColonPtr(pub SyntaxStablePtrId);
 impl TokenColonColonPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -13326,7 +13326,7 @@ impl TerminalColonColon {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalColonColonPtr(SyntaxStablePtrId);
+pub struct TerminalColonColonPtr(pub SyntaxStablePtrId);
 impl TerminalColonColonPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -13389,7 +13389,7 @@ impl Token for TokenComma {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenCommaPtr(SyntaxStablePtrId);
+pub struct TokenCommaPtr(pub SyntaxStablePtrId);
 impl TokenCommaPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -13467,7 +13467,7 @@ impl TerminalComma {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalCommaPtr(SyntaxStablePtrId);
+pub struct TerminalCommaPtr(pub SyntaxStablePtrId);
 impl TerminalCommaPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -13530,7 +13530,7 @@ impl Token for TokenDot {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenDotPtr(SyntaxStablePtrId);
+pub struct TokenDotPtr(pub SyntaxStablePtrId);
 impl TokenDotPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -13608,7 +13608,7 @@ impl TerminalDot {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalDotPtr(SyntaxStablePtrId);
+pub struct TerminalDotPtr(pub SyntaxStablePtrId);
 impl TerminalDotPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -13671,7 +13671,7 @@ impl Token for TokenDotDot {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenDotDotPtr(SyntaxStablePtrId);
+pub struct TokenDotDotPtr(pub SyntaxStablePtrId);
 impl TokenDotDotPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -13749,7 +13749,7 @@ impl TerminalDotDot {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalDotDotPtr(SyntaxStablePtrId);
+pub struct TerminalDotDotPtr(pub SyntaxStablePtrId);
 impl TerminalDotDotPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -13812,7 +13812,7 @@ impl Token for TokenEq {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenEqPtr(SyntaxStablePtrId);
+pub struct TokenEqPtr(pub SyntaxStablePtrId);
 impl TokenEqPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -13890,7 +13890,7 @@ impl TerminalEq {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalEqPtr(SyntaxStablePtrId);
+pub struct TerminalEqPtr(pub SyntaxStablePtrId);
 impl TerminalEqPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -13953,7 +13953,7 @@ impl Token for TokenSemicolon {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenSemicolonPtr(SyntaxStablePtrId);
+pub struct TokenSemicolonPtr(pub SyntaxStablePtrId);
 impl TokenSemicolonPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -14031,7 +14031,7 @@ impl TerminalSemicolon {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalSemicolonPtr(SyntaxStablePtrId);
+pub struct TerminalSemicolonPtr(pub SyntaxStablePtrId);
 impl TerminalSemicolonPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -14094,7 +14094,7 @@ impl Token for TokenQuestionMark {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenQuestionMarkPtr(SyntaxStablePtrId);
+pub struct TokenQuestionMarkPtr(pub SyntaxStablePtrId);
 impl TokenQuestionMarkPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -14172,7 +14172,7 @@ impl TerminalQuestionMark {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalQuestionMarkPtr(SyntaxStablePtrId);
+pub struct TerminalQuestionMarkPtr(pub SyntaxStablePtrId);
 impl TerminalQuestionMarkPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -14235,7 +14235,7 @@ impl Token for TokenUnderscore {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenUnderscorePtr(SyntaxStablePtrId);
+pub struct TokenUnderscorePtr(pub SyntaxStablePtrId);
 impl TokenUnderscorePtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -14313,7 +14313,7 @@ impl TerminalUnderscore {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalUnderscorePtr(SyntaxStablePtrId);
+pub struct TerminalUnderscorePtr(pub SyntaxStablePtrId);
 impl TerminalUnderscorePtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -14376,7 +14376,7 @@ impl Token for TokenLBrace {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenLBracePtr(SyntaxStablePtrId);
+pub struct TokenLBracePtr(pub SyntaxStablePtrId);
 impl TokenLBracePtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -14454,7 +14454,7 @@ impl TerminalLBrace {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalLBracePtr(SyntaxStablePtrId);
+pub struct TerminalLBracePtr(pub SyntaxStablePtrId);
 impl TerminalLBracePtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -14517,7 +14517,7 @@ impl Token for TokenRBrace {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenRBracePtr(SyntaxStablePtrId);
+pub struct TokenRBracePtr(pub SyntaxStablePtrId);
 impl TokenRBracePtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -14595,7 +14595,7 @@ impl TerminalRBrace {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalRBracePtr(SyntaxStablePtrId);
+pub struct TerminalRBracePtr(pub SyntaxStablePtrId);
 impl TerminalRBracePtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -14658,7 +14658,7 @@ impl Token for TokenLBrack {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenLBrackPtr(SyntaxStablePtrId);
+pub struct TokenLBrackPtr(pub SyntaxStablePtrId);
 impl TokenLBrackPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -14736,7 +14736,7 @@ impl TerminalLBrack {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalLBrackPtr(SyntaxStablePtrId);
+pub struct TerminalLBrackPtr(pub SyntaxStablePtrId);
 impl TerminalLBrackPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -14799,7 +14799,7 @@ impl Token for TokenRBrack {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenRBrackPtr(SyntaxStablePtrId);
+pub struct TokenRBrackPtr(pub SyntaxStablePtrId);
 impl TokenRBrackPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -14877,7 +14877,7 @@ impl TerminalRBrack {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalRBrackPtr(SyntaxStablePtrId);
+pub struct TerminalRBrackPtr(pub SyntaxStablePtrId);
 impl TerminalRBrackPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -14940,7 +14940,7 @@ impl Token for TokenLParen {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenLParenPtr(SyntaxStablePtrId);
+pub struct TokenLParenPtr(pub SyntaxStablePtrId);
 impl TokenLParenPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -15018,7 +15018,7 @@ impl TerminalLParen {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalLParenPtr(SyntaxStablePtrId);
+pub struct TerminalLParenPtr(pub SyntaxStablePtrId);
 impl TerminalLParenPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -15081,7 +15081,7 @@ impl Token for TokenRParen {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenRParenPtr(SyntaxStablePtrId);
+pub struct TokenRParenPtr(pub SyntaxStablePtrId);
 impl TokenRParenPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -15159,7 +15159,7 @@ impl TerminalRParen {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalRParenPtr(SyntaxStablePtrId);
+pub struct TerminalRParenPtr(pub SyntaxStablePtrId);
 impl TerminalRParenPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -15222,7 +15222,7 @@ impl Token for TokenArrow {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenArrowPtr(SyntaxStablePtrId);
+pub struct TokenArrowPtr(pub SyntaxStablePtrId);
 impl TokenArrowPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -15300,7 +15300,7 @@ impl TerminalArrow {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalArrowPtr(SyntaxStablePtrId);
+pub struct TerminalArrowPtr(pub SyntaxStablePtrId);
 impl TerminalArrowPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -15363,7 +15363,7 @@ impl Token for TokenMatchArrow {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenMatchArrowPtr(SyntaxStablePtrId);
+pub struct TokenMatchArrowPtr(pub SyntaxStablePtrId);
 impl TokenMatchArrowPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -15441,7 +15441,7 @@ impl TerminalMatchArrow {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalMatchArrowPtr(SyntaxStablePtrId);
+pub struct TerminalMatchArrowPtr(pub SyntaxStablePtrId);
 impl TerminalMatchArrowPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -15504,7 +15504,7 @@ impl Token for TokenEndOfFile {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenEndOfFilePtr(SyntaxStablePtrId);
+pub struct TokenEndOfFilePtr(pub SyntaxStablePtrId);
 impl TokenEndOfFilePtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -15582,7 +15582,7 @@ impl TerminalEndOfFile {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalEndOfFilePtr(SyntaxStablePtrId);
+pub struct TerminalEndOfFilePtr(pub SyntaxStablePtrId);
 impl TerminalEndOfFilePtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -15645,7 +15645,7 @@ impl Token for TokenBadCharacters {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenBadCharactersPtr(SyntaxStablePtrId);
+pub struct TokenBadCharactersPtr(pub SyntaxStablePtrId);
 impl TokenBadCharactersPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -15724,7 +15724,7 @@ impl TerminalBadCharacters {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalBadCharactersPtr(SyntaxStablePtrId);
+pub struct TerminalBadCharactersPtr(pub SyntaxStablePtrId);
 impl TerminalBadCharactersPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -15787,7 +15787,7 @@ impl Token for TokenHash {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenHashPtr(SyntaxStablePtrId);
+pub struct TokenHashPtr(pub SyntaxStablePtrId);
 impl TokenHashPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -15865,7 +15865,7 @@ impl TerminalHash {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalHashPtr(SyntaxStablePtrId);
+pub struct TerminalHashPtr(pub SyntaxStablePtrId);
 impl TerminalHashPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -15940,7 +15940,7 @@ impl SyntaxFile {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct SyntaxFilePtr(SyntaxStablePtrId);
+pub struct SyntaxFilePtr(pub SyntaxStablePtrId);
 impl SyntaxFilePtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -15999,7 +15999,7 @@ impl Token for TokenSingleLineComment {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenSingleLineCommentPtr(SyntaxStablePtrId);
+pub struct TokenSingleLineCommentPtr(pub SyntaxStablePtrId);
 impl TokenSingleLineCommentPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -16057,7 +16057,7 @@ impl Token for TokenWhitespace {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenWhitespacePtr(SyntaxStablePtrId);
+pub struct TokenWhitespacePtr(pub SyntaxStablePtrId);
 impl TokenWhitespacePtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -16114,7 +16114,7 @@ impl Token for TokenNewline {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenNewlinePtr(SyntaxStablePtrId);
+pub struct TokenNewlinePtr(pub SyntaxStablePtrId);
 impl TokenNewlinePtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -16171,7 +16171,7 @@ impl Token for TokenMissing {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenMissingPtr(SyntaxStablePtrId);
+pub struct TokenMissingPtr(pub SyntaxStablePtrId);
 impl TokenMissingPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
@@ -16228,7 +16228,7 @@ impl Token for TokenSkipped {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenSkippedPtr(SyntaxStablePtrId);
+pub struct TokenSkippedPtr(pub SyntaxStablePtrId);
 impl TokenSkippedPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0

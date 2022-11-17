@@ -5,7 +5,8 @@ use defs::db::DefsGroup;
 use defs::diagnostic_utils::StableLocation;
 use defs::ids::{
     EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericFunctionId, GenericParamId,
-    GenericTypeId, ImplId, ModuleId, ModuleItemId, StructId, TraitId, UseId, VariantId,
+    GenericTypeId, ImplFunctionId, ImplId, ModuleId, ModuleItemId, StructId, TraitFunctionId,
+    TraitId, UseId, VariantId,
 };
 use diagnostics::{Diagnostics, DiagnosticsBuilder};
 use filesystem::db::{AsFilesGroupMut, FilesGroup};
@@ -121,6 +122,36 @@ pub trait SemanticGroup:
     /// Returns the attributes of a trait.
     #[salsa::invoke(items::trt::trait_attributes)]
     fn trait_attributes(&self, trait_id: TraitId) -> Option<Vec<Attribute>>;
+    /// Returns the functions of a trait.
+    #[salsa::invoke(items::trt::trait_functions)]
+    fn trait_functions(&self, trait_id: TraitId) -> Option<Vec<TraitFunctionId>>;
+
+    // Trait function.
+    // ================
+    /// Private query to compute data about a trait function.
+    #[salsa::invoke(items::trt::priv_trait_function_data)]
+    fn priv_trait_function_data(
+        &self,
+        function_id: TraitFunctionId,
+    ) -> Option<items::trt::TraitFunctionData>;
+    /// Returns the semantic diagnostics of a trait function.
+    #[salsa::invoke(items::trt::trait_function_diagnostics)]
+    fn trait_function_diagnostics(
+        &self,
+        trait_function_id: TraitFunctionId,
+    ) -> Diagnostics<SemanticDiagnostic>;
+    /// Returns the signature of a trait function.
+    #[salsa::invoke(items::trt::trait_function_signature)]
+    fn trait_function_signature(
+        &self,
+        trait_function_id: TraitFunctionId,
+    ) -> Option<semantic::Signature>;
+    /// Returns the generic params of a trait function.
+    #[salsa::invoke(items::trt::trait_function_generic_params)]
+    fn trait_function_generic_params(
+        &self,
+        trait_function_id: TraitFunctionId,
+    ) -> Option<Vec<GenericParamId>>;
 
     // Impl.
     // =======
@@ -155,6 +186,9 @@ pub trait SemanticGroup:
         module_id: ModuleId,
         concrete_trait_id: ConcreteTraitId,
     ) -> Option<Vec<ConcreteImplId>>;
+    /// Returns the functions in the impl.
+    #[salsa::invoke(items::imp::impl_functions)]
+    fn impl_functions(&self, impl_id: ImplId) -> Option<Vec<ImplFunctionId>>;
 
     // Free function.
     // ==============

@@ -25,6 +25,9 @@ pub fn contains_cycle(db: &dyn SierraGenGroup, function_id: FreeFunctionId) -> O
                         }
                     }
                     defs::ids::GenericFunctionId::Extern(_) => {}
+                    defs::ids::GenericFunctionId::TraitFunction(_) => {
+                        panic!("Trait function should be replaced with concrete functions.")
+                    }
                 }
             }
         }
