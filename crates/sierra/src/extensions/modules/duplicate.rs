@@ -1,17 +1,16 @@
 use super::as_single_type;
 use crate::extensions::lib_func::{
-    LibFuncSignature, OutputVarInfo, SierraApChange, SignatureOnlyConcreteLibFunc,
-    SignatureSpecializationContext, SpecializationContext,
+    LibFuncSignature, OutputVarInfo, SierraApChange, SignatureOnlyGenericLibFunc,
+    SignatureSpecializationContext,
 };
-use crate::extensions::{NamedLibFunc, OutputVarReferenceInfo, SpecializationError};
+use crate::extensions::{OutputVarReferenceInfo, SpecializationError};
 use crate::ids::GenericLibFuncId;
 use crate::program::GenericArg;
 
 /// LibFunc for duplicating an object.
 #[derive(Default)]
 pub struct DupLibFunc {}
-impl NamedLibFunc for DupLibFunc {
-    type Concrete = SignatureOnlyConcreteLibFunc;
+impl SignatureOnlyGenericLibFunc for DupLibFunc {
     const ID: GenericLibFuncId = GenericLibFuncId::new_inline("dup");
 
     fn specialize_signature(
@@ -39,15 +38,5 @@ impl NamedLibFunc for DupLibFunc {
             ],
             SierraApChange::Known(0),
         ))
-    }
-
-    fn specialize(
-        &self,
-        context: &dyn SpecializationContext,
-        generic_args: &[GenericArg],
-    ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(SignatureOnlyConcreteLibFunc {
-            signature: self.specialize_signature(context.upcast(), generic_args)?,
-        })
     }
 }

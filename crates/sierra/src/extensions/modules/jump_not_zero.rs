@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 use super::non_zero::NonZeroType;
 use crate::extensions::lib_func::{
     BranchSignature, LibFuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
-    SignatureOnlyConcreteLibFunc, SignatureSpecializationContext, SpecializationContext,
+    SignatureSpecializationContext,
 };
 use crate::extensions::{
     NamedType, NoGenericArgsGenericLibFunc, OutputVarReferenceInfo, SpecializationError,
@@ -27,7 +27,6 @@ pub struct JumpNotZeroLibFunc<TJumpNotZeroTraits: JumpNotZeroTraits> {
 impl<TJumpNotZeroTraits: JumpNotZeroTraits> NoGenericArgsGenericLibFunc
     for JumpNotZeroLibFunc<TJumpNotZeroTraits>
 {
-    type Concrete = SignatureOnlyConcreteLibFunc;
     const ID: GenericLibFuncId = TJumpNotZeroTraits::JUMP_NOT_ZERO;
 
     fn specialize_signature(
@@ -50,18 +49,6 @@ impl<TJumpNotZeroTraits: JumpNotZeroTraits> NoGenericArgsGenericLibFunc
                 },
             ],
             fallthrough: Some(0),
-        })
-    }
-
-    fn specialize(
-        &self,
-        context: &dyn SpecializationContext,
-    ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(SignatureOnlyConcreteLibFunc {
-            signature: <Self as NoGenericArgsGenericLibFunc>::specialize_signature(
-                self,
-                context.upcast(),
-            )?,
         })
     }
 }

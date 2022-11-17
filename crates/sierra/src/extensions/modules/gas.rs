@@ -3,8 +3,7 @@ use super::range_check::RangeCheckType;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibFuncSignature, OutputVarInfo, ParamSignature,
-    SierraApChange, SignatureOnlyConcreteLibFunc, SignatureSpecializationContext,
-    SpecializationContext,
+    SierraApChange, SignatureSpecializationContext,
 };
 use crate::extensions::types::{InfoOnlyConcreteType, TypeInfo};
 use crate::extensions::{
@@ -45,7 +44,6 @@ define_libfunc_hierarchy! {
 #[derive(Default)]
 pub struct GetGasLibFunc {}
 impl NoGenericArgsGenericLibFunc for GetGasLibFunc {
-    type Concrete = SignatureOnlyConcreteLibFunc;
     const ID: GenericLibFuncId = GenericLibFuncId::new_inline("get_gas");
 
     fn specialize_signature(
@@ -96,20 +94,12 @@ impl NoGenericArgsGenericLibFunc for GetGasLibFunc {
             fallthrough: Some(0),
         })
     }
-
-    fn specialize(
-        &self,
-        context: &dyn SpecializationContext,
-    ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(SignatureOnlyConcreteLibFunc { signature: self.specialize_signature(context.upcast())? })
-    }
 }
 
 /// LibFunc for returning unused gas.
 #[derive(Default)]
 pub struct RefundGasLibFunc {}
 impl NoGenericArgsGenericLibFunc for RefundGasLibFunc {
-    type Concrete = SignatureOnlyConcreteLibFunc;
     const ID: GenericLibFuncId = GenericLibFuncId::new_inline("refund_gas");
 
     fn specialize_signature(
@@ -126,13 +116,6 @@ impl NoGenericArgsGenericLibFunc for RefundGasLibFunc {
             SierraApChange::Known(0),
         ))
     }
-
-    fn specialize(
-        &self,
-        context: &dyn SpecializationContext,
-    ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(SignatureOnlyConcreteLibFunc { signature: self.specialize_signature(context.upcast())? })
-    }
 }
 
 /// LibFunc for burning gas.
@@ -141,7 +124,6 @@ impl NoGenericArgsGenericLibFunc for RefundGasLibFunc {
 #[derive(Default)]
 pub struct BurnGasLibFunc {}
 impl NoGenericArgsGenericLibFunc for BurnGasLibFunc {
-    type Concrete = SignatureOnlyConcreteLibFunc;
     const ID: GenericLibFuncId = GenericLibFuncId::new_inline("burn_gas");
 
     fn specialize_signature(
@@ -149,12 +131,5 @@ impl NoGenericArgsGenericLibFunc for BurnGasLibFunc {
         _context: &dyn SignatureSpecializationContext,
     ) -> Result<LibFuncSignature, SpecializationError> {
         Ok(LibFuncSignature::new_non_branch(vec![], vec![], SierraApChange::Known(0)))
-    }
-
-    fn specialize(
-        &self,
-        context: &dyn SpecializationContext,
-    ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(SignatureOnlyConcreteLibFunc { signature: self.specialize_signature(context.upcast())? })
     }
 }
