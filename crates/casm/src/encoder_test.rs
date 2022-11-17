@@ -64,6 +64,12 @@ use crate::inline::CasmContext;
     None;
     "[ap + 0] = [fp + -5], ap++;"
 )]
+#[test_case(
+    casm!([ap] = [ap - 3], ap++;),
+    0x48127ffd7fff8000,
+    None;
+    "[ap + 0] = [ap + -3], ap++;"
+)]
 fn test_encode(mut casm: CasmContext, encoding: u64, immediate: Option<i16>) {
     let enc = BigInt::from(encoding);
     assert_eq!(

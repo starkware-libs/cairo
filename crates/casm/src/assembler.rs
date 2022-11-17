@@ -229,7 +229,7 @@ impl ResOperand {
                 off1: -1,
                 off2: operand.offset,
                 imm: None,
-                op0_register: operand.register,
+                op0_register: Register::FP,
                 op1_addr: operand.register.to_op1_addr(),
                 res: Res::Op1,
             },
@@ -257,7 +257,7 @@ impl ResOperand {
                     off1: a_res.off2,
                     off2: b_res.off2,
                     imm: b_res.imm,
-                    op0_register: a_res.op0_register,
+                    op0_register: operand.a.register,
                     op1_addr: match operand.b {
                         DerefOrImmediate::Immediate(_) => Op1Addr::Imm,
                         DerefOrImmediate::Deref(b) => b.register.to_op1_addr(),
