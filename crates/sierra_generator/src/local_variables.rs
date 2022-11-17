@@ -43,6 +43,7 @@ fn inner_find_local_variables(
 ) -> Option<bool> {
     let block = &lowered_function.blocks[block_id];
     let mut known_ap_change = true;
+
     for statement in &block.statements {
         // All the input variables should be available.
         state.use_variables(&statement.inputs(), res);
@@ -58,25 +59,15 @@ fn inner_find_local_variables(
             lowering::Statement::Call(statement_call) => {
                 let (_, concrete_function_id) =
                     get_concrete_libfunc_id(db, statement_call.function);
-                let libfunc_signature = get_libfunc_signature(db, concrete_function_id);
-                assert_eq!(
-                    libfunc_signature.branch_signatures.len(),
-                    1,
-                    "Unexpected branches in function '{:?}'",
-                    statement_call.function.debug(db)
-                );
 
-                match libfunc_signature.branch_signatures[0].ap_change {
-                    sierra::extensions::lib_func::SierraApChange::Known(_) => {}
-                    _ => {
-                        state.revoke_temporary_variables();
-                        known_ap_change = false;
-                    }
-                }
-                state.register_outputs(
+                handle_function_call(
+                    db,
+                    &mut state,
+                    &mut known_ap_change,
+                    &format!("function '{:?}'", statement_call.function.debug(db)),
+                    concrete_function_id,
                     &statement_call.inputs,
                     &statement_call.outputs,
-                    &libfunc_signature.branch_signatures[0].vars,
                 );
             }
             lowering::Statement::CallBlock(statement_call_block) => {
@@ -143,6 +134,30 @@ fn inner_find_local_variables(
         lowering::BlockEnd::Unreachable => {}
     }
     Some(known_ap_change)
+}
+
+/// Helper function for statements that result in a simple function call, such as
+/// [lowering::Statement::Call] and [lowering::Statement::StructConstruct].
+fn handle_function_call(
+    db: &dyn SierraGenGroup,
+    state: &mut LocalVariablesState,
+    known_ap_change: &mut bool,
+    name: &str,
+    concrete_function_id: sierra::ids::ConcreteLibFuncId,
+    inputs: &[lowering::VariableId],
+    outputs: &[lowering::VariableId],
+) {
+    let libfunc_signature = get_libfunc_signature(db, concrete_function_id);
+    assert_eq!(libfunc_signature.branch_signatures.len(), 1, "Unexpected branches in {name}.");
+
+    match libfunc_signature.branch_signatures[0].ap_change {
+        sierra::extensions::lib_func::SierraApChange::Known(_) => {}
+        _ => {
+            state.revoke_temporary_variables();
+            *known_ap_change = false;
+        }
+    }
+    state.register_outputs(inputs, outputs, &libfunc_signature.branch_signatures[0].vars);
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
