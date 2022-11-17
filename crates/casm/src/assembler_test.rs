@@ -183,6 +183,24 @@ fn test_assert_eq_assemble() {
             opcode: Opcode::AssertEq,
         },
     );
+
+    assert_eq!(
+        assemble_instruction(casm!([ap] = [ap - 3], ap++;)),
+        InstructionRepr {
+            off0: 0,
+            off1: -1,
+            off2: -3,
+            imm: None,
+            dst_register: Register::AP,
+            op0_register: Register::FP,
+            op1_addr: Op1Addr::AP,
+            res: Res::Op1,
+            pc_update: PcUpdate::Regular,
+            ap_update: ApUpdate::Add1,
+            fp_update: FpUpdate::Regular,
+            opcode: Opcode::AssertEq,
+        },
+    );
 }
 
 #[test]
