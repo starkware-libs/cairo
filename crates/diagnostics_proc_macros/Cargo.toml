@@ -10,6 +10,6 @@ proc-macro = true
 normal = ["debug"]
 
 [dependencies]
-syn.workspace = true
-quote.workspace = true
 debug = { path = "../debug" }
+quote.workspace = true
+syn.workspace = true

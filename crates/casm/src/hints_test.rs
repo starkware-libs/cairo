@@ -1,3 +1,5 @@
+use test_log::test;
+
 use crate::hints::Hint;
 use crate::operand::{CellRef, DerefOrImmediate, Register};
 

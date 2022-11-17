@@ -217,7 +217,6 @@ fn test_member_access_failures() {
     );
 }
 
-// TODO(yuval): split test utils and move this test to db_test/type_test.
 #[test]
 fn test_function_with_param() {
     let mut db_val = SemanticDatabaseForTesting::default();
@@ -232,7 +231,6 @@ fn test_function_with_param() {
     let _param_ty = param.ty;
 }
 
-// TODO(yuval): split test utils and move this test to db_test/type_test.
 #[test]
 fn test_tuple_type() {
     let mut db_val = SemanticDatabaseForTesting::default();
@@ -251,7 +249,6 @@ fn test_tuple_type() {
     );
 }
 
-// TODO(yuval): split test utils and move this test to db_test/type_test.
 #[test]
 fn test_function_with_return_type() {
     let mut db_val = SemanticDatabaseForTesting::default();

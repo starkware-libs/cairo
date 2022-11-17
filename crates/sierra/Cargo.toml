@@ -10,6 +10,7 @@ regex = "1"
 
 [dependencies]
 const-fnv1a-hash.workspace = true
+env_logger.workspace = true
 itertools.workspace = true
 lalrpop-util.workspace = true
 thiserror.workspace = true
@@ -24,3 +25,4 @@ assert_matches.workspace = true
 bimap.workspace = true
 indoc.workspace = true
 test-case.workspace = true
+test-log.workspace = true

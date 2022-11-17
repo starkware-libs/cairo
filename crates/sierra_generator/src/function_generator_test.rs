@@ -4,6 +4,7 @@ use indoc::indoc;
 use lowering::db::LoweringGroup;
 use pretty_assertions::assert_eq;
 use semantic::test_utils::setup_test_module;
+use test_log::test;
 use utils::extract_matches;
 
 use crate::db::SierraGenGroup;

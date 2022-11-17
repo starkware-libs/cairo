@@ -1,5 +1,6 @@
 use pretty_assertions::assert_eq;
 use smol_str::SmolStr;
+use test_log::test;
 
 use super::ast::{
     ExprBinary, ExprPath, PathSegmentGreen, PathSegmentSimple, SyntaxFileGreen, TerminalIdentifier,

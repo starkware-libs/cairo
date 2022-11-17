@@ -20,7 +20,7 @@ sierra_generator = { path = "../crates/sierra_generator", features = ["testing"]
 sierra_to_casm = { path = "../crates/sierra_to_casm" }
 syntax = { path = "../crates/syntax" }
 salsa = "0.16.1"
-test-case = "2.2.1"
+test-case = "2.2.2"
 
 [[test]]
 name = "examples_test"

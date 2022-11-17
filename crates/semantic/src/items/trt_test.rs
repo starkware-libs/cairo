@@ -1,6 +1,7 @@
 use defs::db::DefsGroup;
 use defs::ids::ModuleItemId;
 use pretty_assertions::assert_eq;
+use test_log::test;
 use utils::extract_matches;
 
 use crate::db::SemanticGroup;

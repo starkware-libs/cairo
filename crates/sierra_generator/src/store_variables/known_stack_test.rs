@@ -1,4 +1,5 @@
 use pretty_assertions::assert_eq;
+use test_log::test;
 use utils::ordered_hash_map::OrderedHashMap;
 use utils::unordered_hash_set::UnorderedHashSet;
 
