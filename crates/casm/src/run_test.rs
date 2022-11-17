@@ -1,3 +1,4 @@
+use cairo_rs::types::relocatable::MaybeRelocatable;
 use num_bigint::BigInt;
 use test_case::test_case;
 
@@ -5,8 +6,19 @@ use crate::casm;
 use crate::inline::CasmContext;
 use crate::run::run_function;
 
-fn as_felts(nums: &[i128]) -> Vec<BigInt> {
-    nums.iter().map(|num| (BigInt::from(*num))).collect()
+macro_rules! maybe_relocatable {
+    (($seg:expr, $off:expr)) => {
+        MaybeRelocatable::from(($seg, $off))
+    };
+    ($num:expr) => {
+        MaybeRelocatable::from((BigInt::from($num)))
+    };
+}
+
+macro_rules! maybe_relocatables {
+    ($($val:tt),*) => {
+        vec![$(maybe_relocatable!($val)),*]
+    };
 }
 
 #[test_case(
@@ -16,7 +28,7 @@ fn as_felts(nums: &[i128]) -> Vec<BigInt> {
         ret;
     },
     2,
-    &[-5, 7]
+    maybe_relocatables![(-5), 7]
 )]
 #[test_case(
     casm! {
@@ -27,7 +39,7 @@ fn as_felts(nums: &[i128]) -> Vec<BigInt> {
         ret;
     },
     3,
-    &[579, 123, 456]
+    maybe_relocatables![579, 123, 456]
 )]
 #[test_case(
     casm! {
@@ -41,7 +53,7 @@ fn as_felts(nums: &[i128]) -> Vec<BigInt> {
         ret;
     },
     5,
-    &[1, 5, 0, 3, 4]
+    maybe_relocatables![1, 5, 0, 3, 4]
 )]
 #[test_case(
     casm! {
@@ -52,7 +64,7 @@ fn as_felts(nums: &[i128]) -> Vec<BigInt> {
         ret;
     },
     3,
-    &[39, 1, 84]
+    maybe_relocatables![39, 1, 84]
 )]
 #[test_case(
     casm! {
@@ -63,7 +75,7 @@ fn as_felts(nums: &[i128]) -> Vec<BigInt> {
         ret;
     },
     4,
-    &[5, 39, 7, 4]
+    maybe_relocatables![5, 39, 7, 4]
 )]
 #[test_case(
     casm! {
@@ -82,8 +94,17 @@ fn as_felts(nums: &[i128]) -> Vec<BigInt> {
         ret;
     },
     1,
-    &[377]
+    maybe_relocatables![377]
 )]
-fn test_runner(function: CasmContext, n_returns: usize, expected: &[i128]) {
-    assert_eq!(run_function(function.instructions, n_returns), as_felts(expected));
+#[test_case(
+    casm! {
+        %{ memory[ap] = segments.add() %}
+        ap += 1;
+        ret;
+    },
+    1,
+    maybe_relocatables![(4, 0)]
+)]
+fn test_runner(function: CasmContext, n_returns: usize, expected: Vec<MaybeRelocatable>) {
+    assert_eq!(run_function(function.instructions, n_returns), expected);
 }
