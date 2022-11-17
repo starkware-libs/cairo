@@ -65,6 +65,25 @@ fn as_felts(nums: &[i128]) -> Vec<BigInt> {
     4,
     &[5, 39, 7, 4]
 )]
+#[test_case(
+    casm! {
+        [ap + 0] = 1, ap++;
+        [ap + 0] = 1, ap++;
+        [ap + 0] = 13, ap++;
+        call rel 3;
+        ret;
+        jmp rel 5 if [fp + -3] != 0;
+        [ap + 0] = [fp + -5], ap++;
+        jmp rel 8;
+        [ap + 0] = [fp + -4], ap++;
+        [ap + 0] = [fp + -5] + [fp + -4], ap++;
+        [fp + -3] = [ap + 0] + 1, ap++;
+        call rel (-9);
+        ret;
+    },
+    1,
+    &[377]
+)]
 fn test_runner(function: CasmContext, n_returns: usize, expected: &[i128]) {
     assert_eq!(run_function(function, n_returns), as_felts(expected));
 }

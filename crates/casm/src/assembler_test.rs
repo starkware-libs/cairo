@@ -1,4 +1,5 @@
 use num_bigint::ToBigInt;
+use pretty_assertions::assert_eq;
 
 use super::InstructionRepr;
 use crate::assembler::{ApUpdate, FpUpdate, Op1Addr, Opcode, PcUpdate, Res};
@@ -146,6 +147,7 @@ fn test_assert_eq_assemble() {
             opcode: Opcode::AssertEq,
         },
     );
+
     assert_eq!(
         assemble_instruction(casm!([fp] = [ap - 1] + [ap - 2];)),
         InstructionRepr {
@@ -159,6 +161,24 @@ fn test_assert_eq_assemble() {
             res: Res::Add,
             pc_update: PcUpdate::Regular,
             ap_update: ApUpdate::Regular,
+            fp_update: FpUpdate::Regular,
+            opcode: Opcode::AssertEq,
+        },
+    );
+
+    assert_eq!(
+        assemble_instruction(casm!([ap + 0] = [fp + -5], ap++;)),
+        InstructionRepr {
+            off0: 0,
+            off1: -1,
+            off2: -5,
+            imm: None,
+            dst_register: Register::AP,
+            op0_register: Register::FP,
+            op1_addr: Op1Addr::FP,
+            res: Res::Op1,
+            pc_update: PcUpdate::Regular,
+            ap_update: ApUpdate::Add1,
             fp_update: FpUpdate::Regular,
             opcode: Opcode::AssertEq,
         },
