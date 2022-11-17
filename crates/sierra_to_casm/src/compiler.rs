@@ -41,8 +41,8 @@ pub enum CompilationError {
 /// The casm program representation.
 #[derive(Debug, Eq, PartialEq)]
 pub struct CairoProgram {
-    instructions: Vec<Instruction>,
-    debug_info: CairoProgramDebugInfo,
+    pub instructions: Vec<Instruction>,
+    pub debug_info: CairoProgramDebugInfo,
 }
 impl Display for CairoProgram {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -57,14 +57,14 @@ impl Display for CairoProgram {
 #[derive(Debug, Eq, PartialEq)]
 pub struct SierraStatementDebugInfo {
     /// The offset of the sierra statement within the bytecode.
-    code_offset: usize,
+    pub code_offset: usize,
 }
 
 /// The debug information of a compilation from Sierra to casm.
 #[derive(Debug, Eq, PartialEq)]
 pub struct CairoProgramDebugInfo {
     /// The debug information per Sierra statement.
-    sierra_statement_info: Vec<SierraStatementDebugInfo>,
+    pub sierra_statement_info: Vec<SierraStatementDebugInfo>,
 }
 
 /// Ensure the basic structure of the invocation is the same as the library function.
