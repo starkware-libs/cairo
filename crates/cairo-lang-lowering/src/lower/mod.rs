@@ -215,6 +215,11 @@ pub fn lower_statement(
             let ret_var = lower_expr(ctx, scope, *expr)?.var(ctx, scope)?;
             return Err(LoweringFlowError::Return(ret_var, ctx.get_location(stable_ptr.untyped())));
         }
+        semantic::Statement::Break(_) => {
+            return Err(LoweringFlowError::Failed(
+                ctx.diagnostics.report(stmt.stable_ptr().untyped(), LoopsUnsupported),
+            ));
+        }
     }
     Ok(())
 }
@@ -329,6 +334,9 @@ fn lower_expr(
         semantic::Expr::FunctionCall(expr) => lower_expr_function_call(ctx, expr, scope),
         semantic::Expr::Match(expr) => lower_expr_match(ctx, expr, scope),
         semantic::Expr::If(expr) => lower_expr_if(ctx, scope, expr),
+        semantic::Expr::Loop(expr) => Err(LoweringFlowError::Failed(
+            ctx.diagnostics.report(expr.stable_ptr.untyped(), LoopsUnsupported),
+        )),
         semantic::Expr::Var(expr) => {
             log::trace!("Lowering a variable: {:?}", expr.debug(&ctx.expr_formatter));
             Ok(LoweredExpr::SemanticVar(expr.var, ctx.get_location(expr.stable_ptr.untyped())))

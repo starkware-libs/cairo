@@ -41,6 +41,7 @@ pub enum Statement {
     Expr(StatementExpr),
     Let(StatementLet),
     Return(StatementReturn),
+    Break(StatementBreak),
 }
 impl Statement {
     pub fn stable_ptr(&self) -> ast::StatementPtr {
@@ -48,6 +49,7 @@ impl Statement {
             Statement::Expr(stmt) => stmt.stable_ptr,
             Statement::Let(stmt) => stmt.stable_ptr,
             Statement::Return(stmt) => stmt.stable_ptr,
+            Statement::Break(stmt) => stmt.stable_ptr,
         }
     }
 }
@@ -80,6 +82,15 @@ pub struct StatementReturn {
     pub stable_ptr: ast::StatementPtr,
 }
 
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[debug_db(ExprFormatter<'a>)]
+pub struct StatementBreak {
+    pub expr: ExprId,
+    #[hide_field_debug_with_db]
+    #[dont_rewrite]
+    pub stable_ptr: ast::StatementPtr,
+}
+
 // Expressions.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
@@ -89,6 +100,7 @@ pub enum Expr {
     Desnap(ExprDesnap),
     Assignment(ExprAssignment),
     Block(ExprBlock),
+    Loop(ExprLoop),
     FunctionCall(ExprFunctionCall),
     Match(ExprMatch),
     If(ExprIf),
@@ -109,6 +121,7 @@ impl Expr {
             Expr::Snapshot(expr) => expr.ty,
             Expr::Desnap(expr) => expr.ty,
             Expr::Block(expr) => expr.ty,
+            Expr::Loop(expr) => expr.ty,
             Expr::FunctionCall(expr) => expr.ty,
             Expr::Match(expr) => expr.ty,
             Expr::If(expr) => expr.ty,
@@ -129,6 +142,7 @@ impl Expr {
             Expr::Snapshot(expr) => expr.stable_ptr,
             Expr::Desnap(expr) => expr.stable_ptr,
             Expr::Block(expr) => expr.stable_ptr,
+            Expr::Loop(expr) => expr.stable_ptr,
             Expr::FunctionCall(expr) => expr.stable_ptr,
             Expr::Match(expr) => expr.stable_ptr,
             Expr::If(expr) => expr.stable_ptr,
@@ -191,6 +205,16 @@ pub struct ExprBlock {
     /// The block expression will evaluate to this tail expression.
     /// Otherwise, this will be None.
     pub tail: Option<ExprId>,
+    pub ty: semantic::TypeId,
+    #[hide_field_debug_with_db]
+    #[dont_rewrite]
+    pub stable_ptr: ast::ExprPtr,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[debug_db(ExprFormatter<'a>)]
+pub struct ExprLoop {
+    pub body: ExprBlock,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
     #[dont_rewrite]

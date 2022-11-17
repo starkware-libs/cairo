@@ -1,0 +1,95 @@
+//! > Incompatible types in loop breaks
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+    loop {
+        if true {
+            break true;
+        } else {
+            break 0;
+        };
+    };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Loop has incompatible return types: "core::bool" and "core::felt252"
+ --> lib.cairo:6:19
+            break 0;
+                  ^
+
+//! > ==========================================================================
+
+//! > Break outside a loop.
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+    break 5;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Break only allowed inside a `loop`.
+ --> lib.cairo:2:5
+    break 5;
+    ^******^
+
+//! > ==========================================================================
+
+//! > Return inside a loop
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() -> bool {
+    loop {
+        return true;
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: `return` not allowed inside a `loop`.
+ --> lib.cairo:3:9
+        return true;
+        ^**********^
+
+//! > ==========================================================================
+
+//! > Valid loop
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() -> bool {
+    loop {
+        break true;
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
