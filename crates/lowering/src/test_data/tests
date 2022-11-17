@@ -138,7 +138,7 @@ blk5:
 Inputs: v0: core::felt
 Statements:
   () <- blk0()
-  (v2: ()) <- tuple_construct()
+  (v2: ()) <- struct_construct()
   () <- blk1()
   (v3: core::felt) <- 1u
   (v4: core::felt) <- 1u

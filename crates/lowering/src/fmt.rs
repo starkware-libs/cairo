@@ -233,7 +233,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for StatementEnumConstruct {
 
 impl DebugWithDb<LoweredFormatter<'_>> for StatementStructConstruct {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
-        write!(f, "tuple_construct(")?;
+        write!(f, "struct_construct(")?;
         let mut inputs = self.inputs.iter().peekable();
         while let Some(var) = inputs.next() {
             var.fmt(f, ctx)?;
@@ -247,7 +247,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for StatementStructConstruct {
 
 impl DebugWithDb<LoweredFormatter<'_>> for StatementStructDestructure {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
-        write!(f, "tuple_destructure(")?;
+        write!(f, "struct_destructure(")?;
         self.input.fmt(f, ctx)?;
         write!(f, ")")
     }
