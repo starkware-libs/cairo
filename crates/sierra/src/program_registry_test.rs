@@ -1,4 +1,5 @@
 use indoc::indoc;
+use test_log::test;
 
 use crate::extensions::core::{CoreLibFunc, CoreType};
 use crate::program::{ConcreteTypeLongId, TypeDeclaration};

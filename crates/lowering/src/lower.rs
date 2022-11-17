@@ -2,6 +2,7 @@ use defs::ids::{FreeFunctionId, GenericFunctionId, LanguageElementId};
 use diagnostics::Diagnostics;
 use id_arena::Arena;
 use itertools::{chain, zip_eq};
+use log::trace;
 use num_traits::Zero;
 use scope::{BlockScope, BlockScopeEnd};
 use semantic::corelib::{core_felt_ty, core_jump_nz_func, core_nonzero_ty};
@@ -48,6 +49,7 @@ pub struct Lowered {
 
 /// Lowers a semantic free function.
 pub fn lower(db: &dyn LoweringGroup, free_function_id: FreeFunctionId) -> Option<Lowered> {
+    trace!("Started lowering of a free function.");
     let function_def = db.free_function_definition(free_function_id)?;
     let generic_params = db.free_function_declaration_generic_params(free_function_id)?;
     let signature = db.free_function_declaration_signature(free_function_id)?;
@@ -115,6 +117,7 @@ fn lower_block(
     scope: &mut BlockScope,
     expr_block: &semantic::ExprBlock,
 ) -> Option<BlockScopeEnd> {
+    trace!("Started lowering of a block.");
     for (i, stmt_id) in expr_block.statements.iter().enumerate() {
         let stmt = &ctx.function_def.statements[*stmt_id];
         let lowered_stmt = lower_statement(ctx, scope, stmt);
@@ -155,6 +158,7 @@ pub fn lower_tail_expr(
     scope: &mut BlockScope,
     expr: semantic::ExprId,
 ) -> Option<BlockScopeEnd> {
+    trace!("Started lowering of a tail expression.");
     let lowered_expr = lower_expr(ctx, scope, expr);
     lowered_expr_to_block_scope_end(ctx, scope, lowered_expr)
 }
@@ -181,6 +185,7 @@ pub fn lower_statement(
     scope: &mut BlockScope,
     stmt: &semantic::Statement,
 ) -> Result<(), StatementLoweringFlowError> {
+    trace!("Started lowering of a statement.");
     match stmt {
         semantic::Statement::Expr(semantic::StatementExpr { expr, stable_ptr: _ }) => {
             lower_expr(ctx, scope, *expr)?;
@@ -237,6 +242,7 @@ fn lower_single_pattern(
     pattern: &semantic::Pattern,
     lowered_expr: LoweredExpr,
 ) {
+    trace!("Started lowering of a single pattern.");
     match pattern {
         semantic::Pattern::Literal(_) => unreachable!(),
         semantic::Pattern::Variable(semantic::PatternVariable { name: _, var: sem_var }) => {
@@ -292,6 +298,7 @@ fn lower_expr(
     expr_id: semantic::ExprId,
 ) -> Result<LoweredExpr, LoweringFlowError> {
     let expr = &ctx.function_def.exprs[expr_id];
+    trace!("Started lowering of an expression: {:?}", expr);
     match expr {
         semantic::Expr::Tuple(expr) => lower_expr_tuple(ctx, expr, scope),
         semantic::Expr::Assignment(expr) => lower_expr_assignment(ctx, expr, scope),
@@ -322,6 +329,7 @@ fn lower_expr_tuple(
     expr: &semantic::ExprTuple,
     scope: &mut BlockScope,
 ) -> Result<LoweredExpr, LoweringFlowError> {
+    trace!("Started lowering of a tuple.");
     let inputs = expr
         .items
         .iter()
@@ -336,6 +344,7 @@ fn lower_expr_block(
     scope: &mut BlockScope,
     expr: &semantic::ExprBlock,
 ) -> Result<LoweredExpr, LoweringFlowError> {
+    trace!("Started lowering of a block expression.");
     let (block_sealed, mut finalized_merger) =
         BlockFlowMerger::with(ctx, scope, &[], |ctx, merger| {
             merger.run_in_subscope(ctx, vec![], |ctx, subscope, _| lower_block(ctx, subscope, expr))
@@ -356,6 +365,7 @@ fn lower_expr_function_call(
     expr: &semantic::ExprFunctionCall,
     scope: &mut BlockScope,
 ) -> Result<LoweredExpr, LoweringFlowError> {
+    trace!("Started lowering of a function call expression.");
     // TODO(spapini): Use the correct stable pointer.
     let arg_inputs = lower_exprs_as_vars(ctx, &expr.args, scope)?;
     let (ref_tys, ref_inputs): (_, Vec<LivingVar>) = expr
@@ -436,6 +446,7 @@ fn lower_expr_match(
     expr: &semantic::ExprMatch,
     scope: &mut BlockScope,
 ) -> Result<LoweredExpr, LoweringFlowError> {
+    trace!("Started lowering of a match expression.");
     let lowered_expr = lower_expr(ctx, scope, expr.matched_expr)?;
 
     if ctx.function_def.exprs[expr.matched_expr].ty() == ctx.db.core_felt_ty() {
@@ -498,6 +509,7 @@ fn lower_optimized_extern_match(
     extern_enum: LoweredExprExternEnum,
     match_arms: &[semantic::MatchArm],
 ) -> Result<LoweredExpr, LoweringFlowError> {
+    trace!("Started lowering of an optimized extern match.");
     let concrete_variants = ctx.db.concrete_enum_variants(extern_enum.concrete_enum_id).unwrap();
     if match_arms.len() != concrete_variants.len() {
         return Err(LoweringFlowError::Failed);
@@ -561,6 +573,7 @@ fn lower_expr_match_felt(
     expr_var: LivingVar,
     scope: &mut BlockScope,
 ) -> Result<LoweredExpr, LoweringFlowError> {
+    trace!("Started lowering of a match-felt expression.");
     // Check that the match has the expected form.
     let (literal, block0, block_otherwise) = if let [
         semantic::MatchArm {
@@ -666,6 +679,7 @@ fn lower_expr_enum_ctor(
     expr: &semantic::ExprEnumVariantCtor,
     scope: &mut BlockScope,
 ) -> Result<LoweredExpr, LoweringFlowError> {
+    trace!("Started lowering of an enum c'tor expression.");
     Ok(LoweredExpr::AtVariable(
         generators::EnumConstruct {
             input: lower_expr(ctx, scope, expr.value_expr)?.var(ctx, scope),
@@ -681,6 +695,7 @@ fn lower_expr_member_access(
     expr: &semantic::ExprMemberAccess,
     scope: &mut BlockScope,
 ) -> Result<LoweredExpr, LoweringFlowError> {
+    trace!("Started lowering of a member-access expression.");
     let members = ctx.db.struct_members(expr.struct_id).ok_or(LoweringFlowError::Failed)?;
     let member_idx = members
         .iter()
@@ -702,6 +717,7 @@ fn lower_expr_struct_ctor(
     expr: &semantic::ExprStructCtor,
     scope: &mut BlockScope,
 ) -> Result<LoweredExpr, LoweringFlowError> {
+    trace!("Started lowering of a struct c'tor expression.");
     let members = ctx.db.struct_members(expr.struct_id).ok_or(LoweringFlowError::Failed)?;
     let member_expr = UnorderedHashMap::from_iter(expr.members.iter().cloned());
     Ok(LoweredExpr::AtVariable(
@@ -724,6 +740,7 @@ fn lower_expr_error_propagate(
     expr: &semantic::ExprPropagateError,
     scope: &mut BlockScope,
 ) -> Result<LoweredExpr, LoweringFlowError> {
+    trace!("Started lowering of an error-propagate expression.");
     let lowered_expr = lower_expr(ctx, scope, expr.inner)?;
     if let LoweredExpr::ExternEnum(extern_enum) = lowered_expr {
         return lower_optimized_extern_error_propagate(ctx, scope, extern_enum, expr);
@@ -782,6 +799,7 @@ fn lower_optimized_extern_error_propagate(
     extern_enum: LoweredExprExternEnum,
     expr: &semantic::ExprPropagateError,
 ) -> Result<LoweredExpr, LoweringFlowError> {
+    trace!("Started lowering of an optimized error-propagate expression.");
     let (blocks, mut finalized_merger) = BlockFlowMerger::with(
         ctx,
         scope,
@@ -877,6 +895,7 @@ fn lower_expr_assignment(
     expr: &semantic::ExprAssignment,
     scope: &mut BlockScope,
 ) -> Result<LoweredExpr, LoweringFlowError> {
+    trace!("Started lowering of an assignment expression.");
     scope.try_ensure_semantic_variable(ctx, expr.var);
     let var = lower_expr(ctx, scope, expr.rhs)?.var(ctx, scope);
     scope.put_semantic_variable(expr.var, var);

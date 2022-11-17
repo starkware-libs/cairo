@@ -1,4 +1,5 @@
 use indoc::indoc;
+use test_log::test;
 
 use crate::hints::Hint;
 use crate::instructions::{

@@ -3,6 +3,7 @@ use salsa::{InternId, InternKey};
 use syntax::node::ast::{TokenSingleLineComment, TokenWhitespace};
 use syntax::node::kind::SyntaxKind;
 use syntax::node::Token;
+use test_log::test;
 
 use super::Lexer;
 use crate::lexer::LexerTerminal;

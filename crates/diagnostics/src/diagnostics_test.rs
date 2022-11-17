@@ -5,6 +5,7 @@ use filesystem::ids::{FileId, FileLongId, VirtualFile};
 use filesystem::span::{TextOffset, TextSpan};
 use filesystem::test_utils::FilesDatabaseForTesting;
 use indoc::indoc;
+use test_log::test;
 
 use super::{DiagnosticEntry, DiagnosticLocation, DiagnosticsBuilder};
 
