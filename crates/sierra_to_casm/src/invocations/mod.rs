@@ -233,6 +233,7 @@ pub fn compile_invocation(
         CoreConcreteLibFunc::Box(libfunc) => boxing::build(libfunc, builder),
         CoreConcreteLibFunc::Enum(libfunc) => enm::build(libfunc, builder),
         CoreConcreteLibFunc::Struct(libfunc) => strct::build(libfunc, builder),
+        CoreConcreteLibFunc::DictFeltTo(_) => todo!(),
     }
 }
 
