@@ -9,8 +9,9 @@ filesystem = { path = "../filesystem" }
 itertools.workspace = true
 salsa.workspace = true
 
-
-[dev_dependencies]
+[dev-dependencies]
 diagnostics_proc_macros = { path = "../diagnostics_proc_macros" }
+env_logger.workspace = true
 indoc.workspace = true
 pretty_assertions.workspace = true
+test-log.workspace = true

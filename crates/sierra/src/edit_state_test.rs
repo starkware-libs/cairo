@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use test_log::test;
+
 use crate::edit_state::{put_results, take_args, EditStateError};
 use crate::ids::VarId;
 

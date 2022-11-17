@@ -1,6 +1,7 @@
 use defs::ids::ModuleId;
 use indoc::indoc;
 use pretty_assertions::assert_eq;
+use test_log::test;
 
 use crate::db::SemanticGroup;
 use crate::semantic_test;

@@ -13,3 +13,7 @@ path = "src/bin/generate_syntax.rs"
 [dependencies]
 genco.workspace = true
 xshell.workspace = true
+
+[dev-dependencies]
+env_logger.workspace = true
+test-log.workspace = true

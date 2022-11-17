@@ -11,3 +11,4 @@ toml.workspace = true
 
 [dev-dependencies]
 indoc.workspace = true
+test-log.workspace = true

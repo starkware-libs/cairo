@@ -10,3 +10,7 @@ path-clean.workspace = true
 project = { path = "../project" }
 salsa.workspace = true
 smol_str.workspace = true
+
+[dev-dependencies]
+env_logger.workspace = true
+test-log.workspace = true

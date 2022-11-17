@@ -201,7 +201,6 @@ impl ConcreteExternTypeId {
     }
 }
 
-// TODO(yuval): move to a separate module "type".
 // TODO(spapini): add a query wrapper.
 /// Resolves a type given a module and a path.
 /// pub fn maybe_resolve_type(

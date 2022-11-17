@@ -1,5 +1,6 @@
 use indoc::indoc;
 use pretty_assertions::assert_eq;
+use test_log::test;
 
 use crate::test_utils::checked_compile_to_sierra;
 
