@@ -62,6 +62,7 @@ impl SignatureSpecializationContext for SierraSignatureSpecializationContext<'_>
                 "Internal compiler error: get_function_ap_change() should only be used for user \
                  defined functions."
             ),
+            GenericFunctionId::ImplFunction(_) => todo!(),
         }
     }
 }
