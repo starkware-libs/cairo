@@ -1,13 +1,11 @@
 use super::as_single_type;
 use crate::extensions::lib_func::{
-    LibFuncSignature, OutputVarInfo, SierraApChange, SignatureOnlyConcreteLibFunc,
-    SignatureSpecializationContext, SpecializationContext,
+    LibFuncSignature, OutputVarInfo, SierraApChange, SignatureOnlyGenericLibFunc,
+    SignatureSpecializationContext,
 };
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::TypeInfo;
-use crate::extensions::{
-    ConcreteType, NamedLibFunc, NamedType, OutputVarReferenceInfo, SpecializationError,
-};
+use crate::extensions::{ConcreteType, NamedType, OutputVarReferenceInfo, SpecializationError};
 use crate::ids::{ConcreteTypeId, GenericLibFuncId, GenericTypeId};
 use crate::program::GenericArg;
 
@@ -40,8 +38,7 @@ impl ConcreteType for NonZeroConcreteType {
 /// LibFunc for unwrapping a NonZero<T> back into a T.
 #[derive(Default)]
 pub struct UnwrapNonZeroLibFunc {}
-impl NamedLibFunc for UnwrapNonZeroLibFunc {
-    type Concrete = SignatureOnlyConcreteLibFunc;
+impl SignatureOnlyGenericLibFunc for UnwrapNonZeroLibFunc {
     const ID: GenericLibFuncId = GenericLibFuncId::new_inline("unwrap_nz");
 
     fn specialize_signature(
@@ -58,15 +55,5 @@ impl NamedLibFunc for UnwrapNonZeroLibFunc {
             }],
             SierraApChange::Known(0),
         ))
-    }
-
-    fn specialize(
-        &self,
-        context: &dyn SpecializationContext,
-        args: &[GenericArg],
-    ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(SignatureOnlyConcreteLibFunc {
-            signature: self.specialize_signature(context.upcast(), args)?,
-        })
     }
 }

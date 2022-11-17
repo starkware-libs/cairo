@@ -3,13 +3,11 @@ use super::felt::FeltType;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     DeferredOutputKind, LibFuncSignature, OutputVarInfo, SierraApChange,
-    SignatureOnlyConcreteLibFunc, SignatureSpecializationContext, SpecializationContext,
+    SignatureOnlyGenericLibFunc, SignatureSpecializationContext,
 };
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::TypeInfo;
-use crate::extensions::{
-    ConcreteType, NamedLibFunc, NamedType, OutputVarReferenceInfo, SpecializationError,
-};
+use crate::extensions::{ConcreteType, NamedType, OutputVarReferenceInfo, SpecializationError};
 use crate::ids::{ConcreteTypeId, GenericLibFuncId, GenericTypeId};
 use crate::program::GenericArg;
 
@@ -69,8 +67,7 @@ define_libfunc_hierarchy! {
 /// LibFunc for creating a new dict_felt_to.
 #[derive(Default)]
 pub struct DictFeltToNewLibFunc {}
-impl NamedLibFunc for DictFeltToNewLibFunc {
-    type Concrete = SignatureOnlyConcreteLibFunc;
+impl SignatureOnlyGenericLibFunc for DictFeltToNewLibFunc {
     const ID: GenericLibFuncId = GenericLibFuncId::new_inline("dict_felt_to_new");
 
     fn specialize_signature(
@@ -89,23 +86,12 @@ impl NamedLibFunc for DictFeltToNewLibFunc {
             SierraApChange::Known(1),
         ))
     }
-
-    fn specialize(
-        &self,
-        context: &dyn SpecializationContext,
-        args: &[GenericArg],
-    ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(SignatureOnlyConcreteLibFunc {
-            signature: self.specialize_signature(context.upcast(), args)?,
-        })
-    }
 }
 
 /// LibFunc for writing a new value to a dict_felt_to.
 #[derive(Default)]
 pub struct DictFeltToWriteLibFunc {}
-impl NamedLibFunc for DictFeltToWriteLibFunc {
-    type Concrete = SignatureOnlyConcreteLibFunc;
+impl SignatureOnlyGenericLibFunc for DictFeltToWriteLibFunc {
     const ID: GenericLibFuncId = GenericLibFuncId::new_inline("dict_felt_to_write");
 
     fn specialize_signature(
@@ -125,23 +111,12 @@ impl NamedLibFunc for DictFeltToWriteLibFunc {
             SierraApChange::Known(1),
         ))
     }
-
-    fn specialize(
-        &self,
-        context: &dyn SpecializationContext,
-        args: &[GenericArg],
-    ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(SignatureOnlyConcreteLibFunc {
-            signature: self.specialize_signature(context.upcast(), args)?,
-        })
-    }
 }
 
 /// LibFunc for reading a value corresponding to a key, from a dict_felt_to.
 #[derive(Default)]
 pub struct DictFeltToReadLibFunc {}
-impl NamedLibFunc for DictFeltToReadLibFunc {
-    type Concrete = SignatureOnlyConcreteLibFunc;
+impl SignatureOnlyGenericLibFunc for DictFeltToReadLibFunc {
     const ID: GenericLibFuncId = GenericLibFuncId::new_inline("dict_felt_to_read");
 
     fn specialize_signature(
@@ -166,15 +141,5 @@ impl NamedLibFunc for DictFeltToReadLibFunc {
             ],
             SierraApChange::Known(1),
         ))
-    }
-
-    fn specialize(
-        &self,
-        context: &dyn SpecializationContext,
-        args: &[GenericArg],
-    ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(SignatureOnlyConcreteLibFunc {
-            signature: self.specialize_signature(context.upcast(), args)?,
-        })
     }
 }

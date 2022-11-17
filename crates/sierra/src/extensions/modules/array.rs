@@ -2,13 +2,11 @@ use super::as_single_type;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     DeferredOutputKind, LibFuncSignature, OutputVarInfo, SierraApChange,
-    SignatureOnlyConcreteLibFunc, SignatureSpecializationContext, SpecializationContext,
+    SignatureOnlyGenericLibFunc, SignatureSpecializationContext,
 };
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::TypeInfo;
-use crate::extensions::{
-    ConcreteType, NamedLibFunc, NamedType, OutputVarReferenceInfo, SpecializationError,
-};
+use crate::extensions::{ConcreteType, NamedType, OutputVarReferenceInfo, SpecializationError};
 use crate::ids::{ConcreteTypeId, GenericLibFuncId, GenericTypeId};
 use crate::program::GenericArg;
 
@@ -65,8 +63,7 @@ define_libfunc_hierarchy! {
 /// LibFunc for creating a new array.
 #[derive(Default)]
 pub struct ArrayNewLibFunc {}
-impl NamedLibFunc for ArrayNewLibFunc {
-    type Concrete = SignatureOnlyConcreteLibFunc;
+impl SignatureOnlyGenericLibFunc for ArrayNewLibFunc {
     const ID: GenericLibFuncId = GenericLibFuncId::new_inline("array_new");
 
     fn specialize_signature(
@@ -84,23 +81,12 @@ impl NamedLibFunc for ArrayNewLibFunc {
             SierraApChange::Known(1),
         ))
     }
-
-    fn specialize(
-        &self,
-        context: &dyn SpecializationContext,
-        args: &[GenericArg],
-    ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(SignatureOnlyConcreteLibFunc {
-            signature: self.specialize_signature(context.upcast(), args)?,
-        })
-    }
 }
 
 /// LibFunc for pushing a value into the end of an array.
 #[derive(Default)]
 pub struct ArrayAppendLibFunc {}
-impl NamedLibFunc for ArrayAppendLibFunc {
-    type Concrete = SignatureOnlyConcreteLibFunc;
+impl SignatureOnlyGenericLibFunc for ArrayAppendLibFunc {
     const ID: GenericLibFuncId = GenericLibFuncId::new_inline("array_append");
 
     fn specialize_signature(
@@ -119,15 +105,5 @@ impl NamedLibFunc for ArrayAppendLibFunc {
             }],
             SierraApChange::Known(0),
         ))
-    }
-
-    fn specialize(
-        &self,
-        context: &dyn SpecializationContext,
-        args: &[GenericArg],
-    ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(SignatureOnlyConcreteLibFunc {
-            signature: self.specialize_signature(context.upcast(), args)?,
-        })
     }
 }

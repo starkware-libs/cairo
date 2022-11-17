@@ -6,8 +6,7 @@ use super::non_zero::NonZeroType;
 use super::range_check::RangeCheckType;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibFuncSignature, OutputVarInfo, ParamSignature,
-    SierraApChange, SignatureOnlyConcreteLibFunc, SignatureSpecializationContext,
-    SpecializationContext,
+    SierraApChange, SignatureSpecializationContext, SpecializationContext,
 };
 use crate::extensions::types::{InfoOnlyConcreteType, TypeInfo};
 use crate::extensions::{
@@ -379,7 +378,6 @@ impl SignatureBasedConcreteLibFunc for Uint128ConstConcreteLibFunc {
 #[derive(Default)]
 pub struct Uint128LessThanLibFunc {}
 impl NoGenericArgsGenericLibFunc for Uint128LessThanLibFunc {
-    type Concrete = SignatureOnlyConcreteLibFunc;
     const ID: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_lt");
 
     fn specialize_signature(
@@ -410,25 +408,12 @@ impl NoGenericArgsGenericLibFunc for Uint128LessThanLibFunc {
             fallthrough: Some(0),
         })
     }
-
-    fn specialize(
-        &self,
-        context: &dyn SpecializationContext,
-    ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(SignatureOnlyConcreteLibFunc {
-            signature: <Self as NoGenericArgsGenericLibFunc>::specialize_signature(
-                self,
-                context.upcast(),
-            )?,
-        })
-    }
 }
 
 /// LibFunc for converting a felt into a uint128.
 #[derive(Default)]
 pub struct Uint128FromFeltLibFunc {}
 impl NoGenericArgsGenericLibFunc for Uint128FromFeltLibFunc {
-    type Concrete = SignatureOnlyConcreteLibFunc;
     const ID: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_from_felt");
 
     fn specialize_signature(
@@ -470,25 +455,12 @@ impl NoGenericArgsGenericLibFunc for Uint128FromFeltLibFunc {
             fallthrough: Some(0),
         })
     }
-
-    fn specialize(
-        &self,
-        context: &dyn SpecializationContext,
-    ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(SignatureOnlyConcreteLibFunc {
-            signature: <Self as NoGenericArgsGenericLibFunc>::specialize_signature(
-                self,
-                context.upcast(),
-            )?,
-        })
-    }
 }
 
 /// LibFunc for converting a uint128 into a felt.
 #[derive(Default)]
 pub struct Uint128ToFeltLibFunc {}
 impl NoGenericArgsGenericLibFunc for Uint128ToFeltLibFunc {
-    type Concrete = SignatureOnlyConcreteLibFunc;
     const ID: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_to_felt");
 
     fn specialize_signature(
@@ -503,17 +475,5 @@ impl NoGenericArgsGenericLibFunc for Uint128ToFeltLibFunc {
             }],
             SierraApChange::Known(0),
         ))
-    }
-
-    fn specialize(
-        &self,
-        context: &dyn SpecializationContext,
-    ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(SignatureOnlyConcreteLibFunc {
-            signature: <Self as NoGenericArgsGenericLibFunc>::specialize_signature(
-                self,
-                context.upcast(),
-            )?,
-        })
     }
 }
