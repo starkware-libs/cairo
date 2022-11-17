@@ -2,7 +2,6 @@ use db_utils::define_short_id;
 use debug::DebugWithDb;
 use defs::ids::{GenericFunctionId, GenericParamId, ParamLongId};
 use diagnostics_proc_macros::DebugWithDb;
-use itertools::chain;
 use smol_str::SmolStr;
 use syntax::node::{ast, Terminal, TypedSyntaxNode};
 
@@ -65,12 +64,6 @@ pub struct Signature {
     pub return_type: semantic::TypeId,
     /// implicit parameters
     pub implicits: Vec<semantic::Parameter>,
-}
-impl Signature {
-    /// Gets references of all the params of the signature (both normal and implicits).
-    pub fn all_params(&self) -> impl Iterator<Item = &semantic::Parameter> {
-        chain!(self.implicits.iter(), self.params.iter())
-    }
 }
 
 pub fn function_signature_return_type(
@@ -167,6 +160,7 @@ pub fn generic_function_generic_params(
     }
 }
 
+/// Query implementation of [crate::db::SemanticGroup::concrete_function_signature].
 pub fn concrete_function_signature(
     db: &dyn SemanticGroup,
     function_id: FunctionId,

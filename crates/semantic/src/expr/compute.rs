@@ -5,9 +5,9 @@
 use std::collections::HashMap;
 
 use ast::{BinaryOperator, PathSegment};
-use defs::ids::{GenericFunctionId, LocalVarLongId, MemberId, VarId};
+use defs::ids::{GenericFunctionId, LocalVarLongId, MemberId};
 use id_arena::Arena;
-use itertools::{chain, zip_eq};
+use itertools::zip_eq;
 use num_bigint::BigInt;
 use num_traits::Num;
 use smol_str::SmolStr;
@@ -931,39 +931,6 @@ pub fn resolve_variable_by_name(
     None
 }
 
-/// Resolves a variable given a context and the variable's type.
-/// Fails if a variable of the given type does not exist or if multiple such variables exist.
-// Note: currently only relevant to implicit arguments lookup (because of the diagnostics it
-// produces).
-pub fn resolve_variable_by_type(
-    ctx: &mut ComputationContext<'_>,
-    var_type: TypeId,
-    function_call_ptr: ast::ExprPtr,
-) -> Option<VarId> {
-    let mut maybe_env = Some(&*ctx.environment);
-    let mut found_var = None;
-    while let Some(env) = maybe_env {
-        for var in chain!(env.variables.values(), env.unnamed_variables.iter()) {
-            if var.ty() == var_type {
-                if found_var.is_some() {
-                    ctx.diagnostics.report_by_ptr(
-                        function_call_ptr.untyped(),
-                        VariableOfTypeFoundMoreThanOnce { ty: var_type },
-                    );
-                    return None;
-                }
-                found_var = Some(var.id());
-            }
-        }
-        maybe_env = env.parent.as_deref();
-    }
-    if found_var.is_none() {
-        ctx.diagnostics
-            .report_by_ptr(function_call_ptr.untyped(), VariableOfTypeNotFound { ty: var_type });
-    }
-    found_var
-}
-
 /// Typechecks a function call.
 fn expr_function_call(
     ctx: &mut ComputationContext<'_>,
@@ -1009,12 +976,6 @@ fn expr_function_call(
         } else {
             args.push(ctx.exprs.alloc(arg));
         }
-    }
-
-    // Lookup implicit arguments in context by type of implicit parameters. Fail if any of them
-    // can't be resolved.
-    for implicit_param in signature.implicits.iter() {
-        ref_args.push(resolve_variable_by_type(ctx, implicit_param.ty, stable_ptr)?);
     }
 
     Some(Expr::FunctionCall(ExprFunctionCall {

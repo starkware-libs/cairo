@@ -346,6 +346,8 @@ pub trait SemanticGroup:
         generic_function: GenericFunctionId,
     ) -> Option<Vec<GenericParamId>>;
 
+    // Concrete function.
+    // =================
     /// Returns the signature of a concrete function. This include free functions, extern functions,
     /// etc...
     #[salsa::invoke(items::functions::concrete_function_signature)]
