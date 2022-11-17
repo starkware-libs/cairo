@@ -1,13 +1,10 @@
+use cairo_rs::types::relocatable::MaybeRelocatable;
 use num_bigint::BigInt;
 use test_case::test_case;
 
 use crate::casm;
 use crate::inline::CasmContext;
 use crate::run::run_function;
-
-fn as_felts(nums: &[i128]) -> Vec<BigInt> {
-    nums.iter().map(|num| (BigInt::from(*num))).collect()
-}
 
 #[test_case(
     casm! {
@@ -16,7 +13,7 @@ fn as_felts(nums: &[i128]) -> Vec<BigInt> {
         ret;
     },
     2,
-    &[-5, 7]
+    &[(-5), 7]
 )]
 #[test_case(
     casm! {
@@ -85,5 +82,34 @@ fn as_felts(nums: &[i128]) -> Vec<BigInt> {
     &[377]
 )]
 fn test_runner(function: CasmContext, n_returns: usize, expected: &[i128]) {
-    assert_eq!(run_function(function.instructions, n_returns), as_felts(expected));
+    assert_eq!(
+        run_function(function.instructions, n_returns),
+        expected
+            .iter()
+            .map(|num| MaybeRelocatable::Int(BigInt::from(*num)))
+            .collect::<Vec<MaybeRelocatable>>()
+    );
+}
+
+#[test_case(
+    casm! {
+        %{ memory[ap] = segments.add() %}
+        ap += 1;
+        ret;
+    },
+    1,
+    &[(4, 0)]
+)]
+fn test_runner_relocatable_returns(
+    function: CasmContext,
+    n_returns: usize,
+    expected: &[(isize, usize)],
+) {
+    assert_eq!(
+        run_function(function.instructions, n_returns),
+        expected
+            .iter()
+            .map(|pair| MaybeRelocatable::from(*pair))
+            .collect::<Vec<MaybeRelocatable>>()
+    );
 }
