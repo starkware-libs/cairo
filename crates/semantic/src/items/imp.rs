@@ -2,6 +2,8 @@ use db_utils::define_short_id;
 use defs::ids::{GenericParamId, ImplId, LanguageElementId, ModuleId};
 use diagnostics::Diagnostics;
 use diagnostics_proc_macros::DebugWithDb;
+use syntax::node::ast::{Item, MaybeImplBody};
+use syntax::node::db::SyntaxGroup;
 use syntax::node::ids::SyntaxStablePtrId;
 use syntax::node::TypedSyntaxNode;
 use utils::{extract_matches, try_extract_matches, OptionHelper};
@@ -50,6 +52,17 @@ pub fn impl_generic_params(db: &dyn SemanticGroup, impl_id: ImplId) -> Option<Ve
     Some(db.priv_impl_declaration_data(impl_id)?.generic_params)
 }
 
+fn report_invalid_in_impl<Terminal: syntax::node::Terminal>(
+    syntax_db: &dyn SyntaxGroup,
+    diagnostics: &mut SemanticDiagnostics,
+    kw_terminal: Terminal,
+) {
+    diagnostics.report_by_ptr(
+        kw_terminal.as_syntax_node().stable_ptr(),
+        InvalidImplItem { item_kw: kw_terminal.text(syntax_db) },
+    );
+}
+
 /// Query implementation of [crate::db::SemanticGroup::priv_impl_declaration_data].
 pub fn priv_impl_declaration_data(
     db: &dyn SemanticGroup,
@@ -71,6 +84,46 @@ pub fn priv_impl_declaration_data(
         &impl_ast.generic_params(syntax_db),
     );
     let mut resolver = Resolver::new(db, module_id, &generic_params);
+
+    if let MaybeImplBody::Some(body) = impl_ast.body(syntax_db) {
+        for item in body.items(syntax_db).elements(syntax_db) {
+            match item {
+                Item::Module(module) => {
+                    report_invalid_in_impl(syntax_db, &mut diagnostics, module.module_kw(syntax_db))
+                }
+
+                Item::Use(use_item) => {
+                    report_invalid_in_impl(syntax_db, &mut diagnostics, use_item.use_kw(syntax_db))
+                }
+                Item::ExternFunction(extern_func) => report_invalid_in_impl(
+                    syntax_db,
+                    &mut diagnostics,
+                    extern_func.extern_kw(syntax_db),
+                ),
+                Item::ExternType(extern_type) => report_invalid_in_impl(
+                    syntax_db,
+                    &mut diagnostics,
+                    extern_type.extern_kw(syntax_db),
+                ),
+                Item::Trait(trt) => {
+                    report_invalid_in_impl(syntax_db, &mut diagnostics, trt.trait_kw(syntax_db))
+                }
+                Item::Impl(imp) => {
+                    report_invalid_in_impl(syntax_db, &mut diagnostics, imp.impl_kw(syntax_db))
+                }
+                Item::Struct(strct) => {
+                    report_invalid_in_impl(syntax_db, &mut diagnostics, strct.struct_kw(syntax_db))
+                }
+                Item::Enum(enm) => {
+                    report_invalid_in_impl(syntax_db, &mut diagnostics, enm.enum_kw(syntax_db))
+                }
+                // TODO(ilya): Allow free functions inside impl.
+                Item::FreeFunction(func) => {
+                    report_invalid_in_impl(syntax_db, &mut diagnostics, func.function_kw(syntax_db))
+                }
+            }
+        }
+    }
 
     let trait_path_syntax = impl_ast.trait_path(syntax_db);
     let concrete_trait = resolver
