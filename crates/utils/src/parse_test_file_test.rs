@@ -1,3 +1,4 @@
+use test_utils_macros::test;
 use std::path::Path;
 
 use crate::parse_test_file;

@@ -1,3 +1,4 @@
+use test_utils_macros::test;
 use std::fs;
 
 use crate::generator::{get_codes, project_root};

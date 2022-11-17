@@ -7,17 +7,20 @@ edition.workspace = true
 assert_matches.workspace = true
 casm = { path = "../casm" }
 clap.workspace = true
+env_logger.workspace = true
 itertools.workspace = true
 num-bigint.workspace = true
 sierra = { path = "../sierra" }
 sierra_gas = { path = "../sierra_gas" }
 thiserror.workspace = true
 utils = { path = "../utils" }
+test_utils_macros = { path = "../test_utils_macros" }
 
 [dev-dependencies]
 indoc.workspace = true
 pretty_assertions.workspace = true
 test-case.workspace = true
+test-log.workspace = true
 
 [[bin]]
 name = "sierra-compile"

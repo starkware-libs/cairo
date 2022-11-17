@@ -1,3 +1,4 @@
+use test_utils_macros::test;
 use sierra::ids::VarId;
 use sierra::program;
 use utils::ordered_hash_set::OrderedHashSet;

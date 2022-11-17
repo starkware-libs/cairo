@@ -7,14 +7,17 @@ edition.workspace = true
 db_utils = { path = "../db_utils" }
 debug = { path = "../debug" }
 diagnostics = { path = "../diagnostics" }
+env_logger.workspace = true
 filesystem = { path = "../filesystem" }
 itertools.workspace = true
 salsa.workspace = true
 syntax = { path = "../syntax" }
 parser = { path = "../parser" }
 smol_str.workspace = true
+test_utils_macros = { path = "../test_utils_macros" }
 utils = { path = "../utils" }
 
 [dev-dependencies]
 indoc.workspace = true
 pretty_assertions.workspace = true
+test-log.workspace = true

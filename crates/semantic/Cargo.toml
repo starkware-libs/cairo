@@ -12,6 +12,7 @@ defs = { path = "../defs" }
 debug = { path = "../debug" }
 diagnostics = { path = "../diagnostics" }
 diagnostics_proc_macros = { path = "../diagnostics_proc_macros" }
+env_logger.workspace = true
 filesystem = { path = "../filesystem" }
 id-arena.workspace = true
 itertools.workspace = true
@@ -23,10 +24,12 @@ num-traits.workspace = true
 salsa.workspace = true
 smol_str.workspace = true
 syntax = { path = "../syntax" }
+test_utils_macros = { path = "../test_utils_macros" }
 utils = { path = "../utils" }
 
 [dev-dependencies]
 assert_matches.workspace = true
 indoc.workspace = true
 pretty_assertions.workspace = true
+test-log.workspace = true
 utils = { path = "../utils", features = ["testing"] }

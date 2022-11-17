@@ -1,3 +1,4 @@
+use test_utils_macros::test;
 use std::sync::Arc;
 
 use super::FilesGroup;

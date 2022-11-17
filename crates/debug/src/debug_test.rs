@@ -1,3 +1,4 @@
+use test_utils_macros::test;
 use std::fmt::Debug;
 
 use db_utils::define_short_id;

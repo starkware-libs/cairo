@@ -1,3 +1,4 @@
+use test_utils_macros::test;
 use indoc::indoc;
 use pretty_assertions::assert_eq;
 

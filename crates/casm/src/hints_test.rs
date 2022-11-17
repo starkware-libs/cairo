@@ -1,3 +1,4 @@
+use test_utils_macros::test;
 use crate::hints::Hint;
 use crate::operand::{CellRef, DerefOrImmediate, Register};
 

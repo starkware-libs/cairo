@@ -1,3 +1,4 @@
+use test_utils_macros::test;
 use defs::db::DefsGroup;
 use defs::ids::ModuleItemId;
 use indoc::indoc;

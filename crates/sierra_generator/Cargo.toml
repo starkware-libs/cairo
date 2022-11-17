@@ -12,6 +12,7 @@ debug = { path = "../debug" }
 defs = {path = "../defs"}
 diagnostics = { path = "../diagnostics" }
 diagnostics_proc_macros = { path = "../diagnostics_proc_macros" }
+env_logger.workspace = true
 filesystem = { path = "../filesystem" }
 id-arena.workspace = true
 itertools.workspace = true
@@ -24,9 +25,11 @@ sierra = { path = "../sierra" }
 smol_str.workspace = true
 syntax = { path = "../syntax" }
 utils = { path = "../utils" }
+test_utils_macros = { path = "../test_utils_macros" }
 
-[dev_dependencies]
+[dev-dependencies]
 indoc.workspace = true
 pretty_assertions.workspace = true
 semantic = { path = "../semantic", features = ["testing"] }
 utils = { path = "../utils", features = ["testing"] }
+test-log.workspace = true

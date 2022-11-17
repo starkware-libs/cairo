@@ -1,3 +1,4 @@
+use test_utils_macros::test;
 use debug::DebugWithDb;
 use itertools::Itertools;
 use lowering::db::LoweringGroup;

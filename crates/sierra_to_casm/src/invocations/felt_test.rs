@@ -1,3 +1,4 @@
+use test_utils_macros::test;
 use casm::ap_change::ApChange;
 use casm::casm;
 use sierra::program::StatementIdx;

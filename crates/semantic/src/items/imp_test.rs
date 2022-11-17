@@ -1,3 +1,4 @@
+use test_utils_macros::test;
 use defs::db::DefsGroup;
 use defs::ids::ModuleItemId;
 use pretty_assertions::assert_eq;

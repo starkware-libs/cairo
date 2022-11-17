@@ -11,6 +11,7 @@ db_utils = { path = "../db_utils" }
 defs = { path = "../defs" }
 debug = { path = "../debug" }
 diagnostics = { path = "../diagnostics" }
+env_logger.workspace = true
 lowering = { path = "../lowering" }
 semantic = { path = "../semantic" }
 formatter = { path = "../formatter" }
@@ -23,4 +24,9 @@ tower-lsp.workspace = true
 lsp.workspace = true
 serde_json.workspace = true
 salsa.workspace = true
+test_utils_macros = { path = "../test_utils_macros" }
 utils = { path = "../utils" }
+
+[dev-dependencies]
+test-log.workspace = true
+

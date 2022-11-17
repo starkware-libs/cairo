@@ -1,3 +1,4 @@
+use test_utils_macros::test;
 use super::{BinOpOperand, DerefOrImmediate, Operation};
 use crate::operand::{CellRef, Register, ResOperand};
 

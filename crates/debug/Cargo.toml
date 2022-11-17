@@ -3,7 +3,12 @@ name = "debug"
 version.workspace = true
 edition.workspace = true
 
-[dev_dependencies]
+[dependencies]
+env_logger.workspace = true
+test_utils_macros = { path = "../test_utils_macros" }
+
+[dev-dependencies]
 db_utils = { path = "../db_utils" }
 diagnostics_proc_macros = { path = "../diagnostics_proc_macros" }
 salsa.workspace = true
+test-log.workspace = true

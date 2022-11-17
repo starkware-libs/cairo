@@ -1,3 +1,4 @@
+use test_utils_macros::test;
 use debug::DebugWithDb;
 use defs::db::DefsGroup;
 use defs::ids::ModuleItemId;

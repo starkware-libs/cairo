@@ -1,7 +1,11 @@
 [package]
-name = "utils"
+name = "test_utils_macros"
 version.workspace = true
 edition.workspace = true
+
+[lib]
+proc-macro = true
+proc-macro2 = true
 
 [features]
 testing = []
@@ -10,8 +14,10 @@ testing = []
 env_logger.workspace = true
 indexmap.workspace = true
 itertools.workspace = true
-test_utils_macros = { path = "../test_utils_macros" }
+syn.workspace = true
+quote.workspace = true
 
 [dev-dependencies]
+proc-macro2 = "1.0"
+test-case-macros = "2.2.1"
 test-case.workspace = true
-test-log.workspace = true

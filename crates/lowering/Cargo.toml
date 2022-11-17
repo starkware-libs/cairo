@@ -7,11 +7,13 @@ edition.workspace = true
 db_utils = { path = "../db_utils" }
 debug = { path = "../debug" }
 defs = {path = "../defs"}
+env_logger.workspace = true
 diagnostics = { path = "../diagnostics" }
 diagnostics_proc_macros = { path = "../diagnostics_proc_macros" }
 filesystem = { path = "../filesystem" }
 id-arena.workspace = true
 itertools.workspace = true
+log.workspace = true
 num-bigint.workspace = true
 num-traits.workspace = true
 parser = { path = "../parser" }
@@ -19,10 +21,12 @@ salsa.workspace = true
 semantic = { path = "../semantic" }
 smol_str.workspace = true
 syntax = { path = "../syntax" }
+test_utils_macros = { path = "../test_utils_macros" }
 utils = { path = "../utils" }
 
-[dev_dependencies]
+[dev-dependencies]
 indoc.workspace = true
 pretty_assertions.workspace = true
 semantic = { path = "../semantic", features = ["testing"] }
+test-log.workspace = true
 utils = { path = "../utils", features = ["testing"] }

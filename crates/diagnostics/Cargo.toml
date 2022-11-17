@@ -5,12 +5,15 @@ edition.workspace = true
 
 [dependencies]
 db_utils = { path = "../db_utils" }
+env_logger.workspace = true
 filesystem = { path = "../filesystem" }
 itertools.workspace = true
 salsa.workspace = true
+test_utils_macros = { path = "../test_utils_macros" }
 
 
-[dev_dependencies]
+[dev-dependencies]
 diagnostics_proc_macros = { path = "../diagnostics_proc_macros" }
 indoc.workspace = true
 pretty_assertions.workspace = true
+test-log.workspace = true

@@ -1,3 +1,4 @@
+use test_utils_macros::test;
 use pretty_assertions::assert_eq;
 use salsa::{InternId, InternKey};
 use sierra::ids::ConcreteLibFuncId;

@@ -1,3 +1,4 @@
+use test_utils_macros::test;
 use diagnostics::DiagnosticsBuilder;
 use lowering::lower::lower;
 use semantic::test_utils::setup_test_function;

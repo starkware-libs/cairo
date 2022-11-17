@@ -9,15 +9,18 @@ path = "src/bin/cli.rs"
 
 [dependencies]
 clap.workspace = true
+colored.workspace = true
+diffy.workspace = true
+env_logger.workspace = true
 filesystem = { path = "../filesystem" }
 itertools.workspace = true
+parser = { path = "../parser" }
 salsa.workspace = true
 smol_str.workspace = true
-parser = { path = "../parser" }
 syntax = { path = "../syntax" }
-diffy.workspace = true
-colored.workspace = true
+test_utils_macros = { path = "../test_utils_macros" }
 
 [dev-dependencies]
 pretty_assertions.workspace = true
 test-case.workspace = true
+test-log.workspace = true

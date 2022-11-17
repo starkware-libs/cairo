@@ -6,7 +6,12 @@ edition.workspace = true
 [dependencies]
 db_utils = { path = "../db_utils" }
 debug = { path = "../debug" }
+env_logger.workspace = true
 path-clean.workspace = true
 project = { path = "../project" }
 salsa.workspace = true
 smol_str.workspace = true
+test_utils_macros = { path = "../test_utils_macros" }
+
+[dev-dependencies]
+test-log.workspace = true

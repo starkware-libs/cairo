@@ -1,3 +1,4 @@
+use test_utils_macros::test;
 use num_bigint::ToBigInt;
 
 use super::InstructionRepr;

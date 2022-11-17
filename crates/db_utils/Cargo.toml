@@ -4,3 +4,8 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+env_logger.workspace = true
+test_utils_macros = { path = "../test_utils_macros" }
+
+[dev-dependencies]
+test-log.workspace = true

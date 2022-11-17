@@ -1,3 +1,4 @@
+use test_utils_macros::test;
 use indoc::indoc;
 
 // Testing by parsing code and printing its display, making sure we get back the formatted code.

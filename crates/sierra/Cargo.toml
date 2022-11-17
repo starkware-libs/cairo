@@ -10,6 +10,7 @@ regex = "1"
 
 [dependencies]
 const-fnv1a-hash.workspace = true
+env_logger.workspace = true
 itertools.workspace = true
 lalrpop-util.workspace = true
 thiserror.workspace = true
@@ -17,6 +18,7 @@ num-bigint.workspace = true
 num-traits.workspace = true
 salsa.workspace = true
 smol_str.workspace = true
+test_utils_macros = { path = "../test_utils_macros" }
 utils = { path = "../utils" }
 
 [dev-dependencies]
@@ -24,3 +26,4 @@ assert_matches.workspace = true
 bimap.workspace = true
 indoc.workspace = true
 test-case.workspace = true
+test-log.workspace = true

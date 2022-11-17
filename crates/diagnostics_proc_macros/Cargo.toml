@@ -5,11 +5,19 @@ edition.workspace = true
 
 [lib]
 proc-macro = true
+proc-macro2 = true
 
 [package.metadata.cargo-udeps.ignore]
 normal = ["debug"]
 
 [dependencies]
-syn.workspace = true
-quote.workspace = true
 debug = { path = "../debug" }
+env_logger.workspace = true
+proc-macro2.workspace = true
+quote.workspace = true
+syn.workspace = true
+test-case-macros.workspace = true
+test_utils_macros = { path = "../test_utils_macros" }
+
+[dev-dependencies]
+test-log.workspace = true

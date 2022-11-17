@@ -1,3 +1,4 @@
+use test_utils_macros::test;
 use sierra::program::StatementIdx;
 
 use super::{CostExpr, Var};
