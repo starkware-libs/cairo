@@ -27,6 +27,7 @@ use filesystem::ids::{CrateId, FileId};
 use smol_str::SmolStr;
 use syntax::node::helpers::GetIdentifier;
 use syntax::node::ids::SyntaxStablePtrId;
+use syntax::node::stable_ptr::SyntaxStablePtr;
 use syntax::node::{ast, Terminal, TypedSyntaxNode};
 use utils::OptionFrom;
 
@@ -301,12 +302,43 @@ define_language_element_id!(
     name
 );
 define_language_element_id!(TraitId, TraitLongId, ast::ItemTrait, lookup_intern_trait, name);
+define_language_element_id!(
+    TraitFunctionId,
+    TraitFunctionLongId,
+    ast::TraitItemFunction,
+    lookup_intern_trait_function,
+    name
+);
+impl TraitFunctionId {
+    pub fn trait_id(&self, db: &dyn DefsGroup) -> TraitId {
+        let TraitFunctionLongId(module_id, ptr) = db.lookup_intern_trait_function(*self);
+        let SyntaxStablePtr::Child{parent, ..} = db.lookup_intern_stable_ptr(ptr.untyped()) else {panic!()};
+        let trait_ptr = ast::ItemTraitPtr(parent);
+        db.intern_trait(TraitLongId(module_id, trait_ptr))
+    }
+}
 define_language_element_id!(ImplId, ImplLongId, ast::ItemImpl, lookup_intern_impl, name);
 
 // Struct items.
 // TODO(spapini): Override full_path for to include parents, for better debug.
 define_language_element_id!(MemberId, MemberLongId, ast::Member, lookup_intern_member, name);
+impl MemberId {
+    pub fn struct_id(&self, db: &dyn DefsGroup) -> StructId {
+        let MemberLongId(module_id, ptr) = db.lookup_intern_member(*self);
+        let SyntaxStablePtr::Child{parent, ..} = db.lookup_intern_stable_ptr(ptr.untyped()) else {panic!()};
+        let struct_ptr = ast::ItemStructPtr(parent);
+        db.intern_struct(StructLongId(module_id, struct_ptr))
+    }
+}
 define_language_element_id!(VariantId, VariantLongId, ast::Member, lookup_intern_variant, name);
+impl VariantId {
+    pub fn enum_id(&self, db: &dyn DefsGroup) -> EnumId {
+        let VariantLongId(module_id, ptr) = db.lookup_intern_variant(*self);
+        let SyntaxStablePtr::Child{parent, ..} = db.lookup_intern_stable_ptr(ptr.untyped()) else {panic!()};
+        let enum_ptr = ast::ItemEnumPtr(parent);
+        db.intern_enum(EnumLongId(module_id, enum_ptr))
+    }
+}
 
 define_language_element_id_as_enum! {
     /// Id for any variable definition.
@@ -351,6 +383,7 @@ define_language_element_id_as_enum! {
     pub enum GenericFunctionId {
         Free(FreeFunctionId),
         Extern(ExternFunctionId),
+        TraitFunction(TraitFunctionId),
         // TODO(spapini): impl functions.
     }
 }
