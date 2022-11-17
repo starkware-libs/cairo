@@ -27,7 +27,7 @@ libfunc enum_init<core::option::Option::<core::integer::uint128>, 1> = enum_init
 libfunc felt_const<1> = felt_const<1>;
 libfunc uint128_from_felt = uint128_from_felt;
 libfunc uint128_sub = uint128_sub;
-libfunc function_call<user@test_crate::fib> = function_call<user@test_crate::fib>;
+libfunc function_call<user@fib_uint128::fib_uint128::fib> = function_call<user@fib_uint128::fib_uint128::fib>;
 libfunc enum_match<core::option::Option::<core::integer::uint128>> = enum_match<core::option::Option::<core::integer::uint128>>;
 
 revoke_ap_tracking() -> ();
@@ -103,7 +103,7 @@ store_temp<RangeCheck>([31]) -> ([39]);
 store_temp<uint128>([2]) -> ([40]);
 store_temp<uint128>([13]) -> ([41]);
 store_temp<uint128>([32]) -> ([42]);
-function_call<user@test_crate::fib>([39], [40], [41], [42]) -> ([37], [38]);
+function_call<user@fib_uint128::fib_uint128::fib>([39], [40], [41], [42]) -> ([37], [38]);
 enum_match<core::option::Option::<core::integer::uint128>>([38]) { 75([43]) 78([44]) };
 store_temp<uint128>([43]) -> ([45]);
 burn_gas() -> ();
@@ -126,4 +126,4 @@ rename<core::option::Option::<core::integer::uint128>>([8]) -> ([53]);
 burn_gas() -> ();
 return([52], [53]);
 
-test_crate::fib@0([0]: RangeCheck, [1]: uint128, [2]: uint128, [3]: uint128) -> (RangeCheck, core::option::Option::<core::integer::uint128>);
+fib_uint128::fib_uint128::fib@0([0]: RangeCheck, [1]: uint128, [2]: uint128, [3]: uint128) -> (RangeCheck, core::option::Option::<core::integer::uint128>);

@@ -2,42 +2,29 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 
-use defs::ids::ModuleId;
-use filesystem::ids::CrateId;
-use lowering::db::LoweringGroup;
+use compiler::db::RootDatabase;
+use compiler::diagnostics::check_diagnostics;
+use compiler::project::setup_project;
 use pretty_assertions::assert_eq;
-use semantic::db::SemanticGroup;
-use semantic::test_utils::setup_test_crate;
 use sierra_gas::calc_gas_info;
 use sierra_gas::gas_info::GasInfo;
 use sierra_generator::db::SierraGenGroup;
 use sierra_generator::replace_ids::replace_sierra_ids_in_program;
-use sierra_generator::test_utils::SierraGenDatabaseForTesting;
 use sierra_to_casm::metadata::Metadata;
 use test_case::test_case;
+
 /// Setups the cairo lowering to sierra db for the matching example.
-fn setup(name: &str) -> (SierraGenDatabaseForTesting, CrateId) {
+fn setup(name: &str) -> RootDatabase {
     let dir = env!("CARGO_MANIFEST_DIR");
     // Pop the "/tests" suffix.
     let mut path = PathBuf::from(dir).parent().unwrap().to_owned();
     path.push("examples");
     path.push(format!("{name}.cairo"));
 
-    let mut db_val = SierraGenDatabaseForTesting::default();
-    let db = &mut db_val;
-    let crate_id = setup_test_crate(db, &std::fs::read_to_string(path).unwrap());
-
-    let module_id = ModuleId::CrateRoot(crate_id);
-    db.module_semantic_diagnostics(module_id)
-        .unwrap()
-        .expect_with_db(db, "Unexpected semantic diagnostics");
-    db.module_lowering_diagnostics(module_id)
-        .unwrap()
-        .expect_with_db(db, "Unexpected lowering diagnostics.");
-    db.module_sierra_diagnostics(module_id)
-        .expect_with_db(db, "Unexpected Sierra generation diagnostics.");
-
-    (db_val, crate_id)
+    let mut db = RootDatabase::default();
+    setup_project(&mut db, path.as_path()).expect("Project setup failed.");
+    assert!(!check_diagnostics(&mut db));
+    db
 }
 
 /// Returns the content of the relevant test file.
@@ -50,8 +37,7 @@ fn get_expected_contents(name: &str, test_type: &str) -> String {
 
 /// Compiles the Cairo code for `name` to a Sierra program.
 fn checked_compile_to_sierra(name: &str) -> sierra::program::Program {
-    let (db, _) = setup(name);
-
+    let db = setup(name);
     let sierra_program = db.get_sierra_program().unwrap();
     replace_sierra_ids_in_program(&db, &sierra_program)
 }
