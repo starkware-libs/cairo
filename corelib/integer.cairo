@@ -10,4 +10,6 @@ extern func uint128_mul(a: uint128, b: uint128) -> Option::<uint128> implicits (
 extern func uint128_div(a: uint128, b: NonZero::<uint128>) -> uint128 implicits (rc: RangeCheck);
 extern func uint128_mod(a: uint128, b: NonZero::<uint128>) -> uint128 implicits (rc: RangeCheck);
 
+extern func uint128_lt(a: uint128, b: uint128) -> bool implicits (rc: RangeCheck);
+
 extern func uint128_jump_nz(a: uint128) -> JumpNzResult::<uint128>;
