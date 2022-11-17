@@ -11,11 +11,13 @@ use itertools::{chain, zip_eq};
 use num_bigint::BigInt;
 use num_traits::Num;
 use smol_str::SmolStr;
+use syntax::node::ast::PatternStructParam;
 use syntax::node::db::SyntaxGroup;
 use syntax::node::helpers::{GetIdentifier, PathSegmentEx};
 use syntax::node::{ast, Terminal, TypedSyntaxNode};
 use utils::ordered_hash_map::OrderedHashMap;
 use utils::unordered_hash_map::UnorderedHashMap;
+use utils::unordered_hash_set::UnorderedHashSet;
 use utils::{try_extract_matches, OptionHelper};
 
 use super::objects::*;
@@ -35,7 +37,7 @@ use crate::items::strct::SemanticStructEx;
 use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use crate::semantic::{self, FunctionId, LocalVariable, TypeId, TypeLongId, Variable};
 use crate::types::{resolve_type, ConcreteTypeId};
-use crate::{Mutability, Parameter};
+use crate::{Mutability, Parameter, PatternStruct};
 
 /// Context for computing the semantic model of expression trees.
 pub struct ComputationContext<'ctx> {
@@ -599,7 +601,7 @@ fn compute_pattern_semantic(
         ),
         ast::Pattern::Struct(pattern_struct) => {
             // Check that type is an struct, and get the concrete struct from it.
-            let _concrete_struct =
+            let concrete_struct =
                 try_extract_matches!(ctx.db.lookup_intern_type(ty), TypeLongId::Concrete)
                     .and_then(|c| try_extract_matches!(c, ConcreteTypeId::Struct))
                     .on_none(|| {
@@ -609,10 +611,50 @@ fn compute_pattern_semantic(
                             ctx.diagnostics.report(&pattern_struct, UnexpectedEnumPattern { ty });
                         }
                     })?;
-
-            // TODO(spapini): Support struct patterns.
-            ctx.diagnostics.report(&pattern_struct, Unsupported);
-            return None;
+            let pattern_param_asts = pattern_struct.params(syntax_db).elements(syntax_db);
+            let struct_id = concrete_struct.struct_id(ctx.db);
+            let mut members = ctx.db.struct_members(struct_id).expect("This is a valid struct.");
+            let mut used_members = UnorderedHashSet::default();
+            let mut get_member = |ctx: &mut ComputationContext<'_>, member_name: SmolStr| {
+                let member = members.swap_remove(&member_name).on_none(|| {
+                    ctx.diagnostics.report(
+                        &pattern_struct,
+                        if used_members.contains(&member_name) {
+                            StructMemberRedefinition { struct_id, member_name: member_name.clone() }
+                        } else {
+                            NoSuchMember { struct_id, member_name: member_name.clone() }
+                        },
+                    );
+                })?;
+                used_members.insert(member_name);
+                Some(member)
+            };
+            let mut field_patterns = vec![];
+            let mut has_tail = false;
+            for pattern_param_ast in pattern_param_asts {
+                match pattern_param_ast {
+                    PatternStructParam::Single(single) => {
+                        let member = get_member(ctx, single.text(syntax_db))?;
+                        let pattern = create_variable_pattern(ctx, single, &[], member.ty);
+                        field_patterns.push((member, Box::new(pattern)));
+                    }
+                    PatternStructParam::WithExpr(with_expr) => {
+                        let member = get_member(ctx, with_expr.name(syntax_db).text(syntax_db))?;
+                        let pattern =
+                            compute_pattern_semantic(ctx, with_expr.pattern(syntax_db), ty)?;
+                        field_patterns.push((member, Box::new(pattern)));
+                    }
+                    PatternStructParam::Tail(_) => {
+                        has_tail = true;
+                    }
+                }
+            }
+            if !has_tail {
+                for (member_name, _) in members {
+                    ctx.diagnostics.report(&pattern_struct, MissingMember { member_name });
+                }
+            }
+            Pattern::Struct(PatternStruct { id: struct_id, field_patterns, ty })
         }
         ast::Pattern::Tuple(pattern_tuple) => {
             let tys = try_extract_matches!(ctx.db.lookup_intern_type(ty), TypeLongId::Tuple)
