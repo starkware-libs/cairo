@@ -1,0 +1,21 @@
+[package]
+name = "playground"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+cairo-rs.workspace = true
+clap.workspace = true
+compiler = { path = "../compiler" }
+casm = { path = "../casm" }
+sierra = { path = "../sierra" }
+sierra_gas = { path = "../sierra_gas" }
+sierra_generator = { path = "../sierra_generator" }
+sierra_to_casm = { path = "../sierra_to_casm" }
+itertools.workspace = true
+salsa.workspace = true
+thiserror.workspace = true
+
+[[bin]]
+name = "cairo-playground"
+path = "src/cli.rs"
