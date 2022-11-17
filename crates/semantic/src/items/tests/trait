@@ -72,6 +72,11 @@ error: `enum` is not allowed inside impl.
     enum DummyEnum {}
     ^**^
 
+error: function `my_bar` is not a member of trait `MyTrait`.
+ --> lib.cairo:17:5
+    func my_bar() {
+    ^*************^
+
 //! > ==========================================================================
 
 //! > Test enum generics failures.

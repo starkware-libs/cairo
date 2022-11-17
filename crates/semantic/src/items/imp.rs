@@ -5,7 +5,7 @@ use defs::ids::{
     GenericFunctionId, GenericParamId, ImplFunctionId, ImplFunctionLongId, ImplId,
     LanguageElementId, ModuleId,
 };
-use diagnostics::Diagnostics;
+use diagnostics::{Diagnostics, DiagnosticsBuilder};
 use diagnostics_proc_macros::DebugWithDb;
 use syntax::node::ast::{self, Item, MaybeImplBody};
 use syntax::node::db::SyntaxGroup;
@@ -119,7 +119,18 @@ pub fn impl_semantic_definition_diagnostics(
     db: &dyn SemanticGroup,
     impl_id: ImplId,
 ) -> Diagnostics<SemanticDiagnostic> {
-    db.priv_impl_definition_data(impl_id).map(|data| data.diagnostics).unwrap_or_default()
+    let mut diagnostics = DiagnosticsBuilder::default();
+
+    let Some(data) = db.priv_impl_definition_data(impl_id) else {
+        return Diagnostics::default();
+    };
+
+    diagnostics.extend(data.diagnostics);
+    for impl_function_id in data.function_asts.keys() {
+        diagnostics.extend(db.impl_function_declaration_diagnostics(*impl_function_id));
+    }
+
+    diagnostics.build()
 }
 
 /// An helper function to report diagnostics in priv_impl_definition_data.
@@ -198,10 +209,9 @@ pub fn priv_impl_definition_data(
                 }
 
                 Item::FreeFunction(func) => {
-                    function_asts.insert(
-                        db.intern_impl_function(ImplFunctionLongId(module_id, func.stable_ptr())),
-                        func,
-                    );
+                    let impl_function_id =
+                        db.intern_impl_function(ImplFunctionLongId(module_id, func.stable_ptr()));
+                    function_asts.insert(impl_function_id, func);
                 }
             }
         }
@@ -356,7 +366,7 @@ pub fn impl_function_signature(
     db: &dyn SemanticGroup,
     impl_function_id: ImplFunctionId,
 ) -> Option<semantic::Signature> {
-    Some(db.priv_impl_function_data(impl_function_id)?.signature)
+    Some(db.priv_impl_function_declaration_data(impl_function_id)?.signature)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_function_generic_params].
@@ -364,10 +374,20 @@ pub fn impl_function_generic_params(
     db: &dyn SemanticGroup,
     impl_function_id: ImplFunctionId,
 ) -> Option<Vec<GenericParamId>> {
-    Some(db.priv_impl_function_data(impl_function_id)?.generic_params)
+    Some(db.priv_impl_function_declaration_data(impl_function_id)?.generic_params)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::priv_impl_function_data].
+/// Query implementation of [crate::db::SemanticGroup::impl_function_declaration_diagnostics].
+pub fn impl_function_declaration_diagnostics(
+    db: &dyn SemanticGroup,
+    impl_function_id: ImplFunctionId,
+) -> Diagnostics<SemanticDiagnostic> {
+    db.priv_impl_function_declaration_data(impl_function_id)
+        .map(|data| data.diagnostics)
+        .unwrap_or_default()
+}
+
+/// Query implementation of [crate::db::SemanticGroup::priv_impl_function_declaration_data].
 pub fn priv_impl_function_declaration_data(
     db: &dyn SemanticGroup,
     impl_function_id: ImplFunctionId,
@@ -398,7 +418,22 @@ pub fn priv_impl_function_declaration_data(
         &mut environment,
     );
 
-    // TODO(ilya): Check that the signature is consistent with the relevant item in the trait.
+    let declaraton_data = db.priv_impl_declaration_data(impl_id)?;
+
+    declaraton_data.concrete_trait.and_then(|concrete_trait| {
+        let concrete_trait_long_id = db.lookup_intern_concrete_trait(concrete_trait);
+        let trait_id = concrete_trait_long_id.trait_id;
+        let trait_functions = db.trait_functions(trait_id)?;
+
+        let function_name = db.lookup_intern_impl_function(impl_function_id).name(db.upcast());
+        match trait_functions.get(&function_name) {
+            // TODO(ilya): Verify that signature match.
+            Some(_trait_function_id) => {}
+            None => diagnostics
+                .report(function_syntax, FunctionNotMemberOfTrait { impl_function_id, trait_id }),
+        }
+        Some(())
+    });
 
     let implicits = function_signature_implicit_parameters(
         &mut diagnostics,
