@@ -27,6 +27,7 @@ pub struct ExternFunctionDeclarationData {
 }
 
 // Selectors.
+// TODO(spapini): Remove declaration from the names.
 /// Query implementation of [crate::db::SemanticGroup::extern_function_declaration_diagnostics].
 pub fn extern_function_declaration_diagnostics(
     db: &dyn SemanticGroup,
