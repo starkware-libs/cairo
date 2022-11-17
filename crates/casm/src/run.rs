@@ -174,15 +174,9 @@ pub fn run(
 }
 
 /// Runs `function` and returns `n_returns` return values.
-pub fn run_function(instructions: Vec<Instruction>, n_returns: usize) -> Vec<BigInt> {
+pub fn run_function(instructions: Vec<Instruction>, n_returns: usize) -> Vec<MaybeRelocatable> {
     run(instructions, "plain", get_prime())
         .expect("Virtual machine failed")
         .get_return_values(n_returns)
         .expect("Return memory cells not set.")
-        .iter()
-        .map(|ret_val| match ret_val {
-            MaybeRelocatable::Int(value) => value.clone(),
-            MaybeRelocatable::RelocatableValue(_) => panic!("Return value can't be relocatable."),
-        })
-        .collect()
 }
