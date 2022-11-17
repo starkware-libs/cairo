@@ -1,5 +1,7 @@
 use std::path::Path;
 
+use test_log::test;
+
 use crate::parse_test_file;
 
 #[test]

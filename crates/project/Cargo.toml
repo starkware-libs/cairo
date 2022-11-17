@@ -4,6 +4,7 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+env_logger.workspace = true
 serde.workspace = true
 smol_str.workspace = true
 thiserror.workspace = true
@@ -11,3 +12,4 @@ toml.workspace = true
 
 [dev-dependencies]
 indoc.workspace = true
+test-log.workspace = true

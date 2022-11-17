@@ -7,8 +7,10 @@ edition.workspace = true
 testing = []
 
 [dependencies]
+env_logger.workspace = true
 indexmap.workspace = true
 itertools.workspace = true
 
 [dev-dependencies]
 test-case.workspace = true
+test-log.workspace = true

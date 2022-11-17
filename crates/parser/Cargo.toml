@@ -10,8 +10,10 @@ fix_parser_tests = ["utils/testing"]
 colored.workspace = true
 db_utils = { path = "../db_utils" }
 diagnostics = { path = "../diagnostics" }
+env_logger.workspace = true
 filesystem = { path = "../filesystem" }
 itertools.workspace = true
+log.workspace = true
 salsa.workspace = true
 smol_str.workspace = true
 syntax = { path = "../syntax" }
@@ -21,4 +23,5 @@ utils = { path = "../utils" }
 [dev-dependencies]
 pretty_assertions.workspace = true
 test-case.workspace = true
+test-log.workspace = true
 utils = { path = "../utils", features=["testing"] }

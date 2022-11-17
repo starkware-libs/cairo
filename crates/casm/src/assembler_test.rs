@@ -1,4 +1,5 @@
 use num_bigint::ToBigInt;
+use test_log::test;
 
 use super::InstructionRepr;
 use crate::assembler::{ApUpdate, FpUpdate, Op1Addr, Opcode, PcUpdate, Res};

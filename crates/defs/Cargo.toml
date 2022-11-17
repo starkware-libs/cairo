@@ -7,6 +7,7 @@ edition.workspace = true
 db_utils = { path = "../db_utils" }
 debug = { path = "../debug" }
 diagnostics = { path = "../diagnostics" }
+env_logger.workspace = true
 filesystem = { path = "../filesystem" }
 itertools.workspace = true
 salsa.workspace = true
@@ -18,3 +19,4 @@ utils = { path = "../utils" }
 [dev-dependencies]
 indoc.workspace = true
 pretty_assertions.workspace = true
+test-log.workspace = true

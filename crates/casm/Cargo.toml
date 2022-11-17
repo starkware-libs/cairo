@@ -5,6 +5,7 @@ edition.workspace = true
 
 [dependencies]
 cairo-rs = { git = "https://github.com/lambdaclass/cairo-rs", rev="3a2dead" }
+env_logger.workspace = true
 thiserror.workspace = true
 num-bigint.workspace = true
 utils = { path = "../utils" }
@@ -14,3 +15,4 @@ indoc.workspace = true
 itertools.workspace = true
 pretty_assertions.workspace = true
 test-case.workspace = true
+test-log.workspace = true

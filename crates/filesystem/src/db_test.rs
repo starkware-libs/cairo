@@ -1,5 +1,7 @@
 use std::sync::Arc;
 
+use test_log::test;
+
 use super::FilesGroup;
 use crate::db::FilesGroupEx;
 use crate::ids::{CrateLongId, Directory};
