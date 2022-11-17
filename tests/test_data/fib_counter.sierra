@@ -18,7 +18,7 @@ libfunc felt_const<1> = felt_const<1>;
 libfunc felt_sub = felt_sub;
 libfunc store_temp<felt> = store_temp<felt>;
 libfunc rename<felt> = rename<felt>;
-libfunc function_call<user@test_crate::fib> = function_call<user@test_crate::fib>;
+libfunc function_call<user@fib_counter::fib_counter::fib> = function_call<user@fib_counter::fib_counter::fib>;
 libfunc struct_deconstruct<Tuple<felt, felt>> = struct_deconstruct<Tuple<felt, felt>>;
 
 revoke_ap_tracking() -> ();
@@ -42,7 +42,7 @@ store_temp<felt>([7]) -> ([7]);
 rename<felt>([7]) -> ([12]);
 store_temp<felt>([9]) -> ([9]);
 rename<felt>([9]) -> ([13]);
-function_call<user@test_crate::fib>([11], [12], [13]) -> ([10]);
+function_call<user@fib_counter::fib_counter::fib>([11], [12], [13]) -> ([10]);
 struct_deconstruct<Tuple<felt, felt>>([10]) -> ([14], [15]);
 felt_const<1>() -> ([16]);
 felt_add([15], [16]) -> ([17]);
@@ -56,4 +56,4 @@ rename<Tuple<felt, felt>>([6]) -> ([20]);
 burn_gas() -> ();
 return([20]);
 
-test_crate::fib@0([0]: felt, [1]: felt, [2]: felt) -> (Tuple<felt, felt>);
+fib_counter::fib_counter::fib@0([0]: felt, [1]: felt, [2]: felt) -> (Tuple<felt, felt>);

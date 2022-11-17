@@ -28,7 +28,7 @@ libfunc felt_const<1> = felt_const<1>;
 libfunc felt_sub = felt_sub;
 libfunc store_temp<felt> = store_temp<felt>;
 libfunc rename<felt> = rename<felt>;
-libfunc function_call<user@test_crate::fib> = function_call<user@test_crate::fib>;
+libfunc function_call<user@fib_gas::fib_gas::fib> = function_call<user@fib_gas::fib_gas::fib>;
 
 revoke_ap_tracking() -> ();
 get_gas([0], [1]) { fallthrough([5], [6]) 8([7], [8]) };
@@ -74,7 +74,7 @@ store_temp<felt>([21]) -> ([21]);
 rename<felt>([21]) -> ([30]);
 store_temp<felt>([23]) -> ([23]);
 rename<felt>([23]) -> ([31]);
-function_call<user@test_crate::fib>([27], [28], [29], [30], [31]) -> ([24], [25], [26]);
+function_call<user@fib_gas::fib_gas::fib>([27], [28], [29], [30], [31]) -> ([24], [25], [26]);
 rename<RangeCheck>([24]) -> ([18]);
 rename<GasBuiltin>([25]) -> ([19]);
 rename<core::option::Option::<core::felt>>([26]) -> ([20]);
@@ -85,4 +85,4 @@ rename<core::option::Option::<core::felt>>([20]) -> ([34]);
 burn_gas() -> ();
 return([32], [33], [34]);
 
-test_crate::fib@0([0]: RangeCheck, [1]: GasBuiltin, [2]: felt, [3]: felt, [4]: felt) -> (RangeCheck, GasBuiltin, core::option::Option::<core::felt>);
+fib_gas::fib_gas::fib@0([0]: RangeCheck, [1]: GasBuiltin, [2]: felt, [3]: felt, [4]: felt) -> (RangeCheck, GasBuiltin, core::option::Option::<core::felt>);
