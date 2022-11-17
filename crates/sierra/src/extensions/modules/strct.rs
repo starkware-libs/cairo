@@ -17,13 +17,11 @@ use super::as_single_type;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     DeferredOutputKind, LibFuncSignature, OutputVarInfo, SierraApChange,
-    SignatureOnlyConcreteLibFunc, SignatureSpecializationContext, SpecializationContext,
+    SignatureOnlyGenericLibFunc, SignatureSpecializationContext,
 };
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::TypeInfo;
-use crate::extensions::{
-    ConcreteType, NamedLibFunc, NamedType, OutputVarReferenceInfo, SpecializationError,
-};
+use crate::extensions::{ConcreteType, NamedType, OutputVarReferenceInfo, SpecializationError};
 use crate::ids::{ConcreteTypeId, GenericLibFuncId, GenericTypeId};
 use crate::program::{ConcreteTypeLongId, GenericArg};
 
@@ -109,8 +107,7 @@ define_libfunc_hierarchy! {
 /// LibFunc for constructing a struct.
 #[derive(Default)]
 pub struct StructConstructLibFunc {}
-impl NamedLibFunc for StructConstructLibFunc {
-    type Concrete = SignatureOnlyConcreteLibFunc;
+impl SignatureOnlyGenericLibFunc for StructConstructLibFunc {
     const ID: GenericLibFuncId = GenericLibFuncId::new_inline("struct_construct");
 
     fn specialize_signature(
@@ -132,23 +129,12 @@ impl NamedLibFunc for StructConstructLibFunc {
             SierraApChange::Known(0),
         ))
     }
-
-    fn specialize(
-        &self,
-        context: &dyn SpecializationContext,
-        args: &[GenericArg],
-    ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(SignatureOnlyConcreteLibFunc {
-            signature: self.specialize_signature(context.upcast(), args)?,
-        })
-    }
 }
 
 /// LibFunc for deconstructing a struct.
 #[derive(Default)]
 pub struct StructDeconstructLibFunc {}
-impl NamedLibFunc for StructDeconstructLibFunc {
-    type Concrete = SignatureOnlyConcreteLibFunc;
+impl SignatureOnlyGenericLibFunc for StructDeconstructLibFunc {
     const ID: GenericLibFuncId = GenericLibFuncId::new_inline("struct_deconstruct");
 
     fn specialize_signature(
@@ -174,15 +160,5 @@ impl NamedLibFunc for StructDeconstructLibFunc {
                 .collect(),
             SierraApChange::Known(0),
         ))
-    }
-
-    fn specialize(
-        &self,
-        context: &dyn SpecializationContext,
-        args: &[GenericArg],
-    ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(SignatureOnlyConcreteLibFunc {
-            signature: self.specialize_signature(context.upcast(), args)?,
-        })
     }
 }

@@ -1,17 +1,15 @@
 use super::as_single_type;
 use crate::extensions::lib_func::{
-    LibFuncSignature, SierraApChange, SignatureOnlyConcreteLibFunc, SignatureSpecializationContext,
-    SpecializationContext,
+    LibFuncSignature, SierraApChange, SignatureOnlyGenericLibFunc, SignatureSpecializationContext,
 };
-use crate::extensions::{NamedLibFunc, SpecializationError};
+use crate::extensions::SpecializationError;
 use crate::ids::GenericLibFuncId;
 use crate::program::GenericArg;
 
 /// LibFunc for ignoring a plain old data object.
 #[derive(Default)]
 pub struct DropLibFunc {}
-impl NamedLibFunc for DropLibFunc {
-    type Concrete = SignatureOnlyConcreteLibFunc;
+impl SignatureOnlyGenericLibFunc for DropLibFunc {
     const ID: GenericLibFuncId = GenericLibFuncId::new_inline("drop");
 
     fn specialize_signature(
@@ -26,15 +24,5 @@ impl NamedLibFunc for DropLibFunc {
         } else {
             Err(SpecializationError::UnsupportedGenericArg)
         }
-    }
-
-    fn specialize(
-        &self,
-        context: &dyn SpecializationContext,
-        generic_args: &[GenericArg],
-    ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(SignatureOnlyConcreteLibFunc {
-            signature: self.specialize_signature(context.upcast(), generic_args)?,
-        })
     }
 }
