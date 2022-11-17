@@ -4,6 +4,7 @@ use sierra::extensions::lib_func::LibFuncSignature;
 use sierra::extensions::GenericLibFuncEx;
 use sierra::ids::{ConcreteLibFuncId, ConcreteTypeId, GenericLibFuncId};
 use sierra::program;
+use smol_str::SmolStr;
 
 use crate::db::SierraGenGroup;
 use crate::pre_sierra;
@@ -42,14 +43,50 @@ pub fn return_statement(res: Vec<sierra::ids::VarId>) -> pre_sierra::Statement {
     pre_sierra::Statement::Sierra(program::GenStatement::Return(res))
 }
 
+pub fn get_libfunc_id_with_generic_arg(
+    db: &dyn SierraGenGroup,
+    name: impl Into<SmolStr>,
+    ty: sierra::ids::ConcreteTypeId,
+) -> sierra::ids::ConcreteLibFuncId {
+    db.intern_concrete_lib_func(sierra::program::ConcreteLibFuncLongId {
+        generic_id: sierra::ids::GenericLibFuncId::from_string(name),
+        generic_args: vec![sierra::program::GenericArg::Type(ty)],
+    })
+}
+
 /// Returns the [sierra::program::ConcreteLibFuncLongId] associated with `store_temp`.
 pub fn store_temp_libfunc_id(
     db: &dyn SierraGenGroup,
     ty: ConcreteTypeId,
 ) -> sierra::ids::ConcreteLibFuncId {
+    get_libfunc_id_with_generic_arg(db, "store_temp", ty)
+}
+
+pub fn struct_construct_libfunc_id(
+    db: &dyn SierraGenGroup,
+    ty: sierra::ids::ConcreteTypeId,
+) -> sierra::ids::ConcreteLibFuncId {
+    get_libfunc_id_with_generic_arg(db, "struct_construct", ty)
+}
+
+pub fn struct_deconstruct_libfunc_id(
+    db: &dyn SierraGenGroup,
+    ty: sierra::ids::ConcreteTypeId,
+) -> sierra::ids::ConcreteLibFuncId {
+    get_libfunc_id_with_generic_arg(db, "struct_deconstruct", ty)
+}
+
+pub fn enum_init_libfunc_id(
+    db: &dyn SierraGenGroup,
+    ty: sierra::ids::ConcreteTypeId,
+    variant_idx: usize,
+) -> sierra::ids::ConcreteLibFuncId {
     db.intern_concrete_lib_func(sierra::program::ConcreteLibFuncLongId {
-        generic_id: sierra::ids::GenericLibFuncId::from_string("store_temp"),
-        generic_args: vec![sierra::program::GenericArg::Type(ty)],
+        generic_id: sierra::ids::GenericLibFuncId::from_string("enum_init"),
+        generic_args: vec![
+            sierra::program::GenericArg::Type(ty),
+            sierra::program::GenericArg::Value(variant_idx.into()),
+        ],
     })
 }
 

@@ -8,7 +8,10 @@ use sierra::program;
 
 use crate::expr_generator_context::ExprGeneratorContext;
 use crate::pre_sierra;
-use crate::utils::{get_concrete_libfunc_id, jump_statement, return_statement, simple_statement};
+use crate::utils::{
+    enum_init_libfunc_id, get_concrete_libfunc_id, jump_statement, return_statement,
+    simple_statement, struct_construct_libfunc_id, struct_deconstruct_libfunc_id,
+};
 
 /// Generates Sierra code that computes a given [lowering::Block].
 /// Returns a list of Sierra statements.
@@ -273,7 +276,8 @@ fn generate_statement_enum_construct(
     statement: &lowering::StatementEnumConstruct,
 ) -> Option<Vec<pre_sierra::Statement>> {
     Some(vec![simple_statement(
-        context.enum_init_libfunc_id(
+        enum_init_libfunc_id(
+            context.get_db(),
             context.get_variable_sierra_type(statement.output)?,
             statement.variant.idx,
         ),
@@ -288,7 +292,10 @@ fn generate_statement_struct_construct_code(
     statement: &lowering::StatementStructConstruct,
 ) -> Option<Vec<pre_sierra::Statement>> {
     Some(vec![simple_statement(
-        context.struct_construct_libfunc_id(context.get_variable_sierra_type(statement.output)?),
+        struct_construct_libfunc_id(
+            context.get_db(),
+            context.get_variable_sierra_type(statement.output)?,
+        ),
         &context.get_sierra_variables(&statement.inputs),
         &[context.get_sierra_variable(statement.output)],
     )])
@@ -300,7 +307,10 @@ fn generate_statement_struct_destructure_code(
     statement: &lowering::StatementStructDestructure,
 ) -> Option<Vec<pre_sierra::Statement>> {
     Some(vec![simple_statement(
-        context.struct_deconstruct_libfunc_id(context.get_variable_sierra_type(statement.input)?),
+        struct_deconstruct_libfunc_id(
+            context.get_db(),
+            context.get_variable_sierra_type(statement.input)?,
+        ),
         &[context.get_sierra_variable(statement.input)],
         &context.get_sierra_variables(&statement.outputs),
     )])
