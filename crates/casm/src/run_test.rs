@@ -85,5 +85,5 @@ fn as_felts(nums: &[i128]) -> Vec<BigInt> {
     &[377]
 )]
 fn test_runner(function: CasmContext, n_returns: usize, expected: &[i128]) {
-    assert_eq!(run_function(function, n_returns), as_felts(expected));
+    assert_eq!(run_function(function.instructions, n_returns), as_felts(expected));
 }
