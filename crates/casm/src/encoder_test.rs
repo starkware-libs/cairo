@@ -65,8 +65,8 @@ use crate::inline::CasmContext;
     "[ap + 0] = [fp + -5], ap++;"
 )]
 #[test_case(
-    casm!([ap] = [ap - 3], ap++;),
-    0x48127ffd7fff8000,
+    casm!([ap + 0] = [fp + -3], ap++;),
+    0x480a7ffd7fff8000,
     None;
     "[ap + 0] = [ap + -3], ap++;"
 )]
@@ -94,11 +94,24 @@ fn test_encode(mut casm: CasmContext, encoding: u64, immediate: Option<i16>) {
         call rel (-9);
         ret;
     },
-    vec![0x480680017fff8000 ,1 ,0x480680017fff8000 ,1 ,0x480680017fff8000 ,13 ,0x1104800180018000 ,3 ,0x208b7fff7fff7ffe ,0x20780017fff7ffd ,5 ,0x480a7ffb7fff8000 ,0x10780017fff7fff ,8 ,0x480a7ffc7fff8000 ,0x482a7ffc7ffb8000 ,0x4825800180007ffd ,1 ,0x1104800180018000 ,-9 ,0x208b7fff7fff7ffe]
+    vec![
+        0x480680017fff8000, 1, 0x480680017fff8000, 1, 0x480680017fff8000, 13, 0x1104800180018000,
+        3, 0x208b7fff7fff7ffe, 0x20780017fff7ffd, 5, 0x480a7ffb7fff8000, 0x10780017fff7fff, 8,
+        0x480a7ffc7fff8000, 0x482a7ffc7ffb8000, 0x4825800180007ffd, 1, 0x1104800180018000, -9,
+        0x208b7fff7fff7ffe
+    ];
+    "fib(1, 1, 13)"
 )]
 fn test_encode_multiple(casm: CasmContext, expected: Vec<i128>) {
     let exp: Vec<BigInt> = expected.into_iter().map(BigInt::from).collect();
-    let enc: Vec<BigInt> =
-        casm.instructions.iter().flat_map(|inst| inst.assemble().encode()).collect();
+    let enc: Vec<BigInt> = casm
+        .instructions
+        .iter()
+        .flat_map(|inst| inst.assemble().encode())
+        .map(|e| {
+            println!("{:#02x}", e);
+            e
+        })
+        .collect();
     assert_eq!(enc, exp);
 }
