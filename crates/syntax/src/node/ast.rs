@@ -7168,7 +7168,7 @@ impl ItemEnum {
     pub fn new_green(
         db: &dyn SyntaxGroup,
         attributes: AttributeListGreen,
-        enumkw: TerminalEnumGreen,
+        enum_kw: TerminalEnumGreen,
         name: TerminalIdentifierGreen,
         generic_params: OptionWrappedGenericParamListGreen,
         lbrace: TerminalLBraceGreen,
@@ -7176,7 +7176,7 @@ impl ItemEnum {
         rbrace: TerminalRBraceGreen,
     ) -> ItemEnumGreen {
         let children: Vec<GreenId> =
-            vec![attributes.0, enumkw.0, name.0, generic_params.0, lbrace.0, variants.0, rbrace.0];
+            vec![attributes.0, enum_kw.0, name.0, generic_params.0, lbrace.0, variants.0, rbrace.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         ItemEnumGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::ItemEnum,
@@ -7188,7 +7188,7 @@ impl ItemEnum {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
         AttributeList::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn enumkw(&self, db: &dyn SyntaxGroup) -> TerminalEnum {
+    pub fn enum_kw(&self, db: &dyn SyntaxGroup) -> TerminalEnum {
         TerminalEnum::from_syntax_node(db, self.children[1].clone())
     }
     pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {

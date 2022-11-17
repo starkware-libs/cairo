@@ -377,7 +377,7 @@ pub fn get_spec() -> Vec<Node> {
         )
     .add_struct(StructBuilder::new("ItemEnum")
         .node("attributes" ,"AttributeList")
-        .node("enumkw", "TerminalEnum")
+        .node("enum_kw", "TerminalEnum")
         .key_node("name", "TerminalIdentifier")
         .node("generic_params", "OptionWrappedGenericParamList")
         .node("lbrace", "TerminalLBrace")
