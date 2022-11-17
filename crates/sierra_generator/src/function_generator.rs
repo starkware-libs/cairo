@@ -22,7 +22,10 @@ use crate::expr_generator_context::ExprGeneratorContext;
 use crate::pre_sierra::{self, Statement};
 use crate::specialization_context::SierraSignatureSpecializationContext;
 use crate::store_variables::add_store_statements;
-use crate::utils::{get_libfunc_signature, simple_statement};
+use crate::utils::{
+    drop_libfunc_id, dup_libfunc_id, get_libfunc_signature, revoke_ap_tracking_libfunc_id,
+    simple_statement,
+};
 use crate::SierraGeneratorDiagnostic;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -87,7 +90,7 @@ fn get_function_code(
     let mut statements: Vec<pre_sierra::Statement> = vec![label];
 
     // TODO(ilya, 10/10/2022): Add revoke_ap_tracking only when necessary.
-    statements.push(simple_statement(context.revoke_ap_tracking_libfunc_id(), &[], &[]));
+    statements.push(simple_statement(revoke_ap_tracking_libfunc_id(context.get_db()), &[], &[]));
 
     // Generate the function's body.
     let body_statements = generate_block_code(&mut context, block)?;
@@ -146,7 +149,7 @@ fn add_dups_and_drops(
                 .into_iter()
                 .map(|var| {
                     simple_statement(
-                        context.drop_libfunc_id(var_types[var.clone()].clone()),
+                        drop_libfunc_id(context.get_db(), var_types[var.clone()].clone()),
                         &[var],
                         &[],
                     )
@@ -159,7 +162,7 @@ fn add_dups_and_drops(
                     if dups.contains(arg) {
                         let usage_var = context.allocate_sierra_variable();
                         expanded_statement.push(simple_statement(
-                            context.dup_libfunc_id(var_types[arg.clone()].clone()),
+                            dup_libfunc_id(context.get_db(), var_types[arg.clone()].clone()),
                             &[arg.clone()],
                             &[arg.clone(), usage_var.clone()],
                         ));

@@ -1,8 +1,6 @@
 use defs::diagnostic_utils::StableLocation;
 use defs::ids::{FreeFunctionId, LanguageElementId, ModuleId};
 use diagnostics::DiagnosticsBuilder;
-use num_bigint::BigInt;
-use smol_str::SmolStr;
 use syntax::node::ids::SyntaxStablePtrId;
 use utils::unordered_hash_map::UnorderedHashMap;
 
@@ -80,95 +78,6 @@ impl<'a> ExprGeneratorContext<'a> {
             id: self.label_id_allocator.allocate(),
         });
         (pre_sierra::Statement::Label(pre_sierra::Label { id }), id)
-    }
-
-    fn get_libfunc_id_without_generics(
-        &self,
-        name: impl Into<SmolStr>,
-    ) -> sierra::ids::ConcreteLibFuncId {
-        self.db.intern_concrete_lib_func(sierra::program::ConcreteLibFuncLongId {
-            generic_id: sierra::ids::GenericLibFuncId::from_string(name),
-            generic_args: vec![],
-        })
-    }
-
-    fn get_libfunc_id_with_generic_arg(
-        &self,
-        name: impl Into<SmolStr>,
-        ty: sierra::ids::ConcreteTypeId,
-    ) -> sierra::ids::ConcreteLibFuncId {
-        self.db.intern_concrete_lib_func(sierra::program::ConcreteLibFuncLongId {
-            generic_id: sierra::ids::GenericLibFuncId::from_string(name),
-            generic_args: vec![sierra::program::GenericArg::Type(ty)],
-        })
-    }
-
-    pub fn felt_const_libfunc_id(&self, value: BigInt) -> sierra::ids::ConcreteLibFuncId {
-        self.db.intern_concrete_lib_func(sierra::program::ConcreteLibFuncLongId {
-            generic_id: sierra::ids::GenericLibFuncId::from_string("felt_const"),
-            generic_args: vec![sierra::program::GenericArg::Value(value)],
-        })
-    }
-
-    pub fn enum_init_libfunc_id(
-        &self,
-        ty: sierra::ids::ConcreteTypeId,
-        variant_idx: usize,
-    ) -> sierra::ids::ConcreteLibFuncId {
-        self.db.intern_concrete_lib_func(sierra::program::ConcreteLibFuncLongId {
-            generic_id: sierra::ids::GenericLibFuncId::from_string("enum_init"),
-            generic_args: vec![
-                sierra::program::GenericArg::Type(ty),
-                sierra::program::GenericArg::Value(variant_idx.into()),
-            ],
-        })
-    }
-
-    pub fn match_enum_libfunc_id(
-        &self,
-        ty: sierra::ids::ConcreteTypeId,
-    ) -> sierra::ids::ConcreteLibFuncId {
-        self.get_libfunc_id_with_generic_arg("enum_match", ty)
-    }
-
-    pub fn struct_construct_libfunc_id(
-        &self,
-        ty: sierra::ids::ConcreteTypeId,
-    ) -> sierra::ids::ConcreteLibFuncId {
-        self.get_libfunc_id_with_generic_arg("struct_construct", ty)
-    }
-
-    pub fn struct_deconstruct_libfunc_id(
-        &self,
-        ty: sierra::ids::ConcreteTypeId,
-    ) -> sierra::ids::ConcreteLibFuncId {
-        self.get_libfunc_id_with_generic_arg("struct_deconstruct", ty)
-    }
-
-    pub fn drop_libfunc_id(
-        &self,
-        ty: sierra::ids::ConcreteTypeId,
-    ) -> sierra::ids::ConcreteLibFuncId {
-        self.get_libfunc_id_with_generic_arg("drop", ty)
-    }
-
-    pub fn dup_libfunc_id(
-        &self,
-        ty: sierra::ids::ConcreteTypeId,
-    ) -> sierra::ids::ConcreteLibFuncId {
-        self.get_libfunc_id_with_generic_arg("dup", ty)
-    }
-
-    pub fn burn_gas_libfunc_id(&self) -> sierra::ids::ConcreteLibFuncId {
-        self.get_libfunc_id_without_generics("burn_gas")
-    }
-
-    pub fn jump_libfunc_id(&self) -> sierra::ids::ConcreteLibFuncId {
-        self.get_libfunc_id_without_generics("jump")
-    }
-
-    pub fn revoke_ap_tracking_libfunc_id(&self) -> sierra::ids::ConcreteLibFuncId {
-        self.get_libfunc_id_without_generics("revoke_ap_tracking")
     }
 
     /// Add a SierraGenerator diagnostic to the list of diagnostics.
