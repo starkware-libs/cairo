@@ -3,7 +3,10 @@
 mod test;
 
 use defs::diagnostic_utils::StableLocation;
-use defs::ids::{EnumId, GenericFunctionId, ModuleId, StructId, TopLevelLanguageElementId};
+use defs::ids::{
+    EnumId, GenericFunctionId, ImplFunctionId, ModuleId, StructId, TopLevelLanguageElementId,
+    TraitId,
+};
 use diagnostics::{DiagnosticEntry, DiagnosticLocation, Diagnostics, DiagnosticsBuilder};
 use smol_str::SmolStr;
 use syntax::node::ids::SyntaxStablePtrId;
@@ -71,6 +74,15 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::NotAStruct => "Not a struct.".into(),
             SemanticDiagnosticKind::NotAType => "Not a type.".into(),
             SemanticDiagnosticKind::NotATrait => "Not a trait.".into(),
+            SemanticDiagnosticKind::FunctionNotMemberOfTrait { impl_function_id, trait_id } => {
+                let defs_db = db.upcast();
+                format!(
+                    "function `{}` is not a member of trait `{}`.",
+                    impl_function_id.name(defs_db),
+                    trait_id.name(defs_db)
+                )
+            }
+
             SemanticDiagnosticKind::UnexpectedGenericArgs => "Unexpected generic arguments".into(),
             SemanticDiagnosticKind::UnknownMember => "Unknown member.".into(),
             SemanticDiagnosticKind::MemberSpecifiedMoreThanOnce => {
@@ -241,6 +253,7 @@ pub enum SemanticDiagnosticKind {
     NotAStruct,
     NotAType,
     NotATrait,
+    FunctionNotMemberOfTrait { impl_function_id: ImplFunctionId, trait_id: TraitId },
     UnexpectedGenericArgs,
     UnknownMember,
     MemberSpecifiedMoreThanOnce,
