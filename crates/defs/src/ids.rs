@@ -27,6 +27,7 @@ use filesystem::ids::{CrateId, FileId};
 use smol_str::SmolStr;
 use syntax::node::helpers::GetIdentifier;
 use syntax::node::ids::SyntaxStablePtrId;
+use syntax::node::stable_ptr::SyntaxStablePtr;
 use syntax::node::{ast, Terminal, TypedSyntaxNode};
 use utils::OptionFrom;
 
@@ -309,6 +310,28 @@ define_language_element_id!(
     name
 );
 define_language_element_id!(TraitId, TraitLongId, ast::ItemTrait, lookup_intern_trait, name);
+define_language_element_id!(
+    TraitFunctionId,
+    TraitFunctionLongId,
+    ast::TraitItemFunction,
+    lookup_intern_trait_function,
+    name
+);
+impl TraitFunctionId {
+    pub fn trait_id(&self, db: &dyn DefsGroup) -> TraitId {
+        let TraitFunctionLongId(module_id, ptr) = db.lookup_intern_trait_function(*self);
+        // Trait function ast lies a few levels bellow the trait ast.
+        // Fetch the grand grand grand parent.
+        // TODO(spapini): Use a parent function.
+        let SyntaxStablePtr::Child{parent, ..} = db.lookup_intern_stable_ptr(ptr.untyped()) else {
+            panic!()
+        };
+        let SyntaxStablePtr::Child{parent, ..} = db.lookup_intern_stable_ptr(parent) else {panic!()};
+        let SyntaxStablePtr::Child{parent, ..} = db.lookup_intern_stable_ptr(parent) else {panic!()};
+        let trait_ptr = ast::ItemTraitPtr(parent);
+        db.intern_trait(TraitLongId(module_id, trait_ptr))
+    }
+}
 define_language_element_id!(ImplId, ImplLongId, ast::ItemImpl, lookup_intern_impl, name);
 
 // Struct items.
@@ -359,6 +382,7 @@ define_language_element_id_as_enum! {
     pub enum GenericFunctionId {
         Free(FreeFunctionId),
         Extern(ExternFunctionId),
+        TraitFunction(TraitFunctionId),
         // TODO(spapini): impl functions.
     }
 }
