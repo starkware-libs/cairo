@@ -1,4 +1,5 @@
 use cairo_rs::types::relocatable::MaybeRelocatable;
+use itertools::Itertools;
 use num_bigint::BigInt;
 use test_case::test_case;
 
@@ -13,7 +14,8 @@ use crate::run::run_function;
         ret;
     },
     2,
-    &[(-5), 7]
+    &[-5, 7];
+    "simple ap sets"
 )]
 #[test_case(
     casm! {
@@ -24,7 +26,8 @@ use crate::run::run_function;
         ret;
     },
     3,
-    &[579, 123, 456]
+    &[579, 123, 456];
+    "sum ap into fp"
 )]
 #[test_case(
     casm! {
@@ -38,7 +41,8 @@ use crate::run::run_function;
         ret;
     },
     5,
-    &[1, 5, 0, 3, 4]
+    &[1, 5, 0, 3, 4];
+    "jumps"
 )]
 #[test_case(
     casm! {
@@ -49,7 +53,8 @@ use crate::run::run_function;
         ret;
     },
     3,
-    &[39, 1, 84]
+    &[39, 1, 84];
+    "less than hint"
 )]
 #[test_case(
     casm! {
@@ -60,7 +65,8 @@ use crate::run::run_function;
         ret;
     },
     4,
-    &[5, 39, 7, 4]
+    &[5, 39, 7, 4];
+    "divmod hint"
 )]
 #[test_case(
     casm! {
@@ -79,15 +85,13 @@ use crate::run::run_function;
         ret;
     },
     1,
-    &[377]
+    &[377];
+    "fib(1, 1, 13)"
 )]
 fn test_runner(function: CasmContext, n_returns: usize, expected: &[i128]) {
     assert_eq!(
         run_function(function.instructions, n_returns),
-        expected
-            .iter()
-            .map(|num| MaybeRelocatable::Int(BigInt::from(*num)))
-            .collect::<Vec<MaybeRelocatable>>()
+        expected.iter().map(|num| Some(MaybeRelocatable::from(BigInt::from(*num)))).collect_vec()
     );
 }
 
@@ -98,7 +102,8 @@ fn test_runner(function: CasmContext, n_returns: usize, expected: &[i128]) {
         ret;
     },
     1,
-    &[(4, 0)]
+    &[(4, 0)];
+    "allocate segment"
 )]
 fn test_runner_relocatable_returns(
     function: CasmContext,
@@ -107,9 +112,18 @@ fn test_runner_relocatable_returns(
 ) {
     assert_eq!(
         run_function(function.instructions, n_returns),
-        expected
-            .iter()
-            .map(|pair| MaybeRelocatable::from(*pair))
-            .collect::<Vec<MaybeRelocatable>>()
+        expected.iter().map(|pair| Some(MaybeRelocatable::from(*pair))).collect_vec()
     );
+}
+
+#[test_case(
+    casm! {
+        ap += 1;
+        ret;
+    },
+    1;
+    "uninitialized memory"
+)]
+fn test_runner_uninitialized_returns(function: CasmContext, n_returns: usize) {
+    assert_eq!(run_function(function.instructions, n_returns), [None]);
 }
