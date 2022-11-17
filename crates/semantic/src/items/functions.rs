@@ -140,6 +140,7 @@ pub fn generic_function_signature(
         GenericFunctionId::TraitFunction(trait_function) => {
             db.trait_function_signature(trait_function)
         }
+        GenericFunctionId::ImplFunction(impl_function) => db.impl_function_signature(impl_function),
     }
 }
 /// Query implementation of [crate::db::SemanticGroup::generic_function_generic_params].
@@ -156,6 +157,9 @@ pub fn generic_function_generic_params(
         }
         GenericFunctionId::TraitFunction(trait_function) => {
             db.trait_function_generic_params(trait_function)
+        }
+        GenericFunctionId::ImplFunction(impl_function) => {
+            db.impl_function_generic_params(impl_function)
         }
     }
 }

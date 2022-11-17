@@ -292,6 +292,23 @@ define_language_element_id!(
     lookup_intern_impl_function,
     name
 );
+impl ImplFunctionId {
+    pub fn impl_id(&self, db: &dyn DefsGroup) -> ImplId {
+        let ImplFunctionLongId(module_id, ptr) = db.lookup_intern_impl_function(*self);
+        // TODO(spapini): Use a parent function.
+        let SyntaxStablePtr::Child{parent, ..} = db.lookup_intern_stable_ptr(ptr.untyped()) else {
+            panic!()
+        };
+        let SyntaxStablePtr::Child{parent, ..} = db.lookup_intern_stable_ptr(parent) else {
+            panic!()
+        };
+        let SyntaxStablePtr::Child{parent, ..} = db.lookup_intern_stable_ptr(parent) else {
+            panic!()
+        };
+        let impl_ptr = ast::ItemImplPtr(parent);
+        db.intern_impl(ImplLongId(module_id, impl_ptr))
+    }
+}
 
 define_language_element_id!(
     ExternFunctionId,
@@ -326,8 +343,12 @@ impl TraitFunctionId {
         let SyntaxStablePtr::Child{parent, ..} = db.lookup_intern_stable_ptr(ptr.untyped()) else {
             panic!()
         };
-        let SyntaxStablePtr::Child{parent, ..} = db.lookup_intern_stable_ptr(parent) else {panic!()};
-        let SyntaxStablePtr::Child{parent, ..} = db.lookup_intern_stable_ptr(parent) else {panic!()};
+        let SyntaxStablePtr::Child{parent, ..} = db.lookup_intern_stable_ptr(parent) else {
+            panic!()
+        };
+        let SyntaxStablePtr::Child{parent, ..} = db.lookup_intern_stable_ptr(parent) else {
+            panic!()
+        };
         let trait_ptr = ast::ItemTraitPtr(parent);
         db.intern_trait(TraitLongId(module_id, trait_ptr))
     }
@@ -383,7 +404,7 @@ define_language_element_id_as_enum! {
         Free(FreeFunctionId),
         Extern(ExternFunctionId),
         TraitFunction(TraitFunctionId),
-        // TODO(spapini): impl functions.
+        ImplFunction(ImplFunctionId),
     }
 }
 impl GenericFunctionId {

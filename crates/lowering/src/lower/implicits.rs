@@ -40,7 +40,7 @@ pub fn function_all_implicits(
         GenericFunctionId::Extern(extern_function) => {
             db.extern_function_declaration_implicits(extern_function)
         }
-        GenericFunctionId::TraitFunction(_) => todo!(),
+        GenericFunctionId::TraitFunction(_) | GenericFunctionId::ImplFunction(_) => todo!(),
     }
 }
 
@@ -74,7 +74,7 @@ pub fn free_function_all_implicits(
                     // All implicits of a libfunc are explicit implicits.
                     db.extern_function_declaration_implicits(extern_function)?.into_iter().collect()
                 }
-                GenericFunctionId::TraitFunction(_) => todo!(),
+                GenericFunctionId::TraitFunction(_) | GenericFunctionId::ImplFunction(_) => todo!(),
             };
         all_implicits.extend(&current_implicits);
     }
