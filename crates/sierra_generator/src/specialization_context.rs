@@ -58,7 +58,7 @@ impl SignatureSpecializationContext for SierraSignatureSpecializationContext<'_>
                     ApChange::Unknown => SierraApChange::Unknown,
                 })
             }
-            GenericFunctionId::Extern(_) => panic!(
+            GenericFunctionId::Extern(_) | GenericFunctionId::TraitFunction(_) => panic!(
                 "Internal compiler error: get_function_ap_change() should only be used for user \
                  defined functions."
             ),
