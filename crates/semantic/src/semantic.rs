@@ -60,29 +60,24 @@ pub enum Mutability {
 pub enum Variable {
     Local(LocalVariable),
     Param(Parameter),
-    ImplicitParam(Parameter),
 }
 impl Variable {
     pub fn id(&self) -> VarId {
         match self {
             Variable::Local(local) => VarId::Local(local.id),
             Variable::Param(param) => VarId::Param(param.id),
-            Variable::ImplicitParam(implicit_param) => VarId::Param(implicit_param.id),
         }
     }
     pub fn ty(&self) -> TypeId {
         match self {
             Variable::Local(local) => local.ty,
             Variable::Param(param) => param.ty,
-            Variable::ImplicitParam(implicit_param) => implicit_param.ty,
         }
     }
     pub fn is_mut(&self) -> bool {
         match self {
             Variable::Local(local) => local.is_mut,
-            Variable::Param(param) | Variable::ImplicitParam(param) => {
-                param.mutability != Mutability::Immutable
-            }
+            Variable::Param(param) => param.mutability != Mutability::Immutable,
         }
     }
 }

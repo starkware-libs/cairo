@@ -1,7 +1,7 @@
 use defs::ids::{FreeFunctionId, GenericFunctionId, LanguageElementId};
 use diagnostics::Diagnostics;
 use id_arena::Arena;
-use itertools::{chain, zip_eq};
+use itertools::{chain, zip_eq, Itertools};
 use num_traits::Zero;
 use scope::{BlockScope, BlockScopeEnd};
 use semantic::corelib::{core_felt_ty, core_jump_nz_func, core_nonzero_ty};
@@ -18,7 +18,7 @@ use self::context::{
 };
 use self::external::{extern_facade_expr, extern_facade_return_tys};
 use self::lower_if::lower_expr_if;
-use self::scope::{generators, BlockFlowMerger, OuterVarInfo};
+use self::scope::{generators, BlockFlowMerger, BlockMergerFinalized};
 use self::variables::LivingVar;
 use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnosticKind::*;
@@ -52,19 +52,23 @@ pub fn lower(db: &dyn LoweringGroup, free_function_id: FreeFunctionId) -> Option
     let generic_params = db.free_function_declaration_generic_params(free_function_id)?;
     let signature = db.free_function_declaration_signature(free_function_id)?;
 
+    let implicits = db.free_function_all_implicits_vec(free_function_id)?;
     // Params.
-    let ref_params: Vec<_> = signature
-        .all_params()
+    let ref_params = signature
+        .params
+        .iter()
         .filter(|param| param.mutability == Mutability::Reference)
         .map(|param| VarId::Param(param.id))
-        .collect();
+        .collect_vec();
     let input_semantic_vars: Vec<semantic::Variable> =
-        signature.all_params().cloned().map(semantic::Variable::Param).collect();
-    let (input_semantic_var_ids, input_semantic_var_tys): (Vec<_>, Vec<_>) = input_semantic_vars
+        signature.params.into_iter().map(semantic::Variable::Param).collect();
+    let (input_semantic_var_ids, input_var_tys): (Vec<_>, Vec<_>) = input_semantic_vars
         .iter()
         .map(|semantic_var| (semantic_var.id(), semantic_var.ty()))
         .unzip();
+    let input_var_tys = chain!(implicits.clone(), input_var_tys).collect();
 
+    let implicits_ref = &implicits;
     let mut ctx = LoweringContext {
         db,
         function_def: &function_def,
@@ -73,6 +77,7 @@ pub fn lower(db: &dyn LoweringGroup, free_function_id: FreeFunctionId) -> Option
         blocks: Arena::default(),
         semantic_defs: UnorderedHashMap::default(),
         ref_params: &ref_params,
+        implicits: implicits_ref,
         lookup_context: ImplLookupContext {
             module_id: free_function_id.module(db.upcast()),
             extra_modules: vec![],
@@ -91,9 +96,15 @@ pub fn lower(db: &dyn LoweringGroup, free_function_id: FreeFunctionId) -> Option
     // Lower block to a BlockSealed.
     let (block_sealed_opt, mut merger_finalized) =
         BlockFlowMerger::with_root(&mut ctx, &ref_params, |ctx, merger| {
-            merger.run_in_subscope(ctx, input_semantic_var_tys, |ctx, scope, variables| {
-                // Initialize params.
-                for (semantic_var_id, var) in zip_eq(input_semantic_var_ids, variables) {
+            merger.run_in_subscope(ctx, input_var_tys, |ctx, scope, variables| {
+                let mut variables_iter = variables.into_iter();
+                for ty in implicits_ref {
+                    let var = variables_iter.next()?;
+                    scope.put_implicit(*ty, var);
+                }
+
+                // Initialize implicits and params.
+                for (semantic_var_id, var) in zip_eq(input_semantic_var_ids, variables_iter) {
                     scope.put_semantic_variable(semantic_var_id, var);
                 }
                 lower_block(ctx, scope, semantic_block)
@@ -209,6 +220,13 @@ fn get_full_return_vars(
     scope: &mut BlockScope,
     value_vars: Vec<LivingVar>,
 ) -> Result<Vec<LivingVar>, StatementLoweringFlowError> {
+    let implicit_vars = ctx
+        .implicits
+        .iter()
+        .map(|ty| scope.take_implicit(*ty))
+        .collect::<Option<Vec<_>>>()
+        .ok_or(LoweringFlowError::Failed)?;
+
     let ref_vars = ctx
         .ref_params
         .iter()
@@ -221,7 +239,7 @@ fn get_full_return_vars(
             )
         })
         .collect::<Result<Vec<_>, _>>()?;
-    Ok(chain!(ref_vars, value_vars).collect())
+    Ok(chain!(implicit_vars, ref_vars, value_vars).collect())
 }
 
 // TODO:(spapini): Separate match pattern from non-match (single) patterns in the semantic
@@ -344,10 +362,12 @@ fn lower_expr_block(
     let block_finalized = finalized_merger.finalize_block(ctx, block_sealed);
 
     // Emit the statement.
-    let call_block_generator =
-        generators::CallBlock { block: block_finalized.block, end_info: finalized_merger.end_info };
+    let call_block_generator = generators::CallBlock {
+        block: block_finalized.block,
+        end_info: finalized_merger.end_info.clone(),
+    };
     let block_result = call_block_generator.add(ctx, scope);
-    lowered_expr_from_block_result(scope, block_result, finalized_merger.outer_var_info)
+    lowered_expr_from_block_result(scope, block_result, finalized_merger)
 }
 
 /// Lowers an expression of type [semantic::ExprFunctionCall].
@@ -370,8 +390,15 @@ fn lower_expr_function_call(
         .collect::<Result<Vec<_>, _>>()?
         .into_iter()
         .unzip();
+    let callee_implicit_types =
+        ctx.db.function_all_implicits(expr.function).ok_or(LoweringFlowError::Failed)?;
+    let implicits = callee_implicit_types
+        .iter()
+        .map(|ty| scope.take_implicit(*ty))
+        .collect::<Option<Vec<_>>>()
+        .ok_or(LoweringFlowError::Failed)?;
     // TODO(orizi): Support ref args that are not the first arguments.
-    let inputs = chain!(ref_inputs, arg_inputs.into_iter()).collect();
+    let inputs = chain!(implicits, ref_inputs, arg_inputs.into_iter()).collect();
 
     // The following is relevant only to extern functions.
     if matches!(
@@ -381,18 +408,28 @@ fn lower_expr_function_call(
         if let semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::Enum(concrete_enum_id)) =
             ctx.db.lookup_intern_type(expr.ty)
         {
+            // It is still unknown whether we directly match on this enum result, or store it to a
+            // variable. Thus we can't perform the call. Performing it and rebinding variables are
+            // done on the 2 places where this result it used:
+            // 1. [lower_optimized_extern_match]
+            // 2. [context::LoweredExprExternEnum::var]
             return Ok(LoweredExpr::ExternEnum(LoweredExprExternEnum {
                 function: expr.function,
                 concrete_enum_id,
                 inputs,
                 ref_args: expr.ref_args.clone(),
+                implicits: callee_implicit_types,
             }));
         }
     }
 
-    let (ref_outputs, res) =
+    let (implicit_outputs, ref_outputs, res) =
         perform_function_call(ctx, scope, expr.function, inputs, ref_tys, expr.ty);
 
+    // Rebind the implicits.
+    for (implicit_type, implicit_output) in zip_eq(callee_implicit_types, implicit_outputs) {
+        scope.put_implicit(implicit_type, implicit_output);
+    }
     // Rebind the ref variables.
     for (semantic_var_id, output_var) in zip_eq(&expr.ref_args, ref_outputs) {
         scope.put_semantic_variable(*semantic_var_id, output_var);
@@ -410,7 +447,7 @@ fn perform_function_call(
     inputs: Vec<LivingVar>,
     ref_tys: Vec<semantic::TypeId>,
     ret_ty: semantic::TypeId,
-) -> (Vec<LivingVar>, LoweredExpr) {
+) -> (Vec<LivingVar>, Vec<LivingVar>, LoweredExpr) {
     // If the function is not extern, simply call it.
     if !matches!(
         ctx.db.lookup_intern_function(function).function,
@@ -418,16 +455,18 @@ fn perform_function_call(
     ) {
         let call_result =
             generators::Call { function, inputs, ref_tys, ret_tys: vec![ret_ty] }.add(ctx, scope);
-        let ref_outputs = call_result.ref_outputs;
         let res = LoweredExpr::AtVariable(call_result.returns.into_iter().next().unwrap());
-        return (ref_outputs, res);
+        return (call_result.implicit_outputs, call_result.ref_outputs, res);
     };
 
     // Extern function
     let ret_tys = extern_facade_return_tys(ctx, ret_ty);
     let call_result = generators::Call { function, inputs, ref_tys, ret_tys }.add(ctx, scope);
-    let ref_outputs = call_result.ref_outputs;
-    (ref_outputs, extern_facade_expr(ctx, ret_ty, call_result.returns))
+    (
+        call_result.implicit_outputs,
+        call_result.ref_outputs,
+        extern_facade_expr(ctx, ret_ty, call_result.returns),
+    )
 }
 
 /// Lowers an expression of type [semantic::ExprMatch].
@@ -485,10 +524,10 @@ fn lower_expr_match(
         input: expr_var,
         concrete_enum_id,
         arms,
-        end_info: finalized_merger.end_info,
+        end_info: finalized_merger.end_info.clone(),
     };
     let block_result = match_generator.add(ctx, scope);
-    lowered_expr_from_block_result(scope, block_result, finalized_merger.outer_var_info)
+    lowered_expr_from_block_result(scope, block_result, finalized_merger)
 }
 
 /// Lowers a match expression on a LoweredExpr::ExternEnum lowered expression.
@@ -539,6 +578,7 @@ fn lower_optimized_extern_match(
             block_opts.collect::<Option<Vec<_>>>().ok_or(LoweringFlowError::Failed)
         },
     );
+
     let arms = blocks?
         .into_iter()
         .map(|sealed| finalized_merger.finalize_block(ctx, sealed).block)
@@ -547,10 +587,10 @@ fn lower_optimized_extern_match(
         function: extern_enum.function,
         inputs: extern_enum.inputs,
         arms,
-        end_info: finalized_merger.end_info,
+        end_info: finalized_merger.end_info.clone(),
     }
     .add(ctx, scope);
-    lowered_expr_from_block_result(scope, block_result, finalized_merger.outer_var_info)
+    lowered_expr_from_block_result(scope, block_result, finalized_merger)
 }
 
 /// Lowers an expression of type [semantic::ExprMatch] where the matched expression is a felt.
@@ -610,10 +650,10 @@ fn lower_expr_match_felt(
         function: core_jump_nz_func(semantic_db),
         inputs: vec![expr_var],
         arms: vec![block0_finalized.block, block_otherwise_finalized.block],
-        end_info: finalized_merger.end_info,
+        end_info: finalized_merger.end_info.clone(),
     };
     let block_result = match_generator.add(ctx, scope);
-    lowered_expr_from_block_result(scope, block_result, finalized_merger.outer_var_info)
+    lowered_expr_from_block_result(scope, block_result, finalized_merger)
 }
 
 /// Extracts concrete enum and variants from a match expression. Assumes it is indeed a concrete
@@ -769,10 +809,10 @@ fn lower_expr_error_propagate(
         input: var,
         concrete_enum_id: expr.ok_variant.concrete_enum_id,
         arms,
-        end_info: finalized_merger.end_info,
+        end_info: finalized_merger.end_info.clone(),
     };
     let block_result = match_generator.add(ctx, scope);
-    lowered_expr_from_block_result(scope, block_result, finalized_merger.outer_var_info)
+    lowered_expr_from_block_result(scope, block_result, finalized_merger)
 }
 
 /// Lowers an error propagation expression on a LoweredExpr::ExternEnum lowered expression.
@@ -840,10 +880,10 @@ fn lower_optimized_extern_error_propagate(
         function: extern_enum.function,
         inputs: extern_enum.inputs,
         arms,
-        end_info: finalized_merger.end_info,
+        end_info: finalized_merger.end_info.clone(),
     }
     .add(ctx, scope);
-    lowered_expr_from_block_result(scope, block_result, finalized_merger.outer_var_info)
+    lowered_expr_from_block_result(scope, block_result, finalized_merger)
 }
 
 /// Returns the input types for an extern match variant arm.
@@ -855,7 +895,7 @@ fn match_extern_variant_arm_input_types(
     let variant_input_tys = extern_facade_return_tys(ctx, ty);
     let ref_tys =
         extern_enum.ref_args.iter().map(|semantic_var_id| ctx.semantic_defs[*semantic_var_id].ty());
-    chain!(ref_tys, variant_input_tys.into_iter()).collect()
+    chain!(extern_enum.implicits.clone(), ref_tys, variant_input_tys.into_iter()).collect()
 }
 
 /// Rebinds input references when matching on extern functions.
@@ -864,8 +904,13 @@ fn match_extern_arm_ref_args_rebind(
     extern_enum: &LoweredExprExternEnum,
     subscope: &mut BlockScope,
 ) {
+    let implicit_outputs: Vec<_> = arm_inputs.drain(0..extern_enum.implicits.len()).collect();
+    // Bind the implicits.
+    for (ty, output_var) in zip_eq(&extern_enum.implicits, implicit_outputs) {
+        subscope.put_implicit(*ty, output_var);
+    }
     let ref_outputs: Vec<_> = arm_inputs.drain(0..extern_enum.ref_args.len()).collect();
-    // Rebind the ref variables.
+    // Bind the ref variables.
     for (semantic_var_id, output_var) in zip_eq(&extern_enum.ref_args, ref_outputs) {
         subscope.put_semantic_variable(*semantic_var_id, output_var);
     }
@@ -919,16 +964,32 @@ fn take_semantic_var(
 fn lowered_expr_from_block_result(
     scope: &mut BlockScope,
     block_result: generators::CallBlockResult,
-    outer_var_info: OuterVarInfo,
+    finalized_merger: BlockMergerFinalized,
 ) -> Result<LoweredExpr, LoweringFlowError> {
     match block_result {
         generators::CallBlockResult::Callsite { maybe_output, pushes } => {
-            for (semantic_var_id, var) in zip_eq(outer_var_info.pushes, pushes) {
+            let mut pushes_iter = pushes.into_iter();
+            for implicit_type in finalized_merger.outer_implicit_info.pushes {
+                let var = pushes_iter.next().unwrap();
+                scope.put_implicit(implicit_type, var);
+                scope.mark_implicit_changed(implicit_type);
+            }
+            for (semantic_var_id, var) in
+                zip_eq(finalized_merger.outer_var_info.pushes, pushes_iter)
+            {
                 scope.put_semantic_variable(semantic_var_id, var);
             }
-            for (semantic_var_id, var) in outer_var_info.bring_back {
+
+            // Bring back the unused implicits.
+            for (ty, implicit_var) in finalized_merger.outer_implicit_info.unchanged {
+                scope.put_implicit(ty, implicit_var);
+            }
+
+            // Bring back the untouched semantic vars.
+            for (semantic_var_id, var) in finalized_merger.outer_var_info.bring_back {
                 scope.put_semantic_variable(semantic_var_id, var);
             }
+
             Ok(match maybe_output {
                 Some(output) => LoweredExpr::AtVariable(output),
                 None => LoweredExpr::Tuple(vec![]),

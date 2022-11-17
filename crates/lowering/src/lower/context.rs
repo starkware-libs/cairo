@@ -4,7 +4,7 @@ use semantic::items::enm::SemanticEnumEx;
 use semantic::items::imp::ImplLookupContext;
 use utils::unordered_hash_map::UnorderedHashMap;
 
-use super::scope::generators::CallBlockResult;
+use super::lowered_expr_from_block_result;
 use super::scope::{generators, BlockScope, BlockScopeEnd};
 use super::variables::LivingVar;
 use crate::db::LoweringGroup;
@@ -13,7 +13,7 @@ use crate::lower::external::{extern_facade_expr, extern_facade_return_tys};
 use crate::lower::scope::BlockFlowMerger;
 use crate::objects::{Block, Variable};
 
-/// Context for the lowering phase.
+/// Context for the lowering phase of a free function.
 pub struct LoweringContext<'db> {
     pub db: &'db dyn LoweringGroup,
     /// Semantic model for current function definition.
@@ -27,8 +27,10 @@ pub struct LoweringContext<'db> {
     /// Definitions encountered for semantic variables.
     // TODO(spapini): consider moving to semantic model.
     pub semantic_defs: UnorderedHashMap<semantic::VarId, semantic::Variable>,
-    // TODO(spapini): Document.
+    // TODO(spapini): Document. (excluding implicits).
     pub ref_params: &'db [semantic::VarId],
+    // The available implicits in this function.
+    pub implicits: &'db [semantic::TypeId],
     // Lookup context for impls.
     pub lookup_context: ImplLookupContext,
 }
@@ -65,9 +67,13 @@ pub struct LoweredExprExternEnum {
     pub concrete_enum_id: semantic::ConcreteEnumId,
     pub inputs: Vec<LivingVar>,
     pub ref_args: Vec<semantic::VarId>,
+    /// The implicits used/changed by the function.
+    pub implicits: Vec<semantic::TypeId>,
 }
 impl LoweredExprExternEnum {
     pub fn var(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockScope) -> LivingVar {
+        let function_id = self.function;
+
         let concrete_variants = ctx.db.concrete_enum_variants(self.concrete_enum_id).unwrap();
         let (blocks, mut finalized_merger) =
             BlockFlowMerger::with(ctx, scope, &self.ref_args, |ctx, merger| {
@@ -79,6 +85,8 @@ impl LoweredExprExternEnum {
                         .map(|semantic_var_id| ctx.semantic_defs[*semantic_var_id].ty());
                     let input_tys = chain!(ref_tys, variant_input_tys.into_iter()).collect();
                     merger.run_in_subscope(ctx, input_tys, |ctx, subscope, mut arm_inputs| {
+                        let implicit_outputs: Vec<_> =
+                            arm_inputs.drain(0..self.implicits.len()).collect();
                         let ref_outputs: Vec<_> =
                             arm_inputs.drain(0..self.ref_args.len()).collect();
                         let input = extern_facade_expr(ctx, concrete_variant.ty, arm_inputs)
@@ -86,7 +94,11 @@ impl LoweredExprExternEnum {
                         let res = generators::EnumConstruct { input, variant: concrete_variant }
                             .add(ctx, subscope);
 
-                        // Rebind the ref variables.
+                        // Bind implicits.
+                        for (ty, output_var) in zip_eq(&self.implicits, implicit_outputs) {
+                            subscope.put_implicit(*ty, output_var);
+                        }
+                        // Bind the ref variables.
                         for (semantic_var_id, output_var) in zip_eq(&self.ref_args, ref_outputs) {
                             subscope.put_semantic_variable(*semantic_var_id, output_var);
                         }
@@ -96,27 +108,22 @@ impl LoweredExprExternEnum {
                 });
                 block_opts.collect::<Option<Vec<_>>>().ok_or(LoweringFlowError::Failed)
             });
+
         let arms = blocks
             .unwrap()
             .into_iter()
             .map(|sealed| finalized_merger.finalize_block(ctx, sealed).block)
             .collect();
         let call_block_result = generators::MatchExtern {
-            function: self.function,
+            function: function_id,
             inputs: self.inputs,
             arms,
-            end_info: finalized_merger.end_info,
+            end_info: finalized_merger.end_info.clone(),
         }
         .add(ctx, scope);
-        if let CallBlockResult::Callsite { pushes, maybe_output: Some(output) } = call_block_result
-        {
-            for (semantic_var_id, output_var) in zip_eq(&self.ref_args, pushes) {
-                scope.put_semantic_variable(*semantic_var_id, output_var);
-            }
-            output
-        } else {
-            todo!("Handle empty enums.");
-        }
+        lowered_expr_from_block_result(scope, call_block_result, finalized_merger)
+            .expect("Handle empty enums.")
+            .var(ctx, scope)
     }
 }
 

@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use itertools::chain;
 use utils::ordered_hash_map::OrderedHashMap;
@@ -18,7 +18,8 @@ pub mod generators;
 // create an instance of BlockScope.
 #[derive(Default)]
 pub struct BlockScope {
-    /// Variables given as inputs. Relevant for function blocks / match arm blocks, etc...
+    /// Variables given as inputs to the block, including implicits. Relevant for function blocks /
+    /// match arm blocks, etc...
     inputs: Vec<VariableId>,
     /// A [BlockFlowMerger] instance that helps pull variables from higher scopes and records these
     /// pulls.
@@ -27,6 +28,10 @@ pub struct BlockScope {
     living_variables: LivingVariables,
     /// A store for semantic variables, owning their OwnedVariable instances.
     semantic_variables: SemanticVariablesMap,
+    /// A store for implicit variables, owning their OwnedVariable instances.
+    implicits: HashMap<semantic::TypeId, LivingVar>,
+    // The implicits that are used/changed in this block.
+    changed_implicits: HashSet<semantic::TypeId>,
     /// Current sequence of lowered statements emitted.
     statements: Vec<Statement>,
 }
@@ -36,7 +41,7 @@ pub enum BlockScopeEnd {
     /// Return to callsite with an optional expression (e.g. a block that might end with a tail
     /// expression).
     Callsite(Option<LivingVar>),
-    /// Return from the function.
+    /// Return from the function. The value is a vector of the vars to be returned (not dropped).
     Return(Vec<LivingVar>),
     /// The end of the block is unreachable.
     Unreachable,
@@ -92,6 +97,21 @@ impl BlockScope {
         Some(())
     }
 
+    /// Puts an implicit variable and its owned lowered variable into the current scope.
+    pub fn put_implicit(&mut self, ty: semantic::TypeId, var: LivingVar) {
+        self.implicits.insert(ty, var);
+    }
+
+    /// Marks the implicit as changed and moves it.
+    pub fn take_implicit(&mut self, ty: semantic::TypeId) -> Option<LivingVar> {
+        self.mark_implicit_changed(ty);
+        self.implicits.remove(&ty)
+    }
+
+    pub fn mark_implicit_changed(&mut self, ty: semantic::TypeId) {
+        self.changed_implicits.insert(ty);
+    }
+
     /// Seals a BlockScope from adding statements or variables. A sealed block should be finalized
     /// with final pulls to get a [Block]. See [BlockSealed].
     fn seal(mut self, end: BlockScopeEnd) -> (BlockSealed, Box<BlockFlowMerger>) {
@@ -112,6 +132,8 @@ impl BlockScope {
             inputs: self.inputs,
             living_variables: self.living_variables,
             semantic_variables: self.semantic_variables,
+            implicits: self.implicits,
+            changed_implicits: self.changed_implicits,
             statements: self.statements,
             end,
         };
@@ -123,22 +145,44 @@ impl BlockScope {
         all_living.extend(self.living_variables.get_all());
         self.merger.append_all_living_stack(all_living);
     }
+
+    /// Pull the living implicit variables into the given merger.
+    fn pull_implicits(&mut self, merger: &mut BlockFlowMerger) {
+        for (ty, var) in self.implicits.drain() {
+            let usable_var = self.living_variables.take_var(var);
+            let living_var = merger.splitter.add(usable_var);
+            merger.implicit_pulls.insert(ty, living_var);
+        }
+    }
 }
 
 /// A block that was sealed after adding all the statements, just before determining the final
 /// inputs.
 pub struct BlockSealed {
+    /// The inputs to the block, including implicits.
     inputs: Vec<VariableId>,
+    /// The living variables at the end of the block.
     living_variables: LivingVariables,
+    /// The semantic variables and their state in the end of the block.
     semantic_variables: SemanticVariablesMap,
+    /// All the implicits available in this block.
+    implicits: HashMap<semantic::TypeId, LivingVar>,
+    /// The implicits that were used/changed by this block.
+    changed_implicits: HashSet<semantic::TypeId>,
+    /// The lowered statements of this block.
     statements: Vec<Statement>,
+    /// The end type of this block.
     end: BlockSealedEnd,
 }
 
 /// Represents how a block ends. See [BlockScopeEnd].
 pub enum BlockSealedEnd {
+    /// Return to callsite with an optional expression (e.g. a block that might end with a tail
+    /// expression).
     Callsite(Option<UsableVariable>),
+    /// Return from the function.
     Return { returns: Vec<UsableVariable>, drops: Vec<VariableId> },
+    /// The end of the block is unreachable.
     Unreachable,
 }
 
@@ -150,6 +194,8 @@ pub struct BlockFinalizeParams<'a> {
     pushes: &'a [semantic::VarId],
     // Variables that are returned from current scope to the calling scope by not changing them.
     bring_back: &'a [semantic::VarId],
+    // Implicits that are returned from current scope to the calling scope via block outputs.
+    implicit_pushes: &'a [semantic::TypeId],
 }
 
 impl BlockSealed {
@@ -166,8 +212,15 @@ impl BlockSealed {
         ctx: &mut LoweringContext<'_>,
         params: BlockFinalizeParams<'_>,
     ) -> BlockFinalized {
-        let BlockSealed { inputs, mut living_variables, mut semantic_variables, statements, end } =
-            self;
+        let BlockSealed {
+            inputs,
+            mut living_variables,
+            mut implicits,
+            mut semantic_variables,
+            statements,
+            end,
+            ..
+        } = self;
         // Pull extra semantic variables if necessary.
         for (semantic_var_id, var) in params.pulls.into_iter() {
             if !semantic_variables.contains(semantic_var_id) {
@@ -178,14 +231,30 @@ impl BlockSealed {
         let (end, end_info, drops) = match end {
             BlockSealedEnd::Callsite(maybe_output) => {
                 for semantic_var_id in params.bring_back {
-                    // Take the variable from this scope if it exists, so we can bring it will stay
-                    // alive for the caller scope.
+                    // Take the variable from this scope if it exists, so it will stay alive for the
+                    // caller scope.
                     semantic_variables
                         .take(*semantic_var_id)
                         .and_then(|entry| entry.take_var())
                         .map(|var| living_variables.take_var(var));
                 }
-                let pushes: Vec<_> = params
+                let implicit_pushes: Vec<VariableId> = params
+                    .implicit_pushes
+                    .iter()
+                    .map(|ty| {
+                        // This should not panic as implicits are always alive (may only change, but
+                        // not drop).
+                        let var = implicits
+                            .remove(ty)
+                            .expect("Implicit removed from main map before finalize()");
+                        living_variables.take_var(var).var_id()
+                    })
+                    .collect();
+                for (_, var) in implicits {
+                    living_variables.take_var(var);
+                }
+
+                let pushes: Vec<VariableId> = params
                     .pushes
                     .iter()
                     .map(|semantic_var_id| {
@@ -201,7 +270,8 @@ impl BlockSealed {
                 let maybe_output = maybe_output.as_ref().map(UsableVariable::var_id);
                 let maybe_output_ty = maybe_output.map(|var_id| ctx.variables[var_id].ty);
                 let push_tys = pushes.iter().map(|var_id| ctx.variables[*var_id].ty).collect();
-                let outputs = chain!(pushes, maybe_output.into_iter()).collect();
+                let outputs = chain!(implicit_pushes, pushes, maybe_output.into_iter()).collect();
+
                 let drops = living_variables.get_all();
                 (
                     BlockEnd::Callsite(outputs),
@@ -229,6 +299,7 @@ pub struct BlockFinalized {
 }
 
 /// Describes the structure of the output variables of a finalized block.
+#[derive(Clone)]
 pub enum BlockEndInfo {
     /// The block returns to callsite.
     Callsite {
@@ -264,11 +335,17 @@ pub struct BlockFlowMerger {
     splitter: Splitter,
     /// Variables that were pulled from a higher scope, "used", are kept here.
     pulls: OrderedHashMap<semantic::VarId, LivingVar>,
+    // Implicit parameters that were pulled (moved) from the higher scope. This are always all the
+    // implicits that exist in the higher scope.
+    implicit_pulls: OrderedHashMap<semantic::TypeId, LivingVar>,
     /// All variables that were pulled, and then rebound to something else.
     changed_semantic_vars: HashSet<semantic::VarId>,
     /// All variables that were pulled and consumed (moved) in at least one branch, and thus cannot
     /// be available in the parent scope anymore (i.e. cannot be pushed).
     moved_semantic_vars: HashSet<semantic::VarId>,
+    /// All implicits that were changed in the block. Note, in the case of an optimized match, this
+    /// doesn't include the implicits that were consumed by the extern function.
+    changed_implicits: HashSet<semantic::TypeId>,
     maybe_output_ty: Option<semantic::TypeId>,
     reachable: bool,
     // TODO(spapini): Optimize pushes by using shouldnt_push.
@@ -284,10 +361,14 @@ impl BlockFlowMerger {
         extra_outputs: &[semantic::VarId],
         f: F,
     ) -> (T, BlockMergerFinalized) {
-        borrow_as_box(parent_scope, |boxed_parent_scope| {
-            let mut merger = Self { parent_scope: Some(boxed_parent_scope), ..Self::default() };
+        borrow_as_box(parent_scope, |mut boxed_parent_scope| {
+            let mut merger = Self::default();
+            boxed_parent_scope.pull_implicits(&mut merger);
+            merger.parent_scope = Some(boxed_parent_scope);
+
             let res = f(ctx, &mut merger);
             let (finalized, returned_scope) = merger.finalize(ctx, extra_outputs);
+
             ((res, finalized), returned_scope.unwrap())
         })
     }
@@ -305,13 +386,13 @@ impl BlockFlowMerger {
         let mut merger = Self::default();
         let res = f(ctx, &mut merger);
         let (finalized, _returned_scope) = merger.finalize(ctx, extra_outputs);
-
         (res, finalized)
     }
 
     /// Runs a closure with a new subscope [BlockScope] instance. The closure should return
-    /// a [BlockScopeEnd] for this block if successfull. This block's flow will be merged with the
+    /// a [BlockScopeEnd] for this block if successful. This block's flow will be merged with the
     /// rest of the blocks created with this function.
+    /// `input_tys` are the types of all the inputs to the block, including implicits.
     /// Returns the a [BlockSealed] for that block.
     pub fn run_in_subscope<
         F: FnOnce(&mut LoweringContext<'_>, &mut BlockScope, Vec<LivingVar>) -> Option<BlockScopeEnd>,
@@ -319,10 +400,25 @@ impl BlockFlowMerger {
         &mut self,
         ctx: &mut LoweringContext<'_>,
         input_tys: Vec<semantic::TypeId>,
+        // TODO(yuval): rename f.
         f: F,
     ) -> Option<BlockSealed> {
         let block_sealed = borrow_as_box(self, |merger| {
-            let mut block_scope = BlockScope { merger, ..BlockScope::default() };
+            // Add all implicits to scope.
+            let mut living_variables = LivingVariables::default();
+            let implicit_vars: Vec<_> = merger
+                .implicit_pulls
+                .iter()
+                .map(|(ty, var)| {
+                    let usable_var = merger.splitter.split(var);
+                    let living_var = living_variables.introduce_var(usable_var);
+                    (*ty, living_var)
+                })
+                .collect();
+            let mut block_scope = BlockScope { merger, living_variables, ..BlockScope::default() };
+            for (ty, living_var) in implicit_vars.into_iter() {
+                block_scope.put_implicit(ty, living_var);
+            }
 
             // Set inputs.
             let input_vars: Vec<_> = input_tys
@@ -378,6 +474,7 @@ impl BlockFlowMerger {
         let maybe_output = try_extract_matches!(&block_sealed.end, BlockSealedEnd::Callsite)?;
         self.reachable = true;
         self.maybe_output_ty = maybe_output.as_ref().map(|var| ctx.variables[var.var_id()].ty);
+
         let mut current_moved = HashSet::new();
         let mut current_changed = HashSet::new();
         for (semantic_var_id, entry) in block_sealed.semantic_variables.var_mapping.iter() {
@@ -403,11 +500,14 @@ impl BlockFlowMerger {
             self.moved_semantic_vars.union(&current_moved).copied().collect();
         self.changed_semantic_vars =
             self.changed_semantic_vars.union(&current_changed).copied().collect();
+        self.changed_implicits =
+            self.changed_implicits.union(&block_sealed.changed_implicits).copied().collect();
         Some(())
     }
 
     /// Finalizes the merger, deciding on the correct pulls and pushes for all the blocks
     /// encountered.
+    /// `extra_outputs` - Semantic variables to push as ref parameters
     fn finalize(
         mut self,
         ctx: &LoweringContext<'_>,
@@ -436,7 +536,35 @@ impl BlockFlowMerger {
         }
         // TODO(spapini): extra_outputs might not be alive. Currently, this panics.
         pushes.extend(extra_outputs.iter().copied());
-        let push_tys = pushes.iter().map(|var_id| ctx.semantic_defs[*var_id].ty()).collect();
+
+        let mut unchanged_implicits = HashMap::new();
+        if self.parent_scope.is_some() {
+            // The unchanged implicits are all the ones existing in the parent scope minus the
+            // changed ones. Note that in an optimized match, the ones existing in
+            // the parent_scope don't include the ones that are used by the extern
+            // function. These are added later to implicits_to_push, as they do need to
+            // be pushed back out of the match.
+            let parent_scope = self.parent_scope.as_mut().unwrap();
+            for (ty, var) in self.implicit_pulls.into_iter() {
+                if !self.changed_implicits.contains(&ty) {
+                    parent_scope.living_variables.introduce_var(self.splitter.split(&var));
+                    unchanged_implicits.insert(ty, var);
+                }
+            }
+        }
+
+        let mut implicits_to_push: Vec<semantic::TypeId> = Vec::new();
+        for ty in ctx.implicits {
+            if !unchanged_implicits.contains_key(ty) {
+                implicits_to_push.push(*ty);
+            }
+        }
+
+        let push_tys = chain!(
+            implicits_to_push.clone(),
+            pushes.iter().map(|var_id| ctx.semantic_defs[*var_id].ty()),
+        )
+        .collect();
         let end_info = if self.reachable {
             BlockEndInfo::Callsite { maybe_output_ty: self.maybe_output_ty, push_tys }
         } else {
@@ -450,6 +578,10 @@ impl BlockFlowMerger {
                 pulls,
                 splitter: self.splitter,
                 outer_var_info: OuterVarInfo { pushes, bring_back },
+                outer_implicit_info: OuterImplicitInfo {
+                    pushes: implicits_to_push,
+                    unchanged: unchanged_implicits,
+                },
             },
             self.parent_scope,
         )
@@ -457,12 +589,22 @@ impl BlockFlowMerger {
 }
 
 /// Information about the effect on the variables of the outer scope.
+#[derive(Debug)]
 pub struct OuterVarInfo {
     /// Variables that are returned from current scope to the calling scope via block outputs.
     pub pushes: Vec<semantic::VarId>,
     /// Variables that are returned from current scope to the calling scope by not changing them.
     pub bring_back: OrderedHashMap<semantic::VarId, LivingVar>,
 }
+/// Information about the effect on the implicits of the outer scope.
+#[derive(Debug)]
+pub struct OuterImplicitInfo {
+    /// Implicits that are returned from current scope to the calling scope via block outputs.
+    pub pushes: Vec<semantic::TypeId>,
+    /// Implicits that are returned from current scope to the calling scope by not changing them.
+    pub unchanged: HashMap<semantic::TypeId, LivingVar>,
+}
+
 /// Used to finalize blocks. Generated after calling [`BlockFlowMerger::finalize()`].
 pub struct BlockMergerFinalized {
     /// End information for the block.
@@ -473,6 +615,8 @@ pub struct BlockMergerFinalized {
     pulls: OrderedHashMap<semantic::VarId, LivingVar>,
     /// Information about the effect on the variables of the outer scope.
     pub outer_var_info: OuterVarInfo,
+    /// Information about the effect on the implicits of the outer scope.
+    pub outer_implicit_info: OuterImplicitInfo,
 }
 impl BlockMergerFinalized {
     /// Finalizes a sealed block.
@@ -487,6 +631,7 @@ impl BlockMergerFinalized {
             pulls,
             pushes: &self.outer_var_info.pushes,
             bring_back: &self.outer_var_info.bring_back.keys().copied().collect::<Vec<_>>(),
+            implicit_pushes: &self.outer_implicit_info.pushes,
         };
         block_sealed.finalize(ctx, params)
     }

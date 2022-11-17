@@ -6,6 +6,7 @@ use diagnostics::Diagnostics;
 use lowering::db::LoweringGroup;
 use semantic::Mutability;
 use sierra::extensions::{ConcreteType, GenericTypeEx};
+use sierra::ids::ConcreteTypeId;
 
 use crate::program_generator::{self};
 use crate::specialization_context::SierraSignatureSpecializationContext;
@@ -104,13 +105,26 @@ fn get_function_signature(
     db: &dyn SierraGenGroup,
     function_id: sierra::ids::FunctionId,
 ) -> Option<Arc<sierra::program::FunctionSignature>> {
+    // TODO(yuval): add another version of this function that directly received semantic FunctionId.
+    // Call it from function_generators::get_function_code. Take ret_types from the result instead
+    // of only the explicit ret_type. Also use it for params instead of the current logic. Then use
+    // it in the end of program_generator::get_sierra_program instead of calling this function from
+    // there.
     let semantic_function_id = db.lookup_intern_sierra_function(function_id);
     let signature = db.concrete_function_signature(semantic_function_id)?;
-    let mut param_types = Vec::new();
-    let mut ret_types = Vec::new();
-    for param in signature.all_params() {
+
+    let implicits = db
+        .function_all_implicits(semantic_function_id)?
+        .iter()
+        .map(|ty| db.get_concrete_type_id(*ty))
+        .collect::<Option<Vec<ConcreteTypeId>>>()?;
+
+    let mut ret_types = implicits.clone();
+    let mut all_params = implicits;
+
+    for param in signature.params {
         let concrete_type_id = db.get_concrete_type_id(param.ty)?;
-        param_types.push(concrete_type_id.clone());
+        all_params.push(concrete_type_id.clone());
         if param.mutability == Mutability::Reference {
             ret_types.push(concrete_type_id);
         }
@@ -119,7 +133,7 @@ fn get_function_signature(
     // TODO(ilya): Handle tuple and struct types.
     ret_types.push(db.get_concrete_type_id(signature.return_type)?);
 
-    Some(Arc::new(sierra::program::FunctionSignature { param_types, ret_types }))
+    Some(Arc::new(sierra::program::FunctionSignature { param_types: all_params, ret_types }))
 }
 
 fn get_type_info(

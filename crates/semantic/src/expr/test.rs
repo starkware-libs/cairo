@@ -24,7 +24,6 @@ semantic_test!(
         "src/expr/test_data/error_propagate",
         "src/expr/test_data/generics",
         "src/expr/test_data/if",
-        "src/expr/test_data/implicits",
         "src/expr/test_data/let_statement",
         "src/expr/test_data/match",
         "src/expr/test_data/operators",
@@ -521,7 +520,7 @@ fn test_expr_call() {
     let expr = db.expr_semantic(test_expr.function_id, test_expr.expr_id);
 
     // Check expr.
-    let semantic::ExprFunctionCall { function: _, ref_args, args, ty, stable_ptr: _ } =
+    let semantic::ExprFunctionCall { ref_args, args, ty, .. } =
         extract_matches!(expr, crate::Expr::FunctionCall, "Unexpected expr.");
     assert!(ref_args.is_empty());
     assert!(args.is_empty());

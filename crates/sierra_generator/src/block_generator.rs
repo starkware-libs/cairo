@@ -159,6 +159,7 @@ fn generate_statement_call_code(
             // Create [pre_sierra::PushValue] instances for the arguments.
             let mut args_on_stack: Vec<sierra::ids::VarId> = vec![];
             let mut push_values_vec: Vec<pre_sierra::PushValue> = vec![];
+
             for (var_id, var) in zip_eq(&statement.inputs, inputs) {
                 // Allocate a temporary Sierra variable that represents the argument placed on the
                 // stack.

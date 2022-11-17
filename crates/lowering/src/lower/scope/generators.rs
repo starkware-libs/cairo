@@ -43,14 +43,8 @@ pub struct Call {
     /// Types for the returns of the function. An output variable will be introduced for each.
     pub ret_tys: Vec<semantic::TypeId>,
 }
-/// Result of adding a Call statement.
-pub struct CallResult {
-    /// Output variables for function return value.
-    pub returns: Vec<LivingVar>,
-    /// Output variables for function `ref` parameters.
-    pub ref_outputs: Vec<LivingVar>,
-}
 impl Call {
+    /// Adds a call statement to the scope.
     pub fn add(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockScope) -> CallResult {
         let inputs = self
             .inputs
@@ -62,19 +56,39 @@ impl Call {
             .into_iter()
             .map(|ty| scope.living_variables.introduce_new_var(ctx, ty))
             .collect();
+        let implicit_outputs = ctx
+            .db
+            .function_all_implicits(self.function)
+            .unwrap()
+            .into_iter()
+            .map(|ty| scope.living_variables.introduce_new_var(ctx, ty))
+            .collect();
         let ref_outputs = self
             .ref_tys
             .into_iter()
             .map(|ty| scope.living_variables.introduce_new_var(ctx, ty))
             .collect();
-        let outputs = chain!(&ref_outputs, &returns).map(|var: &LivingVar| var.var_id()).collect();
+        let outputs = chain!(&implicit_outputs, &ref_outputs, &returns)
+            .map(|var: &LivingVar| var.var_id())
+            .collect();
+
         scope.statements.push(Statement::Call(StatementCall {
             function: self.function,
             inputs,
             outputs,
         }));
-        CallResult { returns, ref_outputs }
+
+        CallResult { returns, ref_outputs, implicit_outputs }
     }
+}
+/// Result of adding a Call statement.
+pub struct CallResult {
+    /// Output variables for function's return value.
+    pub returns: Vec<LivingVar>,
+    /// Output variables for function's `ref` parameters.
+    pub ref_outputs: Vec<LivingVar>,
+    /// Output variables for function's implicit parameters.
+    pub implicit_outputs: Vec<LivingVar>,
 }
 
 /// Generator for [StatementCallBlock].
@@ -83,6 +97,7 @@ pub struct CallBlock {
     pub end_info: BlockEndInfo,
 }
 /// Result of adding a CallBlock statement.
+#[derive(Debug)]
 pub enum CallBlockResult {
     /// Block returns to call site with output variables.
     Callsite {

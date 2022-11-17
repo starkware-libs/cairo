@@ -88,10 +88,10 @@ pub fn lower_expr_if_bool(
             (corelib::true_variant(semantic_db), main_finalized.block),
             (corelib::false_variant(semantic_db), else_finalized.block),
         ],
-        end_info: finalized_merger.end_info,
+        end_info: finalized_merger.end_info.clone(),
     };
     let block_result = match_generator.add(ctx, scope);
-    lowered_expr_from_block_result(scope, block_result, finalized_merger.outer_var_info)
+    lowered_expr_from_block_result(scope, block_result, finalized_merger)
 }
 
 /// Lowers an expression of type [semantic::ExprIf].
@@ -151,10 +151,10 @@ pub fn lower_expr_if_eq_zero(
         function: corelib::core_jump_nz_func(semantic_db),
         inputs: vec![condition_var],
         arms: vec![main_finalized.block, else_finalized.block],
-        end_info: finalized_merger.end_info,
+        end_info: finalized_merger.end_info.clone(),
     };
     let block_result = match_generator.add(ctx, scope);
-    lowered_expr_from_block_result(scope, block_result, finalized_merger.outer_var_info)
+    lowered_expr_from_block_result(scope, block_result, finalized_merger)
 }
 
 /// Lowers an optional else block. If the else block is missing it is replaced with a block

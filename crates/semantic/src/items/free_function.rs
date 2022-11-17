@@ -26,7 +26,8 @@ use crate::{semantic, Expr, ExprId, FunctionId, SemanticDiagnostic, TypeId};
 #[path = "free_function_test.rs"]
 mod test;
 
-// Declaration.
+// === Declaration ===
+
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct FreeFunctionDeclarationData {
@@ -37,7 +38,8 @@ pub struct FreeFunctionDeclarationData {
     attributes: Vec<Attribute>,
 }
 
-// Selectors.
+// --- Selectors ---
+
 /// Query implementation of [crate::db::SemanticGroup::free_function_declaration_diagnostics].
 pub fn free_function_declaration_diagnostics(
     db: &dyn SemanticGroup,
@@ -47,6 +49,7 @@ pub fn free_function_declaration_diagnostics(
         .map(|data| data.diagnostics)
         .unwrap_or_default()
 }
+
 /// Query implementation of [crate::db::SemanticGroup::free_function_declaration_signature].
 pub fn free_function_declaration_signature(
     db: &dyn SemanticGroup,
@@ -86,7 +89,8 @@ pub fn free_function_declaration_generic_params(
     Some(db.priv_free_function_declaration_data(free_function_id)?.generic_params)
 }
 
-// Computation.
+// --- Computation ---
+
 /// Query implementation of [crate::db::SemanticGroup::priv_free_function_declaration_data].
 pub fn priv_free_function_declaration_data(
     db: &dyn SemanticGroup,
@@ -136,7 +140,8 @@ pub fn priv_free_function_declaration_data(
     })
 }
 
-// Definition.
+// === Definition ===
+
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct FreeFunctionDefinitionData {
@@ -157,7 +162,8 @@ pub struct FreeFunctionDefinition {
     pub direct_callees: Vec<FunctionId>,
 }
 
-// Selectors.
+// --- Selectors ---
+
 /// Query implementation of [crate::db::SemanticGroup::free_function_definition_diagnostics].
 pub fn free_function_definition_diagnostics(
     db: &dyn SemanticGroup,
@@ -167,6 +173,7 @@ pub fn free_function_definition_diagnostics(
         .map(|data| data.diagnostics)
         .unwrap_or_default()
 }
+
 /// Query implementation of [crate::db::SemanticGroup::free_function_definition_body].
 pub fn free_function_definition_body(
     db: &dyn SemanticGroup,
@@ -210,7 +217,8 @@ pub fn free_function_definition(
     Some(db.priv_free_function_definition_data(free_function_id)?.definition)
 }
 
-// Computation.
+// ---Computation ---
+
 /// Query implementation of [crate::db::SemanticGroup::priv_free_function_definition_data].
 pub fn priv_free_function_definition_data(
     db: &dyn SemanticGroup,
