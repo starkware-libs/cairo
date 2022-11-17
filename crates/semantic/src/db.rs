@@ -5,7 +5,8 @@ use defs::db::DefsGroup;
 use defs::diagnostic_utils::StableLocation;
 use defs::ids::{
     EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericFunctionId, GenericParamId,
-    GenericTypeId, ImplId, ModuleId, ModuleItemId, StructId, TraitId, UseId, VariantId,
+    GenericTypeId, ImplFunctionId, ImplId, ModuleId, ModuleItemId, StructId, TraitId, UseId,
+    VariantId,
 };
 use diagnostics::{Diagnostics, DiagnosticsBuilder};
 use filesystem::db::{AsFilesGroupMut, FilesGroup};
@@ -155,6 +156,9 @@ pub trait SemanticGroup:
         module_id: ModuleId,
         concrete_trait_id: ConcreteTraitId,
     ) -> Option<Vec<ConcreteImplId>>;
+    /// Returns the functions in the impl.
+    #[salsa::invoke(items::imp::impl_functions)]
+    fn impl_functions(&self, impl_id: ImplId) -> Option<Vec<ImplFunctionId>>;
 
     // Free function.
     // ==============

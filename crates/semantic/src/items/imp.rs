@@ -1,11 +1,16 @@
+use std::vec;
+
 use db_utils::define_short_id;
-use defs::ids::{GenericParamId, ImplId, LanguageElementId, ModuleId};
+use defs::ids::{
+    GenericParamId, ImplFunctionId, ImplFunctionLongId, ImplId, LanguageElementId, ModuleId,
+};
 use diagnostics::Diagnostics;
 use diagnostics_proc_macros::DebugWithDb;
-use syntax::node::ast::{Item, MaybeImplBody};
+use syntax::node::ast::{self, Item, MaybeImplBody};
 use syntax::node::db::SyntaxGroup;
 use syntax::node::ids::SyntaxStablePtrId;
 use syntax::node::TypedSyntaxNode;
+use utils::ordered_hash_map::OrderedHashMap;
 use utils::{extract_matches, try_extract_matches, OptionHelper};
 
 use super::attribute::{ast_attributes_to_semantic, Attribute};
@@ -20,6 +25,10 @@ use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use crate::{
     ConcreteTraitId, ConcreteTraitLongId, GenericArgumentId, SemanticDiagnostic, TypeId, TypeLongId,
 };
+
+#[cfg(test)]
+#[path = "imp_test.rs"]
+mod test;
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
@@ -52,17 +61,6 @@ pub fn impl_generic_params(db: &dyn SemanticGroup, impl_id: ImplId) -> Option<Ve
     Some(db.priv_impl_declaration_data(impl_id)?.generic_params)
 }
 
-fn report_invalid_in_impl<Terminal: syntax::node::Terminal>(
-    syntax_db: &dyn SyntaxGroup,
-    diagnostics: &mut SemanticDiagnostics,
-    kw_terminal: Terminal,
-) {
-    diagnostics.report_by_ptr(
-        kw_terminal.as_syntax_node().stable_ptr(),
-        InvalidImplItem { item_kw: kw_terminal.text(syntax_db) },
-    );
-}
-
 /// Query implementation of [crate::db::SemanticGroup::priv_impl_declaration_data].
 pub fn priv_impl_declaration_data(
     db: &dyn SemanticGroup,
@@ -84,6 +82,80 @@ pub fn priv_impl_declaration_data(
         &impl_ast.generic_params(syntax_db),
     );
     let mut resolver = Resolver::new(db, module_id, &generic_params);
+
+    let trait_path_syntax = impl_ast.trait_path(syntax_db);
+    let concrete_trait = resolver
+        .resolve_concrete_path(&mut diagnostics, &trait_path_syntax)
+        .and_then(|option_concrete_path| {
+            try_extract_matches!(option_concrete_path, ResolvedConcreteItem::Trait)
+                .on_none(|| diagnostics.report(&trait_path_syntax, NotATrait))
+        });
+
+    let attributes = ast_attributes_to_semantic(syntax_db, impl_ast.attributes(syntax_db));
+    Some(ImplDeclarationData {
+        diagnostics: diagnostics.build(),
+        generic_params,
+        concrete_trait,
+        attributes,
+    })
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
+#[debug_db(dyn SemanticGroup + 'static)]
+pub struct ImplDefinitionData {
+    diagnostics: Diagnostics<SemanticDiagnostic>,
+    function_asts: OrderedHashMap<ImplFunctionId, ast::ItemFreeFunction>,
+}
+
+/// Query implementation of [crate::db::SemanticGroup::impl_semantic_definition_diagnostics].
+pub fn impl_semantic_definition_diagnostics(
+    db: &dyn SemanticGroup,
+    impl_id: ImplId,
+) -> Diagnostics<SemanticDiagnostic> {
+    db.priv_impl_definition_data(impl_id).map(|data| data.diagnostics).unwrap_or_default()
+}
+
+/// An helper function to report diagnostics in priv_impl_definition_data.
+fn report_invalid_in_impl<Terminal: syntax::node::Terminal>(
+    syntax_db: &dyn SyntaxGroup,
+    diagnostics: &mut SemanticDiagnostics,
+    kw_terminal: Terminal,
+) {
+    diagnostics.report_by_ptr(
+        kw_terminal.as_syntax_node().stable_ptr(),
+        InvalidImplItem { item_kw: kw_terminal.text(syntax_db) },
+    );
+}
+
+/// Query implementation of [crate::db::SemanticGroup::priv_impl_definition_data].
+pub fn priv_impl_definition_data(
+    db: &dyn SemanticGroup,
+    impl_id: ImplId,
+) -> Option<ImplDefinitionData> {
+    let module_id = impl_id.module(db.upcast());
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
+
+    let declaration_data = db.priv_impl_declaration_data(impl_id)?;
+    let concrete_trait = declaration_data.concrete_trait?;
+
+    let module_data = db.module_data(module_id)?;
+    let impl_ast = module_data.impls.get(&impl_id)?;
+    let syntax_db = db.upcast();
+
+    let lookup_context = ImplLookupContext {
+        module_id,
+        extra_modules: vec![],
+        generic_params: declaration_data.generic_params,
+    };
+    check_special_impls(
+        db,
+        &mut diagnostics,
+        lookup_context,
+        concrete_trait,
+        impl_ast.stable_ptr().untyped(),
+    );
+
+    let mut function_asts = OrderedHashMap::default();
 
     if let MaybeImplBody::Some(body) = impl_ast.body(syntax_db) {
         for item in body.items(syntax_db).elements(syntax_db) {
@@ -117,73 +189,23 @@ pub fn priv_impl_declaration_data(
                 Item::Enum(enm) => {
                     report_invalid_in_impl(syntax_db, &mut diagnostics, enm.enum_kw(syntax_db))
                 }
-                // TODO(ilya): Allow free functions inside impl.
+
                 Item::FreeFunction(func) => {
-                    report_invalid_in_impl(syntax_db, &mut diagnostics, func.function_kw(syntax_db))
+                    function_asts.insert(
+                        db.intern_impl_function(ImplFunctionLongId(module_id, func.stable_ptr())),
+                        func,
+                    );
                 }
             }
         }
     }
 
-    let trait_path_syntax = impl_ast.trait_path(syntax_db);
-    let concrete_trait = resolver
-        .resolve_concrete_path(&mut diagnostics, &trait_path_syntax)
-        .and_then(|option_concrete_path| {
-            try_extract_matches!(option_concrete_path, ResolvedConcreteItem::Trait)
-                .on_none(|| diagnostics.report(&trait_path_syntax, NotATrait))
-        });
-
-    let attributes = ast_attributes_to_semantic(syntax_db, impl_ast.attributes(syntax_db));
-    Some(ImplDeclarationData {
-        diagnostics: diagnostics.build(),
-        generic_params,
-        concrete_trait,
-        attributes,
-    })
+    Some(ImplDefinitionData { diagnostics: diagnostics.build(), function_asts })
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
-#[debug_db(dyn SemanticGroup + 'static)]
-pub struct ImplDefinitionData {
-    diagnostics: Diagnostics<SemanticDiagnostic>,
-}
-
-/// Query implementation of [crate::db::SemanticGroup::impl_semantic_definition_diagnostics].
-pub fn impl_semantic_definition_diagnostics(
-    db: &dyn SemanticGroup,
-    impl_id: ImplId,
-) -> Diagnostics<SemanticDiagnostic> {
-    db.priv_impl_definition_data(impl_id).map(|data| data.diagnostics).unwrap_or_default()
-}
-
-/// Query implementation of [crate::db::SemanticGroup::priv_impl_definition_data].
-pub fn priv_impl_definition_data(
-    db: &dyn SemanticGroup,
-    impl_id: ImplId,
-) -> Option<ImplDefinitionData> {
-    let module_id = impl_id.module(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_id);
-
-    let declaration_data = db.priv_impl_declaration_data(impl_id)?;
-    let concrete_trait = declaration_data.concrete_trait?;
-
-    let module_data = db.module_data(module_id)?;
-    let impl_ast = module_data.impls.get(&impl_id)?;
-
-    let lookup_context = ImplLookupContext {
-        module_id,
-        extra_modules: vec![],
-        generic_params: declaration_data.generic_params,
-    };
-    check_special_impls(
-        db,
-        &mut diagnostics,
-        lookup_context,
-        concrete_trait,
-        impl_ast.stable_ptr().untyped(),
-    );
-
-    Some(ImplDefinitionData { diagnostics: diagnostics.build() })
+/// Query implementation of [crate::db::SemanticGroup::impl_functions].
+pub fn impl_functions(db: &dyn SemanticGroup, impl_id: ImplId) -> Option<Vec<ImplFunctionId>> {
+    Some(db.priv_impl_definition_data(impl_id)?.function_asts.keys().copied().collect())
 }
 
 /// Handle special cases such as Copy and Drop checking.
