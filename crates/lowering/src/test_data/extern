@@ -80,7 +80,7 @@ End:
 blk1:
 Inputs: v5: core::felt, v6: core::felt
 Statements:
-  (v7: (core::felt)) <- tuple_construct(v6)
+  (v7: (core::felt)) <- struct_construct(v6)
   (v8: test_crate::MyEnum) <- MyEnum::B(v7)
 Drops: v7, v6
 End:
@@ -89,7 +89,7 @@ End:
 blk2:
 Inputs: v9: core::felt, v10: core::felt, v11: core::felt
 Statements:
-  (v12: (core::felt, core::felt)) <- tuple_construct(v10, v11)
+  (v12: (core::felt, core::felt)) <- struct_construct(v10, v11)
   (v13: test_crate::MyEnum) <- MyEnum::C(v12)
 Drops: v12, v10, v11
 End:

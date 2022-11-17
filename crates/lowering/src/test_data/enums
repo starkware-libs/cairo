@@ -35,7 +35,7 @@ End:
 blk1:
 Inputs: v0: core::felt
 Statements:
-  (v1: ()) <- tuple_construct()
+  (v1: ()) <- struct_construct()
   (v2: core::bool) <- bool::True(v1)
   (v4: core::felt) <- blk0()
   (v5: test_crate::MyEnum) <- MyEnum::B(v4)
