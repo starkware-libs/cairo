@@ -17,6 +17,9 @@ func foo(,var1: int,, mut ref var2: felt,) -> int {
     } else {
         2
     };
+    let block_combination = {5} + match x { E::V1(_) => 4, E::V2(_) => 2 }
+        - if cond { 32 } else { 1 };
+    let w = calc_with_error(x, y?, z)?;
     let x = true; // bla1
                   // bla2
     z = 5;

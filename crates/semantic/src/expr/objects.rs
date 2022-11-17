@@ -94,6 +94,7 @@ pub enum Expr {
     MemberAccess(ExprMemberAccess),
     StructCtor(ExprStructCtor),
     EnumVariantCtor(ExprEnumVariantCtor),
+    PropagateError(ExprPropagateError),
     Missing(ExprMissing),
 }
 impl Expr {
@@ -110,6 +111,7 @@ impl Expr {
             Expr::MemberAccess(expr) => expr.ty,
             Expr::StructCtor(expr) => expr.ty,
             Expr::EnumVariantCtor(expr) => expr.ty,
+            Expr::PropagateError(expr) => expr.ok_variant.ty,
             Expr::Missing(expr) => expr.ty,
         }
     }
@@ -126,6 +128,7 @@ impl Expr {
             Expr::MemberAccess(expr) => expr.stable_ptr,
             Expr::StructCtor(expr) => expr.stable_ptr,
             Expr::EnumVariantCtor(expr) => expr.stable_ptr,
+            Expr::PropagateError(expr) => expr.stable_ptr,
             Expr::Missing(expr) => expr.stable_ptr,
         }
     }
@@ -226,6 +229,7 @@ pub struct ExprLiteral {
 #[debug_db(ExprFormatter<'_>)]
 pub struct ExprMemberAccess {
     pub expr: semantic::ExprId,
+    pub struct_id: StructId,
     pub member: MemberId,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
@@ -248,6 +252,17 @@ pub struct ExprEnumVariantCtor {
     pub variant: semantic::ConcreteVariant,
     pub value_expr: ExprId,
     pub ty: semantic::TypeId,
+    #[hide_field_debug_with_db]
+    pub stable_ptr: ast::ExprPtr,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[debug_db(ExprFormatter<'_>)]
+pub struct ExprPropagateError {
+    pub inner: ExprId,
+    pub ok_variant: semantic::ConcreteVariant,
+    pub err_variant: semantic::ConcreteVariant,
+    pub func_err_variant: semantic::ConcreteVariant,
     #[hide_field_debug_with_db]
     pub stable_ptr: ast::ExprPtr,
 }

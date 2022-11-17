@@ -11,11 +11,13 @@ use itertools::{chain, zip_eq};
 use num_bigint::BigInt;
 use num_traits::Num;
 use smol_str::SmolStr;
+use syntax::node::ast::PatternStructParam;
 use syntax::node::db::SyntaxGroup;
 use syntax::node::helpers::{GetIdentifier, PathSegmentEx};
 use syntax::node::{ast, Terminal, TypedSyntaxNode};
 use utils::ordered_hash_map::OrderedHashMap;
 use utils::unordered_hash_map::UnorderedHashMap;
+use utils::unordered_hash_set::UnorderedHashSet;
 use utils::{try_extract_matches, OptionHelper};
 
 use super::objects::*;
@@ -24,6 +26,7 @@ use super::pattern::{
 };
 use crate::corelib::{
     core_binary_operator, core_felt_ty, false_literal_expr, true_literal_expr, unit_ty,
+    unwrap_error_propagation_type,
 };
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
@@ -34,7 +37,7 @@ use crate::items::strct::SemanticStructEx;
 use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use crate::semantic::{self, FunctionId, LocalVariable, TypeId, TypeLongId, Variable};
 use crate::types::{resolve_type, ConcreteTypeId};
-use crate::{Mutability, Parameter};
+use crate::{Mutability, Parameter, PatternStruct};
 
 /// Context for computing the semantic model of expression trees.
 pub struct ComputationContext<'ctx> {
@@ -182,6 +185,7 @@ pub fn maybe_compute_expr_semantic(
         ast::Expr::Block(block_syntax) => compute_expr_block_semantic(ctx, block_syntax),
         ast::Expr::Match(expr_match) => compute_expr_match_semantic(ctx, expr_match),
         ast::Expr::If(expr_if) => compute_expr_if_semantic(ctx, expr_if),
+        ast::Expr::ErrorPropagate(expr) => compute_expr_error_propagate_semantic(ctx, expr),
         ast::Expr::Missing(_) => {
             ctx.diagnostics.report(syntax, Unsupported);
             None
@@ -227,8 +231,13 @@ fn compute_expr_binary_semantic(
             }
         };
     }
-    let function = core_binary_operator(db, &binary_op)
-        .on_none(|| ctx.diagnostics.report(&binary_op, UnknownBinaryOperator))?;
+    let function = match core_binary_operator(db, &binary_op, lexpr.ty(), rexpr.ty()) {
+        Err(err_kind) => {
+            ctx.diagnostics.report(&binary_op, err_kind);
+            return None;
+        }
+        Ok(function) => function,
+    };
     expr_function_call(ctx, function, vec![lexpr, rexpr], stable_ptr)
 }
 
@@ -475,6 +484,43 @@ fn compute_expr_if_semantic(
     }))
 }
 
+/// Computes the semantic model of an expression of type [ast::ExprErrorPropagate].
+fn compute_expr_error_propagate_semantic(
+    ctx: &mut ComputationContext<'_>,
+    syntax: &ast::ExprErrorPropagate,
+) -> Option<Expr> {
+    let syntax_db = ctx.db.upcast();
+    let inner = compute_expr_semantic(ctx, &syntax.expr(syntax_db));
+    let (ok_variant, err_variant) =
+        unwrap_error_propagation_type(ctx.db, inner.ty()).on_none(|| {
+            ctx.diagnostics.report(syntax, ErrorPropagateOnNonErrorType { ty: inner.ty() });
+        })?;
+    let (_, func_err_variant) =
+        unwrap_error_propagation_type(ctx.db, ctx.return_ty).on_none(|| {
+            ctx.diagnostics.report(
+                syntax,
+                IncompatibleErrorPropagateType { return_ty: ctx.return_ty, err_ty: err_variant.ty },
+            );
+        })?;
+    // TODO(orizi): When auto conversion of types is added, try to convert the error type.
+    if func_err_variant.ty != err_variant.ty
+        || func_err_variant.concrete_enum_id.enum_id(ctx.db)
+            != err_variant.concrete_enum_id.enum_id(ctx.db)
+    {
+        ctx.diagnostics.report(
+            syntax,
+            IncompatibleErrorPropagateType { return_ty: ctx.return_ty, err_ty: err_variant.ty },
+        );
+    }
+    Some(Expr::PropagateError(ExprPropagateError {
+        inner: ctx.exprs.alloc(inner),
+        ok_variant,
+        err_variant,
+        func_err_variant,
+        stable_ptr: syntax.stable_ptr().into(),
+    }))
+}
+
 /// Computes the semantic model of a pattern, or None if invalid.
 fn compute_pattern_semantic(
     ctx: &mut ComputationContext<'_>,
@@ -499,7 +545,11 @@ fn compute_pattern_semantic(
                 try_extract_matches!(ctx.db.lookup_intern_type(ty), TypeLongId::Concrete)
                     .and_then(|c| try_extract_matches!(c, ConcreteTypeId::Enum))
                     .on_none(|| {
-                        ctx.diagnostics.report(&enum_pattern, UnexpectedEnumPattern { ty });
+                        // Don't add a diagnostic if the type is missing.
+                        // A diagnostic should've already been added.
+                        if ty != TypeId::missing(ctx.db) {
+                            ctx.diagnostics.report(&enum_pattern, UnexpectedEnumPattern { ty });
+                        }
                     })?;
 
             // Extract the enum variant from the path syntax.
@@ -551,16 +601,60 @@ fn compute_pattern_semantic(
         ),
         ast::Pattern::Struct(pattern_struct) => {
             // Check that type is an struct, and get the concrete struct from it.
-            let _concrete_struct =
+            let concrete_struct =
                 try_extract_matches!(ctx.db.lookup_intern_type(ty), TypeLongId::Concrete)
                     .and_then(|c| try_extract_matches!(c, ConcreteTypeId::Struct))
                     .on_none(|| {
-                        ctx.diagnostics.report(&pattern_struct, UnexpectedEnumPattern { ty });
+                        // Don't add a diagnostic if the type is missing.
+                        // A diagnostic should've already been added.
+                        if ty != TypeId::missing(ctx.db) {
+                            ctx.diagnostics.report(&pattern_struct, UnexpectedEnumPattern { ty });
+                        }
                     })?;
-
-            // TODO(spapini): Support struct patterns.
-            ctx.diagnostics.report(&pattern_struct, Unsupported);
-            return None;
+            let pattern_param_asts = pattern_struct.params(syntax_db).elements(syntax_db);
+            let struct_id = concrete_struct.struct_id(ctx.db);
+            let mut members = ctx.db.struct_members(struct_id).expect("This is a valid struct.");
+            let mut used_members = UnorderedHashSet::default();
+            let mut get_member = |ctx: &mut ComputationContext<'_>, member_name: SmolStr| {
+                let member = members.swap_remove(&member_name).on_none(|| {
+                    ctx.diagnostics.report(
+                        &pattern_struct,
+                        if used_members.contains(&member_name) {
+                            StructMemberRedefinition { struct_id, member_name: member_name.clone() }
+                        } else {
+                            NoSuchMember { struct_id, member_name: member_name.clone() }
+                        },
+                    );
+                })?;
+                used_members.insert(member_name);
+                Some(member)
+            };
+            let mut field_patterns = vec![];
+            let mut has_tail = false;
+            for pattern_param_ast in pattern_param_asts {
+                match pattern_param_ast {
+                    PatternStructParam::Single(single) => {
+                        let member = get_member(ctx, single.text(syntax_db))?;
+                        let pattern = create_variable_pattern(ctx, single, &[], member.ty);
+                        field_patterns.push((member, Box::new(pattern)));
+                    }
+                    PatternStructParam::WithExpr(with_expr) => {
+                        let member = get_member(ctx, with_expr.name(syntax_db).text(syntax_db))?;
+                        let pattern =
+                            compute_pattern_semantic(ctx, with_expr.pattern(syntax_db), member.ty)?;
+                        field_patterns.push((member, Box::new(pattern)));
+                    }
+                    PatternStructParam::Tail(_) => {
+                        has_tail = true;
+                    }
+                }
+            }
+            if !has_tail {
+                for (member_name, _) in members {
+                    ctx.diagnostics.report(&pattern_struct, MissingMember { member_name });
+                }
+            }
+            Pattern::Struct(PatternStruct { id: struct_id, field_patterns, ty })
         }
         ast::Pattern::Tuple(pattern_tuple) => {
             let tys = try_extract_matches!(ctx.db.lookup_intern_type(ty), TypeLongId::Tuple)
@@ -770,6 +864,7 @@ fn member_access_expr(
                 let lexpr_id = ctx.exprs.alloc(lexpr);
                 return Some(Expr::MemberAccess(ExprMemberAccess {
                     expr: lexpr_id,
+                    struct_id: concrete_struct_id.struct_id(ctx.db),
                     member: member.id,
                     ty: member.ty,
                     stable_ptr,

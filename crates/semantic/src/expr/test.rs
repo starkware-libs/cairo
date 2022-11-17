@@ -21,6 +21,7 @@ semantic_test!(
     [
         "src/expr/test_data/assignment",
         "src/expr/test_data/enum",
+        "src/expr/test_data/error_propagate",
         "src/expr/test_data/generics",
         "src/expr/test_data/if",
         "src/expr/test_data/implicits",
@@ -149,15 +150,19 @@ fn test_member_access() {
         exprs,
         vec![
             "MemberAccess(ExprMemberAccess { expr: Var(ExprVar { var: ParamId(test_crate::a), ty: \
-             test_crate::A }), member: MemberId(test_crate::a), ty: (core::felt) })",
+             test_crate::A }), struct_id: StructId(test_crate::A), member: \
+             MemberId(test_crate::a), ty: (core::felt) })",
             "MemberAccess(ExprMemberAccess { expr: Var(ExprVar { var: ParamId(test_crate::a), ty: \
-             test_crate::A }), member: MemberId(test_crate::b), ty: core::felt })",
+             test_crate::A }), struct_id: StructId(test_crate::A), member: \
+             MemberId(test_crate::b), ty: core::felt })",
             "MemberAccess(ExprMemberAccess { expr: Var(ExprVar { var: ParamId(test_crate::a), ty: \
-             test_crate::A }), member: MemberId(test_crate::c), ty: test_crate::B })",
+             test_crate::A }), struct_id: StructId(test_crate::A), member: \
+             MemberId(test_crate::c), ty: test_crate::B })",
             "MemberAccess(ExprMemberAccess { expr: MemberAccess(ExprMemberAccess { expr: \
-             Var(ExprVar { var: ParamId(test_crate::a), ty: test_crate::A }), member: \
-             MemberId(test_crate::c), ty: test_crate::B }), member: MemberId(test_crate::a), ty: \
-             core::felt })",
+             Var(ExprVar { var: ParamId(test_crate::a), ty: test_crate::A }), struct_id: \
+             StructId(test_crate::A), member: MemberId(test_crate::c), ty: test_crate::B }), \
+             struct_id: StructId(test_crate::B), member: MemberId(test_crate::a), ty: core::felt \
+             })",
         ]
     );
 }

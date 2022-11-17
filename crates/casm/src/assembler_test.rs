@@ -108,6 +108,23 @@ fn test_jnz_assemble() {
             opcode: Opcode::Nop,
         },
     );
+    assert_eq!(
+        assemble_instruction(casm!(jmp rel 2 if [ap - 2] != 0, ap++;)),
+        InstructionRepr {
+            off0: -2,
+            off1: -1,
+            off2: 1,
+            imm: 2.to_bigint(),
+            dst_register: Register::AP,
+            op0_register: Register::FP,
+            op1_addr: Op1Addr::Imm,
+            res: Res::Unconstrained,
+            pc_update: PcUpdate::Jnz,
+            ap_update: ApUpdate::Add1,
+            fp_update: FpUpdate::Regular,
+            opcode: Opcode::Nop,
+        },
+    );
 }
 
 #[test]
@@ -123,6 +140,23 @@ fn test_assert_eq_assemble() {
             op0_register: Register::FP,
             op1_addr: Op1Addr::Imm,
             res: Res::Op1,
+            pc_update: PcUpdate::Regular,
+            ap_update: ApUpdate::Regular,
+            fp_update: FpUpdate::Regular,
+            opcode: Opcode::AssertEq,
+        },
+    );
+    assert_eq!(
+        assemble_instruction(casm!([fp] = [ap - 1] + [ap - 2];)),
+        InstructionRepr {
+            off0: 0,
+            off1: -1,
+            off2: -2,
+            imm: None,
+            dst_register: Register::FP,
+            op0_register: Register::AP,
+            op1_addr: Op1Addr::AP,
+            res: Res::Add,
             pc_update: PcUpdate::Regular,
             ap_update: ApUpdate::Regular,
             fp_update: FpUpdate::Regular,

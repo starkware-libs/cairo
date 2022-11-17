@@ -27,7 +27,8 @@ pub fn get_spec() -> Vec<Node> {
             .node("StructCtorCall")
             .node("Block")
             .node("Match")
-            .node("If"),
+            .node("If")
+            .node("ErrorPropagate"),
     )
     .add_separated_list("ExprList", "Expr", "TerminalComma")
     .add_struct(StructBuilder::new("ExprMissing"))
@@ -119,6 +120,7 @@ pub fn get_spec() -> Vec<Node> {
         .node("else_block", "ExprBlock")
         )
     .add_option("ElseClause")
+    .add_struct(StructBuilder::new("ExprErrorPropagate").node("expr", "Expr").node("op", "TerminalQuestionMark"))
     // --- Struct ctor ---
     .add_struct(StructBuilder::new("StructArgExpr")
         .node("colon", "TerminalColon")
@@ -248,6 +250,7 @@ pub fn get_spec() -> Vec<Node> {
         .node("rparen", "TerminalRParen")
         )
     .add_option("ImplicitsClause")
+    .add_option("TerminalNoPanic")
     // TODO(spapini): Add generic params.
     // This is an unnamed signature, e.g. "() -> Type".
     .add_struct(StructBuilder::new("FunctionSignature")
@@ -256,6 +259,7 @@ pub fn get_spec() -> Vec<Node> {
         .node("rparen", "TerminalRParen")
         .node("ret_ty", "OptionReturnTypeClause")
         .node("implicits_clause", "OptionImplicitsClause")
+        .node("optional_no_panic", "OptionTerminalNoPanic")
         )
     // --- Struct Members ---
     // Struct member and enum variant have the same structure.
@@ -328,8 +332,21 @@ pub fn get_spec() -> Vec<Node> {
         )
     .add_struct(StructBuilder::new("TraitBody")
         .node("lbrace", "TerminalLBrace")
-        // TODO(spapini): Associated items.
+        .node("items", "TraitItemList")
         .node("rbrace", "TerminalRBrace")
+    )
+    .add_list("TraitItemList", "TraitItem")
+    .add_enum(EnumBuilder::new("TraitItem")
+        // TODO(spapini): types and constants.
+        .node("Function")
+        )
+    .add_struct(StructBuilder::new("TraitItemFunction")
+        .node("attributes" ,"AttributeList")
+        .node("function_kw", "TerminalFunction")
+        .key_node("name", "TerminalIdentifier")
+        .node("generic_params", "OptionWrappedGenericParamList")
+        .node("signature", "FunctionSignature")
+        .node("semicolon", "TerminalSemicolon")
     )
     .add_struct(StructBuilder::new("ItemImpl")
         .node("attributes" ,"AttributeList")
@@ -346,7 +363,7 @@ pub fn get_spec() -> Vec<Node> {
         )
     .add_struct(StructBuilder::new("ImplBody")
             .node("lbrace", "TerminalLBrace")
-            // TODO(spapini): Associated items.
+            .node("items", "ItemList")
             .node("rbrace", "TerminalRBrace")
         )
     .add_struct(StructBuilder::new("ItemStruct")
@@ -360,7 +377,7 @@ pub fn get_spec() -> Vec<Node> {
         )
     .add_struct(StructBuilder::new("ItemEnum")
         .node("attributes" ,"AttributeList")
-        .node("enumkw", "TerminalEnum")
+        .node("enum_kw", "TerminalEnum")
         .key_node("name", "TerminalIdentifier")
         .node("generic_params", "OptionWrappedGenericParamList")
         .node("lbrace", "TerminalLBrace")
@@ -412,6 +429,7 @@ pub fn get_spec() -> Vec<Node> {
     .add_token_and_terminal("Implicits")
     .add_token_and_terminal("Ref")
     .add_token_and_terminal("Mut")
+    .add_token_and_terminal("NoPanic")
     .add_token_and_terminal("And")
     .add_token_and_terminal("AndAnd")
     .add_token_and_terminal("OrOr")
@@ -433,6 +451,7 @@ pub fn get_spec() -> Vec<Node> {
     .add_token_and_terminal("DotDot")
     .add_token_and_terminal("Eq")
     .add_token_and_terminal("Semicolon")
+    .add_token_and_terminal("QuestionMark")
     .add_token_and_terminal("Underscore")
     .add_token_and_terminal("LBrace")
     .add_token_and_terminal("RBrace")

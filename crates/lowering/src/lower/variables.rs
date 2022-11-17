@@ -57,7 +57,12 @@ impl LivingVariables {
         ctx: &mut LoweringContext<'_>,
         ty: semantic::TypeId,
     ) -> LivingVar {
-        let var_id = ctx.variables.alloc(Variable { duplicatable: true, droppable: true, ty });
+        let ty_info = ctx.db.type_info(ctx.lookup_context.clone(), ty).unwrap_or_default();
+        let var_id = ctx.variables.alloc(Variable {
+            duplicatable: ty_info.duplicatable,
+            droppable: ty_info.droppable,
+            ty,
+        });
         self.introduce_var(UsableVariable(var_id))
     }
 

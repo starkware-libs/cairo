@@ -34,6 +34,12 @@ use crate::inline::CasmContext;
     "jmp rel 205 if [ap + 5] != 0;"
 )]
 #[test_case(
+    casm!(jmp rel 2 if [ap - 1] != 0, ap++;),
+    0xa0680017fff7fffu64,
+    Some(2);
+    "jmp rel 2 if [ap + (-1)] != 0;"
+)]
+#[test_case(
     casm!([ap + 5] = 205;),
     0x400680017fff8005u64,
     Some(205);

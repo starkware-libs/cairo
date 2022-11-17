@@ -148,8 +148,8 @@ impl Instruction {
                 let res = insn.jump_offset.to_res_description();
                 InstructionRepr {
                     off0: insn.condition.offset,
-                    off1: res.off1,
-                    off2: 1,
+                    off1: -1,
+                    off2: res.off2,
                     imm: res.imm,
                     dst_register: insn.condition.register,
                     op0_register: Register::FP,
@@ -229,7 +229,7 @@ impl ResOperand {
                 off1: -1,
                 off2: operand.offset,
                 imm: None,
-                op0_register: Register::FP,
+                op0_register: operand.register,
                 op1_addr: operand.register.to_op1_addr(),
                 res: Res::Op1,
             },

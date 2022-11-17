@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use db_utils::Upcast;
 use defs::db::DefsGroup;
+use defs::diagnostic_utils::StableLocation;
 use defs::ids::{
     EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericFunctionId, GenericParamId,
     GenericTypeId, ImplId, ModuleId, ModuleItemId, StructId, TraitId, UseId, VariantId,
@@ -13,9 +14,13 @@ use parser::db::ParserGroup;
 use smol_str::SmolStr;
 use utils::ordered_hash_map::OrderedHashMap;
 
+use crate::diagnostic::SemanticDiagnosticKind;
+use crate::items::attribute::Attribute;
+use crate::items::imp::{ConcreteImplId, ImplLookupContext};
+use crate::items::trt::ConcreteTraitId;
 use crate::resolve_path::ResolvedGenericItem;
 use crate::{
-    corelib, items, semantic, types, FreeFunctionDefinition, FunctionId, SemanticDiagnostic,
+    corelib, items, semantic, types, FreeFunctionDefinition, FunctionId, SemanticDiagnostic, TypeId,
 };
 
 // Salsa database interface.
@@ -47,8 +52,8 @@ pub trait SemanticGroup:
     #[salsa::interned]
     fn intern_concrete_impl(
         &self,
-        id: items::trt::ConcreteImplLongId,
-    ) -> items::trt::ConcreteImplId;
+        id: items::imp::ConcreteImplLongId,
+    ) -> items::imp::ConcreteImplId;
     #[salsa::interned]
     fn intern_type(&self, id: types::TypeLongId) -> semantic::TypeId;
 
@@ -113,18 +118,43 @@ pub trait SemanticGroup:
     /// Returns the generic parameters of a trait.
     #[salsa::invoke(items::trt::trait_generic_params)]
     fn trait_generic_params(&self, trait_id: TraitId) -> Option<Vec<GenericParamId>>;
+    /// Returns the attributes of a trait.
+    #[salsa::invoke(items::trt::trait_attributes)]
+    fn trait_attributes(&self, trait_id: TraitId) -> Option<Vec<Attribute>>;
 
     // Impl.
     // =======
-    /// Private query to compute data about an impl.
-    #[salsa::invoke(items::trt::priv_impl_semantic_data)]
-    fn priv_impl_semantic_data(&self, impl_id: ImplId) -> Option<items::trt::ImplData>;
-    /// Returns the semantic diagnostics of an impl.
-    #[salsa::invoke(items::trt::impl_semantic_diagnostics)]
-    fn impl_semantic_diagnostics(&self, impl_id: ImplId) -> Diagnostics<SemanticDiagnostic>;
+    /// Private query to compute declaration data about an impl.
+    #[salsa::invoke(items::imp::priv_impl_declaration_data)]
+    fn priv_impl_declaration_data(
+        &self,
+        impl_id: ImplId,
+    ) -> Option<items::imp::ImplDeclarationData>;
+    /// Returns the semantic declaration diagnostics of an impl.
+    #[salsa::invoke(items::imp::impl_semantic_declaration_diagnostics)]
+    fn impl_semantic_declaration_diagnostics(
+        &self,
+        impl_id: ImplId,
+    ) -> Diagnostics<SemanticDiagnostic>;
     /// Returns the generic parameters of an impl.
-    #[salsa::invoke(items::trt::impl_generic_params)]
+    #[salsa::invoke(items::imp::impl_generic_params)]
     fn impl_generic_params(&self, impl_id: ImplId) -> Option<Vec<GenericParamId>>;
+    /// Private query to compute data about an impl.
+    #[salsa::invoke(items::imp::priv_impl_definition_data)]
+    fn priv_impl_definition_data(&self, impl_id: ImplId) -> Option<items::imp::ImplDefinitionData>;
+    /// Returns the semantic definition diagnostics of an impl.
+    #[salsa::invoke(items::imp::impl_semantic_definition_diagnostics)]
+    fn impl_semantic_definition_diagnostics(
+        &self,
+        impl_id: ImplId,
+    ) -> Diagnostics<SemanticDiagnostic>;
+    /// Find implementation for a concrete trait in a module.
+    #[salsa::invoke(items::imp::find_impls_at_module)]
+    fn find_impls_at_module(
+        &self,
+        module_id: ModuleId,
+        concrete_trait_id: ConcreteTraitId,
+    ) -> Option<Vec<ConcreteImplId>>;
 
     // Free function.
     // ==============
@@ -153,7 +183,13 @@ pub trait SemanticGroup:
     fn free_function_declaration_attributes(
         &self,
         free_function_id: FreeFunctionId,
-    ) -> Option<Vec<items::free_function::Attribute>>;
+    ) -> Option<Vec<Attribute>>;
+    /// Returns the explicit implicits of a signature of a free function declaration.
+    #[salsa::invoke(items::free_function::free_function_declaration_implicits)]
+    fn free_function_declaration_implicits(
+        &self,
+        free_function_id: FreeFunctionId,
+    ) -> Option<Vec<TypeId>>;
     /// Returns the generic params of a free function declaration.
     #[salsa::invoke(items::free_function::free_function_declaration_generic_params)]
     fn free_function_declaration_generic_params(
@@ -179,6 +215,20 @@ pub trait SemanticGroup:
         &self,
         free_function_id: FreeFunctionId,
     ) -> Option<semantic::ExprId>;
+    /// Returns the direct callees of a free function definition. The items in the vector are
+    /// unique.
+    #[salsa::invoke(items::free_function::free_function_definition_direct_callees)]
+    fn free_function_definition_direct_callees(
+        &self,
+        free_function_id: FreeFunctionId,
+    ) -> Option<Vec<FunctionId>>;
+    /// Returns the free function direct callees of a free function definition (i.e. excluding
+    /// libfunc callees). The items in the vector are unique.
+    #[salsa::invoke(items::free_function::free_function_definition_direct_free_function_callees)]
+    fn free_function_definition_direct_free_function_callees(
+        &self,
+        free_function_id: FreeFunctionId,
+    ) -> Option<Vec<FreeFunctionId>>;
     /// Returns the definition of a free function.
     #[salsa::invoke(items::free_function::free_function_definition)]
     fn free_function_definition(
@@ -214,6 +264,12 @@ pub trait SemanticGroup:
         &self,
         extern_function_id: ExternFunctionId,
     ) -> Option<Vec<GenericParamId>>;
+    /// Returns the explicit implicits of an extern function declaration.
+    #[salsa::invoke(items::extern_function::extern_function_declaration_implicits)]
+    fn extern_function_declaration_implicits(
+        &self,
+        extern_function_id: ExternFunctionId,
+    ) -> Option<Vec<TypeId>>;
 
     // Extern type.
     // ============
@@ -270,6 +326,17 @@ pub trait SemanticGroup:
         &self,
         generic_type: GenericTypeId,
     ) -> Option<Vec<GenericParamId>>;
+
+    // Concrete type.
+    // =================
+    /// Returns the generic_type of a generic function. This include free types, extern
+    /// types, etc...
+    #[salsa::invoke(types::type_info)]
+    fn type_info(
+        &self,
+        lookup_context: ImplLookupContext,
+        ty: types::TypeId,
+    ) -> Option<types::TypeInfo>;
 
     // Expression.
     // ===========
@@ -328,9 +395,23 @@ fn module_semantic_diagnostics(
                 diagnostics.extend(db.trait_semantic_diagnostics(*trait_id));
             }
             ModuleItemId::Impl(impl_id) => {
-                diagnostics.extend(db.impl_semantic_diagnostics(*impl_id));
+                diagnostics.extend(db.impl_semantic_declaration_diagnostics(*impl_id));
+                diagnostics.extend(db.impl_semantic_definition_diagnostics(*impl_id));
             }
-            ModuleItemId::Submodule(_) => {}
+            ModuleItemId::Submodule(id) => {
+                if let Some(file_id) = db.module_file(ModuleId::Submodule(*id)) {
+                    if db.file_content(file_id).is_none() {
+                        // Note that the error location is in the parent module, not the submodule.
+                        diagnostics.add(SemanticDiagnostic {
+                            stable_location: StableLocation::new(
+                                module_id,
+                                id.stable_ptr(db.upcast()).untyped(),
+                            ),
+                            kind: SemanticDiagnosticKind::FileNotFound,
+                        });
+                    }
+                }
+            }
             ModuleItemId::ExternType(_) => {}
             ModuleItemId::ExternFunction(extern_function) => {
                 diagnostics.extend(db.extern_function_declaration_diagnostics(*extern_function));

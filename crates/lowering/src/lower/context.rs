@@ -1,6 +1,7 @@
 use id_arena::Arena;
 use itertools::{chain, zip_eq};
 use semantic::items::enm::SemanticEnumEx;
+use semantic::items::imp::ImplLookupContext;
 use utils::unordered_hash_map::UnorderedHashMap;
 
 use super::scope::generators::CallBlockResult;
@@ -28,6 +29,8 @@ pub struct LoweringContext<'db> {
     pub semantic_defs: UnorderedHashMap<semantic::VarId, semantic::Variable>,
     // TODO(spapini): Document.
     pub ref_params: &'db [semantic::VarId],
+    // Lookup context for impls.
+    pub lookup_context: ImplLookupContext,
 }
 
 /// Representation of the value of a computed expression.
@@ -48,7 +51,7 @@ impl LoweredExpr {
                 let inputs: Vec<_> = exprs.into_iter().map(|expr| expr.var(ctx, scope)).collect();
                 let tys = inputs.iter().map(|var| ctx.variables[var.var_id()].ty).collect();
                 let ty = ctx.db.intern_type(semantic::TypeLongId::Tuple(tys));
-                generators::TupleConstruct { inputs, ty }.add(ctx, scope)
+                generators::StructConstruct { inputs, ty }.add(ctx, scope)
             }
             LoweredExpr::ExternEnum(extern_enum) => extern_enum.var(ctx, scope),
         }

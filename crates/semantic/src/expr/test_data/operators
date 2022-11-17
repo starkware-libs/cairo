@@ -15,20 +15,15 @@ foo
 extern type MyType;
 
 //! > expected_diagnostics
-error: Unexpected argument type. Expected: "core::felt", found: "test_crate::MyType".
- --> lib.cairo:3:9
+error: Binary operator '*' is not supported for types 'test_crate::MyType' and 'test_crate::MyType'.
+ --> lib.cairo:3:11
     a + a * a;
-        ^
+          ^
 
-error: Unexpected argument type. Expected: "core::felt", found: "test_crate::MyType".
- --> lib.cairo:3:13
+error: Binary operator '+' is not supported for types 'test_crate::MyType' and '<missing>'.
+ --> lib.cairo:3:7
     a + a * a;
-            ^
-
-error: Unexpected argument type. Expected: "core::felt", found: "test_crate::MyType".
- --> lib.cairo:3:5
-    a + a * a;
-    ^
+      ^
 
 //! > ==========================================================================
 
@@ -38,13 +33,14 @@ error: Unexpected argument type. Expected: "core::felt", found: "test_crate::MyT
 test_function_diagnostics
 
 //! > function
-func foo(a: felt, b: bool) {
+func foo(a: felt, b: bool) implicits (rc:RangeCheck) {
     // Valid.
     a + a * a - a;
     b && b || b && (a == a || a > a)
     && (a<a) && (a<=a) && (a>=a);
     // Errors.
     a>a>a;
+    a - b
 }
 
 //! > function_name
@@ -53,7 +49,12 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Unexpected argument type. Expected: "core::felt", found: "core::bool".
- --> lib.cairo:7:5
+error: Binary operator '>' is not supported for types 'core::bool' and 'core::felt'.
+ --> lib.cairo:7:8
     a>a>a;
-    ^*^
+       ^
+
+error: Binary operator '-' is not supported for types 'core::felt' and 'core::bool'.
+ --> lib.cairo:8:7
+    a - b
+      ^

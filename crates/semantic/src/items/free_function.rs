@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::sync::Arc;
 
 use db_utils::Upcast;
@@ -5,10 +6,11 @@ use defs::ids::{FreeFunctionId, GenericFunctionId, GenericParamId, LanguageEleme
 use diagnostics::Diagnostics;
 use diagnostics_proc_macros::DebugWithDb;
 use id_arena::Arena;
-use smol_str::SmolStr;
-use syntax::node::{ast, Terminal};
+use syntax::node::ast;
+use utils::try_extract_matches;
 use utils::unordered_hash_map::UnorderedHashMap;
 
+use super::attribute::{ast_attributes_to_semantic, Attribute};
 use super::functions::{
     function_signature_implicit_parameters, function_signature_params,
     function_signature_return_type,
@@ -18,16 +20,11 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics};
 use crate::expr::compute::{compute_expr_block_semantic, ComputationContext, Environment};
 use crate::resolve_path::{ResolvedGenericItem, ResolvedLookback, Resolver};
-use crate::{semantic, ExprId, SemanticDiagnostic};
+use crate::{semantic, Expr, ExprId, FunctionId, SemanticDiagnostic, TypeId};
 
 #[cfg(test)]
 #[path = "free_function_test.rs"]
 mod test;
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Attribute {
-    id: SmolStr,
-}
 
 // Declaration.
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
@@ -64,6 +61,21 @@ pub fn free_function_declaration_attributes(
     free_function_id: FreeFunctionId,
 ) -> Option<Vec<Attribute>> {
     Some(db.priv_free_function_declaration_data(free_function_id)?.attributes)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::free_function_declaration_implicits].
+pub fn free_function_declaration_implicits(
+    db: &dyn SemanticGroup,
+    free_function_id: FreeFunctionId,
+) -> Option<Vec<TypeId>> {
+    Some(
+        db.priv_free_function_declaration_data(free_function_id)?
+            .signature
+            .implicits
+            .into_iter()
+            .map(|param| param.ty)
+            .collect(),
+    )
 }
 
 /// Query implementation of [crate::db::SemanticGroup::free_function_declaration_generic_params].
@@ -114,13 +126,7 @@ pub fn priv_free_function_declaration_data(
         &mut environment,
     );
 
-    // TODO(ilya): Consider checking for attribute repetitions.
-    let attributes = function_syntax
-        .attributes(syntax_db)
-        .elements(syntax_db)
-        .into_iter()
-        .map(|attribute| Attribute { id: attribute.attr(syntax_db).text(syntax_db) })
-        .collect();
+    let attributes = ast_attributes_to_semantic(syntax_db, function_syntax.attributes(syntax_db));
     Some(FreeFunctionDeclarationData {
         diagnostics: diagnostics.build(),
         signature: semantic::Signature { params, return_type, implicits },
@@ -146,6 +152,9 @@ pub struct FreeFunctionDefinition {
     pub exprs: Arena<semantic::Expr>,
     pub statements: Arena<semantic::Statement>,
     pub body: semantic::ExprId,
+    /// The set of direct callees of the free function (user functions and libfuncs that are called
+    /// from this free function). The items in the vector are unique.
+    pub direct_callees: Vec<FunctionId>,
 }
 
 // Selectors.
@@ -165,6 +174,34 @@ pub fn free_function_definition_body(
 ) -> Option<semantic::ExprId> {
     Some(db.priv_free_function_definition_data(free_function_id)?.definition.body)
 }
+
+/// Query implementation of [crate::db::SemanticGroup::free_function_definition_direct_callees].
+pub fn free_function_definition_direct_callees(
+    db: &dyn SemanticGroup,
+    free_function_id: FreeFunctionId,
+) -> Option<Vec<FunctionId>> {
+    Some(db.priv_free_function_definition_data(free_function_id)?.definition.direct_callees.clone())
+}
+
+/// Query implementation of
+/// [crate::db::SemanticGroup::free_function_definition_direct_free_function_callees].
+pub fn free_function_definition_direct_free_function_callees(
+    db: &dyn SemanticGroup,
+    free_function_id: FreeFunctionId,
+) -> Option<Vec<FreeFunctionId>> {
+    Some(
+        db.free_function_definition_direct_callees(free_function_id)?
+            .into_iter()
+            .filter_map(|function_id| {
+                match db.lookup_intern_function(function_id).function.generic_function {
+                    GenericFunctionId::Free(free_function) => Some(free_function),
+                    _ => None,
+                }
+            })
+            .collect(),
+    )
+}
+
 /// Query implementation of [crate::db::SemanticGroup::free_function_definition].
 pub fn free_function_definition(
     db: &dyn SemanticGroup,
@@ -211,6 +248,12 @@ pub fn priv_free_function_definition_data(
     let body = ctx.exprs.alloc(expr);
     let ComputationContext { exprs, statements, resolver, .. } = ctx;
 
+    let direct_callees: HashSet<FunctionId> = exprs
+        .iter()
+        .filter_map(|(_id, expr)| try_extract_matches!(expr, Expr::FunctionCall))
+        .map(|f| f.function)
+        .collect();
+
     let expr_lookup: UnorderedHashMap<_, _> =
         exprs.iter().map(|(expr_id, expr)| (expr.stable_ptr(), expr_id)).collect();
     let resolved_lookback = resolver.lookback;
@@ -218,7 +261,12 @@ pub fn priv_free_function_definition_data(
         diagnostics: diagnostics.build(),
         expr_lookup,
         resolved_lookback,
-        definition: Arc::new(FreeFunctionDefinition { exprs, statements, body }),
+        definition: Arc::new(FreeFunctionDefinition {
+            exprs,
+            statements,
+            body,
+            direct_callees: direct_callees.into_iter().collect(),
+        }),
     })
 }
 

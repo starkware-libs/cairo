@@ -1,12 +1,15 @@
-use defs::ids::{EnumId, GenericFunctionId, GenericTypeId, ModuleId, ModuleItemId};
+use defs::ids::{EnumId, GenericFunctionId, GenericTypeId, ModuleId, ModuleItemId, TraitId};
 use filesystem::ids::CrateLongId;
 use smol_str::SmolStr;
 use syntax::node::ast::{self, BinaryOperator};
-use utils::{extract_matches, OptionFrom};
+use utils::{extract_matches, try_extract_matches, OptionFrom};
 
 use crate::db::SemanticGroup;
+use crate::diagnostic::SemanticDiagnosticKind;
 use crate::expr::compute::ComputationContext;
 use crate::items::enm::SemanticEnumEx;
+use crate::items::trt::ConcreteTraitId;
+use crate::resolve_path::ResolvedGenericItem;
 use crate::types::ConcreteEnumLongId;
 use crate::{
     semantic, ConcreteEnumId, ConcreteFunction, ConcreteVariant, Expr, ExprId, ExprTuple,
@@ -22,6 +25,10 @@ pub fn core_felt_ty(db: &dyn SemanticGroup) -> TypeId {
     get_core_ty_by_name(db, "felt".into(), vec![])
 }
 
+pub fn core_uint128_ty(db: &dyn SemanticGroup) -> TypeId {
+    get_core_ty_by_name(db, "uint128".into(), vec![])
+}
+
 pub fn core_nonzero_ty(db: &dyn SemanticGroup, inner_type: TypeId) -> TypeId {
     get_core_ty_by_name(db, "NonZero".into(), vec![GenericArgumentId::Type(inner_type)])
 }
@@ -33,10 +40,19 @@ fn get_core_ty_by_name(
 ) -> TypeId {
     let core_module = db.core_module();
     // This should not fail if the corelib is present.
-    let generic_type = db
+    let module_item_id = db
         .module_item_by_name(core_module, name.clone())
-        .and_then(GenericTypeId::option_from)
         .unwrap_or_else(|| panic!("Type '{name}' was not found in core lib."));
+    let generic_type = match module_item_id {
+        ModuleItemId::Use(use_id) => {
+            db.use_resolved_item(use_id).and_then(|resolved_generic_item| {
+                try_extract_matches!(resolved_generic_item, ResolvedGenericItem::GenericType)
+            })
+        }
+        _ => GenericTypeId::option_from(module_item_id),
+    }
+    .unwrap_or_else(|| panic!("{name} is not a type."));
+
     db.intern_type(semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::new(
         db,
         generic_type,
@@ -138,6 +154,39 @@ pub fn unit_ty(db: &dyn SemanticGroup) -> TypeId {
     db.intern_type(semantic::TypeLongId::Tuple(vec![]))
 }
 
+/// Attempts to unwrap error propagation types (Option, Result).
+/// Returns None if not one of these types.
+pub fn unwrap_error_propagation_type(
+    db: &dyn SemanticGroup,
+    ty: TypeId,
+) -> Option<(ConcreteVariant, ConcreteVariant)> {
+    match db.lookup_intern_type(ty) {
+        // Only enums may be `Result` and `Option` types.
+        TypeLongId::Concrete(semantic::ConcreteTypeId::Enum(enm)) => {
+            let name = enm.enum_id(db.upcast()).name(db.upcast());
+            if name == "Option" || name == "Result" {
+                if let [ok_variant, err_variant] = db.concrete_enum_variants(enm)?.as_slice() {
+                    Some((ok_variant.clone(), err_variant.clone()))
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        }
+        TypeLongId::GenericParameter(_) => todo!(
+            "When generic types are supported, if type is of matching type, allow unwrapping it \
+             to type."
+        ),
+        TypeLongId::Concrete(
+            semantic::ConcreteTypeId::Struct(_) | semantic::ConcreteTypeId::Extern(_),
+        )
+        | TypeLongId::Tuple(_)
+        | TypeLongId::Never
+        | TypeLongId::Missing => None,
+    }
+}
+
 /// builds a semantic unit expression. This is not necessarily located in the AST, so it is received
 /// as a param.
 pub fn unit_expr(ctx: &mut ComputationContext<'_>, stable_ptr: ast::ExprPtr) -> ExprId {
@@ -151,22 +200,46 @@ pub fn unit_expr(ctx: &mut ComputationContext<'_>, stable_ptr: ast::ExprPtr) -> 
 pub fn core_binary_operator(
     db: &dyn SemanticGroup,
     binary_op: &BinaryOperator,
-) -> Option<FunctionId> {
-    let function_name = match binary_op {
-        BinaryOperator::Plus(_) => "felt_add",
-        BinaryOperator::Minus(_) => "felt_sub",
-        BinaryOperator::Mul(_) => "felt_mul",
-        BinaryOperator::Div(_) => "felt_div",
-        BinaryOperator::EqEq(_) => "felt_eq",
-        BinaryOperator::AndAnd(_) => "bool_and",
-        BinaryOperator::OrOr(_) => "bool_or",
-        BinaryOperator::LE(_) => "felt_le",
-        BinaryOperator::GE(_) => "felt_ge",
-        BinaryOperator::LT(_) => "felt_lt",
-        BinaryOperator::GT(_) => "felt_gt",
-        _ => return None,
+    type1: TypeId,
+    type2: TypeId,
+) -> Result<FunctionId, SemanticDiagnosticKind> {
+    // TODO(lior): Replace current hard-coded implementation with an implementation that is based on
+    //   traits.
+    let felt = core_felt_ty(db);
+    let uint128 = core_uint128_ty(db);
+    let bool_ty = core_bool_ty(db);
+    let unsupported_operator = |op: &str| {
+        Err(SemanticDiagnosticKind::UnsupportedBinaryOperator { op: op.into(), type1, type2 })
     };
-    Some(get_core_function_id(db, function_name.into(), vec![]))
+    let function_name = match binary_op {
+        BinaryOperator::Plus(_) if [type1, type2] == [felt, felt] => "felt_add",
+        BinaryOperator::Plus(_) if [type1, type2] == [uint128, uint128] => "uint128_add",
+        BinaryOperator::Plus(_) => return unsupported_operator("+"),
+        BinaryOperator::Minus(_) if [type1, type2] == [felt, felt] => "felt_sub",
+        BinaryOperator::Minus(_) if [type1, type2] == [uint128, uint128] => "uint128_sub",
+        BinaryOperator::Minus(_) => return unsupported_operator("-"),
+        BinaryOperator::Mul(_) if [type1, type2] == [felt, felt] => "felt_mul",
+        BinaryOperator::Mul(_) => return unsupported_operator("*"),
+        BinaryOperator::Div(_) if [type1, type2] == [felt, felt] => "felt_div",
+        BinaryOperator::Div(_) => return unsupported_operator("/"),
+        BinaryOperator::EqEq(_) if [type1, type2] == [felt, felt] => "felt_eq",
+        BinaryOperator::EqEq(_) => return unsupported_operator("=="),
+        BinaryOperator::AndAnd(_) if [type1, type2] == [bool_ty, bool_ty] => "bool_and",
+        BinaryOperator::AndAnd(_) => return unsupported_operator("&&"),
+        BinaryOperator::OrOr(_) if [type1, type2] == [bool_ty, bool_ty] => "bool_or",
+        BinaryOperator::OrOr(_) => return unsupported_operator("||"),
+        BinaryOperator::LE(_) if [type1, type2] == [felt, felt] => "felt_le",
+        BinaryOperator::LE(_) => return unsupported_operator("<="),
+        BinaryOperator::GE(_) if [type1, type2] == [felt, felt] => "felt_ge",
+        BinaryOperator::GE(_) => return unsupported_operator(">="),
+        BinaryOperator::LT(_) if [type1, type2] == [felt, felt] => "felt_lt",
+        BinaryOperator::LT(_) if [type1, type2] == [uint128, uint128] => "uint128_lt",
+        BinaryOperator::LT(_) => return unsupported_operator("<"),
+        BinaryOperator::GT(_) if [type1, type2] == [felt, felt] => "felt_gt",
+        BinaryOperator::GT(_) => return unsupported_operator(">"),
+        _ => return Err(SemanticDiagnosticKind::UnknownBinaryOperator),
+    };
+    Ok(get_core_function_id(db, function_name.into(), vec![]))
 }
 
 pub fn felt_eq(db: &dyn SemanticGroup) -> FunctionId {
@@ -188,11 +261,57 @@ fn get_core_function_id(
     generic_args: Vec<GenericArgumentId>,
 ) -> FunctionId {
     let core_module = db.core_module();
-    let generic_function = db
+    let module_item_id = db
         .module_item_by_name(core_module, name.clone())
-        .and_then(GenericFunctionId::option_from)
         .unwrap_or_else(|| panic!("Function '{name}' was not found in core lib."));
+    let generic_function = match module_item_id {
+        ModuleItemId::Use(use_id) => {
+            db.use_resolved_item(use_id).and_then(|resolved_generic_item| {
+                try_extract_matches!(resolved_generic_item, ResolvedGenericItem::GenericFunction)
+            })
+        }
+        _ => GenericFunctionId::option_from(module_item_id),
+    }
+    .unwrap_or_else(|| panic!("{name} is not a function."));
+
     db.intern_function(FunctionLongId {
         function: ConcreteFunction { generic_function, generic_args },
     })
+}
+
+pub fn concrete_copy_trait(db: &dyn SemanticGroup, ty: TypeId) -> ConcreteTraitId {
+    get_core_concrete_trait(db, "Copy".into(), vec![GenericArgumentId::Type(ty)])
+}
+
+pub fn concrete_drop_trait(db: &dyn SemanticGroup, ty: TypeId) -> ConcreteTraitId {
+    get_core_concrete_trait(db, "Drop".into(), vec![GenericArgumentId::Type(ty)])
+}
+
+pub fn copy_trait(db: &dyn SemanticGroup) -> TraitId {
+    get_core_trait(db, "Copy".into())
+}
+
+pub fn drop_trait(db: &dyn SemanticGroup) -> TraitId {
+    get_core_trait(db, "Drop".into())
+}
+
+/// Given a core library trait name and its generic arguments, returns [ConcreteTraitId].
+fn get_core_concrete_trait(
+    db: &dyn SemanticGroup,
+    name: SmolStr,
+    generic_args: Vec<GenericArgumentId>,
+) -> ConcreteTraitId {
+    let trait_id = get_core_trait(db, name);
+    db.intern_concrete_trait(semantic::ConcreteTraitLongId { trait_id, generic_args })
+}
+
+/// Given a core library trait name, returns [TraitId].
+fn get_core_trait(db: &dyn SemanticGroup, name: SmolStr) -> TraitId {
+    let core_module = db.core_module();
+    // This should not fail if the corelib is present.
+    let use_id =
+        extract_matches!(db.module_item_by_name(core_module, name).unwrap(), ModuleItemId::Use);
+    let trait_id =
+        extract_matches!(db.use_resolved_item(use_id).unwrap(), ResolvedGenericItem::Trait);
+    trait_id
 }

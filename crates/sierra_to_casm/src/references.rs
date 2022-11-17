@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use casm::ap_change::{ApChange, ApChangeError, ApplyApChange};
+use casm::ap_change::ApplyApChange;
 use casm::operand::{CellRef, DerefOrImmediate, Register};
 use num_bigint::BigInt;
 use sierra::extensions::felt::FeltOperator;
@@ -8,7 +8,10 @@ use sierra::ids::{ConcreteTypeId, VarId};
 use sierra::program::{Function, StatementIdx};
 use thiserror::Error;
 use utils::casts::usize_as_i16;
+use utils::try_extract_matches;
+use {casm, sierra};
 
+use crate::invocations::InvocationError;
 use crate::type_sizes::TypeSizeMap;
 
 #[derive(Error, Debug, Eq, PartialEq)]
@@ -40,12 +43,16 @@ pub struct BinOpExpression {
     pub b: DerefOrImmediate,
 }
 impl ApplyApChange for BinOpExpression {
-    fn apply_ap_change(self, ap_change: ApChange) -> Result<Self, ApChangeError> {
-        Ok(BinOpExpression {
+    fn apply_known_ap_change(self, ap_change: usize) -> Option<Self> {
+        Some(BinOpExpression {
             op: self.op,
-            a: self.a.apply_ap_change(ap_change)?,
-            b: self.b.apply_ap_change(ap_change)?,
+            a: self.a.apply_known_ap_change(ap_change)?,
+            b: self.b.apply_known_ap_change(ap_change)?,
         })
+    }
+
+    fn can_apply_unknown(&self) -> bool {
+        self.a.can_apply_unknown() && self.b.can_apply_unknown()
     }
 }
 
@@ -82,34 +89,48 @@ impl ReferenceExpression {
 }
 
 impl ApplyApChange for CellExpression {
-    fn apply_ap_change(self, ap_change: ApChange) -> Result<Self, ApChangeError> {
-        Ok(match self {
+    fn apply_known_ap_change(self, ap_change: usize) -> Option<Self> {
+        Some(match self {
             CellExpression::Deref(operand) => {
-                CellExpression::Deref(operand.apply_ap_change(ap_change)?)
+                CellExpression::Deref(operand.apply_known_ap_change(ap_change)?)
             }
             CellExpression::DoubleDeref(operand) => {
-                CellExpression::DoubleDeref(operand.apply_ap_change(ap_change)?)
+                CellExpression::DoubleDeref(operand.apply_known_ap_change(ap_change)?)
             }
             CellExpression::IntoSingleCellRef(operand) => {
-                CellExpression::IntoSingleCellRef(operand.apply_ap_change(ap_change)?)
+                CellExpression::IntoSingleCellRef(operand.apply_known_ap_change(ap_change)?)
             }
             CellExpression::BinOp(operand) => {
-                CellExpression::BinOp(operand.apply_ap_change(ap_change)?)
+                CellExpression::BinOp(operand.apply_known_ap_change(ap_change)?)
             }
             expr @ (CellExpression::Padding | CellExpression::Immediate(_)) => expr,
         })
     }
+
+    fn can_apply_unknown(&self) -> bool {
+        match self {
+            CellExpression::Deref(operand)
+            | CellExpression::DoubleDeref(operand)
+            | CellExpression::IntoSingleCellRef(operand) => operand.can_apply_unknown(),
+            CellExpression::Immediate(_) | CellExpression::Padding => true,
+            CellExpression::BinOp(operand) => operand.can_apply_unknown(),
+        }
+    }
 }
 
 impl ApplyApChange for ReferenceExpression {
-    fn apply_ap_change(self, ap_change: ApChange) -> Result<Self, ApChangeError> {
-        Ok(ReferenceExpression {
+    fn apply_known_ap_change(self, ap_change: usize) -> Option<Self> {
+        Some(ReferenceExpression {
             cells: self
                 .cells
                 .into_iter()
-                .map(|cell_expr| cell_expr.apply_ap_change(ap_change))
-                .collect::<Result<Vec<_>, _>>()?,
+                .map(|cell_expr| cell_expr.apply_known_ap_change(ap_change))
+                .collect::<Option<Vec<_>>>()?,
         })
+    }
+
+    fn can_apply_unknown(&self) -> bool {
+        self.cells.iter().all(|cell| cell.can_apply_unknown())
     }
 }
 
@@ -157,4 +178,12 @@ pub fn check_types_match(
     } else {
         Err(ReferencesError::InvalidReferenceTypeForArgument)
     }
+}
+
+/// Extract the cell reference from the reference expression.
+pub fn try_unpack_deref(expr: &ReferenceExpression) -> Result<CellRef, InvocationError> {
+    expr.try_unpack_single()
+        .ok()
+        .and_then(|cell| try_extract_matches!(cell, CellExpression::Deref))
+        .ok_or(InvocationError::InvalidReferenceExpressionForArgument)
 }

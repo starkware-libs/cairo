@@ -2,14 +2,16 @@ use std::collections::HashMap;
 
 use db_utils::define_short_id;
 use debug::DebugWithDb;
-use defs::ids::{EnumId, ExternTypeId, GenericParamId, GenericTypeId, StructId};
+use defs::ids::{EnumId, ExternTypeId, GenericParamId, GenericTypeId, LanguageElementId, StructId};
 use itertools::Itertools;
 use syntax::node::ast;
 use utils::OptionFrom;
 
+use crate::corelib::{concrete_copy_trait, concrete_drop_trait};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
+use crate::items::imp::{find_impls_at_context, ImplLookupContext};
 use crate::resolve_path::{ResolvedConcreteItem, Resolver};
 use crate::{semantic, GenericArgumentId};
 
@@ -63,6 +65,16 @@ impl DebugWithDb<dyn SemanticGroup> for TypeLongId {
         db: &(dyn SemanticGroup + 'static),
     ) -> std::fmt::Result {
         write!(f, "{}", self.format(db))
+    }
+}
+impl PartialOrd for TypeId {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.0.partial_cmp(&other.0)
+    }
+}
+impl Ord for TypeId {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.0.cmp(&other.0)
     }
 }
 
@@ -279,4 +291,51 @@ pub fn substitute_generics(
             .unwrap_or(ty),
         TypeLongId::Missing | TypeLongId::Never => ty,
     }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Default)]
+pub struct TypeInfo {
+    /// Can the type be (trivially) dropped.
+    pub droppable: bool,
+    /// Can the type be (trivially) duplicated.
+    pub duplicatable: bool,
+}
+
+/// Query implementation of [crate::db::SemanticGroup::type_info].
+pub fn type_info(
+    db: &dyn SemanticGroup,
+    mut lookup_context: ImplLookupContext,
+    ty: TypeId,
+) -> Option<TypeInfo> {
+    // TODO(spapini): Validate Copy and Drop for structs and enums.
+    Some(match db.lookup_intern_type(ty) {
+        TypeLongId::Concrete(concrete_type_id) => {
+            let module = concrete_type_id.generic_type(db).module(db.upcast());
+            // Look for Copy and Drop trait also in the defining module.
+            if !lookup_context.extra_modules.contains(&module) {
+                lookup_context.extra_modules.push(module);
+            }
+            let droppable =
+                !find_impls_at_context(db, &lookup_context, concrete_drop_trait(db, ty))?
+                    .is_empty();
+            let duplicatable =
+                !find_impls_at_context(db, &lookup_context, concrete_copy_trait(db, ty))?
+                    .is_empty();
+            TypeInfo { droppable, duplicatable }
+        }
+        TypeLongId::Tuple(tys) => {
+            let infos = tys
+                .into_iter()
+                .map(|ty| db.type_info(lookup_context.clone(), ty))
+                .collect::<Option<Vec<_>>>()?;
+            let droppable = infos.iter().all(|info| info.droppable);
+            let duplicatable = infos.iter().all(|info| info.duplicatable);
+            TypeInfo { droppable, duplicatable }
+        }
+        TypeLongId::GenericParameter(_) => todo!(),
+        TypeLongId::Never => TypeInfo { droppable: true, duplicatable: true },
+        TypeLongId::Missing => {
+            return None;
+        }
+    })
 }

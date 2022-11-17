@@ -201,6 +201,12 @@ impl<'a> Parser<'a> {
         let rparen = self.parse_token::<TerminalRParen>();
         let return_type_clause = self.parse_option_return_type_clause();
         let implicits_clause = self.parse_option_implicits_clause();
+        let optional_no_panic = if self.peek().kind == SyntaxKind::TerminalNoPanic {
+            self.take::<TerminalNoPanic>().into()
+        } else {
+            OptionTerminalNoPanicEmpty::new_green(self.db).into()
+        };
+
         FunctionSignature::new_green(
             self.db,
             lparen,
@@ -208,6 +214,7 @@ impl<'a> Parser<'a> {
             rparen,
             return_type_clause,
             implicits_clause,
+            optional_no_panic,
         )
     }
 
@@ -263,6 +270,21 @@ impl<'a> Parser<'a> {
         ItemUse::new_green(self.db, attributes, use_kw, path, semicolon)
     }
 
+    /// Returns a GreenId of a node with an identifier kind.
+    fn parse_identifier(&mut self) -> TerminalIdentifierGreen {
+        match self.peek().kind {
+            // TODO(ilya): Add more keywords.
+            // TODO(ilya): consider autogenerate this to ensure no keywords are forgotten.
+            SyntaxKind::TerminalExtern => {
+                self.skip_token(ParserDiagnosticKind::ReservedIdentifier {
+                    identifier: self.peek().text.clone(),
+                });
+                TerminalIdentifier::missing(self.db)
+            }
+            _ => self.parse_token::<TerminalIdentifier>(),
+        }
+    }
+
     /// Returns a GreenId of a node with an attribute kind or None if an attribute can't be parsed.
     fn try_parse_attribute(&mut self) -> Option<AttributeGreen> {
         match self.peek().kind {
@@ -270,7 +292,7 @@ impl<'a> Parser<'a> {
                 // TODO(ilya): Support attributes with values, i.e. #[derive(Copy, Clone)].
                 let hash = self.take::<TerminalHash>();
                 let lbrack = self.parse_token::<TerminalLBrack>();
-                let attr = self.parse_token::<TerminalIdentifier>();
+                let attr = self.parse_identifier();
                 let rbrack = self.parse_token::<TerminalRBrack>();
 
                 Some(Attribute::new_green(self.db, hash, lbrack, attr, rbrack))
@@ -285,7 +307,11 @@ impl<'a> Parser<'a> {
             "Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/Attribute";
         AttributeList::new_green(
             self.db,
-            self.parse_list(Self::try_parse_attribute, is_of_kind!(top_level), expected_elements),
+            self.parse_list(
+                Self::try_parse_attribute,
+                is_of_kind!(rbrace, top_level),
+                expected_elements,
+            ),
         )
     }
 
@@ -315,14 +341,46 @@ impl<'a> Parser<'a> {
         let generic_params = self.parse_optional_generic_params();
         let body = if self.peek().kind == SyntaxKind::TerminalLBrace {
             let lbrace = self.take::<TerminalLBrace>();
-            // TODO(spapini): Parse associated items.
+            let items = TraitItemList::new_green(
+                self.db,
+                self.parse_list(Self::try_parse_trait_item, is_of_kind!(rbrace), "trait item"),
+            );
             let rbrace = self.parse_token::<TerminalRBrace>();
-            TraitBody::new_green(self.db, lbrace, rbrace).into()
+            TraitBody::new_green(self.db, lbrace, items, rbrace).into()
         } else {
             self.parse_token::<TerminalSemicolon>().into()
         };
 
         ItemTrait::new_green(self.db, attributes, trait_kw, name, generic_params, body)
+    }
+
+    /// Returns a GreenId of a node with a TraitItem.* kind (see [syntax::node::ast::TraitItem]).
+    pub fn try_parse_trait_item(&mut self) -> Option<TraitItemGreen> {
+        let attributes = self.parse_attribute_list();
+
+        match self.peek().kind {
+            SyntaxKind::TerminalFunction => Some(self.expect_trait_function(attributes).into()),
+            _ => None,
+        }
+    }
+
+    /// Assumes the current token is Function.
+    /// Expected pattern: <FunctionSignature><SemiColon>
+    fn expect_trait_function(&mut self, attributes: AttributeListGreen) -> TraitItemFunctionGreen {
+        let function_kw = self.take::<TerminalFunction>();
+        let name = self.parse_token::<TerminalIdentifier>();
+        let generic_params = self.parse_optional_generic_params();
+        let signature = self.expect_function_signature();
+        let semicolon = self.parse_token::<TerminalSemicolon>();
+        TraitItemFunction::new_green(
+            self.db,
+            attributes,
+            function_kw,
+            name,
+            generic_params,
+            signature,
+            semicolon,
+        )
     }
 
     /// Assumes the current token is Impl.
@@ -334,9 +392,12 @@ impl<'a> Parser<'a> {
         let trait_path = self.parse_path();
         let body = if self.peek().kind == SyntaxKind::TerminalLBrace {
             let lbrace = self.take::<TerminalLBrace>();
-            // TODO(spapini): Parse associated items.
+            let items = ItemList::new_green(
+                self.db,
+                self.parse_list(Self::try_parse_top_level_item, is_of_kind!(rbrace), "item"),
+            );
             let rbrace = self.parse_token::<TerminalRBrace>();
-            ImplBody::new_green(self.db, lbrace, rbrace).into()
+            ImplBody::new_green(self.db, lbrace, items, rbrace).into()
         } else {
             self.parse_token::<TerminalSemicolon>().into()
         };
@@ -358,13 +419,7 @@ impl<'a> Parser<'a> {
     /// Returns a GreenId of a node with an Expr.* kind (see [syntax::node::ast::Expr]) or None if
     /// an expression can't be parsed.
     fn try_parse_expr(&mut self) -> Option<ExprGreen> {
-        match self.peek().kind {
-            // Call parse_block() and not expect_block() because it's cheap.
-            SyntaxKind::TerminalLBrace => Some(self.parse_block().into()),
-            SyntaxKind::TerminalMatch => Some(self.expect_match_expr().into()),
-            SyntaxKind::TerminalIf => Some(self.expect_if_expr().into()),
-            _ => self.try_parse_simple_expression(MAX_PRECEDENCE, LbraceAllowed::Allow),
-        }
+        self.try_parse_expr_limited(MAX_PRECEDENCE, LbraceAllowed::Allow)
     }
     /// Returns a GreenId of a node with an Expr.* kind (see [syntax::node::ast::Expr]) or a node
     /// with kind ExprMissing if an expression can't be parsed.
@@ -402,29 +457,40 @@ impl<'a> Parser<'a> {
         }
     }
 
-    /// Returns a GreenId of a node with an Expr.* kind (see [syntax::node::ast::Expr]), excluding
-    /// ExprBlock, or None if such an expression can't be parsed.
+    /// Returns a GreenId of a node with an Expr.* kind (see [syntax::node::ast::Expr]) or None if
+    /// such an expression can't be parsed.
     ///
+    /// Parsing will be limited by:
+    /// `parent_precedence` - parsing of boolean operators limited to this.
     /// `lbrace_allowed` - See [LbraceAllowed].
-    fn try_parse_simple_expression(
+    fn try_parse_expr_limited(
         &mut self,
         parent_precedence: usize,
         lbrace_allowed: LbraceAllowed,
     ) -> Option<ExprGreen> {
         let mut expr = if let Some(precedence) = get_unary_operator_precedence(self.peek().kind) {
             let op = self.parse_unary_operator();
-            let expr = self.parse_simple_expression(precedence, lbrace_allowed);
+            let expr = self.parse_expr_limited(precedence, lbrace_allowed);
             ExprUnary::new_green(self.db, op, expr).into()
         } else {
             self.try_parse_atom(lbrace_allowed)?
         };
 
+        // ? operator has the highest precedence, so we now find all the usages after.
+        while self.peek().kind == SyntaxKind::TerminalQuestionMark {
+            expr = ExprErrorPropagate::new_green(
+                self.db,
+                expr,
+                self.parse_token::<TerminalQuestionMark>(),
+            )
+            .into();
+        }
         while let Some(precedence) = get_binary_operator_precedence(self.peek().kind) {
             if precedence >= parent_precedence {
                 return Some(expr);
             }
             let op = self.parse_binary_operator();
-            let rhs = self.parse_simple_expression(precedence, lbrace_allowed);
+            let rhs = self.parse_expr_limited(precedence, lbrace_allowed);
             expr = ExprBinary::new_green(self.db, expr, op, rhs).into();
         }
         Some(expr)
@@ -433,12 +499,12 @@ impl<'a> Parser<'a> {
     /// ExprBlock, or ExprMissing if such an expression can't be parsed.
     ///
     /// `lbrace_allowed` - See [LbraceAllowed].
-    fn parse_simple_expression(
+    fn parse_expr_limited(
         &mut self,
         parent_precedence: usize,
         lbrace_allowed: LbraceAllowed,
     ) -> ExprGreen {
-        match self.try_parse_simple_expression(parent_precedence, lbrace_allowed) {
+        match self.try_parse_expr_limited(parent_precedence, lbrace_allowed) {
             Some(green) => green,
             None => self.create_and_report_missing::<Expr>(ParserDiagnosticKind::MissingExpression),
         }
@@ -473,6 +539,12 @@ impl<'a> Parser<'a> {
             }
             SyntaxKind::TerminalLBrace if lbrace_allowed == LbraceAllowed::Allow => {
                 Some(self.parse_block().into())
+            }
+            SyntaxKind::TerminalMatch if lbrace_allowed == LbraceAllowed::Allow => {
+                Some(self.expect_match_expr().into())
+            }
+            SyntaxKind::TerminalIf if lbrace_allowed == LbraceAllowed::Allow => {
+                Some(self.expect_if_expr().into())
             }
             _ => {
                 // TODO(yuval): report to diagnostics.
@@ -621,7 +693,7 @@ impl<'a> Parser<'a> {
     /// Expected pattern: match <expr> \{<MatchArm>*\}
     fn expect_match_expr(&mut self) -> ExprMatchGreen {
         let match_kw = self.take::<TerminalMatch>();
-        let expr = self.parse_simple_expression(MAX_PRECEDENCE, LbraceAllowed::Forbid);
+        let expr = self.parse_expr_limited(MAX_PRECEDENCE, LbraceAllowed::Forbid);
         let lbrace = self.parse_token::<TerminalLBrace>();
         let arms = MatchArms::new_green(
             self.db,
@@ -639,7 +711,7 @@ impl<'a> Parser<'a> {
     /// Expected pattern: `if <expr> <block> [else <block>]`.
     fn expect_if_expr(&mut self) -> ExprIfGreen {
         let if_kw = self.take::<TerminalIf>();
-        let condition = self.parse_simple_expression(MAX_PRECEDENCE, LbraceAllowed::Forbid);
+        let condition = self.parse_expr_limited(MAX_PRECEDENCE, LbraceAllowed::Forbid);
         let if_block = self.parse_block();
 
         let else_clause: OptionElseClauseGreen = if self.peek().kind == SyntaxKind::TerminalElse {
@@ -701,7 +773,7 @@ impl<'a> Parser<'a> {
                         // Enum pattern.
                         let lparen = self.take::<TerminalLParen>();
                         let pattern = self.parse_pattern();
-                        let rparen = self.take::<TerminalRParen>();
+                        let rparen = self.parse_token::<TerminalRParen>();
                         PatternEnum::new_green(self.db, path, lparen, pattern, rparen).into()
                     }
                     _ => path.into(),
@@ -718,7 +790,7 @@ impl<'a> Parser<'a> {
                     is_of_kind!(rparen, block, rbrace, top_level),
                     "pattern",
                 ));
-                let rparen = self.take::<TerminalRParen>();
+                let rparen = self.parse_token::<TerminalRParen>();
                 PatternTuple::new_green(self.db, lparen, patterns, rparen).into()
             }
             _ => return None,
@@ -1198,6 +1270,9 @@ impl<'a> Parser<'a> {
 
     /// If the current token is of kind `token_kind`, returns a GreenId of a node with this kind.
     /// Otherwise, returns Token::Missing.
+    ///
+    /// Note that this function should not be called for 'TerminalIdentifier',
+    /// parse_identifier should be used instead.
     fn parse_token<Terminal: syntax::node::Terminal>(&mut self) -> Terminal::Green {
         match self.try_parse_token::<Terminal>() {
             Some(green) => green,

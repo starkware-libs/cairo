@@ -24,6 +24,9 @@ fn terminal_kind_to_text(kind: SyntaxKind) -> Vec<&'static str> {
         SyntaxKind::TerminalImpl => vec!["impl"],
         SyntaxKind::TerminalOf => vec!["of"],
         SyntaxKind::TerminalLet => vec!["let"],
+        SyntaxKind::TerminalMut => vec!["mut"],
+        SyntaxKind::TerminalRef => vec!["ref"],
+        SyntaxKind::TerminalNoPanic => vec!["nopanic"],
         SyntaxKind::TerminalModule => vec!["mod"],
         SyntaxKind::TerminalStruct => vec!["struct"],
         SyntaxKind::TerminalEnum => vec!["enum"],
@@ -54,6 +57,7 @@ fn terminal_kind_to_text(kind: SyntaxKind) -> Vec<&'static str> {
         SyntaxKind::TerminalOrOr => vec!["||"],
         SyntaxKind::TerminalPlus => vec!["+"],
         SyntaxKind::TerminalSemicolon => vec![";"],
+        SyntaxKind::TerminalQuestionMark => vec!["?"],
         SyntaxKind::TerminalUnderscore => vec!["_"],
         SyntaxKind::TerminalLBrace => vec!["{"],
         SyntaxKind::TerminalRBrace => vec!["}"],
@@ -87,6 +91,9 @@ fn terminal_kinds() -> Vec<SyntaxKind> {
         SyntaxKind::TerminalStruct,
         SyntaxKind::TerminalEnum,
         SyntaxKind::TerminalLet,
+        SyntaxKind::TerminalMut,
+        SyntaxKind::TerminalRef,
+        SyntaxKind::TerminalNoPanic,
         SyntaxKind::TerminalReturn,
         SyntaxKind::TerminalMatch,
         SyntaxKind::TerminalIf,
@@ -113,6 +120,7 @@ fn terminal_kinds() -> Vec<SyntaxKind> {
         SyntaxKind::TerminalDotDot,
         SyntaxKind::TerminalEq,
         SyntaxKind::TerminalSemicolon,
+        SyntaxKind::TerminalQuestionMark,
         SyntaxKind::TerminalUnderscore,
         SyntaxKind::TerminalLBrace,
         SyntaxKind::TerminalRBrace,
@@ -175,6 +183,9 @@ fn is_identifier_like(kind: SyntaxKind) -> bool {
             | SyntaxKind::TerminalStruct
             | SyntaxKind::TerminalEnum
             | SyntaxKind::TerminalLet
+            | SyntaxKind::TerminalMut
+            | SyntaxKind::TerminalRef
+            | SyntaxKind::TerminalNoPanic
             | SyntaxKind::TerminalReturn
             | SyntaxKind::TerminalMatch
             | SyntaxKind::TerminalIf

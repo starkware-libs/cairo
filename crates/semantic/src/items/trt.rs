@@ -1,14 +1,12 @@
 use db_utils::define_short_id;
-use defs::ids::{GenericParamId, ImplId, LanguageElementId, TraitId};
+use defs::ids::{GenericParamId, LanguageElementId, TraitId};
 use diagnostics::Diagnostics;
 use diagnostics_proc_macros::DebugWithDb;
-use utils::{try_extract_matches, OptionHelper};
 
+use super::attribute::{ast_attributes_to_semantic, Attribute};
 use super::generics::semantic_generic_params;
 use crate::db::SemanticGroup;
-use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
-use crate::resolve_path::{ResolvedConcreteItem, Resolver};
 use crate::{GenericArgumentId, SemanticDiagnostic};
 
 #[cfg(test)]
@@ -28,6 +26,7 @@ define_short_id!(ConcreteTraitId, ConcreteTraitLongId, SemanticGroup, lookup_int
 pub struct TraitData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
     generic_params: Vec<GenericParamId>,
+    attributes: Vec<Attribute>,
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_semantic_diagnostics].
@@ -46,10 +45,17 @@ pub fn trait_generic_params(
     Some(db.priv_trait_semantic_data(trait_id)?.generic_params)
 }
 
+/// Query implementation of [crate::db::SemanticGroup::trait_attributes].
+pub fn trait_attributes(db: &dyn SemanticGroup, trait_id: TraitId) -> Option<Vec<Attribute>> {
+    Some(db.priv_trait_semantic_data(trait_id)?.attributes)
+}
+
 /// Query implementation of [crate::db::SemanticGroup::priv_trait_semantic_data].
 pub fn priv_trait_semantic_data(db: &dyn SemanticGroup, trait_id: TraitId) -> Option<TraitData> {
     // TODO(spapini): When asts are rooted on items, don't query module_data directly. Use a
     // selector.
+
+    let syntax_db = db.upcast();
     let module_id = trait_id.module(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_id);
     let module_data = db.module_data(module_id)?;
@@ -60,69 +66,9 @@ pub fn priv_trait_semantic_data(db: &dyn SemanticGroup, trait_id: TraitId) -> Op
         db,
         &mut diagnostics,
         module_id,
-        &trait_ast.generic_params(db.upcast()),
+        &trait_ast.generic_params(syntax_db),
     );
 
-    Some(TraitData { diagnostics: diagnostics.build(), generic_params })
-}
-
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
-#[debug_db(dyn SemanticGroup + 'static)]
-pub struct ConcreteImplLongId {
-    pub impl_id: ImplId,
-    pub generic_args: Vec<GenericArgumentId>,
-}
-define_short_id!(ConcreteImplId, ConcreteImplLongId, SemanticGroup, lookup_intern_concrete_impl);
-
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
-#[debug_db(dyn SemanticGroup + 'static)]
-pub struct ImplData {
-    diagnostics: Diagnostics<SemanticDiagnostic>,
-    generic_params: Vec<GenericParamId>,
-    /// The concrete trait this impl implements, or None if cannot be resolved.
-    concrete_trait: Option<ConcreteTraitId>,
-}
-
-/// Query implementation of [crate::db::SemanticGroup::impl_semantic_diagnostics].
-pub fn impl_semantic_diagnostics(
-    db: &dyn SemanticGroup,
-    impl_id: ImplId,
-) -> Diagnostics<SemanticDiagnostic> {
-    db.priv_impl_semantic_data(impl_id).map(|data| data.diagnostics).unwrap_or_default()
-}
-
-/// Query implementation of [crate::db::SemanticGroup::impl_generic_params].
-pub fn impl_generic_params(db: &dyn SemanticGroup, impl_id: ImplId) -> Option<Vec<GenericParamId>> {
-    Some(db.priv_impl_semantic_data(impl_id)?.generic_params)
-}
-
-/// Query implementation of [crate::db::SemanticGroup::priv_impl_semantic_data].
-pub fn priv_impl_semantic_data(db: &dyn SemanticGroup, impl_id: ImplId) -> Option<ImplData> {
-    // TODO(spapini): When asts are rooted on items, don't query module_data directly. Use a
-    // selector.
-    let module_id = impl_id.module(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_id);
-    // TODO(spapini): Add generic args when they are supported on enums.
-    let module_data = db.module_data(module_id)?;
-    let impl_ast = module_data.impls.get(&impl_id)?;
-    let syntax_db = db.upcast();
-
-    // Generic params.
-    let generic_params = semantic_generic_params(
-        db,
-        &mut diagnostics,
-        module_id,
-        &impl_ast.generic_params(syntax_db),
-    );
-    let mut resolver = Resolver::new(db, module_id, &generic_params);
-
-    let trait_path_syntax = impl_ast.trait_path(syntax_db);
-    let concrete_trait = resolver
-        .resolve_concrete_path(&mut diagnostics, &trait_path_syntax)
-        .and_then(|option_concrete_path| {
-            try_extract_matches!(option_concrete_path, ResolvedConcreteItem::Trait)
-                .on_none(|| diagnostics.report(&trait_path_syntax, NotATrait))
-        });
-
-    Some(ImplData { diagnostics: diagnostics.build(), generic_params, concrete_trait })
+    let attributes = ast_attributes_to_semantic(syntax_db, trait_ast.attributes(syntax_db));
+    Some(TraitData { diagnostics: diagnostics.build(), generic_params, attributes })
 }

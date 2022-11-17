@@ -22,6 +22,7 @@ pub enum SyntaxKind {
     ExprIf,
     ElseClause,
     OptionElseClauseEmpty,
+    ExprErrorPropagate,
     StructArgExpr,
     OptionStructArgExprEmpty,
     StructArgSingle,
@@ -50,6 +51,7 @@ pub enum SyntaxKind {
     ParamList,
     ImplicitsClause,
     OptionImplicitsClauseEmpty,
+    OptionTerminalNoPanicEmpty,
     FunctionSignature,
     Member,
     MemberList,
@@ -62,6 +64,8 @@ pub enum SyntaxKind {
     ItemExternType,
     ItemTrait,
     TraitBody,
+    TraitItemList,
+    TraitItemFunction,
     ItemImpl,
     ImplBody,
     ItemStruct,
@@ -117,6 +121,8 @@ pub enum SyntaxKind {
     TerminalRef,
     TokenMut,
     TerminalMut,
+    TokenNoPanic,
+    TerminalNoPanic,
     TokenAnd,
     TerminalAnd,
     TokenAndAnd,
@@ -159,6 +165,8 @@ pub enum SyntaxKind {
     TerminalEq,
     TokenSemicolon,
     TerminalSemicolon,
+    TokenQuestionMark,
+    TerminalQuestionMark,
     TokenUnderscore,
     TerminalUnderscore,
     TokenLBrace,
@@ -216,6 +224,7 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalImplicits
                 | SyntaxKind::TerminalRef
                 | SyntaxKind::TerminalMut
+                | SyntaxKind::TerminalNoPanic
                 | SyntaxKind::TerminalAnd
                 | SyntaxKind::TerminalAndAnd
                 | SyntaxKind::TerminalOrOr
@@ -237,6 +246,7 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalDotDot
                 | SyntaxKind::TerminalEq
                 | SyntaxKind::TerminalSemicolon
+                | SyntaxKind::TerminalQuestionMark
                 | SyntaxKind::TerminalUnderscore
                 | SyntaxKind::TerminalLBrace
                 | SyntaxKind::TerminalRBrace
@@ -276,6 +286,7 @@ impl SyntaxKind {
                 | SyntaxKind::TokenImplicits
                 | SyntaxKind::TokenRef
                 | SyntaxKind::TokenMut
+                | SyntaxKind::TokenNoPanic
                 | SyntaxKind::TokenAnd
                 | SyntaxKind::TokenAndAnd
                 | SyntaxKind::TokenOrOr
@@ -297,6 +308,7 @@ impl SyntaxKind {
                 | SyntaxKind::TokenDotDot
                 | SyntaxKind::TokenEq
                 | SyntaxKind::TokenSemicolon
+                | SyntaxKind::TokenQuestionMark
                 | SyntaxKind::TokenUnderscore
                 | SyntaxKind::TokenLBrace
                 | SyntaxKind::TokenRBrace

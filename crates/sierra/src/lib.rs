@@ -27,3 +27,5 @@ lalrpop_mod!(
 );
 
 pub type ProgramParser = parser::ProgramParser;
+pub type ConcreteLibFuncLongIdParser = parser::ConcreteLibFuncLongIdParser;
+pub type ConcreteTypeLongIdParser = parser::ConcreteTypeLongIdParser;

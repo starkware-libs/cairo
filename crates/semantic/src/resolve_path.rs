@@ -21,7 +21,8 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::items::enm::{ConcreteVariant, SemanticEnumEx};
-use crate::items::trt::{ConcreteImplId, ConcreteImplLongId, ConcreteTraitId, ConcreteTraitLongId};
+use crate::items::imp::{ConcreteImplId, ConcreteImplLongId};
+use crate::items::trt::{ConcreteTraitId, ConcreteTraitLongId};
 use crate::types::resolve_type;
 use crate::{
     ConcreteFunction, ConcreteTypeId, FunctionId, FunctionLongId, GenericArgumentId, TypeId,
@@ -448,7 +449,7 @@ impl<'db> Resolver<'db> {
             ModuleItemId::Submodule(id) => ResolvedGenericItem::Module(ModuleId::Submodule(id)),
             ModuleItemId::Use(id) => {
                 // TODO(spapini): Right now we call priv_use_semantic_data() directly for cycle
-                // handling. Otherise, we need to handle cycle both on it and on the selector
+                // handling. Otherwise, we need to handle cycle both on it and on the selector
                 // use_resolved_item(). Fix this,
                 self.db.priv_use_semantic_data(id)?.resolved_item?
             }

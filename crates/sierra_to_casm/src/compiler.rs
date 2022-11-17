@@ -38,9 +38,11 @@ pub enum CompilationError {
     LibFuncInvocationMismatch { statement_idx: StatementIdx },
 }
 
-#[derive(Error, Debug, Eq, PartialEq)]
+/// The casm program representation.
+#[derive(Debug, Eq, PartialEq)]
 pub struct CairoProgram {
     instructions: Vec<Instruction>,
+    debug_info: CairoProgramDebugInfo,
 }
 impl Display for CairoProgram {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -51,8 +53,22 @@ impl Display for CairoProgram {
     }
 }
 
+/// The debug information of a compilation from Sierra to casm.
+#[derive(Debug, Eq, PartialEq)]
+pub struct SierraStatementDebugInfo {
+    /// The offset of the sierra statement within the bytecode.
+    code_offset: usize,
+}
+
+/// The debug information of a compilation from Sierra to casm.
+#[derive(Debug, Eq, PartialEq)]
+pub struct CairoProgramDebugInfo {
+    /// The debug information per Sierra statement.
+    sierra_statement_info: Vec<SierraStatementDebugInfo>,
+}
+
 /// Ensure the basic structure of the invocation is the same as the library function.
-fn check_basic_structure(
+pub fn check_basic_structure(
     statement_idx: StatementIdx,
     invocation: &Invocation,
     libfunc: &CoreConcreteLibFunc,
@@ -186,7 +202,15 @@ pub fn compile(
         }
     }
 
-    relocate_instructions(&relocations, statement_offsets, &mut instructions);
+    relocate_instructions(&relocations, &statement_offsets, &mut instructions);
 
-    Ok(CairoProgram { instructions })
+    Ok(CairoProgram {
+        instructions,
+        debug_info: CairoProgramDebugInfo {
+            sierra_statement_info: statement_offsets
+                .into_iter()
+                .map(|code_offset| SierraStatementDebugInfo { code_offset })
+                .collect(),
+        },
+    })
 }

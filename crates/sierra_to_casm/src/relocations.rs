@@ -72,7 +72,7 @@ pub struct RelocationEntry {
 /// can be applied during that pass.
 pub fn relocate_instructions(
     relocations: &[RelocationEntry],
-    statement_offsets: Vec<usize>,
+    statement_offsets: &[usize],
     instructions: &mut [Instruction],
 ) {
     let mut program_offset = 0;
@@ -83,7 +83,7 @@ pub fn relocate_instructions(
             Some(RelocationEntry { instruction_idx: relocation_idx, relocation })
                 if *relocation_idx == instruction_idx =>
             {
-                relocation.apply(program_offset, &statement_offsets, instruction);
+                relocation.apply(program_offset, statement_offsets, instruction);
                 relocation_entry = relocations_iter.next();
             }
             _ => (),

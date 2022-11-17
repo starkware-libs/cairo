@@ -1,8 +1,32 @@
 use itertools::chain;
 use semantic::items::enm::SemanticEnumEx;
+use semantic::items::strct::SemanticStructEx;
 use sierra::program::ConcreteTypeLongId;
 
 use crate::db::SierraGenGroup;
+
+/// Interns and returns the Sierra concrete type id for a user defined struct or enum.
+fn get_user_type_concrete_type_id<GenericArgTyIter: Iterator<Item = semantic::TypeId>>(
+    db: &dyn SierraGenGroup,
+    ty: semantic::ConcreteTypeId,
+    generic_id: sierra::ids::GenericTypeId,
+    generic_arg_tys: GenericArgTyIter,
+) -> Option<sierra::ids::ConcreteTypeId> {
+    Some(
+        db.intern_concrete_type(ConcreteTypeLongId {
+            generic_id,
+            generic_args: chain!(
+                [Some(sierra::program::GenericArg::UserType(ty.format(db.upcast()).into()))],
+                generic_arg_tys.map(|generic_arg_ty| {
+                    Some(sierra::program::GenericArg::Type(
+                        db.get_concrete_type_id(generic_arg_ty)?,
+                    ))
+                })
+            )
+            .collect::<Option<_>>()?,
+        }),
+    )
+}
 
 /// See [SierraGenGroup::get_concrete_type_id] for documentation.
 pub fn get_concrete_type_id(
@@ -12,24 +36,18 @@ pub fn get_concrete_type_id(
     match db.lookup_intern_type(type_id) {
         semantic::TypeLongId::Concrete(ty) => {
             match ty {
-                semantic::ConcreteTypeId::Struct(_) => todo!(),
-                semantic::ConcreteTypeId::Enum(enm) => {
-                    let generic_args: Option<_> = chain!(
-                        [Some(sierra::program::GenericArg::UserType(
-                            type_id.format(db.upcast()).into()
-                        ))],
-                        db.concrete_enum_variants(enm)?.into_iter().map(|concrete_variant| {
-                            Some(sierra::program::GenericArg::Type(
-                                db.get_concrete_type_id(concrete_variant.ty)?,
-                            ))
-                        })
-                    )
-                    .collect();
-                    Some(db.intern_concrete_type(ConcreteTypeLongId {
-                        generic_id: "Enum".into(),
-                        generic_args: generic_args?,
-                    }))
-                }
+                semantic::ConcreteTypeId::Struct(strct) => get_user_type_concrete_type_id(
+                    db,
+                    ty,
+                    "Struct".into(),
+                    db.concrete_struct_members(strct)?.into_iter().map(|(_, member)| member.ty),
+                ),
+                semantic::ConcreteTypeId::Enum(enm) => get_user_type_concrete_type_id(
+                    db,
+                    ty,
+                    "Enum".into(),
+                    db.concrete_enum_variants(enm)?.into_iter().map(|variant| variant.ty),
+                ),
                 semantic::ConcreteTypeId::Extern(extrn) => {
                     Some(
                         db.intern_concrete_type(ConcreteTypeLongId {

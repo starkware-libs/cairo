@@ -19,7 +19,7 @@ libfunc into_box<felt> = into_box<felt>;
 libfunc felt_const<1> = felt_const<1>;
 libfunc felt_sub = felt_sub;
 libfunc rename<Box<felt>> = rename<Box<felt>>;
-libfunc function_call<user@test_crate::fib> = function_call<user@test_crate::fib>;
+libfunc function_call<user@fib_box::fib_box::fib> = function_call<user@fib_box::fib_box::fib>;
 
 revoke_ap_tracking() -> ();
 unbox<felt>([2]) -> ([3]);
@@ -49,11 +49,11 @@ store_temp<Box<felt>>([9]) -> ([9]);
 rename<Box<felt>>([9]) -> ([15]);
 store_temp<Box<felt>>([12]) -> ([12]);
 rename<Box<felt>>([12]) -> ([16]);
-function_call<user@test_crate::fib>([14], [15], [16]) -> ([13]);
+function_call<user@fib_box::fib_box::fib>([14], [15], [16]) -> ([13]);
 rename<Box<felt>>([13]) -> ([5]);
 burn_gas() -> ();
 rename<Box<felt>>([5]) -> ([17]);
 burn_gas() -> ();
 return([17]);
 
-test_crate::fib@0([0]: Box<felt>, [1]: Box<felt>, [2]: Box<felt>) -> (Box<felt>);
+fib_box::fib_box::fib@0([0]: Box<felt>, [1]: Box<felt>, [2]: Box<felt>) -> (Box<felt>);

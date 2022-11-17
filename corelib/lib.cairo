@@ -4,8 +4,8 @@ use traits::Drop;
 
 enum bool { False: (), True: (), }
 // TODO(spapini): Make unnamed.
-impl BoolCopy for Copy::<bool>;
-impl BoolDrop for Drop::<bool>;
+impl BoolCopy of Copy::<bool>;
+impl BoolDrop of Drop::<bool>;
 
 extern func bool_and(a: bool, b: bool) -> bool;
 extern func bool_or(a: bool, b: bool) -> bool;
@@ -15,8 +15,8 @@ extern type RangeCheck;
 
 extern type felt;
 // TODO(spapini): Make unnamed.
-impl FeltCopy for Copy::<felt>;
-impl FeltDrop for Drop::<felt>;
+impl FeltCopy of Copy::<felt>;
+impl FeltDrop of Drop::<felt>;
 
 extern func felt_add(a: felt, b: felt) -> felt;
 extern func felt_sub(a: felt, b: felt) -> felt;
@@ -29,12 +29,12 @@ extern func unwrap_nz<T>(a: NonZero::<T>) -> T;
 
 extern func felt_div(a: felt, b: NonZero::<felt>) -> felt;
 
+// TODO(orizi): Consider removing and replacing with `jump_nz(a - b)`.
 extern func felt_eq(a: felt, b: felt) -> bool;
-// TODO(spapini): Get RangeCheck implicit.
-extern func felt_le(a: felt, b: felt) -> (bool);
-extern func felt_ge(a: felt, b: felt) -> (bool);
-extern func felt_lt(a: felt, b: felt) -> (bool);
-extern func felt_gt(a: felt, b: felt) -> (bool);
+extern func felt_le(a: felt, b: felt) -> bool implicits (rc: RangeCheck);
+extern func felt_ge(a: felt, b: felt) -> bool implicits (rc: RangeCheck);
+extern func felt_lt(a: felt, b: felt) -> bool implicits (rc: RangeCheck);
+extern func felt_gt(a: felt, b: felt) -> bool implicits (rc: RangeCheck);
 
 extern func felt_jump_nz(a: felt) -> JumpNzResult::<felt>;
 
@@ -79,5 +79,4 @@ use integer::uint128_jump_nz;
 // Gas
 mod gas;
 use gas::GasBuiltin;
-use gas::GetGasResult;
 use gas::get_gas;

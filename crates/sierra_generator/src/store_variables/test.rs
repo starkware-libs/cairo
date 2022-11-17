@@ -8,10 +8,11 @@ use sierra::ids::ConcreteLibFuncId;
 
 use crate::db::SierraGenGroup;
 use crate::pre_sierra;
+use crate::replace_ids::replace_sierra_ids;
 use crate::store_variables::add_store_statements;
 use crate::test_utils::{
     dummy_jump_statement, dummy_label, dummy_push_values, dummy_return_statement,
-    dummy_simple_branch, dummy_simple_statement, replace_sierra_ids, SierraGenDatabaseForTesting,
+    dummy_simple_branch, dummy_simple_statement, SierraGenDatabaseForTesting,
 };
 
 /// Returns the [OutputVarReferenceInfo] information for a given libfunc.

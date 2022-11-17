@@ -91,7 +91,7 @@ pub fn lower_expr_if_bool(
         end_info: finalized_merger.end_info,
     };
     let block_result = match_generator.add(ctx, scope);
-    lowered_expr_from_block_result(scope, block_result, finalized_merger.pushes)
+    lowered_expr_from_block_result(scope, block_result, finalized_merger.outer_var_info)
 }
 
 /// Lowers an expression of type [semantic::ExprIf].
@@ -154,7 +154,7 @@ pub fn lower_expr_if_eq_zero(
         end_info: finalized_merger.end_info,
     };
     let block_result = match_generator.add(ctx, scope);
-    lowered_expr_from_block_result(scope, block_result, finalized_merger.pushes)
+    lowered_expr_from_block_result(scope, block_result, finalized_merger.outer_var_info)
 }
 
 /// Lowers an optional else block. If the else block is missing it is replaced with a block

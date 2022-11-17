@@ -1,18 +1,19 @@
 use db_utils::Upcast;
-use debug::DebugWithDb;
-use defs::db::{DefsDatabase, DefsGroup};
+use defs::db::{init_defs_group, DefsDatabase, DefsGroup};
+use defs::ids::ModuleId;
 use filesystem::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup};
 use lowering::db::{LoweringDatabase, LoweringGroup};
 use parser::db::ParserDatabase;
 use salsa::{InternId, InternKey};
 use semantic::db::{SemanticDatabase, SemanticGroup};
+use semantic::test_utils::setup_test_crate;
 use sierra::ids::{ConcreteLibFuncId, GenericLibFuncId};
 use sierra::program;
 use syntax::node::db::{SyntaxDatabase, SyntaxGroup};
-use utils::extract_matches;
 
 use crate::db::{SierraGenDatabase, SierraGenGroup};
-use crate::pre_sierra::{self, PushValue};
+use crate::pre_sierra;
+use crate::replace_ids::replace_sierra_ids_in_program;
 use crate::utils::{jump_statement, return_statement, simple_statement};
 
 #[salsa::database(
@@ -32,6 +33,7 @@ impl Default for SierraGenDatabaseForTesting {
     fn default() -> Self {
         let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
+        init_defs_group(&mut res);
         res
     }
 }
@@ -66,138 +68,24 @@ impl Upcast<dyn LoweringGroup> for SierraGenDatabaseForTesting {
     }
 }
 
-/// Replaces `sierra::ids::{ConcreteLibFuncId, ConcreteTypeId, FunctionId}` with a dummy ids whose
-/// debug string is the string representing the expanded information about the id.
-/// For LibFuncs and Types - that would be recursively opening their generic arguments, for
-/// functions - that would be getting their original name. For example, while the original debug
-/// string may be `[6]`, the resulting debug string may be: for libfuncs: `felt_const<2>` or
-/// `unbox<Box<Box<felt>>>`. for types: `felt` or `Box<Box<felt>>`.
-/// for functions: `test_crate::foo`.
-pub fn replace_sierra_ids(
-    db: &dyn SierraGenGroup,
-    statement: &pre_sierra::Statement,
-) -> pre_sierra::Statement {
-    match statement {
-        pre_sierra::Statement::Sierra(sierra::program::GenStatement::Invocation(p)) => {
-            pre_sierra::Statement::Sierra(sierra::program::GenStatement::Invocation(
-                sierra::program::GenInvocation {
-                    libfunc_id: replace_libfunc_id(db, &p.libfunc_id),
-                    ..p.clone()
-                },
-            ))
-        }
-        pre_sierra::Statement::PushValues(values) => pre_sierra::Statement::PushValues(
-            values
-                .iter()
-                .map(|value| PushValue { ty: replace_type_id(db, &value.ty), ..value.clone() })
-                .collect(),
-        ),
-        _ => statement.clone(),
-    }
-}
+/// Compiles 'content' to sierra and replaces the sierra ids to make it readable.
+pub fn checked_compile_to_sierra(content: &str) -> sierra::program::Program {
+    let mut db_val = SierraGenDatabaseForTesting::default();
+    let db = &mut db_val;
+    let crate_id = setup_test_crate(db, content);
 
-/// Replaces `sierra::ids::{ConcreteLibFuncId, ConcreteTypeId, FunctionId}` with a dummy ids whose
-/// debug string is the string representing the expanded information about the id.
-/// For LibFuncs and Types - that would be recursively opening their generic arguments, for
-/// functions - that would be getting their original name. For example, while the original debug
-/// string may be `[6]`, the resulting debug string may be: for libfuncs: `felt_const<2>` or
-/// `unbox<Box<Box<felt>>>`. for types: `felt` or `Box<Box<felt>>`.
-/// for functions: `test_crate::foo`.
-///
-/// Similar to [replace_sierra_ids] except that it acts on [sierra::program::Program].
-pub fn replace_sierra_ids_in_program(
-    db: &dyn SierraGenGroup,
-    program: &sierra::program::Program,
-) -> sierra::program::Program {
-    let mut program = program.clone();
-    for statement in &mut program.statements {
-        if let sierra::program::GenStatement::Invocation(p) = statement {
-            p.libfunc_id = replace_libfunc_id(db, &p.libfunc_id);
-        }
-    }
-    for type_declaration in &mut program.type_declarations {
-        type_declaration.id = replace_type_id(db, &type_declaration.id);
-        replace_generic_args(db, &mut type_declaration.long_id.generic_args);
-    }
-    for libfunc_declaration in &mut program.libfunc_declarations {
-        libfunc_declaration.id = replace_libfunc_id(db, &libfunc_declaration.id);
-        replace_generic_args(db, &mut libfunc_declaration.long_id.generic_args);
-    }
-    for function in &mut program.funcs {
-        function.id = replace_function_id(db, &function.id);
-        for param in &mut function.params {
-            param.ty = replace_type_id(db, &param.ty);
-        }
-        for ty in &mut function.signature.ret_types {
-            *ty = replace_type_id(db, ty);
-        }
-        for ty in &mut function.signature.param_types {
-            *ty = replace_type_id(db, ty);
-        }
-    }
-    program
-}
+    let module_id = ModuleId::CrateRoot(crate_id);
+    db.module_semantic_diagnostics(module_id)
+        .unwrap()
+        .expect_with_db(db, "Unexpected semantic diagnostics");
+    db.module_lowering_diagnostics(module_id)
+        .unwrap()
+        .expect_with_db(db, "Unexpected lowering diagnostics.");
+    db.module_sierra_diagnostics(module_id)
+        .expect_with_db(db, "Unexpected Sierra generation diagnostics.");
 
-/// Helper for [replace_sierra_ids] and [replace_sierra_ids_in_program] replacing libfunc ids.
-fn replace_libfunc_id(
-    db: &dyn SierraGenGroup,
-    id: &sierra::ids::ConcreteLibFuncId,
-) -> sierra::ids::ConcreteLibFuncId {
-    let mut long_id = db.lookup_intern_concrete_lib_func(id.clone());
-    replace_generic_args(db, &mut long_id.generic_args);
-    long_id.to_string().into()
-}
-
-/// Helper for [replace_sierra_ids] and [replace_sierra_ids_in_program] replacing type ids.
-fn replace_type_id(
-    db: &dyn SierraGenGroup,
-    id: &sierra::ids::ConcreteTypeId,
-) -> sierra::ids::ConcreteTypeId {
-    let mut long_id = db.lookup_intern_concrete_type(id.clone());
-    replace_generic_args(db, &mut long_id.generic_args);
-    if long_id.generic_id == "Enum".into() || long_id.generic_id == "Struct".into() {
-        long_id.generic_id =
-            extract_matches!(&long_id.generic_args[0], program::GenericArg::UserType)
-                .to_string()
-                .into();
-        if long_id.generic_id == "Tuple".into() {
-            long_id.generic_args = long_id.generic_args.into_iter().skip(1).collect();
-            if long_id.generic_args.is_empty() {
-                long_id.generic_id = "Unit".into();
-            }
-        } else {
-            long_id.generic_args.clear();
-        }
-    }
-    long_id.to_string().into()
-}
-
-/// Helper for [replace_sierra_ids] and [replace_sierra_ids_in_program] replacing function ids.
-fn replace_function_id(
-    db: &dyn SierraGenGroup,
-    sierra_id: &sierra::ids::FunctionId,
-) -> sierra::ids::FunctionId {
-    let semantic_id = db.lookup_intern_sierra_function(sierra_id.clone());
-    format!("{:?}", db.lookup_intern_function(semantic_id).debug(db.upcast())).into()
-}
-
-/// Helper for [replace_sierra_ids] and [replace_sierra_ids_in_program] replacing ids within a
-/// vector of generic args.
-fn replace_generic_args(db: &dyn SierraGenGroup, generic_args: &mut Vec<program::GenericArg>) {
-    for arg in generic_args {
-        match arg {
-            program::GenericArg::Type(id) => {
-                *id = replace_type_id(db, id);
-            }
-            program::GenericArg::UserFunc(id) => {
-                *id = replace_function_id(db, id);
-            }
-            program::GenericArg::LibFunc(id) => {
-                *id = replace_libfunc_id(db, id);
-            }
-            program::GenericArg::Value(_) | program::GenericArg::UserType(_) => {}
-        }
-    }
+    let program = db.get_sierra_program().unwrap();
+    replace_sierra_ids_in_program(db, &program)
 }
 
 /// Generates a dummy statement with the given name, inputs and outputs.

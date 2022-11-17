@@ -54,7 +54,8 @@
     │   │   │   │               ├── token (kind: TokenIdentifier): 'S'
     │   │   │   │               └── trailing_trivia (kind: Trivia)
     │   │   │   │                   └── child #0 (kind: TokenNewline).
-    │   │   │   └── implicits_clause (kind: OptionImplicitsClauseEmpty) []
+    │   │   │   ├── implicits_clause (kind: OptionImplicitsClauseEmpty) []
+    │   │   │   └── optional_no_panic (kind: OptionTerminalNoPanicEmpty) []
     │   │   └── body (kind: ExprBlock)
     │   │       ├── lbrace (kind: TerminalLBrace)
     │   │       │   ├── leading_trivia (kind: Trivia) []
@@ -468,7 +469,8 @@
     │   │   │   │               ├── token (kind: TokenIdentifier): 'X'
     │   │   │   │               └── trailing_trivia (kind: Trivia)
     │   │   │   │                   └── child #0 (kind: TokenWhitespace).
-    │   │   │   └── implicits_clause (kind: OptionImplicitsClauseEmpty) []
+    │   │   │   ├── implicits_clause (kind: OptionImplicitsClauseEmpty) []
+    │   │   │   └── optional_no_panic (kind: OptionTerminalNoPanicEmpty) []
     │   │   └── body (kind: ExprBlock)
     │   │       ├── lbrace (kind: TerminalLBrace)
     │   │       │   ├── leading_trivia (kind: Trivia) []

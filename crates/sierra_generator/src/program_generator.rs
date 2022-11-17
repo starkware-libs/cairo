@@ -33,17 +33,23 @@ pub fn module_sierra_diagnostics(
                 diagnostics.extend(db.free_function_sierra_diagnostics(*free_function_id))
             }
             ModuleItemId::Enum(_) => {}
-            _ => todo!("Not supported yet."),
+            ModuleItemId::Struct(_) => {}
+            ModuleItemId::Impl(_) => {}
+            ModuleItemId::Submodule(_)
+            | ModuleItemId::Use(_)
+            | ModuleItemId::Trait(_)
+            | ModuleItemId::ExternType(_)
+            | ModuleItemId::ExternFunction(_) => {}
         }
     }
     diagnostics.build()
 }
 
-/// Query implementation of [crate::db::SierraGenGroup::module_sierra_program].
-pub fn module_sierra_program(
+/// Query implementation of [crate::db::SierraGenGroup::module_sierra_library].
+pub fn module_sierra_library(
     db: &dyn SierraGenGroup,
     module_id: ModuleId,
-) -> Option<Arc<sierra::program::Program>> {
+) -> Option<Arc<pre_sierra::Library>> {
     let module_items = db.module_items(module_id)?;
     let mut functions: Vec<Arc<pre_sierra::Function>> = vec![];
     let mut statements: Vec<pre_sierra::Statement> = vec![];
@@ -52,47 +58,24 @@ pub fn module_sierra_program(
     // and add them to `functions`.
     for (_name, item) in module_items.items.iter() {
         match item {
-            ModuleItemId::Submodule(_) => todo!("'mod' lowering not supported yet."),
-            ModuleItemId::Use(_) => todo!("'use' lowering not supported yet."),
+            ModuleItemId::Submodule(_) => {}
+            ModuleItemId::Use(_) => {}
             ModuleItemId::FreeFunction(free_function_id) => {
                 let function: Arc<pre_sierra::Function> =
                     db.free_function_sierra(*free_function_id)?;
                 functions.push(function.clone());
                 statements.extend_from_slice(function.body.as_slice());
             }
-            ModuleItemId::Struct(_) => todo!("'struct' lowering not supported yet."),
+            ModuleItemId::Struct(_) => {}
             ModuleItemId::Enum(_) => {}
             ModuleItemId::Trait(_) => {}
             ModuleItemId::Impl(_) => {}
             ModuleItemId::ExternType(_) => {}
-            ModuleItemId::ExternFunction(_) => todo!("'extern func' lowering not supported yet."),
+            ModuleItemId::ExternFunction(_) => {}
         }
     }
-    let libfunc_declarations =
-        generate_libfunc_declarations(db, collect_used_libfuncs(&statements).iter());
-    let type_declarations =
-        generate_type_declarations(db, collect_used_types(db, &libfunc_declarations).iter());
-    // Resolve labels.
-    let label_replacer = LabelReplacer::from_statements(&statements);
-    let resolved_statements = resolve_labels(statements, &label_replacer);
 
-    Some(Arc::new(program::Program {
-        type_declarations,
-        libfunc_declarations,
-        statements: resolved_statements,
-        funcs: functions
-            .into_iter()
-            .map(|function| {
-                let sierra_signature = db.get_function_signature(function.id.clone()).unwrap();
-                program::Function::new(
-                    function.id.clone(),
-                    function.parameters.clone(),
-                    sierra_signature.ret_types.clone(),
-                    label_replacer.handle_label_id(function.entry_point),
-                )
-            })
-            .collect(),
-    }))
+    Some(Arc::new(pre_sierra::Library { statements, functions }))
 }
 
 /// Generates the list of [sierra::program::LibFuncDeclaration] for the given list of
@@ -189,4 +172,45 @@ fn collect_used_types(
             )
         })
         .collect()
+}
+
+pub fn get_sierra_program(db: &dyn SierraGenGroup) -> Option<Arc<sierra::program::Program>> {
+    let mut functions: Vec<Arc<pre_sierra::Function>> = vec![];
+    let mut statements: Vec<pre_sierra::Statement> = vec![];
+
+    for crate_id in db.crates() {
+        let modules = db.crate_modules(crate_id);
+        for module in modules.iter() {
+            let pre_sierra_library = db.module_sierra_library(*module)?;
+
+            functions.extend_from_slice(&pre_sierra_library.functions);
+            statements.extend_from_slice(&pre_sierra_library.statements);
+        }
+    }
+
+    let libfunc_declarations =
+        generate_libfunc_declarations(db, collect_used_libfuncs(&statements).iter());
+    let type_declarations =
+        generate_type_declarations(db, collect_used_types(db, &libfunc_declarations).iter());
+    // Resolve labels.
+    let label_replacer = LabelReplacer::from_statements(&statements);
+    let resolved_statements = resolve_labels(statements, &label_replacer);
+
+    Some(Arc::new(program::Program {
+        type_declarations,
+        libfunc_declarations,
+        statements: resolved_statements,
+        funcs: functions
+            .into_iter()
+            .map(|function| {
+                let sierra_signature = db.get_function_signature(function.id.clone()).unwrap();
+                program::Function::new(
+                    function.id.clone(),
+                    function.parameters.clone(),
+                    sierra_signature.ret_types.clone(),
+                    label_replacer.handle_label_id(function.entry_point),
+                )
+            })
+            .collect(),
+    }))
 }

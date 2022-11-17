@@ -7,10 +7,11 @@ use crate::operand::{CellRef, DerefOrImmediate};
 mod test;
 
 // Represents a cairo hint.
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub enum Hint {
     AllocSegment { dst: CellRef },
-    TestLessThan { lhs: DerefOrImmediate, rhs: DerefOrImmediate },
+    TestLessThan { lhs: DerefOrImmediate, rhs: DerefOrImmediate, dst: CellRef },
+    DivMod { lhs: DerefOrImmediate, rhs: DerefOrImmediate, quotient: CellRef, remainder: CellRef },
 }
 
 impl Display for Hint {
@@ -22,11 +23,18 @@ impl Display for Hint {
         write!(f, "%{{ ")?;
         match self {
             Hint::AllocSegment { dst } => write!(f, "memory{dst} = segments.add()")?,
-            Hint::TestLessThan { lhs, rhs } => {
-                write!(f, "memory[ap + 0] = ")?;
+            Hint::TestLessThan { lhs, rhs, dst } => {
+                write!(f, "memory{dst} = ")?;
                 fmt_access_or_const(f, lhs)?;
                 write!(f, " < ")?;
                 fmt_access_or_const(f, rhs)?;
+            }
+            Hint::DivMod { lhs, rhs, quotient, remainder } => {
+                write!(f, "(memory{quotient}, memory{remainder}) = divmod(")?;
+                fmt_access_or_const(f, lhs)?;
+                write!(f, ", ")?;
+                fmt_access_or_const(f, rhs)?;
+                write!(f, ")")?;
             }
         }
         write!(f, " %}}")

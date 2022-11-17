@@ -14,7 +14,9 @@ pub use crate::expr::pattern::{
 pub use crate::items::enm::{ConcreteVariant, Variant};
 pub use crate::items::free_function::FreeFunctionDefinition;
 pub use crate::items::functions::{ConcreteFunction, FunctionId, FunctionLongId, Signature};
+pub use crate::items::imp::{ConcreteImplId, ConcreteImplLongId};
 pub use crate::items::strct::Member;
+pub use crate::items::trt::{ConcreteTraitId, ConcreteTraitLongId};
 pub use crate::types::{
     ConcreteEnumId, ConcreteExternTypeId, ConcreteStructId, ConcreteTypeId, TypeId, TypeLongId,
 };

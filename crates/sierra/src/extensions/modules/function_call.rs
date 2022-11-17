@@ -20,15 +20,15 @@ impl NamedLibFunc for FunctionCallLibFunc {
     ) -> Result<LibFuncSignature, SpecializationError> {
         match args {
             [GenericArg::UserFunc(function_id)] => {
-                let function = context.get_function_signature(function_id)?;
+                let signature = context.get_function_signature(function_id)?;
                 let ap_change = match context.get_function_ap_change(function_id)? {
                     // The call uses two stack slots.
                     SierraApChange::Known(ap_change) => SierraApChange::Known(ap_change + 2),
                     ap_change => ap_change,
                 };
                 Ok(LibFuncSignature::new_non_branch(
-                    function.param_types.clone(),
-                    function
+                    signature.param_types.clone(),
+                    signature
                         .ret_types
                         .iter()
                         .enumerate()

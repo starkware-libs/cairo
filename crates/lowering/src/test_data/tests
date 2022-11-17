@@ -138,7 +138,7 @@ blk5:
 Inputs: v0: core::felt
 Statements:
   () <- blk0()
-  (v2: ()) <- tuple_construct()
+  (v2: ()) <- struct_construct()
   () <- blk1()
   (v3: core::felt) <- 1u
   (v4: core::felt) <- 1u
@@ -156,8 +156,6 @@ Statements:
 Drops: v0, v2, v3, v4, v5, v9, v10, v11, v12, v16, v17
 End:
   Callsite(v18)
-
-
 
 //! > ==========================================================================
 
@@ -245,6 +243,6 @@ Statements:
     MyEnum::B => blk4,
     MyEnum::C => blk5,
   }
-Drops: v0
+Drops:
 End:
   Callsite(v8)

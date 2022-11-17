@@ -47,9 +47,17 @@ impl DiagnosticEntry for SemanticDiagnostic {
 
     fn format(&self, db: &Self::DbType) -> String {
         match &self.kind {
+            SemanticDiagnosticKind::FileNotFound => "File not found.".into(),
             SemanticDiagnosticKind::Unsupported => "Unsupported feature.".into(),
             SemanticDiagnosticKind::UnknownLiteral => "Unknown literal.".into(),
             SemanticDiagnosticKind::UnknownBinaryOperator => "Unknown binary operator.".into(),
+            SemanticDiagnosticKind::UnsupportedBinaryOperator { op, type1, type2 } => {
+                format!(
+                    "Binary operator '{op}' is not supported for types '{}' and '{}'.",
+                    type1.format(db),
+                    type2.format(db)
+                )
+            }
             SemanticDiagnosticKind::UnknownFunction => "Unknown function.".into(),
             SemanticDiagnosticKind::UnknownTrait => "Unknown trait.".into(),
             SemanticDiagnosticKind::UnknownImpl => "Unknown impl.".into(),
@@ -145,6 +153,16 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     enum_id.full_path(db.upcast())
                 )
             }
+            SemanticDiagnosticKind::IncompatibleErrorPropagateType { return_ty, err_ty } => {
+                format!(
+                    r#"Return type "{}" does not wrap error "{}""#,
+                    return_ty.format(db),
+                    err_ty.format(db)
+                )
+            }
+            SemanticDiagnosticKind::ErrorPropagateOnNonErrorType { ty } => {
+                format!(r#"Type "{}" can not error propagate"#, ty.format(db))
+            }
             SemanticDiagnosticKind::InvalidMemberExpression => "Invalid member expression.".into(),
             SemanticDiagnosticKind::InvalidPath => "Invalid path.".into(),
             SemanticDiagnosticKind::RefArgNotAVariable => "ref argument must be a variable.".into(),
@@ -200,6 +218,15 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     ty.format(db)
                 )
             }
+            SemanticDiagnosticKind::InvalidCopyTraitImpl => {
+                "Invalid copy trait implementation.".into()
+            }
+            SemanticDiagnosticKind::InvalidDropTraitImpl => {
+                "Invalid drop trait implementation.".into()
+            }
+            SemanticDiagnosticKind::InvalidImplItem { item_kw } => {
+                format!("`{}` is not allowed inside impl.", item_kw)
+            }
         }
     }
 
@@ -210,9 +237,11 @@ impl DiagnosticEntry for SemanticDiagnostic {
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum SemanticDiagnosticKind {
+    FileNotFound,
     Unsupported,
     UnknownLiteral,
     UnknownBinaryOperator,
+    UnsupportedBinaryOperator { op: SmolStr, type1: semantic::TypeId, type2: semantic::TypeId },
     UnknownFunction,
     UnknownTrait,
     UnknownImpl,
@@ -245,6 +274,8 @@ pub enum SemanticDiagnosticKind {
     TypeHasNoMembers { ty: semantic::TypeId, member_name: SmolStr },
     NoSuchMember { struct_id: StructId, member_name: SmolStr },
     NoSuchVariant { enum_id: EnumId, variant_name: SmolStr },
+    IncompatibleErrorPropagateType { return_ty: semantic::TypeId, err_ty: semantic::TypeId },
+    ErrorPropagateOnNonErrorType { ty: semantic::TypeId },
     RefArgNotAVariable,
     AssignmentToImmutableVar,
     InvalidLhsForAssignment,
@@ -258,4 +289,7 @@ pub enum SemanticDiagnosticKind {
     UnexpectedStructPattern { ty: semantic::TypeId },
     UnexpectedTuplePattern { ty: semantic::TypeId },
     WrongEnum { expected_enum: EnumId, actual_enum: EnumId },
+    InvalidCopyTraitImpl,
+    InvalidDropTraitImpl,
+    InvalidImplItem { item_kw: SmolStr },
 }
