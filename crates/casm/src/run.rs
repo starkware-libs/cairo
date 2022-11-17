@@ -14,7 +14,6 @@ use cairo_rs::vm::vm_core::VirtualMachine;
 use num_bigint::BigInt;
 
 use crate::hints::Hint;
-use crate::inline::CasmContext;
 use crate::instructions::Instruction;
 use crate::operand::{CellRef, DerefOrImmediate, Register};
 
@@ -175,8 +174,8 @@ pub fn run(
 }
 
 /// Runs `function` and returns `n_returns` return values.
-pub fn run_function(function: CasmContext, n_returns: usize) -> Vec<BigInt> {
-    run(function.instructions, "plain", get_prime())
+pub fn run_function(instructions: Vec<Instruction>, n_returns: usize) -> Vec<BigInt> {
+    run(instructions, "plain", get_prime())
         .expect("Virtual machine failed")
         .get_return_values(n_returns)
         .expect("Return memory cells not set.")
