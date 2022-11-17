@@ -246,7 +246,24 @@ fn lower_single_pattern(
             // TODO(spapini): Build semantic_defs in semantic model.
             ctx.semantic_defs.insert(sem_var.id(), sem_var);
         }
-        semantic::Pattern::Struct(_) => todo!(),
+        semantic::Pattern::Struct(strct) => {
+            let members = ctx.db.struct_members(strct.id).unwrap();
+            let mut required_members = UnorderedHashMap::from_iter(
+                strct.field_patterns.iter().map(|(member, pattern)| (member.id, pattern)),
+            );
+            generators::StructDestructure {
+                input: lowered_expr.var(ctx, scope),
+                tys: members.iter().map(|(_, member)| member.ty).collect(),
+            }
+            .add(ctx, scope)
+            .into_iter()
+            .zip(members.into_iter())
+            .for_each(|(var, (_, member))| {
+                if let Some(member_pattern) = required_members.remove(&member.id) {
+                    lower_single_pattern(ctx, scope, member_pattern, LoweredExpr::AtVariable(var));
+                }
+            });
+        }
         semantic::Pattern::Tuple(semantic::PatternTuple { field_patterns, ty }) => {
             let outputs = if let LoweredExpr::Tuple(exprs) = lowered_expr {
                 exprs

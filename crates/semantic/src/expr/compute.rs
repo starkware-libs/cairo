@@ -641,7 +641,7 @@ fn compute_pattern_semantic(
                     PatternStructParam::WithExpr(with_expr) => {
                         let member = get_member(ctx, with_expr.name(syntax_db).text(syntax_db))?;
                         let pattern =
-                            compute_pattern_semantic(ctx, with_expr.pattern(syntax_db), ty)?;
+                            compute_pattern_semantic(ctx, with_expr.pattern(syntax_db), member.ty)?;
                         field_patterns.push((member, Box::new(pattern)));
                     }
                     PatternStructParam::Tail(_) => {

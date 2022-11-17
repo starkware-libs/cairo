@@ -69,3 +69,41 @@ Statements:
 Drops: v1, v3
 End:
   Callsite(v2)
+
+//! > ==========================================================================
+
+//! > Test struct destructure.
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+func foo(s: MyStruct) -> (felt, felt) {
+    let MyStruct { a: _, c: (v, _), b} = s;
+    (v, b)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct MyStruct {
+  a: (),
+  b: felt,
+  c: (felt, felt),
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_format
+blk0:
+Inputs: v0: test_crate::MyStruct
+Statements:
+  (v1: (), v2: core::felt, v3: (core::felt, core::felt)) <- tuple_destructure(v0)
+  (v4: core::felt, v5: core::felt) <- tuple_destructure(v3)
+  (v6: (core::felt, core::felt)) <- tuple_construct(v4, v2)
+Drops: v1, v2, v3, v4, v5
+End:
+  Callsite(v6)
