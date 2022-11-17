@@ -79,5 +79,4 @@ use integer::uint128_jump_nz;
 // Gas
 mod gas;
 use gas::GasBuiltin;
-use gas::GetGasResult;
 use gas::get_gas;
