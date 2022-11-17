@@ -234,7 +234,7 @@ fn strip_comments_and_linebreaks(program: &str) -> String {
                 %{ memory[ap + 0] = memory[fp + -4] < memory[fp + -3] %}
                 jmp rel 6 if [ap + 0] != 0, ap++;
                 // a >= b.
-                [fp + -3] = [ap + 0] + [fp + -4], ap++;
+                [fp + -4] = [ap + 0] + [fp + -3], ap++;
                 [ap + 0] = [[fp + -5] + 0];
                 jmp rel 6;
                 // a < b.
