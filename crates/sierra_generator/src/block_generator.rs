@@ -179,6 +179,9 @@ fn generate_statement_call_code(
             ])
         }
         GenericFunctionId::Extern(_) => Some(vec![simple_statement(libfunc_id, &inputs, &outputs)]),
+        GenericFunctionId::TraitFunction(_) => {
+            panic!("Trait function should be replaced with concrete functions.")
+        }
     }
 }
 
