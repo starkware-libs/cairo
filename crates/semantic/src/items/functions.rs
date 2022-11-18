@@ -15,7 +15,7 @@ use crate::types::{resolve_type, substitute_generics};
 use crate::{semantic, Mutability, Parameter};
 
 /// Function instance.
-/// For example: ImplA::foo<A, B>, or bar<A>.
+/// For example: `ImplA::foo<A, B>`, or `bar<A>`.
 // TODO(spapini): Make it an enum and add a function pointer variant.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct FunctionLongId {
