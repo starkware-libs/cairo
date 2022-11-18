@@ -471,7 +471,7 @@ impl NoGenericArgsGenericLibFunc for Uint128ToFeltLibFunc {
             vec![context.get_concrete_type(Uint128Type::id(), &[])?],
             vec![OutputVarInfo {
                 ty: context.get_concrete_type(FeltType::id(), &[])?,
-                ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },
+                ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
             }],
             SierraApChange::Known(0),
         ))
