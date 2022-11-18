@@ -2,7 +2,7 @@ use super::as_single_type;
 use super::uninitialized::UninitializedType;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
-    LibFuncSignature, OutputVarInfo, ParamSignature, SierraApChange, SignatureOnlyConcreteLibFunc,
+    LibFuncSignature, OutputVarInfo, ParamSignature, SierraApChange, SignatureOnlyGenericLibFunc,
     SignatureSpecializationContext, SpecializationContext,
 };
 use crate::extensions::{
@@ -156,7 +156,6 @@ impl SignatureBasedConcreteLibFunc for StoreLocalConcreteLibFunc {
 #[derive(Default)]
 pub struct FinalizeLocalsLibFunc {}
 impl NoGenericArgsGenericLibFunc for FinalizeLocalsLibFunc {
-    type Concrete = SignatureOnlyConcreteLibFunc;
     const ID: GenericLibFuncId = GenericLibFuncId::new_inline("finalize_locals");
 
     fn specialize_signature(
@@ -164,18 +163,6 @@ impl NoGenericArgsGenericLibFunc for FinalizeLocalsLibFunc {
         _context: &dyn SignatureSpecializationContext,
     ) -> Result<LibFuncSignature, SpecializationError> {
         Ok(LibFuncSignature::new_non_branch(vec![], vec![], SierraApChange::FinalizeLocals))
-    }
-
-    fn specialize(
-        &self,
-        context: &dyn SpecializationContext,
-    ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(SignatureOnlyConcreteLibFunc {
-            signature: <Self as NoGenericArgsGenericLibFunc>::specialize_signature(
-                self,
-                context.upcast(),
-            )?,
-        })
     }
 }
 
@@ -227,8 +214,7 @@ impl NamedLibFunc for AllocLocalLibFunc {
 /// LibFunc for renaming an identifier - used to align identities for flow control merge.
 #[derive(Default)]
 pub struct RenameLibFunc {}
-impl NamedLibFunc for RenameLibFunc {
-    type Concrete = SignatureOnlyConcreteLibFunc;
+impl SignatureOnlyGenericLibFunc for RenameLibFunc {
     const ID: GenericLibFuncId = GenericLibFuncId::new_inline("rename");
 
     fn specialize_signature(
@@ -245,15 +231,5 @@ impl NamedLibFunc for RenameLibFunc {
             }],
             SierraApChange::Known(0),
         ))
-    }
-
-    fn specialize(
-        &self,
-        context: &dyn SpecializationContext,
-        args: &[GenericArg],
-    ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(SignatureOnlyConcreteLibFunc {
-            signature: self.specialize_signature(context.upcast(), args)?,
-        })
     }
 }

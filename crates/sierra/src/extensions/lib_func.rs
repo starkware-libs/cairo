@@ -178,7 +178,7 @@ impl<TNamedLibFunc: NamedLibFunc> GenericLibFunc for TNamedLibFunc {
         context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
     ) -> Result<LibFuncSignature, SpecializationError> {
-        <Self as NamedLibFunc>::specialize_signature(self, context, args)
+        self.specialize_signature(context, args)
     }
 
     fn specialize(
@@ -186,27 +186,53 @@ impl<TNamedLibFunc: NamedLibFunc> GenericLibFunc for TNamedLibFunc {
         context: &dyn SpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        <Self as NamedLibFunc>::specialize(self, context, args)
+        self.specialize(context, args)
+    }
+}
+
+/// Trait for implementing a specialization generator not holding anything more than a signature.
+pub trait SignatureOnlyGenericLibFunc: Default {
+    const ID: GenericLibFuncId;
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<LibFuncSignature, SpecializationError>;
+}
+impl<T: SignatureOnlyGenericLibFunc> NamedLibFunc for T {
+    type Concrete = SignatureOnlyConcreteLibFunc;
+    const ID: GenericLibFuncId = <Self as SignatureOnlyGenericLibFunc>::ID;
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<LibFuncSignature, SpecializationError> {
+        self.specialize_signature(context, args)
+    }
+
+    fn specialize(
+        &self,
+        context: &dyn SpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
+        Ok(SignatureOnlyConcreteLibFunc {
+            signature: self.specialize_signature(context.upcast(), args)?,
+        })
     }
 }
 
 /// Trait for implementing a specialization generator with no generic arguments.
 pub trait NoGenericArgsGenericLibFunc: Default {
-    type Concrete: ConcreteLibFunc;
     const ID: GenericLibFuncId;
 
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibFuncSignature, SpecializationError>;
-
-    fn specialize(
-        &self,
-        context: &dyn SpecializationContext,
-    ) -> Result<Self::Concrete, SpecializationError>;
 }
-impl<T: NoGenericArgsGenericLibFunc> NamedLibFunc for T {
-    type Concrete = <Self as NoGenericArgsGenericLibFunc>::Concrete;
+impl<T: NoGenericArgsGenericLibFunc> SignatureOnlyGenericLibFunc for T {
     const ID: GenericLibFuncId = <Self as NoGenericArgsGenericLibFunc>::ID;
 
     fn specialize_signature(
@@ -216,18 +242,6 @@ impl<T: NoGenericArgsGenericLibFunc> NamedLibFunc for T {
     ) -> Result<LibFuncSignature, SpecializationError> {
         if args.is_empty() {
             self.specialize_signature(context)
-        } else {
-            Err(SpecializationError::WrongNumberOfGenericArgs)
-        }
-    }
-
-    fn specialize(
-        &self,
-        context: &dyn SpecializationContext,
-        args: &[GenericArg],
-    ) -> Result<Self::Concrete, SpecializationError> {
-        if args.is_empty() {
-            self.specialize(context)
         } else {
             Err(SpecializationError::WrongNumberOfGenericArgs)
         }

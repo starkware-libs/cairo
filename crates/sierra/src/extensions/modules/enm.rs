@@ -25,7 +25,7 @@ use super::as_single_type;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibFuncSignature, OutputVarInfo, SierraApChange,
-    SignatureOnlyConcreteLibFunc, SignatureSpecializationContext, SpecializationContext,
+    SignatureOnlyGenericLibFunc, SignatureSpecializationContext, SpecializationContext,
 };
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::TypeInfo;
@@ -193,8 +193,7 @@ impl NamedLibFunc for EnumInitLibFunc {
 /// LibFunc for matching an enum.
 #[derive(Default)]
 pub struct EnumMatchLibFunc {}
-impl NamedLibFunc for EnumMatchLibFunc {
-    type Concrete = SignatureOnlyConcreteLibFunc;
+impl SignatureOnlyGenericLibFunc for EnumMatchLibFunc {
     const ID: GenericLibFuncId = GenericLibFuncId::new_inline("enum_match");
 
     fn specialize_signature(
@@ -222,18 +221,6 @@ impl NamedLibFunc for EnumMatchLibFunc {
             param_signatures: vec![enum_type.into()],
             branch_signatures,
             fallthrough: None,
-        })
-    }
-
-    // TODO(yuval): this repeats many times. consider adding an impl for all signature-only
-    // libfuncs.
-    fn specialize(
-        &self,
-        context: &dyn SpecializationContext,
-        args: &[GenericArg],
-    ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(SignatureOnlyConcreteLibFunc {
-            signature: self.specialize_signature(context.upcast(), args)?,
         })
     }
 }
