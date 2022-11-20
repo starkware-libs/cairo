@@ -12,8 +12,8 @@ use utils::ordered_hash_set::OrderedHashSet;
 use crate::db::SierraGenGroup;
 use crate::replace_ids::replace_libfunc_id;
 use crate::utils::{
-    get_concrete_libfunc_id, get_libfunc_signature, struct_construct_libfunc_id,
-    struct_deconstruct_libfunc_id,
+    enum_init_libfunc_id, get_concrete_libfunc_id, get_libfunc_signature,
+    struct_construct_libfunc_id, struct_deconstruct_libfunc_id,
 };
 
 /// Given the lowering of a function, returns the set of variables which should be stored as local
@@ -147,7 +147,19 @@ fn inner_find_local_variables(
                     &statement_struct_destructure.outputs,
                 );
             }
-            lowering::Statement::EnumConstruct(_) => todo!(),
+            lowering::Statement::EnumConstruct(statement_enum_construct) => {
+                let ty = db.get_concrete_type_id(
+                    lowered_function.variables[statement_enum_construct.output].ty,
+                )?;
+                handle_function_call(
+                    db,
+                    &mut state,
+                    &mut known_ap_change,
+                    enum_init_libfunc_id(db, ty, statement_enum_construct.variant.idx),
+                    &[statement_enum_construct.input],
+                    &[statement_enum_construct.output],
+                );
+            }
         }
     }
 
