@@ -8,6 +8,7 @@ clap.workspace = true
 defs = { path = "../defs" }
 db_utils = { path = "../db_utils" }
 filesystem = { path = "../filesystem" }
+log.workspace = true
 lowering = { path = "../lowering" }
 semantic = { path = "../semantic" }
 sierra = { path = "../sierra" }
@@ -17,7 +18,7 @@ parser = { path = "../parser" }
 project = { path = "../project" }
 salsa.workspace = true
 thiserror.workspace = true
-
+utils = { path = "../utils" }
 
 [dev-dependencies]
 test-log.workspace = true

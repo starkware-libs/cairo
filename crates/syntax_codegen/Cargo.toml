@@ -12,7 +12,9 @@ path = "src/bin/generate_syntax.rs"
 
 [dependencies]
 genco.workspace = true
+log.workspace = true
 xshell.workspace = true
+utils = { path = "../utils" }
 
 [dev-dependencies]
 env_logger.workspace = true
