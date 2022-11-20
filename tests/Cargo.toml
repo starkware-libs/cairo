@@ -4,10 +4,13 @@ version.workspace = true
 edition.workspace = true
 
 [dev-dependencies]
+cairo-rs.workspace = true
+casm = { path = "../crates/casm" }
 compiler = { path = "../crates/compiler" }
 defs = { path = "../crates/defs" }
 diagnostics = { path = "../crates/diagnostics" }
 filesystem = { path = "../crates/filesystem" }
+num-bigint.workspace = true
 parser = { path = "../crates/parser" }
 pretty_assertions = "1.2.1"
 sierra = { path = "../crates/sierra" }
