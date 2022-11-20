@@ -249,6 +249,24 @@ macro_rules! res {
             b: $crate::deref_or_immediate!($b),
         })
     };
+    ([[ap $($op:tt $offset:expr)?]]) => {
+        $crate::operand::ResOperand::DoubleDeref($crate::deref!([ap $($op $offset)?]), 0)
+    };
+    ([[ap $($op:tt $offset:expr)?] + $outer:expr]) => {
+        $crate::operand::ResOperand::DoubleDeref($crate::deref!([ap $($op $offset)?]), $outer)
+    };
+    ([[ap $($op:tt $offset:expr)?] - $outer:expr]) => {
+        $crate::operand::ResOperand::DoubleDeref($crate::deref!([ap $($op $offset)?]), -$outer)
+    };
+    ([[fp $($op:tt $offset:expr)?]]) => {
+        $crate::operand::ResOperand::DoubleDeref($crate::deref!([fp $($op $offset)?]), 0)
+    };
+    ([[fp $($op:tt $offset:expr)?] + $outer:expr]) => {
+        $crate::operand::ResOperand::DoubleDeref($crate::deref!([fp $($op $offset)?]), $outer)
+    };
+    ([[fp $($op:tt $offset:expr)?] - $outer:expr]) => {
+        $crate::operand::ResOperand::DoubleDeref($crate::deref!([fp $($op $offset)?]), -$outer)
+    };
     ([[$a:expr]]) => {
         $crate::operand::ResOperand::DoubleDeref($a, 0)
     };
