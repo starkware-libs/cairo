@@ -20,6 +20,7 @@ use crate::type_sizes::TypeSizeMap;
 
 mod array;
 mod boxing;
+mod dict_felt_to;
 mod enm;
 mod felt;
 mod function_call;
@@ -233,7 +234,7 @@ pub fn compile_invocation(
         CoreConcreteLibFunc::Box(libfunc) => boxing::build(libfunc, builder),
         CoreConcreteLibFunc::Enum(libfunc) => enm::build(libfunc, builder),
         CoreConcreteLibFunc::Struct(libfunc) => strct::build(libfunc, builder),
-        CoreConcreteLibFunc::DictFeltTo(_) => todo!(),
+        CoreConcreteLibFunc::DictFeltTo(libfunc) => dict_felt_to::build(libfunc, builder),
     }
 }
 
