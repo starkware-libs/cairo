@@ -6,6 +6,8 @@ edition.workspace = true
 [dependencies]
 defs = { path = "../defs" }
 semantic = { path = "../semantic" }
+serde.workspace = true
+serde_json.workspace = true
 syntax = { path = "../syntax" }
 thiserror.workspace = true
 

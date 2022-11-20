@@ -1,15 +1,18 @@
 use defs::ids::{TraitFunctionId, TraitId};
 use semantic::db::SemanticGroup;
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 #[cfg(test)]
 #[path = "abi_test.rs"]
 mod test;
 
-#[derive(Default, Debug)]
+/// Contract ABI.
+#[derive(Default, Debug, Serialize, Deserialize)]
+#[serde(transparent)]
 pub struct Contract {
     // TODO(spapini): Add storage variables.
-    pub functions: Vec<Function>,
+    pub items: Vec<Item>,
 }
 impl Contract {
     /// Creates a Starknet contract ABI from a TraitId.
@@ -37,7 +40,7 @@ impl Contract {
         let name = trait_function_id.name(defs_db).into();
         let signature =
             db.trait_function_signature(trait_function_id).ok_or(ABIError::CompilationError)?;
-        self.functions.push(Function {
+        self.items.push(Item::Function(Function {
             name,
             inputs: signature
                 .params
@@ -49,9 +52,13 @@ impl Contract {
                 .collect(),
             // TODO(spapini): output refs?
             output_ty: signature.return_type.format(db),
-        });
+        }));
 
         Ok(())
+    }
+
+    pub fn json(&self) -> String {
+        serde_json::to_string_pretty(&self).unwrap()
     }
 }
 
@@ -63,14 +70,24 @@ pub enum ABIError {
     CompilationError,
 }
 
-#[derive(Debug)]
+/// Enum of contract item ABIs.
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum Item {
+    #[serde(rename = "function")]
+    Function(Function),
+}
+
+/// Contract function ABI.
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Function {
     pub name: String,
     pub inputs: Vec<Input>,
     pub output_ty: String,
 }
 
-#[derive(Debug)]
+/// Function input ABI.
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Input {
     pub name: String,
     pub ty: String,
