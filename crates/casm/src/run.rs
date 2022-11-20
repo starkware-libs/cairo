@@ -138,7 +138,7 @@ impl HintProcessor for CairoHintProcessor {
 
 /// Runs program on layout with prime, and returns the resulting VM.
 #[allow(clippy::result_large_err)]
-pub fn run(
+fn run(
     program: Vec<Instruction>,
     layout: &str,
     prime: BigInt,
@@ -174,9 +174,15 @@ pub fn run(
 }
 
 /// Runs `function` and returns `n_returns` return values.
-pub fn run_function(instructions: Vec<Instruction>, n_returns: usize) -> Vec<MaybeRelocatable> {
-    run(instructions, "plain", get_prime())
-        .expect("Virtual machine failed")
-        .get_return_values(n_returns)
-        .expect("Return memory cells not set.")
+pub fn run_function(
+    instructions: Vec<Instruction>,
+    n_returns: usize,
+) -> Vec<Option<MaybeRelocatable>> {
+    let vm = run(instructions, "plain", get_prime()).expect("Virtual machine failed");
+    let addr = vm.get_ap().sub(n_returns).expect("AP stack to small");
+    vm.get_range(addr, n_returns)
+        .unwrap()
+        .into_iter()
+        .map(|cell| cell.map(|value| value.into_owned()))
+        .collect()
 }
