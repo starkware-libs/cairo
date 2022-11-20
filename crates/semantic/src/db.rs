@@ -190,6 +190,27 @@ pub trait SemanticGroup:
     #[salsa::invoke(items::imp::impl_functions)]
     fn impl_functions(&self, impl_id: ImplId) -> Option<Vec<ImplFunctionId>>;
 
+    // impl function.
+    // ================
+    /// Returns the signature of a impl function.
+    #[salsa::invoke(items::imp::impl_function_signature)]
+    fn impl_function_signature(
+        &self,
+        impl_function_id: ImplFunctionId,
+    ) -> Option<semantic::Signature>;
+    /// Returns the generic params of a impl function.
+    #[salsa::invoke(items::imp::impl_function_generic_params)]
+    fn impl_function_generic_params(
+        &self,
+        impl_function_id: ImplFunctionId,
+    ) -> Option<Vec<GenericParamId>>;
+    /// Private query to compute data about a impl function.
+    #[salsa::invoke(items::imp::priv_impl_function_declaration_data)]
+    fn priv_impl_function_data(
+        &self,
+        function_id: ImplFunctionId,
+    ) -> Option<items::imp::ImplFunctionDeclarationData>;
+
     // Free function.
     // ==============
     /// Private query to compute data about a free function declaration - its signature excluding

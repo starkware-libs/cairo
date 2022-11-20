@@ -2,7 +2,8 @@ use std::vec;
 
 use db_utils::define_short_id;
 use defs::ids::{
-    GenericParamId, ImplFunctionId, ImplFunctionLongId, ImplId, LanguageElementId, ModuleId,
+    GenericFunctionId, GenericParamId, ImplFunctionId, ImplFunctionLongId, ImplId,
+    LanguageElementId, ModuleId,
 };
 use diagnostics::Diagnostics;
 use diagnostics_proc_macros::DebugWithDb;
@@ -15,15 +16,21 @@ use utils::{extract_matches, try_extract_matches, OptionHelper};
 
 use super::attribute::{ast_attributes_to_semantic, Attribute};
 use super::enm::SemanticEnumEx;
+use super::functions::{
+    function_signature_implicit_parameters, function_signature_params,
+    function_signature_return_type,
+};
 use super::generics::semantic_generic_params;
 use super::strct::SemanticStructEx;
 use crate::corelib::{copy_trait, drop_trait};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
+use crate::expr::compute::Environment;
 use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use crate::{
-    ConcreteTraitId, ConcreteTraitLongId, GenericArgumentId, SemanticDiagnostic, TypeId, TypeLongId,
+    semantic, ConcreteTraitId, ConcreteTraitLongId, GenericArgumentId, SemanticDiagnostic, TypeId,
+    TypeLongId,
 };
 
 #[cfg(test)]
@@ -331,4 +338,83 @@ pub fn find_impls_at_context(
         }
     }
     Some(res)
+}
+
+// Declaration.
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
+#[debug_db(dyn SemanticGroup + 'static)]
+pub struct ImplFunctionDeclarationData {
+    diagnostics: Diagnostics<SemanticDiagnostic>,
+    signature: semantic::Signature,
+    generic_params: Vec<GenericParamId>,
+    // TODO(ilya): Do we need Environment like in a free function?
+    attributes: Vec<Attribute>,
+}
+
+/// Query implementation of [crate::db::SemanticGroup::impl_function_signature].
+pub fn impl_function_signature(
+    db: &dyn SemanticGroup,
+    impl_function_id: ImplFunctionId,
+) -> Option<semantic::Signature> {
+    Some(db.priv_impl_function_data(impl_function_id)?.signature)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::impl_function_generic_params].
+pub fn impl_function_generic_params(
+    db: &dyn SemanticGroup,
+    impl_function_id: ImplFunctionId,
+) -> Option<Vec<GenericParamId>> {
+    Some(db.priv_impl_function_data(impl_function_id)?.generic_params)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::priv_impl_function_data].
+pub fn priv_impl_function_declaration_data(
+    db: &dyn SemanticGroup,
+    impl_function_id: ImplFunctionId,
+) -> Option<ImplFunctionDeclarationData> {
+    let module_id = impl_function_id.module(db.upcast());
+    let mut diagnostics = SemanticDiagnostics::new(module_id);
+    let impl_id = impl_function_id.impl_id(db.upcast());
+    let data = db.priv_impl_definition_data(impl_id)?;
+    let function_syntax = &data.function_asts[impl_function_id];
+    let generic_params = semantic_generic_params(
+        db,
+        &mut diagnostics,
+        module_id,
+        &function_syntax.generic_params(db.upcast()),
+    );
+    let mut resolver = Resolver::new(db, module_id, &generic_params);
+    let syntax_db = db.upcast();
+    let signature_syntax = function_syntax.signature(syntax_db);
+    let return_type =
+        function_signature_return_type(&mut diagnostics, db, &mut resolver, &signature_syntax);
+    let mut environment = Environment::default();
+    let params = function_signature_params(
+        &mut diagnostics,
+        db,
+        &mut resolver,
+        &signature_syntax,
+        GenericFunctionId::ImplFunction(impl_function_id),
+        &mut environment,
+    );
+
+    // TODO(ilya): Check that the signature is consistent with the relevant item in the trait.
+
+    let implicits = function_signature_implicit_parameters(
+        &mut diagnostics,
+        db,
+        &mut resolver,
+        &signature_syntax,
+        GenericFunctionId::ImplFunction(impl_function_id),
+        &mut environment,
+    );
+
+    let attributes = ast_attributes_to_semantic(syntax_db, function_syntax.attributes(syntax_db));
+
+    Some(ImplFunctionDeclarationData {
+        diagnostics: diagnostics.build(),
+        signature: semantic::Signature { params, return_type, implicits },
+        generic_params,
+        attributes,
+    })
 }
