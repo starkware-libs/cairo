@@ -1,0 +1,15 @@
+[package]
+name = "starknet"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+defs = { path = "../defs" }
+semantic = { path = "../semantic" }
+syntax = { path = "../syntax" }
+thiserror.workspace = true
+
+[dev-dependencies]
+indoc.workspace = true
+utils = { path = "../utils" }
+semantic = { path = "../semantic", features = ["testing"] }
