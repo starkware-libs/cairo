@@ -199,68 +199,6 @@ pub enum SyntaxKind {
     TokenSkipped,
 }
 impl SyntaxKind {
-    pub fn is_terminal(&self) -> bool {
-        matches!(
-            *self,
-            SyntaxKind::TerminalIdentifier
-                | SyntaxKind::TerminalLiteralNumber
-                | SyntaxKind::TerminalFalse
-                | SyntaxKind::TerminalTrue
-                | SyntaxKind::TerminalExtern
-                | SyntaxKind::TerminalType
-                | SyntaxKind::TerminalFunction
-                | SyntaxKind::TerminalModule
-                | SyntaxKind::TerminalEnum
-                | SyntaxKind::TerminalStruct
-                | SyntaxKind::TerminalTrait
-                | SyntaxKind::TerminalImpl
-                | SyntaxKind::TerminalOf
-                | SyntaxKind::TerminalLet
-                | SyntaxKind::TerminalReturn
-                | SyntaxKind::TerminalMatch
-                | SyntaxKind::TerminalIf
-                | SyntaxKind::TerminalElse
-                | SyntaxKind::TerminalUse
-                | SyntaxKind::TerminalImplicits
-                | SyntaxKind::TerminalRef
-                | SyntaxKind::TerminalMut
-                | SyntaxKind::TerminalNoPanic
-                | SyntaxKind::TerminalAnd
-                | SyntaxKind::TerminalAndAnd
-                | SyntaxKind::TerminalOrOr
-                | SyntaxKind::TerminalEqEq
-                | SyntaxKind::TerminalNeq
-                | SyntaxKind::TerminalGE
-                | SyntaxKind::TerminalGT
-                | SyntaxKind::TerminalLE
-                | SyntaxKind::TerminalLT
-                | SyntaxKind::TerminalNot
-                | SyntaxKind::TerminalPlus
-                | SyntaxKind::TerminalMinus
-                | SyntaxKind::TerminalMul
-                | SyntaxKind::TerminalDiv
-                | SyntaxKind::TerminalColon
-                | SyntaxKind::TerminalColonColon
-                | SyntaxKind::TerminalComma
-                | SyntaxKind::TerminalDot
-                | SyntaxKind::TerminalDotDot
-                | SyntaxKind::TerminalEq
-                | SyntaxKind::TerminalSemicolon
-                | SyntaxKind::TerminalQuestionMark
-                | SyntaxKind::TerminalUnderscore
-                | SyntaxKind::TerminalLBrace
-                | SyntaxKind::TerminalRBrace
-                | SyntaxKind::TerminalLBrack
-                | SyntaxKind::TerminalRBrack
-                | SyntaxKind::TerminalLParen
-                | SyntaxKind::TerminalRParen
-                | SyntaxKind::TerminalArrow
-                | SyntaxKind::TerminalMatchArrow
-                | SyntaxKind::TerminalEndOfFile
-                | SyntaxKind::TerminalBadCharacters
-                | SyntaxKind::TerminalHash
-        )
-    }
     pub fn is_token(&self) -> bool {
         matches!(
             *self,
@@ -326,6 +264,120 @@ impl SyntaxKind {
                 | SyntaxKind::TokenNewline
                 | SyntaxKind::TokenMissing
                 | SyntaxKind::TokenSkipped
+        )
+    }
+    pub fn is_terminal(&self) -> bool {
+        matches!(
+            *self,
+            SyntaxKind::TerminalIdentifier
+                | SyntaxKind::TerminalLiteralNumber
+                | SyntaxKind::TerminalFalse
+                | SyntaxKind::TerminalTrue
+                | SyntaxKind::TerminalExtern
+                | SyntaxKind::TerminalType
+                | SyntaxKind::TerminalFunction
+                | SyntaxKind::TerminalModule
+                | SyntaxKind::TerminalEnum
+                | SyntaxKind::TerminalStruct
+                | SyntaxKind::TerminalTrait
+                | SyntaxKind::TerminalImpl
+                | SyntaxKind::TerminalOf
+                | SyntaxKind::TerminalLet
+                | SyntaxKind::TerminalReturn
+                | SyntaxKind::TerminalMatch
+                | SyntaxKind::TerminalIf
+                | SyntaxKind::TerminalElse
+                | SyntaxKind::TerminalUse
+                | SyntaxKind::TerminalImplicits
+                | SyntaxKind::TerminalRef
+                | SyntaxKind::TerminalMut
+                | SyntaxKind::TerminalNoPanic
+                | SyntaxKind::TerminalAnd
+                | SyntaxKind::TerminalAndAnd
+                | SyntaxKind::TerminalOrOr
+                | SyntaxKind::TerminalEqEq
+                | SyntaxKind::TerminalNeq
+                | SyntaxKind::TerminalGE
+                | SyntaxKind::TerminalGT
+                | SyntaxKind::TerminalLE
+                | SyntaxKind::TerminalLT
+                | SyntaxKind::TerminalNot
+                | SyntaxKind::TerminalPlus
+                | SyntaxKind::TerminalMinus
+                | SyntaxKind::TerminalMul
+                | SyntaxKind::TerminalDiv
+                | SyntaxKind::TerminalColon
+                | SyntaxKind::TerminalColonColon
+                | SyntaxKind::TerminalComma
+                | SyntaxKind::TerminalDot
+                | SyntaxKind::TerminalDotDot
+                | SyntaxKind::TerminalEq
+                | SyntaxKind::TerminalSemicolon
+                | SyntaxKind::TerminalQuestionMark
+                | SyntaxKind::TerminalUnderscore
+                | SyntaxKind::TerminalLBrace
+                | SyntaxKind::TerminalRBrace
+                | SyntaxKind::TerminalLBrack
+                | SyntaxKind::TerminalRBrack
+                | SyntaxKind::TerminalLParen
+                | SyntaxKind::TerminalRParen
+                | SyntaxKind::TerminalArrow
+                | SyntaxKind::TerminalMatchArrow
+                | SyntaxKind::TerminalEndOfFile
+                | SyntaxKind::TerminalBadCharacters
+                | SyntaxKind::TerminalHash
+        )
+    }
+    pub fn is_keyword_token(&self) -> bool {
+        matches!(
+            *self,
+            SyntaxKind::TokenFalse
+                | SyntaxKind::TokenTrue
+                | SyntaxKind::TokenExtern
+                | SyntaxKind::TokenType
+                | SyntaxKind::TokenFunction
+                | SyntaxKind::TokenModule
+                | SyntaxKind::TokenEnum
+                | SyntaxKind::TokenStruct
+                | SyntaxKind::TokenTrait
+                | SyntaxKind::TokenImpl
+                | SyntaxKind::TokenOf
+                | SyntaxKind::TokenLet
+                | SyntaxKind::TokenReturn
+                | SyntaxKind::TokenMatch
+                | SyntaxKind::TokenIf
+                | SyntaxKind::TokenElse
+                | SyntaxKind::TokenUse
+                | SyntaxKind::TokenImplicits
+                | SyntaxKind::TokenRef
+                | SyntaxKind::TokenMut
+                | SyntaxKind::TokenNoPanic
+        )
+    }
+    pub fn is_keyword_terminal(&self) -> bool {
+        matches!(
+            *self,
+            SyntaxKind::TerminalFalse
+                | SyntaxKind::TerminalTrue
+                | SyntaxKind::TerminalExtern
+                | SyntaxKind::TerminalType
+                | SyntaxKind::TerminalFunction
+                | SyntaxKind::TerminalModule
+                | SyntaxKind::TerminalEnum
+                | SyntaxKind::TerminalStruct
+                | SyntaxKind::TerminalTrait
+                | SyntaxKind::TerminalImpl
+                | SyntaxKind::TerminalOf
+                | SyntaxKind::TerminalLet
+                | SyntaxKind::TerminalReturn
+                | SyntaxKind::TerminalMatch
+                | SyntaxKind::TerminalIf
+                | SyntaxKind::TerminalElse
+                | SyntaxKind::TerminalUse
+                | SyntaxKind::TerminalImplicits
+                | SyntaxKind::TerminalRef
+                | SyntaxKind::TerminalMut
+                | SyntaxKind::TerminalNoPanic
         )
     }
 }

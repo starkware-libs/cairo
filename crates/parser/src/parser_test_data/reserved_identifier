@@ -1,0 +1,296 @@
+//! > Module name - reserved identifier.
+
+//! > test_function_name
+get_diagnostics
+
+//! > cairo_code
+mod mod;
+
+//! > expected_diagnostics
+error: 'mod' is a reserved identifier.
+ --> dummy_file.cairo:1:5
+mod mod;
+    ^*^
+
+//! > ==========================================================================
+
+//! > Struct name  - reserved identifier.
+
+//! > test_function_name
+get_diagnostics
+
+//! > cairo_code
+struct mod {}
+
+//! > expected_diagnostics
+error: 'mod' is a reserved identifier.
+ --> dummy_file.cairo:1:8
+struct mod {}
+       ^*^
+
+//! > ==========================================================================
+
+//! > Enum name  - reserved identifier.
+
+//! > test_function_name
+get_diagnostics
+
+//! > cairo_code
+enum mod {}
+
+//! > expected_diagnostics
+error: 'mod' is a reserved identifier.
+ --> dummy_file.cairo:1:6
+enum mod {}
+     ^*^
+
+//! > ==========================================================================
+
+//! > Extern function name  - reserved identifier.
+
+//! > test_function_name
+get_diagnostics
+
+//! > cairo_code
+extern func mod();
+
+//! > expected_diagnostics
+error: 'mod' is a reserved identifier.
+ --> dummy_file.cairo:1:13
+extern func mod();
+            ^*^
+
+//! > ==========================================================================
+
+//! > Extern type name  - reserved identifier.
+
+//! > test_function_name
+get_diagnostics
+
+//! > cairo_code
+extern type mod;
+
+//! > expected_diagnostics
+error: 'mod' is a reserved identifier.
+ --> dummy_file.cairo:1:13
+extern type mod;
+            ^*^
+
+//! > ==========================================================================
+
+//! > Attribute name  - reserved identifier.
+
+//! > test_function_name
+get_diagnostics
+
+//! > cairo_code
+#[mod]
+func foo() {}
+
+//! > expected_diagnostics
+error: 'mod' is a reserved identifier.
+ --> dummy_file.cairo:1:3
+#[mod]
+  ^*^
+
+//! > ==========================================================================
+
+//! > Free function name  - reserved identifier.
+
+//! > test_function_name
+get_diagnostics
+
+//! > cairo_code
+func mod() {}
+
+//! > expected_diagnostics
+error: 'mod' is a reserved identifier.
+ --> dummy_file.cairo:1:6
+func mod() {}
+     ^*^
+
+//! > ==========================================================================
+
+//! > Trait name  - reserved identifier.
+
+//! > test_function_name
+get_diagnostics
+
+//! > cairo_code
+trait mod {}
+
+//! > expected_diagnostics
+error: 'mod' is a reserved identifier.
+ --> dummy_file.cairo:1:7
+trait mod {}
+      ^*^
+
+//! > ==========================================================================
+
+//! > Trait function name  - reserved identifier.
+
+//! > test_function_name
+get_diagnostics
+
+//! > cairo_code
+trait trt {
+    func mod();
+}
+
+//! > expected_diagnostics
+error: 'mod' is a reserved identifier.
+ --> dummy_file.cairo:2:10
+    func mod();
+         ^*^
+
+//! > ==========================================================================
+
+//! > Impl name  - reserved identifier.
+
+//! > test_function_name
+get_diagnostics
+
+//! > cairo_code
+impl mod of MyTrait {}
+
+//! > expected_diagnostics
+error: 'mod' is a reserved identifier.
+ --> dummy_file.cairo:1:6
+impl mod of MyTrait {}
+     ^*^
+
+//! > ==========================================================================
+
+//! > Struct c'tor single argument  - reserved identifier.
+
+//! > test_function_name
+get_diagnostics
+
+//! > cairo_code
+func foo() {
+    A { mod }
+}
+
+//! > expected_diagnostics
+error: 'mod' is a reserved identifier.
+ --> dummy_file.cairo:2:9
+    A { mod }
+        ^*^
+
+//! > ==========================================================================
+
+//! > Pattern with modifiers  - reserved identifier.
+
+//! > test_function_name
+get_diagnostics
+
+//! > cairo_code
+func foo() {
+    let ref mod = 3;
+}
+
+//! > expected_diagnostics
+error: 'mod' is a reserved identifier.
+ --> dummy_file.cairo:2:13
+    let ref mod = 3;
+            ^*^
+
+//! > ==========================================================================
+
+//! > Pattern's struct parameter  - reserved identifier.
+
+//! > test_function_name
+get_diagnostics
+
+//! > cairo_code
+func foo() {
+    let MyStruct { mod } = 3;
+}
+
+//! > expected_diagnostics
+error: 'mod' is a reserved identifier.
+ --> dummy_file.cairo:2:20
+    let MyStruct { mod } = 3;
+                   ^*^
+
+//! > ==========================================================================
+
+//! > Param name with modifiers  - reserved identifier.
+
+//! > test_function_name
+get_diagnostics
+
+//! > cairo_code
+func f(ref mod: felt) {}
+
+//! > expected_diagnostics
+error: 'mod' is a reserved identifier.
+ --> dummy_file.cairo:1:12
+func f(ref mod: felt) {}
+           ^*^
+
+//! > ==========================================================================
+
+//! > Param name without modifiers  - reserved identifier.
+
+//! > test_function_name
+get_diagnostics
+
+//! > cairo_code
+func f(mod: felt) {}
+
+//! > expected_diagnostics
+error: 'mod' is a reserved identifier.
+ --> dummy_file.cairo:1:8
+func f(mod: felt) {}
+       ^*^
+
+//! > ==========================================================================
+
+//! > Struct member name  - reserved identifier.
+
+//! > test_function_name
+get_diagnostics
+
+//! > cairo_code
+struct A {
+    mod: felt
+}
+
+//! > expected_diagnostics
+error: 'mod' is a reserved identifier.
+ --> dummy_file.cairo:2:5
+    mod: felt
+    ^*^
+
+//! > ==========================================================================
+
+//! > Path segment  - reserved identifier.
+
+//! > test_function_name
+get_diagnostics
+
+//! > cairo_code
+use mod::foo;
+
+//! > expected_diagnostics
+error: 'mod' is a reserved identifier.
+ --> dummy_file.cairo:1:5
+use mod::foo;
+    ^*^
+
+//! > ==========================================================================
+
+//! > Generic parameter  - reserved identifier.
+
+//! > test_function_name
+get_diagnostics
+
+//! > cairo_code
+struct A<mod> {}
+
+//! > expected_diagnostics
+error: 'mod' is a reserved identifier.
+ --> dummy_file.cairo:1:10
+struct A<mod> {}
+         ^*^
