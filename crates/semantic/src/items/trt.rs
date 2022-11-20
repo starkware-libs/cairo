@@ -5,6 +5,7 @@ use defs::ids::{
 };
 use diagnostics::Diagnostics;
 use diagnostics_proc_macros::DebugWithDb;
+use smol_str::SmolStr;
 use syntax::node::{ast, TypedSyntaxNode};
 use utils::ordered_hash_map::OrderedHashMap;
 
@@ -63,8 +64,20 @@ pub fn trait_attributes(db: &dyn SemanticGroup, trait_id: TraitId) -> Option<Vec
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_functions].
-pub fn trait_functions(db: &dyn SemanticGroup, trait_id: TraitId) -> Option<Vec<TraitFunctionId>> {
-    Some(db.priv_trait_semantic_data(trait_id)?.function_asts.keys().copied().collect())
+pub fn trait_functions(
+    db: &dyn SemanticGroup,
+    trait_id: TraitId,
+) -> Option<OrderedHashMap<SmolStr, TraitFunctionId>> {
+    Some(
+        db.priv_trait_semantic_data(trait_id)?
+            .function_asts
+            .keys()
+            .map(|function_id| {
+                let function_long_id = db.lookup_intern_trait_function(*function_id);
+                (function_long_id.name(db.upcast()), *function_id)
+            })
+            .collect(),
+    )
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_trait_semantic_data].

@@ -19,8 +19,9 @@ impl Contract {
         }
 
         let mut contract = Self::default();
-        for trait_function_id in db.trait_functions(trait_id).unwrap_or_default() {
-            contract.add_function(db, trait_function_id)?;
+
+        for trait_function_id in db.trait_functions(trait_id).unwrap_or_default().values() {
+            contract.add_function(db, *trait_function_id)?;
         }
 
         Ok(contract)
