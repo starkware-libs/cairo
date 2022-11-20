@@ -1,11 +1,10 @@
-use cairo_rs::types::relocatable::MaybeRelocatable;
 use itertools::Itertools;
-use num_bigint::BigInt;
+use num_bigint::{BigInt, Sign};
 use test_case::test_case;
 
-use crate::casm;
 use crate::inline::CasmContext;
-use crate::run::run_function;
+use crate::run::{run_function, run_function_return_values};
+use crate::{casm, deref};
 
 #[test_case(
     casm! {
@@ -14,7 +13,7 @@ use crate::run::run_function;
         ret;
     },
     2,
-    &[-5, 7];
+    &[-5, 7].map(Some);
     "simple ap sets"
 )]
 #[test_case(
@@ -26,7 +25,7 @@ use crate::run::run_function;
         ret;
     },
     3,
-    &[579, 123, 456];
+    &[579, 123, 456].map(Some);
     "sum ap into fp"
 )]
 #[test_case(
@@ -41,7 +40,7 @@ use crate::run::run_function;
         ret;
     },
     5,
-    &[1, 5, 0, 3, 4];
+    &[1, 5, 0, 3, 4].map(Some);
     "jumps"
 )]
 #[test_case(
@@ -53,7 +52,7 @@ use crate::run::run_function;
         ret;
     },
     3,
-    &[39, 1, 84];
+    &[39, 1, 84].map(Some);
     "less than hint"
 )]
 #[test_case(
@@ -65,7 +64,7 @@ use crate::run::run_function;
         ret;
     },
     4,
-    &[5, 39, 7, 4];
+    &[5, 39, 7, 4].map(Some);
     "divmod hint"
 )]
 #[test_case(
@@ -85,45 +84,40 @@ use crate::run::run_function;
         ret;
     },
     1,
-    &[377];
+    &[377].map(Some);
     "fib(1, 1, 13)"
 )]
-fn test_runner(function: CasmContext, n_returns: usize, expected: &[i128]) {
-    assert_eq!(
-        run_function(function.instructions, n_returns),
-        expected.iter().map(|num| Some(MaybeRelocatable::from(BigInt::from(*num)))).collect_vec()
-    );
-}
-
-#[test_case(
-    casm! {
-        %{ memory[ap] = segments.add() %}
-        ap += 1;
-        ret;
-    },
-    1,
-    &[(4, 0)];
-    "allocate segment"
-)]
-fn test_runner_relocatable_returns(
-    function: CasmContext,
-    n_returns: usize,
-    expected: &[(isize, usize)],
-) {
-    assert_eq!(
-        run_function(function.instructions, n_returns),
-        expected.iter().map(|pair| Some(MaybeRelocatable::from(*pair))).collect_vec()
-    );
-}
-
 #[test_case(
     casm! {
         ap += 1;
+        [ap] = 0, ap++;
         ret;
     },
-    1;
+    2,
+    &[None, Some(0)];
     "uninitialized memory"
 )]
-fn test_runner_uninitialized_returns(function: CasmContext, n_returns: usize) {
-    assert_eq!(run_function(function.instructions, n_returns), [None]);
+fn test_runner(function: CasmContext, n_returns: usize, expected: &[Option<i128>]) {
+    assert_eq!(
+        run_function_return_values(function.instructions, n_returns).expect("Running code failed."),
+        expected.iter().map(|num| num.map(BigInt::from)).collect_vec()
+    );
+}
+
+#[test]
+fn test_allocate_segment() {
+    let (memory, ap) = run_function(
+        casm! {
+            [ap] = 1337, ap++;
+            %{ memory[ap] = segments.add() %}
+            [ap - 1] = [[deref!([ap])]];
+            ret;
+        }
+        .instructions,
+    )
+    .expect("Running code failed.");
+    let ptr = memory[ap].as_ref().expect("Uninitialized value.");
+    let (Sign::Plus, digits) = ptr.to_u64_digits() else {panic!("Negative number.");};
+    let [ptr] = &digits[..] else {panic!("Number not in index range.");};
+    assert_eq!(memory[*ptr as usize], Some(BigInt::from(1337)));
 }
