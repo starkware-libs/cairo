@@ -947,7 +947,7 @@ fn expr_function_call(
     if arg_exprs.len() != signature.params.len() {
         ctx.diagnostics.report_by_ptr(
             stable_ptr.untyped(),
-            WrongNumberOfArguments { expected: signature.params.len(), actual: arg_exprs.len() },
+            WrongNumberOfParameters { expected: signature.params.len(), actual: arg_exprs.len() },
         );
         return None;
     }
@@ -964,7 +964,7 @@ fn expr_function_call(
         if arg_typ != param_typ && arg_typ != TypeId::missing(ctx.db) {
             ctx.diagnostics.report_by_ptr(
                 arg.stable_ptr().untyped(),
-                WrongArgumentType { expected_ty: param_typ, actual_ty: arg_typ },
+                WrongParameterType { expected_ty: param_typ, actual_ty: arg_typ },
             );
         }
 
