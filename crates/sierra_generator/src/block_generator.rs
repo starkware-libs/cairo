@@ -8,7 +8,11 @@ use sierra::program;
 
 use crate::expr_generator_context::ExprGeneratorContext;
 use crate::pre_sierra;
-use crate::utils::{get_concrete_libfunc_id, jump_statement, return_statement, simple_statement};
+use crate::utils::{
+    burn_gas_libfunc_id, enum_init_libfunc_id, felt_const_libfunc_id, get_concrete_libfunc_id,
+    jump_libfunc_id, jump_statement, match_enum_libfunc_id, return_statement, simple_statement,
+    struct_construct_libfunc_id, struct_deconstruct_libfunc_id,
+};
 
 /// Generates Sierra code that computes a given [lowering::Block].
 /// Returns a list of Sierra statements.
@@ -89,7 +93,7 @@ pub fn generate_return_code(
 
     statements.push(pre_sierra::Statement::PushValues(push_values));
     // Add burn_gas to equalize gas costs across all return paths.
-    statements.push(simple_statement(context.burn_gas_libfunc_id(), &[], &[]));
+    statements.push(simple_statement(burn_gas_libfunc_id(context.get_db()), &[], &[]));
     statements.push(return_statement(return_variables_on_stack));
 
     Some(statements)
@@ -135,7 +139,7 @@ fn generate_statement_literal_code(
 ) -> Option<Vec<pre_sierra::Statement>> {
     let output_var = context.get_sierra_variable(statement.output);
     Some(vec![simple_statement(
-        context.felt_const_libfunc_id(statement.value.clone()),
+        felt_const_libfunc_id(context.get_db(), statement.value.clone()),
         &[],
         &[output_var],
     )])
@@ -243,11 +247,11 @@ fn generate_statement_match_extern_code(
 
         if is_reachable {
             // Add burn_gas to equalize gas costs across the merging paths.
-            statements.push(simple_statement(context.burn_gas_libfunc_id(), &[], &[]));
+            statements.push(simple_statement(burn_gas_libfunc_id(context.get_db()), &[], &[]));
 
             // Add jump statement to the end of the match. The last block does not require a jump.
             if i < statement.arms.len() - 1 {
-                statements.push(jump_statement(context.jump_libfunc_id(), end_label_id));
+                statements.push(jump_statement(jump_libfunc_id(context.get_db()), end_label_id));
             }
         }
     }
@@ -274,7 +278,8 @@ fn generate_statement_enum_construct(
     statement: &lowering::StatementEnumConstruct,
 ) -> Option<Vec<pre_sierra::Statement>> {
     Some(vec![simple_statement(
-        context.enum_init_libfunc_id(
+        enum_init_libfunc_id(
+            context.get_db(),
             context.get_variable_sierra_type(statement.output)?,
             statement.variant.idx,
         ),
@@ -289,7 +294,10 @@ fn generate_statement_struct_construct_code(
     statement: &lowering::StatementStructConstruct,
 ) -> Option<Vec<pre_sierra::Statement>> {
     Some(vec![simple_statement(
-        context.struct_construct_libfunc_id(context.get_variable_sierra_type(statement.output)?),
+        struct_construct_libfunc_id(
+            context.get_db(),
+            context.get_variable_sierra_type(statement.output)?,
+        ),
         &context.get_sierra_variables(&statement.inputs),
         &[context.get_sierra_variable(statement.output)],
     )])
@@ -301,7 +309,10 @@ fn generate_statement_struct_destructure_code(
     statement: &lowering::StatementStructDestructure,
 ) -> Option<Vec<pre_sierra::Statement>> {
     Some(vec![simple_statement(
-        context.struct_deconstruct_libfunc_id(context.get_variable_sierra_type(statement.input)?),
+        struct_deconstruct_libfunc_id(
+            context.get_db(),
+            context.get_variable_sierra_type(statement.input)?,
+        ),
         &[context.get_sierra_variable(statement.input)],
         &context.get_sierra_variables(&statement.outputs),
     )])
@@ -331,7 +342,7 @@ fn generate_statement_match_enum(
         })
         .collect();
 
-    let libfunc_id = context.match_enum_libfunc_id(concrete_enum_type);
+    let libfunc_id = match_enum_libfunc_id(context.get_db(), concrete_enum_type);
 
     // Call the match libfunc.
     statements.push(pre_sierra::Statement::Sierra(program::GenStatement::Invocation(
@@ -352,11 +363,11 @@ fn generate_statement_match_enum(
 
         if is_reachable {
             // Add burn_gas to equalize gas costs across the merging paths.
-            statements.push(simple_statement(context.burn_gas_libfunc_id(), &[], &[]));
+            statements.push(simple_statement(burn_gas_libfunc_id(context.get_db()), &[], &[]));
 
             // Add jump statement to the end of the match. The last block does not require a jump.
             if i < statement.arms.len() - 1 {
-                statements.push(jump_statement(context.jump_libfunc_id(), end_label_id));
+                statements.push(jump_statement(jump_libfunc_id(context.get_db()), end_label_id));
             }
         }
     }
