@@ -185,3 +185,117 @@ End:
 
 //! > local_variables
 v1, v11
+
+//! > ==========================================================================
+
+//! > Match extern early return
+
+//! > test_function_name
+check_find_local_variables
+
+//! > function_name
+foo
+
+//! > function_code
+func foo(x: felt) -> felt {
+    let w1 = x + x;
+
+    match felt_jump_nz(x) {
+        JumpNzResult::Zero(_) => 1,
+        JumpNzResult::NonZero(y) => {
+            revoke_ap()
+            return 0;
+        },
+    }
+
+    // w1 is not revoked.
+    let w2 = w1 + x;
+
+    match felt_jump_nz(x) {
+        JumpNzResult::Zero(_) => 1,
+        JumpNzResult::NonZero(y) => {
+            // Same as above, without revoke_ap() and without an early return.
+            2
+        },
+    }
+
+    // w2 is revoked.
+    w2 + x
+}
+
+//! > module_code
+// Revokes ap since this function is recursive.
+func revoke_ap() -> felt {
+    revoke_ap()
+}
+
+//! > lowering_format
+blk0:
+Inputs:
+Statements:
+  (v4: core::felt) <- test_crate::revoke_ap()
+  (v5: core::felt) <- 0u
+Drops: v4, v3, v0, v1
+End:
+  Return(v5)
+
+blk1:
+Inputs:
+Statements:
+  (v2: core::felt) <- 1u
+Drops:
+End:
+  Callsite(v2)
+
+blk2:
+Inputs: v3: core::NonZero::<core::felt>
+Statements:
+  () <- blk0()
+Drops:
+End:
+  Unreachable
+
+blk3:
+Inputs:
+Statements:
+  (v10: core::felt) <- 2u
+Drops:
+End:
+  Callsite(v10)
+
+blk4:
+Inputs:
+Statements:
+  (v8: core::felt) <- 1u
+Drops:
+End:
+  Callsite(v8)
+
+blk5:
+Inputs: v9: core::NonZero::<core::felt>
+Statements:
+  (v11: core::felt) <- blk3()
+Drops: v9
+End:
+  Callsite(v11)
+
+blk6:
+Inputs: v0: core::felt
+Statements:
+  (v1: core::felt) <- core::felt_add(v0, v0)
+  (v6: core::felt) <- match core::felt_jump_nz(v0) {
+    () => blk1,
+    (v3) => blk2,
+  }
+  (v7: core::felt) <- core::felt_add(v1, v0)
+  (v12: core::felt) <- match core::felt_jump_nz(v0) {
+    () => blk4,
+    (v9) => blk5,
+  }
+  (v13: core::felt) <- core::felt_add(v7, v0)
+Drops: v0, v1, v6, v7, v12
+End:
+  Callsite(v13)
+
+//! > local_variables
+v7
