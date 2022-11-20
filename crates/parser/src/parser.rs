@@ -18,8 +18,6 @@ use crate::operators::{get_binary_operator_precedence, get_unary_operator_preced
 use crate::recovery::is_of_kind;
 use crate::ParserDiagnostic;
 
-// TODO(yuval): add diagnostics.
-
 pub struct Parser<'a> {
     db: &'a dyn SyntaxGroup,
     file_id: FileId,
@@ -196,7 +194,6 @@ impl<'a> Parser<'a> {
 
     /// Expected pattern: `<ParenthesizedParamList><ReturnTypeClause>`
     fn expect_function_signature(&mut self) -> FunctionSignatureGreen {
-        // TODO(yuval): support generics
         let lparen = self.parse_token::<TerminalLParen>();
         let params = self.parse_param_list();
         let rparen = self.parse_token::<TerminalRParen>();
@@ -757,7 +754,7 @@ impl<'a> Parser<'a> {
             return Some(PatternIdentifier::new_green(self.db, modifiers, name).into());
         };
 
-        // TODO(yuval): Support tuple and "Or" patterns.
+        // TODO(yuval): Support "Or" patterns.
         Some(match self.peek().kind {
             SyntaxKind::TerminalLiteralNumber => self.take::<TerminalLiteralNumber>().into(),
             SyntaxKind::TerminalUnderscore => self.take::<TerminalUnderscore>().into(),
@@ -1286,12 +1283,7 @@ impl<'a> Parser<'a> {
     /// Note that this function should not be called for 'TerminalIdentifier' -
     /// try_parse_identifier() should be used instead.
     fn try_parse_token<Terminal: syntax::node::Terminal>(&mut self) -> Option<Terminal::Green> {
-        if Terminal::KIND == self.peek().kind {
-            Some(self.take::<Terminal>())
-        } else {
-            // TODO(yuval): report to diagnostics.
-            None
-        }
+        if Terminal::KIND == self.peek().kind { Some(self.take::<Terminal>()) } else { None }
     }
 
     /// If the current token is of kind `token_kind`, returns a GreenId of a node with this kind.
