@@ -35,7 +35,7 @@ impl ConcreteType for NonZeroConcreteType {
     }
 }
 
-/// LibFunc for unwrapping a NonZero<T> back into a T.
+/// LibFunc for unwrapping a `NonZero<T>` back into a T.
 #[derive(Default)]
 pub struct UnwrapNonZeroLibFunc {}
 impl SignatureOnlyGenericLibFunc for UnwrapNonZeroLibFunc {

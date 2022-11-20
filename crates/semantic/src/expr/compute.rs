@@ -87,7 +87,7 @@ impl<'ctx> ComputationContext<'ctx> {
         F: FnOnce(&mut Self) -> T,
     {
         // Push an environment to the stack.
-        let new_environment = Box::new(Environment::default());
+        let new_environment = Box::<Environment>::default();
         let old_environment = std::mem::replace(&mut self.environment, new_environment);
         self.environment.parent = Some(old_environment);
 

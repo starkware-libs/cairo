@@ -67,7 +67,7 @@ impl SignatureOnlyGenericLibFunc for IntoBoxLibFunc {
     }
 }
 
-/// LibFunc for unboxing a Box<T> back into a T.
+/// LibFunc for unboxing a `Box<T>` back into a T.
 #[derive(Default)]
 pub struct UnboxLibFunc {}
 impl SignatureOnlyGenericLibFunc for UnboxLibFunc {

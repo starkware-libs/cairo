@@ -46,7 +46,7 @@ pub trait SignatureSpecializationContext: TypeSpecializationContext {
             .ok_or_else(|| SpecializationError::MissingFunction(function_id.clone()))
     }
 
-    /// Returns the concrete id of T<S> given generic type T and concrete type S.
+    /// Returns the concrete id of `T<S>` given generic type T and concrete type S.
     fn get_wrapped_concrete_type(
         &self,
         id: GenericTypeId,
@@ -473,8 +473,7 @@ macro_rules! concrete_method_impl {
     }) => {
         fn $method_name(&self $(,$var_name:ident : $var:ty)*) -> $ret_type {
             match self {
-                $(Self::$variant_name(value) =>
-                    <$variant as $crate::extensions::ConcreteLibFunc>::$method_name(value)),*
+                $(Self::$variant_name(value) => value.$method_name()),*
             }
         }
     }

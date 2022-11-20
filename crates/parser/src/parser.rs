@@ -143,7 +143,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Assumes the current token is Module.
-    /// Expected pattern: mod<Identifier>\{<ItemList>\}
+    /// Expected pattern: `mod<Identifier>\{<ItemList>\}`
     fn expect_module(&mut self, attributes: AttributeListGreen) -> ItemModuleGreen {
         let module_kw = self.take::<TerminalModule>();
         let name = self.parse_token::<TerminalIdentifier>();
@@ -152,7 +152,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Assumes the current token is Struct.
-    /// Expected pattern: struct<Identifier>{<ParamList>}
+    /// Expected pattern: `struct<Identifier>{<ParamList>}`
     fn expect_struct(&mut self, attributes: AttributeListGreen) -> ItemStructGreen {
         let struct_kw = self.take::<TerminalStruct>();
         let name = self.parse_token::<TerminalIdentifier>();
@@ -173,7 +173,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Assumes the current token is Enum.
-    /// Expected pattern: enum<Identifier>{<ParamList>}
+    /// Expected pattern: `enum<Identifier>{<ParamList>}`
     fn expect_enum(&mut self, attributes: AttributeListGreen) -> ItemEnumGreen {
         let enum_kw = self.take::<TerminalEnum>();
         let name = self.parse_token::<TerminalIdentifier>();
@@ -193,7 +193,7 @@ impl<'a> Parser<'a> {
         )
     }
 
-    /// Expected pattern: <ParenthesizedParamList><ReturnTypeClause>
+    /// Expected pattern: `<ParenthesizedParamList><ReturnTypeClause>`
     fn expect_function_signature(&mut self) -> FunctionSignatureGreen {
         // TODO(yuval): support generics
         let lparen = self.parse_token::<TerminalLParen>();
@@ -219,7 +219,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Assumes the current token is Extern.
-    /// Expected pattern: extern(<FunctionSignature>|type<Identifier>);
+    /// Expected pattern: `extern(<FunctionSignature>|type<Identifier>);`
     fn expect_extern_item(&mut self, attributes: AttributeListGreen) -> ItemGreen {
         let extern_kw = self.take::<TerminalExtern>();
         match self.peek().kind {
@@ -262,7 +262,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Assumes the current token is Use.
-    /// Expected pattern: use<Path>;
+    /// Expected pattern: `use<Path>;`
     fn expect_use(&mut self, attributes: AttributeListGreen) -> ItemUseGreen {
         let use_kw = self.take::<TerminalUse>();
         let path = self.parse_path();
@@ -316,7 +316,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Assumes the current token is Function.
-    /// Expected pattern: <FunctionSignature><Block>
+    /// Expected pattern: `<FunctionSignature><Block>`
     fn expect_free_function(&mut self, attributes: AttributeListGreen) -> ItemFreeFunctionGreen {
         let function_kw = self.take::<TerminalFunction>();
         let name = self.parse_token::<TerminalIdentifier>();
@@ -365,7 +365,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Assumes the current token is Function.
-    /// Expected pattern: <FunctionSignature><SemiColon>
+    /// Expected pattern: `<FunctionSignature><SemiColon>`
     fn expect_trait_function(&mut self, attributes: AttributeListGreen) -> TraitItemFunctionGreen {
         let function_kw = self.take::<TerminalFunction>();
         let name = self.parse_token::<TerminalIdentifier>();
@@ -568,7 +568,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Assumes the current token is LParen.
-    /// Expected pattern: \(<ExprList>\)
+    /// Expected pattern: `\(<ExprList>\)`
     fn expect_expression_list_parenthesized(&mut self) -> ExprListParenthesizedGreen {
         let lparen = self.take::<TerminalLParen>();
         let expression_list = ExprList::new_green(
@@ -584,7 +584,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Assumes the current token is LBrace.
-    /// Expected pattern: \{<StructArgList>\}
+    /// Expected pattern: `\{<StructArgList>\}`
     fn expect_struct_ctor_argument_list_braced(&mut self) -> ArgListBracedGreen {
         let lbrace = self.take::<TerminalLBrace>();
         let arg_list = StructArgList::new_green(
@@ -601,7 +601,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Assumes the current token is LParen.
-    /// Expected pattern: <ExprListParenthesized>
+    /// Expected pattern: `<ExprListParenthesized>`
     fn expect_function_call(&mut self, path: ExprPathGreen) -> ExprFunctionCallGreen {
         let func_name = path;
         let parenthesized_args = self.expect_expression_list_parenthesized();
@@ -609,7 +609,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Assumes the current token is LBrace.
-    /// Expected pattern: <ExprListBraced>
+    /// Expected pattern: `<ExprListBraced>`
     fn expect_constructor_call(&mut self, path: ExprPathGreen) -> ExprStructCtorCallGreen {
         let ctor_name = path;
         let args = self.expect_struct_ctor_argument_list_braced();
@@ -617,7 +617,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Assumes the current token is LParen.
-    /// Expected pattern: \((<expr>,)*<expr>?\)
+    /// Expected pattern: `\((<expr>,)*<expr>?\)`
     /// Returns a GreenId of a node with kind ExprParenthesized|ExprTuple.
     fn expect_parenthesized_expr(&mut self) -> ExprGreen {
         let lparen = self.take::<TerminalLParen>();
@@ -639,7 +639,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Assumes the current token is DotDot.
-    /// Expected pattern: \.\.<Expr>
+    /// Expected pattern: `\.\.<Expr>`
     fn expect_struct_argument_tail(&mut self) -> StructArgTailGreen {
         let dotdot = self.take::<TerminalDotDot>(); // ..
         // TODO(yuval): consider changing this to SimpleExpr once it exists.
@@ -660,7 +660,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Returns a GreenId of a node with kind StructArgExpr or OptionStructArgExprEmpty if an
-    /// argument expression (":<value>") can't be parsed.
+    /// argument expression `(":<value>")` can't be parsed.
     fn parse_option_struct_arg_expression(&mut self) -> OptionStructArgExprGreen {
         if self.peek().kind == SyntaxKind::TerminalColon {
             let colon = self.take::<TerminalColon>();
@@ -690,7 +690,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Assumes the current token is `Match`.
-    /// Expected pattern: match <expr> \{<MatchArm>*\}
+    /// Expected pattern: `match <expr> \{<MatchArm>*\}`
     fn expect_match_expr(&mut self) -> ExprMatchGreen {
         let match_kw = self.take::<TerminalMatch>();
         let expr = self.parse_expr_limited(MAX_PRECEDENCE, LbraceAllowed::Forbid);
@@ -1006,7 +1006,7 @@ impl<'a> Parser<'a> {
         Some(Member::new_green(self.db, name, type_clause))
     }
 
-    /// Expected pattern: <PathSegment>(::<PathSegment>)*
+    /// Expected pattern: `<PathSegment>(::<PathSegment>)*`
     /// Returns a GreenId of a node with kind ExprPath.
     fn parse_path(&mut self) -> ExprPathGreen {
         let mut children: Vec<ExprPathElementOrSeparatorGreen> = vec![];
@@ -1057,7 +1057,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Assumes the current token is LT.
-    /// Expected pattern: \< <GenericArgList> \>
+    /// Expected pattern: `\< <GenericArgList> \>`
     fn expect_generic_args(&mut self) -> GenericArgsGreen {
         let langle = self.take::<TerminalLT>();
         let generic_args = GenericArgList::new_green(
@@ -1073,7 +1073,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Assumes the current token is LT.
-    /// Expected pattern: \< <GenericParamList> \>
+    /// Expected pattern: `\< <GenericParamList> \>`
     fn expect_generic_params(&mut self) -> WrappedGenericParamListGreen {
         let langle = self.take::<TerminalLT>();
         let generic_params = GenericParamList::new_green(
@@ -1224,10 +1224,7 @@ impl<'a> Parser<'a> {
         self.diagnostics.add(ParserDiagnostic {
             file_id: self.file_id,
             kind: diagnostic_kind,
-            span: TextSpan {
-                start: TextOffset(diag_start as usize),
-                end: TextOffset(diag_end as usize),
-            },
+            span: TextSpan { start: TextOffset(diag_start), end: TextOffset(diag_end) },
         });
     }
 
