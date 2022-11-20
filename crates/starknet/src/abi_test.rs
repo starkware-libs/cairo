@@ -25,12 +25,30 @@ fn test_abi() {
         db.module_item_by_name(module_id, "MyAbi".into()).unwrap(),
         ModuleItemId::Trait
     );
-    let abi = Contract::from_trait(db, trait_id);
-    // TODO(spapini): Replace with json.
-    assert_eq!(
-        format!("{:?}", abi),
-        "Ok(Contract { functions: [Function { name: \"foo\", inputs: [Input { name: \"a\", ty: \
-         \"core::felt\" }, Input { name: \"b\", ty: \"core::integer::uint128\" }], output_ty: \
-         \"core::option::Option::<()>\" }] })"
-    );
+    let abi = Contract::from_trait(db, trait_id).unwrap();
+    let expected = serde_json::to_string_pretty(&abi).unwrap();
+    if expected
+        != indoc! {
+        r#"{
+            "items": [
+              {
+                "type": "function",
+                "name": "foo",
+                "inputs": [
+                  {
+                    "name": "a",
+                    "ty": "core::felt"
+                  },
+                  {
+                    "name": "b",
+                    "ty": "core::integer::uint128"
+                  }
+                ],
+                "output_ty": "core::option::Option::<()>"
+              }
+            ]
+          }"#}
+    {
+        panic!("Expected: \n{}", expected);
+    }
 }
