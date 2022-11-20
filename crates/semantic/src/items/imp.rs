@@ -7,7 +7,8 @@ use defs::ids::{
 };
 use diagnostics::{Diagnostics, DiagnosticsBuilder};
 use diagnostics_proc_macros::DebugWithDb;
-use syntax::node::ast::{self, Item, MaybeImplBody};
+use itertools::izip;
+use syntax::node::ast::{self, Item, MaybeImplBody, OptionReturnTypeClause};
 use syntax::node::db::SyntaxGroup;
 use syntax::node::ids::SyntaxStablePtrId;
 use syntax::node::TypedSyntaxNode;
@@ -418,23 +419,6 @@ pub fn priv_impl_function_declaration_data(
         &mut environment,
     );
 
-    let declaraton_data = db.priv_impl_declaration_data(impl_id)?;
-
-    declaraton_data.concrete_trait.and_then(|concrete_trait| {
-        let concrete_trait_long_id = db.lookup_intern_concrete_trait(concrete_trait);
-        let trait_id = concrete_trait_long_id.trait_id;
-        let trait_functions = db.trait_functions(trait_id)?;
-
-        let function_name = db.lookup_intern_impl_function(impl_function_id).name(db.upcast());
-        match trait_functions.get(&function_name) {
-            // TODO(ilya): Verify that signature match.
-            Some(_trait_function_id) => {}
-            None => diagnostics
-                .report(function_syntax, FunctionNotMemberOfTrait { impl_function_id, trait_id }),
-        }
-        Some(())
-    });
-
     let implicits = function_signature_implicit_parameters(
         &mut diagnostics,
         db,
@@ -444,12 +428,92 @@ pub fn priv_impl_function_declaration_data(
         &mut environment,
     );
 
+    let signature = semantic::Signature { params, return_type, implicits };
+
+    validate_impl_function_signature(
+        db,
+        &mut diagnostics,
+        impl_id,
+        impl_function_id,
+        &signature_syntax,
+        &signature,
+        function_syntax,
+    );
+
     let attributes = ast_attributes_to_semantic(syntax_db, function_syntax.attributes(syntax_db));
 
     Some(ImplFunctionDeclarationData {
         diagnostics: diagnostics.build(),
-        signature: semantic::Signature { params, return_type, implicits },
+        signature,
         generic_params,
         attributes,
     })
+}
+
+fn validate_impl_function_signature(
+    db: &dyn SemanticGroup,
+    diagnostics: &mut SemanticDiagnostics,
+    impl_id: ImplId,
+    impl_function_id: ImplFunctionId,
+    signature_syntax: &ast::FunctionSignature,
+    signature: &semantic::Signature,
+    function_syntax: &ast::ItemFreeFunction,
+) {
+    let syntax_db = db.upcast();
+    let Some(declaraton_data) = db.priv_impl_declaration_data(impl_id) else {
+        return;
+    };
+    let Some(concrete_trait) = declaraton_data.concrete_trait else {
+        return;
+    };
+    let concrete_trait_long_id = db.lookup_intern_concrete_trait(concrete_trait);
+    let trait_id = concrete_trait_long_id.trait_id;
+    let Some(trait_functions) = db.trait_functions(trait_id) else {
+        return;
+    };
+    let function_name = db.lookup_intern_impl_function(impl_function_id).name(db.upcast());
+    let Some(trait_function_id) = trait_functions.get(&function_name).on_none(|| {
+        diagnostics.report(function_syntax, FunctionNotMemberOfTrait { impl_function_id, trait_id })
+    }) else {
+        return;
+    };
+    let Some(trait_signature) = db.trait_function_signature(*trait_function_id) else {
+        return;
+    };
+    if signature.params.len() != trait_signature.params.len() {
+        diagnostics.report(
+            &signature_syntax.parameters(syntax_db),
+            WrongNumberOfParameters {
+                expected: trait_signature.params.len(),
+                actual: signature.params.len(),
+            },
+        )
+    }
+    for (idx, (param, trait_param)) in
+        izip!(signature.params.iter(), trait_signature.params.iter()).enumerate()
+    {
+        let expected_ty = trait_param.ty;
+        let actual_ty = param.ty;
+        if expected_ty != actual_ty {
+            diagnostics.report(
+                &signature_syntax.parameters(syntax_db).elements(syntax_db)[idx],
+                WrongParameterType { expected_ty, actual_ty },
+            );
+        }
+    }
+
+    let expected_ty = trait_signature.return_type;
+    let actual_ty = signature.return_type;
+    if expected_ty != actual_ty {
+        let location_ptr = match signature_syntax.ret_ty(syntax_db) {
+            OptionReturnTypeClause::ReturnTypeClause(ret_ty) => {
+                ret_ty.ty(syntax_db).as_syntax_node()
+            }
+            OptionReturnTypeClause::Empty(_) => {
+                function_syntax.body(syntax_db).lbrace(syntax_db).as_syntax_node()
+            }
+        }
+        .stable_ptr();
+        diagnostics.report_by_ptr(location_ptr, WrongReturnType { expected_ty, actual_ty });
+    }
 }

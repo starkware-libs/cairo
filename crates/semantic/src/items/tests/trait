@@ -11,7 +11,11 @@ foo
 
 //! > module_code
 struct A {}
-trait MyTrait<T>;
+trait MyTrait<T> {
+    func param_test(a: uint128) -> felt;
+
+    func no_ret_ty(a: uint128) -> felt;
+}
 impl MyImpl of MyTrait::<A>;
 impl MyImpl2<T> of MyTrait::<T> {
     mod a;
@@ -29,53 +33,81 @@ impl MyImpl2<T> of MyTrait::<T> {
     func my_bar() {
 
     }
+
+    func param_test(a: felt, b: felt) -> uint128 {
+
+    }
+
+    func no_ret_ty(a: uint128) {
+
+    }
 }
 
 //! > expected_diagnostics
 error: `mod` is not allowed inside impl.
- --> lib.cairo:5:5
+ --> lib.cairo:9:5
     mod a;
     ^*^
 
 error: `use` is not allowed inside impl.
- --> lib.cairo:6:5
+ --> lib.cairo:10:5
     use b;
     ^*^
 
 error: `extern` is not allowed inside impl.
- --> lib.cairo:7:5
+ --> lib.cairo:11:5
     extern func extern_func();
     ^****^
 
 error: `extern` is not allowed inside impl.
- --> lib.cairo:8:5
+ --> lib.cairo:12:5
     extern type DummyType;
     ^****^
 
 error: `trait` is not allowed inside impl.
- --> lib.cairo:10:5
+ --> lib.cairo:14:5
     trait DummyTrait;
     ^***^
 
 error: `impl` is not allowed inside impl.
- --> lib.cairo:11:5
+ --> lib.cairo:15:5
     impl DummyImpl of MyTrait::<T>;
     ^**^
 
 error: `struct` is not allowed inside impl.
- --> lib.cairo:13:5
+ --> lib.cairo:17:5
     struct DummyStruct {}
     ^****^
 
 error: `enum` is not allowed inside impl.
- --> lib.cairo:15:5
+ --> lib.cairo:19:5
     enum DummyEnum {}
     ^**^
 
 error: function `my_bar` is not a member of trait `MyTrait`.
- --> lib.cairo:17:5
+ --> lib.cairo:21:5
     func my_bar() {
     ^*************^
+
+error: Wrong number of parameters. Expected 1, found: 2
+ --> lib.cairo:25:21
+    func param_test(a: felt, b: felt) -> uint128 {
+                    ^**************^
+
+error: Unexpected parameter type. Expected: "core::integer::uint128", found: "core::felt".
+ --> lib.cairo:25:21
+    func param_test(a: felt, b: felt) -> uint128 {
+                    ^*****^
+
+error: Unexpected return type. Expected: "core::felt", found: "core::integer::uint128".
+ --> lib.cairo:25:42
+    func param_test(a: felt, b: felt) -> uint128 {
+                                         ^*****^
+
+error: Unexpected return type. Expected: "core::felt", found: "()".
+ --> lib.cairo:29:32
+    func no_ret_ty(a: uint128) {
+                               ^
 
 //! > ==========================================================================
 
