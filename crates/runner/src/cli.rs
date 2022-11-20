@@ -5,7 +5,6 @@ use std::path::Path;
 use std::sync::Arc;
 
 use anyhow::{Context, Ok};
-use cairo_rs::types::relocatable::MaybeRelocatable;
 use casm::instructions::Instruction;
 use casm::{casm, casm_extend};
 use clap::Parser;
@@ -26,9 +25,14 @@ use sierra_to_casm::metadata::Metadata;
 #[clap(version, verbatim_doc_comment)]
 struct Args {
     /// The file to compile and run.
+    #[arg(short, long)]
     path: String,
     /// In cases where gas is available, the amount of provided gas.
+    #[arg(long)]
     available_gas: Option<usize>,
+    /// In cases where gas is available, the amount of provided gas.
+    #[arg(long, default_value_t = false)]
+    print_full_memory: bool,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -54,19 +58,27 @@ fn main() -> anyhow::Result<()> {
     let program =
         sierra_to_casm::compiler::compile(&sierra_program, &metadata, args.available_gas.is_some())
             .with_context(|| "Failed lowering to casm.")?;
-    let entry_code = create_entry_code(main_func, args, metadata, &program)?;
+    let entry_code = create_entry_code(main_func, args.available_gas, metadata, &program)?;
 
     let (input_size, output_size) = function_sizes[&main_func.entry_point];
-    let results =
-        casm::run::run_function(chain!(entry_code, program.instructions).collect(), output_size);
-    print!("Returned memory values: [");
-    for result in &results[input_size..] {
-        match result {
-            None => print!("Uninitialized, "),
-            Some(MaybeRelocatable::Int(value)) => print!("{value}, "),
-            Some(MaybeRelocatable::RelocatableValue(relocatable)) => {
-                print!("&segment[{}][{}], ", relocatable.segment_index, relocatable.offset);
+    let (memory, ap) = casm::run::run_function(chain!(entry_code, program.instructions).collect())
+        .with_context(|| "Failed running casm code.")?;
+    if args.print_full_memory {
+        print!("Full memory: [");
+        for cell in &memory {
+            match cell {
+                None => print!("_, "),
+                Some(value) => print!("{value}, "),
             }
+        }
+        println!("]");
+    }
+    print!("Returned values: [");
+    let printed_result_size = output_size - input_size;
+    for cell in &memory[(ap - 1 - printed_result_size)..(ap - 1)] {
+        match cell {
+            None => print!("_, "),
+            Some(value) => print!("{value}, "),
         }
     }
     println!("]");
@@ -77,7 +89,7 @@ fn main() -> anyhow::Result<()> {
 /// function.
 fn create_entry_code(
     main_func: &sierra::program::GenFunction<StatementIdx>,
-    args: Args,
+    available_gas: Option<usize>,
     metadata: Metadata,
     program: &sierra_to_casm::compiler::CairoProgram,
 ) -> Result<Vec<Instruction>, anyhow::Error> {
@@ -92,7 +104,7 @@ fn create_entry_code(
                 ap += 1;
             }
         } else if ty == &"GasBuiltin".into() {
-            if let Some(available_gas) = args.available_gas {
+            if let Some(available_gas) = available_gas {
                 let initial_gas = available_gas
                     .checked_sub(metadata.gas_info.function_costs[&main_func.id] as usize);
                 if let Some(initial_gas) = initial_gas {
@@ -112,11 +124,13 @@ fn create_entry_code(
         }
     }
     let before_final_call = ctx.current_code_offset;
-    let final_call_size = 3;
+    let final_call_size = 5;
     let offset = final_call_size
         + program.debug_info.sierra_statement_info[main_func.entry_point.0].code_offset;
     casm_extend! {ctx,
         call rel offset;
+        // Padding to make sure end of segment won't be removed even if uninitialized.
+        [ap] = 0, ap++;
         ret;
     }
     assert_eq!(before_final_call + final_call_size, ctx.current_code_offset);

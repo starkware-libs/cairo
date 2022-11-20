@@ -136,24 +136,21 @@ impl HintProcessor for CairoHintProcessor {
     }
 }
 
-/// Runs program on layout with prime, and returns the resulting VM.
-#[allow(clippy::result_large_err)]
-fn run(
-    program: Vec<Instruction>,
-    layout: &str,
-    prime: BigInt,
-) -> Result<VirtualMachine, VirtualMachineError> {
-    let data: Vec<MaybeRelocatable> = program
+/// Runs `program` on layout with prime, and returns the memory layout and ap value.
+pub fn run_function(
+    function: Vec<Instruction>,
+) -> Result<(Vec<Option<BigInt>>, usize), Box<VirtualMachineError>> {
+    let data: Vec<MaybeRelocatable> = function
         .iter()
         .flat_map(|inst| inst.assemble().encode())
         .map(MaybeRelocatable::from)
         .collect();
 
-    let hint_processor = CairoHintProcessor::new(program);
+    let hint_processor = CairoHintProcessor::new(function);
 
     let program = Program {
         builtins: Vec::new(),
-        prime: prime.clone(),
+        prime: get_prime(),
         data,
         constants: HashMap::new(),
         main: Some(0),
@@ -163,26 +160,24 @@ fn run(
         reference_manager: ReferenceManager { references: Vec::new() },
         identifiers: HashMap::new(),
     };
-    let mut runner = CairoRunner::new(&program, layout, false)?;
-    let mut vm = VirtualMachine::new(prime, false);
+    let mut runner = CairoRunner::new(&program, "plain", false)
+        .map_err(VirtualMachineError::from)
+        .map_err(Box::new)?;
+    let mut vm = VirtualMachine::new(get_prime(), true);
 
-    let end = runner.initialize(&mut vm)?;
+    let end = runner.initialize(&mut vm).map_err(VirtualMachineError::from).map_err(Box::new)?;
 
     runner.run_until_pc(end, &mut vm, &hint_processor)?;
-
-    Ok(vm)
+    runner.end_run(true, false, &mut vm, &hint_processor).map_err(Box::new)?;
+    runner.relocate(&mut vm).map_err(VirtualMachineError::from).map_err(Box::new)?;
+    Ok((runner.relocated_memory, runner.relocated_trace.unwrap().last().unwrap().ap))
 }
 
 /// Runs `function` and returns `n_returns` return values.
-pub fn run_function(
+pub fn run_function_return_values(
     instructions: Vec<Instruction>,
     n_returns: usize,
-) -> Vec<Option<MaybeRelocatable>> {
-    let vm = run(instructions, "plain", get_prime()).expect("Virtual machine failed");
-    let addr = vm.get_ap().sub(n_returns).expect("AP stack to small");
-    vm.get_range(addr, n_returns)
-        .unwrap()
-        .into_iter()
-        .map(|cell| cell.map(|value| value.into_owned()))
-        .collect()
+) -> Result<Vec<Option<BigInt>>, Box<VirtualMachineError>> {
+    let (cells, ap) = run_function(instructions)?;
+    Ok(cells[(ap - n_returns)..ap].to_vec())
 }
