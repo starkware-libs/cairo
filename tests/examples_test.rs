@@ -2,9 +2,14 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 
+use cairo_rs::vm::errors::vm_errors::VirtualMachineError;
+use casm::instructions::Instruction;
+use casm::run::run_function_return_values;
+use casm::{casm, casm_extend};
 use compiler::db::RootDatabase;
 use compiler::diagnostics::check_diagnostics;
 use compiler::project::setup_project;
+use num_bigint::BigInt;
 use pretty_assertions::assert_eq;
 use sierra_gas::calc_gas_info;
 use sierra_gas::gas_info::GasInfo;
@@ -96,4 +101,48 @@ fn cairo_to_casm(name: &str, enable_gas_checks: bool) {
 #[test_case("corelib_usage")]
 fn lowering_test(name: &str) {
     setup(name);
+}
+
+/// Add instructions pushing arguments, calling a function immediately after the generated code,
+/// and returning the function's return values:
+///     [ap] = arg0, ap++;
+///     [ap] = arg1, ap++;
+///     ...
+///     call rel 3; // This jumps over the call and the ret.
+///     ret;
+fn generate_function_runner(params: Vec<BigInt>) -> Vec<Instruction> {
+    let mut ctx = casm!();
+    for param in params {
+        casm_extend!(ctx, [ap] = param, ap++;);
+    }
+    let before_call_offset = ctx.current_code_offset;
+    casm_extend!(ctx, call rel 3; ret;);
+    assert_eq!(ctx.current_code_offset, before_call_offset + 3);
+    ctx.instructions
+}
+
+#[test_case("fib", &[1, 1, 7].map(BigInt::from), &[21].map(BigInt::from).map(Some); "fib")]
+fn run_function_test(
+    name: &str,
+    params: &[BigInt],
+    expected: &[Option<BigInt>],
+) -> Result<(), Box<VirtualMachineError>> {
+    let sierra_func = checked_compile_to_sierra(name);
+
+    let mut program = generate_function_runner(params.to_vec());
+    let func = sierra_to_casm::compiler::compile(
+        &sierra_func,
+        &Metadata {
+            function_ap_change: HashMap::new(),
+            gas_info: GasInfo { variable_values: HashMap::new(), function_costs: HashMap::new() },
+        },
+        false,
+    )
+    .unwrap()
+    .instructions;
+
+    program.extend(func);
+    let res = run_function_return_values(program, expected.len())?;
+    assert_eq!(res, expected.to_vec());
+    Ok(())
 }
