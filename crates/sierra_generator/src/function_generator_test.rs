@@ -63,3 +63,60 @@ fn test_function_generator() {
     );
     assert_eq!(function.entry_point.to_string(), "label1");
 }
+
+#[test]
+fn test_function_generator_local_vars() {
+    let mut db = SierraGenDatabaseForTesting::default();
+    let module_id = setup_test_module(
+        &mut db,
+        indoc! {"
+            func foo(a: felt) -> felt {
+                let b = a + a + a;
+                revoke_ap();
+                b
+            }
+
+            // Revokes ap since this function is recursive.
+            func revoke_ap() -> felt {
+                revoke_ap()
+            }
+        "},
+    )
+    .unwrap()
+    .module_id;
+    let foo = extract_matches!(
+        db.module_items(module_id).unwrap().items["foo"],
+        ModuleItemId::FreeFunction,
+        "Unexpected item type."
+    );
+
+    db.module_lowering_diagnostics(module_id).expect("");
+    db.free_function_sierra_diagnostics(foo).expect("");
+    let function = db.free_function_sierra(foo).unwrap();
+    assert_eq!(
+        function
+            .body
+            .iter()
+            .map(|x| replace_sierra_ids(&db, x).to_string())
+            .collect::<Vec<String>>(),
+        vec![
+            "label0:",
+            "alloc_local<felt>() -> ([2])",
+            "drop<Uninitialized<felt>>([2]) -> ()",
+            "finalize_locals() -> ()",
+            "revoke_ap_tracking() -> ()",
+            "dup<felt>([0]) -> ([0], [6])",
+            "dup<felt>([0]) -> ([0], [7])",
+            "felt_add([6], [7]) -> ([3])",
+            "store_temp<felt>([3]) -> ([3])",
+            "felt_add([3], [0]) -> ([1])",
+            "function_call<user@test_crate::revoke_ap>() -> ([4])",
+            "drop<felt>([4]) -> ()",
+            "store_temp<felt>([1]) -> ([1])",
+            "rename<felt>([1]) -> ([5])",
+            "burn_gas() -> ()",
+            "return([5])",
+        ]
+    );
+    assert_eq!(function.entry_point.to_string(), "label0");
+}
