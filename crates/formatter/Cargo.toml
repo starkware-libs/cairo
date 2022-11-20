@@ -13,10 +13,12 @@ colored.workspace = true
 diffy.workspace = true
 filesystem = { path = "../filesystem" }
 itertools.workspace = true
+log.workspace = true
 parser = { path = "../parser" }
 salsa.workspace = true
 smol_str.workspace = true
 syntax = { path = "../syntax" }
+utils = { path = "../utils" }
 
 [dev-dependencies]
 pretty_assertions.workspace = true

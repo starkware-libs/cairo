@@ -2,6 +2,7 @@ use std::fmt;
 
 pub mod casts;
 pub mod extract_matches;
+pub mod logging;
 pub mod ordered_hash_map;
 pub mod ordered_hash_set;
 pub mod strongly_connected_components;
