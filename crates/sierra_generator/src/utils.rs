@@ -3,7 +3,7 @@ use num_bigint::BigInt;
 use sierra::extensions::core::CoreLibFunc;
 use sierra::extensions::lib_func::LibFuncSignature;
 use sierra::extensions::GenericLibFuncEx;
-use sierra::ids::{ConcreteLibFuncId, ConcreteTypeId, GenericLibFuncId};
+use sierra::ids::{ConcreteLibFuncId, GenericLibFuncId};
 use sierra::program;
 use smol_str::SmolStr;
 
@@ -58,7 +58,7 @@ pub fn get_libfunc_id_with_generic_arg(
 /// Returns the [sierra::program::ConcreteLibFuncLongId] associated with `store_temp`.
 pub fn store_temp_libfunc_id(
     db: &dyn SierraGenGroup,
-    ty: ConcreteTypeId,
+    ty: sierra::ids::ConcreteTypeId,
 ) -> sierra::ids::ConcreteLibFuncId {
     get_libfunc_id_with_generic_arg(db, "store_temp", ty)
 }
@@ -94,7 +94,7 @@ pub fn enum_init_libfunc_id(
 /// Returns the [sierra::program::ConcreteLibFuncLongId] associated with `rename`.
 pub fn rename_libfunc_id(
     db: &dyn SierraGenGroup,
-    ty: ConcreteTypeId,
+    ty: sierra::ids::ConcreteTypeId,
 ) -> sierra::ids::ConcreteLibFuncId {
     db.intern_concrete_lib_func(sierra::program::ConcreteLibFuncLongId {
         generic_id: sierra::ids::GenericLibFuncId::from_string("rename"),
@@ -153,6 +153,17 @@ pub fn jump_libfunc_id(db: &dyn SierraGenGroup) -> sierra::ids::ConcreteLibFuncI
 
 pub fn revoke_ap_tracking_libfunc_id(db: &dyn SierraGenGroup) -> sierra::ids::ConcreteLibFuncId {
     get_libfunc_id_without_generics(db, "revoke_ap_tracking")
+}
+
+pub fn alloc_local_libfunc_id(
+    db: &dyn SierraGenGroup,
+    ty: sierra::ids::ConcreteTypeId,
+) -> sierra::ids::ConcreteLibFuncId {
+    get_libfunc_id_with_generic_arg(db, "alloc_local", ty)
+}
+
+pub fn finalize_locals_libfunc_id(db: &dyn SierraGenGroup) -> sierra::ids::ConcreteLibFuncId {
+    get_libfunc_id_without_generics(db, "finalize_locals")
 }
 
 /// Returns the [LibFuncSignature] of the given function.
