@@ -31,6 +31,7 @@ edition = "2021"
 [workspace.dependencies]
 assert_matches = "1.5"
 bimap = "0.6.2"
+chrono = "0.4.23"
 clap = { version = "4.0", features = ["derive"] }
 colored = "2"
 const-fnv1a-hash = "1.1.0"

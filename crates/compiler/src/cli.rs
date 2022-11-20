@@ -7,8 +7,10 @@ use clap::Parser;
 use compiler::db::RootDatabase;
 use compiler::diagnostics::check_diagnostics;
 use compiler::project::setup_project;
+use log::info;
 use sierra_generator::db::SierraGenGroup;
 use sierra_generator::replace_ids::replace_sierra_ids_in_program;
+use utils::logging::init_logging;
 
 /// Command line args parser.
 /// Exits with 0/1 if the input is formatted correctly/incorrectly.
@@ -25,6 +27,9 @@ struct Args {
 }
 
 fn main() -> ExitCode {
+    init_logging();
+    info!("Starting Cairo compilation.");
+
     let args = Args::parse();
 
     let mut db_val = RootDatabase::default();

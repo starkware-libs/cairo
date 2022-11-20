@@ -9,6 +9,7 @@ casm = { path = "../casm" }
 clap.workspace = true
 env_logger.workspace = true
 itertools.workspace = true
+log.workspace = true
 num-bigint.workspace = true
 sierra = { path = "../sierra" }
 sierra_gas = { path = "../sierra_gas" }

@@ -13,8 +13,10 @@ path = "src/bin/generate_syntax.rs"
 [dependencies]
 env_logger.workspace = true
 genco.workspace = true
+log.workspace = true
 xshell.workspace = true
 test_utils_macros = { path = "../test_utils_macros" }
+utils = { path = "../utils" }
 
 [dev-dependencies]
 test-log.workspace = true

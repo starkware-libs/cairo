@@ -9,6 +9,7 @@ defs = { path = "../defs" }
 db_utils = { path = "../db_utils" }
 env_logger.workspace = true
 filesystem = { path = "../filesystem" }
+log.workspace = true
 lowering = { path = "../lowering" }
 semantic = { path = "../semantic" }
 sierra = { path = "../sierra" }
@@ -19,7 +20,7 @@ project = { path = "../project" }
 salsa.workspace = true
 test_utils_macros = { path = "../test_utils_macros" }
 thiserror.workspace = true
-
+utils = { path = "../utils" }
 
 [dev-dependencies]
 test-log.workspace = true

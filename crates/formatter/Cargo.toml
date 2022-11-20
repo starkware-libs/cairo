@@ -14,11 +14,13 @@ diffy.workspace = true
 env_logger.workspace = true
 filesystem = { path = "../filesystem" }
 itertools.workspace = true
+log.workspace = true
 parser = { path = "../parser" }
 salsa.workspace = true
 smol_str.workspace = true
 syntax = { path = "../syntax" }
 test_utils_macros = { path = "../test_utils_macros" }
+utils = { path = "../utils" }
 
 [dev-dependencies]
 pretty_assertions.workspace = true

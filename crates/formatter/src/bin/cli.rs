@@ -6,7 +6,9 @@ use clap::Parser;
 use colored::Colorize;
 use diffy::{create_patch, PatchFormatter};
 use formatter::{get_formatted_file, FormatterConfig};
+use log::info;
 use parser::utils::{get_syntax_root_and_diagnostics_from_file, SimpleParserDatabase};
+use utils::logging::init_logging;
 
 /// Format a specific file and return whether it was already correctly formatted.
 fn format_file(file_path: &str, args: &FormatterArgs, config: &FormatterConfig) -> bool {
@@ -151,6 +153,9 @@ struct FormatterArgs {
 }
 
 fn main() -> ExitCode {
+    init_logging();
+    info!("Starting formatting.");
+
     let args = FormatterArgs::parse();
     let config = FormatterConfig::default();
     println_if_verbose(

@@ -7,9 +7,11 @@ edition.workspace = true
 testing = []
 
 [dependencies]
+chrono.workspace = true
 env_logger.workspace = true
 indexmap.workspace = true
 itertools.workspace = true
+log.workspace = true
 test_utils_macros = { path = "../test_utils_macros" }
 
 [dev-dependencies]
