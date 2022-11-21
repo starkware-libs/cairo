@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use cairo_rs::vm::errors::vm_errors::VirtualMachineError;
 use casm::instructions::Instruction;
@@ -9,7 +10,9 @@ use casm::{casm, casm_extend};
 use compiler::db::RootDatabase;
 use compiler::diagnostics::check_diagnostics;
 use compiler::project::setup_project;
+use defs::db::DefsGroup;
 use num_bigint::BigInt;
+use plugins::derive::DerivePlugin;
 use pretty_assertions::assert_eq;
 use sierra_gas::calc_gas_info;
 use sierra_gas::gas_info::GasInfo;
@@ -27,6 +30,7 @@ fn setup(name: &str) -> RootDatabase {
     path.push(format!("{name}.cairo"));
 
     let mut db = RootDatabase::default();
+    db.set_macro_plugins(vec![Arc::new(DerivePlugin {})]);
     setup_project(&mut db, path.as_path()).expect("Project setup failed.");
     assert!(!check_diagnostics(&mut db));
     db

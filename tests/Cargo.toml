@@ -12,6 +12,7 @@ diagnostics = { path = "../crates/diagnostics" }
 filesystem = { path = "../crates/filesystem" }
 num-bigint.workspace = true
 parser = { path = "../crates/parser" }
+plugins = { path = "../crates/plugins" }
 pretty_assertions = "1.2.1"
 sierra = { path = "../crates/sierra" }
 sierra_gas = { path = "../crates/sierra_gas" }
@@ -19,8 +20,8 @@ semantic = { path = "../crates/semantic", features = ["testing"] }
 sierra_generator = { path = "../crates/sierra_generator", features = ["testing"] }
 sierra_to_casm = { path = "../crates/sierra_to_casm" }
 syntax = { path = "../crates/syntax" }
-salsa = "0.16.1"
-test-case = "2.2.2"
+salsa.workspace = true
+test-case.workspace = true
 
 [[test]]
 name = "examples_test"
