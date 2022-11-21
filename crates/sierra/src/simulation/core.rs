@@ -339,6 +339,15 @@ fn simulate_integer_libfunc(
             [_, _, _] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
         },
+        Uint128Concrete::LessThanOrEqual(_) => match inputs {
+            [CoreValue::RangeCheck, CoreValue::Uint128(a), CoreValue::Uint128(b)] => {
+                // "False" branch (branch 0) is the case a > b.
+                // "True" branch (branch 1) is the case a <= b.
+                Ok((vec![CoreValue::RangeCheck], usize::from(a <= b)))
+            }
+            [_, _, _] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
+            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+        },
     }
 }
 
