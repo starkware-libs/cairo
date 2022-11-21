@@ -66,6 +66,37 @@ pub struct Signature {
     pub implicits: Vec<semantic::Parameter>,
 }
 
+impl Signature {
+    pub fn from_ast(
+        diagnostics: &mut SemanticDiagnostics,
+        db: &dyn SemanticGroup,
+        resolver: &mut Resolver<'_>,
+        signature_syntax: &ast::FunctionSignature,
+        function_id: GenericFunctionId,
+        environment: &mut Environment,
+    ) -> Self {
+        let return_type =
+            function_signature_return_type(diagnostics, db, resolver, signature_syntax);
+        let params = function_signature_params(
+            diagnostics,
+            db,
+            resolver,
+            signature_syntax,
+            function_id,
+            environment,
+        );
+        let implicits = function_signature_implicit_parameters(
+            diagnostics,
+            db,
+            resolver,
+            signature_syntax,
+            function_id,
+            environment,
+        );
+        semantic::Signature { params, return_type, implicits }
+    }
+}
+
 pub fn function_signature_return_type(
     diagnostics: &mut SemanticDiagnostics,
     db: &dyn SemanticGroup,

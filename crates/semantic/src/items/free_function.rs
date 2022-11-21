@@ -11,10 +11,6 @@ use utils::try_extract_matches;
 use utils::unordered_hash_map::UnorderedHashMap;
 
 use super::attribute::{ast_attributes_to_semantic, Attribute};
-use super::functions::{
-    function_signature_implicit_parameters, function_signature_params,
-    function_signature_return_type,
-};
 use super::generics::semantic_generic_params;
 use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics};
@@ -111,17 +107,7 @@ pub fn priv_free_function_declaration_data(
 
     let syntax_db = db.upcast();
     let signature_syntax = function_syntax.signature(syntax_db);
-    let return_type =
-        function_signature_return_type(&mut diagnostics, db, &mut resolver, &signature_syntax);
-    let params = function_signature_params(
-        &mut diagnostics,
-        db,
-        &mut resolver,
-        &signature_syntax,
-        GenericFunctionId::Free(free_function_id),
-        &mut environment,
-    );
-    let implicits = function_signature_implicit_parameters(
+    let signature = semantic::Signature::from_ast(
         &mut diagnostics,
         db,
         &mut resolver,
@@ -133,7 +119,7 @@ pub fn priv_free_function_declaration_data(
     let attributes = ast_attributes_to_semantic(syntax_db, function_syntax.attributes(syntax_db));
     Some(FreeFunctionDeclarationData {
         diagnostics: diagnostics.build(),
-        signature: semantic::Signature { params, return_type, implicits },
+        signature,
         generic_params,
         environment,
         attributes,
