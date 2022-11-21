@@ -2,10 +2,6 @@ use defs::ids::{ExternFunctionId, GenericFunctionId, GenericParamId, LanguageEle
 use diagnostics::Diagnostics;
 use diagnostics_proc_macros::DebugWithDb;
 
-use super::functions::{
-    function_signature_implicit_parameters, function_signature_params,
-    function_signature_return_type,
-};
 use super::generics::semantic_generic_params;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnostics;
@@ -85,17 +81,7 @@ pub fn priv_extern_function_declaration_data(
     let mut resolver = Resolver::new(db, module_id, &generic_params);
     let mut environment = Environment::default();
     let signature_syntax = function_syntax.signature(db.upcast());
-    let return_type =
-        function_signature_return_type(&mut diagnostics, db, &mut resolver, &signature_syntax);
-    let params = function_signature_params(
-        &mut diagnostics,
-        db,
-        &mut resolver,
-        &signature_syntax,
-        GenericFunctionId::Extern(extern_function_id),
-        &mut environment,
-    );
-    let implicits = function_signature_implicit_parameters(
+    let signature = semantic::Signature::from_ast(
         &mut diagnostics,
         db,
         &mut resolver,
@@ -105,7 +91,7 @@ pub fn priv_extern_function_declaration_data(
     );
     Some(ExternFunctionDeclarationData {
         diagnostics: diagnostics.build(),
-        signature: semantic::Signature { params, return_type, implicits },
+        signature,
         generic_params,
     })
 }
