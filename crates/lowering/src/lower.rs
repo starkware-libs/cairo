@@ -781,8 +781,34 @@ fn lower_expr_error_propagate(
 ) -> Result<LoweredExpr, LoweringFlowError> {
     log::trace!("Started lowering of an error-propagate expression.");
     let lowered_expr = lower_expr(ctx, scope, expr.inner)?;
+    lower_error_propagate(
+        ctx,
+        scope,
+        lowered_expr,
+        &expr.ok_variant,
+        &expr.err_variant,
+        &expr.func_err_variant,
+    )
+}
+
+/// Lowers an error propagation.
+fn lower_error_propagate(
+    ctx: &mut LoweringContext<'_>,
+    scope: &mut BlockScope,
+    lowered_expr: LoweredExpr,
+    ok_variant: &semantic::ConcreteVariant,
+    err_variant: &semantic::ConcreteVariant,
+    func_err_variant: &semantic::ConcreteVariant,
+) -> Result<LoweredExpr, LoweringFlowError> {
     if let LoweredExpr::ExternEnum(extern_enum) = lowered_expr {
-        return lower_optimized_extern_error_propagate(ctx, scope, extern_enum, expr);
+        return lower_optimized_extern_error_propagate(
+            ctx,
+            scope,
+            extern_enum,
+            ok_variant,
+            err_variant,
+            func_err_variant,
+        );
     }
 
     let var = lowered_expr.var(ctx, scope);
@@ -791,21 +817,17 @@ fn lower_expr_error_propagate(
         BlockFlowMerger::with(ctx, scope, &[], |ctx, merger| -> Result<_, LoweringFlowError> {
             Ok([
                 merger
-                    .run_in_subscope(
-                        ctx,
-                        vec![expr.ok_variant.ty],
-                        |_ctx, _subscope, arm_inputs| {
-                            let [var] = <[_; 1]>::try_from(arm_inputs).ok().unwrap();
-                            Some(BlockScopeEnd::Callsite(Some(var)))
-                        },
-                    )
+                    .run_in_subscope(ctx, vec![ok_variant.ty], |_ctx, _subscope, arm_inputs| {
+                        let [var] = <[_; 1]>::try_from(arm_inputs).ok().unwrap();
+                        Some(BlockScopeEnd::Callsite(Some(var)))
+                    })
                     .ok_or(LoweringFlowError::Failed)?,
                 merger
-                    .run_in_subscope(ctx, vec![expr.err_variant.ty], |ctx, subscope, arm_inputs| {
+                    .run_in_subscope(ctx, vec![err_variant.ty], |ctx, subscope, arm_inputs| {
                         let [var] = <[_; 1]>::try_from(arm_inputs).ok().unwrap();
                         let value_var = generators::EnumConstruct {
                             input: var,
-                            variant: expr.func_err_variant.clone(),
+                            variant: func_err_variant.clone(),
                         }
                         .add(ctx, subscope);
                         Some(BlockScopeEnd::Return(
@@ -817,13 +839,12 @@ fn lower_expr_error_propagate(
         });
     let finalized_blocks = res?.map(|sealed| finalized_merger.finalize_block(ctx, sealed).block);
 
-    let arms =
-        zip_eq([expr.ok_variant.clone(), expr.err_variant.clone()], finalized_blocks).collect();
+    let arms = zip_eq([ok_variant.clone(), err_variant.clone()], finalized_blocks).collect();
 
     // Emit the statement.
     let match_generator = generators::MatchEnum {
         input: var,
-        concrete_enum_id: expr.ok_variant.concrete_enum_id,
+        concrete_enum_id: ok_variant.concrete_enum_id,
         arms,
         end_info: finalized_merger.end_info.clone(),
     };
@@ -836,7 +857,9 @@ fn lower_optimized_extern_error_propagate(
     ctx: &mut LoweringContext<'_>,
     scope: &mut BlockScope,
     extern_enum: LoweredExprExternEnum,
-    expr: &semantic::ExprPropagateError,
+    ok_variant: &semantic::ConcreteVariant,
+    err_variant: &semantic::ConcreteVariant,
+    func_err_variant: &semantic::ConcreteVariant,
 ) -> Result<LoweredExpr, LoweringFlowError> {
     log::trace!("Started lowering of an optimized error-propagate expression.");
     let (blocks, mut finalized_merger) = BlockFlowMerger::with(
@@ -847,7 +870,7 @@ fn lower_optimized_extern_error_propagate(
             Ok([
                 {
                     let input_tys =
-                        match_extern_variant_arm_input_types(ctx, expr.ok_variant.ty, &extern_enum);
+                        match_extern_variant_arm_input_types(ctx, ok_variant.ty, &extern_enum);
                     merger
                         .run_in_subscope(ctx, input_tys, |ctx, subscope, mut arm_inputs| {
                             match_extern_arm_ref_args_rebind(
@@ -856,18 +879,14 @@ fn lower_optimized_extern_error_propagate(
                                 subscope,
                             );
 
-                            let variant_expr =
-                                extern_facade_expr(ctx, expr.ok_variant.ty, arm_inputs);
+                            let variant_expr = extern_facade_expr(ctx, ok_variant.ty, arm_inputs);
                             Some(BlockScopeEnd::Callsite(Some(variant_expr.var(ctx, subscope))))
                         })
                         .ok_or(LoweringFlowError::Failed)?
                 },
                 {
-                    let input_tys = match_extern_variant_arm_input_types(
-                        ctx,
-                        expr.err_variant.ty,
-                        &extern_enum,
-                    );
+                    let input_tys =
+                        match_extern_variant_arm_input_types(ctx, err_variant.ty, &extern_enum);
                     merger
                         .run_in_subscope(ctx, input_tys, |ctx, subscope, mut arm_inputs| {
                             match_extern_arm_ref_args_rebind(
@@ -875,12 +894,11 @@ fn lower_optimized_extern_error_propagate(
                                 &extern_enum,
                                 subscope,
                             );
-                            let variant_expr =
-                                extern_facade_expr(ctx, expr.err_variant.ty, arm_inputs);
+                            let variant_expr = extern_facade_expr(ctx, err_variant.ty, arm_inputs);
                             let input = variant_expr.var(ctx, subscope);
                             let value_var = generators::EnumConstruct {
                                 input,
-                                variant: expr.func_err_variant.clone(),
+                                variant: func_err_variant.clone(),
                             }
                             .add(ctx, subscope);
                             Some(BlockScopeEnd::Return(
