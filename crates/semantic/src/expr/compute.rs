@@ -37,14 +37,14 @@ use crate::items::strct::SemanticStructEx;
 use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use crate::semantic::{self, FunctionId, LocalVariable, TypeId, TypeLongId, Variable};
 use crate::types::{resolve_type, ConcreteTypeId};
-use crate::{Mutability, Parameter, PatternStruct};
+use crate::{Mutability, Parameter, PatternStruct, Signature};
 
 /// Context for computing the semantic model of expression trees.
 pub struct ComputationContext<'ctx> {
     pub db: &'ctx dyn SemanticGroup,
     pub diagnostics: &'ctx mut SemanticDiagnostics,
     pub resolver: Resolver<'ctx>,
-    return_ty: TypeId,
+    signature: &'ctx Signature,
     environment: Box<Environment>,
     pub exprs: Arena<semantic::Expr>,
     pub statements: Arena<semantic::Statement>,
@@ -56,7 +56,7 @@ impl<'ctx> ComputationContext<'ctx> {
         db: &'ctx dyn SemanticGroup,
         diagnostics: &'ctx mut SemanticDiagnostics,
         resolver: Resolver<'ctx>,
-        return_ty: TypeId,
+        signature: &'ctx Signature,
         environment: Environment,
     ) -> Self {
         let semantic_defs = environment
@@ -70,7 +70,7 @@ impl<'ctx> ComputationContext<'ctx> {
             db,
             diagnostics,
             resolver,
-            return_ty,
+            signature,
             environment: Box::new(environment),
             exprs: Arena::default(),
             statements: Arena::default(),
@@ -495,11 +495,14 @@ fn compute_expr_error_propagate_semantic(
         unwrap_error_propagation_type(ctx.db, inner.ty()).on_none(|| {
             ctx.diagnostics.report(syntax, ErrorPropagateOnNonErrorType { ty: inner.ty() });
         })?;
-    let (_, func_err_variant) =
-        unwrap_error_propagation_type(ctx.db, ctx.return_ty).on_none(|| {
+    let (_, func_err_variant) = unwrap_error_propagation_type(ctx.db, ctx.signature.return_type)
+        .on_none(|| {
             ctx.diagnostics.report(
                 syntax,
-                IncompatibleErrorPropagateType { return_ty: ctx.return_ty, err_ty: err_variant.ty },
+                IncompatibleErrorPropagateType {
+                    return_ty: ctx.signature.return_type,
+                    err_ty: err_variant.ty,
+                },
             );
         })?;
     // TODO(orizi): When auto conversion of types is added, try to convert the error type.
@@ -509,7 +512,10 @@ fn compute_expr_error_propagate_semantic(
     {
         ctx.diagnostics.report(
             syntax,
-            IncompatibleErrorPropagateType { return_ty: ctx.return_ty, err_ty: err_variant.ty },
+            IncompatibleErrorPropagateType {
+                return_ty: ctx.signature.return_type,
+                err_ty: err_variant.ty,
+            },
         );
     }
     Some(Expr::PropagateError(ExprPropagateError {
@@ -1044,10 +1050,13 @@ pub fn compute_statement_semantic(
         ast::Statement::Return(return_syntax) => {
             let expr_syntax = return_syntax.expr(syntax_db);
             let expr = compute_expr_semantic(ctx, &expr_syntax);
-            if expr.ty() != ctx.return_ty {
+            if expr.ty() != ctx.signature.return_type {
                 ctx.diagnostics.report(
                     &expr_syntax,
-                    WrongReturnType { expected_ty: ctx.return_ty, actual_ty: expr.ty() },
+                    WrongReturnType {
+                        expected_ty: ctx.signature.return_type,
+                        actual_ty: expr.ty(),
+                    },
                 )
             }
             semantic::Statement::Return(semantic::StatementReturn {
