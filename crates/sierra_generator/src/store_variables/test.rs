@@ -65,6 +65,14 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibFuncId) -
             }],
             fallthrough: Some(0),
         },
+        "revoke_ap" => LibFuncSignature {
+            param_signatures: vec![],
+            branch_signatures: vec![BranchSignature {
+                vars: vec![],
+                ap_change: SierraApChange::Unknown,
+            }],
+            fallthrough: Some(0),
+        },
         "function_call4" => {
             let vars: Vec<_> = (0..4)
                 .map(|idx| OutputVarInfo {
@@ -176,7 +184,15 @@ fn store_local_simple() {
     let statements: Vec<pre_sierra::Statement> = vec![
         dummy_simple_statement(&db, "felt_add", &["0", "1"], &["2"]),
         dummy_simple_statement(&db, "nope", &[], &[]),
+        // Case I: local added instead of tempvar, when first used.
         dummy_simple_statement(&db, "felt_add", &["2", "3"], &["4"]),
+        dummy_simple_statement(&db, "nope", &[], &[]),
+        // Case II: deferred computed into local before revoke_ap().
+        dummy_simple_statement(&db, "revoke_ap", &[], &[]),
+        dummy_simple_statement(&db, "function_call4", &[], &["5", "6", "7", "8"]),
+        dummy_simple_statement(&db, "nope", &[], &[]),
+        // Case III: tempvar copied into local before revoke_ap().
+        dummy_simple_statement(&db, "revoke_ap", &[], &[]),
         dummy_return_statement(&[]),
     ];
 
@@ -184,13 +200,24 @@ fn store_local_simple() {
         test_add_store_statements(
             &db,
             statements,
-            OrderedHashMap::from_iter(vec![("2".into(), "5".into())])
+            OrderedHashMap::from_iter(vec![
+                ("2".into(), "102".into()),
+                ("4".into(), "104".into()),
+                ("7".into(), "107".into())
+            ])
         ),
         vec![
             "felt_add(0, 1) -> (2)",
             "nope() -> ()",
-            "store_local<felt>(5, 2) -> (2)",
+            "store_local<felt>(102, 2) -> (2)",
             "felt_add(2, 3) -> (4)",
+            "nope() -> ()",
+            // TODO(lior): store_local of (4) should be added here.
+            "revoke_ap() -> ()",
+            "function_call4() -> (5, 6, 7, 8)",
+            "nope() -> ()",
+            // TODO(lior): store_local of (7) should be added here.
+            "revoke_ap() -> ()",
             "return()",
         ],
     );
