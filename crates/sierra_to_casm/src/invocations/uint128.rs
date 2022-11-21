@@ -44,6 +44,7 @@ pub fn build(
         Uint128Concrete::FromFelt(_) => build_uint128_from_felt(builder),
         Uint128Concrete::ToFelt(_) => misc::build_identity(builder),
         Uint128Concrete::LessThan(_) => build_uint128_lt(builder),
+        Uint128Concrete::LessThanOrEqual(_) => build_uint128_le(builder),
     }
 }
 
@@ -296,6 +297,64 @@ fn build_uint128_lt(
             relocation: Relocation::RelativeStatementId(target_statement_id),
         }],
         [2_usize, 3_usize]
+            .iter()
+            .map(|ap_change| {
+                vec![ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
+                    op: FeltOperator::Add,
+                    a: range_check.unchecked_apply_known_ap_change(*ap_change),
+                    b: DerefOrImmediate::from(1),
+                }))]
+                .into_iter()
+            })
+            .into_iter(),
+    ))
+}
+
+fn build_uint128_le(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let (range_check, a, b) = unwrap_range_check_based_binary_op_refs(&builder)?;
+    let target_statement_id = get_bool_comparison_target_statement_id(&builder);
+
+    let gt_ap_change = 3_usize;
+    let le_ap_change = 2_usize;
+
+    // Split the code into two blocks, to get the offset of the first block as the jump target in
+    // case a<=b.
+    let mut jnz_and_gt_code = casm! {
+        // Check if a<=b.
+        %{ memory[ap + 0] = memory a <= memory b %}
+        jmp rel 0 if [ap + 0] != 0, ap++;
+        // a>b if and only if a-b-1>=0.
+        [ap + 0] = (b.unchecked_apply_known_ap_change(1)) + 1, ap++; // Compute b+1.
+        (a.unchecked_apply_known_ap_change(2)) = [ap + 0] + [ap + -1], ap++; // Compute a-b-1.
+        [ap + 0] = [[range_check.unchecked_apply_known_ap_change(gt_ap_change)]];
+        jmp rel 0; // Fixed in relocations.
+    };
+    let le_code = casm! {
+        // a<=b if and only if b-a>=0.
+        (b.unchecked_apply_known_ap_change(1)) = [ap + 0] + (a.unchecked_apply_known_ap_change(1)), ap++;  // Compute b-a.
+        [ap + 0] = [[range_check.unchecked_apply_known_ap_change(le_ap_change)]];
+    };
+
+    // Since the jump offset of the positive (X<Y) case depends only on the above CASM code,
+    // compute it here and manually replace the value in the `jmp`.
+    // The target should be just after the `jmp rel 0` statement, which ends the X>=Y case.
+    let less_than_or_equal_offset = jnz_and_gt_code.current_code_offset;
+    *extract_matches!(
+        &mut extract_matches!(&mut jnz_and_gt_code.instructions[0].body, InstructionBody::Jnz)
+            .jump_offset,
+        DerefOrImmediate::Immediate
+    ) = BigInt::from(less_than_or_equal_offset);
+
+    let relocation_index = jnz_and_gt_code.instructions.len() - 1;
+    Ok(builder.build(
+        chain!(jnz_and_gt_code.instructions, le_code.instructions).collect(),
+        vec![RelocationEntry {
+            instruction_idx: relocation_index,
+            relocation: Relocation::RelativeStatementId(target_statement_id),
+        }],
+        [gt_ap_change, le_ap_change]
             .iter()
             .map(|ap_change| {
                 vec![ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
