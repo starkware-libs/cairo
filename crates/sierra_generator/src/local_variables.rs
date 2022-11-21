@@ -18,8 +18,7 @@ use crate::utils::{
 
 /// Given the lowering of a function, returns the set of variables which should be stored as local
 /// variables.
-#[allow(dead_code)]
-fn find_local_variables(
+pub fn find_local_variables(
     db: &dyn SierraGenGroup,
     lowered_function: &Lowered,
 ) -> Option<OrderedHashSet<VariableId>> {
@@ -87,6 +86,11 @@ fn inner_find_local_variables(
                 state.mark_outputs_as_temporary(statement);
             }
             lowering::Statement::MatchExtern(statement_match_extern) => {
+                // The number of branches that continue to the next statement after the match.
+                let mut reachable_branches: usize = 0;
+                // Is the ap change known after all of the branches.
+                let mut reachable_branches_known_ap_change: bool = true;
+
                 let (_, concrete_function_id) =
                     get_concrete_libfunc_id(db, statement_match_extern.function);
                 let libfunc_signature = get_libfunc_signature(db, concrete_function_id);
@@ -101,13 +105,39 @@ fn inner_find_local_variables(
                         &branch_signature.vars,
                     );
 
-                    inner_find_local_variables(db, lowered_function, *block_id, state_clone, res)?;
+                    let inner_known_ap_change = inner_find_local_variables(
+                        db,
+                        lowered_function,
+                        *block_id,
+                        state_clone,
+                        res,
+                    )?;
+
+                    // Update reachable_branches and reachable_branches_known_ap_change.
+                    if let lowering::BlockEnd::Callsite(_) = lowered_function.blocks[*block_id].end
+                    {
+                        reachable_branches += 1;
+                        if !inner_known_ap_change {
+                            reachable_branches_known_ap_change = false;
+                        }
+                    }
                 }
-                state.revoke_temporary_variables();
-                known_ap_change = false;
+
+                // If there is more than one branch that reaches this point, or ap change is unknown
+                // for at least one of them, revoke the temporary variables.
+                if reachable_branches > 1 || !reachable_branches_known_ap_change {
+                    state.revoke_temporary_variables();
+                    known_ap_change = false;
+                }
                 state.mark_outputs_as_temporary(statement);
             }
             lowering::Statement::MatchEnum(statement_match_enum) => {
+                // TODO(lior): Remove code duplication with [lowering::Statement::MatchExtern].
+                // The number of branches that continue to the next statement after the match.
+                let mut reachable_branches: usize = 0;
+                // Is the ap change known after all of the branches.
+                let mut reachable_branches_known_ap_change: bool = true;
+
                 for (_variant, block_id) in &statement_match_enum.arms {
                     let mut state_clone = state.clone();
 
@@ -115,10 +145,29 @@ fn inner_find_local_variables(
                         state_clone.set_variable_status(*var_id, VariableStatus::TemporaryVariable);
                     }
 
-                    inner_find_local_variables(db, lowered_function, *block_id, state_clone, res)?;
+                    let inner_known_ap_change = inner_find_local_variables(
+                        db,
+                        lowered_function,
+                        *block_id,
+                        state_clone,
+                        res,
+                    )?;
+                    // Update reachable_branches and reachable_branches_known_ap_change.
+                    if let lowering::BlockEnd::Callsite(_) = lowered_function.blocks[*block_id].end
+                    {
+                        reachable_branches += 1;
+                        if !inner_known_ap_change {
+                            reachable_branches_known_ap_change = false;
+                        }
+                    }
                 }
-                state.revoke_temporary_variables();
-                known_ap_change = false;
+
+                // If there is more than one branch that reaches this point, or ap change is unknown
+                // for at least one of them, revoke the temporary variables.
+                if reachable_branches > 1 || !reachable_branches_known_ap_change {
+                    state.revoke_temporary_variables();
+                    known_ap_change = false;
+                }
                 state.mark_outputs_as_temporary(statement);
             }
             lowering::Statement::StructConstruct(statement_struct_construct) => {

@@ -88,3 +88,143 @@ End:
 
 //! > local_variables
 v2, v1, v10
+
+//! > ==========================================================================
+
+//! > Match enum early return
+
+//! > test_function_name
+check_find_local_variables
+
+//! > function_name
+foo
+
+//! > function_code
+func foo(x: MyEnum, z: felt) -> felt {
+    let w1 = z + z;
+    match x {
+        MyEnum::A(a) => {
+            revoke_ap()
+            return 0;
+        },
+        MyEnum::B(b) => {
+            b + b + b
+        }
+    };
+
+    // w1 is not revoked.
+    let w2 = w1 + z;
+
+    match x {
+        MyEnum::A(a) => {
+            // Same as above, without revoke_ap() and without an early return.
+            a
+        },
+        MyEnum::B(b) => {
+            b + b + b
+        }
+    };
+
+    // w2 is revoked.
+    w2 + z
+}
+
+//! > module_code
+// Revokes ap since this function is recursive.
+func revoke_ap() -> felt {
+    revoke_ap()
+}
+
+enum MyEnum {
+  A: felt,
+  B: felt,
+}
+impl MyEnumCopy of Copy::<MyEnum>;
+
+//! > lowering_format
+blk0:
+Inputs:
+Statements:
+  (v4: core::felt) <- test_crate::revoke_ap()
+  (v5: core::felt) <- 0u
+Drops: v4, v3, v0, v1, v2
+End:
+  Return(v5)
+
+blk1:
+Inputs:
+Statements:
+  (v7: core::felt) <- core::felt_add(v6, v6)
+  (v8: core::felt) <- core::felt_add(v7, v6)
+Drops: v7
+End:
+  Callsite(v8)
+
+blk2:
+Inputs: v3: core::felt
+Statements:
+  () <- blk0()
+Drops:
+End:
+  Unreachable
+
+blk3:
+Inputs: v6: core::felt
+Statements:
+  (v9: core::felt) <- blk1()
+Drops: v6
+End:
+  Callsite(v9)
+
+blk4:
+Inputs:
+Statements:
+Drops:
+End:
+  Callsite(v12)
+
+blk5:
+Inputs:
+Statements:
+  (v15: core::felt) <- core::felt_add(v14, v14)
+  (v16: core::felt) <- core::felt_add(v15, v14)
+Drops: v15
+End:
+  Callsite(v16)
+
+blk6:
+Inputs: v12: core::felt
+Statements:
+  (v13: core::felt) <- blk4()
+Drops: v12
+End:
+  Callsite(v13)
+
+blk7:
+Inputs: v14: core::felt
+Statements:
+  (v17: core::felt) <- blk5()
+Drops: v14
+End:
+  Callsite(v17)
+
+blk8:
+Inputs: v0: test_crate::MyEnum, v1: core::felt
+Statements:
+  (v2: core::felt) <- core::felt_add(v1, v1)
+  (v10: core::felt) <- match_enum(v0) {
+    MyEnum::A => blk2,
+    MyEnum::B => blk3,
+  }
+  (v11: core::felt) <- core::felt_add(v2, v1)
+  (v18: core::felt) <- match_enum(v0) {
+    MyEnum::A => blk6,
+    MyEnum::B => blk7,
+  }
+  (v19: core::felt) <- core::felt_add(v11, v1)
+Drops: v0, v1, v2, v10, v11, v18
+End:
+  Callsite(v19)
+
+//! > local_variables
+v11
