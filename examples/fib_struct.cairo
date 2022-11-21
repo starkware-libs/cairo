@@ -1,7 +1,5 @@
 // Calculates fib...
-struct FibResult { value: felt, index: felt, nothing: () }
-impl FibResultCopy of Copy::<FibResult>;
-impl FibResultDrop of Drop::<FibResult>;
+# [ derive (Copy, Drop) ] struct FibResult { value: felt, index: felt, nothing: () }
 
 func fib(a: felt, b: felt, n: felt) -> FibResult {
     match n {

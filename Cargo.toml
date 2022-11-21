@@ -13,6 +13,7 @@ members = [
     "crates/languageserver",
     "crates/lowering",
     "crates/parser",
+    "crates/plugins",
     "crates/project",
     "crates/runner",
     "crates/semantic",
