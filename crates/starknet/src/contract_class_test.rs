@@ -1,13 +1,15 @@
 use indoc::indoc;
-use num_bigint::BigInt;
+use num_bigint::BigUint;
 use pretty_assertions::assert_eq;
 
 use crate::contract_class::{ContractClass, ContractEntryPoint, ContractEntryPoints};
 
 #[test]
 fn test_serialization() {
-    let external =
-        vec![ContractEntryPoint { selector: BigInt::from(u128::MAX), offset: BigInt::from(1) }];
+    let external = vec![ContractEntryPoint {
+        selector: BigUint::from(u128::MAX),
+        offset: BigUint::from(1u32),
+    }];
 
     let contract = ContractClass {
         sierra_program: "".to_string(),
