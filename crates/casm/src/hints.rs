@@ -36,6 +36,11 @@ pub enum Hint {
         rhs: DerefOrImmediate,
         dst: CellRef,
     },
+    TestLessThanOrEqual {
+        lhs: DerefOrImmediate,
+        rhs: DerefOrImmediate,
+        dst: CellRef,
+    },
     DivMod {
         lhs: DerefOrImmediate,
         rhs: DerefOrImmediate,
@@ -91,6 +96,12 @@ impl Display for Hint {
                 write!(f, "memory{dst} = ")?;
                 fmt_access_or_const(f, lhs)?;
                 write!(f, " < ")?;
+                fmt_access_or_const(f, rhs)?;
+            }
+            Hint::TestLessThanOrEqual { lhs, rhs, dst } => {
+                write!(f, "memory{dst} = ")?;
+                fmt_access_or_const(f, lhs)?;
+                write!(f, " <= ")?;
                 fmt_access_or_const(f, rhs)?;
             }
             Hint::DivMod { lhs, rhs, quotient, remainder } => {
