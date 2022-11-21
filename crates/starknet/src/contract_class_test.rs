@@ -18,8 +18,10 @@ fn test_serialization() {
         },
     };
 
+    let serialized = serde_json::to_string_pretty(&contract).unwrap();
+
     assert_eq!(
-        serde_json::to_string_pretty(&contract).unwrap(),
+        &serialized,
         indoc! {
             r#"
         {
@@ -36,4 +38,6 @@ fn test_serialization() {
           }
         }"#}
     );
+
+    assert_eq!(contract, serde_json::from_str(&serialized).unwrap())
 }
