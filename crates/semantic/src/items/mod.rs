@@ -10,3 +10,6 @@ pub mod modifiers;
 pub mod strct;
 pub mod trt;
 pub mod us;
+
+#[cfg(test)]
+mod test;

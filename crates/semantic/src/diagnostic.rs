@@ -239,6 +239,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::PassPanicAsNonpanic => {
                 "Cannot pass a panicable function as nonpanic.".into()
             }
+            SemanticDiagnosticKind::PanicableFromNonPanicable => {
+                "Panicable function called from a non-panicable function.".into()
+            }
         }
     }
 
@@ -306,4 +309,5 @@ pub enum SemanticDiagnosticKind {
     InvalidDropTraitImpl,
     InvalidImplItem { item_kw: SmolStr },
     PassPanicAsNonpanic,
+    PanicableFromNonPanicable,
 }
