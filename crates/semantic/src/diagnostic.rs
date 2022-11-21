@@ -82,7 +82,6 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     trait_id.name(defs_db)
                 )
             }
-
             SemanticDiagnosticKind::UnexpectedGenericArgs => "Unexpected generic arguments".into(),
             SemanticDiagnosticKind::UnknownMember => "Unknown member.".into(),
             SemanticDiagnosticKind::MemberSpecifiedMoreThanOnce => {
@@ -97,11 +96,21 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::MissingMember { member_name } => {
                 format!(r#"Missing member "{member_name}"."#)
             }
+            SemanticDiagnosticKind::WrongNumberOfParameters { expected, actual } => {
+                format!("Wrong number of parameters. Expected {expected}, found: {actual}")
+            }
             SemanticDiagnosticKind::WrongNumberOfArguments { expected, actual } => {
                 format!("Wrong number of arguments. Expected {expected}, found: {actual}")
             }
             SemanticDiagnosticKind::WrongNumberOfGenericArguments { expected, actual } => {
                 format!("Wrong number of generic arguments. Expected {expected}, found: {actual}")
+            }
+            SemanticDiagnosticKind::WrongParameterType { expected_ty, actual_ty } => {
+                format!(
+                    r#"Unexpected parameter type. Expected: "{}", found: "{}"."#,
+                    expected_ty.format(db),
+                    actual_ty.format(db)
+                )
             }
             SemanticDiagnosticKind::WrongArgumentType { expected_ty, actual_ty } => {
                 format!(
@@ -260,8 +269,10 @@ pub enum SemanticDiagnosticKind {
     UseCycle,
     ExpectedConcreteVariant,
     MissingMember { member_name: SmolStr },
+    WrongNumberOfParameters { expected: usize, actual: usize },
     WrongNumberOfArguments { expected: usize, actual: usize },
     WrongNumberOfGenericArguments { expected: usize, actual: usize },
+    WrongParameterType { expected_ty: semantic::TypeId, actual_ty: semantic::TypeId },
     WrongArgumentType { expected_ty: semantic::TypeId, actual_ty: semantic::TypeId },
     WrongReturnType { expected_ty: semantic::TypeId, actual_ty: semantic::TypeId },
     VariableNotFound { name: SmolStr },

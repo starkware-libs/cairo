@@ -16,6 +16,12 @@ fn test_assert() {
         [fp - 5] = x, ap++;
         [fp - 5] = [ap + 1] + [fp - 5], ap++;
         [fp + 5] = [ap + 1] + 2;
+        [ap + 5] = [[ap + 1] + 2];
+        [ap + 5] = [[ap - 1] + 2];
+        [ap + 5] = [[ap + 1] - 2];
+        [ap + 5] = [[ap] + 2];
+        [ap + 5] = [[ap + 1]];
+        [ap + 5] = [[ap]];
         [ap] = [ap + 1] * [fp - 5];
         %{ memory[ap + 5] = segments.add() %}
         [fp - 5] = [ap + 1] * z;
@@ -42,6 +48,12 @@ fn test_assert() {
             [fp + -5] = 1, ap++
             [fp + -5] = [ap + 1] + [fp + -5], ap++
             [fp + 5] = [ap + 1] + 2
+            [ap + 5] = [[ap + 1] + 2]
+            [ap + 5] = [[ap + -1] + 2]
+            [ap + 5] = [[ap + 1] + -2]
+            [ap + 5] = [[ap + 0] + 2]
+            [ap + 5] = [[ap + 1] + 0]
+            [ap + 5] = [[ap + 0] + 0]
             [ap + 0] = [ap + 1] * [fp + -5]
             %{ memory[ap + 5] = segments.add() %}
             [fp + -5] = [ap + 1] * 5
