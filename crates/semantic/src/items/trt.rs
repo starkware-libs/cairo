@@ -10,10 +10,6 @@ use syntax::node::{ast, TypedSyntaxNode};
 use utils::ordered_hash_map::OrderedHashMap;
 
 use super::attribute::{ast_attributes_to_semantic, Attribute};
-use super::functions::{
-    function_signature_implicit_parameters, function_signature_params,
-    function_signature_return_type,
-};
 use super::generics::semantic_generic_params;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnostics;
@@ -169,18 +165,8 @@ pub fn priv_trait_function_data(
     let mut resolver = Resolver::new(db, module_id, &generic_params);
     let syntax_db = db.upcast();
     let signature_syntax = function_syntax.signature(syntax_db);
-    let return_type =
-        function_signature_return_type(&mut diagnostics, db, &mut resolver, &signature_syntax);
     let mut environment = Environment::default();
-    let params = function_signature_params(
-        &mut diagnostics,
-        db,
-        &mut resolver,
-        &signature_syntax,
-        GenericFunctionId::TraitFunction(trait_function_id),
-        &mut environment,
-    );
-    let implicits = function_signature_implicit_parameters(
+    let signature = semantic::Signature::from_ast(
         &mut diagnostics,
         db,
         &mut resolver,
@@ -193,7 +179,7 @@ pub fn priv_trait_function_data(
 
     Some(TraitFunctionData {
         diagnostics: diagnostics.build(),
-        signature: semantic::Signature { params, return_type, implicits },
+        signature,
         generic_params,
         attributes,
     })
