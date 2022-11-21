@@ -9,6 +9,7 @@ use defs::ids::{
 };
 use diagnostics_proc_macros::DebugWithDb;
 use filesystem::ids::CrateLongId;
+use itertools::Itertools;
 use smol_str::SmolStr;
 use syntax::node::helpers::PathSegmentEx;
 use syntax::node::ids::SyntaxStablePtrId;
@@ -194,6 +195,9 @@ impl<'db> Resolver<'db> {
         diagnostics: &mut SemanticDiagnostics,
         segments: &mut Peekable<std::slice::Iter<'_, ast::PathSegment>>,
     ) -> Option<ResolvedConcreteItem> {
+        if let Some(base_module) = self.try_handle_super_segments(diagnostics, segments) {
+            return Some(ResolvedConcreteItem::Module(base_module?));
+        }
         let syntax_db = self.db.upcast();
         Some(match segments.peek().unwrap() {
             syntax::node::ast::PathSegment::WithGenericArgs(generic_segment) => {
@@ -264,6 +268,9 @@ impl<'db> Resolver<'db> {
         diagnostics: &mut SemanticDiagnostics,
         segments: &mut Peekable<std::slice::Iter<'_, ast::PathSegment>>,
     ) -> Option<ResolvedGenericItem> {
+        if let Some(base_module) = self.try_handle_super_segments(diagnostics, segments) {
+            return Some(ResolvedGenericItem::Module(base_module?));
+        }
         let syntax_db = self.db.upcast();
         Some(match segments.peek().unwrap() {
             syntax::node::ast::PathSegment::WithGenericArgs(generic_segment) => {
@@ -289,6 +296,36 @@ impl<'db> Resolver<'db> {
         })
     }
 
+    /// Handles `super::` initial segments, by removing them, and returning the valid module if
+    /// exists. If there's none - returns None.
+    /// If there are, but thats an invalid path, adds to diagnostics and returns Some(None).
+    fn try_handle_super_segments(
+        &self,
+        diagnostics: &mut SemanticDiagnostics,
+        segments: &mut Peekable<std::slice::Iter<'_, ast::PathSegment>>,
+    ) -> Option<Option<ModuleId>> {
+        let syntax_db = self.db.upcast();
+        let mut module_id = self.module_id;
+        for segment in segments.peeking_take_while(|segment| match segment {
+            ast::PathSegment::WithGenericArgs(_) => false,
+            ast::PathSegment::Simple(simple) => simple.ident(syntax_db).text(syntax_db) == "super",
+        }) {
+            module_id = match module_id {
+                ModuleId::CrateRoot(_) => {
+                    diagnostics.report(segment, PathNotFound);
+                    return Some(None);
+                }
+                ModuleId::Submodule(submodule_id) => {
+                    self.db.lookup_intern_submodule(submodule_id).0
+                }
+                ModuleId::VirtualSubmodule(submodule_id) => {
+                    self.db.lookup_intern_virtual_submodule(submodule_id).parent
+                }
+            }
+        }
+        if module_id == self.module_id { None } else { Some(Some(module_id)) }
+    }
+
     /// Given the current resolved item, resolves the next segment.
     fn resolve_next_concrete(
         &mut self,
@@ -301,6 +338,10 @@ impl<'db> Resolver<'db> {
         let ident = identifier.text(syntax_db);
         match item {
             ResolvedConcreteItem::Module(module_id) => {
+                if ident == "super" {
+                    diagnostics.report(identifier, InvalidPath);
+                    return None;
+                }
                 let module_item = self
                     .db
                     .module_item_by_name(*module_id, ident)
