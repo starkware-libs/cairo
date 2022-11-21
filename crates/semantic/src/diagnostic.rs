@@ -236,6 +236,14 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::InvalidImplItem { item_kw } => {
                 format!("`{}` is not allowed inside impl.", item_kw)
             }
+            SemanticDiagnosticKind::PassPanicAsNonpanic { impl_function_id, trait_id } => {
+                let name = impl_function_id.name(db.upcast());
+                let trait_name = trait_id.name(db.upcast());
+                format!(
+                    "The signature of function `{name}` is incompatible with trait \
+                     `{trait_name}`. The trait function is declared as nopanic."
+                )
+            }
         }
     }
 
@@ -302,4 +310,5 @@ pub enum SemanticDiagnosticKind {
     InvalidCopyTraitImpl,
     InvalidDropTraitImpl,
     InvalidImplItem { item_kw: SmolStr },
+    PassPanicAsNonpanic { impl_function_id: ImplFunctionId, trait_id: TraitId },
 }

@@ -12,7 +12,7 @@ foo
 //! > module_code
 struct A {}
 trait MyTrait<T> {
-    func param_test(a: uint128) -> felt;
+    func param_test(a: uint128) -> felt nopanic;
 
     func no_ret_ty(a: uint128) -> felt;
 }
@@ -98,6 +98,11 @@ error: Unexpected parameter type. Expected: "core::integer::uint128", found: "co
  --> lib.cairo:25:21
     func param_test(a: felt, b: felt) -> uint128 {
                     ^*****^
+
+error: The signature of function `param_test` is incompatible with trait `MyTrait`. The trait function is declared as nopanic.
+ --> lib.cairo:25:20
+    func param_test(a: felt, b: felt) -> uint128 {
+                   ^***************************^
 
 error: Unexpected return type. Expected: "core::felt", found: "core::integer::uint128".
  --> lib.cairo:25:42

@@ -17,10 +17,6 @@ use utils::{extract_matches, try_extract_matches, OptionHelper};
 
 use super::attribute::{ast_attributes_to_semantic, Attribute};
 use super::enm::SemanticEnumEx;
-use super::functions::{
-    function_signature_implicit_parameters, function_signature_params,
-    function_signature_return_type,
-};
 use super::generics::semantic_generic_params;
 use super::strct::SemanticStructEx;
 use crate::corelib::{copy_trait, drop_trait};
@@ -407,10 +403,9 @@ pub fn priv_impl_function_declaration_data(
     let mut resolver = Resolver::new(db, module_id, &generic_params);
     let syntax_db = db.upcast();
     let signature_syntax = function_syntax.signature(syntax_db);
-    let return_type =
-        function_signature_return_type(&mut diagnostics, db, &mut resolver, &signature_syntax);
+
     let mut environment = Environment::default();
-    let params = function_signature_params(
+    let signature = semantic::Signature::from_ast(
         &mut diagnostics,
         db,
         &mut resolver,
@@ -418,17 +413,6 @@ pub fn priv_impl_function_declaration_data(
         GenericFunctionId::ImplFunction(impl_function_id),
         &mut environment,
     );
-
-    let implicits = function_signature_implicit_parameters(
-        &mut diagnostics,
-        db,
-        &mut resolver,
-        &signature_syntax,
-        GenericFunctionId::ImplFunction(impl_function_id),
-        &mut environment,
-    );
-
-    let signature = semantic::Signature { params, return_type, implicits };
 
     validate_impl_function_signature(
         db,
@@ -500,6 +484,10 @@ fn validate_impl_function_signature(
                 WrongParameterType { expected_ty, actual_ty },
             );
         }
+    }
+
+    if !trait_signature.panicable && signature.panicable {
+        diagnostics.report(signature_syntax, PassPanicAsNonpanic { impl_function_id, trait_id });
     }
 
     let expected_ty = trait_signature.return_type;
