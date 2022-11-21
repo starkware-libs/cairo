@@ -1,7 +1,7 @@
 use casm::ap_change::ApplyApChange;
 use casm::casm;
 use casm::instructions::InstructionBody;
-use casm::operand::{ap_cell_ref, DerefOrImmediate};
+use casm::operand::{ap_cell_ref, CellRef, DerefOrImmediate};
 use itertools::chain;
 use num_bigint::BigInt;
 use sierra::extensions::felt::FeltOperator;
@@ -9,7 +9,7 @@ use sierra::extensions::integer::{
     IntOperator, Uint128BinaryOperationConcreteLibFunc, Uint128Concrete,
     Uint128OperationConcreteLibFunc, Uint128OperationWithConstConcreteLibFunc,
 };
-use sierra::program::{BranchInfo, BranchTarget};
+use sierra::program::{BranchInfo, BranchTarget, StatementIdx};
 use utils::extract_matches;
 
 use super::{misc, CompiledInvocation, CompiledInvocationBuilder, InvocationError};
@@ -276,36 +276,42 @@ fn build_uint128_from_felt(
     }
 }
 
-fn build_uint128_lt(
-    builder: CompiledInvocationBuilder<'_>,
-) -> Result<CompiledInvocation, InvocationError> {
-    // Fetch and verify input references.
-    let (range_check, a, b) = match builder.refs {
+fn get_uint128_comparison_refs(
+    builder: &CompiledInvocationBuilder<'_>,
+) -> Result<(CellRef, CellRef, CellRef), InvocationError> {
+    // Fetches, verifies and returns the range check, a and b references.
+    match builder.refs {
         [
             ReferenceValue { expression: range_check_expression, .. },
             ReferenceValue { expression: expr_a, .. },
             ReferenceValue { expression: expr_b, .. },
-        ] => (
+        ] => Ok((
             try_unpack_deref(range_check_expression)?,
             try_unpack_deref(expr_a)?,
             try_unpack_deref(expr_b)?,
-        ),
-        refs => {
-            return Err(InvocationError::WrongNumberOfArguments {
-                expected: 3,
-                actual: refs.len(),
-            });
-        }
-    };
+        )),
+        refs => Err(InvocationError::WrongNumberOfArguments { expected: 3, actual: refs.len() }),
+    }
+}
 
+fn get_uint128_comparison_target_statement_id(
+    builder: &CompiledInvocationBuilder<'_>,
+) -> StatementIdx {
     // Fetch the jump target.
-    let target_statement_id = match builder.invocation.branches.as_slice() {
+    match builder.invocation.branches.as_slice() {
         [
             BranchInfo { target: BranchTarget::Fallthrough, .. },
             BranchInfo { target: BranchTarget::Statement(target_statement_id), .. },
-        ] => target_statement_id,
+        ] => *target_statement_id,
         _ => panic!("malformed invocation"),
-    };
+    }
+}
+
+fn build_uint128_lt(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let (range_check, a, b) = get_uint128_comparison_refs(&builder)?;
+    let target_statement_id = get_uint128_comparison_target_statement_id(&builder);
 
     // Split the code into two blocks, to get the offset of the first block as the jump target in
     // case a<b.
@@ -340,7 +346,7 @@ fn build_uint128_lt(
         chain!(jnz_and_ge_code.instructions, lt_code.instructions).collect(),
         vec![RelocationEntry {
             instruction_idx: relocation_index,
-            relocation: Relocation::RelativeStatementId(*target_statement_id),
+            relocation: Relocation::RelativeStatementId(target_statement_id),
         }],
         [2_usize, 3_usize]
             .iter()
