@@ -497,7 +497,7 @@ fn validate_impl_function_signature(
         if expected_ty != actual_ty {
             diagnostics.report(
                 &signature_syntax.parameters(syntax_db).elements(syntax_db)[idx],
-                WrongParameterType { expected_ty, actual_ty },
+                WrongParameterType { impl_function_id, expected_ty, actual_ty },
             );
         }
     }

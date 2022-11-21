@@ -94,7 +94,8 @@ error: Wrong number of parameters. Expected 1, found: 2
     func param_test(a: felt, b: felt) -> uint128 {
                     ^**************^
 
-error: Unexpected parameter type. Expected: "core::integer::uint128", found: "core::felt".
+error: function "param_test" has an incompatible type for trait
+Unexpected parameter type. Expected: "core::integer::uint128", found: "core::felt".
  --> lib.cairo:25:21
     func param_test(a: felt, b: felt) -> uint128 {
                     ^*****^
