@@ -236,6 +236,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::InvalidImplItem { item_kw } => {
                 format!("`{}` is not allowed inside impl.", item_kw)
             }
+            SemanticDiagnosticKind::PassPanicAsNonpanic => {
+                "Cannot pass a panicable function as nonpanic.".into()
+            }
         }
     }
 
@@ -302,4 +305,5 @@ pub enum SemanticDiagnosticKind {
     InvalidCopyTraitImpl,
     InvalidDropTraitImpl,
     InvalidImplItem { item_kw: SmolStr },
+    PassPanicAsNonpanic,
 }

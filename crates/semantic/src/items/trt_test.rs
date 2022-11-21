@@ -42,6 +42,6 @@ fn test_trait() {
     assert_eq!(
         format!("{signature:?}"),
         "Signature { params: [Parameter { id: ParamId(0), ty: TypeId(1), mutability: Immutable \
-         }], return_type: TypeId(0), implicits: [] }"
+         }], return_type: TypeId(0), implicits: [], panicable: true }"
     );
 }
