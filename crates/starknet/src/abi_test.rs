@@ -1,6 +1,7 @@
 use defs::db::DefsGroup;
 use defs::ids::ModuleItemId;
 use indoc::indoc;
+use pretty_assertions::assert_eq;
 use semantic::test_utils::{setup_test_module, SemanticDatabaseForTesting};
 use utils::extract_matches;
 
@@ -25,12 +26,27 @@ fn test_abi() {
         db.module_item_by_name(module_id, "MyAbi".into()).unwrap(),
         ModuleItemId::Trait
     );
-    let abi = Contract::from_trait(db, trait_id);
-    // TODO(spapini): Replace with json.
+    let abi = Contract::from_trait(db, trait_id).unwrap();
+    let actual_serialization = serde_json::to_string_pretty(&abi).unwrap();
     assert_eq!(
-        format!("{:?}", abi),
-        "Ok(Contract { functions: [Function { name: \"foo\", inputs: [Input { name: \"a\", ty: \
-         \"core::felt\" }, Input { name: \"b\", ty: \"core::integer::uint128\" }], output_ty: \
-         \"core::option::Option::<()>\" }] })"
+        actual_serialization,
+        indoc! {
+        r#"[
+            {
+              "type": "function",
+              "name": "foo",
+              "inputs": [
+                {
+                  "name": "a",
+                  "ty": "core::felt"
+                },
+                {
+                  "name": "b",
+                  "ty": "core::integer::uint128"
+                }
+              ],
+              "output_ty": "core::option::Option::<()>"
+            }
+          ]"#}
     );
 }
