@@ -2,29 +2,35 @@ use debug::DebugWithDb;
 use defs::db::DefsGroup;
 use defs::ids::ModuleItemId;
 use pretty_assertions::assert_eq;
-use test_log::test;
+use test_case::test_case;
 use utils::extract_matches;
 
 use crate::db::SemanticGroup;
 use crate::expr::fmt::ExprFormatter;
 use crate::test_utils::{setup_test_module, SemanticDatabaseForTesting};
 
-#[test]
-fn test_resolve_path() {
+#[test_case("Box")]
+#[test_case("core::Box")]
+#[test_case("core::box::Box")]
+#[test_case("core::box::super::Box")]
+fn test_resolve_path(box_path: &str) {
     let mut db_val = SemanticDatabaseForTesting::default();
     let db = &mut db_val;
     let test_module = setup_test_module(
         db,
-        indoc::indoc! {"
-            use core::Box;
-            extern type S<T>;
-            extern func bar<T>(value: S::<felt>) -> S::<()>;
+        format!(
+            indoc::indoc! {"
+                extern type S<T>;
+                extern func bar<T>(value: S::<felt>) -> S::<()>;
 
-            func foo<Q>(value: S::<felt>, b: Q, c: Box::<Q>) {
-                bar::<(felt,Q)>(value);
-                let c = b;
-            }
-        "},
+                func foo<Q>(value: S::<felt>, b: Q, c: {}::<Q>) {{
+                    bar::<(felt,Q)>(value);
+                    let c = b;
+                }}
+            "},
+            box_path
+        )
+        .as_str(),
     )
     .unwrap();
     let module_id = test_module.module_id;
