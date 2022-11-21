@@ -4,10 +4,14 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+clap.workspace = true
+compiler = { path = "../compiler" }
 defs = { path = "../defs" }
 semantic = { path = "../semantic" }
 serde.workspace = true
 serde_json.workspace = true
+sierra = { path = "../sierra" }
+sierra_generator = { path = "../sierra_generator" }
 syntax = { path = "../syntax" }
 thiserror.workspace = true
 num-bigint.workspace = true
@@ -18,3 +22,7 @@ indoc.workspace = true
 pretty_assertions.workspace = true
 semantic = { path = "../semantic", features = ["testing"] }
 utils = { path = "../utils" }
+
+[[bin]]
+name = "starknet-compile"
+path = "src/cli.rs"
