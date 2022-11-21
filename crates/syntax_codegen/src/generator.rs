@@ -433,7 +433,6 @@ fn gen_enum_code(
             const OPTIONAL_KIND: Option<SyntaxKind> = None;
             type StablePtr = $(&ptr_name);
             type Green = $(&green_name);
-            // TODO(yuval): consider adding new_green()
             fn missing(db: &dyn SyntaxGroup) -> Self::Green {
                 $missing_body
             }
