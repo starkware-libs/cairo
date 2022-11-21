@@ -7,6 +7,7 @@ use sierra::extensions::OutputVarReferenceInfo;
 use sierra::ids::ConcreteLibFuncId;
 use utils::ordered_hash_map::OrderedHashMap;
 
+use super::LocalVariables;
 use crate::db::SierraGenGroup;
 use crate::pre_sierra;
 use crate::replace_ids::replace_sierra_ids;
@@ -131,7 +132,7 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibFuncId) -
 fn test_add_store_statements(
     db: &SierraGenDatabaseForTesting,
     statements: Vec<pre_sierra::Statement>,
-    local_variables: OrderedHashMap<sierra::ids::VarId, sierra::ids::VarId>,
+    local_variables: LocalVariables,
 ) -> Vec<String> {
     add_store_statements(
         db,
@@ -160,7 +161,7 @@ fn store_temp_simple() {
     ];
 
     assert_eq!(
-        test_add_store_statements(&db, statements, OrderedHashMap::default()),
+        test_add_store_statements(&db, statements, LocalVariables::default()),
         vec![
             "felt_add(0, 1) -> (2)",
             "nope() -> ()",
@@ -212,7 +213,7 @@ fn store_local_simple() {
             "store_local<felt>(102, 2) -> (2)",
             "felt_add(2, 3) -> (4)",
             "nope() -> ()",
-            // TODO(lior): store_local of (4) should be added here.
+            "store_local<felt>(104, 4) -> (4)",
             "revoke_ap() -> ()",
             "function_call4() -> (5, 6, 7, 8)",
             "nope() -> ()",
@@ -239,7 +240,7 @@ fn store_temp_push_values() {
     ];
 
     assert_eq!(
-        test_add_store_statements(&db, statements, OrderedHashMap::default()),
+        test_add_store_statements(&db, statements, LocalVariables::default()),
         vec![
             "felt_add(0, 1) -> (2)",
             "nope() -> ()",
@@ -271,7 +272,7 @@ fn push_values_optimization() {
     ];
 
     assert_eq!(
-        test_add_store_statements(&db, statements, OrderedHashMap::default()),
+        test_add_store_statements(&db, statements, LocalVariables::default()),
         vec![
             "function_call4() -> (0, 1, 2, 3)",
             "rename<felt>(2) -> (102)",
@@ -296,7 +297,7 @@ fn consecutive_push_values() {
     ];
 
     assert_eq!(
-        test_add_store_statements(&db, statements, OrderedHashMap::default()),
+        test_add_store_statements(&db, statements, LocalVariables::default()),
         vec![
             // First statement. Push [0] and [1].
             "store_temp<felt>(0) -> (100)",
@@ -335,7 +336,7 @@ fn push_values_after_branch_merge() {
     ];
 
     assert_eq!(
-        test_add_store_statements(&db, statements, OrderedHashMap::default()),
+        test_add_store_statements(&db, statements, LocalVariables::default()),
         vec![
             "branch() { label0() fallthrough() }",
             // Push [0], [1] and [2].
@@ -374,7 +375,7 @@ fn push_values_early_return() {
     ];
 
     assert_eq!(
-        test_add_store_statements(&db, statements, OrderedHashMap::default()),
+        test_add_store_statements(&db, statements, LocalVariables::default()),
         vec![
             // Push [0] and [1].
             "store_temp<felt>(0) -> (100)",
@@ -411,7 +412,7 @@ fn store_temp_gets_deferred() {
     ];
 
     assert_eq!(
-        test_add_store_statements(&db, statements, OrderedHashMap::default()),
+        test_add_store_statements(&db, statements, LocalVariables::default()),
         vec![
             "felt_add(0, 1) -> (2)",
             "nope() -> ()",
@@ -446,7 +447,7 @@ fn consecutive_const_additions() {
     ];
 
     assert_eq!(
-        test_add_store_statements(&db, statements, OrderedHashMap::default()),
+        test_add_store_statements(&db, statements, LocalVariables::default()),
         vec![
             "felt_add(0, 1) -> (2)",
             "store_temp<felt>(2) -> (2)",

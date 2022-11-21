@@ -7,7 +7,7 @@ mod state;
 mod test;
 
 use itertools::zip_eq;
-use sierra::extensions::lib_func::{LibFuncSignature, ParamSignature};
+use sierra::extensions::lib_func::{LibFuncSignature, ParamSignature, SierraApChange};
 use sierra::ids::ConcreteLibFuncId;
 use sierra::program::{GenBranchInfo, GenBranchTarget, GenStatement};
 use state::{merge_optional_states, State};
@@ -21,6 +21,10 @@ use crate::utils::{
     rename_libfunc_id, simple_statement, store_local_libfunc_id, store_temp_libfunc_id,
 };
 
+/// A map from variables that should be stored as local to their allocated
+/// space.
+pub type LocalVariables = OrderedHashMap<sierra::ids::VarId, sierra::ids::VarId>;
+
 /// Automatically adds store_temp() statements to the given list of [pre_sierra::Statement].
 /// For example, a deferred reference (e.g., `[ap] + [fp - 3]`) needs to be stored as a temporary
 /// or local variable before being included in additional computation.
@@ -33,7 +37,7 @@ pub fn add_store_statements<GetLibFuncSignature>(
     db: &dyn SierraGenGroup,
     statements: Vec<pre_sierra::Statement>,
     get_lib_func_signature: &GetLibFuncSignature,
-    local_variables: OrderedHashMap<sierra::ids::VarId, sierra::ids::VarId>,
+    local_variables: LocalVariables,
 ) -> Vec<pre_sierra::Statement>
 where
     GetLibFuncSignature: Fn(ConcreteLibFuncId) -> LibFuncSignature,
@@ -48,9 +52,7 @@ where
 
 struct AddStoreVariableStatements<'a> {
     db: &'a dyn SierraGenGroup,
-    /// A map from variables that should be stored as local to their allocated
-    /// space.
-    local_variables: OrderedHashMap<sierra::ids::VarId, sierra::ids::VarId>,
+    local_variables: LocalVariables,
     /// A list of output statements (the original statement, together with the added statements,
     /// such as "store_temp").
     result: Vec<pre_sierra::Statement>,
@@ -66,10 +68,7 @@ struct AddStoreVariableStatements<'a> {
 }
 impl<'a> AddStoreVariableStatements<'a> {
     /// Constructs a new [AddStoreVariableStatements] object.
-    fn new(
-        db: &'a dyn SierraGenGroup,
-        local_variables: OrderedHashMap<sierra::ids::VarId, sierra::ids::VarId>,
-    ) -> Self {
+    fn new(db: &'a dyn SierraGenGroup, local_variables: LocalVariables) -> Self {
         AddStoreVariableStatements {
             db,
             local_variables,
@@ -98,7 +97,18 @@ impl<'a> AddStoreVariableStatements<'a> {
                             &invocation.args,
                             &signature.param_signatures,
                         );
-                        self.state().register_outputs(results, &signature.branch_signatures[0]);
+
+                        let branch_signature = &signature.branch_signatures[0];
+                        match branch_signature.ap_change {
+                            SierraApChange::Unknown | SierraApChange::NotImplemented => {
+                                // If the ap-change is unknown, variables that will be revoked
+                                // otherwise should be stored as locals.
+                                self.store_variables_as_locals();
+                            }
+                            SierraApChange::Known(_) | SierraApChange::FinalizeLocals => {}
+                        }
+
+                        self.state().register_outputs(results, branch_signature);
                     }
                     _ => {
                         // This starts a branch. Store all deferred variables.
@@ -242,6 +252,30 @@ impl<'a> AddStoreVariableStatements<'a> {
         self.clear_deffered_variables();
     }
 
+    /// Stores all the deffered and temporary variables as local variables.
+    // TODO(lior): Store temporary variables as well.
+    fn store_variables_as_locals(&mut self) {
+        let mut vars_to_store: Vec<(
+            sierra::ids::VarId,
+            sierra::ids::VarId,
+            sierra::ids::ConcreteTypeId,
+        )> = vec![];
+        for (var, deferred_info) in self.state_ref().deferred_variables.iter() {
+            if let Some(uninitialized_local_var_id) = self.local_variables.get(var).cloned() {
+                vars_to_store.push((
+                    var.clone(),
+                    uninitialized_local_var_id,
+                    deferred_info.ty.clone(),
+                ));
+            }
+        }
+
+        for (var, uninitialized_local_var_id, ty) in vars_to_store {
+            self.store_local(&var, &var, &uninitialized_local_var_id, &ty);
+            assert!(self.state().deferred_variables.swap_remove(&var).is_some());
+        }
+    }
+
     /// Clears all the deferred variables.
     fn clear_deffered_variables(&mut self) {
         self.state().deferred_variables.clear();
@@ -310,6 +344,14 @@ impl<'a> AddStoreVariableStatements<'a> {
             return self.state_opt.as_mut().unwrap();
         }
         self.state_opt.as_mut().unwrap()
+    }
+
+    /// Same as [Self::state], except that the result is not `mut`.
+    fn state_ref(&self) -> &State {
+        if matches!(self.state_opt.as_ref(), None) {
+            return self.state_opt.as_ref().unwrap();
+        }
+        self.state_opt.as_ref().unwrap()
     }
 
     /// Returns the current known stack, assuming the current statement is reachable.
