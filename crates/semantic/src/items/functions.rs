@@ -64,6 +64,7 @@ pub struct Signature {
     pub return_type: semantic::TypeId,
     /// implicit parameters
     pub implicits: Vec<semantic::Parameter>,
+    pub panicable: bool,
 }
 
 impl Signature {
@@ -93,7 +94,11 @@ impl Signature {
             function_id,
             environment,
         );
-        semantic::Signature { params, return_type, implicits }
+        let panicable = match signature_syntax.optional_no_panic(db.upcast()) {
+            ast::OptionTerminalNoPanic::Empty(_) => true,
+            ast::OptionTerminalNoPanic::TerminalNoPanic(_) => false,
+        };
+        semantic::Signature { params, return_type, implicits, panicable }
     }
 }
 
@@ -221,6 +226,7 @@ pub fn concrete_function_signature(
         params: generic_signature.params.into_iter().map(concretize_param).collect(),
         return_type: substitute_generics(db, &substitution_map, generic_signature.return_type),
         implicits: generic_signature.implicits.into_iter().map(concretize_param).collect(),
+        panicable: generic_signature.panicable,
     })
 }
 
