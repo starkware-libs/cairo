@@ -110,11 +110,10 @@ fn test_function_generator_local_vars() {
             "felt_add([6], [7]) -> ([3])",
             "store_temp<felt>([3]) -> ([3])",
             "felt_add([3], [0]) -> ([1])",
+            "store_local<felt>([2], [1]) -> ([1])",
             "function_call<user@test_crate::revoke_ap>() -> ([4])",
             "drop<felt>([4]) -> ()",
-            // TODO(lior): The following store_local should move above the call to revoke_ap().
-            "store_local<felt>([2], [1]) -> ([1])",
-            "rename<felt>([1]) -> ([5])",
+            "store_temp<felt>([1]) -> ([5])",
             "burn_gas() -> ()",
             "return([5])",
         ]

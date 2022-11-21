@@ -24,7 +24,7 @@ use crate::expr_generator_context::ExprGeneratorContext;
 use crate::local_variables::find_local_variables;
 use crate::pre_sierra::{self, Statement};
 use crate::specialization_context::SierraSignatureSpecializationContext;
-use crate::store_variables::add_store_statements;
+use crate::store_variables::{add_store_statements, LocalVariables};
 use crate::utils::{
     alloc_local_libfunc_id, drop_libfunc_id, dup_libfunc_id, finalize_locals_libfunc_id,
     get_libfunc_signature, revoke_ap_tracking_libfunc_id, simple_statement,
@@ -152,7 +152,7 @@ fn get_function_code(
 fn allocate_local_variables(
     context: &mut ExprGeneratorContext<'_>,
     local_variables: &OrderedHashSet<lowering::VariableId>,
-) -> Option<(OrderedHashMap<sierra::ids::VarId, sierra::ids::VarId>, Vec<Statement>)> {
+) -> Option<(LocalVariables, Vec<Statement>)> {
     let mut statements: Vec<pre_sierra::Statement> = vec![];
     let mut sierra_local_variables =
         OrderedHashMap::<sierra::ids::VarId, sierra::ids::VarId>::default();
@@ -176,7 +176,7 @@ fn allocate_local_variables(
         statements.push(simple_statement(finalize_locals_libfunc_id(context.get_db()), &[], &[]));
     }
 
-    Some((sierra_local_variables, statements))
+    Some((LocalVariables(sierra_local_variables), statements))
 }
 
 /// Adds drops and duplicates of felts to the sierra code.
