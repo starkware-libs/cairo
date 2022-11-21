@@ -13,6 +13,8 @@ use sierra::extensions::lib_func::LibFuncSignature;
 use sierra::extensions::GenericLibFuncEx;
 use sierra::ids::ConcreteLibFuncId;
 use sierra::program::Param;
+use utils::ordered_hash_map::OrderedHashMap;
+use utils::ordered_hash_set::OrderedHashSet;
 use utils::unordered_hash_map::UnorderedHashMap;
 
 use crate::block_generator::{generate_block_code, generate_return_code};
@@ -24,8 +26,8 @@ use crate::pre_sierra::{self, Statement};
 use crate::specialization_context::SierraSignatureSpecializationContext;
 use crate::store_variables::add_store_statements;
 use crate::utils::{
-    drop_libfunc_id, dup_libfunc_id, get_libfunc_signature, revoke_ap_tracking_libfunc_id,
-    simple_statement,
+    alloc_local_libfunc_id, drop_libfunc_id, dup_libfunc_id, finalize_locals_libfunc_id,
+    get_libfunc_signature, revoke_ap_tracking_libfunc_id, simple_statement,
 };
 use crate::SierraGeneratorDiagnostic;
 
@@ -72,10 +74,6 @@ fn get_function_code(
 
     // Find the local variables.
     let local_variables = find_local_variables(db, lowered_function)?;
-    assert!(
-        local_variables.is_empty(),
-        "Local variables are not supported yet. Local variables: {local_variables:?}."
-    );
 
     let mut context = ExprGeneratorContext::new(db, lowered_function, function_id, diagnostics);
 
@@ -96,6 +94,10 @@ fn get_function_code(
     let ret_types = vec![db.get_concrete_type_id(signature.return_type)?];
 
     let mut statements: Vec<pre_sierra::Statement> = vec![label];
+
+    let (_sierra_local_variables, allocate_local_statements) =
+        allocate_local_variables(&mut context, &local_variables)?;
+    statements.extend(allocate_local_statements);
 
     // TODO(ilya, 10/10/2022): Add revoke_ap_tracking only when necessary.
     statements.push(simple_statement(revoke_ap_tracking_libfunc_id(context.get_db()), &[], &[]));
@@ -139,6 +141,41 @@ fn get_function_code(
         }
         .into(),
     )
+}
+
+/// Allocates space for the local variables.
+/// Returns:
+/// * A map from a Sierra variable that should be stored as local variable to its allocated space
+///   (uninitialized local variable).
+/// * A list of Sierra statements.
+fn allocate_local_variables(
+    context: &mut ExprGeneratorContext<'_>,
+    local_variables: &OrderedHashSet<lowering::VariableId>,
+) -> Option<(OrderedHashMap<sierra::ids::VarId, sierra::ids::VarId>, Vec<Statement>)> {
+    let mut statements: Vec<pre_sierra::Statement> = vec![];
+    let mut sierra_local_variables =
+        OrderedHashMap::<sierra::ids::VarId, sierra::ids::VarId>::default();
+    for lowering_var_id in local_variables.iter() {
+        let sierra_var_id = context.get_sierra_variable(*lowering_var_id);
+        let uninitialized_local_var_id = context.allocate_sierra_variable();
+        statements.push(simple_statement(
+            alloc_local_libfunc_id(
+                context.get_db(),
+                context.get_variable_sierra_type(*lowering_var_id)?,
+            ),
+            &[],
+            &[uninitialized_local_var_id.clone()],
+        ));
+
+        sierra_local_variables.insert(sierra_var_id, uninitialized_local_var_id);
+    }
+
+    // Add finalize_locals() statement.
+    if !local_variables.is_empty() {
+        statements.push(simple_statement(finalize_locals_libfunc_id(context.get_db()), &[], &[]));
+    }
+
+    Some((sierra_local_variables, statements))
 }
 
 /// Adds drops and duplicates of felts to the sierra code.
