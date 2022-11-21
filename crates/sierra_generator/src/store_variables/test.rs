@@ -35,7 +35,7 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibFuncId) -
                 ],
                 branch_signatures: vec![BranchSignature {
                     vars,
-                    ap_change: SierraApChange::NotImplemented,
+                    ap_change: SierraApChange::Known(0),
                 }],
                 fallthrough: Some(0),
             }
@@ -61,7 +61,15 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibFuncId) -
             param_signatures: vec![],
             branch_signatures: vec![BranchSignature {
                 vars: vec![],
-                ap_change: SierraApChange::NotImplemented,
+                ap_change: SierraApChange::Known(0),
+            }],
+            fallthrough: Some(0),
+        },
+        "revoke_ap" => LibFuncSignature {
+            param_signatures: vec![],
+            branch_signatures: vec![BranchSignature {
+                vars: vec![],
+                ap_change: SierraApChange::Unknown,
             }],
             fallthrough: Some(0),
         },
@@ -76,7 +84,7 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibFuncId) -
                 param_signatures: vec![],
                 branch_signatures: vec![BranchSignature {
                     vars,
-                    ap_change: SierraApChange::NotImplemented,
+                    ap_change: SierraApChange::Known(6),
                 }],
                 fallthrough: Some(0),
             }
@@ -97,7 +105,7 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibFuncId) -
             ],
             fallthrough: Some(1),
         },
-        "store_temp" => LibFuncSignature {
+        "store_temp<felt>" => LibFuncSignature {
             param_signatures: vec![ParamSignature {
                 ty: felt_ty.clone(),
                 allow_deferred: true,
@@ -108,7 +116,7 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibFuncId) -
                     ty: felt_ty,
                     ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
                 }],
-                ap_change: SierraApChange::NotImplemented,
+                ap_change: SierraApChange::Known(1),
             }],
             fallthrough: Some(0),
         },
@@ -176,7 +184,15 @@ fn store_local_simple() {
     let statements: Vec<pre_sierra::Statement> = vec![
         dummy_simple_statement(&db, "felt_add", &["0", "1"], &["2"]),
         dummy_simple_statement(&db, "nope", &[], &[]),
+        // Case I: local added instead of tempvar, when first used.
         dummy_simple_statement(&db, "felt_add", &["2", "3"], &["4"]),
+        dummy_simple_statement(&db, "nope", &[], &[]),
+        // Case II: deferred computed into local before revoke_ap().
+        dummy_simple_statement(&db, "revoke_ap", &[], &[]),
+        dummy_simple_statement(&db, "function_call4", &[], &["5", "6", "7", "8"]),
+        dummy_simple_statement(&db, "nope", &[], &[]),
+        // Case III: tempvar copied into local before revoke_ap().
+        dummy_simple_statement(&db, "revoke_ap", &[], &[]),
         dummy_return_statement(&[]),
     ];
 
@@ -184,13 +200,24 @@ fn store_local_simple() {
         test_add_store_statements(
             &db,
             statements,
-            OrderedHashMap::from_iter(vec![("2".into(), "5".into())])
+            OrderedHashMap::from_iter(vec![
+                ("2".into(), "102".into()),
+                ("4".into(), "104".into()),
+                ("7".into(), "107".into())
+            ])
         ),
         vec![
             "felt_add(0, 1) -> (2)",
             "nope() -> ()",
-            "store_local<felt>(5, 2) -> (2)",
+            "store_local<felt>(102, 2) -> (2)",
             "felt_add(2, 3) -> (4)",
+            "nope() -> ()",
+            // TODO(lior): store_local of (4) should be added here.
+            "revoke_ap() -> ()",
+            "function_call4() -> (5, 6, 7, 8)",
+            "nope() -> ()",
+            // TODO(lior): store_local of (7) should be added here.
+            "revoke_ap() -> ()",
             "return()",
         ],
     );
@@ -205,7 +232,7 @@ fn store_temp_push_values() {
         dummy_simple_statement(&db, "nope", &[], &[]),
         dummy_simple_statement(&db, "felt_add", &["3", "4"], &["5"]),
         dummy_simple_statement(&db, "felt_add", &["5", "5"], &["6"]),
-        dummy_simple_statement(&db, "nope", &[], &[]),
+        dummy_simple_statement(&db, "store_temp<felt>", &["7"], &["7"]),
         dummy_push_values(&db, &[("5", "100"), ("2", "101"), ("6", "102"), ("6", "103")]),
         dummy_simple_statement(&db, "nope", &[], &[]),
         dummy_return_statement(&["6"]),
@@ -219,7 +246,7 @@ fn store_temp_push_values() {
             "felt_add(3, 4) -> (5)",
             "store_temp<felt>(5) -> (5)",
             "felt_add(5, 5) -> (6)",
-            "nope() -> ()",
+            "store_temp<felt>(7) -> (7)",
             "store_temp<felt>(5) -> (100)",
             "store_temp<felt>(2) -> (2)",
             "rename<felt>(2) -> (101)",
@@ -376,7 +403,7 @@ fn store_temp_gets_deferred() {
     let statements: Vec<pre_sierra::Statement> = vec![
         dummy_simple_statement(&db, "felt_add", &["0", "1"], &["2"]),
         dummy_simple_statement(&db, "nope", &[], &[]),
-        dummy_simple_statement(&db, "store_temp", &["2"], &["3"]),
+        dummy_simple_statement(&db, "store_temp<felt>", &["2"], &["3"]),
         dummy_simple_statement(&db, "nope", &[], &[]),
         dummy_simple_statement(&db, "felt_add", &["2", "2"], &["4"]),
         dummy_simple_statement(&db, "felt_add", &["3", "3"], &["6"]),
@@ -389,7 +416,7 @@ fn store_temp_gets_deferred() {
             "felt_add(0, 1) -> (2)",
             "nope() -> ()",
             // Explicit call to store_temp() is not preceded by an implicit store_temp().
-            "store_temp(2) -> (3)",
+            "store_temp<felt>(2) -> (3)",
             "nope() -> ()",
             // Since var 2 is still deferred an implicit store_temp() is added before felt_add().
             "store_temp<felt>(2) -> (2)",
