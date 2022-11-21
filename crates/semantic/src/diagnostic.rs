@@ -244,6 +244,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
                      `{trait_name}`. The trait function is declared as nopanic."
                 )
             }
+            SemanticDiagnosticKind::PanicableFromNonPanicable => {
+                "Function is declared as nopanic but calls a function that may panic.".into()
+            }
         }
     }
 
@@ -311,4 +314,5 @@ pub enum SemanticDiagnosticKind {
     InvalidDropTraitImpl,
     InvalidImplItem { item_kw: SmolStr },
     PassPanicAsNonpanic { impl_function_id: ImplFunctionId, trait_id: TraitId },
+    PanicableFromNonPanicable,
 }

@@ -940,14 +940,14 @@ pub fn resolve_variable_by_name(
 /// Typechecks a function call.
 fn expr_function_call(
     ctx: &mut ComputationContext<'_>,
-    function: FunctionId,
+    function_id: FunctionId,
     arg_exprs: Vec<Expr>,
     stable_ptr: ast::ExprPtr,
 ) -> Option<Expr> {
     // TODO(spapini): Better location for these diagnostics after the refactor for generics resolve.
     let signature = ctx
         .db
-        .concrete_function_signature(function)
+        .concrete_function_signature(function_id)
         .on_none(|| ctx.diagnostics.report_by_ptr(stable_ptr.untyped(), UnknownFunction))?;
 
     if arg_exprs.len() != signature.params.len() {
@@ -955,6 +955,12 @@ fn expr_function_call(
             stable_ptr.untyped(),
             WrongNumberOfParameters { expected: signature.params.len(), actual: arg_exprs.len() },
         );
+        return None;
+    }
+
+    // Check panicable.
+    if signature.panicable && !ctx.signature.panicable {
+        ctx.diagnostics.report_by_ptr(stable_ptr.untyped(), PanicableFromNonPanicable);
         return None;
     }
 
@@ -985,7 +991,7 @@ fn expr_function_call(
     }
 
     Some(Expr::FunctionCall(ExprFunctionCall {
-        function,
+        function: function_id,
         ref_args,
         args,
         ty: signature.return_type,
