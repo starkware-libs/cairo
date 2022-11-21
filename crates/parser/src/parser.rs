@@ -296,18 +296,36 @@ impl<'a> Parser<'a> {
         }
     }
 
+    /// Parses the arguments of an attributes if exists.
+    /// Expected pattern: `\(<ExprList>\)`
+    fn try_attribute_arg_list_parenthesized(&mut self) -> OptionAttributeArgsGreen {
+        if self.peek().kind != SyntaxKind::TerminalLParen {
+            return OptionAttributeArgsEmpty::new_green(self.db).into();
+        }
+        let lparen = self.take::<TerminalLParen>();
+        let args = self
+            .parse_separated_list::<Expr, TerminalComma, AttributeArgListElementOrSeparatorGreen>(
+                Self::try_parse_expr,
+                is_of_kind!(rparen, block, rbrace, top_level),
+                "expression",
+            );
+        let arg_list = AttributeArgList::new_green(self.db, args);
+        let rparen = self.parse_token::<TerminalRParen>();
+        AttributeArgs::new_green(self.db, lparen, arg_list, rparen).into()
+    }
+
     /// Returns a GreenId of a node with an attribute kind or None if an attribute can't be parsed.
     fn try_parse_attribute(&mut self) -> Option<AttributeGreen> {
         match self.peek().kind {
             SyntaxKind::TerminalHash => {
-                // TODO(ilya): Support attributes with values, i.e. #[derive(Copy, Clone)].
                 let hash = self.take::<TerminalHash>();
                 let lbrack = self.parse_token::<TerminalLBrack>();
 
                 let attr = self.parse_identifier();
+                let args = self.try_attribute_arg_list_parenthesized();
                 let rbrack = self.parse_token::<TerminalRBrack>();
 
-                Some(Attribute::new_green(self.db, hash, lbrack, attr, rbrack))
+                Some(Attribute::new_green(self.db, hash, lbrack, attr, args, rbrack))
             }
             _ => None,
         }
