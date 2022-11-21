@@ -10,6 +10,7 @@ serde.workspace = true
 serde_json.workspace = true
 syntax = { path = "../syntax" }
 thiserror.workspace = true
+num-bigint.workspace = true
 
 [dev-dependencies]
 indoc.workspace = true
