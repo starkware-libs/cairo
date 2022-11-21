@@ -35,6 +35,7 @@ anyhow = "1.0.66"
 assert_matches = "1.5"
 bimap = "0.6.2"
 cairo-rs = { git = "https://github.com/lambdaclass/cairo-rs", rev="3a2dead" }
+chrono = "0.4.23"
 clap = { version = "4.0", features = ["derive"] }
 colored = "2"
 const-fnv1a-hash = "1.1.0"

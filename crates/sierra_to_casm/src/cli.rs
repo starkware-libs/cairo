@@ -5,6 +5,7 @@ use clap::Parser;
 use sierra::ProgramParser;
 use sierra_gas::calc_gas_info;
 use sierra_to_casm::metadata::Metadata;
+use utils::logging::init_logging;
 
 /// Command line args parser.
 /// Exits with 0/1 if the input is formatted correctly/incorrectly.
@@ -17,6 +18,9 @@ struct Args {
 }
 
 fn main() {
+    init_logging();
+    log::info!("Starting Sierra compilation.");
+
     let args = Args::parse();
 
     let sierra_code = fs::read_to_string(args.file).expect("Could not read file!");
