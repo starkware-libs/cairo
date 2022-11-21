@@ -1,5 +1,6 @@
 use sierra::ids::VarId;
 use sierra::program;
+use test_log::test;
 use utils::ordered_hash_set::OrderedHashSet;
 
 use super::{calculate_statement_dups_and_drops, VarsDupsAndDrops};

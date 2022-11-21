@@ -6,6 +6,7 @@ use filesystem::span::{TextOffset, TextSpan};
 use filesystem::test_utils::FilesDatabaseForTesting;
 use indoc::indoc;
 use pretty_assertions::assert_eq;
+use test_log::test;
 
 use super::get_location_marks;
 use crate::DiagnosticLocation;

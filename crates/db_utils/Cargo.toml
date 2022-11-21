@@ -3,4 +3,5 @@ name = "db_utils"
 version.workspace = true
 edition.workspace = true
 
-[dependencies]
+[dev-dependencies]
+test-log.workspace = true

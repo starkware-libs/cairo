@@ -1,5 +1,7 @@
 use std::fs;
 
+use test_log::test;
+
 use crate::generator::{get_codes, project_root};
 
 #[test]

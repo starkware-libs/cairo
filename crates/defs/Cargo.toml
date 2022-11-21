@@ -18,3 +18,4 @@ utils = { path = "../utils" }
 [dev-dependencies]
 indoc.workspace = true
 pretty_assertions.workspace = true
+test-log.workspace = true

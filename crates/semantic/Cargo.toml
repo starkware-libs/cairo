@@ -27,6 +27,8 @@ utils = { path = "../utils" }
 
 [dev-dependencies]
 assert_matches.workspace = true
+env_logger.workspace = true
 indoc.workspace = true
 pretty_assertions.workspace = true
+test-log.workspace = true
 utils = { path = "../utils", features = ["testing"] }

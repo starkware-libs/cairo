@@ -12,6 +12,7 @@ db_utils = { path = "../db_utils" }
 diagnostics = { path = "../diagnostics" }
 filesystem = { path = "../filesystem" }
 itertools.workspace = true
+log.workspace = true
 salsa.workspace = true
 smol_str.workspace = true
 syntax = { path = "../syntax" }
@@ -19,6 +20,8 @@ syntax_codegen = { path = "../syntax_codegen" }
 utils = { path = "../utils" }
 
 [dev-dependencies]
+env_logger.workspace = true
 pretty_assertions.workspace = true
 test-case.workspace = true
+test-log.workspace = true
 utils = { path = "../utils", features=["testing"] }

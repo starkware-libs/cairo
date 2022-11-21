@@ -4,12 +4,14 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
-sierra = { path = "../sierra" }
-utils = { path = "../utils" }
-itertools.workspace = true
 good_lp.workspace = true
+itertools.workspace = true
+sierra = { path = "../sierra" }
 thiserror.workspace = true
+utils = { path = "../utils" }
 
 [dev-dependencies]
+env_logger.workspace = true
 indoc.workspace = true
 test-case.workspace = true
+test-log.workspace = true

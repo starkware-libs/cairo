@@ -2,6 +2,7 @@ use std::fmt::Debug;
 
 use db_utils::define_short_id;
 use diagnostics_proc_macros::DebugWithDb;
+use test_log::test;
 
 use crate::debug;
 use crate::debug::DebugWithDb;
