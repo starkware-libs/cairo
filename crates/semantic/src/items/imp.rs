@@ -17,10 +17,6 @@ use utils::{extract_matches, try_extract_matches, OptionHelper};
 
 use super::attribute::{ast_attributes_to_semantic, Attribute};
 use super::enm::SemanticEnumEx;
-use super::functions::{
-    function_signature_implicit_parameters, function_signature_params,
-    function_signature_return_type,
-};
 use super::generics::semantic_generic_params;
 use super::strct::SemanticStructEx;
 use crate::corelib::{copy_trait, drop_trait};
@@ -407,10 +403,25 @@ pub fn priv_impl_function_declaration_data(
     let mut resolver = Resolver::new(db, module_id, &generic_params);
     let syntax_db = db.upcast();
     let signature_syntax = function_syntax.signature(syntax_db);
-    let return_type =
-        function_signature_return_type(&mut diagnostics, db, &mut resolver, &signature_syntax);
+
+    let declaraton_data = db.priv_impl_declaration_data(impl_id)?;
+    declaraton_data.concrete_trait.and_then(|concrete_trait| {
+        let concrete_trait_long_id = db.lookup_intern_concrete_trait(concrete_trait);
+        let trait_id = concrete_trait_long_id.trait_id;
+        let trait_functions = db.trait_functions(trait_id)?;
+
+        let function_name = db.lookup_intern_impl_function(impl_function_id).name(db.upcast());
+        match trait_functions.get(&function_name) {
+            // TODO(ilya): Verify that signature match.
+            Some(_trait_function_id) => {}
+            None => diagnostics
+                .report(function_syntax, FunctionNotMemberOfTrait { impl_function_id, trait_id }),
+        }
+        Some(())
+    });
+
     let mut environment = Environment::default();
-    let params = function_signature_params(
+    let signature = semantic::Signature::from_ast(
         &mut diagnostics,
         db,
         &mut resolver,
@@ -418,17 +429,6 @@ pub fn priv_impl_function_declaration_data(
         GenericFunctionId::ImplFunction(impl_function_id),
         &mut environment,
     );
-
-    let implicits = function_signature_implicit_parameters(
-        &mut diagnostics,
-        db,
-        &mut resolver,
-        &signature_syntax,
-        GenericFunctionId::ImplFunction(impl_function_id),
-        &mut environment,
-    );
-
-    let signature = semantic::Signature { params, return_type, implicits };
 
     validate_impl_function_signature(
         db,
