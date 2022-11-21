@@ -1,0 +1,45 @@
+//! > Test panicable from panicable.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+func foo_panic() {
+    bar_panic();
+    bar_nopanic();
+}
+
+//! > function_name
+foo_panic
+
+//! > module_code
+func bar_panic() {}
+func bar_nopanic() nopanic {}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test panicable from non-panicable.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+func foo_nopanic() nopanic {
+    bar_panic();
+    bar_nopanic();
+}
+
+//! > function_name
+foo_nopanic
+
+//! > module_code
+func bar_panic() {}
+func bar_nopanic() nopanic {}
+
+//! > expected_diagnostics
+error: Function is declared as nopanic but calls a function that may panic.
+ --> lib.cairo:4:5
+    bar_panic();
+    ^*********^
