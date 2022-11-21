@@ -41,6 +41,7 @@ pub fn lower_expr_if(
     scope: &mut BlockScope,
     expr: &semantic::ExprIf,
 ) -> Result<LoweredExpr, LoweringFlowError> {
+    log::trace!("Started lowering of an if expression.");
     match analyze_condition(ctx, expr.condition) {
         IfCondition::BoolExpr(_) => lower_expr_if_bool(ctx, scope, expr),
         IfCondition::Eq(expr_a, expr_b) => lower_expr_if_eq_zero(ctx, scope, expr, expr_a, expr_b),
@@ -53,6 +54,7 @@ pub fn lower_expr_if_bool(
     scope: &mut BlockScope,
     expr: &semantic::ExprIf,
 ) -> Result<LoweredExpr, LoweringFlowError> {
+    log::trace!("Started lowering of a boolean if expression.");
     // The condition cannot be unit.
     let condition_var = lower_expr(ctx, scope, expr.condition)?.var(ctx, scope);
 
@@ -102,6 +104,7 @@ pub fn lower_expr_if_eq_zero(
     expr_a: semantic::ExprId,
     expr_b: semantic::ExprId,
 ) -> Result<LoweredExpr, LoweringFlowError> {
+    log::trace!("Started lowering of an if-eq-zero expression.");
     let condition_var = if is_zero(ctx, expr_b) {
         lower_expr(ctx, scope, expr_a)?.var(ctx, scope)
     } else if is_zero(ctx, expr_a) {
@@ -164,6 +167,7 @@ fn lower_optional_else_block(
     scope: &mut BlockScope,
     else_block_opt: Option<semantic::ExprId>,
 ) -> Option<BlockScopeEnd> {
+    log::trace!("Started lowering of an optional else block.");
     match else_block_opt {
         Some(else_block) => lower_block(
             ctx,

@@ -12,4 +12,6 @@ smol_str.workspace = true
 utils = { path = "../utils" }
 
 [dev-dependencies]
+env_logger.workspace = true
 pretty_assertions.workspace = true
+test-log.workspace = true

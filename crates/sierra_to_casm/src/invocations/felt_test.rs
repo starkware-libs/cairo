@@ -1,6 +1,7 @@
 use casm::ap_change::ApChange;
 use casm::casm;
 use sierra::program::StatementIdx;
+use test_log::test;
 
 use crate::invocations::test_utils::{
     compile_libfunc, ReducedBranchChanges, ReducedCompiledInvocation,

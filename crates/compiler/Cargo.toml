@@ -18,6 +18,10 @@ project = { path = "../project" }
 salsa.workspace = true
 thiserror.workspace = true
 
+
+[dev-dependencies]
+test-log.workspace = true
+
 [[bin]]
 name = "cairo-compile"
 path = "src/cli.rs"

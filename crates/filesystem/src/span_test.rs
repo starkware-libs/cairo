@@ -1,5 +1,7 @@
 use std::sync::Arc;
 
+use test_log::test;
+
 use super::TextOffset;
 use crate::db::FilesGroup;
 use crate::ids::{FileLongId, VirtualFile};

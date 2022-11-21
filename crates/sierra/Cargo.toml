@@ -22,5 +22,7 @@ utils = { path = "../utils" }
 [dev-dependencies]
 assert_matches.workspace = true
 bimap.workspace = true
+env_logger.workspace = true
 indoc.workspace = true
 test-case.workspace = true
+test-log.workspace = true

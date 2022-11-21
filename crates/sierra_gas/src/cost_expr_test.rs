@@ -1,4 +1,5 @@
 use sierra::program::StatementIdx;
+use test_log::test;
 
 use super::{CostExpr, Var};
 
