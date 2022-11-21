@@ -102,7 +102,6 @@ fn test_function_generator_local_vars() {
         vec![
             "label0:",
             "alloc_local<felt>() -> ([2])",
-            "drop<Uninitialized<felt>>([2]) -> ()",
             "finalize_locals() -> ()",
             "revoke_ap_tracking() -> ()",
             "dup<felt>([0]) -> ([0], [6])",
@@ -112,7 +111,8 @@ fn test_function_generator_local_vars() {
             "felt_add([3], [0]) -> ([1])",
             "function_call<user@test_crate::revoke_ap>() -> ([4])",
             "drop<felt>([4]) -> ()",
-            "store_temp<felt>([1]) -> ([1])",
+            // TODO(lior): The following store_local should move above the call to revoke_ap().
+            "store_local<felt>([2], [1]) -> ([1])",
             "rename<felt>([1]) -> ([5])",
             "burn_gas() -> ()",
             "return([5])",
