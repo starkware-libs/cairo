@@ -15,6 +15,7 @@ parser = { path = "../crates/parser" }
 pretty_assertions = "1.2.1"
 sierra = { path = "../crates/sierra" }
 sierra_gas = { path = "../crates/sierra_gas" }
+semantic = { path = "../crates/semantic", features = ["testing"] }
 sierra_generator = { path = "../crates/sierra_generator", features = ["testing"] }
 sierra_to_casm = { path = "../crates/sierra_to_casm" }
 syntax = { path = "../crates/syntax" }

@@ -44,7 +44,7 @@ fn test_function_generator() {
             .map(|x| replace_sierra_ids(&db, x).to_string())
             .collect::<Vec<String>>(),
         vec![
-            "label0:",
+            "label1:",
             "drop<felt>([1]) -> ()",
             "revoke_ap_tracking() -> ()",
             "felt_const<5>() -> ([2])",
@@ -61,4 +61,5 @@ fn test_function_generator() {
             "return([8])",
         ]
     );
+    assert_eq!(function.entry_point.to_string(), "label1");
 }
