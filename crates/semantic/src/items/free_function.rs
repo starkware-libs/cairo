@@ -223,7 +223,7 @@ pub fn priv_free_function_definition_data(
         db,
         &mut diagnostics,
         resolver,
-        declaration.signature.return_type,
+        &declaration.signature,
         environment,
     );
     let expr = compute_expr_block_semantic(&mut ctx, &syntax.body(db.upcast()))?;
