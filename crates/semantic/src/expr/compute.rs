@@ -958,6 +958,12 @@ fn expr_function_call(
         return None;
     }
 
+    // Check panicable.
+    if signature.panicable && !ctx.signature.panicable {
+        ctx.diagnostics.report_by_ptr(stable_ptr.untyped(), PaniableFromNonPanicable);
+        return None;
+    }
+
     // Check argument types.
     let mut ref_args = Vec::new();
     let mut args = Vec::new();
