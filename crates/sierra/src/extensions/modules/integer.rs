@@ -13,7 +13,7 @@ use crate::extensions::{
     GenericLibFunc, NamedLibFunc, NamedType, NoGenericArgsGenericLibFunc, NoGenericArgsGenericType,
     OutputVarReferenceInfo, SignatureBasedConcreteLibFunc, SpecializationError,
 };
-use crate::ids::{GenericLibFuncId, GenericTypeId};
+use crate::ids::{ConcreteTypeId, GenericLibFuncId, GenericTypeId};
 use crate::program::GenericArg;
 use crate::{define_concrete_libfunc_hierarchy, define_libfunc_hierarchy};
 
@@ -41,6 +41,7 @@ define_libfunc_hierarchy! {
     pub enum Uint128LibFunc {
         Operation(Uint128OperationLibFunc),
         LessThan(Uint128LessThanLibFunc),
+        LessThanOrEqual(Uint128LessThanOrEqualLibFunc),
         Const(Uint128ConstLibFunc),
         FromFelt(Uint128FromFeltLibFunc),
         ToFelt(Uint128ToFeltLibFunc),
@@ -374,6 +375,48 @@ impl SignatureBasedConcreteLibFunc for Uint128ConstConcreteLibFunc {
     }
 }
 
+fn get_uint128_comparison_types(
+    context: &dyn SignatureSpecializationContext,
+) -> Result<(ConcreteTypeId, ConcreteTypeId), SpecializationError> {
+    // Returns uint128 and range_check types.
+    Ok((
+        context.get_concrete_type(Uint128Type::id(), &[])?,
+        context.get_concrete_type(RangeCheckType::id(), &[])?,
+    ))
+}
+
+/// Utility method to output the two branches of uint128 comparison signatures.
+fn get_uint128_comparison_branch_signatures(
+    context: &dyn SignatureSpecializationContext,
+    ap_changes: [usize; 2],
+) -> Result<Vec<BranchSignature>, SpecializationError> {
+    let (_, range_check_type) = get_uint128_comparison_types(context)?;
+    Ok(ap_changes
+        .iter()
+        .map(|ap_change| BranchSignature {
+            vars: vec![OutputVarInfo {
+                ty: range_check_type.clone(),
+                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                    param_idx: 0,
+                }),
+            }],
+            ap_change: SierraApChange::Known(*ap_change),
+        })
+        .collect())
+}
+
+/// Utility method to output the parameter signatures of uint128 comparison signatures.
+fn get_uint128_comparison_param_signatures(
+    context: &dyn SignatureSpecializationContext,
+) -> Result<Vec<ParamSignature>, SpecializationError> {
+    let (uint128_type, range_check_type) = get_uint128_comparison_types(context)?;
+    Ok(vec![
+        ParamSignature::new(range_check_type),
+        ParamSignature::new(uint128_type.clone()),
+        ParamSignature::new(uint128_type),
+    ])
+}
+
 /// LibFunc for comparing uint128s.
 #[derive(Default)]
 pub struct Uint128LessThanLibFunc {}
@@ -384,27 +427,27 @@ impl NoGenericArgsGenericLibFunc for Uint128LessThanLibFunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibFuncSignature, SpecializationError> {
-        let uint128_ty = context.get_concrete_type(Uint128Type::id(), &[])?;
-        let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
-        let branch_signatures = [2_usize, 3_usize]
-            .iter()
-            .map(|ap_change| BranchSignature {
-                vars: vec![OutputVarInfo {
-                    ty: range_check_type.clone(),
-                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                        param_idx: 0,
-                    }),
-                }],
-                ap_change: SierraApChange::Known(*ap_change),
-            })
-            .collect();
         Ok(LibFuncSignature {
-            param_signatures: vec![
-                ParamSignature::new(range_check_type),
-                ParamSignature::new(uint128_ty.clone()),
-                ParamSignature::new(uint128_ty),
-            ],
-            branch_signatures,
+            param_signatures: get_uint128_comparison_param_signatures(context)?,
+            branch_signatures: get_uint128_comparison_branch_signatures(context, [2, 3])?,
+            fallthrough: Some(0),
+        })
+    }
+}
+
+/// LibFunc for comparing uint128s.
+#[derive(Default)]
+pub struct Uint128LessThanOrEqualLibFunc {}
+impl NoGenericArgsGenericLibFunc for Uint128LessThanOrEqualLibFunc {
+    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_le");
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibFuncSignature, SpecializationError> {
+        Ok(LibFuncSignature {
+            param_signatures: get_uint128_comparison_param_signatures(context)?,
+            branch_signatures: get_uint128_comparison_branch_signatures(context, [3, 2])?,
             fallthrough: Some(0),
         })
     }
