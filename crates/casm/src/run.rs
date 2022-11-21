@@ -111,6 +111,14 @@ impl HintProcessor for CairoHintProcessor {
                     if lhs_val < rhs_val { BigInt::from(1) } else { BigInt::from(0) },
                 )?;
             }
+            Hint::TestLessThanOrEqual { lhs, rhs, dst } => {
+                let lhs_val = get_val(lhs.clone())?;
+                let rhs_val = get_val(rhs.clone())?;
+                vm.insert_value(
+                    &cell_ref_to_relocatable(*dst, vm),
+                    if lhs_val <= rhs_val { BigInt::from(1) } else { BigInt::from(0) },
+                )?;
+            }
             Hint::DivMod { lhs, rhs, quotient, remainder } => {
                 let lhs_val = get_val(lhs.clone())?;
                 let rhs_val = get_val(rhs.clone())?;
