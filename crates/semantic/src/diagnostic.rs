@@ -77,7 +77,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::FunctionNotMemberOfTrait { impl_function_id, trait_id } => {
                 let defs_db = db.upcast();
                 format!(
-                    "function `{}` is not a member of trait `{}`.",
+                    "Associated function `{}` is not a member of trait `{}`.",
                     impl_function_id.name(defs_db),
                     trait_id.name(defs_db)
                 )
@@ -105,9 +105,18 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::WrongNumberOfGenericArguments { expected, actual } => {
                 format!("Wrong number of generic arguments. Expected {expected}, found: {actual}")
             }
-            SemanticDiagnosticKind::WrongParameterType { expected_ty, actual_ty } => {
+            SemanticDiagnosticKind::WrongParameterType {
+                impl_function_id,
+                trait_id,
+                expected_ty,
+                actual_ty,
+            } => {
+                let defs_db = db.upcast();
                 format!(
-                    r#"Unexpected parameter type. Expected: "{}", found: "{}"."#,
+                    "Associated function `{}` has an incompatible type for trait `{}`. Unexpected \
+                     parameter type. Expected: `{}`, found: `{}`.",
+                    impl_function_id.name(defs_db),
+                    trait_id.name(defs_db),
                     expected_ty.format(db),
                     actual_ty.format(db)
                 )
@@ -261,7 +270,11 @@ pub enum SemanticDiagnosticKind {
     Unsupported,
     UnknownLiteral,
     UnknownBinaryOperator,
-    UnsupportedBinaryOperator { op: SmolStr, type1: semantic::TypeId, type2: semantic::TypeId },
+    UnsupportedBinaryOperator {
+        op: SmolStr,
+        type1: semantic::TypeId,
+        type2: semantic::TypeId,
+    },
     UnknownFunction,
     UnknownTrait,
     UnknownImpl,
@@ -273,46 +286,121 @@ pub enum SemanticDiagnosticKind {
     NotAStruct,
     NotAType,
     NotATrait,
-    FunctionNotMemberOfTrait { impl_function_id: ImplFunctionId, trait_id: TraitId },
+    FunctionNotMemberOfTrait {
+        impl_function_id: ImplFunctionId,
+        trait_id: TraitId,
+    },
     UnexpectedGenericArgs,
     UnknownMember,
     MemberSpecifiedMoreThanOnce,
     UseCycle,
     ExpectedConcreteVariant,
-    MissingMember { member_name: SmolStr },
-    WrongNumberOfParameters { expected: usize, actual: usize },
-    WrongNumberOfArguments { expected: usize, actual: usize },
-    WrongNumberOfGenericArguments { expected: usize, actual: usize },
-    WrongParameterType { expected_ty: semantic::TypeId, actual_ty: semantic::TypeId },
-    WrongArgumentType { expected_ty: semantic::TypeId, actual_ty: semantic::TypeId },
-    WrongReturnType { expected_ty: semantic::TypeId, actual_ty: semantic::TypeId },
-    VariableNotFound { name: SmolStr },
-    StructMemberRedefinition { struct_id: StructId, member_name: SmolStr },
-    EnumVariantRedefinition { enum_id: EnumId, variant_name: SmolStr },
-    ParamNameRedefinition { function_id: GenericFunctionId, param_name: SmolStr },
-    IncompatibleMatchArms { match_ty: semantic::TypeId, arm_ty: semantic::TypeId },
-    IncompatibleIfBlockTypes { block_if_ty: semantic::TypeId, block_else_ty: semantic::TypeId },
-    TypeHasNoMembers { ty: semantic::TypeId, member_name: SmolStr },
-    NoSuchMember { struct_id: StructId, member_name: SmolStr },
-    NoSuchVariant { enum_id: EnumId, variant_name: SmolStr },
-    IncompatibleErrorPropagateType { return_ty: semantic::TypeId, err_ty: semantic::TypeId },
-    ErrorPropagateOnNonErrorType { ty: semantic::TypeId },
+    MissingMember {
+        member_name: SmolStr,
+    },
+    WrongNumberOfParameters {
+        expected: usize,
+        actual: usize,
+    },
+    WrongNumberOfArguments {
+        expected: usize,
+        actual: usize,
+    },
+    WrongNumberOfGenericArguments {
+        expected: usize,
+        actual: usize,
+    },
+    WrongParameterType {
+        impl_function_id: ImplFunctionId,
+        trait_id: TraitId,
+        expected_ty: semantic::TypeId,
+        actual_ty: semantic::TypeId,
+    },
+    WrongArgumentType {
+        expected_ty: semantic::TypeId,
+        actual_ty: semantic::TypeId,
+    },
+    WrongReturnType {
+        expected_ty: semantic::TypeId,
+        actual_ty: semantic::TypeId,
+    },
+    VariableNotFound {
+        name: SmolStr,
+    },
+    StructMemberRedefinition {
+        struct_id: StructId,
+        member_name: SmolStr,
+    },
+    EnumVariantRedefinition {
+        enum_id: EnumId,
+        variant_name: SmolStr,
+    },
+    ParamNameRedefinition {
+        function_id: GenericFunctionId,
+        param_name: SmolStr,
+    },
+    IncompatibleMatchArms {
+        match_ty: semantic::TypeId,
+        arm_ty: semantic::TypeId,
+    },
+    IncompatibleIfBlockTypes {
+        block_if_ty: semantic::TypeId,
+        block_else_ty: semantic::TypeId,
+    },
+    TypeHasNoMembers {
+        ty: semantic::TypeId,
+        member_name: SmolStr,
+    },
+    NoSuchMember {
+        struct_id: StructId,
+        member_name: SmolStr,
+    },
+    NoSuchVariant {
+        enum_id: EnumId,
+        variant_name: SmolStr,
+    },
+    IncompatibleErrorPropagateType {
+        return_ty: semantic::TypeId,
+        err_ty: semantic::TypeId,
+    },
+    ErrorPropagateOnNonErrorType {
+        ty: semantic::TypeId,
+    },
     RefArgNotAVariable,
     AssignmentToImmutableVar,
     InvalidLhsForAssignment,
     InvalidMemberExpression,
     InvalidPath,
     PathNotFound,
-    RedundantModifier { current_modifier: SmolStr, previous_modifier: SmolStr },
+    RedundantModifier {
+        current_modifier: SmolStr,
+        previous_modifier: SmolStr,
+    },
     ReferenceLocalVariable,
-    UnexpectedLiteralPattern { ty: semantic::TypeId },
-    UnexpectedEnumPattern { ty: semantic::TypeId },
-    UnexpectedStructPattern { ty: semantic::TypeId },
-    UnexpectedTuplePattern { ty: semantic::TypeId },
-    WrongEnum { expected_enum: EnumId, actual_enum: EnumId },
+    UnexpectedLiteralPattern {
+        ty: semantic::TypeId,
+    },
+    UnexpectedEnumPattern {
+        ty: semantic::TypeId,
+    },
+    UnexpectedStructPattern {
+        ty: semantic::TypeId,
+    },
+    UnexpectedTuplePattern {
+        ty: semantic::TypeId,
+    },
+    WrongEnum {
+        expected_enum: EnumId,
+        actual_enum: EnumId,
+    },
     InvalidCopyTraitImpl,
     InvalidDropTraitImpl,
-    InvalidImplItem { item_kw: SmolStr },
-    PassPanicAsNonpanic { impl_function_id: ImplFunctionId, trait_id: TraitId },
+    InvalidImplItem {
+        item_kw: SmolStr,
+    },
+    PassPanicAsNonpanic {
+        impl_function_id: ImplFunctionId,
+        trait_id: TraitId,
+    },
     PanicableFromNonPanicable,
 }
