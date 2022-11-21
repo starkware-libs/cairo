@@ -30,3 +30,4 @@ assert_matches.workspace = true
 indoc.workspace = true
 pretty_assertions.workspace = true
 utils = { path = "../utils", features = ["testing"] }
+test-case.workspace = true

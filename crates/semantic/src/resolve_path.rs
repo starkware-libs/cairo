@@ -301,6 +301,20 @@ impl<'db> Resolver<'db> {
         let ident = identifier.text(syntax_db);
         match item {
             ResolvedConcreteItem::Module(module_id) => {
+                if ident == "super" {
+                    return Some(ResolvedConcreteItem::Module(match module_id {
+                        ModuleId::CrateRoot(_) => {
+                            diagnostics.report(identifier, InvalidPath);
+                            return None;
+                        }
+                        ModuleId::Submodule(submodule_id) => {
+                            self.db.lookup_intern_submodule(*submodule_id).0
+                        }
+                        ModuleId::VirtualSubmodule(submodule_id) => {
+                            self.db.lookup_intern_virtual_submodule(*submodule_id).parent
+                        }
+                    }));
+                }
                 let module_item = self
                     .db
                     .module_item_by_name(*module_id, ident)
@@ -497,8 +511,10 @@ impl<'db> Resolver<'db> {
         let syntax_db = self.db.upcast();
         let ident = identifier.text(syntax_db);
 
-        // If an item with this name is found inside the current module, use the current module.
-        if self.db.module_item_by_name(self.module_id, ident.clone()).is_some() {
+        // If the path is relative, or an item with this name is found inside the current module,
+        // use the current module.
+        if ident == "super" || self.db.module_item_by_name(self.module_id, ident.clone()).is_some()
+        {
             return Some(self.module_id);
         }
 
