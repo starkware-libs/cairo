@@ -23,9 +23,18 @@ impl SyntaxNodeFormat for SyntaxNode {
             | SyntaxKind::TokenComma
             | SyntaxKind::TokenSemicolon
             | SyntaxKind::TokenQuestionMark
-            | SyntaxKind::TokenRParen => true,
+            | SyntaxKind::TokenRParen
+            | SyntaxKind::TokenRBrack => true,
             SyntaxKind::TokenLParen
-                if matches!(parent_parent_kind(db, self), Some(SyntaxKind::FunctionSignature)) =>
+                if matches!(
+                    parent_parent_kind(db, self),
+                    Some(SyntaxKind::FunctionSignature | SyntaxKind::AttributeArgs)
+                ) =>
+            {
+                true
+            }
+            SyntaxKind::TokenLBrack
+                if matches!(parent_parent_kind(db, self), Some(SyntaxKind::Attribute)) =>
             {
                 true
             }
@@ -47,7 +56,10 @@ impl SyntaxNodeFormat for SyntaxNode {
 
     fn force_no_space_after(&self, db: &dyn SyntaxGroup) -> bool {
         match self.kind(db) {
-            SyntaxKind::TokenDot | SyntaxKind::TokenColonColon | SyntaxKind::TokenLParen => true,
+            SyntaxKind::TokenDot
+            | SyntaxKind::TokenColonColon
+            | SyntaxKind::TokenLParen
+            | SyntaxKind::TokenLBrack => true,
             SyntaxKind::ExprPath | SyntaxKind::TerminalIdentifier
                 if matches!(
                     parent_kind(db, self),
@@ -103,6 +115,7 @@ impl SyntaxNodeFormat for SyntaxNode {
             | SyntaxKind::ItemTrait
             | SyntaxKind::ItemImpl
             | SyntaxKind::ItemStruct
+            | SyntaxKind::Attribute
             | SyntaxKind::ItemEnum
             | SyntaxKind::ItemModule
             | SyntaxKind::ItemUse => true,

@@ -1,0 +1,18 @@
+[package]
+name = "plugins"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+db_utils = { path = "../db_utils" }
+defs = { path = "../defs" }
+diagnostics = { path = "../diagnostics" }
+filesystem = { path = "../filesystem" }
+salsa.workspace = true
+smol_str.workspace = true
+syntax = { path = "../syntax" }
+
+[dev-dependencies]
+indoc.workspace = true
+parser = { path = "../parser" }
+debug = { path = "../debug" }
