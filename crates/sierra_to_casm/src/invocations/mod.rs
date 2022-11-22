@@ -1,14 +1,17 @@
 use assert_matches::assert_matches;
 use casm::ap_change::ApChange;
-use casm::instructions::Instruction;
-use casm::operand::{CellRef, Register};
+use casm::inline::CasmContext;
+use casm::instructions::{Instruction, InstructionBody};
+use casm::operand::{CellRef, DerefOrImmediate, Register};
 use itertools::zip_eq;
+use num_bigint::BigInt;
 use sierra::extensions::core::CoreConcreteLibFunc;
 use sierra::extensions::lib_func::{BranchSignature, SierraApChange};
 use sierra::extensions::{ConcreteLibFunc, OutputVarReferenceInfo};
 use sierra::ids::ConcreteTypeId;
 use sierra::program::{BranchInfo, BranchTarget, Invocation, StatementIdx};
 use thiserror::Error;
+use utils::extract_matches;
 use {casm, sierra};
 
 use crate::environment::frame_state::{FrameState, FrameStateError};
@@ -285,4 +288,22 @@ pub fn get_bool_comparison_target_statement_id(
         ] => *target_statement_id,
         _ => panic!("malformed invocation"),
     }
+}
+
+/// Patches the jnz statement target to the end of the CASM context.
+fn patch_jnz_to_end(context: &mut CasmContext, instruction_idx: usize) {
+    // Compute the offset.
+    let mut offset = context.current_code_offset;
+    for i in 0..instruction_idx {
+        offset -= context.instructions[i].body.op_size();
+    }
+    // Replace the jmp target.
+    *extract_matches!(
+        &mut extract_matches!(
+            &mut context.instructions[instruction_idx].body,
+            InstructionBody::Jnz
+        )
+        .jump_offset,
+        DerefOrImmediate::Immediate
+    ) = BigInt::from(offset);
 }

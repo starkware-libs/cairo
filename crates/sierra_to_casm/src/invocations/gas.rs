@@ -1,15 +1,14 @@
 use casm::ap_change::ApplyApChange;
 use casm::casm;
-use casm::instructions::InstructionBody;
 use casm::operand::DerefOrImmediate;
 use itertools::chain;
 use num_bigint::ToBigInt;
 use sierra::extensions::felt::FeltOperator;
 use sierra::extensions::gas::GasConcreteLibFunc;
 use sierra::program::{BranchInfo, BranchTarget};
-use utils::{extract_matches, try_extract_matches};
+use utils::try_extract_matches;
 
-use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
+use super::{patch_jnz_to_end, CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::references::{BinOpExpression, CellExpression, ReferenceExpression, ReferenceValue};
 use crate::relocations::{Relocation, RelocationEntry};
 
@@ -85,15 +84,7 @@ fn build_get_gas(
 
         jmp rel 0; // Fixed in relocations.
     };
-    let branch_offset = before_success_branch.current_code_offset;
-    *extract_matches!(
-        &mut extract_matches!(
-            &mut before_success_branch.instructions[0].body,
-            InstructionBody::Jnz
-        )
-        .jump_offset,
-        DerefOrImmediate::Immediate
-    ) = branch_offset.to_bigint().unwrap();
+    patch_jnz_to_end(&mut before_success_branch, 0);
     let relocation_index = before_success_branch.instructions.len() - 1;
     let success_branch = casm! {
        // requested_count - 1 < gas_counter_value => requested_count <= gas_counter:
