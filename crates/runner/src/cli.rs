@@ -122,13 +122,11 @@ fn create_entry_code(
         }
     }
     let before_final_call = ctx.current_code_offset;
-    let final_call_size = 5;
+    let final_call_size = 3;
     let offset = final_call_size
         + program.debug_info.sierra_statement_info[main_func.entry_point.0].code_offset;
     casm_extend! {ctx,
         call rel offset;
-        // Padding to make sure end of segment won't be removed even if uninitialized.
-        [ap] = 0, ap++;
         ret;
     }
     assert_eq!(before_final_call + final_call_size, ctx.current_code_offset);
