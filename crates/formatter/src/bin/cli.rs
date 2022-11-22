@@ -152,7 +152,7 @@ struct FormatterArgs {
 }
 
 fn main() -> ExitCode {
-    init_logging();
+    init_logging(log::LevelFilter::Off);
     log::info!("Starting formatting.");
 
     let args = FormatterArgs::parse();

@@ -1800,6 +1800,7 @@ dependencies = [
  "salsa",
  "smol_str",
  "syntax",
+ "test-case",
  "test-log",
  "utils",
 ]
