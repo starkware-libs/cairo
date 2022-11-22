@@ -2,6 +2,7 @@ use indoc::indoc;
 use num_bigint::BigUint;
 use pretty_assertions::assert_eq;
 
+use crate::abi;
 use crate::contract_class::{ContractClass, ContractEntryPoint, ContractEntryPoints};
 
 #[test]
@@ -18,6 +19,7 @@ fn test_serialization() {
             l1_handler: vec![],
             constructor: vec![],
         },
+        abi: abi::Contract::default(),
     };
 
     let serialized = serde_json::to_string_pretty(&contract).unwrap();
@@ -37,7 +39,8 @@ fn test_serialization() {
             ],
             "L1_HANDLER": [],
             "CONSTRUCTOR": []
-          }
+          },
+          "abi": []
         }"#}
     );
 
