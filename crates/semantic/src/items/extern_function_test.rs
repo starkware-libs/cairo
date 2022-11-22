@@ -15,7 +15,7 @@ fn test_extern_function() {
     let test_module = setup_test_module(
         db,
         indoc::indoc! {"
-            extern func foo<A, B>();
+            extern func foo<A, B>() nopanic;
         "},
     )
     .unwrap();
@@ -28,6 +28,6 @@ fn test_extern_function() {
     let signature = db.extern_function_declaration_signature(extern_function_id).unwrap();
     assert_eq!(
         format!("{:?}", signature.debug(db)),
-        "Signature { params: [], return_type: (), implicits: [], panicable: true }"
+        "Signature { params: [], return_type: (), implicits: [], panicable: false }"
     );
 }

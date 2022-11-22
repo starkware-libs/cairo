@@ -469,26 +469,31 @@ error: Missing token TerminalRBrace.
 
 error: Missing token TerminalSemicolon.
  --> test1.cairo:33:47
-extern func glee<A, b>(var1: int,) -> crate::S<int>;
+extern func glee<A, b>(var1: int,) -> crate::S<int> nopanic;
                                               ^
 
 error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/Attribute.
  --> test1.cairo:33:47
-extern func glee<A, b>(var1: int,) -> crate::S<int>;
+extern func glee<A, b>(var1: int,) -> crate::S<int> nopanic;
                                               ^
 
 error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/Attribute.
  --> test1.cairo:33:48
-extern func glee<A, b>(var1: int,) -> crate::S<int>;
+extern func glee<A, b>(var1: int,) -> crate::S<int> nopanic;
                                                ^*^
 
 error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/Attribute.
  --> test1.cairo:33:51
-extern func glee<A, b>(var1: int,) -> crate::S<int>;
+extern func glee<A, b>(var1: int,) -> crate::S<int> nopanic;
                                                   ^
 
 error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/Attribute.
- --> test1.cairo:33:52
-extern func glee<A, b>(var1: int,) -> crate::S<int>;
-                                                   ^
+ --> test1.cairo:33:53
+extern func glee<A, b>(var1: int,) -> crate::S<int> nopanic;
+                                                    ^*****^
+
+error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/Attribute.
+ --> test1.cairo:33:60
+extern func glee<A, b>(var1: int,) -> crate::S<int> nopanic;
+                                                           ^
 

@@ -52,12 +52,12 @@ enum mod {}
 get_diagnostics
 
 //! > cairo_code
-extern func mod();
+extern func mod() nopanic;
 
 //! > expected_diagnostics
 error: 'mod' is a reserved identifier.
  --> dummy_file.cairo:1:13
-extern func mod();
+extern func mod() nopanic;
             ^*^
 
 //! > ==========================================================================

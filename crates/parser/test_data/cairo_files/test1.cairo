@@ -30,7 +30,7 @@ func foo(,var1: int,, mut ref var2: felt,) -> int {
 func bar<A, B>() -> felt { }
 
 extern type S<>;
-extern func glee<A, b>(var1: int,) -> crate::S<int>;
+extern func glee<A, b>(var1: int,) -> crate::S<int> nopanic;
 
 struct A<A, B> {
     member: bool,

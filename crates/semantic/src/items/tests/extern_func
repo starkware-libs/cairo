@@ -19,3 +19,8 @@ error: Path not found.
  --> lib.cairo:1:22
 extern func bar() -> bad_type;
                      ^******^
+
+error: An extern function must be marked as nopanic.
+ --> lib.cairo:1:1
+extern func bar() -> bad_type;
+^****************************^
