@@ -1,6 +1,5 @@
 use casm::ap_change::ApplyApChange;
 use casm::casm;
-use casm::instructions::InstructionBody;
 use casm::operand::{ap_cell_ref, DerefOrImmediate};
 use itertools::chain;
 use num_bigint::BigInt;
@@ -9,11 +8,11 @@ use sierra::extensions::integer::{
     IntOperator, Uint128BinaryOperationConcreteLibFunc, Uint128Concrete,
     Uint128OperationConcreteLibFunc, Uint128OperationWithConstConcreteLibFunc,
 };
-use utils::extract_matches;
 
 use super::{misc, CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::{
-    get_bool_comparison_target_statement_id, unwrap_range_check_based_binary_op_refs,
+    get_bool_comparison_target_statement_id, patch_jnz_to_end,
+    unwrap_range_check_based_binary_op_refs,
 };
 use crate::references::{
     try_unpack_deref, BinOpExpression, CellExpression, ReferenceExpression, ReferenceValue,
@@ -82,16 +81,7 @@ fn build_uint128_op(
                 },
                 _ => unreachable!("Only supported options in arm."),
             };
-            let branch_offset = before_success_branch.current_code_offset
-                - before_success_branch.instructions[0].body.op_size();
-            *extract_matches!(
-                &mut extract_matches!(
-                    &mut before_success_branch.instructions[1].body,
-                    InstructionBody::Jnz
-                )
-                .jump_offset,
-                DerefOrImmediate::Immediate
-            ) = BigInt::from(branch_offset);
+            patch_jnz_to_end(&mut before_success_branch, 1);
             let relocation_index = before_success_branch.instructions.len() - 1;
             let success_branch = casm! {
                 // No overflow:
@@ -179,15 +169,7 @@ fn build_uint128_from_felt(
                 [ap - 3] = [[(range_check.unchecked_apply_known_ap_change(5))] + 2];
                 jmp rel 0; // Fixed in relocations.
             };
-            let branch_offset = before_success_branch.current_code_offset;
-            *extract_matches!(
-                &mut extract_matches!(
-                    &mut before_success_branch.instructions[0].body,
-                    InstructionBody::Jnz
-                )
-                .jump_offset,
-                DerefOrImmediate::Immediate
-            ) = BigInt::from(branch_offset);
+            patch_jnz_to_end(&mut before_success_branch, 0);
             let relocation_index = before_success_branch.instructions.len() - 1;
             let success_branch = casm! {
                 // No overflow:
@@ -285,12 +267,7 @@ fn build_uint128_lt(
     // Since the jump offset of the positive (X<Y) case depends only on the above CASM code,
     // compute it here and manually replace the value in the `jmp`.
     // The target should be just after the `jmp rel 0` statement, which ends the X>=Y case.
-    let ge_offset = jnz_and_lt_code.current_code_offset;
-    *extract_matches!(
-        &mut extract_matches!(&mut jnz_and_lt_code.instructions[0].body, InstructionBody::Jnz)
-            .jump_offset,
-        DerefOrImmediate::Immediate
-    ) = BigInt::from(ge_offset);
+    patch_jnz_to_end(&mut jnz_and_lt_code, 0);
 
     let relocation_index = jnz_and_lt_code.instructions.len() - 1;
     Ok(builder.build(
@@ -341,12 +318,7 @@ fn build_uint128_le(
     // Since the jump offset of the positive (X<Y) case depends only on the above CASM code,
     // compute it here and manually replace the value in the `jmp`.
     // The target should be just after the `jmp rel 0` statement, which ends the X>=Y case.
-    let less_than_offset = jnz_and_le_code.current_code_offset;
-    *extract_matches!(
-        &mut extract_matches!(&mut jnz_and_le_code.instructions[0].body, InstructionBody::Jnz)
-            .jump_offset,
-        DerefOrImmediate::Immediate
-    ) = BigInt::from(less_than_offset);
+    patch_jnz_to_end(&mut jnz_and_le_code, 0);
 
     let relocation_index = jnz_and_le_code.instructions.len() - 1;
     Ok(builder.build(
