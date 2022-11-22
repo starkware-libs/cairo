@@ -460,22 +460,22 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn parse_binary_operator(&mut self) -> BinaryOperatorGreen {
+    fn parse_binary_operator(&mut self) -> Option<BinaryOperatorGreen> {
         match self.peek().kind {
-            SyntaxKind::TerminalDot => self.take::<TerminalDot>().into(),
-            SyntaxKind::TerminalNot => self.take::<TerminalNot>().into(),
-            SyntaxKind::TerminalMul => self.take::<TerminalMul>().into(),
-            SyntaxKind::TerminalDiv => self.take::<TerminalDiv>().into(),
-            SyntaxKind::TerminalPlus => self.take::<TerminalPlus>().into(),
-            SyntaxKind::TerminalMinus => self.take::<TerminalMinus>().into(),
-            SyntaxKind::TerminalEq => self.take::<TerminalEq>().into(),
-            SyntaxKind::TerminalEqEq => self.take::<TerminalEqEq>().into(),
-            SyntaxKind::TerminalLT => self.take::<TerminalLT>().into(),
-            SyntaxKind::TerminalGT => self.take::<TerminalGT>().into(),
-            SyntaxKind::TerminalLE => self.take::<TerminalLE>().into(),
-            SyntaxKind::TerminalGE => self.take::<TerminalGE>().into(),
-            SyntaxKind::TerminalAnd => self.take::<TerminalAnd>().into(),
-            SyntaxKind::TerminalOr => self.take::<TerminalOr>().into(),
+            SyntaxKind::TerminalDot => Some(self.take::<TerminalDot>().into()),
+            SyntaxKind::TerminalNot => None,
+            SyntaxKind::TerminalMul => Some(self.take::<TerminalMul>().into()),
+            SyntaxKind::TerminalDiv => Some(self.take::<TerminalDiv>().into()),
+            SyntaxKind::TerminalPlus => Some(self.take::<TerminalPlus>().into()),
+            SyntaxKind::TerminalMinus => Some(self.take::<TerminalMinus>().into()),
+            SyntaxKind::TerminalEq => Some(self.take::<TerminalEq>().into()),
+            SyntaxKind::TerminalEqEq => Some(self.take::<TerminalEqEq>().into()),
+            SyntaxKind::TerminalLT => Some(self.take::<TerminalLT>().into()),
+            SyntaxKind::TerminalGT => Some(self.take::<TerminalGT>().into()),
+            SyntaxKind::TerminalLE => Some(self.take::<TerminalLE>().into()),
+            SyntaxKind::TerminalGE => Some(self.take::<TerminalGE>().into()),
+            SyntaxKind::TerminalAnd => Some(self.take::<TerminalAnd>().into()),
+            SyntaxKind::TerminalOr => Some(self.take::<TerminalOr>().into()),
             _ => unreachable!(),
         }
     }
@@ -519,9 +519,12 @@ impl<'a> Parser<'a> {
             if precedence >= parent_precedence {
                 return Some(expr);
             }
-            let op = self.parse_binary_operator();
-            let rhs = self.parse_expr_limited(precedence, lbrace_allowed);
-            expr = ExprBinary::new_green(self.db, expr, op, rhs).into();
+            if let Some(op) = self.parse_binary_operator() {
+                let rhs = self.parse_expr_limited(precedence, lbrace_allowed);
+                expr = ExprBinary::new_green(self.db, expr, op, rhs).into();
+            } else {
+                return Some(expr);
+            }
         }
         Some(expr)
     }
