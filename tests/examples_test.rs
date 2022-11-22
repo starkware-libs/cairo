@@ -126,6 +126,30 @@ fn generate_function_runner(params: Vec<BigInt>) -> Vec<Instruction> {
 }
 
 #[test_case("fib", &[1, 1, 7].map(BigInt::from), &[21].map(BigInt::from).map(Some); "fib")]
+#[test_case(
+    "fib_counter",
+    &[1, 1, 8].map(BigInt::from),
+    &[34, 8].map(BigInt::from).map(Some);
+    "fib_counter"
+)]
+#[test_case(
+    "fib_struct",
+    &[1, 1, 9].map(BigInt::from),
+    &[55, 9].map(BigInt::from).map(Some);
+    "fib_struct"
+)]
+#[test_case(
+    "fib_uint128",
+    &[1, 1, 10].map(BigInt::from),
+    &[0, 89].map(BigInt::from).map(Some);
+    "fib_uint128"
+)]
+#[test_case(
+    "fib_uint128",
+    &[1, 1, 200].map(BigInt::from),
+    &[Some(BigInt::from(1)), None];
+    "fib_uint128_overflow"
+)]
 fn run_function_test(
     name: &str,
     params: &[BigInt],
