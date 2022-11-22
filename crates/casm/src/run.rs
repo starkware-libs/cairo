@@ -179,6 +179,8 @@ pub fn run_function(
     let end = runner.initialize(&mut vm).map_err(VirtualMachineError::from).map_err(Box::new)?;
 
     runner.run_until_pc(end, &mut vm, &hint_processor)?;
+    // TODO(alont) Remove this hack once the VM no longer squashes Nones at the end of segments.
+    vm.insert_value(vm.get_ap() + 1, MaybeRelocatable::Int(BigInt::from(0)))?;
     runner.end_run(true, false, &mut vm, &hint_processor).map_err(Box::new)?;
     runner.relocate(&mut vm).map_err(VirtualMachineError::from).map_err(Box::new)?;
     Ok((runner.relocated_memory, runner.relocated_trace.unwrap().last().unwrap().ap))
