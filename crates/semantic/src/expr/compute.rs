@@ -976,7 +976,7 @@ fn expr_function_call(
         if arg_typ != param_typ && arg_typ != TypeId::missing(ctx.db) {
             ctx.diagnostics.report_by_ptr(
                 arg.stable_ptr().untyped(),
-                WrongParameterType { expected_ty: param_typ, actual_ty: arg_typ },
+                WrongArgumentType { expected_ty: param_typ, actual_ty: arg_typ },
             );
         }
 
