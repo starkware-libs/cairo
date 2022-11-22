@@ -2089,6 +2089,7 @@ dependencies = [
  "compiler",
  "defs",
  "indoc",
+ "itertools",
  "num-bigint",
  "num-traits 0.2.15",
  "pretty_assertions",
