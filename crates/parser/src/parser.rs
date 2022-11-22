@@ -474,8 +474,8 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalGT => self.take::<TerminalGT>().into(),
             SyntaxKind::TerminalLE => self.take::<TerminalLE>().into(),
             SyntaxKind::TerminalGE => self.take::<TerminalGE>().into(),
-            SyntaxKind::TerminalAndAnd => self.take::<TerminalAndAnd>().into(),
-            SyntaxKind::TerminalOrOr => self.take::<TerminalOrOr>().into(),
+            SyntaxKind::TerminalAnd => self.take::<TerminalAnd>().into(),
+            SyntaxKind::TerminalOr => self.take::<TerminalOr>().into(),
             _ => unreachable!(),
         }
     }

@@ -134,6 +134,8 @@ pub fn get_key_fields(kind: SyntaxKind, children: Vec<GreenId>) -> Vec<GreenId> 
         SyntaxKind::TerminalAnd => vec![],
         SyntaxKind::TokenAndAnd => vec![],
         SyntaxKind::TerminalAndAnd => vec![],
+        SyntaxKind::TokenOr => vec![],
+        SyntaxKind::TerminalOr => vec![],
         SyntaxKind::TokenOrOr => vec![],
         SyntaxKind::TerminalOrOr => vec![],
         SyntaxKind::TokenEqEq => vec![],

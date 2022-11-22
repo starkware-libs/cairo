@@ -36,8 +36,8 @@ test_function_diagnostics
 func foo(a: felt, b: bool) implicits (rc:RangeCheck) {
     // Valid.
     a + a * a - a;
-    b && b || b && (a == a || a > a)
-    && (a<a) && (a<=a) && (a>=a);
+    b & b | b & (a == a | a > a)
+    & (a<a) & (a<=a) & (a>=a);
     // Errors.
     a>a>a;
     a - b
