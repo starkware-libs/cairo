@@ -52,12 +52,12 @@ enum _ {}
 get_diagnostics
 
 //! > cairo_code
-extern func _();
+extern func _() nopanic;
 
 //! > expected_diagnostics
 error: An underscore ('_') is not allowed as an identifier in this context.
  --> dummy_file.cairo:1:13
-extern func _();
+extern func _() nopanic;
             ^
 
 //! > ==========================================================================

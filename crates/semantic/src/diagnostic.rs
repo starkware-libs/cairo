@@ -256,6 +256,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::PanicableFromNonPanicable => {
                 "Function is declared as nopanic but calls a function that may panic.".into()
             }
+            SemanticDiagnosticKind::PanicableExternFunction => {
+                "An extern function must be marked as nopanic.".into()
+            }
         }
     }
 
@@ -403,4 +406,5 @@ pub enum SemanticDiagnosticKind {
         trait_id: TraitId,
     },
     PanicableFromNonPanicable,
+    PanicableExternFunction,
 }

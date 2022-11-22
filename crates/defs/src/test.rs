@@ -68,7 +68,7 @@ fn test_resolve() {
         &mut db_val,
         indoc! {"
             func foo() -> felt { 5 }
-            extern func felt_add(a: felt, b: felt) -> felt;
+            extern func felt_add(a: felt, b: felt) -> felt nopanic;
         "},
     );
     let db = &db_val;

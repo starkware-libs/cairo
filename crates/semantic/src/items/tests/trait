@@ -20,7 +20,7 @@ impl MyImpl of MyTrait::<A>;
 impl MyImpl2<T> of MyTrait::<T> {
     mod a;
     use b;
-    extern func extern_func();
+    extern func extern_func() nopanic;
     extern type DummyType;
 
     trait DummyTrait;
