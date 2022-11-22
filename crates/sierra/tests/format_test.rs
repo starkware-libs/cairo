@@ -13,6 +13,7 @@ fn format_test() {
                 type ConcreteTypeId  = TypeId<arg>;
                 type  ConcreteTypeId = TypeId<arg1, 4>;
                 type [123] = TypeId<[12],  4>;
+                type [4]= Enum<ut@core::option ::Option:: <core::felt>, [3],[2]>;
                 libfunc CalleeId = LibFuncId ;
                 // Additional comment.
                 libfunc OtherCalleeId = LibFuncId <arg, 4>;
@@ -40,6 +41,7 @@ fn format_test() {
             type ConcreteTypeId = TypeId<arg>;
             type ConcreteTypeId = TypeId<arg1, 4>;
             type [123] = TypeId<[12], 4>;
+            type [4] = Enum<ut@core::option::Option::<core::felt>, [3], [2]>;
 
             libfunc CalleeId = LibFuncId;
             libfunc OtherCalleeId = LibFuncId<arg, 4>;
