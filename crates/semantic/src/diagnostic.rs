@@ -77,7 +77,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::FunctionNotMemberOfTrait { impl_function_id, trait_id } => {
                 let defs_db = db.upcast();
                 format!(
-                    "Associated function `{}` is not a member of trait `{}`.",
+                    "Impl function `{}` is not a member of trait `{}`.",
                     impl_function_id.name(defs_db),
                     trait_id.name(defs_db)
                 )
@@ -96,8 +96,23 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::MissingMember { member_name } => {
                 format!(r#"Missing member "{member_name}"."#)
             }
-            SemanticDiagnosticKind::WrongNumberOfParameters { expected, actual } => {
-                format!("Wrong number of parameters. Expected {expected}, found: {actual}")
+            SemanticDiagnosticKind::WrongNumberOfParameters {
+                impl_function_id,
+                trait_id,
+                expected,
+                actual,
+            } => {
+                let defs_db = db.upcast();
+                let function_name = impl_function_id.name(defs_db);
+                format!(
+                    "The number of parameters in the impl function `{}` is incompatible with \
+                     `{}:{}` Expected {}, actual: {}",
+                    function_name,
+                    trait_id.name(defs_db),
+                    function_name,
+                    expected,
+                    actual,
+                )
             }
             SemanticDiagnosticKind::WrongNumberOfArguments { expected, actual } => {
                 format!("Wrong number of arguments. Expected {expected}, found: {actual}")
@@ -112,11 +127,13 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 actual_ty,
             } => {
                 let defs_db = db.upcast();
+                let function_name = impl_function_id.name(defs_db);
                 format!(
-                    "Associated function `{}` has an incompatible type for trait `{}`. Unexpected \
-                     parameter type. Expected: `{}`, found: `{}`.",
-                    impl_function_id.name(defs_db),
+                    "Parameter type of impl function `{}` is incompatible with `{}::{}`. \
+                     Expected: `{}`, actual: `{}`.",
+                    function_name,
                     trait_id.name(defs_db),
+                    function_name,
                     expected_ty.format(db),
                     actual_ty.format(db)
                 )
@@ -131,6 +148,24 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::WrongReturnType { expected_ty, actual_ty } => {
                 format!(
                     r#"Unexpected return type. Expected: "{}", found: "{}"."#,
+                    expected_ty.format(db),
+                    actual_ty.format(db)
+                )
+            }
+            SemanticDiagnosticKind::WrongReturnTypeForImpl {
+                impl_function_id,
+                trait_id,
+                expected_ty,
+                actual_ty,
+            } => {
+                let defs_db = db.upcast();
+                let function_name = impl_function_id.name(defs_db);
+                format!(
+                    "Return type of impl function `{}` his incompatible with `{}:{}`. Expected: \
+                     `{}`, actual: `{}`.",
+                    function_name,
+                    trait_id.name(defs_db),
+                    function_name,
                     expected_ty.format(db),
                     actual_ty.format(db)
                 )
@@ -302,6 +337,8 @@ pub enum SemanticDiagnosticKind {
         member_name: SmolStr,
     },
     WrongNumberOfParameters {
+        impl_function_id: ImplFunctionId,
+        trait_id: TraitId,
         expected: usize,
         actual: usize,
     },
@@ -324,6 +361,12 @@ pub enum SemanticDiagnosticKind {
         actual_ty: semantic::TypeId,
     },
     WrongReturnType {
+        expected_ty: semantic::TypeId,
+        actual_ty: semantic::TypeId,
+    },
+    WrongReturnTypeForImpl {
+        impl_function_id: ImplFunctionId,
+        trait_id: TraitId,
         expected_ty: semantic::TypeId,
         actual_ty: semantic::TypeId,
     },
