@@ -63,7 +63,7 @@ pub struct Signature {
     pub params: Vec<semantic::Parameter>,
     pub return_type: semantic::TypeId,
     /// implicit parameters
-    pub implicits: Vec<semantic::Parameter>,
+    pub uses: Vec<semantic::Parameter>,
     pub panicable: bool,
 }
 
@@ -86,7 +86,7 @@ impl Signature {
             function_id,
             environment,
         );
-        let implicits = function_signature_implicit_parameters(
+        let uses = function_signature_use_parameters(
             diagnostics,
             db,
             resolver,
@@ -98,7 +98,7 @@ impl Signature {
             ast::OptionTerminalNoPanic::Empty(_) => true,
             ast::OptionTerminalNoPanic::TerminalNoPanic(_) => false,
         };
-        semantic::Signature { params, return_type, implicits, panicable }
+        semantic::Signature { params, return_type, uses, panicable }
     }
 }
 
@@ -119,8 +119,8 @@ pub fn function_signature_return_type(
     resolve_type(db, diagnostics, resolver, &ty_syntax)
 }
 
-/// Returns the implicit parameters of the given function signature's AST.
-pub fn function_signature_implicit_parameters(
+/// Returns the use parameters of the given function signature's AST.
+pub fn function_signature_use_parameters(
     diagnostics: &mut SemanticDiagnostics,
     db: &dyn SemanticGroup,
     resolver: &mut Resolver<'_>,
@@ -130,10 +130,10 @@ pub fn function_signature_implicit_parameters(
 ) -> Vec<semantic::Parameter> {
     let syntax_db = db.upcast();
 
-    let ast_params = match sig.implicits_clause(syntax_db) {
-        ast::OptionImplicitsClause::Empty(_) => Vec::new(),
-        ast::OptionImplicitsClause::ImplicitsClause(with_clause) => {
-            with_clause.implicits(syntax_db).elements(syntax_db)
+    let ast_params = match sig.use_clause(syntax_db) {
+        ast::OptionUseClause::Empty(_) => Vec::new(),
+        ast::OptionUseClause::UseClause(with_clause) => {
+            with_clause.uses(syntax_db).elements(syntax_db)
         }
     };
 
@@ -225,14 +225,14 @@ pub fn concrete_function_signature(
     Some(Signature {
         params: generic_signature.params.into_iter().map(concretize_param).collect(),
         return_type: substitute_generics(db, &substitution_map, generic_signature.return_type),
-        implicits: generic_signature.implicits.into_iter().map(concretize_param).collect(),
+        uses: generic_signature.uses.into_iter().map(concretize_param).collect(),
         panicable: generic_signature.panicable,
     })
 }
 
 /// For a given list of AST parameters, returns the list of semantic parameters along with the
 /// corresponding environment.
-/// `implicit_params` - indicates whether this call handles implicit params or normal params.
+/// `use_params` - indicates whether this call handles use params or normal params.
 fn update_env_with_ast_params(
     diagnostics: &mut SemanticDiagnostics,
     db: &dyn SemanticGroup,
@@ -240,12 +240,12 @@ fn update_env_with_ast_params(
     ast_params: &[ast::Param],
     function_id: GenericFunctionId,
     env: &mut Environment,
-    implicit_params: bool,
+    use_params: bool,
 ) -> Vec<semantic::Parameter> {
     let mut semantic_params = Vec::new();
     for ast_param in ast_params.iter() {
         let (name, semantic_param) =
-            ast_param_to_semantic(diagnostics, db, resolver, ast_param, implicit_params);
+            ast_param_to_semantic(diagnostics, db, resolver, ast_param, use_params);
         if env.add_param(diagnostics, &name, semantic_param.clone(), ast_param, function_id) {
             semantic_params.push(semantic_param);
         }
@@ -254,13 +254,13 @@ fn update_env_with_ast_params(
 }
 
 /// Returns a semantic parameter (and its name) for the given AST parameter
-/// `implicit_param` - indicates whether this call handles an implicit param or a normal param.
+/// `use_param` - indicates whether this call handles a use param or a normal param.
 fn ast_param_to_semantic(
     diagnostics: &mut SemanticDiagnostics,
     db: &dyn SemanticGroup,
     resolver: &mut Resolver<'_>,
     ast_param: &ast::Param,
-    implicit_param: bool,
+    use_param: bool,
 ) -> (Option<SmolStr>, semantic::Parameter) {
     let syntax_db = db.upcast();
 
@@ -273,7 +273,7 @@ fn ast_param_to_semantic(
     let ty_syntax = ast_param.type_clause(syntax_db).ty(syntax_db);
     let ty = resolve_type(db, diagnostics, resolver, &ty_syntax);
 
-    let mutability = if implicit_param {
+    let mutability = if use_param {
         Mutability::Reference
     } else {
         modifiers::compute_mutability(

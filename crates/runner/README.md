@@ -9,18 +9,18 @@ If we want to run code that is gas tested:
 cargo run --bin cairo-run -- -p /path/to/file.cairo --available-gas 200
 ```
 
-We currently only run the a `main` function with no arguments beside implicits.
+We currently only run the a `main` function with no arguments beside uses.
 
 # Examples
 
 ## Without gas:
 ```
-func main() -> Option::<felt> implicits (rc: RangeCheck, gb: GasBuiltin) {
+func main() -> Option::<felt> use (rc: RangeCheck, gb: GasBuiltin) {
     fib(1, 1, 13)
 }
 
 /// Calculates fib...
-func fib(a: felt, b: felt, n: felt) -> Option::<felt> implicits (rc: RangeCheck, gb: GasBuiltin) {
+func fib(a: felt, b: felt, n: felt) -> Option::<felt> use (rc: RangeCheck, gb: GasBuiltin) {
     get_gas()?;
     match n {
         0 => Option::<felt>::Some(a),
@@ -32,11 +32,11 @@ func fib(a: felt, b: felt, n: felt) -> Option::<felt> implicits (rc: RangeCheck,
 ## With gas:
 ```
 // Calculates fib...
-func main() -> Option::<uint128> implicits (rc: RangeCheck) {
+func main() -> Option::<uint128> use (rc: RangeCheck) {
     fib(uint128_from_felt(1)?, uint128_from_felt(1)?, uint128_from_felt(100)?)
 }
 
-func fib(a: uint128, b: uint128, n: uint128) -> Option::<uint128> implicits (rc: RangeCheck) {
+func fib(a: uint128, b: uint128, n: uint128) -> Option::<uint128> use (rc: RangeCheck) {
     match uint128_to_felt(n) {
         0 => Option::<uint128>::Some(a),
         _ => {

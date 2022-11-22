@@ -198,7 +198,7 @@ impl<'a> Parser<'a> {
         let params = self.parse_param_list();
         let rparen = self.parse_token::<TerminalRParen>();
         let return_type_clause = self.parse_option_return_type_clause();
-        let implicits_clause = self.parse_option_implicits_clause();
+        let use_clause = self.parse_option_use_clause();
         let optional_no_panic = if self.peek().kind == SyntaxKind::TerminalNoPanic {
             self.take::<TerminalNoPanic>().into()
         } else {
@@ -211,7 +211,7 @@ impl<'a> Parser<'a> {
             params,
             rparen,
             return_type_clause,
-            implicits_clause,
+            use_clause,
             optional_no_panic,
         )
     }
@@ -939,24 +939,24 @@ impl<'a> Parser<'a> {
         }
     }
 
-    /// Returns a GreenId of a node with kind ImplicitsClause or OptionImplicitsClauseEmpty if a
-    /// implicits-clause can't be parsed.
-    fn parse_option_implicits_clause(&mut self) -> OptionImplicitsClauseGreen {
-        if self.peek().kind == SyntaxKind::TerminalImplicits {
-            let implicits_kw = self.take::<TerminalImplicits>();
+    /// Returns a GreenId of a node with kind UseClause or OptionUseClauseEmpty if a
+    /// use-clause can't be parsed.
+    fn parse_option_use_clause(&mut self) -> OptionUseClauseGreen {
+        if self.peek().kind == SyntaxKind::TerminalUse {
+            let use_kw = self.take::<TerminalUse>();
             let lparen = self.parse_token::<TerminalLParen>();
-            let implicits = ParamList::new_green(
+            let uses = ParamList::new_green(
                 self.db,
                 self.parse_separated_list::<Param, TerminalComma, ParamListElementOrSeparatorGreen>(
                     Self::try_parse_param,
                     is_of_kind!(rparen, block, lbrace, rbrace, top_level),
-                    "implicit param",
+                    "use param",
                 ),
             );
             let rparen = self.parse_token::<TerminalRParen>();
-            ImplicitsClause::new_green(self.db, implicits_kw, lparen, implicits, rparen).into()
+            UseClause::new_green(self.db, use_kw, lparen, uses, rparen).into()
         } else {
-            OptionImplicitsClauseEmpty::new_green(self.db).into()
+            OptionUseClauseEmpty::new_green(self.db).into()
         }
     }
 

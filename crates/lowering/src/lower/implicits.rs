@@ -15,81 +15,80 @@ pub fn function_scc_representative(
     SCCRepresentative(function_scc(db, function).into_iter().min().unwrap_or(function))
 }
 
-/// Query implementation of [crate::db::LoweringGroup::function_scc_explicit_implicits].
-pub fn function_scc_explicit_implicits(
+/// Query implementation of [crate::db::LoweringGroup::function_scc_explicit_uses].
+pub fn function_scc_explicit_uses(
     db: &dyn LoweringGroup,
     function: SCCRepresentative,
 ) -> Option<HashSet<TypeId>> {
     let scc = function_scc(db, function.0);
-    let mut explicit_implicits = HashSet::new();
+    let mut explicit_uses = HashSet::new();
     for func in scc {
-        let current_implicits: HashSet<TypeId> =
-            db.free_function_declaration_implicits(func)?.into_iter().collect();
-        explicit_implicits.extend(current_implicits);
+        let current_uses: HashSet<TypeId> =
+            db.free_function_declaration_uses(func)?.into_iter().collect();
+        explicit_uses.extend(current_uses);
     }
-    Some(explicit_implicits)
+    Some(explicit_uses)
 }
 
-/// Query implementation of [crate::db::LoweringGroup::function_all_implicits].
-pub fn function_all_implicits(
+/// Query implementation of [crate::db::LoweringGroup::function_all_uses].
+pub fn function_all_uses(
     db: &dyn LoweringGroup,
     function: semantic::FunctionId,
 ) -> Option<Vec<TypeId>> {
     match db.lookup_intern_function(function).function.generic_function {
-        GenericFunctionId::Free(free_function) => db.free_function_all_implicits_vec(free_function),
+        GenericFunctionId::Free(free_function) => db.free_function_all_uses_vec(free_function),
         GenericFunctionId::Extern(extern_function) => {
-            db.extern_function_declaration_implicits(extern_function)
+            db.extern_function_declaration_uses(extern_function)
         }
         GenericFunctionId::TraitFunction(_) | GenericFunctionId::ImplFunction(_) => todo!(),
     }
 }
 
-/// Query implementation of [crate::db::LoweringGroup::free_function_all_implicits].
-pub fn free_function_all_implicits(
+/// Query implementation of [crate::db::LoweringGroup::free_function_all_uses].
+pub fn free_function_all_uses(
     db: &dyn LoweringGroup,
     function: FreeFunctionId,
 ) -> Option<HashSet<TypeId>> {
     // Find the SCC representative.
     let scc_representative = function_scc_representative(db, function);
 
-    // Start with the explicit implicits of the SCC.
-    let mut all_implicits = function_scc_explicit_implicits(db, scc_representative.clone())?;
+    // Start with the explicit uses of the SCC.
+    let mut all_uses = function_scc_explicit_uses(db, scc_representative.clone())?;
 
-    // For each direct callee, add its implicits.
+    // For each direct callee, add its uses.
     for direct_callee in db.free_function_definition_direct_callees(function)? {
-        let current_implicits =
-            match db.lookup_intern_function(direct_callee).function.generic_function {
-                GenericFunctionId::Free(free_function) => {
-                    // For a free function, call this method recursively. To avoid cycles, first
-                    // check that the callee is not in this function's SCC.
-                    let direct_callee_representative =
-                        function_scc_representative(db, free_function);
-                    if direct_callee_representative == scc_representative {
-                        // We already have the implicits of this SCC - do nothing.
-                        continue;
-                    }
-                    free_function_all_implicits(db, direct_callee_representative.0)?
+        let current_uses = match db.lookup_intern_function(direct_callee).function.generic_function
+        {
+            GenericFunctionId::Free(free_function) => {
+                // For a free function, call this method recursively. To avoid cycles, first
+                // check that the callee is not in this function's SCC.
+                let direct_callee_representative = function_scc_representative(db, free_function);
+                if direct_callee_representative == scc_representative {
+                    // We already have the uses of this SCC - do nothing.
+                    continue;
                 }
-                GenericFunctionId::Extern(extern_function) => {
-                    // All implicits of a libfunc are explicit implicits.
-                    db.extern_function_declaration_implicits(extern_function)?.into_iter().collect()
-                }
-                GenericFunctionId::TraitFunction(_) | GenericFunctionId::ImplFunction(_) => todo!(),
-            };
-        all_implicits.extend(&current_implicits);
+                free_function_all_uses(db, direct_callee_representative.0)?
+            }
+            GenericFunctionId::Extern(extern_function) => {
+                // All uses of a libfunc are explicit uses.
+                db.extern_function_declaration_uses(extern_function)?.into_iter().collect()
+            }
+            GenericFunctionId::TraitFunction(_) | GenericFunctionId::ImplFunction(_) => todo!(),
+        };
+        all_uses.extend(&current_uses);
     }
-    Some(all_implicits)
+    Some(all_uses)
 }
 
-/// Query implementation of [crate::db::LoweringGroup::free_function_all_implicits_vec].
-pub fn free_function_all_implicits_vec(
+/// Query implementation of [crate::db::LoweringGroup::free_function_all_uses_vec].
+pub fn free_function_all_uses_vec(
     db: &dyn LoweringGroup,
     function: FreeFunctionId,
 ) -> Option<Vec<TypeId>> {
-    let implicits_set = db.free_function_all_implicits(function)?;
-    let mut implicits_vec = implicits_set.into_iter().collect_vec();
-    implicits_vec.sort();
-    Some(implicits_vec)
+    let uses_set = db.free_function_all_uses(function)?;
+    let mut uses_vec = uses_set.into_iter().collect_vec();
+    uses_vec.sort();
+    Some(uses_vec)
 }
 
 /// Query implementation of [crate::db::LoweringGroup::function_scc].

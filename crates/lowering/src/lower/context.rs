@@ -27,10 +27,10 @@ pub struct LoweringContext<'db> {
     /// Definitions encountered for semantic variables.
     // TODO(spapini): consider moving to semantic model.
     pub semantic_defs: UnorderedHashMap<semantic::VarId, semantic::Variable>,
-    // TODO(spapini): Document. (excluding implicits).
+    // TODO(spapini): Document. (excluding uses).
     pub ref_params: &'db [semantic::VarId],
-    // The available implicits in this function.
-    pub implicits: &'db [semantic::TypeId],
+    // The available uses in this function.
+    pub uses: &'db [semantic::TypeId],
     // Lookup context for impls.
     pub lookup_context: ImplLookupContext,
 }
@@ -67,8 +67,8 @@ pub struct LoweredExprExternEnum {
     pub concrete_enum_id: semantic::ConcreteEnumId,
     pub inputs: Vec<LivingVar>,
     pub ref_args: Vec<semantic::VarId>,
-    /// The implicits used/changed by the function.
-    pub implicits: Vec<semantic::TypeId>,
+    /// The uses used/changed by the function.
+    pub uses: Vec<semantic::TypeId>,
 }
 impl LoweredExprExternEnum {
     pub fn var(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockScope) -> LivingVar {
@@ -86,7 +86,7 @@ impl LoweredExprExternEnum {
                     let input_tys = chain!(ref_tys, variant_input_tys.into_iter()).collect();
                     merger.run_in_subscope(ctx, input_tys, |ctx, subscope, mut arm_inputs| {
                         let implicit_outputs: Vec<_> =
-                            arm_inputs.drain(0..self.implicits.len()).collect();
+                            arm_inputs.drain(0..self.uses.len()).collect();
                         let ref_outputs: Vec<_> =
                             arm_inputs.drain(0..self.ref_args.len()).collect();
                         let input = extern_facade_expr(ctx, concrete_variant.ty, arm_inputs)
@@ -94,9 +94,9 @@ impl LoweredExprExternEnum {
                         let res = generators::EnumConstruct { input, variant: concrete_variant }
                             .add(ctx, subscope);
 
-                        // Bind implicits.
-                        for (ty, output_var) in zip_eq(&self.implicits, implicit_outputs) {
-                            subscope.put_implicit(*ty, output_var);
+                        // Bind uses.
+                        for (ty, output_var) in zip_eq(&self.uses, implicit_outputs) {
+                            subscope.put_use(*ty, output_var);
                         }
                         // Bind the ref variables.
                         for (semantic_var_id, output_var) in zip_eq(&self.ref_args, ref_outputs) {

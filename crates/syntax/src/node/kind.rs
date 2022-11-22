@@ -49,8 +49,8 @@ pub enum SyntaxKind {
     Param,
     ModifierList,
     ParamList,
-    ImplicitsClause,
-    OptionImplicitsClauseEmpty,
+    UseClause,
+    OptionUseClauseEmpty,
     OptionTerminalNoPanicEmpty,
     FunctionSignature,
     Member,
@@ -118,8 +118,6 @@ pub enum SyntaxKind {
     TerminalElse,
     TokenUse,
     TerminalUse,
-    TokenImplicits,
-    TerminalImplicits,
     TokenRef,
     TerminalRef,
     TokenMut,
@@ -224,7 +222,6 @@ impl SyntaxKind {
                 | SyntaxKind::TokenIf
                 | SyntaxKind::TokenElse
                 | SyntaxKind::TokenUse
-                | SyntaxKind::TokenImplicits
                 | SyntaxKind::TokenRef
                 | SyntaxKind::TokenMut
                 | SyntaxKind::TokenNoPanic
@@ -291,7 +288,6 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalIf
                 | SyntaxKind::TerminalElse
                 | SyntaxKind::TerminalUse
-                | SyntaxKind::TerminalImplicits
                 | SyntaxKind::TerminalRef
                 | SyntaxKind::TerminalMut
                 | SyntaxKind::TerminalNoPanic
@@ -351,7 +347,6 @@ impl SyntaxKind {
                 | SyntaxKind::TokenIf
                 | SyntaxKind::TokenElse
                 | SyntaxKind::TokenUse
-                | SyntaxKind::TokenImplicits
                 | SyntaxKind::TokenRef
                 | SyntaxKind::TokenMut
                 | SyntaxKind::TokenNoPanic
@@ -377,7 +372,6 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalIf
                 | SyntaxKind::TerminalElse
                 | SyntaxKind::TerminalUse
-                | SyntaxKind::TerminalImplicits
                 | SyntaxKind::TerminalRef
                 | SyntaxKind::TerminalMut
                 | SyntaxKind::TerminalNoPanic

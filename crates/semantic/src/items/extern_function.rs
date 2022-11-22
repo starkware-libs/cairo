@@ -48,15 +48,15 @@ pub fn extern_function_declaration_generic_params(
 ) -> Option<Vec<GenericParamId>> {
     Some(db.priv_extern_function_declaration_data(extern_function_id)?.generic_params)
 }
-/// Query implementation of [crate::db::SemanticGroup::extern_function_declaration_implicits].
-pub fn extern_function_declaration_implicits(
+/// Query implementation of [crate::db::SemanticGroup::extern_function_declaration_uses].
+pub fn extern_function_declaration_uses(
     db: &dyn SemanticGroup,
     extern_function_id: ExternFunctionId,
 ) -> Option<Vec<TypeId>> {
     Some(
         db.priv_extern_function_declaration_data(extern_function_id)?
             .signature
-            .implicits
+            .uses
             .into_iter()
             .map(|param| param.ty)
             .collect(),

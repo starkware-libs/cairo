@@ -249,9 +249,9 @@ pub trait SemanticGroup:
         &self,
         free_function_id: FreeFunctionId,
     ) -> Option<Vec<Attribute>>;
-    /// Returns the explicit implicits of a signature of a free function declaration.
-    #[salsa::invoke(items::free_function::free_function_declaration_implicits)]
-    fn free_function_declaration_implicits(
+    /// Returns the explicit uses of a signature of a free function declaration.
+    #[salsa::invoke(items::free_function::free_function_declaration_uses)]
+    fn free_function_declaration_uses(
         &self,
         free_function_id: FreeFunctionId,
     ) -> Option<Vec<TypeId>>;
@@ -329,9 +329,9 @@ pub trait SemanticGroup:
         &self,
         extern_function_id: ExternFunctionId,
     ) -> Option<Vec<GenericParamId>>;
-    /// Returns the explicit implicits of an extern function declaration.
-    #[salsa::invoke(items::extern_function::extern_function_declaration_implicits)]
-    fn extern_function_declaration_implicits(
+    /// Returns the explicit uses of an extern function declaration.
+    #[salsa::invoke(items::extern_function::extern_function_declaration_uses)]
+    fn extern_function_declaration_uses(
         &self,
         extern_function_id: ExternFunctionId,
     ) -> Option<Vec<TypeId>>;

@@ -58,7 +58,7 @@ impl Call {
             .collect();
         let implicit_outputs = ctx
             .db
-            .function_all_implicits(self.function)
+            .function_all_uses(self.function)
             .unwrap()
             .into_iter()
             .map(|ty| scope.living_variables.introduce_new_var(ctx, ty))

@@ -62,15 +62,15 @@ pub fn free_function_declaration_attributes(
     Some(db.priv_free_function_declaration_data(free_function_id)?.attributes)
 }
 
-/// Query implementation of [crate::db::SemanticGroup::free_function_declaration_implicits].
-pub fn free_function_declaration_implicits(
+/// Query implementation of [crate::db::SemanticGroup::free_function_declaration_uses].
+pub fn free_function_declaration_uses(
     db: &dyn SemanticGroup,
     free_function_id: FreeFunctionId,
 ) -> Option<Vec<TypeId>> {
     Some(
         db.priv_free_function_declaration_data(free_function_id)?
             .signature
-            .implicits
+            .uses
             .into_iter()
             .map(|param| param.ty)
             .collect(),

@@ -53,7 +53,7 @@ pub fn lower(db: &dyn LoweringGroup, free_function_id: FreeFunctionId) -> Option
     let generic_params = db.free_function_declaration_generic_params(free_function_id)?;
     let signature = db.free_function_declaration_signature(free_function_id)?;
 
-    let implicits = db.free_function_all_implicits_vec(free_function_id)?;
+    let uses = db.free_function_all_uses_vec(free_function_id)?;
     // Params.
     let ref_params = signature
         .params
@@ -67,9 +67,9 @@ pub fn lower(db: &dyn LoweringGroup, free_function_id: FreeFunctionId) -> Option
         .iter()
         .map(|semantic_var| (semantic_var.id(), semantic_var.ty()))
         .unzip();
-    let input_var_tys = chain!(implicits.clone(), input_var_tys).collect();
+    let input_var_tys = chain!(uses.clone(), input_var_tys).collect();
 
-    let implicits_ref = &implicits;
+    let uses_ref = &uses;
     let mut ctx = LoweringContext {
         db,
         function_def: &function_def,
@@ -78,7 +78,7 @@ pub fn lower(db: &dyn LoweringGroup, free_function_id: FreeFunctionId) -> Option
         blocks: Arena::default(),
         semantic_defs: UnorderedHashMap::default(),
         ref_params: &ref_params,
-        implicits: implicits_ref,
+        uses: uses_ref,
         lookup_context: ImplLookupContext {
             module_id: free_function_id.module(db.upcast()),
             extra_modules: vec![],
@@ -99,12 +99,12 @@ pub fn lower(db: &dyn LoweringGroup, free_function_id: FreeFunctionId) -> Option
         BlockFlowMerger::with_root(&mut ctx, &ref_params, |ctx, merger| {
             merger.run_in_subscope(ctx, input_var_tys, |ctx, scope, variables| {
                 let mut variables_iter = variables.into_iter();
-                for ty in implicits_ref {
+                for ty in uses_ref {
                     let var = variables_iter.next()?;
-                    scope.put_implicit(*ty, var);
+                    scope.put_use(*ty, var);
                 }
 
-                // Initialize implicits and params.
+                // Initialize uses and params.
                 for (semantic_var_id, var) in zip_eq(input_semantic_var_ids, variables_iter) {
                     scope.put_semantic_variable(semantic_var_id, var);
                 }
@@ -225,7 +225,7 @@ fn get_full_return_vars(
     value_vars: Vec<LivingVar>,
 ) -> Result<Vec<LivingVar>, StatementLoweringFlowError> {
     let implicit_vars = ctx
-        .implicits
+        .uses
         .iter()
         .map(|ty| scope.take_implicit(*ty))
         .collect::<Option<Vec<_>>>()
@@ -399,15 +399,15 @@ fn lower_expr_function_call(
         .collect::<Result<Vec<_>, _>>()?
         .into_iter()
         .unzip();
-    let callee_implicit_types =
-        ctx.db.function_all_implicits(expr.function).ok_or(LoweringFlowError::Failed)?;
-    let implicits = callee_implicit_types
+    let callee_uses_types =
+        ctx.db.function_all_uses(expr.function).ok_or(LoweringFlowError::Failed)?;
+    let uses = callee_uses_types
         .iter()
         .map(|ty| scope.take_implicit(*ty))
         .collect::<Option<Vec<_>>>()
         .ok_or(LoweringFlowError::Failed)?;
     // TODO(orizi): Support ref args that are not the first arguments.
-    let inputs = chain!(implicits, ref_inputs, arg_inputs.into_iter()).collect();
+    let inputs = chain!(uses, ref_inputs, arg_inputs.into_iter()).collect();
 
     // The following is relevant only to extern functions.
     if matches!(
@@ -427,17 +427,17 @@ fn lower_expr_function_call(
                 concrete_enum_id,
                 inputs,
                 ref_args: expr.ref_args.clone(),
-                implicits: callee_implicit_types,
+                uses: callee_uses_types,
             }));
         }
     }
 
-    let (implicit_outputs, ref_outputs, res) =
+    let (uses_outputs, ref_outputs, res) =
         perform_function_call(ctx, scope, expr.function, inputs, ref_tys, expr.ty);
 
-    // Rebind the implicits.
-    for (implicit_type, implicit_output) in zip_eq(callee_implicit_types, implicit_outputs) {
-        scope.put_implicit(implicit_type, implicit_output);
+    // Rebind the uses.
+    for (use_type, use_output) in zip_eq(callee_uses_types, uses_outputs) {
+        scope.put_use(use_type, use_output);
     }
     // Rebind the ref variables.
     for (semantic_var_id, output_var) in zip_eq(&expr.ref_args, ref_outputs) {
@@ -912,7 +912,7 @@ fn match_extern_variant_arm_input_types(
     let variant_input_tys = extern_facade_return_tys(ctx, ty);
     let ref_tys =
         extern_enum.ref_args.iter().map(|semantic_var_id| ctx.semantic_defs[*semantic_var_id].ty());
-    chain!(extern_enum.implicits.clone(), ref_tys, variant_input_tys.into_iter()).collect()
+    chain!(extern_enum.uses.clone(), ref_tys, variant_input_tys.into_iter()).collect()
 }
 
 /// Rebinds input references when matching on extern functions.
@@ -921,10 +921,10 @@ fn match_extern_arm_ref_args_rebind(
     extern_enum: &LoweredExprExternEnum,
     subscope: &mut BlockScope,
 ) {
-    let implicit_outputs: Vec<_> = arm_inputs.drain(0..extern_enum.implicits.len()).collect();
-    // Bind the implicits.
-    for (ty, output_var) in zip_eq(&extern_enum.implicits, implicit_outputs) {
-        subscope.put_implicit(*ty, output_var);
+    let implicit_outputs: Vec<_> = arm_inputs.drain(0..extern_enum.uses.len()).collect();
+    // Bind the uses.
+    for (ty, output_var) in zip_eq(&extern_enum.uses, implicit_outputs) {
+        subscope.put_use(*ty, output_var);
     }
     let ref_outputs: Vec<_> = arm_inputs.drain(0..extern_enum.ref_args.len()).collect();
     // Bind the ref variables.
@@ -987,9 +987,9 @@ fn lowered_expr_from_block_result(
     match block_result {
         generators::CallBlockResult::Callsite { maybe_output, pushes } => {
             let mut pushes_iter = pushes.into_iter();
-            for implicit_type in finalized_merger.outer_implicit_info.pushes {
+            for implicit_type in finalized_merger.outer_use_info.pushes {
                 let var = pushes_iter.next().unwrap();
-                scope.put_implicit(implicit_type, var);
+                scope.put_use(implicit_type, var);
                 scope.mark_implicit_changed(implicit_type);
             }
             for (semantic_var_id, var) in
@@ -998,9 +998,9 @@ fn lowered_expr_from_block_result(
                 scope.put_semantic_variable(semantic_var_id, var);
             }
 
-            // Bring back the unused implicits.
-            for (ty, implicit_var) in finalized_merger.outer_implicit_info.unchanged {
-                scope.put_implicit(ty, implicit_var);
+            // Bring back the unused uses.
+            for (ty, implicit_var) in finalized_merger.outer_use_info.unchanged {
+                scope.put_use(ty, implicit_var);
             }
 
             // Bring back the untouched semantic vars.

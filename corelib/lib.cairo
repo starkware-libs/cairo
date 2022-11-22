@@ -31,10 +31,10 @@ extern func felt_div(a: felt, b: NonZero::<felt>) -> felt nopanic;
 
 // TODO(orizi): Consider removing and replacing with `jump_nz(a - b)`.
 extern func felt_eq(a: felt, b: felt) -> bool nopanic;
-extern func felt_le(a: felt, b: felt) -> bool implicits (rc: RangeCheck) nopanic;
-extern func felt_ge(a: felt, b: felt) -> bool implicits (rc: RangeCheck) nopanic;
-extern func felt_lt(a: felt, b: felt) -> bool implicits (rc: RangeCheck) nopanic;
-extern func felt_gt(a: felt, b: felt) -> bool implicits (rc: RangeCheck) nopanic;
+extern func felt_le(a: felt, b: felt) -> bool use (rc: RangeCheck) nopanic;
+extern func felt_ge(a: felt, b: felt) -> bool use (rc: RangeCheck) nopanic;
+extern func felt_lt(a: felt, b: felt) -> bool use (rc: RangeCheck) nopanic;
+extern func felt_gt(a: felt, b: felt) -> bool use (rc: RangeCheck) nopanic;
 
 extern func felt_jump_nz(a: felt) -> JumpNzResult::<felt> nopanic;
 

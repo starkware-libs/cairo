@@ -147,7 +147,6 @@ impl<'a> Lexer<'a> {
             "if" => TokenKind::If,
             "else" => TokenKind::Else,
             "use" => TokenKind::Use,
-            "implicits" => TokenKind::Implicits,
             "ref" => TokenKind::Ref,
             "mut" => TokenKind::Mut,
             "nopanic" => TokenKind::NoPanic,
@@ -292,7 +291,6 @@ enum TokenKind {
     If,
     Else,
     Use,
-    Implicits,
     NoPanic,
 
     // Modifiers.
@@ -360,7 +358,6 @@ fn token_kind_to_terminal_syntax_kind(kind: TokenKind) -> SyntaxKind {
         TokenKind::If => SyntaxKind::TerminalIf,
         TokenKind::Else => SyntaxKind::TerminalElse,
         TokenKind::Use => SyntaxKind::TerminalUse,
-        TokenKind::Implicits => SyntaxKind::TerminalImplicits,
         TokenKind::NoPanic => SyntaxKind::TerminalNoPanic,
         TokenKind::And => SyntaxKind::TerminalAnd,
         TokenKind::AndAnd => SyntaxKind::TerminalAndAnd,

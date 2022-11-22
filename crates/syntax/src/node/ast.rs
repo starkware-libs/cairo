@@ -4996,34 +4996,34 @@ impl TypedSyntaxNode for ParamList {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct ImplicitsClause {
+pub struct UseClause {
     node: SyntaxNode,
     children: Vec<SyntaxNode>,
 }
-impl ImplicitsClause {
+impl UseClause {
     pub fn new_green(
         db: &dyn SyntaxGroup,
-        implicits_kw: TerminalImplicitsGreen,
+        use_kw: TerminalUseGreen,
         lparen: TerminalLParenGreen,
-        implicits: ParamListGreen,
+        uses: ParamListGreen,
         rparen: TerminalRParenGreen,
-    ) -> ImplicitsClauseGreen {
-        let children: Vec<GreenId> = vec![implicits_kw.0, lparen.0, implicits.0, rparen.0];
+    ) -> UseClauseGreen {
+        let children: Vec<GreenId> = vec![use_kw.0, lparen.0, uses.0, rparen.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
-        ImplicitsClauseGreen(db.intern_green(GreenNode {
-            kind: SyntaxKind::ImplicitsClause,
+        UseClauseGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::UseClause,
             details: GreenNodeDetails::Node { children, width },
         }))
     }
 }
-impl ImplicitsClause {
-    pub fn implicits_kw(&self, db: &dyn SyntaxGroup) -> TerminalImplicits {
-        TerminalImplicits::from_syntax_node(db, self.children[0].clone())
+impl UseClause {
+    pub fn use_kw(&self, db: &dyn SyntaxGroup) -> TerminalUse {
+        TerminalUse::from_syntax_node(db, self.children[0].clone())
     }
     pub fn lparen(&self, db: &dyn SyntaxGroup) -> TerminalLParen {
         TerminalLParen::from_syntax_node(db, self.children[1].clone())
     }
-    pub fn implicits(&self, db: &dyn SyntaxGroup) -> ParamList {
+    pub fn uses(&self, db: &dyn SyntaxGroup) -> ParamList {
         ParamList::from_syntax_node(db, self.children[2].clone())
     }
     pub fn rparen(&self, db: &dyn SyntaxGroup) -> TerminalRParen {
@@ -5031,24 +5031,24 @@ impl ImplicitsClause {
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ImplicitsClausePtr(pub SyntaxStablePtrId);
-impl ImplicitsClausePtr {
+pub struct UseClausePtr(pub SyntaxStablePtrId);
+impl UseClausePtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ImplicitsClauseGreen(pub GreenId);
-impl TypedSyntaxNode for ImplicitsClause {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ImplicitsClause);
-    type StablePtr = ImplicitsClausePtr;
-    type Green = ImplicitsClauseGreen;
+pub struct UseClauseGreen(pub GreenId);
+impl TypedSyntaxNode for UseClause {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::UseClause);
+    type StablePtr = UseClausePtr;
+    type Green = UseClauseGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
-        ImplicitsClauseGreen(db.intern_green(GreenNode {
-            kind: SyntaxKind::ImplicitsClause,
+        UseClauseGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::UseClause,
             details: GreenNodeDetails::Node {
                 children: vec![
-                    TerminalImplicits::missing(db).0,
+                    TerminalUse::missing(db).0,
                     TerminalLParen::missing(db).0,
                     ParamList::missing(db).0,
                     TerminalRParen::missing(db).0,
@@ -5061,10 +5061,10 @@ impl TypedSyntaxNode for ImplicitsClause {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::ImplicitsClause,
+            SyntaxKind::UseClause,
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::ImplicitsClause
+            SyntaxKind::UseClause
         );
         let children = node.children(db).collect();
         Self { node, children }
@@ -5076,110 +5076,109 @@ impl TypedSyntaxNode for ImplicitsClause {
         self.node.clone()
     }
     fn stable_ptr(&self) -> Self::StablePtr {
-        ImplicitsClausePtr(self.node.0.stable_ptr)
+        UseClausePtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub enum OptionImplicitsClause {
-    Empty(OptionImplicitsClauseEmpty),
-    ImplicitsClause(ImplicitsClause),
+pub enum OptionUseClause {
+    Empty(OptionUseClauseEmpty),
+    UseClause(UseClause),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct OptionImplicitsClausePtr(pub SyntaxStablePtrId);
-impl OptionImplicitsClausePtr {
+pub struct OptionUseClausePtr(pub SyntaxStablePtrId);
+impl OptionUseClausePtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
     }
 }
-impl From<OptionImplicitsClauseEmptyPtr> for OptionImplicitsClausePtr {
-    fn from(value: OptionImplicitsClauseEmptyPtr) -> Self {
+impl From<OptionUseClauseEmptyPtr> for OptionUseClausePtr {
+    fn from(value: OptionUseClauseEmptyPtr) -> Self {
         Self(value.0)
     }
 }
-impl From<ImplicitsClausePtr> for OptionImplicitsClausePtr {
-    fn from(value: ImplicitsClausePtr) -> Self {
+impl From<UseClausePtr> for OptionUseClausePtr {
+    fn from(value: UseClausePtr) -> Self {
         Self(value.0)
     }
 }
-impl From<OptionImplicitsClauseEmptyGreen> for OptionImplicitsClauseGreen {
-    fn from(value: OptionImplicitsClauseEmptyGreen) -> Self {
+impl From<OptionUseClauseEmptyGreen> for OptionUseClauseGreen {
+    fn from(value: OptionUseClauseEmptyGreen) -> Self {
         Self(value.0)
     }
 }
-impl From<ImplicitsClauseGreen> for OptionImplicitsClauseGreen {
-    fn from(value: ImplicitsClauseGreen) -> Self {
+impl From<UseClauseGreen> for OptionUseClauseGreen {
+    fn from(value: UseClauseGreen) -> Self {
         Self(value.0)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct OptionImplicitsClauseGreen(pub GreenId);
-impl TypedSyntaxNode for OptionImplicitsClause {
+pub struct OptionUseClauseGreen(pub GreenId);
+impl TypedSyntaxNode for OptionUseClause {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
-    type StablePtr = OptionImplicitsClausePtr;
-    type Green = OptionImplicitsClauseGreen;
+    type StablePtr = OptionUseClausePtr;
+    type Green = OptionUseClauseGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
         panic!("No missing variant.");
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         let kind = node.kind(db);
         match kind {
-            SyntaxKind::OptionImplicitsClauseEmpty => {
-                OptionImplicitsClause::Empty(OptionImplicitsClauseEmpty::from_syntax_node(db, node))
+            SyntaxKind::OptionUseClauseEmpty => {
+                OptionUseClause::Empty(OptionUseClauseEmpty::from_syntax_node(db, node))
             }
-            SyntaxKind::ImplicitsClause => {
-                OptionImplicitsClause::ImplicitsClause(ImplicitsClause::from_syntax_node(db, node))
+            SyntaxKind::UseClause => {
+                OptionUseClause::UseClause(UseClause::from_syntax_node(db, node))
             }
-            _ => panic!(
-                "Unexpected syntax kind {:?} when constructing {}.",
-                kind, "OptionImplicitsClause"
-            ),
+            _ => {
+                panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "OptionUseClause")
+            }
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         match self {
-            OptionImplicitsClause::Empty(x) => x.as_syntax_node(),
-            OptionImplicitsClause::ImplicitsClause(x) => x.as_syntax_node(),
+            OptionUseClause::Empty(x) => x.as_syntax_node(),
+            OptionUseClause::UseClause(x) => x.as_syntax_node(),
         }
     }
     fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
         Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
     }
     fn stable_ptr(&self) -> Self::StablePtr {
-        OptionImplicitsClausePtr(self.as_syntax_node().0.stable_ptr)
+        OptionUseClausePtr(self.as_syntax_node().0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct OptionImplicitsClauseEmpty {
+pub struct OptionUseClauseEmpty {
     node: SyntaxNode,
     children: Vec<SyntaxNode>,
 }
-impl OptionImplicitsClauseEmpty {
-    pub fn new_green(db: &dyn SyntaxGroup) -> OptionImplicitsClauseEmptyGreen {
+impl OptionUseClauseEmpty {
+    pub fn new_green(db: &dyn SyntaxGroup) -> OptionUseClauseEmptyGreen {
         let children: Vec<GreenId> = vec![];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
-        OptionImplicitsClauseEmptyGreen(db.intern_green(GreenNode {
-            kind: SyntaxKind::OptionImplicitsClauseEmpty,
+        OptionUseClauseEmptyGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::OptionUseClauseEmpty,
             details: GreenNodeDetails::Node { children, width },
         }))
     }
 }
-impl OptionImplicitsClauseEmpty {}
+impl OptionUseClauseEmpty {}
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct OptionImplicitsClauseEmptyPtr(pub SyntaxStablePtrId);
-impl OptionImplicitsClauseEmptyPtr {
+pub struct OptionUseClauseEmptyPtr(pub SyntaxStablePtrId);
+impl OptionUseClauseEmptyPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct OptionImplicitsClauseEmptyGreen(pub GreenId);
-impl TypedSyntaxNode for OptionImplicitsClauseEmpty {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::OptionImplicitsClauseEmpty);
-    type StablePtr = OptionImplicitsClauseEmptyPtr;
-    type Green = OptionImplicitsClauseEmptyGreen;
+pub struct OptionUseClauseEmptyGreen(pub GreenId);
+impl TypedSyntaxNode for OptionUseClauseEmpty {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::OptionUseClauseEmpty);
+    type StablePtr = OptionUseClauseEmptyPtr;
+    type Green = OptionUseClauseEmptyGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
-        OptionImplicitsClauseEmptyGreen(db.intern_green(GreenNode {
-            kind: SyntaxKind::OptionImplicitsClauseEmpty,
+        OptionUseClauseEmptyGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::OptionUseClauseEmpty,
             details: GreenNodeDetails::Node { children: vec![], width: 0 },
         }))
     }
@@ -5187,10 +5186,10 @@ impl TypedSyntaxNode for OptionImplicitsClauseEmpty {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::OptionImplicitsClauseEmpty,
+            SyntaxKind::OptionUseClauseEmpty,
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::OptionImplicitsClauseEmpty
+            SyntaxKind::OptionUseClauseEmpty
         );
         let children = node.children(db).collect();
         Self { node, children }
@@ -5202,7 +5201,7 @@ impl TypedSyntaxNode for OptionImplicitsClauseEmpty {
         self.node.clone()
     }
     fn stable_ptr(&self) -> Self::StablePtr {
-        OptionImplicitsClauseEmptyPtr(self.node.0.stable_ptr)
+        OptionUseClauseEmptyPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -5343,17 +5342,11 @@ impl FunctionSignature {
         parameters: ParamListGreen,
         rparen: TerminalRParenGreen,
         ret_ty: OptionReturnTypeClauseGreen,
-        implicits_clause: OptionImplicitsClauseGreen,
+        use_clause: OptionUseClauseGreen,
         optional_no_panic: OptionTerminalNoPanicGreen,
     ) -> FunctionSignatureGreen {
-        let children: Vec<GreenId> = vec![
-            lparen.0,
-            parameters.0,
-            rparen.0,
-            ret_ty.0,
-            implicits_clause.0,
-            optional_no_panic.0,
-        ];
+        let children: Vec<GreenId> =
+            vec![lparen.0, parameters.0, rparen.0, ret_ty.0, use_clause.0, optional_no_panic.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         FunctionSignatureGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::FunctionSignature,
@@ -5374,8 +5367,8 @@ impl FunctionSignature {
     pub fn ret_ty(&self, db: &dyn SyntaxGroup) -> OptionReturnTypeClause {
         OptionReturnTypeClause::from_syntax_node(db, self.children[3].clone())
     }
-    pub fn implicits_clause(&self, db: &dyn SyntaxGroup) -> OptionImplicitsClause {
-        OptionImplicitsClause::from_syntax_node(db, self.children[4].clone())
+    pub fn use_clause(&self, db: &dyn SyntaxGroup) -> OptionUseClause {
+        OptionUseClause::from_syntax_node(db, self.children[4].clone())
     }
     pub fn optional_no_panic(&self, db: &dyn SyntaxGroup) -> OptionTerminalNoPanic {
         OptionTerminalNoPanic::from_syntax_node(db, self.children[5].clone())
@@ -5403,7 +5396,7 @@ impl TypedSyntaxNode for FunctionSignature {
                     ParamList::missing(db).0,
                     TerminalRParen::missing(db).0,
                     OptionReturnTypeClause::missing(db).0,
-                    OptionImplicitsClause::missing(db).0,
+                    OptionUseClause::missing(db).0,
                     OptionTerminalNoPanic::missing(db).0,
                 ],
                 width: 0,
@@ -10839,147 +10832,6 @@ impl TypedSyntaxNode for TerminalUse {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         TerminalUsePtr(self.node.0.stable_ptr)
-    }
-}
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct TokenImplicits {
-    node: SyntaxNode,
-}
-impl Token for TokenImplicits {
-    fn new_green(db: &dyn SyntaxGroup, text: SmolStr) -> Self::Green {
-        TokenImplicitsGreen(db.intern_green(GreenNode {
-            kind: SyntaxKind::TokenImplicits,
-            details: GreenNodeDetails::Token(text),
-        }))
-    }
-    fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(db.lookup_intern_green(self.node.0.green).details, GreenNodeDetails::Token)
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenImplicitsPtr(pub SyntaxStablePtrId);
-impl TokenImplicitsPtr {
-    pub fn untyped(&self) -> SyntaxStablePtrId {
-        self.0
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TokenImplicitsGreen(pub GreenId);
-impl TokenImplicitsGreen {
-    pub fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        extract_matches!(db.lookup_intern_green(self.0).details, GreenNodeDetails::Token)
-    }
-}
-impl TypedSyntaxNode for TokenImplicits {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TokenImplicits);
-    type StablePtr = TokenImplicitsPtr;
-    type Green = TokenImplicitsGreen;
-    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
-        TokenImplicitsGreen(db.intern_green(GreenNode {
-            kind: SyntaxKind::TokenMissing,
-            details: GreenNodeDetails::Token("".into()),
-        }))
-    }
-    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        match db.lookup_intern_green(node.0.green).details {
-            GreenNodeDetails::Token(_) => Self { node },
-            GreenNodeDetails::Node { .. } => {
-                panic!("Expected a token {:?}, not an internal node", SyntaxKind::TokenImplicits)
-            }
-        }
-    }
-    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
-        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
-    }
-    fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
-    }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TokenImplicitsPtr(self.node.0.stable_ptr)
-    }
-}
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct TerminalImplicits {
-    node: SyntaxNode,
-    children: Vec<SyntaxNode>,
-}
-impl Terminal for TerminalImplicits {
-    const KIND: SyntaxKind = SyntaxKind::TerminalImplicits;
-    type TokenType = TokenImplicits;
-    fn new_green(
-        db: &dyn SyntaxGroup,
-        leading_trivia: TriviaGreen,
-        token: <<TerminalImplicits as Terminal>::TokenType as TypedSyntaxNode>::Green,
-        trailing_trivia: TriviaGreen,
-    ) -> Self::Green {
-        let children: Vec<GreenId> = vec![leading_trivia.0, token.0, trailing_trivia.0];
-        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
-        TerminalImplicitsGreen(db.intern_green(GreenNode {
-            kind: SyntaxKind::TerminalImplicits,
-            details: GreenNodeDetails::Node { children, width },
-        }))
-    }
-    fn text(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        self.token(db).text(db)
-    }
-}
-impl TerminalImplicits {
-    pub fn leading_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[0].clone())
-    }
-    pub fn token(&self, db: &dyn SyntaxGroup) -> TokenImplicits {
-        TokenImplicits::from_syntax_node(db, self.children[1].clone())
-    }
-    pub fn trailing_trivia(&self, db: &dyn SyntaxGroup) -> Trivia {
-        Trivia::from_syntax_node(db, self.children[2].clone())
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalImplicitsPtr(pub SyntaxStablePtrId);
-impl TerminalImplicitsPtr {
-    pub fn untyped(&self) -> SyntaxStablePtrId {
-        self.0
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct TerminalImplicitsGreen(pub GreenId);
-impl TypedSyntaxNode for TerminalImplicits {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::TerminalImplicits);
-    type StablePtr = TerminalImplicitsPtr;
-    type Green = TerminalImplicitsGreen;
-    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
-        TerminalImplicitsGreen(db.intern_green(GreenNode {
-            kind: SyntaxKind::TerminalImplicits,
-            details: GreenNodeDetails::Node {
-                children: vec![
-                    Trivia::missing(db).0,
-                    TokenImplicits::missing(db).0,
-                    Trivia::missing(db).0,
-                ],
-                width: 0,
-            },
-        }))
-    }
-    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        let kind = node.kind(db);
-        assert_eq!(
-            kind,
-            SyntaxKind::TerminalImplicits,
-            "Unexpected SyntaxKind {:?}. Expected {:?}.",
-            kind,
-            SyntaxKind::TerminalImplicits
-        );
-        let children = node.children(db).collect();
-        Self { node, children }
-    }
-    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
-        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
-    }
-    fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
-    }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        TerminalImplicitsPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]

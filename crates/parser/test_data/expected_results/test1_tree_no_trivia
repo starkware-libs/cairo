@@ -49,7 +49,7 @@
     │   │   │   │   └── ty (kind: ExprPath)
     │   │   │   │       └── item #0 (kind: PathSegmentSimple)
     │   │   │   │           └── ident (kind: TokenIdentifier): 'int'
-    │   │   │   ├── implicits_clause (kind: OptionImplicitsClauseEmpty) []
+    │   │   │   ├── use_clause (kind: OptionUseClauseEmpty) []
     │   │   │   └── optional_no_panic (kind: OptionTerminalNoPanicEmpty) []
     │   │   └── body (kind: ExprBlock)
     │   │       ├── lbrace (kind: TokenLBrace): '{'
@@ -348,7 +348,7 @@
     │   │   │   │   └── ty (kind: ExprPath)
     │   │   │   │       └── item #0 (kind: PathSegmentSimple)
     │   │   │   │           └── ident (kind: TokenIdentifier): 'felt'
-    │   │   │   ├── implicits_clause (kind: OptionImplicitsClauseEmpty) []
+    │   │   │   ├── use_clause (kind: OptionUseClauseEmpty) []
     │   │   │   └── optional_no_panic (kind: OptionTerminalNoPanicEmpty) []
     │   │   └── body (kind: ExprBlock)
     │   │       ├── lbrace (kind: TokenLBrace): '{'
@@ -398,7 +398,7 @@
     │   │   │   │       ├── separator #0 (kind: TokenColonColon): '::'
     │   │   │   │       └── item #1 (kind: PathSegmentSimple)
     │   │   │   │           └── ident (kind: TokenIdentifier): 'S'
-    │   │   │   ├── implicits_clause (kind: OptionImplicitsClauseEmpty) []
+    │   │   │   ├── use_clause (kind: OptionUseClauseEmpty) []
     │   │   │   └── optional_no_panic (kind: OptionTerminalNoPanicEmpty) []
     │   │   └── semicolon: Missing
     │   └── child #6 (kind: ItemStruct)

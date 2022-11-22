@@ -39,30 +39,27 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     /// the given function's SCC.
     ///
     /// For better caching, this function should be called only with the representative of the SCC.
-    #[salsa::invoke(crate::lower::implicits::function_scc_explicit_implicits)]
-    fn function_scc_explicit_implicits(
-        &self,
-        function: SCCRepresentative,
-    ) -> Option<HashSet<TypeId>>;
+    #[salsa::invoke(crate::lower::implicits::function_scc_explicit_uses)]
+    fn function_scc_explicit_uses(&self, function: SCCRepresentative) -> Option<HashSet<TypeId>>;
 
     /// Returns all the implicit parameters that the function requires (according to both its
     /// signature and the functions it calls). The items in the returned vector are unique and the
-    /// order is consistent, but not necessarily related to the order of the explicit implicits in
+    /// order is consistent, but not necessarily related to the order of the explicit uses in
     /// the signature of the function.
-    #[salsa::invoke(crate::lower::implicits::function_all_implicits)]
-    fn function_all_implicits(&self, function: semantic::FunctionId) -> Option<Vec<TypeId>>;
+    #[salsa::invoke(crate::lower::implicits::function_all_uses)]
+    fn function_all_uses(&self, function: semantic::FunctionId) -> Option<Vec<TypeId>>;
 
     /// Returns all the implicit parameters that the free function requires (according to both its
     /// signature and the functions it calls).
-    #[salsa::invoke(crate::lower::implicits::free_function_all_implicits)]
-    fn free_function_all_implicits(&self, function: FreeFunctionId) -> Option<HashSet<TypeId>>;
+    #[salsa::invoke(crate::lower::implicits::free_function_all_uses)]
+    fn free_function_all_uses(&self, function: FreeFunctionId) -> Option<HashSet<TypeId>>;
 
     /// Returns all the implicit parameters that the free function requires (according to both its
     /// signature and the functions it calls). The items in the returned vector are unique and the
-    /// order is consistent, but not necessarily related to the order of the explicit implicits in
+    /// order is consistent, but not necessarily related to the order of the explicit uses in
     /// the signature of the function.
-    #[salsa::invoke(crate::lower::implicits::free_function_all_implicits_vec)]
-    fn free_function_all_implicits_vec(&self, function: FreeFunctionId) -> Option<Vec<TypeId>>;
+    #[salsa::invoke(crate::lower::implicits::free_function_all_uses_vec)]
+    fn free_function_all_uses_vec(&self, function: FreeFunctionId) -> Option<Vec<TypeId>>;
 
     /// Returns all the functions in the same strongly connected component as the given function.
     #[salsa::invoke(crate::lower::implicits::function_scc)]

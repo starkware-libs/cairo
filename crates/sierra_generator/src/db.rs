@@ -113,14 +113,14 @@ fn get_function_signature(
     let semantic_function_id = db.lookup_intern_sierra_function(function_id);
     let signature = db.concrete_function_signature(semantic_function_id)?;
 
-    let implicits = db
-        .function_all_implicits(semantic_function_id)?
+    let uses = db
+        .function_all_uses(semantic_function_id)?
         .iter()
         .map(|ty| db.get_concrete_type_id(*ty))
         .collect::<Option<Vec<ConcreteTypeId>>>()?;
 
-    let mut ret_types = implicits.clone();
-    let mut all_params = implicits;
+    let mut ret_types = uses.clone();
+    let mut all_params = uses;
 
     for param in signature.params {
         let concrete_type_id = db.get_concrete_type_id(param.ty)?;
