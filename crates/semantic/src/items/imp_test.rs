@@ -42,7 +42,7 @@ fn test_impl() {
 
     assert_eq!(
         format!("{:?}", db.impl_function_signature(func_ids[0]).unwrap()),
-        "Signature { params: [Parameter { id: ParamId(0), ty: TypeId(1), mutability: Immutable \
+        "Signature { params: [Parameter { id: ParamId(1), ty: TypeId(1), mutability: Immutable \
          }], return_type: TypeId(0), implicits: [], panicable: true }"
     );
 }
