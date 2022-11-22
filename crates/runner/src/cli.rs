@@ -44,7 +44,7 @@ fn main() -> anyhow::Result<()> {
     setup_project(db, Path::new(&args.path))?;
 
     if check_diagnostics(db) {
-        None.with_context(|| "Bad diagnostics.")?;
+        anyhow::bail!("failed to compile: {}", args.path);
     }
 
     let sierra_program =
@@ -96,7 +96,7 @@ fn create_entry_code(
     let mut ctx = casm! {};
     for (i, ty) in main_func.signature.param_types.iter().enumerate() {
         if &main_func.signature.ret_types[i] != ty {
-            None.with_context(|| "We only support main functions with no parameters.")?;
+            anyhow::bail!("We only support main functions with no parameters.");
         }
         if ty == &"RangeCheck".into() {
             casm_extend! {ctx,
@@ -112,15 +112,13 @@ fn create_entry_code(
                         [ap + 0] = initial_gas, ap++;
                     }
                 } else {
-                    None.with_context(|| "Not enough gas to call function.")?;
+                    anyhow::bail!("Not enough gas to call function.");
                 }
             } else {
-                None.with_context(|| {
-                    "GasBuiltin is required while no `available_gas` value provided."
-                })?;
+                anyhow::bail!("GasBuiltin is required while no `available_gas` value provided.");
             }
         } else {
-            None.with_context(|| "Inputs for main are not supported.")?;
+            anyhow::bail!("Inputs for main are not supported.");
         }
     }
     let before_final_call = ctx.current_code_offset;
