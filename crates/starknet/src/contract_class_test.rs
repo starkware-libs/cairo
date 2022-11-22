@@ -86,4 +86,18 @@ fn test_compile_path() {
           "
         }
     );
+
+    assert_eq!(
+        serde_json::to_string_pretty(&contract.abi).unwrap(),
+        indoc! {r#"
+          [
+            {
+              "type": "function",
+              "name": "test",
+              "inputs": [],
+              "output_ty": "core::felt"
+            }
+          ]"#
+        }
+    );
 }
