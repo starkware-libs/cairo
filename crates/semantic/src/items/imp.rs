@@ -457,7 +457,7 @@ fn validate_impl_function_signature(
     };
     let function_name = db.lookup_intern_impl_function(impl_function_id).name(db.upcast());
     let Some(trait_function_id) = trait_functions.get(&function_name).on_none(|| {
-        diagnostics.report(function_syntax, FunctionNotMemberOfTrait { impl_function_id, trait_id })
+        diagnostics.report(function_syntax, FunctionNotMemberOfTrait { impl_id, impl_function_id, trait_id })
     }) else {
         return;
     };
@@ -468,6 +468,9 @@ fn validate_impl_function_signature(
         diagnostics.report(
             &signature_syntax.parameters(syntax_db),
             WrongNumberOfParameters {
+                impl_id,
+                impl_function_id,
+                trait_id,
                 expected: trait_signature.params.len(),
                 actual: signature.params.len(),
             },
@@ -481,7 +484,7 @@ fn validate_impl_function_signature(
         if expected_ty != actual_ty {
             diagnostics.report(
                 &signature_syntax.parameters(syntax_db).elements(syntax_db)[idx],
-                WrongParameterType { impl_function_id, trait_id, expected_ty, actual_ty },
+                WrongParameterType { impl_id, impl_function_id, trait_id, expected_ty, actual_ty },
             );
         }
     }
@@ -502,6 +505,9 @@ fn validate_impl_function_signature(
             }
         }
         .stable_ptr();
-        diagnostics.report_by_ptr(location_ptr, WrongReturnType { expected_ty, actual_ty });
+        diagnostics.report_by_ptr(
+            location_ptr,
+            WrongReturnTypeForImpl { impl_id, impl_function_id, trait_id, expected_ty, actual_ty },
+        );
     }
 }
