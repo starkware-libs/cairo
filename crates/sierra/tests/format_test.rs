@@ -1,6 +1,17 @@
 use indoc::indoc;
 use test_log::test;
 
+#[test]
+fn stuff() {
+    assert_eq!(
+        "core::option::Option::<core::felt>",
+        sierra::ConcreteLabelParser::new()
+            .parse("core::option::Option::<core::felt>")
+            .unwrap()
+            .to_string()
+    );
+}
+
 // Testing by parsing code and printing its display, making sure we get back the formatted code.
 #[test]
 fn format_test() {
@@ -13,6 +24,7 @@ fn format_test() {
                 type ConcreteTypeId  = TypeId<arg>;
                 type  ConcreteTypeId = TypeId<arg1, 4>;
                 type [123] = TypeId<[12],  4>;
+                type [4]= Enum<ut@core::option ::Option:: <core::felt>, [3],[2]>;
                 libfunc CalleeId = LibFuncId ;
                 // Additional comment.
                 libfunc OtherCalleeId = LibFuncId <arg, 4>;
@@ -40,6 +52,7 @@ fn format_test() {
             type ConcreteTypeId = TypeId<arg>;
             type ConcreteTypeId = TypeId<arg1, 4>;
             type [123] = TypeId<[12], 4>;
+            type [4] = Enum<ut@core::option::Option::<core::felt>, [3], [2]>;
 
             libfunc CalleeId = LibFuncId;
             libfunc OtherCalleeId = LibFuncId<arg, 4>;
