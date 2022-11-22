@@ -197,3 +197,165 @@ Statements:
 Drops: v0, v1
 End:
   Callsite(v10, v9)
+
+//! > ==========================================================================
+
+//! > Test extern function enum calling with implicits.
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+func foo(ref a: felt, b: felt) {
+  let x = f(a, b);
+  match x {
+    MyEnum::A(y) => (),
+    MyEnum::B(y) => (),
+    MyEnum::C(y) => (),
+  }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum MyEnum {
+  A: felt,
+  B: (felt,),
+  C: (felt, felt),
+}
+extern func f(ref a: felt, b: felt) -> MyEnum implicits(rc: RangeCheck) nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_format
+blk0:
+Inputs: v3: core::RangeCheck, v4: core::felt, v5: core::felt
+Statements:
+  (v6: test_crate::MyEnum) <- MyEnum::A(v5)
+Drops: v5
+End:
+  Callsite(v3, v4, v6)
+
+blk1:
+Inputs: v7: core::RangeCheck, v8: core::felt, v9: core::felt
+Statements:
+  (v10: (core::felt)) <- struct_construct(v9)
+  (v11: test_crate::MyEnum) <- MyEnum::B(v10)
+Drops: v10, v9
+End:
+  Callsite(v7, v8, v11)
+
+blk2:
+Inputs: v12: core::RangeCheck, v13: core::felt, v14: core::felt, v15: core::felt
+Statements:
+  (v16: (core::felt, core::felt)) <- struct_construct(v14, v15)
+  (v17: test_crate::MyEnum) <- MyEnum::C(v16)
+Drops: v16, v15, v14
+End:
+  Callsite(v12, v13, v17)
+
+blk3:
+Inputs: v21: core::felt
+Statements:
+Drops: v21
+End:
+  Callsite()
+
+blk4:
+Inputs: v22: (core::felt)
+Statements:
+Drops: v22
+End:
+  Callsite()
+
+blk5:
+Inputs: v23: (core::felt, core::felt)
+Statements:
+Drops: v23
+End:
+  Callsite()
+
+blk6:
+Inputs: v0: core::RangeCheck, v1: core::felt, v2: core::felt
+Statements:
+  (v19: core::RangeCheck, v20: core::felt, v18: test_crate::MyEnum) <- match test_crate::f(v0, v1, v2) {
+    (v3, v4, v5) => blk0,
+    (v7, v8, v9) => blk1,
+    (v12, v13, v14, v15) => blk2,
+  }
+  () <- match_enum(v18) {
+    MyEnum::A => blk3,
+    MyEnum::B => blk4,
+    MyEnum::C => blk5,
+  }
+Drops: v2, v1
+End:
+  Callsite(v19, v20)
+
+//! > ==========================================================================
+
+//! > Test extern function enum calling with optimization with implicits.
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+func foo(ref a: felt, b: felt) -> felt {
+  match f(a, b) {
+    MyEnum::A(y) => y,
+    MyEnum::B((y,)) => y,
+    MyEnum::C((y,_)) => y,
+  }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum MyEnum {
+  A: felt,
+  B: (felt,),
+  C: (felt, felt),
+}
+extern func f(ref a: felt, b: felt) -> MyEnum implicits(rc: RangeCheck) nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_format
+blk0:
+Inputs: v3: core::RangeCheck, v4: core::felt, v5: core::felt
+Statements:
+Drops:
+End:
+  Callsite(v3, v4, v5)
+
+blk1:
+Inputs: v6: core::RangeCheck, v7: core::felt, v8: core::felt
+Statements:
+Drops:
+End:
+  Callsite(v6, v7, v8)
+
+blk2:
+Inputs: v9: core::RangeCheck, v10: core::felt, v11: core::felt, v12: core::felt
+Statements:
+Drops: v12
+End:
+  Callsite(v9, v10, v11)
+
+blk3:
+Inputs: v0: core::RangeCheck, v1: core::felt, v2: core::felt
+Statements:
+  (v14: core::RangeCheck, v15: core::felt, v13: core::felt) <- match test_crate::f(v0, v1, v2) {
+    (v3, v4, v5) => blk0,
+    (v6, v7, v8) => blk1,
+    (v9, v10, v11, v12) => blk2,
+  }
+Drops: v2, v1
+End:
+  Callsite(v14, v15, v13)

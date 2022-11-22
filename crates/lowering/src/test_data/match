@@ -90,11 +90,11 @@ test_function_lowering
 
 //! > function
 func foo() -> felt {
-    let x = 7;
-    match x {
-        0 => x,
-        1 => 7,
-    }
+  let x = 7;
+  match x {
+      0 => x,
+      1 => 7,
+  }
 }
 
 //! > function_name
@@ -106,8 +106,8 @@ foo
 
 //! > lowering_diagnostics
 error: Only match zero (match ... { 0 => ..., _ => ... }) is currently supported.
- --> lib.cairo:3:5
-    match x {
-    ^*******^
+ --> lib.cairo:3:3
+  match x {
+  ^*******^
 
 //! > lowering_format
