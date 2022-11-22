@@ -4,7 +4,7 @@ use log::LevelFilter;
 
 /// Initializes env_logger.
 /// The format is:
-/// <level>  /path/to/file:<line_number>  <time>  <log_message>
+/// `<level>  /path/to/file:<line_number>  <time>  <log_message>`
 pub fn init_logging() {
     let filter_level = LevelFilter::Info;
     env_logger::Builder::new()
