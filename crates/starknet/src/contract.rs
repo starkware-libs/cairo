@@ -1,5 +1,9 @@
-use defs::ids::{ModuleItemId, StructId};
+use defs::ids::{LanguageElementId, ModuleItemId, StructId};
 use semantic::db::SemanticGroup;
+use semantic::diagnostic::SemanticDiagnostics;
+use semantic::resolve_path::{ResolvedConcreteItem, Resolver};
+use semantic::ConcreteImplId;
+use syntax::node::{ast, TypedSyntaxNode};
 
 #[cfg(test)]
 #[path = "contract_test.rs"]
@@ -10,6 +14,7 @@ pub struct ContractDeclaration {
     /// The id of the struct that defines the contracts storage.
     pub struct_id: StructId,
     /// A list of Expressions that specify the implementations included in the contract.
+    /// See resolve_contract_impls(...) for more detail.
     pub impls: Vec<syntax::node::ast::Expr>,
 }
 
@@ -41,4 +46,52 @@ pub fn find_contract_structs(db: &dyn SemanticGroup) -> Vec<ContractDeclaration>
         }
     }
     contracts
+}
+
+/// Returns the ConcreteImplId's that should be included in a contract.
+pub fn resolve_contract_impls(
+    db: &(dyn SemanticGroup + 'static),
+    contract: &ContractDeclaration,
+) -> anyhow::Result<Vec<ConcreteImplId>> {
+    let syntax_db = db.upcast();
+
+    let module_file_id = contract.struct_id.module_file(db.upcast());
+    let mut diagnostics = SemanticDiagnostics::new(module_file_id);
+
+    let mut resolver =
+        Resolver::new(db, module_file_id, &db.struct_generic_params(contract.struct_id).unwrap());
+
+    let mut impls = vec![];
+
+    // TODO(ilya): Add error locations.
+    for expr in &contract.impls {
+        match expr {
+            ast::Expr::Path(path) => match resolver.resolve_concrete_path(&mut diagnostics, path) {
+                Some(ResolvedConcreteItem::Impl(concrete_impl_id)) => impls.push(concrete_impl_id),
+                Some(_item) => anyhow::bail!(
+                    "`{}` is not an `impl`.",
+                    path.as_syntax_node().get_text(syntax_db)
+                ),
+                None => {
+                    anyhow::bail!(
+                        "Failed to resolve `{}`.",
+                        path.as_syntax_node().get_text(syntax_db)
+                    )
+                }
+            },
+
+            _ => {
+                anyhow::bail!(
+                    "Expected a path, Got `{}`.",
+                    expr.as_syntax_node().get_text(syntax_db)
+                )
+            }
+        }
+    }
+    let diag = diagnostics.build();
+    if !diag.get_all().is_empty() {
+        // TODO(ilya): Print diagnostics.
+        anyhow::bail!("Got diagnostics while resolving impl path: {}", diag.format(db.upcast()));
+    }
+    Ok(impls)
 }

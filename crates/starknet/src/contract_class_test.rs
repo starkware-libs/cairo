@@ -77,7 +77,14 @@ fn test_compile_path() {
             "L1_HANDLER": [],
             "CONSTRUCTOR": []
           },
-          "abi": []
+          "abi": [
+            {
+              "type": "function",
+              "name": "test",
+              "inputs": [],
+              "output_ty": "core::felt"
+            }
+          ]
         }"#}
     );
 }
