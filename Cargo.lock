@@ -2058,6 +2058,9 @@ dependencies = [
 name = "starknet"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
+ "clap 4.0.26",
+ "compiler",
  "defs",
  "indoc",
  "num-bigint",
@@ -2066,6 +2069,8 @@ dependencies = [
  "semantic",
  "serde",
  "serde_json",
+ "sierra",
+ "sierra_generator",
  "syntax",
  "thiserror",
  "utils",
