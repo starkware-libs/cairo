@@ -8,7 +8,7 @@ use thiserror::Error;
 mod test;
 
 /// Contract ABI.
-#[derive(Default, Debug, Serialize, Deserialize)]
+#[derive(Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(transparent)]
 pub struct Contract {
     // TODO(spapini): Add storage variables.
@@ -71,7 +71,7 @@ pub enum ABIError {
 }
 
 /// Enum of contract item ABIs.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum Item {
     #[serde(rename = "function")]
@@ -79,7 +79,7 @@ pub enum Item {
 }
 
 /// Contract function ABI.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Function {
     pub name: String,
     pub inputs: Vec<Input>,
@@ -87,7 +87,7 @@ pub struct Function {
 }
 
 /// Function input ABI.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Input {
     pub name: String,
     pub ty: String,

@@ -3,6 +3,8 @@ use num_traits::Num;
 use serde::ser::Serializer;
 use serde::{Deserialize, Deserializer, Serialize};
 
+use crate::abi;
+
 #[cfg(test)]
 #[path = "contract_class_test.rs"]
 mod test;
@@ -12,6 +14,7 @@ mod test;
 pub struct ContractClass {
     pub sierra_program: String,
     pub entry_points_by_type: ContractEntryPoints,
+    pub abi: abi::Contract,
 }
 
 #[derive(Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
