@@ -30,15 +30,19 @@ foo
 felt_const<10>() -> ([0])
 felt_jump_nz([0]) { fallthrough() label0([1]) }
 felt_const<3>() -> ([2])
-PushValues([2]: felt) -> ([3])
+enum_init<core::PanicResult::<core::felt>, 0>([2]) -> ([3])
+PushValues([3]: core::PanicResult::<core::felt>) -> ([4])
 burn_gas() -> ()
 jump() { label1() }
 label0:
-felt_const<4>() -> ([4])
-PushValues([4]: felt) -> ([5])
-PushValues([5]: felt) -> ([3])
+felt_const<4>() -> ([5])
+enum_init<core::PanicResult::<core::felt>, 0>([5]) -> ([6])
+PushValues([6]: core::PanicResult::<core::felt>) -> ([7])
+enum_init<core::PanicResult::<core::felt>, 0>([7]) -> ([8])
+PushValues([8]: core::PanicResult::<core::felt>) -> ([4])
 burn_gas() -> ()
 label1:
+enum_init<core::PanicResult::<core::felt>, 0>([4]) -> ([9])
 
 //! > ==========================================================================
 
@@ -70,11 +74,14 @@ foo
 //! > sierra_code
 felt_const<7>() -> ([0])
 felt_jump_nz([0]) { fallthrough() label0([1]) }
-PushValues([0]: felt) -> ([2])
+enum_init<core::PanicResult::<core::felt>, 0>([0]) -> ([2])
+PushValues([2]: core::PanicResult::<core::felt>) -> ([3])
 burn_gas() -> ()
 jump() { label1() }
 label0:
-felt_const<7>() -> ([3])
-PushValues([3]: felt) -> ([2])
+felt_const<7>() -> ([4])
+enum_init<core::PanicResult::<core::felt>, 0>([4]) -> ([5])
+PushValues([5]: core::PanicResult::<core::felt>) -> ([3])
 burn_gas() -> ()
 label1:
+enum_init<core::PanicResult::<core::felt>, 0>([3]) -> ([6])

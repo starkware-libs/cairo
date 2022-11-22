@@ -30,38 +30,41 @@ blk1:
 Inputs: v2: core::felt
 Statements:
   (v3: core::result::Result::<core::felt, core::felt>) <- Result::Err(v2)
+  (v4: core::PanicResult::<core::result::Result::<core::felt, core::felt>>) <- PanicResult::Ok(v3)
 Drops: v2, v0
 End:
-  Return(v3)
+  Return(v4)
 
 blk2:
-Inputs: v5: core::integer::uint128
+Inputs: v6: core::integer::uint128
 Statements:
 Drops:
 End:
-  Callsite(v5)
+  Callsite(v6)
 
 blk3:
-Inputs: v6: core::felt
+Inputs: v7: core::felt
 Statements:
-  (v7: core::result::Result::<core::felt, core::felt>) <- Result::Err(v6)
-Drops: v6, v4
+  (v8: core::result::Result::<core::felt, core::felt>) <- Result::Err(v7)
+  (v9: core::PanicResult::<core::result::Result::<core::felt, core::felt>>) <- PanicResult::Ok(v8)
+Drops: v7, v5
 End:
-  Return(v7)
+  Return(v9)
 
 blk4:
 Inputs: v0: core::result::Result::<core::result::Result::<core::integer::uint128, core::felt>, core::felt>
 Statements:
-  (v4: core::result::Result::<core::integer::uint128, core::felt>) <- match_enum(v0) {
+  (v5: core::result::Result::<core::integer::uint128, core::felt>) <- match_enum(v0) {
     Result::Ok => blk0,
     Result::Err => blk1,
   }
-  (v8: core::integer::uint128) <- match_enum(v4) {
+  (v10: core::integer::uint128) <- match_enum(v5) {
     Result::Ok => blk2,
     Result::Err => blk3,
   }
-  (v9: core::felt) <- 1u
-  (v10: core::result::Result::<core::felt, core::felt>) <- Result::Ok(v9)
-Drops: v8, v9
+  (v11: core::felt) <- 1u
+  (v12: core::result::Result::<core::felt, core::felt>) <- Result::Ok(v11)
+  (v13: core::PanicResult::<core::result::Result::<core::felt, core::felt>>) <- PanicResult::Ok(v12)
+Drops: v10, v11
 End:
-  Callsite(v10)
+  Callsite(v13)

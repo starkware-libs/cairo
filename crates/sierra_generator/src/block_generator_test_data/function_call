@@ -30,9 +30,31 @@ felt_const<1>() -> ([0])
 felt_const<2>() -> ([1])
 PushValues([2]: MyStruct, [0]: felt, [1]: felt) -> ([5], [6], [7])
 function_call<user@test_crate::bar>([5], [6], [7]) -> ([3], [4])
-felt_add([4], [4]) -> ([8])
-PushValues([3]: MyStruct, [4]: felt, [8]: felt) -> ([11], [12], [13])
-function_call<user@test_crate::bar>([11], [12], [13]) -> ([9], [10])
+enum_match<core::PanicResult::<core::felt>>([4]) { label0([8]) label1([9]) }
+label0:
+PushValues([8]: felt) -> ([10])
+burn_gas() -> ()
+jump() { label2() }
+label1:
+enum_init<core::PanicResult::<core::felt>, 0>([9]) -> ([11])
+PushValues([11]: core::PanicResult::<core::felt>) -> ([12])
+burn_gas() -> ()
+return([12])
+label2:
+felt_add([10], [10]) -> ([13])
+PushValues([3]: MyStruct, [10]: felt, [13]: felt) -> ([16], [17], [18])
+function_call<user@test_crate::bar>([16], [17], [18]) -> ([14], [15])
+enum_match<core::PanicResult::<core::felt>>([15]) { label3([19]) label4([20]) }
+label3:
+PushValues([19]: felt) -> ([21])
+burn_gas() -> ()
+jump() { label5() }
+label4:
+enum_init<core::PanicResult::<core::felt>, 0>([20]) -> ([22])
+PushValues([22]: core::PanicResult::<core::felt>) -> ([23])
+burn_gas() -> ()
+return([23])
+label5:
 
 //! > ==========================================================================
 
@@ -70,14 +92,59 @@ felt_const<7>() -> ([0])
 felt_const<7>() -> ([1])
 PushValues([0]: felt, [1]: felt) -> ([3], [4])
 function_call<user@test_crate::bar>([3], [4]) -> ([2])
-felt_const<7>() -> ([5])
-PushValues([0]: felt, [5]: felt) -> ([7], [8])
-function_call<user@test_crate::bar>([7], [8]) -> ([6])
-felt_const<7>() -> ([9])
-PushValues([0]: felt, [9]: felt) -> ([11], [12])
-function_call<user@test_crate::bar>([11], [12]) -> ([10])
-PushValues([6]: felt, [10]: felt) -> ([14], [15])
-function_call<user@test_crate::bar2>([14], [15]) -> ([13])
+enum_match<core::PanicResult::<core::felt>>([2]) { label0([5]) label1([6]) }
+label0:
+PushValues([5]: felt) -> ([7])
+burn_gas() -> ()
+jump() { label2() }
+label1:
+enum_init<core::PanicResult::<core::felt>, 0>([6]) -> ([8])
+PushValues([8]: core::PanicResult::<core::felt>) -> ([9])
+burn_gas() -> ()
+return([9])
+label2:
+felt_const<7>() -> ([10])
+PushValues([0]: felt, [10]: felt) -> ([12], [13])
+function_call<user@test_crate::bar>([12], [13]) -> ([11])
+enum_match<core::PanicResult::<core::felt>>([11]) { label3([14]) label4([15]) }
+label3:
+PushValues([14]: felt) -> ([16])
+burn_gas() -> ()
+jump() { label5() }
+label4:
+enum_init<core::PanicResult::<core::felt>, 0>([15]) -> ([17])
+PushValues([17]: core::PanicResult::<core::felt>) -> ([18])
+burn_gas() -> ()
+return([18])
+label5:
+felt_const<7>() -> ([19])
+PushValues([0]: felt, [19]: felt) -> ([21], [22])
+function_call<user@test_crate::bar>([21], [22]) -> ([20])
+enum_match<core::PanicResult::<core::felt>>([20]) { label6([23]) label7([24]) }
+label6:
+PushValues([23]: felt) -> ([25])
+burn_gas() -> ()
+jump() { label8() }
+label7:
+enum_init<core::PanicResult::<core::felt>, 0>([24]) -> ([26])
+PushValues([26]: core::PanicResult::<core::felt>) -> ([27])
+burn_gas() -> ()
+return([27])
+label8:
+PushValues([16]: felt, [25]: felt) -> ([29], [30])
+function_call<user@test_crate::bar2>([29], [30]) -> ([28])
+enum_match<core::PanicResult::<core::felt>>([28]) { label9([31]) label10([32]) }
+label9:
+PushValues([31]: felt) -> ([33])
+burn_gas() -> ()
+jump() { label11() }
+label10:
+enum_init<core::PanicResult::<core::felt>, 0>([32]) -> ([34])
+PushValues([34]: core::PanicResult::<core::felt>) -> ([35])
+burn_gas() -> ()
+return([35])
+label11:
+enum_init<core::PanicResult::<core::felt>, 0>([33]) -> ([36])
 
 //! > ==========================================================================
 
@@ -111,3 +178,15 @@ extern func my_libfunc(a: felt, b: felt) -> felt;
 felt_const<3>() -> ([0])
 felt_const<6>() -> ([1])
 my_libfunc([0], [1]) -> ([2])
+enum_match<core::PanicResult::<core::felt>>([2]) { label0([3]) label1([4]) }
+label0:
+PushValues([3]: felt) -> ([5])
+burn_gas() -> ()
+jump() { label2() }
+label1:
+enum_init<core::PanicResult::<core::felt>, 0>([4]) -> ([6])
+PushValues([6]: core::PanicResult::<core::felt>) -> ([7])
+burn_gas() -> ()
+return([7])
+label2:
+enum_init<core::PanicResult::<core::felt>, 0>([5]) -> ([8])

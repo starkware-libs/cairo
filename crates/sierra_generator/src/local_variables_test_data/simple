@@ -26,22 +26,61 @@ func revoke_ap() -> felt {
 
 //! > lowering_format
 blk0:
+Inputs: v5: core::felt
+Statements:
+Drops:
+End:
+  Callsite(v5)
+
+blk1:
+Inputs: v6: core::felt
+Statements:
+  (v7: core::PanicResult::<core::felt>) <- PanicResult::Ok(v6)
+Drops: v6, v0, v1, v2, v3, v4
+End:
+  Return(v7)
+
+blk2:
+Inputs: v11: core::felt
+Statements:
+Drops:
+End:
+  Callsite(v11)
+
+blk3:
+Inputs: v12: core::felt
+Statements:
+  (v13: core::PanicResult::<core::felt>) <- PanicResult::Ok(v12)
+Drops: v12, v0, v1, v2, v3, v8, v9, v10
+End:
+  Return(v13)
+
+blk4:
 Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- core::felt_add(v0, v0)
   (v2: core::felt) <- core::felt_add(v1, v1)
   (v3: core::felt) <- core::felt_add(v2, v2)
-  (v4: core::felt) <- test_crate::revoke_ap()
-  (v5: core::felt) <- core::felt_add(v0, v2)
-  (v6: core::felt) <- test_crate::revoke_ap()
-  (v7: core::felt) <- core::felt_add(v0, v2)
-  (v8: core::felt) <- core::felt_add(v7, v5)
-Drops: v8, v1, v2, v3, v4, v5, v6, v7
+  (v4: core::PanicResult::<core::felt>) <- test_crate::revoke_ap()
+  (v8: core::felt) <- match_enum(v4) {
+    PanicResult::Ok => blk0,
+    PanicResult::Ok => blk1,
+  }
+  (v9: core::felt) <- core::felt_add(v0, v2)
+  (v10: core::PanicResult::<core::felt>) <- test_crate::revoke_ap()
+  (v14: core::felt) <- match_enum(v10) {
+    PanicResult::Ok => blk2,
+    PanicResult::Ok => blk3,
+  }
+  (v15: core::felt) <- core::felt_add(v0, v2)
+  (v16: core::felt) <- core::felt_add(v15, v9)
+  (v17: core::PanicResult::<core::felt>) <- PanicResult::Ok(v0)
+Drops: v0, v1, v2, v3, v8, v9, v14, v15, v16
 End:
-  Callsite(v0)
+  Callsite(v17)
 
 //! > local_variables
-v2, v5
+v2, v9
 
 //! > ==========================================================================
 
@@ -68,13 +107,33 @@ func revoke_ap() -> felt {
 
 //! > lowering_format
 blk0:
+Inputs: v3: core::felt
+Statements:
+Drops:
+End:
+  Callsite(v3)
+
+blk1:
+Inputs: v4: core::felt
+Statements:
+  (v5: core::PanicResult::<core::felt>) <- PanicResult::Ok(v4)
+Drops: v4, v0, v1, v2
+End:
+  Return(v5)
+
+blk2:
 Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- core::felt_add(v0, v0)
-  (v2: core::felt) <- test_crate::revoke_ap()
-Drops: v0, v2
+  (v2: core::PanicResult::<core::felt>) <- test_crate::revoke_ap()
+  (v6: core::felt) <- match_enum(v2) {
+    PanicResult::Ok => blk0,
+    PanicResult::Ok => blk1,
+  }
+  (v7: core::PanicResult::<core::felt>) <- PanicResult::Ok(v1)
+Drops: v0, v1, v6
 End:
-  Return(v1)
+  Return(v7)
 
 //! > local_variables
 v1
@@ -108,6 +167,21 @@ func revoke_ap() -> felt {
 
 //! > lowering_format
 blk0:
+Inputs: v10: core::felt
+Statements:
+Drops:
+End:
+  Callsite(v10)
+
+blk1:
+Inputs: v11: core::felt
+Statements:
+  (v12: core::PanicResult::<core::felt>) <- PanicResult::Ok(v11)
+Drops: v11, v0, v1, v2, v3, v4, v5, v6, v7, v8, v9
+End:
+  Return(v12)
+
+blk2:
 Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- core::felt_add(v0, v0)
@@ -115,11 +189,16 @@ Statements:
   (v3: core::felt, v4: core::felt) <- core::dup<Type(core::felt),>(v2)
   (v5: core::felt, v6: core::felt) <- core::dup<Type(core::felt),>(v4)
   (v7: core::felt, v8: core::felt) <- core::dup<Type(core::felt),>(v5)
-  (v9: core::felt) <- test_crate::revoke_ap()
-  (v10: core::felt) <- core::felt_add(v7, v8)
-Drops: v0, v1, v2, v3, v4, v5, v6, v7, v8, v9
+  (v9: core::PanicResult::<core::felt>) <- test_crate::revoke_ap()
+  (v13: core::felt) <- match_enum(v9) {
+    PanicResult::Ok => blk0,
+    PanicResult::Ok => blk1,
+  }
+  (v14: core::felt) <- core::felt_add(v7, v8)
+  (v15: core::PanicResult::<core::felt>) <- PanicResult::Ok(v14)
+Drops: v0, v1, v2, v3, v4, v5, v6, v7, v8, v13, v14
 End:
-  Callsite(v10)
+  Callsite(v15)
 
 //! > local_variables
 v2

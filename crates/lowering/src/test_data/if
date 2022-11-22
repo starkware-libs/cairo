@@ -26,27 +26,30 @@ blk0:
 Inputs: v2: ()
 Statements:
   (v3: core::felt) <- 1u
-Drops: v2, v1
+  (v4: core::PanicResult::<core::felt>) <- PanicResult::Ok(v3)
+Drops: v2, v3
 End:
-  Callsite(v3)
+  Callsite(v4)
 
 blk1:
-Inputs: v4: ()
+Inputs: v5: ()
 Statements:
-Drops: v4
+  (v6: core::PanicResult::<core::felt>) <- PanicResult::Ok(v1)
+Drops: v5
 End:
-  Callsite(v1)
+  Callsite(v6)
 
 blk2:
 Inputs: v0: core::bool, v1: core::felt
 Statements:
-  (v5: core::felt) <- match_enum(v0) {
+  (v7: core::PanicResult::<core::felt>) <- match_enum(v0) {
     bool::True => blk0,
     bool::False => blk1,
   }
+  (v8: core::PanicResult::<core::felt>) <- PanicResult::Ok(v7)
 Drops: v0, v1
 End:
-  Callsite(v5)
+  Callsite(v8)
 
 //! > ==========================================================================
 
@@ -78,27 +81,30 @@ blk0:
 Inputs:
 Statements:
   (v1: core::felt) <- 1u
-Drops: v0
+  (v2: core::PanicResult::<core::felt>) <- PanicResult::Ok(v1)
+Drops: v1
 End:
-  Callsite(v1)
+  Callsite(v2)
 
 blk1:
-Inputs: v2: core::NonZero::<core::felt>
+Inputs: v3: core::NonZero::<core::felt>
 Statements:
-Drops: v2
+  (v4: core::PanicResult::<core::felt>) <- PanicResult::Ok(v0)
+Drops: v3
 End:
-  Callsite(v0)
+  Callsite(v4)
 
 blk2:
 Inputs: v0: core::felt
 Statements:
-  (v3: core::felt) <- match core::felt_jump_nz(v0) {
+  (v5: core::PanicResult::<core::felt>) <- match core::felt_jump_nz(v0) {
     () => blk0,
-    (v2) => blk1,
+    (v3) => blk1,
   }
+  (v6: core::PanicResult::<core::felt>) <- PanicResult::Ok(v5)
 Drops: v0
 End:
-  Callsite(v3)
+  Callsite(v6)
 
 //! > ==========================================================================
 
@@ -129,14 +135,15 @@ blk0:
 Inputs:
 Statements:
   (v1: core::felt) <- 10u
-Drops: v0
+  (v2: core::PanicResult::<core::felt>) <- PanicResult::Ok(v1)
+Drops: v1, v0
 End:
-  Return(v1)
+  Return(v2)
 
 blk1:
-Inputs: v2: core::NonZero::<core::felt>
+Inputs: v3: core::NonZero::<core::felt>
 Statements:
-Drops: v2
+Drops: v3
 End:
   Callsite()
 
@@ -145,12 +152,13 @@ Inputs: v0: core::felt
 Statements:
   () <- match core::felt_jump_nz(v0) {
     () => blk0,
-    (v2) => blk1,
+    (v3) => blk1,
   }
-  (v3: core::felt) <- 20u
-Drops: v0
+  (v4: core::felt) <- 20u
+  (v5: core::PanicResult::<core::felt>) <- PanicResult::Ok(v4)
+Drops: v0, v4
 End:
-  Callsite(v3)
+  Callsite(v5)
 
 //! > ==========================================================================
 
@@ -182,17 +190,19 @@ blk0:
 Inputs:
 Statements:
   (v7: core::felt) <- 0u
-Drops:
+  (v8: core::PanicResult::<core::felt>) <- PanicResult::Ok(v7)
+Drops: v7
 End:
-  Callsite(v7)
+  Callsite(v8)
 
 blk1:
-Inputs: v8: core::NonZero::<core::felt>
+Inputs: v9: core::NonZero::<core::felt>
 Statements:
-  (v9: core::felt) <- 1u
-Drops: v8
+  (v10: core::felt) <- 1u
+  (v11: core::PanicResult::<core::felt>) <- PanicResult::Ok(v10)
+Drops: v9, v10
 End:
-  Callsite(v9)
+  Callsite(v11)
 
 blk2:
 Inputs: v0: core::felt, v1: core::felt, v2: core::felt, v3: core::felt
@@ -200,10 +210,11 @@ Statements:
   (v4: core::felt) <- core::felt_add(v0, v1)
   (v5: core::felt) <- core::felt_sub(v2, v3)
   (v6: core::felt) <- core::felt_sub(v4, v5)
-  (v10: core::felt) <- match core::felt_jump_nz(v6) {
+  (v12: core::PanicResult::<core::felt>) <- match core::felt_jump_nz(v6) {
     () => blk0,
-    (v8) => blk1,
+    (v9) => blk1,
   }
+  (v13: core::PanicResult::<core::felt>) <- PanicResult::Ok(v12)
 Drops: v0, v1, v2, v3, v4, v5, v6
 End:
-  Callsite(v10)
+  Callsite(v13)

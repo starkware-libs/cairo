@@ -98,23 +98,29 @@ End:
 blk3:
 Inputs: v16: core::felt
 Statements:
-Drops: v16
+  (v17: ()) <- struct_construct()
+  (v18: core::PanicResult::<()>) <- PanicResult::Ok(v17)
+Drops: v16, v17
 End:
-  Callsite()
+  Callsite(v18)
 
 blk4:
-Inputs: v17: (core::felt)
+Inputs: v19: (core::felt)
 Statements:
-Drops: v17
+  (v20: ()) <- struct_construct()
+  (v21: core::PanicResult::<()>) <- PanicResult::Ok(v20)
+Drops: v19, v20
 End:
-  Callsite()
+  Callsite(v21)
 
 blk5:
-Inputs: v18: (core::felt, core::felt)
+Inputs: v22: (core::felt, core::felt)
 Statements:
-Drops: v18
+  (v23: ()) <- struct_construct()
+  (v24: core::PanicResult::<()>) <- PanicResult::Ok(v23)
+Drops: v22, v23
 End:
-  Callsite()
+  Callsite(v24)
 
 blk6:
 Inputs: v0: core::felt, v1: core::felt
@@ -124,14 +130,15 @@ Statements:
     (v5, v6) => blk1,
     (v9, v10, v11) => blk2,
   }
-  () <- match_enum(v14) {
+  (v25: core::PanicResult::<()>) <- match_enum(v14) {
     MyEnum::A => blk3,
     MyEnum::B => blk4,
     MyEnum::C => blk5,
   }
+  (v26: core::PanicResult::<()>) <- PanicResult::Ok(v25)
 Drops: v0, v1
 End:
-  Callsite(v15)
+  Callsite(v15, v26)
 
 //! > ==========================================================================
 
@@ -168,32 +175,36 @@ extern func f(ref a: felt, b: felt) -> MyEnum nopanic;
 blk0:
 Inputs: v2: core::felt, v3: core::felt
 Statements:
-Drops:
+  (v4: core::PanicResult::<core::felt>) <- PanicResult::Ok(v3)
+Drops: v3
 End:
-  Callsite(v2, v3)
+  Callsite(v2, v4)
 
 blk1:
-Inputs: v4: core::felt, v5: core::felt
+Inputs: v5: core::felt, v6: core::felt
 Statements:
-Drops:
+  (v7: core::PanicResult::<core::felt>) <- PanicResult::Ok(v6)
+Drops: v6
 End:
-  Callsite(v4, v5)
+  Callsite(v5, v7)
 
 blk2:
-Inputs: v6: core::felt, v7: core::felt, v8: core::felt
+Inputs: v8: core::felt, v9: core::felt, v10: core::felt
 Statements:
-Drops: v8
+  (v11: core::PanicResult::<core::felt>) <- PanicResult::Ok(v9)
+Drops: v10, v9
 End:
-  Callsite(v6, v7)
+  Callsite(v8, v11)
 
 blk3:
 Inputs: v0: core::felt, v1: core::felt
 Statements:
-  (v10: core::felt, v9: core::felt) <- match test_crate::f(v0, v1) {
+  (v13: core::felt, v12: core::PanicResult::<core::felt>) <- match test_crate::f(v0, v1) {
     (v2, v3) => blk0,
-    (v4, v5) => blk1,
-    (v6, v7, v8) => blk2,
+    (v5, v6) => blk1,
+    (v8, v9, v10) => blk2,
   }
+  (v14: core::PanicResult::<core::felt>) <- PanicResult::Ok(v12)
 Drops: v0, v1
 End:
-  Callsite(v10, v9)
+  Callsite(v13, v14)

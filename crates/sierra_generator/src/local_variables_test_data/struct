@@ -30,21 +30,60 @@ struct MyStruct {
 
 //! > lowering_format
 blk0:
+Inputs: v3: core::felt
+Statements:
+Drops:
+End:
+  Callsite(v3)
+
+blk1:
+Inputs: v4: core::felt
+Statements:
+  (v5: core::PanicResult::<core::felt>) <- PanicResult::Ok(v4)
+Drops: v4, v0, v1, v2
+End:
+  Return(v5)
+
+blk2:
+Inputs: v15: core::felt
+Statements:
+Drops:
+End:
+  Callsite(v15)
+
+blk3:
+Inputs: v16: core::felt
+Statements:
+  (v17: core::PanicResult::<core::felt>) <- PanicResult::Ok(v16)
+Drops: v16, v0, v1, v6, v8, v9, v10, v11, v12, v13, v14
+End:
+  Return(v17)
+
+blk4:
 Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- core::felt_add(v0, v0)
-  (v2: core::felt) <- test_crate::revoke_ap()
-  (v3: test_crate::MyStruct) <- struct_construct(v0, v1)
-  (v4: core::felt, v5: core::felt) <- struct_destructure(v3)
-  (v6: core::felt) <- 0u
-  (v7: test_crate::MyStruct) <- struct_construct(v4, v6)
-  (v8: core::felt) <- 1u
-  (v9: test_crate::MyStruct) <- struct_construct(v0, v8)
-  (v10: core::felt) <- test_crate::revoke_ap()
-  (v11: core::felt, v12: core::felt) <- struct_destructure(v9)
-Drops: v0, v1, v2, v4, v5, v6, v7, v8, v10, v12
+  (v2: core::PanicResult::<core::felt>) <- test_crate::revoke_ap()
+  (v6: core::felt) <- match_enum(v2) {
+    PanicResult::Ok => blk0,
+    PanicResult::Ok => blk1,
+  }
+  (v7: test_crate::MyStruct) <- struct_construct(v0, v1)
+  (v8: core::felt, v9: core::felt) <- struct_destructure(v7)
+  (v10: core::felt) <- 0u
+  (v11: test_crate::MyStruct) <- struct_construct(v8, v10)
+  (v12: core::felt) <- 1u
+  (v13: test_crate::MyStruct) <- struct_construct(v0, v12)
+  (v14: core::PanicResult::<core::felt>) <- test_crate::revoke_ap()
+  (v18: core::felt) <- match_enum(v14) {
+    PanicResult::Ok => blk2,
+    PanicResult::Ok => blk3,
+  }
+  (v19: core::felt, v20: core::felt) <- struct_destructure(v13)
+  (v21: core::PanicResult::<core::felt>) <- PanicResult::Ok(v19)
+Drops: v0, v1, v6, v8, v9, v10, v11, v12, v18, v19, v20
 End:
-  Callsite(v11)
+  Callsite(v21)
 
 //! > local_variables
-v1, v9
+v1, v13

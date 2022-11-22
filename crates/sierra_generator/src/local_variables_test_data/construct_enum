@@ -26,14 +26,34 @@ struct MyStruct {
 
 //! > lowering_format
 blk0:
+Inputs: v3: core::felt
+Statements:
+Drops:
+End:
+  Callsite(v3)
+
+blk1:
+Inputs: v4: core::felt
+Statements:
+  (v5: core::PanicResult::<core::felt>) <- PanicResult::Ok(v4)
+Drops: v4, v0, v1, v2
+End:
+  Return(v5)
+
+blk2:
 Inputs:
 Statements:
   (v0: ()) <- struct_construct()
   (v1: core::bool) <- bool::True(v0)
-  (v2: core::felt) <- test_crate::revoke_ap()
-Drops: v0, v2
+  (v2: core::PanicResult::<core::felt>) <- test_crate::revoke_ap()
+  (v6: core::felt) <- match_enum(v2) {
+    PanicResult::Ok => blk0,
+    PanicResult::Ok => blk1,
+  }
+  (v7: core::PanicResult::<core::bool>) <- PanicResult::Ok(v1)
+Drops: v0, v1, v6
 End:
-  Callsite(v1)
+  Callsite(v7)
 
 //! > local_variables
 v1

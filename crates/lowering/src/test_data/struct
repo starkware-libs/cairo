@@ -31,9 +31,10 @@ Statements:
   (v3: core::felt) <- 7u
   (v4: (core::felt, core::felt)) <- struct_construct(v2, v3)
   (v5: test_crate::MyStruct) <- struct_construct(v1, v0, v4)
+  (v6: core::PanicResult::<test_crate::MyStruct>) <- PanicResult::Ok(v5)
 Drops: v0, v1, v2, v3, v4
 End:
-  Callsite(v5)
+  Callsite(v6)
 
 //! > ==========================================================================
 
@@ -66,9 +67,10 @@ blk0:
 Inputs: v0: test_crate::MyStruct
 Statements:
   (v1: (), v2: core::felt, v3: (core::felt, core::felt)) <- struct_destructure(v0)
-Drops: v1, v3
+  (v4: core::PanicResult::<core::felt>) <- PanicResult::Ok(v2)
+Drops: v1, v2, v3
 End:
-  Callsite(v2)
+  Callsite(v4)
 
 //! > ==========================================================================
 
@@ -104,6 +106,7 @@ Statements:
   (v1: (), v2: core::felt, v3: (core::felt, core::felt)) <- struct_destructure(v0)
   (v4: core::felt, v5: core::felt) <- struct_destructure(v3)
   (v6: (core::felt, core::felt)) <- struct_construct(v4, v2)
-Drops: v1, v2, v3, v4, v5
+  (v7: core::PanicResult::<(core::felt, core::felt)>) <- PanicResult::Ok(v6)
+Drops: v1, v2, v3, v4, v5, v6
 End:
-  Callsite(v6)
+  Callsite(v7)

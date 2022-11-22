@@ -1,5 +1,5 @@
 // Calculates fib...
-func fib(a: felt, b: felt, n: felt) -> (felt, felt) {
+func fib(a: felt, b: felt, n: felt) -> (felt, felt) nopanic {
     match n {
         0 => (a, 0),
         _ => {

@@ -27,28 +27,31 @@ Inputs:
 Statements:
   (v2: core::felt) <- 1u
   (v3: core::felt) <- core::felt_add(v0, v2)
-Drops: v1, v2
+  (v4: core::PanicResult::<core::felt>) <- PanicResult::Ok(v3)
+Drops: v3, v2
 End:
-  Callsite(v3)
+  Callsite(v4)
 
 blk1:
-Inputs: v4: core::NonZero::<core::felt>
+Inputs: v5: core::NonZero::<core::felt>
 Statements:
-Drops: v4
+  (v6: core::PanicResult::<core::felt>) <- PanicResult::Ok(v1)
+Drops: v5
 End:
-  Callsite(v1)
+  Callsite(v6)
 
 blk2:
 Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- 7u
-  (v5: core::felt) <- match core::felt_jump_nz(v1) {
+  (v7: core::PanicResult::<core::felt>) <- match core::felt_jump_nz(v1) {
     () => blk0,
-    (v4) => blk1,
+    (v5) => blk1,
   }
+  (v8: core::PanicResult::<core::felt>) <- PanicResult::Ok(v7)
 Drops: v0, v1
 End:
-  Callsite(v5)
+  Callsite(v8)
 
 //! > ==========================================================================
 

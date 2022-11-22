@@ -25,11 +25,13 @@ foo
 //! > sierra_code
 felt_jump_nz([0]) { fallthrough() label0([1]) }
 felt_const<1>() -> ([2])
-PushValues([2]: felt) -> ([3])
+enum_init<core::PanicResult::<core::felt>, 0>([2]) -> ([3])
+PushValues([3]: core::PanicResult::<core::felt>) -> ([4])
 burn_gas() -> ()
-return([3])
+return([4])
 label0:
 PushValues() -> ()
 burn_gas() -> ()
 label1:
-felt_const<2>() -> ([4])
+felt_const<2>() -> ([5])
+enum_init<core::PanicResult::<core::felt>, 0>([5]) -> ([6])

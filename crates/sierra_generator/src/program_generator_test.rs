@@ -8,11 +8,11 @@ use crate::test_utils::checked_compile_to_sierra;
 fn test_program_generator() {
     // TODO(lior): Make bar return something like felt_add(5, bar()).
     let program = checked_compile_to_sierra(indoc! {"
-                func foo(a: felt) -> felt {
+                func foo(a: felt) -> felt nopanic {
                     bar(5)
                 }
 
-                func bar(a: felt) -> felt {
+                func bar(a: felt) -> felt nopanic {
                     felt_add(a, a)
                 }
             "});
@@ -58,7 +58,7 @@ fn test_program_generator() {
 #[test]
 fn test_type_dependency() {
     let program = checked_compile_to_sierra(indoc! {"
-                func unbox_twice(a: Box::<Box::<Box::<felt>>>) -> Box::<felt> {
+                func unbox_twice(a: Box::<Box::<Box::<felt>>>) -> Box::<felt> nopanic {
                     unbox::<Box::<felt>>(unbox::<Box::<Box::<felt>>>(a))
                 }
             "});

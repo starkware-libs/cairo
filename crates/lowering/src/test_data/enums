@@ -28,17 +28,19 @@ blk0:
 Inputs:
 Statements:
   (v3: core::felt) <- 5u
-Drops:
+  (v4: core::PanicResult::<test_crate::MyEnum>) <- PanicResult::Ok(v3)
+Drops: v3
 End:
-  Callsite(v3)
+  Callsite(v4)
 
 blk1:
 Inputs: v0: core::felt
 Statements:
   (v1: ()) <- struct_construct()
   (v2: core::bool) <- bool::True(v1)
-  (v4: core::felt) <- blk0()
-  (v5: test_crate::MyEnum) <- MyEnum::B(v4)
-Drops: v0, v1, v2, v4
+  (v5: core::PanicResult::<test_crate::MyEnum>) <- blk0()
+  (v6: test_crate::MyEnum) <- MyEnum::B(v5)
+  (v7: core::PanicResult::<test_crate::MyEnum>) <- PanicResult::Ok(v6)
+Drops: v0, v1, v2
 End:
-  Callsite(v5)
+  Callsite(v7)

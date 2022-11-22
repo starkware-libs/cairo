@@ -17,12 +17,12 @@ fn test_function_generator() {
     let module_id = setup_test_module(
         &mut db,
         indoc! {"
-                func foo(a: felt, b: felt) -> felt {
+                func foo(a: felt, b: felt) -> felt nopanic {
                     let b = felt_add(a, 5);
                     bar(b, b, b)
                 }
 
-                func bar(x: felt, y: felt, z: felt) -> felt {
+                func bar(x: felt, y: felt, z: felt) -> felt nopanic {
                     0
                 }
             "},
@@ -71,14 +71,14 @@ fn test_function_generator_local_vars() {
     let module_id = setup_test_module(
         &mut db,
         indoc! {"
-            func foo(a: felt) -> felt {
+            func foo(a: felt) -> felt nopanic {
                 let b = a + a + a;
                 revoke_ap();
                 b
             }
 
             // Revokes ap since this function is recursive.
-            func revoke_ap() -> felt {
+            func revoke_ap() -> felt nopanic {
                 revoke_ap()
             }
         "},

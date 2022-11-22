@@ -35,73 +35,118 @@ func revoke_ap() -> felt {
 
 //! > lowering_format
 blk0:
-Inputs:
+Inputs: v5: core::felt
 Statements:
-  (v3: core::felt) <- test_crate::revoke_ap()
-  (v4: core::felt) <- core::unwrap_nz<Type(core::felt),>(v2)
-Drops: v3
-End:
-  Callsite(v4)
-
-blk1:
-Inputs:
-Statements:
-  (v1: core::felt) <- 1u
-Drops:
-End:
-  Callsite(v1)
-
-blk2:
-Inputs: v2: core::NonZero::<core::felt>
-Statements:
-  (v5: core::felt) <- blk0()
 Drops:
 End:
   Callsite(v5)
 
+blk1:
+Inputs: v6: core::felt
+Statements:
+  (v7: core::PanicResult::<core::felt>) <- PanicResult::Ok(v6)
+Drops: v6, v4, v3, v0
+End:
+  Return(v7)
+
+blk2:
+Inputs:
+Statements:
+  (v4: core::PanicResult::<core::felt>) <- test_crate::revoke_ap()
+  (v8: core::felt) <- match_enum(v4) {
+    PanicResult::Ok => blk0,
+    PanicResult::Ok => blk1,
+  }
+  (v9: core::felt) <- core::unwrap_nz<Type(core::felt),>(v3)
+  (v10: core::PanicResult::<core::felt>) <- PanicResult::Ok(v9)
+Drops: v8, v9
+End:
+  Callsite(v10)
+
 blk3:
 Inputs:
 Statements:
-  (v10: core::felt) <- test_crate::revoke_ap()
-  (v11: core::felt) <- core::unwrap_nz<Type(core::felt),>(v9)
-Drops: v10
+  (v1: core::felt) <- 1u
+  (v2: core::PanicResult::<core::felt>) <- PanicResult::Ok(v1)
+Drops: v1
 End:
-  Callsite(v11)
+  Callsite(v2)
 
 blk4:
-Inputs:
+Inputs: v3: core::NonZero::<core::felt>
 Statements:
-  (v8: core::felt) <- 1u
-Drops:
-End:
-  Callsite(v8)
-
-blk5:
-Inputs: v9: core::NonZero::<core::felt>
-Statements:
-  (v12: core::felt) <- blk3()
+  (v11: core::PanicResult::<core::felt>) <- blk2()
+  (v12: core::PanicResult::<core::felt>) <- PanicResult::Ok(v11)
 Drops:
 End:
   Callsite(v12)
 
+blk5:
+Inputs: v19: core::felt
+Statements:
+Drops:
+End:
+  Callsite(v19)
+
 blk6:
+Inputs: v20: core::felt
+Statements:
+  (v21: core::PanicResult::<core::felt>) <- PanicResult::Ok(v20)
+Drops: v20, v18, v17, v0, v13, v14
+End:
+  Return(v21)
+
+blk7:
+Inputs:
+Statements:
+  (v18: core::PanicResult::<core::felt>) <- test_crate::revoke_ap()
+  (v22: core::felt) <- match_enum(v18) {
+    PanicResult::Ok => blk5,
+    PanicResult::Ok => blk6,
+  }
+  (v23: core::felt) <- core::unwrap_nz<Type(core::felt),>(v17)
+  (v24: core::PanicResult::<core::felt>) <- PanicResult::Ok(v23)
+Drops: v22, v23
+End:
+  Callsite(v24)
+
+blk8:
+Inputs:
+Statements:
+  (v15: core::felt) <- 1u
+  (v16: core::PanicResult::<core::felt>) <- PanicResult::Ok(v15)
+Drops: v15
+End:
+  Callsite(v16)
+
+blk9:
+Inputs: v17: core::NonZero::<core::felt>
+Statements:
+  (v25: core::PanicResult::<core::felt>) <- blk7()
+  (v26: core::PanicResult::<core::felt>) <- PanicResult::Ok(v25)
+Drops:
+End:
+  Callsite(v26)
+
+blk10:
 Inputs: v0: core::felt
 Statements:
-  (v6: core::felt) <- match core::felt_jump_nz(v0) {
-    () => blk1,
-    (v2) => blk2,
+  (v13: core::PanicResult::<core::felt>) <- match core::felt_jump_nz(v0) {
+    () => blk3,
+    (v3) => blk4,
   }
-  (v7: core::felt) <- core::felt_add(v0, v0)
-  (v13: core::felt) <- match core::felt_jump_nz(v7) {
-    () => blk4,
-    (v9) => blk5,
+  (v14: core::felt) <- core::felt_add(v0, v0)
+  (v27: core::PanicResult::<core::felt>) <- match core::felt_jump_nz(v14) {
+    () => blk8,
+    (v17) => blk9,
   }
-Drops: v0, v6, v7
+  (v28: core::PanicResult::<core::felt>) <- PanicResult::Ok(v27)
+Drops: v0, v13, v14
 End:
-  Callsite(v13)
+  Callsite(v28)
 
 //! > local_variables
-v7
+v14
 
 //! > ==========================================================================
 
@@ -136,55 +181,79 @@ blk0:
 Inputs:
 Statements:
   (v3: core::felt) <- 1u
-Drops:
+  (v4: core::PanicResult::<core::felt>) <- PanicResult::Ok(v3)
+Drops: v3
 End:
-  Callsite(v3)
+  Callsite(v4)
 
 blk1:
-Inputs: v4: core::NonZero::<core::felt>
+Inputs: v5: core::NonZero::<core::felt>
 Statements:
-  (v5: core::felt) <- 2u
-Drops: v4
+  (v6: core::felt) <- 2u
+  (v7: core::PanicResult::<core::felt>) <- PanicResult::Ok(v6)
+Drops: v5, v6
 End:
-  Callsite(v5)
+  Callsite(v7)
 
 blk2:
 Inputs:
 Statements:
-  (v8: core::felt) <- 1u
-Drops:
+  (v10: core::felt) <- 1u
+  (v11: core::PanicResult::<core::felt>) <- PanicResult::Ok(v10)
+Drops: v10
 End:
-  Callsite(v8)
+  Callsite(v11)
 
 blk3:
-Inputs: v9: core::NonZero::<core::felt>
+Inputs: v12: core::NonZero::<core::felt>
 Statements:
-  (v10: core::felt) <- 2u
-Drops: v9
+  (v13: core::felt) <- 2u
+  (v14: core::PanicResult::<core::felt>) <- PanicResult::Ok(v13)
+Drops: v12, v13
 End:
-  Callsite(v10)
+  Callsite(v14)
 
 blk4:
+Inputs: v17: core::felt
+Statements:
+Drops:
+End:
+  Callsite(v17)
+
+blk5:
+Inputs: v18: core::felt
+Statements:
+  (v19: core::PanicResult::<core::felt>) <- PanicResult::Ok(v18)
+Drops: v18, v0, v1, v2, v9, v15, v16
+End:
+  Return(v19)
+
+blk6:
 Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- core::felt_add(v0, v0)
   (v2: core::felt) <- core::felt_add(v1, v1)
-  (v6: core::felt) <- match core::felt_jump_nz(v2) {
+  (v8: core::PanicResult::<core::felt>) <- match core::felt_jump_nz(v2) {
     () => blk0,
-    (v4) => blk1,
+    (v5) => blk1,
   }
-  (v7: core::felt) <- core::felt_add(v1, v6)
-  (v11: core::felt) <- match core::felt_jump_nz(v1) {
+  (v9: core::felt) <- core::felt_add(v1, v8)
+  (v15: core::PanicResult::<core::felt>) <- match core::felt_jump_nz(v1) {
     () => blk2,
-    (v9) => blk3,
+    (v12) => blk3,
   }
-  (v12: core::felt) <- test_crate::revoke_ap()
-Drops: v0, v1, v2, v6, v7, v12
+  (v16: core::PanicResult::<core::felt>) <- test_crate::revoke_ap()
+  (v20: core::felt) <- match_enum(v16) {
+    PanicResult::Ok => blk4,
+    PanicResult::Ok => blk5,
+  }
+  (v21: core::PanicResult::<core::felt>) <- PanicResult::Ok(v15)
+Drops: v0, v1, v2, v9, v20
 End:
-  Callsite(v11)
+  Callsite(v21)
 
 //! > local_variables
-v1, v11
+v1, v15
 
 //! > ==========================================================================
 
@@ -231,71 +300,96 @@ func revoke_ap() -> felt {
 
 //! > lowering_format
 blk0:
-Inputs:
+Inputs: v6: core::felt
 Statements:
-  (v4: core::felt) <- test_crate::revoke_ap()
-  (v5: core::felt) <- 0u
-Drops: v4, v3, v0, v1
+Drops:
 End:
-  Return(v5)
+  Callsite(v6)
 
 blk1:
-Inputs:
+Inputs: v7: core::felt
 Statements:
-  (v2: core::felt) <- 1u
-Drops:
+  (v8: core::PanicResult::<core::felt>) <- PanicResult::Ok(v7)
+Drops: v7, v5, v4, v0, v1
 End:
-  Callsite(v2)
+  Return(v8)
 
 blk2:
-Inputs: v3: core::NonZero::<core::felt>
+Inputs:
 Statements:
-  () <- blk0()
-Drops:
+  (v5: core::PanicResult::<core::felt>) <- test_crate::revoke_ap()
+  (v9: core::felt) <- match_enum(v5) {
+    PanicResult::Ok => blk0,
+    PanicResult::Ok => blk1,
+  }
+  (v10: core::felt) <- 0u
+  (v11: core::PanicResult::<core::felt>) <- PanicResult::Ok(v10)
+Drops: v9, v10, v4, v0, v1
 End:
-  Unreachable
+  Return(v11)
 
 blk3:
 Inputs:
 Statements:
-  (v10: core::felt) <- 2u
-Drops:
+  (v2: core::felt) <- 1u
+  (v3: core::PanicResult::<core::felt>) <- PanicResult::Ok(v2)
+Drops: v2
 End:
-  Callsite(v10)
+  Callsite(v3)
 
 blk4:
-Inputs:
+Inputs: v4: core::NonZero::<core::felt>
 Statements:
-  (v8: core::felt) <- 1u
+  () <- blk2()
 Drops:
 End:
-  Callsite(v8)
+  Unreachable
 
 blk5:
-Inputs: v9: core::NonZero::<core::felt>
+Inputs:
 Statements:
-  (v11: core::felt) <- blk3()
-Drops: v9
+  (v17: core::felt) <- 2u
+  (v18: core::PanicResult::<core::felt>) <- PanicResult::Ok(v17)
+Drops: v17
 End:
-  Callsite(v11)
+  Callsite(v18)
 
 blk6:
+Inputs:
+Statements:
+  (v14: core::felt) <- 1u
+  (v15: core::PanicResult::<core::felt>) <- PanicResult::Ok(v14)
+Drops: v14
+End:
+  Callsite(v15)
+
+blk7:
+Inputs: v16: core::NonZero::<core::felt>
+Statements:
+  (v19: core::PanicResult::<core::felt>) <- blk5()
+  (v20: core::PanicResult::<core::felt>) <- PanicResult::Ok(v19)
+Drops: v16
+End:
+  Callsite(v20)
+
+blk8:
 Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- core::felt_add(v0, v0)
-  (v6: core::felt) <- match core::felt_jump_nz(v0) {
-    () => blk1,
-    (v3) => blk2,
+  (v12: core::PanicResult::<core::felt>) <- match core::felt_jump_nz(v0) {
+    () => blk3,
+    (v4) => blk4,
   }
-  (v7: core::felt) <- core::felt_add(v1, v0)
-  (v12: core::felt) <- match core::felt_jump_nz(v0) {
-    () => blk4,
-    (v9) => blk5,
+  (v13: core::felt) <- core::felt_add(v1, v0)
+  (v21: core::PanicResult::<core::felt>) <- match core::felt_jump_nz(v0) {
+    () => blk6,
+    (v16) => blk7,
   }
-  (v13: core::felt) <- core::felt_add(v7, v0)
-Drops: v0, v1, v6, v7, v12
+  (v22: core::felt) <- core::felt_add(v13, v0)
+  (v23: core::PanicResult::<core::felt>) <- PanicResult::Ok(v22)
+Drops: v0, v1, v12, v13, v21, v22
 End:
-  Callsite(v13)
+  Callsite(v23)
 
 //! > local_variables
-v7
+v13

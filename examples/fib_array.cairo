@@ -1,9 +1,9 @@
 // Returns an array of size n with the values of the Fibonacci sequence.
-func fib(n: felt) -> Array::<felt> {
+func fib(n: felt) -> Array::<felt> nopanic {
     fib_inner(1, 1, n, array_new::<felt>())
 }
 
-func fib_inner(a: felt, b: felt, remaining: felt, arr: Array::<felt>) -> Array::<felt> {
+func fib_inner(a: felt, b: felt, remaining: felt, arr: Array::<felt>) -> Array::<felt> nopanic {
     if remaining == 0 {
         return arr;
     }

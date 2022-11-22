@@ -1,6 +1,6 @@
 impl MyCopy of Copy::<Option::<(felt, felt)>>;
 
-func foo(x: Option::<(felt, felt)>) -> Option::<felt> {
+func foo(x: Option::<(felt, felt)>) -> Option::<felt> nopanic {
     let y = x;
     match x {
         Option::Some (x) => {

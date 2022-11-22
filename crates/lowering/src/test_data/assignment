@@ -43,6 +43,7 @@ Statements:
     bool::True => blk0,
     bool::False => blk1,
   }
-Drops: v0, v1
+  (v6: core::PanicResult::<core::felt>) <- PanicResult::Ok(v5)
+Drops: v0, v1, v5
 End:
-  Callsite(v5)
+  Callsite(v6)
