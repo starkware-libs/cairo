@@ -3,7 +3,7 @@ use defs::ids::{
     GenericFunctionId, GenericParamId, LanguageElementId, TraitFunctionId, TraitFunctionLongId,
     TraitId,
 };
-use diagnostics::Diagnostics;
+use diagnostics::{Diagnostics, DiagnosticsBuilder};
 use diagnostics_proc_macros::DebugWithDb;
 use smol_str::SmolStr;
 use syntax::node::{ast, TypedSyntaxNode};
@@ -43,7 +43,18 @@ pub fn trait_semantic_diagnostics(
     db: &dyn SemanticGroup,
     trait_id: TraitId,
 ) -> Diagnostics<SemanticDiagnostic> {
-    db.priv_trait_semantic_data(trait_id).map(|data| data.diagnostics).unwrap_or_default()
+    let mut diagnostics = DiagnosticsBuilder::default();
+
+    let Some(data) = db.priv_trait_semantic_data(trait_id) else {
+        return Diagnostics::default();
+    };
+
+    diagnostics.extend(data.diagnostics);
+    for trait_function_id in data.function_asts.keys() {
+        diagnostics.extend(db.trait_function_diagnostics(*trait_function_id));
+    }
+
+    diagnostics.build()
 }
 
 /// Query implementation of [crate::db::SemanticGroup::trait_generic_params].

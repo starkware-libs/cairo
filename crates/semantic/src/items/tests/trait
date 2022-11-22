@@ -12,7 +12,7 @@ foo
 //! > module_code
 struct A {}
 trait MyTrait<T> {
-    func param_test(a: uint128) -> felt nopanic;
+    func param_test(a: uint128) -> bad_type nopanic;
 
     func no_ret_ty(a: uint128) -> felt;
 }
@@ -44,6 +44,11 @@ impl MyImpl2<T> of MyTrait::<T> {
 }
 
 //! > expected_diagnostics
+error: Path not found.
+ --> lib.cairo:3:36
+    func param_test(a: uint128) -> bad_type nopanic;
+                                   ^******^
+
 error: `mod` is not allowed inside impl.
  --> lib.cairo:9:5
     mod a;
@@ -104,7 +109,7 @@ error: The signature of function `param_test` is incompatible with trait `MyTrai
     func param_test(a: felt, b: felt) -> uint128 {
                    ^***************************^
 
-error: Unexpected return type. Expected: "core::felt", found: "core::integer::uint128".
+error: Unexpected return type. Expected: "<missing>", found: "core::integer::uint128".
  --> lib.cairo:25:42
     func param_test(a: felt, b: felt) -> uint128 {
                                          ^*****^
