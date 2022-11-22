@@ -35,7 +35,7 @@ fn main() -> anyhow::Result<()> {
     setup_project(db, Path::new(&args.path))?;
 
     if check_diagnostics(db) {
-        return Err(anyhow::Error::msg(format!("failed to compile: {}", args.path)));
+        anyhow::bail!("failed to compile: {}", args.path);
     }
 
     let mut sierra_program =
