@@ -87,7 +87,12 @@ impl LoweredExprExternEnum {
                         .ref_args
                         .iter()
                         .map(|semantic_var_id| ctx.semantic_defs[*semantic_var_id].ty());
-                    let input_tys = chain!(ref_tys, variant_input_tys.into_iter()).collect();
+                    let input_tys = chain!(
+                        self.implicits.iter().cloned(),
+                        ref_tys,
+                        variant_input_tys.into_iter()
+                    )
+                    .collect();
                     merger.run_in_subscope(ctx, input_tys, |ctx, subscope, mut arm_inputs| {
                         let implicit_outputs: Vec<_> =
                             arm_inputs.drain(0..self.implicits.len()).collect();
