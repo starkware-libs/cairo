@@ -1,5 +1,5 @@
 use casm::ap_change::ApChange;
-use casm::{casm, deref};
+use casm::casm;
 use num_bigint::BigInt;
 use pretty_assertions::assert_eq;
 use sierra::program::StatementIdx;
@@ -24,9 +24,9 @@ fn test_add() {
                 %{ memory[ap + 0] = memory [ap - 1] < (BigInt::from(2).pow(128)) %}
                 jmp rel 7 if [ap + 0] != 0, ap++;
                 [ap + 0] = [ap - 2] + (-BigInt::from(2).pow(128)), ap++;
-                [ap - 1] = [[deref!([fp + 2])]];
+                [ap - 1] = [[fp + 2]];
                 jmp rel 0;
-                [ap - 2] = [[deref!([fp + 2])]];
+                [ap - 2] = [[fp + 2]];
             }
             .instructions,
             relocations: vec![RelocationEntry {
@@ -60,9 +60,9 @@ fn test_sub() {
                 %{ memory[ap + 0] = memory [ap - 1] < (BigInt::from(2).pow(128)) %}
                 jmp rel 7 if [ap + 0] != 0, ap++;
                 [ap + 0] = [ap - 2] + (BigInt::from(2).pow(128)), ap++;
-                [ap - 1] = [[deref!([ap - 5])]];
+                [ap - 1] = [[ap - 5]];
                 jmp rel 0;
-                [ap - 2] = [[deref!([ap - 4])]];
+                [ap - 2] = [[ap - 4]];
             }
             .instructions,
             relocations: vec![RelocationEntry {
@@ -92,18 +92,18 @@ fn test_lt() {
         ),
         ReducedCompiledInvocation {
             instructions: casm! {
-                %{ memory[ap + 0] = memory[ap - 7] < memory[ap - 6] %}
-                jmp rel 6 if [ap + 0] != 0, ap++;
-                [ap + -8] = [ap + 0] + [ap + -7], ap++;
-                [ap + 0] = [[deref!([fp + -5])]];
-                jmp rel 0;
+                %{ memory[ap + 0] = memory[ap - 6] <= memory[ap - 7] %}
+                jmp rel 8 if [ap + 0] != 0, ap++;
                 [ap + 0] = [ap + -8] + 1, ap++;
                 [ap + -8] = [ap + 0] + [ap + -1], ap++;
-                [ap + 0] = [[deref!([fp - 5])]];
+                [ap - 1] = [[fp - 5]];
+                jmp rel 0;
+                [ap + -8] = [ap + 0] + [ap + -7], ap++;
+                [ap - 1] = [[fp + -5]];
             }
             .instructions,
             relocations: vec![RelocationEntry {
-                instruction_idx: 3,
+                instruction_idx: 4,
                 relocation: Relocation::RelativeStatementId(StatementIdx(1))
             }],
             results: vec![
@@ -129,18 +129,18 @@ fn test_le() {
         ),
         ReducedCompiledInvocation {
             instructions: casm! {
-                %{ memory[ap + 0] = memory[ap - 7] <= memory[ap - 6] %}
-                jmp rel 8 if [ap + 0] != 0, ap++;
+                %{ memory[ap + 0] = memory[ap - 6] < memory[ap - 7] %}
+                jmp rel 6 if [ap + 0] != 0, ap++;
+                [ap + -7] = [ap + 0] + [ap + -8], ap++;
+                [ap - 1] = [[fp + -5]];
+                jmp rel 0;
                 [ap + 0] = [ap + -7] + 1, ap++;
                 [ap + -9] = [ap + 0] + [ap + -1], ap++;
-                [ap + 0] = [[deref!([fp - 5])]];
-                jmp rel 0;
-                [ap + -7] = [ap + 0] + [ap + -8], ap++;
-                [ap + 0] = [[deref!([fp + -5])]];
+                [ap - 1] = [[fp - 5]];
             }
             .instructions,
             relocations: vec![RelocationEntry {
-                instruction_idx: 4,
+                instruction_idx: 3,
                 relocation: Relocation::RelativeStatementId(StatementIdx(1))
             }],
             results: vec![
