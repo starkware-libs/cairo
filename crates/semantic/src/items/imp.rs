@@ -468,6 +468,8 @@ fn validate_impl_function_signature(
         diagnostics.report(
             &signature_syntax.parameters(syntax_db),
             WrongNumberOfParameters {
+                impl_function_id,
+                trait_id,
                 expected: trait_signature.params.len(),
                 actual: signature.params.len(),
             },
@@ -502,6 +504,9 @@ fn validate_impl_function_signature(
             }
         }
         .stable_ptr();
-        diagnostics.report_by_ptr(location_ptr, WrongReturnType { expected_ty, actual_ty });
+        diagnostics.report_by_ptr(
+            location_ptr,
+            WrongReturnTypeForImpl { impl_function_id, trait_id, expected_ty, actual_ty },
+        );
     }
 }

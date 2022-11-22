@@ -953,7 +953,7 @@ fn expr_function_call(
     if arg_exprs.len() != signature.params.len() {
         ctx.diagnostics.report_by_ptr(
             stable_ptr.untyped(),
-            WrongNumberOfParameters { expected: signature.params.len(), actual: arg_exprs.len() },
+            WrongNumberOfArguments { expected: signature.params.len(), actual: arg_exprs.len() },
         );
         return None;
     }
