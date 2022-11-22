@@ -1,4 +1,4 @@
-use num_bigint::BigUint;
+use num_bigint::{BigInt, BigUint};
 use num_traits::Num;
 use serde::ser::Serializer;
 use serde::{Deserialize, Deserializer, Serialize};
@@ -54,4 +54,11 @@ where
             .map_err(|error| serde::de::Error::custom(format!("{}", error))),
         None => Err(serde::de::Error::custom(format!("{s} does not start with `0x` is missing."))),
     }
+}
+
+/// Represents a contract in the StarkNet network.
+#[derive(Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CasmContractClass {
+    pub bytecode: Vec<BigInt>,
+    pub entry_points_by_type: ContractEntryPoints,
 }
