@@ -460,25 +460,31 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn parse_binary_operator(&mut self) -> BinaryOperatorGreen {
-        match self.peek().kind {
-            SyntaxKind::TerminalDot => self.take::<TerminalDot>().into(),
-            SyntaxKind::TerminalNot => self.take::<TerminalNot>().into(),
-            SyntaxKind::TerminalMul => self.take::<TerminalMul>().into(),
-            SyntaxKind::TerminalDiv => self.take::<TerminalDiv>().into(),
-            SyntaxKind::TerminalPlus => self.take::<TerminalPlus>().into(),
-            SyntaxKind::TerminalMinus => self.take::<TerminalMinus>().into(),
-            SyntaxKind::TerminalEq => self.take::<TerminalEq>().into(),
-            SyntaxKind::TerminalEqEq => self.take::<TerminalEqEq>().into(),
-            SyntaxKind::TerminalLT => self.take::<TerminalLT>().into(),
-            SyntaxKind::TerminalGT => self.take::<TerminalGT>().into(),
-            SyntaxKind::TerminalLE => self.take::<TerminalLE>().into(),
-            SyntaxKind::TerminalGE => self.take::<TerminalGE>().into(),
-            SyntaxKind::TerminalAnd => self.take::<TerminalAnd>().into(),
-            SyntaxKind::TerminalOr => self.take::<TerminalOr>().into(),
-            _ => unreachable!(),
+    /// Assumes the current token is an operator (binary or unary).
+    /// Returns a GreenId of the operator or None if the operator is a unary-only operator.
+    fn try_parse_binary_operator(&mut self) -> Option<BinaryOperatorGreen> {
+        if self.peek().kind == SyntaxKind::TerminalNot {
+            None
+        } else {
+            Some(match self.peek().kind {
+                SyntaxKind::TerminalDot => self.take::<TerminalDot>().into(),
+                SyntaxKind::TerminalMul => self.take::<TerminalMul>().into(),
+                SyntaxKind::TerminalDiv => self.take::<TerminalDiv>().into(),
+                SyntaxKind::TerminalPlus => self.take::<TerminalPlus>().into(),
+                SyntaxKind::TerminalMinus => self.take::<TerminalMinus>().into(),
+                SyntaxKind::TerminalEq => self.take::<TerminalEq>().into(),
+                SyntaxKind::TerminalEqEq => self.take::<TerminalEqEq>().into(),
+                SyntaxKind::TerminalLT => self.take::<TerminalLT>().into(),
+                SyntaxKind::TerminalGT => self.take::<TerminalGT>().into(),
+                SyntaxKind::TerminalLE => self.take::<TerminalLE>().into(),
+                SyntaxKind::TerminalGE => self.take::<TerminalGE>().into(),
+                SyntaxKind::TerminalAnd => self.take::<TerminalAnd>().into(),
+                SyntaxKind::TerminalOr => self.take::<TerminalOr>().into(),
+                _ => unreachable!(),
+            })
         }
     }
+    /// Assumes the current token is a unary operator, and returns a GreenId of the operator.
     fn parse_unary_operator(&mut self) -> UnaryOperatorGreen {
         match self.peek().kind {
             SyntaxKind::TerminalNot => self.take::<TerminalNot>().into(),
@@ -519,9 +525,12 @@ impl<'a> Parser<'a> {
             if precedence >= parent_precedence {
                 return Some(expr);
             }
-            let op = self.parse_binary_operator();
-            let rhs = self.parse_expr_limited(precedence, lbrace_allowed);
-            expr = ExprBinary::new_green(self.db, expr, op, rhs).into();
+            if let Some(op) = self.try_parse_binary_operator() {
+                let rhs = self.parse_expr_limited(precedence, lbrace_allowed);
+                expr = ExprBinary::new_green(self.db, expr, op, rhs).into();
+            } else {
+                return Some(expr);
+            }
         }
         Some(expr)
     }
