@@ -6,7 +6,7 @@ use log::LevelFilter;
 /// The format is:
 /// <level>  /path/to/file:<line_number>  <time>  <log_message>
 pub fn init_logging() {
-    let filter_level = LevelFilter::Info;
+    let filter_level = LevelFilter::Off;
     env_logger::Builder::new()
         .filter_level(filter_level)
         .format(|buf, record| {
