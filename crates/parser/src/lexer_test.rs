@@ -55,6 +55,7 @@ fn terminal_kind_to_text(kind: SyntaxKind) -> Vec<&'static str> {
         SyntaxKind::TerminalMul => vec!["*"],
         SyntaxKind::TerminalNeq => vec!["!="],
         SyntaxKind::TerminalNot => vec!["!"],
+        SyntaxKind::TerminalOr => vec!["|"],
         SyntaxKind::TerminalOrOr => vec!["||"],
         SyntaxKind::TerminalPlus => vec!["+"],
         SyntaxKind::TerminalSemicolon => vec![";"],
@@ -102,6 +103,7 @@ fn terminal_kinds() -> Vec<SyntaxKind> {
         SyntaxKind::TerminalUse,
         SyntaxKind::TerminalAnd,
         SyntaxKind::TerminalAndAnd,
+        SyntaxKind::TerminalOr,
         SyntaxKind::TerminalOrOr,
         SyntaxKind::TerminalEqEq,
         SyntaxKind::TerminalNeq,
@@ -154,6 +156,7 @@ fn need_separator(
         return true;
     }
     if (text0 == "&" && text1.starts_with('&'))
+        || (text0 == "|" && text1.starts_with('|'))
         || (text0 == "/" && text1 == "/")
         || ((text0 == "=" || text0 == "!") && text1.starts_with('='))
         || ((text0 == "=") && text1.starts_with('>'))

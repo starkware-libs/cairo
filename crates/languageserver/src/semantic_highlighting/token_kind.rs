@@ -28,6 +28,7 @@ impl SemanticTokenKind {
             SyntaxKind::TokenLiteralNumber => SemanticTokenKind::Number,
             SyntaxKind::TokenAnd
             | SyntaxKind::TokenAndAnd
+            | SyntaxKind::TokenOr
             | SyntaxKind::TokenOrOr
             | SyntaxKind::TokenEqEq
             | SyntaxKind::TokenNeq

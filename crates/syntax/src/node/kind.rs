@@ -130,6 +130,8 @@ pub enum SyntaxKind {
     TerminalAnd,
     TokenAndAnd,
     TerminalAndAnd,
+    TokenOr,
+    TerminalOr,
     TokenOrOr,
     TerminalOrOr,
     TokenEqEq,
@@ -230,6 +232,7 @@ impl SyntaxKind {
                 | SyntaxKind::TokenNoPanic
                 | SyntaxKind::TokenAnd
                 | SyntaxKind::TokenAndAnd
+                | SyntaxKind::TokenOr
                 | SyntaxKind::TokenOrOr
                 | SyntaxKind::TokenEqEq
                 | SyntaxKind::TokenNeq
@@ -297,6 +300,7 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalNoPanic
                 | SyntaxKind::TerminalAnd
                 | SyntaxKind::TerminalAndAnd
+                | SyntaxKind::TerminalOr
                 | SyntaxKind::TerminalOrOr
                 | SyntaxKind::TerminalEqEq
                 | SyntaxKind::TerminalNeq
