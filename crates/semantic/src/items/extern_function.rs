@@ -4,6 +4,7 @@ use diagnostics_proc_macros::DebugWithDb;
 
 use super::generics::semantic_generic_params;
 use crate::db::SemanticGroup;
+use crate::diagnostic::SemanticDiagnosticKind::PanicableExternFunction;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::Environment;
 use crate::resolve_path::Resolver;
@@ -89,6 +90,11 @@ pub fn priv_extern_function_declaration_data(
         GenericFunctionId::Extern(extern_function_id),
         &mut environment,
     );
+
+    if signature.panicable {
+        diagnostics.report(function_syntax, PanicableExternFunction);
+    }
+
     Some(ExternFunctionDeclarationData {
         diagnostics: diagnostics.build(),
         signature,

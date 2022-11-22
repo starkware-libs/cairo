@@ -15,10 +15,10 @@ func foo(ref a: felt, b: felt) {
 foo
 
 //! > module_code
-extern func f(ref a: felt, b: felt) -> felt;
-extern func g(ref a: felt, b: felt) -> (felt,);
-extern func h(ref a: felt, b: felt) -> (felt,felt);
-extern func i(ref a: felt, b: felt) -> ((felt,),);
+extern func f(ref a: felt, b: felt) -> felt nopanic;
+extern func g(ref a: felt, b: felt) -> (felt,) nopanic;
+extern func h(ref a: felt, b: felt) -> (felt,felt) nopanic;
+extern func i(ref a: felt, b: felt) -> ((felt,),) nopanic;
 
 //! > semantic_diagnostics
 
@@ -62,7 +62,7 @@ enum MyEnum {
   B: (felt,),
   C: (felt, felt),
 }
-extern func f(ref a: felt, b: felt) -> MyEnum;
+extern func f(ref a: felt, b: felt) -> MyEnum nopanic;
 
 //! > semantic_diagnostics
 
@@ -158,7 +158,7 @@ enum MyEnum {
   B: (felt,),
   C: (felt, felt),
 }
-extern func f(ref a: felt, b: felt) -> MyEnum;
+extern func f(ref a: felt, b: felt) -> MyEnum nopanic;
 
 //! > semantic_diagnostics
 

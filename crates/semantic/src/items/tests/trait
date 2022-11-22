@@ -20,7 +20,7 @@ impl MyImpl of MyTrait::<A>;
 impl MyImpl2<T> of MyTrait::<T> {
     mod a;
     use b;
-    extern func extern_func();
+    extern func extern_func() nopanic;
     extern type DummyType;
 
     trait DummyTrait;
@@ -56,7 +56,7 @@ error: `use` is not allowed inside impl.
 
 error: `extern` is not allowed inside impl.
  --> lib.cairo:11:5
-    extern func extern_func();
+    extern func extern_func() nopanic;
     ^****^
 
 error: `extern` is not allowed inside impl.

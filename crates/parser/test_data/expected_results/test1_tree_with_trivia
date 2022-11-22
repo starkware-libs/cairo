@@ -1157,9 +1157,11 @@
     │       │   │   ├── child #0 (kind: TokenSkipped): '<'
     │       │   │   ├── child #1 (kind: TokenSkipped): 'int'
     │       │   │   ├── child #2 (kind: TokenSkipped): '>'
-    │       │   │   ├── child #3 (kind: TokenSkipped): ';'
-    │       │   │   ├── child #4 (kind: TokenNewline).
-    │       │   │   └── child #5 (kind: TokenNewline).
+    │       │   │   ├── child #3 (kind: TokenWhitespace).
+    │       │   │   ├── child #4 (kind: TokenSkipped): 'nopanic'
+    │       │   │   ├── child #5 (kind: TokenSkipped): ';'
+    │       │   │   ├── child #6 (kind: TokenNewline).
+    │       │   │   └── child #7 (kind: TokenNewline).
     │       │   ├── token (kind: TokenStruct): 'struct'
     │       │   └── trailing_trivia (kind: Trivia)
     │       │       └── child #0 (kind: TokenWhitespace).
