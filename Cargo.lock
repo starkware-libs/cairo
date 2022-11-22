@@ -377,6 +377,7 @@ dependencies = [
 name = "compiler"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "clap 4.0.26",
  "db_utils",
  "defs",
