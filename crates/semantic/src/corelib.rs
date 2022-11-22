@@ -228,6 +228,7 @@ pub fn core_binary_operator(
         BinaryOperator::Or(_) if [type1, type2] == [bool_ty, bool_ty] => "bool_or",
         BinaryOperator::Or(_) => return unsupported_operator("|"),
         BinaryOperator::LE(_) if [type1, type2] == [felt, felt] => "felt_le",
+        BinaryOperator::LE(_) if [type1, type2] == [uint128, uint128] => "uint128_le",
         BinaryOperator::LE(_) => return unsupported_operator("<="),
         BinaryOperator::GE(_) if [type1, type2] == [felt, felt] => "felt_ge",
         BinaryOperator::GE(_) => return unsupported_operator(">="),
