@@ -5,7 +5,7 @@ test_function_diagnostics
 
 //! > function
 extern type A<S>;
-extern func bar<T>(x:T) -> A::<T>;
+extern func bar<T>(x:T) -> A::<T> nopanic;
 
 func foo(a: A::<felt>) -> A::<A::<felt>> {
     let res = bar::<A::<felt>>(a);
