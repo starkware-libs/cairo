@@ -5,10 +5,9 @@ use log::LevelFilter;
 /// Initializes env_logger.
 /// The format is:
 /// <level>  /path/to/file:<line_number>  <time>  <log_message>
-pub fn init_logging() {
-    let filter_level = LevelFilter::Info;
+pub fn init_logging(default_level: LevelFilter) {
     env_logger::Builder::new()
-        .filter_level(filter_level)
+        .filter_level(default_level)
         .format(|buf, record| {
             let location =
                 format!("{}:{}", record.file().unwrap_or("unknown"), record.line().unwrap_or(0),);

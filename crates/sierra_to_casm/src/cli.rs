@@ -18,7 +18,7 @@ struct Args {
 }
 
 fn main() {
-    init_logging();
+    init_logging(log::LevelFilter::Off);
     log::info!("Starting Sierra compilation.");
 
     let args = Args::parse();
