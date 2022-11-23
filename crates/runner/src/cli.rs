@@ -75,7 +75,7 @@ fn main() -> anyhow::Result<()> {
     }
     print!("Returned values: [");
     let printed_result_size = output_size - input_size;
-    for cell in &memory[(ap - 1 - printed_result_size)..(ap - 1)] {
+    for cell in &memory[(ap - printed_result_size)..ap] {
         match cell {
             None => print!("_, "),
             Some(value) => print!("{value}, "),
