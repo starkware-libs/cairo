@@ -47,7 +47,7 @@ fn main() -> anyhow::Result<()> {
 
     // TODO(ilya): Get abi and entry points from the code.
     let contract = ContractClass {
-        sierra_program: format!("{}", sierra_program),
+        sierra_program: (*sierra_program).clone(),
         entry_points_by_type: ContractEntryPoints::default(),
         abi: abi::Contract::default(),
     };
