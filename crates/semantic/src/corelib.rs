@@ -33,7 +33,7 @@ pub fn core_nonzero_ty(db: &dyn SemanticGroup, inner_type: TypeId) -> TypeId {
     get_core_ty_by_name(db, "NonZero".into(), vec![GenericArgumentId::Type(inner_type)])
 }
 
-fn get_core_ty_by_name(
+pub fn get_core_ty_by_name(
     db: &dyn SemanticGroup,
     name: SmolStr,
     generic_args: Vec<GenericArgumentId>,
@@ -88,12 +88,12 @@ pub fn core_bool_enum(db: &dyn SemanticGroup) -> ConcreteEnumId {
 
 /// Generates a ConcreteVariant instance for `false`.
 pub fn false_variant(db: &dyn SemanticGroup) -> ConcreteVariant {
-    get_enum_concrete_variant(db, core_module(db), "bool", "False")
+    get_enum_concrete_variant(db, "bool", vec![], "False")
 }
 
 /// Generates a ConcreteVariant instance for `true`.
 pub fn true_variant(db: &dyn SemanticGroup) -> ConcreteVariant {
-    get_enum_concrete_variant(db, core_module(db), "bool", "True")
+    get_enum_concrete_variant(db, "bool", vec![], "True")
 }
 
 /// Gets a semantic expression of the literal `false`. Uses the given `stable_ptr` in the returned
@@ -102,7 +102,7 @@ pub fn false_literal_expr(
     ctx: &mut ComputationContext<'_>,
     stable_ptr: ast::ExprPtr,
 ) -> semantic::Expr {
-    get_bool_variant_expr(ctx, core_module(ctx.db), "bool", "False", stable_ptr)
+    get_bool_variant_expr(ctx, "bool", "False", stable_ptr)
 }
 
 /// Gets a semantic expression of the literal `true`. Uses the given `stable_ptr` in the returned
@@ -111,19 +111,18 @@ pub fn true_literal_expr(
     ctx: &mut ComputationContext<'_>,
     stable_ptr: ast::ExprPtr,
 ) -> semantic::Expr {
-    get_bool_variant_expr(ctx, core_module(ctx.db), "bool", "True", stable_ptr)
+    get_bool_variant_expr(ctx, "bool", "True", stable_ptr)
 }
 
 /// Gets a semantic expression of the specified bool enum variant. Uses the given `stable_ptr` in
 /// the returned semantic expression.
 fn get_bool_variant_expr(
     ctx: &mut ComputationContext<'_>,
-    module_id: ModuleId,
     enum_name: &str,
     variant_name: &str,
     stable_ptr: ast::ExprPtr,
 ) -> semantic::Expr {
-    let concrete_variant = get_enum_concrete_variant(ctx.db, module_id, enum_name, variant_name);
+    let concrete_variant = get_enum_concrete_variant(ctx.db, enum_name, vec![], variant_name);
     semantic::Expr::EnumVariantCtor(semantic::ExprEnumVariantCtor {
         variant: concrete_variant,
         value_expr: unit_expr(ctx, stable_ptr),
@@ -134,16 +133,16 @@ fn get_bool_variant_expr(
 
 /// Gets a [ConcreteVariant] instance for an enum variant, by name.
 /// Assumes the variant exists.
-fn get_enum_concrete_variant(
+pub fn get_enum_concrete_variant(
     db: &dyn SemanticGroup,
-    module_id: ModuleId,
     enum_name: &str,
+    generic_args: Vec<GenericArgumentId>,
     variant_name: &str,
 ) -> ConcreteVariant {
+    let module_id = core_module(db);
     let enum_item = db.module_item_by_name(module_id, enum_name.into()).unwrap();
     let enum_id = extract_matches!(enum_item, ModuleItemId::Enum);
-    let concrete_enum_id =
-        db.intern_concrete_enum(ConcreteEnumLongId { enum_id, generic_args: vec![] });
+    let concrete_enum_id = db.intern_concrete_enum(ConcreteEnumLongId { enum_id, generic_args });
     let variant_id = db.enum_variants(enum_id).unwrap()[variant_name];
     let variant = db.variant_semantic(enum_id, variant_id).unwrap();
     db.concrete_enum_variant(concrete_enum_id, &variant).unwrap()
@@ -314,4 +313,8 @@ fn get_core_trait(db: &dyn SemanticGroup, name: SmolStr) -> TraitId {
     let trait_id =
         extract_matches!(db.use_resolved_item(use_id).unwrap(), ResolvedGenericItem::Trait);
     trait_id
+}
+
+pub fn get_panic_ty(db: &dyn SemanticGroup, inner_ty: TypeId) -> TypeId {
+    get_core_ty_by_name(db.upcast(), "PanicResult".into(), vec![GenericArgumentId::Type(inner_ty)])
 }

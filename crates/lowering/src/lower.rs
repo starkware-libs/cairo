@@ -4,10 +4,12 @@ use id_arena::Arena;
 use itertools::{chain, zip_eq, Itertools};
 use num_traits::Zero;
 use scope::{BlockScope, BlockScopeEnd};
-use semantic::corelib::{core_felt_ty, core_jump_nz_func, core_nonzero_ty};
+use semantic::corelib::{
+    core_felt_ty, core_jump_nz_func, core_nonzero_ty, get_enum_concrete_variant, get_panic_ty,
+};
 use semantic::items::enm::SemanticEnumEx;
 use semantic::items::imp::ImplLookupContext;
-use semantic::{ConcreteTypeId, Mutability, TypeLongId, VarId};
+use semantic::{ConcreteTypeId, GenericArgumentId, Mutability, TypeLongId, VarId};
 use syntax::node::ids::SyntaxStablePtrId;
 use utils::unordered_hash_map::UnorderedHashMap;
 use utils::{extract_matches, try_extract_matches};
@@ -171,7 +173,8 @@ pub fn lower_tail_expr(
     expr: semantic::ExprId,
 ) -> Option<BlockScopeEnd> {
     log::trace!("Started lowering of a tail expression.");
-    let lowered_expr = lower_expr(ctx, scope, expr);
+    let lowered_expr =
+        lower_expr(ctx, scope, expr).map(|expr| maybe_wrap_with_panic(ctx, expr, scope));
     lowered_expr_to_block_scope_end(ctx, scope, lowered_expr)
 }
 
@@ -209,19 +212,54 @@ pub fn lower_statement(
         semantic::Statement::Return(semantic::StatementReturn { expr, stable_ptr: _ }) => {
             // Lower return expr.
             let lowered_expr = lower_expr(ctx, scope, *expr)?;
-            let value_vars = match lowered_expr {
-                LoweredExpr::Tuple(tys) if tys.is_empty() => vec![],
-                _ => vec![lowered_expr.var(ctx, scope)],
-            };
-            let return_vars = get_full_return_vars(ctx, scope, value_vars)?;
+            let return_vars = get_full_return_vars(ctx, scope, lowered_expr)?;
             return Err(StatementLoweringFlowError::End(BlockScopeEnd::Return(return_vars)));
         }
     }
     Ok(())
 }
 
-/// Returns the return variables, prefixed by the reference params.
+/// Returns the return variables, prefixed by the reference params. Wraps with PanicResult if
+/// needed.
 fn get_full_return_vars(
+    ctx: &mut LoweringContext<'_>,
+    scope: &mut BlockScope,
+    value_expr: LoweredExpr,
+) -> Result<Vec<LivingVar>, StatementLoweringFlowError> {
+    let lowered_expr = maybe_wrap_with_panic(ctx, value_expr, scope);
+    let value_vars = match lowered_expr {
+        LoweredExpr::Tuple(tys) if tys.is_empty() => vec![],
+        _ => vec![lowered_expr.var(ctx, scope)],
+    };
+    get_plain_full_return_vars(ctx, scope, value_vars)
+}
+
+/// Wraps a LoweredExpr with PanicResult::Ok id the current function panics.
+fn maybe_wrap_with_panic(
+    ctx: &mut LoweringContext<'_>,
+    value_expr: LoweredExpr,
+    scope: &mut BlockScope,
+) -> LoweredExpr {
+    let lowered_expr = if ctx.may_panic {
+        let variant = get_enum_concrete_variant(
+            ctx.db.upcast(),
+            "PanicResult",
+            vec![GenericArgumentId::Type(ctx.signature.return_type)],
+            "Ok",
+        );
+        LoweredExpr::AtVariable(
+            generators::EnumConstruct { input: value_expr.var(ctx, scope), variant }
+                .add(ctx, scope),
+        )
+    } else {
+        value_expr
+    };
+    lowered_expr
+}
+
+/// Returns the return variables, prefixed by the reference params, without wrapping with
+/// PanicResult.
+fn get_plain_full_return_vars(
     ctx: &mut LoweringContext<'_>,
     scope: &mut BlockScope,
     value_vars: Vec<LivingVar>,
@@ -387,6 +425,7 @@ fn lower_expr_function_call(
     scope: &mut BlockScope,
 ) -> Result<LoweredExpr, LoweringFlowError> {
     log::trace!("Started lowering of a function call expression.");
+
     // TODO(spapini): Use the correct stable pointer.
     let arg_inputs = lower_exprs_as_vars(ctx, &expr.args, scope)?;
     let (ref_tys, ref_inputs): (_, Vec<LivingVar>) = expr
@@ -434,8 +473,11 @@ fn lower_expr_function_call(
         }
     }
 
+    let may_panic = ctx.db.function_may_panic(expr.function).ok_or(LoweringFlowError::Failed)?;
+    let expr_ty = if may_panic { get_panic_ty(ctx.db.upcast(), expr.ty) } else { expr.ty };
+
     let (implicit_outputs, ref_outputs, res) =
-        perform_function_call(ctx, scope, expr.function, inputs, ref_tys, expr.ty);
+        perform_function_call(ctx, scope, expr.function, inputs, ref_tys, expr_ty);
 
     // Rebind the implicits.
     for (implicit_type, implicit_output) in zip_eq(callee_implicit_types, implicit_outputs) {
@@ -444,6 +486,10 @@ fn lower_expr_function_call(
     // Rebind the ref variables.
     for (semantic_var_id, output_var) in zip_eq(&expr.ref_args, ref_outputs) {
         scope.put_semantic_variable(*semantic_var_id, output_var);
+    }
+
+    if may_panic {
+        return lower_panic_error_propagate(ctx, scope, res, expr.ty);
     }
     Ok(res)
 }
@@ -776,6 +822,28 @@ fn lower_expr_struct_ctor(
 }
 
 /// Lowers an expression of type [semantic::ExprPropagateError].
+fn lower_panic_error_propagate(
+    ctx: &mut LoweringContext<'_>,
+    scope: &mut BlockScope,
+    lowered_expr: LoweredExpr,
+    ty: semantic::TypeId,
+) -> Result<LoweredExpr, LoweringFlowError> {
+    let ok_variant = get_enum_concrete_variant(
+        ctx.db.upcast(),
+        "PanicResult",
+        vec![GenericArgumentId::Type(ty)],
+        "Ok",
+    );
+    let err_variant = get_enum_concrete_variant(
+        ctx.db.upcast(),
+        "PanicResult",
+        vec![GenericArgumentId::Type(ty)],
+        "Ok",
+    );
+    lower_error_propagate(ctx, scope, lowered_expr, &ok_variant, &err_variant, &err_variant, true)
+}
+
+/// Lowers an expression of type [semantic::ExprPropagateError].
 fn lower_expr_error_propagate(
     ctx: &mut LoweringContext<'_>,
     expr: &semantic::ExprPropagateError,
@@ -790,6 +858,7 @@ fn lower_expr_error_propagate(
         &expr.ok_variant,
         &expr.err_variant,
         &expr.func_err_variant,
+        false,
     )
 }
 
@@ -801,6 +870,7 @@ fn lower_error_propagate(
     ok_variant: &semantic::ConcreteVariant,
     err_variant: &semantic::ConcreteVariant,
     func_err_variant: &semantic::ConcreteVariant,
+    panic_error: bool,
 ) -> Result<LoweredExpr, LoweringFlowError> {
     if let LoweredExpr::ExternEnum(extern_enum) = lowered_expr {
         return lower_optimized_extern_error_propagate(
@@ -810,6 +880,7 @@ fn lower_error_propagate(
             ok_variant,
             err_variant,
             func_err_variant,
+            panic_error,
         );
     }
 
@@ -832,9 +903,13 @@ fn lower_error_propagate(
                             variant: func_err_variant.clone(),
                         }
                         .add(ctx, subscope);
-                        Some(BlockScopeEnd::Return(
-                            get_full_return_vars(ctx, subscope, vec![value_var]).ok()?,
-                        ))
+                        let res = if panic_error {
+                            get_plain_full_return_vars(ctx, subscope, vec![value_var]).ok()?
+                        } else {
+                            get_full_return_vars(ctx, subscope, LoweredExpr::AtVariable(value_var))
+                                .ok()?
+                        };
+                        Some(BlockScopeEnd::Return(res))
                     })
                     .ok_or(LoweringFlowError::Failed)?,
             ])
@@ -862,6 +937,7 @@ fn lower_optimized_extern_error_propagate(
     ok_variant: &semantic::ConcreteVariant,
     err_variant: &semantic::ConcreteVariant,
     func_err_variant: &semantic::ConcreteVariant,
+    panic_error: bool,
 ) -> Result<LoweredExpr, LoweringFlowError> {
     log::trace!("Started lowering of an optimized error-propagate expression.");
     let (blocks, mut finalized_merger) = BlockFlowMerger::with(
@@ -903,9 +979,17 @@ fn lower_optimized_extern_error_propagate(
                                 variant: func_err_variant.clone(),
                             }
                             .add(ctx, subscope);
-                            Some(BlockScopeEnd::Return(
-                                get_full_return_vars(ctx, subscope, vec![value_var]).ok()?,
-                            ))
+                            let res = if panic_error {
+                                get_plain_full_return_vars(ctx, subscope, vec![value_var]).ok()?
+                            } else {
+                                get_full_return_vars(
+                                    ctx,
+                                    subscope,
+                                    LoweredExpr::AtVariable(value_var),
+                                )
+                                .ok()?
+                            };
+                            Some(BlockScopeEnd::Return(res))
                         })
                         .ok_or(LoweringFlowError::Failed)?
                 },
