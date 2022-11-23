@@ -1,12 +1,7 @@
-use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use cairo_rs::vm::errors::vm_errors::VirtualMachineError;
-use casm::instructions::Instruction;
-use casm::run::run_function_return_values;
-use casm::{casm, casm_extend};
 use compiler::db::RootDatabase;
 use compiler::diagnostics::check_diagnostics;
 use compiler::project::setup_project;
@@ -14,12 +9,14 @@ use defs::db::DefsGroup;
 use num_bigint::BigInt;
 use plugins::derive::DerivePlugin;
 use pretty_assertions::assert_eq;
-use sierra_gas::calc_gas_info;
-use sierra_gas::gas_info::GasInfo;
 use sierra_generator::db::SierraGenGroup;
 use sierra_generator::replace_ids::replace_sierra_ids_in_program;
-use sierra_to_casm::metadata::Metadata;
+use sierra_to_casm::test_utils::build_metadata;
 use test_case::test_case;
+
+use crate::common::run_sierra_program;
+
+mod common;
 
 /// Setups the cairo lowering to sierra db for the matching example.
 fn setup(name: &str) -> RootDatabase {
@@ -81,7 +78,6 @@ fn checked_compile_to_sierra(name: &str) -> sierra::program::Program {
 #[test_case("fib_local")]
 #[test_case("enum_flow")]
 #[test_case("corelib_usage")]
-#[test_case("uint128_le")]
 fn cairo_to_sierra(name: &str) {
     compare_contents_or_fix(name, "sierra", checked_compile_to_sierra(name).to_string());
     assert_eq!(checked_compile_to_sierra(name).to_string(), get_expected_contents(name, "sierra"));
@@ -98,20 +94,14 @@ fn cairo_to_sierra(name: &str) {
 #[test_case("fib_local", false)]
 #[test_case("enum_flow", false)]
 #[test_case("corelib_usage", false)]
-#[test_case("uint128_le", false)]
 fn cairo_to_casm(name: &str, enable_gas_checks: bool) {
     let program = checked_compile_to_sierra(name);
-    let gas_info = if enable_gas_checks {
-        calc_gas_info(&program).expect("Failed calculating gas variables.")
-    } else {
-        GasInfo { variable_values: HashMap::new(), function_costs: HashMap::new() }
-    };
     compare_contents_or_fix(
         name,
         "casm",
         sierra_to_casm::compiler::compile(
             &program,
-            &Metadata { function_ap_change: HashMap::new(), gas_info },
+            &build_metadata(&program, &[], enable_gas_checks),
             enable_gas_checks,
         )
         .unwrap()
@@ -128,27 +118,8 @@ fn cairo_to_casm(name: &str, enable_gas_checks: bool) {
 #[test_case("fib_gas")]
 #[test_case("fib_local")]
 #[test_case("corelib_usage")]
-#[test_case("uint128_le")]
 fn lowering_test(name: &str) {
     setup(name);
-}
-
-/// Add instructions pushing arguments, calling a function immediately after the generated code,
-/// and returning the function's return values:
-///     [ap] = arg0, ap++;
-///     [ap] = arg1, ap++;
-///     ...
-///     call rel 3; // This jumps over the call and the ret.
-///     ret;
-fn generate_function_runner(params: Vec<BigInt>) -> Vec<Instruction> {
-    let mut ctx = casm!();
-    for param in params {
-        casm_extend!(ctx, [ap] = param, ap++;);
-    }
-    let before_call_offset = ctx.current_code_offset;
-    casm_extend!(ctx, call rel 3; ret;);
-    assert_eq!(ctx.current_code_offset, before_call_offset + 3);
-    ctx.instructions
 }
 
 #[test_case("fib", &[1, 1, 7].map(BigInt::from), &[21].map(BigInt::from).map(Some); "fib")]
@@ -182,45 +153,7 @@ fn generate_function_runner(params: Vec<BigInt>) -> Vec<Instruction> {
     &[Some(BigInt::from(13))];
     "fib_local"
 )]
-#[test_case(
-    "uint128_le",
-    &[1, 1].map(BigInt::from),
-    &[Some(BigInt::from(0))];
-    "1 less than 1"
-)]
-#[test_case(
-    "uint128_le",
-    &[1, 2].map(BigInt::from),
-    &[Some(BigInt::from(1))];
-    "1 less than 2"
-)]
-#[test_case(
-    "uint128_le",
-    &[2, 1].map(BigInt::from),
-    &[Some(BigInt::from(0))];
-    "2 less than 1"
-)]
-fn run_function_test(
-    name: &str,
-    params: &[BigInt],
-    expected: &[Option<BigInt>],
-) -> Result<(), Box<VirtualMachineError>> {
+fn run_function_test(name: &str, params: &[BigInt], expected: &[Option<BigInt>]) {
     let sierra_func = checked_compile_to_sierra(name);
-
-    let mut program = generate_function_runner(params.to_vec());
-    let func = sierra_to_casm::compiler::compile(
-        &sierra_func,
-        &Metadata {
-            function_ap_change: HashMap::new(),
-            gas_info: GasInfo { variable_values: HashMap::new(), function_costs: HashMap::new() },
-        },
-        false,
-    )
-    .unwrap()
-    .instructions;
-
-    program.extend(func);
-    let res = run_function_return_values(program, expected.len())?;
-    assert_eq!(res, expected.to_vec());
-    Ok(())
+    assert_eq!(run_sierra_program(&sierra_func, params, expected.len(), false), expected);
 }
