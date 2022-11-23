@@ -113,7 +113,9 @@ impl<'a> AddStoreVariableStatements<'a> {
                     _ => {
                         // This starts a branch. Store all deferred variables.
                         self.store_all_deffered_variables();
-                        self.store_temporary_variables_as_locals();
+                        if invocation.branches.len() > 1 {
+                            self.store_temporary_variables_as_locals();
+                        }
 
                         // Go over the branches. The state of a branch that points to `Fallthrough`
                         // is merged into `fallthrough_state`.
