@@ -2,6 +2,7 @@ use num_bigint::{BigInt, BigUint};
 use num_traits::Num;
 use serde::ser::Serializer;
 use serde::{Deserialize, Deserializer, Serialize};
+use sierra::{self};
 
 use crate::abi;
 
@@ -10,9 +11,9 @@ use crate::abi;
 mod test;
 
 /// Represents a contract in the StarkNet network.
-#[derive(Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ContractClass {
-    pub sierra_program: String,
+    pub sierra_program: sierra::program::Program,
     pub entry_points_by_type: ContractEntryPoints,
     pub abi: abi::Contract,
 }

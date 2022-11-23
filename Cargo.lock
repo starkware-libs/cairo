@@ -1940,6 +1940,7 @@ dependencies = [
  "num-traits 0.2.15",
  "regex",
  "salsa",
+ "serde",
  "smol_str",
  "test-case",
  "test-log",

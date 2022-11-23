@@ -13,7 +13,12 @@ fn test_serialization() {
     }];
 
     let contract = ContractClass {
-        sierra_program: "".to_string(),
+        sierra_program: sierra::program::Program {
+            type_declarations: vec![],
+            libfunc_declarations: vec![],
+            statements: vec![],
+            funcs: vec![],
+        },
         entry_points_by_type: ContractEntryPoints {
             external,
             l1_handler: vec![],
@@ -29,7 +34,7 @@ fn test_serialization() {
         indoc! {
             r#"
         {
-          "sierra_program": "",
+          "sierra_program": "\n\n\n",
           "entry_points_by_type": {
             "EXTERNAL": [
               {
