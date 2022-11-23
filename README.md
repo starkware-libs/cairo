@@ -1,4 +1,4 @@
-# Cairo 2
+# Cairo 1.0
 
 # Development instructions.
 ## Install the language server:
