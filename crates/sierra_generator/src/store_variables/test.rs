@@ -194,6 +194,14 @@ fn store_local_simple() {
         dummy_simple_statement(&db, "nope", &[], &[]),
         // Case III: tempvar copied into local before revoke_ap().
         dummy_simple_statement(&db, "revoke_ap", &[], &[]),
+        dummy_simple_statement(&db, "store_temp<felt>", &["9"], &["9"]),
+        // Don't store as local due to a simple jump.
+        dummy_jump_statement(&db, 0),
+        dummy_label(0),
+        dummy_simple_statement(&db, "nope", &[], &[]),
+        // Case IV: tempvar copied into local before branches.
+        dummy_simple_branch(&db, "branch", &[], 1),
+        dummy_label(1),
         dummy_return_statement(&[]),
     ];
 
@@ -204,7 +212,8 @@ fn store_local_simple() {
             OrderedHashMap::from_iter(vec![
                 ("2".into(), "102".into()),
                 ("4".into(), "104".into()),
-                ("7".into(), "107".into())
+                ("7".into(), "107".into()),
+                ("9".into(), "109".into())
             ])
         ),
         vec![
@@ -219,6 +228,13 @@ fn store_local_simple() {
             "nope() -> ()",
             "store_local<felt>(107, 7) -> (7)",
             "revoke_ap() -> ()",
+            "store_temp<felt>(9) -> (9)",
+            "jump() { label0() }",
+            "label0:",
+            "nope() -> ()",
+            "store_local<felt>(109, 9) -> (9)",
+            "branch() { label1() fallthrough() }",
+            "label1:",
             "return()",
         ],
     );
