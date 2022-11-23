@@ -18,6 +18,10 @@ pub struct LoweringContext<'db> {
     pub db: &'db dyn LoweringGroup,
     /// Semantic model for current function definition.
     pub function_def: &'db semantic::FreeFunctionDefinition,
+    // Semantic signature for current function.
+    pub signature: semantic::Signature,
+    /// Whether the current function may panic.
+    pub may_panic: bool,
     /// Current emitted diagnostics.
     pub diagnostics: LoweringDiagnostics,
     /// Arena of allocated lowered variables.

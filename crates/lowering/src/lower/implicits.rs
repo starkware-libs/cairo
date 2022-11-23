@@ -12,7 +12,7 @@ pub fn function_scc_representative(
     db: &dyn LoweringGroup,
     function: FreeFunctionId,
 ) -> SCCRepresentative {
-    SCCRepresentative(function_scc(db, function).into_iter().min().unwrap_or(function))
+    SCCRepresentative(db.function_scc(function).into_iter().min().unwrap_or(function))
 }
 
 /// Query implementation of [crate::db::LoweringGroup::function_scc_explicit_implicits].
@@ -50,10 +50,10 @@ pub fn free_function_all_implicits(
     function: FreeFunctionId,
 ) -> Option<HashSet<TypeId>> {
     // Find the SCC representative.
-    let scc_representative = function_scc_representative(db, function);
+    let scc_representative = db.function_scc_representative(function);
 
     // Start with the explicit implicits of the SCC.
-    let mut all_implicits = function_scc_explicit_implicits(db, scc_representative.clone())?;
+    let mut all_implicits = db.function_scc_explicit_implicits(scc_representative.clone())?;
 
     // For each direct callee, add its implicits.
     for direct_callee in db.free_function_definition_direct_callees(function)? {
@@ -63,12 +63,12 @@ pub fn free_function_all_implicits(
                     // For a free function, call this method recursively. To avoid cycles, first
                     // check that the callee is not in this function's SCC.
                     let direct_callee_representative =
-                        function_scc_representative(db, free_function);
+                        db.function_scc_representative(free_function);
                     if direct_callee_representative == scc_representative {
                         // We already have the implicits of this SCC - do nothing.
                         continue;
                     }
-                    free_function_all_implicits(db, direct_callee_representative.0)?
+                    db.free_function_all_implicits(direct_callee_representative.0)?
                 }
                 GenericFunctionId::Extern(extern_function) => {
                     // All implicits of a libfunc are explicit implicits.
@@ -121,4 +121,44 @@ impl<'a> GraphNode for FreeFunctionNode<'a> {
     fn get_id(&self) -> Self::NodeId {
         self.free_function_id
     }
+}
+
+/// Query implementation of [crate::db::LoweringGroup::function_may_panic].
+pub fn function_may_panic(db: &dyn LoweringGroup, function: semantic::FunctionId) -> Option<bool> {
+    match db.lookup_intern_function(function).function.generic_function {
+        GenericFunctionId::Free(free_function) => db.free_function_may_panic(free_function),
+        GenericFunctionId::Extern(_) => Some(false),
+        GenericFunctionId::TraitFunction(_) | GenericFunctionId::ImplFunction(_) => todo!(),
+    }
+}
+
+/// Query implementation of [crate::db::LoweringGroup::free_function_may_panic].
+pub fn free_function_may_panic(
+    db: &dyn LoweringGroup,
+    free_function: FreeFunctionId,
+) -> Option<bool> {
+    // Find the SCC representative.
+    let scc_representative = db.function_scc_representative(free_function);
+
+    // TODO(spapini): Add something that actually panics.
+    // For each direct callee, find if it may panic.
+    for direct_callee in db.free_function_definition_direct_callees(free_function)? {
+        match db.lookup_intern_function(direct_callee).function.generic_function {
+            GenericFunctionId::Free(free_function) => {
+                // For a free function, call this method recursively. To avoid cycles, first
+                // check that the callee is not in this function's SCC.
+                let direct_callee_representative = function_scc_representative(db, free_function);
+                if direct_callee_representative == scc_representative {
+                    // We already have the implicits of this SCC - do nothing.
+                    continue;
+                }
+                if db.free_function_may_panic(direct_callee_representative.0)? {
+                    return Some(true);
+                }
+            }
+            GenericFunctionId::Extern(_) => {}
+            GenericFunctionId::TraitFunction(_) | GenericFunctionId::ImplFunction(_) => todo!(),
+        };
+    }
+    Some(false)
 }

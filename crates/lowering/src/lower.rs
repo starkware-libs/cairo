@@ -62,7 +62,7 @@ pub fn lower(db: &dyn LoweringGroup, free_function_id: FreeFunctionId) -> Option
         .map(|param| VarId::Param(param.id))
         .collect_vec();
     let input_semantic_vars: Vec<semantic::Variable> =
-        signature.params.into_iter().map(semantic::Variable::Param).collect();
+        signature.params.iter().cloned().map(semantic::Variable::Param).collect();
     let (input_semantic_var_ids, input_var_tys): (Vec<_>, Vec<_>) = input_semantic_vars
         .iter()
         .map(|semantic_var| (semantic_var.id(), semantic_var.ty()))
@@ -73,6 +73,8 @@ pub fn lower(db: &dyn LoweringGroup, free_function_id: FreeFunctionId) -> Option
     let mut ctx = LoweringContext {
         db,
         function_def: &function_def,
+        signature,
+        may_panic: db.free_function_may_panic(free_function_id)?,
         diagnostics: LoweringDiagnostics::new(free_function_id.module(db.upcast())),
         variables: Arena::default(),
         blocks: Arena::default(),

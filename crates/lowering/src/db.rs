@@ -64,6 +64,14 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     #[salsa::invoke(crate::lower::implicits::free_function_all_implicits_vec)]
     fn free_function_all_implicits_vec(&self, function: FreeFunctionId) -> Option<Vec<TypeId>>;
 
+    /// Returns whether the function may panic.
+    #[salsa::invoke(crate::lower::implicits::function_may_panic)]
+    fn function_may_panic(&self, function: semantic::FunctionId) -> Option<bool>;
+
+    /// Returns whether the function may panic.
+    #[salsa::invoke(crate::lower::implicits::free_function_may_panic)]
+    fn free_function_may_panic(&self, free_function: FreeFunctionId) -> Option<bool>;
+
     /// Returns all the functions in the same strongly connected component as the given function.
     #[salsa::invoke(crate::lower::implicits::function_scc)]
     fn function_scc(&self, function_id: FreeFunctionId) -> Vec<FreeFunctionId>;
