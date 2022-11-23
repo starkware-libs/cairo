@@ -8,6 +8,6 @@ func fib_inner(a: felt, b: felt, remaining: felt, arr: Array::<felt>) -> Array::
         return arr;
     }
 
-    let arr = array_append::<felt>(arr, a);
+    array_append::<felt>(arr, a);
     fib_inner(b, a + b, remaining - 1, arr)
 }

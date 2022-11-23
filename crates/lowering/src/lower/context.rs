@@ -143,6 +143,7 @@ pub enum LoweringFlowError {
     Failed,
     /// The current computation is unreachable.
     Unreachable,
+    Return(Vec<LivingVar>),
 }
 /// Cases where the flow of lowering a statement should halt.
 pub enum StatementLoweringFlowError {
@@ -157,6 +158,9 @@ impl From<LoweringFlowError> for StatementLoweringFlowError {
             LoweringFlowError::Failed => StatementLoweringFlowError::Failed,
             LoweringFlowError::Unreachable => {
                 StatementLoweringFlowError::End(BlockScopeEnd::Unreachable)
+            }
+            LoweringFlowError::Return(return_vars) => {
+                StatementLoweringFlowError::End(BlockScopeEnd::Return(return_vars))
             }
         }
     }

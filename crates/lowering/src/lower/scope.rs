@@ -25,7 +25,7 @@ pub struct BlockScope {
     /// pulls.
     merger: Box<BlockFlowMerger>,
     /// Living variables owned by this scope.
-    living_variables: LivingVariables,
+    pub living_variables: LivingVariables,
     /// A store for semantic variables, owning their OwnedVariable instances.
     semantic_variables: SemanticVariablesMap,
     /// A store for implicit variables, owning their OwnedVariable instances.

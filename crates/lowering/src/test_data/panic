@@ -1,0 +1,33 @@
+//! > Test enum constructor.
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+func foo(a: bool) -> felt {
+  let data = array_new::<felt>();
+  array_append::<felt>(data, 1);
+  let y = panic(data);
+  5
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_format
+blk0:
+Inputs: v0: core::bool
+Statements:
+  (v1: core::array::Array::<core::felt>) <- core::array::array_new<Type(core::felt),>()
+  (v2: core::felt) <- 1u
+  (v3: core::array::Array::<core::felt>) <- core::array::array_append<Type(core::felt),>(v1, v2)
+  (v4: core::PanicResult::<core::felt>) <- PanicResult::Err(v3)
+Drops: v0, v2
+End:
+  Return(v4)

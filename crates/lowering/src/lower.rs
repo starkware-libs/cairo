@@ -5,7 +5,8 @@ use itertools::{chain, zip_eq, Itertools};
 use num_traits::Zero;
 use scope::{BlockScope, BlockScopeEnd};
 use semantic::corelib::{
-    core_felt_ty, core_jump_nz_func, core_nonzero_ty, get_enum_concrete_variant, get_panic_ty,
+    core_felt_ty, core_jump_nz_func, core_nonzero_ty, get_core_function_id,
+    get_enum_concrete_variant, get_panic_ty,
 };
 use semantic::items::enm::SemanticEnumEx;
 use semantic::items::imp::ImplLookupContext;
@@ -191,6 +192,7 @@ pub fn lowered_expr_to_block_scope_end(
         Err(LoweringFlowError::Failed) => {
             return None;
         }
+        Err(LoweringFlowError::Return(return_vars)) => BlockScopeEnd::Return(return_vars),
     })
 }
 
@@ -231,7 +233,7 @@ fn get_full_return_vars(
         LoweredExpr::Tuple(tys) if tys.is_empty() => vec![],
         _ => vec![lowered_expr.var(ctx, scope)],
     };
-    get_plain_full_return_vars(ctx, scope, value_vars)
+    Ok(get_plain_full_return_vars(ctx, scope, value_vars)?)
 }
 
 /// Wraps a LoweredExpr with PanicResult::Ok id the current function panics.
@@ -263,7 +265,7 @@ fn get_plain_full_return_vars(
     ctx: &mut LoweringContext<'_>,
     scope: &mut BlockScope,
     value_vars: Vec<LivingVar>,
-) -> Result<Vec<LivingVar>, StatementLoweringFlowError> {
+) -> Result<Vec<LivingVar>, LoweringFlowError> {
     let implicit_vars = ctx
         .implicits
         .iter()
@@ -477,7 +479,7 @@ fn lower_expr_function_call(
     let expr_ty = if may_panic { get_panic_ty(ctx.db.upcast(), expr.ty) } else { expr.ty };
 
     let (implicit_outputs, ref_outputs, res) =
-        perform_function_call(ctx, scope, expr.function, inputs, ref_tys, expr_ty);
+        perform_function_call(ctx, scope, expr.function, inputs, ref_tys, expr_ty)?;
 
     // Rebind the implicits.
     for (implicit_type, implicit_output) in zip_eq(callee_implicit_types, implicit_outputs) {
@@ -504,7 +506,7 @@ fn perform_function_call(
     inputs: Vec<LivingVar>,
     ref_tys: Vec<semantic::TypeId>,
     ret_ty: semantic::TypeId,
-) -> (Vec<LivingVar>, Vec<LivingVar>, LoweredExpr) {
+) -> Result<(Vec<LivingVar>, Vec<LivingVar>, LoweredExpr), LoweringFlowError> {
     // If the function is not extern, simply call it.
     if !matches!(
         ctx.db.lookup_intern_function(function).function,
@@ -513,17 +515,42 @@ fn perform_function_call(
         let call_result =
             generators::Call { function, inputs, ref_tys, ret_tys: vec![ret_ty] }.add(ctx, scope);
         let res = LoweredExpr::AtVariable(call_result.returns.into_iter().next().unwrap());
-        return (call_result.implicit_outputs, call_result.ref_outputs, res);
+        return Ok((call_result.implicit_outputs, call_result.ref_outputs, res));
     };
+
+    // If the function is panic(), do something special.
+    if function == get_core_function_id(ctx.db.upcast(), "panic".into(), vec![]) {
+        assert!(ref_tys.is_empty());
+        assert_eq!(inputs.len(), 1);
+        let [input] = <[_; 1]>::try_from(inputs).ok().unwrap();
+        return Ok((vec![], vec![], lower_panic(ctx, scope, input)?));
+    }
 
     // Extern function
     let ret_tys = extern_facade_return_tys(ctx, ret_ty);
     let call_result = generators::Call { function, inputs, ref_tys, ret_tys }.add(ctx, scope);
-    (
+    Ok((
         call_result.implicit_outputs,
         call_result.ref_outputs,
         extern_facade_expr(ctx, ret_ty, call_result.returns),
-    )
+    ))
+}
+
+fn lower_panic(
+    ctx: &mut LoweringContext<'_>,
+    scope: &mut BlockScope,
+    data_var: LivingVar,
+) -> Result<LoweredExpr, LoweringFlowError> {
+    let func_err_variant = get_enum_concrete_variant(
+        ctx.db.upcast(),
+        "PanicResult",
+        vec![GenericArgumentId::Type(ctx.signature.return_type)],
+        "Err",
+    );
+    let value_var =
+        generators::EnumConstruct { input: data_var, variant: func_err_variant }.add(ctx, scope);
+    let res = get_plain_full_return_vars(ctx, scope, vec![value_var])?;
+    Err(LoweringFlowError::Return(res))
 }
 
 /// Lowers an expression of type [semantic::ExprMatch].
@@ -840,7 +867,21 @@ fn lower_panic_error_propagate(
         vec![GenericArgumentId::Type(ty)],
         "Ok",
     );
-    lower_error_propagate(ctx, scope, lowered_expr, &ok_variant, &err_variant, &err_variant, true)
+    let func_err_variant = get_enum_concrete_variant(
+        ctx.db.upcast(),
+        "PanicResult",
+        vec![GenericArgumentId::Type(ctx.signature.return_type)],
+        "Ok",
+    );
+    lower_error_propagate(
+        ctx,
+        scope,
+        lowered_expr,
+        &ok_variant,
+        &err_variant,
+        &func_err_variant,
+        true,
+    )
 }
 
 /// Lowers an expression of type [semantic::ExprPropagateError].

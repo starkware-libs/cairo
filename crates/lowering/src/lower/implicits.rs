@@ -127,7 +127,9 @@ impl<'a> GraphNode for FreeFunctionNode<'a> {
 pub fn function_may_panic(db: &dyn LoweringGroup, function: semantic::FunctionId) -> Option<bool> {
     match db.lookup_intern_function(function).function.generic_function {
         GenericFunctionId::Free(free_function) => db.free_function_may_panic(free_function),
-        GenericFunctionId::Extern(_) => Some(false),
+        GenericFunctionId::Extern(extern_function) => {
+            Some(db.extern_function_declaration_signature(extern_function)?.panicable)
+        }
         GenericFunctionId::TraitFunction(_) | GenericFunctionId::ImplFunction(_) => todo!(),
     }
 }
@@ -156,7 +158,11 @@ pub fn free_function_may_panic(
                     return Some(true);
                 }
             }
-            GenericFunctionId::Extern(_) => {}
+            GenericFunctionId::Extern(extern_function) => {
+                if db.extern_function_declaration_signature(extern_function)?.panicable {
+                    return Some(true);
+                }
+            }
             GenericFunctionId::TraitFunction(_) | GenericFunctionId::ImplFunction(_) => todo!(),
         };
     }

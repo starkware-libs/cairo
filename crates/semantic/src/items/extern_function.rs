@@ -1,8 +1,10 @@
 use defs::ids::{ExternFunctionId, GenericFunctionId, GenericParamId, LanguageElementId};
 use diagnostics::Diagnostics;
 use diagnostics_proc_macros::DebugWithDb;
+use utils::extract_matches;
 
 use super::generics::semantic_generic_params;
+use crate::corelib::get_core_generic_function_id;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::PanicableExternFunction;
 use crate::diagnostic::SemanticDiagnostics;
@@ -92,7 +94,13 @@ pub fn priv_extern_function_declaration_data(
     );
 
     if signature.panicable {
-        diagnostics.report(function_syntax, PanicableExternFunction);
+        let panic_function = extract_matches!(
+            get_core_generic_function_id(db.upcast(), "panic".into()),
+            GenericFunctionId::Extern
+        );
+        if extern_function_id != panic_function {
+            diagnostics.report(function_syntax, PanicableExternFunction);
+        }
     }
 
     Some(ExternFunctionDeclarationData {

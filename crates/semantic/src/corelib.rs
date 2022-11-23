@@ -255,16 +255,25 @@ pub fn core_jump_nz_func(db: &dyn SemanticGroup) -> FunctionId {
 }
 
 /// Given a core library function name and its generic arguments, returns [FunctionId].
-fn get_core_function_id(
+pub fn get_core_function_id(
     db: &dyn SemanticGroup,
     name: SmolStr,
     generic_args: Vec<GenericArgumentId>,
 ) -> FunctionId {
+    let generic_function = get_core_generic_function_id(db, name);
+
+    db.intern_function(FunctionLongId {
+        function: ConcreteFunction { generic_function, generic_args },
+    })
+}
+
+/// Given a core library function name, returns [GenericFunctionId].
+pub fn get_core_generic_function_id(db: &dyn SemanticGroup, name: SmolStr) -> GenericFunctionId {
     let core_module = db.core_module();
     let module_item_id = db
         .module_item_by_name(core_module, name.clone())
         .unwrap_or_else(|| panic!("Function '{name}' was not found in core lib."));
-    let generic_function = match module_item_id {
+    match module_item_id {
         ModuleItemId::Use(use_id) => {
             db.use_resolved_item(use_id).and_then(|resolved_generic_item| {
                 try_extract_matches!(resolved_generic_item, ResolvedGenericItem::GenericFunction)
@@ -272,11 +281,7 @@ fn get_core_function_id(
         }
         _ => GenericFunctionId::option_from(module_item_id),
     }
-    .unwrap_or_else(|| panic!("{name} is not a function."));
-
-    db.intern_function(FunctionLongId {
-        function: ConcreteFunction { generic_function, generic_args },
-    })
+    .unwrap_or_else(|| panic!("{name} is not a function."))
 }
 
 pub fn concrete_copy_trait(db: &dyn SemanticGroup, ty: TypeId) -> ConcreteTraitId {
