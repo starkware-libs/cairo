@@ -1,0 +1,30 @@
+//! > Test that a ! b isn't parsed as a binary operation
+
+//! > comments
+`a ! b;` should be parsed as `a !b;`, i.e, two statements:
+    * `a` (missing a semicolon)
+    * `!b;` (not `b`)
+
+//! > test_function_name
+test_partial_parser_tree
+
+//! > cairo_code
+func foo() {
+    1 ! 2;
+}
+
+//! > top_level_kind
+StatementList
+
+//! > ignored_kinds
+
+//! > expected_tree
+└── Top level kind: StatementList
+    ├── child #0 (kind: StatementExpr)
+    │   ├── expr (kind: TokenLiteralNumber): '1'
+    │   └── semicolon (kind: OptionTerminalSemicolonEmpty) []
+    └── child #1 (kind: StatementExpr)
+        ├── expr (kind: ExprUnary)
+        │   ├── op (kind: TokenNot): '!'
+        │   └── expr (kind: TokenLiteralNumber): '2'
+        └── semicolon (kind: TokenSemicolon): ';'
