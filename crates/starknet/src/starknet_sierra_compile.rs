@@ -1,9 +1,8 @@
 use std::collections::HashMap;
 use std::fs;
 
-use anyhow::{anyhow, Context};
+use anyhow::Context;
 use clap::Parser;
-use sierra::ProgramParser;
 use sierra_gas::calc_gas_info;
 use sierra_to_casm::metadata::Metadata;
 use starknet::contract_class::{CasmContractClass, ContractClass, ContractEntryPoints};
@@ -28,9 +27,7 @@ fn main() -> anyhow::Result<()> {
     )
     .with_context(|| "deserialization Failed.")?;
 
-    let program = ProgramParser::new()
-        .parse(&contract_class.sierra_program)
-        .map_err(|err| anyhow!("Sierra parsing failed.\n{}", err.to_string()))?;
+    let program = contract_class.sierra_program;
     let gas_info = calc_gas_info(&program).with_context(|| "Failed calculating gas variables.")?;
 
     let gas_usage_check = true;
