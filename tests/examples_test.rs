@@ -36,12 +36,31 @@ fn setup(name: &str) -> RootDatabase {
     db
 }
 
+/// Returns the path of the relevant test file.
+fn get_test_data_path(name: &str, test_type: &str) -> PathBuf {
+    [env!("CARGO_MANIFEST_DIR"), "test_data", &format!("{name}.{test_type}")].into_iter().collect()
+}
+
 /// Returns the content of the relevant test file.
 fn get_expected_contents(name: &str, test_type: &str) -> String {
-    let path: PathBuf = [env!("CARGO_MANIFEST_DIR"), "test_data", &format!("{name}.{test_type}")]
-        .into_iter()
-        .collect();
+    let path = get_test_data_path(name, test_type);
     fs::read_to_string(path.clone()).unwrap_or_else(|_| panic!("Could not read file: '{path:?}'"))
+}
+
+/// Overrides the test file data.
+fn set_contents(name: &str, test_type: &str, content: String) {
+    let path = get_test_data_path(name, test_type);
+    fs::write(path.clone(), content).unwrap_or_else(|_| panic!("Could not write file: '{path:?}'"));
+}
+
+/// Compares content to examples content, or overides it if `CAIRO_FIX_TESTS=1`.
+fn compare_contents_or_fix(name: &str, test_type: &str, content: String) {
+    let is_fix_mode = std::env::var("CAIRO_FIX_TESTS").is_ok();
+    if is_fix_mode {
+        set_contents(name, test_type, content);
+    } else {
+        assert_eq!(content, get_expected_contents(name, test_type));
+    }
 }
 
 /// Compiles the Cairo code for `name` to a Sierra program.
@@ -63,6 +82,7 @@ fn checked_compile_to_sierra(name: &str) -> sierra::program::Program {
 #[test_case("corelib_usage" => ignore["unsupported"])]
 #[test_case("uint128_le")]
 fn cairo_to_sierra(name: &str) {
+    compare_contents_or_fix(name, "sierra", checked_compile_to_sierra(name).to_string());
     assert_eq!(checked_compile_to_sierra(name).to_string(), get_expected_contents(name, "sierra"));
 }
 
@@ -84,8 +104,9 @@ fn cairo_to_casm(name: &str, enable_gas_checks: bool) {
     } else {
         GasInfo { variable_values: HashMap::new(), function_costs: HashMap::new() }
     };
-
-    assert_eq!(
+    compare_contents_or_fix(
+        name,
+        "casm",
         sierra_to_casm::compiler::compile(
             &program,
             &Metadata { function_ap_change: HashMap::new(), gas_info },
@@ -93,7 +114,6 @@ fn cairo_to_casm(name: &str, enable_gas_checks: bool) {
         )
         .unwrap()
         .to_string(),
-        get_expected_contents(name, "casm")
     );
 }
 
