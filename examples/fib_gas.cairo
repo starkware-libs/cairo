@@ -1,8 +1,17 @@
 // Calculates fib...
-func fib(a: felt, b: felt, n: felt) -> Option::<felt> implicits (rc: RangeCheck, gb: GasBuiltin) {
-    get_gas()?;
+func fib(a: felt, b: felt, n: felt) -> felt implicits (rc: RangeCheck, gb: GasBuiltin) {
+    match get_gas() {
+        Option::Some (x) => {
+        },
+        Option::None (x) => {
+            let data = array_new::<felt>();
+            // TODO(spapini): Add when working.
+            // array_append::<felt>(data, 1);
+            panic(data);
+        },
+    }
     match n {
-        0 => Option::<felt>::Some(a),
+        0 => a,
         _ => fib(b, a + b, n - 1),
     }
 }

@@ -68,6 +68,7 @@ pub fn lower_expr_if_bool(
                 ctx,
                 subscope,
                 extract_matches!(&ctx.function_def.exprs[expr.if_block], semantic::Expr::Block),
+                false,
             )
         });
         let else_block_scope = merger.run_in_subscope(ctx, vec![unit_ty], |ctx, subscope, _| {
@@ -132,6 +133,7 @@ pub fn lower_expr_if_eq_zero(
                 ctx,
                 subscope,
                 extract_matches!(&ctx.function_def.exprs[expr.if_block], semantic::Expr::Block),
+                false,
             )
         });
         let non_zero_type =
@@ -173,6 +175,7 @@ fn lower_optional_else_block(
             ctx,
             scope,
             extract_matches!(&ctx.function_def.exprs[else_block], semantic::Expr::Block),
+            false,
         ),
         None => lowered_expr_to_block_scope_end(ctx, scope, Ok(LoweredExpr::Tuple(vec![]))),
     }

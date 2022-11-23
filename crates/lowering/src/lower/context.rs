@@ -62,6 +62,19 @@ impl LoweredExpr {
             LoweredExpr::ExternEnum(extern_enum) => extern_enum.var(ctx, scope),
         }
     }
+    pub fn ty(&self, ctx: &mut LoweringContext<'_>) -> semantic::TypeId {
+        match self {
+            LoweredExpr::AtVariable(var) => ctx.variables[var.var_id()].ty,
+            LoweredExpr::Tuple(exprs) => ctx.db.intern_type(semantic::TypeLongId::Tuple(
+                exprs.iter().map(|expr| expr.ty(ctx)).collect(),
+            )),
+            LoweredExpr::ExternEnum(extern_enum) => {
+                ctx.db.intern_type(semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::Enum(
+                    extern_enum.concrete_enum_id,
+                )))
+            }
+        }
+    }
 }
 
 /// Lazy expression value of an extern call returning an enum.
@@ -143,6 +156,7 @@ pub enum LoweringFlowError {
     Failed,
     /// The current computation is unreachable.
     Unreachable,
+    Return(Vec<LivingVar>),
 }
 /// Cases where the flow of lowering a statement should halt.
 pub enum StatementLoweringFlowError {
@@ -157,6 +171,9 @@ impl From<LoweringFlowError> for StatementLoweringFlowError {
             LoweringFlowError::Failed => StatementLoweringFlowError::Failed,
             LoweringFlowError::Unreachable => {
                 StatementLoweringFlowError::End(BlockScopeEnd::Unreachable)
+            }
+            LoweringFlowError::Return(return_vars) => {
+                StatementLoweringFlowError::End(BlockScopeEnd::Return(return_vars))
             }
         }
     }
