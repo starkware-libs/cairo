@@ -240,6 +240,51 @@ fn store_local_simple() {
     );
 }
 
+/// Tests that storing the result of an if as a local variable works correctly.
+///
+/// For example:
+///     let y = if cond { 1 } else { 2 }
+///     revoke_ap()
+///     // Use y.
+#[test]
+fn store_local_result_of_if() {
+    let db = SierraGenDatabaseForTesting::default();
+    let statements: Vec<pre_sierra::Statement> = vec![
+        dummy_simple_branch(&db, "branch", &[], 0),
+        // If part.
+        dummy_simple_statement(&db, "store_temp<felt>", &["100"], &["100"]),
+        dummy_jump_statement(&db, 1),
+        // Else part.
+        dummy_label(0),
+        dummy_push_values(&db, &[("0", "100")]),
+        // Post-if.
+        dummy_label(1),
+        dummy_simple_statement(&db, "nope", &[], &[]),
+        dummy_simple_statement(&db, "revoke_ap", &[], &[]),
+        dummy_return_statement(&[]),
+    ];
+
+    assert_eq!(
+        test_add_store_statements(
+            &db,
+            statements,
+            OrderedHashMap::from_iter(vec![("100".into(), "200".into()),])
+        ),
+        vec![
+            "branch() { label0() fallthrough() }",
+            "store_temp<felt>(100) -> (100)",
+            "jump() { label1() }",
+            "label0:",
+            "store_temp<felt>(0) -> (100)",
+            "label1:",
+            "nope() -> ()",
+            "store_local<felt>(200, 100) -> (100)",
+            "revoke_ap() -> ()",
+            "return()",
+        ],
+    );
+}
+
 /// Tests the behavior of the [PushValues](pre_sierra::Statement::PushValues) statement.
 #[test]
 fn store_temp_push_values() {
