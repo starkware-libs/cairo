@@ -7,4 +7,6 @@ pub mod invocations;
 pub mod metadata;
 pub mod references;
 pub mod relocations;
+#[cfg(any(feature = "testing", test))]
+pub mod test_utils;
 pub mod type_sizes;
