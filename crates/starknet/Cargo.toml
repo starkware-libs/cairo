@@ -14,6 +14,8 @@ serde_json.workspace = true
 sierra = { path = "../sierra" }
 sierra_generator = { path = "../sierra_generator" }
 syntax = { path = "../syntax" }
+sierra_gas = { path = "../sierra_gas" }
+sierra_to_casm = { path = "../sierra_to_casm" }
 thiserror.workspace = true
 num-bigint.workspace = true
 num-traits.workspace = true
@@ -27,3 +29,7 @@ utils = { path = "../utils" }
 [[bin]]
 name = "starknet-compile"
 path = "src/cli.rs"
+
+[[bin]]
+name = "starknet-sierra-compile"
+path = "src/starknet_sierra_compile.rs"

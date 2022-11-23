@@ -143,7 +143,7 @@ BasicLabel: String = {
 // `BasicLabel`s joined by "::".
 PathLabel: String = {
     BasicLabel => <>,
-    <path_label:PathLabel> "::" <basic_label:BasicLabel> => format!("{path_label}::{basic_label}>"),
+    <path_label:PathLabel> "::" <basic_label:BasicLabel> => format!("{path_label}::{basic_label}"),
 }
 
 // `GenericArg`s joined by ",".
@@ -154,6 +154,7 @@ GenericArgsString: String = {
 
 // Label that can also include generic arguments.
 ConcreteLabel: String = {
+    <base:PathLabel> "::" "<" <generic_args:GenericArgsString> ">" => format!("{base}::<{generic_args}>"),
     <base:PathLabel> "<" <generic_args:GenericArgsString> ">" => format!("{base}<{generic_args}>"),
     PathLabel => <>,
 }
