@@ -3,6 +3,9 @@ name = "sierra_to_casm"
 version.workspace = true
 edition.workspace = true
 
+[features]
+testing = []
+
 [dependencies]
 assert_matches.workspace = true
 casm = { path = "../casm" }
