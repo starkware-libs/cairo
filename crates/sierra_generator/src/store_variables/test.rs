@@ -217,7 +217,7 @@ fn store_local_simple() {
             "revoke_ap() -> ()",
             "function_call4() -> (5, 6, 7, 8)",
             "nope() -> ()",
-            // TODO(lior): store_local of (7) should be added here.
+            "store_local<felt>(107, 7) -> (7)",
             "revoke_ap() -> ()",
             "return()",
         ],

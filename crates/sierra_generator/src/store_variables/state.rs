@@ -28,8 +28,10 @@ pub enum DeferredVariableKind {
 #[derive(Clone, Debug, Default)]
 pub struct State {
     /// A map from [sierra::ids::VarId] of a deferred reference
-    /// (for example, `[ap - 1] + [ap - 2]`) to its type.
+    /// (for example, `[ap - 1] + [ap - 2]`) to [DeferredVariableInfo].
     pub deferred_variables: OrderedHashMap<sierra::ids::VarId, DeferredVariableInfo>,
+    /// A map from [sierra::ids::VarId] of temporary variables to their type.
+    pub temporary_variables: OrderedHashMap<sierra::ids::VarId, sierra::ids::ConcreteTypeId>,
     /// The information known about the top of the stack.
     pub known_stack: KnownStack,
 }
@@ -63,9 +65,10 @@ impl State {
     /// Register an output variable of a libfunc.
     ///
     /// If the variable is marked as Deferred output by the libfunc, it is added to
-    /// `self.deferred_variables`.
+    /// [Self::deferred_variables]. Similarly for [Self::temporary_variables].
     fn register_output(&mut self, res: sierra::ids::VarId, output_info: &OutputVarInfo) {
         self.deferred_variables.swap_remove(&res);
+        self.temporary_variables.swap_remove(&res);
         self.known_stack.remove_variable(&res);
         match &output_info.ref_info {
             OutputVarReferenceInfo::Deferred(kind) => {
@@ -82,7 +85,8 @@ impl State {
                 );
             }
             OutputVarReferenceInfo::NewTempVar { idx } => {
-                self.known_stack.insert(res, *idx);
+                self.known_stack.insert(res.clone(), *idx);
+                self.temporary_variables.insert(res, output_info.ty.clone());
             }
             OutputVarReferenceInfo::SameAsParam { .. }
             | OutputVarReferenceInfo::NewLocalVar
@@ -113,8 +117,22 @@ pub fn merge_optional_states(a_opt: Option<State>, b_opt: Option<State>) -> Opti
                 "Internal compiler error: Branch merges with different list of deferred variables \
                  is not supported yet."
             );
+
+            // Merge the lists of temporary variables.
+            let mut temporary_variables = OrderedHashMap::default();
+            for (var, ty_a) in a.temporary_variables {
+                if let Some(ty_b) = b.temporary_variables.get(&var) {
+                    assert_eq!(
+                        ty_a, *ty_b,
+                        "Internal compiler error: Found different types for the same variable."
+                    );
+                    temporary_variables.insert(var, ty_a);
+                }
+            }
+
             Some(State {
                 deferred_variables: a.deferred_variables,
+                temporary_variables,
                 known_stack: a.known_stack.merge_with(&b.known_stack),
             })
         }

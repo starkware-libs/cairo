@@ -113,6 +113,7 @@ impl<'a> AddStoreVariableStatements<'a> {
                     _ => {
                         // This starts a branch. Store all deferred variables.
                         self.store_all_deffered_variables();
+                        self.store_temporary_variables_as_locals();
 
                         // Go over the branches. The state of a branch that points to `Fallthrough`
                         // is merged into `fallthrough_state`.
@@ -243,7 +244,7 @@ impl<'a> AddStoreVariableStatements<'a> {
         }
     }
 
-    /// Stores all the deffered variables and clears `deferred_variables`.
+    /// Stores all the deffered variables and clears [State::deferred_variables].
     /// The variables will be added according to the order of creation.
     fn store_all_deffered_variables(&mut self) {
         for (var, deferred_info) in self.state().deferred_variables.clone() {
@@ -252,8 +253,24 @@ impl<'a> AddStoreVariableStatements<'a> {
         self.clear_deffered_variables();
     }
 
+    /// Copies all the temporary variables that are marked as locals into local variables,
+    /// and removes them from [State::temporary_variables].
+    fn store_temporary_variables_as_locals(&mut self) {
+        for (var, _) in self.state().temporary_variables.clone() {
+            self.store_temp_as_local(&var);
+        }
+    }
+
+    /// Copies the given variable into a local variable if it is marked as local.
+    /// Removes it from [State::temporary_variables].
+    fn store_temp_as_local(&mut self, var: &sierra::ids::VarId) {
+        if let Some(uninitialized_local_var_id) = self.local_variables.get(var).cloned() {
+            let ty = self.state().temporary_variables.swap_remove(var).unwrap();
+            self.store_local(var, var, &uninitialized_local_var_id, &ty);
+        }
+    }
+
     /// Stores all the deffered and temporary variables as local variables.
-    // TODO(lior): Store temporary variables as well.
     fn store_variables_as_locals(&mut self) {
         let mut vars_to_store: Vec<(
             sierra::ids::VarId,
@@ -274,6 +291,8 @@ impl<'a> AddStoreVariableStatements<'a> {
             self.store_local(&var, &var, &uninitialized_local_var_id, &ty);
             assert!(self.state().deferred_variables.swap_remove(&var).is_some());
         }
+
+        self.store_temporary_variables_as_locals();
     }
 
     /// Clears all the deferred variables.
