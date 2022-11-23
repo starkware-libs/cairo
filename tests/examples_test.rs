@@ -61,6 +61,7 @@ fn checked_compile_to_sierra(name: &str) -> sierra::program::Program {
 #[test_case("fib_gas")]
 #[test_case("enum_flow")]
 #[test_case("corelib_usage" => ignore["unsupported"])]
+#[test_case("uint128_le")]
 fn cairo_to_sierra(name: &str) {
     assert_eq!(checked_compile_to_sierra(name).to_string(), get_expected_contents(name, "sierra"));
 }
@@ -75,6 +76,7 @@ fn cairo_to_sierra(name: &str) {
 #[test_case("fib_gas", true)]
 #[test_case("enum_flow", false)]
 #[test_case("corelib_usage", false => ignore["unsupported"])]
+#[test_case("uint128_le", false)]
 fn cairo_to_casm(name: &str, enable_gas_checks: bool) {
     let program = checked_compile_to_sierra(name);
     let gas_info = if enable_gas_checks {
@@ -103,6 +105,7 @@ fn cairo_to_casm(name: &str, enable_gas_checks: bool) {
 #[test_case("fib_uint128")]
 #[test_case("fib_gas")]
 #[test_case("corelib_usage")]
+#[test_case("uint128_le")]
 fn lowering_test(name: &str) {
     setup(name);
 }
@@ -149,6 +152,24 @@ fn generate_function_runner(params: Vec<BigInt>) -> Vec<Instruction> {
     &[1, 1, 200].map(BigInt::from),
     &[Some(BigInt::from(1)), None];
     "fib_uint128_overflow"
+)]
+#[test_case(
+    "uint128_le",
+    &[1, 1].map(BigInt::from),
+    &[Some(BigInt::from(0))];
+    "1 less than 1"
+)]
+#[test_case(
+    "uint128_le",
+    &[1, 2].map(BigInt::from),
+    &[Some(BigInt::from(1))];
+    "1 less than 2"
+)]
+#[test_case(
+    "uint128_le",
+    &[2, 1].map(BigInt::from),
+    &[Some(BigInt::from(0))];
+    "2 less than 1"
 )]
 fn run_function_test(
     name: &str,
