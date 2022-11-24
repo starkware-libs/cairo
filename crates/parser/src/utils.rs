@@ -5,6 +5,7 @@ use diagnostics::{Diagnostics, DiagnosticsBuilder};
 use filesystem::db::{init_files_group, FilesDatabase, FilesGroup};
 use filesystem::ids::FileId;
 use syntax::node::db::{SyntaxDatabase, SyntaxGroup};
+use syntax::node::green::GreenNodeDetails;
 use syntax::node::{SyntaxNode, TypedSyntaxNode};
 
 use crate::db::ParserDatabase;
@@ -50,4 +51,27 @@ pub fn get_syntax_root_and_diagnostics(
     let mut diagnostics = DiagnosticsBuilder::new();
     let syntax_root = Parser::parse_file(db, &mut diagnostics, file_id, contents);
     (syntax_root.as_syntax_node(), diagnostics.build())
+}
+
+// TODO(orizi): Consider making this a method of syntax node.
+/// Get all the text under a semantic node.
+pub fn get_node_text(db: &dyn SyntaxGroup, syntax_node: &SyntaxNode) -> String {
+    let mut buffer = String::default();
+    append_text(db, syntax_node, &mut buffer);
+    buffer
+}
+
+/// Helper for `get_node_text` to allocate only a single string.
+fn append_text(db: &dyn SyntaxGroup, syntax_node: &SyntaxNode, buffer: &mut String) {
+    let node = syntax_node.green_node(db);
+    match node.details {
+        GreenNodeDetails::Token(text) => {
+            buffer.push_str(text.as_str());
+        }
+        GreenNodeDetails::Node { .. } => {
+            for child in syntax_node.children(db) {
+                append_text(db, &child, buffer);
+            }
+        }
+    }
 }
