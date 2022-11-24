@@ -34,14 +34,15 @@ fn main() -> anyhow::Result<()> {
     let mut db_val = RootDatabase::default();
     let db = &mut db_val;
 
-    setup_project(db, Path::new(&args.path))?;
+    let main_crate_ids = setup_project(db, Path::new(&args.path))?;
 
     if check_diagnostics(db) {
         anyhow::bail!("failed to compile: {}", args.path);
     }
 
-    let mut sierra_program =
-        db.get_sierra_program().with_context(|| "Compilation failed without any diagnostics.")?;
+    let mut sierra_program = db
+        .get_sierra_program(main_crate_ids)
+        .with_context(|| "Compilation failed without any diagnostics.")?;
 
     if args.replace_ids {
         sierra_program = Arc::new(replace_sierra_ids_in_program(db, &sierra_program));
