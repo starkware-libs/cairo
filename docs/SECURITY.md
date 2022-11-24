@@ -2,7 +2,7 @@
 
 ## Reporting a Vulnerability
 
-If there are any vulnerabilities in **Beerus**, don't hesitate to _report them_.
+If there are any vulnerabilities in **Cairo**, don't hesitate to _report them_.
 
 1. Use any of the [private contact addresses](https://github.com/starkware-libs-cairo#support).
 2. Describe the vulnerability.
