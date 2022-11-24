@@ -20,15 +20,15 @@ pub struct ContractClass {
 #[derive(Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ContractEntryPoints {
     #[serde(rename = "EXTERNAL")]
-    pub external: Vec<SierraEntryPoint>,
+    pub external: Vec<ContractEntryPoint>,
     #[serde(rename = "L1_HANDLER")]
-    pub l1_handler: Vec<SierraEntryPoint>,
+    pub l1_handler: Vec<ContractEntryPoint>,
     #[serde(rename = "CONSTRUCTOR")]
-    pub constructor: Vec<SierraEntryPoint>,
+    pub constructor: Vec<ContractEntryPoint>,
 }
 
 #[derive(Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct SierraEntryPoint {
+pub struct ContractEntryPoint {
     /// A field element that encodes the signature of the called function.
     #[serde(serialize_with = "serialize_big_uint", deserialize_with = "deserialize_big_uint")]
     pub selector: BigUint,

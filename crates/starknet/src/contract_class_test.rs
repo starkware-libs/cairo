@@ -3,11 +3,11 @@ use num_bigint::BigUint;
 use pretty_assertions::assert_eq;
 
 use crate::abi;
-use crate::contract_class::{ContractClass, ContractEntryPoints, SierraEntryPoint};
+use crate::contract_class::{ContractClass, ContractEntryPoint, ContractEntryPoints};
 
 #[test]
 fn test_serialization() {
-    let external = vec![SierraEntryPoint { selector: BigUint::from(u128::MAX), function_id: 7 }];
+    let external = vec![ContractEntryPoint { selector: BigUint::from(u128::MAX), function_id: 7 }];
 
     let contract = ContractClass {
         sierra_program: sierra::program::Program {
