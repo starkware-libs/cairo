@@ -8,11 +8,16 @@ db_utils = { path = "../db_utils" }
 defs = { path = "../defs" }
 diagnostics = { path = "../diagnostics" }
 filesystem = { path = "../filesystem" }
+indoc.workspace = true
+itertools.workspace = true
+parser = { path = "../parser" }
 salsa.workspace = true
 smol_str.workspace = true
 syntax = { path = "../syntax" }
+utils = { path = "../utils" }
 
 [dev-dependencies]
 indoc.workspace = true
 parser = { path = "../parser" }
+pretty_assertions.workspace = true
 debug = { path = "../debug" }
