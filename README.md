@@ -127,6 +127,6 @@ _For more information and to report security issues, please refer to our [securi
 
 ## License
 
-This project is licensed under the **GNU General Public License v3.0**.
+This project is licensed under the **Apache 2.0**.
 
 See [LICENSE](LICENSE) for more information.
