@@ -4,8 +4,8 @@ mod test;
 
 use defs::diagnostic_utils::StableLocation;
 use defs::ids::{
-    EnumId, GenericFunctionId, ImplFunctionId, ModuleId, StructId, TopLevelLanguageElementId,
-    TraitId,
+    EnumId, GenericFunctionId, ImplFunctionId, ImplId, ModuleId, StructId,
+    TopLevelLanguageElementId, TraitId,
 };
 use diagnostics::{DiagnosticEntry, DiagnosticLocation, Diagnostics, DiagnosticsBuilder};
 use smol_str::SmolStr;
@@ -74,10 +74,15 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::NotAStruct => "Not a struct.".into(),
             SemanticDiagnosticKind::NotAType => "Not a type.".into(),
             SemanticDiagnosticKind::NotATrait => "Not a trait.".into(),
-            SemanticDiagnosticKind::FunctionNotMemberOfTrait { impl_function_id, trait_id } => {
+            SemanticDiagnosticKind::FunctionNotMemberOfTrait {
+                impl_id,
+                impl_function_id,
+                trait_id,
+            } => {
                 let defs_db = db.upcast();
                 format!(
-                    "Associated function `{}` is not a member of trait `{}`.",
+                    "Impl function `{}::{}` is not a member of trait `{}`.",
+                    impl_id.name(defs_db),
                     impl_function_id.name(defs_db),
                     trait_id.name(defs_db)
                 )
@@ -96,8 +101,25 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::MissingMember { member_name } => {
                 format!(r#"Missing member "{member_name}"."#)
             }
-            SemanticDiagnosticKind::WrongNumberOfParameters { expected, actual } => {
-                format!("Wrong number of parameters. Expected {expected}, found: {actual}")
+            SemanticDiagnosticKind::WrongNumberOfParameters {
+                impl_id,
+                impl_function_id,
+                trait_id,
+                expected,
+                actual,
+            } => {
+                let defs_db = db.upcast();
+                let function_name = impl_function_id.name(defs_db);
+                format!(
+                    "The number of parameters in the impl function `{}::{}` is incompatible with \
+                     `{}::{}`. Expected: {}, actual: {}.",
+                    impl_id.name(defs_db),
+                    function_name,
+                    trait_id.name(defs_db),
+                    function_name,
+                    expected,
+                    actual,
+                )
             }
             SemanticDiagnosticKind::WrongNumberOfArguments { expected, actual } => {
                 format!("Wrong number of arguments. Expected {expected}, found: {actual}")
@@ -106,17 +128,21 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 format!("Wrong number of generic arguments. Expected {expected}, found: {actual}")
             }
             SemanticDiagnosticKind::WrongParameterType {
+                impl_id,
                 impl_function_id,
                 trait_id,
                 expected_ty,
                 actual_ty,
             } => {
                 let defs_db = db.upcast();
+                let function_name = impl_function_id.name(defs_db);
                 format!(
-                    "Associated function `{}` has an incompatible type for trait `{}`. Unexpected \
-                     parameter type. Expected: `{}`, found: `{}`.",
-                    impl_function_id.name(defs_db),
+                    "Parameter type of impl function `{}::{}` is incompatible with `{}::{}`. \
+                     Expected: `{}`, actual: `{}`.",
+                    impl_id.name(defs_db),
+                    function_name,
                     trait_id.name(defs_db),
+                    function_name,
                     expected_ty.format(db),
                     actual_ty.format(db)
                 )
@@ -131,6 +157,26 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::WrongReturnType { expected_ty, actual_ty } => {
                 format!(
                     r#"Unexpected return type. Expected: "{}", found: "{}"."#,
+                    expected_ty.format(db),
+                    actual_ty.format(db)
+                )
+            }
+            SemanticDiagnosticKind::WrongReturnTypeForImpl {
+                impl_id,
+                impl_function_id,
+                trait_id,
+                expected_ty,
+                actual_ty,
+            } => {
+                let defs_db = db.upcast();
+                let function_name = impl_function_id.name(defs_db);
+                format!(
+                    "Return type of impl function `{}::{}` is incompatible with `{}::{}`. \
+                     Expected: `{}`, actual: `{}`.",
+                    impl_id.name(defs_db),
+                    function_name,
+                    trait_id.name(defs_db),
+                    function_name,
                     expected_ty.format(db),
                     actual_ty.format(db)
                 )
@@ -290,6 +336,7 @@ pub enum SemanticDiagnosticKind {
     NotAType,
     NotATrait,
     FunctionNotMemberOfTrait {
+        impl_id: ImplId,
         impl_function_id: ImplFunctionId,
         trait_id: TraitId,
     },
@@ -302,6 +349,9 @@ pub enum SemanticDiagnosticKind {
         member_name: SmolStr,
     },
     WrongNumberOfParameters {
+        impl_id: ImplId,
+        impl_function_id: ImplFunctionId,
+        trait_id: TraitId,
         expected: usize,
         actual: usize,
     },
@@ -314,6 +364,7 @@ pub enum SemanticDiagnosticKind {
         actual: usize,
     },
     WrongParameterType {
+        impl_id: ImplId,
         impl_function_id: ImplFunctionId,
         trait_id: TraitId,
         expected_ty: semantic::TypeId,
@@ -324,6 +375,13 @@ pub enum SemanticDiagnosticKind {
         actual_ty: semantic::TypeId,
     },
     WrongReturnType {
+        expected_ty: semantic::TypeId,
+        actual_ty: semantic::TypeId,
+    },
+    WrongReturnTypeForImpl {
+        impl_id: ImplId,
+        impl_function_id: ImplFunctionId,
+        trait_id: TraitId,
         expected_ty: semantic::TypeId,
         actual_ty: semantic::TypeId,
     },
