@@ -8,6 +8,7 @@ db_utils = { path = "../db_utils" }
 debug = { path = "../debug" }
 diagnostics = { path = "../diagnostics" }
 filesystem = { path = "../filesystem" }
+indexmap.workspace = true
 itertools.workspace = true
 salsa.workspace = true
 syntax = { path = "../syntax" }

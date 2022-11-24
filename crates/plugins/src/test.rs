@@ -62,7 +62,16 @@ fn test_derive_plugin() {
     db.set_macro_plugins(vec![Arc::new(DerivePlugin {})]);
 
     // Main module file.
-    set_file_content(db, "src/lib.cairo", "#[derive(Copy, Drop)] struct A{}");
+    set_file_content(
+        db,
+        "src/lib.cairo",
+        r#"
+            #[derive(Copy, Drop)]
+            struct A{}
+            #[derive(Copy, Drop)]
+            struct B{}
+        "#,
+    );
 
     // Find submodules.
     let module_id = ModuleId::CrateRoot(crate_id);
@@ -76,5 +85,15 @@ fn test_derive_plugin() {
     assert_eq!(
         format!("{:?}", db.module_item_by_name(submodule_id, "ADrop".into()).debug(db)),
         "Some(ImplId(test_crate::impls::ADrop))"
+    );
+
+    assert_eq!(
+        format!("{:?}", db.module_item_by_name(submodule_id, "BCopy".into()).debug(db)),
+        "Some(ImplId(test_crate::impls::BCopy))"
+    );
+
+    assert_eq!(
+        format!("{:?}", db.module_item_by_name(submodule_id, "BDrop".into()).debug(db)),
+        "Some(ImplId(test_crate::impls::BDrop))"
     );
 }
