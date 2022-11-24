@@ -327,6 +327,7 @@ impl<'a> AddStoreVariableStatements<'a> {
         ));
 
         self.known_stack().push(var_on_stack);
+        self.state().temporary_variables.insert(var_on_stack.clone(), ty.clone());
     }
 
     fn store_local(
