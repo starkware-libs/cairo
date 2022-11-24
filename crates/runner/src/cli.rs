@@ -41,14 +41,15 @@ fn main() -> anyhow::Result<()> {
     let mut db_val = RootDatabase::default();
     let db = &mut db_val;
 
-    setup_project(db, Path::new(&args.path))?;
+    let main_crate_ids = setup_project(db, Path::new(&args.path))?;
 
     if check_diagnostics(db) {
         anyhow::bail!("failed to compile: {}", args.path);
     }
 
-    let sierra_program =
-        db.get_sierra_program().with_context(|| "Compilation failed without any diagnostics.")?;
+    let sierra_program = db
+        .get_sierra_program(main_crate_ids)
+        .with_context(|| "Compilation failed without any diagnostics.")?;
     let function_sizes = function_to_input_output_sizes(&sierra_program, db);
 
     let sierra_program = Arc::new(replace_sierra_ids_in_program(db, &sierra_program));

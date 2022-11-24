@@ -68,12 +68,21 @@ impl Upcast<dyn LoweringGroup> for SierraGenDatabaseForTesting {
     }
 }
 
-/// Compiles 'content' to sierra and replaces the sierra ids to make it readable.
+/// Compiles `content` to sierra and replaces the sierra ids to make it readable.
 pub fn checked_compile_to_sierra(content: &str) -> sierra::program::Program {
+    let (db, crate_id) = setup_db_and_get_crate_id(content);
+
+    let program = db.get_sierra_program(vec![crate_id]).unwrap();
+    replace_sierra_ids_in_program(&db, &program)
+}
+
+/// Adds `content` to a salsa db and returns the crate id that points to it.
+pub fn setup_db_and_get_crate_id(
+    content: &str,
+) -> (SierraGenDatabaseForTesting, filesystem::ids::CrateId) {
     let mut db_val = SierraGenDatabaseForTesting::default();
     let db = &mut db_val;
     let crate_id = setup_test_crate(db, content);
-
     let module_id = ModuleId::CrateRoot(crate_id);
     db.module_semantic_diagnostics(module_id)
         .unwrap()
@@ -83,9 +92,7 @@ pub fn checked_compile_to_sierra(content: &str) -> sierra::program::Program {
         .expect_with_db(db, "Unexpected lowering diagnostics.");
     db.module_sierra_diagnostics(module_id)
         .expect_with_db(db, "Unexpected Sierra generation diagnostics.");
-
-    let program = db.get_sierra_program().unwrap();
-    replace_sierra_ids_in_program(db, &program)
+    (db_val, crate_id)
 }
 
 /// Generates a dummy statement with the given name, inputs and outputs.

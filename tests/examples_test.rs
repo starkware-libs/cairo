@@ -6,6 +6,7 @@ use compiler::db::RootDatabase;
 use compiler::diagnostics::check_diagnostics;
 use compiler::project::setup_project;
 use defs::db::DefsGroup;
+use filesystem::ids::CrateId;
 use num_bigint::BigInt;
 use plugins::derive::DerivePlugin;
 use pretty_assertions::assert_eq;
@@ -19,7 +20,7 @@ use crate::common::run_sierra_program;
 mod common;
 
 /// Setups the cairo lowering to sierra db for the matching example.
-fn setup(name: &str) -> RootDatabase {
+fn setup(name: &str) -> (RootDatabase, Vec<CrateId>) {
     let dir = env!("CARGO_MANIFEST_DIR");
     // Pop the "/tests" suffix.
     let mut path = PathBuf::from(dir).parent().unwrap().to_owned();
@@ -28,9 +29,9 @@ fn setup(name: &str) -> RootDatabase {
 
     let mut db = RootDatabase::default();
     db.set_macro_plugins(vec![Arc::new(DerivePlugin {})]);
-    setup_project(&mut db, path.as_path()).expect("Project setup failed.");
+    let main_crate_ids = setup_project(&mut db, path.as_path()).expect("Project setup failed.");
     assert!(!check_diagnostics(&mut db));
-    db
+    (db, main_crate_ids)
 }
 
 /// Returns the path of the relevant test file.
@@ -62,8 +63,8 @@ fn compare_contents_or_fix(name: &str, test_type: &str, content: String) {
 
 /// Compiles the Cairo code for `name` to a Sierra program.
 fn checked_compile_to_sierra(name: &str) -> sierra::program::Program {
-    let db = setup(name);
-    let sierra_program = db.get_sierra_program().unwrap();
+    let (db, main_crate_ids) = setup(name);
+    let sierra_program = db.get_sierra_program(main_crate_ids).unwrap();
     replace_sierra_ids_in_program(&db, &sierra_program)
 }
 

@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use db_utils::define_short_id;
 use defs::ids::FreeFunctionId;
 use sierra::ids::ConcreteTypeId;
@@ -92,11 +90,4 @@ pub struct PushValue {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Label {
     pub id: LabelId,
-}
-
-/// Represents a pre-sierra library.
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Library {
-    pub functions: Vec<Arc<Function>>,
-    pub statements: Vec<Statement>,
 }
