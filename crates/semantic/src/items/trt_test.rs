@@ -1,3 +1,4 @@
+use debug::DebugWithDb;
 use defs::db::DefsGroup;
 use defs::ids::ModuleItemId;
 use pretty_assertions::assert_eq;
@@ -29,7 +30,7 @@ fn test_trait() {
 
     assert_eq!(format!("{:?}", db.trait_generic_params(trait_id).unwrap()), "[]");
     assert_eq!(
-        format!("{:?}", db.trait_attributes(trait_id).unwrap()),
+        format!("{:?}", db.trait_attributes(trait_id).unwrap().debug(db)),
         "[Attribute { id: \"contract\" }]"
     );
 
