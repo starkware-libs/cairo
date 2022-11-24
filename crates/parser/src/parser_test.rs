@@ -3,7 +3,6 @@ use std::fmt::Write;
 
 use pretty_assertions::assert_eq;
 use test_case::test_case;
-use test_log::test;
 use utils::ordered_hash_map::OrderedHashMap;
 
 use crate::colored_printer::print_colored;

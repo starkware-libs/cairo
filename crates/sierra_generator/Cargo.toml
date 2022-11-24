@@ -28,6 +28,7 @@ utils = { path = "../utils" }
 [dev-dependencies]
 env_logger.workspace = true
 indoc.workspace = true
+log.workspace = true
 pretty_assertions.workspace = true
 semantic = { path = "../semantic", features = ["testing"] }
 utils = { path = "../utils", features = ["testing"] }
