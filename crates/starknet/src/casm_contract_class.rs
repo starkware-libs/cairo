@@ -4,12 +4,14 @@ use num_bigint::{BigInt, BigUint};
 use num_traits::Num;
 use serde::ser::Serializer;
 use serde::{Deserialize, Deserializer, Serialize};
+use sierra::ids::FunctionId;
+use sierra::program::StatementIdx;
 use sierra_gas::{calc_gas_info, CostError};
 use sierra_to_casm::compiler::CompilationError;
 use sierra_to_casm::metadata::Metadata;
 use thiserror::Error;
 
-use crate::contract_class::{ContractClass, ContractEntryPoints};
+use crate::contract_class::{ContractClass, ContractEntryPoint};
 
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum StarknetSierraCompilationError {
@@ -17,6 +19,8 @@ pub enum StarknetSierraCompilationError {
     CompilationError(#[from] CompilationError),
     #[error(transparent)]
     CostError(#[from] CostError),
+    #[error("Invalid entry point.")]
+    EntryPointError,
 }
 
 /// Represents a contract in the StarkNet network.
@@ -24,7 +28,7 @@ pub enum StarknetSierraCompilationError {
 pub struct CasmContractClass {
     pub bytecode: Vec<BigInt>,
     pub hints: Vec<(usize, Vec<String>)>,
-    pub entry_points_by_type: ContractEntryPoints,
+    pub entry_points_by_type: CasmContractEntryPoints,
 }
 
 impl CasmContractClass {
@@ -53,19 +57,64 @@ impl CasmContractClass {
             bytecode.extend(instruction.assemble().encode());
         }
 
-        // TODO(ilya): Fix entry points.
+        // A mapping from func_id to statement_id
+        let func_sierra_entry_point: HashMap<&FunctionId, StatementIdx> =
+            program.funcs.iter().map(|func| (&func.id, func.entry_point)).collect();
 
-        Ok(Self { bytecode, hints, entry_points_by_type: ContractEntryPoints::default() })
+        let as_casm_entry_point = |contract_entry_point: ContractEntryPoint| {
+            let statement_id = func_sierra_entry_point
+                .get(&FunctionId::from_usize(contract_entry_point.function_id))
+                .ok_or(StarknetSierraCompilationError::EntryPointError)?;
+
+            let code_offset = cairo_program
+                .debug_info
+                .sierra_statement_info
+                .get(statement_id.0)
+                .ok_or(StarknetSierraCompilationError::EntryPointError)?
+                .code_offset;
+            Ok::<CasmContractEntryPoint, StarknetSierraCompilationError>(CasmContractEntryPoint {
+                selector: contract_entry_point.selector,
+                offset: code_offset,
+            })
+        };
+
+        let as_casm_entry_points = |contract_entry_points: Vec<ContractEntryPoint>| {
+            let mut entry_points = vec![];
+            for contract_entry_point in contract_entry_points.into_iter() {
+                entry_points.push(as_casm_entry_point(contract_entry_point)?);
+            }
+            Ok::<Vec<CasmContractEntryPoint>, StarknetSierraCompilationError>(entry_points)
+        };
+
+        Ok(Self {
+            bytecode,
+            hints,
+            entry_points_by_type: CasmContractEntryPoints {
+                external: as_casm_entry_points(contract_class.entry_points_by_type.external)?,
+                l1_handler: as_casm_entry_points(contract_class.entry_points_by_type.l1_handler)?,
+                constructor: as_casm_entry_points(contract_class.entry_points_by_type.constructor)?,
+            },
+        })
     }
 }
 
 #[derive(Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct ContractEntryPoint {
+pub struct CasmContractEntryPoint {
     /// A field element that encodes the signature of the called function.
     #[serde(serialize_with = "serialize_big_uint", deserialize_with = "deserialize_big_uint")]
     pub selector: BigUint,
     /// The offset of the instruction that should be called within the contract bytecode.
     pub offset: usize,
+}
+
+#[derive(Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CasmContractEntryPoints {
+    #[serde(rename = "EXTERNAL")]
+    pub external: Vec<CasmContractEntryPoint>,
+    #[serde(rename = "L1_HANDLER")]
+    pub l1_handler: Vec<CasmContractEntryPoint>,
+    #[serde(rename = "CONSTRUCTOR")]
+    pub constructor: Vec<CasmContractEntryPoint>,
 }
 
 pub fn serialize_big_uint<S>(num: &BigUint, serializer: S) -> Result<S::Ok, S::Error>
