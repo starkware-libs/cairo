@@ -88,6 +88,9 @@ pub trait SemanticGroup:
         &self,
         struct_id: StructId,
     ) -> Option<OrderedHashMap<SmolStr, semantic::Member>>;
+    /// Returns the attributes of a struct.
+    #[salsa::invoke(items::strct::struct_attributes)]
+    fn struct_attributes(&self, struct_id: StructId) -> Option<Vec<Attribute>>;
 
     // Enum.
     // =======
