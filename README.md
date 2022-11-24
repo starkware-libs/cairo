@@ -1,7 +1,7 @@
 <div align="center">
   <h1>Cairo 🐺 </h1>
   <h2> ⚡ Blazing ⚡ fast ⚡ compiler for Cairo, written in 🦀 Rust 🦀 </h2>
-  <img src="resources/img/logo.png" height="200" width="200">
+  <img src="./resources/img/cairo-logo-square.png" height="200" width="200">
   <br />
   <a href="#about"><strong>Explore the snippets »</strong></a>
   <br />
