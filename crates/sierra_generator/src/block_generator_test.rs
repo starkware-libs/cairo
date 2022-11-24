@@ -1,7 +1,6 @@
 use diagnostics::DiagnosticsBuilder;
 use lowering::lower::lower;
 use semantic::test_utils::setup_test_function;
-use test_log::test;
 use utils::ordered_hash_map::OrderedHashMap;
 
 use super::generate_block_code;

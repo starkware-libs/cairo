@@ -23,6 +23,7 @@ syntax = { path = "../syntax" }
 utils = { path = "../utils" }
 
 [dev-dependencies]
+env_logger.workspace = true
 indoc.workspace = true
 pretty_assertions.workspace = true
 semantic = { path = "../semantic", features = ["testing"] }

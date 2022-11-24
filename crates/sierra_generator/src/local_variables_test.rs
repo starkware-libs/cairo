@@ -3,7 +3,6 @@ use itertools::Itertools;
 use lowering::db::LoweringGroup;
 use pretty_assertions::assert_eq;
 use semantic::test_utils::setup_test_function;
-use test_log::test;
 use utils::ordered_hash_map::OrderedHashMap;
 
 use super::find_local_variables;
