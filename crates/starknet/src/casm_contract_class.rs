@@ -21,6 +21,7 @@ pub enum StarknetSierraCompilationError {
 #[derive(Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CasmContractClass {
     pub bytecode: Vec<BigInt>,
+    pub hints: Vec<(usize, Vec<String>)>,
     pub entry_points_by_type: ContractEntryPoints,
 }
 
@@ -39,12 +40,19 @@ impl CasmContractClass {
         )?;
 
         let mut bytecode = vec![];
+        let mut hints = vec![];
         for instruction in cairo_program.instructions {
+            if !instruction.hints.is_empty() {
+                hints.push((
+                    bytecode.len(),
+                    instruction.hints.iter().map(|hint| hint.to_string()).collect(),
+                ))
+            }
             bytecode.extend(instruction.assemble().encode());
         }
 
         // TODO(ilya): Fix entry points.
 
-        Ok(Self { bytecode, entry_points_by_type: ContractEntryPoints::default() })
+        Ok(Self { bytecode, hints, entry_points_by_type: ContractEntryPoints::default() })
     }
 }
