@@ -41,7 +41,7 @@ fn generate_derive_code_for_type(
                             let name = ident.text(db);
                             let derived = segment.ident(db).text(db);
                             impls.push(format!(
-                                "impl {name}{derived} of {derived}::<super::{name}>;"
+                                "impl {name}{derived} of {derived}::<super::{name}>;\n"
                             ));
                         }
                     }
@@ -49,5 +49,5 @@ fn generate_derive_code_for_type(
             }
         }
     }
-    if impls.is_empty() { None } else { Some(("impls".into(), impls.join("\n"))) }
+    if impls.is_empty() { None } else { Some(("impls".into(), impls.join(""))) }
 }

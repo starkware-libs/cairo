@@ -17,7 +17,8 @@ syntax = { path = "../syntax" }
 utils = { path = "../utils" }
 
 [dev-dependencies]
+debug = { path = "../debug" }
 indoc.workspace = true
 parser = { path = "../parser" }
 pretty_assertions.workspace = true
-debug = { path = "../debug" }
+test-case.workspace = true
