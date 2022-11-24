@@ -234,22 +234,31 @@ fn module_submodules(db: &dyn DefsGroup, module_id: ModuleId) -> Option<Vec<Modu
     let syntax_db = db.upcast();
     let mut submodules: Vec<_> =
         db.module_data(module_id)?.submodules.keys().copied().map(ModuleId::Submodule).collect();
+    let mut virtual_modules = OrderedHashMap::<SmolStr, Vec<String>>::default();
     for plugin in db.macro_plugins() {
         for item_ast in db.module_syntax(module_id)?.items(syntax_db).elements(syntax_db) {
             let Some((name, content)) = plugin.generate_code(db.upcast(), item_ast) else {continue};
-            let file = db.intern_file(FileLongId::Virtual(VirtualFile {
-                parent: db.module_file(module_id),
-                name: name.clone(),
-                content: Arc::new(content),
-            }));
-            let submodule_id =
-                ModuleId::VirtualSubmodule(db.intern_virtual_submodule(VirtualSubmodule {
-                    name,
-                    parent: module_id,
-                    file,
-                }));
-            submodules.push(submodule_id);
+            match virtual_modules.entry(name) {
+                indexmap::map::Entry::Occupied(mut e) => e.get_mut().push(content),
+                indexmap::map::Entry::Vacant(e) => {
+                    e.insert(vec![content]);
+                }
+            }
         }
+    }
+    for (name, content) in virtual_modules {
+        let file = db.intern_file(FileLongId::Virtual(VirtualFile {
+            parent: db.module_file(module_id),
+            name: name.clone(),
+            content: Arc::new(content.join("\n")),
+        }));
+        let submodule_id =
+            ModuleId::VirtualSubmodule(db.intern_virtual_submodule(VirtualSubmodule {
+                name,
+                parent: module_id,
+                file,
+            }));
+        submodules.push(submodule_id);
     }
     Some(submodules)
 }
