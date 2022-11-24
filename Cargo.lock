@@ -1538,10 +1538,13 @@ dependencies = [
  "diagnostics",
  "filesystem",
  "indoc",
+ "itertools",
  "parser",
+ "pretty_assertions",
  "salsa",
  "smol_str",
  "syntax",
+ "utils",
 ]
 
 [[package]]
