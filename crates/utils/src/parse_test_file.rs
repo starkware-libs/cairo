@@ -189,7 +189,7 @@ impl TestBuilder {
 #[macro_export]
 macro_rules! test_file_test {
     ($test_name:ident, $filenames:expr, $db_type:ty, $func:ident) => {
-        #[test]
+        #[test_log::test]
         fn $test_name() -> Result<(), std::io::Error> {
             // TODO(mkaput): consider extracting this part into a function and passing macro args
             // via refs or closures. It may reduce compilation time sizeably.
@@ -203,7 +203,9 @@ macro_rules! test_file_test {
                     utils::parse_test_file::Test,
                 >::default();
                 // TODO(alont): global tags for all tests in a file.
+                let test_func_name = stringify!($func);
                 for (test_name, test) in tests {
+                    log::debug!(r#"Running test: {test_func_name}::{filename}::"{test_name}""#);
                     let outputs = $func(&mut <$db_type>::default(), &test.attributes);
                     let line_num = test.line_num;
                     let full_filename = std::fs::canonicalize(path.as_path())?;
@@ -218,7 +220,7 @@ macro_rules! test_file_test {
                         })
                     };
 
-                    assert_eq!(get_attr("test_function_name"), stringify!($func));
+                    assert_eq!(get_attr("test_function_name"), test_func_name);
 
                     if is_fix_mode {
                         let mut new_test = test.clone();
