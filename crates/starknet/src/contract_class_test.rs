@@ -1,16 +1,14 @@
 use indoc::indoc;
 use num_bigint::BigUint;
 use pretty_assertions::assert_eq;
+use sierra::ids::FunctionId;
 
 use crate::abi;
-use crate::contract_class::{ContractClass, ContractEntryPoint, ContractEntryPoints};
+use crate::contract_class::{ContractClass, ContractEntryPoints, SierraEntryPoint};
 
 #[test]
 fn test_serialization() {
-    let external = vec![ContractEntryPoint {
-        selector: BigUint::from(u128::MAX),
-        offset: BigUint::from(1u32),
-    }];
+    let external = vec![SierraEntryPoint { selector: BigUint::from(u128::MAX), function_id: 7 }];
 
     let contract = ContractClass {
         sierra_program: sierra::program::Program {
@@ -37,10 +35,13 @@ fn test_serialization() {
           "sierra_program": "\n\n\n",
           "entry_points_by_type": {
             "EXTERNAL": [
-              {
-                "selector": "0xffffffffffffffffffffffffffffffff",
-                "offset": "0x1"
-              }
+              "selector": [
+                4294967295,
+                4294967295,
+                4294967295,
+                4294967295
+            ],
+              "function_id": 7
             ],
             "L1_HANDLER": [],
             "CONSTRUCTOR": []
