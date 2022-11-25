@@ -356,7 +356,7 @@ impl<'a> AddStoreVariableStatements<'a> {
             &[dst.clone()],
         ));
 
-        self.known_stack().clone_if_on_stack(src, dst);
+        self.state().rename_var(src, dst);
     }
 
     /// Returns the current state, assuming the current statement is reachable.
