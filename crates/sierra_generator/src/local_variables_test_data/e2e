@@ -60,9 +60,6 @@ return([19])
 
 //! > Test locals with if
 
-//! > todo
-// TODO(lior): Missing store_local for variable [2].
-
 //! > test_function_name
 test_function_generator
 
@@ -92,7 +89,6 @@ func revoke_ap() -> felt {
 label0:
 alloc_local<felt>() -> ([1])
 alloc_local<felt>() -> ([3])
-drop<Uninitialized<felt>>([3]) -> ()
 finalize_locals() -> ()
 revoke_ap_tracking() -> ()
 function_call<user@test_crate::revoke_ap>() -> ([0])
@@ -114,6 +110,7 @@ function_call<user@test_crate::revoke_ap>() -> ([9])
 rename<felt>([9]) -> ([2])
 burn_gas() -> ()
 label3:
+store_local<felt>([3], [2]) -> ([2])
 function_call<user@test_crate::revoke_ap>() -> ([10])
 drop<felt>([10]) -> ()
 felt_add([0], [2]) -> ([11])
