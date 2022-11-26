@@ -202,6 +202,7 @@ impl EnumConstruct {
 pub struct MatchEnum {
     pub input: LivingVar,
     pub concrete_enum_id: ConcreteEnumId,
+    /// The arms of the match. Order must be identical to the order in the definition of the enum.
     pub arms: Vec<(ConcreteVariant, BlockId)>,
     pub end_info: BlockEndInfo,
 }
