@@ -6,6 +6,7 @@ use semantic::test_utils::setup_test_function;
 use utils::ordered_hash_map::OrderedHashMap;
 
 use super::find_local_variables;
+use crate::function_generator_test_utils::test_function_generator;
 use crate::test_utils::SierraGenDatabaseForTesting;
 
 utils::test_file_test!(
@@ -54,3 +55,10 @@ fn check_find_local_variables(
         ("local_variables".into(), local_variables_str),
     ])
 }
+
+utils::test_file_test!(
+    local_variables_e2e_test,
+    ["src/local_variables_test_data/e2e",],
+    SierraGenDatabaseForTesting,
+    test_function_generator
+);

@@ -7,6 +7,8 @@ mod diagnostic;
 mod dup_and_drop;
 mod expr_generator_context;
 mod function_generator;
+#[cfg(any(feature = "testing", test))]
+pub mod function_generator_test_utils;
 mod id_allocator;
 mod local_variables;
 mod next_statement_index_fetch;
