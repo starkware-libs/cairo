@@ -7,7 +7,8 @@ check_find_local_variables
 foo
 
 //! > function_code
-func foo(x: MyEnum) -> felt {
+func foo() -> felt {
+  let x = bar();
   let w1 = 2;
   let y = match x {
     MyEnum::A(a) => {
@@ -30,6 +31,10 @@ func foo(x: MyEnum) -> felt {
 // Revokes ap since this function is recursive.
 func revoke_ap() -> felt {
     revoke_ap()
+}
+
+func bar() -> MyEnum {
+    bar()
 }
 
 enum MyEnum {
@@ -73,8 +78,9 @@ End:
   Callsite(v9)
 
 blk4:
-Inputs: v0: test_crate::MyEnum
+Inputs:
 Statements:
+  (v0: test_crate::MyEnum) <- test_crate::bar()
   (v1: core::felt) <- 2u
   (v10: core::felt) <- match_enum(v0) {
     MyEnum::A => blk2,
@@ -87,7 +93,7 @@ End:
   Callsite(v10)
 
 //! > local_variables
-v2, v1, v10
+v0, v1, v10
 
 //! > ==========================================================================
 
