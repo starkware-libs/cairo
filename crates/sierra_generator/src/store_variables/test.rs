@@ -345,6 +345,35 @@ fn push_values_optimization() {
     );
 }
 
+/// Tests that the known stack is cleared after change to ap.
+#[test]
+fn push_values_clear_known_stack() {
+    let db = SierraGenDatabaseForTesting::default();
+    let statements: Vec<pre_sierra::Statement> = vec![
+        dummy_push_values(&db, &[("0", "100")]),
+        // The explicit call to store_temp() will clear the known stack.
+        dummy_simple_statement(&db, "store_temp<felt>", &["1"], &["101"]),
+        dummy_push_values(&db, &[("100", "200"), ("101", "201")]),
+        dummy_simple_statement(&db, "nope", &[], &[]),
+        dummy_push_values(&db, &[("200", "300"), ("201", "301")]),
+        dummy_return_statement(&["0"]),
+    ];
+
+    assert_eq!(
+        test_add_store_statements(&db, statements, LocalVariables::default()),
+        vec![
+            "store_temp<felt>(0) -> (100)",
+            "store_temp<felt>(1) -> (101)",
+            "store_temp<felt>(100) -> (200)",
+            "store_temp<felt>(101) -> (201)",
+            "nope() -> ()",
+            "rename<felt>(200) -> (300)",
+            "rename<felt>(201) -> (301)",
+            "return(0)",
+        ]
+    );
+}
+
 /// Tests a few consecutive invocations of [PushValues](pre_sierra::Statement::PushValues).
 #[test]
 fn consecutive_push_values() {

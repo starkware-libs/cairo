@@ -1,4 +1,6 @@
-use sierra::extensions::lib_func::{BranchSignature, DeferredOutputKind, OutputVarInfo};
+use sierra::extensions::lib_func::{
+    BranchSignature, DeferredOutputKind, OutputVarInfo, SierraApChange,
+};
 use sierra::extensions::OutputVarReferenceInfo;
 use utils::ordered_hash_map::OrderedHashMap;
 
@@ -45,12 +47,15 @@ impl State {
     ) {
         // Clear the stack if needed.
         match branch_signature.ap_change {
-            sierra::extensions::lib_func::SierraApChange::NotImplemented
-            | sierra::extensions::lib_func::SierraApChange::Unknown => {
+            SierraApChange::NotImplemented | SierraApChange::Unknown => {
                 self.clear_known_stack();
             }
-            sierra::extensions::lib_func::SierraApChange::FinalizeLocals
-            | sierra::extensions::lib_func::SierraApChange::Known(_) => {}
+            SierraApChange::Known(value) if value != 0 => {
+                // Clear the stack in this case since it's possible that undeclared (not part of the
+                // output) temporary variables are created by the libfunc.
+                self.clear_known_stack();
+            }
+            SierraApChange::FinalizeLocals | SierraApChange::Known(_) => {}
         }
 
         for (var, var_info) in itertools::zip_eq(results, &branch_signature.vars) {
