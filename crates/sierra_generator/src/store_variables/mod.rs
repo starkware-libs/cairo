@@ -182,39 +182,47 @@ impl<'a> AddStoreVariableStatements<'a> {
     }
 
     /// Prepares the given `arg` to be used as an argument for a libfunc.
+    ///
+    /// Returns `true` if the variable was copied to the stack.
     fn prepare_libfunc_argument(
         &mut self,
         arg: &sierra::ids::VarId,
         allow_deferred: bool,
         allow_add_const: bool,
-    ) {
+    ) -> bool {
         if let Some(deferred_info) = self.state().deferred_variables.get(arg) {
             match deferred_info.kind {
                 state::DeferredVariableKind::Generic => {
                     if !allow_deferred {
-                        self.store_deferred(arg)
+                        return self.store_deferred(arg);
                     }
                 }
                 state::DeferredVariableKind::AddConst => {
                     if !allow_add_const {
-                        self.store_deferred(arg)
+                        return self.store_deferred(arg);
                     }
                 }
             };
         }
+
+        false
     }
 
     /// Adds a store_temp() or store_local() instruction for the given deferred variable and removes
     /// it from the `deferred_variables` map.
-    fn store_deferred(&mut self, var: &sierra::ids::VarId) {
+    ///
+    /// Returns `true` if the variable was copied to the stack.
+    fn store_deferred(&mut self, var: &sierra::ids::VarId) -> bool {
         let deferred_info = self.state().deferred_variables[var.clone()].clone();
+        self.state().deferred_variables.swap_remove(var);
         // Check if this variable should be a local variable.
         if let Some(uninitialized_local_var_id) = self.local_variables.get(var).cloned() {
             self.store_local(var, var, &uninitialized_local_var_id, &deferred_info.ty);
+            false
         } else {
             self.store_temp(var, var, &deferred_info.ty);
+            true
         }
-        self.state().deferred_variables.swap_remove(var);
     }
 
     fn push_values(&mut self, push_values: &Vec<pre_sierra::PushValue>) {
@@ -226,22 +234,25 @@ impl<'a> AddStoreVariableStatements<'a> {
         let prefix_size = self.known_stack().compute_on_stack_prefix_size(push_values);
 
         for (i, pre_sierra::PushValue { var, var_on_stack, ty }) in push_values.iter().enumerate() {
-            if self.state().deferred_variables.contains_key(var) {
+            let should_rename = if self.state().deferred_variables.contains_key(var) {
                 // Convert the deferred variable into a temporary variable, by calling
                 // `prepare_libfunc_argument`.
-                self.prepare_libfunc_argument(var, false, false);
+                // `should_rename` should be set to `true` if the variable was copied onto the
+                // stack.
+                self.prepare_libfunc_argument(var, false, false)
+            } else {
+                // Check if this is part of the prefix. If it is, rename instead of adding
+                // `store_temp`.
+                i < prefix_size
+            };
+
+            if should_rename {
                 // Note: the original variable may still be used after the following `rename`
                 // statement. In such a case, it will be dupped before the `rename`
                 // by `add_dups_and_drops()`.
                 self.rename_var(var, var_on_stack, ty);
             } else {
-                // Check if this is part of the prefix. If it is, rename instead of adding
-                // `store_temp`.
-                if i < prefix_size {
-                    self.rename_var(var, var_on_stack, ty);
-                } else {
-                    self.store_temp(var, var_on_stack, ty);
-                }
+                self.store_temp(var, var_on_stack, ty);
             }
         }
     }
