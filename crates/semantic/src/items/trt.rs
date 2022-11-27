@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use db_utils::define_short_id;
 use defs::ids::{
     GenericFunctionId, GenericParamId, LanguageElementId, TraitFunctionId, TraitFunctionLongId,
@@ -14,7 +16,7 @@ use super::generics::semantic_generic_params;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::Environment;
-use crate::resolve_path::Resolver;
+use crate::resolve_path::{ResolvedLookback, Resolver};
 use crate::{semantic, GenericArgumentId, SemanticDiagnostic};
 
 #[cfg(test)]
@@ -132,6 +134,7 @@ pub struct TraitFunctionData {
     signature: semantic::Signature,
     generic_params: Vec<GenericParamId>,
     attributes: Vec<Attribute>,
+    resolved_lookback: Arc<ResolvedLookback>,
 }
 
 // Selectors.
@@ -155,6 +158,14 @@ pub fn trait_function_generic_params(
     trait_function_id: TraitFunctionId,
 ) -> Option<Vec<GenericParamId>> {
     Some(db.priv_trait_function_data(trait_function_id)?.generic_params)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::trait_function_resolved_lookback].
+pub fn trait_function_resolved_lookback(
+    db: &dyn SemanticGroup,
+    trait_function_id: TraitFunctionId,
+) -> Option<Arc<ResolvedLookback>> {
+    Some(db.priv_trait_function_data(trait_function_id)?.resolved_lookback)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_trait_function_data].
@@ -187,11 +198,13 @@ pub fn priv_trait_function_data(
     );
 
     let attributes = ast_attributes_to_semantic(syntax_db, function_syntax.attributes(syntax_db));
+    let resolved_lookback = Arc::new(resolver.lookback);
 
     Some(TraitFunctionData {
         diagnostics: diagnostics.build(),
         signature,
         generic_params,
         attributes,
+        resolved_lookback,
     })
 }

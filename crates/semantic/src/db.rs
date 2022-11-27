@@ -5,21 +5,22 @@ use defs::db::DefsGroup;
 use defs::diagnostic_utils::StableLocation;
 use defs::ids::{
     EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericFunctionId, GenericParamId,
-    GenericTypeId, ImplFunctionId, ImplId, ModuleId, ModuleItemId, StructId, TraitFunctionId,
-    TraitId, UseId, VariantId,
+    GenericTypeId, ImplFunctionId, ImplId, LookupItemId, ModuleId, ModuleItemId, StructId,
+    TraitFunctionId, TraitId, UseId, VariantId,
 };
 use diagnostics::{Diagnostics, DiagnosticsBuilder};
 use filesystem::db::{AsFilesGroupMut, FilesGroup};
 use filesystem::ids::FileId;
 use parser::db::ParserGroup;
 use smol_str::SmolStr;
+use syntax::node::ast;
 use utils::ordered_hash_map::OrderedHashMap;
 
 use crate::diagnostic::SemanticDiagnosticKind;
 use crate::items::attribute::Attribute;
 use crate::items::imp::{ConcreteImplId, ImplLookupContext};
 use crate::items::trt::ConcreteTraitId;
-use crate::resolve_path::ResolvedGenericItem;
+use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, ResolvedLookback};
 use crate::{
     corelib, items, semantic, types, FreeFunctionDefinition, FunctionId, SemanticDiagnostic, TypeId,
 };
@@ -70,6 +71,8 @@ pub trait SemanticGroup:
     /// Returns the semantic diagnostics of a use.
     #[salsa::invoke(items::us::use_resolved_item)]
     fn use_resolved_item(&self, use_id: UseId) -> Option<ResolvedGenericItem>;
+    #[salsa::invoke(items::us::use_resolved_lookback)]
+    fn use_resolved_lookback(&self, use_id: UseId) -> Option<Arc<ResolvedLookback>>;
 
     // Struct.
     // =======
@@ -91,6 +94,9 @@ pub trait SemanticGroup:
     /// Returns the attributes of a struct.
     #[salsa::invoke(items::strct::struct_attributes)]
     fn struct_attributes(&self, struct_id: StructId) -> Option<Vec<Attribute>>;
+    /// Returns the resolution lookback of a struct.
+    #[salsa::invoke(items::strct::struct_resolved_lookback)]
+    fn struct_resolved_lookback(&self, strct_id: StructId) -> Option<Arc<ResolvedLookback>>;
 
     // Enum.
     // =======
@@ -110,6 +116,9 @@ pub trait SemanticGroup:
     #[salsa::invoke(items::enm::variant_semantic)]
     fn variant_semantic(&self, enum_id: EnumId, variant_id: VariantId)
     -> Option<semantic::Variant>;
+    /// Returns the resolution lookback of an enum.
+    #[salsa::invoke(items::enm::enum_resolved_lookback)]
+    fn enum_resolved_lookback(&self, enum_id: EnumId) -> Option<Arc<ResolvedLookback>>;
 
     // Trait.
     // =======
@@ -158,6 +167,12 @@ pub trait SemanticGroup:
         &self,
         trait_function_id: TraitFunctionId,
     ) -> Option<Vec<GenericParamId>>;
+    /// Returns the resolution lookback of a trait function.
+    #[salsa::invoke(items::trt::trait_function_resolved_lookback)]
+    fn trait_function_resolved_lookback(
+        &self,
+        trait_function_id: TraitFunctionId,
+    ) -> Option<Arc<ResolvedLookback>>;
 
     // Impl.
     // =======
@@ -176,6 +191,9 @@ pub trait SemanticGroup:
     /// Returns the generic parameters of an impl.
     #[salsa::invoke(items::imp::impl_generic_params)]
     fn impl_generic_params(&self, impl_id: ImplId) -> Option<Vec<GenericParamId>>;
+    /// Returns the resolution lookback of an impl.
+    #[salsa::invoke(items::imp::impl_resolved_lookback)]
+    fn impl_resolved_lookback(&self, impl_id: ImplId) -> Option<Arc<ResolvedLookback>>;
     /// Private query to compute data about an impl.
     #[salsa::invoke(items::imp::priv_impl_definition_data)]
     fn priv_impl_definition_data(&self, impl_id: ImplId) -> Option<items::imp::ImplDefinitionData>;
@@ -217,6 +235,12 @@ pub trait SemanticGroup:
         &self,
         impl_function_id: ImplFunctionId,
     ) -> Diagnostics<SemanticDiagnostic>;
+    /// Returns the resolution lookback of an impl function.
+    #[salsa::invoke(items::imp::impl_function_resolved_lookback)]
+    fn impl_function_resolved_lookback(
+        &self,
+        impl_function_id: ImplFunctionId,
+    ) -> Option<Arc<ResolvedLookback>>;
     /// Private query to compute data about a impl function declaration.
     #[salsa::invoke(items::imp::priv_impl_function_declaration_data)]
     fn priv_impl_function_declaration_data(
@@ -264,6 +288,12 @@ pub trait SemanticGroup:
         &self,
         free_function_id: FreeFunctionId,
     ) -> Option<Vec<GenericParamId>>;
+    /// Returns the resolution lookback of a free function.
+    #[salsa::invoke(items::free_function::free_function_declaration_resolved_lookback)]
+    fn free_function_declaration_resolved_lookback(
+        &self,
+        free_function_id: FreeFunctionId,
+    ) -> Option<Arc<ResolvedLookback>>;
 
     /// Private query to compute data about a free function definition - its body.
     #[salsa::invoke(items::free_function::priv_free_function_definition_data)]
@@ -303,6 +333,12 @@ pub trait SemanticGroup:
         &self,
         free_function_id: FreeFunctionId,
     ) -> Option<Arc<FreeFunctionDefinition>>;
+    /// Returns the resolution lookback of a free function.
+    #[salsa::invoke(items::free_function::free_function_definition_resolved_lookback)]
+    fn free_function_definition_resolved_lookback(
+        &self,
+        free_function_id: FreeFunctionId,
+    ) -> Option<Arc<ResolvedLookback>>;
 
     // Extern function.
     // ================
@@ -338,6 +374,12 @@ pub trait SemanticGroup:
         &self,
         extern_function_id: ExternFunctionId,
     ) -> Option<Vec<TypeId>>;
+    /// Returns the resolution lookback of an extern function.
+    #[salsa::invoke(items::extern_function::extern_function_declaration_resolved_lookback)]
+    fn extern_function_declaration_resolved_lookback(
+        &self,
+        extern_function_id: ExternFunctionId,
+    ) -> Option<Arc<ResolvedLookback>>;
 
     // Extern type.
     // ============
@@ -398,7 +440,7 @@ pub trait SemanticGroup:
     ) -> Option<Vec<GenericParamId>>;
 
     // Concrete type.
-    // =================
+    // ==============
     /// Returns the generic_type of a generic function. This include free types, extern
     /// types, etc...
     #[salsa::invoke(types::type_info)]
@@ -423,6 +465,21 @@ pub trait SemanticGroup:
         id: semantic::StatementId,
     ) -> semantic::Statement;
 
+    // Lookups.
+    // ========
+    fn lookup_resolved_generic_item_by_ptr(
+        &self,
+        id: LookupItemId,
+        ptr: ast::TerminalIdentifierPtr,
+    ) -> Option<ResolvedGenericItem>;
+    fn lookup_resolved_concrete_item_by_ptr(
+        &self,
+        id: LookupItemId,
+        ptr: ast::TerminalIdentifierPtr,
+    ) -> Option<ResolvedConcreteItem>;
+
+    // Diagnostics.
+    // ============
     /// Aggregates module level semantic diagnostics.
     fn module_semantic_diagnostics(
         &self,
@@ -434,6 +491,7 @@ pub trait SemanticGroup:
     -> Option<Diagnostics<SemanticDiagnostic>>;
 
     // Corelib.
+    // ========
     #[salsa::invoke(corelib::core_module)]
     fn core_module(&self) -> ModuleId;
     #[salsa::invoke(corelib::core_felt_ty)]
@@ -502,4 +560,49 @@ fn file_semantic_diagnostics(
         }
     }
     Some(diagnostics.build())
+}
+
+pub fn lookup_resolved_generic_item_by_ptr(
+    db: &dyn SemanticGroup,
+    id: LookupItemId,
+    ptr: ast::TerminalIdentifierPtr,
+) -> Option<ResolvedGenericItem> {
+    get_resolver_lookbacks(id, db)
+        .into_iter()
+        .find_map(|resolver_lookback| resolver_lookback.generic.get(&ptr).cloned())
+}
+
+pub fn lookup_resolved_concrete_item_by_ptr(
+    db: &dyn SemanticGroup,
+    id: LookupItemId,
+    ptr: ast::TerminalIdentifierPtr,
+) -> Option<ResolvedConcreteItem> {
+    get_resolver_lookbacks(id, db)
+        .into_iter()
+        .find_map(|resolver_lookback| resolver_lookback.concrete.get(&ptr).cloned())
+}
+
+fn get_resolver_lookbacks(id: LookupItemId, db: &dyn SemanticGroup) -> Vec<Arc<ResolvedLookback>> {
+    match id {
+        LookupItemId::ModuleItem(module_item) => match module_item {
+            ModuleItemId::Submodule(_) => vec![],
+            ModuleItemId::Use(id) => vec![db.use_resolved_lookback(id)],
+            ModuleItemId::FreeFunction(id) => vec![
+                db.free_function_declaration_resolved_lookback(id),
+                db.free_function_definition_resolved_lookback(id),
+            ],
+            ModuleItemId::Struct(id) => vec![db.struct_resolved_lookback(id)],
+            ModuleItemId::Enum(id) => vec![db.enum_resolved_lookback(id)],
+            ModuleItemId::Trait(_) => vec![],
+            ModuleItemId::Impl(id) => vec![db.impl_resolved_lookback(id)],
+            ModuleItemId::ExternType(_) => vec![],
+            ModuleItemId::ExternFunction(id) => {
+                vec![db.extern_function_declaration_resolved_lookback(id)]
+            }
+        },
+        LookupItemId::ImplFunction(_) => vec![],
+    }
+    .into_iter()
+    .flatten()
+    .collect()
 }

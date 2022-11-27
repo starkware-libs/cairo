@@ -462,3 +462,12 @@ impl OptionFrom<ModuleItemId> for GenericTypeId {
         }
     }
 }
+
+define_language_element_id_as_enum! {
+    /// Generic function ids enum.
+    pub enum LookupItemId {
+        ModuleItem(ModuleItemId),
+        // TODO(spapini): Replace with ImplItemId.
+        ImplFunction(ImplFunctionId),
+    }
+}

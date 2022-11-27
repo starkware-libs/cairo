@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use defs::ids::{ExternFunctionId, GenericFunctionId, GenericParamId, LanguageElementId};
 use diagnostics::Diagnostics;
 use diagnostics_proc_macros::DebugWithDb;
@@ -9,7 +11,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::PanicableExternFunction;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::Environment;
-use crate::resolve_path::Resolver;
+use crate::resolve_path::{ResolvedLookback, Resolver};
 use crate::{semantic, SemanticDiagnostic, TypeId};
 
 #[cfg(test)]
@@ -23,6 +25,7 @@ pub struct ExternFunctionDeclarationData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
     signature: semantic::Signature,
     generic_params: Vec<GenericParamId>,
+    resolved_lookback: Arc<ResolvedLookback>,
 }
 
 // Selectors.
@@ -65,6 +68,15 @@ pub fn extern_function_declaration_implicits(
     )
 }
 
+/// Query implementation of
+/// [crate::db::SemanticGroup::extern_function_declaration_resolved_lookback].
+pub fn extern_function_declaration_resolved_lookback(
+    db: &dyn SemanticGroup,
+    extern_function_id: ExternFunctionId,
+) -> Option<Arc<ResolvedLookback>> {
+    Some(db.priv_extern_function_declaration_data(extern_function_id)?.resolved_lookback)
+}
+
 // Computation.
 /// Query implementation of [crate::db::SemanticGroup::priv_extern_function_declaration_data].
 pub fn priv_extern_function_declaration_data(
@@ -103,9 +115,11 @@ pub fn priv_extern_function_declaration_data(
         }
     }
 
+    let resolved_lookback = Arc::new(resolver.lookback);
     Some(ExternFunctionDeclarationData {
         diagnostics: diagnostics.build(),
         signature,
         generic_params,
+        resolved_lookback,
     })
 }

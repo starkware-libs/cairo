@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use std::vec;
 
 use db_utils::define_short_id;
@@ -24,7 +25,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::Environment;
-use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
+use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, ResolvedLookback, Resolver};
 use crate::{
     semantic, ConcreteTraitId, ConcreteTraitLongId, GenericArgumentId, SemanticDiagnostic, TypeId,
     TypeLongId,
@@ -50,6 +51,7 @@ pub struct ImplDeclarationData {
     /// The concrete trait this impl implements, or None if cannot be resolved.
     concrete_trait: Option<ConcreteTraitId>,
     attributes: Vec<Attribute>,
+    resolved_lookback: Arc<ResolvedLookback>,
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_semantic_declaration_diagnostics].
@@ -63,6 +65,14 @@ pub fn impl_semantic_declaration_diagnostics(
 /// Query implementation of [crate::db::SemanticGroup::impl_generic_params].
 pub fn impl_generic_params(db: &dyn SemanticGroup, impl_id: ImplId) -> Option<Vec<GenericParamId>> {
     Some(db.priv_impl_declaration_data(impl_id)?.generic_params)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::impl_resolved_lookback].
+pub fn impl_resolved_lookback(
+    db: &dyn SemanticGroup,
+    impl_id: ImplId,
+) -> Option<Arc<ResolvedLookback>> {
+    Some(db.priv_impl_declaration_data(impl_id)?.resolved_lookback)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_impl_declaration_data].
@@ -96,11 +106,13 @@ pub fn priv_impl_declaration_data(
         });
 
     let attributes = ast_attributes_to_semantic(syntax_db, impl_ast.attributes(syntax_db));
+    let resolved_lookback = Arc::new(resolver.lookback);
     Some(ImplDeclarationData {
         diagnostics: diagnostics.build(),
         generic_params,
         concrete_trait,
         attributes,
+        resolved_lookback,
     })
 }
 
@@ -356,6 +368,7 @@ pub struct ImplFunctionDeclarationData {
     generic_params: Vec<GenericParamId>,
     // TODO(ilya): Do we need Environment like in a free function?
     attributes: Vec<Attribute>,
+    resolved_lookback: Arc<ResolvedLookback>,
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_function_signature].
@@ -382,6 +395,14 @@ pub fn impl_function_declaration_diagnostics(
     db.priv_impl_function_declaration_data(impl_function_id)
         .map(|data| data.diagnostics)
         .unwrap_or_default()
+}
+
+/// Query implementation of [crate::db::SemanticGroup::impl_function_resolved_lookback].
+pub fn impl_function_resolved_lookback(
+    db: &dyn SemanticGroup,
+    impl_function_id: ImplFunctionId,
+) -> Option<Arc<ResolvedLookback>> {
+    Some(db.priv_impl_function_declaration_data(impl_function_id)?.resolved_lookback)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_impl_function_declaration_data].
@@ -425,12 +446,14 @@ pub fn priv_impl_function_declaration_data(
     );
 
     let attributes = ast_attributes_to_semantic(syntax_db, function_syntax.attributes(syntax_db));
+    let resolved_lookback = Arc::new(resolver.lookback);
 
     Some(ImplFunctionDeclarationData {
         diagnostics: diagnostics.build(),
         signature,
         generic_params,
         attributes,
+        resolved_lookback,
     })
 }
 
