@@ -5,8 +5,7 @@ func fib(a: felt, b: felt, n: felt) -> felt implicits (rc: RangeCheck, gb: GasBu
         },
         Option::None (x) => {
             let data = array_new::<felt>();
-            // TODO(spapini): Add when working.
-            // array_append::<felt>(data, 1);
+            array_append::<felt>(data, 1);
             panic(data);
         },
     }
