@@ -8,7 +8,7 @@ use syntax::node::ast;
 pub use super::expr::objects::*;
 use crate::db::SemanticGroup;
 pub use crate::expr::pattern::{
-    Pattern, PatternEnum, PatternLiteral, PatternOtherwise, PatternStruct, PatternTuple,
+    Pattern, PatternEnumVariant, PatternLiteral, PatternOtherwise, PatternStruct, PatternTuple,
     PatternVariable,
 };
 pub use crate::items::enm::{ConcreteVariant, Variant};

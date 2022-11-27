@@ -349,7 +349,7 @@ fn lower_single_pattern(
                 lower_single_pattern(ctx, scope, pattern, var);
             }
         }
-        semantic::Pattern::Enum(_) => unreachable!(),
+        semantic::Pattern::EnumVariant(_) => unreachable!(),
         semantic::Pattern::Otherwise(_) => {}
     }
 }
@@ -654,7 +654,8 @@ fn lower_optimized_extern_match(
                         match_extern_arm_ref_args_rebind(&mut arm_inputs, &extern_enum, subscope);
                         let variant_expr = extern_facade_expr(ctx, concrete_variant.ty, arm_inputs);
                         // TODO(spapini): Convert to a diagnostic.
-                        let enum_pattern = extract_matches!(&arm.pattern, semantic::Pattern::Enum);
+                        let enum_pattern =
+                            extract_matches!(&arm.pattern, semantic::Pattern::EnumVariant);
                         // TODO(spapini): Convert to a diagnostic.
                         assert_eq!(&enum_pattern.variant, concrete_variant, "Wrong variant");
                         lower_single_pattern(
@@ -1175,7 +1176,7 @@ fn extract_var_pattern(
     pattern: &semantic::Pattern,
     concrete_variant: &semantic::ConcreteVariant,
 ) -> Option<semantic::VarId> {
-    let enum_pattern = extract_matches!(&pattern, semantic::Pattern::Enum);
+    let enum_pattern = extract_matches!(&pattern, semantic::Pattern::EnumVariant);
     assert_eq!(&enum_pattern.variant, concrete_variant, "Wrong variant");
     let var_pattern = extract_matches!(&*enum_pattern.inner_pattern, semantic::Pattern::Variable);
     let semantic_var_id = semantic::VarId::Local(var_pattern.var.id);
