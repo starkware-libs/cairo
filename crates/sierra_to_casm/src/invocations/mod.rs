@@ -238,6 +238,9 @@ pub fn compile_invocation(
         CoreConcreteLibFunc::Enum(libfunc) => enm::build(libfunc, builder),
         CoreConcreteLibFunc::Struct(libfunc) => strct::build(libfunc, builder),
         CoreConcreteLibFunc::DictFeltTo(libfunc) => dict_felt_to::build(libfunc, builder),
+        CoreConcreteLibFunc::Pedersen(_) => {
+            todo!("Compilation of pedersen() to casm is not implemented yet.");
+        }
     }
 }
 
