@@ -2054,6 +2054,68 @@ impl TypedSyntaxNode for ExprIf {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum BlockOrIf {
+    Block(ExprBlock),
+    If(ExprIf),
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct BlockOrIfPtr(pub SyntaxStablePtrId);
+impl BlockOrIfPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+impl From<ExprBlockPtr> for BlockOrIfPtr {
+    fn from(value: ExprBlockPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ExprIfPtr> for BlockOrIfPtr {
+    fn from(value: ExprIfPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ExprBlockGreen> for BlockOrIfGreen {
+    fn from(value: ExprBlockGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ExprIfGreen> for BlockOrIfGreen {
+    fn from(value: ExprIfGreen) -> Self {
+        Self(value.0)
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct BlockOrIfGreen(pub GreenId);
+impl TypedSyntaxNode for BlockOrIf {
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
+    type StablePtr = BlockOrIfPtr;
+    type Green = BlockOrIfGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        panic!("No missing variant.");
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::ExprBlock => BlockOrIf::Block(ExprBlock::from_syntax_node(db, node)),
+            SyntaxKind::ExprIf => BlockOrIf::If(ExprIf::from_syntax_node(db, node)),
+            _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "BlockOrIf"),
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        match self {
+            BlockOrIf::Block(x) => x.as_syntax_node(),
+            BlockOrIf::If(x) => x.as_syntax_node(),
+        }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        BlockOrIfPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ElseClause {
     node: SyntaxNode,
     children: Vec<SyntaxNode>,
@@ -2062,9 +2124,9 @@ impl ElseClause {
     pub fn new_green(
         db: &dyn SyntaxGroup,
         else_kw: TerminalElseGreen,
-        else_block: ExprBlockGreen,
+        else_block_or_if: BlockOrIfGreen,
     ) -> ElseClauseGreen {
-        let children: Vec<GreenId> = vec![else_kw.0, else_block.0];
+        let children: Vec<GreenId> = vec![else_kw.0, else_block_or_if.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         ElseClauseGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::ElseClause,
@@ -2076,8 +2138,8 @@ impl ElseClause {
     pub fn else_kw(&self, db: &dyn SyntaxGroup) -> TerminalElse {
         TerminalElse::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn else_block(&self, db: &dyn SyntaxGroup) -> ExprBlock {
-        ExprBlock::from_syntax_node(db, self.children[1].clone())
+    pub fn else_block_or_if(&self, db: &dyn SyntaxGroup) -> BlockOrIf {
+        BlockOrIf::from_syntax_node(db, self.children[1].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -2097,7 +2159,7 @@ impl TypedSyntaxNode for ElseClause {
         ElseClauseGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::ElseClause,
             details: GreenNodeDetails::Node {
-                children: vec![TerminalElse::missing(db).0, ExprBlock::missing(db).0],
+                children: vec![TerminalElse::missing(db).0, BlockOrIf::missing(db).0],
                 width: 0,
             },
         }))
