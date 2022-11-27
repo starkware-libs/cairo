@@ -23,7 +23,9 @@ pub fn get_type_size_map(
             | CoreTypeConcrete::RangeCheck(_)
             | CoreTypeConcrete::Box(_)
             | CoreTypeConcrete::Pedersen(_) => Some(1),
-            CoreTypeConcrete::Array(_) | CoreTypeConcrete::DictFeltTo(_) => Some(2),
+            CoreTypeConcrete::Array(_)
+            | CoreTypeConcrete::DictFeltTo(_)
+            | CoreTypeConcrete::SquashedDictFeltTo(_) => Some(2),
             CoreTypeConcrete::NonZero(NonZeroConcreteType { ty, .. }) => {
                 type_sizes.get(ty).cloned()
             }
