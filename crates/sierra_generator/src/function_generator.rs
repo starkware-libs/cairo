@@ -122,6 +122,7 @@ fn get_function_code(
         },
         sierra_local_variables,
     );
+
     let statements = add_dups_and_drops(&mut context, &parameters, statements);
 
     // TODO(spapini): Don't intern objects for the semantic model outside the crate. These should

@@ -177,6 +177,7 @@ impl<'a> AddStoreVariableStatements<'a> {
                 arg,
                 param_signature.allow_deferred,
                 param_signature.allow_add_const,
+                param_signature.allow_const,
             );
         }
     }
@@ -189,16 +190,22 @@ impl<'a> AddStoreVariableStatements<'a> {
         arg: &sierra::ids::VarId,
         allow_deferred: bool,
         allow_add_const: bool,
+        allow_const: bool,
     ) -> bool {
         if let Some(deferred_info) = self.state().deferred_variables.get(arg) {
             match deferred_info.kind {
-                state::DeferredVariableKind::Generic => {
-                    if !allow_deferred {
+                state::DeferredVariableKind::Const => {
+                    if !allow_const {
                         return self.store_deferred(arg);
                     }
                 }
                 state::DeferredVariableKind::AddConst => {
                     if !allow_add_const {
+                        return self.store_deferred(arg);
+                    }
+                }
+                state::DeferredVariableKind::Generic => {
+                    if !allow_deferred {
                         return self.store_deferred(arg);
                     }
                 }
@@ -239,7 +246,7 @@ impl<'a> AddStoreVariableStatements<'a> {
                 // `prepare_libfunc_argument`.
                 // `should_rename` should be set to `true` if the variable was copied onto the
                 // stack.
-                self.prepare_libfunc_argument(var, false, false)
+                self.prepare_libfunc_argument(var, false, false, true)
             } else {
                 // Check if this is part of the prefix. If it is, rename instead of adding
                 // `store_temp`.
@@ -261,7 +268,10 @@ impl<'a> AddStoreVariableStatements<'a> {
     /// The variables will be added according to the order of creation.
     fn store_all_deffered_variables(&mut self) {
         for (var, deferred_info) in self.state().deferred_variables.clone() {
-            self.store_temp(&var, &var, &deferred_info.ty);
+            // Don't store other types of none ap-dependent vars.
+            if deferred_info.kind != state::DeferredVariableKind::Const {
+                self.store_temp(&var, &var, &deferred_info.ty);
+            }
         }
         self.clear_deffered_variables();
     }
