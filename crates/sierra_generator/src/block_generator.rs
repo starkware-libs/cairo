@@ -221,9 +221,9 @@ fn generate_statement_match_extern_code(
     .collect();
 
     let branches: Vec<_> = zip_eq(&statement.arms, arm_targets)
-        .map(|(arm, target)| program::GenBranchInfo {
+        .map(|((_, block_id), target)| program::GenBranchInfo {
             target,
-            results: context.get_sierra_variables(&context.get_lowered_block(*arm).inputs),
+            results: context.get_sierra_variables(&context.get_lowered_block(*block_id).inputs),
         })
         .collect();
 
@@ -233,14 +233,14 @@ fn generate_statement_match_extern_code(
     )));
 
     // Generate the blocks.
-    for (i, arm) in enumerate(&statement.arms) {
+    for (i, (_, block_id)) in enumerate(&statement.arms) {
         // Add a label for each of the arm blocks, except for the first.
         if i > 0 {
             statements.push(arm_labels[i - 1].0.clone());
         }
 
         // TODO(lior): Try to avoid the following clone().
-        let lowered_block = context.get_lowered_block(*arm);
+        let lowered_block = context.get_lowered_block(*block_id);
         let (code, is_reachable) =
             generate_block_code_and_push_values(context, lowered_block, &statement.outputs)?;
         statements.extend(code);

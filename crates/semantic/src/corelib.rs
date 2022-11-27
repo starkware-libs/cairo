@@ -96,6 +96,26 @@ pub fn true_variant(db: &dyn SemanticGroup) -> ConcreteVariant {
     get_enum_concrete_variant(db, "bool", vec![], "True")
 }
 
+/// Generates a ConcreteVariant instance for `JumpNzResult::<felt>::Zero`.
+pub fn jump_nz_zero_variant(db: &dyn SemanticGroup) -> ConcreteVariant {
+    get_enum_concrete_variant(
+        db,
+        "JumpNzResult",
+        vec![GenericArgumentId::Type(core_felt_ty(db))],
+        "Zero",
+    )
+}
+
+/// Generates a ConcreteVariant instance for `JumpNzResult::<felt>::NonZero`.
+pub fn jump_nz_nonzero_variant(db: &dyn SemanticGroup) -> ConcreteVariant {
+    get_enum_concrete_variant(
+        db,
+        "JumpNzResult",
+        vec![GenericArgumentId::Type(core_felt_ty(db))],
+        "NonZero",
+    )
+}
+
 /// Gets a semantic expression of the literal `false`. Uses the given `stable_ptr` in the returned
 /// semantic expression.
 pub fn false_literal_expr(

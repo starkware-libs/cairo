@@ -126,7 +126,8 @@ impl CallBlock {
 pub struct MatchExtern {
     pub function: semantic::FunctionId,
     pub inputs: Vec<LivingVar>,
-    pub arms: Vec<BlockId>,
+    /// The arms of the match. Order must be identical to the order in the definition of the enum.
+    pub arms: Vec<(ConcreteVariant, BlockId)>,
     pub end_info: BlockEndInfo,
 }
 impl MatchExtern {

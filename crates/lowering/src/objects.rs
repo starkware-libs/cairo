@@ -143,7 +143,8 @@ pub struct StatementMatchExtern {
     /// Living variables in current scope to move to the function, as arguments.
     pub inputs: Vec<VariableId>,
     /// Match arms. All blocks should have the same rets.
-    pub arms: Vec<BlockId>,
+    /// Order must be identical to the order in the definition of the enum.
+    pub arms: Vec<(ConcreteVariant, BlockId)>,
     /// New variables to be introduced into the current scope from the arm outputs.
     pub outputs: Vec<VariableId>,
 }
