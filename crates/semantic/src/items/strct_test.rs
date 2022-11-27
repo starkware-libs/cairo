@@ -16,6 +16,7 @@ fn test_struct() {
     let (test_module, diagnostics) = setup_test_module(
         db,
         indoc::indoc! {"
+            #[attr]
             struct A {
                 a: felt,
                 b: (felt, felt),
@@ -34,12 +35,12 @@ fn test_struct() {
         diagnostics,
         indoc! {r#"
         error: Redefinition of member "a" on struct "test_crate::A".
-         --> lib.cairo:5:5
+         --> lib.cairo:6:5
             a: (),
             ^***^
 
         error: Redefinition of member "a" on struct "test_crate::A".
-         --> lib.cairo:6:5
+         --> lib.cairo:7:5
             a: ()
             ^***^
 
@@ -64,5 +65,15 @@ fn test_struct() {
             a: Member { id: MemberId(test_crate::a), ty: () },
             b: Member { id: MemberId(test_crate::b), ty: (core::felt, core::felt) },
             c: Member { id: MemberId(test_crate::c), ty: () }"}
+    );
+
+    assert_eq!(
+        db.struct_attributes(struct_id)
+            .unwrap()
+            .iter()
+            .map(|attr| format!("{:?}", attr))
+            .collect::<Vec<_>>()
+            .join(",\n"),
+        r#"Attribute { id: "attr" }"#
     );
 }
