@@ -22,6 +22,14 @@ impl<Key: Hash + Eq, Value> OrderedHashMap<Key, Value> {
         self.0.get_mut(key)
     }
 
+    /// Get the given key’s corresponding entry in the map for insertion and/or in-place
+    /// manipulation.
+    ///
+    /// Computes in O(1) time (amortized average).
+    pub fn entry(&mut self, key: Key) -> indexmap::map::Entry<'_, Key, Value> {
+        self.0.entry(key)
+    }
+
     /// Return an iterator over the key-value pairs of the map, in their order.
     pub fn iter(&self) -> indexmap::map::Iter<'_, Key, Value> {
         self.0.iter()

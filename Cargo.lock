@@ -557,6 +557,7 @@ dependencies = [
  "debug",
  "diagnostics",
  "filesystem",
+ "indexmap",
  "indoc",
  "itertools",
  "parser",
