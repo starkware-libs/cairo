@@ -7,7 +7,6 @@ use filesystem::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGrou
 use filesystem::ids::{CrateLongId, Directory, FileLongId};
 use indoc::indoc;
 use parser::db::ParserDatabase;
-use parser::utils::get_node_text;
 use pretty_assertions::assert_eq;
 use syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use syntax::node::TypedSyntaxNode;
@@ -162,7 +161,7 @@ fn plugin_test(
         .expect("Didn't find expected submodule.");
 
     assert_eq!(
-        get_node_text(db, &db.module_syntax(submodule_id).unwrap().as_syntax_node()),
+        db.module_syntax(submodule_id).unwrap().as_syntax_node().get_text(db),
         expected_submodule_content
     );
 }
