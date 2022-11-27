@@ -418,11 +418,11 @@ fn lower_expr_block(
     let block_finalized = finalized_merger.finalize_block(ctx, block_sealed);
 
     // Emit the statement.
-    let call_block_generator = generators::CallBlock {
+    let block_result = (generators::CallBlock {
         block: block_finalized.block,
         end_info: finalized_merger.end_info.clone(),
-    };
-    let block_result = call_block_generator.add(ctx, scope);
+    })
+    .add(ctx, scope);
     lowered_expr_from_block_result(scope, block_result, finalized_merger)
 }
 
@@ -612,13 +612,13 @@ fn lower_expr_match(
     let arms = zip_eq(concrete_variants, finalized_blocks).collect();
 
     // Emit the statement.
-    let match_generator = generators::MatchEnum {
+    let block_result = (generators::MatchEnum {
         input: expr_var,
         concrete_enum_id,
         arms,
         end_info: finalized_merger.end_info.clone(),
-    };
-    let block_result = match_generator.add(ctx, scope);
+    })
+    .add(ctx, scope);
     lowered_expr_from_block_result(scope, block_result, finalized_merger)
 }
 
@@ -672,11 +672,12 @@ fn lower_optimized_extern_match(
             block_opts.collect::<Option<Vec<_>>>().ok_or(LoweringFlowError::Failed)
         },
     );
-
     let arms = blocks?
         .into_iter()
         .map(|sealed| finalized_merger.finalize_block(ctx, sealed).block)
         .collect();
+
+    // Emit the statement.
     let block_result = generators::MatchExtern {
         function: extern_enum.function,
         inputs: extern_enum.inputs,
@@ -741,13 +742,13 @@ fn lower_expr_match_felt(
         .finalize_block(ctx, block_otherwise_sealed.ok_or(LoweringFlowError::Failed)?);
 
     // Emit the statement.
-    let match_generator = generators::MatchExtern {
+    let block_result = (generators::MatchExtern {
         function: core_jump_nz_func(semantic_db),
         inputs: vec![expr_var],
         arms: vec![block0_finalized.block, block_otherwise_finalized.block],
         end_info: finalized_merger.end_info.clone(),
-    };
-    let block_result = match_generator.add(ctx, scope);
+    })
+    .add(ctx, scope);
     lowered_expr_from_block_result(scope, block_result, finalized_merger)
 }
 
@@ -968,13 +969,13 @@ fn lower_error_propagate(
     let arms = zip_eq([ok_variant.clone(), err_variant.clone()], finalized_blocks).collect();
 
     // Emit the statement.
-    let match_generator = generators::MatchEnum {
+    let block_result = (generators::MatchEnum {
         input: var,
         concrete_enum_id: ok_variant.concrete_enum_id,
         arms,
         end_info: finalized_merger.end_info.clone(),
-    };
-    let block_result = match_generator.add(ctx, scope);
+    })
+    .add(ctx, scope);
     lowered_expr_from_block_result(scope, block_result, finalized_merger)
 }
 
