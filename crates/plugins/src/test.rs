@@ -6,11 +6,16 @@ use defs::db::{init_defs_group, DefsDatabase, DefsGroup};
 use defs::ids::ModuleId;
 use filesystem::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup, FilesGroupEx};
 use filesystem::ids::{CrateLongId, Directory, FileLongId};
+use indoc::indoc;
 // use indoc::indoc;
 use parser::db::ParserDatabase;
+use parser::utils::get_node_text;
+use pretty_assertions::assert_eq;
 use syntax::node::db::{SyntaxDatabase, SyntaxGroup};
+use syntax::node::TypedSyntaxNode;
 
 use crate::derive::DerivePlugin;
+use crate::panicable::PanicablePlugin;
 
 #[salsa::database(DefsDatabase, ParserDatabase, SyntaxDatabase, FilesDatabase)]
 pub struct DatabaseForTesting {
@@ -95,5 +100,82 @@ fn test_derive_plugin() {
     assert_eq!(
         format!("{:?}", db.module_item_by_name(submodule_id, "BDrop".into()).debug(db)),
         "Some(ImplId(test_crate::impls::BDrop))"
+    );
+}
+
+#[test]
+fn test_panicable_plugin() {
+    let mut db_val = DatabaseForTesting::default();
+    let db = &mut db_val;
+
+    let crate_id = db.intern_crate(CrateLongId("test_crate".into()));
+    let root = Directory("src".into());
+    db.set_crate_root(crate_id, Some(root));
+    db.set_macro_plugins(vec![Arc::new(PanicablePlugin {})]);
+
+    // Main module file.
+    set_file_content(
+        db,
+        "src/lib.cairo",
+        indoc! {"
+            #[panic_with(1)]
+            extern func foo(a: felt, b: other) -> Option::<()> implicits (rc: RangeCheck, gb: GasBuiltin) nopanic;
+
+            #[panic_with(2)]
+            extern func bar() -> Option::<felt> nopanic;
+
+            #[panic_with(3)]
+            func non_extern(_: some_type) -> Option::<(felt, other)> nopanic {
+                (4, 56)
+            }
+        "},
+    );
+
+    // Find submodules.
+    let module_id = ModuleId::CrateRoot(crate_id);
+    let submodule_id = db.module_submodules(module_id).unwrap().pop().unwrap();
+    let submodule_syntax = db.module_syntax(submodule_id).unwrap();
+    assert_eq!(
+        get_node_text(db, &submodule_syntax.as_syntax_node()),
+        indoc! {"
+        func foo(a: felt, b: other) -> () {
+            match super::foo(a, b) {
+                Option::Some (v) => {
+                    v
+                },
+                Option::None (v) => {
+                    let data = array_new::<felt>();
+                    array_append::<felt>(data, 1);
+                    panic(data);
+                },
+            }
+        }
+
+        func bar() -> felt {
+            match super::bar() {
+                Option::Some (v) => {
+                    v
+                },
+                Option::None (v) => {
+                    let data = array_new::<felt>();
+                    array_append::<felt>(data, 2);
+                    panic(data);
+                },
+            }
+        }
+
+        func non_extern(_: some_type) -> (felt, other) {
+            match super::non_extern(_) {
+                Option::Some (v) => {
+                    v
+                },
+                Option::None (v) => {
+                    let data = array_new::<felt>();
+                    array_append::<felt>(data, 3);
+                    panic(data);
+                },
+            }
+        }
+    "}
     );
 }
