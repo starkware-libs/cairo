@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use db_utils::Upcast;
 use defs::ids::{EnumId, GenericParamId, LanguageElementId, VariantId, VariantLongId};
 use diagnostics::Diagnostics;
@@ -11,7 +13,7 @@ use super::generics::semantic_generic_params;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
-use crate::resolve_path::Resolver;
+use crate::resolve_path::{ResolvedLookback, Resolver};
 use crate::types::{resolve_type, substitute_generics};
 use crate::{semantic, ConcreteEnumId, SemanticDiagnostic};
 
@@ -26,6 +28,7 @@ pub struct EnumData {
     generic_params: Vec<GenericParamId>,
     variants: OrderedHashMap<SmolStr, VariantId>,
     variant_semantic: OrderedHashMap<VariantId, Variant>,
+    resolved_lookback: Arc<ResolvedLookback>,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
@@ -79,6 +82,14 @@ pub fn variant_semantic(
     data.variant_semantic.get(&variant_id).cloned()
 }
 
+/// Query implementation of [crate::db::SemanticGroup::enum_resolved_lookback].
+pub fn enum_resolved_lookback(
+    db: &dyn SemanticGroup,
+    enum_id: EnumId,
+) -> Option<Arc<ResolvedLookback>> {
+    Some(db.priv_enum_semantic_data(enum_id)?.resolved_lookback)
+}
+
 /// Query implementation of [crate::db::SemanticGroup::priv_enum_semantic_data].
 pub fn priv_enum_semantic_data(db: &dyn SemanticGroup, enum_id: EnumId) -> Option<EnumData> {
     // TODO(spapini): When asts are rooted on items, don't query module_data directly. Use a
@@ -116,7 +127,15 @@ pub fn priv_enum_semantic_data(db: &dyn SemanticGroup, enum_id: EnumId) -> Optio
         variant_semantic.insert(id, Variant { enum_id, id, ty, idx: variant_idx });
     }
 
-    Some(EnumData { diagnostics: diagnostics.build(), generic_params, variants, variant_semantic })
+    let resolved_lookback = Arc::new(resolver.lookback);
+
+    Some(EnumData {
+        diagnostics: diagnostics.build(),
+        generic_params,
+        variants,
+        variant_semantic,
+        resolved_lookback,
+    })
 }
 
 // TODO(spapini): Consider making these queries.

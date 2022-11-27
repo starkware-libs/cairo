@@ -11,7 +11,11 @@ pub use db::RootDatabase;
 use db_utils::Upcast;
 use debug::DebugWithDb;
 use defs::db::DefsGroup;
-use defs::ids::{FreeFunctionId, FreeFunctionLongId, LanguageElementId};
+use defs::ids::{
+    EnumLongId, ExternFunctionLongId, ExternTypeLongId, FreeFunctionId, FreeFunctionLongId,
+    ImplLongId, LanguageElementId, LookupItemId, ModuleId, ModuleItemId, StructLongId, TraitLongId,
+    UseLongId,
+};
 use diagnostics::{DiagnosticEntry, Diagnostics};
 use filesystem::db::{AsFilesGroupMut, FilesGroup, FilesGroupEx, PrivRawFileContentQuery};
 use filesystem::ids::{FileId, FileLongId};
@@ -62,13 +66,16 @@ fn from_pos(pos: TextPosition) -> Position {
     Position { line: pos.line as u32, character: pos.col as u32 }
 }
 impl Backend {
+    /// Locks and gets a database instance.
     async fn db(&self) -> tokio::sync::MutexGuard<'_, RootDatabase> {
         self.db_mutex.lock().await
     }
+    /// Gets a FileId from a URI.
     fn file(&self, db: &RootDatabase, uri: Url) -> FileId {
         let path = uri.to_file_path().expect("Only file URIs are supported.");
         FileId::new(db, path)
     }
+    // Refresh diagnostics and send diffs to client.
     async fn refresh_diagnostics(&self) {
         let db = self.db().await;
         let mut state = self.state_mutex.lock().await;
@@ -126,6 +133,7 @@ impl Backend {
         }
     }
 
+    /// Converts internal format diagnostics to LSP format.
     fn get_diagnostics<T: DiagnosticEntry>(
         &self,
         db: &T::DbType,
@@ -323,12 +331,10 @@ impl LanguageServer for Backend {
         let file_uri = params.text_document_position_params.text_document.uri;
         let file = self.file(&db, file_uri);
         let position = params.text_document_position_params.position;
-        let (node, free_function_id) =
-            if let Some(res) = get_node_and_function(&*db, file, position) {
-                res
-            } else {
-                return Ok(None);
-            };
+        let Some((node, lookup_items)) = get_node_and_lookup_items(&*db, file, position) else {return Ok(None)};
+        let Some(
+            LookupItemId::ModuleItem(ModuleItemId::FreeFunction(free_function_id))
+        ) = lookup_items.into_iter().next() else  {return Ok(None)};
 
         // Build texts.
         let mut hints = Vec::new();
@@ -341,7 +347,6 @@ impl LanguageServer for Backend {
 
         Ok(Some(Hover { contents: HoverContents::Array(hints), range: None }))
     }
-
     async fn goto_definition(
         &self,
         params: GotoDefinitionParams,
@@ -351,80 +356,132 @@ impl LanguageServer for Backend {
         let file_uri = params.text_document_position_params.text_document.uri;
         let file = self.file(&db, file_uri.clone());
         let position = params.text_document_position_params.position;
-        let (node, free_function_id) =
-            if let Some(res) = get_node_and_function(&*db, file, position) {
-                res
+        let Some((node, lookup_items)) = get_node_and_lookup_items(&*db, file, position) else {return Ok(None)};
+        for lookup_item_id in lookup_items {
+            if node.kind(syntax_db) != SyntaxKind::TokenIdentifier {
+                continue;
+            }
+            let identifier =
+                ast::TerminalIdentifier::from_syntax_node(syntax_db, node.parent().unwrap());
+            let Some(item) = db.lookup_resolved_generic_item_by_ptr(
+                lookup_item_id, identifier.stable_ptr())
+            else { continue; };
+
+            let defs_db = (*db).upcast();
+            let (module_id, stable_ptr) = match item {
+                ResolvedGenericItem::Module(item) => {
+                    (item, db.intern_stable_ptr(SyntaxStablePtr::Root))
+                }
+                ResolvedGenericItem::GenericFunction(item) => {
+                    (item.module(defs_db), item.untyped_stable_ptr(defs_db))
+                }
+                ResolvedGenericItem::GenericType(generic_type) => {
+                    (generic_type.module(defs_db), generic_type.untyped_stable_ptr(defs_db))
+                }
+                ResolvedGenericItem::Variant(variant) => {
+                    (variant.id.module(defs_db), variant.id.stable_ptr(defs_db).untyped())
+                }
+                ResolvedGenericItem::Trait(trt) => {
+                    (trt.module(defs_db), trt.stable_ptr(defs_db).untyped())
+                }
+                ResolvedGenericItem::Impl(imp) => {
+                    (imp.module(defs_db), imp.stable_ptr(defs_db).untyped())
+                }
+            };
+
+            let file = if let Some(file) = db.module_file(module_id) {
+                file
             } else {
                 return Ok(None);
             };
 
-        if node.kind(syntax_db) != SyntaxKind::TokenIdentifier {
-            return Ok(None);
+            let uri = if let FileLongId::OnDisk(path) = db.lookup_intern_file(file) {
+                Url::from_file_path(path).unwrap()
+            } else {
+                return Ok(None);
+            };
+            let syntax = if let Some(syntax) = db.file_syntax(file) {
+                syntax
+            } else {
+                eprintln!("Formatting failed. File '{file_uri}' does not exist.");
+                return Ok(None);
+            };
+            let node = syntax.as_syntax_node().lookup_ptr(syntax_db, stable_ptr);
+            let span = node.span_without_trivia(syntax_db);
+
+            let start = from_pos(span.start.position_in_file((*db).upcast(), file).unwrap());
+            let end = from_pos(span.end.position_in_file((*db).upcast(), file).unwrap());
+
+            return Ok(Some(GotoDefinitionResponse::Scalar(Location {
+                uri,
+                range: Range { start, end },
+            })));
         }
-        let identifier =
-            ast::TerminalIdentifier::from_syntax_node(syntax_db, node.parent().unwrap());
-        let item = if let Some(item) =
-            db.lookup_resolved_generic_item_by_ptr(free_function_id, identifier.stable_ptr())
-        {
-            item
-        } else {
-            return Ok(None);
-        };
-
-        let defs_db = (*db).upcast();
-        let (module_id, stable_ptr) = match item {
-            ResolvedGenericItem::Module(item) => {
-                (item, db.intern_stable_ptr(SyntaxStablePtr::Root))
-            }
-            ResolvedGenericItem::GenericFunction(item) => {
-                (item.module(defs_db), item.untyped_stable_ptr(defs_db))
-            }
-            ResolvedGenericItem::GenericType(generic_type) => {
-                (generic_type.module(defs_db), generic_type.untyped_stable_ptr(defs_db))
-            }
-            ResolvedGenericItem::Variant(variant) => {
-                (variant.id.module(defs_db), variant.id.stable_ptr(defs_db).untyped())
-            }
-            ResolvedGenericItem::Trait(trt) => {
-                (trt.module(defs_db), trt.stable_ptr(defs_db).untyped())
-            }
-            ResolvedGenericItem::Impl(imp) => {
-                (imp.module(defs_db), imp.stable_ptr(defs_db).untyped())
-            }
-        };
-
-        let file = if let Some(file) = db.module_file(module_id) {
-            file
-        } else {
-            return Ok(None);
-        };
-
-        let uri = if let FileLongId::OnDisk(path) = db.lookup_intern_file(file) {
-            Url::from_file_path(path).unwrap()
-        } else {
-            return Ok(None);
-        };
-        let syntax = if let Some(syntax) = db.file_syntax(file) {
-            syntax
-        } else {
-            eprintln!("Formatting failed. File '{file_uri}' does not exist.");
-            return Ok(None);
-        };
-        let node = syntax.as_syntax_node().lookup_ptr(syntax_db, stable_ptr);
-        let span = node.span_without_trivia(syntax_db);
-
-        let start = from_pos(span.start.position_in_file((*db).upcast(), file).unwrap());
-        let end = from_pos(span.end.position_in_file((*db).upcast(), file).unwrap());
-
-        Ok(Some(GotoDefinitionResponse::Scalar(Location { uri, range: Range { start, end } })))
+        return Ok(None);
     }
 }
 
-fn get_node_and_function(
+/// If the ast node is a lookup item, return the corresponding id. Otherwise, return None.
+/// See [LookupItemId].
+fn lookup_item_from_ast(
+    db: &dyn SemanticGroup,
+    module_id: ModuleId,
+    node: SyntaxNode,
+) -> Option<LookupItemId> {
+    let syntax_db = db.upcast();
+    // TODO(spapini): Handle trait items.
+    match node.kind(syntax_db) {
+        SyntaxKind::ItemFreeFunction => Some(LookupItemId::ModuleItem(ModuleItemId::FreeFunction(
+            db.intern_free_function(FreeFunctionLongId(
+                module_id,
+                ast::ItemFreeFunction::from_syntax_node(syntax_db, node).stable_ptr(),
+            )),
+        ))),
+        SyntaxKind::ItemExternFunction => Some(LookupItemId::ModuleItem(
+            ModuleItemId::ExternFunction(db.intern_extern_function(ExternFunctionLongId(
+                module_id,
+                ast::ItemExternFunction::from_syntax_node(syntax_db, node).stable_ptr(),
+            ))),
+        )),
+        SyntaxKind::ItemExternType => Some(LookupItemId::ModuleItem(ModuleItemId::ExternType(
+            db.intern_extern_type(ExternTypeLongId(
+                module_id,
+                ast::ItemExternType::from_syntax_node(syntax_db, node).stable_ptr(),
+            )),
+        ))),
+        SyntaxKind::ItemTrait => {
+            Some(LookupItemId::ModuleItem(ModuleItemId::Trait(db.intern_trait(TraitLongId(
+                module_id,
+                ast::ItemTrait::from_syntax_node(syntax_db, node).stable_ptr(),
+            )))))
+        }
+        SyntaxKind::ItemImpl => Some(LookupItemId::ModuleItem(ModuleItemId::Impl(db.intern_impl(
+            ImplLongId(module_id, ast::ItemImpl::from_syntax_node(syntax_db, node).stable_ptr()),
+        )))),
+        SyntaxKind::ItemStruct => {
+            Some(LookupItemId::ModuleItem(ModuleItemId::Struct(db.intern_struct(StructLongId(
+                module_id,
+                ast::ItemStruct::from_syntax_node(syntax_db, node).stable_ptr(),
+            )))))
+        }
+        SyntaxKind::ItemEnum => Some(LookupItemId::ModuleItem(ModuleItemId::Enum(db.intern_enum(
+            EnumLongId(module_id, ast::ItemEnum::from_syntax_node(syntax_db, node).stable_ptr()),
+        )))),
+        SyntaxKind::ItemUse => Some(LookupItemId::ModuleItem(ModuleItemId::Use(db.intern_use(
+            UseLongId(module_id, ast::ItemUse::from_syntax_node(syntax_db, node).stable_ptr()),
+        )))),
+        _ => None,
+    }
+}
+
+/// Given a position in a file, return the syntax node for the token at that position, and all the
+/// lookup items above this node.
+fn get_node_and_lookup_items(
     db: &(dyn SemanticGroup + 'static),
     file: FileId,
     position: Position,
-) -> Option<(SyntaxNode, FreeFunctionId)> {
+) -> Option<(SyntaxNode, Vec<LookupItemId>)> {
+    let mut res = Vec::new();
     let syntax_db = db.upcast();
     let filename = file.file_name(db.upcast());
 
@@ -457,18 +514,20 @@ fn get_node_and_function(
 
     // Find containing function.
     let mut item_node = node.clone();
-    while item_node.kind(syntax_db) != SyntaxKind::ItemFreeFunction {
-        item_node = item_node.parent().on_none(|| {
-            eprintln!("Hover failed. Not inside a function.");
-        })?;
+    loop {
+        if let Some(item) = lookup_item_from_ast(db, module_id, item_node.clone()) {
+            res.push(item);
+        }
+        match item_node.parent() {
+            Some(next_node) => {
+                item_node = next_node;
+            }
+            None => return Some((node, res)),
+        }
     }
-    let function_node = ast::ItemFreeFunction::from_syntax_node(syntax_db, item_node);
-    let free_function_id =
-        db.intern_free_function(FreeFunctionLongId(module_id, function_node.stable_ptr()));
-
-    Some((node, free_function_id))
 }
 
+/// If the node is an identifier, retrieves a hover hint for it.
 fn get_identifier_hint(
     db: &(dyn SemanticGroup + 'static),
     free_function_id: FreeFunctionId,
@@ -479,12 +538,17 @@ fn get_identifier_hint(
         return None;
     }
     let identifier = ast::TerminalIdentifier::from_syntax_node(syntax_db, node.parent().unwrap());
-    let item = db.lookup_resolved_generic_item_by_ptr(free_function_id, identifier.stable_ptr())?;
+    let item = db.lookup_resolved_generic_item_by_ptr(
+        LookupItemId::ModuleItem(ModuleItemId::FreeFunction(free_function_id)),
+        identifier.stable_ptr(),
+    )?;
+
     // TODO(spapini): Also include concrete item hints.
     // TODO(spapini): Format this better.
     Some(format!("`{:?}`", item.debug(db)))
 }
 
+/// If the node is an expression, retrieves a hover hint for it.
 fn get_expr_hint(
     db: &(dyn SemanticGroup + 'static),
     free_function_id: FreeFunctionId,
@@ -506,6 +570,7 @@ fn get_expr_hint(
     Some(format!("Type: `{}`", semantic_expr.ty().format(db)))
 }
 
+/// Returns true if the current ast node is an expression.
 fn is_expr(kind: SyntaxKind) -> bool {
     matches!(
         kind,

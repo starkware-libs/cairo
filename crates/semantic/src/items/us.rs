@@ -1,10 +1,12 @@
+use std::sync::Arc;
+
 use defs::ids::{LanguageElementId, UseId};
 use diagnostics::Diagnostics;
 use diagnostics_proc_macros::DebugWithDb;
 
 use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics};
-use crate::resolve_path::{ResolvedGenericItem, Resolver};
+use crate::resolve_path::{ResolvedGenericItem, ResolvedLookback, Resolver};
 use crate::SemanticDiagnostic;
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
@@ -12,6 +14,7 @@ use crate::SemanticDiagnostic;
 pub struct UseData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
     pub resolved_item: Option<ResolvedGenericItem>,
+    resolved_lookback: Arc<ResolvedLookback>,
 }
 
 /// Query implementation of [crate::db::SemanticGroup::priv_struct_semantic_data].
@@ -26,7 +29,8 @@ pub fn priv_use_semantic_data(db: &(dyn SemanticGroup), use_id: UseId) -> Option
     let use_ast = module_data.uses.get(&use_id)?;
     let syntax_db = db.upcast();
     let resolved_item = resolver.resolve_generic_path(&mut diagnostics, &use_ast.name(syntax_db));
-    Some(UseData { diagnostics: diagnostics.build(), resolved_item })
+    let resolved_lookback = Arc::new(resolver.lookback);
+    Some(UseData { diagnostics: diagnostics.build(), resolved_item, resolved_lookback })
 }
 
 /// Cycle handling for [crate::db::SemanticGroup::priv_struct_semantic_data].
@@ -45,7 +49,11 @@ pub fn priv_use_semantic_data_cycle(
     } else {
         diagnostics.report(&use_ast.name(syntax_db), SemanticDiagnosticKind::PathNotFound);
     }
-    Some(UseData { diagnostics: diagnostics.build(), resolved_item: None })
+    Some(UseData {
+        diagnostics: diagnostics.build(),
+        resolved_item: None,
+        resolved_lookback: Arc::new(ResolvedLookback::default()),
+    })
 }
 
 /// Query implementation of [crate::db::SemanticGroup::use_semantic_diagnostics].
@@ -59,4 +67,12 @@ pub fn use_semantic_diagnostics(
 /// Query implementation of [crate::db::SemanticGroup::use_resolved_item].
 pub fn use_resolved_item(db: &dyn SemanticGroup, use_id: UseId) -> Option<ResolvedGenericItem> {
     db.priv_use_semantic_data(use_id).and_then(|data| data.resolved_item)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::use_resolved_lookback].
+pub fn use_resolved_lookback(
+    db: &dyn SemanticGroup,
+    use_id: UseId,
+) -> Option<Arc<ResolvedLookback>> {
+    Some(db.priv_use_semantic_data(use_id)?.resolved_lookback)
 }

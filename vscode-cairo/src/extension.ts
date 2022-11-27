@@ -36,7 +36,7 @@ function findLanguageServerExecutable(
         rootPath = workspaceFolders[0].uri.path || rootPath
     }
 
-    var configPath = config.get<string>('cairo.languageServerPath');
+    var configPath = config.get<string>('cairo1.languageServerPath');
     if (configPath) {
         // Replace placeholders, if present.
         return configPath.replace(/\${workspaceFolder}/g, rootPath);
@@ -58,7 +58,7 @@ function setupLanguageServer(
             if (!executable) {
                 outputChannel.appendLine(
                     "Cairo language server was not found. Make sure cairo-lang-server is " +
-                    "installed and that the configuration 'cairo.languageServerPath' is correct.");
+                    "installed and that the configuration 'cairo1.languageServerPath' is correct.");
                 return;
             }
             outputChannel.appendLine("Cairo language server running from: " + executable);
