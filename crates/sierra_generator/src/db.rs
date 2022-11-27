@@ -5,7 +5,8 @@ use defs::ids::{FreeFunctionId, ModuleId};
 use diagnostics::Diagnostics;
 use filesystem::ids::CrateId;
 use lowering::db::LoweringGroup;
-use semantic::Mutability;
+use semantic::corelib::get_core_ty_by_name;
+use semantic::{GenericArgumentId, Mutability};
 use sierra::extensions::{ConcreteType, GenericTypeEx};
 use sierra::ids::ConcreteTypeId;
 
@@ -119,6 +120,7 @@ fn get_function_signature(
     // there.
     let semantic_function_id = db.lookup_intern_sierra_function(function_id);
     let signature = db.concrete_function_signature(semantic_function_id)?;
+    let may_panic = db.function_may_panic(semantic_function_id)?;
 
     let implicits = db
         .function_all_implicits(semantic_function_id)?
@@ -126,6 +128,7 @@ fn get_function_signature(
         .map(|ty| db.get_concrete_type_id(*ty))
         .collect::<Option<Vec<ConcreteTypeId>>>()?;
 
+    // TODO(spapini): Handle ret_types in lowering.
     let mut ret_types = implicits.clone();
     let mut all_params = implicits;
 
@@ -138,7 +141,15 @@ fn get_function_signature(
     }
 
     // TODO(ilya): Handle tuple and struct types.
-    ret_types.push(db.get_concrete_type_id(signature.return_type)?);
+    let mut return_type = signature.return_type;
+    if may_panic {
+        return_type = get_core_ty_by_name(
+            db.upcast(),
+            "PanicResult".into(),
+            vec![GenericArgumentId::Type(return_type)],
+        )
+    }
+    ret_types.push(db.get_concrete_type_id(return_type)?);
 
     Some(Arc::new(sierra::program::FunctionSignature { param_types: all_params, ret_types }))
 }
