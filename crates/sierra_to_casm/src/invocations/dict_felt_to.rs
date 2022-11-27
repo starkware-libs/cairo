@@ -1,10 +1,11 @@
+use std::str::FromStr;
 use std::vec;
 
 use casm::ap_change::ApplyApChange;
-use casm::casm;
 use casm::hints::Hint;
 use casm::instructions::{AddApInstruction, Instruction, InstructionBody};
 use casm::operand::{CellRef, DerefOrImmediate, Register, ResOperand};
+use casm::{casm, casm_extend};
 use num_bigint::BigInt;
 use sierra::extensions::dict_felt_to::DictFeltToConcreteLibFunc;
 use sierra::extensions::felt::FeltOperator;
@@ -30,7 +31,7 @@ pub fn build(
         DictFeltToConcreteLibFunc::New(_) => build_dict_felt_to_new(builder),
         DictFeltToConcreteLibFunc::Read(_) => build_dict_felt_to_read(builder),
         DictFeltToConcreteLibFunc::Write(_) => build_dict_felt_to_write(builder),
-        DictFeltToConcreteLibFunc::Squash(_) => todo!(),
+        DictFeltToConcreteLibFunc::Squash(_) => build_dict_felt_to_squash(builder),
     }
 }
 
@@ -186,6 +187,257 @@ fn build_dict_felt_to_write(
         instructions,
         vec![],
         [[dict_view.to_reference_expression()].into_iter()].into_iter(),
+    ))
+}
+
+/// Handles the dict_squash instruction.
+fn build_dict_felt_to_squash(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let (range_check, dict_view) = match builder.refs {
+        [
+            ReferenceValue { expression: expr_range_check, .. },
+            ReferenceValue { expression: expr_dict, .. },
+        ] => {
+            let concrete_dict_type = &builder.libfunc.param_signatures()[0].ty;
+            let dict_view =
+                DictFeltToView::try_get_view(expr_dict, &builder.program_info, concrete_dict_type)
+                    .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?;
+            let range_check = try_unpack_deref(expr_range_check)?;
+            (range_check, dict_view)
+        }
+        refs => {
+            return Err(InvocationError::WrongNumberOfArguments {
+                expected: 1,
+                actual: refs.len(),
+            });
+        }
+    };
+    let mut start_expr = dict_view.start;
+    let mut end_expr = dict_view.end;
+    let end_offset = dict_view.end_offset;
+    // ceil((PRIME / 2) / 2 ** 128).
+    let prime_over_2_high = BigInt::from_str("3544607988759775765608368578435044694").unwrap();
+    // ceil((PRIME / 3) / 2 ** 128).
+    let prime_over_3_high = BigInt::from_str("5316911983139663648412552867652567041").unwrap();
+    // 1/3 mod PRIME
+    let inverse3 = BigInt::from_str(
+        "1206167596222043737899107594365023368541035738443865566657697352045290673494",
+    )
+    .unwrap();
+    start_expr = start_expr.unchecked_apply_known_ap_change(1);
+    end_expr = end_expr.unchecked_apply_known_ap_change(2);
+    let mut casm_ctx = casm!(
+        [ap] = range_check, ap++;
+        [ap] = start_expr, ap++;
+        [ap] = end_expr + end_offset, ap++;
+        call rel 61;
+        jmp rel 174;
+    );
+    casm_ctx.current_hints.push(Hint::DictSquashHints { hint_index: 1 });
+    casm_extend!(casm_ctx,
+        [ap] = [[fp + (-5)]], ap++;
+        [ap] = [[fp + (-5)] + 1], ap++;
+        [ap] = [ap + (-1)] * prime_over_2_high, ap++;
+        [ap] = [ap + (-3)] + [ap + (-1)], ap++;
+        [ap] = [[fp + (-5)] + 2], ap++;
+        [ap] = [[fp + (-5)] + 3], ap++;
+        [ap] = [ap + (-1)] * prime_over_3_high, ap++;
+        [ap] = [ap + (-3)] + [ap + (-1)], ap++;
+    );
+    casm_ctx.current_hints.push(Hint::DictSquashHints { hint_index: 2 });
+    casm_extend!(casm_ctx,
+        jmp rel 14 if [ap] != 0, ap++;
+        [ap] = (-1), ap++;
+        [ap + (-1)] = [ap] + [fp + (-4)], ap++;
+        [ap + (-1)] = [ap + (-8)] + [ap + (-4)];
+        [fp + (-4)] = [ap] + [fp + (-3)] , ap++;
+        [ap] = [fp + (-3)] + 1, ap++;
+        [ap] = [ap + (-2)] * [ap + (-1)], ap++;
+        [ap + (-1)] = [ap + (-11)] * [ap + (-7)];
+        [ap] = [fp + (-5)] + 4, ap++;
+        ret;
+    );
+    casm_ctx.current_hints.push(Hint::DictSquashHints { hint_index: 3 });
+    casm_extend!(casm_ctx,
+        [ap] = (-1), ap++;
+        [ap + (-1)] = [ap] + [fp + (-3)], ap++;
+        [ap] = [fp + (-4)] + [ap + (-1)], ap++;
+        [ap + (-1)] = [ap + (-10)] + [ap + (-6)];
+        [ap] = [fp + (-4)] * [ap + (-2)], ap++;
+        [ap + (-1)] = [ap + (-11)] * [ap + (-7)];
+        [ap] = [fp + (-5)] + 4, ap++;
+        ret;
+    );
+    casm_ctx.current_hints.push(Hint::DictSquashHints { hint_index: 4 });
+    casm_extend!(casm_ctx,
+        [fp + (-3)] = [ap + (-7)] + [ap + (-3)];
+        [fp + (-3)] =  [ap] + [fp + (-4)], ap++;
+        [ap] = [fp + (-4)] * [ap + (-1)], ap++;
+        [ap + (-1)] = [ap + (-9)] * [ap + (-5)];
+        ap += 2;
+        [ap] = [fp + (-5)] + 4, ap++;
+        ret;
+    );
+    casm_ctx.current_hints.push(Hint::DictSquashHints { hint_index: 5 });
+    casm_extend!(casm_ctx,
+        [fp + (-4)] = [ap] + [fp + (-3)], ap++;
+        jmp rel 4 if [ap + (-1)] != 0;
+        [fp + (-4)] = [fp + (-4)] + 1;
+        [ap] = [fp + (-5)], ap++;
+        [ap] = [fp + (-4)], ap++;
+        [ap] = [fp + (-3)], ap++;
+        call rel (-53);
+        ret;
+    );
+    casm_ctx.current_hints.push(Hint::DictSquashHints { hint_index: 6 });
+    casm_extend!(casm_ctx,
+        ap += 1;
+        ret;
+        ap += 1;
+    );
+    casm_ctx.current_hints.push(Hint::DictSquashHints { hint_index: 7 });
+    casm_extend!(casm_ctx,
+        call rel (-5);
+        [fp] = [ap + (-1)];
+    );
+    casm_ctx.current_hints.push(Hint::ExitScope);
+    casm_extend!(casm_ctx,
+        [ap] = [fp + (-5)], ap++;
+        [ap] = [fp + (-4)], ap++;
+        [ap] = [fp + (-3)], ap++;
+        [ap] = [fp], ap++;
+        call rel 6;
+    );
+    casm_ctx.current_hints.push(Hint::DictSquashHints { hint_index: 8 });
+    casm_extend!(casm_ctx,
+        [ap] = [ap + (-2)], ap++;
+        [ap] = [fp], ap++;
+        [ap] = [ap + (-3)], ap++;
+        ret;
+        ap += 3;
+    );
+    casm_ctx.current_hints.push(Hint::EnterScope);
+    casm_extend!(casm_ctx,
+        [fp + (-4)] = [fp] + [fp + (-5)];
+        jmp rel 5 if [fp] != 0;
+    );
+    casm_ctx.current_hints.push(Hint::ExitScope);
+    casm_extend!(casm_ctx,
+        [ap] = [fp + (-6)], ap++;
+        [ap] = [fp + (-3)], ap++;
+        ret;
+        [ap] = [fp] * inverse3, ap++;
+    );
+    casm_ctx.current_hints.push(Hint::DictSquashHints { hint_index: 9 });
+    casm_extend!(casm_ctx,
+        jmp rel 7 if [fp + 2] != 0;
+        [fp + 1] = [[fp + (-6)]];
+        [ap] = [fp + (-6)] + 1, ap++;
+        jmp rel 3;
+        [ap] = [fp + (-6)], ap++;
+        [ap] = [fp + (-5)], ap++;
+        [ap] = [fp + (-4)] + (-1), ap++;
+        [ap] = [fp + 1], ap++;
+        [ap] = [ap + (-5)], ap++;
+        [ap] = [fp + (-3)], ap++;
+        [ap] = [fp + 2], ap++;
+        call rel 3;
+    );
+    casm_ctx.current_hints.push(Hint::ExitScope);
+    casm_extend!(casm_ctx,
+        ret;
+        ap += 2;
+    );
+    casm_ctx.current_hints.push(Hint::DictSquashHints { hint_index: 10 });
+    casm_extend!(casm_ctx,
+        [ap] = [[fp + (-9)]], ap++;
+        [ap] = [ap + (-1)] * 3, ap++;
+        [ap + 1] = [fp + (-8)] + [ap + (-1)], ap++;
+        [ap + (-1)] = [[ap] + 2], ap++;
+        [ap] = [fp + (-9)] + 1, ap++;
+        [fp + (-6)] = [[ap + (-2)]];
+        [fp + (-6)] = [[fp + (-4)]];
+        [fp] = [[ap + (-2)] + 1];
+        [fp] = [[fp + (-4)] + 1];
+    );
+    casm_ctx.current_hints.push(Hint::DictSquashHints { hint_index: 11 });
+    casm_extend!(casm_ctx, jmp rel 15 if [fp + 1] != 0;);
+    casm_ctx.current_hints.push(Hint::DictSquashHints { hint_index: 12 });
+    casm_extend!(casm_ctx,
+        [ap] = [[ap + (-1)]], ap++;
+        [ap] = [ap + (-1)] + 1, ap++;
+        [ap] = [ap + (-1)] * 3, ap++;
+        [ap + 2] = [ap + (-5)] + [ap + (-1)], ap++;
+        [ap + (-7)] = [[ap + 1] + 1];
+        [ap] = [[ap + 1] + 2], ap++;
+        [fp + (-6)] = [[ap]];
+        [ap + 1] = [ap + (-6)] + 1, ap++;
+    );
+    casm_ctx.current_hints.push(Hint::DictSquashHints { hint_index: 13 });
+    casm_extend!(casm_ctx, jmp rel (-11) if [ap + (-3)] != 0, ap++;);
+    casm_ctx.current_hints.push(Hint::DictSquashHints { hint_index: 14 });
+    casm_extend!(casm_ctx,
+        [fp + (-7)] = [ap] + [ap + (-2)];
+        [ap] = [[ap + (-1)]], ap++;
+        [ap + (-2)] = [ap] + [fp + (-9)], ap++;
+    );
+    casm_ctx.current_hints.push(Hint::DictSquashHints { hint_index: 15 });
+    casm_extend!(casm_ctx,
+        [ap + (-5)] = [[fp + (-4)] + 2];
+        [fp + (-5)] = [ap] + [ap + (-1)], ap++;
+        jmp rel 7 if [ap + (-1)] != 0;
+    );
+    casm_ctx.current_hints.push(Hint::DictSquashHints { hint_index: 16 });
+    casm_extend!(casm_ctx,
+        [ap] = [ap + (-4)] + 1, ap++;
+        [ap] = [fp + (-4)] + 3, ap++;
+        ret;
+        ap += 1;
+    );
+    casm_ctx.current_hints.push(Hint::DictSquashHints { hint_index: 17 });
+    casm_extend!(casm_ctx,
+        jmp rel 14 if [fp + (-3)] != 0;
+        [ap] = [fp + (-6)] + 1, ap++;
+        [ap + (-2)] = [ap] + [ap + (-1)], ap++;
+        [ap + (-1)] = [[ap + (-7)] + 1];
+        [ap] = [ap + (-7)] + 2, ap++;
+        [ap] = [fp + (-8)], ap++;
+        [ap] = [fp + (-7)], ap++;
+        [ap] = [ap + (-6)], ap++;
+        [ap] = [ap + (-8)], ap++;
+        jmp rel 12;
+        [ap] = [ap + (-5)] + 1, ap++;
+        [ap] = [fp + (-6)], ap++;
+        [ap] = [ap + (-3)], ap++;
+        call rel (-117);
+        [ap] = [fp + (-8)], ap++;
+        [ap] = [fp + (-7)], ap++;
+        [ap] = [ap + (-29)], ap++;
+        [ap] = [ap + (-31)], ap++;
+        [ap] = [fp + (-4)] + 3, ap++;
+        [ap] = [fp + (-3)], ap++;
+        call rel (-69);
+        ret;
+    );
+    Ok(builder.build(
+        casm_ctx.instructions,
+        vec![],
+        [[
+            // Range check pointer
+            ReferenceExpression {
+                cells: vec![CellExpression::Deref(CellRef { register: Register::AP, offset: -3 })],
+            },
+            // Squashed dict
+            ReferenceExpression {
+                cells: vec![
+                    CellExpression::Deref(CellRef { register: Register::AP, offset: -2 }),
+                    CellExpression::Deref(CellRef { register: Register::AP, offset: -1 }),
+                ],
+            },
+        ]
+        .into_iter()]
+        .into_iter(),
     ))
 }
 
