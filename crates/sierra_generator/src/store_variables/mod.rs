@@ -112,8 +112,8 @@ impl<'a> AddStoreVariableStatements<'a> {
                     }
                     _ => {
                         // This starts a branch. Store all deferred variables.
-                        self.store_all_deffered_variables();
                         if invocation.branches.len() > 1 {
+                            self.store_all_deffered_variables();
                             self.store_temporary_variables_as_locals();
                         }
 
@@ -147,10 +147,6 @@ impl<'a> AddStoreVariableStatements<'a> {
                 self.state_opt = None;
             }
             pre_sierra::Statement::Label(pre_sierra::Label { id: label_id }) => {
-                if self.state_opt.is_some() {
-                    self.store_all_deffered_variables();
-                }
-
                 // Merge self.known_stack with the future_stack that corresponds to the label, if
                 // any.
                 self.state_opt = merge_optional_states(
@@ -177,6 +173,7 @@ impl<'a> AddStoreVariableStatements<'a> {
                 arg,
                 param_signature.allow_deferred,
                 param_signature.allow_add_const,
+                param_signature.allow_const,
             );
         }
     }
@@ -189,16 +186,22 @@ impl<'a> AddStoreVariableStatements<'a> {
         arg: &sierra::ids::VarId,
         allow_deferred: bool,
         allow_add_const: bool,
+        allow_const: bool,
     ) -> bool {
         if let Some(deferred_info) = self.state().deferred_variables.get(arg) {
             match deferred_info.kind {
-                state::DeferredVariableKind::Generic => {
-                    if !allow_deferred {
+                state::DeferredVariableKind::Const => {
+                    if !allow_const {
                         return self.store_deferred(arg);
                     }
                 }
                 state::DeferredVariableKind::AddConst => {
                     if !allow_add_const {
+                        return self.store_deferred(arg);
+                    }
+                }
+                state::DeferredVariableKind::Generic => {
+                    if !allow_deferred {
                         return self.store_deferred(arg);
                     }
                 }
@@ -239,7 +242,7 @@ impl<'a> AddStoreVariableStatements<'a> {
                 // `prepare_libfunc_argument`.
                 // `should_rename` should be set to `true` if the variable was copied onto the
                 // stack.
-                self.prepare_libfunc_argument(var, false, false)
+                self.prepare_libfunc_argument(var, false, false, true)
             } else {
                 // Check if this is part of the prefix. If it is, rename instead of adding
                 // `store_temp`.
