@@ -754,8 +754,12 @@ impl<'a> Parser<'a> {
 
         let else_clause: OptionElseClauseGreen = if self.peek().kind == SyntaxKind::TerminalElse {
             let else_kw = self.take::<TerminalElse>();
-            let else_block = self.parse_block();
-            ElseClause::new_green(self.db, else_kw, else_block).into()
+            let else_block_or_if = if self.peek().kind == SyntaxKind::TerminalIf {
+                BlockOrIfGreen::from(self.expect_if_expr())
+            } else {
+                BlockOrIfGreen::from(self.parse_block())
+            };
+            ElseClause::new_green(self.db, else_kw, else_block_or_if).into()
         } else {
             OptionElseClauseEmpty::new_green(self.db).into()
         };
