@@ -295,8 +295,7 @@ impl LocalVariablesState {
                     self.set_variable_status(*var_id, VariableStatus::Alias(params[param_idx]));
                 }
                 sierra::extensions::OutputVarReferenceInfo::NewTempVar { .. }
-                | sierra::extensions::OutputVarReferenceInfo::Deferred(_)
-                | sierra::extensions::OutputVarReferenceInfo::Const => {
+                | sierra::extensions::OutputVarReferenceInfo::Deferred(_) => {
                     self.set_variable_status(*var_id, VariableStatus::TemporaryVariable);
                 }
                 sierra::extensions::OutputVarReferenceInfo::NewLocalVar => {}

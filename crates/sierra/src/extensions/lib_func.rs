@@ -257,11 +257,13 @@ pub struct ParamSignature {
     pub allow_deferred: bool,
     /// Whether the libfunc argument can be an expression of the form `[ap + i] + const`.
     pub allow_add_const: bool,
+    /// Whether the libfunc argument can be a constant.
+    pub allow_const: bool,
 }
 impl ParamSignature {
     /// Returns a [ParamSignature] with default attributes.
     pub fn new(ty: ConcreteTypeId) -> Self {
-        Self { ty, allow_add_const: false, allow_deferred: false }
+        Self { ty, allow_add_const: false, allow_deferred: false, allow_const: false }
     }
 }
 impl From<ConcreteTypeId> for ParamSignature {
@@ -283,15 +285,15 @@ pub enum OutputVarReferenceInfo {
     /// The output was allocated as a local variable.
     NewLocalVar,
     /// The output is the result of a computation. For example `[ap] + [fp]`,
-    /// `[ap + 1] * [fp - 3]`, `[ap] + 3`.
+    /// `[ap + 1] * [fp - 3]`, `[ap] + 3`, `7`.
     Deferred(DeferredOutputKind),
-    /// The output is a constant.
-    Const,
 }
 
 /// The type of a deferred output.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum DeferredOutputKind {
+    /// The output is a constant. For example, `7`.
+    Const,
     /// The output is the addition of a constant to one of the parameters. For example, `x + 3`.
     AddConst { param_idx: usize },
     /// The output is not one of the above (e.g., `[ap] + [fp]`, `[ap + 1] * [fp - 3]`,
