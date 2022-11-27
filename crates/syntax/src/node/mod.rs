@@ -169,6 +169,29 @@ impl SyntaxNode {
         }
         self.clone()
     }
+
+    /// Returns all the text under the syntax node.
+    /// Note that this traverses the syntax tree, and generates a new string, so use responsibly.
+    pub fn get_text(self, db: &dyn SyntaxGroup) -> String {
+        let mut buffer = String::default();
+        self.append_text(db, &mut buffer);
+        buffer
+    }
+
+    /// Helper for `get_text` to allocate only a single string.
+    fn append_text(self, db: &dyn SyntaxGroup, buffer: &mut String) {
+        let node = self.green_node(db);
+        match node.details {
+            green::GreenNodeDetails::Token(text) => {
+                buffer.push_str(text.as_str());
+            }
+            green::GreenNodeDetails::Node { .. } => {
+                for child in self.children(db) {
+                    child.append_text(db, buffer);
+                }
+            }
+        }
+    }
 }
 pub struct SyntaxNodeChildIterator<'db> {
     db: &'db dyn SyntaxGroup,
