@@ -67,17 +67,23 @@ fn test_compile_path() {
     let contract = compile_path(&path, replace_ids).unwrap();
 
     assert_eq!(
-        serde_json::to_string_pretty(&contract).unwrap(),
-        indoc! {
-            r#"
-        {
-          "sierra_program": "\n\n\n",
-          "entry_points_by_type": {
-            "EXTERNAL": [],
-            "L1_HANDLER": [],
-            "CONSTRUCTOR": []
-          },
-          "abi": []
-        }"#}
+        contract.sierra_program.to_string(),
+        indoc! {"
+          type felt = felt;
+
+          libfunc revoke_ap_tracking = revoke_ap_tracking;
+          libfunc felt_const<1> = felt_const<1>;
+          libfunc store_temp<felt> = store_temp<felt>;
+          libfunc burn_gas = burn_gas;
+
+          revoke_ap_tracking() -> ();
+          felt_const<1>() -> ([0]);
+          store_temp<felt>([0]) -> ([1]);
+          burn_gas() -> ();
+          return([1]);
+
+          test_contract::test_contract::test@0() -> (felt);
+          "
+        }
     );
 }
