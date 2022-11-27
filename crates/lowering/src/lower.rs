@@ -5,7 +5,7 @@ use itertools::{chain, zip_eq, Itertools};
 use num_traits::Zero;
 use scope::{BlockScope, BlockScopeEnd};
 use semantic::corelib::{
-    core_felt_ty, core_jump_nz_func, core_nonzero_ty, get_core_function_id,
+    self, core_felt_ty, core_jump_nz_func, core_nonzero_ty, get_core_function_id,
     get_enum_concrete_variant, get_panic_ty,
 };
 use semantic::items::enm::SemanticEnumEx;
@@ -672,10 +672,12 @@ fn lower_optimized_extern_match(
         },
     );
 
-    let arms = blocks?
+    let finalized_blocks = blocks?
         .into_iter()
         .map(|sealed| finalized_merger.finalize_block(ctx, sealed).block)
-        .collect();
+        .collect_vec();
+    let arms = zip_eq(concrete_variants, finalized_blocks).collect();
+
     let block_result = generators::MatchExtern {
         function: extern_enum.function,
         inputs: extern_enum.inputs,
@@ -739,11 +741,18 @@ fn lower_expr_match_felt(
     let block_otherwise_finalized = finalized_merger
         .finalize_block(ctx, block_otherwise_sealed.ok_or(LoweringFlowError::Failed)?);
 
+    let concrete_variants = vec![
+        corelib::jump_nz_zero_variant(ctx.db.upcast()),
+        corelib::jump_nz_nonzero_variant(ctx.db.upcast()),
+    ];
+    let arms = zip_eq(concrete_variants, [block0_finalized.block, block_otherwise_finalized.block])
+        .collect();
+
     // Emit the statement.
     let match_generator = generators::MatchExtern {
         function: core_jump_nz_func(semantic_db),
         inputs: vec![expr_var],
-        arms: vec![block0_finalized.block, block_otherwise_finalized.block],
+        arms,
         end_info: finalized_merger.end_info.clone(),
     };
     let block_result = match_generator.add(ctx, scope);
@@ -1044,7 +1053,10 @@ fn lower_optimized_extern_error_propagate(
             ])
         },
     );
-    let arms = blocks?.map(|sealed| finalized_merger.finalize_block(ctx, sealed).block).to_vec();
+    let finalized_blocks =
+        blocks?.map(|sealed| finalized_merger.finalize_block(ctx, sealed).block).to_vec();
+    let arms = zip_eq(vec![ok_variant.clone(), err_variant.clone()], finalized_blocks).collect();
+
     let block_result = generators::MatchExtern {
         function: extern_enum.function,
         inputs: extern_enum.inputs,

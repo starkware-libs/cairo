@@ -94,7 +94,7 @@ impl LoweredExprExternEnum {
         let concrete_variants = ctx.db.concrete_enum_variants(self.concrete_enum_id).unwrap();
         let (blocks, mut finalized_merger) =
             BlockFlowMerger::with(ctx, scope, &self.ref_args, |ctx, merger| {
-                let block_opts = concrete_variants.into_iter().map(|concrete_variant| {
+                let block_opts = concrete_variants.clone().into_iter().map(|concrete_variant| {
                     let variant_input_tys = extern_facade_return_tys(ctx, concrete_variant.ty);
                     let ref_tys = self
                         .ref_args
@@ -131,11 +131,13 @@ impl LoweredExprExternEnum {
                 block_opts.collect::<Option<Vec<_>>>().ok_or(LoweringFlowError::Failed)
             });
 
-        let arms = blocks
+        let finalized_blocks: Vec<_> = blocks
             .unwrap()
             .into_iter()
             .map(|sealed| finalized_merger.finalize_block(ctx, sealed).block)
             .collect();
+        let arms = zip_eq(concrete_variants, finalized_blocks).collect();
+
         let call_block_result = generators::MatchExtern {
             function: function_id,
             inputs: self.inputs,

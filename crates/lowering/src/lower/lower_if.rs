@@ -155,7 +155,10 @@ pub fn lower_expr_if_eq_zero(
     let match_generator = generators::MatchExtern {
         function: corelib::core_jump_nz_func(semantic_db),
         inputs: vec![condition_var],
-        arms: vec![main_finalized.block, else_finalized.block],
+        arms: vec![
+            (corelib::jump_nz_zero_variant(ctx.db.upcast()), main_finalized.block),
+            (corelib::jump_nz_nonzero_variant(ctx.db.upcast()), else_finalized.block),
+        ],
         end_info: finalized_merger.end_info.clone(),
     };
     let block_result = match_generator.add(ctx, scope);
