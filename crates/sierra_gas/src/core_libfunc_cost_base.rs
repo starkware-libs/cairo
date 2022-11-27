@@ -53,6 +53,7 @@ pub fn core_libfunc_cost_base<Ops: CostOperations>(
         Gas(RefundGas(_)) | Gas(BurnGas(_)) => vec![ops.statement_var_cost()],
         Array(ArrayConcreteLibFunc::New(_)) => vec![ops.const_cost(1)],
         Array(ArrayConcreteLibFunc::Append(_)) => vec![ops.const_cost(2)],
+        Array(ArrayConcreteLibFunc::At(_)) => vec![ops.const_cost(4), ops.const_cost(3)],
         Uint128(libfunc) => integer_libfunc_cost(ops, libfunc),
         Felt(libfunc) => felt_libfunc_cost(ops, libfunc),
         Drop(_) | Dup(_) | ApTracking(_) | UnwrapNonZero(_) | Mem(Rename(_)) | Box(_) => {

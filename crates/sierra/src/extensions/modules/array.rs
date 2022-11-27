@@ -1,8 +1,10 @@
 use super::as_single_type;
+use super::integer::Uint128Type;
+use super::range_check::RangeCheckType;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
-    DeferredOutputKind, LibFuncSignature, OutputVarInfo, SierraApChange,
-    SignatureOnlyGenericLibFunc, SignatureSpecializationContext,
+    BranchSignature, DeferredOutputKind, LibFuncSignature, OutputVarInfo, ParamSignature,
+    SierraApChange, SignatureOnlyGenericLibFunc, SignatureSpecializationContext,
 };
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
 use crate::extensions::types::TypeInfo;
@@ -55,6 +57,7 @@ define_libfunc_hierarchy! {
     pub enum ArrayLibFunc {
         New(ArrayNewLibFunc),
         Append(ArrayAppendLibFunc),
+        At(ArrayAtLibFunc),
         // TODO(orizi): Add length after libfunc result unpacking is supported.
         // TODO(orizi): Add access after enums are supported.
     }, ArrayConcreteLibFunc
@@ -105,5 +108,55 @@ impl SignatureOnlyGenericLibFunc for ArrayAppendLibFunc {
             }],
             SierraApChange::Known(0),
         ))
+    }
+}
+
+/// LibFunc for pushing a value into the end of an array.
+#[derive(Default)]
+pub struct ArrayAtLibFunc {}
+impl SignatureOnlyGenericLibFunc for ArrayAtLibFunc {
+    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("array_at");
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<LibFuncSignature, SpecializationError> {
+        let ty = as_single_type(args)?;
+        let arr_type = context.get_wrapped_concrete_type(ArrayType::id(), ty.clone())?;
+        let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
+        let uint128_type = context.get_concrete_type(Uint128Type::id(), &[])?;
+        let param_signatures = vec![
+            ParamSignature::new(range_check_type.clone()),
+            ParamSignature::new(arr_type.clone()),
+            ParamSignature::new(uint128_type),
+        ];
+        let rc_output = OutputVarInfo {
+            ty: range_check_type,
+            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                param_idx: 0,
+            }),
+        };
+        let arr_output = OutputVarInfo {
+            ty: arr_type,
+            ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },
+        };
+        let branch_signatures = vec![
+            // First (success) branch returns rc, array and element; failure branch does not return
+            // an element.
+            BranchSignature {
+                vars: vec![
+                    rc_output.clone(),
+                    arr_output.clone(),
+                    OutputVarInfo { ty, ref_info: OutputVarReferenceInfo::NewLocalVar },
+                ],
+                ap_change: SierraApChange::Known(4),
+            },
+            BranchSignature {
+                vars: vec![rc_output, arr_output],
+                ap_change: SierraApChange::Known(3),
+            },
+        ];
+        Ok(LibFuncSignature { param_signatures, branch_signatures, fallthrough: Some(0) })
     }
 }
