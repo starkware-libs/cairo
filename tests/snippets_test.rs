@@ -62,6 +62,18 @@ fn setup(content: &str) -> RootDatabase {
     &[Some(BigInt::from(0))];
     "2 less than 1"
 )]
+#[test_case(
+    "func foo(idx: uint128) -> Option<felt> {
+        let arr = array_new::<felt>();
+        arr.append(10);
+        arr.append(11);
+        arr.append(12);
+        return arr[idx];
+    }",
+    &[1].map(BigInt::from),
+    &[Some(BigInt::from(11))];
+    "arr[1] == 11"
+)]
 fn run_function_test(content: &str, params: &[BigInt], expected: &[Option<BigInt>]) {
     let db = setup(content);
     let sierra_program = db.get_sierra_program().unwrap();
