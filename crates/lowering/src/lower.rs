@@ -589,20 +589,18 @@ fn lower_expr_match(
             // Create a sealed block for each arm.
             let block_opts =
                 zip_eq(&concrete_variants, &expr.arms).map(|(concrete_variant, arm)| {
+                    let input_tys = vec![concrete_variant.ty];
+
                     let semantic_var_id = extract_var_pattern(&arm.pattern, concrete_variant)?;
                     // Create a scope for the arm block.
-                    merger.run_in_subscope(
-                        ctx,
-                        vec![concrete_variant.ty],
-                        |ctx, subscope, variables| {
-                            // Bind the arm input variable to the semantic variable.
-                            let [var] = <[_; 1]>::try_from(variables).ok().unwrap();
-                            subscope.put_semantic_variable(semantic_var_id, var);
+                    merger.run_in_subscope(ctx, input_tys, |ctx, subscope, arm_imputs| {
+                        // Bind the arm input variable to the semantic variable.
+                        let [var] = <[_; 1]>::try_from(arm_imputs).ok().unwrap();
+                        subscope.put_semantic_variable(semantic_var_id, var);
 
-                            // Lower the arm expression.
-                            lower_tail_expr(ctx, subscope, arm.expression, false)
-                        },
-                    )
+                        // Lower the arm expression.
+                        lower_tail_expr(ctx, subscope, arm.expression, false)
+                    })
                 });
             block_opts.collect::<Option<Vec<_>>>().ok_or(LoweringFlowError::Failed)
         });
@@ -651,13 +649,16 @@ fn lower_optimized_extern_match(
 
                     // Create a scope for the arm block.
                     merger.run_in_subscope(ctx, input_tys, |ctx, subscope, mut arm_inputs| {
-                        match_extern_arm_ref_args_bind(&mut arm_inputs, &extern_enum, subscope);
-                        let variant_expr = extern_facade_expr(ctx, concrete_variant.ty, arm_inputs);
                         // TODO(spapini): Convert to a diagnostic.
                         let enum_pattern =
                             extract_matches!(&arm.pattern, semantic::Pattern::EnumVariant);
                         // TODO(spapini): Convert to a diagnostic.
                         assert_eq!(&enum_pattern.variant, concrete_variant, "Wrong variant");
+
+                        // Bind the arm inputs to implicits and semantic variables.
+                        match_extern_arm_ref_args_bind(&mut arm_inputs, &extern_enum, subscope);
+
+                        let variant_expr = extern_facade_expr(ctx, concrete_variant.ty, arm_inputs);
                         lower_single_pattern(
                             ctx,
                             subscope,
