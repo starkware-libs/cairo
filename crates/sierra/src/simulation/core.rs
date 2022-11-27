@@ -206,6 +206,7 @@ pub fn simulate<
             [_, _, _] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
         },
+        CoreConcreteLibFunc::DictFeltTo(DictFeltToConcreteLibFunc::Squash(_)) => todo!(),
         CoreConcreteLibFunc::Pedersen(_) => {
             unimplemented!("Simulation of the Pedersen hash function is not implemented yet.");
         }

@@ -1,5 +1,7 @@
 use super::as_single_type;
 use super::felt::FeltType;
+use super::range_check::RangeCheckType;
+use super::squashed_dict_felt_to::SquashedDictFeltToType;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     DeferredOutputKind, LibFuncSignature, OutputVarInfo, SierraApChange,
@@ -60,7 +62,7 @@ define_libfunc_hierarchy! {
         New(DictFeltToNewLibFunc),
         Read(DictFeltToReadLibFunc),
         Write(DictFeltToWriteLibFunc),
-        // TODO(Gil): Add DictFeltToSquash,
+        Squash(DictFeltToSquashLibFunc),
     }, DictFeltToConcreteLibFunc
 }
 
@@ -140,6 +142,42 @@ impl SignatureOnlyGenericLibFunc for DictFeltToReadLibFunc {
                 },
             ],
             SierraApChange::Known(1),
+        ))
+    }
+}
+
+/// LibFunc for performing a `squash` opertaion on a dict. Returns a pointer to the squashed dict.
+#[derive(Default)]
+pub struct DictFeltToSquashLibFunc {}
+impl SignatureOnlyGenericLibFunc for DictFeltToSquashLibFunc {
+    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("dict_felt_to_squash");
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<LibFuncSignature, SpecializationError> {
+        let generic_ty = as_single_type(args)?;
+        let dict_ty =
+            context.get_wrapped_concrete_type(DictFeltToType::id(), generic_ty.clone())?;
+        let squashed_dict_ty =
+            context.get_wrapped_concrete_type(SquashedDictFeltToType::id(), generic_ty)?;
+        let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
+        Ok(LibFuncSignature::new_non_branch(
+            vec![range_check_type.clone(), dict_ty],
+            vec![
+                OutputVarInfo {
+                    ty: range_check_type,
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                        param_idx: 0,
+                    }),
+                },
+                OutputVarInfo {
+                    ty: squashed_dict_ty,
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                },
+            ],
+            SierraApChange::Unknown,
         ))
     }
 }
