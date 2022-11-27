@@ -1,6 +1,5 @@
 use defs::db::MacroPlugin;
 use itertools::Itertools;
-use parser::utils::get_node_text;
 use syntax::node::ast::AttributeList;
 use syntax::node::db::SyntaxGroup;
 use syntax::node::{ast, Terminal, TypedSyntaxNode};
@@ -74,14 +73,13 @@ fn generate_panicable_code(
             return None;
         };
         let function_name = ident.text(db);
-        let params = get_node_text(db, &signature.parameters(db).as_syntax_node());
-        let inner_ty_text =
-            get_node_text(db, &segment.generic_args(db).generic_args(db).as_syntax_node());
+        let params = signature.parameters(db).as_syntax_node().get_text(db);
+        let inner_ty_text = segment.generic_args(db).generic_args(db).as_syntax_node().get_text(db);
         let args = signature
             .parameters(db)
             .elements(db)
             .into_iter()
-            .map(|param| get_node_text(db, &param.name(db).as_syntax_node()))
+            .map(|param| param.name(db).as_syntax_node().get_text(db))
             .join(", ");
         let err_value = err_value.text(db);
         return Some((
