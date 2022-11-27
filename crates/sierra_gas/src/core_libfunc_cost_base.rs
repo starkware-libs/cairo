@@ -77,6 +77,10 @@ pub fn core_libfunc_cost_base<Ops: CostOperations>(
         DictFeltTo(DictFeltToConcreteLibFunc::Write(_)) => {
             vec![ops.const_cost(4)]
         }
+        CoreConcreteLibFunc::Pedersen(_) => {
+            // TODO(lior): Add pedersen cost in addition to gas cost.
+            vec![ops.const_cost(2)]
+        }
     }
 }
 
