@@ -1,8 +1,15 @@
+use defs::db::DefsGroup;
+use defs::ids::ModuleItemId;
 use indoc::indoc;
+use itertools::Itertools;
 use pretty_assertions::assert_eq;
+use test_case::test_case;
 use test_log::test;
+use utils::try_extract_matches;
 
-use crate::test_utils::checked_compile_to_sierra;
+use crate::db::SierraGenGroup;
+use crate::replace_ids::replace_sierra_ids_in_program;
+use crate::test_utils::{checked_compile_to_sierra, setup_db_and_get_crate_id};
 
 #[test]
 fn test_program_generator() {
@@ -90,5 +97,54 @@ fn test_type_dependency() {
 
             test_crate::unbox_twice@0([0]: Box<Box<Box<felt>>>) -> (Box<felt>);
         "},
+    );
+}
+
+#[test_case(
+    "f1",
+    &[
+        "test_crate::f1", "test_crate::f2", "test_crate::f3",
+        "test_crate::f4", "test_crate::f5", "test_crate::f6",
+    ];
+    "finds all"
+)]
+#[test_case(
+    "f2",
+    &[
+        "test_crate::f2", "test_crate::f3", "test_crate::f4", "test_crate::f5", "test_crate::f6",
+    ];
+    "all but first"
+)]
+#[test_case("f3", &["test_crate::f3", "test_crate::f5", "test_crate::f6"]; "f3 -> f5 -> f6")]
+#[test_case("f4", &["test_crate::f4", "test_crate::f5", "test_crate::f6"]; "f4 -> (f5 -> f6, f6)")]
+#[test_case("f5", &["test_crate::f5", "test_crate::f6"]; "f5 -> f6")]
+#[test_case("f6", &["test_crate::f6"]; "self loop")]
+fn test_only_include_dependecies(func_name: &str, sierra_used_funcs: &[&str]) {
+    let (db, crate_id) = setup_db_and_get_crate_id(indoc! {"
+        func f1() { f2(); f3(); }
+        func f2() { f3(); f4(); f5(); }
+        func f3() { f5(); }
+        func f4() { f5(); f6(); }
+        func f5() { f6(); }
+        func f6() { f6(); }
+    "});
+    let func_id = db
+        .crate_modules(crate_id)
+        .iter()
+        .find_map(|module_id| {
+            try_extract_matches!(
+                db.module_item_by_name(*module_id, func_name.into())?,
+                ModuleItemId::FreeFunction
+            )
+        })
+        .unwrap();
+    let program = db.get_sierra_program_for_functions(vec![func_id]).unwrap();
+    assert_eq!(
+        replace_sierra_ids_in_program(&db, &program)
+            .funcs
+            .into_iter()
+            .map(|f| f.id.to_string())
+            .collect_vec(),
+        sierra_used_funcs
     );
 }

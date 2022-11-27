@@ -1989,6 +1989,7 @@ dependencies = [
  "sierra",
  "smol_str",
  "syntax",
+ "test-case",
  "test-log",
  "utils",
 ]

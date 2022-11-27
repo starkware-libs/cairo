@@ -31,5 +31,6 @@ indoc.workspace = true
 log.workspace = true
 pretty_assertions.workspace = true
 semantic = { path = "../semantic", features = ["testing"] }
+test-case.workspace = true
 utils = { path = "../utils", features = ["testing"] }
 test-log.workspace = true

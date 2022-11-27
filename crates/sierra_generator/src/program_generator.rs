@@ -1,14 +1,17 @@
-use std::collections::HashSet;
+use std::collections::{HashSet, VecDeque};
 use std::sync::Arc;
 
-use defs::ids::{ModuleId, ModuleItemId};
+use defs::ids::{FreeFunctionId, ModuleId};
 use diagnostics::{Diagnostics, DiagnosticsBuilder};
+use filesystem::ids::CrateId;
 use itertools::chain;
 use sierra::extensions::core::CoreLibFunc;
 use sierra::extensions::GenericLibFuncEx;
 use sierra::ids::{ConcreteLibFuncId, ConcreteTypeId};
 use sierra::program;
 use utils::ordered_hash_set::OrderedHashSet;
+use utils::try_extract_matches;
+use utils::unordered_hash_set::UnorderedHashSet;
 
 use crate::db::SierraGenGroup;
 use crate::pre_sierra::{self};
@@ -26,56 +29,10 @@ pub fn module_sierra_diagnostics(
     module_id: ModuleId,
 ) -> Diagnostics<SierraGeneratorDiagnostic> {
     let mut diagnostics = DiagnosticsBuilder::new();
-    let module_items = db.module_items(module_id).unwrap_or_default();
-    for (_name, item) in module_items.items.iter() {
-        match item {
-            ModuleItemId::FreeFunction(free_function_id) => {
-                diagnostics.extend(db.free_function_sierra_diagnostics(*free_function_id))
-            }
-            ModuleItemId::Enum(_) => {}
-            ModuleItemId::Struct(_) => {}
-            ModuleItemId::Impl(_) => {}
-            ModuleItemId::Submodule(_)
-            | ModuleItemId::Use(_)
-            | ModuleItemId::Trait(_)
-            | ModuleItemId::ExternType(_)
-            | ModuleItemId::ExternFunction(_) => {}
-        }
+    for free_function_id in db.module_data(module_id).unwrap_or_default().free_functions.keys() {
+        diagnostics.extend(db.free_function_sierra_diagnostics(*free_function_id))
     }
     diagnostics.build()
-}
-
-/// Query implementation of [crate::db::SierraGenGroup::module_sierra_library].
-pub fn module_sierra_library(
-    db: &dyn SierraGenGroup,
-    module_id: ModuleId,
-) -> Option<Arc<pre_sierra::Library>> {
-    let module_items = db.module_items(module_id)?;
-    let mut functions: Vec<Arc<pre_sierra::Function>> = vec![];
-    let mut statements: Vec<pre_sierra::Statement> = vec![];
-
-    // Iterate over the functions in the module, compile them to pre-sierra statements,
-    // and add them to `functions`.
-    for (_name, item) in module_items.items.iter() {
-        match item {
-            ModuleItemId::Submodule(_) => {}
-            ModuleItemId::Use(_) => {}
-            ModuleItemId::FreeFunction(free_function_id) => {
-                let function: Arc<pre_sierra::Function> =
-                    db.free_function_sierra(*free_function_id)?;
-                functions.push(function.clone());
-                statements.extend_from_slice(function.body.as_slice());
-            }
-            ModuleItemId::Struct(_) => {}
-            ModuleItemId::Enum(_) => {}
-            ModuleItemId::Trait(_) => {}
-            ModuleItemId::Impl(_) => {}
-            ModuleItemId::ExternType(_) => {}
-            ModuleItemId::ExternFunction(_) => {}
-        }
-    }
-
-    Some(Arc::new(pre_sierra::Library { statements, functions }))
 }
 
 /// Generates the list of [sierra::program::LibFuncDeclaration] for the given list of
@@ -174,17 +131,26 @@ fn collect_used_types(
         .collect()
 }
 
-pub fn get_sierra_program(db: &dyn SierraGenGroup) -> Option<Arc<sierra::program::Program>> {
+pub fn get_sierra_program_for_functions(
+    db: &dyn SierraGenGroup,
+    requested_function_ids: Vec<FreeFunctionId>,
+) -> Option<Arc<sierra::program::Program>> {
     let mut functions: Vec<Arc<pre_sierra::Function>> = vec![];
     let mut statements: Vec<pre_sierra::Statement> = vec![];
-
-    for crate_id in db.crates() {
-        let modules = db.crate_modules(crate_id);
-        for module in modules.iter() {
-            let pre_sierra_library = db.module_sierra_library(*module)?;
-
-            functions.extend_from_slice(&pre_sierra_library.functions);
-            statements.extend_from_slice(&pre_sierra_library.statements);
+    let mut processed_function_ids = UnorderedHashSet::<FreeFunctionId>::default();
+    let mut function_id_queue: VecDeque<FreeFunctionId> =
+        requested_function_ids.into_iter().collect();
+    while let Some(function_id) = function_id_queue.pop_front() {
+        if !processed_function_ids.insert(function_id) {
+            continue;
+        }
+        let function: Arc<pre_sierra::Function> = db.free_function_sierra(function_id)?;
+        functions.push(function.clone());
+        statements.extend_from_slice(function.body.as_slice());
+        for statement in &function.body {
+            if let Some(related_function_id) = try_get_free_function_id(db, statement) {
+                function_id_queue.push_back(related_function_id);
+            }
         }
     }
 
@@ -213,4 +179,47 @@ pub fn get_sierra_program(db: &dyn SierraGenGroup) -> Option<Arc<sierra::program
             })
             .collect(),
     }))
+}
+
+/// Tries extracting a free function id from a pre-Sierra statement.
+fn try_get_free_function_id(
+    db: &dyn SierraGenGroup,
+    statement: &pre_sierra::Statement,
+) -> Option<FreeFunctionId> {
+    let invc = try_extract_matches!(
+        try_extract_matches!(statement, pre_sierra::Statement::Sierra)?,
+        program::GenStatement::Invocation
+    )?;
+    let libfunc = db.lookup_intern_concrete_lib_func(invc.libfunc_id.clone());
+    if libfunc.generic_id != "function_call".into() {
+        return None;
+    }
+    let function = db
+        .lookup_intern_function(
+            db.lookup_intern_sierra_function(
+                try_extract_matches!(
+                    libfunc.generic_args.get(0)?,
+                    sierra::program::GenericArg::UserFunc
+                )?
+                .clone(),
+            ),
+        )
+        .function;
+    assert!(function.generic_args.is_empty(), "Generic args are not yet supported");
+    try_extract_matches!(function.generic_function, defs::ids::GenericFunctionId::Free)
+}
+
+pub fn get_sierra_program(
+    db: &dyn SierraGenGroup,
+    requested_crate_ids: Vec<CrateId>,
+) -> Option<Arc<sierra::program::Program>> {
+    let mut requested_function_ids = vec![];
+    for crate_id in requested_crate_ids {
+        for module_id in db.crate_modules(crate_id).iter() {
+            for (free_func_id, _) in db.module_data(*module_id)?.free_functions {
+                requested_function_ids.push(free_func_id)
+            }
+        }
+    }
+    db.get_sierra_program_for_functions(requested_function_ids)
 }
