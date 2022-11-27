@@ -110,9 +110,9 @@ pub fn simulate<
                 iter.next(); // Ignore range check.
                 let arr = extract_matches!(iter.next().unwrap(), CoreValue::Array);
                 let idx = extract_matches!(iter.next().unwrap(), CoreValue::Uint128) as usize;
-                match arr.clone().get(idx) {
+                match arr.get(idx).cloned() {
                     Some(element) => {
-                        Ok((vec![CoreValue::RangeCheck, CoreValue::Array(arr), element.clone()], 0))
+                        Ok((vec![CoreValue::RangeCheck, CoreValue::Array(arr), element], 0))
                     }
                     None => Ok((vec![CoreValue::RangeCheck, CoreValue::Array(arr)], 1)),
                 }

@@ -109,6 +109,7 @@ mod array;
 use array::Array;
 use array::array_new;
 use array::array_append;
+use array::array_at;
 
 // Result.
 mod result;
