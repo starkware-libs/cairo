@@ -19,6 +19,8 @@ pub struct DeferredVariableInfo {
 /// The type of a deferred variable.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum DeferredVariableKind {
+    /// See [DeferredOutputKind::Const].
+    Const,
     /// See [DeferredOutputKind::AddConst].
     AddConst,
     /// See [DeferredOutputKind::Generic].
@@ -78,6 +80,7 @@ impl State {
         match &output_info.ref_info {
             OutputVarReferenceInfo::Deferred(kind) => {
                 let deferred_variable_info_kind = match kind {
+                    DeferredOutputKind::Const => DeferredVariableKind::Const,
                     DeferredOutputKind::AddConst { .. } => DeferredVariableKind::AddConst,
                     DeferredOutputKind::Generic => DeferredVariableKind::Generic,
                 };
@@ -93,9 +96,7 @@ impl State {
                 self.known_stack.insert(res.clone(), *idx);
                 self.temporary_variables.insert(res, output_info.ty.clone());
             }
-            OutputVarReferenceInfo::SameAsParam { .. }
-            | OutputVarReferenceInfo::NewLocalVar
-            | OutputVarReferenceInfo::Const => {}
+            OutputVarReferenceInfo::SameAsParam { .. } | OutputVarReferenceInfo::NewLocalVar => {}
         }
     }
 

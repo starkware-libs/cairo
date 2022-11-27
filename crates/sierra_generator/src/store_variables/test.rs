@@ -46,6 +46,7 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibFuncId) -
                 ty: felt_ty.clone(),
                 allow_deferred: false,
                 allow_add_const: true,
+                allow_const: false,
             }],
             branch_signatures: vec![BranchSignature {
                 vars: vec![OutputVarInfo {
@@ -111,6 +112,7 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibFuncId) -
                 ty: felt_ty.clone(),
                 allow_deferred: true,
                 allow_add_const: true,
+                allow_const: true,
             }],
             branch_signatures: vec![BranchSignature {
                 vars: vec![OutputVarInfo {
