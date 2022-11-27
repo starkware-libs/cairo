@@ -752,12 +752,16 @@ impl<'a> Parser<'a> {
         let condition = self.parse_expr_limited(MAX_PRECEDENCE, LbraceAllowed::Forbid);
         let if_block = self.parse_block();
 
-        let else_clause: OptionElseClauseGreen = if self.peek().kind == SyntaxKind::TerminalElse {
+        let else_clause: MaybeElseGreen = if self.peek().kind == SyntaxKind::TerminalElse {
             let else_kw = self.take::<TerminalElse>();
-            let else_block = self.parse_block();
-            ElseClause::new_green(self.db, else_kw, else_block).into()
+            if self.peek().kind == SyntaxKind::TerminalIf {
+                ExprElseIf::new_green(self.db, else_kw, self.expect_if_expr()).into()
+            } else {
+                let else_block = self.parse_block();
+                ElseClause::new_green(self.db, else_kw, else_block).into()
+            }
         } else {
-            OptionElseClauseEmpty::new_green(self.db).into()
+            EmptyElseClause::new_green(self.db).into()
         };
 
         ExprIf::new_green(self.db, if_kw, condition, if_block, else_clause)

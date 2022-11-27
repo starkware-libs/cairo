@@ -460,9 +460,14 @@ fn compute_expr_if_semantic(
     let if_block = compute_expr_block_semantic(ctx, &syntax.if_block(syntax_db))?;
 
     let (else_block_opt, else_block_ty) = match syntax.else_clause(syntax_db) {
-        ast::OptionElseClause::Empty(_) => (None, unit_ty(ctx.db)),
-        ast::OptionElseClause::ElseClause(else_clause) => {
+        ast::MaybeElse::Empty(_) => (None, unit_ty(ctx.db)),
+        ast::MaybeElse::Else(else_clause) => {
             let else_block = compute_expr_block_semantic(ctx, &else_clause.else_block(syntax_db))?;
+            let ty = else_block.ty();
+            (Some(else_block), ty)
+        }
+        ast::MaybeElse::ElseIf(else_if_clause) => {
+            let else_block = compute_expr_if_semantic(ctx, &else_if_clause.if_clause(syntax_db))?;
             let ty = else_block.ty();
             (Some(else_block), ty)
         }

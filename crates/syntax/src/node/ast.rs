@@ -1980,7 +1980,7 @@ impl ExprIf {
         if_kw: TerminalIfGreen,
         condition: ExprGreen,
         if_block: ExprBlockGreen,
-        else_clause: OptionElseClauseGreen,
+        else_clause: MaybeElseGreen,
     ) -> ExprIfGreen {
         let children: Vec<GreenId> = vec![if_kw.0, condition.0, if_block.0, else_clause.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
@@ -2000,8 +2000,8 @@ impl ExprIf {
     pub fn if_block(&self, db: &dyn SyntaxGroup) -> ExprBlock {
         ExprBlock::from_syntax_node(db, self.children[2].clone())
     }
-    pub fn else_clause(&self, db: &dyn SyntaxGroup) -> OptionElseClause {
-        OptionElseClause::from_syntax_node(db, self.children[3].clone())
+    pub fn else_clause(&self, db: &dyn SyntaxGroup) -> MaybeElse {
+        MaybeElse::from_syntax_node(db, self.children[3].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -2025,7 +2025,7 @@ impl TypedSyntaxNode for ExprIf {
                     TerminalIf::missing(db).0,
                     Expr::missing(db).0,
                     ExprBlock::missing(db).0,
-                    OptionElseClause::missing(db).0,
+                    MaybeElse::missing(db).0,
                 ],
                 width: 0,
             },
@@ -2051,6 +2051,77 @@ impl TypedSyntaxNode for ExprIf {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         ExprIfPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct ExprElseIf {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl ExprElseIf {
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        else_kw: TerminalElseGreen,
+        if_clause: ExprIfGreen,
+    ) -> ExprElseIfGreen {
+        let children: Vec<GreenId> = vec![else_kw.0, if_clause.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        ExprElseIfGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::ExprElseIf,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+}
+impl ExprElseIf {
+    pub fn else_kw(&self, db: &dyn SyntaxGroup) -> TerminalElse {
+        TerminalElse::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn if_clause(&self, db: &dyn SyntaxGroup) -> ExprIf {
+        ExprIf::from_syntax_node(db, self.children[1].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ExprElseIfPtr(pub SyntaxStablePtrId);
+impl ExprElseIfPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ExprElseIfGreen(pub GreenId);
+impl TypedSyntaxNode for ExprElseIf {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprElseIf);
+    type StablePtr = ExprElseIfPtr;
+    type Green = ExprElseIfGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        ExprElseIfGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::ExprElseIf,
+            details: GreenNodeDetails::Node {
+                children: vec![TerminalElse::missing(db).0, ExprIf::missing(db).0],
+                width: 0,
+            },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::ExprElseIf,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::ExprElseIf
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ExprElseIfPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -2125,106 +2196,37 @@ impl TypedSyntaxNode for ElseClause {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub enum OptionElseClause {
-    Empty(OptionElseClauseEmpty),
-    ElseClause(ElseClause),
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct OptionElseClausePtr(pub SyntaxStablePtrId);
-impl OptionElseClausePtr {
-    pub fn untyped(&self) -> SyntaxStablePtrId {
-        self.0
-    }
-}
-impl From<OptionElseClauseEmptyPtr> for OptionElseClausePtr {
-    fn from(value: OptionElseClauseEmptyPtr) -> Self {
-        Self(value.0)
-    }
-}
-impl From<ElseClausePtr> for OptionElseClausePtr {
-    fn from(value: ElseClausePtr) -> Self {
-        Self(value.0)
-    }
-}
-impl From<OptionElseClauseEmptyGreen> for OptionElseClauseGreen {
-    fn from(value: OptionElseClauseEmptyGreen) -> Self {
-        Self(value.0)
-    }
-}
-impl From<ElseClauseGreen> for OptionElseClauseGreen {
-    fn from(value: ElseClauseGreen) -> Self {
-        Self(value.0)
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct OptionElseClauseGreen(pub GreenId);
-impl TypedSyntaxNode for OptionElseClause {
-    const OPTIONAL_KIND: Option<SyntaxKind> = None;
-    type StablePtr = OptionElseClausePtr;
-    type Green = OptionElseClauseGreen;
-    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
-        panic!("No missing variant.");
-    }
-    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        let kind = node.kind(db);
-        match kind {
-            SyntaxKind::OptionElseClauseEmpty => {
-                OptionElseClause::Empty(OptionElseClauseEmpty::from_syntax_node(db, node))
-            }
-            SyntaxKind::ElseClause => {
-                OptionElseClause::ElseClause(ElseClause::from_syntax_node(db, node))
-            }
-            _ => panic!(
-                "Unexpected syntax kind {:?} when constructing {}.",
-                kind, "OptionElseClause"
-            ),
-        }
-    }
-    fn as_syntax_node(&self) -> SyntaxNode {
-        match self {
-            OptionElseClause::Empty(x) => x.as_syntax_node(),
-            OptionElseClause::ElseClause(x) => x.as_syntax_node(),
-        }
-    }
-    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
-        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
-    }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        OptionElseClausePtr(self.as_syntax_node().0.stable_ptr)
-    }
-}
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct OptionElseClauseEmpty {
+pub struct EmptyElseClause {
     node: SyntaxNode,
     children: Vec<SyntaxNode>,
 }
-impl OptionElseClauseEmpty {
-    pub fn new_green(db: &dyn SyntaxGroup) -> OptionElseClauseEmptyGreen {
+impl EmptyElseClause {
+    pub fn new_green(db: &dyn SyntaxGroup) -> EmptyElseClauseGreen {
         let children: Vec<GreenId> = vec![];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
-        OptionElseClauseEmptyGreen(db.intern_green(GreenNode {
-            kind: SyntaxKind::OptionElseClauseEmpty,
+        EmptyElseClauseGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::EmptyElseClause,
             details: GreenNodeDetails::Node { children, width },
         }))
     }
 }
-impl OptionElseClauseEmpty {}
+impl EmptyElseClause {}
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct OptionElseClauseEmptyPtr(pub SyntaxStablePtrId);
-impl OptionElseClauseEmptyPtr {
+pub struct EmptyElseClausePtr(pub SyntaxStablePtrId);
+impl EmptyElseClausePtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct OptionElseClauseEmptyGreen(pub GreenId);
-impl TypedSyntaxNode for OptionElseClauseEmpty {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::OptionElseClauseEmpty);
-    type StablePtr = OptionElseClauseEmptyPtr;
-    type Green = OptionElseClauseEmptyGreen;
+pub struct EmptyElseClauseGreen(pub GreenId);
+impl TypedSyntaxNode for EmptyElseClause {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::EmptyElseClause);
+    type StablePtr = EmptyElseClausePtr;
+    type Green = EmptyElseClauseGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
-        OptionElseClauseEmptyGreen(db.intern_green(GreenNode {
-            kind: SyntaxKind::OptionElseClauseEmpty,
+        EmptyElseClauseGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::EmptyElseClause,
             details: GreenNodeDetails::Node { children: vec![], width: 0 },
         }))
     }
@@ -2232,10 +2234,10 @@ impl TypedSyntaxNode for OptionElseClauseEmpty {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::OptionElseClauseEmpty,
+            SyntaxKind::EmptyElseClause,
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::OptionElseClauseEmpty
+            SyntaxKind::EmptyElseClause
         );
         let children = node.children(db).collect();
         Self { node, children }
@@ -2247,7 +2249,84 @@ impl TypedSyntaxNode for OptionElseClauseEmpty {
         self.node.clone()
     }
     fn stable_ptr(&self) -> Self::StablePtr {
-        OptionElseClauseEmptyPtr(self.node.0.stable_ptr)
+        EmptyElseClausePtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum MaybeElse {
+    ElseIf(ExprElseIf),
+    Else(ElseClause),
+    Empty(EmptyElseClause),
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct MaybeElsePtr(pub SyntaxStablePtrId);
+impl MaybeElsePtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+impl From<ExprElseIfPtr> for MaybeElsePtr {
+    fn from(value: ExprElseIfPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ElseClausePtr> for MaybeElsePtr {
+    fn from(value: ElseClausePtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<EmptyElseClausePtr> for MaybeElsePtr {
+    fn from(value: EmptyElseClausePtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ExprElseIfGreen> for MaybeElseGreen {
+    fn from(value: ExprElseIfGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ElseClauseGreen> for MaybeElseGreen {
+    fn from(value: ElseClauseGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<EmptyElseClauseGreen> for MaybeElseGreen {
+    fn from(value: EmptyElseClauseGreen) -> Self {
+        Self(value.0)
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct MaybeElseGreen(pub GreenId);
+impl TypedSyntaxNode for MaybeElse {
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
+    type StablePtr = MaybeElsePtr;
+    type Green = MaybeElseGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        panic!("No missing variant.");
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::ExprElseIf => MaybeElse::ElseIf(ExprElseIf::from_syntax_node(db, node)),
+            SyntaxKind::ElseClause => MaybeElse::Else(ElseClause::from_syntax_node(db, node)),
+            SyntaxKind::EmptyElseClause => {
+                MaybeElse::Empty(EmptyElseClause::from_syntax_node(db, node))
+            }
+            _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "MaybeElse"),
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        match self {
+            MaybeElse::ElseIf(x) => x.as_syntax_node(),
+            MaybeElse::Else(x) => x.as_syntax_node(),
+            MaybeElse::Empty(x) => x.as_syntax_node(),
+        }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        MaybeElsePtr(self.as_syntax_node().0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]

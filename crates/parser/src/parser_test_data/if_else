@@ -1,0 +1,85 @@
+//! > Test if-else without extra braces
+
+//! > test_function_name
+test_partial_parser_tree
+
+//! > cairo_code
+func f() {
+    if (1 == 2) {
+        3
+    } else if (4 == 5) {
+        6
+    } else if (7 == 8) {
+        9
+    } else {
+        10
+    }
+}
+
+//! > top_level_kind
+ExprIf
+
+//! > ignored_kinds
+
+//! > expected_tree
+└── Top level kind: ExprIf
+    ├── if_kw (kind: TokenIf): 'if'
+    ├── condition (kind: ExprParenthesized)
+    │   ├── lparen (kind: TokenLParen): '('
+    │   ├── expr (kind: ExprBinary)
+    │   │   ├── lhs (kind: TokenLiteralNumber): '1'
+    │   │   ├── op (kind: TokenEqEq): '=='
+    │   │   └── rhs (kind: TokenLiteralNumber): '2'
+    │   └── rparen (kind: TokenRParen): ')'
+    ├── if_block (kind: ExprBlock)
+    │   ├── lbrace (kind: TokenLBrace): '{'
+    │   ├── statements (kind: StatementList)
+    │   │   └── child #0 (kind: StatementExpr)
+    │   │       ├── expr (kind: TokenLiteralNumber): '3'
+    │   │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
+    │   └── rbrace (kind: TokenRBrace): '}'
+    └── else_clause (kind: ExprElseIf)
+        ├── else_kw (kind: TokenElse): 'else'
+        └── if_clause (kind: ExprIf)
+            ├── if_kw (kind: TokenIf): 'if'
+            ├── condition (kind: ExprParenthesized)
+            │   ├── lparen (kind: TokenLParen): '('
+            │   ├── expr (kind: ExprBinary)
+            │   │   ├── lhs (kind: TokenLiteralNumber): '4'
+            │   │   ├── op (kind: TokenEqEq): '=='
+            │   │   └── rhs (kind: TokenLiteralNumber): '5'
+            │   └── rparen (kind: TokenRParen): ')'
+            ├── if_block (kind: ExprBlock)
+            │   ├── lbrace (kind: TokenLBrace): '{'
+            │   ├── statements (kind: StatementList)
+            │   │   └── child #0 (kind: StatementExpr)
+            │   │       ├── expr (kind: TokenLiteralNumber): '6'
+            │   │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
+            │   └── rbrace (kind: TokenRBrace): '}'
+            └── else_clause (kind: ExprElseIf)
+                ├── else_kw (kind: TokenElse): 'else'
+                └── if_clause (kind: ExprIf)
+                    ├── if_kw (kind: TokenIf): 'if'
+                    ├── condition (kind: ExprParenthesized)
+                    │   ├── lparen (kind: TokenLParen): '('
+                    │   ├── expr (kind: ExprBinary)
+                    │   │   ├── lhs (kind: TokenLiteralNumber): '7'
+                    │   │   ├── op (kind: TokenEqEq): '=='
+                    │   │   └── rhs (kind: TokenLiteralNumber): '8'
+                    │   └── rparen (kind: TokenRParen): ')'
+                    ├── if_block (kind: ExprBlock)
+                    │   ├── lbrace (kind: TokenLBrace): '{'
+                    │   ├── statements (kind: StatementList)
+                    │   │   └── child #0 (kind: StatementExpr)
+                    │   │       ├── expr (kind: TokenLiteralNumber): '9'
+                    │   │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
+                    │   └── rbrace (kind: TokenRBrace): '}'
+                    └── else_clause (kind: ElseClause)
+                        ├── else_kw (kind: TokenElse): 'else'
+                        └── else_block (kind: ExprBlock)
+                            ├── lbrace (kind: TokenLBrace): '{'
+                            ├── statements (kind: StatementList)
+                            │   └── child #0 (kind: StatementExpr)
+                            │       ├── expr (kind: TokenLiteralNumber): '10'
+                            │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
+                            └── rbrace (kind: TokenRBrace): '}'
