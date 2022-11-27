@@ -1,0 +1,38 @@
+use defs::db::{MacroPlugin, PluginResult};
+use syntax::node::ast::MaybeImplBody;
+use syntax::node::db::SyntaxGroup;
+use syntax::node::{ast, Terminal, TypedSyntaxNode};
+
+static CONTRACT_IMPL_ATTR: &str = "ContractImpl";
+
+#[derive(Debug)]
+pub struct StarkNetPlugin {}
+
+impl MacroPlugin for StarkNetPlugin {
+    fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {
+        match item_ast {
+            ast::Item::Impl(impl_ast) => {
+                let attrs = impl_ast.attributes(db).elements(db);
+                let attr = match &attrs[..] {
+                    [attr] => attr,
+                    _ => return PluginResult { code: None, diagnostics: vec![] },
+                };
+
+                if attr.attr(db).text(db) == CONTRACT_IMPL_ATTR {
+                    if let MaybeImplBody::Some(body) = impl_ast.body(db) {
+                        return PluginResult {
+                            code: Some((
+                                "entry_points".into(),
+                                body.items(db).as_syntax_node().get_text(db),
+                            )),
+                            diagnostics: vec![],
+                        };
+                    }
+                }
+            }
+            _ => {}
+        }
+
+        PluginResult { code: None, diagnostics: vec![] }
+    }
+}
