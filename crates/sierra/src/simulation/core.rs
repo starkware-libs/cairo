@@ -206,6 +206,19 @@ pub fn simulate<
             [_, _, _] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
         },
+        CoreConcreteLibFunc::DictFeltTo(DictFeltToConcreteLibFunc::Squash(_)) => {
+            match &inputs[..] {
+                [CoreValue::RangeCheck, CoreValue::Dict(_)] => {
+                    let mut iter = inputs.into_iter();
+                    iter.next();
+                    // Returning the same dict since it is exactly the same as the squashed one.
+                    let dict = extract_matches!(iter.next().unwrap(), CoreValue::Dict);
+                    Ok((vec![CoreValue::RangeCheck, CoreValue::Dict(dict)], 0))
+                }
+                [_, _] => Err(LibFuncSimulationError::MemoryLayoutMismatch),
+                _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+            }
+        }
         CoreConcreteLibFunc::Pedersen(_) => {
             unimplemented!("Simulation of the Pedersen hash function is not implemented yet.");
         }

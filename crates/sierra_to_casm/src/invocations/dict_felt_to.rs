@@ -30,6 +30,7 @@ pub fn build(
         DictFeltToConcreteLibFunc::New(_) => build_dict_felt_to_new(builder),
         DictFeltToConcreteLibFunc::Read(_) => build_dict_felt_to_read(builder),
         DictFeltToConcreteLibFunc::Write(_) => build_dict_felt_to_write(builder),
+        DictFeltToConcreteLibFunc::Squash(_) => todo!(),
     }
 }
 
