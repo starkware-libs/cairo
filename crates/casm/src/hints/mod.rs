@@ -7,6 +7,8 @@ use crate::operand::{CellRef, DerefOrImmediate};
 #[cfg(test)]
 mod test;
 
+pub mod dict_squash;
+
 // Represents a cairo hint.
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub enum Hint {
@@ -45,6 +47,13 @@ pub enum Hint {
         rhs: DerefOrImmediate,
         quotient: CellRef,
         remainder: CellRef,
+    },
+    EnterScope,
+    ExitScope,
+    /// Represent a hint which is part of the dict_squash function. The hint_index is the position
+    /// of the index in the set of hints of the function.
+    DictSquashHints {
+        hint_index: usize,
     },
 }
 
@@ -110,6 +119,9 @@ impl Display for Hint {
                 fmt_access_or_const(f, rhs)?;
                 write!(f, ")")?;
             }
+            Hint::EnterScope => write!(f, "vm_enter_scope()")?,
+            Hint::ExitScope => write!(f, "vm_exit_scope()")?,
+            Hint::DictSquashHints { hint_index } => dict_squash::fmt_hint_by_index(f, *hint_index)?,
         }
         write!(f, " %}}")
     }
