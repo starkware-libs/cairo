@@ -150,9 +150,12 @@ impl SignatureOnlyGenericLibFunc for ArrayAtLibFunc {
                         ty: arr_type.clone(),
                         ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },
                     },
-                    OutputVarInfo { ty, ref_info: OutputVarReferenceInfo::NewLocalVar },
+                    OutputVarInfo {
+                        ty,
+                        ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                    },
                 ],
-                ap_change: SierraApChange::Known(4),
+                ap_change: SierraApChange::Known(5),
             },
             BranchSignature {
                 vars: vec![
