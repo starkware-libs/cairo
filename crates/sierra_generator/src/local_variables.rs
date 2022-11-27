@@ -88,11 +88,13 @@ fn inner_find_local_variables(
             lowering::Statement::MatchExtern(statement_match_extern) => {
                 let (_, concrete_function_id) =
                     get_concrete_libfunc_id(db, statement_match_extern.function);
+                let arm_blocks: Vec<_> =
+                    statement_match_extern.arms.iter().map(|(_, block_id)| *block_id).collect();
                 known_ap_change &= handle_match(
                     db,
                     lowered_function,
                     concrete_function_id,
-                    &statement_match_extern.arms,
+                    &arm_blocks,
                     statement,
                     &mut state,
                     res,
