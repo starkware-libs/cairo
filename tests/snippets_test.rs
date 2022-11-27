@@ -58,9 +58,93 @@ fn setup(content: &str) -> (RootDatabase, CrateId) {
     &[Some(BigInt::from(0))];
     "2 less than 1"
 )]
+#[test_case(
+    "
+    func foo(idx: uint128) -> Option::<felt> {
+        let arr = array_new::<felt>();
+        array_append_aux(arr, 10);
+        array_append_aux(arr, 11);
+        array_append_aux(arr, 12);
+        // Temporary hack to prevent padding.
+        let x = array_at::<felt>(arr, idx)?;
+        Option::<felt>::Some(x)
+    }
+    // TODO: remove this when array_append is supported.
+    func array_append_aux(ref arr: Array::<felt>, val: felt) -> felt {
+        array_append::<felt>(arr, val);
+        val
+    }
+    ",
+    &[0].map(BigInt::from),
+    &[Some(BigInt::from(0)), Some(BigInt::from(10))];
+    "arr[0] == 10"
+)]
+#[test_case(
+    "
+    func foo(idx: uint128) -> Option::<felt> {
+        let arr = array_new::<felt>();
+        array_append_aux(arr, 10);
+        array_append_aux(arr, 11);
+        array_append_aux(arr, 12);
+        // Temporary hack to prevent padding.
+        let x = array_at::<felt>(arr, idx)?;
+        Option::<felt>::Some(x)
+    }
+    // TODO: remove this when array_append is supported.
+    func array_append_aux(ref arr: Array::<felt>, val: felt) -> felt {
+        array_append::<felt>(arr, val);
+        val
+    }
+    ",
+    &[1].map(BigInt::from),
+    &[Some(BigInt::from(0)), Some(BigInt::from(11))];
+    "arr[1] == 11"
+)]
+#[test_case(
+    "
+    func foo(idx: uint128) -> Option::<felt> {
+        let arr = array_new::<felt>();
+        array_append_aux(arr, 10);
+        array_append_aux(arr, 11);
+        array_append_aux(arr, 12);
+        // Temporary hack to prevent padding.
+        let x = array_at::<felt>(arr, idx)?;
+        Option::<felt>::Some(x)
+    }
+    // TODO: remove this when array_append is supported.
+    func array_append_aux(ref arr: Array::<felt>, val: felt) -> felt {
+        array_append::<felt>(arr, val);
+        val
+    }
+    ",
+    &[2].map(BigInt::from),
+    &[Some(BigInt::from(0)), Some(BigInt::from(12))];
+    "arr[2] == 12"
+)]
+#[test_case(
+    "
+    func foo(idx: uint128) -> Option::<felt> {
+        let arr = array_new::<felt>();
+        array_append_aux(arr, 10);
+        array_append_aux(arr, 11);
+        array_append_aux(arr, 12);
+        // Temporary hack to prevent padding.
+        let x = array_at::<felt>(arr, idx)?;
+        Option::<felt>::Some(x)
+    }
+    // TODO: remove this when array_append is supported.
+    func array_append_aux(ref arr: Array::<felt>, val: felt) -> felt {
+        array_append::<felt>(arr, val);
+        val
+    }
+    ",
+    &[5].map(BigInt::from),
+    &[Some(BigInt::from(1)), None];
+    "arr[5] out of bounds"
+)]
 fn run_function_test(content: &str, params: &[BigInt], expected: &[Option<BigInt>]) {
     let (db, crate_id) = setup(content);
     let sierra_program = db.get_sierra_program(vec![crate_id]).unwrap();
-    replace_sierra_ids_in_program(&db, &sierra_program);
+    let sierra_program = replace_sierra_ids_in_program(&db, &sierra_program);
     assert_eq!(run_sierra_program(&sierra_program, params, expected.len(), false), expected);
 }
