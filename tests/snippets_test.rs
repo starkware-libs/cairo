@@ -58,9 +58,27 @@ fn setup(content: &str) -> (RootDatabase, CrateId) {
     &[Some(BigInt::from(0))];
     "2 less than 1"
 )]
+#[test_case(
+    "
+    func foo(idx: uint128) -> Option::<felt> {
+        let arr = array_new::<felt>();
+        bar(arr, 10);
+        bar(arr, 11);
+        bar(arr, 12);
+        array_at::<felt>(arr, idx)
+    }
+    func bar(ref arr: Array::<felt>, val: felt) -> felt {
+        array_append::<felt>(arr, val);
+        val
+    }
+    ",
+    &[1].map(BigInt::from),
+    &[Some(BigInt::from(0)), Some(BigInt::from(11))];
+    "arr[1] == 11"
+)]
 fn run_function_test(content: &str, params: &[BigInt], expected: &[Option<BigInt>]) {
     let (db, crate_id) = setup(content);
     let sierra_program = db.get_sierra_program(vec![crate_id]).unwrap();
-    replace_sierra_ids_in_program(&db, &sierra_program);
+    let sierra_program = replace_sierra_ids_in_program(&db, &sierra_program);
     assert_eq!(run_sierra_program(&sierra_program, params, expected.len(), false), expected);
 }
