@@ -38,7 +38,12 @@ impl NamedLibFunc for StoreTempLibFunc {
         let ty = as_single_type(args)?;
         let type_size = context.as_type_specialization_context().get_type_info(ty.clone())?.size;
         Ok(LibFuncSignature::new_non_branch_ex(
-            vec![ParamSignature { ty: ty.clone(), allow_deferred: true, allow_add_const: true }],
+            vec![ParamSignature {
+                ty: ty.clone(),
+                allow_deferred: true,
+                allow_add_const: true,
+                allow_const: true,
+            }],
             vec![OutputVarInfo { ty, ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 } }],
             SierraApChange::Known(type_size),
         ))
@@ -122,7 +127,12 @@ impl NamedLibFunc for StoreLocalLibFunc {
         Ok(LibFuncSignature::new_non_branch_ex(
             vec![
                 ParamSignature::new(uninitialized_type),
-                ParamSignature { ty: ty.clone(), allow_deferred: true, allow_add_const: true },
+                ParamSignature {
+                    ty: ty.clone(),
+                    allow_deferred: true,
+                    allow_add_const: true,
+                    allow_const: true,
+                },
             ],
             vec![OutputVarInfo { ty, ref_info: OutputVarReferenceInfo::NewLocalVar }],
             SierraApChange::Known(0),
