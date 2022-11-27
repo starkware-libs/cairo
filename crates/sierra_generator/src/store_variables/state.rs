@@ -19,6 +19,8 @@ pub struct DeferredVariableInfo {
 /// The type of a deferred variable.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum DeferredVariableKind {
+    /// See [DeferredOutputKind::Const].
+    Const,
     /// See [DeferredOutputKind::AddConst].
     AddConst,
     /// See [DeferredOutputKind::Generic].
@@ -78,6 +80,7 @@ impl State {
         match &output_info.ref_info {
             OutputVarReferenceInfo::Deferred(kind) => {
                 let deferred_variable_info_kind = match kind {
+                    DeferredOutputKind::Const => DeferredVariableKind::Const,
                     DeferredOutputKind::AddConst { .. } => DeferredVariableKind::AddConst,
                     DeferredOutputKind::Generic => DeferredVariableKind::Generic,
                 };
@@ -93,9 +96,7 @@ impl State {
                 self.known_stack.insert(res.clone(), *idx);
                 self.temporary_variables.insert(res, output_info.ty.clone());
             }
-            OutputVarReferenceInfo::SameAsParam { .. }
-            | OutputVarReferenceInfo::NewLocalVar
-            | OutputVarReferenceInfo::Const => {}
+            OutputVarReferenceInfo::SameAsParam { .. } | OutputVarReferenceInfo::NewLocalVar => {}
         }
     }
 
@@ -127,11 +128,17 @@ pub fn merge_optional_states(a_opt: Option<State>, b_opt: Option<State>) -> Opti
         (None, Some(b)) => Some(b),
         (Some(a), None) => Some(a),
         (Some(a), Some(b)) => {
-            assert_eq!(
-                a.deferred_variables, b.deferred_variables,
-                "Internal compiler error: Branch merges with different list of deferred variables \
-                 is not supported yet."
-            );
+            // Merge the lists of deferred variables.
+            let mut deferred_variables = OrderedHashMap::default();
+            for (var, info_a) in a.deferred_variables {
+                if let Some(info_b) = b.deferred_variables.get(&var) {
+                    assert_eq!(
+                        info_a, *info_b,
+                        "Internal compiler error: Found different deferred variables."
+                    );
+                    deferred_variables.insert(var, info_a);
+                }
+            }
 
             // Merge the lists of temporary variables.
             let mut temporary_variables = OrderedHashMap::default();
@@ -146,7 +153,7 @@ pub fn merge_optional_states(a_opt: Option<State>, b_opt: Option<State>) -> Opti
             }
 
             Some(State {
-                deferred_variables: a.deferred_variables,
+                deferred_variables,
                 temporary_variables,
                 known_stack: a.known_stack.merge_with(&b.known_stack),
             })
