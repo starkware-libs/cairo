@@ -154,7 +154,7 @@
     │   │       │   │   │   │   └── rbrace (kind: TokenRBrace): '}'
     │   │       │   │   │   └── else_clause (kind: ElseClause)
     │   │       │   │   │       ├── else_kw (kind: TokenElse): 'else'
-    │   │       │   │   │       └── else_block (kind: ExprBlock)
+    │   │       │   │   │       └── else_block_or_if (kind: ExprBlock)
     │   │       │   │   │           ├── lbrace (kind: TokenLBrace): '{'
     │   │       │   │   │           ├── statements (kind: StatementList)
     │   │       │   │   │           │   └── child #0 (kind: StatementExpr)
@@ -229,7 +229,7 @@
     │   │       │   │   │       │   └── rbrace (kind: TokenRBrace): '}'
     │   │       │   │   │       └── else_clause (kind: ElseClause)
     │   │       │   │   │           ├── else_kw (kind: TokenElse): 'else'
-    │   │       │   │   │           └── else_block (kind: ExprBlock)
+    │   │       │   │   │           └── else_block_or_if (kind: ExprBlock)
     │   │       │   │   │               ├── lbrace (kind: TokenLBrace): '{'
     │   │       │   │   │               ├── statements (kind: StatementList)
     │   │       │   │   │               │   └── child #0 (kind: StatementExpr)

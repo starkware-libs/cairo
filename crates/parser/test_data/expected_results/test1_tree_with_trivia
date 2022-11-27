@@ -462,7 +462,7 @@
     │   │       │   │   │       │   ├── token (kind: TokenElse): 'else'
     │   │       │   │   │       │   └── trailing_trivia (kind: Trivia)
     │   │       │   │   │       │       └── child #0 (kind: TokenWhitespace).
-    │   │       │   │   │       └── else_block (kind: ExprBlock)
+    │   │       │   │   │       └── else_block_or_if (kind: ExprBlock)
     │   │       │   │   │           ├── lbrace (kind: TerminalLBrace)
     │   │       │   │   │           │   ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │           │   ├── token (kind: TokenLBrace): '{'
@@ -683,7 +683,7 @@
     │   │       │   │   │           │   ├── token (kind: TokenElse): 'else'
     │   │       │   │   │           │   └── trailing_trivia (kind: Trivia)
     │   │       │   │   │           │       └── child #0 (kind: TokenWhitespace).
-    │   │       │   │   │           └── else_block (kind: ExprBlock)
+    │   │       │   │   │           └── else_block_or_if (kind: ExprBlock)
     │   │       │   │   │               ├── lbrace (kind: TerminalLBrace)
     │   │       │   │   │               │   ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │               │   ├── token (kind: TokenLBrace): '{'
