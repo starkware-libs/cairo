@@ -15,7 +15,7 @@ use super::generics::semantic_generic_params;
 use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics};
 use crate::expr::compute::{compute_expr_block_semantic, ComputationContext, Environment};
-use crate::resolve_path::{ResolvedGenericItem, ResolvedLookback, Resolver};
+use crate::resolve_path::{ResolvedLookback, Resolver};
 use crate::{semantic, Expr, ExprId, FunctionId, SemanticDiagnostic, TypeId};
 
 #[cfg(test)]
@@ -32,6 +32,7 @@ pub struct FreeFunctionDeclarationData {
     generic_params: Vec<GenericParamId>,
     environment: Environment,
     attributes: Vec<Attribute>,
+    resolved_lookback: Arc<ResolvedLookback>,
 }
 
 // --- Selectors ---
@@ -85,6 +86,14 @@ pub fn free_function_declaration_generic_params(
     Some(db.priv_free_function_declaration_data(free_function_id)?.generic_params)
 }
 
+/// Query implementation of [crate::db::SemanticGroup::free_function_declaration_resolved_lookback].
+pub fn free_function_declaration_resolved_lookback(
+    db: &dyn SemanticGroup,
+    free_function_id: FreeFunctionId,
+) -> Option<Arc<ResolvedLookback>> {
+    Some(db.priv_free_function_declaration_data(free_function_id)?.resolved_lookback)
+}
+
 // --- Computation ---
 
 /// Query implementation of [crate::db::SemanticGroup::priv_free_function_declaration_data].
@@ -117,12 +126,14 @@ pub fn priv_free_function_declaration_data(
     );
 
     let attributes = ast_attributes_to_semantic(syntax_db, function_syntax.attributes(syntax_db));
+    let resolved_lookback = Arc::new(resolver.lookback);
     Some(FreeFunctionDeclarationData {
         diagnostics: diagnostics.build(),
         signature,
         generic_params,
         environment,
         attributes,
+        resolved_lookback,
     })
 }
 
@@ -133,7 +144,7 @@ pub fn priv_free_function_declaration_data(
 pub struct FreeFunctionDefinitionData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
     expr_lookup: UnorderedHashMap<ast::ExprPtr, ExprId>,
-    resolved_lookback: ResolvedLookback,
+    resolved_lookback: Arc<ResolvedLookback>,
     definition: Arc<FreeFunctionDefinition>,
 }
 
@@ -203,6 +214,14 @@ pub fn free_function_definition(
     Some(db.priv_free_function_definition_data(free_function_id)?.definition)
 }
 
+/// Query implementation of [crate::db::SemanticGroup::free_function_definition_resolved_lookback].
+pub fn free_function_definition_resolved_lookback(
+    db: &dyn SemanticGroup,
+    free_function_id: FreeFunctionId,
+) -> Option<Arc<ResolvedLookback>> {
+    Some(db.priv_free_function_definition_data(free_function_id)?.resolved_lookback)
+}
+
 // ---Computation ---
 
 /// Query implementation of [crate::db::SemanticGroup::priv_free_function_definition_data].
@@ -250,7 +269,7 @@ pub fn priv_free_function_definition_data(
 
     let expr_lookup: UnorderedHashMap<_, _> =
         exprs.iter().map(|(expr_id, expr)| (expr.stable_ptr(), expr_id)).collect();
-    let resolved_lookback = resolver.lookback;
+    let resolved_lookback = Arc::new(resolver.lookback);
     Some(FreeFunctionDefinitionData {
         diagnostics: diagnostics.build(),
         expr_lookup,
@@ -304,14 +323,6 @@ pub trait SemanticExprLookup<'a>: Upcast<dyn SemanticGroup + 'a> {
     ) -> Option<ExprId> {
         let definition_data = self.upcast().priv_free_function_definition_data(free_function_id)?;
         definition_data.expr_lookup.get(&ptr).copied()
-    }
-    fn lookup_resolved_generic_item_by_ptr(
-        &self,
-        free_function_id: FreeFunctionId,
-        ptr: ast::TerminalIdentifierPtr,
-    ) -> Option<ResolvedGenericItem> {
-        let definition_data = self.upcast().priv_free_function_definition_data(free_function_id)?;
-        definition_data.resolved_lookback.generic.get(&ptr).cloned()
     }
 }
 

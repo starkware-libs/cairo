@@ -8,7 +8,7 @@ From the directory of this file, run:
 sudo npm install -g vsce
 npm install
 vsce package
-code --install-extension cairo*.vsix
+code --install-extension cairo1*.vsix
 ```
 
 Remember to build the language server:

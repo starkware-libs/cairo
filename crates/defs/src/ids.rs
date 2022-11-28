@@ -113,7 +113,7 @@ macro_rules! define_language_element_id {
 macro_rules! define_language_element_id_as_enum {
     (
         #[toplevel]
-        #[doc = $doc:expr]
+        $(#[doc = $doc:expr])*
         pub enum $enum_name:ident {
             $($variant:ident ($variant_ty:ty),)*
         }
@@ -124,19 +124,19 @@ macro_rules! define_language_element_id_as_enum {
             }
         }
         define_language_element_id_as_enum! {
-            #[doc = $doc]
+            $(#[doc = $doc])*
             pub enum $enum_name {
                 $($variant($variant_ty),)*
             }
         }
     };
     (
-        #[doc = $doc:expr]
+        $(#[doc = $doc:expr])*
         pub enum $enum_name:ident {
             $($variant:ident ($variant_ty:ty),)*
         }
     ) => {
-        #[doc = $doc]
+        $(#[doc = $doc])*
         #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
         pub enum $enum_name {
             $($variant($variant_ty),)*
@@ -460,5 +460,16 @@ impl OptionFrom<ModuleItemId> for GenericTypeId {
             | ModuleItemId::Impl(_)
             | ModuleItemId::ExternFunction(_) => None,
         }
+    }
+}
+
+define_language_element_id_as_enum! {
+    /// Items for resolver lookups.
+    /// These are top items that hold semantic information.
+    /// Semantic info lookups should be performed against these items.
+    pub enum LookupItemId {
+        ModuleItem(ModuleItemId),
+        // TODO(spapini): Replace with ImplItemId.
+        ImplFunction(ImplFunctionId),
     }
 }

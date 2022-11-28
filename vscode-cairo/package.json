@@ -1,6 +1,6 @@
 {
-    "name": "cairo",
-    "displayName": "Cairo",
+    "name": "cairo1",
+    "displayName": "Cairo 1.0",
     "description": "Support Cairo syntax",
     "version": "1.0.0",
     "engines": {
@@ -40,7 +40,7 @@
                         "description": "Enable the Cairo language server.",
                         "scope": "window"
                     },
-                    "cairo.languageServerPath": {
+                    "cairo1.languageServerPath": {
                         "type": "string",
                         "description": "Path to the Cairo language server (cairo-lang-server).",
                         "scope": "window"
@@ -57,7 +57,7 @@
         }
     },
     "publisher": "StarkWare",
-    "repository": "https://github.com/starkware-libs/cairo2/",
+    "repository": "https://github.com/starkware-libs/cairo/",
     "scripts": {
         "vscode:prepublish": "npm run compile",
         "compile": "tsc -p ./",
