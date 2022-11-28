@@ -125,8 +125,8 @@ impl SignatureOnlyGenericLibFunc for StructConstructLibFunc {
                 .into_iter()
                 .map(|ty| ParamSignature {
                     ty,
-                    allow_deferred: false,
-                    allow_add_const: false,
+                    allow_deferred: true,
+                    allow_add_const: true,
                     allow_const: true,
                 })
                 .collect(),
