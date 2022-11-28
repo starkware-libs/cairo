@@ -15,11 +15,11 @@ function findDevLanguageServerAt(path: string, depth: number): string | undefine
     if (depth == 0) {
         return undefined;
     }
-    let candidate = path + "/target/release/languageserver";
+    let candidate = path + "/target/release/cairo-language-server";
     if (fs.existsSync(candidate)) {
         return candidate;
     }
-    candidate = path + "/target/debug/languageserver";
+    candidate = path + "/target/debug/cairo-language-server";
     if (fs.existsSync(candidate)) {
         return candidate;
     }
