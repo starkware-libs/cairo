@@ -100,6 +100,7 @@ fn generate_panicable_code(
                                 let data = array_new::<felt>();
                                 array_append::<felt>(data, {err_value});
                                 panic(data);
+                                {function_name}_panicable({args})
                             }},
                         }}
                     }}

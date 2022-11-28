@@ -65,11 +65,11 @@ use option::Option;
 // Integer.
 mod integer;
 use integer::uint128;
-use integer::uint128_from_felt;
+use integer::uint128_from_felt_panicable;
 use integer::uint128_to_felt;
-use integer::uint128_add;
-use integer::uint128_sub;
-use integer::uint128_mul;
+use integer::uint128_add_panicable;
+use integer::uint128_sub_panicable;
+use integer::uint128_mul_panicable;
 use integer::uint128_div;
 use integer::uint128_mod;
 use integer::uint128_lt;

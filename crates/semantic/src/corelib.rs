@@ -232,10 +232,10 @@ pub fn core_binary_operator(
     };
     let function_name = match binary_op {
         BinaryOperator::Plus(_) if [type1, type2] == [felt, felt] => "felt_add",
-        BinaryOperator::Plus(_) if [type1, type2] == [uint128, uint128] => "uint128_add",
+        BinaryOperator::Plus(_) if [type1, type2] == [uint128, uint128] => "uint128_add_panicable",
         BinaryOperator::Plus(_) => return unsupported_operator("+"),
         BinaryOperator::Minus(_) if [type1, type2] == [felt, felt] => "felt_sub",
-        BinaryOperator::Minus(_) if [type1, type2] == [uint128, uint128] => "uint128_sub",
+        BinaryOperator::Minus(_) if [type1, type2] == [uint128, uint128] => "uint128_sub_panicable",
         BinaryOperator::Minus(_) => return unsupported_operator("-"),
         BinaryOperator::Mul(_) if [type1, type2] == [felt, felt] => "felt_mul",
         BinaryOperator::Mul(_) => return unsupported_operator("*"),

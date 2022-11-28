@@ -125,49 +125,63 @@ fn lowering_test(name: &str) {
     setup(name);
 }
 
-#[test_case("fib", &[1, 1, 7].map(BigInt::from), &[21].map(BigInt::from).map(Some); "fib")]
+fn as_bigint(num: Option<i128>) -> Option<BigInt> {
+    num.map(BigInt::from)
+}
+
+#[test_case("fib", &[1, 1, 7].map(BigInt::from), Some(&[21].map(BigInt::from).map(Some)); "fib")]
 #[test_case(
     "fib_counter",
     &[1, 1, 8].map(BigInt::from),
-    &[34, 8].map(BigInt::from).map(Some);
+    Some(&[34, 8].map(BigInt::from).map(Some));
     "fib_counter"
 )]
 #[test_case(
     "fib_struct",
     &[1, 1, 9].map(BigInt::from),
-    &[55, 9].map(BigInt::from).map(Some);
+    Some(&[55, 9].map(BigInt::from).map(Some));
     "fib_struct"
 )]
 #[test_case(
     "fib_uint128",
     &[1, 1, 10].map(BigInt::from),
-    &[0, 89].map(BigInt::from).map(Some);
+    Some(&[Some(0), Some(89), None].map(as_bigint));
     "fib_uint128"
 )]
 #[test_case(
     "fib_uint128",
     &[1, 1, 200].map(BigInt::from),
-    &[Some(BigInt::from(1)), None];
+    None;
     "fib_uint128_overflow"
 )]
 #[test_case(
     "fib_local",
     &[6].map(BigInt::from),
-    &[Some(BigInt::from(13))];
+    Some(&[Some(BigInt::from(13))]);
     "fib_local"
 )]
 #[test_case(
     "hash_chain",
     &[3].map(BigInt::from),
-    &[BigInt::parse_bytes(
-        b"2dca1ad81a6107a9ef68c69f791bcdbda1df257aab76bd43ded73d96ed6227d", 16)] => ignore["reason"];
+    Some(&[
+        BigInt::parse_bytes(
+            b"2dca1ad81a6107a9ef68c69f791bcdbda1df257aab76bd43ded73d96ed6227d", 16)])
+    => ignore["reason"];
     "hash_chain")]
 #[test_case(
     "testing",
     &[],
-    &[Some(BigInt::from(0)), None, None];
+    Some(&[Some(BigInt::from(0)), None, None]);
     "testing")]
-fn run_function_test(name: &str, params: &[BigInt], expected: &[Option<BigInt>]) {
+fn run_function_test(name: &str, params: &[BigInt], expected_or_panic: Option<&[Option<BigInt>]>) {
     let sierra_func = checked_compile_to_sierra(name);
-    assert_eq!(run_sierra_program(&sierra_func, params, expected.len(), false), expected);
+    let result_count = match &expected_or_panic {
+        None => 3,
+        Some(expected) => expected.len(),
+    };
+    let results = run_sierra_program(&sierra_func, params, result_count, false);
+    match expected_or_panic {
+        None => assert_eq!(results[0], Some(BigInt::from(1)), "Expected getting panic result."),
+        Some(expected) => assert_eq!(results, expected),
+    }
 }
