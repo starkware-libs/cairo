@@ -18,6 +18,13 @@ use sierra::extensions::mem::MemConcreteLibFunc::{
 use sierra::extensions::strct::StructConcreteLibFunc;
 use sierra::program::Function;
 
+/// Represents different type of costs.
+#[derive(Copy, Clone, Hash, PartialEq, Eq)]
+pub enum CostTokenType {
+    /// A single Cairo step, or some cost which is equivalent to it.
+    Step,
+}
+
 /// The operation required for extracting a libfunc's cost.
 pub trait CostOperations {
     type CostType: Clone;

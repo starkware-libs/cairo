@@ -10,6 +10,7 @@ use sierra::extensions::lib_func::{BranchSignature, SierraApChange};
 use sierra::extensions::{ConcreteLibFunc, OutputVarReferenceInfo};
 use sierra::ids::ConcreteTypeId;
 use sierra::program::{BranchInfo, BranchTarget, Invocation, StatementIdx};
+use sierra_gas::CostTokenType;
 use thiserror::Error;
 use utils::extract_matches;
 use {casm, sierra};
@@ -182,10 +183,12 @@ impl CompiledInvocationBuilder<'_> {
                     },
                     SierraApChange::Unknown => ApChange::Unknown,
                 };
+                // TODO(lior): Instead of taking only the steps, take all token types into account.
+                let gas_change_steps = gas_change.map(|x| x[CostTokenType::Step]);
 
                 BranchChanges::new(
                     ap_change,
-                    -gas_change.unwrap_or(0),
+                    -gas_change_steps.unwrap_or(0),
                     expressions,
                     branch_signature,
                 )
