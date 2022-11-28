@@ -29,7 +29,7 @@ fn format_file(file_path: &str, args: &FormatterArgs, config: &FormatterConfig) 
             format!("A parsing error occurred in file: {file_path}. The file was not formatted.")
                 .red()
         );
-        return true;
+        return false;
     }
     let formatted_file = get_formatted_file(db, &syntax_root, config.clone());
 
