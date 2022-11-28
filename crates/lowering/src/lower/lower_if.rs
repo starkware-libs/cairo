@@ -170,16 +170,18 @@ pub fn lower_expr_if_eq(
 fn lower_optional_else_block(
     ctx: &mut LoweringContext<'_>,
     scope: &mut BlockScope,
-    else_block_opt: Option<semantic::ExprId>,
+    else_expr_opt: Option<semantic::ExprId>,
 ) -> Option<BlockScopeEnd> {
     log::trace!("Started lowering of an optional else block.");
-    match else_block_opt {
-        Some(else_block) => lower_block(
-            ctx,
-            scope,
-            extract_matches!(&ctx.function_def.exprs[else_block], semantic::Expr::Block),
-            false,
-        ),
+    match else_expr_opt {
+        Some(else_expr) => match &ctx.function_def.exprs[else_expr] {
+            semantic::Expr::Block(block) => lower_block(ctx, scope, block, false),
+            semantic::Expr::If(if_expr) => {
+                let lowered_if = lower_expr_if(ctx, scope, if_expr);
+                lowered_expr_to_block_scope_end(ctx, scope, lowered_if)
+            }
+            _ => unreachable!(),
+        },
         None => lowered_expr_to_block_scope_end(ctx, scope, Ok(LoweredExpr::Tuple(vec![]))),
     }
 }
