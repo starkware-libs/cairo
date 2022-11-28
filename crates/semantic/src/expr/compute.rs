@@ -22,7 +22,7 @@ use utils::{try_extract_matches, OptionHelper};
 
 use super::objects::*;
 use super::pattern::{
-    Pattern, PatternEnum, PatternLiteral, PatternOtherwise, PatternTuple, PatternVariable,
+    Pattern, PatternEnumVariant, PatternLiteral, PatternOtherwise, PatternTuple, PatternVariable,
 };
 use crate::corelib::{
     core_binary_operator, core_felt_ty, false_literal_expr, true_literal_expr, unit_ty,
@@ -586,7 +586,11 @@ fn compute_pattern_semantic(
             let ty = concrete_variant.ty;
             let inner_pattern =
                 compute_pattern_semantic(ctx, enum_pattern.pattern(syntax_db), ty)?.into();
-            Pattern::Enum(PatternEnum { variant: concrete_variant, inner_pattern, ty })
+            Pattern::EnumVariant(PatternEnumVariant {
+                variant: concrete_variant,
+                inner_pattern,
+                ty,
+            })
         }
         ast::Pattern::Path(path) => {
             // A path of length 1 is an identifier, which will result in a variable pattern.

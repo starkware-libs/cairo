@@ -22,7 +22,7 @@ pub enum Pattern {
     Variable(PatternVariable),
     Struct(PatternStruct),
     Tuple(PatternTuple),
-    Enum(PatternEnum),
+    EnumVariant(PatternEnumVariant),
     Otherwise(PatternOtherwise),
 }
 impl Pattern {
@@ -32,7 +32,7 @@ impl Pattern {
             Pattern::Variable(variable) => variable.var.ty,
             Pattern::Struct(pattern_struct) => pattern_struct.ty,
             Pattern::Tuple(pattern_tuple) => pattern_tuple.ty,
-            Pattern::Enum(pattern_enum) => pattern_enum.ty,
+            Pattern::EnumVariant(pattern_enum_variant) => pattern_enum_variant.ty,
             Pattern::Otherwise(pattern_otherwise) => pattern_otherwise.ty,
         }
     }
@@ -50,7 +50,9 @@ impl Pattern {
                 .iter()
                 .flat_map(|pattern| pattern.variables())
                 .collect(),
-            Pattern::Enum(pattern_enum) => pattern_enum.inner_pattern.variables(),
+            Pattern::EnumVariant(pattern_enum_variant) => {
+                pattern_enum_variant.inner_pattern.variables()
+            }
             Pattern::Literal(_) | Pattern::Otherwise(_) => vec![],
         }
     }
@@ -96,7 +98,7 @@ pub struct PatternTuple {
 /// A pattern that destructures a specific variant of an enum to its inner value.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
 #[debug_db(ExprFormatter<'_>)]
-pub struct PatternEnum {
+pub struct PatternEnumVariant {
     pub variant: semantic::ConcreteVariant,
     pub inner_pattern: Box<Pattern>,
     pub ty: semantic::TypeId,
