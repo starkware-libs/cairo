@@ -651,7 +651,7 @@ fn lower_optimized_extern_match(
 
                     // Create a scope for the arm block.
                     merger.run_in_subscope(ctx, input_tys, |ctx, subscope, mut arm_inputs| {
-                        match_extern_arm_ref_args_rebind(&mut arm_inputs, &extern_enum, subscope);
+                        match_extern_arm_ref_args_bind(&mut arm_inputs, &extern_enum, subscope);
                         let variant_expr = extern_facade_expr(ctx, concrete_variant.ty, arm_inputs);
                         // TODO(spapini): Convert to a diagnostic.
                         let enum_pattern =
@@ -1000,11 +1000,7 @@ fn lower_optimized_extern_error_propagate(
                         match_extern_variant_arm_input_types(ctx, ok_variant.ty, &extern_enum);
                     merger
                         .run_in_subscope(ctx, input_tys, |ctx, subscope, mut arm_inputs| {
-                            match_extern_arm_ref_args_rebind(
-                                &mut arm_inputs,
-                                &extern_enum,
-                                subscope,
-                            );
+                            match_extern_arm_ref_args_bind(&mut arm_inputs, &extern_enum, subscope);
 
                             let variant_expr = extern_facade_expr(ctx, ok_variant.ty, arm_inputs);
                             Some(BlockScopeEnd::Callsite(Some(variant_expr.var(ctx, subscope))))
@@ -1016,11 +1012,7 @@ fn lower_optimized_extern_error_propagate(
                         match_extern_variant_arm_input_types(ctx, err_variant.ty, &extern_enum);
                     merger
                         .run_in_subscope(ctx, input_tys, |ctx, subscope, mut arm_inputs| {
-                            match_extern_arm_ref_args_rebind(
-                                &mut arm_inputs,
-                                &extern_enum,
-                                subscope,
-                            );
+                            match_extern_arm_ref_args_bind(&mut arm_inputs, &extern_enum, subscope);
                             let variant_expr = extern_facade_expr(ctx, err_variant.ty, arm_inputs);
                             let input = variant_expr.var(ctx, subscope);
                             let value_var = generators::EnumConstruct {
@@ -1068,8 +1060,8 @@ fn match_extern_variant_arm_input_types(
     chain!(extern_enum.implicits.clone(), ref_tys, variant_input_tys.into_iter()).collect()
 }
 
-/// Rebinds input references when matching on extern functions.
-fn match_extern_arm_ref_args_rebind(
+/// Binds input references and implicits when matching on extern functions.
+fn match_extern_arm_ref_args_bind(
     arm_inputs: &mut Vec<LivingVar>,
     extern_enum: &LoweredExprExternEnum,
     subscope: &mut BlockScope,
