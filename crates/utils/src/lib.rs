@@ -70,3 +70,11 @@ pub fn borrow_as_box<T: Default, R, F: FnOnce(Box<T>) -> (R, Box<T>)>(ptr: &mut 
     *ptr = *boxed;
     res
 }
+
+/// Macro to use instead of .expect() when the message is not a simple string but a format string.
+#[macro_export]
+macro_rules! expect {
+    ($arg:expr, $($msg_args:tt)*) => {
+        ($arg).unwrap_or_else(|| panic!($($msg_args)*))
+    };
+}

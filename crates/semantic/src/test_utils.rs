@@ -9,7 +9,7 @@ use parser::db::ParserDatabase;
 use pretty_assertions::assert_eq;
 use syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use utils::ordered_hash_map::OrderedHashMap;
-use utils::{extract_matches, OptionFrom};
+use utils::{expect, extract_matches, OptionFrom};
 
 use crate::db::{SemanticDatabase, SemanticGroup};
 use crate::semantic;
@@ -131,10 +131,11 @@ pub fn setup_test_function(
         format!("{module_code}\n{function_code}")
     };
     let (test_module, diagnostics) = setup_test_module(db, &content).split();
-    let generic_function_id = db
-        .module_item_by_name(test_module.module_id, function_name.into())
-        .and_then(GenericFunctionId::option_from)
-        .unwrap_or_else(|| panic!("Function {function_name} was not found."));
+    let generic_function_id = expect!(
+        db.module_item_by_name(test_module.module_id, function_name.into())
+            .and_then(GenericFunctionId::option_from),
+        "Function '{function_name}' was not found."
+    );
     let function_id = extract_matches!(generic_function_id, GenericFunctionId::Free);
     WithStringDiagnostics {
         value: TestFunction {
