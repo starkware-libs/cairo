@@ -8,6 +8,7 @@ use std::ops::{Add, Sub};
 use crate::ordered_hash_map::OrderedHashMap;
 
 pub trait HasZero {
+    /// Returns the zero value for the type.
     fn zero() -> Self;
 }
 impl HasZero for i64 {

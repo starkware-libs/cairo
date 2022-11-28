@@ -3,6 +3,7 @@ use std::collections::HashMap;
 
 use itertools::chain;
 use sierra::program::StatementIdx;
+use utils::collection_arith::HasZero;
 
 #[cfg(test)]
 #[path = "cost_expr_test.rs"]
@@ -38,11 +39,19 @@ impl CostExpr {
     pub fn from_const(const_term: i32) -> Self {
         Self { const_term, var_to_coef: HashMap::default() }
     }
+
     /// Creates a cost expression based on variable only.
     pub fn from_var(var: Var) -> Self {
         Self { const_term: 0, var_to_coef: HashMap::from([(var, 1)]) }
     }
 }
+
+impl HasZero for CostExpr {
+    fn zero() -> Self {
+        Self::from_const(0)
+    }
+}
+
 // CostExpr operators can be optimized if necessary.
 impl std::ops::Add for CostExpr {
     type Output = Self;
@@ -63,6 +72,7 @@ impl std::ops::Add for CostExpr {
         }
     }
 }
+
 impl std::ops::Sub for CostExpr {
     type Output = Self;
     fn sub(self, other: Self) -> Self {

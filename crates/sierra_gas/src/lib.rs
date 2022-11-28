@@ -1,3 +1,4 @@
+pub use core_libfunc_cost_base::CostTokenType;
 use cost_expr::Var;
 use gas_info::GasInfo;
 use sierra::extensions::core::{CoreLibFunc, CoreType};
@@ -37,7 +38,12 @@ pub fn calc_gas_info(program: &Program) -> Result<GasInfo, CostError> {
             let libfunc = registry
                 .get_libfunc(libfunc_id)
                 .expect("Program registery creation would have already failed.");
+            // TODO(lior): Instead of taking only the steps, generate equations for all of the token
+            //   types.
             core_libfunc_cost_expr::core_libfunc_cost_expr(statement_future_cost, idx, libfunc)
+                .iter()
+                .map(|x| x[CostTokenType::Step].clone())
+                .collect()
         },
     )?;
     let solution = solve_equations::solve_equations(equations)?;
