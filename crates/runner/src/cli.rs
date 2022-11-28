@@ -9,7 +9,7 @@ use casm::instructions::Instruction;
 use casm::{casm, casm_extend};
 use clap::Parser;
 use compiler::db::RootDatabase;
-use compiler::diagnostics::check_diagnostics;
+use compiler::diagnostics::check_and_eprint_diagnostics;
 use compiler::project::setup_project;
 use itertools::chain;
 use sierra::program::StatementIdx;
@@ -43,7 +43,7 @@ fn main() -> anyhow::Result<()> {
 
     let main_crate_ids = setup_project(db, Path::new(&args.path))?;
 
-    if check_diagnostics(db) {
+    if check_and_eprint_diagnostics(db) {
         anyhow::bail!("failed to compile: {}", args.path);
     }
 

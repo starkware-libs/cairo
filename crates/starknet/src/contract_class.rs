@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use anyhow::Context;
 use compiler::db::RootDatabase;
-use compiler::diagnostics::check_diagnostics;
+use compiler::diagnostics::check_and_eprint_diagnostics;
 use compiler::project::setup_project;
 use defs::db::DefsGroup;
 use itertools::join;
@@ -70,7 +70,7 @@ pub fn compile_path(path: &Path, replace_ids: bool) -> anyhow::Result<ContractCl
     plugins.push(Arc::new(StarkNetPlugin {}));
     db.set_macro_plugins(plugins);
 
-    if check_diagnostics(db) {
+    if check_and_eprint_diagnostics(db) {
         anyhow::bail!("Failed to compile: {}", path.display());
     }
 
