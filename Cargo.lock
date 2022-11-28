@@ -567,6 +567,7 @@ dependencies = [
  "smol_str",
  "syntax",
  "test-log",
+ "thiserror",
  "utils",
 ]
 

@@ -36,7 +36,7 @@ pub fn priv_use_semantic_data(db: &(dyn SemanticGroup), use_id: UseId) -> Option
 /// Cycle handling for [crate::db::SemanticGroup::priv_struct_semantic_data].
 pub fn priv_use_semantic_data_cycle(
     db: &dyn SemanticGroup,
-    cycle: &Vec<String>,
+    _cycle: &[String],
     use_id: &UseId,
 ) -> Option<UseData> {
     let module_file_id = use_id.module_file(db.upcast());
@@ -44,11 +44,7 @@ pub fn priv_use_semantic_data_cycle(
     let module_data = db.module_data(module_file_id.0)?;
     let use_ast = module_data.uses.get(use_id)?;
     let syntax_db = db.upcast();
-    if cycle.len() > 1 {
-        diagnostics.report(&use_ast.name(syntax_db), SemanticDiagnosticKind::UseCycle);
-    } else {
-        diagnostics.report(&use_ast.name(syntax_db), SemanticDiagnosticKind::PathNotFound);
-    }
+    diagnostics.report(&use_ast.name(syntax_db), SemanticDiagnosticKind::UseCycle);
     Some(UseData {
         diagnostics: diagnostics.build(),
         resolved_item: None,
