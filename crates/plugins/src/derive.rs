@@ -40,9 +40,7 @@ fn generate_derive_code_for_type(
                         if let [ast::PathSegment::Simple(segment)] = &expr.elements(db)[..] {
                             let name = ident.text(db);
                             let derived = segment.ident(db).text(db);
-                            impls.push(format!(
-                                "impl {name}{derived} of {derived}::<super::{name}>;\n"
-                            ));
+                            impls.push(format!("impl {name}{derived} of {derived}::<{name}>;\n"));
                         }
                     }
                 }

@@ -78,7 +78,7 @@ pub fn lower(db: &dyn LoweringGroup, free_function_id: FreeFunctionId) -> Option
         function_def: &function_def,
         signature,
         may_panic: db.free_function_may_panic(free_function_id)?,
-        diagnostics: LoweringDiagnostics::new(free_function_id.module(db.upcast())),
+        diagnostics: LoweringDiagnostics::new(free_function_id.module_file(db.upcast())),
         variables: Arena::default(),
         blocks: Arena::default(),
         semantic_defs: UnorderedHashMap::default(),

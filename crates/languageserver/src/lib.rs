@@ -12,9 +12,9 @@ use db_utils::Upcast;
 use debug::DebugWithDb;
 use defs::db::DefsGroup;
 use defs::ids::{
-    EnumLongId, ExternFunctionLongId, ExternTypeLongId, FreeFunctionId, FreeFunctionLongId,
-    ImplLongId, LanguageElementId, LookupItemId, ModuleId, ModuleItemId, StructLongId, TraitLongId,
-    UseLongId,
+    EnumLongId, ExternFunctionLongId, ExternTypeLongId, FileIndex, FreeFunctionId,
+    FreeFunctionLongId, ImplLongId, LanguageElementId, LookupItemId, ModuleFileId, ModuleItemId,
+    StructLongId, TraitLongId, UseLongId,
 };
 use diagnostics::{DiagnosticEntry, Diagnostics};
 use filesystem::db::{AsFilesGroupMut, FilesGroup, FilesGroupEx, PrivRawFileContentQuery};
@@ -84,7 +84,7 @@ impl Backend {
         let mut files_set: OrderedHashSet<_> = state.open_files.iter().copied().collect();
         for crate_id in db.crates() {
             for module_id in db.crate_modules(crate_id).iter() {
-                if let Some(file_id) = db.module_file(*module_id) {
+                for file_id in db.module_files(*module_id).unwrap_or_default() {
                     files_set.insert(file_id);
                 }
             }
@@ -368,29 +368,39 @@ impl LanguageServer for Backend {
             else { continue; };
 
             let defs_db = (*db).upcast();
-            let (module_id, stable_ptr) = match item {
+            let (module_id, file_index, stable_ptr) = match item {
                 ResolvedGenericItem::Module(item) => {
-                    (item, db.intern_stable_ptr(SyntaxStablePtr::Root))
+                    (item, FileIndex(0), db.intern_stable_ptr(SyntaxStablePtr::Root))
                 }
-                ResolvedGenericItem::GenericFunction(item) => {
-                    (item.module(defs_db), item.untyped_stable_ptr(defs_db))
-                }
-                ResolvedGenericItem::GenericType(generic_type) => {
-                    (generic_type.module(defs_db), generic_type.untyped_stable_ptr(defs_db))
-                }
-                ResolvedGenericItem::Variant(variant) => {
-                    (variant.id.module(defs_db), variant.id.stable_ptr(defs_db).untyped())
-                }
-                ResolvedGenericItem::Trait(trt) => {
-                    (trt.module(defs_db), trt.stable_ptr(defs_db).untyped())
-                }
-                ResolvedGenericItem::Impl(imp) => {
-                    (imp.module(defs_db), imp.stable_ptr(defs_db).untyped())
-                }
+                ResolvedGenericItem::GenericFunction(item) => (
+                    item.module(defs_db),
+                    item.file_index(defs_db),
+                    item.untyped_stable_ptr(defs_db),
+                ),
+                ResolvedGenericItem::GenericType(generic_type) => (
+                    generic_type.module(defs_db),
+                    generic_type.file_index(defs_db),
+                    generic_type.untyped_stable_ptr(defs_db),
+                ),
+                ResolvedGenericItem::Variant(variant) => (
+                    variant.id.module(defs_db),
+                    variant.id.file_index(defs_db),
+                    variant.id.stable_ptr(defs_db).untyped(),
+                ),
+                ResolvedGenericItem::Trait(trt) => (
+                    trt.module(defs_db),
+                    trt.file_index(defs_db),
+                    trt.stable_ptr(defs_db).untyped(),
+                ),
+                ResolvedGenericItem::Impl(imp) => (
+                    imp.module(defs_db),
+                    imp.file_index(defs_db),
+                    imp.stable_ptr(defs_db).untyped(),
+                ),
             };
 
-            let file = if let Some(file) = db.module_file(module_id) {
-                file
+            let file = if let Some(files) = db.module_files(module_id) {
+                files[file_index.0]
             } else {
                 return Ok(None);
             };
@@ -425,7 +435,7 @@ impl LanguageServer for Backend {
 /// See [LookupItemId].
 fn lookup_item_from_ast(
     db: &dyn SemanticGroup,
-    module_id: ModuleId,
+    module_file_id: ModuleFileId,
     node: SyntaxNode,
 ) -> Option<LookupItemId> {
     let syntax_db = db.upcast();
@@ -433,42 +443,48 @@ fn lookup_item_from_ast(
     match node.kind(syntax_db) {
         SyntaxKind::ItemFreeFunction => Some(LookupItemId::ModuleItem(ModuleItemId::FreeFunction(
             db.intern_free_function(FreeFunctionLongId(
-                module_id,
+                module_file_id,
                 ast::ItemFreeFunction::from_syntax_node(syntax_db, node).stable_ptr(),
             )),
         ))),
         SyntaxKind::ItemExternFunction => Some(LookupItemId::ModuleItem(
             ModuleItemId::ExternFunction(db.intern_extern_function(ExternFunctionLongId(
-                module_id,
+                module_file_id,
                 ast::ItemExternFunction::from_syntax_node(syntax_db, node).stable_ptr(),
             ))),
         )),
         SyntaxKind::ItemExternType => Some(LookupItemId::ModuleItem(ModuleItemId::ExternType(
             db.intern_extern_type(ExternTypeLongId(
-                module_id,
+                module_file_id,
                 ast::ItemExternType::from_syntax_node(syntax_db, node).stable_ptr(),
             )),
         ))),
         SyntaxKind::ItemTrait => {
             Some(LookupItemId::ModuleItem(ModuleItemId::Trait(db.intern_trait(TraitLongId(
-                module_id,
+                module_file_id,
                 ast::ItemTrait::from_syntax_node(syntax_db, node).stable_ptr(),
             )))))
         }
-        SyntaxKind::ItemImpl => Some(LookupItemId::ModuleItem(ModuleItemId::Impl(db.intern_impl(
-            ImplLongId(module_id, ast::ItemImpl::from_syntax_node(syntax_db, node).stable_ptr()),
-        )))),
+        SyntaxKind::ItemImpl => {
+            Some(LookupItemId::ModuleItem(ModuleItemId::Impl(db.intern_impl(ImplLongId(
+                module_file_id,
+                ast::ItemImpl::from_syntax_node(syntax_db, node).stable_ptr(),
+            )))))
+        }
         SyntaxKind::ItemStruct => {
             Some(LookupItemId::ModuleItem(ModuleItemId::Struct(db.intern_struct(StructLongId(
-                module_id,
+                module_file_id,
                 ast::ItemStruct::from_syntax_node(syntax_db, node).stable_ptr(),
             )))))
         }
-        SyntaxKind::ItemEnum => Some(LookupItemId::ModuleItem(ModuleItemId::Enum(db.intern_enum(
-            EnumLongId(module_id, ast::ItemEnum::from_syntax_node(syntax_db, node).stable_ptr()),
-        )))),
+        SyntaxKind::ItemEnum => {
+            Some(LookupItemId::ModuleItem(ModuleItemId::Enum(db.intern_enum(EnumLongId(
+                module_file_id,
+                ast::ItemEnum::from_syntax_node(syntax_db, node).stable_ptr(),
+            )))))
+        }
         SyntaxKind::ItemUse => Some(LookupItemId::ModuleItem(ModuleItemId::Use(db.intern_use(
-            UseLongId(module_id, ast::ItemUse::from_syntax_node(syntax_db, node).stable_ptr()),
+            UseLongId(module_file_id, ast::ItemUse::from_syntax_node(syntax_db, node).stable_ptr()),
         )))),
         _ => None,
     }
@@ -511,11 +527,21 @@ fn get_node_and_lookup_items(
         return None;
     }
     let module_id = modules[0];
+    let file_index = FileIndex(
+        db.module_files(module_id)
+            .unwrap()
+            .into_iter()
+            .enumerate()
+            .find(|(_, current_file)| *current_file == file)
+            .unwrap()
+            .0,
+    );
+    let module_file_id = ModuleFileId(module_id, file_index);
 
     // Find containing function.
     let mut item_node = node.clone();
     loop {
-        if let Some(item) = lookup_item_from_ast(db, module_id, item_node.clone()) {
+        if let Some(item) = lookup_item_from_ast(db, module_file_id, item_node.clone()) {
             res.push(item);
         }
         match item_node.parent() {

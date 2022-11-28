@@ -1,4 +1,4 @@
-use defs::ids::{GenericParamId, GenericParamLongId, ModuleId};
+use defs::ids::{GenericParamId, GenericParamLongId, ModuleFileId};
 use syntax::node::{ast, TypedSyntaxNode};
 
 use crate::db::SemanticGroup;
@@ -8,7 +8,7 @@ use crate::diagnostic::SemanticDiagnostics;
 pub fn semantic_generic_params(
     db: &dyn SemanticGroup,
     _diagnostics: &mut SemanticDiagnostics,
-    module_id: ModuleId,
+    module_file_id: ModuleFileId,
     generic_args: &ast::OptionWrappedGenericParamList,
 ) -> Vec<GenericParamId> {
     let syntax_db = db.upcast();
@@ -20,7 +20,10 @@ pub fn semantic_generic_params(
             .elements(syntax_db)
             .iter()
             .map(|param_syntax| {
-                db.intern_generic_param(GenericParamLongId(module_id, param_syntax.stable_ptr()))
+                db.intern_generic_param(GenericParamLongId(
+                    module_file_id,
+                    param_syntax.stable_ptr(),
+                ))
             })
             .collect(),
     }

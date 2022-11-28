@@ -1,23 +1,23 @@
 use defs::diagnostic_utils::StableLocation;
-use defs::ids::ModuleId;
+use defs::ids::ModuleFileId;
 use diagnostics::{DiagnosticEntry, DiagnosticLocation, Diagnostics, DiagnosticsBuilder};
 use semantic::db::SemanticGroup;
 use syntax::node::ids::SyntaxStablePtrId;
 
 pub struct LoweringDiagnostics {
     pub diagnostics: DiagnosticsBuilder<LoweringDiagnostic>,
-    pub module_id: ModuleId,
+    pub module_file_id: ModuleFileId,
 }
 impl LoweringDiagnostics {
-    pub fn new(module_id: ModuleId) -> Self {
-        Self { module_id, diagnostics: DiagnosticsBuilder::default() }
+    pub fn new(module_file_id: ModuleFileId) -> Self {
+        Self { module_file_id, diagnostics: DiagnosticsBuilder::default() }
     }
     pub fn build(self) -> Diagnostics<LoweringDiagnostic> {
         self.diagnostics.build()
     }
     pub fn report(&mut self, stable_ptr: SyntaxStablePtrId, kind: LoweringDiagnosticKind) {
         self.diagnostics.add(LoweringDiagnostic {
-            stable_location: StableLocation::new(self.module_id, stable_ptr),
+            stable_location: StableLocation::new(self.module_file_id, stable_ptr),
             kind,
         });
     }

@@ -101,17 +101,17 @@ pub fn priv_free_function_declaration_data(
     db: &dyn SemanticGroup,
     free_function_id: FreeFunctionId,
 ) -> Option<FreeFunctionDeclarationData> {
-    let module_id = free_function_id.module(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_id);
-    let module_data = db.module_data(module_id)?;
+    let module_file_id = free_function_id.module_file(db.upcast());
+    let mut diagnostics = SemanticDiagnostics::new(module_file_id);
+    let module_data = db.module_data(module_file_id.0)?;
     let function_syntax = module_data.free_functions.get(&free_function_id)?;
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
-        module_id,
+        module_file_id,
         &function_syntax.generic_params(db.upcast()),
     );
-    let mut resolver = Resolver::new(db, module_id, &generic_params);
+    let mut resolver = Resolver::new(db, module_file_id, &generic_params);
     let mut environment = Environment::default();
 
     let syntax_db = db.upcast();
@@ -229,13 +229,13 @@ pub fn priv_free_function_definition_data(
     db: &dyn SemanticGroup,
     free_function_id: FreeFunctionId,
 ) -> Option<FreeFunctionDefinitionData> {
-    let module_id = free_function_id.module(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_id);
-    let module_data = db.module_data(module_id)?;
+    let module_file_id = free_function_id.module_file(db.upcast());
+    let mut diagnostics = SemanticDiagnostics::new(module_file_id);
+    let module_data = db.module_data(module_file_id.0)?;
     let syntax = module_data.free_functions.get(&free_function_id)?.clone();
     // Compute signature semantic.
     let declaration = db.priv_free_function_declaration_data(free_function_id)?;
-    let resolver = Resolver::new(db, module_id, &declaration.generic_params);
+    let resolver = Resolver::new(db, module_file_id, &declaration.generic_params);
     let environment = declaration.environment;
     // Compute body semantic expr.
     let mut ctx = ComputationContext::new(

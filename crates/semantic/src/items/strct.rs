@@ -81,10 +81,10 @@ pub fn priv_struct_semantic_data(
 ) -> Option<StructData> {
     // TODO(spapini): When asts are rooted on items, don't query module_data directly. Use a
     // selector.
-    let module_id = struct_id.module(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_id);
+    let module_file_id = struct_id.module_file(db.upcast());
+    let mut diagnostics = SemanticDiagnostics::new(module_file_id);
     // TODO(spapini): Add generic args when they are supported on structs.
-    let module_data = db.module_data(module_id)?;
+    let module_data = db.module_data(module_file_id.0)?;
     let struct_ast = module_data.structs.get(&struct_id)?;
     let syntax_db = db.upcast();
 
@@ -92,15 +92,15 @@ pub fn priv_struct_semantic_data(
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
-        module_id,
+        module_file_id,
         &struct_ast.generic_params(db.upcast()),
     );
-    let mut resolver = Resolver::new(db, module_id, &generic_params);
+    let mut resolver = Resolver::new(db, module_file_id, &generic_params);
 
     // Members.
     let mut members = OrderedHashMap::default();
     for member in struct_ast.members(syntax_db).elements(syntax_db) {
-        let id = db.intern_member(MemberLongId(module_id, member.stable_ptr()));
+        let id = db.intern_member(MemberLongId(module_file_id, member.stable_ptr()));
         let ty = resolve_type(
             db,
             &mut diagnostics,

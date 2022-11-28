@@ -86,8 +86,8 @@ fn generate_panicable_code(
             "panicable".into(),
             indoc::formatdoc!(
                 r#"
-                    func {function_name}({params}) -> {inner_ty_text} {{
-                        match super::{function_name}({args}) {{
+                    func {function_name}_panicable({params}) -> {inner_ty_text} {{
+                        match {function_name}({args}) {{
                             Option::Some (v) => {{
                                 v
                             }},
