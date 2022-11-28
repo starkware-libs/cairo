@@ -1,6 +1,7 @@
 use std::fmt;
 
 pub mod casts;
+pub mod collection_arith;
 pub mod extract_matches;
 pub mod logging;
 pub mod ordered_hash_map;
