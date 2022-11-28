@@ -3,18 +3,19 @@
 
 use std::sync::Arc;
 
+use num_bigint::BigInt;
+use test_case::test_case;
+
 use compiler::db::RootDatabase;
-use compiler::diagnostics::check_diagnostics;
+use compiler::diagnostics::{check_diagnostics, eprint_diagnostic};
 use defs::db::DefsGroup;
 use defs::ids::ModuleId;
 use filesystem::db::{AsFilesGroupMut, FilesGroup, FilesGroupEx};
 use filesystem::ids::{CrateId, CrateLongId, Directory};
-use num_bigint::BigInt;
 use plugins::derive::DerivePlugin;
 use plugins::panicable::PanicablePlugin;
 use sierra_generator::db::SierraGenGroup;
 use sierra_generator::replace_ids::replace_sierra_ids_in_program;
-use test_case::test_case;
 
 use crate::common::run_sierra_program;
 
@@ -30,7 +31,7 @@ fn setup(content: &str) -> (RootDatabase, CrateId) {
     let module_id = ModuleId::CrateRoot(crate_id);
     let file_id = db.module_main_file(module_id).unwrap();
     db.as_files_group_mut().override_file_content(file_id, Some(Arc::new(content.to_owned())));
-    assert!(!check_diagnostics(&mut db));
+    assert!(!check_diagnostics(&mut db, Some(&mut eprint_diagnostic)));
     (db, crate_id)
 }
 

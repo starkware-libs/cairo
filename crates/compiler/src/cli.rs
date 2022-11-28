@@ -1,14 +1,10 @@
 use std::fs;
-use std::path::Path;
-use std::sync::Arc;
+use std::path::PathBuf;
 
 use anyhow::Context;
 use clap::Parser;
-use compiler::db::RootDatabase;
-use compiler::diagnostics::check_diagnostics;
-use compiler::project::setup_project;
-use sierra_generator::db::SierraGenGroup;
-use sierra_generator::replace_ids::replace_sierra_ids_in_program;
+use compiler::diagnostics::eprint_diagnostic;
+use compiler::{compile, CompileArgs, CompileProjectConfig, CompileResult};
 use utils::logging::init_logging;
 
 /// Command line args parser.
@@ -20,7 +16,7 @@ struct Args {
     path: String,
     /// The output file name (default: stdout).
     output: Option<String>,
-    /// Replaces sierra ids with human readable ones.
+    /// Replaces sierra ids with human-readable ones.
     #[arg(short, long, default_value_t = false)]
     replace_ids: bool,
 }
@@ -31,26 +27,16 @@ fn main() -> anyhow::Result<()> {
 
     let args = Args::parse();
 
-    let mut db_val = RootDatabase::default();
-    let db = &mut db_val;
-
-    let main_crate_ids = setup_project(db, Path::new(&args.path))?;
-
-    if check_diagnostics(db) {
-        anyhow::bail!("failed to compile: {}", args.path);
-    }
-
-    let mut sierra_program = db
-        .get_sierra_program(main_crate_ids)
-        .with_context(|| "Compilation failed without any diagnostics.")?;
-
-    if args.replace_ids {
-        sierra_program = Arc::new(replace_sierra_ids_in_program(db, &sierra_program));
-    }
+    let CompileResult { sierra_program, .. } = compile(CompileArgs {
+        compile: CompileProjectConfig::LoadFromPath { path: PathBuf::from(&args.path) },
+        on_diagnostic: Some(&mut eprint_diagnostic),
+        replace_ids: args.replace_ids,
+    })?;
 
     match args.output {
-        Some(path) => fs::write(path, format!("{}", sierra_program))
-            .with_context(|| "Failed to write output.")?,
+        Some(path) => {
+            fs::write(path, format!("{}", sierra_program)).context("Failed to write output.")?
+        }
         None => println!("{}", sierra_program),
     }
 
