@@ -36,6 +36,10 @@ use crate::db::DefsGroup;
 // A trait for an id for a language element.
 pub trait LanguageElementId {
     fn module(&self, db: &dyn DefsGroup) -> ModuleId;
+    fn file_index(&self, db: &dyn DefsGroup) -> FileIndex;
+    fn module_file(&self, db: &dyn DefsGroup) -> ModuleFileId {
+        ModuleFileId(self.module(db), self.file_index(db))
+    }
     fn untyped_stable_ptr(&self, db: &(dyn DefsGroup + 'static)) -> SyntaxStablePtrId;
 }
 pub trait TopLevelLanguageElementId: LanguageElementId {
@@ -55,7 +59,7 @@ pub trait TopLevelLanguageElementId: LanguageElementId {
 macro_rules! define_language_element_id {
     ($short_id:ident, $long_id:ident, $ast_ty:ty, $lookup:ident $(,$name:ident)?) => {
         #[derive(Clone, PartialEq, Eq, Hash, Debug)]
-        pub struct $long_id(pub ModuleId, pub <$ast_ty as TypedSyntaxNode>::StablePtr);
+        pub struct $long_id(pub ModuleFileId, pub <$ast_ty as TypedSyntaxNode>::StablePtr);
         $(
             impl $long_id {
                 pub fn $name(&self, db: &dyn DefsGroup) -> SmolStr {
@@ -69,12 +73,12 @@ macro_rules! define_language_element_id {
             {
                 fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &T) -> std::fmt::Result {
                     let db: &(dyn DefsGroup + 'static) = db.upcast();
-                    let $long_id(module_id, _stable_ptr) = self;
+                    let $long_id(module_file_id, _stable_ptr) = self;
                     write!(
                         f,
                         "{}({}::{})",
                         stringify!($short_id),
-                        module_id.full_path(db),
+                        module_file_id.0.full_path(db),
                         self.name(db)
                     )
                 }
@@ -93,7 +97,10 @@ macro_rules! define_language_element_id {
         }
         impl LanguageElementId for $short_id {
             fn module(&self, db: &dyn DefsGroup) -> ModuleId {
-                db.$lookup(*self).0
+                db.$lookup(*self).0.0
+            }
+            fn file_index(&self, db: &dyn DefsGroup) -> FileIndex {
+                db.$lookup(*self).0.1
             }
             fn untyped_stable_ptr(&self, db: &(dyn DefsGroup + 'static)) -> SyntaxStablePtrId {
                 self.stable_ptr(db).untyped()
@@ -162,6 +169,13 @@ macro_rules! define_language_element_id_as_enum {
                 match self {
                     $(
                         $enum_name::$variant(id) => id.module(db),
+                    )*
+                }
+            }
+            fn file_index(&self, db: &dyn DefsGroup) -> FileIndex {
+                match self {
+                    $(
+                        $enum_name::$variant(id) => id.file_index(db),
                     )*
                 }
             }
@@ -234,6 +248,11 @@ impl DebugWithDb<dyn DefsGroup> for ModuleId {
         write!(f, "ModuleId({})", self.full_path(db))
     }
 }
+/// Index of file in module.
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+pub struct FileIndex(pub usize);
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+pub struct ModuleFileId(pub ModuleId, pub FileIndex);
 
 /// A virtual sub module is a module create by a macro plugin. All plugin generated code is placed
 /// in such submodules to avoid namespace pollution.
@@ -294,7 +313,7 @@ define_language_element_id!(
 );
 impl ImplFunctionId {
     pub fn impl_id(&self, db: &dyn DefsGroup) -> ImplId {
-        let ImplFunctionLongId(module_id, ptr) = db.lookup_intern_impl_function(*self);
+        let ImplFunctionLongId(module_file_id, ptr) = db.lookup_intern_impl_function(*self);
         // TODO(spapini): Use a parent function.
         let SyntaxStablePtr::Child{parent, ..} = db.lookup_intern_stable_ptr(ptr.untyped()) else {
             panic!()
@@ -306,7 +325,7 @@ impl ImplFunctionId {
             panic!()
         };
         let impl_ptr = ast::ItemImplPtr(parent);
-        db.intern_impl(ImplLongId(module_id, impl_ptr))
+        db.intern_impl(ImplLongId(module_file_id, impl_ptr))
     }
 }
 
@@ -336,7 +355,7 @@ define_language_element_id!(
 );
 impl TraitFunctionId {
     pub fn trait_id(&self, db: &dyn DefsGroup) -> TraitId {
-        let TraitFunctionLongId(module_id, ptr) = db.lookup_intern_trait_function(*self);
+        let TraitFunctionLongId(module_file_id, ptr) = db.lookup_intern_trait_function(*self);
         // Trait function ast lies a few levels bellow the trait ast.
         // Fetch the grand grand grand parent.
         // TODO(spapini): Use a parent function.
@@ -350,7 +369,7 @@ impl TraitFunctionId {
             panic!()
         };
         let trait_ptr = ast::ItemTraitPtr(parent);
-        db.intern_trait(TraitLongId(module_id, trait_ptr))
+        db.intern_trait(TraitLongId(module_file_id, trait_ptr))
     }
 }
 define_language_element_id!(ImplId, ImplLongId, ast::ItemImpl, lookup_intern_impl, name);
@@ -389,11 +408,11 @@ define_language_element_id!(
 impl DebugWithDb<dyn DefsGroup> for LocalVarLongId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &dyn DefsGroup) -> std::fmt::Result {
         let syntax_db = db.upcast();
-        let LocalVarLongId(module_id, ptr) = self;
-        let file_id = db.module_file(*module_id).ok_or(std::fmt::Error)?;
+        let LocalVarLongId(module_file_id, ptr) = self;
+        let file_id = db.module_file(*module_file_id).ok_or(std::fmt::Error)?;
         let root = db.file_syntax(file_id).ok_or(std::fmt::Error)?;
         let text = ast::TerminalIdentifier::from_ptr(syntax_db, &root, *ptr).text(syntax_db);
-        write!(f, "LocalVarId({}::{})", module_id.full_path(db), text)
+        write!(f, "LocalVarId({}::{})", module_file_id.0.full_path(db), text)
     }
 }
 

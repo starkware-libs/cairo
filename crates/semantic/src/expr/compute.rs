@@ -703,8 +703,9 @@ fn create_variable_pattern(
     ty: TypeId,
 ) -> Pattern {
     let syntax_db = ctx.db.upcast();
-    let var_id =
-        ctx.db.intern_local_var(LocalVarLongId(ctx.resolver.module_id, identifier.stable_ptr()));
+    let var_id = ctx
+        .db
+        .intern_local_var(LocalVarLongId(ctx.resolver.module_file_id, identifier.stable_ptr()));
 
     let is_mut = match compute_mutability(ctx.diagnostics, syntax_db, modifier_list) {
         Mutability::Immutable => false,

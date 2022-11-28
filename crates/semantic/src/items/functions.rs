@@ -269,7 +269,7 @@ fn ast_param_to_semantic(
         ast::ParamName::Name(name) => Some(name.text(syntax_db)),
     };
 
-    let id = db.intern_param(ParamLongId(resolver.module_id, ast_param.stable_ptr()));
+    let id = db.intern_param(ParamLongId(resolver.module_file_id, ast_param.stable_ptr()));
     let ty_syntax = ast_param.type_clause(syntax_db).ty(syntax_db);
     let ty = resolve_type(db, diagnostics, resolver, &ty_syntax);
 
