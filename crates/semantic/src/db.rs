@@ -194,6 +194,9 @@ pub trait SemanticGroup:
     /// Returns the resolution lookback of an impl.
     #[salsa::invoke(items::imp::impl_resolved_lookback)]
     fn impl_resolved_lookback(&self, impl_id: ImplId) -> Option<Arc<ResolvedLookback>>;
+    /// Returns the concrete trait that is implemented by the impl
+    #[salsa::invoke(items::imp::impl_trait)]
+    fn impl_trait(&self, impl_id: ImplId) -> Option<ConcreteTraitId>;
     /// Private query to compute data about an impl.
     #[salsa::invoke(items::imp::priv_impl_definition_data)]
     fn priv_impl_definition_data(&self, impl_id: ImplId) -> Option<items::imp::ImplDefinitionData>;

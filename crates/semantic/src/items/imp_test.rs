@@ -45,4 +45,6 @@ fn test_impl() {
         "Signature { params: [Parameter { id: ParamId(1), ty: TypeId(1), mutability: Immutable \
          }], return_type: TypeId(0), implicits: [], panicable: true }"
     );
+
+    assert_eq!(format!("{:?}", db.impl_trait(impl_id).unwrap()), "ConcreteTraitId(0)");
 }
