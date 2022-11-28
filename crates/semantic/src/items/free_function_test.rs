@@ -89,7 +89,7 @@ fn test_expr_lookup() {
 
     let attributes = db.free_function_declaration_attributes(free_function_id).unwrap();
     assert_eq!(
-        format!("{:?}", attributes),
+        format!("{:?}", attributes.debug(db)),
         "[Attribute { id: \"external\" }, Attribute { id: \"my_attr\" }]"
     );
 }
