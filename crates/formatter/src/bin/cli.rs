@@ -10,13 +10,14 @@ use parser::utils::{get_syntax_root_and_diagnostics_from_file, SimpleParserDatab
 use utils::logging::init_logging;
 
 /// Format a specific file and return whether it was already correctly formatted.
+/// Syntax errors counts as not formatted correctly.
 fn format_file(file_path: &str, args: &FormatterArgs, config: &FormatterConfig) -> bool {
     if !is_cairo_file(file_path) {
         eprintln_if_verbose(
             &format!("The file: {file_path}, is not a cairo file, nothing was done.").red(),
             args.verbose,
         );
-        return true;
+        return false;
     }
 
     let db_val = SimpleParserDatabase::default();
@@ -29,7 +30,7 @@ fn format_file(file_path: &str, args: &FormatterArgs, config: &FormatterConfig) 
             format!("A parsing error occurred in file: {file_path}. The file was not formatted.")
                 .red()
         );
-        return true;
+        return false;
     }
     let formatted_file = get_formatted_file(db, &syntax_root, config.clone());
 
