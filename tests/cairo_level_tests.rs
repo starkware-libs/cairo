@@ -2,10 +2,9 @@
 
 use std::path::PathBuf;
 
-use compiler::db::RootDatabase;
-use compiler::diagnostics::check_diagnostics;
-use compiler::project::setup_project;
 use num_bigint::BigInt;
+
+use compiler::{CompilerDatabase, Setup};
 use sierra_generator::db::SierraGenGroup;
 use sierra_generator::replace_ids::replace_sierra_ids_in_program;
 
@@ -18,11 +17,9 @@ fn cairo_level_tests() {
     let dir = env!("CARGO_MANIFEST_DIR");
     let mut path = PathBuf::from(dir);
     path.push("cairo_level");
-    let mut db = RootDatabase::default();
-    let main_crate_ids = setup_project(&mut db, path.as_path()).expect("Project setup failed.");
-    assert!(!check_diagnostics(&mut db));
-    let sierra_program = db.get_sierra_program(main_crate_ids).unwrap();
-    let sierra_func = replace_sierra_ids_in_program(&db, &sierra_program);
+    let mut compiler = CompilerDatabase::with_default_config();
+    let sierra_program = compiler.compile(Setup::Path(path)).expect("Compilation failed.");
+    let sierra_func = replace_sierra_ids_in_program(compiler.upcast(), &sierra_program);
     let results = run_sierra_program(&sierra_func, &[], 3, false);
     assert_eq!(
         results,
