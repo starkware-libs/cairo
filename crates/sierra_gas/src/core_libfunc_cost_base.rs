@@ -19,10 +19,15 @@ use sierra::extensions::strct::StructConcreteLibFunc;
 use sierra::program::Function;
 
 /// Represents different type of costs.
-#[derive(Copy, Clone, Hash, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub enum CostTokenType {
     /// A single Cairo step, or some cost which is equivalent to it.
     Step,
+}
+impl CostTokenType {
+    pub fn iter() -> std::slice::Iter<'static, Self> {
+        [CostTokenType::Step].iter()
+    }
 }
 
 /// The operation required for extracting a libfunc's cost.
