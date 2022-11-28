@@ -4,7 +4,7 @@
 use std::sync::Arc;
 
 use compiler::db::RootDatabase;
-use compiler::diagnostics::check_diagnostics;
+use compiler::diagnostics::{check_diagnostics, eprint_diagnostic};
 use defs::db::DefsGroup;
 use defs::ids::ModuleId;
 use filesystem::db::{AsFilesGroupMut, FilesGroup, FilesGroupEx};
@@ -30,7 +30,7 @@ fn setup(content: &str) -> (RootDatabase, CrateId) {
     let module_id = ModuleId::CrateRoot(crate_id);
     let file_id = db.module_main_file(module_id).unwrap();
     db.as_files_group_mut().override_file_content(file_id, Some(Arc::new(content.to_owned())));
-    assert!(!check_diagnostics(&mut db));
+    assert!(!check_diagnostics(&mut db, Some(&mut eprint_diagnostic)));
     (db, crate_id)
 }
 
