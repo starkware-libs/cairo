@@ -12,6 +12,7 @@ indexmap.workspace = true
 itertools.workspace = true
 salsa.workspace = true
 syntax = { path = "../syntax" }
+thiserror.workspace = true
 parser = { path = "../parser" }
 smol_str.workspace = true
 utils = { path = "../utils" }
