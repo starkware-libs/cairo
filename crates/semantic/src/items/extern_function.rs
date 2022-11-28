@@ -12,7 +12,7 @@ use crate::diagnostic::SemanticDiagnosticKind::PanicableExternFunction;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::Environment;
 use crate::resolve_path::{ResolvedLookback, Resolver};
-use crate::{semantic, SemanticDiagnostic, TypeId};
+use crate::{semantic, Mutability, Parameter, SemanticDiagnostic, TypeId};
 
 #[cfg(test)]
 #[path = "extern_function_test.rs"]
@@ -64,6 +64,21 @@ pub fn extern_function_declaration_implicits(
             .implicits
             .into_iter()
             .map(|param| param.ty)
+            .collect(),
+    )
+}
+
+/// Query implementation of [crate::db::SemanticGroup::extern_function_declaration_refs].
+pub fn extern_function_declaration_refs(
+    db: &dyn SemanticGroup,
+    extern_function_id: ExternFunctionId,
+) -> Option<Vec<Parameter>> {
+    Some(
+        db.priv_extern_function_declaration_data(extern_function_id)?
+            .signature
+            .params
+            .into_iter()
+            .filter(|param| param.mutability == Mutability::Reference)
             .collect(),
     )
 }

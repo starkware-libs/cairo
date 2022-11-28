@@ -7,6 +7,7 @@ use semantic::{ConcreteEnumId, ConcreteVariant};
 
 use super::{BlockEndInfo, BlockScope, LivingVar};
 use crate::lower::context::LoweringContext;
+use crate::lower::external::extern_facade_return_tys;
 use crate::objects::{
     Statement, StatementCall, StatementLiteral, StatementStructConstruct,
     StatementStructDestructure,
@@ -138,7 +139,27 @@ impl MatchExtern {
             .map(|var| scope.living_variables.use_var(ctx, var).var_id())
             .collect();
 
-        // TODO(lior): Check that each arm has the expected input.
+        for (variant, block_id) in &self.arms {
+            let variant_facade_types = extern_facade_return_tys(ctx, variant.ty);
+            let block_input_tys =
+                ctx.blocks[*block_id].inputs.iter().map(|var_id| ctx.variables[*var_id].ty);
+
+            // Compare the types of the inputs excluding implicits and args, to the types of the
+            // variant.
+            let extern_function_id = self
+                .function
+                .try_get_extern_function_id(ctx.db.upcast())
+                .expect("Expected an extern function");
+            let num_implicits =
+                ctx.db.extern_function_declaration_implicits(extern_function_id).unwrap().len();
+            let num_refs =
+                ctx.db.extern_function_declaration_refs(extern_function_id).unwrap().len();
+            let total_extra_inputs = num_implicits + num_refs;
+            itertools::assert_equal(
+                variant_facade_types.into_iter(),
+                block_input_tys.skip(total_extra_inputs),
+            );
+        }
 
         let (outputs, res) = process_end_info(ctx, scope, self.end_info);
         scope.statements.push(Statement::MatchExtern(StatementMatchExtern {
@@ -213,9 +234,9 @@ impl MatchEnum {
 
         // Check that each arm has a single input of the correct type.
         for (variant, block_id) in &self.arms {
-            let input_tys =
+            let block_input_tys =
                 ctx.blocks[*block_id].inputs.iter().map(|var_id| ctx.variables[*var_id].ty);
-            itertools::assert_equal([variant.ty].into_iter(), input_tys);
+            itertools::assert_equal([variant.ty].into_iter(), block_input_tys);
         }
 
         let (outputs, res) = process_end_info(ctx, scope, self.end_info);

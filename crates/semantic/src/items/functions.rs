@@ -1,9 +1,10 @@
 use db_utils::define_short_id;
 use debug::DebugWithDb;
-use defs::ids::{GenericFunctionId, GenericParamId, ParamLongId};
+use defs::ids::{ExternFunctionId, GenericFunctionId, GenericParamId, ParamLongId};
 use diagnostics_proc_macros::DebugWithDb;
 use smol_str::SmolStr;
 use syntax::node::{ast, Terminal, TypedSyntaxNode};
+use utils::try_extract_matches;
 
 use super::modifiers;
 use crate::corelib::unit_ty;
@@ -32,6 +33,18 @@ impl DebugWithDb<dyn SemanticGroup> for FunctionLongId {
 }
 
 define_short_id!(FunctionId, FunctionLongId, SemanticGroup, lookup_intern_function);
+impl FunctionId {
+    /// Returns the ExternFunctionId if this is an extern function. Otherwise returns none.
+    pub fn try_get_extern_function_id(
+        &self,
+        db: &(dyn SemanticGroup + 'static),
+    ) -> Option<ExternFunctionId> {
+        try_extract_matches!(
+            db.lookup_intern_function(*self).function.generic_function,
+            GenericFunctionId::Extern
+        )
+    }
+}
 
 // TODO(spapini): Refactor to an enum.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
