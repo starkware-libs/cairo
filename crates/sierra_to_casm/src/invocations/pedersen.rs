@@ -51,13 +51,7 @@ fn build_pedersen_hash(
                 b: DerefOrImmediate::Immediate(3.into()),
             })],
         },
-        ReferenceExpression {
-            cells: vec![
-                // TODO(lior): Add `offset` to DoubleDeref and set it to 2, so that the result will
-                //   be [[pedersen] + 2].
-                CellExpression::DoubleDeref(pedersen),
-            ],
-        },
+        ReferenceExpression { cells: vec![CellExpression::DoubleDeref(pedersen, 2)] },
     ]
     .into_iter()]
     .into_iter();

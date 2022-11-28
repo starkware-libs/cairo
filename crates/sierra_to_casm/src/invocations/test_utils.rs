@@ -57,7 +57,7 @@ macro_rules! ref_expr_extend {
     };
     ($cells:ident, [[$a:ident $($op:tt $offset:expr)?]] $(, $tok:tt)*) => {
         $cells.push(
-            $crate::references::CellExpression::DoubleDeref(casm::deref!([$a $($op $offset)?]))
+            $crate::references::CellExpression::DoubleDeref(casm::deref!([$a $($op $offset)?]), 0)
         );
         $crate::ref_expr_extend!($cells $(, $tok)*)
     };

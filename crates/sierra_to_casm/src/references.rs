@@ -60,7 +60,8 @@ impl ApplyApChange for BinOpExpression {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum CellExpression {
     Deref(CellRef),
-    DoubleDeref(CellRef),
+    /// Represents an expression of the form [[cell_ref] + offset].
+    DoubleDeref(CellRef, i16),
     IntoSingleCellRef(CellRef),
     Immediate(BigInt),
     Padding,
@@ -94,8 +95,8 @@ impl ApplyApChange for CellExpression {
             CellExpression::Deref(operand) => {
                 CellExpression::Deref(operand.apply_known_ap_change(ap_change)?)
             }
-            CellExpression::DoubleDeref(operand) => {
-                CellExpression::DoubleDeref(operand.apply_known_ap_change(ap_change)?)
+            CellExpression::DoubleDeref(operand, offset) => {
+                CellExpression::DoubleDeref(operand.apply_known_ap_change(ap_change)?, offset)
             }
             CellExpression::IntoSingleCellRef(operand) => {
                 CellExpression::IntoSingleCellRef(operand.apply_known_ap_change(ap_change)?)
@@ -110,7 +111,7 @@ impl ApplyApChange for CellExpression {
     fn can_apply_unknown(&self) -> bool {
         match self {
             CellExpression::Deref(operand)
-            | CellExpression::DoubleDeref(operand)
+            | CellExpression::DoubleDeref(operand, _)
             | CellExpression::IntoSingleCellRef(operand) => operand.can_apply_unknown(),
             CellExpression::Immediate(_) | CellExpression::Padding => true,
             CellExpression::BinOp(operand) => operand.can_apply_unknown(),
