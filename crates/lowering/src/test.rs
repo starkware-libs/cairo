@@ -14,6 +14,7 @@ utils::test_file_test!(
         "src/test_data/enums",
         "src/test_data/error_propagate",
         "src/test_data/extern",
+        "src/test_data/arm_pattern_destructure",
         "src/test_data/if",
         "src/test_data/match",
         "src/test_data/panic",
