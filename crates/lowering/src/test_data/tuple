@@ -20,7 +20,7 @@ foo
 //! > lowering_diagnostics
 
 //! > lowering_format
-blk0:
+blk0 (root):
 Inputs:
 Statements:
   (v0: core::felt) <- 1u

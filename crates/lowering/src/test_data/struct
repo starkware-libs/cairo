@@ -23,7 +23,7 @@ struct MyStruct {
 //! > lowering_diagnostics
 
 //! > lowering_format
-blk0:
+blk0 (root):
 Inputs: v0: core::felt
 Statements:
   (v1: ()) <- struct_construct()
@@ -62,7 +62,7 @@ struct MyStruct {
 //! > lowering_diagnostics
 
 //! > lowering_format
-blk0:
+blk0 (root):
 Inputs: v0: test_crate::MyStruct
 Statements:
   (v1: (), v2: core::felt, v3: (core::felt, core::felt)) <- struct_destructure(v0)
@@ -98,7 +98,7 @@ struct MyStruct {
 //! > lowering_diagnostics
 
 //! > lowering_format
-blk0:
+blk0 (root):
 Inputs: v0: test_crate::MyStruct
 Statements:
   (v1: (), v2: core::felt, v3: (core::felt, core::felt)) <- struct_destructure(v0)
