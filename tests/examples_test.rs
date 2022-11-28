@@ -80,6 +80,7 @@ fn checked_compile_to_sierra(name: &str) -> sierra::program::Program {
 #[test_case("fib_local")]
 #[test_case("enum_flow")]
 #[test_case("corelib_usage")]
+#[test_case("hash_chain")]
 fn cairo_to_sierra(name: &str) {
     compare_contents_or_fix(name, "sierra", checked_compile_to_sierra(name).to_string());
     assert_eq!(checked_compile_to_sierra(name).to_string(), get_expected_contents(name, "sierra"));
@@ -96,6 +97,7 @@ fn cairo_to_sierra(name: &str) {
 #[test_case("fib_local", false)]
 #[test_case("enum_flow", false)]
 #[test_case("corelib_usage", false)]
+#[test_case("hash_chain", false)]
 fn cairo_to_casm(name: &str, enable_gas_checks: bool) {
     let program = checked_compile_to_sierra(name);
     compare_contents_or_fix(
@@ -120,6 +122,7 @@ fn cairo_to_casm(name: &str, enable_gas_checks: bool) {
 #[test_case("fib_gas")]
 #[test_case("fib_local")]
 #[test_case("corelib_usage")]
+#[test_case("hash_chain")]
 fn lowering_test(name: &str) {
     setup(name);
 }
