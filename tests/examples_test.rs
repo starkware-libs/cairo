@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use compiler::db::RootDatabase;
-use compiler::diagnostics::check_diagnostics;
+use compiler::diagnostics::{check_diagnostics, eprint_diagnostic};
 use compiler::project::setup_project;
 use defs::db::DefsGroup;
 use filesystem::ids::CrateId;
@@ -31,7 +31,7 @@ fn setup(name: &str) -> (RootDatabase, Vec<CrateId>) {
     let mut db = RootDatabase::default();
     db.set_macro_plugins(vec![Arc::new(DerivePlugin {}), Arc::new(PanicablePlugin {})]);
     let main_crate_ids = setup_project(&mut db, path.as_path()).expect("Project setup failed.");
-    assert!(!check_diagnostics(&mut db));
+    assert!(!check_diagnostics(&mut db, Some(&mut eprint_diagnostic)));
     (db, main_crate_ids)
 }
 

@@ -1,7 +1,7 @@
 //! Compiles and runs a Cairo program.
 
 use std::collections::HashMap;
-use std::path::Path;
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use anyhow::{Context, Ok};
@@ -9,14 +9,13 @@ use casm::instructions::Instruction;
 use casm::{casm, casm_extend};
 use clap::Parser;
 use compiler::db::RootDatabase;
-use compiler::diagnostics::check_diagnostics;
-use compiler::project::setup_project;
+use compiler::diagnostics::eprint_diagnostic;
+use compiler::{compile, CompileArgs, CompileProjectConfig, CompileResult};
 use itertools::chain;
 use sierra::program::StatementIdx;
 use sierra_gas::calc_gas_info;
 use sierra_gas::gas_info::GasInfo;
 use sierra_generator::db::SierraGenGroup;
-use sierra_generator::replace_ids::replace_sierra_ids_in_program;
 use sierra_to_casm::metadata::Metadata;
 
 /// Command line args parser.
@@ -38,21 +37,14 @@ struct Args {
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
-    let mut db_val = RootDatabase::default();
-    let db = &mut db_val;
+    let CompileResult { mut db, sierra_program, .. } = compile(CompileArgs {
+        compile: CompileProjectConfig::LoadFromPath { path: PathBuf::from(&args.path) },
+        on_diagnostic: Some(&mut eprint_diagnostic),
+        replace_ids: true,
+    })?;
 
-    let main_crate_ids = setup_project(db, Path::new(&args.path))?;
+    let function_sizes = function_to_input_output_sizes(&sierra_program, &mut db);
 
-    if check_diagnostics(db) {
-        anyhow::bail!("failed to compile: {}", args.path);
-    }
-
-    let sierra_program = db
-        .get_sierra_program(main_crate_ids)
-        .with_context(|| "Compilation failed without any diagnostics.")?;
-    let function_sizes = function_to_input_output_sizes(&sierra_program, db);
-
-    let sierra_program = Arc::new(replace_sierra_ids_in_program(db, &sierra_program));
     let main_func =
         find_main(&sierra_program).with_context(|| "Main function not provided in module.")?;
     let metadata = create_metadata(&sierra_program, args.available_gas.is_some())?;

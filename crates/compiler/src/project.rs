@@ -6,7 +6,7 @@ use defs::db::DefsGroup;
 use defs::ids::ModuleId;
 use filesystem::db::{AsFilesGroupMut, FilesGroup, FilesGroupEx};
 use filesystem::ids::{CrateId, CrateLongId, Directory};
-use project::ProjectConfig;
+pub use project::*;
 
 use crate::db::RootDatabase;
 
@@ -63,17 +63,25 @@ pub fn setup_project(db: &mut RootDatabase, path: &Path) -> Result<Vec<CrateId>,
     if path.is_dir() {
         match ProjectConfig::from_directory(path) {
             Ok(config) => {
-                db.with_project_config(config.clone());
-                Ok(config
-                    .content
-                    .crate_roots
-                    .keys()
-                    .map(|crate_id| db.intern_crate(CrateLongId(crate_id.clone())))
-                    .collect())
+                let main_crate_ids = get_main_crate_ids_from_project(db, &config);
+                db.with_project_config(config);
+                Ok(main_crate_ids)
             }
             _ => Err(ProjectError::LoadProjectError),
         }
     } else {
         Ok(vec![setup_single_file_project(db, path)?])
     }
+}
+
+pub fn get_main_crate_ids_from_project(
+    db: &mut RootDatabase,
+    config: &ProjectConfig,
+) -> Vec<CrateId> {
+    config
+        .content
+        .crate_roots
+        .keys()
+        .map(|crate_id| db.intern_crate(CrateLongId(crate_id.clone())))
+        .collect()
 }
