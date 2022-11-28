@@ -1,9 +1,11 @@
+use std::path::PathBuf;
+
 use indoc::indoc;
 use num_bigint::BigUint;
 use pretty_assertions::assert_eq;
 
 use crate::abi;
-use crate::contract_class::{ContractClass, ContractEntryPoint, ContractEntryPoints};
+use crate::contract_class::{compile_path, ContractClass, ContractEntryPoint, ContractEntryPoints};
 
 #[test]
 fn test_serialization() {
@@ -47,4 +49,35 @@ fn test_serialization() {
     );
 
     assert_eq!(contract, serde_json::from_str(&serialized).unwrap())
+}
+
+/// Returns a path to example contract that matches `name`.
+pub fn get_example_file_path(name: &str) -> PathBuf {
+    // Pop the "/sierra_to_casm" suffix.
+    let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    path.extend(["examples", &format!("{name}.cairo")].into_iter());
+    path
+}
+
+#[test]
+fn test_compile_path() {
+    let path = get_example_file_path("test_contract");
+
+    let replace_ids = true;
+    let contract = compile_path(&path, replace_ids).unwrap();
+
+    assert_eq!(
+        serde_json::to_string_pretty(&contract).unwrap(),
+        indoc! {
+            r#"
+        {
+          "sierra_program": "\n\n\n",
+          "entry_points_by_type": {
+            "EXTERNAL": [],
+            "L1_HANDLER": [],
+            "CONSTRUCTOR": []
+          },
+          "abi": []
+        }"#}
+    );
 }
