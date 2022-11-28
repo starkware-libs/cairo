@@ -23,6 +23,9 @@ pub fn build(
     match libfunc {
         ArrayConcreteLibFunc::New(_) => build_array_new(builder),
         ArrayConcreteLibFunc::Append(_) => build_array_append(builder),
+        ArrayConcreteLibFunc::At(_) => {
+            Err(InvocationError::NotImplemented(builder.invocation.clone()))
+        }
     }
 }
 

@@ -44,11 +44,11 @@ pub fn lower_expr_if(
     log::trace!("Started lowering of an if expression.");
     match analyze_condition(ctx, expr.condition) {
         IfCondition::BoolExpr(_) => lower_expr_if_bool(ctx, scope, expr),
-        IfCondition::Eq(expr_a, expr_b) => lower_expr_if_eq_zero(ctx, scope, expr, expr_a, expr_b),
+        IfCondition::Eq(expr_a, expr_b) => lower_expr_if_eq(ctx, scope, expr, expr_a, expr_b),
     }
 }
 
-/// Lowers an expression of type [semantic::ExprIf].
+/// Lowers an expression of type [semantic::ExprIf], for the case of [IfCondition::BoolExpr].
 pub fn lower_expr_if_bool(
     ctx: &mut LoweringContext<'_>,
     scope: &mut BlockScope,
@@ -97,8 +97,8 @@ pub fn lower_expr_if_bool(
     lowered_expr_from_block_result(scope, block_result, finalized_merger)
 }
 
-/// Lowers an expression of type [semantic::ExprIf].
-pub fn lower_expr_if_eq_zero(
+/// Lowers an expression of type [semantic::ExprIf], for the case of [IfCondition::Eq].
+pub fn lower_expr_if_eq(
     ctx: &mut LoweringContext<'_>,
     scope: &mut BlockScope,
     expr: &semantic::ExprIf,
