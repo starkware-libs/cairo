@@ -48,7 +48,11 @@ impl TypeLongId {
         match self {
             TypeLongId::Concrete(concrete) => concrete.format(db),
             TypeLongId::Tuple(inner_types) => {
-                format!("({})", inner_types.iter().map(|ty| ty.format(db)).join(", "))
+                if inner_types.len() == 1 {
+                    format!("({},)", inner_types[0].format(db))
+                } else {
+                    format!("({})", inner_types.iter().map(|ty| ty.format(db)).join(", "))
+                }
             }
             TypeLongId::GenericParameter(generic_param) => {
                 generic_param.name(db.upcast()).to_string()
