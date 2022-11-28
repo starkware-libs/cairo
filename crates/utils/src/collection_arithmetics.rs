@@ -12,6 +12,7 @@ use crate::ordered_hash_map::OrderedHashMap;
 /// Functions may assume the following:
 /// * `x = x + zero() = zero() + x`
 pub trait HasZero {
+    /// Returns the zero value for the type.
     fn zero() -> Self;
 }
 impl HasZero for i64 {
