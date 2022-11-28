@@ -86,6 +86,9 @@ fn generate_panicable_code(
             .into_iter()
             .map(|param| param.name(db).as_syntax_node().get_text(db))
             .join(", ");
+        // Recursive call to the function after panic call is for making sure the block return type
+        // is matching the other arm. TODO(orizi): Fix semantic stage to handle this and
+        // remove this hack.
         return PluginResult {
             code: Some((
                 "panicable".into(),
@@ -100,6 +103,7 @@ fn generate_panicable_code(
                                 let data = array_new::<felt>();
                                 array_append::<felt>(data, {err_value});
                                 panic(data);
+                                {function_name}_panicable({args})
                             }},
                         }}
                     }}

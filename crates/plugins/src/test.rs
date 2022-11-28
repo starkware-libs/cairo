@@ -100,6 +100,7 @@ fn set_file_content(db: &mut DatabaseForTesting, path: &str, content: &str) {
                         let data = array_new::<felt>();
                         array_append::<felt>(data, 1);
                         panic(data);
+                        foo_panicable(a, b)
                     },
                 }
             }
@@ -114,6 +115,7 @@ fn set_file_content(db: &mut DatabaseForTesting, path: &str, content: &str) {
                         let data = array_new::<felt>();
                         array_append::<felt>(data, 2);
                         panic(data);
+                        bar_panicable()
                     },
                 }
             }
@@ -128,6 +130,7 @@ fn set_file_content(db: &mut DatabaseForTesting, path: &str, content: &str) {
                         let data = array_new::<felt>();
                         array_append::<felt>(data, 3);
                         panic(data);
+                        non_extern_panicable(_)
                     },
                 }
             }

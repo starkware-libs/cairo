@@ -71,6 +71,7 @@ fn checked_compile_to_sierra(name: &str) -> sierra::program::Program {
 #[test_case("fib_counter")]
 #[test_case("fib_struct")]
 #[test_case("fib_uint128")]
+#[test_case("fib_uint128_checked")]
 #[test_case("fib_gas")]
 #[test_case("fib_local")]
 #[test_case("enum_flow")]
@@ -89,6 +90,7 @@ fn cairo_to_sierra(name: &str) {
 #[test_case("fib_counter", false)]
 #[test_case("fib_struct", false)]
 #[test_case("fib_uint128", false)]
+#[test_case("fib_uint128_checked", false)]
 #[test_case("fib_gas", true)]
 #[test_case("fib_local", false)]
 #[test_case("enum_flow", false)]
@@ -116,6 +118,7 @@ fn cairo_to_casm(name: &str, enable_gas_checks: bool) {
 #[test_case("fib_counter")]
 #[test_case("fib_struct")]
 #[test_case("fib_uint128")]
+#[test_case("fib_uint128_checked")]
 #[test_case("fib_gas")]
 #[test_case("fib_local")]
 #[test_case("corelib_usage")]
@@ -125,49 +128,71 @@ fn lowering_test(name: &str) {
     setup(name);
 }
 
-#[test_case("fib", &[1, 1, 7].map(BigInt::from), &[21].map(BigInt::from); "fib")]
+#[test_case("fib", &[1, 1, 7].map(BigInt::from), Some(&[21].map(BigInt::from)); "fib")]
 #[test_case(
     "fib_counter",
     &[1, 1, 8].map(BigInt::from),
-    &[34, 8].map(BigInt::from);
+    Some(&[34, 8].map(BigInt::from));
     "fib_counter"
 )]
 #[test_case(
     "fib_struct",
     &[1, 1, 9].map(BigInt::from),
-    &[55, 9].map(BigInt::from);
+    Some(&[55, 9].map(BigInt::from));
     "fib_struct"
+)]
+#[test_case(
+    "fib_uint128_checked",
+    &[1, 1, 10].map(BigInt::from),
+    Some(&[/*ok*/0, /*fib*/89].map(BigInt::from));
+    "fib_uint128_checked"
+)]
+#[test_case(
+    "fib_uint128_checked",
+    &[1, 1, 200].map(BigInt::from),
+    Some(&[/*err*/1, /*padding*/0].map(BigInt::from));
+    "fib_uint128_checked_overflow"
 )]
 #[test_case(
     "fib_uint128",
     &[1, 1, 10].map(BigInt::from),
-    &[/*ok*/0, /*fib*/89].map(BigInt::from);
+    Some(&[/*ok*/0, /*fib*/89, /*padding*/0].map(BigInt::from));
     "fib_uint128"
 )]
 #[test_case(
     "fib_uint128",
     &[1, 1, 200].map(BigInt::from),
-    &[/*err*/1, /*padding*/0].map(BigInt::from);
+    None;
     "fib_uint128_overflow"
 )]
 #[test_case(
     "fib_local",
     &[6].map(BigInt::from),
-    &[13].map(BigInt::from);
+    Some(&[13].map(BigInt::from));
     "fib_local"
 )]
 #[test_case(
     "hash_chain",
     &[3].map(BigInt::from),
-    &[BigInt::parse_bytes(
-        b"2dca1ad81a6107a9ef68c69f791bcdbda1df257aab76bd43ded73d96ed6227d", 16).unwrap()] => ignore["reason"];
+    Some(&[
+        BigInt::parse_bytes(
+            b"2dca1ad81a6107a9ef68c69f791bcdbda1df257aab76bd43ded73d96ed6227d", 16).unwrap()])
+    => ignore["reason"];
     "hash_chain")]
 #[test_case(
     "testing",
     &[],
-    &[/*ok*/0, /*padding*/0, 0].map(BigInt::from);
+    Some(&[/*ok*/0, /*padding*/0, 0].map(BigInt::from));
     "testing")]
-fn run_function_test(name: &str, params: &[BigInt], expected: &[BigInt]) {
+fn run_function_test(name: &str, params: &[BigInt], expected_or_panic: Option<&[BigInt]>) {
     let sierra_func = checked_compile_to_sierra(name);
-    assert_eq!(run_sierra_program(&sierra_func, params, expected.len(), false), expected);
+    let result_count = match &expected_or_panic {
+        None => 3,
+        Some(expected) => expected.len(),
+    };
+    let results = run_sierra_program(&sierra_func, params, result_count, false);
+    match expected_or_panic {
+        None => assert_eq!(results[0], BigInt::from(1), "Expected getting panic result."),
+        Some(expected) => assert_eq!(results, expected),
+    }
 }
