@@ -5,7 +5,8 @@ mod test;
 use std::iter::Peekable;
 
 use defs::ids::{
-    GenericFunctionId, GenericParamId, GenericTypeId, ImplId, ModuleId, ModuleItemId, TraitId,
+    GenericFunctionId, GenericParamId, GenericTypeId, ImplId, ModuleFileId, ModuleId, ModuleItemId,
+    TraitId,
 };
 use diagnostics_proc_macros::DebugWithDb;
 use filesystem::ids::CrateLongId;
@@ -128,7 +129,7 @@ impl ResolvedLookback {
 pub struct Resolver<'db> {
     db: &'db dyn SemanticGroup,
     // Current module in which to resolve the path.
-    pub module_id: ModuleId,
+    pub module_file_id: ModuleFileId,
     // Generic parameters accessible to the resolver.
     generic_params: UnorderedHashMap<SmolStr, GenericParamId>,
     // Lookback map for resolved identifiers in path. Used in "Go to definition".
@@ -137,12 +138,12 @@ pub struct Resolver<'db> {
 impl<'db> Resolver<'db> {
     pub fn new(
         db: &'db dyn SemanticGroup,
-        module_id: ModuleId,
+        module_file_id: ModuleFileId,
         generic_params: &[GenericParamId],
     ) -> Self {
         Self {
             db,
-            module_id,
+            module_file_id,
             generic_params: generic_params
                 .iter()
                 .map(|generic_param| (generic_param.name(db.upcast()), *generic_param))
@@ -305,7 +306,7 @@ impl<'db> Resolver<'db> {
         segments: &mut Peekable<std::slice::Iter<'_, ast::PathSegment>>,
     ) -> Option<Option<ModuleId>> {
         let syntax_db = self.db.upcast();
-        let mut module_id = self.module_id;
+        let mut module_id = self.module_file_id.0;
         for segment in segments.peeking_take_while(|segment| match segment {
             ast::PathSegment::WithGenericArgs(_) => false,
             ast::PathSegment::Simple(simple) => simple.ident(syntax_db).text(syntax_db) == "super",
@@ -316,14 +317,14 @@ impl<'db> Resolver<'db> {
                     return Some(None);
                 }
                 ModuleId::Submodule(submodule_id) => {
-                    self.db.lookup_intern_submodule(submodule_id).0
+                    self.db.lookup_intern_submodule(submodule_id).0.0
                 }
                 ModuleId::VirtualSubmodule(submodule_id) => {
                     self.db.lookup_intern_virtual_submodule(submodule_id).parent
                 }
             }
         }
-        if module_id == self.module_id { None } else { Some(Some(module_id)) }
+        if module_id == self.module_file_id.0 { None } else { Some(Some(module_id)) }
     }
 
     /// Given the current resolved item, resolves the next segment.
@@ -539,8 +540,8 @@ impl<'db> Resolver<'db> {
         let ident = identifier.text(syntax_db);
 
         // If an item with this name is found inside the current module, use the current module.
-        if self.db.module_item_by_name(self.module_id, ident.clone()).is_some() {
-            return Some(self.module_id);
+        if self.db.module_item_by_name(self.module_file_id.0, ident.clone()).is_some() {
+            return Some(self.module_file_id.0);
         }
 
         // If the first segment is a name of a crate, use the crate's root module as the base

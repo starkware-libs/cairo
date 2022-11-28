@@ -85,7 +85,7 @@ pub fn setup_test_crate(db: &mut (dyn SemanticGroup + 'static), content: &str) -
     let crate_id = db.intern_crate(CrateLongId("test_crate".into()));
     let directory = Directory("src".into());
     db.set_crate_root(crate_id, Some(directory));
-    let file_id = db.module_file(ModuleId::CrateRoot(crate_id)).unwrap();
+    let file_id = db.module_main_file(ModuleId::CrateRoot(crate_id)).unwrap();
     db.as_files_group_mut().override_file_content(file_id, Some(Arc::new(content.to_string())));
     crate_id
 }
@@ -97,7 +97,7 @@ pub fn setup_test_module(
 ) -> WithStringDiagnostics<TestModule> {
     let crate_id = setup_test_crate(db, content);
     let module_id = ModuleId::CrateRoot(crate_id);
-    let file_id = db.module_file(module_id).unwrap();
+    let file_id = db.module_main_file(module_id).unwrap();
 
     let syntax_diagnostics = db.file_syntax_diagnostics(file_id).format(Upcast::upcast(db));
     let semantic_diagnostics = db.module_semantic_diagnostics(module_id).unwrap().format(db);

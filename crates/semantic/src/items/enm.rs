@@ -94,9 +94,9 @@ pub fn enum_resolved_lookback(
 pub fn priv_enum_semantic_data(db: &dyn SemanticGroup, enum_id: EnumId) -> Option<EnumData> {
     // TODO(spapini): When asts are rooted on items, don't query module_data directly. Use a
     // selector.
-    let module_id = enum_id.module(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_id);
-    let module_data = db.module_data(module_id)?;
+    let module_file_id = enum_id.module_file(db.upcast());
+    let mut diagnostics = SemanticDiagnostics::new(module_file_id);
+    let module_data = db.module_data(module_file_id.0)?;
     let enum_ast = module_data.enums.get(&enum_id)?;
     let syntax_db = db.upcast();
 
@@ -104,16 +104,16 @@ pub fn priv_enum_semantic_data(db: &dyn SemanticGroup, enum_id: EnumId) -> Optio
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
-        module_id,
+        module_file_id,
         &enum_ast.generic_params(db.upcast()),
     );
-    let mut resolver = Resolver::new(db, module_id, &generic_params);
+    let mut resolver = Resolver::new(db, module_file_id, &generic_params);
 
     // Variants.
     let mut variants = OrderedHashMap::default();
     let mut variant_semantic = OrderedHashMap::default();
     for (variant_idx, variant) in enumerate(enum_ast.variants(syntax_db).elements(syntax_db)) {
-        let id = db.intern_variant(VariantLongId(module_id, variant.stable_ptr()));
+        let id = db.intern_variant(VariantLongId(module_file_id, variant.stable_ptr()));
         let ty = resolve_type(
             db,
             &mut diagnostics,

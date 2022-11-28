@@ -54,7 +54,7 @@ pub fn setup_test_module<T: DefsGroup + AsFilesGroupMut + ?Sized>(
     let crate_id = db.intern_crate(CrateLongId("test_crate".into()));
     let directory = Directory("src".into());
     db.set_crate_root(crate_id, Some(directory));
-    let file = db.module_file(ModuleId::CrateRoot(crate_id)).unwrap();
+    let file = db.module_main_file(ModuleId::CrateRoot(crate_id)).unwrap();
     db.as_files_group_mut().override_file_content(file, Some(Arc::new(content.to_string())));
     let syntax_diagnostics = db.file_syntax_diagnostics(file).format(Upcast::upcast(db));
     assert_eq!(syntax_diagnostics, "");
@@ -101,11 +101,11 @@ fn test_module_file() {
     );
     let submodule_id = ModuleId::Submodule(item_id);
     assert_eq!(
-        db.lookup_intern_file(db.module_file(module_id).unwrap()),
+        db.lookup_intern_file(db.module_main_file(module_id).unwrap()),
         FileLongId::OnDisk("src/lib.cairo".into())
     );
     assert_eq!(
-        db.lookup_intern_file(db.module_file(submodule_id).unwrap()),
+        db.lookup_intern_file(db.module_main_file(submodule_id).unwrap()),
         FileLongId::OnDisk("src/mysubmodule.cairo".into())
     );
 }
@@ -142,10 +142,13 @@ fn test_submodules() {
         .expect("Expected to find foo() in subsubmodule.");
 
     // Test file mappings.
-    assert_eq!(db.file_modules(db.module_file(module_id).unwrap()).unwrap(), vec![module_id]);
-    assert_eq!(db.file_modules(db.module_file(submodule_id).unwrap()).unwrap(), vec![submodule_id]);
+    assert_eq!(db.file_modules(db.module_main_file(module_id).unwrap()).unwrap(), vec![module_id]);
     assert_eq!(
-        db.file_modules(db.module_file(subsubmodule_id).unwrap()).unwrap(),
+        db.file_modules(db.module_main_file(submodule_id).unwrap()).unwrap(),
+        vec![submodule_id]
+    );
+    assert_eq!(
+        db.file_modules(db.module_main_file(subsubmodule_id).unwrap()).unwrap(),
         vec![subsubmodule_id]
     );
 }
@@ -184,16 +187,14 @@ fn test_plugin() {
 
     // Find submodules.
     let module_id = ModuleId::CrateRoot(crate_id);
-    let submodule_id = db.module_submodules(module_id).unwrap().pop().unwrap();
-    let subsubmodule_id = db.module_submodules(submodule_id).unwrap().pop().unwrap();
 
     assert_eq!(
-        format!("{:?}", db.module_item_by_name(submodule_id, "foo".into()).debug(db)),
-        "Some(FreeFunctionId(test_crate::virt::foo))"
+        format!("{:?}", db.module_item_by_name(module_id, "foo".into()).debug(db)),
+        "Some(FreeFunctionId(test_crate::foo))"
     );
 
     assert_eq!(
-        format!("{:?}", db.module_item_by_name(subsubmodule_id, "B".into()).debug(db)),
-        "Some(ExternTypeId(test_crate::virt::virt2::B))"
+        format!("{:?}", db.module_item_by_name(module_id, "B".into()).debug(db)),
+        "Some(ExternTypeId(test_crate::B))"
     );
 }

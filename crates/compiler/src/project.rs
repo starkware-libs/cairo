@@ -49,7 +49,7 @@ fn setup_single_file_project(db: &mut RootDatabase, path: &Path) -> Result<Crate
         db.set_crate_root(crate_id, Some(Directory(path.parent().unwrap().to_path_buf())));
 
         let module_id = ModuleId::CrateRoot(crate_id);
-        let file_id = db.module_file(module_id).unwrap();
+        let file_id = db.module_main_file(module_id).unwrap();
         db.as_files_group_mut()
             .override_file_content(file_id, Some(Arc::new(format!("mod {};", file_stemp))));
         Ok(crate_id)

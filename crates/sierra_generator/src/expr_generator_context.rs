@@ -1,5 +1,5 @@
 use defs::diagnostic_utils::StableLocation;
-use defs::ids::{FreeFunctionId, LanguageElementId, ModuleId};
+use defs::ids::{FreeFunctionId, LanguageElementId, ModuleFileId};
 use diagnostics::DiagnosticsBuilder;
 use syntax::node::ids::SyntaxStablePtrId;
 use utils::unordered_hash_map::UnorderedHashMap;
@@ -14,7 +14,7 @@ pub struct ExprGeneratorContext<'a> {
     db: &'a dyn SierraGenGroup,
     lowered: &'a lowering::lower::Lowered,
     function_id: FreeFunctionId,
-    module_id: ModuleId,
+    module_file_id: ModuleFileId,
     diagnostics: &'a mut DiagnosticsBuilder<SierraGeneratorDiagnostic>,
     var_id_allocator: IdAllocator,
     label_id_allocator: IdAllocator,
@@ -32,7 +32,7 @@ impl<'a> ExprGeneratorContext<'a> {
             db,
             lowered,
             function_id,
-            module_id: function_id.module(db.upcast()),
+            module_file_id: function_id.module_file(db.upcast()),
             diagnostics,
             var_id_allocator: IdAllocator::default(),
             label_id_allocator: IdAllocator::default(),
@@ -88,7 +88,7 @@ impl<'a> ExprGeneratorContext<'a> {
         stable_ptr: SyntaxStablePtrId,
     ) {
         self.diagnostics.add(SierraGeneratorDiagnostic {
-            stable_location: StableLocation::new(self.module_id, stable_ptr),
+            stable_location: StableLocation::new(self.module_file_id, stable_ptr),
             kind,
         });
     }

@@ -95,16 +95,16 @@ pub fn priv_trait_semantic_data(db: &dyn SemanticGroup, trait_id: TraitId) -> Op
     // selector.
 
     let syntax_db = db.upcast();
-    let module_id = trait_id.module(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_id);
-    let module_data = db.module_data(module_id)?;
+    let module_file_id = trait_id.module_file(db.upcast());
+    let mut diagnostics = SemanticDiagnostics::new(module_file_id);
+    let module_data = db.module_data(module_file_id.0)?;
     let trait_ast = module_data.traits.get(&trait_id)?;
 
     // Generic params.
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
-        module_id,
+        module_file_id,
         &trait_ast.generic_params(syntax_db),
     );
 
@@ -115,7 +115,10 @@ pub fn priv_trait_semantic_data(db: &dyn SemanticGroup, trait_id: TraitId) -> Op
             match item {
                 ast::TraitItem::Function(func) => {
                     function_asts.insert(
-                        db.intern_trait_function(TraitFunctionLongId(module_id, func.stable_ptr())),
+                        db.intern_trait_function(TraitFunctionLongId(
+                            module_file_id,
+                            func.stable_ptr(),
+                        )),
                         func,
                     );
                 }
@@ -173,18 +176,18 @@ pub fn priv_trait_function_data(
     db: &dyn SemanticGroup,
     trait_function_id: TraitFunctionId,
 ) -> Option<TraitFunctionData> {
-    let module_id = trait_function_id.module(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_id);
+    let module_file_id = trait_function_id.module_file(db.upcast());
+    let mut diagnostics = SemanticDiagnostics::new(module_file_id);
     let trait_id = trait_function_id.trait_id(db.upcast());
     let data = db.priv_trait_semantic_data(trait_id)?;
     let function_syntax = &data.function_asts[trait_function_id];
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
-        module_id,
+        module_file_id,
         &function_syntax.generic_params(db.upcast()),
     );
-    let mut resolver = Resolver::new(db, module_id, &generic_params);
+    let mut resolver = Resolver::new(db, module_file_id, &generic_params);
     let syntax_db = db.upcast();
     let signature_syntax = function_syntax.signature(syntax_db);
     let mut environment = Environment::default();

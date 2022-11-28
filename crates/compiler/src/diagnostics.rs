@@ -15,7 +15,7 @@ pub fn check_diagnostics(db: &mut RootDatabase) -> bool {
     let mut found_diagnostics = false;
     for crate_id in db.crates() {
         for module_id in &*db.crate_modules(crate_id) {
-            if let Some(file_id) = db.module_file(*module_id) {
+            for file_id in db.module_files(*module_id).unwrap_or_default() {
                 if db.file_content(file_id).is_none() {
                     if let ModuleId::CrateRoot(_) = *module_id {
                         match db.lookup_intern_file(file_id) {
@@ -31,26 +31,26 @@ pub fn check_diagnostics(db: &mut RootDatabase) -> bool {
                         eprint!("{}", diag.format(db));
                     }
                 }
+            }
 
-                if let Some(diag) = db.module_semantic_diagnostics(*module_id) {
-                    if !diag.get_all().is_empty() {
-                        found_diagnostics = true;
-                        eprint!("{}", diag.format(db));
-                    }
-                }
-
-                if let Some(diag) = db.module_lowering_diagnostics(*module_id) {
-                    if !diag.get_all().is_empty() {
-                        found_diagnostics = true;
-                        eprint!("{}", diag.format(db));
-                    }
-                }
-
-                let diag = db.module_sierra_diagnostics(*module_id);
+            if let Some(diag) = db.module_semantic_diagnostics(*module_id) {
                 if !diag.get_all().is_empty() {
                     found_diagnostics = true;
                     eprint!("{}", diag.format(db));
                 }
+            }
+
+            if let Some(diag) = db.module_lowering_diagnostics(*module_id) {
+                if !diag.get_all().is_empty() {
+                    found_diagnostics = true;
+                    eprint!("{}", diag.format(db));
+                }
+            }
+
+            let diag = db.module_sierra_diagnostics(*module_id);
+            if !diag.get_all().is_empty() {
+                found_diagnostics = true;
+                eprint!("{}", diag.format(db));
             }
         }
     }

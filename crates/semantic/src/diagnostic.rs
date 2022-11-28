@@ -4,7 +4,7 @@ mod test;
 
 use defs::diagnostic_utils::StableLocation;
 use defs::ids::{
-    EnumId, GenericFunctionId, ImplFunctionId, ImplId, ModuleId, StructId,
+    EnumId, GenericFunctionId, ImplFunctionId, ImplId, ModuleFileId, StructId,
     TopLevelLanguageElementId, TraitId,
 };
 use diagnostics::{DiagnosticEntry, DiagnosticLocation, Diagnostics, DiagnosticsBuilder};
@@ -17,24 +17,24 @@ use crate::semantic;
 
 pub struct SemanticDiagnostics {
     pub diagnostics: DiagnosticsBuilder<SemanticDiagnostic>,
-    pub module_id: ModuleId,
+    pub module_file_id: ModuleFileId,
 }
 impl SemanticDiagnostics {
-    pub fn new(module_id: ModuleId) -> Self {
-        Self { module_id, diagnostics: DiagnosticsBuilder::default() }
+    pub fn new(module_file_id: ModuleFileId) -> Self {
+        Self { module_file_id, diagnostics: DiagnosticsBuilder::default() }
     }
     pub fn build(self) -> Diagnostics<SemanticDiagnostic> {
         self.diagnostics.build()
     }
     pub fn report<TNode: TypedSyntaxNode>(&mut self, node: &TNode, kind: SemanticDiagnosticKind) {
         self.diagnostics.add(SemanticDiagnostic {
-            stable_location: StableLocation::from_ast(self.module_id, node),
+            stable_location: StableLocation::from_ast(self.module_file_id, node),
             kind,
         });
     }
     pub fn report_by_ptr(&mut self, stable_ptr: SyntaxStablePtrId, kind: SemanticDiagnosticKind) {
         self.diagnostics.add(SemanticDiagnostic {
-            stable_location: StableLocation::new(self.module_id, stable_ptr),
+            stable_location: StableLocation::new(self.module_file_id, stable_ptr),
             kind,
         });
     }
