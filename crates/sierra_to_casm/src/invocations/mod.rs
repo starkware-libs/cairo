@@ -272,6 +272,7 @@ pub fn unwrap_range_check_based_binary_op_refs(
             try_unpack_deref(expr_a)?,
             try_unpack_deref(expr_b)?,
         )),
+        [_, _] => Err(InvocationError::InvalidReferenceExpressionForArgument),
         refs => Err(InvocationError::WrongNumberOfArguments { expected: 3, actual: refs.len() }),
     }
 }
