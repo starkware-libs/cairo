@@ -75,6 +75,11 @@ pub fn impl_resolved_lookback(
     Some(db.priv_impl_declaration_data(impl_id)?.resolved_lookback)
 }
 
+/// Query implementation of [crate::db::SemanticGroup::impl_trait].
+pub fn impl_trait(db: &dyn SemanticGroup, impl_id: ImplId) -> Option<ConcreteTraitId> {
+    db.priv_impl_declaration_data(impl_id)?.concrete_trait
+}
+
 /// Query implementation of [crate::db::SemanticGroup::priv_impl_declaration_data].
 pub fn priv_impl_declaration_data(
     db: &dyn SemanticGroup,
