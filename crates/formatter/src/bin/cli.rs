@@ -24,9 +24,6 @@ enum FormatResult {
     DiffFound,
 }
 
-#[derive(Debug)]
-struct UnparsableError;
-
 impl<'a> Input<'a> {
     pub fn read_content(&self) -> Result<String, std::io::Error> {
         let mut buffer = String::new();
