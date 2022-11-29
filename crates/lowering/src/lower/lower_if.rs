@@ -178,10 +178,10 @@ fn lower_optional_else_block(
             semantic::Expr::Block(block) => lower_block(ctx, scope, block, false),
             semantic::Expr::If(if_expr) => {
                 let lowered_if = lower_expr_if(ctx, scope, if_expr);
-                lowered_expr_to_block_scope_end(ctx, scope, lowered_if)
+                lowered_expr_to_block_scope_end(ctx, scope, lowered_if, false)
             }
             _ => unreachable!(),
         },
-        None => lowered_expr_to_block_scope_end(ctx, scope, Ok(LoweredExpr::Tuple(vec![]))),
+        None => lowered_expr_to_block_scope_end(ctx, scope, Ok(LoweredExpr::Tuple(vec![])), false),
     }
 }

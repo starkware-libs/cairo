@@ -83,18 +83,18 @@ fn cairo_to_sierra(name: &str) {
 }
 
 /// Tests lowering from Cairo to casm.
-#[test_case("fib", false)]
-#[test_case("fib_box", false)]
-#[test_case("fib_array", false)]
-#[test_case("fib_counter", false)]
-#[test_case("fib_struct", false)]
-#[test_case("fib_uint128", false)]
-#[test_case("fib_gas", true)]
-#[test_case("fib_local", false)]
-#[test_case("enum_flow", false)]
-#[test_case("corelib_usage", false)]
-#[test_case("hash_chain", false)]
-#[test_case("testing", false => ignore["Pending on solving unit lowering bug."])]
+// #[test_case("fib", false)]
+// #[test_case("fib_box", false)]
+// #[test_case("fib_array", false)]
+// #[test_case("fib_counter", false)]
+// #[test_case("fib_struct", false)]
+// #[test_case("fib_uint128", false)]
+// #[test_case("fib_gas", true)]
+// #[test_case("fib_local", false)]
+// #[test_case("enum_flow", false)]
+// #[test_case("corelib_usage", false)]
+// #[test_case("hash_chain", false)]
+#[test_case("testing", false)]
 fn cairo_to_casm(name: &str, enable_gas_checks: bool) {
     let program = checked_compile_to_sierra(name);
     compare_contents_or_fix(

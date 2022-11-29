@@ -118,9 +118,10 @@ Statements:
     MyEnum::d => blk8,
     MyEnum::e => blk9,
   }
+  (v9: ()) <- struct_construct()
 Drops:
 End:
-  Callsite()
+  Callsite(v9)
 
 //! > ==========================================================================
 
@@ -245,9 +246,10 @@ Statements:
     (v6) => blk8,
     (v8) => blk9,
   }
+  (v9: ()) <- struct_construct()
 Drops:
 End:
-  Callsite()
+  Callsite(v9)
 
 //! > ==========================================================================
 
@@ -424,9 +426,10 @@ Statements:
     MyEnum::d => blk13,
     MyEnum::e => blk14,
   }
+  (v25: ()) <- struct_construct()
 Drops:
 End:
-  Callsite()
+  Callsite(v25)
 
 //! > ==========================================================================
 
@@ -551,9 +554,10 @@ Statements:
     (v14, v15, v16) => blk8,
     (v18, v19, v20) => blk9,
   }
+  (v23: ()) <- struct_construct()
 Drops: v1, v22
 End:
-  Callsite(v21)
+  Callsite(v21, v23)
 
 //! > ==========================================================================
 
@@ -730,6 +734,7 @@ Statements:
     MyEnum::d => blk13,
     MyEnum::e => blk14,
   }
+  (v39: ()) <- struct_construct()
 Drops: v1, v30
 End:
-  Callsite(v29)
+  Callsite(v29, v39)

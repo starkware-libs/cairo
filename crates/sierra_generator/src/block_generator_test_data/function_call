@@ -33,6 +33,7 @@ function_call<user@test_crate::bar>([5], [6], [7]) -> ([3], [4])
 felt_add([4], [4]) -> ([8])
 PushValues([3]: MyStruct, [4]: felt, [8]: felt) -> ([11], [12], [13])
 function_call<user@test_crate::bar>([11], [12], [13]) -> ([9], [10])
+struct_construct<Unit>() -> ([14])
 
 //! > ==========================================================================
 

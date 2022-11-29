@@ -162,8 +162,8 @@ fn lower_block(
 
     // Determine correct block end.
     match expr_block.tail {
-        Some(tail_expr) => lower_tail_expr(ctx, scope, tail_expr, root),
-        None => Some(BlockScopeEnd::Callsite(None)),
+        None if !root => Some(BlockScopeEnd::Callsite(None)),
+        _ => lower_tail_expr(ctx, scope, expr_block.tail, root),
     }
 }
 
@@ -172,15 +172,19 @@ fn lower_block(
 pub fn lower_tail_expr(
     ctx: &mut LoweringContext<'_>,
     scope: &mut BlockScope,
-    expr: semantic::ExprId,
+    expr: Option<semantic::ExprId>,
     root: bool,
 ) -> Option<BlockScopeEnd> {
     log::trace!("Started lowering of a tail expression.");
-    let mut lowered_expr = lower_expr(ctx, scope, expr);
+    let mut lowered_expr = if let Some(expr) = expr {
+        lower_expr(ctx, scope, expr)
+    } else {
+        Ok(LoweredExpr::Tuple(vec![]))
+    };
     if root {
         lowered_expr = lowered_expr.map(|expr| maybe_wrap_with_panic(ctx, expr, scope));
     }
-    lowered_expr_to_block_scope_end(ctx, scope, lowered_expr)
+    lowered_expr_to_block_scope_end(ctx, scope, lowered_expr, root)
 }
 
 /// Converts [Result<LoweredExpr, LoweringFlowError>] into `BlockScopeEnd`.
@@ -188,9 +192,10 @@ pub fn lowered_expr_to_block_scope_end(
     ctx: &mut LoweringContext<'_>,
     scope: &mut BlockScope,
     lowered_expr: Result<LoweredExpr, LoweringFlowError>,
+    root: bool,
 ) -> Option<BlockScopeEnd> {
     Some(match lowered_expr {
-        Ok(LoweredExpr::Tuple(tys)) if tys.is_empty() => BlockScopeEnd::Callsite(None),
+        Ok(LoweredExpr::Tuple(tys)) if !root && tys.is_empty() => BlockScopeEnd::Callsite(None),
         Ok(lowered_expr) => BlockScopeEnd::Callsite(Some(lowered_expr.var(ctx, scope))),
         Err(LoweringFlowError::Unreachable) => BlockScopeEnd::Unreachable,
         Err(LoweringFlowError::Failed) => {
@@ -604,7 +609,7 @@ fn lower_expr_match(
                         );
 
                         // Lower the arm expression.
-                        lower_tail_expr(ctx, subscope, arm.expression, false)
+                        lower_tail_expr(ctx, subscope, Some(arm.expression), false)
                     })
                 });
             block_opts.collect::<Option<Vec<_>>>().ok_or(LoweringFlowError::Failed)
@@ -672,7 +677,7 @@ fn lower_optimized_extern_match(
                         );
 
                         // Lower the arm expression.
-                        lower_tail_expr(ctx, subscope, arm.expression, false)
+                        lower_tail_expr(ctx, subscope, Some(arm.expression), false)
                     })
                 });
             block_opts.collect::<Option<Vec<_>>>().ok_or(LoweringFlowError::Failed)
@@ -734,12 +739,12 @@ fn lower_expr_match_felt(
     // Lower both blocks.
     let (res, mut finalized_merger) = BlockFlowMerger::with(ctx, scope, &[], |ctx, merger| {
         let block0_end = merger.run_in_subscope(ctx, vec![], |ctx, subscope, _| {
-            lower_tail_expr(ctx, subscope, *block0, false)
+            lower_tail_expr(ctx, subscope, Some(*block0), false)
         });
         let non_zero_type = core_nonzero_ty(semantic_db, core_felt_ty(semantic_db));
         let block_otherwise_end =
             merger.run_in_subscope(ctx, vec![non_zero_type], |ctx, subscope, _| {
-                lower_tail_expr(ctx, subscope, *block_otherwise, false)
+                lower_tail_expr(ctx, subscope, Some(*block_otherwise), false)
             });
         Some((block0_end, block_otherwise_end))
     });

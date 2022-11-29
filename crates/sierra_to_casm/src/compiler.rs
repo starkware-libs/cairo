@@ -120,6 +120,7 @@ pub fn compile(
     let mut program_offset: usize = 0;
 
     for (statement_id, statement) in program.statements.iter().enumerate() {
+        println!("Statement: {statement_id}:{statement}");
         let statement_idx = StatementIdx(statement_id);
         statement_offsets.push(program_offset);
 
