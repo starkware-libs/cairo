@@ -49,7 +49,7 @@ macro_rules! add_instruction {
 fn get_store_instructions(
     builder: &CompiledInvocationBuilder<'_>,
     src_type: &ConcreteTypeId,
-    mut dst: CellRef,
+    dst: CellRef,
     src_expr: &ReferenceExpression,
 ) -> Result<Vec<Instruction>, InvocationError> {
     if builder.program_info.type_sizes.get(src_type).is_none() {
@@ -61,23 +61,7 @@ fn get_store_instructions(
         Register::AP => true,
         Register::FP => false,
     };
-    let mut sequential_padding = 0;
     for cell_expr_orig in &src_expr.cells {
-        // Padding is separately handled as it doesn't always generate an instruction.
-        if *cell_expr_orig == CellExpression::Padding {
-            sequential_padding += 1;
-            continue;
-        }
-        if sequential_padding > 0 {
-            match dst.register {
-                Register::AP => add_instruction!(ctx, ap += sequential_padding),
-                Register::FP => {
-                    dst.offset += sequential_padding;
-                }
-            }
-            ap_change += sequential_padding;
-            sequential_padding = 0;
-        }
         let cell_expr =
             cell_expr_orig.clone().apply_ap_change(ApChange::Known(ap_change as usize)).unwrap();
         match cell_expr {
@@ -99,15 +83,11 @@ fn get_store_instructions(
                 // dst = a / b => a = dst * b
                 FeltOperator::Div => add_instruction!(ctx, a = dst * b),
             },
-            CellExpression::Padding => unreachable!("Padding arm is handled separately"),
         }
         if inc_ap {
             ap_change += 1;
             ctx.instructions.last_mut().unwrap().inc_ap = true;
         }
-    }
-    if sequential_padding > 0 && dst.register == Register::AP {
-        add_instruction!(ctx, ap += (sequential_padding as i128));
     }
     Ok(ctx.instructions)
 }

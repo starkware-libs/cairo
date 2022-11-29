@@ -125,49 +125,49 @@ fn lowering_test(name: &str) {
     setup(name);
 }
 
-#[test_case("fib", &[1, 1, 7].map(BigInt::from), &[21].map(BigInt::from).map(Some); "fib")]
+#[test_case("fib", &[1, 1, 7].map(BigInt::from), &[21].map(BigInt::from); "fib")]
 #[test_case(
     "fib_counter",
     &[1, 1, 8].map(BigInt::from),
-    &[34, 8].map(BigInt::from).map(Some);
+    &[34, 8].map(BigInt::from);
     "fib_counter"
 )]
 #[test_case(
     "fib_struct",
     &[1, 1, 9].map(BigInt::from),
-    &[55, 9].map(BigInt::from).map(Some);
+    &[55, 9].map(BigInt::from);
     "fib_struct"
 )]
 #[test_case(
     "fib_uint128",
     &[1, 1, 10].map(BigInt::from),
-    &[0, 89].map(BigInt::from).map(Some);
+    &[/*ok*/0, /*fib*/89].map(BigInt::from);
     "fib_uint128"
 )]
 #[test_case(
     "fib_uint128",
     &[1, 1, 200].map(BigInt::from),
-    &[Some(BigInt::from(1)), None];
+    &[/*err*/1, /*padding*/0].map(BigInt::from);
     "fib_uint128_overflow"
 )]
 #[test_case(
     "fib_local",
     &[6].map(BigInt::from),
-    &[Some(BigInt::from(13))];
+    &[13].map(BigInt::from);
     "fib_local"
 )]
 #[test_case(
     "hash_chain",
     &[3].map(BigInt::from),
     &[BigInt::parse_bytes(
-        b"2dca1ad81a6107a9ef68c69f791bcdbda1df257aab76bd43ded73d96ed6227d", 16)] => ignore["reason"];
+        b"2dca1ad81a6107a9ef68c69f791bcdbda1df257aab76bd43ded73d96ed6227d", 16).unwrap()] => ignore["reason"];
     "hash_chain")]
 #[test_case(
     "testing",
     &[],
-    &[Some(BigInt::from(0)), None, None];
+    &[/*ok*/0, /*padding*/0, 0].map(BigInt::from);
     "testing")]
-fn run_function_test(name: &str, params: &[BigInt], expected: &[Option<BigInt>]) {
+fn run_function_test(name: &str, params: &[BigInt], expected: &[BigInt]) {
     let sierra_func = checked_compile_to_sierra(name);
     assert_eq!(run_sierra_program(&sierra_func, params, expected.len(), false), expected);
 }
