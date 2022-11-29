@@ -31,7 +31,7 @@ Statements:
   (v3: core::felt, v2: core::felt) <- test_crate::f(v0, v1)
   (v5: core::felt, v4: core::felt) <- test_crate::g(v3, v1)
   (v8: core::felt, v6: core::felt, v7: core::felt) <- test_crate::h(v5, v1)
-  (v10: core::felt, v9: (core::felt)) <- test_crate::i(v8, v1)
+  (v10: core::felt, v9: (core::felt,)) <- test_crate::i(v8, v1)
 Drops: v0, v1, v2, v3, v4, v5, v6, v7, v8, v9
 End:
   Callsite(v10)
@@ -80,7 +80,7 @@ End:
 blk1:
 Inputs: v5: core::felt, v6: core::felt
 Statements:
-  (v7: (core::felt)) <- struct_construct(v6)
+  (v7: (core::felt,)) <- struct_construct(v6)
   (v8: test_crate::MyEnum) <- MyEnum::B(v7)
 Drops: v7, v6
 End:
@@ -103,7 +103,7 @@ End:
   Callsite()
 
 blk4:
-Inputs: v17: (core::felt)
+Inputs: v17: (core::felt,)
 Statements:
 Drops: v17
 End:
@@ -242,7 +242,7 @@ End:
 blk1:
 Inputs: v7: core::RangeCheck, v8: core::felt, v9: core::felt
 Statements:
-  (v10: (core::felt)) <- struct_construct(v9)
+  (v10: (core::felt,)) <- struct_construct(v9)
   (v11: test_crate::MyEnum) <- MyEnum::B(v10)
 Drops: v10, v9
 End:
@@ -265,7 +265,7 @@ End:
   Callsite()
 
 blk4:
-Inputs: v22: (core::felt)
+Inputs: v22: (core::felt,)
 Statements:
 Drops: v22
 End:
