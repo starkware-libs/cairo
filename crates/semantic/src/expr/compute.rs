@@ -25,8 +25,8 @@ use super::pattern::{
     Pattern, PatternEnumVariant, PatternLiteral, PatternOtherwise, PatternTuple, PatternVariable,
 };
 use crate::corelib::{
-    core_binary_operator, core_felt_ty, false_literal_expr, true_literal_expr, unit_ty,
-    unwrap_error_propagation_type,
+    core_binary_operator, core_felt_ty, core_unary_operator, false_literal_expr, true_literal_expr,
+    unit_ty, unwrap_error_propagation_type,
 };
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
@@ -172,10 +172,7 @@ pub fn maybe_compute_expr_semantic(
         ast::Expr::Parenthesized(paren_syntax) => {
             maybe_compute_expr_semantic(ctx, &paren_syntax.expr(syntax_db))
         }
-        ast::Expr::Unary(_) => {
-            ctx.diagnostics.report(syntax, Unsupported);
-            None
-        }
+        ast::Expr::Unary(syntax) => compute_expr_unary_semantic(ctx, syntax),
         ast::Expr::Binary(binary_op_syntax) => compute_expr_binary_semantic(ctx, binary_op_syntax),
         ast::Expr::Tuple(tuple_syntax) => compute_expr_tuple_semantic(ctx, tuple_syntax),
         ast::Expr::FunctionCall(call_syntax) => {
@@ -191,6 +188,24 @@ pub fn maybe_compute_expr_semantic(
             None
         }
     }
+}
+fn compute_expr_unary_semantic(
+    ctx: &mut ComputationContext<'_>,
+    syntax: &ast::ExprUnary,
+) -> Option<Expr> {
+    let syntax_db = ctx.db.upcast();
+
+    let unary_op = syntax.op(syntax_db);
+    let expr = compute_expr_semantic(ctx, &syntax.expr(syntax_db));
+
+    let function = match core_unary_operator(ctx.db, &unary_op, expr.ty()) {
+        Err(err_kind) => {
+            ctx.diagnostics.report(&unary_op, err_kind);
+            return None;
+        }
+        Ok(function) => function,
+    };
+    expr_function_call(ctx, function, vec![expr], syntax.stable_ptr().into())
 }
 
 fn compute_expr_binary_semantic(
