@@ -117,6 +117,7 @@ fn build_uint128_op(
         IntOperator::Mul
         | IntOperator::Div
         | IntOperator::Mod
+        | IntOperator::DivMod
         | IntOperator::WrappingAdd
         | IntOperator::WrappingSub
         | IntOperator::WrappingMul => {
