@@ -1,15 +1,11 @@
 use std::fs;
 use std::path::PathBuf;
-use std::sync::Arc;
 
 use compiler::db::RootDatabase;
 use compiler::diagnostics::check_diagnostics;
 use compiler::project::setup_project;
-use defs::db::DefsGroup;
 use filesystem::ids::CrateId;
 use num_bigint::BigInt;
-use plugins::derive::DerivePlugin;
-use plugins::panicable::PanicablePlugin;
 use pretty_assertions::assert_eq;
 use sierra_generator::db::SierraGenGroup;
 use sierra_generator::replace_ids::replace_sierra_ids_in_program;
@@ -29,7 +25,6 @@ fn setup(name: &str) -> (RootDatabase, Vec<CrateId>) {
     path.push(format!("{name}.cairo"));
 
     let mut db = RootDatabase::default();
-    db.set_macro_plugins(vec![Arc::new(DerivePlugin {}), Arc::new(PanicablePlugin {})]);
     let main_crate_ids = setup_project(&mut db, path.as_path()).expect("Project setup failed.");
     assert!(!check_diagnostics(&mut db));
     (db, main_crate_ids)

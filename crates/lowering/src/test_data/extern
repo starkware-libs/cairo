@@ -25,7 +25,7 @@ extern func i(ref a: felt, b: felt) -> ((felt,),) nopanic;
 //! > lowering_diagnostics
 
 //! > lowering_format
-blk0:
+blk0 (root):
 Inputs: v0: core::felt, v1: core::felt
 Statements:
   (v3: core::felt, v2: core::felt) <- test_crate::f(v0, v1)
@@ -116,7 +116,7 @@ Drops: v18
 End:
   Callsite()
 
-blk6:
+blk6 (root):
 Inputs: v0: core::felt, v1: core::felt
 Statements:
   (v15: core::felt, v14: test_crate::MyEnum) <- match test_crate::f(v0, v1) {
@@ -186,7 +186,7 @@ Drops: v8
 End:
   Callsite(v6, v7)
 
-blk3:
+blk3 (root):
 Inputs: v0: core::felt, v1: core::felt
 Statements:
   (v10: core::felt, v9: core::felt) <- match test_crate::f(v0, v1) {
@@ -278,7 +278,7 @@ Drops: v23
 End:
   Callsite()
 
-blk6:
+blk6 (root):
 Inputs: v0: core::RangeCheck, v1: core::felt, v2: core::felt
 Statements:
   (v19: core::RangeCheck, v20: core::felt, v18: test_crate::MyEnum) <- match test_crate::f(v0, v1, v2) {
@@ -348,7 +348,7 @@ Drops: v12
 End:
   Callsite(v9, v10, v11)
 
-blk3:
+blk3 (root):
 Inputs: v0: core::RangeCheck, v1: core::felt, v2: core::felt
 Statements:
   (v14: core::RangeCheck, v15: core::felt, v13: core::felt) <- match test_crate::f(v0, v1, v2) {

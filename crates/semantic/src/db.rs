@@ -5,8 +5,8 @@ use defs::db::DefsGroup;
 use defs::diagnostic_utils::StableLocation;
 use defs::ids::{
     EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericFunctionId, GenericParamId,
-    GenericTypeId, ImplFunctionId, ImplId, LookupItemId, ModuleId, ModuleItemId, StructId,
-    TraitFunctionId, TraitId, UseId, VariantId,
+    GenericTypeId, ImplFunctionId, ImplId, LanguageElementId, LookupItemId, ModuleId, ModuleItemId,
+    StructId, TraitFunctionId, TraitId, UseId, VariantId,
 };
 use diagnostics::{Diagnostics, DiagnosticsBuilder};
 use filesystem::db::{AsFilesGroupMut, FilesGroup};
@@ -195,6 +195,9 @@ pub trait SemanticGroup:
     /// Returns the resolution lookback of an impl.
     #[salsa::invoke(items::imp::impl_resolved_lookback)]
     fn impl_resolved_lookback(&self, impl_id: ImplId) -> Option<Arc<ResolvedLookback>>;
+    /// Returns the concrete trait that is implemented by the impl.
+    #[salsa::invoke(items::imp::impl_trait)]
+    fn impl_trait(&self, impl_id: ImplId) -> Option<ConcreteTraitId>;
     /// Private query to compute data about an impl.
     #[salsa::invoke(items::imp::priv_impl_definition_data)]
     fn priv_impl_definition_data(&self, impl_id: ImplId) -> Option<items::imp::ImplDefinitionData>;
@@ -534,12 +537,12 @@ fn module_semantic_diagnostics(
                 diagnostics.extend(db.impl_semantic_definition_diagnostics(*impl_id));
             }
             ModuleItemId::Submodule(id) => {
-                if let Some(file_id) = db.module_file(ModuleId::Submodule(*id)) {
+                if let Some(file_id) = db.module_main_file(ModuleId::Submodule(*id)) {
                     if db.file_content(file_id).is_none() {
                         // Note that the error location is in the parent module, not the submodule.
                         diagnostics.add(SemanticDiagnostic {
                             stable_location: StableLocation::new(
-                                module_id,
+                                id.module_file(db.upcast()),
                                 id.stable_ptr(db.upcast()).untyped(),
                             ),
                             kind: SemanticDiagnosticKind::FileNotFound,

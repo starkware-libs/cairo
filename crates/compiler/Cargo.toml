@@ -16,6 +16,7 @@ sierra = { path = "../sierra" }
 sierra_generator = { path = "../sierra_generator" }
 syntax = { path = "../syntax" }
 parser = { path = "../parser" }
+plugins = { path = "../plugins" }
 project = { path = "../project" }
 salsa.workspace = true
 thiserror.workspace = true

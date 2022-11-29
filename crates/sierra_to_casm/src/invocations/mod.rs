@@ -30,6 +30,7 @@ mod function_call;
 mod gas;
 mod mem;
 mod misc;
+mod pedersen;
 mod strct;
 mod uint128;
 
@@ -238,6 +239,7 @@ pub fn compile_invocation(
         CoreConcreteLibFunc::Enum(libfunc) => enm::build(libfunc, builder),
         CoreConcreteLibFunc::Struct(libfunc) => strct::build(libfunc, builder),
         CoreConcreteLibFunc::DictFeltTo(libfunc) => dict_felt_to::build(libfunc, builder),
+        CoreConcreteLibFunc::Pedersen(libfunc) => pedersen::build(libfunc, builder),
     }
 }
 

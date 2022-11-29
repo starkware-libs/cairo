@@ -43,14 +43,14 @@ pub fn priv_extern_type_declaration_data(
     db: &dyn SemanticGroup,
     extern_type_id: ExternTypeId,
 ) -> Option<ExternTypeDeclarationData> {
-    let module_id = extern_type_id.module(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_id);
-    let module_data = db.module_data(module_id)?;
+    let module_file_id = extern_type_id.module_file(db.upcast());
+    let mut diagnostics = SemanticDiagnostics::new(module_file_id);
+    let module_data = db.module_data(module_file_id.0)?;
     let type_syntax = module_data.extern_types.get(&extern_type_id)?;
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
-        module_id,
+        module_file_id,
         &type_syntax.generic_params(db.upcast()),
     );
     Some(ExternTypeDeclarationData { diagnostics: diagnostics.build(), generic_params })

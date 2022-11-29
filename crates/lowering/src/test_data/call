@@ -59,7 +59,7 @@ Drops: v14
 End:
   Callsite()
 
-blk4:
+blk4 (root):
 Inputs: v0: core::felt
 Statements:
   (v1: ()) <- struct_construct()

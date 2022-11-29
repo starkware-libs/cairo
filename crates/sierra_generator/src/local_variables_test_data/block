@@ -37,7 +37,7 @@ Drops: v3
 End:
   Callsite(v4)
 
-blk1:
+blk1 (root):
 Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- core::felt_add(v0, v0)

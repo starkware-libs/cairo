@@ -15,6 +15,7 @@ lowering = { path = "../lowering" }
 semantic = { path = "../semantic" }
 formatter = { path = "../formatter" }
 parser = { path = "../parser" }
+plugins = { path = "../plugins" }
 project = { path = "../project" }
 syntax = { path = "../syntax" }
 filesystem = { path = "../filesystem" }

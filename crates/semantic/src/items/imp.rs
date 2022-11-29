@@ -75,6 +75,11 @@ pub fn impl_resolved_lookback(
     Some(db.priv_impl_declaration_data(impl_id)?.resolved_lookback)
 }
 
+/// Query implementation of [crate::db::SemanticGroup::impl_trait].
+pub fn impl_trait(db: &dyn SemanticGroup, impl_id: ImplId) -> Option<ConcreteTraitId> {
+    db.priv_impl_declaration_data(impl_id)?.concrete_trait
+}
+
 /// Query implementation of [crate::db::SemanticGroup::priv_impl_declaration_data].
 pub fn priv_impl_declaration_data(
     db: &dyn SemanticGroup,
@@ -82,9 +87,9 @@ pub fn priv_impl_declaration_data(
 ) -> Option<ImplDeclarationData> {
     // TODO(spapini): When asts are rooted on items, don't query module_data directly. Use a
     // selector.
-    let module_id = impl_id.module(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_id);
-    let module_data = db.module_data(module_id)?;
+    let module_file_id = impl_id.module_file(db.upcast());
+    let mut diagnostics = SemanticDiagnostics::new(module_file_id);
+    let module_data = db.module_data(module_file_id.0)?;
     let impl_ast = module_data.impls.get(&impl_id)?;
     let syntax_db = db.upcast();
 
@@ -92,10 +97,10 @@ pub fn priv_impl_declaration_data(
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
-        module_id,
+        module_file_id,
         &impl_ast.generic_params(syntax_db),
     );
-    let mut resolver = Resolver::new(db, module_id, &generic_params);
+    let mut resolver = Resolver::new(db, module_file_id, &generic_params);
 
     let trait_path_syntax = impl_ast.trait_path(syntax_db);
     let concrete_trait = resolver
@@ -159,18 +164,18 @@ pub fn priv_impl_definition_data(
     db: &dyn SemanticGroup,
     impl_id: ImplId,
 ) -> Option<ImplDefinitionData> {
-    let module_id = impl_id.module(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_id);
+    let module_file_id = impl_id.module_file(db.upcast());
+    let mut diagnostics = SemanticDiagnostics::new(module_file_id);
 
     let declaration_data = db.priv_impl_declaration_data(impl_id)?;
     let concrete_trait = declaration_data.concrete_trait?;
 
-    let module_data = db.module_data(module_id)?;
+    let module_data = db.module_data(module_file_id.0)?;
     let impl_ast = module_data.impls.get(&impl_id)?;
     let syntax_db = db.upcast();
 
     let lookup_context = ImplLookupContext {
-        module_id,
+        module_id: module_file_id.0,
         extra_modules: vec![],
         generic_params: declaration_data.generic_params,
     };
@@ -218,8 +223,10 @@ pub fn priv_impl_definition_data(
                 }
 
                 Item::FreeFunction(func) => {
-                    let impl_function_id =
-                        db.intern_impl_function(ImplFunctionLongId(module_id, func.stable_ptr()));
+                    let impl_function_id = db.intern_impl_function(ImplFunctionLongId(
+                        module_file_id,
+                        func.stable_ptr(),
+                    ));
                     function_asts.insert(impl_function_id, func);
                 }
             }
@@ -410,18 +417,18 @@ pub fn priv_impl_function_declaration_data(
     db: &dyn SemanticGroup,
     impl_function_id: ImplFunctionId,
 ) -> Option<ImplFunctionDeclarationData> {
-    let module_id = impl_function_id.module(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_id);
+    let module_file_id = impl_function_id.module_file(db.upcast());
+    let mut diagnostics = SemanticDiagnostics::new(module_file_id);
     let impl_id = impl_function_id.impl_id(db.upcast());
     let data = db.priv_impl_definition_data(impl_id)?;
     let function_syntax = &data.function_asts[impl_function_id];
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
-        module_id,
+        module_file_id,
         &function_syntax.generic_params(db.upcast()),
     );
-    let mut resolver = Resolver::new(db, module_id, &generic_params);
+    let mut resolver = Resolver::new(db, module_file_id, &generic_params);
     let syntax_db = db.upcast();
     let signature_syntax = function_syntax.signature(syntax_db);
 

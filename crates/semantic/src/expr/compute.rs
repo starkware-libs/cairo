@@ -11,7 +11,7 @@ use itertools::zip_eq;
 use num_bigint::BigInt;
 use num_traits::Num;
 use smol_str::SmolStr;
-use syntax::node::ast::PatternStructParam;
+use syntax::node::ast::{BlockOrIf, PatternStructParam};
 use syntax::node::db::SyntaxGroup;
 use syntax::node::helpers::{GetIdentifier, PathSegmentEx};
 use syntax::node::{ast, Terminal, TypedSyntaxNode};
@@ -462,9 +462,16 @@ fn compute_expr_if_semantic(
     let (else_block_opt, else_block_ty) = match syntax.else_clause(syntax_db) {
         ast::OptionElseClause::Empty(_) => (None, unit_ty(ctx.db)),
         ast::OptionElseClause::ElseClause(else_clause) => {
-            let else_block = compute_expr_block_semantic(ctx, &else_clause.else_block(syntax_db))?;
-            let ty = else_block.ty();
-            (Some(else_block), ty)
+            match else_clause.else_block_or_if(syntax_db) {
+                BlockOrIf::Block(block) => {
+                    let else_block = compute_expr_block_semantic(ctx, &block)?;
+                    (Some(else_block.clone()), else_block.ty())
+                }
+                BlockOrIf::If(expr_if) => {
+                    let else_if = compute_expr_if_semantic(ctx, &expr_if)?;
+                    (Some(else_if.clone()), else_if.ty())
+                }
+            }
         }
     };
 
@@ -703,8 +710,9 @@ fn create_variable_pattern(
     ty: TypeId,
 ) -> Pattern {
     let syntax_db = ctx.db.upcast();
-    let var_id =
-        ctx.db.intern_local_var(LocalVarLongId(ctx.resolver.module_id, identifier.stable_ptr()));
+    let var_id = ctx
+        .db
+        .intern_local_var(LocalVarLongId(ctx.resolver.module_file_id, identifier.stable_ptr()));
 
     let is_mut = match compute_mutability(ctx.diagnostics, syntax_db, modifier_list) {
         Mutability::Immutable => false,

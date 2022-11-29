@@ -6,10 +6,10 @@ use defs::ids::ModuleId;
 use filesystem::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup, FilesGroupEx};
 use filesystem::ids::{CrateLongId, Directory, FileLongId};
 use indoc::indoc;
+use itertools::zip_eq;
 use parser::db::ParserDatabase;
 use pretty_assertions::assert_eq;
 use syntax::node::db::{SyntaxDatabase, SyntaxGroup};
-use syntax::node::TypedSyntaxNode;
 use test_case::test_case;
 
 use crate::derive::DerivePlugin;
@@ -63,14 +63,16 @@ fn set_file_content(db: &mut DatabaseForTesting, path: &str, content: &str) {
         #[derive(Copy, Drop)]
         struct B{}
     "},
-    "impls",
-    indoc! {"
-        impl ACopy of Copy::<super::A>;
-        impl ADrop of Drop::<super::A>;
-
-        impl BCopy of Copy::<super::B>;
-        impl BDrop of Drop::<super::B>;
-    "};
+    &[
+        indoc! {"
+            impl ACopy of Copy::<A>;
+            impl ADrop of Drop::<A>;
+        "},
+        indoc! {"
+            impl BCopy of Copy::<B>;
+            impl BDrop of Drop::<B>;
+        "},
+    ];
     "derive"
 )]
 #[test_case(
@@ -87,55 +89,53 @@ fn set_file_content(db: &mut DatabaseForTesting, path: &str, content: &str) {
             (4, 56)
         }
     "},
-    "panicable",
-    indoc! {"
-        func foo(a: felt, b: other) -> () {
-            match super::foo(a, b) {
-                Option::Some (v) => {
-                    v
-                },
-                Option::None (v) => {
-                    let data = array_new::<felt>();
-                    array_append::<felt>(data, 1);
-                    panic(data);
-                },
+    &[
+        indoc! {"
+            func foo_panicable(a: felt, b: other) -> () {
+                match foo(a, b) {
+                    Option::Some (v) => {
+                        v
+                    },
+                    Option::None (v) => {
+                        let data = array_new::<felt>();
+                        array_append::<felt>(data, 1);
+                        panic(data);
+                    },
+                }
             }
-        }
-
-        func bar() -> felt {
-            match super::bar() {
-                Option::Some (v) => {
-                    v
-                },
-                Option::None (v) => {
-                    let data = array_new::<felt>();
-                    array_append::<felt>(data, 2);
-                    panic(data);
-                },
+        "},
+        indoc! {"
+            func bar_panicable() -> felt {
+                match bar() {
+                    Option::Some (v) => {
+                        v
+                    },
+                    Option::None (v) => {
+                        let data = array_new::<felt>();
+                        array_append::<felt>(data, 2);
+                        panic(data);
+                    },
+                }
             }
-        }
-
-        func non_extern(_: some_type) -> (felt, other) {
-            match super::non_extern(_) {
-                Option::Some (v) => {
-                    v
-                },
-                Option::None (v) => {
-                    let data = array_new::<felt>();
-                    array_append::<felt>(data, 3);
-                    panic(data);
-                },
+        "},
+        indoc! {"
+            func non_extern_panicable(_: some_type) -> (felt, other) {
+                match non_extern(_) {
+                    Option::Some (v) => {
+                        v
+                    },
+                    Option::None (v) => {
+                        let data = array_new::<felt>();
+                        array_append::<felt>(data, 3);
+                        panic(data);
+                    },
+                }
             }
-        }
-    "};
+        "},
+    ];
     "panicable"
 )]
-fn plugin_test(
-    plugins: Vec<Arc<dyn MacroPlugin>>,
-    content: &str,
-    expected_submodule: &str,
-    expected_submodule_content: &str,
-) {
+fn plugin_test(plugins: Vec<Arc<dyn MacroPlugin>>, content: &str, expected_codes: &[&str]) {
     let mut db_val = DatabaseForTesting::default();
     let db = &mut db_val;
 
@@ -147,21 +147,9 @@ fn plugin_test(
     // Main module file.
     set_file_content(db, "src/lib.cairo", content);
     let module_id = ModuleId::CrateRoot(crate_id);
-    let submodule_id = db
-        .module_submodules(module_id)
-        .unwrap()
-        .into_iter()
-        .find(|submodule_id| {
-            if let ModuleId::VirtualSubmodule(id) = submodule_id {
-                db.lookup_intern_virtual_submodule(*id).name == expected_submodule
-            } else {
-                false
-            }
-        })
-        .expect("Didn't find expected submodule.");
-
-    assert_eq!(
-        db.module_syntax(submodule_id).unwrap().as_syntax_node().get_text(db),
-        expected_submodule_content
-    );
+    for (file, expected_code) in
+        zip_eq(db.module_files(module_id).unwrap().into_iter().skip(1), expected_codes)
+    {
+        assert_eq!(db.file_content(file).unwrap().as_str(), *expected_code);
+    }
 }
