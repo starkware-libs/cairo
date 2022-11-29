@@ -22,7 +22,6 @@ pub enum TypeLongId {
     /// during inference.
     Tuple(Vec<TypeId>),
     GenericParameter(GenericParamId),
-    Never,
     Missing,
 }
 impl OptionFrom<TypeLongId> for ConcreteTypeId {
@@ -35,9 +34,6 @@ define_short_id!(TypeId, TypeLongId, SemanticGroup, lookup_intern_type);
 impl TypeId {
     pub fn missing(db: &dyn SemanticGroup) -> Self {
         db.intern_type(TypeLongId::Missing)
-    }
-    pub fn never(db: &dyn SemanticGroup) -> Self {
-        db.intern_type(TypeLongId::Never)
     }
     pub fn format(&self, db: &dyn SemanticGroup) -> String {
         db.lookup_intern_type(*self).format(db)
@@ -57,7 +53,6 @@ impl TypeLongId {
             TypeLongId::GenericParameter(generic_param) => {
                 generic_param.name(db.upcast()).to_string()
             }
-            TypeLongId::Never => "<never>".to_string(),
             TypeLongId::Missing => "<missing>".to_string(),
         }
     }
@@ -292,7 +287,7 @@ pub fn substitute_generics(
                 *ty
             })
             .unwrap_or(ty),
-        TypeLongId::Missing | TypeLongId::Never => ty,
+        TypeLongId::Missing => ty,
     }
 }
 
@@ -336,7 +331,6 @@ pub fn type_info(
             TypeInfo { droppable, duplicatable }
         }
         TypeLongId::GenericParameter(_) => todo!(),
-        TypeLongId::Never => TypeInfo { droppable: true, duplicatable: true },
         TypeLongId::Missing => {
             return None;
         }
