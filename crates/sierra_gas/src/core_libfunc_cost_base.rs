@@ -23,10 +23,12 @@ use sierra::program::Function;
 pub enum CostTokenType {
     /// A single Cairo step, or some cost which is equivalent to it.
     Step,
+    /// One invocation of the pedersen hash function.
+    Pedersen,
 }
 impl CostTokenType {
     pub fn iter() -> std::slice::Iter<'static, Self> {
-        [CostTokenType::Step].iter()
+        [CostTokenType::Step, CostTokenType::Pedersen].iter()
     }
 }
 
@@ -34,8 +36,10 @@ impl CostTokenType {
 pub trait CostOperations {
     type CostType: Clone;
 
-    /// Get a cost from a constant value.
+    /// Get a cost from a constant value (of type [CostTokenType::Step]).
     fn const_cost(&self, value: i32) -> Self::CostType;
+    /// Get a cost from a constant value of the given token type.
+    fn const_cost_token(&self, value: i32, token_type: CostTokenType) -> Self::CostType;
     /// Get a cost for the content of a function.
     fn function_cost(&mut self, function: &Function) -> Self::CostType;
     /// Get a cost for a variable for the current statement.
@@ -94,8 +98,7 @@ pub fn core_libfunc_cost_base<Ops: CostOperations>(
             vec![ops.const_cost(0)]
         }
         CoreConcreteLibFunc::Pedersen(_) => {
-            // TODO(lior): Add pedersen cost in addition to gas cost.
-            vec![ops.const_cost(2)]
+            vec![ops.add(ops.const_cost(2), ops.const_cost_token(1, CostTokenType::Pedersen))]
         }
     }
 }
