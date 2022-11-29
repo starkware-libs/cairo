@@ -385,6 +385,7 @@ dependencies = [
  "log",
  "lowering",
  "parser",
+ "plugins",
  "project",
  "salsa",
  "semantic",
@@ -566,6 +567,7 @@ dependencies = [
  "smol_str",
  "syntax",
  "test-log",
+ "thiserror",
  "utils",
 ]
 
@@ -726,6 +728,7 @@ dependencies = [
 name = "formatter"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "clap 4.0.26",
  "colored",
  "diffy",
@@ -1075,6 +1078,7 @@ dependencies = [
  "lowering",
  "lsp-types",
  "parser",
+ "plugins",
  "project",
  "salsa",
  "semantic",
@@ -2089,8 +2093,10 @@ dependencies = [
  "compiler",
  "defs",
  "indoc",
+ "itertools",
  "num-bigint",
  "num-traits 0.2.15",
+ "plugins",
  "pretty_assertions",
  "semantic",
  "serde",
@@ -2099,6 +2105,7 @@ dependencies = [
  "sierra_gas",
  "sierra_generator",
  "sierra_to_casm",
+ "smol_str",
  "syntax",
  "thiserror",
  "utils",

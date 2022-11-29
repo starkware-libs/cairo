@@ -1,9 +1,11 @@
+use std::path::PathBuf;
+
 use indoc::indoc;
 use num_bigint::BigUint;
 use pretty_assertions::assert_eq;
 
 use crate::abi;
-use crate::contract_class::{ContractClass, ContractEntryPoint, ContractEntryPoints};
+use crate::contract_class::{compile_path, ContractClass, ContractEntryPoint, ContractEntryPoints};
 
 #[test]
 fn test_serialization() {
@@ -47,4 +49,55 @@ fn test_serialization() {
     );
 
     assert_eq!(contract, serde_json::from_str(&serialized).unwrap())
+}
+
+/// Returns a path to example contract that matches `name`.
+pub fn get_example_file_path(name: &str) -> PathBuf {
+    // Pop the "/sierra_to_casm" suffix.
+    let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    path.extend(["examples", &format!("{name}.cairo")].into_iter());
+    path
+}
+
+#[test]
+fn test_compile_path() {
+    let path = get_example_file_path("test_contract");
+
+    let replace_ids = true;
+    let contract = compile_path(&path, replace_ids).unwrap();
+
+    assert_eq!(
+        contract.sierra_program.to_string(),
+        indoc! {"
+          type felt = felt;
+
+          libfunc revoke_ap_tracking = revoke_ap_tracking;
+          libfunc felt_const<1> = felt_const<1>;
+          libfunc store_temp<felt> = store_temp<felt>;
+          libfunc burn_gas = burn_gas;
+
+          revoke_ap_tracking() -> ();
+          felt_const<1>() -> ([0]);
+          store_temp<felt>([0]) -> ([1]);
+          burn_gas() -> ();
+          return([1]);
+
+          test_contract::test_contract::test@0() -> (felt);
+          "
+        }
+    );
+
+    assert_eq!(
+        serde_json::to_string_pretty(&contract.abi).unwrap(),
+        indoc! {r#"
+          [
+            {
+              "type": "function",
+              "name": "test",
+              "inputs": [],
+              "output_ty": "core::felt"
+            }
+          ]"#
+        }
+    );
 }

@@ -8,6 +8,7 @@ name = "formatter_cli"
 path = "src/bin/cli.rs"
 
 [dependencies]
+anyhow.workspace = true
 clap.workspace = true
 colored.workspace = true
 diffy.workspace = true

@@ -32,7 +32,7 @@ Drops:
 End:
   Callsite(v3)
 
-blk1:
+blk1 (root):
 Inputs: v0: core::felt
 Statements:
   (v1: ()) <- struct_construct()

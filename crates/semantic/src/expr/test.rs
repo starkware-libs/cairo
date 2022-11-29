@@ -150,7 +150,7 @@ fn test_member_access() {
         vec![
             "MemberAccess(ExprMemberAccess { expr: Var(ExprVar { var: ParamId(test_crate::a), ty: \
              test_crate::A }), struct_id: StructId(test_crate::A), member: \
-             MemberId(test_crate::a), ty: (core::felt) })",
+             MemberId(test_crate::a), ty: (core::felt,) })",
             "MemberAccess(ExprMemberAccess { expr: Var(ExprVar { var: ParamId(test_crate::a), ty: \
              test_crate::A }), struct_id: StructId(test_crate::A), member: \
              MemberId(test_crate::b), ty: core::felt })",
@@ -244,7 +244,7 @@ fn test_tuple_type() {
     let param = &signature.params[0];
     assert_eq!(
         format!("{:?}", param.debug(db)),
-        "Parameter { id: ParamId(test_crate::a), ty: (core::felt, (), (core::felt)), mutability: \
+        "Parameter { id: ParamId(test_crate::a), ty: (core::felt, (), (core::felt,)), mutability: \
          Mutable }"
     );
 }

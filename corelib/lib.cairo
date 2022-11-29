@@ -76,7 +76,6 @@ use integer::uint128_lt;
 
 use integer::uint128_jump_nz;
 
-
 // Gas.
 mod gas;
 use gas::GasBuiltin;
@@ -85,3 +84,7 @@ use gas::get_gas;
 // Panics.
 enum PanicResult<T> { Ok: T, Err: Array::<felt>, }
 extern func panic(data: Array::<felt>);
+
+// Hash functions.
+mod hash;
+use hash::pedersen;

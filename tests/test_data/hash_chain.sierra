@@ -1,0 +1,47 @@
+type felt = felt;
+type NonZero<felt> = NonZero<felt>;
+type Pedersen = Pedersen;
+
+libfunc revoke_ap_tracking = revoke_ap_tracking;
+libfunc dup<felt> = dup<felt>;
+libfunc felt_jump_nz = felt_jump_nz;
+libfunc drop<felt> = drop<felt>;
+libfunc felt_const<0> = felt_const<0>;
+libfunc store_temp<Pedersen> = store_temp<Pedersen>;
+libfunc store_temp<felt> = store_temp<felt>;
+libfunc burn_gas = burn_gas;
+libfunc drop<NonZero<felt>> = drop<NonZero<felt>>;
+libfunc felt_const<1> = felt_const<1>;
+libfunc felt_sub = felt_sub;
+libfunc rename<felt> = rename<felt>;
+libfunc function_call<user@hash_chain::hash_chain::hash_chain> = function_call<user@hash_chain::hash_chain::hash_chain>;
+libfunc pedersen = pedersen;
+libfunc rename<Pedersen> = rename<Pedersen>;
+
+revoke_ap_tracking() -> ();
+dup<felt>([1]) -> ([1], [16]);
+felt_jump_nz([16]) { fallthrough() 9([2]) };
+drop<felt>([1]) -> ();
+felt_const<0>() -> ([3]);
+store_temp<Pedersen>([0]) -> ([4]);
+store_temp<felt>([3]) -> ([5]);
+burn_gas() -> ();
+return([4], [5]);
+drop<NonZero<felt>>([2]) -> ();
+burn_gas() -> ();
+felt_const<1>() -> ([6]);
+dup<felt>([1]) -> ([1], [17]);
+felt_sub([17], [6]) -> ([7]);
+store_temp<Pedersen>([0]) -> ([10]);
+store_temp<felt>([7]) -> ([7]);
+rename<felt>([7]) -> ([11]);
+function_call<user@hash_chain::hash_chain::hash_chain>([10], [11]) -> ([8], [9]);
+pedersen([8], [9], [1]) -> ([12], [13]);
+store_temp<Pedersen>([12]) -> ([12]);
+rename<Pedersen>([12]) -> ([14]);
+store_temp<felt>([13]) -> ([13]);
+rename<felt>([13]) -> ([15]);
+burn_gas() -> ();
+return([14], [15]);
+
+hash_chain::hash_chain::hash_chain@0([0]: Pedersen, [1]: felt) -> (Pedersen, felt);

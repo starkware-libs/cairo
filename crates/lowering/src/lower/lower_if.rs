@@ -88,8 +88,8 @@ pub fn lower_expr_if_bool(
         input: condition_var,
         concrete_enum_id: corelib::core_bool_enum(semantic_db),
         arms: vec![
-            (corelib::true_variant(semantic_db), main_finalized.block),
             (corelib::false_variant(semantic_db), else_finalized.block),
+            (corelib::true_variant(semantic_db), main_finalized.block),
         ],
         end_info: finalized_merger.end_info.clone(),
     })
@@ -178,10 +178,10 @@ fn lower_optional_else_block(
             semantic::Expr::Block(block) => lower_block(ctx, scope, block, false),
             semantic::Expr::If(if_expr) => {
                 let lowered_if = lower_expr_if(ctx, scope, if_expr);
-                lowered_expr_to_block_scope_end(ctx, scope, lowered_if)
+                lowered_expr_to_block_scope_end(ctx, scope, lowered_if, false)
             }
             _ => unreachable!(),
         },
-        None => lowered_expr_to_block_scope_end(ctx, scope, Ok(LoweredExpr::Tuple(vec![]))),
+        None => lowered_expr_to_block_scope_end(ctx, scope, Ok(LoweredExpr::Tuple(vec![])), false),
     }
 }
