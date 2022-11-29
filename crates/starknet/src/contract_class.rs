@@ -5,7 +5,9 @@ use anyhow::Context;
 use compiler::db::RootDatabase;
 use compiler::diagnostics::check_diagnostics;
 use compiler::project::setup_project;
+use defs::db::DefsGroup;
 use num_bigint::BigUint;
+use plugins::get_default_plugins;
 use serde::{Deserialize, Serialize};
 use sierra::{self};
 use sierra_generator::db::SierraGenGroup;
@@ -14,6 +16,7 @@ use thiserror::Error;
 
 use crate::abi;
 use crate::casm_contract_class::{deserialize_big_uint, serialize_big_uint};
+use crate::plugin::StarkNetPlugin;
 
 #[cfg(test)]
 #[path = "contract_class_test.rs"]
@@ -59,6 +62,10 @@ pub fn compile_path(path: &Path, replace_ids: bool) -> anyhow::Result<ContractCl
     let db = &mut db_val;
 
     let main_crate_ids = setup_project(db, Path::new(&path))?;
+
+    let mut plugins = get_default_plugins();
+    plugins.push(Arc::new(StarkNetPlugin {}));
+    db.set_macro_plugins(plugins);
 
     if check_diagnostics(db) {
         anyhow::bail!("Failed to compile: {}", path.display());

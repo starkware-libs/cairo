@@ -1,7 +1,8 @@
 trait ITestContract { func test() -> felt; }
 
+#[ContractImpl]
 impl TestContractImpl of ITestContract { func test() -> felt {
-    return 1;
+    1
 }
 }
 

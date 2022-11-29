@@ -17,9 +17,11 @@ sierra_generator = { path = "../sierra_generator" }
 syntax = { path = "../syntax" }
 sierra_gas = { path = "../sierra_gas" }
 sierra_to_casm = { path = "../sierra_to_casm" }
+smol_str.workspace = true
 thiserror.workspace = true
 num-bigint.workspace = true
 num-traits.workspace = true
+plugins = { path = "../plugins" }
 
 [dev-dependencies]
 indoc.workspace = true
