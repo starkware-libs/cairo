@@ -28,7 +28,7 @@ pub fn run_sierra_program(
     params: &[BigInt],
     output_size: usize,
     calculate_gas_info: bool,
-) -> Vec<Option<BigInt>> {
+) -> Vec<BigInt> {
     let mut program = generate_function_runner(params);
 
     let func = sierra_to_casm::compiler::compile(
