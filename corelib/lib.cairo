@@ -21,6 +21,7 @@ impl FeltDrop of Drop::<felt>;
 extern func felt_add(a: felt, b: felt) -> felt nopanic;
 extern func felt_sub(a: felt, b: felt) -> felt nopanic;
 extern func felt_mul(a: felt, b: felt) -> felt nopanic;
+extern func felt_neg(a: felt) -> felt nopanic;
 
 extern type NonZero<T>;
 // TODO(spapini): Add generic impls for NonZero for Copy, Drop.

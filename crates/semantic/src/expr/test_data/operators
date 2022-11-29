@@ -58,3 +58,32 @@ error: Binary operator '-' is not supported for types 'core::felt' and 'core::bo
  --> lib.cairo:8:7
     a - b
       ^
+
+//! > ==========================================================================
+
+//! > Test unary operators.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+func foo() {
+    -(1 == 2);
+    !17;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Unary operator '-' is not supported for type 'core::bool'.
+ --> lib.cairo:2:5
+    -(1 == 2);
+    ^
+
+error: Unary operator '!' is not supported for type 'core::felt'.
+ --> lib.cairo:3:5
+    !17;
+    ^
