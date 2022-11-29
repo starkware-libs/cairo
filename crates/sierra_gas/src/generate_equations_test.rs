@@ -24,7 +24,7 @@ fn libfunc_cost(idx: usize) -> CostExpr {
                 test_program@0() -> ();
             "},
             HashMap::new() =>
-            Ok(vec![(future_statement_cost(0), CostExpr::from_const(0))]);
+            Ok(vec![(future_statement_cost(0))]);
             "return only")]
 #[test_case(indoc! {"
                 cost1() -> ();
@@ -36,7 +36,7 @@ fn libfunc_cost(idx: usize) -> CostExpr {
                 ("cost1".into(), vec![CostExpr::from_const(1)]),
                 ("cost2".into(), vec![CostExpr::from_const(2)]),
             ]) =>
-            Ok(vec![(future_statement_cost(0), CostExpr::from_const(3))]);
+            Ok(vec![(future_statement_cost(0) - CostExpr::from_const(3))]);
             "simple cost sum")]
 #[test_case(indoc! {"
                 var_x() -> ();
@@ -48,7 +48,9 @@ fn libfunc_cost(idx: usize) -> CostExpr {
                 ("var_x".into(), vec![libfunc_cost(0)]),
                 ("cost1".into(), vec![CostExpr::from_const(1)]),
             ]) =>
-            Ok(vec![(future_statement_cost(0), CostExpr::from_const(1) + libfunc_cost(0))]);
+            Ok(vec![
+                (future_statement_cost(0) - (CostExpr::from_const(1) + libfunc_cost(0)))
+            ]);
             "single var")]
 #[test_case(indoc! {"
                 // Traversal index = 3 - future_next = Var::Statement(0) - due to function.
@@ -70,12 +72,12 @@ fn libfunc_cost(idx: usize) -> CostExpr {
                 // Since 'jump_back' is the first non trivial traversed statement, a variable
                 // for statement 1 would be created, and this value add with the cost of the step
                 // to it would be equal to the cost of the other step.
-                (future_statement_cost(1) + CostExpr::from_const(3), CostExpr::from_const(4)),
+                (future_statement_cost(1) - CostExpr::from_const(1)),
                 // Next 'cost2' is used, so the equation is the variable of the line, equals to the
                 // cost of the next line + the step cost.
-                (future_statement_cost(1), future_statement_cost(1) + CostExpr::from_const(3 + 2)),
+                (CostExpr::from_const(-(3 + 2))),
                 // The equation for the function and the step to the following cycle variable.
-                (future_statement_cost(0), future_statement_cost(1) + CostExpr::from_const(1)),
+                (future_statement_cost(0) -future_statement_cost(1) - CostExpr::from_const(1)),
             ]);
             "simple cycle")]
 #[test_case(indoc! {"
@@ -96,7 +98,7 @@ fn libfunc_cost(idx: usize) -> CostExpr {
 fn generate(
     code: &str,
     costs: HashMap<ConcreteLibFuncId, Vec<CostExpr>>,
-) -> Result<Vec<(CostExpr, CostExpr)>, CostError> {
+) -> Result<Vec<CostExpr>, CostError> {
     generate_equations(&sierra::ProgramParser::new().parse(code).unwrap(), |_, _idx, libfunc_id| {
         costs.get(libfunc_id).unwrap().clone()
     })
