@@ -292,7 +292,7 @@ fn get_plain_full_return_vars(
     Ok(chain!(implicit_vars, ref_vars, value_vars).collect())
 }
 
-// TODO:(spapini): Separate match pattern from non-match (single) patterns in the semantic
+// TODO(spapini): Separate match pattern from non-match (single) patterns in the semantic
 // model.
 /// Lowers a single-pattern (pattern that does not appear in a match. This includes structs,
 /// tuples, variables, etc...

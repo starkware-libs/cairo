@@ -21,7 +21,8 @@ pub fn get_type_size_map(
             | CoreTypeConcrete::GasBuiltin(_)
             | CoreTypeConcrete::Uint128(_)
             | CoreTypeConcrete::RangeCheck(_)
-            | CoreTypeConcrete::Box(_) => Some(1),
+            | CoreTypeConcrete::Box(_)
+            | CoreTypeConcrete::Pedersen(_) => Some(1),
             CoreTypeConcrete::Array(_) | CoreTypeConcrete::DictFeltTo(_) => Some(2),
             CoreTypeConcrete::NonZero(NonZeroConcreteType { ty, .. }) => {
                 type_sizes.get(ty).cloned()

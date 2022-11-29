@@ -26,3 +26,7 @@ test-case.workspace = true
 [[test]]
 name = "examples_test"
 path = "examples_test.rs"
+
+[[test]]
+name = "snippets_test"
+path = "snippets_test.rs"

@@ -12,6 +12,7 @@ use super::modules::integer::{Uint128LibFunc, Uint128Type};
 use super::modules::mem::MemLibFunc;
 use super::modules::non_zero::{NonZeroType, UnwrapNonZeroLibFunc};
 use super::modules::unconditional_jump::UnconditionalJumpLibFunc;
+use super::pedersen::{PedersenLibFunc, PedersenType};
 use super::range_check::RangeCheckType;
 use super::strct::{StructLibFunc, StructType};
 use super::uninitialized::UninitializedType;
@@ -30,6 +31,7 @@ define_type_hierarchy! {
         Enum(EnumType),
         Struct(StructType),
         DictFeltTo(DictFeltToType),
+        Pedersen(PedersenType),
     }, CoreTypeConcrete
 }
 
@@ -50,5 +52,6 @@ define_libfunc_hierarchy! {
         Enum(EnumLibFunc),
         Struct(StructLibFunc),
         DictFeltTo(DictFeltToLibFunc),
+        Pedersen(PedersenLibFunc),
     }, CoreConcreteLibFunc
 }
