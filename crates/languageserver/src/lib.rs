@@ -317,10 +317,27 @@ impl LanguageServer for Backend {
             &syntax.as_syntax_node(),
             FormatterConfig::default(),
         );
+
+        let old_text = if let Some(content) = db.file_content(file) {
+            content
+        } else {
+            eprintln!("Formatting failed. Cannot read from file '{file_uri}'.");
+            return Ok(None);
+        };
+
+        // We need this for generating a full document replacement. Maybe generate patches in the
+        // future?
+        let old_line_count = if let Ok(count) = old_text.lines().count().try_into() {
+            count
+        } else {
+            eprintln!("Formatting failed. Line count out of bound in file '{file_uri}'.");
+            return Ok(None);
+        };
+
         Ok(Some(vec![TextEdit {
             range: Range {
                 start: Position { line: 0, character: 0 },
-                end: Position { line: u32::MAX, character: 0 },
+                end: Position { line: old_line_count, character: 0 },
             },
             new_text,
         }]))
