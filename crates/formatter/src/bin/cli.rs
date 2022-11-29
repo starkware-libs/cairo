@@ -1,6 +1,6 @@
 use std::fs;
 use std::io::{stdin, Read};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use std::sync::Arc;
 
@@ -9,7 +9,7 @@ use clap::Parser;
 use colored::Colorize;
 use diffy::{create_patch, PatchFormatter};
 use filesystem::db::FilesGroup;
-use filesystem::ids::{FileLongId, VirtualFile};
+use filesystem::ids::{FileId, FileLongId, VirtualFile};
 use formatter::{get_formatted_file, FormatterConfig};
 use parser::utils::{get_syntax_root_and_diagnostics, SimpleParserDatabase};
 use utils::logging::init_logging;
@@ -27,18 +27,19 @@ enum FormatResult {
 }
 
 impl<'a> Input<'a> {
-    pub fn read_content(&self) -> Result<String, std::io::Error> {
-        let mut buffer = String::new();
+    pub fn to_file_id<D: FilesGroup>(&self, db: &D) -> Result<FileId, std::io::Error> {
         match self {
             Self::Stdin => {
+                let mut buffer = String::new();
                 stdin().read_to_string(&mut buffer)?;
+                Ok(db.intern_file(FileLongId::Virtual(VirtualFile {
+                    parent: None,
+                    name: "<stdin>".into(),
+                    content: Arc::new(buffer),
+                })))
             }
-            Self::File { path } => {
-                let mut file = fs::File::open(path)?;
-                file.read_to_string(&mut buffer)?;
-            }
+            Self::File { path } => Ok(FileId::new(db, PathBuf::from(path))),
         }
-        Ok(buffer)
     }
 
     pub fn write_content(&self, content: &str) -> Result<(), std::io::Error> {
@@ -63,48 +64,38 @@ impl<'a> std::fmt::Display for Input<'a> {
     }
 }
 
-/// Finds the formatted text on the input string
-fn get_formatted_str(text: &str, config: &FormatterConfig) -> Result<String> {
-    let db = SimpleParserDatabase::default();
-
-    let file_id = db.intern_file(FileLongId::Virtual(VirtualFile {
-        parent: None,
-        name: "<text>".into(),
-        content: Arc::new(text.to_owned()),
-    }));
-    let (syntax_root, diagnostics) = get_syntax_root_and_diagnostics(&db, file_id, text);
-
-    // Checks if the inner ParserDiagnostic is empty.
-    if !diagnostics.0.leaves.is_empty() {
-        bail!("Text is unparsable");
-    }
-
-    Ok(get_formatted_file(&db, &syntax_root, config.clone()))
-}
-
 /// Formats an input from stdin or file
 fn format_input(input: &Input<'_>, config: &FormatterConfig, check: bool) -> Result<FormatResult> {
-    let original_text = match input.read_content() {
+    let db = SimpleParserDatabase::default();
+    let file_id = match input.to_file_id(&db) {
         Ok(value) => value,
         Err(_) => {
+            eprintln!("{}", format!("Failed to create virtual file from {input}").red());
+            bail!("Unable to create virtual file");
+        }
+    };
+    let original_text = match db.file_content(file_id) {
+        Some(value) => value,
+        None => {
             eprintln!("{}", format!("Failed to read from {input}").red());
             bail!("Unable to read from input");
         }
     };
 
-    let formatted_text = match get_formatted_str(&original_text, config) {
-        Ok(value) => value,
-        Err(_) => {
-            eprintln!(
-                "{}",
-                format!("A parsing error occurred in {input}. The content was not formatted.")
-                    .red()
-            );
-            bail!("Unable to parse input");
-        }
-    };
+    let (syntax_root, diagnostics) = get_syntax_root_and_diagnostics(&db, file_id, &original_text);
 
-    if formatted_text == original_text {
+    // Checks if the inner ParserDiagnostic is empty.
+    if !diagnostics.0.leaves.is_empty() {
+        eprintln!(
+            "{}",
+            format!("A parsing error occurred in {input}. The content was not formatted.").red()
+        );
+        bail!("Unable to parse input");
+    }
+
+    let formatted_text = get_formatted_file(&db, &syntax_root, config.clone());
+
+    if &formatted_text == original_text.as_ref() {
         // Always print if input is stdin, unless --check is used
         if matches!(input, Input::Stdin) && !check {
             print!("{formatted_text}");
