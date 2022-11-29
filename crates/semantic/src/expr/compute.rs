@@ -25,8 +25,8 @@ use super::pattern::{
     Pattern, PatternEnumVariant, PatternLiteral, PatternOtherwise, PatternTuple, PatternVariable,
 };
 use crate::corelib::{
-    core_binary_operator, core_felt_ty, core_unary_operator, false_literal_expr, true_literal_expr,
-    unit_ty, unwrap_error_propagation_type,
+    core_binary_operator, core_felt_ty, core_panic_func, core_unary_operator, false_literal_expr,
+    true_literal_expr, unit_ty, unwrap_error_propagation_type,
 };
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
@@ -1016,12 +1016,16 @@ fn expr_function_call(
             args.push(ctx.exprs.alloc(arg));
         }
     }
-
+    let ty = if function_id == core_panic_func(ctx.db) {
+        TypeId::never(ctx.db)
+    } else {
+        signature.return_type
+    };
     Some(Expr::FunctionCall(ExprFunctionCall {
         function: function_id,
         ref_args,
         args,
-        ty: signature.return_type,
+        ty,
         stable_ptr,
     }))
 }

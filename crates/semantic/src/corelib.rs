@@ -299,6 +299,10 @@ pub fn core_jump_nz_func(db: &dyn SemanticGroup) -> FunctionId {
     get_core_function_id(db, "felt_jump_nz".into(), vec![])
 }
 
+pub fn core_panic_func(db: &dyn SemanticGroup) -> FunctionId {
+    get_core_function_id(db, "panic".into(), vec![])
+}
+
 /// Given a core library function name and its generic arguments, returns [FunctionId].
 pub fn get_core_function_id(
     db: &dyn SemanticGroup,
