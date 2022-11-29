@@ -22,7 +22,8 @@ use crate::items::imp::{ConcreteImplId, ImplLookupContext};
 use crate::items::trt::ConcreteTraitId;
 use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, ResolvedLookback};
 use crate::{
-    corelib, items, semantic, types, FreeFunctionDefinition, FunctionId, SemanticDiagnostic, TypeId,
+    corelib, items, semantic, types, FreeFunctionDefinition, FunctionId, Parameter,
+    SemanticDiagnostic, TypeId,
 };
 
 // Salsa database interface.
@@ -377,6 +378,12 @@ pub trait SemanticGroup:
         &self,
         extern_function_id: ExternFunctionId,
     ) -> Option<Vec<TypeId>>;
+    /// Returns the ref parameters of an extern function declaration.
+    #[salsa::invoke(items::extern_function::extern_function_declaration_refs)]
+    fn extern_function_declaration_refs(
+        &self,
+        extern_function_id: ExternFunctionId,
+    ) -> Option<Vec<Parameter>>;
     /// Returns the resolution lookback of an extern function.
     #[salsa::invoke(items::extern_function::extern_function_declaration_resolved_lookback)]
     fn extern_function_declaration_resolved_lookback(
@@ -506,6 +513,12 @@ fn module_semantic_diagnostics(
     module_id: ModuleId,
 ) -> Option<Diagnostics<SemanticDiagnostic>> {
     let mut diagnostics = DiagnosticsBuilder::default();
+    for (module_file_id, plugin_diag) in db.module_data(module_id)?.plugin_diagnostics {
+        diagnostics.add(SemanticDiagnostic {
+            stable_location: StableLocation::new(module_file_id, plugin_diag.stable_ptr),
+            kind: SemanticDiagnosticKind::PluginDiagnostic(plugin_diag),
+        });
+    }
     for (_name, item) in db.module_items(module_id)?.items.iter() {
         match item {
             // Add signature diagnostics.

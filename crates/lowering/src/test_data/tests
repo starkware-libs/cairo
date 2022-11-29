@@ -27,7 +27,7 @@ error: Unreachable code
     ^****^
 
 //! > lowering_format
-blk0:
+blk0 (root):
 Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- core::felt_mul(v0, v0)
@@ -59,7 +59,7 @@ foo
 //! > lowering_diagnostics
 
 //! > lowering_format
-blk0:
+blk0 (root):
 Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- 1u
@@ -134,7 +134,7 @@ Drops: v13, v14
 End:
   Callsite(v15)
 
-blk5:
+blk5 (root):
 Inputs: v0: core::felt
 Statements:
   () <- blk0()
@@ -235,7 +235,7 @@ Drops: v5
 End:
   Callsite(v7)
 
-blk6:
+blk6 (root):
 Inputs: v0: test_crate::MyEnum
 Statements:
   (v8: core::felt) <- match_enum(v0) {

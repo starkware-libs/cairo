@@ -2,6 +2,7 @@
 #[path = "diagnostic_test.rs"]
 mod test;
 
+use defs::db::PluginDiagnostic;
 use defs::diagnostic_utils::StableLocation;
 use defs::ids::{
     EnumId, GenericFunctionId, ImplFunctionId, ImplId, ModuleFileId, StructId,
@@ -305,6 +306,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::PanicableExternFunction => {
                 "An extern function must be marked as nopanic.".into()
             }
+            SemanticDiagnosticKind::PluginDiagnostic(diagnostic) => {
+                format!("Plugin diagnostic: {}", diagnostic.message)
+            }
         }
     }
 
@@ -465,4 +469,5 @@ pub enum SemanticDiagnosticKind {
     },
     PanicableFromNonPanicable,
     PanicableExternFunction,
+    PluginDiagnostic(PluginDiagnostic),
 }

@@ -9,6 +9,7 @@ use parser::db::ParserGroup;
 use smol_str::SmolStr;
 use syntax::node::db::SyntaxGroup;
 use syntax::node::helpers::GetIdentifier;
+use syntax::node::ids::SyntaxStablePtrId;
 use syntax::node::{ast, Terminal, TypedSyntaxNode};
 use utils::ordered_hash_map::OrderedHashMap;
 
@@ -82,14 +83,27 @@ pub trait DefsGroup:
     fn macro_plugins(&self) -> Vec<Arc<dyn MacroPlugin>>;
 }
 
+/// Result of plugin code generation.
+pub struct PluginResult {
+    /// Filename, content.
+    pub code: Option<(SmolStr, String)>,
+    /// Diagnostics.
+    pub diagnostics: Vec<PluginDiagnostic>,
+}
+
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct PluginDiagnostic {
+    pub stable_ptr: SyntaxStablePtrId,
+    pub message: String,
+}
+
 // TOD(spapini): Move to another place.
 /// A trait for a macro plugin: external plugin that generates additional code for items.
 pub trait MacroPlugin: std::fmt::Debug + Sync + Send {
     /// Generates code for an item. If no code should be generated returns None.
     /// Otherwise, returns (virtual_module_name, module_content), and a virtual submodule
     /// with that name and content should be created.
-    fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item)
-    -> Option<(SmolStr, String)>;
+    fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult;
 }
 
 /// Initializes a database witf DefsGroup.
@@ -181,6 +195,7 @@ pub struct ModuleData {
     pub extern_types: OrderedHashMap<ExternTypeId, ast::ItemExternType>,
     pub extern_functions: OrderedHashMap<ExternFunctionId, ast::ItemExternFunction>,
     pub files: Vec<FileId>,
+    pub plugin_diagnostics: Vec<(ModuleFileId, PluginDiagnostic)>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -202,9 +217,12 @@ fn module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Option<ModuleData> {
         let syntax_file = db.file_syntax(file)?;
         for item in syntax_file.items(syntax_db).elements(syntax_db) {
             for plugin in db.macro_plugins() {
-                let Some((name, content)) = plugin.generate_code(db.upcast(), item.clone()) else {
-                    continue
-                };
+                let result = plugin.generate_code(db.upcast(), item.clone());
+                for plugin_diag in result.diagnostics {
+                    res.plugin_diagnostics.push((module_file_id, plugin_diag));
+                }
+
+                let Some((name, content)) = result.code else { continue };
                 let new_file = db.intern_file(FileLongId::Virtual(VirtualFile {
                     parent: Some(file),
                     name: name.clone(),

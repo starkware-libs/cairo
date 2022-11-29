@@ -1,15 +1,11 @@
 use std::fs;
 use std::path::PathBuf;
-use std::sync::Arc;
 
 use compiler::db::RootDatabase;
 use compiler::diagnostics::check_diagnostics;
 use compiler::project::setup_project;
-use defs::db::DefsGroup;
 use filesystem::ids::CrateId;
 use num_bigint::BigInt;
-use plugins::derive::DerivePlugin;
-use plugins::panicable::PanicablePlugin;
 use pretty_assertions::assert_eq;
 use sierra_generator::db::SierraGenGroup;
 use sierra_generator::replace_ids::replace_sierra_ids_in_program;
@@ -29,7 +25,6 @@ fn setup(name: &str) -> (RootDatabase, Vec<CrateId>) {
     path.push(format!("{name}.cairo"));
 
     let mut db = RootDatabase::default();
-    db.set_macro_plugins(vec![Arc::new(DerivePlugin {}), Arc::new(PanicablePlugin {})]);
     let main_crate_ids = setup_project(&mut db, path.as_path()).expect("Project setup failed.");
     assert!(!check_diagnostics(&mut db));
     (db, main_crate_ids)
@@ -80,6 +75,8 @@ fn checked_compile_to_sierra(name: &str) -> sierra::program::Program {
 #[test_case("fib_local")]
 #[test_case("enum_flow")]
 #[test_case("corelib_usage")]
+#[test_case("hash_chain")]
+#[test_case("testing")]
 fn cairo_to_sierra(name: &str) {
     compare_contents_or_fix(name, "sierra", checked_compile_to_sierra(name).to_string());
     assert_eq!(checked_compile_to_sierra(name).to_string(), get_expected_contents(name, "sierra"));
@@ -96,6 +93,8 @@ fn cairo_to_sierra(name: &str) {
 #[test_case("fib_local", false)]
 #[test_case("enum_flow", false)]
 #[test_case("corelib_usage", false)]
+#[test_case("hash_chain", false)]
+#[test_case("testing", false)]
 fn cairo_to_casm(name: &str, enable_gas_checks: bool) {
     let program = checked_compile_to_sierra(name);
     compare_contents_or_fix(
@@ -120,6 +119,8 @@ fn cairo_to_casm(name: &str, enable_gas_checks: bool) {
 #[test_case("fib_gas")]
 #[test_case("fib_local")]
 #[test_case("corelib_usage")]
+#[test_case("hash_chain")]
+#[test_case("testing")]
 fn lowering_test(name: &str) {
     setup(name);
 }
@@ -155,6 +156,17 @@ fn lowering_test(name: &str) {
     &[Some(BigInt::from(13))];
     "fib_local"
 )]
+#[test_case(
+    "hash_chain",
+    &[3].map(BigInt::from),
+    &[BigInt::parse_bytes(
+        b"2dca1ad81a6107a9ef68c69f791bcdbda1df257aab76bd43ded73d96ed6227d", 16)] => ignore["reason"];
+    "hash_chain")]
+#[test_case(
+    "testing",
+    &[],
+    &[Some(BigInt::from(0)), None, None];
+    "testing")]
 fn run_function_test(name: &str, params: &[BigInt], expected: &[Option<BigInt>]) {
     let sierra_func = checked_compile_to_sierra(name);
     assert_eq!(run_sierra_program(&sierra_func, params, expected.len(), false), expected);

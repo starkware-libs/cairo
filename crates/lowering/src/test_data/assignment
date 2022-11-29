@@ -35,13 +35,13 @@ Drops: v4
 End:
   Callsite(v1)
 
-blk2:
+blk2 (root):
 Inputs: v0: core::bool
 Statements:
   (v1: core::felt) <- 2u
   (v5: core::felt) <- match_enum(v0) {
-    bool::True => blk0,
     bool::False => blk1,
+    bool::True => blk0,
   }
 Drops: v0, v1
 End:
