@@ -13,7 +13,7 @@ use crate::{casm, deref};
         ret;
     },
     2,
-    &[-5, 7].map(Some);
+    &[-5, 7];
     "simple ap sets"
 )]
 #[test_case(
@@ -25,7 +25,7 @@ use crate::{casm, deref};
         ret;
     },
     3,
-    &[579, 123, 456].map(Some);
+    &[579, 123, 456];
     "sum ap into fp"
 )]
 #[test_case(
@@ -40,7 +40,7 @@ use crate::{casm, deref};
         ret;
     },
     5,
-    &[1, 5, 0, 3, 4].map(Some);
+    &[1, 5, 0, 3, 4];
     "jumps"
 )]
 #[test_case(
@@ -52,7 +52,7 @@ use crate::{casm, deref};
         ret;
     },
     3,
-    &[39, 1, 84].map(Some);
+    &[39, 1, 84];
     "less than hint"
 )]
 #[test_case(
@@ -64,7 +64,7 @@ use crate::{casm, deref};
         ret;
     },
     4,
-    &[5, 39, 7, 4].map(Some);
+    &[5, 39, 7, 4];
     "divmod hint"
 )]
 #[test_case(
@@ -84,23 +84,13 @@ use crate::{casm, deref};
         ret;
     },
     1,
-    &[377].map(Some);
+    &[377];
     "fib(1, 1, 13)"
 )]
-#[test_case(
-    casm! {
-        ap += 1;
-        [ap] = 0, ap++;
-        ret;
-    },
-    2,
-    &[None, Some(0)];
-    "uninitialized memory"
-)]
-fn test_runner(function: CasmContext, n_returns: usize, expected: &[Option<i128>]) {
+fn test_runner(function: CasmContext, n_returns: usize, expected: &[i128]) {
     assert_eq!(
         run_function_return_values(function.instructions, n_returns).expect("Running code failed."),
-        expected.iter().map(|num| num.map(BigInt::from)).collect_vec()
+        expected.iter().copied().map(BigInt::from).collect_vec()
     );
 }
 

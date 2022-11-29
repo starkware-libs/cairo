@@ -1,7 +1,7 @@
 use casm::operand::CellRef;
 use casm::{casm, casm_extend};
 use itertools::{chain, repeat_n};
-use num_bigint::ToBigInt;
+use num_bigint::{BigInt, ToBigInt};
 use sierra::extensions::enm::{EnumConcreteLibFunc, EnumInitConcreteLibFunc};
 use sierra::extensions::ConcreteLibFunc;
 use sierra::ids::ConcreteTypeId;
@@ -96,8 +96,11 @@ fn build_enum_init(
     let enum_size = get_enum_size(&builder.program_info, concrete_enum_type)
         .ok_or(InvocationError::UnknownTypeData)?;
     let num_padding = enum_size - 1 - variant_size;
-    let inner_value =
-        chain!(init_arg_cells.clone(), repeat_n(CellExpression::Padding, num_padding)).collect();
+    let inner_value = chain!(
+        init_arg_cells.clone(),
+        repeat_n(CellExpression::Immediate(BigInt::from(0)), num_padding)
+    )
+    .collect();
 
     let enum_val = EnumView {
         variant_selector: CellExpression::Immediate(variant_selector.to_bigint().unwrap()),

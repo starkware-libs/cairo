@@ -39,7 +39,7 @@ fn setup(content: &str) -> (RootDatabase, CrateId) {
         a < b
     }",
     &[1, 1].map(BigInt::from),
-    &[Some(BigInt::from(0))];
+    &[BigInt::from(0)];
     "1 less than 1"
 )]
 #[test_case(
@@ -47,7 +47,7 @@ fn setup(content: &str) -> (RootDatabase, CrateId) {
         a < b
     }",
     &[1, 2].map(BigInt::from),
-    &[Some(BigInt::from(1))];
+    &[BigInt::from(1)];
     "1 less than 2"
 )]
 #[test_case(
@@ -55,10 +55,10 @@ fn setup(content: &str) -> (RootDatabase, CrateId) {
         a < b
     }",
     &[2, 1].map(BigInt::from),
-    &[Some(BigInt::from(0))];
+    &[BigInt::from(0)];
     "2 less than 1"
 )]
-fn run_function_test(content: &str, params: &[BigInt], expected: &[Option<BigInt>]) {
+fn run_function_test(content: &str, params: &[BigInt], expected: &[BigInt]) {
     let (db, crate_id) = setup(content);
     let sierra_program = db.get_sierra_program(vec![crate_id]).unwrap();
     replace_sierra_ids_in_program(&db, &sierra_program);
