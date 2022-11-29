@@ -100,4 +100,20 @@ fn test_compile_path() {
           ]"#
         }
     );
+
+    assert_eq!(
+        serde_json::to_string_pretty(&contract.entry_points_by_type).unwrap(),
+        indoc! {r#"
+          {
+            "EXTERNAL": [
+              {
+                "selector": "0x0",
+                "function_id": 0
+              }
+            ],
+            "L1_HANDLER": [],
+            "CONSTRUCTOR": []
+          }"#
+        }
+    );
 }
