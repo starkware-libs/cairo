@@ -4,7 +4,7 @@ use casm::operand::{ap_cell_ref, CellRef, DerefOrImmediate};
 use itertools::chain;
 use num_bigint::BigInt;
 use sierra::extensions::array::ArrayConcreteLibFunc;
-use sierra::extensions::felt::FeltOperator;
+use sierra::extensions::felt::FeltBinaryOperator;
 use sierra::extensions::ConcreteLibFunc;
 use sierra::ids::ConcreteTypeId;
 use utils::try_extract_matches;
@@ -202,7 +202,7 @@ fn build_array_at(
             let output_expressions = [
                 vec![
                     ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
-                        op: FeltOperator::Add,
+                        op: FeltBinaryOperator::Add,
                         a: range_check.unchecked_apply_known_ap_change(5),
                         b: DerefOrImmediate::from(1),
                     })),
@@ -212,7 +212,7 @@ fn build_array_at(
                 .into_iter(),
                 vec![
                     ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
-                        op: FeltOperator::Add,
+                        op: FeltBinaryOperator::Add,
                         a: range_check.unchecked_apply_known_ap_change(3),
                         b: DerefOrImmediate::from(1),
                     })),
@@ -250,7 +250,7 @@ fn build_array_len(
     }
     let len_ref_expr = ReferenceExpression {
         cells: vec![CellExpression::BinOp(BinOpExpression {
-            op: FeltOperator::Sub,
+            op: FeltBinaryOperator::Sub,
             a: array_view.end,
             b: DerefOrImmediate::Deref(array_view.start),
         })],
@@ -291,7 +291,7 @@ impl ReferenceExpressionView for ArrayView {
         let (end, end_offset) = match &expr.cells[1] {
             CellExpression::Deref(op) => (*op, 0),
             CellExpression::BinOp(binop) => {
-                if binop.op != FeltOperator::Add {
+                if binop.op != FeltBinaryOperator::Add {
                     return Err(ReferencesError::InvalidReferenceTypeForArgument);
                 }
                 (
@@ -319,7 +319,7 @@ impl ReferenceExpressionView for ArrayView {
                 cells: vec![
                     CellExpression::Deref(self.start),
                     CellExpression::BinOp(BinOpExpression {
-                        op: FeltOperator::Add,
+                        op: FeltBinaryOperator::Add,
                         a: self.end,
                         b: DerefOrImmediate::Immediate(BigInt::from(self.end_offset)),
                     }),

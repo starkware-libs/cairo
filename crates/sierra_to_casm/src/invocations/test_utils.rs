@@ -19,20 +19,20 @@ use crate::metadata::Metadata;
 use crate::references::{ReferenceExpression, ReferenceValue};
 use crate::relocations::RelocationEntry;
 
-/// Creates a FeltOperator from a token operator.
+/// Creates a FeltBinaryOperator from a token operator.
 #[macro_export]
 macro_rules! cell_expr_operator {
     (+) => {
-        sierra::extensions::felt::FeltOperator::Add
+        sierra::extensions::felt::FeltBinaryOperator::Add
     };
     (-) => {
-        sierra::extensions::felt::FeltOperator::Sub
+        sierra::extensions::felt::FeltBinaryOperator::Sub
     };
     (*) => {
-        sierra::extensions::felt::FeltOperator::Mul
+        sierra::extensions::felt::FeltBinaryOperator::Mul
     };
     (/) => {
-        sierra::extensions::felt::FeltOperator::Div
+        sierra::extensions::felt::FeltBinaryOperator::Div
     };
 }
 

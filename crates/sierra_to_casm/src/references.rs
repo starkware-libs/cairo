@@ -4,7 +4,7 @@ use casm::ap_change::ApplyApChange;
 use casm::operand::{CellRef, DerefOrImmediate, Register};
 use num_bigint::BigInt;
 use num_traits::cast::ToPrimitive;
-use sierra::extensions::felt::FeltOperator;
+use sierra::extensions::felt::{FeltBinaryOperator, FeltUnaryOperator};
 use sierra::ids::{ConcreteTypeId, VarId};
 use sierra::program::{Function, StatementIdx};
 use thiserror::Error;
@@ -38,8 +38,23 @@ pub struct ReferenceValue {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
+pub struct UnaryOpExpression {
+    pub op: FeltUnaryOperator,
+    pub a: DerefOrImmediate,
+}
+impl ApplyApChange for UnaryOpExpression {
+    fn apply_known_ap_change(self, ap_change: usize) -> Option<Self> {
+        Some(UnaryOpExpression { op: self.op, a: self.a.apply_known_ap_change(ap_change)? })
+    }
+
+    fn can_apply_unknown(&self) -> bool {
+        self.a.can_apply_unknown()
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct BinOpExpression {
-    pub op: FeltOperator,
+    pub op: FeltBinaryOperator,
     pub a: CellRef,
     pub b: DerefOrImmediate,
 }
@@ -65,6 +80,7 @@ pub enum CellExpression {
     DoubleDeref(CellRef, i16),
     IntoSingleCellRef(CellRef),
     Immediate(BigInt),
+    UnaryOp(UnaryOpExpression),
     BinOp(BinOpExpression),
 }
 
@@ -101,6 +117,9 @@ impl ApplyApChange for CellExpression {
             CellExpression::IntoSingleCellRef(operand) => {
                 CellExpression::IntoSingleCellRef(operand.apply_known_ap_change(ap_change)?)
             }
+            CellExpression::UnaryOp(operand) => {
+                CellExpression::UnaryOp(operand.apply_known_ap_change(ap_change)?)
+            }
             CellExpression::BinOp(operand) => {
                 CellExpression::BinOp(operand.apply_known_ap_change(ap_change)?)
             }
@@ -114,6 +133,7 @@ impl ApplyApChange for CellExpression {
             | CellExpression::DoubleDeref(operand, _)
             | CellExpression::IntoSingleCellRef(operand) => operand.can_apply_unknown(),
             CellExpression::Immediate(_) => true,
+            CellExpression::UnaryOp(operand) => operand.can_apply_unknown(),
             CellExpression::BinOp(operand) => operand.can_apply_unknown(),
         }
     }
@@ -196,7 +216,7 @@ pub fn try_unpack_deref_with_offset(
     match expr.try_unpack_single() {
         Ok(CellExpression::Deref(cell)) => Ok((cell, 0i16)),
         Ok(CellExpression::BinOp(BinOpExpression {
-            op: FeltOperator::Add,
+            op: FeltBinaryOperator::Add,
             a: cell,
             b: DerefOrImmediate::Immediate(offset),
         })) => Ok((
