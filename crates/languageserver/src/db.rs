@@ -3,6 +3,7 @@ use defs::db::{init_defs_group, DefsDatabase, DefsGroup};
 use filesystem::db::{init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup};
 use lowering::db::{LoweringDatabase, LoweringGroup};
 use parser::db::ParserDatabase;
+use plugins::get_default_plugins;
 use semantic::db::{SemanticDatabase, SemanticGroup};
 use syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 
@@ -23,6 +24,8 @@ impl Default for RootDatabase {
         let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
         init_defs_group(&mut res);
+        // TODO(spapini): Consider taking from config.
+        res.set_macro_plugins(get_default_plugins());
         res
     }
 }
