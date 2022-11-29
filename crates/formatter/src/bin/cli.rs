@@ -1,52 +1,119 @@
 use std::fs;
-use std::path::Path;
+use std::io::{stdin, Read};
+use std::path::{Path, PathBuf};
 use std::process::ExitCode;
+use std::sync::Arc;
 
+use anyhow::{bail, Result};
 use clap::Parser;
 use colored::Colorize;
 use diffy::{create_patch, PatchFormatter};
+use filesystem::db::FilesGroup;
+use filesystem::ids::{FileId, FileLongId, VirtualFile};
 use formatter::{get_formatted_file, FormatterConfig};
-use parser::utils::{get_syntax_root_and_diagnostics_from_file, SimpleParserDatabase};
+use parser::utils::{get_syntax_root_and_diagnostics, SimpleParserDatabase};
 use utils::logging::init_logging;
 
-/// Format a specific file and return whether it was already correctly formatted.
-fn format_file(file_path: &str, args: &FormatterArgs, config: &FormatterConfig) -> bool {
-    if !is_cairo_file(file_path) {
-        eprintln_if_verbose(
-            &format!("The file: {file_path}, is not a cairo file, nothing was done.").red(),
-            args.verbose,
-        );
-        return true;
+#[derive(Debug)]
+enum Input<'a> {
+    Stdin,
+    File { path: &'a str },
+}
+
+#[derive(Debug)]
+enum FormatResult {
+    Identical,
+    DiffFound,
+}
+
+impl<'a> Input<'a> {
+    pub fn to_file_id<D: FilesGroup>(&self, db: &D) -> Result<FileId, std::io::Error> {
+        match self {
+            Self::Stdin => {
+                let mut buffer = String::new();
+                stdin().read_to_string(&mut buffer)?;
+                Ok(db.intern_file(FileLongId::Virtual(VirtualFile {
+                    parent: None,
+                    name: "<stdin>".into(),
+                    content: Arc::new(buffer),
+                })))
+            }
+            Self::File { path } => Ok(FileId::new(db, PathBuf::from(path))),
+        }
     }
 
-    let db_val = SimpleParserDatabase::default();
-    let db = &db_val;
-    let (syntax_root, diagnostics) = get_syntax_root_and_diagnostics_from_file(db, file_path);
+    pub fn write_content(&self, content: &str) -> Result<(), std::io::Error> {
+        match self {
+            Self::Stdin => {
+                print!("{content}");
+            }
+            Self::File { path } => {
+                fs::write(path, content)?;
+            }
+        }
+        Ok(())
+    }
+}
+
+impl<'a> std::fmt::Display for Input<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Stdin => write!(f, "stdin"),
+            Self::File { path } => write!(f, "file {}", path),
+        }
+    }
+}
+
+/// Formats an input from stdin or file
+fn format_input(input: &Input<'_>, config: &FormatterConfig, check: bool) -> Result<FormatResult> {
+    let db = SimpleParserDatabase::default();
+    let file_id = match input.to_file_id(&db) {
+        Ok(value) => value,
+        Err(_) => {
+            eprintln!("{}", format!("Failed to create virtual file from {input}").red());
+            bail!("Unable to create virtual file");
+        }
+    };
+    let original_text = match db.file_content(file_id) {
+        Some(value) => value,
+        None => {
+            eprintln!("{}", format!("Failed to read from {input}").red());
+            bail!("Unable to read from input");
+        }
+    };
+
+    let (syntax_root, diagnostics) = get_syntax_root_and_diagnostics(&db, file_id, &original_text);
+
     // Checks if the inner ParserDiagnostic is empty.
     if !diagnostics.0.leaves.is_empty() {
         eprintln!(
             "{}",
-            format!("A parsing error occurred in file: {file_path}. The file was not formatted.")
-                .red()
+            format!("A parsing error occurred in {input}. The content was not formatted.").red()
         );
-        return false;
+        bail!("Unable to parse input");
     }
-    let formatted_file = get_formatted_file(db, &syntax_root, config.clone());
 
-    let original_file = fs::read_to_string(file_path).unwrap();
-    if formatted_file == original_file {
-        true
-    } else {
-        if args.check {
-            let patch = create_patch(&original_file, &formatted_file);
-            let f = PatchFormatter::new().with_color();
-            println!("Diff in {file_path}:");
-            print!("{}", f.fmt_patch(&patch));
-        } else if fs::write(file_path, formatted_file).is_err() {
-            eprintln!("{}", format!("Unable to write result to {file_path}.").red());
+    let formatted_text = get_formatted_file(&db, &syntax_root, config.clone());
+
+    if &formatted_text == original_text.as_ref() {
+        // Always print if input is stdin, unless --check is used
+        if matches!(input, Input::Stdin) && !check {
+            print!("{formatted_text}");
         }
-
-        false
+        Ok(FormatResult::Identical)
+    } else if check {
+        // Diff found and --check was used
+        print_diff(input, &original_text, &formatted_text);
+        Ok(FormatResult::DiffFound)
+    } else {
+        // Diff found but --check is not used
+        match input.write_content(&formatted_text) {
+            Ok(_) => Ok(FormatResult::DiffFound),
+            Err(_) => {
+                eprintln!("{}", format!("Unable to write result to {input}.").red());
+                bail!("Unable to write to output");
+            }
+        }
     }
 }
 
@@ -63,7 +130,7 @@ fn format_directory(
     }
     for sub_path in fs::read_dir(path).unwrap() {
         if sub_path.unwrap().file_name() == ".cairofmtignore" {
-            println_if_verbose(&format!("The directory {path} was ignored."), args.verbose);
+            eprintln_if_verbose(&format!("The directory {path} was ignored."), args.verbose);
             return true;
         }
     }
@@ -91,10 +158,21 @@ fn format_path(
         // File exists
         Ok(metadata) => {
             if metadata.is_file() {
-                println_if_verbose(&format!("Formatting file: {}.", path), args.verbose);
-                format_file(path, args, config)
+                if !is_cairo_file(path) {
+                    eprintln_if_verbose(
+                        &format!("The file: {path}, is not a cairo file, nothing was done.").red(),
+                        args.verbose,
+                    );
+                    true
+                } else {
+                    eprintln_if_verbose(&format!("Formatting file: {}.", path), args.verbose);
+                    matches!(
+                        (format_input(&Input::File { path }, config, args.check), args.check),
+                        (Ok(FormatResult::Identical), _) | (Ok(FormatResult::DiffFound), false)
+                    )
+                }
             } else if metadata.is_dir() {
-                println_if_verbose(&format!("Formatting directory: {}.", path), args.verbose);
+                eprintln_if_verbose(&format!("Formatting directory: {}.", path), args.verbose);
                 format_directory(path, args, recursion_depth, config)
             } else {
                 // A symlink.
@@ -118,18 +196,22 @@ fn is_cairo_file(file_path: &str) -> bool {
     }
 }
 
-/// Outputs a string if the verbose flag is true.
-fn println_if_verbose(s: &str, verbose: bool) {
-    if verbose {
-        println!("{s}");
-    }
-}
-
-/// Outputs an error string if the verbose flag is true.
+/// Outputs a string to stderr if the verbose flag is true.
 fn eprintln_if_verbose(s: &str, verbose: bool) {
     if verbose {
         eprintln!("{s}");
     }
+}
+
+/// Prints diffs to stdout
+fn print_diff(input: &Input<'_>, original_text: &str, formatted_text: &str) {
+    let patch = create_patch(original_text, formatted_text);
+    let f = PatchFormatter::new().with_color();
+    match input {
+        Input::Stdin => println!("Diff in stdin:"),
+        Input::File { path } => println!("Diff in file {path}:"),
+    }
+    print!("{}", f.fmt_patch(&patch));
 }
 
 /// Sierra to casm compiler.
@@ -147,7 +229,7 @@ struct FormatterArgs {
     /// Print verbose output.
     #[arg(short, long, default_value_t = false)]
     verbose: bool,
-    /// A list of files and directories to format.
+    /// A list of files and directories to format. Use "-" for stdin.
     files: Vec<String>,
 }
 
@@ -157,17 +239,27 @@ fn main() -> ExitCode {
 
     let args = FormatterArgs::parse();
     let config = FormatterConfig::default();
-    println_if_verbose(
+    eprintln_if_verbose(
         &format!("Start formatting. Check: {}, Recursive: {}.", args.check, args.recursive),
         args.verbose,
     );
-    let mut all_correct = true;
-    if args.files.is_empty() {
-        all_correct = format_path(".", &args, 0, &config);
-    } else {
-        for file in args.files.iter() {
-            all_correct &= format_path(file, &args, 0, &config);
+
+    if args.files.len() == 1 && args.files[0] == "-" {
+        // Input comes from stdin
+        match (format_input(&Input::Stdin, &config, args.check), args.check) {
+            (Ok(FormatResult::Identical), _) => ExitCode::SUCCESS,
+            (Ok(FormatResult::DiffFound), false) => ExitCode::SUCCESS,
+            _ => ExitCode::FAILURE,
         }
+    } else {
+        let mut all_correct = true;
+        if args.files.is_empty() {
+            all_correct = format_path(".", &args, 0, &config);
+        } else {
+            for file in args.files.iter() {
+                all_correct &= format_path(file, &args, 0, &config);
+            }
+        }
+        if !all_correct && args.check { ExitCode::FAILURE } else { ExitCode::SUCCESS }
     }
-    if !all_correct && args.check { ExitCode::FAILURE } else { ExitCode::SUCCESS }
 }

@@ -728,6 +728,7 @@ dependencies = [
 name = "formatter"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "clap 4.0.26",
  "colored",
  "diffy",
