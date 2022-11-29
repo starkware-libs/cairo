@@ -112,7 +112,7 @@ fn generate_panicable_code(
     PluginResult { code: None, diagnostics: vec![] }
 }
 
-/// Given a function signature, if it returns Option::<T>, returns T. Otherwise, returns None.
+/// Given a function signature, if it returns `Option::<T>`, returns T. Otherwise, returns None.
 fn extract_option_ty(db: &dyn SyntaxGroup, signature: &ast::FunctionSignature) -> Option<String> {
     let ret_ty_expr =
         try_extract_matches!(signature.ret_ty(db), ast::OptionReturnTypeClause::ReturnTypeClause)?
