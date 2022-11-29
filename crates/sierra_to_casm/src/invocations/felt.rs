@@ -2,12 +2,14 @@ use casm::operand::DerefOrImmediate;
 use num_bigint::BigInt;
 use sierra::extensions::felt::{
     FeltBinaryOperationConcreteLibFunc, FeltConcrete, FeltOperationConcreteLibFunc,
-    FeltOperationWithConstConcreteLibFunc, FeltOperator,
+    FeltOperationWithConstConcreteLibFunc, FeltOperator, FeltUnaryOperationConcreteLibFunc,
 };
 
 use super::misc::build_jump_nz;
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
-use crate::references::{BinOpExpression, CellExpression, ReferenceExpression, ReferenceValue};
+use crate::references::{
+    BinOpExpression, CellExpression, ReferenceExpression, ReferenceValue, UnaryOpExpression,
+};
 
 #[cfg(test)]
 #[path = "felt_test.rs"]
@@ -19,6 +21,9 @@ pub fn build(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
+        FeltConcrete::Operation(FeltOperationConcreteLibFunc::Unary(
+            FeltUnaryOperationConcreteLibFunc { operator, .. },
+        )) => build_felt_unary_op(builder, *operator),
         FeltConcrete::Operation(FeltOperationConcreteLibFunc::Binary(
             FeltBinaryOperationConcreteLibFunc { operator, .. },
         )) => build_felt_op(builder, *operator),
@@ -31,6 +36,33 @@ pub fn build(
                 .into_iter(),
         )),
     }
+}
+
+/// Handles a felt operation with the given unary op.
+fn build_felt_unary_op(
+    builder: CompiledInvocationBuilder<'_>,
+    op: FeltOperator,
+) -> Result<CompiledInvocation, InvocationError> {
+    let expr = match builder.refs {
+        [ReferenceValue { expression: expr, .. }] => expr,
+        refs => {
+            return Err(InvocationError::WrongNumberOfArguments {
+                expected: 1,
+                actual: refs.len(),
+            });
+        }
+    };
+    let cell = expr
+        .try_unpack_single()
+        .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?;
+    let expression = match cell {
+        CellExpression::Deref(a) => UnaryOpExpression { op, a: DerefOrImmediate::Deref(a) },
+        CellExpression::Immediate(a) => UnaryOpExpression { op, a: DerefOrImmediate::Immediate(a) },
+        _ => return Err(InvocationError::InvalidReferenceExpressionForArgument),
+    };
+    Ok(builder.build_only_reference_changes(
+        [ReferenceExpression::from_cell(CellExpression::UnaryOp(expression))].into_iter(),
+    ))
 }
 
 /// Handles a felt operation with the given op.

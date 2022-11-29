@@ -1,6 +1,6 @@
 ap += 1;
 jmp rel 6 if [fp + -3] != 0;
-[ap + 0] = 1, ap++;
+[ap + 0] = -1, ap++;
 jmp rel 20;
 [fp + -3] = [ap + 0] + 1, ap++;
 jmp rel 6 if [ap + -1] != 0;

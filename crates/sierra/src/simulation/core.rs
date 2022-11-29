@@ -16,6 +16,7 @@ use crate::extensions::enm::{EnumConcreteLibFunc, EnumInitConcreteLibFunc};
 use crate::extensions::felt::{
     FeltBinaryOperationConcreteLibFunc, FeltConcrete, FeltConstConcreteLibFunc,
     FeltOperationConcreteLibFunc, FeltOperationWithConstConcreteLibFunc, FeltOperator,
+    FeltUnaryOperationConcreteLibFunc,
 };
 use crate::extensions::function_call::FunctionCallConcreteLibFunc;
 use crate::extensions::gas::GasConcreteLibFunc::{BurnGas, GetGas, RefundGas};
@@ -383,6 +384,12 @@ fn simulate_felt_libfunc(
                 Err(LibFuncSimulationError::WrongNumberOfArgs)
             }
         }
+        FeltConcrete::Operation(FeltOperationConcreteLibFunc::Unary(
+            FeltUnaryOperationConcreteLibFunc { operator, .. },
+        )) => match (inputs, operator) {
+            ([CoreValue::Felt(val)], FeltOperator::Neg) => Ok((vec![CoreValue::Felt(-val)], 0)),
+            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+        },
         FeltConcrete::Operation(FeltOperationConcreteLibFunc::Binary(
             FeltBinaryOperationConcreteLibFunc { operator, .. },
         )) => match (inputs, operator) {
@@ -417,6 +424,7 @@ fn simulate_felt_libfunc(
                     FeltOperator::Sub => value - c.clone(),
                     FeltOperator::Mul => value * c.clone(),
                     FeltOperator::Div => todo!("Support full felt operations."),
+                    _ => unreachable!("Operation not supported."),
                 })],
                 0,
             )),

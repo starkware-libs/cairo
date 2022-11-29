@@ -152,13 +152,13 @@ fn lowering_test(name: &str) {
 )]
 #[test_case(
     "fib_local",
-    &[6].map(BigInt::from),
+    &[9].map(BigInt::from),
     &[13].map(BigInt::from);
     "fib_local"
 )]
 #[test_case(
     "hash_chain",
-    &[3].map(BigInt::from),
+    &[8].map(BigInt::from),
     &[BigInt::parse_bytes(
         b"2dca1ad81a6107a9ef68c69f791bcdbda1df257aab76bd43ded73d96ed6227d", 16).unwrap()] => ignore["reason"];
     "hash_chain")]
