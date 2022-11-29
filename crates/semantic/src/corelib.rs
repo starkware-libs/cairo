@@ -252,19 +252,13 @@ pub fn core_binary_operator(
     };
     let function_name = match binary_op {
         BinaryOperator::Plus(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_add",
-        BinaryOperator::Plus(_) if [type1, type2] == [uint128_ty, uint128_ty] => {
-            "uint128_add_panicable"
-        }
+        BinaryOperator::Plus(_) if [type1, type2] == [uint128_ty, uint128_ty] => "uint128_add",
         BinaryOperator::Plus(_) => return unsupported_operator("+"),
         BinaryOperator::Minus(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_sub",
-        BinaryOperator::Minus(_) if [type1, type2] == [uint128_ty, uint128_ty] => {
-            "uint128_sub_panicable"
-        }
+        BinaryOperator::Minus(_) if [type1, type2] == [uint128_ty, uint128_ty] => "uint128_sub",
         BinaryOperator::Minus(_) => return unsupported_operator("-"),
         BinaryOperator::Mul(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_mul",
-        BinaryOperator::Mul(_) if [type1, type2] == [uint128_ty, uint128_ty] => {
-            "uint128_mul_panicable"
-        }
+        BinaryOperator::Mul(_) if [type1, type2] == [uint128_ty, uint128_ty] => "uint128_mul",
         BinaryOperator::Mul(_) => return unsupported_operator("*"),
         BinaryOperator::Div(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_div",
         BinaryOperator::Div(_) => return unsupported_operator("/"),

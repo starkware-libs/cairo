@@ -86,9 +86,9 @@ impl GenericLibFunc for Uint128OperationLibFunc {
         const WRAPPING_ADD: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_wrapping_add");
         const WRAPPING_SUB: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_wrapping_sub");
         const WRAPPING_MUL: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_wrapping_mul");
-        const ADD: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_add");
-        const SUB: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_sub");
-        const MUL: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_mul");
+        const ADD: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_checked_add");
+        const SUB: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_checked_sub");
+        const MUL: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_checked_mul");
         const DIV: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_div");
         const MOD: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_mod");
         match id {
@@ -457,7 +457,7 @@ impl NoGenericArgsGenericLibFunc for Uint128LessThanOrEqualLibFunc {
 #[derive(Default)]
 pub struct Uint128FromFeltLibFunc {}
 impl NoGenericArgsGenericLibFunc for Uint128FromFeltLibFunc {
-    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_from_felt");
+    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_try_from_felt");
 
     fn specialize_signature(
         &self,
