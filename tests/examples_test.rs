@@ -75,6 +75,7 @@ fn checked_compile_to_sierra(name: &str) -> sierra::program::Program {
 #[test_case("fib_local")]
 #[test_case("enum_flow")]
 #[test_case("corelib_usage")]
+#[test_case("hash_chain")]
 fn cairo_to_sierra(name: &str) {
     compare_contents_or_fix(name, "sierra", checked_compile_to_sierra(name).to_string());
     assert_eq!(checked_compile_to_sierra(name).to_string(), get_expected_contents(name, "sierra"));
@@ -91,6 +92,7 @@ fn cairo_to_sierra(name: &str) {
 #[test_case("fib_local", false)]
 #[test_case("enum_flow", false)]
 #[test_case("corelib_usage", false)]
+#[test_case("hash_chain", false)]
 fn cairo_to_casm(name: &str, enable_gas_checks: bool) {
     let program = checked_compile_to_sierra(name);
     compare_contents_or_fix(
@@ -115,6 +117,7 @@ fn cairo_to_casm(name: &str, enable_gas_checks: bool) {
 #[test_case("fib_gas")]
 #[test_case("fib_local")]
 #[test_case("corelib_usage")]
+#[test_case("hash_chain")]
 fn lowering_test(name: &str) {
     setup(name);
 }
@@ -150,6 +153,12 @@ fn lowering_test(name: &str) {
     &[Some(BigInt::from(13))];
     "fib_local"
 )]
+#[test_case(
+    "hash_chain",
+    &[3].map(BigInt::from),
+    &[BigInt::parse_bytes(
+        b"2dca1ad81a6107a9ef68c69f791bcdbda1df257aab76bd43ded73d96ed6227d", 16)] => ignore["reason"];
+    "hash_chain")]
 fn run_function_test(name: &str, params: &[BigInt], expected: &[Option<BigInt>]) {
     let sierra_func = checked_compile_to_sierra(name);
     assert_eq!(run_sierra_program(&sierra_func, params, expected.len(), false), expected);
