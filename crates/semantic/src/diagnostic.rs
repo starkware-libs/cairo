@@ -54,6 +54,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::FileNotFound => "File not found.".into(),
             SemanticDiagnosticKind::Unsupported => "Unsupported feature.".into(),
             SemanticDiagnosticKind::UnknownLiteral => "Unknown literal.".into(),
+            SemanticDiagnosticKind::UnsupportedUnaryOperator { op, ty } => {
+                format!("Unary operator '{op}' is not supported for type '{}'.", ty.format(db),)
+            }
             SemanticDiagnosticKind::UnknownBinaryOperator => "Unknown binary operator.".into(),
             SemanticDiagnosticKind::UnsupportedBinaryOperator { op, type1, type2 } => {
                 format!(
@@ -322,6 +325,10 @@ pub enum SemanticDiagnosticKind {
     FileNotFound,
     Unsupported,
     UnknownLiteral,
+    UnsupportedUnaryOperator {
+        op: SmolStr,
+        ty: semantic::TypeId,
+    },
     UnknownBinaryOperator,
     UnsupportedBinaryOperator {
         op: SmolStr,

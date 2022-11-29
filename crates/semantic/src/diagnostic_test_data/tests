@@ -117,3 +117,42 @@ error: ref argument must be a variable.
  --> lib.cairo:2:7
   foo(1);
       ^
+
+//! > ==========================================================================
+
+//! > Test unsupported operators
+
+//! > test_function_name
+test_expr_diagnostics
+
+//! > expr_code
+!17
+
+//! > module_code
+
+//! > function_body
+1 == 1;
+11 + (1 == 1);
+112 & 192;
+-(1 == 2);
+
+//! > expected_diagnostics
+error: Binary operator '+' is not supported for types 'core::felt' and 'core::bool'.
+ --> lib.cairo:2:4
+11 + (1 == 1);
+   ^
+
+error: Binary operator '&' is not supported for types 'core::felt' and 'core::felt'.
+ --> lib.cairo:3:5
+112 & 192;
+    ^
+
+error: Unary operator '-' is not supported for type 'core::bool'.
+ --> lib.cairo:4:1
+-(1 == 2); {
+^
+
+error: Unary operator '!' is not supported for type 'core::felt'.
+ --> lib.cairo:5:1
+!17
+^
