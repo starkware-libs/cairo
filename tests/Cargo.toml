@@ -28,5 +28,5 @@ name = "examples_test"
 path = "examples_test.rs"
 
 [[test]]
-name = "snippets_test"
-path = "snippets_test.rs"
+name = "cairo_level_tests"
+path = "cairo_level_tests.rs"
