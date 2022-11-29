@@ -22,7 +22,7 @@ pub fn generate_equations<
 >(
     program: &Program,
     get_cost: GetCost,
-) -> Result<Vec<(CostExpr, CostExpr)>, CostError> {
+) -> Result<Vec<CostExpr>, CostError> {
     // Calculating first to fail early.
     let statement_topological_ordering = get_reverse_topological_ordering(program)?;
     // Vector containing the cost from a statement until the end of the function in some path (may
@@ -57,14 +57,14 @@ pub fn generate_equations<
 /// Helper to generate the equations for calculating gas variables.
 struct EquationGenerator {
     pub future_costs: Vec<Option<CostExpr>>,
-    pub equations: Vec<(CostExpr, CostExpr)>,
+    pub equations: Vec<CostExpr>,
 }
 impl EquationGenerator {
     /// Sets some future or adds a matching equation if already set.
     fn set_or_add_constraint(&mut self, idx: &StatementIdx, cost: CostExpr) {
         let entry = &mut self.future_costs[idx.0];
         if let Some(other) = entry {
-            self.equations.push((other.clone(), cost));
+            self.equations.push(other.clone() - cost);
         } else {
             *entry = Some(cost);
         }
