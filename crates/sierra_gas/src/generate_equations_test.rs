@@ -100,12 +100,16 @@ fn generate(
     code: &str,
     costs: HashMap<ConcreteLibFuncId, Vec<CostExpr>>,
 ) -> Result<Vec<CostExpr>, CostError> {
-    generate_equations(&sierra::ProgramParser::new().parse(code).unwrap(), |_, _idx, libfunc_id| {
-        costs
-            .get(libfunc_id)
-            .unwrap()
-            .iter()
-            .map(|x| CostExprMap::from_iter([(CostTokenType::Step, x.clone())]))
-            .collect()
-    })
+    Ok(generate_equations(
+        &sierra::ProgramParser::new().parse(code).unwrap(),
+        |_, _idx, libfunc_id| {
+            costs
+                .get(libfunc_id)
+                .unwrap()
+                .iter()
+                .map(|x| CostExprMap::from_iter([(CostTokenType::Step, x.clone())]))
+                .collect()
+        },
+    )?[CostTokenType::Step]
+        .clone())
 }

@@ -1,5 +1,5 @@
 use std::hash::Hash;
-use std::ops::Index;
+use std::ops::{Index, IndexMut};
 
 use indexmap::{Equivalent, IndexMap};
 use itertools::zip_eq;
@@ -117,6 +117,14 @@ impl<Key: Hash + Eq, IndexType: Into<Key>, Value> Index<IndexType> for OrderedHa
 
     fn index(&self, index: IndexType) -> &Self::Output {
         &self.0[&index.into()]
+    }
+}
+
+impl<Key: Hash + Eq, IndexType: Into<Key>, Value> IndexMut<IndexType>
+    for OrderedHashMap<Key, Value>
+{
+    fn index_mut(&mut self, index: IndexType) -> &mut Value {
+        self.0.index_mut(&index.into())
     }
 }
 

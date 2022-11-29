@@ -2,6 +2,7 @@ use itertools::zip_eq;
 use sierra::ids::ConcreteLibFuncId;
 use sierra::program::{Program, StatementIdx};
 use utils::collection_arithmetics::{add_maps, sub_maps};
+use utils::ordered_hash_map::OrderedHashMap;
 
 use super::CostError;
 use crate::core_libfunc_cost_expr::CostExprMap;
@@ -25,13 +26,12 @@ pub fn generate_equations<
 >(
     program: &Program,
     get_cost: GetCost,
-) -> Result<Vec<CostExpr>, CostError> {
+) -> Result<OrderedHashMap<CostTokenType, Vec<CostExpr>>, CostError> {
     // Calculating first to fail early.
     let statement_topological_ordering = get_reverse_topological_ordering(program)?;
     // Vector containing the cost from a statement until the end of the function in some path (may
     // be a variable).
-    let mut generator =
-        EquationGenerator { future_costs: vec![None; program.statements.len()], equations: vec![] };
+    let mut generator = EquationGenerator::new(vec![None; program.statements.len()]);
     // Adding a variable for every function entry point.
     for func in &program.funcs {
         generator.get_future_cost(&func.entry_point);
@@ -60,15 +60,24 @@ pub fn generate_equations<
 /// Helper to generate the equations for calculating gas variables.
 struct EquationGenerator {
     pub future_costs: Vec<Option<CostExprMap>>,
-    pub equations: Vec<CostExpr>,
+    pub equations: OrderedHashMap<CostTokenType, Vec<CostExpr>>,
 }
 impl EquationGenerator {
+    fn new(future_costs: Vec<Option<CostExprMap>>) -> Self {
+        Self {
+            future_costs,
+            equations: OrderedHashMap::from_iter(
+                CostTokenType::iter().map(|token_type| (*token_type, vec![])),
+            ),
+        }
+    }
+
     /// Sets some future or adds a matching equation if already set.
     fn set_or_add_constraint(&mut self, idx: &StatementIdx, cost: CostExprMap) {
         let entry = &mut self.future_costs[idx.0];
         if let Some(other) = entry {
-            for (_token_type, val) in sub_maps(other.clone(), cost) {
-                self.equations.push(val);
+            for (token_type, val) in sub_maps(other.clone(), cost) {
+                self.equations[token_type].push(val);
             }
         } else {
             *entry = Some(cost);

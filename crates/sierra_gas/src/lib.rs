@@ -40,8 +40,9 @@ pub fn calc_gas_info(program: &Program) -> Result<GasInfo, CostError> {
             core_libfunc_cost_expr::core_libfunc_cost_expr(statement_future_cost, idx, libfunc)
         },
     )?;
-    let solution = solve_equations::solve_equations(equations)?;
     // TODO(lior): Output the costs in other tokens as well.
+    // TODO(lior): Remove the clone() below.
+    let solution = solve_equations::solve_equations(equations[CostTokenType::Step].clone())?;
     let function_costs = program
         .funcs
         .iter()
