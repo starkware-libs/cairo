@@ -67,14 +67,14 @@ Statements:
   (v3: ()) <- struct_construct()
   (v4: core::bool) <- bool::True(v3)
   (v9: core::felt) <- match_enum(v4) {
-    bool::True => blk0,
     bool::False => blk1,
+    bool::True => blk0,
   }
   (v10: ()) <- struct_construct()
   (v11: core::bool) <- bool::False(v10)
   () <- match_enum(v11) {
-    bool::True => blk2,
     bool::False => blk3,
+    bool::True => blk2,
   }
   (v15: core::felt) <- 5u
 Drops: v0, v1, v2, v3, v4, v11, v10
