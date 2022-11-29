@@ -1,13 +1,15 @@
 use std::fs;
 use std::io::{stdin, Read};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::ExitCode;
+use std::sync::Arc;
 
 use anyhow::{bail, Result};
 use clap::Parser;
 use colored::Colorize;
 use diffy::{create_patch, PatchFormatter};
-use filesystem::ids::FileId;
+use filesystem::db::FilesGroup;
+use filesystem::ids::{FileLongId, VirtualFile};
 use formatter::{get_formatted_file, FormatterConfig};
 use parser::utils::{get_syntax_root_and_diagnostics, SimpleParserDatabase};
 use utils::logging::init_logging;
@@ -65,8 +67,11 @@ impl<'a> std::fmt::Display for Input<'a> {
 fn get_formatted_str(text: &str, config: &FormatterConfig) -> Result<String> {
     let db = SimpleParserDatabase::default();
 
-    // Fake file name just to make FileId happy
-    let file_id = FileId::new(&db, PathBuf::from("String"));
+    let file_id = db.intern_file(FileLongId::Virtual(VirtualFile {
+        parent: None,
+        name: "<text>".into(),
+        content: Arc::new(text.to_owned()),
+    }));
     let (syntax_root, diagnostics) = get_syntax_root_and_diagnostics(&db, file_id, text);
 
     // Checks if the inner ParserDiagnostic is empty.
