@@ -21,10 +21,10 @@ func main() -> felt {
 
 func match_short(e: MyEnumShort) -> felt {
     match e {
-        MyEnumShort::a (x) => {
+        MyEnumShort::a(x) => {
             x
         },
-        MyEnumShort::b (x) => {
+        MyEnumShort::b(x) => {
             x
         },
     }
@@ -32,13 +32,13 @@ func match_short(e: MyEnumShort) -> felt {
 
 func match_long(e: MyEnumLong) -> felt {
     match e {
-        MyEnumLong::a (x) => {
+        MyEnumLong::a(x) => {
             x
         },
-        MyEnumLong::b (x) => {
+        MyEnumLong::b(x) => {
             x
         },
-        MyEnumLong::c (x) => {
+        MyEnumLong::c(x) => {
             x
         },
     }
