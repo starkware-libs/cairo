@@ -1,4 +1,4 @@
-use defs::db::MacroPlugin;
+use defs::db::{MacroPlugin, PluginDiagnostic, PluginResult};
 use itertools::Itertools;
 use syntax::node::ast::AttributeList;
 use syntax::node::db::SyntaxGroup;
@@ -9,11 +9,7 @@ use utils::try_extract_matches;
 pub struct PanicablePlugin {}
 
 impl MacroPlugin for PanicablePlugin {
-    fn generate_code(
-        &self,
-        db: &dyn SyntaxGroup,
-        item_ast: ast::Item,
-    ) -> Option<(smol_str::SmolStr, String)> {
+    fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {
         match item_ast {
             ast::Item::ExternFunction(extern_func_ast) => generate_panicable_code(
                 db,
@@ -27,7 +23,7 @@ impl MacroPlugin for PanicablePlugin {
                 free_func_ast.signature(db),
                 free_func_ast.attributes(db),
             ),
-            _ => None,
+            _ => PluginResult { code: None, diagnostics: vec![] },
         }
     }
 }
@@ -38,7 +34,7 @@ fn generate_panicable_code(
     ident: ast::TerminalIdentifier,
     signature: ast::FunctionSignature,
     attributes: AttributeList,
-) -> Option<(smol_str::SmolStr, String)> {
+) -> PluginResult {
     for attr in attributes.elements(db) {
         if attr.attr(db).text(db) != "panic_with" {
             continue;
@@ -49,43 +45,52 @@ fn generate_panicable_code(
             ast::OptionTerminalNoPanic::TerminalNoPanic(_)
         ) {
             // Only nonpanic functions can be wrapped.
-            return None;
-        }
-        let ret_ty_expr = try_extract_matches!(
-            signature.ret_ty(db),
-            ast::OptionReturnTypeClause::ReturnTypeClause
-        )?
-        .ty(db);
-        let ret_ty_path = try_extract_matches!(ret_ty_expr, ast::Expr::Path)?;
-
-        // Currently only wrapping functions returning an Option<T>.
-        let [ast::PathSegment::WithGenericArgs(segment)] = &ret_ty_path.elements(db)[..] else {
-            return None;
-        };
-        if segment.ident(db).text(db) != "Option" {
-            return None;
+            return PluginResult {
+                code: None,
+                diagnostics: vec![PluginDiagnostic {
+                    stable_ptr: signature.stable_ptr().untyped(),
+                    message: "Only nonpanic functions can be wrapped".into(),
+                }],
+            };
         }
 
-        let ast::OptionAttributeArgs::AttributeArgs(args) = attr.args(db) else {
-            return None;
+        let Some(inner_ty_text) = extract_option_ty(db, &signature) else {
+            return PluginResult {
+                code: None,
+                diagnostics: vec![PluginDiagnostic {
+                    stable_ptr: signature.stable_ptr().untyped(),
+                    message: "Currently only wrapping functions returning an Option<T>".into(),
+                }],
+            };
         };
-        let [ast::Expr::Literal(err_value)] = &args.arg_list(db).elements(db)[..] else {
-            return None;
+
+        let Some(err_value) = try_extract_matches!(attr.args(db), ast::OptionAttributeArgs::AttributeArgs).and_then(
+            |args| {
+            if let [ast::Expr::Literal(err_value)] = &args.arg_list(db).elements(db)[..] {
+                Some(err_value.text(db)) } else { None}
+        }) else {
+            return PluginResult {
+                code: None,
+                diagnostics: vec![PluginDiagnostic {
+                    stable_ptr: signature.stable_ptr().untyped(),
+                    message: "Failed to extract panic data attribute".into(),
+                }],
+            };
         };
+
         let function_name = ident.text(db);
         let params = signature.parameters(db).as_syntax_node().get_text(db);
-        let inner_ty_text = segment.generic_args(db).generic_args(db).as_syntax_node().get_text(db);
         let args = signature
             .parameters(db)
             .elements(db)
             .into_iter()
             .map(|param| param.name(db).as_syntax_node().get_text(db))
             .join(", ");
-        let err_value = err_value.text(db);
-        return Some((
-            "panicable".into(),
-            indoc::formatdoc!(
-                r#"
+        return PluginResult {
+            code: Some((
+                "panicable".into(),
+                indoc::formatdoc!(
+                    r#"
                     func {function_name}_panicable({params}) -> {inner_ty_text} {{
                         match {function_name}({args}) {{
                             Option::Some (v) => {{
@@ -99,8 +104,28 @@ fn generate_panicable_code(
                         }}
                     }}
                 "#
-            ),
-        ));
+                ),
+            )),
+            diagnostics: vec![],
+        };
     }
-    None
+    PluginResult { code: None, diagnostics: vec![] }
+}
+
+/// Given a function signature, if it returns Option::<T>, returns T. Otherwise, returns None.
+fn extract_option_ty(db: &dyn SyntaxGroup, signature: &ast::FunctionSignature) -> Option<String> {
+    let ret_ty_expr =
+        try_extract_matches!(signature.ret_ty(db), ast::OptionReturnTypeClause::ReturnTypeClause)?
+            .ty(db);
+    let ret_ty_path = try_extract_matches!(ret_ty_expr, ast::Expr::Path)?;
+
+    // Currently only wrapping functions returning an Option<T>.
+    let [ast::PathSegment::WithGenericArgs(segment)] = &ret_ty_path.elements(db)[..] else {
+        return None;
+    };
+    if segment.ident(db).text(db) != "Option" {
+        return None;
+    }
+
+    Some(segment.generic_args(db).generic_args(db).as_syntax_node().get_text(db))
 }
