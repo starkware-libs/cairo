@@ -49,7 +49,7 @@ Drops: v6, v4
 End:
   Return(v7)
 
-blk4:
+blk4 (root):
 Inputs: v0: core::result::Result::<core::result::Result::<core::integer::uint128, core::felt>, core::felt>
 Statements:
   (v4: core::result::Result::<core::integer::uint128, core::felt>) <- match_enum(v0) {

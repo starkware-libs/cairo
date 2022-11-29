@@ -21,7 +21,7 @@ foo
 //! > lowering_diagnostics
 
 //! > lowering_format
-blk0:
+blk0 (root):
 Inputs: v0: core::bool
 Statements:
   (v1: core::array::Array::<core::felt>) <- core::array::array_new<Type(core::felt),>()

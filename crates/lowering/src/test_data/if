@@ -37,7 +37,7 @@ Drops: v4
 End:
   Callsite(v1)
 
-blk2:
+blk2 (root):
 Inputs: v0: core::bool, v1: core::felt
 Statements:
   (v5: core::felt) <- match_enum(v0) {
@@ -89,7 +89,7 @@ Drops: v2
 End:
   Callsite(v0)
 
-blk2:
+blk2 (root):
 Inputs: v0: core::felt
 Statements:
   (v3: core::felt) <- match core::felt_jump_nz(v0) {
@@ -140,7 +140,7 @@ Drops: v2
 End:
   Callsite()
 
-blk2:
+blk2 (root):
 Inputs: v0: core::felt
 Statements:
   () <- match core::felt_jump_nz(v0) {
@@ -194,7 +194,7 @@ Drops: v8
 End:
   Callsite(v9)
 
-blk2:
+blk2 (root):
 Inputs: v0: core::felt, v1: core::felt, v2: core::felt, v3: core::felt
 Statements:
   (v4: core::felt) <- core::felt_add(v0, v1)

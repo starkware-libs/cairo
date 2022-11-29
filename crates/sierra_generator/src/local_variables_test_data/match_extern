@@ -84,7 +84,7 @@ Drops:
 End:
   Callsite(v12)
 
-blk6:
+blk6 (root):
 Inputs: v0: core::felt
 Statements:
   (v6: core::felt) <- match core::felt_jump_nz(v0) {
@@ -164,7 +164,7 @@ Drops: v9
 End:
   Callsite(v10)
 
-blk4:
+blk4 (root):
 Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- core::felt_add(v0, v0)
@@ -279,7 +279,7 @@ Drops: v9
 End:
   Callsite(v11)
 
-blk6:
+blk6 (root):
 Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- core::felt_add(v0, v0)

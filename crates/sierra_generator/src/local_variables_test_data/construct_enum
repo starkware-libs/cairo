@@ -25,7 +25,7 @@ struct MyStruct {
 }
 
 //! > lowering_format
-blk0:
+blk0 (root):
 Inputs:
 Statements:
   (v0: ()) <- struct_construct()

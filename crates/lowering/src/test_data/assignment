@@ -35,7 +35,7 @@ Drops: v4
 End:
   Callsite(v1)
 
-blk2:
+blk2 (root):
 Inputs: v0: core::bool
 Statements:
   (v1: core::felt) <- 2u
