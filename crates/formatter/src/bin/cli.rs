@@ -87,7 +87,7 @@ fn get_formatted_str(text: &str, config: &FormatterConfig) -> Result<String, Unp
 
 /// Formats an input from stdin or file
 fn format_input(
-    input: &Input,
+    input: &Input<'_>,
     config: &FormatterConfig,
     check: bool,
 ) -> Result<FormatResult, FormatError> {
@@ -220,7 +220,7 @@ fn eprintln_if_verbose(s: &str, verbose: bool) {
 }
 
 /// Prints diffs to stdout
-fn print_diff(input: &Input, original_text: &str, formatted_text: &str) {
+fn print_diff(input: &Input<'_>, original_text: &str, formatted_text: &str) {
     let patch = create_patch(original_text, formatted_text);
     let f = PatchFormatter::new().with_color();
     match input {
