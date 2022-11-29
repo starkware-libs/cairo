@@ -63,7 +63,7 @@ impl CasmContractClass {
 
         let as_casm_entry_point = |contract_entry_point: ContractEntryPoint| {
             let statement_id = func_sierra_entry_point
-                .get(&FunctionId::from_usize(contract_entry_point.function_id))
+                .get(&FunctionId::new(contract_entry_point.function_id))
                 .ok_or(StarknetSierraCompilationError::EntryPointError)?;
 
             let code_offset = cairo_program

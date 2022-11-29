@@ -100,4 +100,6 @@ fn test_compile_path() {
           ]"#
         }
     );
+
+    // TODO(ilya): Make the entry points consistent across compilations and add them to the test.
 }
