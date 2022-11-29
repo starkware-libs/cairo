@@ -14,8 +14,9 @@ use crate::extensions::core::CoreConcreteLibFunc::{
 use crate::extensions::dict_felt_to::DictFeltToConcreteLibFunc;
 use crate::extensions::enm::{EnumConcreteLibFunc, EnumInitConcreteLibFunc};
 use crate::extensions::felt::{
-    FeltBinaryOperationConcreteLibFunc, FeltConcrete, FeltConstConcreteLibFunc,
-    FeltOperationConcreteLibFunc, FeltOperationWithConstConcreteLibFunc, FeltOperator,
+    FeltBinaryOpConcreteLibFunc, FeltBinaryOperationConcreteLibFunc, FeltBinaryOperator,
+    FeltConcrete, FeltConstConcreteLibFunc, FeltOperationWithConstConcreteLibFunc,
+    FeltUnaryOpConcreteLibFunc, FeltUnaryOperationConcreteLibFunc, FeltUnaryOperator,
 };
 use crate::extensions::function_call::FunctionCallConcreteLibFunc;
 use crate::extensions::gas::GasConcreteLibFunc::{BurnGas, GetGas, RefundGas};
@@ -381,22 +382,30 @@ fn simulate_felt_libfunc(
                 Err(LibFuncSimulationError::WrongNumberOfArgs)
             }
         }
-        FeltConcrete::Operation(FeltOperationConcreteLibFunc::Binary(
-            FeltBinaryOperationConcreteLibFunc { operator, .. },
+        FeltConcrete::UnaryOperation(FeltUnaryOperationConcreteLibFunc::Unary(
+            FeltUnaryOpConcreteLibFunc { operator, .. },
+        )) => match (inputs, operator) {
+            ([CoreValue::Felt(val)], FeltUnaryOperator::Neg) => {
+                Ok((vec![CoreValue::Felt(-val)], 0))
+            }
+            _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
+        },
+        FeltConcrete::BinaryOperation(FeltBinaryOperationConcreteLibFunc::Binary(
+            FeltBinaryOpConcreteLibFunc { operator, .. },
         )) => match (inputs, operator) {
             (
                 [CoreValue::Felt(lhs), CoreValue::Felt(rhs)],
-                FeltOperator::Add | FeltOperator::Sub | FeltOperator::Mul,
+                FeltBinaryOperator::Add | FeltBinaryOperator::Sub | FeltBinaryOperator::Mul,
             ) => Ok((
                 vec![CoreValue::Felt(match operator {
-                    FeltOperator::Add => lhs + rhs,
-                    FeltOperator::Sub => lhs - rhs,
-                    FeltOperator::Mul => lhs * rhs,
+                    FeltBinaryOperator::Add => lhs + rhs,
+                    FeltBinaryOperator::Sub => lhs - rhs,
+                    FeltBinaryOperator::Mul => lhs * rhs,
                     _ => unreachable!("Arm only handles these cases."),
                 })],
                 0,
             )),
-            ([CoreValue::Felt(_lhs), CoreValue::NonZero(non_zero)], FeltOperator::Div) => {
+            ([CoreValue::Felt(_lhs), CoreValue::NonZero(non_zero)], FeltBinaryOperator::Div) => {
                 if let CoreValue::Felt(_rhs) = *non_zero.clone() {
                     todo!("Support felt_div operation.")
                 } else {
@@ -406,15 +415,15 @@ fn simulate_felt_libfunc(
             ([_, _], _) => Err(LibFuncSimulationError::MemoryLayoutMismatch),
             _ => Err(LibFuncSimulationError::WrongNumberOfArgs),
         },
-        FeltConcrete::Operation(FeltOperationConcreteLibFunc::Const(
+        FeltConcrete::BinaryOperation(FeltBinaryOperationConcreteLibFunc::Const(
             FeltOperationWithConstConcreteLibFunc { operator, c, .. },
         )) => match inputs {
             [CoreValue::Felt(value)] => Ok((
                 vec![CoreValue::Felt(match operator {
-                    FeltOperator::Add => value + c.clone(),
-                    FeltOperator::Sub => value - c.clone(),
-                    FeltOperator::Mul => value * c.clone(),
-                    FeltOperator::Div => todo!("Support full felt operations."),
+                    FeltBinaryOperator::Add => value + c.clone(),
+                    FeltBinaryOperator::Sub => value - c.clone(),
+                    FeltBinaryOperator::Mul => value * c.clone(),
+                    FeltBinaryOperator::Div => todo!("Support full felt operations."),
                 })],
                 0,
             )),

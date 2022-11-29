@@ -6,7 +6,7 @@ use casm::casm;
 use casm::operand::DerefOrImmediate;
 use num_bigint::BigInt;
 use num_traits::FromPrimitive;
-use sierra::extensions::felt::FeltOperator;
+use sierra::extensions::felt::FeltBinaryOperator;
 use sierra::extensions::pedersen::PedersenConcreteLibFunc;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
@@ -59,7 +59,7 @@ fn build_pedersen_hash(
     let output_expressions = [vec![
         ReferenceExpression {
             cells: vec![CellExpression::BinOp(BinOpExpression {
-                op: FeltOperator::Add,
+                op: FeltBinaryOperator::Add,
                 a: pedersen_base,
                 b: DerefOrImmediate::Immediate(BigInt::from_i16(pedersen_offset).unwrap() + 3),
             })],
