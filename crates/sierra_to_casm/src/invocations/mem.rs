@@ -1,6 +1,6 @@
 use casm::ap_change::{ApChange, ApplyApChange};
 use casm::instructions::Instruction;
-use casm::operand::{CellRef, Register};
+use casm::operand::{CellRef, DerefOrImmediate, Register};
 use casm::{casm, casm_extend};
 use sierra::extensions::felt::FeltOperator;
 use sierra::extensions::mem::{
@@ -13,7 +13,9 @@ use utils::try_extract_matches;
 
 use super::{misc, CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::environment::frame_state;
-use crate::references::{BinOpExpression, CellExpression, ReferenceExpression, ReferenceValue};
+use crate::references::{
+    BinOpExpression, CellExpression, ReferenceExpression, ReferenceValue, UnaryOpExpression,
+};
 
 /// Builds instructions for Sierra memory operations.
 pub fn build(
@@ -75,6 +77,15 @@ fn get_store_instructions(
                 operand = [[dst]]
             ),
             CellExpression::Immediate(operand) => add_instruction!(ctx, dst = operand),
+            CellExpression::UnaryOp(UnaryOpExpression { op, a }) => match op {
+                FeltOperator::Neg => match a {
+                    DerefOrImmediate::Deref(cell_ref) => {
+                        add_instruction!(ctx, dst = cell_ref * (-1))
+                    }
+                    DerefOrImmediate::Immediate(imm) => add_instruction!(ctx, dst = (-imm)),
+                },
+                _ => unreachable!("Unexpected unary expression"),
+            },
             CellExpression::BinOp(BinOpExpression { op, a, b }) => match op {
                 FeltOperator::Add => add_instruction!(ctx, dst = a + b),
                 FeltOperator::Mul => add_instruction!(ctx, dst = a * b),
@@ -82,6 +93,7 @@ fn get_store_instructions(
                 FeltOperator::Sub => add_instruction!(ctx, a = dst + b),
                 // dst = a / b => a = dst * b
                 FeltOperator::Div => add_instruction!(ctx, a = dst * b),
+                _ => unreachable!("Unexpected binary expression"),
             },
         }
         if inc_ap {
