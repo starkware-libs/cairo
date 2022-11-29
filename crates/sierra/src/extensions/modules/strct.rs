@@ -16,7 +16,7 @@ use utils::try_extract_matches;
 use super::as_single_type;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
-    DeferredOutputKind, LibFuncSignature, OutputVarInfo, SierraApChange,
+    DeferredOutputKind, LibFuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
     SignatureOnlyGenericLibFunc, SignatureSpecializationContext,
 };
 use crate::extensions::type_specialization_context::TypeSpecializationContext;
@@ -120,8 +120,16 @@ impl SignatureOnlyGenericLibFunc for StructConstructLibFunc {
         let member_types =
             StructConcreteType::new(context.as_type_specialization_context(), &generic_args)?
                 .members;
-        Ok(LibFuncSignature::new_non_branch(
-            member_types,
+        Ok(LibFuncSignature::new_non_branch_ex(
+            member_types
+                .into_iter()
+                .map(|ty| ParamSignature {
+                    ty,
+                    allow_deferred: false,
+                    allow_add_const: false,
+                    allow_const: true,
+                })
+                .collect(),
             vec![OutputVarInfo {
                 ty: struct_type,
                 ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),

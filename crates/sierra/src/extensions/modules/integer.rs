@@ -340,7 +340,7 @@ impl NamedLibFunc for Uint128ConstLibFunc {
             vec![],
             vec![OutputVarInfo {
                 ty: context.get_concrete_type(Uint128Type::id(), &[])?,
-                ref_info: OutputVarReferenceInfo::Const,
+                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Const),
             }],
             SierraApChange::Known(0),
         ))
@@ -467,7 +467,12 @@ impl NoGenericArgsGenericLibFunc for Uint128FromFeltLibFunc {
         Ok(LibFuncSignature {
             param_signatures: vec![
                 ParamSignature::new(range_check_type.clone()),
-                ParamSignature::new(context.get_concrete_type(FeltType::id(), &[])?),
+                ParamSignature {
+                    ty: context.get_concrete_type(FeltType::id(), &[])?,
+                    allow_deferred: false,
+                    allow_add_const: false,
+                    allow_const: true,
+                },
             ],
             branch_signatures: vec![
                 BranchSignature {

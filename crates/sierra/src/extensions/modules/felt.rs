@@ -4,7 +4,7 @@ use num_traits::Zero;
 use super::jump_not_zero::{JumpNotZeroLibFunc, JumpNotZeroTraits};
 use super::non_zero::NonZeroType;
 use crate::extensions::lib_func::{
-    DeferredOutputKind, LibFuncSignature, OutputVarInfo, SierraApChange,
+    DeferredOutputKind, LibFuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
     SignatureSpecializationContext, SpecializationContext,
 };
 use crate::extensions::types::{InfoOnlyConcreteType, TypeInfo};
@@ -95,13 +95,18 @@ impl GenericLibFunc for FeltOperationLibFunc {
     ) -> Result<LibFuncSignature, SpecializationError> {
         let ty = context.get_concrete_type(FeltType::id(), &[])?;
         match args {
-            [] => Ok(LibFuncSignature::new_non_branch(
+            [] => Ok(LibFuncSignature::new_non_branch_ex(
                 vec![
-                    ty.clone(),
-                    if matches!(self.operator, FeltOperator::Div) {
-                        context.get_wrapped_concrete_type(NonZeroType::id(), ty.clone())?
-                    } else {
-                        ty.clone()
+                    ParamSignature::new(ty.clone()),
+                    ParamSignature {
+                        ty: if matches!(self.operator, FeltOperator::Div) {
+                            context.get_wrapped_concrete_type(NonZeroType::id(), ty.clone())?
+                        } else {
+                            ty.clone()
+                        },
+                        allow_deferred: false,
+                        allow_add_const: false,
+                        allow_const: true,
                     },
                 ],
                 vec![OutputVarInfo {
@@ -199,7 +204,7 @@ impl NamedLibFunc for FeltConstLibFunc {
             vec![],
             vec![OutputVarInfo {
                 ty: context.get_concrete_type(FeltType::id(), &[])?,
-                ref_info: OutputVarReferenceInfo::Const,
+                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Const),
             }],
             SierraApChange::Known(0),
         ))
