@@ -33,14 +33,14 @@ blk0 (root):
 Inputs: v0: core::felt
 Statements:
   (v1: core::felt) <- core::felt_add(v0, v0)
-  (v2: core::felt) <- test_crate::revoke_ap()
-  (v3: test_crate::MyStruct) <- struct_construct(v0, v1)
+  (v2: core::felt) <- test::revoke_ap()
+  (v3: test::MyStruct) <- struct_construct(v0, v1)
   (v4: core::felt, v5: core::felt) <- struct_destructure(v3)
   (v6: core::felt) <- 0u
-  (v7: test_crate::MyStruct) <- struct_construct(v4, v6)
+  (v7: test::MyStruct) <- struct_construct(v4, v6)
   (v8: core::felt) <- 1u
-  (v9: test_crate::MyStruct) <- struct_construct(v0, v8)
-  (v10: core::felt) <- test_crate::revoke_ap()
+  (v9: test::MyStruct) <- struct_construct(v0, v8)
+  (v10: core::felt) <- test::revoke_ap()
   (v11: core::felt, v12: core::felt) <- struct_destructure(v9)
 Drops: v0, v1, v2, v4, v5, v6, v7, v8, v10, v12
 End:

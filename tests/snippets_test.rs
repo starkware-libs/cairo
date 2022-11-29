@@ -24,8 +24,8 @@ mod common;
 fn setup(content: &str) -> (RootDatabase, CrateId) {
     let mut db = RootDatabase::default();
     db.set_macro_plugins(vec![Arc::new(DerivePlugin {}), Arc::new(PanicablePlugin {})]);
-    let crate_id = db.intern_crate(CrateLongId("test_crate/lib.cairo".into()));
-    db.set_crate_root(crate_id, Some(Directory("test_crate".into())));
+    let crate_id = db.intern_crate(CrateLongId("test/lib.cairo".into()));
+    db.set_crate_root(crate_id, Some(Directory("test".into())));
 
     let module_id = ModuleId::CrateRoot(crate_id);
     let file_id = db.module_main_file(module_id).unwrap();

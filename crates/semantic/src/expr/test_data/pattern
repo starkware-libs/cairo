@@ -50,7 +50,7 @@ error: Missing member "member3".
     let Struct2{member1, member2} = s2;
         ^***********************^
 
-error: Redefinition of member "member1" on struct "test_crate::Struct2".
+error: Redefinition of member "member1" on struct "test::Struct2".
  --> lib.cairo:15:9
     let Struct2{member1, member2, member3, member1, } = s2;
         ^*******************************************^

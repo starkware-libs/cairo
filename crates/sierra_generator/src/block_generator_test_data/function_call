@@ -29,10 +29,10 @@ extern type MyStruct;
 felt_const<1>() -> ([0])
 felt_const<2>() -> ([1])
 PushValues([2]: MyStruct, [0]: felt, [1]: felt) -> ([5], [6], [7])
-function_call<user@test_crate::bar>([5], [6], [7]) -> ([3], [4])
+function_call<user@test::bar>([5], [6], [7]) -> ([3], [4])
 felt_add([4], [4]) -> ([8])
 PushValues([3]: MyStruct, [4]: felt, [8]: felt) -> ([11], [12], [13])
-function_call<user@test_crate::bar>([11], [12], [13]) -> ([9], [10])
+function_call<user@test::bar>([11], [12], [13]) -> ([9], [10])
 struct_construct<Unit>() -> ([14])
 
 //! > ==========================================================================
@@ -70,15 +70,15 @@ func bar2(a: felt, b: felt) -> felt {
 felt_const<7>() -> ([0])
 felt_const<7>() -> ([1])
 PushValues([0]: felt, [1]: felt) -> ([3], [4])
-function_call<user@test_crate::bar>([3], [4]) -> ([2])
+function_call<user@test::bar>([3], [4]) -> ([2])
 felt_const<7>() -> ([5])
 PushValues([0]: felt, [5]: felt) -> ([7], [8])
-function_call<user@test_crate::bar>([7], [8]) -> ([6])
+function_call<user@test::bar>([7], [8]) -> ([6])
 felt_const<7>() -> ([9])
 PushValues([0]: felt, [9]: felt) -> ([11], [12])
-function_call<user@test_crate::bar>([11], [12]) -> ([10])
+function_call<user@test::bar>([11], [12]) -> ([10])
 PushValues([6]: felt, [10]: felt) -> ([14], [15])
-function_call<user@test_crate::bar2>([14], [15]) -> ([13])
+function_call<user@test::bar2>([14], [15]) -> ([13])
 
 //! > ==========================================================================
 

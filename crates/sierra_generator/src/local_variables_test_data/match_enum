@@ -46,7 +46,7 @@ enum MyEnum {
 blk0:
 Inputs:
 Statements:
-  (v3: core::felt) <- test_crate::revoke_ap()
+  (v3: core::felt) <- test::revoke_ap()
   (v4: core::felt) <- core::felt_add(v2, v2)
 Drops: v3
 End:
@@ -80,14 +80,14 @@ End:
 blk4 (root):
 Inputs:
 Statements:
-  (v0: test_crate::MyEnum) <- test_crate::bar()
+  (v0: test::MyEnum) <- test::bar()
   (v1: core::felt) <- 2u
   (v10: core::felt) <- match_enum(v0) {
     MyEnum::A => blk2,
     MyEnum::B => blk3,
   }
   (v11: core::felt) <- core::felt_add(v1, v1)
-  (v12: core::felt) <- test_crate::revoke_ap()
+  (v12: core::felt) <- test::revoke_ap()
 Drops: v1, v12, v11
 End:
   Callsite(v10)
@@ -151,7 +151,7 @@ impl MyEnumCopy of Copy::<MyEnum>;
 blk0:
 Inputs:
 Statements:
-  (v4: core::felt) <- test_crate::revoke_ap()
+  (v4: core::felt) <- test::revoke_ap()
   (v5: core::felt) <- 0u
 Drops: v4, v3, v0, v1, v2
 End:
@@ -215,7 +215,7 @@ End:
   Callsite(v17)
 
 blk8 (root):
-Inputs: v0: test_crate::MyEnum, v1: core::felt
+Inputs: v0: test::MyEnum, v1: core::felt
 Statements:
   (v2: core::felt) <- core::felt_add(v1, v1)
   (v10: core::felt) <- match_enum(v0) {

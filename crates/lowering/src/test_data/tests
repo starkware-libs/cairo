@@ -148,7 +148,7 @@ Statements:
     (v7) => blk3,
   }
   (v10: core::felt) <- 3u
-  (v11: core::felt) <- test_crate::foo(v10)
+  (v11: core::felt) <- test::foo(v10)
   (v12: core::felt) <- 5u
   (v16: core::felt) <- blk4()
   (v17: core::felt) <- core::felt_mul(v12, v16)
@@ -236,7 +236,7 @@ End:
   Callsite(v7)
 
 blk6 (root):
-Inputs: v0: test_crate::MyEnum
+Inputs: v0: test::MyEnum
 Statements:
   (v8: core::felt) <- match_enum(v0) {
     MyEnum::A => blk3,

@@ -45,7 +45,7 @@ error: Invalid path.
     let a : A = A::a::a(());
                       ^
 
-error: Enum "test_crate::A" has no variant "c"
+error: Enum "test::A" has no variant "c"
  --> lib.cairo:16:20
     let a : A = A::c();
                    ^

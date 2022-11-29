@@ -43,11 +43,10 @@ fn test_resolve_path() {
     assert_eq!(
         format!("{:?}", body.debug(&expr_formatter)),
         "Some(Block(ExprBlock { statements: [Expr(StatementExpr { expr: \
-         FunctionCall(ExprFunctionCall { function: test_crate::bar<Type((core::felt, Q)),>, \
-         ref_args: [], args: [Var(ExprVar { var: ParamId(test_crate::value), ty: \
-         test_crate::S::<core::felt> })], ty: test_crate::S::<()> }) }), Let(StatementLet { \
-         pattern: Variable(c), expr: Var(ExprVar { var: ParamId(test_crate::b), ty: Q }) })], \
-         tail: None, ty: () }))"
+         FunctionCall(ExprFunctionCall { function: test::bar<Type((core::felt, Q)),>, ref_args: \
+         [], args: [Var(ExprVar { var: ParamId(test::value), ty: test::S::<core::felt> })], ty: \
+         test::S::<()> }) }), Let(StatementLet { pattern: Variable(c), expr: Var(ExprVar { var: \
+         ParamId(test::b), ty: Q }) })], tail: None, ty: () }))"
     );
 }
 
@@ -61,7 +60,7 @@ fn test_resolve_path_super() {
     let mut db_val = SemanticDatabaseForTesting::default();
     let db = &mut db_val;
 
-    let crate_id = db.intern_crate(CrateLongId("test_crate".into()));
+    let crate_id = db.intern_crate(CrateLongId("test".into()));
     let root = Directory("src".into());
     db.set_crate_root(crate_id, Some(root));
 
@@ -98,10 +97,10 @@ fn test_resolve_path_super() {
     let members = db.struct_members(struct_id).unwrap();
     assert_eq!(
         format!("{:?}", members["a"].debug(db)),
-        "Member { id: MemberId(test_crate::inner2::a), ty: test_crate::inner1::InnerStruct1 }"
+        "Member { id: MemberId(test::inner2::a), ty: test::inner1::InnerStruct1 }"
     );
     assert_eq!(
         format!("{:?}", members["b"].debug(db)),
-        "Member { id: MemberId(test_crate::inner2::b), ty: test_crate::OuterStruct }"
+        "Member { id: MemberId(test::inner2::b), ty: test::OuterStruct }"
     );
 }

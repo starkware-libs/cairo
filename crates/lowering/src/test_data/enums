@@ -38,7 +38,7 @@ Statements:
   (v1: ()) <- struct_construct()
   (v2: core::bool) <- bool::True(v1)
   (v4: core::felt) <- blk0()
-  (v5: test_crate::MyEnum) <- MyEnum::B(v4)
+  (v5: test::MyEnum) <- MyEnum::B(v4)
 Drops: v0, v1, v2, v4
 End:
   Callsite(v5)

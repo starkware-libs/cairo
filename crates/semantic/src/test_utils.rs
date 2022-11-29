@@ -82,7 +82,7 @@ pub struct TestModule {
 
 /// Sets up a crate with given content, and returns its crate id.
 pub fn setup_test_crate(db: &mut (dyn SemanticGroup + 'static), content: &str) -> CrateId {
-    let crate_id = db.intern_crate(CrateLongId("test_crate".into()));
+    let crate_id = db.intern_crate(CrateLongId("test".into()));
     let directory = Directory("src".into());
     db.set_crate_root(crate_id, Some(directory));
     let file_id = db.module_main_file(ModuleId::CrateRoot(crate_id)).unwrap();

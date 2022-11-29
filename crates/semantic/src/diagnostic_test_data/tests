@@ -75,6 +75,11 @@ func foo() {
 
 //! > expected_diagnostics
 error: Path not found.
+ --> lib.cairo:7:3
+  test_crate::foo();
+  ^********^
+
+error: Path not found.
  --> lib.cairo:8:3
   bad_module::foo();
   ^********^
@@ -84,10 +89,10 @@ error: Path not found.
   super::foo();
   ^***^
 
-error: Invalid path.
- --> lib.cairo:10:15
+error: Path not found.
+ --> lib.cairo:10:3
   test_crate::super::foo();
-              ^***^
+  ^********^
 
 //! > ==========================================================================
 

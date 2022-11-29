@@ -15,12 +15,12 @@ foo
 extern type MyType;
 
 //! > expected_diagnostics
-error: Binary operator '*' is not supported for types 'test_crate::MyType' and 'test_crate::MyType'.
+error: Binary operator '*' is not supported for types 'test::MyType' and 'test::MyType'.
  --> lib.cairo:3:11
     a + a * a;
           ^
 
-error: Binary operator '+' is not supported for types 'test_crate::MyType' and '<missing>'.
+error: Binary operator '+' is not supported for types 'test::MyType' and '<missing>'.
  --> lib.cairo:3:7
     a + a * a;
       ^
