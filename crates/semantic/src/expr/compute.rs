@@ -25,8 +25,8 @@ use super::pattern::{
     Pattern, PatternEnumVariant, PatternLiteral, PatternOtherwise, PatternTuple, PatternVariable,
 };
 use crate::corelib::{
-    core_binary_operator, core_felt_ty, core_unary_operator, false_literal_expr, true_literal_expr,
-    unit_ty, unwrap_error_propagation_type,
+    core_binary_operator, core_felt_ty, core_unary_operator, false_literal_expr, never_ty,
+    true_literal_expr, unit_ty, unwrap_error_propagation_type,
 };
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
@@ -357,7 +357,7 @@ pub fn compute_expr_block_semantic(
             t.ty()
         } else if let Some(statement) = statements_semantic.last() {
             if let Statement::Return(_) = &new_ctx.statements[*statement] {
-                TypeId::never(new_ctx.db)
+                never_ty(new_ctx.db)
             } else {
                 unit_ty(db)
             }
@@ -381,7 +381,7 @@ struct FlowMergeTypeHelper {
 }
 impl FlowMergeTypeHelper {
     fn new(db: &dyn SemanticGroup) -> Self {
-        Self { never_type: TypeId::never(db), missing_type: TypeId::missing(db), final_type: None }
+        Self { never_type: never_ty(db), missing_type: TypeId::missing(db), final_type: None }
     }
 
     /// Attempt merge a branch into the helper, on error will return the conflicting types.
@@ -915,7 +915,7 @@ fn member_access_expr(
         TypeLongId::GenericParameter(_) => {
             ctx.diagnostics.report(&rhs_syntax, TypeHasNoMembers { ty: lexpr.ty(), member_name });
         }
-        TypeLongId::Missing | TypeLongId::Never => {}
+        TypeLongId::Missing => {}
     }
     None
 }
@@ -1016,7 +1016,6 @@ fn expr_function_call(
             args.push(ctx.exprs.alloc(arg));
         }
     }
-
     Some(Expr::FunctionCall(ExprFunctionCall {
         function: function_id,
         ref_args,

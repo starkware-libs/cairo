@@ -56,7 +56,7 @@ pub fn lower_expr_if_bool(
 ) -> Result<LoweredExpr, LoweringFlowError> {
     log::trace!("Lowering a boolean if expression: {:?}", expr.debug(&ctx.expr_formatter));
     // The condition cannot be unit.
-    let condition_var = lower_expr(ctx, scope, expr.condition)?.var(ctx, scope);
+    let condition_var = lower_expr(ctx, scope, expr.condition)?.var(ctx, scope)?;
 
     let semantic_db = ctx.db.upcast();
 
@@ -110,12 +110,12 @@ pub fn lower_expr_if_eq(
         expr.debug(&ctx.expr_formatter)
     );
     let condition_var = if is_zero(ctx, expr_b) {
-        lower_expr(ctx, scope, expr_a)?.var(ctx, scope)
+        lower_expr(ctx, scope, expr_a)?.var(ctx, scope)?
     } else if is_zero(ctx, expr_a) {
-        lower_expr(ctx, scope, expr_b)?.var(ctx, scope)
+        lower_expr(ctx, scope, expr_b)?.var(ctx, scope)?
     } else {
-        let lowered_a = lower_expr(ctx, scope, expr_a)?.var(ctx, scope);
-        let lowered_b = lower_expr(ctx, scope, expr_b)?.var(ctx, scope);
+        let lowered_a = lower_expr(ctx, scope, expr_a)?.var(ctx, scope)?;
+        let lowered_b = lower_expr(ctx, scope, expr_b)?.var(ctx, scope)?;
         let ret_ty = corelib::core_felt_ty(ctx.db.upcast());
         let call_result = generators::Call {
             function: corelib::felt_sub(ctx.db.upcast()),

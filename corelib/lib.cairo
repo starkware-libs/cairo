@@ -143,7 +143,8 @@ use gas::get_gas;
 
 // Panics.
 enum PanicResult<T> { Ok: T, Err: Array::<felt>, }
-extern func panic(data: Array::<felt>);
+enum never { }
+extern func panic(data: Array::<felt>) -> never;
 
 func assert(cond: bool, err_code: felt) {
     if cond {

@@ -302,7 +302,7 @@ fn get_inner_types(db: &dyn SemanticGroup, ty: TypeId) -> Option<Vec<TypeId>> {
             }
         }
         TypeLongId::Tuple(tys) => tys,
-        TypeLongId::GenericParameter(_) | TypeLongId::Never | TypeLongId::Missing => {
+        TypeLongId::GenericParameter(_) | TypeLongId::Missing => {
             return None;
         }
     })

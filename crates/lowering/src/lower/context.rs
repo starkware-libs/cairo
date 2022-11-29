@@ -53,14 +53,21 @@ pub enum LoweredExpr {
     ExternEnum(LoweredExprExternEnum),
 }
 impl LoweredExpr {
-    pub fn var(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockScope) -> LivingVar {
+    pub fn var(
+        self,
+        ctx: &mut LoweringContext<'_>,
+        scope: &mut BlockScope,
+    ) -> Result<LivingVar, LoweringFlowError> {
         match self {
-            LoweredExpr::AtVariable(var_id) => var_id,
+            LoweredExpr::AtVariable(var_id) => Ok(var_id),
             LoweredExpr::Tuple(exprs) => {
-                let inputs: Vec<_> = exprs.into_iter().map(|expr| expr.var(ctx, scope)).collect();
+                let inputs: Vec<_> = exprs
+                    .into_iter()
+                    .map(|expr| expr.var(ctx, scope))
+                    .collect::<Result<Vec<_>, _>>()?;
                 let tys = inputs.iter().map(|var| ctx.variables[var.var_id()].ty).collect();
                 let ty = ctx.db.intern_type(semantic::TypeLongId::Tuple(tys));
-                generators::StructConstruct { inputs, ty }.add(ctx, scope)
+                Ok(generators::StructConstruct { inputs, ty }.add(ctx, scope))
             }
             LoweredExpr::ExternEnum(extern_enum) => extern_enum.var(ctx, scope),
         }
@@ -91,7 +98,11 @@ pub struct LoweredExprExternEnum {
     pub implicits: Vec<semantic::TypeId>,
 }
 impl LoweredExprExternEnum {
-    pub fn var(self, ctx: &mut LoweringContext<'_>, scope: &mut BlockScope) -> LivingVar {
+    pub fn var(
+        self,
+        ctx: &mut LoweringContext<'_>,
+        scope: &mut BlockScope,
+    ) -> Result<LivingVar, LoweringFlowError> {
         let function_id = self.function;
 
         let concrete_variants = ctx.db.concrete_enum_variants(self.concrete_enum_id).unwrap();
@@ -114,10 +125,15 @@ impl LoweredExprExternEnum {
                             arm_inputs.drain(0..self.implicits.len()).collect();
                         let ref_outputs: Vec<_> =
                             arm_inputs.drain(0..self.ref_args.len()).collect();
-                        let input = extern_facade_expr(ctx, concrete_variant.ty, arm_inputs)
-                            .var(ctx, subscope);
-                        let res = generators::EnumConstruct { input, variant: concrete_variant }
-                            .add(ctx, subscope);
+                        let result = extern_facade_expr(ctx, concrete_variant.ty, arm_inputs)
+                            .var(ctx, subscope)
+                            .map(|input| {
+                                Some(BlockScopeEnd::Callsite(Some(
+                                    generators::EnumConstruct { input, variant: concrete_variant }
+                                        .add(ctx, subscope),
+                                )))
+                            })
+                            .unwrap_or_else(lowering_flow_error_to_block_scope_end)?;
 
                         // Bind implicits.
                         for (ty, output_var) in zip_eq(&self.implicits, implicit_outputs) {
@@ -128,14 +144,13 @@ impl LoweredExprExternEnum {
                             subscope.put_semantic_variable(*semantic_var_id, output_var);
                         }
 
-                        Some(BlockScopeEnd::Callsite(Some(res)))
+                        Some(result)
                     })
                 });
                 block_opts.collect::<Option<Vec<_>>>().ok_or(LoweringFlowError::Failed)
             });
 
-        let finalized_blocks: Vec<_> = blocks
-            .unwrap()
+        let finalized_blocks: Vec<_> = blocks?
             .into_iter()
             .map(|sealed| finalized_merger.finalize_block(ctx, sealed).block)
             .collect();
@@ -148,9 +163,7 @@ impl LoweredExprExternEnum {
             end_info: finalized_merger.end_info.clone(),
         }
         .add(ctx, scope);
-        lowered_expr_from_block_result(scope, call_block_result, finalized_merger)
-            .expect("Handle empty enums.")
-            .var(ctx, scope)
+        lowered_expr_from_block_result(scope, call_block_result, finalized_merger)?.var(ctx, scope)
     }
 }
 
@@ -163,6 +176,16 @@ pub enum LoweringFlowError {
     Unreachable,
     Return(Vec<LivingVar>),
 }
+
+/// Converts a lowering flow error the appropriate block scope end, if possible.
+pub fn lowering_flow_error_to_block_scope_end(err: LoweringFlowError) -> Option<BlockScopeEnd> {
+    match err {
+        LoweringFlowError::Failed => None,
+        LoweringFlowError::Unreachable => Some(BlockScopeEnd::Unreachable),
+        LoweringFlowError::Return(return_vars) => Some(BlockScopeEnd::Return(return_vars)),
+    }
+}
+
 /// Cases where the flow of lowering a statement should halt.
 pub enum StatementLoweringFlowError {
     /// Computation failure. A corresponding diagnostic should be emitted.

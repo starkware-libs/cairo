@@ -12,6 +12,7 @@ use utils::unordered_hash_map::UnorderedHashMap;
 
 use super::attribute::{ast_attributes_to_semantic, Attribute};
 use super::generics::semantic_generic_params;
+use crate::corelib::never_ty;
 use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics};
 use crate::expr::compute::{compute_expr_block_semantic, ComputationContext, Environment};
@@ -248,7 +249,7 @@ pub fn priv_free_function_definition_data(
     let expr = compute_expr_block_semantic(&mut ctx, &syntax.body(db.upcast()))?;
     if expr.ty() != declaration.signature.return_type
         && expr.ty() != semantic::TypeId::missing(db)
-        && expr.ty() != semantic::TypeId::never(db)
+        && expr.ty() != never_ty(db)
     {
         ctx.diagnostics.report(
             &syntax.body(db.upcast()),
