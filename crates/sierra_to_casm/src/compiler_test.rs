@@ -72,7 +72,7 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 box_and_back@26([1]: felt) -> (felt);
                 box_and_back_wrapper@31([1]: felt) -> (felt);
             "},
-            &[("box_and_back", 2), ("box_and_back_wrapper", 5)], false,
+            &[("box_and_back", Some(2)), ("box_and_back_wrapper", Some(5))], false,
             indoc! {"
                 // test_program:
                 [ap + 0] = [fp + -4] + [fp + -3], ap++;
@@ -129,7 +129,7 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
 
                 test_program@0([1]: felt, [2]: felt) -> (felt, felt);
             "},
-            &[("test_program", 5)], false,
+            &[("test_program", Some(5))], false,
             indoc! {"
                 [ap + 0] = [fp + -4], ap++;
                 [fp + 1] = [ap + -1];
@@ -384,7 +384,7 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 return ([9], [10]);
                 test_program@0() -> (DictFeltToFelt, felt);
             "},
-            &[("test_program", 13)], false,
+            &[("test_program", Some(13))], false,
             indoc! {"
                 [ap + 0] = 10, ap++;
                 [ap + 0] = 11, ap++;
@@ -437,7 +437,7 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
 
 fn sierra_to_casm(
     sierra_code: &str,
-    ap_change_data: &[(&str, usize)],
+    ap_change_data: &[(&str, Option<usize>)],
     check_gas_usage: bool,
     expected_casm: &str,
 ) {
@@ -480,7 +480,7 @@ fn sierra_to_casm(
                 return([2]);
 
                 test_program@0([2]: felt) -> (felt);
-            "}, &[("test_program", 0)],
+            "}, &[("test_program", Some(0))],
             "#0: Return arguments are not on the stack.";
             "Invalid return reference")]
 #[test_case(indoc! {"
@@ -627,7 +627,7 @@ fn sierra_to_casm(
                 return ([1]);
 
                 test_program@0([1]: felt, [2]: felt) -> (felt);
-            "}, &[("test_program", 1)], "One of the arguments does not match the expected type \
+            "}, &[("test_program", Some(1))], "One of the arguments does not match the expected type \
 of the libfunc or return statement.";
             "Invalid return type")]
 #[test_case(indoc! {"
@@ -723,7 +723,7 @@ of the libfunc or return statement.";
                 return ();
 
                 foo@0([1]: felt) -> ();
-            "}, &[("foo", 0)], "#3: locals were allocated but finalize_locals was not called.";
+            "}, &[("foo", Some(0))], "#3: locals were allocated but finalize_locals was not called.";
             "missing finalize_locals ")]
 #[test_case(indoc! {"
                 type felt = felt;
@@ -743,10 +743,14 @@ of the libfunc or return statement.";
                 return ();
 
                 foo@0() -> ();
-            "}, &[("foo", 5)], "#0: Invalid Ap change annotation. \
+            "}, &[("foo", Some(5))], "#0: Invalid Ap change annotation. \
 expected: ApChange::Known(5) got: ApChange::Known(0).";
             "bad Ap change")]
-fn compiler_errors(sierra_code: &str, ap_change_data: &[(&str, usize)], expected_result: &str) {
+fn compiler_errors(
+    sierra_code: &str,
+    ap_change_data: &[(&str, Option<usize>)],
+    expected_result: &str,
+) {
     let program = ProgramParser::new().parse(sierra_code).unwrap();
     pretty_assertions::assert_eq!(
         compile(&program, &build_metadata(&program, ap_change_data, false), false)

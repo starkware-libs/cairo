@@ -14,14 +14,20 @@ use crate::metadata::Metadata;
 /// Builds the metadata for a Sierra program.
 pub fn build_metadata(
     program: &Program,
-    ap_change_data: &[(&str, usize)],
+    ap_change_data: &[(&str, Option<usize>)],
     calculate_gas_info: bool,
 ) -> Metadata {
     Metadata {
         function_ap_change: ap_change_data
             .iter()
             .map(|(func_name, change)| {
-                (FunctionId::from_string(func_name), SierraApChange::Known(*change))
+                (
+                    FunctionId::from_string(func_name),
+                    match *change {
+                        Some(ap_change) => SierraApChange::Known(ap_change),
+                        None => SierraApChange::Unknown,
+                    },
+                )
             })
             .collect(),
         gas_info: if calculate_gas_info {
