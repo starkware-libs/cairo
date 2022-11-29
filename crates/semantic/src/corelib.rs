@@ -1,7 +1,7 @@
 use defs::ids::{EnumId, GenericFunctionId, GenericTypeId, ModuleId, ModuleItemId, TraitId};
 use filesystem::ids::CrateLongId;
 use smol_str::SmolStr;
-use syntax::node::ast::{self, BinaryOperator};
+use syntax::node::ast::{self, BinaryOperator, UnaryOperator};
 use utils::{extract_matches, try_extract_matches, OptionFrom};
 
 use crate::db::SemanticGroup;
@@ -214,6 +214,26 @@ pub fn unit_expr(ctx: &mut ComputationContext<'_>, stable_ptr: ast::ExprPtr) -> 
         ty: ctx.db.intern_type(TypeLongId::Tuple(Vec::new())),
         stable_ptr,
     }))
+}
+
+pub fn core_unary_operator(
+    db: &dyn SemanticGroup,
+    unary_op: &UnaryOperator,
+    ty: TypeId,
+) -> Result<FunctionId, SemanticDiagnosticKind> {
+    let felt = core_felt_ty(db);
+    let bool_ty = core_bool_ty(db);
+    let unsupported_operator =
+        |op: &str| Err(SemanticDiagnosticKind::UnsupportedUnaryOperator { op: op.into(), ty });
+
+    let function_name = match unary_op {
+        UnaryOperator::Minus(_) if ty == felt => "felt_neg",
+        UnaryOperator::Minus(_) => return unsupported_operator("+"),
+
+        UnaryOperator::Not(_) if ty == bool_ty => "bool_not",
+        UnaryOperator::Not(_) => return unsupported_operator("!"),
+    };
+    Ok(get_core_function_id(db, function_name.into(), vec![]))
 }
 
 pub fn core_binary_operator(
