@@ -190,7 +190,9 @@ pub fn run_function(
 pub fn run_function_return_values(
     instructions: Vec<Instruction>,
     n_returns: usize,
-) -> Result<Vec<Option<BigInt>>, Box<VirtualMachineError>> {
+) -> Result<Vec<BigInt>, Box<VirtualMachineError>> {
     let (cells, ap) = run_function(instructions)?;
-    Ok(cells[(ap - n_returns)..ap].to_vec())
+    // TODO(orizi): Return an error instead of unwrapping.
+    let cells = cells.into_iter().skip(ap - n_returns);
+    Ok(cells.take(n_returns).map(|cell| cell.unwrap()).collect())
 }
