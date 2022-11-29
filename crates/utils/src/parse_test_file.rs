@@ -6,6 +6,7 @@ use std::io::{self, BufRead};
 use std::path::Path;
 
 use crate::ordered_hash_map::OrderedHashMap;
+use crate::ResultHelper;
 
 const TAG_PREFIX: &str = "//! > ";
 const TEST_SEPARATOR: &str =
@@ -33,7 +34,7 @@ struct TestBuilder {
 }
 
 pub fn parse_test_file(filename: &Path) -> io::Result<OrderedHashMap<String, Test>> {
-    let file = fs::File::open(filename)?;
+    let file = fs::File::open(filename).on_err(|_| log::error!("File not found: {filename:?}"))?;
     let mut lines = io::BufReader::new(file).lines();
     let mut builder = TestBuilder::default();
     let mut line_num: usize = 0;
