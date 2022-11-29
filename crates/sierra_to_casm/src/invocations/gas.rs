@@ -4,7 +4,7 @@ use casm::operand::{CellRef, DerefOrImmediate, Register};
 use itertools::chain;
 use num_bigint::BigInt;
 use sierra::extensions::builtin_cost::CostTokenType;
-use sierra::extensions::felt::FeltOperator;
+use sierra::extensions::felt::FeltBinaryOperator;
 use sierra::extensions::gas::GasConcreteLibFunc;
 use sierra::program::{BranchInfo, BranchTarget};
 use utils::try_extract_matches;
@@ -101,7 +101,7 @@ fn build_get_gas(
         [
             vec![
                 ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
-                    op: FeltOperator::Add,
+                    op: FeltBinaryOperator::Add,
                     a: range_check.unchecked_apply_known_ap_change(2),
                     b: DerefOrImmediate::from(1),
                 })),
@@ -113,7 +113,7 @@ fn build_get_gas(
             .into_iter(),
             vec![
                 ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
-                    op: FeltOperator::Add,
+                    op: FeltBinaryOperator::Add,
                     a: range_check.unchecked_apply_known_ap_change(3),
                     b: DerefOrImmediate::from(1),
                 })),
@@ -160,7 +160,7 @@ fn build_refund_gas(
             ReferenceExpression::from_cell(CellExpression::Deref(gas_counter_value))
         } else {
             ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
-                op: FeltOperator::Add,
+                op: FeltBinaryOperator::Add,
                 a: gas_counter_value,
                 b: DerefOrImmediate::Immediate(BigInt::from(*requested_count)),
             }))

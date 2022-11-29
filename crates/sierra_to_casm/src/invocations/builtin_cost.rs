@@ -3,7 +3,7 @@ use casm::casm;
 use casm::operand::{CellRef, DerefOrImmediate, Register};
 use itertools::chain;
 use sierra::extensions::builtin_cost::{BuiltinCostConcreteLibFunc, BuiltinGetGasConcreteLibFunc};
-use sierra::extensions::felt::FeltOperator;
+use sierra::extensions::felt::FeltBinaryOperator;
 use sierra::program::{BranchInfo, BranchTarget};
 use utils::try_extract_matches;
 
@@ -115,7 +115,7 @@ fn build_builtin_get_gas(
         [
             vec![
                 ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
-                    op: FeltOperator::Add,
+                    op: FeltBinaryOperator::Add,
                     a: range_check.unchecked_apply_known_ap_change(3),
                     b: DerefOrImmediate::from(1),
                 })),
@@ -127,7 +127,7 @@ fn build_builtin_get_gas(
             .into_iter(),
             vec![
                 ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
-                    op: FeltOperator::Add,
+                    op: FeltBinaryOperator::Add,
                     a: range_check.unchecked_apply_known_ap_change(4),
                     b: DerefOrImmediate::from(1),
                 })),

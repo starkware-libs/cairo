@@ -1,8 +1,8 @@
 use casm::ap_change::{ApChange, ApplyApChange};
 use casm::instructions::Instruction;
-use casm::operand::{CellRef, Register};
+use casm::operand::{CellRef, DerefOrImmediate, Register};
 use casm::{casm, casm_extend};
-use sierra::extensions::felt::FeltOperator;
+use sierra::extensions::felt::{FeltBinaryOperator, FeltUnaryOperator};
 use sierra::extensions::mem::{
     AllocLocalConcreteLibFunc, MemConcreteLibFunc, StoreLocalConcreteLibFunc,
     StoreTempConcreteLibFunc,
@@ -13,7 +13,9 @@ use utils::try_extract_matches;
 
 use super::{misc, CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::environment::frame_state;
-use crate::references::{BinOpExpression, CellExpression, ReferenceExpression, ReferenceValue};
+use crate::references::{
+    BinOpExpression, CellExpression, ReferenceExpression, ReferenceValue, UnaryOpExpression,
+};
 
 /// Builds instructions for Sierra memory operations.
 pub fn build(
@@ -75,13 +77,21 @@ fn get_store_instructions(
                 operand = [[dst]]
             ),
             CellExpression::Immediate(operand) => add_instruction!(ctx, dst = operand),
+            CellExpression::UnaryOp(UnaryOpExpression { op, a }) => match op {
+                FeltUnaryOperator::Neg => match a {
+                    DerefOrImmediate::Deref(cell_ref) => {
+                        add_instruction!(ctx, dst = cell_ref * (-1))
+                    }
+                    DerefOrImmediate::Immediate(imm) => add_instruction!(ctx, dst = (-imm)),
+                },
+            },
             CellExpression::BinOp(BinOpExpression { op, a, b }) => match op {
-                FeltOperator::Add => add_instruction!(ctx, dst = a + b),
-                FeltOperator::Mul => add_instruction!(ctx, dst = a * b),
+                FeltBinaryOperator::Add => add_instruction!(ctx, dst = a + b),
+                FeltBinaryOperator::Mul => add_instruction!(ctx, dst = a * b),
                 // dst = a - b => a = dst + b
-                FeltOperator::Sub => add_instruction!(ctx, a = dst + b),
+                FeltBinaryOperator::Sub => add_instruction!(ctx, a = dst + b),
                 // dst = a / b => a = dst * b
-                FeltOperator::Div => add_instruction!(ctx, a = dst * b),
+                FeltBinaryOperator::Div => add_instruction!(ctx, a = dst * b),
             },
         }
         if inc_ap {

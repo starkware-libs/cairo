@@ -3,7 +3,7 @@ use casm::hints::Hint;
 use casm::operand::{BinOpOperand, DerefOrImmediate, ResOperand};
 use num_bigint::BigInt;
 use num_traits::FromPrimitive;
-use sierra::extensions::felt::FeltOperator;
+use sierra::extensions::felt::FeltBinaryOperator;
 
 use super::{CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::references::{
@@ -52,7 +52,7 @@ pub fn build_storage_read(
     let output_expressions = [vec![
         ReferenceExpression {
             cells: vec![CellExpression::BinOp(BinOpExpression {
-                op: FeltOperator::Add,
+                op: FeltBinaryOperator::Add,
                 a: syscall_base,
                 b: DerefOrImmediate::Immediate(BigInt::from_i16(syscall_offset).unwrap() + 3),
             })],
