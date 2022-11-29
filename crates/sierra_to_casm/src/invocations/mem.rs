@@ -82,8 +82,8 @@ fn get_store_instructions(
             cell_expr_orig.clone().apply_ap_change(ApChange::Known(ap_change as usize)).unwrap();
         match cell_expr {
             CellExpression::Deref(operand) => add_instruction!(ctx, dst = operand),
-            CellExpression::DoubleDeref(operand) => {
-                add_instruction!(ctx, dst = [[operand]])
+            CellExpression::DoubleDeref(operand, offset) => {
+                add_instruction!(ctx, dst = [[operand] + offset])
             }
             CellExpression::IntoSingleCellRef(operand) => add_instruction!(
                 ctx,
