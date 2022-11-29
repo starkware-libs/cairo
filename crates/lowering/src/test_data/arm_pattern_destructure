@@ -1,0 +1,735 @@
+//! > Test arm pattern destructure for match-enum param.
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+func foo(e: MyEnum) {
+    match e {
+        MyEnum::a((x, y)) => {},
+        MyEnum::b(x) => {},
+        MyEnum::c((x,)) => {},
+        MyEnum::d(x) => {},
+        MyEnum::e(x) => {},
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum MyEnum {
+    a: (felt, felt),
+    b: (felt, felt),
+    c: (felt,),
+    d: (felt,),
+    e: felt
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_format
+blk0:
+Inputs:
+Statements:
+Drops:
+End:
+  Callsite()
+
+blk1:
+Inputs:
+Statements:
+Drops:
+End:
+  Callsite()
+
+blk2:
+Inputs:
+Statements:
+Drops:
+End:
+  Callsite()
+
+blk3:
+Inputs:
+Statements:
+Drops:
+End:
+  Callsite()
+
+blk4:
+Inputs:
+Statements:
+Drops:
+End:
+  Callsite()
+
+blk5:
+Inputs: v1: (core::felt, core::felt)
+Statements:
+  (v2: core::felt, v3: core::felt) <- struct_destructure(v1)
+  () <- blk0()
+Drops: v1, v2, v3
+End:
+  Callsite()
+
+blk6:
+Inputs: v4: (core::felt, core::felt)
+Statements:
+  () <- blk1()
+Drops: v4
+End:
+  Callsite()
+
+blk7:
+Inputs: v5: (core::felt)
+Statements:
+  (v6: core::felt) <- struct_destructure(v5)
+  () <- blk2()
+Drops: v5, v6
+End:
+  Callsite()
+
+blk8:
+Inputs: v7: (core::felt)
+Statements:
+  () <- blk3()
+Drops: v7
+End:
+  Callsite()
+
+blk9:
+Inputs: v8: core::felt
+Statements:
+  () <- blk4()
+Drops: v8
+End:
+  Callsite()
+
+blk10 (root):
+Inputs: v0: test_crate::MyEnum
+Statements:
+  () <- match_enum(v0) {
+    MyEnum::a => blk5,
+    MyEnum::b => blk6,
+    MyEnum::c => blk7,
+    MyEnum::d => blk8,
+    MyEnum::e => blk9,
+  }
+Drops:
+End:
+  Callsite()
+
+//! > ==========================================================================
+
+//! > Test arm pattern destructure for match-extern.
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+func foo() {
+    match bar() {
+        MyEnum::a((x, y)) => {},
+        MyEnum::b(x) => {},
+        MyEnum::c((x,)) => {},
+        MyEnum::d(x) => {},
+        MyEnum::e(x) => {},
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum MyEnum {
+    a: (felt, felt),
+    b: (felt, felt),
+    c: (felt,),
+    d: (felt,),
+    e: felt
+}
+extern func bar() -> MyEnum nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_format
+blk0:
+Inputs:
+Statements:
+Drops:
+End:
+  Callsite()
+
+blk1:
+Inputs:
+Statements:
+Drops:
+End:
+  Callsite()
+
+blk2:
+Inputs:
+Statements:
+Drops:
+End:
+  Callsite()
+
+blk3:
+Inputs:
+Statements:
+Drops:
+End:
+  Callsite()
+
+blk4:
+Inputs:
+Statements:
+Drops:
+End:
+  Callsite()
+
+blk5:
+Inputs: v0: core::felt, v1: core::felt
+Statements:
+  () <- blk0()
+Drops: v0, v1
+End:
+  Callsite()
+
+blk6:
+Inputs: v2: core::felt, v3: core::felt
+Statements:
+  (v4: (core::felt, core::felt)) <- struct_construct(v2, v3)
+  () <- blk1()
+Drops: v2, v3, v4
+End:
+  Callsite()
+
+blk7:
+Inputs: v5: core::felt
+Statements:
+  () <- blk2()
+Drops: v5
+End:
+  Callsite()
+
+blk8:
+Inputs: v6: core::felt
+Statements:
+  (v7: (core::felt)) <- struct_construct(v6)
+  () <- blk3()
+Drops: v6, v7
+End:
+  Callsite()
+
+blk9:
+Inputs: v8: core::felt
+Statements:
+  () <- blk4()
+Drops: v8
+End:
+  Callsite()
+
+blk10 (root):
+Inputs:
+Statements:
+  () <- match test_crate::bar() {
+    (v0, v1) => blk5,
+    (v2, v3) => blk6,
+    (v5) => blk7,
+    (v6) => blk8,
+    (v8) => blk9,
+  }
+Drops:
+End:
+  Callsite()
+
+//! > ==========================================================================
+
+//! > Test arm pattern destructure for match-enum variable.
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+func foo() {
+    let y = bar();
+    match y {
+        MyEnum::a((x, y)) => {},
+        MyEnum::b(x) => {},
+        MyEnum::c((x,)) => {},
+        MyEnum::d(x) => {},
+        MyEnum::e(x) => {},
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum MyEnum {
+    a: (felt, felt),
+    b: (felt, felt),
+    c: (felt,),
+    d: (felt,),
+    e: felt
+}
+extern func bar() -> MyEnum nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_format
+blk0:
+Inputs: v0: core::felt, v1: core::felt
+Statements:
+  (v2: (core::felt, core::felt)) <- struct_construct(v0, v1)
+  (v3: test_crate::MyEnum) <- MyEnum::a(v2)
+Drops: v0, v1, v2
+End:
+  Callsite(v3)
+
+blk1:
+Inputs: v4: core::felt, v5: core::felt
+Statements:
+  (v6: (core::felt, core::felt)) <- struct_construct(v4, v5)
+  (v7: test_crate::MyEnum) <- MyEnum::b(v6)
+Drops: v4, v5, v6
+End:
+  Callsite(v7)
+
+blk2:
+Inputs: v8: core::felt
+Statements:
+  (v9: (core::felt)) <- struct_construct(v8)
+  (v10: test_crate::MyEnum) <- MyEnum::c(v9)
+Drops: v8, v9
+End:
+  Callsite(v10)
+
+blk3:
+Inputs: v11: core::felt
+Statements:
+  (v12: (core::felt)) <- struct_construct(v11)
+  (v13: test_crate::MyEnum) <- MyEnum::d(v12)
+Drops: v11, v12
+End:
+  Callsite(v13)
+
+blk4:
+Inputs: v14: core::felt
+Statements:
+  (v15: test_crate::MyEnum) <- MyEnum::e(v14)
+Drops: v14
+End:
+  Callsite(v15)
+
+blk5:
+Inputs:
+Statements:
+Drops:
+End:
+  Callsite()
+
+blk6:
+Inputs:
+Statements:
+Drops:
+End:
+  Callsite()
+
+blk7:
+Inputs:
+Statements:
+Drops:
+End:
+  Callsite()
+
+blk8:
+Inputs:
+Statements:
+Drops:
+End:
+  Callsite()
+
+blk9:
+Inputs:
+Statements:
+Drops:
+End:
+  Callsite()
+
+blk10:
+Inputs: v17: (core::felt, core::felt)
+Statements:
+  (v18: core::felt, v19: core::felt) <- struct_destructure(v17)
+  () <- blk5()
+Drops: v17, v18, v19
+End:
+  Callsite()
+
+blk11:
+Inputs: v20: (core::felt, core::felt)
+Statements:
+  () <- blk6()
+Drops: v20
+End:
+  Callsite()
+
+blk12:
+Inputs: v21: (core::felt)
+Statements:
+  (v22: core::felt) <- struct_destructure(v21)
+  () <- blk7()
+Drops: v21, v22
+End:
+  Callsite()
+
+blk13:
+Inputs: v23: (core::felt)
+Statements:
+  () <- blk8()
+Drops: v23
+End:
+  Callsite()
+
+blk14:
+Inputs: v24: core::felt
+Statements:
+  () <- blk9()
+Drops: v24
+End:
+  Callsite()
+
+blk15 (root):
+Inputs:
+Statements:
+  (v16: test_crate::MyEnum) <- match test_crate::bar() {
+    (v0, v1) => blk0,
+    (v4, v5) => blk1,
+    (v8) => blk2,
+    (v11) => blk3,
+    (v14) => blk4,
+  }
+  () <- match_enum(v16) {
+    MyEnum::a => blk10,
+    MyEnum::b => blk11,
+    MyEnum::c => blk12,
+    MyEnum::d => blk13,
+    MyEnum::e => blk14,
+  }
+Drops:
+End:
+  Callsite()
+
+//! > ==========================================================================
+
+//! > Test arm pattern destructure for match-extern (with refs and implicits).
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+func foo(z: felt) {
+    match bar(z) {
+        MyEnum::a((x, y)) => {},
+        MyEnum::b(x) => {},
+        MyEnum::c((x,)) => {},
+        MyEnum::d(x) => {},
+        MyEnum::e(x) => {},
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum MyEnum {
+    a: (felt, felt),
+    b: (felt, felt),
+    c: (felt,),
+    d: (felt,),
+    e: felt
+}
+extern func bar(ref r: felt) -> MyEnum implicits(rc: RangeCheck) nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_format
+blk0:
+Inputs:
+Statements:
+Drops:
+End:
+  Callsite()
+
+blk1:
+Inputs:
+Statements:
+Drops:
+End:
+  Callsite()
+
+blk2:
+Inputs:
+Statements:
+Drops:
+End:
+  Callsite()
+
+blk3:
+Inputs:
+Statements:
+Drops:
+End:
+  Callsite()
+
+blk4:
+Inputs:
+Statements:
+Drops:
+End:
+  Callsite()
+
+blk5:
+Inputs: v2: core::RangeCheck, v3: core::felt, v4: core::felt, v5: core::felt
+Statements:
+  () <- blk0()
+Drops: v5, v4
+End:
+  Callsite(v2, v3)
+
+blk6:
+Inputs: v6: core::RangeCheck, v7: core::felt, v8: core::felt, v9: core::felt
+Statements:
+  (v10: (core::felt, core::felt)) <- struct_construct(v8, v9)
+  () <- blk1()
+Drops: v10, v9, v8
+End:
+  Callsite(v6, v7)
+
+blk7:
+Inputs: v11: core::RangeCheck, v12: core::felt, v13: core::felt
+Statements:
+  () <- blk2()
+Drops: v13
+End:
+  Callsite(v11, v12)
+
+blk8:
+Inputs: v14: core::RangeCheck, v15: core::felt, v16: core::felt
+Statements:
+  (v17: (core::felt)) <- struct_construct(v16)
+  () <- blk3()
+Drops: v17, v16
+End:
+  Callsite(v14, v15)
+
+blk9:
+Inputs: v18: core::RangeCheck, v19: core::felt, v20: core::felt
+Statements:
+  () <- blk4()
+Drops: v20
+End:
+  Callsite(v18, v19)
+
+blk10 (root):
+Inputs: v0: core::RangeCheck, v1: core::felt
+Statements:
+  (v21: core::RangeCheck, v22: core::felt) <- match test_crate::bar(v0, v1) {
+    (v2, v3, v4, v5) => blk5,
+    (v6, v7, v8, v9) => blk6,
+    (v11, v12, v13) => blk7,
+    (v14, v15, v16) => blk8,
+    (v18, v19, v20) => blk9,
+  }
+Drops: v1, v22
+End:
+  Callsite(v21)
+
+//! > ==========================================================================
+
+//! > Test arm pattern destructure for match-enum variable (with refs and implicits).
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+func foo(z: felt) {
+    let y = bar(z);
+    match y {
+        MyEnum::a((x, y)) => {},
+        MyEnum::b(x) => {},
+        MyEnum::c((x,)) => {},
+        MyEnum::d(x) => {},
+        MyEnum::e(x) => {},
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum MyEnum {
+    a: (felt, felt),
+    b: (felt, felt),
+    c: (felt,),
+    d: (felt,),
+    e: felt
+}
+extern func bar(ref r: felt) -> MyEnum implicits(rc: RangeCheck) nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_format
+blk0:
+Inputs: v2: core::RangeCheck, v3: core::felt, v4: core::felt, v5: core::felt
+Statements:
+  (v6: (core::felt, core::felt)) <- struct_construct(v4, v5)
+  (v7: test_crate::MyEnum) <- MyEnum::a(v6)
+Drops: v6, v5, v4
+End:
+  Callsite(v2, v3, v7)
+
+blk1:
+Inputs: v8: core::RangeCheck, v9: core::felt, v10: core::felt, v11: core::felt
+Statements:
+  (v12: (core::felt, core::felt)) <- struct_construct(v10, v11)
+  (v13: test_crate::MyEnum) <- MyEnum::b(v12)
+Drops: v12, v11, v10
+End:
+  Callsite(v8, v9, v13)
+
+blk2:
+Inputs: v14: core::RangeCheck, v15: core::felt, v16: core::felt
+Statements:
+  (v17: (core::felt)) <- struct_construct(v16)
+  (v18: test_crate::MyEnum) <- MyEnum::c(v17)
+Drops: v17, v16
+End:
+  Callsite(v14, v15, v18)
+
+blk3:
+Inputs: v19: core::RangeCheck, v20: core::felt, v21: core::felt
+Statements:
+  (v22: (core::felt)) <- struct_construct(v21)
+  (v23: test_crate::MyEnum) <- MyEnum::d(v22)
+Drops: v22, v21
+End:
+  Callsite(v19, v20, v23)
+
+blk4:
+Inputs: v24: core::RangeCheck, v25: core::felt, v26: core::felt
+Statements:
+  (v27: test_crate::MyEnum) <- MyEnum::e(v26)
+Drops: v26
+End:
+  Callsite(v24, v25, v27)
+
+blk5:
+Inputs:
+Statements:
+Drops:
+End:
+  Callsite()
+
+blk6:
+Inputs:
+Statements:
+Drops:
+End:
+  Callsite()
+
+blk7:
+Inputs:
+Statements:
+Drops:
+End:
+  Callsite()
+
+blk8:
+Inputs:
+Statements:
+Drops:
+End:
+  Callsite()
+
+blk9:
+Inputs:
+Statements:
+Drops:
+End:
+  Callsite()
+
+blk10:
+Inputs: v31: (core::felt, core::felt)
+Statements:
+  (v32: core::felt, v33: core::felt) <- struct_destructure(v31)
+  () <- blk5()
+Drops: v33, v31, v32
+End:
+  Callsite()
+
+blk11:
+Inputs: v34: (core::felt, core::felt)
+Statements:
+  () <- blk6()
+Drops: v34
+End:
+  Callsite()
+
+blk12:
+Inputs: v35: (core::felt)
+Statements:
+  (v36: core::felt) <- struct_destructure(v35)
+  () <- blk7()
+Drops: v36, v35
+End:
+  Callsite()
+
+blk13:
+Inputs: v37: (core::felt)
+Statements:
+  () <- blk8()
+Drops: v37
+End:
+  Callsite()
+
+blk14:
+Inputs: v38: core::felt
+Statements:
+  () <- blk9()
+Drops: v38
+End:
+  Callsite()
+
+blk15 (root):
+Inputs: v0: core::RangeCheck, v1: core::felt
+Statements:
+  (v29: core::RangeCheck, v30: core::felt, v28: test_crate::MyEnum) <- match test_crate::bar(v0, v1) {
+    (v2, v3, v4, v5) => blk0,
+    (v8, v9, v10, v11) => blk1,
+    (v14, v15, v16) => blk2,
+    (v19, v20, v21) => blk3,
+    (v24, v25, v26) => blk4,
+  }
+  () <- match_enum(v28) {
+    MyEnum::a => blk10,
+    MyEnum::b => blk11,
+    MyEnum::c => blk12,
+    MyEnum::d => blk13,
+    MyEnum::e => blk14,
+  }
+Drops: v1, v30
+End:
+  Callsite(v29)
