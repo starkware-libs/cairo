@@ -1,22 +1,21 @@
 use defs::ids::{ModuleItemId, StructId};
 use semantic::db::SemanticGroup;
-use semantic::items::attribute::Attribute;
 
 #[cfg(test)]
 #[path = "contract_test.rs"]
 mod test;
 
-/// Represents a struct and an attribute that marks it as a contract.
-pub struct UnresolvedContractDefinition {
-    /// The struct that defines the contracts storage.
-    pub id: StructId,
-    /// The contract attribute
-    pub attr: Attribute,
+/// Represents a declaration of a contract.
+pub struct ContractDeclaration {
+    /// The id of the struct that defines the contracts storage.
+    pub struct_id: StructId,
+    /// A list of Expressions that specify the implementations included in the contract.
+    pub impls: Vec<syntax::node::ast::Expr>,
 }
 
 /// Finds the structs annotated as contracts in the current compilation units and
-/// returns the corresponding UnresolvedContractDefinition.
-pub fn find_contract_structs(db: &dyn SemanticGroup) -> Vec<UnresolvedContractDefinition> {
+/// returns the corresponding ContractDeclarations.
+pub fn find_contract_structs(db: &dyn SemanticGroup) -> Vec<ContractDeclaration> {
     let mut contracts = vec![];
     for crate_id in db.crates() {
         let modules = db.crate_modules(crate_id);
@@ -30,9 +29,9 @@ pub fn find_contract_structs(db: &dyn SemanticGroup) -> Vec<UnresolvedContractDe
                     if let Some(attrs) = db.struct_attributes(*struct_id) {
                         if let [attr] = attrs.as_slice() {
                             if attr.id == "contract" {
-                                contracts.push(UnresolvedContractDefinition {
-                                    id: *struct_id,
-                                    attr: attr.clone(),
+                                contracts.push(ContractDeclaration {
+                                    struct_id: *struct_id,
+                                    impls: attr.args.clone(),
                                 });
                             }
                         };

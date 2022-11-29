@@ -513,6 +513,12 @@ fn module_semantic_diagnostics(
     module_id: ModuleId,
 ) -> Option<Diagnostics<SemanticDiagnostic>> {
     let mut diagnostics = DiagnosticsBuilder::default();
+    for (module_file_id, plugin_diag) in db.module_data(module_id)?.plugin_diagnostics {
+        diagnostics.add(SemanticDiagnostic {
+            stable_location: StableLocation::new(module_file_id, plugin_diag.stable_ptr),
+            kind: SemanticDiagnosticKind::PluginDiagnostic(plugin_diag),
+        });
+    }
     for (_name, item) in db.module_items(module_id)?.items.iter() {
         match item {
             // Add signature diagnostics.
