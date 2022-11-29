@@ -11,16 +11,16 @@ func run_tests() -> felt {
 
 func bool_tests(ref test_count: felt) {
     assert_and_count(test_count, true);
-    assert_and_count(test_count, ! false);
+    assert_and_count(test_count, !false);
     assert_and_count(test_count, true == true);
     assert_and_count(test_count, false == false);
-    assert_and_count(test_count, ! (true == false));
-    assert_and_count(test_count, ! (false == true));
-    assert_and_count(test_count, ! (false & false));
-    assert_and_count(test_count, ! (true & false));
-    assert_and_count(test_count, ! (false & true));
+    assert_and_count(test_count, !(true == false));
+    assert_and_count(test_count, !(false == true));
+    assert_and_count(test_count, !(false & false));
+    assert_and_count(test_count, !(true & false));
+    assert_and_count(test_count, !(false & true));
     assert_and_count(test_count, true & true);
-    assert_and_count(test_count, ! (false | false));
+    assert_and_count(test_count, !(false | false));
     assert_and_count(test_count, true | false);
     assert_and_count(test_count, false | true);
     assert_and_count(test_count, true | true);
@@ -35,11 +35,11 @@ func felt_tests(ref test_count: felt) {
     assert_and_count(test_count, 3 * 6 == 18);
     assert_and_count(test_count, 1 < 4);
     assert_and_count(test_count, 1 <= 4);
-    assert_and_count(test_count, ! (4 < 4));
+    assert_and_count(test_count, !(4 < 4));
     assert_and_count(test_count, 4 <= 4);
     assert_and_count(test_count, 5 > 2);
     assert_and_count(test_count, 5 >= 2);
-    assert_and_count(test_count, ! (3 > 3));
+    assert_and_count(test_count, !(3 > 3));
     assert_and_count(test_count, 3 >= 3);
 }
 
@@ -67,11 +67,11 @@ func uint128_cmp_tests(ref test_count: felt) {
     let u5 = uint128_from_felt(5);
     assert_and_count(test_count, u1 < u4);
     assert_and_count(test_count, u1 <= u4);
-    assert_and_count(test_count, ! (u4 < u4));
+    assert_and_count(test_count, !(u4 < u4));
     assert_and_count(test_count, u4 <= u4);
     assert_and_count(test_count, u5 > u2);
     assert_and_count(test_count, u5 >= u2);
-    assert_and_count(test_count, ! (u3 > u3));
+    assert_and_count(test_count, !(u3 > u3));
     assert_and_count(test_count, u3 >= u3);
 }
 

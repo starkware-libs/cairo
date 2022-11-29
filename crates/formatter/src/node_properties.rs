@@ -57,6 +57,7 @@ impl SyntaxNodeFormat for SyntaxNode {
     fn force_no_space_after(&self, db: &dyn SyntaxGroup) -> bool {
         match self.kind(db) {
             SyntaxKind::TokenDot
+            | SyntaxKind::TokenNot
             | SyntaxKind::TokenColonColon
             | SyntaxKind::TokenLParen
             | SyntaxKind::TokenLBrack => true,
