@@ -1,5 +1,6 @@
 use id_arena::Arena;
 use itertools::{chain, zip_eq};
+use semantic::expr::fmt::ExprFormatter;
 use semantic::items::enm::SemanticEnumEx;
 use semantic::items::imp::ImplLookupContext;
 use utils::unordered_hash_map::UnorderedHashMap;
@@ -37,6 +38,8 @@ pub struct LoweringContext<'db> {
     pub implicits: &'db [semantic::TypeId],
     // Lookup context for impls.
     pub lookup_context: ImplLookupContext,
+    // Expression formatter of the free function.
+    pub expr_formatter: ExprFormatter<'db>,
 }
 
 /// Representation of the value of a computed expression.

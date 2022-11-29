@@ -1,3 +1,4 @@
+use debug::DebugWithDb;
 use num_traits::Zero;
 use semantic::corelib;
 use utils::extract_matches;
@@ -41,7 +42,6 @@ pub fn lower_expr_if(
     scope: &mut BlockScope,
     expr: &semantic::ExprIf,
 ) -> Result<LoweredExpr, LoweringFlowError> {
-    log::trace!("Started lowering of an if expression.");
     match analyze_condition(ctx, expr.condition) {
         IfCondition::BoolExpr(_) => lower_expr_if_bool(ctx, scope, expr),
         IfCondition::Eq(expr_a, expr_b) => lower_expr_if_eq(ctx, scope, expr, expr_a, expr_b),
@@ -54,7 +54,7 @@ pub fn lower_expr_if_bool(
     scope: &mut BlockScope,
     expr: &semantic::ExprIf,
 ) -> Result<LoweredExpr, LoweringFlowError> {
-    log::trace!("Started lowering of a boolean if expression.");
+    log::trace!("Lowering a boolean if expression: {:?}", expr.debug(&ctx.expr_formatter));
     // The condition cannot be unit.
     let condition_var = lower_expr(ctx, scope, expr.condition)?.var(ctx, scope);
 
@@ -105,7 +105,10 @@ pub fn lower_expr_if_eq(
     expr_a: semantic::ExprId,
     expr_b: semantic::ExprId,
 ) -> Result<LoweredExpr, LoweringFlowError> {
-    log::trace!("Started lowering of an if-eq-zero expression.");
+    log::trace!(
+        "Started lowering of an if-eq-zero expression: {:?}",
+        expr.debug(&ctx.expr_formatter)
+    );
     let condition_var = if is_zero(ctx, expr_b) {
         lower_expr(ctx, scope, expr_a)?.var(ctx, scope)
     } else if is_zero(ctx, expr_a) {
