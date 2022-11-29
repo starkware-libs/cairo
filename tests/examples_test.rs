@@ -94,7 +94,7 @@ fn cairo_to_sierra(name: &str) {
 #[test_case("enum_flow", false)]
 #[test_case("corelib_usage", false)]
 #[test_case("hash_chain", false)]
-#[test_case("testing", false => ignore["Pending on solving unit lowering bug."])]
+#[test_case("testing", false)]
 fn cairo_to_casm(name: &str, enable_gas_checks: bool) {
     let program = checked_compile_to_sierra(name);
     compare_contents_or_fix(

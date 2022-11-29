@@ -32,9 +32,10 @@ Statements:
   (v5: core::felt, v4: core::felt) <- test_crate::g(v3, v1)
   (v8: core::felt, v6: core::felt, v7: core::felt) <- test_crate::h(v5, v1)
   (v10: core::felt, v9: (core::felt,)) <- test_crate::i(v8, v1)
+  (v11: ()) <- struct_construct()
 Drops: v0, v1, v2, v3, v4, v5, v6, v7, v8, v9
 End:
-  Callsite(v10)
+  Callsite(v10, v11)
 
 //! > ==========================================================================
 
@@ -129,9 +130,10 @@ Statements:
     MyEnum::B => blk4,
     MyEnum::C => blk5,
   }
+  (v19: ()) <- struct_construct()
 Drops: v0, v1
 End:
-  Callsite(v15)
+  Callsite(v15, v19)
 
 //! > ==========================================================================
 
@@ -291,9 +293,10 @@ Statements:
     MyEnum::B => blk4,
     MyEnum::C => blk5,
   }
+  (v24: ()) <- struct_construct()
 Drops: v2, v1
 End:
-  Callsite(v19, v20)
+  Callsite(v19, v20, v24)
 
 //! > ==========================================================================
 

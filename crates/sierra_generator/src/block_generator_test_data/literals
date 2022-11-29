@@ -25,3 +25,4 @@ foo
 felt_const<5>() -> ([0])
 felt_const<6>() -> ([1])
 felt_const<26>() -> ([2])
+struct_construct<Unit>() -> ([3])
