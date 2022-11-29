@@ -3,6 +3,7 @@ use std::io::{stdin, Read};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
+use anyhow::{bail, Result};
 use clap::Parser;
 use colored::Colorize;
 use diffy::{create_patch, PatchFormatter};
@@ -21,12 +22,6 @@ enum Input<'a> {
 enum FormatResult {
     Identical,
     DiffFound,
-}
-
-#[derive(Debug)]
-enum FormatError {
-    Unparsable,
-    IoError,
 }
 
 #[derive(Debug)]
@@ -70,7 +65,7 @@ impl<'a> std::fmt::Display for Input<'a> {
 }
 
 /// Finds the formatted text on the input string
-fn get_formatted_str(text: &str, config: &FormatterConfig) -> Result<String, UnparsableError> {
+fn get_formatted_str(text: &str, config: &FormatterConfig) -> Result<String> {
     let db = SimpleParserDatabase::default();
 
     // Fake file name just to make FileId happy
@@ -79,35 +74,31 @@ fn get_formatted_str(text: &str, config: &FormatterConfig) -> Result<String, Unp
 
     // Checks if the inner ParserDiagnostic is empty.
     if !diagnostics.0.leaves.is_empty() {
-        return Err(UnparsableError);
+        bail!("Text is unparsable");
     }
 
     Ok(get_formatted_file(&db, &syntax_root, config.clone()))
 }
 
 /// Formats an input from stdin or file
-fn format_input(
-    input: &Input<'_>,
-    config: &FormatterConfig,
-    check: bool,
-) -> Result<FormatResult, FormatError> {
+fn format_input(input: &Input<'_>, config: &FormatterConfig, check: bool) -> Result<FormatResult> {
     let original_text = match input.read_content() {
         Ok(value) => value,
         Err(_) => {
             eprintln!("{}", format!("Failed to read from {input}").red());
-            return Err(FormatError::IoError);
+            bail!("Unable to read from input");
         }
     };
 
     let formatted_text = match get_formatted_str(&original_text, config) {
         Ok(value) => value,
-        Err(UnparsableError) => {
+        Err(_) => {
             eprintln!(
                 "{}",
                 format!("A parsing error occurred in {input}. The content was not formatted.")
                     .red()
             );
-            return Err(FormatError::Unparsable);
+            bail!("Unable to parse input");
         }
     };
 
@@ -127,7 +118,7 @@ fn format_input(
             Ok(_) => Ok(FormatResult::DiffFound),
             Err(_) => {
                 eprintln!("{}", format!("Unable to write result to {input}.").red());
-                Err(FormatError::IoError)
+                bail!("Unable to write to output");
             }
         }
     }
