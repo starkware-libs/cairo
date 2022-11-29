@@ -41,8 +41,8 @@ blk2 (root):
 Inputs: v0: core::bool, v1: core::felt
 Statements:
   (v5: core::felt) <- match_enum(v0) {
-    bool::True => blk0,
     bool::False => blk1,
+    bool::True => blk0,
   }
 Drops: v0, v1
 End:

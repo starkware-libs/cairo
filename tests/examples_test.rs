@@ -165,7 +165,7 @@ fn lowering_test(name: &str) {
 #[test_case(
     "testing",
     &[],
-    &[] => ignore["Pending on solving unit lowering bug."];
+    &[Some(BigInt::from(0)), None, None];
     "testing")]
 fn run_function_test(name: &str, params: &[BigInt], expected: &[Option<BigInt>]) {
     let sierra_func = checked_compile_to_sierra(name);

@@ -11,9 +11,8 @@ ret;
 [ap + 0] = 0, ap++;
 ap += 2;
 ret;
-jmp rel 6 if [fp + -4] != 0;
+jmp rel 17 if [fp + -4] != 0;
 jmp rel 2;
-jmp rel 15;
 %{ memory[ap + 0] = segments.add() %}
 ap += 1;
 [ap + 0] = [ap + -1], ap++;

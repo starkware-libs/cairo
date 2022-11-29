@@ -88,8 +88,8 @@ pub fn lower_expr_if_bool(
         input: condition_var,
         concrete_enum_id: corelib::core_bool_enum(semantic_db),
         arms: vec![
-            (corelib::true_variant(semantic_db), main_finalized.block),
             (corelib::false_variant(semantic_db), else_finalized.block),
+            (corelib::true_variant(semantic_db), main_finalized.block),
         ],
         end_info: finalized_merger.end_info.clone(),
     })
