@@ -67,6 +67,8 @@ impl SyntaxNodeFormat for SyntaxNode {
                         SyntaxKind::ItemFreeFunction
                             | SyntaxKind::ItemExternFunction
                             | SyntaxKind::ExprFunctionCall
+                            | SyntaxKind::PatternEnum
+                            | SyntaxKind::PatternStruct
                     )
                 ) =>
             {
