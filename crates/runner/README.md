@@ -1,5 +1,7 @@
 # Compiling and running cairo files
 
+If we want to run code that without gas tested:
+
 ```
 cargo run --bin cairo-run -- -p /path/to/file.cairo
 ```
@@ -14,22 +16,6 @@ We currently only run the a `main` function with no arguments beside implicits.
 # Examples
 
 ## Without gas:
-```
-func main() -> Option::<felt> implicits (rc: RangeCheck, gb: GasBuiltin) {
-    fib(1, 1, 13)
-}
-
-/// Calculates fib...
-func fib(a: felt, b: felt, n: felt) -> Option::<felt> implicits (rc: RangeCheck, gb: GasBuiltin) {
-    get_gas()?;
-    match n {
-        0 => Option::<felt>::Some(a),
-        _ => fib(b, a + b, n - 1),
-    }
-}
-```
-
-## With gas:
 ```
 // Calculates fib...
 func main() -> Option::<uint128> implicits (rc: RangeCheck) {
@@ -46,6 +32,24 @@ func fib(a: uint128, b: uint128, n: uint128) -> Option::<uint128> implicits (rc:
     }
 }
 ```
+
+## With gas:
+```
+func main() -> Option::<felt> implicits (rc: RangeCheck, gb: GasBuiltin) {
+    fib(1, 1, 13)
+}
+
+/// Calculates fib...
+func fib(a: felt, b: felt, n: felt) -> Option::<felt> implicits (rc: RangeCheck, gb: GasBuiltin) {
+    get_gas()?;
+    match n {
+        0 => Option::<felt>::Some(a),
+        _ => fib(b, a + b, n - 1),
+    }
+}
+```
+
+
 
 # Additional Information
 * Functions without calls to `get_gas` will not compile without `--available-gas` value.
