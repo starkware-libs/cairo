@@ -68,6 +68,7 @@ pub enum IntOperator {
     Mul,
     Div,
     Mod,
+    DivMod,
 }
 
 /// Libfunc for uint128 operations.
@@ -91,6 +92,7 @@ impl GenericLibFunc for Uint128OperationLibFunc {
         const MUL: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_checked_mul");
         const DIV: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_div");
         const MOD: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_mod");
+        const DIVMOD: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_divmod");
         match id {
             id if id == &WRAPPING_ADD => Some(Self::new(IntOperator::WrappingAdd)),
             id if id == &WRAPPING_SUB => Some(Self::new(IntOperator::WrappingSub)),
@@ -100,6 +102,7 @@ impl GenericLibFunc for Uint128OperationLibFunc {
             id if id == &MUL => Some(Self::new(IntOperator::Mul)),
             id if id == &DIV => Some(Self::new(IntOperator::Div)),
             id if id == &MOD => Some(Self::new(IntOperator::Mod)),
+            id if id == &DIVMOD => Some(Self::new(IntOperator::DivMod)),
             _ => None,
         }
     }
@@ -129,6 +132,27 @@ impl GenericLibFunc for Uint128OperationLibFunc {
                         ty,
                         ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                     },
+                ],
+                SierraApChange::NotImplemented,
+            )),
+            ([], IntOperator::DivMod) => Ok(LibFuncSignature::new_non_branch(
+                vec![
+                    range_check_type.clone(),
+                    ty.clone(),
+                    context.get_wrapped_concrete_type(NonZeroType::id(), ty.clone())?,
+                ],
+                vec![
+                    OutputVarInfo {
+                        ty: range_check_type,
+                        ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                            param_idx: 0,
+                        }),
+                    },
+                    OutputVarInfo {
+                        ty: ty.clone(),
+                        ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
+                    },
+                    OutputVarInfo { ty, ref_info: OutputVarReferenceInfo::NewTempVar { idx: 1 } },
                 ],
                 SierraApChange::NotImplemented,
             )),
@@ -200,6 +224,28 @@ impl GenericLibFunc for Uint128OperationLibFunc {
                         OutputVarInfo {
                             ty,
                             ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                        },
+                    ],
+                    SierraApChange::NotImplemented,
+                ))
+            }
+            ([GenericArg::Value(c)], IntOperator::DivMod) if !c.is_zero() => {
+                Ok(LibFuncSignature::new_non_branch(
+                    vec![range_check_type.clone(), ty.clone()],
+                    vec![
+                        OutputVarInfo {
+                            ty: range_check_type,
+                            ref_info: OutputVarReferenceInfo::Deferred(
+                                DeferredOutputKind::AddConst { param_idx: 0 },
+                            ),
+                        },
+                        OutputVarInfo {
+                            ty: ty.clone(),
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
+                        },
+                        OutputVarInfo {
+                            ty,
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: 1 },
                         },
                     ],
                     SierraApChange::NotImplemented,
@@ -278,7 +324,11 @@ impl GenericLibFunc for Uint128OperationLibFunc {
                 }))
             }
             [GenericArg::Value(c)] => {
-                if matches!(self.operator, IntOperator::Div | IntOperator::Mod) && c.is_zero() {
+                if matches!(
+                    self.operator,
+                    IntOperator::Div | IntOperator::Mod | IntOperator::DivMod
+                ) && c.is_zero()
+                {
                     Err(SpecializationError::UnsupportedGenericArg)
                 } else {
                     Ok(Uint128OperationConcreteLibFunc::Const(

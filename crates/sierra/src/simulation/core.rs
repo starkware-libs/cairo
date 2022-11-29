@@ -292,6 +292,23 @@ fn simulate_integer_libfunc(
                 }
             }
             (
+                [CoreValue::RangeCheck, CoreValue::Uint128(lhs), CoreValue::NonZero(non_zero)],
+                IntOperator::DivMod,
+            ) => {
+                if let CoreValue::Uint128(rhs) = **non_zero {
+                    Ok((
+                        vec![
+                            CoreValue::RangeCheck,
+                            CoreValue::Uint128(lhs / rhs),
+                            CoreValue::Uint128(lhs % rhs),
+                        ],
+                        0,
+                    ))
+                } else {
+                    Err(LibFuncSimulationError::MemoryLayoutMismatch)
+                }
+            }
+            (
                 [CoreValue::RangeCheck, CoreValue::Uint128(lhs), CoreValue::Uint128(rhs)],
                 IntOperator::Add | IntOperator::Sub | IntOperator::Mul,
             ) => Ok(
@@ -327,6 +344,14 @@ fn simulate_integer_libfunc(
                             IntOperator::Mod => value % *c,
                             _ => unreachable!("Arm only handles these cases."),
                         }),
+                    ],
+                    0,
+                ),
+                IntOperator::DivMod => (
+                    vec![
+                        CoreValue::RangeCheck,
+                        CoreValue::Uint128(value / *c),
+                        CoreValue::Uint128(value % *c),
                     ],
                     0,
                 ),
