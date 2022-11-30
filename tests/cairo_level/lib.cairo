@@ -5,6 +5,7 @@ func run_tests() -> felt {
     bool_tests(test_count);
     felt_tests(test_count);
     uint128_tests(test_count);
+    uint128_divmod_tests(test_count);
     array_tests(test_count);
     test_count
 }
@@ -89,6 +90,26 @@ func array_tests(ref test_count: felt) {
             Option::Some(x) => false,
             Option::None(()) => true,
     });
+}
+
+func nz_u128_from_felt(val: felt) -> NonZero::<uint128> {
+    match uint128_jump_nz(uint128_from_felt(val)) {
+        JumpNzResult::Zero(()) => {
+            let data = array_new::<felt>();
+            array_append::<felt>(data, 7);
+            panic(data)
+        },
+        JumpNzResult::NonZero(x) => x,
+    }
+}
+
+func uint128_divmod_tests(ref test_count: felt) {
+    let (q, r) = uint128_divmod(uint128_from_felt(8), nz_u128_from_felt(2));
+    assert_and_count(test_count, q == uint128_from_felt(4));
+    assert_and_count(test_count, r == uint128_from_felt(0));
+    let (q, r) = uint128_divmod(uint128_from_felt(7), nz_u128_from_felt(3));
+    assert_and_count(test_count, q == uint128_from_felt(2));
+    assert_and_count(test_count, r == uint128_from_felt(1));
 }
 
 func assert_and_count(ref test_count: felt, cond: bool) {
