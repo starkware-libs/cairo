@@ -44,15 +44,15 @@ func felt_tests(ref test_count: felt) {
 }
 
 func uint128_calc_tests(ref test_count: felt) {
-    let u1 = uint128_from_felt_panicable(1);
-    let u2 = uint128_from_felt_panicable(2);
-    let u3 = uint128_from_felt_panicable(3);
-    let u4 = uint128_from_felt_panicable(4);
-    let u6 = uint128_from_felt_panicable(6);
-    let u9 = uint128_from_felt_panicable(9);
-    let u231 = uint128_from_felt_panicable(231);
-    let u1000 = uint128_from_felt_panicable(1000);
-    let u1231 = uint128_from_felt_panicable(1231);
+    let u1 = uint128_from_felt(1);
+    let u2 = uint128_from_felt(2);
+    let u3 = uint128_from_felt(3);
+    let u4 = uint128_from_felt(4);
+    let u6 = uint128_from_felt(6);
+    let u9 = uint128_from_felt(9);
+    let u231 = uint128_from_felt(231);
+    let u1000 = uint128_from_felt(1000);
+    let u1231 = uint128_from_felt(1231);
     assert_and_count(test_count, u1 + u3 == u4);
     assert_and_count(test_count, u3 + u6 == u9);
     assert_and_count(test_count, u3 - u1 == u2);
@@ -60,11 +60,11 @@ func uint128_calc_tests(ref test_count: felt) {
 }
 
 func uint128_cmp_tests(ref test_count: felt) {
-    let u1 = uint128_from_felt_panicable(1);
-    let u2 = uint128_from_felt_panicable(2);
-    let u3 = uint128_from_felt_panicable(3);
-    let u4 = uint128_from_felt_panicable(4);
-    let u5 = uint128_from_felt_panicable(5);
+    let u1 = uint128_from_felt(1);
+    let u2 = uint128_from_felt(2);
+    let u3 = uint128_from_felt(3);
+    let u4 = uint128_from_felt(4);
+    let u5 = uint128_from_felt(5);
     assert_and_count(test_count, u1 < u4);
     assert_and_count(test_count, u1 <= u4);
     assert_and_count(test_count, ! (u4 < u4));

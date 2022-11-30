@@ -4,29 +4,29 @@ impl Uint128Drop of Drop::<uint128>;
 
 // TODO(orizi): Change all error codes into short-strings.
 
-#[panic_with(1)]
-extern func uint128_from_felt(a: felt) -> Option::<uint128> implicits (rc: RangeCheck) nopanic;
+#[panic_with(1, uint128_from_felt)]
+extern func uint128_try_from_felt(a: felt) -> Option::<uint128> implicits (rc: RangeCheck) nopanic;
 
 extern func uint128_to_felt(a: uint128) -> felt nopanic;
 
-#[panic_with(1)]
-extern func uint128_add(
+#[panic_with(1, uint128_add)]
+extern func uint128_checked_add(
     a: uint128,
     b: uint128
     ) -> Option::<uint128> implicits (
     rc: RangeCheck
 ) nopanic;
 
-#[panic_with(1)]
-extern func uint128_sub(
+#[panic_with(1, uint128_sub)]
+extern func uint128_checked_sub(
     a: uint128,
     b: uint128
     ) -> Option::<uint128> implicits (
     rc: RangeCheck
 ) nopanic;
 
-#[panic_with(1)]
-extern func uint128_mul(
+#[panic_with(1, uint128_mul)]
+extern func uint128_checked_mul(
     a: uint128,
     b: uint128
     ) -> Option::<uint128> implicits (
