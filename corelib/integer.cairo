@@ -40,7 +40,7 @@ extern func uint128_mod(
 extern func uint128_divmod(
     a: uint128,
     b: NonZero::<uint128>
-) -> (uint128, uint128) implicits (rc: RangeCheck) nopanic;
+) -> (uint128, uint128) implicits(rc: RangeCheck) nopanic;
 
 extern func uint128_lt(a: uint128, b: uint128) -> bool implicits(rc: RangeCheck) nopanic;
 extern func uint128_le(a: uint128, b: uint128) -> bool implicits(rc: RangeCheck) nopanic;

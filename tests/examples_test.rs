@@ -1,6 +1,7 @@
 use std::fs;
 use std::path::PathBuf;
 
+use casm::run::run_function_return_values;
 use compiler::db::RootDatabase;
 use compiler::diagnostics::check_and_eprint_diagnostics;
 use compiler::project::setup_project;
@@ -12,7 +13,7 @@ use sierra_generator::replace_ids::replace_sierra_ids_in_program;
 use sierra_to_casm::test_utils::build_metadata;
 use test_case::test_case;
 
-use crate::common::run_sierra_program;
+use crate::common::get_runnable_casm;
 
 mod common;
 
@@ -190,7 +191,9 @@ fn run_function_test(name: &str, params: &[BigInt], expected_or_panic: Option<&[
         None => 3,
         Some(expected) => expected.len(),
     };
-    let results = run_sierra_program(&sierra_func, params, result_count, false);
+    let results =
+        run_function_return_values(get_runnable_casm(&sierra_func, params, false), result_count)
+            .expect("Run failed.");
     match expected_or_panic {
         None => assert_eq!(results[0], BigInt::from(1), "Expected getting panic result."),
         Some(expected) => assert_eq!(results, expected),

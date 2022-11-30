@@ -1,5 +1,4 @@
 use casm::instructions::Instruction;
-use casm::run::run_function_return_values;
 use casm::{casm, casm_extend};
 use num_bigint::BigInt;
 use sierra_to_casm::test_utils::build_metadata;
@@ -22,15 +21,13 @@ fn generate_function_runner(params: &[BigInt]) -> Vec<Instruction> {
     ctx.instructions
 }
 
-/// Compiles down a Sierra program and runs it.
-pub fn run_sierra_program(
+/// Returns casm that would simulate running the code with the given params.
+pub fn get_runnable_casm(
     sierra_program: &sierra::program::Program,
     params: &[BigInt],
-    output_size: usize,
     calculate_gas_info: bool,
-) -> Vec<BigInt> {
+) -> Vec<Instruction> {
     let mut program = generate_function_runner(params);
-
     let func = sierra_to_casm::compiler::compile(
         sierra_program,
         &build_metadata(sierra_program, &[], calculate_gas_info),
@@ -38,7 +35,6 @@ pub fn run_sierra_program(
     )
     .unwrap()
     .instructions;
-
     program.extend(func);
-    run_function_return_values(program, output_size).expect("Run failed.")
+    program
 }
