@@ -161,3 +161,6 @@ func assert(cond: bool, err_code: felt) {
 // Hash functions.
 mod hash;
 use hash::pedersen;
+
+// Syscall Ptr
+extern type SyscallPtr;
