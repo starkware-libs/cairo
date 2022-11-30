@@ -33,12 +33,12 @@ fn test_enum() {
     assert_eq!(
         diagnostics,
         indoc! {r#"
-        error: Redefinition of variant "a" on enum "test_crate::A".
+        error: Redefinition of variant "a" on enum "test::A".
          --> lib.cairo:5:5
             a: (),
             ^***^
 
-        error: Redefinition of variant "a" on enum "test_crate::A".
+        error: Redefinition of variant "a" on enum "test::A".
          --> lib.cairo:6:5
             a: ()
             ^***^
@@ -67,8 +67,8 @@ fn test_enum() {
     assert_eq!(
         actual,
         indoc! {"
-            a: VariantId(test_crate::a), ty: (),
-            b: VariantId(test_crate::b), ty: (core::felt, core::felt),
-            c: VariantId(test_crate::c), ty: ()"}
+            a: VariantId(test::a), ty: (),
+            b: VariantId(test::b), ty: (core::felt, core::felt),
+            c: VariantId(test::c), ty: ()"}
     );
 }

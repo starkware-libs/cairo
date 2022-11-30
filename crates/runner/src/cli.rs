@@ -30,7 +30,7 @@ struct Args {
     /// In cases where gas is available, the amount of provided gas.
     #[arg(long)]
     available_gas: Option<usize>,
-    /// In cases where gas is available, the amount of provided gas.
+    /// Whether to print the memory.
     #[arg(long, default_value_t = false)]
     print_full_memory: bool,
 }

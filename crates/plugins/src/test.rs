@@ -139,7 +139,7 @@ fn plugin_test(plugins: Vec<Arc<dyn MacroPlugin>>, content: &str, expected_codes
     let mut db_val = DatabaseForTesting::default();
     let db = &mut db_val;
 
-    let crate_id = db.intern_crate(CrateLongId("test_crate".into()));
+    let crate_id = db.intern_crate(CrateLongId("test".into()));
     let root = Directory("src".into());
     db.set_crate_root(crate_id, Some(root));
     db.set_macro_plugins(plugins);
