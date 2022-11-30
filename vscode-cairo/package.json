@@ -42,7 +42,7 @@
                     },
                     "cairo1.languageServerPath": {
                         "type": "string",
-                        "description": "Path to the Cairo language server (cairo-lang-server).",
+                        "description": "Path to the Cairo language server (cairo-language-server).",
                         "scope": "window"
                     }
                 }

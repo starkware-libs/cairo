@@ -13,7 +13,7 @@ We currently only run the a `main` function with no arguments beside implicits.
 
 # Examples
 
-## Without gas:
+## With gas:
 ```
 func main() -> Option::<felt> implicits (rc: RangeCheck, gb: GasBuiltin) {
     fib(1, 1, 13)
@@ -29,7 +29,7 @@ func fib(a: felt, b: felt, n: felt) -> Option::<felt> implicits (rc: RangeCheck,
 }
 ```
 
-## With gas:
+## Without gas:
 ```
 // Calculates fib...
 func main() -> Option::<uint128> implicits (rc: RangeCheck) {
