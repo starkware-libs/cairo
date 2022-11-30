@@ -54,14 +54,14 @@ macro_rules! extract_matches {
         match $e {
             $variant(x) => x,
             ref e => {
-                panic!("assertion failed: `{:?}` does not match `{}`", e, stringify!($variant))
+                panic!("Variant extract failed: `{:?}` is not of variant `{}`", e, stringify!($variant))
             }
         }
     };
     ( $e:expr , $variant:path , $($arg:tt)* ) => {
         match $e {
             $variant(x) => x,
-            ref e => panic!("assertion failed: `{:?}` does not match `{}`: {}",
+            ref e => panic!("Variant extract failed: `{:?}` is not of variant `{}`: {}",
                 e, stringify!($variant), format_args!($($arg)*))
         }
     };
