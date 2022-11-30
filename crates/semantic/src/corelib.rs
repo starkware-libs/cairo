@@ -173,6 +173,21 @@ pub fn unit_ty(db: &dyn SemanticGroup) -> TypeId {
     db.intern_type(semantic::TypeLongId::Tuple(vec![]))
 }
 
+/// Gets the never type ().
+pub fn never_ty(db: &dyn SemanticGroup) -> TypeId {
+    let core_module = db.core_module();
+    // This should not fail if the corelib is present.
+    let generic_type = db
+        .module_item_by_name(core_module, "never".into())
+        .and_then(GenericTypeId::option_from)
+        .expect("Type bool was not found in core lib.");
+    db.intern_type(semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::new(
+        db,
+        generic_type,
+        vec![],
+    )))
+}
+
 /// Attempts to unwrap error propagation types (Option, Result).
 /// Returns None if not one of these types.
 pub fn unwrap_error_propagation_type(
@@ -201,7 +216,6 @@ pub fn unwrap_error_propagation_type(
             semantic::ConcreteTypeId::Struct(_) | semantic::ConcreteTypeId::Extern(_),
         )
         | TypeLongId::Tuple(_)
-        | TypeLongId::Never
         | TypeLongId::Missing => None,
     }
 }

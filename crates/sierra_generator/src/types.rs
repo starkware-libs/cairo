@@ -83,8 +83,6 @@ pub fn get_concrete_type_id(
                 .collect(),
             }),
         ),
-        semantic::TypeLongId::GenericParameter(_)
-        | semantic::TypeLongId::Missing
-        | semantic::TypeLongId::Never => None,
+        semantic::TypeLongId::GenericParameter(_) | semantic::TypeLongId::Missing => None,
     }
 }
