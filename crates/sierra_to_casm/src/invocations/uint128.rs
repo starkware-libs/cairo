@@ -114,10 +114,48 @@ fn build_uint128_op(
                 .into_iter(),
             ))
         }
+        IntOperator::DivMod => {
+            let code = casm! {
+                %{ (memory[ap + 0], memory[ap + 1]) = divmod(a, b) %}
+                // Both `q` and `r` must be uint128.
+                // We must check `r` explicitly: we later check that `0 <= b - (r + 1)` and
+                // `b * q + r = a`, however, if `r = -1` we may pass both of these checks (say, if
+                // `b = a + 1` and `q = 1`).
+                // We must also check `q` explicitly; the only arithmetic constraint on `q` is
+                // `b * q + r = a`, and if `b = 2`, `a = 1` and `r = 0`, we can take `q` to be the
+                // inverse of 2 (`(PRIME + 1) / 2`, much larger than 2^128) and pass this
+                // constraint.
+                [ap + 0] = [[range_check]], ap++;
+                [ap + 0] = [[range_check.unchecked_apply_known_ap_change(1)] + 1], ap++;
+                // Verify `r < b` by constraining `0 <= b - (r + 1)`.
+                [ap + 0] = [ap + -1] + 1, ap++;
+                (b.unchecked_apply_known_ap_change(3)) = [ap + 0] + [ap + -1], ap++;
+                [ap + -1] = [[range_check.unchecked_apply_known_ap_change(4)] + 2], ap++;
+                // Verify `b * q + r = a`.
+                [ap + -1] = [ap + -5] * (b.unchecked_apply_known_ap_change(5));
+                (a.unchecked_apply_known_ap_change(5)) = [ap + -1] + [ap + -4];
+            };
+            Ok(builder.build(
+                code.instructions,
+                vec![],
+                vec![
+                    vec![
+                        ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
+                            op: FeltOperator::Add,
+                            a: range_check.unchecked_apply_known_ap_change(5),
+                            b: DerefOrImmediate::from(3),
+                        })),
+                        ReferenceExpression::from_cell(CellExpression::Deref(ap_cell_ref(-5))),
+                        ReferenceExpression::from_cell(CellExpression::Deref(ap_cell_ref(-4))),
+                    ]
+                    .into_iter(),
+                ]
+                .into_iter(),
+            ))
+        }
         IntOperator::Mul
         | IntOperator::Div
         | IntOperator::Mod
-        | IntOperator::DivMod
         | IntOperator::WrappingAdd
         | IntOperator::WrappingSub
         | IntOperator::WrappingMul => {
