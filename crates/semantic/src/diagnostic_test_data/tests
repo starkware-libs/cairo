@@ -61,10 +61,10 @@ test_expr_diagnostics
 {
   foo();
   core::felt_add(1,1);
-  test_crate::foo();
+  test::foo();
   bad_module::foo();
   super::foo();
-  test_crate::super::foo();
+  test::super::foo();
 }
 
 //! > module_code
@@ -85,9 +85,9 @@ error: Path not found.
   ^***^
 
 error: Invalid path.
- --> lib.cairo:10:15
-  test_crate::super::foo();
-              ^***^
+ --> lib.cairo:10:9
+  test::super::foo();
+        ^***^
 
 //! > ==========================================================================
 
