@@ -185,6 +185,16 @@ macro_rules! casm_extend {
         });
         $crate::casm_extend!($ctx, $($tok)*)
     };
+    ($ctx:ident, %{ ( memory $quotient:tt, memory $remainder:tt )
+         = divmod ( $lhs:tt , $rhs:tt ) %} $($tok:tt)*) => {
+        $ctx.current_hints.push($crate::hints::Hint::DivMod{
+            lhs: $crate::deref_or_immediate!($lhs).into(),
+            rhs: $crate::deref_or_immediate!($rhs).into(),
+            quotient: $crate::deref!($quotient),
+            remainder: $crate::deref!($remainder),
+        });
+        $crate::casm_extend!($ctx, $($tok)*)
+    };
 }
 
 #[macro_export]
