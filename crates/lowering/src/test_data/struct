@@ -30,7 +30,7 @@ Statements:
   (v2: core::felt) <- 3u
   (v3: core::felt) <- 7u
   (v4: (core::felt, core::felt)) <- struct_construct(v2, v3)
-  (v5: test_crate::MyStruct) <- struct_construct(v1, v0, v4)
+  (v5: test::MyStruct) <- struct_construct(v1, v0, v4)
 Drops: v0, v1, v2, v3, v4
 End:
   Callsite(v5)
@@ -63,7 +63,7 @@ struct MyStruct {
 
 //! > lowering_format
 blk0 (root):
-Inputs: v0: test_crate::MyStruct
+Inputs: v0: test::MyStruct
 Statements:
   (v1: (), v2: core::felt, v3: (core::felt, core::felt)) <- struct_destructure(v0)
 Drops: v1, v3
@@ -99,7 +99,7 @@ struct MyStruct {
 
 //! > lowering_format
 blk0 (root):
-Inputs: v0: test_crate::MyStruct
+Inputs: v0: test::MyStruct
 Statements:
   (v1: (), v2: core::felt, v3: (core::felt, core::felt)) <- struct_destructure(v0)
   (v4: core::felt, v5: core::felt) <- struct_destructure(v3)

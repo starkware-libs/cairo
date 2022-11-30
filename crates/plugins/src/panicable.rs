@@ -64,10 +64,17 @@ fn generate_panicable_code(
             };
         };
 
-        let Some(err_value) = try_extract_matches!(attr.args(db), ast::OptionAttributeArgs::AttributeArgs).and_then(
+        let Some((err_value, panicable_name)) = try_extract_matches!(attr.args(db), ast::OptionAttributeArgs::AttributeArgs).and_then(
             |args| {
-            if let [ast::Expr::Literal(err_value)] = &args.arg_list(db).elements(db)[..] {
-                Some(err_value.text(db)) } else { None}
+            if let [ast::Expr::Literal(err_value), ast::Expr::Path(name)] = &args.arg_list(db).elements(db)[..] {
+                if let [ast::PathSegment::Simple(segment)] = &name.elements(db)[..] {
+                    Some((err_value.text(db), segment.ident(db).text(db)))
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
         }) else {
             return PluginResult {
                 code: None,
@@ -91,7 +98,7 @@ fn generate_panicable_code(
                 "panicable".into(),
                 indoc::formatdoc!(
                     r#"
-                    func {function_name}_panicable({params}) -> {inner_ty_text} {{
+                    func {panicable_name}({params}) -> {inner_ty_text} {{
                         match {function_name}({args}) {{
                             Option::Some (v) => {{
                                 v
@@ -99,7 +106,7 @@ fn generate_panicable_code(
                             Option::None (v) => {{
                                 let data = array_new::<felt>();
                                 array_append::<felt>(data, {err_value});
-                                panic(data);
+                                panic(data)
                             }},
                         }}
                     }}

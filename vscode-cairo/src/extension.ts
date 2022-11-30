@@ -90,7 +90,7 @@ function setupLanguageServer(
 export function activate(context: vscode.ExtensionContext) {
     const config = vscode.workspace.getConfiguration();
 
-    if (config.get<boolean>('cairo.enableLanguageServer')) {
+    if (config.get<boolean>('cairo1.enableLanguageServer')) {
         setupLanguageServer(config, context);
     }
 }

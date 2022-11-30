@@ -15,7 +15,7 @@ use crate::relocations::{Relocation, RelocationEntry};
 fn test_add() {
     assert_eq!(
         compile_libfunc(
-            "uint128_add",
+            "uint128_checked_add",
             vec![ref_expr!([fp + 2]), ref_expr!([fp + 1]), ref_expr!([ap - 7])]
         ),
         ReducedCompiledInvocation {
@@ -51,7 +51,7 @@ fn test_add() {
 fn test_sub() {
     assert_eq!(
         compile_libfunc(
-            "uint128_sub",
+            "uint128_checked_sub",
             vec![ref_expr!([ap - 2]), ref_expr!([ap - 1]), ref_expr!([fp + 7])]
         ),
         ReducedCompiledInvocation {

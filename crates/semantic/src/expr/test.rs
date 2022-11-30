@@ -66,10 +66,10 @@ fn test_expr_assignment() {
 
     assert_eq!(
         format!("{:?}", expr.debug(&expr_formatter)),
-        "Assignment(ExprAssignment { var: LocalVarId(test_crate::a), rhs: \
-         FunctionCall(ExprFunctionCall { function: core::felt_mul, ref_args: [], args: \
-         [Var(ExprVar { var: LocalVarId(test_crate::a), ty: core::felt }), Literal(ExprLiteral { \
-         value: 3, ty: core::felt })], ty: core::felt }), ty: () })"
+        "Assignment(ExprAssignment { var: LocalVarId(test::a), rhs: FunctionCall(ExprFunctionCall \
+         { function: core::felt_mul, ref_args: [], args: [Var(ExprVar { var: LocalVarId(test::a), \
+         ty: core::felt }), Literal(ExprLiteral { value: 3, ty: core::felt })], ty: core::felt \
+         }), ty: () })"
     );
 }
 
@@ -151,20 +151,18 @@ fn test_member_access() {
     assert_eq!(
         exprs,
         vec![
-            "MemberAccess(ExprMemberAccess { expr: Var(ExprVar { var: ParamId(test_crate::a), ty: \
-             test_crate::A }), struct_id: StructId(test_crate::A), member: \
-             MemberId(test_crate::a), ty: (core::felt,) })",
-            "MemberAccess(ExprMemberAccess { expr: Var(ExprVar { var: ParamId(test_crate::a), ty: \
-             test_crate::A }), struct_id: StructId(test_crate::A), member: \
-             MemberId(test_crate::b), ty: core::felt })",
-            "MemberAccess(ExprMemberAccess { expr: Var(ExprVar { var: ParamId(test_crate::a), ty: \
-             test_crate::A }), struct_id: StructId(test_crate::A), member: \
-             MemberId(test_crate::c), ty: test_crate::B })",
-            "MemberAccess(ExprMemberAccess { expr: MemberAccess(ExprMemberAccess { expr: \
-             Var(ExprVar { var: ParamId(test_crate::a), ty: test_crate::A }), struct_id: \
-             StructId(test_crate::A), member: MemberId(test_crate::c), ty: test_crate::B }), \
-             struct_id: StructId(test_crate::B), member: MemberId(test_crate::a), ty: core::felt \
+            "MemberAccess(ExprMemberAccess { expr: Var(ExprVar { var: ParamId(test::a), ty: \
+             test::A }), struct_id: StructId(test::A), member: MemberId(test::a), ty: \
+             (core::felt,) })",
+            "MemberAccess(ExprMemberAccess { expr: Var(ExprVar { var: ParamId(test::a), ty: \
+             test::A }), struct_id: StructId(test::A), member: MemberId(test::b), ty: core::felt \
              })",
+            "MemberAccess(ExprMemberAccess { expr: Var(ExprVar { var: ParamId(test::a), ty: \
+             test::A }), struct_id: StructId(test::A), member: MemberId(test::c), ty: test::B })",
+            "MemberAccess(ExprMemberAccess { expr: MemberAccess(ExprMemberAccess { expr: \
+             Var(ExprVar { var: ParamId(test::a), ty: test::A }), struct_id: StructId(test::A), \
+             member: MemberId(test::c), ty: test::B }), struct_id: StructId(test::B), member: \
+             MemberId(test::a), ty: core::felt })",
         ]
     );
 }
@@ -191,7 +189,7 @@ fn test_member_access_failures() {
     assert_eq!(
         diagnostics,
         indoc! {r#"
-            error: Struct "test_crate::A" has no member "f"
+            error: Struct "test::A" has no member "f"
              --> lib.cairo:7:7
                 a.f
                   ^
@@ -247,7 +245,7 @@ fn test_tuple_type() {
     let param = &signature.params[0];
     assert_eq!(
         format!("{:?}", param.debug(db)),
-        "Parameter { id: ParamId(test_crate::a), ty: (core::felt, (), (core::felt,)), mutability: \
+        "Parameter { id: ParamId(test::a), ty: (core::felt, (), (core::felt,)), mutability: \
          Mutable }"
     );
 }
@@ -304,8 +302,8 @@ fn test_let_statement() {
         format!("{:?}", expr.debug(&expr_formatter)),
         "Block(ExprBlock { statements: [Let(StatementLet { pattern: Variable(a), expr: \
          Literal(ExprLiteral { value: 3, ty: core::felt }) }), Let(StatementLet { pattern: \
-         Variable(b), expr: Var(ExprVar { var: LocalVarId(test_crate::a), ty: core::felt }) })], \
-         tail: None, ty: () })"
+         Variable(b), expr: Var(ExprVar { var: LocalVarId(test::a), ty: core::felt }) })], tail: \
+         None, ty: () })"
     );
 }
 
@@ -417,12 +415,11 @@ fn test_expr_match() {
     let expr_formatter = ExprFormatter { db, free_function_id: test_function.function_id };
     assert_eq!(
         format!("{:?}", expr.debug(&expr_formatter)),
-        "Match(ExprMatch { matched_expr: Var(ExprVar { var: ParamId(test_crate::a), ty: \
-         core::felt }), arms: [MatchArm { pattern: Literal(PatternLiteral { literal: ExprLiteral \
-         { value: 0, ty: core::felt }, ty: core::felt }), expression: Literal(ExprLiteral { \
-         value: 0, ty: core::felt }) }, MatchArm { pattern: Otherwise(PatternOtherwise { ty: \
-         core::felt }), expression: Literal(ExprLiteral { value: 1, ty: core::felt }) }], ty: \
-         core::felt })"
+        "Match(ExprMatch { matched_expr: Var(ExprVar { var: ParamId(test::a), ty: core::felt }), \
+         arms: [MatchArm { pattern: Literal(PatternLiteral { literal: ExprLiteral { value: 0, ty: \
+         core::felt }, ty: core::felt }), expression: Literal(ExprLiteral { value: 0, ty: \
+         core::felt }) }, MatchArm { pattern: Otherwise(PatternOtherwise { ty: core::felt }), \
+         expression: Literal(ExprLiteral { value: 1, ty: core::felt }) }], ty: core::felt })"
     );
 }
 
@@ -546,7 +543,7 @@ fn test_expr_call_failures() {
 
         "}
     );
-    assert_eq!(format!("{:?}", test_expr.module_id.debug(db)), "ModuleId(test_crate)");
+    assert_eq!(format!("{:?}", test_expr.module_id.debug(db)), "ModuleId(test)");
     assert_eq!(
         format!(
             "{:?}",
@@ -618,10 +615,9 @@ fn test_expr_struct_ctor() {
     let expr_formatter = ExprFormatter { db, free_function_id: test_expr.function_id };
     assert_eq!(
         format!("{:?}", expr.debug(&expr_formatter)),
-        "StructCtor(ExprStructCtor { struct_id: StructId(test_crate::A), members: \
-         [(MemberId(test_crate::a), Literal(ExprLiteral { value: 1, ty: core::felt })), \
-         (MemberId(test_crate::b), Var(ExprVar { var: LocalVarId(test_crate::b), ty: core::felt \
-         }))], ty: test_crate::A })"
+        "StructCtor(ExprStructCtor { struct_id: StructId(test::A), members: [(MemberId(test::a), \
+         Literal(ExprLiteral { value: 1, ty: core::felt })), (MemberId(test::b), Var(ExprVar { \
+         var: LocalVarId(test::b), ty: core::felt }))], ty: test::A })"
     );
 }
 

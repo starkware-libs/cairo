@@ -173,6 +173,21 @@ pub fn unit_ty(db: &dyn SemanticGroup) -> TypeId {
     db.intern_type(semantic::TypeLongId::Tuple(vec![]))
 }
 
+/// Gets the never type ().
+pub fn never_ty(db: &dyn SemanticGroup) -> TypeId {
+    let core_module = db.core_module();
+    // This should not fail if the corelib is present.
+    let generic_type = db
+        .module_item_by_name(core_module, "never".into())
+        .and_then(GenericTypeId::option_from)
+        .expect("Type bool was not found in core lib.");
+    db.intern_type(semantic::TypeLongId::Concrete(semantic::ConcreteTypeId::new(
+        db,
+        generic_type,
+        vec![],
+    )))
+}
+
 /// Attempts to unwrap error propagation types (Option, Result).
 /// Returns None if not one of these types.
 pub fn unwrap_error_propagation_type(
@@ -201,7 +216,6 @@ pub fn unwrap_error_propagation_type(
             semantic::ConcreteTypeId::Struct(_) | semantic::ConcreteTypeId::Extern(_),
         )
         | TypeLongId::Tuple(_)
-        | TypeLongId::Never
         | TypeLongId::Missing => None,
     }
 }
@@ -258,10 +272,13 @@ pub fn core_binary_operator(
         BinaryOperator::Minus(_) if [type1, type2] == [uint128_ty, uint128_ty] => "uint128_sub",
         BinaryOperator::Minus(_) => return unsupported_operator("-"),
         BinaryOperator::Mul(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_mul",
+        BinaryOperator::Mul(_) if [type1, type2] == [uint128_ty, uint128_ty] => "uint128_mul",
         BinaryOperator::Mul(_) => return unsupported_operator("*"),
         BinaryOperator::Div(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_div",
         BinaryOperator::Div(_) => return unsupported_operator("/"),
         BinaryOperator::EqEq(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_eq",
+        BinaryOperator::EqEq(_) if [type1, type2] == [bool_ty, bool_ty] => "bool_eq",
+        BinaryOperator::EqEq(_) if [type1, type2] == [uint128_ty, uint128_ty] => "uint128_eq",
         BinaryOperator::EqEq(_) => return unsupported_operator("=="),
         BinaryOperator::And(_) if [type1, type2] == [bool_ty, bool_ty] => "bool_and",
         BinaryOperator::And(_) => return unsupported_operator("&"),
@@ -271,11 +288,13 @@ pub fn core_binary_operator(
         BinaryOperator::LE(_) if [type1, type2] == [uint128_ty, uint128_ty] => "uint128_le",
         BinaryOperator::LE(_) => return unsupported_operator("<="),
         BinaryOperator::GE(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_ge",
+        BinaryOperator::GE(_) if [type1, type2] == [uint128_ty, uint128_ty] => "uint128_ge",
         BinaryOperator::GE(_) => return unsupported_operator(">="),
         BinaryOperator::LT(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_lt",
         BinaryOperator::LT(_) if [type1, type2] == [uint128_ty, uint128_ty] => "uint128_lt",
         BinaryOperator::LT(_) => return unsupported_operator("<"),
         BinaryOperator::GT(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_gt",
+        BinaryOperator::GT(_) if [type1, type2] == [uint128_ty, uint128_ty] => "uint128_gt",
         BinaryOperator::GT(_) => return unsupported_operator(">"),
         _ => return Err(SemanticDiagnosticKind::UnknownBinaryOperator),
     };
