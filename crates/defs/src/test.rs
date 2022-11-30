@@ -53,7 +53,7 @@ pub fn setup_test_module<T: DefsGroup + AsFilesGroupMut + ?Sized>(
     db: &mut T,
     content: &str,
 ) -> ModuleId {
-    let crate_id = db.intern_crate(CrateLongId("test_crate".into()));
+    let crate_id = db.intern_crate(CrateLongId("test".into()));
     let directory = Directory("src".into());
     db.set_crate_root(crate_id, Some(directory));
     let file = db.module_main_file(ModuleId::CrateRoot(crate_id)).unwrap();
@@ -76,7 +76,7 @@ fn test_resolve() {
     let db = &db_val;
     assert!(db.module_item_by_name(module_id, "doesnt_exist".into()).is_none());
     let felt_add = db.module_item_by_name(module_id, "felt_add".into());
-    assert_eq!(format!("{:?}", felt_add.debug(db)), "Some(ExternFunctionId(test_crate::felt_add))");
+    assert_eq!(format!("{:?}", felt_add.debug(db)), "Some(ExternFunctionId(test::felt_add))");
     match db.module_item_by_name(module_id, "felt_add".into()).unwrap() {
         crate::ids::ModuleItemId::ExternFunction(_) => {}
         _ => panic!("Expected an extern function"),
@@ -122,7 +122,7 @@ fn test_submodules() {
     let mut db_val = DatabaseForTesting::default();
     let db = &mut db_val;
 
-    let crate_id = db.intern_crate(CrateLongId("test_crate".into()));
+    let crate_id = db.intern_crate(CrateLongId("test".into()));
     let root = Directory("src".into());
     db.set_crate_root(crate_id, Some(root));
 
@@ -189,7 +189,7 @@ fn test_plugin() {
     let mut db_val = DatabaseForTesting::default();
     let db = &mut db_val;
 
-    let crate_id = db.intern_crate(CrateLongId("test_crate".into()));
+    let crate_id = db.intern_crate(CrateLongId("test".into()));
     let root = Directory("src".into());
     db.set_crate_root(crate_id, Some(root));
     db.set_macro_plugins(vec![Arc::new(DummyPlugin {})]);
@@ -202,11 +202,11 @@ fn test_plugin() {
 
     assert_eq!(
         format!("{:?}", db.module_item_by_name(module_id, "foo".into()).debug(db)),
-        "Some(FreeFunctionId(test_crate::foo))"
+        "Some(FreeFunctionId(test::foo))"
     );
 
     assert_eq!(
         format!("{:?}", db.module_item_by_name(module_id, "B".into()).debug(db)),
-        "Some(ExternTypeId(test_crate::B))"
+        "Some(ExternTypeId(test::B))"
     );
 }

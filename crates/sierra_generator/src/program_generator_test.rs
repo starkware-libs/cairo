@@ -34,7 +34,7 @@ fn test_program_generator() {
             libfunc revoke_ap_tracking = revoke_ap_tracking;
             libfunc felt_const<5> = felt_const<5>;
             libfunc store_temp<felt> = store_temp<felt>;
-            libfunc function_call<user@test_crate::bar> = function_call<user@test_crate::bar>;
+            libfunc function_call<user@test::bar> = function_call<user@test::bar>;
             libfunc rename<felt> = rename<felt>;
             libfunc burn_gas = burn_gas;
             libfunc dup<felt> = dup<felt>;
@@ -44,7 +44,7 @@ fn test_program_generator() {
             revoke_ap_tracking() -> ();
             felt_const<5>() -> ([1]);
             store_temp<felt>([1]) -> ([3]);
-            function_call<user@test_crate::bar>([3]) -> ([2]);
+            function_call<user@test::bar>([3]) -> ([2]);
             rename<felt>([2]) -> ([4]);
             burn_gas() -> ();
             return([4]);
@@ -56,8 +56,8 @@ fn test_program_generator() {
             burn_gas() -> ();
             return([2]);
 
-            test_crate::foo@0([0]: felt) -> (felt);
-            test_crate::bar@8([0]: felt) -> (felt);
+            test::foo@0([0]: felt) -> (felt);
+            test::bar@8([0]: felt) -> (felt);
         "},
     );
 }
@@ -95,7 +95,7 @@ fn test_type_dependency() {
             burn_gas() -> ();
             return([3]);
 
-            test_crate::unbox_twice@0([0]: Box<Box<Box<felt>>>) -> (Box<felt>);
+            test::unbox_twice@0([0]: Box<Box<Box<felt>>>) -> (Box<felt>);
         "},
     );
 }
@@ -103,22 +103,22 @@ fn test_type_dependency() {
 #[test_case(
     "f1",
     &[
-        "test_crate::f1", "test_crate::f2", "test_crate::f3",
-        "test_crate::f4", "test_crate::f5", "test_crate::f6",
+        "test::f1", "test::f2", "test::f3",
+        "test::f4", "test::f5", "test::f6",
     ];
     "finds all"
 )]
 #[test_case(
     "f2",
     &[
-        "test_crate::f2", "test_crate::f3", "test_crate::f4", "test_crate::f5", "test_crate::f6",
+        "test::f2", "test::f3", "test::f4", "test::f5", "test::f6",
     ];
     "all but first"
 )]
-#[test_case("f3", &["test_crate::f3", "test_crate::f5", "test_crate::f6"]; "f3 -> f5 -> f6")]
-#[test_case("f4", &["test_crate::f4", "test_crate::f5", "test_crate::f6"]; "f4 -> (f5 -> f6, f6)")]
-#[test_case("f5", &["test_crate::f5", "test_crate::f6"]; "f5 -> f6")]
-#[test_case("f6", &["test_crate::f6"]; "self loop")]
+#[test_case("f3", &["test::f3", "test::f5", "test::f6"]; "f3 -> f5 -> f6")]
+#[test_case("f4", &["test::f4", "test::f5", "test::f6"]; "f4 -> (f5 -> f6, f6)")]
+#[test_case("f5", &["test::f5", "test::f6"]; "f5 -> f6")]
+#[test_case("f6", &["test::f6"]; "self loop")]
 fn test_only_include_dependecies(func_name: &str, sierra_used_funcs: &[&str]) {
     let (db, crate_id) = setup_db_and_get_crate_id(indoc! {"
         func f1() { f2(); f3(); }
