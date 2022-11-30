@@ -41,6 +41,7 @@ chrono = "0.4.23"
 clap = { version = "4.0", features = ["derive"] }
 colored = "2"
 const-fnv1a-hash = "1.1.0"
+convert_case = "0.6.0"
 diffy = "0.3.0"
 env_logger = "0.9.3"
 genco = "0.17.0"

@@ -165,6 +165,7 @@ func assert(cond: bool, err_code: felt) {
 
 // Hash functions.
 mod hash;
+use hash::PedersenBuiltinCost;
 use hash::pedersen;
 use hash::pedersen_get_gas;
 
