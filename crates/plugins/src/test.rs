@@ -99,8 +99,7 @@ fn set_file_content(db: &mut DatabaseForTesting, path: &str, content: &str) {
                     Option::None (v) => {
                         let data = array_new::<felt>();
                         array_append::<felt>(data, 1);
-                        panic(data);
-                        foo_improved(a, b)
+                        panic(data)
                     },
                 }
             }
@@ -114,8 +113,7 @@ fn set_file_content(db: &mut DatabaseForTesting, path: &str, content: &str) {
                     Option::None (v) => {
                         let data = array_new::<felt>();
                         array_append::<felt>(data, 2);
-                        panic(data);
-                        bar_changed()
+                        panic(data)
                     },
                 }
             }
@@ -129,8 +127,7 @@ fn set_file_content(db: &mut DatabaseForTesting, path: &str, content: &str) {
                     Option::None (v) => {
                         let data = array_new::<felt>();
                         array_append::<felt>(data, 3);
-                        panic(data);
-                        non_extern_stuff(_)
+                        panic(data)
                     },
                 }
             }
