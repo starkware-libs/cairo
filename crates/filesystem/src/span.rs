@@ -71,3 +71,10 @@ impl TextOffset {
         Some(TextPosition { line: line_number, col: *self - line_offset })
     }
 }
+
+impl FileSummary {
+    /// Gets the number of lines
+    pub fn line_count(&self) -> usize {
+        self.line_offsets.len()
+    }
+}
