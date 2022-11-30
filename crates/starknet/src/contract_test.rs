@@ -2,7 +2,7 @@ use indoc::indoc;
 use pretty_assertions::assert_eq;
 use semantic::test_utils::{setup_test_crate, SemanticDatabaseForTesting};
 
-use crate::contract::{find_contract_structs, resolve_contract_impls};
+use crate::contract::{find_contract_structs, resolve_contract_impls, starknet_keccak};
 
 #[test]
 fn test_contract_resolving() {
@@ -52,4 +52,12 @@ fn test_contract_resolving() {
         resolve_contract_impls(db, &contracts[3]).expect_err("").to_string(),
         "Failed to resolve `NoSuchPath`."
     );
+}
+
+#[test]
+fn test_starknet_keccak() {
+    assert_eq!(
+        format!("0x{:x}", starknet_keccak("__execute__".as_bytes())),
+        "0x15d40a3d6ca2ac30f4031e42be28da9b056fef9bb7357ac5e85627ee876e5ad",
+    )
 }
