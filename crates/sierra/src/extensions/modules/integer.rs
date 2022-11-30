@@ -157,7 +157,7 @@ impl GenericLibFunc for Uint128OperationLibFunc {
                         ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                     },
                 ],
-                SierraApChange::NotImplemented,
+                SierraApChange::Known(5),
             )),
             (
                 [],
@@ -251,7 +251,7 @@ impl GenericLibFunc for Uint128OperationLibFunc {
                             ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                         },
                     ],
-                    SierraApChange::NotImplemented,
+                    SierraApChange::Known(5),
                 ))
             }
             (
