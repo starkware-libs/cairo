@@ -49,7 +49,7 @@ macro_rules! add_instruction {
 fn get_store_instructions(
     builder: &CompiledInvocationBuilder<'_>,
     src_type: &ConcreteTypeId,
-    dst: CellRef,
+    mut dst: CellRef,
     src_expr: &ReferenceExpression,
 ) -> Result<Vec<Instruction>, InvocationError> {
     if builder.program_info.type_sizes.get(src_type).is_none() {
@@ -87,6 +87,8 @@ fn get_store_instructions(
         if inc_ap {
             ap_change += 1;
             ctx.instructions.last_mut().unwrap().inc_ap = true;
+        } else {
+            dst.offset += 1;
         }
     }
     Ok(ctx.instructions)
