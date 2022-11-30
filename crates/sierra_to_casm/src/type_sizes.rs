@@ -19,6 +19,7 @@ pub fn get_type_size_map(
         let size = match ty {
             CoreTypeConcrete::Felt(_)
             | CoreTypeConcrete::GasBuiltin(_)
+            | CoreTypeConcrete::BuiltinCost(_)
             | CoreTypeConcrete::Uint128(_)
             | CoreTypeConcrete::RangeCheck(_)
             | CoreTypeConcrete::Box(_)
