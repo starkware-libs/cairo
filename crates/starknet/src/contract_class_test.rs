@@ -70,19 +70,22 @@ fn test_compile_path() {
         contract.sierra_program.to_string(),
         indoc! {"
           type felt = felt;
+          type SyscallPtr = SyscallPtr;
 
           libfunc revoke_ap_tracking = revoke_ap_tracking;
           libfunc felt_const<1> = felt_const<1>;
+          libfunc store_temp<SyscallPtr> = store_temp<SyscallPtr>;
           libfunc store_temp<felt> = store_temp<felt>;
           libfunc burn_gas = burn_gas;
 
           revoke_ap_tracking() -> ();
-          felt_const<1>() -> ([0]);
-          store_temp<felt>([0]) -> ([1]);
+          felt_const<1>() -> ([1]);
+          store_temp<SyscallPtr>([0]) -> ([2]);
+          store_temp<felt>([1]) -> ([3]);
           burn_gas() -> ();
-          return([1]);
+          return([2], [3]);
 
-          test_contract::test_contract::test@0() -> (felt);
+          test_contract::test_contract::test@0([0]: SyscallPtr) -> (SyscallPtr, felt);
           "
         }
     );
@@ -94,7 +97,12 @@ fn test_compile_path() {
             {
               "type": "function",
               "name": "test",
-              "inputs": [],
+              "inputs": [
+                {
+                  "name": "syscall_ptr",
+                  "ty": "core::SyscallPtr"
+                }
+              ],
               "output_ty": "core::felt"
             }
           ]"#
