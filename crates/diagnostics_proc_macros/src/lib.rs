@@ -17,6 +17,7 @@ pub fn derive_debug_with_db(input: TokenStream) -> TokenStream {
     let db = if let syn::Type::Paren(db) = db { db } else { panic!("Expected parenthesis") };
     let db = quote! {(#db)};
     let name = input.ident;
+    // TODO(yuval/shahar): extract the lifetime here and use it instead of `'a` below.
     let body = match input.data {
         syn::Data::Struct(strct) => emit_struct_debug(name, db, strct),
         syn::Data::Enum(enm) => emit_enum_debug(name, db, enm),
@@ -34,11 +35,12 @@ fn emit_struct_debug(name: syn::Ident, db: TokenStream2, strct: syn::DataStruct)
     let (pattern, field_prints) = emit_fields_debug(db.clone(), name.to_string(), strct.fields);
     let crt = debug_crate();
     quote! {
-        impl #crt::debug::DebugWithDb<#db> for #name {
-            fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &#db) -> std::fmt::Result {
+        impl<'a, T: ?Sized + db_utils::Upcast<#db>> #crt::debug::DebugWithDb<T> for #name {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>, other_db: &T) -> std::fmt::Result {
                 use #crt::debug::DebugWithDb;
                 use #crt::debug::helper::Fallback;
                 let #name #pattern = self;
+                let db: &#db = other_db.upcast();
                 #field_prints
             }
         }
@@ -61,10 +63,11 @@ fn emit_enum_debug(name: syn::Ident, db: TokenStream2, enm: syn::DataEnum) -> To
     }
     let crt = debug_crate();
     quote! {
-        impl #crt::debug::DebugWithDb<#db> for #name {
-            fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &#db) -> std::fmt::Result {
+        impl<'a, T: ?Sized + db_utils::Upcast<#db>> #crt::debug::DebugWithDb<T> for #name {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>, other_db: &T) -> std::fmt::Result {
                 use #crt::debug::DebugWithDb;
                 use #crt::debug::helper::Fallback;
+                let db: &#db = other_db.upcast();
                 match self {
                     #variant_prints
                 }

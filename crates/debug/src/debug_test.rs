@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use db_utils::define_short_id;
+use db_utils::{define_short_id, Upcast};
 use diagnostics_proc_macros::DebugWithDb;
 use test_log::test;
 
@@ -20,6 +20,12 @@ pub struct DatabaseForTesting {
     storage: salsa::Storage<DatabaseForTesting>,
 }
 impl salsa::Database for DatabaseForTesting {}
+
+impl Upcast<dyn TestGroup> for DatabaseForTesting {
+    fn upcast(&self) -> &(dyn TestGroup + 'static) {
+        self
+    }
+}
 
 // Structs.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]

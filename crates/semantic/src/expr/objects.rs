@@ -38,7 +38,7 @@ impl DebugWithDb<ExprFormatter<'_>> for StatementId {
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
-#[debug_db(ExprFormatter<'_>)]
+#[debug_db(ExprFormatter<'a>)]
 pub enum Statement {
     Expr(StatementExpr),
     Let(StatementLet),
@@ -55,7 +55,7 @@ impl Statement {
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
-#[debug_db(ExprFormatter<'_>)]
+#[debug_db(ExprFormatter<'a>)]
 pub struct StatementExpr {
     pub expr: ExprId,
     #[hide_field_debug_with_db]
@@ -63,7 +63,7 @@ pub struct StatementExpr {
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
-#[debug_db(ExprFormatter<'_>)]
+#[debug_db(ExprFormatter<'a>)]
 pub struct StatementLet {
     pub pattern: Pattern,
     pub expr: ExprId,
@@ -72,7 +72,7 @@ pub struct StatementLet {
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
-#[debug_db(ExprFormatter<'_>)]
+#[debug_db(ExprFormatter<'a>)]
 pub struct StatementReturn {
     pub expr: ExprId,
     #[hide_field_debug_with_db]
@@ -81,7 +81,7 @@ pub struct StatementReturn {
 
 // Expressions.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
-#[debug_db(ExprFormatter<'_>)]
+#[debug_db(ExprFormatter<'a>)]
 pub enum Expr {
     Tuple(ExprTuple),
     Assignment(ExprAssignment),
@@ -135,7 +135,7 @@ impl Expr {
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
-#[debug_db(ExprFormatter<'_>)]
+#[debug_db(ExprFormatter<'a>)]
 pub struct ExprTuple {
     pub items: Vec<ExprId>,
     pub ty: semantic::TypeId,
@@ -144,7 +144,7 @@ pub struct ExprTuple {
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
-#[debug_db(ExprFormatter<'_>)]
+#[debug_db(ExprFormatter<'a>)]
 pub struct ExprBlock {
     pub statements: Vec<StatementId>,
     /// Blocks may end with an expression, without a trailing `;`.
@@ -158,7 +158,7 @@ pub struct ExprBlock {
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
-#[debug_db(ExprFormatter<'_>)]
+#[debug_db(ExprFormatter<'a>)]
 pub struct ExprFunctionCall {
     pub function: FunctionId,
     pub ref_args: Vec<VarId>,
@@ -169,7 +169,7 @@ pub struct ExprFunctionCall {
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
-#[debug_db(ExprFormatter<'_>)]
+#[debug_db(ExprFormatter<'a>)]
 pub struct ExprMatch {
     pub matched_expr: ExprId,
     pub arms: Vec<MatchArm>,
@@ -179,7 +179,7 @@ pub struct ExprMatch {
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
-#[debug_db(ExprFormatter<'_>)]
+#[debug_db(ExprFormatter<'a>)]
 pub struct ExprIf {
     pub condition: ExprId,
     pub if_block: ExprId,
@@ -190,14 +190,14 @@ pub struct ExprIf {
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
-#[debug_db(ExprFormatter<'_>)]
+#[debug_db(ExprFormatter<'a>)]
 pub struct MatchArm {
     pub pattern: Pattern,
     pub expression: ExprId,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
-#[debug_db(ExprFormatter<'_>)]
+#[debug_db(ExprFormatter<'a>)]
 pub struct ExprAssignment {
     pub var: VarId,
     pub rhs: semantic::ExprId,
@@ -208,7 +208,7 @@ pub struct ExprAssignment {
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
-#[debug_db(ExprFormatter<'_>)]
+#[debug_db(ExprFormatter<'a>)]
 pub struct ExprVar {
     pub var: VarId,
     pub ty: semantic::TypeId,
@@ -217,7 +217,7 @@ pub struct ExprVar {
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
-#[debug_db(ExprFormatter<'_>)]
+#[debug_db(ExprFormatter<'a>)]
 pub struct ExprLiteral {
     pub value: BigInt,
     pub ty: semantic::TypeId,
@@ -226,7 +226,7 @@ pub struct ExprLiteral {
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
-#[debug_db(ExprFormatter<'_>)]
+#[debug_db(ExprFormatter<'a>)]
 pub struct ExprMemberAccess {
     pub expr: semantic::ExprId,
     pub struct_id: StructId,
@@ -237,7 +237,7 @@ pub struct ExprMemberAccess {
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
-#[debug_db(ExprFormatter<'_>)]
+#[debug_db(ExprFormatter<'a>)]
 pub struct ExprStructCtor {
     pub struct_id: StructId,
     pub members: Vec<(MemberId, ExprId)>,
@@ -247,7 +247,7 @@ pub struct ExprStructCtor {
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
-#[debug_db(ExprFormatter<'_>)]
+#[debug_db(ExprFormatter<'a>)]
 pub struct ExprEnumVariantCtor {
     pub variant: semantic::ConcreteVariant,
     pub value_expr: ExprId,
@@ -257,7 +257,7 @@ pub struct ExprEnumVariantCtor {
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
-#[debug_db(ExprFormatter<'_>)]
+#[debug_db(ExprFormatter<'a>)]
 pub struct ExprPropagateError {
     pub inner: ExprId,
     pub ok_variant: semantic::ConcreteVariant,
@@ -268,7 +268,7 @@ pub struct ExprPropagateError {
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
-#[debug_db(ExprFormatter<'_>)]
+#[debug_db(ExprFormatter<'a>)]
 pub struct ExprMissing {
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
