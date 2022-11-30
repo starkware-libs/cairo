@@ -48,5 +48,19 @@ extern func uint128_mod(
 ) nopanic;
 
 extern func uint128_lt(a: uint128, b: uint128) -> bool implicits (rc: RangeCheck) nopanic;
+extern func uint128_le(a: uint128, b: uint128) -> bool implicits (rc: RangeCheck) nopanic;
+
+func uint128_gt(a: uint128, b: uint128) -> bool implicits (rc: RangeCheck) nopanic {
+    uint128_lt(b, a)
+}
+
+func uint128_ge(a: uint128, b: uint128) -> bool implicits (rc: RangeCheck) nopanic {
+    uint128_le(b, a)
+}
+
+// TODO(orizi): Change to extern when added.
+func uint128_eq(a: uint128, b: uint128) -> bool implicits (rc: RangeCheck) {
+    uint128_to_felt(a) == uint128_to_felt(b)
+}
 
 extern func uint128_jump_nz(a: uint128) -> JumpNzResult::<uint128> nopanic;

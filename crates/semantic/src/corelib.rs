@@ -262,10 +262,15 @@ pub fn core_binary_operator(
         }
         BinaryOperator::Minus(_) => return unsupported_operator("-"),
         BinaryOperator::Mul(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_mul",
+        BinaryOperator::Mul(_) if [type1, type2] == [uint128_ty, uint128_ty] => {
+            "uint128_mul_panicable"
+        }
         BinaryOperator::Mul(_) => return unsupported_operator("*"),
         BinaryOperator::Div(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_div",
         BinaryOperator::Div(_) => return unsupported_operator("/"),
         BinaryOperator::EqEq(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_eq",
+        BinaryOperator::EqEq(_) if [type1, type2] == [bool_ty, bool_ty] => "bool_eq",
+        BinaryOperator::EqEq(_) if [type1, type2] == [uint128_ty, uint128_ty] => "uint128_eq",
         BinaryOperator::EqEq(_) => return unsupported_operator("=="),
         BinaryOperator::And(_) if [type1, type2] == [bool_ty, bool_ty] => "bool_and",
         BinaryOperator::And(_) => return unsupported_operator("&"),
@@ -275,11 +280,13 @@ pub fn core_binary_operator(
         BinaryOperator::LE(_) if [type1, type2] == [uint128_ty, uint128_ty] => "uint128_le",
         BinaryOperator::LE(_) => return unsupported_operator("<="),
         BinaryOperator::GE(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_ge",
+        BinaryOperator::GE(_) if [type1, type2] == [uint128_ty, uint128_ty] => "uint128_ge",
         BinaryOperator::GE(_) => return unsupported_operator(">="),
         BinaryOperator::LT(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_lt",
         BinaryOperator::LT(_) if [type1, type2] == [uint128_ty, uint128_ty] => "uint128_lt",
         BinaryOperator::LT(_) => return unsupported_operator("<"),
         BinaryOperator::GT(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_gt",
+        BinaryOperator::GT(_) if [type1, type2] == [uint128_ty, uint128_ty] => "uint128_gt",
         BinaryOperator::GT(_) => return unsupported_operator(">"),
         _ => return Err(SemanticDiagnosticKind::UnknownBinaryOperator),
     };
