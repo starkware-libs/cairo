@@ -60,7 +60,8 @@ impl SyntaxNodeFormat for SyntaxNode {
             | SyntaxKind::TokenNot
             | SyntaxKind::TokenColonColon
             | SyntaxKind::TokenLParen
-            | SyntaxKind::TokenLBrack => true,
+            | SyntaxKind::TokenLBrack
+            | SyntaxKind::TokenImplicits => true,
             SyntaxKind::ExprPath | SyntaxKind::TerminalIdentifier
                 if matches!(
                     parent_kind(db, self),
