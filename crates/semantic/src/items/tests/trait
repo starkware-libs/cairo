@@ -12,7 +12,7 @@ foo
 //! > module_code
 struct A {}
 trait MyTrait<T> {
-    func param_test(a: uint128) -> bad_type nopanic;
+    func param_test(ref a: uint128) -> bad_type nopanic;
 
     func no_ret_ty(a: uint128) -> felt;
 }
@@ -34,20 +34,20 @@ impl MyImpl2<T> of MyTrait::<T> {
 
     }
 
-    func param_test(a: felt, b: felt) -> uint128 {
+    func param_test(a: felt, b: felt, c: felt) -> uint128 {
 
     }
 
-    func no_ret_ty(a: uint128) {
+    func no_ret_ty(ref a: uint128) {
 
     }
 }
 
 //! > expected_diagnostics
 error: Path not found.
- --> lib.cairo:3:36
-    func param_test(a: uint128) -> bad_type nopanic;
-                                   ^******^
+ --> lib.cairo:3:40
+    func param_test(ref a: uint128) -> bad_type nopanic;
+                                       ^******^
 
 error: `mod` is not allowed inside impl.
  --> lib.cairo:9:5
@@ -100,9 +100,14 @@ error: The number of parameters in the impl function `MyImpl2::param_test` is in
                     ^**************^
 
 error: Parameter type of impl function `MyImpl2::param_test` is incompatible with `MyTrait::param_test`. Expected: `core::integer::uint128`, actual: `core::felt`.
+ --> lib.cairo:25:24
+    func param_test(a: felt, b: felt) -> uint128 {
+                       ^**^
+
+error: Parameter of `MyImpl2::param_test` must be `ref` to match `MyTrait::param_test`.
  --> lib.cairo:25:21
     func param_test(a: felt, b: felt) -> uint128 {
-                    ^*****^
+                    ^
 
 error: The signature of function `param_test` is incompatible with trait `MyTrait`. The trait function is declared as nopanic.
  --> lib.cairo:25:20
@@ -114,10 +119,15 @@ error: Return type of impl function `MyImpl2::param_test` is incompatible with `
     func param_test(a: felt, b: felt) -> uint128 {
                                          ^*****^
 
+error: `MyImpl2::no_ret_ty` has an incompatible type for trait `MyTrait::no_ret_ty`. Remove `ref` modifier.
+ --> lib.cairo:29:20
+    func no_ret_ty(ref a: uint128) {
+                   ^*^
+
 error: Return type of impl function `MyImpl2::no_ret_ty` is incompatible with `MyTrait::no_ret_ty`. Expected: `core::felt`, actual: `()`.
- --> lib.cairo:29:32
-    func no_ret_ty(a: uint128) {
-                               ^
+ --> lib.cairo:29:36
+    func no_ret_ty(ref a: uint128) {
+                                   ^
 
 //! > ==========================================================================
 
