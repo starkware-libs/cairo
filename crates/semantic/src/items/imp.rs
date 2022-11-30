@@ -511,10 +511,21 @@ fn validate_impl_function_signature(
     {
         let expected_ty = trait_param.ty;
         let actual_ty = param.ty;
+
         if expected_ty != actual_ty {
             diagnostics.report(
-                &signature_syntax.parameters(syntax_db).elements(syntax_db)[idx],
+                &signature_syntax.parameters(syntax_db).elements(syntax_db)[idx]
+                    .type_clause(syntax_db)
+                    .ty(syntax_db),
                 WrongParameterType { impl_id, impl_function_id, trait_id, expected_ty, actual_ty },
+            );
+        }
+
+        if trait_param.mutability != param.mutability {
+            diagnostics.report(
+                &signature_syntax.parameters(syntax_db).elements(syntax_db)[idx]
+                    .modifiers(syntax_db),
+                WrongParameterMutability { impl_id, impl_function_id, trait_id },
             );
         }
     }

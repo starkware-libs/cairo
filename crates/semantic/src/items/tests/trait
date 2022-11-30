@@ -12,7 +12,7 @@ foo
 //! > module_code
 struct A {}
 trait MyTrait<T> {
-    func param_test(a: uint128) -> bad_type nopanic;
+    func param_test(ref a: uint128) -> bad_type nopanic;
 
     func no_ret_ty(a: uint128) -> felt;
 }
@@ -45,9 +45,9 @@ impl MyImpl2<T> of MyTrait::<T> {
 
 //! > expected_diagnostics
 error: Path not found.
- --> lib.cairo:3:36
-    func param_test(a: uint128) -> bad_type nopanic;
-                                   ^******^
+ --> lib.cairo:3:40
+    func param_test(ref a: uint128) -> bad_type nopanic;
+                                       ^******^
 
 error: `mod` is not allowed inside impl.
  --> lib.cairo:9:5
@@ -100,9 +100,14 @@ error: The number of parameters in the impl function `MyImpl2::param_test` is in
                     ^**************^
 
 error: Parameter type of impl function `MyImpl2::param_test` is incompatible with `MyTrait::param_test`. Expected: `core::integer::uint128`, actual: `core::felt`.
+ --> lib.cairo:25:24
+    func param_test(a: felt, b: felt) -> uint128 {
+                       ^**^
+
+error: Parameter mutability of impl function `MyImpl2::param_test` is incompatible with `MyTrait::param_test`.
  --> lib.cairo:25:21
     func param_test(a: felt, b: felt) -> uint128 {
-                    ^*****^
+                    ^
 
 error: The signature of function `param_test` is incompatible with trait `MyTrait`. The trait function is declared as nopanic.
  --> lib.cairo:25:20
