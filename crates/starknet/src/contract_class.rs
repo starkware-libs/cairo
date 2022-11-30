@@ -22,7 +22,7 @@ use utils::try_extract_matches;
 
 use crate::abi;
 use crate::casm_contract_class::{deserialize_big_uint, serialize_big_uint};
-use crate::contract::{find_contract_structs, resolve_contract_impls};
+use crate::contract::{find_contract_structs, resolve_contract_impls, starknet_keccak};
 use crate::plugin::StarkNetPlugin;
 
 #[cfg(test)]
@@ -152,8 +152,7 @@ fn get_entry_points(
         let sierra_id = db.intern_sierra_function(func_id);
 
         entry_points_by_type.external.push(ContractEntryPoint {
-            // TODO(ilya): compute the selector.
-            selector: BigUint::from(0u32),
+            selector: starknet_keccak(function_name.as_bytes()),
             function_id: replacer.replace_function_id(&sierra_id).id,
         });
     }

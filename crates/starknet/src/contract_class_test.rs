@@ -107,7 +107,7 @@ fn test_compile_path() {
           {
             "EXTERNAL": [
               {
-                "selector": "0x0",
+                "selector": "0x22ff5f21f0b81b113e63f7db6da94fedef11b2119b4088b89664fb9a3cb658",
                 "function_id": 0
               }
             ],

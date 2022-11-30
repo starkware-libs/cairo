@@ -1,8 +1,10 @@
 use defs::ids::{LanguageElementId, ModuleItemId, StructId};
+use num_bigint::BigUint;
 use semantic::db::SemanticGroup;
 use semantic::diagnostic::SemanticDiagnostics;
 use semantic::resolve_path::{ResolvedConcreteItem, Resolver};
 use semantic::ConcreteImplId;
+use sha3::{Digest, Keccak256};
 use syntax::node::{ast, TypedSyntaxNode};
 
 #[cfg(test)]
@@ -16,6 +18,17 @@ pub struct ContractDeclaration {
     /// A list of Expressions that specify the implementations included in the contract.
     /// See resolve_contract_impls(...) for more detail.
     pub impls: Vec<syntax::node::ast::Expr>,
+}
+
+/// A variant of eth-keccak that computes a value that fits in a StarkNet field element.
+pub fn starknet_keccak(data: &[u8]) -> BigUint {
+    let mut hasher = Keccak256::new();
+    hasher.update(data);
+    let mut result = hasher.finalize();
+
+    // Truncate result to 250 bits.
+    *result.first_mut().unwrap() &= 3;
+    BigUint::from_bytes_be(&result)
 }
 
 /// Finds the structs annotated as contracts in the current compilation units and
