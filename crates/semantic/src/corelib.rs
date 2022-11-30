@@ -1,7 +1,7 @@
 use defs::ids::{EnumId, GenericFunctionId, GenericTypeId, ModuleId, ModuleItemId, TraitId};
 use filesystem::ids::CrateLongId;
 use smol_str::SmolStr;
-use syntax::node::ast::{self, BinaryOperator};
+use syntax::node::ast::{self, BinaryOperator, UnaryOperator};
 use utils::{extract_matches, try_extract_matches, OptionFrom};
 
 use crate::db::SemanticGroup;
@@ -216,6 +216,26 @@ pub fn unit_expr(ctx: &mut ComputationContext<'_>, stable_ptr: ast::ExprPtr) -> 
     }))
 }
 
+pub fn core_unary_operator(
+    db: &dyn SemanticGroup,
+    unary_op: &UnaryOperator,
+    ty: TypeId,
+) -> Result<FunctionId, SemanticDiagnosticKind> {
+    let felt_ty = core_felt_ty(db);
+    let bool_ty = core_bool_ty(db);
+    let unsupported_operator =
+        |op: &str| Err(SemanticDiagnosticKind::UnsupportedUnaryOperator { op: op.into(), ty });
+
+    let function_name = match unary_op {
+        UnaryOperator::Minus(_) if ty == felt_ty => "felt_neg",
+        UnaryOperator::Minus(_) => return unsupported_operator("-"),
+
+        UnaryOperator::Not(_) if ty == bool_ty => "bool_not",
+        UnaryOperator::Not(_) => return unsupported_operator("!"),
+    };
+    Ok(get_core_function_id(db, function_name.into(), vec![]))
+}
+
 pub fn core_binary_operator(
     db: &dyn SemanticGroup,
     binary_op: &BinaryOperator,
@@ -224,38 +244,43 @@ pub fn core_binary_operator(
 ) -> Result<FunctionId, SemanticDiagnosticKind> {
     // TODO(lior): Replace current hard-coded implementation with an implementation that is based on
     //   traits.
-    let felt = core_felt_ty(db);
-    let uint128 = core_uint128_ty(db);
+    let felt_ty = core_felt_ty(db);
+    let uint128_ty = core_uint128_ty(db);
     let bool_ty = core_bool_ty(db);
     let unsupported_operator = |op: &str| {
         Err(SemanticDiagnosticKind::UnsupportedBinaryOperator { op: op.into(), type1, type2 })
     };
     let function_name = match binary_op {
-        BinaryOperator::Plus(_) if [type1, type2] == [felt, felt] => "felt_add",
-        BinaryOperator::Plus(_) if [type1, type2] == [uint128, uint128] => "uint128_add",
+        BinaryOperator::Plus(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_add",
+        BinaryOperator::Plus(_) if [type1, type2] == [uint128_ty, uint128_ty] => "uint128_add",
         BinaryOperator::Plus(_) => return unsupported_operator("+"),
-        BinaryOperator::Minus(_) if [type1, type2] == [felt, felt] => "felt_sub",
-        BinaryOperator::Minus(_) if [type1, type2] == [uint128, uint128] => "uint128_sub",
+        BinaryOperator::Minus(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_sub",
+        BinaryOperator::Minus(_) if [type1, type2] == [uint128_ty, uint128_ty] => "uint128_sub",
         BinaryOperator::Minus(_) => return unsupported_operator("-"),
-        BinaryOperator::Mul(_) if [type1, type2] == [felt, felt] => "felt_mul",
+        BinaryOperator::Mul(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_mul",
+        BinaryOperator::Mul(_) if [type1, type2] == [uint128_ty, uint128_ty] => "uint128_mul",
         BinaryOperator::Mul(_) => return unsupported_operator("*"),
-        BinaryOperator::Div(_) if [type1, type2] == [felt, felt] => "felt_div",
+        BinaryOperator::Div(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_div",
         BinaryOperator::Div(_) => return unsupported_operator("/"),
-        BinaryOperator::EqEq(_) if [type1, type2] == [felt, felt] => "felt_eq",
+        BinaryOperator::EqEq(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_eq",
+        BinaryOperator::EqEq(_) if [type1, type2] == [bool_ty, bool_ty] => "bool_eq",
+        BinaryOperator::EqEq(_) if [type1, type2] == [uint128_ty, uint128_ty] => "uint128_eq",
         BinaryOperator::EqEq(_) => return unsupported_operator("=="),
         BinaryOperator::And(_) if [type1, type2] == [bool_ty, bool_ty] => "bool_and",
         BinaryOperator::And(_) => return unsupported_operator("&"),
         BinaryOperator::Or(_) if [type1, type2] == [bool_ty, bool_ty] => "bool_or",
         BinaryOperator::Or(_) => return unsupported_operator("|"),
-        BinaryOperator::LE(_) if [type1, type2] == [felt, felt] => "felt_le",
-        BinaryOperator::LE(_) if [type1, type2] == [uint128, uint128] => "uint128_le",
+        BinaryOperator::LE(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_le",
+        BinaryOperator::LE(_) if [type1, type2] == [uint128_ty, uint128_ty] => "uint128_le",
         BinaryOperator::LE(_) => return unsupported_operator("<="),
-        BinaryOperator::GE(_) if [type1, type2] == [felt, felt] => "felt_ge",
+        BinaryOperator::GE(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_ge",
+        BinaryOperator::GE(_) if [type1, type2] == [uint128_ty, uint128_ty] => "uint128_ge",
         BinaryOperator::GE(_) => return unsupported_operator(">="),
-        BinaryOperator::LT(_) if [type1, type2] == [felt, felt] => "felt_lt",
-        BinaryOperator::LT(_) if [type1, type2] == [uint128, uint128] => "uint128_lt",
+        BinaryOperator::LT(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_lt",
+        BinaryOperator::LT(_) if [type1, type2] == [uint128_ty, uint128_ty] => "uint128_lt",
         BinaryOperator::LT(_) => return unsupported_operator("<"),
-        BinaryOperator::GT(_) if [type1, type2] == [felt, felt] => "felt_gt",
+        BinaryOperator::GT(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_gt",
+        BinaryOperator::GT(_) if [type1, type2] == [uint128_ty, uint128_ty] => "uint128_gt",
         BinaryOperator::GT(_) => return unsupported_operator(">"),
         _ => return Err(SemanticDiagnosticKind::UnknownBinaryOperator),
     };

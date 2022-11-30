@@ -78,20 +78,20 @@ fn set_file_content(db: &mut DatabaseForTesting, path: &str, content: &str) {
 #[test_case(
     vec![Arc::new(PanicablePlugin{})],
     indoc! {"
-        #[panic_with(1)]
+        #[panic_with(1, foo_improved)]
         extern func foo(a: felt, b: other) -> Option::<()> implicits (rc: RangeCheck, gb: GasBuiltin) nopanic;
 
-        #[panic_with(2)]
+        #[panic_with(2, bar_changed)]
         extern func bar() -> Option::<felt> nopanic;
 
-        #[panic_with(3)]
+        #[panic_with(3, non_extern_stuff)]
         func non_extern(_: some_type) -> Option::<(felt, other)> nopanic {
             (4, 56)
         }
     "},
     &[
         indoc! {"
-            func foo_panicable(a: felt, b: other) -> () {
+            func foo_improved(a: felt, b: other) -> () {
                 match foo(a, b) {
                     Option::Some (v) => {
                         v
@@ -100,12 +100,13 @@ fn set_file_content(db: &mut DatabaseForTesting, path: &str, content: &str) {
                         let data = array_new::<felt>();
                         array_append::<felt>(data, 1);
                         panic(data);
+                        foo_improved(a, b)
                     },
                 }
             }
         "},
         indoc! {"
-            func bar_panicable() -> felt {
+            func bar_changed() -> felt {
                 match bar() {
                     Option::Some (v) => {
                         v
@@ -114,12 +115,13 @@ fn set_file_content(db: &mut DatabaseForTesting, path: &str, content: &str) {
                         let data = array_new::<felt>();
                         array_append::<felt>(data, 2);
                         panic(data);
+                        bar_changed()
                     },
                 }
             }
         "},
         indoc! {"
-            func non_extern_panicable(_: some_type) -> (felt, other) {
+            func non_extern_stuff(_: some_type) -> (felt, other) {
                 match non_extern(_) {
                     Option::Some (v) => {
                         v
@@ -128,6 +130,7 @@ fn set_file_content(db: &mut DatabaseForTesting, path: &str, content: &str) {
                         let data = array_new::<felt>();
                         array_append::<felt>(data, 3);
                         panic(data);
+                        non_extern_stuff(_)
                     },
                 }
             }
