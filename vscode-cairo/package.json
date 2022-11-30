@@ -34,7 +34,7 @@
             {
                 "title": "Cairo",
                 "properties": {
-                    "cairo.enableLanguageServer": {
+                    "cairo1.enableLanguageServer": {
                         "type": "boolean",
                         "default": "true",
                         "description": "Enable the Cairo language server.",

@@ -2,7 +2,7 @@ use salsa;
 use smol_str::SmolStr;
 
 const fn id_from_string(s: &str) -> u64 {
-    // TODO(ilya, 10/10/2022): Fix https://github.com/starkware-libs/cairo2/issues/45.
+    // TODO(ilya, 10/10/2022): Fix https://github.com/starkware-libs/cairo/issues/45.
     const_fnv1a_hash::fnv1a_hash_str_64(s)
 }
 
