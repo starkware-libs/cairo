@@ -111,32 +111,44 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
 #[test_case(indoc! {"
                 type felt = felt;
                 type UninitializedFelt = Uninitialized<felt>;
+                type ArrayFelt = Array<felt>;
+                type UninitializedArrayFelt = Uninitialized<ArrayFelt>;
 
                 libfunc finalize_locals = finalize_locals;
                 libfunc alloc_local_felt = alloc_local<felt>;
                 libfunc store_local_felt = store_local<felt>;
+                libfunc alloc_local_array_felt = alloc_local<ArrayFelt>;
+                libfunc store_local_array_felt = store_local<ArrayFelt>;
                 libfunc store_temp_felt = store_temp<felt>;
+                libfunc store_temp_array_felt = store_temp<ArrayFelt>;
 
                 store_temp_felt([1]) -> ([1]);
-                alloc_local_felt() -> ([3]);
                 alloc_local_felt() -> ([4]);
-                store_local_felt([3], [1]) -> ([3]);
+                alloc_local_felt() -> ([5]);
+                alloc_local_array_felt() -> ([6]);
+                store_local_felt([4], [1]) -> ([4]);
                 finalize_locals() -> ();
-                store_local_felt([4], [2]) -> ([4]);
-                store_temp_felt([3]) -> ([3]);
+                store_local_felt([5], [2]) -> ([5]);
+                store_local_array_felt([6], [3]) -> ([6]);
                 store_temp_felt([4]) -> ([4]);
-                return ([3], [4]);
+                store_temp_felt([5]) -> ([5]);
+                store_temp_array_felt([6]) -> ([6]);
+                return ([4], [5], [6]);
 
-                test_program@0([1]: felt, [2]: felt) -> (felt, felt);
+                test_program@0([1]: felt, [2]: felt, [3]: ArrayFelt) -> (felt, felt, ArrayFelt);
             "},
-            &[("test_program", 5)], false,
+            &[("test_program", 9)], false,
             indoc! {"
-                [ap + 0] = [fp + -4], ap++;
+                [ap + 0] = [fp + -6], ap++;
                 [fp + 1] = [ap + -1];
-                ap += 2;
-                [fp + 2] = [fp + -3];
+                ap += 4;
+                [fp + 2] = [fp + -5];
+                [fp + 3] = [fp + -4];
+                [fp + 4] = [fp + -3];
                 [ap + 0] = [fp + 1], ap++;
                 [ap + 0] = [fp + 2], ap++;
+                [ap + 0] = [fp + 3], ap++;
+                [ap + 0] = [fp + 4], ap++;
                 ret;
             "};
             "alloc_local and store_local")]
