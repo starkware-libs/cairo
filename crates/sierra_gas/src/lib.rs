@@ -1,6 +1,6 @@
-pub use core_libfunc_cost_base::CostTokenType;
 use cost_expr::Var;
 use gas_info::GasInfo;
+use sierra::extensions::builtin_cost::CostTokenType;
 use sierra::extensions::core::{CoreLibFunc, CoreType};
 use sierra::program::{Program, StatementIdx};
 use sierra::program_registry::{ProgramRegistry, ProgramRegistryError};

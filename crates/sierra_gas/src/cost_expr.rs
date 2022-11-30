@@ -2,10 +2,8 @@ use core::fmt;
 use std::collections::HashMap;
 
 use itertools::chain;
-use sierra::program::StatementIdx;
+use sierra::{extensions::builtin_cost::CostTokenType, program::StatementIdx};
 use utils::collection_arithmetics::HasZero;
-
-use crate::CostTokenType;
 
 #[cfg(test)]
 #[path = "cost_expr_test.rs"]

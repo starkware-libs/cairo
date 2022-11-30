@@ -5,6 +5,7 @@ use crate::program::GenericArg;
 pub mod ap_tracking;
 pub mod array;
 pub mod boxing;
+pub mod builtin_cost;
 pub mod dict_felt_to;
 pub mod drop;
 pub mod duplicate;

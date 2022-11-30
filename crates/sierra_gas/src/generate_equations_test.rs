@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use indoc::indoc;
+use sierra::extensions::builtin_cost::CostTokenType;
 use sierra::ids::ConcreteLibFuncId;
 use sierra::program::StatementIdx;
 use test_case::test_case;
@@ -8,7 +9,7 @@ use test_case::test_case;
 use super::generate_equations;
 use crate::core_libfunc_cost_expr::CostExprMap;
 use crate::cost_expr::{CostExpr, Var};
-use crate::{CostError, CostTokenType};
+use crate::CostError;
 
 /// Returns a cost expression for a statement future variable.
 fn future_statement_cost(idx: usize) -> CostExpr {

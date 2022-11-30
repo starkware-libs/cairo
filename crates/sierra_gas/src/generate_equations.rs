@@ -1,4 +1,5 @@
 use itertools::zip_eq;
+use sierra::extensions::builtin_cost::CostTokenType;
 use sierra::ids::ConcreteLibFuncId;
 use sierra::program::{Program, StatementIdx};
 use utils::collection_arithmetics::{add_maps, sub_maps};
@@ -7,7 +8,6 @@ use utils::ordered_hash_map::OrderedHashMap;
 use super::CostError;
 use crate::core_libfunc_cost_expr::CostExprMap;
 use crate::cost_expr::{CostExpr, Var};
-use crate::CostTokenType;
 
 #[cfg(test)]
 #[path = "generate_equations_test.rs"]
