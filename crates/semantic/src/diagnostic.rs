@@ -151,6 +151,21 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     actual_ty.format(db)
                 )
             }
+            SemanticDiagnosticKind::WrongParameterMutability {
+                impl_id,
+                impl_function_id,
+                trait_id,
+            } => {
+                let defs_db = db.upcast();
+                let function_name = impl_function_id.name(defs_db);
+                format!(
+                    "Parameter mutability of impl function `{}::{}` is incompatible with `{}::{}`.",
+                    impl_id.name(defs_db),
+                    function_name,
+                    trait_id.name(defs_db),
+                    function_name,
+                )
+            }
             SemanticDiagnosticKind::WrongArgumentType { expected_ty, actual_ty } => {
                 format!(
                     r#"Unexpected argument type. Expected: "{}", found: "{}"."#,
@@ -380,6 +395,11 @@ pub enum SemanticDiagnosticKind {
         trait_id: TraitId,
         expected_ty: semantic::TypeId,
         actual_ty: semantic::TypeId,
+    },
+    WrongParameterMutability {
+        impl_id: ImplId,
+        impl_function_id: ImplFunctionId,
+        trait_id: TraitId,
     },
     WrongArgumentType {
         expected_ty: semantic::TypeId,
