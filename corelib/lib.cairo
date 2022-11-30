@@ -129,6 +129,7 @@ use integer::uint128_sub;
 use integer::uint128_mul;
 use integer::uint128_div;
 use integer::uint128_mod;
+use integer::uint128_divmod;
 use integer::uint128_lt;
 use integer::uint128_le;
 use integer::uint128_gt;
