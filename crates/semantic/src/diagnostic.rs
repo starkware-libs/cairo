@@ -151,6 +151,36 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     actual_ty.format(db)
                 )
             }
+            SemanticDiagnosticKind::ParamaterMustBeReference {
+                impl_id,
+                impl_function_id,
+                trait_id,
+            } => {
+                let defs_db = db.upcast();
+                let function_name = impl_function_id.name(defs_db);
+                format!(
+                    "Parameter of `{}::{}` must be `ref` to match `{}::{}`.",
+                    impl_id.name(defs_db),
+                    function_name,
+                    trait_id.name(defs_db),
+                    function_name,
+                )
+            }
+            SemanticDiagnosticKind::ParamaterCannotBeReference {
+                impl_id,
+                impl_function_id,
+                trait_id,
+            } => {
+                let defs_db = db.upcast();
+                let function_name = impl_function_id.name(defs_db);
+                format!(
+                    "`{}::{}` has an incompatible type for trait `{}::{}`. Remove `ref` modifier.",
+                    impl_id.name(defs_db),
+                    function_name,
+                    trait_id.name(defs_db),
+                    function_name,
+                )
+            }
             SemanticDiagnosticKind::WrongArgumentType { expected_ty, actual_ty } => {
                 format!(
                     r#"Unexpected argument type. Expected: "{}", found: "{}"."#,
@@ -380,6 +410,16 @@ pub enum SemanticDiagnosticKind {
         trait_id: TraitId,
         expected_ty: semantic::TypeId,
         actual_ty: semantic::TypeId,
+    },
+    ParamaterMustBeReference {
+        impl_id: ImplId,
+        impl_function_id: ImplFunctionId,
+        trait_id: TraitId,
+    },
+    ParamaterCannotBeReference {
+        impl_id: ImplId,
+        impl_function_id: ImplFunctionId,
+        trait_id: TraitId,
     },
     WrongArgumentType {
         expected_ty: semantic::TypeId,
