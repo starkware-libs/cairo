@@ -6,17 +6,18 @@ use sierra::program::StatementIdx;
 use test_case::test_case;
 
 use super::generate_equations;
+use crate::core_libfunc_cost_expr::CostExprMap;
 use crate::cost_expr::{CostExpr, Var};
-use crate::CostError;
+use crate::{CostError, CostTokenType};
 
 /// Returns a cost expression for a statement future variable.
 fn future_statement_cost(idx: usize) -> CostExpr {
-    CostExpr::from_var(Var::StatementFuture(StatementIdx(idx)))
+    CostExpr::from_var(Var::StatementFuture(StatementIdx(idx), CostTokenType::Step))
 }
 
 /// Returns a cost expression for a libfunc variable.
 fn libfunc_cost(idx: usize) -> CostExpr {
-    CostExpr::from_var(Var::LibFuncImplicitGasVariable(StatementIdx(idx)))
+    CostExpr::from_var(Var::LibFuncImplicitGasVariable(StatementIdx(idx), CostTokenType::Step))
 }
 
 #[test_case(indoc! {"
@@ -100,6 +101,11 @@ fn generate(
     costs: HashMap<ConcreteLibFuncId, Vec<CostExpr>>,
 ) -> Result<Vec<CostExpr>, CostError> {
     generate_equations(&sierra::ProgramParser::new().parse(code).unwrap(), |_, _idx, libfunc_id| {
-        costs.get(libfunc_id).unwrap().clone()
+        costs
+            .get(libfunc_id)
+            .unwrap()
+            .iter()
+            .map(|x| CostExprMap::from_iter([(CostTokenType::Step, x.clone())]))
+            .collect()
     })
 }

@@ -2,10 +2,11 @@ use sierra::program::StatementIdx;
 use test_log::test;
 
 use super::{CostExpr, Var};
+use crate::CostTokenType;
 
 #[test]
 fn operations() {
-    let as_var = |idx| Var::LibFuncImplicitGasVariable(StatementIdx(idx));
+    let as_var = |idx| Var::LibFuncImplicitGasVariable(StatementIdx(idx), CostTokenType::Step);
     assert_eq!(CostExpr::from_const(1) + CostExpr::from_const(2), CostExpr::from_const(3));
     assert_eq!(CostExpr::from_const(1) - CostExpr::from_const(2), CostExpr::from_const(-1));
     assert_eq!(

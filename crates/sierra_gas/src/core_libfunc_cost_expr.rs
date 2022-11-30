@@ -7,7 +7,7 @@ use crate::core_libfunc_cost_base::{core_libfunc_cost_base, CostOperations, Cost
 use crate::cost_expr::{CostExpr, Var};
 use crate::generate_equations::StatementFutureCost;
 
-type CostExprMap = OrderedHashMap<CostTokenType, CostExpr>;
+pub type CostExprMap = OrderedHashMap<CostTokenType, CostExpr>;
 
 /// Cost operations for getting `CostExpr` costs values.
 struct Ops<'a> {
@@ -22,16 +22,13 @@ impl CostOperations for Ops<'_> {
     }
 
     fn function_cost(&mut self, function: &sierra::program::Function) -> Self::CostType {
-        Self::CostType::from_iter([(
-            CostTokenType::Step,
-            self.statement_future_cost.get_future_cost(&function.entry_point).clone(),
-        )])
+        self.statement_future_cost.get_future_cost(&function.entry_point).clone()
     }
 
     fn statement_var_cost(&self) -> Self::CostType {
         Self::CostType::from_iter([(
             CostTokenType::Step,
-            CostExpr::from_var(Var::LibFuncImplicitGasVariable(self.idx)),
+            CostExpr::from_var(Var::LibFuncImplicitGasVariable(self.idx, CostTokenType::Step)),
         )])
     }
 
