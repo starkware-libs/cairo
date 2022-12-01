@@ -26,7 +26,7 @@ fn cairo_level_tests() {
     let results = run_sierra_program(&sierra_func, &[], 3, false);
     assert_eq!(
         results,
-        [/* ok */ 0, /* test_count */ 40, /* padding */ 0].map(BigInt::from),
+        [/* ok */ 0, /* test_count */ 44, /* padding */ 0].map(BigInt::from),
         "Got panic from cairo."
     );
 }

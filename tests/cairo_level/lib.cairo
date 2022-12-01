@@ -5,6 +5,7 @@ func run_tests() -> felt {
     bool_tests(test_count);
     felt_tests(test_count);
     uint128_tests(test_count);
+    array_tests(test_count);
     test_count
 }
 
@@ -65,6 +66,29 @@ func uint128_tests(ref test_count: felt) {
     assert_and_count(test_count, u5 >= u2);
     assert_and_count(test_count, !(u3 > u3));
     assert_and_count(test_count, u3 >= u3);
+}
+
+func array_tests(ref test_count: felt) {
+    let arr = array_new::<felt>();
+    array_append::<felt>(arr, 10);
+    array_append::<felt>(arr, 11);
+    array_append::<felt>(arr, 12);
+        assert_and_count(test_count, match array_at::<felt>(arr, uint128_from_felt(0)) {
+            Option::Some(x) => x == 10,
+            Option::None(()) => false,
+    });
+        assert_and_count(test_count, match array_at::<felt>(arr, uint128_from_felt(1)) {
+            Option::Some(x) => x == 11,
+            Option::None(()) => false,
+    });
+        assert_and_count(test_count, match array_at::<felt>(arr, uint128_from_felt(2)) {
+            Option::Some(x) => x == 12,
+            Option::None(()) => false,
+    });
+        assert_and_count(test_count, match array_at::<felt>(arr, uint128_from_felt(5)) {
+            Option::Some(x) => false,
+            Option::None(()) => true,
+    });
 }
 
 func assert_and_count(ref test_count: felt, cond: bool) {
