@@ -2,6 +2,7 @@
 
 mod ap_change;
 mod block_generator;
+pub mod canonical_id_replacer;
 pub mod db;
 mod diagnostic;
 mod dup_and_drop;
