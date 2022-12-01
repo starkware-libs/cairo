@@ -113,6 +113,6 @@ func uint128_divmod_tests(ref test_count: felt) {
 }
 
 func assert_and_count(ref test_count: felt, cond: bool) {
-    assert(cond, 1);
+    assert(cond, test_count);
     test_count = test_count + 1;
 }
