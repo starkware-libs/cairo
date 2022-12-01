@@ -10,7 +10,7 @@ use utils::ordered_hash_map::OrderedHashMap;
 use utils::ordered_hash_set::OrderedHashSet;
 
 use crate::db::SierraGenGroup;
-use crate::replace_ids::replace_libfunc_id;
+use crate::replace_ids::{DebugReplacer, SierraIdReplacer};
 use crate::utils::{
     enum_init_libfunc_id, get_concrete_libfunc_id, get_libfunc_signature, match_enum_libfunc_id,
     struct_construct_libfunc_id, struct_deconstruct_libfunc_id,
@@ -240,7 +240,7 @@ fn handle_function_call(
         libfunc_signature.branch_signatures.len(),
         1,
         "Unexpected branches in '{}'.",
-        replace_libfunc_id(db, &concrete_function_id)
+        DebugReplacer { db }.replace_libfunc_id(&concrete_function_id)
     );
 
     match libfunc_signature.branch_signatures[0].ap_change {
