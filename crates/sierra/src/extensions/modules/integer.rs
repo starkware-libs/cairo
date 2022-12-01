@@ -154,7 +154,7 @@ impl GenericLibFunc for Uint128OperationLibFunc {
                     },
                     OutputVarInfo { ty, ref_info: OutputVarReferenceInfo::NewTempVar { idx: 1 } },
                 ],
-                SierraApChange::NotImplemented,
+                SierraApChange::Known(5),
             )),
             (
                 [],
@@ -248,7 +248,7 @@ impl GenericLibFunc for Uint128OperationLibFunc {
                             ref_info: OutputVarReferenceInfo::NewTempVar { idx: 1 },
                         },
                     ],
-                    SierraApChange::NotImplemented,
+                    SierraApChange::Known(5),
                 ))
             }
             (
