@@ -20,6 +20,8 @@ pub mod non_zero;
 pub mod pedersen;
 pub mod range_check;
 pub mod squashed_dict_felt_to;
+pub mod starknet;
+pub mod storage;
 pub mod strct;
 pub mod syscalls;
 pub mod unconditional_jump;
