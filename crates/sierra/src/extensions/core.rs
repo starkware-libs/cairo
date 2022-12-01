@@ -11,6 +11,7 @@ use super::modules::gas::{GasBuiltinType, GasLibFunc};
 use super::modules::integer::{Uint128LibFunc, Uint128Type};
 use super::modules::mem::MemLibFunc;
 use super::modules::non_zero::{NonZeroType, UnwrapNonZeroLibFunc};
+use super::modules::syscalls::SyscallPtrType;
 use super::modules::unconditional_jump::UnconditionalJumpLibFunc;
 use super::pedersen::{PedersenLibFunc, PedersenType};
 use super::range_check::RangeCheckType;
@@ -34,6 +35,7 @@ define_type_hierarchy! {
         DictFeltTo(DictFeltToType),
         SquashedDictFeltTo(SquashedDictFeltToType),
         Pedersen(PedersenType),
+        SyscallPtr(SyscallPtrType),
     }, CoreTypeConcrete
 }
 

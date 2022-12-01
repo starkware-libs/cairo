@@ -317,10 +317,24 @@ impl LanguageServer for Backend {
             &syntax.as_syntax_node(),
             FormatterConfig::default(),
         );
+
+        let file_summary = if let Some(summary) = db.file_summary(file) {
+            summary
+        } else {
+            eprintln!("Formatting failed. Cannot get summary for file '{file_uri}'.");
+            return Ok(None);
+        };
+        let old_line_count = if let Ok(count) = file_summary.line_count().try_into() {
+            count
+        } else {
+            eprintln!("Formatting failed. Line count out of bound in file '{file_uri}'.");
+            return Ok(None);
+        };
+
         Ok(Some(vec![TextEdit {
             range: Range {
                 start: Position { line: 0, character: 0 },
-                end: Position { line: u32::MAX, character: 0 },
+                end: Position { line: old_line_count, character: 0 },
             },
             new_text,
         }]))

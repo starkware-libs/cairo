@@ -22,7 +22,8 @@ pub fn get_type_size_map(
             | CoreTypeConcrete::Uint128(_)
             | CoreTypeConcrete::RangeCheck(_)
             | CoreTypeConcrete::Box(_)
-            | CoreTypeConcrete::Pedersen(_) => Some(1),
+            | CoreTypeConcrete::SyscallPtr(_) => Some(1),
+            CoreTypeConcrete::Pedersen(_) => Some(1),
             CoreTypeConcrete::Array(_)
             | CoreTypeConcrete::DictFeltTo(_)
             | CoreTypeConcrete::SquashedDictFeltTo(_) => Some(2),

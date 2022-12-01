@@ -3,6 +3,9 @@ use std::collections::HashMap;
 
 use itertools::chain;
 use sierra::program::StatementIdx;
+use utils::collection_arithmetics::HasZero;
+
+use crate::CostTokenType;
 
 #[cfg(test)]
 #[path = "cost_expr_test.rs"]
@@ -12,15 +15,17 @@ mod test;
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum Var {
     /// Variables supplied for a libfunc at statement id (e.g. get_gas, refund_gas).
-    LibFuncImplicitGasVariable(StatementIdx),
+    LibFuncImplicitGasVariable(StatementIdx, CostTokenType),
     /// Variable marking on a statement's future cost (any route from it to a return).
-    StatementFuture(StatementIdx),
+    StatementFuture(StatementIdx, CostTokenType),
 }
 impl fmt::Display for Var {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Var::LibFuncImplicitGasVariable(idx) => write!(f, "libfunc@{}", idx),
-            Var::StatementFuture(idx) => write!(f, "future@{}", idx),
+            Var::LibFuncImplicitGasVariable(idx, token_type) => {
+                write!(f, "libfunc@{token_type:?}{idx}")
+            }
+            Var::StatementFuture(idx, token_type) => write!(f, "future@{token_type:?}{idx}"),
         }
     }
 }
@@ -38,11 +43,19 @@ impl CostExpr {
     pub fn from_const(const_term: i32) -> Self {
         Self { const_term, var_to_coef: HashMap::default() }
     }
+
     /// Creates a cost expression based on variable only.
     pub fn from_var(var: Var) -> Self {
         Self { const_term: 0, var_to_coef: HashMap::from([(var, 1)]) }
     }
 }
+
+impl HasZero for CostExpr {
+    fn zero() -> Self {
+        Self::from_const(0)
+    }
+}
+
 // CostExpr operators can be optimized if necessary.
 impl std::ops::Add for CostExpr {
     type Output = Self;
@@ -63,6 +76,7 @@ impl std::ops::Add for CostExpr {
         }
     }
 }
+
 impl std::ops::Sub for CostExpr {
     type Output = Self;
     fn sub(self, other: Self) -> Self {

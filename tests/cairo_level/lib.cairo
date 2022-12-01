@@ -4,8 +4,7 @@ func run_tests() -> felt {
     let test_count = 0;
     bool_tests(test_count);
     felt_tests(test_count);
-    uint128_calc_tests(test_count);
-    uint128_cmp_tests(test_count);
+    uint128_tests(test_count);
     test_count
 }
 
@@ -43,11 +42,12 @@ func felt_tests(ref test_count: felt) {
     assert_and_count(test_count, 3 >= 3);
 }
 
-func uint128_calc_tests(ref test_count: felt) {
+func uint128_tests(ref test_count: felt) {
     let u1 = uint128_from_felt(1);
     let u2 = uint128_from_felt(2);
     let u3 = uint128_from_felt(3);
     let u4 = uint128_from_felt(4);
+    let u5 = uint128_from_felt(5);
     let u6 = uint128_from_felt(6);
     let u9 = uint128_from_felt(9);
     let u231 = uint128_from_felt(231);
@@ -57,14 +57,6 @@ func uint128_calc_tests(ref test_count: felt) {
     assert_and_count(test_count, u3 + u6 == u9);
     assert_and_count(test_count, u3 - u1 == u2);
     assert_and_count(test_count, u1231 - u231 == u1000);
-}
-
-func uint128_cmp_tests(ref test_count: felt) {
-    let u1 = uint128_from_felt(1);
-    let u2 = uint128_from_felt(2);
-    let u3 = uint128_from_felt(3);
-    let u4 = uint128_from_felt(4);
-    let u5 = uint128_from_felt(5);
     assert_and_count(test_count, u1 < u4);
     assert_and_count(test_count, u1 <= u4);
     assert_and_count(test_count, !(u4 < u4));
