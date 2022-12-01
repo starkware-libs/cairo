@@ -333,13 +333,15 @@ impl LineBuilder {
             )
             .join("\n")
     }
-    /// Creates a new LineBuilder where each subchild which is a LineBuilder, is replaced by all
-    /// its children.
+    /// Creates a new LineBuilder where the first subchild which is a LineBuilder, is replaced by
+    /// all its children.
     fn flatten(&self) -> LineBuilder {
         let mut flattened_tree = LineBuilder::new();
+        let mut first_tree_found = false;
         for child in self.children.iter() {
             match child {
-                LineComponent::Internal(sub_tree) => {
+                LineComponent::Internal(sub_tree) if !first_tree_found => {
+                    first_tree_found = true;
                     for sub_child in sub_tree.children.iter() {
                         flattened_tree.push_child(sub_child.clone());
                     }
