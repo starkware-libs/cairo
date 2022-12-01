@@ -60,6 +60,7 @@ quote = "1.0.21"
 salsa = "0.16.1"
 serde = { version = "1.0.130", features = ["derive"] }
 serde_json = "1.0"
+sha3 = "0.10.6"
 smol_str = "0.1.23"
 syn = { version = "1.0.99", features = ["full", "extra-traits"] }
 test-case = "2.2.2"

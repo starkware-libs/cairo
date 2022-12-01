@@ -2101,6 +2101,7 @@ dependencies = [
  "semantic",
  "serde",
  "serde_json",
+ "sha3",
  "sierra",
  "sierra_gas",
  "sierra_generator",
