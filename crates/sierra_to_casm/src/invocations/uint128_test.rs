@@ -15,7 +15,7 @@ use crate::relocations::{Relocation, RelocationEntry};
 fn test_add() {
     assert_eq!(
         compile_libfunc(
-            "uint128_checked_add",
+            "uint128_overflow_add",
             vec![ref_expr!([fp + 2]), ref_expr!([fp + 1]), ref_expr!([ap - 7])]
         ),
         ReducedCompiledInvocation {
@@ -39,7 +39,7 @@ fn test_add() {
                     ap_change: ApChange::Known(2)
                 },
                 ReducedBranchChanges {
-                    refs: vec![ref_expr!([fp + 2] + 1)],
+                    refs: vec![ref_expr!([fp + 2] + 1), ref_expr!([ap - 1])],
                     ap_change: ApChange::Known(3)
                 }
             ]
@@ -51,7 +51,7 @@ fn test_add() {
 fn test_sub() {
     assert_eq!(
         compile_libfunc(
-            "uint128_checked_sub",
+            "uint128_overflow_sub",
             vec![ref_expr!([ap - 2]), ref_expr!([ap - 1]), ref_expr!([fp + 7])]
         ),
         ReducedCompiledInvocation {
@@ -75,7 +75,7 @@ fn test_sub() {
                     ap_change: ApChange::Known(2)
                 },
                 ReducedBranchChanges {
-                    refs: vec![ref_expr!([ap - 5] + 1)],
+                    refs: vec![ref_expr!([ap - 5] + 1), ref_expr!([ap - 1])],
                     ap_change: ApChange::Known(3)
                 }
             ]
