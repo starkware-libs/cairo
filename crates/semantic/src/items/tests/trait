@@ -216,3 +216,53 @@ error: Invalid drop trait implementation.
  --> lib.cairo:22:1
 impl T2Drop of Drop::<(felt, Linear)>;
 ^************************************^
+
+//! > ==========================================================================
+
+//! > Mutable param is no allowed in trait functions.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+func foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait<T> {
+    func f(mut a: felt);
+}
+
+//! > expected_diagnostics
+error: Parameter of trait function `MyTrait::f` can't be defined as mutable.
+ --> lib.cairo:2:12
+    func f(mut a: felt);
+           ^*^
+
+//! > ==========================================================================
+
+//! > Impl function param can be mutable or immutable.
+
+//! > test_function_name
+test_function_diagnostics
+
+//! > function
+func foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait MyTrait<T> {
+   func f(a: felt);
+}
+impl MyImpl<T> of MyTrait::<T> {
+   func f(a: felt) {}
+}
+impl MyImpl2<T> of MyTrait::<T> {
+   func f(mut a: felt) {}
+}
+
+//! > expected_diagnostics
