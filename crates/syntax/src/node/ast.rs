@@ -5063,7 +5063,7 @@ impl ImplicitsClause {
         db: &dyn SyntaxGroup,
         implicits_kw: TerminalImplicitsGreen,
         lparen: TerminalLParenGreen,
-        implicits: ParamListGreen,
+        implicits: ImplicitsListGreen,
         rparen: TerminalRParenGreen,
     ) -> ImplicitsClauseGreen {
         let children: Vec<GreenId> = vec![implicits_kw.0, lparen.0, implicits.0, rparen.0];
@@ -5081,8 +5081,8 @@ impl ImplicitsClause {
     pub fn lparen(&self, db: &dyn SyntaxGroup) -> TerminalLParen {
         TerminalLParen::from_syntax_node(db, self.children[1].clone())
     }
-    pub fn implicits(&self, db: &dyn SyntaxGroup) -> ParamList {
-        ParamList::from_syntax_node(db, self.children[2].clone())
+    pub fn implicits(&self, db: &dyn SyntaxGroup) -> ImplicitsList {
+        ImplicitsList::from_syntax_node(db, self.children[2].clone())
     }
     pub fn rparen(&self, db: &dyn SyntaxGroup) -> TerminalRParen {
         TerminalRParen::from_syntax_node(db, self.children[3].clone())
@@ -5108,7 +5108,7 @@ impl TypedSyntaxNode for ImplicitsClause {
                 children: vec![
                     TerminalImplicits::missing(db).0,
                     TerminalLParen::missing(db).0,
-                    ParamList::missing(db).0,
+                    ImplicitsList::missing(db).0,
                     TerminalRParen::missing(db).0,
                 ],
                 width: 0,
@@ -5135,6 +5135,84 @@ impl TypedSyntaxNode for ImplicitsClause {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         ImplicitsClausePtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct ImplicitsList(ElementList<ExprPath, 2>);
+impl Deref for ImplicitsList {
+    type Target = ElementList<ExprPath, 2>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+impl ImplicitsList {
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        children: Vec<ImplicitsListElementOrSeparatorGreen>,
+    ) -> ImplicitsListGreen {
+        let width = children.iter().map(|id| db.lookup_intern_green(id.id()).width()).sum();
+        ImplicitsListGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::ImplicitsList,
+            details: GreenNodeDetails::Node {
+                children: children.iter().map(|x| x.id()).collect(),
+                width,
+            },
+        }))
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ImplicitsListPtr(pub SyntaxStablePtrId);
+impl ImplicitsListPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub enum ImplicitsListElementOrSeparatorGreen {
+    Separator(TerminalCommaGreen),
+    Element(ExprPathGreen),
+}
+impl From<TerminalCommaGreen> for ImplicitsListElementOrSeparatorGreen {
+    fn from(value: TerminalCommaGreen) -> Self {
+        ImplicitsListElementOrSeparatorGreen::Separator(value)
+    }
+}
+impl From<ExprPathGreen> for ImplicitsListElementOrSeparatorGreen {
+    fn from(value: ExprPathGreen) -> Self {
+        ImplicitsListElementOrSeparatorGreen::Element(value)
+    }
+}
+impl ImplicitsListElementOrSeparatorGreen {
+    fn id(&self) -> GreenId {
+        match self {
+            ImplicitsListElementOrSeparatorGreen::Separator(green) => green.0,
+            ImplicitsListElementOrSeparatorGreen::Element(green) => green.0,
+        }
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ImplicitsListGreen(pub GreenId);
+impl TypedSyntaxNode for ImplicitsList {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ImplicitsList);
+    type StablePtr = ImplicitsListPtr;
+    type Green = ImplicitsListGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        ImplicitsListGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::ImplicitsList,
+            details: GreenNodeDetails::Node { children: vec![], width: 0 },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        Self(ElementList::new(node))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ImplicitsListPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]

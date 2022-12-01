@@ -666,7 +666,7 @@ enum MyEnum {
   g: (felt,),
   h: felt
 }
-extern func bar(ref r: felt) -> MyEnum implicits(rc: RangeCheck) nopanic;
+extern func bar(ref r: felt) -> MyEnum implicits(RangeCheck) nopanic;
 
 //! > semantic_diagnostics
 
@@ -851,7 +851,7 @@ enum MyEnum {
   g: (felt,),
   h: felt
 }
-extern func bar(ref r: felt) -> MyEnum implicits(rc: RangeCheck) nopanic;
+extern func bar(ref r: felt) -> MyEnum implicits(RangeCheck) nopanic;
 
 //! > semantic_diagnostics
 

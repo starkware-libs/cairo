@@ -50,6 +50,7 @@ pub enum SyntaxKind {
     ModifierList,
     ParamList,
     ImplicitsClause,
+    ImplicitsList,
     OptionImplicitsClauseEmpty,
     OptionTerminalNoPanicEmpty,
     FunctionSignature,

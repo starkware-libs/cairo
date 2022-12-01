@@ -75,20 +75,20 @@ func felt_eq(a: felt, b: felt) -> bool {
 }
 
 // TODO(orizi): Change to extern when added.
-func felt_lt(a: felt, b: felt) -> bool implicits(rc: RangeCheck) {
+func felt_lt(a: felt, b: felt) -> bool implicits(RangeCheck) {
     uint128_lt(uint128_from_felt(a), uint128_from_felt(b))
 }
 
-func felt_gt(a: felt, b: felt) -> bool implicits(rc: RangeCheck) {
+func felt_gt(a: felt, b: felt) -> bool implicits(RangeCheck) {
     felt_lt(b, a)
 }
 
 // TODO(orizi): Change to extern when added.
-func felt_le(a: felt, b: felt) -> bool implicits(rc: RangeCheck) {
+func felt_le(a: felt, b: felt) -> bool implicits(RangeCheck) {
     bool_not(felt_gt(a, b))
 }
 
-func felt_ge(a: felt, b: felt) -> bool implicits(rc: RangeCheck) {
+func felt_ge(a: felt, b: felt) -> bool implicits(RangeCheck) {
     felt_le(b, a)
 }
 

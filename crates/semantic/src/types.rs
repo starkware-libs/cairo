@@ -202,7 +202,6 @@ impl ConcreteExternTypeId {
 
 // TODO(spapini): add a query wrapper.
 /// Resolves a type given a module and a path.
-/// pub fn maybe_resolve_type(
 pub fn resolve_type(
     db: &dyn SemanticGroup,
     diagnostics: &mut SemanticDiagnostics,
