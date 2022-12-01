@@ -60,14 +60,9 @@ pub type Uint128JumpNotZeroLibFunc = JumpNotZeroLibFunc<Uint128Traits>;
 /// Operators for integers.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum IntOperator {
-    WrappingAdd,
-    WrappingSub,
-    WrappingMul,
-    Add,
-    Sub,
-    Mul,
-    Div,
-    Mod,
+    OverflowingAdd,
+    OverflowingSub,
+    OverflowingMul,
     DivMod,
 }
 
@@ -84,24 +79,17 @@ impl GenericLibFunc for Uint128OperationLibFunc {
     type Concrete = Uint128OperationConcreteLibFunc;
 
     fn by_id(id: &GenericLibFuncId) -> Option<Self> {
-        const WRAPPING_ADD: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_wrapping_add");
-        const WRAPPING_SUB: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_wrapping_sub");
-        const WRAPPING_MUL: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_wrapping_mul");
-        const ADD: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_checked_add");
-        const SUB: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_checked_sub");
-        const MUL: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_checked_mul");
-        const DIV: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_div");
-        const MOD: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_mod");
+        const OVERFLOWING_ADD: GenericLibFuncId =
+            GenericLibFuncId::new_inline("uint128_overflow_add");
+        const OVERFLOWING_SUB: GenericLibFuncId =
+            GenericLibFuncId::new_inline("uint128_overflow_sub");
+        const OVERFLOWING_MUL: GenericLibFuncId =
+            GenericLibFuncId::new_inline("uint128_overflow_mul");
         const DIVMOD: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_safe_divmod");
         match id {
-            id if id == &WRAPPING_ADD => Some(Self::new(IntOperator::WrappingAdd)),
-            id if id == &WRAPPING_SUB => Some(Self::new(IntOperator::WrappingSub)),
-            id if id == &WRAPPING_MUL => Some(Self::new(IntOperator::WrappingMul)),
-            id if id == &ADD => Some(Self::new(IntOperator::Add)),
-            id if id == &SUB => Some(Self::new(IntOperator::Sub)),
-            id if id == &MUL => Some(Self::new(IntOperator::Mul)),
-            id if id == &DIV => Some(Self::new(IntOperator::Div)),
-            id if id == &MOD => Some(Self::new(IntOperator::Mod)),
+            id if id == &OVERFLOWING_ADD => Some(Self::new(IntOperator::OverflowingAdd)),
+            id if id == &OVERFLOWING_SUB => Some(Self::new(IntOperator::OverflowingSub)),
+            id if id == &OVERFLOWING_MUL => Some(Self::new(IntOperator::OverflowingMul)),
             id if id == &DIVMOD => Some(Self::new(IntOperator::DivMod)),
             _ => None,
         }
@@ -115,26 +103,6 @@ impl GenericLibFunc for Uint128OperationLibFunc {
         let ty = context.get_concrete_type(Uint128Type::id(), &[])?;
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
         match (args, self.operator) {
-            ([], IntOperator::Div | IntOperator::Mod) => Ok(LibFuncSignature::new_non_branch(
-                vec![
-                    range_check_type.clone(),
-                    ty.clone(),
-                    context.get_wrapped_concrete_type(NonZeroType::id(), ty.clone())?,
-                ],
-                vec![
-                    OutputVarInfo {
-                        ty: range_check_type,
-                        ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                            param_idx: 0,
-                        }),
-                    },
-                    OutputVarInfo {
-                        ty,
-                        ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
-                    },
-                ],
-                SierraApChange::NotImplemented,
-            )),
             ([], IntOperator::DivMod) => Ok(LibFuncSignature::new_non_branch(
                 vec![
                     range_check_type.clone(),
@@ -158,24 +126,10 @@ impl GenericLibFunc for Uint128OperationLibFunc {
             )),
             (
                 [],
-                IntOperator::WrappingAdd | IntOperator::WrappingSub | IntOperator::WrappingMul,
-            ) => Ok(LibFuncSignature::new_non_branch(
-                vec![range_check_type.clone(), ty.clone(), ty.clone()],
-                vec![
-                    OutputVarInfo {
-                        ty: range_check_type,
-                        ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                            param_idx: 0,
-                        }),
-                    },
-                    OutputVarInfo {
-                        ty,
-                        ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
-                    },
-                ],
-                SierraApChange::NotImplemented,
-            )),
-            ([], IntOperator::Add | IntOperator::Sub | IntOperator::Mul) => Ok(LibFuncSignature {
+                IntOperator::OverflowingAdd
+                | IntOperator::OverflowingSub
+                | IntOperator::OverflowingMul,
+            ) => Ok(LibFuncSignature {
                 param_signatures: vec![
                     ParamSignature::new(range_check_type.clone()),
                     ParamSignature::new(ty.clone()),
@@ -191,7 +145,7 @@ impl GenericLibFunc for Uint128OperationLibFunc {
                                 ),
                             },
                             OutputVarInfo {
-                                ty,
+                                ty: ty.clone(),
                                 ref_info: OutputVarReferenceInfo::Deferred(
                                     DeferredOutputKind::Generic,
                                 ),
@@ -200,35 +154,25 @@ impl GenericLibFunc for Uint128OperationLibFunc {
                         ap_change: SierraApChange::Known(2),
                     },
                     BranchSignature {
-                        vars: vec![OutputVarInfo {
-                            ty: range_check_type,
-                            ref_info: OutputVarReferenceInfo::Deferred(
-                                DeferredOutputKind::AddConst { param_idx: 0 },
-                            ),
-                        }],
+                        vars: vec![
+                            OutputVarInfo {
+                                ty: range_check_type,
+                                ref_info: OutputVarReferenceInfo::Deferred(
+                                    DeferredOutputKind::AddConst { param_idx: 0 },
+                                ),
+                            },
+                            OutputVarInfo {
+                                ty,
+                                ref_info: OutputVarReferenceInfo::Deferred(
+                                    DeferredOutputKind::Generic,
+                                ),
+                            },
+                        ],
                         ap_change: SierraApChange::Known(3),
                     },
                 ],
                 fallthrough: Some(0),
             }),
-            ([GenericArg::Value(c)], IntOperator::Div | IntOperator::Mod) if !c.is_zero() => {
-                Ok(LibFuncSignature::new_non_branch(
-                    vec![range_check_type.clone(), ty.clone()],
-                    vec![
-                        OutputVarInfo {
-                            ty: range_check_type,
-                            ref_info: OutputVarReferenceInfo::Deferred(
-                                DeferredOutputKind::AddConst { param_idx: 0 },
-                            ),
-                        },
-                        OutputVarInfo {
-                            ty,
-                            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
-                        },
-                    ],
-                    SierraApChange::NotImplemented,
-                ))
-            }
             ([GenericArg::Value(c)], IntOperator::DivMod) if !c.is_zero() => {
                 Ok(LibFuncSignature::new_non_branch(
                     vec![range_check_type.clone(), ty.clone()],
@@ -253,60 +197,52 @@ impl GenericLibFunc for Uint128OperationLibFunc {
             }
             (
                 [GenericArg::Value(_c)],
-                IntOperator::WrappingAdd | IntOperator::WrappingSub | IntOperator::WrappingMul,
-            ) => Ok(LibFuncSignature::new_non_branch(
-                vec![range_check_type.clone(), ty.clone()],
-                vec![
-                    OutputVarInfo {
-                        ty: range_check_type,
-                        ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                            param_idx: 0,
-                        }),
-                    },
-                    OutputVarInfo {
-                        ty,
-                        ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
-                    },
+                IntOperator::OverflowingAdd
+                | IntOperator::OverflowingSub
+                | IntOperator::OverflowingMul,
+            ) => Ok(LibFuncSignature {
+                param_signatures: vec![
+                    ParamSignature::new(range_check_type.clone()),
+                    ParamSignature::new(ty.clone()),
                 ],
-                SierraApChange::NotImplemented,
-            )),
-            ([GenericArg::Value(_c)], IntOperator::Add | IntOperator::Sub | IntOperator::Mul) => {
-                Ok(LibFuncSignature {
-                    param_signatures: vec![
-                        ParamSignature::new(range_check_type.clone()),
-                        ParamSignature::new(ty.clone()),
-                    ],
-                    branch_signatures: vec![
-                        BranchSignature {
-                            vars: vec![
-                                OutputVarInfo {
-                                    ty: range_check_type.clone(),
-                                    ref_info: OutputVarReferenceInfo::Deferred(
-                                        DeferredOutputKind::AddConst { param_idx: 0 },
-                                    ),
-                                },
-                                OutputVarInfo {
-                                    ty,
-                                    ref_info: OutputVarReferenceInfo::Deferred(
-                                        DeferredOutputKind::Generic,
-                                    ),
-                                },
-                            ],
-                            ap_change: SierraApChange::NotImplemented,
-                        },
-                        BranchSignature {
-                            vars: vec![OutputVarInfo {
+                branch_signatures: vec![
+                    BranchSignature {
+                        vars: vec![
+                            OutputVarInfo {
+                                ty: range_check_type.clone(),
+                                ref_info: OutputVarReferenceInfo::Deferred(
+                                    DeferredOutputKind::AddConst { param_idx: 0 },
+                                ),
+                            },
+                            OutputVarInfo {
+                                ty: ty.clone(),
+                                ref_info: OutputVarReferenceInfo::Deferred(
+                                    DeferredOutputKind::Generic,
+                                ),
+                            },
+                        ],
+                        ap_change: SierraApChange::NotImplemented,
+                    },
+                    BranchSignature {
+                        vars: vec![
+                            OutputVarInfo {
                                 ty: range_check_type,
                                 ref_info: OutputVarReferenceInfo::Deferred(
                                     DeferredOutputKind::AddConst { param_idx: 0 },
                                 ),
-                            }],
-                            ap_change: SierraApChange::NotImplemented,
-                        },
-                    ],
-                    fallthrough: Some(0),
-                })
-            }
+                            },
+                            OutputVarInfo {
+                                ty,
+                                ref_info: OutputVarReferenceInfo::Deferred(
+                                    DeferredOutputKind::Generic,
+                                ),
+                            },
+                        ],
+                        ap_change: SierraApChange::NotImplemented,
+                    },
+                ],
+                fallthrough: Some(0),
+            }),
             _ => Err(SpecializationError::UnsupportedGenericArg),
         }
     }
@@ -324,11 +260,7 @@ impl GenericLibFunc for Uint128OperationLibFunc {
                 }))
             }
             [GenericArg::Value(c)] => {
-                if matches!(
-                    self.operator,
-                    IntOperator::Div | IntOperator::Mod | IntOperator::DivMod
-                ) && c.is_zero()
-                {
+                if matches!(self.operator, IntOperator::DivMod) && c.is_zero() {
                     Err(SpecializationError::UnsupportedGenericArg)
                 } else {
                     Ok(Uint128OperationConcreteLibFunc::Const(
