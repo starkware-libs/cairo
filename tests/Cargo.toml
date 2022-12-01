@@ -14,6 +14,7 @@ num-bigint.workspace = true
 parser = { path = "../crates/parser" }
 plugins = { path = "../crates/plugins" }
 pretty_assertions = "1.2.1"
+runner = { path = "../crates/runner" }
 sierra = { path = "../crates/sierra" }
 sierra_gas = { path = "../crates/sierra_gas" }
 semantic = { path = "../crates/semantic", features = ["testing"] }
