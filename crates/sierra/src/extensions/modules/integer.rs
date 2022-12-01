@@ -92,7 +92,7 @@ impl GenericLibFunc for Uint128OperationLibFunc {
         const MUL: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_checked_mul");
         const DIV: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_div");
         const MOD: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_mod");
-        const DIVMOD: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_divmod");
+        const DIVMOD: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_safe_divmod");
         match id {
             id if id == &WRAPPING_ADD => Some(Self::new(IntOperator::WrappingAdd)),
             id if id == &WRAPPING_SUB => Some(Self::new(IntOperator::WrappingSub)),
