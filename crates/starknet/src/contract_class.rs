@@ -14,8 +14,9 @@ use semantic::db::SemanticGroup;
 use semantic::{ConcreteFunction, FunctionLongId};
 use serde::{Deserialize, Serialize};
 use sierra::{self};
+use sierra_generator::canonical_id_replacer::CanonicalReplacer;
 use sierra_generator::db::SierraGenGroup;
-use sierra_generator::replace_ids::replace_sierra_ids_in_program;
+use sierra_generator::replace_ids::{replace_sierra_ids_in_program, SierraIdReplacer};
 use thiserror::Error;
 use utils::try_extract_matches;
 
@@ -103,18 +104,21 @@ pub fn compile_path(path: &Path, replace_ids: bool) -> anyhow::Result<ContractCl
         db.impl_trait(impl_id).with_context(|| "Failed to get contract trait.")?;
     let trait_id = db.lookup_intern_concrete_trait(concrete_trait_id).trait_id;
 
-    let mut sierra_program = db
+    let sierra_program = db
         .get_sierra_program(main_crate_ids)
         .with_context(|| "Compilation failed without any diagnostics.")?;
 
-    if replace_ids {
-        sierra_program = Arc::new(replace_sierra_ids_in_program(db, &sierra_program));
-    }
+    let replacer = CanonicalReplacer::from_program(&sierra_program);
+    let sierra_program = if replace_ids {
+        replace_sierra_ids_in_program(db, &sierra_program)
+    } else {
+        replacer.apply(&sierra_program)
+    };
 
-    let entry_points_by_type = get_entry_points(db, impl_id.module(db), trait_id)?;
+    let entry_points_by_type = get_entry_points(db, impl_id.module(db), trait_id, &replacer)?;
 
     Ok(ContractClass {
-        sierra_program: (*sierra_program).clone(),
+        sierra_program,
         entry_points_by_type,
         abi: abi::Contract::from_trait(db, trait_id)
             .with_context(|| "Failed to extract contract ABI.")?,
@@ -126,6 +130,7 @@ fn get_entry_points(
     db: &mut RootDatabase,
     impl_module_id: ModuleId,
     trait_id: TraitId,
+    replacer: &CanonicalReplacer,
 ) -> Result<ContractEntryPoints, anyhow::Error> {
     let trait_functions = db.trait_functions(trait_id).unwrap();
     let mut entry_points_by_type = ContractEntryPoints::default();
@@ -149,7 +154,7 @@ fn get_entry_points(
         entry_points_by_type.external.push(ContractEntryPoint {
             // TODO(ilya): compute the selector.
             selector: BigUint::from(0u32),
-            function_id: sierra_id.id,
+            function_id: replacer.replace_function_id(&sierra_id).id,
         });
     }
     Ok(entry_points_by_type)

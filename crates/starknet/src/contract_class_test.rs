@@ -101,5 +101,19 @@ fn test_compile_path() {
         }
     );
 
-    // TODO(ilya): Make the entry points consistent across compilations and add them to the test.
+    assert_eq!(
+        serde_json::to_string_pretty(&contract.entry_points_by_type).unwrap(),
+        indoc! {r#"
+          {
+            "EXTERNAL": [
+              {
+                "selector": "0x0",
+                "function_id": 0
+              }
+            ],
+            "L1_HANDLER": [],
+            "CONSTRUCTOR": []
+          }"#
+        }
+    );
 }

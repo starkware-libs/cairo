@@ -2,10 +2,10 @@ use indoc::indoc;
 use pretty_assertions::assert_eq;
 use sierra::ProgramParser;
 
-use crate::canonical_id_replacer::canonicalize_sierra_ids_in_program;
+use super::CanonicalReplacer;
 
 #[test]
-fn test_resplacer() {
+fn test_replacer() {
     let input = indoc! {"
             type felt = felt;
             type NonZeroFelt = NonZero<felt>;
@@ -70,5 +70,7 @@ fn test_resplacer() {
 
     let program = ProgramParser::new().parse(input).unwrap();
 
-    assert_eq!(format!("{}", canonicalize_sierra_ids_in_program(&program)), expecetd_output)
+    let replacer = CanonicalReplacer::from_program(&program);
+
+    assert_eq!(format!("{}", replacer.apply(&program)), expecetd_output)
 }
