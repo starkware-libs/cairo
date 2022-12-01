@@ -5,7 +5,6 @@ use indoc::writedoc;
 use crate::operand::{CellRef, DerefOrImmediate};
 
 #[cfg(test)]
-#[path = "hints_test.rs"]
 mod test;
 
 // Represents a cairo hint.
