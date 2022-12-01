@@ -54,12 +54,12 @@ fn build_uint128_op(
 ) -> Result<CompiledInvocation, InvocationError> {
     let (range_check, a, b) = unwrap_range_check_based_binary_op_refs(&builder)?;
     match op {
-        IntOperator::Add | IntOperator::Sub => {
+        IntOperator::OverflowingAdd | IntOperator::OverflowingSub => {
             let failure_handle_statement_id = get_bool_comparison_target_statement_id(&builder);
             let uint128_limit: BigInt = BigInt::from(u128::MAX) + 1;
             // The code up to the success branch.
             let mut before_success_branch = match op {
-                IntOperator::Add => casm! {
+                IntOperator::OverflowingAdd => casm! {
                     [ap + 0] = a + b, ap++;
                     %{ memory[ap + 0] = memory [ap - 1] < (uint128_limit.clone()) %}
                     jmp rel 0 if [ap + 0] != 0, ap++;
@@ -69,7 +69,7 @@ fn build_uint128_op(
                     [ap - 1] = [[range_check.unchecked_apply_known_ap_change(3)]];
                     jmp rel 0; // Fixed in relocations.
                 },
-                IntOperator::Sub => casm! {
+                IntOperator::OverflowingSub => casm! {
                     a = [ap + 0] + b, ap++;
                     %{ memory[ap + 0] = memory [ap - 1] < (uint128_limit.clone())  %}
                     jmp rel 0 if [ap + 0] != 0, ap++;
@@ -104,11 +104,14 @@ fn build_uint128_op(
                         ReferenceExpression::from_cell(CellExpression::Deref(ap_cell_ref(-2))),
                     ]
                     .into_iter(),
-                    vec![ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
-                        op: FeltOperator::Add,
-                        a: range_check.unchecked_apply_known_ap_change(3),
-                        b: DerefOrImmediate::from(1),
-                    }))]
+                    vec![
+                        ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
+                            op: FeltOperator::Add,
+                            a: range_check.unchecked_apply_known_ap_change(3),
+                            b: DerefOrImmediate::from(1),
+                        })),
+                        ReferenceExpression::from_cell(CellExpression::Deref(ap_cell_ref(-1))),
+                    ]
                     .into_iter(),
                 ]
                 .into_iter(),
@@ -153,12 +156,7 @@ fn build_uint128_op(
                 .into_iter(),
             ))
         }
-        IntOperator::Mul
-        | IntOperator::Div
-        | IntOperator::Mod
-        | IntOperator::WrappingAdd
-        | IntOperator::WrappingSub
-        | IntOperator::WrappingMul => {
+        IntOperator::OverflowingMul => {
             Err(InvocationError::NotImplemented(builder.invocation.clone()))
         }
     }

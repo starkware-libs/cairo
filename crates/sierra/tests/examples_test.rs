@@ -17,7 +17,6 @@ fn get_example_program(name: &str) -> Program {
     sierra::ProgramParser::new().parse(&fs::read_to_string(path).unwrap()).unwrap()
 }
 
-#[test_case("collatz")]
 #[test_case("fib_jumps")]
 #[test_case("fib_no_gas")]
 #[test_case("fib_recursive")]
@@ -25,38 +24,11 @@ fn parse(name: &str) {
     get_example_program(name);
 }
 
-#[test_case("collatz")]
 #[test_case("fib_jumps")]
 #[test_case("fib_no_gas")]
 #[test_case("fib_recursive")]
 fn create_registry(name: &str) {
     ProgramRegistry::<CoreType, CoreLibFunc>::new(&get_example_program(name)).unwrap();
-}
-
-// 5 -> 16 -> 8 -> 4 -> 2 -> 1
-#[test_case((800, 5), (638, 5); "5 => 5")]
-//  0     1     2     3     4     5     6     7     8     9
-//  7 -> 22 -> 11 -> 34 -> 17 -> 52 -> 26 -> 13 -> 40 -> 20 ->
-// 10 ->  5 -> 16 ->  8 ->  4 ->  2 ->  1
-#[test_case((800, 7), (274, 16); "7 => 16")]
-// Out of gas.
-#[test_case((400, 7), (1, u128::MAX); "Out of gas.")]
-fn simulate_collatz((gb, n): (i64, u128), (new_gb, index): (i64, u128)) {
-    assert_eq!(
-        simulation::run(
-            &get_example_program("collatz"),
-            &HashMap::from([
-                (StatementIdx(7), 35),
-                (StatementIdx(19), 3),
-                (StatementIdx(25), 0),
-                (StatementIdx(38), 0),
-                (StatementIdx(49), 1),
-            ]),
-            &"Collatz".into(),
-            vec![CoreValue::RangeCheck, CoreValue::GasBuiltin(gb), CoreValue::Uint128(n)]
-        ),
-        Ok(vec![CoreValue::RangeCheck, CoreValue::GasBuiltin(new_gb), CoreValue::Uint128(index)])
-    );
 }
 
 #[test_case((1000, 0), (1011, 1); "0 => 1")]
