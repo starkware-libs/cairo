@@ -154,6 +154,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                 | SyntaxKind::TokenMinus
                 | SyntaxKind::TokenMul
                 | SyntaxKind::TokenDiv
+                | SyntaxKind::TokenMod
         )
     }
     fn add_break_line_point_after(&self, _db: &dyn SyntaxGroup) -> bool {
@@ -192,10 +193,12 @@ impl SyntaxNodeFormat for SyntaxNode {
                 precedence: 100,
                 break_type: BreakLinePointType::Dangling,
             },
-            SyntaxKind::TokenMul | SyntaxKind::TokenDiv => BreakLinePointProperties {
-                precedence: 101,
-                break_type: BreakLinePointType::Dangling,
-            },
+            SyntaxKind::TokenMul | SyntaxKind::TokenDiv | SyntaxKind::TokenMod => {
+                BreakLinePointProperties {
+                    precedence: 101,
+                    break_type: BreakLinePointType::Dangling,
+                }
+            }
             _ => unreachable!(),
         }
     }
