@@ -2,7 +2,7 @@ use std::fs;
 use std::path::PathBuf;
 
 use compiler::db::RootDatabase;
-use compiler::diagnostics::check_diagnostics;
+use compiler::diagnostics::check_and_eprint_diagnostics;
 use compiler::project::setup_project;
 use filesystem::ids::CrateId;
 use num_bigint::BigInt;
@@ -26,7 +26,7 @@ fn setup(name: &str) -> (RootDatabase, Vec<CrateId>) {
 
     let mut db = RootDatabase::default();
     let main_crate_ids = setup_project(&mut db, path.as_path()).expect("Project setup failed.");
-    assert!(!check_diagnostics(&mut db));
+    assert!(!check_and_eprint_diagnostics(&mut db));
     (db, main_crate_ids)
 }
 
