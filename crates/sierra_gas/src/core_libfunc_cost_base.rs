@@ -97,6 +97,8 @@ pub fn core_libfunc_cost_base<Ops: CostOperations>(
         CoreConcreteLibFunc::Pedersen(_) => {
             vec![ops.add(ops.const_cost(2), ops.const_cost_token(1, CostTokenType::Pedersen))]
         }
+
+        &CoreConcreteLibFunc::StarkNet(_) => todo!(),
     }
 }
 
