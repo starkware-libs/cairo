@@ -156,6 +156,8 @@ pub enum SyntaxKind {
     TerminalMul,
     TokenDiv,
     TerminalDiv,
+    TokenMod,
+    TerminalMod,
     TokenColon,
     TerminalColon,
     TokenColonColon,
@@ -245,6 +247,7 @@ impl SyntaxKind {
                 | SyntaxKind::TokenMinus
                 | SyntaxKind::TokenMul
                 | SyntaxKind::TokenDiv
+                | SyntaxKind::TokenMod
                 | SyntaxKind::TokenColon
                 | SyntaxKind::TokenColonColon
                 | SyntaxKind::TokenComma
@@ -313,6 +316,7 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalMinus
                 | SyntaxKind::TerminalMul
                 | SyntaxKind::TerminalDiv
+                | SyntaxKind::TerminalMod
                 | SyntaxKind::TerminalColon
                 | SyntaxKind::TerminalColonColon
                 | SyntaxKind::TerminalComma

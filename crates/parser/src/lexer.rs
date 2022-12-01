@@ -196,6 +196,7 @@ impl<'a> Lexer<'a> {
                 '.' => self.pick_kind('.', TokenKind::DotDot, TokenKind::Dot),
                 '*' => self.take_token_of_kind(TokenKind::Mul),
                 '/' => self.take_token_of_kind(TokenKind::Div),
+                '%' => self.take_token_of_kind(TokenKind::Mod),
                 '+' => self.take_token_of_kind(TokenKind::Plus),
                 '#' => self.take_token_of_kind(TokenKind::Hash),
                 '-' => self.pick_kind('>', TokenKind::Arrow, TokenKind::Minus),
@@ -311,6 +312,7 @@ enum TokenKind {
     Minus,
     Mul,
     Div,
+    Mod,
 
     Colon,
     ColonColon,
@@ -374,6 +376,7 @@ fn token_kind_to_terminal_syntax_kind(kind: TokenKind) -> SyntaxKind {
         TokenKind::Minus => SyntaxKind::TerminalMinus,
         TokenKind::Mul => SyntaxKind::TerminalMul,
         TokenKind::Div => SyntaxKind::TerminalDiv,
+        TokenKind::Mod => SyntaxKind::TerminalMod,
         TokenKind::Colon => SyntaxKind::TerminalColon,
         TokenKind::ColonColon => SyntaxKind::TerminalColonColon,
         TokenKind::Comma => SyntaxKind::TerminalComma,
