@@ -272,7 +272,7 @@ impl<'a> Parser<'a> {
 
     /// Returns a GreenId of a node with an identifier kind or None if an identifier can't be
     /// parsed.
-    /// Note that if the terminal is a keyword or an underscore, it is skipped it and
+    /// Note that if the terminal is a keyword or an underscore, it is skipped, and
     /// Some(missing-identifier) is returned.
     fn try_parse_identifier(&mut self) -> Option<TerminalIdentifierGreen> {
         if self.peek().kind.is_keyword_terminal() {
@@ -286,6 +286,16 @@ impl<'a> Parser<'a> {
         } else {
             self.try_parse_token::<TerminalIdentifier>()
         }
+    }
+    /// Returns whether the current token is an identifier, a keyword or an underscore ('_'),
+    /// without consuming it. This should be used mostly, instead of checking whether the current
+    /// token is an identifier, because in many cases we'd want to consume the keyword/underscore as
+    /// the identifier and raise a relevant diagnostic
+    /// (ReservedIdentifier/UnderscoreNotAllowedAsIdentifier).
+    fn is_peek_identifier_like(&self) -> bool {
+        let kind = self.peek().kind;
+        kind.is_keyword_terminal()
+            || matches!(kind, SyntaxKind::TerminalUnderscore | SyntaxKind::TerminalIdentifier)
     }
 
     /// Returns a GreenId of a node with an identifier kind.
@@ -958,12 +968,13 @@ impl<'a> Parser<'a> {
         if self.peek().kind == SyntaxKind::TerminalImplicits {
             let implicits_kw = self.take::<TerminalImplicits>();
             let lparen = self.parse_token::<TerminalLParen>();
-            let implicits = ParamList::new_green(
+            let implicits = ImplicitsList::new_green(
                 self.db,
-                self.parse_separated_list::<Param, TerminalComma, ParamListElementOrSeparatorGreen>(
-                    Self::try_parse_param,
-                    is_of_kind!(rparen, block, lbrace, rbrace, top_level),
-                    "implicit param",
+                self.parse_separated_list::<ExprPath, TerminalComma, ImplicitsListElementOrSeparatorGreen>(
+                    Self::try_parse_path,
+                    // Don't stop at keywords as try_parse_path handles keywords inside it. Otherwise the diagnostic is less accurate.
+                    is_of_kind!(rparen, lbrace, rbrace),
+                    "implicit type",
                 ),
             );
             let rparen = self.parse_token::<TerminalRParen>();
@@ -985,7 +996,7 @@ impl<'a> Parser<'a> {
         )
     }
 
-    /// Returns a GreenId of a node with kind Modifier or None if a parameter can't be parsed.
+    /// Returns a GreenId of a node with kind Modifier or None if a modifier can't be parsed.
     fn try_parse_modifier(&mut self) -> Option<ModifierGreen> {
         match self.peek().kind {
             SyntaxKind::TerminalRef => Some(self.take::<TerminalRef>().into()),
@@ -1069,8 +1080,12 @@ impl<'a> Parser<'a> {
 
         ExprPath::new_green(self.db, children)
     }
+    /// Returns a GreenId of a node with kind ExprPath or None if a path can't be parsed.
+    fn try_parse_path(&mut self) -> Option<ExprPathGreen> {
+        if self.is_peek_identifier_like() { Some(self.parse_path()) } else { None }
+    }
 
-    /// Returns a PathSegment and and optional separator.
+    /// Returns a PathSegment and an optional separator.
     fn parse_path_segment(&mut self) -> (PathSegmentGreen, Option<TerminalColonColonGreen>) {
         let identifier = match self.try_parse_identifier() {
             Some(identifier) => identifier,

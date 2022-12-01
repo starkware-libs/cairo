@@ -13,7 +13,7 @@ use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::Environment;
 use crate::resolve_path::Resolver;
 use crate::types::{resolve_type, substitute_generics};
-use crate::{semantic, Mutability, Parameter};
+use crate::{semantic, Parameter};
 
 /// Function instance.
 /// For example: `ImplA::foo<A, B>`, or `bar<A>`.
@@ -76,7 +76,7 @@ pub struct Signature {
     pub params: Vec<semantic::Parameter>,
     pub return_type: semantic::TypeId,
     /// implicit parameters
-    pub implicits: Vec<semantic::Parameter>,
+    pub implicits: Vec<semantic::TypeId>,
     pub panicable: bool,
 }
 
@@ -99,14 +99,8 @@ impl Signature {
             function_id,
             environment,
         );
-        let implicits = function_signature_implicit_parameters(
-            diagnostics,
-            db,
-            resolver,
-            signature_syntax,
-            function_id,
-            environment,
-        );
+        let implicits =
+            function_signature_implicit_parameters(diagnostics, db, resolver, signature_syntax);
         let panicable = match signature_syntax.optional_no_panic(db.upcast()) {
             ast::OptionTerminalNoPanic::Empty(_) => true,
             ast::OptionTerminalNoPanic::TerminalNoPanic(_) => false,
@@ -138,19 +132,26 @@ pub fn function_signature_implicit_parameters(
     db: &dyn SemanticGroup,
     resolver: &mut Resolver<'_>,
     sig: &ast::FunctionSignature,
-    function_id: GenericFunctionId,
-    env: &mut Environment,
-) -> Vec<semantic::Parameter> {
+) -> Vec<semantic::TypeId> {
     let syntax_db = db.upcast();
 
-    let ast_params = match sig.implicits_clause(syntax_db) {
+    let ast_implicits = match sig.implicits_clause(syntax_db) {
         ast::OptionImplicitsClause::Empty(_) => Vec::new(),
-        ast::OptionImplicitsClause::ImplicitsClause(with_clause) => {
-            with_clause.implicits(syntax_db).elements(syntax_db)
+        ast::OptionImplicitsClause::ImplicitsClause(implicits_clause) => {
+            implicits_clause.implicits(syntax_db).elements(syntax_db)
         }
     };
 
-    update_env_with_ast_params(diagnostics, db, resolver, &ast_params, function_id, env, true)
+    let mut implicits = Vec::new();
+    for implicit in ast_implicits {
+        implicits.push(resolve_type(
+            db,
+            diagnostics,
+            resolver,
+            &syntax::node::ast::Expr::Path(implicit),
+        ));
+    }
+    implicits
 }
 
 /// Returns the parameters of the given function signature's AST.
@@ -170,7 +171,6 @@ pub fn function_signature_params(
         &sig.parameters(syntax_db).elements(syntax_db),
         function_id,
         env,
-        false,
     )
 }
 
@@ -238,14 +238,13 @@ pub fn concrete_function_signature(
     Some(Signature {
         params: generic_signature.params.into_iter().map(concretize_param).collect(),
         return_type: substitute_generics(db, &substitution_map, generic_signature.return_type),
-        implicits: generic_signature.implicits.into_iter().map(concretize_param).collect(),
+        implicits: generic_signature.implicits,
         panicable: generic_signature.panicable,
     })
 }
 
 /// For a given list of AST parameters, returns the list of semantic parameters along with the
 /// corresponding environment.
-/// `implicit_params` - indicates whether this call handles implicit params or normal params.
 fn update_env_with_ast_params(
     diagnostics: &mut SemanticDiagnostics,
     db: &dyn SemanticGroup,
@@ -253,12 +252,10 @@ fn update_env_with_ast_params(
     ast_params: &[ast::Param],
     function_id: GenericFunctionId,
     env: &mut Environment,
-    implicit_params: bool,
 ) -> Vec<semantic::Parameter> {
     let mut semantic_params = Vec::new();
     for ast_param in ast_params.iter() {
-        let (name, semantic_param) =
-            ast_param_to_semantic(diagnostics, db, resolver, ast_param, implicit_params);
+        let (name, semantic_param) = ast_param_to_semantic(diagnostics, db, resolver, ast_param);
         if env.add_param(diagnostics, &name, semantic_param.clone(), ast_param, function_id) {
             semantic_params.push(semantic_param);
         }
@@ -266,14 +263,12 @@ fn update_env_with_ast_params(
     semantic_params
 }
 
-/// Returns a semantic parameter (and its name) for the given AST parameter
-/// `implicit_param` - indicates whether this call handles an implicit param or a normal param.
+/// Returns a semantic parameter (and its name) for the given AST parameter.
 fn ast_param_to_semantic(
     diagnostics: &mut SemanticDiagnostics,
     db: &dyn SemanticGroup,
     resolver: &mut Resolver<'_>,
     ast_param: &ast::Param,
-    implicit_param: bool,
 ) -> (Option<SmolStr>, semantic::Parameter) {
     let syntax_db = db.upcast();
 
@@ -286,15 +281,11 @@ fn ast_param_to_semantic(
     let ty_syntax = ast_param.type_clause(syntax_db).ty(syntax_db);
     let ty = resolve_type(db, diagnostics, resolver, &ty_syntax);
 
-    let mutability = if implicit_param {
-        Mutability::Reference
-    } else {
-        modifiers::compute_mutability(
-            diagnostics,
-            syntax_db,
-            &ast_param.modifiers(syntax_db).elements(syntax_db),
-        )
-    };
+    let mutability = modifiers::compute_mutability(
+        diagnostics,
+        syntax_db,
+        &ast_param.modifiers(syntax_db).elements(syntax_db),
+    );
 
     let semantic_param = semantic::Parameter { id, ty, mutability };
     (name, semantic_param)

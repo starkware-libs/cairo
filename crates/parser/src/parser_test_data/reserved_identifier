@@ -294,3 +294,19 @@ error: 'mod' is a reserved identifier.
  --> dummy_file.cairo:1:10
 struct A<mod> {}
          ^*^
+
+//! > ==========================================================================
+
+//! > Implicit  - reserved identifier.
+
+//! > test_function_name
+get_diagnostics
+
+//! > cairo_code
+func foo() implicits(mod) {}
+
+//! > expected_diagnostics
+error: 'mod' is a reserved identifier.
+ --> dummy_file.cairo:1:22
+func foo() implicits(mod) {}
+                     ^*^

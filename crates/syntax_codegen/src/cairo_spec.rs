@@ -196,7 +196,7 @@ pub fn get_spec() -> Vec<Node> {
         .node("rparen", "TerminalRParen")
         )
     // --- Type clauses ---
-    // TODO(yuval): support SimpleExpr instead of ExprPath
+    // TODO(yuval): support SimpleExpr instead of Expr
     .add_struct(StructBuilder::new("TypeClause").node("colon", "TerminalColon").node("ty", "Expr"))
     .add_option("TypeClause")
     .add_struct(StructBuilder::new("ReturnTypeClause")
@@ -250,9 +250,10 @@ pub fn get_spec() -> Vec<Node> {
     .add_struct(StructBuilder::new("ImplicitsClause")
         .node("implicits_kw", "TerminalImplicits")
         .node("lparen", "TerminalLParen")
-        .node("implicits", "ParamList")
+        .node("implicits", "ImplicitsList")
         .node("rparen", "TerminalRParen")
         )
+    .add_separated_list("ImplicitsList", "ExprPath", "TerminalComma")
     .add_option("ImplicitsClause")
     .add_option("TerminalNoPanic")
     // TODO(spapini): Add generic params.

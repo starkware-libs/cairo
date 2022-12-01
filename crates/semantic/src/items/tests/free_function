@@ -26,7 +26,7 @@ func foo(a: bool, a: felt) {
 test_function_diagnostics
 
 //! > function
-func foo(a: bool) implicits(f: felt, b: bool) {
+func foo(a: bool) implicits(felt, bool) {
 }
 
 //! > function_name
@@ -38,57 +38,13 @@ foo
 
 //! > ==========================================================================
 
-//! > Test free function implicit param redefinition.
+//! > Test valid free function with unnamed parameters
 
 //! > test_function_name
 test_function_diagnostics
 
 //! > function
-func foo() implicits(a: bool, a: felt) {
-}
-
-//! > function_name
-foo
-
-//! > module_code
-
-//! > expected_diagnostics
-error: Redefinition of parameter name "a" in function "test::foo".
- --> lib.cairo:1:31
-func foo() implicits(a: bool, a: felt) {
-                              ^*****^
-
-//! > ==========================================================================
-
-//! > Test free function implicit param redefinition of param.
-
-//! > test_function_name
-test_function_diagnostics
-
-//! > function
-func foo(a: bool) implicits(a: felt) {
-}
-
-//! > function_name
-foo
-
-//! > module_code
-
-//! > expected_diagnostics
-error: Redefinition of parameter name "a" in function "test::foo".
- --> lib.cairo:1:29
-func foo(a: bool) implicits(a: felt) {
-                            ^*****^
-
-//! > ==========================================================================
-
-//! > Test valid free function with unnamed parameters (both normal and implicit)
-
-//! > test_function_name
-test_function_diagnostics
-
-//! > function
-func foo(_: bool, a: bool, _: felt) implicits(_: bool, b: felt, _: felt) {
+func foo(_: bool, a: bool, _: felt) implicits(bool, felt, felt) {
 }
 
 //! > function_name

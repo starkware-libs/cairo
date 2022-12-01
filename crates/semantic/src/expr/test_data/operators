@@ -33,7 +33,7 @@ error: Binary operator '+' is not supported for types 'test::MyType' and '<missi
 test_function_diagnostics
 
 //! > function
-func foo(a: felt, b: bool) implicits (rc:RangeCheck) {
+func foo(a: felt, b: bool) implicits(RangeCheck) {
     // Valid.
     a + a * a - a;
     b & b | b & (a == a | a > a)

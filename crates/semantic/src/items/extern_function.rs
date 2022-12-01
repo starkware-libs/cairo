@@ -58,14 +58,7 @@ pub fn extern_function_declaration_implicits(
     db: &dyn SemanticGroup,
     extern_function_id: ExternFunctionId,
 ) -> Option<Vec<TypeId>> {
-    Some(
-        db.priv_extern_function_declaration_data(extern_function_id)?
-            .signature
-            .implicits
-            .into_iter()
-            .map(|param| param.ty)
-            .collect(),
-    )
+    Some(db.priv_extern_function_declaration_data(extern_function_id)?.signature.implicits)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::extern_function_declaration_refs].
