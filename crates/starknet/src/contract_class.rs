@@ -6,15 +6,18 @@ use compiler::db::RootDatabase;
 use compiler::diagnostics::check_and_eprint_diagnostics;
 use compiler::project::setup_project;
 use defs::db::DefsGroup;
+use defs::ids::{GenericFunctionId, LanguageElementId, ModuleId, ModuleItemId, TraitId};
 use itertools::join;
 use num_bigint::BigUint;
 use plugins::get_default_plugins;
 use semantic::db::SemanticGroup;
+use semantic::{ConcreteFunction, FunctionLongId};
 use serde::{Deserialize, Serialize};
 use sierra::{self};
 use sierra_generator::db::SierraGenGroup;
 use sierra_generator::replace_ids::replace_sierra_ids_in_program;
 use thiserror::Error;
+use utils::try_extract_matches;
 
 use crate::abi;
 use crate::casm_contract_class::{deserialize_big_uint, serialize_big_uint};
@@ -55,7 +58,7 @@ pub struct ContractEntryPoint {
     #[serde(serialize_with = "serialize_big_uint", deserialize_with = "deserialize_big_uint")]
     pub selector: BigUint,
     // The function in the sierra program.
-    pub function_id: usize,
+    pub function_id: u64,
 }
 
 // Compile the contract given by path.
@@ -94,9 +97,10 @@ pub fn compile_path(path: &Path, replace_ids: bool) -> anyhow::Result<ContractCl
         }
     };
 
-    let concrete_trait_id = db
-        .impl_trait(db.lookup_intern_concrete_impl(concrete_impl_id).impl_id)
-        .with_context(|| "Failed to get contract trait.")?;
+    let impl_id = db.lookup_intern_concrete_impl(concrete_impl_id).impl_id;
+
+    let concrete_trait_id =
+        db.impl_trait(impl_id).with_context(|| "Failed to get contract trait.")?;
     let trait_id = db.lookup_intern_concrete_trait(concrete_trait_id).trait_id;
 
     let mut sierra_program = db
@@ -107,11 +111,46 @@ pub fn compile_path(path: &Path, replace_ids: bool) -> anyhow::Result<ContractCl
         sierra_program = Arc::new(replace_sierra_ids_in_program(db, &sierra_program));
     }
 
-    // TODO(ilya): Get abi and entry points from the code.
+    let entry_points_by_type = get_entry_points(db, impl_id.module(db), trait_id)?;
+
     Ok(ContractClass {
         sierra_program: (*sierra_program).clone(),
-        entry_points_by_type: ContractEntryPoints::default(),
+        entry_points_by_type,
         abi: abi::Contract::from_trait(db, trait_id)
             .with_context(|| "Failed to extract contract ABI.")?,
     })
+}
+
+/// Return the entry points given a trait and a module_id where they are implemented.
+fn get_entry_points(
+    db: &mut RootDatabase,
+    impl_module_id: ModuleId,
+    trait_id: TraitId,
+) -> Result<ContractEntryPoints, anyhow::Error> {
+    let trait_functions = db.trait_functions(trait_id).unwrap();
+    let mut entry_points_by_type = ContractEntryPoints::default();
+    for function_name in trait_functions.keys() {
+        let item = db
+            .module_item_by_name(impl_module_id, function_name.clone())
+            .with_context(|| format!("The `{}` entry point was not found.", function_name))?;
+
+        let free_func_id = try_extract_matches!(item, ModuleItemId::FreeFunction)
+            .with_context(|| format!("Expected `{}` to be a function.", function_name))?;
+
+        let func_id = db.intern_function(FunctionLongId {
+            function: ConcreteFunction {
+                generic_function: GenericFunctionId::Free(free_func_id),
+                generic_args: vec![],
+            },
+        });
+
+        let sierra_id = db.intern_sierra_function(func_id);
+
+        entry_points_by_type.external.push(ContractEntryPoint {
+            // TODO(ilya): compute the selector.
+            selector: BigUint::from(0u32),
+            function_id: sierra_id.id,
+        });
+    }
+    Ok(entry_points_by_type)
 }
