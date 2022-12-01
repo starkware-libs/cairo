@@ -19,10 +19,12 @@ pub mod non_zero;
 pub mod pedersen;
 pub mod range_check;
 pub mod squashed_dict_felt_to;
+pub mod storage;
 pub mod strct;
 pub mod syscalls;
 pub mod unconditional_jump;
 pub mod uninitialized;
+pub mod starknet;
 
 /// Helper for extracting the type from the template arguments.
 fn as_single_type(args: &[GenericArg]) -> Result<ConcreteTypeId, SpecializationError> {

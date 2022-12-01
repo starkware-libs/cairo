@@ -23,6 +23,8 @@ pub fn build_bijective_mapping() -> BiMap<ConcreteTypeId, ConcreteTypeLongId> {
     elements.insert("UninitializedUint128".into(), as_type_long_id("Uninitialized", &["uint128"]));
     elements.insert("GasBuiltin".into(), as_type_long_id("GasBuiltin", &[]));
     elements.insert("RangeCheck".into(), as_type_long_id("RangeCheck", &[]));
+    elements.insert("SyscallPtr".into(), as_type_long_id("SyscallPtr", &[]));
+    elements.insert("StorageAddress".into(), as_type_long_id("StorageAddress", &[]));
     elements
 }
 

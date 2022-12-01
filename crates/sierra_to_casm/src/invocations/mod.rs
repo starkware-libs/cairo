@@ -243,6 +243,12 @@ pub fn compile_invocation(
         CoreConcreteLibFunc::Struct(libfunc) => strct::build(libfunc, builder),
         CoreConcreteLibFunc::DictFeltTo(libfunc) => dict_felt_to::build(libfunc, builder),
         CoreConcreteLibFunc::Pedersen(libfunc) => pedersen::build(libfunc, builder),
+        CoreConcreteLibFunc::StarkNet(_) => {
+            unimplemented!(
+                "
+            StarkNet functionalities are not implemented yet."
+            )
+        }
     }
 }
 

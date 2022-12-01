@@ -222,6 +222,9 @@ pub fn simulate<
         CoreConcreteLibFunc::Pedersen(_) => {
             unimplemented!("Simulation of the Pedersen hash function is not implemented yet.");
         }
+        &CoreConcreteLibFunc::StarkNet(_) => {
+            unimplemented!("Simulation of the StarkNet functionalities is not implemented yet.")
+        }
     }
 }
 
