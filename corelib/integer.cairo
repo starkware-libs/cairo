@@ -27,17 +27,33 @@ extern func uint128_checked_mul(
     b: uint128
 ) -> Option::<uint128> implicits(RangeCheck) nopanic;
 
-extern func uint128_div(
-    a: uint128,
-    b: NonZero::<uint128>
-) -> uint128 implicits(RangeCheck) nopanic;
+#[panic_with(1, uint128_as_non_zero)]
+func uint128_checked_as_non_zero(a: uint128) -> Option::<NonZero::<uint128>> nopanic {
+    match uint128_jump_nz(a) {
+        JumpNzResult::Zero(()) => Option::<NonZero::<uint128>>::None(()),
+        JumpNzResult::NonZero(x) => Option::<NonZero::<uint128>>::Some(x),
+    }
+}
 
-extern func uint128_mod(
-    a: uint128,
-    b: NonZero::<uint128>
-) -> uint128 implicits(RangeCheck) nopanic;
+func uint128_safe_div(a: uint128, b: NonZero::<uint128>) -> uint128 implicits(RangeCheck) nopanic {
+    let (q, r) = uint128_safe_divmod(a, b);
+    q
+}
 
-extern func uint128_divmod(
+func uint128_div(a: uint128, b: uint128) -> uint128 implicits(RangeCheck) {
+    uint128_safe_div(a, uint128_as_non_zero(b))
+}
+
+func uint128_safe_mod(a: uint128, b: NonZero::<uint128>) -> uint128 implicits(RangeCheck) nopanic {
+    let (q, r) = uint128_safe_divmod(a, b);
+    r
+}
+
+func uint128_mod(a: uint128, b: uint128) -> uint128 implicits(RangeCheck) {
+    uint128_safe_mod(a, uint128_as_non_zero(b))
+}
+
+extern func uint128_safe_divmod(
     a: uint128,
     b: NonZero::<uint128>
 ) -> (uint128, uint128) implicits(RangeCheck) nopanic;
