@@ -30,10 +30,10 @@ impl CostOperations for Ops<'_> {
         self.statement_future_cost.get_future_cost(&function.entry_point).clone()
     }
 
-    fn statement_var_cost(&self) -> Self::CostType {
+    fn statement_var_cost(&self, token_type: CostTokenType) -> Self::CostType {
         Self::CostType::from_iter([(
-            CostTokenType::Step,
-            CostExpr::from_var(Var::LibFuncImplicitGasVariable(self.idx, CostTokenType::Step)),
+            token_type,
+            CostExpr::from_var(Var::LibFuncImplicitGasVariable(self.idx, token_type)),
         )])
     }
 
