@@ -243,6 +243,9 @@ pub fn compile_invocation(
         CoreConcreteLibFunc::Struct(libfunc) => strct::build(libfunc, builder),
         CoreConcreteLibFunc::DictFeltTo(libfunc) => dict_felt_to::build(libfunc, builder),
         CoreConcreteLibFunc::Pedersen(libfunc) => pedersen::build(libfunc, builder),
+        CoreConcreteLibFunc::BuiltinCost(_libfunc) => {
+            todo!("Builtin cost libfuncs are not implemented yet.")
+        }
     }
 }
 
