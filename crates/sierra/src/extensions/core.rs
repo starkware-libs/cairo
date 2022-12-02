@@ -1,5 +1,6 @@
 use super::ap_tracking::RevokeApTrackingLibFunc;
 use super::array::{ArrayLibFunc, ArrayType};
+use super::builtin_cost::BuiltinCostLibFunc;
 use super::dict_felt_to::{DictFeltToLibFunc, DictFeltToType};
 use super::drop::DropLibFunc;
 use super::duplicate::DupLibFunc;
@@ -44,6 +45,7 @@ define_libfunc_hierarchy! {
         ApTracking(RevokeApTrackingLibFunc),
         Array(ArrayLibFunc),
         Box(BoxLibFunc),
+        BuiltinCost(BuiltinCostLibFunc),
         Drop(DropLibFunc),
         Dup(DupLibFunc),
         Felt(FeltLibFunc),

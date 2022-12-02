@@ -222,6 +222,9 @@ pub fn simulate<
         CoreConcreteLibFunc::Pedersen(_) => {
             unimplemented!("Simulation of the Pedersen hash function is not implemented yet.");
         }
+        CoreConcreteLibFunc::BuiltinCost(_) => {
+            todo!("Simulation of the builtin cost functionality is not implemented yet.")
+        }
     }
 }
 
