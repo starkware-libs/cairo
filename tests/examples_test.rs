@@ -78,6 +78,7 @@ fn checked_compile_to_sierra(name: &str) -> sierra::program::Program {
 #[test_case("enum_flow")]
 #[test_case("corelib_usage")]
 #[test_case("hash_chain")]
+#[test_case("hash_chain_gas")]
 #[test_case("testing")]
 fn cairo_to_sierra(name: &str) {
     compare_contents_or_fix(name, "sierra", checked_compile_to_sierra(name).to_string());
@@ -97,6 +98,7 @@ fn cairo_to_sierra(name: &str) {
 #[test_case("enum_flow", false)]
 #[test_case("corelib_usage", false)]
 #[test_case("hash_chain", false)]
+#[test_case("hash_chain_gas", true)]
 #[test_case("testing", false)]
 fn cairo_to_casm(name: &str, enable_gas_checks: bool) {
     let program = checked_compile_to_sierra(name);
