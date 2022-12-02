@@ -8,42 +8,42 @@ impl BoolCopy of Copy::<bool>;
 impl BoolDrop of Drop::<bool>;
 
 // TODO(orizi): Change to extern when added.
-func bool_and(a: bool, b: bool) -> bool implicits() nopanic {
+func bool_and(a: bool, b: bool) -> bool implicits () nopanic {
     match a {
-        bool::False(x) => bool::False(()),
-        bool::True(x) => b,
+        bool::False (x) => bool::False(()),
+        bool::True (x) => b,
     }
 }
 
 // TODO(orizi): Change to extern when added.
-func bool_or(a: bool, b: bool) -> bool implicits() nopanic {
+func bool_or(a: bool, b: bool) -> bool implicits () nopanic {
     match a {
-        bool::False(x) => b,
-        bool::True(x) => bool::True(()),
+        bool::False (x) => b,
+        bool::True (x) => bool::True(()),
     }
 }
 
 // TODO(orizi): Change to extern when added.
-func bool_not(a: bool) -> bool implicits() nopanic {
+func bool_not(a: bool) -> bool implicits () nopanic {
     match a {
-        bool::False(x) => bool::True(()),
-        bool::True(x) => bool::False(()),
+        bool::False (x) => bool::True(()),
+        bool::True (x) => bool::False(()),
     }
 }
 
 // TODO(orizi): Change to extern when added.
-func bool_xor(a: bool, b: bool) -> bool implicits() nopanic {
+func bool_xor(a: bool, b: bool) -> bool implicits () nopanic {
     match a {
-        bool::False(x) => b,
-        bool::True(x) => bool_not(b),
+        bool::False (x) => b,
+        bool::True (x) => bool_not(b),
     }
 }
 
 // TODO(orizi): Change to extern when added.
-func bool_eq(a: bool, b: bool) -> bool implicits() nopanic {
+func bool_eq(a: bool, b: bool) -> bool implicits () nopanic {
     match a {
-        bool::False(x) => bool_not(b),
-        bool::True(x) => b,
+        bool::False (x) => bool_not(b),
+        bool::True (x) => b,
     }
 }
 
@@ -75,20 +75,20 @@ func felt_eq(a: felt, b: felt) -> bool {
 }
 
 // TODO(orizi): Change to extern when added.
-func felt_lt(a: felt, b: felt) -> bool implicits(RangeCheck) {
+func felt_lt(a: felt, b: felt) -> bool implicits (RangeCheck) {
     uint128_lt(uint128_from_felt(a), uint128_from_felt(b))
 }
 
-func felt_gt(a: felt, b: felt) -> bool implicits(RangeCheck) {
+func felt_gt(a: felt, b: felt) -> bool implicits (RangeCheck) {
     felt_lt(b, a)
 }
 
 // TODO(orizi): Change to extern when added.
-func felt_le(a: felt, b: felt) -> bool implicits(RangeCheck) {
+func felt_le(a: felt, b: felt) -> bool implicits (RangeCheck) {
     bool_not(felt_gt(a, b))
 }
 
-func felt_ge(a: felt, b: felt) -> bool implicits(RangeCheck) {
+func felt_ge(a: felt, b: felt) -> bool implicits (RangeCheck) {
     felt_le(b, a)
 }
 
@@ -161,6 +161,7 @@ func assert(cond: bool, err_code: felt) {
 // Hash functions.
 mod hash;
 use hash::pedersen;
+use hash::pedersen_get_gas;
 
 // Syscall Ptr
 extern type SyscallPtr;
