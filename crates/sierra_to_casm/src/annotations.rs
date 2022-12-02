@@ -5,6 +5,7 @@ use std::iter;
 use casm::ap_change::{ApChange, ApChangeError, ApplyApChange};
 use itertools::zip_eq;
 use sierra::edit_state::{put_results, take_args};
+use sierra::extensions::builtin_cost::CostTokenType;
 use sierra::extensions::lib_func::SierraApChange;
 use sierra::ids::{ConcreteTypeId, VarId};
 use sierra::program::{BranchInfo, Function, StatementIdx};
@@ -154,7 +155,8 @@ impl ProgramAnnotations {
                     return_annotation,
                     environment: if gas_usage_check {
                         Environment::new(GasWallet::Value(
-                            metadata.gas_info.function_costs[&func.id],
+                            // TODO(lior): Handle the other token types.
+                            metadata.gas_info.function_costs[&func.id][CostTokenType::Step],
                         ))
                     } else {
                         Environment::new(GasWallet::Disabled)

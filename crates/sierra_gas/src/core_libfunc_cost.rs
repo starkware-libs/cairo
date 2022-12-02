@@ -24,16 +24,13 @@ impl CostOperations for Ops<'_> {
     }
 
     fn function_cost(&mut self, function: &sierra::program::Function) -> Self::CostType {
-        Some(OrderedHashMap::from_iter([(
-            CostTokenType::Step,
-            *self.gas_info.function_costs.get(&function.id)?,
-        )]))
+        self.gas_info.function_costs.get(&function.id).cloned()
     }
 
     fn statement_var_cost(&self) -> Self::CostType {
         Some(OrderedHashMap::from_iter([(
             CostTokenType::Step,
-            *self.gas_info.variable_values.get(&self.idx)?,
+            *self.gas_info.variable_values.get(&(self.idx, CostTokenType::Step))?,
         )]))
     }
 
