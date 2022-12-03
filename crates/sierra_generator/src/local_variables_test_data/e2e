@@ -161,3 +161,49 @@ store_temp<felt>([5]) -> ([5])
 rename<felt>([5]) -> ([6])
 burn_gas() -> ()
 return([6])
+
+//! > ==========================================================================
+
+//! > Test locals with dup
+
+//! > test_function_name
+test_function_generator
+
+//! > function
+func foo() -> felt {
+    let x = revoke_ap();
+    let (y, z) = dup::<felt>(x);
+    revoke_ap();
+    y
+}
+
+//! > function_name
+foo
+
+//! > module_code
+func revoke_ap() -> felt {
+    revoke_ap()
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_gen_diagnostics
+
+//! > sierra_code
+label0:
+alloc_local<felt>() -> ([1])
+finalize_locals() -> ()
+revoke_ap_tracking() -> ()
+function_call<user@test::revoke_ap>() -> ([0])
+dup<felt>([0]) -> ([0], [6])
+dup<felt>([6]) -> ([2], [3])
+drop<felt>([3]) -> ()
+store_local<felt>([1], [0]) -> ([0])
+drop<felt>([0]) -> ()
+function_call<user@test::revoke_ap>() -> ([4])
+drop<felt>([4]) -> ()
+store_temp<felt>([2]) -> ([5])
+burn_gas() -> ()
+return([5])
