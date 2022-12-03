@@ -20,5 +20,5 @@ fn cairo_level_tests() {
         SierraCasmRunner::new((*sierra_program).clone(), false).expect("Failed setting up runner.");
     let result =
         runner.run_function(/* find first */ "", &[], &None).expect("Failed running the function.");
-    assert_eq!(result.value, RunResultValue::Success(vec![/* test_count */ BigInt::from(48)]));
+    assert_eq!(result.value, RunResultValue::Success(vec![/* test_count */ BigInt::from(50)]));
 }
