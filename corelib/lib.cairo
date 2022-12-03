@@ -64,6 +64,8 @@ extern type NonZero<T>;
 enum JumpNzResult<T> { Zero: (), NonZero: NonZero::<T>, }
 extern func unwrap_nz<T>(a: NonZero::<T>) -> T nopanic;
 
+impl NonZeroFeltCopy of Copy::<NonZero::<felt>>;
+impl NonZeroFeltDrop of Drop::<NonZero::<felt>>;
 extern func felt_div(a: felt, b: NonZero::<felt>) -> felt nopanic;
 
 // TODO(orizi): Change to extern when added.
