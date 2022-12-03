@@ -61,6 +61,8 @@ func uint128_tests(ref test_count: felt) {
     assert_and_count(test_count, u3 + u6 == u9);
     assert_and_count(test_count, u3 - u1 == u2);
     assert_and_count(test_count, u1231 - u231 == u1000);
+    assert_and_count(test_count, u1 * u3 == u3);
+    assert_and_count(test_count, u2 * u4 == u8);
     assert_and_count(test_count, u8 / u2 == u4);
     assert_and_count(test_count, u8 % u2 == u0);
     assert_and_count(test_count, u7 / u3 == u2);
