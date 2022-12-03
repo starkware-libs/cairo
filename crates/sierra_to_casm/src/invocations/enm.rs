@@ -1,7 +1,7 @@
 use casm::operand::CellRef;
 use casm::{casm, casm_extend};
 use itertools::{chain, repeat_n};
-use num_bigint::{BigInt, ToBigInt};
+use num_bigint::BigInt;
 use sierra::extensions::enm::{EnumConcreteLibFunc, EnumInitConcreteLibFunc};
 use sierra::extensions::ConcreteLibFunc;
 use sierra::ids::ConcreteTypeId;
@@ -103,7 +103,7 @@ fn build_enum_init(
     .collect();
 
     let enum_val = EnumView {
-        variant_selector: CellExpression::Immediate(variant_selector.to_bigint().unwrap()),
+        variant_selector: CellExpression::Immediate(BigInt::from(variant_selector)),
         inner_value,
     };
     let output_expressions = [enum_val.to_reference_expression()].into_iter();

@@ -3,9 +3,8 @@ use casm::casm;
 use casm::operand::DerefOrImmediate;
 use itertools::chain;
 use num_bigint::BigInt;
-use sierra::extensions::builtin_cost::CostTokenType;
+use sierra::extensions::builtin_cost::{BuiltinCostConcreteLibFunc, BuiltinGetGasConcreteLibFunc};
 use sierra::extensions::felt::FeltOperator;
-use sierra::extensions::gas::GasConcreteLibFunc;
 use sierra::program::{BranchInfo, BranchTarget};
 use utils::try_extract_matches;
 
@@ -15,26 +14,28 @@ use crate::relocations::{Relocation, RelocationEntry};
 
 /// Builds instructions for Sierra gas operations.
 pub fn build(
-    libfunc: &GasConcreteLibFunc,
+    libfunc: &BuiltinCostConcreteLibFunc,
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
-        GasConcreteLibFunc::GetGas(_) => build_get_gas(builder),
-        GasConcreteLibFunc::RefundGas(_) => build_refund_gas(builder),
-        GasConcreteLibFunc::BurnGas(_) => Ok(builder.build_only_reference_changes([].into_iter())),
+        BuiltinCostConcreteLibFunc::BuiltinGetGas(libfunc) => {
+            build_builtin_get_gas(libfunc, builder)
+        }
     }
 }
 
 /// Handles the get gas invocation.
-fn build_get_gas(
+fn build_builtin_get_gas(
+    libfunc: &BuiltinGetGasConcreteLibFunc,
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
+    // TODO(lior): Share code with get_gas().
     let requested_count = builder
         .program_info
         .metadata
         .gas_info
         .variable_values
-        .get(&(builder.idx, CostTokenType::Step))
+        .get(&(builder.idx, libfunc.token_type))
         .ok_or(InvocationError::UnknownVariableData)?;
     let (range_check_expression, gas_counter_expression) = match builder.refs {
         [
@@ -70,6 +71,8 @@ fn build_get_gas(
         ] => statement_id,
         _ => panic!("malformed invocation"),
     };
+
+    // TODO(lior): Multiply requested_count by a dynamic value.
 
     // The code up to the success branch.
     let mut before_success_branch = casm! {
@@ -125,48 +128,6 @@ fn build_get_gas(
             ]
             .into_iter(),
         ]
-        .into_iter(),
-    ))
-}
-
-/// Handles the refund gas invocation.
-fn build_refund_gas(
-    builder: CompiledInvocationBuilder<'_>,
-) -> Result<CompiledInvocation, InvocationError> {
-    let requested_count = builder
-        .program_info
-        .metadata
-        .gas_info
-        .variable_values
-        .get(&(builder.idx, CostTokenType::Step))
-        .ok_or(InvocationError::UnknownVariableData)?;
-    let expression = match builder.refs {
-        [ReferenceValue { expression, .. }] => expression,
-        refs => {
-            return Err(InvocationError::WrongNumberOfArguments {
-                expected: 1,
-                actual: refs.len(),
-            });
-        }
-    };
-    let gas_counter_value = try_extract_matches!(
-        expression
-            .try_unpack_single()
-            .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?,
-        CellExpression::Deref
-    )
-    .ok_or(InvocationError::InvalidReferenceExpressionForArgument)?;
-
-    Ok(builder.build_only_reference_changes(
-        [if *requested_count == 0 {
-            ReferenceExpression::from_cell(CellExpression::Deref(gas_counter_value))
-        } else {
-            ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
-                op: FeltOperator::Add,
-                a: gas_counter_value,
-                b: DerefOrImmediate::Immediate(BigInt::from(*requested_count)),
-            }))
-        }]
         .into_iter(),
     ))
 }

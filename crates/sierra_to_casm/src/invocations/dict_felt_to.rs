@@ -5,7 +5,7 @@ use casm::casm;
 use casm::hints::Hint;
 use casm::instructions::{AddApInstruction, Instruction, InstructionBody};
 use casm::operand::{CellRef, DerefOrImmediate, Register, ResOperand};
-use num_bigint::ToBigInt;
+use num_bigint::BigInt;
 use sierra::extensions::dict_felt_to::DictFeltToConcreteLibFunc;
 use sierra::extensions::felt::FeltOperator;
 use sierra::extensions::ConcreteLibFunc;
@@ -258,7 +258,7 @@ impl ReferenceExpressionView for DictFeltToView {
                     CellExpression::BinOp(BinOpExpression {
                         op: FeltOperator::Add,
                         a: self.end,
-                        b: DerefOrImmediate::Immediate(self.end_offset.to_bigint().unwrap()),
+                        b: DerefOrImmediate::Immediate(BigInt::from(self.end_offset)),
                     }),
                 ],
             }

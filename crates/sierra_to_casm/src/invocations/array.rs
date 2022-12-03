@@ -2,7 +2,7 @@ use casm::ap_change::ApplyApChange;
 use casm::casm;
 use casm::operand::{ap_cell_ref, CellRef, DerefOrImmediate};
 use itertools::chain;
-use num_bigint::ToBigInt;
+use num_bigint::BigInt;
 use sierra::extensions::array::ArrayConcreteLibFunc;
 use sierra::extensions::felt::FeltOperator;
 use sierra::extensions::ConcreteLibFunc;
@@ -285,7 +285,7 @@ impl ReferenceExpressionView for ArrayView {
                     CellExpression::BinOp(BinOpExpression {
                         op: FeltOperator::Add,
                         a: self.end,
-                        b: DerefOrImmediate::Immediate(self.end_offset.to_bigint().unwrap()),
+                        b: DerefOrImmediate::Immediate(BigInt::from(self.end_offset)),
                     }),
                 ],
             }
