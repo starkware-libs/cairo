@@ -55,6 +55,9 @@ func uint128_checked_mul(
     }
 }
 
+impl NonZeroUint128Copy of Copy::<NonZero::<uint128>>;
+impl NonZeroUint128Drop of Drop::<NonZero::<uint128>>;
+
 #[panic_with(1, uint128_as_non_zero)]
 func uint128_checked_as_non_zero(a: uint128) -> Option::<NonZero::<uint128>> nopanic {
     match uint128_jump_nz(a) {
