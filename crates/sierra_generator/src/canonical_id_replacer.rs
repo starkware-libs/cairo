@@ -38,31 +38,6 @@ impl CanonicalReplacer {
 
         Self { type_ids, function_ids, libfunc_ids }
     }
-
-    pub fn apply(&self, program: &sierra::program::Program) -> sierra::program::Program {
-        let mut program = program.clone();
-        for type_declaration in &mut program.type_declarations {
-            type_declaration.id = self.replace_type_id(&type_declaration.id);
-            self.replace_generic_args(&mut type_declaration.long_id.generic_args);
-        }
-
-        for function in &mut program.funcs {
-            function.id = self.replace_function_id(&function.id);
-        }
-
-        for libfunc_declaration in &mut program.libfunc_declarations {
-            libfunc_declaration.id = self.replace_libfunc_id(&libfunc_declaration.id);
-            self.replace_generic_args(&mut libfunc_declaration.long_id.generic_args);
-        }
-
-        for statement in &mut program.statements {
-            if let sierra::program::GenStatement::Invocation(p) = statement {
-                p.libfunc_id = self.replace_libfunc_id(&p.libfunc_id);
-            }
-        }
-
-        program
-    }
 }
 
 impl SierraIdReplacer for CanonicalReplacer {
