@@ -257,7 +257,7 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
             indoc! {"
                 jmp rel 8 if [fp + -3] != 0;
                 [ap + 0] = [fp + -5], ap++;
-                [ap + 0] = [fp + -4] + 10, ap++;
+                [ap + 0] = [fp + -4] + 14, ap++;
                 [ap + 0] = 1, ap++;
                 ret;
 
@@ -265,7 +265,7 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 [fp + -3] = [ap + 0] + 1, ap++;
                 jmp rel 8 if [ap + -1] != 0;
                 [ap + 0] = [fp + -5], ap++;
-                [ap + 0] = [fp + -4] + 8, ap++;
+                [ap + 0] = [fp + -4] + 12, ap++;
                 [ap + 0] = 1, ap++;
                 ret;
 
@@ -279,9 +279,9 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 [ap + 0] = [fp + -4], ap++;
                 [ap + 0] = 1, ap++;
                 // Statement # 27 - Getting gas for the main loop.
-                %{ memory[ap + 0] = 5 < memory[ap + -2] %}
+                %{ memory[ap + 0] = 7 < memory[ap + -2] %}
                 jmp rel 9 if [ap + 0] != 0, ap++;
-                [ap + 0] = [ap + -3] + -5, ap++;
+                [ap + 0] = [ap + -3] + -7, ap++;
                 [ap + 0] = [ap + -1] * -1, ap++;
                 [ap + -1] = [[ap + -6] + 0];
                 jmp rel 19;
@@ -289,16 +289,16 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 // Statement # 28
                 // The main loop - given [b, _, _, n, rc, gb, a, _, _] - adds [n-1, updated_rc, updated_gb, a+b]
                 // Memory cells form is now [b'=a, _, _, n'=n-1, rc'=updated_rc, gb'=updated_gb, a'=a+b]
-                [ap + 0] = [ap + -3] + -6, ap++;
+                [ap + 0] = [ap + -3] + -8, ap++;
                 [ap + -1] = [[ap + -5] + 0];
                 [ap + -6] = [ap + 0] + 1, ap++;
                 [ap + 0] = [ap + -6] + 1, ap++;
-                [ap + -6] = [ap + 0] + 6, ap++;
+                [ap + -6] = [ap + 0] + 8, ap++;
                 [ap + 0] = [ap + -6] + [ap + -12], ap++;
                 jmp rel -19 if [ap + -4] != 0;
                 // Statement # 48 - n == 0, so we can return the latest a.
                 [ap + 0] = [ap + -3], ap++;
-                [ap + 0] = [ap + -3] + 1, ap++;
+                [ap + 0] = [ap + -3] + 5, ap++;
                 [ap + 0] = [ap + -3], ap++;
                 ret;
                 [ap + 0] = [ap + -6] + 1, ap++;
@@ -313,7 +313,7 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 [ap + 0] = 1, ap++;
                 jmp rel 7 if [fp + -3] != 0;
                 [ap + 0] = [fp + -5], ap++;
-                [ap + 0] = [fp + -4] + 3, ap++;
+                [ap + 0] = [fp + -4] + 7, ap++;
                 [ap + 0] = [ap + -3], ap++;
                 ret;
 
@@ -322,24 +322,24 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 jmp rel 7 if [ap + -1] != 0;
                 [ap + 0] = [fp + -5], ap++;
                 // Statement # 12 - n == 1, so we return updated gb and 1.
-                [ap + 0] = [fp + -4] + 1, ap++;
+                [ap + 0] = [fp + -4] + 5, ap++;
                 [ap + 0] = [ap + -4], ap++;
                 ret;
 
                 // Statement # 17 - Get gas for the recursive calls.
-                %{ memory[ap + 0] = 30 < memory[fp + -4] %}
+                %{ memory[ap + 0] = 36 < memory[fp + -4] %}
                 jmp rel 9 if [ap + 0] != 0, ap++;
-                [ap + 0] = [fp + -4] + -30, ap++;
+                [ap + 0] = [fp + -4] + -36, ap++;
                 [ap + 0] = [ap + -1] * -1, ap++;
                 [ap + -1] = [[fp + -5] + 0];
                 jmp rel 26;
-                [ap + 0] = [fp + -4] + -31, ap++;
+                [ap + 0] = [fp + -4] + -37, ap++;
                 [ap + -1] = [[fp + -5] + 0];
 
                 // Statement # 21 - Performing both recursive calculations and returning their sum.
                 ap += 2;
                 [ap + 0] = [fp + -5] + 1, ap++;
-                [fp + -4] = [ap + 0] + 31, ap++;
+                [fp + -4] = [ap + 0] + 37, ap++;
                 [ap + -7] = [fp + 4] + 1;
                 [ap + 0] = [ap + -7], ap++;
                 call rel -39;

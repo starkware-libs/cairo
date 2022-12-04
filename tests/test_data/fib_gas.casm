@@ -1,13 +1,13 @@
-%{ memory[ap + 0] = 22 < memory[fp + -6] %}
+%{ memory[ap + 0] = 24 < memory[fp + -6] %}
 jmp rel 9 if [ap + 0] != 0, ap++;
-[ap + 0] = [fp + -6] + -22, ap++;
+[ap + 0] = [fp + -6] + -24, ap++;
 [ap + 0] = [ap + -1] * -1, ap++;
 [ap + -1] = [[fp + -7] + 0];
 jmp rel 11;
-[ap + 0] = [fp + -6] + -23, ap++;
+[ap + 0] = [fp + -6] + -25, ap++;
 [ap + -1] = [[fp + -7] + 0];
 [ap + 0] = [fp + -7] + 1, ap++;
-[fp + -6] = [ap + 0] + 23, ap++;
+[fp + -6] = [ap + 0] + 25, ap++;
 jmp rel 18;
 %{ memory[ap + 0] = segments.add() %}
 ap += 1;
