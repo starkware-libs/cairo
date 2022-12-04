@@ -1,9 +1,10 @@
+use sierra::extensions::builtin_cost::CostTokenType;
 use sierra::extensions::core::CoreConcreteLibFunc;
 use sierra::program::StatementIdx;
 use utils::collection_arithmetics::{add_maps, sub_maps};
 use utils::ordered_hash_map::OrderedHashMap;
 
-use crate::core_libfunc_cost_base::{core_libfunc_cost_base, CostOperations, CostTokenType};
+use crate::core_libfunc_cost_base::{core_libfunc_cost_base, CostOperations};
 use crate::cost_expr::{CostExpr, Var};
 use crate::generate_equations::StatementFutureCost;
 

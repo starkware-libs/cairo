@@ -1,4 +1,5 @@
 use sierra::extensions::array::ArrayConcreteLibFunc;
+use sierra::extensions::builtin_cost::CostTokenType;
 use sierra::extensions::core::CoreConcreteLibFunc::{
     self, ApTracking, Array, Box, DictFeltTo, Drop, Dup, Enum, Felt, FunctionCall, Gas, Mem,
     Struct, Uint128, UnconditionalJump, UnwrapNonZero,
@@ -17,20 +18,6 @@ use sierra::extensions::mem::MemConcreteLibFunc::{
 };
 use sierra::extensions::strct::StructConcreteLibFunc;
 use sierra::program::Function;
-
-/// Represents different type of costs.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
-pub enum CostTokenType {
-    /// A single Cairo step, or some cost which is equivalent to it.
-    Step,
-    /// One invocation of the pedersen hash function.
-    Pedersen,
-}
-impl CostTokenType {
-    pub fn iter() -> std::slice::Iter<'static, Self> {
-        [CostTokenType::Step, CostTokenType::Pedersen].iter()
-    }
-}
 
 /// The operation required for extracting a libfunc's cost.
 pub trait CostOperations {
