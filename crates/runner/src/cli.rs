@@ -12,6 +12,7 @@ use compiler::db::RootDatabase;
 use compiler::diagnostics::check_and_eprint_diagnostics;
 use compiler::project::setup_project;
 use itertools::chain;
+use sierra::extensions::builtin_cost::CostTokenType;
 use sierra::program::StatementIdx;
 use sierra_gas::calc_gas_info;
 use sierra_gas::gas_info::GasInfo;
@@ -106,8 +107,10 @@ fn create_entry_code(
             }
         } else if ty == &"GasBuiltin".into() {
             if let Some(available_gas) = available_gas {
-                let initial_gas = available_gas
-                    .checked_sub(metadata.gas_info.function_costs[&main_func.id] as usize);
+                // TODO(lior): Handle the other token types.
+                let initial_gas = available_gas.checked_sub(
+                    metadata.gas_info.function_costs[&main_func.id][CostTokenType::Step] as usize,
+                );
                 if let Some(initial_gas) = initial_gas {
                     casm_extend! {ctx,
                         [ap + 0] = initial_gas, ap++;

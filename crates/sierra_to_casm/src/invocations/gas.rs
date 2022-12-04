@@ -3,6 +3,7 @@ use casm::casm;
 use casm::operand::DerefOrImmediate;
 use itertools::chain;
 use num_bigint::ToBigInt;
+use sierra::extensions::builtin_cost::CostTokenType;
 use sierra::extensions::felt::FeltOperator;
 use sierra::extensions::gas::GasConcreteLibFunc;
 use sierra::program::{BranchInfo, BranchTarget};
@@ -34,7 +35,7 @@ fn build_get_gas(
         .metadata
         .gas_info
         .variable_values
-        .get(&builder.idx)
+        .get(&(builder.idx, CostTokenType::Step))
         .ok_or(InvocationError::UnknownVariableData)?;
     let (range_check_expression, gas_counter_expression) = match builder.refs {
         [
@@ -137,7 +138,7 @@ fn build_refund_gas(
         .metadata
         .gas_info
         .variable_values
-        .get(&builder.idx)
+        .get(&(builder.idx, CostTokenType::Step))
         .ok_or(InvocationError::UnknownVariableData)?;
     let expression = match builder.refs {
         [ReferenceValue { expression, .. }] => expression,
