@@ -209,6 +209,10 @@ impl<'a> AddStoreVariableStatements<'a> {
             };
         }
 
+        if self.state().temporary_variables.get(arg).is_some() {
+            self.store_temp_as_local(arg);
+        }
+
         false
     }
 
