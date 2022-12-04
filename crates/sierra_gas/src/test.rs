@@ -19,44 +19,44 @@ fn get_example_program(name: &str) -> Program {
 #[test_case("collatz" =>
             Ok(GasInfo {
                 variable_values: [
-                    ((StatementIdx(7), CostTokenType::Step), 35),
+                    ((StatementIdx(7), CostTokenType::Step), 37),
                     ((StatementIdx(19), CostTokenType::Step), 3),
                     ((StatementIdx(25), CostTokenType::Step), 0),
                     ((StatementIdx(38), CostTokenType::Step), 0),
-                    ((StatementIdx(49), CostTokenType::Step), 1),
+                    ((StatementIdx(49), CostTokenType::Step), 5),
                 ].into_iter().collect(),
                 function_costs: [(
                     "Collatz".into(),
-                    [(CostTokenType::Step, 14)].into_iter().collect()
+                    [(CostTokenType::Step, 18)].into_iter().collect()
                 )].into_iter().collect()
             }))]
 #[test_case("fib_jumps" =>
             Ok(GasInfo {
                 variable_values: [
-                    ((StatementIdx(3), CostTokenType::Step), 10),
-                    ((StatementIdx(13), CostTokenType::Step), 8),
-                    ((StatementIdx(27), CostTokenType::Step), 6),
-                    ((StatementIdx(40), CostTokenType::Step), 1),
+                    ((StatementIdx(3), CostTokenType::Step), 14),
+                    ((StatementIdx(13), CostTokenType::Step), 12),
+                    ((StatementIdx(27), CostTokenType::Step), 8),
+                    ((StatementIdx(40), CostTokenType::Step), 5),
                     ((StatementIdx(49), CostTokenType::Step), 0),
                 ].into_iter().collect(),
                 function_costs: [(
                     "Fibonacci".into(),
-                    [(CostTokenType::Step, 14)].into_iter().collect()
+                    [(CostTokenType::Step, 18)].into_iter().collect()
                 )].into_iter().collect()
             });
             "fib_jumps")]
 #[test_case("fib_recursive" =>
             Ok(GasInfo {
                 variable_values: [
-                    ((StatementIdx(3), CostTokenType::Step), 3),
-                    ((StatementIdx(12), CostTokenType::Step), 1),
-                    ((StatementIdx(19), CostTokenType::Step), 31),
+                    ((StatementIdx(3), CostTokenType::Step), 7),
+                    ((StatementIdx(12), CostTokenType::Step), 5),
+                    ((StatementIdx(19), CostTokenType::Step), 37),
                     ((StatementIdx(35), CostTokenType::Step), 0),
                     ((StatementIdx(42), CostTokenType::Step), 0),
                 ].into_iter().collect(),
                 function_costs: [(
                     "Fibonacci".into(),
-                    [(CostTokenType::Step, 8)].into_iter().collect()
+                    [(CostTokenType::Step, 12)].into_iter().collect()
                 )].into_iter().collect()
             }))]
 fn solve_gas(path: &str) -> Result<GasInfo, CostError> {
