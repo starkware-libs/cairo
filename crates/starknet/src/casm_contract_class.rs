@@ -75,6 +75,7 @@ impl CasmContractClass {
             Ok::<CasmContractEntryPoint, StarknetSierraCompilationError>(CasmContractEntryPoint {
                 selector: contract_entry_point.selector,
                 offset: code_offset,
+                builtins: vec![],
             })
         };
 
@@ -105,6 +106,8 @@ pub struct CasmContractEntryPoint {
     pub selector: BigUint,
     /// The offset of the instruction that should be called within the contract bytecode.
     pub offset: usize,
+    // list of builtins.
+    pub builtins: Vec<BigUint>,
 }
 
 #[derive(Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
