@@ -17,7 +17,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::Environment;
 use crate::resolve_path::{ResolvedLookback, Resolver};
-use crate::{semantic, GenericArgumentId, SemanticDiagnostic};
+use crate::{semantic, GenericArgumentId, Mutability, SemanticDiagnostic};
 
 #[cfg(test)]
 #[path = "trt_test.rs"]
@@ -200,6 +200,15 @@ pub fn priv_trait_function_data(
         &mut environment,
     );
 
+    validate_trait_function_signature(
+        db,
+        &mut diagnostics,
+        trait_id,
+        trait_function_id,
+        &signature,
+        &signature_syntax,
+    );
+
     let attributes = ast_attributes_to_semantic(syntax_db, function_syntax.attributes(syntax_db));
     let resolved_lookback = Arc::new(resolver.lookback);
 
@@ -210,4 +219,26 @@ pub fn priv_trait_function_data(
         attributes,
         resolved_lookback,
     })
+}
+
+fn validate_trait_function_signature(
+    db: &dyn SemanticGroup,
+    diagnostics: &mut SemanticDiagnostics,
+    trait_id: TraitId,
+    function_id: TraitFunctionId,
+    sig: &semantic::Signature,
+    sig_syntax: &ast::FunctionSignature,
+) {
+    let syntax_db = db.upcast();
+    for (idx, param) in sig.params.iter().enumerate() {
+        if param.mutability == Mutability::Mutable {
+            diagnostics.report(
+                &sig_syntax.parameters(syntax_db).elements(syntax_db)[idx].modifiers(syntax_db),
+                crate::diagnostic::SemanticDiagnosticKind::TraitParamMutable {
+                    trait_id,
+                    function_id,
+                },
+            );
+        }
+    }
 }

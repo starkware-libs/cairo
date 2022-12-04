@@ -6,7 +6,7 @@ use defs::db::PluginDiagnostic;
 use defs::diagnostic_utils::StableLocation;
 use defs::ids::{
     EnumId, GenericFunctionId, ImplFunctionId, ImplId, ModuleFileId, StructId,
-    TopLevelLanguageElementId, TraitId,
+    TopLevelLanguageElementId, TraitFunctionId, TraitId,
 };
 use diagnostics::{DiagnosticEntry, DiagnosticLocation, Diagnostics, DiagnosticsBuilder};
 use smol_str::SmolStr;
@@ -149,6 +149,14 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     function_name,
                     expected_ty.format(db),
                     actual_ty.format(db)
+                )
+            }
+            SemanticDiagnosticKind::TraitParamMutable { trait_id, function_id } => {
+                let defs_db = db.upcast();
+                format!(
+                    "Parameter of trait function `{}::{}` can't be defined as mutable.",
+                    trait_id.name(defs_db),
+                    function_id.name(defs_db),
                 )
             }
             SemanticDiagnosticKind::WrongArgumentType { expected_ty, actual_ty } => {
@@ -380,6 +388,10 @@ pub enum SemanticDiagnosticKind {
         trait_id: TraitId,
         expected_ty: semantic::TypeId,
         actual_ty: semantic::TypeId,
+    },
+    TraitParamMutable {
+        trait_id: TraitId,
+        function_id: TraitFunctionId,
     },
     WrongArgumentType {
         expected_ty: semantic::TypeId,
