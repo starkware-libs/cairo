@@ -5,6 +5,7 @@ mod test;
 use std::collections::HashMap;
 
 use sierra::ids::{ConcreteLibFuncId, ConcreteTypeId, FunctionId};
+use sierra::program::{FunctionSignature, Param};
 
 use crate::replace_ids::SierraIdReplacer;
 
@@ -48,6 +49,27 @@ impl CanonicalReplacer {
 
         for function in &mut program.funcs {
             function.id = self.replace_function_id(&function.id);
+            function.signature = FunctionSignature {
+                param_types: function
+                    .signature
+                    .param_types
+                    .iter()
+                    .map(|type_id| self.replace_type_id(type_id))
+                    .collect(),
+
+                ret_types: function
+                    .signature
+                    .ret_types
+                    .iter()
+                    .map(|type_id| self.replace_type_id(type_id))
+                    .collect(),
+            };
+
+            function.params = function
+                .params
+                .iter()
+                .map(|param| Param { id: param.id.clone(), ty: self.replace_type_id(&param.ty) })
+                .collect();
         }
 
         for libfunc_declaration in &mut program.libfunc_declarations {
