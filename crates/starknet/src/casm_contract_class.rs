@@ -1,7 +1,8 @@
 use std::collections::HashMap;
 
-use num_bigint::{BigInt, BigUint};
-use num_traits::Num;
+use num_bigint::BigUint;
+use num_integer::Integer;
+use num_traits::{Num, Signed};
 use serde::ser::Serializer;
 use serde::{Deserialize, Deserializer, Serialize};
 use sierra::ids::FunctionId;
@@ -26,7 +27,7 @@ pub enum StarknetSierraCompilationError {
 /// Represents a contract in the StarkNet network.
 #[derive(Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CasmContractClass {
-    pub bytecode: Vec<BigInt>,
+    pub bytecode: Vec<BigUint>,
     pub hints: Vec<(usize, Vec<String>)>,
     pub entry_points_by_type: CasmContractEntryPoints,
 }
@@ -35,6 +36,12 @@ impl CasmContractClass {
     pub fn from_contract_class(
         contract_class: ContractClass,
     ) -> Result<Self, StarknetSierraCompilationError> {
+        let prime = BigUint::from_str_radix(
+            "800000000000011000000000000000000000000000000000000000000000001",
+            16,
+        )
+        .unwrap();
+
         let program = contract_class.sierra_program;
         let gas_info = calc_gas_info(&program)?;
 
@@ -54,7 +61,10 @@ impl CasmContractClass {
                     instruction.hints.iter().map(|hint| hint.to_string()).collect(),
                 ))
             }
-            bytecode.extend(instruction.assemble().encode());
+            bytecode.extend(instruction.assemble().encode().iter().map(|big_int| {
+                let (_q, reminder) = big_int.magnitude().div_rem(&prime);
+                if big_int.is_negative() { &prime - reminder } else { reminder }
+            }))
         }
 
         // A mapping from func_id to statement_id
