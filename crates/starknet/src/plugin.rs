@@ -5,6 +5,10 @@ use syntax::node::{ast, Terminal, TypedSyntaxNode};
 
 static CONTRACT_IMPL_ATTR: &str = "ContractImpl";
 
+#[cfg(test)]
+#[path = "plugin_test.rs"]
+mod test;
+
 #[derive(Debug)]
 pub struct StarkNetPlugin {}
 
