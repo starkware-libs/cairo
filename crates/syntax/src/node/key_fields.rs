@@ -54,6 +54,7 @@ pub fn get_key_fields(kind: SyntaxKind, children: Vec<GreenId>) -> Vec<GreenId> 
         SyntaxKind::ModifierList => vec![],
         SyntaxKind::ParamList => vec![],
         SyntaxKind::ImplicitsClause => vec![],
+        SyntaxKind::ImplicitsList => vec![],
         SyntaxKind::OptionImplicitsClauseEmpty => vec![],
         SyntaxKind::OptionTerminalNoPanicEmpty => vec![],
         SyntaxKind::FunctionSignature => vec![],

@@ -1,4 +1,4 @@
-//! > Module name - underscore not supported
+//! > Module name - underscore not supported.
 
 //! > test_function_name
 get_diagnostics
@@ -14,7 +14,7 @@ mod _;
 
 //! > ==========================================================================
 
-//! > Struct name - underscore not supported
+//! > Struct name - underscore not supported.
 
 //! > test_function_name
 get_diagnostics
@@ -30,7 +30,7 @@ struct _ {}
 
 //! > ==========================================================================
 
-//! > Enum name - underscore not supported
+//! > Enum name - underscore not supported.
 
 //! > test_function_name
 get_diagnostics
@@ -46,7 +46,7 @@ enum _ {}
 
 //! > ==========================================================================
 
-//! > Extern function name - underscore not supported
+//! > Extern function name - underscore not supported.
 
 //! > test_function_name
 get_diagnostics
@@ -62,7 +62,7 @@ extern func _() nopanic;
 
 //! > ==========================================================================
 
-//! > Extern type name - underscore not supported
+//! > Extern type name - underscore not supported.
 
 //! > test_function_name
 get_diagnostics
@@ -78,7 +78,7 @@ extern type _;
 
 //! > ==========================================================================
 
-//! > Attribute name - underscore not supported
+//! > Attribute name - underscore not supported.
 
 //! > test_function_name
 get_diagnostics
@@ -95,7 +95,7 @@ error: An underscore ('_') is not allowed as an identifier in this context.
 
 //! > ==========================================================================
 
-//! > Free function name - underscore not supported
+//! > Free function name - underscore not supported.
 
 //! > test_function_name
 get_diagnostics
@@ -111,7 +111,7 @@ func _() {}
 
 //! > ==========================================================================
 
-//! > Trait name - underscore not supported
+//! > Trait name - underscore not supported.
 
 //! > test_function_name
 get_diagnostics
@@ -127,7 +127,7 @@ trait _ {}
 
 //! > ==========================================================================
 
-//! > Trait function name - underscore not supported
+//! > Trait function name - underscore not supported.
 
 //! > test_function_name
 get_diagnostics
@@ -145,7 +145,7 @@ error: An underscore ('_') is not allowed as an identifier in this context.
 
 //! > ==========================================================================
 
-//! > Impl name - underscore not supported
+//! > Impl name - underscore not supported.
 
 //! > test_function_name
 get_diagnostics
@@ -161,7 +161,7 @@ impl _ of MyTrait {}
 
 //! > ==========================================================================
 
-//! > Struct c'tor single argument - underscore not supported
+//! > Struct c'tor single argument - underscore not supported.
 
 //! > test_function_name
 get_diagnostics
@@ -179,7 +179,7 @@ error: An underscore ('_') is not allowed as an identifier in this context.
 
 //! > ==========================================================================
 
-//! > Pattern with modifiers - underscore not supported
+//! > Pattern with modifiers - underscore not supported.
 
 //! > test_function_name
 get_diagnostics
@@ -197,7 +197,7 @@ error: An underscore ('_') is not allowed as an identifier in this context.
 
 //! > ==========================================================================
 
-//! > Pattern's struct parameter - underscore not supported
+//! > Pattern's struct parameter - underscore not supported.
 
 //! > test_function_name
 get_diagnostics
@@ -215,7 +215,7 @@ error: An underscore ('_') is not allowed as an identifier in this context.
 
 //! > ==========================================================================
 
-//! > Param name with modifiers - underscore not supported
+//! > Param name with modifiers - underscore not supported.
 
 //! > test_function_name
 get_diagnostics
@@ -243,7 +243,7 @@ func f(_: felt) {}
 
 //! > ==========================================================================
 
-//! > Struct member name - underscore not supported
+//! > Struct member name - underscore not supported.
 
 //! > test_function_name
 get_diagnostics
@@ -261,7 +261,7 @@ error: An underscore ('_') is not allowed as an identifier in this context.
 
 //! > ==========================================================================
 
-//! > Path segment - underscore not supported
+//! > Path segment - underscore not supported.
 
 //! > test_function_name
 get_diagnostics
@@ -277,7 +277,7 @@ use _::foo;
 
 //! > ==========================================================================
 
-//! > Generic parameter - underscore not supported
+//! > Generic parameter - underscore not supported.
 
 //! > test_function_name
 get_diagnostics
@@ -290,3 +290,19 @@ error: An underscore ('_') is not allowed as an identifier in this context.
  --> dummy_file.cairo:1:10
 struct A<_> {}
          ^
+
+//! > ==========================================================================
+
+//! > Implicit - underscore not supported.
+
+//! > test_function_name
+get_diagnostics
+
+//! > cairo_code
+func foo() implicits(_) {}
+
+//! > expected_diagnostics
+error: An underscore ('_') is not allowed as an identifier in this context.
+ --> dummy_file.cairo:1:22
+func foo() implicits(_) {}
+                     ^

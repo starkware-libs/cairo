@@ -79,7 +79,7 @@ fn set_file_content(db: &mut DatabaseForTesting, path: &str, content: &str) {
     vec![Arc::new(PanicablePlugin{})],
     indoc! {"
         #[panic_with(1, foo_improved)]
-        extern func foo(a: felt, b: other) -> Option::<()> implicits (rc: RangeCheck, gb: GasBuiltin) nopanic;
+        extern func foo(a: felt, b: other) -> Option::<()> implicits(RangeCheck, GasBuiltin) nopanic;
 
         #[panic_with(2, bar_changed)]
         extern func bar() -> Option::<felt> nopanic;
