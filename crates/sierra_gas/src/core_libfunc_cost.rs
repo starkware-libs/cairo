@@ -27,10 +27,10 @@ impl CostOperations for Ops<'_> {
         self.gas_info.function_costs.get(&function.id).cloned()
     }
 
-    fn statement_var_cost(&self) -> Self::CostType {
+    fn statement_var_cost(&self, token_type: CostTokenType) -> Self::CostType {
         Some(OrderedHashMap::from_iter([(
-            CostTokenType::Step,
-            *self.gas_info.variable_values.get(&(self.idx, CostTokenType::Step))?,
+            token_type,
+            *self.gas_info.variable_values.get(&(self.idx, token_type))?,
         )]))
     }
 
