@@ -26,7 +26,7 @@ pub enum StarknetSierraCompilationError {
 /// Represents a contract in the StarkNet network.
 #[derive(Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CasmContractClass {
-    pub bytecode: Vec<BigInt>,
+    pub bytecode: Vec<BigUint>,
     pub hints: Vec<(usize, Vec<String>)>,
     pub entry_points_by_type: CasmContractEntryPoints,
 }
@@ -35,6 +35,12 @@ impl CasmContractClass {
     pub fn from_contract_class(
         contract_class: ContractClass,
     ) -> Result<Self, StarknetSierraCompilationError> {
+        let prime = BigInt::from_str_radix(
+            "800000000000011000000000000000000000000000000000000000000000001",
+            16,
+        )
+        .unwrap();
+
         let program = contract_class.sierra_program;
         let gas_info = calc_gas_info(&program)?;
 
@@ -54,7 +60,11 @@ impl CasmContractClass {
                     instruction.hints.iter().map(|hint| hint.to_string()).collect(),
                 ))
             }
-            bytecode.extend(instruction.assemble().encode());
+            bytecode.extend(instruction.assemble().encode().iter().map(|big_int| {
+                let res = big_int % &prime;
+                assert_ne!(res.sign(), num_bigint::Sign::Minus);
+                res.magnitude().clone()
+            }));
         }
 
         // A mapping from func_id to statement_id
