@@ -115,12 +115,16 @@ impl<'a> Lexer<'a> {
             if self.peek() == Some('x') {
                 self.take();
                 self.take_while(|c| c.is_ascii_hexdigit());
-                return TokenKind::LiteralNumber;
             }
         }
 
         // The token does not start with '0x'. Parse the token as a decimal number.
         self.take_while(|c| c.is_ascii_digit());
+
+        // Parse _type suffix.
+        if self.peek() == Some('_') {
+            self.take_while(|c| c.is_ascii_alphanumeric() || c == '_');
+        }
         TokenKind::LiteralNumber
     }
 
