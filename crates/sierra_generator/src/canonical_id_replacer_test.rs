@@ -3,6 +3,7 @@ use pretty_assertions::assert_eq;
 use sierra::ProgramParser;
 
 use super::CanonicalReplacer;
+use crate::replace_ids::SierraIdReplacer;
 
 #[test]
 fn test_replacer() {
@@ -62,10 +63,10 @@ fn test_replacer() {
             return([7], [8], [4]);
             [0]() -> ();
 
-            [0]@0([1]: felt, [2]: felt) -> (felt, felt, felt);
-            [1]@10([1]: felt, [2]: felt) -> (felt, felt);
-            [2]@26([1]: felt) -> (felt);
-            [3]@31([1]: felt) -> (felt);
+            [0]@0([1]: [0], [2]: [0]) -> ([0], [0], [0]);
+            [1]@10([1]: [0], [2]: [0]) -> ([0], [0]);
+            [2]@26([1]: [0]) -> ([0]);
+            [3]@31([1]: [0]) -> ([0]);
         "};
 
     let program = ProgramParser::new().parse(input).unwrap();
