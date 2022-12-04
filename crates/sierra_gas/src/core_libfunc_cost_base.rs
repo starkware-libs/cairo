@@ -1,8 +1,8 @@
 use sierra::extensions::array::ArrayConcreteLibFunc;
-use sierra::extensions::builtin_cost::CostTokenType;
+use sierra::extensions::builtin_cost::{BuiltinCostConcreteLibFunc, CostTokenType};
 use sierra::extensions::core::CoreConcreteLibFunc::{
-    self, ApTracking, Array, Box, DictFeltTo, Drop, Dup, Enum, Felt, FunctionCall, Gas, Mem,
-    Struct, Uint128, UnconditionalJump, UnwrapNonZero,
+    self, ApTracking, Array, Box, BuiltinCost, DictFeltTo, Drop, Dup, Enum, Felt, FunctionCall,
+    Gas, Mem, Pedersen, Struct, Uint128, UnconditionalJump, UnwrapNonZero,
 };
 use sierra::extensions::dict_felt_to::DictFeltToConcreteLibFunc;
 use sierra::extensions::enm::EnumConcreteLibFunc;
@@ -94,8 +94,14 @@ pub fn core_libfunc_cost_base<Ops: CostOperations>(
             // TODO(Gil): add the cost to new/read/write once the casm is added.
             vec![ops.const_cost(0)]
         }
-        CoreConcreteLibFunc::Pedersen(_) => {
+        Pedersen(_) => {
             vec![ops.add(ops.const_cost(2), ops.const_cost_token(1, CostTokenType::Pedersen))]
+        }
+        BuiltinCost(BuiltinCostConcreteLibFunc::BuiltinGetGas(libfunc)) => {
+            vec![
+                ops.sub(ops.const_cost(3), ops.statement_var_cost(libfunc.token_type)),
+                ops.const_cost(5),
+            ]
         }
     }
 }
