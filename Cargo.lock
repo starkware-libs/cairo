@@ -731,6 +731,8 @@ dependencies = [
  "anyhow",
  "clap 4.0.26",
  "colored",
+ "db_utils",
+ "diagnostics",
  "diffy",
  "filesystem",
  "itertools",
