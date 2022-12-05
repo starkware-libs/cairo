@@ -58,8 +58,7 @@ define_libfunc_hierarchy! {
         New(ArrayNewLibFunc),
         Append(ArrayAppendLibFunc),
         At(ArrayAtLibFunc),
-        // TODO(orizi): Add length after libfunc result unpacking is supported.
-        // TODO(orizi): Add access after enums are supported.
+        Len(ArrayLenLibFunc),
     }, ArrayConcreteLibFunc
 }
 
@@ -81,6 +80,36 @@ impl SignatureOnlyGenericLibFunc for ArrayNewLibFunc {
                 ty: context.get_wrapped_concrete_type(ArrayType::id(), ty)?,
                 ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
             }],
+            SierraApChange::Known(1),
+        ))
+    }
+}
+
+/// LibFunc for getting the length of the array.
+#[derive(Default)]
+pub struct ArrayLenLibFunc {}
+impl SignatureOnlyGenericLibFunc for ArrayLenLibFunc {
+    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("array_len");
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<LibFuncSignature, SpecializationError> {
+        let ty = as_single_type(args)?;
+        let arr_type = context.get_wrapped_concrete_type(ArrayType::id(), ty)?;
+        Ok(LibFuncSignature::new_non_branch(
+            vec![arr_type.clone()],
+            vec![
+                OutputVarInfo {
+                    ty: arr_type,
+                    ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+                },
+                OutputVarInfo {
+                    ty: context.get_concrete_type(Uint128Type::id(), &[])?,
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                },
+            ],
             SierraApChange::Known(1),
         ))
     }
