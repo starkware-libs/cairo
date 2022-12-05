@@ -24,6 +24,7 @@ members = [
     "crates/starknet",
     "crates/syntax",
     "crates/syntax_codegen",
+    "crates/test_runner",
     "tests",
 ]
 
