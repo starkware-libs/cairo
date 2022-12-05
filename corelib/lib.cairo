@@ -69,7 +69,7 @@ impl NonZeroFeltDrop of Drop::<NonZero::<felt>>;
 extern func felt_div(a: felt, b: NonZero::<felt>) -> felt nopanic;
 
 // TODO(orizi): Change to extern when added.
-func felt_eq(a: felt, b: felt) -> bool {
+func felt_eq(a: felt, b: felt) -> bool nopanic {
     match a - b {
         0 => bool::True(()),
         _ => bool::False(()),
@@ -141,6 +141,7 @@ use integer::uint128_jump_nz;
 use integer::uint256;
 use integer::uint256_add;
 use integer::uint256_sub;
+use integer::uint256_mul;
 use integer::uint256_eq;
 
 // Gas.
