@@ -165,6 +165,10 @@ func uint128_eq(a: uint128, b: uint128) -> bool implicits() nopanic {
     uint128_to_felt(a) == uint128_to_felt(b)
 }
 
+func uint128_ne(a: uint128, b: uint128) -> bool implicits() nopanic {
+    !(a == b)
+}
+
 extern func uint128_jump_nz(a: uint128) -> JumpNzResult::<uint128> implicits() nopanic;
 
 #[derive(Copy, Drop)]
@@ -216,7 +220,7 @@ func uint256_overflow_mul(a: uint256, b: uint256) -> (uint256, bool) nopanic {
     let (high, overflow) = match uint128_overflow_add(high1, high2) {
         Result::Ok(high) => (
             high,
-            !(overflow_value1 == u0) | !(overflow_value2 == u0) | (a.high > u0 & b.high > u0)
+            overflow_value1 != u0 | overflow_value2 != u0 | (a.high > u0 & b.high > u0)
         ),
         Result::Err(high) => (high, true),
     };
@@ -268,4 +272,8 @@ func uint256_checked_mul(
 
 func uint256_eq(a: uint256, b: uint256) -> bool implicits() {
     a.low == b.low & a.high == b.high
+}
+
+func uint256_ne(a: uint256, b: uint256) -> bool implicits() {
+    !(a == b)
 }

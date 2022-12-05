@@ -46,6 +46,9 @@ func bool_eq(a: bool, b: bool) -> bool implicits() nopanic {
         bool::True(x) => b,
     }
 }
+func bool_ne(a: bool, b: bool) -> bool implicits() nopanic {
+    !(a == b)
+}
 
 extern type RangeCheck;
 
@@ -74,6 +77,9 @@ func felt_eq(a: felt, b: felt) -> bool nopanic {
         0 => bool::True(()),
         _ => bool::False(()),
     }
+}
+func felt_ne(a: felt, b: felt) -> bool nopanic {
+    !(a == b)
 }
 
 // TODO(orizi): Change to extern when added.
@@ -137,12 +143,14 @@ use integer::uint128_le;
 use integer::uint128_gt;
 use integer::uint128_ge;
 use integer::uint128_eq;
+use integer::uint128_ne;
 use integer::uint128_jump_nz;
 use integer::uint256;
 use integer::uint256_add;
 use integer::uint256_sub;
 use integer::uint256_mul;
 use integer::uint256_eq;
+use integer::uint256_ne;
 
 // Gas.
 mod gas;
