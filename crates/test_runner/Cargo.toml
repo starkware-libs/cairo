@@ -16,6 +16,7 @@ filesystem = { path = "../filesystem" }
 itertools.workspace = true
 num-bigint.workspace = true
 project = { path = "../project" }
+rayon.workspace = true
 runner = { path = "../runner" }
 salsa.workspace = true
 semantic = { path = "../semantic" }

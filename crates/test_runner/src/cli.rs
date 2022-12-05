@@ -1,8 +1,9 @@
 //! Compiles and runs a Cairo program.
 
 use std::path::Path;
+use std::sync::Mutex;
 
-use anyhow::{Context, Ok};
+use anyhow::{bail, Context};
 use clap::Parser;
 use colored::Colorize;
 use compiler::db::RootDatabase;
@@ -11,6 +12,8 @@ use compiler::project::setup_project;
 use debug::DebugWithDb;
 use defs::ids::{FreeFunctionId, GenericFunctionId, ModuleItemId};
 use filesystem::ids::CrateId;
+use itertools::Itertools;
+use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use runner::SierraCasmRunner;
 use semantic::db::SemanticGroup;
 use semantic::{ConcreteFunction, FunctionLongId};
@@ -25,6 +28,13 @@ struct Args {
     /// The file to compile and run.
     #[arg(short, long)]
     path: String,
+}
+
+/// The status of a ran test.
+enum TestStatus {
+    Success,
+    Fail,
+    Ignore,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -43,65 +53,112 @@ fn main() -> anyhow::Result<()> {
         .get_sierra_program_for_functions(all_tests.iter().map(|t| t.func_id).collect())
         .with_context(|| "Compilation failed without any diagnostics.")?;
     let sierra_program = replace_sierra_ids_in_program(db, &sierra_program);
-    let mut fail_count = 0;
-    let mut pass_count = 0;
-    let mut ignore_count = 0;
-    for test in &all_tests {
-        let name = format!(
-            "{:?}",
-            FunctionLongId {
-                function: ConcreteFunction {
-                    generic_function: GenericFunctionId::Free(test.func_id),
-                    generic_args: vec![]
-                }
-            }
-            .debug(db)
+    let named_tests = all_tests
+        .into_iter()
+        .map(|test| {
+            (
+                format!(
+                    "{:?}",
+                    FunctionLongId {
+                        function: ConcreteFunction {
+                            generic_function: GenericFunctionId::Free(test.func_id),
+                            generic_args: vec![]
+                        }
+                    }
+                    .debug(db)
+                ),
+                test,
+            )
+        })
+        .collect_vec();
+    let TestsSummary { passed, failed, ignored } = run_tests(named_tests, sierra_program)?;
+    if failed.is_empty() {
+        println!(
+            "test result: {}. {} passed; {} failed; {} ignored",
+            "ok".bright_green(),
+            passed.len(),
+            failed.len(),
+            ignored.len()
         );
-        print!("{name} - ");
-        if test.ignored {
-            ignore_count += 1;
-            println!("{}", "ignored".bright_yellow());
-            continue;
+        Ok(())
+    } else {
+        println!("failures:");
+        for failure in &failed {
+            println!("   {failure}");
         }
-        let runner = SierraCasmRunner::new(sierra_program.clone(), false)
-            .with_context(|| "Failed setting up runner.")?;
-        let result = runner
-            .run_function(name.as_str(), &[], &None)
-            .with_context(|| "Failed to run the function.")?;
-        match result.value {
-            runner::RunResultValue::Success(_) => match test.expectation {
-                TestExpectation::Success => {
-                    pass_count += 1;
-                    println!("{}", "ok".bright_green())
-                }
-                TestExpectation::Panics => {
-                    fail_count += 1;
-                    println!("{}", "fail".bright_red())
-                }
-            },
-            runner::RunResultValue::Panic(_) => match test.expectation {
-                TestExpectation::Success => {
-                    fail_count += 1;
-                    println!("{}", "fail".bright_red())
-                }
-                TestExpectation::Panics => {
-                    pass_count += 1;
-                    println!("{}", "ok".bright_green())
-                }
-            },
-        }
+        println!();
+        bail!(
+            "test result: {}. {} passed; {} failed; {} ignored",
+            "FAILED".bright_red(),
+            passed.len(),
+            failed.len(),
+            ignored.len()
+        );
     }
-    println!(
-        "{} tests, {} passed, {} failed, {} ignored.",
-        all_tests.len(),
-        pass_count,
-        fail_count,
-        ignore_count
-    );
-    if fail_count > 0 {
-        anyhow::bail!("{fail_count} tests failed!");
-    }
-    Ok(())
+}
+
+/// Summary data of the ran tests.
+struct TestsSummary {
+    passed: Vec<String>,
+    failed: Vec<String>,
+    ignored: Vec<String>,
+}
+
+/// Runs the tests and process the results for a summary.
+fn run_tests(
+    named_tests: Vec<(String, TestConfig)>,
+    sierra_program: sierra::program::Program,
+) -> anyhow::Result<TestsSummary> {
+    println!("running {} tests", named_tests.len());
+    let wrapped_summary =
+        Mutex::new(Ok(TestsSummary { passed: vec![], failed: vec![], ignored: vec![] }));
+    named_tests
+        .into_par_iter()
+        .map(|(name, test)| -> anyhow::Result<(String, TestStatus)> {
+            if test.ignored {
+                return Ok((name, TestStatus::Ignore));
+            }
+            let runner = SierraCasmRunner::new(sierra_program.clone(), false)
+                .with_context(|| "Failed setting up runner.")?;
+            let result = runner
+                .run_function(name.as_str(), &[], &None)
+                .with_context(|| "Failed to run the function.")?;
+            Ok((
+                name,
+                match (result.value, test.expectation) {
+                    (runner::RunResultValue::Success(_), TestExpectation::Success)
+                    | (runner::RunResultValue::Panic(_), TestExpectation::Panics) => {
+                        TestStatus::Success
+                    }
+                    (runner::RunResultValue::Success(_), TestExpectation::Panics)
+                    | (runner::RunResultValue::Panic(_), TestExpectation::Success) => {
+                        TestStatus::Fail
+                    }
+                },
+            ))
+        })
+        .for_each(|r| {
+            let mut wrapped_summary = wrapped_summary.lock().unwrap();
+            if wrapped_summary.is_err() {
+                return;
+            }
+            let (name, status) = match r {
+                Ok((name, status)) => (name, status),
+                Err(err) => {
+                    *wrapped_summary = Err(err);
+                    return;
+                }
+            };
+            let summary = wrapped_summary.as_mut().unwrap();
+            let (res_type, status_str) = match status {
+                TestStatus::Success => (&mut summary.passed, "ok".bright_green()),
+                TestStatus::Fail => (&mut summary.failed, "fail".bright_red()),
+                TestStatus::Ignore => (&mut summary.ignored, "ignored".bright_yellow()),
+            };
+            println!("test {name} ... {status_str}",);
+            res_type.push(name);
+        });
+    wrapped_summary.into_inner().unwrap()
 }
 
 /// Expectation for a result of a test.
