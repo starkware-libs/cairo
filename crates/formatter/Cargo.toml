@@ -11,6 +11,7 @@ path = "src/bin/cli.rs"
 anyhow.workspace = true
 clap.workspace = true
 colored.workspace = true
+diagnostics = { path = "../diagnostics" }
 diffy.workspace = true
 filesystem = { path = "../filesystem" }
 itertools.workspace = true
