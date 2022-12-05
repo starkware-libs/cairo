@@ -144,10 +144,13 @@ impl GenericLibFunc for BuiltinCostGetGasLibFunc {
 
         let gas_builtin_type = context.get_concrete_type(GasBuiltinType::id(), &[])?;
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
+        let builtin_cost_type =
+            context.get_concrete_type(BuiltinCostType::id_from_token_type(self.token_type), &[])?;
         Ok(LibFuncSignature {
             param_signatures: vec![
                 ParamSignature::new(range_check_type.clone()),
                 ParamSignature::new(gas_builtin_type.clone()),
+                ParamSignature::new(builtin_cost_type),
             ],
             branch_signatures: vec![
                 // Success:
