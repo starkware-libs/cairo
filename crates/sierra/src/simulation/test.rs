@@ -165,6 +165,8 @@ fn simulate_branch(
 #[test_case("array_new", vec![type_arg("uint128")], vec![] => Ok(vec![Array(vec![])]); "array_new()")]
 #[test_case("array_append", vec![type_arg("uint128")], vec![Array(vec![]), Uint128(4)] =>
             Ok(vec![Array(vec![Uint128(4)])]); "array_append([], 4)")]
+#[test_case("array_len", vec![type_arg("uint128")], vec![Array(vec![])] =>
+            Ok(vec![Array(vec![]), Uint128(0)]); "array_len([])")]
 #[test_case("uint128_wrapping_add", vec![], vec![RangeCheck, Uint128(2), Uint128(3)] => Ok(vec![RangeCheck, Uint128(5)]);
             "uint128_wrapping_add(2, 3)")]
 #[test_case("uint128_wrapping_sub", vec![], vec![RangeCheck, Uint128(5), Uint128(3)] => Ok(vec![RangeCheck, Uint128(2)]);
