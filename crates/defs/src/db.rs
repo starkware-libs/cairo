@@ -84,6 +84,7 @@ pub trait DefsGroup:
 }
 
 /// Result of plugin code generation.
+#[derive(Default)]
 pub struct PluginResult {
     /// Filename, content.
     pub code: Option<(SmolStr, String)>,

@@ -4,18 +4,38 @@
 test_expand_contract
 
 //! > cairo_code
-trait ITestContract { func test(a: felt) -> felt; }
+trait ITestContract { func test(ref syscall_ptr: SyscallPtr, ref arg: felt, ref num: felt) -> felt; }
 
 #[ContractImpl]
-impl TestContractImpl of ITestContract { func test(a: felt) -> felt {
-    1
-}
+impl TestContractImpl of ITestContract {
+    func test(ref syscall_ptr: SyscallPtr, ref arg: felt, num: felt) -> felt {
+        1
+    }
 }
 
 #[contract(TestContractImpl)]
 struct TestContract { }
 
 //! > generated_cairo_code
-func test(a: felt) -> felt {
+func test(ref syscall_ptr: SyscallPtr, ref arg: felt, num: felt) -> felt {
     1
+}
+func __wrapper_test(ref syscall_ptr: SyscallPtr, data: Array::<felt>) -> Array::<felt> {
+    if array::array_len::<felt>(data) == integer::uint128_from_felt(3) {
+    } else {
+        panic(array::array_new::<felt>());
+    }
+    let mut __arg_arg: felt = match array::array_at::<felt>(data, 0) {
+        Some(x) => x,
+        None(()) => panic(array::array_new::<felt>()),
+    };
+    let __arg_num: felt = match array::array_at::<felt>(data, 1) {
+        Some(x) => x,
+        None(()) => panic(array::array_new::<felt>()),
+    };
+    let res = test(syscall_ptr, __arg_arg, __arg_num);
+    let mut arr = array::array_new::<felt>();
+    array::array_append::<felt>(arr, __arg_arg);
+    array::array_append::<felt>(arr, res);
+    arr
 }

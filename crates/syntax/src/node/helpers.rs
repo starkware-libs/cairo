@@ -1,6 +1,6 @@
 use smol_str::SmolStr;
 
-use super::ast::{self, TerminalIdentifierGreen, TokenIdentifierGreen};
+use super::ast::{self, Modifier, TerminalIdentifierGreen, TokenIdentifierGreen};
 use super::db::SyntaxGroup;
 use super::kind::SyntaxKind;
 use super::Terminal;
@@ -69,5 +69,21 @@ impl GetIdentifier for ast::PathSegment {
     /// Retrieves the text of the segment (without the generic args).
     fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
         self.identifier_ast(db).text(db)
+    }
+}
+impl GetIdentifier for ast::ParamName {
+    fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        match self {
+            ast::ParamName::Underscore(_) => "_".into(),
+            ast::ParamName::Name(name) => name.text(db),
+        }
+    }
+}
+impl GetIdentifier for ast::Modifier {
+    fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
+        match self {
+            Modifier::Ref(r) => r.text(db),
+            Modifier::Mut(m) => m.text(db),
+        }
     }
 }
