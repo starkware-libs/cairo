@@ -2113,6 +2113,8 @@ dependencies = [
  "compiler",
  "defs",
  "env_logger",
+ "formatter",
+ "genco",
  "indoc",
  "itertools",
  "log",
