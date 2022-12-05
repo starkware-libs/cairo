@@ -2019,6 +2019,7 @@ dependencies = [
  "itertools",
  "log",
  "num-bigint",
+ "num-traits 0.2.15",
  "pretty_assertions",
  "sierra",
  "sierra_gas",
