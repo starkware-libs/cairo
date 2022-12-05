@@ -29,6 +29,7 @@ pub fn build(
         ArrayConcreteLibFunc::New(_) => build_array_new(builder),
         ArrayConcreteLibFunc::Append(_) => build_array_append(builder),
         ArrayConcreteLibFunc::At(_) => build_array_at(builder),
+        ArrayConcreteLibFunc::Len(_) => build_array_len(builder),
     }
 }
 
@@ -225,6 +226,29 @@ fn build_array_at(
     }
 }
 
+fn build_array_len(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let array_view = match builder.refs {
+        [ReferenceValue { expression: expr_arr, .. }] => {
+            let concrete_array_type = &builder.libfunc.param_signatures()[0].ty;
+            ArrayView::try_get_view(expr_arr, &builder.program_info, concrete_array_type)
+                .map_err(|_| InvocationError::InvalidReferenceExpressionForArgument)?
+        }
+        refs => {
+            return Err(InvocationError::WrongNumberOfArguments {
+                expected: 1,
+                actual: refs.len(),
+            });
+        }
+    };
+    let len = array_view.end.offset + array_view.end_offset - array_view.start.offset;
+
+    let instructions = casm! { [ap + 0] = len; }.instructions;
+    let output_expressions = [vec![array_view.to_reference_expression()].into_iter()].into_iter();
+    Ok(builder.build(instructions, vec![], output_expressions))
+}
+
 /// A struct representing an actual array value in the Sierra program.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ArrayView {
@@ -236,7 +260,8 @@ pub struct ArrayView {
     pub end: CellRef,
     /// The number of elements appended to the array since the last store. The real end of the
     /// array is in the address \[end\] + end_offset.
-    pub end_offset: u16,
+    /// Never negative.
+    pub end_offset: i16,
 }
 
 impl ReferenceExpressionView for ArrayView {
@@ -253,14 +278,14 @@ impl ReferenceExpressionView for ArrayView {
         let start = try_extract_matches!(expr.cells[0], CellExpression::Deref)
             .ok_or(ReferencesError::InvalidReferenceTypeForArgument)?;
         let (end, end_offset) = match &expr.cells[1] {
-            CellExpression::Deref(op) => (*op, 0u16),
+            CellExpression::Deref(op) => (*op, 0),
             CellExpression::BinOp(binop) => {
                 if binop.op != FeltOperator::Add {
                     return Err(ReferencesError::InvalidReferenceTypeForArgument);
                 }
                 (
                     binop.a,
-                    u16::try_from(
+                    i16::try_from(
                         try_extract_matches!(&binop.b, DerefOrImmediate::Immediate)
                             .ok_or(ReferencesError::InvalidReferenceTypeForArgument)?,
                     )
