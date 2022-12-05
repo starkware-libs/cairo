@@ -3,8 +3,13 @@
 pub mod formatter;
 pub mod node_properties;
 
+use std::sync::Arc;
+
+use diagnostics::DiagnosticsBuilder;
+use filesystem::ids::{FileLongId, VirtualFile};
+use parser::parser::Parser;
 use syntax::node::db::SyntaxGroup;
-use syntax::node::SyntaxNode;
+use syntax::node::{SyntaxNode, TypedSyntaxNode};
 
 use crate::formatter::Formatter;
 
@@ -19,6 +24,19 @@ pub fn get_formatted_file(
     let mut formatter = Formatter::new(db, config);
     formatter.format_node(syntax_root, false);
     formatter.get_result()
+}
+
+/// formats Cairo code given as a string.
+pub fn format_string(db: &dyn SyntaxGroup, content: String) -> String {
+    let virtual_file = db.upcast().intern_file(FileLongId::Virtual(VirtualFile {
+        parent: None,
+        name: "string_to_format".into(),
+        content: Arc::new(content.clone()),
+    }));
+    let mut diagnostics = DiagnosticsBuilder::new();
+    let syntax_root =
+        Parser::parse_file(db, &mut diagnostics, virtual_file, content.as_str()).as_syntax_node();
+    get_formatted_file(db, &syntax_root, FormatterConfig::default())
 }
 
 #[derive(Clone)]
