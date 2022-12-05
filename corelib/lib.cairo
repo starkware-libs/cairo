@@ -137,8 +137,11 @@ use integer::uint128_le;
 use integer::uint128_gt;
 use integer::uint128_ge;
 use integer::uint128_eq;
-
 use integer::uint128_jump_nz;
+use integer::uint256;
+use integer::uint256_add;
+use integer::uint256_sub;
+use integer::uint256_eq;
 
 // Gas.
 mod gas;
