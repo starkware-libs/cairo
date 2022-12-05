@@ -272,6 +272,7 @@ pub fn core_binary_operator(
         BinaryOperator::Minus(_) => return unsupported_operator("-"),
         BinaryOperator::Mul(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_mul",
         BinaryOperator::Mul(_) if [type1, type2] == [uint128_ty, uint128_ty] => "uint128_mul",
+        BinaryOperator::Mul(_) if [type1, type2] == [uint256_ty, uint256_ty] => "uint256_mul",
         BinaryOperator::Mul(_) => return unsupported_operator("*"),
         BinaryOperator::Div(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_div",
         BinaryOperator::Div(_) if [type1, type2] == [uint128_ty, uint128_ty] => "uint128_div",
