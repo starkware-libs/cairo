@@ -2112,6 +2112,7 @@ dependencies = [
  "smol_str",
  "syntax",
  "test-log",
+ "test_utils",
  "thiserror",
  "utils",
 ]
@@ -2278,6 +2279,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "test_utils"
+version = "0.1.0"
+
+[[package]]
 name = "tests"
 version = "0.1.0"
 dependencies = [
@@ -2299,6 +2304,7 @@ dependencies = [
  "sierra_to_casm",
  "syntax",
  "test-case",
+ "test_utils",
 ]
 
 [[package]]

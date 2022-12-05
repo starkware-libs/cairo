@@ -20,6 +20,7 @@ semantic = { path = "../crates/semantic", features = ["testing"] }
 sierra_generator = { path = "../crates/sierra_generator", features = ["testing"] }
 sierra_to_casm = { path = "../crates/sierra_to_casm", features = ["testing"] }
 syntax = { path = "../crates/syntax" }
+test_utils = { path = "../crates/test_utils" }
 salsa.workspace = true
 test-case.workspace = true
 

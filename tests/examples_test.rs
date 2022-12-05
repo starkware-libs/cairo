@@ -1,4 +1,3 @@
-use std::fs;
 use std::path::PathBuf;
 
 use casm::run::run_function_return_values;
@@ -12,6 +11,7 @@ use sierra_generator::db::SierraGenGroup;
 use sierra_generator::replace_ids::replace_sierra_ids_in_program;
 use sierra_to_casm::test_utils::build_metadata;
 use test_case::test_case;
+use test_utils::compare_contents_or_fix_with_path;
 
 use crate::common::get_runnable_casm;
 
@@ -36,26 +36,10 @@ fn get_test_data_path(name: &str, test_type: &str) -> PathBuf {
     [env!("CARGO_MANIFEST_DIR"), "test_data", &format!("{name}.{test_type}")].into_iter().collect()
 }
 
-/// Returns the content of the relevant test file.
-fn get_expected_contents(name: &str, test_type: &str) -> String {
-    let path = get_test_data_path(name, test_type);
-    fs::read_to_string(path.clone()).unwrap_or_else(|_| panic!("Could not read file: '{path:?}'"))
-}
-
-/// Overrides the test file data.
-fn set_contents(name: &str, test_type: &str, content: String) {
-    let path = get_test_data_path(name, test_type);
-    fs::write(path.clone(), content).unwrap_or_else(|_| panic!("Could not write file: '{path:?}'"));
-}
-
 /// Compares content to examples content, or overides it if `CAIRO_FIX_TESTS=1`.
 fn compare_contents_or_fix(name: &str, test_type: &str, content: String) {
-    let is_fix_mode = std::env::var("CAIRO_FIX_TESTS").is_ok();
-    if is_fix_mode {
-        set_contents(name, test_type, content);
-    } else {
-        assert_eq!(content, get_expected_contents(name, test_type));
-    }
+    let path = get_test_data_path(name, test_type);
+    compare_contents_or_fix_with_path(&path, content)
 }
 
 /// Compiles the Cairo code for `name` to a Sierra program.
@@ -82,7 +66,6 @@ fn checked_compile_to_sierra(name: &str) -> sierra::program::Program {
 #[test_case("testing")]
 fn cairo_to_sierra(name: &str) {
     compare_contents_or_fix(name, "sierra", checked_compile_to_sierra(name).to_string());
-    assert_eq!(checked_compile_to_sierra(name).to_string(), get_expected_contents(name, "sierra"));
 }
 
 /// Tests lowering from Cairo to casm.
