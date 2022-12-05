@@ -67,6 +67,7 @@ fn generate_panicable_code(
         let Some((err_value, panicable_name)) = try_extract_matches!(attr.args(db), ast::OptionAttributeArgs::AttributeArgs).and_then(
             |args| {
             if let [ast::Expr::Literal(err_value), ast::Expr::Path(name)] = &args.arg_list(db).elements(db)[..] {
+                // TODO(orizi): Once generic user functions are supported, support generic params, e.g. for `array_at<T>`.
                 if let [ast::PathSegment::Simple(segment)] = &name.elements(db)[..] {
                     Some((err_value.text(db), segment.ident(db).text(db)))
                 } else {
