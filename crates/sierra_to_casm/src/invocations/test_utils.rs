@@ -61,6 +61,12 @@ macro_rules! ref_expr_extend {
         );
         $crate::ref_expr_extend!($cells $(, $tok)*)
     };
+    ($cells:ident, [[$a:ident $($op:tt $offset:expr)?] + $offset2:expr] $(, $tok:tt)*) => {
+        $cells.push(
+            $crate::references::CellExpression::DoubleDeref(casm::deref!([$a $($op $offset)?]), $offset2)
+        );
+        $crate::ref_expr_extend!($cells $(, $tok)*)
+    };
     ($cells:ident, & $a:ident $($op:tt $offset:expr)? $(, $tok:tt)*) => {
         $cells.push($crate::references::CellExpression::IntoSingleCellRef(
             casm::deref!([$a $($op $offset)?])
