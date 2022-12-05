@@ -29,6 +29,7 @@ pub fn build(
         ArrayConcreteLibFunc::New(_) => build_array_new(builder),
         ArrayConcreteLibFunc::Append(_) => build_array_append(builder),
         ArrayConcreteLibFunc::At(_) => build_array_at(builder),
+        ArrayConcreteLibFunc::Len(_) => build_array_len(builder),
     }
 }
 
@@ -223,6 +224,13 @@ fn build_array_at(
             Ok(builder.build(instructions, relocations, output_expressions))
         }
     }
+}
+
+fn build_array_len(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    // TODO(yuval)
+    Ok(builder.build(vec![], vec![], vec![vec![].into_iter()].into_iter()))
 }
 
 /// A struct representing an actual array value in the Sierra program.
