@@ -2281,6 +2281,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "test_runner"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "cairo-rs",
+ "casm",
+ "clap 4.0.26",
+ "colored",
+ "compiler",
+ "debug",
+ "defs",
+ "filesystem",
+ "itertools",
+ "num-bigint",
+ "project",
+ "runner",
+ "salsa",
+ "semantic",
+ "sierra",
+ "sierra_generator",
+ "sierra_to_casm",
+ "syntax",
+ "thiserror",
+ "utils",
+]
+
+[[package]]
 name = "tests"
 version = "0.1.0"
 dependencies = [
