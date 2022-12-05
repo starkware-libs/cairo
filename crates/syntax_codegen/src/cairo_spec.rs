@@ -64,6 +64,7 @@ pub fn get_spec() -> Vec<Node> {
             .node_with_explicit_kind("Plus", "TerminalPlus")
             .node_with_explicit_kind("Minus", "TerminalMinus")
             .node_with_explicit_kind("EqEq", "TerminalEqEq")
+            .node_with_explicit_kind("Neq", "TerminalNeq")
             .node_with_explicit_kind("Eq", "TerminalEq")
             // TODO(yuval): not yet implemented in parser.
             .node_with_explicit_kind("And", "TerminalAnd")

@@ -17,6 +17,7 @@ pub fn get_binary_operator_precedence(kind: SyntaxKind) -> Option<usize> {
         SyntaxKind::TerminalMul | SyntaxKind::TerminalDiv | SyntaxKind::TerminalMod => Some(2),
         SyntaxKind::TerminalPlus | SyntaxKind::TerminalMinus => Some(3),
         SyntaxKind::TerminalEqEq
+        | SyntaxKind::TerminalNeq
         | SyntaxKind::TerminalLT
         | SyntaxKind::TerminalGT
         | SyntaxKind::TerminalLE
