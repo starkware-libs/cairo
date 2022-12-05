@@ -1,7 +1,8 @@
 use sierra::extensions::array::ArrayConcreteLibFunc;
+use sierra::extensions::builtin_cost::{BuiltinCostConcreteLibFunc, CostTokenType};
 use sierra::extensions::core::CoreConcreteLibFunc::{
-    self, ApTracking, Array, Box, DictFeltTo, Drop, Dup, Enum, Felt, FunctionCall, Gas, Mem,
-    Struct, Uint128, UnconditionalJump, UnwrapNonZero,
+    self, ApTracking, Array, Box, BuiltinCost, DictFeltTo, Drop, Dup, Enum, Felt, FunctionCall,
+    Gas, Mem, Pedersen, Struct, Uint128, UnconditionalJump, UnwrapNonZero,
 };
 use sierra::extensions::dict_felt_to::DictFeltToConcreteLibFunc;
 use sierra::extensions::enm::EnumConcreteLibFunc;
@@ -18,20 +19,6 @@ use sierra::extensions::mem::MemConcreteLibFunc::{
 use sierra::extensions::strct::StructConcreteLibFunc;
 use sierra::program::Function;
 
-/// Represents different type of costs.
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
-pub enum CostTokenType {
-    /// A single Cairo step, or some cost which is equivalent to it.
-    Step,
-    /// One invocation of the pedersen hash function.
-    Pedersen,
-}
-impl CostTokenType {
-    pub fn iter() -> std::slice::Iter<'static, Self> {
-        [CostTokenType::Step, CostTokenType::Pedersen].iter()
-    }
-}
-
 /// The operation required for extracting a libfunc's cost.
 pub trait CostOperations {
     type CostType: Clone;
@@ -43,7 +30,7 @@ pub trait CostOperations {
     /// Get a cost for the content of a function.
     fn function_cost(&mut self, function: &Function) -> Self::CostType;
     /// Get a cost for a variable for the current statement.
-    fn statement_var_cost(&self) -> Self::CostType;
+    fn statement_var_cost(&self, token_type: CostTokenType) -> Self::CostType;
     /// Adds costs.
     fn add(&self, lhs: Self::CostType, rhs: Self::CostType) -> Self::CostType;
     /// Subtracts costs.
@@ -64,9 +51,19 @@ pub fn core_libfunc_cost_base<Ops: CostOperations>(
             vec![ops.add(ops.const_cost(2), func_content_cost)]
         }
         Gas(GetGas(_)) => {
-            vec![ops.sub(ops.const_cost(1), ops.statement_var_cost()), ops.const_cost(1)]
+            vec![
+                ops.sub(ops.const_cost(3), ops.statement_var_cost(CostTokenType::Step)),
+                ops.const_cost(5),
+            ]
         }
-        Gas(RefundGas(_)) | Gas(BurnGas(_)) => vec![ops.statement_var_cost()],
+        Gas(RefundGas(_)) => vec![ops.statement_var_cost(CostTokenType::Step)],
+        Gas(BurnGas(_)) => {
+            // TODO(lior): Fix BurnGas Sierra->casm code to handle all token types.
+            let cost = CostTokenType::iter()
+                .map(|token_type| ops.statement_var_cost(*token_type))
+                .reduce(|x, y| ops.add(x, y));
+            vec![cost.unwrap()]
+        }
         Array(ArrayConcreteLibFunc::New(_)) => vec![ops.const_cost(1)],
         Array(ArrayConcreteLibFunc::Append(_)) => vec![ops.const_cost(2)],
         Array(ArrayConcreteLibFunc::At(_)) => vec![ops.const_cost(4), ops.const_cost(3)],
@@ -97,8 +94,14 @@ pub fn core_libfunc_cost_base<Ops: CostOperations>(
             // TODO(Gil): add the cost to new/read/write once the casm is added.
             vec![ops.const_cost(0)]
         }
-        CoreConcreteLibFunc::Pedersen(_) => {
+        Pedersen(_) => {
             vec![ops.add(ops.const_cost(2), ops.const_cost_token(1, CostTokenType::Pedersen))]
+        }
+        BuiltinCost(BuiltinCostConcreteLibFunc::BuiltinGetGas(libfunc)) => {
+            vec![
+                ops.sub(ops.const_cost(3), ops.statement_var_cost(libfunc.token_type)),
+                ops.const_cost(5),
+            ]
         }
     }
 }

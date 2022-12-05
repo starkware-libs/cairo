@@ -1,9 +1,10 @@
+use sierra::extensions::builtin_cost::CostTokenType;
 use sierra::extensions::core::CoreConcreteLibFunc;
 use sierra::program::StatementIdx;
 use utils::collection_arithmetics::{add_maps, sub_maps};
 use utils::ordered_hash_map::OrderedHashMap;
 
-use crate::core_libfunc_cost_base::{core_libfunc_cost_base, CostOperations, CostTokenType};
+use crate::core_libfunc_cost_base::{core_libfunc_cost_base, CostOperations};
 use crate::cost_expr::{CostExpr, Var};
 use crate::generate_equations::StatementFutureCost;
 
@@ -29,10 +30,10 @@ impl CostOperations for Ops<'_> {
         self.statement_future_cost.get_future_cost(&function.entry_point).clone()
     }
 
-    fn statement_var_cost(&self) -> Self::CostType {
+    fn statement_var_cost(&self, token_type: CostTokenType) -> Self::CostType {
         Self::CostType::from_iter([(
-            CostTokenType::Step,
-            CostExpr::from_var(Var::LibFuncImplicitGasVariable(self.idx, CostTokenType::Step)),
+            token_type,
+            CostExpr::from_var(Var::LibFuncImplicitGasVariable(self.idx, token_type)),
         )])
     }
 

@@ -1,9 +1,10 @@
+use sierra::extensions::builtin_cost::CostTokenType;
 use sierra::extensions::core::CoreConcreteLibFunc;
 use sierra::program::StatementIdx;
 use utils::collection_arithmetics::{add_maps, sub_maps};
 use utils::ordered_hash_map::OrderedHashMap;
 
-use crate::core_libfunc_cost_base::{core_libfunc_cost_base, CostOperations, CostTokenType};
+use crate::core_libfunc_cost_base::{core_libfunc_cost_base, CostOperations};
 use crate::gas_info::GasInfo;
 
 /// Cost operations for getting `Option<i64>` costs values.
@@ -23,16 +24,13 @@ impl CostOperations for Ops<'_> {
     }
 
     fn function_cost(&mut self, function: &sierra::program::Function) -> Self::CostType {
-        Some(OrderedHashMap::from_iter([(
-            CostTokenType::Step,
-            *self.gas_info.function_costs.get(&function.id)?,
-        )]))
+        self.gas_info.function_costs.get(&function.id).cloned()
     }
 
-    fn statement_var_cost(&self) -> Self::CostType {
+    fn statement_var_cost(&self, token_type: CostTokenType) -> Self::CostType {
         Some(OrderedHashMap::from_iter([(
-            CostTokenType::Step,
-            *self.gas_info.variable_values.get(&self.idx)?,
+            token_type,
+            *self.gas_info.variable_values.get(&(self.idx, token_type))?,
         )]))
     }
 

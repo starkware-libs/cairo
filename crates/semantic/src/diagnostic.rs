@@ -159,6 +159,38 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     function_id.name(defs_db),
                 )
             }
+            SemanticDiagnosticKind::ParamaterShouldBeReference {
+                impl_id,
+                impl_function_id,
+                trait_id,
+            } => {
+                let defs_db = db.upcast();
+                let function_name = impl_function_id.name(defs_db);
+                format!(
+                    "Parameter of impl function {}::{} is incompatible with {}::{}. It should be \
+                     a reference.",
+                    impl_id.name(defs_db),
+                    function_name,
+                    trait_id.name(defs_db),
+                    function_name,
+                )
+            }
+            SemanticDiagnosticKind::ParamaterShouldNotBeReference {
+                impl_id,
+                impl_function_id,
+                trait_id,
+            } => {
+                let defs_db = db.upcast();
+                let function_name = impl_function_id.name(defs_db);
+                format!(
+                    "Parameter of impl function {}::{} is incompatible with {}::{}. It should not \
+                     be a reference.",
+                    impl_id.name(defs_db),
+                    function_name,
+                    trait_id.name(defs_db),
+                    function_name,
+                )
+            }
             SemanticDiagnosticKind::WrongArgumentType { expected_ty, actual_ty } => {
                 format!(
                     r#"Unexpected argument type. Expected: "{}", found: "{}"."#,
@@ -392,6 +424,16 @@ pub enum SemanticDiagnosticKind {
     TraitParamMutable {
         trait_id: TraitId,
         function_id: TraitFunctionId,
+    },
+    ParamaterShouldBeReference {
+        impl_id: ImplId,
+        impl_function_id: ImplFunctionId,
+        trait_id: TraitId,
+    },
+    ParamaterShouldNotBeReference {
+        impl_id: ImplId,
+        impl_function_id: ImplFunctionId,
+        trait_id: TraitId,
     },
     WrongArgumentType {
         expected_ty: semantic::TypeId,

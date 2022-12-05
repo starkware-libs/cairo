@@ -5,12 +5,12 @@ use casm::instructions::{Instruction, InstructionBody};
 use casm::operand::{CellRef, DerefOrImmediate, Register};
 use itertools::zip_eq;
 use num_bigint::BigInt;
+use sierra::extensions::builtin_cost::CostTokenType;
 use sierra::extensions::core::CoreConcreteLibFunc;
 use sierra::extensions::lib_func::{BranchSignature, SierraApChange};
 use sierra::extensions::{ConcreteLibFunc, OutputVarReferenceInfo};
 use sierra::ids::ConcreteTypeId;
 use sierra::program::{BranchInfo, BranchTarget, Invocation, StatementIdx};
-use sierra_gas::CostTokenType;
 use thiserror::Error;
 use utils::extract_matches;
 use {casm, sierra};
@@ -24,6 +24,7 @@ use crate::type_sizes::TypeSizeMap;
 
 mod array;
 mod boxing;
+mod builtin_cost;
 mod dict_felt_to;
 mod enm;
 mod felt;
@@ -243,6 +244,7 @@ pub fn compile_invocation(
         CoreConcreteLibFunc::Struct(libfunc) => strct::build(libfunc, builder),
         CoreConcreteLibFunc::DictFeltTo(libfunc) => dict_felt_to::build(libfunc, builder),
         CoreConcreteLibFunc::Pedersen(libfunc) => pedersen::build(libfunc, builder),
+        CoreConcreteLibFunc::BuiltinCost(libfunc) => builtin_cost::build(libfunc, builder),
     }
 }
 
