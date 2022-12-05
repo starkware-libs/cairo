@@ -170,6 +170,8 @@ fn simulate_branch(
             Ok(vec![Array(vec![Uint128(4)])]); "array_append([], 4)")]
 #[test_case("array_at", vec![type_arg("uint128")], vec![RangeCheck, Array(vec![Uint128(5)]), Uint128(0)]
              => Ok(vec![RangeCheck, Array(vec![Uint128(5)]), Uint128(5)]); "array_at([5], 0)")]
+#[test_case("array_len", vec![type_arg("uint128")], vec![Array(vec![])] =>
+            Ok(vec![Array(vec![]), Uint128(0)]); "array_len([])")]
 #[test_case("uint128_safe_divmod", vec![], vec![RangeCheck, Uint128(32), NonZero(Box::new(Uint128(5)))]
              => Ok(vec![RangeCheck, Uint128(6), Uint128(2)]); "uint128_safe_divmod(32, 5)")]
 #[test_case("uint128_safe_divmod", vec![value_arg(5)], vec![RangeCheck, Uint128(32)]
