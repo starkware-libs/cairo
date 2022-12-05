@@ -24,7 +24,7 @@ pub fn test_expand_contract(
             Some((_path, content)) => content,
             None => continue,
         };
-        generated_items.push(content);
+        generated_items.push(formatter::format_string(db, content));
     }
 
     OrderedHashMap::from([("generated_cairo_code".into(), generated_items.join("\n"))])
