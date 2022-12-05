@@ -153,6 +153,44 @@ func test_uint128_mod_by_0() {
     uint128_from_felt(2) % uint128_from_felt(0);
 }
 
+// TODO(orizi): Remove when uint256 literals are supported.
+func as_uint256(high: felt, low: felt) -> uint256 {
+    uint256 { low: uint128_from_felt(low), high: uint128_from_felt(high) }
+}
+
+// TODO(orizi): Use uint256 literals when supported.
+#[test]
+func test_uint256_operators() {
+    assert(as_uint256(1, 1) + as_uint256(3, 2) == as_uint256(4, 3), 1);
+    assert(
+        as_uint256(1, 170141183460469231731687303715884105728) 
+        + as_uint256(3, 170141183460469231731687303715884105728) == as_uint256(5, 0),
+        1
+    );
+    assert(as_uint256(4, 3) - as_uint256(1, 1) == as_uint256(3, 2), 1);
+    assert(
+        as_uint256(5, 0) 
+        - as_uint256(
+        1,
+        170141183460469231731687303715884105728
+    ) == as_uint256(3, 170141183460469231731687303715884105728),
+        1
+    );
+}
+
+#[test]
+#[should_panic]
+func test_uint256_add_overflow() {
+    as_uint256(170141183460469231731687303715884105728, 1) 
+        + as_uint256(170141183460469231731687303715884105728, 1);
+}
+
+#[test]
+#[should_panic]
+func test_uint256_sub_overflow() {
+    as_uint256(1, 1) - as_uint256(1, 2);
+}
+
 // TODO(orizi): Switch to operators and literals when added.
 func test_array_helper(idx: felt) -> felt {
     let arr = array_new::<felt>();
