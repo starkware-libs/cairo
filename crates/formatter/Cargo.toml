@@ -11,6 +11,7 @@ path = "src/bin/cli.rs"
 anyhow.workspace = true
 clap.workspace = true
 colored.workspace = true
+diagnostics = { path = "../diagnostics" }
 diffy.workspace = true
 filesystem = { path = "../filesystem" }
 itertools.workspace = true
@@ -22,6 +23,7 @@ syntax = { path = "../syntax" }
 utils = { path = "../utils" }
 
 [dev-dependencies]
+db_utils = { path = "../db_utils" }
 pretty_assertions.workspace = true
 test-case.workspace = true
 test-log.workspace = true

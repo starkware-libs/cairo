@@ -1,3 +1,5 @@
+use db_utils::Upcast;
+use filesystem::db::{FilesDatabase, FilesGroup};
 use pretty_assertions::assert_eq;
 use smol_str::SmolStr;
 use test_log::test;
@@ -11,12 +13,17 @@ use super::db::SyntaxDatabase;
 use super::kind::SyntaxKind;
 use super::{SyntaxGroup, SyntaxNode, Terminal, Token};
 
-#[salsa::database(SyntaxDatabase)]
+#[salsa::database(SyntaxDatabase, FilesDatabase)]
 #[derive(Default)]
 pub struct DatabaseForTesting {
     storage: salsa::Storage<DatabaseForTesting>,
 }
 impl salsa::Database for DatabaseForTesting {}
+impl Upcast<dyn FilesGroup> for DatabaseForTesting {
+    fn upcast(&self) -> &(dyn FilesGroup + 'static) {
+        self
+    }
+}
 
 fn traverse(
     db: &dyn SyntaxGroup,
