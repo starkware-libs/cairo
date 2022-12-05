@@ -40,7 +40,7 @@ impl DiagnosticEntry for LoweringDiagnostic {
             LoweringDiagnosticKind::OnlyMatchZeroIsSupported => {
                 "Only match zero (match ... { 0 => ..., _ => ... }) is currently supported.".into()
             }
-            LoweringDiagnosticKind::VariableMoved => "Variable has previously moved.".into(),
+            LoweringDiagnosticKind::VariableMoved => "Variable was previously moved.".into(),
         }
     }
 

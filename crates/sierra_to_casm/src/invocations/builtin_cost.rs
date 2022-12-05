@@ -37,18 +37,20 @@ fn build_builtin_get_gas(
         .variable_values
         .get(&(builder.idx, libfunc.token_type))
         .ok_or(InvocationError::UnknownVariableData)?;
-    let (range_check_expression, gas_counter_expression) = match builder.refs {
-        [
-            ReferenceValue { expression: range_check_expression, .. },
-            ReferenceValue { expression: gas_counter_expression, .. },
-        ] => (range_check_expression, gas_counter_expression),
-        refs => {
-            return Err(InvocationError::WrongNumberOfArguments {
-                expected: 2,
-                actual: refs.len(),
-            });
-        }
-    };
+    let (range_check_expression, gas_counter_expression, _builtin_cost_expression) =
+        match builder.refs {
+            [
+                ReferenceValue { expression: range_check_expression, .. },
+                ReferenceValue { expression: gas_counter_expression, .. },
+                ReferenceValue { expression: builtin_cost_expression, .. },
+            ] => (range_check_expression, gas_counter_expression, builtin_cost_expression),
+            refs => {
+                return Err(InvocationError::WrongNumberOfArguments {
+                    expected: 2,
+                    actual: refs.len(),
+                });
+            }
+        };
     let gas_counter_value = try_extract_matches!(
         gas_counter_expression
             .try_unpack_single()
