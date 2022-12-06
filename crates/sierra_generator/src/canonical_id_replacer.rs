@@ -15,7 +15,11 @@ pub struct CanonicalReplacer {
     libfunc_ids: HashMap<ConcreteLibFuncId, ConcreteLibFuncId>,
 }
 
+/// A replacer that replace the Ids in the program with canonical onces.
+/// The canonical ids are defined by the order of the declaration in the program.
+/// The first type_id is 0, the second type id is 1, etc.
 impl CanonicalReplacer {
+    /// Builds a replacer from a program.
     pub fn from_program(program: &sierra::program::Program) -> Self {
         let mut type_ids = HashMap::default();
 
