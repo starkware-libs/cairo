@@ -1,3 +1,5 @@
+use convert_case::Casing;
+
 use super::gas::GasBuiltinType;
 use super::range_check::RangeCheckType;
 use crate::define_libfunc_hierarchy;
@@ -5,12 +7,13 @@ use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibFuncSignature, OutputVarInfo, ParamSignature,
     SierraApChange, SignatureSpecializationContext,
 };
+use crate::extensions::types::TypeInfo;
 use crate::extensions::{
-    GenericLibFunc, NamedType, OutputVarReferenceInfo, SignatureBasedConcreteLibFunc,
-    SpecializationError,
+    ConcreteType, GenericLibFunc, GenericType, NamedType, OutputVarReferenceInfo,
+    SignatureBasedConcreteLibFunc, SpecializationError,
 };
-use crate::ids::GenericLibFuncId;
-use crate::program::GenericArg;
+use crate::ids::{GenericLibFuncId, GenericTypeId};
+use crate::program::{ConcreteTypeLongId, GenericArg};
 
 /// Represents different type of costs.
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
@@ -33,6 +36,68 @@ impl CostTokenType {
         }
         .into()
     }
+
+    pub fn camel_case_name(&self) -> String {
+        self.name().to_case(convert_case::Case::UpperCamel)
+    }
+}
+
+/// Represents the cost of a single invocation of a builtin.
+pub struct BuiltinCostType {
+    token_type: CostTokenType,
+}
+impl BuiltinCostType {
+    fn id_from_token_type(token_type: CostTokenType) -> GenericTypeId {
+        GenericTypeId::from_string(&format!("{}BuiltinCost", token_type.camel_case_name()))
+    }
+}
+impl GenericType for BuiltinCostType {
+    type Concrete = BuiltinCostConcreteType;
+
+    fn by_id(id: &GenericTypeId) -> Option<Self> {
+        for token_type in CostTokenType::iter() {
+            if *id == Self::id_from_token_type(*token_type) {
+                return Some(Self { token_type: *token_type });
+            }
+        }
+        None
+    }
+
+    fn specialize(
+        &self,
+        _context: &dyn crate::extensions::type_specialization_context::TypeSpecializationContext,
+        args: &[GenericArg],
+    ) -> Result<Self::Concrete, SpecializationError> {
+        if !args.is_empty() {
+            return Err(SpecializationError::WrongNumberOfGenericArgs);
+        }
+
+        Ok(BuiltinCostConcreteType {
+            info: TypeInfo {
+                long_id: ConcreteTypeLongId {
+                    generic_id: Self::id_from_token_type(self.token_type),
+                    generic_args: vec![],
+                },
+                storable: true,
+                droppable: true,
+                duplicatable: true,
+                size: 1,
+            },
+            token_type: self.token_type,
+        })
+    }
+}
+
+pub struct BuiltinCostConcreteType {
+    pub info: TypeInfo,
+    // TODO: is this needed?
+    pub token_type: CostTokenType,
+}
+
+impl ConcreteType for BuiltinCostConcreteType {
+    fn info(&self) -> &TypeInfo {
+        &self.info
+    }
 }
 
 define_libfunc_hierarchy! {
@@ -42,8 +107,6 @@ define_libfunc_hierarchy! {
 }
 
 /// LibFunc for getting gas to be used by a builtin.
-// TODO(lior): Remove allow(dead_code) once `token_type` is used.
-#[allow(dead_code)]
 pub struct BuiltinCostGetGasLibFunc {
     token_type: CostTokenType,
 }
