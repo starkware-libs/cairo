@@ -1,0 +1,13 @@
+[
+  {
+    "type": "function",
+    "name": "test",
+    "inputs": [
+      {
+        "name": "syscall_ptr",
+        "ty": "core::SyscallPtr"
+      }
+    ],
+    "output_ty": "core::felt"
+  }
+]
