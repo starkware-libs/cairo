@@ -191,6 +191,8 @@ fn find_type_specialization(
 #[test_case("array_new", vec![type_arg("uint128")] => Ok(()); "array_new<uint128>")]
 #[test_case("array_append", vec![] => Err(WrongNumberOfGenericArgs); "array_append")]
 #[test_case("array_append", vec![type_arg("uint128")] => Ok(()); "array_append<uint128>")]
+#[test_case("array_at", vec![] => Err(WrongNumberOfGenericArgs); "array_at")]
+#[test_case("array_at", vec![type_arg("uint128")] => Ok(()); "array_at<uint128>")]
 #[test_case("get_gas", vec![value_arg(0)] => Err(WrongNumberOfGenericArgs); "get_gas<0>")]
 #[test_case("get_gas", vec![] => Ok(()); "get_gas")]
 #[test_case("refund_gas", vec![value_arg(0)] => Err(WrongNumberOfGenericArgs); "refund_gas<0>")]
