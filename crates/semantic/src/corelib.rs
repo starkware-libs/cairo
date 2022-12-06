@@ -275,6 +275,7 @@ pub fn core_binary_operator(
         BinaryOperator::Mul(_) if [type1, type2] == [uint128_ty, uint128_ty] => "uint128_mul",
         BinaryOperator::Mul(_) => return unsupported_operator("*"),
         BinaryOperator::Div(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_div",
+        BinaryOperator::Div(_) if [type1, type2] == [uint128_ty, uint128_ty] => "uint128_div",
         BinaryOperator::Div(_) => return unsupported_operator("/"),
         BinaryOperator::EqEq(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_eq",
         BinaryOperator::EqEq(_) if [type1, type2] == [bool_ty, bool_ty] => "bool_eq",

@@ -5,7 +5,6 @@ func run_tests() -> felt {
     bool_tests(test_count);
     felt_tests(test_count);
     uint128_tests(test_count);
-    uint128_divmod_tests(test_count);
     array_tests(test_count);
     test_count
 }
@@ -45,12 +44,15 @@ func felt_tests(ref test_count: felt) {
 }
 
 func uint128_tests(ref test_count: felt) {
+    let u0 = uint128_from_felt(0);
     let u1 = uint128_from_felt(1);
     let u2 = uint128_from_felt(2);
     let u3 = uint128_from_felt(3);
     let u4 = uint128_from_felt(4);
     let u5 = uint128_from_felt(5);
     let u6 = uint128_from_felt(6);
+    let u7 = uint128_from_felt(7);
+    let u8 = uint128_from_felt(8);
     let u9 = uint128_from_felt(9);
     let u231 = uint128_from_felt(231);
     let u1000 = uint128_from_felt(1000);
@@ -59,6 +61,10 @@ func uint128_tests(ref test_count: felt) {
     assert_and_count(test_count, u3 + u6 == u9);
     assert_and_count(test_count, u3 - u1 == u2);
     assert_and_count(test_count, u1231 - u231 == u1000);
+    assert_and_count(test_count, u8 / u2 == u4);
+    assert_and_count(test_count, uint128_mod(u8, u2) == u0);
+    assert_and_count(test_count, u7 / u3 == u2);
+    assert_and_count(test_count, uint128_mod(u7, u3) == u1);
     assert_and_count(test_count, u1 < u4);
     assert_and_count(test_count, u1 <= u4);
     assert_and_count(test_count, !(u4 < u4));
@@ -90,26 +96,6 @@ func array_tests(ref test_count: felt) {
             Option::Some(x) => false,
             Option::None(()) => true,
     });
-}
-
-func nz_u128_from_felt(val: felt) -> NonZero::<uint128> {
-    match uint128_jump_nz(uint128_from_felt(val)) {
-        JumpNzResult::Zero(()) => {
-            let data = array_new::<felt>();
-            array_append::<felt>(data, 7);
-            panic(data)
-        },
-        JumpNzResult::NonZero(x) => x,
-    }
-}
-
-func uint128_divmod_tests(ref test_count: felt) {
-    let (q, r) = uint128_divmod(uint128_from_felt(8), nz_u128_from_felt(2));
-    assert_and_count(test_count, q == uint128_from_felt(4));
-    assert_and_count(test_count, r == uint128_from_felt(0));
-    let (q, r) = uint128_divmod(uint128_from_felt(7), nz_u128_from_felt(3));
-    assert_and_count(test_count, q == uint128_from_felt(2));
-    assert_and_count(test_count, r == uint128_from_felt(1));
 }
 
 func assert_and_count(ref test_count: felt, cond: bool) {
