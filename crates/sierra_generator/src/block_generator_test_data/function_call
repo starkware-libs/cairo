@@ -4,7 +4,7 @@
 block_generator_test
 
 //! > function
-func foo(z: MyStruct) -> () {
+func foo(mut z: MyStruct) -> () {
     let x = bar(1, 2, z);
     bar(x, x + x, z);
 }

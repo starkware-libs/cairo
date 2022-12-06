@@ -8,7 +8,7 @@ func hash_chain(n: felt) -> felt {
         Option::Some(x) => {
         },
         Option::None(x) => {
-            let data = array_new::<felt>();
+            let mut data = array_new::<felt>();
             array_append::<felt>(data, 1);
             panic(data);
         },
@@ -18,7 +18,7 @@ func hash_chain(n: felt) -> felt {
         Option::Some(x) => {
         },
         Option::None(x) => {
-            let data = array_new::<felt>();
+            let mut data = array_new::<felt>();
             array_append::<felt>(data, 1);
             panic(data);
         },

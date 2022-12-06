@@ -286,6 +286,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::InvalidMemberExpression => "Invalid member expression.".into(),
             SemanticDiagnosticKind::InvalidPath => "Invalid path.".into(),
             SemanticDiagnosticKind::RefArgNotAVariable => "ref argument must be a variable.".into(),
+            SemanticDiagnosticKind::RefArgNotMutable => {
+                "ref argument must be a mutable variable.".into()
+            }
             SemanticDiagnosticKind::AssignmentToImmutableVar => {
                 "Cannot assign to an immutable variable.".into()
             }
@@ -493,6 +496,7 @@ pub enum SemanticDiagnosticKind {
         ty: semantic::TypeId,
     },
     RefArgNotAVariable,
+    RefArgNotMutable,
     AssignmentToImmutableVar,
     InvalidLhsForAssignment,
     InvalidMemberExpression,

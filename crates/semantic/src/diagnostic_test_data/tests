@@ -91,7 +91,7 @@ error: Invalid path.
 
 //! > ==========================================================================
 
-//! > Test duplicate 'ref' and bad argument for ref param and .
+//! > Test duplicate 'ref'.
 
 //! > test_function_name
 test_expr_diagnostics
@@ -102,7 +102,8 @@ test_expr_diagnostics
 
 //! > module_code
 func foo(ref ref v: felt) {
-  foo(1);
+  let mut a = 1;
+  foo(a);
 }
 
 //! > function_body
@@ -113,7 +114,51 @@ error: `ref` modifier was specified after another modifier (`ref`). Only a singl
 func foo(ref ref v: felt) {
              ^*^
 
+//! > ==========================================================================
+
+//! > Test bad argument for ref param (not a variable).
+
+//! > test_function_name
+test_expr_diagnostics
+
+//! > expr_code
+{
+}
+
+//! > module_code
+func foo(ref v: felt) {
+  foo(1);
+}
+
+//! > function_body
+
+//! > expected_diagnostics
 error: ref argument must be a variable.
  --> lib.cairo:2:7
   foo(1);
+      ^
+
+//! > ==========================================================================
+
+//! > Test bad argument for ref param (variable not mutable).
+
+//! > test_function_name
+test_expr_diagnostics
+
+//! > expr_code
+{
+}
+
+//! > module_code
+func foo(ref v: felt) {
+  let a = 3;
+  foo(a);
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+error: ref argument must be a mutable variable.
+ --> lib.cairo:3:7
+  foo(a);
       ^
