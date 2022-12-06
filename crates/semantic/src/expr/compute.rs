@@ -1008,9 +1008,14 @@ fn expr_function_call(
         }
 
         if param.mutability == Mutability::Reference {
+            // Verify the argument is a variable.
             let expr_var = try_extract_matches!(&arg, Expr::Var).on_none(|| {
                 ctx.diagnostics.report_by_ptr(arg.stable_ptr().untyped(), RefArgNotAVariable);
             })?;
+            // Verify the variable argument is mutable.
+            if !ctx.semantic_defs[expr_var.var].is_mut() {
+                ctx.diagnostics.report_by_ptr(arg.stable_ptr().untyped(), RefArgNotMutable);
+            }
             ref_args.push(expr_var.var);
         } else {
             args.push(ctx.exprs.alloc(arg));

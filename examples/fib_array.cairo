@@ -3,7 +3,7 @@ func fib(n: felt) -> Array::<felt> {
     fib_inner(1, 1, n, array_new::<felt>())
 }
 
-func fib_inner(a: felt, b: felt, remaining: felt, arr: Array::<felt>) -> Array::<felt> {
+func fib_inner(a: felt, b: felt, remaining: felt, mut arr: Array::<felt>) -> Array::<felt> {
     if remaining == 0 {
         return arr;
     }

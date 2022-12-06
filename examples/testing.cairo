@@ -5,7 +5,7 @@ func run_tests() {
 func assert(cond: bool, err_code: felt) {
     if cond {
     } else {
-        let data = array_new::<felt>();
+        let mut data = array_new::<felt>();
         array_append::<felt>(data, err_code);
         panic(data);
     }

@@ -122,7 +122,7 @@ fn generate_entry_point_wrapper(
 
     // TODO(yuval): change to uint128 literal once it's supported.
     Some(quote! {
-        func $wrapper_name(ref syscall_ptr: SyscallPtr, data: Array::<felt>) -> Array::<felt> {
+        func $wrapper_name(ref syscall_ptr: SyscallPtr, mut data: Array::<felt>) -> Array::<felt> {
             if array::array_len::<felt>(data) != integer::uint128_from_felt($params_len) {
                 // TODO(yuval): add error message.
                 panic(array::array_new::<felt>());
