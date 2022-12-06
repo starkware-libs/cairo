@@ -1,5 +1,6 @@
 use super::ap_tracking::RevokeApTrackingLibFunc;
 use super::array::{ArrayLibFunc, ArrayType};
+use super::boolean::BoolLibFunc;
 use super::branch_align::BranchAlignLibFunc;
 use super::builtin_cost::{BuiltinCostLibFunc, BuiltinCostsType};
 use super::dict_felt_to::{DictFeltToLibFunc, DictFeltToType};
@@ -47,6 +48,7 @@ define_libfunc_hierarchy! {
         ApTracking(RevokeApTrackingLibFunc),
         Array(ArrayLibFunc),
         BranchAlign(BranchAlignLibFunc),
+        Bool(BoolLibFunc),
         Box(BoxLibFunc),
         BuiltinCost(BuiltinCostLibFunc),
         Drop(DropLibFunc),
