@@ -1,6 +1,7 @@
 use std::fs;
 
-use filesystem::db::FilesDatabase;
+use db_utils::Upcast;
+use filesystem::db::{FilesDatabase, FilesGroup};
 use parser::utils::{get_syntax_root_and_diagnostics_from_file, SimpleParserDatabase};
 use pretty_assertions::assert_eq;
 use syntax::node::db::SyntaxDatabase;
@@ -14,6 +15,11 @@ pub struct DatabaseImpl {
     storage: salsa::Storage<DatabaseImpl>,
 }
 impl salsa::Database for DatabaseImpl {}
+impl Upcast<dyn FilesGroup> for DatabaseImpl {
+    fn upcast(&self) -> &(dyn FilesGroup + 'static) {
+        self
+    }
+}
 
 // TODO(Gil): Add tests
 #[test_case("test_data/cairo_files/test1.cairo", "test_data/expected_results/test1.cairo")]

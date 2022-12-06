@@ -31,6 +31,11 @@ impl Upcast<dyn SyntaxGroup> for SimpleParserDatabase {
         self
     }
 }
+impl Upcast<dyn FilesGroup> for SimpleParserDatabase {
+    fn upcast(&self) -> &(dyn FilesGroup + 'static) {
+        self
+    }
+}
 
 /// Reads a cairo file to the db and return the syntax_root and diagnostic of its parsing.
 pub fn get_syntax_root_and_diagnostics_from_file(
