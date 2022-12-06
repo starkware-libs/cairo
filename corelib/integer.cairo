@@ -19,7 +19,7 @@ extern func uint128_overflow_sub(
 ) -> Result::<uint128, uint128> implicits(RangeCheck) nopanic;
 
 // TODO(orizi): This is a helper for `uint128_wide_mul` - remove when becomes extern.
-func uint128_from_felt_or(a: felt, d: uint128) -> uint128 nopanic {
+func uint128_from_felt_or(a: felt, d: uint128) -> uint128 implicits(RangeCheck) nopanic {
     match uint128_try_from_felt(a) {
         Option::Some(x) => x,
         Option::None(x) => d,
@@ -27,11 +27,11 @@ func uint128_from_felt_or(a: felt, d: uint128) -> uint128 nopanic {
 }
 
 // TODO(orizi): This is a helper for `uint128_wide_mul` - remove when becomes extern.
-func uint128_known_u64_mul(a: uint128, b: uint128) -> uint128 nopanic {
+func uint128_known_u64_mul(a: uint128, b: uint128) -> uint128 implicits(RangeCheck) nopanic {
     uint128_from_felt_or(uint128_to_felt(a) * uint128_to_felt(b), a)
 }
 
-func uint128_wrapping_add(a: uint128, b: uint128) -> uint128 nopanic {
+func uint128_wrapping_add(a: uint128, b: uint128) -> uint128 implicits(RangeCheck) nopanic {
     match uint128_overflow_add(a, b) {
         Result::Ok(x) => x,
         Result::Err(x) => x,
@@ -119,7 +119,7 @@ impl NonZeroUint128Copy of Copy::<NonZero::<uint128>>;
 impl NonZeroUint128Drop of Drop::<NonZero::<uint128>>;
 
 #[panic_with(1, uint128_as_non_zero)]
-func uint128_checked_as_non_zero(a: uint128) -> Option::<NonZero::<uint128>> nopanic {
+func uint128_checked_as_non_zero(a: uint128) -> Option::<NonZero::<uint128>> implicits() nopanic {
     match uint128_jump_nz(a) {
         JumpNzResult::Zero(()) => Option::<NonZero::<uint128>>::None(()),
         JumpNzResult::NonZero(x) => Option::<NonZero::<uint128>>::Some(x),
@@ -165,4 +165,75 @@ func uint128_eq(a: uint128, b: uint128) -> bool implicits(RangeCheck) {
     uint128_to_felt(a) == uint128_to_felt(b)
 }
 
-extern func uint128_jump_nz(a: uint128) -> JumpNzResult::<uint128> nopanic;
+extern func uint128_jump_nz(a: uint128) -> JumpNzResult::<uint128> implicits() nopanic;
+
+#[derive(Copy, Drop)]
+struct uint256 { low: uint128, high: uint128, }
+
+func uint256_overflow_add(
+    a: uint256,
+    b: uint256
+) -> (uint256, bool) implicits(RangeCheck) nopanic {
+    let (high, overflow) = match uint128_overflow_add(a.high, b.high) {
+        Result::Ok(high) => (high, false),
+        Result::Err(high) => (high, true),
+    };
+    match uint128_overflow_add(a.low, b.low) {
+        Result::Ok(low) => (uint256 { low, high }, overflow),
+        Result::Err(low) => {
+            match uint128_overflow_add(high, uint128_from_felt_or(1, high)) {
+                Result::Ok(high) => (uint256 { low, high }, overflow),
+                Result::Err(high) => (uint256 { low, high }, true),
+            }
+        },
+    }
+}
+
+func uint256_overflow_sub(
+    a: uint256,
+    b: uint256
+) -> (uint256, bool) implicits(RangeCheck) nopanic {
+    let (high, overflow) = match uint128_overflow_sub(a.high, b.high) {
+        Result::Ok(high) => (high, false),
+        Result::Err(high) => (high, true),
+    };
+    match uint128_overflow_sub(a.low, b.low) {
+        Result::Ok(low) => (uint256 { low, high }, overflow),
+        Result::Err(low) => {
+            match uint128_overflow_sub(high, uint128_from_felt_or(1, high)) {
+                Result::Ok(high) => (uint256 { low, high }, overflow),
+                Result::Err(high) => (uint256 { low, high }, true),
+            }
+        },
+    }
+}
+
+#[panic_with(1, uint256_add)]
+func uint256_checked_add(
+    a: uint256,
+    b: uint256
+) -> Option::<uint256> implicits(RangeCheck) nopanic {
+    let (r, overflow) = uint256_overflow_add(a, b);
+    if overflow {
+        Option::<uint256>::None(())
+    } else {
+        Option::<uint256>::Some(r)
+    }
+}
+
+#[panic_with(1, uint256_sub)]
+func uint256_checked_sub(
+    a: uint256,
+    b: uint256
+) -> Option::<uint256> implicits(RangeCheck) nopanic {
+    let (r, overflow) = uint256_overflow_sub(a, b);
+    if overflow {
+        Option::<uint256>::None(())
+    } else {
+        Option::<uint256>::Some(r)
+    }
+}
+
+func uint256_eq(a: uint256, b: uint256) -> bool implicits() {
+    a.low == b.low & a.high == b.high
+}
