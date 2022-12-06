@@ -8,6 +8,7 @@ anyhow.workspace = true
 clap.workspace = true
 compiler = { path = "../compiler" }
 defs = { path = "../defs" }
+genco.workspace = true
 itertools.workspace = true
 log.workspace = true
 semantic = { path = "../semantic" }
@@ -30,6 +31,7 @@ parser = { path = "../parser" }
 
 [dev-dependencies]
 env_logger.workspace = true
+formatter = { path = "../formatter" }
 indoc.workspace = true
 pretty_assertions.workspace = true
 semantic = { path = "../semantic", features = ["testing"] }
