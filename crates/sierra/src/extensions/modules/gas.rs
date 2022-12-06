@@ -69,7 +69,7 @@ impl NoGenericArgsGenericLibFunc for GetGasLibFunc {
                         },
                         OutputVarInfo {
                             ty: gas_builtin_type.clone(),
-                            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
                         },
                     ],
                     ap_change: SierraApChange::Known(2),
