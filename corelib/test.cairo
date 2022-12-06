@@ -176,6 +176,8 @@ func test_uint256_operators() {
     ) == as_uint256(3, 170141183460469231731687303715884105728),
         1
     );
+    assert(as_uint256(4, 3) * as_uint256(0, 1) == as_uint256(4, 3), 1);
+    assert(as_uint256(4, 3) * as_uint256(0, 2) == as_uint256(8, 6), 1);
 }
 
 #[test]
@@ -189,6 +191,18 @@ func test_uint256_add_overflow() {
 #[should_panic]
 func test_uint256_sub_overflow() {
     as_uint256(1, 1) - as_uint256(1, 2);
+}
+
+#[test]
+#[should_panic]
+func test_uint256_mul_overflow_1() {
+    as_uint256(1, 1) * as_uint256(1, 2);
+}
+
+#[test]
+#[should_panic]
+func test_uint256_mul_overflow_2() {
+    as_uint256(0, 170141183460469231731687303715884105728) * as_uint256(2, 0);
 }
 
 // TODO(orizi): Switch to operators and literals when added.

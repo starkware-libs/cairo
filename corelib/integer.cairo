@@ -161,7 +161,7 @@ func uint128_ge(a: uint128, b: uint128) -> bool implicits(RangeCheck) nopanic {
 }
 
 // TODO(orizi): Change to extern when added.
-func uint128_eq(a: uint128, b: uint128) -> bool implicits(RangeCheck) {
+func uint128_eq(a: uint128, b: uint128) -> bool implicits() nopanic {
     uint128_to_felt(a) == uint128_to_felt(b)
 }
 
@@ -208,6 +208,25 @@ func uint256_overflow_sub(
     }
 }
 
+func uint256_overflow_mul(a: uint256, b: uint256) -> (uint256, bool) nopanic {
+    let u0 = uint128_from_felt_or(0, a.low);
+    let (low, high1) = uint128_wide_mul(a.low, b.low);
+    let (high2, overflow_value1) = uint128_wide_mul(a.low, b.high);
+    let (high3, overflow_value2) = uint128_wide_mul(a.high, b.low);
+    let (high, overflow) = match uint128_overflow_add(high1, high2) {
+        Result::Ok(high) => (
+            high,
+            !(overflow_value1 == u0) | !(overflow_value2 == u0) | (a.high > u0 & b.high > u0)
+        ),
+        Result::Err(high) => (high, true),
+    };
+    let (high, overflow) = match uint128_overflow_add(high, high3) {
+        Result::Ok(high) => (high, overflow),
+        Result::Err(high) => (high, true),
+    };
+    (uint256 { low, high }, overflow)
+}
+
 #[panic_with(1, uint256_add)]
 func uint256_checked_add(
     a: uint256,
@@ -227,6 +246,19 @@ func uint256_checked_sub(
     b: uint256
 ) -> Option::<uint256> implicits(RangeCheck) nopanic {
     let (r, overflow) = uint256_overflow_sub(a, b);
+    if overflow {
+        Option::<uint256>::None(())
+    } else {
+        Option::<uint256>::Some(r)
+    }
+}
+
+#[panic_with(1, uint256_mul)]
+func uint256_checked_mul(
+    a: uint256,
+    b: uint256
+) -> Option::<uint256> implicits(RangeCheck) nopanic {
+    let (r, overflow) = uint256_overflow_mul(a, b);
     if overflow {
         Option::<uint256>::None(())
     } else {
