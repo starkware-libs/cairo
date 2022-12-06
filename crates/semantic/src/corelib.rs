@@ -25,10 +25,6 @@ pub fn core_felt_ty(db: &dyn SemanticGroup) -> TypeId {
     get_core_ty_by_name(db, "felt".into(), vec![])
 }
 
-pub fn core_uint128_ty(db: &dyn SemanticGroup) -> TypeId {
-    get_core_ty_by_name(db, "uint128".into(), vec![])
-}
-
 pub fn core_nonzero_ty(db: &dyn SemanticGroup, inner_type: TypeId) -> TypeId {
     get_core_ty_by_name(db, "NonZero".into(), vec![GenericArgumentId::Type(inner_type)])
 }
@@ -259,7 +255,8 @@ pub fn core_binary_operator(
     // TODO(lior): Replace current hard-coded implementation with an implementation that is based on
     //   traits.
     let felt_ty = core_felt_ty(db);
-    let uint128_ty = core_uint128_ty(db);
+    let uint128_ty = get_core_ty_by_name(db, "uint128".into(), vec![]);
+    let uint256_ty = get_core_ty_by_name(db, "uint256".into(), vec![]);
     let bool_ty = core_bool_ty(db);
     let unsupported_operator = |op: &str| {
         Err(SemanticDiagnosticKind::UnsupportedBinaryOperator { op: op.into(), type1, type2 })
@@ -267,9 +264,11 @@ pub fn core_binary_operator(
     let function_name = match binary_op {
         BinaryOperator::Plus(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_add",
         BinaryOperator::Plus(_) if [type1, type2] == [uint128_ty, uint128_ty] => "uint128_add",
+        BinaryOperator::Plus(_) if [type1, type2] == [uint256_ty, uint256_ty] => "uint256_add",
         BinaryOperator::Plus(_) => return unsupported_operator("+"),
         BinaryOperator::Minus(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_sub",
         BinaryOperator::Minus(_) if [type1, type2] == [uint128_ty, uint128_ty] => "uint128_sub",
+        BinaryOperator::Minus(_) if [type1, type2] == [uint256_ty, uint256_ty] => "uint256_sub",
         BinaryOperator::Minus(_) => return unsupported_operator("-"),
         BinaryOperator::Mul(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_mul",
         BinaryOperator::Mul(_) if [type1, type2] == [uint128_ty, uint128_ty] => "uint128_mul",
@@ -282,6 +281,7 @@ pub fn core_binary_operator(
         BinaryOperator::EqEq(_) if [type1, type2] == [felt_ty, felt_ty] => "felt_eq",
         BinaryOperator::EqEq(_) if [type1, type2] == [bool_ty, bool_ty] => "bool_eq",
         BinaryOperator::EqEq(_) if [type1, type2] == [uint128_ty, uint128_ty] => "uint128_eq",
+        BinaryOperator::EqEq(_) if [type1, type2] == [uint256_ty, uint256_ty] => "uint256_eq",
         BinaryOperator::EqEq(_) => return unsupported_operator("=="),
         BinaryOperator::And(_) if [type1, type2] == [bool_ty, bool_ty] => "bool_and",
         BinaryOperator::And(_) => return unsupported_operator("&"),

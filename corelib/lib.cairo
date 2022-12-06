@@ -64,6 +64,8 @@ extern type NonZero<T>;
 enum JumpNzResult<T> { Zero: (), NonZero: NonZero::<T>, }
 extern func unwrap_nz<T>(a: NonZero::<T>) -> T nopanic;
 
+impl NonZeroFeltCopy of Copy::<NonZero::<felt>>;
+impl NonZeroFeltDrop of Drop::<NonZero::<felt>>;
 extern func felt_div(a: felt, b: NonZero::<felt>) -> felt nopanic;
 
 // TODO(orizi): Change to extern when added.
@@ -135,8 +137,11 @@ use integer::uint128_le;
 use integer::uint128_gt;
 use integer::uint128_ge;
 use integer::uint128_eq;
-
 use integer::uint128_jump_nz;
+use integer::uint256;
+use integer::uint256_add;
+use integer::uint256_sub;
+use integer::uint256_eq;
 
 // Gas.
 mod gas;
@@ -165,3 +170,5 @@ use hash::pedersen_get_gas;
 
 // Syscall Ptr
 extern type SyscallPtr;
+
+mod test;

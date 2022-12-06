@@ -55,7 +55,7 @@ blk2:
 Inputs: v2: core::NonZero::<core::felt>
 Statements:
   (v5: core::felt) <- blk0()
-Drops:
+Drops: v2
 End:
   Callsite(v5)
 
@@ -80,7 +80,7 @@ blk5:
 Inputs: v9: core::NonZero::<core::felt>
 Statements:
   (v12: core::felt) <- blk3()
-Drops:
+Drops: v9
 End:
   Callsite(v12)
 
