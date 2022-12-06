@@ -27,7 +27,7 @@ pub enum StarknetSierraCompilationError {
 /// Represents a contract in the StarkNet network.
 #[derive(Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CasmContractClass {
-    pub bytecode: Vec<BigUint>,
+    pub bytecode: Vec<BigIntAsHex>,
     pub hints: Vec<(usize, Vec<String>)>,
     pub entry_points_by_type: CasmContractEntryPoints,
 }
@@ -63,7 +63,10 @@ impl CasmContractClass {
             }
             bytecode.extend(instruction.assemble().encode().iter().map(|big_int| {
                 let (_q, reminder) = big_int.magnitude().div_rem(&prime);
-                if big_int.is_negative() { &prime - reminder } else { reminder }
+
+                BigIntAsHex {
+                    value: if big_int.is_negative() { &prime - reminder } else { reminder },
+                }
             }))
         }
 
@@ -117,7 +120,7 @@ pub struct CasmContractEntryPoint {
     /// The offset of the instruction that should be called within the contract bytecode.
     pub offset: usize,
     // list of builtins.
-    pub builtins: Vec<BigUint>,
+    pub builtins: Vec<BigIntAsHex>,
 }
 
 #[derive(Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -147,4 +150,13 @@ where
             .map_err(|error| serde::de::Error::custom(format!("{}", error))),
         None => Err(serde::de::Error::custom(format!("{s} does not start with `0x` is missing."))),
     }
+}
+
+// A wrapper for BigUint that serializes as hex.
+#[derive(Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(transparent)]
+pub struct BigIntAsHex {
+    /// A field element that encodes the signature of the called function.
+    #[serde(serialize_with = "serialize_big_uint", deserialize_with = "deserialize_big_uint")]
+    pub value: BigUint,
 }
