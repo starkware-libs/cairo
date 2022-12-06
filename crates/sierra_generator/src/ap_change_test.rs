@@ -8,7 +8,7 @@ use utils::ordered_hash_map::OrderedHashMap;
 use crate::db::SierraGenGroup;
 use crate::test_utils::SierraGenDatabaseForTesting;
 
-utils::test_file_test!(
+test_utils::test_file_test!(
     ap_change,
     ["src/ap_change_test_data/tests",],
     SierraGenDatabaseForTesting,

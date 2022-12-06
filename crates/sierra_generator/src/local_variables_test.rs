@@ -9,7 +9,7 @@ use super::find_local_variables;
 use crate::function_generator_test_utils::test_function_generator;
 use crate::test_utils::SierraGenDatabaseForTesting;
 
-utils::test_file_test!(
+test_utils::test_file_test!(
     local_variables,
     [
         "src/local_variables_test_data/block",
@@ -56,7 +56,7 @@ fn check_find_local_variables(
     ])
 }
 
-utils::test_file_test!(
+test_utils::test_file_test!(
     local_variables_e2e_test,
     ["src/local_variables_test_data/e2e",],
     SierraGenDatabaseForTesting,

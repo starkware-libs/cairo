@@ -10,11 +10,6 @@ pub mod strongly_connected_components;
 pub mod unordered_hash_map;
 pub mod unordered_hash_set;
 
-#[cfg(any(feature = "testing", test))]
-pub mod parse_test_file;
-#[cfg(any(feature = "testing", test))]
-pub use parse_test_file::parse_test_file;
-
 /// Similar to From / TryFrom, but returns an option.
 pub trait OptionFrom<T>
 where
