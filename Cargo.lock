@@ -1728,16 +1728,19 @@ name = "runner"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "cairo-rs",
  "casm",
  "clap 4.0.26",
  "compiler",
  "itertools",
+ "num-bigint",
  "salsa",
  "sierra",
  "sierra_gas",
  "sierra_generator",
  "sierra_to_casm",
  "thiserror",
+ "utils",
 ]
 
 [[package]]
@@ -2021,6 +2024,7 @@ dependencies = [
  "itertools",
  "log",
  "num-bigint",
+ "num-traits 0.2.15",
  "pretty_assertions",
  "sierra",
  "sierra_gas",
@@ -2103,6 +2107,7 @@ dependencies = [
  "itertools",
  "log",
  "num-bigint",
+ "num-integer",
  "num-traits 0.2.15",
  "parser",
  "plugins",
@@ -2308,6 +2313,7 @@ dependencies = [
  "parser",
  "plugins",
  "pretty_assertions",
+ "runner",
  "salsa",
  "semantic",
  "sierra",
@@ -2316,6 +2322,7 @@ dependencies = [
  "sierra_to_casm",
  "syntax",
  "test-case",
+ "test_utils",
 ]
 
 [[package]]

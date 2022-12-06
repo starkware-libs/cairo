@@ -64,6 +64,8 @@ extern type NonZero<T>;
 enum JumpNzResult<T> { Zero: (), NonZero: NonZero::<T>, }
 extern func unwrap_nz<T>(a: NonZero::<T>) -> T nopanic;
 
+impl NonZeroFeltCopy of Copy::<NonZero::<felt>>;
+impl NonZeroFeltDrop of Drop::<NonZero::<felt>>;
 extern func felt_div(a: felt, b: NonZero::<felt>) -> felt nopanic;
 
 // TODO(orizi): Change to extern when added.
@@ -127,9 +129,9 @@ use integer::uint128_to_felt;
 use integer::uint128_add;
 use integer::uint128_sub;
 use integer::uint128_mul;
+use integer::uint128_as_non_zero;
 use integer::uint128_div;
 use integer::uint128_mod;
-use integer::uint128_divmod;
 use integer::uint128_lt;
 use integer::uint128_le;
 use integer::uint128_gt;

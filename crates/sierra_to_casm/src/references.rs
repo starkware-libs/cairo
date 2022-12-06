@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use casm::ap_change::ApplyApChange;
 use casm::operand::{CellRef, DerefOrImmediate, Register};
 use num_bigint::BigInt;
+use num_traits::cast::ToPrimitive;
 use sierra::extensions::felt::FeltOperator;
 use sierra::ids::{ConcreteTypeId, VarId};
 use sierra::program::{Function, StatementIdx};
@@ -186,4 +187,22 @@ pub fn try_unpack_deref(expr: &ReferenceExpression) -> Result<CellRef, Invocatio
         .ok()
         .and_then(|cell| try_extract_matches!(cell, CellExpression::Deref))
         .ok_or(InvocationError::InvalidReferenceExpressionForArgument)
+}
+
+/// Given `[ref] + offset` returns `([ref], offset)`.
+pub fn try_unpack_deref_with_offset(
+    expr: &ReferenceExpression,
+) -> Result<(CellRef, i16), InvocationError> {
+    match expr.try_unpack_single() {
+        Ok(CellExpression::Deref(cell)) => Ok((cell, 0i16)),
+        Ok(CellExpression::BinOp(BinOpExpression {
+            op: FeltOperator::Add,
+            a: cell,
+            b: DerefOrImmediate::Immediate(offset),
+        })) => Ok((
+            cell,
+            offset.to_i16().ok_or(InvocationError::InvalidReferenceExpressionForArgument)?,
+        )),
+        _ => Err(InvocationError::InvalidReferenceExpressionForArgument),
+    }
 }

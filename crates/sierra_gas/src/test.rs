@@ -16,20 +16,6 @@ fn get_example_program(name: &str) -> Program {
     sierra::ProgramParser::new().parse(&fs::read_to_string(path).unwrap()).unwrap()
 }
 
-#[test_case("collatz" =>
-            Ok(GasInfo {
-                variable_values: [
-                    ((StatementIdx(7), CostTokenType::Step), 37),
-                    ((StatementIdx(19), CostTokenType::Step), 3),
-                    ((StatementIdx(25), CostTokenType::Step), 0),
-                    ((StatementIdx(38), CostTokenType::Step), 0),
-                    ((StatementIdx(49), CostTokenType::Step), 5),
-                ].into_iter().collect(),
-                function_costs: [(
-                    "Collatz".into(),
-                    [(CostTokenType::Step, 18)].into_iter().collect()
-                )].into_iter().collect()
-            }))]
 #[test_case("fib_jumps" =>
             Ok(GasInfo {
                 variable_values: [

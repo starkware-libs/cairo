@@ -40,7 +40,8 @@ impl SemanticTokenKind {
             | SyntaxKind::TokenPlus
             | SyntaxKind::TokenMinus
             | SyntaxKind::TokenMul
-            | SyntaxKind::TokenDiv => SemanticTokenKind::Operator,
+            | SyntaxKind::TokenDiv
+            | SyntaxKind::TokenMod => SemanticTokenKind::Operator,
             SyntaxKind::TokenSingleLineComment => SemanticTokenKind::Comment,
             _ => return None,
         })

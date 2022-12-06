@@ -214,12 +214,15 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 type RangeCheck = RangeCheck;
 
                 libfunc revoke_ap_tracking = revoke_ap_tracking;
-                libfunc uint128_checked_add = uint128_checked_add;
+                libfunc uint128_overflow_add = uint128_overflow_add;
                 libfunc drop<uint128> = drop<uint128>;
                 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 
                 revoke_ap_tracking() -> ();
-                uint128_checked_add([1], [2], [3]) {fallthrough([1], [2]) 3([1]) };
+                uint128_overflow_add([1], [2], [3]) {fallthrough([1], [2]) 5([1], [2]) };
+                drop<uint128>([2]) -> ();
+                store_temp<RangeCheck>([1]) -> ([1]);
+                return ([1]);
                 drop<uint128>([2]) -> ();
                 store_temp<RangeCheck>([1]) -> ([1]);
                 return ([1]);
@@ -233,8 +236,10 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 jmp rel 7 if [ap + 0] != 0, ap++;
                 [ap + 0] = [ap + -2] + -340282366920938463463374607431768211456, ap++;
                 [ap + -1] = [[fp + -5] + 0];
-                jmp rel 3;
+                jmp rel 6;
                 [ap + -2] = [[fp + -5] + 0];
+                [ap + 0] = [fp + -5] + 1, ap++;
+                ret;
                 [ap + 0] = [fp + -5] + 1, ap++;
                 ret;
             "};
@@ -740,17 +745,6 @@ fn sierra_to_casm(
             "}, &[],
             "Error from program registry";
             "Concrete libfunc Id used twice")]
-#[test_case(indoc! {"
-                type uint128 = uint128;
-                type RangeCheck = RangeCheck;
-
-                libfunc uint128_wrapping_add = uint128_wrapping_add;
-
-                uint128_wrapping_add([1], [2], [3]) -> ([1], [2]);
-                test_program@0([1]: RangeCheck, [2]: uint128, [3]: uint128) -> ();
-            "}, &[],
-            "#0: The requested functionality is not implemented yet.";
-            "Not implemented")]
 #[test_case(indoc! {"
                 type felt = felt;
                 libfunc felt_add = felt_add;
