@@ -164,10 +164,10 @@ impl GenericLibFunc for BuiltinCostGetGasLibFunc {
                         },
                         OutputVarInfo {
                             ty: gas_builtin_type.clone(),
-                            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
                         },
                     ],
-                    ap_change: SierraApChange::Known(2), // TODO: Check/fix.
+                    ap_change: SierraApChange::Known(2), // TODO(lior): Check/fix.
                 },
                 // Failure:
                 BranchSignature {
@@ -183,7 +183,7 @@ impl GenericLibFunc for BuiltinCostGetGasLibFunc {
                             ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },
                         },
                     ],
-                    ap_change: SierraApChange::Known(3), // TODO: Check/fix.
+                    ap_change: SierraApChange::Known(3), // TODO(lior): Check/fix.
                 },
             ],
             fallthrough: Some(0),
