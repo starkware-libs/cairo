@@ -289,7 +289,7 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 [ap + 0] = [ap + -3] + -7, ap++;
                 [ap + 0] = [ap + -1] * -1, ap++;
                 [ap + -1] = [[ap + -6] + 0];
-                jmp rel 19;
+                jmp rel 18;
 
                 // Statement # 28
                 // The main loop - given [b, _, _, n, rc, gb, a, _, _] - adds [n-1, updated_rc, updated_gb, a+b]
@@ -298,9 +298,9 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 [ap + -1] = [[ap + -5] + 0];
                 [ap + -6] = [ap + 0] + 1, ap++;
                 [ap + 0] = [ap + -6] + 1, ap++;
-                [ap + -6] = [ap + 0] + 8, ap++;
+                [ap + 0] = [ap + -3], ap++;
                 [ap + 0] = [ap + -6] + [ap + -12], ap++;
-                jmp rel -19 if [ap + -4] != 0;
+                jmp rel -18 if [ap + -4] != 0;
                 // Statement # 48 - n == 0, so we can return the latest a.
                 [ap + 0] = [ap + -3], ap++;
                 [ap + 0] = [ap + -3] + 5, ap++;
@@ -337,22 +337,22 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 [ap + 0] = [fp + -4] + -36, ap++;
                 [ap + 0] = [ap + -1] * -1, ap++;
                 [ap + -1] = [[fp + -5] + 0];
-                jmp rel 26;
+                jmp rel 25;
                 [ap + 0] = [fp + -4] + -37, ap++;
                 [ap + -1] = [[fp + -5] + 0];
 
                 // Statement # 21 - Performing both recursive calculations and returning their sum.
                 ap += 2;
                 [ap + 0] = [fp + -5] + 1, ap++;
-                [fp + -4] = [ap + 0] + 37, ap++;
+                [ap + 0] = [ap + -4], ap++;
                 [ap + -7] = [fp + 4] + 1;
                 [ap + 0] = [ap + -7], ap++;
-                call rel -39;
+                call rel -38;
                 [fp + 5] = [ap + -1];
                 [ap + 0] = [ap + -3], ap++;
                 [ap + 0] = [ap + -3], ap++;
                 [ap + 0] = [fp + 4], ap++;
-                call rel -45;
+                call rel -44;
                 [ap + 0] = [ap + -3], ap++;
                 [ap + 0] = [ap + -3], ap++;
                 [ap + 0] = [fp + 5] + [ap + -3], ap++;
