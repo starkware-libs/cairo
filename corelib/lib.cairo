@@ -7,12 +7,13 @@ enum bool { False: (), True: (), }
 impl BoolCopy of Copy::<bool>;
 impl BoolDrop of Drop::<bool>;
 
-// TODO(orizi): Change to extern when added.
-func bool_and(a: bool, b: bool) -> bool implicits() nopanic {
-    match a {
-        bool::False(x) => bool::False(()),
-        bool::True(x) => b,
-    }
+// TODO(dorimedini): Once we can differentiate between the value-bool and the branch-bool, just do:
+// extern func bool_and(a: bool, b: bool) -> bool implicits() nopanic;
+// (this will also require renaming the libfunc from "bool_and_impl" back to "bool_and".
+extern func bool_and_impl(ref a: bool, b: bool) implicits() nopanic;
+func bool_and(mut a: bool, b: bool) -> bool implicits() nopanic {
+    bool_and_impl(a, b);
+    a
 }
 
 // TODO(orizi): Change to extern when added.
