@@ -24,6 +24,7 @@ use crate::relocations::RelocationEntry;
 use crate::type_sizes::TypeSizeMap;
 
 mod array;
+mod bool;
 mod boxing;
 mod builtin_cost;
 mod dict_felt_to;
