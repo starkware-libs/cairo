@@ -120,12 +120,10 @@ fn generate_entry_point_wrapper(
     let wrapped_name = function.name(db).text(db).to_string();
     let wrapper_name = format!("__wrapper_{}", wrapped_name);
 
-    // TODO(yuval): change to != once it's supported.
     // TODO(yuval): change to uint128 literal once it's supported.
     Some(quote! {
         func $wrapper_name(ref syscall_ptr: SyscallPtr, data: Array::<felt>) -> Array::<felt> {
-            if array::array_len::<felt>(data) == integer::uint128_from_felt($params_len) {
-            } else {
+            if array::array_len::<felt>(data) != integer::uint128_from_felt($params_len) {
                 // TODO(yuval): add error message.
                 panic(array::array_new::<felt>());
             }
