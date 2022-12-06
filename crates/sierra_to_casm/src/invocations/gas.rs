@@ -1,6 +1,6 @@
 use casm::ap_change::ApplyApChange;
 use casm::casm;
-use casm::operand::DerefOrImmediate;
+use casm::operand::{CellRef, DerefOrImmediate, Register};
 use itertools::chain;
 use num_bigint::BigInt;
 use sierra::extensions::builtin_cost::CostTokenType;
@@ -105,11 +105,9 @@ fn build_get_gas(
                     a: range_check.unchecked_apply_known_ap_change(2),
                     b: DerefOrImmediate::from(1),
                 })),
-                // TODO(orizi): Use the value the was computed above.
-                ReferenceExpression::from_cell(CellExpression::BinOp(BinOpExpression {
-                    op: FeltOperator::Sub,
-                    a: gas_counter_value.unchecked_apply_known_ap_change(2),
-                    b: DerefOrImmediate::Immediate(BigInt::from(*requested_count)),
+                ReferenceExpression::from_cell(CellExpression::Deref(CellRef {
+                    register: Register::AP,
+                    offset: -1,
                 })),
             ]
             .into_iter(),
