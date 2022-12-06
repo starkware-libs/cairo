@@ -1,7 +1,7 @@
 use super::felt::FeltType;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
-    DeferredOutputKind, LibFuncSignature, OutputVarInfo, SierraApChange,
+    DeferredOutputKind, LibFuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
     SignatureSpecializationContext,
 };
 use crate::extensions::types::{InfoOnlyConcreteType, TypeInfo};
@@ -50,8 +50,17 @@ impl NoGenericArgsGenericLibFunc for PedersenHashLibFunc {
     ) -> Result<LibFuncSignature, SpecializationError> {
         let pedersen_ty = context.get_concrete_type(PedersenType::id(), &[])?;
         let felt_ty = context.get_concrete_type(FeltType::id(), &[])?;
-        Ok(LibFuncSignature::new_non_branch(
-            vec![pedersen_ty.clone(), felt_ty.clone(), felt_ty.clone()],
+        Ok(LibFuncSignature::new_non_branch_ex(
+            vec![
+                ParamSignature {
+                    ty: pedersen_ty.clone(),
+                    allow_deferred: false,
+                    allow_add_const: true,
+                    allow_const: false,
+                },
+                ParamSignature::new(felt_ty.clone()),
+                ParamSignature::new(felt_ty.clone()),
+            ],
             vec![
                 OutputVarInfo {
                     ty: pedersen_ty,
