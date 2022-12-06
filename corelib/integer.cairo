@@ -9,23 +9,51 @@ extern func uint128_try_from_felt(a: felt) -> Option::<uint128> implicits(RangeC
 
 extern func uint128_to_felt(a: uint128) -> felt nopanic;
 
-#[panic_with(1, uint128_add)]
-extern func uint128_checked_add(
+extern func uint128_overflow_add(
     a: uint128,
     b: uint128
-) -> Option::<uint128> implicits(RangeCheck) nopanic;
+) -> Result::<uint128, uint128> implicits(RangeCheck) nopanic;
+extern func uint128_overflow_sub(
+    a: uint128,
+    b: uint128
+) -> Result::<uint128, uint128> implicits(RangeCheck) nopanic;
+extern func uint128_overflow_mul(
+    a: uint128,
+    b: uint128
+) -> Result::<uint128, uint128> implicits(RangeCheck) nopanic;
+
+#[panic_with(1, uint128_add)]
+func uint128_checked_add(
+    a: uint128,
+    b: uint128
+) -> Option::<uint128> implicits(RangeCheck) nopanic {
+    match uint128_overflow_add(a, b) {
+        Result::Ok(r) => Option::<uint128>::Some(r),
+        Result::Err(r) => Option::<uint128>::None(()),
+    }
+}
 
 #[panic_with(1, uint128_sub)]
-extern func uint128_checked_sub(
+func uint128_checked_sub(
     a: uint128,
     b: uint128
-) -> Option::<uint128> implicits(RangeCheck) nopanic;
+) -> Option::<uint128> implicits(RangeCheck) nopanic {
+    match uint128_overflow_sub(a, b) {
+        Result::Ok(r) => Option::<uint128>::Some(r),
+        Result::Err(r) => Option::<uint128>::None(()),
+    }
+}
 
 #[panic_with(1, uint128_mul)]
-extern func uint128_checked_mul(
+func uint128_checked_mul(
     a: uint128,
     b: uint128
-) -> Option::<uint128> implicits(RangeCheck) nopanic;
+) -> Option::<uint128> implicits(RangeCheck) nopanic {
+    match uint128_overflow_mul(a, b) {
+        Result::Ok(r) => Option::<uint128>::Some(r),
+        Result::Err(r) => Option::<uint128>::None(()),
+    }
+}
 
 #[panic_with(1, uint128_as_non_zero)]
 func uint128_checked_as_non_zero(a: uint128) -> Option::<NonZero::<uint128>> nopanic {
