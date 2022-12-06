@@ -115,7 +115,7 @@ impl GenericLibFunc for BuiltinCostGetGasLibFunc {
 
     fn by_id(id: &GenericLibFuncId) -> Option<Self> {
         for token_type in CostTokenType::iter() {
-            if *id == GenericLibFuncId::from_string(&format!("{}_get_gas", token_type.name())) {
+            if *id == GenericLibFuncId::from_string(format!("{}_get_gas", token_type.name())) {
                 return Some(Self { token_type: *token_type });
             }
         }
