@@ -1726,16 +1726,19 @@ name = "runner"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "cairo-rs",
  "casm",
  "clap 4.0.26",
  "compiler",
  "itertools",
+ "num-bigint",
  "salsa",
  "sierra",
  "sierra_gas",
  "sierra_generator",
  "sierra_to_casm",
  "thiserror",
+ "utils",
 ]
 
 [[package]]
@@ -2307,6 +2310,7 @@ dependencies = [
  "parser",
  "plugins",
  "pretty_assertions",
+ "runner",
  "salsa",
  "semantic",
  "sierra",
