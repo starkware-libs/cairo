@@ -243,6 +243,6 @@ pub fn test_function_diagnostics(
 #[macro_export]
 macro_rules! semantic_test {
     ($test_name:ident, $filenames:expr, $func:ident) => {
-        utils::test_file_test!($test_name, $filenames, SemanticDatabaseForTesting, $func);
+        test_utils::test_file_test!($test_name, $filenames, SemanticDatabaseForTesting, $func);
     };
 }

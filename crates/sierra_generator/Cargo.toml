@@ -32,5 +32,5 @@ log.workspace = true
 pretty_assertions.workspace = true
 semantic = { path = "../semantic", features = ["testing"] }
 test-case.workspace = true
-utils = { path = "../utils", features = ["testing"] }
+test_utils = { path = "../test_utils"}
 test-log.workspace = true

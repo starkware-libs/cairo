@@ -6,7 +6,7 @@ use crate::fmt::LoweredFormatter;
 use crate::lower::lower;
 use crate::test_utils::LoweringDatabaseForTesting;
 
-utils::test_file_test!(
+test_utils::test_file_test!(
     lowering_test,
     [
         "src/test_data/assignment",

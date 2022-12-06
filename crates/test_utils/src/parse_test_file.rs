@@ -5,8 +5,8 @@ use std::fs;
 use std::io::{self, BufRead};
 use std::path::Path;
 
-use crate::ordered_hash_map::OrderedHashMap;
-use crate::ResultHelper;
+use utils::ordered_hash_map::OrderedHashMap;
+use utils::ResultHelper;
 
 const TAG_PREFIX: &str = "//! > ";
 const TEST_SEPARATOR: &str =
@@ -178,7 +178,7 @@ impl TestBuilder {
 /// #[macro_export]
 /// macro_rules! parser_test {
 ///     ($test_name:ident, $filenames:expr, $func:ident) => {
-///         utils::test_file_test!($test_name, $filenames, ParserDatabaseForTesting, $func);
+///         test_utils::test_file_test!($test_name, $filenames, ParserDatabaseForTesting, $func);
 ///     };
 /// }
 /// ```
@@ -198,10 +198,10 @@ macro_rules! test_file_test {
             for filename in $filenames {
                 let path: std::path::PathBuf =
                     [env!("CARGO_MANIFEST_DIR"), filename].iter().collect();
-                let tests = utils::parse_test_file(path.as_path())?;
+                let tests = test_utils::parse_test_file(path.as_path())?;
                 let mut new_tests = utils::ordered_hash_map::OrderedHashMap::<
                     String,
-                    utils::parse_test_file::Test,
+                    test_utils::parse_test_file::Test,
                 >::default();
                 // TODO(alont): global tags for all tests in a file.
                 let test_func_name = stringify!($func);
@@ -242,7 +242,7 @@ macro_rules! test_file_test {
                     }
                 }
                 if is_fix_mode {
-                    utils::parse_test_file::dump_to_test_file(new_tests, filename)?;
+                    test_utils::parse_test_file::dump_to_test_file(new_tests, filename)?;
                 }
             }
             Ok(())

@@ -1164,6 +1164,7 @@ dependencies = [
  "smol_str",
  "syntax",
  "test-log",
+ "test_utils",
  "utils",
 ]
 
@@ -1444,6 +1445,7 @@ dependencies = [
  "syntax_codegen",
  "test-case",
  "test-log",
+ "test_utils",
  "utils",
 ]
 
@@ -1829,6 +1831,7 @@ dependencies = [
  "syntax",
  "test-case",
  "test-log",
+ "test_utils",
  "utils",
 ]
 
@@ -2000,6 +2003,7 @@ dependencies = [
  "syntax",
  "test-case",
  "test-log",
+ "test_utils",
  "utils",
 ]
 
@@ -2112,6 +2116,7 @@ dependencies = [
  "smol_str",
  "syntax",
  "test-log",
+ "test_utils",
  "thiserror",
  "utils",
 ]
@@ -2275,6 +2280,16 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "test_utils"
+version = "0.1.0"
+dependencies = [
+ "env_logger",
+ "log",
+ "test-log",
+ "utils",
 ]
 
 [[package]]

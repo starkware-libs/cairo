@@ -9,7 +9,7 @@ use crate::replace_ids::replace_sierra_ids;
 use crate::test_utils::SierraGenDatabaseForTesting;
 use crate::SierraGeneratorDiagnostic;
 
-utils::test_file_test!(
+test_utils::test_file_test!(
     lowering_test,
     [
         "src/block_generator_test_data/early_return",
