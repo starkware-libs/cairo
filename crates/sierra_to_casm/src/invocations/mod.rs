@@ -233,6 +233,9 @@ pub fn compile_invocation(
         CoreConcreteLibFunc::Felt(libfunc) => felt::build(libfunc, builder),
         CoreConcreteLibFunc::Uint128(libfunc) => uint128::build(libfunc, builder),
         CoreConcreteLibFunc::Gas(libfunc) => gas::build(libfunc, builder),
+        CoreConcreteLibFunc::BranchAlign(_) => {
+            Ok(builder.build_only_reference_changes([].into_iter()))
+        }
         CoreConcreteLibFunc::Array(libfunc) => array::build(libfunc, builder),
         CoreConcreteLibFunc::Drop(_) => misc::build_drop(builder),
         CoreConcreteLibFunc::Dup(_) => misc::build_dup(builder),
