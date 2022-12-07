@@ -122,7 +122,7 @@ impl GenericLibFunc for Uint128OperationLibFunc {
                     },
                     OutputVarInfo { ty, ref_info: OutputVarReferenceInfo::NewTempVar { idx: 1 } },
                 ],
-                SierraApChange::Known(5),
+                SierraApChange::Known { new_vars_only: false },
             )),
             (
                 [],
@@ -151,7 +151,7 @@ impl GenericLibFunc for Uint128OperationLibFunc {
                                 ),
                             },
                         ],
-                        ap_change: SierraApChange::Known(2),
+                        ap_change: SierraApChange::Known { new_vars_only: false },
                     },
                     BranchSignature {
                         vars: vec![
@@ -168,7 +168,7 @@ impl GenericLibFunc for Uint128OperationLibFunc {
                                 ),
                             },
                         ],
-                        ap_change: SierraApChange::Known(3),
+                        ap_change: SierraApChange::Known { new_vars_only: false },
                     },
                 ],
                 fallthrough: Some(0),
@@ -192,7 +192,7 @@ impl GenericLibFunc for Uint128OperationLibFunc {
                             ref_info: OutputVarReferenceInfo::NewTempVar { idx: 1 },
                         },
                     ],
-                    SierraApChange::Known(5),
+                    SierraApChange::Known { new_vars_only: false },
                 ))
             }
             (
@@ -324,7 +324,7 @@ impl NamedLibFunc for Uint128ConstLibFunc {
                 ty: context.get_concrete_type(Uint128Type::id(), &[])?,
                 ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Const),
             }],
-            SierraApChange::Known(0),
+            SierraApChange::Known { new_vars_only: true },
         ))
     }
 
@@ -370,19 +370,17 @@ fn get_uint128_comparison_types(
 /// Utility method to output the two branches of uint128 comparison signatures.
 fn get_uint128_comparison_branch_signatures(
     context: &dyn SignatureSpecializationContext,
-    ap_changes: [usize; 2],
 ) -> Result<Vec<BranchSignature>, SpecializationError> {
     let (_, range_check_type) = get_uint128_comparison_types(context)?;
-    Ok(ap_changes
-        .iter()
-        .map(|ap_change| BranchSignature {
+    Ok((0..2)
+        .map(|_| BranchSignature {
             vars: vec![OutputVarInfo {
                 ty: range_check_type.clone(),
                 ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
                     param_idx: 0,
                 }),
             }],
-            ap_change: SierraApChange::Known(*ap_change),
+            ap_change: SierraApChange::Known { new_vars_only: false },
         })
         .collect())
 }
@@ -411,7 +409,7 @@ impl NoGenericArgsGenericLibFunc for Uint128LessThanLibFunc {
     ) -> Result<LibFuncSignature, SpecializationError> {
         Ok(LibFuncSignature {
             param_signatures: get_uint128_comparison_param_signatures(context)?,
-            branch_signatures: get_uint128_comparison_branch_signatures(context, [2, 3])?,
+            branch_signatures: get_uint128_comparison_branch_signatures(context)?,
             fallthrough: Some(0),
         })
     }
@@ -429,7 +427,7 @@ impl NoGenericArgsGenericLibFunc for Uint128LessThanOrEqualLibFunc {
     ) -> Result<LibFuncSignature, SpecializationError> {
         Ok(LibFuncSignature {
             param_signatures: get_uint128_comparison_param_signatures(context)?,
-            branch_signatures: get_uint128_comparison_branch_signatures(context, [3, 2])?,
+            branch_signatures: get_uint128_comparison_branch_signatures(context)?,
             fallthrough: Some(0),
         })
     }
@@ -473,7 +471,7 @@ impl NoGenericArgsGenericLibFunc for Uint128sFromFeltLibFunc {
                             ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },
                         },
                     ],
-                    ap_change: SierraApChange::Known(1),
+                    ap_change: SierraApChange::Known { new_vars_only: false },
                 },
                 BranchSignature {
                     vars: vec![
@@ -498,7 +496,7 @@ impl NoGenericArgsGenericLibFunc for Uint128sFromFeltLibFunc {
                             ref_info: OutputVarReferenceInfo::NewTempVar { idx: 1 },
                         },
                     ],
-                    ap_change: SierraApChange::Known(6),
+                    ap_change: SierraApChange::Known { new_vars_only: false },
                 },
             ],
             fallthrough: Some(0),
@@ -522,7 +520,7 @@ impl NoGenericArgsGenericLibFunc for Uint128ToFeltLibFunc {
                 ty: context.get_concrete_type(FeltType::id(), &[])?,
                 ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
             }],
-            SierraApChange::Known(0),
+            SierraApChange::Known { new_vars_only: true },
         ))
     }
 }

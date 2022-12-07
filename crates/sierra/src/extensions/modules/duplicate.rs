@@ -36,7 +36,7 @@ impl SignatureOnlyGenericLibFunc for DupLibFunc {
                     ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
                 },
             ],
-            SierraApChange::Known(0),
+            SierraApChange::Known { new_vars_only: true },
         ))
     }
 }

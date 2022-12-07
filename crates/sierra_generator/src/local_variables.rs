@@ -244,7 +244,7 @@ fn handle_function_call(
     );
 
     match libfunc_signature.branch_signatures[0].ap_change {
-        sierra::extensions::lib_func::SierraApChange::Known(_) => {}
+        sierra::extensions::lib_func::SierraApChange::Known { .. } => {}
         _ => {
             state.revoke_temporary_variables();
             *known_ap_change = false;

@@ -7,10 +7,11 @@ use itertools::zip_eq;
 use num_bigint::BigInt;
 use sierra::extensions::builtin_cost::CostTokenType;
 use sierra::extensions::core::CoreConcreteLibFunc;
-use sierra::extensions::lib_func::{BranchSignature, SierraApChange};
+use sierra::extensions::lib_func::BranchSignature;
 use sierra::extensions::{ConcreteLibFunc, OutputVarReferenceInfo};
 use sierra::ids::ConcreteTypeId;
 use sierra::program::{BranchInfo, BranchTarget, Invocation, StatementIdx};
+use sierra_ap_change::core_libfunc_ap_change::core_libfunc_ap_change;
 use thiserror::Error;
 use utils::extract_matches;
 use {casm, sierra};
@@ -174,17 +175,27 @@ impl CompiledInvocationBuilder<'_> {
             relocations,
             results: zip_eq(
                 zip_eq(self.libfunc.branch_signatures(), gas_changes),
-                output_expressions,
+                zip_eq(output_expressions, core_libfunc_ap_change(self.libfunc)),
             )
-            .map(|((branch_signature, gas_change), expressions)| {
-                let ap_change = match branch_signature.ap_change {
-                    SierraApChange::Known(x) => ApChange::Known(x),
-                    SierraApChange::NotImplemented => panic!("AP change not implemented."),
-                    SierraApChange::FinalizeLocals => match self.environment.frame_state {
-                        FrameState::Finalized { allocated } => ApChange::Known(allocated),
-                        _ => panic!("Unexpected frame state."),
-                    },
-                    SierraApChange::Unknown => ApChange::Unknown,
+            .map(|((branch_signature, gas_change), (expressions, ap_change))| {
+                let ap_change = match ap_change {
+                    sierra_ap_change::ApChange::Known(x) => ApChange::Known(x),
+                    sierra_ap_change::ApChange::FinalizeLocals => {
+                        match self.environment.frame_state {
+                            FrameState::Finalized { allocated } => ApChange::Known(allocated),
+                            _ => panic!("Unexpected frame state."),
+                        }
+                    }
+                    sierra_ap_change::ApChange::KnownByTypeSize(ty) => {
+                        ApChange::Known(self.program_info.type_sizes[&ty])
+                    }
+                    sierra_ap_change::ApChange::FunctionCall(id) => self
+                        .program_info
+                        .metadata
+                        .function_ap_change
+                        .get(&id)
+                        .map_or(ApChange::Unknown, |x| ApChange::Known(x + 2)),
+                    sierra_ap_change::ApChange::Unknown => ApChange::Unknown,
                 };
                 // TODO(lior): Instead of taking only the steps, take all token types into account.
                 let gas_change_steps = gas_change.map(|x| x[CostTokenType::Step]);

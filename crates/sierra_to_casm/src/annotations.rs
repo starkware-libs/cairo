@@ -6,7 +6,6 @@ use casm::ap_change::{ApChange, ApChangeError, ApplyApChange};
 use itertools::zip_eq;
 use sierra::edit_state::{put_results, take_args};
 use sierra::extensions::builtin_cost::CostTokenType;
-use sierra::extensions::lib_func::SierraApChange;
 use sierra::ids::{ConcreteTypeId, VarId};
 use sierra::program::{BranchInfo, Function, StatementIdx};
 use thiserror::Error;
@@ -129,7 +128,7 @@ impl ProgramAnnotations {
         let mut return_annotations: HashMap<ReturnProperties, ReturnAnnotation> = HashMap::new();
         for func in functions {
             let ap_change = match metadata.function_ap_change.get(&func.id) {
-                Some(SierraApChange::Known(x)) => ApChange::Known(*x),
+                Some(x) => ApChange::Known(*x),
                 _ => ApChange::Unknown,
             };
 

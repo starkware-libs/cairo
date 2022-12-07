@@ -167,7 +167,7 @@ impl GenericLibFunc for BuiltinCostGetGasLibFunc {
                             ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
                         },
                     ],
-                    ap_change: SierraApChange::Known(2), // TODO(lior): Check/fix.
+                    ap_change: SierraApChange::Known { new_vars_only: false },
                 },
                 // Failure:
                 BranchSignature {
@@ -183,7 +183,7 @@ impl GenericLibFunc for BuiltinCostGetGasLibFunc {
                             ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },
                         },
                     ],
-                    ap_change: SierraApChange::Known(3), // TODO(lior): Check/fix.
+                    ap_change: SierraApChange::Known { new_vars_only: false },
                 },
             ],
             fallthrough: Some(0),
