@@ -25,8 +25,8 @@ use super::pattern::{
     Pattern, PatternEnumVariant, PatternLiteral, PatternOtherwise, PatternTuple, PatternVariable,
 };
 use crate::corelib::{
-    core_binary_operator, core_felt_ty, core_unary_operator, false_literal_expr, never_ty,
-    true_literal_expr, unit_ty, unwrap_error_propagation_type,
+    core_binary_operator, core_felt_ty, core_unary_operator, false_literal_expr,
+    get_core_ty_by_name, never_ty, true_literal_expr, unit_ty, unwrap_error_propagation_type,
 };
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
@@ -839,13 +839,23 @@ fn literal_to_semantic(
     let syntax_db = db.upcast();
     let text = literal_syntax.text(syntax_db);
 
-    let value = match text.strip_prefix("0x") {
+    let (literal, ty) = if let Some((literal, ty)) = text.split_once('_') {
+        (literal.into(), Some(ty))
+    } else {
+        (text.clone(), None)
+    };
+
+    let value = match literal.strip_prefix("0x") {
         Some(num_no_prefix) => BigInt::from_str_radix(num_no_prefix, 16).ok(),
-        None => text.parse::<BigInt>().ok(),
+        None => literal.parse::<BigInt>().ok(),
     }
     .on_none(|| ctx.diagnostics.report(literal_syntax, UnknownLiteral))?;
 
-    let ty = db.core_felt_ty();
+    let ty = if let Some(ty_str) = ty {
+        get_core_ty_by_name(db, ty_str.into(), vec![])
+    } else {
+        db.core_felt_ty()
+    };
     Some(ExprLiteral { value, ty, stable_ptr: literal_syntax.stable_ptr().into() })
 }
 
