@@ -151,8 +151,8 @@ pub fn dup_libfunc_id(
     get_libfunc_id_with_generic_arg(db, "dup", ty)
 }
 
-pub fn burn_gas_libfunc_id(db: &dyn SierraGenGroup) -> sierra::ids::ConcreteLibFuncId {
-    get_libfunc_id_without_generics(db, "burn_gas")
+pub fn branch_align_libfunc_id(db: &dyn SierraGenGroup) -> sierra::ids::ConcreteLibFuncId {
+    get_libfunc_id_without_generics(db, "branch_align")
 }
 
 pub fn jump_libfunc_id(db: &dyn SierraGenGroup) -> sierra::ids::ConcreteLibFuncId {
