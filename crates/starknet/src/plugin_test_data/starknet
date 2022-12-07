@@ -20,7 +20,7 @@ struct TestContract { }
 func test(ref syscall_ptr: SyscallPtr, ref arg: felt, num: felt) -> felt {
     1
 }
-func __wrapper_test(ref syscall_ptr: SyscallPtr, data: Array::<felt>) -> Array::<felt> {
+func __wrapper_test(ref syscall_ptr: SyscallPtr, mut data: Array::<felt>) -> Array::<felt> {
     if array::array_len::<felt>(data) != integer::uint128_from_felt(3) {
         panic(array::array_new::<felt>());
     }

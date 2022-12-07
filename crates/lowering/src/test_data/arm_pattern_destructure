@@ -639,7 +639,7 @@ End:
 test_function_lowering
 
 //! > function
-func foo(z: felt) {
+func foo(mut z: felt) {
     match bar(z) {
         MyEnum::a((x, (y, z))) => {},
         MyEnum::b((x, y)) => {},
@@ -823,7 +823,7 @@ End:
 test_function_lowering
 
 //! > function
-func foo(z: felt) {
+func foo(mut z: felt) {
     let y = bar(z);
     match y {
         MyEnum::a((x, (y, z))) => {},

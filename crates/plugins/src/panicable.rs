@@ -105,7 +105,7 @@ fn generate_panicable_code(
                                 v
                             }},
                             Option::None (v) => {{
-                                let data = array_new::<felt>();
+                                let mut data = array_new::<felt>();
                                 array_append::<felt>(data, {err_value});
                                 panic(data)
                             }},
