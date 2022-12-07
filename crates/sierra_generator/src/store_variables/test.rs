@@ -36,7 +36,7 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibFuncId) -
                 ],
                 branch_signatures: vec![BranchSignature {
                     vars,
-                    ap_change: SierraApChange::Known(0),
+                    ap_change: SierraApChange::Known { new_vars_only: true },
                 }],
                 fallthrough: Some(0),
             }
@@ -55,7 +55,7 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibFuncId) -
                         param_idx: 0,
                     }),
                 }],
-                ap_change: SierraApChange::Known(0),
+                ap_change: SierraApChange::Known { new_vars_only: true },
             }],
             fallthrough: Some(0),
         },
@@ -63,7 +63,7 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibFuncId) -
             param_signatures: vec![],
             branch_signatures: vec![BranchSignature {
                 vars: vec![],
-                ap_change: SierraApChange::Known(0),
+                ap_change: SierraApChange::Known { new_vars_only: true },
             }],
             fallthrough: Some(0),
         },
@@ -86,7 +86,7 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibFuncId) -
                 param_signatures: vec![],
                 branch_signatures: vec![BranchSignature {
                     vars,
-                    ap_change: SierraApChange::Known(6),
+                    ap_change: SierraApChange::Known { new_vars_only: false },
                 }],
                 fallthrough: Some(0),
             }
@@ -95,15 +95,21 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibFuncId) -
             param_signatures: vec![],
             branch_signatures: vec![BranchSignature {
                 vars: vec![],
-                ap_change: SierraApChange::Known(0),
+                ap_change: SierraApChange::Known { new_vars_only: true },
             }],
             fallthrough: None,
         },
         "branch" => LibFuncSignature {
             param_signatures: vec![],
             branch_signatures: vec![
-                BranchSignature { vars: vec![], ap_change: SierraApChange::Known(0) },
-                BranchSignature { vars: vec![], ap_change: SierraApChange::Known(0) },
+                BranchSignature {
+                    vars: vec![],
+                    ap_change: SierraApChange::Known { new_vars_only: true },
+                },
+                BranchSignature {
+                    vars: vec![],
+                    ap_change: SierraApChange::Known { new_vars_only: true },
+                },
             ],
             fallthrough: Some(1),
         },
@@ -119,7 +125,7 @@ fn get_lib_func_signature(db: &dyn SierraGenGroup, libfunc: ConcreteLibFuncId) -
                     ty: felt_ty,
                     ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
                 }],
-                ap_change: SierraApChange::Known(1),
+                ap_change: SierraApChange::Known { new_vars_only: true },
             }],
             fallthrough: Some(0),
         },
@@ -366,8 +372,8 @@ fn push_values_clear_known_stack() {
         vec![
             "store_temp<felt>(0) -> (100)",
             "store_temp<felt>(1) -> (101)",
-            "store_temp<felt>(100) -> (200)",
-            "store_temp<felt>(101) -> (201)",
+            "rename<felt>(100) -> (200)",
+            "rename<felt>(101) -> (201)",
             "nope() -> ()",
             "rename<felt>(200) -> (300)",
             "rename<felt>(201) -> (301)",

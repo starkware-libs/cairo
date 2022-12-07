@@ -7,12 +7,13 @@ use filesystem::ids::CrateId;
 use lowering::db::LoweringGroup;
 use semantic::corelib::get_core_ty_by_name;
 use semantic::{GenericArgumentId, Mutability};
+use sierra::extensions::lib_func::SierraApChange;
 use sierra::extensions::{ConcreteType, GenericTypeEx};
 use sierra::ids::ConcreteTypeId;
 
 use crate::program_generator::{self};
 use crate::specialization_context::SierraSignatureSpecializationContext;
-use crate::{ap_change, function_generator, pre_sierra, ApChange, SierraGeneratorDiagnostic};
+use crate::{ap_change, function_generator, pre_sierra, SierraGeneratorDiagnostic};
 
 #[salsa::query_group(SierraGenDatabase)]
 pub trait SierraGenGroup: LoweringGroup + Upcast<dyn LoweringGroup> {
@@ -90,9 +91,9 @@ pub trait SierraGenGroup: LoweringGroup + Upcast<dyn LoweringGroup> {
     fn contains_cycle(&self, function_id: FreeFunctionId) -> Option<bool>;
 
     /// Returns the ap change of a given function if it is known at compile time or
-    /// [ApChange::Unknown] otherwise.
+    /// [SierraApChange::Unknown] otherwise.
     #[salsa::invoke(ap_change::get_ap_change)]
-    fn get_ap_change(&self, function_id: FreeFunctionId) -> Option<ApChange>;
+    fn get_ap_change(&self, function_id: FreeFunctionId) -> Option<SierraApChange>;
 
     /// Returns the [sierra::program::Program] object of the requested functions.
     #[salsa::invoke(program_generator::get_sierra_program_for_functions)]

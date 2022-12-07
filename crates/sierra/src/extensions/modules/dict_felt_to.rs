@@ -85,7 +85,7 @@ impl SignatureOnlyGenericLibFunc for DictFeltToNewLibFunc {
                 ty: context.get_wrapped_concrete_type(DictFeltToType::id(), ty)?,
                 ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
             }],
-            SierraApChange::Known(1),
+            SierraApChange::Known { new_vars_only: false },
         ))
     }
 }
@@ -110,7 +110,7 @@ impl SignatureOnlyGenericLibFunc for DictFeltToWriteLibFunc {
                 ty: dict_ty,
                 ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
             }],
-            SierraApChange::Known(1),
+            SierraApChange::Known { new_vars_only: false },
         ))
     }
 }
@@ -141,7 +141,7 @@ impl SignatureOnlyGenericLibFunc for DictFeltToReadLibFunc {
                     ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                 },
             ],
-            SierraApChange::Known(1),
+            SierraApChange::Known { new_vars_only: false },
         ))
     }
 }

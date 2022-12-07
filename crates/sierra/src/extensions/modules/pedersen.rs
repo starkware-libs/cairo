@@ -73,7 +73,7 @@ impl NoGenericArgsGenericLibFunc for PedersenHashLibFunc {
                     ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                 },
             ],
-            SierraApChange::Known(0),
+            SierraApChange::Known { new_vars_only: true },
         ))
     }
 }

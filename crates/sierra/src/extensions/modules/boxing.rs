@@ -62,7 +62,7 @@ impl SignatureOnlyGenericLibFunc for IntoBoxLibFunc {
                 ty: context.get_wrapped_concrete_type(BoxType::id(), ty)?,
                 ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
             }],
-            SierraApChange::Known(0),
+            SierraApChange::Known { new_vars_only: true },
         ))
     }
 }
@@ -85,7 +85,7 @@ impl SignatureOnlyGenericLibFunc for UnboxLibFunc {
                 ty,
                 ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
             }],
-            SierraApChange::Known(0),
+            SierraApChange::Known { new_vars_only: true },
         ))
     }
 }

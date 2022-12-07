@@ -4,7 +4,6 @@ use sierra::extensions::type_specialization_context::TypeSpecializationContext;
 use sierra::program::ConcreteTypeLongId;
 
 use crate::db::SierraGenGroup;
-use crate::ApChange;
 
 /// A wrapper over the [SierraGenGroup] salsa database, that provides the
 /// [SignatureSpecializationContext] functionality.
@@ -52,12 +51,7 @@ impl SignatureSpecializationContext for SierraSignatureSpecializationContext<'_>
             .lookup_intern_function(self.0.lookup_intern_sierra_function(function_id.clone()))
             .function;
         match concrete_function.generic_function {
-            GenericFunctionId::Free(free_function_id) => {
-                self.0.get_ap_change(free_function_id).map(|ap_change| match ap_change {
-                    ApChange::Known(value) => SierraApChange::Known(value),
-                    ApChange::Unknown => SierraApChange::Unknown,
-                })
-            }
+            GenericFunctionId::Free(free_function_id) => self.0.get_ap_change(free_function_id),
             GenericFunctionId::Extern(_) | GenericFunctionId::TraitFunction(_) => panic!(
                 "Internal compiler error: get_function_ap_change() should only be used for user \
                  defined functions."

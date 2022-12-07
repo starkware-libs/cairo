@@ -80,7 +80,7 @@ impl SignatureOnlyGenericLibFunc for ArrayNewLibFunc {
                 ty: context.get_wrapped_concrete_type(ArrayType::id(), ty)?,
                 ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
             }],
-            SierraApChange::Known(1),
+            SierraApChange::Known { new_vars_only: false },
         ))
     }
 }
@@ -110,7 +110,7 @@ impl SignatureOnlyGenericLibFunc for ArrayLenLibFunc {
                     ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                 },
             ],
-            SierraApChange::Known(1),
+            SierraApChange::Known { new_vars_only: true },
         ))
     }
 }
@@ -135,7 +135,7 @@ impl SignatureOnlyGenericLibFunc for ArrayAppendLibFunc {
                 ty: arr_ty,
                 ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
             }],
-            SierraApChange::Known(0),
+            SierraApChange::Known { new_vars_only: true },
         ))
     }
 }
@@ -184,7 +184,7 @@ impl SignatureOnlyGenericLibFunc for ArrayAtLibFunc {
                         ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                     },
                 ],
-                ap_change: SierraApChange::Known(5),
+                ap_change: SierraApChange::Known { new_vars_only: false },
             },
             BranchSignature {
                 vars: vec![
@@ -199,7 +199,7 @@ impl SignatureOnlyGenericLibFunc for ArrayAtLibFunc {
                         ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },
                     },
                 ],
-                ap_change: SierraApChange::Known(3),
+                ap_change: SierraApChange::Known { new_vars_only: false },
             },
         ];
         Ok(LibFuncSignature { param_signatures, branch_signatures, fallthrough: Some(0) })

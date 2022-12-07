@@ -3,7 +3,6 @@ use std::fs;
 use std::path::PathBuf;
 
 use itertools::Itertools;
-use sierra::extensions::lib_func::SierraApChange;
 use sierra::ids::FunctionId;
 use sierra::program::Program;
 use sierra_gas::calc_gas_info;
@@ -20,9 +19,7 @@ pub fn build_metadata(
     Metadata {
         function_ap_change: ap_change_data
             .iter()
-            .map(|(func_name, change)| {
-                (FunctionId::from_string(func_name), SierraApChange::Known(*change))
-            })
+            .map(|(func_name, change)| (FunctionId::from_string(func_name), *change))
             .collect(),
         gas_info: if calculate_gas_info {
             calc_gas_info(program).expect("Failed calculating gas variables.")
