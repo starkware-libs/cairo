@@ -2045,6 +2045,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "sierra_ap_change"
+version = "0.1.0"
+dependencies = [
+ "env_logger",
+ "indoc",
+ "itertools",
+ "sierra",
+ "test-case",
+ "test-log",
+ "thiserror",
+ "utils",
+]
+
+[[package]]
 name = "sierra_gas"
 version = "0.1.0"
 dependencies = [
@@ -2105,6 +2119,7 @@ dependencies = [
  "num-traits 0.2.15",
  "pretty_assertions",
  "sierra",
+ "sierra_ap_change",
  "sierra_gas",
  "test-case",
  "test-log",
