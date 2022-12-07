@@ -9,7 +9,7 @@ use sierra::program;
 use crate::expr_generator_context::ExprGeneratorContext;
 use crate::pre_sierra;
 use crate::utils::{
-    burn_gas_libfunc_id, enum_init_libfunc_id, felt_const_libfunc_id, get_concrete_libfunc_id,
+    branch_align_libfunc_id, enum_init_libfunc_id, felt_const_libfunc_id, get_concrete_libfunc_id,
     jump_libfunc_id, jump_statement, match_enum_libfunc_id, return_statement, simple_statement,
     struct_construct_libfunc_id, struct_deconstruct_libfunc_id,
 };
@@ -92,8 +92,6 @@ pub fn generate_return_code(
     }
 
     statements.push(pre_sierra::Statement::PushValues(push_values));
-    // Add burn_gas to equalize gas costs across all return paths.
-    statements.push(simple_statement(burn_gas_libfunc_id(context.get_db()), &[], &[]));
     statements.push(return_statement(return_variables_on_stack));
 
     Some(statements)
@@ -238,6 +236,8 @@ fn generate_statement_match_extern_code(
         if i > 0 {
             statements.push(arm_labels[i - 1].0.clone());
         }
+        // Add branch_align to equalize gas costs across the merging paths.
+        statements.push(simple_statement(branch_align_libfunc_id(context.get_db()), &[], &[]));
 
         // TODO(lior): Try to avoid the following clone().
         let lowered_block = context.get_lowered_block(*block_id);
@@ -246,9 +246,6 @@ fn generate_statement_match_extern_code(
         statements.extend(code);
 
         if is_reachable {
-            // Add burn_gas to equalize gas costs across the merging paths.
-            statements.push(simple_statement(burn_gas_libfunc_id(context.get_db()), &[], &[]));
-
             // Add jump statement to the end of the match. The last block does not require a jump.
             if i < statement.arms.len() - 1 {
                 statements.push(jump_statement(jump_libfunc_id(context.get_db()), end_label_id));
@@ -355,6 +352,8 @@ fn generate_statement_match_enum(
         enumerate(zip_eq(arm_label_statements, &statement.arms))
     {
         statements.push(label_statement);
+        // Add branch_align to equalize gas costs across the merging paths.
+        statements.push(simple_statement(branch_align_libfunc_id(context.get_db()), &[], &[]));
 
         let lowered_block = context.get_lowered_block(*arm);
         let (code, is_reachable) =
@@ -362,9 +361,6 @@ fn generate_statement_match_enum(
         statements.extend(code);
 
         if is_reachable {
-            // Add burn_gas to equalize gas costs across the merging paths.
-            statements.push(simple_statement(burn_gas_libfunc_id(context.get_db()), &[], &[]));
-
             // Add jump statement to the end of the match. The last block does not require a jump.
             if i < statement.arms.len() - 1 {
                 statements.push(jump_statement(jump_libfunc_id(context.get_db()), end_label_id));

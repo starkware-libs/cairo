@@ -24,12 +24,12 @@ foo
 
 //! > sierra_code
 felt_jump_nz([0]) { fallthrough() label0([1]) }
+branch_align() -> ()
 felt_const<1>() -> ([2])
 PushValues([2]: felt) -> ([3])
-burn_gas() -> ()
 return([3])
 label0:
+branch_align() -> ()
 PushValues() -> ()
-burn_gas() -> ()
 label1:
 felt_const<2>() -> ([4])
