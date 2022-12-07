@@ -7,6 +7,7 @@ edition.workspace = true
 utils = { path = "../utils" }
 log.workspace = true
 env_logger.workspace = true
+pretty_assertions.workspace = true
 
 [dev-dependencies]
 test-log.workspace = true

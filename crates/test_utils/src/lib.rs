@@ -20,6 +20,6 @@ pub fn compare_contents_or_fix_with_path(path: &Path, content: String) {
     if is_fix_mode {
         set_contents(path, content);
     } else {
-        assert_eq!(content, get_expected_contents(path));
+        pretty_assertions::assert_eq!(content, get_expected_contents(path));
     }
 }
