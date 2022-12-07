@@ -7,6 +7,7 @@ use syntax::node::helpers::GetIdentifier;
 use syntax::node::{ast, Terminal, TypedSyntaxNode};
 
 static CONTRACT_IMPL_ATTR: &str = "ContractImpl";
+pub static WRAPPER_PREFIX: &str = "__wrapper_";
 
 #[cfg(test)]
 #[path = "plugin_test.rs"]
@@ -118,7 +119,7 @@ fn generate_entry_point_wrapper(
     let param_names_tokens = join(arg_names.into_iter(), ", ");
 
     let wrapped_name = function.name(db).text(db).to_string();
-    let wrapper_name = format!("__wrapper_{}", wrapped_name);
+    let wrapper_name = format!("{}{}", WRAPPER_PREFIX, wrapped_name);
 
     // TODO(yuval): change to uint128 literal once it's supported.
     Some(quote! {
