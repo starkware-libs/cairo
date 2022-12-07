@@ -2400,6 +2400,7 @@ version = "0.1.0"
 dependencies = [
  "env_logger",
  "log",
+ "pretty_assertions",
  "test-log",
  "utils",
 ]
