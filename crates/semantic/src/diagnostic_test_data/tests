@@ -162,3 +162,29 @@ error: ref argument must be a mutable variable.
  --> lib.cairo:3:7
   foo(a);
       ^
+
+//! > ==========================================================================
+
+//! > Test numerical literal of unsupported type.
+
+//! > test_function_name
+test_expr_diagnostics
+
+//! > expr_code
+{
+    let a = 123_felt;
+    let a = 123_uint128;
+    let b = 123_uint129;
+}
+
+//! > module_code
+func foo() {
+}
+
+//! > function_body
+
+//! > expected_diagnostics
+error: Unknown type.
+ --> lib.cairo:7:13
+    let b = 123_uint129;
+            ^*********^

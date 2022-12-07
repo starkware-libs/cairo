@@ -24,7 +24,7 @@ use super::pattern::{
 };
 use crate::corelib::{
     core_binary_operator, core_felt_ty, core_unary_operator, false_literal_expr, never_ty,
-    true_literal_expr, unit_ty, unwrap_error_propagation_type,
+    true_literal_expr, try_get_core_ty_by_name, unit_ty, unwrap_error_propagation_type,
 };
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
@@ -836,12 +836,26 @@ fn literal_to_semantic(
 ) -> Option<ExprLiteral> {
     let db = ctx.db;
     let syntax_db = db.upcast();
-    let literal = LiteralLongId::try_from(literal_syntax.text(syntax_db))
-        .ok()
-        .on_none(|| ctx.diagnostics.report(literal_syntax, UnknownLiteral))?;
+    let text = literal_syntax.text(syntax_db);
 
-    let ty = db.core_felt_ty();
-    Some(ExprLiteral { value: literal.value, ty, stable_ptr: literal_syntax.stable_ptr().into() })
+    let (literal_text, ty) = if let Some((literal, ty)) = text.split_once('_') {
+        (literal.into(), Some(ty))
+    } else {
+        (text.clone(), None)
+    };
+    let value = LiteralLongId::try_from(literal_text)
+        .ok()
+        .on_none(|| ctx.diagnostics.report(literal_syntax, UnknownLiteral))?
+        .value;
+
+    let ty = if let Some(ty_str) = ty {
+        try_get_core_ty_by_name(db, ty_str.into(), vec![])
+            .map_err(|err| ctx.diagnostics.report(literal_syntax, err))
+            .ok()?
+    } else {
+        db.core_felt_ty()
+    };
+    Some(ExprLiteral { value, ty, stable_ptr: literal_syntax.stable_ptr().into() })
 }
 
 /// Given an expression syntax, if it's an identifier, returns it. Otherwise, returns the proper
