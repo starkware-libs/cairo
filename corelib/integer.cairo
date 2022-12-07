@@ -285,3 +285,10 @@ func uint256_eq(a: uint256, b: uint256) -> bool implicits() {
 func uint256_ne(a: uint256, b: uint256) -> bool implicits() {
     !(a == b)
 }
+
+func uint256_from_felt(a: felt) -> uint256 implicits(RangeCheck) nopanic {
+    match uint128s_from_felt(a) {
+        Uint128sFromFeltResult::Narrow(low) => uint256 { low, high: uint128_from_felt_low(0) },
+        Uint128sFromFeltResult::Wide((high, low)) => uint256 { low, high },
+    }
+}

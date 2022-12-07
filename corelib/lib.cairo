@@ -151,6 +151,7 @@ use integer::uint256_sub;
 use integer::uint256_mul;
 use integer::uint256_eq;
 use integer::uint256_ne;
+use integer::uint256_from_felt;
 
 // Gas.
 mod gas;
@@ -163,8 +164,7 @@ enum never { }
 extern func panic(data: Array::<felt>) -> never;
 
 func assert(cond: bool, err_code: felt) {
-    if cond {
-    } else {
+    if !cond {
         let mut data = array_new::<felt>();
         array_append::<felt>(data, err_code);
         panic(data);
