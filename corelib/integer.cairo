@@ -4,8 +4,16 @@ impl Uint128Drop of Drop::<uint128>;
 
 // TODO(orizi): Change all error codes into short-strings.
 
+enum Uint128sFromFeltResult { Narrow: uint128, Wide: (uint128, uint128), }
+extern func uint128s_from_felt(a: felt) -> Uint128sFromFeltResult implicits(RangeCheck) nopanic;
+
 #[panic_with(1, uint128_from_felt)]
-extern func uint128_try_from_felt(a: felt) -> Option::<uint128> implicits(RangeCheck) nopanic;
+func uint128_try_from_felt(a: felt) -> Option::<uint128> implicits(RangeCheck) nopanic {
+    match uint128s_from_felt(a) {
+        Uint128sFromFeltResult::Narrow(x) => Option::<uint128>::Some(x),
+        Uint128sFromFeltResult::Wide(x) => Option::<uint128>::None(()),
+    }
+}
 
 extern func uint128_to_felt(a: uint128) -> felt nopanic;
 
@@ -19,16 +27,16 @@ extern func uint128_overflow_sub(
 ) -> Result::<uint128, uint128> implicits(RangeCheck) nopanic;
 
 // TODO(orizi): This is a helper for `uint128_wide_mul` - remove when becomes extern.
-func uint128_from_felt_or(a: felt, d: uint128) -> uint128 implicits(RangeCheck) nopanic {
-    match uint128_try_from_felt(a) {
-        Option::Some(x) => x,
-        Option::None(x) => d,
+func uint128_from_felt_low(a: felt) -> uint128 implicits(RangeCheck) nopanic {
+    match uint128s_from_felt(a) {
+        Uint128sFromFeltResult::Narrow(x) => x,
+        Uint128sFromFeltResult::Wide((x, _)) => x,
     }
 }
 
 // TODO(orizi): This is a helper for `uint128_wide_mul` - remove when becomes extern.
 func uint128_known_u64_mul(a: uint128, b: uint128) -> uint128 implicits(RangeCheck) nopanic {
-    uint128_from_felt_or(uint128_to_felt(a) * uint128_to_felt(b), a)
+    uint128_from_felt_low(uint128_to_felt(a) * uint128_to_felt(b))
 }
 
 func uint128_wrapping_add(a: uint128, b: uint128) -> uint128 implicits(RangeCheck) nopanic {
@@ -40,7 +48,7 @@ func uint128_wrapping_add(a: uint128, b: uint128) -> uint128 implicits(RangeChec
 
 // TODO(orizi): Change to extern when added.
 func uint128_wide_mul(a: uint128, b: uint128) -> (uint128, uint128) implicits(RangeCheck) nopanic {
-    let u2_64 = uint128_from_felt_or(18446744073709551616, a);
+    let u2_64 = uint128_from_felt_low(18446744073709551616);
     let nz_u2_64 = match uint128_checked_as_non_zero(u2_64) {
         Option::Some(x) => x,
         Option::None(x) => {
@@ -48,7 +56,7 @@ func uint128_wide_mul(a: uint128, b: uint128) -> (uint128, uint128) implicits(Ra
             return (a, b);
         },
     };
-    let u1 = uint128_from_felt_or(1, a);
+    let u1 = uint128_from_felt_low(1);
     let (a1, a0) = uint128_safe_divmod(a, nz_u2_64);
     let (b1, b0) = uint128_safe_divmod(b, nz_u2_64);
     let top_word = uint128_known_u64_mul(a1, b1);
@@ -185,7 +193,7 @@ func uint256_overflow_add(
     match uint128_overflow_add(a.low, b.low) {
         Result::Ok(low) => (uint256 { low, high }, overflow),
         Result::Err(low) => {
-            match uint128_overflow_add(high, uint128_from_felt_or(1, high)) {
+            match uint128_overflow_add(high, uint128_from_felt_low(1)) {
                 Result::Ok(high) => (uint256 { low, high }, overflow),
                 Result::Err(high) => (uint256 { low, high }, true),
             }
@@ -204,7 +212,7 @@ func uint256_overflow_sub(
     match uint128_overflow_sub(a.low, b.low) {
         Result::Ok(low) => (uint256 { low, high }, overflow),
         Result::Err(low) => {
-            match uint128_overflow_sub(high, uint128_from_felt_or(1, high)) {
+            match uint128_overflow_sub(high, uint128_from_felt_low(1)) {
                 Result::Ok(high) => (uint256 { low, high }, overflow),
                 Result::Err(high) => (uint256 { low, high }, true),
             }
@@ -213,7 +221,7 @@ func uint256_overflow_sub(
 }
 
 func uint256_overflow_mul(a: uint256, b: uint256) -> (uint256, bool) nopanic {
-    let u0 = uint128_from_felt_or(0, a.low);
+    let u0 = uint128_from_felt_low(0);
     let (low, high1) = uint128_wide_mul(a.low, b.low);
     let (high2, overflow_value1) = uint128_wide_mul(a.low, b.high);
     let (high3, overflow_value2) = uint128_wide_mul(a.high, b.low);

@@ -43,7 +43,7 @@ define_libfunc_hierarchy! {
         LessThan(Uint128LessThanLibFunc),
         LessThanOrEqual(Uint128LessThanOrEqualLibFunc),
         Const(Uint128ConstLibFunc),
-        FromFelt(Uint128FromFeltLibFunc),
+        FromFelt(Uint128sFromFeltLibFunc),
         ToFelt(Uint128ToFeltLibFunc),
         JumpNotZero(Uint128JumpNotZeroLibFunc),
     }, Uint128Concrete
@@ -435,11 +435,12 @@ impl NoGenericArgsGenericLibFunc for Uint128LessThanOrEqualLibFunc {
     }
 }
 
-/// LibFunc for converting a felt into a uint128.
+/// LibFunc for converting a felt into a uint128, or the number and the overflow in the case of
+/// failure.
 #[derive(Default)]
-pub struct Uint128FromFeltLibFunc {}
-impl NoGenericArgsGenericLibFunc for Uint128FromFeltLibFunc {
-    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("uint128_try_from_felt");
+pub struct Uint128sFromFeltLibFunc {}
+impl NoGenericArgsGenericLibFunc for Uint128sFromFeltLibFunc {
+    const ID: GenericLibFuncId = GenericLibFuncId::new_inline("uint128s_from_felt");
 
     fn specialize_signature(
         &self,
@@ -473,12 +474,22 @@ impl NoGenericArgsGenericLibFunc for Uint128FromFeltLibFunc {
                     ap_change: SierraApChange::Known(1),
                 },
                 BranchSignature {
-                    vars: vec![OutputVarInfo {
-                        ty: range_check_type,
-                        ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                            param_idx: 0,
-                        }),
-                    }],
+                    vars: vec![
+                        OutputVarInfo {
+                            ty: range_check_type,
+                            ref_info: OutputVarReferenceInfo::Deferred(
+                                DeferredOutputKind::AddConst { param_idx: 0 },
+                            ),
+                        },
+                        OutputVarInfo {
+                            ty: context.get_concrete_type(Uint128Type::id(), &[])?,
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
+                        },
+                        OutputVarInfo {
+                            ty: context.get_concrete_type(Uint128Type::id(), &[])?,
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: 1 },
+                        },
+                    ],
                     ap_change: SierraApChange::Known(5),
                 },
             ],
