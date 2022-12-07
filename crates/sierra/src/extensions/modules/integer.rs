@@ -479,7 +479,7 @@ impl NoGenericArgsGenericLibFunc for Uint128FromFeltLibFunc {
                             param_idx: 0,
                         }),
                     }],
-                    ap_change: SierraApChange::Known(4),
+                    ap_change: SierraApChange::Known(5),
                 },
             ],
             fallthrough: Some(0),

@@ -193,7 +193,7 @@ fn build_uint128_from_felt(
                 jmp rel 0 if [ap + 0] != 0, ap++; // Jump to success branch. Address updated later.
                 // Overflow:
                 %{ (memory[ap + 0], memory[ap + 1]) = divmod(
-                    memory (range_check.unchecked_apply_known_ap_change(1)),
+                    memory (value.unchecked_apply_known_ap_change(1)),
                     (uint128_limit.clone())
                 ) %}
                 ap += 2;
@@ -251,7 +251,7 @@ fn build_uint128_from_felt(
                 ]
                 .into_iter(),
                 vec![ReferenceExpression::from_cell(CellExpression::Deref(
-                    range_check.unchecked_apply_known_ap_change(4),
+                    range_check.unchecked_apply_known_ap_change(5),
                 ))]
                 .into_iter(),
             ]
@@ -261,9 +261,9 @@ fn build_uint128_from_felt(
                 builder.build(casm! { ap += 1; }.instructions, vec![], output_expressions)
             } else {
                 builder.build(
-                    casm! { ap += 4; jmp rel 0; }.instructions,
+                    casm! { ap += 5; jmp rel 0; }.instructions,
                     vec![RelocationEntry {
-                        instruction_idx: 0,
+                        instruction_idx: 1,
                         relocation: Relocation::RelativeStatementId(failure_handle_statement_id),
                     }],
                     output_expressions,
