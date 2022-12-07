@@ -328,6 +328,7 @@ pub enum SierraApChange {
     Unknown,
     /// The libfunc changes `ap` by pushing new tempvars, as described by
     /// [OutputVarReferenceInfo::NewTempVar] in [`BranchSignature::vars`].
+    // TODO(orizi): Add a special case for `Known(0)`.
     Known(usize),
     // The libfunc allocates locals, the `ap` change depends on the environment.
     FinalizeLocals,
