@@ -12,11 +12,11 @@ use super::modules::gas::{GasBuiltinType, GasLibFunc};
 use super::modules::integer::{Uint128LibFunc, Uint128Type};
 use super::modules::mem::MemLibFunc;
 use super::modules::non_zero::{NonZeroType, UnwrapNonZeroLibFunc};
-use super::modules::syscalls::SyscallPtrType;
 use super::modules::unconditional_jump::UnconditionalJumpLibFunc;
 use super::pedersen::{PedersenLibFunc, PedersenType};
 use super::range_check::RangeCheckType;
 use super::squashed_dict_felt_to::SquashedDictFeltToType;
+use super::starknet::{StarkNetLibFunc, StarkNetType};
 use super::strct::{StructLibFunc, StructType};
 use super::uninitialized::UninitializedType;
 use crate::{define_libfunc_hierarchy, define_type_hierarchy};
@@ -37,7 +37,7 @@ define_type_hierarchy! {
         DictFeltTo(DictFeltToType),
         SquashedDictFeltTo(SquashedDictFeltToType),
         Pedersen(PedersenType),
-        SyscallPtr(SyscallPtrType),
+        StarkNet(StarkNetType),
     }, CoreTypeConcrete
 }
 
@@ -60,5 +60,6 @@ define_libfunc_hierarchy! {
         Struct(StructLibFunc),
         DictFeltTo(DictFeltToLibFunc),
         Pedersen(PedersenLibFunc),
+        StarkNet(StarkNetLibFunc),
     }, CoreConcreteLibFunc
 }

@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use sierra::extensions::core::{CoreLibFunc, CoreType, CoreTypeConcrete};
 use sierra::extensions::non_zero::NonZeroConcreteType;
+use sierra::extensions::starknet::StarkNetTypeConcrete;
 use sierra::ids::ConcreteTypeId;
 use sierra::program::Program;
 use sierra::program_registry::ProgramRegistry;
@@ -23,7 +24,8 @@ pub fn get_type_size_map(
             | CoreTypeConcrete::Uint128(_)
             | CoreTypeConcrete::RangeCheck(_)
             | CoreTypeConcrete::Box(_)
-            | CoreTypeConcrete::SyscallPtr(_) => Some(1),
+            | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::SyscallPtr(_)) => Some(1),
+            CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::StorageAddress(_)) => Some(1),
             CoreTypeConcrete::Pedersen(_) => Some(1),
             CoreTypeConcrete::Array(_)
             | CoreTypeConcrete::DictFeltTo(_)
