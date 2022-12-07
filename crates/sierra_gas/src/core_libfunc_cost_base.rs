@@ -1,14 +1,14 @@
 use sierra::extensions::array::ArrayConcreteLibFunc;
 use sierra::extensions::builtin_cost::{BuiltinCostConcreteLibFunc, CostTokenType};
 use sierra::extensions::core::CoreConcreteLibFunc::{
-    self, ApTracking, Array, Box, BuiltinCost, DictFeltTo, Drop, Dup, Enum, Felt, FunctionCall,
-    Gas, Mem, Pedersen, Struct, Uint128, UnconditionalJump, UnwrapNonZero,
+    self, ApTracking, Array, Box, BranchAlign, BuiltinCost, DictFeltTo, Drop, Dup, Enum, Felt,
+    FunctionCall, Gas, Mem, Pedersen, Struct, Uint128, UnconditionalJump, UnwrapNonZero,
 };
 use sierra::extensions::dict_felt_to::DictFeltToConcreteLibFunc;
 use sierra::extensions::enm::EnumConcreteLibFunc;
 use sierra::extensions::felt::FeltConcrete;
 use sierra::extensions::function_call::FunctionCallConcreteLibFunc;
-use sierra::extensions::gas::GasConcreteLibFunc::{BurnGas, GetGas, RefundGas};
+use sierra::extensions::gas::GasConcreteLibFunc::{GetGas, RefundGas};
 use sierra::extensions::integer::{
     IntOperator, Uint128BinaryOperationConcreteLibFunc, Uint128Concrete,
     Uint128OperationConcreteLibFunc, Uint128OperationWithConstConcreteLibFunc,
@@ -57,7 +57,7 @@ pub fn core_libfunc_cost_base<Ops: CostOperations>(
             ]
         }
         Gas(RefundGas(_)) => vec![ops.statement_var_cost(CostTokenType::Step)],
-        Gas(BurnGas(_)) => {
+        BranchAlign(_) => {
             // TODO(lior): Fix BurnGas Sierra->casm code to handle all token types.
             let cost = CostTokenType::iter()
                 .map(|token_type| ops.statement_var_cost(*token_type))
