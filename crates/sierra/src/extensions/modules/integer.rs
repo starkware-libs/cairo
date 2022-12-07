@@ -435,7 +435,8 @@ impl NoGenericArgsGenericLibFunc for Uint128LessThanOrEqualLibFunc {
     }
 }
 
-/// LibFunc for converting a felt into a uint128.
+/// LibFunc for converting a felt into a uint128, or the number and the overflow in the case of
+/// failure.
 #[derive(Default)]
 pub struct Uint128FromFeltLibFunc {}
 impl NoGenericArgsGenericLibFunc for Uint128FromFeltLibFunc {
@@ -473,12 +474,22 @@ impl NoGenericArgsGenericLibFunc for Uint128FromFeltLibFunc {
                     ap_change: SierraApChange::Known(1),
                 },
                 BranchSignature {
-                    vars: vec![OutputVarInfo {
-                        ty: range_check_type,
-                        ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                            param_idx: 0,
-                        }),
-                    }],
+                    vars: vec![
+                        OutputVarInfo {
+                            ty: range_check_type,
+                            ref_info: OutputVarReferenceInfo::Deferred(
+                                DeferredOutputKind::AddConst { param_idx: 0 },
+                            ),
+                        },
+                        OutputVarInfo {
+                            ty: context.get_concrete_type(Uint128Type::id(), &[])?,
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
+                        },
+                        OutputVarInfo {
+                            ty: context.get_concrete_type(Uint128Type::id(), &[])?,
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: 1 },
+                        },
+                    ],
                     ap_change: SierraApChange::Known(5),
                 },
             ],
