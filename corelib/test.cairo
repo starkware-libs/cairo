@@ -158,6 +158,12 @@ func as_uint256(high: felt, low: felt) -> uint256 {
     uint256 { low: uint128_from_felt(low), high: uint128_from_felt(high) }
 }
 
+#[test]
+func test_uint256_from_felt() {
+    assert(uint256_from_felt(1) == as_uint256(0, 1), 1);
+    assert(uint256_from_felt(170141183460469231731687303715884105728 * 2) == as_uint256(1, 0), 1);
+}
+
 // TODO(orizi): Use uint256 literals when supported.
 #[test]
 func test_uint256_operators() {
