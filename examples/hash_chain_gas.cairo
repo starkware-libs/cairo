@@ -5,8 +5,7 @@ func hash_chain(n: felt, pedersen_cost: PedersenBuiltinCost) -> felt {
     }
 
     match get_gas() {
-        Option::Some(x) => {
-        },
+        Option::Some(x) => {},
         Option::None(x) => {
             let mut data = array_new::<felt>();
             array_append::<felt>(data, 1);
@@ -15,8 +14,7 @@ func hash_chain(n: felt, pedersen_cost: PedersenBuiltinCost) -> felt {
     }
 
     match pedersen_get_gas(pedersen_cost) {
-        Option::Some(x) => {
-        },
+        Option::Some(x) => {},
         Option::None(x) => {
             let mut data = array_new::<felt>();
             array_append::<felt>(data, 1);

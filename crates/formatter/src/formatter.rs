@@ -68,6 +68,8 @@ pub struct BreakLinePointProperties {
     /// For example, if StatementList is broken the code is indented, but if AttributeList is
     /// broken there is no indentation.
     pub add_indent: bool,
+    /// Indicates to put a space instead of the break line point if it were not broken.
+    pub space_if_ignored: bool,
 }
 impl BreakLinePointProperties {
     pub fn new(
@@ -75,8 +77,9 @@ impl BreakLinePointProperties {
         break_type: BreakLinePointType,
         is_optional: bool,
         add_indent: bool,
+        space_if_ignored: bool,
     ) -> Self {
-        Self { precedence, break_type, is_optional, add_indent }
+        Self { precedence, break_type, is_optional, add_indent, space_if_ignored }
     }
 }
 /// Represents the relative position of a break line point inside a node.
@@ -122,7 +125,7 @@ impl LineComponent {
             Self::Internal { builder, .. } => builder.width(),
             Self::Space => 1,
             Self::Indent(n) => *n,
-            Self::BreakLinePoint(_) => 0,
+            Self::BreakLinePoint(properties) => usize::from(properties.space_if_ignored),
             // TODO(Gil): Only leading comments should be ignored.
             Self::Comment(_) => 0,
         }
@@ -135,7 +138,9 @@ impl fmt::Display for LineComponent {
             Self::Internal { builder, .. } => write!(f, "{builder}"),
             Self::Space => write!(f, " "),
             Self::Indent(n) => write!(f, "{}", " ".repeat(*n)),
-            Self::BreakLinePoint(_) => write!(f, ""),
+            Self::BreakLinePoint(properties) => {
+                write!(f, "{}", if properties.space_if_ignored { " " } else { "" })
+            }
             Self::Comment(s) => write!(f, "{s}"),
         }
     }
@@ -343,6 +348,10 @@ impl LineBuilder {
                 }
             }
             if i == 0 && break_line_point_properties.break_type.is_dangling() {
+                trees
+                    .last_mut()
+                    .unwrap()
+                    .push_str(if break_line_point_properties.space_if_ignored { " " } else { "" });
                 added_indent = trees.last_mut().unwrap().width();
                 base_indent = 0;
             } else if *position < self.children.len() {
@@ -646,15 +655,15 @@ impl<'a> Formatter<'a> {
     }
     /// Appends a token node to the result.
     fn append_token(&mut self, text: SmolStr, syntax_node: &SyntaxNode, no_space_after: bool) {
-        if !syntax_node.force_no_space_before(self.db) && !self.line_state.no_space_after {
-            self.line_state.line_buffer.push_space();
-        }
-        self.line_state.no_space_after = no_space_after;
         if let Some(break_properties) =
             syntax_node.get_break_line_point_properties(self.db, BreakingPosition::Leading)
         {
             self.append_break_line_point(break_properties);
         }
+        if !syntax_node.force_no_space_before(self.db) && !self.line_state.no_space_after {
+            self.line_state.line_buffer.push_space();
+        }
+        self.line_state.no_space_after = no_space_after;
         self.line_state.line_buffer.push_str(&text);
         if let Some(break_properties) =
             syntax_node.get_break_line_point_properties(self.db, BreakingPosition::Trailing)
@@ -664,5 +673,6 @@ impl<'a> Formatter<'a> {
     }
     fn append_break_line_point(&mut self, properties: BreakLinePointProperties) {
         self.line_state.line_buffer.push_break_line_point(properties);
+        self.line_state.no_space_after = true;
     }
 }

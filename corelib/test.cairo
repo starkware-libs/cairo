@@ -163,17 +163,17 @@ func as_uint256(high: felt, low: felt) -> uint256 {
 func test_uint256_operators() {
     assert(as_uint256(1, 1) + as_uint256(3, 2) == as_uint256(4, 3), 1);
     assert(
-        as_uint256(1, 170141183460469231731687303715884105728) 
-        + as_uint256(3, 170141183460469231731687303715884105728) == as_uint256(5, 0),
+        as_uint256(1, 170141183460469231731687303715884105728)
+            + as_uint256(3, 170141183460469231731687303715884105728) == as_uint256(5, 0),
         1
     );
     assert(as_uint256(4, 3) - as_uint256(1, 1) == as_uint256(3, 2), 1);
     assert(
-        as_uint256(5, 0) 
-        - as_uint256(
-        1,
-        170141183460469231731687303715884105728
-    ) == as_uint256(3, 170141183460469231731687303715884105728),
+        as_uint256(5, 0)
+            - as_uint256(
+                1,
+                170141183460469231731687303715884105728
+            ) == as_uint256(3, 170141183460469231731687303715884105728),
         1
     );
     assert(as_uint256(4, 3) * as_uint256(0, 1) == as_uint256(4, 3), 1);
@@ -183,7 +183,7 @@ func test_uint256_operators() {
 #[test]
 #[should_panic]
 func test_uint256_add_overflow() {
-    as_uint256(170141183460469231731687303715884105728, 1) 
+    as_uint256(170141183460469231731687303715884105728, 1)
         + as_uint256(170141183460469231731687303715884105728, 1);
 }
 
@@ -217,7 +217,8 @@ func test_array_helper(idx: felt) -> felt {
             let mut data = array_new::<felt>();
             array_append::<felt>(data, idx);
             panic(data)
-    } }
+        }
+    }
 }
 
 #[test]

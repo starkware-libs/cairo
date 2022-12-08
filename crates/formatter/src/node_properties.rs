@@ -63,6 +63,7 @@ impl SyntaxNodeFormat for SyntaxNode {
             | SyntaxKind::TokenColonColon
             | SyntaxKind::TokenLParen
             | SyntaxKind::TokenLBrack
+            | SyntaxKind::TokenLBrace
             | SyntaxKind::TokenImplicits => true,
             SyntaxKind::ExprPath | SyntaxKind::TerminalIdentifier
                 if matches!(
@@ -121,6 +122,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                             break_type: BreakLinePointType::ListBreak,
                             is_optional: false,
                             add_indent: false,
+                            space_if_ignored: false,
                         })
                     }
                 }
@@ -129,6 +131,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                     break_type: BreakLinePointType::ListBreak,
                     is_optional: false,
                     add_indent: true,
+                    space_if_ignored: false,
                 }),
                 _ => None,
             },
@@ -137,18 +140,21 @@ impl SyntaxNodeFormat for SyntaxNode {
                 break_type: BreakLinePointType::ListBreak,
                 is_optional: false,
                 add_indent: true,
+                space_if_ignored: false,
             }),
             SyntaxKind::StatementList => Some(BreakLinePointProperties {
                 precedence: 3,
                 break_type: BreakLinePointType::ListBreak,
                 is_optional: false,
                 add_indent: true,
+                space_if_ignored: false,
             }),
             SyntaxKind::MatchArms => Some(BreakLinePointProperties {
                 precedence: 4,
                 break_type: BreakLinePointType::SeparatedListBreak,
                 is_optional: false,
                 add_indent: true,
+                space_if_ignored: false,
             }),
             SyntaxKind::AttributeList => {
                 if let BreakingPosition::Leading = position {
@@ -159,6 +165,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                         break_type: BreakLinePointType::ListBreak,
                         is_optional: false,
                         add_indent: false,
+                        space_if_ignored: false,
                     })
                 }
             }
@@ -167,24 +174,28 @@ impl SyntaxNodeFormat for SyntaxNode {
                 break_type: BreakLinePointType::SeparatedListBreak,
                 is_optional: true,
                 add_indent: true,
+                space_if_ignored: matches!(position, BreakingPosition::Internal),
             }),
             SyntaxKind::StructArgList => Some(BreakLinePointProperties {
                 precedence: 7,
                 break_type: BreakLinePointType::SeparatedListBreak,
                 is_optional: true,
                 add_indent: true,
+                space_if_ignored: true,
             }),
             SyntaxKind::MemberList => Some(BreakLinePointProperties {
                 precedence: 8,
                 break_type: BreakLinePointType::SeparatedListBreak,
                 is_optional: true,
                 add_indent: true,
+                space_if_ignored: true,
             }),
             SyntaxKind::ParamList => Some(BreakLinePointProperties {
                 precedence: 9,
                 break_type: BreakLinePointType::SeparatedListBreak,
                 is_optional: true,
                 add_indent: true,
+                space_if_ignored: matches!(position, BreakingPosition::Internal),
             }),
             SyntaxKind::TokenPlus | SyntaxKind::TokenMinus => {
                 if let BreakingPosition::Leading = position {
@@ -193,6 +204,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                         break_type: BreakLinePointType::Dangling,
                         is_optional: true,
                         add_indent: false,
+                        space_if_ignored: true,
                     })
                 } else {
                     None
@@ -205,6 +217,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                         break_type: BreakLinePointType::Dangling,
                         is_optional: true,
                         add_indent: false,
+                        space_if_ignored: true,
                     })
                 } else {
                     None
@@ -216,6 +229,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                 break_type: BreakLinePointType::Newline,
                 is_optional: false,
                 add_indent: false,
+                space_if_ignored: false,
             }),
             _ => None,
         }

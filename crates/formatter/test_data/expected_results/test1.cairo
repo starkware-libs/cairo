@@ -30,8 +30,8 @@ func bar<T>(x: T) -> T {
 }
 
 
-struct A { }
-struct B { }
+struct A {}
+struct B {}
 
 // Calculates fib, but all variables are boxes.
 func fib(a: Box::<felt>, b: Box::<felt>, n: Box::<felt>) -> Box::<felt> {
