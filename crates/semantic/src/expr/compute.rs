@@ -8,8 +8,6 @@ use ast::{BinaryOperator, PathSegment};
 use defs::ids::{GenericFunctionId, LocalVarLongId, MemberId};
 use id_arena::Arena;
 use itertools::zip_eq;
-use num_bigint::BigInt;
-use num_traits::Num;
 use smol_str::SmolStr;
 use syntax::node::ast::{BlockOrIf, PatternStructParam};
 use syntax::node::db::SyntaxGroup;
@@ -18,7 +16,7 @@ use syntax::node::{ast, Terminal, TypedSyntaxNode};
 use utils::ordered_hash_map::OrderedHashMap;
 use utils::unordered_hash_map::UnorderedHashMap;
 use utils::unordered_hash_set::UnorderedHashSet;
-use utils::{try_extract_matches, OptionHelper};
+use utils::{big_int_from_smol_str, try_extract_matches, OptionHelper};
 
 use super::objects::*;
 use super::pattern::{
@@ -837,13 +835,9 @@ fn literal_to_semantic(
 ) -> Option<ExprLiteral> {
     let db = ctx.db;
     let syntax_db = db.upcast();
-    let text = literal_syntax.text(syntax_db);
 
-    let value = match text.strip_prefix("0x") {
-        Some(num_no_prefix) => BigInt::from_str_radix(num_no_prefix, 16).ok(),
-        None => text.parse::<BigInt>().ok(),
-    }
-    .on_none(|| ctx.diagnostics.report(literal_syntax, UnknownLiteral))?;
+    let value = big_int_from_smol_str(literal_syntax.text(syntax_db))
+        .on_none(|| ctx.diagnostics.report(literal_syntax, UnknownLiteral))?;
 
     let ty = db.core_felt_ty();
     Some(ExprLiteral { value, ty, stable_ptr: literal_syntax.stable_ptr().into() })
