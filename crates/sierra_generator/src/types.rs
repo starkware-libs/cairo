@@ -64,6 +64,7 @@ pub fn get_concrete_type_id(
                                             db.get_concrete_type_id(ty).unwrap(),
                                         )
                                     }
+                                    semantic::GenericArgumentId::Literal(_) => todo!(),
                                 })
                                 .collect(),
                         }),

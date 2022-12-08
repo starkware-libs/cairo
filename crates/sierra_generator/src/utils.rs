@@ -6,6 +6,7 @@ use sierra::extensions::GenericLibFuncEx;
 use sierra::ids::{ConcreteLibFuncId, GenericLibFuncId};
 use sierra::program;
 use smol_str::SmolStr;
+use utils::big_int_from_smol_str;
 
 use crate::db::SierraGenGroup;
 use crate::pre_sierra;
@@ -224,11 +225,17 @@ pub fn get_concrete_libfunc_id(
         GenericFunctionId::Extern(extern_id) => {
             let mut generic_args = vec![];
             for generic_arg in &concrete_function.generic_args {
+                // TODO(lior): How should the following unwrap()'s be handled?
                 generic_args.push(match generic_arg {
-                    semantic::GenericArgumentId::Type(ty) => sierra::program::GenericArg::Type(
-                        // TODO(lior): How should the following unwrap() be handled?
-                        db.get_concrete_type_id(*ty).unwrap(),
-                    ),
+                    semantic::GenericArgumentId::Type(ty) => {
+                        sierra::program::GenericArg::Type(db.get_concrete_type_id(*ty).unwrap())
+                    }
+                    semantic::GenericArgumentId::Literal(literal_id) => {
+                        sierra::program::GenericArg::Value(
+                            big_int_from_smol_str(db.lookup_intern_literal(*literal_id).text)
+                                .unwrap(),
+                        )
+                    }
                 });
             }
 

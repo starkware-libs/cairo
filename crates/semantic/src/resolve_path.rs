@@ -25,6 +25,7 @@ use crate::diagnostic::SemanticDiagnostics;
 use crate::items::enm::{ConcreteVariant, SemanticEnumEx};
 use crate::items::imp::{ConcreteImplId, ConcreteImplLongId};
 use crate::items::trt::{ConcreteTraitId, ConcreteTraitLongId};
+use crate::literals::LiteralLongId;
 use crate::types::resolve_type;
 use crate::{
     ConcreteFunction, ConcreteTypeId, FunctionId, FunctionLongId, GenericArgumentId, TypeId,
@@ -175,9 +176,17 @@ impl<'db> Resolver<'db> {
                         .generic_args(syntax_db)
                         .elements(syntax_db)
                         .iter()
-                        .map(|generic_arg_syntax| {
-                            let ty = resolve_type(self.db, diagnostics, self, generic_arg_syntax);
-                            GenericArgumentId::Type(ty)
+                        .map(|generic_arg_syntax| match generic_arg_syntax {
+                            ast::Expr::Literal(literal) => {
+                                GenericArgumentId::Literal(self.db.intern_literal(LiteralLongId {
+                                    text: literal.text(syntax_db),
+                                }))
+                            }
+                            _ => {
+                                let ty =
+                                    resolve_type(self.db, diagnostics, self, generic_arg_syntax);
+                                GenericArgumentId::Type(ty)
+                            }
                         })
                         .collect();
                     (segment.ident(syntax_db), Some(generic_args))
