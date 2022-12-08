@@ -10,6 +10,9 @@ pub mod strongly_connected_components;
 pub mod unordered_hash_map;
 pub mod unordered_hash_set;
 
+use num_bigint::BigInt;
+use num_traits::Num;
+
 /// Similar to From / TryFrom, but returns an option.
 pub trait OptionFrom<T>
 where
@@ -81,4 +84,11 @@ pub fn borrow_as_box<T: Default, R, F: FnOnce(Box<T>) -> (R, Box<T>)>(ptr: &mut 
     let (res, boxed) = f(Box::new(std::mem::take(ptr)));
     *ptr = *boxed;
     res
+}
+
+pub fn big_int_from_smol_str(text: smol_str::SmolStr) -> Option<BigInt> {
+    match text.strip_prefix("0x") {
+        Some(num_no_prefix) => BigInt::from_str_radix(num_no_prefix, 16).ok(),
+        None => text.parse::<BigInt>().ok(),
+    }
 }
