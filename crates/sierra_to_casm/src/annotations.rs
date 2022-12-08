@@ -127,7 +127,7 @@ impl ProgramAnnotations {
         let mut annotations = ProgramAnnotations::new(n_statements);
         let mut return_annotations: HashMap<ReturnProperties, ReturnAnnotation> = HashMap::new();
         for func in functions {
-            let ap_change = match metadata.function_ap_change.get(&func.id) {
+            let ap_change = match metadata.ap_change_info.function_ap_change.get(&func.id) {
                 Some(x) => ApChange::Known(*x),
                 _ => ApChange::Unknown,
             };
