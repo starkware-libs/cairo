@@ -23,7 +23,7 @@ use utils::try_extract_matches;
 use crate::abi;
 use crate::casm_contract_class::{deserialize_big_uint, serialize_big_uint};
 use crate::contract::{find_contract_structs, resolve_contract_impls, starknet_keccak};
-use crate::plugin::StarkNetPlugin;
+use crate::plugin::{StarkNetPlugin, WRAPPER_PREFIX};
 
 #[cfg(test)]
 #[path = "contract_class_test.rs"]
@@ -136,7 +136,10 @@ fn get_entry_points(
     let mut entry_points_by_type = ContractEntryPoints::default();
     for function_name in trait_functions.keys() {
         let item = db
-            .module_item_by_name(impl_module_id, function_name.clone())
+            .module_item_by_name(
+                impl_module_id,
+                format!("{}{}", WRAPPER_PREFIX, &function_name).into(),
+            )
             .with_context(|| format!("The `{}` entry point was not found.", function_name))?;
 
         let free_func_id = try_extract_matches!(item, ModuleItemId::FreeFunction)
