@@ -10,6 +10,7 @@ use sierra::extensions::core::{CoreLibFunc, CoreType};
 use sierra::extensions::ConcreteType;
 use sierra::program::{Function, GenericArg};
 use sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
+use sierra_ap_change::{calc_ap_changes, ApChangeError};
 use sierra_gas::calc_gas_info;
 use sierra_gas::gas_info::GasInfo;
 use sierra_to_casm::compiler::{CairoProgram, CompilationError};
@@ -33,6 +34,8 @@ pub enum RunnerError {
     ProgramRegistryError(#[from] Box<ProgramRegistryError>),
     #[error(transparent)]
     SierraCompilationError(#[from] CompilationError),
+    #[error(transparent)]
+    ApChangeError(#[from] ApChangeError),
     #[error(transparent)]
     VirtualMachineError(#[from] Box<VirtualMachineError>),
 }
@@ -260,6 +263,6 @@ fn create_metadata(
     } else {
         GasInfo { variable_values: HashMap::new(), function_costs: HashMap::new() }
     };
-    let metadata = Metadata { function_ap_change: HashMap::new(), gas_info };
+    let metadata = Metadata { ap_change_info: calc_ap_changes(sierra_program)?, gas_info };
     Ok(metadata)
 }
