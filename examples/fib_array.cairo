@@ -9,5 +9,5 @@ func fib_inner(a: felt, b: felt, remaining: felt, mut arr: Array::<felt>) -> Arr
     }
 
     array_append::<felt>(arr, a);
-    fib_inner(b, a + b, remaining - 1, arr)
+    return fib_inner(b, a + b, remaining - 1, arr);
 }
