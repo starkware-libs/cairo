@@ -1,3 +1,7 @@
+#[cfg(test)]
+#[path = "casm_contract_class_test.rs"]
+mod test;
+
 use std::collections::HashMap;
 
 use num_bigint::BigUint;
