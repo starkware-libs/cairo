@@ -28,6 +28,9 @@ impl std::fmt::Display for LabelId {
 pub struct Function {
     /// The source function which was compiled.
     pub id: sierra::ids::FunctionId,
+    /// Number of statements in the body that are the function header, including the label and the
+    /// local variables definition.
+    pub header_size: usize,
     /// The body of the function.
     pub body: Vec<Statement>,
     /// A label pointing to the first instruction of the function.

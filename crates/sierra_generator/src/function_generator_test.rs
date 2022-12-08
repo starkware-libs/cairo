@@ -47,7 +47,6 @@ fn test_function_generator() {
         vec![
             "label1:",
             "drop<felt>([1]) -> ()",
-            "revoke_ap_tracking() -> ()",
             "felt_const<5>() -> ([2])",
             "felt_add([0], [2]) -> ([3])",
             "store_temp<felt>([3]) -> ([3])",
@@ -103,7 +102,6 @@ fn test_function_generator_local_vars() {
             "label0:",
             "alloc_local<felt>() -> ([2])",
             "finalize_locals() -> ()",
-            "revoke_ap_tracking() -> ()",
             "dup<felt>([0]) -> ([0], [6])",
             "dup<felt>([0]) -> ([0], [7])",
             "felt_add([6], [7]) -> ([3])",

@@ -31,7 +31,6 @@ fn test_program_generator() {
             type felt = felt;
 
             libfunc drop<felt> = drop<felt>;
-            libfunc revoke_ap_tracking = revoke_ap_tracking;
             libfunc felt_const<5> = felt_const<5>;
             libfunc store_temp<felt> = store_temp<felt>;
             libfunc function_call<user@test::bar> = function_call<user@test::bar>;
@@ -40,13 +39,11 @@ fn test_program_generator() {
             libfunc felt_add = felt_add;
 
             drop<felt>([0]) -> ();
-            revoke_ap_tracking() -> ();
             felt_const<5>() -> ([1]);
             store_temp<felt>([1]) -> ([3]);
             function_call<user@test::bar>([3]) -> ([2]);
             rename<felt>([2]) -> ([4]);
             return([4]);
-            revoke_ap_tracking() -> ();
             dup<felt>([0]) -> ([0], [3]);
             felt_add([0], [3]) -> ([1]);
             store_temp<felt>([1]) -> ([1]);
@@ -54,7 +51,7 @@ fn test_program_generator() {
             return([2]);
 
             test::foo@0([0]: felt) -> (felt);
-            test::bar@7([0]: felt) -> (felt);
+            test::bar@6([0]: felt) -> (felt);
         "},
     );
 }
@@ -75,14 +72,12 @@ fn test_type_dependency() {
             type Box<Box<felt>> = Box<Box<felt>>;
             type Box<Box<Box<felt>>> = Box<Box<Box<felt>>>;
 
-            libfunc revoke_ap_tracking = revoke_ap_tracking;
             libfunc unbox<Box<Box<felt>>> = unbox<Box<Box<felt>>>;
             libfunc store_temp<Box<Box<felt>>> = store_temp<Box<Box<felt>>>;
             libfunc unbox<Box<felt>> = unbox<Box<felt>>;
             libfunc store_temp<Box<felt>> = store_temp<Box<felt>>;
             libfunc rename<Box<felt>> = rename<Box<felt>>;
 
-            revoke_ap_tracking() -> ();
             unbox<Box<Box<felt>>>([0]) -> ([1]);
             store_temp<Box<Box<felt>>>([1]) -> ([1]);
             unbox<Box<felt>>([1]) -> ([2]);

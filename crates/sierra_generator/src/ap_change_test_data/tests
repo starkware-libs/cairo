@@ -13,8 +13,8 @@ func non_cyclic2() -> felt {
 }
 
 //! > result
-non_cyclic: ap_change=Some(Unknown), has_cycles=Some(false)
-non_cyclic2: ap_change=Some(Unknown), has_cycles=Some(false)
+non_cyclic: ap_change=Some(Known { new_vars_only: false }), has_cycles=Some(false)
+non_cyclic2: ap_change=Some(Known { new_vars_only: false }), has_cycles=Some(false)
 
 //! > ==========================================================================
 
