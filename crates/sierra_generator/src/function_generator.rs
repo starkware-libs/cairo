@@ -27,7 +27,7 @@ use crate::specialization_context::SierraSignatureSpecializationContext;
 use crate::store_variables::{add_store_statements, LocalVariables};
 use crate::utils::{
     alloc_local_libfunc_id, drop_libfunc_id, dup_libfunc_id, finalize_locals_libfunc_id,
-    get_libfunc_signature, revoke_ap_tracking_libfunc_id, simple_statement,
+    get_libfunc_signature, simple_statement,
 };
 use crate::SierraGeneratorDiagnostic;
 
@@ -99,9 +99,7 @@ fn get_function_code(
         allocate_local_variables(&mut context, &local_variables)?;
     statements.extend(allocate_local_statements);
 
-    // TODO(ilya, 10/10/2022): Add revoke_ap_tracking only when necessary.
-    statements.push(simple_statement(revoke_ap_tracking_libfunc_id(context.get_db()), &[], &[]));
-
+    let prolog_size = statements.len();
     // Generate the function's body.
     let body_statements = generate_block_code(&mut context, block)?;
     statements.extend(body_statements);
@@ -136,6 +134,7 @@ fn get_function_code(
                     generic_args: vec![],
                 },
             })),
+            prolog_size,
             body: statements,
             entry_point: label_id,
             parameters,
