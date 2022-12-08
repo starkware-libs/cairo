@@ -72,7 +72,7 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 box_and_back@26([1]: felt) -> (felt);
                 box_and_back_wrapper@31([1]: felt) -> (felt);
             "},
-            &[("box_and_back", 2), ("box_and_back_wrapper", 5)], false,
+            false,
             indoc! {"
                 // test_program:
                 [ap + 0] = [fp + -4] + [fp + -3], ap++;
@@ -137,7 +137,7 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
 
                 test_program@0([1]: felt, [2]: felt, [3]: ArrayFelt) -> (felt, felt, ArrayFelt);
             "},
-            &[("test_program", 9)], false,
+            false,
             indoc! {"
                 [ap + 0] = [fp + -6], ap++;
                 [fp + 1] = [ap + -1];
@@ -171,14 +171,15 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
 
                 test_program@0([1]: felt) -> ();
             "},
-            &[], true,
+            true,
             indoc! {"
-                jmp rel 3 if [fp + -3] != 0;
+                jmp rel 5 if [fp + -3] != 0;
+                ap += 1;
                 ret;
                 [ap + 0] = [fp + -3], ap++;
                 ret;
             "};
-            "burn gas")]
+            "branch align")]
 #[test_case(indoc!{"
                 type RangeCheck = RangeCheck;
                 type uint128 = uint128;
@@ -194,7 +195,7 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 return ([1]);
 
                 test_program@0([1]: RangeCheck, [2]: uint128, [3]: uint128) -> (RangeCheck);
-            "}, &[], false, indoc!{"
+            "}, false, indoc!{"
                 %{ memory[ap + 0] = memory[fp + -3] <= memory[fp + -4] %}
                 jmp rel 8 if [ap + 0] != 0, ap++;
                 // a >= b.
@@ -229,7 +230,7 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
 
                 test_program@0([1]: RangeCheck, [2]: uint128, [3]: uint128) -> (RangeCheck);
             "},
-            &[], false,
+            false,
             indoc! {"
                 [ap + 0] = [fp + -4] + [fp + -3], ap++;
                 %{ memory[ap + 0] = memory[ap + -1] < 340282366920938463463374607431768211456 %}
@@ -245,7 +246,7 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
             "};
             "u128")]
 #[test_case(read_sierra_example_file("fib_no_gas").as_str(),
-            &[], false,
+            false,
             indoc! {"
                 jmp rel 4 if [fp + -3] != 0;
                 [ap + 0] = [fp + -5], ap++;
@@ -258,7 +259,7 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
             "};
             "fib_no_gas")]
 #[test_case(read_sierra_example_file("fib_jumps").as_str(),
-            &[], true,
+            true,
             indoc! {"
                 jmp rel 8 if [fp + -3] != 0;
                 [ap + 0] = [fp + -5], ap++;
@@ -313,7 +314,7 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
             "};
             "fib_jumps")]
 #[test_case(read_sierra_example_file("fib_recursive").as_str(),
-            &[], true,
+            true,
             indoc! {"
                 [ap + 0] = 1, ap++;
                 jmp rel 7 if [fp + -3] != 0;
@@ -408,7 +409,7 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 return ([12], [13]);
                 test_program@0([0]: RangeCheck) -> (RangeCheck, SquashedDictFeltToFelt);
             "},
-            &[], false,
+            false,
             indoc! {"
             [ap + 0] = 10, ap++;
             [ap + 0] = 11, ap++;
@@ -680,21 +681,12 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
             "};
             "dict test")]
 
-fn sierra_to_casm(
-    sierra_code: &str,
-    ap_change_data: &[(&str, usize)],
-    check_gas_usage: bool,
-    expected_casm: &str,
-) {
+fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str) {
     let program = ProgramParser::new().parse(sierra_code).unwrap();
     pretty_assertions::assert_eq!(
-        compile(
-            &program,
-            &build_metadata(&program, ap_change_data, check_gas_usage),
-            check_gas_usage
-        )
-        .expect("Compilation failed.")
-        .to_string(),
+        compile(&program, &build_metadata(&program, check_gas_usage), check_gas_usage)
+            .expect("Compilation failed.")
+            .to_string(),
         strip_comments_and_linebreaks(expected_casm)
     );
 }
@@ -704,7 +696,7 @@ fn sierra_to_casm(
                 return([2]);
 
                 test_program@0() -> (felt);
-            "}, &[],
+            "},
             "#0: [2] is undefined.";
             "Missing reference")]
 #[test_case(indoc! {"
@@ -716,7 +708,7 @@ fn sierra_to_casm(
                 return();
 
                 test_program@0([1]: felt) -> ();
-            "}, &[],
+            "},
             "#1->#2: [1] was overridden.";
             "Reference override")]
 #[test_case(indoc! {"
@@ -725,7 +717,7 @@ fn sierra_to_casm(
                 return([2]);
 
                 test_program@0([2]: felt) -> (felt);
-            "}, &[("test_program", 0)],
+            "},
             "#0: Return arguments are not on the stack.";
             "Invalid return reference")]
 #[test_case(indoc! {"
@@ -734,7 +726,7 @@ fn sierra_to_casm(
                 store_temp_felt([1]) -> ([1]);
 
                 test_program@0([1]: felt) -> ();
-            "}, &[],
+            "},
             "Error from program registry";
             "undeclared libfunc")]
 #[test_case(indoc! {"
@@ -742,7 +734,7 @@ fn sierra_to_casm(
 
                 libfunc store_temp_felt = store_temp<felt>;
                 libfunc store_temp_felt = store_temp<felt>;
-            "}, &[],
+            "},
             "Error from program registry";
             "Concrete libfunc Id used twice")]
 #[test_case(indoc! {"
@@ -753,7 +745,7 @@ fn sierra_to_casm(
                 felt_add([3], [4]) -> ([5]);
 
                 test_program@0([1]: felt, [2]: felt, [3]: felt) -> ();
-            "}, &[],
+            "},
             "#1: One of the arguments does not satisfy the requirements of the libfunc.";
             "Invalid reference expression for felt_add")]
 #[test_case(indoc! {"
@@ -764,56 +756,57 @@ fn sierra_to_casm(
                 return([3]);
 
                 test_program@0([1]: uint128, [2]: uint128) -> (felt);
-            "}, &[],
+            "},
             "One of the arguments does not match the expected type of the libfunc or return \
  statement.";
             "Types mismatch")]
 #[test_case(indoc! {"
                 test_program@25() -> ();
-            "}, &[], "InvalidStatementIdx";
+            "}, "InvalidStatementIdx";
             "Invalid entry point")]
 #[test_case(indoc! {"
                 return();
 
                 foo@0([1]: felt, [1]: felt) -> ();
-            "},  &[], "Invalid function declaration.";
+            "}, "Invalid function declaration.";
             "Bad Declaration")]
 #[test_case(indoc! {"
             return();
-            "}, &[], "MissingAnnotationsForStatement";
+            "}, "MissingAnnotationsForStatement";
             "Missing references for statement")]
 #[test_case(indoc! {"
                 type NonZeroFelt = NonZero<felt>;
                 type felt = felt;
-            "}, &[], "Error from program registry";
+            "}, "Error from program registry";
             "type ordering bad for building size map")]
 #[test_case(indoc! {"
                 type felt = felt;
                 libfunc felt_add = felt_add;
                 felt_add([1], [2], [3]) -> ([4]);
+                return();
                 test_program@0([1]: felt, [2]: felt, [3]: felt) -> ();
-            "}, &[], "#0: Invocation mismatched to libfunc";
+            "}, "#0: Invocation mismatched to libfunc";
             "input count mismatch")]
 #[test_case(indoc! {"
                 type felt = felt;
                 libfunc felt_add = felt_add;
                 felt_add([1], [2]) -> ([3], [4]);
                 test_program@0([1]: felt, [2]: felt) -> ();
-            "}, &[], "#0: Invocation mismatched to libfunc";
+            "}, "#0: Invocation mismatched to libfunc";
             "output type mismatch")]
 #[test_case(indoc! {"
                 type felt = felt;
                 libfunc felt_add = felt_add;
                 felt_add([1], [2]) { 0([3]) 1([3]) };
                 test_program@0([1]: felt, [2]: felt) -> ();
-            "}, &[], "#0: Invocation mismatched to libfunc";
+            "}, "#0: Invocation mismatched to libfunc";
             "branch count mismatch")]
 #[test_case(indoc! {"
                 type felt = felt;
                 libfunc felt_add = felt_add;
                 felt_add([1], [2]) { 0([3]) };
                 test_program@0([1]: felt, [2]: felt) -> ();
-            "}, &[], "#0: Invocation mismatched to libfunc";
+            "}, "#0: Invocation mismatched to libfunc";
             "fallthrough mismatch")]
 #[test_case(indoc! {"
                 type felt = felt;
@@ -822,7 +815,7 @@ fn sierra_to_casm(
                 felt_dup([1]) -> ([1], [2]);
                 return ([1]);
                 test_program@0([1]: felt) -> ();
-            "}, &[], "[2] is dangling at #1.";
+            "}, "[2] is dangling at #1.";
             "Dangling references")]
 #[test_case(indoc! {"
                 type felt = felt;
@@ -831,7 +824,7 @@ fn sierra_to_casm(
 
                 foo@0([1]: felt) -> ();
                 bar@0([2]: felt) -> ();
-            "}, &[], "#0: Inconsistent references annotations.";
+            "}, "#0: Inconsistent references annotations.";
             "Failed building type information")]
 #[test_case(indoc! {"
                 type felt = felt;
@@ -841,7 +834,7 @@ fn sierra_to_casm(
                 return ([1]);
                 test_program@0([1]: felt) -> ();
                 foo@1([1]: felt) -> (felt);
-            "}, &[], "#1: Inconsistent references annotations.";
+            "}, "#1: Inconsistent references annotations.";
             "Inconsistent return annotations.")]
 #[test_case(indoc! {"
                 type felt = felt;
@@ -861,7 +854,7 @@ fn sierra_to_casm(
                 return ([1]);
 
                 test_program@0([1]: felt, [2]: felt) -> (felt);
-            "}, &[("test_program", 1)], "One of the arguments does not match the expected type \
+            "}, "One of the arguments does not match the expected type \
 of the libfunc or return statement.";
             "Invalid return type")]
 #[test_case(indoc! {"
@@ -880,7 +873,7 @@ of the libfunc or return statement.";
                 return();
 
                 foo@0([1]: felt) -> ();
-            "}, &[], "#2->#3: Got 'Unknown ap change' error while moving [1].";
+            "}, "#2->#3: Got 'Unknown ap change' error while moving [1].";
             "Ap change error")]
 #[test_case(indoc! {"
                 type felt = felt;
@@ -901,7 +894,7 @@ of the libfunc or return statement.";
                 return ();
 
                 foo@0([1]: felt) -> ();
-            "}, &[], "#5: Inconsistent ap tracking.";
+            "}, "#5: Inconsistent ap tracking.";
             "Inconsistent ap tracking.")]
 #[test_case(indoc! {"
                 libfunc finalize_locals = finalize_locals;
@@ -911,7 +904,7 @@ of the libfunc or return statement.";
                 return ();
 
                 test_program@0() -> ();
-            "}, &[], "#1: finalize_locals is not allowed at this point.";
+            "}, "#1: finalize_locals is not allowed at this point.";
             "Invalid finalize_locals 1")]
 #[test_case(indoc! {"
                 type felt = felt;
@@ -926,7 +919,7 @@ of the libfunc or return statement.";
                 return ();
 
                 foo@0([1]: felt) -> ();
-            "}, &[], "#2: finalize_locals is not allowed at this point.";
+            "}, "#2: finalize_locals is not allowed at this point.";
             "Invalid finalize_locals 2")]
 #[test_case(indoc! {"
                 type felt = felt;
@@ -941,7 +934,7 @@ of the libfunc or return statement.";
                 return ();
 
                 foo@0([1]: felt) -> ();
-            "}, &[], "#2: alloc_local is not allowed at this point.";
+            "}, "#2: alloc_local is not allowed at this point.";
             "Invalid alloc_local ")]
 #[test_case(indoc! {"
                 type felt = felt;
@@ -957,7 +950,7 @@ of the libfunc or return statement.";
                 return ();
 
                 foo@0([1]: felt) -> ();
-            "}, &[("foo", 0)], "#3: locals were allocated but finalize_locals was not called.";
+            "}, "#3: locals were allocated but finalize_locals was not called.";
             "missing finalize_locals ")]
 #[test_case(indoc! {"
                 type felt = felt;
@@ -971,19 +964,12 @@ of the libfunc or return statement.";
                 return ();
 
                 foo@0() -> ();
-            "}, &[], "#1: The functionality is supported only for sized types.";
+            "}, "#1: The functionality is supported only for sized types.";
             "store_temp<Uninitialized<felt>()")]
-#[test_case(indoc! {"
-                return ();
-
-                foo@0() -> ();
-            "}, &[("foo", 5)], "#0: Invalid Ap change annotation. \
-expected: ApChange::Known(5) got: ApChange::Known(0).";
-            "bad Ap change")]
-fn compiler_errors(sierra_code: &str, ap_change_data: &[(&str, usize)], expected_result: &str) {
+fn compiler_errors(sierra_code: &str, expected_result: &str) {
     let program = ProgramParser::new().parse(sierra_code).unwrap();
     pretty_assertions::assert_eq!(
-        compile(&program, &build_metadata(&program, ap_change_data, false), false)
+        compile(&program, &build_metadata(&program, false), false)
             .expect_err("Compilation is expected to fail.")
             .to_string(),
         expected_result

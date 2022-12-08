@@ -182,6 +182,9 @@ impl CompiledInvocationBuilder<'_> {
             .map(|((branch_signature, gas_change), (expressions, ap_change))| {
                 let ap_change = match ap_change {
                     sierra_ap_change::ApChange::Known(x) => ApChange::Known(x),
+                    sierra_ap_change::ApChange::AtLocalsFinalizationByTypeSize(_) => {
+                        ApChange::Known(0)
+                    }
                     sierra_ap_change::ApChange::FinalizeLocals => {
                         match self.environment.frame_state {
                             FrameState::Finalized { allocated } => ApChange::Known(allocated),
@@ -194,9 +197,19 @@ impl CompiledInvocationBuilder<'_> {
                     sierra_ap_change::ApChange::FunctionCall(id) => self
                         .program_info
                         .metadata
+                        .ap_change_info
                         .function_ap_change
                         .get(&id)
                         .map_or(ApChange::Unknown, |x| ApChange::Known(x + 2)),
+                    sierra_ap_change::ApChange::FromMetadata => ApChange::Known(
+                        *self
+                            .program_info
+                            .metadata
+                            .ap_change_info
+                            .variable_values
+                            .get(&self.idx)
+                            .unwrap_or(&0),
+                    ),
                     sierra_ap_change::ApChange::Unknown => ApChange::Unknown,
                 };
                 // TODO(lior): Instead of taking only the steps, take all token types into account.
@@ -246,9 +259,7 @@ pub fn compile_invocation(
         CoreConcreteLibFunc::Felt(libfunc) => felt::build(libfunc, builder),
         CoreConcreteLibFunc::Uint128(libfunc) => uint128::build(libfunc, builder),
         CoreConcreteLibFunc::Gas(libfunc) => gas::build(libfunc, builder),
-        CoreConcreteLibFunc::BranchAlign(_) => {
-            Ok(builder.build_only_reference_changes([].into_iter()))
-        }
+        CoreConcreteLibFunc::BranchAlign(_) => misc::build_branch_align(builder),
         CoreConcreteLibFunc::Array(libfunc) => array::build(libfunc, builder),
         CoreConcreteLibFunc::Drop(_) => misc::build_drop(builder),
         CoreConcreteLibFunc::Dup(_) => misc::build_dup(builder),
