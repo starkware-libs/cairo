@@ -110,15 +110,6 @@ impl SyntaxNodeFormat for SyntaxNode {
         }
     }
 
-    fn is_protected_breaking_node(&self, db: &dyn SyntaxGroup) -> bool {
-        matches!(
-            self.kind(db),
-            SyntaxKind::ExprParenthesized
-                | SyntaxKind::StructArgList
-                | SyntaxKind::ParamList
-                | SyntaxKind::ExprList
-        )
-    }
     fn get_break_line_point_properties(
         &self,
         db: &dyn SyntaxGroup,
@@ -213,6 +204,25 @@ impl SyntaxNodeFormat for SyntaxNode {
                 }
             }
             _ => None,
+        }
+    }
+
+    fn get_protected_zone_precedence(&self, db: &dyn SyntaxGroup) -> Option<usize> {
+        match parent_kind(db, self) {
+            Some(SyntaxKind::ItemFreeFunction) => match self.kind(db) {
+                SyntaxKind::AttributeList => Some(1),
+                SyntaxKind::FunctionSignature => Some(3),
+                SyntaxKind::ExprBlock => Some(2),
+                _ => None,
+            },
+            _ => match self.kind(db) {
+                SyntaxKind::ExprParenthesized
+                | SyntaxKind::StructArgList
+                | SyntaxKind::ParamList
+                | SyntaxKind::ExprList
+                | SyntaxKind::StatementList => Some(1),
+                _ => None,
+            },
         }
     }
 }

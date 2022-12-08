@@ -14,8 +14,8 @@ let z = 5;
     let block = {
     y + 1;
     x + 5
-    };
-    }
+};
+}
     
  { // Comment.
 
@@ -25,7 +25,7 @@ let z = 5;
 
 5; // Comment.
 
-    } // Comment.
+} // Comment.
 
 }
     
@@ -44,15 +44,15 @@ func fib(
     n: Box::<felt>
 ) -> Box::<felt> {
     match n {
-0 => {
+    0 => {
     a
-    },
-_ => {
+},
+    _ => {
     fib(
     b,
     into_box::<felt>(unbox::<felt>(a) + unbox::<felt>(b)),
     into_box::<felt>(unbox::<felt>(n) - 1),
 )
-    },
+},
 }
 }

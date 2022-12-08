@@ -13,5 +13,3 @@ func foo(x: T) -> S {
 func bar(first_arg: T, second_arg: T, third_arg: T, fourth_arg: T, fifth_arg: T, sixth_arg: T, seventh_arg: T) -> T {
     let x = Struct{first_arg: first_arg, second_arg: second_arg, third_arg: third_arg, fourth_arg: fourth_arg, fifth_arg: fifth_arg};
 }
-
-
