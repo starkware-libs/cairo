@@ -14,7 +14,9 @@ impl TestContractImpl of ITestContract {
 }
 
 #[contract(TestContractImpl)]
-struct TestContract { }
+struct TestContract {
+    storage_var: felt,
+}
 
 //! > generated_cairo_code
 func test(ref syscall_ptr: SyscallPtr, ref arg: felt, num: felt) -> felt {
@@ -37,4 +39,11 @@ func __wrapper_test(ref syscall_ptr: SyscallPtr, mut data: Array::<felt>) -> Arr
     array::array_append::<felt>(arr, __arg_arg);
     array::array_append::<felt>(arr, res);
     arr
+}
+
+func get_storage_var(ref syscall_ptr: SyscallPtr) -> felt {
+    starknet::storage_read_syscall(
+        syscall_ptr,
+        starknet::storage_address_const::<0x37fe6583f0b27bf0827d87f21c448b20f8709dfc8e4efbdddb75a0b443df714>()
+    )
 }

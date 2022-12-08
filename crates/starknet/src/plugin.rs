@@ -6,8 +6,11 @@ use syntax::node::db::SyntaxGroup;
 use syntax::node::helpers::GetIdentifier;
 use syntax::node::{ast, Terminal, TypedSyntaxNode};
 
+use crate::contract::starknet_keccak;
+
 static CONTRACT_IMPL_ATTR: &str = "ContractImpl";
 pub static WRAPPER_PREFIX: &str = "__wrapper_";
+static CONTRACT_ATTR: &str = "contract";
 
 #[cfg(test)]
 #[path = "plugin_test.rs"]
@@ -18,43 +21,76 @@ pub struct StarkNetPlugin {}
 
 impl MacroPlugin for StarkNetPlugin {
     fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {
-        let impl_ast = match item_ast {
-            ast::Item::Impl(impl_ast) => impl_ast,
+        match item_ast {
+            ast::Item::Impl(impl_ast) => handle_impl(db, impl_ast),
+            ast::Item::Struct(struct_ast) => handle_struct(db, struct_ast),
             // TODO(yuval): diagnostic
-            _ => return PluginResult::default(),
-        };
-
-        let attrs = impl_ast.attributes(db).elements(db);
-        if !attrs.iter().any(|attr| attr.attr(db).text(db) == CONTRACT_IMPL_ATTR) {
-            // TODO(yuval): diagnostic
-            return PluginResult::default();
+            _ => PluginResult::default(),
         }
+    }
+}
 
-        let body = match impl_ast.body(db) {
-            MaybeImplBody::Some(body) => body,
-            // TODO(yuval): diagnostic
-            MaybeImplBody::None(_) => return PluginResult::default(),
-        };
+/// If the struct is annotated with CONTRACT_ATTR, generate getter functions for
+/// its members.
+fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> PluginResult {
+    let attrs = struct_ast.attributes(db).elements(db);
+    if !attrs.iter().any(|attr| attr.attr(db).text(db) == CONTRACT_ATTR) {
+        // TODO(ilya): diagnostic
+        return PluginResult::default();
+    }
 
-        let impl_items = body.items(db);
-        let mut functions_tokens = rust::Tokens::new();
-        functions_tokens.append(impl_items.as_syntax_node().get_text(db).as_str());
+    let mut code_tokens = rust::Tokens::new();
 
-        for impl_item in impl_items.elements(db) {
-            let item_function = match impl_item {
-                ast::Item::FreeFunction(f) => f,
-                // Impl should only have free functions.
-                _ => unreachable!(),
-            };
-            if let Some(generated_function) = generate_entry_point_wrapper(db, &item_function) {
-                functions_tokens.append(generated_function);
+    for member in struct_ast.members(db).elements(db) {
+        // TODO(ilya): Put this logic inside an inline module once inline modules are supported.
+        let name = member.name(db).text(db);
+        let address = format!("0x{:x}", starknet_keccak(name.as_bytes()));
+        let getter_name = format!("get_{}", name);
+
+        let getter = quote! {
+            func $getter_name(ref syscall_ptr: SyscallPtr) -> felt {
+                starknet::storage_read_syscall(
+                    syscall_ptr, starknet::storage_address_const::<$address>())
             }
-        }
+        };
 
-        PluginResult {
-            code: Some(("entry_points".into(), functions_tokens.to_string().unwrap())),
-            diagnostics: vec![],
+        code_tokens.append(getter)
+    }
+    PluginResult {
+        code: Some(("contract_storage".into(), code_tokens.to_string().unwrap())),
+        diagnostics: vec![],
+    }
+}
+
+/// If the impl is annotated with CONTRACT_IMPL_ATTR, generates wrappers for
+/// the functions in the impl.
+fn handle_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> PluginResult {
+    let attrs = impl_ast.attributes(db).elements(db);
+    if !attrs.iter().any(|attr| attr.attr(db).text(db) == CONTRACT_IMPL_ATTR) {
+        // TODO(yuval): diagnostic
+        return PluginResult::default();
+    }
+    let body = match impl_ast.body(db) {
+        MaybeImplBody::Some(body) => body,
+        // TODO(yuval): diagnostic
+        MaybeImplBody::None(_) => return PluginResult::default(),
+    };
+    let impl_items = body.items(db);
+    let mut functions_tokens = rust::Tokens::new();
+    functions_tokens.append(impl_items.as_syntax_node().get_text(db).as_str());
+    for impl_item in impl_items.elements(db) {
+        let item_function = match impl_item {
+            ast::Item::FreeFunction(f) => f,
+            // Impl should only have free functions.
+            _ => unreachable!(),
+        };
+        if let Some(generated_function) = generate_entry_point_wrapper(db, &item_function) {
+            functions_tokens.append(generated_function);
         }
+    }
+    PluginResult {
+        code: Some(("entry_points".into(), functions_tokens.to_string().unwrap())),
+        diagnostics: vec![],
     }
 }
 
