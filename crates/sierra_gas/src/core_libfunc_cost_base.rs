@@ -117,6 +117,7 @@ pub fn core_libfunc_cost_base<Ops: CostOperations>(
             ]
         }
         CoreConcreteLibFunc::StarkNet(libfunc) => starknet_libfunc_cost_base(ops, libfunc),
+        &CoreConcreteLibFunc::Cheatcodes(_) => todo!(),
     }
 }
 

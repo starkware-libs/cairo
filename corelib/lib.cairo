@@ -188,4 +188,8 @@ use hash::pedersen;
 mod starknet;
 use starknet::System;
 
+// Cheatcodes
+mod cheatcodes;
+use cheatcodes::roll;
+
 mod test;
