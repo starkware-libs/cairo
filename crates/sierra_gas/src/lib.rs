@@ -15,7 +15,6 @@ mod core_libfunc_cost_expr;
 mod cost_expr;
 pub mod gas_info;
 mod generate_equations;
-mod solve_equations;
 
 #[cfg(test)]
 mod test;
@@ -48,7 +47,8 @@ pub fn calc_gas_info(program: &Program) -> Result<GasInfo, CostError> {
     let mut function_costs =
         HashMap::<sierra::ids::FunctionId, OrderedHashMap<CostTokenType, i64>>::default();
     for (token_type, token_equations) in equations {
-        let solution = solve_equations::solve_equations(token_equations)?;
+        let solution = solver::try_solve_equations(token_equations)
+            .ok_or(CostError::SolvingGasEquationFailed)?;
         for func in &program.funcs {
             let id = &func.id;
             if !function_costs.contains_key(id) {

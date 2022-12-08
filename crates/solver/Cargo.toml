@@ -1,13 +1,11 @@
 [package]
-name = "sierra_gas"
+name = "solver"
 version.workspace = true
 edition.workspace = true
 
 [dependencies]
+good_lp.workspace = true
 itertools.workspace = true
-sierra = { path = "../sierra" }
-solver = { path = "../solver" }
-thiserror.workspace = true
 utils = { path = "../utils" }
 
 [dev-dependencies]

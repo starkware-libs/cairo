@@ -2063,10 +2063,10 @@ name = "sierra_gas"
 version = "0.1.0"
 dependencies = [
  "env_logger",
- "good_lp",
  "indoc",
  "itertools",
  "sierra",
+ "solver",
  "test-case",
  "test-log",
  "thiserror",
@@ -2174,6 +2174,19 @@ checksum = "02e2d2db9033d13a1567121ddd7a095ee144db4e1ca1b1bda3419bc0da294ebd"
 dependencies = [
  "libc",
  "winapi",
+]
+
+[[package]]
+name = "solver"
+version = "0.1.0"
+dependencies = [
+ "env_logger",
+ "good_lp",
+ "indoc",
+ "itertools",
+ "test-case",
+ "test-log",
+ "utils",
 ]
 
 [[package]]

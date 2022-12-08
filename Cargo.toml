@@ -22,6 +22,7 @@ members = [
     "crates/sierra_gas",
     "crates/sierra_generator",
     "crates/sierra_to_casm",
+    "crates/solver",
     "crates/starknet",
     "crates/syntax",
     "crates/syntax_codegen",
