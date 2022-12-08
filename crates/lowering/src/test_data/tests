@@ -246,3 +246,34 @@ Statements:
 Drops:
 End:
   Callsite(v8)
+
+//! > ==========================================================================
+
+//! > Test literal generic argument.
+
+//! > test_function_name
+test_function_lowering
+
+//! > function
+func foo(a : Array::<felt, 5>) -> felt {
+  felt_const::<17>()
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern type Array<T, N>;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_format
+blk0 (root):
+Inputs: v0: test::Array::<core::felt, 5>
+Statements:
+  (v1: core::felt) <- core::felt_const<Literal(LiteralLongId { value: 17 }),>()
+Drops: v0
+End:
+  Callsite(v1)

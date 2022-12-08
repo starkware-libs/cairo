@@ -25,6 +25,7 @@ use crate::diagnostic::SemanticDiagnostics;
 use crate::items::enm::{ConcreteVariant, SemanticEnumEx};
 use crate::items::imp::{ConcreteImplId, ConcreteImplLongId};
 use crate::items::trt::{ConcreteTraitId, ConcreteTraitLongId};
+use crate::literals::LiteralLongId;
 use crate::types::resolve_type;
 use crate::{
     ConcreteFunction, ConcreteTypeId, FunctionId, FunctionLongId, GenericArgumentId, TypeId,
@@ -170,16 +171,29 @@ impl<'db> Resolver<'db> {
         for segment in segments {
             let (identifier, generic_args) = match segment {
                 syntax::node::ast::PathSegment::WithGenericArgs(segment) => {
-                    let generic_args = segment
-                        .generic_args(syntax_db)
-                        .generic_args(syntax_db)
-                        .elements(syntax_db)
-                        .iter()
-                        .map(|generic_arg_syntax| {
-                            let ty = resolve_type(self.db, diagnostics, self, generic_arg_syntax);
-                            GenericArgumentId::Type(ty)
-                        })
-                        .collect();
+                    let mut generic_args = vec![];
+                    for generic_arg_syntax in
+                        segment.generic_args(syntax_db).generic_args(syntax_db).elements(syntax_db)
+                    {
+                        match generic_arg_syntax {
+                            ast::Expr::Literal(literal_syntax) => {
+                                let literal =
+                                    LiteralLongId::try_from(literal_syntax.text(syntax_db))
+                                        .ok()
+                                        .on_none(|| {
+                                            diagnostics.report(&literal_syntax, UnknownLiteral)
+                                        })?;
+                                generic_args.push(GenericArgumentId::Literal(
+                                    self.db.intern_literal(literal),
+                                ));
+                            }
+                            _ => {
+                                let ty =
+                                    resolve_type(self.db, diagnostics, self, &generic_arg_syntax);
+                                generic_args.push(GenericArgumentId::Type(ty));
+                            }
+                        }
+                    }
                     (segment.ident(syntax_db), Some(generic_args))
                 }
                 syntax::node::ast::PathSegment::Simple(segment) => (segment.ident(syntax_db), None),

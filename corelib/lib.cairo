@@ -53,6 +53,8 @@ func bool_ne(a: bool, b: bool) -> bool implicits() nopanic {
 extern type RangeCheck;
 
 extern type felt;
+extern func felt_const<value>() -> felt nopanic;
+
 // TODO(spapini): Make unnamed.
 impl FeltCopy of Copy::<felt>;
 impl FeltDrop of Drop::<felt>;
