@@ -34,6 +34,7 @@ pub mod strct;
 pub mod uint128;
 pub mod unconditional_jump;
 pub mod uninitialized;
+pub mod cheatcodes;
 
 /// Helper for Unit type def.
 fn get_unit_type(

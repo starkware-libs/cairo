@@ -218,4 +218,8 @@ use starknet::System;
 use starknet::ContractAddress;
 
 #[cfg(test)]
+// Cheatcodes
+mod cheatcodes;
+use cheatcodes::roll;
+
 mod test;
