@@ -49,7 +49,7 @@ impl NamedLibFunc for StorageAddressConstLibFunc {
         Ok(LibFuncSignature::new_non_branch(
             vec![],
             vec![OutputVarInfo {
-                ty: context.get_concrete_type(FeltType::id(), &[])?,
+                ty: context.get_concrete_type(StorageAddressType::id(), &[])?,
                 ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Const),
             }],
             SierraApChange::Known(0),
