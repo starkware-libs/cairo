@@ -250,7 +250,15 @@ fn handle_function_call(
             *known_ap_change = false;
         }
     }
-    state.register_outputs(inputs, outputs, &libfunc_signature.branch_signatures[0].vars);
+
+    let vars = &libfunc_signature.branch_signatures[0].vars;
+    assert_eq!(
+        outputs.len(),
+        vars.len(),
+        "Wrong number of outputs for '{}'. Is the signature on the extern function correct?",
+        DebugReplacer { db }.replace_libfunc_id(&concrete_function_id)
+    );
+    state.register_outputs(inputs, outputs, vars);
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
