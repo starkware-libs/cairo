@@ -147,59 +147,62 @@ impl SyntaxNodeFormat for SyntaxNode {
             _ => 0,
         }
     }
-    fn add_break_line_point_before(&self, db: &dyn SyntaxGroup) -> bool {
-        matches!(
-            self.kind(db),
-            SyntaxKind::TokenPlus
-                | SyntaxKind::TokenMinus
-                | SyntaxKind::TokenMul
-                | SyntaxKind::TokenDiv
-                | SyntaxKind::TokenMod
-        )
-    }
-    fn add_break_line_point_after(&self, _db: &dyn SyntaxGroup) -> bool {
-        false
-    }
-    fn is_breakable_list(&self, db: &dyn SyntaxGroup) -> bool {
-        matches!(
-            self.kind(db),
-            SyntaxKind::StructArgList | SyntaxKind::ParamList | SyntaxKind::ExprList
-        )
-    }
+    // TODO(Gil): Add all protected zones and break points when the formatter is stable.
     fn is_protected_breaking_node(&self, db: &dyn SyntaxGroup) -> bool {
         matches!(
             self.kind(db),
             SyntaxKind::ExprParenthesized
-                | SyntaxKind::StructArgList
-                | SyntaxKind::ParamList
                 | SyntaxKind::ExprList
+                | SyntaxKind::MatchArms
+                | SyntaxKind::StructArgList
+                | SyntaxKind::PatternStructParamList
+                | SyntaxKind::PatternList
+                | SyntaxKind::ParamList
+                | SyntaxKind::ImplicitsList
+                | SyntaxKind::MemberList
+                | SyntaxKind::AttributeArgList
+                | SyntaxKind::GenericArgList
+                | SyntaxKind::GenericParamList
+                | SyntaxKind::ExprListParenthesized
         )
     }
-    fn get_break_line_point_properties(&self, db: &dyn SyntaxGroup) -> BreakLinePointProperties {
+    fn get_wrapping_break_line_point_properties(
+        &self,
+        db: &dyn SyntaxGroup,
+    ) -> (Option<BreakLinePointProperties>, Option<BreakLinePointProperties>) {
         match self.kind(db) {
-            SyntaxKind::ExprList => BreakLinePointProperties {
-                precedence: 10,
-                break_type: BreakLinePointType::ListBreak,
-            },
-            SyntaxKind::StructArgList => BreakLinePointProperties {
-                precedence: 11,
-                break_type: BreakLinePointType::ListBreak,
-            },
-            SyntaxKind::ParamList => BreakLinePointProperties {
-                precedence: 12,
-                break_type: BreakLinePointType::ListBreak,
-            },
-            SyntaxKind::TokenPlus | SyntaxKind::TokenMinus => BreakLinePointProperties {
-                precedence: 100,
-                break_type: BreakLinePointType::Dangling,
-            },
-            SyntaxKind::TokenMul | SyntaxKind::TokenDiv | SyntaxKind::TokenMod => {
-                BreakLinePointProperties {
-                    precedence: 101,
-                    break_type: BreakLinePointType::Dangling,
-                }
-            }
-            _ => unreachable!(),
+            SyntaxKind::ParamList | SyntaxKind::StructArgList | SyntaxKind::ExprList => (
+                Some(BreakLinePointProperties {
+                    precedence: 0,
+                    break_type: BreakLinePointType::IndentedWithTail,
+                }),
+                Some(BreakLinePointProperties {
+                    precedence: 0,
+                    break_type: BreakLinePointType::IndentedWithTail,
+                }),
+            ),
+            SyntaxKind::TerminalComma => (
+                None,
+                Some(BreakLinePointProperties {
+                    precedence: 0,
+                    break_type: BreakLinePointType::NotIndented,
+                }),
+            ),
+            SyntaxKind::TerminalPlus | SyntaxKind::TerminalMinus => (
+                Some(BreakLinePointProperties {
+                    precedence: 1,
+                    break_type: BreakLinePointType::Indented,
+                }),
+                None,
+            ),
+            SyntaxKind::TerminalMul | SyntaxKind::TerminalDiv => (
+                Some(BreakLinePointProperties {
+                    precedence: 2,
+                    break_type: BreakLinePointType::Indented,
+                }),
+                None,
+            ),
+            _ => (None, None),
         }
     }
 }
