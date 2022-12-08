@@ -22,7 +22,7 @@ use crate::items::imp::{ConcreteImplId, ImplLookupContext};
 use crate::items::trt::ConcreteTraitId;
 use crate::resolve_path::{ResolvedConcreteItem, ResolvedGenericItem, ResolvedLookback};
 use crate::{
-    corelib, items, semantic, types, FreeFunctionDefinition, FunctionId, Parameter,
+    corelib, items, literals, semantic, types, FreeFunctionDefinition, FunctionId, Parameter,
     SemanticDiagnostic, TypeId,
 };
 
@@ -59,6 +59,8 @@ pub trait SemanticGroup:
     ) -> items::imp::ConcreteImplId;
     #[salsa::interned]
     fn intern_type(&self, id: types::TypeLongId) -> semantic::TypeId;
+    #[salsa::interned]
+    fn intern_literal(&self, id: literals::LiteralLongId) -> literals::LiteralId;
 
     // Use.
     // ====
