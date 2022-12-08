@@ -58,8 +58,8 @@ pub struct ContractEntryPoint {
     /// A field element that encodes the signature of the called function.
     #[serde(serialize_with = "serialize_big_uint", deserialize_with = "deserialize_big_uint")]
     pub selector: BigUint,
-    // The function in the sierra program.
-    pub function_id: u64,
+    // The idx of the user function declaration in the sierra program.
+    pub function_idx: usize,
 }
 
 // Compile the contract given by path.
@@ -156,7 +156,7 @@ fn get_entry_points(
 
         entry_points_by_type.external.push(ContractEntryPoint {
             selector: starknet_keccak(function_name.as_bytes()),
-            function_id: replacer.replace_function_id(&sierra_id).id,
+            function_idx: replacer.replace_function_id(&sierra_id).id as usize,
         });
     }
     Ok(entry_points_by_type)
