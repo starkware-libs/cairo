@@ -33,6 +33,8 @@ mod gas;
 mod mem;
 mod misc;
 mod pedersen;
+mod starknet;
+
 mod strct;
 mod uint128;
 
@@ -245,12 +247,7 @@ pub fn compile_invocation(
         CoreConcreteLibFunc::DictFeltTo(libfunc) => dict_felt_to::build(libfunc, builder),
         CoreConcreteLibFunc::Pedersen(libfunc) => pedersen::build(libfunc, builder),
         CoreConcreteLibFunc::BuiltinCost(libfunc) => builtin_cost::build(libfunc, builder),
-        CoreConcreteLibFunc::StarkNet(_) => {
-            unimplemented!(
-                "
-            StarkNet functionalities are not implemented yet."
-            )
-        }
+        CoreConcreteLibFunc::StarkNet(libfunc) => starknet::build(libfunc, builder),
     }
 }
 

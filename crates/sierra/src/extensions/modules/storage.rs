@@ -120,7 +120,7 @@ impl NoGenericArgsGenericLibFunc for StorageReadLibFunc {
                     ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                 },
             ],
-            SierraApChange::Known(0),
+            SierraApChange::Known(1),
         ))
     }
 }
