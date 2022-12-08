@@ -13,7 +13,7 @@ use crate::SemanticDiagnostic;
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct UseData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
-    pub resolved_item: Option<ResolvedGenericItem>,
+    resolved_item: Option<ResolvedGenericItem>,
     resolved_lookback: Arc<ResolvedLookback>,
 }
 
