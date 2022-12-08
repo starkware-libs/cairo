@@ -222,4 +222,8 @@ use starknet::ContractAddress;
 mod cheatcodes;
 use cheatcodes::roll;
 
+// Cheatcodes
+mod cheatcodes;
+use cheatcodes::roll;
+
 mod test;
