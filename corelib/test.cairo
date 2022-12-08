@@ -163,8 +163,8 @@ func test_uint256_from_felt() {
     assert(uint256_from_felt(1) == as_uint256(uint128_const::<0>(), uint128_const::<1>()), 1);
     assert(
         uint256_from_felt(
-        170141183460469231731687303715884105728 * 2
-    ) == as_uint256(uint128_const::<1>(), uint128_const::<0>()),
+            170141183460469231731687303715884105728 * 2
+        ) == as_uint256(uint128_const::<1>(), uint128_const::<0>()),
         1
     );
 }
@@ -173,51 +173,45 @@ func test_uint256_from_felt() {
 #[test]
 func test_uint256_operators() {
     assert(
-        as_uint256(uint128_const::<1>(), uint128_const::<1>()) 
-        + as_uint256(
-        uint128_const::<3>(),
-        uint128_const::<2>()
-    ) == as_uint256(uint128_const::<4>(), uint128_const::<3>()),
+        as_uint256(uint128_const::<1>(), uint128_const::<1>())
+            + as_uint256(
+                uint128_const::<3>(), uint128_const::<2>()
+            ) == as_uint256(uint128_const::<4>(), uint128_const::<3>()),
         1
     );
     assert(
-        as_uint256(uint128_const::<1>(), pow_2_127()) 
-        + as_uint256(
-        uint128_const::<3>(),
-        pow_2_127()
-    ) == as_uint256(uint128_const::<5>(), uint128_const::<0>()),
+        as_uint256(uint128_const::<1>(), pow_2_127())
+            + as_uint256(
+                uint128_const::<3>(), pow_2_127()
+            ) == as_uint256(uint128_const::<5>(), uint128_const::<0>()),
         1
     );
     assert(
-        as_uint256(uint128_const::<4>(), uint128_const::<3>()) 
-        - as_uint256(
-        uint128_const::<1>(),
-        uint128_const::<1>()
-    ) == as_uint256(uint128_const::<3>(), uint128_const::<2>()),
+        as_uint256(uint128_const::<4>(), uint128_const::<3>())
+            - as_uint256(
+                uint128_const::<1>(), uint128_const::<1>()
+            ) == as_uint256(uint128_const::<3>(), uint128_const::<2>()),
         1
     );
     assert(
-        as_uint256(uint128_const::<5>(), uint128_const::<0>()) 
-        - as_uint256(
-        uint128_const::<1>(),
-        pow_2_127()
-    ) == as_uint256(uint128_const::<3>(), pow_2_127()),
+        as_uint256(uint128_const::<5>(), uint128_const::<0>())
+            - as_uint256(
+                uint128_const::<1>(), pow_2_127()
+            ) == as_uint256(uint128_const::<3>(), pow_2_127()),
         1
     );
     assert(
-        as_uint256(uint128_const::<4>(), uint128_const::<3>()) 
-        * as_uint256(
-        uint128_const::<0>(),
-        uint128_const::<1>()
-    ) == as_uint256(uint128_const::<4>(), uint128_const::<3>()),
+        as_uint256(uint128_const::<4>(), uint128_const::<3>())
+            * as_uint256(
+                uint128_const::<0>(), uint128_const::<1>()
+            ) == as_uint256(uint128_const::<4>(), uint128_const::<3>()),
         1
     );
     assert(
-        as_uint256(uint128_const::<4>(), uint128_const::<3>()) 
-        * as_uint256(
-        uint128_const::<0>(),
-        uint128_const::<2>()
-    ) == as_uint256(uint128_const::<8>(), uint128_const::<6>()),
+        as_uint256(uint128_const::<4>(), uint128_const::<3>())
+            * as_uint256(
+                uint128_const::<0>(), uint128_const::<2>()
+            ) == as_uint256(uint128_const::<8>(), uint128_const::<6>()),
         1
     );
 }
@@ -231,21 +225,21 @@ func test_uint256_add_overflow() {
 #[test]
 #[should_panic]
 func test_uint256_sub_overflow() {
-    as_uint256(uint128_const::<1>(), uint128_const::<1>()) 
+    as_uint256(uint128_const::<1>(), uint128_const::<1>())
         - as_uint256(uint128_const::<1>(), uint128_const::<2>());
 }
 
 #[test]
 #[should_panic]
 func test_uint256_mul_overflow_1() {
-    as_uint256(uint128_const::<1>(), uint128_const::<1>()) 
+    as_uint256(uint128_const::<1>(), uint128_const::<1>())
         * as_uint256(uint128_const::<1>(), uint128_const::<2>());
 }
 
 #[test]
 #[should_panic]
 func test_uint256_mul_overflow_2() {
-    as_uint256(uint128_const::<0>(), pow_2_127()) 
+    as_uint256(uint128_const::<0>(), pow_2_127())
         * as_uint256(uint128_const::<2>(), uint128_const::<0>());
 }
 
