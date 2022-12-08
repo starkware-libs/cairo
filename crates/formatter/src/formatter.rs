@@ -4,46 +4,39 @@ use itertools::Itertools;
 use smol_str::SmolStr;
 use syntax::node::db::SyntaxGroup;
 use syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
+use utils::extract_matches;
 
 use crate::FormatterConfig;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 /// Defines the break point behaviour.
 /// Defined in get_break_line_point_properties.
 pub enum BreakLinePointType {
-    /// Dangling points are usually operators which should be aligned to the first operator, i.e.:
-    /// let x = 1 + 2
-    ///           + 3
-    ///           + 4
-    Dangling,
-    /// Non-dangling are not aligned to a token above, but instead just indented by tabsize.
-    /// For example, method calls, i.e.:
-    /// a_variable.function1()
-    ///     .function2()
-    ///     .function3()
-    NonDangling,
-    /// List breaks are similar to non-dangling points, but have a non-indented trailing suffix.
-    /// Should only be used for separated lists.
-    /// For example, struct c`tor:
+    /// Represents a breakpoint which should be indented when broken. For example, binary expr:
+    /// let x = 1
+    ///     + 2
+    ///     + 3
+    ///     + 4
+    Indented,
+    /// Represents a breakpoint which should be indented when broken, except for the last one in
+    /// the group. For example, StructArgList:
     /// let x = Struct {
+    ///     first_arg: first_arg, second_arg: second_arg,
+    /// };
+    IndentedWithTail,
+    /// Represents a breakpoint which should not be indented when broken. For example, the
+    /// TerminalComma of StructArgList: Notice that the StructArgList wrapping it incur
+    /// indentation. let x = Struct {
     ///     first_arg: first_arg,
     ///     second_arg: second_arg,
+    ///     third_arg: third_arg,
+    ///     fourth_arg: fourth_arg,
+    ///     fifth_arg: fifth_arg
     /// };
-    ListBreak,
-}
-impl BreakLinePointType {
-    pub fn is_dangling(&self) -> bool {
-        matches!(self, BreakLinePointType::Dangling)
-    }
-    pub fn is_nondangling(&self) -> bool {
-        matches!(self, BreakLinePointType::NonDangling)
-    }
-    pub fn is_list_break(&self) -> bool {
-        matches!(self, BreakLinePointType::ListBreak)
-    }
+    NotIndented,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 /// Properties defining the behaviour of a break line point.
 pub struct BreakLinePointProperties {
     /// Breaking precedence, lower values will break first.
@@ -58,7 +51,7 @@ impl BreakLinePointProperties {
 }
 
 /// The possible parts of line trees.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 enum LineComponent {
     /// A simple string to be printed.
     Token(String),
@@ -102,7 +95,7 @@ impl fmt::Display for LineComponent {
 
 /// Represents a line in the code, separated by optional break line points.
 /// Used to break the line if too long.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 struct LineBuilder {
     children: Vec<LineComponent>,
     /// Indicates whether this builder is open, which means any new child should
@@ -153,7 +146,9 @@ impl LineBuilder {
     }
     /// Appends an indent to the line.
     pub fn push_indent(&mut self, n: usize) {
-        self.push_child(LineComponent::Indent(n));
+        if n > 0 {
+            self.push_child(LineComponent::Indent(n));
+        }
     }
     /// Appends an optional break line point.
     pub fn push_break_line_point(&mut self, properties: BreakLinePointProperties) {
@@ -216,12 +211,11 @@ impl LineBuilder {
         if self.width() < max_line_width {
             return vec![self.to_string()];
         }
-        let mut sub_builders = self.to_broken_tree_by_width(max_line_width, tab_size);
+        let mut sub_builders = self.to_broken_tree(tab_size);
         // While the line is not broken into several lines, try to flatten it and then break it.
         while sub_builders.len() == 1 {
             if !sub_builders[0].is_flat() {
-                sub_builders =
-                    sub_builders[0].flatten().to_broken_tree_by_width(max_line_width, tab_size);
+                sub_builders = sub_builders[0].flatten().to_broken_tree(tab_size);
             } else {
                 // Can't break tree to fit within width
                 // TODO(Gil): Propagate error to user.
@@ -236,27 +230,29 @@ impl LineBuilder {
     }
     /// Breaks the LineTree into a vector of LineTrees
     /// according to the lowest precedence break line point found in the LineTree.
-    fn to_broken_tree_by_width(&self, max_line_width: usize, tab_size: usize) -> Vec<LineBuilder> {
+    fn to_broken_tree(&self, tab_size: usize) -> Vec<LineBuilder> {
         let mut breaking_positions = self.get_preceding_break_points_indices();
         if breaking_positions.is_empty() {
             return vec![self.clone()];
         }
-        let mut break_line_point_type = if let LineComponent::BreakLinePoint(properties) =
-            &self.children[breaking_positions[0]]
-        {
-            properties.break_type.clone()
-        } else {
-            unreachable!("Index is taken from a break line points positions vector.");
-        };
+        let break_line_point_type =
+            extract_matches!(&self.children[breaking_positions[0]], LineComponent::BreakLinePoint)
+                .break_type
+                .clone();
+        // Ignore breaking points at the end of the line.
+        // TODO(Gil): Support empty lines break points where allowed.
+        if *breaking_positions.last().unwrap() == self.children.len() - 1 {
+            breaking_positions.pop();
+        }
+        let base_indent = self.get_leading_indent();
         let mut trees: Vec<LineBuilder> = vec![LineBuilder::new()];
+        trees.last_mut().unwrap().push_indent(base_indent);
         let mut added_indent = 0;
         let mut prev_position = 0;
-        // Dangling break is overridden if it will cause the line to still be too long.
-        if break_line_point_type.is_dangling()
-            && (breaking_positions.len() == 1
-                || self.width_between(0, breaking_positions[1]) > max_line_width)
-        {
-            break_line_point_type = BreakLinePointType::NonDangling;
+        if matches!(
+            break_line_point_type,
+            BreakLinePointType::Indented | BreakLinePointType::IndentedWithTail
+        ) {
             added_indent = tab_size;
         }
 
@@ -267,6 +263,7 @@ impl LineBuilder {
         for (i, position) in breaking_positions.iter().enumerate() {
             for j in prev_position..*position {
                 match &self.children[j] {
+                    LineComponent::Indent(_) => {}
                     LineComponent::Space => {
                         // Ignore spaces at the start of a line
                         if !trees.last_mut().unwrap().is_only_indents() {
@@ -276,25 +273,14 @@ impl LineBuilder {
                     _ => trees.last_mut().unwrap().push_child(self.children[j].clone()),
                 }
             }
-            if i == 0 && break_line_point_type.is_dangling() {
-                added_indent = trees.last_mut().unwrap().width();
-            } else if *position < self.children.len() {
-                if break_line_point_type.is_list_break() {
-                    // In a breakable list, add indent after the first break point
-                    // (e.g. after "Struct{" to indent all struct builder args )
-                    if i == 0 {
-                        added_indent += tab_size;
-                    }
-                    // In a breakable list, remove indent before the trailing tokens
-                    // (e.g. before "};" to unindent the closing brace)
-                    if i == breaking_positions.len() - 2 {
-                        added_indent -= tab_size;
-                    }
+            if *position < self.children.len() {
+                if matches!(break_line_point_type, BreakLinePointType::IndentedWithTail)
+                    && i == breaking_positions.len() - 2
+                {
+                    added_indent = 0;
                 }
                 trees.push(LineBuilder::new());
-                if added_indent > 0 {
-                    trees.last_mut().unwrap().push_indent(added_indent);
-                }
+                trees.last_mut().unwrap().push_indent(base_indent + added_indent);
             }
             prev_position = position + 1;
         }
@@ -359,6 +345,18 @@ impl LineBuilder {
     fn is_only_indents(&self) -> bool {
         !self.children.iter().any(|child| !matches!(child, LineComponent::Indent(_)))
     }
+    fn get_leading_indent(&self) -> usize {
+        let mut leading_indent = 0;
+        for child in self.children.iter() {
+            match child {
+                LineComponent::Indent(indent) => leading_indent += *indent,
+                _ => {
+                    break;
+                }
+            }
+        }
+        leading_indent
+    }
 }
 
 /// A struct holding all the data of the pending line to be emitted.
@@ -405,19 +403,12 @@ pub trait SyntaxNodeFormat {
     fn allow_newline_after(&self, db: &dyn SyntaxGroup) -> bool;
     /// Returns the number of allowed empty lines between two consecutive children of this node.
     fn allowed_empty_between(&self, db: &dyn SyntaxGroup) -> usize;
-    /// Returns true if there should be an optional break line point before the node.
-    fn add_break_line_point_before(&self, db: &dyn SyntaxGroup) -> bool;
-    /// Returns true if there should be an optional break line point after the node.
-    fn add_break_line_point_after(&self, db: &dyn SyntaxGroup) -> bool;
-    /// Returns true if the list is optionally breakable.
-    /// Only applicable for separated lists kind nodes.
-    fn is_breakable_list(&self, db: &dyn SyntaxGroup) -> bool;
-    /// Returns the BreakPointProperties associated with the specific node kind.
-    fn get_break_line_point_properties(&self, db: &dyn SyntaxGroup) -> BreakLinePointProperties;
-    /// Returns true if the node is protected from breaking unless no other break points exists.
-    /// For example break points inside ExprParenthesized should only be used if there are no break
-    /// points outside the the parenthesis.
-    /// Only applicable for internal nodes.
+    /// Returns the break point properties before and after a specific node if a break point should
+    /// exist, otherwise returns None.
+    fn get_wrapping_break_line_point_properties(
+        &self,
+        db: &dyn SyntaxGroup,
+    ) -> (Option<BreakLinePointProperties>, Option<BreakLinePointProperties>);
     fn is_protected_breaking_node(&self, db: &dyn SyntaxGroup) -> bool;
 }
 
@@ -459,12 +450,21 @@ impl<'a> Formatter<'a> {
         if syntax_node.text(self.db).is_some() {
             panic!("Token reached before terminal.");
         }
+        let is_protected_zone = syntax_node.is_protected_breaking_node(self.db);
+        let node_break_points = syntax_node.get_wrapping_break_line_point_properties(self.db);
+        self.append_break_line_point(node_break_points.0);
+        if is_protected_zone {
+            self.line_state.line_buffer.open_sub_builder();
+        }
         if syntax_node.kind(self.db).is_terminal() {
             self.format_terminal(syntax_node, no_space_after);
         } else {
             self.format_internal(syntax_node, no_space_after);
         }
-
+        if is_protected_zone {
+            self.line_state.line_buffer.close_sub_builder();
+        }
+        self.append_break_line_point(node_break_points.1);
         if syntax_node.force_line_break(self.db) && !self.line_state.is_empty() {
             self.finalize_line();
         }
@@ -474,13 +474,6 @@ impl<'a> Formatter<'a> {
         let indent_change = usize::from(syntax_node.should_change_indent(self.db));
         let allowed_empty_between = syntax_node.allowed_empty_between(self.db);
         let no_space_after = no_space_after || syntax_node.force_no_space_after(self.db);
-
-        if syntax_node.is_protected_breaking_node(self.db) {
-            self.line_state.line_buffer.open_sub_builder();
-        }
-        if syntax_node.is_breakable_list(self.db) {
-            self.append_break_line_point(syntax_node.get_break_line_point_properties(self.db));
-        }
         let children = syntax_node.children(self.db);
         let n_children = children.len();
         for (i, child) in children.enumerate() {
@@ -496,16 +489,6 @@ impl<'a> Formatter<'a> {
 
             self.empty_lines_allowance = allowed_empty_between;
             self.current_indent -= indent_change;
-            // If this is a breakable list is breakable a breakpoint is added after each separator
-            if i % 2 == 1 && i != n_children - 1 && syntax_node.is_breakable_list(self.db) {
-                self.append_break_line_point(syntax_node.get_break_line_point_properties(self.db));
-            }
-        }
-        if syntax_node.is_breakable_list(self.db) {
-            self.append_break_line_point(syntax_node.get_break_line_point_properties(self.db));
-        }
-        if syntax_node.is_protected_breaking_node(self.db) {
-            self.line_state.line_buffer.close_sub_builder();
         }
     }
     /// Formats a terminal node and appends the formatted string to the result.
@@ -556,16 +539,12 @@ impl<'a> Formatter<'a> {
             self.line_state.line_buffer.push_space();
         }
         self.line_state.no_space_after = no_space_after;
-        if syntax_node.add_break_line_point_before(self.db) {
-            self.append_break_line_point(syntax_node.get_break_line_point_properties(self.db));
-        }
         self.line_state.line_buffer.push_str(&text);
-        if syntax_node.add_break_line_point_after(self.db) {
-            self.append_break_line_point(syntax_node.get_break_line_point_properties(self.db));
-        }
     }
-    fn append_break_line_point(&mut self, properties: BreakLinePointProperties) {
-        self.line_state.line_buffer.push_break_line_point(properties);
+    fn append_break_line_point(&mut self, properties: Option<BreakLinePointProperties>) {
+        if let Some(properties) = properties {
+            self.line_state.line_buffer.push_break_line_point(properties);
+        }
     }
     /// Returns the leading indentation according to the current indent and the tab size.
     fn get_indentation(&self) -> String {
