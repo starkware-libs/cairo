@@ -1,8 +1,8 @@
-use std::collections::HashMap;
 use std::fs;
 
 use clap::Parser;
 use sierra::ProgramParser;
+use sierra_ap_change::calc_ap_changes;
 use sierra_gas::calc_gas_info;
 use sierra_to_casm::metadata::Metadata;
 use utils::logging::init_logging;
@@ -31,7 +31,10 @@ fn main() {
     let gas_usage_check = true;
     let cairo_program = sierra_to_casm::compiler::compile(
         &program,
-        &Metadata { function_ap_change: HashMap::new(), gas_info },
+        &Metadata {
+            ap_change_info: calc_ap_changes(&program).expect("Failed calculating ap changes."),
+            gas_info,
+        },
         gas_usage_check,
     )
     .expect("Compilation failed.");
