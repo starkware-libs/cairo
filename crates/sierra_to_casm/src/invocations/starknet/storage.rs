@@ -1,5 +1,6 @@
 use casm::casm;
-use casm::operand::DerefOrImmediate;
+use casm::hints::Hint;
+use casm::operand::{BinOpOperand, DerefOrImmediate, ResOperand};
 use num_bigint::BigInt;
 use num_traits::FromPrimitive;
 use sierra::extensions::felt::FeltOperator;
@@ -33,13 +34,21 @@ pub fn build_storage_read(
         return Err(InvocationError::InvalidReferenceExpressionForArgument);
     }
 
-    let instructions = casm! {
+    let mut instructions = casm! {
         [ap] = selector, ap++;
         [ap] = [[syscall_base] + syscall_offset];
         storage_address = [[syscall_base] + (syscall_offset + 1)];
-        // TODO(ilya): Read sys call hint.
     }
     .instructions;
+
+    instructions.last_mut().unwrap().hints = vec![Hint::SystemCall {
+        syscall_ptr: ResOperand::BinOp(BinOpOperand {
+            op: casm::operand::Operation::Add,
+            a: syscall_base,
+            b: DerefOrImmediate::Immediate(BigInt::from_i16(syscall_offset).unwrap()),
+        }),
+    }];
+
     let output_expressions = [vec![
         ReferenceExpression {
             cells: vec![CellExpression::BinOp(BinOpExpression {
