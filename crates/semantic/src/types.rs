@@ -138,6 +138,7 @@ impl ConcreteTypeId {
                     .iter()
                     .map(|arg| match arg {
                         crate::GenericArgumentId::Type(ty) => ty.format(db),
+                        crate::GenericArgumentId::Literal(literal_id) => literal_id.format(db),
                     })
                     .join(", ")
             )
@@ -269,9 +270,11 @@ pub fn substitute_generics(
                 concrete
                     .generic_args(db)
                     .iter()
-                    .map(|generic_arg| {
-                        let GenericArgumentId::Type(ty) = generic_arg;
-                        GenericArgumentId::Type(substitute_generics(db, substitution, *ty))
+                    .map(|generic_arg| match generic_arg {
+                        GenericArgumentId::Type(ty) => {
+                            GenericArgumentId::Type(substitute_generics(db, substitution, *ty))
+                        }
+                        GenericArgumentId::Literal(_) => *generic_arg,
                     })
                     .collect(),
             )))
@@ -281,9 +284,12 @@ pub fn substitute_generics(
         )),
         TypeLongId::GenericParameter(generic_param) => substitution
             .get(&generic_param)
-            .map(|generic_arg| {
-                let GenericArgumentId::Type(ty) = generic_arg;
-                *ty
+            .map(|generic_arg| match generic_arg {
+                GenericArgumentId::Type(ty) => *ty,
+                GenericArgumentId::Literal(_) => {
+                    // TODO(ilya): Add diagnostics: "Expected type. Got literal"
+                    TypeId::missing(db)
+                }
             })
             .unwrap_or(ty),
         TypeLongId::Missing => ty,
