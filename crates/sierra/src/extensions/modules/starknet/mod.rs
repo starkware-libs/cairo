@@ -1,6 +1,10 @@
-use super::storage::{StorageAddressConstLibFunc, StorageAddressType, StorageReadLibFunc};
-use crate::extensions::syscalls::SyscallPtrType;
 use crate::{define_libfunc_hierarchy, define_type_hierarchy};
+
+pub mod storage;
+use storage::{StorageAddressConstLibFunc, StorageAddressType, StorageReadLibFunc};
+
+mod syscalls;
+use syscalls::SyscallPtrType;
 
 define_type_hierarchy! {
     pub enum StarkNetType {
