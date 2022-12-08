@@ -160,7 +160,9 @@ fn integer_libfunc_cost<Ops: CostOperations>(
 /// Returns costs for felt libfuncs.
 fn felt_libfunc_cost<Ops: CostOperations>(ops: &Ops, libfunc: &FeltConcrete) -> Vec<Ops::CostType> {
     match libfunc {
-        FeltConcrete::Const(_) | FeltConcrete::Operation(_) => vec![ops.const_cost(0)],
+        FeltConcrete::Const(_)
+        | FeltConcrete::BinaryOperation(_)
+        | FeltConcrete::UnaryOperation(_) => vec![ops.const_cost(0)],
         FeltConcrete::JumpNotZero(_) => {
             vec![ops.const_cost(1), ops.const_cost(1)]
         }

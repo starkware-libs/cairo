@@ -8,7 +8,7 @@ use casm::operand::{CellRef, DerefOrImmediate, Register, ResOperand};
 use casm::{casm, casm_extend};
 use num_bigint::BigInt;
 use sierra::extensions::dict_felt_to::DictFeltToConcreteLibFunc;
-use sierra::extensions::felt::FeltOperator;
+use sierra::extensions::felt::FeltBinaryOperator;
 use sierra::extensions::ConcreteLibFunc;
 use sierra::ids::ConcreteTypeId;
 use utils::try_extract_matches;
@@ -480,7 +480,7 @@ impl ReferenceExpressionView for DictFeltToView {
         let (end, end_offset) = match &expr.cells[1] {
             CellExpression::Deref(op) => (*op, 0u16),
             CellExpression::BinOp(binop) => {
-                if binop.op != FeltOperator::Add {
+                if binop.op != FeltBinaryOperator::Add {
                     return Err(ReferencesError::InvalidReferenceTypeForArgument);
                 }
                 (
@@ -508,7 +508,7 @@ impl ReferenceExpressionView for DictFeltToView {
                 cells: vec![
                     CellExpression::Deref(self.end),
                     CellExpression::BinOp(BinOpExpression {
-                        op: FeltOperator::Add,
+                        op: FeltBinaryOperator::Add,
                         a: self.end,
                         b: DerefOrImmediate::Immediate(BigInt::from(self.end_offset)),
                     }),
