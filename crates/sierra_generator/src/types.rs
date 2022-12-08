@@ -64,6 +64,11 @@ pub fn get_concrete_type_id(
                                             db.get_concrete_type_id(ty).unwrap(),
                                         )
                                     }
+                                    semantic::GenericArgumentId::Literal(literal_id) => {
+                                        sierra::program::GenericArg::Value(
+                                            db.lookup_intern_literal(literal_id).value,
+                                        )
+                                    }
                                 })
                                 .collect(),
                         }),

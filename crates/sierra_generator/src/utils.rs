@@ -225,10 +225,15 @@ pub fn get_concrete_libfunc_id(
             let mut generic_args = vec![];
             for generic_arg in &concrete_function.generic_args {
                 generic_args.push(match generic_arg {
-                    semantic::GenericArgumentId::Type(ty) => sierra::program::GenericArg::Type(
+                    semantic::GenericArgumentId::Type(ty) => {
                         // TODO(lior): How should the following unwrap() be handled?
-                        db.get_concrete_type_id(*ty).unwrap(),
-                    ),
+                        sierra::program::GenericArg::Type(db.get_concrete_type_id(*ty).unwrap())
+                    }
+                    semantic::GenericArgumentId::Literal(literal_id) => {
+                        sierra::program::GenericArg::Value(
+                            db.lookup_intern_literal(*literal_id).value,
+                        )
+                    }
                 });
             }
 
